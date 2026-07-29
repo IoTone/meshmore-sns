@@ -1,0 +1,18 @@
+# macOS
+.DS_Store
+
+# Python (brand/ tooling)
+__pycache__/
+*.py[cod]
+
+# Gradle / Java (libmeshcore, libmeshcore-android)
+.gradle/
+build/
+local.properties
+*.class
+
+# IDE
+.idea/
+*.iml
+
+# Note: the Flutter app keeps its own ignore rules in meshmore_sns_app/.gitignore
