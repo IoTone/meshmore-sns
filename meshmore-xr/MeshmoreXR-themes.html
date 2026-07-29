@@ -1,0 +1,692 @@
+<title>MeshmoreXR — Nine Themes</title>
+
+<style>
+:root {
+  --font-mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+
+  --ground: #f0efec;
+  --panel: #ffffff;
+  --panel-2: #e8e7e3;
+  --line: #d3d2cd;
+  --line-soft: #e2e1dd;
+  --text: #16191c;
+  --text-dim: #565d64;
+  --text-faint: #8a9098;
+  --shadow: 0 1px 2px rgba(0,0,0,.05), 0 8px 24px rgba(0,0,0,.05);
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ground: #07090c;
+    --panel: #0e1319;
+    --panel-2: #141b23;
+    --line: #1e2833;
+    --line-soft: #161d25;
+    --text: #ccd7e1;
+    --text-dim: #7e8c99;
+    --text-faint: #55606b;
+    --shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.3);
+  }
+}
+:root[data-theme="light"] {
+  --ground: #f0efec; --panel: #ffffff; --panel-2: #e8e7e3;
+  --line: #d3d2cd; --line-soft: #e2e1dd;
+  --text: #16191c; --text-dim: #565d64; --text-faint: #8a9098;
+  --shadow: 0 1px 2px rgba(0,0,0,.05), 0 8px 24px rgba(0,0,0,.05);
+}
+:root[data-theme="dark"] {
+  --ground: #07090c; --panel: #0e1319; --panel-2: #141b23;
+  --line: #1e2833; --line-soft: #161d25;
+  --text: #ccd7e1; --text-dim: #7e8c99; --text-faint: #55606b;
+  --shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.3);
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--ground);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+.wrap { max-width: 1220px; margin: 0 auto; padding: 0 22px 80px; }
+
+/* ---------- masthead ---------- */
+.mast { padding: 52px 0 30px; border-bottom: 1px solid var(--line); }
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: 11px; letter-spacing: .22em; text-transform: uppercase;
+  color: var(--text-faint); margin: 0 0 18px;
+}
+h1 {
+  font-family: var(--font-mono);
+  font-size: clamp(30px, 5.2vw, 52px);
+  line-height: 1.02; letter-spacing: -.02em; font-weight: 600;
+  margin: 0 0 16px; text-wrap: balance;
+}
+h1 em { font-style: normal; color: var(--accent, #35E0F0); }
+.dek {
+  max-width: 60ch; color: var(--text-dim); font-size: 16.5px; margin: 0;
+}
+.tiers {
+  display: flex; flex-wrap: wrap; gap: 8px; margin-top: 26px;
+  font-family: var(--font-mono); font-size: 11.5px; letter-spacing: .06em;
+}
+.tier {
+  border: 1px solid var(--line); padding: 5px 11px; color: var(--text-dim);
+  background: var(--panel);
+}
+.tier b { color: var(--text); font-weight: 600; }
+
+/* ---------- stage ---------- */
+.stage-grid {
+  display: grid; grid-template-columns: 218px minmax(0,1fr);
+  gap: 26px; margin-top: 34px; align-items: start;
+}
+@media (max-width: 860px) { .stage-grid { grid-template-columns: 1fr; } }
+
+.rail { display: flex; flex-direction: column; gap: 5px; position: sticky; top: 18px; }
+@media (max-width: 860px) {
+  .rail { position: static; flex-direction: row; overflow-x: auto; padding-bottom: 6px; }
+}
+.chip {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--panel); border: 1px solid var(--line);
+  padding: 9px 11px; cursor: pointer; text-align: left;
+  color: var(--text-dim); font-family: var(--font-mono);
+  font-size: 12px; letter-spacing: .04em; white-space: nowrap;
+  transition: border-color .12s, color .12s, background .12s;
+}
+.chip:hover { border-color: var(--text-faint); color: var(--text); }
+.chip:focus-visible { outline: 2px solid var(--accent, #35E0F0); outline-offset: 2px; }
+.chip[aria-selected="true"] {
+  color: var(--text); background: var(--panel-2);
+  border-color: var(--chip); box-shadow: inset 3px 0 0 var(--chip);
+}
+.dot { width: 9px; height: 9px; border-radius: 50%; background: var(--chip); flex: none; }
+.chip .n { color: var(--text-faint); font-size: 10.5px; }
+
+.stage { min-width: 0; }
+.canvas-shell {
+  position: relative; border: 1px solid var(--line);
+  background: #000; aspect-ratio: 16 / 10; overflow: hidden;
+}
+canvas { display: block; width: 100%; height: 100%; }
+.controls {
+  display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+  margin-top: 10px;
+}
+.toggle {
+  font-family: var(--font-mono); font-size: 11px; letter-spacing: .08em;
+  text-transform: uppercase; background: var(--panel);
+  border: 1px solid var(--line); color: var(--text-dim);
+  padding: 7px 12px; cursor: pointer;
+}
+.toggle:hover { border-color: var(--text-faint); color: var(--text); }
+.toggle:focus-visible { outline: 2px solid var(--accent, #35E0F0); outline-offset: 2px; }
+.toggle[aria-pressed="true"] { background: var(--text); color: var(--ground); border-color: var(--text); }
+.hint {
+  font-family: var(--font-mono); font-size: 11px; color: var(--text-faint);
+  margin-left: auto; letter-spacing: .04em;
+}
+
+/* ---------- detail ---------- */
+.detail { margin-top: 30px; display: grid; gap: 24px; }
+.title-row { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; }
+.title-row h2 {
+  font-family: var(--font-mono); font-size: 27px; font-weight: 600;
+  letter-spacing: -.01em; margin: 0;
+}
+.badge {
+  font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .12em;
+  text-transform: uppercase; padding: 3px 9px; border: 1px solid currentColor;
+}
+.b-panel { color: #6b8fb5; } .b-additive { color: #b58fd8; } .b-hybrid { color: #6fae94; }
+.oneliner {
+  font-size: 18px; line-height: 1.5; max-width: 62ch; color: var(--text);
+  margin: 0; border-left: 2px solid var(--chip); padding-left: 16px;
+}
+.swatches { display: flex; flex-wrap: wrap; gap: 0; border: 1px solid var(--line); }
+.sw { flex: 1 1 90px; min-width: 90px; }
+.sw .band { height: 46px; }
+.sw .lbl {
+  font-family: var(--font-mono); font-size: 10px; letter-spacing: .05em;
+  padding: 6px 8px; color: var(--text-dim); border-top: 1px solid var(--line);
+  background: var(--panel);
+}
+.sw .lbl b { display: block; color: var(--text); font-weight: 500; text-transform: uppercase; }
+
+.specs { display: grid; grid-template-columns: repeat(auto-fit, minmax(258px, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); }
+.spec { background: var(--panel); padding: 15px 17px; }
+.spec h3 {
+  font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .16em;
+  text-transform: uppercase; color: var(--text-faint);
+  margin: 0 0 8px; font-weight: 500;
+}
+.spec p { margin: 0; font-size: 14.5px; color: var(--text-dim); }
+.spec p b { color: var(--text); font-weight: 600; }
+.risk { border-left: 3px solid var(--chip); }
+
+/* ---------- table ---------- */
+.matrix-wrap { overflow-x: auto; border: 1px solid var(--line); margin-top: 14px; }
+table { border-collapse: collapse; width: 100%; font-size: 13px; min-width: 780px; }
+th, td { text-align: left; padding: 9px 13px; border-bottom: 1px solid var(--line-soft); white-space: nowrap; }
+thead th {
+  font-family: var(--font-mono); font-size: 10px; letter-spacing: .13em;
+  text-transform: uppercase; color: var(--text-faint); font-weight: 500;
+  background: var(--panel-2); border-bottom: 1px solid var(--line);
+}
+tbody tr { background: var(--panel); cursor: pointer; }
+tbody tr:hover { background: var(--panel-2); }
+tbody tr[aria-selected="true"] { background: var(--panel-2); }
+tbody tr[aria-selected="true"] td:first-child { box-shadow: inset 3px 0 0 var(--rc); }
+td.name { font-family: var(--font-mono); font-weight: 600; color: var(--text); }
+td.num { font-variant-numeric: tabular-nums; color: var(--text-faint); }
+.pill {
+  font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .06em;
+  padding: 2px 8px; border: 1px solid currentColor;
+}
+.p-best { color: #4c9c74; } .p-ok { color: var(--text-dim); } .p-warn { color: #c08a3e; } .p-bad { color: #c2564f; }
+
+section.blk { margin-top: 52px; }
+section.blk > h2 {
+  font-family: var(--font-mono); font-size: 12px; letter-spacing: .2em;
+  text-transform: uppercase; color: var(--text-faint); font-weight: 500;
+  margin: 0 0 6px; padding-bottom: 10px; border-bottom: 1px solid var(--line);
+}
+section.blk .lede { max-width: 66ch; color: var(--text-dim); margin: 16px 0 0; }
+.rec { display: grid; gap: 12px; margin-top: 20px; }
+.rec-item {
+  display: grid; grid-template-columns: 26px 1fr; gap: 14px;
+  background: var(--panel); border: 1px solid var(--line); padding: 14px 16px;
+}
+.rec-item .rank {
+  font-family: var(--font-mono); font-size: 12px; color: var(--text-faint);
+  font-variant-numeric: tabular-nums;
+}
+.rec-item b { font-family: var(--font-mono); }
+.rec-item p { margin: 4px 0 0; color: var(--text-dim); font-size: 14.5px; }
+
+footer {
+  margin-top: 60px; padding-top: 22px; border-top: 1px solid var(--line);
+  font-family: var(--font-mono); font-size: 11.5px; color: var(--text-faint);
+  letter-spacing: .04em;
+}
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+</style>
+
+<div class="wrap">
+
+  <header class="mast">
+    <p class="eyebrow">Design brief · theme selection · 2026-07-29</p>
+    <h1>Nine themes for <em>MeshmoreXR</em></h1>
+    <p class="dek">
+      One symbology, restyled nine ways. Each preview is the <b>HORIZON</b> surface — the
+      always-on mesh drawn in plan view, peers at their true bearings, range halos at
+      100&nbsp;m / 1&nbsp;km / 10&nbsp;km, and the forward field of view deliberately kept clear.
+      Pick a chip to restyle it live. Then turn <b>Sunlight</b> on.
+    </p>
+    <div class="tiers">
+      <span class="tier"><b>Tier 0 · DARK</b> &nbsp;glasses only</span>
+      <span class="tier"><b>Tier 1 · MESH</b> &nbsp;+ BLE radio — home</span>
+      <span class="tier"><b>Tier 2 · UPLINK</b> &nbsp;+ broadband — superpowers</span>
+    </div>
+  </header>
+
+  <div class="stage-grid">
+    <div class="rail" role="tablist" aria-label="Themes"></div>
+
+    <div class="stage">
+      <div class="canvas-shell"><canvas id="c"></canvas></div>
+      <div class="controls">
+        <button class="toggle" id="sun" aria-pressed="false">Sunlight passthrough</button>
+        <button class="toggle" id="motion" aria-pressed="true">Mesh traffic</button>
+        <span class="hint" id="hint">black renders as transparent on see-through glasses</span>
+      </div>
+
+      <div class="detail">
+        <div class="title-row">
+          <h2 id="t-name"></h2>
+          <span class="badge" id="t-sub"></span>
+        </div>
+        <p class="oneliner" id="t-one"></p>
+        <div class="swatches" id="t-sw"></div>
+        <div class="specs" id="t-specs"></div>
+      </div>
+    </div>
+  </div>
+
+  <section class="blk">
+    <h2>Comparison</h2>
+    <p class="lede">
+      Substrate class predicts almost everything downstream: how a theme holds up in
+      daylight, what it costs on the GPU, and how much of it survives contact with a
+      real sky. Click a row to load it above.
+    </p>
+    <div class="matrix-wrap">
+      <table>
+        <thead><tr>
+          <th>#</th><th>Theme</th><th>Substrate</th><th>Hero metaphor</th>
+          <th>Audio pack</th><th>Sunlight</th><th>Accessibility</th><th>GPU</th><th>Effort</th>
+        </tr></thead>
+        <tbody id="matrix"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="blk">
+    <h2>Recommendation</h2>
+    <div class="rec" id="rec"></div>
+    <p class="lede">
+      Theme is data, not architecture — so the marginal cost of each theme after the first
+      is styling only, <b>provided the seven-primitive symbology is built as a genuine
+      abstraction from day one</b>. That is the load-bearing engineering decision in this brief.
+    </p>
+  </section>
+
+  <footer>
+    MeshmoreXR · com.iotj.meshmore.xr · Jetpack XR SceneCore / ARCore 1.0.0-beta01 ·
+    libmeshcore consumed as-is · full brief in meshmore-xr/MeshmoreXR-design-brief.md
+  </footer>
+</div>
+
+<script>
+const T = [
+{ key:'halo', n:'HALO FIELD', sub:'hybrid', rec:'default',
+  one:'The mesh as a calm horizon. Everything at its true bearing, nothing shouting, legible in direct sun. The one you can wear for eight hours.',
+  ground:'#070B10', panel:'#101722', accent:'#35E0F0', alt:'#7CFF6B', warn:'#FFB020', alert:'#FF3B6B', text:'#DDE7EF',
+  type:'<b>Saira Condensed</b> display · <b>M PLUS 1 Code</b> mono + JA · Departure Mono for range labels only',
+  audio:'<b>“Sonar”</b> — a soft sonar ping on discovery, a two-note figure for messages, low sustained tones for link state. Sparse enough to survive eight hours outdoors.',
+  guide:'Never more than three luminance levels at once. Recency-fade is the primary information channel. If you are adding a decoration, delete it.',
+  risk:'<b>Low.</b> The safe, correct default — and the only theme that is simultaneously lowest-effort, most legible, and most accessible.',
+  metaphor:'Calm bearing ring', sun:'High', a11y:'Best', gpu:'Low', effort:'Lowest', symbol:'disc' },
+
+{ key:'nerv', n:'NERV SPATIAL', sub:'panel',
+  one:'The command deck, wrapped around you. Evangelion’s MAGI console as a 360° operations ring — countdown telemetry, hexagonal brackets, and an emergency state you cannot miss.',
+  ground:'#0A0E1A', panel:'#121826', accent:'#FF7A00', alt:'#9CFF00', warn:'#FFC400', alert:'#E01B24', text:'#E6ECF5',
+  type:'<b>Saira</b> ALL-CAPS compressed · <b>Departure Mono</b> for all telemetry · M PLUS 1 Code kanji callouts · outlined slashed-zero numerals',
+  audio:'<b>“Mission Control”</b> — MAGI-style data chirps, a three-tone alert cadence, countdown ticks under long operations. Busy but structured.',
+  guide:'Density is the aesthetic — but density lives on <b>panels</b>, never in open space. On critical alert the whole palette inverts to red and the scanline rate triples.',
+  risk:'<b>Medium.</b> The easiest theme in the set to overbuild into an unreadable wall.',
+  metaphor:'Command deck', sun:'Medium', a11y:'Medium', gpu:'Medium', effort:'High', symbol:'hex' },
+
+{ key:'aghud', n:'AG-SYSTEMS', sub:'hybrid',
+  one:'Wipeout’s craft HUD at 900 km/h. Velocity chevrons, a fictional race-team livery per channel, glossy and fast. The showpiece for demos.',
+  ground:'#05060B', panel:'#10131F', accent:'#22D3EE', alt:'#FF2D78', warn:'#FFD23F', alert:'#FF2D78', text:'#DDF6FF',
+  type:'<b>Michroma / Orbitron</b> display · Saira body · JetBrains Mono values',
+  audio:'<b>“Velocity”</b> — filtered sweeps, doppler whooshes, a three-note race-start triad on link-up. Confident and glossy.',
+  guide:'Motion carries the identity, so <b>reduce-motion must be designed, not bolted on</b> — the static fallback needs its own pass or this becomes the least accessible of the nine.',
+  risk:'<b>Medium-high.</b> Largest motion-sickness surface area in the set.',
+  metaphor:'Craft HUD', sun:'High', a11y:'Medium', gpu:'Medium', effort:'Med-High', symbol:'chevron' },
+
+{ key:'seele', n:'SEELE MONOLITH', sub:'panel', rec:'contrast',
+  one:'Type is the entire UI. Black slabs floating in your room, cream numerals a foot tall, near-zero chrome. The sunlight and accessibility benchmark.',
+  ground:'#000000', panel:'#0E0E0C', accent:'#EDE6D6', alt:'#9A958A', warn:'#9A958A', alert:'#C8102E', text:'#EDE6D6',
+  type:'Oversized <b>Saira</b> numerals · <b>M PLUS 1 Code</b> sparse text · slashed zero. Nothing else.',
+  audio:'<b>“Tribunal”</b> — deep resonant sub-bass strikes for critical events, a single low choral swell, and near-silence otherwise. The most restrained pack.',
+  guide:'If it can be a number, make it a number. If it can be removed, remove it. A node is not a dot — it is a callsign on a monolith.',
+  risk:'<b>Low.</b> Ship this as the guaranteed high-contrast alternate regardless of which theme wins default. It is the one that works at noon in July.',
+  metaphor:'Giant numeral', sun:'Highest', a11y:'Highest', gpu:'Lowest', effort:'Low', symbol:'slab' },
+
+{ key:'drpop', n:'DR POP', sub:'panel',
+  one:'The Designers Republic’s maximalist half. Flat colour blocks, fabricated corporate sub-brands, katakana as pure graphic. Loud, Y2K, unapologetic.',
+  ground:'#101014', panel:'#1C1C24', accent:'#FF2E88', alt:'#D7FF00', warn:'#00E5FF', alert:'#FF2E88', text:'#F2F0E6',
+  type:'<b>Michroma / Orbitron</b> display · <b>M PLUS 1 Code</b> katakana run as graphics, not as language · very bold numerals',
+  audio:'<b>“Pure Phase”</b> — Y2K rave stabs, vinyl crackle, TR-909-adjacent blips, a filtered riser on channel switch. The most musical pack.',
+  guide:'Hi-saturation on neutral, angular, layered. <b>Colour is decoration here and must never be the sole carrier of state.</b> The katakana is ornamental and must never displace real localized text.',
+  risk:'<b>High on accessibility.</b> Beautiful, and the most work to do right.',
+  metaphor:'Colour-block sub-brands', sun:'Medium', a11y:'Needs care', gpu:'Low', effort:'Medium', symbol:'block' },
+
+{ key:'recon', n:'RECON AMBER', sub:'hybrid', rec:'night',
+  one:'Single-hue night operations. Amber phosphor, nothing else. Lowest power, lowest light pollution, works at 3 a.m. without ruining your night vision.',
+  ground:'#000000', panel:'#0A0A07', accent:'#FFB000', alt:'#6E4E00', warn:'#FFB000', alert:'#B3231F', text:'#FFB000',
+  type:'<b>Departure Mono / M PLUS 1 Code</b> throughout. No display face at all.',
+  audio:'<b>“Codec”</b> — squelch bursts, a codec-style ring for incoming, morse-adjacent confirmation clicks. Monochrome sound to match monochrome light.',
+  guide:'One hue at four luminance steps. Information is carried by brightness and form, never by colour — which makes this automatically the most colour-blind-safe theme of the nine.',
+  risk:'<b>Low.</b> The pragmatist’s pick, dimmest emission, best battery, and genuinely differentiated.',
+  metaphor:'Single-hue sweep', sun:'Highest', a11y:'High', gpu:'Lowest', effort:'Low', symbol:'radar' },
+
+{ key:'vector', n:'VECTORLINE', sub:'additive',
+  one:'Tempest, Rez, Battlezone. Pure glowing vector geometry in a black void — which on see-through glasses means glowing geometry in your actual room. The UI is an instrument you play.',
+  ground:'#000000', panel:'#05070A', accent:'#00FFC8', alt:'#B14BFF', warn:'#FFE066', alert:'#FF3D00', text:'#DFFFF6',
+  type:'<b>Nova Square / Syncopate</b> display · Departure Mono data — stroke-forward faces that read as drawn vectors',
+  audio:'<b>“Arcade”</b> — the standout. Every interaction is a musical note quantized to a scale, and the scale shifts with mesh activity. A busy mesh literally sounds richer. The app becomes an instrument.',
+  guide:'Because black is transparent, <b>the real world is your background and you do not control it.</b> Every mark must be legible against a white wall and a bright sky. Extruded additive tube geometry only — never flat 1px strokes.',
+  risk:'<b>High, and worth stating plainly.</b> The most spectacular theme and the one most likely to be unusable outdoors at noon. Prototype against real sunlight before committing.',
+  metaphor:'Glowing vectors', sun:'Low', a11y:'Medium', gpu:'High', effort:'High', symbol:'wire' },
+
+{ key:'biolume', n:'BIOLUME', sub:'additive',
+  one:'The mesh as a living organism. Not cyberpunk at all — drifting spores, mycelial threads propagating between nodes, soft breathing light. The one that makes people say “oh” out loud.',
+  ground:'#04100E', panel:'#0B1F1A', accent:'#5FFFC2', alt:'#9B6BFF', warn:'#FFD08A', alert:'#FF6B5F', text:'#D8FFF0',
+  type:'<b>Outfit</b> display · <b>M PLUS Rounded 1c</b> body + JA · IBM Plex Mono for the little data there is',
+  audio:'<b>“Bloom”</b> — granular textures, breath, soft chimes. Generative: no two events sound identical, but each event class keeps a stable timbral identity so it stays learnable. The least fatiguing pack.',
+  guide:'Mycelial threads visibly grow from sender to receiver as packets propagate — the best visualization of a mesh network anyone has built. Nothing is ever perfectly still; reduce-motion freezes the field and keeps every meaning.',
+  risk:'<b>Medium-high GPU</b> — the one real particle budget in the set. Medium risk of reading as insufficiently “operational” for field use.',
+  metaphor:'Living organism', sun:'Medium', a11y:'High', gpu:'Highest', effort:'High', symbol:'spore' },
+
+{ key:'void', n:'TERMINAL VOID', sub:'additive',
+  one:'Phosphor text floating in space. No panels, no chrome, no graphics. The power-user, lowest-power, highest-legibility, most honest theme in the set.',
+  ground:'#000000', panel:'#020402', accent:'#33FF66', alt:'#0A3D17', warn:'#B8FF33', alert:'#FF4444', text:'#33FF66',
+  type:'<b>Departure Mono</b> at native pixel-grid multiples of 11 · M PLUS 1 Code for JA. Nothing else, ever.',
+  audio:'<b>“Teletype”</b> — mechanical key clacks, a real BEL, a carriage-return ding. Deliberately lo-fi.',
+  guide:'The primitives are replaced by glyphs. A node is <code>●davi1 −71dBm 340m 042°</code>. The HORIZON is a ring of floating text lines at true bearings. Zero geometry.',
+  risk:'<b>Low technically, narrow appeal.</b> Ship it as the developer / field fallback and let the enthusiasts find it.',
+  metaphor:'Text in space', sun:'High', a11y:'High', gpu:'Lowest', effort:'Low', symbol:'text' },
+];
+
+const NODES = [
+  { nm:'kanako.1', b:-38,  r:.40, age:0   },
+  { nm:'davi1',    b:-97,  r:.62, age:.08 },
+  { nm:'relay-nw', b:-152, r:.80, age:.15 },
+  { nm:'t1000-e',  b:38,   r:.33, age:0   },
+  { nm:'gate-cam', b:84,   r:.55, age:.30 },
+  { nm:'ridge',    b:132,  r:.86, age:.55 },
+  { nm:'hab-2',    b:172,  r:.70, age:.20 },
+  { nm:'shed',     b:-172, r:.50, age:.72 },
+  { nm:'mule.4',   b:118,  r:.44, age:.05 },
+  { nm:'oku.9',    b:-66,  r:.90, age:.42 },
+  { nm:'beacon',   b:156,  r:.28, age:.12 },
+];
+
+const REC = [
+  { t:'HALO FIELD', k:'halo', why:'Build this top-to-bottom first. It exercises every zone and every primitive without any exotic rendering, and it is the most faithful expression of “offline first, always-on mesh.”' },
+  { t:'SEELE MONOLITH', k:'seele', why:'The guaranteed high-contrast alternate. Nearly free once the theme system exists, and it is the one that survives direct sun.' },
+  { t:'RECON AMBER', k:'recon', why:'The night and low-power variant. Also nearly free, and the most colour-blind-safe of the nine.' },
+  { t:'VECTORLINE or BIOLUME', k:'vector', why:'The showpiece — but only after a sunlight prototype. Both bet everything on emission, and black is transparent on an additive display. Two days of prototyping de-risks the two most expensive themes.' },
+];
+
+const rail = document.querySelector('.rail');
+const matrix = document.getElementById('matrix');
+let cur = 0, sunOn = false, motionOn = true;
+
+T.forEach((t, i) => {
+  const b = document.createElement('button');
+  b.className = 'chip'; b.setAttribute('role','tab');
+  b.style.setProperty('--chip', t.accent);
+  b.innerHTML = `<span class="dot"></span><span>${t.n}</span><span class="n">${String(i+1).padStart(2,'0')}</span>`;
+  b.onclick = () => select(i);
+  rail.appendChild(b);
+
+  const pill = v => {
+    const c = v==='Best'||v==='Highest'||v==='Lowest'||v==='High' ? 'p-best'
+            : v==='Low'||v==='Needs care' ? 'p-warn' : 'p-ok';
+    return `<span class="pill ${c}">${v}</span>`;
+  };
+  const tr = document.createElement('tr');
+  tr.style.setProperty('--rc', t.accent);
+  tr.innerHTML = `<td class="num">${String(i+1).padStart(2,'0')}</td>
+    <td class="name">${t.n}</td>
+    <td>${t.sub}</td><td>${t.metaphor}</td><td>${t.audio.match(/“([^”]+)”/)[1]}</td>
+    <td>${pill(t.sun)}</td><td>${pill(t.a11y)}</td><td>${pill(t.gpu)}</td><td>${t.effort}</td>`;
+  tr.onclick = () => { select(i); document.querySelector('.canvas-shell').scrollIntoView({behavior:'smooth', block:'center'}); };
+  matrix.appendChild(tr);
+});
+
+document.getElementById('rec').innerHTML = REC.map((r,i) => {
+  const t = T.find(x => x.key === r.k);
+  return `<div class="rec-item"><span class="rank">${String(i+1).padStart(2,'0')}</span>
+    <div><b style="color:${t.accent}">${r.t}</b><p>${r.why}</p></div></div>`;
+}).join('');
+
+/* ---------- canvas ---------- */
+const cv = document.getElementById('c');
+const ctx = cv.getContext('2d');
+let W = 0, H = 0, t0 = performance.now();
+const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+function resize() {
+  const r = cv.parentElement.getBoundingClientRect();
+  const d = Math.min(devicePixelRatio || 1, 2);
+  W = r.width; H = r.height;
+  cv.width = W * d; cv.height = H * d;
+  ctx.setTransform(d, 0, 0, d, 0, 0);
+}
+new ResizeObserver(resize).observe(cv.parentElement);
+resize();
+
+const hex = (h, a) => {
+  const n = parseInt(h.slice(1), 16);
+  return `rgba(${n>>16&255},${n>>8&255},${n&255},${a})`;
+};
+
+function drawSunlight() {
+  // A procedural bright outdoor backdrop: sky gradient, horizon, a pale wall.
+  const g = ctx.createLinearGradient(0, 0, 0, H);
+  g.addColorStop(0, '#a9c8e8'); g.addColorStop(.52, '#dce8f2'); g.addColorStop(.53, '#c9c3b4'); g.addColorStop(1, '#9d9585');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = 'rgba(255,255,255,.55)';
+  ctx.fillRect(W * .58, H * .10, W * .30, H * .43);
+  ctx.fillStyle = 'rgba(0,0,0,.06)';
+  ctx.fillRect(W * .05, H * .18, W * .17, H * .35);
+  const s = ctx.createRadialGradient(W*.18, H*.16, 4, W*.18, H*.16, H*.5);
+  s.addColorStop(0, 'rgba(255,255,240,.95)'); s.addColorStop(1, 'rgba(255,255,240,0)');
+  ctx.fillStyle = s; ctx.fillRect(0, 0, W, H);
+}
+
+function mote(t, x, y, rad, lum, name, dist) {
+  const a = t.accent, al = t.alt;
+  ctx.save();
+  switch (t.symbol) {
+    case 'hex': {
+      ctx.fillStyle = hex(a, lum); ctx.beginPath(); ctx.arc(x, y, rad, 0, 7); ctx.fill();
+      ctx.strokeStyle = hex(al, lum * .9); ctx.lineWidth = 1.6;
+      const s = rad + 5;
+      [[-1,-1],[1,-1],[1,1],[-1,1]].forEach(([sx, sy]) => {
+        ctx.beginPath();
+        ctx.moveTo(x + sx*s, y + sy*s - sy*4); ctx.lineTo(x + sx*s, y + sy*s);
+        ctx.lineTo(x + sx*s - sx*4, y + sy*s); ctx.stroke();
+      });
+      break;
+    }
+    case 'chevron': {
+      ctx.fillStyle = hex(a, lum);
+      ctx.beginPath();
+      ctx.moveTo(x, y - rad*1.5); ctx.lineTo(x + rad*1.15, y + rad);
+      ctx.lineTo(x, y + rad*.35); ctx.lineTo(x - rad*1.15, y + rad);
+      ctx.closePath(); ctx.fill();
+      break;
+    }
+    case 'slab': {
+      ctx.fillStyle = hex(t.panel, .96);
+      const w = Math.max(46, name.length * 6.2), h = 17;
+      ctx.fillRect(x - w/2, y - h/2, w, h);
+      ctx.strokeStyle = hex(a, lum * .5); ctx.lineWidth = 1;
+      ctx.strokeRect(x - w/2, y - h/2, w, h);
+      ctx.fillStyle = hex(a, lum); ctx.font = '600 10px ui-monospace, monospace';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(name.toUpperCase(), x, y + .5);
+      ctx.restore(); return;
+    }
+    case 'block': {
+      ctx.fillStyle = hex(lum > .6 ? a : al, Math.max(lum, .5));
+      ctx.fillRect(x - rad*1.3, y - rad*1.3, rad*2.6, rad*2.6);
+      ctx.fillStyle = hex(t.text, .9);
+      ctx.fillRect(x - rad*1.3, y + rad*.5, rad*2.6, 2.5);
+      break;
+    }
+    case 'radar': {
+      ctx.fillStyle = hex(a, lum); ctx.beginPath(); ctx.arc(x, y, rad, 0, 7); ctx.fill();
+      ctx.strokeStyle = hex(a, lum * .35); ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.arc(x, y, rad + 4.5, 0, 7); ctx.stroke();
+      break;
+    }
+    case 'wire': {
+      ctx.strokeStyle = hex(a, lum); ctx.lineWidth = 2.2;
+      ctx.shadowColor = hex(a, lum * .9); ctx.shadowBlur = 12;
+      ctx.beginPath();
+      for (let i = 0; i < 6; i++) {
+        const ang = i / 6 * Math.PI * 2 - Math.PI/2;
+        const px = x + Math.cos(ang) * rad * 1.45, py = y + Math.sin(ang) * rad * 1.45;
+        i ? ctx.lineTo(px, py) : ctx.moveTo(px, py);
+      }
+      ctx.closePath(); ctx.stroke();
+      ctx.fillStyle = hex(al, lum * .55); ctx.shadowBlur = 0;
+      ctx.beginPath(); ctx.arc(x, y, rad * .42, 0, 7); ctx.fill();
+      break;
+    }
+    case 'spore': {
+      const g = ctx.createRadialGradient(x, y, 0, x, y, rad * 3.4);
+      g.addColorStop(0, hex(a, lum)); g.addColorStop(.32, hex(a, lum * .38));
+      g.addColorStop(1, hex(al, 0));
+      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, rad * 3.4, 0, 7); ctx.fill();
+      ctx.fillStyle = hex('#ffffff', lum * .75);
+      ctx.beginPath(); ctx.arc(x, y, rad * .5, 0, 7); ctx.fill();
+      break;
+    }
+    case 'text': {
+      ctx.fillStyle = hex(a, lum); ctx.font = '11px ui-monospace, monospace';
+      ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+      ctx.fillText('●' + name, x - 4, y);
+      ctx.fillStyle = hex(a, lum * .5); ctx.font = '9.5px ui-monospace, monospace';
+      ctx.fillText(dist, x + 6, y + 11);
+      ctx.restore(); return;
+    }
+    default: { // disc — HALO FIELD
+      ctx.fillStyle = hex(a, lum); ctx.beginPath(); ctx.arc(x, y, rad, 0, 7); ctx.fill();
+      ctx.strokeStyle = hex('#ffffff', lum * .55); ctx.lineWidth = 1.1;
+      ctx.beginPath(); ctx.arc(x, y, rad, 0, 7); ctx.stroke();
+    }
+  }
+  if (t.symbol !== 'slab' && t.symbol !== 'text') {
+    ctx.fillStyle = hex(t.text, lum * .78);
+    ctx.font = '10px ui-monospace, monospace';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    ctx.fillText(name, x, y + rad + 7);
+  }
+  ctx.restore();
+}
+
+function frame(now) {
+  const t = T[cur];
+  const time = (now - t0) / 1000;
+  const cx = W / 2, cy = H * .54, R = Math.min(W, H) * .40;
+  const additive = t.sub === 'additive';
+
+  ctx.setTransform(Math.min(devicePixelRatio||1,2),0,0,Math.min(devicePixelRatio||1,2),0,0);
+  ctx.globalCompositeOperation = 'source-over';
+
+  if (sunOn) drawSunlight();
+  else { ctx.fillStyle = t.ground; ctx.fillRect(0, 0, W, H); }
+
+  // Panel-led themes paint an opaque ground slab that survives sunlight.
+  if (sunOn && (t.sub === 'panel' || t.sub === 'hybrid')) {
+    ctx.fillStyle = hex(t.ground, t.sub === 'panel' ? .93 : .55);
+    ctx.beginPath(); ctx.arc(cx, cy, R * 1.22, 0, 7); ctx.fill();
+  }
+  if (additive || t.sub === 'hybrid') ctx.globalCompositeOperation = 'lighter';
+
+  // range halos — filled annuli, never stroked circles
+  [.34, .64, 1].forEach((f, i) => {
+    ctx.beginPath();
+    ctx.arc(cx, cy, R * f, 0, 7); ctx.arc(cx, cy, R * f - 2.2, 0, 7, true);
+    ctx.fillStyle = hex(t.accent, .16 + i * .04); ctx.fill();
+    ctx.fillStyle = hex(t.text, .42);
+    ctx.font = '9px ui-monospace, monospace'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+    ctx.fillText(['100 m','1 km','10 km'][i], cx + R * f + 6, cy);
+  });
+
+  // RECON's slow radar sweep
+  if (t.symbol === 'radar' && motionOn && !reduced) {
+    const a = time * .55 % (Math.PI * 2);
+    for (let k = 0; k < 22; k++) {
+      ctx.beginPath(); ctx.moveTo(cx, cy);
+      ctx.arc(cx, cy, R, a - k * .026, a - (k - 1) * .026);
+      ctx.fillStyle = hex(t.accent, .11 * (1 - k / 22)); ctx.fill();
+    }
+  }
+
+  // forward FOV — deliberately kept clear
+  ctx.save();
+  ctx.setLineDash([5, 5]); ctx.strokeStyle = hex(t.text, .30); ctx.lineWidth = 1;
+  [-24, 24].forEach(d => {
+    const a = (d - 90) * Math.PI / 180;
+    ctx.beginPath(); ctx.moveTo(cx, cy);
+    ctx.lineTo(cx + Math.cos(a) * R * 1.14, cy + Math.sin(a) * R * 1.14); ctx.stroke();
+  });
+  ctx.restore();
+  ctx.fillStyle = hex(t.text, .42);
+  ctx.font = '9px ui-monospace, monospace'; ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+  ctx.fillText('FORWARD FOV ~48° — KEPT CLEAR', cx, cy - R * 1.18);
+
+  // nodes
+  NODES.forEach((n, i) => {
+    const a = (n.b - 90) * Math.PI / 180;
+    const drift = (t.symbol === 'spore' && motionOn && !reduced) ? Math.sin(time * .7 + i) * 3 : 0;
+    const x = cx + Math.cos(a) * R * n.r, y = cy + Math.sin(a) * R * n.r + drift;
+    const lum = 1 - n.age * .72;                       // recency is brightness
+    const dist = Math.round(n.r * 3400) + 'm';
+
+    // link spur to a recently-heard node
+    if (n.age < .2) {
+      ctx.strokeStyle = hex(t.alt, .18 * lum); ctx.lineWidth = t.sub === 'additive' ? 2.4 : 1.4;
+      ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(x, y); ctx.stroke();
+    }
+    // pulse — the mesh visibly breathes
+    if (motionOn && !reduced) {
+      const ph = ((time * .42 + i * .29) % 1);
+      if (n.age < .35 && ph < .55) {
+        ctx.beginPath(); ctx.arc(x, y, 7 + ph * 30, 0, 7);
+        ctx.arc(x, y, 5 + ph * 30, 0, 7, true);
+        ctx.fillStyle = hex(t.accent, (1 - ph / .55) * .34 * lum); ctx.fill();
+      }
+    }
+    mote(t, x, y, 5.6, lum, n.nm, dist);
+  });
+
+  // you
+  ctx.globalCompositeOperation = 'source-over';
+  ctx.fillStyle = hex(t.text, .92);
+  ctx.beginPath(); ctx.arc(cx, cy, 4.5, 0, 7); ctx.fill();
+  ctx.strokeStyle = hex(t.text, .40); ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.arc(cx, cy, 9, 0, 7); ctx.stroke();
+
+  // palm console readout
+  ctx.fillStyle = hex(t.text, .62);
+  ctx.font = '10px ui-monospace, monospace'; ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+  ctx.fillText(`TIER 1 · MESH   PEERS 11   CH0 PUBLIC   ${t.n}`, 14, 12);
+
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+
+/* ---------- selection ---------- */
+function select(i) {
+  cur = i;
+  const t = T[i];
+  document.documentElement.style.setProperty('--accent', t.accent);
+  [...rail.children].forEach((c, k) => c.setAttribute('aria-selected', k === i));
+  [...matrix.children].forEach((r, k) => r.setAttribute('aria-selected', k === i));
+
+  document.getElementById('t-name').textContent = t.n;
+  const sub = document.getElementById('t-sub');
+  sub.textContent = t.sub + '-led substrate';
+  sub.className = 'badge b-' + t.sub;
+  const one = document.getElementById('t-one');
+  one.textContent = t.one; one.style.setProperty('--chip', t.accent);
+
+  document.getElementById('t-sw').innerHTML =
+    [['ground', t.ground], ['surface', t.panel], ['accent', t.accent],
+     ['alt', t.alt], ['alert', t.alert], ['text', t.text]]
+    .map(([n, v]) => `<div class="sw"><div class="band" style="background:${v}"></div>
+      <div class="lbl"><b>${n}</b>${v}</div></div>`).join('');
+
+  document.getElementById('t-specs').innerHTML = `
+    <div class="spec"><h3>Typography</h3><p>${t.type}</p></div>
+    <div class="spec"><h3>Audible theme pack</h3><p>${t.audio}</p></div>
+    <div class="spec"><h3>Design guidelines</h3><p>${t.guide}</p></div>
+    <div class="spec risk" style="--chip:${t.accent}"><h3>Honest risk</h3><p>${t.risk}</p></div>`;
+}
+select(0);
+
+document.getElementById('sun').onclick = e => {
+  sunOn = !sunOn; e.currentTarget.setAttribute('aria-pressed', sunOn);
+  document.getElementById('hint').textContent = sunOn
+    ? 'additive themes wash out — panel-led themes hold. this is the §1.3 constraint, live.'
+    : 'black renders as transparent on see-through glasses';
+};
+document.getElementById('motion').onclick = e => {
+  motionOn = !motionOn; e.currentTarget.setAttribute('aria-pressed', motionOn);
+};
+</script>
