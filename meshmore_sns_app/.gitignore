@@ -1,0 +1,24 @@
+# =============================================================================
+# Top-level .gitignore for the Meshmore SNS starter repo.
+#
+# Flutter project-specific rules live in `responsive_starter_app/.gitignore`.
+# Keep this file limited to repo-wide concerns (OS junk, editors).
+# =============================================================================
+
+# ----- OS / Misc -----
+*.log
+*.pyc
+*.swp
+.DS_Store
+.atom/
+.buildlog/
+.history
+.svn/
+
+# ----- IDEs / Editors -----
+*.iml
+*.ipr
+*.iws
+.idea/
+.fleet/
+#.vscode/
