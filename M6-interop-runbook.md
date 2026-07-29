@@ -34,8 +34,10 @@ Call them **A** (paired to the phone over BLE) and **B** (sender).
 2. Grant Bluetooth (and, pre-Android-12, Location) permissions.
 3. In-app: `Settings → Diagnostics & connect → Scan & connect`
    (drives `MeshcoreController.connect()`). If the OS prompts for a
-   BLE pairing PIN, it is **`123456`** (T1000-E default — see the
-   Seeed wiki above). Expect state `handshaking → ready` and
+   BLE pairing PIN: **screenless radios (T1000-E) use `123456`**;
+   **radios with a display (e.g. Wio Tracker L1 Pro) show a random
+   PIN on their screen** — enter that one, `123456` will not work
+   (see the Seeed wiki above). Expect state `handshaking → ready` and
    `selfInfo` populated. **TC1 pass.**
 
 ## Part 2 — TC3/TC4: send / receive, encrypted + unencrypted
