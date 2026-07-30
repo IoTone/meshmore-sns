@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- HALO FIELD ground, so the window matches the app before Compose draws
+         and there is no white flash on launch. -->
+    <style name="Theme.MeshmoreXR" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">#FF070B10</item>
+        <item name="android:statusBarColor">#FF070B10</item>
+        <item name="android:navigationBarColor">#FF070B10</item>
+    </style>
+</resources>

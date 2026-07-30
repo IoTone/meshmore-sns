@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright (c) 2026 IoTone, Inc. / SPDX-License-Identifier: MIT -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- P0 checkpoint 1 declares XR but does NOT require it, so the same APK
+         installs on a phone for comparison. It is tightened to required=true
+         once the spatial surfaces are load-bearing (checkpoint 2). -->
+    <uses-feature android:name="android.software.xr.immersive" android:required="false" />
+
+    <!-- Hand tracking is requested at runtime in a later checkpoint. Declared
+         here so the permission model is visible from the start; a denial must
+         degrade to gaze+dwell, never error (design brief 8.2 / L6). -->
+    <uses-permission android:name="android.permission.HAND_TRACKING" />
+
+    <!-- MeshCore companion radio over BLE (checkpoint 3). BLUETOOTH_SCAN is
+         marked neverForLocation: we derive position from the radio's own
+         advert, not from BLE scanning. -->
+    <uses-permission android:name="android.permission.BLUETOOTH_SCAN"
+        android:usesPermissionFlags="neverForLocation" />
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+    <uses-feature android:name="android.hardware.bluetooth_le" android:required="false" />
+
+    <application
+        android:label="MeshmoreXR"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.MeshmoreXR">
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:configChanges="orientation|screenSize|screenLayout|keyboardHidden|uiMode|density"
+            android:theme="@style/Theme.MeshmoreXR">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+    </application>
+</manifest>
