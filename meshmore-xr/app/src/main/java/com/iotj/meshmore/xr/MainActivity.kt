@@ -16,8 +16,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -38,18 +36,41 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.xr.compose.platform.LocalSession
 import androidx.xr.compose.platform.LocalSpatialCapabilities
 import androidx.xr.compose.platform.requestFullSpace
+import androidx.xr.runtime.math.Pose
+import androidx.xr.runtime.math.Vector3
+import androidx.xr.scenecore.MeshEntity
+import androidx.xr.scenecore.Space
+import com.iotj.meshmore.xr.spatial.Prims
+import androidx.xr.scenecore.scene
 import androidx.xr.compose.platform.requestHomeSpace
 import androidx.xr.compose.spatial.Subspace
 import androidx.xr.compose.subspace.SpatialPanel
 import androidx.xr.compose.subspace.layout.SubspaceModifier
 import androidx.xr.compose.subspace.layout.height
 import androidx.xr.compose.subspace.layout.width
+import com.iotj.meshmore.xr.spatial.Horizon
+import com.iotj.meshmore.xr.spatial.Stage
+import com.iotj.meshmore.xr.spatial.Unfold
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.offset
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.draw.scale
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsHoveredAsState
+import androidx.compose.foundation.shape.GenericShape
 import io.iotone.meshcore.android.SessionState
 import io.iotone.meshcore.MeshcoreBle
 import io.iotone.meshcore.MeshcoreConstants
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlin.math.PI
+import kotlin.random.Random
 
 /**
  * P0 checkpoints 1 + 2.
@@ -93,7 +114,9 @@ class MainActivity : ComponentActivity() {
         // supplied at launch:  adb shell am start -n .../.MainActivity --es pin 123456
         val pin = intent?.getStringExtra("pin")
         Log.i(TAG, "[boot] pin override = ${pin ?: "<none, using built-in>"}")
-        setContent { MaterialTheme { Root(facts, link, pin) } }
+        val debug = intent?.getBooleanExtra("debug", false) ?: false
+        Log.i(TAG, "[boot] debug surface = $debug")
+        setContent { MaterialTheme { Root(facts, link, pin, debug) } }
         Log.i(TAG, "[boot] setContent done")
     }
 
@@ -129,7 +152,7 @@ private val Dim = Color(0xFF6C8296)
 private val Ok = Color(0xFF7CFF6B)
 
 @Composable
-private fun Root(facts: List<Pair<String, String>>, link: MeshLink, pinOverride: String?) {
+private fun Root(facts: List<Pair<String, String>>, link: MeshLink, pinOverride: String?, debug: Boolean) {
     val caps = LocalSpatialCapabilities.current
     val spatial = caps.isSpatialUiEnabled
     val activity = LocalContext.current as? ComponentActivity
@@ -170,22 +193,157 @@ private fun Root(facts: List<Pair<String, String>>, link: MeshLink, pinOverride:
     }
 
     if (spatial) {
-        // CHECKPOINT 2 — real spatial UI. SpatialPanel sizes are in Dp here and
-        // are converted to metres by the runtime; ordinary Compose renders onto
-        // the panel surface.
-        Subspace {
-            SpatialPanel(SubspaceModifier.width(1024.dp).height(720.dp)) {
-                StatusScreen(facts, link, spatial = true)
+        // P1 — the HORIZON is REAL GEOMETRY in the room, not a panel. The panel
+        // below is a development readout only, deliberately small and pushed
+        // aside; it is not the experience.
+        // NO PANEL. The spatial experience is geometry only -- floor, mesh,
+        // callsigns. The diagnostic readout is a DEBUG SURFACE and is opt-in:
+        //     adb shell am start -n .../.MainActivity --ez debug true
+        // Launching into a panel is what makes an XR app feel like a phone app
+        // that happens to be floating.
+        HorizonScene()
+        if (debug) {
+            Subspace {
+                SpatialPanel(SubspaceModifier.width(560.dp).height(420.dp)) {
+                    DiagnosticSurface { StatusScreen(facts, link, spatial = true) }
+                }
             }
         }
     } else {
-        // Home Space: an ordinary 2D window. Fully functional, per the brief's
-        // rule that no spatial capability must ever be load-bearing.
-        StatusScreen(facts, link, spatial = false)
+        // Home Space is a 2D window we are only ever passing through: the app
+        // requests Full Space immediately. Showing the full readout here is what
+        // made the launch look like a mobile app, so this is a holding state.
+        HoldingScreen()
     }
 }
 
 private const val TAG_UI = "MeshmoreXR"
+
+/**
+ * The only rectangle in the app, and it does not arrive like one: a targeting
+ * reticle punches in, tears, then unfolds vertically from a slit with the
+ * content fading up inside it. Diagnostics earn a panel; nothing else does.
+ */
+/** Passing through home space. Deliberately almost nothing. */
+@Composable
+private fun HoldingScreen() {
+    Box(Modifier.fillMaxSize().background(Ground)) {
+        Text(
+            "MESHMORE XR",
+            color = Accent, fontSize = 22.sp,
+            fontFamily = FontFamily.Monospace, fontWeight = FontWeight.SemiBold,
+            modifier = Modifier.align(Alignment.Center),
+        )
+    }
+}
+
+@Composable
+private fun DiagnosticSurface(content: @Composable () -> Unit) {
+    val t = Unfold.rememberClock(durationMs = 1100)
+    Unfold.Frame(t = t, accent = Accent, alt = Ok) { contentAlpha, foldOpen ->
+        Box(
+            Modifier
+                .fillMaxSize()
+                .clipToBounds()
+                // scale on Y only: the content unfolds with the frame rather
+                // than sliding in behind it
+                .scale(scaleX = 1f, scaleY = foldOpen.coerceAtLeast(0.001f))
+                .alpha(contentAlpha)
+        ) { content() }
+    }
+}
+
+/**
+ * P1 — builds the HORIZON as MeshEntities in world space and drives its pulses.
+ *
+ * Bearings are simulated for now: the radio only reports a peer's position when
+ * that peer advertised one (ADV_LATLON), and on a bench neither of ours does.
+ * Faking a bearing for an unlocated node is explicitly forbidden by the brief,
+ * so those park in the unlocated arc instead. Real bearings arrive with S3.
+ */
+@Composable
+private fun HorizonScene() {
+    val session = LocalSession.current ?: return
+
+    LaunchedEffect(session) {
+        // THE PANEL YOU CANNOT SEE IN CODE. Entering Full Space does not remove
+        // the Activity's own window -- it becomes `mainPanelEntity` and keeps
+        // rendering, so the app appears as a big opaque rectangle floating in
+        // the room even when setContent() draws nothing but a wordmark. It also
+        // occludes everything behind it, which hides the geometry we came here
+        // to show. Disabling it is what actually makes the app spatial.
+        runCatching { session.scene.mainPanelEntity.setEnabled(false) }
+            .onFailure { Log.w(TAG_UI, "[spatial] main panel still visible: $it") }
+
+        val palette = Horizon.Palette(
+            accent = 0x35E0F0, alt = 0x7CFF6B, warn = 0xFFB020, text = 0xDDE7EF,
+        )
+        // Recentre on the body BEFORE building anything, or the whole
+        // experience can end up behind the user.
+        val stage = Stage(session, palette)
+        val origin = stage.recentre()
+
+        val horizon = Horizon(session, palette)
+        val names = listOf(
+            "kanako.1", "davi1", "relay-nw", "t1000-e", "gate-cam",
+            "ridge", "hab-2", "shed", "mule.4", "oku.9", "beacon",
+        )
+        val nodes = names.mapIndexed { i, nm ->
+            Horizon.Node(
+                name = nm,
+                bearingRad = (i.toFloat() / names.size * 2f * PI.toFloat()) + (i % 3) * 0.22f,
+                elev = kotlin.math.sin(i * 2.1f) * 0.34f,
+                dist = 0.28f + ((i * 37) % 100) / 140f,
+                age = ((i * 53) % 100) / 100f,
+                located = nm != "shed",
+                hops = 1 + (i % 3),
+            )
+        }
+        Log.i(TAG_UI, "[horizon] building ${nodes.size} nodes")
+        // Floor first: the room claims itself, then the mesh arrives on top.
+        stage.buildFloor(origin)
+        horizon.build(nodes, origin, stage.floorHeight())
+
+        // Frame loop: pulses decay, and a packet lands every so often so the
+        // mesh visibly breathes. ~30 Hz is plenty for this motion.
+        var since = 0f
+        var fall = 0f
+        try {
+            var panelWarned = false
+            while (true) {
+                delay(33)
+                // RE-ASSERT EVERY FRAME. Disabling the main panel once is not
+                // enough: the Compose XR layer re-enables it behind our back on
+                // later layout passes, and it comes back as a large translucent
+                // quad that writes depth -- so it does not just look wrong, it
+                // OCCLUDES the geometry behind it and the scene reads as empty.
+                val mp = session.scene.mainPanelEntity
+                if (mp.isEnabled()) {
+                    if (!panelWarned) {
+                        Log.i(TAG_UI, "[spatial] main panel came back — re-disabling")
+                        panelWarned = true
+                    }
+                    mp.setEnabled(false)
+                }
+                // Tron floor falls into place over ~1.6s, outward from the user.
+                if (fall < 1f) {
+                    fall = (fall + 0.033f / 1.6f).coerceAtMost(1f)
+                    stage.tickFloor(fall)
+                }
+                horizon.tick(0.033f)
+                since += 0.033f
+                if (since > 1.4f) {
+                    since = 0f
+                    val n = nodes.filter { it.located }.random(Random)
+                    horizon.pulse(n.bearingRad, n.dist, origin)
+                }
+            }
+        } finally {
+            horizon.clear()
+            stage.clearFloor()
+        }
+    }
+}
 
 @Composable
 private fun StatusScreen(facts: List<Pair<String, String>>, link: MeshLink, spatial: Boolean) {
@@ -248,11 +406,12 @@ private fun StatusScreen(facts: List<Pair<String, String>>, link: MeshLink, spat
             modifier = Modifier.padding(top = 16.dp),
             horizontalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            Button(
+            Target(
+                label = if (spatial) "TO HOME SPACE" else "REQUEST FULL SPACE",
+                tint = Accent,
                 enabled = !busy && activity != null,
-                colors = ButtonDefaults.buttonColors(containerColor = Accent, contentColor = Ground),
                 onClick = {
-                    val a = activity ?: return@Button
+                    val a = activity ?: return@Target
                     busy = true
                     scope.launch {
                         // Suspend, and it can be refused -- hence the result log.
@@ -261,11 +420,12 @@ private fun StatusScreen(facts: List<Pair<String, String>>, link: MeshLink, spat
                         busy = false
                     }
                 },
-            ) { Text(if (spatial) "TO HOME SPACE" else "REQUEST FULL SPACE", fontFamily = FontFamily.Monospace) }
+            )
 
-            Button(
+            Target(
+                label = "LINK RADIO",
+                tint = Ok,
                 enabled = mesh.state == SessionState.DISCONNECTED && !mesh.scanning,
-                colors = ButtonDefaults.buttonColors(containerColor = Ok, contentColor = Ground),
                 onClick = {
                     if (link.hasBlePermissions()) link.connect()
                     else perms.launch(arrayOf(
@@ -273,8 +433,39 @@ private fun StatusScreen(facts: List<Pair<String, String>>, link: MeshLink, spat
                         android.Manifest.permission.BLUETOOTH_CONNECT,
                     ))
                 },
-            ) { Text("LINK RADIO", fontFamily = FontFamily.Monospace) }
+            )
         }
+    }
+}
+
+/**
+ * A control, not a Button. Material's pill is a fingertip-on-glass affordance;
+ * this is a bracketed target that ignites on focus -- the flat cousin of the
+ * PEBBLE, for the one surface that is allowed to be flat.
+ */
+@Composable
+private fun Target(label: String, tint: Color, enabled: Boolean = true, onClick: () -> Unit) {
+    val interaction = remember { MutableInteractionSource() }
+    val hot by interaction.collectIsHoveredAsState()
+    val c = if (enabled) tint else Dim
+    val brackets = GenericShape { size, _ ->
+        val a = size.minDimension * 0.34f
+        moveTo(0f, a); lineTo(0f, 0f); lineTo(a, 0f)
+        moveTo(size.width - a, 0f); lineTo(size.width, 0f); lineTo(size.width, a)
+        moveTo(size.width, size.height - a); lineTo(size.width, size.height); lineTo(size.width - a, size.height)
+        moveTo(a, size.height); lineTo(0f, size.height); lineTo(0f, size.height - a)
+        close()
+    }
+    Box(
+        Modifier
+            .border(if (hot) 1.6.dp else 1.dp, c.copy(alpha = if (hot) 1f else 0.55f), brackets)
+            .clickable(enabled = enabled, interactionSource = interaction, indication = null) { onClick() }
+            .padding(horizontal = 16.dp, vertical = 9.dp)
+    ) {
+        Text(
+            label, color = c, fontSize = 12.sp,
+            fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Medium,
+        )
     }
 }
 

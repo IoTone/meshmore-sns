@@ -1,0 +1,103 @@
+#!/usr/bin/env bash
+# bin/xrshot — see what the GLASSES are rendering, without a human in the loop.
+#
+# WHY THIS EXISTS: every visual change to a spatial scene used to cost a round
+# trip ("please put the headset on and tell me what you see"). That is the
+# slowest possible dev loop and it burns the one reviewer we have.
+#
+# Two facts make self-validation possible:
+#
+#   * The XREAL Aura is display 20 (EXTERNAL, 3840x1200 — stereo, 1920x1200 per
+#     eye). Display 0 is the puck's own 2D screen and shows NOTHING of the
+#     spatial scene. Capturing display 0 is the classic wrong answer.
+#
+#   * Both displays are FLAG_SECURE, so `adb shell screencap` writes a 0-byte
+#     file and exits 0 — silent failure, the worst kind. scrcpy 4.0 segfaults on
+#     this host against the puck. `screenrecord` on-device works, so: record
+#     there, pull, cut frames with ffmpeg.
+#
+# What comes back is ONE composited eye with passthrough underneath, at
+# 1920x1200 -- not the raw 3840x1200 stereo buffer. That is what we want: it is
+# very close to what the wearer sees.
+#
+#   bin/xrshot                 relaunch the app, record 14 s, cut 6 frames
+#   bin/xrshot -d 25           record 25 s
+#   bin/xrshot -n              do NOT relaunch; capture whatever is on screen now
+#   bin/xrshot --debug         relaunch with the diagnostic surface enabled
+#   bin/xrshot -a 0,1,3,6,10   cut frames at these seconds
+set -uo pipefail
+cd "$(dirname "$0")/.."
+
+PKG=com.iotj.meshmore.xr
+export ANDROID_HOME="${ANDROID_HOME:-$HOME/Library/Android/sdk}"
+ADB="$ANDROID_HOME/platform-tools/adb"
+OUT="${XRSHOT_OUT:-/private/tmp/claude-501/-Users-dkords-dev-projects-iotj-meshmore-sns-git/66103b82-49aa-4c4b-8572-176e0eda7a60/scratchpad/shots}"
+
+DUR=14; RELAUNCH=1; DEBUG=0; AT=""
+while [ $# -gt 0 ]; do
+  case "$1" in
+    -d) DUR="$2"; shift 2 ;;
+    -a) AT="$2"; shift 2 ;;
+    -n) RELAUNCH=0; shift ;;
+    --debug) DEBUG=1; shift ;;
+    *) echo "unknown arg: $1" >&2; exit 2 ;;
+  esac
+done
+# Default sample points: launch, the floor mid-fall, the floor landed, and two
+# later frames to catch anything that drifts or decays after the intro.
+[ -n "$AT" ] || AT="0.4,1.2,2.2,4,8,12"
+
+if [ -z "${ANDROID_SERIAL:-}" ]; then
+  for s in $("$ADB" devices | awk '/device$/{print $1}'); do
+    if "$ADB" -s "$s" shell pm list features </dev/null 2>/dev/null | grep -q xr.api.spatial; then
+      export ANDROID_SERIAL="$s"; break
+    fi
+  done
+fi
+[ -n "${ANDROID_SERIAL:-}" ] || { echo "no XR device attached" >&2; exit 1; }
+
+rm -rf "$OUT"; mkdir -p "$OUT"
+MP4="$OUT/glasses.mp4"
+
+# Start recording BEFORE the launch so frame 0 catches the very first paint.
+# --no-playback keeps it headless; --no-audio avoids the audio-capture prompt.
+# The XREAL is a PHYSICAL display; screenrecord's --display-id wants the
+# SurfaceFlinger id (dumpsys SurfaceFlinger --display-id), not the logical one
+# from `dumpsys display`. Passing 20 gets "Invalid physical display ID".
+PHYS=$("$ADB" -s "$ANDROID_SERIAL" shell dumpsys SurfaceFlinger --display-id </dev/null 2>/dev/null \
+       | awk -F'[ (]' '/XREAL|HWC display 1/{print $2; exit}')
+[ -n "$PHYS" ] || { echo "could not find the glasses display" >&2; exit 1; }
+"$ADB" -s "$ANDROID_SERIAL" shell screenrecord --display-id "$PHYS" \
+       --time-limit "$DUR" --bit-rate 16M /sdcard/xrshot.mp4 >"$OUT/rec.log" 2>&1 &
+SC=$!
+sleep 1.5   # let the encoder come up, or the first second is dropped
+
+if [ "$RELAUNCH" = 1 ]; then
+  "$ADB" -s "$ANDROID_SERIAL" shell am force-stop $PKG
+  "$ADB" -s "$ANDROID_SERIAL" logcat -c
+  if [ "$DEBUG" = 1 ]; then
+    "$ADB" -s "$ANDROID_SERIAL" shell am start -n $PKG/.MainActivity --ez debug true >/dev/null
+  else
+    "$ADB" -s "$ANDROID_SERIAL" shell monkey -p $PKG -c android.intent.category.LAUNCHER 1 >/dev/null 2>&1
+  fi
+  T0=$(date +%s)
+fi
+
+wait $SC
+"$ADB" -s "$ANDROID_SERIAL" pull /sdcard/xrshot.mp4 "$MP4" >/dev/null 2>&1
+[ -s "$MP4" ] || { echo "recording failed:"; cat "$OUT/rec.log"; exit 1; }
+
+# Cut the requested timestamps, left eye only.
+i=0
+for t in ${AT//,/ }; do
+  i=$((i+1))
+  ffmpeg -loglevel error -y -ss "$t" -i "$MP4" -frames:v 1 \
+         -vf "scale=1100:-1" "$(printf '%s/f%02d_t%s.png' "$OUT" "$i" "$t")"
+done
+
+"$ADB" -s "$ANDROID_SERIAL" logcat -d -s MeshmoreXR:V AndroidRuntime:E > "$OUT/logcat.txt" 2>/dev/null
+
+echo "--- $OUT ---"
+ls -1 "$OUT"/*.png 2>/dev/null
+echo "--- log ---"
+tail -25 "$OUT/logcat.txt" 2>/dev/null
