@@ -93,7 +93,11 @@ import kotlin.random.Random
  */
 class MainActivity : ComponentActivity() {
 
-    companion object { const val TAG = "MeshmoreXR" }
+    companion object {
+        const val TAG = "MeshmoreXR"
+        /** Set by the launch intent; read by HorizonScene. */
+        var selfTest: Boolean = false
+    }
 
     // One link per activity. Checkpoint 3 lives here.
     private val link by lazy { MeshLink(this) }
@@ -116,6 +120,8 @@ class MainActivity : ComponentActivity() {
         Log.i(TAG, "[boot] pin override = ${pin ?: "<none, using built-in>"}")
         val debug = intent?.getBooleanExtra("debug", false) ?: false
         Log.i(TAG, "[boot] debug surface = $debug")
+        selfTest = intent?.getBooleanExtra("selftest", false) ?: false
+        Log.i(TAG, "[boot] selftest = $selfTest")
         setContent { MaterialTheme { Root(facts, link, pin, debug) } }
         Log.i(TAG, "[boot] setContent done")
     }
@@ -313,6 +319,7 @@ private fun HorizonScene() {
         var since = 0f
         var fall = 0f
         try {
+            if (MainActivity.selfTest) launch { horizon.selfTest(origin) }
             var panelWarned = false
             while (true) {
                 delay(33)
@@ -337,6 +344,7 @@ private fun HorizonScene() {
                 // Billboard the callsigns at the LIVE head, not the launch
                 // pose -- the labels have to keep facing the user as they walk.
                 stage.headNow()?.let { horizon.faceViewer(it.translation) }
+                horizon.drainSelections(origin)
                 horizon.tick(0.033f)
                 since += 0.033f
                 if (since > 1.4f) {

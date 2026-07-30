@@ -24,6 +24,7 @@
 #   bin/xrshot -d 25           record 25 s
 #   bin/xrshot -n              do NOT relaunch; capture whatever is on screen now
 #   bin/xrshot --debug         relaunch with the diagnostic surface enabled
+#   bin/xrshot --selftest      drive hover+select without a pointer (see Horizon.selfTest)
 #   bin/xrshot -a 0,1,3,6,10   cut frames at these seconds
 set -uo pipefail
 cd "$(dirname "$0")/.."
@@ -33,13 +34,14 @@ export ANDROID_HOME="${ANDROID_HOME:-$HOME/Library/Android/sdk}"
 ADB="$ANDROID_HOME/platform-tools/adb"
 OUT="${XRSHOT_OUT:-/private/tmp/claude-501/-Users-dkords-dev-projects-iotj-meshmore-sns-git/66103b82-49aa-4c4b-8572-176e0eda7a60/scratchpad/shots}"
 
-DUR=14; RELAUNCH=1; DEBUG=0; AT=""
+DUR=14; RELAUNCH=1; DEBUG=0; SELFTEST=0; AT=""
 while [ $# -gt 0 ]; do
   case "$1" in
     -d) DUR="$2"; shift 2 ;;
     -a) AT="$2"; shift 2 ;;
     -n) RELAUNCH=0; shift ;;
     --debug) DEBUG=1; shift ;;
+    --selftest) SELFTEST=1; shift ;;
     *) echo "unknown arg: $1" >&2; exit 2 ;;
   esac
 done
@@ -64,9 +66,19 @@ MP4="$OUT/glasses.mp4"
 # The XREAL is a PHYSICAL display; screenrecord's --display-id wants the
 # SurfaceFlinger id (dumpsys SurfaceFlinger --display-id), not the logical one
 # from `dumpsys display`. Passing 20 gets "Invalid physical display ID".
-PHYS=$("$ADB" -s "$ANDROID_SERIAL" shell dumpsys SurfaceFlinger --display-id </dev/null 2>/dev/null \
-       | awk -F'[ (]' '/XREAL|HWC display 1/{print $2; exit}')
-[ -n "$PHYS" ] || { echo "could not find the glasses display" >&2; exit 1; }
+# Prefer the glasses. Fall back to the primary physical display, which is what
+# the Android XR *emulator* exposes -- it has one display and it is the rendered
+# scene, so the same pipeline works there with no special case beyond this line.
+DISPLAYS=$("$ADB" -s "$ANDROID_SERIAL" shell dumpsys SurfaceFlinger --display-id </dev/null 2>/dev/null)
+PHYS=$(echo "$DISPLAYS" | awk -F'[ (]' '/XREAL|HWC display 1/{print $2; exit}')
+WHICH=glasses
+if [ -z "$PHYS" ]; then
+  PHYS=$(echo "$DISPLAYS" | awk -F'[ (]' '/^Display /{print $2; exit}')
+  WHICH=$(echo "$DISPLAYS" | sed -n 's/.*displayName="\([^"]*\)".*/\1/p' | head -1)
+  WHICH="${WHICH:-primary} (no glasses attached)"
+fi
+[ -n "$PHYS" ] || { echo "no capturable display found" >&2; exit 1; }
+echo "capturing: $WHICH  [$PHYS]" >&2
 "$ADB" -s "$ANDROID_SERIAL" shell screenrecord --display-id "$PHYS" \
        --time-limit "$DUR" --bit-rate 16M /sdcard/xrshot.mp4 >"$OUT/rec.log" 2>&1 &
 SC=$!
@@ -77,6 +89,8 @@ if [ "$RELAUNCH" = 1 ]; then
   "$ADB" -s "$ANDROID_SERIAL" logcat -c
   if [ "$DEBUG" = 1 ]; then
     "$ADB" -s "$ANDROID_SERIAL" shell am start -n $PKG/.MainActivity --ez debug true >/dev/null
+  elif [ "$SELFTEST" = 1 ]; then
+    "$ADB" -s "$ANDROID_SERIAL" shell am start -n $PKG/.MainActivity --ez selftest true >/dev/null
   else
     "$ADB" -s "$ANDROID_SERIAL" shell monkey -p $PKG -c android.intent.category.LAUNCHER 1 >/dev/null 2>&1
   fi

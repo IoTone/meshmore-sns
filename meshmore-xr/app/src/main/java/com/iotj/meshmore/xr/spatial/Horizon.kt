@@ -8,6 +8,8 @@ import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Vector3
 import androidx.xr.scenecore.Entity
+import androidx.xr.scenecore.InputEvent
+import androidx.xr.scenecore.InteractableComponent
 import androidx.xr.scenecore.MeshEntity
 import androidx.xr.scenecore.Space
 import androidx.xr.scenecore.scene
@@ -44,9 +46,32 @@ class Horizon(private val session: Session, private val theme: Palette) {
     private val entities = mutableListOf<Entity>()
     private val pulses = mutableListOf<Pulse>()
     private val labels = mutableListOf<Label>()
+    private val peers = mutableListOf<Peer>()
+
+    /** Selections raised on the input thread, drained by the frame loop. */
+    private val selected = java.util.concurrent.ConcurrentLinkedQueue<Peer>()
 
     /** A callsign and the point it is anchored to, for per-frame billboarding. */
     private class Label(val entity: Entity, val at: Vector3)
+
+    /**
+     * One touchable node. Everything here is built up front and then only
+     * *toggled* — no geometry is created in response to input, because
+     * `Prims.material` is a suspend call and an input callback is not a
+     * coroutine, and because building a mesh mid-gesture hitches the frame
+     * exactly when the user is watching for a response.
+     */
+    private class Peer(
+        val node: Node,
+        val mote: MeshEntity,
+        val label: Entity,
+        val detail: MeshEntity,
+        val at: Vector3,
+        val dist: Float,
+        val bearing: Float,
+        val baseAlpha: Float,
+        var open: Boolean = false,
+    )
 
     private class Pulse(val entity: MeshEntity, val base: Float, var life: Float = 1f)
 
@@ -93,7 +118,7 @@ class Horizon(private val session: Session, private val theme: Palette) {
             val moteMat = Prims.material(
                 session, if (n.located) theme.accent else theme.warn, lum.coerceIn(0.25f, 1f)
             )
-            MeshEntity.create(session, moteMesh, listOf(moteMat)).also {
+            val mote = MeshEntity.create(session, moteMesh, listOf(moteMat)).also {
                 it.parent = root
                 it.setPose(Pose(Vector3(px, py, pz)), Space.ACTIVITY)
                 entities += it
@@ -155,6 +180,56 @@ class Horizon(private val session: Session, private val theme: Palette) {
                 }
             }
 
+            // NODE DETAIL — hidden until selected. Stroke glyphs, so selection
+            // does not drag in the whole tier-R font pipeline for three numbers.
+            val det = "%d HOP  %.1fKM  %s".format(
+                n.hops, dist * 5.0f, if (n.age < 0.34f) "LIVE" else "STALE",
+            )
+            val detMesh = Prims.build(session, Glyphs.text(det, capH * 0.78f))
+            val detMat = Prims.material(session, theme.alt, 0.9f)
+            val detail = MeshEntity.create(session, detMesh, listOf(detMat)).also {
+                it.parent = txt          // inherits the billboard rotation
+                it.setPose(Pose(Vector3(0f, -capH * 1.5f, 0f)), Space.PARENT)
+                // setEnabled, NOT setAlpha(0). Alpha propagates down the
+                // subtree, so the hover handler writing the LABEL's alpha also
+                // rewrites this child's -- and the detail reveals itself the
+                // moment the pointer passes anywhere near, with no selection.
+                it.setEnabled(false)
+                entities += it
+            }
+
+            // HIT PROXY — an invisible sphere ~3 deg across around the mote.
+            // The mote itself is ~1.6 deg, which clears the 0.6 deg *visibility*
+            // floor but is well under the ~2 deg the brief requires of anything
+            // REACHED FOR (L7). Aiming a gaze ray at a 1.6 deg target is a test
+            // of patience, so the thing you point at is deliberately bigger than
+            // the thing you see.
+            //
+            // Alpha 0.02 rather than 0: a fully transparent entity is a
+            // reasonable thing for a renderer to skip, and being skipped means
+            // being unhittable. 0.02 emits nothing perceptible on an additive
+            // display and keeps it in the pipeline.
+            val proxy = MeshEntity.create(
+                session, Prims.build(session, Prims.mote(r * 2.2f, 5, 8)), listOf(moteMat),
+            ).also {
+                it.parent = root
+                it.setPose(Pose(Vector3(px, py, pz)), Space.ACTIVITY)
+                it.setAlpha(0.02f)
+                entities += it
+            }
+
+            val peer = Peer(
+                node = n, mote = mote, label = txt, detail = detail,
+                at = Vector3(px, py, pz), dist = dist, bearing = bearing,
+                baseAlpha = lum.coerceIn(0.25f, 1f),
+            )
+            peers += peer
+            runCatching {
+                proxy.addComponent(
+                    InteractableComponent.create(session) { ev -> onInput(peer, ev) },
+                )
+            }.onFailure { Log.w(TAG, "[horizon] no input on ${n.name}: $it") }
+
             // Elevation CARET: "the ridge station is above you" as a fact you
             // perceive, not a figure you read.
             if (n.located && kotlin.math.abs(n.elev) > 0.25f) {
@@ -170,6 +245,77 @@ class Horizon(private val session: Session, private val theme: Palette) {
             }
         }
         Log.i(TAG, "[horizon] built ${entities.size} entities for ${nodes.size} nodes")
+    }
+
+    /**
+     * HOVER and SELECT. Runs on the input thread, so it does only what is safe
+     * there: alpha and scale on entities that already exist. Anything needing a
+     * coroutine (building a pulse) is queued for [drainSelections].
+     */
+    private fun onInput(p: Peer, ev: InputEvent) = apply(p, ev.action)
+
+    private fun apply(p: Peer, action: InputEvent.Action) {
+        when (action) {
+            InputEvent.Action.HOVER_ENTER -> {
+                p.mote.setScale(HOVER_SCALE)
+                p.mote.setAlpha(1f)
+                p.label.setAlpha(1f)
+            }
+            InputEvent.Action.HOVER_EXIT -> {
+                p.mote.setScale(1f)
+                p.mote.setAlpha(p.baseAlpha)
+                p.label.setAlpha(p.baseAlpha)
+            }
+            // UP, not DOWN: a selection should be cancellable by moving off the
+            // target before releasing, which is what every pointing device has
+            // taught people to expect.
+            InputEvent.Action.UP -> {
+                p.open = !p.open
+                p.detail.setEnabled(p.open)
+                if (p.open) selected.add(p)
+                Log.i(TAG, "[horizon] select ${p.node.name} open=${p.open}")
+            }
+            else -> Unit
+        }
+    }
+
+    /**
+     * DEBUG ONLY — drive the response path with no pointer.
+     *
+     * `adb shell input` cannot reach the XR pointer: spatial input arrives from
+     * the runtime's hand/controller ray, not from a touch on display 0. That
+     * leaves the hit test unverifiable from a script, but everything downstream
+     * of it -- hover growth, the detail reveal, the pulse -- is just entity
+     * state, and this exercises exactly that. It splits the risk: if this looks
+     * right, the only thing left to confirm on a head is whether the ray lands.
+     *
+     *     adb shell am start -n .../.MainActivity --ez selftest true
+     */
+    suspend fun selfTest(o: Stage.Origin) {
+        // EVERY peer, not one: only ~2 of 11 nodes fall inside a 61 deg FOV, so
+        // driving a single one has a 1-in-6 chance of being visible to whoever
+        // is checking. Driving all of them means whatever is in frame responds.
+        val live = peers.filter { it.node.located }
+        if (live.isEmpty()) return
+        Log.i(TAG, "[selftest] driving ${live.size} peers")
+        live.forEach { apply(it, InputEvent.Action.HOVER_ENTER) }
+        kotlinx.coroutines.delay(1800)
+        live.forEach { apply(it, InputEvent.Action.UP) }
+        drainSelections(o)
+        kotlinx.coroutines.delay(3000)
+        live.forEach { apply(it, InputEvent.Action.UP); apply(it, InputEvent.Action.HOVER_EXIT) }
+        Log.i(TAG, "[selftest] done")
+    }
+
+    /**
+     * Fire the ring for anything selected since the last frame. Called from the
+     * frame loop because [pulse] is suspend and the input callback is not.
+     */
+    suspend fun drainSelections(o: Stage.Origin) {
+        while (true) {
+            val p = selected.poll() ?: return
+            pulse(p.bearing, p.dist, o)
+        }
     }
 
     /** PULSE — the mesh visibly breathing. One expanding ring per packet. */
@@ -239,6 +385,8 @@ class Horizon(private val session: Session, private val theme: Palette) {
         // Labels hold the same entities; drop the references or faceViewer()
         // would keep posing disposed handles every frame after a rebuild.
         labels.clear()
+        peers.clear()
+        selected.clear()
         pulses.forEach { runCatching { it.entity.dispose() } }
         pulses.clear()
     }
@@ -247,6 +395,8 @@ class Horizon(private val session: Session, private val theme: Palette) {
         private const val TAG = "MeshmoreXR"
         /** HORIZON radius, metres. Body-locked in the design; world-fixed for P1. */
         const val R = 2.5f
+        /** Hover growth. Big enough to be unmistakable, small enough not to jump. */
+        private const val HOVER_SCALE = 1.35f
         /** The shell sits at and below eye level; the forward arc stays clear. */
         const val EYE_DROP = -0.30f
     }
