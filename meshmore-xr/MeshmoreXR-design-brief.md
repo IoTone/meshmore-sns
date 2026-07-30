@@ -1683,6 +1683,75 @@ the answer changes a default rather than the design:
 
 ## 10. Proposed sequencing
 
+### P0 — DONE, verified on hardware 2026-07-30
+
+All three checkpoints passed on a Google XR Puck (Aura class) against a live
+MeshCore radio.
+
+| | Result |
+|---|---|
+| **1** builds, installs, launches | toolchain + JBR pinning + composite build **links at runtime** |
+| **2** `Subspace { SpatialPanel { } }` | spatial UI renders; Home Space → Full Space transition works |
+| **3** BLE handshake from the glasses | `CMD_APP_START` → `RESP_CODE_SELF_INFO` decoded by `libmeshcore` |
+
+Checkpoint 3 is the one the project rested on, and it holds: Nordic's BLE stack,
+`AndroidBleTransport`, `MeshcoreSession` and the pure-Java codec all work
+**unmodified** on XR hardware — the same code as the Flutter app's Java twin, on
+the same pinned firmware. The radio reported
+`910.525 MHz · SF7 · BW 62.5 · CR 5 · TX 22 dBm · advType=1 (ADV_TYPE_CHAT)`.
+**Everything downstream is UI work.**
+
+#### Five findings that cost time, or would have
+
+1. **`xr.immersive` is `no` on the Aura** while `xr.api.spatial` and
+   `xr.api.openxr` are `YES`. The starter guide's
+   `<uses-feature android:name="android.software.xr.immersive" android:required="true"/>`
+   would have **rejected the APK at install**. Gate on
+   `LocalSpatialCapabilities`, never on the immersive feature.
+2. **An XR app starts in Home Space** — an ordinary 2D window where
+   `isSpatialUiEnabled` is false. Full Space must be *requested*, and
+   `requestFullSpace()` is a **suspend** call returning a result that can be a
+   refusal. Spatial UI is a state you transition into, never one to assume.
+   MeshmoreXR requests it itself at startup; the 2D path stays fully functional.
+3. **The radio requires a bonded BLE link.** `AndroidBleTransport` never
+   initiates bonding, so an unpaired client connects, discovers services, sends
+   `APP_START` — and hangs in `HANDSHAKING` forever, indistinguishable from a
+   protocol bug. Worth fixing upstream in `libmeshcore-android`.
+4. **BLE pairing variants need different responses.** Answering a
+   passkey-confirmation with `setPin()` fails silently. Read
+   `EXTRA_PAIRING_VARIANT` and branch: PIN/passkey → `setPin()`,
+   confirmation/consent → `setPairingConfirmation(true)`.
+5. **`androidx.lifecycle` 2.11.0 requires AGP 9.1+ and compileSdk 37.** AGP is
+   pinned at 8.10.1 to match `libmeshcore-android` (a composite build cannot
+   sensibly load two AGP versions), so lifecycle is force-held at 2.10.0.
+   **AGP is now at 9.3.1** — migrating is a real decision that must move
+   `libmeshcore-android` too, since it is shared with the Flutter SNS app.
+   Separately, BouncyCastle (via `libmeshcore`) collides with jspecify on
+   `META-INF/versions/*/OSGI-INF/**` and must be excluded in `packaging`.
+
+#### S2 LINK, revised by what we learned
+
+The radio's PIN is **random per boot** whenever it has a display
+(`MyMesh.cpp:932`), shown on a 64×48 OLED. Reading six digits off a 13 mm panel
+and entering them in XR is exactly the misery S2 LINK exists to remove — it cost
+two cycles to a single misread digit on the night we built it.
+
+**A QR on the radio's own screen is not the answer.** At a 0.210 mm pixel pitch,
+QR v1 with its mandatory quiet zone yields 0.210 mm modules — below the ~0.25 mm
+a close-range camera needs — and dropping the quiet zone to reach 0.419 mm
+breaks most decoders. Micro QR M2/M3 fits at 0.419 mm but is poorly supported,
+including by ARCore's `QrCode`. The binding constraint is focus anyway: headset
+cameras are fixed-focus for scene distance and will not macro-focus on a 6 mm
+target.
+
+So: `QrCode` stays in S2 LINK for **contact and channel-key exchange between
+operators** — off a phone screen or a printed card, where the code is 30 mm+.
+For pairing, the options are the on-screen PIN (entered once, then the bond
+persists) or a **static PIN** on rigs you control.
+
+---
+
+
 | Phase | Deliverable | Proves |
 |---|---|---|
 | **P0** | Gradle skeleton, composite build, `Subspace { SpatialPanel { } }` renders, `libmeshcore` handshake to a real T1000-E over BLE from glasses | The stack is real end-to-end |
