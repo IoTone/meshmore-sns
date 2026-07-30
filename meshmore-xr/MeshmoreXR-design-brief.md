@@ -1220,13 +1220,48 @@ Each theme specifies: **name · one-liner · substrate class · palette · type 
 symbology treatment · motion · audio pack (or its absence) · TTS voice ·
 guidelines · honest risk.**
 
-All nine honour §8 parity guarantees without exception. They differ only in
-visual language, density, motion, and sonic character — never in what
-information is available or how it is reached.
+All nine honour §8 parity guarantees without exception. Seven of the nine differ
+only in visual language, density, motion, and sonic character — never in what
+information is available or how it is reached. **Two differ in posture as well**
+(§7.0), and for those the guarantee narrows precisely: every piece of
+information is still *available*, but the route to it changes.
 
 **Substrate classes:** **PANEL-LED** (survives sunlight best, cheapest, most
 conventional) · **ADDITIVE-LED** (most spectacular, most fragile in bright
 light, highest GPU) · **HYBRID**.
+
+---
+
+### 7.0 · Posture — the second axis
+
+A theme has always been a *skin*: palette, type, symbology treatment, motion,
+sound. **Posture** is a second, orthogonal axis, and it is a bigger claim: it
+decides **which zones a theme lights up at all, and at what scale.**
+
+The reason to have it is that "wearing the mesh" is not one activity. Sitting at
+a desk reviewing a network and walking a ridge line with a pack on are different
+enough that the same surface budget serves neither well. Rather than bolt modes
+onto every theme, two themes *are* the modes.
+
+| Posture | Zones live | Content scale | Built for |
+|---|---|---|---|
+| **FIELD** *(default — seven themes)* | HORIZON · FOCUS · HAND · EDGE · GROUND | HORIZON at r ≈ 2.5 m | Standing, walking, stopping to look. The general case. |
+| **TABLETOP** | **GROUND · FOCUS · HAND** (no HORIZON) | Everything inside ~0.8 m | Seated, indoors, stationary, powered |
+| **TRANSIT** | **MICROHUD · HAND** (nothing else, ever) | Peripheral band + palm | Moving, hands busy, eyes on the world |
+
+Three rules that keep posture from becoming a licence to fragment the app:
+
+1. **Posture never removes information, only routes.** Anything a FIELD theme
+   shows on the HORIZON must be reachable in TABLETOP and TRANSIT — from the
+   GROUND map and the hand menu respectively. §8 parity is unchanged.
+2. **Posture is a theme property, not a mode toggle.** Choosing RECON AMBER *is*
+   choosing TRANSIT. There is no orthogonal switch, because a posture the skin
+   was not designed for looks like a bug.
+3. **Angular sizing makes scale free.** The type and symbology floors are
+   specified in *degrees* (§6, and `MeshmoreXR-typography.md` §5), so a 1.75° em
+   is 76 mm on a 2.5 m HORIZON and 18 mm on a 0.6 m tabletop with no separate
+   spec and no per-posture constants. This is exactly what the angular
+   discipline was bought for.
 
 ---
 
@@ -1373,10 +1408,27 @@ light, highest GPU) · **HYBRID**.
 - **Audio — "Codec":** squelch bursts, a codec-style ring for incoming, morse-
   adjacent confirmation clicks. Monochrome sound to match monochrome light.
 - **TTS voice:** flat, radio-filtered, band-limited.
+- **Posture: TRANSIT.** This is the **physically active** theme, and it is the
+  only one that never puts anything in front of you. Two surfaces exist and no
+  others: the **MICROHUD** band between the upper and lower FOV edges, and the
+  **hand map** on the palm. Nothing occupies the central FOV, because the
+  central FOV is where the trail, the traffic, and the person you are talking to
+  are. You do not look *at* this theme; you glance at its edge, or you turn your
+  hand over.
+  - The HORIZON is not drawn. Bearing lives in the microhud's compass ticks.
+  - Node detail is reached by turning the palm up, not by selecting in space.
+  - The hand map is the GROUND surface, shrunk to palm scale.
+  - Microhud text is **Latin and numerals only, permanently** — kanji at
+    microhud size is a smudge, so a Japanese string routes to the hand menu
+    TITLE instead (`MeshmoreXR-typography.md` §5.4).
 - **Guidelines:** a single hue is the constraint *and* the feature — because
   brightness already carries all state, this theme is automatically the most
-  colour-blind-safe of the nine. Dimmest emission, best battery.
-- **Risk:** low. The pragmatist's pick and a genuinely differentiated one.
+  colour-blind-safe of the nine. Dimmest emission, best battery. Every one of
+  those properties is what you want when you are three hours into a walk, which
+  is why TRANSIT landed here rather than on AG-SYSTEMS: a craft HUD is still
+  something you look *through*, and this is something you look *past*.
+- **Risk:** low, and posture lowers it further — the smallest surface budget in
+  the set is also the least to build and the least to get wrong.
 
 ---
 
@@ -1434,12 +1486,32 @@ light, highest GPU) · **HYBRID**.
   no two events sound identical**, but each event class keeps a stable timbral
   identity so it stays learnable. The least fatiguing pack.
 - **TTS voice:** warm, unhurried, close-mic'd.
+- **Posture: TABLETOP.** This is the **small-scale, compact** theme: the entire
+  mesh is a living diorama on a real table, roughly 0.6–0.8 m across, and there
+  is no HORIZON at all. You sit down to it. You lean in. You walk around the
+  table rather than turning your head.
+  - GROUND is the whole experience — the TABLE map scale, always on.
+  - FOCUS spawns *above* the table, not at 1.2 m along gaze.
+  - HAND keeps the palm console; the hand menu switches map scale rather than
+    view.
+  - Because content sits at ~0.6 m instead of 2.5 m, every mark is ~4× smaller
+    in millimetres at the same visual angle. Nothing in the spec changes (§7.0
+    rule 3) — but this is the theme that proves the angular discipline was worth
+    it.
 - **Guidelines:** this theme argues that a mesh network is *alive*, and every
   design decision must serve that. It is also the strongest counter-programming
   to "another dark cyberpunk app" — worth having in the set for that reason
-  alone.
-- **Risk:** medium-high GPU (the one real particle budget in the set); medium
-  risk of reading as insufficiently "operational" for field use.
+  alone. Growth, drift and breathing all read far better on a compact object you
+  can lean into than on a 5 m ring you scan, which is the second reason TABLETOP
+  belongs here.
+- **Risk:** medium-high GPU (the one real particle budget in the set) — largely
+  neutralised by TABLETOP, which is a seated, stationary, usually-powered
+  posture where thermals and battery stop being the binding constraint. Its
+  other stated risk, reading as insufficiently "operational" for field use, is
+  answered by simply not being a field theme.
+- **Runner-up considered:** NERV SPATIAL. A command deck *is* a desk, but its
+  V.High density is the opposite of compact — it wants a wall of readouts, not a
+  small object. Density, not scale, is what ruled it out.
 
 ---
 
@@ -1471,17 +1543,17 @@ light, highest GPU) · **HYBRID**.
 
 ### 7.10 Theme comparison
 
-| # | Theme | Substrate | Hero metaphor | Density | Audio pack | Sunlight | Accessibility | GPU | Effort |
-|---|---|---|---|---|---|---|---|---|---|
-| 1 | **HALO FIELD** | Hybrid | Calm bearing ring | Med | Sonar | High | **Best** | Low | **Lowest** |
-| 2 | NERV SPATIAL | Panel | Command deck | V.High | Mission Control | Med | Med | Med | High |
-| 3 | AG-SYSTEMS | Hybrid | Craft HUD | Low | Velocity | High | Med⚠ | Med | Med-High |
-| 4 | SEELE MONOLITH | Panel | Giant numeral | Minimal | Tribunal | **Highest** | **Highest** | **Lowest** | Low |
-| 5 | DR POP | Panel | Colour-block brands | High | Pure Phase | Med | Needs care⚠ | Low | Med |
-| 6 | RECON AMBER | Hybrid | Single-hue sweep | Low | Codec | **Highest** | High | **Lowest** | Low |
-| 7 | VECTORLINE | Additive | Glowing vectors | Med | **Arcade** | **Low ⚠** | Med | High | High |
-| 8 | BIOLUME | Additive | Living organism | Low | Bloom | Med | High | **Highest** | High |
-| 9 | TERMINAL VOID | Additive | Text in space | High | Teletype | High | High | **Lowest** | Low |
+| # | Theme | **Posture** | Substrate | Hero metaphor | Density | Audio pack | Sunlight | Accessibility | GPU | Effort |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 1 | **HALO FIELD** | Field | Hybrid | Calm bearing ring | Med | Sonar | High | **Best** | Low | **Lowest** |
+| 2 | NERV SPATIAL | Field | Panel | Command deck | V.High | Mission Control | Med | Med | Med | High |
+| 3 | AG-SYSTEMS | Field | Hybrid | Craft HUD | Low | Velocity | High | Med⚠ | Med | Med-High |
+| 4 | SEELE MONOLITH | Field | Panel | Giant numeral | Minimal | Tribunal | **Highest** | **Highest** | **Lowest** | Low |
+| 5 | DR POP | Field | Panel | Colour-block brands | High | Pure Phase | Med | Needs care⚠ | Low | Med |
+| 6 | RECON AMBER | **Transit** | Hybrid | Single-hue sweep | Low | Codec | **Highest** | High | **Lowest** | Low |
+| 7 | VECTORLINE | Field | Additive | Glowing vectors | Med | **Arcade** | **Low ⚠** | Med | High | High |
+| 8 | BIOLUME | **Tabletop** | Additive | Living organism | Low | Bloom | Med | High | **Highest** | High |
+| 9 | TERMINAL VOID | Field | Additive | Text in space | High | Teletype | High | High | **Lowest** | Low |
 
 ### 7.11 Recommendation
 

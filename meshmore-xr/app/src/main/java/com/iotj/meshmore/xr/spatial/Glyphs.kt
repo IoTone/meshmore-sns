@@ -68,15 +68,40 @@ object Glyphs {
         put('?', floatArrayOf(0f,5f, 1f,6f,  1f,6f, 3f,6f,  3f,6f, 4f,5f,  4f,5f, 2f,3f,  2f,3f, 2f,2f,  2f,0f, 2f,1f))
         put('#', floatArrayOf(1f,0f, 1f,6f,  3f,0f, 3f,6f,  0f,2f, 4f,2f,  0f,4f, 4f,4f))
         put('*', floatArrayOf(2f,1f, 2f,5f,  0f,2f, 4f,4f,  0f,4f, 4f,2f))
+        put('+', floatArrayOf(2f,1f, 2f,5f,  0f,3f, 4f,3f))
+        put('!', floatArrayOf(2f,2f, 2f,6f,  2f,0f, 2f,1f))
+        put(',', floatArrayOf(2f,1f, 1f,-1f))
+        put('\'', floatArrayOf(2f,4f, 2f,6f))
+        put('(', floatArrayOf(3f,6f, 1f,4f,  1f,4f, 1f,2f,  1f,2f, 3f,0f))
+        put(')', floatArrayOf(1f,6f, 3f,4f,  3f,4f, 3f,2f,  3f,2f, 1f,0f))
+        put('=', floatArrayOf(0f,2f, 4f,2f,  0f,4f, 4f,4f))
+        put(' ', floatArrayOf())
+        // TOFU — the honest "a real letter goes here and we cannot draw it" box.
+        // An empty cell would silently merge two different names into one label.
+        put(Callsign.TOFU, floatArrayOf(
+            0.5f,0.5f, 3.5f,0.5f,  3.5f,0.5f, 3.5f,5.5f,
+            3.5f,5.5f, 0.5f,5.5f,  0.5f,5.5f, 0.5f,0.5f,
+        ))
+        put(Callsign.ELLIPSIS, floatArrayOf(0.2f,0f, 0.2f,0.7f,  2f,0f, 2f,0.7f,  3.8f,0f, 3.8f,0.7f))
     }
+
+    /** Can this char be drawn? Callsign uses it to decide keep-vs-tofu. */
+    fun has(c: Char): Boolean = FONT.containsKey(c)
 
     private const val GW = 4f      // glyph cell width, in grid units
     private const val GH = 6f      // cap height
     private const val ADV = 5.6f   // advance, including the gap
 
+    /**
+     * Number of CELLS [text] occupies. Counted in CODE POINTS, not chars: an
+     * emoji is a surrogate pair, and measuring it as two cells throws the
+     * centring off by half a glyph for every one in the name.
+     */
+    private fun cells(text: String): Int = text.codePointCount(0, text.length)
+
     /** Width of [text] in world units at cap height [size]. */
     fun width(text: String, size: Float): Float =
-        if (text.isEmpty()) 0f else (text.length * ADV - (ADV - GW)) * (size / GH)
+        cells(text).let { if (it == 0) 0f else (it * ADV - (ADV - GW)) * (size / GH) }
 
     /**
      * Build [text] as extruded strokes, centred on the origin in X and sitting
@@ -87,9 +112,19 @@ object Glyphs {
         val f = Prims.Facets()
         val s = size / GH
         val r = if (strokeR > 0f) strokeR else size * 0.055f
-        var pen = -width(text, size) / 2f
-        for (ch in text.uppercase()) {
-            val segs = FONT[ch]
+        // Measure the UPPERCASED string: uppercase() can widen a code point
+        // (ss -> SS), and measuring the original would mis-centre the label.
+        val up = text.uppercase()
+        var pen = -width(up, size) / 2f
+        var idx = 0
+        while (idx < up.length) {
+            val cp = up.codePointAt(idx)
+            idx += Character.charCount(cp)
+            // Anything Callsign did not already fold is drawn as tofu rather
+            // than skipped, so an unexpected code point is visible instead of
+            // quietly shortening the label.
+            val segs = if (Character.charCount(cp) == 1) FONT[cp.toChar()] ?: FONT[Callsign.TOFU]
+                       else FONT[Callsign.TOFU]
             if (segs != null) {
                 var i = 0
                 while (i + 3 < segs.size) {

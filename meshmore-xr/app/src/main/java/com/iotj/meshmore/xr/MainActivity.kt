@@ -284,9 +284,13 @@ private fun HorizonScene() {
         val origin = stage.recentre()
 
         val horizon = Horizon(session, palette)
+        // Deliberately includes the shapes real MeshCore names take: emoji,
+        // fullwidth Latin, accents, kana, and a name that is nothing BUT emoji.
+        // If any of these can break the label path, better it breaks here.
         val names = listOf(
-            "kanako.1", "davi1", "relay-nw", "t1000-e", "gate-cam",
-            "ridge", "hab-2", "shed", "mule.4", "oku.9", "beacon",
+            "kanako.1", "davi1 \uD83D\uDE80", "relay-nw", "t1000-e", "gate-cam",
+            "\uD83D\uDC22 turtle relay", "\uFF2F\uFF2B\uFF41\uFF59", "shed",
+            "\u00D6konomy", "\u3042\u304D\u306F\u3070\u3089", "\uD83C\uDF0A\uD83C\uDF0A",
         )
         val nodes = names.mapIndexed { i, nm ->
             Horizon.Node(
@@ -295,7 +299,7 @@ private fun HorizonScene() {
                 elev = kotlin.math.sin(i * 2.1f) * 0.34f,
                 dist = 0.28f + ((i * 37) % 100) / 140f,
                 age = ((i * 53) % 100) / 100f,
-                located = nm != "shed",
+                located = !nm.startsWith("shed"),
                 hops = 1 + (i % 3),
             )
         }
@@ -330,6 +334,9 @@ private fun HorizonScene() {
                     fall = (fall + 0.033f / 1.6f).coerceAtMost(1f)
                     stage.tickFloor(fall)
                 }
+                // Billboard the callsigns at the LIVE head, not the launch
+                // pose -- the labels have to keep facing the user as they walk.
+                stage.headNow()?.let { horizon.faceViewer(it.translation) }
                 horizon.tick(0.033f)
                 since += 0.033f
                 if (since > 1.4f) {

@@ -54,6 +54,17 @@ class Stage(private val session: Session, private val theme: Horizon.Palette) {
     private var head: Pose? = null
 
     /**
+     * The head RIGHT NOW, in activity space, or null if tracking is unavailable.
+     * Cheap enough to call every frame; billboarding needs it per-frame, since
+     * the launch pose stops being the viewpoint the moment the user moves.
+     */
+    fun headNow(): Pose? = runCatching {
+        session.scene.perceptionSpace
+            .getScenePoseFromPerceptionPose(ArDevice.getInstance(session).state.value.devicePose)
+            .poseInActivitySpace
+    }.getOrNull() ?: head
+
+    /**
      * A point [d] metres along the head's TRUE forward axis, pitch included.
      * Only for calibration: anything placed here is centred in the FOV whatever
      * the head is doing, which is what you need when the question is "does this
