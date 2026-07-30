@@ -61,7 +61,7 @@ The two places native code genuinely pays are named in §6.4.
 
 ### 1.2 The XR SDK moved — the starter guide's snippets are stale
 
-Verified against the release notes on 2026-07-29:
+Verified against the release notes on 2026-07-30:
 
 | Artifact | Latest | Released |
 |---|---|---|
@@ -69,6 +69,25 @@ Verified against the release notes on 2026-07-29:
 | `androidx.xr.arcore:arcore` | **1.0.0-beta01** | 2026-07-15 |
 | `androidx.xr.runtime:runtime` | **1.0.0-beta01** | 2026-07-15 |
 | `androidx.xr.compose:compose` | **1.0.0-alpha16** | 2026-07-15 |
+
+> **"Developer Preview 4" vs. these versions — they are different clocks.**
+> DP4 is the *SDK bundle* branding and shipped **2026-05-19** (which is also
+> when `xr.compose` alpha14 landed). The individual `androidx.xr.*` artifacts
+> then kept their own cadence: alpha15 on 06-17, and on **07-15** the three
+> core libraries went to **beta**. So targeting the table above is **two release
+> waves ahead of DP4**, not behind it. Quote artifact versions in this project,
+> not the DP number.
+
+**Tooling:** Android XR tools ship only in **Android Studio Canary**
+(stable/preview channels may not include them), plus latest Build-Tools,
+Emulator, Platform-Tools and *Layout Inspector for API 31–36*. Already-installed
+SDK tools must be **re-selected and re-applied** to actually update.
+
+> ⚠️ **Do not let Canary set `JAVA_HOME`.** Canary's bundled JBR can be Java 25,
+> which AGP and the Kotlin plugin reject (`IllegalArgumentException: 25.0.2`).
+> Use Canary for XR tooling but keep the build pinned to the **stable** Studio's
+> JBR 17 (`/Applications/Android Studio.app/Contents/jbr/Contents/Home`), per
+> §6.2.
 
 Breaking changes since the guide was written — budget for these on day one:
 
@@ -1466,6 +1485,8 @@ light, highest GPU) · **HYBRID**.
 
 ### 7.11 Recommendation
 
+> **DECIDED (2026-07-30): HALO FIELD is the default theme.**
+
 **Default: HALO FIELD (1).** It is the only theme that is simultaneously the
 lowest-effort, the most legible in the field, the most accessible, and the most
 faithful to "offline first, always-on mesh." It is the right thing to build
@@ -1629,8 +1650,9 @@ a list.
 These cannot honestly be runtime toggles — they change what gets built or
 shipped, and pretending otherwise would just hide the question:
 
-1. **Default theme.** My recommendation remains HALO FIELD (§7.11). Everything
-   else adapts to this and it is still unmade.
+1. ~~**Default theme.**~~ **DECIDED 2026-07-30 — HALO FIELD.** Build this one
+   top-to-bottom first; it exercises every zone and primitive with no exotic
+   rendering. `theme.js` already ships it as `THEMES[0]`.
 2. **Build all nine themes, or three plus the theme SDK?** HALO FIELD + SEELE +
    RECON proves the abstraction cheaply. I would not build nine before the first
    is validated on hardware.
