@@ -190,7 +190,13 @@ class Horizon(private val session: Session, private val theme: Palette) {
 
             // NODE DETAIL — hidden until selected. Stroke glyphs, so selection
             // does not drag in the whole tier-R font pipeline for three numbers.
-            val det = "%d HOP  %.1fKM  %s".format(
+            // The horizon label is clipped to stay glanceable; the detail line
+            // is where the full name lives, because exactly one node is open at
+            // a time and the width costs nothing there. Truncating in both
+            // places would mean the app never shows you what a node is called.
+            val full = if (cs.truncated) Callsign.render(n.name, maxGlyphs = 40).text else ""
+            val det = "%s%d HOP  %.1fKM  %s".format(
+                if (full.isNotEmpty()) "$full   " else "",
                 n.hops, dist * 5.0f, if (n.age < 0.34f) "LIVE" else "STALE",
             )
             val detMesh = Prims.build(session, Glyphs.text(det, capH * 0.78f))

@@ -55,10 +55,20 @@ object Callsign {
 
     /**
      * Above this the label stops being a callsign and becomes a paragraph
-     * floating in the room. At ~1.3 deg per glyph a 14-glyph label already
-     * spans about 18 deg of a 61 deg FOV.
+     * floating in the room. At ~1.2 deg per glyph an 18-glyph label spans
+     * about 22 deg of a 61 deg FOV.
+     *
+     * 14 was sized for `kanako.1`, not for how people actually name repeaters.
+     * On the live mesh almost every name was cut -- `Brier_Hill_Solar_Repeat`,
+     * `N7DSB Solar Repeater`, `Mt. Talbert repeatpeatp` -- which is a lot of
+     * ellipses for no benefit. 18 covers most real names outright, and the
+     * lane rule absorbs the extra width automatically because separation is
+     * already derived from label length rather than a constant.
+     *
+     * The full name is not lost: anything still cut here is shown untruncated
+     * on selection, where exactly one node is open and the width is free.
      */
-    const val MAX_GLYPHS = 14
+    const val MAX_GLYPHS = 18
 
     fun render(raw: String, maxGlyphs: Int = MAX_GLYPHS): Rendered {
         // NFKD, not NFKC: we WANT accents split off their base letters so the

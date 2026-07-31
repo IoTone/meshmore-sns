@@ -141,13 +141,14 @@ class Boot(private val session: Session, private val theme: Horizon.Palette) {
     fun tick(dt: Float, fraction: Float, hasTotal: Boolean) {
         t += dt
 
-        // Slow rotation. SLOW deliberately -- this sits above the user's eyeline
-        // for half a minute, and anything brisk up there is a distraction you
-        // cannot look away from.
-        wordmark?.setPose(
-            Pose(at, Quaternion.fromEulerAngles(0f, (t * SPIN_DEG_S) % 360f, 0f)),
-            Space.ACTIVITY,
-        )
+        // Slow turn, but an OSCILLATION rather than a full revolution. Stroke
+        // glyphs are flat, so a wordmark spinning through 360 degrees goes
+        // edge-on twice per turn and collapses to a bright line -- at 18 deg/s
+        // that is an unreadable moment every ten seconds, which reads as a
+        // fault rather than as motion. Swinging through +/-38 keeps it legible
+        // at every instant while still clearly turning in space.
+        val yaw = SWING_DEG * sin(t * SWING_RATE)
+        wordmark?.setPose(Pose(at, Quaternion.fromEulerAngles(0f, yaw, 0f)), Space.ACTIVITY)
         // Breathing alpha rather than a hard blink: a flashing wordmark at this
         // size reads as an alarm.
         val pulse = 0.55f + 0.45f * (0.5f + 0.5f * sin(t * 2.2f))
@@ -199,18 +200,26 @@ class Boot(private val session: Session, private val theme: Horizon.Palette) {
 
     private companion object {
         const val TAG = "MeshmoreXR"
-        /** Overhead: the horizon owns eye level, the boot surface must not. */
-        const val HEIGHT = 0.95f
+        /**
+         * Above eye level but INSIDE the FOV. At 2 m forward, height h subtends
+         * atan(h/2): the original 0.95 put the wordmark 25 deg up, well past
+         * the Aura's 17 deg half-height, so the vessel was clipped at the top
+         * of the frame and the wordmark was off-screen entirely. 0.50 puts the
+         * wordmark at 14 deg and the vessel between 0 and 12 -- clear of the
+         * horizon ring below, and wholly visible.
+         */
+        const val HEIGHT = 0.50f
         const val FORWARD = 2.0f
         const val CAP = 0.115f
         const val RADIUS = 0.16f
         const val VESSEL_H = 0.42f
-        const val VESSEL_DROP = 0.62f
+        const val VESSEL_DROP = 0.50f
         const val STAVES = 8
         const val BODY_RINGS = 5
         const val BODY_GAP = 0.045f
         const val PARTICLES = 14
-        const val SPIN_DEG_S = 18f
+        const val SWING_DEG = 38f
+        const val SWING_RATE = 0.55f
         const val DROP_PERIOD = 0.9f
     }
 }
