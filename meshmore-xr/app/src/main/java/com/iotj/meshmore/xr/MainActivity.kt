@@ -53,6 +53,7 @@ import androidx.xr.compose.subspace.layout.height
 import androidx.xr.compose.subspace.layout.width
 import com.iotj.meshmore.xr.spatial.Boot
 import com.iotj.meshmore.xr.spatial.Horizon
+import com.iotj.meshmore.xr.spatial.Hud
 import com.iotj.meshmore.xr.spatial.MeshNodes
 import com.iotj.meshmore.xr.spatial.Stage
 import com.iotj.meshmore.xr.spatial.Unfold
@@ -377,6 +378,7 @@ private fun HorizonScene(link: MeshLink) {
     val originRef = remember { mutableStateOf<Stage.Origin?>(null) }
     val nodesRef = remember { mutableStateOf<List<Horizon.Node>>(emptyList()) }
     val bootRef = remember { mutableStateOf<Boot?>(null) }
+    val hudRef = remember { mutableStateOf<Hud?>(null) }
 
     // The mesh, rebuilt whenever membership changes.
     LaunchedEffect(signature, here, horizonRef.value) {
@@ -435,6 +437,9 @@ private fun HorizonScene(link: MeshLink) {
         val boot = Boot(session, palette)
         boot.build(origin)
         bootRef.value = boot
+        val hud = Hud(session, palette)
+        hud.build()
+        hudRef.value = hud
         stageRef.value = stage
         originRef.value = origin
         horizonRef.value = horizon
@@ -445,6 +450,7 @@ private fun HorizonScene(link: MeshLink) {
         var fall = 0f
         var lastAdverts = -1
         var boot0Elapsed = 0f
+        var statusTick = 0f
         try {
             if (MainActivity.selfTest) launch { horizon.selfTest(origin) }
             var panelWarned = false
@@ -491,8 +497,30 @@ private fun HorizonScene(link: MeshLink) {
                     bootRef.value?.clear()
                     bootRef.value = null
                 }
-                stage.headNow()?.let { horizon.faceViewer(it.translation) }
+                stage.headNow()?.let {
+                    horizon.faceViewer(it.translation)
+                    // The microhud is head-locked, so it is re-placed from the
+                    // live pose every frame rather than anchored once.
+                    hudRef.value?.tick(it)
+                }
                 horizon.drainSelections(origin)
+
+                // Link readout, refreshed about once a second. The strings are
+                // short on purpose: the microhud answers "is the radio there
+                // and how much of the mesh do I hold", not everything about it.
+                statusTick += 0.033f
+                if (statusTick > 1f) {
+                    statusTick = 0f
+                    val st = link.status.value
+                    val batt = load.batteryMv?.takeIf { it > 0 }
+                        ?.let { " %.1fV".format(it / 1000f) } ?: ""
+                    hudRef.value?.setStatus(
+                        "%s%s  %d/%d".format(
+                            if (st.state == SessionState.READY) "LINK" else st.state.name.take(4),
+                            batt, nodesRef.value.size, mesh.size,
+                        )
+                    )
+                }
                 horizon.tick(0.033f)
                 // PULSE ON A REAL PACKET. The brief defines a pulse as a packet
                 // event, and until now it fired on a 1.4 s timer over invented
@@ -519,6 +547,7 @@ private fun HorizonScene(link: MeshLink) {
             }
         } finally {
             horizon.clear()
+            hudRef.value?.clear()
             stage.clearFloor()
         }
     }

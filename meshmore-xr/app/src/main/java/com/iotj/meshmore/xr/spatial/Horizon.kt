@@ -116,7 +116,13 @@ class Horizon(private val session: Session, private val theme: Palette) {
 
             // Bearings are measured from the user's LAUNCH FACING, so the mesh
             // wraps the body rather than the tracker's arbitrary origin.
-            val v = o.place(bearing, R * dist, elev * R * 0.35f + EYE_DROP)
+            // ELEV_SPAN keeps the ring inside the WORLD WINDOW. The microhud
+            // spec reserves +/-10 deg for world content and places its ribbon
+            // and stats bands outside that; at 0.35 the outermost lane reached
+            // +/-19 deg and node callsigns printed straight through the link
+            // readout. atan(R * 0.176 / R) is 10 deg, so the full lane spread
+            // now exactly fills the window it was given and no further.
+            val v = o.place(bearing, R * dist, elev * R * ELEV_SPAN + EYE_DROP)
             val px = v.x; val py = v.y; val pz = v.z
             val dx = px - o.x; val dy = py - o.y; val dz = pz - o.z
             val range = kotlin.math.sqrt(dx * dx + dy * dy + dz * dz)
@@ -533,6 +539,9 @@ class Horizon(private val session: Session, private val theme: Palette) {
         // CHAT while the product calls it COMPANION -- the brief is explicit
         // that the two must not drift in code, so the protocol name stays here
         // and the product name stays in the UI.
+        /** Vertical half-span of the ring, as a fraction of R. 0.176 = 10 deg. */
+        const val ELEV_SPAN = 0.176f
+
         const val TYPE_NONE = 0
         const val TYPE_CHAT = 1
         const val TYPE_REPEATER = 2
