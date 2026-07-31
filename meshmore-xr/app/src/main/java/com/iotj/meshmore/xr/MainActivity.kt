@@ -135,6 +135,12 @@ class MainActivity : ComponentActivity() {
             if (la != null && lo != null) MeshNodes.Here(la, lo) else null
         }
         Log.i(TAG, "[boot] home override = ${homeOverride ?: "<none, using radio GPS>"}")
+        // Until the spatial settings surface exists, the toggle is reachable
+        // from the launch intent:  --ez devloc true
+        if (intent?.hasExtra("devloc") == true) {
+            Settings.setUseDeviceLocation(this, intent.getBooleanExtra("devloc", false))
+        }
+        Log.i(TAG, "[boot] device-location fallback = ${Settings.useDeviceLocation(this)}")
         setContent { MaterialTheme { Root(facts, link, pin, debug) } }
         Log.i(TAG, "[boot] setContent done")
     }
@@ -225,10 +231,17 @@ private fun Root(facts: List<Pair<String, String>>, link: MeshLink, pinOverride:
     LaunchedEffect(Unit) {
         if (link.hasBlePermissions()) dial()
         else askBle.launch(
-            arrayOf(
-                android.Manifest.permission.BLUETOOTH_SCAN,
-                android.Manifest.permission.BLUETOOTH_CONNECT,
-            )
+            buildList {
+                add(android.Manifest.permission.BLUETOOTH_SCAN)
+                add(android.Manifest.permission.BLUETOOTH_CONNECT)
+                // Asked for in the same prompt ONLY when the user already
+                // enabled the fallback. Requesting location from someone who
+                // never turned it on is exactly the kind of thing that makes
+                // people deny the whole dialog.
+                if (Settings.useDeviceLocation(activity ?: return@buildList)) {
+                    add(android.Manifest.permission.ACCESS_FINE_LOCATION)
+                }
+            }.toTypedArray()
         )
     }
 
@@ -330,6 +343,8 @@ private fun simulatedMesh(): List<Horizon.Node> {
 @Composable
 private fun HorizonScene(link: MeshLink) {
     val session = LocalSession.current ?: return
+    val ctx = LocalContext.current
+    val hereSource = remember { HereSource(ctx) }
 
     // LIVE MESH. The horizon is whatever the radio can actually see; the
     // simulated ring is now opt-in (--ez sim true) and exists only so the
@@ -365,12 +380,12 @@ private fun HorizonScene(link: MeshLink) {
         // its own position is. `--es home "lat,lon"` lets the operator state
         // where they are. That is not a fabricated bearing: the brief forbids
         // inventing a peer's position, not being told our own.
-        val origin2 = if (here.known) here else MainActivity.homeOverride ?: here
+        val origin2 = hereSource.resolve(here, MainActivity.homeOverride)
         val nodes = if (MainActivity.simulate) simulatedMesh() else
             MeshNodes.build(origin2, mesh, System.currentTimeMillis() / 1000)
         Log.i(TAG_UI, "[horizon] building ${nodes.size} nodes " +
             "(${if (MainActivity.simulate) "SIMULATED" else "live"}, " +
-            "fix=${origin2.known}${if (!here.known && MainActivity.homeOverride != null) " via --es home" else ""}, " +
+            "fix=${origin2.known} via ${hereSource.source}, " +
             "located=${nodes.count { it.located }}" +
             MeshNodes.droppedCount(mesh).let { if (it > 0) ", $it not shown" else "" } + ")")
         nodesRef.value = nodes

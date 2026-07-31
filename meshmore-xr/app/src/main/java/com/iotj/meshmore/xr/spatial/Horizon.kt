@@ -37,6 +37,8 @@ class Horizon(private val session: Session, private val theme: Palette) {
         val age: Float,           // 0 = just heard, 1 = stale
         val located: Boolean,
         val hops: Int,
+        /** Real altitude in metres from telemetry, or null when unknown. */
+        val altM: Double? = null,
     )
 
     data class Palette(
@@ -236,19 +238,36 @@ class Horizon(private val session: Session, private val theme: Palette) {
                 )
             }.onFailure { Log.w(TAG, "[horizon] no input on ${n.name}: $it") }
 
-            // Elevation CARET: "the ridge station is above you" as a fact you
-            // perceive, not a figure you read.
-            if (n.located && kotlin.math.abs(n.elev) > 0.25f) {
-                val up = n.elev > 0
-                val cMesh = Prims.build(session, Prims.caret(r * 0.9f, r * 1.6f))
-                val cMat = Prims.material(session, theme.alt, 0.85f * lum)
-                MeshEntity.create(session, cMesh, listOf(cMat)).also {
+            // ALTITUDE, and only altitude. This caret used to fire on `elev`,
+            // which is now also the de-occlusion lane -- pointing it at a lane
+            // offset would turn a legibility trick into a claim that the node
+            // is up a hill. It is drawn ONLY for a node with real telemetry
+            // altitude, and it comes with the figure in metres, because "above
+            // you" without a number is the kind of half-fact that gets someone
+            // walking uphill for no reason.
+            if (n.altM != null) {
+                val up = n.altM >= 0
+                val aMesh = Prims.build(session, Prims.caret(r * 0.9f, r * 1.6f))
+                val aMat = Prims.material(session, theme.alt, 0.9f * lum)
+                MeshEntity.create(session, aMesh, listOf(aMat)).also {
                     it.parent = root
-                    val dy = if (up) r * 2.4f else -r * 3.8f
-                    it.setPose(Pose(Vector3(px, py + dy, pz)), Space.ACTIVITY)
+                    it.setPose(
+                        Pose(Vector3(px, py + if (up) r * 2.4f else -r * 3.8f, pz)),
+                        Space.ACTIVITY,
+                    )
+                    entities += it
+                }
+                val txtAlt = "%.0fM".format(n.altM)
+                val altMesh = Prims.build(session, Glyphs.text(txtAlt, capH * 0.72f))
+                MeshEntity.create(
+                    session, altMesh, listOf(Prims.material(session, theme.alt, 0.85f * lum)),
+                ).also {
+                    it.parent = txt          // billboards with the callsign
+                    it.setPose(Pose(Vector3(0f, capH * 1.35f, 0f)), Space.PARENT)
                     entities += it
                 }
             }
+
         }
         Log.i(TAG, "[horizon] built ${entities.size} entities for ${nodes.size} nodes")
     }

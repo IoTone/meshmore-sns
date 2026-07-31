@@ -94,6 +94,55 @@ class MeshNodesTest {
         assertTrue("expected a # fallback, got '${n.name}'", n.name.startsWith("#"))
     }
 
+    // ---- de-occlusion -----------------------------------------------------
+
+    private fun node(bearingDeg: Double, alt: Double? = null, located: Boolean = true) =
+        Horizon.Node(
+            name = "n$bearingDeg", bearingRad = Math.toRadians(bearingDeg).toFloat(),
+            elev = 0f, dist = 0.5f, age = 0f, located = located, hops = 1, altM = alt,
+        )
+
+    @Test fun clusteredNodesGetDifferentHeights() {
+        // Four nodes within two degrees of each other: the real-mesh case, where
+        // a whole town shares one bearing and stacks into a single blob.
+        val out = MeshNodes.deOcclude(listOf(node(10.0), node(11.0), node(11.5), node(12.0)))
+        assertEquals(4, out.map { it.elev }.toSet().size)
+    }
+
+    @Test fun wellSeparatedNodesAllStayOnTheHorizonPlane() {
+        val out = MeshNodes.deOcclude((0..5).map { node(it * 60.0) })
+        assertTrue(out.all { it.elev == 0f })
+    }
+
+    /** The whole point: a lane offset must never masquerade as altitude. */
+    @Test fun nodesWithRealAltitudeAreNeverMoved() {
+        val withAlt = node(10.0, alt = 412.0)
+        val out = MeshNodes.deOcclude(listOf(withAlt, node(10.2), node(10.4)))
+        assertEquals(0f, out.single { it.altM != null }.elev, 0f)
+    }
+
+    @Test fun unlocatedNodesAreNotLaned() {
+        val out = MeshNodes.deOcclude(listOf(node(0.0, located = false), node(0.0, located = false)))
+        assertTrue(out.all { it.elev == 0f })
+    }
+
+    /** Lanes must alternate so the ring stays centred on eye level. */
+    @Test fun lanesAlternateAboutZero() {
+        assertEquals(0f, MeshNodes.laneElev(0), 0f)
+        assertTrue(MeshNodes.laneElev(1) > 0f)
+        assertTrue(MeshNodes.laneElev(2) < 0f)
+        assertTrue(MeshNodes.laneElev(3) > MeshNodes.laneElev(1))
+        assertTrue(MeshNodes.laneElev(4) < MeshNodes.laneElev(2))
+        assertTrue(MeshNodes.laneElev(99) in -1f..1f)
+    }
+
+    @Test fun buildCapsTheRingAndReportsWhatItDropped() {
+        val many = (0 until 60).map { peer(name = "n$it", lat = 48.0 + it * 0.01, lon = 2.0) }
+        val out = MeshNodes.build(MeshNodes.Here(londonLat, londonLon), many, NOW)
+        assertEquals(MeshNodes.MAX_MOTES, out.size)
+        assertEquals(60 - MeshNodes.MAX_MOTES, MeshNodes.droppedCount(many))
+    }
+
     private fun peer(name: String = "relay", lat: Double? = null, lon: Double? = null) =
         MeshNodes.Peer("k1", name, 2, 2, lat, lon, NOW)
 

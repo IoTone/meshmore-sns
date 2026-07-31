@@ -33,6 +33,8 @@ object MeshNodes {
         val lat: Double?,
         val lon: Double?,
         val lastSeenEpochSec: Long,
+        /** Metres above sea level from CayenneLPP telemetry, or null. */
+        val altM: Double? = null,
     )
 
     /** Where the radio thinks it is. Null when it has no fix. */
@@ -113,8 +115,56 @@ object MeshNodes {
                 age = ageOf(p.lastSeenEpochSec, nowEpochSec),
                 located = located,
                 hops = p.hops.coerceAtLeast(1),
+                altM = p.altM,
             )
+        }.let { deOcclude(it) }
+
+    /**
+     * STOP MOTES HIDING BEHIND EACH OTHER.
+     *
+     * Bearing alone puts every node on one horizontal line, and a real mesh
+     * clusters -- nodes in the same town share a bearing to within a degree, so
+     * they stack into a single blob with their callsigns written over each
+     * other. Spreading them vertically is the cheapest fix that keeps every
+     * bearing truthful.
+     *
+     * THE TRAP, and the reason this is not simply "add some jitter": height is
+     * already meaningful. A mote placed higher reads as *higher up*, and a
+     * synthetic offset presented that way is a fabricated altitude -- exactly
+     * the class of claim the brief forbids for bearing. So the two are kept
+     * strictly apart:
+     *
+     *   altM != null -> the node has REAL telemetry altitude. Its height is its
+     *                   own, it is never moved, and Horizon marks it with a
+     *                   caret and the figure in metres.
+     *   altM == null -> height carries no meaning, so it is free to use for
+     *                   legibility. No marker is drawn, and the ABSENCE of the
+     *                   marker is what tells the user this height is not a claim.
+     *
+     * Lanes alternate above and below the horizon plane so the ring stays
+     * centred on eye level rather than drifting upward.
+     */
+    fun deOcclude(nodes: List<Horizon.Node>): List<Horizon.Node> {
+        val lanes = ArrayList<Float>()          // last bearing placed in each lane
+        val byBearing = nodes.sortedBy { it.bearingRad }
+        val out = HashMap<Horizon.Node, Float>()
+        byBearing.forEach { n ->
+            if (n.altM != null || !n.located) { out[n] = n.elev; return@forEach }
+            var lane = 0
+            while (lane < lanes.size && abs(n.bearingRad - lanes[lane]) < MIN_SEP_RAD) lane++
+            if (lane == lanes.size) lanes.add(n.bearingRad) else lanes[lane] = n.bearingRad
+            out[n] = laneElev(lane)
         }
+        return nodes.map { it.copy(elev = out[it] ?: it.elev) }
+    }
+
+    /** 0, +1, -1, +2, -2 … so the ring stays centred on eye level. */
+    fun laneElev(lane: Int): Float {
+        if (lane == 0) return 0f
+        val step = (lane + 1) / 2
+        val sign = if (lane % 2 == 1) 1 else -1
+        return (sign * step * LANE_STEP).coerceIn(-1f, 1f)
+    }
 
     /**
      * WHICH NODES GET A MOTE.
@@ -164,4 +214,8 @@ object MeshNodes {
      * is one every 15 degrees, which leaves room for a callsign beside each.
      */
     const val MAX_MOTES = 24
+    /** Bearings closer than this share a lane and must be separated. */
+    const val MIN_SEP_RAD = 0.20f        // ~11.5 degrees
+    /** Vertical step per lane, as a fraction of the shell's vertical span. */
+    const val LANE_STEP = 0.30f
 }

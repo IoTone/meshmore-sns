@@ -20,6 +20,13 @@
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
     <uses-feature android:name="android.hardware.bluetooth_le" android:required="false" />
 
+    <!-- Headset GPS, used ONLY as a fallback when the companion radio has no
+         fix of its own, and only when the user has switched it on (Settings.
+         useDeviceLocation, off by default). Declared here so the capability is
+         visible; never requested unless that path is actually taken. -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+
     <application
         android:label="MeshmoreXR"
         android:icon="@mipmap/ic_launcher"
