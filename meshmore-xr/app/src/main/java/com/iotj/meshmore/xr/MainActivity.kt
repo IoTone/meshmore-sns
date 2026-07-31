@@ -53,6 +53,7 @@ import androidx.xr.compose.subspace.layout.height
 import androidx.xr.compose.subspace.layout.width
 import com.iotj.meshmore.xr.spatial.Boot
 import com.iotj.meshmore.xr.spatial.Glyphs
+import com.iotj.meshmore.xr.spatial.HereMark
 import com.iotj.meshmore.xr.spatial.Horizon
 import com.iotj.meshmore.xr.spatial.Hud
 import com.iotj.meshmore.xr.spatial.MeshNodes
@@ -144,6 +145,11 @@ class MainActivity : ComponentActivity() {
             Settings.setUseDeviceLocation(this, intent.getBooleanExtra("devloc", false))
         }
         Log.i(TAG, "[boot] device-location fallback = ${Settings.useDeviceLocation(this)}")
+        // A flood advert reaches the whole mesh through every repeater that
+        // hears it. That is someone else's airtime, so it is opt-in per launch:
+        //   --ez flood true
+        link.floodOnConnect = intent?.getBooleanExtra("flood", false) == true
+        Log.i(TAG, "[boot] connect advert = ${if (link.floodOnConnect) "FLOOD" else "zero-hop"}")
         setContent { MaterialTheme { Root(facts, link, pin, debug) } }
         Log.i(TAG, "[boot] setContent done")
     }
@@ -380,9 +386,12 @@ private fun HorizonScene(link: MeshLink) {
     val nodesRef = remember { mutableStateOf<List<Horizon.Node>>(emptyList()) }
     val bootRef = remember { mutableStateOf<Boot?>(null) }
     val hudRef = remember { mutableStateOf<Hud?>(null) }
+    val hereMarkRef = remember { mutableStateOf<HereMark?>(null) }
+    // Bumped by the HERE marker so the mesh rebuild below re-runs on a toggle.
+    val hereEpoch = remember { mutableStateOf(0) }
 
     // The mesh, rebuilt whenever membership changes.
-    LaunchedEffect(signature, here, horizonRef.value) {
+    LaunchedEffect(signature, here, horizonRef.value, hereEpoch.value) {
         // DEBOUNCE. A contact sync delivers the whole list one frame at a time
         // -- 58 contacts arrived as 58 separate membership changes, and without
         // this the scene is disposed and rebuilt 58 times in 1.5 s. LaunchedEffect
@@ -414,6 +423,7 @@ private fun HorizonScene(link: MeshLink) {
             ", of ${mesh.size} peers)")
         nodesRef.value = nodes
         h.build(nodes, o, st.floorHeight())
+        hereMarkRef.value?.setText(hereCaption(ctx, hereSource, origin2))
     }
 
     LaunchedEffect(session) {
@@ -448,6 +458,9 @@ private fun HorizonScene(link: MeshLink) {
         val hud = Hud(session, palette)
         hud.build()
         hudRef.value = hud
+        val hereMark = HereMark(session, palette)
+        hereMark.build(origin, hereCaption(ctx, hereSource, hereSource.resolve(here, MainActivity.homeOverride)))
+        hereMarkRef.value = hereMark
         stageRef.value = stage
         originRef.value = origin
         horizonRef.value = horizon
@@ -507,11 +520,27 @@ private fun HorizonScene(link: MeshLink) {
                 }
                 stage.headNow()?.let {
                     horizon.faceViewer(it.translation)
+                    hereMarkRef.value?.faceViewer(it.translation)
                     // The microhud is head-locked, so it is re-placed from the
                     // live pose every frame rather than anchored once.
                     hudRef.value?.tick(it)
                 }
                 horizon.drainSelections(origin)
+
+                // THE ONE IN-HEADSET SETTING. Flipping it changes where every
+                // bearing is measured from, so the whole horizon has to be
+                // rebuilt -- done by bumping the epoch the build effect keys on
+                // rather than rebuilding here, so a pinch and a contact sync
+                // landing together still collapse into one rebuild.
+                if (hereMarkRef.value?.takePinch() == true) {
+                    val on = !Settings.useDeviceLocation(ctx)
+                    Settings.setUseDeviceLocation(ctx, on)
+                    Log.i(TAG_UI, "[here] headset GPS -> ${if (on) "ON" else "OFF"}")
+                    hereMarkRef.value?.setText(
+                        hereCaption(ctx, hereSource, hereSource.resolve(link.here.value, MainActivity.homeOverride))
+                    )
+                    hereEpoch.value += 1
+                }
 
                 // Link readout, refreshed about once a second. The strings are
                 // short on purpose: the microhud answers "is the radio there
@@ -568,6 +597,30 @@ private fun HorizonScene(link: MeshLink) {
             stage.clearFloor()
         }
     }
+}
+
+/**
+ * What the HERE marker says. It reports the source that is actually IN USE, not
+ * the setting -- those differ whenever the radio has its own fix, because the
+ * headset is a fallback and never an override. Saying "HEADSET" while the
+ * bearings came from the radio would be a plain lie about where the horizon is
+ * measured from.
+ *
+ * The no-fix case names the remedy rather than the fault. "NONE" alone tells
+ * someone staring at an empty ring nothing they can act on.
+ */
+private fun hereCaption(
+    ctx: android.content.Context,
+    src: HereSource,
+    resolved: MeshNodes.Here,
+): String = when {
+    !resolved.known && !Settings.useDeviceLocation(ctx) -> "HERE  NO FIX - PINCH FOR HEADSET GPS"
+    !resolved.known -> "HERE  NO FIX"
+    // The armed-but-unused note only earns its place when the fallback is NOT
+    // the source. "HEADSET (HEADSET ON)" says one thing twice.
+    src.source == "headset" -> "HERE  HEADSET GPS"
+    else -> "HERE  ${src.source.uppercase()}" +
+        if (Settings.useDeviceLocation(ctx)) "  - HEADSET ARMED" else ""
 }
 
 @Composable

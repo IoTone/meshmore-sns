@@ -311,6 +311,27 @@ class MeshLink(private val context: Context) {
         }
     }
 
+    /** Set before connect to make the connect-time advert a flood. */
+    var floodOnConnect: Boolean = false
+
+    /**
+     * Put a self-advert on the air, so other nodes learn this radio exists.
+     *
+     * [flood] false is zero-hop -- direct neighbours only. True propagates
+     * through every repeater that hears it, which is how you become visible
+     * across a whole mesh and also how you spend everyone else's airtime.
+     */
+    fun announce(flood: Boolean) {
+        val s = session
+        if (s == null || _status.value.state != SessionState.READY) {
+            Log.w(TAG, "[link] advert skipped — link not ready")
+            return
+        }
+        Log.i(TAG, "[link] self-advert -> ${if (flood) "FLOOD" else "zero-hop"}")
+        s.sendSelfAdvert(flood)
+        _status.value = _status.value.copy(lastEvent = "advert")
+    }
+
     /**
      * Everything the radio will tell us about itself, in one readable block.
      *
@@ -384,6 +405,22 @@ class MeshLink(private val context: Context) {
                 // connect, so a client that only listens sees an empty horizon
                 // while the radio's own screen shows a full one. This is the
                 // difference between "no nodes" and "never asked".
+                // ANNOUNCE OURSELVES. Until now this app was a pure listener:
+                // it asked for contacts, heard 162 nodes, and never once put
+                // anything on the air. A REPEATER beacons on a timer, but this
+                // radio adverts as type 1 (chat/companion) and a companion only
+                // advertises when its client asks it to -- so nothing else on
+                // the mesh had any reason to know the radio existed, and it did
+                // not appear in another node's scan however close it was.
+                //
+                // ZERO-HOP by default. That reaches direct neighbours, which is
+                // what "the node next to me should see me" needs, and it costs
+                // the wider mesh nothing. A FLOOD advert propagates across every
+                // repeater in range of every hop; that is a deliberate act on a
+                // shared public channel, so it stays behind an explicit flag
+                // rather than firing on every launch.
+                announce(floodOnConnect)
+
                 Log.i(TAG, "[link] requesting contacts")
                 session?.requestContacts()
                 session?.requestBatteryStorage()
