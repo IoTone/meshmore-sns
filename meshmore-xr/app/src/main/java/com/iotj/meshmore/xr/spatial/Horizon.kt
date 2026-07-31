@@ -71,7 +71,13 @@ class Horizon(private val session: Session, private val theme: Palette) {
         val bearing: Float,
         val baseAlpha: Float,
         var open: Boolean = false,
-    )
+    ) {
+        /** Which pointers are currently on this peer. BOTH hands emit rays. */
+        val pointers = mutableSetOf<String>()
+        var hovered = false
+        var exitAt = 0L
+        var lastSelect = 0L
+    }
 
     private class Pulse(val entity: MeshEntity, val base: Float, var life: Float = 1f)
 
@@ -252,7 +258,71 @@ class Horizon(private val session: Session, private val theme: Palette) {
      * there: alpha and scale on entities that already exist. Anything needing a
      * coroutine (building a pulse) is queued for [drainSelections].
      */
-    private fun onInput(p: Peer, ev: InputEvent) = apply(p, ev.action)
+    private fun onInput(p: Peer, ev: InputEvent) {
+        // Log EVERY event, not just selections. The Aura reports only
+        // hand_tracking -- no controller, no eye tracking -- and a lower
+        // xr.api.spatial level than the emulator, so it is an open question
+        // whether a ray reaches these entities at all. Without a hover line the
+        // failure "no pointer ever arrives" is indistinguishable from "the
+        // pinch was not recognised", and those need completely different fixes.
+        if (ev.action != InputEvent.Action.HOVER_MOVE) {
+            Log.i(TAG, "[input] ${ev.action} on ${p.node.name} src=${ev.source} ptr=${ev.pointerType}")
+        }
+        val key = ev.pointerType.toString()
+        when (ev.action) {
+            InputEvent.Action.HOVER_ENTER, InputEvent.Action.HOVER_MOVE -> p.pointers += key
+            InputEvent.Action.HOVER_EXIT -> {
+                p.pointers -= key
+                p.exitAt = android.os.SystemClock.uptimeMillis()
+            }
+            InputEvent.Action.UP -> {
+                // DEBOUNCE. Both hands are tracked, so a single pinch can arrive
+                // as two UP events -- and against a toggle that means the node
+                // opens and immediately closes again, which reads as "selection
+                // does not work". Measured on device: gate-cam toggled four
+                // times, twice inside 500 ms, for what was meant to be one or
+                // two deliberate selections.
+                val now = android.os.SystemClock.uptimeMillis()
+                if (now - p.lastSelect < SELECT_DEBOUNCE_MS) {
+                    Log.i(TAG, "[input] debounced repeat UP on ${p.node.name}")
+                    return
+                }
+                p.lastSelect = now
+                select(p)
+            }
+            else -> Unit
+        }
+    }
+
+    /** Toggle a node open. Shared by real input and by [selfTest]. */
+    private fun select(p: Peer) {
+        p.open = !p.open
+        p.detail.setEnabled(p.open)
+        if (p.open) selected.add(p)
+        Log.i(TAG, "[horizon] select ${p.node.name} open=${p.open}")
+    }
+
+    /**
+     * Reconcile hover from pointer state, with a release grace period.
+     *
+     * Hand tracking jitters, and a ray that wobbles a few millimetres across a
+     * small target produces a stream of ENTER/EXIT pairs -- 42% of measured
+     * hover episodes lasted under 150 ms, three under 50 ms. Driving the visual
+     * straight off those events makes the mote strobe between its two sizes.
+     * So hover is a *state* derived from which pointers are on the target, and
+     * losing the last one starts a timer rather than ending the hover.
+     */
+    private fun reconcileHover() {
+        val now = android.os.SystemClock.uptimeMillis()
+        peers.forEach { p ->
+            val want = p.pointers.isNotEmpty() ||
+                (p.hovered && now - p.exitAt < HOVER_GRACE_MS)
+            if (want != p.hovered) {
+                p.hovered = want
+                apply(p, if (want) InputEvent.Action.HOVER_ENTER else InputEvent.Action.HOVER_EXIT)
+            }
+        }
+    }
 
     private fun apply(p: Peer, action: InputEvent.Action) {
         when (action) {
@@ -265,15 +335,6 @@ class Horizon(private val session: Session, private val theme: Palette) {
                 p.mote.setScale(1f)
                 p.mote.setAlpha(p.baseAlpha)
                 p.label.setAlpha(p.baseAlpha)
-            }
-            // UP, not DOWN: a selection should be cancellable by moving off the
-            // target before releasing, which is what every pointing device has
-            // taught people to expect.
-            InputEvent.Action.UP -> {
-                p.open = !p.open
-                p.detail.setEnabled(p.open)
-                if (p.open) selected.add(p)
-                Log.i(TAG, "[horizon] select ${p.node.name} open=${p.open}")
             }
             else -> Unit
         }
@@ -298,12 +359,15 @@ class Horizon(private val session: Session, private val theme: Palette) {
         val live = peers.filter { it.node.located }
         if (live.isEmpty()) return
         Log.i(TAG, "[selftest] driving ${live.size} peers")
-        live.forEach { apply(it, InputEvent.Action.HOVER_ENTER) }
+        // Drive the pointer SET, not apply(), so hover goes through the same
+        // reconcile + grace path real hands do. A self-test that routes around
+        // the state machine tests nothing that can break.
+        live.forEach { it.pointers += "SELFTEST" }
         kotlinx.coroutines.delay(1800)
-        live.forEach { apply(it, InputEvent.Action.UP) }
+        live.forEach { select(it) }
         drainSelections(o)
         kotlinx.coroutines.delay(3000)
-        live.forEach { apply(it, InputEvent.Action.UP); apply(it, InputEvent.Action.HOVER_EXIT) }
+        live.forEach { select(it); it.pointers -= "SELFTEST" }
         Log.i(TAG, "[selftest] done")
     }
 
@@ -364,6 +428,7 @@ class Horizon(private val session: Session, private val theme: Palette) {
 
     /** Drive the pulses. Called from a frame loop; cheap and allocation-free. */
     fun tick(dt: Float) {
+        reconcileHover()
         val it = pulses.iterator()
         while (it.hasNext()) {
             val p = it.next()
@@ -397,6 +462,10 @@ class Horizon(private val session: Session, private val theme: Palette) {
         const val R = 2.5f
         /** Hover growth. Big enough to be unmistakable, small enough not to jump. */
         private const val HOVER_SCALE = 1.35f
+        /** How long hover survives losing every pointer. Covers tracking jitter. */
+        private const val HOVER_GRACE_MS = 180L
+        /** Two hands, one pinch: ignore a second UP inside this window. */
+        private const val SELECT_DEBOUNCE_MS = 350L
         /** The shell sits at and below eye level; the forward arc stays clear. */
         const val EYE_DROP = -0.30f
     }
