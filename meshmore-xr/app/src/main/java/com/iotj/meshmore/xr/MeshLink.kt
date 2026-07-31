@@ -168,14 +168,33 @@ class MeshLink(private val context: Context) {
             .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
             .build()
 
+        // CHOOSE, DO NOT RACE. A mesh is by definition a place where several
+        // MeshCore radios are in range, and this used to take whatever answered
+        // FIRST. With a neighbour's node nearer than the user's own, that meant
+        // grabbing a stranger, offering it our PIN, and failing the bond --
+        // "bond 11 -> 10" and then silence -- while the user's own paired radio
+        // sat a metre away untouched.
+        //
+        // So: collect for a short settle window, then rank. A radio we are
+        // already BONDED to wins outright, because a bond is the user having
+        // already said "this one is mine". Among strangers, take the strongest
+        // signal: the user's radio is the one on their person, and arrival order
+        // is not a property of anything we care about.
+        //
+        // The ranking happens over SCAN RESULTS rather than over the adapter's
+        // bond list, deliberately. Going straight to a bonded address without
+        // scanning connects to a radio that is switched off just as happily as
+        // to one that is on, and then waits forever -- which is exactly how this
+        // looked before: "already bonded, connecting", and no state change ever.
+        // A device in the scan results is a device that is actually there.
+        val seen = LinkedHashMap<String, ScanResult>()
         val cb = object : ScanCallback() {
             override fun onScanResult(callbackType: Int, result: ScanResult) {
                 val name = try { result.device.name } catch (_: SecurityException) { null } ?: return
                 if (!name.startsWith(namePrefix, ignoreCase = true)) return
-                Log.i(TAG, "[link] found '$name' rssi=${result.rssi}")
-                scanner.stopScan(this)
-                _status.value = _status.value.copy(scanning = false, deviceName = name, lastEvent = "found $name")
-                bondThenOpen(result.device, pin)
+                if (seen.put(result.device.address, result) == null) {
+                    Log.i(TAG, "[link] found '$name' rssi=${result.rssi}")
+                }
             }
 
             override fun onScanFailed(errorCode: Int) {
@@ -185,7 +204,29 @@ class MeshLink(private val context: Context) {
         }
         scanner.startScan(emptyList(), settings, cb)
 
-        // Bounded: park with a clear state rather than scanning forever.
+        // Settle, then choose. Also bounded: park with a clear state rather than
+        // scanning forever.
+        Handler(Looper.getMainLooper()).postDelayed({
+            if (!_status.value.scanning) return@postDelayed
+            scanner.stopScan(cb)
+            // Bonded first, then signal. compareBy is ascending, so maxByOrNull
+            // over (isBonded, rssi) picks a bonded radio if there is one and the
+            // loudest stranger otherwise.
+            val best = seen.values.maxWithOrNull(
+                compareBy<ScanResult>({ if (it.device.bondState == BluetoothDevice.BOND_BONDED) 1 else 0 }, { it.rssi })
+            )
+            if (best == null) {
+                Log.w(TAG, "[link] scan timeout — no radio named '$namePrefix*'")
+                _status.value = _status.value.copy(scanning = false, error = "no radio found", lastEvent = "timeout")
+                return@postDelayed
+            }
+            val name = runCatching { best.device.name }.getOrNull() ?: best.device.address
+            val why = if (best.device.bondState == BluetoothDevice.BOND_BONDED) "bonded" else "strongest"
+            Log.i(TAG, "[link] ${seen.size} candidate(s) — $why '$name' rssi=${best.rssi}")
+            _status.value = _status.value.copy(scanning = false, deviceName = name, lastEvent = "found $name")
+            bondThenOpen(best.device, pin)
+        }, SCAN_SETTLE_MS)
+
         Handler(Looper.getMainLooper()).postDelayed({
             if (_status.value.scanning) {
                 scanner.stopScan(cb)
@@ -403,6 +444,12 @@ class MeshLink(private val context: Context) {
         private const val TAG = "MeshmoreXR"
         private const val APP_NAME = "MeshmoreXR"
         private const val SCAN_TIMEOUT_MS = 12_000L
+        /**
+         * How long to collect advertisers before choosing the strongest. Long
+         * enough that a second radio gets a chance to be heard, short enough
+         * that a lone radio still connects in well under a second of felt delay.
+         */
+        private const val SCAN_SETTLE_MS = 1_500L
         /**
          * NOT a constant in practice. MyMesh.cpp:932 does:
          *     if (has_display && BLE_PIN_CODE == 123456)

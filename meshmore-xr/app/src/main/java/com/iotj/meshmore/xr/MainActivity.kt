@@ -52,6 +52,7 @@ import androidx.xr.compose.subspace.layout.SubspaceModifier
 import androidx.xr.compose.subspace.layout.height
 import androidx.xr.compose.subspace.layout.width
 import com.iotj.meshmore.xr.spatial.Boot
+import com.iotj.meshmore.xr.spatial.Glyphs
 import com.iotj.meshmore.xr.spatial.Horizon
 import com.iotj.meshmore.xr.spatial.Hud
 import com.iotj.meshmore.xr.spatial.MeshNodes
@@ -512,8 +513,17 @@ private fun HorizonScene(link: MeshLink) {
                 if (statusTick > 1f) {
                     statusTick = 0f
                     val st = link.status.value
-                    val batt = load.batteryMv?.takeIf { it > 0 }
-                        ?.let { " %.1fV".format(it / 1000f) } ?: ""
+                    // THREE STATES, NOT TWO. Silence used to cover both "the
+                    // radio never answered the battery query" and "it answered
+                    // 0 mV", which are different facts: the first is a link we
+                    // should look at, the second is a mains-powered node working
+                    // perfectly. 0 mV now draws the external-power bolt.
+                    val mv = load.batteryMv
+                    val batt = when {
+                        mv == null -> ""
+                        mv <= 0 -> " ${Glyphs.BOLT}"
+                        else -> " %.1fV".format(mv / 1000f)
+                    }
                     hudRef.value?.setStatus(
                         "%s%s  %d/%d".format(
                             if (st.state == SessionState.READY) "LINK" else st.state.name.take(4),

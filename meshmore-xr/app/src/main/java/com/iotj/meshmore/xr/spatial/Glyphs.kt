@@ -22,6 +22,9 @@ package com.iotj.meshmore.xr.spatial
  */
 object Glyphs {
 
+    /** External-power mark. See the FONT entry for what it does and does not claim. */
+    const val BOLT = '⚡'
+
     /** Segments as (x0,y0,x1,y1) on a 0..4 x 0..6 grid. */
     private val FONT: Map<Char, FloatArray> = buildMap {
         put('A', floatArrayOf(0f,0f, 0f,4f,  0f,4f, 2f,6f,  2f,6f, 4f,4f,  4f,4f, 4f,0f,  0f,3f, 4f,3f))
@@ -76,6 +79,13 @@ object Glyphs {
         put(')', floatArrayOf(1f,6f, 3f,4f,  3f,4f, 3f,2f,  3f,2f, 1f,0f))
         put('=', floatArrayOf(0f,2f, 4f,2f,  0f,4f, 4f,4f))
         put(' ', floatArrayOf())
+        // EXTERNAL POWER. Drawn when the radio answers the battery query with
+        // 0 mV -- which is what a mains/USB node without a fuel gauge reports
+        // (the C6L does exactly this). It says "this node is not running down a
+        // cell", NOT "this cell is at N% and climbing": we have no charge rate
+        // and must not draw one. A blank here would be worse -- indistinguishable
+        // from "the radio never answered", which is a different fault.
+        put(BOLT, floatArrayOf(2.9f,6f, 0.7f,2.8f,  0.7f,2.8f, 2.0f,2.8f,  2.0f,2.8f, 1.1f,0f))
         // TOFU — the honest "a real letter goes here and we cannot draw it" box.
         // An empty cell would silently merge two different names into one label.
         put(Callsign.TOFU, floatArrayOf(
