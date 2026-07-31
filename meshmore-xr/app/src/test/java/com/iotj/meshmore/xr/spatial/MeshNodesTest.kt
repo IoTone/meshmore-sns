@@ -145,12 +145,61 @@ class MeshNodesTest {
 
     /** Lanes must alternate so the ring stays centred on eye level. */
     @Test fun lanesAlternateAboutZero() {
-        assertEquals(0f, MeshNodes.laneElev(0), 0f)
-        assertTrue(MeshNodes.laneElev(1) > 0f)
-        assertTrue(MeshNodes.laneElev(2) < 0f)
-        assertTrue(MeshNodes.laneElev(3) > MeshNodes.laneElev(1))
-        assertTrue(MeshNodes.laneElev(4) < MeshNodes.laneElev(2))
-        assertTrue(MeshNodes.laneElev(99) in -1f..1f)
+        assertEquals(0, MeshNodes.laneRing(0))
+        assertTrue(MeshNodes.laneRing(1) > 0)
+        assertTrue(MeshNodes.laneRing(2) < 0)
+        assertTrue(MeshNodes.laneRing(3) > MeshNodes.laneRing(1))
+        assertTrue(MeshNodes.laneRing(4) < MeshNodes.laneRing(2))
+    }
+
+    /**
+     * The live-mesh bug: a cluster needing eight lanes had lane 7 clamped onto
+     * lane 5, putting "North Everett" and "Esterra Solar" back on one line.
+     * Every occupied lane must end up at its own height.
+     */
+    @Test fun aDenseClusterGivesEveryNodeItsOwnHeight() {
+        val cluster = listOf(
+            named("Vault 112 Overseer", 4.0), named("Alaska Junction SE", 7.2),
+            named("Entropy Temple", 7.3), named("Brier_Hill_Solar", 8.2),
+            named("Woofy Repeater", 8.4), named("North Everett", 8.6),
+            named("W7MIR Repeater", 10.1), named("Esterra Solar", 11.3),
+        )
+        val out = MeshNodes.deOcclude(cluster)
+        assertEquals("every node needs a distinct height",
+            cluster.size, out.map { it.elev }.toSet().size)
+        assertTrue("must stay inside the shell", out.all { it.elev in -1f..1f })
+    }
+
+    /** Bearings wrap: 359 and 4 are five degrees apart, not 355. */
+    @Test fun angularGapWrapsAroundNorth() {
+        assertEquals(
+            Math.toRadians(5.0).toFloat(),
+            MeshNodes.angularGap(Math.toRadians(359.0).toFloat(), Math.toRadians(4.0).toFloat()),
+            1e-4f,
+        )
+    }
+
+    /**
+     * The seam case: sorting by bearing separates 352 deg from 4 deg by the
+     * whole list, so a lane's most-recent occupant is never its wrap neighbour.
+     * Nodes in between must not let the two ends collide.
+     */
+    @Test fun theRingSeamIsCheckedNotJustTheLastEntry() {
+        val out = MeshNodes.deOcclude(listOf(
+            named("GM-EXT88 Repeater", 352.6),
+            named("Cedar Hills", 267.5),
+            named("Vault 112 Overseer", 4.0),
+        ))
+        val ext = out.first { it.name.startsWith("GM-EXT88") }
+        val vault = out.first { it.name.startsWith("Vault") }
+        assertTrue("wrap neighbours must not share a height", ext.elev != vault.elev)
+    }
+
+    @Test fun nodesEitherSideOfNorthDoNotShareALane() {
+        val out = MeshNodes.deOcclude(
+            listOf(named("GM-EXT88 Repeater", 356.0), named("Vault 112 Overseer", 4.0)),
+        )
+        assertEquals(2, out.map { it.elev }.toSet().size)
     }
 
     @Test fun buildCapsTheRingAndReportsWhatItDropped() {

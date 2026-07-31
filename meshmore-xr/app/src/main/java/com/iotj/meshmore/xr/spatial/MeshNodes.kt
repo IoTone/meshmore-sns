@@ -151,22 +151,71 @@ object MeshNodes {
         // "NORTH EVERETT" sit in different lanes and still overlap — which is
         // exactly what happened on the first live mesh. Two nodes may share a
         // lane only when their labels do not touch.
-        val lanes = ArrayList<Pair<Float, Float>>()   // last bearing, its half-width
+        // Each lane remembers its FIRST and LAST occupant, not just the last.
+        // Sorting by bearing puts the ring's seam at the ends of the list, so a
+        // node at 359 deg is processed far away from its true neighbour at 4
+        // deg and the lane's "last" entry is never the one it actually abuts.
+        // That left GM-EXT88 (352.6) sharing a lane with Vault 112 (4.0) and
+        // their labels printed straight through each other. Checking both ends
+        // closes the seam.
+        class Lane(var firstB: Float, var firstH: Float, var lastB: Float, var lastH: Float)
+        val lanes = ArrayList<Lane>()
         val byBearing = nodes.sortedBy { it.bearingRad }
-        val out = HashMap<Horizon.Node, Float>()
+        val laneOf = HashMap<Horizon.Node, Int>()
         byBearing.forEach { n ->
-            if (n.altM != null || !n.located) { out[n] = n.elev; return@forEach }
+            if (n.altM != null || !n.located) return@forEach
             val half = labelHalfWidthRad(n.name)
             var lane = 0
             while (lane < lanes.size) {
-                val (prevBearing, prevHalf) = lanes[lane]
-                if (abs(n.bearingRad - prevBearing) >= half + prevHalf + LABEL_GAP_RAD) break
+                val l = lanes[lane]
+                val clearsLast = angularGap(n.bearingRad, l.lastB) >= half + l.lastH + LABEL_GAP_RAD
+                val clearsFirst = angularGap(n.bearingRad, l.firstB) >= half + l.firstH + LABEL_GAP_RAD
+                if (clearsLast && clearsFirst) break
                 lane++
             }
-            if (lane == lanes.size) lanes.add(n.bearingRad to half) else lanes[lane] = n.bearingRad to half
-            out[n] = laneElev(lane)
+            if (lane == lanes.size) {
+                lanes.add(Lane(n.bearingRad, half, n.bearingRad, half))
+            } else {
+                lanes[lane].lastB = n.bearingRad
+                lanes[lane].lastH = half
+            }
+            laneOf[n] = lane
+        }
+
+        // SECOND PASS: spread the lanes actually used across the full vertical
+        // span. A fixed step per lane clamped to +/-1 does not overflow, it
+        // COLLAPSES -- lane 7 lands on top of lane 5 and the two nodes are
+        // right back on the same line, which is precisely what happened to
+        // "North Everett" and "Esterra Solar" on the live mesh. Normalising by
+        // the outermost ring in use means every lane is distinct by
+        // construction, and a sparse ring stays tight rather than being spread
+        // out for no reason.
+        val maxRing = laneOf.values.maxOfOrNull { abs(laneRing(it)) } ?: 0
+        val out = HashMap<Horizon.Node, Float>()
+        laneOf.forEach { (n, lane) ->
+            out[n] = if (maxRing == 0) 0f else laneRing(lane).toFloat() / maxRing
         }
         return nodes.map { it.copy(elev = out[it] ?: it.elev) }
+    }
+
+    /**
+     * Smallest angle between two bearings, in radians.
+     *
+     * Bearings wrap, so a plain subtraction makes 359 deg and 4 deg look 355
+     * apart when they are 5 -- two nodes either side of north would be treated
+     * as opposite ends of the ring and allowed to share a lane.
+     */
+    fun angularGap(a: Float, b: Float): Float {
+        val twoPi = (2.0 * Math.PI).toFloat()
+        val d = abs(a - b) % twoPi
+        return if (d > twoPi / 2f) twoPi - d else d
+    }
+
+    /** Signed ring for a lane index: 0, +1, -1, +2, -2 … centred on eye level. */
+    fun laneRing(lane: Int): Int {
+        if (lane == 0) return 0
+        val step = (lane + 1) / 2
+        return if (lane % 2 == 1) step else -step
     }
 
     /**
@@ -179,14 +228,6 @@ object MeshNodes {
      */
     fun labelHalfWidthRad(name: String): Float =
         (name.codePointCount(0, name.length) * CELL_RAD) / 2f
-
-    /** 0, +1, -1, +2, -2 … so the ring stays centred on eye level. */
-    fun laneElev(lane: Int): Float {
-        if (lane == 0) return 0f
-        val step = (lane + 1) / 2
-        val sign = if (lane % 2 == 1) 1 else -1
-        return (sign * step * LANE_STEP).coerceIn(-1f, 1f)
-    }
 
     /**
      * WHICH NODES GET A MOTE.
@@ -243,6 +284,5 @@ object MeshNodes {
     const val CELL_RAD = 0.0212f
     /** Breathing room between two labels sharing a lane. ~3 degrees. */
     const val LABEL_GAP_RAD = 0.05f
-    /** Vertical step per lane, as a fraction of the shell's vertical span. */
-    const val LANE_STEP = 0.34f
+
 }
