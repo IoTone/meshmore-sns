@@ -114,6 +114,23 @@ class MeshNodesTest {
         assertTrue(out.all { it.elev == 0f })
     }
 
+    /** The live-mesh failure: different lanes, still overlapping labels. */
+    @Test fun longLabelsNeedMoreSeparationThanShortOnes() {
+        val short = MeshNodes.deOcclude(listOf(named("AB", 0.0), named("CD", 14.0)))
+        assertTrue("short labels 14 deg apart should share a lane",
+            short.all { it.elev == 0f })
+        val long = MeshNodes.deOcclude(
+            listOf(named("ESTACADA SOLAR", 0.0), named("NORTH EVERETT", 14.0)),
+        )
+        assertEquals("14-glyph labels 14 deg apart must not share a lane",
+            2, long.map { it.elev }.toSet().size)
+    }
+
+    private fun named(name: String, bearingDeg: Double) = Horizon.Node(
+        name = name, bearingRad = Math.toRadians(bearingDeg).toFloat(),
+        elev = 0f, dist = 0.5f, age = 0f, located = true, hops = 1,
+    )
+
     /** The whole point: a lane offset must never masquerade as altitude. */
     @Test fun nodesWithRealAltitudeAreNeverMoved() {
         val withAlt = node(10.0, alt = 412.0)

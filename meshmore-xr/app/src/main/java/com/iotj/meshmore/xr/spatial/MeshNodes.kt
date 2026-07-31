@@ -145,18 +145,40 @@ object MeshNodes {
      * centred on eye level rather than drifting upward.
      */
     fun deOcclude(nodes: List<Horizon.Node>): List<Horizon.Node> {
-        val lanes = ArrayList<Float>()          // last bearing placed in each lane
+        // Separation is driven by the LABEL, not by a constant. The mote is
+        // ~1.6 degrees wide but its callsign is ten times that, so a fixed
+        // angular gap tuned to the dot lets "ESTACADA SOLAR" and
+        // "NORTH EVERETT" sit in different lanes and still overlap — which is
+        // exactly what happened on the first live mesh. Two nodes may share a
+        // lane only when their labels do not touch.
+        val lanes = ArrayList<Pair<Float, Float>>()   // last bearing, its half-width
         val byBearing = nodes.sortedBy { it.bearingRad }
         val out = HashMap<Horizon.Node, Float>()
         byBearing.forEach { n ->
             if (n.altM != null || !n.located) { out[n] = n.elev; return@forEach }
+            val half = labelHalfWidthRad(n.name)
             var lane = 0
-            while (lane < lanes.size && abs(n.bearingRad - lanes[lane]) < MIN_SEP_RAD) lane++
-            if (lane == lanes.size) lanes.add(n.bearingRad) else lanes[lane] = n.bearingRad
+            while (lane < lanes.size) {
+                val (prevBearing, prevHalf) = lanes[lane]
+                if (abs(n.bearingRad - prevBearing) >= half + prevHalf + LABEL_GAP_RAD) break
+                lane++
+            }
+            if (lane == lanes.size) lanes.add(n.bearingRad to half) else lanes[lane] = n.bearingRad to half
             out[n] = laneElev(lane)
         }
         return nodes.map { it.copy(elev = out[it] ?: it.elev) }
     }
+
+    /**
+     * Half the angular width of a callsign, in radians.
+     *
+     * Labels are sized by VISUAL ANGLE, so this is independent of how far the
+     * node is: cap height is a fixed fraction of range, which makes each glyph
+     * cell a fixed angle. That is the whole point of the angular discipline —
+     * the separation rule needs no distance term.
+     */
+    fun labelHalfWidthRad(name: String): Float =
+        (name.codePointCount(0, name.length) * CELL_RAD) / 2f
 
     /** 0, +1, -1, +2, -2 … so the ring stays centred on eye level. */
     fun laneElev(lane: Int): Float {
@@ -214,8 +236,13 @@ object MeshNodes {
      * is one every 15 degrees, which leaves room for a callsign beside each.
      */
     const val MAX_MOTES = 24
-    /** Bearings closer than this share a lane and must be separated. */
-    const val MIN_SEP_RAD = 0.20f        // ~11.5 degrees
+    /**
+     * Angular width of one glyph cell: ADV/GH x the 0.0227 cap-height fraction
+     * Horizon uses. ~1.2 degrees, so a 14-glyph callsign spans ~17.
+     */
+    const val CELL_RAD = 0.0212f
+    /** Breathing room between two labels sharing a lane. ~3 degrees. */
+    const val LABEL_GAP_RAD = 0.05f
     /** Vertical step per lane, as a fraction of the shell's vertical span. */
-    const val LANE_STEP = 0.30f
+    const val LANE_STEP = 0.34f
 }
