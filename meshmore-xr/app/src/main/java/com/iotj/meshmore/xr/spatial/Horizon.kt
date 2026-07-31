@@ -39,6 +39,8 @@ class Horizon(private val session: Session, private val theme: Palette) {
         val hops: Int,
         /** Real altitude in metres from telemetry, or null when unknown. */
         val altM: Double? = null,
+        /** MeshCore advert type nibble: 0 none, 1 chat, 2 repeater, 3 room, 4 sensor. */
+        val type: Int = TYPE_NONE,
     )
 
     data class Palette(
@@ -47,14 +49,18 @@ class Horizon(private val session: Session, private val theme: Palette) {
 
     private val entities = mutableListOf<Entity>()
     private val pulses = mutableListOf<Pulse>()
-    private val labels = mutableListOf<Label>()
+    private val facing = mutableListOf<Facing>()
     private val peers = mutableListOf<Peer>()
 
     /** Selections raised on the input thread, drained by the frame loop. */
     private val selected = java.util.concurrent.ConcurrentLinkedQueue<Peer>()
 
-    /** A callsign and the point it is anchored to, for per-frame billboarding. */
-    private class Label(val entity: Entity, val at: Vector3)
+    /**
+     * Anything that must keep turning toward the viewer, and where it lives.
+     * Callsigns need it to stay readable; repeater dishes need it because a
+     * bowl seen from behind is just a lump.
+     */
+    private class Facing(val entity: Entity, val at: Vector3)
 
     /**
      * One touchable node. Everything here is built up front and then only
@@ -122,7 +128,20 @@ class Horizon(private val session: Session, private val theme: Palette) {
             val r = (range * 0.0140f).coerceAtLeast(0.010f)
             val lum = 1f - n.age * 0.72f
 
-            val moteMesh = Prims.build(session, Prims.mote(r))
+            // SILHOUETTE CARRIES TYPE. Until now every node was the same
+            // sphere and the only way to tell a repeater from a phone was that
+            // some owners happened to type "Repeater" into the name -- which
+            // is unreliable, untranslatable, and occasionally just wrong. The
+            // protocol says so authoritatively; the shape should too.
+            val isRepeater = n.type == TYPE_REPEATER
+            val moteMesh = Prims.build(
+                session,
+                // Wide and SHALLOW: depth/radius near 0.3 reads as a dish,
+                // near 0.7 reads as a cup. Wider than the mote radius so the
+                // two are distinguishable by silhouette alone at 1.5 degrees,
+                // which is the only cue the brief allows at this size.
+                if (isRepeater) Prims.dish(r * 1.65f, r * 0.5f) else Prims.mote(r),
+            )
             val moteMat = Prims.material(
                 session, if (n.located) theme.accent else theme.warn, lum.coerceIn(0.25f, 1f)
             )
@@ -130,6 +149,9 @@ class Horizon(private val session: Session, private val theme: Palette) {
                 it.parent = root
                 it.setPose(Pose(Vector3(px, py, pz)), Space.ACTIVITY)
                 entities += it
+                // A dish only reads as a dish from its open side, so it turns
+                // with the viewer exactly as the callsigns do.
+                if (isRepeater) facing += Facing(it, Vector3(px, py, pz))
             }
 
             // Hop count as an equatorial BAND -- structure you see on a sphere
@@ -166,7 +188,7 @@ class Horizon(private val session: Session, private val theme: Palette) {
                 it.parent = root
                 it.setPose(Pose(anchor), Space.ACTIVITY)
                 entities += it
-                labels += Label(it, anchor)
+                facing += Facing(it, anchor)
             }
 
             // PICTOGRAPH BADGE — the emoji we could not draw, acknowledged.
@@ -275,7 +297,10 @@ class Horizon(private val session: Session, private val theme: Palette) {
             }
 
         }
-        Log.i(TAG, "[horizon] built ${entities.size} entities for ${nodes.size} nodes")
+        Log.i(TAG, "[horizon] built ${entities.size} entities for ${nodes.size} nodes " +
+            "(${nodes.count { it.type == TYPE_REPEATER }} repeaters, " +
+            "${nodes.count { it.type == TYPE_CHAT }} chat, " +
+            "${nodes.count { it.type !in listOf(TYPE_REPEATER, TYPE_CHAT) }} other)")
     }
 
     /**
@@ -440,7 +465,7 @@ class Horizon(private val session: Session, private val theme: Palette) {
      * will pass.
      */
     fun faceViewer(head: Vector3) {
-        labels.forEach { l ->
+        facing.forEach { l ->
             val dx = head.x - l.at.x
             val dz = head.z - l.at.z
             if (dx * dx + dz * dz < 1e-6f) return@forEach
@@ -492,7 +517,7 @@ class Horizon(private val session: Session, private val theme: Palette) {
         entities.clear()
         // Labels hold the same entities; drop the references or faceViewer()
         // would keep posing disposed handles every frame after a rebuild.
-        labels.clear()
+        facing.clear()
         peers.clear()
         selected.clear()
         pulses.forEach { runCatching { it.entity.dispose() } }
@@ -503,6 +528,16 @@ class Horizon(private val session: Session, private val theme: Palette) {
         private const val TAG = "MeshmoreXR"
         /** HORIZON radius, metres. Body-locked in the design; world-fixed for P1. */
         const val R = 2.5f
+
+        // MeshCore advert types. The protocol calls the phone/glasses role
+        // CHAT while the product calls it COMPANION -- the brief is explicit
+        // that the two must not drift in code, so the protocol name stays here
+        // and the product name stays in the UI.
+        const val TYPE_NONE = 0
+        const val TYPE_CHAT = 1
+        const val TYPE_REPEATER = 2
+        const val TYPE_ROOM = 3
+        const val TYPE_SENSOR = 4
         /** Hover growth. Big enough to be unmistakable, small enough not to jump. */
         private const val HOVER_SCALE = 1.35f
         /** How long hover survives losing every pointer. Covers tracking jitter. */

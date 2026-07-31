@@ -277,6 +277,13 @@ private const val TAG_UI = "MeshmoreXR"
 private const val MIN_BOOT_S = 4.5f
 
 /**
+ * Hard ceiling on the loading surface. A live 280-contact sync takes ~16 s, so
+ * this is generous -- it exists to guarantee the experience starts, not to cut
+ * a healthy load short.
+ */
+private const val MAX_BOOT_S = 28f
+
+/**
  * The only rectangle in the app, and it does not arrive like one: a targeting
  * reticle punches in, tears, then unfolds vertically from a slit with the
  * content fading up inside it. Diagnostics earn a panel; nothing else does.
@@ -466,12 +473,21 @@ private fun HorizonScene(link: MeshLink) {
                 // BOOT SURFACE. Held for a minimum dwell even if the sync is
                 // instant: a wordmark that appears and vanishes inside a second
                 // reads as a glitch, not as a launch.
-                val loading = !load.done || boot0Elapsed < MIN_BOOT_S
+                // TIME-BOX THE WAIT. Teardown used to depend solely on the
+                // contact sync completing -- and on a reconnect to an already
+                // bonded radio the sync sometimes never starts at all. The app
+                // was then stuck on the loading surface forever while happily
+                // hearing live adverts behind it: connected, working, and
+                // apparently frozen. Whatever has arrived by MAX_BOOT_S is what
+                // we show; an incomplete horizon beats a permanent splash.
+                val loading = boot0Elapsed < MAX_BOOT_S &&
+                    (!load.done || boot0Elapsed < MIN_BOOT_S)
                 boot0Elapsed += 0.033f
                 if (loading) {
                     bootRef.value?.tick(0.033f, load.fraction, load.total > 0)
                 } else if (bootRef.value != null) {
-                    Log.i(TAG_UI, "[boot] surface down after %.1fs".format(boot0Elapsed))
+                    Log.i(TAG_UI, "[boot] surface down after %.1fs (sync %s)"
+                        .format(boot0Elapsed, if (load.done) "complete" else "TIMED OUT"))
                     bootRef.value?.clear()
                     bootRef.value = null
                 }

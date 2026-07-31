@@ -181,6 +181,61 @@ object Prims {
     }
 
     /**
+     * DISH — a repeater. A shallow paraboloid bowl: still ROUND, so it stays in
+     * the same family as the MOTE and does not steal the angular silhouettes
+     * the brief reserves for room servers, but unmistakably a different object
+     * at 1.5 degrees.
+     *
+     * The bowl opens toward +Z, matching the glyph convention, so the same
+     * billboard yaw that turns a callsign turns a dish to face the viewer.
+     * That is deliberate: we do not know a repeater's real antenna azimuth, and
+     * a dish aimed at a specific heading would be a claim about the physical
+     * world -- the same class of fabrication the brief forbids for bearing.
+     * Facing the user reads as an affordance rather than as a direction.
+     *
+     * Built with BOTH surfaces and a rim. A single-layer shell would vanish
+     * from behind wherever back faces are culled, and a repeater that
+     * disappears as you walk past it is worse than one that never had a shape.
+     */
+    fun dish(radius: Float, depth: Float, rings: Int = 5, seg: Int = 14): Facets {
+        val f = Facets()
+        fun px(i: Int, j: Int): FloatArray {
+            val t = i.toFloat() / rings
+            val rr = radius * t
+            val a = 2.0 * Math.PI * j / seg
+            return floatArrayOf(
+                (rr * cos(a)).toFloat(), (rr * sin(a)).toFloat(), depth * t * t,
+            )
+        }
+        for (i in 0 until rings) for (j in 0 until seg) {
+            val a = px(i, j); val b = px(i + 1, j)
+            val c = px(i + 1, j + 1); val d = px(i, j + 1)
+            if (i == 0) {
+                f.tri(a[0], a[1], a[2], b[0], b[1], b[2], c[0], c[1], c[2])
+                f.tri(a[0], a[1], a[2], c[0], c[1], c[2], b[0], b[1], b[2])
+            } else {
+                f.quad(a[0], a[1], a[2], b[0], b[1], b[2], c[0], c[1], c[2], d[0], d[1], d[2])
+                f.quad(a[0], a[1], a[2], d[0], d[1], d[2], c[0], c[1], c[2], b[0], b[1], b[2])
+            }
+        }
+        // Rim: a thin torus at the mouth, which is what actually carries the
+        // silhouette when the dish is seen edge-on. Sized off RADIUS, not
+        // depth -- a shallow dish has little depth to scale from, and a rim
+        // derived from it thins to nothing exactly as the bowl flattens.
+        f.addTranslated(halo(radius, radius * 0.055f, seg, 4), 0f, 0f, depth)
+
+        // FEED HORN. The thing that makes a dish read as a dish rather than as
+        // a dome: a stalk standing out of the bowl on the open side, with a
+        // button on the end. It also breaks the circular silhouette, so the
+        // shape survives being seen from behind -- which matters here because
+        // yaw-only billboarding cannot control the pitch we are viewed from.
+        val feed = depth + radius * 0.85f
+        f.addTranslated(spur(0f, 0f, depth * 0.15f, 0f, 0f, feed, radius * 0.045f), 0f, 0f, 0f)
+        f.addTranslated(mote(radius * 0.16f, 4, 6), 0f, 0f, feed)
+        return f
+    }
+
+    /**
      * HALO — a range ring. A real TORUS, never a flat annulus: an annulus is a
      * disc with a hole and collapses to a line at a grazing angle, which reads
      * as a rendering fault rather than as a ring.

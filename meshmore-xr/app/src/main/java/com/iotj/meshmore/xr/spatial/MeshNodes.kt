@@ -116,6 +116,7 @@ object MeshNodes {
                 located = located,
                 hops = p.hops.coerceAtLeast(1),
                 altM = p.altM,
+                type = p.type,
             )
         }.let { deOcclude(it) }
 
