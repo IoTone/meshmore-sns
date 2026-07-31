@@ -20,6 +20,7 @@ import androidx.core.content.ContextCompat
 import io.iotone.meshcore.android.AndroidBleTransport
 import io.iotone.meshcore.android.MeshcoreSession
 import io.iotone.meshcore.android.SessionListener
+import com.iotj.meshmore.xr.spatial.MeshNodes
 import io.iotone.meshcore.android.SessionState
 import io.iotone.meshcore.frames.AdvertFrame
 import io.iotone.meshcore.frames.ChannelMessageFrame
@@ -61,6 +62,47 @@ class MeshLink(private val context: Context) {
 
     private val _status = MutableStateFlow(Status())
     val status: StateFlow<Status> = _status.asStateFlow()
+
+    /**
+     * THE MESH ITSELF, keyed by public key.
+     *
+     * Adverts and contacts describe the same peers from two directions: an
+     * advert is what just came over the air, a contact is what the radio has
+     * persisted. Merging them into one keyed table means a node heard live and
+     * a node remembered from an hour ago are the same mote, not two.
+     *
+     * Keyed by PUBLIC KEY, never by name. Names are user-supplied, duplicated,
+     * and changed on a whim; the key is the identity. Two radios both called
+     * "node" must remain two motes.
+     */
+    private val peers = java.util.concurrent.ConcurrentHashMap<String, MeshNodes.Peer>()
+    private val _mesh = MutableStateFlow<List<MeshNodes.Peer>>(emptyList())
+    val mesh: StateFlow<List<MeshNodes.Peer>> = _mesh.asStateFlow()
+
+    /** Where the radio thinks it is; the origin every bearing is measured from. */
+    private val _here = MutableStateFlow(MeshNodes.Here(null, null))
+    val here: StateFlow<MeshNodes.Here> = _here.asStateFlow()
+
+    private fun publish() { _mesh.value = peers.values.sortedBy { it.name } }
+
+    private fun hex(b: ByteArray?): String =
+        b?.take(6)?.joinToString("") { "%02x".format(it) } ?: ""
+
+    private fun upsert(p: MeshNodes.Peer) {
+        // Merge rather than replace: an advert carries a position and a name, a
+        // contact also carries the hop count. Whichever arrives second must not
+        // erase what the first one knew.
+        peers.compute(p.key) { _, old ->
+            if (old == null) p else p.copy(
+                name = p.name.ifBlank { old.name },
+                lat = p.lat ?: old.lat,
+                lon = p.lon ?: old.lon,
+                hops = if (p.hops > 0) p.hops else old.hops,
+                lastSeenEpochSec = maxOf(p.lastSeenEpochSec, old.lastSeenEpochSec),
+            )
+        }
+        publish()
+    }
 
     private var transport: AndroidBleTransport? = null
     private var session: MeshcoreSession? = null
@@ -212,13 +254,46 @@ class MeshLink(private val context: Context) {
                         "bw=${selfInfo.bandwidthKhz()} cr=${selfInfo.codingRate()} " +
                         "tx=${selfInfo.txPowerDbm()}dBm advType=${selfInfo.advType()}")
                 _status.value = _status.value.copy(selfInfo = selfInfo, lastEvent = "READY")
+                _here.value = MeshNodes.Here(selfInfo.latitude(), selfInfo.longitude())
+                Log.i(TAG, "[link] here = ${selfInfo.latitude()}, ${selfInfo.longitude()} " +
+                    "(fix=${_here.value.known})")
             }
 
             override fun onAdvert(frame: AdvertFrame) {
+                val a = frame.advert()
+                Log.i(TAG, "[link] advert '${a.name()}' type=${a.type()} " +
+                    "lat=${a.latitude()} lon=${a.longitude()}")
+                upsert(
+                    MeshNodes.Peer(
+                        key = hex(a.publicKey()),
+                        name = a.name() ?: "",
+                        type = a.type(),
+                        // An advert carries no path, so hop count stays unknown
+                        // until a contact for the same key fills it in.
+                        hops = 0,
+                        lat = a.latitude(),
+                        lon = a.longitude(),
+                        lastSeenEpochSec = a.timestamp(),
+                    )
+                )
                 _status.value = _status.value.let { it.copy(adverts = it.adverts + 1, lastEvent = "advert") }
             }
 
             override fun onContact(frame: ContactFrame) {
+                val c = frame.contact()
+                upsert(
+                    MeshNodes.Peer(
+                        key = hex(c.publicKey()),
+                        name = c.name() ?: "",
+                        type = c.type(),
+                        // outPathLen is the number of relays in the stored path,
+                        // so hops to us is that plus our own final leg.
+                        hops = c.outPathLen() + 1,
+                        lat = c.latitude(),
+                        lon = c.longitude(),
+                        lastSeenEpochSec = c.lastAdvertTimestamp(),
+                    )
+                )
                 _status.value = _status.value.let { it.copy(contacts = it.contacts + 1, lastEvent = "contact") }
             }
 

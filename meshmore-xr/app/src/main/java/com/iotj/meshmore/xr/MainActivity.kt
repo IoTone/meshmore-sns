@@ -52,6 +52,7 @@ import androidx.xr.compose.subspace.layout.SubspaceModifier
 import androidx.xr.compose.subspace.layout.height
 import androidx.xr.compose.subspace.layout.width
 import com.iotj.meshmore.xr.spatial.Horizon
+import com.iotj.meshmore.xr.spatial.MeshNodes
 import com.iotj.meshmore.xr.spatial.Stage
 import com.iotj.meshmore.xr.spatial.Unfold
 import androidx.compose.foundation.layout.Box
@@ -97,6 +98,8 @@ class MainActivity : ComponentActivity() {
         const val TAG = "MeshmoreXR"
         /** Set by the launch intent; read by HorizonScene. */
         var selfTest: Boolean = false
+        /** --ez sim true : draw the fake ring instead of the radio's mesh. */
+        var simulate: Boolean = false
     }
 
     // One link per activity. Checkpoint 3 lives here.
@@ -122,6 +125,8 @@ class MainActivity : ComponentActivity() {
         Log.i(TAG, "[boot] debug surface = $debug")
         selfTest = intent?.getBooleanExtra("selftest", false) ?: false
         Log.i(TAG, "[boot] selftest = $selfTest")
+        simulate = intent?.getBooleanExtra("sim", false) ?: false
+        Log.i(TAG, "[boot] simulate = $simulate")
         setContent { MaterialTheme { Root(facts, link, pin, debug) } }
         Log.i(TAG, "[boot] setContent done")
     }
@@ -187,15 +192,36 @@ private fun Root(facts: List<Pair<String, String>>, link: MeshLink, pinOverride:
     // loop on a failed scan would burn the radio and the battery. Reconnect
     // with backoff is a later concern (S2 LINK).
     var linkTried by remember { mutableStateOf(false) }
-    LaunchedEffect(Unit) {
-        if (linkTried) return@LaunchedEffect
+
+    fun dial() {
+        if (linkTried) return
         linkTried = true
-        if (link.hasBlePermissions()) {
-            Log.i(TAG_UI, "[link] auto-connect at startup")
-            if (pinOverride != null) link.connect(pin = pinOverride) else link.connect()
-        } else {
-            Log.i(TAG_UI, "[link] no BLE permission at startup — waiting for user")
-        }
+        Log.i(TAG_UI, "[link] auto-connect at startup")
+        if (pinOverride != null) link.connect(pin = pinOverride) else link.connect()
+    }
+
+    // THE REASON THE LINK NEVER CONNECTED. The app logged "no BLE permission --
+    // waiting for user" and then waited forever, because nothing ever asked.
+    // BLUETOOTH_SCAN and BLUETOOTH_CONNECT are runtime permissions on API 31+,
+    // and the grant dialog is the system's own. That makes it the sanctioned
+    // tier-P escape hatch (typography plan §2): a system surface we do not own,
+    // shown once, rather than a panel of ours.
+    val askBle = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions(),
+    ) { granted ->
+        val ok = granted.values.all { it }
+        Log.i(TAG_UI, "[link] BLE permission granted=$ok $granted")
+        if (ok) dial() else Log.w(TAG_UI, "[link] BLE denied — mesh will stay empty")
+    }
+
+    LaunchedEffect(Unit) {
+        if (link.hasBlePermissions()) dial()
+        else askBle.launch(
+            arrayOf(
+                android.Manifest.permission.BLUETOOTH_SCAN,
+                android.Manifest.permission.BLUETOOTH_CONNECT,
+            )
+        )
     }
 
     if (spatial) {
@@ -207,7 +233,7 @@ private fun Root(facts: List<Pair<String, String>>, link: MeshLink, pinOverride:
         //     adb shell am start -n .../.MainActivity --ez debug true
         // Launching into a panel is what makes an XR app feel like a phone app
         // that happens to be floating.
-        HorizonScene()
+        HorizonScene(link)
         if (debug) {
             Subspace {
                 SpatialPanel(SubspaceModifier.width(560.dp).height(420.dp)) {
@@ -267,9 +293,67 @@ private fun DiagnosticSurface(content: @Composable () -> Unit) {
  * Faking a bearing for an unlocated node is explicitly forbidden by the brief,
  * so those park in the unlocated arc instead. Real bearings arrive with S3.
  */
+/**
+ * The fake ring. No longer the default -- it exists so the rendering, the
+ * label pipeline and the interaction can be exercised with no radio present,
+ * which is most of the time. The names deliberately include the shapes real
+ * MeshCore names take: emoji, fullwidth Latin, accents, kana, and a name that
+ * is nothing but emoji.
+ */
+private fun simulatedMesh(): List<Horizon.Node> {
+    val names = listOf(
+        "kanako.1", "davi1 \uD83D\uDE80", "relay-nw", "t1000-e", "gate-cam",
+        "\uD83D\uDC22 turtle relay", "\uFF2F\uFF2B\uFF41\uFF59", "shed",
+        "\u00D6konomy", "\u3042\u304D\u306F\u3070\u3089", "\uD83C\uDF0A\uD83C\uDF0A",
+    )
+    return names.mapIndexed { i, nm ->
+        Horizon.Node(
+            name = nm,
+            bearingRad = (i.toFloat() / names.size * 2f * PI.toFloat()) + (i % 3) * 0.22f,
+            elev = kotlin.math.sin(i * 2.1f) * 0.34f,
+            dist = 0.28f + ((i * 37) % 100) / 140f,
+            age = ((i * 53) % 100) / 100f,
+            located = !nm.startsWith("shed"),
+            hops = 1 + (i % 3),
+        )
+    }
+}
+
 @Composable
-private fun HorizonScene() {
+private fun HorizonScene(link: MeshLink) {
     val session = LocalSession.current ?: return
+
+    // LIVE MESH. The horizon is whatever the radio can actually see; the
+    // simulated ring is now opt-in (--ez sim true) and exists only so the
+    // rendering can be exercised with no hardware present.
+    val mesh by link.mesh.collectAsState()
+    val here by link.here.collectAsState()
+
+    // Rebuild on MEMBERSHIP change, not on every frame the radio speaks. An
+    // advert arrives with a fresh timestamp several times a minute per node,
+    // and rebuilding the horizon on each one would dispose and re-create every
+    // entity -- destroying hover state and the user's open selections while
+    // they are looking at them.
+    val signature = remember(mesh) { mesh.joinToString(",") { "${it.key}:${it.lat != null}" } }
+
+    val horizonRef = remember { mutableStateOf<Horizon?>(null) }
+    val stageRef = remember { mutableStateOf<Stage?>(null) }
+    val originRef = remember { mutableStateOf<Stage.Origin?>(null) }
+    val nodesRef = remember { mutableStateOf<List<Horizon.Node>>(emptyList()) }
+
+    // The mesh, rebuilt whenever membership changes.
+    LaunchedEffect(signature, here, horizonRef.value) {
+        val h = horizonRef.value ?: return@LaunchedEffect
+        val st = stageRef.value ?: return@LaunchedEffect
+        val o = originRef.value ?: return@LaunchedEffect
+        val nodes = if (MainActivity.simulate) simulatedMesh() else
+            MeshNodes.build(here, mesh, System.currentTimeMillis() / 1000)
+        Log.i(TAG_UI, "[horizon] building ${nodes.size} nodes " +
+            "(${if (MainActivity.simulate) "SIMULATED" else "live"}, " +
+            "fix=${here.known}, located=${nodes.count { it.located }})")
+        nodesRef.value = nodes
+        h.build(nodes, o, st.floorHeight())
+    }
 
     LaunchedEffect(session) {
         // THE PANEL YOU CANNOT SEE IN CODE. Entering Full Space does not remove
@@ -293,31 +377,17 @@ private fun HorizonScene() {
         // Deliberately includes the shapes real MeshCore names take: emoji,
         // fullwidth Latin, accents, kana, and a name that is nothing BUT emoji.
         // If any of these can break the label path, better it breaks here.
-        val names = listOf(
-            "kanako.1", "davi1 \uD83D\uDE80", "relay-nw", "t1000-e", "gate-cam",
-            "\uD83D\uDC22 turtle relay", "\uFF2F\uFF2B\uFF41\uFF59", "shed",
-            "\u00D6konomy", "\u3042\u304D\u306F\u3070\u3089", "\uD83C\uDF0A\uD83C\uDF0A",
-        )
-        val nodes = names.mapIndexed { i, nm ->
-            Horizon.Node(
-                name = nm,
-                bearingRad = (i.toFloat() / names.size * 2f * PI.toFloat()) + (i % 3) * 0.22f,
-                elev = kotlin.math.sin(i * 2.1f) * 0.34f,
-                dist = 0.28f + ((i * 37) % 100) / 140f,
-                age = ((i * 53) % 100) / 100f,
-                located = !nm.startsWith("shed"),
-                hops = 1 + (i % 3),
-            )
-        }
-        Log.i(TAG_UI, "[horizon] building ${nodes.size} nodes")
         // Floor first: the room claims itself, then the mesh arrives on top.
         stage.buildFloor(origin)
-        horizon.build(nodes, origin, stage.floorHeight())
+        stageRef.value = stage
+        originRef.value = origin
+        horizonRef.value = horizon
 
         // Frame loop: pulses decay, and a packet lands every so often so the
         // mesh visibly breathes. ~30 Hz is plenty for this motion.
         var since = 0f
         var fall = 0f
+        var lastAdverts = -1
         try {
             if (MainActivity.selfTest) launch { horizon.selfTest(origin) }
             var panelWarned = false
@@ -346,11 +416,27 @@ private fun HorizonScene() {
                 stage.headNow()?.let { horizon.faceViewer(it.translation) }
                 horizon.drainSelections(origin)
                 horizon.tick(0.033f)
+                // PULSE ON A REAL PACKET. The brief defines a pulse as a packet
+                // event, and until now it fired on a 1.4 s timer over invented
+                // nodes -- a screensaver pretending to be telemetry. It now
+                // tracks the advert counter, so a ring on the horizon means the
+                // radio genuinely heard something, and a quiet mesh looks quiet.
+                val adverts = link.status.value.adverts
+                if (adverts != lastAdverts) {
+                    lastAdverts = adverts
+                    val live = nodesRef.value.filter { it.located }
+                    if (live.isNotEmpty()) {
+                        val n = live.random(Random)
+                        horizon.pulse(n.bearingRad, n.dist, origin)
+                    }
+                }
                 since += 0.033f
-                if (since > 1.4f) {
+                if (MainActivity.simulate && since > 1.4f) {
                     since = 0f
-                    val n = nodes.filter { it.located }.random(Random)
-                    horizon.pulse(n.bearingRad, n.dist, origin)
+                    nodesRef.value.filter { it.located }.takeIf { it.isNotEmpty() }?.let {
+                        val n = it.random(Random)
+                        horizon.pulse(n.bearingRad, n.dist, origin)
+                    }
                 }
             }
         } finally {
