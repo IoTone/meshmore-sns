@@ -685,7 +685,21 @@ public final class MeshcoreFrameCodec {
                     byte[] payload = c.atEnd()
                             ? new byte[0]
                             : c.bytes(c.remaining(), "advert.payload");
-                    return new AdvertFrame(Advert.parse(payload));
+                    // Firmware in the field pushes only the 32-byte public key
+                    // here, not a signed advert record. Parsing that as a
+                    // record fails on the timestamp and drops the push, so
+                    // every over-the-air advert is lost. Short payloads decode
+                    // to a BARE advert instead: which node was heard, and
+                    // nothing it cannot honestly claim.
+                    if (payload.length >= Advert.MIN_FULL_SIZE) {
+                        return new AdvertFrame(Advert.parse(payload));
+                    }
+                    if (payload.length >= MeshcoreConstants.PUB_KEY_SIZE) {
+                        return new AdvertFrame(Advert.bare(
+                                java.util.Arrays.copyOf(
+                                        payload, MeshcoreConstants.PUB_KEY_SIZE)));
+                    }
+                    return new AdvertFrame(Advert.bare(payload));
                 }
                 case 0x82: { // PUSH_CODE_ACK
                     // Delivery ACK for a direct message: a 4-byte CRC tag

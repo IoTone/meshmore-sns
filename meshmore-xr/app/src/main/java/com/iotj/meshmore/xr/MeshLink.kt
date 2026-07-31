@@ -299,6 +299,24 @@ class MeshLink(private val context: Context) {
 
             override fun onAdvert(frame: AdvertFrame) {
                 val a = frame.advert()
+                // A BARE advert is a public key and nothing else: "this node
+                // was just heard". It must refresh liveness WITHOUT touching
+                // name or position -- writing its empty name over a contact's
+                // real one would blank the callsign of every node that speaks.
+                if (a.isBare) {
+                    val k = hex(a.publicKey())
+                    val now = System.currentTimeMillis() / 1000
+                    val known = peers[k]
+                    if (known != null) {
+                        peers[k] = known.copy(lastSeenEpochSec = now)
+                        publish()
+                    }
+                    Log.i(TAG, "[link] heard $k${if (known == null) " (unknown)" else " ${known.name}"}")
+                    _status.value = _status.value.let {
+                        it.copy(adverts = it.adverts + 1, lastEvent = "heard")
+                    }
+                    return
+                }
                 Log.i(TAG, "[link] advert '${a.name()}' type=${a.type()} " +
                     "lat=${a.latitude()} lon=${a.longitude()}")
                 upsert(

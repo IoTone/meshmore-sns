@@ -80,6 +80,38 @@ public record Advert(
      * @throws FrameTruncatedException on a short/garbled payload; the
      *         callers turn that into a typed failure / {@code null}
      */
+    /**
+     * Minimum bytes a full advert record needs: public key + timestamp +
+     * signature. Anything shorter is a bare notification, not a record.
+     */
+    public static final int MIN_FULL_SIZE =
+            MeshcoreConstants.PUB_KEY_SIZE + 4 + MeshcoreConstants.SIGNATURE_SIZE;
+
+    /**
+     * A public key and nothing else — "this node was just heard".
+     *
+     * {@code PUSH_CODE_ADVERTISEMENT} (0x80) does not always carry a signed
+     * advert record. Firmware in the field pushes only the 32-byte public key
+     * of the node it heard, leaving the payload 68 bytes short of a full
+     * record. Parsing that as a record fails on the timestamp and the whole
+     * push is discarded, so every over-the-air advert is lost and the client
+     * only ever sees the stored contact list.
+     *
+     * <p>A bare advert carries no timestamp, no signature and no app_data, so
+     * it can be neither verified nor located. It says exactly one thing —
+     * which node was heard, and by implication that it was heard now.</p>
+     */
+    public static Advert bare(byte[] publicKey) {
+        return new Advert(
+                publicKey, 0L, new byte[0], new byte[0], new byte[0],
+                0, null, null, OptionalInt.empty(), OptionalInt.empty(), null);
+    }
+
+    /** True when this came from a bare push and carries no signed record. */
+    public boolean isBare() {
+        return signature.length == 0;
+    }
+
     public static Advert parse(byte[] payload) {
         ByteCursor c = new ByteCursor(payload);
         byte[] pubKey = c.bytes(MeshcoreConstants.PUB_KEY_SIZE, "advert.pubKey");
