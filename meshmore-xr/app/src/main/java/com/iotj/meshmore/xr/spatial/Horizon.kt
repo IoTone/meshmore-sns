@@ -41,6 +41,14 @@ class Horizon(private val session: Session, private val theme: Palette) {
         val altM: Double? = null,
         /** MeshCore advert type nibble: 0 none, 1 chat, 2 repeater, 3 room, 4 sensor. */
         val type: Int = TYPE_NONE,
+        /**
+         * When > 0 this mote is not a node but a COUNT: the number of nodes on
+         * roughly this bearing that the vertical budget could not label. Its
+         * bearing is their mean, so it points at a real place; everything else
+         * about it is an aggregate and it is drawn so it cannot be mistaken
+         * for a single radio.
+         */
+        val cluster: Int = 0,
     )
 
     data class Palette(
@@ -140,13 +148,22 @@ class Horizon(private val session: Session, private val theme: Palette) {
             // is unreliable, untranslatable, and occasionally just wrong. The
             // protocol says so authoritatively; the shape should too.
             val isRepeater = n.type == TYPE_REPEATER
+            val isCluster = n.cluster > 0
             val moteMesh = Prims.build(
                 session,
-                // Wide and SHALLOW: depth/radius near 0.3 reads as a dish,
-                // near 0.7 reads as a cup. Wider than the mote radius so the
-                // two are distinguishable by silhouette alone at 1.5 degrees,
-                // which is the only cue the brief allows at this size.
-                if (isRepeater) Prims.dish(r * 1.65f, r * 0.5f) else Prims.mote(r),
+                when {
+                    // A CLUSTER must not look like a node, or the count reads as
+                    // one radio with a strange name. Coarse facets and half again
+                    // the size: bigger than any node and visibly built out of
+                    // parts, which is what it is.
+                    isCluster -> Prims.mote(r * 1.5f, rings = 3, seg = 5)
+                    // Wide and SHALLOW: depth/radius near 0.3 reads as a dish,
+                    // near 0.7 reads as a cup. Wider than the mote radius so the
+                    // two are distinguishable by silhouette alone at 1.5 degrees,
+                    // which is the only cue the brief allows at this size.
+                    isRepeater -> Prims.dish(r * 1.65f, r * 0.5f)
+                    else -> Prims.mote(r)
+                },
             )
             val moteMat = Prims.material(
                 session, if (n.located) theme.accent else theme.warn, lum.coerceIn(0.25f, 1f)
@@ -161,8 +178,10 @@ class Horizon(private val session: Session, private val theme: Palette) {
             }
 
             // Hop count as an equatorial BAND -- structure you see on a sphere
-            // rather than a number you parse.
-            if (n.hops > 1) {
+            // rather than a number you parse. A cluster's hop count is an
+            // aggregate over nodes at different depths in the mesh, so it gets
+            // no band: the band is a fact about ONE radio's path.
+            if (n.hops > 1 && !isCluster) {
                 val bandMesh = Prims.build(session, Prims.halo(r * 1.55f, r * 0.16f, 24, 4))
                 val bandMat = Prims.material(session, theme.alt, 0.75f * lum)
                 MeshEntity.create(session, bandMesh, listOf(bandMat)).also {
@@ -223,10 +242,16 @@ class Horizon(private val session: Session, private val theme: Palette) {
             // a time and the width costs nothing there. Truncating in both
             // places would mean the app never shows you what a node is called.
             val full = if (cs.truncated) Callsign.render(n.name, maxGlyphs = 40).text else ""
-            val det = "%s%d HOP  %.1fKM  %s".format(
-                if (full.isNotEmpty()) "$full   " else "",
-                n.hops, dist * 5.0f, if (n.age < 0.34f) "LIVE" else "STALE",
-            )
+            val det = if (isCluster) {
+                // Say what it is, in words. "+19" alone is ambiguous -- it could
+                // be a channel, a margin, a signal figure.
+                "%d NODES NOT SHOWN  NEAR %.1fKM".format(n.cluster, dist * 5.0f)
+            } else {
+                "%s%d HOP  %.1fKM  %s".format(
+                    if (full.isNotEmpty()) "$full   " else "",
+                    n.hops, dist * 5.0f, if (n.age < 0.34f) "LIVE" else "STALE",
+                )
+            }
             val detMesh = Prims.build(session, Glyphs.text(det, capH * 0.78f))
             val detMat = Prims.material(session, theme.alt, 0.9f)
             val detail = MeshEntity.create(session, detMesh, listOf(detMat)).also {

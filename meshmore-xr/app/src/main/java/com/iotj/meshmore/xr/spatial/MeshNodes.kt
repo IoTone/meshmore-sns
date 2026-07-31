@@ -101,7 +101,12 @@ object MeshNodes {
         nowEpochSec: Long,
         limit: Int = MAX_MOTES,
     ): List<Horizon.Node> =
-        rank(here, peers, nowEpochSec).take(limit).map { p ->
+        // NOTE the whole ranked list goes to layout(), not a take(limit) of it.
+        // Deferred nodes cost nothing -- they build no geometry -- and passing
+        // them through is what lets a cluster carry a TRUE count. Capping the
+        // input first made a cluster of 139 nodes announce itself as "+19",
+        // which is a worse lie than not drawing it at all.
+        rank(here, peers, nowEpochSec).map { p ->
             val located = here.known && valid(p.lat) && valid(p.lon)
             val km = if (located) haversineKm(here.lat!!, here.lon!!, p.lat!!, p.lon!!) else 0.0
             Horizon.Node(
@@ -118,85 +123,165 @@ object MeshNodes {
                 altM = p.altM,
                 type = p.type,
             )
-        }.let { deOcclude(it) }
+        }.let { layout(it, limit) }
 
     /**
-     * STOP MOTES HIDING BEHIND EACH OTHER.
+     * PLACEMENT — fit what fits, and COUNT the rest.
      *
-     * Bearing alone puts every node on one horizontal line, and a real mesh
-     * clusters -- nodes in the same town share a bearing to within a degree, so
-     * they stack into a single blob with their callsigns written over each
-     * other. Spreading them vertically is the cheapest fix that keeps every
-     * bearing truthful.
+     * The previous version made every node a lane of its own when it had to,
+     * then normalised the lanes to fill the vertical span. That guarantees no
+     * two lanes coincide, and it is still wrong, because it assumes the span
+     * can be divided arbitrarily finely. It cannot. Do the arithmetic:
      *
-     * THE TRAP, and the reason this is not simply "add some jitter": height is
-     * already meaningful. A mote placed higher reads as *higher up*, and a
-     * synthetic offset presented that way is a fabricated altitude -- exactly
-     * the class of claim the brief forbids for bearing. So the two are kept
-     * strictly apart:
+     *   mote           ~1.6 deg across (constant angular size, Horizon)
+     *   callsign cap   ~1.3 deg, hung ~2.1 deg below the mote centre
+     *   ------------------------------------------------------------
+     *   one node       ~4.2 deg of vertical space, mote top to text bottom
      *
-     *   altM != null -> the node has REAL telemetry altitude. Its height is its
-     *                   own, it is never moved, and Horizon marks it with a
-     *                   caret and the figure in metres.
+     * The world window is +/-10 deg, which is 20 deg, which holds FIVE of
+     * those. Not twenty-four. Asked for twenty-four it produced lanes 0.83 deg
+     * apart and drew a column of overlapping spheres with every callsign
+     * printed through its neighbours -- the honest consequence of an algorithm
+     * that could not say "no".
+     *
+     * So this one says no. Nodes are placed in rank order, each taking the
+     * first lane whose existing occupants its label clears. A node that fits
+     * nowhere is DEFERRED, and the deferred are grouped by bearing into
+     * counted cluster motes: one object saying "+19" rather than nineteen
+     * objects saying nothing legible. That is a real property of the mesh --
+     * nineteen nodes really are over there -- rendered at the density the
+     * available angle can carry.
+     *
+     * Placing in RANK order rather than bearing order also retires the seam
+     * bug this function used to carry. Sorting by bearing put 359 deg and 4 deg
+     * at opposite ends of the list, so a lane's "last occupant" was never the
+     * one a node actually abutted, and the fix was to track the first and last
+     * separately. Keeping every occupant and testing against all of them makes
+     * the ordering irrelevant, and wrap is already handled by angularGap.
+     *
+     * HEIGHT IS STILL NOT ALTITUDE. The distinction the old comment drew holds
+     * and is load-bearing:
+     *
+     *   altM != null -> REAL telemetry altitude. The node does not move: it
+     *                   fits in the lane its altitude puts it in or it defers.
      *   altM == null -> height carries no meaning, so it is free to use for
-     *                   legibility. No marker is drawn, and the ABSENCE of the
-     *                   marker is what tells the user this height is not a claim.
-     *
-     * Lanes alternate above and below the horizon plane so the ring stays
-     * centred on eye level rather than drifting upward.
+     *                   legibility. Horizon draws no caret, and the ABSENCE of
+     *                   the caret is what tells the user this is not a claim.
      */
-    fun deOcclude(nodes: List<Horizon.Node>): List<Horizon.Node> {
-        // Separation is driven by the LABEL, not by a constant. The mote is
-        // ~1.6 degrees wide but its callsign is ten times that, so a fixed
-        // angular gap tuned to the dot lets "ESTACADA SOLAR" and
-        // "NORTH EVERETT" sit in different lanes and still overlap — which is
-        // exactly what happened on the first live mesh. Two nodes may share a
-        // lane only when their labels do not touch.
-        // Each lane remembers its FIRST and LAST occupant, not just the last.
-        // Sorting by bearing puts the ring's seam at the ends of the list, so a
-        // node at 359 deg is processed far away from its true neighbour at 4
-        // deg and the lane's "last" entry is never the one it actually abuts.
-        // That left GM-EXT88 (352.6) sharing a lane with Vault 112 (4.0) and
-        // their labels printed straight through each other. Checking both ends
-        // closes the seam.
-        class Lane(var firstB: Float, var firstH: Float, var lastB: Float, var lastH: Float)
-        val lanes = ArrayList<Lane>()
-        val byBearing = nodes.sortedBy { it.bearingRad }
-        val laneOf = HashMap<Horizon.Node, Int>()
-        byBearing.forEach { n ->
-            if (n.altM != null || !n.located) return@forEach
-            val half = labelHalfWidthRad(n.name)
-            var lane = 0
-            while (lane < lanes.size) {
-                val l = lanes[lane]
-                val clearsLast = angularGap(n.bearingRad, l.lastB) >= half + l.lastH + LABEL_GAP_RAD
-                val clearsFirst = angularGap(n.bearingRad, l.firstB) >= half + l.firstH + LABEL_GAP_RAD
-                if (clearsLast && clearsFirst) break
-                lane++
-            }
-            if (lane == lanes.size) {
-                lanes.add(Lane(n.bearingRad, half, n.bearingRad, half))
-            } else {
-                lanes[lane].lastB = n.bearingRad
-                lanes[lane].lastH = half
-            }
-            laneOf[n] = lane
+    fun layout(nodes: List<Horizon.Node>, limit: Int = MAX_MOTES): List<Horizon.Node> {
+        class Occupant(val b: Float, val half: Float)
+        val lanes = List(LANES) { ArrayList<Occupant>() }
+        val out = ArrayList<Horizon.Node>()
+        val deferred = ArrayList<Horizon.Node>()
+        var unlocated = 0
+
+        fun clears(lane: Int, b: Float, half: Float): Boolean =
+            lanes[lane].all { angularGap(b, it.b) >= half + it.half + LABEL_GAP_RAD }
+
+        fun place(n: Horizon.Node, half: Float): Boolean {
+            // Lane indices already run 0, +1, -1, +2, -2 outward from eye level
+            // (see laneRing), so trying them in order keeps a sparse ring flat
+            // and only reaches for the edges of the window when it must. The
+            // bottom lane is not offered: it belongs to the clusters.
+            val candidates =
+                if (n.altM != null) listOf(laneAt(n.elev)) else (0 until CLUSTER_LANE).toList()
+            val lane = candidates.firstOrNull { clears(it, n.bearingRad, half) } ?: return false
+            lanes[lane].add(Occupant(n.bearingRad, half))
+            out += if (n.altM != null) n else n.copy(elev = elevOfLane(lane))
+            return true
         }
 
-        // SECOND PASS: spread the lanes actually used across the full vertical
-        // span. A fixed step per lane clamped to +/-1 does not overflow, it
-        // COLLAPSES -- lane 7 lands on top of lane 5 and the two nodes are
-        // right back on the same line, which is precisely what happened to
-        // "North Everett" and "Esterra Solar" on the live mesh. Normalising by
-        // the outermost ring in use means every lane is distinct by
-        // construction, and a sparse ring stays tight rather than being spread
-        // out for no reason.
-        val maxRing = laneOf.values.maxOfOrNull { abs(laneRing(it)) } ?: 0
-        val out = HashMap<Horizon.Node, Float>()
-        laneOf.forEach { (n, lane) ->
-            out[n] = if (maxRing == 0) 0f else laneRing(lane).toFloat() / maxRing
+        nodes.forEach { n ->
+            if (!n.located) {
+                // The unlocated arc has no bearings to separate by, so it gets a
+                // flat cap rather than a packing rule.
+                if (unlocated < MAX_UNLOCATED && out.size < limit) { out += n; unlocated++ }
+                return@forEach
+            }
+            if (out.size >= limit || !place(n, labelHalfWidthRad(n.name))) deferred += n
         }
-        return nodes.map { it.copy(elev = out[it] ?: it.elev) }
+
+        // CLUSTERS get the BOTTOM LANE to themselves, and it has to be that way.
+        // A cluster stands at the mean bearing of the nodes it holds -- which
+        // are, by definition, the nodes that just filled every lane on that
+        // bearing. Offered the same lanes it clears none of them and is dropped
+        // silently, so the count that was supposed to prevent nodes vanishing
+        // vanishes instead. Reserving a lane makes room by construction.
+        //
+        // It also reads well: the counts run along the bottom of the window
+        // like a footer, plainly a different KIND of thing from the named nodes
+        // above them.
+        if (deferred.isNotEmpty()) out += clustersFor(deferred)
+        return out
+    }
+
+    /** One [Group] is a bearing bucket of deferred nodes, accumulated. */
+    private class Group {
+        var n = 0
+        var sumB = 0.0
+        var sumD = 0.0
+        var age = 1f
+        var hops = Int.MAX_VALUE
+        val bearing: Float get() = (sumB / n).toFloat()
+        fun add(x: Horizon.Node) {
+            n++; sumB += x.bearingRad.toDouble(); sumD += x.dist.toDouble()
+            age = minOf(age, x.age); hops = minOf(hops, x.hops)
+        }
+        fun absorb(o: Group) {
+            n += o.n; sumB += o.sumB; sumD += o.sumD
+            age = minOf(age, o.age); hops = minOf(hops, o.hops)
+        }
+    }
+
+    /**
+     * Turn the deferred nodes into counted motes.
+     *
+     * NOTHING MAY VANISH UNCOUNTED. A group that cannot be drawn -- because it
+     * would collide with another count, or because the mote budget is spent --
+     * is ABSORBED into its nearest neighbour rather than dropped. The bearing
+     * blurs a little as counts merge, which is the honest trade: "+31 roughly
+     * that way" is true, and a group that quietly disappears is not.
+     */
+    private fun clustersFor(deferred: List<Horizon.Node>): List<Horizon.Node> {
+        val groups = LinkedHashMap<Int, Group>()
+        deferred.filter { it.located }.forEach {
+            groups.getOrPut((it.bearingRad / CLUSTER_RAD).toInt()) { Group() }.add(it)
+        }
+        val kept = ArrayList<Group>()
+        groups.values.sortedByDescending { it.n }.forEach { g ->
+            val room = kept.size < MAX_CLUSTERS &&
+                kept.all { angularGap(g.bearing, it.bearing) >= CLUSTER_GAP_RAD }
+            if (room || kept.isEmpty()) kept += g
+            else kept.minByOrNull { angularGap(g.bearing, it.bearing) }!!.absorb(g)
+        }
+        return kept.map { g ->
+            Horizon.Node(
+                name = "+${g.n}",
+                // Members share a bucket far narrower than the wrap, so a plain
+                // mean is safe and a circular mean is not worth the arithmetic.
+                bearingRad = g.bearing,
+                elev = elevOfLane(CLUSTER_LANE),
+                dist = (g.sumD / g.n).toFloat(),
+                // Freshest member: the cluster is live if anything in it is.
+                age = g.age,
+                located = true,
+                hops = g.hops,
+                cluster = g.n,
+            )
+        }
+    }
+
+    /** Elevation (-1..1) of a lane index, spread evenly over the window. */
+    fun elevOfLane(lane: Int): Float {
+        val half = (LANES - 1) / 2
+        return if (half == 0) 0f else laneRing(lane).toFloat() / half
+    }
+
+    /** The lane whose elevation is nearest [elev]. Inverse of [elevOfLane]. */
+    fun laneAt(elev: Float): Int {
+        val half = (LANES - 1) / 2
+        val ring = Math.round(elev * half).coerceIn(-half, half)
+        return (0 until LANES).first { laneRing(it) == ring }
     }
 
     /**
@@ -285,5 +370,39 @@ object MeshNodes {
     const val CELL_RAD = 0.0212f
     /** Breathing room between two labels sharing a lane. ~3 degrees. */
     const val LABEL_GAP_RAD = 0.05f
+    /**
+     * HOW MANY LANES THE WINDOW ACTUALLY HOLDS.
+     *
+     * The world window is +/-10 deg (Horizon.ELEV_SPAN) and one node --  mote
+     * plus the callsign hung beneath it -- is about 4.2 deg tall. 20 / 4.2 is
+     * 4.8, so five lanes, pitched 5 deg apart, leaving a little under a degree
+     * of clear space between one node's callsign and the mote below it.
+     *
+     * Raising this does not fit more nodes, it just overlaps them again. If
+     * more nodes need to be legible at once, the thing to change is the window
+     * or the type size -- both of which have owners elsewhere -- not this.
+     */
+    const val LANES = 5
+    /**
+     * Bearing width of a cluster bucket, ~17 deg. Wide enough that a town does
+     * not fragment into four counts, narrow enough that "+19 over there" still
+     * points somewhere you could walk.
+     */
+    const val CLUSTER_RAD = 0.30f
+    /**
+     * The lane reserved for counts. laneRing puts the highest index at the
+     * bottom of the window, which is where a footer belongs.
+     */
+    const val CLUSTER_LANE = LANES - 1
+    /** Minimum separation between two counts sharing the cluster lane, ~9 deg. */
+    const val CLUSTER_GAP_RAD = 0.16f
+    /** Counts on screen at once. Beyond this they merge rather than multiply. */
+    const val MAX_CLUSTERS = 5
+    /**
+     * Motes in the unlocated arc. They all share one fabricated bearing, so
+     * they cannot be separated by the packing rule -- they are simply capped
+     * before they become a pile.
+     */
+    const val MAX_UNLOCATED = 4
 
 }

@@ -105,25 +105,62 @@ class MeshNodesTest {
     @Test fun clusteredNodesGetDifferentHeights() {
         // Four nodes within two degrees of each other: the real-mesh case, where
         // a whole town shares one bearing and stacks into a single blob.
-        val out = MeshNodes.deOcclude(listOf(node(10.0), node(11.0), node(11.5), node(12.0)))
+        val out = MeshNodes.layout(listOf(node(10.0), node(11.0), node(11.5), node(12.0)))
         assertEquals(4, out.map { it.elev }.toSet().size)
     }
 
     @Test fun wellSeparatedNodesAllStayOnTheHorizonPlane() {
-        val out = MeshNodes.deOcclude((0..5).map { node(it * 60.0) })
+        val out = MeshNodes.layout((0..5).map { node(it * 60.0) })
         assertTrue(out.all { it.elev == 0f })
     }
 
     /** The live-mesh failure: different lanes, still overlapping labels. */
     @Test fun longLabelsNeedMoreSeparationThanShortOnes() {
-        val short = MeshNodes.deOcclude(listOf(named("AB", 0.0), named("CD", 14.0)))
+        val short = MeshNodes.layout(listOf(named("AB", 0.0), named("CD", 14.0)))
         assertTrue("short labels 14 deg apart should share a lane",
             short.all { it.elev == 0f })
-        val long = MeshNodes.deOcclude(
+        val long = MeshNodes.layout(
             listOf(named("ESTACADA SOLAR", 0.0), named("NORTH EVERETT", 14.0)),
         )
         assertEquals("14-glyph labels 14 deg apart must not share a lane",
             2, long.map { it.elev }.toSet().size)
+    }
+
+    /**
+     * THE CAPACITY RULE. The window holds LANES nodes on one bearing and no
+     * more. Asked for more it used to subdivide the span until the labels
+     * overlapped again; it must now refuse and count instead.
+     */
+    @Test fun aSaturatedBearingRefusesRatherThanOverlapping() {
+        val town = (0 until 20).map { named("SOLAR REPEATER $it", 8.0 + it * 0.1) }
+        val out = MeshNodes.layout(town)
+        val labelled = out.filter { it.cluster == 0 }
+        assertEquals("only a full window of nodes may be labelled — the bottom " +
+            "lane is reserved for counts", MeshNodes.CLUSTER_LANE, labelled.size)
+        assertEquals("labelled nodes must each have their own height",
+            labelled.size, labelled.map { it.elev }.toSet().size)
+        val counted = out.filter { it.cluster > 0 }.sumOf { it.cluster }
+        assertEquals("everything not labelled must be counted",
+            20 - MeshNodes.CLUSTER_LANE, counted)
+    }
+
+    /** A cluster points at a real place: the mean bearing of what it holds. */
+    @Test fun aClusterPointsAtItsMembers() {
+        val town = (0 until 20).map { named("SOLAR REPEATER $it", 100.0 + it * 0.1) }
+        val c = MeshNodes.layout(town).single { it.cluster > 0 }
+        assertEquals(Math.toRadians(101.0).toFloat(), c.bearingRad, Math.toRadians(1.5).toFloat())
+    }
+
+    /** Every height the layout emits has to be inside the shell it was given. */
+    @Test fun everyPlacedNodeStaysInsideTheWindow() {
+        val many = (0 until 40).map { named("NODE $it", it * 3.0) }
+        assertTrue(MeshNodes.layout(many).all { it.elev in -1f..1f })
+    }
+
+    @Test fun laneElevationsRoundTrip() {
+        (0 until MeshNodes.LANES).forEach { lane ->
+            assertEquals(lane, MeshNodes.laneAt(MeshNodes.elevOfLane(lane)))
+        }
     }
 
     private fun named(name: String, bearingDeg: Double) = Horizon.Node(
@@ -134,13 +171,19 @@ class MeshNodesTest {
     /** The whole point: a lane offset must never masquerade as altitude. */
     @Test fun nodesWithRealAltitudeAreNeverMoved() {
         val withAlt = node(10.0, alt = 412.0)
-        val out = MeshNodes.deOcclude(listOf(withAlt, node(10.2), node(10.4)))
+        val out = MeshNodes.layout(listOf(withAlt, node(10.2), node(10.4)))
         assertEquals(0f, out.single { it.altM != null }.elev, 0f)
     }
 
     @Test fun unlocatedNodesAreNotLaned() {
-        val out = MeshNodes.deOcclude(listOf(node(0.0, located = false), node(0.0, located = false)))
+        val out = MeshNodes.layout(listOf(node(0.0, located = false), node(0.0, located = false)))
         assertTrue(out.all { it.elev == 0f })
+    }
+
+    /** They share one fabricated bearing, so they are capped, not packed. */
+    @Test fun theUnlocatedArcIsCapped() {
+        val out = MeshNodes.layout((0 until 12).map { node(0.0, located = false) })
+        assertEquals(MeshNodes.MAX_UNLOCATED, out.count { !it.located })
     }
 
     /** Lanes must alternate so the ring stays centred on eye level. */
@@ -153,21 +196,26 @@ class MeshNodesTest {
     }
 
     /**
-     * The live-mesh bug: a cluster needing eight lanes had lane 7 clamped onto
-     * lane 5, putting "North Everett" and "Esterra Solar" back on one line.
-     * Every occupied lane must end up at its own height.
+     * The live-mesh case, with the real callsigns off the Seattle cluster.
+     * Eight nodes inside eight degrees is more than the window holds, so the
+     * requirement is no longer "every node gets a height" -- that was the
+     * demand that produced 0.83 deg lanes and a column of overlapping spheres.
+     * It is: everything DRAWN is separated, and nothing is silently lost.
      */
-    @Test fun aDenseClusterGivesEveryNodeItsOwnHeight() {
-        val cluster = listOf(
+    @Test fun aDenseClusterSeparatesWhatItDrawsAndCountsTheRest() {
+        val town = listOf(
             named("Vault 112 Overseer", 4.0), named("Alaska Junction SE", 7.2),
             named("Entropy Temple", 7.3), named("Brier_Hill_Solar", 8.2),
             named("Woofy Repeater", 8.4), named("North Everett", 8.6),
             named("W7MIR Repeater", 10.1), named("Esterra Solar", 11.3),
         )
-        val out = MeshNodes.deOcclude(cluster)
-        assertEquals("every node needs a distinct height",
-            cluster.size, out.map { it.elev }.toSet().size)
+        val out = MeshNodes.layout(town)
+        val labelled = out.filter { it.cluster == 0 }
+        assertEquals("every drawn node needs a distinct height",
+            labelled.size, labelled.map { it.elev }.toSet().size)
         assertTrue("must stay inside the shell", out.all { it.elev in -1f..1f })
+        assertEquals("no node may vanish without being counted",
+            town.size, labelled.size + out.sumOf { it.cluster })
     }
 
     /** Bearings wrap: 359 and 4 are five degrees apart, not 355. */
@@ -185,7 +233,7 @@ class MeshNodesTest {
      * Nodes in between must not let the two ends collide.
      */
     @Test fun theRingSeamIsCheckedNotJustTheLastEntry() {
-        val out = MeshNodes.deOcclude(listOf(
+        val out = MeshNodes.layout(listOf(
             named("GM-EXT88 Repeater", 352.6),
             named("Cedar Hills", 267.5),
             named("Vault 112 Overseer", 4.0),
@@ -196,17 +244,26 @@ class MeshNodesTest {
     }
 
     @Test fun nodesEitherSideOfNorthDoNotShareALane() {
-        val out = MeshNodes.deOcclude(
+        val out = MeshNodes.layout(
             listOf(named("GM-EXT88 Repeater", 356.0), named("Vault 112 Overseer", 4.0)),
         )
         assertEquals(2, out.map { it.elev }.toSet().size)
     }
 
-    @Test fun buildCapsTheRingAndReportsWhatItDropped() {
+    /**
+     * 60 peers strung north from London: they span enough bearing to place a
+     * good many, and whatever will not fit must come back as a count. The cap
+     * is on MOTES, so clusters count against it too -- the budget is what the
+     * scene can draw, not what it can label.
+     */
+    @Test fun buildCapsTheRingAndCountsWhatItCouldNotDraw() {
         val many = (0 until 60).map { peer(name = "n$it", lat = 48.0 + it * 0.01, lon = 2.0) }
         val out = MeshNodes.build(MeshNodes.Here(londonLat, londonLon), many, NOW)
-        assertEquals(MeshNodes.MAX_MOTES, out.size)
-        assertEquals(60 - MeshNodes.MAX_MOTES, MeshNodes.droppedCount(many))
+        assertTrue("must not exceed the mote budget",
+            out.count { it.cluster == 0 } <= MeshNodes.MAX_MOTES)
+        assertTrue("counts are bounded too", out.count { it.cluster > 0 } <= MeshNodes.MAX_CLUSTERS)
+        assertEquals("every peer is either drawn or counted",
+            60, out.count { it.cluster == 0 } + out.sumOf { it.cluster })
     }
 
     private fun peer(name: String = "relay", lat: Double? = null, lon: Double? = null) =

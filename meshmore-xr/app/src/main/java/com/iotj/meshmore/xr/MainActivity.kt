@@ -400,11 +400,18 @@ private fun HorizonScene(link: MeshLink) {
         val origin2 = hereSource.resolve(here, MainActivity.homeOverride)
         val nodes = if (MainActivity.simulate) simulatedMesh() else
             MeshNodes.build(origin2, mesh, System.currentTimeMillis() / 1000)
-        Log.i(TAG_UI, "[horizon] building ${nodes.size} nodes " +
+        // Count what was DRAWN, not what the cap would have dropped. The old
+        // form was peers.size - MAX_MOTES, which stopped being true the moment
+        // placement became fit-driven: a saturated bearing labels five nodes,
+        // not twenty-four, and reporting the cap hid that entirely.
+        val clusters = nodes.filter { it.cluster > 0 }
+        Log.i(TAG_UI, "[horizon] building ${nodes.size} motes " +
             "(${if (MainActivity.simulate) "SIMULATED" else "live"}, " +
             "fix=${origin2.known} via ${hereSource.source}, " +
-            "located=${nodes.count { it.located }}" +
-            MeshNodes.droppedCount(mesh).let { if (it > 0) ", $it not shown" else "" } + ")")
+            "labelled=${nodes.count { it.cluster == 0 }}" +
+            (if (clusters.isEmpty()) "" else
+                ", ${clusters.size} cluster(s) holding ${clusters.sumOf { it.cluster }}") +
+            ", of ${mesh.size} peers)")
         nodesRef.value = nodes
         h.build(nodes, o, st.floorHeight())
     }

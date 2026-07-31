@@ -94,16 +94,26 @@ class Hud(private val session: Session, private val theme: Horizon.Palette) {
         val t = head.translation
 
         // Local (x, y, -D) in the head's yaw frame -> activity space.
+        //
+        // THE ROTATION IS -yaw, NOT +yaw. The HUD is a sheet of glass in front
+        // of the face: its normal must point back AT the head, which is the
+        // reverse of the head's own forward axis. Using +yaw orients it the
+        // same way the head faces -- i.e. edge-on-to-mirrored, off by 2*yaw --
+        // so the ticks and numerals counter-rotate as you turn, twice as fast
+        // and the wrong way. It is invisible on the bench because the error
+        // vanishes at yaw 0, which is exactly where a recentred app starts.
+        //
+        // Every mark shares this one rotation rather than each turning toward
+        // the head from its own position. That is deliberate: a HUD is PAINTED
+        // ON THE GLASS. Per-mark billboarding would fan the ribbon outward at
+        // the edges, and the numerals would visibly swivel as they slid across
+        // -- motion that means nothing, on the one surface that must be dead
+        // still for the world behind it to be readable.
+        val face = Quaternion.fromEulerAngles(0f, -Math.toDegrees(yaw.toDouble()).toFloat(), 0f)
         fun place(e: Entity, x: Float, y: Float) {
             val wx = t.x + x * cos(yaw) - (-D) * sin(yaw)
             val wz = t.z + x * sin(yaw) + (-D) * cos(yaw)
-            e.setPose(
-                Pose(
-                    Vector3(wx, t.y + y, wz),
-                    Quaternion.fromEulerAngles(0f, Math.toDegrees(yaw.toDouble()).toFloat(), 0f),
-                ),
-                Space.ACTIVITY,
-            )
+            e.setPose(Pose(Vector3(wx, t.y + y, wz), face), Space.ACTIVITY)
         }
 
         var slot = 0
