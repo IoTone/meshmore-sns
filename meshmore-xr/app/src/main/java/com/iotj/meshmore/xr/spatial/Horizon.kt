@@ -464,6 +464,24 @@ class Horizon(private val session: Session, private val theme: Palette) {
     }
 
     fun clear() {
+        // DETACH BEFORE DISPOSING, or this double-frees.
+        //
+        // The badge and the detail line are parented to the callsign so they
+        // inherit its billboard rotation -- but all three are also in this
+        // list. Disposing a parent disposes its children, so by the time the
+        // loop reached the child it had already been freed, and the native
+        // allocator aborted the whole process:
+        //
+        //   Scudo ERROR: invalid chunk state when deallocating address ...
+        //
+        // It is a NATIVE abort, so the runCatching below never saw it -- there
+        // is no Java exception to catch, the process is simply gone. And it
+        // only fires on a REBUILD, which is why it looked like "crashes after
+        // loading some nodes": every membership change ran this path.
+        //
+        // Breaking the parent links first makes every entity an independent
+        // root, so each is freed exactly once.
+        entities.forEach { runCatching { it.parent = null } }
         entities.forEach { runCatching { it.dispose() } }
         entities.clear()
         // Labels hold the same entities; drop the references or faceViewer()
