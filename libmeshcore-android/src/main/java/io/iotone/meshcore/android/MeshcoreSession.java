@@ -210,6 +210,25 @@ public final class MeshcoreSession {
     }
 
     /**
+     * Reads one channel slot ({@code CMD_GET_CHANNEL}, 0x1F). The reply
+     * arrives as a {@link io.iotone.meshcore.frames.ChannelInfoFrame} on
+     * {@link SessionListener#onOtherFrame}.
+     *
+     * <p>Slot numbering is the firmware's: 0 is conventionally the public
+     * channel. A slot that is not configured answers with an empty name, so
+     * enumerating channels means asking for each index and reading what comes
+     * back — there is no "how many channels" query.</p>
+     *
+     * <p>No-op when not {@link SessionState#READY}.</p>
+     *
+     * @param channelIdx channel slot index
+     */
+    public void requestChannel(int channelIdx) {
+        if (state.get() != SessionState.READY) return;
+        send(MeshcoreFrameCodec.getChannel(channelIdx));
+    }
+
+    /**
      * Closes the session and disconnects the transport.
      */
     public void close() {

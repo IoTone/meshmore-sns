@@ -12,6 +12,7 @@ import androidx.xr.scenecore.MeshEntity
 import androidx.xr.scenecore.Space
 import androidx.xr.scenecore.scene
 import kotlin.math.abs
+import kotlin.math.asin
 import kotlin.math.atan2
 import kotlin.math.cos
 import kotlin.math.sin
@@ -91,9 +92,26 @@ class Hud(private val session: Session, private val theme: Horizon.Palette) {
      */
     fun tick(head: Pose) {
         val yaw = yawOf(head)
+        val pitch = pitchOf(head)
         val t = head.translation
 
-        // Local (x, y, -D) in the head's yaw frame -> activity space.
+        // PITCH IS PART OF THE LOCK. The bands were yaw-locked but pinned to a
+        // fixed WORLD HEIGHT, which is not the same as being pinned to the
+        // view. Tip your head down and the FOV moves while the bands stay put,
+        // so they ride up out of their reserved strips: the link readout ended
+        // up across the middle of the scene, printing through node callsigns,
+        // while the compass ribbon left the top of the display entirely. The
+        // bands are supposed to be the two edges of the view -- compass above,
+        // link below -- and that only holds if they follow where the view is
+        // actually pointing.
+        //
+        // ROLL IS DELIBERATELY EXCLUDED. Tilting your head should not tilt the
+        // instrument; a horizon that rolls with the head is the classic way to
+        // make an HMD nauseating. Yaw and pitch, nothing else.
+        val cp = cos(pitch)
+        val sp = sin(pitch)
+
+        // Local (x, y, -D) in the head's yaw+pitch frame -> activity space.
         //
         // THE ROTATION IS -yaw, NOT +yaw. The HUD is a sheet of glass in front
         // of the face: its normal must point back AT the head, which is the
@@ -109,11 +127,32 @@ class Hud(private val session: Session, private val theme: Horizon.Palette) {
         // the edges, and the numerals would visibly swivel as they slid across
         // -- motion that means nothing, on the one surface that must be dead
         // still for the world behind it to be readable.
-        val face = Quaternion.fromEulerAngles(0f, -Math.toDegrees(yaw.toDouble()).toFloat(), 0f)
+        //
+        // The tilt is composed as (yaw * pitch) rather than written as a single
+        // Euler triple: the yaw term is empirically verified against the horizon
+        // billboards, and multiplying a local-X rotation onto its RIGHT applies
+        // the pitch in the entity's own frame, which is well-defined whatever
+        // this library's Euler ORDER turns out to be. Guessing an Euler
+        // convention that happens to agree at zero is how the +yaw bug survived.
+        val face = Quaternion.fromEulerAngles(0f, -Math.toDegrees(yaw.toDouble()).toFloat(), 0f) *
+            Quaternion.fromAxisAngle(Vector3(1f, 0f, 0f), Math.toDegrees(pitch.toDouble()).toFloat())
+
+        // The head's flat basis. Everything is placed as
+        //     head + x*right + y'*up + z'*forward
+        // with (y, -D) rotated by pitch about `right` first, so a band at -13.5
+        // deg stays at -13.5 deg of the VIEW rather than of the world.
         fun place(e: Entity, x: Float, y: Float) {
-            val wx = t.x + x * cos(yaw) - (-D) * sin(yaw)
-            val wz = t.z + x * sin(yaw) + (-D) * cos(yaw)
-            e.setPose(Pose(Vector3(wx, t.y + y, wz), face), Space.ACTIVITY)
+            val fwdX = sin(yaw); val fwdZ = -cos(yaw)
+            val rgtX = cos(yaw); val rgtZ = sin(yaw)
+            val up = y * cp + D * sp
+            val fwd = D * cp - y * sp
+            e.setPose(
+                Pose(
+                    Vector3(t.x + x * rgtX + fwd * fwdX, t.y + up, t.z + x * rgtZ + fwd * fwdZ),
+                    face,
+                ),
+                Space.ACTIVITY,
+            )
         }
 
         var slot = 0
@@ -170,6 +209,17 @@ class Hud(private val session: Session, private val theme: Horizon.Palette) {
         val fx = 2f * (q.x * q.z + q.w * q.y)
         val fz = 1f - 2f * (q.x * q.x + q.y * q.y)
         return atan2(-fx, fz)
+    }
+
+    /**
+     * Elevation of the head's forward axis: + is looking up. Taken from the
+     * forward VECTOR rather than from an Euler decomposition, so head roll
+     * cannot leak into it.
+     */
+    private fun pitchOf(p: Pose): Float {
+        val q = p.rotation
+        val fy = -2f * (q.y * q.z - q.w * q.x)
+        return asin(fy.coerceIn(-1f, 1f))
     }
 
     /** Shortest signed difference, so the ribbon does not tear at north. */

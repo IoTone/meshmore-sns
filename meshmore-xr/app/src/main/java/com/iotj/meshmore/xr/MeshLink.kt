@@ -311,6 +311,60 @@ class MeshLink(private val context: Context) {
         }
     }
 
+    /**
+     * Everything the radio will tell us about itself, in one readable block.
+     *
+     * This is a DIAGNOSTIC, not a feature: when the horizon is empty or the
+     * mesh is quiet, the first question is always "what is this radio actually
+     * set to", and reconstructing that from a one-line summary and the
+     * firmware's own menus is slow and error-prone. Frequency, spreading
+     * factor and bandwidth have to match the mesh exactly or the radio hears
+     * nothing while looking perfectly healthy.
+     */
+    private fun dumpRadio(s: SelfInfo) {
+        val key = s.publicKey()?.joinToString("") { "%02x".format(it) } ?: "?"
+        Log.i(TAG, "[radio] ======== MeshCore radio ========")
+        Log.i(TAG, "[radio] name          = ${s.name()}")
+        Log.i(TAG, "[radio] public key    = $key")
+        Log.i(TAG, "[radio] advert type   = ${s.advType()} (${advTypeName(s.advType())})")
+        Log.i(TAG, "[radio] frequency     = ${s.frequencyMhz()} MHz")
+        Log.i(TAG, "[radio] bandwidth     = ${s.bandwidthKhz()} kHz")
+        Log.i(TAG, "[radio] spread factor = SF${s.spreadingFactor()}")
+        Log.i(TAG, "[radio] coding rate   = 4/${s.codingRate()}")
+        Log.i(TAG, "[radio] tx power      = ${s.txPowerDbm()} dBm (max ${s.maxTxPowerDbm()})")
+        Log.i(TAG, "[radio] position      = ${s.latitude()}, ${s.longitude()}" +
+            if (MeshNodes.Here(s.latitude(), s.longitude()).known) "" else "  (no GPS fix)")
+        Log.i(TAG, "[radio] adv loc policy= ${s.advertLocPolicy()}")
+        Log.i(TAG, "[radio] telemetry mode= ${s.telemetryModeRaw()}")
+        Log.i(TAG, "[radio] multi-acks    = ${s.multiAcks()}")
+        Log.i(TAG, "[radio] manual add    = ${s.manualAddContacts()}")
+    }
+
+    /**
+     * One channel slot. The PSK is fingerprinted, never printed: it is the key
+     * that decrypts every message on that channel, and a log that leaks it is
+     * a log that cannot be pasted anywhere. Matching it against the well-known
+     * public PSK is the one comparison worth making, because "am I on Public
+     * or on something private" is the question being asked.
+     */
+    private fun dumpChannel(c: io.iotone.meshcore.model.ChannelInfo) {
+        val psk = c.psk()
+        if (c.name().isNullOrBlank() && (psk == null || psk.all { it.toInt() == 0 })) {
+            Log.i(TAG, "[radio] channel ${c.channelIdx()}     = <empty slot>")
+            return
+        }
+        val isPublic = psk != null &&
+            psk.contentEquals(io.iotone.meshcore.MeshcoreConstants.publicChannelPsk())
+        val fp = psk?.take(4)?.joinToString("") { "%02x".format(it) } ?: "?"
+        Log.i(TAG, "[radio] channel ${c.channelIdx()}     = \"${c.name()}\"  psk $fp…  " +
+            if (isPublic) "PUBLIC (well-known key)" else "private/custom key")
+    }
+
+    private fun advTypeName(t: Int) = when (t) {
+        0 -> "none"; 1 -> "chat/companion"; 2 -> "repeater"; 3 -> "room"; 4 -> "sensor"
+        else -> "unknown"
+    }
+
     private fun openSession(device: BluetoothDevice) {
         val t = AndroidBleTransport(context)
         val s = MeshcoreSession(APP_NAME, t, object : SessionListener {
@@ -321,10 +375,7 @@ class MeshLink(private val context: Context) {
 
             override fun onReady(selfInfo: SelfInfo) {
                 // THE CHECKPOINT: CMD_APP_START -> RESP_CODE_SELF_INFO decoded.
-                Log.i(TAG, "[link] READY name='${selfInfo.name()}' " +
-                        "freq=${selfInfo.frequencyMhz()} sf=${selfInfo.spreadingFactor()} " +
-                        "bw=${selfInfo.bandwidthKhz()} cr=${selfInfo.codingRate()} " +
-                        "tx=${selfInfo.txPowerDbm()}dBm advType=${selfInfo.advType()}")
+                dumpRadio(selfInfo)
                 _status.value = _status.value.copy(selfInfo = selfInfo, lastEvent = "READY")
                 _here.value = MeshNodes.Here(selfInfo.latitude(), selfInfo.longitude())
                 Log.i(TAG, "[link] here = ${selfInfo.latitude()}, ${selfInfo.longitude()} " +
@@ -336,6 +387,10 @@ class MeshLink(private val context: Context) {
                 Log.i(TAG, "[link] requesting contacts")
                 session?.requestContacts()
                 session?.requestBatteryStorage()
+                // Enumerate the channel slots. There is no "how many channels"
+                // query -- an unconfigured slot simply answers with an empty
+                // name -- so we ask for a fixed few and print what comes back.
+                for (i in 0 until CHANNEL_SLOTS) session?.requestChannel(i)
             }
 
             override fun onAdvert(frame: AdvertFrame) {
@@ -412,9 +467,11 @@ class MeshLink(private val context: Context) {
                     }
                     is io.iotone.meshcore.frames.BatteryStorageFrame -> {
                         val mv = runCatching { frame.battery().batteryMillivolts() }.getOrNull()
-                        Log.i(TAG, "[link] battery = ${mv}mV")
+                        Log.i(TAG, "[radio] battery       = ${mv}mV" +
+                            if (mv != null && mv <= 0) "  (no cell reported — external power)" else "")
                         _load.value = _load.value.copy(batteryMv = mv)
                     }
+                    is io.iotone.meshcore.frames.ChannelInfoFrame -> dumpChannel(frame.info())
                     else -> Unit
                 }
             }
@@ -443,6 +500,8 @@ class MeshLink(private val context: Context) {
     companion object {
         private const val TAG = "MeshmoreXR"
         private const val APP_NAME = "MeshmoreXR"
+        /** Channel slots to enumerate at connect. The firmware has no count query. */
+        private const val CHANNEL_SLOTS = 4
         private const val SCAN_TIMEOUT_MS = 12_000L
         /**
          * How long to collect advertisers before choosing the strongest. Long
