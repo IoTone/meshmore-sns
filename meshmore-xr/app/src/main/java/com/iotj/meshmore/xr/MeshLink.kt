@@ -314,6 +314,26 @@ class MeshLink(private val context: Context) {
     /** Set before connect to make the connect-time advert a flood. */
     var floodOnConnect: Boolean = false
 
+    // ---- DIAGNOSTICS ------------------------------------------------------
+    //
+    // A rolling transcript of every frame the codec decodes. This exists
+    // because "the radio is quiet" and "the radio is talking and we are
+    // dropping it" are indistinguishable from the horizon, and the difference
+    // is the whole debugging problem. Logcat has this, but logcat is not
+    // available to someone wearing the glasses.
+
+    private val _diag = MutableStateFlow<List<String>>(emptyList())
+    val diag: StateFlow<List<String>> = _diag.asStateFlow()
+
+    /** Bounded: this is a tail, not a recording. */
+    private fun diag(line: String) {
+        val stamp = java.text.SimpleDateFormat("HH:mm:ss", java.util.Locale.US)
+            .format(java.util.Date())
+        _diag.value = (_diag.value + "$stamp  $line").takeLast(DIAG_MAX)
+    }
+
+    fun clearDiag() { _diag.value = emptyList() }
+
     /**
      * Put a self-advert on the air, so other nodes learn this radio exists.
      *
@@ -328,6 +348,7 @@ class MeshLink(private val context: Context) {
             return
         }
         Log.i(TAG, "[link] self-advert -> ${if (flood) "FLOOD" else "zero-hop"}")
+        diag(">>ADVERT ${if (flood) "FLOOD" else "zero-hop"} sent — waiting for OK")
         s.sendSelfAdvert(flood)
         _status.value = _status.value.copy(lastEvent = "advert")
     }
@@ -465,6 +486,9 @@ class MeshLink(private val context: Context) {
                         lastSeenEpochSec = a.timestamp(),
                     )
                 )
+                diag("ADVERT   ${a.name()?.ifBlank { null } ?: hex(a.publicKey()).take(12)}" +
+                    "  type=${a.type()}" +
+                    (a.latitude()?.let { la -> "  %.4f,%.4f".format(la, a.longitude()) } ?: ""))
                 _status.value = _status.value.let { it.copy(adverts = it.adverts + 1, lastEvent = "advert") }
             }
 
@@ -489,6 +513,7 @@ class MeshLink(private val context: Context) {
 
             override fun onChannelMessage(frame: ChannelMessageFrame) {
                 Log.i(TAG, "[link] channel msg: ${frame.message().text()}")
+                diag("CHANMSG  ${frame.message().text()}")
                 _status.value = _status.value.let { it.copy(messages = it.messages + 1, lastEvent = "msg") }
             }
 
@@ -509,13 +534,36 @@ class MeshLink(private val context: Context) {
                         _load.value = _load.value.copy(batteryMv = mv)
                     }
                     is io.iotone.meshcore.frames.ChannelInfoFrame -> dumpChannel(frame.info())
-                    else -> Unit
+                    // THE ADVERT RECEIPT. CMD_SEND_SELF_ADVERT is answered with
+                    // OK or ERROR, and both used to fall into `else -> Unit`.
+                    // That meant "we sent the advert" was a claim about a byte
+                    // we put on a wire, not about anything the radio did with
+                    // it -- and if the firmware rejected it we would never have
+                    // known. It is still only the FIRMWARE's acknowledgement,
+                    // not proof of a transmission: no companion protocol
+                    // reports that.
+                    is io.iotone.meshcore.frames.OkFrame ->
+                        diag("OK       command accepted")
+                    is io.iotone.meshcore.frames.ErrorFrame -> {
+                        Log.w(TAG, "[link] ERROR from radio: $frame")
+                        diag("ERROR    radio rejected a command: $frame")
+                    }
+                    is io.iotone.meshcore.frames.RfLogFrame ->
+                        diag("RF       ${frame.log()}")
+                    is io.iotone.meshcore.frames.TelemetryResponseFrame ->
+                        diag("TELEM    ${frame}")
+                    is io.iotone.meshcore.frames.AckFrame -> diag("ACK      $frame")
+                    is io.iotone.meshcore.frames.MsgSentFrame -> diag("SENT     $frame")
+                    is io.iotone.meshcore.frames.UnsupportedFrame ->
+                        diag("UNSUP    $frame")
+                    else -> diag("FRAME    ${frame.javaClass.simpleName}")
                 }
             }
 
             override fun onDecodeFailure(failure: DecodeFailure) {
                 // Decoding is total, so this is data we should look at, not a crash.
                 Log.w(TAG, "[link] decode failure: ${failure.error()}")
+                diag("DECODE!  ${failure.error()}")
                 _status.value = _status.value.copy(lastEvent = "decode-fail")
             }
         })
@@ -537,6 +585,8 @@ class MeshLink(private val context: Context) {
     companion object {
         private const val TAG = "MeshmoreXR"
         private const val APP_NAME = "MeshmoreXR"
+        /** Lines kept in the diagnostics tail. */
+        private const val DIAG_MAX = 300
         /** Channel slots to enumerate at connect. The firmware has no count query. */
         private const val CHANNEL_SLOTS = 4
         private const val SCAN_TIMEOUT_MS = 12_000L

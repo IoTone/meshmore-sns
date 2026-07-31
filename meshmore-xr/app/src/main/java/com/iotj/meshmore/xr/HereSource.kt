@@ -117,4 +117,22 @@ object Settings {
         context.getSharedPreferences(FILE, Context.MODE_PRIVATE)
             .edit().putBoolean(KEY_DEVICE_LOCATION, on).apply()
     }
+
+    /**
+     * The decoded-traffic panel. ON by default FOR NOW: the advert path is
+     * still unproven and the panel is how we prove it. This default is
+     * temporary and should flip back to off once it has done its job -- a
+     * debugging instrument left switched on becomes part of the product by
+     * accident.
+     */
+    fun diagnostics(context: Context): Boolean =
+        context.getSharedPreferences(FILE, Context.MODE_PRIVATE)
+            .getBoolean(KEY_DIAGNOSTICS, true)
+
+    fun setDiagnostics(context: Context, on: Boolean) {
+        context.getSharedPreferences(FILE, Context.MODE_PRIVATE)
+            .edit().putBoolean(KEY_DIAGNOSTICS, on).apply()
+    }
+
+    private const val KEY_DIAGNOSTICS = "diagnostics_panel"
 }

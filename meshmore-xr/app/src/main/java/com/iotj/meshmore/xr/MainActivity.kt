@@ -50,6 +50,8 @@ import androidx.xr.compose.spatial.Subspace
 import androidx.xr.compose.subspace.SpatialPanel
 import androidx.xr.compose.subspace.layout.SubspaceModifier
 import androidx.xr.compose.subspace.layout.height
+import androidx.xr.compose.subspace.layout.offset
+import androidx.xr.compose.subspace.layout.rotate
 import androidx.xr.compose.subspace.layout.width
 import com.iotj.meshmore.xr.spatial.Boot
 import com.iotj.meshmore.xr.spatial.Glyphs
@@ -148,6 +150,10 @@ class MainActivity : ComponentActivity() {
         // A flood advert reaches the whole mesh through every repeater that
         // hears it. That is someone else's airtime, so it is opt-in per launch:
         //   --ez flood true
+        if (intent?.hasExtra("diag") == true) {
+            Settings.setDiagnostics(this, intent.getBooleanExtra("diag", true))
+        }
+        Log.i(TAG, "[boot] diagnostics panel = ${Settings.diagnostics(this)}")
         link.floodOnConnect = intent?.getBooleanExtra("flood", false) == true
         Log.i(TAG, "[boot] connect advert = ${if (link.floodOnConnect) "FLOOD" else "zero-hop"}")
         setContent { MaterialTheme { Root(facts, link, pin, debug) } }
@@ -268,6 +274,29 @@ private fun Root(facts: List<Pair<String, String>>, link: MeshLink, pinOverride:
             Subspace {
                 SpatialPanel(SubspaceModifier.width(560.dp).height(420.dp)) {
                     DiagnosticSurface { StatusScreen(facts, link, spatial = true) }
+                }
+            }
+        }
+        // RADIO TRAFFIC — a conventional scrolling panel, off to the right.
+        //
+        // Everything else in this app refuses to be a panel on principle. This
+        // one is a panel ON PURPOSE: it is an instrument for finding out why
+        // the mesh is not doing what you expect, and a scrolling transcript of
+        // decoded frames is genuinely the right shape for that. Making it
+        // spatial would make it worse.
+        //
+        // Pushed to the right and turned away from the forward arc so it never
+        // sits in front of the horizon. Default ON while the advert path is
+        // still in question; `--ez diag false` turns it off.
+        if (Settings.diagnostics(LocalContext.current)) {
+            Subspace {
+                SpatialPanel(
+                    SubspaceModifier
+                        .width(520.dp).height(760.dp)
+                        .offset(x = 620.dp, z = (-140).dp)
+                        .rotate(androidx.xr.runtime.math.Vector3(0f, 1f, 0f), -34f)
+                ) {
+                    RadioLogPanel(link)
                 }
             }
         }
@@ -623,6 +652,79 @@ private fun hereCaption(
     src.source == "headset" -> "HERE  HEADSET GPS"
     else -> "HERE  ${src.source.uppercase()}" +
         if (Settings.useDeviceLocation(ctx)) "  - HEADSET ARMED" else ""
+}
+
+/**
+ * The radio transcript. Deliberately an ordinary widget: header, scrolling
+ * list, two buttons.
+ *
+ * AUTOSCROLL FOLLOWS THE TAIL, AND STOPS WHEN YOU SCROLL. A log that yanks
+ * itself back to the bottom while you are reading three lines up is unusable
+ * for the one thing it is for, which is reading what already happened.
+ */
+@Composable
+private fun RadioLogPanel(link: MeshLink) {
+    val lines by link.diag.collectAsState()
+    val st by link.status.collectAsState()
+    val listState = androidx.compose.foundation.lazy.rememberLazyListState()
+    var follow by remember { mutableStateOf(true) }
+    val scope = rememberCoroutineScope()
+
+    // "Are we at the bottom" has to be recomputed from the list, not
+    // remembered from the last scroll: new lines move the bottom.
+    LaunchedEffect(lines.size, follow) {
+        if (follow && lines.isNotEmpty()) listState.scrollToItem(lines.size - 1)
+    }
+
+    Column(
+        Modifier.fillMaxSize().background(Color(0xF00A0E12)).padding(12.dp),
+    ) {
+        Text(
+            "RADIO TRAFFIC",
+            color = Color(0xFF66E8D0), fontFamily = FontFamily.Monospace,
+            fontWeight = FontWeight.Bold, fontSize = 15.sp,
+        )
+        Text(
+            "${st.state}   adverts ${st.adverts}   contacts ${st.contacts}   ${lines.size} lines",
+            color = Color(0xFF7A8C96), fontFamily = FontFamily.Monospace, fontSize = 11.sp,
+            modifier = Modifier.padding(bottom = 6.dp),
+        )
+        androidx.compose.foundation.lazy.LazyColumn(
+            state = listState,
+            modifier = Modifier.fillMaxWidth().weight(1f),
+        ) {
+            items(lines.size) { i ->
+                val l = lines[i]
+                Text(
+                    l,
+                    // Colour by KIND, read off the tag the writer already
+                    // emitted -- nothing here re-parses the frame.
+                    color = when {
+                        l.contains("ERROR") || l.contains("DECODE!") -> Color(0xFFFF7A6B)
+                        l.contains(">>ADVERT") -> Color(0xFFFFD166)
+                        l.contains("OK ") -> Color(0xFF8CE99A)
+                        l.contains("ADVERT") -> Color(0xFF66E8D0)
+                        else -> Color(0xFFAFC0CA)
+                    },
+                    fontFamily = FontFamily.Monospace, fontSize = 11.sp,
+                )
+            }
+        }
+        Row(
+            Modifier.fillMaxWidth().padding(top = 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Target("ADVERT", Color(0xFFFFD166)) { link.announce(false) }
+            Target("FLOOD", Color(0xFFFF7A6B)) { link.announce(true) }
+            Target(if (follow) "FOLLOWING" else "PAUSED", Color(0xFF66E8D0)) {
+                follow = !follow
+                if (follow && lines.isNotEmpty()) {
+                    scope.launch { listState.scrollToItem(lines.size - 1) }
+                }
+            }
+            Target("CLEAR", Color(0xFF7A8C96)) { link.clearDiag() }
+        }
+    }
 }
 
 @Composable
