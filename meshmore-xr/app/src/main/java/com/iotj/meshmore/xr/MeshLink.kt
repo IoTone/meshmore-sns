@@ -83,7 +83,13 @@ class MeshLink(private val context: Context) {
     private val _here = MutableStateFlow(MeshNodes.Here(null, null))
     val here: StateFlow<MeshNodes.Here> = _here.asStateFlow()
 
-    private fun publish() { _mesh.value = peers.values.sortedBy { it.name } }
+    private fun publish() {
+        val v = peers.values.sortedBy { it.name }
+        _mesh.value = v
+        val withPos = v.count { it.lat != null && it.lon != null &&
+            (kotlin.math.abs(it.lat) > 1e-7 || kotlin.math.abs(it.lon) > 1e-7) }
+        Log.i(TAG, "[link] mesh: ${v.size} peers, $withPos with a position")
+    }
 
     private fun hex(b: ByteArray?): String =
         b?.take(6)?.joinToString("") { "%02x".format(it) } ?: ""
@@ -257,6 +263,12 @@ class MeshLink(private val context: Context) {
                 _here.value = MeshNodes.Here(selfInfo.latitude(), selfInfo.longitude())
                 Log.i(TAG, "[link] here = ${selfInfo.latitude()}, ${selfInfo.longitude()} " +
                     "(fix=${_here.value.known})")
+                // ASK FOR THE MESH. The device does not push its contact list on
+                // connect, so a client that only listens sees an empty horizon
+                // while the radio's own screen shows a full one. This is the
+                // difference between "no nodes" and "never asked".
+                Log.i(TAG, "[link] requesting contacts")
+                session?.requestContacts()
             }
 
             override fun onAdvert(frame: AdvertFrame) {

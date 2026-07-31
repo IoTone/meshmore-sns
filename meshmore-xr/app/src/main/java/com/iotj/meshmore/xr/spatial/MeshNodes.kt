@@ -93,8 +93,13 @@ object MeshNodes {
      * produces two motes off the shoulder and an empty ring. That is the
      * correct picture of what the radio actually knows.
      */
-    fun build(here: Here, peers: List<Peer>, nowEpochSec: Long): List<Horizon.Node> =
-        peers.map { p ->
+    fun build(
+        here: Here,
+        peers: List<Peer>,
+        nowEpochSec: Long,
+        limit: Int = MAX_MOTES,
+    ): List<Horizon.Node> =
+        rank(here, peers, nowEpochSec).take(limit).map { p ->
             val located = here.known && valid(p.lat) && valid(p.lon)
             val km = if (located) haversineKm(here.lat!!, here.lon!!, p.lat!!, p.lon!!) else 0.0
             Horizon.Node(
@@ -111,6 +116,37 @@ object MeshNodes {
             )
         }
 
+    /**
+     * WHICH NODES GET A MOTE.
+     *
+     * A real public mesh is not eleven nodes, it is hundreds -- the first live
+     * radio we pointed at this reported 165 contacts, and the horizon died
+     * trying to draw them. Two independent reasons to cap it:
+     *
+     *  - COST. Every node is roughly six entities, each with its own mesh
+     *    (sphere, hit proxy, callsign strokes, detail strokes). 165 nodes is
+     *    ~1000 meshes built in one pass, and the app did not survive it.
+     *
+     *  - LEGIBILITY. 165 motes spread over 360 degrees is one every 2.2
+     *    degrees, well inside each other's labels. A ring that dense carries
+     *    less information than a ring of twenty, not more.
+     *
+     * Ranking prefers nodes we can actually place, then the ones heard most
+     * recently -- "who is on the air near me", which is what the horizon is
+     * for. The remainder are not lost; they are simply not motes, and the
+     * caller is told how many were dropped rather than being left to assume
+     * the mesh is small.
+     */
+    fun rank(here: Here, peers: List<Peer>, nowEpochSec: Long): List<Peer> =
+        peers.sortedWith(
+            compareByDescending<Peer> { here.known && valid(it.lat) && valid(it.lon) }
+                .thenByDescending { it.lastSeenEpochSec }
+        )
+
+    /** How many of [peers] would be dropped at [limit]. For logging, not display. */
+    fun droppedCount(peers: List<Peer>, limit: Int = MAX_MOTES): Int =
+        (peers.size - limit).coerceAtLeast(0)
+
     /** 0 = heard just now, 1 = stale. Linear over [STALE_AFTER_SEC]. */
     fun ageOf(lastSeenEpochSec: Long, nowEpochSec: Long): Float {
         if (lastSeenEpochSec <= 0L) return 1f
@@ -123,4 +159,9 @@ object MeshNodes {
     const val MAX_KM = 50.0
     /** An hour with no advert and a node reads as fully stale. */
     const val STALE_AFTER_SEC = 3600.0
+    /**
+     * Motes on the horizon. Chosen for legibility first -- 24 over 360 degrees
+     * is one every 15 degrees, which leaves room for a callsign beside each.
+     */
+    const val MAX_MOTES = 24
 }

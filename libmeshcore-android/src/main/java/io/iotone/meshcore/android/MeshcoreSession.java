@@ -180,6 +180,23 @@ public final class MeshcoreSession {
     }
 
     /**
+     * Requests the device's stored contact list ({@code CMD_GET_CONTACTS},
+     * 0x04). The device replies with {@code ContactsStartFrame}, one
+     * {@link io.iotone.meshcore.frames.ContactFrame} per contact dispatched to
+     * {@link SessionListener#onContact}, then {@code EndOfContactsFrame}.
+     *
+     * <p>Without this the contact list is never delivered: the device does not
+     * push it on connect, so a client that only listens sees an empty mesh
+     * while the radio's own screen shows a full one.</p>
+     *
+     * <p>No-op when not {@link SessionState#READY}.</p>
+     */
+    public void requestContacts() {
+        if (state.get() != SessionState.READY) return;
+        send(MeshcoreFrameCodec.getContacts());
+    }
+
+    /**
      * Closes the session and disconnects the transport.
      */
     public void close() {

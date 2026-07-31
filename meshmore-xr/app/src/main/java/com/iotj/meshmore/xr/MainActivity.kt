@@ -100,6 +100,8 @@ class MainActivity : ComponentActivity() {
         var selfTest: Boolean = false
         /** --ez sim true : draw the fake ring instead of the radio's mesh. */
         var simulate: Boolean = false
+        /** --es home "lat,lon" : our position when the radio has no GPS. */
+        var homeOverride: MeshNodes.Here? = null
     }
 
     // One link per activity. Checkpoint 3 lives here.
@@ -127,6 +129,12 @@ class MainActivity : ComponentActivity() {
         Log.i(TAG, "[boot] selftest = $selfTest")
         simulate = intent?.getBooleanExtra("sim", false) ?: false
         Log.i(TAG, "[boot] simulate = $simulate")
+        homeOverride = intent?.getStringExtra("home")?.split(",")?.let { parts ->
+            val la = parts.getOrNull(0)?.trim()?.toDoubleOrNull()
+            val lo = parts.getOrNull(1)?.trim()?.toDoubleOrNull()
+            if (la != null && lo != null) MeshNodes.Here(la, lo) else null
+        }
+        Log.i(TAG, "[boot] home override = ${homeOverride ?: "<none, using radio GPS>"}")
         setContent { MaterialTheme { Root(facts, link, pin, debug) } }
         Log.i(TAG, "[boot] setContent done")
     }
@@ -343,14 +351,28 @@ private fun HorizonScene(link: MeshLink) {
 
     // The mesh, rebuilt whenever membership changes.
     LaunchedEffect(signature, here, horizonRef.value) {
+        // DEBOUNCE. A contact sync delivers the whole list one frame at a time
+        // -- 58 contacts arrived as 58 separate membership changes, and without
+        // this the scene is disposed and rebuilt 58 times in 1.5 s. LaunchedEffect
+        // cancels on key change, so a delay here means only the last one runs.
+        kotlinx.coroutines.delay(700)
         val h = horizonRef.value ?: return@LaunchedEffect
         val st = stageRef.value ?: return@LaunchedEffect
         val o = originRef.value ?: return@LaunchedEffect
+        // WHERE WE ARE. The companion radio reports its own position, but a
+        // board with no GPS reports 0/0 -- and without an origin no bearing can
+        // be computed, so every peer parks in the unlocated arc however good
+        // its own position is. `--es home "lat,lon"` lets the operator state
+        // where they are. That is not a fabricated bearing: the brief forbids
+        // inventing a peer's position, not being told our own.
+        val origin2 = if (here.known) here else MainActivity.homeOverride ?: here
         val nodes = if (MainActivity.simulate) simulatedMesh() else
-            MeshNodes.build(here, mesh, System.currentTimeMillis() / 1000)
+            MeshNodes.build(origin2, mesh, System.currentTimeMillis() / 1000)
         Log.i(TAG_UI, "[horizon] building ${nodes.size} nodes " +
             "(${if (MainActivity.simulate) "SIMULATED" else "live"}, " +
-            "fix=${here.known}, located=${nodes.count { it.located }})")
+            "fix=${origin2.known}${if (!here.known && MainActivity.homeOverride != null) " via --es home" else ""}, " +
+            "located=${nodes.count { it.located }}" +
+            MeshNodes.droppedCount(mesh).let { if (it > 0) ", $it not shown" else "" } + ")")
         nodesRef.value = nodes
         h.build(nodes, o, st.floorHeight())
     }
