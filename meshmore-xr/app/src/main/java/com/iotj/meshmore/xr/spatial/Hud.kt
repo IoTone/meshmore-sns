@@ -230,8 +230,21 @@ class Hud(private val session: Session, private val theme: Horizon.Palette) {
         return x
     }
 
-    private companion object {
-        const val TAG = "MeshmoreXR"
+    companion object {
+        /**
+         * The strips the bands occupy, as degrees from the centre of the VIEW.
+         * Horizon reads these to fade any callsign that drifts underneath one:
+         * the HUD is view-fixed and the mesh is world-fixed, so they cross
+         * whenever the head pitches, and no amount of pinning prevents that.
+         *
+         * Inner edge 10.5 rather than 10: the world window's own boundary, plus
+         * a shade, so a label sitting exactly on the edge does not flicker.
+         * Outer 17 covers the ribbon's numerals (to ~15.1) and the stats line.
+         */
+        const val BAND_INNER_DEG = 10.5f
+        const val BAND_OUTER_DEG = 17.0f
+
+        private const val TAG = "MeshmoreXR"
         /** HUD plane distance. Everything angular is evaluated here. */
         const val D = 1.05f
         const val SAFE_H_DEG = 28f

@@ -83,6 +83,8 @@ class Horizon(private val session: Session, private val theme: Palette) {
         val label: Entity,
         val detail: MeshEntity,
         val at: Vector3,
+        /** Where the CALLSIGN hangs — lower than the mote, and what gets veiled. */
+        val labelAt: Vector3,
         val dist: Float,
         val bearing: Float,
         val baseAlpha: Float,
@@ -287,7 +289,7 @@ class Horizon(private val session: Session, private val theme: Palette) {
 
             val peer = Peer(
                 node = n, mote = mote, label = txt, detail = detail,
-                at = Vector3(px, py, pz), dist = dist, bearing = bearing,
+                at = Vector3(px, py, pz), labelAt = anchor, dist = dist, bearing = bearing,
                 baseAlpha = lum.coerceIn(0.25f, 1f),
             )
             peers += peer
@@ -407,15 +409,18 @@ class Horizon(private val session: Session, private val theme: Palette) {
 
     private fun apply(p: Peer, action: InputEvent.Action) {
         when (action) {
+            // Label alpha is NOT written here. veil() owns it and runs every
+            // frame; two writers on one property means whichever fired last
+            // wins, and the hover events fire at transitions while the veil
+            // fires continuously — so hovering inside a HUD band would light
+            // the callsign back up and leave it lit.
             InputEvent.Action.HOVER_ENTER -> {
                 p.mote.setScale(HOVER_SCALE)
                 p.mote.setAlpha(1f)
-                p.label.setAlpha(1f)
             }
             InputEvent.Action.HOVER_EXIT -> {
                 p.mote.setScale(1f)
                 p.mote.setAlpha(p.baseAlpha)
-                p.label.setAlpha(p.baseAlpha)
             }
             else -> Unit
         }
@@ -507,6 +512,58 @@ class Horizon(private val session: Session, private val theme: Palette) {
         }
     }
 
+    /**
+     * FADE CALLSIGNS THAT DRIFT UNDER THE MICROHUD.
+     *
+     * The HUD is view-fixed and the mesh is world-fixed, so the two cross
+     * whenever the head pitches — no amount of pinning prevents it, and the
+     * result is a node name printed through the link readout with both
+     * illegible. One of them has to give way, and it is the callsign: the HUD
+     * band is a fixed, tiny, known strip that the user relies on being able to
+     * read at a glance, while a callsign that has wandered into it will wander
+     * out again the moment they look level.
+     *
+     * The MOTE is left alone deliberately. Losing the name where it is
+     * unreadable anyway costs nothing; losing the dot would punch holes in the
+     * ring and misrepresent where the mesh is. You lose the label, not the node.
+     *
+     * The view angle is (world elevation - head pitch), which is exactly how
+     * Hud.place positions a band: a mark at local y sits at pitch + atan(y/D).
+     * The two therefore agree by construction rather than by tuning.
+     */
+    fun veil(head: Pose) {
+        val t = head.translation
+        val q = head.rotation
+        val fy = -2f * (q.y * q.z - q.w * q.x)
+        val pitchDeg = Math.toDegrees(kotlin.math.asin(fy.coerceIn(-1f, 1f)).toDouble()).toFloat()
+        var veiled = 0
+        peers.forEach { p ->
+            val dx = p.labelAt.x - t.x
+            val dy = p.labelAt.y - t.y
+            val dz = p.labelAt.z - t.z
+            val r = kotlin.math.sqrt(dx * dx + dy * dy + dz * dz)
+            if (r < 1e-3f) return@forEach
+            val view = Math.toDegrees(
+                kotlin.math.asin((dy / r).coerceIn(-1f, 1f)).toDouble()
+            ).toFloat() - pitchDeg
+            val a = kotlin.math.abs(view)
+            val hidden = a >= Hud.BAND_INNER_DEG && a <= Hud.BAND_OUTER_DEG
+            val base = if (p.hovered) 1f else p.baseAlpha
+            p.label.setAlpha(if (hidden) base * VEIL_ALPHA else base)
+            if (hidden) veiled++
+        }
+        // Logged on CHANGE only. A per-frame line would be 30 Hz of noise, but
+        // without any line at all "the bands are clear" is indistinguishable
+        // from "the veil never ran", and those look identical in a screenshot.
+        if (veiled != lastVeiled) {
+            lastVeiled = veiled
+            Log.i(TAG, "[horizon] veiled $veiled callsign(s) under the hud (pitch %.0f°)"
+                .format(pitchDeg))
+        }
+    }
+
+    private var lastVeiled = -1
+
     /** Drive the pulses. Called from a frame loop; cheap and allocation-free. */
     fun tick(dt: Float) {
         reconcileHover()
@@ -573,6 +630,13 @@ class Horizon(private val session: Session, private val theme: Palette) {
         const val TYPE_ROOM = 3
         const val TYPE_SENSOR = 4
         /** Hover growth. Big enough to be unmistakable, small enough not to jump. */
+        /**
+         * How far a veiled callsign drops. Not zero: it still reads as "a node
+         * is there, its name is behind the instrument", which is true and is
+         * information. Disappearing entirely would look like the mesh thinned
+         * out every time the user tipped their head.
+         */
+        private const val VEIL_ALPHA = 0.12f
         private const val HOVER_SCALE = 1.35f
         /** How long hover survives losing every pointer. Covers tracking jitter. */
         private const val HOVER_GRACE_MS = 180L

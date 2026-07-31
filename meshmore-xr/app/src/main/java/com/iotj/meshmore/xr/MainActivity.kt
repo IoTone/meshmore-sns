@@ -520,6 +520,8 @@ private fun HorizonScene(link: MeshLink) {
                 }
                 stage.headNow()?.let {
                     horizon.faceViewer(it.translation)
+                    // Callsigns give way to the microhud bands where they cross.
+                    horizon.veil(it)
                     hereMarkRef.value?.faceViewer(it.translation)
                     // The microhud is head-locked, so it is re-placed from the
                     // live pose every frame rather than anchored once.
