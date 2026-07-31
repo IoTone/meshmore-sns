@@ -79,6 +79,26 @@ class MeshLink(private val context: Context) {
     private val _mesh = MutableStateFlow<List<MeshNodes.Peer>>(emptyList())
     val mesh: StateFlow<List<MeshNodes.Peer>> = _mesh.asStateFlow()
 
+    /**
+     * LOADING, as a real fraction rather than a spinner.
+     *
+     * The contact sync announces its size up front (ContactsStartFrame carries
+     * a count), so the progress we show is the progress that exists -- no
+     * invented percentage, and the bar cannot sit at 90% forever.
+     */
+    data class Load(
+        val total: Int = 0,
+        val received: Int = 0,
+        val done: Boolean = false,
+        val batteryMv: Int? = null,
+        val rssi: Int? = null,
+    ) {
+        val fraction: Float get() = if (total <= 0) 0f else (received.toFloat() / total).coerceIn(0f, 1f)
+    }
+
+    private val _load = MutableStateFlow(Load())
+    val load: StateFlow<Load> = _load.asStateFlow()
+
     /** Where the radio thinks it is; the origin every bearing is measured from. */
     private val _here = MutableStateFlow(MeshNodes.Here(null, null))
     val here: StateFlow<MeshNodes.Here> = _here.asStateFlow()
@@ -86,9 +106,14 @@ class MeshLink(private val context: Context) {
     private fun publish() {
         val v = peers.values.sortedBy { it.name }
         _mesh.value = v
-        val withPos = v.count { it.lat != null && it.lon != null &&
-            (kotlin.math.abs(it.lat) > 1e-7 || kotlin.math.abs(it.lon) > 1e-7) }
-        Log.i(TAG, "[link] mesh: ${v.size} peers, $withPos with a position")
+        // Logged on completion only. A 254-contact sync logging per contact
+        // floods the ring buffer and evicts the lines you actually need -- the
+        // build and teardown events at either end of the load.
+        if (_load.value.done || v.size % 50 == 0) {
+            val withPos = v.count { it.lat != null && it.lon != null &&
+                (kotlin.math.abs(it.lat) > 1e-7 || kotlin.math.abs(it.lon) > 1e-7) }
+            Log.i(TAG, "[link] mesh: ${v.size} peers, $withPos with a position")
+        }
     }
 
     private fun hex(b: ByteArray?): String =
@@ -269,6 +294,7 @@ class MeshLink(private val context: Context) {
                 // difference between "no nodes" and "never asked".
                 Log.i(TAG, "[link] requesting contacts")
                 session?.requestContacts()
+                session?.requestBatteryStorage()
             }
 
             override fun onAdvert(frame: AdvertFrame) {
@@ -306,12 +332,32 @@ class MeshLink(private val context: Context) {
                         lastSeenEpochSec = c.lastAdvertTimestamp(),
                     )
                 )
+                _load.value = _load.value.let { it.copy(received = it.received + 1) }
                 _status.value = _status.value.let { it.copy(contacts = it.contacts + 1, lastEvent = "contact") }
             }
 
             override fun onChannelMessage(frame: ChannelMessageFrame) {
                 Log.i(TAG, "[link] channel msg: ${frame.message().text()}")
                 _status.value = _status.value.let { it.copy(messages = it.messages + 1, lastEvent = "msg") }
+            }
+
+            override fun onOtherFrame(frame: io.iotone.meshcore.frames.MeshcoreInbound) {
+                when (frame) {
+                    is io.iotone.meshcore.frames.ContactsStartFrame -> {
+                        Log.i(TAG, "[link] contacts sync: ${frame.count()} expected")
+                        _load.value = Load(total = frame.count().toInt(), received = 0)
+                    }
+                    is io.iotone.meshcore.frames.EndOfContactsFrame -> {
+                        Log.i(TAG, "[link] contacts sync complete")
+                        _load.value = _load.value.copy(done = true)
+                    }
+                    is io.iotone.meshcore.frames.BatteryStorageFrame -> {
+                        val mv = runCatching { frame.battery().batteryMillivolts() }.getOrNull()
+                        Log.i(TAG, "[link] battery = ${mv}mV")
+                        _load.value = _load.value.copy(batteryMv = mv)
+                    }
+                    else -> Unit
+                }
             }
 
             override fun onDecodeFailure(failure: DecodeFailure) {

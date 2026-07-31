@@ -51,6 +51,7 @@ import androidx.xr.compose.subspace.SpatialPanel
 import androidx.xr.compose.subspace.layout.SubspaceModifier
 import androidx.xr.compose.subspace.layout.height
 import androidx.xr.compose.subspace.layout.width
+import com.iotj.meshmore.xr.spatial.Boot
 import com.iotj.meshmore.xr.spatial.Horizon
 import com.iotj.meshmore.xr.spatial.MeshNodes
 import com.iotj.meshmore.xr.spatial.Stage
@@ -272,6 +273,9 @@ private fun Root(facts: List<Pair<String, String>>, link: MeshLink, pinOverride:
 
 private const val TAG_UI = "MeshmoreXR"
 
+/** Minimum time the boot surface stays up, so a fast sync is not a flicker. */
+private const val MIN_BOOT_S = 4.5f
+
 /**
  * The only rectangle in the app, and it does not arrive like one: a targeting
  * reticle punches in, tears, then unfolds vertically from a slit with the
@@ -351,6 +355,8 @@ private fun HorizonScene(link: MeshLink) {
     // rendering can be exercised with no hardware present.
     val mesh by link.mesh.collectAsState()
     val here by link.here.collectAsState()
+    val load by link.load.collectAsState()
+    val status by link.status.collectAsState()
 
     // Rebuild on MEMBERSHIP change, not on every frame the radio speaks. An
     // advert arrives with a fresh timestamp several times a minute per node,
@@ -363,6 +369,7 @@ private fun HorizonScene(link: MeshLink) {
     val stageRef = remember { mutableStateOf<Stage?>(null) }
     val originRef = remember { mutableStateOf<Stage.Origin?>(null) }
     val nodesRef = remember { mutableStateOf<List<Horizon.Node>>(emptyList()) }
+    val bootRef = remember { mutableStateOf<Boot?>(null) }
 
     // The mesh, rebuilt whenever membership changes.
     LaunchedEffect(signature, here, horizonRef.value) {
@@ -416,6 +423,11 @@ private fun HorizonScene(link: MeshLink) {
         // If any of these can break the label path, better it breaks here.
         // Floor first: the room claims itself, then the mesh arrives on top.
         stage.buildFloor(origin)
+        // The boot surface goes up immediately -- the wait it covers starts
+        // now, not when the first contact arrives.
+        val boot = Boot(session, palette)
+        boot.build(origin)
+        bootRef.value = boot
         stageRef.value = stage
         originRef.value = origin
         horizonRef.value = horizon
@@ -425,6 +437,7 @@ private fun HorizonScene(link: MeshLink) {
         var since = 0f
         var fall = 0f
         var lastAdverts = -1
+        var boot0Elapsed = 0f
         try {
             if (MainActivity.selfTest) launch { horizon.selfTest(origin) }
             var panelWarned = false
@@ -450,6 +463,18 @@ private fun HorizonScene(link: MeshLink) {
                 }
                 // Billboard the callsigns at the LIVE head, not the launch
                 // pose -- the labels have to keep facing the user as they walk.
+                // BOOT SURFACE. Held for a minimum dwell even if the sync is
+                // instant: a wordmark that appears and vanishes inside a second
+                // reads as a glitch, not as a launch.
+                val loading = !load.done || boot0Elapsed < MIN_BOOT_S
+                boot0Elapsed += 0.033f
+                if (loading) {
+                    bootRef.value?.tick(0.033f, load.fraction, load.total > 0)
+                } else if (bootRef.value != null) {
+                    Log.i(TAG_UI, "[boot] surface down after %.1fs".format(boot0Elapsed))
+                    bootRef.value?.clear()
+                    bootRef.value = null
+                }
                 stage.headNow()?.let { horizon.faceViewer(it.translation) }
                 horizon.drainSelections(origin)
                 horizon.tick(0.033f)

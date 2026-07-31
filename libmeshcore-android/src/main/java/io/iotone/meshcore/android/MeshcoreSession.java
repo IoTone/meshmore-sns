@@ -197,6 +197,19 @@ public final class MeshcoreSession {
     }
 
     /**
+     * Requests battery voltage and storage usage
+     * ({@code CMD_GET_BATT_AND_STORAGE}, 0x14). The reply arrives as a
+     * {@link io.iotone.meshcore.frames.BatteryStorageFrame} on
+     * {@link SessionListener#onOtherFrame}.
+     *
+     * <p>No-op when not {@link SessionState#READY}.</p>
+     */
+    public void requestBatteryStorage() {
+        if (state.get() != SessionState.READY) return;
+        send(MeshcoreFrameCodec.getBatteryStorage());
+    }
+
+    /**
      * Closes the session and disconnects the transport.
      */
     public void close() {
