@@ -76,6 +76,22 @@ object HandSign {
      * classifier that returns its best guess for any input is a classifier that
      * fires constantly.
      */
+    /** Finger extension as multiples of hand scale — the numbers the thresholds compare. */
+    fun ratios(joints: Map<HandJointType, Pose>): String {
+        val scale = scaleOf(joints)
+        if (scale <= 1e-4f) return "no-scale"
+        fun r(t: HandJointType): Float {
+            val w = joints[HandJointType.WRIST]?.translation ?: return -1f
+            val p = joints[t]?.translation ?: return -1f
+            return dist(w.x, w.y, w.z, p.x, p.y, p.z) / scale
+        }
+        return "t%.2f i%.2f m%.2f r%.2f l%.2f".format(
+            r(HandJointType.THUMB_TIP), r(HandJointType.INDEX_TIP),
+            r(HandJointType.MIDDLE_TIP), r(HandJointType.RING_TIP),
+            r(HandJointType.LITTLE_TIP),
+        )
+    }
+
     /** What the classifier saw. For calibrating thresholds against real hands. */
     fun describe(joints: Map<HandJointType, Pose>): String {
         val scale = scaleOf(joints)

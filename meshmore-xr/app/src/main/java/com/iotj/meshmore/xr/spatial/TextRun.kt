@@ -101,7 +101,32 @@ object TextRun {
         val entity: PanelEntity,
         val widthM: Float,
         val heightM: Float,
-    )
+        private val view: TextView? = null,
+    ) {
+        /**
+         * Change the words WITHOUT rebuilding the panel.
+         *
+         * The alternative — dispose and recreate per change — is what a live
+         * readout did, several times a second, and it produced overlapping
+         * panels showing different text at once: the old one still rendering
+         * while the new one drew over it, which reads as a label cut through its
+         * own middle. It also churned a PanelEntity (a real Android View and its
+         * surface) per update, which is not a thing to do at frame rate on a
+         * device that thermally throttles.
+         *
+         * Only valid for a panel built with [reusable], whose pixel size was
+         * fixed up front so the text can change without the geometry moving.
+         */
+        fun setText(text: String): Boolean {
+            val v = view ?: return false
+            if (v.text.toString() == text) return true
+            v.text = text
+            // The panel samples the view's own drawing; it has already been
+            // laid out at a fixed size, so re-measuring would only fight it.
+            v.invalidate()
+            return true
+        }
+    }
 
     /**
      * Build [text] as a run whose capitals stand [capHeightM] metres tall.
@@ -109,6 +134,23 @@ object TextRun {
      * [argb] is the ink colour. There is no background: the view is transparent
      * and stays that way.
      */
+    /**
+     * A run whose text can change later.
+     *
+     * [widest] is the longest string this panel will ever hold; the panel is
+     * sized for it once and never resized. A readout that re-measures itself is
+     * a readout that jitters, and on this SDK it is also a readout that rebuilds
+     * a View every time a digit changes.
+     */
+    fun reusable(
+        session: Session,
+        context: Context,
+        widest: String,
+        capHeightM: Float,
+        argb: Int,
+        name: String = "run",
+    ): Run? = create(session, context, widest, capHeightM, argb, name, reusable = true)
+
     fun create(
         session: Session,
         context: Context,
@@ -116,6 +158,7 @@ object TextRun {
         capHeightM: Float,
         argb: Int,
         name: String = "run",
+        reusable: Boolean = false,
     ): Run? = runCatching {
         val tv = TextView(context).apply {
             this.text = text
@@ -221,7 +264,7 @@ object TextRun {
         // default is not zero. There is no visible ground to round, but there is
         // no reason to leave the geometry claiming otherwise either.
         panel.cornerRadius = 0f
-        Run(panel, wPx * scale, hPx * scale)
+        Run(panel, wPx * scale, hPx * scale, if (reusable) tv else null)
     }.onFailure {
         Log.w(TAG, "[type] run '$text' failed: ${it.javaClass.simpleName}: ${it.message}")
     }.getOrNull()

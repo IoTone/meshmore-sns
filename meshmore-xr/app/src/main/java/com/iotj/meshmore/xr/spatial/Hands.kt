@@ -45,6 +45,7 @@ class Hands(
     private val leftJoints = mutableListOf<MeshEntity>()
     private var readout: TextRun.Run? = null
     private var lastText = ""
+    private var lastAt = 0L
 
     var visible: Boolean = false
         private set
@@ -61,6 +62,19 @@ class Hands(
             rightJoints += joint(root, theme.accent)
             leftJoints += joint(root, theme.alt)
         }
+
+        // ONE panel, sized once for the widest string it will ever hold. Built
+        // from a template rather than from live text so the geometry never
+        // moves as the numbers change.
+        readout = TextRun.reusable(
+            session, context,
+            "R TRAC NONE t0.00 i0.00 m0.00 r0.00 l0.00   L TRAC NONE t0.00 i0.00 m0.00 r0.00 l0.00",
+            0.014f, 0xFFCCE8F0.toInt(), "handdiag",
+        )?.also {
+            it.entity.parent = root
+            it.entity.setEnabled(false)
+            entities += it.entity
+        }
         setVisible(false)
         Log.i(TAG, "[hands] ${order.size} joints per hand")
     }
@@ -72,8 +86,13 @@ class Hands(
 
     fun setVisible(v: Boolean) {
         visible = v
-        entities.forEach { runCatching { it.setEnabled(v) } }
+        // Joints are enabled by tick() as the tracker reports them, so hiding
+        // must not be undone by the next frame — but SHOWING must not enable
+        // every joint either, or a hand that is not being tracked appears as a
+        // full skeleton frozen wherever it last was.
+        entities.forEach { runCatching { it.setEnabled(false) } }
         readout?.entity?.let { runCatching { it.setEnabled(v) } }
+        if (!v) lastText = ""
     }
 
     /**
@@ -90,12 +109,32 @@ class Hands(
         place(rightJoints, r?.handJoints)
         place(leftJoints, l?.handJoints)
 
-        val text = "R ${short(r?.trackingState?.toString())} ${letter(r?.handJoints)}   " +
-            "L ${short(l?.trackingState?.toString())} ${letter(l?.handJoints)}"
-        if (text != lastText) {
-            lastText = text
-            showReadout(text, head)
+        // THROTTLED. The classification flickers between letters as fingers
+        // move, and updating on every change meant several panel writes a
+        // second. 4 Hz is faster than anyone reads and slow enough to be free.
+        val now = android.os.SystemClock.uptimeMillis()
+        if (now - lastAt >= READOUT_MS) {
+            lastAt = now
+            // The RATIOS, not just the verdict. "NONE" tells you the classifier
+            // rejected the shape and nothing about why; the numbers tell you
+            // which finger it thinks is still extended, which is the one thing
+            // needed to move a threshold. Debugging a classifier from its output
+            // alone is guessing.
+            val text = "R " + row(r?.trackingState?.toString(), r?.handJoints) +
+                "   L " + row(l?.trackingState?.toString(), l?.handJoints)
+            if (text != lastText) {
+                lastText = text
+                readout?.setText(text)
+            }
         }
+        place(readoutAt(head))
+    }
+
+    /** `TRAC A t1.3 i0.9 m0.9 r0.9 l0.9` — verdict first, evidence after. */
+    private fun row(state: String?, j: Map<HandJointType, Pose>?): String {
+        val st = short(state)
+        if (j.isNullOrEmpty()) return "$st --"
+        return "$st ${HandSign.classify(j).name.take(4)} ${HandSign.ratios(j)}"
     }
 
     /**
@@ -136,46 +175,35 @@ class Hands(
     private fun short(s: String?): String =
         s?.substringAfter("(")?.substringBefore(")")?.take(4) ?: "----"
 
-    /**
-     * Tier R, because the readout carries state rather than a fixed legend.
-     *
-     * Placed along the head's FORWARD axis rather than at a fixed world offset.
-     * The offset version sat at (x, y-0.3, z-0.75) whatever direction the user
-     * was facing, so it drifted off to the side and was read edge-on — which is
-     * why half of it appeared to be missing. It was not clipped; it was turned
-     * away.
-     */
-    private suspend fun showReadout(text: String, head: Pose?) {
-        if (head == null) return
+    /** Where the readout sits: in front of the head, facing it, level. */
+    private fun readoutAt(head: Pose?): Pair<Vector3, androidx.xr.runtime.math.Quaternion>? {
+        head ?: return null
         val q = head.rotation
         val t = head.translation
-        // Head forward, flattened: the readout should sit in front of the user,
-        // not tilt with their chin.
+        // Head forward, FLATTENED. The readout should sit in front of the user
+        // rather than tilt with their chin — and the earlier version placed it
+        // at a fixed world offset regardless of facing, so it drifted to the
+        // side and was read edge-on, which looks exactly like a label cut in
+        // half through its own centre.
         val fx = 2f * (q.x * q.z + q.w * q.y)
         val fz = 1f - 2f * (q.x * q.x + q.y * q.y)
         val yaw = kotlin.math.atan2(-fx, fz)
-        val at = Vector3(
+        return Vector3(
             t.x + kotlin.math.sin(yaw) * READ_D,
-            t.y - 0.26f,
+            t.y - 0.24f,
             t.z - kotlin.math.cos(yaw) * READ_D,
-        )
-        val face = androidx.xr.runtime.math.Quaternion.fromEulerAngles(
+        ) to androidx.xr.runtime.math.Quaternion.fromEulerAngles(
             0f, -Math.toDegrees(yaw.toDouble()).toFloat(), 0f,
         )
-        val fresh = TextRun.create(session, context, text, 0.020f, 0xFFCCE8F0.toInt(), "handdiag")
-            ?: return
-        fresh.entity.parent = session.scene.activitySpace
-        fresh.entity.setPose(Pose(at, face), Space.ACTIVITY)
-        val old = readout
-        readout = fresh
-        entities += fresh.entity
-        runCatching {
-            old?.entity?.let { entities.remove(it); it.parent = null; (it as Entity).dispose() }
-        }
+    }
+
+    private fun place(at: Pair<Vector3, androidx.xr.runtime.math.Quaternion>?) {
+        val (p, r) = at ?: return
+        runCatching { readout?.entity?.setPose(Pose(p, r), Space.ACTIVITY) }
     }
 
     fun clear() {
-        rightJoints.clear(); leftJoints.clear(); readout = null; lastText = ""
+        rightJoints.clear(); leftJoints.clear(); readout = null; lastText = ""; lastAt = 0L
         val doomed = entities.toList()
         entities.clear()
         doomed.forEach { runCatching { it.parent = null } }
@@ -195,5 +223,7 @@ class Hands(
         const val JOINT_R = 0.009f
         /** Readout distance: close enough to read, past the reach surfaces. */
         const val READ_D = 0.9f
+        /** 4 Hz. Faster than anyone reads, slow enough to cost nothing. */
+        const val READOUT_MS = 250L
     }
 }
