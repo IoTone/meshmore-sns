@@ -70,6 +70,12 @@ object TextRun {
      */
     private const val CAL_TOLERANCE = 0.035f
 
+    /**
+     * Widest panel we will ask for. Comfortably under the 4096 px most GL
+     * implementations guarantee, with room for the 2x oversample.
+     */
+    private const val MAX_PX = 2048
+
     /** Loaded once. createFromAsset parses the whole 1.5 MB file every call. */
     private var cached: Typeface? = null
 
@@ -210,6 +216,24 @@ object TextRun {
             typeface = face(context)
         }
         tv.measure(View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED)
+
+        // WIDTH CEILING. A long run at 96 px rasterises very wide -- the hand
+        // readout's 88-character template came to ~4200 px -- and past the
+        // platform's surface limit the panel clamps, the TextView re-lays out
+        // inside the smaller box, and a maxLines=1 string becomes a wrapped one
+        // whose first line is all you see. That is what "only the top fifth of
+        // the text" was: not clipping, WRAPPING, caused by asking for a panel
+        // wider than the device would give.
+        //
+        // So the type shrinks to fit rather than the panel silently truncating.
+        // A smaller readout you can read beats a large one you cannot.
+        if (tv.measuredWidth > MAX_PX) {
+            val shrink = MAX_PX.toFloat() / tv.measuredWidth
+            tv.textSize = RASTER_PX * shrink
+            tv.measure(View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED)
+            Log.i(TAG, "[type] '%s' shrunk to %.0f px to fit %d".format(
+                text.take(24), RASTER_PX * shrink, MAX_PX))
+        }
         val wPx = tv.measuredWidth
         val hPx = tv.measuredHeight
         if (wPx <= 0 || hPx <= 0) {

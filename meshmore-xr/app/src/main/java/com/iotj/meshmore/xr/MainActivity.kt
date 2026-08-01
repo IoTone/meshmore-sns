@@ -508,7 +508,6 @@ private fun HorizonScene(link: MeshLink) {
             ", of ${mesh.size} peers)")
         nodesRef.value = nodes
         h.build(nodes, o, st.floorHeight())
-        hereMarkRef.value?.setText(hereCaption(ctx, hereSource, origin2))
     }
 
     LaunchedEffect(session) {
@@ -602,6 +601,14 @@ private fun HorizonScene(link: MeshLink) {
                 dockRef.value?.setLit("HELP", next)
                 if (next) cue.opened() else cue.closed()
             },
+            "HERE" to {
+                val on = !Settings.useDeviceLocation(ctx)
+                Settings.setUseDeviceLocation(ctx, on)
+                dockRef.value?.setLit("HERE", on)
+                hereEpoch.value += 1
+                if (on) cue.opened() else cue.closed()
+                Log.i(TAG_UI, "[here] headset GPS -> ${if (on) "ON" else "OFF"}")
+            },
             "HANDS" to {
                 val next = !(handsRef.value?.visible ?: false)
                 handsRef.value?.setVisible(next)
@@ -617,9 +624,10 @@ private fun HorizonScene(link: MeshLink) {
         // DEFAULT CLOSED, no exception. A launch flag that opens a live radio
         // panel is the same hazard as leaving it standing, just triggered by a
         // command line instead of a stray hand. The dock is the way in.
-        val hereMark = HereMark(session, palette)
-        hereMark.build(origin, hereCaption(ctx, hereSource, hereSource.resolve(here, MainActivity.homeOverride)))
-        hereMarkRef.value = hereMark
+        // HERE used to be its own ring, low and forward — which is exactly
+        // where the dock now sits. Two settings surfaces in the same place, one
+        // of them a lone unlabelled ring, is what the extra rings in the view
+        // were. It is a dock pip now; the dock is the settings surface.
         stageRef.value = stage
         originRef.value = origin
         horizonRef.value = horizon
@@ -682,7 +690,6 @@ private fun HorizonScene(link: MeshLink) {
                     horizon.faceViewer(it.translation)
                     // Callsigns give way to the microhud bands where they cross.
                     horizon.veil(it)
-                    hereMarkRef.value?.faceViewer(it.translation)
                     rackRef.value?.tick(it.translation)
                     dockRef.value?.tick()
                     helpRef.value?.tick(it.translation)
@@ -746,20 +753,6 @@ private fun HorizonScene(link: MeshLink) {
 
                 horizon.drainSelections(origin)
 
-                // THE ONE IN-HEADSET SETTING. Flipping it changes where every
-                // bearing is measured from, so the whole horizon has to be
-                // rebuilt -- done by bumping the epoch the build effect keys on
-                // rather than rebuilding here, so a pinch and a contact sync
-                // landing together still collapse into one rebuild.
-                if (hereMarkRef.value?.takePinch() == true) {
-                    val on = !Settings.useDeviceLocation(ctx)
-                    Settings.setUseDeviceLocation(ctx, on)
-                    Log.i(TAG_UI, "[here] headset GPS -> ${if (on) "ON" else "OFF"}")
-                    hereMarkRef.value?.setText(
-                        hereCaption(ctx, hereSource, hereSource.resolve(link.here.value, MainActivity.homeOverride))
-                    )
-                    hereEpoch.value += 1
-                }
 
                 // Link readout, refreshed about once a second. The strings are
                 // short on purpose: the microhud answers "is the radio there

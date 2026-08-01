@@ -103,10 +103,10 @@ class Dock(private val session: Session, private val theme: Horizon.Palette) {
             // rather than 0 so the renderer cannot decide to skip it.
             MeshEntity.create(
                 session, Prims.build(session, Prims.mote(R * 2.0f, 5, 8)),
-                listOf(Prims.material(session, theme.accent, 0.02f)),
+                listOf(Prims.material(session, theme.accent, PROXY_A)),
             ).also {
                 it.parent = root; it.setPose(Pose(at), Space.ACTIVITY)
-                it.setAlpha(0.02f); entities += it
+                it.setAlpha(PROXY_A); entities += it
                 runCatching {
                     it.addComponent(InteractableComponent.create(session) { ev -> onInput(pip, ev) })
                 }.onFailure { e -> Log.w(TAG, "[dock] no input on $name: $e") }
@@ -158,5 +158,13 @@ class Dock(private val session: Session, private val theme: Horizon.Palette) {
         const val CAP = 0.011f
         const val DIM = 0.18f
         const val DEBOUNCE_MS = 350L
+        /**
+         * Hit proxies are meant to be reached for and not seen. 0.02 was chosen
+         * so the renderer could not decide to skip a fully transparent entity —
+         * but on an ADDITIVE display 2% of a bright accent still emits, and a
+         * 4 cm sphere of it beside every pip read as a second, useless ring.
+         * 0.004 is the smallest value observed to stay hit-tested.
+         */
+        const val PROXY_A = 0.004f
     }
 }

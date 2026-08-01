@@ -44,6 +44,7 @@ class Hands(
     private val rightJoints = mutableListOf<MeshEntity>()
     private val leftJoints = mutableListOf<MeshEntity>()
     private var readout: TextRun.Run? = null
+    private var readoutL: TextRun.Run? = null
     private var lastText = ""
     private var lastAt = 0L
 
@@ -66,15 +67,16 @@ class Hands(
         // ONE panel, sized once for the widest string it will ever hold. Built
         // from a template rather than from live text so the geometry never
         // moves as the numbers change.
+        // TWO LINES, ONE PER HAND. A single line carrying both was 88
+        // characters and asked for a panel wider than the device would give.
+        // It is also the wrong shape: you are looking at one hand at a time.
+        val template = "R TRAC NONE t0.00 i0.00 m0.00 r0.00 l0.00"
         readout = TextRun.reusable(
-            session, context,
-            "R TRAC NONE t0.00 i0.00 m0.00 r0.00 l0.00   L TRAC NONE t0.00 i0.00 m0.00 r0.00 l0.00",
-            0.014f, 0xFFCCE8F0.toInt(), "handdiag",
-        )?.also {
-            it.entity.parent = root
-            it.entity.setEnabled(false)
-            entities += it.entity
-        }
+            session, context, template, 0.016f, 0xFFCCE8F0.toInt(), "handdiagR",
+        )?.also { it.entity.parent = root; it.entity.setEnabled(false); entities += it.entity }
+        readoutL = TextRun.reusable(
+            session, context, template, 0.016f, 0xFFCCE8F0.toInt(), "handdiagL",
+        )?.also { it.entity.parent = root; it.entity.setEnabled(false); entities += it.entity }
         setVisible(false)
         Log.i(TAG, "[hands] ${order.size} joints per hand")
     }
@@ -92,6 +94,7 @@ class Hands(
         // full skeleton frozen wherever it last was.
         entities.forEach { runCatching { it.setEnabled(false) } }
         readout?.entity?.let { runCatching { it.setEnabled(v) } }
+        readoutL?.entity?.let { runCatching { it.setEnabled(v) } }
         if (!v) lastText = ""
     }
 
@@ -120,11 +123,16 @@ class Hands(
             // which finger it thinks is still extended, which is the one thing
             // needed to move a threshold. Debugging a classifier from its output
             // alone is guessing.
-            val text = "R " + row(r?.trackingState?.toString(), r?.handJoints) +
-                "   L " + row(l?.trackingState?.toString(), l?.handJoints)
-            if (text != lastText) {
-                lastText = text
-                readout?.setText(text)
+            val tr = "R " + row(r?.trackingState?.toString(), r?.handJoints)
+            val tl = "L " + row(l?.trackingState?.toString(), l?.handJoints)
+            if (tr + tl != lastText) {
+                lastText = tr + tl
+                readout?.setText(tr)
+                readoutL?.setText(tl)
+                // Logged too, so a test run leaves evidence even when nobody
+                // thought to read the panel. The thresholds have now been
+                // guessed at twice; this is the datum that ends that.
+                Log.i(TAG, "[hands] $tr | $tl")
             }
         }
         place(readoutAt(head))
@@ -200,10 +208,14 @@ class Hands(
     private fun place(at: Pair<Vector3, androidx.xr.runtime.math.Quaternion>?) {
         val (p, r) = at ?: return
         runCatching { readout?.entity?.setPose(Pose(p, r), Space.ACTIVITY) }
+        runCatching {
+            readoutL?.entity?.setPose(Pose(Vector3(p.x, p.y - LINE, p.z), r), Space.ACTIVITY)
+        }
     }
 
     fun clear() {
-        rightJoints.clear(); leftJoints.clear(); readout = null; lastText = ""; lastAt = 0L
+        rightJoints.clear(); leftJoints.clear(); readout = null; readoutL = null
+        lastText = ""; lastAt = 0L
         val doomed = entities.toList()
         entities.clear()
         doomed.forEach { runCatching { it.parent = null } }
@@ -225,5 +237,7 @@ class Hands(
         const val READ_D = 0.9f
         /** 4 Hz. Faster than anyone reads, slow enough to cost nothing. */
         const val READOUT_MS = 250L
+        /** Gap between the two hand rows. */
+        const val LINE = 0.032f
     }
 }
