@@ -204,38 +204,48 @@ class MeshLink(private val context: Context) {
         }
         scanner.startScan(emptyList(), settings, cb)
 
-        // Settle, then choose. Also bounded: park with a clear state rather than
-        // scanning forever.
-        Handler(Looper.getMainLooper()).postDelayed({
-            if (!_status.value.scanning) return@postDelayed
-            scanner.stopScan(cb)
-            // Bonded first, then signal. compareBy is ascending, so maxByOrNull
-            // over (isBonded, rssi) picks a bonded radio if there is one and the
+        // SETTLE, THEN CHOOSE — AND KEEP LISTENING UNTIL THERE IS SOMETHING TO
+        // CHOOSE FROM.
+        //
+        // The first version stopped the scan unconditionally at the end of the
+        // settle window and only then checked whether it had heard anything. A
+        // radio whose advert did not land inside that first 1.5 s was therefore
+        // invisible forever, and the log said "still listening" while the
+        // scanner was already stopped -- so the failure presented as a dead
+        // radio when the radio was fine and we had stopped looking. Adverts are
+        // not on our schedule; the window has to re-arm.
+        val handler = Handler(Looper.getMainLooper())
+        var waited = 0L
+        lateinit var settle: Runnable
+        settle = Runnable {
+            if (!_status.value.scanning) return@Runnable
+            // Bonded first, then signal. compareBy is ascending, so maxWith over
+            // (isBonded, rssi) picks a bonded radio if there is one and the
             // loudest stranger otherwise.
             val best = seen.values.maxWithOrNull(
                 compareBy<ScanResult>({ if (it.device.bondState == BluetoothDevice.BOND_BONDED) 1 else 0 }, { it.rssi })
             )
             if (best == null) {
-                // Not a timeout -- the settle window simply heard nothing. Said
-                // as "timeout" it reads as "we waited 12 s", which sends you
-                // looking for a slow radio instead of a silent one.
-                Log.w(TAG, "[link] nothing named '$namePrefix*' in the settle window — still listening")
-                return@postDelayed
+                waited += SCAN_SETTLE_MS
+                if (waited >= SCAN_TIMEOUT_MS) {
+                    scanner.stopScan(cb)
+                    Log.w(TAG, "[link] no radio named '$namePrefix*' after ${SCAN_TIMEOUT_MS / 1000}s")
+                    _status.value = _status.value.copy(
+                        scanning = false, error = "no radio found", lastEvent = "timeout")
+                } else {
+                    handler.postDelayed(settle, SCAN_SETTLE_MS)
+                }
+                return@Runnable
             }
+            scanner.stopScan(cb)
             val name = runCatching { best.device.name }.getOrNull() ?: best.device.address
             val why = if (best.device.bondState == BluetoothDevice.BOND_BONDED) "bonded" else "strongest"
-            Log.i(TAG, "[link] ${seen.size} candidate(s) — $why '$name' rssi=${best.rssi}")
+            Log.i(TAG, "[link] ${seen.size} candidate(s) after ${waited + SCAN_SETTLE_MS}ms — " +
+                "$why '$name' rssi=${best.rssi}")
             _status.value = _status.value.copy(scanning = false, deviceName = name, lastEvent = "found $name")
             bondThenOpen(best.device, pin)
-        }, SCAN_SETTLE_MS)
-
-        Handler(Looper.getMainLooper()).postDelayed({
-            if (_status.value.scanning) {
-                scanner.stopScan(cb)
-                Log.w(TAG, "[link] scan timeout — no radio named '$namePrefix*'")
-                _status.value = _status.value.copy(scanning = false, error = "no radio found", lastEvent = "timeout")
-            }
-        }, SCAN_TIMEOUT_MS)
+        }
+        handler.postDelayed(settle, SCAN_SETTLE_MS)
     }
 
     /**

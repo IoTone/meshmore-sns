@@ -89,8 +89,13 @@ class RadioConfig(
         val codingRate: Int,
         val txDbm: Int,
     ) {
-        fun pretty() = "%.3fMHz BW%.4g SF%d 4/%d %ddBm"
-            .format(freqMhz, bandwidthKhz, spreadingFactor, codingRate, txDbm)
+        fun pretty() = "%.3fMHz BW%s SF%d 4/%d %ddBm".format(
+            freqMhz, trim(bandwidthKhz), spreadingFactor, codingRate, txDbm,
+        )
+
+        /** 62.5 stays 62.5; 125.0 becomes 125. Bandwidths are read, not computed. */
+        private fun trim(v: Double) =
+            if (v == Math.floor(v)) v.toLong().toString() else v.toString()
 
         fun encode() = "$freqMhz|$bandwidthKhz|$spreadingFactor|$codingRate|$txDbm"
 
