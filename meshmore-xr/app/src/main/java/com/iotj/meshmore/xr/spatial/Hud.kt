@@ -188,20 +188,32 @@ class Hud(private val session: Session, private val theme: Horizon.Palette) {
     suspend fun setStatus(text: String) {
         if (text == lastStatus) return
         lastStatus = text
-        runCatching { status?.let { entities.remove(it); (it as Entity).dispose() } }
-        status = MeshEntity.create(
+        // BUILD FIRST, THEN SWAP, THEN DISPOSE — see HereMark.setText for the
+        // crash this order prevents. Prims.build suspends, tick() runs on the
+        // same dispatcher and poses `status` every frame, so disposing before
+        // reassigning leaves a window where the field names a dead entity. This
+        // one runs about once a second against a 30 Hz loop, so the window is
+        // hit constantly rather than rarely.
+        val fresh = MeshEntity.create(
             session, Prims.build(session, Glyphs.text(text, STATS_CAP)),
             listOf(Prims.material(session, theme.alt, 0.8f)),
-        ).also { it.parent = session.scene.activitySpace; entities += it }
+        ).also { it.parent = session.scene.activitySpace }
+        val old = status
+        status = fresh
+        entities += fresh
+        runCatching { old?.let { entities.remove(it); it.parent = null; (it as Entity).dispose() } }
     }
 
     private var lastStatus: String? = null
 
     fun clear() {
-        entities.forEach { runCatching { it.parent = null } }
-        entities.forEach { runCatching { it.dispose() } }
-        entities.clear(); minors.clear(); majors.clear()
+        // References dropped BEFORE disposal, so whatever runs next finds empty
+        // collections rather than handles to dead entities.
         status = null; lastStatus = null
+        val doomed = entities.toList()
+        entities.clear(); minors.clear(); majors.clear()
+        doomed.forEach { runCatching { it.parent = null } }
+        doomed.forEach { runCatching { it.dispose() } }
     }
 
     private fun yawOf(p: Pose): Float {

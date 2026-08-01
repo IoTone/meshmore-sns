@@ -86,19 +86,36 @@ class HereMark(private val session: Session, private val theme: Horizon.Palette)
         Log.i(TAG, "[here] marker up: \"$text\"")
     }
 
-    /** Rebuild the caption. Cheap enough: it changes on selection, not per frame. */
+    /**
+     * Rebuild the caption. Cheap enough: it changes on selection, not per frame.
+     *
+     * BUILD FIRST, THEN SWAP, THEN DISPOSE. The obvious order -- dispose the old
+     * label, then create its replacement -- crashes, and it took a live radio to
+     * show it: Prims.build and Prims.material are SUSPEND, so this function
+     * yields between the dispose and the assignment. The frame loop runs on the
+     * same dispatcher, takes that gap, and calls faceViewer() on a field still
+     * pointing at the entity we just disposed:
+     *
+     *     Entity$DisposedException: MeshEntity@509717a is already disposed
+     *         at HereMark.faceViewer
+     *
+     * With the new entity built before the swap there is no window in which the
+     * field is stale, suspend point or not.
+     */
     suspend fun setText(text: String) {
         if (text == lastText) return
         lastText = text
-        runCatching { label?.let { entities.remove(it); (it as Entity).dispose() } }
-        label = MeshEntity.create(
+        val fresh = MeshEntity.create(
             session, Prims.build(session, Glyphs.text(text, CAP)),
             listOf(Prims.material(session, theme.text, 0.85f)),
         ).also {
             it.parent = session.scene.activitySpace
             it.setPose(Pose(Vector3(at.x, at.y - R * 2.4f - CAP, at.z)), Space.ACTIVITY)
-            entities += it
         }
+        val old = label
+        label = fresh
+        entities += fresh
+        runCatching { old?.let { entities.remove(it); it.parent = null; (it as Entity).dispose() } }
     }
 
     /** Keep the caption readable as the user moves around it. */
@@ -133,11 +150,13 @@ class HereMark(private val session: Session, private val theme: Horizon.Palette)
     }
 
     fun clear() {
+        // Drop the reference BEFORE disposing, not after: whatever runs next
+        // must find null rather than a handle to a dead entity.
+        label = null
+        lastText = null
         entities.forEach { runCatching { it.parent = null } }
         entities.forEach { runCatching { it.dispose() } }
         entities.clear()
-        label = null
-        lastText = null
     }
 
     private companion object {
