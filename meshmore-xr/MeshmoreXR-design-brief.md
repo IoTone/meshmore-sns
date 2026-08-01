@@ -1773,11 +1773,142 @@ Reads are already implemented — `SelfInfo` plus `CMD_GET_CHANNEL` give the who
 current state, and the `[radio]` log block prints it. What this station adds is
 the write path and the safety around it.
 
-Open question for you: **does RADIO ship in v1, or stay a diagnostic?** Editing
-LoRa params is the one action in this app that can leave a user's hardware
-silent in the field with no on-device way back. I would ship the low-risk half
-(name, position, policy, telemetry, manual-add) and gate the four link-breaking
-params behind the same explicit unlock the robot-control surfaces get.
+~~Open question for you: does RADIO ship in v1, or stay a diagnostic?~~
+**DECIDED 2026-07-31 — RADIO ships in v1, all of it.** The four link-breaking
+params are not gated behind an unlock; they are gated behind the STAGED COMMIT
+in §9.6.5, which protects against the actual failure mode — a half-applied
+parameter set — rather than against the user.
+
+### 9.6 THE RACK — the radio config as an instrument
+
+**Status: designed and prototyped. `airspace-ui` → RADIO. 2026-07-31.**
+**Decision taken: RADIO ships in v1.**
+
+§9.5 lists the fields. This is the form they take, and the form is doing real
+work — it is not a skin over a settings list.
+
+#### 9.6.1 Why a rack, and not a panel of controls
+
+The rest of the app is soft: pebbles, beads, haloes, things that invite a touch.
+Every one of them operates on the mesh, which you cannot break by looking at it.
+The radio is different. Four of its fields can leave the hardware deaf in the
+field with no on-device way back, and two of them broadcast where the wearer is.
+
+The 1980s rack is the honest vocabulary for that, because its controls **resist
+you in proportion to their consequence**:
+
+| Real-world affordance | What it encodes here |
+|---|---|
+| Detented encoder | discrete, countable, cannot be nudged to a half-value |
+| Guarded toggle | you must uncover it before you can throw it |
+| Lamp | binary. lit or not. never "sort of" |
+| Seven-segment | a *reading*, distinct from a *setting* |
+| Bargraph with a red zone | a scale with a limit that is not the device's |
+| Rack ears and unit seams | this is one instrument, in named sections |
+
+Nothing here is a row with a chevron, and nothing is a control you can operate
+by brushing past it.
+
+#### 9.6.2 The one thing that stops it being a period pastiche
+
+**On additive optics, black is transparent.** A 19-inch face is mostly dark
+anodised metal, which on an Aura renders as *nothing* — you would be left with
+LEDs and silkscreen floating in the room with no instrument under them.
+
+So the chassis is drawn as **edges and light**: rails, ears, screw bosses and
+unit seams are extruded and lit, and the metal between them is implied by the
+frame around it, exactly as a wireframe implies a solid. On a panel-substrate
+theme the face is painted in too and it reads as a solid instrument; on additive
+it reads as the ghost of one. Both are correct. Only the second survives
+daylight, which is why the frame — not the face — carries the silhouette.
+
+#### 9.6.3 Sized by angle, then proportioned
+
+Built at true scale (482.6 mm) and placed at REACH, a rack face subtends **49°**
+— wider than the comfortable field, forcing the user to scan their head across
+their own instrument. So the width is chosen from the angle we are willing to
+spend and the unit height falls out of the real 10.9:1 ratio:
+
+```
+0.44 m at 0.62 m   →   ~39° wide, 8U → ~29° tall
+```
+
+Eight units, four functional rows, two units each. The 2U row is what buys an
+encoder the space it needs: knob, readout above, caption below is three stacked
+elements, and 1U rows produced a first render where every label printed through
+its neighbour.
+
+#### 9.6.4 Four rows, four classes of risk
+
+| Row | Contents | Risk |
+|---|---|---|
+| **IDENTITY** | node name, public key, GPS SRC, BCAST POS | reversible / **disclosure** |
+| **AIR** | PRESET, FREQ, BW, SF, CR, TX power | **stranding** / regulatory |
+| **COMMIT** | LIVE vs PEND, PENDING lamp, COMMIT, REVERT | the gate |
+| **CHANNELS** | slots, PSK fingerprints, QR import | **key material** |
+
+You can tell which row is which before reading a word, which is the point.
+
+#### 9.6.5 The commit model — the part to review
+
+Frequency, bandwidth, spreading factor and coding rate are **one command and one
+working configuration**. Committing them a control at a time walks the radio
+through combinations that match no mesh at all: you would lose contact somewhere
+in the middle of your own edit.
+
+So the AIR row is **staged**. Turning an encoder changes PENDING. The panel shows
+LIVE and PEND on two segment displays, always both — a single readout that
+silently switches between "what the radio is doing" and "what it would do" is
+how you commit something you did not mean to. A lamp breathes while anything is
+staged, because an instrument with unsaved state that looks identical to one
+without is how you walk away mid-edit.
+
+And then the hard part: **once COMMIT is thrown, the app cannot tell you whether
+it worked.** A radio on the wrong parameters is still connected over BLE and
+still perfectly healthy — it simply hears nothing, which is indistinguishable
+from a quiet mesh. There is no verification available, from any protocol, at
+any point.
+
+So the panel keeps the previous set and offers REVERT for the session. That is
+not a courtesy; it is the *only* recovery path that exists, because once the
+radio is deaf the mesh cannot tell you anything.
+
+**Open, and worth your call: should REVERT survive a restart?** A dead-man timer
+— auto-revert unless the commit is confirmed within N seconds — would make a bad
+commit self-healing, at the cost of a radio that changes its own settings back
+while the user watches. I lean toward persisting the previous set to disk and
+offering REVERT at next launch, without the timer.
+
+#### 9.6.6 Presets before numbers
+
+Nobody thinks "SF7". They think "the mesh my region is on". Offering the raw
+parameters first is how someone ends up typing a spreading factor they read on a
+forum. So PRESET is the leftmost, largest encoder; turning it stages all four at
+once, and touching any raw encoder flips the preset to CUSTOM.
+
+#### 9.6.7 Two disclosure switches, never one
+
+GPS SRC says *use the headset's fix to draw the horizon* — never leaves the
+glasses. BCAST POS says *put that fix in every advert* — broadcasts where the
+wearer is, unencrypted, to anyone in range. They are separate guarded switches
+because they are separate decisions, and wiring one to the other would be the
+single most consequential shortcut available in this panel.
+
+PSKs are **fingerprinted, never printed**. A panel that shows a channel key is a
+panel that cannot be photographed, screen-shared, or worn in public.
+
+#### 9.6.8 Prototype
+
+`airspace-ui` → **RADIO**. Drag a knob to turn an encoder; click a guard twice
+(lift, then throw); COMMIT sends the staged set. `npm test` covers the staged/live
+split, commit, revert, and previous-set retention.
+
+One bug the prototype already caught, worth recording: the frequency encoder was
+built on a 125 kHz grid, and **910.525 — what the radio in the room actually runs
+— is not on it**. `indexOf` returned −1 and every downstream readout formatted
+`undefined`. An encoder that cannot express the value the hardware is already set
+to is worse than no encoder at all. The grid is 25 kHz, and encoders now clamp
+rather than crash.
 
 ### 9.4 Still a decision, not a setting
 

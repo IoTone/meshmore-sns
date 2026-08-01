@@ -9,7 +9,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "serve": "python3 -m http.server 5181 --directory dist",
-    "test": "node test/settings.mjs && node test/smoke.mjs",
+    "test": "node test/settings.mjs && node test/smoke.mjs && node test/rack.mjs",
     "diag": "node test/diag.mjs",
     "pack": "npm run build && python3 scripts/pack-artifact.py dist/artifact.html",
     "test:settings": "node test/settings.mjs"

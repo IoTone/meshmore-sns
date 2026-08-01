@@ -45,6 +45,15 @@
       margin: -2.5px 0 0 -2.5px; border-radius: 50%;
       background: rgba(255,255,255,.75); pointer-events: none;
     }
+    #rackwrap {
+      position: fixed; right: 14px; bottom: 14px; width: 340px;
+      display: flex; flex-direction: column; gap: 8px; z-index: 5;
+    }
+    #racklog {
+      font: 11px/1.5 ui-monospace, Menlo, monospace; white-space: pre-wrap;
+      margin: 0; min-height: 92px; color: #cfe3ea;
+    }
+    #rackhelp { font-size: 11px; }
   </style>
 </head>
 <body>
@@ -53,6 +62,7 @@
     <div class="row" id="modes">
       <button id="m-home" aria-pressed="true">HORIZON</button>
       <button id="m-console" aria-pressed="false">CONSOLE</button>
+      <button id="m-radio" aria-pressed="false">RADIO</button>
       <button id="m-hud" aria-pressed="true">HUD</button>
       <button id="m-sun" aria-pressed="false">SUNLIGHT</button>
       <button id="m-lang">EN</button>
@@ -65,6 +75,14 @@
         <span class="k">drag a bead</span> scrub a RAIL
       </div>
     </div>
+  </div>
+  <div id="rackwrap" style="display:none">
+    <div class="plate" id="rackhelp">
+      <span class="k">drag a knob</span> turn an encoder &nbsp;
+      <span class="k">click a guard twice</span> lift the cover, then throw &nbsp;
+      <span class="k">COMMIT</span> sends the staged set
+    </div>
+    <pre class="plate" id="racklog"></pre>
   </div>
   <div id="reticle"></div>
   <script type="module" src="/src/main.js"></script>

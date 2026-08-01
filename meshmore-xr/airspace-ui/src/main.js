@@ -11,6 +11,7 @@ import { Ember } from './airspace/widgets.js';
 import { Horizon } from './surfaces/Horizon.js';
 import { Console } from './surfaces/Console.js';
 import { Vectrex } from './surfaces/Vectrex.js';
+import { Rack } from './surfaces/Rack.js';
 import { makeMesh } from './mesh/fakeMesh.js';
 import { Hud } from './surfaces/Hud.js';
 import { setLocale, getLocale, loadFonts, t } from './airspace/i18n.js';
@@ -63,12 +64,14 @@ const sky = new THREE.Mesh(
 sky.visible = false;
 scene.add(sky);
 
+let rack = null;
+
 function build() {
   if (rig) {
     scene.remove(rig.horizon, rig.reach, rig.read, rig.edge, rig.ground);
   }
   rig = new Rig(scene);
-  horizon = null; consoleSurface = null; vectrex = null; hud = null;
+  horizon = null; consoleSurface = null; vectrex = null; hud = null; rack = null;
 
   scene.background = new THREE.Color(sunlight ? 0xbcd2e8 : theme.ground);
   sky.visible = sunlight;
@@ -86,6 +89,9 @@ function build() {
   if (mode === 'home') {
     horizon = new Horizon(theme, cue, nodes);
     rig.horizon.add(horizon);
+  } else if (mode === 'radio') {
+    rack = new Rack(theme, cue, { onLog: rackLog });
+    rig.reach.add(rack);
   } else {
     consoleSurface = new Console(theme, cue, {
       themeNames: THEMES.map((t) => t.name),
@@ -111,10 +117,28 @@ function setTheme(i, fromConsole) {
   cue.fire(theme, 'TIER_CHANGE');
 }
 
+// The RADIO panel keeps its own transcript. Committing a parameter set is the
+// one action here you may need to account for later, so it is written down.
+const rackLines = [];
+function rackLog(line) {
+  const t = new Date().toTimeString().slice(0, 8);
+  rackLines.push(`${t}  ${line}`);
+  const el = document.getElementById('racklog');
+  if (el) { el.textContent = rackLines.slice(-9).join('\n'); }
+}
+
 function setMode(m) {
   mode = m;
   document.getElementById('m-home').setAttribute('aria-pressed', m === 'home');
   document.getElementById('m-console').setAttribute('aria-pressed', m === 'console');
+  document.getElementById('m-radio').setAttribute('aria-pressed', m === 'radio');
+  document.getElementById('rackwrap').style.display = m === 'radio' ? 'block' : 'none';
+  // The scene opens facing the HORIZON's populated arc, which is nowhere near
+  // the rack. An instrument you have to go looking for on entry reads as broken.
+  if (m === 'radio') { yaw = 0; pitch = -0.02; }
+  // The HUD is HORIZON chrome. Over an instrument you are operating with your
+  // hands it is just glass in the way.
+  if (m === 'radio') hudOn = false;
   build(); status();
 }
 
@@ -136,6 +160,7 @@ THEMES.forEach((t, i) => {
 });
 document.getElementById('m-home').onclick = () => { cue.audio.init(); setMode('home'); };
 document.getElementById('m-console').onclick = () => { cue.audio.init(); setMode('console'); };
+document.getElementById('m-radio').onclick = () => { cue.audio.init(); setMode('radio'); };
 document.getElementById('m-hud').onclick = (e) => {
   hudOn = !hudOn;
   e.currentTarget.setAttribute('aria-pressed', hudOn);
@@ -187,7 +212,7 @@ renderer.domElement.addEventListener('click', () => {
   if (w && !w.draggable) w.commit();
 });
 
-function widgets() { return consoleSurface ? consoleSurface.widgets : []; }
+function widgets() { return (rack || consoleSurface)?.widgets || []; }
 
 function pick() {
   const ws = widgets();
@@ -265,8 +290,9 @@ function loop() {
   if (horizon) horizon.update(dt, camera);
   if (vectrex) vectrex.update(dt, camera);
   if (hud) hud.update(dt, camera);
-  if (consoleSurface) {
-    consoleSurface.update(dt, camera);
+  if (rack) rack.update(dt, camera);
+  if (consoleSurface) consoleSurface.update(dt, camera);
+  if (rack || consoleSurface) {
     const hot = pick();
     widgets().forEach((w) => { w.setHot(w === hot); w.setNear(w === hot); });
   }
@@ -301,5 +327,5 @@ function loop() {
 
 // `?diag=1` exposes the scene graph to test/diag.mjs.
 if (new URLSearchParams(location.search).has('diag')) {
-  window.__diag = { scene, camera, THREE, get rig() { return rig; } };
+  window.__diag = { scene, camera, THREE, get rig() { return rig; }, get rack() { return rack; }, rackLines };
 }
