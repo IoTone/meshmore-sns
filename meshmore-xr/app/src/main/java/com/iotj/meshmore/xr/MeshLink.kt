@@ -316,6 +316,65 @@ class MeshLink(private val context: Context) {
     /** Set before connect to make the connect-time advert a flood. */
     var floodOnConnect: Boolean = false
 
+    /** The radio's own configuration: staged, committed, recoverable (§9.6.5). */
+    val radio = RadioConfig(context) { Log.i(TAG, "[radio] $it") }
+
+    /**
+     * Send the staged parameter set to the radio, as ONE command.
+     *
+     * The previous set is written to disk before anything goes out, so a crash
+     * between the two leaves a way back rather than losing one. Nothing here
+     * verifies the result, because nothing can: see RadioConfig's class doc.
+     */
+    fun commitRadio(): Boolean {
+        val s = session
+        if (s == null || _status.value.state != SessionState.READY) {
+            Log.w(TAG, "[radio] commit skipped — link not ready")
+            return false
+        }
+        if (!radio.dirty()) { Log.i(TAG, "[radio] nothing staged"); return false }
+        val next = radio.commit() ?: return false
+        diag(">>RADIO  COMMIT ${next.pretty()}")
+        s.setRadioParams(
+            io.iotone.meshcore.model.RadioParams.of(
+                next.freqMhz, next.bandwidthKhz, next.spreadingFactor, next.codingRate,
+            )
+        )
+        s.setTxPower(next.txDbm)
+        // A parameter change can only be proven by hearing something afterwards,
+        // and a quiet mesh proves nothing -- but announcing ourselves on the new
+        // configuration is the one action that gives the change a chance to be
+        // noticed by somebody else.
+        announce(false)
+        return true
+    }
+
+    /** Put the radio back on the set it was running before the last commit. */
+    fun revertRadio(): Boolean {
+        val s = session
+        if (s == null || _status.value.state != SessionState.READY) return false
+        val p = radio.takePrevious() ?: run { Log.i(TAG, "[radio] no previous set"); return false }
+        diag(">>RADIO  REVERT ${p.pretty()}")
+        s.setRadioParams(
+            io.iotone.meshcore.model.RadioParams.of(
+                p.freqMhz, p.bandwidthKhz, p.spreadingFactor, p.codingRate,
+            )
+        )
+        s.setTxPower(p.txDbm)
+        announce(false)
+        return true
+    }
+
+    /** Rename the node as it advertises itself. */
+    fun setNodeName(name: String) {
+        val s = session ?: return
+        if (_status.value.state != SessionState.READY) return
+        Log.i(TAG, "[radio] advert name -> '$name'")
+        diag(">>RADIO  name '$name'")
+        s.setAdvertName(name)
+        announce(false)
+    }
+
     // ---- DIAGNOSTICS ------------------------------------------------------
     //
     // A rolling transcript of every frame the codec decodes. This exists
@@ -464,6 +523,20 @@ class MeshLink(private val context: Context) {
             override fun onReady(selfInfo: SelfInfo) {
                 // THE CHECKPOINT: CMD_APP_START -> RESP_CODE_SELF_INFO decoded.
                 dumpRadio(selfInfo)
+                // Adopt the radio's own parameters as LIVE. This runs on every
+                // reconnect, including the one after a commit went wrong -- which
+                // is exactly when the previous set on disk starts earning its
+                // keep, because the radio now reports its new wrong parameters
+                // as its truth and has no memory of anything else.
+                radio.observe(
+                    RadioConfig.Params(
+                        freqMhz = selfInfo.frequencyMhz(),
+                        bandwidthKhz = selfInfo.bandwidthKhz(),
+                        spreadingFactor = selfInfo.spreadingFactor(),
+                        codingRate = selfInfo.codingRate(),
+                        txDbm = selfInfo.txPowerDbm(),
+                    )
+                )
                 _status.value = _status.value.copy(selfInfo = selfInfo, lastEvent = "READY")
                 _here.value = MeshNodes.Here(selfInfo.latitude(), selfInfo.longitude())
                 Log.i(TAG, "[link] here = ${selfInfo.latitude()}, ${selfInfo.longitude()} " +

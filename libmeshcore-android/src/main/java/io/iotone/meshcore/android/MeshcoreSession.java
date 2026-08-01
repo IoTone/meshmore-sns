@@ -20,6 +20,7 @@ import io.iotone.meshcore.frames.MeshcoreInbound;
 import io.iotone.meshcore.frames.MessagesWaitingFrame;
 import io.iotone.meshcore.frames.NoMoreMessagesFrame;
 import io.iotone.meshcore.frames.SelfInfoFrame;
+import io.iotone.meshcore.model.RadioParams;
 import io.iotone.meshcore.model.SelfInfo;
 import io.iotone.meshcore.transport.MeshcoreTransport;
 
@@ -262,6 +263,54 @@ public final class MeshcoreSession {
      *
      * @param policy advert location policy (0 = none, 1 = share)
      */
+    /**
+     * Writes the four LoRa parameters as ONE command
+     * ({@code CMD_SET_RADIO_PARAMS}, 0x0B).
+     *
+     * <p>They are one command because they are one working configuration.
+     * Applying them piecemeal would walk the radio through combinations that
+     * match no mesh at all, and there is no way back over the air once it stops
+     * hearing anything — a radio on the wrong parameters is still connected and
+     * still perfectly healthy, it is simply deaf. Callers are expected to stage
+     * a complete set and commit it, keeping the previous set for recovery.</p>
+     *
+     * <p>No-op when not {@link SessionState#READY}.</p>
+     *
+     * @param params the complete parameter set
+     */
+    public void setRadioParams(RadioParams params) {
+        if (state.get() != SessionState.READY) return;
+        send(MeshcoreFrameCodec.setRadioParams(params));
+    }
+
+    /**
+     * Sets TX power in dBm ({@code CMD_SET_RADIO_TX_POWER}, 0x0C).
+     *
+     * <p>The ceiling is regulatory as well as physical; callers should clamp to
+     * {@code SelfInfo.maxTxPowerDbm()} and to the region's legal limit rather
+     * than passing a figure through unchecked.</p>
+     *
+     * <p>No-op when not {@link SessionState#READY}.</p>
+     *
+     * @param dbm transmit power, dBm
+     */
+    public void setTxPower(int dbm) {
+        if (state.get() != SessionState.READY) return;
+        send(MeshcoreFrameCodec.setRadioTxPower(dbm));
+    }
+
+    /**
+     * Sets the advertised node name ({@code CMD_SET_ADVERT_NAME}, 0x08).
+     *
+     * <p>No-op when not {@link SessionState#READY}.</p>
+     *
+     * @param name advertised name; truncated by the codec at 31 bytes
+     */
+    public void setAdvertName(String name) {
+        if (state.get() != SessionState.READY) return;
+        send(MeshcoreFrameCodec.setAdvertName(name));
+    }
+
     public void setAdvertLocPolicy(int policy) {
         SelfInfo s = selfInfo();
         if (state.get() != SessionState.READY || s == null) return;

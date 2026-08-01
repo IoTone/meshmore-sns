@@ -1873,11 +1873,28 @@ So the panel keeps the previous set and offers REVERT for the session. That is
 not a courtesy; it is the *only* recovery path that exists, because once the
 radio is deaf the mesh cannot tell you anything.
 
-**Open, and worth your call: should REVERT survive a restart?** A dead-man timer
-— auto-revert unless the commit is confirmed within N seconds — would make a bad
-commit self-healing, at the cost of a radio that changes its own settings back
-while the user watches. I lean toward persisting the previous set to disk and
-offering REVERT at next launch, without the timer.
+~~Open: should REVERT survive a restart?~~ **DECIDED 2026-07-31 — yes, on disk,
+no dead-man timer.** Implemented in `RadioConfig`.
+
+In-memory recovery only covers the case where you notice immediately. It does
+not cover the realistic one: you commit, the mesh goes quiet, you assume it is a
+quiet evening, and you find out tomorrow. By then the process is gone and with
+it the only record of what the radio used to be — **the radio itself cannot tell
+you, because it now reports its new wrong parameters as its truth.**
+
+The dead-man timer was rejected on a specific ground, not on taste: *"confirmed"*
+has no honest definition here. Hearing a packet within N seconds proves the
+parameters work; hearing **nothing** proves nothing at all on a mesh that is
+regularly quiet for minutes. A timer would silently revert good commits on quiet
+evenings — a worse failure than the one it prevents, because it is wrong and
+invisible.
+
+Two ordering rules fall out and are enforced in code:
+
+- The previous set is written to disk **before** the command goes out, so a
+  crash between the two leaves a way back rather than losing one.
+- REVERT is **single-use**. It restores one step and clears the record; keeping
+  it would offer a way back to the configuration you just escaped from.
 
 #### 9.6.6 Presets before numbers
 
