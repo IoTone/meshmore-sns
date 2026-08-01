@@ -51,6 +51,41 @@ class Hud(private val session: Session, private val theme: Horizon.Palette) {
     private val majors = mutableListOf<Pair<Int, MeshEntity>>()   // bearing deg -> entity
     private var status: MeshEntity? = null
 
+    /**
+     * BOTH BANDS START OFF.
+     *
+     * The microhud is the only head-locked thing in the app, which makes it the
+     * only thing the user cannot look away from. Defaulting it on decides for
+     * them that they want instrument chrome between their eyes and the room —
+     * on a see-through display that is a real cost, paid continuously. So it is
+     * summoned, like settings: ASL 'A' on the right hand raises the compass,
+     * 'A' on the left raises the link band.
+     *
+     * Tracked separately because they answer different questions. The compass
+     * says which way you are facing and is worth having while walking; the link
+     * band says what the radio is doing and is worth having while stopped.
+     */
+    var upperOn: Boolean = false
+        private set
+    var lowerOn: Boolean = false
+        private set
+
+    fun setUpper(on: Boolean) {
+        upperOn = on
+        // Only ever turns things OFF here. Which ticks should be lit depends on
+        // where the head is pointing, and tick() decides that every frame — so
+        // switching the band on is just permission for tick() to do its job.
+        if (!on) {
+            minors.forEach { runCatching { it.setEnabled(false) } }
+            majors.forEach { runCatching { it.second.setEnabled(false) } }
+        }
+    }
+
+    fun setLower(on: Boolean) {
+        lowerOn = on
+        runCatching { status?.setEnabled(on) }
+    }
+
     suspend fun build() {
         clear()
         val root = session.scene.activitySpace
@@ -155,9 +190,16 @@ class Hud(private val session: Session, private val theme: Horizon.Palette) {
             )
         }
 
+        // The ribbon is re-placed every frame, and placing implies enabling —
+        // so the gate has to be here, not only in setUpper(). Otherwise the
+        // first frame after a toggle-off puts every tick straight back.
+        if (!upperOn) {
+            minors.forEach { it.setEnabled(false) }
+            majors.forEach { it.second.setEnabled(false) }
+        }
         var slot = 0
         var bearing = 0
-        while (bearing < 360) {
+        while (upperOn && bearing < 360) {
             val d = wrapDeg(bearing - Math.toDegrees(yaw.toDouble()).toFloat())
             if (abs(d) <= SAFE_H_DEG) {
                 val x = D * tan(Math.toRadians(d.toDouble())).toFloat()
@@ -176,7 +218,7 @@ class Hud(private val session: Session, private val theme: Horizon.Palette) {
         }
         for (i in slot until minors.size) minors[i].setEnabled(false)
 
-        status?.let { place(it, 0f, STATS_Y) }
+        status?.let { it.setEnabled(lowerOn); if (lowerOn) place(it, 0f, STATS_Y) }
     }
 
     /**
@@ -197,7 +239,7 @@ class Hud(private val session: Session, private val theme: Horizon.Palette) {
         val fresh = MeshEntity.create(
             session, Prims.build(session, Glyphs.text(text, STATS_CAP)),
             listOf(Prims.material(session, theme.alt, 0.8f)),
-        ).also { it.parent = session.scene.activitySpace }
+        ).also { it.parent = session.scene.activitySpace; it.setEnabled(lowerOn) }
         val old = status
         status = fresh
         entities += fresh

@@ -1964,6 +1964,53 @@ built on a 125 kHz grid, and **910.525 — what the radio in the room actually r
 to is worse than no encoder at all. The grid is 25 kHz, and encoders now clamp
 rather than crash.
 
+### 9.7 ASL QUICK ACTIONS — gestures as commands
+
+**Started 2026-08-01. Classifier and toggles built; tutorial and docs owed.**
+
+The Aura reports hand tracking and nothing else — no controller, no eye
+tracking — so every command is either a pinch on a target or a shape the hand
+makes. A pinch costs world space and costs a glance: you have to *find* the
+thing. A hand shape costs neither, which is the right register for "turn the HUD
+off" — something you want mid-stride, without looking at anything.
+
+**ASL rather than an invented vocabulary**, for three reasons: the letters are
+already designed to be told apart by eye, they are already learnable because a
+real teaching literature exists, and a user who signs gets them for free. An
+invented gesture set has none of that and must justify every shape from scratch.
+
+| Gesture | Action |
+|---|---|
+| Right hand **A** | toggle the compass band (upper microhud) |
+| Left hand **A** | toggle the link band (lower microhud) |
+
+Per-hand rather than one gesture cycling both: the two bands answer different
+questions — *which way am I facing* while walking, *what is the radio doing*
+while stopped — and a cycle makes you pass through a state you did not want on
+the way to the one you did.
+
+**Both bands now default OFF.** The microhud is the only head-locked thing in
+the app, which makes it the only thing the user cannot look away from.
+Defaulting it on decides for them that they want instrument chrome between their
+eyes and the room, and on a see-through display that is a real cost paid
+continuously.
+
+Every letter needs a **dwell** before it fires and fires **once** per hold. A
+fist is something hands do by accident all day; a HUD that vanishes when you
+pick up a mug is worse than one you have to ask twice.
+
+#### 9.7.1 Owed, and flagged here so it is not forgotten
+
+1. **A first-run tutorial.** A gesture vocabulary with no teaching moment is a
+   feature only its author can use. This has to be part of first install, not a
+   page someone might find.
+2. **ASL help in a documentation surface.** Meshmore SNS ships good docs and
+   this should too — including the letter shapes themselves, which are the one
+   thing a user cannot look up by guessing.
+3. **More letters.** The classifier knows A and H and is deliberately reluctant
+   about everything else. Which actions deserve a letter is a design question,
+   not a capacity one.
+
 ### 9.4 Still a decision, not a setting
 
 These cannot honestly be runtime toggles — they change what gets built or

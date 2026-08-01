@@ -107,7 +107,14 @@ class Rack(
         // with an extra step.
         entities.forEach { runCatching { it.setEnabled(v) } }
         armed = false
+        // RE-ASSERT EVERY LAMP. setEnabled(true) turns the whole subtree back
+        // on, including the GLOW ring of a lamp that is supposed to be dark —
+        // so a PENDING that was lit when the rack was dismissed came back as a
+        // gold ring floating in the room with no panel under it. Enabling is
+        // not the same as restoring: the entities remember they were enabled,
+        // not what they meant.
         armLamp?.set(false)
+        if (v) refresh() else lampPending?.set(false)
         Log.i(TAG, "[rack] ${if (v) "summoned" else "dismissed"}")
     }
 

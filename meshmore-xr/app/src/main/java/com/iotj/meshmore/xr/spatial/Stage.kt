@@ -6,6 +6,7 @@ import android.util.Log
 import androidx.xr.arcore.ArDevice
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.DeviceTrackingMode
+import androidx.xr.runtime.HandTrackingMode
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
@@ -53,6 +54,10 @@ class Stage(private val session: Session, private val theme: Horizon.Palette) {
     private var floorY = 0f
     private var head: Pose? = null
 
+    /** True once the platform has actually granted hand tracking. */
+    var handsEnabled = false
+        private set
+
     /**
      * The head RIGHT NOW, in activity space, or null if tracking is unavailable.
      * Cheap enough to call every frame; billboarding needs it per-frame, since
@@ -97,8 +102,35 @@ class Stage(private val session: Session, private val theme: Horizon.Palette) {
      */
     suspend fun recentre(): Origin {
         val fallback = Origin(0f, 0f, 0f, 0f)
+        // ASK FOR HANDS, BUT NOT AT THE COST OF THE FLOOR.
+        //
+        // Config is a whole configuration, not a patch, so hand tracking has to
+        // be named here or it stays at its default of DISABLED — which is why
+        // Hand.right(session) returned null on a device reporting
+        // `hand_tracking = YES`.
+        //
+        // But HAND_TRACKING is a runtime permission, and without it configure()
+        // throws SecurityException for the WHOLE call. Requesting hands
+        // therefore took device tracking down with it: no head pose, no
+        // recentre, the entire experience anchored to the tracker's origin
+        // because of an optional gesture feature. So it degrades: try with
+        // hands, and if the platform refuses, come back without them.
+        runCatching {
+            session.configure(
+                Config(
+                    deviceTracking = DeviceTrackingMode.SPATIAL,
+                    handTracking = HandTrackingMode.BOTH,
+                )
+            )
+            handsEnabled = true
+        }.onFailure {
+            Log.w(TAG, "[stage] hand tracking refused (${it.javaClass.simpleName}) — " +
+                "gestures off, everything else unaffected")
+        }
         try {
-            session.configure(Config(deviceTracking = DeviceTrackingMode.SPATIAL))
+            if (!handsEnabled) {
+                session.configure(Config(deviceTracking = DeviceTrackingMode.SPATIAL))
+            }
         } catch (t: Throwable) {
             Log.w(TAG, "[stage] no device tracking (${t.javaClass.simpleName}) — using activity origin")
             return fallback

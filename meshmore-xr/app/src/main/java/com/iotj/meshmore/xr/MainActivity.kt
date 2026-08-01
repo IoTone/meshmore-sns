@@ -265,6 +265,12 @@ private fun Root(facts: List<Pair<String, String>>, link: MeshLink, pinOverride:
                 if (Settings.useDeviceLocation(activity ?: return@buildList)) {
                     add(android.Manifest.permission.ACCESS_FINE_LOCATION)
                 }
+                // HAND_TRACKING is declared in the manifest and is still a
+                // RUNTIME permission — declaring it only earns the right to
+                // ask. Without the grant, session.configure() throws for the
+                // whole call, which is how requesting an optional gesture
+                // feature managed to take device tracking down with it.
+                add("android.permission.HAND_TRACKING")
             }.toTypedArray()
         )
     }
@@ -539,6 +545,16 @@ private fun HorizonScene(link: MeshLink) {
         rack.setVisible(false)
         rackRef.value = rack
 
+        // HANDS. The Aura reports hand tracking and nothing else, so a shape the
+        // hand makes is the only command that costs neither world space nor a
+        // glance — which is what "turn the HUD off" needs, since you want it
+        // mid-stride without looking at anything.
+        val handR = runCatching { androidx.xr.arcore.Hand.right(session) }.getOrNull()
+        val handL = runCatching { androidx.xr.arcore.Hand.left(session) }.getOrNull()
+        val gateR = com.iotj.meshmore.xr.spatial.HandSign.Gate()
+        val gateL = com.iotj.meshmore.xr.spatial.HandSign.Gate()
+        Log.i(TAG_UI, "[hand] tracking right=${handR != null} left=${handL != null}")
+
         val dock = Dock(session, palette)
         dock.build(origin, listOf(
             "RADIO" to {
@@ -552,12 +568,9 @@ private fun HorizonScene(link: MeshLink) {
             rack.setVisible(false)
             dock.setLit("RADIO", false)
         }
-        // --ez radio true still opens it straight away, for a demo that should
-        // not begin with a scavenger hunt.
-        if (MainActivity.showRadio) {
-            rack.setVisible(true)
-            dock.setLit("RADIO", true)
-        }
+        // DEFAULT CLOSED, no exception. A launch flag that opens a live radio
+        // panel is the same hazard as leaving it standing, just triggered by a
+        // command line instead of a stray hand. The dock is the way in.
         val hereMark = HereMark(session, palette)
         hereMark.build(origin, hereCaption(ctx, hereSource, hereSource.resolve(here, MainActivity.homeOverride)))
         hereMarkRef.value = hereMark
@@ -630,6 +643,35 @@ private fun HorizonScene(link: MeshLink) {
                     // live pose every frame rather than anchored once.
                     hudRef.value?.tick(it)
                 }
+                // ASL QUICK ACTIONS. Right 'A' raises the compass band, left
+                // 'A' raises the link band. Per-hand rather than one gesture
+                // cycling both: two surfaces answering different questions
+                // should be two commands, and a cycle makes you pass through a
+                // state you did not want on the way to the one you did.
+                val nowMs = android.os.SystemClock.uptimeMillis()
+                handR?.state?.value?.handJoints?.let { j ->
+                    if (gateR.update(
+                            com.iotj.meshmore.xr.spatial.HandSign.classify(j), nowMs,
+                        ) == com.iotj.meshmore.xr.spatial.HandSign.Letter.A
+                    ) {
+                        hudRef.value?.let { h ->
+                            h.setUpper(!h.upperOn)
+                            Log.i(TAG_UI, "[hand] R:A — compass ${if (h.upperOn) "ON" else "OFF"}")
+                        }
+                    }
+                }
+                handL?.state?.value?.handJoints?.let { j ->
+                    if (gateL.update(
+                            com.iotj.meshmore.xr.spatial.HandSign.classify(j), nowMs,
+                        ) == com.iotj.meshmore.xr.spatial.HandSign.Letter.A
+                    ) {
+                        hudRef.value?.let { h ->
+                            h.setLower(!h.lowerOn)
+                            Log.i(TAG_UI, "[hand] L:A — link band ${if (h.lowerOn) "ON" else "OFF"}")
+                        }
+                    }
+                }
+
                 horizon.drainSelections(origin)
 
                 // THE ONE IN-HEADSET SETTING. Flipping it changes where every
