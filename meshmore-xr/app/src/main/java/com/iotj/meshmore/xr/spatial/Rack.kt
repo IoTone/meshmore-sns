@@ -144,7 +144,16 @@ class Rack(
             // tilt about the panel's X, then yaw about world Y.
             val ty = y * ct - z * st
             val tz = y * st + z * ct
-            Vector3(base.x + x * cy + tz * sy, base.y + ty, base.z + x * sy - tz * cy)
+            // +Z IS TOWARD THE USER. It was away, and everything raised off the
+            // face — knob bodies, witness marks, lamp domes, segment bars — was
+            // therefore sunk BEHIND the chassis it should stand proud of, so the
+            // knobs rendered as holes rather than as knobs.
+            //
+            // The user is at o and the rack sits REACH along (sin yaw, ·, -cos
+            // yaw), so rack -> user is (-sin yaw, ·, +cos yaw). Depth has to be
+            // added along THAT, not its negation. The x term keeps the right
+            // vector (cos yaw, ·, sin yaw); only depth was inverted.
+            Vector3(base.x + x * cy - tz * sy, base.y + ty, base.z + x * sy + tz * cy)
         }
 
         suspend fun mesh(f: Prims.Facets, rgb: Int, a: Float, x: Float, y: Float, z: Float = 0f):
