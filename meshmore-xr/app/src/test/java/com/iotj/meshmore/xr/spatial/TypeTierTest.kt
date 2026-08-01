@@ -85,8 +85,11 @@ class TypeWidthTest {
     @Test fun kanjiCountsDouble() {
         assertEquals(6, TypeTier.displayCells("中継局"))
         assertEquals(3, TypeTier.displayCells("ABC"))
-        assertEquals(2, TypeTier.displayCells("🍁"))
+        // Emoji are 3: measured ~1.24 em from the system emoji font, which is
+        // wider than a full-width CJK cell. See TypeTier.cellsOf.
+        assertEquals(3, TypeTier.displayCells("🍁"))
         assertEquals(8, TypeTier.displayCells("AB中継局"))
+        assertEquals(5, TypeTier.displayCells("AB🍁"))
     }
 
     @Test fun shortTextIsNotClipped() {

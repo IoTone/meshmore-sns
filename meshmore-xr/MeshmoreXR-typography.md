@@ -105,7 +105,7 @@ volume. Latin callsigns keep it.
 | Role | Face | Why |
 |---|---|---|
 | **Display** (wordmark, surface titles) | **Saira**, `wght` 600, `wdth` 105 | Direct continuity with Meshmore SNS mobile. The brand already reads this way. |
-| **Body / CJK** | **M PLUS 1 Code** | Measured below. Monospaced and technical rather than humanist, and sits beside Saira without argument. **Not yet shipped — tier R currently uses `Typeface.MONOSPACE`.** The monospace *choice* is already load-bearing: it is what lets the layout predict a run's width (§6.2). |
+| **Body / CJK** | **M PLUS 1 Code** | Measured below. Monospaced and technical rather than humanist, and sits beside Saira without argument. **SHIPPED 2026-08-01** — `assets/fonts/MPLUS1Code-Regular.ttf`, 5,870 codepoints / 5,232 ideographs / 181 kana, merged from the latin + latin-ext + japanese subsets. SIL OFL, licence shipped alongside. |
 | **Telemetry** (numerals, units, RSSI, coordinates) | **JetBrains Mono**, `wght` 500, `zero` on | Continuity with mobile's slashed-zero motif. Monospace is already tabular. Best x-height of the three (0.550). |
 
 **Mixing rule:** never mix Saira and M PLUS inside a single run. A run is
@@ -543,6 +543,13 @@ Three constraints that override the table:
    kinsoku. M PLUS is NOT yet shipped: tier R uses `Typeface.MONOSPACE`, the
    platform's stand-in, which is why the cell-width constant is measured rather
    than taken from the face's metrics.
+4. **T4 — the face.** **DONE 2026-08-01.** M PLUS 1 Code ships in assets and
+   tier R uses it. Measured 0.6792 em/cell on device, identical across six runs
+   — which is 0.496 em of advance against the face's 0.730 cap, i.e. half-width
+   to within half a percent. The measurement agrees with the face's own design,
+   so the constant describes something real rather than being curve-fitted. It
+   moved 23% from the platform monospace it replaced, which is the argument for
+   shipping a face rather than borrowing one.
    Verify against the 1.8° floor with `bin/xrshot`, not by eye on a monitor.
 4. **T4 — Angular scale enforcement.** Move all six roles behind an API that
    takes a role and a string and returns a size, with promotion built in.

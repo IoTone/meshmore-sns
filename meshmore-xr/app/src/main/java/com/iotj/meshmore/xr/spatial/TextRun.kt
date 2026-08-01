@@ -70,6 +70,26 @@ object TextRun {
      */
     private const val CAL_TOLERANCE = 0.035f
 
+    /** Loaded once. createFromAsset parses the whole 1.5 MB file every call. */
+    private var cached: Typeface? = null
+
+    /**
+     * M PLUS 1 Code, or the platform's monospace if the asset is somehow
+     * missing. The fallback is deliberate but noisy: a silent substitution
+     * changes the cell width the layout is budgeting against, and the drift
+     * check below is what would notice — so say it once, loudly, here too.
+     */
+    private fun face(context: Context): Typeface {
+        cached?.let { return it }
+        val t = runCatching { Typeface.createFromAsset(context.assets, FONT_ASSET) }
+            .onFailure { Log.e(TAG, "[type] $FONT_ASSET missing — falling back to platform monospace") }
+            .getOrDefault(Typeface.MONOSPACE)
+        cached = t
+        return t
+    }
+
+    private const val FONT_ASSET = "fonts/MPLUS1Code-Regular.ttf"
+
     /**
      * A run's panel plus what the caller needs to place it.
      *
@@ -128,22 +148,23 @@ object TextRun {
             // uppercases because its font has no lowercase; tier R has one.
             isAllCaps = false
 
-            // MONOSPACE, for two reasons that happen to be the same reason.
+            // M PLUS 1 CODE — T4. The plan's body face (§3): "monospaced and
+            // technical rather than humanist", chosen so tier R sits beside the
+            // stroke font without argument.
             //
-            // AESTHETIC: the plan's body face is M PLUS 1 Code -- "monospaced
-            // and technical rather than humanist" (§3) -- chosen so tier R sits
-            // beside the stroke font without argument. Proportional sans did
-            // not: on the live ring `Woofy Repeater` read as ordinary UI text
-            // next to `W7MIR REPEATER` in vector caps, and the horizon started
-            // drifting away from its own register. MONOSPACE is the platform
-            // stand-in until the real face ships.
+            // Two reasons, and they turn out to be one. AESTHETICALLY,
+            // proportional sans made `Woofy Repeater` read as ordinary UI text
+            // next to `W7MIR REPEATER` in vector caps and the ring drifted away
+            // from its own register. MEASURABLY, a monospace advance is a
+            // constant, so a run's width is cells x advance exactly -- which is
+            // what lets a layout with no access to a font predict it.
             //
-            // MEASURABLE: a monospace advance is a constant, so a run's width
-            // is cells x advance EXACTLY. The proportional face made the layout
-            // estimate conservative by about 2x -- safe, but it spent budget
-            // that could have labelled more nodes. Now the estimate can be
-            // right instead of merely cautious.
-            typeface = Typeface.MONOSPACE
+            // Shipped rather than borrowed. Typeface.MONOSPACE was the stand-in
+            // and it is whatever the platform happens to mean by monospace: it
+            // varies by Android version and by locale, and its CJK coverage is
+            // nobody's promise. This file is 5,232 ideographs and 181 kana that
+            // will still be there next release.
+            typeface = face(context)
         }
         tv.measure(View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED)
         val wPx = tv.measuredWidth
@@ -174,8 +195,16 @@ object TextRun {
         val cells = TypeTier.displayCells(text)
         if (cells > 0) {
             val measured = (wPx / capPx) / cells
-            if (kotlin.math.abs(measured - TypeTier.RUN_CELL_EM) > CAL_TOLERANCE) {
-                Log.w(TAG, "[type] CELL WIDTH DRIFT: measured %.3f em/cell, expected %.3f — '%s'"
+            // DIRECTIONAL. Only UNDER-reservation is a fault: the layout
+            // cleared less arc than the run occupies, so the label is about to
+            // print through its neighbour. Over-reservation wastes a little arc
+            // and collides with nothing, which is exactly what modelling an
+            // emoji as 3 cells does -- it is 2.5, and rounding down would trade
+            // a harmless gap for a real overlap. Warning on both directions made
+            // the check cry wolf about the safe one.
+            if (measured > TypeTier.RUN_CELL_EM + CAL_TOLERANCE) {
+                Log.w(TAG, "[type] CELL WIDTH UNDER-RESERVED: measured %.3f em/cell, " +
+                    "budgeted %.3f — labels will overlap — '%s'"
                     .format(measured, TypeTier.RUN_CELL_EM, text))
             }
         }

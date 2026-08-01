@@ -70,17 +70,21 @@ object TypeTier {
      * face ever stops agreeing with these.
      *
      *   STROKE  Glyphs advances 5.6 units on a 6-unit cap: 0.933 exactly.
-     *   RUN     Typeface.MONOSPACE measured 15.029 w/cap over 18 cells, three
-     *           times identically -> 0.835.
+     *   RUN     M PLUS 1 Code measured 0.6792 on device, identical across six
+     *           runs of different lengths and scripts.
      *
-     * They are within 11% of each other, which is the useful consequence of
-     * choosing a monospaced face for tier R (§3): the layout can predict a run's
-     * width almost as well as a stroke label's. Proportional sans was 2x narrower
-     * than the estimate, which never collided but spent budget that could have
-     * labelled more nodes.
+     * That second number is a good sanity check on the whole approach: M PLUS
+     * has a 0.730 em cap, so 0.6792 x 0.730 = 0.496 em of advance — half-width
+     * to within half a percent, which is exactly what a monospaced CJK face is
+     * supposed to be. The measurement agrees with the face's own design, so the
+     * constant is describing something real rather than curve-fitting.
+     *
+     * It also moved a long way from the platform monospace it replaced (0.835),
+     * which is the argument for shipping a face rather than borrowing one: the
+     * layout was budgeting 23% too much width for every run.
      */
     const val STROKE_CELL_EM = 0.933f
-    const val RUN_CELL_EM = 0.835f
+    const val RUN_CELL_EM = 0.679f
 
     /** Cell width as a fraction of cap height for whatever tier [text] takes. */
     fun cellEm(text: String, boundToObject: Boolean = true): Float =
@@ -145,10 +149,33 @@ object TypeTier {
         while (i < text.length) {
             val cp = text.codePointAt(i)
             i += Character.charCount(cp)
-            n += if (isWide(cp)) 2 else 1
+            n += cellsOf(cp)
         }
         return n
     }
+
+    /**
+     * Width of one code point in cells.
+     *
+     * EMOJI ARE THREE, NOT TWO, and that is a measurement rather than a guess.
+     * They do not come from the body face at all -- no text font ships colour
+     * emoji -- so they are drawn by the system emoji font at whatever advance IT
+     * uses. Modelled as full-width (2 cells) the layout under-reserved, and the
+     * calibration check caught it the moment M PLUS replaced the platform
+     * monospace: '🐶🐾Woofy Repeater' measured 0.716 em/cell against 0.679
+     * expected, which works out at ~1.24 em per emoji, or ~2.5 cells.
+     *
+     * Rounded UP. Over-reserving costs a little unused arc; under-reserving puts
+     * a label through its neighbour, and the whole point of this number is that
+     * the layout and the renderer agree.
+     */
+    fun cellsOf(cp: Int): Int = when {
+        isEmoji(cp) -> 3
+        isWide(cp) -> 2
+        else -> 1
+    }
+
+    private fun isEmoji(cp: Int): Boolean = cp in 0x1F300..0x1FAFF || cp in 0x2600..0x27BF
 
     /**
      * The East Asian Wide and Fullwidth blocks, plus emoji, which render at
@@ -166,7 +193,7 @@ object TypeTier {
         in 0xFE30..0xFE6F,   // CJK compatibility forms
         in 0xFF00..0xFF60,   // fullwidth forms
         in 0xFFE0..0xFFE6,
-        in 0x1F300..0x1FAFF, // emoji
+        in 0x1F300..0x1FAFF, // emoji — but see cellsOf: these are 3, not 2
         in 0x20000..0x2FA1F, // CJK ext B and beyond
         -> true
         else -> false
@@ -189,7 +216,12 @@ object TypeTier {
         var i = 0
         while (i < text.length) {
             val cp = text.codePointAt(i)
-            val w = if (isWide(cp)) 2 else 1
+            // cellsOf, NOT a second copy of the width rule. This function had
+            // its own `if (isWide) 2 else 1` and it silently disagreed with
+            // displayCells the moment emoji became three cells: clip fitted
+            // eight emoji into a budget displayCells then measured at 25. One
+            // quantity, one implementation.
+            val w = cellsOf(cp)
             // -1 leaves room for the ellipsis, which is itself one cell.
             if (n + w > maxCells - 1) break
             sb.appendCodePoint(cp)

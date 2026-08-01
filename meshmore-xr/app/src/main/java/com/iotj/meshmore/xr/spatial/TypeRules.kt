@@ -128,7 +128,7 @@ object TypeRules {
         var cells = 0
         while (i < text.length) {
             val cp = text.codePointAt(i)
-            val w = TypeTier.displayCells(String(Character.toChars(cp)))
+            val w = TypeTier.cellsOf(cp)
             if (cells + w > maxCells) break
             cells += w
             i += Character.charCount(cp)
