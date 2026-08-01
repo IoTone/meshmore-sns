@@ -104,4 +104,76 @@ object TypeTier {
 
     /** Code points, not chars: an emoji is a surrogate pair and counts as one. */
     fun cells(text: String): Int = text.codePointCount(0, text.length)
+
+    /**
+     * Width in CELLS, where a full-width glyph counts two.
+     *
+     * A kanji is about twice as wide as a Latin letter at the same cap height —
+     * that is what "full-width" means — so counting code points measures the
+     * wrong thing the moment a name stops being Latin. `中継局` is three code
+     * points and six cells wide, and a layout that believes the first number
+     * reserves half the space the label needs.
+     *
+     * Everything downstream of this — the de-occlusion budget, the truncation
+     * limit — is in these units, so both agree by construction.
+     */
+    fun displayCells(text: String): Int {
+        var n = 0
+        var i = 0
+        while (i < text.length) {
+            val cp = text.codePointAt(i)
+            i += Character.charCount(cp)
+            n += if (isWide(cp)) 2 else 1
+        }
+        return n
+    }
+
+    /**
+     * The East Asian Wide and Fullwidth blocks, plus emoji, which render at
+     * roughly square proportions in every fallback face we will meet.
+     */
+    private fun isWide(cp: Int): Boolean = when (cp) {
+        in 0x1100..0x115F,   // Hangul Jamo
+        in 0x2E80..0x303E,   // CJK radicals, Kangxi, punctuation
+        in 0x3041..0x33FF,   // kana, Bopomofo, compatibility
+        in 0x3400..0x4DBF,   // CJK ext A
+        in 0x4E00..0x9FFF,   // CJK unified
+        in 0xA000..0xA4CF,   // Yi
+        in 0xAC00..0xD7A3,   // Hangul syllables
+        in 0xF900..0xFAFF,   // CJK compatibility ideographs
+        in 0xFE30..0xFE6F,   // CJK compatibility forms
+        in 0xFF00..0xFF60,   // fullwidth forms
+        in 0xFFE0..0xFFE6,
+        in 0x1F300..0x1FAFF, // emoji
+        in 0x20000..0x2FA1F, // CJK ext B and beyond
+        -> true
+        else -> false
+    }
+
+    /**
+     * Trim [text] to [maxCells] of display width, marking the cut.
+     *
+     * TIER R HAS TO BE CLIPPED TOO, and it was not. The stroke path capped
+     * labels at Callsign.MAX_GLYPHS and tier R inherited no such limit, so the
+     * first live run produced `RBP SENSE CAP REPEATER ` at 1.003 m wide — about
+     * 23 degrees at its own range, against a horizon whose whole layout is built
+     * on labels being a known size. Rendering the full name is not a kindness
+     * when it prints through three of its neighbours.
+     */
+    fun clip(text: String, maxCells: Int): String {
+        if (displayCells(text) <= maxCells) return text
+        val sb = StringBuilder()
+        var n = 0
+        var i = 0
+        while (i < text.length) {
+            val cp = text.codePointAt(i)
+            val w = if (isWide(cp)) 2 else 1
+            // -1 leaves room for the ellipsis, which is itself one cell.
+            if (n + w > maxCells - 1) break
+            sb.appendCodePoint(cp)
+            n += w
+            i += Character.charCount(cp)
+        }
+        return sb.toString().trimEnd() + "\u2026"
+    }
 }

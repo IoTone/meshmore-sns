@@ -220,8 +220,13 @@ class Horizon(
             // something other than the stroke font should.
             val tier = TypeTier.of(n.name, boundToObject = true)
             val txt: Entity = if (tier == TypeTier.Tier.RUN && context != null && !isCluster) {
+                // Clipped to the SAME budget MeshNodes laid out against. The
+                // layout reserves space for a label of MAX_LABEL_CELLS; drawing
+                // a wider one puts it through the neighbours the layout just
+                // carefully cleared.
+                val shown = TypeTier.clip(n.name, MeshNodes.MAX_LABEL_CELLS)
                 val run = TextRun.create(
-                    session, context, n.name, capH,
+                    session, context, shown, capH,
                     argb = tintOf(theme.text, 0.45f + 0.55f * lum),
                     name = "run-${n.name.take(12)}",
                 )

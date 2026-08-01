@@ -313,7 +313,12 @@ object MeshNodes {
      * the separation rule needs no distance term.
      */
     fun labelHalfWidthRad(name: String): Float =
-        (name.codePointCount(0, name.length) * CELL_RAD) / 2f
+        // DISPLAY cells, not code points. A kanji is twice as wide as a Latin
+        // letter at the same cap height, so counting code points reserved half
+        // the space a CJK label actually needs -- and every tier R label that
+        // reached the ring after T2 was laid out against that wrong number.
+        // Clipped first, because the label that gets drawn is the clipped one.
+        (TypeTier.displayCells(TypeTier.clip(name, MAX_LABEL_CELLS)) * CELL_RAD) / 2f
 
     /**
      * WHICH NODES GET A MOTE.
@@ -368,6 +373,12 @@ object MeshNodes {
      * Horizon uses. ~1.2 degrees, so a 14-glyph callsign spans ~17.
      */
     const val CELL_RAD = 0.0212f
+    /**
+     * Widest a label may be, in display cells. Matches Callsign.MAX_GLYPHS so
+     * the stroke and run paths cannot drift apart: both budgets have to be the
+     * same number or the layout is estimating one path while drawing the other.
+     */
+    const val MAX_LABEL_CELLS = 18
     /** Breathing room between two labels sharing a lane. ~3 degrees. */
     const val LABEL_GAP_RAD = 0.05f
     /**

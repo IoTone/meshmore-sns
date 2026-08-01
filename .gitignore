@@ -16,3 +16,6 @@ local.properties
 *.iml
 
 # Note: the Flutter app keeps its own ignore rules in meshmore_sns_app/.gitignore
+
+# Pop-11 session images (bin/xrdeploy.p helpers). State, not source.
+*.psv

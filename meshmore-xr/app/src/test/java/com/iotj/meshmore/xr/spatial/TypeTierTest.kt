@@ -78,3 +78,47 @@ class TypeTierTest {
         assertTrue(samples.none { TypeTier.of(it, boundToObject = true) == Tier.PANEL })
     }
 }
+
+/** Width budgeting — T2. A label the layout did not reserve space for is a collision. */
+class TypeWidthTest {
+
+    @Test fun kanjiCountsDouble() {
+        assertEquals(6, TypeTier.displayCells("中継局"))
+        assertEquals(3, TypeTier.displayCells("ABC"))
+        assertEquals(2, TypeTier.displayCells("🍁"))
+        assertEquals(8, TypeTier.displayCells("AB中継局"))
+    }
+
+    @Test fun shortTextIsNotClipped() {
+        assertEquals("W7MIR", TypeTier.clip("W7MIR", 18))
+        assertEquals("中継局", TypeTier.clip("中継局", 18))
+    }
+
+    /** The live failure: 23 cells rendered at 1.003 m, ~23 deg at its own range. */
+    @Test fun theLiveOverrunIsClipped() {
+        val out = TypeTier.clip("RBP SENSE CAP REPEATER ", 18)
+        assertTrue("must be marked as cut", out.endsWith("…"))
+        assertTrue("must fit the budget", TypeTier.displayCells(out) <= 18)
+    }
+
+    /** Clipping counts width, so a kanji name is cut at half the code points. */
+    @Test fun clippingRespectsFullWidth() {
+        val out = TypeTier.clip("中継局中継局中継局中継局", 18)
+        assertTrue(TypeTier.displayCells(out) <= 18)
+    }
+
+    /** Never split a surrogate pair — half an emoji is a broken glyph, not a short one. */
+    @Test fun clippingNeverSplitsACodePoint() {
+        val out = TypeTier.clip("🍁".repeat(20), 18)
+        assertEquals(out, String(out.codePoints().toArray(), 0, out.codePointCount(0, out.length)))
+        assertTrue(TypeTier.displayCells(out) <= 18)
+    }
+
+    /** The estimate the layout uses must match what the renderer is handed. */
+    @Test fun layoutBudgetsWhatIsActuallyDrawn() {
+        val name = "RBP SENSE CAP REPEATER "
+        val drawn = TypeTier.clip(name, MeshNodes.MAX_LABEL_CELLS)
+        val estimatedCells = MeshNodes.labelHalfWidthRad(name) * 2f / MeshNodes.CELL_RAD
+        assertEquals(TypeTier.displayCells(drawn).toFloat(), estimatedCells, 0.01f)
+    }
+}
