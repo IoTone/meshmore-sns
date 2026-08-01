@@ -436,6 +436,9 @@ private fun HorizonScene(link: MeshLink) {
         // where they are. That is not a fabricated bearing: the brief forbids
         // inventing a peer's position, not being told our own.
         val origin2 = hereSource.resolve(here, MainActivity.homeOverride)
+        // Tell the mesh where we are, using the SAME fix the horizon is drawn
+        // from, so what we broadcast and what we draw cannot disagree.
+        if (Settings.shareLocation(ctx)) link.publishPosition(origin2)
         val nodes = if (MainActivity.simulate) simulatedMesh() else
             MeshNodes.build(origin2, mesh, System.currentTimeMillis() / 1000)
         // Count what was DRAWN, not what the cap would have dropped. The old

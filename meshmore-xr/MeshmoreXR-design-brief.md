@@ -1717,6 +1717,68 @@ test, so a setting cannot exist without a home:
 Enums are TUMBLERs, ranges are RAILs, booleans are DETENTs. Nothing is a row in
 a list.
 
+### 9.5 RADIO station — editing the radio from inside (planned, not built)
+
+**Status: designed here, not implemented. 2026-07-31.**
+
+Everything in §9.1–9.3 configures *the app*. Nothing configures *the radio*, and
+that gap has cost real time: frequency, spreading factor, bandwidth and coding
+rate must match the mesh exactly or the radio hears nothing while looking
+perfectly healthy, and the advert location policy silently suppressed our
+position until we went looking for it. All of it was reachable only over adb.
+
+A fifth CONSOLE station, **RADIO**, closes that.
+
+| Field | Control | Command | Risk |
+|---|---|---|---|
+| Node name | text | `CMD_SET_ADVERT_NAME` (0x08) | low |
+| Frequency MHz | RAIL | `CMD_SET_RADIO_PARAMS` (0x0B) | **link-breaking** |
+| Bandwidth kHz | TUMBLER | `CMD_SET_RADIO_PARAMS` | **link-breaking** |
+| Spreading factor | TUMBLER (SF7–SF12) | `CMD_SET_RADIO_PARAMS` | **link-breaking** |
+| Coding rate | TUMBLER (4/5–4/8) | `CMD_SET_RADIO_PARAMS` | **link-breaking** |
+| TX power dBm | RAIL, capped at `maxTxPowerDbm` | `CMD_SET_RADIO_TX_POWER` (0x0C) | regulatory |
+| Advertised position | DETENT + source | `CMD_SET_ADVERT_LATLON` (0x0C) | **privacy** |
+| Advert loc policy | DETENT | `CMD_SET_OTHER_PARAMS` (0x26) | **privacy** |
+| Manual-add contacts | DETENT | `CMD_SET_OTHER_PARAMS` | low |
+| Telemetry mode | TUMBLER | `CMD_SET_OTHER_PARAMS` | low |
+| Channel 0..n | name + PSK, QR import | `CMD_SET_CHANNEL` (0x20) | **key material** |
+
+Four rules this station has to follow, all of them learned rather than assumed:
+
+1. **The four LoRa params are one transaction.** They are a single command and a
+   single working configuration. Committing them one control at a time walks the
+   radio through combinations that match no mesh at all. Edit as a set, commit
+   once, and offer named presets before raw numbers — nobody means "SF7" first,
+   they mean "the mesh my region is on".
+
+2. **Changing them can strand the radio, and the app cannot tell you so.** Once
+   the params are wrong the radio is still connected over BLE and still perfectly
+   healthy; it simply hears nothing, and that is indistinguishable from a quiet
+   mesh. So: confirm before commit, keep the previous set, and offer REVERT for
+   as long as the session lasts. This is the one place in the app where an
+   are-you-sure earns its keep.
+
+3. **Position and PSK are not settings, they are disclosures.** Sharing position
+   broadcasts where the wearer is, unencrypted, to anyone in range — materially
+   different from using the same fix locally to draw bearings, which is why they
+   are already two separate flags in code and must stay two controls here. A
+   channel PSK decrypts every message on that channel: it may be imported and
+   replaced, and it is never displayed, only fingerprinted.
+
+4. **TX power has a legal ceiling, not just a device one.** Clamp to
+   `maxTxPowerDbm` from `SelfInfo` and label the region, rather than offering a
+   number the user may not lawfully transmit at.
+
+Reads are already implemented — `SelfInfo` plus `CMD_GET_CHANNEL` give the whole
+current state, and the `[radio]` log block prints it. What this station adds is
+the write path and the safety around it.
+
+Open question for you: **does RADIO ship in v1, or stay a diagnostic?** Editing
+LoRa params is the one action in this app that can leave a user's hardware
+silent in the field with no on-device way back. I would ship the low-risk half
+(name, position, policy, telemetry, manual-add) and gate the four link-breaking
+params behind the same explicit unlock the robot-control surfaces get.
+
 ### 9.4 Still a decision, not a setting
 
 These cannot honestly be runtime toggles — they change what gets built or

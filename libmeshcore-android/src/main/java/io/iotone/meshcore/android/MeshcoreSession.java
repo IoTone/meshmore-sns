@@ -229,6 +229,47 @@ public final class MeshcoreSession {
     }
 
     /**
+     * Sets the position this node puts in its own adverts
+     * ({@code CMD_SET_ADVERT_LATLON}, 0x0C). Degrees, converted to the
+     * protocol's micro-degrees.
+     *
+     * <p>This is what other nodes will see and plot. A node with no GPS
+     * reports 0/0 forever, and 0/0 is a real place in the Gulf of Guinea —
+     * so an unset position is not a harmless blank, it is a wrong answer
+     * that looks like a right one.</p>
+     *
+     * <p>No-op when not {@link SessionState#READY}.</p>
+     *
+     * @param latitude  degrees
+     * @param longitude degrees
+     */
+    public void setAdvertPosition(double latitude, double longitude) {
+        if (state.get() != SessionState.READY) return;
+        send(MeshcoreFrameCodec.setAdvertLatLon(
+                (int) Math.round(latitude * 1_000_000d),
+                (int) Math.round(longitude * 1_000_000d)));
+    }
+
+    /**
+     * Sets the advert location policy ({@code CMD_SET_OTHER_PARAMS}, 0x26)
+     * while preserving the other params from {@code selfInfo}.
+     *
+     * <p>Policy 0 means the node omits its position from adverts however
+     * good that position is, so setting a lat/lon without also setting this
+     * changes nothing on the air.</p>
+     *
+     * <p>No-op when not {@link SessionState#READY} or before self-info.</p>
+     *
+     * @param policy advert location policy (0 = none, 1 = share)
+     */
+    public void setAdvertLocPolicy(int policy) {
+        SelfInfo s = selfInfo();
+        if (state.get() != SessionState.READY || s == null) return;
+        send(MeshcoreFrameCodec.setOtherParams(
+                s.manualAddContacts() ? 1 : 0, s.telemetryModeRaw(), policy, s.multiAcks()));
+    }
+
+    /**
      * Closes the session and disconnects the transport.
      */
     public void close() {

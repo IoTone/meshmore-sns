@@ -216,8 +216,10 @@ class MeshLink(private val context: Context) {
                 compareBy<ScanResult>({ if (it.device.bondState == BluetoothDevice.BOND_BONDED) 1 else 0 }, { it.rssi })
             )
             if (best == null) {
-                Log.w(TAG, "[link] scan timeout — no radio named '$namePrefix*'")
-                _status.value = _status.value.copy(scanning = false, error = "no radio found", lastEvent = "timeout")
+                // Not a timeout -- the settle window simply heard nothing. Said
+                // as "timeout" it reads as "we waited 12 s", which sends you
+                // looking for a slow radio instead of a silent one.
+                Log.w(TAG, "[link] nothing named '$namePrefix*' in the settle window — still listening")
                 return@postDelayed
             }
             val name = runCatching { best.device.name }.getOrNull() ?: best.device.address
@@ -333,6 +335,50 @@ class MeshLink(private val context: Context) {
     }
 
     fun clearDiag() { _diag.value = emptyList() }
+
+    /**
+     * Give the radio a position to advertise, and permission to advertise it.
+     *
+     * THE RADIO WAS ANNOUNCING ITSELF AT 0/0. Two separate reasons, and fixing
+     * either alone changes nothing:
+     *
+     *  - It has no GPS, so its stored position is 0/0 -- which is not a blank,
+     *    it is the Gulf of Guinea. Other nodes were free to plot it there.
+     *  - advertLocPolicy was 0, meaning "omit position from adverts" however
+     *    good the position is.
+     *
+     * The position we send is the one the horizon is already measured from, so
+     * what we tell the mesh and what we draw cannot disagree.
+     *
+     * THIS BROADCASTS WHERE YOU ARE, to a public channel, unencrypted. That is
+     * a materially different act from using the same fix locally to compute
+     * bearings, so it is a separate setting -- enabling headset GPS does not
+     * silently start telling everyone about it.
+     */
+    fun publishPosition(here: MeshNodes.Here) {
+        val s = session
+        if (s == null || _status.value.state != SessionState.READY) return
+        if (!here.known) return
+        // DEDUPE, and re-advertise only on a real move. A GPS fix jitters by
+        // metres every second; re-announcing on every wobble would put an
+        // advert on a shared channel several times a minute for no new
+        // information. MOVE_DEG is about 11 m.
+        val prev = published
+        val moved = prev == null ||
+            kotlin.math.abs(prev.lat!! - here.lat!!) > MOVE_DEG ||
+            kotlin.math.abs(prev.lon!! - here.lon!!) > MOVE_DEG
+        if (!moved) return
+        published = here
+        Log.i(TAG, "[link] advertising position ${here.lat}, ${here.lon} (policy -> share)")
+        diag(">>POS    %.5f, %.5f  policy=share".format(here.lat, here.lon))
+        s.setAdvertPosition(here.lat!!, here.lon!!)
+        s.setAdvertLocPolicy(LOC_POLICY_SHARE)
+        // The position only reaches the mesh inside an advert, so one goes out
+        // with it -- and only here, on an actual change.
+        announce(false)
+    }
+
+    private var published: MeshNodes.Here? = null
 
     /**
      * Put a self-advert on the air, so other nodes learn this radio exists.
@@ -585,6 +631,10 @@ class MeshLink(private val context: Context) {
     companion object {
         private const val TAG = "MeshmoreXR"
         private const val APP_NAME = "MeshmoreXR"
+        /** ~11 m. Below this a "move" is GPS jitter, not a move. */
+        private const val MOVE_DEG = 0.0001
+        /** advertLocPolicy: 0 omits position from adverts, 1 shares it. */
+        const val LOC_POLICY_SHARE = 1
         /** Lines kept in the diagnostics tail. */
         private const val DIAG_MAX = 300
         /** Channel slots to enumerate at connect. The firmware has no count query. */

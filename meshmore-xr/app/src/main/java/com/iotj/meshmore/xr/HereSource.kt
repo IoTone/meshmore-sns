@@ -134,5 +134,23 @@ object Settings {
             .edit().putBoolean(KEY_DIAGNOSTICS, on).apply()
     }
 
+    /**
+     * Whether to tell the mesh where we are.
+     *
+     * SEPARATE FROM [useDeviceLocation] on purpose. Using a fix to compute
+     * bearings is local and private; putting it in an advert broadcasts it
+     * unencrypted on a public channel to anyone in range. Those are different
+     * decisions and one must not imply the other.
+     */
+    fun shareLocation(context: Context): Boolean =
+        context.getSharedPreferences(FILE, Context.MODE_PRIVATE)
+            .getBoolean(KEY_SHARE_LOCATION, true)
+
+    fun setShareLocation(context: Context, on: Boolean) {
+        context.getSharedPreferences(FILE, Context.MODE_PRIVATE)
+            .edit().putBoolean(KEY_SHARE_LOCATION, on).apply()
+    }
+
     private const val KEY_DIAGNOSTICS = "diagnostics_panel"
+    private const val KEY_SHARE_LOCATION = "share_location"
 }
