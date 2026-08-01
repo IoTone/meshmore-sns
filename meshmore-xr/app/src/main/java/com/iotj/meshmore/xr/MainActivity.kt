@@ -686,7 +686,7 @@ private fun HorizonScene(link: MeshLink) {
                     rackRef.value?.tick(it.translation)
                     dockRef.value?.tick()
                     helpRef.value?.tick(it.translation)
-                    launch { handsRef.value?.tick(handR, handL, it.translation) }
+                    launch { handsRef.value?.tick(handR, handL, it) }
                     // The microhud is head-locked, so it is re-placed from the
                     // live pose every frame rather than anchored once.
                     hudRef.value?.tick(it)

@@ -83,7 +83,7 @@ class Hands(
      * was. A stale joint is worse than a missing one: it looks like tracking,
      * and it is the last place the finger was rather than where it is.
      */
-    suspend fun tick(right: Hand?, left: Hand?, head: Vector3?) {
+    suspend fun tick(right: Hand?, left: Hand?, head: Pose?) {
         if (!visible) return
         val r = right?.state?.value
         val l = left?.state?.value
@@ -98,7 +98,23 @@ class Hands(
         }
     }
 
+    /**
+     * THE FRAME CONVERSION, and the reason the skeleton floated in mid-air three
+     * feet from the hand it belonged to.
+     *
+     * Hand joints arrive in ARCore's PERCEPTION space. SceneCore's Space.ACTIVITY
+     * is a different frame, so posing a joint straight into it puts the hand
+     * wherever the two origins happen to differ — which looks like a tiny
+     * cluster of dots hovering somewhere in the room, tracking your fingers
+     * perfectly and following none of your movements.
+     *
+     * This is the SAME bug the head pose had in P0, where it made the entire
+     * scene land outside the FOV, and it is the same fix. It is worth noticing
+     * that it recurred: any API that hands back a Pose from the perception layer
+     * needs this, and nothing in the type system says so.
+     */
     private fun place(into: List<MeshEntity>, joints: Map<HandJointType, Pose>?) {
+        val ps = session.scene.perceptionSpace
         order.forEachIndexed { i, type ->
             val e = into.getOrNull(i) ?: return@forEachIndexed
             val p = joints?.get(type)
@@ -106,8 +122,9 @@ class Hands(
                 runCatching { e.setEnabled(false) }
             } else {
                 runCatching {
+                    val inActivity = ps.getScenePoseFromPerceptionPose(p).poseInActivitySpace
                     e.setEnabled(true)
-                    e.setPose(Pose(p.translation), Space.ACTIVITY)
+                    e.setPose(Pose(inActivity.translation), Space.ACTIVITY)
                 }
             }
         }
@@ -119,13 +136,36 @@ class Hands(
     private fun short(s: String?): String =
         s?.substringAfter("(")?.substringBefore(")")?.take(4) ?: "----"
 
-    /** Tier R, because the readout carries state rather than a fixed legend. */
-    private suspend fun showReadout(text: String, head: Vector3?) {
-        val at = head?.let { Vector3(it.x, it.y - 0.30f, it.z - 0.75f) } ?: return
+    /**
+     * Tier R, because the readout carries state rather than a fixed legend.
+     *
+     * Placed along the head's FORWARD axis rather than at a fixed world offset.
+     * The offset version sat at (x, y-0.3, z-0.75) whatever direction the user
+     * was facing, so it drifted off to the side and was read edge-on — which is
+     * why half of it appeared to be missing. It was not clipped; it was turned
+     * away.
+     */
+    private suspend fun showReadout(text: String, head: Pose?) {
+        if (head == null) return
+        val q = head.rotation
+        val t = head.translation
+        // Head forward, flattened: the readout should sit in front of the user,
+        // not tilt with their chin.
+        val fx = 2f * (q.x * q.z + q.w * q.y)
+        val fz = 1f - 2f * (q.x * q.x + q.y * q.y)
+        val yaw = kotlin.math.atan2(-fx, fz)
+        val at = Vector3(
+            t.x + kotlin.math.sin(yaw) * READ_D,
+            t.y - 0.26f,
+            t.z - kotlin.math.cos(yaw) * READ_D,
+        )
+        val face = androidx.xr.runtime.math.Quaternion.fromEulerAngles(
+            0f, -Math.toDegrees(yaw.toDouble()).toFloat(), 0f,
+        )
         val fresh = TextRun.create(session, context, text, 0.020f, 0xFFCCE8F0.toInt(), "handdiag")
             ?: return
         fresh.entity.parent = session.scene.activitySpace
-        fresh.entity.setPose(Pose(at), Space.ACTIVITY)
+        fresh.entity.setPose(Pose(at, face), Space.ACTIVITY)
         val old = readout
         readout = fresh
         entities += fresh.entity
@@ -144,7 +184,16 @@ class Hands(
 
     private companion object {
         const val TAG = "MeshmoreXR"
-        /** Small enough to read as a skeleton rather than as a bunch of grapes. */
-        const val JOINT_R = 0.006f
+        /**
+         * A joint marker, in metres. 9 mm against a ~20 cm hand reads as a
+         * skeleton; much larger and adjacent knuckles merge into a mitten,
+         * which is exactly the distinction the classifier is being judged on.
+         *
+         * It looked tiny before because it was in the wrong place — three feet
+         * away, where 6 mm subtends almost nothing. At the hand it is right.
+         */
+        const val JOINT_R = 0.009f
+        /** Readout distance: close enough to read, past the reach surfaces. */
+        const val READ_D = 0.9f
     }
 }
