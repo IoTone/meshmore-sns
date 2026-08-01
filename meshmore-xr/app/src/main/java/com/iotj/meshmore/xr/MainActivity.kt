@@ -507,7 +507,7 @@ private fun HorizonScene(link: MeshLink) {
         val stage = Stage(session, palette)
         val origin = stage.recentre()
 
-        val horizon = Horizon(session, palette)
+        val horizon = Horizon(session, palette, ctx)
         // Deliberately includes the shapes real MeshCore names take: emoji,
         // fullwidth Latin, accents, kana, and a name that is nothing BUT emoji.
         // If any of these can break the label path, better it breaks here.

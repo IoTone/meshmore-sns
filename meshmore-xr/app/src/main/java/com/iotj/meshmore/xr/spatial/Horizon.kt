@@ -27,7 +27,12 @@ import kotlin.math.sin
  *
  * Everything here is a MeshEntity built from Prims. Nothing is Compose.
  */
-class Horizon(private val session: Session, private val theme: Palette) {
+class Horizon(
+    private val session: Session,
+    private val theme: Palette,
+    /** Needed to build tier R runs, which are real Android Views. */
+    private val context: android.content.Context? = null,
+) {
 
     data class Node(
         val name: String,
@@ -202,27 +207,52 @@ class Horizon(private val session: Session, private val theme: Palette) {
             // accents, or nothing but a turtle. Callsign folds that into
             // something the stroke font can actually draw and tells us whether
             // to raise a badge for what it had to drop.
-            val cs = Callsign.render(n.name)
-            if (cs.badge || cs.tofu > 0 || cs.truncated) {
-                Log.i(TAG, "[callsign] ${n.name} -> ${cs.text} " +
-                    "badge=${cs.badge} tofu=${cs.tofu} cut=${cs.truncated}")
-            }
-            val label = if (n.located) cs.text else cs.text + " ?"
-            val txtMesh = Prims.build(session, Glyphs.text(label, capH))
-            val txtMat = Prims.material(session, theme.text, (0.45f + 0.55f * lum))
             val anchor = Vector3(px, py - r * 2.6f - capH, pz)
-            val txt = MeshEntity.create(session, txtMesh, listOf(txtMat)).also {
-                it.parent = root
-                it.setPose(Pose(anchor), Space.ACTIVITY)
-                entities += it
-                facing += Facing(it, anchor)
+
+            // WHICH MACHINERY DRAWS THIS NAME (T1). Latin goes to the stroke
+            // font, which is the only text here with genuine volume and the
+            // reason the ring reads as Wipeout. Anything else -- kanji, kana,
+            // an accented place name, a turtle -- goes to tier R, where a real
+            // face and the platform's fallback chain can actually draw it.
+            //
+            // Before this, `中継局` became three tofu boxes. Not because we
+            // could not render it, but because nothing ever asked whether
+            // something other than the stroke font should.
+            val tier = TypeTier.of(n.name, boundToObject = true)
+            val txt: Entity = if (tier == TypeTier.Tier.RUN && context != null && !isCluster) {
+                val run = TextRun.create(
+                    session, context, n.name, capH,
+                    argb = tintOf(theme.text, 0.45f + 0.55f * lum),
+                    name = "run-${n.name.take(12)}",
+                )
+                if (run != null) {
+                    Log.i(TAG, "[type] RUN '${n.name}' ${"%.3f".format(run.widthM)}m wide")
+                    run.entity.also {
+                        it.parent = root
+                        it.setPose(Pose(anchor), Space.ACTIVITY)
+                        entities += it
+                        facing += Facing(it, anchor)
+                    }
+                } else {
+                    // A run that will not build must still leave a label. Tier S
+                    // tofu is ugly and honest; nothing at all is neither.
+                    strokeLabel(root, n, capH, lum, anchor)
+                }
+            } else {
+                strokeLabel(root, n, capH, lum, anchor)
             }
+            val cs = Callsign.render(n.name)
 
             // PICTOGRAPH BADGE — the emoji we could not draw, acknowledged.
             // Parented to the label so it inherits the billboard rotation for
             // free and keeps its offset in the label's own frame; a sibling in
             // world space would need its offset re-rotated every frame.
-            if (cs.badge) {
+            //
+            // TIER S ONLY. The badge exists because a stroke font cannot draw a
+            // turtle; tier R draws the turtle. Raising it there would announce a
+            // loss that did not happen and put a gem next to the emoji it stands
+            // for.
+            if (cs.badge && tier == TypeTier.Tier.STROKE) {
                 val g = capH * 0.42f
                 // rings=2, seg=4 makes an octahedron: a faceted gem, clearly a
                 // MARK rather than another letter, and it reads as volume from
@@ -231,7 +261,7 @@ class Horizon(private val session: Session, private val theme: Palette) {
                 val bMat = Prims.material(session, theme.alt, 0.85f * lum)
                 MeshEntity.create(session, bMesh, listOf(bMat)).also {
                     it.parent = txt
-                    val x = -(Glyphs.width(label, capH) / 2f + g * 1.9f)
+                    val x = -(Glyphs.width(cs.text, capH) / 2f + g * 1.9f)
                     it.setPose(Pose(Vector3(x, capH * 0.5f, 0f)), Space.PARENT)
                     entities += it
                 }
@@ -341,6 +371,35 @@ class Horizon(private val session: Session, private val theme: Palette) {
      * there: alpha and scale on entities that already exist. Anything needing a
      * coroutine (building a pulse) is queued for [drainSelections].
      */
+    /**
+     * TIER S — the extruded stroke label, and the fallback when a run will not
+     * build. Folding and tofu live here and only here: a tofu box is an honest
+     * report from a stroke font, which is correct on this path and would be a
+     * product failure on the other one.
+     */
+    private suspend fun strokeLabel(
+        root: Entity, n: Node, capH: Float, lum: Float, anchor: Vector3,
+    ): Entity {
+        val cs = Callsign.render(n.name)
+        if (cs.badge || cs.tofu > 0 || cs.truncated) {
+            Log.i(TAG, "[callsign] ${n.name} -> ${cs.text} " +
+                "badge=${cs.badge} tofu=${cs.tofu} cut=${cs.truncated}")
+        }
+        val label = if (n.located) cs.text else cs.text + " ?"
+        val mesh = Prims.build(session, Glyphs.text(label, capH))
+        val mat = Prims.material(session, theme.text, (0.45f + 0.55f * lum))
+        return MeshEntity.create(session, mesh, listOf(mat)).also {
+            it.parent = root
+            it.setPose(Pose(anchor), Space.ACTIVITY)
+            entities += it
+            facing += Facing(it, anchor)
+        }
+    }
+
+    /** Theme colour at [a] alpha, as the ARGB int a TextView wants. */
+    private fun tintOf(rgb: Int, a: Float): Int =
+        (((a.coerceIn(0f, 1f) * 255).toInt() and 0xFF) shl 24) or (rgb and 0xFFFFFF)
+
     private fun onInput(p: Peer, ev: InputEvent) {
         // Log EVERY event, not just selections. The Aura reports only
         // hand_tracking -- no controller, no eye tracking -- and a lower
