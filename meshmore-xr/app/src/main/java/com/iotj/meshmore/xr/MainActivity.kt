@@ -106,6 +106,8 @@ class MainActivity : ComponentActivity() {
         var selfTest: Boolean = false
         /** --ez sim true : draw the fake ring instead of the radio's mesh. */
         var simulate: Boolean = false
+        /** --ez typeprobe true : answer whether tier R can exist on this SDK. */
+        var typeProbe: Boolean = false
         /** --es home "lat,lon" : our position when the radio has no GPS. */
         var homeOverride: MeshNodes.Here? = null
     }
@@ -133,6 +135,7 @@ class MainActivity : ComponentActivity() {
         Log.i(TAG, "[boot] debug surface = $debug")
         selfTest = intent?.getBooleanExtra("selftest", false) ?: false
         Log.i(TAG, "[boot] selftest = $selfTest")
+        typeProbe = intent?.getBooleanExtra("typeprobe", false) ?: false
         simulate = intent?.getBooleanExtra("sim", false) ?: false
         Log.i(TAG, "[boot] simulate = $simulate")
         homeOverride = intent?.getStringExtra("home")?.split(",")?.let { parts ->
@@ -270,6 +273,34 @@ private fun Root(facts: List<Pair<String, String>>, link: MeshLink, pinOverride:
         // Launching into a panel is what makes an XR app feel like a phone app
         // that happens to be floating.
         HorizonScene(link)
+        // TIER R, THE ONLY REMAINING PATH — a transparent panel carrying one run.
+        //
+        // The texture route is closed (TypeProbe): Texture.create resolves
+        // against the AssetManager, so a string composed at runtime can never
+        // become a sampled texture on this SDK. Compose can still rasterise it,
+        // and the question this answers is whether the panel it arrives on
+        // behaves like ink in the room or like a pane of glass.
+        //
+        // Three things to look for in the capture, in order of severity:
+        //   1. does it OCCLUDE the horizon behind it (mainPanelEntity does)
+        //   2. is there a visible RECTANGLE on an additive display
+        //   3. do the kanji and the emoji render at all
+        if (MainActivity.typeProbe) {
+            Subspace {
+                SpatialPanel(
+                    SubspaceModifier.width(420.dp).height(150.dp)
+                        .offset(x = (-260).dp, y = 150.dp, z = 300.dp)
+                ) {
+                    Column(
+                        Modifier.fillMaxSize().background(Color.Transparent),
+                        verticalArrangement = Arrangement.Center,
+                    ) {
+                        Text("\u4e2d\u7d99\u5c40 ABC", color = Color(0xFF66E8D0), fontSize = 34.sp)
+                        Text("ESTACADA \u306e\u5fdc\u7b54\u306a\u3057", color = Color(0xFFDDE7EF), fontSize = 22.sp)
+                    }
+                }
+            }
+        }
         if (debug) {
             Subspace {
                 SpatialPanel(SubspaceModifier.width(560.dp).height(420.dp)) {
@@ -506,6 +537,7 @@ private fun HorizonScene(link: MeshLink) {
         var statusTick = 0f
         try {
             if (MainActivity.selfTest) launch { horizon.selfTest(origin) }
+            if (MainActivity.typeProbe) launch { com.iotj.meshmore.xr.spatial.TypeProbe.run(session, ctx) }
             var panelWarned = false
             while (true) {
                 delay(33)

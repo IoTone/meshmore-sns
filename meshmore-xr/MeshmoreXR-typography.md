@@ -286,32 +286,66 @@ anything we rasterise must be written to disk before it can be sampled.
 That rules out the usual glyph-atlas-with-live-updates design, and points at a
 different one that happens to suit us better.
 
-### 6.2 Per-run rasterisation
+### 6.2 Per-run rasterisation — **REVISED 2026-07-31, measured on device**
 
-**One text run → one PNG → one quad.** Not a shared atlas.
+> **The texture route is closed.** `Texture.create()` resolves its path against
+> the **AssetManager**, not the filesystem. Assets are baked into the APK at
+> build time and read-only at runtime, so a string composed at runtime can never
+> become a sampled texture on scenecore 1.0.0-beta01. The original design below
+> is preserved because its *reasoning* still holds; only its mechanism does not.
+
+Probed on hardware (`--ez typeprobe true`, `spatial/TypeProbe.kt`):
 
 ```
-"の中継局が応答なし"  ──Paint/Canvas──▶  ARGB_8888, transparent ground
-                     ──▶ cacheDir/type/<sha1(text,face,px,weight)>.png
-                     ──▶ Texture.create(path)
-                     ──▶ KhronosUnlitMaterial(BLEND) + quad sized to the run
+rasterised '中継局 ABC ⚡' 641x128px, ink=8519 samples
+wrote /data/user/0/com.iotj.meshmore.xr/cache/typeprobe.png (12473 bytes)
+FAIL absolute cacheDir  -> IllegalArgumentException: expects a path relative to `assets/`
+FAIL relative to /      -> IOException: Unable to find Android asset data/user/0/…
+FAIL bare filename      -> IOException: Unable to find Android asset typeprobe.png
+OK   assets control     -> androidx.xr.scenecore.Texture@ec0276d
 ```
 
-Why this is right here and not a compromise:
+Two things that measurement settles:
 
-- Runs are **created once and rarely change**. A callsign, a chat line, a place
-  label. This is not a text editor.
-- It sidesteps atlas packing, eviction, and the re-upload problem entirely.
-- Cache key includes the face and pixel size, so the same string at two sizes is
-  two files — correct, and cheap.
-- Android's `Paint` gives us **the system font fallback chain for free**, which
-  means emoji, obscure kanji, Cyrillic, and Devanagari all just work without us
-  shipping a face for each. That also retires the emoji-badge workaround in
-  `Callsign.kt` for tier R text (it stays for tier S).
+1. **Rasterisation was never the hard part.** Android's `Paint` drew the kanji
+   *and* the emoji through its own fallback chain — 8,519 ink samples, no tofu,
+   no shipped CJK face required. Everything §6.2 said about getting free font
+   fallback is true and remains the reason to go this way.
+2. **Only the upload is blocked**, and it is blocked absolutely. There is no
+   addressing mode that reaches a writable file.
 
-Costs to respect: one file write + one `Texture.create` per distinct run. Both
-must happen off the frame loop. A two-level cache — in-memory `Texture` by key,
-on-disk PNG by key — makes relaunch nearly free.
+#### The path that works: one run, one transparent panel
+
+Compose can rasterise what `Texture.create` will not accept. A `SpatialPanel`
+with a fully transparent background, carrying **one run**, depth-placed in the
+room, satisfies every criterion in §6.3 — verified in the same session:
+
+- **No rectangle.** On the additive display the ground emits nothing; the room
+  is visible straight through it.
+- **No occlusion.** Horizon geometry behind it renders normally. This was the
+  real risk, because `mainPanelEntity` *does* write depth and does occlude —
+  a `SpatialPanel` does not.
+- **CJK renders.** `中継局 ABC` and `ESTACADA の応答なし` both correct.
+
+This is not a retreat to tier P. The §2 ban on P is a ban on *Compose panels as
+UI surfaces* — scrolling lists, navigation, chrome. Here Compose is being used as
+a **rasteriser** for a single run, and every property that would make the result
+a panel is absent. The distinction is the one §6.3 already draws, and it is about
+the rendered result rather than the mechanism that produced it.
+
+What changes in the tier R contract:
+
+| §6.2 as written | as built |
+|---|---|
+| `Paint` → PNG → `Texture` → quad | `Text` → transparent `SpatialPanel` |
+| cache keyed by `sha1(text,face,px,weight)` | Compose recomposition; no disk cache |
+| one file write + one texture upload per run | one panel per run |
+| we choose the face explicitly | face set via Compose `FontFamily` |
+
+The disk cache disappears, which is a simplification rather than a loss — its
+whole purpose was to avoid re-uploading textures, and there are no textures.
+Re-open this if a later SceneCore adds a `Bitmap` overload: the original design
+is better, and this is the version that exists.
 
 ### 6.3 Why a textured quad is not a panel
 
@@ -500,7 +534,8 @@ Three constraints that override the table:
 1. **T1 — Router.** Turn `Callsign.render()` into the tier S/R router (§2). No
    new rendering; strings that need R are simply logged as such. Cheap, and it
    tells us the real distribution of what nodes are named.
-2. **T2 — Tier R minimum.** `Paint` → PNG → `Texture` → quad, one run, Latin
+2. **T2 — Tier R minimum.** One run on a transparent `SpatialPanel` (§6.2 as
+   revised — the texture route is closed), Latin
    only, with the two-level cache. Proves the pipeline without touching i18n.
 3. **T3 — CJK output.** Add M PLUS, the promotion rule, kinsoku line breaking.
    Verify against the 1.8° floor with `bin/xrshot`, not by eye on a monitor.
