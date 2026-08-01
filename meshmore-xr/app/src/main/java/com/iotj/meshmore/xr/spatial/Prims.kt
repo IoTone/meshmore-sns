@@ -15,6 +15,7 @@ import androidx.xr.scenecore.VertexAttributeType
 import androidx.xr.scenecore.VertexLayout
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
+import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.max
 import kotlin.math.min
@@ -273,6 +274,31 @@ object Prims {
     }
 
     /** BAR — one discrete segment. An extruded box, so it reads at an angle. */
+    /**
+     * A cylinder about the Z axis — the knob body every rack control is built
+     * from. Capped at both ends: an open tube reads as a hole on an additive
+     * display, where you see straight through anything that emits nothing.
+     */
+    fun cyl(r: Float, depth: Float, seg: Int = 20, rBack: Float = r): Facets {
+        val f = Facets()
+        val hz = depth / 2f
+        for (i in 0 until seg) {
+            val a0 = (i.toFloat() / seg) * 2f * PI.toFloat()
+            val a1 = ((i + 1).toFloat() / seg) * 2f * PI.toFloat()
+            val c0 = cos(a0); val s0 = sin(a0)
+            val c1 = cos(a1); val s1 = sin(a1)
+            // wall
+            f.quad(
+                c0 * rBack, s0 * rBack, -hz, c1 * rBack, s1 * rBack, -hz,
+                c1 * r, s1 * r, hz, c0 * r, s0 * r, hz,
+            )
+            // caps
+            f.tri(0f, 0f, hz, c0 * r, s0 * r, hz, c1 * r, s1 * r, hz)
+            f.tri(0f, 0f, -hz, c1 * rBack, s1 * rBack, -hz, c0 * rBack, s0 * rBack, -hz)
+        }
+        return f
+    }
+
     fun bar(w: Float, h: Float, d: Float): Facets {
         val f = Facets()
         val x = w / 2; val y = h / 2; val z = d / 2

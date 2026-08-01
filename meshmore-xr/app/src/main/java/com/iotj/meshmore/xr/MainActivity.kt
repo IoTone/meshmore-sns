@@ -44,6 +44,7 @@ import androidx.xr.runtime.math.Vector3
 import androidx.xr.scenecore.MeshEntity
 import androidx.xr.scenecore.Space
 import com.iotj.meshmore.xr.spatial.Prims
+import com.iotj.meshmore.xr.spatial.Rack
 import androidx.xr.scenecore.scene
 import androidx.xr.compose.platform.requestHomeSpace
 import androidx.xr.compose.spatial.Subspace
@@ -106,6 +107,8 @@ class MainActivity : ComponentActivity() {
         var selfTest: Boolean = false
         /** --ez sim true : draw the fake ring instead of the radio's mesh. */
         var simulate: Boolean = false
+        /** --ez radio true : bring the RADIO rack up alongside the horizon. */
+        var showRadio: Boolean = false
         /** --ez typeprobe true : answer whether tier R can exist on this SDK. */
         var typeProbe: Boolean = false
         /** --es home "lat,lon" : our position when the radio has no GPS. */
@@ -136,6 +139,8 @@ class MainActivity : ComponentActivity() {
         selfTest = intent?.getBooleanExtra("selftest", false) ?: false
         Log.i(TAG, "[boot] selftest = $selfTest")
         typeProbe = intent?.getBooleanExtra("typeprobe", false) ?: false
+        showRadio = intent?.getBooleanExtra("radio", false) ?: false
+        Log.i(TAG, "[boot] radio rack = $showRadio")
         simulate = intent?.getBooleanExtra("sim", false) ?: false
         Log.i(TAG, "[boot] simulate = $simulate")
         homeOverride = intent?.getStringExtra("home")?.split(",")?.let { parts ->
@@ -447,6 +452,7 @@ private fun HorizonScene(link: MeshLink) {
     val bootRef = remember { mutableStateOf<Boot?>(null) }
     val hudRef = remember { mutableStateOf<Hud?>(null) }
     val hereMarkRef = remember { mutableStateOf<HereMark?>(null) }
+    val rackRef = remember { mutableStateOf<Rack?>(null) }
     // Bumped by the HERE marker so the mesh rebuild below re-runs on a toggle.
     val hereEpoch = remember { mutableStateOf(0) }
 
@@ -521,6 +527,15 @@ private fun HorizonScene(link: MeshLink) {
         val hud = Hud(session, palette)
         hud.build()
         hudRef.value = hud
+        // THE RADIO RACK. Body-locked at reach, below the horizon's own arc, so
+        // it never competes with the mesh for the forward window.
+        if (MainActivity.showRadio) {
+            val rack = Rack(session, palette, ctx, link.radio)
+            rack.onCommit = { link.commitRadio() }
+            rack.onRevert = { link.revertRadio() }
+            rack.build(origin)
+            rackRef.value = rack
+        }
         val hereMark = HereMark(session, palette)
         hereMark.build(origin, hereCaption(ctx, hereSource, hereSource.resolve(here, MainActivity.homeOverride)))
         hereMarkRef.value = hereMark
@@ -587,6 +602,7 @@ private fun HorizonScene(link: MeshLink) {
                     // Callsigns give way to the microhud bands where they cross.
                     horizon.veil(it)
                     hereMarkRef.value?.faceViewer(it.translation)
+                    rackRef.value?.tick(it.translation)
                     // The microhud is head-locked, so it is re-placed from the
                     // live pose every frame rather than anchored once.
                     hudRef.value?.tick(it)
@@ -614,6 +630,12 @@ private fun HorizonScene(link: MeshLink) {
                 statusTick += 0.033f
                 if (statusTick > 1f) {
                     statusTick = 0f
+                    // The rack is built at launch, BEFORE the radio has said
+                    // what it is running -- so its segment displays showed the
+                    // dark-8 ghost forever. Refreshed on the same ~1 Hz tick as
+                    // the link readout, which is also when a commit or revert
+                    // would have changed what LIVE means.
+                    rackRef.value?.refresh()
                     val st = link.status.value
                     // THREE STATES, NOT TWO. Silence used to cover both "the
                     // radio never answered the battery query" and "it answered
