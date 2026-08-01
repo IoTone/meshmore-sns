@@ -88,14 +88,15 @@ class Rack(
      * has to be expressed as PRESENCE rather than only as caution.
      */
     /**
-     * Starts TRUE because entities are created enabled — the flag has to
-     * describe what the scene is actually doing, not what we intended. It said
-     * false while 276 enabled entities stood in the room, so the first
-     * setVisible(false) early-returned and the rack was live and pinchable with
-     * nothing on screen admitting it. A state variable that disagrees with the
-     * thing it models is worse than no state variable.
+     * FALSE, and the entities are created disabled to match — the flag has to
+     * describe what the scene is actually doing, not what we intended.
+     *
+     * It briefly said true-in-effect the other way round: entities were built
+     * enabled and disabled a frame later, which drew the console at launch and
+     * then took it away. Both halves have to agree at every instant, including
+     * during the build.
      */
-    var visible: Boolean = true
+    var visible: Boolean = false
         private set
 
     fun setVisible(v: Boolean) {
@@ -169,6 +170,12 @@ class Rack(
         ).also {
             it.parent = root
             it.setPose(Pose(pose(x, y, z), rot), Space.ACTIVITY)
+            // BORN HIDDEN. Building enabled and disabling afterwards draws the
+            // whole panel for the frames the build takes -- 276 entities, so
+            // several -- and a radio console that flashes up at launch and
+            // vanishes reads as a fault even though it is the correct end
+            // state. There is no moment at which it should have been visible.
+            it.setEnabled(false)
             entities += it
         }
 
@@ -188,6 +195,7 @@ class Rack(
                 it.parent = root
                 it.setPose(Pose(pose(c.at.x, c.at.y, c.at.z + 0.02f), rot), Space.ACTIVITY)
                 it.setAlpha(0.02f)
+                it.setEnabled(false)
                 entities += it
             }
             runCatching {

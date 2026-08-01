@@ -110,6 +110,8 @@ class MainActivity : ComponentActivity() {
         var simulate: Boolean = false
         /** --ez radio true : bring the RADIO rack up alongside the horizon. */
         var showRadio: Boolean = false
+        /** --ez handdebug true : log what the ASL classifier measures, ~1 Hz. */
+        var handDebug: Boolean = false
         /** --ez typeprobe true : answer whether tier R can exist on this SDK. */
         var typeProbe: Boolean = false
         /** --es home "lat,lon" : our position when the radio has no GPS. */
@@ -141,6 +143,7 @@ class MainActivity : ComponentActivity() {
         Log.i(TAG, "[boot] selftest = $selfTest")
         typeProbe = intent?.getBooleanExtra("typeprobe", false) ?: false
         showRadio = intent?.getBooleanExtra("radio", false) ?: false
+        handDebug = intent?.getBooleanExtra("handdebug", false) ?: false
         Log.i(TAG, "[boot] radio rack = $showRadio")
         simulate = intent?.getBooleanExtra("sim", false) ?: false
         Log.i(TAG, "[boot] simulate = $simulate")
@@ -556,7 +559,25 @@ private fun HorizonScene(link: MeshLink) {
         Log.i(TAG_UI, "[hand] tracking right=${handR != null} left=${handL != null}")
 
         val dock = Dock(session, palette)
+        // EVERY SURFACE HAS A PINCHABLE WAY IN, gesture or no gesture.
+        //
+        // The ASL toggles are the fast path -- no glance, no target, usable
+        // mid-stride -- but a gesture that fails is indistinguishable from a
+        // feature that does not exist, and hand tracking can be PAUSED for
+        // reasons the user cannot see (hands out of the camera's view being the
+        // common one). A surface reachable ONLY by gesture is a surface that is
+        // sometimes unreachable.
         dock.build(origin, listOf(
+            "COMPASS" to {
+                hudRef.value?.let { h ->
+                    h.setUpper(!h.upperOn); dockRef.value?.setLit("COMPASS", h.upperOn)
+                }
+            },
+            "LINK" to {
+                hudRef.value?.let { h ->
+                    h.setLower(!h.lowerOn); dockRef.value?.setLit("LINK", h.lowerOn)
+                }
+            },
             "RADIO" to {
                 val next = !(rackRef.value?.visible ?: false)
                 rackRef.value?.setVisible(next)
@@ -649,6 +670,19 @@ private fun HorizonScene(link: MeshLink) {
                 // should be two commands, and a cycle makes you pass through a
                 // state you did not want on the way to the one you did.
                 val nowMs = android.os.SystemClock.uptimeMillis()
+                // Calibration trace, ~1 Hz, only while a hand is actually
+                // tracked. The classifier's thresholds were set from synthesised
+                // joints; this is what a real hand measures.
+                if (MainActivity.handDebug && statusTick == 0f) {
+                    handR?.state?.value?.let { st ->
+                        Log.i(TAG_UI, "[hand] R ${st.trackingState} " +
+                            com.iotj.meshmore.xr.spatial.HandSign.describe(st.handJoints))
+                    }
+                    handL?.state?.value?.let { st ->
+                        Log.i(TAG_UI, "[hand] L ${st.trackingState} " +
+                            com.iotj.meshmore.xr.spatial.HandSign.describe(st.handJoints))
+                    }
+                }
                 handR?.state?.value?.handJoints?.let { j ->
                     if (gateR.update(
                             com.iotj.meshmore.xr.spatial.HandSign.classify(j), nowMs,
@@ -656,6 +690,10 @@ private fun HorizonScene(link: MeshLink) {
                     ) {
                         hudRef.value?.let { h ->
                             h.setUpper(!h.upperOn)
+                            // The dock lamp is the app's statement about what is
+                            // open; a gesture that changes the state without
+                            // updating it makes the dock lie.
+                            dockRef.value?.setLit("COMPASS", h.upperOn)
                             Log.i(TAG_UI, "[hand] R:A — compass ${if (h.upperOn) "ON" else "OFF"}")
                         }
                     }
@@ -667,6 +705,7 @@ private fun HorizonScene(link: MeshLink) {
                     ) {
                         hudRef.value?.let { h ->
                             h.setLower(!h.lowerOn)
+                            dockRef.value?.setLit("LINK", h.lowerOn)
                             Log.i(TAG_UI, "[hand] L:A — link band ${if (h.lowerOn) "ON" else "OFF"}")
                         }
                     }
