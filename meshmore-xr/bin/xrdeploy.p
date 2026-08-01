@@ -23,39 +23,71 @@ define shell_lines(cmd);
     acc
 enddefine;
 
-;;; WHICH DEVICE. Two are usually attached -- the phone and the XR puck -- and
-;;; installing the glasses build on the phone is a silent no-op that looks like
-;;; success. Probe for the spatial feature rather than trusting a serial: a
-;;; hardcoded serial is right until the day it is not, and then it is wrong
-;;; quietly.
-define xr_find_device();
-    lvars ss = shell_lines(ADB sys_>< ' devices'), s, serial, feats;
-    false -> XR_SERIAL;
+;;; Serials currently reported by adb, whatever their state.
+define adb_attached();
+    lvars ss = shell_lines(ADB sys_>< ' devices'), s, acc = [];
     for s in ss do
         if issubstring('\tdevice', 1, s) then
-            substring(1, locchar(`\t`, 1, s) - 1, s) -> serial;
-            shell_lines(ADB sys_>< ' -s ' sys_>< serial
-                        sys_>< ' shell pm list features </dev/null') -> feats;
-            lvars f;
-            for f in feats do
-                if issubstring('xr.api.spatial', 1, f) then
-                    serial -> XR_SERIAL;
-                    quitloop(2);
-                endif;
-            endfor;
+            [^^acc ^(substring(1, locchar(`\t`, 1, s) - 1, s))] -> acc;
         endif;
+    endfor;
+    acc
+enddefine;
+
+define is_attached(serial);
+    lvars s;
+    for s in adb_attached() do
+        if s = serial then return(true); endif;
+    endfor;
+    false
+enddefine;
+
+;;; WHICH DEVICE. The Sharp phone is almost always attached too, and installing
+;;; the glasses build on it is a silent no-op that reads exactly like success.
+;;; So the target is chosen by capability, not by order or by a serial written
+;;; down somewhere: the Aura is the one reporting xr.api.spatial.
+define xr_find_device();
+    lvars serial;
+    false -> XR_SERIAL;
+    for serial in adb_attached() do
+        lvars feats = shell_lines(ADB sys_>< ' -s ' sys_>< serial
+                        sys_>< ' shell pm list features </dev/null'), f;
+        for f in feats do
+            if issubstring('xr.api.spatial', 1, f) then
+                serial -> XR_SERIAL;
+                quitloop(2);
+            endif;
+        endfor;
     endfor;
     XR_SERIAL
 enddefine;
 
+;;; RE-VALIDATE THE CACHE, DO NOT JUST TRUST IT. A serial cached from an earlier
+;;; call is only useful while that device is still on the end of the cable.
+;;; Unplug the Aura and the old code would go on addressing it: every adb call
+;;; fails in its own way, none of them says "the glasses are gone", and the
+;;; session quietly becomes a machine for producing confusing output.
+;;;
+;;; The check is one `adb devices` -- cheap -- and only a cache MISS pays for
+;;; probing features, which is the slow part and touches the phone.
 define need_device();
-    unless XR_SERIAL then xr_find_device() -> ; endunless;
-    unless XR_SERIAL then
-        npr('!! no XR device attached');
-        false
-    else true
-    endunless
+    if XR_SERIAL and is_attached(XR_SERIAL) then
+        true
+    else
+        if XR_SERIAL then
+            npr('!! ' sys_>< XR_SERIAL sys_>< ' is gone — re-probing');
+        endif;
+        xr_find_device() -> ;
+        if XR_SERIAL then
+            npr('== XR device ' sys_>< XR_SERIAL);
+            true
+        else
+            npr('!! no device reporting xr.api.spatial — is the Aura plugged in?');
+            false
+        endif;
+    endif
 enddefine;
+
 
 define adb(args);
     ADB sys_>< ' -s ' sys_>< XR_SERIAL sys_>< ' ' sys_>< args
