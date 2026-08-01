@@ -37,15 +37,36 @@ object HandSign {
     enum class Letter { NONE, A, H }
 
     /**
-     * Hand scale, from the wrist to the middle knuckle. Every threshold below is
-     * a multiple of this, so the classifier works on a large hand and a small
-     * one without a calibration step.
+     * A fingertip more than this many times its knuckle's distance from the
+     * wrist is STRAIGHT. A straight finger measures near 2.0 and a curled one
+     * near or below 1.0, so the midpoint is a wide, forgiving gate rather than
+     * a tuned edge.
+     */
+    const val STRAIGHT = 1.5f
+
+    /**
+     * Hand scale, from the wrist to the middle knuckle.
+     *
+     * KEPT ONLY AS A SANITY CHECK. It was the divisor for every threshold and
+     * it was the wrong one: on this hand model MIDDLE_METACARPAL sits almost on
+     * the wrist, so the divisor is a couple of centimetres and every ratio blows
+     * up. A real hand measured t4.90 i4.93 m2.38 r2.04 l2.15 against thresholds
+     * of 1.55 — every finger "extended", always, so the fist could never be
+     * recognised. See [extended] for what replaced it.
      */
     private fun scaleOf(j: Map<HandJointType, Pose>): Float {
         val w = j[HandJointType.WRIST]?.translation ?: return 0f
         val m = j[HandJointType.MIDDLE_METACARPAL]?.translation ?: return 0f
         return dist(w.x, w.y, w.z, m.x, m.y, m.z)
     }
+
+    /** Each finger's tip and the knuckle it folds around. */
+    private val FINGERS = listOf(
+        HandJointType.INDEX_TIP to HandJointType.INDEX_PROXIMAL,
+        HandJointType.MIDDLE_TIP to HandJointType.MIDDLE_PROXIMAL,
+        HandJointType.RING_TIP to HandJointType.RING_PROXIMAL,
+        HandJointType.LITTLE_TIP to HandJointType.LITTLE_PROXIMAL,
+    )
 
     private fun dist(ax: Float, ay: Float, az: Float, bx: Float, by: Float, bz: Float): Float {
         val dx = ax - bx; val dy = ay - by; val dz = az - bz
@@ -62,11 +83,35 @@ object HandSign {
      * when a joint is briefly lost.
      */
     private fun extended(
-        j: Map<HandJointType, Pose>, tip: HandJointType, scale: Float, k: Float = 1.55f,
-    ): Boolean {
-        val w = j[HandJointType.WRIST]?.translation ?: return false
-        val t = j[tip]?.translation ?: return false
-        return dist(w.x, w.y, w.z, t.x, t.y, t.z) > k * scale
+        j: Map<HandJointType, Pose>, tip: HandJointType, scale: Float, k: Float = STRAIGHT,
+    ): Boolean = reach(j, tip, knuckleFor(tip)) > k
+
+    private fun knuckleFor(tip: HandJointType): HandJointType =
+        FINGERS.firstOrNull { it.first == tip }?.second ?: HandJointType.THUMB_PROXIMAL
+
+    /**
+     * How far a fingertip reaches BEYOND ITS OWN KNUCKLE, as a ratio.
+     *
+     * This is the fix for the calibration failure above, and it is better than a
+     * retuned constant would have been. Measuring the tip against a whole-hand
+     * scale asks "is this finger long?", which depends on the hand, the model's
+     * joint placement, and which joint the vendor calls a metacarpal. Measuring
+     * it against its OWN proximal joint asks "is this finger straight?", which
+     * is the actual question and is answered the same way by every hand:
+     *
+     *   straight  tip is roughly twice as far from the wrist as its knuckle
+     *   curled    tip folds back toward the palm, landing at or inside it
+     *
+     * No hand-size term, no per-model constant, nothing to recalibrate when the
+     * next headset numbers its joints differently.
+     */
+    fun reach(j: Map<HandJointType, Pose>, tip: HandJointType, knuckle: HandJointType): Float {
+        val w = j[HandJointType.WRIST]?.translation ?: return -1f
+        val t = j[tip]?.translation ?: return -1f
+        val k = j[knuckle]?.translation ?: return -1f
+        val dk = dist(w.x, w.y, w.z, k.x, k.y, k.z)
+        if (dk < 1e-5f) return -1f
+        return dist(w.x, w.y, w.z, t.x, t.y, t.z) / dk
     }
 
     /**
@@ -77,20 +122,13 @@ object HandSign {
      * fires constantly.
      */
     /** Finger extension as multiples of hand scale — the numbers the thresholds compare. */
-    fun ratios(joints: Map<HandJointType, Pose>): String {
-        val scale = scaleOf(joints)
-        if (scale <= 1e-4f) return "no-scale"
-        fun r(t: HandJointType): Float {
-            val w = joints[HandJointType.WRIST]?.translation ?: return -1f
-            val p = joints[t]?.translation ?: return -1f
-            return dist(w.x, w.y, w.z, p.x, p.y, p.z) / scale
-        }
-        return "t%.2f i%.2f m%.2f r%.2f l%.2f".format(
-            r(HandJointType.THUMB_TIP), r(HandJointType.INDEX_TIP),
-            r(HandJointType.MIDDLE_TIP), r(HandJointType.RING_TIP),
-            r(HandJointType.LITTLE_TIP),
+    fun ratios(joints: Map<HandJointType, Pose>): String =
+        "i%.2f m%.2f r%.2f l%.2f".format(
+            reach(joints, HandJointType.INDEX_TIP, HandJointType.INDEX_PROXIMAL),
+            reach(joints, HandJointType.MIDDLE_TIP, HandJointType.MIDDLE_PROXIMAL),
+            reach(joints, HandJointType.RING_TIP, HandJointType.RING_PROXIMAL),
+            reach(joints, HandJointType.LITTLE_TIP, HandJointType.LITTLE_PROXIMAL),
         )
-    }
 
     /** What the classifier saw. For calibrating thresholds against real hands. */
     fun describe(joints: Map<HandJointType, Pose>): String {
@@ -115,14 +153,16 @@ object HandSign {
         val middle = extended(joints, HandJointType.MIDDLE_TIP, scale)
         val ring = extended(joints, HandJointType.RING_TIP, scale)
         val little = extended(joints, HandJointType.LITTLE_TIP, scale)
-        // The thumb is shorter and sits on a different axis, so it needs its own
-        // threshold — measured against the same scale, not a separate constant.
-        val thumb = extended(joints, HandJointType.THUMB_TIP, scale, k = 1.15f)
 
         return when {
-            // A — closed fist, thumb alongside. The four fingers curled is the
-            // load-bearing half; the thumb only has to not be tucked inside.
-            !index && !middle && !ring && !little && thumb -> Letter.A
+            // A — a closed fist. The four fingers curled is the whole test.
+            //
+            // The thumb requirement is GONE. ASL distinguishes A (thumb
+            // alongside) from S (thumb across the fingers) by the thumb, and
+            // both are fists — but the thumb is the least reliably tracked joint
+            // on the hand and we do not use S. Requiring it bought a distinction
+            // nothing depends on at the cost of the gesture working at all.
+            !index && !middle && !ring && !little -> Letter.A
             // H — index and middle extended together, ring and little down.
             // Distinguished from A by exactly the fingers A requires to be
             // curled, so the two cannot be confused by a threshold wobble.

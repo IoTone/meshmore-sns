@@ -14,12 +14,22 @@ import org.junit.Test
  */
 class HandSignTest {
 
+    /**
+     * [index]..[little] are TIP REACH: how far the tip sits from the wrist as a
+     * multiple of its own knuckle's distance. ~2.0 is a straight finger, ~1.0 a
+     * curled one — the quantity the classifier actually tests.
+     */
     private fun hand(
         thumb: Float, index: Float, middle: Float, ring: Float, little: Float,
         scale: Float = 0.09f,
     ): Map<HandJointType, Pose> = mapOf(
         HandJointType.WRIST to at(0f),
         HandJointType.MIDDLE_METACARPAL to at(scale),
+        HandJointType.THUMB_PROXIMAL to at(scale),
+        HandJointType.INDEX_PROXIMAL to at(scale),
+        HandJointType.MIDDLE_PROXIMAL to at(scale),
+        HandJointType.RING_PROXIMAL to at(scale),
+        HandJointType.LITTLE_PROXIMAL to at(scale),
         HandJointType.THUMB_TIP to at(thumb * scale),
         HandJointType.INDEX_TIP to at(index * scale),
         HandJointType.MIDDLE_TIP to at(middle * scale),
@@ -29,19 +39,29 @@ class HandSignTest {
 
     private fun at(y: Float) = Pose(Vector3(0f, y, 0f))
 
-    /** A: fist, thumb alongside. Four fingers curled is the load-bearing half. */
-    @Test fun aIsAFistWithTheThumbOut() {
+    /** A: a closed fist. Four curled fingers is the whole test. */
+    @Test fun aIsAClosedFist() {
         assertEquals(HandSign.Letter.A, HandSign.classify(hand(1.4f, 1.0f, 1.0f, 1.0f, 1.0f)))
     }
 
-    /** A thumb tucked inside the fist is not A — it is not anything. */
-    @Test fun aFullFistIsNotA() {
-        assertEquals(HandSign.Letter.NONE, HandSign.classify(hand(0.8f, 1.0f, 1.0f, 1.0f, 1.0f)))
+    /**
+     * The thumb is deliberately NOT part of it. ASL tells A from S by the thumb
+     * and both are fists, but the thumb is the least reliably tracked joint on
+     * the hand and we do not use S — requiring it bought a distinction nothing
+     * depends on at the cost of the gesture working at all.
+     */
+    @Test fun theThumbDoesNotDecideIt() {
+        assertEquals(HandSign.Letter.A, HandSign.classify(hand(0.8f, 1.0f, 1.0f, 1.0f, 1.0f)))
     }
 
     /** H: index and middle out together, ring and little down. */
     @Test fun hIsTwoFingers() {
         assertEquals(HandSign.Letter.H, HandSign.classify(hand(0.9f, 2.0f, 2.0f, 1.0f, 1.0f)))
+    }
+
+    /** The measured live hand: index straight, the other three folded. */
+    @Test fun aPointingHandIsNotAFist() {
+        assertEquals(HandSign.Letter.NONE, HandSign.classify(hand(2.0f, 2.0f, 1.1f, 1.0f, 1.0f)))
     }
 
     /** A and H disagree on exactly the fingers A needs curled, so no wobble confuses them. */
