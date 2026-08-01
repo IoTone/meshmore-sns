@@ -77,6 +77,40 @@ class Rack(
     private var bar: Bargraph? = null
     private var dirty = false
 
+    /**
+     * THE RACK IS NOT AMBIENT. It starts hidden and is summoned.
+     *
+     * Left permanently in the room it is a live radio configuration sitting in
+     * the space you gesture in — eleven controls, four of which can strand the
+     * hardware, all one stray pinch away while you are doing something else
+     * entirely. Every other surface in this app is safe to have around because
+     * looking at the mesh cannot change it. This one is not, and the difference
+     * has to be expressed as PRESENCE rather than only as caution.
+     */
+    /**
+     * Starts TRUE because entities are created enabled — the flag has to
+     * describe what the scene is actually doing, not what we intended. It said
+     * false while 276 enabled entities stood in the room, so the first
+     * setVisible(false) early-returned and the rack was live and pinchable with
+     * nothing on screen admitting it. A state variable that disagrees with the
+     * thing it models is worse than no state variable.
+     */
+    var visible: Boolean = true
+        private set
+
+    fun setVisible(v: Boolean) {
+        if (v == visible) return
+        visible = v
+        // setEnabled, not alpha: a disabled entity is not hit-tested, so an
+        // invisible rack cannot be pinched. Fading it out would leave every
+        // control live behind a transparent panel, which is the same accident
+        // with an extra step.
+        entities.forEach { runCatching { it.setEnabled(v) } }
+        armed = false
+        armLamp?.set(false)
+        Log.i(TAG, "[rack] ${if (v) "summoned" else "dismissed"}")
+    }
+
     // ------------------------------------------------------------------ build
     suspend fun build(o: Stage.Origin) {
         clear()
@@ -227,12 +261,20 @@ class Rack(
         label("PEND", col(0.04f), y - 0.016f, mesh)
         segLive = Segment(col(0.24f), y + 0.014f, theme.alt, mesh).also { it.build(7) }
         segPend = Segment(col(0.24f), y - 0.016f, theme.warn, mesh).also { it.build(7) }
-        lampPending = lamp(col(0.50f), y + 0.010f, "PENDING", theme.warn, false, mesh)
+        lampPending = lamp(col(0.44f), y + 0.010f, "PENDING", theme.warn, false, mesh)
+        armLamp = lamp(col(0.60f), y + 0.010f, "ARMED", theme.warn, false, mesh)
 
-        // REVERT is not a courtesy. Once a bad parameter set has made the radio
-        // deaf, it is the ONLY recovery path that exists, because at that point
-        // the mesh cannot tell you anything.
-        pebble(col(0.73f), y + 0.008f, "COMMIT", theme.alt, 0.016f, mesh) { commit() }
+        // COMMIT IS TWO-STEP, like the disclosure guards and for the same
+        // reason: it is the only control on this panel that reaches the radio.
+        // Everything else stages, and staging is free — you can turn every
+        // encoder to nonsense and walk away with the hardware untouched. One
+        // pinch on a bare button undoes that whole protection, and it was a bare
+        // button until the panel was seen sitting in a room being gestured near.
+        //
+        // First pinch ARMS and lights the lamp. Second commits. Anything else —
+        // dismissing the rack, or staging a further edit — disarms, because an
+        // arm that survives a change of mind is not a confirmation of anything.
+        pebble(col(0.75f), y + 0.008f, "COMMIT", theme.alt, 0.016f, mesh) { armOrCommit() }
         pebble(col(0.93f), y + 0.008f, "REVERT", theme.warn, 0.013f, mesh) { revert() }
     }
 
@@ -246,8 +288,12 @@ class Rack(
         // photographed, screen-shared, or worn in public.
         slate("CH0", "Public 8b3387e9", col(0.32f), y + 0.010f, mesh)
         slate("CH1", "— empty —", col(0.66f), y + 0.010f, mesh)
-        pebble(col(0.92f), y + 0.008f, "IMPORT", theme.alt, 0.012f, mesh) {
+        pebble(col(0.80f), y + 0.008f, "IMPORT", theme.alt, 0.012f, mesh) {
             Log.i(TAG, "[rack] channel import — QR scan not wired")
+        }
+        // A way out that does not require finding the thing that summoned it.
+        pebble(col(0.96f), y + 0.008f, "CLOSE", theme.text, 0.013f, mesh) {
+            onDismiss?.invoke()
         }
     }
 
@@ -415,6 +461,10 @@ class Rack(
 
     // ------------------------------------------------------------- actions --
     private fun stage(edit: (RadioConfig.Params) -> RadioConfig.Params) {
+        // Staging DISARMS. An arm is a confirmation of one specific parameter
+        // set; letting it survive an edit would let the second pinch commit
+        // something the first one never saw.
+        disarm()
         cfg.stage(edit); refresh()
     }
 
@@ -432,8 +482,33 @@ class Rack(
 
     var onCommit: (() -> Unit)? = null
     var onRevert: (() -> Unit)? = null
-    private fun commit() { onCommit?.invoke(); refresh() }
-    private fun revert() { onRevert?.invoke(); refresh() }
+    var onDismiss: (() -> Unit)? = null
+
+    private var armed = false
+    private var armLamp: Lamp? = null
+
+    private fun armOrCommit() {
+        if (!cfg.dirty()) { Log.i(TAG, "[rack] nothing staged"); return }
+        if (!armed) {
+            armed = true
+            armLamp?.set(true)
+            Log.i(TAG, "[rack] COMMIT armed — pinch again to send")
+            return
+        }
+        armed = false
+        armLamp?.set(false)
+        onCommit?.invoke()
+        refresh()
+    }
+
+    private fun disarm() {
+        if (!armed) return
+        armed = false
+        armLamp?.set(false)
+        Log.i(TAG, "[rack] disarmed — the staged set changed")
+    }
+
+    private fun revert() { disarm(); onRevert?.invoke(); refresh() }
 
     fun refresh() {
         segLive?.set(cfg.live?.let { "%.3f".format(it.freqMhz) } ?: "  ---")

@@ -1914,6 +1914,43 @@ single most consequential shortcut available in this panel.
 PSKs are **fingerprinted, never printed**. A panel that shows a channel key is a
 panel that cannot be photographed, screen-shared, or worn in public.
 
+#### 9.6.7b SETTINGS ARE SUMMONED — the dock
+
+**Added 2026-08-01, after seeing the rack standing in a room.**
+
+The rack rendered correctly and was immediately wrong for a reason no
+screenshot of the panel alone would show: it was *always there*. A live radio
+configuration — eleven controls, four of which can strand the hardware — parked
+in the space the user gestures in, permanently one stray pinch from a change
+they did not intend.
+
+Every other surface in this app is safe to leave standing, because reading the
+mesh cannot alter it. Settings are the exception, and **the exception has to be
+expressed as presence, not only as caution.** So:
+
+- **The rack starts hidden and is summoned.** Not faded — `setEnabled(false)`,
+  because a disabled entity is not hit-tested. Fading would leave every control
+  live behind a transparent panel: the same accident with an extra step.
+- **The DOCK is the summoning.** A short row of pips, low and forward at about
+  −30°, each standing for one surface, each lit while its surface is open. You
+  go to it; it does not come to you.
+- **COMMIT is two-step.** It is the only control that reaches the radio —
+  everything else stages, and staging is free. One pinch on a bare button undid
+  that whole protection. First pinch arms and lights ARMED; second sends.
+  Staging again, or dismissing the rack, disarms: an arm that survives a change
+  of mind confirms nothing.
+- **The rack carries its own CLOSE**, so leaving does not require finding the
+  thing that opened it.
+
+**The dock is a downpayment on the back-of-hand menu.** That is where these pips
+belong — wrist-anchored, hidden until you turn your hand over, which is the most
+deliberate "open settings" gesture available and costs no world space at all.
+The Aura reports hand tracking so the anchor is reachable; the palm-facing test
+and wrist pose are what remain. The *interaction* is deliberately already the
+one the hand menu needs — a pip is a target you pinch, it toggles one surface,
+one surface open at a time — so moving it to the wrist changes where the pips
+are and nothing else.
+
 #### 9.6.8 Prototype
 
 `airspace-ui` → **RADIO**. Drag a knob to turn an encoder; click a guard twice

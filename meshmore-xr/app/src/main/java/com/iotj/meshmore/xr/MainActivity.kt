@@ -55,6 +55,7 @@ import androidx.xr.compose.subspace.layout.offset
 import androidx.xr.compose.subspace.layout.rotate
 import androidx.xr.compose.subspace.layout.width
 import com.iotj.meshmore.xr.spatial.Boot
+import com.iotj.meshmore.xr.spatial.Dock
 import com.iotj.meshmore.xr.spatial.Glyphs
 import com.iotj.meshmore.xr.spatial.HereMark
 import com.iotj.meshmore.xr.spatial.Horizon
@@ -453,6 +454,7 @@ private fun HorizonScene(link: MeshLink) {
     val hudRef = remember { mutableStateOf<Hud?>(null) }
     val hereMarkRef = remember { mutableStateOf<HereMark?>(null) }
     val rackRef = remember { mutableStateOf<Rack?>(null) }
+    val dockRef = remember { mutableStateOf<Dock?>(null) }
     // Bumped by the HERE marker so the mesh rebuild below re-runs on a toggle.
     val hereEpoch = remember { mutableStateOf(0) }
 
@@ -527,14 +529,34 @@ private fun HorizonScene(link: MeshLink) {
         val hud = Hud(session, palette)
         hud.build()
         hudRef.value = hud
-        // THE RADIO RACK. Body-locked at reach, below the horizon's own arc, so
-        // it never competes with the mesh for the forward window.
+        // THE RADIO RACK, built but NOT SHOWN. Settings are summoned from the
+        // dock; leaving a live radio configuration standing in the room is how
+        // it gets changed by someone reaching for something else.
+        val rack = Rack(session, palette, ctx, link.radio)
+        rack.onCommit = { link.commitRadio() }
+        rack.onRevert = { link.revertRadio() }
+        rack.build(origin)
+        rack.setVisible(false)
+        rackRef.value = rack
+
+        val dock = Dock(session, palette)
+        dock.build(origin, listOf(
+            "RADIO" to {
+                val next = !(rackRef.value?.visible ?: false)
+                rackRef.value?.setVisible(next)
+                dockRef.value?.setLit("RADIO", next)
+            },
+        ))
+        dockRef.value = dock
+        rack.onDismiss = {
+            rack.setVisible(false)
+            dock.setLit("RADIO", false)
+        }
+        // --ez radio true still opens it straight away, for a demo that should
+        // not begin with a scavenger hunt.
         if (MainActivity.showRadio) {
-            val rack = Rack(session, palette, ctx, link.radio)
-            rack.onCommit = { link.commitRadio() }
-            rack.onRevert = { link.revertRadio() }
-            rack.build(origin)
-            rackRef.value = rack
+            rack.setVisible(true)
+            dock.setLit("RADIO", true)
         }
         val hereMark = HereMark(session, palette)
         hereMark.build(origin, hereCaption(ctx, hereSource, hereSource.resolve(here, MainActivity.homeOverride)))
@@ -603,6 +625,7 @@ private fun HorizonScene(link: MeshLink) {
                     horizon.veil(it)
                     hereMarkRef.value?.faceViewer(it.translation)
                     rackRef.value?.tick(it.translation)
+                    dockRef.value?.tick()
                     // The microhud is head-locked, so it is re-placed from the
                     // live pose every frame rather than anchored once.
                     hudRef.value?.tick(it)
