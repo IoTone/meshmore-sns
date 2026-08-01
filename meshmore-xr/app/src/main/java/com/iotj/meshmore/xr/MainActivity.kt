@@ -57,6 +57,8 @@ import androidx.xr.compose.subspace.layout.width
 import com.iotj.meshmore.xr.spatial.Boot
 import com.iotj.meshmore.xr.spatial.Dock
 import com.iotj.meshmore.xr.spatial.Glyphs
+import com.iotj.meshmore.xr.spatial.Hands
+import com.iotj.meshmore.xr.spatial.HelpCard
 import com.iotj.meshmore.xr.spatial.HereMark
 import com.iotj.meshmore.xr.spatial.Horizon
 import com.iotj.meshmore.xr.spatial.Hud
@@ -464,6 +466,9 @@ private fun HorizonScene(link: MeshLink) {
     val hereMarkRef = remember { mutableStateOf<HereMark?>(null) }
     val rackRef = remember { mutableStateOf<Rack?>(null) }
     val dockRef = remember { mutableStateOf<Dock?>(null) }
+    val handsRef = remember { mutableStateOf<Hands?>(null) }
+    val helpRef = remember { mutableStateOf<HelpCard?>(null) }
+    val cue = remember { Cue() }
     // Bumped by the HERE marker so the mesh rebuild below re-runs on a toggle.
     val hereEpoch = remember { mutableStateOf(0) }
 
@@ -558,6 +563,13 @@ private fun HorizonScene(link: MeshLink) {
         val gateL = com.iotj.meshmore.xr.spatial.HandSign.Gate()
         Log.i(TAG_UI, "[hand] tracking right=${handR != null} left=${handL != null}")
 
+        val hands = Hands(session, palette, ctx)
+        hands.build()
+        handsRef.value = hands
+        val help = HelpCard(session, palette, ctx)
+        help.build(origin)
+        helpRef.value = help
+
         val dock = Dock(session, palette)
         // EVERY SURFACE HAS A PINCHABLE WAY IN, gesture or no gesture.
         //
@@ -582,6 +594,19 @@ private fun HorizonScene(link: MeshLink) {
                 val next = !(rackRef.value?.visible ?: false)
                 rackRef.value?.setVisible(next)
                 dockRef.value?.setLit("RADIO", next)
+                if (next) cue.opened() else cue.closed()
+            },
+            "HELP" to {
+                val next = !(helpRef.value?.visible ?: false)
+                helpRef.value?.setVisible(next)
+                dockRef.value?.setLit("HELP", next)
+                if (next) cue.opened() else cue.closed()
+            },
+            "HANDS" to {
+                val next = !(handsRef.value?.visible ?: false)
+                handsRef.value?.setVisible(next)
+                dockRef.value?.setLit("HANDS", next)
+                if (next) cue.opened() else cue.closed()
             },
         ))
         dockRef.value = dock
@@ -660,6 +685,8 @@ private fun HorizonScene(link: MeshLink) {
                     hereMarkRef.value?.faceViewer(it.translation)
                     rackRef.value?.tick(it.translation)
                     dockRef.value?.tick()
+                    helpRef.value?.tick(it.translation)
+                    launch { handsRef.value?.tick(handR, handL, it.translation) }
                     // The microhud is head-locked, so it is re-placed from the
                     // live pose every frame rather than anchored once.
                     hudRef.value?.tick(it)
@@ -688,6 +715,11 @@ private fun HorizonScene(link: MeshLink) {
                             com.iotj.meshmore.xr.spatial.HandSign.classify(j), nowMs,
                         ) == com.iotj.meshmore.xr.spatial.HandSign.Letter.A
                     ) {
+                        // BEFORE the action. Hearing this means the classifier
+                        // saw the letter; the only remaining question is whether
+                        // what it triggered did anything. Silence means the
+                        // problem is upstream of our logic entirely.
+                        cue.recognised()
                         hudRef.value?.let { h ->
                             h.setUpper(!h.upperOn)
                             // The dock lamp is the app's statement about what is
@@ -703,6 +735,7 @@ private fun HorizonScene(link: MeshLink) {
                             com.iotj.meshmore.xr.spatial.HandSign.classify(j), nowMs,
                         ) == com.iotj.meshmore.xr.spatial.HandSign.Letter.A
                     ) {
+                        cue.recognised()
                         hudRef.value?.let { h ->
                             h.setLower(!h.lowerOn)
                             dockRef.value?.setLit("LINK", h.lowerOn)
