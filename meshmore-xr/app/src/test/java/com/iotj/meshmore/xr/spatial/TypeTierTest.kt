@@ -118,7 +118,29 @@ class TypeWidthTest {
     @Test fun layoutBudgetsWhatIsActuallyDrawn() {
         val name = "RBP SENSE CAP REPEATER "
         val drawn = TypeTier.clip(name, MeshNodes.MAX_LABEL_CELLS)
-        val estimatedCells = MeshNodes.labelHalfWidthRad(name) * 2f / MeshNodes.CELL_RAD
+        val cellRad = MeshNodes.CAP_FRACTION * TypeTier.cellEm(drawn)
+        val estimatedCells = MeshNodes.labelHalfWidthRad(name) * 2f / cellRad
         assertEquals(TypeTier.displayCells(drawn).toFloat(), estimatedCells, 0.01f)
+    }
+
+    /**
+     * A stroke label and a run of the same cell count are NOT the same width.
+     * Budgeting both with one constant is how an 18-cell label ends up two
+     * characters into its neighbour.
+     */
+    @Test fun theTwoTiersAreBudgetedSeparately() {
+        val stroke = "W7MIR REPEATER"                 // Latin, 14 cells -> STROKE
+        val run = "中継局中継局中"                      // CJK, 14 cells -> RUN
+        assertEquals(14, TypeTier.displayCells(stroke))
+        assertEquals(14, TypeTier.displayCells(run))
+        assertEquals(TypeTier.STROKE_CELL_EM, TypeTier.cellEm(stroke), 1e-4f)
+        assertEquals(TypeTier.RUN_CELL_EM, TypeTier.cellEm(run), 1e-4f)
+        assertTrue("a stroke cell is wider than a monospace run cell",
+            MeshNodes.labelHalfWidthRad(stroke) > MeshNodes.labelHalfWidthRad(run))
+    }
+
+    /** The stroke constant is the font's own geometry, not a guess: 5.6/6. */
+    @Test fun theStrokeCellMatchesTheFontMetrics() {
+        assertEquals(5.6f / 6f, TypeTier.STROKE_CELL_EM, 1e-3f)
     }
 }

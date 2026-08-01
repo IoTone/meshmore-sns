@@ -64,6 +64,13 @@ object TextRun {
     private const val RASTER_PX = 96f
 
     /**
+     * How far a run's measured cell width may drift from the constant the layout
+     * uses before it is worth saying so. 4% of a cell; an 18-cell label would be
+     * out by most of a character before this fires.
+     */
+    private const val CAL_TOLERANCE = 0.035f
+
+    /**
      * A run's panel plus what the caller needs to place it.
      *
      * [widthM] and [heightM] are the rendered size in metres, which the caller
@@ -98,11 +105,45 @@ object TextRun {
             includeFontPadding = false
             setPadding(0, 0, 0, 0)
             maxLines = 1
-            // Sans rather than the stroke font's register on purpose: this tier
-            // exists precisely for strings the stroke font cannot draw, and the
-            // face that draws them is whatever the platform's fallback chain
-            // selects. Naming a family it may not have would only mislead.
-            typeface = Typeface.SANS_SERIF
+
+            // T3 (§7) — THE THREE PROHIBITIONS, asserted here rather than
+            // trusted. None of them is currently violated; all three are one
+            // careless line away, and every one of them looks correct at the
+            // call site because it IS correct on the Latin string you would
+            // test with. Written as guards so a future edit trips over them.
+            //
+            // Tracking is a Latin device: CJK is set on an em grid and the grid
+            // is the rhythm, so spacing ideographs apart does not open the line
+            // up, it breaks what made it readable.
+            letterSpacing = if (TypeRules.mayTrack(text)) letterSpacing else 0f
+            // Synthetic bold smears and synthetic italic shears. Tolerable on a
+            // Latin letter of few strokes; fatal to a kanji, whose legibility at
+            // this size depends on its strokes staying apart.
+            if (!TypeRules.maySynthesiseWeight(text)) {
+                setTypeface(typeface, android.graphics.Typeface.NORMAL)
+            }
+            // And nothing here uppercases. On a mixed run that would shout the
+            // Latin half and leave the kana alone -- two registers in one line,
+            // which reads as a rendering fault rather than as emphasis. Tier S
+            // uppercases because its font has no lowercase; tier R has one.
+            isAllCaps = false
+
+            // MONOSPACE, for two reasons that happen to be the same reason.
+            //
+            // AESTHETIC: the plan's body face is M PLUS 1 Code -- "monospaced
+            // and technical rather than humanist" (§3) -- chosen so tier R sits
+            // beside the stroke font without argument. Proportional sans did
+            // not: on the live ring `Woofy Repeater` read as ordinary UI text
+            // next to `W7MIR REPEATER` in vector caps, and the horizon started
+            // drifting away from its own register. MONOSPACE is the platform
+            // stand-in until the real face ships.
+            //
+            // MEASURABLE: a monospace advance is a constant, so a run's width
+            // is cells x advance EXACTLY. The proportional face made the layout
+            // estimate conservative by about 2x -- safe, but it spent budget
+            // that could have labelled more nodes. Now the estimate can be
+            // right instead of merely cautious.
+            typeface = Typeface.MONOSPACE
         }
         tv.measure(View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED)
         val wPx = tv.measuredWidth
@@ -122,6 +163,22 @@ object TextRun {
         tv.paint.getTextBounds("H", 0, 1, bounds)
         val capPx = if (bounds.height() > 0) bounds.height().toFloat() else RASTER_PX * 0.72f
         val scale = capHeightM / capPx
+
+        // SELF-CHECK, not a running commentary. The layout predicts this run's
+        // width without a device (MeshNodes is pure), from a constant measured
+        // once. If the platform ever hands us a different face -- a locale with
+        // its own monospace, a future Android -- that constant silently stops
+        // describing reality and the ring starts overlapping again with nothing
+        // to say why. So: measure every run, log only when it disagrees.
+        // Silence here means the constant is still true.
+        val cells = TypeTier.displayCells(text)
+        if (cells > 0) {
+            val measured = (wPx / capPx) / cells
+            if (kotlin.math.abs(measured - TypeTier.RUN_CELL_EM) > CAL_TOLERANCE) {
+                Log.w(TAG, "[type] CELL WIDTH DRIFT: measured %.3f em/cell, expected %.3f — '%s'"
+                    .format(measured, TypeTier.RUN_CELL_EM, text))
+            }
+        }
 
         val panel = PanelEntity.create(
             session, tv, IntSize2d(wPx, hPx), name,

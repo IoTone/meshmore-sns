@@ -105,7 +105,7 @@ volume. Latin callsigns keep it.
 | Role | Face | Why |
 |---|---|---|
 | **Display** (wordmark, surface titles) | **Saira**, `wght` 600, `wdth` 105 | Direct continuity with Meshmore SNS mobile. The brand already reads this way. |
-| **Body / CJK** | **M PLUS 1 Code** | Measured below. Monospaced and technical rather than humanist, and sits beside Saira without argument. |
+| **Body / CJK** | **M PLUS 1 Code** | Measured below. Monospaced and technical rather than humanist, and sits beside Saira without argument. **Not yet shipped — tier R currently uses `Typeface.MONOSPACE`.** The monospace *choice* is already load-bearing: it is what lets the layout predict a run's width (§6.2). |
 | **Telemetry** (numerals, units, RSSI, coordinates) | **JetBrains Mono**, `wght` 500, `zero` on | Continuity with mobile's slashed-zero motif. Monospace is already tabular. Best x-height of the three (0.550). |
 
 **Mixing rule:** never mix Saira and M PLUS inside a single run. A run is
@@ -537,7 +537,12 @@ Three constraints that override the table:
 2. **T2 — Tier R minimum.** One run on a transparent `SpatialPanel` (§6.2 as
    revised — the texture route is closed), Latin
    only, with the two-level cache. Proves the pipeline without touching i18n.
-3. **T3 — CJK output.** Add M PLUS, the promotion rule, kinsoku line breaking.
+3. ~~**T3 — CJK output.**~~ **DONE 2026-08-01, except the face.** `TypeRules`
+   carries the three prohibitions (§7) as functions the renderer asks rather
+   than as advice in a document, plus `BreakIterator`-based wrapping with
+   kinsoku. M PLUS is NOT yet shipped: tier R uses `Typeface.MONOSPACE`, the
+   platform's stand-in, which is why the cell-width constant is measured rather
+   than taken from the face's metrics.
    Verify against the 1.8° floor with `bin/xrshot`, not by eye on a monitor.
 4. **T4 — Angular scale enforcement.** Move all six roles behind an API that
    takes a role and a string and returns a size, with promotion built in.

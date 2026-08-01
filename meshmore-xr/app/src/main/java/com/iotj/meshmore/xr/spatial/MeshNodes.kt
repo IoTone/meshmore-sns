@@ -312,13 +312,19 @@ object MeshNodes {
      * cell a fixed angle. That is the whole point of the angular discipline —
      * the separation rule needs no distance term.
      */
-    fun labelHalfWidthRad(name: String): Float =
+    fun labelHalfWidthRad(name: String): Float {
         // DISPLAY cells, not code points. A kanji is twice as wide as a Latin
         // letter at the same cap height, so counting code points reserved half
         // the space a CJK label actually needs -- and every tier R label that
         // reached the ring after T2 was laid out against that wrong number.
         // Clipped first, because the label that gets drawn is the clipped one.
-        (TypeTier.displayCells(TypeTier.clip(name, MAX_LABEL_CELLS)) * CELL_RAD) / 2f
+        val shown = TypeTier.clip(name, MAX_LABEL_CELLS)
+        // And PER TIER, because a stroke cell and a monospace-run cell are not
+        // the same width. Only 11% apart -- but the whole point of this function
+        // is that the layout and the renderer agree, and 11% of an 18-cell label
+        // is two characters of overlap.
+        return (TypeTier.displayCells(shown) * CAP_FRACTION * TypeTier.cellEm(shown)) / 2f
+    }
 
     /**
      * WHICH NODES GET A MOTE.
@@ -373,6 +379,12 @@ object MeshNodes {
      * Horizon uses. ~1.2 degrees, so a 14-glyph callsign spans ~17.
      */
     const val CELL_RAD = 0.0212f
+    /**
+     * Cap height as a fraction of range — the one number that makes every label
+     * the same visual angle whatever its distance. Horizon uses it directly; it
+     * lives here because the width budget is derived from it.
+     */
+    const val CAP_FRACTION = 0.0227f
     /**
      * Widest a label may be, in display cells. Matches Callsign.MAX_GLYPHS so
      * the stroke and run paths cannot drift apart: both budgets have to be the

@@ -65,6 +65,28 @@ object TypeTier {
     const val STROKE_MAX_CELLS = 16
 
     /**
+     * Width of ONE CELL as a fraction of cap height, per tier. Measured on the
+     * device, not derived — see TextRun's calibration check, which shouts if the
+     * face ever stops agreeing with these.
+     *
+     *   STROKE  Glyphs advances 5.6 units on a 6-unit cap: 0.933 exactly.
+     *   RUN     Typeface.MONOSPACE measured 15.029 w/cap over 18 cells, three
+     *           times identically -> 0.835.
+     *
+     * They are within 11% of each other, which is the useful consequence of
+     * choosing a monospaced face for tier R (§3): the layout can predict a run's
+     * width almost as well as a stroke label's. Proportional sans was 2x narrower
+     * than the estimate, which never collided but spent budget that could have
+     * labelled more nodes.
+     */
+    const val STROKE_CELL_EM = 0.933f
+    const val RUN_CELL_EM = 0.835f
+
+    /** Cell width as a fraction of cap height for whatever tier [text] takes. */
+    fun cellEm(text: String, boundToObject: Boolean = true): Float =
+        if (of(text, boundToObject) == Tier.STROKE) STROKE_CELL_EM else RUN_CELL_EM
+
+    /**
      * Route [text].
      *
      * [boundToObject] is the caller saying "this is welded to a thing in the
