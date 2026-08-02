@@ -52,7 +52,8 @@ object AslIcon {
     /** A view that draws one contour, and nothing else. */
     private class Glyph(
         context: Context, pathData: String?, ink: Int,
-        private val mirror: Boolean, stroked: Boolean,
+        private val mirror: Boolean, private val stroked: Boolean,
+        private val padPx: Float,
     ) : View(context) {
         private val path: Path? = pathData?.let {
             runCatching { PathParser.createPathFromPathData(it) }
@@ -75,20 +76,44 @@ object AslIcon {
 
         override fun onDraw(canvas: Canvas) {
             val p = path ?: return
-            // The path is authored in a 100-unit box; scale it to whatever the
-            // panel is, with a margin so the outermost stroke is not clipped by
-            // the panel edge — the same lesson as the readout, learned once.
-            val s = (width.coerceAtMost(height) * 0.88f) / AslGlyphs.BOX
-            // The stroke is authored in box units, so it has to scale with the
-            // path or a small mark comes out hairline and a large one blocky.
-            fill.strokeWidth = STROKE_UNITS * s
-            val m = Matrix().apply {
-                setScale(s, s)
-                postTranslate(
-                    (width - AslGlyphs.BOX * s) / 2f,
-                    (height - AslGlyphs.BOX * s) / 2f,
+            // FIT THE INK, NOT THE BOX — when a pad is asked for.
+            //
+            // Scaling by the nominal 100-unit box assumes every path fills it,
+            // and the dock marks do not: measured on the seven, ink ran from
+            // 1.09° for the question mark to 2.62° for the crosshair. A set of
+            // icons that vary 2.4x in optical size does not read as a set, and
+            // the small end was below the 2.86° the ASL diagrams established as
+            // legible on this display. The same assumption gave the widest
+            // marks the least margin, because they were the ones actually
+            // reaching the box edge.
+            //
+            // Fitting each path's own bounds fixes both at once: every mark ends
+            // up the same optical size with the same margin, whatever its author
+            // happened to draw. Bounds are inflated by half the stroke first,
+            // because a stroke is centred on the path and the outer half of it
+            // is ink the bounds do not report.
+            val b = android.graphics.RectF()
+            p.computeBounds(b, true)
+            val half = if (stroked) STROKE_UNITS / 2f else 0f
+            val bw = b.width() + 2f * half
+            val bh = b.height() + 2f * half
+            val side = width.coerceAtMost(height)
+            val s: Float
+            val m = Matrix()
+            if (padPx > 0f && bw > 0f && bh > 0f) {
+                s = (side - 2f * padPx) / kotlin.math.max(bw, bh)
+                m.setScale(s, s)
+                // Centre on the bounds, not on the box — an off-centre path
+                // would otherwise sit off-centre in its panel.
+                m.postTranslate(width / 2f - b.centerX() * s, height / 2f - b.centerY() * s)
+            } else {
+                s = (side * 0.88f) / AslGlyphs.BOX
+                m.setScale(s, s)
+                m.postTranslate(
+                    (width - AslGlyphs.BOX * s) / 2f, (height - AslGlyphs.BOX * s) / 2f,
                 )
             }
+            fill.strokeWidth = STROKE_UNITS * s
             // MIRRORED FOR THE LEFT HAND. The Gallaudet chart draws every
             // letter with the right hand, so a left-hand row showed the wrong
             // hand entirely — and for a shape whose whole meaning is which
@@ -126,11 +151,11 @@ object AslIcon {
     fun fromPath(
         session: Session, context: Context, pathData: String?, sizeM: Float,
         argb: Int, mirror: Boolean = false, stroked: Boolean = false,
-        name: String = "mark",
+        padPx: Float = 0f, name: String = "mark",
     ): PanelEntity? {
         pathData ?: return null
         return runCatching {
-            val v = Glyph(context, pathData, argb, mirror, stroked)
+            val v = Glyph(context, pathData, argb, mirror, stroked, padPx)
             v.measure(
                 View.MeasureSpec.makeMeasureSpec(PX, View.MeasureSpec.EXACTLY),
                 View.MeasureSpec.makeMeasureSpec(PX, View.MeasureSpec.EXACTLY),

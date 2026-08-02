@@ -144,7 +144,7 @@ class Dock(
             val mark: Entity = Marks[name]?.let { path ->
                 AslIcon.fromPath(
                     session, context, path, MARK, argb(theme.accent, 1f),
-                    stroked = true, name = "mark-$name",
+                    stroked = true, padPx = MARK_PAD, name = "mark-$name",
                 )
             } ?: MeshEntity.create(
                 // Nobody drew this one. A ring is the honest fallback: visibly
@@ -331,7 +331,13 @@ class Dock(
         /** -0.38 at 0.66 m is about -30 degrees: below everything, above the floor. */
         const val DROP = -0.38f
         const val R = 0.020f
-        const val PITCH = 0.075f
+        /**
+         * Pip spacing. Widened with the marks: normalising their optical size
+         * pulled the small ones UP, which closes the gaps a varied set was
+         * getting for free. 0.083 m is 6.2° at the dock's 0.762 m, leaving a
+         * gap between adjacent ink slightly wider than the ink itself.
+         */
+        const val PITCH = 0.083f
         /**
          * Caption cap height. 1.28° at the dock's 0.76 m — DERIVED from §4.1's
          * 1.2° floor, not chosen by eye. It was 0.011 m, which is 0.83°, and it
@@ -343,7 +349,15 @@ class Dock(
          * The mark, 3.0° at 0.76 m. Floor argued in Marks' header from the one
          * icon in this app whose legibility has actually been measured.
          */
-        const val MARK = 0.040f
+        const val MARK = 0.042f
+        /**
+         * Margin inside the mark panel, in the 256 px raster — about 10 px a
+         * side, which is what the row was asked for and what the measurement
+         * said it did not have: the crosshair was reaching to 16 px and the
+         * compass to 21, while the question mark sat at 82 and looked lost.
+         * With bounds-fitting every mark now gets exactly this.
+         */
+        const val MARK_PAD = 12f
         const val DIM = 0.18f
         /**
          * A mark at rest. Brighter than [DIM], which was tuned for the solid

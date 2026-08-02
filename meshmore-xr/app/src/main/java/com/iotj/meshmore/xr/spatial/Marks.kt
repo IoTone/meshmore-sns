@@ -56,8 +56,13 @@ object Marks {
 
         // HERE — a crosshair on your own position. Reads as a fix, which is
         // what it is; a map pin would claim a map we are not showing.
-        "HERE" to "M50 24 m-22 0 a22 22 0 1 0 44 0 a22 22 0 1 0 -44 0 " +
-            "M50 4 V18 M50 82 V96 M4 50 H18 M82 50 H96",
+        // The circle was authored centred on (50,24) while its ticks were
+        // placed around (50,50), so it drew as a ring with three dashes
+        // scattered below and beside it rather than as a crosshair. Bounds
+        // fitting made it worse, not better: the shape was still wrong, it was
+        // just wrong at a consistent size.
+        "HERE" to "M50 50 m-20 0 a20 20 0 1 0 40 0 a20 20 0 1 0 -40 0 " +
+            "M50 6 V22 M50 78 V94 M6 50 H22 M78 50 H94",
 
         // WIDE — corner brackets opening outward. Magnification as a framing
         // gesture rather than a lens, which at this size is an ellipse.
