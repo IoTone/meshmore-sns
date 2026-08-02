@@ -54,27 +54,82 @@ listed in §9 as rejected.
 SNS's settings hub, verbatim from `app_en.arb`, mapped to this surface and to
 the brief's existing CONSOLE stations (§9.3):
 
-| SNS hub entry | Plate | Bay contents | Brief station |
+| SNS hub entry | Plate mark | Bay contents | Brief station |
 |---|---|---|---|
-| Device configuration | **DEVICE** | THE RACK, unchanged | RADIO (§9.5/9.6) |
-| App settings | **APP** | connection, language, notifications, permissions, data, background | UPLINK + part of VOICE |
-| Profile & personalization | **PROFILE** | theme preset, type size, audio master + alerts, a11y | THEME + ACCESS |
-| Channels | **CHANNELS** | slots · name + PSK · #hashtag · active | *new station* |
-| Diagnostics & connect | **DIAG** | connect a radio · frame log · M6 capture | *new station* |
+| Device configuration | **mast + arcs** | THE RACK, unchanged | RADIO (§9.5/9.6) |
+| App settings | **three rails** | connection, language, notifications, permissions, data, background | UPLINK + part of VOICE |
+| Profile & personalization | **swatch ring** | theme preset, type size, audio master + alerts, a11y | THEME + ACCESS |
+| Channels | **hash** | slots · name + PSK · #hashtag · active | *new station* |
+| Diagnostics & connect | **trace + link arc** | connect a radio · frame log · M6 capture | *new station* |
+
+The marks mirror SNS's own icons — `router_outlined`, `tune`, `palette_outlined`,
+`tag`, `bluetooth_searching` — redrawn as contours in the app's register, through
+the same `PathParser` pipeline as `AslIcon`. Parity of *symbol*, not of artwork.
+
+Two are worth calling out. **Three rails** for APP is not a borrowed slider icon;
+RAIL is already this app's word for a range control (§9.3), so the mark says
+what the bay contains. **The swatch ring** for PROFILE renders the *current
+theme's* palette, so it previews the thing its bay changes and is the one mark
+that is not static.
 
 Three notes on the mapping:
 
-- **Plate titles are one word.** Not the SNS sentence. §4.1's 1.2° floor makes
-  a 21-character title 27° of arc — see §8 for the budget. The SNS subtitle
-  survives as focus-revealed text on the selected plate only.
 - **Two plates span more than one brief station.** APP and PROFILE each cover
   two. That is fine and expected — SNS groups by *what the user came to do*, the
   brief grouped by *what the setting is*. The invariant from §9.3 still holds
   and should still be asserted by test: **every setting has exactly one home**,
   and the test now walks plates rather than stations.
+- **The words are SNS's words, exactly.** Because only one label is ever
+  visible (§3.1), the readout can carry the full hub string —
+  "Diagnostics & connect / Connect a radio · frame log · M6 capture" — instead
+  of a one-word abbreviation. Icon-first *restores* wording parity that a
+  text-first stack would have had to sacrifice.
 - **DIAG contains "connect a radio", which is S2 LINK.** Building this surface
   therefore delivers a real piece of the P2 phase flagged as unfinished in
   `MeshmoreXR-course-correction.md` §1. Worth knowing when sequencing it.
+
+---
+
+## 3.1 Icons carry identity; words carry detail
+
+The rule this surface is built on, and it is a general one:
+
+> **The resting state must carry identity. Whatever carries it does not have to
+> be a word.**
+
+This is the reconciliation of two decisions that otherwise look contradictory.
+The dock's pips were made to show their names permanently on 2026-08-02, because
+seven identical rings carry *no* identity at rest — position was the only thing
+distinguishing them, and that is a memory test. The console's plates carry a
+distinct mark each, so identity is already present at rest and the word is free
+to wait for focus.
+
+The mechanism is proven. Focus-revealed captions were broken for three rounds of
+debugging and are now correct: panels honour their pixel raster, billboard in
+yaw and pitch, and brighten on focus. What follows is a design consequence of
+that fix rather than a hope.
+
+**What icon-first buys, concretely:**
+
+| | Text-first | Icon-first |
+|---|---|---|
+| Plate width | 14.4° (one word at 1.2°) | **3.0°** |
+| Stack silhouette | a slab across the view | a narrow column |
+| Label wording | abbreviated to one word | **the full SNS string** |
+| Labels visible at once | five | one |
+
+The second row is the one that matters most. §2.1 rule 2 says *more room does
+not mean more UI, it means a bigger protected world window* — and a settings
+menu that occupies 14° of arc per row is the exact failure that rule names. A
+column of marks leaves the room visible behind it, which on additive optics it
+was going to be anyway.
+
+**Where the word appears.** In a **fixed readout slot at the base of the cone**,
+by the emitter — not attached to each plate. Two reasons: in a vertical fan,
+per-plate labels sit on a common axis and collide with their neighbours; and a
+label that moves as focus moves is a label you have to chase. The dock can get
+away with per-pip captions because a horizontal row spreads them naturally. A
+vertical stack cannot, and the difference is geometry, not preference.
 
 ---
 
@@ -131,9 +186,16 @@ Plates rise and splay into a shallow fan facing the eye.
 |---|---|---|
 | Stack centre distance | 0.90 m | Arm's length, past the dock, short cone |
 | Stack centre elevation | 11° below eye | Continuous with the dock at −30°; leaves the true centre clear |
+| Plate mark | 0.047 m ≈ 3.0° | See §8 — anchored to a measured icon, not a guess |
 | Plate pitch | 0.085 m ≈ 5.4° | Selection separation — below ~5° hand tracking cannot reliably distinguish adjacent targets |
 | Depth splay | 0.02 m per plate | The nearest plate is the top of the deck |
 | Fan span (5 plates) | 0.34 m ≈ 21.5° | Fits the vertical budget; see §8 |
+
+**Pitch is set by the hand, not by the mark.** At 3.0° the marks would pack into
+15° of arc, but hand tracking cannot reliably separate targets closer than ~5°,
+so the plates sit further apart than they need to be and the gaps are empty.
+That is the correct trade and worth stating so nobody later "tightens" it: the
+binding constraint on a selectable stack is the pointer, not the artwork.
 
 **The fan is ordered, not radial.** A carousel or an orrery was considered and
 rejected: it looks better in a screenshot and it destroys the one thing a
@@ -143,7 +205,9 @@ five are in a fixed order; so are these.
 ### 5.3 Focus and selection
 
 - **Focused** plate: advances 0.03 m toward the eye, goes to full luminance,
-  and reveals its subtitle. Neighbours dim to 0.55.
+  and writes its name into the readout slot (§3.1). Neighbours dim to 0.55.
+  The readout is never empty while the stack is fanned — it shows the focused
+  plate, or the last focused one, because a blank label slot reads as a fault.
 - **Selected** plate: advances to the front of the fan; the others **recede and
   dim but do not disappear**. They are the breadcrumb — §5 of the brief calls
   knowing where you are "the thing that is genuinely hard in a headless spatial
@@ -207,21 +271,44 @@ Applying §4.1 (no text below 1.2° at any distance), and the lesson from
 `MeshmoreXR-course-correction.md` §2 that fixed metre sizes chosen by eye come
 out under the floor — **so these are derived, not picked**:
 
-At the 0.90 m stack distance, 1.2° = 0.0189 m cap.
+### 8.1 Icons
+
+§4.1's 1.2° floor is a **text** rule: you must resolve strokes to tell `8` from
+`B`. An icon in a set of five needs only to be told apart from four others,
+which is a far easier discrimination, so the text floor does not transfer — but
+icons need a floor of their own and it should come from a measurement rather
+than from a round number that sounds right.
+
+**We have one.** The ASL hand diagrams on the help card are 0.085 m at 1.5 m =
+**3.25°**, and at that size finger separations resolve on the Aura — confirmed
+in capture on 2026-08-01, on the specific display this ships to. That is the
+hardest icon discrimination in the app (which of several similar hand shapes),
+so it is a conservative anchor for five distinct silhouettes.
+
+**Proposed rule: no icon below 3.0° of visual angle**, pending the same
+build-and-look every other threshold in this project has had. At 0.90 m that is
+a 0.047 m mark.
+
+### 8.2 Text
+
+Only the readout carries text, at 0.85 m, where 1.2° = 0.0178 m cap.
 
 | Element | Cap | Angle | |
 |---|---|---|---|
-| Plate title | 0.022 m | 1.40° | one word; ≤11 chars = 14.4° wide |
-| Focused subtitle | 0.020 m | 1.27° | ≤24 chars = 28° wide |
-| Bay instrument legends | ≥0.0189 m | ≥1.20° | the rack's current 0.010 m is **illegal** and must be raised when it becomes a bay |
+| Readout title | 0.022 m | 1.48° | SNS hub string verbatim |
+| Readout subtitle | 0.020 m | 1.35° | SNS subtitle verbatim |
+| Bay instrument legends | ≥0.0178 m | ≥1.20° | the rack's current 0.010 m is **illegal** and must be raised when it becomes a bay |
 
-Two consequences worth stating plainly:
+**The readout wraps to at most two lines of ~20 characters.** At legal size,
+20 characters is 25–27° of arc, which is the practical width of one line; the
+longest SNS subtitle ("Connect a radio · frame log · M6 capture", 39 characters)
+is 47° on one line and must wrap. Two lines in a fixed slot is a *label*, not a
+list — the distinction being that it describes one thing rather than enumerating
+several.
 
-1. **Titles must be single words.** "DIAGNOSTICS & CONNECT" at legal size is 27°
-   of arc — most of the comfortable field for one menu row. This is the same
-   constraint that broke the dock captions.
-2. **Subtitles are focus-only.** Five subtitles at once does not fit, and five
-   lines of small print is a list wearing a costume.
+This is the whole payoff of §3.1. A text-first stack had to choose between legal
+type and SNS's actual wording, and would have shipped five abbreviations. One
+label at a time can be full size *and* say what the phone app says.
 
 **The console may use the protected centre.** §2.1 rule 2 reserves 34°×20°
 against anything *persistent*; the console is summoned and dismissed. It and
@@ -312,6 +399,17 @@ switch that is somewhere findable.
 ## 11. What this does not decide
 
 - **D1 — Retire the dock's RADIO pip?** §7. My recommendation is yes.
+- **D1b — Does §3.1 apply back to the dock?** It offers a third answer to the
+  dock-caption problem in `MeshmoreXR-course-correction.md` §2, which currently
+  has only two bad options (four-character abbreviations, or a two-row stagger).
+  If each pip carried a **mark** at ≥3.0°, identity would live in the icon, the
+  permanent caption could retire, and the focus-revealed caption could be full
+  size and legal in a slot below the row — the 0.83° violation disappears rather
+  than being negotiated. This does **not** contradict the 2026-08-02 decision:
+  that decision was that *seven identical rings* must be labelled, and it is
+  correct. The question §3.1 raises is whether they should have been identical.
+  Not to be acted on without a call — the dock is the surface you have actually
+  been using.
 - **D2 — Does the console replace the HAND MENU, or sit inside it?** The brief
   §5 gives the settings gear to the hand menu; we built a dock instead. This is
   the same open question as D3 in the course-correction note and should be
