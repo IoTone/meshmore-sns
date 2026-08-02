@@ -88,11 +88,18 @@ class Dock(
 
     private inner class Pip(
         val name: String,
-        val ring: MeshEntity,
-        val lamp: MeshEntity,
+        val mark: Entity,
         val captionAt: Vector3,
         val toggle: () -> Unit,
     ) {
+        /** Push [hot] and [lit] onto the mark. The only place either is drawn. */
+        fun apply() {
+            runCatching {
+                mark.setScale(if (hot) HOT_SCALE else 1f)
+                mark.setAlpha(if (lit) 1f else if (hot) 0.95f else MARK_DIM)
+            }
+        }
+
         var lastFire = 0L
         var lit = false
         /** Which pointers are on it. BOTH hands emit rays, hence a set. */
@@ -119,23 +126,36 @@ class Dock(
             val x = (i - (items.size - 1) / 2f) * PITCH
             val at = Vector3(base.x + x, base.y, base.z)
 
-            // A RING, not a mote. Every sphere in this scene is a node; a pip
-            // that looked like one would read as a radio improbably close by.
-            val ring = MeshEntity.create(
+            // THE MARK IS THE PIP. One object: silhouette says WHICH control,
+            // scale says focus, brightness says whether its surface is open.
+            //
+            // There used to be a ring here with the mark inside it, and it could
+            // not work. A PanelEntity writes depth across its whole quad, so the
+            // mark's transparent margin punched a hole in the ring behind it and
+            // every pip came out as a bright annulus with a dark square bitten
+            // out of the middle. This is the same additive-display rule the hit
+            // proxies already obey: on this display transparent is not the same
+            // as absent, and only Prims.ghost's alpha-mask material makes it so.
+            //
+            // Losing the ring costs nothing the marks do not carry better. It
+            // existed to say "a pip is not a node"; a flat line drawing says
+            // that more plainly than a torus did, since every other thing in
+            // the scene is extruded geometry.
+            val mark: Entity = Marks[name]?.let { path ->
+                AslIcon.fromPath(
+                    session, context, path, MARK, argb(theme.accent, 1f),
+                    stroked = true, name = "mark-$name",
+                )
+            } ?: MeshEntity.create(
+                // Nobody drew this one. A ring is the honest fallback: visibly
+                // a control, visibly not identified, rather than nothing.
                 session, Prims.build(session, Prims.halo(R, R * 0.22f)),
                 listOf(Prims.material(session, theme.alt, 0.75f)),
-            ).also { it.parent = root; it.setPose(Pose(at), Space.ACTIVITY); entities += it }
-
-            // The lamp inside says whether that surface is currently open. A
-            // dock that cannot tell you what is already up is how you end up
-            // summoning a thing that was behind you all along.
-            val lamp = MeshEntity.create(
-                session, Prims.build(session, Prims.mote(R * 0.45f, 5, 8)),
-                listOf(Prims.material(session, theme.accent, 1f)),
-            ).also {
-                it.parent = root; it.setPose(Pose(at), Space.ACTIVITY)
-                it.setAlpha(DIM); entities += it
-            }
+            )
+            mark.parent = root
+            mark.setPose(Pose(at), Space.ACTIVITY)
+            runCatching { mark.setAlpha(MARK_DIM) }
+            entities += mark
 
             // THE NAME STAYS UP. A dock you have to hover to identify is a
             // dock you learn by poking it, and seven unlabelled rings are a
@@ -162,12 +182,11 @@ class Dock(
                 captions[name] = it
                 it.entity.parent = root
                 it.setText(name)
-                it.entity.setEnabled(true)
-                runCatching { it.entity.setAlpha(CAPTION_DIM) }
+                it.entity.setEnabled(false)
                 entities += it.entity
             }
 
-            val pip = Pip(name, ring, lamp, Vector3(at.x, at.y - R * 2.4f, at.z), act)
+            val pip = Pip(name, mark, Vector3(at.x, at.y - R * 2.4f, at.z), act)
             pips += pip
 
             // Hit proxy, same reasoning as everywhere else: the thing you point
@@ -211,10 +230,7 @@ class Dock(
 
     /** Light the pip for whichever surface is open; dark for the rest. */
     fun setLit(name: String, lit: Boolean) {
-        pips.firstOrNull { it.name == name }?.let {
-            it.lit = lit
-            it.lamp.setAlpha(if (lit) 1f else DIM)
-        }
+        pips.firstOrNull { it.name == name }?.let { it.lit = lit; it.apply() }
     }
 
     private fun onInput(p: Pip, ev: InputEvent) {
@@ -263,19 +279,24 @@ class Dock(
             val want = p.pointers.isNotEmpty() || (p.hot && now - p.exitAt < GRACE_MS)
             if (want == p.hot) return@forEach
             p.hot = want
-            runCatching {
-                // The RING swells and brightens, not the lamp — the lamp already
-                // means "this surface is open", and one object cannot carry two
-                // states without either becoming ambiguous.
-                p.ring.setScale(if (want) HOT_SCALE else 1f)
-                p.ring.setAlpha(if (want) 1f else 0.75f)
-            }
-            // BRIGHTNESS is the focus cue for the caption, since visibility is
-            // no longer available to carry it. Every name is legible; the one
-            // you are pointing at is the bright one, alongside the ring swelling.
+            // TWO CHANNELS ON ONE OBJECT, which is only safe because they are
+            // orthogonal: SCALE means "you are pointing at this", BRIGHTNESS
+            // means "this surface is open". A single object carrying two
+            // STATES would be ambiguous; carrying two different QUESTIONS is
+            // how a physical control works.
+            runCatching { p.apply()  }
+            // ONE CAPTION, AND ONLY ON FOCUS. This is not a retreat to the
+            // pre-2026-08-02 behaviour: the objection then was that seven
+            // identical rings carry no identity at rest, and the marks now do.
+            //
+            // It is also forced. At the §4.1 floor a caption is 9.6° of arc
+            // against a 5.6° pip pitch, so seven at once cannot be legal AND
+            // legible. Exactly one visible has no neighbour to collide with,
+            // which is what lets it be the full word at full size.
             captions[p.name]?.let { c ->
-                runCatching { c.entity.setAlpha(if (want) 1f else CAPTION_DIM) }
+                runCatching { c.entity.setEnabled(want) }
             }
+
             if (want) onFocus?.invoke(p.name)
         }
     }
@@ -311,8 +332,27 @@ class Dock(
         const val DROP = -0.38f
         const val R = 0.020f
         const val PITCH = 0.075f
-        const val CAP = 0.011f
+        /**
+         * Caption cap height. 1.28° at the dock's 0.76 m — DERIVED from §4.1's
+         * 1.2° floor, not chosen by eye. It was 0.011 m, which is 0.83°, and it
+         * looked perfectly fine on the device; that is precisely why the rule is
+         * written as an angle and not as a distance.
+         */
+        const val CAP = 0.017f
+        /**
+         * The mark, 3.0° at 0.76 m. Floor argued in Marks' header from the one
+         * icon in this app whose legibility has actually been measured.
+         */
+        const val MARK = 0.040f
         const val DIM = 0.18f
+        /**
+         * A mark at rest. Brighter than [DIM], which was tuned for the solid
+         * lamp mote this replaced — the same alpha over a line drawing emits a
+         * fraction of the light, because most of the mark is the space between
+         * its strokes. Identity has to be readable without pointing at it, or
+         * the marks are not doing the job the captions were retired for.
+         */
+        const val MARK_DIM = 0.55f
         const val DEBOUNCE_MS = 350L
         const val GRACE_MS = 180L
         /** Enough swell to read at a glance, not so much it looks like a press. */

@@ -49,18 +49,25 @@ object AslIcon {
      */
     private const val PX = 256
 
-    /** A view that draws one letter, and nothing else. */
+    /** A view that draws one contour, and nothing else. */
     private class Glyph(
-        context: Context, letter: Char, private val ink: Int,
-        private val mirror: Boolean,
+        context: Context, pathData: String?, ink: Int,
+        private val mirror: Boolean, stroked: Boolean,
     ) : View(context) {
-        private val path: Path? = AslGlyphs[letter]?.let {
+        private val path: Path? = pathData?.let {
             runCatching { PathParser.createPathFromPathData(it) }
-                .onFailure { e -> Log.w(TAG, "[asl] '$letter' unparseable: ${e.message}") }
+                .onFailure { e -> Log.w(TAG, "[mark] unparseable: ${e.message}") }
                 .getOrNull()
         }
         private val fill = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            style = Paint.Style.FILL
+            // STROKED OR FILLED, because the two artwork sources differ in kind.
+            // The Gallaudet letters are closed contours and want a fill; the
+            // dock marks are line drawings authored as open paths and want a
+            // stroke. Forcing either into the other's mode produces a blot.
+            style = if (stroked) Paint.Style.STROKE else Paint.Style.FILL
+            strokeWidth = STROKE_UNITS
+            strokeCap = Paint.Cap.ROUND
+            strokeJoin = Paint.Join.ROUND
             color = ink
         }
 
@@ -72,6 +79,9 @@ object AslIcon {
             // panel is, with a margin so the outermost stroke is not clipped by
             // the panel edge — the same lesson as the readout, learned once.
             val s = (width.coerceAtMost(height) * 0.88f) / AslGlyphs.BOX
+            // The stroke is authored in box units, so it has to scale with the
+            // path or a small mark comes out hairline and a large one blocky.
+            fill.strokeWidth = STROKE_UNITS * s
             val m = Matrix().apply {
                 setScale(s, s)
                 postTranslate(
@@ -102,15 +112,32 @@ object AslIcon {
         mirror: Boolean = false,
     ): PanelEntity? {
         if (!AslGlyphs.has(letter)) return null
+        return fromPath(session, context, AslGlyphs[letter], sizeM, argb, mirror,
+            stroked = false, name = "asl-$letter")
+    }
+
+    /**
+     * Build any contour as a panel [sizeM] metres square, inked in [argb].
+     *
+     * Split out from [create] so the dock marks can use the same pipeline: the
+     * panel sizing rule, the margin, the mirror and the theme ink are all
+     * things you only want to get right once.
+     */
+    fun fromPath(
+        session: Session, context: Context, pathData: String?, sizeM: Float,
+        argb: Int, mirror: Boolean = false, stroked: Boolean = false,
+        name: String = "mark",
+    ): PanelEntity? {
+        pathData ?: return null
         return runCatching {
-            val v = Glyph(context, letter, argb, mirror)
+            val v = Glyph(context, pathData, argb, mirror, stroked)
             v.measure(
                 View.MeasureSpec.makeMeasureSpec(PX, View.MeasureSpec.EXACTLY),
                 View.MeasureSpec.makeMeasureSpec(PX, View.MeasureSpec.EXACTLY),
             )
             v.layout(0, 0, PX, PX)
             PanelEntity.create(
-                session, v, FloatSize2d(sizeM, sizeM), "asl-$letter",
+                session, v, FloatSize2d(sizeM, sizeM), name,
                 Pose(Vector3(0f, 0f, 0f)),
             ).also {
                 // PIXELS, THEN SCALE — the same rule TextRun had to learn.
@@ -123,7 +150,10 @@ object AslIcon {
                 if (mpp != null) runCatching { it.setScale(sizeM / (PX * mpp)) }
                 it.cornerRadius = 0f
             }
-        }.onFailure { Log.w(TAG, "[asl] panel for '$letter' failed: ${it.message}") }
+        }.onFailure { Log.w(TAG, "[mark] panel '$name' failed: ${it.message}") }
             .getOrNull()
     }
+
+    /** Stroke weight, in the 100-unit authoring box. Bold enough to read at 3°. */
+    private const val STROKE_UNITS = 7f
 }
