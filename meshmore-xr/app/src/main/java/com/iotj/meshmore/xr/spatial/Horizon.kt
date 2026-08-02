@@ -195,6 +195,14 @@ class Horizon(
                     it.parent = root
                     it.setPose(Pose(Vector3(px, py, pz)), Space.ACTIVITY)
                     entities += it
+                    // IT HAS TO TURN, like the dish does. A torus lying in a
+                    // fixed plane is a ring only from one direction; from
+                    // anywhere else it foreshortens to an ellipse, and once the
+                    // mote inside it is faint that ellipse reads as a stray ring
+                    // floating in the room with nothing to do with the node it
+                    // belongs to. It was the only unbilloarded thing left in the
+                    // scene and it looked exactly like a bug.
+                    facing += Facing(it, Vector3(px, py, pz))
                 }
             }
 

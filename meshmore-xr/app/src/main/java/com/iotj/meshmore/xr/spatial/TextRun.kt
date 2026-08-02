@@ -170,9 +170,22 @@ object TextRun {
             this.text = text
             setTextColor(argb)
             setBackgroundColor(Color.TRANSPARENT)
-            textSize = RASTER_PX
+            // PIXELS, EXPLICITLY. The `textSize` property setter is SP, which
+            // the platform scales by the user's font-size preference and the
+            // display density — so the view drew larger than the panel we had
+            // sized from RASTER_PX, and the difference showed up as text cut off
+            // at the top, bottom and right edges. Everything downstream treats
+            // RASTER_PX as pixels; this makes that true.
+            setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, RASTER_PX)
             includeFontPadding = false
-            setPadding(0, 0, 0, 0)
+            // PADDING, and CENTRED inside it. Measuring a glyph box exactly and
+            // sizing a panel to it leaves no room for the parts of a face that
+            // legitimately exceed it — descenders, accents, the odd overhang —
+            // and any rounding in either direction takes a slice off an edge.
+            // The margin costs a few millimetres of transparent nothing.
+            val pad = (RASTER_PX * 0.12f).toInt()
+            setPadding(pad, pad, pad, pad)
+            gravity = android.view.Gravity.CENTER
             maxLines = 1
 
             // T3 (§7) — THE THREE PROHIBITIONS, asserted here rather than
