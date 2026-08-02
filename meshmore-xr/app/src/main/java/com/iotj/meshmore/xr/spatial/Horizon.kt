@@ -60,6 +60,16 @@ class Horizon(
         val accent: Int, val alt: Int, val warn: Int, val text: Int,
     )
 
+    /**
+     * Labels come from here, not from new panels each build.
+     *
+     * A horizon rebuild happens whenever mesh membership changes — on a live
+     * 350-peer mesh that is every few seconds — and each rebuild was disposing
+     * 24 Android Views and their surfaces and creating 24 more. The pool is
+     * built once and lent out; a rebuild now costs a setText per label.
+     */
+    private var labels: LabelPool? = null
+
     private val entities = mutableListOf<Entity>()
     private val pulses = mutableListOf<Pulse>()
     private val facing = mutableListOf<Facing>()
@@ -107,6 +117,11 @@ class Horizon(
     suspend fun build(nodes: List<Node>, o: Stage.Origin, floorY: Float) {
         clear()
         val root = session.scene.activitySpace
+        if (labels == null && context != null) {
+            labels = LabelPool(session, context).also { it.build(tintOf(theme.text, 0.95f)) }
+        }
+        labels?.begin()
+        var unlabelled = 0
 
         // --- range halos: real tori, lying flat below eye level --------------
         // Distance is read from which band a mote sits in, so the bands are the
@@ -231,31 +246,23 @@ class Horizon(
             // which was the actual complaint: proportional mixed-case sitting
             // next to all-caps vector strokes read as two applications.
             val tier = TypeTier.of(n.name, TypeTier.Kind.NAME)
-            val txt: Entity = if (tier == TypeTier.Tier.RUN && context != null && !isCluster) {
-                // Clipped to the SAME budget MeshNodes laid out against. The
-                // layout reserves space for a label of MAX_LABEL_CELLS; drawing
-                // a wider one puts it through the neighbours the layout just
-                // carefully cleared.
-                val shown = TypeTier.clip(n.name, MeshNodes.MAX_LABEL_CELLS)
-                val run = TextRun.create(
-                    session, context, shown, capH,
-                    argb = tintOf(theme.text, 0.45f + 0.55f * lum),
-                    name = "run-${n.name.take(12)}",
-                )
-                if (run != null) {
-                    Log.i(TAG, "[type] RUN '${n.name}' ${"%.3f".format(run.widthM)}m wide")
-                    run.entity.also {
-                        it.parent = root
-                        it.setPose(Pose(anchor), Space.ACTIVITY)
-                        entities += it
-                        facing += Facing(it, anchor)
-                    }
-                } else {
-                    // A run that will not build must still leave a label. Tier S
-                    // tofu is ugly and honest; nothing at all is neither.
-                    strokeLabel(root, n, capH, lum, anchor)
-                }
+            // Clipped to the SAME budget MeshNodes laid out against. The layout
+            // reserves space for a label of MAX_LABEL_CELLS; drawing a wider one
+            // puts it through the neighbours the layout just carefully cleared.
+            val shown = TypeTier.clip(n.name, MeshNodes.MAX_LABEL_CELLS)
+            val pooled = tier == TypeTier.Tier.RUN && !isCluster &&
+                labels?.place(shown, anchor, capH) == true
+            val txt: Entity = if (pooled) {
+                // The pool owns the entity and its billboarding. Peer.label is
+                // only used for the veil, and a pooled label is shared — dimming
+                // it would dim whichever node borrows it next. Point the peer at
+                // its MOTE instead, which is per-node and already alpha-managed.
+                mote
             } else {
+                // No pool, no context, or the pool ran dry: a cluster count and
+                // anything unlabelled still needs SOMETHING, and tier S is the
+                // path that costs one mesh rather than one Android View.
+                if (tier == TypeTier.Tier.RUN && !isCluster) unlabelled++
                 strokeLabel(root, n, capH, lum, anchor)
             }
             val cs = Callsign.render(n.name)
@@ -376,6 +383,9 @@ class Horizon(
                 }
             }
 
+        }
+        if (unlabelled > 0) {
+            Log.i(TAG, "[horizon] $unlabelled node(s) fell back to stroke labels — pool exhausted")
         }
         Log.i(TAG, "[horizon] built ${entities.size} entities for ${nodes.size} nodes " +
             "(${nodes.count { it.type == TYPE_REPEATER }} repeaters, " +
@@ -577,6 +587,7 @@ class Horizon(
      * will pass.
      */
     fun faceViewer(head: Vector3) {
+        labels?.faceViewer(head)
         facing.forEach { l ->
             val dx = head.x - l.at.x
             val dz = head.z - l.at.z
@@ -656,6 +667,13 @@ class Horizon(
                 p.entity.setAlpha(p.life * 0.55f)
             }
         }
+    }
+
+    /** The pool outlives a rebuild; only a teardown of the surface disposes it. */
+    fun dispose() {
+        clear()
+        labels?.clear()
+        labels = null
     }
 
     fun clear() {
