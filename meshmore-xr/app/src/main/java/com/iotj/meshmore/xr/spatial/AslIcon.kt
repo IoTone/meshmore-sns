@@ -1,0 +1,110 @@
+// Copyright (c) 2026 IoTone, Inc.
+// SPDX-License-Identifier: MIT
+package com.iotj.meshmore.xr.spatial
+
+import android.content.Context
+import android.graphics.Canvas
+import android.graphics.Color
+import android.graphics.Paint
+import android.graphics.Path
+import android.graphics.Matrix
+import android.util.Log
+import android.view.View
+import androidx.core.graphics.PathParser
+import androidx.xr.runtime.Session
+import androidx.xr.runtime.math.FloatSize2d
+import androidx.xr.runtime.math.IntSize2d
+import androidx.xr.runtime.math.Pose
+import androidx.xr.runtime.math.Vector3
+import androidx.xr.scenecore.PanelEntity
+
+/**
+ * AN ASL HAND SHAPE, AS A DIAGRAM IN THE ROOM.
+ *
+ * "Fist, thumb alongside" is a bad teacher. It is the description I put on the
+ * help card because a stroke font cannot draw a hand, and the gesture then
+ * failed three times in testing partly because nobody could see what the target
+ * shape was. A picture of the letter is the difference between a discoverable
+ * command and a secret one.
+ *
+ * DRAWN, NOT PHOTOGRAPHED, and that matters on this display. A photograph is a
+ * rectangle of lit pixels; on additive optics it hangs in the room as a glowing
+ * card. A contour drawing is ink and nothing else — the ground stays fully
+ * transparent, so the shape reads as a diagram floating in the air rather than
+ * as a screen someone left open.
+ *
+ * It also takes the theme's colour by construction. There is no palette baked
+ * into the artwork to fight, because the fill was discarded (see AslGlyphs) and
+ * every stroke here is painted in whatever ink the surface is using.
+ */
+object AslIcon {
+
+    private const val TAG = "MeshmoreXR"
+
+    /**
+     * Rasterisation size. These are contour drawings with fine finger
+     * separations; below about 200 px the strokes start merging and a fist
+     * stops being distinguishable from a flat hand, which is the whole
+     * distinction the diagram exists to make.
+     */
+    private const val PX = 256
+
+    /** A view that draws one letter, and nothing else. */
+    private class Glyph(context: Context, letter: Char, private val ink: Int) : View(context) {
+        private val path: Path? = AslGlyphs[letter]?.let {
+            runCatching { PathParser.createPathFromPathData(it) }
+                .onFailure { e -> Log.w(TAG, "[asl] '$letter' unparseable: ${e.message}") }
+                .getOrNull()
+        }
+        private val fill = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            style = Paint.Style.FILL
+            color = ink
+        }
+
+        init { setBackgroundColor(Color.TRANSPARENT) }
+
+        override fun onDraw(canvas: Canvas) {
+            val p = path ?: return
+            // The path is authored in a 100-unit box; scale it to whatever the
+            // panel is, with a margin so the outermost stroke is not clipped by
+            // the panel edge — the same lesson as the readout, learned once.
+            val s = (width.coerceAtMost(height) * 0.88f) / AslGlyphs.BOX
+            val m = Matrix().apply {
+                setScale(s, s)
+                postTranslate(
+                    (width - AslGlyphs.BOX * s) / 2f,
+                    (height - AslGlyphs.BOX * s) / 2f,
+                )
+            }
+            val out = Path(p).apply { transform(m) }
+            canvas.drawPath(out, fill)
+        }
+    }
+
+    /**
+     * Build [letter] as a panel [sizeM] metres square, inked in [argb].
+     * Returns null when the letter has no artwork — the caller falls back to
+     * the written description, which is worse but is not nothing.
+     */
+    fun create(
+        session: Session, context: Context, letter: Char, sizeM: Float, argb: Int,
+    ): PanelEntity? {
+        if (!AslGlyphs.has(letter)) return null
+        return runCatching {
+            val v = Glyph(context, letter, argb)
+            v.measure(
+                View.MeasureSpec.makeMeasureSpec(PX, View.MeasureSpec.EXACTLY),
+                View.MeasureSpec.makeMeasureSpec(PX, View.MeasureSpec.EXACTLY),
+            )
+            v.layout(0, 0, PX, PX)
+            PanelEntity.create(
+                session, v, FloatSize2d(sizeM, sizeM), "asl-$letter",
+                Pose(Vector3(0f, 0f, 0f)),
+            ).also {
+                it.sizeInPixels = IntSize2d(PX, PX)
+                it.cornerRadius = 0f
+            }
+        }.onFailure { Log.w(TAG, "[asl] panel for '$letter' failed: ${it.message}") }
+            .getOrNull()
+    }
+}
