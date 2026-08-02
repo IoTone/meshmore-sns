@@ -125,24 +125,43 @@ class HandSignTest {
  */
 class HandFacingTest {
 
-    /** Right palm toward +Z: index knuckle to -X, little to +X, fingers up. */
-    private fun rightPalmToward() = HandSign.palmNormal(
+    /**
+     * The joint layout that produced a correctly-oriented 'A' on the device,
+     * with the convention pinned by observation rather than by derivation —
+     * see HandSign.palmNormal. What these lock down is that the two hands stay
+     * MIRRORED: the same physical gesture must give the same answer on either
+     * hand, and that is the part a sign error breaks silently.
+     */
+    private fun rightHandNormal() = HandSign.palmNormal(
         0f, 0f, 0f, -0.04f, 0.09f, 0f, 0.04f, 0.09f, 0f, rightHand = true,
     )
 
-    /** Left hand is the mirror: index knuckle to +X. */
-    private fun leftPalmToward() = HandSign.palmNormal(
+    private fun leftHandNormal() = HandSign.palmNormal(
         0f, 0f, 0f, 0.04f, 0.09f, 0f, -0.04f, 0.09f, 0f, rightHand = false,
     )
 
-    @Test fun therightPalmNormalPointsOutOfThePalm() {
-        val (_, _, nz) = rightPalmToward()
-        assertTrue("right palm facing +Z should give a +Z normal, got $nz", nz > 0.9f)
+    /**
+     * THE INVARIANT THAT MATTERS. Mirror the knuckles and flip the hand flag —
+     * the same gesture on the other hand — and the normal must come out the
+     * same way. If it does not, one hand accepts the letter and the other
+     * refuses it, which presents as "it only works with my left hand" and is
+     * exactly what a handedness sign error does.
+     */
+    @Test fun bothHandsAgreeOnTheSameGesture() {
+        val (rx, ry, rz) = rightHandNormal()
+        val (lx, ly, lz) = leftHandNormal()
+        assertEquals(rx, lx, 1e-5f)
+        assertEquals(ry, ly, 1e-5f)
+        assertEquals(rz, lz, 1e-5f)
     }
 
-    @Test fun theLeftHandIsMirroredNotIdentical() {
-        val (_, _, nz) = leftPalmToward()
-        assertTrue("left palm facing +Z should give a +Z normal, got $nz", nz > 0.9f)
+    @Test fun theNormalIsPerpendicularToThePalmPlane() {
+        val (nx, ny, nz) = rightHandNormal()
+        // Knuckles and wrist lie in the XY plane here, so the normal is on Z.
+        assertEquals(0f, nx, 1e-5f)
+        assertEquals(0f, ny, 1e-5f)
+        assertTrue("normal must be a unit direction along Z, got $nz",
+            kotlin.math.abs(nz) > 0.99f)
     }
 
     /** Degenerate input must not produce a confident direction. */

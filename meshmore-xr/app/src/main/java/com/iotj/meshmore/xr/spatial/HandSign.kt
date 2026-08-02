@@ -74,9 +74,20 @@ object HandSign {
      * person standing in front of you. Hence [palmAway].
      *
      * The normal comes from the two outer knuckles and the wrist, which is a
-     * plane through the palm. Handedness flips it: with the right palm toward
-     * you and fingers up the index knuckle is on your left, with the left hand
-     * it is on your right, so the cross product changes sign between them.
+     * plane through the palm. Handedness flips it, because the two hands are
+     * mirror images: whichever side the index knuckle falls on for one, it
+     * falls on the other side for the other, and the cross product changes sign
+     * with it.
+     *
+     * WHICH SIDE IS WHICH WAS SETTLED ON THE DEVICE, NOT DERIVED. I reasoned it
+     * out from anatomical position and got it backwards — the first build fired
+     * on a palm-first fist and refused a correctly formed one. That is the
+     * fourth sign convention in this project I have argued my way to the wrong
+     * answer on (head yaw, Euler order, panel depth, and now this), and the
+     * pattern is clear enough to write down: a handedness or chirality sign is
+     * not something to derive in a comment. Build it, look at it, and let the
+     * hardware say. The readout prints `back` or `palm` precisely so this is
+     * checkable in one glance instead of one release.
      */
     fun palmNormal(
         wx: Float, wy: Float, wz: Float,
@@ -86,11 +97,12 @@ object HandSign {
     ): Triple<Float, Float, Float> {
         val ux = ix - wx; val uy = iy - wy; val uz = iz - wz
         val vx = lx - wx; val vy = ly - wy; val vz = lz - wz
-        // u x v points out of the LEFT palm; the right hand is its mirror.
+        // u x v points out of the RIGHT palm; the left hand is its mirror.
+        // Verified on hardware — see the note above about deriving this.
         var nx = uy * vz - uz * vy
         var ny = uz * vx - ux * vz
         var nz = ux * vy - uy * vx
-        if (rightHand) { nx = -nx; ny = -ny; nz = -nz }
+        if (!rightHand) { nx = -nx; ny = -ny; nz = -nz }
         val m = sqrt(nx * nx + ny * ny + nz * nz)
         if (m < 1e-6f) return Triple(0f, 0f, 0f)
         return Triple(nx / m, ny / m, nz / m)
