@@ -705,6 +705,11 @@ private fun HorizonScene(link: MeshLink) {
                 // state you did not want on the way to the one you did.
                 val nowMs = android.os.SystemClock.uptimeMillis()
                 val it0 = stage.headNow()
+                // Hands that are operating a control are not signing. Feeding
+                // the gate NONE rather than skipping it also resets any partial
+                // dwell, so a fist held through a selection cannot complete a
+                // letter on the other side of it.
+                val reaching = com.iotj.meshmore.xr.spatial.Reach.busy()
                 // Calibration trace, ~1 Hz, only while a hand is actually
                 // tracked. The classifier's thresholds were set from synthesised
                 // joints; this is what a real hand measures.
@@ -723,8 +728,10 @@ private fun HorizonScene(link: MeshLink) {
                     // an 'A', not an 'A' — and accepting both doubles the number
                     // of accidental hand positions that fire a command.
                     val away = handsRef.value?.palmAway(j, it0, rightHand = true)
+                    val seenR = if (reaching) com.iotj.meshmore.xr.spatial.HandSign.Letter.NONE
+                                else com.iotj.meshmore.xr.spatial.HandSign.classify(j, away)
                     if (gateR.update(
-                            com.iotj.meshmore.xr.spatial.HandSign.classify(j, away), nowMs,
+                            seenR, nowMs,
                         ) == com.iotj.meshmore.xr.spatial.HandSign.Letter.A
                     ) {
                         // BEFORE the action. Hearing this means the classifier
@@ -744,8 +751,10 @@ private fun HorizonScene(link: MeshLink) {
                 }
                 handL?.state?.value?.handJoints?.let { j ->
                     val away = handsRef.value?.palmAway(j, it0, rightHand = false)
+                    val seenL = if (reaching) com.iotj.meshmore.xr.spatial.HandSign.Letter.NONE
+                                else com.iotj.meshmore.xr.spatial.HandSign.classify(j, away)
                     if (gateL.update(
-                            com.iotj.meshmore.xr.spatial.HandSign.classify(j, away), nowMs,
+                            seenL, nowMs,
                         ) == com.iotj.meshmore.xr.spatial.HandSign.Letter.A
                     ) {
                         cue.recognised()

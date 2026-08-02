@@ -563,6 +563,7 @@ class Rack(
         val now = android.os.SystemClock.uptimeMillis()
         if (now - c.lastFire < DEBOUNCE_MS) return
         c.lastFire = now
+        Reach.consumed()
         fired.add(c)
     }
 

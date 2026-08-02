@@ -45,6 +45,19 @@ object HandSign {
     const val STRAIGHT = 1.5f
 
     /**
+     * Thumb-tip to index-tip, as a fraction of the wrist-to-index-knuckle
+     * distance. Below this the hand is pinching rather than signing.
+     *
+     * PROVISIONAL, and biased toward rejecting. The readout prints the measured
+     * value so it can be set from a real hand rather than from this comment —
+     * the last two constants here were guessed and both were wrong. Erring
+     * toward rejection is the right way to be wrong: a missed HUD toggle is an
+     * annoyance, a HUD that flips while you are selecting a node is the bug
+     * being fixed.
+     */
+    const val PINCH_GAP = 0.42f
+
+    /**
      * Hand scale, from the wrist to the middle knuckle.
      *
      * KEPT ONLY AS A SANITY CHECK. It was the divisor for every threshold and
@@ -106,6 +119,34 @@ object HandSign {
         val m = sqrt(nx * nx + ny * ny + nz * nz)
         if (m < 1e-6f) return Triple(0f, 0f, 0f)
         return Triple(nx / m, ny / m, nz / m)
+    }
+
+    /**
+     * IS THIS A PINCH? — the shape 'A' is nearly, and the one it must not be.
+     *
+     * A pinch curls all four fingers, which is exactly the test for 'A', so
+     * selecting a node was toggling the compass band. That is not a threshold
+     * being slightly off; the two shapes genuinely overlap on the only feature
+     * being measured.
+     *
+     * What separates them is WHERE THE THUMB IS. In a pinch the thumb tip meets
+     * the index tip — that is what pinching means. In ASL 'A' the thumb lies
+     * ALONGSIDE the curled index, roughly level with its middle knuckle, while
+     * the index tip is tucked into the palm; the two tips end up a good part of
+     * a finger-length apart. So the gap between them, measured against the
+     * hand's own knuckle distance, tells the shapes apart without either one
+     * having to know about the other.
+     *
+     * Returns the gap as a ratio, or -1 when the joints are not there.
+     */
+    fun pinchGap(j: Map<HandJointType, Pose>): Float {
+        val w = j[HandJointType.WRIST]?.translation ?: return -1f
+        val k = j[HandJointType.INDEX_PROXIMAL]?.translation ?: return -1f
+        val t = j[HandJointType.THUMB_TIP]?.translation ?: return -1f
+        val i = j[HandJointType.INDEX_TIP]?.translation ?: return -1f
+        val knuckle = dist(w.x, w.y, w.z, k.x, k.y, k.z)
+        if (knuckle < 1e-5f) return -1f
+        return dist(t.x, t.y, t.z, i.x, i.y, i.z) / knuckle
     }
 
     /** Each finger's tip and the knuckle it folds around. */
@@ -171,7 +212,8 @@ object HandSign {
      */
     /** Finger extension as multiples of hand scale — the numbers the thresholds compare. */
     fun ratios(joints: Map<HandJointType, Pose>): String =
-        "i%.2f m%.2f r%.2f l%.2f".format(
+        "p%.2f i%.2f m%.2f r%.2f l%.2f".format(
+            pinchGap(joints),
             reach(joints, HandJointType.INDEX_TIP, HandJointType.INDEX_PROXIMAL),
             reach(joints, HandJointType.MIDDLE_TIP, HandJointType.MIDDLE_PROXIMAL),
             reach(joints, HandJointType.RING_TIP, HandJointType.RING_PROXIMAL),
@@ -218,6 +260,13 @@ object HandSign {
         val middle = extended(joints, HandJointType.MIDDLE_TIP, scale)
         val ring = extended(joints, HandJointType.RING_TIP, scale)
         val little = extended(joints, HandJointType.LITTLE_TIP, scale)
+
+        // A PINCH IS NOT A LETTER. Checked before anything else, because a
+        // pinch satisfies every finger-curl test 'A' applies and the user is
+        // usually pinching AT something — so a false 'A' does not merely fire a
+        // command, it fires one while they are trying to issue a different one.
+        val gap = pinchGap(joints)
+        if (gap in 0f..PINCH_GAP) return Letter.NONE
 
         return when {
             // A — a closed fist. The four fingers curled is the whole test.

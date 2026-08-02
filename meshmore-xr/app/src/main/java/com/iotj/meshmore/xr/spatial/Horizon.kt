@@ -457,6 +457,7 @@ class Horizon(
                     return
                 }
                 p.lastSelect = now
+                Reach.consumed()
                 select(p)
             }
             else -> Unit
@@ -483,6 +484,8 @@ class Horizon(
      */
     private fun reconcileHover() {
         val now = android.os.SystemClock.uptimeMillis()
+        // A pointer resting on a node is a hand that is reaching, not signing.
+        Reach.setHovering(peers.any { it.pointers.isNotEmpty() })
         peers.forEach { p ->
             val want = p.pointers.isNotEmpty() ||
                 (p.hovered && now - p.exitAt < HOVER_GRACE_MS)

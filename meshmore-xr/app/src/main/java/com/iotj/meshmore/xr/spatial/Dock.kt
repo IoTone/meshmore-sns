@@ -128,6 +128,7 @@ class Dock(private val session: Session, private val theme: Horizon.Palette) {
         val now = android.os.SystemClock.uptimeMillis()
         if (now - p.lastFire < DEBOUNCE_MS) return
         p.lastFire = now
+        Reach.consumed()
         fired.add(p)
     }
 

@@ -70,7 +70,7 @@ class Hands(
         // TWO LINES, ONE PER HAND. A single line carrying both was 88
         // characters and asked for a panel wider than the device would give.
         // It is also the wrong shape: you are looking at one hand at a time.
-        val template = "R TRAC NONE back i0.00 m0.00 r0.00 l0.00"
+        val template = "R TRAC NONE back p0.00 i0.00 m0.00 r0.00 l0.00"
         readout = TextRun.reusable(
             session, context, template, 0.016f, 0xFFCCE8F0.toInt(), "handdiagR",
         )?.also { it.entity.parent = root; it.entity.setEnabled(false); entities += it.entity }

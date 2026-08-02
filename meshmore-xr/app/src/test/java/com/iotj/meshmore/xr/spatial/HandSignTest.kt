@@ -31,7 +31,12 @@ class HandSignTest {
         HandJointType.MIDDLE_PROXIMAL to at(scale),
         HandJointType.RING_PROXIMAL to at(scale),
         HandJointType.LITTLE_PROXIMAL to at(scale),
-        HandJointType.THUMB_TIP to at(thumb * scale),
+        // THE THUMB IS LATERAL. Placing it on the same axis as the fingers put
+        // its tip within a few millimetres of the index tip, which is the
+        // definition of a pinch — so every synthetic 'A' was being rejected as
+        // one. The fixture was anatomically degenerate and the pinch test is
+        // what exposed it.
+        HandJointType.THUMB_TIP to Pose(Vector3(THUMB_OUT, thumb * scale, 0f)),
         HandJointType.INDEX_TIP to at(index * scale),
         HandJointType.MIDDLE_TIP to at(middle * scale),
         HandJointType.RING_TIP to at(ring * scale),
@@ -40,10 +45,45 @@ class HandSignTest {
 
     private fun at(y: Float) = Pose(Vector3(0f, y, 0f))
 
-    /** A: a closed fist. Four curled fingers is the whole test. */
+    /** How far the thumb sits off the finger axis. About right for a hand. */
+    private val THUMB_OUT = 0.05f
+
+    /** A: a closed fist. Four curled fingers, thumb NOT on the index tip. */
     @Test fun aIsAClosedFist() {
         assertEquals(HandSign.Letter.A, HandSign.classify(hand(1.4f, 1.0f, 1.0f, 1.0f, 1.0f)))
     }
+
+    /**
+     * A PINCH IS NOT A LETTER, and this is the case that shipped broken:
+     * selecting a node toggled the compass band, because a pinch curls all four
+     * fingers and that was the entire test for 'A'.
+     *
+     * The two are separated by where the THUMB sits — meeting the index tip in
+     * a pinch, alongside the curled index in 'A'.
+     */
+    @Test fun aPinchIsNotAnA() {
+        assertEquals(HandSign.Letter.NONE, HandSign.classify(pinch()))
+    }
+
+    @Test fun theGapIsWhatSeparatesThem() {
+        assertTrue("a pinch closes the gap", HandSign.pinchGap(pinch()) < HandSign.PINCH_GAP)
+        assertTrue("an A holds it open", HandSign.pinchGap(fistA()) > HandSign.PINCH_GAP)
+    }
+
+    /** Missing joints must not read as a pinch and silently swallow every letter. */
+    @Test fun anUnmeasurableGapDoesNotBlockLetters() {
+        assertEquals(-1f, HandSign.pinchGap(emptyMap()), 1e-5f)
+        assertEquals(HandSign.Letter.A, HandSign.classify(hand(1.4f, 1f, 1f, 1f, 1f)))
+    }
+
+    /** Thumb tip ON the index tip: the defining feature of a pinch. */
+    private fun pinch() = hand(1.0f, 1.0f, 1.0f, 1.0f, 1.0f).toMutableMap().apply {
+        this[HandJointType.INDEX_TIP] = at(0.09f)
+        this[HandJointType.THUMB_TIP] = Pose(Vector3(0.002f, 0.091f, 0f))
+    }
+
+    /** Thumb alongside the curled index — the ASL 'A' position. */
+    private fun fistA() = hand(1.4f, 1.0f, 1.0f, 1.0f, 1.0f)
 
     /**
      * The thumb is deliberately NOT part of it. ASL tells A from S by the thumb
@@ -178,7 +218,8 @@ class HandFacingTest {
         HandJointType.MIDDLE_PROXIMAL to Pose(Vector3(0f, 0.09f, 0f)),
         HandJointType.RING_PROXIMAL to Pose(Vector3(0f, 0.09f, 0f)),
         HandJointType.LITTLE_PROXIMAL to Pose(Vector3(0f, 0.09f, 0f)),
-        HandJointType.THUMB_TIP to Pose(Vector3(0f, 0.126f, 0f)),
+        // Lateral, like a real thumb — see the note in HandSignTest.hand().
+        HandJointType.THUMB_TIP to Pose(Vector3(0.05f, 0.126f, 0f)),
         HandJointType.INDEX_TIP to Pose(Vector3(0f, 0.09f, 0f)),
         HandJointType.MIDDLE_TIP to Pose(Vector3(0f, 0.09f, 0f)),
         HandJointType.RING_TIP to Pose(Vector3(0f, 0.09f, 0f)),
