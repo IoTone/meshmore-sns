@@ -93,7 +93,7 @@ class Notice(
     private companion object {
         /** Sized once for the longest answer either spoke produces. */
         const val WIDEST = "MMMMMMMMMMMMMM 99.9KM   MMMMMMMMMMMMMM 99.9KM"
-        const val CAP = 0.020f
+        const val CAP = 0.026f
         const val DIST = 1.15f
         /** About -17 deg: under the world window, above the dock. */
         const val DROP = -0.35f

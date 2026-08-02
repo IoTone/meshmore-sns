@@ -312,8 +312,18 @@ class Hud(private val session: Session, private val theme: Horizon.Palette) {
         const val TICK_W = 0.004f
         const val MINOR_H = 0.014f
         const val MAJOR_H = 0.026f
-        const val LABEL_CAP = 0.021f
-        const val STATS_CAP = 0.020f
+        /**
+         * DERIVED FROM THE ANGLE, not chosen by eye. Brief §4.1: no text below
+         * 1.2° of visual angle, ever. At the ribbon's 1.05 m these were 0.021
+         * and 0.020 — 1.15° and 1.09°, both illegal, and both looked fine on
+         * the device, which is exactly why the rule is stated as an angle.
+         *
+         * 1.31°, matching the 1.30° the ring labels have used since MeshNodes
+         * (CAP_FRACTION = 0.0227 rad). Sitting exactly on 1.20° would satisfy
+         * the letter of the rule with no margin for a distance that shifts.
+         */
+        const val LABEL_CAP = 0.024f
+        const val STATS_CAP = 0.024f
         val CARDINALS = mapOf(0 to "N", 90 to "E", 180 to "S", 270 to "W")
     }
 }

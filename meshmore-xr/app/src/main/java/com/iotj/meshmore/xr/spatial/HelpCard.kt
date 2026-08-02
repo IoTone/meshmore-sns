@@ -179,7 +179,7 @@ class HelpCard(
         /** Left edge of the hand column, and of the description column. */
         const val HAND_COL = 0.06f
         const val COL = 0.30f
-        const val CAP = 0.030f
+        const val CAP = 0.034f
         /** The hand diagram, square. Big enough that finger separations read. */
         const val ICON = 0.085f
     }
