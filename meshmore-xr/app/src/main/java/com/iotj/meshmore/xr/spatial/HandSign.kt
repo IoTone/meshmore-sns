@@ -60,6 +60,42 @@ object HandSign {
         return dist(w.x, w.y, w.z, m.x, m.y, m.z)
     }
 
+    /**
+     * PALM DIRECTION — which way the hand is turned.
+     *
+     * A hand shape is only half a letter. ASL forms its letters with the palm
+     * toward the RECEIVER, so a fist held palm-first at your own face is not a
+     * well-formed 'A'; it is the back of an 'A'. Ignoring that made the two
+     * indistinguishable, which is wrong as ASL and also wrong as a command
+     * vocabulary — it doubles the number of accidental hand positions that fire.
+     *
+     * Wearing the glasses puts the camera on the SIGNER, so a correctly formed
+     * letter presents its BACK to them: you sign outward, as you would to a
+     * person standing in front of you. Hence [palmAway].
+     *
+     * The normal comes from the two outer knuckles and the wrist, which is a
+     * plane through the palm. Handedness flips it: with the right palm toward
+     * you and fingers up the index knuckle is on your left, with the left hand
+     * it is on your right, so the cross product changes sign between them.
+     */
+    fun palmNormal(
+        wx: Float, wy: Float, wz: Float,
+        ix: Float, iy: Float, iz: Float,
+        lx: Float, ly: Float, lz: Float,
+        rightHand: Boolean,
+    ): Triple<Float, Float, Float> {
+        val ux = ix - wx; val uy = iy - wy; val uz = iz - wz
+        val vx = lx - wx; val vy = ly - wy; val vz = lz - wz
+        // u x v points out of the LEFT palm; the right hand is its mirror.
+        var nx = uy * vz - uz * vy
+        var ny = uz * vx - ux * vz
+        var nz = ux * vy - uy * vx
+        if (rightHand) { nx = -nx; ny = -ny; nz = -nz }
+        val m = sqrt(nx * nx + ny * ny + nz * nz)
+        if (m < 1e-6f) return Triple(0f, 0f, 0f)
+        return Triple(nx / m, ny / m, nz / m)
+    }
+
     /** Each finger's tip and the knuckle it folds around. */
     private val FINGERS = listOf(
         HandJointType.INDEX_TIP to HandJointType.INDEX_PROXIMAL,
@@ -143,6 +179,23 @@ object HandSign {
             .format(scale, r(HandJointType.THUMB_TIP), r(HandJointType.INDEX_TIP),
                 r(HandJointType.MIDDLE_TIP), r(HandJointType.RING_TIP),
                 r(HandJointType.LITTLE_TIP), classify(joints))
+    }
+
+    /**
+     * Classify, optionally requiring the palm to be turned away.
+     *
+     * [palmAway] null means the caller could not determine the orientation —
+     * the wrist or a knuckle was not tracked, or there is no head pose. The
+     * shape is then accepted on its own, because refusing every letter whenever
+     * one joint drops out would make the vocabulary unusable in exactly the
+     * conditions it is most needed.
+     */
+    fun classify(joints: Map<HandJointType, Pose>, palmAway: Boolean?): Letter {
+        val shape = classify(joints)
+        if (shape == Letter.NONE) return shape
+        // Orientation only ever REJECTS. It cannot turn a non-letter into one.
+        if (palmAway == false) return Letter.NONE
+        return shape
     }
 
     fun classify(joints: Map<HandJointType, Pose>): Letter {

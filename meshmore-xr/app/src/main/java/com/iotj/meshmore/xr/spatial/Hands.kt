@@ -70,7 +70,7 @@ class Hands(
         // TWO LINES, ONE PER HAND. A single line carrying both was 88
         // characters and asked for a panel wider than the device would give.
         // It is also the wrong shape: you are looking at one hand at a time.
-        val template = "R TRAC NONE t0.00 i0.00 m0.00 r0.00 l0.00"
+        val template = "R TRAC NONE back i0.00 m0.00 r0.00 l0.00"
         readout = TextRun.reusable(
             session, context, template, 0.016f, 0xFFCCE8F0.toInt(), "handdiagR",
         )?.also { it.entity.parent = root; it.entity.setEnabled(false); entities += it.entity }
@@ -123,8 +123,10 @@ class Hands(
             // which finger it thinks is still extended, which is the one thing
             // needed to move a threshold. Debugging a classifier from its output
             // alone is guessing.
-            val tr = "R " + row(r?.trackingState?.toString(), r?.handJoints)
-            val tl = "L " + row(l?.trackingState?.toString(), l?.handJoints)
+            val ar = palmAway(r?.handJoints, head, rightHand = true)
+            val al = palmAway(l?.handJoints, head, rightHand = false)
+            val tr = "R " + row(r?.trackingState?.toString(), r?.handJoints, ar)
+            val tl = "L " + row(l?.trackingState?.toString(), l?.handJoints, al)
             if (tr + tl != lastText) {
                 lastText = tr + tl
                 readout?.setText(tr)
@@ -138,11 +140,14 @@ class Hands(
         place(readoutAt(head))
     }
 
-    /** `TRAC A t1.3 i0.9 m0.9 r0.9 l0.9` — verdict first, evidence after. */
-    private fun row(state: String?, j: Map<HandJointType, Pose>?): String {
+    /** `TRAC A back i0.9 m0.9 r0.9 l0.9` — verdict, orientation, then evidence. */
+    private fun row(
+        state: String?, j: Map<HandJointType, Pose>?, away: Boolean?,
+    ): String {
         val st = short(state)
         if (j.isNullOrEmpty()) return "$st --"
-        return "$st ${HandSign.classify(j).name.take(4)} ${HandSign.ratios(j)}"
+        val face = when (away) { true -> "back"; false -> "palm"; null -> "?" }
+        return "$st ${HandSign.classify(j, away).name.take(4)} $face ${HandSign.ratios(j)}"
     }
 
     /**
@@ -179,6 +184,39 @@ class Hands(
 
     private fun letter(j: Map<HandJointType, Pose>?): String =
         if (j.isNullOrEmpty()) "--" else HandSign.classify(j).name
+
+    /**
+     * Is the palm turned away from the wearer?
+     *
+     * Everything is converted to ACTIVITY space first. The palm normal is a
+     * DIRECTION, and the perception and activity frames need not share an
+     * orientation — comparing a normal computed in one frame against a head
+     * position in the other would be comparing two different rooms.
+     *
+     * Null when the joints or the head are not available: the caller treats
+     * that as "unknown" and judges the shape alone, rather than refusing every
+     * letter whenever a knuckle drops out.
+     */
+    fun palmAway(j: Map<HandJointType, Pose>?, head: Pose?, rightHand: Boolean): Boolean? {
+        j ?: return null
+        head ?: return null
+        val ps = session.scene.perceptionSpace
+        fun act(t: HandJointType): Vector3? = runCatching {
+            ps.getScenePoseFromPerceptionPose(j[t] ?: return null).poseInActivitySpace.translation
+        }.getOrNull()
+        val w = act(HandJointType.WRIST) ?: return null
+        val i = act(HandJointType.INDEX_PROXIMAL) ?: return null
+        val l = act(HandJointType.LITTLE_PROXIMAL) ?: return null
+        val (nx, ny, nz) = HandSign.palmNormal(
+            w.x, w.y, w.z, i.x, i.y, i.z, l.x, l.y, l.z, rightHand,
+        )
+        if (nx == 0f && ny == 0f && nz == 0f) return null
+        val h = head.translation
+        // Away from the head: the normal and the head-to-hand direction agree.
+        val dx = w.x - h.x; val dy = w.y - h.y; val dz = w.z - h.z
+        val dot = nx * dx + ny * dy + nz * dz
+        return dot > 0f
+    }
 
     private fun short(s: String?): String =
         s?.substringAfter("(")?.substringBefore(")")?.take(4) ?: "----"

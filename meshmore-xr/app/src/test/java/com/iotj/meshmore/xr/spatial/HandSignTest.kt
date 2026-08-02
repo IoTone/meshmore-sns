@@ -6,6 +6,7 @@ import androidx.xr.arcore.HandJointType
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector3
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
@@ -114,5 +115,77 @@ class HandSignTest {
         g.update(HandSign.Letter.A, 0)
         g.update(HandSign.Letter.H, 100)
         assertEquals(HandSign.Letter.NONE, g.update(HandSign.Letter.A, 300))
+    }
+}
+
+/**
+ * Orientation. A hand shape is only half a letter: ASL forms its letters with
+ * the palm toward the receiver, so a fist held palm-first at your own face is
+ * the BACK of an 'A' rather than an 'A'.
+ */
+class HandFacingTest {
+
+    /** Right palm toward +Z: index knuckle to -X, little to +X, fingers up. */
+    private fun rightPalmToward() = HandSign.palmNormal(
+        0f, 0f, 0f, -0.04f, 0.09f, 0f, 0.04f, 0.09f, 0f, rightHand = true,
+    )
+
+    /** Left hand is the mirror: index knuckle to +X. */
+    private fun leftPalmToward() = HandSign.palmNormal(
+        0f, 0f, 0f, 0.04f, 0.09f, 0f, -0.04f, 0.09f, 0f, rightHand = false,
+    )
+
+    @Test fun therightPalmNormalPointsOutOfThePalm() {
+        val (_, _, nz) = rightPalmToward()
+        assertTrue("right palm facing +Z should give a +Z normal, got $nz", nz > 0.9f)
+    }
+
+    @Test fun theLeftHandIsMirroredNotIdentical() {
+        val (_, _, nz) = leftPalmToward()
+        assertTrue("left palm facing +Z should give a +Z normal, got $nz", nz > 0.9f)
+    }
+
+    /** Degenerate input must not produce a confident direction. */
+    @Test fun collinearJointsGiveNoNormal() {
+        val n = HandSign.palmNormal(0f, 0f, 0f, 0f, 0.09f, 0f, 0f, 0.18f, 0f, rightHand = true)
+        assertEquals(Triple(0f, 0f, 0f), n)
+    }
+
+    private val fist = mapOf(
+        HandJointType.WRIST to Pose(Vector3(0f, 0f, 0f)),
+        HandJointType.MIDDLE_METACARPAL to Pose(Vector3(0f, 0.09f, 0f)),
+        HandJointType.THUMB_PROXIMAL to Pose(Vector3(0f, 0.09f, 0f)),
+        HandJointType.INDEX_PROXIMAL to Pose(Vector3(0f, 0.09f, 0f)),
+        HandJointType.MIDDLE_PROXIMAL to Pose(Vector3(0f, 0.09f, 0f)),
+        HandJointType.RING_PROXIMAL to Pose(Vector3(0f, 0.09f, 0f)),
+        HandJointType.LITTLE_PROXIMAL to Pose(Vector3(0f, 0.09f, 0f)),
+        HandJointType.THUMB_TIP to Pose(Vector3(0f, 0.126f, 0f)),
+        HandJointType.INDEX_TIP to Pose(Vector3(0f, 0.09f, 0f)),
+        HandJointType.MIDDLE_TIP to Pose(Vector3(0f, 0.09f, 0f)),
+        HandJointType.RING_TIP to Pose(Vector3(0f, 0.09f, 0f)),
+        HandJointType.LITTLE_TIP to Pose(Vector3(0f, 0.09f, 0f)),
+    )
+
+    @Test fun aFistWithThePalmAwayIsAnA() {
+        assertEquals(HandSign.Letter.A, HandSign.classify(fist, palmAway = true))
+    }
+
+    /** The case reported from the glasses: it fired from either side. */
+    @Test fun aFistWithThePalmTowardTheWearerIsNot() {
+        assertEquals(HandSign.Letter.NONE, HandSign.classify(fist, palmAway = false))
+    }
+
+    /**
+     * Unknown orientation accepts the shape. Refusing every letter whenever one
+     * knuckle drops out would make the vocabulary fail exactly when tracking is
+     * marginal, which is when it is most needed.
+     */
+    @Test fun unknownOrientationJudgesTheShapeAlone() {
+        assertEquals(HandSign.Letter.A, HandSign.classify(fist, palmAway = null))
+    }
+
+    /** Orientation can only reject. It cannot invent a letter. */
+    @Test fun orientationNeverCreatesALetter() {
+        assertEquals(HandSign.Letter.NONE, HandSign.classify(emptyMap(), palmAway = true))
     }
 }

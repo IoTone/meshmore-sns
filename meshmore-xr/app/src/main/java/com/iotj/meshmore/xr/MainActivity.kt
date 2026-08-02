@@ -704,6 +704,7 @@ private fun HorizonScene(link: MeshLink) {
                 // should be two commands, and a cycle makes you pass through a
                 // state you did not want on the way to the one you did.
                 val nowMs = android.os.SystemClock.uptimeMillis()
+                val it0 = stage.headNow()
                 // Calibration trace, ~1 Hz, only while a hand is actually
                 // tracked. The classifier's thresholds were set from synthesised
                 // joints; this is what a real hand measures.
@@ -718,8 +719,12 @@ private fun HorizonScene(link: MeshLink) {
                     }
                 }
                 handR?.state?.value?.handJoints?.let { j ->
+                    // ORIENTATION COUNTS. A fist held palm-first is the back of
+                    // an 'A', not an 'A' — and accepting both doubles the number
+                    // of accidental hand positions that fire a command.
+                    val away = handsRef.value?.palmAway(j, it0, rightHand = true)
                     if (gateR.update(
-                            com.iotj.meshmore.xr.spatial.HandSign.classify(j), nowMs,
+                            com.iotj.meshmore.xr.spatial.HandSign.classify(j, away), nowMs,
                         ) == com.iotj.meshmore.xr.spatial.HandSign.Letter.A
                     ) {
                         // BEFORE the action. Hearing this means the classifier
@@ -738,8 +743,9 @@ private fun HorizonScene(link: MeshLink) {
                     }
                 }
                 handL?.state?.value?.handJoints?.let { j ->
+                    val away = handsRef.value?.palmAway(j, it0, rightHand = false)
                     if (gateL.update(
-                            com.iotj.meshmore.xr.spatial.HandSign.classify(j), nowMs,
+                            com.iotj.meshmore.xr.spatial.HandSign.classify(j, away), nowMs,
                         ) == com.iotj.meshmore.xr.spatial.HandSign.Letter.A
                     ) {
                         cue.recognised()
