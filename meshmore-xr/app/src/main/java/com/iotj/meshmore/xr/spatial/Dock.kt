@@ -44,6 +44,43 @@ class Dock(
     private val context: android.content.Context,
 ) {
 
+    private var headAt: Vector3? = null
+
+    /**
+     * Face the caption at the viewer, in YAW AND PITCH.
+     *
+     * The dock sits about 30 degrees below eye level, so it is looked at from
+     * above — and a vertical quad seen from 30 degrees above foreshortens to a
+     * sliver. That is what "the labels are empty, cut off near the top of the
+     * text" was: not empty and not clipped, but edge-on.
+     *
+     * Yaw alone is not enough here, which is the difference from the microhud.
+     * The microhud is at eye level and only ever turned about; the dock is
+     * BELOW you, so the pitch term is the whole problem.
+     */
+    private fun facing(at: Vector3): Quaternion {
+        val h = headAt ?: return Quaternion.fromEulerAngles(0f, 0f, 0f)
+        val dx = h.x - at.x
+        val dy = h.y - at.y
+        val dz = h.z - at.z
+        val flat = kotlin.math.sqrt(dx * dx + dz * dz)
+        if (flat < 1e-5f) return Quaternion.fromEulerAngles(0f, 0f, 0f)
+        val yaw = Math.toDegrees(kotlin.math.atan2(dx, dz).toDouble()).toFloat()
+        val pitch = Math.toDegrees(kotlin.math.atan2(dy, flat).toDouble()).toFloat()
+        // Yaw about world Y, then pitch about the panel's own X — composed
+        // rather than written as an Euler triple, for the reason the microhud
+        // and the rack both learned: this library's Euler ORDER is not the one
+        // the argument names suggest.
+        //
+        // The pitch is NEGATED, and that sign was settled by looking at it, not
+        // by reasoning about it. The first build tilted the caption further away
+        // from the eye instead of toward it, which on screen is the same symptom
+        // as no rotation at all — a sliver — and is why deriving this in a
+        // comment has been wrong four times in this project.
+        return Quaternion.fromEulerAngles(0f, yaw, 0f) *
+            Quaternion.fromAxisAngle(Vector3(1f, 0f, 0f), -pitch)
+    }
+
     private val captions = HashMap<String, TextRun.Run>()
     /** Overrides for a pip's caption, and which one stays visible unfocused. */
     private val text = HashMap<String, String>()
@@ -174,7 +211,9 @@ class Dock(
                 if (show) {
                     c.setText(caption ?: name)
                     pips.firstOrNull { it.name == name }?.let { p ->
-                        c.entity.setPose(Pose(p.captionAt), Space.ACTIVITY)
+                        c.entity.setPose(
+                            Pose(p.captionAt, facing(p.captionAt)), Space.ACTIVITY,
+                        )
                     }
                 }
             }
@@ -221,6 +260,17 @@ class Dock(
      */
     private fun reconcileFocus() {
         val now = android.os.SystemClock.uptimeMillis()
+        // A PINNED caption is visible without focus, so nothing else would ever
+        // re-aim it as the user moves.
+        pinned?.let { n ->
+            captions[n]?.let { c ->
+                pips.firstOrNull { it.name == n }?.let { p ->
+                    runCatching {
+                        c.entity.setPose(Pose(p.captionAt, facing(p.captionAt)), Space.ACTIVITY)
+                    }
+                }
+            }
+        }
         pips.forEach { p ->
             val want = p.pointers.isNotEmpty() || (p.hot && now - p.exitAt < GRACE_MS)
             if (want == p.hot) return@forEach
@@ -241,7 +291,9 @@ class Dock(
                     c.entity.setEnabled(show)
                     if (show) {
                         c.setText(text[p.name] ?: p.name)
-                        c.entity.setPose(Pose(p.captionAt), Space.ACTIVITY)
+                        c.entity.setPose(
+                            Pose(p.captionAt, facing(p.captionAt)), Space.ACTIVITY,
+                        )
                     }
                 }
             }
@@ -250,7 +302,13 @@ class Dock(
     }
 
     /** Drained on the frame loop — nothing opens a surface from an input callback. */
-    fun tick() {
+    /**
+     * [head] in activity space. Needed because the caption is a PANEL and a
+     * panel is a flat, one-sided quad — unlike every other thing in the dock,
+     * which is extruded geometry that reads from any angle.
+     */
+    fun tick(head: Vector3? = null) {
+        headAt = head
         reconcileFocus()
         while (true) {
             val p = fired.poll() ?: break

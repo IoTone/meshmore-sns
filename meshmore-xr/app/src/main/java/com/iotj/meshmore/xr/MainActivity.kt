@@ -150,6 +150,9 @@ class MainActivity : ComponentActivity() {
         typeProbe = intent?.getBooleanExtra("typeprobe", false) ?: false
         showRadio = intent?.getBooleanExtra("radio", false) ?: false
         handDebug = intent?.getBooleanExtra("handdebug", false) ?: false
+        // Draw every tier R panel's own boundary. See TextRun.outline.
+        com.iotj.meshmore.xr.spatial.TextRun.outline =
+            intent?.getBooleanExtra("outline", false) ?: false
         Log.i(TAG, "[boot] radio rack = $showRadio")
         simulate = intent?.getBooleanExtra("sim", false) ?: false
         Log.i(TAG, "[boot] simulate = $simulate")
@@ -780,7 +783,7 @@ private fun HorizonScene(link: MeshLink) {
                     // Callsigns give way to the microhud bands where they cross.
                     horizon.veil(it)
                     rackRef.value?.tick(it.translation)
-                    dockRef.value?.tick()
+                    dockRef.value?.tick(it.translation)
                     menuRef.value?.tick(it.translation)
                     noticeRef.value?.tick(it)
                     helpRef.value?.tick(it.translation)

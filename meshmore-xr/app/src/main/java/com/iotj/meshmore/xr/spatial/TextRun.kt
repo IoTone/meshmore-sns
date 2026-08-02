@@ -76,6 +76,91 @@ object TextRun {
      */
     private const val MAX_PX = 2048
 
+    /**
+     * The runtime's metres-per-pixel, as measured on this device. Only ever a
+     * seed for the create call — the real figure is read back afterwards,
+     * because a constant that describes one runtime's default is exactly the
+     * kind of thing that stops being true without saying so.
+     */
+    private const val NOMINAL_MPP = 3.9e-4f
+
+    /**
+     * DRAW EVERY PANEL'S OWN EDGE. Off by default; `--ez outline true`.
+     *
+     * A run that renders wrong is nearly impossible to diagnose from the run
+     * itself: a panel that is too short, a panel seen edge-on, text laid out
+     * against stale bounds and a panel occluded by the floor all produce the
+     * same photograph — a sliver of glyph tops — and this file has now had all
+     * four. Guessing between them cost several build-and-look cycles each time.
+     *
+     * The outline settles it in one look, because it separates the two things
+     * that are otherwise conflated: WHERE THE SURFACE IS, and WHERE THE TEXT
+     * LANDS INSIDE IT. If the rectangle is missing, the panel is not where you
+     * think. If it is a sliver, the panel is edge-on. If it is right and the
+     * text is not inside it, the layout is stale.
+     */
+    @JvmStatic
+    var outline: Boolean = false
+
+    /**
+     * The debug background: the view's own edge, its padding box, and a ruler.
+     *
+     * Two rectangles alone could not settle it. They showed the text sitting low
+     * and clipped, which is equally consistent with the TEXT being drawn wrong
+     * and with the VIEW being mapped onto the quad wrong — and those have
+     * opposite fixes. The tick marks are at known fractions of the view, so the
+     * photograph reports the mapping directly instead of being reasoned about:
+     * if the centre tick lands at the middle of the outline the mapping is
+     * honest and the text is at fault, and if it does not, it is the mapping.
+     */
+    private class Ruler(
+        private val pad: Int, private val tag: String,
+    ) : android.graphics.drawable.Drawable() {
+        private var drawn = 0
+        private val p = android.graphics.Paint().apply {
+            isAntiAlias = false
+            style = android.graphics.Paint.Style.STROKE
+        }
+
+        override fun draw(canvas: android.graphics.Canvas) {
+            val b = bounds
+            // GROUND TRUTH, taken at the only moment that matters. Everything
+            // else about this panel is measured before the runtime has had its
+            // say; this runs inside the actual render into the surface.
+            if (drawn < 24) {
+                drawn++
+                Log.i(TAG, "[type] DRAW bounds=" + b.width() + "x" + b.height() +
+                    " canvas=" + canvas.width + "x" + canvas.height + " tag=" + tag)
+            }
+            val w = b.width().toFloat()
+            val h = b.height().toFloat()
+            val t = (h * 0.04f).coerceAtLeast(2f)
+            p.strokeWidth = t
+            // The view's edge.
+            p.color = 0xFFFF3060.toInt()
+            canvas.drawRect(t / 2, t / 2, w - t / 2, h - t / 2, p)
+            // The padding box the text is composed into.
+            p.color = 0xFF30A0FF.toInt()
+            p.strokeWidth = t * 0.6f
+            canvas.drawRect(
+                pad.toFloat(), pad.toFloat(), w - pad, h - pad, p,
+            )
+            // Quarter, half, three-quarter — drawn as short stubs from the left
+            // edge so they cannot be mistaken for the boxes. The half is longest.
+            p.strokeWidth = t * 0.7f
+            p.color = 0xFF40FF80.toInt()
+            canvas.drawLine(0f, h * 0.5f, w * 0.25f, h * 0.5f, p)
+            p.color = 0xFFFFD000.toInt()
+            canvas.drawLine(0f, h * 0.25f, w * 0.12f, h * 0.25f, p)
+            canvas.drawLine(0f, h * 0.75f, w * 0.12f, h * 0.75f, p)
+        }
+
+        override fun setAlpha(a: Int) {}
+        override fun setColorFilter(f: android.graphics.ColorFilter?) {}
+        @Deprecated("Drawable API", ReplaceWith("android.graphics.PixelFormat.TRANSLUCENT"))
+        override fun getOpacity() = android.graphics.PixelFormat.TRANSLUCENT
+    }
+
     /** Loaded once. createFromAsset parses the whole 1.5 MB file every call. */
     private var cached: Typeface? = null
 
@@ -110,7 +195,26 @@ object TextRun {
         private val view: TextView? = null,
         private val wPx: Int = 0,
         private val hPx: Int = 0,
+        private val mpp: Float = 1f,
+        private val capPx: Float = 1f,
     ) {
+
+        /**
+         * Re-size in the world WITHOUT re-rasterising.
+         *
+         * The pixels are fixed for the life of the panel; only how large that
+         * raster is drawn changes. Assigning `size` here instead is what broke
+         * the dock caption — see the note at the panel construction.
+         */
+        fun setCapHeight(capHeightM: Float) {
+            runCatching { entity.setScale((capHeightM / capPx) / mpp) }
+        }
+
+        /** World width this run occupies at [capHeightM]. */
+        fun widthAt(capHeightM: Float): Float = wPx * capHeightM / capPx
+
+        /** World height this run occupies at [capHeightM]. */
+        fun heightAt(capHeightM: Float): Float = hPx * capHeightM / capPx
         /**
          * Change the words WITHOUT rebuilding the panel.
          *
@@ -126,7 +230,10 @@ object TextRun {
          * fixed up front so the text can change without the geometry moving.
          */
         fun setText(text: String): Boolean {
-            val v = view ?: return false
+            val v = view
+            if (outline) Log.i(TAG, "[type] setText('" + text + "') view=" +
+                (if (v == null) "NULL" else "ok") + " had='" + (v?.text ?: "") + "'")
+            if (v == null) return false
             if (v.text.toString() == text) return true
             v.text = text
             // AND LAY IT OUT AGAIN, BY HAND. This is the whole bug.
@@ -148,6 +255,16 @@ object TextRun {
             v.measure(ws, hs)
             v.layout(0, 0, wPx, hPx)
             v.invalidate()
+            if (outline) {
+                val lay = v.layout
+                Log.i(TAG, "[type] laid '" + text + "' view=" + v.width + "x" + v.height +
+                    " meas=" + v.measuredWidth + "x" + v.measuredHeight +
+                    " pad=" + v.paddingTop + "/" + v.paddingBottom +
+                    " layoutH=" + (lay?.height ?: -1) +
+                    " lineTop=" + (lay?.getLineTop(0) ?: -1) +
+                    " lineBottom=" + (lay?.getLineBottom(0) ?: -1) +
+                    " base=" + v.baseline + " gravity=" + v.gravity)
+            }
             return true
         }
     }
@@ -187,7 +304,11 @@ object TextRun {
         val tv = TextView(context).apply {
             this.text = text
             setTextColor(argb)
-            setBackgroundColor(Color.TRANSPARENT)
+            if (outline) {
+                background = Ruler((RASTER_PX * 0.12f).toInt(), name)
+            } else {
+                setBackgroundColor(Color.TRANSPARENT)
+            }
             // PIXELS, EXPLICITLY. The `textSize` property setter is SP, which
             // the platform scales by the user's font-size preference and the
             // display density — so the view drew larger than the panel we had
@@ -314,46 +435,45 @@ object TextRun {
             }
         }
 
-        // WORLD SIZE FIRST, PIXELS SECOND — and then check that both stuck.
+        // SIZE IS PIXELS. THE WORLD SIZE IS A SCALE. This is the third and
+        // last attempt at this, and the first one that is not a race between
+        // two setters.
         //
-        // Creating from IntSize2d and assigning `size` afterwards left the two
-        // descriptions of this panel disagreeing: the runtime is free to pick
-        // its own metres-per-pixel on create, and the later assignment changed
-        // the metres without changing what region of the surface was sampled.
-        // The visible result is a panel showing the middle of its own texture —
-        // text sliced off top, bottom and right.
+        // `size` and `sizeInPixels` are not two independent properties. Each
+        // one RECOMPUTES the other through the runtime's own metres-per-pixel,
+        // so whichever is assigned last silently discards the other. Assigning
+        // metres second — the previous fix — meant every panel was re-rasterised
+        // at the runtime's default ~3.9e-4 m/px: the dock caption asked for
+        // 886x141 px and was drawn at 350x55, measured from inside the draw
+        // call. A TextView laid out for 141 px, told to render 96 px type into
+        // 55, shows the top of the capitals and nothing else. That is the whole
+        // of the "empty dock labels" bug, and it looked for three rounds like
+        // clipped text because the visible sliver was the top of the caps
+        // sitting near the BOTTOM of the panel.
         //
-        // Stating the world size at construction and the pixel size explicitly
-        // afterwards leaves nothing implied. The log line is not decoration: two
-        // numbers that must agree, and have twice not.
+        // So: state the pixels, which is the thing that must be exact, and then
+        // reach the size we want with SCALE. A scale is a transform on the
+        // entity. It cannot re-enter the sizing arithmetic, cannot re-measure
+        // the view, and cannot be undone by a later size assignment.
         val panel = PanelEntity.create(
-            session, tv, FloatSize2d(wPx * scale, hPx * scale), name,
+            session, tv, FloatSize2d(wPx * NOMINAL_MPP, hPx * NOMINAL_MPP), name,
             Pose(Vector3(0f, 0f, 0f)),
         )
-        // PIXELS FIRST, THEN METRES. Assigning sizeInPixels RECOMPUTES the world
-        // size from the runtime's own metres-per-pixel and discards whatever was
-        // passed to create() — so every panel came out at pixels x 3.9e-4 and
-        // the requested cap height was never honoured. Longer strings therefore
-        // rendered LARGER, which is why the dock captions grew until they
-        // collided: a caption panel sized for an 18-character template was
-        // 0.34 m wide against a 0.075 m pip pitch.
-        //
-        // Ring labels escaped it only because the pool assigns `size` again
-        // after creation, which is exactly the ordering this now makes explicit.
         panel.sizeInPixels = IntSize2d(wPx, hPx)
-        panel.size = FloatSize2d(wPx * scale, hPx * scale)
-        // capPx is in here because the world size derives from it and the
-        // arithmetic has not reconciled with what the device reports. Measured,
-        // not assumed — deriving it in a comment is how the last three sizing
-        // bugs got written.
-        Log.i(TAG, "[type] panel '%s' view=%dx%dpx size=%.3fx%.3fm cap=%.1fpx text=%.1fpx"
-            .format(text.take(14), wPx, hPx, panel.size.width, panel.size.height,
-                capPx, tv.textSize))
-        // A rounded corner is the most panel-ish property a surface has, and the
-        // default is not zero. There is no visible ground to round, but there is
-        // no reason to leave the geometry claiming otherwise either.
+        // READ BACK what the runtime chose rather than trusting NOMINAL_MPP.
+        // The nominal figure is what this device reported once; it is a seed for
+        // the create call, not a fact to build on.
+        val mpp = (panel.size.height / hPx).takeIf { it > 0f } ?: NOMINAL_MPP
+        val k = (capHeightM / capPx) / mpp
+        runCatching { panel.setScale(k) }
+        Log.i(TAG, "[type] panel '" + text.take(14) + "' view=" + wPx + "x" + hPx +
+            "px mpp=" + mpp + " scale=" + k + " cap=" + capPx + "px -> " +
+            (wPx * capHeightM / capPx) + "x" + (hPx * capHeightM / capPx) + "m")
         panel.cornerRadius = 0f
-        Run(panel, wPx * scale, hPx * scale, if (reusable) tv else null, wPx, hPx)
+        Run(
+            panel, wPx * capHeightM / capPx, hPx * capHeightM / capPx,
+            if (reusable) tv else null, wPx, hPx, mpp, capPx,
+        )
     }.onFailure {
         Log.w(TAG, "[type] run '$text' failed: ${it.javaClass.simpleName}: ${it.message}")
     }.getOrNull()

@@ -5,7 +5,6 @@ package com.iotj.meshmore.xr.spatial
 import android.content.Context
 import android.util.Log
 import androidx.xr.runtime.Session
-import androidx.xr.runtime.math.FloatSize2d
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Vector3
@@ -86,9 +85,11 @@ class LabelPool(
         val s = slots[lent++]
         s.run.setText(text)
         // World size from cap height. The panel's PIXEL size never changes; only
-        // how large that fixed raster is drawn in the room.
-        val h = capHeightM / TEMPLATE_CAP
-        s.run.entity.size = FloatSize2d(s.run.widthM * h, s.run.heightM * h)
+        // how large that fixed raster is drawn in the room — which is why this
+        // is a SCALE and not an assignment to `size`. Assigning `size` re-derives
+        // the pixel size from the runtime's default density and silently
+        // re-rasterises the view at whatever that comes to.
+        s.run.setCapHeight(capHeightM)
         s.at = at
         s.live = true
         runCatching {
