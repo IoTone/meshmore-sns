@@ -50,7 +50,10 @@ object AslIcon {
     private const val PX = 256
 
     /** A view that draws one letter, and nothing else. */
-    private class Glyph(context: Context, letter: Char, private val ink: Int) : View(context) {
+    private class Glyph(
+        context: Context, letter: Char, private val ink: Int,
+        private val mirror: Boolean,
+    ) : View(context) {
         private val path: Path? = AslGlyphs[letter]?.let {
             runCatching { PathParser.createPathFromPathData(it) }
                 .onFailure { e -> Log.w(TAG, "[asl] '$letter' unparseable: ${e.message}") }
@@ -76,6 +79,14 @@ object AslIcon {
                     (height - AslGlyphs.BOX * s) / 2f,
                 )
             }
+            // MIRRORED FOR THE LEFT HAND. The Gallaudet chart draws every
+            // letter with the right hand, so a left-hand row showed the wrong
+            // hand entirely — and for a shape whose whole meaning is which
+            // fingers are where, that is not a cosmetic difference. A hand is
+            // chiral: its mirror image is the other hand, which is exactly the
+            // transform wanted here and the reason this is a flip about the
+            // vertical axis rather than a rotation.
+            if (mirror) m.postScale(-1f, 1f, width / 2f, height / 2f)
             val out = Path(p).apply { transform(m) }
             canvas.drawPath(out, fill)
         }
@@ -88,10 +99,11 @@ object AslIcon {
      */
     fun create(
         session: Session, context: Context, letter: Char, sizeM: Float, argb: Int,
+        mirror: Boolean = false,
     ): PanelEntity? {
         if (!AslGlyphs.has(letter)) return null
         return runCatching {
-            val v = Glyph(context, letter, argb)
+            val v = Glyph(context, letter, argb, mirror)
             v.measure(
                 View.MeasureSpec.makeMeasureSpec(PX, View.MeasureSpec.EXACTLY),
                 View.MeasureSpec.makeMeasureSpec(PX, View.MeasureSpec.EXACTLY),
@@ -101,7 +113,14 @@ object AslIcon {
                 session, v, FloatSize2d(sizeM, sizeM), "asl-$letter",
                 Pose(Vector3(0f, 0f, 0f)),
             ).also {
+                // PIXELS, THEN SCALE — the same rule TextRun had to learn.
+                // `size` and `sizeInPixels` recompute each other through the
+                // runtime's metres-per-pixel, so assigning pixels here silently
+                // replaced the sizeM asked for with PX x the runtime default,
+                // and every hand diagram came out about a fifth too large.
                 it.sizeInPixels = IntSize2d(PX, PX)
+                val mpp = (it.size.height / PX).takeIf { m -> m > 0f }
+                if (mpp != null) runCatching { it.setScale(sizeM / (PX * mpp)) }
                 it.cornerRadius = 0f
             }
         }.onFailure { Log.w(TAG, "[asl] panel for '$letter' failed: ${it.message}") }

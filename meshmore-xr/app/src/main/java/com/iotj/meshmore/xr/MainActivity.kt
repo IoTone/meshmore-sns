@@ -116,6 +116,16 @@ class MainActivity : ComponentActivity() {
         var simulate: Boolean = false
         /** --ez radio true : bring the RADIO rack up alongside the horizon. */
         var showRadio: Boolean = false
+        /**
+         * --ez help true : bring the GESTURE CARD up at launch.
+         *
+         * Unlike the radio rack, which stays closed on principle because a
+         * launch flag onto live controls is the same hazard as leaving them
+         * standing, this card is inert: it says what the hands can do and
+         * touches nothing. Being able to open it without a hand in front of the
+         * glasses is the only way to check it renders.
+         */
+        var showHelp: Boolean = false
         /** --ez handdebug true : log what the ASL classifier measures, ~1 Hz. */
         var handDebug: Boolean = false
         /** --ez typeprobe true : answer whether tier R can exist on this SDK. */
@@ -150,6 +160,7 @@ class MainActivity : ComponentActivity() {
         typeProbe = intent?.getBooleanExtra("typeprobe", false) ?: false
         showRadio = intent?.getBooleanExtra("radio", false) ?: false
         handDebug = intent?.getBooleanExtra("handdebug", false) ?: false
+        showHelp = intent?.getBooleanExtra("help", false) ?: false
         // Draw every tier R panel's own boundary. See TextRun.outline.
         com.iotj.meshmore.xr.spatial.TextRun.outline =
             intent?.getBooleanExtra("outline", false) ?: false
@@ -364,6 +375,14 @@ private fun Root(facts: List<Pair<String, String>>, link: MeshLink, pinOverride:
 }
 
 private const val TAG_UI = "MeshmoreXR"
+
+/**
+ * How long after a 'B' back-out a second one is ignored, whichever hand sends
+ * it. Long enough to cover both hands settling into a flat rest at slightly
+ * different moments, short enough that deliberately stepping out two levels
+ * still feels immediate.
+ */
+private const val BACK_OUT_MS = 600L
 
 /**
  * How far from a cluster's stated bearing a node counts as belonging to it.
@@ -614,6 +633,15 @@ private fun HorizonScene(link: MeshLink) {
         val handL = runCatching { androidx.xr.arcore.Hand.left(session) }.getOrNull()
         val gateR = com.iotj.meshmore.xr.spatial.HandSign.Gate()
         val gateL = com.iotj.meshmore.xr.spatial.HandSign.Gate()
+        // EITHER HAND BACKS OUT, but only one level per press.
+        //
+        // 'B' is a flat hand, and a flat hand is what BOTH hands are doing when
+        // you rest them. The two gates are independent, so with the command
+        // bound on each hand a two-handed rest fires it twice in the same frame
+        // and drops two levels at once — the exact failure the right-hand-only
+        // version was written to avoid, doubled. One shared debounce is what
+        // makes the symmetry safe.
+        var lastBackAt = 0L
         Log.i(TAG_UI, "[hand] tracking right=${handR != null} left=${handL != null}")
 
         val menu = RadialMenu(session, palette)
@@ -701,6 +729,10 @@ private fun HorizonScene(link: MeshLink) {
         // arrived — and it arrives BEFORE the pinch, which is when it helps.
         dock.onFocus = { cue.recognised() }
         dockRef.value = dock
+        if (MainActivity.showHelp) {
+            help.setVisible(true)
+            dock.setLit("HELP", true)
+        }
         rack.onDismiss = {
             rack.setVisible(false)
             dock.setLit("RADIO", false)
@@ -817,6 +849,23 @@ private fun HorizonScene(link: MeshLink) {
                             com.iotj.meshmore.xr.spatial.HandSign.describe(st.handJoints))
                     }
                 }
+                // ONE LEVEL, not all the way out. Getting three levels deep and
+                // being thrown to the top loses the path you took to find
+                // something; "back" and "home" are different commands, and B is
+                // back. Only listened to while magnified, because a flat hand is
+                // a common resting shape and making it mean something at all
+                // times would be a command you issue by relaxing.
+                fun backOut(hand: String) {
+                    if (lensStack.isEmpty()) return
+                    if (nowMs - lastBackAt < BACK_OUT_MS) return
+                    lastBackAt = nowMs
+                    cue.recognised()
+                    lensStack.removeAt(lensStack.lastIndex)
+                    hereEpoch.value += 1
+                    menuRef.value?.hide()
+                    Log.i(TAG_UI, "[hand] $hand:B — out one level, depth ${lensStack.size}")
+                }
+
                 handR?.state?.value?.handJoints?.let { j ->
                     // ORIENTATION COUNTS. A fist held palm-first is the back of
                     // an 'A', not an 'A' — and accepting both doubles the number
@@ -829,18 +878,8 @@ private fun HorizonScene(link: MeshLink) {
                     // listened to while magnified. A flat hand is a common
                     // resting shape; making it mean something at all times
                     // would be a command you issue by relaxing.
-                    if (gotR == com.iotj.meshmore.xr.spatial.HandSign.Letter.B &&
-                        lensStack.isNotEmpty()
-                    ) {
-                        // ONE LEVEL, not all the way out. Getting three levels
-                        // deep and being thrown to the top loses the path you
-                        // took to find something; "back" and "home" are
-                        // different commands and B is back.
-                        cue.recognised()
-                        lensStack.removeAt(lensStack.lastIndex)
-                        hereEpoch.value += 1
-                        menuRef.value?.hide()
-                        Log.i(TAG_UI, "[hand] R:B — out one level, depth ${lensStack.size}")
+                    if (gotR == com.iotj.meshmore.xr.spatial.HandSign.Letter.B) {
+                        backOut("R")
                     }
                     if (gotR == com.iotj.meshmore.xr.spatial.HandSign.Letter.A) {
                         // BEFORE the action. Hearing this means the classifier
@@ -862,10 +901,11 @@ private fun HorizonScene(link: MeshLink) {
                     val away = handsRef.value?.palmAway(j, it0, rightHand = false)
                     val seenL = if (reaching) com.iotj.meshmore.xr.spatial.HandSign.Letter.NONE
                                 else com.iotj.meshmore.xr.spatial.HandSign.classify(j, away)
-                    if (gateL.update(
-                            seenL, nowMs,
-                        ) == com.iotj.meshmore.xr.spatial.HandSign.Letter.A
-                    ) {
+                    val gotL = gateL.update(seenL, nowMs)
+                    if (gotL == com.iotj.meshmore.xr.spatial.HandSign.Letter.B) {
+                        backOut("L")
+                    }
+                    if (gotL == com.iotj.meshmore.xr.spatial.HandSign.Letter.A) {
                         cue.recognised()
                         hudRef.value?.let { h ->
                             h.setLower(!h.lowerOn)

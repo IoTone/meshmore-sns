@@ -54,12 +54,26 @@ class HelpCard(
      * gone. A hand shape is a picture; describing it is a workaround for not
      * having one.
      */
-    private data class Row(val letter: Char?, val hand: String, val does: String)
+    private data class Row(val letter: Char?, val hand: String, val does: String) {
+        /**
+         * Left-hand rows draw a MIRRORED glyph. The source chart is drawn
+         * entirely with the right hand, so an unmirrored icon on a left-hand row
+         * depicts the wrong hand — and since the two commands here differ ONLY
+         * by which hand makes the shape, that is the one detail the row exists
+         * to convey.
+         */
+        val mirrored: Boolean get() = hand == "LEFT"
+    }
 
     private val rows = listOf(
         Row(null, "GESTURES", ""),
         Row('a', "RIGHT", "COMPASS BAND ON / OFF"),
         Row('a', "LEFT", "LINK BAND ON / OFF"),
+        // B was reachable but undocumented, which for a gesture is the same as
+        // absent: there is nothing to discover it from. It takes either hand.
+        Row('b', "RIGHT", "BACK OUT ONE LEVEL"),
+        Row('b', "LEFT", "BACK OUT ONE LEVEL"),
+        Row(null, "", "B ONLY ANSWERS WHILE MAGNIFIED"),
         Row(null, "", "HOLD STILL FOR HALF A SECOND"),
         Row(null, "", "PALM AWAY - THE GLASSES SEE THE BACK"),
         Row(null, "", "OR PINCH A DOCK RING INSTEAD"),
@@ -77,7 +91,9 @@ class HelpCard(
         rows.forEachIndexed { i, r ->
             val y = base.y + (rows.size / 2f - i) * LINE
             r.letter?.let { ch ->
-                AslIcon.create(session, context, ch, ICON, argb(theme.accent, 0.95f))?.let { p ->
+                AslIcon.create(
+                    session, context, ch, ICON, argb(theme.accent, 0.95f), r.mirrored,
+                )?.let { p ->
                     p.parent = root
                     p.setPose(Pose(Vector3(base.x - ICON * 0.9f, y, base.z)), Space.ACTIVITY)
                     p.setEnabled(false)
@@ -85,12 +101,27 @@ class HelpCard(
                     lines += p as Entity to Vector3(base.x - ICON * 0.9f, y, base.z)
                 }
             }
-            if (r.hand.isNotEmpty()) line(root, r.hand, Vector3(base.x + 0.10f, y, base.z), theme.text)
-            if (r.does.isNotEmpty()) line(root, r.does, Vector3(base.x + COL, y, base.z), theme.alt)
+            // LEFT-ALIGNED, by measuring. Tier S centres a run on its anchor,
+            // so a column addressed by its centre moves as the words change
+            // length — and the longest row then reaches back across whatever is
+            // to its left. That is what put "BACK OUT ONE LEVEL" through the
+            // word "RIGHT". A table wants its columns to start in the same
+            // place, which means anchoring the LEFT edge and letting the run
+            // end where it ends.
+            if (r.hand.isNotEmpty()) {
+                line(root, r.hand, at(base, HAND_COL, r.hand, y), theme.text)
+            }
+            if (r.does.isNotEmpty()) {
+                line(root, r.does, at(base, COL, r.does, y), theme.alt)
+            }
         }
         setVisible(false)
         Log.i(TAG, "[help] card built, ${lines.size} lines")
     }
+
+    /** Where a run must be anchored for its LEFT edge to sit at [left]. */
+    private fun at(base: Vector3, left: Float, text: String, y: Float): Vector3 =
+        Vector3(base.x + left + Glyphs.width(text, CAP) / 2f, y, base.z)
 
     private suspend fun line(root: Entity, text: String, at: Vector3, rgb: Int) {
         // Tier S: short, Latin, fixed. Exactly what the stroke font is for, and
@@ -145,7 +176,9 @@ class HelpCard(
         const val TAG = "MeshmoreXR"
         const val READ = 1.5f
         const val LINE = 0.105f
-        const val COL = 0.42f
+        /** Left edge of the hand column, and of the description column. */
+        const val HAND_COL = 0.06f
+        const val COL = 0.30f
         const val CAP = 0.030f
         /** The hand diagram, square. Big enough that finger separations read. */
         const val ICON = 0.085f
