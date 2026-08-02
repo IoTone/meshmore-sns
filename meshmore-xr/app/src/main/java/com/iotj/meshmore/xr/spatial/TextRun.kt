@@ -108,6 +108,8 @@ object TextRun {
         val widthM: Float,
         val heightM: Float,
         private val view: TextView? = null,
+        private val wPx: Int = 0,
+        private val hPx: Int = 0,
     ) {
         /**
          * Change the words WITHOUT rebuilding the panel.
@@ -127,8 +129,24 @@ object TextRun {
             val v = view ?: return false
             if (v.text.toString() == text) return true
             v.text = text
-            // The panel samples the view's own drawing; it has already been
-            // laid out at a fixed size, so re-measuring would only fight it.
+            // AND LAY IT OUT AGAIN, BY HAND. This is the whole bug.
+            //
+            // TextView.setText calls checkForRelayout(), which calls
+            // requestLayout() — and requestLayout on a view with NO PARENT is a
+            // no-op. Nothing else was ever going to lay this view out, so its
+            // internal Layout kept whatever geometry it had from the last pass
+            // while the new string drew against it. The panel and the surface
+            // were exactly the right size the entire time; the TEXT inside was
+            // being composed against stale bounds, which is why it appeared
+            // sliced through its own middle.
+            //
+            // A panel-hosted View is detached by construction. Every property
+            // change that would normally trigger a layout has to be finished by
+            // hand here.
+            val ws = View.MeasureSpec.makeMeasureSpec(wPx, View.MeasureSpec.EXACTLY)
+            val hs = View.MeasureSpec.makeMeasureSpec(hPx, View.MeasureSpec.EXACTLY)
+            v.measure(ws, hs)
+            v.layout(0, 0, wPx, hPx)
             v.invalidate()
             return true
         }
@@ -289,19 +307,32 @@ object TextRun {
             }
         }
 
+        // WORLD SIZE FIRST, PIXELS SECOND — and then check that both stuck.
+        //
+        // Creating from IntSize2d and assigning `size` afterwards left the two
+        // descriptions of this panel disagreeing: the runtime is free to pick
+        // its own metres-per-pixel on create, and the later assignment changed
+        // the metres without changing what region of the surface was sampled.
+        // The visible result is a panel showing the middle of its own texture —
+        // text sliced off top, bottom and right.
+        //
+        // Stating the world size at construction and the pixel size explicitly
+        // afterwards leaves nothing implied. The log line is not decoration: two
+        // numbers that must agree, and have twice not.
         val panel = PanelEntity.create(
-            session, tv, IntSize2d(wPx, hPx), name,
+            session, tv, FloatSize2d(wPx * scale, hPx * scale), name,
             Pose(Vector3(0f, 0f, 0f)),
         )
-        // Order matters: setSizeInPixels comes from create(), and setSize then
-        // fixes the WORLD size. Setting only pixels leaves the panel at whatever
-        // metres-per-pixel default the runtime chose.
-        panel.size = FloatSize2d(wPx * scale, hPx * scale)
+        panel.sizeInPixels = IntSize2d(wPx, hPx)
+        Log.i(TAG, "[type] panel '%s' view=%dx%dpx panel=%dx%dpx size=%.3fx%.3fm".format(
+            text.take(18), wPx, hPx,
+            panel.sizeInPixels.width, panel.sizeInPixels.height,
+            panel.size.width, panel.size.height))
         // A rounded corner is the most panel-ish property a surface has, and the
         // default is not zero. There is no visible ground to round, but there is
         // no reason to leave the geometry claiming otherwise either.
         panel.cornerRadius = 0f
-        Run(panel, wPx * scale, hPx * scale, if (reusable) tv else null)
+        Run(panel, wPx * scale, hPx * scale, if (reusable) tv else null, wPx, hPx)
     }.onFailure {
         Log.w(TAG, "[type] run '$text' failed: ${it.javaClass.simpleName}: ${it.message}")
     }.getOrNull()
