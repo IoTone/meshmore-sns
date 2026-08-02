@@ -260,7 +260,14 @@ object TextRun {
         // A smaller readout you can read beats a large one you cannot.
         if (tv.measuredWidth > MAX_PX) {
             val shrink = MAX_PX.toFloat() / tv.measuredWidth
-            tv.textSize = RASTER_PX * shrink
+            // COMPLEX_UNIT_PX AGAIN. `tv.textSize = x` is the SP setter, which
+            // the platform multiplies by display density — so the shrink path
+            // made the text BIGGER on any device with density > 1, and a panel
+            // asked to fit 2048 px came back at 3082. The very same mistake was
+            // fixed a few lines above and this second instance was left behind,
+            // which is the argument for the property never being used here at
+            // all: one of them is right and they look identical.
+            tv.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, RASTER_PX * shrink)
             tv.measure(View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED)
             Log.i(TAG, "[type] '%s' shrunk to %.0f px to fit %d".format(
                 text.take(24), RASTER_PX * shrink, MAX_PX))
@@ -323,11 +330,25 @@ object TextRun {
             session, tv, FloatSize2d(wPx * scale, hPx * scale), name,
             Pose(Vector3(0f, 0f, 0f)),
         )
+        // PIXELS FIRST, THEN METRES. Assigning sizeInPixels RECOMPUTES the world
+        // size from the runtime's own metres-per-pixel and discards whatever was
+        // passed to create() — so every panel came out at pixels x 3.9e-4 and
+        // the requested cap height was never honoured. Longer strings therefore
+        // rendered LARGER, which is why the dock captions grew until they
+        // collided: a caption panel sized for an 18-character template was
+        // 0.34 m wide against a 0.075 m pip pitch.
+        //
+        // Ring labels escaped it only because the pool assigns `size` again
+        // after creation, which is exactly the ordering this now makes explicit.
         panel.sizeInPixels = IntSize2d(wPx, hPx)
-        Log.i(TAG, "[type] panel '%s' view=%dx%dpx panel=%dx%dpx size=%.3fx%.3fm".format(
-            text.take(18), wPx, hPx,
-            panel.sizeInPixels.width, panel.sizeInPixels.height,
-            panel.size.width, panel.size.height))
+        panel.size = FloatSize2d(wPx * scale, hPx * scale)
+        // capPx is in here because the world size derives from it and the
+        // arithmetic has not reconciled with what the device reports. Measured,
+        // not assumed — deriving it in a comment is how the last three sizing
+        // bugs got written.
+        Log.i(TAG, "[type] panel '%s' view=%dx%dpx size=%.3fx%.3fm cap=%.1fpx text=%.1fpx"
+            .format(text.take(14), wPx, hPx, panel.size.width, panel.size.height,
+                capPx, tv.textSize))
         // A rounded corner is the most panel-ish property a surface has, and the
         // default is not zero. There is no visible ground to round, but there is
         // no reason to leave the geometry claiming otherwise either.

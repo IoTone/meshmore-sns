@@ -45,6 +45,9 @@ class Dock(
 ) {
 
     private val captions = HashMap<String, TextRun.Run>()
+    /** Overrides for a pip's caption, and which one stays visible unfocused. */
+    private val text = HashMap<String, String>()
+    private var pinned: String? = null
     private val entities = mutableListOf<Entity>()
     private val pips = mutableListOf<Pip>()
     private val fired = java.util.concurrent.ConcurrentLinkedQueue<Pip>()
@@ -53,6 +56,7 @@ class Dock(
         val name: String,
         val ring: MeshEntity,
         val lamp: MeshEntity,
+        val captionAt: Vector3,
         val toggle: () -> Unit,
     ) {
         var lastFire = 0L
@@ -102,17 +106,28 @@ class Dock(
             // The caption is a POOLED RUN rather than baked strokes, because
             // one of these has to say where you are — "IN +106 NNE" — and that
             // changes as you navigate. A mesh label cannot be rewritten.
+            // ONE CAPTION AT A TIME, and it belongs to whichever pip has focus.
+            //
+            // Seven captions abreast do not fit and cannot be made to. A caption
+            // panel sized for the longest thing it may ever say is 0.136 m wide
+            // against a 0.075 m pip pitch, so the panels overlap regardless of
+            // how short the words are — and an oversized mostly-empty panel is
+            // not free: it darkened the floor grid behind it.
+            //
+            // Making the label follow focus is not a workaround for that, it is
+            // what a dock of seven things wants anyway. The pips carry identity
+            // by position and by lamp; the name is what you need at the moment
+            // you are pointing at one, which is exactly when focus knows it.
             TextRun.reusable(
-                session, context, CAPTION_WIDEST, CAP, argb(theme.alt, 0.9f), "dock-$name",
+                session, context, CAPTION_WIDEST, CAP, argb(theme.alt, 0.95f), "dock-caption",
             )?.also {
                 captions[name] = it
-                it.setText(name)
                 it.entity.parent = root
-                it.entity.setPose(Pose(Vector3(at.x, at.y - R * 2.2f, at.z)), Space.ACTIVITY)
+                it.entity.setEnabled(false)
                 entities += it.entity
             }
 
-            val pip = Pip(name, ring, lamp, act)
+            val pip = Pip(name, ring, lamp, Vector3(at.x, at.y - R * 2.4f, at.z), act)
             pips += pip
 
             // Hit proxy, same reasoning as everywhere else: the thing you point
@@ -120,10 +135,10 @@ class Dock(
             // rather than 0 so the renderer cannot decide to skip it.
             MeshEntity.create(
                 session, Prims.build(session, Prims.mote(R * 2.0f, 5, 8)),
-                listOf(Prims.material(session, theme.accent, PROXY_A)),
+                listOf(Prims.ghost(session)),
             ).also {
                 it.parent = root; it.setPose(Pose(at), Space.ACTIVITY)
-                it.setAlpha(PROXY_A); entities += it
+                entities += it
                 runCatching {
                     it.addComponent(InteractableComponent.create(session) { ev -> onInput(pip, ev) })
                 }.onFailure { e -> Log.w(TAG, "[dock] no input on $name: $e") }
@@ -137,8 +152,33 @@ class Dock(
      * the one surface that is always present, so it is the only place a "you
      * are here" can live without competing with the ring for space.
      */
-    fun setCaption(name: String, text: String) {
-        captions[name]?.setText(text)
+    /**
+     * Give a pip something other than its own name to say, and PIN it visible.
+     *
+     * Only used for state a pip carries that the user has to see without
+     * pointing at it — the magnification depth, which is a "you are here" and
+     * would be useless if you had to go and ask.
+     */
+    fun setCaption(name: String, caption: String?) {
+        if (caption == null) {
+            text.remove(name)
+            if (pinned == name) pinned = null
+        } else {
+            text[name] = caption
+            pinned = name
+        }
+        captions[name]?.let { c ->
+            runCatching {
+                val show = pinned == name
+                c.entity.setEnabled(show)
+                if (show) {
+                    c.setText(caption ?: name)
+                    pips.firstOrNull { it.name == name }?.let { p ->
+                        c.entity.setPose(Pose(p.captionAt), Space.ACTIVITY)
+                    }
+                }
+            }
+        }
     }
 
     /** Light the pip for whichever surface is open; dark for the rest. */
@@ -192,6 +232,19 @@ class Dock(
                 p.ring.setScale(if (want) HOT_SCALE else 1f)
                 p.ring.setAlpha(if (want) 1f else 0.75f)
             }
+            // Show this pip's caption, hide every other. Placed under the pip
+            // that owns it rather than in a fixed slot, so the name and the
+            // thing it names are never separated.
+            captions[p.name]?.let { c ->
+                runCatching {
+                    val show = want || p.name == pinned
+                    c.entity.setEnabled(show)
+                    if (show) {
+                        c.setText(text[p.name] ?: p.name)
+                        c.entity.setPose(Pose(p.captionAt), Space.ACTIVITY)
+                    }
+                }
+            }
             if (want) onFocus?.invoke(p.name)
         }
     }
@@ -207,7 +260,7 @@ class Dock(
     }
 
     fun clear() {
-        pips.clear(); fired.clear(); captions.clear()
+        pips.clear(); fired.clear(); captions.clear(); text.clear(); pinned = null
         val doomed = entities.toList()
         entities.clear()
         doomed.forEach { runCatching { it.parent = null } }

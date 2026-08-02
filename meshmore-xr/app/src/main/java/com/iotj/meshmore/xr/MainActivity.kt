@@ -553,7 +553,10 @@ private fun HorizonScene(link: MeshLink) {
         h.build(nodes, o, st.floorHeight())
         // WHERE AM I, on the one surface that is always there.
         dockRef.value?.let { d ->
-            d.setCaption("WIDE", if (lens == null) "WIDE" else "OUT x${lensStack.size}")
+            // Pinned only while magnified: at 1:1 there is nothing to say and
+            // an always-on caption is one more thing between the user and the
+            // room.
+            d.setCaption("WIDE", if (lens == null) null else "OUT x${lensStack.size}")
             d.setLit("WIDE", lens != null)
         }
     }

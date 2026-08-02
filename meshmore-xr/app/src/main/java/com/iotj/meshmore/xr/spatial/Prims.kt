@@ -156,6 +156,27 @@ object Prims {
             )
         }
 
+    /**
+     * A material for something REACHED FOR BUT NEVER SEEN.
+     *
+     * A hit proxy at alpha 0.02 emits almost nothing, which is what it wants —
+     * but with AlphaMode.BLEND it still WRITES DEPTH, so it punches a hole in
+     * whatever is drawn behind it. Against the black sky that is invisible;
+     * against the floor grid it is seven dark squares sitting under the dock.
+     *
+     * MASK with a cutoff above the fragment's own alpha discards the fragment
+     * outright: no colour, no depth, nothing behind it disturbed.
+     *
+     * NOTE it is the RENDERER's depth that is affected, not the room. An
+     * additive display cannot subtract light, so this never occluded anything
+     * real — only our own geometry, which is why it took a floor grid to see.
+     */
+    suspend fun ghost(session: Session): KhronosUnlitMaterial =
+        KhronosUnlitMaterial.create(session, AlphaMode.MASK).apply {
+            setBaseColorFactor(Vector4(1f, 1f, 1f, 0f))
+            setAlphaCutoff(0.5f)
+        }
+
     // ---- the primitives ----------------------------------------------------
 
     /**
