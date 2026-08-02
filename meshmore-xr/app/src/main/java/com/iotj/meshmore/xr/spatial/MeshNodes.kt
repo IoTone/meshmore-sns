@@ -100,6 +100,17 @@ object MeshNodes {
         peers: List<Peer>,
         nowEpochSec: Long,
         limit: Int = MAX_MOTES,
+        /**
+         * When set, only nodes inside the wedge are drawn and their bearings are
+         * magnified across the whole ring.
+         *
+         * The remap happens BEFORE layout, deliberately: de-occlusion packs
+         * labels by angular separation, and the separation that matters is the
+         * one on screen. Laying out in true bearing and magnifying afterwards
+         * would space labels for a 7 degree ring and then stretch them across
+         * 360, leaving the ring nearly empty and the labels wherever they fell.
+         */
+        lens: Lens? = null,
     ): List<Horizon.Node> =
         // NOTE the whole ranked list goes to layout(), not a take(limit) of it.
         // Deferred nodes cost nothing -- they build no geometry -- and passing
@@ -123,6 +134,10 @@ object MeshNodes {
                 altM = p.altM,
                 type = p.type,
             )
+        }.let { nodes ->
+            if (lens == null) nodes
+            else nodes.filter { !it.located || lens.contains(it.bearingRad) }
+                .map { if (it.located) it.copy(bearingRad = lens.map(it.bearingRad)) else it }
         }.let { layout(it, limit) }
 
     /**
