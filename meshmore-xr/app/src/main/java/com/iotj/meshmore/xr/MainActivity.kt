@@ -21,6 +21,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -61,8 +62,11 @@ import com.iotj.meshmore.xr.spatial.Hands
 import com.iotj.meshmore.xr.spatial.HelpCard
 import com.iotj.meshmore.xr.spatial.HereMark
 import com.iotj.meshmore.xr.spatial.Horizon
+import com.iotj.meshmore.xr.spatial.Lens
+import com.iotj.meshmore.xr.spatial.RadialMenu
 import com.iotj.meshmore.xr.spatial.Hud
 import com.iotj.meshmore.xr.spatial.MeshNodes
+import com.iotj.meshmore.xr.spatial.Notice
 import com.iotj.meshmore.xr.spatial.Stage
 import com.iotj.meshmore.xr.spatial.Unfold
 import androidx.compose.foundation.layout.Box
@@ -358,6 +362,26 @@ private fun Root(facts: List<Pair<String, String>>, link: MeshLink, pinOverride:
 
 private const val TAG_UI = "MeshmoreXR"
 
+/**
+ * How far from a cluster's stated bearing a node counts as belonging to it.
+ * The cluster's own bearing is the MEAN of its members, so the grab has to be
+ * wide enough to reach the ones at the edges — CLUSTER_RAD is the bucket width
+ * they were grouped into, and a little over that covers the spread.
+ */
+private val CLUSTER_GRAB = MeshNodes.CLUSTER_RAD * 0.75f
+
+/**
+ * How wide to grab, at magnification [depth].
+ *
+ * The grab is in TRUE bearing, and each level of magnification means the
+ * cluster you just pinched covers a proportionally narrower slice of the real
+ * world. Using one width at every depth would, on the second level, scoop up
+ * the entire wedge again — you would magnify and get exactly what you were
+ * already looking at, which reads as the button not working.
+ */
+private fun grabFor(depth: Int): Float =
+    CLUSTER_GRAB / Math.pow(6.0, depth.toDouble()).toFloat()
+
 /** Minimum time the boot surface stays up, so a fast sync is not a flicker. */
 private const val MIN_BOOT_S = 4.5f
 
@@ -467,6 +491,23 @@ private fun HorizonScene(link: MeshLink) {
     val rackRef = remember { mutableStateOf<Rack?>(null) }
     val dockRef = remember { mutableStateOf<Dock?>(null) }
     val handsRef = remember { mutableStateOf<Hands?>(null) }
+    val menuRef = remember { mutableStateOf<RadialMenu?>(null) }
+    val noticeRef = remember { mutableStateOf<Notice?>(null) }
+    // The wedge currently magnified, or null for the true 1:1 ring. Bumping
+    // hereEpoch is what makes the mesh effect re-run and re-place everything.
+    /**
+     * The magnification STACK, outermost first. Empty is the true 1:1 ring.
+     *
+     * A stack rather than a single lens because the user asked the right
+     * question: magnifying 106 nodes across the ring still cannot label all of
+     * them — four lanes hold about 120 evenly spread, and they are never evenly
+     * spread — so the magnified view has clusters of its own, and those want
+     * going into too. Depth has to be a first-class thing rather than a case.
+     *
+     * Every lens is defined over TRUE bearings and composed by unmapping first,
+     * so the third level is the same arithmetic as the first.
+     */
+    val lensStack = remember { mutableStateListOf<Lens>() }
     val helpRef = remember { mutableStateOf<HelpCard?>(null) }
     val cue = remember { Cue() }
     // Bumped by the HERE marker so the mesh rebuild below re-runs on a toggle.
@@ -489,11 +530,12 @@ private fun HorizonScene(link: MeshLink) {
         // where they are. That is not a fabricated bearing: the brief forbids
         // inventing a peer's position, not being told our own.
         val origin2 = hereSource.resolve(here, MainActivity.homeOverride)
+        val lens = lensStack.lastOrNull()
         // Tell the mesh where we are, using the SAME fix the horizon is drawn
         // from, so what we broadcast and what we draw cannot disagree.
         if (Settings.shareLocation(ctx)) link.publishPosition(origin2)
         val nodes = if (MainActivity.simulate) simulatedMesh() else
-            MeshNodes.build(origin2, mesh, System.currentTimeMillis() / 1000)
+            MeshNodes.build(origin2, mesh, System.currentTimeMillis() / 1000, lens = lens)
         // Count what was DRAWN, not what the cap would have dropped. The old
         // form was peers.size - MAX_MOTES, which stopped being true the moment
         // placement became fit-driven: a saturated bearing labels five nodes,
@@ -505,9 +547,15 @@ private fun HorizonScene(link: MeshLink) {
             "labelled=${nodes.count { it.cluster == 0 }}" +
             (if (clusters.isEmpty()) "" else
                 ", ${clusters.size} cluster(s) holding ${clusters.sumOf { it.cluster }}") +
-            ", of ${mesh.size} peers)")
+            ", of ${mesh.size} peers" +
+            (lens?.let { ", MAGNIFIED $it" } ?: "") + ")")
         nodesRef.value = nodes
         h.build(nodes, o, st.floorHeight())
+        // WHERE AM I, on the one surface that is always there.
+        dockRef.value?.let { d ->
+            d.setCaption("WIDE", if (lens == null) "WIDE" else "OUT x${lensStack.size}")
+            d.setLit("WIDE", lens != null)
+        }
     }
 
     LaunchedEffect(session) {
@@ -562,6 +610,19 @@ private fun HorizonScene(link: MeshLink) {
         val gateL = com.iotj.meshmore.xr.spatial.HandSign.Gate()
         Log.i(TAG_UI, "[hand] tracking right=${handR != null} left=${handL != null}")
 
+        val menu = RadialMenu(session, palette)
+        menu.build(listOf(
+            RadialMenu.Item("magnify", "MAGNIFY"),
+            RadialMenu.Item("bearing", "BEARING"),
+            RadialMenu.Item("nearest", "NEAREST"),
+            RadialMenu.Item("dismiss", "CLOSE"),
+        ))
+        menuRef.value = menu
+
+        val notice = Notice(session, palette, ctx)
+        notice.build()
+        noticeRef.value = notice
+
         val hands = Hands(session, palette, ctx)
         hands.build()
         handsRef.value = hands
@@ -569,7 +630,7 @@ private fun HorizonScene(link: MeshLink) {
         help.build(origin)
         helpRef.value = help
 
-        val dock = Dock(session, palette)
+        val dock = Dock(session, palette, ctx)
         // EVERY SURFACE HAS A PINCHABLE WAY IN, gesture or no gesture.
         //
         // The ASL toggles are the fast path -- no glance, no target, usable
@@ -609,6 +670,19 @@ private fun HorizonScene(link: MeshLink) {
                 if (on) cue.opened() else cue.closed()
                 Log.i(TAG_UI, "[here] headset GPS -> ${if (on) "ON" else "OFF"}")
             },
+            "WIDE" to {
+                // Back out one level. The pip is also the ANCHOR: its caption
+                // says which region you are inside, so the one always-present
+                // surface answers "where am I" without the ring having to.
+                if (lensStack.isNotEmpty()) {
+                    lensStack.removeAt(lensStack.lastIndex)
+                    hereEpoch.value += 1
+                    menuRef.value?.hide()
+                    cue.closed()
+                } else {
+                    cue.closed()
+                }
+            },
             "HANDS" to {
                 val next = !(handsRef.value?.visible ?: false)
                 handsRef.value?.setVisible(next)
@@ -616,6 +690,10 @@ private fun HorizonScene(link: MeshLink) {
                 if (next) cue.opened() else cue.closed()
             },
         ))
+        // A short tick when a pip takes focus. On a display where you cannot
+        // feel a control, sound is the only confirmation that the pointer has
+        // arrived — and it arrives BEFORE the pinch, which is when it helps.
+        dock.onFocus = { cue.recognised() }
         dockRef.value = dock
         rack.onDismiss = {
             rack.setVisible(false)
@@ -631,6 +709,14 @@ private fun HorizonScene(link: MeshLink) {
         stageRef.value = stage
         originRef.value = origin
         horizonRef.value = horizon
+        // A cluster is the one mote whose selection cannot mean "open this
+        // node", because there is no node behind it.
+        horizon.onCluster = { node, at ->
+            menuRef.value?.let { m ->
+                if (m.open) m.hide() else m.showAt(at, node)
+            }
+            cue.opened()
+        }
 
         // Frame loop: pulses decay, and a packet lands every so often so the
         // mesh visibly breathes. ~30 Hz is plenty for this motion.
@@ -692,6 +778,8 @@ private fun HorizonScene(link: MeshLink) {
                     horizon.veil(it)
                     rackRef.value?.tick(it.translation)
                     dockRef.value?.tick()
+                    menuRef.value?.tick(it.translation)
+                    noticeRef.value?.tick(it)
                     helpRef.value?.tick(it.translation)
                     launch { handsRef.value?.tick(handR, handL, it) }
                     // The microhud is head-locked, so it is re-placed from the
@@ -730,10 +818,25 @@ private fun HorizonScene(link: MeshLink) {
                     val away = handsRef.value?.palmAway(j, it0, rightHand = true)
                     val seenR = if (reaching) com.iotj.meshmore.xr.spatial.HandSign.Letter.NONE
                                 else com.iotj.meshmore.xr.spatial.HandSign.classify(j, away)
-                    if (gateR.update(
-                            seenR, nowMs,
-                        ) == com.iotj.meshmore.xr.spatial.HandSign.Letter.A
+                    val gotR = gateR.update(seenR, nowMs)
+                    // B RETURNS A MAGNIFIED RING TO TRUE BEARING, and is only
+                    // listened to while magnified. A flat hand is a common
+                    // resting shape; making it mean something at all times
+                    // would be a command you issue by relaxing.
+                    if (gotR == com.iotj.meshmore.xr.spatial.HandSign.Letter.B &&
+                        lensStack.isNotEmpty()
                     ) {
+                        // ONE LEVEL, not all the way out. Getting three levels
+                        // deep and being thrown to the top loses the path you
+                        // took to find something; "back" and "home" are
+                        // different commands and B is back.
+                        cue.recognised()
+                        lensStack.removeAt(lensStack.lastIndex)
+                        hereEpoch.value += 1
+                        menuRef.value?.hide()
+                        Log.i(TAG_UI, "[hand] R:B — out one level, depth ${lensStack.size}")
+                    }
+                    if (gotR == com.iotj.meshmore.xr.spatial.HandSign.Letter.A) {
                         // BEFORE the action. Hearing this means the classifier
                         // saw the letter; the only remaining question is whether
                         // what it triggered did anything. Silence means the
@@ -767,6 +870,85 @@ private fun HorizonScene(link: MeshLink) {
                 }
 
                 horizon.drainSelections(origin)
+
+                // THE MENU'S ANSWER, drained on the frame loop like every other
+                // input — nothing rebuilds the horizon from a pinch callback.
+                menuRef.value?.poll()?.let { choice ->
+                    val node = menuRef.value?.subject as? Horizon.Node
+                    when (choice) {
+                        "magnify" -> {
+                            val o2 = hereSource.resolve(link.here.value, MainActivity.homeOverride)
+                            // The cluster's bearing is a DISPLAYED one. Unmap it
+                            // back through every active lens to get the true
+                            // bearing, or the new wedge is built over
+                            // already-magnified angles and magnifies the
+                            // magnification.
+                            val trueB = node?.let { n ->
+                                lensStack.foldRight(n.bearingRad) { l, b -> l.unmap(b) }
+                            }
+                            val bearings = link.mesh.value.mapNotNull { p ->
+                                if (!o2.known || p.lat == null || p.lon == null) null
+                                else MeshNodes.bearingRad(o2.lat!!, o2.lon!!, p.lat, p.lon)
+                            }.filter { b ->
+                                trueB != null &&
+                                    MeshNodes.angularGap(b, trueB) < grabFor(lensStack.size)
+                            }
+                            val l = Lens.over(bearings)
+                            if (l == null || bearings.size < 2) {
+                                Log.i(TAG_UI, "[menu] nothing left to magnify there")
+                                cue.closed()
+                            } else {
+                                lensStack.add(l)
+                                hereEpoch.value += 1
+                                Log.i(TAG_UI, "[menu] magnify $l over ${bearings.size}, " +
+                                    "depth ${lensStack.size}")
+                                cue.opened()
+                            }
+                        }
+                        "bearing" -> node?.let { n ->
+                            val o2 = hereSource.resolve(link.here.value, MainActivity.homeOverride)
+                            val trueB = lensStack.foldRight(n.bearingRad) { l, b -> l.unmap(b) }
+                            // The TRUE bearing, because a displayed one is only
+                            // meaningful inside a magnification the user may
+                            // already have forgotten they are in.
+                            noticeRef.value?.say(
+                                "%s TRUE %03d  %s".format(
+                                    n.name,
+                                    Math.round(Math.toDegrees(trueB.toDouble())).toInt()
+                                        .let { ((it % 360) + 360) % 360 },
+                                    MeshNodes.km(n.dist.toDouble()),
+                                ),
+                            )
+                            cue.opened()
+                        }
+                        "nearest" -> node?.let { n ->
+                            val o2 = hereSource.resolve(link.here.value, MainActivity.homeOverride)
+                            val trueB = lensStack.foldRight(n.bearingRad) { l, b -> l.unmap(b) }
+                            // The nearest few BY NAME, without changing the
+                            // view. Most of the time "what is in there" is the
+                            // whole question and magnifying is more than was
+                            // asked for.
+                            val near = link.mesh.value.mapNotNull { p ->
+                                if (!o2.known || p.lat == null || p.lon == null) null
+                                else {
+                                    val b = MeshNodes.bearingRad(o2.lat!!, o2.lon!!, p.lat, p.lon)
+                                    if (MeshNodes.angularGap(b, trueB) >= grabFor(lensStack.size)) null
+                                    else p to MeshNodes.haversineKm(
+                                        o2.lat!!, o2.lon!!, p.lat, p.lon)
+                                }
+                            }.sortedBy { it.second }.take(3)
+                            noticeRef.value?.say(
+                                if (near.isEmpty()) "NOTHING RESOLVABLE THERE"
+                                else near.joinToString("   ") {
+                                    "%s %.1fKM".format(it.first.name.take(14), it.second)
+                                },
+                            )
+                            cue.opened()
+                        }
+                        "dismiss" -> cue.closed()
+                    }
+                    menuRef.value?.hide()
+                }
 
 
                 // Link readout, refreshed about once a second. The strings are

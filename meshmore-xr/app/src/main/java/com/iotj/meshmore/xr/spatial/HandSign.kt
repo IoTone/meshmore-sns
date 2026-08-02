@@ -34,7 +34,7 @@ import kotlin.math.sqrt
  */
 object HandSign {
 
-    enum class Letter { NONE, A, H }
+    enum class Letter { NONE, A, B, H }
 
     /**
      * A fingertip more than this many times its knuckle's distance from the
@@ -48,12 +48,16 @@ object HandSign {
      * Thumb-tip to index-tip, as a fraction of the wrist-to-index-knuckle
      * distance. Below this the hand is pinching rather than signing.
      *
-     * PROVISIONAL, and biased toward rejecting. The readout prints the measured
-     * value so it can be set from a real hand rather than from this comment —
-     * the last two constants here were guessed and both were wrong. Erring
-     * toward rejection is the right way to be wrong: a missed HUD toggle is an
-     * annoyance, a HUD that flips while you are selecting a node is the bug
-     * being fixed.
+     * MEASURED ON HARDWARE, 2026-08-01:
+     *
+     *     pinching   0.09 - 0.11
+     *     open hand  0.77
+     *     ASL 'A'    fires reliably at this threshold
+     *
+     * 0.42 sits between the two clusters with room on either side, so this is a
+     * gap rather than an edge — the reading has to move by a factor of four
+     * before it changes an answer. It was a guess when written and is not one
+     * now; the readout prints `p0.NN` so it can be re-checked on any hand.
      */
     const val PINCH_GAP = 0.42f
 
@@ -281,6 +285,17 @@ object HandSign {
             // Distinguished from A by exactly the fingers A requires to be
             // curled, so the two cannot be confused by a threshold wobble.
             index && middle && !ring && !little -> Letter.H
+            // B — flat hand, all four fingers straight.
+            //
+            // ASL tells B from 5 by the thumb: folded across the palm for B,
+            // spread for 5. We do not test it, for the same reason we dropped
+            // it from A — the thumb is the least reliably tracked joint on the
+            // hand. So a relaxed open hand reads as B, which is only acceptable
+            // because of WHAT B DOES: it returns a magnified ring to true
+            // bearing, and it is only listened to while magnified. A false B
+            // undoes a view you can restore with one pinch. A false A would
+            // change something you were not touching.
+            index && middle && ring && little -> Letter.B
             else -> Letter.NONE
         }
     }

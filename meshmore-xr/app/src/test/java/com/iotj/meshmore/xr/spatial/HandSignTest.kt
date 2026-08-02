@@ -105,9 +105,21 @@ class HandSignTest {
         assertEquals(HandSign.Letter.NONE, HandSign.classify(hand(2.0f, 2.0f, 1.1f, 1.0f, 1.0f)))
     }
 
-    /** A and H disagree on exactly the fingers A needs curled, so no wobble confuses them. */
-    @Test fun anOpenHandIsNeither() {
-        assertEquals(HandSign.Letter.NONE, HandSign.classify(hand(1.4f, 2.0f, 2.0f, 2.0f, 2.0f)))
+    /**
+     * An open hand is B, and that is a deliberate cost rather than an accident.
+     *
+     * ASL tells B from 5 by the thumb — folded across the palm for B, spread
+     * for 5 — and we do not test the thumb, for the same reason it was dropped
+     * from A: it is the least reliably tracked joint on the hand. So a relaxed
+     * open hand reads as B.
+     *
+     * That is acceptable only because of what B DOES. It returns a magnified
+     * ring to true bearing and is listened to ONLY while magnified, so a false
+     * B undoes a view one pinch restores. A false A would change something the
+     * user was not touching, which is why A keeps its stricter shape.
+     */
+    @Test fun anOpenHandIsB() {
+        assertEquals(HandSign.Letter.B, HandSign.classify(hand(1.4f, 2.0f, 2.0f, 2.0f, 2.0f)))
     }
 
     @Test fun aHandWithNoJointsIsSilent() {
@@ -247,5 +259,44 @@ class HandFacingTest {
     /** Orientation can only reject. It cannot invent a letter. */
     @Test fun orientationNeverCreatesALetter() {
         assertEquals(HandSign.Letter.NONE, HandSign.classify(emptyMap(), palmAway = true))
+    }
+}
+
+/** B — the flat hand that returns a magnified ring to true bearing. */
+class HandBTest {
+
+    private fun at(y: Float) = Pose(Vector3(0f, y, 0f))
+    private val OUT = 0.05f
+
+    private fun hand(thumb: Float, i: Float, m: Float, r: Float, l: Float, s: Float = 0.09f) = mapOf(
+        HandJointType.WRIST to at(0f),
+        HandJointType.MIDDLE_METACARPAL to at(s),
+        HandJointType.THUMB_PROXIMAL to at(s),
+        HandJointType.INDEX_PROXIMAL to at(s),
+        HandJointType.MIDDLE_PROXIMAL to at(s),
+        HandJointType.RING_PROXIMAL to at(s),
+        HandJointType.LITTLE_PROXIMAL to at(s),
+        HandJointType.THUMB_TIP to Pose(Vector3(OUT, thumb * s, 0f)),
+        HandJointType.INDEX_TIP to at(i * s),
+        HandJointType.MIDDLE_TIP to at(m * s),
+        HandJointType.RING_TIP to at(r * s),
+        HandJointType.LITTLE_TIP to at(l * s),
+    )
+
+    @Test fun bIsAFlatHand() {
+        assertEquals(HandSign.Letter.B, HandSign.classify(hand(1.2f, 2f, 2f, 2f, 2f)))
+    }
+
+    /** The three letters must not overlap: each needs a different finger set. */
+    @Test fun theLettersAreDistinct() {
+        assertEquals(HandSign.Letter.A, HandSign.classify(hand(1.4f, 1f, 1f, 1f, 1f)))
+        assertEquals(HandSign.Letter.H, HandSign.classify(hand(1.0f, 2f, 2f, 1f, 1f)))
+        assertEquals(HandSign.Letter.B, HandSign.classify(hand(1.2f, 2f, 2f, 2f, 2f)))
+    }
+
+    /** Orientation applies to every letter, not only to A. */
+    @Test fun bAlsoNeedsThePalmAway() {
+        assertEquals(HandSign.Letter.NONE,
+            HandSign.classify(hand(1.2f, 2f, 2f, 2f, 2f), palmAway = false))
     }
 }

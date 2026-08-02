@@ -38,20 +38,33 @@ import androidx.xr.scenecore.scene
  * surface, and exactly one surface is open at a time. Moving that to the wrist
  * later changes where the pips are and nothing else.
  */
-class Dock(private val session: Session, private val theme: Horizon.Palette) {
+class Dock(
+    private val session: Session,
+    private val theme: Horizon.Palette,
+    private val context: android.content.Context,
+) {
 
+    private val captions = HashMap<String, TextRun.Run>()
     private val entities = mutableListOf<Entity>()
     private val pips = mutableListOf<Pip>()
     private val fired = java.util.concurrent.ConcurrentLinkedQueue<Pip>()
 
     private inner class Pip(
         val name: String,
+        val ring: MeshEntity,
         val lamp: MeshEntity,
         val toggle: () -> Unit,
     ) {
         var lastFire = 0L
         var lit = false
+        /** Which pointers are on it. BOTH hands emit rays, hence a set. */
+        val pointers = mutableSetOf<String>()
+        var hot = false
+        var exitAt = 0L
     }
+
+    /** Raised when a pip takes focus. The host makes the sound. */
+    var onFocus: ((String) -> Unit)? = null
 
     suspend fun build(o: Stage.Origin, items: List<Pair<String, () -> Unit>>) {
         clear()
@@ -86,16 +99,20 @@ class Dock(private val session: Session, private val theme: Horizon.Palette) {
                 it.setAlpha(DIM); entities += it
             }
 
-            MeshEntity.create(
-                session, Prims.build(session, Glyphs.text(name, CAP)),
-                listOf(Prims.material(session, theme.alt, 0.85f)),
-            ).also {
-                it.parent = root
-                it.setPose(Pose(Vector3(at.x, at.y - R * 2.2f, at.z)), Space.ACTIVITY)
-                entities += it
+            // The caption is a POOLED RUN rather than baked strokes, because
+            // one of these has to say where you are — "IN +106 NNE" — and that
+            // changes as you navigate. A mesh label cannot be rewritten.
+            TextRun.reusable(
+                session, context, CAPTION_WIDEST, CAP, argb(theme.alt, 0.9f), "dock-$name",
+            )?.also {
+                captions[name] = it
+                it.setText(name)
+                it.entity.parent = root
+                it.entity.setPose(Pose(Vector3(at.x, at.y - R * 2.2f, at.z)), Space.ACTIVITY)
+                entities += it.entity
             }
 
-            val pip = Pip(name, lamp, act)
+            val pip = Pip(name, ring, lamp, act)
             pips += pip
 
             // Hit proxy, same reasoning as everywhere else: the thing you point
@@ -115,6 +132,15 @@ class Dock(private val session: Session, private val theme: Horizon.Palette) {
         Log.i(TAG, "[dock] ${pips.size} pip(s) up")
     }
 
+    /**
+     * Rename a pip. This is the anchor for magnified navigation: the dock is
+     * the one surface that is always present, so it is the only place a "you
+     * are here" can live without competing with the ring for space.
+     */
+    fun setCaption(name: String, text: String) {
+        captions[name]?.setText(text)
+    }
+
     /** Light the pip for whichever surface is open; dark for the rest. */
     fun setLit(name: String, lit: Boolean) {
         pips.firstOrNull { it.name == name }?.let {
@@ -124,16 +150,55 @@ class Dock(private val session: Session, private val theme: Horizon.Palette) {
     }
 
     private fun onInput(p: Pip, ev: InputEvent) {
-        if (ev.action != InputEvent.Action.UP) return
+        val key = ev.pointerType.toString()
+        when (ev.action) {
+            InputEvent.Action.HOVER_ENTER, InputEvent.Action.HOVER_MOVE -> p.pointers += key
+            InputEvent.Action.HOVER_EXIT -> {
+                p.pointers -= key
+                p.exitAt = android.os.SystemClock.uptimeMillis()
+            }
+            InputEvent.Action.UP -> {
+                val now = android.os.SystemClock.uptimeMillis()
+                if (now - p.lastFire < DEBOUNCE_MS) return
+                p.lastFire = now
+                Reach.consumed()
+                fired.add(p)
+            }
+            else -> Unit
+        }
+    }
+
+    /**
+     * FOCUS, reconciled per frame rather than from the events themselves.
+     *
+     * A pip you cannot tell you are pointing at is a pip you aim by trial: you
+     * pinch, nothing happens, and you cannot tell whether you missed or whether
+     * the control is dead. Focus answers that before the pinch.
+     *
+     * Reconciled with a grace period because hand tracking drops HOVER_EXIT and
+     * re-enters constantly at the edge of a target — driving the visual straight
+     * from events makes it strobe.
+     */
+    private fun reconcileFocus() {
         val now = android.os.SystemClock.uptimeMillis()
-        if (now - p.lastFire < DEBOUNCE_MS) return
-        p.lastFire = now
-        Reach.consumed()
-        fired.add(p)
+        pips.forEach { p ->
+            val want = p.pointers.isNotEmpty() || (p.hot && now - p.exitAt < GRACE_MS)
+            if (want == p.hot) return@forEach
+            p.hot = want
+            runCatching {
+                // The RING swells and brightens, not the lamp — the lamp already
+                // means "this surface is open", and one object cannot carry two
+                // states without either becoming ambiguous.
+                p.ring.setScale(if (want) HOT_SCALE else 1f)
+                p.ring.setAlpha(if (want) 1f else 0.75f)
+            }
+            if (want) onFocus?.invoke(p.name)
+        }
     }
 
     /** Drained on the frame loop — nothing opens a surface from an input callback. */
     fun tick() {
+        reconcileFocus()
         while (true) {
             val p = fired.poll() ?: break
             Log.i(TAG, "[dock] ${p.name}")
@@ -142,7 +207,7 @@ class Dock(private val session: Session, private val theme: Horizon.Palette) {
     }
 
     fun clear() {
-        pips.clear(); fired.clear()
+        pips.clear(); fired.clear(); captions.clear()
         val doomed = entities.toList()
         entities.clear()
         doomed.forEach { runCatching { it.parent = null } }
@@ -159,6 +224,14 @@ class Dock(private val session: Session, private val theme: Horizon.Palette) {
         const val CAP = 0.011f
         const val DIM = 0.18f
         const val DEBOUNCE_MS = 350L
+        const val GRACE_MS = 180L
+        /** Enough swell to read at a glance, not so much it looks like a press. */
+        const val HOT_SCALE = 1.35f
+        /** Sized once for the longest thing a caption ever says. */
+        const val CAPTION_WIDEST = "IN +9999 NNE 999KM"
+
+        fun argb(rgb: Int, a: Float) =
+            (((a.coerceIn(0f, 1f) * 255).toInt() and 0xFF) shl 24) or (rgb and 0xFFFFFF)
         /**
          * Hit proxies are meant to be reached for and not seen. 0.02 was chosen
          * so the renderer could not decide to skip a fully transparent entity —

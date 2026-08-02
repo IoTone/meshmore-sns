@@ -68,6 +68,28 @@ class Lens(loRad: Float, hiRad: Float) {
         return norm(mid + d * factor)
     }
 
+    /**
+     * Displayed bearing back to true — the inverse of [map].
+     *
+     * NESTING NEEDS THIS. Magnifying a cluster that is itself inside a magnified
+     * ring means building a lens over the TRUE bearings of its members, but the
+     * only bearing to hand is the one on screen. Without an inverse the second
+     * lens would be built over already-magnified angles and would magnify the
+     * magnification — a factor of 2600 on the Seattle wedge, where every node
+     * lands on the opposite side of the ring from where it should.
+     *
+     * Keeping every lens defined over TRUE bearings, and composing by unmapping
+     * first, means depth costs nothing: the third level is the same arithmetic
+     * as the first.
+     */
+    fun unmap(displayedRad: Float): Float {
+        val mid = midpoint
+        var d = displayedRad - mid
+        while (d > PI) d -= TWO_PI
+        while (d < -PI) d += TWO_PI
+        return norm(mid + d / factor)
+    }
+
     /** The wedge's centre, which is where the return marker goes. */
     val midpoint: Float get() = norm(lo + span / 2f)
 

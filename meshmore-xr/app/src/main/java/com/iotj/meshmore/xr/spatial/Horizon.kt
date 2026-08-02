@@ -550,9 +550,20 @@ class Horizon(
      * Fire the ring for anything selected since the last frame. Called from the
      * frame loop because [pulse] is suspend and the input callback is not.
      */
+    /**
+     * Raised when a CLUSTER mote is pinched. A count is the one mote whose
+     * selection cannot mean "show me this node" — there is no node — so the
+     * host opens a menu on it instead of the detail line.
+     */
+    var onCluster: ((Node, Vector3) -> Unit)? = null
+
     suspend fun drainSelections(o: Stage.Origin) {
         while (true) {
             val p = selected.poll() ?: return
+            if (p.node.cluster > 0) {
+                onCluster?.invoke(p.node, p.at)
+                continue
+            }
             pulse(p.bearing, p.dist, o)
         }
     }

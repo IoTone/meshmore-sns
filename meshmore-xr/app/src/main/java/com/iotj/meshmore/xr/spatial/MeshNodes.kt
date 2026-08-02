@@ -271,7 +271,12 @@ object MeshNodes {
         }
         return kept.map { g ->
             Horizon.Node(
-                name = "+${g.n}",
+                // WHAT IS IN THERE, not just how many. "+106" is a count and a
+                // shrug: it says something is over there without saying where
+                // "there" is or how far. The compass point and the mean range
+                // are the two facts a count already implies and never states,
+                // and they are what decide whether it is worth going in.
+                name = "+${g.n} ${compass(g.bearing)} ${km(g.sumD / g.n)}",
                 // Members share a bucket far narrower than the wrap, so a plain
                 // mean is safe and a circular mean is not worth the arithmetic.
                 bearingRad = g.bearing,
@@ -376,6 +381,30 @@ object MeshNodes {
     /** How many of [peers] would be dropped at [limit]. For logging, not display. */
     fun droppedCount(peers: List<Peer>, limit: Int = MAX_MOTES): Int =
         (peers.size - limit).coerceAtLeast(0)
+
+    /** Sixteen-point compass. Coarse on purpose: a cluster IS a spread. */
+    fun compass(bearingRad: Float): String {
+        val deg = Math.toDegrees(bearingRad.toDouble())
+        val i = (((deg % 360.0 + 360.0) % 360.0) / 22.5).let { Math.round(it).toInt() % 16 }
+        return POINTS[i]
+    }
+
+    private val POINTS = listOf(
+        "N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE",
+        "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW",
+    )
+
+    /**
+     * The band fraction back to kilometres, for display only.
+     *
+     * bandFor is logarithmic, so this inverts it rather than scaling it — a
+     * linear read of a log band would put a node at 4 km when it is at 25, and
+     * a distance on a label is a claim someone might walk on.
+     */
+    fun km(band: Double): String {
+        val k = Math.exp(band * Math.log(1.0 + MAX_KM)) - 1.0
+        return if (k < 10) "%.1fKM".format(k) else "%.0fKM".format(k)
+    }
 
     /** 0 = heard just now, 1 = stale. Linear over [STALE_AFTER_SEC]. */
     fun ageOf(lastSeenEpochSec: Long, nowEpochSec: Long): Float {
