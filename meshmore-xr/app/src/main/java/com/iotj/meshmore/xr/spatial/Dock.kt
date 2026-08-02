@@ -82,9 +82,6 @@ class Dock(
     }
 
     private val captions = HashMap<String, TextRun.Run>()
-    /** Overrides for a pip's caption, and which one stays visible unfocused. */
-    private val text = HashMap<String, String>()
-    private var pinned: String? = null
     private val entities = mutableListOf<Entity>()
     private val pips = mutableListOf<Pip>()
     private val fired = java.util.concurrent.ConcurrentLinkedQueue<Pip>()
@@ -140,27 +137,33 @@ class Dock(
                 it.setAlpha(DIM); entities += it
             }
 
-            // The caption is a POOLED RUN rather than baked strokes, because
-            // one of these has to say where you are — "IN +106 NNE" — and that
-            // changes as you navigate. A mesh label cannot be rewritten.
-            // ONE CAPTION AT A TIME, and it belongs to whichever pip has focus.
+            // THE NAME STAYS UP. A dock you have to hover to identify is a
+            // dock you learn by poking it, and seven unlabelled rings are a
+            // guessing game — which is what these were, because they were sized
+            // wrong rather than because a label could not fit.
             //
-            // Seven captions abreast do not fit and cannot be made to. A caption
-            // panel sized for the longest thing it may ever say is 0.136 m wide
-            // against a 0.075 m pip pitch, so the panels overlap regardless of
-            // how short the words are — and an oversized mostly-empty panel is
-            // not free: it darkened the floor grid behind it.
+            // The old sizing reserved 18 characters ("IN +9999 NNE 999KM") for
+            // a future magnified-area readout that was never built. At 0.137 m
+            // against a 0.075 m pip pitch every caption overlapped both its
+            // neighbours no matter how short the word was, and hiding all but
+            // the focused one was the workaround for that.
             //
-            // Making the label follow focus is not a workaround for that, it is
-            // what a dock of seven things wants anyway. The pips carry identity
-            // by position and by lamp; the name is what you need at the moment
-            // you are pointing at one, which is exactly when focus knows it.
+            // What a pip can actually say is its own name or a short state
+            // string — COMPASS is the longest at 7, "OUT x99" also 7. Eight
+            // cells is 0.063 m, which clears the pitch, and a shorter word just
+            // carries transparent margin that emits nothing on this display.
+            //
+            // If a genuinely long readout is wanted later it does not belong in
+            // this row: it wants its own line below the dock, where it can be as
+            // wide as it likes without pushing the names around.
             TextRun.reusable(
                 session, context, CAPTION_WIDEST, CAP, argb(theme.alt, 0.95f), "dock-caption",
             )?.also {
                 captions[name] = it
                 it.entity.parent = root
-                it.entity.setEnabled(false)
+                it.setText(name)
+                it.entity.setEnabled(true)
+                runCatching { it.entity.setAlpha(CAPTION_DIM) }
                 entities += it.entity
             }
 
@@ -190,33 +193,19 @@ class Dock(
      * are here" can live without competing with the ring for space.
      */
     /**
-     * Give a pip something other than its own name to say, and PIN it visible.
+     * Give a pip something other than its own name to say. Null restores it.
      *
-     * Only used for state a pip carries that the user has to see without
-     * pointing at it — the magnification depth, which is a "you are here" and
-     * would be useless if you had to go and ask.
+     * Used for state a pip carries that the user has to see without pointing at
+     * it — the magnification depth, which is a "you are here" and would be
+     * useless if you had to go and ask. It no longer pins anything visible:
+     * every caption is visible.
      */
     fun setCaption(name: String, caption: String?) {
-        if (caption == null) {
-            text.remove(name)
-            if (pinned == name) pinned = null
-        } else {
-            text[name] = caption
-            pinned = name
-        }
         captions[name]?.let { c ->
-            runCatching {
-                val show = pinned == name
-                c.entity.setEnabled(show)
-                if (show) {
-                    c.setText(caption ?: name)
-                    pips.firstOrNull { it.name == name }?.let { p ->
-                        c.entity.setPose(
-                            Pose(p.captionAt, facing(p.captionAt)), Space.ACTIVITY,
-                        )
-                    }
-                }
-            }
+            // The words change; the label does not come and go. An override
+            // that appeared and vanished was readable only as "something just
+            // happened here", which is not what a state readout is for.
+            runCatching { c.setText(caption ?: name) }
         }
     }
 
@@ -260,14 +249,13 @@ class Dock(
      */
     private fun reconcileFocus() {
         val now = android.os.SystemClock.uptimeMillis()
-        // A PINNED caption is visible without focus, so nothing else would ever
-        // re-aim it as the user moves.
-        pinned?.let { n ->
-            captions[n]?.let { c ->
-                pips.firstOrNull { it.name == n }?.let { p ->
-                    runCatching {
-                        c.entity.setPose(Pose(p.captionAt, facing(p.captionAt)), Space.ACTIVITY)
-                    }
+        // Aim EVERY caption, every frame. They are all standing now, so a
+        // caption that is only re-posed when its focus changes would be left
+        // edge-on the moment the user moves.
+        pips.forEach { p ->
+            captions[p.name]?.let { c ->
+                runCatching {
+                    c.entity.setPose(Pose(p.captionAt, facing(p.captionAt)), Space.ACTIVITY)
                 }
             }
         }
@@ -282,20 +270,11 @@ class Dock(
                 p.ring.setScale(if (want) HOT_SCALE else 1f)
                 p.ring.setAlpha(if (want) 1f else 0.75f)
             }
-            // Show this pip's caption, hide every other. Placed under the pip
-            // that owns it rather than in a fixed slot, so the name and the
-            // thing it names are never separated.
+            // BRIGHTNESS is the focus cue for the caption, since visibility is
+            // no longer available to carry it. Every name is legible; the one
+            // you are pointing at is the bright one, alongside the ring swelling.
             captions[p.name]?.let { c ->
-                runCatching {
-                    val show = want || p.name == pinned
-                    c.entity.setEnabled(show)
-                    if (show) {
-                        c.setText(text[p.name] ?: p.name)
-                        c.entity.setPose(
-                            Pose(p.captionAt, facing(p.captionAt)), Space.ACTIVITY,
-                        )
-                    }
-                }
+                runCatching { c.entity.setAlpha(if (want) 1f else CAPTION_DIM) }
             }
             if (want) onFocus?.invoke(p.name)
         }
@@ -318,7 +297,7 @@ class Dock(
     }
 
     fun clear() {
-        pips.clear(); fired.clear(); captions.clear(); text.clear(); pinned = null
+        pips.clear(); fired.clear(); captions.clear()
         val doomed = entities.toList()
         entities.clear()
         doomed.forEach { runCatching { it.parent = null } }
@@ -338,8 +317,14 @@ class Dock(
         const val GRACE_MS = 180L
         /** Enough swell to read at a glance, not so much it looks like a press. */
         const val HOT_SCALE = 1.35f
-        /** Sized once for the longest thing a caption ever says. */
-        const val CAPTION_WIDEST = "IN +9999 NNE 999KM"
+        /**
+         * Sized once for the longest thing a caption ever says: a pip's own
+         * name (COMPASS, 7) or a short state string ("OUT x99", 7). Eight cells
+         * is 0.063 m against a 0.075 m pip pitch, so the row never collides.
+         */
+        const val CAPTION_WIDEST = "MMMMMMMM"
+        /** Unfocused caption. Legible, but the focused one is plainly brighter. */
+        const val CAPTION_DIM = 0.62f
 
         fun argb(rgb: Int, a: Float) =
             (((a.coerceIn(0f, 1f) * 255).toInt() and 0xFF) shl 24) or (rgb and 0xFFFFFF)
