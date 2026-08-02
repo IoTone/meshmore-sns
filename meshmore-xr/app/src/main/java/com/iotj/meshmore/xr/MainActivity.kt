@@ -126,6 +126,14 @@ class MainActivity : ComponentActivity() {
          * glasses is the only way to check it renders.
          */
         var showHelp: Boolean = false
+        /**
+         * --ez menu true : open the cluster menu on the first cluster found.
+         *
+         * The menu only appears by pinching a cluster mote, so nothing about it
+         * can be checked without a hand in front of the glasses — which is how
+         * it shipped with no focus state at all and nobody noticed.
+         */
+        var showMenu: Boolean = false
         /** --ez handdebug true : log what the ASL classifier measures, ~1 Hz. */
         var handDebug: Boolean = false
         /** --ez typeprobe true : answer whether tier R can exist on this SDK. */
@@ -161,6 +169,7 @@ class MainActivity : ComponentActivity() {
         showRadio = intent?.getBooleanExtra("radio", false) ?: false
         handDebug = intent?.getBooleanExtra("handdebug", false) ?: false
         showHelp = intent?.getBooleanExtra("help", false) ?: false
+        showMenu = intent?.getBooleanExtra("menu", false) ?: false
         // Draw every tier R panel's own boundary. See TextRun.outline.
         com.iotj.meshmore.xr.spatial.TextRun.outline =
             intent?.getBooleanExtra("outline", false) ?: false
@@ -728,6 +737,10 @@ private fun HorizonScene(link: MeshLink) {
         // feel a control, sound is the only confirmation that the pointer has
         // arrived — and it arrives BEFORE the pinch, which is when it helps.
         dock.onFocus = { cue.recognised() }
+        // The menu gets the same tick the dock does. On a display where you
+        // cannot feel a control, sound is the only confirmation the pointer
+        // arrived — and it arrives BEFORE the pinch, which is when it helps.
+        menuRef.value?.onFocus = { cue.recognised() }
         dockRef.value = dock
         if (MainActivity.showHelp) {
             help.setVisible(true)
@@ -765,6 +778,21 @@ private fun HorizonScene(link: MeshLink) {
         var statusTick = 0f
         try {
             if (MainActivity.selfTest) launch { horizon.selfTest(origin) }
+            if (MainActivity.showMenu) launch {
+                // POLLED, not delayed. The mesh arrives over BLE and the ring
+                // does not cluster until it has; a fixed wait picked before that
+                // just reports "no cluster" and looks like a broken flag.
+                var waited = 0
+                while (waited < 60_000) {
+                    horizon.firstCluster()?.let { (n, p) ->
+                        menuRef.value?.showAt(p, n)
+                        Log.i(TAG_UI, "[menu] opened by launch flag on ${n.name}")
+                        return@launch
+                    }
+                    kotlinx.coroutines.delay(1000); waited += 1000
+                }
+                Log.w(TAG_UI, "[menu] --ez menu: no cluster appeared in 60 s")
+            }
             if (MainActivity.typeProbe) launch { com.iotj.meshmore.xr.spatial.TypeProbe.run(session, ctx) }
             var panelWarned = false
             while (true) {

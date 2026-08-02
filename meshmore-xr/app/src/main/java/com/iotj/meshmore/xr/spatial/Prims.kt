@@ -262,6 +262,45 @@ object Prims {
      * disc with a hole and collapses to a line at a grazing angle, which reads
      * as a rendering fault rather than as a ring.
      */
+    /**
+     * A SEGMENTED RETICLE — a ring with gaps, standing in the XY plane so its
+     * face points along +Z.
+     *
+     * Two things [halo] cannot do for a focus indicator. It lies in the XZ
+     * plane, which is right for the dock (below eye level, so it reads as an
+     * ellipse) and wrong for a menu that opens around a node at eye height,
+     * where a horizontal ring is seen edge-on and reads as a line. And it is
+     * rotationally symmetric, so spinning it about its own axis produces no
+     * visible change at all — the gaps are what make rotation legible.
+     *
+     * [arcs] segments occupying [duty] of the circumference between them.
+     */
+    fun reticle(
+        radius: Float, tube: Float, arcs: Int = 3, duty: Float = 0.62f,
+        seg: Int = 60, sides: Int = 6,
+    ): Facets {
+        val f = Facets()
+        fun px(i: Int, j: Int) =
+            ((radius + tube * cos(2.0 * Math.PI * j / sides)) * cos(2.0 * Math.PI * i / seg)).toFloat()
+        fun py(i: Int, j: Int) =
+            ((radius + tube * cos(2.0 * Math.PI * j / sides)) * sin(2.0 * Math.PI * i / seg)).toFloat()
+        fun pz(j: Int) = (tube * sin(2.0 * Math.PI * j / sides)).toFloat()
+        for (i in 0 until seg) {
+            // Which arc this segment belongs to, and how far through it we are.
+            val t = (i.toFloat() / seg * arcs) % 1f
+            if (t > duty) continue
+            for (j in 0 until sides) {
+                f.quad(
+                    px(i, j), py(i, j), pz(j),
+                    px(i, j + 1), py(i, j + 1), pz(j + 1),
+                    px(i + 1, j + 1), py(i + 1, j + 1), pz(j + 1),
+                    px(i + 1, j), py(i + 1, j), pz(j),
+                )
+            }
+        }
+        return f
+    }
+
     fun halo(radius: Float, tube: Float, seg: Int = 48, sides: Int = 6): Facets {
         val f = Facets()
         fun px(i: Int, j: Int) =

@@ -557,6 +557,13 @@ class Horizon(
      */
     var onCluster: ((Node, Vector3) -> Unit)? = null
 
+    /**
+     * The first cluster mote on the ring, and where it sits. Only used by the
+     * --ez menu launch flag, which needs something to open a menu ON.
+     */
+    fun firstCluster(): Pair<Node, Vector3>? =
+        peers.firstOrNull { it.node.cluster > 0 }?.let { it.node to it.at }
+
     suspend fun drainSelections(o: Stage.Origin) {
         while (true) {
             val p = selected.poll() ?: return
