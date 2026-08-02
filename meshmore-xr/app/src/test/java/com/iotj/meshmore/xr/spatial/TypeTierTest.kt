@@ -11,22 +11,35 @@ import org.junit.Test
 /** T1 — the routing rule. Real MeshCore node names, off public meshes. */
 class TypeTierTest {
 
-    @Test fun latinBoundToAnObjectStaysStrokes() {
-        assertEquals(Tier.STROKE, TypeTier.of("W7MIR REPEATER", boundToObject = true))
-        assertEquals(Tier.STROKE, TypeTier.of("042", boundToObject = true))
-        assertEquals(Tier.STROKE, TypeTier.of("SF7", boundToObject = true))
+    /** Instrument markings keep the stroke font — they are not words. */
+    @Test fun marksStayStrokes() {
+        assertEquals(Tier.STROKE, TypeTier.of("042", TypeTier.Kind.MARK))
+        assertEquals(Tier.STROKE, TypeTier.of("SF7", TypeTier.Kind.MARK))
+        assertEquals(Tier.STROKE, TypeTier.of("FREQ", TypeTier.Kind.MARK))
+    }
+
+    /**
+     * A NAME always takes the real font, even plain Latin. This is the whole
+     * point of the split: on the ring a proportional mixed-case name beside an
+     * all-caps vector one read as two different applications.
+     */
+    @Test fun namesAlwaysTakeTheRealFont() {
+        assertEquals(Tier.RUN, TypeTier.of("W7MIR REPEATER", TypeTier.Kind.NAME))
+        assertEquals(Tier.RUN, TypeTier.of("中継局", TypeTier.Kind.NAME))
+        assertEquals(Tier.RUN, TypeTier.of("Woofy Repeater", TypeTier.Kind.NAME))
     }
 
     /** The whole point of T1: these used to become tofu boxes. */
+    /** Even asked for as a MARK, a script the stroke font cannot draw routes out. */
     @Test fun cjkTakesTheRealFontPath() {
-        assertEquals(Tier.RUN, TypeTier.of("中継局", boundToObject = true))
-        assertEquals(Tier.RUN, TypeTier.of("ESTACADA の応答なし", boundToObject = true))
-        assertEquals(Tier.RUN, TypeTier.of("かな", boundToObject = true))
+        assertEquals(Tier.RUN, TypeTier.of("中継局", TypeTier.Kind.MARK))
+        assertEquals(Tier.RUN, TypeTier.of("ESTACADA の応答なし", TypeTier.Kind.MARK))
+        assertEquals(Tier.RUN, TypeTier.of("かな", TypeTier.Kind.MARK))
     }
 
     @Test fun emojiTakesTheRealFontPath() {
-        assertEquals(Tier.RUN, TypeTier.of("🍁 Hobart Nursery", boundToObject = true))
-        assertEquals(Tier.RUN, TypeTier.of("Capitol Hill Prime💜", boundToObject = true))
+        assertEquals(Tier.RUN, TypeTier.of("🍁 Hobart Nursery", TypeTier.Kind.MARK))
+        assertEquals(Tier.RUN, TypeTier.of("Capitol Hill Prime💜", TypeTier.Kind.MARK))
     }
 
     /**
@@ -37,21 +50,21 @@ class TypeTierTest {
     @Test fun decoratedLatinFoldsAndStaysCheap() {
         assertTrue(TypeTier.drawableAsStrokes("Ökonomy"))
         assertTrue(TypeTier.drawableAsStrokes("ＡＢＣ"))
-        assertEquals(Tier.STROKE, TypeTier.of("Ökonomy", boundToObject = true))
+        assertEquals(Tier.STROKE, TypeTier.of("Ökonomy", TypeTier.Kind.MARK))
     }
 
     /** Not welded to anything means it is carrying language for its own sake. */
-    @Test fun unboundTextIsAlwaysARun() {
-        assertEquals(Tier.RUN, TypeTier.of("SETTINGS", boundToObject = false))
+    @Test fun theDefaultKindIsName() {
+        assertEquals(Tier.RUN, TypeTier.of("SETTINGS"))
         assertEquals(Tier.RUN, TypeTier.of("W7MIR REPEATER"))
     }
 
     /** Past the cap a label stops being a label and becomes a paragraph. */
     @Test fun longLabelsLeaveTheStrokePath() {
         val long = "A".repeat(TypeTier.STROKE_MAX_CELLS + 1)
-        assertEquals(Tier.RUN, TypeTier.of(long, boundToObject = true))
+        assertEquals(Tier.RUN, TypeTier.of(long, TypeTier.Kind.MARK))
         val fits = "A".repeat(TypeTier.STROKE_MAX_CELLS)
-        assertEquals(Tier.STROKE, TypeTier.of(fits, boundToObject = true))
+        assertEquals(Tier.STROKE, TypeTier.of(fits, TypeTier.Kind.MARK))
     }
 
     /** An emoji is one cell, not two, or every length rule is off by one. */
@@ -63,7 +76,7 @@ class TypeTierTest {
 
     @Test fun theEmptyStringIsHarmless() {
         assertTrue(TypeTier.drawableAsStrokes(""))
-        assertEquals(Tier.STROKE, TypeTier.of("", boundToObject = true))
+        assertEquals(Tier.STROKE, TypeTier.of("", TypeTier.Kind.MARK))
     }
 
     @Test fun cjkIsNotDrawableAsStrokes() {
@@ -75,7 +88,7 @@ class TypeTierTest {
     @Test fun panelIsNeverAutomatic() {
         val samples = listOf("中継局", "ABC", "🍁", "", "a".repeat(40), "ESTACADA の応答なし")
         assertTrue(samples.none { TypeTier.of(it) == Tier.PANEL })
-        assertTrue(samples.none { TypeTier.of(it, boundToObject = true) == Tier.PANEL })
+        assertTrue(samples.none { TypeTier.of(it, TypeTier.Kind.MARK) == Tier.PANEL })
     }
 }
 
@@ -121,7 +134,7 @@ class TypeWidthTest {
     @Test fun layoutBudgetsWhatIsActuallyDrawn() {
         val name = "RBP SENSE CAP REPEATER "
         val drawn = TypeTier.clip(name, MeshNodes.MAX_LABEL_CELLS)
-        val cellRad = MeshNodes.CAP_FRACTION * TypeTier.cellEm(drawn)
+        val cellRad = MeshNodes.CAP_FRACTION * TypeTier.cellEm(drawn, TypeTier.Kind.NAME)
         val estimatedCells = MeshNodes.labelHalfWidthRad(name) * 2f / cellRad
         assertEquals(TypeTier.displayCells(drawn).toFloat(), estimatedCells, 0.01f)
     }
@@ -136,10 +149,11 @@ class TypeWidthTest {
         val run = "中継局中継局中"                      // CJK, 14 cells -> RUN
         assertEquals(14, TypeTier.displayCells(stroke))
         assertEquals(14, TypeTier.displayCells(run))
-        assertEquals(TypeTier.STROKE_CELL_EM, TypeTier.cellEm(stroke), 1e-4f)
-        assertEquals(TypeTier.RUN_CELL_EM, TypeTier.cellEm(run), 1e-4f)
-        assertTrue("a stroke cell is wider than a monospace run cell",
-            MeshNodes.labelHalfWidthRad(stroke) > MeshNodes.labelHalfWidthRad(run))
+        assertEquals(TypeTier.STROKE_CELL_EM, TypeTier.cellEm(stroke, TypeTier.Kind.MARK), 1e-4f)
+        assertEquals(TypeTier.RUN_CELL_EM, TypeTier.cellEm(run, TypeTier.Kind.MARK), 1e-4f)
+        // As NAMES both are runs, so both budget the same — which is the point:
+        // the ring's labels are now one kind of thing.
+        assertEquals(MeshNodes.labelHalfWidthRad(stroke), MeshNodes.labelHalfWidthRad(run), 1e-5f)
     }
 
     /** The stroke constant is the font's own geometry, not a guess: 5.6/6. */

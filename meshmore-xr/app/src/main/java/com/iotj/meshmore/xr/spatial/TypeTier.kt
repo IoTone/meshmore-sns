@@ -87,28 +87,58 @@ object TypeTier {
     const val RUN_CELL_EM = 0.679f
 
     /** Cell width as a fraction of cap height for whatever tier [text] takes. */
-    fun cellEm(text: String, boundToObject: Boolean = true): Float =
-        if (of(text, boundToObject) == Tier.STROKE) STROKE_CELL_EM else RUN_CELL_EM
+    fun cellEm(text: String, kind: Kind = Kind.NAME): Float =
+        if (of(text, kind) == Tier.STROKE) STROKE_CELL_EM else RUN_CELL_EM
+
+    /**
+     * What a string IS, which decides how it is drawn.
+     *
+     * The distinction that matters turned out not to be "bound to an object"
+     * but WORDS VERSUS MARKS. On the live ring a proportional mixed-case name
+     * sat beside an all-caps vector one and the two read as different
+     * applications — but nobody minds that `042` on the compass and `FREQ` on
+     * an encoder are vector strokes, because those are not words, they are
+     * markings on an instrument.
+     */
+    enum class Kind {
+        /**
+         * A name, a message, a place — anything a person wrote or would read as
+         * language. Always tier R: it may contain any script, and more
+         * importantly all such text should look like each other.
+         */
+        NAME,
+
+        /**
+         * An instrument marking. A compass numeral, a rack legend, a unit, a
+         * dock caption. Tier S where it can be, because extruded strokes are
+         * the only text in this app with real volume — it is what makes the
+         * horizon read as Wipeout rather than as a HUD overlay — and because a
+         * hundred of these as panels would be a hundred Android Views.
+         */
+        MARK,
+    }
 
     /**
      * Route [text].
      *
-     * [boundToObject] is the caller saying "this is welded to a thing in the
-     * room" — a callsign under a mote, a tick on the compass ribbon, a figure on
-     * a rack encoder. Text that is NOT bound to an object is carrying language
-     * for its own sake and belongs in tier R regardless of what characters it
-     * happens to contain.
+     * A NAME always takes the real font. A MARK takes strokes when the stroke
+     * font can draw it and it is short enough to be a marking rather than a
+     * sentence; anything else falls through to tier R, which can draw
+     * everything.
      */
-    fun of(text: String, boundToObject: Boolean = false): Tier {
-        // Rule 2 (§2). Anything outside the stroke set takes the real-font path.
-        // This is what makes CJK, accents and emoji route themselves: no caller
-        // has to know, and no caller can forget.
+    fun of(text: String, kind: Kind = Kind.NAME): Tier {
+        if (kind == Kind.NAME) return Tier.RUN
+        // Anything outside the stroke set takes the real-font path. This is what
+        // makes CJK, accents and emoji route themselves: no caller has to know,
+        // and no caller can forget.
         if (!drawableAsStrokes(text)) return Tier.RUN
-        // Rule 3. Bound and short -> stroke, which is the only text with volume.
-        if (boundToObject && cells(text) <= STROKE_MAX_CELLS) return Tier.STROKE
-        // Rule 4.
+        if (cells(text) <= STROKE_MAX_CELLS) return Tier.STROKE
         return Tier.RUN
     }
+
+    /** Compatibility shim for callers that still think in "bound to an object". */
+    fun of(text: String, boundToObject: Boolean): Tier =
+        of(text, if (boundToObject) Kind.MARK else Kind.NAME)
 
     /**
      * True when every code point is in the stroke set AFTER the folding Callsign

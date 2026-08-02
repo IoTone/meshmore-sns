@@ -202,8 +202,16 @@ class Rack(
                 proxy.addComponent(InteractableComponent.create(session) { ev -> onInput(c, ev) })
             }.onFailure { Log.w(TAG, "[rack] no input on ${c.name}: $it") }
         }
+        // ASSERT THE STATE, do not assume it. setVisible() short-circuits when
+        // the flag already matches, and during a build the flag is false while
+        // entities are being created — so calling setVisible(false) afterwards
+        // did nothing and anything born enabled stayed enabled. This is the
+        // third time that flag and those entities have disagreed; the build now
+        // ends by making them agree unconditionally.
+        entities.forEach { runCatching { it.setEnabled(visible) } }
         refresh()
-        Log.i(TAG, "[rack] built ${entities.size} entities, ${controls.size} controls")
+        Log.i(TAG, "[rack] built ${entities.size} entities, ${controls.size} controls, " +
+            "visible=$visible")
     }
 
     private fun rowY(i: Int) = H / 2f - (U * ROW_U) / 2f - i * U * ROW_U
@@ -470,6 +478,11 @@ class Rack(
         // Tier R: the value may be a channel name in any script the mesh uses.
         TextRun.create(session, context, value, CAP * 0.9f, argb(theme.text, 0.9f), "slate")?.let {
             it.entity.parent = session.scene.activitySpace
+            // BORN HIDDEN, like everything else on this panel. These were the
+            // only entities not created through mesh(), so they were the only
+            // ones still enabled — which is why two channel slates hung in the
+            // room at horizon height with no rack under them.
+            it.entity.setEnabled(false)
             entities += it.entity
             facing += it.entity to Vector3(x, y, 0.006f)
         }
@@ -561,6 +574,7 @@ class Rack(
             runCatching { c.act() }.onFailure { Log.w(TAG, "[rack] ${c.name} failed: $it") }
         }
         head ?: return
+        if (!visible) return
         facing.forEach { (e, at) ->
             val dx = head.x - at.x; val dz = head.z - at.z
             if (dx * dx + dz * dz < 1e-6f) return@forEach

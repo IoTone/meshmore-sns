@@ -323,7 +323,12 @@ object MeshNodes {
         // the same width. Only 11% apart -- but the whole point of this function
         // is that the layout and the renderer agree, and 11% of an 18-cell label
         // is two characters of overlap.
-        return (TypeTier.displayCells(shown) * CAP_FRACTION * TypeTier.cellEm(shown)) / 2f
+        // A callsign is a NAME, so it is tier R and budgeted at the run cell
+        // width. It used to be budgeted as a stroke label whenever it happened
+        // to be short Latin, which meant the layout reserved a different width
+        // than the renderer drew for exactly the labels that were most common.
+        return (TypeTier.displayCells(shown) * CAP_FRACTION *
+            TypeTier.cellEm(shown, TypeTier.Kind.NAME)) / 2f
     }
 
     /**

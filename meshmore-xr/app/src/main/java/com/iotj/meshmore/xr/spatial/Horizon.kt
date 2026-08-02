@@ -226,7 +226,11 @@ class Horizon(
             // Before this, `中継局` became three tofu boxes. Not because we
             // could not render it, but because nothing ever asked whether
             // something other than the stroke font should.
-            val tier = TypeTier.of(n.name, boundToObject = true)
+            // A node name is a NAME. It goes to the real font whatever script
+            // it is in, so every name on the ring looks like every other name —
+            // which was the actual complaint: proportional mixed-case sitting
+            // next to all-caps vector strokes read as two applications.
+            val tier = TypeTier.of(n.name, TypeTier.Kind.NAME)
             val txt: Entity = if (tier == TypeTier.Tier.RUN && context != null && !isCluster) {
                 // Clipped to the SAME budget MeshNodes laid out against. The
                 // layout reserves space for a label of MAX_LABEL_CELLS; drawing
