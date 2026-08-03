@@ -134,11 +134,31 @@ class MeshLink(private val context: Context) {
     private fun hexFull(b: ByteArray?): String? =
         b?.takeIf { it.size > 6 }?.joinToString("") { "%02x".format(it) }
 
+    /**
+     * A ROUTE APPEARING IS THE EVENT WE ARE WAITING FOR.
+     *
+     * The topology census measured 350 contacts and zero resolvable routes,
+     * because this radio has only ever listened: MeshCore records a path when
+     * a message ARRIVES, so a passive device learns none. The cheapest way to
+     * change that is for somebody to message us — no transmission on our side
+     * at all — and this says so out loud the moment it happens, rather than
+     * leaving it to be noticed at the next contact sync.
+     */
+    private fun notePathChange(old: MeshNodes.Peer?, now: MeshNodes.Peer) {
+        val had = old?.path != null && old.path.isNotEmpty()
+        val has = now.path != null && now.path.isNotEmpty()
+        if (!has || had) return
+        Log.i(TAG, "[topology] ROUTE LEARNED for ${now.name.ifBlank { now.key }} — " +
+            "${now.path!!.size} relay(s): " + now.path.joinToString(",") { "%02x".format(it) })
+        diag("ROUTE    ${now.name.ifBlank { now.key.takeLast(4) }} via ${now.path.size} relay(s)")
+    }
+
     private fun upsert(p: MeshNodes.Peer) {
         // Merge rather than replace: an advert carries a position and a name, a
         // contact also carries the hop count. Whichever arrives second must not
         // erase what the first one knew.
         peers.compute(p.key) { _, old ->
+            notePathChange(old, p)
             if (old == null) p else p.copy(
                 name = p.name.ifBlank { old.name },
                 lat = p.lat ?: old.lat,
