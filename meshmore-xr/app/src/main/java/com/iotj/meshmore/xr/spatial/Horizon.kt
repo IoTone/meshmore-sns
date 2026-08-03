@@ -103,6 +103,12 @@ class Horizon(
         val dist: Float,
         val bearing: Float,
         val baseAlpha: Float,
+        /**
+         * True when the callsign came from the pool. Then [label] points at the
+         * MOTE (the pooled entity is shared and must not be touched per-peer),
+         * so anything that hides "the label" must not go through it.
+         */
+        val pooled: Boolean = false,
         var open: Boolean = false,
     ) {
         /** Which pointers are currently on this peer. BOTH hands emit rays. */
@@ -344,7 +350,7 @@ class Horizon(
             val peer = Peer(
                 node = n, mote = mote, label = txt, detail = detail,
                 at = Vector3(px, py, pz), labelAt = anchor, dist = dist, bearing = bearing,
-                baseAlpha = lum.coerceIn(0.25f, 1f),
+                baseAlpha = lum.coerceIn(0.25f, 1f), pooled = pooled,
             )
             peers += peer
             runCatching {
@@ -503,6 +509,9 @@ class Horizon(
             // wins, and the hover events fire at transitions while the veil
             // fires continuously — so hovering inside a HUD band would light
             // the callsign back up and leave it lit.
+            // SCALE ONLY. Mote alpha moved to veil() for the same reason the
+            // label's is there: one writer per property, and veil runs
+            // continuously while these fire at transitions.
             InputEvent.Action.HOVER_ENTER -> {
                 p.mote.setScale(HOVER_SCALE)
                 p.mote.setAlpha(1f)
@@ -658,11 +667,24 @@ class Horizon(
             val hidden = a >= Hud.BAND_INNER_DEG && a <= Hud.BAND_OUTER_DEG
             val base = if (p.hovered) 1f else p.baseAlpha
             p.label.setAlpha(if (hidden) base * VEIL_ALPHA else base)
+            // THE RECESS IS AN ENABLE, NOT AN ALPHA — see the note on [recess].
+            // A pooled label is the pool's entity and `label` points at the mote
+            // instead, so going through it here would blank the node itself.
+            if (!p.pooled) runCatching { p.label.setEnabled(!recessed) }
             if (hidden) veiled++
         }
         // Logged on CHANGE only. A per-frame line would be 30 Hz of noise, but
         // without any line at all "the bands are clear" is indistinguishable
         // from "the veil never ran", and those look identical in a screenshot.
+        // Pooled labels are the pool's entities, not the peer's, so they need
+        // telling separately — a peer whose label is pooled points `label` at
+        // its own mote precisely because the pooled one is shared.
+        // Pooled callsigns are the pool's entities, not the peer's — a peer
+        // whose label is pooled points `label` at its own mote — so they are
+        // told separately. Alpha rather than enable only because the pool
+        // manages its own visibility; the effect is the same rule.
+        runCatching { labels?.setAlpha(if (recessed) 0f else 1f) }
+
         if (veiled != lastVeiled) {
             lastVeiled = veiled
             Log.i(TAG, "[horizon] veiled $veiled callsign(s) under the hud (pitch %.0f°)"
@@ -671,6 +693,36 @@ class Horizon(
     }
 
     private var lastVeiled = -1
+
+    /**
+     * Whether the ring is receded behind a FOCUS surface.
+     *
+     * Paradigm rule 3 (§2.1): ONE FOCUS AT A TIME. When the cluster menu opens
+     * it is the thing you are doing, and the ring's own callsigns were printing
+     * straight through its labels — two layers of text at the same depth with
+     * nothing saying which one you are meant to be reading.
+     *
+     * THE RING KEEPS ITS MOTES AND LOSES ITS NAMES. That is the rule, and it is
+     * better than a uniform dim: the mesh is still THERE, in the same places,
+     * so the menu has not closed the world window — but the text layer belongs
+     * to whatever is in focus, and only one thing can hold it.
+     *
+     * It is an ENABLE rather than an alpha, and that was forced. Probed on the
+     * device at recess 0.0: pooled callsigns (PanelEntity) vanished, while the
+     * stroke callsigns and motes (MeshEntity) did not change at all — and
+     * setEnabled(false) on the very same references hid them immediately. So
+     * MeshEntity.setAlpha is not reaching this material path, whatever it does
+     * elsewhere. Worth knowing beyond here: veil() dims callsigns under the HUD
+     * bands by exactly that call, which means the veil has most likely never
+     * done anything visible either. Its counter has always been honest about
+     * how many labels it CHOSE; nothing was checking the result.
+     */
+    private var recessed = false
+
+    /** Push the ring back, or bring it forward. Idempotent; call it per frame. */
+    fun setRecessed(on: Boolean) {
+        recessed = on
+    }
 
     /** Drive the pulses. Called from a frame loop; cheap and allocation-free. */
     fun tick(dt: Float) {

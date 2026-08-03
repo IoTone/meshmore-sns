@@ -102,6 +102,14 @@ class LabelPool(
     /** How many labels this build could not have. Worth logging, never guessing. */
     fun exhausted(wanted: Int): Int = (wanted - slots.size).coerceAtLeast(0)
 
+    /**
+     * Dim every live label. Used to recede the ring behind a FOCUS surface —
+     * the pool owns these entities, so Horizon cannot reach them per-peer.
+     */
+    fun setAlpha(a: Float) {
+        slots.forEach { s -> if (s.live) runCatching { s.run.entity.setAlpha(a) } }
+    }
+
     /** Turn every live label toward the viewer. */
     fun faceViewer(head: Vector3) {
         slots.forEach { s ->

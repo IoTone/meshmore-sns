@@ -841,6 +841,9 @@ private fun HorizonScene(link: MeshLink) {
                 stage.headNow()?.let {
                     horizon.faceViewer(it.translation)
                     // Callsigns give way to the microhud bands where they cross.
+                    // ONE FOCUS AT A TIME (§2.1 rule 3). Set before veil, which
+                    // is what actually writes the alphas.
+                    horizon.setRecessed(menuRef.value?.open == true)
                     horizon.veil(it)
                     rackRef.value?.tick(it.translation)
                     dockRef.value?.tick(it.translation)
