@@ -324,15 +324,28 @@ class Horizon(
             }
             val detMesh = Prims.build(session, Glyphs.text(det, capH * 0.78f))
             val detMat = Prims.material(session, theme.alt, 0.9f)
+            // BILLBOARDED IN ITS OWN RIGHT, not by inheritance.
+            //
+            // This used to hang off `txt` to pick up the label's rotation, and
+            // that only worked for the labels drawn as STROKES. When a callsign
+            // comes from the pool, `txt` points at the MOTE — a sphere, which
+            // never billboards because it does not need to — so the detail line
+            // inherited nothing and stayed pinned facing wherever it was built.
+            // Reported 2026-08-03: readable from one side of the ring and
+            // mirrored from the other.
+            //
+            // Its own anchor in activity space and its own entry in `facing`
+            // fixes it for both label paths, and stops the fix depending on
+            // which tier a name happened to route to.
+            val detAt = Vector3(anchor.x, anchor.y - capH * 1.5f, anchor.z)
             val detail = MeshEntity.create(session, detMesh, listOf(detMat)).also {
-                it.parent = txt          // inherits the billboard rotation
-                it.setPose(Pose(Vector3(0f, -capH * 1.5f, 0f)), Space.PARENT)
-                // setEnabled, NOT setAlpha(0). Alpha propagates down the
-                // subtree, so the hover handler writing the LABEL's alpha also
-                // rewrites this child's -- and the detail reveals itself the
-                // moment the pointer passes anywhere near, with no selection.
+                it.parent = root
+                it.setPose(Pose(detAt), Space.ACTIVITY)
+                // setEnabled, NOT setAlpha(0): a hidden line must not come back
+                // the moment a pointer passes near the node, with no selection.
                 it.setEnabled(false)
                 entities += it
+                facing += Facing(it, detAt)
             }
 
             // HIT PROXY — an invisible sphere ~3 deg across around the mote.
