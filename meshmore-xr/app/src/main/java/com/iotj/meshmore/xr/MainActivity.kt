@@ -136,6 +136,15 @@ class MainActivity : ComponentActivity() {
         var showMenu: Boolean = false
         /** --ez focus true : open S3 NODE FOCUS on the first node that arrives. */
         var showFocus: Boolean = false
+        /**
+         * --ez probe true : message the operator's OWN nodes, once, to make
+         * the mesh learn a route to them.
+         *
+         * Off by default and deliberately a launch flag rather than anything
+         * automatic: this transmits. The targets are allow-listed in MeshLink
+         * and the flag cannot widen them.
+         */
+        var probePaths: Boolean = false
         /** --ez handdebug true : log what the ASL classifier measures, ~1 Hz. */
         var handDebug: Boolean = false
         /** --ez typeprobe true : answer whether tier R can exist on this SDK. */
@@ -210,6 +219,7 @@ class MainActivity : ComponentActivity() {
         showHelp = intent?.getBooleanExtra("help", false) ?: false
         showMenu = intent?.getBooleanExtra("menu", false) ?: false
         showFocus = intent?.getBooleanExtra("focus", false) ?: false
+        probePaths = intent?.getBooleanExtra("probe", false) ?: false
         northDeg = intent?.getStringExtra("north")?.toFloatOrNull()
         Log.i(TAG, "[boot] north at launch = " +
             (northDeg?.let { "%.0f° true".format(it) } ?: "<unknown, ring is relative>"))
@@ -591,6 +601,23 @@ private fun HorizonScene(link: MeshLink) {
     val hereEpoch = remember { mutableStateOf(0) }
 
     // The mesh, rebuilt whenever membership changes.
+    // THE PATH PROBE, deliberately NOT inside the scene effect.
+    //
+    // Sending is a radio action and has nothing to do with the head. The scene
+    // effect blocks on Stage.recentre() until a head pose settles, so putting
+    // it there meant the probe never ran while the glasses sat on a desk —
+    // which is precisely when it is convenient to run one.
+    LaunchedEffect(link, MainActivity.probePaths) {
+        if (!MainActivity.probePaths) return@LaunchedEffect
+        // Wait for the first contact sync so the allow-listed keys are known.
+        while (!link.load.value.done) kotlinx.coroutines.delay(500)
+        link.probePaths()
+        // Then long enough for a reply to come back and teach the radio a
+        // route, and re-sync so the new path is visible to the census.
+        kotlinx.coroutines.delay(60_000)
+        link.refreshContacts()
+    }
+
     LaunchedEffect(signature, here, horizonRef.value, hereEpoch.value) {
         // DEBOUNCE. A contact sync delivers the whole list one frame at a time
         // -- 58 contacts arrived as 58 separate membership changes, and without

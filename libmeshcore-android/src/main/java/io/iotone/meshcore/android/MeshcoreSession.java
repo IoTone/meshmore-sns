@@ -181,6 +181,28 @@ public final class MeshcoreSession {
     }
 
     /**
+     * Requests telemetry from a PEER ({@code CMD_SEND_TELEMETRY_REQ} with a
+     * 32-byte public key). The reply arrives later as a
+     * {@code PUSH_CODE_TELEMETRY_RESPONSE} (0x8B) on
+     * {@link SessionListener#onOtherFrame}, or not at all — the peer may be
+     * unreachable, may not permit telemetry to us (see the {@code FLAG_*}
+     * permission bits on {@link io.iotone.meshcore.model.Contact}), or may
+     * simply be asleep. Callers must treat silence as normal.
+     *
+     * <p>Unlike {@link #requestSelfTelemetry()} this puts a packet on the air
+     * and costs the mesh time, so it is a deliberate act per peer and not
+     * something to sweep a contact list with.</p>
+     *
+     * <p>No-op when not {@link SessionState#READY}.</p>
+     *
+     * @param pubKey the peer's full 32-byte public key
+     */
+    public void requestPeerTelemetry(@NonNull byte[] pubKey) {
+        if (state.get() != SessionState.READY) return;
+        send(MeshcoreFrameCodec.sendTelemetryReq(pubKey));
+    }
+
+    /**
      * Requests the device's stored contact list ({@code CMD_GET_CONTACTS},
      * 0x04). The device replies with {@code ContactsStartFrame}, one
      * {@link io.iotone.meshcore.frames.ContactFrame} per contact dispatched to

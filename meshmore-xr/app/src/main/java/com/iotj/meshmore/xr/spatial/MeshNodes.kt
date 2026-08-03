@@ -47,7 +47,48 @@ object MeshNodes {
         val path: List<Int>? = null,
         /** Reachable by flooding: no pinned route. Mutually exclusive with [path]. */
         val flood: Boolean = false,
+        /**
+         * What the peer last told us about itself, when it has been asked and
+         * chose to answer. Null means never received — which is the normal
+         * state, not a fault: telemetry is a request over the air that a peer
+         * may refuse, may be unable to answer, or may simply sleep through.
+         */
+        val telemetry: Telemetry? = null,
+        /**
+         * The FULL 32-byte identity, hex, when we have seen it.
+         *
+         * [key] is only the first six bytes, because that is all an advert
+         * carries and both sources have to agree on one identity to merge on.
+         * A contact carries the whole key, and two things need it: a peer
+         * telemetry request takes 32 bytes, and people quote their own nodes by
+         * the TAIL of the full key — which a six-byte prefix can never match.
+         */
+        val fullKey: String? = null,
     )
+
+    /**
+     * A decoded CayenneLPP reading from a peer.
+     *
+     * Only the fields MeshCore radios actually publish are named. Everything
+     * else that arrives is kept in [other] rather than dropped, because a
+     * sensor we have not seen yet is information and a decoder that silently
+     * discards what it does not recognise is how a mesh looks emptier than it
+     * is.
+     */
+    data class Telemetry(
+        val atEpochSec: Long,
+        val volts: Double? = null,
+        val tempC: Double? = null,
+        val humidityPct: Double? = null,
+        val other: Map<Int, List<Double>> = emptyMap(),
+    ) {
+        override fun toString(): String = buildList {
+            volts?.let { add("%.2fV".format(it)) }
+            tempC?.let { add("%.1fC".format(it)) }
+            humidityPct?.let { add("%.0f%%".format(it)) }
+            if (other.isNotEmpty()) add("+${other.size} more")
+        }.joinToString(" ").ifEmpty { "(empty)" }
+    }
 
     /** Where the radio thinks it is. Null when it has no fix. */
     data class Here(val lat: Double?, val lon: Double?) {

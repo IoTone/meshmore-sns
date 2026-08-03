@@ -77,6 +77,15 @@ class MeshLink(private val context: Context) {
      * "node" must remain two motes.
      */
     private val peers = java.util.concurrent.ConcurrentHashMap<String, MeshNodes.Peer>()
+
+    /**
+     * The ONLY nodes this app will transmit to, by public-key suffix.
+     *
+     * Authorised by the operator on 2026-08-03 as hardware they own. Anything
+     * else on the mesh belongs to somebody else and is never addressed —
+     * receiving is passive, sending is not.
+     */
+    private val ALLOWED_SUFFIXES = listOf("ab60", "d563")
     private val _mesh = MutableStateFlow<List<MeshNodes.Peer>>(emptyList())
     val mesh: StateFlow<List<MeshNodes.Peer>> = _mesh.asStateFlow()
 
@@ -117,8 +126,13 @@ class MeshLink(private val context: Context) {
         }
     }
 
+    /** The six-byte identity every source agrees on. Used as the map key. */
     private fun hex(b: ByteArray?): String =
         b?.take(6)?.joinToString("") { "%02x".format(it) } ?: ""
+
+    /** The whole thing, when a source actually carries it. */
+    private fun hexFull(b: ByteArray?): String? =
+        b?.takeIf { it.size > 6 }?.joinToString("") { "%02x".format(it) }
 
     private fun upsert(p: MeshNodes.Peer) {
         // Merge rather than replace: an advert carries a position and a name, a
@@ -130,6 +144,11 @@ class MeshLink(private val context: Context) {
                 lat = p.lat ?: old.lat,
                 lon = p.lon ?: old.lon,
                 hops = if (p.hops > 0) p.hops else old.hops,
+                // An advert never carries the full key, so a later advert must
+                // not erase what a contact told us.
+                fullKey = p.fullKey ?: old.fullKey,
+                telemetry = p.telemetry ?: old.telemetry,
+                path = p.path ?: old.path,
                 lastSeenEpochSec = maxOf(p.lastSeenEpochSec, old.lastSeenEpochSec),
             )
         }
@@ -457,6 +476,96 @@ class MeshLink(private val context: Context) {
      * through every repeater that hears it, which is how you become visible
      * across a whole mesh and also how you spend everyone else's airtime.
      */
+    /**
+     * PATH PROBE — send to a peer so the mesh tells us how it gets there.
+     *
+     * MeshCore learns a stored route when a contact ANSWERS: the reply carries
+     * the path back and the radio keeps it. A device that has only ever
+     * received adverts therefore has no routes at all, which is exactly what
+     * the topology census measured on 2026-08-03 — 350 contacts, 350 flood,
+     * zero resolvable. Sending is the only thing that moves that number.
+     *
+     * STRICTLY ALLOW-LISTED, and this is the whole reason the method exists in
+     * this shape. Sending puts a packet on a shared radio band addressed to
+     * somebody else's hardware, so it is not something to sweep a contact list
+     * with. [ALLOWED_SUFFIXES] holds the ONLY keys this app will message —
+     * nodes the operator owns and explicitly authorised on 2026-08-03. A key
+     * that is not in that list is refused and logged, not sent.
+     */
+    fun probePaths(text: String = "meshmore-xr path probe") {
+        val s = session
+        if (s == null || _status.value.state != SessionState.READY) {
+            Log.w(TAG, "[probe] skipped — link not ready")
+            return
+        }
+        val targets = peers.values.filter { p ->
+            // Against the FULL key. People quote a node by the tail of its
+            // whole identity, which a six-byte prefix cannot match — the first
+            // run of this probe refused both authorised nodes for exactly that
+            // reason and looked like they were absent from the mesh.
+            val id = p.fullKey ?: p.key
+            ALLOWED_SUFFIXES.any { id.endsWith(it, ignoreCase = true) }
+        }
+        if (targets.isEmpty()) {
+            // WHERE ELSE THE STRING MIGHT LIVE. A MeshCore node is quoted by
+            // people in several ways — the head of the key, the tail, or just
+            // its name — so say which of those matched anything before
+            // concluding the node is absent.
+            ALLOWED_SUFFIXES.forEach { sfx ->
+                val anywhere = peers.values.filter {
+                    (it.fullKey ?: it.key).contains(sfx, ignoreCase = true)
+                }
+                val named = peers.values.filter { it.name.contains(sfx, ignoreCase = true) }
+                Log.w(TAG, "[probe] '$sfx': keyEndsWith=0 keyContains=${anywhere.size} " +
+                    "nameContains=${named.size}" +
+                    (anywhere.firstOrNull()?.let { " e.g. ${it.name} ${it.key}" } ?: ""))
+            }
+            Log.w(TAG, "[probe] full keys are " +
+                (peers.values.firstOrNull { it.fullKey != null }?.fullKey?.length ?: 0) +
+                " hex; with full=" + peers.values.count { it.fullKey != null } +
+                "/" + peers.size)
+            peers.values.filter { it.fullKey != null }.take(3).forEach {
+                Log.w(TAG, "[probe] e.g. ${it.name.take(16)} = ${it.fullKey}")
+            }
+            Log.w(TAG, "[probe] none of the allowed nodes are in contacts: $ALLOWED_SUFFIXES")
+            return
+        }
+        targets.forEach { p ->
+            val full = unhex(p.fullKey ?: p.key)
+            if (full == null || full.size < 6) {
+                Log.w(TAG, "[probe] ${p.name}: unusable key")
+                return@forEach
+            }
+            // The command takes the first six bytes, not the whole identity.
+            val prefix = full.copyOfRange(0, 6)
+            Log.i(TAG, "[probe] -> ${p.name} (${p.key.takeLast(4)})")
+            diag(">>PROBE  ${p.name.ifBlank { p.key.takeLast(4) }}")
+            s.sendDirectMessage(prefix, System.currentTimeMillis() / 1000, text)
+            // And ask what it is while we are talking to it. Needs the WHOLE
+            // key, so a peer we only ever heard advert cannot be asked.
+            if (full.size >= 32) {
+                runCatching { s.requestPeerTelemetry(full) }
+                    .onFailure { Log.w(TAG, "[probe] telemetry req failed: $it") }
+            } else {
+                Log.w(TAG, "[probe] ${p.name}: no full key, telemetry not requested")
+            }
+        }
+        _status.value = _status.value.copy(lastEvent = "probe")
+    }
+
+    /** Re-sync contacts, which is how a newly learned path becomes visible. */
+    fun refreshContacts() {
+        val s = session ?: return
+        if (_status.value.state != SessionState.READY) return
+        Log.i(TAG, "[link] re-requesting contacts to pick up learned paths")
+        s.requestContacts()
+    }
+
+    private fun unhex(h: String): ByteArray? = runCatching {
+        ByteArray(h.length / 2) { i -> ((h[i * 2].digitToInt(16) shl 4) or
+            h[i * 2 + 1].digitToInt(16)).toByte() }
+    }.getOrNull()
+
     fun announce(flood: Boolean) {
         val s = session
         if (s == null || _status.value.state != SessionState.READY) {
@@ -627,6 +736,7 @@ class MeshLink(private val context: Context) {
                 upsert(
                     MeshNodes.Peer(
                         key = hex(c.publicKey()),
+                        fullKey = hexFull(c.publicKey()),
                         name = c.name() ?: "",
                         type = c.type(),
                         // outPathLen is the number of relays in the stored path,
@@ -657,6 +767,46 @@ class MeshLink(private val context: Context) {
 
             override fun onOtherFrame(frame: io.iotone.meshcore.frames.MeshcoreInbound) {
                 when (frame) {
+                    is io.iotone.meshcore.frames.TelemetryResponseFrame -> {
+                        // WHICH PEER, by key PREFIX — the reply carries the
+                        // first bytes of the public key, not the whole thing.
+                        val pre = hex(frame.pubKeyPrefix())
+                        val entries = runCatching {
+                            io.iotone.meshcore.codec.CayenneLpp.decode(frame.lppPayload())
+                        }.getOrElse { emptyList() }
+                        var volts: Double? = null
+                        var tempC: Double? = null
+                        var hum: Double? = null
+                        val other = HashMap<Int, List<Double>>()
+                        entries.forEach { e ->
+                            when (e.type()) {
+                                io.iotone.meshcore.codec.CayenneLpp.LppType.VOLTAGE ->
+                                    volts = e.values().firstOrNull()
+                                io.iotone.meshcore.codec.CayenneLpp.LppType.TEMPERATURE ->
+                                    tempC = e.values().firstOrNull()
+                                io.iotone.meshcore.codec.CayenneLpp.LppType.HUMIDITY ->
+                                    hum = e.values().firstOrNull()
+                                // KEPT, not dropped. A sensor we have not seen
+                                // before is information; a decoder that
+                                // discards the unfamiliar makes a mesh look
+                                // emptier than it is.
+                                else -> other[e.type()] = e.values()
+                            }
+                        }
+                        val t = MeshNodes.Telemetry(
+                            atEpochSec = System.currentTimeMillis() / 1000,
+                            volts = volts, tempC = tempC, humidityPct = hum,
+                            other = other,
+                        )
+                        val hit = _mesh.value.firstOrNull { it.key.startsWith(pre) }
+                        Log.i(TAG, "[telemetry] ${hit?.name ?: pre} -> $t" +
+                            (if (other.isEmpty()) "" else "  types=${other.keys}"))
+                        diag("TELEM    ${hit?.name?.ifBlank { null } ?: pre}  $t")
+                        if (hit != null) {
+                            peers[hit.key] = hit.copy(telemetry = t)
+                            publish()
+                        }
+                    }
                     is io.iotone.meshcore.frames.ContactsStartFrame -> {
                         Log.i(TAG, "[link] contacts sync: ${frame.count()} expected")
                         _load.value = Load(total = frame.count().toInt(), received = 0)
