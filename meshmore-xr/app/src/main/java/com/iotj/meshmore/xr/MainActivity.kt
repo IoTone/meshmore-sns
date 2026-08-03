@@ -568,6 +568,7 @@ private fun HorizonScene(link: MeshLink) {
     val menuRef = remember { mutableStateOf<RadialMenu?>(null) }
     val focusRef = remember { mutableStateOf<com.iotj.meshmore.xr.spatial.Focus?>(null) }
     val gazeRef = remember { mutableStateOf<com.iotj.meshmore.xr.spatial.Gaze?>(null) }
+    val rosterRef = remember { mutableStateOf<com.iotj.meshmore.xr.spatial.Roster?>(null) }
     val noticeRef = remember { mutableStateOf<Notice?>(null) }
     // The wedge currently magnified, or null for the true 1:1 ring. Bumping
     // hereEpoch is what makes the mesh effect re-run and re-place everything.
@@ -756,6 +757,11 @@ private fun HorizonScene(link: MeshLink) {
         help.build(origin)
         helpRef.value = help
 
+        // Roster picks, queued: Focus.showFor builds the spur and therefore
+        // suspends, and a dock action is not a coroutine. Same shape as the
+        // node-pinch queue below.
+        val rosterWant = java.util.concurrent.ConcurrentLinkedQueue<
+            com.iotj.meshmore.xr.spatial.Horizon.Node>()
         val dock = Dock(session, palette, ctx)
         // EVERY SURFACE HAS A PINCHABLE WAY IN, gesture or no gesture.
         //
@@ -820,6 +826,42 @@ private fun HorizonScene(link: MeshLink) {
                 dockRef.value?.setLit("HANDS", next)
                 if (next) cue.opened() else cue.closed()
             },
+            // EVERY NODE, WITHOUT TURNING AROUND (§8.2).
+            "LIST" to {
+                val r = rosterRef.value
+                val h = stage.headNow()
+                if (r == null || h == null) {
+                    cue.closed()
+                } else if (r.open) {
+                    r.hide(); dockRef.value?.setLit("LIST", false); cue.closed()
+                } else {
+                    val o2 = hereSource.resolve(link.here.value, MainActivity.homeOverride)
+                    val now = System.currentTimeMillis() / 1000
+                    // BY RANGE. The one ordering that is a fact about the mesh
+                    // rather than a claim about importance.
+                    val entries = link.mesh.value.mapNotNull { p ->
+                        if (!o2.known || p.lat == null || p.lon == null) null
+                        else p to MeshNodes.haversineKm(o2.lat!!, o2.lon!!, p.lat, p.lon)
+                    }.sortedBy { it.second }.map { (p, km) ->
+                        val n = MeshNodes.nodeFor(o2, p, now)
+                        com.iotj.meshmore.xr.spatial.Roster.Entry(
+                            "%-14s %5s %s".format(
+                                com.iotj.meshmore.xr.spatial.TypeTier.clip(n.name, 14),
+                                MeshNodes.km(n.dist.toDouble()),
+                                MeshNodes.compass(n.bearingRad),
+                            ),
+                        ) {
+                            rosterWant.add(n)
+                        }
+                    }
+                    val q = h.rotation
+                    val fx = 2f * (q.x * q.z + q.w * q.y)
+                    val fz = 1f - 2f * (q.x * q.x + q.y * q.y)
+                    r.showAt(h.translation, kotlin.math.atan2(-fx, fz), entries)
+                    dockRef.value?.setLit("LIST", true)
+                    cue.opened()
+                }
+            },
             // FACE NORTH, THEN PRESS THIS.
             //
             // The glasses publish no magnetometer — two sensors reach apps and
@@ -862,6 +904,11 @@ private fun HorizonScene(link: MeshLink) {
         // THE DWELL FALLBACK (§8.2). Armed only when no hand is tracked, so it
         // is an alternative to the pinch rather than a second way to fire the
         // same control by accident.
+        val roster = com.iotj.meshmore.xr.spatial.Roster(session, palette, ctx)
+        roster.build()
+        roster.onFocus = { cue.recognised() }
+        rosterRef.value = roster
+
         val gaze = com.iotj.meshmore.xr.spatial.Gaze(session, palette)
         gaze.build()
         gaze.onFire = { cue.recognised() }
@@ -1025,7 +1072,18 @@ private fun HorizonScene(link: MeshLink) {
                 val anyHand = listOf(handR, handL).any { h ->
                     h?.state?.value?.handJoints?.isNotEmpty() == true
                 }
+                // Targets are refreshed each frame because the roster's rows
+                // come and go. Fourteen cones is nothing next to the ring.
+                gazeRef.value?.setTargets(
+                    (dockRef.value?.gazeTargets() ?: emptyList()) +
+                        (rosterRef.value?.gazeTargets() ?: emptyList()),
+                )
                 gazeRef.value?.tick(stage.headNow(), anyHand, nowMs)
+                rosterRef.value?.tick(stage.headNow()?.translation)
+                while (true) {
+                    val pick = rosterRef.value?.poll() ?: break
+                    rosterRef.value?.activate(pick)
+                }
                 val it0 = stage.headNow()
                 // Hands that are operating a control are not signing. Feeding
                 // the gate NONE rather than skipping it also resets any partial
@@ -1157,6 +1215,26 @@ private fun HorizonScene(link: MeshLink) {
                 // the same node again closes it, so a pinch is always its own
                 // undo and there is no way to be left with a card you cannot
                 // dismiss.
+                // A ROSTER PICK OPENS THE SAME FOCUS a pinch on the mote would
+                // have, at the node's TRUE bearing — which is the point of the
+                // list: the node may be behind you, or clustered away, or both.
+                while (true) {
+                    val n = rosterWant.poll() ?: break
+                    val f = focusRef.value ?: break
+                    val head = stage.headNow()?.translation ?: break
+                    f.showFor(
+                        n,
+                        origin.place(
+                            n.bearingRad,
+                            com.iotj.meshmore.xr.spatial.Horizon.R * n.dist,
+                            com.iotj.meshmore.xr.spatial.Horizon.EYE_DROP,
+                        ),
+                        head,
+                    )
+                    rosterRef.value?.hide()
+                    dockRef.value?.setLit("LIST", false)
+                    cue.opened()
+                }
                 while (true) {
                     val (n, p) = focusWant.poll() ?: break
                     val f = focusRef.value ?: break

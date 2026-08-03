@@ -69,6 +69,10 @@ object Marks {
         "WIDE" to "M34 10 H10 V34 M66 10 H90 V34 M90 66 V90 H66 M34 90 H10 V66 " +
             "M40 50 H60 M50 40 V60",
 
+        // LIST — the roster. Rows, plainly: this is the one surface in the app
+        // that IS a list, so pretending otherwise in its mark would be coy.
+        "LIST" to "M22 30 H78 M22 50 H78 M22 70 H78 M10 30 H12 M10 50 H12 M10 70 H12",
+
         // NORTH — a compass needle, and deliberately NOT another rose.
         //
         // COMPASS (the band toggle) is already a four-point star, and two
