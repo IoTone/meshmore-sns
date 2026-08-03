@@ -1079,6 +1079,10 @@ private fun HorizonScene(link: MeshLink) {
                         (rosterRef.value?.gazeTargets() ?: emptyList()),
                 )
                 gazeRef.value?.tick(stage.headNow(), anyHand, nowMs)
+                // Show the dwelled pip's caption. Same focus state a pointer
+                // produces, so the two input paths look identical as well as
+                // firing identically.
+                dockRef.value?.gazed = gazeRef.value?.onTarget
                 rosterRef.value?.tick(stage.headNow()?.translation)
                 while (true) {
                     val pick = rosterRef.value?.poll() ?: break

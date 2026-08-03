@@ -81,6 +81,14 @@ class Gaze(
     /** Raised when a dwell completes, so the host can make the sound. */
     var onFire: ((String) -> Unit)? = null
 
+    /**
+     * Which target the gaze is resting on, or null. The host feeds this back to
+     * the surface so the thing about to fire shows its ordinary focus state —
+     * the dock pips carry icons at rest and their CAPTION is what disambiguates
+     * them, so dwelling without it fires a control whose name you never saw.
+     */
+    val onTarget: String? get() = onId
+
     suspend fun build() {
         clear()
         // Gapped, so its rotation reads. The dwell winds it round: a ring that

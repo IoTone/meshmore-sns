@@ -47,6 +47,14 @@ class Dock(
     private var headAt: Vector3? = null
 
     /**
+     * The pip the GAZE is resting on, if any. Folded into focus alongside the
+     * pointers so a dwelled pip swells and shows its caption exactly as a
+     * pointed-at one does — without it, dwell fires a control whose name the
+     * user never saw, which is worse on a row of icons than on a row of words.
+     */
+    var gazed: String? = null
+
+    /**
      * Face the caption at the viewer, in YAW AND PITCH.
      *
      * The dock sits about 30 degrees below eye level, so it is looked at from
@@ -292,7 +300,8 @@ class Dock(
             }
         }
         pips.forEach { p ->
-            val want = p.pointers.isNotEmpty() || (p.hot && now - p.exitAt < GRACE_MS)
+            val want = p.pointers.isNotEmpty() || p.name == gazed ||
+                (p.hot && now - p.exitAt < GRACE_MS)
             if (want == p.hot) return@forEach
             p.hot = want
             // TWO CHANNELS ON ONE OBJECT, which is only safe because they are
