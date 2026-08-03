@@ -86,6 +86,25 @@ class MeshLink(private val context: Context) {
      * receiving is passive, sending is not.
      */
     private val ALLOWED_SUFFIXES = listOf("ab60", "d563")
+
+    /**
+     * Matched against the NAME first, which is how these nodes are actually
+     * identified — and not against the key, which is what the first attempt
+     * did and why it refused both.
+     *
+     * MeshCore's default advert name is NOT derived from the public key.
+     * D38F07AED563 has key prefix 1a17e848dbc2; the two share nothing. The
+     * operator quotes their hardware by the name, the name is what appears in
+     * every other app, and the key is an implementation detail nobody reads.
+     *
+     * Still an allow-list, and still explicit: a name is weaker evidence than
+     * a key, so the match is logged with both before anything is transmitted.
+     */
+    private fun isAllowed(p: MeshNodes.Peer): Boolean =
+        ALLOWED_SUFFIXES.any { sfx ->
+            p.name.endsWith(sfx, ignoreCase = true) ||
+                (p.fullKey ?: p.key).endsWith(sfx, ignoreCase = true)
+        }
     private val _mesh = MutableStateFlow<List<MeshNodes.Peer>>(emptyList())
     val mesh: StateFlow<List<MeshNodes.Peer>> = _mesh.asStateFlow()
 
@@ -145,12 +164,18 @@ class MeshLink(private val context: Context) {
      * leaving it to be noticed at the next contact sync.
      */
     private fun notePathChange(old: MeshNodes.Peer?, now: MeshNodes.Peer) {
-        val had = old?.path != null && old.path.isNotEmpty()
-        val has = now.path != null && now.path.isNotEmpty()
+        // ANY non-null path is a learned route. An EMPTY one means DIRECT —
+        // no relays — and the first version tested isNotEmpty(), so it missed
+        // exactly the case that arrived: the operator's DM taught this radio a
+        // one-hop route and the watcher written to announce it said nothing.
+        val had = old?.path != null
+        val has = now.path != null
         if (!has || had) return
-        Log.i(TAG, "[topology] ROUTE LEARNED for ${now.name.ifBlank { now.key }} — " +
-            "${now.path!!.size} relay(s): " + now.path.joinToString(",") { "%02x".format(it) })
-        diag("ROUTE    ${now.name.ifBlank { now.key.takeLast(4) }} via ${now.path.size} relay(s)")
+        val hops = now.path!!
+        val how = if (hops.isEmpty()) "DIRECT, no relays"
+                  else "${hops.size} relay(s): " + hops.joinToString(",") { "%02x".format(it) }
+        Log.i(TAG, "[topology] ROUTE LEARNED for ${now.name.ifBlank { now.key }} — $how")
+        diag("ROUTE    ${now.name.ifBlank { now.key.takeLast(4) }}  $how")
     }
 
     private fun upsert(p: MeshNodes.Peer) {
@@ -518,27 +543,16 @@ class MeshLink(private val context: Context) {
             Log.w(TAG, "[probe] skipped — link not ready")
             return
         }
-        val targets = peers.values.filter { p ->
-            // Against the FULL key. People quote a node by the tail of its
-            // whole identity, which a six-byte prefix cannot match — the first
-            // run of this probe refused both authorised nodes for exactly that
-            // reason and looked like they were absent from the mesh.
-            val id = p.fullKey ?: p.key
-            ALLOWED_SUFFIXES.any { id.endsWith(it, ignoreCase = true) }
-        }
+        val targets = peers.values.filter { isAllowed(it) }
         if (targets.isEmpty()) {
             // WHERE ELSE THE STRING MIGHT LIVE. A MeshCore node is quoted by
             // people in several ways — the head of the key, the tail, or just
             // its name — so say which of those matched anything before
             // concluding the node is absent.
             ALLOWED_SUFFIXES.forEach { sfx ->
-                val anywhere = peers.values.filter {
-                    (it.fullKey ?: it.key).contains(sfx, ignoreCase = true)
-                }
                 val named = peers.values.filter { it.name.contains(sfx, ignoreCase = true) }
-                Log.w(TAG, "[probe] '$sfx': keyEndsWith=0 keyContains=${anywhere.size} " +
-                    "nameContains=${named.size}" +
-                    (anywhere.firstOrNull()?.let { " e.g. ${it.name} ${it.key}" } ?: ""))
+                Log.w(TAG, "[probe] '$sfx': nameMatches=${named.size}" +
+                    (named.firstOrNull()?.let { " e.g. '${it.name}' key=${it.key}" } ?: ""))
             }
             Log.w(TAG, "[probe] full keys are " +
                 (peers.values.firstOrNull { it.fullKey != null }?.fullKey?.length ?: 0) +
@@ -558,7 +572,9 @@ class MeshLink(private val context: Context) {
             }
             // The command takes the first six bytes, not the whole identity.
             val prefix = full.copyOfRange(0, 6)
-            Log.i(TAG, "[probe] -> ${p.name} (${p.key.takeLast(4)})")
+            // BOTH identifiers, before transmitting. A name matched an
+            // allow-list entry; the key says which physical radio that is.
+            Log.i(TAG, "[probe] -> name='${p.name}' key=${p.key} (authorised)")
             diag(">>PROBE  ${p.name.ifBlank { p.key.takeLast(4) }}")
             s.sendDirectMessage(prefix, System.currentTimeMillis() / 1000, text)
             // And ask what it is while we are talking to it. Needs the WHOLE
@@ -787,6 +803,39 @@ class MeshLink(private val context: Context) {
 
             override fun onOtherFrame(frame: io.iotone.meshcore.frames.MeshcoreInbound) {
                 when (frame) {
+                    // THE DEVICE DOES NOT PUSH MESSAGE BODIES. It says items
+                    // are waiting and holds them until they are fetched, one at
+                    // a time — so an app that ignores this receives no direct
+                    // messages at all, and the sender is left believing nothing
+                    // arrived. This app ignored it until 2026-08-03, when a DM
+                    // sent from the operator's own node vanished into the
+                    // radio's queue and no route was ever learned from it.
+                    is io.iotone.meshcore.frames.MessagesWaitingFrame -> {
+                        Log.i(TAG, "[msg] waiting: ${frame.count()} — draining")
+                        session?.syncNextMessage()
+                    }
+                    is io.iotone.meshcore.frames.ContactMessageFrame -> {
+                        val m = frame.message()
+                        val pre = hex(m.pubKeyPrefix())
+                        val who = peers.values.firstOrNull { it.key == pre }
+                        // pathLen is the hop count the message ARRIVED by, and
+                        // 0xFF means it flooded. This is the number the topology
+                        // census is waiting to see move.
+                        val via = if (m.pathLen() == MeshTopology.PATH_LEN_FLOOD) "flood"
+                                  else "${m.pathLen()} hop(s)"
+                        Log.i(TAG, "[msg] DM from ${who?.name?.ifBlank { null } ?: pre} " +
+                            "via $via: ${m.text()}")
+                        diag("<<DM     ${who?.name?.ifBlank { null } ?: pre}  ($via)  ${m.text()}")
+                        // Keep draining: the device hands them over one at a
+                        // time and stops answering when the queue is empty.
+                        session?.syncNextMessage()
+                        // A message arriving is when the radio learns a route
+                        // back, so look for one now rather than at the next sync.
+                        session?.requestContacts()
+                    }
+                    is io.iotone.meshcore.frames.NoMoreMessagesFrame -> {
+                        Log.i(TAG, "[msg] queue empty")
+                    }
                     is io.iotone.meshcore.frames.TelemetryResponseFrame -> {
                         // WHICH PEER, by key PREFIX — the reply carries the
                         // first bytes of the public key, not the whole thing.
@@ -845,6 +894,13 @@ class MeshLink(private val context: Context) {
                             Log.i(TAG, "[topology] " + g.census)
                             Log.i(TAG, "[topology] edges=" + g.edges.size +
                                 " by kind " + g.edges.groupingBy { it.kind }.eachCount())
+                            // NAME the resolvable ones. A count that moved is
+                            // interesting; knowing which node moved it is what
+                            // you act on.
+                            _mesh.value.filter { it.path != null }.forEach { p ->
+                                Log.i(TAG, "[topology] routed: ${p.name.ifBlank { p.key }} " +
+                                    "key=${p.key} hops=" + (p.path?.size ?: -1))
+                            }
                         }.onFailure { Log.w(TAG, "[topology] census failed: " + it) }
                         _load.value = _load.value.copy(done = true)
                     }
