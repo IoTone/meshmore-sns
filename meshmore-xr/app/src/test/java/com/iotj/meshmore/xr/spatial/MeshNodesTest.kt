@@ -266,6 +266,42 @@ class MeshNodesTest {
             60, out.count { it.cluster == 0 } + out.sumOf { it.cluster })
     }
 
+    /**
+     * nodeFor was lifted OUT of build() so NEAREST can describe a peer that
+     * never got a mote — MAX_MOTES means most members of a cluster do not.
+     * A refactor that quietly changed what build() produces would move every
+     * node on the ring, so pin the two together.
+     */
+    @Test fun nodeForMatchesWhatBuildProduces() {
+        val p = peer(name = "relay", lat = 51.52, lon = -0.10)
+        val here = MeshNodes.Here(londonLat, londonLon)
+        val built = MeshNodes.build(here, listOf(p), NOW).single()
+        val direct = MeshNodes.nodeFor(here, p, NOW)
+        assertEquals(built.name, direct.name)
+        assertEquals(built.bearingRad, direct.bearingRad, 1e-6f)
+        assertEquals(built.dist, direct.dist, 1e-6f)
+        assertEquals(built.located, direct.located)
+        assertEquals(built.hops, direct.hops)
+    }
+
+    /**
+     * And it must give a TRUE bearing even when a lens is up: the spur it feeds
+     * is painted on the real world, and a magnification is only a view.
+     */
+    @Test fun nodeForIgnoresAnyLens() {
+        val p = peer(name = "relay", lat = 51.52, lon = -0.10)
+        val here = MeshNodes.Here(londonLat, londonLon)
+        val trueB = MeshNodes.nodeFor(here, p, NOW).bearingRad
+        val lensed = MeshNodes.build(
+            here, listOf(p), NOW, lens = Lens.over(listOf(trueB, trueB + 0.02f)),
+        ).single()
+        assertTrue(
+            "a lens must move the DRAWN bearing but not nodeFor's",
+            kotlin.math.abs(lensed.bearingRad - trueB) > 1e-4f,
+        )
+        assertEquals(trueB, MeshNodes.nodeFor(here, p, NOW).bearingRad, 1e-6f)
+    }
+
     private fun peer(name: String = "relay", lat: Double? = null, lon: Double? = null) =
         MeshNodes.Peer("k1", name, 2, 2, lat, lon, NOW)
 

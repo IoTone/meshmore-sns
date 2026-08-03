@@ -55,6 +55,37 @@ object MeshNodes {
      * on the desk and the repeater on the ridge -- and a linear band would pin
      * everything indoors into the innermost ring and waste the other two.
      */
+    /**
+     * ONE peer as a node, at its TRUE bearing — no lens applied.
+     *
+     * Factored out of [build] so a caller that has a peer but no drawn mote can
+     * still ask where it is. NEAREST is exactly that case: it names nodes found
+     * inside a cluster, and MAX_MOTES means most of them were never given a
+     * mote of their own, so there is nothing on the ring to point at.
+     *
+     * TRUE bearing, deliberately, even while a lens is up. A magnification is a
+     * view transform; the spur it feeds is painted on the real world and has to
+     * mean the direction you would actually walk.
+     */
+    fun nodeFor(here: Here, p: Peer, nowEpochSec: Long): Horizon.Node {
+        val located = here.known && valid(p.lat) && valid(p.lon)
+        val km = if (located) haversineKm(here.lat!!, here.lon!!, p.lat!!, p.lon!!) else 0.0
+        return Horizon.Node(
+            name = p.name.ifBlank { "#%04X".format(p.key.hashCode() and 0xFFFF) },
+            bearingRad = if (located) bearingRad(here.lat!!, here.lon!!, p.lat!!, p.lon!!) else 0f,
+            // No altitude anywhere in the MeshCore contact record, so there is
+            // no elevation to show. Zero means Horizon draws no caret, which is
+            // the honest outcome -- not a flat guess at "level".
+            elev = 0f,
+            dist = if (located) bandFor(km) else 0.42f,
+            age = ageOf(p.lastSeenEpochSec, nowEpochSec),
+            located = located,
+            hops = p.hops.coerceAtLeast(1),
+            altM = p.altM,
+            type = p.type,
+        )
+    }
+
     fun bandFor(km: Double, maxKm: Double = MAX_KM): Float {
         if (km <= 0.0) return 0.06f
         val f = ln(1.0 + km) / ln(1.0 + maxKm)
@@ -117,28 +148,12 @@ object MeshNodes {
         // them through is what lets a cluster carry a TRUE count. Capping the
         // input first made a cluster of 139 nodes announce itself as "+19",
         // which is a worse lie than not drawing it at all.
-        rank(here, peers, nowEpochSec).map { p ->
-            val located = here.known && valid(p.lat) && valid(p.lon)
-            val km = if (located) haversineKm(here.lat!!, here.lon!!, p.lat!!, p.lon!!) else 0.0
-            Horizon.Node(
-                name = p.name.ifBlank { "#%04X".format(p.key.hashCode() and 0xFFFF) },
-                bearingRad = if (located) bearingRad(here.lat!!, here.lon!!, p.lat!!, p.lon!!) else 0f,
-                // No altitude anywhere in the MeshCore contact record, so there
-                // is no elevation to show. Zero means Horizon draws no caret,
-                // which is the honest outcome -- not a flat guess at "level".
-                elev = 0f,
-                dist = if (located) bandFor(km) else 0.42f,
-                age = ageOf(p.lastSeenEpochSec, nowEpochSec),
-                located = located,
-                hops = p.hops.coerceAtLeast(1),
-                altM = p.altM,
-                type = p.type,
-            )
-        }.let { nodes ->
-            if (lens == null) nodes
-            else nodes.filter { !it.located || lens.contains(it.bearingRad) }
-                .map { if (it.located) it.copy(bearingRad = lens.map(it.bearingRad)) else it }
-        }.let { layout(it, limit) }
+        rank(here, peers, nowEpochSec).map { p -> nodeFor(here, p, nowEpochSec) }
+            .let { nodes ->
+                if (lens == null) nodes
+                else nodes.filter { !it.located || lens.contains(it.bearingRad) }
+                    .map { if (it.located) it.copy(bearingRad = lens.map(it.bearingRad)) else it }
+            }.let { layout(it, limit) }
 
     /**
      * PLACEMENT — fit what fits, and COUNT the rest.

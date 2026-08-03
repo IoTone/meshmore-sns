@@ -1182,6 +1182,40 @@ private fun HorizonScene(link: MeshLink) {
                                     "%s %.1fKM".format(it.first.name.take(14), it.second)
                                 },
                             )
+                            // AND OPEN THE NEAREST ONE, because a name you
+                            // cannot reach is a dead end.
+                            //
+                            // MAX_MOTES is 24. Magnifying into a count spreads
+                            // its members across the ring but does not reduce
+                            // how many there are, so layout() clusters them
+                            // again and most of the nodes NEAREST just named
+                            // still have no mote of their own — there is
+                            // nothing on the ring to go and pinch. Reported
+                            // 2026-08-03 as "nearest reports a node I cannot
+                            // find".
+                            //
+                            // FOCUS does not need a mote. The card answers who,
+                            // and the spur answers where, from the node's TRUE
+                            // bearing — which is the one thing a magnification
+                            // does not change.
+                            near.firstOrNull()?.let { (p, _) ->
+                                val f = focusRef.value
+                                val head = stage.headNow()?.translation
+                                if (f != null && head != null) {
+                                    val fn = MeshNodes.nodeFor(
+                                        o2, p, System.currentTimeMillis() / 1000,
+                                    )
+                                    f.showFor(
+                                        fn,
+                                        origin.place(
+                                            fn.bearingRad,
+                                            com.iotj.meshmore.xr.spatial.Horizon.R * fn.dist,
+                                            com.iotj.meshmore.xr.spatial.Horizon.EYE_DROP,
+                                        ),
+                                        head,
+                                    )
+                                }
+                            }
                             cue.opened()
                         }
                         "dismiss" -> cue.closed()
