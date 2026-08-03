@@ -456,6 +456,29 @@ private const val TAG_UI = "MeshmoreXR"
  */
 private const val BACK_OUT_MS = 600L
 
+/** The head's yaw, in the convention Stage.Origin.place uses. */
+private fun yawOf(h: androidx.xr.runtime.math.Pose): Float {
+    val q = h.rotation
+    val fx = 2f * (q.x * q.z + q.w * q.y)
+    val fz = 1f - 2f * (q.x * q.x + q.y * q.y)
+    return kotlin.math.atan2(-fx, fz)
+}
+
+/**
+ * How long ago, in words a person uses.
+ *
+ * "1785739387" is a timestamp, "2 MIN AGO" is an answer. This app is a
+ * companion and not a packet analyser, and the difference shows up in small
+ * places like this one before it shows up anywhere else.
+ */
+private fun ago(sec: Long): String = when {
+    sec < 0 -> "JUST NOW"
+    sec < 60 -> "JUST NOW"
+    sec < 3600 -> "${sec / 60} MIN AGO"
+    sec < 86400 -> "${sec / 3600} HR AGO"
+    else -> "${sec / 86400} DAY AGO"
+}
+
 /**
  * How far from a cluster's stated bearing a node counts as belonging to it.
  * The cluster's own bearing is the MEAN of its members, so the grab has to be
@@ -589,6 +612,7 @@ private fun HorizonScene(link: MeshLink) {
     val focusRef = remember { mutableStateOf<com.iotj.meshmore.xr.spatial.Focus?>(null) }
     val gazeRef = remember { mutableStateOf<com.iotj.meshmore.xr.spatial.Gaze?>(null) }
     val rosterRef = remember { mutableStateOf<com.iotj.meshmore.xr.spatial.Roster?>(null) }
+    val inboxRef = remember { mutableStateOf<com.iotj.meshmore.xr.spatial.Inbox?>(null) }
     val noticeRef = remember { mutableStateOf<Notice?>(null) }
     // The wedge currently magnified, or null for the true 1:1 ring. Bumping
     // hereEpoch is what makes the mesh effect re-run and re-place everything.
@@ -878,11 +902,37 @@ private fun HorizonScene(link: MeshLink) {
                     cue.closed()
                 }
             },
-            "HANDS" to {
-                val next = !(handsRef.value?.visible ?: false)
-                handsRef.value?.setVisible(next)
-                dockRef.value?.setLit("HANDS", next)
-                if (next) cue.opened() else cue.closed()
+            // THE INBOX TAKES THE HAND-SKELETON'S SLOT.
+            //
+            // HANDS draws a debug skeleton and belongs behind --ez handdebug,
+            // not on the dock of an app someone installs: it is scaffolding
+            // that earned its place while gestures were unreliable, and a row
+            // of ten pips is already 52 degrees wide. What people said to you
+            // outranks a wireframe of your own fingers.
+            "INBOX" to {
+                val b = inboxRef.value
+                val h = stage.headNow()
+                if (b == null || h == null) {
+                    cue.closed()
+                } else if (b.open) {
+                    b.hide(); dockRef.value?.setLit("INBOX", false); cue.closed()
+                } else {
+                    val now = System.currentTimeMillis() / 1000
+                    b.showAt(h.translation, yawOf(h), link.msgs.value.map { m ->
+                        com.iotj.meshmore.xr.spatial.Inbox.Entry(
+                            who = "%-14s %s".format(
+                                com.iotj.meshmore.xr.spatial.TypeTier.clip(
+                                    m.fromName.ifBlank { m.channel ?: "UNKNOWN" }, 14,
+                                ),
+                                ago(now - m.atEpochSec),
+                            ),
+                            words = com.iotj.meshmore.xr.spatial.TypeTier.clip(m.text, 24),
+                            mine = m.direct,
+                        )
+                    })
+                    dockRef.value?.setLit("INBOX", true)
+                    cue.opened()
+                }
             },
             // EVERY NODE, WITHOUT TURNING AROUND (§8.2).
             "LIST" to {
@@ -962,6 +1012,11 @@ private fun HorizonScene(link: MeshLink) {
         // THE DWELL FALLBACK (§8.2). Armed only when no hand is tracked, so it
         // is an alternative to the pinch rather than a second way to fire the
         // same control by accident.
+        val inbox = com.iotj.meshmore.xr.spatial.Inbox(session, palette, ctx)
+        inbox.build()
+        inbox.onFocus = { cue.recognised() }
+        inboxRef.value = inbox
+
         val roster = com.iotj.meshmore.xr.spatial.Roster(session, palette, ctx)
         roster.build()
         roster.onFocus = { cue.recognised() }
@@ -972,6 +1027,23 @@ private fun HorizonScene(link: MeshLink) {
         gaze.onFire = { cue.recognised() }
         gaze.setTargets(dock.gazeTargets())
         gazeRef.value = gaze
+
+        // SOMEBODY SPOKE. A message that arrives silently, into a surface you
+        // have to know to open, is a message the app did not deliver. This is
+        // the one unsolicited interruption in the whole design and it is worth
+        // it: the mesh is people, and being told when one of them says
+        // something is the difference between a companion and a monitor.
+        link.onMessage = { m ->
+            cue.opened()
+            noticeRef.value?.say(
+                "%s: %s".format(
+                    com.iotj.meshmore.xr.spatial.TypeTier.clip(
+                        m.fromName.ifBlank { m.channel ?: "MESSAGE" }, 12,
+                    ),
+                    com.iotj.meshmore.xr.spatial.TypeTier.clip(m.text, 22),
+                ),
+            )
+        }
 
         dock.onFocus = { cue.recognised() }
         // The menu gets the same tick the dock does. On a display where you
@@ -1134,7 +1206,8 @@ private fun HorizonScene(link: MeshLink) {
                 // come and go. Fourteen cones is nothing next to the ring.
                 gazeRef.value?.setTargets(
                     (dockRef.value?.gazeTargets() ?: emptyList()) +
-                        (rosterRef.value?.gazeTargets() ?: emptyList()),
+                        (rosterRef.value?.gazeTargets() ?: emptyList()) +
+                        (inboxRef.value?.gazeTargets() ?: emptyList()),
                 )
                 gazeRef.value?.tick(stage.headNow(), anyHand, nowMs)
                 // Show the dwelled pip's caption. Same focus state a pointer
@@ -1145,6 +1218,11 @@ private fun HorizonScene(link: MeshLink) {
                 while (true) {
                     val pick = rosterRef.value?.poll() ?: break
                     rosterRef.value?.activate(pick)
+                }
+                inboxRef.value?.tick(stage.headNow()?.translation)
+                while (true) {
+                    val pick = inboxRef.value?.poll() ?: break
+                    inboxRef.value?.activate(pick)
                 }
                 val it0 = stage.headNow()
                 // Hands that are operating a control are not signing. Feeding

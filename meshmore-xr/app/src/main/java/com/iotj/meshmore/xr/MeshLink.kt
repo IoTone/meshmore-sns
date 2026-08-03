@@ -129,6 +129,33 @@ class MeshLink(private val context: Context) {
     val load: StateFlow<Load> = _load.asStateFlow()
 
     /** Where the radio thinks it is; the origin every bearing is measured from. */
+    /**
+     * What people have said to us, newest first.
+     *
+     * Kept in memory only. A companion app that forgets your messages when it
+     * restarts is a poor one and this will want persisting, but a ring buffer
+     * that is honest about being a ring buffer beats a store that half works.
+     */
+    data class Msg(
+        val fromKey: String,
+        val fromName: String,
+        val text: String,
+        val atEpochSec: Long,
+        val direct: Boolean,
+        val channel: String? = null,
+    )
+
+    private val _msgs = MutableStateFlow<List<Msg>>(emptyList())
+    val msgs: StateFlow<List<Msg>> = _msgs.asStateFlow()
+
+    /** Raised on arrival so the host can announce it. */
+    var onMessage: ((Msg) -> Unit)? = null
+
+    private fun remember(m: Msg) {
+        _msgs.value = (listOf(m) + _msgs.value).take(MSG_KEEP)
+        onMessage?.invoke(m)
+    }
+
     private val _here = MutableStateFlow(MeshNodes.Here(null, null))
     val here: StateFlow<MeshNodes.Here> = _here.asStateFlow()
 
@@ -825,6 +852,12 @@ class MeshLink(private val context: Context) {
                     (m.snrDb()?.let { " snr=${it}dB" } ?: "") + ": ${m.text()}")
                 diag("<<DM     $name  ($via)  ${m.text()}")
                 _status.value = _status.value.copy(lastEvent = "dm")
+                remember(
+                    Msg(
+                        fromKey = pre, fromName = name, text = m.text(),
+                        atEpochSec = m.timestamp(), direct = true,
+                    ),
+                )
                 // A message arriving is when the radio learns a route back, so
                 // go looking for one now rather than at the next sync.
                 session?.requestContacts()
@@ -863,9 +896,29 @@ class MeshLink(private val context: Context) {
             }
 
             override fun onChannelMessage(frame: ChannelMessageFrame) {
-                Log.i(TAG, "[link] channel msg: ${frame.message().text()}")
-                diag("CHANMSG  ${frame.message().text()}")
-                _status.value = _status.value.let { it.copy(messages = it.messages + 1, lastEvent = "msg") }
+                val cm = frame.message()
+                Log.i(TAG, "[link] channel msg: ${cm.text()}")
+                diag("CHANMSG  ${cm.text()}")
+                _status.value = _status.value.let {
+                    it.copy(messages = it.messages + 1, lastEvent = "msg")
+                }
+                // CHANNEL TRAFFIC IS MESSAGES TOO. A channel message carries no
+                // sender key — it is a broadcast on a shared key — so the
+                // sender, when there is one, is whatever the text was prefixed
+                // with. Splitting that out is the channel's convention rather
+                // than the protocol's, so it is done leniently and the whole
+                // line is kept either way.
+                val raw = cm.text()
+                val cut = raw.indexOf(": ")
+                val who = if (cut in 1..24) raw.take(cut) else ""
+                val body = if (cut in 1..24) raw.substring(cut + 2) else raw
+                remember(
+                    Msg(
+                        fromKey = "", fromName = who, text = body,
+                        atEpochSec = cm.timestamp(), direct = false,
+                        channel = "#${cm.channelIdx()}",
+                    ),
+                )
             }
 
             override fun onOtherFrame(frame: io.iotone.meshcore.frames.MeshcoreInbound) {
@@ -1021,5 +1074,11 @@ class MeshLink(private val context: Context) {
          * the user (or a QR code, via arcore's QrCode API).
          */
         private const val BLE_PIN = "888294"
+        /**
+         * How many messages to keep. Enough that a busy channel does not push
+         * a direct message out of reach in a minute, few enough that it is
+         * plainly a recent-history buffer and not an archive.
+         */
+        private const val MSG_KEEP = 60
     }
 }

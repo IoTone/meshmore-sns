@@ -69,6 +69,11 @@ object Marks {
         "WIDE" to "M34 10 H10 V34 M66 10 H90 V34 M90 66 V90 H66 M34 90 H10 V66 " +
             "M40 50 H60 M50 40 V60",
 
+        // INBOX — an envelope. The one mark in the set that is not an
+        // instrument, which is the point: this is the surface where the mesh
+        // is people rather than hardware.
+        "INBOX" to "M12 28 H88 V72 H12 Z M12 30 L50 54 L88 30",
+
         // LIST — the roster. Rows, plainly: this is the one surface in the app
         // that IS a list, so pretending otherwise in its mark would be coy.
         "LIST" to "M22 30 H78 M22 50 H78 M22 70 H78 M10 30 H12 M10 50 H12 M10 70 H12",

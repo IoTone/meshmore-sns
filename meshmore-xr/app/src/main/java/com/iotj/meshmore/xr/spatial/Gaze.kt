@@ -68,6 +68,8 @@ class Gaze(
 
     /** Which target the gaze is on, and for how long. */
     private var onId: String? = null
+    private var lastPose: Pair<Vector3, Quaternion>? = null
+    private var lastMovedAt = 0L
     private var since = 0L
     private var firedId: String? = null
 
@@ -116,9 +118,41 @@ class Gaze(
      * while it is true.
      */
     fun tick(head: Pose?, handsSeen: Boolean, nowMs: Long) {
+        // IS ANYONE WEARING THIS? A head that has not moved at all is a headset
+        // on a table, and a headset on a table was quietly dwelling on whatever
+        // dock pip it happened to be pointing at and pressing it. Nobody asked
+        // for that, and an app that changes its own settings while unattended
+        // does not feel competent whatever else it does right.
+        //
+        // A worn headset is never still: breathing alone moves it. So the test
+        // is not "did the user look somewhere", it is "is this thing on a face
+        // at all", and the threshold can be tiny.
+        //
+        // It starts DISARMED. The first version treated "no previous pose" as
+        // motion, which armed dwell on the very first frame — and a headset
+        // lying on a desk pointing at the dock fired a pip 900 ms later, before
+        // the stillness test had two samples to compare. Movement has to be
+        // observed, not assumed.
+        head?.let { h ->
+            val p = h.translation
+            val q = h.rotation
+            val moved = lastPose?.let { l ->
+                kotlin.math.abs(p.x - l.first.x) + kotlin.math.abs(p.y - l.first.y) +
+                    kotlin.math.abs(p.z - l.first.z) +
+                    kotlin.math.abs(q.x - l.second.x) + kotlin.math.abs(q.y - l.second.y) +
+                    kotlin.math.abs(q.z - l.second.z) + kotlin.math.abs(q.w - l.second.w)
+            } ?: 0f   // no previous pose yet: OBSERVE, do not assume motion
+            lastPose = p to q
+            if (moved > STILL_EPS) lastMovedAt = nowMs
+        }
+        val worn = nowMs - lastMovedAt < STILL_MS
+
         val wasActive = active
-        active = !handsSeen
-        if (wasActive != active) Log.i(TAG, "[gaze] dwell ${if (active) "ARMED" else "stood down"}")
+        active = !handsSeen && worn
+        if (wasActive != active) {
+            Log.i(TAG, "[gaze] dwell " + if (active) "ARMED" else
+                ("stood down (" + (if (handsSeen) "hands" else "still") + ")"))
+        }
         if (!active || head == null) {
             onId = null
             runCatching { ring?.setEnabled(false) }
@@ -209,5 +243,13 @@ class Gaze(
         const val DWELL_MS = 900L
         /** The lock ring's radius at the dock's distance. About 2.6 degrees. */
         const val R = 0.035f
+        /**
+         * How much combined position+rotation change counts as "alive". Small
+         * on purpose: a worn headset is never still, and the only thing being
+         * excluded here is one that is not on a head.
+         */
+        const val STILL_EPS = 0.004f
+        /** How long a motionless headset stays armed before standing down. */
+        const val STILL_MS = 2500L
     }
 }
