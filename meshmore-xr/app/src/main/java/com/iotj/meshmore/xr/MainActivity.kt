@@ -142,10 +142,21 @@ class MainActivity : ComponentActivity() {
         var typeProbe: Boolean = false
         /** --es home "lat,lon" : our position when the radio has no GPS. */
         var homeOverride: MeshNodes.Here? = null
+        /**
+         * Activity starts within this PROCESS. Survives recreation, dies with
+         * the process, so it separates "the Activity came back" from "the whole
+         * app was killed and relaunched".
+         */
+        var starts: Int = 0
     }
 
     // One link per activity. Checkpoint 3 lives here.
     private val link by lazy { MeshLink(this) }
+
+    override fun onStop() {
+        super.onStop()
+        Log.i(TAG, "[boot] onStop — finishing=$isFinishing changing=$isChangingConfigurations")
+    }
 
     override fun onDestroy() {
         link.close()
@@ -154,7 +165,20 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        Log.i(TAG, "[boot] onCreate — ${Build.MANUFACTURER} ${Build.MODEL} api=${Build.VERSION.SDK_INT}")
+        // WHICH KIND OF START THIS IS.
+        //
+        // Everything the session holds — the lens stack, which surfaces are
+        // open, where the origin was taken — lives in Compose `remember`, so an
+        // Activity recreation silently resets all of it and the user is
+        // returned to an unmagnified ring at the home orientation with no event
+        // to explain it. That is indistinguishable, from the outside, from a
+        // gesture having fired. This line tells the two apart after the fact.
+        starts += 1
+        Log.i(TAG, "[boot] onCreate — ${Build.MANUFACTURER} ${Build.MODEL} " +
+            "api=${Build.VERSION.SDK_INT} start=#$starts " +
+            (if (savedInstanceState != null) "RESTORED (activity recreated)"
+             else if (starts > 1) "fresh activity, SAME process"
+             else "fresh process"))
 
         val facts = collectFacts()
         facts.forEach { (k, v) -> Log.i(TAG, "[boot] $k = $v") }
@@ -729,6 +753,11 @@ private fun HorizonScene(link: MeshLink) {
                     hereEpoch.value += 1
                     menuRef.value?.hide()
                     cue.closed()
+                    // NAMED, because "the view demagnified" has three possible
+                    // causes — this pip, the B gesture, and the Activity being
+                    // recreated under us — and they are indistinguishable from
+                    // the outside. A pop with no line before it was not a pop.
+                    Log.i(TAG_UI, "[lens] popped by WIDE pip, depth ${lensStack.size}")
                 } else {
                     cue.closed()
                 }
@@ -939,7 +968,7 @@ private fun HorizonScene(link: MeshLink) {
                     lensStack.removeAt(lensStack.lastIndex)
                     hereEpoch.value += 1
                     menuRef.value?.hide()
-                    Log.i(TAG_UI, "[hand] $hand:B — out one level, depth ${lensStack.size}")
+                    Log.i(TAG_UI, "[lens] popped by $hand:B gesture, depth ${lensStack.size}")
                 }
 
                 handR?.state?.value?.handJoints?.let { j ->
