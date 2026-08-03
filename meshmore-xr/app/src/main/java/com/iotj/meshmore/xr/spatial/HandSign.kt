@@ -70,10 +70,17 @@ object HandSign {
      * this file was eventually fixed. `ratios` now prints it (`s0.00`), so the
      * hands readout can be watched while opening and closing the fingers.
      *
-     * Biased tight on purpose. A missed B costs one pinch on the WIDE pip; a
-     * false B costs a magnification and an explanation.
+     * 0.34 was the first guess and it was too tight — B stopped firing at all
+     * on a real hand. Loosened to 0.50 pending the measurement, and the
+     * classifier now LOGS the value whenever four fingers are extended, so the
+     * next run says what a real together-hand actually reports instead of what
+     * hand proportions suggest it should.
+     *
+     * The threshold is no longer the only defence, which is what makes
+     * loosening it safe: B also requires the hand to be PRESENTED (see
+     * Hands.presented), and a hand at rest is not.
      */
-    const val B_SPREAD = 0.34f
+    const val B_SPREAD = 0.50f
 
     /**
      * Hand scale, from the wrist to the middle knuckle.
@@ -350,6 +357,10 @@ object HandSign {
             // thumb folded across. The thumb we still do not test — least
             // reliably tracked joint — but adjacency is measured off the
             // fingertips, which are among the best tracked.
+            // THE LOG FOR THIS LIVES IN THE CALLER, not here. This object is
+            // pure — that is what lets it be tested without a device, and the
+            // whole B threshold argument was settled by those tests. Reaching
+            // for android.util.Log inside it broke five of them at once.
             index && middle && ring && little &&
                 spread(joints).let { it in 0f..B_SPREAD } -> Letter.B
             else -> Letter.NONE

@@ -218,6 +218,33 @@ class Hands(
         return dot > 0f
     }
 
+    /**
+     * Is this hand being PRESENTED, or just present?
+     *
+     * The spread test tells a deliberate flat hand from a splayed one, but it
+     * is a threshold on a tracked joint and thresholds are wrong until hardware
+     * says otherwise. This is the part that does not depend on one: a hand you
+     * are signing with is UP, and a hand you have stopped using hangs.
+     *
+     * Only 'B' consults it. 'A' is a fist — a shape hands do not fall into by
+     * relaxing — and it works today; adding a condition to it would risk what
+     * is already right to guard against something that has never happened.
+     *
+     * Null when the joints or the head are unavailable, which callers treat as
+     * "do not fire" rather than as "presented".
+     */
+    fun presented(j: Map<HandJointType, Pose>?, head: Pose?): Boolean? {
+        j ?: return null
+        head ?: return null
+        val ps = session.scene.perceptionSpace
+        val w = runCatching {
+            ps.getScenePoseFromPerceptionPose(
+                j[HandJointType.WRIST] ?: return null,
+            ).poseInActivitySpace.translation
+        }.getOrNull() ?: return null
+        return w.y > head.translation.y - PRESENT_DROP
+    }
+
     private fun short(s: String?): String =
         s?.substringAfter("(")?.substringBefore(")")?.take(4) ?: "----"
 
@@ -277,5 +304,11 @@ class Hands(
         const val READOUT_MS = 250L
         /** Gap between the two hand rows. */
         const val LINE = 0.032f
+        /**
+         * How far below the eye a wrist may be and still count as presented.
+         * 0.55 m is about chest height on a standing adult: comfortably above
+         * a hand at rest by the hip, comfortably below one held up to sign.
+         */
+        const val PRESENT_DROP = 0.55f
     }
 }

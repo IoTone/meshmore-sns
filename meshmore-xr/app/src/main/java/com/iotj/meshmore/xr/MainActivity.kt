@@ -140,6 +140,19 @@ class MainActivity : ComponentActivity() {
         var handDebug: Boolean = false
         /** --ez typeprobe true : answer whether tier R can exist on this SDK. */
         var typeProbe: Boolean = false
+        /**
+         * --es north "<deg>" : the TRUE heading you are facing at launch.
+         *
+         * The Aura publishes no magnetometer and no accelerometer to apps — the
+         * IMU belongs to the XR runtime — so the device cannot find north by
+         * itself, and every node's bearing comes from lat/lon and is therefore
+         * measured from true north. Telling the app which way you were pointing
+         * is the only offline way to reconcile the two.
+         *
+         * Face north and pass 0; face east and pass 90. Null means the ring
+         * stays relative to the launch facing, which is what it has always done.
+         */
+        var northDeg: Float? = null
         /** --es home "lat,lon" : our position when the radio has no GPS. */
         var homeOverride: MeshNodes.Here? = null
         /**
@@ -197,6 +210,9 @@ class MainActivity : ComponentActivity() {
         showHelp = intent?.getBooleanExtra("help", false) ?: false
         showMenu = intent?.getBooleanExtra("menu", false) ?: false
         showFocus = intent?.getBooleanExtra("focus", false) ?: false
+        northDeg = intent?.getStringExtra("north")?.toFloatOrNull()
+        Log.i(TAG, "[boot] north at launch = " +
+            (northDeg?.let { "%.0f° true".format(it) } ?: "<unknown, ring is relative>"))
         // Draw every tier R panel's own boundary. See TextRun.outline.
         com.iotj.meshmore.xr.spatial.TextRun.outline =
             intent?.getBooleanExtra("outline", false) ?: false
@@ -636,7 +652,40 @@ private fun HorizonScene(link: MeshLink) {
         // Recentre on the body BEFORE building anything, or the whole
         // experience can end up behind the user.
         val stage = Stage(session, palette)
-        val origin = stage.recentre()
+        val origin0 = stage.recentre()
+        // WHICH WAY IS NORTH. Every node's bearing comes from real lat/lon, so
+        // it is measured from TRUE north — while place() measures from the
+        // launch facing. They agree only if the wearer happened to start facing
+        // north, and otherwise the whole ring is rotated by the difference.
+        //
+        // Measured now, APPLIED only when Heading.TRUST says the convention has
+        // been checked against a real compass. Android's azimuth is written for
+        // a phone's frame and this is a headset; a confidently wrong north
+        // looks authoritative, which is worse than an honestly relative one.
+        val fix = com.iotj.meshmore.xr.spatial.Heading.read(
+            ctx,
+            MainActivity.homeOverride?.lat, MainActivity.homeOverride?.lon, null,
+        )
+        val told = MainActivity.northDeg
+        val origin = when {
+            // What the wearer says, first. A person with a compass is a better
+            // heading source than a headset with no magnetometer.
+            told != null -> {
+                Log.i(TAG_UI, "[heading] ring is NORTH-REFERENCED from --es north $told")
+                origin0.copy(
+                    yawRad = origin0.yawRad - Math.toRadians(told.toDouble()).toFloat(),
+                )
+            }
+            fix != null && com.iotj.meshmore.xr.spatial.Heading.TRUST -> {
+                Log.i(TAG_UI, "[heading] ring is NORTH-REFERENCED from the sensor")
+                origin0.copy(yawRad = origin0.yawRad - fix.trueRad)
+            }
+            else -> {
+                Log.w(TAG_UI, "[heading] ring is RELATIVE to launch facing — " +
+                    "'N' means 'the way you were pointing', not north")
+                origin0
+            }
+        }
 
         val horizon = Horizon(session, palette, ctx)
         // Deliberately includes the shapes real MeshCore names take: emoji,
@@ -679,6 +728,8 @@ private fun HorizonScene(link: MeshLink) {
         // version was written to avoid, doubled. One shared debounce is what
         // makes the symmetry safe.
         var lastBackAt = 0L
+        var lastShapeLog = 0L
+        var lastShapeLogL = 0L
         Log.i(TAG_UI, "[hand] tracking right=${handR != null} left=${handL != null}")
 
         val menu = RadialMenu(session, palette)
@@ -979,11 +1030,25 @@ private fun HorizonScene(link: MeshLink) {
                     val seenR = if (reaching) com.iotj.meshmore.xr.spatial.HandSign.Letter.NONE
                                 else com.iotj.meshmore.xr.spatial.HandSign.classify(j, away)
                     val gotR = gateR.update(seenR, nowMs)
+                    // WHAT THE CLASSIFIER SAW, so the B threshold is set from a
+                    // real hand rather than from hand proportions. Throttled,
+                    // and only while a hand is actually tracked.
+                    if (nowMs - lastShapeLog > 500L) {
+                        lastShapeLog = nowMs
+                        Log.i(TAG_UI, "[hands] R seen=%s spread=%.2f (B limit %.2f)"
+                            .format(seenR, com.iotj.meshmore.xr.spatial.HandSign.spread(j),
+                                com.iotj.meshmore.xr.spatial.HandSign.B_SPREAD))
+                    }
                     // B RETURNS A MAGNIFIED RING TO TRUE BEARING, and is only
                     // listened to while magnified. A flat hand is a common
                     // resting shape; making it mean something at all times
                     // would be a command you issue by relaxing.
-                    if (gotR == com.iotj.meshmore.xr.spatial.HandSign.Letter.B) {
+                    // PRESENTED, not merely present. See Hands.presented — a
+                    // hand that has been put down must not issue commands, and
+                    // this does not depend on the spread threshold being right.
+                    if (gotR == com.iotj.meshmore.xr.spatial.HandSign.Letter.B &&
+                        handsRef.value?.presented(j, it0) == true
+                    ) {
                         backOut("R")
                     }
                     if (gotR == com.iotj.meshmore.xr.spatial.HandSign.Letter.A) {
@@ -1007,7 +1072,15 @@ private fun HorizonScene(link: MeshLink) {
                     val seenL = if (reaching) com.iotj.meshmore.xr.spatial.HandSign.Letter.NONE
                                 else com.iotj.meshmore.xr.spatial.HandSign.classify(j, away)
                     val gotL = gateL.update(seenL, nowMs)
-                    if (gotL == com.iotj.meshmore.xr.spatial.HandSign.Letter.B) {
+                    if (nowMs - lastShapeLogL > 500L) {
+                        lastShapeLogL = nowMs
+                        Log.i(TAG_UI, "[hands] L seen=%s spread=%.2f (B limit %.2f)"
+                            .format(seenL, com.iotj.meshmore.xr.spatial.HandSign.spread(j),
+                                com.iotj.meshmore.xr.spatial.HandSign.B_SPREAD))
+                    }
+                    if (gotL == com.iotj.meshmore.xr.spatial.HandSign.Letter.B &&
+                        handsRef.value?.presented(j, it0) == true
+                    ) {
                         backOut("L")
                     }
                     if (gotL == com.iotj.meshmore.xr.spatial.HandSign.Letter.A) {
