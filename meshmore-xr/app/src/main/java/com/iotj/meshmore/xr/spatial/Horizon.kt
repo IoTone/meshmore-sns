@@ -307,11 +307,17 @@ class Horizon(
             val det = if (isCluster) {
                 // Say what it is, in words. "+19" alone is ambiguous -- it could
                 // be a channel, a margin, a signal figure.
-                "%d NODES NOT SHOWN  NEAR %.1fKM".format(n.cluster, dist * 5.0f)
+                "%d NODES NOT SHOWN  NEAR %s".format(
+                    n.cluster, MeshNodes.km(n.dist.toDouble()))
             } else {
-                "%s%d HOP  %.1fKM  %s".format(
+                // MeshNodes.km INVERTS the log band. `dist * 5` was a linear
+                // read of it, which is the exact error km()'s own note warns
+                // about: it puts a node at 4 km when it is at 25. A distance on
+                // a label is a claim someone might walk on.
+                "%s%d HOP  %s  %s".format(
                     if (full.isNotEmpty()) "$full   " else "",
-                    n.hops, dist * 5.0f, if (n.age < 0.34f) "LIVE" else "STALE",
+                    n.hops, MeshNodes.km(n.dist.toDouble()),
+                    if (n.age < 0.34f) "LIVE" else "STALE",
                 )
             }
             val detMesh = Prims.build(session, Glyphs.text(det, capH * 0.78f))
@@ -567,11 +573,21 @@ class Horizon(
     var onCluster: ((Node, Vector3) -> Unit)? = null
 
     /**
+     * Raised when a single node is pinched. Carries where it sits, because the
+     * host has to place a FOCUS card between the viewer and the thing.
+     */
+    var onNode: ((Node, Vector3) -> Unit)? = null
+
+    /**
      * The first cluster mote on the ring, and where it sits. Only used by the
      * --ez menu launch flag, which needs something to open a menu ON.
      */
     fun firstCluster(): Pair<Node, Vector3>? =
         peers.firstOrNull { it.node.cluster > 0 }?.let { it.node to it.at }
+
+    /** The first real node on the ring. For the --ez focus launch flag. */
+    fun firstNode(): Pair<Node, Vector3>? =
+        peers.firstOrNull { it.node.cluster == 0 }?.let { it.node to it.at }
 
     suspend fun drainSelections(o: Stage.Origin) {
         while (true) {
@@ -580,7 +596,10 @@ class Horizon(
                 onCluster?.invoke(p.node, p.at)
                 continue
             }
+            // The pulse stays: it is the mesh answering, and it reads as the
+            // response to the pinch. The FOCUS card is what the pinch was FOR.
             pulse(p.bearing, p.dist, o)
+            onNode?.invoke(p.node, p.at)
         }
     }
 

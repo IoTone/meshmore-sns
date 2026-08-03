@@ -134,6 +134,8 @@ class MainActivity : ComponentActivity() {
          * it shipped with no focus state at all and nobody noticed.
          */
         var showMenu: Boolean = false
+        /** --ez focus true : open S3 NODE FOCUS on the first node that arrives. */
+        var showFocus: Boolean = false
         /** --ez handdebug true : log what the ASL classifier measures, ~1 Hz. */
         var handDebug: Boolean = false
         /** --ez typeprobe true : answer whether tier R can exist on this SDK. */
@@ -170,6 +172,7 @@ class MainActivity : ComponentActivity() {
         handDebug = intent?.getBooleanExtra("handdebug", false) ?: false
         showHelp = intent?.getBooleanExtra("help", false) ?: false
         showMenu = intent?.getBooleanExtra("menu", false) ?: false
+        showFocus = intent?.getBooleanExtra("focus", false) ?: false
         // Draw every tier R panel's own boundary. See TextRun.outline.
         com.iotj.meshmore.xr.spatial.TextRun.outline =
             intent?.getBooleanExtra("outline", false) ?: false
@@ -523,6 +526,7 @@ private fun HorizonScene(link: MeshLink) {
     val dockRef = remember { mutableStateOf<Dock?>(null) }
     val handsRef = remember { mutableStateOf<Hands?>(null) }
     val menuRef = remember { mutableStateOf<RadialMenu?>(null) }
+    val focusRef = remember { mutableStateOf<com.iotj.meshmore.xr.spatial.Focus?>(null) }
     val noticeRef = remember { mutableStateOf<Notice?>(null) }
     // The wedge currently magnified, or null for the true 1:1 ring. Bumping
     // hereEpoch is what makes the mesh effect re-run and re-place everything.
@@ -661,6 +665,9 @@ private fun HorizonScene(link: MeshLink) {
             RadialMenu.Item("dismiss", "CLOSE"),
         ))
         menuRef.value = menu
+        val focus = com.iotj.meshmore.xr.spatial.Focus(session, palette, ctx)
+        focus.build()
+        focusRef.value = focus
 
         val notice = Notice(session, palette, ctx)
         notice.build()
@@ -762,6 +769,12 @@ private fun HorizonScene(link: MeshLink) {
         horizonRef.value = horizon
         // A cluster is the one mote whose selection cannot mean "open this
         // node", because there is no node behind it.
+        // A NODE PINCH OPENS FOCUS. Queued rather than handled here: showFor
+        // builds the spur, which suspends, and this is an input callback.
+        val focusWant = java.util.concurrent.ConcurrentLinkedQueue<Pair<
+            com.iotj.meshmore.xr.spatial.Horizon.Node, androidx.xr.runtime.math.Vector3>>()
+        horizon.onNode = { node, at -> focusWant.add(node to at) }
+
         horizon.onCluster = { node, at ->
             menuRef.value?.let { m ->
                 if (m.open) m.hide() else m.showAt(at, node)
@@ -778,6 +791,20 @@ private fun HorizonScene(link: MeshLink) {
         var statusTick = 0f
         try {
             if (MainActivity.selfTest) launch { horizon.selfTest(origin) }
+            if (MainActivity.showFocus) launch {
+                var waited = 0
+                while (waited < 60_000) {
+                    val n = horizon.firstNode()
+                    val h = stage.headNow()?.translation
+                    if (n != null && h != null) {
+                        focusRef.value?.showFor(n.first, n.second, h)
+                        Log.i(TAG_UI, "[focus] opened by launch flag on ${n.first.name}")
+                        return@launch
+                    }
+                    kotlinx.coroutines.delay(1000); waited += 1000
+                }
+                Log.w(TAG_UI, "[focus] --ez focus: no node appeared in 60 s")
+            }
             if (MainActivity.showMenu) launch {
                 // POLLED, not delayed. The mesh arrives over BLE and the ring
                 // does not cluster until it has; a fixed wait picked before that
@@ -843,11 +870,17 @@ private fun HorizonScene(link: MeshLink) {
                     // Callsigns give way to the microhud bands where they cross.
                     // ONE FOCUS AT A TIME (§2.1 rule 3). Set before veil, which
                     // is what actually writes the alphas.
-                    horizon.setRecessed(menuRef.value?.open == true)
+                    // Either FOCUS surface quiets the ring's names — §2.1 rule
+                    // 3 is about how many things can hold the text layer, not
+                    // about which one happens to be up.
+                    horizon.setRecessed(
+                        menuRef.value?.open == true || focusRef.value?.open == true,
+                    )
                     horizon.veil(it)
                     rackRef.value?.tick(it.translation)
                     dockRef.value?.tick(it.translation)
                     menuRef.value?.tick(it.translation)
+                    focusRef.value?.tick(it.translation)
                     noticeRef.value?.tick(it)
                     helpRef.value?.tick(it.translation)
                     launch { handsRef.value?.tick(handR, handL, it) }
@@ -887,8 +920,20 @@ private fun HorizonScene(link: MeshLink) {
                 // a common resting shape and making it mean something at all
                 // times would be a command you issue by relaxing.
                 fun backOut(hand: String) {
-                    if (lensStack.isEmpty()) return
                     if (nowMs - lastBackAt < BACK_OUT_MS) return
+                    // FOCUS FIRST. B is "back", and the most recent thing you
+                    // opened is what back should undo — unwinding a lens level
+                    // while a card is still up would answer a question nobody
+                    // asked.
+                    focusRef.value?.let { f ->
+                        if (f.open) {
+                            lastBackAt = nowMs
+                            f.hide(); cue.closed()
+                            Log.i(TAG_UI, "[hand] $hand:B — focus closed")
+                            return
+                        }
+                    }
+                    if (lensStack.isEmpty()) return
                     lastBackAt = nowMs
                     cue.recognised()
                     lensStack.removeAt(lensStack.lastIndex)
@@ -947,6 +992,21 @@ private fun HorizonScene(link: MeshLink) {
                 }
 
                 horizon.drainSelections(origin)
+
+                // ONE FOCUS AT A TIME: a second node replaces the first, and
+                // the same node again closes it, so a pinch is always its own
+                // undo and there is no way to be left with a card you cannot
+                // dismiss.
+                while (true) {
+                    val (n, p) = focusWant.poll() ?: break
+                    val f = focusRef.value ?: break
+                    val head = stage.headNow()?.translation ?: break
+                    if (f.open && f.subject == n.name) {
+                        f.hide(); cue.closed()
+                    } else {
+                        f.showFor(n, p, head); cue.opened()
+                    }
+                }
 
                 // THE MENU'S ANSWER, drained on the frame loop like every other
                 // input — nothing rebuilds the horizon from a pinch callback.
