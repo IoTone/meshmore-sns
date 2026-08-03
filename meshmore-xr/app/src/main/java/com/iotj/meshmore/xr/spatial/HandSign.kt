@@ -60,6 +60,20 @@ object HandSign {
      * now; the readout prints `p0.NN` so it can be re-checked on any hand.
      */
     const val PINCH_GAP = 0.42f
+    /**
+     * Widest adjacent fingertip gap that still counts as "together", as a
+     * fraction of the knuckle distance.
+     *
+     * PROVISIONAL. Derived from hand proportions — fingertips touching sit at
+     * roughly 0.2 of the knuckle distance, a relaxed splay at roughly 0.45 —
+     * and NOT yet settled on hardware, which is how every other threshold in
+     * this file was eventually fixed. `ratios` now prints it (`s0.00`), so the
+     * hands readout can be watched while opening and closing the fingers.
+     *
+     * Biased tight on purpose. A missed B costs one pinch on the WIDE pip; a
+     * false B costs a magnification and an explanation.
+     */
+    const val B_SPREAD = 0.34f
 
     /**
      * Hand scale, from the wrist to the middle knuckle.
@@ -143,6 +157,37 @@ object HandSign {
      *
      * Returns the gap as a ratio, or -1 when the joints are not there.
      */
+    /**
+     * FINGER SPREAD — how far apart the fingertips are, as a fraction of the
+     * hand's own knuckle distance. Scale-free, like every other measure here.
+     *
+     * This is what tells a DELIBERATE flat hand from a relaxed open one, and it
+     * is the discriminator ASL actually uses: B has the fingers together (and
+     * the thumb folded across, which we do not test because the thumb is the
+     * least reliably tracked joint on the hand). A hand at rest splays.
+     *
+     * Returns -1 when the joints are not there, which callers must treat as
+     * "unknown" rather than "together".
+     */
+    fun spread(j: Map<HandJointType, Pose>): Float {
+        val w = j[HandJointType.WRIST]?.translation ?: return -1f
+        val k = j[HandJointType.INDEX_PROXIMAL]?.translation ?: return -1f
+        val knuckle = dist(w.x, w.y, w.z, k.x, k.y, k.z)
+        if (knuckle < 1e-5f) return -1f
+        val tips = listOf(
+            HandJointType.INDEX_TIP, HandJointType.MIDDLE_TIP,
+            HandJointType.RING_TIP, HandJointType.LITTLE_TIP,
+        ).map { j[it]?.translation ?: return -1f }
+        // The WIDEST adjacent gap, not the mean: one splayed finger is a hand
+        // that is not making the letter, and averaging hides it.
+        var worst = 0f
+        for (i in 0 until tips.size - 1) {
+            val a = tips[i]; val b = tips[i + 1]
+            worst = kotlin.math.max(worst, dist(a.x, a.y, a.z, b.x, b.y, b.z) / knuckle)
+        }
+        return worst
+    }
+
     fun pinchGap(j: Map<HandJointType, Pose>): Float {
         val w = j[HandJointType.WRIST]?.translation ?: return -1f
         val k = j[HandJointType.INDEX_PROXIMAL]?.translation ?: return -1f
@@ -222,7 +267,7 @@ object HandSign {
             reach(joints, HandJointType.MIDDLE_TIP, HandJointType.MIDDLE_PROXIMAL),
             reach(joints, HandJointType.RING_TIP, HandJointType.RING_PROXIMAL),
             reach(joints, HandJointType.LITTLE_TIP, HandJointType.LITTLE_PROXIMAL),
-        )
+        ) + " s%.2f".format(spread(joints))
 
     /** What the classifier saw. For calibrating thresholds against real hands. */
     fun describe(joints: Map<HandJointType, Pose>): String {
@@ -285,17 +330,28 @@ object HandSign {
             // Distinguished from A by exactly the fingers A requires to be
             // curled, so the two cannot be confused by a threshold wobble.
             index && middle && !ring && !little -> Letter.H
-            // B — flat hand, all four fingers straight.
+            // B — flat hand, four fingers straight AND TOGETHER.
             //
-            // ASL tells B from 5 by the thumb: folded across the palm for B,
-            // spread for 5. We do not test it, for the same reason we dropped
-            // it from A — the thumb is the least reliably tracked joint on the
-            // hand. So a relaxed open hand reads as B, which is only acceptable
-            // because of WHAT B DOES: it returns a magnified ring to true
-            // bearing, and it is only listened to while magnified. A false B
-            // undoes a view you can restore with one pinch. A false A would
-            // change something you were not touching.
-            index && middle && ring && little -> Letter.B
+            // The togetherness is not pedantry about ASL, it is the whole
+            // defence. Without it the test is "four fingers extended", which is
+            // an open hand — the most common resting shape there is — and the
+            // note that used to sit here argued that was acceptable because a
+            // false B only "undoes a view you can restore with one pinch".
+            //
+            // It was not acceptable. Reported 2026-08-02: the view kept
+            // demagnifying on its own, from a hand the user was not gesturing
+            // with, and because B is only listened to WHILE MAGNIFIED the only
+            // time the flaw could bite was the exact time it mattered. The cost
+            // of a false B is not one pinch, it is losing a magnification that
+            // took finding a cluster, pinching it and choosing MAGNIFY to reach
+            // — and having no idea why it went.
+            //
+            // ASL distinguishes B from 5 by the fingers being together and the
+            // thumb folded across. The thumb we still do not test — least
+            // reliably tracked joint — but adjacency is measured off the
+            // fingertips, which are among the best tracked.
+            index && middle && ring && little &&
+                spread(joints).let { it in 0f..B_SPREAD } -> Letter.B
             else -> Letter.NONE
         }
     }

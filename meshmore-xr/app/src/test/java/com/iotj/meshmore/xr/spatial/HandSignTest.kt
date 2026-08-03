@@ -23,6 +23,13 @@ class HandSignTest {
     private fun hand(
         thumb: Float, index: Float, middle: Float, ring: Float, little: Float,
         scale: Float = 0.09f,
+        /**
+         * Lateral separation between adjacent fingertips, as a fraction of
+         * [scale]. 0 is the original fixture — every finger on one axis, which
+         * cannot express a splayed hand at all and is why "four fingers
+         * extended" went unchallenged as the whole test for B.
+         */
+        spread: Float = 0f,
     ): Map<HandJointType, Pose> = mapOf(
         HandJointType.WRIST to at(0f),
         HandJointType.MIDDLE_METACARPAL to at(scale),
@@ -37,11 +44,13 @@ class HandSignTest {
         // one. The fixture was anatomically degenerate and the pinch test is
         // what exposed it.
         HandJointType.THUMB_TIP to Pose(Vector3(THUMB_OUT, thumb * scale, 0f)),
-        HandJointType.INDEX_TIP to at(index * scale),
-        HandJointType.MIDDLE_TIP to at(middle * scale),
-        HandJointType.RING_TIP to at(ring * scale),
-        HandJointType.LITTLE_TIP to at(little * scale),
+        HandJointType.INDEX_TIP to tip(index * scale, -1.5f * spread * scale),
+        HandJointType.MIDDLE_TIP to tip(middle * scale, -0.5f * spread * scale),
+        HandJointType.RING_TIP to tip(ring * scale, 0.5f * spread * scale),
+        HandJointType.LITTLE_TIP to tip(little * scale, 1.5f * spread * scale),
     )
+
+    private fun tip(y: Float, x: Float) = Pose(Vector3(x, y, 0f))
 
     private fun at(y: Float) = Pose(Vector3(0f, y, 0f))
 
@@ -167,6 +176,61 @@ class HandSignTest {
         g.update(HandSign.Letter.A, 0)
         g.update(HandSign.Letter.H, 100)
         assertEquals(HandSign.Letter.NONE, g.update(HandSign.Letter.A, 300))
+    }
+
+    // --- B is a DELIBERATE flat hand, not any open one -----------------------
+
+    /**
+     * The bug of 2026-08-02: the magnified view kept collapsing on its own.
+     * 'B' tested only that four fingers were extended, which is an open hand —
+     * so a hand resting in view issued a command, and because B is only
+     * listened to while magnified, the one moment it could fire was the one
+     * moment it destroyed work.
+     */
+    @Test fun bNeedsTheFingersTogether() {
+        assertEquals(
+            HandSign.Letter.B,
+            HandSign.classify(hand(1.2f, 2f, 2f, 2f, 2f, spread = 0.15f)),
+        )
+        assertEquals(
+            "a splayed open hand is not a letter",
+            HandSign.Letter.NONE,
+            HandSign.classify(hand(1.2f, 2f, 2f, 2f, 2f, spread = 0.9f)),
+        )
+    }
+
+    /** Spread is scale-free, like every other measure in the classifier. */
+    @Test fun spreadDoesNotDependOnHandSize() {
+        val small = HandSign.spread(hand(1.2f, 2f, 2f, 2f, 2f, scale = 0.06f, spread = 0.5f))
+        val large = HandSign.spread(hand(1.2f, 2f, 2f, 2f, 2f, scale = 0.12f, spread = 0.5f))
+        assertTrue("small=$small large=$large", kotlin.math.abs(small - large) < 0.02f)
+    }
+
+    /** Missing joints are UNKNOWN, and unknown must not read as "together". */
+    @Test fun spreadIsNegativeWhenJointsAreMissing() {
+        assertTrue(HandSign.spread(emptyMap()) < 0f)
+        assertEquals(HandSign.Letter.NONE, HandSign.classify(emptyMap()))
+    }
+
+    /**
+     * A and H are unaffected: neither depends on the fingers being together.
+     *
+     * Splayed to 0.45, a relaxed hand, and NOT to the 0.9 the B rejection uses.
+     * The fixture offsets tips laterally, which lengthens wrist-to-tip — so an
+     * anatomically absurd splay makes a CURLED finger measure as extended and
+     * the test fails for a reason that has nothing to do with what it checks.
+     * Written down because it caught me: the first version of this test failed
+     * on H and the classifier was right.
+     */
+    @Test fun spreadDoesNotDisturbTheOtherLetters() {
+        assertEquals(
+            HandSign.Letter.A,
+            HandSign.classify(hand(1.4f, 1.0f, 1.0f, 1.0f, 1.0f, spread = 0.45f)),
+        )
+        assertEquals(
+            HandSign.Letter.H,
+            HandSign.classify(hand(1.4f, 2.0f, 2.0f, 1.0f, 1.0f, spread = 0.45f)),
+        )
     }
 }
 
@@ -299,4 +363,5 @@ class HandBTest {
         assertEquals(HandSign.Letter.NONE,
             HandSign.classify(hand(1.2f, 2f, 2f, 2f, 2f), palmAway = false))
     }
+
 }
