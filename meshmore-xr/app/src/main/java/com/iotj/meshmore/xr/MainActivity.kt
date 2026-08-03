@@ -567,6 +567,7 @@ private fun HorizonScene(link: MeshLink) {
     val handsRef = remember { mutableStateOf<Hands?>(null) }
     val menuRef = remember { mutableStateOf<RadialMenu?>(null) }
     val focusRef = remember { mutableStateOf<com.iotj.meshmore.xr.spatial.Focus?>(null) }
+    val gazeRef = remember { mutableStateOf<com.iotj.meshmore.xr.spatial.Gaze?>(null) }
     val noticeRef = remember { mutableStateOf<Notice?>(null) }
     // The wedge currently magnified, or null for the true 1:1 ring. Bumping
     // hereEpoch is what makes the mesh effect re-run and re-place everything.
@@ -728,8 +729,8 @@ private fun HorizonScene(link: MeshLink) {
         // version was written to avoid, doubled. One shared debounce is what
         // makes the symmetry safe.
         var lastBackAt = 0L
-        var lastShapeLog = 0L
-        var lastShapeLogL = 0L
+        var lastShapeR = ""
+        var lastShapeL = ""
         Log.i(TAG_UI, "[hand] tracking right=${handR != null} left=${handL != null}")
 
         val menu = RadialMenu(session, palette)
@@ -823,6 +824,15 @@ private fun HorizonScene(link: MeshLink) {
         // A short tick when a pip takes focus. On a display where you cannot
         // feel a control, sound is the only confirmation that the pointer has
         // arrived — and it arrives BEFORE the pinch, which is when it helps.
+        // THE DWELL FALLBACK (§8.2). Armed only when no hand is tracked, so it
+        // is an alternative to the pinch rather than a second way to fire the
+        // same control by accident.
+        val gaze = com.iotj.meshmore.xr.spatial.Gaze(session, palette)
+        gaze.build()
+        gaze.onFire = { cue.recognised() }
+        gaze.setTargets(dock.gazeTargets())
+        gazeRef.value = gaze
+
         dock.onFocus = { cue.recognised() }
         // The menu gets the same tick the dock does. On a display where you
         // cannot feel a control, sound is the only confirmation the pointer
@@ -974,6 +984,13 @@ private fun HorizonScene(link: MeshLink) {
                 // should be two commands, and a cycle makes you pass through a
                 // state you did not want on the way to the one you did.
                 val nowMs = android.os.SystemClock.uptimeMillis()
+                // THE DWELL FALLBACK. Hands present means the pinch path is
+                // live, so dwell stands down — it is an alternative, not a
+                // second way to fire the same control without noticing.
+                val anyHand = listOf(handR, handL).any { h ->
+                    h?.state?.value?.handJoints?.isNotEmpty() == true
+                }
+                gazeRef.value?.tick(stage.headNow(), anyHand, nowMs)
                 val it0 = stage.headNow()
                 // Hands that are operating a control are not signing. Feeding
                 // the gate NONE rather than skipping it also resets any partial
@@ -1033,11 +1050,16 @@ private fun HorizonScene(link: MeshLink) {
                     // WHAT THE CLASSIFIER SAW, so the B threshold is set from a
                     // real hand rather than from hand proportions. Throttled,
                     // and only while a hand is actually tracked.
-                    if (nowMs - lastShapeLog > 500L) {
-                        lastShapeLog = nowMs
-                        Log.i(TAG_UI, "[hands] R seen=%s spread=%.2f (B limit %.2f)"
-                            .format(seenR, com.iotj.meshmore.xr.spatial.HandSign.spread(j),
-                                com.iotj.meshmore.xr.spatial.HandSign.B_SPREAD))
+                    // ON CHANGE ONLY. At 500 ms this was four lines a second
+                    // and it evicted the app's own startup log from a buffer the
+                    // platform's sensor HAL already floods — which cost a whole
+                    // debugging cycle chasing a feature that had in fact built.
+                    val shapeR = "%s %.2f".format(
+                        seenR, com.iotj.meshmore.xr.spatial.HandSign.spread(j))
+                    if (shapeR != lastShapeR) {
+                        lastShapeR = shapeR
+                        Log.i(TAG_UI, "[hands] R seen=$shapeR " +
+                            "(B limit ${com.iotj.meshmore.xr.spatial.HandSign.B_SPREAD})")
                     }
                     // B RETURNS A MAGNIFIED RING TO TRUE BEARING, and is only
                     // listened to while magnified. A flat hand is a common
@@ -1072,11 +1094,12 @@ private fun HorizonScene(link: MeshLink) {
                     val seenL = if (reaching) com.iotj.meshmore.xr.spatial.HandSign.Letter.NONE
                                 else com.iotj.meshmore.xr.spatial.HandSign.classify(j, away)
                     val gotL = gateL.update(seenL, nowMs)
-                    if (nowMs - lastShapeLogL > 500L) {
-                        lastShapeLogL = nowMs
-                        Log.i(TAG_UI, "[hands] L seen=%s spread=%.2f (B limit %.2f)"
-                            .format(seenL, com.iotj.meshmore.xr.spatial.HandSign.spread(j),
-                                com.iotj.meshmore.xr.spatial.HandSign.B_SPREAD))
+                    val shapeL = "%s %.2f".format(
+                        seenL, com.iotj.meshmore.xr.spatial.HandSign.spread(j))
+                    if (shapeL != lastShapeL) {
+                        lastShapeL = shapeL
+                        Log.i(TAG_UI, "[hands] L seen=$shapeL " +
+                            "(B limit ${com.iotj.meshmore.xr.spatial.HandSign.B_SPREAD})")
                     }
                     if (gotL == com.iotj.meshmore.xr.spatial.HandSign.Letter.B &&
                         handsRef.value?.presented(j, it0) == true

@@ -89,6 +89,8 @@ class Dock(
     private inner class Pip(
         val name: String,
         val mark: Entity,
+        /** Where the pip itself sits. Needed by the gaze fallback. */
+        val at: Vector3,
         val captionAt: Vector3,
         val toggle: () -> Unit,
     ) {
@@ -186,7 +188,7 @@ class Dock(
                 entities += it.entity
             }
 
-            val pip = Pip(name, mark, Vector3(at.x, at.y - R * 2.4f, at.z), act)
+            val pip = Pip(name, mark, at, Vector3(at.x, at.y - R * 2.4f, at.z), act)
             pips += pip
 
             // Hit proxy, same reasoning as everywhere else: the thing you point
@@ -204,6 +206,20 @@ class Dock(
             }
         }
         Log.i(TAG, "[dock] ${pips.size} pip(s) up")
+    }
+
+    /**
+     * The pips as GAZE TARGETS, for the dwell fallback (§8.2).
+     *
+     * The dock is wired first because it is the summon surface — everything
+     * else in the app is reached through it — and because it sits 30 degrees
+     * below eye level, which is not somewhere a gaze rests by accident.
+     *
+     * Firing goes through the same queue a pinch uses, so a dwelled pip and a
+     * pinched one take exactly the same path and cannot drift apart.
+     */
+    fun gazeTargets(): List<Gaze.Target> = pips.map { p ->
+        Gaze.Target(p.name, p.at, CONE) { fired.add(p) }
     }
 
     /**
@@ -358,6 +374,12 @@ class Dock(
          * With bounds-fitting every mark now gets exactly this.
          */
         const val MARK_PAD = 12f
+        /**
+         * Gaze acceptance half-angle. 3.2 degrees — a little wider than a mark
+         * itself, because a head is a coarse pointer and the pips are 6.2
+         * degrees apart, so this cannot reach a neighbour.
+         */
+        const val CONE = 0.056f
         const val DIM = 0.18f
         /**
          * A mark at rest. Brighter than [DIM], which was tuned for the solid
