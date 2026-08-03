@@ -64,6 +64,12 @@ object MeshNodes {
          * the TAIL of the full key — which a six-byte prefix can never match.
          */
         val fullKey: String? = null,
+        /**
+         * The radio's own favourite bit (Contact.FLAG_FAVOURITE). The operator
+         * saying "this one is mine" — which is the only signal we have that
+         * beats distance and recency, so it outranks both.
+         */
+        val favourite: Boolean = false,
     )
 
     /**
@@ -136,13 +142,32 @@ object MeshNodes {
             hops = p.hops.coerceAtLeast(1),
             altM = p.altM,
             type = p.type,
+            favourite = p.favourite,
         )
     }
 
     fun bandFor(km: Double, maxKm: Double = MAX_KM): Float {
-        if (km <= 0.0) return 0.06f
-        val f = ln(1.0 + km) / ln(1.0 + maxKm)
-        return f.coerceIn(0.06, 1.0).toFloat()
+        // THE FLOOR IS ABOUT BEING VISIBLE, not about being accurate.
+        //
+        // It was 0.06, which at the ring's 2.5 m radius puts anything within
+        // about 200 m at 0.15 m from the origin — 15 cm out and 30 cm below
+        // eye level, which is to say INSIDE the wearer, behind the near plane
+        // and under the world window. The operator's own T1000e is the node
+        // guaranteed to land there, and it could not be found on 2026-08-03
+        // for exactly that reason.
+        //
+        // 0.24 puts the innermost band at 0.6 m — arm's length, readable, and
+        // still plainly nearer than everything else. The log mapping above it
+        // is untouched; this only decides where "very close" is drawn.
+        // REMAPPED, NOT CLAMPED — and the test is what caught the difference.
+        // Simply raising the floor to 0.24 put everything within 1.6 km on the
+        // same band, which is a worse loss of near resolution than the problem
+        // it fixed. Mapping the log range onto [NEAR_BAND, 1] instead keeps it
+        // monotonic the whole way: 0 km at 0.6 m, 1 km at 0.94, 5 km at 1.47,
+        // 50 km at the ring itself.
+        if (km <= 0.0) return NEAR_BAND
+        val f = (ln(1.0 + km) / ln(1.0 + maxKm)).coerceIn(0.0, 1.0)
+        return (NEAR_BAND + (1f - NEAR_BAND) * f).toFloat()
     }
 
     /** Great-circle distance in km. */
@@ -440,9 +465,31 @@ object MeshNodes {
      * caller is told how many were dropped rather than being left to assume
      * the mesh is small.
      */
+    /**
+     * The order everything downstream depends on: [layout] fills its lanes in
+     * this order and stops at MAX_MOTES, so ranking IS which nodes exist as far
+     * as the ring is concerned.
+     *
+     * FAVOURITES FIRST. The radio already stores a favourite bit per contact
+     * and this app ignored it. It is the operator saying "these are mine", and
+     * a node they marked must never be one of the 326 that got clustered away.
+     *
+     * THEN NEAREST, which is new. It used to sort by last-heard, so a quiet
+     * radio in the same room ranked below a chatty one forty kilometres off —
+     * and "I expected my own node to show up close to me" is exactly the
+     * complaint that produces. Recency only breaks ties now.
+     */
     fun rank(here: Here, peers: List<Peer>, nowEpochSec: Long): List<Peer> =
         peers.sortedWith(
-            compareByDescending<Peer> { here.known && valid(it.lat) && valid(it.lon) }
+            compareByDescending<Peer> { it.favourite }
+                .thenByDescending { here.known && valid(it.lat) && valid(it.lon) }
+                .thenBy {
+                    if (here.known && valid(it.lat) && valid(it.lon)) {
+                        haversineKm(here.lat!!, here.lon!!, it.lat!!, it.lon!!)
+                    } else {
+                        Double.MAX_VALUE
+                    }
+                }
                 .thenByDescending { it.lastSeenEpochSec }
         )
 
@@ -484,6 +531,13 @@ object MeshNodes {
     private const val EARTH_KM = 6371.0088
     /** Outer range band. Beyond this everything pins to the rim. */
     const val MAX_KM = 50.0
+
+    /**
+     * The innermost band, as a fraction of the ring radius. See [bandFor].
+     * 0.24 of 2.5 m is 0.6 m — arm's length, which is the nearest a thing can
+     * be drawn and still be looked at.
+     */
+    const val NEAR_BAND = 0.24f
     /** An hour with no advert and a node reads as fully stale. */
     const val STALE_AFTER_SEC = 3600.0
     /**

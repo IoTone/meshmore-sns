@@ -46,6 +46,8 @@ class Horizon(
         val altM: Double? = null,
         /** MeshCore advert type nibble: 0 none, 1 chat, 2 repeater, 3 room, 4 sensor. */
         val type: Int = TYPE_NONE,
+        /** The radio's favourite bit. Never clustered away — see MeshNodes.rank. */
+        val favourite: Boolean = false,
         /**
          * When > 0 this mote is not a node but a COUNT: the number of nodes on
          * roughly this bearing that the vertical budget could not label. Its

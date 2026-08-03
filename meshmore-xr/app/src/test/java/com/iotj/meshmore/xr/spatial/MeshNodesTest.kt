@@ -302,6 +302,62 @@ class MeshNodesTest {
         assertEquals(trueB, MeshNodes.nodeFor(here, p, NOW).bearingRad, 1e-6f)
     }
 
+    // --- findability: near, mine, and drawn ---------------------------------
+
+    /**
+     * A node a few metres away used to land at 0.06 of the ring radius — 15 cm
+     * from the origin, which is inside the wearer. The operator could not find
+     * their own T1000e on 2026-08-03 for exactly this reason.
+     */
+    @Test fun aVeryNearNodeIsDrawnAtArmsLength() {
+        assertEquals(MeshNodes.NEAR_BAND, MeshNodes.bandFor(0.0), 1e-6f)
+        // NOT equal to the floor — the range is remapped onto [NEAR_BAND, 1]
+        // rather than clamped, so 50 m is still further out than 0 m. The first
+        // version of this test asserted the clamp and would have locked in the
+        // flattening it was written to prevent.
+        assertTrue(MeshNodes.bandFor(0.05) > MeshNodes.NEAR_BAND)
+        assertTrue(MeshNodes.bandFor(0.05) < MeshNodes.bandFor(0.5))
+        assertTrue("0.6 m at a 2.5 m ring", MeshNodes.NEAR_BAND * 2.5f > 0.5f)
+    }
+
+    /** The band still grows with range; only the floor moved. */
+    @Test fun theBandStillRisesWithDistance() {
+        assertTrue(MeshNodes.bandFor(1.0) > MeshNodes.bandFor(0.0))
+        assertTrue(MeshNodes.bandFor(20.0) > MeshNodes.bandFor(1.0))
+        assertEquals(1.0f, MeshNodes.bandFor(50.0), 1e-6f)
+    }
+
+    /**
+     * Ranking IS which nodes exist: layout fills lanes in this order and stops
+     * at MAX_MOTES. A node in the same room must not rank below a chatty one
+     * forty kilometres away.
+     */
+    @Test fun nearestOutranksMostRecentlyHeard() {
+        val here = MeshNodes.Here(londonLat, londonLon)
+        val far = peer(name = "far", lat = 51.9, lon = -0.9)
+            .copy(lastSeenEpochSec = NOW)
+        val near = peer(name = "near", lat = londonLat + 0.0005, lon = londonLon)
+            .copy(lastSeenEpochSec = NOW - 3600)
+        val out = MeshNodes.rank(here, listOf(far, near), NOW)
+        assertEquals("near", out.first().name)
+    }
+
+    /** A favourite is the operator saying "this one is mine". It wins outright. */
+    @Test fun aFavouriteOutranksEverything() {
+        val here = MeshNodes.Here(londonLat, londonLon)
+        val near = peer(name = "near", lat = londonLat + 0.0005, lon = londonLon)
+        val mine = peer(name = "mine", lat = 51.9, lon = -0.9).copy(favourite = true)
+        val out = MeshNodes.rank(here, listOf(near, mine), NOW)
+        assertEquals("mine", out.first().name)
+    }
+
+    /** And it survives the trip into a Node, so the ring can mark it. */
+    @Test fun favouriteReachesTheNode() {
+        val here = MeshNodes.Here(londonLat, londonLon)
+        val p = peer(name = "mine", lat = londonLat, lon = londonLon).copy(favourite = true)
+        assertTrue(MeshNodes.nodeFor(here, p, NOW).favourite)
+    }
+
     private fun peer(name: String = "relay", lat: Double? = null, lon: Double? = null) =
         MeshNodes.Peer("k1", name, 2, 2, lat, lon, NOW)
 

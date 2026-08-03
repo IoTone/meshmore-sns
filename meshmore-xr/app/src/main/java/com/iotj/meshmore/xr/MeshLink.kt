@@ -192,6 +192,7 @@ class MeshLink(private val context: Context) {
                 // An advert never carries the full key, so a later advert must
                 // not erase what a contact told us.
                 fullKey = p.fullKey ?: old.fullKey,
+                favourite = p.favourite || old.favourite,
                 telemetry = p.telemetry ?: old.telemetry,
                 path = p.path ?: old.path,
                 lastSeenEpochSec = maxOf(p.lastSeenEpochSec, old.lastSeenEpochSec),
@@ -835,6 +836,10 @@ class MeshLink(private val context: Context) {
                     MeshNodes.Peer(
                         key = hex(c.publicKey()),
                         fullKey = hexFull(c.publicKey()),
+                        // The operator's own "this one is mine", stored on the
+                        // radio and ignored by this app until now.
+                        favourite = (c.flags() and
+                            io.iotone.meshcore.model.Contact.FLAG_FAVOURITE) != 0,
                         name = c.name() ?: "",
                         type = c.type(),
                         // outPathLen is the number of relays in the stored path,
