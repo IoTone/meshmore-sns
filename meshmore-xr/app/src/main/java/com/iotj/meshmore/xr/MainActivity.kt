@@ -820,6 +820,41 @@ private fun HorizonScene(link: MeshLink) {
                 dockRef.value?.setLit("HANDS", next)
                 if (next) cue.opened() else cue.closed()
             },
+            // FACE NORTH, THEN PRESS THIS.
+            //
+            // The glasses publish no magnetometer — two sensors reach apps and
+            // neither is an IMU — so the device cannot find north, while every
+            // node's bearing is computed from lat/lon and is therefore measured
+            // FROM north. Without this the whole ring is rotated by however far
+            // off north you happened to be at launch, which is what a real
+            // compass held up to the display showed on 2026-08-02.
+            //
+            // PER SESSION, and that is not laziness. The correction is a yaw in
+            // the runtime's activity space, and that space is re-established on
+            // every launch — a number stored from one session means nothing in
+            // the next. Persisting it would be storing a fiction.
+            "NORTH" to {
+                val h = stage.headNow()
+                if (h == null) {
+                    cue.closed()
+                    Log.w(TAG_UI, "[heading] NORTH pressed with no head pose")
+                } else {
+                    // The same derivation Stage.recentre uses, and it must stay
+                    // the same: place() maps bearing 0 to (sin a, -cos a), so
+                    // the yaw that puts north under your nose is atan2(-fx, fz).
+                    // The X sign vanishes at identity, which is how a mirrored
+                    // scene survives every test done facing the tracking origin.
+                    val q = h.rotation
+                    val fx = 2f * (q.x * q.z + q.w * q.y)
+                    val fz = 1f - 2f * (q.x * q.x + q.y * q.y)
+                    val yaw = kotlin.math.atan2(-fx, fz)
+                    originRef.value = originRef.value?.copy(yawRad = yaw)
+                    hereEpoch.value += 1
+                    cue.opened()
+                    Log.i(TAG_UI, "[heading] NORTH set from head yaw %.1f° — ring is now "
+                        .format(Math.toDegrees(yaw.toDouble())) + "north-referenced")
+                }
+            },
         ))
         // A short tick when a pip takes focus. On a display where you cannot
         // feel a control, sound is the only confirmation that the pointer has

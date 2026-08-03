@@ -69,6 +69,14 @@ object Marks {
         "WIDE" to "M34 10 H10 V34 M66 10 H90 V34 M90 66 V90 H66 M34 90 H10 V66 " +
             "M40 50 H60 M50 40 V60",
 
+        // NORTH — a compass needle, and deliberately NOT another rose.
+        //
+        // COMPASS (the band toggle) is already a four-point star, and two
+        // compass-shaped marks a few degrees apart would be a coin toss. A
+        // needle is the instrument you point, which is what this pip does: you
+        // face north and tell the ring so.
+        "NORTH" to "M50 6 L64 50 L50 94 L36 50 Z M50 6 L50 94 M30 50 H70",
+
         // HANDS — four fingers, a thumb and a palm.
         //
         // First attempt borrowed the Gallaudet 'B' the help card already draws,
