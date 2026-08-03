@@ -35,6 +35,18 @@ object MeshNodes {
         val lastSeenEpochSec: Long,
         /** Metres above sea level from CayenneLPP telemetry, or null. */
         val altM: Double? = null,
+        /**
+         * The stored route to this peer, as the first byte of each relay's
+         * public key — MeshCore stores one byte per hop, which is why
+         * MeshTopology has to treat collisions as ambiguous.
+         *
+         * null   = nothing known (advert-only). A floater.
+         * empty  = a direct neighbour.
+         * else   = the relays between us and them, in order.
+         */
+        val path: List<Int>? = null,
+        /** Reachable by flooding: no pinned route. Mutually exclusive with [path]. */
+        val flood: Boolean = false,
     )
 
     /** Where the radio thinks it is. Null when it has no fix. */

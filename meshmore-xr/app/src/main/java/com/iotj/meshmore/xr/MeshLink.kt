@@ -21,6 +21,7 @@ import io.iotone.meshcore.android.AndroidBleTransport
 import io.iotone.meshcore.android.MeshcoreSession
 import io.iotone.meshcore.android.SessionListener
 import com.iotj.meshmore.xr.spatial.MeshNodes
+import com.iotj.meshmore.xr.spatial.MeshTopology
 import io.iotone.meshcore.android.SessionState
 import io.iotone.meshcore.frames.AdvertFrame
 import io.iotone.meshcore.frames.ChannelMessageFrame
@@ -631,6 +632,14 @@ class MeshLink(private val context: Context) {
                         // outPathLen is the number of relays in the stored path,
                         // so hops to us is that plus our own final leg.
                         hops = c.outPathLen() + 1,
+                        // THE ROUTE ITSELF, which used to be read for its
+                        // LENGTH and then dropped. One byte per relay — the
+                        // first byte of its public key — which is all MeshCore
+                        // stores and is why MeshTopology has to treat two
+                        // repeaters sharing a first byte as ambiguous.
+                        path = if (c.outPathLen() == MeshTopology.PATH_LEN_FLOOD) null
+                               else c.activePath().map { b -> b.toInt() and 0xFF },
+                        flood = c.outPathLen() == MeshTopology.PATH_LEN_FLOOD,
                         lat = c.latitude(),
                         lon = c.longitude(),
                         lastSeenEpochSec = c.lastAdvertTimestamp(),
@@ -654,6 +663,19 @@ class MeshLink(private val context: Context) {
                     }
                     is io.iotone.meshcore.frames.EndOfContactsFrame -> {
                         Log.i(TAG, "[link] contacts sync complete")
+                        // THE CENSUS. Step 1 of the topology spec: measure what
+                        // fraction of a real mesh has a route we can actually
+                        // resolve, before designing anything on top of it. SNS's
+                        // field note says to expect very little.
+                        runCatching {
+                            val selfKey = _status.value.selfInfo
+                                ?.publicKey()?.joinToString("") { b -> "%02x".format(b) }
+                                ?: "self"
+                            val g = MeshTopology.resolve(selfKey, _mesh.value)
+                            Log.i(TAG, "[topology] " + g.census)
+                            Log.i(TAG, "[topology] edges=" + g.edges.size +
+                                " by kind " + g.edges.groupingBy { it.kind }.eachCount())
+                        }.onFailure { Log.w(TAG, "[topology] census failed: " + it) }
                         _load.value = _load.value.copy(done = true)
                     }
                     is io.iotone.meshcore.frames.BatteryStorageFrame -> {

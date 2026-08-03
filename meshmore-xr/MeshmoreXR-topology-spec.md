@@ -1,5 +1,18 @@
 # MeshmoreXR — THE LATTICE
 
+> **MEASURED 2026-08-03, AND THE ANSWER IS NO — NOT YET.** Step 1 was run
+> against the live 350-contact mesh and there is nothing to draw:
+>
+> ```
+> peers=350  resolvable=0  (direct=0 relayed=0)  flood=350  floaters=0
+> repeaters=297  collisions=83
+> ```
+>
+> Every contact is flood-routed, so the graph is a star: one node in the
+> middle and 350 dashed edges to nodes with no relationship to each other. See
+> §3.2 for what that means and what would have to change first. The rest of
+> this document stands as the design for when the data does.
+
 **The mesh's topology as a spatial force-directed graph. Spec only; nothing built.**
 Written 2026-08-03. Mirrors Meshmore SNS's `MeshTreeView` (R50). Extends
 `MeshmoreXR-design-brief.md` §5 as a new surface; does **not** replace S1
@@ -94,6 +107,51 @@ there will be many.
   artefact. Two nodes close together in the lattice are not near each other,
   and the surface must not read as a map — which is the strongest argument for
   it looking nothing like HORIZON (§5).
+
+### 3.2 The measurement, and the verdict
+
+The spec put the census first because the surface rests on a number nobody had.
+Here it is, from the live mesh on 2026-08-03:
+
+| | |
+|---|---|
+| Peers | 350 |
+| **Resolvable routes** | **0** |
+| Direct neighbours | 0 |
+| Relayed (chain resolved) | 0 |
+| Flood-routed | 350 |
+| Typed as repeaters | 297 |
+| First-byte collisions among them | 83 |
+
+**Every single contact is flood-routed.** SNS warned of a "3 nodes surprise";
+this radio has a zero-node surprise. The lattice, built today, would be a star:
+self in the middle and 350 dashed spokes to nodes with no drawn relationship to
+one another. That is not a topology view, it is a worse roster.
+
+The reason is not a bug. MeshCore learns a stored path when you actually
+*message* a contact — the route comes back with the reply. A passive listener
+that has only ever received adverts has no paths at all, and this device has
+been a passive listener for its whole life.
+
+**A second number matters as much.** 83 collisions among 297 repeaters is what
+the birthday problem predicts for 297 items in 256 buckets, and it means that
+even once paths exist, **roughly a quarter of all hops will be ambiguous**. A
+one-byte hash cannot index a mesh this size. Any future version of this surface
+has to be built expecting that, not hoping against it.
+
+**So the lattice is deferred, and the trigger is measurable.** Re-run the
+census; when `resolvable` is a meaningful fraction of `peers` — say 15% — there
+is a graph worth drawing. Until then §13's step 1 is the whole of the work, and
+it is done.
+
+What would move the number:
+
+- **Send to peers**, and paths appear for the ones that answer. This makes the
+  lattice a natural companion to S4 SPEAK rather than a standalone surface —
+  the graph fills in as you use the mesh.
+- **Ask the radio for paths explicitly**, if MeshCore exposes a path-discovery
+  command. Worth checking `libmeshcore` before assuming it does not.
+- **Nothing else.** We cannot infer edges, and §3.1 says why.
 
 ---
 
