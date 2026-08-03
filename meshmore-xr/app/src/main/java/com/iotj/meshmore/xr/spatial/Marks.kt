@@ -69,6 +69,30 @@ object Marks {
         "WIDE" to "M34 10 H10 V34 M66 10 H90 V34 M90 66 V90 H66 M34 90 H10 V66 " +
             "M40 50 H60 M50 40 V60",
 
+        // --- console plates. Mirrors of SNS's settings hub icons ------------
+        // SETUP — the emitter on the dock. A gear would be the obvious mark and
+        // is also the most generic one in software; this is the projector base
+        // the stack rises from, drawn as what it is.
+        "SETUP" to "M22 78 H78 M30 78 L44 56 M70 78 L56 56 M40 56 H60 " +
+            "M50 56 V34 M38 34 H62 M44 22 H56",
+
+        // APP — three RAILs. Not a borrowed slider icon: RAIL is already this
+        // app's word for a range control, so the mark says what the bay holds.
+        "APP" to "M14 30 H86 M14 50 H86 M14 70 H86 " +
+            "M34 24 V36 M62 44 V56 M46 64 V76",
+
+        // PROFILE — a swatch ring. The one mark that is not static: it takes
+        // the theme's own colours, so it previews the thing its bay changes.
+        "PROFILE" to "M50 50 m-30 0 a30 30 0 1 0 60 0 a30 30 0 1 0 -60 0 " +
+            "M50 20 V50 L76 65",
+
+        // CHANNELS — a hash. Universal, and the same symbol SNS uses.
+        "CHANNELS" to "M32 16 L24 84 M62 16 L54 84 M16 36 H82 M14 64 H80",
+
+        // DIAG — a trace with a link arc. Connect a radio, and watch frames.
+        "DIAG" to "M10 62 H26 L34 42 L44 78 L54 54 L62 62 H74 " +
+            "M64 30 A24 24 0 0 1 88 54",
+
         // INBOX — an envelope. The one mark in the set that is not an
         // instrument, which is the point: this is the surface where the mesh
         // is people rather than hardware.

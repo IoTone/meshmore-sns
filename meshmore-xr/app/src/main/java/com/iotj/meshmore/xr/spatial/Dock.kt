@@ -226,6 +226,9 @@ class Dock(
      * Firing goes through the same queue a pinch uses, so a dwelled pip and a
      * pinched one take exactly the same path and cannot drift apart.
      */
+    /** Where a pip sits, for a surface that needs to grow out of one. */
+    fun pipAt(name: String): Vector3? = pips.firstOrNull { it.name == name }?.at
+
     fun gazeTargets(): List<Gaze.Target> = pips.map { p ->
         Gaze.Target(p.name, p.at, CONE) { fired.add(p) }
     }

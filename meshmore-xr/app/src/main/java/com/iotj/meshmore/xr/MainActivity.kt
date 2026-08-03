@@ -154,6 +154,8 @@ class MainActivity : ComponentActivity() {
          * not a permission you control.
          */
         var telPerm: String? = null
+        /** --ez console true : project the settings stack at launch. Inert. */
+        var showConsole: Boolean = false
         /** --ez handdebug true : log what the ASL classifier measures, ~1 Hz. */
         var handDebug: Boolean = false
         /** --ez typeprobe true : answer whether tier R can exist on this SDK. */
@@ -230,6 +232,7 @@ class MainActivity : ComponentActivity() {
         showFocus = intent?.getBooleanExtra("focus", false) ?: false
         probePaths = intent?.getBooleanExtra("probe", false) ?: false
         telPerm = intent?.getStringExtra("telperm")
+        showConsole = intent?.getBooleanExtra("console", false) ?: false
         northDeg = intent?.getStringExtra("north")?.toFloatOrNull()
         Log.i(TAG, "[boot] north at launch = " +
             (northDeg?.let { "%.0f° true".format(it) } ?: "<unknown, ring is relative>"))
@@ -613,6 +616,7 @@ private fun HorizonScene(link: MeshLink) {
     val gazeRef = remember { mutableStateOf<com.iotj.meshmore.xr.spatial.Gaze?>(null) }
     val rosterRef = remember { mutableStateOf<com.iotj.meshmore.xr.spatial.Roster?>(null) }
     val inboxRef = remember { mutableStateOf<com.iotj.meshmore.xr.spatial.Inbox?>(null) }
+    val consoleRef = remember { mutableStateOf<com.iotj.meshmore.xr.spatial.Console?>(null) }
     val noticeRef = remember { mutableStateOf<Notice?>(null) }
     // The wedge currently magnified, or null for the true 1:1 ring. Bumping
     // hereEpoch is what makes the mesh effect re-run and re-place everything.
@@ -864,11 +868,23 @@ private fun HorizonScene(link: MeshLink) {
                     h.setLower(!h.lowerOn); dockRef.value?.setLit("LINK", h.lowerOn)
                 }
             },
-            "RADIO" to {
-                val next = !(rackRef.value?.visible ?: false)
-                rackRef.value?.setVisible(next)
-                dockRef.value?.setLit("RADIO", next)
-                if (next) cue.opened() else cue.closed()
+            // THE CONSOLE TAKES THE RADIO PIP'S SLOT, and the rack becomes a
+            // bay inside it (console spec §7 D1). One guarded entrance to the
+            // radio beats two — the original objection to the rack was that it
+            // sat somewhere it would get changed by a hand reaching for
+            // something else — and the dock does not grow a tenth pip.
+            "SETUP" to {
+                val c = consoleRef.value
+                val at = dockRef.value?.pipAt("SETUP")
+                if (c == null || at == null) {
+                    cue.closed()
+                } else if (c.open) {
+                    c.hide(); dockRef.value?.setLit("SETUP", false); cue.closed()
+                } else {
+                    c.showAt(at)
+                    dockRef.value?.setLit("SETUP", true)
+                    cue.opened()
+                }
             },
             "HELP" to {
                 val next = !(helpRef.value?.visible ?: false)
@@ -1012,6 +1028,11 @@ private fun HorizonScene(link: MeshLink) {
         // THE DWELL FALLBACK (§8.2). Armed only when no hand is tracked, so it
         // is an alternative to the pinch rather than a second way to fire the
         // same control by accident.
+        val console = com.iotj.meshmore.xr.spatial.Console(session, palette, ctx)
+        console.build()
+        console.onFocus = { cue.recognised() }
+        consoleRef.value = console
+
         val inbox = com.iotj.meshmore.xr.spatial.Inbox(session, palette, ctx)
         inbox.build()
         inbox.onFocus = { cue.recognised() }
@@ -1057,7 +1078,7 @@ private fun HorizonScene(link: MeshLink) {
         }
         rack.onDismiss = {
             rack.setVisible(false)
-            dock.setLit("RADIO", false)
+            dock.setLit("SETUP", false)
         }
         // DEFAULT CLOSED, no exception. A launch flag that opens a live radio
         // panel is the same hazard as leaving it standing, just triggered by a
@@ -1093,6 +1114,14 @@ private fun HorizonScene(link: MeshLink) {
         var statusTick = 0f
         try {
             if (MainActivity.selfTest) launch { horizon.selfTest(origin) }
+            if (MainActivity.showConsole) launch {
+                kotlinx.coroutines.delay(1500)
+                dockRef.value?.pipAt("SETUP")?.let { at ->
+                    consoleRef.value?.showAt(at)
+                    dockRef.value?.setLit("SETUP", true)
+                    Log.i(TAG_UI, "[console] opened by launch flag")
+                }
+            }
             if (MainActivity.showFocus) launch {
                 var waited = 0
                 while (waited < 60_000) {
@@ -1207,17 +1236,48 @@ private fun HorizonScene(link: MeshLink) {
                 gazeRef.value?.setTargets(
                     (dockRef.value?.gazeTargets() ?: emptyList()) +
                         (rosterRef.value?.gazeTargets() ?: emptyList()) +
-                        (inboxRef.value?.gazeTargets() ?: emptyList()),
+                        (inboxRef.value?.gazeTargets() ?: emptyList()) +
+                        (consoleRef.value?.gazeTargets() ?: emptyList()),
                 )
                 gazeRef.value?.tick(stage.headNow(), anyHand, nowMs)
                 // Show the dwelled pip's caption. Same focus state a pointer
                 // produces, so the two input paths look identical as well as
                 // firing identically.
                 dockRef.value?.gazed = gazeRef.value?.onTarget
+                consoleRef.value?.setGazed(gazeRef.value?.onTarget)
                 rosterRef.value?.tick(stage.headNow()?.translation)
                 while (true) {
                     val pick = rosterRef.value?.poll() ?: break
                     rosterRef.value?.activate(pick)
+                }
+                consoleRef.value?.tick(stage.headNow()?.translation)
+                while (true) {
+                    val bay = consoleRef.value?.poll() ?: break
+                    when (bay) {
+                        // The rack, unchanged and with its guards intact. The
+                        // console changes how you REACH it, not how it works.
+                        "DEVICE" -> {
+                            rackRef.value?.setVisible(true)
+                            consoleRef.value?.hide()
+                            dockRef.value?.setLit("SETUP", false)
+                            cue.opened()
+                        }
+                        "DIAG" -> {
+                            val on = !Settings.diagnostics(ctx)
+                            Settings.setDiagnostics(ctx, on)
+                            noticeRef.value?.say(
+                                if (on) "DIAGNOSTICS ON" else "DIAGNOSTICS OFF",
+                            )
+                            cue.opened()
+                        }
+                        // HONEST ABOUT WHAT IS NOT BUILT. A plate that opens
+                        // nothing and says nothing reads as a fault; one that
+                        // says so reads as a roadmap.
+                        else -> {
+                            noticeRef.value?.say("$bay — NOT BUILT YET")
+                            cue.closed()
+                        }
+                    }
                 }
                 inboxRef.value?.tick(stage.headNow()?.translation)
                 while (true) {
