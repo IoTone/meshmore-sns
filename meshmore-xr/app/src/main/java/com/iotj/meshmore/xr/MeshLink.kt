@@ -767,6 +767,42 @@ class MeshLink(private val context: Context) {
                 _status.value = _status.value.let { it.copy(adverts = it.adverts + 1, lastEvent = "advert") }
             }
 
+            /**
+             * INBOUND DIRECT MESSAGES, which this app could not receive at all
+             * until 2026-08-03.
+             *
+             * The session drains the device's queue by itself — triggerDrain on
+             * MSGS_WAITING, continueDrain after each item — and hands each
+             * message here. Nothing was listening, so every DM ever sent to
+             * this radio was fetched, dispatched, and dropped on the floor,
+             * with the sender left believing nothing arrived.
+             *
+             * The first attempt at this fix put handlers in onOtherFrame, which
+             * these frames never reach: the session intercepts MSGS_WAITING and
+             * NO_MORE_MESSAGES outright and routes contact messages to their own
+             * callback. Reading the dispatch would have been quicker than
+             * writing the handler.
+             */
+            override fun onContactMessage(
+                frame: io.iotone.meshcore.frames.ContactMessageFrame,
+            ) {
+                val m = frame.message()
+                val pre = hex(m.pubKeyPrefix())
+                val who = peers.values.firstOrNull { it.key == pre }
+                // pathLen is the hop count the message ARRIVED by; 0xFF means it
+                // flooded. This is the number the topology census watches.
+                val via = if (m.pathLen() == MeshTopology.PATH_LEN_FLOOD) "flood"
+                          else "${m.pathLen()} hop(s)"
+                val name = who?.name?.ifBlank { null } ?: pre
+                Log.i(TAG, "[msg] DM from $name via $via" +
+                    (m.snrDb()?.let { " snr=${it}dB" } ?: "") + ": ${m.text()}")
+                diag("<<DM     $name  ($via)  ${m.text()}")
+                _status.value = _status.value.copy(lastEvent = "dm")
+                // A message arriving is when the radio learns a route back, so
+                // go looking for one now rather than at the next sync.
+                session?.requestContacts()
+            }
+
             override fun onContact(frame: ContactFrame) {
                 val c = frame.contact()
                 upsert(
@@ -803,39 +839,6 @@ class MeshLink(private val context: Context) {
 
             override fun onOtherFrame(frame: io.iotone.meshcore.frames.MeshcoreInbound) {
                 when (frame) {
-                    // THE DEVICE DOES NOT PUSH MESSAGE BODIES. It says items
-                    // are waiting and holds them until they are fetched, one at
-                    // a time — so an app that ignores this receives no direct
-                    // messages at all, and the sender is left believing nothing
-                    // arrived. This app ignored it until 2026-08-03, when a DM
-                    // sent from the operator's own node vanished into the
-                    // radio's queue and no route was ever learned from it.
-                    is io.iotone.meshcore.frames.MessagesWaitingFrame -> {
-                        Log.i(TAG, "[msg] waiting: ${frame.count()} — draining")
-                        session?.syncNextMessage()
-                    }
-                    is io.iotone.meshcore.frames.ContactMessageFrame -> {
-                        val m = frame.message()
-                        val pre = hex(m.pubKeyPrefix())
-                        val who = peers.values.firstOrNull { it.key == pre }
-                        // pathLen is the hop count the message ARRIVED by, and
-                        // 0xFF means it flooded. This is the number the topology
-                        // census is waiting to see move.
-                        val via = if (m.pathLen() == MeshTopology.PATH_LEN_FLOOD) "flood"
-                                  else "${m.pathLen()} hop(s)"
-                        Log.i(TAG, "[msg] DM from ${who?.name?.ifBlank { null } ?: pre} " +
-                            "via $via: ${m.text()}")
-                        diag("<<DM     ${who?.name?.ifBlank { null } ?: pre}  ($via)  ${m.text()}")
-                        // Keep draining: the device hands them over one at a
-                        // time and stops answering when the queue is empty.
-                        session?.syncNextMessage()
-                        // A message arriving is when the radio learns a route
-                        // back, so look for one now rather than at the next sync.
-                        session?.requestContacts()
-                    }
-                    is io.iotone.meshcore.frames.NoMoreMessagesFrame -> {
-                        Log.i(TAG, "[msg] queue empty")
-                    }
                     is io.iotone.meshcore.frames.TelemetryResponseFrame -> {
                         // WHICH PEER, by key PREFIX — the reply carries the
                         // first bytes of the public key, not the whole thing.

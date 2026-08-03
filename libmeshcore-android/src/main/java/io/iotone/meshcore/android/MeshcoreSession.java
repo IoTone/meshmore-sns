@@ -181,26 +181,6 @@ public final class MeshcoreSession {
     }
 
     /**
-     * Pulls the next queued inbound message ({@code CMD_SYNC_NEXT_MESSAGE},
-     * 0x0A).
-     *
-     * <p>The device does <em>not</em> push message bodies. It announces that
-     * items are waiting with {@code PUSH_CODE_MSGS_WAITING} and holds them
-     * until they are fetched one at a time — so a client that never calls this
-     * receives no direct messages at all, and the sender sees no acknowledgement
-     * that anything arrived. Call it on every
-     * {@link io.iotone.meshcore.frames.MessagesWaitingFrame} and again after
-     * each {@link io.iotone.meshcore.frames.ContactMessageFrame} until the
-     * device answers {@link io.iotone.meshcore.frames.NoMoreMessagesFrame}.</p>
-     *
-     * <p>No-op when not {@link SessionState#READY}.</p>
-     */
-    public void syncNextMessage() {
-        if (state.get() != SessionState.READY) return;
-        send(MeshcoreFrameCodec.syncNextMessage());
-    }
-
-    /**
      * Requests telemetry from a PEER ({@code CMD_SEND_TELEMETRY_REQ} with a
      * 32-byte public key). The reply arrives later as a
      * {@code PUSH_CODE_TELEMETRY_RESPONSE} (0x8B) on
