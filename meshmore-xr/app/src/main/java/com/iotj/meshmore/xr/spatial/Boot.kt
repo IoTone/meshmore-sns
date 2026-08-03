@@ -121,10 +121,14 @@ class Boot(private val session: Session, private val theme: Horizon.Palette) {
         // the vessel always looks like it is being fed. They are the only thing
         // that moves when the radio announces no total -- an honest "working"
         // with no invented level under it.
-        val moteMat = Prims.material(session, theme.alt, 0.9f)
+        // ONE MATERIAL PER ENTITY. A single material shared across the
+        // particles is released by whichever one is disposed first, while the
+        // rest still borrow it, and the renderer aborts in native code — see
+        // the note on Horizon's hit proxy for the message it prints.
         repeat(PARTICLES) {
             MeshEntity.create(
-                session, Prims.build(session, Prims.mote(0.010f, 4, 6)), listOf(moteMat),
+                session, Prims.build(session, Prims.mote(0.010f, 4, 6)),
+                listOf(Prims.material(session, theme.alt, 0.9f)),
             ).also {
                 it.parent = root
                 motes += it

@@ -70,14 +70,16 @@ class HereMark(private val session: Session, private val theme: Horizon.Palette)
         setText(text)
 
         // Hit proxy, same reasoning as Horizon's: the thing you point at is
-        // deliberately larger than the thing you see, and alpha 0.02 rather
-        // than 0 so the renderer cannot decide to skip it.
+        // deliberately larger than the thing you see. Its OWN material, and a
+        // ghost — it shared `mat` with the ring above, which is the crash
+        // described on Horizon's proxy, and an alpha-mask material discards its
+        // fragments instead of writing depth over what is behind it.
         val proxy = MeshEntity.create(
-            session, Prims.build(session, Prims.mote(R * 1.9f, 5, 8)), listOf(mat),
+            session, Prims.build(session, Prims.mote(R * 1.9f, 5, 8)),
+            listOf(Prims.ghost(session)),
         ).also {
             it.parent = root
             it.setPose(Pose(at), Space.ACTIVITY)
-            it.setAlpha(0.02f)
             entities += it
         }
         runCatching {

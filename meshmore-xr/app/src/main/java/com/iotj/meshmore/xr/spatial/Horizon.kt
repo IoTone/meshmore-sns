@@ -340,16 +340,33 @@ class Horizon(
             // of patience, so the thing you point at is deliberately bigger than
             // the thing you see.
             //
-            // Alpha 0.02 rather than 0: a fully transparent entity is a
-            // reasonable thing for a renderer to skip, and being skipped means
-            // being unhittable. 0.02 emits nothing perceptible on an additive
-            // display and keeps it in the pipeline.
+            // ITS OWN MATERIAL, and specifically a GHOST.
+            //
+            // This shared `moteMat` with the mote, and one material handed to
+            // two entities is what crashed the renderer:
+            //
+            //   OwnedPtr of type imp::Material named "Split Engine Placeholder"
+            //   released with 1 outstanding borrowed objects
+            //
+            // Disposing either entity releases the material while the other
+            // still borrows it, and the abort lands in native code with no
+            // Kotlin frame to point at. On this runtime a material belongs to
+            // exactly one entity. Reported 2026-08-02 as an occasional crash
+            // when backing out with the dock's WIDE pip, which is a rebuild and
+            // therefore a mass dispose.
+            //
+            // Ghost rather than alpha 0.02 for the same reason the dock's
+            // proxies are: an alpha-mask material DISCARDS its fragments, so it
+            // cannot write depth and quietly occlude what is behind it, whereas
+            // a nearly-transparent one is still drawn. The 0.02 trick was there
+            // to stop the renderer skipping — and being skipped means being
+            // unhittable — but MASK keeps it in the pipeline without emitting.
             val proxy = MeshEntity.create(
-                session, Prims.build(session, Prims.mote(r * 2.2f, 5, 8)), listOf(moteMat),
+                session, Prims.build(session, Prims.mote(r * 2.2f, 5, 8)),
+                listOf(Prims.ghost(session)),
             ).also {
                 it.parent = root
                 it.setPose(Pose(Vector3(px, py, pz)), Space.ACTIVITY)
-                it.setAlpha(0.02f)
                 entities += it
             }
 

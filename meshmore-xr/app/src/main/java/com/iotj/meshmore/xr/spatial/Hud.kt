@@ -89,8 +89,12 @@ class Hud(private val session: Session, private val theme: Horizon.Palette) {
     suspend fun build() {
         clear()
         val root = session.scene.activitySpace
-        val mat = Prims.material(session, theme.accent, 0.75f)
-        val matDim = Prims.material(session, theme.accent, 0.42f)
+        // A MATERIAL PER ENTITY. These used to be two materials shared across
+        // forty ticks, and on this runtime a material belongs to exactly one
+        // entity: disposing any one of them releases it while the rest still
+        // borrow, and the renderer aborts in native code with
+        // "OwnedPtr of type imp::Material ... released with N outstanding
+        // borrowed objects". See Horizon's hit proxy for the report.
 
         // Minor ticks are identical, so a POOL is enough: only about a dozen
         // are ever on screen and which bearings they represent changes every
@@ -98,7 +102,8 @@ class Hud(private val session: Session, private val theme: Horizon.Palette) {
         // permanently disabled for nothing.
         repeat(MINOR_POOL) {
             MeshEntity.create(
-                session, Prims.build(session, Prims.bar(TICK_W, MINOR_H, TICK_W)), listOf(matDim),
+                session, Prims.build(session, Prims.bar(TICK_W, MINOR_H, TICK_W)),
+                listOf(Prims.material(session, theme.accent, 0.42f)),
             ).also { it.parent = root; it.setEnabled(false); minors += it; entities += it }
         }
 
@@ -113,7 +118,10 @@ class Hud(private val session: Session, private val theme: Horizon.Palette) {
             f.addTranslated(
                 Glyphs.text(label, LABEL_CAP), 0f, -(MAJOR_H / 2f + LABEL_CAP * 1.1f), 0f,
             )
-            MeshEntity.create(session, Prims.build(session, f), listOf(mat)).also {
+            MeshEntity.create(
+                session, Prims.build(session, f),
+                listOf(Prims.material(session, theme.accent, 0.75f)),
+            ).also {
                 it.parent = root; it.setEnabled(false); majors += b to it; entities += it
             }
         }
