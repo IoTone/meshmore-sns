@@ -589,6 +589,30 @@ class MeshLink(private val context: Context) {
         _status.value = _status.value.copy(lastEvent = "probe")
     }
 
+    /**
+     * Who may ask this radio what it knows.
+     *
+     * A GUARDED write, like the rack's link-breaking fields: this is the only
+     * setting in the app that decides what leaves the device about the person
+     * wearing it, and LOCATION is not the same decision as battery level.
+     */
+    fun setTelemetryPermissions(p: com.iotj.meshmore.xr.spatial.TelemetryPerms.Perms) {
+        val s = session
+        if (s == null || _status.value.state != SessionState.READY) {
+            Log.w(TAG, "[telemetry] set skipped — link not ready")
+            return
+        }
+        Log.i(TAG, "[telemetry] permissions -> $p (packed=0x%02x)".format(p.packed()))
+        diag(">>TELPERM $p")
+        s.setTelemetryPermissions(p.packed())
+    }
+
+    /** What the radio currently allows, straight from the last SELF_INFO. */
+    fun telemetryPermissions(): com.iotj.meshmore.xr.spatial.TelemetryPerms.Perms =
+        com.iotj.meshmore.xr.spatial.TelemetryPerms.unpack(
+            _status.value.selfInfo?.telemetryModeRaw() ?: 0,
+        )
+
     /** Re-sync contacts, which is how a newly learned path becomes visible. */
     fun refreshContacts() {
         val s = session ?: return
@@ -638,7 +662,9 @@ class MeshLink(private val context: Context) {
         Log.i(TAG, "[radio] position      = ${s.latitude()}, ${s.longitude()}" +
             if (MeshNodes.Here(s.latitude(), s.longitude()).known) "" else "  (no GPS fix)")
         Log.i(TAG, "[radio] adv loc policy= ${s.advertLocPolicy()}")
-        Log.i(TAG, "[radio] telemetry mode= ${s.telemetryModeRaw()}")
+        Log.i(TAG, "[radio] telemetry     = " +
+            com.iotj.meshmore.xr.spatial.TelemetryPerms.unpack(s.telemetryModeRaw()) +
+            "  (raw 0x%02x)".format(s.telemetryModeRaw()))
         Log.i(TAG, "[radio] multi-acks    = ${s.multiAcks()}")
         Log.i(TAG, "[radio] manual add    = ${s.manualAddContacts()}")
     }

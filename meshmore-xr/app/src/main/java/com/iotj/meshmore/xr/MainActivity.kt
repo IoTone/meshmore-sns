@@ -145,6 +145,15 @@ class MainActivity : ComponentActivity() {
          * and the flag cannot widen them.
          */
         var probePaths: Boolean = false
+        /**
+         * --es telperm "battery,location,environment", each of deny|contacts|anyone.
+         *
+         * The rack is where this belongs (§9.5 lists it as a TUMBLER) and that
+         * is still owed. Until then this makes the setting reachable rather
+         * than merely implemented, because a permission you cannot change is
+         * not a permission you control.
+         */
+        var telPerm: String? = null
         /** --ez handdebug true : log what the ASL classifier measures, ~1 Hz. */
         var handDebug: Boolean = false
         /** --ez typeprobe true : answer whether tier R can exist on this SDK. */
@@ -220,6 +229,7 @@ class MainActivity : ComponentActivity() {
         showMenu = intent?.getBooleanExtra("menu", false) ?: false
         showFocus = intent?.getBooleanExtra("focus", false) ?: false
         probePaths = intent?.getBooleanExtra("probe", false) ?: false
+        telPerm = intent?.getStringExtra("telperm")
         northDeg = intent?.getStringExtra("north")?.toFloatOrNull()
         Log.i(TAG, "[boot] north at launch = " +
             (northDeg?.let { "%.0f° true".format(it) } ?: "<unknown, ring is relative>"))
@@ -601,6 +611,27 @@ private fun HorizonScene(link: MeshLink) {
     val hereEpoch = remember { mutableStateOf(0) }
 
     // The mesh, rebuilt whenever membership changes.
+    // TELEMETRY PERMISSIONS, if the launch asked to change them. Not in the
+    // scene effect for the same reason the probe is not: it is a radio setting
+    // and has nothing to do with a head pose.
+    LaunchedEffect(link, MainActivity.telPerm) {
+        val spec = MainActivity.telPerm ?: return@LaunchedEffect
+        while (link.status.value.selfInfo == null) kotlinx.coroutines.delay(500)
+        val want = spec.split(",").map { it.trim().lowercase() }
+        fun lvl(s: String?) = when (s) {
+            "anyone", "all" -> com.iotj.meshmore.xr.spatial.TelemetryPerms.ALLOW_ALL
+            "contacts", "flags" -> com.iotj.meshmore.xr.spatial.TelemetryPerms.ALLOW_FLAGS
+            else -> com.iotj.meshmore.xr.spatial.TelemetryPerms.DENY
+        }
+        val p = com.iotj.meshmore.xr.spatial.TelemetryPerms.Perms(
+            base = lvl(want.getOrNull(0)),
+            location = lvl(want.getOrNull(1)),
+            environment = lvl(want.getOrNull(2)),
+        )
+        Log.i(TAG_UI, "[telemetry] was ${link.telemetryPermissions()}, setting $p")
+        link.setTelemetryPermissions(p)
+    }
+
     // THE PATH PROBE, deliberately NOT inside the scene effect.
     //
     // Sending is a radio action and has nothing to do with the head. The scene

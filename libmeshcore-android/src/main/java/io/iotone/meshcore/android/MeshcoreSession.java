@@ -333,6 +333,35 @@ public final class MeshcoreSession {
         send(MeshcoreFrameCodec.setAdvertName(name));
     }
 
+    /**
+     * Sets who may REQUEST telemetry from this device
+     * ({@code CMD_SET_OTHER_PARAMS}, packed byte).
+     *
+     * <p>The byte carries three 2-bit permission levels — bits 0-1 base
+     * (battery), 2-3 location, 4-5 environment — each one of
+     * {@code 0 = DENY}, {@code 1 = ALLOW_FLAGS} (per-contact flags on
+     * {@link io.iotone.meshcore.model.Contact}), {@code 2 = ALLOW_ALL}.
+     * This governs permission, not capability: allowing a class the device
+     * has no sensor for simply yields nothing.</p>
+     *
+     * <p>Like every other setter on this command, it writes the WHOLE record —
+     * manual-add, telemetry, location policy and multi-acks together — so the
+     * current values of the others are read back from {@link SelfInfo} and
+     * resent unchanged. Sending only the field you meant to change silently
+     * resets the rest.</p>
+     *
+     * <p>No-op when not {@link SessionState#READY}.</p>
+     *
+     * @param packed the packed telemetry permission byte
+     */
+    public void setTelemetryPermissions(int packed) {
+        SelfInfo s = selfInfo();
+        if (state.get() != SessionState.READY || s == null) return;
+        send(MeshcoreFrameCodec.setOtherParams(
+                s.manualAddContacts() ? 1 : 0, packed,
+                s.advertLocPolicy(), s.multiAcks()));
+    }
+
     public void setAdvertLocPolicy(int policy) {
         SelfInfo s = selfInfo();
         if (state.get() != SessionState.READY || s == null) return;
