@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: MIT
 package com.iotj.meshmore.xr
 
+import com.iotj.meshmore.xr.spatial.Crown
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
@@ -622,6 +623,7 @@ private fun HorizonScene(link: MeshLink) {
     val consoleRef = remember { mutableStateOf<com.iotj.meshmore.xr.spatial.Console?>(null) }
     val threadRef = remember { mutableStateOf<com.iotj.meshmore.xr.spatial.Thread?>(null) }
     val cuffRef = remember { mutableStateOf<com.iotj.meshmore.xr.spatial.Cuff?>(null) }
+    val crownRef = remember { mutableStateOf<com.iotj.meshmore.xr.spatial.Crown?>(null) }
     val reelRef = remember { mutableStateOf<com.iotj.meshmore.xr.spatial.Reel?>(null) }
     val noticeRef = remember { mutableStateOf<Notice?>(null) }
     // The wedge currently magnified, or null for the true 1:1 ring. Bumping
@@ -643,6 +645,12 @@ private fun HorizonScene(link: MeshLink) {
     val unread = remember { mutableStateOf(0) }
     val helpRef = remember { mutableStateOf<HelpCard?>(null) }
     val cue = remember { Cue() }
+    val speech = remember { Speech(ctx) }
+    // TextToSpeech holds a system engine binding. Leaking one is not fatal but
+    // it is the kind of thing a store review notices, and the fix is two lines.
+    androidx.compose.runtime.DisposableEffect(Unit) {
+        onDispose { speech.release(); cue.release() }
+    }
     // Bumped by the HERE marker so the mesh rebuild below re-runs on a toggle.
     val hereEpoch = remember { mutableStateOf(0) }
 
@@ -1065,6 +1073,10 @@ private fun HorizonScene(link: MeshLink) {
         cuff.build()
         cuffRef.value = cuff
 
+        val crown = com.iotj.meshmore.xr.spatial.Crown(session, palette, ctx)
+        crown.build()
+        crownRef.value = crown
+
         val thread = com.iotj.meshmore.xr.spatial.Thread(session, palette, ctx)
         thread.build()
         threadRef.value = thread
@@ -1334,7 +1346,8 @@ private fun HorizonScene(link: MeshLink) {
                         (rosterRef.value?.gazeTargets() ?: emptyList()) +
                         (inboxRef.value?.gazeTargets() ?: emptyList()) +
                         (consoleRef.value?.gazeTargets() ?: emptyList()) +
-                        (threadRef.value?.gazeTargets() ?: emptyList()),
+                        (threadRef.value?.gazeTargets() ?: emptyList()) +
+                        (crownRef.value?.gazeTargets() ?: emptyList()),
                 )
                 gazeRef.value?.tick(stage.headNow(), anyHand, nowMs)
                 // THE CHAT HAND IS THE LEFT ONE by default (§5: one hand runs
@@ -1387,6 +1400,27 @@ private fun HorizonScene(link: MeshLink) {
                             },
                         )
                         r.tick(cj, dot, hp?.translation, nowMs)
+
+                        // THE CROWN LIVES AND DIES WITH THE CARD. Actions
+                        // belong to the message being read, so there is no
+                        // state to keep about whether they should be up: if
+                        // there is a card, there is something to do about it.
+                        val cw = crownRef.value
+                        if (cw != null) {
+                            if (r.open && r.cardAt != null) {
+                                if (!cw.open) cw.show()
+                            } else if (cw.open) {
+                                cw.hide()
+                            }
+                            cw.tick(r.cardAt, hp?.translation, nowMs)
+                            while (true) {
+                                val act = cw.poll() ?: break
+                                onCrown(
+                                    act, link, r, cw, threadRef.value, speech, cue,
+                                    stage, nowMs,
+                                )
+                            }
+                        }
                     }
                 }
                 // Show the dwelled pip's caption. Same focus state a pointer
@@ -2099,5 +2133,103 @@ private fun FactRow(key: String, value: String) {
             fontSize = 13.sp, fontFamily = FontFamily.Monospace,
             fontWeight = FontWeight.Medium,
         )
+    }
+}
+
+/**
+ * ACT ON THE MESSAGE ON THE CARD.
+ *
+ * Lives outside the scene composable because it is a decision table, and a
+ * decision table buried in a tick loop is where behaviour goes to become
+ * untraceable. Every branch ends with the wearer being TOLD something: on a
+ * mesh radio there is no delivery receipt and no other way to find out whether
+ * a reply left, and "did that send?" is not a question a companion app should
+ * make anyone hold in their head.
+ */
+private fun onCrown(
+    act: Crown.Act,
+    link: MeshLink,
+    reel: com.iotj.meshmore.xr.spatial.Reel,
+    crown: com.iotj.meshmore.xr.spatial.Crown,
+    thread: com.iotj.meshmore.xr.spatial.Thread?,
+    speech: Speech,
+    cue: Cue,
+    stage: com.iotj.meshmore.xr.spatial.Stage,
+    nowMs: Long,
+) {
+    // The REAL message, not the reel's display copy: the copy is clipped for
+    // the card and sending a clipped reply-quote would be its own bug.
+    val msg = link.msgs.value.getOrNull(reel.selectedIndex)
+    when (act) {
+        Crown.Act.REPLY -> { crown.setReplying(true); cue.opened() }
+        Crown.Act.BACK -> { crown.setReplying(false); cue.closed() }
+        Crown.Act.DISMISS -> { crown.setReplying(false); crown.hide(); cue.closed() }
+        Crown.Act.ALOUD -> {
+            if (msg == null) {
+                crown.say("NOTHING TO READ", nowMs)
+            } else {
+                // WHO, then what. A disembodied sentence in your ear is a
+                // worse experience than no audio at all.
+                val who = msg.fromName.ifBlank { msg.channelName ?: "someone" }
+                speech.say("$who says: ${msg.text}")
+                crown.say("READING ALOUD", nowMs)
+            }
+            cue.recognised()
+        }
+        Crown.Act.THREAD -> {
+            val h = stage.headNow()
+            val t = link.threads().firstOrNull { th ->
+                msg != null && th.messages.any { it.atEpochSec == msg.atEpochSec }
+            }
+            if (h == null || t == null) {
+                crown.say("NO THREAD FOR THIS", nowMs)
+                cue.closed()
+            } else {
+                val nowS = System.currentTimeMillis() / 1000
+                thread?.showAt(
+                    h.translation, yawOf(h), t.id, t.title,
+                    t.messages.map { m ->
+                        com.iotj.meshmore.xr.spatial.Thread.Line(
+                            who = "%-14s %s".format(
+                                com.iotj.meshmore.xr.spatial.TypeTier.clip(
+                                    m.fromName.ifBlank { t.title }, 14,
+                                ),
+                                ago(nowS - m.atEpochSec),
+                            ),
+                            words = com.iotj.meshmore.xr.spatial.TypeTier.clip(m.text, 24),
+                            mine = m.direct,
+                        )
+                    },
+                )
+                crown.hide()
+                cue.opened()
+            }
+        }
+        Crown.Act.SEND_1, Crown.Act.SEND_2, Crown.Act.SEND_3 -> {
+            val text = when (act) {
+                Crown.Act.SEND_1 -> "ROGER"
+                Crown.Act.SEND_2 -> "ON MY WAY"
+                else -> "STAND BY"
+            }
+            if (msg == null) {
+                crown.say("NOTHING TO REPLY TO", nowMs)
+                cue.closed()
+                return
+            }
+            when (val r = link.replyTo(msg, text)) {
+                is MeshLink.Sent.Ok -> {
+                    crown.say("SENT: $text", nowMs); crown.setReplying(false); cue.recognised()
+                }
+                is MeshLink.Sent.NotReady -> {
+                    crown.say("RADIO NOT READY", nowMs); cue.closed()
+                }
+                is MeshLink.Sent.Refused -> {
+                    // The refusal reason verbatim. "It did not send" and "it is
+                    // not allowed to send" want different actions from the
+                    // wearer, and only one of them is worth retrying.
+                    crown.say(r.why, nowMs); cue.closed()
+                }
+            }
+        }
     }
 }

@@ -105,6 +105,19 @@ class Reel(
     private var turned = false
     /** Which slot is at the front. Derived from [spin], never set directly. */
     private var current = 0
+    /**
+     * Where the raised card is, in activity space, or null when nothing is
+     * shown. The CROWN hangs off this: the actions belong to the message being
+     * read, so they follow it rather than keeping their own idea of where it is.
+     */
+    var cardAt: Vector3? = null
+        private set
+
+    /** The message the card is showing, for whoever acts on it. */
+    val selected: Slot? get() = slots.getOrNull(current)
+
+    /** Its index in the feed, which is how the host finds the real message. */
+    val selectedIndex: Int get() = current
     private val entities = mutableListOf<Entity>()
     private var slots: List<Slot> = emptyList()
 
@@ -219,6 +232,7 @@ class Reel(
                     it.ring.setEnabled(false)
                 }
             }
+            cardAt = null
             runCatching {
                 panel?.setEnabled(false)
                 stem?.setEnabled(false)
@@ -443,6 +457,7 @@ class Reel(
             val pitch = CARD_CAP * 1.7f
             val baseY = cy + uy * s * RAISE + CLEAR + pitch * wrapped.size
             val at = Vector3(cx + ux * s * RAISE, baseY, cz + uz * s * RAISE)
+            cardAt = at
             val r = facing(at, h)
             // WHO, AND FROM WHERE. A name alone cannot say whether Chuck spoke
             // to the whole channel or to you, and those are different enough
@@ -479,7 +494,7 @@ class Reel(
         cells.clear(); slots = emptyList(); open = false
         panel = null; stem = null; cardWho = null; cardBody.clear()
         current = 0; spin = 0f; grabT = 0f; grabSpin = 0f; scrubbing = false
-        hint = null; turned = false
+        hint = null; turned = false; cardAt = null
         val doomed = entities.toList()
         entities.clear()
         doomed.forEach { runCatching { it.parent = null } }

@@ -651,6 +651,96 @@ class MeshLink(private val context: Context) {
      * nodes the operator owns and explicitly authorised on 2026-08-03. A key
      * that is not in that list is refused and logged, not sent.
      */
+    /**
+     * WHAT HAPPENED TO A REPLY. Not a boolean: "it did not send" and "it is not
+     * allowed to send" are different facts and the surface has to say which.
+     */
+    sealed class Sent {
+        object Ok : Sent()
+        object NotReady : Sent()
+        /** [why] is shown to the wearer verbatim, so it is written for them. */
+        class Refused(val why: String) : Sent()
+    }
+
+    /**
+     * CHANNEL TRANSMIT IS OFF, and this is a deliberate default rather than an
+     * oversight.
+     *
+     * The operator's standing authorisation (2026-08-03) covers NODES they own:
+     * "my own nodes I am comfortable sending to end in ab60 and d563". A direct
+     * message to one of those is squarely inside it. A CHANNEL message is not
+     * the same act -- it puts a packet on a shared band addressed to everyone
+     * listening on that channel, most of whom are strangers -- so it is not
+     * covered by permission to talk to your own hardware, and quietly treating
+     * it as if it were would be helping myself to a wider licence than was
+     * given.
+     *
+     * Flip it when you want the app to speak on channels. Nothing else needs
+     * to change; the reply path is already built for it.
+     */
+    var channelTxAuthorised: Boolean = false
+
+    /**
+     * Answer a message where it came from: the channel if it was a channel, the
+     * sender if it was direct.
+     *
+     * The allow-list is enforced HERE, at the one place that transmits, rather
+     * than by whichever surface happens to be calling. A guard that lives in
+     * the UI is a guard that the next surface forgets.
+     */
+    fun replyTo(m: Msg, text: String): Sent {
+        val s = session
+        if (s == null || _status.value.state != SessionState.READY) return Sent.NotReady
+        if (text.isBlank()) return Sent.Refused("NOTHING TO SEND")
+
+        if (!m.direct) {
+            val idx = m.channel?.removePrefix("#")?.toIntOrNull()
+                ?: return Sent.Refused("UNKNOWN CHANNEL")
+            if (!channelTxAuthorised) {
+                Log.w(TAG, "[tx] channel reply refused — channel TX not authorised")
+                return Sent.Refused("CHANNEL SEND IS OFF")
+            }
+            return runCatching {
+                s.sendChannelMessage(idx, System.currentTimeMillis() / 1000, text)
+                diag(">>CHAN ${m.channelName ?: m.channel}")
+                Log.i(TAG, "[tx] -> channel $idx")
+                Sent.Ok as Sent
+            }.getOrElse { Sent.Refused("SEND FAILED") }
+        }
+
+        val peer = peers.values.firstOrNull {
+            m.fromKey.isNotBlank() &&
+                ((it.fullKey ?: it.key).startsWith(m.fromKey, ignoreCase = true) ||
+                    m.fromKey.startsWith(it.key, ignoreCase = true))
+        } ?: return Sent.Refused("SENDER NOT IN CONTACTS")
+
+        if (!isAllowed(peer)) {
+            // Named, so the refusal is checkable rather than mysterious.
+            Log.w(TAG, "[tx] refused — '${peer.name}' key=${peer.key} not in $ALLOWED_SUFFIXES")
+            return Sent.Refused("NOT AN AUTHORISED NODE")
+        }
+        val full = unhex(peer.fullKey ?: peer.key)
+        if (full == null || full.size < 6) return Sent.Refused("UNUSABLE KEY")
+        Log.i(TAG, "[tx] -> name='${peer.name}' key=${peer.key} (authorised)")
+        diag(">>DM   ${peer.name.ifBlank { peer.key.takeLast(4) }}")
+        return runCatching {
+            s.sendDirectMessage(
+                full.copyOfRange(0, 6), System.currentTimeMillis() / 1000, text,
+            )
+            // OUR OWN WORDS GO IN THE LOG TOO. A conversation that shows only
+            // the other half is not a conversation, and the thread corridor
+            // already knows how to draw a line as mine.
+            remember(
+                Msg(
+                    fromKey = peer.key, fromName = "ME", text = text,
+                    atEpochSec = System.currentTimeMillis() / 1000,
+                    direct = true, channel = null,
+                ),
+            )
+            Sent.Ok as Sent
+        }.getOrElse { Sent.Refused("SEND FAILED") }
+    }
+
     fun probePaths(text: String = "meshmore-xr path probe") {
         val s = session
         if (s == null || _status.value.state != SessionState.READY) {
