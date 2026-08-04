@@ -51,8 +51,11 @@ import kotlin.math.sqrt
  * most nauseating failure mode available in XR". The gap is not tuning slack;
  * it is the feature.
  *
- * OWED: rotation by thumb-along-index, and the per-message CROWN. The reel
- * currently shows the newest at the front and does not turn.
+ * IT TURNS BOTH WAYS. Thumb toward the fingertip goes back in time, thumb
+ * toward the knuckle comes forward, and the ring wraps, so any message is
+ * reachable from any other in whichever direction is shorter.
+ *
+ * OWED: the per-message CROWN.
  */
 class Reel(
     private val session: Session,
@@ -290,9 +293,15 @@ class Reel(
             // so mapping its whole length onto a whole turn puts the detents
             // millimetres apart. One stroke covers half the ring and you lift
             // and re-place to go further — the gesture a scroll wheel makes,
-            // and the reason a scroll wheel works. Half of TWO is one, so with
-            // a short reel a stroke is decisive rather than twitchy.
-            val gain = (n / 2f).coerceAtLeast(1f)
+            // and the reason a scroll wheel works.
+            //
+            // IT RUNS BOTH WAYS: toward the fingertip goes back in time, toward
+            // the knuckle comes forward, and the ring wraps, so every message
+            // is reachable in either direction. The floor of two is what makes
+            // that legible on a SHORT reel — at half-the-ring, two messages
+            // needed a whole stroke each way to move at all, which reads as a
+            // control that only goes one way rather than one that is stiff.
+            val gain = (n / 2f).coerceAtLeast(2f)
             val thumb = act(HandJointType.THUMB_TIP)
             val itip = act(HandJointType.INDEX_TIP)
             if (thumb != null && itip != null) {
@@ -404,7 +413,17 @@ class Reel(
                 cardBody.forEach { it.entity.setEnabled(false) }
                 return@runCatching
             }
-            val at = Vector3(cx + ux * s * RAISE, cy + uy * s * RAISE, cz + uz * s * RAISE)
+            val wrapped = wrap(sel.words, CARD_COLS, CARD_LINES)
+            // THE BLOCK GROWS UPWARD FROM A FIXED CLEARANCE, rather than
+            // hanging down from a fixed top. A long message that hangs down
+            // runs into the hand it is sitting on, and raising the anchor by a
+            // constant instead leaves a one-line message floating absurdly
+            // high. Pinning the BOTTOM means short messages sit close to the
+            // oval and long ones ride up out of the way, which is what was
+            // asked for and also the only version that works at both extremes.
+            val pitch = CARD_CAP * 1.7f
+            val baseY = cy + uy * s * RAISE + CLEAR + pitch * wrapped.size
+            val at = Vector3(cx + ux * s * RAISE, baseY, cz + uz * s * RAISE)
             val r = facing(at, h)
             // WHO, AND FROM WHERE. A name alone cannot say whether Chuck spoke
             // to the whole channel or to you, and those are different enough
@@ -415,17 +434,13 @@ class Reel(
                 else "${sel.who} \u00b7 ${sel.origin.ifBlank { "CHANNEL" }}",
             )
             cardWho?.entity?.setPose(Pose(at, r), Space.ACTIVITY)
-            val wrapped = wrap(sel.words, CARD_COLS, CARD_LINES)
             cardBody.forEachIndexed { i, line ->
                 val txt = wrapped.getOrNull(i)
                 line.entity.setEnabled(txt != null)
                 if (txt == null) return@forEachIndexed
                 line.setText(txt)
                 line.entity.setPose(
-                    Pose(
-                        Vector3(at.x, at.y - CARD_CAP * (2.0f + i * 1.7f), at.z),
-                        r,
-                    ),
+                    Pose(Vector3(at.x, baseY - pitch * (1.4f + i), at.z), r),
                     Space.ACTIVITY,
                 )
             }
@@ -484,12 +499,28 @@ class Reel(
         const val TUBE = 0.0022f
         /** How far the current message stands off the panel, toward the wearer. */
         const val RAISE = 0.07f
-        /** 1.8° where the card sits: the one thing here meant to be READ. */
-        const val CARD_CAP = 0.012f
-        /** Wide enough to read, narrow enough to fit a 34° field. */
-        const val CARD_COLS = 14
-        const val CARD_LINES = 3
-        const val CARD_WIDEST = "MMMMMMMMMMMMMM"
+        /**
+         * 1.8° where the card sits (~0.32 m): the one thing here meant to be
+         * READ. Comfortably over §4.1's 1.2° floor and the 1.30° house
+         * standard, with the margin spent on WIDTH rather than on height —
+         * a clipped message is a worse failure than a slightly smaller one.
+         */
+        const val CARD_CAP = 0.010f
+        /**
+         * EIGHTEEN BY NINE — about 150 characters, against the 42 the first card
+         * held, which duly clipped very nearly everything.
+         *
+         * Eighteen is a BOUND, not a preference: at CARD_CAP the worst case of
+         * eighteen capital M's is 0.169 m, and at 0.32 m that subtends about
+         * 30° against a 34° field. Real text averages far narrower. Twenty
+         * would fit the arithmetic and leave nothing for a hand held closer
+         * than assumed.
+         */
+        const val CARD_COLS = 18
+        const val CARD_LINES = 9
+        const val CARD_WIDEST = "MMMMMMMMMMMMMMMMMM"
+        /** How far the bottom of the block clears the oval. */
+        const val CLEAR = 0.02f
         /** The header holds "NAME · CHANNEL", which is longer than a body line. */
         const val HEAD_WIDEST = "MMMMMMMMMMMMMMMMMMMM"
         /** Sender labels hang just under their marker. */
@@ -548,33 +579,42 @@ internal fun scrub(prox: Vector3, tip: Vector3, thumb: Vector3): Scrub {
 /**
  * Break the words across the card's lines.
  *
- * A single line of message text at a readable size is 0.25 m wide at a
- * third of a metre — about forty degrees, which is wider than the display.
- * So it wraps, at spaces where there are any and mid-word where there are
- * not, because a long unbroken token is a real thing people send.
+ * A single line of message text at a readable size is wider than the display,
+ * so it wraps: at spaces where there are any, and mid-word where there are not,
+ * because a long unbroken token is a real thing people send.
+ *
+ * WHEN IT DOES NOT FIT, IT SAYS SO. Word packing never reaches the raw
+ * cols x lines product -- a line ends when the next word will not fit, so a
+ * fourteen-column line holding "abc abc abc" wastes three of its characters --
+ * which means a message sized against that product overflows and loses its
+ * tail. Dropping it silently is the bad version: the wearer reads a sentence
+ * that simply stops, with no way to tell a terse message from a truncated one.
+ * The ellipsis is the difference between "that is all he said" and "there is
+ * more of this in the thread".
  */
 internal fun wrap(text: String, cols: Int, lines: Int): List<String> {
-    val out = mutableListOf<String>()
+    if (cols <= 0 || lines <= 0) return emptyList()
+    val all = mutableListOf<String>()
     var cur = StringBuilder()
     for (word in text.trim().split(' ')) {
         var w = word
         while (w.length > cols) {
-            if (cur.isNotEmpty()) { out += cur.toString(); cur = StringBuilder() }
-            out += w.take(cols)
+            if (cur.isNotEmpty()) { all += cur.toString(); cur = StringBuilder() }
+            all += w.take(cols)
             w = w.drop(cols)
-            if (out.size >= lines) return out.take(lines)
         }
         if (w.isEmpty()) continue
         when {
             cur.isEmpty() -> cur.append(w)
             cur.length + 1 + w.length <= cols -> cur.append(' ').append(w)
-            else -> {
-                out += cur.toString()
-                if (out.size >= lines) return out
-                cur = StringBuilder(w)
-            }
+            else -> { all += cur.toString(); cur = StringBuilder(w) }
         }
     }
-    if (cur.isNotEmpty()) out += cur.toString()
-    return out.take(lines)
+    if (cur.isNotEmpty()) all += cur.toString()
+    if (all.size <= lines) return all
+    val kept = all.take(lines).toMutableList()
+    val last = kept[lines - 1]
+    kept[lines - 1] =
+        if (last.length < cols) "$last\u2026" else last.take(cols - 1) + "\u2026"
+    return kept
 }

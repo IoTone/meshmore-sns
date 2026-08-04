@@ -6,6 +6,7 @@ import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Vector3
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -106,8 +107,62 @@ class ReelWrapTest {
     }
 
     @Test
+    fun `text that fits the card is not silently shortened`() {
+        // The failure this guards: the card's capacity and the feed's clip
+        // drifting apart, so the feed trims to the OLD size and the card
+        // renders a shortened message with no sign that anything was cut.
+        // NINE, not twelve. Word packing never reaches the raw cols x lines
+        // product -- a line ends when the next word will not fit, so "abc"
+        // words give three per fourteen-column line and eleven of its
+        // characters are used. Writing the naive product into this test is how
+        // a capacity gets overstated, so it is spelled out: 3 lines x 3 words.
+        val words = (1..9).joinToString(" ") { "abc" }
+        assertEquals(words, wrap(words).joinToString(" "))
+    }
+
+    @Test
     fun `empty and whitespace do not produce a blank line`() {
         assertEquals(emptyList<String>(), wrap(""))
         assertEquals(emptyList<String>(), wrap("   "))
+    }
+}
+
+/**
+ * OVERFLOW IS VISIBLE.
+ *
+ * Word packing never reaches cols x lines, so a message sized against that
+ * product overflows the card. Losing the tail is survivable -- the whole
+ * message is in the thread corridor -- but losing it SILENTLY is not: the
+ * wearer reads a sentence that stops and has no way to tell a terse message
+ * from a truncated one.
+ */
+class ReelOverflowTest {
+
+    @Test
+    fun `an overlong message is marked, not merely cut`() {
+        val long = (1..40).joinToString(" ") { "word" }
+        val r = wrap(long, 18, 3)
+        assertEquals(3, r.size)
+        assertTrue("no ellipsis on '${r.last()}'", r.last().endsWith("…"))
+        r.forEach { assertTrue("too wide: '$it'", it.length <= 18) }
+    }
+
+    @Test
+    fun `a message that fits carries no ellipsis`() {
+        val r = wrap("the repeater is back up", 18, 3)
+        assertFalse(r.last().endsWith("…"))
+    }
+
+    @Test
+    fun `an unbroken token that overflows is still marked`() {
+        val r = wrap("x".repeat(200), 18, 3)
+        assertEquals(3, r.size)
+        assertTrue(r.last().endsWith("…"))
+    }
+
+    @Test
+    fun `degenerate bounds return nothing rather than looping`() {
+        assertEquals(emptyList<String>(), wrap("anything", 0, 3))
+        assertEquals(emptyList<String>(), wrap("anything", 18, 0))
     }
 }

@@ -1368,11 +1368,12 @@ private fun HorizonScene(link: MeshLink) {
                                         // the first front arc a pile.
                                         8,
                                     ),
-                                    // The raised card holds three lines of
-                                    // fourteen; clipping at twelve here was
-                                    // sized for the old one-line front arc and
-                                    // would throw away most of every message.
-                                    words = com.iotj.meshmore.xr.spatial.TypeTier.clip(m.text, 42),
+                                    // The raised card holds eight lines of
+                                    // eighteen. Anything clipped here is
+                                    // clipped BEFORE the card ever sees it, so
+                                    // this number has to track the card's
+                                    // capacity or the card silently shrinks.
+                                    words = com.iotj.meshmore.xr.spatial.TypeTier.clip(m.text, 144),
                                     direct = m.direct,
                                     // The channel's NAME where the radio gave
                                     // us one, its slot index where it did not.
