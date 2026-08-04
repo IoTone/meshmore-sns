@@ -151,6 +151,48 @@ class MeshLink(private val context: Context) {
     /** Raised on arrival so the host can announce it. */
     var onMessage: ((Msg) -> Unit)? = null
 
+    /**
+     * One conversation: a channel, or one person.
+     *
+     * [id] is the channel tag or the sender's key prefix — whichever it is,
+     * every message in the thread shares it, which is the only grouping the
+     * protocol actually supports. MeshCore has no thread identity of its own.
+     */
+    data class Thread(
+        val id: String,
+        val title: String,
+        val direct: Boolean,
+        val messages: List<Msg>,
+    ) {
+        val newest: Msg? get() = messages.firstOrNull()
+    }
+
+    /**
+     * The message buffer as conversations, most recently active first.
+     *
+     * Grouped rather than interleaved because a flat feed is what a packet
+     * monitor shows. People do not think in packets; they think "what did
+     * Astor say" and "what is happening on the channel", and those are two
+     * different questions that a single stream answers badly.
+     */
+    fun threads(): List<Thread> =
+        _msgs.value
+            .groupBy { if (it.direct) it.fromKey else (it.channel ?: "#") }
+            .map { (id, ms) ->
+                val first = ms.first()
+                Thread(
+                    id = id,
+                    title = if (first.direct) {
+                        first.fromName.ifBlank { id }
+                    } else {
+                        first.channel ?: "CHANNEL"
+                    },
+                    direct = first.direct,
+                    messages = ms,
+                )
+            }
+            .sortedByDescending { it.newest?.atEpochSec ?: 0L }
+
     private fun remember(m: Msg) {
         _msgs.value = (listOf(m) + _msgs.value).take(MSG_KEEP)
         onMessage?.invoke(m)

@@ -156,6 +156,8 @@ class MainActivity : ComponentActivity() {
         var telPerm: String? = null
         /** --ez console true : project the settings stack at launch. Inert. */
         var showConsole: Boolean = false
+        /** --ez thread true : open the most recent conversation at launch. */
+        var showThread: Boolean = false
         /** --ez handdebug true : log what the ASL classifier measures, ~1 Hz. */
         var handDebug: Boolean = false
         /** --ez typeprobe true : answer whether tier R can exist on this SDK. */
@@ -233,6 +235,7 @@ class MainActivity : ComponentActivity() {
         probePaths = intent?.getBooleanExtra("probe", false) ?: false
         telPerm = intent?.getStringExtra("telperm")
         showConsole = intent?.getBooleanExtra("console", false) ?: false
+        showThread = intent?.getBooleanExtra("thread", false) ?: false
         northDeg = intent?.getStringExtra("north")?.toFloatOrNull()
         Log.i(TAG, "[boot] north at launch = " +
             (northDeg?.let { "%.0f° true".format(it) } ?: "<unknown, ring is relative>"))
@@ -617,6 +620,7 @@ private fun HorizonScene(link: MeshLink) {
     val rosterRef = remember { mutableStateOf<com.iotj.meshmore.xr.spatial.Roster?>(null) }
     val inboxRef = remember { mutableStateOf<com.iotj.meshmore.xr.spatial.Inbox?>(null) }
     val consoleRef = remember { mutableStateOf<com.iotj.meshmore.xr.spatial.Console?>(null) }
+    val threadRef = remember { mutableStateOf<com.iotj.meshmore.xr.spatial.Thread?>(null) }
     val noticeRef = remember { mutableStateOf<Notice?>(null) }
     // The wedge currently magnified, or null for the true 1:1 ring. Bumping
     // hereEpoch is what makes the mesh effect re-run and re-place everything.
@@ -934,16 +938,21 @@ private fun HorizonScene(link: MeshLink) {
                     b.hide(); dockRef.value?.setLit("INBOX", false); cue.closed()
                 } else {
                     val now = System.currentTimeMillis() / 1000
-                    b.showAt(h.translation, yawOf(h), link.msgs.value.map { m ->
+                    b.showAt(h.translation, yawOf(h), link.threads().map { t ->
+                        val last = t.newest
                         com.iotj.meshmore.xr.spatial.Inbox.Entry(
+                            id = t.id,
                             who = "%-14s %s".format(
-                                com.iotj.meshmore.xr.spatial.TypeTier.clip(
-                                    m.fromName.ifBlank { m.channel ?: "UNKNOWN" }, 14,
-                                ),
-                                ago(now - m.atEpochSec),
+                                com.iotj.meshmore.xr.spatial.TypeTier.clip(t.title, 14),
+                                last?.let { ago(now - it.atEpochSec) } ?: "",
                             ),
-                            words = com.iotj.meshmore.xr.spatial.TypeTier.clip(m.text, 24),
-                            mine = m.direct,
+                            // The last thing said, which is what a thread list
+                            // is FOR — a row that only names the conversation
+                            // makes you open every one to find the live one.
+                            words = com.iotj.meshmore.xr.spatial.TypeTier.clip(
+                                last?.text ?: "", 24,
+                            ),
+                            mine = t.direct,
                         )
                     })
                     dockRef.value?.setLit("INBOX", true)
@@ -1028,6 +1037,10 @@ private fun HorizonScene(link: MeshLink) {
         // THE DWELL FALLBACK (§8.2). Armed only when no hand is tracked, so it
         // is an alternative to the pinch rather than a second way to fire the
         // same control by accident.
+        val thread = com.iotj.meshmore.xr.spatial.Thread(session, palette, ctx)
+        thread.build()
+        threadRef.value = thread
+
         val console = com.iotj.meshmore.xr.spatial.Console(session, palette, ctx)
         console.build()
         console.onFocus = { cue.recognised() }
@@ -1114,6 +1127,57 @@ private fun HorizonScene(link: MeshLink) {
         var statusTick = 0f
         try {
             if (MainActivity.selfTest) launch { horizon.selfTest(origin) }
+            if (MainActivity.showThread) launch {
+                var waited = 0
+                while (waited < 90_000) {
+                    val t = link.threads().firstOrNull()
+                    val h = stage.headNow()
+                    if (t != null && h != null) {
+                        val nowS = System.currentTimeMillis() / 1000
+                        threadRef.value?.showAt(
+                            h.translation, yawOf(h), t.id, t.title,
+                            t.messages.map { m ->
+                                com.iotj.meshmore.xr.spatial.Thread.Line(
+                                    who = "%-14s %s".format(
+                                        com.iotj.meshmore.xr.spatial.TypeTier.clip(
+                                            m.fromName.ifBlank { t.title }, 14,
+                                        ),
+                                        ago(nowS - m.atEpochSec),
+                                    ),
+                                    words = com.iotj.meshmore.xr.spatial.TypeTier.clip(m.text, 24),
+                                    mine = m.direct,
+                                )
+                            },
+                        )
+                        Log.i(TAG_UI, "[thread] opened by launch flag on " + t.title)
+                        return@launch
+                    }
+                    kotlinx.coroutines.delay(1000); waited += 1000
+                }
+                // A QUIET MESH IS NOT A BROKEN SURFACE, and waiting for a
+                // stranger to say something is a poor way to check geometry.
+                // Labelled SAMPLE so it can never be mistaken for traffic —
+                // the same bargain --ez sim already makes for the ring.
+                stage.headNow()?.let { h ->
+                    threadRef.value?.showAt(
+                        h.translation, yawOf(h), "sample", "SAMPLE THREAD",
+                        listOf(
+                            "newest, nearest to you" to "JUST NOW",
+                            "second message back" to "2 MIN AGO",
+                            "third, further away" to "8 MIN AGO",
+                            "fourth step into the past" to "20 MIN AGO",
+                            "fifth, still readable" to "1 HR AGO",
+                            "sixth and furthest" to "3 HR AGO",
+                        ).map { (t, w) ->
+                            com.iotj.meshmore.xr.spatial.Thread.Line(
+                                who = "%-14s %s".format("SAMPLE", w),
+                                words = t, mine = false,
+                            )
+                        },
+                    )
+                    Log.w(TAG_UI, "[thread] no traffic — showing SAMPLE for geometry")
+                }
+            }
             if (MainActivity.showConsole) launch {
                 kotlinx.coroutines.delay(1500)
                 dockRef.value?.pipAt("SETUP")?.let { at ->
@@ -1280,9 +1344,34 @@ private fun HorizonScene(link: MeshLink) {
                     }
                 }
                 inboxRef.value?.tick(stage.headNow()?.translation)
+                threadRef.value?.tick(stage.headNow()?.translation)
                 while (true) {
                     val pick = inboxRef.value?.poll() ?: break
-                    inboxRef.value?.activate(pick)
+                    val id = inboxRef.value?.activate(pick) ?: continue
+                    // OPENING A THREAD REPLACES THE LIST. One FOCUS at a time
+                    // (§2.1 rule 3) — and a corridor of messages standing in
+                    // front of the list it came from is two readable things
+                    // competing for the same glance.
+                    val h = stage.headNow() ?: continue
+                    val t = link.threads().firstOrNull { it.id == id } ?: continue
+                    val nowS = System.currentTimeMillis() / 1000
+                    threadRef.value?.showAt(
+                        h.translation, yawOf(h), t.id, t.title,
+                        t.messages.map { m ->
+                            com.iotj.meshmore.xr.spatial.Thread.Line(
+                                who = "%-14s %s".format(
+                                    com.iotj.meshmore.xr.spatial.TypeTier.clip(
+                                        m.fromName.ifBlank { t.title }, 14,
+                                    ),
+                                    ago(nowS - m.atEpochSec),
+                                ),
+                                words = com.iotj.meshmore.xr.spatial.TypeTier.clip(m.text, 24),
+                                mine = m.direct,
+                            )
+                        },
+                    )
+                    inboxRef.value?.hide()
+                    cue.opened()
                 }
                 val it0 = stage.headNow()
                 // Hands that are operating a control are not signing. Feeding
@@ -1315,6 +1404,14 @@ private fun HorizonScene(link: MeshLink) {
                     // opened is what back should undo — unwinding a lens level
                     // while a card is still up would answer a question nobody
                     // asked.
+                    threadRef.value?.let { t ->
+                        if (t.open) {
+                            lastBackAt = nowMs
+                            t.hide(); cue.closed()
+                            Log.i(TAG_UI, "[hand] $hand:B — thread closed")
+                            return
+                        }
+                    }
                     focusRef.value?.let { f ->
                         if (f.open) {
                             lastBackAt = nowMs

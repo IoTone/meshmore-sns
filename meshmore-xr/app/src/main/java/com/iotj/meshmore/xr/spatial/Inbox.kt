@@ -46,8 +46,15 @@ class Inbox(
     private val context: Context,
 ) {
 
-    /** One message, already formatted for reading. */
-    class Entry(val who: String, val words: String, val mine: Boolean)
+    /**
+     * One CONVERSATION, already formatted. [id] is what the host opens.
+     *
+     * The inbox lists threads rather than messages now. A flat feed of
+     * everything the radio heard is a packet monitor; people think "what did
+     * Astor say" and "what is happening on the channel", which are two
+     * questions a single stream answers badly.
+     */
+    class Entry(val id: String, val who: String, val words: String, val mine: Boolean)
 
     private class Row(
         val head: TextRun.Run,
@@ -144,12 +151,17 @@ class Inbox(
 
     fun poll(): Int? = fired.poll()
 
-    /** Page forward. Returns true when the pick was a message rather than paging. */
-    fun activate(index: Int): Boolean {
-        if (index != PAGER) return all.getOrNull(page * ROWS + index) != null
-        page = (page + 1) % pages().coerceAtLeast(1)
-        render()
-        return false
+    /**
+     * Act on a pick. Returns the conversation id when one was chosen, null
+     * when the pick was the pager.
+     */
+    fun activate(index: Int): String? {
+        if (index == PAGER) {
+            page = (page + 1) % pages().coerceAtLeast(1)
+            render()
+            return null
+        }
+        return all.getOrNull(page * ROWS + index)?.id
     }
 
     private fun pages(): Int = if (all.isEmpty()) 1 else (all.size + ROWS - 1) / ROWS
