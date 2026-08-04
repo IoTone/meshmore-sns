@@ -31,6 +31,11 @@ PKG=com.iotj.meshmore.xr
 # Two devices are usually attached (phone + XR puck); target the XR one unless
 # ANDROID_SERIAL is already set.
 if [ -z "${ANDROID_SERIAL:-}" ]; then
+  # Declared before the loop: `set -u` is on, so if no attached device reports
+  # xr.api.spatial the reference below is an unbound-variable error and the
+  # whole script dies -- turning "the glasses are unplugged" into "the build
+  # tool is broken", which is a bad five minutes to hand somebody.
+  XR=
   # NOTE: `adb shell` reads stdin, so it eats the rest of a `while read` loop's
   # input and only the FIRST device ever gets probed. Feed it /dev/null.
   for s in $("$ADB" devices | awk '/device$/{print $1}'); do

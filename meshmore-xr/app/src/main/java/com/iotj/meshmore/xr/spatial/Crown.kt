@@ -26,10 +26,28 @@ import kotlin.math.atan2
  * brief — an app you cannot answer is a receiver, and the whole point of this
  * one is that it should feel like a companion.
  *
- * AN ARC OVER THE MESSAGE, not a menu beside it. The actions belong to the
- * message being read, so they are attached to it: curved over the top of the
- * raised card, following the same billboard, appearing and leaving with it.
- * Nothing about the message's position has to be remembered while choosing.
+ * BUTTONS YOU CAN HIT, AT A DISTANCE YOU CAN POINT AT.
+ *
+ * The first build arced five text labels over the raised card. The arithmetic
+ * says why that failed: the card sits about 0.32 m from the eye, a 34-degree
+ * field is 19.6 cm wide there, and the five labels total 36.2 cm. They
+ * overlapped each other -- the same collision the reel's front arc had -- and
+ * each carried a fixed 9 cm hit box that matched no label's actual width, so
+ * the thing you aimed at and the thing you hit were different rectangles.
+ *
+ * It is also simply too close. A surface you point and pinch at wants to be an
+ * arm away, not held against your face.
+ *
+ * So the crown is a COLUMN of real plates at a metre, where the same field is
+ * 61 cm across and a button can be a button: a slab with an edge, sized to its
+ * own label, with the hit volume exactly the slab. That is what "solid object"
+ * has to mean here -- not decoration, but the target and the drawing being the
+ * same shape.
+ *
+ * FOCUS IS A SECOND PLATE, not a brightness change. MeshEntity.setAlpha is a
+ * no-op on this material path -- proved on device on 2026-08-02 -- so a lit
+ * state has to be its own geometry with its own material. The Cuff's resting
+ * ring works the same way and for the same reason.
  *
  * TWO LEVELS IN ONE WIDGET. Choosing REPLY swaps the labels for quick replies
  * rather than opening a second surface. A second surface would need its own
@@ -66,7 +84,12 @@ class Crown(
      */
     enum class Level { ACTIONS, COMPOSE, CONFIRM }
 
-    private class Item(val run: TextRun.Run, val proxy: MeshEntity) {
+    private class Item(
+        val run: TextRun.Run,
+        val plate: MeshEntity,
+        val lit: MeshEntity,
+        val proxy: MeshEntity,
+    ) {
         var lastFire = 0L
     }
 
@@ -98,6 +121,7 @@ class Crown(
      * shared band. Every route now ends up here first.
      */
     private var draft = ""
+    private var focused = -1
     private var dictating = false
     private var spoken = 0
     private var full = false
@@ -120,11 +144,21 @@ class Crown(
     /** Whether this conversation reads itself aloud, for the toggle's label. */
     var voiceOn: Boolean = false
 
+    /** What this conversation is called, so the toggle can name what it acts on. */
+    var voiceScope: String = ""
+
+    /** The pointer arrived on a button. The host owns the tick sound. */
+    var onFocus: (() -> Unit)? = null
+
     private fun labels(): List<Pair<Act, String>> = when (level) {
         Level.ACTIONS -> listOf(
             Act.REPLY to "REPLY",
             Act.ALOUD to "READ ALOUD",
-            Act.VOICE to if (voiceOn) "VOICE ON" else "VOICE OFF",
+            // STATE, WITH A COLON, not a bare word. "VOICE OFF" reads as a
+            // button that turns voice off; "VOICE: OFF" reads as the switch it
+            // is. The difference decides whether pinching it does what the
+            // wearer expected, which is the only thing a toggle label is for.
+            Act.VOICE to if (voiceOn) "VOICE: ON" else "VOICE: OFF",
             Act.THREAD to "THREAD",
             Act.DISMISS to "CLOSE",
         )
@@ -144,16 +178,30 @@ class Crown(
         val root = session.scene.activitySpace
         repeat(SLOTS) {
             val run = TextRun.reusable(
-                session, context, WIDEST, CAP, argb(theme.accent, 0.95f), "crown",
+                session, context, WIDEST, CAP, argb(theme.text, 0.98f), "crown",
             ) ?: return@repeat
             run.entity.parent = root
             run.entity.setEnabled(false)
             entities += run.entity
+            // The slab. Dim enough that the label reads as ink on it rather
+            // than a word fighting a lamp -- on additive optics a bright plate
+            // washes out the very text it carries.
+            val plate = MeshEntity.create(
+                session, Prims.build(session, Prims.bar(PLATE_W, PLATE_H, DEPTH)),
+                listOf(Prims.material(session, theme.alt, 0.16f)),
+            ).also { it.parent = root; it.setEnabled(false); entities += it }
+            val lit = MeshEntity.create(
+                session, Prims.build(session, Prims.bar(PLATE_W, PLATE_H, DEPTH)),
+                listOf(Prims.material(session, theme.accent, 0.42f)),
+            ).also { it.parent = root; it.setEnabled(false); entities += it }
+            // The hit volume IS the slab, which was the other half of the
+            // problem: a fixed 9 cm box under labels of every width meant the
+            // shape you aimed at and the shape you hit were different.
             val proxy = MeshEntity.create(
-                session, Prims.build(session, Prims.bar(HIT_W, HIT_H, 0.02f)),
+                session, Prims.build(session, Prims.bar(PLATE_W, PLATE_H, HIT_D)),
                 listOf(Prims.ghost(session)),
             ).also { it.parent = root; it.setEnabled(false); entities += it }
-            val item = Item(run, proxy)
+            val item = Item(run, plate, lit, proxy)
             val index = items.size
             runCatching {
                 proxy.addComponent(
@@ -234,57 +282,80 @@ class Crown(
 
     fun poll(): Act? = fired.poll()?.let { labels().getOrNull(it)?.first }
 
-    /** [at] is the card's anchor; the crown arcs above it. */
-    fun tick(at: Vector3?, head: Vector3?, nowMs: Long) {
+    /**
+     * [at] is the card's anchor, kept only so the crown vanishes with it; the
+     * column itself is placed in front of the WEARER at pointing distance.
+     *
+     * The actions still belong to the message -- they appear and leave with it
+     * -- but hanging them off the card's position put them 0.32 m from the eye,
+     * which is neither readable at five items nor comfortable to pinch at.
+     */
+    fun tick(at: Vector3?, head: Vector3?, yawRad: Float, nowMs: Long) {
         if (!open || at == null || head == null) {
             if (!open) return
             items.forEach {
-                runCatching { it.run.entity.setEnabled(false); it.proxy.setEnabled(false) }
+                runCatching {
+                    it.run.entity.setEnabled(false); it.plate.setEnabled(false)
+                    it.lit.setEnabled(false); it.proxy.setEnabled(false)
+                }
             }
             return
         }
+        val fx = kotlin.math.sin(yawRad)
+        val fz = -kotlin.math.cos(yawRad)
+        val cx = head.x + fx * DIST
+        val cz = head.z + fz * DIST
         val ls = labels()
-        // Across the top, on a shallow arc. Flat would collide with the card's
-        // own header; a full ring would put half the actions behind the hand.
-        val span = (ls.size - 1).coerceAtLeast(1)
+        // Centred on the eye line and stacked downward from it, so the top row
+        // is where the gaze already is and the column grows into the space
+        // below rather than across the mesh.
+        val top = head.y + TOP_DROP + (ls.size - 1) * PITCH / 2f
         ls.forEachIndexed { i, (_, text) ->
-            val f = i.toFloat() / span - 0.5f
-            val p = Vector3(
-                at.x + f * WIDTH,
-                at.y + RISE - kotlin.math.abs(f) * BOW,
-                at.z,
-            )
+            val p = Vector3(cx, top - i * PITCH, cz)
             slotAt[i] = p
             val item = items.getOrNull(i) ?: return@forEachIndexed
+            val r = facing(p, head)
             runCatching {
                 item.run.entity.setEnabled(true)
                 item.run.setText(text)
-                item.run.entity.setPose(Pose(p, facing(p, head)), Space.ACTIVITY)
+                item.run.entity.setPose(Pose(p, r), Space.ACTIVITY)
+                // The lit plate sits a hair in front of the dim one so the two
+                // can never z-fight over the same millimetre.
+                val back = Vector3(p.x - fx * PLATE_BACK, p.y, p.z - fz * PLATE_BACK)
+                item.plate.setEnabled(i != focused)
+                item.plate.setPose(Pose(back, r), Space.ACTIVITY)
+                item.lit.setEnabled(i == focused)
+                item.lit.setPose(Pose(back, r), Space.ACTIVITY)
                 item.proxy.setEnabled(true)
-                item.proxy.setPose(Pose(p), Space.ACTIVITY)
+                item.proxy.setPose(Pose(p, r), Space.ACTIVITY)
             }
         }
         // Anything past the current level's count is off, not stale.
         for (i in ls.size until items.size) {
             runCatching {
-                items[i].run.entity.setEnabled(false); items[i].proxy.setEnabled(false)
+                items[i].run.entity.setEnabled(false); items[i].plate.setEnabled(false)
+                items[i].lit.setEnabled(false); items[i].proxy.setEnabled(false)
             }
         }
-        // The words themselves, under the actions, wherever they came from —
+        if (focused >= ls.size) focused = -1
+
+        // The words themselves, ABOVE the buttons, wherever they came from --
         // spoken, canned, or one day generated. One place to read what is about
-        // to leave the radio.
+        // to leave the radio, and it is read before it is confirmed, so it goes
+        // where the eye lands first.
+        val headY = top + PITCH
         runCatching {
             val showing = level != Level.ACTIONS && (draft.isNotEmpty() || dictating)
             draft0?.entity?.setEnabled(showing)
             count0?.entity?.setEnabled(showing && (dictating || spoken > 0))
             if (showing) {
-                val dp = Vector3(at.x, at.y + RISE - BOW - DRAFT_DROP, at.z)
+                val dp = Vector3(cx, headY + DRAFT_UP, cz)
                 draft0?.setText(
                     if (draft.isBlank() && dictating) "LISTENING\u2026"
                     else TypeTier.clip(draft, DRAFT_COLS),
                 )
                 draft0?.entity?.setPose(Pose(dp, facing(dp, head)), Space.ACTIVITY)
-                val cp = Vector3(at.x, dp.y - CAP * 1.9f, at.z)
+                val cp = Vector3(cx, dp.y - CAP * 1.5f, cz)
                 count0?.setText(
                     "$spoken/${Dictation.MAX_WORDS} WORDS" + if (full) "  FULL" else "",
                 )
@@ -295,7 +366,7 @@ class Crown(
             val on = nowMs < noteUntil
             note?.entity?.setEnabled(on)
             if (on) {
-                val np = Vector3(at.x, at.y + RISE + BOW, at.z)
+                val np = Vector3(cx, headY + NOTE_UP, cz)
                 note?.entity?.setPose(Pose(np, facing(np, head)), Space.ACTIVITY)
             }
         }
@@ -310,6 +381,14 @@ class Crown(
 
     private fun onInput(index: Int, item: Item, ev: InputEvent) {
         if (!open) return
+        // POINTING AT A BUTTON HAS TO LOOK LIKE SOMETHING. Without it the only
+        // feedback is the action happening, which is too late to be aiming
+        // information.
+        when (ev.action) {
+            InputEvent.Action.HOVER_ENTER -> { focused = index; onFocus?.invoke() }
+            InputEvent.Action.HOVER_EXIT -> if (focused == index) focused = -1
+            else -> Unit
+        }
         if (ev.action != InputEvent.Action.UP) return
         val now = android.os.SystemClock.uptimeMillis()
         if (now - item.lastFire < DEBOUNCE_MS) return
@@ -329,7 +408,7 @@ class Crown(
 
     fun clear() {
         items.clear(); slotAt.clear(); fired.clear(); note = null; draft0 = null
-        open = false; level = Level.ACTIONS; noteUntil = 0L
+        open = false; level = Level.ACTIONS; noteUntil = 0L; focused = -1
         draft = ""; dictating = false; spoken = 0; full = false
         val doomed = entities.toList()
         entities.clear()
@@ -345,19 +424,36 @@ class Crown(
         /** Five actions, or three quick replies plus SPEAK and a way back. */
         const val SLOTS = 5
         /** 1.9° where the card sits — the same reasoning as the card's own cap. */
-        const val CAP = 0.011f
-        const val WIDTH = 0.30f
-        const val RISE = 0.10f
-        /** How much the arc droops at its ends, so it reads as a crown. */
-        const val BOW = 0.02f
-        const val HIT_W = 0.09f
-        const val HIT_H = 0.04f
+        /**
+         * 1.5° at [DIST] — over §4.1's 1.2° floor and the 1.30° house standard.
+         * A button that has to be aimed at deserves more than the minimum.
+         */
+        const val CAP = 0.026f
+        /**
+         * A METRE OUT. The card is at about 0.32 m, where a 34° field is 19.6
+         * cm wide and five labels total 36.2 cm. At a metre the same field is
+         * 61 cm and the column fits with room to spare — and an arm's length
+         * is where pointing and pinching actually happen.
+         */
+        const val DIST = 1.0f
+        const val PLATE_W = 0.34f
+        const val PLATE_H = 0.062f
+        const val DEPTH = 0.004f
+        /** Behind the label, so the text is never inside the slab. */
+        const val PLATE_BACK = 0.006f
+        /** Deep enough to be reached for, not so deep it catches a stray hand. */
+        const val HIT_D = 0.03f
+        const val PITCH = 0.078f
+        /** The column starts a little below the eye line, where menus belong. */
+        const val TOP_DROP = -0.06f
+        const val DRAFT_UP = 0.055f
+        const val NOTE_UP = 0.16f
         const val CONE = 0.045f
         const val DEBOUNCE_MS = 350L
         const val NOTE_MS = 3500L
-        const val WIDEST = "MMMMMMMMMM"
+        const val WIDEST = "MMMMMMMMMMMM"
         const val NOTE_WIDEST = "MMMMMMMMMMMMMMMMMMMM"
         const val DRAFT_COLS = 20
-        const val DRAFT_DROP = 0.035f
+
     }
 }

@@ -1088,6 +1088,10 @@ private fun HorizonScene(link: MeshLink) {
 
         val crown = com.iotj.meshmore.xr.spatial.Crown(session, palette, ctx)
         crown.build()
+        // Same tick the dock and menu use. On a display where you cannot feel a
+        // control, sound is the only confirmation the pointer arrived — and it
+        // arrives BEFORE the pinch, which is when it is worth having.
+        crown.onFocus = { cue.recognised() }
         crownRef.value = crown
 
         val thread = com.iotj.meshmore.xr.spatial.Thread(session, palette, ctx)
@@ -1456,7 +1460,15 @@ private fun HorizonScene(link: MeshLink) {
                             cw.voiceOn = voice.isOn(
                                 sel?.let { if (it.direct) it.fromKey else (it.channel ?: "#") },
                             )
-                            cw.tick(r.cardAt, hp?.translation, nowMs)
+                            // Named, so the toggle says WHAT it is switching.
+                            cw.voiceScope = sel?.let {
+                                if (it.direct) it.fromName.ifBlank { "THIS SENDER" }
+                                else (it.channelName ?: it.channel ?: "THIS CHANNEL")
+                            }?.uppercase().orEmpty()
+                            cw.tick(
+                                r.cardAt, hp?.translation,
+                                hp?.let { yawOf(it) } ?: 0f, nowMs,
+                            )
                             while (true) {
                                 val act = cw.poll() ?: break
                                 onCrown(
@@ -2223,7 +2235,11 @@ private fun onCrown(
         Crown.Act.VOICE -> {
             val now = voice.toggle(threadId)
             crown.voiceOn = now
-            crown.say(if (now) "VOICE ON FOR THIS" else "VOICE OFF FOR THIS", nowMs)
+            // NAMED. "VOICE ON FOR THIS" leaves the wearer to work out what
+            // "this" was, which on a surface that scrolls between conversations
+            // is exactly the thing they cannot be sure of.
+            val what = crown.voiceScope.ifBlank { "THIS" }
+            crown.say(if (now) "SPEAKING $what" else "SILENT: $what", nowMs)
             cue.recognised()
         }
         Crown.Act.ALOUD -> {

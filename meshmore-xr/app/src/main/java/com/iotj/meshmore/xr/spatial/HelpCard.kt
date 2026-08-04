@@ -104,6 +104,11 @@ class HelpCard(
         Row(null, "LEFT", "PALM UP SHOWS THE MESSAGE REEL", mark = "HANDS"),
         Row(null, "LEFT", "SLIDE THUMB ALONG INDEX TO TURN", mark = "SCRUB"),
         Row(null, "", "EITHER WAY - IT WRAPS ROUND"),
+        // Asked directly -- "how do I turn on the audio to always do TTS for
+        // this channel" -- which is the answer to a feature that exists and
+        // could not be found. A control nobody can locate is not shipped.
+        Row(null, "", "POINT A CROWN BUTTON AND PINCH"),
+        Row(null, "", "VOICE: ON READS THAT CHANNEL ALOUD"),
     )
 
     suspend fun build(o: Stage.Origin) {
