@@ -14,6 +14,7 @@ import androidx.xr.scenecore.InteractableComponent
 import androidx.xr.scenecore.MeshEntity
 import androidx.xr.scenecore.Space
 import androidx.xr.scenecore.scene
+import com.iotj.meshmore.xr.Dictation
 import kotlin.math.atan2
 
 /**
@@ -49,7 +50,21 @@ class Crown(
 ) {
 
     /** What was chosen. The host decides what any of it means. */
-    enum class Act { REPLY, ALOUD, THREAD, DISMISS, SEND_1, SEND_2, SEND_3, BACK }
+    enum class Act {
+        REPLY, ALOUD, VOICE, THREAD, DISMISS,
+        SEND_1, SEND_2, SEND_3, SPEAK, BACK,
+        CONFIRM, CANCEL,
+    }
+
+    /**
+     * WHERE IN THE CROWN WE ARE.
+     *
+     * CONFIRM is a separate level rather than a flag on COMPOSE because it is a
+     * different question. COMPOSE asks "what do you want to say"; CONFIRM asks
+     * "shall this go out on the radio", and the second one deserves a screen
+     * where the only two answers are yes and no.
+     */
+    enum class Level { ACTIONS, COMPOSE, CONFIRM }
 
     private class Item(val run: TextRun.Run, val proxy: MeshEntity) {
         var lastFire = 0L
@@ -61,9 +76,31 @@ class Crown(
     private val slotAt = HashMap<Int, Vector3>()
     private var note: TextRun.Run? = null
     private var noteUntil = 0L
+    /**
+     * THE DRAFT, SHOWN BEFORE IT IS SENT — and the word count with it.
+     *
+     * The count is the limit made visible. A ceiling discovered afterwards, by
+     * having your sentence cut in half on somebody else's screen, is not a
+     * limit; it is a trap. So it reads "12/20" while you talk and says FULL
+     * when it stops listening.
+     */
+    private var draft0: TextRun.Run? = null
+    private var count0: TextRun.Run? = null
 
-    /** Level 1 is the actions; level 2 is the quick replies. */
-    private var replying = false
+    private var level = Level.ACTIONS
+
+    /**
+     * The words waiting to go out, and the live dictation state under them.
+     *
+     * NOTHING IS SENT FROM THE COMPOSE LEVEL. Picking a canned reply used to
+     * transmit on the spot, which is precisely the accidental send this was
+     * asked to prevent — a pinch that lands slightly wrong put words on a
+     * shared band. Every route now ends up here first.
+     */
+    private var draft = ""
+    private var dictating = false
+    private var spoken = 0
+    private var full = false
 
     var open: Boolean = false
         private set
@@ -80,19 +117,27 @@ class Crown(
      */
     private val quick = listOf("ROGER", "ON MY WAY", "STAND BY")
 
-    private fun labels(): List<Pair<Act, String>> =
-        if (replying) {
-            quick.mapIndexed { i, q ->
-                listOf(Act.SEND_1, Act.SEND_2, Act.SEND_3)[i] to q
-            } + (Act.BACK to "BACK")
-        } else {
-            listOf(
-                Act.REPLY to "REPLY",
-                Act.ALOUD to "READ ALOUD",
-                Act.THREAD to "THREAD",
-                Act.DISMISS to "CLOSE",
-            )
-        }
+    /** Whether this conversation reads itself aloud, for the toggle's label. */
+    var voiceOn: Boolean = false
+
+    private fun labels(): List<Pair<Act, String>> = when (level) {
+        Level.ACTIONS -> listOf(
+            Act.REPLY to "REPLY",
+            Act.ALOUD to "READ ALOUD",
+            Act.VOICE to if (voiceOn) "VOICE ON" else "VOICE OFF",
+            Act.THREAD to "THREAD",
+            Act.DISMISS to "CLOSE",
+        )
+        Level.COMPOSE -> quick.mapIndexed { i, q ->
+            listOf(Act.SEND_1, Act.SEND_2, Act.SEND_3)[i] to q
+        } + listOf(
+            Act.SPEAK to if (dictating) "LISTENING" else "SPEAK",
+            Act.BACK to "BACK",
+        )
+        // TWO ANSWERS AND NOTHING ELSE. A confirm screen with a third option is
+        // a confirm screen somebody will misfire on.
+        Level.CONFIRM -> listOf(Act.CONFIRM to "SEND", Act.CANCEL to "CANCEL")
+    }
 
     suspend fun build() {
         clear()
@@ -124,29 +169,62 @@ class Crown(
         note = TextRun.reusable(
             session, context, NOTE_WIDEST, CAP, argb(theme.text, 0.95f), "crown-note",
         )?.also { it.entity.parent = root; it.entity.setEnabled(false); entities += it.entity }
+        draft0 = TextRun.reusable(
+            session, context, NOTE_WIDEST, CAP * 1.15f, argb(theme.text, 0.98f), "crown-draft",
+        )?.also { it.entity.parent = root; it.entity.setEnabled(false); entities += it.entity }
+        count0 = TextRun.reusable(
+            session, context, "99/99 WORDS  FULL", CAP * 0.8f,
+            argb(theme.alt, 0.9f), "crown-count",
+        )?.also { it.entity.parent = root; it.entity.setEnabled(false); entities += it.entity }
         Log.i(TAG, "[crown] ${items.size} slots")
     }
 
     fun show() {
         open = true
-        replying = false
+        level = Level.ACTIONS
+        draft = ""
+    }
+
+    fun compose() { level = Level.COMPOSE }
+
+    /** Put words in the mouth and go to the one screen that can send them. */
+    fun propose(text: String) {
+        draft = text
+        level = if (text.isBlank()) Level.COMPOSE else Level.CONFIRM
+    }
+
+    fun backToActions() { level = Level.ACTIONS; draft = ""; dictating = false }
+
+    fun backToCompose() { level = Level.COMPOSE; draft = "" }
+
+    val at: Level get() = level
+
+    val pending: String get() = draft
+
+    /** Live dictation state, for the word counter. */
+    fun setDictation(text: String, words: Int, listening: Boolean, atLimit: Boolean) {
+        draft = text
+        spoken = words
+        dictating = listening
+        full = atLimit
     }
 
     fun hide() {
         if (!open) return
         open = false
-        replying = false
+        level = Level.ACTIONS
+        draft = ""
+        dictating = false
         fired.clear()
         items.forEach {
             runCatching { it.run.entity.setEnabled(false); it.proxy.setEnabled(false) }
         }
-        runCatching { note?.entity?.setEnabled(false) }
+        runCatching {
+            note?.entity?.setEnabled(false)
+            draft0?.entity?.setEnabled(false)
+            count0?.entity?.setEnabled(false)
+        }
     }
-
-    /** Step into the quick replies, or back out of them. */
-    fun setReplying(on: Boolean) { replying = on }
-
-    val inReply: Boolean get() = replying
 
     /** Say what happened, for a few seconds. */
     fun say(text: String, nowMs: Long) {
@@ -192,6 +270,27 @@ class Crown(
                 items[i].run.entity.setEnabled(false); items[i].proxy.setEnabled(false)
             }
         }
+        // The words themselves, under the actions, wherever they came from —
+        // spoken, canned, or one day generated. One place to read what is about
+        // to leave the radio.
+        runCatching {
+            val showing = level != Level.ACTIONS && (draft.isNotEmpty() || dictating)
+            draft0?.entity?.setEnabled(showing)
+            count0?.entity?.setEnabled(showing && (dictating || spoken > 0))
+            if (showing) {
+                val dp = Vector3(at.x, at.y + RISE - BOW - DRAFT_DROP, at.z)
+                draft0?.setText(
+                    if (draft.isBlank() && dictating) "LISTENING\u2026"
+                    else TypeTier.clip(draft, DRAFT_COLS),
+                )
+                draft0?.entity?.setPose(Pose(dp, facing(dp, head)), Space.ACTIVITY)
+                val cp = Vector3(at.x, dp.y - CAP * 1.9f, at.z)
+                count0?.setText(
+                    "$spoken/${Dictation.MAX_WORDS} WORDS" + if (full) "  FULL" else "",
+                )
+                count0?.entity?.setPose(Pose(cp, facing(cp, head)), Space.ACTIVITY)
+            }
+        }
         runCatching {
             val on = nowMs < noteUntil
             note?.entity?.setEnabled(on)
@@ -229,8 +328,9 @@ class Crown(
     }
 
     fun clear() {
-        items.clear(); slotAt.clear(); fired.clear(); note = null
-        open = false; replying = false; noteUntil = 0L
+        items.clear(); slotAt.clear(); fired.clear(); note = null; draft0 = null
+        open = false; level = Level.ACTIONS; noteUntil = 0L
+        draft = ""; dictating = false; spoken = 0; full = false
         val doomed = entities.toList()
         entities.clear()
         doomed.forEach { runCatching { it.parent = null } }
@@ -242,8 +342,8 @@ class Crown(
 
     private companion object {
         const val TAG = "MeshmoreXR"
-        /** Four actions, or three quick replies plus a way back. */
-        const val SLOTS = 4
+        /** Five actions, or three quick replies plus SPEAK and a way back. */
+        const val SLOTS = 5
         /** 1.9° where the card sits — the same reasoning as the card's own cap. */
         const val CAP = 0.011f
         const val WIDTH = 0.30f
@@ -257,5 +357,7 @@ class Crown(
         const val NOTE_MS = 3500L
         const val WIDEST = "MMMMMMMMMM"
         const val NOTE_WIDEST = "MMMMMMMMMMMMMMMMMMMM"
+        const val DRAFT_COLS = 20
+        const val DRAFT_DROP = 0.035f
     }
 }

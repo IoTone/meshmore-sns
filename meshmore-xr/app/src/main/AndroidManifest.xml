@@ -24,6 +24,11 @@
          fix of its own, and only when the user has switched it on (Settings.
          useDeviceLocation, off by default). Declared here so the capability is
          visible; never requested unless that path is actually taken. -->
+    <!-- Dictation. Requested at the moment the wearer asks to speak, never at
+         startup: a microphone prompt on first launch of a mesh radio reads as
+         the app wanting to listen to the room. -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 

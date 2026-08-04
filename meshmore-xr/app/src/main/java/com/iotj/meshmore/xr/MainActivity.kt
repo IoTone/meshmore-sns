@@ -646,10 +646,23 @@ private fun HorizonScene(link: MeshLink) {
     val helpRef = remember { mutableStateOf<HelpCard?>(null) }
     val cue = remember { Cue() }
     val speech = remember { Speech(ctx) }
+    val dictation = remember { Dictation(ctx) }
+    // ASKED AT THE MOMENT OF SPEAKING, never at startup. A microphone prompt on
+    // first launch of a mesh radio reads as the app wanting to listen to the
+    // room, and it would be the first thing anybody saw. The system dialog is
+    // the sanctioned tier-P escape hatch, same as the BLE grant.
+    val askMic = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission(),
+    ) { granted ->
+        Log.i(TAG_UI, "[stt] mic granted=$granted")
+        if (granted) dictation.start()
+        else crownRef.value?.say("MIC NOT ALLOWED", android.os.SystemClock.uptimeMillis())
+    }
+    val voice = remember { VoicePrefs(ctx) }
     // TextToSpeech holds a system engine binding. Leaking one is not fatal but
     // it is the kind of thing a store review notices, and the fix is two lines.
     androidx.compose.runtime.DisposableEffect(Unit) {
-        onDispose { speech.release(); cue.release() }
+        onDispose { speech.release(); dictation.release(); cue.release() }
     }
     // Bumped by the HERE marker so the mesh rebuild below re-runs on a toggle.
     val hereEpoch = remember { mutableStateOf(0) }
@@ -1121,6 +1134,28 @@ private fun HorizonScene(link: MeshLink) {
             // segment for channel traffic, the whole ring and a pulse for
             // something addressed to you personally.
             if (m.direct) cuffRef.value?.directArrived() else cuffRef.value?.channelArrived()
+            // AND IT READS ITSELF, if this conversation was opted in. Only if:
+            // an app that starts talking unprompted is startling in a way a
+            // light is not, because you can look away from a light and you
+            // cannot un-hear a voice in a room with other people in it.
+            val tid = if (m.direct) m.fromKey else (m.channel ?: "#")
+            if (voice.isOn(tid)) {
+                val who = m.fromName.ifBlank { m.channelName ?: "someone" }
+                speech.say("$who says: ${m.text}")
+            }
+        }
+
+        // The dictation counter, straight from the recogniser's partial
+        // results. Partials are too unreliable to send and exactly reliable
+        // enough to count words with, which is all this uses them for.
+        dictation.onUpdate = { d ->
+            crownRef.value?.setDictation(d.text, d.words, d.listening, d.full)
+        }
+        // And when the wearer stops talking, the words become a DRAFT — never a
+        // transmission. Speech recognition mishears; a radio that sends what it
+        // thought it heard puts that mistake on somebody else's screen.
+        dictation.onFinal = { text ->
+            if (text.isNotBlank()) crownRef.value?.propose(text) else crownRef.value?.compose()
         }
 
         dock.onFocus = { cue.recognised() }
@@ -1412,12 +1447,24 @@ private fun HorizonScene(link: MeshLink) {
                             } else if (cw.open) {
                                 cw.hide()
                             }
+                            // The crown's VOICE label has to agree with the
+                            // store for the CURRENT message, not the one the
+                            // wearer last toggled — otherwise turning voice on
+                            // for one conversation appears to have turned it on
+                            // for every message you scroll past.
+                            val sel = link.msgs.value.getOrNull(r.selectedIndex)
+                            cw.voiceOn = voice.isOn(
+                                sel?.let { if (it.direct) it.fromKey else (it.channel ?: "#") },
+                            )
                             cw.tick(r.cardAt, hp?.translation, nowMs)
                             while (true) {
                                 val act = cw.poll() ?: break
                                 onCrown(
-                                    act, link, r, cw, threadRef.value, speech, cue,
-                                    stage, nowMs,
+                                    act, link, r, cw, threadRef.value, speech,
+                                    dictation, voice, cue, stage, nowMs,
+                                    askMic = {
+                                        askMic.launch(android.Manifest.permission.RECORD_AUDIO)
+                                    },
                                 )
                             }
                         }
@@ -2150,31 +2197,60 @@ private fun onCrown(
     act: Crown.Act,
     link: MeshLink,
     reel: com.iotj.meshmore.xr.spatial.Reel,
-    crown: com.iotj.meshmore.xr.spatial.Crown,
+    crown: Crown,
     thread: com.iotj.meshmore.xr.spatial.Thread?,
     speech: Speech,
+    dictation: Dictation,
+    voice: VoicePrefs,
     cue: Cue,
     stage: com.iotj.meshmore.xr.spatial.Stage,
     nowMs: Long,
+    askMic: () -> Unit,
 ) {
     // The REAL message, not the reel's display copy: the copy is clipped for
-    // the card and sending a clipped reply-quote would be its own bug.
+    // the card and acting on a clipped message would be its own bug.
     val msg = link.msgs.value.getOrNull(reel.selectedIndex)
+    val threadId = msg?.let { if (it.direct) it.fromKey else (it.channel ?: "#") }
     when (act) {
-        Crown.Act.REPLY -> { crown.setReplying(true); cue.opened() }
-        Crown.Act.BACK -> { crown.setReplying(false); cue.closed() }
-        Crown.Act.DISMISS -> { crown.setReplying(false); crown.hide(); cue.closed() }
+        Crown.Act.REPLY -> { crown.compose(); cue.opened() }
+        Crown.Act.BACK -> { dictation.cancel(); crown.backToActions(); cue.closed() }
+        Crown.Act.CANCEL -> {
+            // Back to composing rather than out altogether: cancelling a draft
+            // means "not those words", almost never "not at all".
+            dictation.cancel(); crown.backToCompose(); cue.closed()
+        }
+        Crown.Act.DISMISS -> { dictation.cancel(); crown.hide(); cue.closed() }
+        Crown.Act.VOICE -> {
+            val now = voice.toggle(threadId)
+            crown.voiceOn = now
+            crown.say(if (now) "VOICE ON FOR THIS" else "VOICE OFF FOR THIS", nowMs)
+            cue.recognised()
+        }
         Crown.Act.ALOUD -> {
             if (msg == null) {
                 crown.say("NOTHING TO READ", nowMs)
             } else {
-                // WHO, then what. A disembodied sentence in your ear is a
-                // worse experience than no audio at all.
+                // WHO, then what. A disembodied sentence in your ear is a worse
+                // experience than no audio at all.
                 val who = msg.fromName.ifBlank { msg.channelName ?: "someone" }
                 speech.say("$who says: ${msg.text}")
                 crown.say("READING ALOUD", nowMs)
             }
             cue.recognised()
+        }
+        Crown.Act.SPEAK -> {
+            when {
+                dictation.listening -> dictation.stop()
+                // The grant is requested HERE, the first time somebody asks to
+                // talk, rather than at startup where it would look like the app
+                // wanted to listen to the room.
+                !dictation.hasPermission() -> { crown.say("ASKING FOR MIC", nowMs); askMic() }
+                else -> {
+                    dictation.start()
+                    dictation.problem?.let { crown.say(it, nowMs) }
+                }
+            }
+            cue.opened()
         }
         Crown.Act.THREAD -> {
             val h = stage.headNow()
@@ -2205,28 +2281,29 @@ private fun onCrown(
                 cue.opened()
             }
         }
-        Crown.Act.SEND_1, Crown.Act.SEND_2, Crown.Act.SEND_3 -> {
-            val text = when (act) {
-                Crown.Act.SEND_1 -> "ROGER"
-                Crown.Act.SEND_2 -> "ON MY WAY"
-                else -> "STAND BY"
-            }
-            if (msg == null) {
-                crown.say("NOTHING TO REPLY TO", nowMs)
+        // A CANNED REPLY IS A DRAFT, NOT A TRANSMISSION. These used to send on
+        // the spot, which is the accidental send this was built to prevent: a
+        // pinch landing one slot wrong put words on a shared band with nothing
+        // in between. Now they propose, and the confirm level sends.
+        Crown.Act.SEND_1 -> { crown.propose("ROGER"); cue.opened() }
+        Crown.Act.SEND_2 -> { crown.propose("ON MY WAY"); cue.opened() }
+        Crown.Act.SEND_3 -> { crown.propose("STAND BY"); cue.opened() }
+        Crown.Act.CONFIRM -> {
+            val text = crown.pending
+            if (msg == null || text.isBlank()) {
+                crown.say("NOTHING TO SEND", nowMs)
                 cue.closed()
                 return
             }
             when (val r = link.replyTo(msg, text)) {
                 is MeshLink.Sent.Ok -> {
-                    crown.say("SENT: $text", nowMs); crown.setReplying(false); cue.recognised()
+                    crown.say("SENT", nowMs); crown.backToActions(); cue.recognised()
                 }
-                is MeshLink.Sent.NotReady -> {
-                    crown.say("RADIO NOT READY", nowMs); cue.closed()
-                }
+                is MeshLink.Sent.NotReady -> { crown.say("RADIO NOT READY", nowMs); cue.closed() }
                 is MeshLink.Sent.Refused -> {
-                    // The refusal reason verbatim. "It did not send" and "it is
-                    // not allowed to send" want different actions from the
-                    // wearer, and only one of them is worth retrying.
+                    // The reason verbatim. "It did not send" and "it is not
+                    // allowed to send" want different things from the reader,
+                    // and only one of them is worth trying again.
                     crown.say(r.why, nowMs); cue.closed()
                 }
             }
