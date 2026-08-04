@@ -621,6 +621,7 @@ private fun HorizonScene(link: MeshLink) {
     val inboxRef = remember { mutableStateOf<com.iotj.meshmore.xr.spatial.Inbox?>(null) }
     val consoleRef = remember { mutableStateOf<com.iotj.meshmore.xr.spatial.Console?>(null) }
     val threadRef = remember { mutableStateOf<com.iotj.meshmore.xr.spatial.Thread?>(null) }
+    val cuffRef = remember { mutableStateOf<com.iotj.meshmore.xr.spatial.Cuff?>(null) }
     val noticeRef = remember { mutableStateOf<Notice?>(null) }
     // The wedge currently magnified, or null for the true 1:1 ring. Bumping
     // hereEpoch is what makes the mesh effect re-run and re-place everything.
@@ -971,6 +972,7 @@ private fun HorizonScene(link: MeshLink) {
                     })
                     dockRef.value?.setLit("INBOX", true)
                     unread.value = 0
+                    cuffRef.value?.clearUnread()
                     cue.opened()
                 }
             },
@@ -1053,6 +1055,10 @@ private fun HorizonScene(link: MeshLink) {
         // THE DWELL FALLBACK (§8.2). Armed only when no hand is tracked, so it
         // is an alternative to the pinch rather than a second way to fire the
         // same control by accident.
+        val cuff = com.iotj.meshmore.xr.spatial.Cuff(session, palette)
+        cuff.build()
+        cuffRef.value = cuff
+
         val thread = com.iotj.meshmore.xr.spatial.Thread(session, palette, ctx)
         thread.build()
         threadRef.value = thread
@@ -1091,7 +1097,13 @@ private fun HorizonScene(link: MeshLink) {
         // window, and the design survives losing any one.
         //
         // Audio and the unread count exist today. CUFF and EMBER are owed.
-        link.onMessage = { unread.value += 1 }
+        link.onMessage = { m ->
+            unread.value += 1
+            // CHANNEL AND DM DIFFER BY FORM, not by colour (§S4): one arc
+            // segment for channel traffic, the whole ring and a pulse for
+            // something addressed to you personally.
+            if (m.direct) cuffRef.value?.directArrived() else cuffRef.value?.channelArrived()
+        }
 
         dock.onFocus = { cue.recognised() }
         // The menu gets the same tick the dock does. On a display where you
@@ -1318,6 +1330,10 @@ private fun HorizonScene(link: MeshLink) {
                         (consoleRef.value?.gazeTargets() ?: emptyList()),
                 )
                 gazeRef.value?.tick(stage.headNow(), anyHand, nowMs)
+                // THE CHAT HAND IS THE LEFT ONE by default (§5: one hand runs
+                // the system, the other runs the conversation), so the cuff
+                // rides the left wrist.
+                cuffRef.value?.tick(handL?.state?.value?.handJoints, nowMs)
                 // Show the dwelled pip's caption. Same focus state a pointer
                 // produces, so the two input paths look identical as well as
                 // firing identically.
