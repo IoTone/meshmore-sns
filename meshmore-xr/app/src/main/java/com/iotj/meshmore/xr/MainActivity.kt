@@ -637,6 +637,8 @@ private fun HorizonScene(link: MeshLink) {
      * so the third level is the same arithmetic as the first.
      */
     val lensStack = remember { mutableStateListOf<Lens>() }
+    /** Messages arrived and not yet looked at. Shown in the microhud band. */
+    val unread = remember { mutableStateOf(0) }
     val helpRef = remember { mutableStateOf<HelpCard?>(null) }
     val cue = remember { Cue() }
     // Bumped by the HERE marker so the mesh rebuild below re-runs on a toggle.
@@ -968,6 +970,7 @@ private fun HorizonScene(link: MeshLink) {
                         )
                     })
                     dockRef.value?.setLit("INBOX", true)
+                    unread.value = 0
                     cue.opened()
                 }
             },
@@ -1075,22 +1078,20 @@ private fun HorizonScene(link: MeshLink) {
         gaze.setTargets(dock.gazeTargets())
         gazeRef.value = gaze
 
-        // SOMEBODY SPOKE. A message that arrives silently, into a surface you
-        // have to know to open, is a message the app did not deliver. This is
-        // the one unsolicited interruption in the whole design and it is worth
-        // it: the mesh is people, and being told when one of them says
-        // something is the difference between a companion and a monitor.
-        link.onMessage = { m ->
-            cue.opened()
-            noticeRef.value?.say(
-                "%s: %s".format(
-                    com.iotj.meshmore.xr.spatial.TypeTier.clip(
-                        m.fromName.ifBlank { m.channel ?: "MESSAGE" }, 12,
-                    ),
-                    com.iotj.meshmore.xr.spatial.TypeTier.clip(m.text, 22),
-                ),
-            )
-        }
+        // ARRIVAL IS AMBIENT. §S4: "Nothing appears in front of your face,
+        // and nothing demands acknowledgement. The mesh is ambient; you look
+        // when you choose to."
+        //
+        // This used to put the sender and the text on a NOTICE in the middle of
+        // the view, with a comment arguing that one unsolicited interruption
+        // earned its place. The brief had already decided otherwise, and it is
+        // right: a mesh that interrupts you is a mesh you turn off. The four
+        // channels it specifies are audio, the wrist CUFF, a MICROHUD unread
+        // count and an EMBER at the viewport edge — none of them in the world
+        // window, and the design survives losing any one.
+        //
+        // Audio and the unread count exist today. CUFF and EMBER are owed.
+        link.onMessage = { unread.value += 1 }
 
         dock.onFocus = { cue.recognised() }
         // The menu gets the same tick the dock does. On a display where you
@@ -1747,9 +1748,13 @@ private fun HorizonScene(link: MeshLink) {
                         else -> " %.1fV".format(mv / 1000f)
                     }
                     hudRef.value?.setStatus(
-                        "%s%s  %d/%d".format(
+                        "%s%s  %d/%d%s".format(
                             if (st.state == SessionState.READY) "LINK" else st.state.name.take(4),
                             batt, nodesRef.value.size, mesh.size,
+                            // The unread count, in the band rather than the
+                            // world window. Distinguished by FORM as well as
+                            // number when the CUFF lands.
+                            if (unread.value > 0) "  %d NEW".format(unread.value) else "",
                         )
                     )
                 }
