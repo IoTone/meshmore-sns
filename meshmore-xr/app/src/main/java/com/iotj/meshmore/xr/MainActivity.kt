@@ -1058,6 +1058,7 @@ private fun HorizonScene(link: MeshLink) {
         // same control by accident.
         val reel = com.iotj.meshmore.xr.spatial.Reel(session, palette, ctx)
         reel.build()
+        reel.onDetent = { cue.tick() }
         reelRef.value = reel
 
         val cuff = com.iotj.meshmore.xr.spatial.Cuff(session, palette)
@@ -1355,7 +1356,11 @@ private fun HorizonScene(link: MeshLink) {
                                     who = com.iotj.meshmore.xr.spatial.TypeTier.clip(
                                         m.fromName.ifBlank { m.channel ?: "?" }, 8,
                                     ),
-                                    words = com.iotj.meshmore.xr.spatial.TypeTier.clip(m.text, 12),
+                                    // The raised card holds three lines of
+                                    // fourteen; clipping at twelve here was
+                                    // sized for the old one-line front arc and
+                                    // would throw away most of every message.
+                                    words = com.iotj.meshmore.xr.spatial.TypeTier.clip(m.text, 42),
                                 )
                             },
                         )

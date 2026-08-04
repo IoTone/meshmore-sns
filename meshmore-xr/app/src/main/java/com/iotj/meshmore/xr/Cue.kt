@@ -50,6 +50,16 @@ class Cue {
     /** A surface opened. Higher and shorter than a rejection. */
     fun opened() = play(ToneGenerator.TONE_PROP_BEEP2, 120)
 
+    /**
+     * A DETENT PASSED — one notch of a continuous control.
+     *
+     * Deliberately the shortest and least eventful of these. A reel turned
+     * through six slots fires this six times in about a second, and a tone
+     * that is satisfying once is intolerable at that rate; this one has to
+     * disappear into the gesture rather than announce it.
+     */
+    fun tick() = play(ToneGenerator.TONE_PROP_ACK, 30)
+
     /** A surface closed, or an action declined. */
     fun closed() = play(ToneGenerator.TONE_PROP_NACK, 140)
 

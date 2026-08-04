@@ -64,41 +64,17 @@ class PalmFrameTest {
  * that is fine until someone sends a 40-character URL with no spaces in it —
  * which on a mesh radio is a normal Tuesday.
  *
- * The reel's own instance is not constructible off-device (it wants a Session),
- * so this exercises the rule through a standalone copy of the same bounds. The
- * value being protected is the CONTRACT: never wider than CARD_COLS, never
- * more than CARD_LINES, and never an infinite loop on an unbreakable token.
+ * The contract being protected: never wider than the column count, never more
+ * lines than the card has, and never an infinite loop on an unbreakable token.
+ * The wrap lives at file scope in Reel.kt precisely so this can call the real
+ * one — a test against a copied-out version of the logic tests the copy.
  */
 class ReelWrapTest {
 
     private val cols = 14
     private val lines = 3
 
-    private fun wrap(text: String): List<String> {
-        val out = mutableListOf<String>()
-        var cur = StringBuilder()
-        for (word in text.trim().split(' ')) {
-            var w = word
-            while (w.length > cols) {
-                if (cur.isNotEmpty()) { out += cur.toString(); cur = StringBuilder() }
-                out += w.take(cols)
-                w = w.drop(cols)
-                if (out.size >= lines) return out.take(lines)
-            }
-            if (w.isEmpty()) continue
-            when {
-                cur.isEmpty() -> cur.append(w)
-                cur.length + 1 + w.length <= cols -> cur.append(' ').append(w)
-                else -> {
-                    out += cur.toString()
-                    if (out.size >= lines) return out
-                    cur = StringBuilder(w)
-                }
-            }
-        }
-        if (cur.isNotEmpty()) out += cur.toString()
-        return out.take(lines)
-    }
+    private fun wrap(text: String) = wrap(text, cols, lines)
 
     private fun check(text: String) {
         val r = wrap(text)

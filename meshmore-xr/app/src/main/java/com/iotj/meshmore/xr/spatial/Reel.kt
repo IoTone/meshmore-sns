@@ -72,10 +72,27 @@ class Reel(
     private var stem: MeshEntity? = null
     private var cardWho: TextRun.Run? = null
     private val cardBody = mutableListOf<TextRun.Run>()
-    /** Which slot is current. Fixed at the front until rotation lands. */
+    /**
+     * How far the ring has been turned, in slots. Continuous, so the oval
+     * moves with the thumb rather than jumping between detents — the snap is
+     * for WHICH message is current, not for where the markers are drawn.
+     */
+    private var spin = 0f
+    /** Clutch state: where the thumb was, and where the spin was, at contact. */
+    private var grabT = 0f
+    private var grabSpin = 0f
+    private var scrubbing = false
+    /** Which slot is at the front. Derived from [spin], never set directly. */
     private var current = 0
     private val entities = mutableListOf<Entity>()
     private var slots: List<Slot> = emptyList()
+
+    /**
+     * One notch of the ring went past. The host owns the sound: the reel has no
+     * business holding an audio path, and the themes' audio packs (§7) will
+     * want to answer this differently per profile.
+     */
+    var onDetent: (() -> Unit)? = null
 
     /** Revealed, with the hysteresis of §5 rather than a single threshold. */
     var open: Boolean = false
@@ -207,11 +224,40 @@ class Reel(
         val cy = w.y + ay * (ALONG) + uy * s * STANDOFF
         val cz = w.z + az * (ALONG) + uz * s * STANDOFF
 
+        // TURN THE RING. A CLUTCH, NOT AN ABSOLUTE MAPPING: the thumb's travel
+        // is about 9 cm and the ring is twelve deep, so mapping the finger's
+        // whole length onto a whole turn puts the detents 7 mm apart, which is
+        // below what a thumb can place reliably. Instead one stroke moves
+        // GAIN slots and you lift and re-place to go further — the same
+        // gesture a scroll wheel makes, and the reason a scroll wheel works.
+        val thumb = act(HandJointType.THUMB_TIP)
+        val itip = act(HandJointType.INDEX_TIP)
+        if (thumb != null && itip != null) {
+            val sc = scrub(ix, itip, thumb)
+            if (sc.on && !scrubbing) {
+                scrubbing = true; grabT = sc.t; grabSpin = spin
+            } else if (!sc.on) {
+                scrubbing = false
+            }
+            if (scrubbing) spin = grabSpin + (sc.t - grabT) * GAIN
+        } else {
+            scrubbing = false
+        }
+        // The front slot, snapped. Sliding the thumb toward the fingertip
+        // brings OLDER messages round to the front, which is the direction the
+        // hand is already travelling when it reaches for the past.
+        val front = ((-Math.round(spin)) % SLOTS + SLOTS) % SLOTS
+        if (front != current) {
+            current = front
+            if (slots.isNotEmpty()) onDetent?.invoke()
+        }
+
         cells.forEachIndexed { i, c ->
             val msg = slots.getOrNull(i)
             // Slot 0 sits at the FRONT — nearest the wearer along the hand —
             // and the rest wrap round. Newest first, which is what triage wants.
-            val t = (i.toFloat() / SLOTS) * TAU
+            // Plus the spin, so the whole ring turns under the thumb.
+            val t = ((i + spin) / SLOTS) * TAU
             val ox = kotlin.math.sin(t) * RX
             val oy = -kotlin.math.cos(t) * RY
             val at = Vector3(
@@ -221,7 +267,13 @@ class Reel(
             )
             // Senders only on the front arc — enough to choose by. The words
             // are on the raised card, because five lines of them do not fit.
-            val named = msg != null && i < FRONT
+            //
+            // Which slots are named follows where they are DRAWN, not their
+            // index: once the ring turns, "the front five" is a fact about the
+            // oval rather than about the message list.
+            val steps = ((i + spin) % SLOTS + SLOTS) % SLOTS
+            val fromFront = kotlin.math.min(steps, SLOTS - steps)
+            val named = msg != null && fromFront <= FRONT / 2f
             runCatching {
                 c.mote.setEnabled(msg != null)
                 c.mote.setPose(Pose(at), Space.ACTIVITY)
@@ -265,7 +317,7 @@ class Reel(
             val r = facing(at, h)
             cardWho?.setText(sel.who)
             cardWho?.entity?.setPose(Pose(at, r), Space.ACTIVITY)
-            val wrapped = wrap(sel.words)
+            val wrapped = wrap(sel.words, CARD_COLS, CARD_LINES)
             cardBody.forEachIndexed { i, line ->
                 val txt = wrapped.getOrNull(i)
                 line.entity.setEnabled(txt != null)
@@ -282,40 +334,6 @@ class Reel(
         }
     }
 
-    /**
-     * Break the words across the card's lines.
-     *
-     * A single line of message text at a readable size is 0.25 m wide at a
-     * third of a metre — about forty degrees, which is wider than the display.
-     * So it wraps, at spaces where there are any and mid-word where there are
-     * not, because a long unbroken token is a real thing people send.
-     */
-    internal fun wrap(text: String): List<String> {
-        val out = mutableListOf<String>()
-        var cur = StringBuilder()
-        for (word in text.trim().split(' ')) {
-            var w = word
-            while (w.length > CARD_COLS) {
-                if (cur.isNotEmpty()) { out += cur.toString(); cur = StringBuilder() }
-                out += w.take(CARD_COLS)
-                w = w.drop(CARD_COLS)
-                if (out.size >= CARD_LINES) return out.take(CARD_LINES)
-            }
-            if (w.isEmpty()) continue
-            when {
-                cur.isEmpty() -> cur.append(w)
-                cur.length + 1 + w.length <= CARD_COLS -> cur.append(' ').append(w)
-                else -> {
-                    out += cur.toString()
-                    if (out.size >= CARD_LINES) return out
-                    cur = StringBuilder(w)
-                }
-            }
-        }
-        if (cur.isNotEmpty()) out += cur.toString()
-        return out.take(CARD_LINES)
-    }
-
     private fun facing(at: Vector3, head: Vector3): Quaternion {
         val dx = head.x - at.x
         val dz = head.z - at.z
@@ -327,7 +345,8 @@ class Reel(
 
     fun clear() {
         cells.clear(); slots = emptyList(); open = false
-        panel = null; stem = null; cardWho = null; cardBody.clear(); current = 0
+        panel = null; stem = null; cardWho = null; cardBody.clear()
+        current = 0; spin = 0f; grabT = 0f; grabSpin = 0f; scrubbing = false
         val doomed = entities.toList()
         entities.clear()
         doomed.forEach { runCatching { it.parent = null } }
@@ -374,5 +393,79 @@ class Reel(
         const val CARD_WIDEST = "MMMMMMMMMMMMMM"
         /** Sender labels hang just under their marker. */
         const val LABEL_DROP = 0.014f
+        /** Slots per full stroke of the thumb. Half the ring, so two strokes
+         *  come all the way round and no single one demands 7 mm precision. */
+        const val GAIN = 6f
     }
+}
+
+/** How close to the index's axis counts as riding it, as a fraction of that
+ *  finger's own length — so it holds across hand sizes. */
+internal const val CONTACT_FRAC = 0.34f
+
+/**
+ * WHERE THE THUMB SITS ALONG THE INDEX — the reel's one real haptic.
+ *
+ * §5: thumb-along-index is "the app's only source of genuine haptics",
+ * because you are touching your own finger. Nothing else here can be felt,
+ * and a control you can feel is worth more than three you cannot.
+ *
+ * [t] runs 0 at the index knuckle to 1 at its tip. [on] is whether the
+ * thumb is close enough to the finger to count as riding it, measured as a
+ * FRACTION of that finger's own length rather than in millimetres — hands
+ * differ in size by well over the tolerance an absolute threshold would
+ * need, and this project has already had one gesture threshold fail for
+ * exactly that reason.
+ *
+ * Pure, and separately tested: the alternative is discovering a sign error
+ * by wearing the headset, which costs several minutes per attempt.
+ */
+internal class Scrub(val t: Float, val on: Boolean)
+
+internal fun scrub(prox: Vector3, tip: Vector3, thumb: Vector3): Scrub {
+    val axx = tip.x - prox.x; val axy = tip.y - prox.y; val axz = tip.z - prox.z
+    val l2 = axx * axx + axy * axy + axz * axz
+    if (l2 < 1e-8f) return Scrub(0f, false)
+    val vx = thumb.x - prox.x; val vy = thumb.y - prox.y; val vz = thumb.z - prox.z
+    val raw = (vx * axx + vy * axy + vz * axz) / l2
+    val t = raw.coerceIn(0f, 1f)
+    // Perpendicular offset from the finger's axis, at the clamped point:
+    // a thumb held out past the fingertip is not riding the finger.
+    val px = vx - axx * t; val py = vy - axy * t; val pz = vz - axz * t
+    val d = sqrt(px * px + py * py + pz * pz)
+    return Scrub(t, d < CONTACT_FRAC * sqrt(l2))
+}
+
+/**
+ * Break the words across the card's lines.
+ *
+ * A single line of message text at a readable size is 0.25 m wide at a
+ * third of a metre — about forty degrees, which is wider than the display.
+ * So it wraps, at spaces where there are any and mid-word where there are
+ * not, because a long unbroken token is a real thing people send.
+ */
+internal fun wrap(text: String, cols: Int, lines: Int): List<String> {
+    val out = mutableListOf<String>()
+    var cur = StringBuilder()
+    for (word in text.trim().split(' ')) {
+        var w = word
+        while (w.length > cols) {
+            if (cur.isNotEmpty()) { out += cur.toString(); cur = StringBuilder() }
+            out += w.take(cols)
+            w = w.drop(cols)
+            if (out.size >= lines) return out.take(lines)
+        }
+        if (w.isEmpty()) continue
+        when {
+            cur.isEmpty() -> cur.append(w)
+            cur.length + 1 + w.length <= cols -> cur.append(' ').append(w)
+            else -> {
+                out += cur.toString()
+                if (out.size >= lines) return out
+                cur = StringBuilder(w)
+            }
+        }
+    }
+    if (cur.isNotEmpty()) out += cur.toString()
+    return out.take(lines)
 }
