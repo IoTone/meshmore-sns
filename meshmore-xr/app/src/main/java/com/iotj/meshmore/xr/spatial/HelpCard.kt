@@ -74,6 +74,8 @@ class HelpCard(
         Row('b', "RIGHT", "BACK OUT ONE LEVEL"),
         Row('b', "LEFT", "BACK OUT ONE LEVEL"),
         Row(null, "", "B ONLY ANSWERS WHILE MAGNIFIED"),
+        Row('r', "RIGHT", "RESET VIEW TO WHERE YOU STAND"),
+        Row('r', "LEFT", "RESET VIEW - EITHER HAND"),
         Row(null, "", "HOLD STILL FOR HALF A SECOND"),
         Row(null, "", "PALM AWAY - THE GLASSES SEE THE BACK"),
         Row(null, "", "OR PINCH A DOCK RING INSTEAD"),

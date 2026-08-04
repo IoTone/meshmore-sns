@@ -178,6 +178,65 @@ class HandSignTest {
         assertEquals(HandSign.Letter.NONE, g.update(HandSign.Letter.A, 300))
     }
 
+    // --- R: the same fingers as H, crossed ----------------------------------
+
+    /**
+     * A hand with the index and middle laid across each other. [swap] > 0 puts
+     * the tips in the OPPOSITE lateral order from their knuckles, which is what
+     * crossing physically is; 0 leaves them side by side, which is an H.
+     */
+    private fun twoFingers(swap: Float, scale: Float = 0.09f): Map<HandJointType, Pose> {
+        fun p(x: Float, y: Float) = Pose(Vector3(x, y, 0f))
+        return mapOf(
+            HandJointType.WRIST to p(0f, 0f),
+            HandJointType.MIDDLE_METACARPAL to p(0f, scale),
+            HandJointType.THUMB_PROXIMAL to p(0f, scale),
+            HandJointType.THUMB_TIP to p(0.05f, 1.4f * scale),
+            // Knuckles: index left of middle.
+            HandJointType.INDEX_PROXIMAL to p(0f, scale),
+            HandJointType.MIDDLE_PROXIMAL to p(0.02f, scale),
+            HandJointType.RING_PROXIMAL to p(0.04f, scale),
+            HandJointType.LITTLE_PROXIMAL to p(0.06f, scale),
+            // Tips: index and middle extended; swap slides them past each other.
+            HandJointType.INDEX_TIP to p(0f + swap * 0.02f, 2f * scale),
+            HandJointType.MIDDLE_TIP to p(0.02f - swap * 0.02f, 2f * scale),
+            HandJointType.RING_TIP to p(0.04f, 1f * scale),
+            HandJointType.LITTLE_TIP to p(0.06f, 1f * scale),
+        )
+    }
+
+    @Test fun `crossed fingers are R and uncrossed are H`() {
+        assertEquals(HandSign.Letter.H, HandSign.classify(twoFingers(swap = 0f)))
+        assertEquals(HandSign.Letter.R, HandSign.classify(twoFingers(swap = 1.6f)))
+    }
+
+    /** Side by side sits near zero, and must not flicker into R. */
+    @Test fun `fingers merely touching are not crossed`() {
+        assertTrue(!HandSign.crossed(twoFingers(swap = 0f)))
+        assertTrue(!HandSign.crossed(twoFingers(swap = 0.4f)))
+    }
+
+    /** Missing joints are unknown, and unknown must never read as crossed. */
+    @Test fun `an unseen hand is not an R`() {
+        assertTrue(!HandSign.crossed(emptyMap()))
+        assertEquals(HandSign.Letter.NONE, HandSign.classify(emptyMap()))
+    }
+
+    /** Crossing is a sign, not a distance, so hand size cannot change it. */
+    @Test fun `crossing does not depend on hand size`() {
+        assertTrue(HandSign.crossed(twoFingers(swap = 1.6f, scale = 0.06f)))
+        assertTrue(HandSign.crossed(twoFingers(swap = 1.6f, scale = 0.13f)))
+    }
+
+    /**
+     * R must not steal from the letters that already work. A and B do not have
+     * the index and middle alone extended, so neither can reach the R branch.
+     */
+    @Test fun `R does not disturb A or B`() {
+        assertEquals(HandSign.Letter.A, HandSign.classify(hand(1.4f, 1f, 1f, 1f, 1f)))
+        assertEquals(HandSign.Letter.B, HandSign.classify(hand(1.2f, 2f, 2f, 2f, 2f)))
+    }
+
     // --- B is a DELIBERATE flat hand, not any open one -----------------------
 
     /**

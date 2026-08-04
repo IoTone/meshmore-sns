@@ -168,6 +168,34 @@ class Inbox(
 
     private fun render() {
         val a = anchor ?: return
+        // EMPTY IS A STATE, NOT AN ABSENCE.
+        //
+        // Every row and the pager were gated on having content, so an inbox
+        // with no conversations drew nothing whatsoever — which from the
+        // outside is exactly what a broken surface looks like. Reported as
+        // "the inbox icon doesn't show anything", and it was right to be
+        // reported: the app opened a surface and the surface said nothing.
+        if (all.isEmpty()) {
+            rows.forEachIndexed { i, r ->
+                val on = i == 0
+                runCatching {
+                    r.head.entity.setEnabled(on)
+                    r.body.entity.setEnabled(on)
+                    r.proxy.setEnabled(false)
+                    if (!on) return@runCatching
+                    r.head.setText("NO MESSAGES YET")
+                    r.body.setText("they appear here as they arrive")
+                    val at = Vector3(a.x, a.y, a.z)
+                    r.head.entity.setPose(Pose(at, facing(a)), Space.ACTIVITY)
+                    r.body.entity.setPose(
+                        Pose(Vector3(a.x, a.y - HEAD_CAP * 1.9f, a.z), facing(a)),
+                        Space.ACTIVITY,
+                    )
+                }
+            }
+            runCatching { pager?.entity?.setEnabled(false); pagerProxy?.setEnabled(false) }
+            return
+        }
         val first = page * ROWS
         rows.forEachIndexed { i, r ->
             val e = all.getOrNull(first + i)

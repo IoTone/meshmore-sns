@@ -1025,6 +1025,7 @@ private fun HorizonScene(link: MeshLink) {
                     val yaw = kotlin.math.atan2(-fx, fz)
                     originRef.value = originRef.value?.copy(yawRad = yaw)
                     hereEpoch.value += 1
+                    MainActivity.northDeg = 0f   // north is now established
                     cue.opened()
                     Log.i(TAG_UI, "[heading] NORTH set from head yaw %.1f° — ring is now "
                         .format(Math.toDegrees(yaw.toDouble())) + "north-referenced")
@@ -1429,6 +1430,46 @@ private fun HorizonScene(link: MeshLink) {
                     Log.i(TAG_UI, "[lens] popped by $hand:B gesture, depth ${lensStack.size}")
                 }
 
+                /**
+                 * R — RESET THE VIEW: bring the ring to where you are standing now,
+                 * WITHOUT touching which way north is.
+                 *
+                 * That second half is the whole point and the easy thing to get wrong.
+                 * Stage.recentre() derives yaw from the current facing, so calling it
+                 * here would silently redefine north as "whatever direction you were
+                 * looking when you pressed reset" — undoing the NORTH correction and
+                 * rotating every bearing in the app. A reset that breaks the compass is
+                 * not a reset.
+                 *
+                 * So it moves the origin's POSITION and keeps its yaw. Walk to another
+                 * room, press R, and the ring follows you with its bearings intact.
+                 *
+                 * If north was never established it says so rather than inventing one:
+                 * this hardware publishes no magnetometer, so "orient to true north" is
+                 * only meaningful once somebody has told it north once.
+                 */
+                val northKnown = MainActivity.northDeg != null
+                fun resetView(hand: String) {
+                    if (nowMs - lastBackAt < BACK_OUT_MS) return
+                    lastBackAt = nowMs
+                    val h = stage.headNow()
+                    val o = originRef.value
+                    if (h == null || o == null) {
+                cue.closed()
+                Log.w(TAG_UI, "[reset] no head pose")
+                return
+                    }
+                    val t = h.translation
+                    originRef.value = o.copy(x = t.x, y = t.y, z = t.z)
+                    hereEpoch.value += 1
+                    cue.opened()
+                    noticeRef.value?.say(
+                if (northKnown) "VIEW RESET" else "VIEW RESET  NORTH NOT SET",
+                    )
+                    Log.i(TAG_UI, "[reset] $hand:R — origin moved to (%.2f, %.2f, %.2f), yaw kept %.1f°"
+                .format(t.x, t.y, t.z, Math.toDegrees(o.yawRad.toDouble())))
+                }
+
                 handR?.state?.value?.handJoints?.let { j ->
                     // ORIENTATION COUNTS. A fist held palm-first is the back of
                     // an 'A', not an 'A' — and accepting both doubles the number
@@ -1463,6 +1504,13 @@ private fun HorizonScene(link: MeshLink) {
                     ) {
                         backOut("R")
                     }
+                    // Presented, like B: a reset is not something to issue by
+                    // resting a hand somewhere.
+                    if (gotR == com.iotj.meshmore.xr.spatial.HandSign.Letter.R &&
+                        handsRef.value?.presented(j, it0) == true
+                    ) {
+                        resetView("R")
+                    }
                     if (gotR == com.iotj.meshmore.xr.spatial.HandSign.Letter.A) {
                         // BEFORE the action. Hearing this means the classifier
                         // saw the letter; the only remaining question is whether
@@ -1495,6 +1543,11 @@ private fun HorizonScene(link: MeshLink) {
                         handsRef.value?.presented(j, it0) == true
                     ) {
                         backOut("L")
+                    }
+                    if (gotL == com.iotj.meshmore.xr.spatial.HandSign.Letter.R &&
+                        handsRef.value?.presented(j, it0) == true
+                    ) {
+                        resetView("L")
                     }
                     if (gotL == com.iotj.meshmore.xr.spatial.HandSign.Letter.A) {
                         cue.recognised()

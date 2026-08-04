@@ -34,7 +34,7 @@ import kotlin.math.sqrt
  */
 object HandSign {
 
-    enum class Letter { NONE, A, B, H }
+    enum class Letter { NONE, A, B, H, R }
 
     /**
      * A fingertip more than this many times its knuckle's distance from the
@@ -81,6 +81,14 @@ object HandSign {
      * Hands.presented), and a hand at rest is not.
      */
     const val B_SPREAD = 0.50f
+    /**
+     * How far the tips must be out of order before it counts as crossed, as a
+     * fraction of the knuckle span. Two fingers held side by side sit near
+     * zero, so a margin is what stops an H flickering into an R.
+     *
+     * PROVISIONAL, like every threshold here before hardware moved it.
+     */
+    const val CROSS_MARGIN = 0.25f
 
     /**
      * Hand scale, from the wrist to the middle knuckle.
@@ -193,6 +201,47 @@ object HandSign {
             worst = kotlin.math.max(worst, dist(a.x, a.y, a.z, b.x, b.y, b.z) / knuckle)
         }
         return worst
+    }
+
+    /**
+     * ARE THE INDEX AND MIDDLE FINGERS CROSSED?
+     *
+     * This is the whole of R, and it is the only letter we ship whose shape is
+     * not a matter of which fingers are out. R and H have the SAME extension
+     * pattern — index and middle up, ring and little down — so a classifier
+     * built on reach alone reads a crossed hand as an H and fires whatever H
+     * is bound to. They have to be separated by the crossing itself.
+     *
+     * Crossing SWAPS THE LATERAL ORDER: the index tip ends up on the far side
+     * of the middle tip from where the index KNUCKLE sits. So project both
+     * pairs onto the knuckle-to-knuckle axis and compare signs — negative
+     * means the tips are the other way round from their roots, which is a
+     * finger laid over its neighbour.
+     *
+     * Scale-free and handed-ness-free by construction: it is a sign, not a
+     * distance, and the axis is taken from the hand's own knuckles rather than
+     * from the world. Returns false when the joints are missing, because
+     * "unknown" must not read as "crossed" — an unseen hand would otherwise
+     * become an R.
+     */
+    fun crossed(j: Map<HandJointType, Pose>): Boolean {
+        val ik = j[HandJointType.INDEX_PROXIMAL]?.translation ?: return false
+        val mk = j[HandJointType.MIDDLE_PROXIMAL]?.translation ?: return false
+        val it = j[HandJointType.INDEX_TIP]?.translation ?: return false
+        val mt = j[HandJointType.MIDDLE_TIP]?.translation ?: return false
+        // The hand's own lateral axis: knuckle to knuckle.
+        val ax = mk.x - ik.x; val ay = mk.y - ik.y; val az = mk.z - ik.z
+        val len2 = ax * ax + ay * ay + az * az
+        if (len2 < 1e-8f) return false
+        // Where each tip sits along it. Roots are 0 and 1 by definition, so the
+        // tips being in the opposite order is what a crossing looks like.
+        fun along(px: Float, py: Float, pz: Float): Float =
+            ((px - ik.x) * ax + (py - ik.y) * ay + (pz - ik.z) * az) / len2
+        val gap = along(mt.x, mt.y, mt.z) - along(it.x, it.y, it.z)
+        // Uncrossed the middle tip is further along the axis than the index
+        // tip, exactly as their knuckles are. A comfortable margin, because
+        // two fingers held together sit near zero and must not flicker into R.
+        return gap < -CROSS_MARGIN
     }
 
     fun pinchGap(j: Map<HandJointType, Pose>): Float {
@@ -336,6 +385,9 @@ object HandSign {
             // H — index and middle extended together, ring and little down.
             // Distinguished from A by exactly the fingers A requires to be
             // curled, so the two cannot be confused by a threshold wobble.
+            // R BEFORE H, because they are the same fingers and differ only by
+            // the crossing. Checking H first would swallow every R.
+            index && middle && !ring && !little && crossed(joints) -> Letter.R
             index && middle && !ring && !little -> Letter.H
             // B — flat hand, four fingers straight AND TOGETHER.
             //
