@@ -245,6 +245,47 @@ class Hands(
         return w.y > head.translation.y - PRESENT_DROP
     }
 
+    /**
+     * HOW SQUARELY THE PALM FACES THE WEARER, from -1 to +1.
+     *
+     * [palmAway] answers the same question as a boolean, and a boolean cannot
+     * carry hysteresis — §5 requires the reveal and the hide to sit at
+     * DIFFERENT thresholds, because a single one makes a hand-anchored surface
+     * strobe as the wrist hovers at the boundary, and "flicker on a
+     * hand-anchored element is the most nauseating failure mode available in
+     * XR". The gap between the two is the feature, so the caller needs the
+     * number.
+     *
+     * +1 is the palm square on to the wearer. Null when the joints or the head
+     * are unavailable, which callers must treat as "do not reveal" rather than
+     * as zero.
+     */
+    fun palmDot(j: Map<HandJointType, Pose>?, head: Pose?, rightHand: Boolean): Float? {
+        j ?: return null
+        head ?: return null
+        val ps = session.scene.perceptionSpace
+        fun act(t: HandJointType): Vector3? = runCatching {
+            ps.getScenePoseFromPerceptionPose(j[t] ?: return null).poseInActivitySpace.translation
+        }.getOrNull()
+        val w = act(HandJointType.WRIST) ?: return null
+        val i = act(HandJointType.INDEX_PROXIMAL) ?: return null
+        val l = act(HandJointType.LITTLE_PROXIMAL) ?: return null
+        val (nx, ny, nz) = HandSign.palmNormal(
+            w.x, w.y, w.z, i.x, i.y, i.z, l.x, l.y, l.z, rightHand,
+        )
+        if (nx == 0f && ny == 0f && nz == 0f) return null
+        val h = head.translation
+        var dx = w.x - h.x; var dy = w.y - h.y; var dz = w.z - h.z
+        val d = kotlin.math.sqrt(dx * dx + dy * dy + dz * dz)
+        if (d < 1e-4f) return null
+        dx /= d; dy /= d; dz /= d
+        val n = kotlin.math.sqrt(nx * nx + ny * ny + nz * nz)
+        if (n < 1e-6f) return null
+        // palmAway is this dot being POSITIVE, so facing the wearer is its
+        // negation. Same convention, one more digit of it.
+        return -((nx * dx + ny * dy + nz * dz) / n)
+    }
+
     private fun short(s: String?): String =
         s?.substringAfter("(")?.substringBefore(")")?.take(4) ?: "----"
 

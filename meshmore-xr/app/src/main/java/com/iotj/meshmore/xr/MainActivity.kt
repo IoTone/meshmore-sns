@@ -622,6 +622,7 @@ private fun HorizonScene(link: MeshLink) {
     val consoleRef = remember { mutableStateOf<com.iotj.meshmore.xr.spatial.Console?>(null) }
     val threadRef = remember { mutableStateOf<com.iotj.meshmore.xr.spatial.Thread?>(null) }
     val cuffRef = remember { mutableStateOf<com.iotj.meshmore.xr.spatial.Cuff?>(null) }
+    val reelRef = remember { mutableStateOf<com.iotj.meshmore.xr.spatial.Reel?>(null) }
     val noticeRef = remember { mutableStateOf<Notice?>(null) }
     // The wedge currently magnified, or null for the true 1:1 ring. Bumping
     // hereEpoch is what makes the mesh effect re-run and re-place everything.
@@ -1055,6 +1056,10 @@ private fun HorizonScene(link: MeshLink) {
         // THE DWELL FALLBACK (§8.2). Armed only when no hand is tracked, so it
         // is an alternative to the pinch rather than a second way to fire the
         // same control by accident.
+        val reel = com.iotj.meshmore.xr.spatial.Reel(session, palette, ctx)
+        reel.build()
+        reelRef.value = reel
+
         val cuff = com.iotj.meshmore.xr.spatial.Cuff(session, palette)
         cuff.build()
         cuffRef.value = cuff
@@ -1334,6 +1339,29 @@ private fun HorizonScene(link: MeshLink) {
                 // the system, the other runs the conversation), so the cuff
                 // rides the left wrist.
                 cuffRef.value?.tick(handL?.state?.value?.handJoints, nowMs)
+                // THE REEL RIDES THE SAME HAND AS THE CUFF — §5 puts the whole
+                // conversation on one hand so an arriving message can never
+                // disturb a control you are part-way through operating.
+                run {
+                    val cj = handL?.state?.value?.handJoints
+                    val hp = stage.headNow()
+                    val dot = handsRef.value?.palmDot(cj, hp, rightHand = false)
+                    val r = reelRef.value
+                    if (r != null) {
+                        val nowS = System.currentTimeMillis() / 1000
+                        r.setMessages(
+                            link.msgs.value.take(12).map { m ->
+                                com.iotj.meshmore.xr.spatial.Reel.Slot(
+                                    who = com.iotj.meshmore.xr.spatial.TypeTier.clip(
+                                        m.fromName.ifBlank { m.channel ?: "?" }, 8,
+                                    ),
+                                    words = com.iotj.meshmore.xr.spatial.TypeTier.clip(m.text, 12),
+                                )
+                            },
+                        )
+                        r.tick(cj, dot, hp?.translation, nowMs)
+                    }
+                }
                 // Show the dwelled pip's caption. Same focus state a pointer
                 // produces, so the two input paths look identical as well as
                 // firing identically.
