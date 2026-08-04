@@ -48,6 +48,7 @@ class Cuff(
 ) {
 
     private var root: MeshEntity? = null
+    private var rest: MeshEntity? = null
     private val segments = mutableListOf<MeshEntity>()
     private val entities = mutableListOf<Entity>()
 
@@ -91,7 +92,25 @@ class Cuff(
                 entities += it
             }
         }
-        Log.i(TAG, "[cuff] $SEGMENTS segments")
+        // THE RESTING RING. The cuff is a thing you WEAR, not a thing that
+        // appears when there is news — once the unread drained it vanished
+        // entirely and there was nothing to say the surface existed. §5 draws
+        // it as a ring carrying an unread marker, not as the marker itself.
+        //
+        // A separate dim torus rather than the same segments turned down,
+        // because MeshEntity.setAlpha does nothing on this path: brightness has
+        // to be baked into the material at creation. Slightly inside the lit
+        // ring so the two cannot z-fight.
+        rest = MeshEntity.create(
+            session, Prims.build(session, Prims.halo(R * 0.97f, TUBE * 0.8f, 32, 5)),
+            listOf(Prims.material(session, theme.alt, 0.30f)),
+        ).also {
+            it.parent = root
+            it.setPose(Pose(Vector3(0f, 0f, 0f)), Space.PARENT)
+            it.setEnabled(true)
+            entities += it
+        }
+        Log.i(TAG, "[cuff] $SEGMENTS segments + resting ring")
     }
 
     /**
@@ -135,6 +154,9 @@ class Cuff(
         lit = arcs > 0
     }
 
+    /** Unread count, for anything that wants to agree with the wrist. */
+    val unread: Int get() = arcs
+
     /**
      * Follow the wrist. [joints] are the CHAT hand's, in perception space.
      *
@@ -174,7 +196,9 @@ class Cuff(
         val at = Vector3(w.x + ax * BACK, w.y + ay * BACK, w.z + az * BACK)
 
         runCatching {
-            r.setEnabled(lit)
+            // Present whenever the arm is: the ring is worn, the SEGMENTS are
+            // the message count.
+            r.setEnabled(true)
             r.setPose(Pose(at, alignY(ax, ay, az)), Space.ACTIVITY)
             // The DM pulse: a size beat that decays. Scale, because alpha does
             // nothing on this material path.
@@ -207,7 +231,7 @@ class Cuff(
     }
 
     fun clear() {
-        segments.clear(); root = null; arcs = 0; dmAt = 0L; lit = false
+        segments.clear(); root = null; rest = null; arcs = 0; dmAt = 0L; lit = false
         val doomed = entities.toList()
         entities.clear()
         doomed.forEach { runCatching { it.parent = null } }
