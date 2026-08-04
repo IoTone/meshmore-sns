@@ -70,3 +70,116 @@ class ReelScrubTest {
         assertFalse(s.on)
     }
 }
+
+/**
+ * THE CURLED FINGER — the pose the gesture is actually made in.
+ *
+ * Nobody slides a thumb along a rigid index. The first version measured the
+ * thumb's distance from the straight chord between knuckle and fingertip,
+ * which describes the finger only while it is straight; curl it and the middle
+ * of the finger stands well off its own chord, so a thumb resting ON the finger
+ * measures as far away FROM it and the gesture stops registering.
+ *
+ * The failure is silent and looks exactly like bad hand tracking, which is why
+ * it survived two rounds of "doesn't seem to work". These are the numbers that
+ * decide it, and they now live here rather than on someone's face.
+ */
+class ReelCurledScrubTest {
+
+    /** A ~75 mm index curled about 40 degrees, four joints, in the XY plane. */
+    private val curled = listOf(
+        Vector3(0f, 0f, 0f),
+        Vector3(0.030f, 0.008f, 0f),
+        Vector3(0.052f, 0.024f, 0f),
+        Vector3(0.066f, 0.046f, 0f),
+    )
+
+    @Test
+    fun `a thumb on a curled finger registers`() {
+        // Resting on the middle joint, 20 mm off the finger's surface normal.
+        val thumb = Vector3(0.052f + 0.014f, 0.024f - 0.014f, 0f)
+        assertTrue("bones", scrub(curled, thumb).on)
+    }
+
+    @Test
+    fun `the bones measure a curled finger as closer than its chord does`() {
+        // HOW MUCH this matters, stated honestly rather than assumed. Writing
+        // this test as "the chord fails and the bones pass" FAILED: at the
+        // current 0.45 tolerance the chord still registers a 40-degree curl,
+        // so the polyline is a margin improvement here, not the whole fix for
+        // the gesture not firing. What it does buy is real and measurable --
+        // the thumb reads as materially nearer the finger it is touching --
+        // and the margin is what tracking jitter eats into.
+        //
+        // Written this way so the next person does not inherit a claim the
+        // arithmetic never supported.
+        val thumb = Vector3(0.052f + 0.014f, 0.024f - 0.014f, 0f)
+        assertTrue(scrub(curled, thumb).on)
+        assertTrue(dist(curled, thumb) < dist(listOf(curled.first(), curled.last()), thumb))
+    }
+
+    /** Perpendicular distance implied by a Scrub, recovered from the threshold. */
+    private fun dist(bones: List<Vector3>, thumb: Vector3): Float {
+        var lo = 0f
+        var hi = 1f
+        // The contact test is `d < frac * total`, so bisecting on the fraction
+        // recovers d/total -- enough to compare two measurements of the same
+        // pose without exposing the internals.
+        repeat(40) {
+            val mid = (lo + hi) / 2f
+            if (scrubAt(bones, thumb, mid)) hi = mid else lo = mid
+        }
+        return (lo + hi) / 2f
+    }
+
+    private fun scrubAt(bones: List<Vector3>, thumb: Vector3, frac: Float): Boolean {
+        // Same arithmetic, with the tolerance as a parameter.
+        var total = 0f
+        for (k in 0 until bones.size - 1) total += len(bones[k], bones[k + 1])
+        var best = Float.MAX_VALUE
+        for (k in 0 until bones.size - 1) {
+            val a = bones[k]
+            val b = bones[k + 1]
+            val l2 = len(a, b) * len(a, b)
+            if (l2 < 1e-10f) continue
+            val vx = thumb.x - a.x
+            val vy = thumb.y - a.y
+            val vz = thumb.z - a.z
+            val dx = b.x - a.x
+            val dy = b.y - a.y
+            val dz = b.z - a.z
+            val u = ((vx * dx + vy * dy + vz * dz) / l2).coerceIn(0f, 1f)
+            val px = vx - dx * u
+            val py = vy - dy * u
+            val pz = vz - dz * u
+            val d = kotlin.math.sqrt(px * px + py * py + pz * pz)
+            if (d < best) best = d
+        }
+        return best < frac * total
+    }
+
+    private fun len(a: Vector3, b: Vector3) = kotlin.math.sqrt(
+        (b.x - a.x) * (b.x - a.x) + (b.y - a.y) * (b.y - a.y) + (b.z - a.z) * (b.z - a.z),
+    )
+
+    @Test
+    fun `t still runs knuckle to tip along the arc`() {
+        assertEquals(0f, scrub(curled, curled.first()).t, 0.02f)
+        assertEquals(1f, scrub(curled, curled.last()).t, 0.02f)
+        // The middle joint is past halfway along the arc of this curl.
+        val mid = scrub(curled, curled[2]).t
+        assertTrue("mid was $mid", mid in 0.4f..0.9f)
+    }
+
+    @Test
+    fun `an open hand still does not turn the reel`() {
+        // Thumb abducted well clear of a curled finger.
+        assertFalse(scrub(curled, Vector3(0.02f, -0.055f, 0f)).on)
+    }
+
+    @Test
+    fun `a single tracked joint is not a finger`() {
+        assertFalse(scrub(listOf(Vector3(0f, 0f, 0f)), Vector3(0f, 0f, 0f)).on)
+        assertFalse(scrub(emptyList(), Vector3(0f, 0f, 0f)).on)
+    }
+}

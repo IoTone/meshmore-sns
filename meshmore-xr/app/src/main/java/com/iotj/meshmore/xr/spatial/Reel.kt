@@ -184,7 +184,7 @@ class Reel(
         // is short enough to be new to somebody, and only when there is
         // somewhere to turn TO.
         hint = TextRun.reusable(
-            session, context, HINT, CAP * 0.85f, argb(theme.alt, 0.75f), "reel-hint",
+            session, context, HINT_WIDEST, CAP * 0.85f, argb(theme.alt, 0.75f), "reel-hint",
         )?.also { it.entity.parent = root; it.entity.setEnabled(false); entities += it.entity }
         Log.i(TAG, "[reel] $SLOTS slots, $FRONT named, raised card")
     }
@@ -303,9 +303,17 @@ class Reel(
             // control that only goes one way rather than one that is stiff.
             val gain = (n / 2f).coerceAtLeast(2f)
             val thumb = act(HandJointType.THUMB_TIP)
-            val itip = act(HandJointType.INDEX_TIP)
-            if (thumb != null && itip != null) {
-                val sc = scrub(ix, itip, thumb)
+            // The whole finger, knuckle to tip. Intermediate joints are
+            // optional so a partial tracking frame degrades to the chord
+            // rather than dropping the gesture altogether.
+            val bones = listOfNotNull(
+                ix,
+                act(HandJointType.INDEX_INTERMEDIATE),
+                act(HandJointType.INDEX_DISTAL),
+                act(HandJointType.INDEX_TIP),
+            )
+            if (thumb != null && bones.size >= 2) {
+                val sc = scrub(bones, thumb)
                 if (sc.on && !scrubbing) {
                     scrubbing = true; grabT = sc.t; grabSpin = spin
                     Log.i(TAG, "[reel] scrub start at %.2f".format(sc.t))
@@ -385,11 +393,20 @@ class Reel(
             stem?.setPose(Pose(mid, q), Space.ACTIVITY)
         }
 
-        // The hint sits below the oval, where it cannot be mistaken for a
-        // message. It stops once there is nothing to turn to, and once the
-        // wearer has demonstrably turned it.
+        // THE HINT DOUBLES AS THE CONTACT LAMP.
+        //
+        // The gesture had exactly one failure mode and no way to see it: touch
+        // the finger and either the reel turned or nothing at all happened, and
+        // "nothing at all happened" covers both "not detected" and "detected,
+        // nowhere to go". Those need opposite fixes, and telling them apart was
+        // costing a round trip through the headset each time.
+        //
+        // So while the thumb is riding the finger the line says so, and says
+        // where you are in the reel. It also keeps showing after the wearer has
+        // turned it — the position readout is useful forever, the instruction
+        // is not.
         runCatching {
-            val show = n > 1 && !turned
+            val show = n > 1 && (scrubbing || !turned)
             hint?.entity?.setEnabled(show)
             if (show) {
                 val hAt = Vector3(
@@ -397,7 +414,9 @@ class Reel(
                     cy - ay * (RY + HINT_DROP),
                     cz - az * (RY + HINT_DROP),
                 )
-                hint?.setText(HINT)
+                hint?.setText(
+                    if (scrubbing) "\u25c0  ${current + 1} OF $n  \u25b6" else HINT,
+                )
                 hint?.entity?.setPose(Pose(hAt, facing(hAt, h)), Space.ACTIVITY)
             }
         }
@@ -526,6 +545,8 @@ class Reel(
         /** Sender labels hang just under their marker. */
         const val LABEL_DROP = 0.014f
         const val HINT = "THUMB ALONG INDEX TO TURN"
+        /** Wide enough for the hint AND for the position readout it becomes. */
+        const val HINT_WIDEST = "THUMB ALONG INDEX TO TURN"
         const val HINT_DROP = 0.022f
     }
 }
@@ -546,34 +567,69 @@ internal const val CONTACT_FRAC = 0.45f
 /**
  * WHERE THE THUMB SITS ALONG THE INDEX — the reel's one real haptic.
  *
- * §5: thumb-along-index is "the app's only source of genuine haptics",
- * because you are touching your own finger. Nothing else here can be felt,
- * and a control you can feel is worth more than three you cannot.
+ * §5: thumb-along-index is "the app's only source of genuine haptics", because
+ * you are touching your own finger. Nothing else here can be felt, and a
+ * control you can feel is worth more than three you cannot.
  *
- * [t] runs 0 at the index knuckle to 1 at its tip. [on] is whether the
- * thumb is close enough to the finger to count as riding it, measured as a
+ * [t] runs 0 at the index knuckle to 1 at its tip, measured along the finger's
+ * ARC. [on] is whether the thumb is close enough to count as riding it, as a
  * FRACTION of that finger's own length rather than in millimetres — hands
- * differ in size by well over the tolerance an absolute threshold would
- * need, and this project has already had one gesture threshold fail for
- * exactly that reason.
+ * differ in size by well over the tolerance an absolute threshold would need,
+ * and this project has already had one gesture fail for exactly that reason.
  *
- * Pure, and separately tested: the alternative is discovering a sign error
- * by wearing the headset, which costs several minutes per attempt.
+ * IT FOLLOWS THE BONES, NOT A CHORD. The first version measured against the
+ * straight line from knuckle to fingertip, which is only the finger's shape
+ * while the finger is straight — and nobody slides a thumb along a rigid
+ * index. Curl it thirty degrees and the middle of the finger stands about a
+ * centimetre off its own chord, so a thumb resting ON the finger measures as a
+ * centimetre and a half away from it and the gesture stops being detected. The
+ * failure is silent and looks exactly like bad tracking. Reported as "doesn't
+ * seem to work for me", which is what a silent failure always sounds like.
+ *
+ * Pure, and separately tested: the alternative is discovering a sign error by
+ * wearing the headset, which costs several minutes per attempt.
  */
 internal class Scrub(val t: Float, val on: Boolean)
 
-internal fun scrub(prox: Vector3, tip: Vector3, thumb: Vector3): Scrub {
-    val axx = tip.x - prox.x; val axy = tip.y - prox.y; val axz = tip.z - prox.z
-    val l2 = axx * axx + axy * axy + axz * axz
-    if (l2 < 1e-8f) return Scrub(0f, false)
-    val vx = thumb.x - prox.x; val vy = thumb.y - prox.y; val vz = thumb.z - prox.z
-    val raw = (vx * axx + vy * axy + vz * axz) / l2
-    val t = raw.coerceIn(0f, 1f)
-    // Perpendicular offset from the finger's axis, at the clamped point:
-    // a thumb held out past the fingertip is not riding the finger.
-    val px = vx - axx * t; val py = vy - axy * t; val pz = vz - axz * t
-    val d = sqrt(px * px + py * py + pz * pz)
-    return Scrub(t, d < CONTACT_FRAC * sqrt(l2))
+/** Two-point form: a straight finger, and what the tests started from. */
+internal fun scrub(prox: Vector3, tip: Vector3, thumb: Vector3): Scrub =
+    scrub(listOf(prox, tip), thumb)
+
+internal fun scrub(bones: List<Vector3>, thumb: Vector3): Scrub {
+    if (bones.size < 2) return Scrub(0f, false)
+    // Segment lengths, and the total, which is both the arc-length denominator
+    // and the scale the contact tolerance is expressed in.
+    val seg = FloatArray(bones.size - 1)
+    var total = 0f
+    for (k in 0 until bones.size - 1) {
+        val a = bones[k]; val b = bones[k + 1]
+        seg[k] = sqrt(
+            (b.x - a.x) * (b.x - a.x) + (b.y - a.y) * (b.y - a.y) + (b.z - a.z) * (b.z - a.z),
+        )
+        total += seg[k]
+    }
+    if (total < 1e-5f) return Scrub(0f, false)
+
+    var bestD = Float.MAX_VALUE
+    var bestArc = 0f
+    var run = 0f
+    for (k in 0 until bones.size - 1) {
+        val a = bones[k]; val b = bones[k + 1]
+        val l2 = seg[k] * seg[k]
+        if (l2 > 1e-10f) {
+            val vx = thumb.x - a.x; val vy = thumb.y - a.y; val vz = thumb.z - a.z
+            val dx = b.x - a.x; val dy = b.y - a.y; val dz = b.z - a.z
+            // Clamped BEFORE the perpendicular, so a thumb held out past the
+            // fingertip measures from the tip rather than from an infinite
+            // line — otherwise an open hand reads as contact.
+            val u = ((vx * dx + vy * dy + vz * dz) / l2).coerceIn(0f, 1f)
+            val px = vx - dx * u; val py = vy - dy * u; val pz = vz - dz * u
+            val d = sqrt(px * px + py * py + pz * pz)
+            if (d < bestD) { bestD = d; bestArc = run + seg[k] * u }
+        }
+        run += seg[k]
+    }
+    return Scrub((bestArc / total).coerceIn(0f, 1f), bestD < CONTACT_FRAC * total)
 }
 
 /**

@@ -54,7 +54,22 @@ class HelpCard(
      * gone. A hand shape is a picture; describing it is a workaround for not
      * having one.
      */
-    private data class Row(val letter: Char?, val hand: String, val does: String) {
+    private data class Row(
+        val letter: Char?,
+        val hand: String,
+        val does: String,
+        /**
+         * A [Marks] contour instead of an ASL letter, for the commands that
+         * are not hand SHAPES at all.
+         *
+         * Thumb-along-index is a MOTION, and no letter of the manual alphabet
+         * depicts one. It went in as prose and was immediately reported back as
+         * needing a visual — the same lesson this card's shape column already
+         * taught when it said "A = FIST, THUMB ALONGSIDE" and the gesture kept
+         * failing for want of anything to look at.
+         */
+        val mark: String? = null,
+    ) {
         /**
          * Left-hand rows draw a MIRRORED glyph. The source chart is drawn
          * entirely with the right hand, so an unmirrored icon on a left-hand row
@@ -83,8 +98,12 @@ class HelpCard(
         // undiscoverable. Same lesson B taught: reachable and undocumented is
         // the same as absent.
         Row(null, "MESSAGES", ""),
-        Row(null, "", "TURN LEFT PALM UP TO SEE THE REEL"),
-        Row(null, "", "SLIDE THUMB ALONG INDEX TO TURN IT"),
+        // NOT the letter B, which this card already binds to BACK OUT. Palm-up
+        // is a POSE, not a hand shape, and borrowing a letter that means
+        // something else on the row above would teach a link that is not there.
+        Row(null, "LEFT", "PALM UP SHOWS THE MESSAGE REEL", mark = "HANDS"),
+        Row(null, "LEFT", "SLIDE THUMB ALONG INDEX TO TURN", mark = "SCRUB"),
+        Row(null, "", "EITHER WAY - IT WRAPS ROUND"),
     )
 
     suspend fun build(o: Stage.Origin) {
@@ -98,16 +117,24 @@ class HelpCard(
 
         rows.forEachIndexed { i, r ->
             val y = base.y + (rows.size / 2f - i) * LINE
-            r.letter?.let { ch ->
+            val icon = r.letter?.let { ch ->
                 AslIcon.create(
                     session, context, ch, ICON, argb(theme.accent, 0.95f), r.mirrored,
-                )?.let { p ->
-                    p.parent = root
-                    p.setPose(Pose(Vector3(base.x - ICON * 0.9f, y, base.z)), Space.ACTIVITY)
-                    p.setEnabled(false)
-                    entities += p
-                    lines += p as Entity to Vector3(base.x - ICON * 0.9f, y, base.z)
-                }
+                )
+            } ?: r.mark?.let { m ->
+                // Stroked, like every other mark: a line drawing survives being
+                // small where a filled shape becomes a lump of emitted light.
+                AslIcon.fromPath(
+                    session, context, Marks[m], ICON, argb(theme.accent, 0.95f),
+                    mirror = r.mirrored, stroked = true, padPx = 6f, name = "help-$m",
+                )
+            }
+            icon?.let { p ->
+                p.parent = root
+                p.setPose(Pose(Vector3(base.x - ICON * 0.9f, y, base.z)), Space.ACTIVITY)
+                p.setEnabled(false)
+                entities += p
+                lines += p as Entity to Vector3(base.x - ICON * 0.9f, y, base.z)
             }
             // LEFT-ALIGNED, by measuring. Tier S centres a run on its anchor,
             // so a column addressed by its centre moves as the words change

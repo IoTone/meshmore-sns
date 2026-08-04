@@ -121,6 +121,28 @@ object Marks {
         // telling a hand from a question mark. Same artwork, different job.
         "HANDS" to "M36 58 V26 M48 58 V20 M60 58 V24 M70 58 V34 M28 58 L18 44 " +
             "M28 58 H72 V78 A12 12 0 0 1 60 90 H40 A12 12 0 0 1 28 78 Z",
+
+        // SCRUB — the thumb riding the index, which is how the reel turns.
+        //
+        // Asked for after "slide thumb along index" appeared in the help card
+        // as WORDS and did not teach the gesture. The card already learned this
+        // once: its shape column used to say "A = FIST, THUMB ALONGSIDE" and
+        // the gesture kept failing partly because there was nothing to look at.
+        // Describing a hand shape is a workaround for not having a picture.
+        //
+        // A CURLED index, not a straight one, because that is how the finger
+        // actually sits when a thumb slides on it -- and drawing it straight
+        // would teach the pose that the code, until today, was the only thing
+        // that believed in. The thumb crosses it, and the arrow runs ALONG the
+        // finger with heads at both ends: the reel turns both ways and one
+        // arrowhead would say otherwise.
+        "SCRUB" to
+            // the curled index, knuckle to tip
+            "M20 74 Q30 44 52 34 Q68 27 78 30 " +
+            // the thumb laid across it
+            "M30 88 Q40 72 54 62 " +
+            // and the travel, both ways, parallel to the finger
+            "M34 20 L74 12 M34 20 L42 14 M34 20 L41 26 M74 12 L66 8 M74 12 L67 18",
     )
 
     /**
