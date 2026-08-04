@@ -319,6 +319,48 @@ object Prims {
         return f
     }
 
+    /**
+     * OVAL — a halo that is not a circle, lying in XY with its normal on +Z.
+     *
+     * halo() is a torus about the Y axis and is symmetric under roll, so
+     * everything built from it could be posed with one axis and no thought
+     * about the second. An ellipse cannot: a quarter turn out and the wide axis
+     * runs up the fingers instead of across them. Hence the different plane —
+     * the normal is +Z so the whole thing poses with fromLookTowards(normal,
+     * up), whose convention PalmFrameTest pins down.
+     *
+     * The tube rides the ellipse's own in-plane normal, which is NOT the
+     * radial direction once rx != ry — using the radius vector instead leaves
+     * the tube visibly thinner at the ends of the long axis.
+     */
+    fun oval(rx: Float, ry: Float, tube: Float, seg: Int = 48, sides: Int = 6): Facets {
+        val f = Facets()
+        fun pt(i: Int, j: Int): Triple<Float, Float, Float> {
+            val t = 2.0 * Math.PI * i / seg
+            val ct = cos(t); val st = sin(t)
+            // Perpendicular to the tangent (-rx sin t, ry cos t), in plane.
+            var nx = (ry * ct); var ny = (rx * st)
+            val nl = kotlin.math.sqrt(nx * nx + ny * ny).let { if (it > 1e-9) it else 1.0 }
+            nx /= nl; ny /= nl
+            val p = 2.0 * Math.PI * j / sides
+            val cp = cos(p); val sp = sin(p)
+            return Triple(
+                (rx * ct + tube * cp * nx).toFloat(),
+                (ry * st + tube * cp * ny).toFloat(),
+                (tube * sp).toFloat(),
+            )
+        }
+        for (i in 0 until seg) for (j in 0 until sides) {
+            val a = pt(i, j); val b = pt(i + 1, j)
+            val c = pt(i + 1, j + 1); val d = pt(i, j + 1)
+            f.quad(
+                a.first, a.second, a.third, b.first, b.second, b.third,
+                c.first, c.second, c.third, d.first, d.second, d.third,
+            )
+        }
+        return f
+    }
+
     /** CARET — direction / elevation. A cone; a flat triangle vanishes edge-on. */
     fun caret(radius: Float, height: Float, seg: Int = 8): Facets {
         val f = Facets()

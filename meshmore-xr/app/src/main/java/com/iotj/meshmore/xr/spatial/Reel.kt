@@ -31,10 +31,19 @@ import kotlin.math.sqrt
  * an end and invites scrolling toward an archive that does not exist here.
  * Older hands off to the thread.
  *
- * FIVE LEGIBLE, TWELVE PRESENT. The slots on the far arc carry a mote and no
- * words, because at a palm's distance twelve legible lines cannot fit and
- * pretending otherwise means twelve illegible ones. The count is visible; the
- * words arrive as a slot comes round the front.
+ * ONE MESSAGE READS AT A TIME, AND IT PROJECTS UP.
+ *
+ * The first build put five full messages across the front arc, as §S4's "~5
+ * legible" was read to mean. On the glasses they collided with each other and
+ * with the ring's own callsigns behind them: at a palm's distance a
+ * sender-plus-text line is 0.19 m wide and the slots are 0.09 m apart, so five
+ * of them is a pile. §4.1 forbids the obvious escape of shrinking the type.
+ *
+ * So the oval is a PANEL of markers and the SELECTED message lifts off it
+ * toward the wearer, alone, at a size meant to be read. The front arc keeps
+ * senders only — enough to choose by — and the words belong to whichever slot
+ * is current. That is what the surface is for: triage is choosing, not
+ * reading, and the reading happens either on the raised card or in the thread.
  *
  * HYSTERESIS IS MANDATORY, and §5 says why in as many words: reveal above 0.6,
  * hide below 0.45, because a single threshold makes the surface strobe as the
@@ -57,6 +66,14 @@ class Reel(
     private class Cell(val run: TextRun.Run, val mote: MeshEntity)
 
     private val cells = mutableListOf<Cell>()
+    /** The oval itself, so the slots read as sitting ON something. */
+    private var panel: MeshEntity? = null
+    /** The raised card: whichever slot is current, big enough to read. */
+    private var stem: MeshEntity? = null
+    private var cardWho: TextRun.Run? = null
+    private val cardBody = mutableListOf<TextRun.Run>()
+    /** Which slot is current. Fixed at the front until rotation lands. */
+    private var current = 0
     private val entities = mutableListOf<Entity>()
     private var slots: List<Slot> = emptyList()
 
@@ -80,7 +97,41 @@ class Reel(
             ).also { it.parent = root; it.setEnabled(false); entities += it }
             cells += Cell(run, mote)
         }
-        Log.i(TAG, "[reel] $SLOTS slots, $FRONT legible")
+        // THE PANEL. Without it the messages are text floating over a hand and
+        // read as debris from the ring behind them; with it they are markers on
+        // a surface. An outline rather than a fill: a filled oval on additive
+        // optics is a lamp, and it would wash out the very words it carries.
+        // A true ellipse at true size, not a circle scaled to fit: the slots
+        // sit on an RX-by-RY oval and a circle through the wide pair misses the
+        // narrow pair by 3 cm, which at palm range is not subtle.
+        panel = MeshEntity.create(
+            session, Prims.build(session, Prims.oval(RX, RY, TUBE, 56, 5)),
+            listOf(Prims.material(session, theme.alt, 0.5f)),
+        ).also { it.parent = root; it.setEnabled(false); entities += it }
+
+        // THE PROJECTOR BEAM. The card is not merely floating near the oval, it
+        // comes OUT of it, and a stem is what makes that read as one gesture
+        // rather than two surfaces that happen to be adjacent. Along local +Z,
+        // which fromLookTowards puts on the palm normal, so it is constant in
+        // the palm's frame and needs no rebuilding as the hand moves.
+        stem = MeshEntity.create(
+            session, Prims.build(session, Prims.spur(0f, 0f, 0f, 0f, 0f, RAISE, TUBE * 0.6f)),
+            listOf(Prims.material(session, theme.accent, 0.35f)),
+        ).also { it.parent = root; it.setEnabled(false); entities += it }
+
+        cardWho = TextRun.reusable(
+            session, context, CARD_WIDEST, CARD_CAP * 0.8f,
+            argb(theme.accent, 0.95f), "reel-card-who",
+        )?.also { it.entity.parent = root; it.entity.setEnabled(false); entities += it.entity }
+        repeat(CARD_LINES) {
+            val r = TextRun.reusable(
+                session, context, CARD_WIDEST, CARD_CAP, argb(theme.text, 0.98f), "reel-card",
+            ) ?: return@repeat
+            r.entity.parent = root; r.entity.setEnabled(false); entities += r.entity
+            cardBody += r
+        }
+
+        Log.i(TAG, "[reel] $SLOTS slots, $FRONT named, raised card")
     }
 
     fun setMessages(list: List<Slot>) {
@@ -108,6 +159,12 @@ class Reel(
         if (!open) {
             cells.forEach {
                 runCatching { it.run.entity.setEnabled(false); it.mote.setEnabled(false) }
+            }
+            runCatching {
+                panel?.setEnabled(false)
+                stem?.setEnabled(false)
+                cardWho?.entity?.setEnabled(false)
+                cardBody.forEach { it.entity.setEnabled(false) }
             }
             return
         }
@@ -162,16 +219,101 @@ class Reel(
                 cy + by * ox + ay * oy,
                 cz + bz * ox + az * oy,
             )
-            val legible = msg != null && i < FRONT
+            // Senders only on the front arc — enough to choose by. The words
+            // are on the raised card, because five lines of them do not fit.
+            val named = msg != null && i < FRONT
             runCatching {
-                c.mote.setEnabled(msg != null && !legible)
+                c.mote.setEnabled(msg != null)
                 c.mote.setPose(Pose(at), Space.ACTIVITY)
-                c.run.entity.setEnabled(legible)
-                if (!legible) return@runCatching
-                c.run.setText("${msg!!.who}  ${msg.words}")
-                c.run.entity.setPose(Pose(at, facing(at, h)), Space.ACTIVITY)
+                c.mote.setScale(if (i == current) 1.8f else 1f)
+                c.run.entity.setEnabled(named)
+                if (!named) return@runCatching
+                c.run.setText(msg!!.who)
+                c.run.entity.setPose(
+                    Pose(Vector3(at.x, at.y - LABEL_DROP, at.z), facing(at, h)),
+                    Space.ACTIVITY,
+                )
             }
         }
+
+        // The oval and its beam share one rotation: normal forward, along-hand
+        // up. That second argument is the whole reason PalmFrameTest exists —
+        // it is what stops the wide axis from ending up running up the fingers.
+        val q = Quaternion.fromLookTowards(
+            Vector3(ux * s, uy * s, uz * s), Vector3(ax, ay, az),
+        )
+        val mid = Vector3(cx, cy, cz)
+        runCatching {
+            panel?.setEnabled(true)
+            panel?.setPose(Pose(mid, q), Space.ACTIVITY)
+            stem?.setEnabled(slots.isNotEmpty())
+            stem?.setPose(Pose(mid, q), Space.ACTIVITY)
+        }
+
+        // AND THE CURRENT MESSAGE PROJECTS UP — off the panel along its own
+        // normal, where the beam ends. Nearer the eye than the oval, so it is
+        // bigger in angle as well as in metres: ~1.8 degrees against the ring's
+        // 1.2, which is the difference between reading and counting.
+        val sel = slots.getOrNull(current)
+        runCatching {
+            cardWho?.entity?.setEnabled(sel != null)
+            if (sel == null) {
+                cardBody.forEach { it.entity.setEnabled(false) }
+                return@runCatching
+            }
+            val at = Vector3(cx + ux * s * RAISE, cy + uy * s * RAISE, cz + uz * s * RAISE)
+            val r = facing(at, h)
+            cardWho?.setText(sel.who)
+            cardWho?.entity?.setPose(Pose(at, r), Space.ACTIVITY)
+            val wrapped = wrap(sel.words)
+            cardBody.forEachIndexed { i, line ->
+                val txt = wrapped.getOrNull(i)
+                line.entity.setEnabled(txt != null)
+                if (txt == null) return@forEachIndexed
+                line.setText(txt)
+                line.entity.setPose(
+                    Pose(
+                        Vector3(at.x, at.y - CARD_CAP * (2.0f + i * 1.7f), at.z),
+                        r,
+                    ),
+                    Space.ACTIVITY,
+                )
+            }
+        }
+    }
+
+    /**
+     * Break the words across the card's lines.
+     *
+     * A single line of message text at a readable size is 0.25 m wide at a
+     * third of a metre — about forty degrees, which is wider than the display.
+     * So it wraps, at spaces where there are any and mid-word where there are
+     * not, because a long unbroken token is a real thing people send.
+     */
+    internal fun wrap(text: String): List<String> {
+        val out = mutableListOf<String>()
+        var cur = StringBuilder()
+        for (word in text.trim().split(' ')) {
+            var w = word
+            while (w.length > CARD_COLS) {
+                if (cur.isNotEmpty()) { out += cur.toString(); cur = StringBuilder() }
+                out += w.take(CARD_COLS)
+                w = w.drop(CARD_COLS)
+                if (out.size >= CARD_LINES) return out.take(CARD_LINES)
+            }
+            if (w.isEmpty()) continue
+            when {
+                cur.isEmpty() -> cur.append(w)
+                cur.length + 1 + w.length <= CARD_COLS -> cur.append(' ').append(w)
+                else -> {
+                    out += cur.toString()
+                    if (out.size >= CARD_LINES) return out
+                    cur = StringBuilder(w)
+                }
+            }
+        }
+        if (cur.isNotEmpty()) out += cur.toString()
+        return out.take(CARD_LINES)
     }
 
     private fun facing(at: Vector3, head: Vector3): Quaternion {
@@ -185,6 +327,7 @@ class Reel(
 
     fun clear() {
         cells.clear(); slots = emptyList(); open = false
+        panel = null; stem = null; cardWho = null; cardBody.clear(); current = 0
         val doomed = entities.toList()
         entities.clear()
         doomed.forEach { runCatching { it.parent = null } }
@@ -219,6 +362,17 @@ class Reel(
         /** §5's thresholds, verbatim. The gap between them is the feature. */
         const val REVEAL = 0.6f
         const val HIDE = 0.45f
-        const val WIDEST = "MMMMMMMM MMMMMMMMMMMM"
+        const val WIDEST = "MMMMMMMM"
+        const val TUBE = 0.0022f
+        /** How far the current message stands off the panel, toward the wearer. */
+        const val RAISE = 0.07f
+        /** 1.8° where the card sits: the one thing here meant to be READ. */
+        const val CARD_CAP = 0.012f
+        /** Wide enough to read, narrow enough to fit a 34° field. */
+        const val CARD_COLS = 14
+        const val CARD_LINES = 3
+        const val CARD_WIDEST = "MMMMMMMMMMMMMM"
+        /** Sender labels hang just under their marker. */
+        const val LABEL_DROP = 0.014f
     }
 }
