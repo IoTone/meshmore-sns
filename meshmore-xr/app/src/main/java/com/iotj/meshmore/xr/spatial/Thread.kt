@@ -9,6 +9,9 @@ import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Vector3
 import androidx.xr.scenecore.Entity
+import androidx.xr.scenecore.InputEvent
+import androidx.xr.scenecore.InteractableComponent
+import androidx.xr.scenecore.MeshEntity
 import androidx.xr.scenecore.Space
 import androidx.xr.scenecore.scene
 import kotlin.math.atan2
@@ -54,6 +57,22 @@ class Thread(
 
     private val slots = mutableListOf<Slot>()
     private var header: TextRun.Run? = null
+    /**
+     * THE WAY FURTHER BACK.
+     *
+     * older() was written with the corridor and then never called by anything,
+     * so a conversation showed its newest six and there was no way to reach the
+     * seventh -- a paging control with no button, which is the same as no
+     * paging at all. It sits at the FAR END of the corridor because that is
+     * where the past already is: looking deeper into it is the gesture, and
+     * putting an "older" control anywhere else would be asking people to learn
+     * a second idea when the geometry has already taught them the first.
+     */
+    private var deeper: TextRun.Run? = null
+    private var deeperProxy: MeshEntity? = null
+    private var deeperAt: Vector3? = null
+    private val fired = java.util.concurrent.ConcurrentLinkedQueue<Int>()
+    private var lastFire = 0L
     private val entities = mutableListOf<Entity>()
 
     private var origin: Vector3? = null
@@ -82,7 +101,29 @@ class Thread(
             val body = run(root, WIDEST_BODY, d * CAP_FRAC, theme.text) ?: return@repeat
             slots += Slot(head, body)
         }
-        Log.i(TAG, "[thread] ${slots.size} deep")
+        val far = distAt(DEPTH)
+        deeper = run(root, WIDEST_DEEP, far * CAP_FRAC * 0.85f, theme.accent)
+        deeperProxy = MeshEntity.create(
+            session, Prims.build(session, Prims.bar(far * 0.5f, far * 0.12f, 0.02f)),
+            listOf(Prims.ghost(session)),
+        ).also { p ->
+            p.parent = root; p.setEnabled(false); entities += p
+            runCatching {
+                p.addComponent(
+                    InteractableComponent.create(session) { ev ->
+                        if (open && ev.action == InputEvent.Action.UP) {
+                            val now = android.os.SystemClock.uptimeMillis()
+                            if (now - lastFire >= DEBOUNCE_MS) {
+                                lastFire = now
+                                Reach.consumed()
+                                fired.add(1)
+                            }
+                        }
+                    },
+                )
+            }.onFailure { Log.w(TAG, "[thread] no input on older: $it") }
+        }
+        Log.i(TAG, "[thread] ${slots.size} deep, paging wired")
     }
 
     private suspend fun run(root: Entity, widest: String, cap: Float, rgb: Int): TextRun.Run? =
@@ -111,15 +152,33 @@ class Thread(
         slots.forEach {
             runCatching { it.head.entity.setEnabled(false); it.body.entity.setEnabled(false) }
         }
-        runCatching { header?.entity?.setEnabled(false) }
+        runCatching {
+            header?.entity?.setEnabled(false)
+            deeper?.entity?.setEnabled(false)
+            deeperProxy?.setEnabled(false)
+        }
+        fired.clear()
         Log.i(TAG, "[thread] closed")
     }
 
     /** Step further back in time. Wraps, so there is always a way out. */
     fun older() {
         if (lines.size <= DEPTH) return
-        page = (page + 1) % ((lines.size + DEPTH - 1) / DEPTH)
+        page = (page + 1) % pages()
         place()
+        Log.i(TAG, "[thread] page ${page + 1} of ${pages()}")
+    }
+
+    private fun pages(): Int =
+        if (lines.isEmpty()) 1 else (lines.size + DEPTH - 1) / DEPTH
+
+    /** Drain picks. The host calls older() so one code path owns the paging. */
+    fun poll(): Int? = fired.poll()
+
+    fun gazeTargets(): List<Gaze.Target> {
+        if (!open || lines.size <= DEPTH) return emptyList()
+        val at = deeperAt ?: return emptyList()
+        return listOf(Gaze.Target("thread-older", at, CONE) { fired.add(1) })
     }
 
     fun tick(head: Vector3?) {
@@ -137,6 +196,26 @@ class Thread(
             header?.entity?.setEnabled(true)
             val hAt = Vector3(o.x + fx * NEAR, o.y + HEADER_UP, o.z + fz * NEAR)
             header?.entity?.setPose(Pose(hAt, facing(hAt)), Space.ACTIVITY)
+        }
+        // The marker for what is behind the last visible message. Hidden when
+        // the whole conversation already fits: an "older" control that pages to
+        // the same six messages is a lie about there being more.
+        val more = lines.size > DEPTH
+        val fd = distAt(DEPTH)
+        val dAt = Vector3(o.x + fx * fd, o.y - EYE_DROP + DEPTH * RISE, o.z + fz * fd)
+        deeperAt = dAt
+        runCatching {
+            deeper?.entity?.setEnabled(more)
+            deeperProxy?.setEnabled(more)
+            if (more) {
+                deeper?.setText(
+                    "OLDER   %d-%d OF %d".format(
+                        first + 1, (first + DEPTH).coerceAtMost(lines.size), lines.size,
+                    ),
+                )
+                deeper?.entity?.setPose(Pose(dAt, facing(dAt)), Space.ACTIVITY)
+                deeperProxy?.setPose(Pose(dAt), Space.ACTIVITY)
+            }
         }
         slots.forEachIndexed { i, s ->
             val line = lines.getOrNull(first + i)
@@ -173,6 +252,7 @@ class Thread(
 
     fun clear() {
         slots.clear(); header = null
+        deeper = null; deeperProxy = null; deeperAt = null; fired.clear(); lastFire = 0L
         open = false; id = null; lines = emptyList(); page = 0; origin = null
         val doomed = entities.toList()
         entities.clear()
@@ -202,6 +282,9 @@ class Thread(
          */
         const val CAP_FRAC = 0.0227f
         const val HEAD_CAP = 0.030f
+        const val CONE = 0.05f
+        const val DEBOUNCE_MS = 350L
+        const val WIDEST_DEEP = "OLDER   99-99 OF 999"
         const val WIDEST_HEAD = "MMMMMMMMMMMMMM  99 MIN AGO"
         const val WIDEST_BODY = "MMMMMMMMMMMMMMMMMMMMMMMM"
     }

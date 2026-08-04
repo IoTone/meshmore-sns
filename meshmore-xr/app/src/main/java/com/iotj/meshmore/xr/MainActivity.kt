@@ -186,7 +186,7 @@ class MainActivity : ComponentActivity() {
     }
 
     // One link per activity. Checkpoint 3 lives here.
-    private val link by lazy { MeshLink(this) }
+    private val link by lazy { MeshLink(this).also { it.restore() } }
 
     override fun onStop() {
         super.onStop()
@@ -1333,7 +1333,8 @@ private fun HorizonScene(link: MeshLink) {
                     (dockRef.value?.gazeTargets() ?: emptyList()) +
                         (rosterRef.value?.gazeTargets() ?: emptyList()) +
                         (inboxRef.value?.gazeTargets() ?: emptyList()) +
-                        (consoleRef.value?.gazeTargets() ?: emptyList()),
+                        (consoleRef.value?.gazeTargets() ?: emptyList()) +
+                        (threadRef.value?.gazeTargets() ?: emptyList()),
                 )
                 gazeRef.value?.tick(stage.headNow(), anyHand, nowMs)
                 // THE CHAT HAND IS THE LEFT ONE by default (§5: one hand runs
@@ -1392,6 +1393,9 @@ private fun HorizonScene(link: MeshLink) {
                 // firing identically.
                 dockRef.value?.gazed = gazeRef.value?.onTarget
                 consoleRef.value?.setGazed(gazeRef.value?.onTarget)
+                // Paging the corridor further back. One code path owns it: the
+                // surface reports a pick, the host decides what a pick means.
+                while (threadRef.value?.poll() != null) threadRef.value?.older()
                 rosterRef.value?.tick(stage.headNow()?.translation)
                 while (true) {
                     val pick = rosterRef.value?.poll() ?: break

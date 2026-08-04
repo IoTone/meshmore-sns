@@ -202,9 +202,44 @@ class MeshLink(private val context: Context) {
             }
             .sortedByDescending { it.newest?.atEpochSec ?: 0L }
 
+    /**
+     * History across restarts.
+     *
+     * Lazy rather than built in the constructor: MeshLink is created before the
+     * scene is, and reading a preferences file is not something to do on the
+     * way to first frame.
+     */
+    private val store by lazy { MsgStore(context) { Log.i(TAG, it) } }
+
+    /**
+     * Bring back what was said before the app was last closed.
+     *
+     * Call once. Restored messages do NOT fire onMessage: they are history, and
+     * announcing forty of them at startup would ring the cuff, chime the audio
+     * and light every arrival channel the app has for things the user read
+     * yesterday.
+     */
+    fun restore() {
+        if (_msgs.value.isNotEmpty()) return
+        val old = store.load()
+        if (old.isNotEmpty()) _msgs.value = old.take(MSG_KEEP)
+    }
+
     private fun remember(m: Msg) {
         _msgs.value = (listOf(m) + _msgs.value).take(MSG_KEEP)
+        // Written on arrival rather than at shutdown, because an XR app is
+        // killed by the system far more often than it is closed by a person,
+        // and onDestroy is not a promise.
+        runCatching { store.save(_msgs.value) }
+            .onFailure { Log.w(TAG, "[store] save failed: ${it.javaClass.simpleName}") }
         onMessage?.invoke(m)
+    }
+
+    /** Forget everything. The one thing a message log must always allow. */
+    fun forgetMessages() {
+        _msgs.value = emptyList()
+        runCatching { store.clear() }
+        Log.i(TAG, "[store] history cleared")
     }
 
     private val _here = MutableStateFlow(MeshNodes.Here(null, null))
@@ -1142,6 +1177,15 @@ class MeshLink(private val context: Context) {
          * a direct message out of reach in a minute, few enough that it is
          * plainly a recent-history buffer and not an archive.
          */
-        private const val MSG_KEEP = 60
+        /**
+         * How much history is kept.
+         *
+         * Sixty was the size of a buffer nobody could look at beyond the newest
+         * few, so it never mattered. Now that it survives restarts and can be
+         * paged, it is the actual answer to "how far back does this go" -- and
+         * at roughly 120 bytes a message this is about fifty kilobytes, which
+         * is nothing.
+         */
+        private const val MSG_KEEP = 500
     }
 }
