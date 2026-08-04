@@ -55,6 +55,7 @@ class Cuff(
     private var arcs = 0
     /** When the last DM landed, for the pulse. */
     private var dmAt = 0L
+    private var lastChannelAt = 0L
     private var lit = false
 
     suspend fun build() {
@@ -93,9 +94,24 @@ class Cuff(
         Log.i(TAG, "[cuff] $SEGMENTS segments")
     }
 
+    /**
+     * Auto-clear: channel arcs fade after a while, DMs do not.
+     *
+     * §9.2 makes this a theme-owned setting and gives the reason — "a cuff
+     * glowing since breakfast is noise". A busy channel fills all twelve
+     * segments in a minute, and a ring that is always full has stopped being
+     * an indicator and become decoration.
+     *
+     * DIRECT MESSAGES DO NOT EXPIRE. Somebody addressed you personally, and a
+     * count that quietly forgets that is worse than no count. Only ambient
+     * channel traffic ages out.
+     */
+    var autoClear: Boolean = true
+
     /** A channel message landed: one more segment. */
     fun channelArrived() {
         arcs = (arcs + 1).coerceAtMost(SEGMENTS)
+        lastChannelAt = android.os.SystemClock.uptimeMillis()
         apply()
     }
 
@@ -110,6 +126,7 @@ class Cuff(
     fun clearUnread() {
         arcs = 0
         dmAt = 0L
+        lastChannelAt = 0L
         apply()
     }
 
@@ -127,6 +144,14 @@ class Cuff(
      */
     fun tick(joints: Map<HandJointType, Pose>?, nowMs: Long) {
         val r = root ?: return
+        // Age out ambient traffic, one segment at a time so it drains rather
+        // than blinking off — the difference between "you missed nothing" and
+        // "something just cleared itself".
+        if (autoClear && dmAt == 0L && arcs > 0 && nowMs - lastChannelAt > FADE_MS) {
+            arcs--
+            lastChannelAt = nowMs
+            apply()
+        }
         if (joints.isNullOrEmpty()) {
             runCatching { r.setEnabled(false) }
             return
@@ -201,6 +226,8 @@ class Cuff(
         const val TUBE = 0.0035f
         /** How far along the forearm from the wrist joint. */
         const val BACK = 0.025f
+        /** How long one channel segment survives untouched. */
+        const val FADE_MS = 20_000L
         const val PULSE_MS = 1800L
         const val PULSE_BEATS = 3f
     }
