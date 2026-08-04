@@ -143,6 +143,15 @@ class MeshLink(private val context: Context) {
         val atEpochSec: Long,
         val direct: Boolean,
         val channel: String? = null,
+        /**
+         * The channel's NAME, when the radio has told us one.
+         *
+         * Separate from [channel] on purpose: [channel] is the slot index and
+         * is what threads are grouped by, because it is stable. A name can be
+         * blank, can be renamed, and can collide between two radios -- all of
+         * which are fine for a label and fatal for an identity.
+         */
+        val channelName: String? = null,
     )
 
     private val _msgs = MutableStateFlow<List<Msg>>(emptyList())
@@ -746,12 +755,23 @@ class MeshLink(private val context: Context) {
      * public PSK is the one comparison worth making, because "am I on Public
      * or on something private" is the question being asked.
      */
+    /**
+     * Channel slot index -> its name, as the radio reports it.
+     *
+     * The names were being logged and dropped, so a message could only ever say
+     * "#0" -- which is the radio's filing system, not a thing anybody calls a
+     * channel. Kept here rather than re-read per message: the enumeration
+     * happens once at connect and channels do not rename themselves.
+     */
+    private val chanNames = HashMap<Int, String>()
+
     private fun dumpChannel(c: io.iotone.meshcore.model.ChannelInfo) {
         val psk = c.psk()
         if (c.name().isNullOrBlank() && (psk == null || psk.all { it.toInt() == 0 })) {
             Log.i(TAG, "[radio] channel ${c.channelIdx()}     = <empty slot>")
             return
         }
+        c.name()?.takeIf { it.isNotBlank() }?.let { chanNames[c.channelIdx()] = it }
         val isPublic = psk != null &&
             psk.contentEquals(io.iotone.meshcore.MeshcoreConstants.publicChannelPsk())
         val fp = psk?.take(4)?.joinToString("") { "%02x".format(it) } ?: "?"
@@ -959,6 +979,7 @@ class MeshLink(private val context: Context) {
                         fromKey = "", fromName = who, text = body,
                         atEpochSec = cm.timestamp(), direct = false,
                         channel = "#${cm.channelIdx()}",
+                        channelName = chanNames[cm.channelIdx()],
                     ),
                 )
             }

@@ -1354,13 +1354,33 @@ private fun HorizonScene(link: MeshLink) {
                             link.msgs.value.take(12).map { m ->
                                 com.iotj.meshmore.xr.spatial.Reel.Slot(
                                     who = com.iotj.meshmore.xr.spatial.TypeTier.clip(
-                                        m.fromName.ifBlank { m.channel ?: "?" }, 8,
+                                        m.fromName.ifBlank {
+                                            // A channel message with no sender
+                                            // prefix is somebody the radio
+                                            // cannot name, not the channel
+                                            // talking to itself.
+                                            if (m.direct) "?" else "SOMEONE"
+                                        },
+                                        // Eight, not more: the front-arc runs
+                                        // are rasterised eight M's wide, and
+                                        // wider labels are exactly what made
+                                        // the first front arc a pile.
+                                        8,
                                     ),
                                     // The raised card holds three lines of
                                     // fourteen; clipping at twelve here was
                                     // sized for the old one-line front arc and
                                     // would throw away most of every message.
                                     words = com.iotj.meshmore.xr.spatial.TypeTier.clip(m.text, 42),
+                                    direct = m.direct,
+                                    // The channel's NAME where the radio gave
+                                    // us one, its slot index where it did not.
+                                    // "#0" is the radio's filing system, not a
+                                    // thing anybody calls a channel.
+                                    origin = com.iotj.meshmore.xr.spatial.TypeTier.clip(
+                                        m.channelName?.uppercase()
+                                            ?: m.channel.orEmpty(), 10,
+                                    ),
                                 )
                             },
                         )

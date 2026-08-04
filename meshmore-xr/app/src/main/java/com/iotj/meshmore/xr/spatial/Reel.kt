@@ -60,10 +60,25 @@ class Reel(
     private val context: Context,
 ) {
 
-    /** One message, already formatted. */
-    class Slot(val who: String, val words: String)
+    /**
+     * One message, already formatted.
+     *
+     * [direct] and [origin] are what make a DM tellable from channel traffic.
+     * §S4 requires the two to be "distinguished by form in every channel -- and
+     * never by colour alone", which the ring answers with a RING: a direct
+     * message gets a circle drawn round its marker, and channel traffic does
+     * not. Circled means somebody addressed you, and it survives being seen at
+     * the edge of vision, at five millimetres, by someone who cannot tell the
+     * theme's two blues apart.
+     */
+    class Slot(
+        val who: String,
+        val words: String,
+        val direct: Boolean = false,
+        val origin: String = "",
+    )
 
-    private class Cell(val run: TextRun.Run, val mote: MeshEntity)
+    private class Cell(val run: TextRun.Run, val mote: MeshEntity, val ring: MeshEntity)
 
     private val cells = mutableListOf<Cell>()
     /** The oval itself, so the slots read as sitting ON something. */
@@ -112,7 +127,15 @@ class Reel(
                 session, Prims.build(session, Prims.mote(MOTE, 4, 6)),
                 listOf(Prims.material(session, theme.alt, 0.85f)),
             ).also { it.parent = root; it.setEnabled(false); entities += it }
-            cells += Cell(run, mote)
+            // The DM ring. Its own entity per cell rather than a shared one,
+            // because sharing a material aborts the renderer natively on this
+            // path -- learned the expensive way in Horizon, HereMark, Hud and
+            // Boot.
+            val ring = MeshEntity.create(
+                session, Prims.build(session, Prims.halo(MOTE * 2.4f, MOTE * 0.32f, 16, 4)),
+                listOf(Prims.material(session, theme.accent, 0.95f)),
+            ).also { it.parent = root; it.setEnabled(false); entities += it }
+            cells += Cell(run, mote, ring)
         }
         // THE PANEL. Without it the messages are text floating over a hand and
         // read as debris from the ring behind them; with it they are markers on
@@ -137,7 +160,7 @@ class Reel(
         ).also { it.parent = root; it.setEnabled(false); entities += it }
 
         cardWho = TextRun.reusable(
-            session, context, CARD_WIDEST, CARD_CAP * 0.8f,
+            session, context, HEAD_WIDEST, CARD_CAP * 0.75f,
             argb(theme.accent, 0.95f), "reel-card-who",
         )?.also { it.entity.parent = root; it.entity.setEnabled(false); entities += it.entity }
         repeat(CARD_LINES) {
@@ -175,7 +198,11 @@ class Reel(
         if (was != open) Log.i(TAG, "[reel] ${if (open) "revealed" else "hidden"}")
         if (!open) {
             cells.forEach {
-                runCatching { it.run.entity.setEnabled(false); it.mote.setEnabled(false) }
+                runCatching {
+                    it.run.entity.setEnabled(false)
+                    it.mote.setEnabled(false)
+                    it.ring.setEnabled(false)
+                }
             }
             runCatching {
                 panel?.setEnabled(false)
@@ -223,6 +250,15 @@ class Reel(
         val cx = w.x + ax * (ALONG) + ux * s * STANDOFF
         val cy = w.y + ay * (ALONG) + uy * s * STANDOFF
         val cz = w.z + az * (ALONG) + uz * s * STANDOFF
+
+        // The palm's two rotations, shared by everything below. fromLookTowards
+        // puts local +Z on `forward` and local +Y on `up` (PalmFrameTest), so
+        // the oval wants the normal forward and the DM rings -- which are tori
+        // about their own Y -- want it up.
+        val fwd = Vector3(ux * s, uy * s, uz * s)
+        val along = Vector3(ax, ay, az)
+        val q = Quaternion.fromLookTowards(fwd, along)
+        val qRing = Quaternion.fromLookTowards(along, fwd)
 
         // TURN THE RING. A CLUTCH, NOT AN ABSOLUTE MAPPING: the thumb's travel
         // is about 9 cm and the ring is twelve deep, so mapping the finger's
@@ -278,6 +314,11 @@ class Reel(
                 c.mote.setEnabled(msg != null)
                 c.mote.setPose(Pose(at), Space.ACTIVITY)
                 c.mote.setScale(if (i == current) 1.8f else 1f)
+                // CIRCLED = ADDRESSED TO YOU. Lying in the oval's own plane, so
+                // it reads as a ring rather than as an edge-on line.
+                c.ring.setEnabled(msg?.direct == true)
+                c.ring.setPose(Pose(at, qRing), Space.ACTIVITY)
+                c.ring.setScale(if (i == current) 1.8f else 1f)
                 c.run.entity.setEnabled(named)
                 if (!named) return@runCatching
                 c.run.setText(msg!!.who)
@@ -291,9 +332,6 @@ class Reel(
         // The oval and its beam share one rotation: normal forward, along-hand
         // up. That second argument is the whole reason PalmFrameTest exists —
         // it is what stops the wide axis from ending up running up the fingers.
-        val q = Quaternion.fromLookTowards(
-            Vector3(ux * s, uy * s, uz * s), Vector3(ax, ay, az),
-        )
         val mid = Vector3(cx, cy, cz)
         runCatching {
             panel?.setEnabled(true)
@@ -315,7 +353,14 @@ class Reel(
             }
             val at = Vector3(cx + ux * s * RAISE, cy + uy * s * RAISE, cz + uz * s * RAISE)
             val r = facing(at, h)
-            cardWho?.setText(sel.who)
+            // WHO, AND FROM WHERE. A name alone cannot say whether Chuck spoke
+            // to the whole channel or to you, and those are different enough
+            // that guessing wrong is embarrassing in one direction and a missed
+            // message in the other.
+            cardWho?.setText(
+                if (sel.direct) "${sel.who} \u2192 YOU"
+                else "${sel.who} \u00b7 ${sel.origin.ifBlank { "CHANNEL" }}",
+            )
             cardWho?.entity?.setPose(Pose(at, r), Space.ACTIVITY)
             val wrapped = wrap(sel.words, CARD_COLS, CARD_LINES)
             cardBody.forEachIndexed { i, line ->
@@ -391,6 +436,8 @@ class Reel(
         const val CARD_COLS = 14
         const val CARD_LINES = 3
         const val CARD_WIDEST = "MMMMMMMMMMMMMM"
+        /** The header holds "NAME · CHANNEL", which is longer than a body line. */
+        const val HEAD_WIDEST = "MMMMMMMMMMMMMMMMMMMM"
         /** Sender labels hang just under their marker. */
         const val LABEL_DROP = 0.014f
         /** Slots per full stroke of the thumb. Half the ring, so two strokes
