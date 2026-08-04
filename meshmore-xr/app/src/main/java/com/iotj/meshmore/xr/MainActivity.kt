@@ -843,6 +843,18 @@ private fun HorizonScene(link: MeshLink) {
         val hands = Hands(session, palette, ctx)
         hands.build()
         handsRef.value = hands
+        // THE SKELETON IS DEBUG SCAFFOLDING AND NEEDS A WAY IN.
+        //
+        // Its dock pip was given to the inbox, on the argument that a wireframe
+        // of your own fingers does not belong on a shipping dock — which stands,
+        // but I said it was "behind --ez handdebug" without checking, and that
+        // flag only ever gated LOGGING. So the surface was built on every launch
+        // and reachable from nowhere: dead weight that still cost its entities.
+        // The flag now does what it was claimed to do.
+        if (MainActivity.handDebug) {
+            hands.setVisible(true)
+            Log.i(TAG_UI, "[hands] skeleton shown by --ez handdebug")
+        }
         val help = HelpCard(session, palette, ctx)
         help.build(origin)
         helpRef.value = help
