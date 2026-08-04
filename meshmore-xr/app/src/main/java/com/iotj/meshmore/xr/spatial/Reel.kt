@@ -85,6 +85,7 @@ class Reel(
     private var panel: MeshEntity? = null
     /** The raised card: whichever slot is current, big enough to read. */
     private var stem: MeshEntity? = null
+    private var hint: TextRun.Run? = null
     private var cardWho: TextRun.Run? = null
     private val cardBody = mutableListOf<TextRun.Run>()
     /**
@@ -97,6 +98,8 @@ class Reel(
     private var grabT = 0f
     private var grabSpin = 0f
     private var scrubbing = false
+    /** Whether they have ever turned it. The hint retires once they have. */
+    private var turned = false
     /** Which slot is at the front. Derived from [spin], never set directly. */
     private var current = 0
     private val entities = mutableListOf<Entity>()
@@ -171,6 +174,15 @@ class Reel(
             cardBody += r
         }
 
+        // HOW TO TURN IT, ON THE SURFACE ITSELF. §S4 gives the reel a gesture
+        // and no way to find out about it, and an undocumented gesture is the
+        // same as an absent one — this exact reel was reported as "I couldn't
+        // figure out how to move to an earlier one". Shown only while the reel
+        // is short enough to be new to somebody, and only when there is
+        // somewhere to turn TO.
+        hint = TextRun.reusable(
+            session, context, HINT, CAP * 0.85f, argb(theme.alt, 0.75f), "reel-hint",
+        )?.also { it.entity.parent = root; it.entity.setEnabled(false); entities += it.entity }
         Log.i(TAG, "[reel] $SLOTS slots, $FRONT named, raised card")
     }
 
@@ -209,6 +221,7 @@ class Reel(
                 stem?.setEnabled(false)
                 cardWho?.entity?.setEnabled(false)
                 cardBody.forEach { it.entity.setEnabled(false) }
+                hint?.entity?.setEnabled(false)
             }
             return
         }
@@ -260,40 +273,63 @@ class Reel(
         val q = Quaternion.fromLookTowards(fwd, along)
         val qRing = Quaternion.fromLookTowards(along, fwd)
 
-        // TURN THE RING. A CLUTCH, NOT AN ABSOLUTE MAPPING: the thumb's travel
-        // is about 9 cm and the ring is twelve deep, so mapping the finger's
-        // whole length onto a whole turn puts the detents 7 mm apart, which is
-        // below what a thumb can place reliably. Instead one stroke moves
-        // GAIN slots and you lift and re-place to go further — the same
-        // gesture a scroll wheel makes, and the reason a scroll wheel works.
-        val thumb = act(HandJointType.THUMB_TIP)
-        val itip = act(HandJointType.INDEX_TIP)
-        if (thumb != null && itip != null) {
-            val sc = scrub(ix, itip, thumb)
-            if (sc.on && !scrubbing) {
-                scrubbing = true; grabT = sc.t; grabSpin = spin
-            } else if (!sc.on) {
-                scrubbing = false
-            }
-            if (scrubbing) spin = grabSpin + (sc.t - grabT) * GAIN
+        // TURN THE RING — OVER THE MESSAGES THAT EXIST, not over twelve slots.
+        //
+        // The first version stepped through all SLOTS regardless of how many
+        // messages were in them, so with two messages ten of the twelve detents
+        // selected nothing and the card simply vanished. From the wearer's side
+        // that is indistinguishable from the gesture not working, which is
+        // exactly how it was reported. The ring buffer's CAPACITY is twelve;
+        // its CONTENTS are however many have arrived, and the control has to
+        // follow the contents.
+        val n = slots.size
+        if (n == 0) {
+            spin = 0f; scrubbing = false
         } else {
-            scrubbing = false
+            // A CLUTCH, NOT AN ABSOLUTE MAPPING: the thumb travels about 9 cm,
+            // so mapping its whole length onto a whole turn puts the detents
+            // millimetres apart. One stroke covers half the ring and you lift
+            // and re-place to go further — the gesture a scroll wheel makes,
+            // and the reason a scroll wheel works. Half of TWO is one, so with
+            // a short reel a stroke is decisive rather than twitchy.
+            val gain = (n / 2f).coerceAtLeast(1f)
+            val thumb = act(HandJointType.THUMB_TIP)
+            val itip = act(HandJointType.INDEX_TIP)
+            if (thumb != null && itip != null) {
+                val sc = scrub(ix, itip, thumb)
+                if (sc.on && !scrubbing) {
+                    scrubbing = true; grabT = sc.t; grabSpin = spin
+                    Log.i(TAG, "[reel] scrub start at %.2f".format(sc.t))
+                } else if (!sc.on && scrubbing) {
+                    scrubbing = false
+                    Log.i(TAG, "[reel] scrub end")
+                }
+                if (scrubbing) spin = grabSpin + (sc.t - grabT) * gain
+            } else if (scrubbing) {
+                scrubbing = false
+                Log.i(TAG, "[reel] scrub end (lost joints)")
+            }
         }
         // The front slot, snapped. Sliding the thumb toward the fingertip
         // brings OLDER messages round to the front, which is the direction the
         // hand is already travelling when it reaches for the past.
-        val front = ((-Math.round(spin)) % SLOTS + SLOTS) % SLOTS
+        val front = if (n == 0) 0 else ((-Math.round(spin)) % n + n) % n
         if (front != current) {
             current = front
-            if (slots.isNotEmpty()) onDetent?.invoke()
+            turned = true
+            onDetent?.invoke()
+            Log.i(TAG, "[reel] message ${current + 1} of $n")
         }
 
         cells.forEachIndexed { i, c ->
             val msg = slots.getOrNull(i)
-            // Slot 0 sits at the FRONT — nearest the wearer along the hand —
-            // and the rest wrap round. Newest first, which is what triage wants.
-            // Plus the spin, so the whole ring turns under the thumb.
-            val t = ((i + spin) / SLOTS) * TAU
+            // The oval is divided by how many messages there ARE, so whichever
+            // one is selected sits at the front and the rest spread evenly
+            // round. Dividing by the capacity instead left a half-empty reel
+            // with its markers bunched at one edge and the front position empty
+            // most of the time.
+            val span = n.coerceAtLeast(1)
+            val t = ((i + spin) / span) * TAU
             val ox = kotlin.math.sin(t) * RX
             val oy = -kotlin.math.cos(t) * RY
             val at = Vector3(
@@ -307,8 +343,8 @@ class Reel(
             // Which slots are named follows where they are DRAWN, not their
             // index: once the ring turns, "the front five" is a fact about the
             // oval rather than about the message list.
-            val steps = ((i + spin) % SLOTS + SLOTS) % SLOTS
-            val fromFront = kotlin.math.min(steps, SLOTS - steps)
+            val steps = ((i + spin) % span + span) % span
+            val fromFront = kotlin.math.min(steps, span - steps)
             val named = msg != null && fromFront <= FRONT / 2f
             runCatching {
                 c.mote.setEnabled(msg != null)
@@ -338,6 +374,23 @@ class Reel(
             panel?.setPose(Pose(mid, q), Space.ACTIVITY)
             stem?.setEnabled(slots.isNotEmpty())
             stem?.setPose(Pose(mid, q), Space.ACTIVITY)
+        }
+
+        // The hint sits below the oval, where it cannot be mistaken for a
+        // message. It stops once there is nothing to turn to, and once the
+        // wearer has demonstrably turned it.
+        runCatching {
+            val show = n > 1 && !turned
+            hint?.entity?.setEnabled(show)
+            if (show) {
+                val hAt = Vector3(
+                    cx - ax * (RY + HINT_DROP),
+                    cy - ay * (RY + HINT_DROP),
+                    cz - az * (RY + HINT_DROP),
+                )
+                hint?.setText(HINT)
+                hint?.entity?.setPose(Pose(hAt, facing(hAt, h)), Space.ACTIVITY)
+            }
         }
 
         // AND THE CURRENT MESSAGE PROJECTS UP — off the panel along its own
@@ -392,6 +445,7 @@ class Reel(
         cells.clear(); slots = emptyList(); open = false
         panel = null; stem = null; cardWho = null; cardBody.clear()
         current = 0; spin = 0f; grabT = 0f; grabSpin = 0f; scrubbing = false
+        hint = null; turned = false
         val doomed = entities.toList()
         entities.clear()
         doomed.forEach { runCatching { it.parent = null } }
@@ -440,15 +494,23 @@ class Reel(
         const val HEAD_WIDEST = "MMMMMMMMMMMMMMMMMMMM"
         /** Sender labels hang just under their marker. */
         const val LABEL_DROP = 0.014f
-        /** Slots per full stroke of the thumb. Half the ring, so two strokes
-         *  come all the way round and no single one demands 7 mm precision. */
-        const val GAIN = 6f
+        const val HINT = "THUMB ALONG INDEX TO TURN"
+        const val HINT_DROP = 0.022f
     }
 }
 
-/** How close to the index's axis counts as riding it, as a fraction of that
- *  finger's own length — so it holds across hand sizes. */
-internal const val CONTACT_FRAC = 0.34f
+/**
+ * How close to the index's axis counts as riding it, as a fraction of that
+ * finger's own length — so it holds across hand sizes.
+ *
+ * A thumb resting against the side of the index sits about 22 mm off its axis
+ * on a 75 mm finger, which is 0.29. The first value here was 0.34, leaving
+ * about 4 mm for hand-tracking jitter to eat before the gesture silently stops
+ * being detected — and a gesture that fails silently is reported as "I could
+ * not figure out how to do it", not as a bug. 0.45 leaves real headroom and is
+ * still nowhere near an abducted thumb, which is 0.8 and up.
+ */
+internal const val CONTACT_FRAC = 0.45f
 
 /**
  * WHERE THE THUMB SITS ALONG THE INDEX — the reel's one real haptic.

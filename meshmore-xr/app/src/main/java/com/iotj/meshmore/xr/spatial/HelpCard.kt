@@ -79,6 +79,12 @@ class HelpCard(
         Row(null, "", "HOLD STILL FOR HALF A SECOND"),
         Row(null, "", "PALM AWAY - THE GLASSES SEE THE BACK"),
         Row(null, "", "OR PINCH A DOCK RING INSTEAD"),
+        // The reel's gesture had no entry anywhere, and was duly reported as
+        // undiscoverable. Same lesson B taught: reachable and undocumented is
+        // the same as absent.
+        Row(null, "MESSAGES", ""),
+        Row(null, "", "TURN LEFT PALM UP TO SEE THE REEL"),
+        Row(null, "", "SLIDE THUMB ALONG INDEX TO TURN IT"),
     )
 
     suspend fun build(o: Stage.Origin) {

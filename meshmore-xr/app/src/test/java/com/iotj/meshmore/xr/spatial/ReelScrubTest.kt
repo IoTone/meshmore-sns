@@ -34,7 +34,9 @@ class ReelScrubTest {
 
     @Test
     fun `a thumb resting on the finger is in contact`() {
-        assertTrue(scrub(prox, tip, Vector3(0.04f, 0.012f, 0f)).on)
+        // 22 mm off the axis of a 75 mm finger is where a real thumb sits.
+        assertTrue(scrub(Vector3(0f, 0f, 0f), Vector3(0.075f, 0f, 0f),
+            Vector3(0.037f, 0.022f, 0f)).on)
     }
 
     @Test
