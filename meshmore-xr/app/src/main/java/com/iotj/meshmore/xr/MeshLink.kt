@@ -890,6 +890,38 @@ class MeshLink(private val context: Context) {
      */
     private val chanNames = HashMap<Int, String>()
 
+    /**
+     * One channel slot the radio has told us about.
+     *
+     * [publicKey] is whether the slot carries the WELL-KNOWN public PSK — which
+     * is not a detail, it is the difference between a band anyone within range
+     * can read and one only your group can. A surface that lists channels
+     * without saying which is which is inviting somebody to say something on
+     * the public one thinking it was private.
+     */
+    data class Chan(
+        val idx: Int,
+        val name: String,
+        val publicKey: Boolean,
+        /** The thread id [threads] groups this channel's traffic under. */
+        val threadId: String = "#$idx",
+    )
+
+    private val chans = LinkedHashMap<Int, Chan>()
+
+    /**
+     * The channel slots, in slot order, as reported at connect.
+     *
+     * Slot order rather than most-recently-active: these are POSITIONS on the
+     * radio, the same numbers the phone app and the hardware use, and a list
+     * that reorders itself as traffic arrives is a list where the thing you
+     * reached for last time is somewhere else now.
+     */
+    fun channels(): List<Chan> = chans.values.sortedBy { it.idx }
+
+    /** How many messages are held for a channel, for a surface that shows weight. */
+    fun countFor(threadId: String): Int = _msgs.value.count { it.channel == threadId }
+
     private fun dumpChannel(c: io.iotone.meshcore.model.ChannelInfo) {
         val psk = c.psk()
         if (c.name().isNullOrBlank() && (psk == null || psk.all { it.toInt() == 0 })) {
@@ -900,6 +932,16 @@ class MeshLink(private val context: Context) {
         val isPublic = psk != null &&
             psk.contentEquals(io.iotone.meshcore.MeshcoreConstants.publicChannelPsk())
         val fp = psk?.take(4)?.joinToString("") { "%02x".format(it) } ?: "?"
+        // REMEMBERED, not only logged. This enumeration is the ONLY place the
+        // app learns a channel exists before traffic arrives on it — an empty
+        // channel is still a channel you can set to read itself aloud, and a
+        // list that only shows what has already spoken is a list that is empty
+        // exactly when somebody is setting the app up.
+        chans[c.channelIdx()] = Chan(
+            idx = c.channelIdx(),
+            name = c.name()?.takeIf { it.isNotBlank() } ?: "CHANNEL ${c.channelIdx()}",
+            publicKey = isPublic,
+        )
         Log.i(TAG, "[radio] channel ${c.channelIdx()}     = \"${c.name()}\"  psk $fp…  " +
             if (isPublic) "PUBLIC (well-known key)" else "private/custom key")
     }

@@ -488,6 +488,41 @@ private const val TAG_UI = "MeshmoreXR"
 private const val BACK_OUT_MS = 600L
 
 /** The head's yaw, in the convention Stage.Origin.place uses. */
+/**
+ * The CHANNELS bay's rows, from the two things that know: the radio's slots and
+ * the wearer's voice preferences.
+ *
+ * SLOTS FIRST, THEN CHANNELS ONLY SEEN IN TRAFFIC. The radio enumerates its
+ * slots at connect, which is the authoritative list and the one that includes
+ * an empty band you have not heard from yet. But a channel can also arrive
+ * purely as traffic — a message tagged `#3` from a radio whose enumeration we
+ * missed, or that arrived before we connected — and dropping those would mean
+ * the bay cannot turn off a channel that is, audibly, talking. So the traffic
+ * is unioned in, after, and only where the slot list does not already have it.
+ */
+private fun channelRows(
+    link: MeshLink,
+    voice: VoicePrefs,
+): List<com.iotj.meshmore.xr.spatial.Channels.Row> {
+    val slots = link.channels()
+    val known = slots.map { it.threadId }.toSet()
+    val fromTraffic = link.threads()
+        .filter { !it.direct && it.id !in known }
+        .map { MeshLink.Chan(idx = -1, name = it.title, publicKey = false, threadId = it.id) }
+    return (slots + fromTraffic).map { c ->
+        com.iotj.meshmore.xr.spatial.Channels.Row(
+            threadId = c.threadId,
+            label = com.iotj.meshmore.xr.spatial.channelLabel(
+                name = c.name,
+                publicKey = c.publicKey,
+                count = link.countFor(c.threadId),
+                speaking = voice.isOn(c.threadId),
+            ),
+            speaking = voice.isOn(c.threadId),
+        )
+    }
+}
+
 private fun yawOf(h: androidx.xr.runtime.math.Pose): Float {
     val q = h.rotation
     val fx = 2f * (q.x * q.z + q.w * q.y)
@@ -647,6 +682,7 @@ private fun HorizonScene(link: MeshLink) {
     val consoleRef = remember { mutableStateOf<com.iotj.meshmore.xr.spatial.Console?>(null) }
     val themePickerRef =
         remember { mutableStateOf<com.iotj.meshmore.xr.spatial.ThemePicker?>(null) }
+    val channelsRef = remember { mutableStateOf<com.iotj.meshmore.xr.spatial.Channels?>(null) }
     val threadRef = remember { mutableStateOf<com.iotj.meshmore.xr.spatial.Thread?>(null) }
     val cuffRef = remember { mutableStateOf<com.iotj.meshmore.xr.spatial.Cuff?>(null) }
     val crownRef = remember { mutableStateOf<com.iotj.meshmore.xr.spatial.Crown?>(null) }
@@ -1157,6 +1193,11 @@ private fun HorizonScene(link: MeshLink) {
         picker.onFocus = { cue.recognised() }
         themePickerRef.value = picker
 
+        val channels = com.iotj.meshmore.xr.spatial.Channels(session, palette, ctx)
+        channels.build()
+        channels.onFocus = { cue.recognised() }
+        channelsRef.value = channels
+
         val inbox = com.iotj.meshmore.xr.spatial.Inbox(session, palette, ctx)
         inbox.build()
         inbox.onFocus = { cue.recognised() }
@@ -1570,6 +1611,22 @@ private fun HorizonScene(link: MeshLink) {
                     val pick = rosterRef.value?.poll() ?: break
                     rosterRef.value?.activate(pick)
                 }
+                // THE CHANNELS BAY. A pick is a TOGGLE, not a navigation: the
+                // plate lights, the row re-labels, and the bay stays open,
+                // because setting up which channels talk to you is several
+                // decisions in a row and a surface that closes after each one
+                // makes you walk back in five times.
+                channelsRef.value?.tick(
+                    stage.headNow()?.translation,
+                    stage.headNow()?.let { yawOf(it) } ?: 0f,
+                )
+                while (true) {
+                    val id = channelsRef.value?.poll() ?: break
+                    val now = voice.toggle(id)
+                    channelsRef.value?.update(channelRows(link, voice))
+                    noticeRef.value?.say(if (now) "READS ALOUD" else "SILENT")
+                    if (now) cue.opened() else cue.closed()
+                }
                 // THE THEME PICKER. A pick retints the whole scene in place —
                 // including the picker's own readout, and including the HORIZON
                 // behind it, which is the point (§S11: "you see your real mesh
@@ -1619,6 +1676,17 @@ private fun HorizonScene(link: MeshLink) {
                             noticeRef.value?.say(
                                 if (on) "DIAGNOSTICS ON" else "DIAGNOSTICS OFF",
                             )
+                            cue.opened()
+                        }
+                        // S5 — CHANNELS. Which bands the radio carries, and
+                        // which of them read themselves aloud. This is the only
+                        // place the TTS toggle can be REACHED for a channel that
+                        // has gone quiet, which is exactly when somebody wants
+                        // to turn it off.
+                        "CHANNELS" -> {
+                            consoleRef.value?.hide()
+                            channelsRef.value?.show(channelRows(link, voice))
+                            dockRef.value?.setLit("SETUP", false)
                             cue.opened()
                         }
                         // S11 — THEME & VOICE. The picker previews by retinting
@@ -1714,6 +1782,14 @@ private fun HorizonScene(link: MeshLink) {
                     // who tried all nine has no other way to find the one they
                     // walked in with. Backing out of a preview must mean
                     // "nothing happened".
+                    channelsRef.value?.let { c ->
+                        if (c.open) {
+                            lastBackAt = nowMs
+                            c.hide(); cue.closed()
+                            Log.i(TAG_UI, "[hand] $hand:B — channels closed")
+                            return
+                        }
+                    }
                     themePickerRef.value?.let { p ->
                         if (p.open) {
                             lastBackAt = nowMs
