@@ -184,6 +184,20 @@ class Console(
 
     fun poll(): String? = fired.poll()
 
+    /**
+     * Raise a pick that no hand made.
+     *
+     * For `--es bay <NAME>`. Deliberately routed through the SAME queue a real
+     * pinch uses rather than the host calling the bay's open path directly: a
+     * test harness that takes a shortcut past the code it is meant to be
+     * testing verifies the shortcut. Unknown names fall through to the host's
+     * own "NOT BUILT YET", which is the right answer for a typo too.
+     */
+    fun fire(bay: String) {
+        fired.add(bay)
+        Log.i(TAG, "[console] '$bay' raised by launch flag")
+    }
+
     fun tick(head: Vector3?) {
         if (!open) return
         headAt = head

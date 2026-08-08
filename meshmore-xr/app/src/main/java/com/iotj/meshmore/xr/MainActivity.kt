@@ -186,6 +186,16 @@ class MainActivity : ComponentActivity() {
          */
         var retintProbe: Boolean = false
         /**
+         * --es bay "CHANNELS" : open one console bay at launch.
+         *
+         * The console is reached by a gesture, then a plate, then a pick. That
+         * is correct for a wearer and expensive for a check — and a surface
+         * that is only reachable by wearing the headset is a surface that gets
+         * built unverified, which is how this app accumulated a backlog of them.
+         * One of DEVICE, APP, PROFILE, CHANNELS, DIAG.
+         */
+        var openBay: String? = null
+        /**
          * --es north "<deg>" : the TRUE heading you are facing at launch.
          *
          * The Aura publishes no magnetometer and no accelerometer to apps — the
@@ -260,6 +270,7 @@ class MainActivity : ComponentActivity() {
         showConsole = intent?.getBooleanExtra("console", false) ?: false
         themeKey = intent?.getStringExtra("theme")
         retintProbe = intent?.getBooleanExtra("retintprobe", false) ?: false
+        openBay = intent?.getStringExtra("bay")?.uppercase()
         showThread = intent?.getBooleanExtra("thread", false) ?: false
         northDeg = intent?.getStringExtra("north")?.toFloatOrNull()
         Log.i(TAG, "[boot] north at launch = " +
@@ -1362,6 +1373,15 @@ private fun HorizonScene(link: MeshLink) {
                     consoleRef.value?.showAt(at)
                     dockRef.value?.setLit("SETUP", true)
                     Log.i(TAG_UI, "[console] opened by launch flag")
+                }
+            }
+            MainActivity.openBay?.let { bay ->
+                launch {
+                    // After the scene is up and the radio has enumerated its
+                    // channels, or CHANNELS opens onto an empty list and the
+                    // check says nothing.
+                    kotlinx.coroutines.delay(9000)
+                    consoleRef.value?.fire(bay)
                 }
             }
             // THE ONE CLAIM THE THEME SYSTEM RESTS ON, put in front of an eye.
