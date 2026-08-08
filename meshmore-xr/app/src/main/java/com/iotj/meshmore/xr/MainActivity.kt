@@ -813,6 +813,7 @@ private fun HorizonScene(link: MeshLink) {
         // rebuild the scene.
         val palette = skin.value.palette
         com.iotj.meshmore.xr.spatial.Ink.begin(palette)
+        cue.pack = Cue.packFor(skin.value.audio)
         Log.i(TAG_UI, "[theme] wearing ${skin.value.key} (${skin.value.name})")
         // Recentre on the body BEFORE building anything, or the whole
         // experience can end up behind the user.
@@ -1592,7 +1593,12 @@ private fun HorizonScene(link: MeshLink) {
                         themePickerRef.value?.commit(chosen)
                         themePickerRef.value?.setPreviewing(chosen)
                         noticeRef.value?.say(chosen.name)
-                        cue.recognised()
+                        // §S11: "hear the theme's audio pack fire on a sample
+                        // event". The pack swaps with the palette and then
+                        // announces itself, so a pick is seen AND heard — and
+                        // the sample is a real app sound rather than a demo.
+                        cue.pack = Cue.packFor(chosen.audio)
+                        cue.sample()
                     }
                 }
                 consoleRef.value?.tick(stage.headNow()?.translation)
@@ -1717,6 +1723,7 @@ private fun HorizonScene(link: MeshLink) {
                                 skin.value = p.previewing
                                 themePrefs.set(p.previewing)
                                 com.iotj.meshmore.xr.spatial.Ink.retint(p.previewing.palette)
+                                cue.pack = Cue.packFor(p.previewing.audio)
                             }
                             cue.closed()
                             Log.i(TAG_UI, "[hand] $hand:B — theme picker closed")
