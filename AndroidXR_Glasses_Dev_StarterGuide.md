@@ -191,17 +191,55 @@ properties of the material path.
 
 ### ⚠️ `MeshEntity.setAlpha()` is a NO-OP on the Khronos-unlit path
 
-It compiles, it runs, it returns, and nothing changes. **Brightness has to be
-baked into the material at creation.** The practical consequences:
+It compiles, it runs, it returns, and nothing changes. The practical
+consequences:
 
-- You cannot fade anything. Not in, not out, not to indicate state.
-- A "lit / focused" state must be its **own entity with its own material**,
-  toggled with `setEnabled`. Build both at startup and swap them.
-- The only things you can actually animate are **geometry, scale, pose and
-  enablement**. Design every affordance out of those four.
+- You cannot fade anything **through the entity**. Not in, not out, not to
+  indicate state.
+- The things you can animate **on the entity** are **geometry, scale, pose and
+  enablement**.
 
 ✅ Scale survives being seen at the edge of vision, which is where a
 wrist- or hand-mounted element usually is. Prefer a size pulse to a glow.
+
+### ✅ …but the MATERIAL is mutable, and this is the correction that matters
+
+**`KhronosUnlitMaterial.setBaseColorFactor(Vector4)` is a setter, and it works
+on a material that is already on screen.** Colour *and* alpha, any time, no
+rebuild. Measured 2026-08-08: **532 materials and text panels repainted in
+~7 ms**, cycled 18 times, no crash and no leak.
+
+This is worth stating loudly because the `setAlpha` finding above invites
+exactly the wrong conclusion, and we drew it: if entity alpha does nothing, it
+*looks* as though colour is baked at creation and a restyle means tearing the
+scene down. It is not baked. The two calls are on different objects — one is a
+scene-graph property this renderer path ignores, the other is the material
+resource itself, and it is the same call that establishes the colour at
+creation.
+
+What IS fixed is the per-facet lambert baked into vertex colours — and that is a
+MULTIPLIER (glTF unlit: `baseColor = factor × COLOR_0`), so rewriting the factor
+restyles the mark and leaves its shading intact.
+
+Consequences, in rough order of how much time they save:
+
+- **A whole-app theme change is a walk over a list of materials**, not a scene
+  rebuild. Live restyling of an already-built scene is affordable.
+- **A "lit / focused" state does not have to be a second entity.** It can be,
+  and a second entity is still the right call when the lit state differs in more
+  than colour — but it is now a choice rather than the only option.
+- **Fades are back**, via the material rather than the entity.
+
+⚠️ **Two writers on one value.** The moment both a theme system and a per-frame
+effect (a fade, a veil, a focus highlight) write the same material's colour, the
+last one each frame wins and the other silently stops working. Decide which one
+owns each material and keep to it. This is the single most common bug shape in
+this codebase and the material path is a new place for it to appear.
+
+⚠️ Materials must still be **one per entity** (next section), so a restyle walks
+a list rather than updating one shared material. Hold them **weakly** if the
+scene disposes and rebuilds entities — otherwise the registry is an unbounded
+leak with a rebuild timer attached.
 
 ### ⚠️ One material per entity — sharing aborts the renderer NATIVELY
 
@@ -521,7 +559,10 @@ Skip unless the managed layer can't render your content. If you do:
 - [ ] Consistent lifecycle logging on one tag
 - [ ] (native) clean `xrRequestExitSession` drain; GPU features flag-gated OFF
 - [ ] Validate hand-relative placement on **real hardware**, not the emulator
-- [ ] `[ADDITIVE]` One material per entity; no `setAlpha`; lit states are a second entity
+- [ ] `[ADDITIVE]` One material per entity; entity `setAlpha` does nothing — change
+      colour and alpha with `KhronosUnlitMaterial.setBaseColorFactor` instead
+- [ ] Every material has exactly ONE writer. A theme system and a per-frame fade
+      writing the same material is the bug you will spend a day on
 - [ ] `[ADDITIVE]` Alpha-MASK materials so invisible fragments don't write depth
 - [ ] `PanelEntity`: set `sizeInPixels`, then reach world size with `setScale`
 - [ ] All geometry built at startup, hidden — never inside an input callback
