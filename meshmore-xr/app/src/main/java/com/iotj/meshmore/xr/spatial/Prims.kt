@@ -144,7 +144,29 @@ object Prims {
             .build()
     }
 
-    suspend fun material(session: Session, rgb: Int, alpha: Float = 1f): KhronosUnlitMaterial =
+    /**
+     * One material, one entity — sharing aborts the renderer natively
+     * ("OwnedPtr of type imp::Material released with N outstanding borrowed
+     * objects"), which is why this makes a new one every time rather than
+     * caching by colour.
+     *
+     * Registered with [Ink] on the way out so a theme change can re-colour it
+     * in place instead of rebuilding the scene. That costs one list entry per
+     * material and a weak reference; see [Ink] for why it is not a leak.
+     *
+     * [themed] = false for a mark that is deliberately outside the theme. There
+     * is exactly one such thing and it is load-bearing: the theme picker's
+     * swatches are painted in the colours of the theme they OFFER, so a swatch
+     * for RECON AMBER must stay amber while you are standing in BIOLUME. Left
+     * registered, every swatch would repaint itself to the current theme the
+     * instant you chose one and the grid would become nine identical tiles.
+     */
+    suspend fun material(
+        session: Session,
+        rgb: Int,
+        alpha: Float = 1f,
+        themed: Boolean = true,
+    ): KhronosUnlitMaterial =
         KhronosUnlitMaterial.create(session, AlphaMode.BLEND).apply {
             setBaseColorFactor(
                 Vector4(
@@ -154,6 +176,7 @@ object Prims {
                     alpha,
                 )
             )
+            if (themed) Ink.register(this, rgb, alpha)
         }
 
     /**

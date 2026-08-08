@@ -58,8 +58,24 @@ class Horizon(
         val cluster: Int = 0,
     )
 
+    /**
+     * The ink a surface draws with.
+     *
+     * The first four are the working set: every material and every text run in
+     * the app resolves to one of them, which is what makes a theme a table
+     * rather than a rewrite (see [Theme]).
+     *
+     * [ground], [panel] and [alert] carry the rest of the brief's palette.
+     * GROUND and PANEL only mean something to a PANEL-substrate theme — on
+     * additive optics a dark slab is not drawable at all (brief section 1.3),
+     * so an ADDITIVE theme carries them for completeness and never paints them.
+     * Defaulted, so a caller that only cares about ink can still say so.
+     */
     data class Palette(
         val accent: Int, val alt: Int, val warn: Int, val text: Int,
+        val ground: Int = 0x070B10,
+        val panel: Int = 0x101722,
+        val alert: Int = 0xFF3B6B,
     )
 
     /**

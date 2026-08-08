@@ -197,7 +197,32 @@ object TextRun {
         private val hPx: Int = 0,
         private val mpp: Float = 1f,
         private val capPx: Float = 1f,
-    ) {
+        /**
+         * Kept for RE-INKING, separately from [view], which exists only for
+         * runs declared reusable. A theme change has to reach every run in the
+         * scene, not only the ones whose words can change — the boot legend and
+         * the help card are as much a part of the theme as the readouts are.
+         */
+        private val inkView: TextView? = null,
+    ) : Ink.Tintable {
+
+        /**
+         * Re-colour without re-rasterising. Same trick as [setCapHeight]: the
+         * pixels stay, only what is in them changes.
+         *
+         * Main thread only, which is where the frame loop that calls
+         * [Ink.retint] already runs. Returns false once the view is gone, which
+         * is [Ink]'s signal to drop the entry.
+         */
+        override fun setInk(argb: Int): Boolean {
+            val v = inkView ?: return false
+            v.setTextColor(argb)
+            // BY HAND, for the same reason setText lays out by hand: a
+            // panel-hosted View is detached, so nothing upstream will ever come
+            // and redraw it on our behalf.
+            v.invalidate()
+            return true
+        }
 
         /**
          * Re-size in the world WITHOUT re-rasterising.
@@ -472,8 +497,8 @@ object TextRun {
         panel.cornerRadius = 0f
         Run(
             panel, wPx * capHeightM / capPx, hPx * capHeightM / capPx,
-            if (reusable) tv else null, wPx, hPx, mpp, capPx,
-        )
+            if (reusable) tv else null, wPx, hPx, mpp, capPx, tv,
+        ).also { Ink.registerText(it, argb) }
     }.onFailure {
         Log.w(TAG, "[type] run '$text' failed: ${it.javaClass.simpleName}: ${it.message}")
     }.getOrNull()

@@ -1,0 +1,275 @@
+// Copyright (c) 2026 IoTone, Inc.
+// SPDX-License-Identifier: MIT
+package com.iotj.meshmore.xr.spatial
+
+/**
+ * THE NINE THEMES, as data.
+ *
+ * Design brief section 7. A theme is a skin — palette, type, symbology
+ * treatment, motion, sound — plus one bigger claim, POSTURE (section 7.0),
+ * which decides which zones a theme lights up at all.
+ *
+ * DATA, NOT ARCHITECTURE, and that is the whole reason nine is affordable. The
+ * marginal cost of the ninth theme after the first is a palette and a paragraph
+ * of guidance, because every surface already takes its ink from a
+ * [Horizon.Palette] passed in at construction rather than from a constant it
+ * reaches for itself. Nothing here draws anything. Nothing here needs a
+ * headset. It is a table, and it is tested as a table.
+ *
+ * ## The one hack in this file, stated plainly
+ *
+ * [Skin] retints a live scene by looking a material's colour back up in the
+ * palette it came from — which needs each role in a palette to be
+ * DISTINGUISHABLE by its value. Three themes collapse roles onto one hex by
+ * design: SEELE is cream-on-black and nothing else, RECON is a single amber at
+ * four luminances, TERMINAL VOID is one phosphor green. In those palettes the
+ * duplicate roles are nudged by ONE unit in a single channel — `#FFB000` for
+ * accent and `#FFB002` for text. That difference is 1/255th of one channel of
+ * an emissive display; it is below the panel's own dithering noise and far
+ * below anything an eye resolves. It buys an exact reverse lookup, which is
+ * what lets a theme change apply to a scene already built.
+ *
+ * The alternative was threading a role enum through some two hundred call
+ * sites, which is a large diff to fix a problem three constants fix.
+ */
+object Theme {
+
+    /** Which rendering strategy the theme bets on — brief section 7, "substrate classes". */
+    enum class Substrate {
+        /** Ink on an opaque slab. Survives sunlight best, cheapest, most conventional. */
+        PANEL,
+
+        /** Emission into the room. Most spectacular, most fragile in bright light. */
+        ADDITIVE,
+
+        /** Additive in the open, panel where reading happens. */
+        HYBRID,
+    }
+
+    /**
+     * Which zones the theme lights up (brief section 7.0).
+     *
+     * Posture never removes information, only routes: anything a FIELD theme
+     * shows on the HORIZON is reachable in TABLETOP and TRANSIT, from the
+     * GROUND map and the hand menu respectively.
+     */
+    enum class Posture {
+        /** Standing, walking, stopping to look. The general case, seven of the nine. */
+        FIELD,
+
+        /** Seated, indoors, stationary, powered. Everything inside about 0.8 m. */
+        TABLETOP,
+
+        /** Moving, hands busy, eyes on the world. MICROHUD and palm, nothing else. */
+        TRANSIT,
+    }
+
+    /** How much the theme is allowed to move, before the wearer's reduce-motion setting. */
+    enum class Motion {
+        /** Nothing idles. Movement means an event happened. */
+        STILL,
+
+        /** Considered transitions, no ambient drift. */
+        MEASURED,
+
+        /** Ambient life — drift, breathing, growth. Never perfectly still. */
+        ALIVE,
+    }
+
+    /**
+     * One theme.
+     *
+     * [palette] is what the surfaces consume; everything else here is either
+     * consumed by the picker, or is guidance that a future surface honours.
+     * Fields that no surface reads YET are kept because the alternative is
+     * re-deriving them from prose at the moment they are needed, and the prose
+     * is in a different file.
+     */
+    data class Skin(
+        /** Stable id. Persisted, so it must never change once shipped. */
+        val key: String,
+        /** What the picker says. */
+        val name: String,
+        /** The one-liner from the brief, shown under the name. */
+        val line: String,
+        val palette: Horizon.Palette,
+        val substrate: Substrate,
+        val posture: Posture = Posture.FIELD,
+        val motion: Motion = Motion.MEASURED,
+        /** Which audio pack fires (brief section 7, per theme). */
+        val audio: String,
+        /**
+         * True when the theme expects an opaque ground slab behind read text.
+         *
+         * This is the section 1.3 constraint made operational: on additive
+         * optics black is transparent, so a PANEL theme must actually paint its
+         * `panel` colour as geometry to get the contrast it was designed for,
+         * and an ADDITIVE theme must not, or it turns the room into a wall.
+         */
+        val slab: Boolean = substrate != Substrate.ADDITIVE,
+    )
+
+    /**
+     * HALO FIELD, the default (brief section 7.11).
+     *
+     * First in the list, and the recommendation is not a matter of taste: it is
+     * the only one that is simultaneously lowest-effort, most legible and most
+     * accessible, and it exercises every zone and every primitive without any
+     * exotic rendering.
+     */
+    val HALO = Skin(
+        key = "halo",
+        name = "HALO FIELD",
+        line = "The mesh as a calm horizon. The one you can wear for eight hours.",
+        palette = Horizon.Palette(
+            accent = 0x35E0F0, alt = 0x7CFF6B, warn = 0xFFB020, text = 0xDDE7EF,
+            ground = 0x070B10, panel = 0x101722, alert = 0xFF3B6B,
+        ),
+        substrate = Substrate.HYBRID,
+        motion = Motion.STILL,
+        audio = "sonar",
+    )
+
+    val NERV = Skin(
+        key = "nerv",
+        name = "NERV SPATIAL",
+        line = "The command deck, wrapped around you. MAGI as a 360 degree ring.",
+        palette = Horizon.Palette(
+            accent = 0xFF7A00, alt = 0x9CFF00, warn = 0xFFC400, text = 0xE6ECF5,
+            ground = 0x0A0E1A, panel = 0x121826, alert = 0xE01B24,
+        ),
+        substrate = Substrate.PANEL,
+        audio = "mission",
+    )
+
+    val AGSYS = Skin(
+        key = "aghud",
+        name = "AG-SYSTEMS",
+        line = "Wipeout's craft HUD at 900 km/h. Velocity chevrons, race livery.",
+        palette = Horizon.Palette(
+            accent = 0x22D3EE, alt = 0xFF2D78, warn = 0xFFD23F, text = 0xDDF6FF,
+            ground = 0x05060B, panel = 0x10131F, alert = 0xFF2D78,
+        ),
+        substrate = Substrate.HYBRID,
+        motion = Motion.ALIVE,
+        audio = "velocity",
+    )
+
+    /**
+     * SEELE MONOLITH — the high-contrast alternate.
+     *
+     * Ships regardless of which theme wins the default, because it is the one
+     * that works at noon in July. Accent and text are the same cream by design;
+     * see the note at the top of this file for the nudge.
+     */
+    val SEELE = Skin(
+        key = "seele",
+        name = "SEELE MONOLITH",
+        line = "Type is the entire UI. Cream numerals a foot tall, near-zero chrome.",
+        palette = Horizon.Palette(
+            // accent EDE6D6 / text EDE6D7 and alt 9A958A / warn 9A958B: one unit apart.
+            accent = 0xEDE6D6, alt = 0x9A958A, warn = 0x9A958B, text = 0xEDE6D7,
+            ground = 0x000000, panel = 0x0E0E0C, alert = 0xC8102E,
+        ),
+        substrate = Substrate.PANEL,
+        motion = Motion.STILL,
+        audio = "tribunal",
+    )
+
+    val DRPOP = Skin(
+        key = "drpop",
+        name = "DR POP",
+        line = "Flat colour blocks, fabricated sub-brands, katakana as graphic.",
+        palette = Horizon.Palette(
+            accent = 0xFF2E88, alt = 0xD7FF00, warn = 0x00E5FF, text = 0xF2F0E6,
+            ground = 0x101014, panel = 0x1C1C24, alert = 0xFF2E88,
+        ),
+        substrate = Substrate.PANEL,
+        audio = "purephase",
+    )
+
+    /**
+     * RECON AMBER — night operations, and the TRANSIT posture.
+     *
+     * One hue at four luminance steps, so information is carried by brightness
+     * and form and never by colour, which makes it the most colour-blind-safe
+     * of the nine without trying. Accent, warn and text are one amber; see the
+     * nudge note at the top of this file.
+     */
+    val RECON = Skin(
+        key = "recon",
+        name = "RECON AMBER",
+        line = "Single-hue night operations. Works at 3 a.m. without ruining your eyes.",
+        palette = Horizon.Palette(
+            // accent FFB000 / warn FFB001 / text FFB002: within one unit of each other.
+            accent = 0xFFB000, alt = 0x6E4E00, warn = 0xFFB001, text = 0xFFB002,
+            ground = 0x000000, panel = 0x0A0A07, alert = 0xB3231F,
+        ),
+        substrate = Substrate.HYBRID,
+        posture = Posture.TRANSIT,
+        motion = Motion.STILL,
+        audio = "codec",
+    )
+
+    val VECTOR = Skin(
+        key = "vector",
+        name = "VECTORLINE",
+        line = "Tempest, Rez, Battlezone. Glowing vector geometry in your actual room.",
+        palette = Horizon.Palette(
+            accent = 0x00FFC8, alt = 0xB14BFF, warn = 0xFFE066, text = 0xDFFFF6,
+            ground = 0x000000, panel = 0x05070A, alert = 0xFF3D00,
+        ),
+        substrate = Substrate.ADDITIVE,
+        motion = Motion.MEASURED,
+        audio = "arcade",
+    )
+
+    /** BIOLUME — the mesh as a living organism, and the TABLETOP posture. */
+    val BIOLUME = Skin(
+        key = "biolume",
+        name = "BIOLUME",
+        line = "Drifting spores, mycelial threads, soft breathing light.",
+        palette = Horizon.Palette(
+            accent = 0x5FFFC2, alt = 0x9B6BFF, warn = 0xFFD08A, text = 0xD8FFF0,
+            ground = 0x04100E, panel = 0x0B1F1A, alert = 0xFF6B5F,
+        ),
+        substrate = Substrate.ADDITIVE,
+        posture = Posture.TABLETOP,
+        motion = Motion.ALIVE,
+        audio = "bloom",
+    )
+
+    /**
+     * TERMINAL VOID — phosphor text in space.
+     *
+     * Accent and text are one green by design; see the nudge note at the top of
+     * this file.
+     */
+    val VOID = Skin(
+        key = "void",
+        name = "TERMINAL VOID",
+        line = "Phosphor text floating in space. No panels, no chrome, no graphics.",
+        palette = Horizon.Palette(
+            // accent 33FF66 / text 33FF67: one unit apart.
+            accent = 0x33FF66, alt = 0x0A3D17, warn = 0xB8FF33, text = 0x33FF67,
+            ground = 0x000000, panel = 0x020402, alert = 0xFF4444,
+        ),
+        substrate = Substrate.ADDITIVE,
+        motion = Motion.STILL,
+        audio = "teletype",
+    )
+
+    /** Picker order. HALO first because it is the default and the reference. */
+    val ALL: List<Skin> = listOf(HALO, SEELE, RECON, AGSYS, NERV, DRPOP, VECTOR, BIOLUME, VOID)
+
+    val DEFAULT: Skin = HALO
+
+    /** A persisted key back to a theme, tolerating a key from a build that had others. */
+    fun byKey(key: String?): Skin = ALL.firstOrNull { it.key == key } ?: DEFAULT
+
+    /** Position in [ALL], for a picker that needs to know where it is. */
+    fun indexOf(skin: Skin): Int = ALL.indexOf(skin).coerceAtLeast(0)
+
+    /** The next theme in the ring, for a control that steps rather than picks. */
+    fun next(skin: Skin): Skin = ALL[(indexOf(skin) + 1) % ALL.size]
+}

@@ -164,6 +164,28 @@ class MainActivity : ComponentActivity() {
         /** --ez typeprobe true : answer whether tier R can exist on this SDK. */
         var typeProbe: Boolean = false
         /**
+         * --es theme "<key>" : build in one of the nine, ignoring what is stored.
+         *
+         * Nine skins is nine things to look at on a headset, and reaching each
+         * one through the console costs a minute of somebody's time per check.
+         * Keys are in [com.iotj.meshmore.xr.spatial.Theme.ALL]. Does not
+         * persist — the wearer's own choice is still there next launch.
+         */
+        var themeKey: String? = null
+        /**
+         * --ez retintprobe true : cycle every theme, once a second, from boot.
+         *
+         * THIS EXISTS TO FALSIFY ONE CLAIM. The theme system rests on
+         * `KhronosUnlitMaterial.setBaseColorFactor` re-colouring a material
+         * that is already on screen — which is a documented setter, and which
+         * this codebase had previously assumed was impossible after
+         * `MeshEntity.setAlpha` turned out to be a no-op on the same path. One
+         * wrong assumption of that shape already cost a fortnight of working
+         * around it. A flag that repaints the whole scene nine times while
+         * somebody watches settles it in nine seconds.
+         */
+        var retintProbe: Boolean = false
+        /**
          * --es north "<deg>" : the TRUE heading you are facing at launch.
          *
          * The Aura publishes no magnetometer and no accelerometer to apps — the
@@ -236,6 +258,8 @@ class MainActivity : ComponentActivity() {
         probePaths = intent?.getBooleanExtra("probe", false) ?: false
         telPerm = intent?.getStringExtra("telperm")
         showConsole = intent?.getBooleanExtra("console", false) ?: false
+        themeKey = intent?.getStringExtra("theme")
+        retintProbe = intent?.getBooleanExtra("retintprobe", false) ?: false
         showThread = intent?.getBooleanExtra("thread", false) ?: false
         northDeg = intent?.getStringExtra("north")?.toFloatOrNull()
         Log.i(TAG, "[boot] north at launch = " +
@@ -621,6 +645,8 @@ private fun HorizonScene(link: MeshLink) {
     val rosterRef = remember { mutableStateOf<com.iotj.meshmore.xr.spatial.Roster?>(null) }
     val inboxRef = remember { mutableStateOf<com.iotj.meshmore.xr.spatial.Inbox?>(null) }
     val consoleRef = remember { mutableStateOf<com.iotj.meshmore.xr.spatial.Console?>(null) }
+    val themePickerRef =
+        remember { mutableStateOf<com.iotj.meshmore.xr.spatial.ThemePicker?>(null) }
     val threadRef = remember { mutableStateOf<com.iotj.meshmore.xr.spatial.Thread?>(null) }
     val cuffRef = remember { mutableStateOf<com.iotj.meshmore.xr.spatial.Cuff?>(null) }
     val crownRef = remember { mutableStateOf<com.iotj.meshmore.xr.spatial.Crown?>(null) }
@@ -645,6 +671,23 @@ private fun HorizonScene(link: MeshLink) {
     val unread = remember { mutableStateOf(0) }
     val helpRef = remember { mutableStateOf<HelpCard?>(null) }
     val cue = remember { Cue() }
+    /**
+     * WHICH OF THE NINE, read before anything is built.
+     *
+     * [Ink] can retint a scene that already exists, which is what makes the
+     * picker a live preview — but the scene still has to be BUILT in the right
+     * theme, or the first frame after launch is HALO FIELD flashing past on its
+     * way to whatever the wearer actually chose. Read here, applied at
+     * `Ink.begin` before the first surface exists.
+     */
+    val themePrefs = remember { ThemePrefs(ctx) }
+    val skin = remember {
+        mutableStateOf(
+            // The launch flag overrides for THIS RUN and is not written back.
+            MainActivity.themeKey?.let { com.iotj.meshmore.xr.spatial.Theme.byKey(it) }
+                ?: themePrefs.current(),
+        )
+    }
     val speech = remember { Speech(ctx) }
     val dictation = remember { Dictation(ctx) }
     // ASKED AT THE MOMENT OF SPEAKING, never at startup. A microphone prompt on
@@ -763,9 +806,14 @@ private fun HorizonScene(link: MeshLink) {
         runCatching { session.scene.mainPanelEntity.setEnabled(false) }
             .onFailure { Log.w(TAG_UI, "[spatial] main panel still visible: $it") }
 
-        val palette = Horizon.Palette(
-            accent = 0x35E0F0, alt = 0x7CFF6B, warn = 0xFFB020, text = 0xDDE7EF,
-        )
+        // THE THEME, BEFORE THE FIRST SURFACE. Nine skins (brief §7); the table
+        // is in Theme.kt and the stored choice in ThemePrefs. `Ink.begin` tells
+        // the registry which palette everything about to be created belongs to,
+        // which is what lets a later change re-colour it in place rather than
+        // rebuild the scene.
+        val palette = skin.value.palette
+        com.iotj.meshmore.xr.spatial.Ink.begin(palette)
+        Log.i(TAG_UI, "[theme] wearing ${skin.value.key} (${skin.value.name})")
         // Recentre on the body BEFORE building anything, or the whole
         // experience can end up behind the user.
         val stage = Stage(session, palette)
@@ -1103,6 +1151,11 @@ private fun HorizonScene(link: MeshLink) {
         console.onFocus = { cue.recognised() }
         consoleRef.value = console
 
+        val picker = com.iotj.meshmore.xr.spatial.ThemePicker(session, palette, ctx)
+        picker.build()
+        picker.onFocus = { cue.recognised() }
+        themePickerRef.value = picker
+
         val inbox = com.iotj.meshmore.xr.spatial.Inbox(session, palette, ctx)
         inbox.build()
         inbox.onFocus = { cue.recognised() }
@@ -1269,6 +1322,25 @@ private fun HorizonScene(link: MeshLink) {
                     Log.i(TAG_UI, "[console] opened by launch flag")
                 }
             }
+            // THE ONE CLAIM THE THEME SYSTEM RESTS ON, put in front of an eye.
+            // See MainActivity.retintProbe. Never persists: a probe that
+            // changed the wearer's stored theme would be a probe with a side
+            // effect, and this one is meant to leave no trace.
+            if (MainActivity.retintProbe) launch {
+                kotlinx.coroutines.delay(6000)
+                val ink = com.iotj.meshmore.xr.spatial.Ink
+                repeat(com.iotj.meshmore.xr.spatial.Theme.ALL.size * 2) { i ->
+                    val s = com.iotj.meshmore.xr.spatial.Theme.ALL[
+                        i % com.iotj.meshmore.xr.spatial.Theme.ALL.size,
+                    ]
+                    Log.i(TAG_UI, "[theme] PROBE -> ${s.key}, ${ink.size()} things registered")
+                    ink.retint(s.palette)
+                    noticeRef.value?.say(s.name)
+                    kotlinx.coroutines.delay(2000)
+                }
+                ink.retint(skin.value.palette)
+                Log.i(TAG_UI, "[theme] PROBE done, back to ${skin.value.key}")
+            }
             if (MainActivity.showFocus) launch {
                 var waited = 0
                 while (waited < 60_000) {
@@ -1385,6 +1457,7 @@ private fun HorizonScene(link: MeshLink) {
                         (rosterRef.value?.gazeTargets() ?: emptyList()) +
                         (inboxRef.value?.gazeTargets() ?: emptyList()) +
                         (consoleRef.value?.gazeTargets() ?: emptyList()) +
+                        (themePickerRef.value?.gazeTargets() ?: emptyList()) +
                         (threadRef.value?.gazeTargets() ?: emptyList()) +
                         (crownRef.value?.gazeTargets() ?: emptyList()),
                 )
@@ -1487,6 +1560,7 @@ private fun HorizonScene(link: MeshLink) {
                 // firing identically.
                 dockRef.value?.gazed = gazeRef.value?.onTarget
                 consoleRef.value?.setGazed(gazeRef.value?.onTarget)
+                themePickerRef.value?.setGazed(gazeRef.value?.onTarget)
                 // Paging the corridor further back. One code path owns it: the
                 // surface reports a pick, the host decides what a pick means.
                 while (threadRef.value?.poll() != null) threadRef.value?.older()
@@ -1494,6 +1568,32 @@ private fun HorizonScene(link: MeshLink) {
                 while (true) {
                     val pick = rosterRef.value?.poll() ?: break
                     rosterRef.value?.activate(pick)
+                }
+                // THE THEME PICKER. A pick retints the whole scene in place —
+                // including the picker's own readout, and including the HORIZON
+                // behind it, which is the point (§S11: "you see your real mesh
+                // restyled in place"). Persisted here rather than in the
+                // surface, so one place in the app owns what choosing means.
+                themePickerRef.value?.tick(stage.headNow()?.translation)
+                while (true) {
+                    val chosen = themePickerRef.value?.poll() ?: break
+                    if (chosen == skin.value) {
+                        // PICKING WHAT YOU ARE ALREADY WEARING IS THE WAY OUT.
+                        // There is no separate CLOSE control: the tile you are
+                        // standing in is the one under the cursor, so choosing
+                        // it again is the gesture people try first and it costs
+                        // no arc to support.
+                        themePickerRef.value?.hide()
+                        cue.closed()
+                    } else {
+                        skin.value = chosen
+                        themePrefs.set(chosen)
+                        com.iotj.meshmore.xr.spatial.Ink.retint(chosen.palette)
+                        themePickerRef.value?.commit(chosen)
+                        themePickerRef.value?.setPreviewing(chosen)
+                        noticeRef.value?.say(chosen.name)
+                        cue.recognised()
+                    }
                 }
                 consoleRef.value?.tick(stage.headNow()?.translation)
                 while (true) {
@@ -1514,6 +1614,23 @@ private fun HorizonScene(link: MeshLink) {
                                 if (on) "DIAGNOSTICS ON" else "DIAGNOSTICS OFF",
                             )
                             cue.opened()
+                        }
+                        // S11 — THEME & VOICE. The picker previews by retinting
+                        // the real scene, so it opens in front of the wearer
+                        // with the HORIZON still behind it: that IS the preview
+                        // the brief asks for, and a swatch would be a worse one.
+                        "PROFILE" -> {
+                            val h = stage.headNow()
+                            if (h == null) {
+                                noticeRef.value?.say("NOT TRACKING YET")
+                            } else {
+                                consoleRef.value?.hide()
+                                themePickerRef.value?.showAt(
+                                    h.translation, yawOf(h), skin.value,
+                                )
+                                dockRef.value?.setLit("SETUP", false)
+                                cue.opened()
+                            }
                         }
                         // HONEST ABOUT WHAT IS NOT BUILT. A plate that opens
                         // nothing and says nothing reads as a fault; one that
@@ -1585,6 +1702,27 @@ private fun HorizonScene(link: MeshLink) {
                     // opened is what back should undo — unwinding a lens level
                     // while a card is still up would answer a question nobody
                     // asked.
+                    // THE PICKER FIRST, AND IT REVERTS. Everywhere else B just
+                    // closes; here it also puts the theme back, because the
+                    // picker previews by changing the whole world and a wearer
+                    // who tried all nine has no other way to find the one they
+                    // walked in with. Backing out of a preview must mean
+                    // "nothing happened".
+                    themePickerRef.value?.let { p ->
+                        if (p.open) {
+                            lastBackAt = nowMs
+                            val was = p.previewing
+                            p.cancel()
+                            if (p.previewing != was) {
+                                skin.value = p.previewing
+                                themePrefs.set(p.previewing)
+                                com.iotj.meshmore.xr.spatial.Ink.retint(p.previewing.palette)
+                            }
+                            cue.closed()
+                            Log.i(TAG_UI, "[hand] $hand:B — theme picker closed")
+                            return
+                        }
+                    }
                     threadRef.value?.let { t ->
                         if (t.open) {
                             lastBackAt = nowMs
