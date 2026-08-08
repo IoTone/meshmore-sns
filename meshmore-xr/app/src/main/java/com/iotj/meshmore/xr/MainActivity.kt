@@ -219,7 +219,18 @@ class MainActivity : ComponentActivity() {
     }
 
     // One link per activity. Checkpoint 3 lives here.
-    private val link by lazy { MeshLink(this).also { it.restore() } }
+    private val link by lazy {
+        MeshLink(this).also {
+            it.restore()
+            // WHAT THE WEARER DECIDED, not what the build shipped with. Off
+            // unless somebody has been to the APP bay and said so twice; the
+            // refusal path inside MeshLink is untouched and remains the only
+            // gate. Loaded here so it is true before the first frame, rather
+            // than only after the bay has been opened once.
+            it.channelTxAuthorised = Settings.channelSend(this)
+            Log.i(TAG, "[tx] channel send authorised = ${it.channelTxAuthorised}")
+        }
+    }
 
     override fun onStop() {
         super.onStop()
@@ -514,24 +525,77 @@ private const val BACK_OUT_MS = 600L
 private fun channelRows(
     link: MeshLink,
     voice: VoicePrefs,
-): List<com.iotj.meshmore.xr.spatial.Channels.Row> {
+): List<com.iotj.meshmore.xr.spatial.Stack.Row> {
     val slots = link.channels()
     val known = slots.map { it.threadId }.toSet()
     val fromTraffic = link.threads()
         .filter { !it.direct && it.id !in known }
         .map { MeshLink.Chan(idx = -1, name = it.title, publicKey = false, threadId = it.id) }
     return (slots + fromTraffic).map { c ->
-        com.iotj.meshmore.xr.spatial.Channels.Row(
-            threadId = c.threadId,
+        com.iotj.meshmore.xr.spatial.Stack.Row(
+            id = c.threadId,
             label = com.iotj.meshmore.xr.spatial.channelLabel(
                 name = c.name,
                 publicKey = c.publicKey,
                 count = link.countFor(c.threadId),
                 speaking = voice.isOn(c.threadId),
             ),
-            speaking = voice.isOn(c.threadId),
+            lit = voice.isOn(c.threadId),
         )
     }
+}
+
+/** How long a guarded row stays armed before it forgets it was asked. */
+private const val ARM_MS = 6000L
+
+/** Rows that a single pinch must not complete. */
+private val GUARDED_ROWS = setOf("CHANSEND", "FORGET")
+
+/**
+ * The APP bay's rows.
+ *
+ * All five are REAL state that something in the app already reads. A settings
+ * surface whose switches do nothing is worse than one that is missing: the
+ * missing one is an obvious gap, and the fake one is a promise, so nobody finds
+ * out until the thing they switched off happens anyway.
+ *
+ * The connection state is deliberately NOT here — console spec §10 says it is a
+ * lamp rather than a row, and it goes in the title, because it is something you
+ * read and not something you can change from a bay.
+ */
+private fun appRows(
+    ctx: android.content.Context,
+    link: MeshLink,
+    armedId: String?,
+): List<com.iotj.meshmore.xr.spatial.Stack.Row> {
+    fun row(id: String, name: String, on: Boolean, onWord: String = "ON", offWord: String = "OFF") =
+        com.iotj.meshmore.xr.spatial.Stack.Row(
+            id = id,
+            label = com.iotj.meshmore.xr.spatial.settingLabel(
+                name, on, armed = armedId == id, onWord = onWord, offWord = offWord,
+            ),
+            // AN ARMED ROW DOES NOT LIGHT. Lighting it would show the state it
+            // is about to have rather than the one it has, which is a switch
+            // that lies for six seconds.
+            lit = on && armedId != id,
+        )
+    return listOf(
+        row("LOCATION", "USE HEADSET LOCATION", Settings.useDeviceLocation(ctx)),
+        // Two location settings, and they are separate on purpose: using a fix
+        // to compute bearings is local and private, putting it in an advert
+        // broadcasts it unencrypted to anyone in range.
+        row("SHARE", "SHARE MY LOCATION", Settings.shareLocation(ctx)),
+        row("DIAG", "DIAGNOSTICS PANEL", Settings.diagnostics(ctx)),
+        row("CHANSEND", "SEND ON CHANNELS", Settings.channelSend(ctx), "ALLOWED", "OFF"),
+        com.iotj.meshmore.xr.spatial.Stack.Row(
+            id = "FORGET",
+            label = com.iotj.meshmore.xr.spatial.settingLabel(
+                "ERASE ${link.msgs.value.size} MESSAGES",
+                on = false, armed = armedId == "FORGET", offWord = "",
+            ).trimEnd(),
+            lit = false,
+        ),
+    )
 }
 
 private fun yawOf(h: androidx.xr.runtime.math.Pose): Float {
@@ -693,7 +757,17 @@ private fun HorizonScene(link: MeshLink) {
     val consoleRef = remember { mutableStateOf<com.iotj.meshmore.xr.spatial.Console?>(null) }
     val themePickerRef =
         remember { mutableStateOf<com.iotj.meshmore.xr.spatial.ThemePicker?>(null) }
-    val channelsRef = remember { mutableStateOf<com.iotj.meshmore.xr.spatial.Channels?>(null) }
+    val channelsRef = remember { mutableStateOf<com.iotj.meshmore.xr.spatial.Stack?>(null) }
+    val appRef = remember { mutableStateOf<com.iotj.meshmore.xr.spatial.Stack?>(null) }
+    /**
+     * A guarded row that has been pressed ONCE, and when it expires.
+     *
+     * Two settings in the APP bay widen what the radio does or destroy
+     * something that cannot be got back, and a single pinch is not enough
+     * consent for either. Held here rather than in the stack because the stack
+     * is deliberately ignorant of what a pick MEANS.
+     */
+    val armed = remember { mutableStateOf<Pair<String, Long>?>(null) }
     val threadRef = remember { mutableStateOf<com.iotj.meshmore.xr.spatial.Thread?>(null) }
     val cuffRef = remember { mutableStateOf<com.iotj.meshmore.xr.spatial.Cuff?>(null) }
     val crownRef = remember { mutableStateOf<com.iotj.meshmore.xr.spatial.Crown?>(null) }
@@ -1204,10 +1278,15 @@ private fun HorizonScene(link: MeshLink) {
         picker.onFocus = { cue.recognised() }
         themePickerRef.value = picker
 
-        val channels = com.iotj.meshmore.xr.spatial.Channels(session, palette, ctx)
+        val channels = com.iotj.meshmore.xr.spatial.Stack(session, palette, ctx)
         channels.build()
         channels.onFocus = { cue.recognised() }
         channelsRef.value = channels
+
+        val appBay = com.iotj.meshmore.xr.spatial.Stack(session, palette, ctx)
+        appBay.build()
+        appBay.onFocus = { cue.recognised() }
+        appRef.value = appBay
 
         val inbox = com.iotj.meshmore.xr.spatial.Inbox(session, palette, ctx)
         inbox.build()
@@ -1647,6 +1726,63 @@ private fun HorizonScene(link: MeshLink) {
                     noticeRef.value?.say(if (now) "READS ALOUD" else "SILENT")
                     if (now) cue.opened() else cue.closed()
                 }
+                // THE APP BAY. Two of its rows are GUARDED: the first pick
+                // arms and re-labels, the second within ARM_MS commits. One
+                // widens what the radio transmits and the other erases history
+                // that cannot be got back, and a single pinch — which can land
+                // slightly wrong — is not enough consent for either.
+                appRef.value?.tick(
+                    stage.headNow()?.translation,
+                    stage.headNow()?.let { yawOf(it) } ?: 0f,
+                )
+                armed.value?.let { (_, at) ->
+                    if (nowMs - at > ARM_MS) {
+                        armed.value = null
+                        appRef.value?.update(appRows(ctx, link, null), "LIT = ON    B TO CLOSE")
+                    }
+                }
+                while (true) {
+                    val id = appRef.value?.poll() ?: break
+                    val guarded = id in GUARDED_ROWS
+                    if (guarded && armed.value?.first != id) {
+                        armed.value = id to nowMs
+                        appRef.value?.update(
+                            appRows(ctx, link, id),
+                            when (id) {
+                                "CHANSEND" -> "PICK AGAIN TO ALLOW CHANNEL SEND"
+                                else -> "PICK AGAIN TO ERASE — CANNOT BE UNDONE"
+                            },
+                        )
+                        cue.closed()
+                        continue
+                    }
+                    armed.value = null
+                    when (id) {
+                        "LOCATION" -> Settings.setUseDeviceLocation(
+                            ctx, !Settings.useDeviceLocation(ctx),
+                        )
+                        "SHARE" -> Settings.setShareLocation(ctx, !Settings.shareLocation(ctx))
+                        "DIAG" -> Settings.setDiagnostics(ctx, !Settings.diagnostics(ctx))
+                        // THE ONE THAT WIDENS WHAT THE RADIO SAYS. MeshLink
+                        // stays the single gate; this only sets the flag it
+                        // reads, and the refusal path is untouched.
+                        "CHANSEND" -> {
+                            val on = !Settings.channelSend(ctx)
+                            Settings.setChannelSend(ctx, on)
+                            link.channelTxAuthorised = on
+                            noticeRef.value?.say(
+                                if (on) "CHANNEL SEND ALLOWED" else "CHANNEL SEND OFF",
+                            )
+                        }
+                        "FORGET" -> {
+                            val n = link.msgs.value.size
+                            link.forgetMessages()
+                            noticeRef.value?.say("$n MESSAGES ERASED")
+                        }
+                    }
+                    appRef.value?.update(appRows(ctx, link, null), "LIT = ON    B TO CLOSE")
+                    cue.recognised()
+                }
                 // THE THEME PICKER. A pick retints the whole scene in place —
                 // including the picker's own readout, and including the HORIZON
                 // behind it, which is the point (§S11: "you see your real mesh
@@ -1705,7 +1841,30 @@ private fun HorizonScene(link: MeshLink) {
                         // to turn it off.
                         "CHANNELS" -> {
                             consoleRef.value?.hide()
-                            channelsRef.value?.show(channelRows(link, voice))
+                            channelsRef.value?.show(
+                                channelRows(link, voice),
+                                title = "CHANNELS — PICK TO SPEAK",
+                                footer = if (link.channels().isEmpty())
+                                    "CONNECT A RADIO TO SEE ITS SLOTS"
+                                else "LIT = READS ALOUD    B TO CLOSE",
+                            )
+                            dockRef.value?.setLit("SETUP", false)
+                            cue.opened()
+                        }
+                        // APP — the settings that are about this app rather
+                        // than about the radio. Console spec §10 wants the
+                        // connection state as a LAMP rather than a row, so it
+                        // lives in the title: it is something you read, not
+                        // something you can change from here.
+                        "APP" -> {
+                            consoleRef.value?.hide()
+                            armed.value = null
+                            appRef.value?.show(
+                                appRows(ctx, link, armed.value?.first),
+                                title = "APP — CONNECTION: " +
+                                    link.status.value.state.name,
+                                footer = "LIT = ON    B TO CLOSE",
+                            )
                             dockRef.value?.setLit("SETUP", false)
                             cue.opened()
                         }
@@ -1802,6 +1961,15 @@ private fun HorizonScene(link: MeshLink) {
                     // who tried all nine has no other way to find the one they
                     // walked in with. Backing out of a preview must mean
                     // "nothing happened".
+                    appRef.value?.let { a ->
+                        if (a.open) {
+                            lastBackAt = nowMs
+                            armed.value = null
+                            a.hide(); cue.closed()
+                            Log.i(TAG_UI, "[hand] $hand:B — app bay closed")
+                            return
+                        }
+                    }
                     channelsRef.value?.let { c ->
                         if (c.open) {
                             lastBackAt = nowMs

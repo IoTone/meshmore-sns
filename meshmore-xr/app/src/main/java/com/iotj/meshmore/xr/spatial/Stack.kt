@@ -17,48 +17,54 @@ import androidx.xr.scenecore.scene
 import kotlin.math.atan2
 
 /**
- * THE CHANNELS BAY — which bands exist, and which of them talk to you.
+ * THE STACK — a column of state you can point at, reused by every bay.
  *
- * The console spec (§10) asks for "a nested STACK, one plate per slot", and the
- * brief (§S5) asks for a TTS toggle per channel. This is both, in the CROWN's
- * form rather than the console's fan, because the console's fan carries ICONS
- * and a channel is identified by its NAME — there is no silhouette for
- * "Portland Metro" — and because the last thing said about the crown's plates
- * was that this is what a button should be here: a slab with an edge, sized to
- * its own label, at a distance you can point at.
+ * Console spec §5 asks for the stack as a REUSABLE PRIMITIVE, and §5.4 gives
+ * the argument: "one widget, two depths, and the interaction the user learned
+ * at the top level is the one that works inside." This is that widget. CHANNELS
+ * and APP are two instances of it with different rows.
  *
- * ## Why this bay exists at all, ahead of the other one
+ * ## The crown's form, not the console's fan
  *
- * "All channels should have a toggle on/off audible voice TTS" was asked for
- * directly, and it was half-built: [com.iotj.meshmore.xr.VoicePrefs] stores it
- * per thread and the CROWN can toggle the conversation you are reading. But the
- * crown only reaches a channel you have a MESSAGE from and are currently
- * looking at, which means the setting could not be found by somebody setting
- * the app up, and could not be turned off for a channel that had gone quiet —
- * the exact case where you want it off is the case where nothing arrives to
- * open a crown on.
+ * The console fans plates carrying ICONS. A row here is identified by WORDS —
+ * there is no silhouette for "Portland Metro" and none for "share location" —
+ * so it takes the crown's shape instead: a slab with an edge, sized to its own
+ * label, with the hit volume exactly the slab, at a metre where you can point
+ * at it. That was the conclusion the crown reached the hard way and there is no
+ * reason to reach it twice.
  *
- * A bay that lists the slots fixes both, and it is the answer to "how do I turn
- * on the audio to always do TTS for this channel".
+ * ## LIT MEANS ON, NOT FOCUSED
  *
- * ## Public keys are said out loud
+ * The crown lights the plate under the pointer, because there the light is the
+ * only thing saying where you are. Here the plate carries a STATE that outlives
+ * the glance — whether this channel speaks, whether this setting is on — and a
+ * light that means "focused" on one surface and "on" on another is a light that
+ * means nothing. Focus is the scale bump instead.
  *
- * A slot carrying the well-known public PSK is marked PUBLIC. It is one word
- * and it is not decoration: the difference between a band anyone in range can
- * read and one only your group can is the difference that decides what a person
- * is willing to say on it, and a list of names alone hides it completely.
+ * ## Dumb on purpose
+ *
+ * It draws rows and reports picks. It does not know what a channel is, does not
+ * know what a setting is, and does not decide what a pick MEANS — including
+ * whether a pick needs confirming. That belongs to the host, which is the only
+ * thing that knows both halves, and it is what lets one widget serve a list of
+ * bands and a list of switches without either leaking into it.
  */
-class Channels(
+class Stack(
     private val session: Session,
     private val theme: Horizon.Palette,
     private val context: Context,
 ) {
 
-    /** One row's state, handed in by the host each time the bay opens. */
+    /**
+     * One row, handed in by the host each time the stack opens.
+     *
+     * [id] is whatever the host wants back when this row is picked — a channel
+     * thread id, a setting's name. This class never interprets it.
+     */
     class Row(
-        val threadId: String,
+        val id: String,
         val label: String,
-        val speaking: Boolean,
+        val lit: Boolean,
     )
 
     private class Slot(
@@ -77,6 +83,8 @@ class Channels(
     private var note: TextRun.Run? = null
 
     private var rows: List<Row> = emptyList()
+    private var title: String = ""
+    private var footer: String = ""
     private var focused: Int = -1
 
     var open: Boolean = false
@@ -93,7 +101,7 @@ class Channels(
         // wearer is watching for a response.
         repeat(MAX) {
             val run = TextRun.reusable(
-                session, context, WIDEST, CAP, argb(theme.text, 0.98f), "chan",
+                session, context, WIDEST, CAP, argb(theme.text, 0.98f), "stack",
             ) ?: return@repeat
             run.entity.parent = root
             run.entity.setEnabled(false)
@@ -116,16 +124,16 @@ class Channels(
                 proxy.addComponent(
                     InteractableComponent.create(session) { ev -> onInput(index, s, ev) },
                 )
-            }.onFailure { Log.w(TAG, "[chan] no input on $index: $it") }
+            }.onFailure { Log.w(TAG, "[stack] no input on $index: $it") }
             slots += s
         }
         head0 = TextRun.reusable(
-            session, context, HEAD_WIDEST, CAP, argb(theme.accent, 0.95f), "chan-head",
+            session, context, HEAD_WIDEST, CAP, argb(theme.accent, 0.95f), "stack-head",
         )?.also { it.entity.parent = root; it.entity.setEnabled(false); entities += it.entity }
         note = TextRun.reusable(
-            session, context, NOTE_WIDEST, CAP * 0.85f, argb(theme.alt, 0.9f), "chan-note",
+            session, context, NOTE_WIDEST, CAP * 0.85f, argb(theme.alt, 0.9f), "stack-note",
         )?.also { it.entity.parent = root; it.entity.setEnabled(false); entities += it.entity }
-        Log.i(TAG, "[chan] ${slots.size} slots")
+        Log.i(TAG, "[stack] ${slots.size} slots")
     }
 
     /**
@@ -135,12 +143,14 @@ class Channels(
      * radio's slots and the wearer's voice preferences — and this surface is
      * deliberately ignorant of either. It draws rows and reports picks.
      */
-    fun show(list: List<Row>) {
+    fun show(list: List<Row>, title: String, footer: String) {
         rows = list.take(MAX)
+        this.title = title
+        this.footer = footer
         open = true
         focused = -1
         fired.clear()
-        Log.i(TAG, "[chan] open with ${rows.size} of ${list.size} channels")
+        Log.i(TAG, "[stack] '$title' open with ${rows.size} of ${list.size} rows")
     }
 
     fun hide() {
@@ -158,15 +168,16 @@ class Channels(
             head0?.entity?.setEnabled(false)
             note?.entity?.setEnabled(false)
         }
-        Log.i(TAG, "[chan] closed")
+        Log.i(TAG, "[stack] closed")
     }
 
-    /** Which channel was picked, as a thread id. */
+    /** Which row was picked, by its [Row.id]. */
     fun poll(): String? = fired.poll()
 
     /** Re-label after a toggle, without rebuilding anything. */
-    fun update(list: List<Row>) {
+    fun update(list: List<Row>, footer: String = this.footer) {
         rows = list.take(MAX)
+        this.footer = footer
     }
 
     fun tick(head: Vector3?, yawRad: Float) {
@@ -192,9 +203,7 @@ class Channels(
 
         runCatching {
             head0?.entity?.setEnabled(true)
-            head0?.setText(
-                if (rows.isEmpty()) "NO CHANNELS YET" else "CHANNELS — PICK TO SPEAK",
-            )
+            head0?.setText(title)
             val hp = Vector3(cx, top + PITCH * 1.1f, cz)
             head0?.entity?.setPose(Pose(hp, facing(hp, head)), Space.ACTIVITY)
         }
@@ -223,9 +232,9 @@ class Channels(
                 // this channel reads itself aloud — and a light that means
                 // "focused" on one surface and "on" on another is a light that
                 // means nothing. Focus is the scale bump instead.
-                s.plate.setEnabled(!row.speaking)
+                s.plate.setEnabled(!row.lit)
                 s.plate.setPose(Pose(back, r), Space.ACTIVITY)
-                s.lit.setEnabled(row.speaking)
+                s.lit.setEnabled(row.lit)
                 s.lit.setPose(Pose(back, r), Space.ACTIVITY)
                 s.run.entity.setScale(if (i == focused) HOT else 1f)
                 s.proxy.setEnabled(true)
@@ -235,10 +244,7 @@ class Channels(
 
         runCatching {
             note?.entity?.setEnabled(true)
-            note?.setText(
-                if (rows.isEmpty()) "CONNECT A RADIO TO SEE ITS SLOTS"
-                else "LIT = READS ALOUD    B TO CLOSE",
-            )
+            note?.setText(footer)
             val np = Vector3(cx, top - rows.size.coerceAtLeast(1) * PITCH - NOTE_DROP, cz)
             note?.entity?.setPose(Pose(np, facing(np, head)), Space.ACTIVITY)
         }
@@ -270,7 +276,7 @@ class Channels(
                 if (now - s.lastFire < DEBOUNCE_MS) return
                 s.lastFire = now
                 Reach.consumed()
-                rows.getOrNull(index)?.let { fired.add(it.threadId) }
+                rows.getOrNull(index)?.let { fired.add(it.id) }
             }
             else -> Unit
         }
@@ -278,6 +284,7 @@ class Channels(
 
     fun clear() {
         slots.clear(); fired.clear(); rows = emptyList()
+        title = ""; footer = ""
         head0 = null; note = null; open = false; focused = -1
         val doomed = entities.toList()
         entities.clear()
@@ -318,68 +325,8 @@ class Channels(
         const val CAP = 0.026f
 
         /** Sized for the longest row this can hold, once, so it never re-measures. */
-        const val WIDEST = CHAN_WIDEST
-        const val HEAD_WIDEST = "CHANNELS — PICK TO SPEAK"
-        const val NOTE_WIDEST = "CONNECT A RADIO TO SEE ITS SLOTS"
-    }
-}
-
-/**
- * The template every row is measured against, and the reason it is a constant.
- *
- * [TextRun.reusable] sizes a panel ONCE, for the longest string it will ever
- * hold, and never resizes — a readout that re-measures itself jitters, and on
- * this SDK it also rebuilds an Android View every time a word changes. The
- * consequence is that a row longer than this template does not grow the panel,
- * it gets CLIPPED inside it, silently, at whatever character the box ends.
- *
- * So the template is the contract and [channelLabel] is what keeps it.
- */
-internal const val CHAN_WIDEST = "PUBLIC  PORTLAND METRO  999+  SPEAKS"
-
-/** Longest channel name that fits the row template. */
-internal const val CHAN_NAME_MAX = 14
-
-/**
- * One row's words. PURE, and at file scope so it is testable without a Session.
- *
- * Order is deliberate: the PUBLIC warning first, because it is the thing that
- * changes what a person is willing to say and it should not be at the end of a
- * line that might be clipped. The name next, because it is what you are looking
- * for. The count, because weight tells you which band is alive. SPEAKS last,
- * because it is the state the plate's own lighting already carries — the word
- * is the confirmation, not the signal.
- */
-internal fun channelLabel(
-    name: String,
-    publicKey: Boolean,
-    count: Int,
-    speaking: Boolean,
-): String {
-    val n = name.trim().uppercase().let {
-        // Truncated with a real ellipsis rather than a hard cut, so a clipped
-        // name reads as clipped rather than as a channel somebody named badly.
-        if (it.length <= CHAN_NAME_MAX) it else it.take(CHAN_NAME_MAX - 1) + "…"
-    }.ifBlank { "UNNAMED" }
-    // Counts saturate, AND SAY SO. A four-digit count would push the row past
-    // the template and clip the SPEAKS off the end — losing the state to show
-    // the traffic, which is the wrong trade.
-    //
-    // The first cut rendered 1234 as "999", which is not a truncation, it is a
-    // wrong number: this is a public band that really does carry four figures
-    // in an evening, so it would have been wrong on the busiest channel and
-    // right nowhere. The plus costs one character of a template we control.
-    val c = if (count > 999) "999+" else count.toString()
-    // NOT TWICE. The stock MeshCore slot 0 is literally named "Public" and
-    // carries the public PSK, so the marker and the name are the same word and
-    // the row came out "PUBLIC  PUBLIC  1234" — which reads as a rendering
-    // fault, and worse, teaches the eye to skim past the marker on every OTHER
-    // row where it is the only warning there is.
-    val mark = publicKey && !n.startsWith("PUBLIC")
-    return buildString {
-        if (mark) append("PUBLIC  ")
-        append(n)
-        append("  ").append(c)
-        if (speaking) append("  SPEAKS")
+        const val WIDEST = ROW_WIDEST
+        const val HEAD_WIDEST = ROW_HEAD_WIDEST
+        const val NOTE_WIDEST = ROW_NOTE_WIDEST
     }
 }

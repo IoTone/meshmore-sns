@@ -151,6 +151,29 @@ object Settings {
             .edit().putBoolean(KEY_SHARE_LOCATION, on).apply()
     }
 
+    /**
+     * WHETHER THIS APP MAY TRANSMIT ON A CHANNEL. Off until somebody says so.
+     *
+     * A direct message goes to one radio you chose. A CHANNEL message puts a
+     * packet on a shared band addressed to everyone listening, most of whom are
+     * strangers — a different act, and not one to enable on a wearer's behalf
+     * because the reply button would otherwise look broken.
+     *
+     * Stored here rather than left as a source constant so it is the WEARER's
+     * decision rather than a build's, made in the open, in a bay, with the
+     * consequence written next to it. [MeshLink.channelTxAuthorised] is loaded
+     * from this at startup and remains the single gate at the radio.
+     */
+    fun channelSend(context: Context): Boolean =
+        context.getSharedPreferences(FILE, Context.MODE_PRIVATE)
+            .getBoolean(KEY_CHANNEL_SEND, false)
+
+    fun setChannelSend(context: Context, on: Boolean) {
+        context.getSharedPreferences(FILE, Context.MODE_PRIVATE)
+            .edit().putBoolean(KEY_CHANNEL_SEND, on).apply()
+    }
+
     private const val KEY_DIAGNOSTICS = "diagnostics_panel"
     private const val KEY_SHARE_LOCATION = "share_location"
+    private const val KEY_CHANNEL_SEND = "channel_send"
 }

@@ -17,11 +17,11 @@ import org.junit.Test
  *
  * Names come off other people's radios, so the input is not under our control.
  */
-class ChannelLabelTest {
+class RowsTest {
 
     private fun fits(s: String) = assertTrue(
-        "'$s' is ${s.length} chars, template is ${CHAN_WIDEST.length}",
-        s.length <= CHAN_WIDEST.length,
+        "'$s' is ${s.length} chars, template is ${ROW_WIDEST.length}",
+        s.length <= ROW_WIDEST.length,
     )
 
     @Test fun theOrdinaryCaseReadsAsIntended() {
@@ -37,7 +37,7 @@ class ChannelLabelTest {
 
     @Test fun everyRowFitsTheTemplateEvenAtTheWorstCase() {
         fits(channelLabel("A Ridiculously Long Channel Name", true, 99999, true))
-        fits(CHAN_WIDEST)
+        fits(ROW_WIDEST)
     }
 
     @Test fun aLongNameIsEllipsisedNotCut() {
@@ -100,5 +100,66 @@ class ChannelLabelTest {
     /** A zero count is shown, not hidden: "0" is information, absence is ambiguous. */
     @Test fun zeroIsShown() {
         assertEquals("QUIET  0", channelLabel("Quiet", false, 0, false))
+    }
+
+    // --- settings rows -------------------------------------------------------
+
+    /**
+     * The state word is there on and off alike. The plate's light already says
+     * which — but a row reading just "SHARE LOCATION" gives a reader no way to
+     * tell an unlit plate from a plate that failed to light, and "off" versus
+     * "broken" is the whole question somebody has when they come looking.
+     */
+    @Test fun aSettingAlwaysSaysItsState() {
+        assertEquals("SHARE MY LOCATION  ON", settingLabel("Share my location", true))
+        assertEquals("SHARE MY LOCATION  OFF", settingLabel("Share my location", false))
+    }
+
+    @Test fun aGuardedRowAsksRatherThanReportingAState() {
+        val s = settingLabel("Send on channels", on = false, armed = true)
+        assertTrue(s, s.endsWith("CONFIRM?"))
+        // and the armed question replaces the state entirely — a half-pressed
+        // switch is not a state the setting is in.
+        assertTrue(s, !s.contains("OFF"))
+        assertTrue(settingLabel("Send on channels", on = true, armed = true).let {
+            !it.contains("ON  ") && it.endsWith("CONFIRM?")
+        })
+    }
+
+    @Test fun aSettingCanNameItsOwnStateWords() {
+        assertEquals(
+            "SEND ON CHANNELS  ALLOWED",
+            settingLabel("Send on channels", true, onWord = "ALLOWED", offWord = "OFF"),
+        )
+    }
+
+    @Test fun everySettingRowFitsTheSharedTemplate() {
+        fits(settingLabel("A Very Long Setting Name That Somebody Added Later", true))
+        fits(settingLabel("Send on channels", false, armed = true, onWord = "ALLOWED"))
+        fits(settingLabel("Erase 99999 messages", false, offWord = "").trimEnd())
+        fits(ROW_HEAD_WIDEST)
+        fits(ROW_NOTE_WIDEST)
+    }
+
+    @Test fun aBlankSettingNameStillRenders() {
+        assertTrue(settingLabel("  ", false).startsWith("SETTING"))
+    }
+
+    /**
+     * Both bays share one panel size, so the widest thing either can say has to
+     * be inside the one template. A per-bay template would mean a per-bay
+     * panel, and the stack would stop being a shared primitive.
+     */
+    @Test fun theHeaderAndFooterTemplatesCoverWhatTheBaysActuallySay() {
+        listOf(
+            "CHANNELS — PICK TO SPEAK",
+            "APP — CONNECTION: DISCONNECTED",
+        ).forEach { assertTrue(it, it.length <= ROW_HEAD_WIDEST.length) }
+        listOf(
+            "CONNECT A RADIO TO SEE ITS SLOTS",
+            "LIT = READS ALOUD    B TO CLOSE",
+            "LIT = ON    B TO CLOSE",
+            "PICK AGAIN TO ALLOW CHANNEL SEND",
+        ).forEach { assertTrue(it, it.length <= ROW_NOTE_WIDEST.length) }
     }
 }
