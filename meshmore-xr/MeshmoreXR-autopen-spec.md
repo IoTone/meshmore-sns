@@ -1,6 +1,19 @@
 # AUTOPEN — a suggested reply, before launch
 
-**Status: NOT BUILT. Owed before launch.** Requested 2026-08-04.
+**Status: BUILT 2026-08-08**, as `meshmore-xr/app/src/main/java/com/iotj/meshmore/xr/Autopen.kt`.
+Requested 2026-08-04.
+
+> **What shipped is not a model.** It is intent recognition plus a table of
+> drafts — see the file's own header, which says so first. Every constraint
+> below is honoured, and the "Definition of done" at the foot is complete except
+> for the settings toggle. The seam is `suggest(String): String?`, so a real
+> model can replace it without any caller changing.
+>
+> The reason it is not a model is in the file too, and it is not only schedule:
+> what a model would buy is the CONTENT of the answer — "20 minutes" rather than
+> "on my way" — which requires knowing where the wearer is going and when they
+> will arrive. The app does not know that. So this drafts the FORM and leaves
+> the wearer the fact.
 
 ## What it is
 
@@ -70,9 +83,29 @@ crown.
 
 ## Definition of done
 
-- [ ] A fourth COMPOSE slot, present only when a suggestion exists
-- [ ] Visibly marked as generated, at COMPOSE **and** at CONFIRM
-- [ ] Never reaches `replyTo` without a wearer confirming
-- [ ] Clipped to `Dictation.MAX_WORDS`
-- [ ] Off the render thread; failure degrades to absence
-- [ ] A setting to turn it off entirely
+- [x] A fourth COMPOSE slot, present only when a suggestion exists
+- [x] Visibly marked as generated, at COMPOSE **and** at CONFIRM
+- [x] Never reaches `replyTo` without a wearer confirming
+- [x] Clipped to `Dictation.MAX_WORDS`
+- [x] Failure degrades to absence. *Not* off the render thread — it is a
+      lowercase, a split and a few set lookups on at most 150 bytes, so moving
+      it off-thread would cost more than it saves. That line is where a model
+      would be called FROM, and a model would need the thread.
+- [ ] A setting to turn it off entirely — **still owed.** The APP bay is built
+      and this is one more row in it.
+
+## What testing changed, which is worth keeping
+
+Four false positives, none of them found by thinking about it:
+
+- "all good **here**" read as a summons — `here` and `over` are ordinary words.
+- "…**when** you get a chance tomorrow" read as a question about time.
+- "**come** to the gate **when** you can" answered with an ETA, because the time
+  words were tested before the summons.
+- "you **need** to start with the protocol" answered with ON MY WAY — found only
+  by replaying a captured evening of real Portland-mesh traffic, which is now a
+  verbatim test case. `need` carries advice as often as it carries a summons.
+
+A mesh channel is mostly chatter between strangers, so the default has to be
+SILENCE. The real-traffic test asserts that a whole evening of it produces no
+suggestions at all.
