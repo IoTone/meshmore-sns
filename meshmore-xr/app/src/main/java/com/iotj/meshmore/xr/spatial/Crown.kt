@@ -98,7 +98,7 @@ class Crown(
 
     private val items = mutableListOf<Item>()
     private val entities = mutableListOf<Entity>()
-    private val fired = java.util.concurrent.ConcurrentLinkedQueue<Int>()
+    private val fired = java.util.concurrent.ConcurrentLinkedQueue<Act>()
     private val slotAt = HashMap<Int, Vector3>()
     private var note: TextRun.Run? = null
     private var noteUntil = 0L
@@ -302,8 +302,16 @@ class Crown(
         draft = ""
         dictating = false
         fired.clear()
+        // ALL FOUR, not two. This listed only the label and the hit proxy, so
+        // the dim and lit SLABS stayed on screen after the crown closed — a
+        // green rectangle floating over the room with no text on it and nothing
+        // to pinch, which is what it looked like on the glasses. Reported
+        // 2026-08-08 with a photograph.
         items.forEach {
-            runCatching { it.run.entity.setEnabled(false); it.proxy.setEnabled(false) }
+            runCatching {
+                it.run.entity.setEnabled(false); it.proxy.setEnabled(false)
+                it.plate.setEnabled(false); it.lit.setEnabled(false)
+            }
         }
         runCatching {
             note?.entity?.setEnabled(false)
@@ -318,7 +326,20 @@ class Crown(
         noteUntil = nowMs + NOTE_MS
     }
 
-    fun poll(): Act? = fired.poll()?.let { labels().getOrNull(it)?.first }
+    /**
+     * RESOLVED AT FIRE TIME, not here.
+     *
+     * This used to hold an index and look the action up in `labels()` when the
+     * host got round to draining — but `labels()` depends on the LEVEL, and the
+     * level changes as a result of handling the previous pick. Two picks in one
+     * frame, or a pick that arrived a frame after a level change, resolved
+     * against the wrong screen and came back null, and a null here silently
+     * ends the host's drain loop.
+     *
+     * An action is what the wearer aimed at when they pinched. It cannot depend
+     * on what happened afterwards.
+     */
+    fun poll(): Act? = fired.poll()
 
     /**
      * [at] is the card's anchor, kept only so the crown vanishes with it; the
@@ -344,6 +365,22 @@ class Crown(
         val cx = head.x + fx * DIST
         val cz = head.z + fz * DIST
         val ls = labels()
+        // EVERY ROW THE LEVEL DOES NOT USE, OFF. The loop below only touches
+        // items 0 until ls.size, so going from ACTIONS (five rows) to CONFIRM
+        // (two) left three fully-lit plates behind with stale labels — AND
+        // their hit proxies live. Pinching one fired an index the current level
+        // has no label for, poll() resolved it to null, and the whole drain
+        // loop broke on it. That is why a confirmed reply could look sent and
+        // never leave the radio: the plate being aimed at was a ghost of the
+        // previous screen.
+        for (i in ls.size until items.size) {
+            val it0 = items[i]
+            runCatching {
+                it0.run.entity.setEnabled(false); it0.plate.setEnabled(false)
+                it0.lit.setEnabled(false); it0.proxy.setEnabled(false)
+            }
+            slotAt.remove(i)
+        }
         // Centred on the eye line and stacked downward from it, so the top row
         // is where the gaze already is and the column grows into the space
         // below rather than across the mesh.
@@ -419,7 +456,8 @@ class Crown(
     fun gazeTargets(): List<Gaze.Target> {
         if (!open) return emptyList()
         return labels().indices.mapNotNull { i ->
-            slotAt[i]?.let { Gaze.Target("crown-$i", it, CONE) { fired.add(i) } }
+            val act = labels().getOrNull(i)?.first ?: return@mapNotNull null
+            slotAt[i]?.let { Gaze.Target("crown-$i", it, CONE) { fired.add(act) } }
         }
     }
 
@@ -434,11 +472,19 @@ class Crown(
             else -> Unit
         }
         if (ev.action != InputEvent.Action.UP) return
+        // A ROW THE CURRENT LEVEL DOES NOT HAVE IS NOT A BUTTON. tick() now
+        // disables those proxies, so this should be unreachable — it is here
+        // because the version that was not unreachable shipped, and a stale
+        // plate that still transmits is worse than one that only looks wrong.
+        val act = labels().getOrNull(index)?.first ?: run {
+            Log.w(TAG, "[crown] pinch on row $index, which $level does not have")
+            return
+        }
         val now = android.os.SystemClock.uptimeMillis()
         if (now - item.lastFire < DEBOUNCE_MS) return
         item.lastFire = now
         Reach.consumed()
-        fired.add(index)
+        fired.add(act)
     }
 
     private fun facing(at: Vector3, head: Vector3): Quaternion {

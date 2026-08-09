@@ -2780,7 +2780,21 @@ private fun onCrown(
         }
         Crown.Act.CONFIRM -> {
             val text = crown.pending
+            // SAY WHAT WE ARE ABOUT TO DO, ALWAYS. A reply that does not arrive
+            // at the other end is the hardest thing in this app to diagnose
+            // from the outside — the wearer sees a confirm screen and then
+            // nothing, and the radio's own log is the only witness. One line
+            // before the attempt turns "it didn't send" into a question with an
+            // answer.
+            Log.i(
+                TAG_UI,
+                "[crown] CONFIRM idx=${reel.selectedIndex} msg=" +
+                    (msg?.let { "${it.fromName}/${if (it.direct) "DM" else it.channel}" }
+                        ?: "NONE") +
+                    " text='" + text.take(40) + "'",
+            )
             if (msg == null || text.isBlank()) {
+                Log.w(TAG_UI, "[crown] nothing to send: msg=${msg != null} blank=${text.isBlank()}")
                 crown.say("NOTHING TO SEND", nowMs)
                 cue.closed()
                 return
