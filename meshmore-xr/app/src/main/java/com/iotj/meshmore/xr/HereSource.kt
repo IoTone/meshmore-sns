@@ -192,6 +192,23 @@ object Settings {
             .edit().putBoolean(KEY_AUTOPEN, on).apply()
     }
 
+    /**
+     * Whether FIRST LIGHT has been completed. Once per install, not per launch.
+     *
+     * Stored as "done" rather than "show me": the wearer never chose this, so
+     * the app should stop asking as soon as it has its answer, and a preference
+     * phrased the other way invites a future default that shows it again.
+     */
+    fun firstLightDone(context: Context): Boolean =
+        context.getSharedPreferences(FILE, Context.MODE_PRIVATE)
+            .getBoolean(KEY_FIRST_LIGHT, false)
+
+    fun setFirstLightDone(context: Context, done: Boolean) {
+        context.getSharedPreferences(FILE, Context.MODE_PRIVATE)
+            .edit().putBoolean(KEY_FIRST_LIGHT, done).apply()
+    }
+
+    private const val KEY_FIRST_LIGHT = "first_light_done"
     private const val KEY_AUTOPEN = "autopen"
     private const val KEY_DIAGNOSTICS = "diagnostics_panel"
     private const val KEY_SHARE_LOCATION = "share_location"

@@ -151,6 +151,15 @@ class Stack(
         focused = -1
         fired.clear()
         Log.i(TAG, "[stack] '$title' open with ${rows.size} of ${list.size} rows")
+        // NO SILENT TRUNCATION. A bay that grows past MAX drops its last rows
+        // and looks completely normal doing it — the setting is simply not
+        // there, and the person looking for it concludes the app does not have
+        // it. APP is already AT the ceiling, so the next row somebody adds is
+        // the one that vanishes.
+        if (list.size > MAX) {
+            Log.w(TAG, "[stack] '$title' DROPPED ${list.size - MAX} row(s): " +
+                list.drop(MAX).joinToString { it.id })
+        }
     }
 
     fun hide() {

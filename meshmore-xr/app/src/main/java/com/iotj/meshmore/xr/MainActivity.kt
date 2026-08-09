@@ -185,6 +185,8 @@ class MainActivity : ComponentActivity() {
          * somebody watches settles it in nine seconds.
          */
         var retintProbe: Boolean = false
+        /** --ez firstlight true : run S0 again on a device that has seen it. */
+        var firstLight: Boolean = false
         /**
          * --es bay "CHANNELS" : open one console bay at launch.
          *
@@ -281,6 +283,7 @@ class MainActivity : ComponentActivity() {
         showConsole = intent?.getBooleanExtra("console", false) ?: false
         themeKey = intent?.getStringExtra("theme")
         retintProbe = intent?.getBooleanExtra("retintprobe", false) ?: false
+        firstLight = intent?.getBooleanExtra("firstlight", false) ?: false
         openBay = intent?.getStringExtra("bay")?.uppercase()
         showThread = intent?.getBooleanExtra("thread", false) ?: false
         northDeg = intent?.getStringExtra("north")?.toFloatOrNull()
@@ -759,6 +762,7 @@ private fun HorizonScene(link: MeshLink) {
     val themePickerRef =
         remember { mutableStateOf<com.iotj.meshmore.xr.spatial.ThemePicker?>(null) }
     val channelsRef = remember { mutableStateOf<com.iotj.meshmore.xr.spatial.Stack?>(null) }
+    val firstRef = remember { mutableStateOf<com.iotj.meshmore.xr.spatial.FirstLight?>(null) }
     val appRef = remember { mutableStateOf<com.iotj.meshmore.xr.spatial.Stack?>(null) }
     /**
      * A guarded row that has been pressed ONCE, and when it expires.
@@ -1284,6 +1288,18 @@ private fun HorizonScene(link: MeshLink) {
         channels.onFocus = { cue.recognised() }
         channelsRef.value = channels
 
+        val first = com.iotj.meshmore.xr.spatial.FirstLight(session, palette, ctx)
+        first.build()
+        // TOUCHED ONCE AND NEVER AGAIN. Recorded before the cue so a crash in
+        // the sound path cannot make the wearer do onboarding twice.
+        first.onTouched = {
+            Settings.setFirstLightDone(ctx, true)
+            first.hide()
+            noticeRef.value?.say("HANDS ARE WORKING")
+            cue.opened()
+        }
+        firstRef.value = first
+
         val appBay = com.iotj.meshmore.xr.spatial.Stack(session, palette, ctx)
         appBay.build()
         appBay.onFocus = { cue.recognised() }
@@ -1455,6 +1471,25 @@ private fun HorizonScene(link: MeshLink) {
                     Log.i(TAG_UI, "[console] opened by launch flag")
                 }
             }
+            // S0 · FIRST LIGHT. One mote, once per install. It teaches the
+            // paradigm by doing it, and it is the fastest hand-tracking
+            // diagnostic in the app: without it a dead tracker presents as five
+            // different surfaces being broken.
+            if (!Settings.firstLightDone(ctx) || MainActivity.firstLight) launch {
+                kotlinx.coroutines.delay(2500)
+                var waited = 0
+                while (waited < 30_000) {
+                    val h = stage.headNow()
+                    if (h != null) {
+                        firstRef.value?.showAt(
+                            h.translation, yawOf(h), android.os.SystemClock.uptimeMillis(),
+                        )
+                        return@launch
+                    }
+                    kotlinx.coroutines.delay(500); waited += 500
+                }
+                Log.w(TAG_UI, "[first] never got a head pose — skipped")
+            }
             MainActivity.openBay?.let { bay ->
                 launch {
                     // After the scene is up and the radio has enumerated its
@@ -1600,6 +1635,7 @@ private fun HorizonScene(link: MeshLink) {
                         (inboxRef.value?.gazeTargets() ?: emptyList()) +
                         (consoleRef.value?.gazeTargets() ?: emptyList()) +
                         (themePickerRef.value?.gazeTargets() ?: emptyList()) +
+                        (firstRef.value?.gazeTargets() ?: emptyList()) +
                         (threadRef.value?.gazeTargets() ?: emptyList()) +
                         (crownRef.value?.gazeTargets() ?: emptyList()),
                 )
@@ -1730,6 +1766,9 @@ private fun HorizonScene(link: MeshLink) {
                 // because setting up which channels talk to you is several
                 // decisions in a row and a surface that closes after each one
                 // makes you walk back in five times.
+                firstRef.value?.let { f ->
+                    if (f.open) f.tick(stage.headNow()?.translation, nowMs)
+                }
                 channelsRef.value?.tick(
                     stage.headNow()?.translation,
                     stage.headNow()?.let { yawOf(it) } ?: 0f,
