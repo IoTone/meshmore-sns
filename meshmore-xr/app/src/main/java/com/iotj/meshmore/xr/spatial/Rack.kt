@@ -256,8 +256,8 @@ class Rack(
         // second says "put that fix in every advert", which broadcasts where the
         // wearer is, unencrypted, to anyone in range. Wiring one to the other
         // would be the single most consequential shortcut available here.
-        guard(col(0.72f), y + 0.006f, "GPS SRC", theme.warn, mesh)
-        guard(col(0.92f), y + 0.006f, "BCAST POS", theme.warn, mesh)
+        guard(col(0.72f), y + 0.006f, "GPS", theme.warn, mesh)
+        guard(col(0.92f), y + 0.006f, "BCAST", theme.warn, mesh)
     }
 
     // ------------------------------------------------------------- ROW 2 ----
@@ -293,8 +293,8 @@ class Rack(
         label("PEND", col(0.04f), y - 0.016f, mesh)
         segLive = Segment(col(0.24f), y + 0.014f, theme.alt, mesh).also { it.build(7) }
         segPend = Segment(col(0.24f), y - 0.016f, theme.warn, mesh).also { it.build(7) }
-        lampPending = lamp(col(0.44f), y + 0.010f, "PENDING", theme.warn, false, mesh)
-        armLamp = lamp(col(0.60f), y + 0.010f, "ARMED", theme.warn, false, mesh)
+        lampPending = lamp(col(0.44f), y + 0.010f, "PEND", theme.warn, false, mesh)
+        armLamp = lamp(col(0.60f), y + 0.010f, "ARM", theme.warn, false, mesh)
 
         // COMMIT IS TWO-STEP, like the disclosure guards and for the same
         // reason: it is the only control on this panel that reaches the radio.
@@ -307,7 +307,7 @@ class Rack(
         // dismissing the rack, or staging a further edit — disarms, because an
         // arm that survives a change of mind is not a confirmation of anything.
         pebble(col(0.75f), y + 0.008f, "COMMIT", theme.alt, 0.016f, mesh) { armOrCommit() }
-        pebble(col(0.93f), y + 0.008f, "REVERT", theme.warn, 0.013f, mesh) { revert() }
+        pebble(col(0.93f), y + 0.008f, "UNDO", theme.warn, 0.013f, mesh) { revert() }
     }
 
     // ------------------------------------------------------------- ROW 4 ----
@@ -617,7 +617,22 @@ class Rack(
          */
         const val EYE_DROP = -0.155f
         const val TILT_DEG = 14f
-        const val CAP = 0.010f
+        /**
+         * 1.30 degrees at [REACH] — the house standard, and it was 0.92.
+         *
+         * The old figure was under the section 4.1 floor of 1.20, which is bad
+         * enough on its own. What the arithmetic actually turned up is worse:
+         * at 1.30 the legends are 6.2 to 11.5 cm wide and the control columns
+         * are 6.3 to 7.7 cm apart, so several of them overlap — and "BCAST"
+         * was ALREADY overlapping its neighbour at 0.92. It read as kerning.
+         *
+         * The face cannot grow: at 0.44 m and reach it already subtends 39
+         * degrees, wider than the comfortable field. So the legends got shorter
+         * instead. Every one of them now fits its own column with margin at the
+         * house standard, which is checked in RackLegendTest rather than
+         * eyeballed, because the failure is silent and looks like a font bug.
+         */
+        const val CAP = 0.0141f
         const val KNOB_R = 0.013f
         const val HIT_R = 0.026f
         const val DEBOUNCE_MS = 350L

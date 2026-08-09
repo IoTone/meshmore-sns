@@ -586,6 +586,7 @@ private fun appRows(
         // broadcasts it unencrypted to anyone in range.
         row("SHARE", "SHARE MY LOCATION", Settings.shareLocation(ctx)),
         row("DIAG", "DIAGNOSTICS PANEL", Settings.diagnostics(ctx)),
+        row("AUTOPEN", "SUGGEST A REPLY", Settings.autopen(ctx)),
         row("CHANSEND", "SEND ON CHANNELS", Settings.channelSend(ctx), "ALLOWED", "OFF"),
         com.iotj.meshmore.xr.spatial.Stack.Row(
             id = "FORGET",
@@ -1692,7 +1693,7 @@ private fun HorizonScene(link: MeshLink) {
                             // hitching the frame was written for a model; when
                             // one arrives, this line becomes the place it is
                             // called FROM, not the place it runs.
-                            cw.suggestion = sel?.text?.let { Autopen.suggest(it) }
+                            cw.suggestion = sel?.text?.takeIf { Settings.autopen(ctx) }?.let { Autopen.suggest(it) }
                             cw.tick(
                                 r.cardAt, hp?.translation,
                                 hp?.let { yawOf(it) } ?: 0f, nowMs,
@@ -1777,6 +1778,7 @@ private fun HorizonScene(link: MeshLink) {
                         )
                         "SHARE" -> Settings.setShareLocation(ctx, !Settings.shareLocation(ctx))
                         "DIAG" -> Settings.setDiagnostics(ctx, !Settings.diagnostics(ctx))
+                        "AUTOPEN" -> Settings.setAutopen(ctx, !Settings.autopen(ctx))
                         // THE ONE THAT WIDENS WHAT THE RADIO SAYS. MeshLink
                         // stays the single gate; this only sets the flag it
                         // reads, and the refusal path is untouched.

@@ -173,6 +173,26 @@ object Settings {
             .edit().putBoolean(KEY_CHANNEL_SEND, on).apply()
     }
 
+    /**
+     * Whether AUTOPEN offers a drafted reply. ON, because it is opt-OUT.
+     *
+     * It proposes and never sends, it is marked as generated on both screens it
+     * appears on, and it stays absent unless it has something the canned
+     * replies do not cover — so the cost of it being on is one row that is
+     * usually not there. The switch exists because a person who does not want a
+     * machine writing in their voice should not have to argue with it, and
+     * because the spec asked for one.
+     */
+    fun autopen(context: Context): Boolean =
+        context.getSharedPreferences(FILE, Context.MODE_PRIVATE)
+            .getBoolean(KEY_AUTOPEN, true)
+
+    fun setAutopen(context: Context, on: Boolean) {
+        context.getSharedPreferences(FILE, Context.MODE_PRIVATE)
+            .edit().putBoolean(KEY_AUTOPEN, on).apply()
+    }
+
+    private const val KEY_AUTOPEN = "autopen"
     private const val KEY_DIAGNOSTICS = "diagnostics_panel"
     private const val KEY_SHARE_LOCATION = "share_location"
     private const val KEY_CHANNEL_SEND = "channel_send"

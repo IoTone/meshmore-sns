@@ -91,8 +91,7 @@ crown.
       lowercase, a split and a few set lookups on at most 150 bytes, so moving
       it off-thread would cost more than it saves. That line is where a model
       would be called FROM, and a model would need the thread.
-- [ ] A setting to turn it off entirely — **still owed.** The APP bay is built
-      and this is one more row in it.
+- [x] A setting to turn it off entirely — APP bay, `SUGGEST A REPLY`. Opt-OUT.
 
 ## What testing changed, which is worth keeping
 
