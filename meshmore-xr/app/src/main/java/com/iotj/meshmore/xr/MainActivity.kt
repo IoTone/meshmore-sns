@@ -1679,6 +1679,20 @@ private fun HorizonScene(link: MeshLink) {
                                 if (it.direct) it.fromName.ifBlank { "THIS SENDER" }
                                 else (it.channelName ?: it.channel ?: "THIS CHANNEL")
                             }?.uppercase().orEmpty()
+                            // AUTOPEN reads the message under the cursor, every
+                            // frame the cursor moves. Set to null as readily as
+                            // to a draft: a suggestion left over from the
+                            // previous message is a reply to the wrong person,
+                            // and it would look exactly as legitimate as a
+                            // correct one.
+                            //
+                            // Cheap enough to do here rather than off-thread —
+                            // it is a lowercase, a split and a few set lookups
+                            // on at most 150 bytes. The spec's warning about
+                            // hitching the frame was written for a model; when
+                            // one arrives, this line becomes the place it is
+                            // called FROM, not the place it runs.
+                            cw.suggestion = sel?.text?.let { Autopen.suggest(it) }
                             cw.tick(
                                 r.cardAt, hp?.translation,
                                 hp?.let { yawOf(it) } ?: 0f, nowMs,
@@ -2713,6 +2727,16 @@ private fun onCrown(
         Crown.Act.SEND_1 -> { crown.propose("ROGER"); cue.opened() }
         Crown.Act.SEND_2 -> { crown.propose("ON MY WAY"); cue.opened() }
         Crown.Act.SEND_3 -> { crown.propose("STAND BY"); cue.opened() }
+        // AUTOPEN. Routed through the SAME confirm level as every other draft
+        // -- proposeGenerated differs only in that it remembers the words were
+        // not the wearer's, so the confirm screen can say so. The row is only
+        // offered when there is a suggestion at all, so a null here means the
+        // pick raced a card change and doing nothing is right.
+        Crown.Act.SEND_AUTO -> {
+            val s = crown.suggestion
+            if (s.isNullOrBlank()) { crown.say("NO SUGGESTION", nowMs); cue.closed() }
+            else { crown.proposeGenerated(s); cue.opened() }
+        }
         Crown.Act.CONFIRM -> {
             val text = crown.pending
             if (msg == null || text.isBlank()) {

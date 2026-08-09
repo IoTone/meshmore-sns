@@ -14,6 +14,7 @@ import androidx.xr.scenecore.InteractableComponent
 import androidx.xr.scenecore.MeshEntity
 import androidx.xr.scenecore.Space
 import androidx.xr.scenecore.scene
+import com.iotj.meshmore.xr.Autopen
 import com.iotj.meshmore.xr.Dictation
 import kotlin.math.atan2
 
@@ -72,6 +73,8 @@ class Crown(
         REPLY, ALOUD, VOICE, THREAD, DISMISS,
         SEND_1, SEND_2, SEND_3, SPEAK, BACK,
         CONFIRM, CANCEL,
+        /** The AUTOPEN draft, offered only when there is one. */
+        SEND_AUTO,
     }
 
     /**
@@ -123,6 +126,24 @@ class Crown(
     private var draft = ""
     private var focused = -1
     private var dictating = false
+
+    /**
+     * The AUTOPEN draft for the message being read, or null.
+     *
+     * Set by the host on every card change, INCLUDING to null -- a suggestion
+     * left over from the previous message is a reply to the wrong person, and
+     * it would look exactly as legitimate as a correct one.
+     */
+    var suggestion: String? = null
+
+    /**
+     * Whether what is on the CONFIRM screen was written by the app.
+     *
+     * The spec is specific that marking it in the menu is not enough: "by the
+     * time the words are on the confirm screen they look exactly like words the
+     * wearer chose. That is the moment the label matters."
+     */
+    private var generated = false
     private var spoken = 0
     private var full = false
 
@@ -164,7 +185,14 @@ class Crown(
         )
         Level.COMPOSE -> quick.mapIndexed { i, q ->
             listOf(Act.SEND_1, Act.SEND_2, Act.SEND_3)[i] to q
-        } + listOf(
+        } + listOfNotNull(
+            // PRESENT ONLY WHEN THERE IS ONE. Autopen returns null whenever it
+            // has nothing the canned replies do not already cover, and an
+            // always-present row that is sometimes dead is a row people learn
+            // to skip -- which costs the feature exactly when it does have
+            // something to say.
+            suggestion?.let { Act.SEND_AUTO to Autopen.LABEL },
+        ) + listOf(
             Act.SPEAK to if (dictating) "LISTENING" else "SPEAK",
             Act.BACK to "BACK",
         )
@@ -238,12 +266,20 @@ class Crown(
     /** Put words in the mouth and go to the one screen that can send them. */
     fun propose(text: String) {
         draft = text
+        generated = false
         level = if (text.isBlank()) Level.COMPOSE else Level.CONFIRM
     }
 
-    fun backToActions() { level = Level.ACTIONS; draft = ""; dictating = false }
+    /** The same route, and it remembers where the words came from. */
+    fun proposeGenerated(text: String) {
+        draft = Autopen.clip(text)
+        generated = draft.isNotBlank()
+        level = if (draft.isBlank()) Level.COMPOSE else Level.CONFIRM
+    }
 
-    fun backToCompose() { level = Level.COMPOSE; draft = "" }
+    fun backToActions() { level = Level.ACTIONS; draft = ""; dictating = false; generated = false }
+
+    fun backToCompose() { level = Level.COMPOSE; draft = ""; generated = false }
 
     val at: Level get() = level
 
@@ -251,6 +287,8 @@ class Crown(
 
     /** Live dictation state, for the word counter. */
     fun setDictation(text: String, words: Int, listening: Boolean, atLimit: Boolean) {
+        // Speaking over a suggestion makes it yours, so the marking goes.
+        generated = false
         draft = text
         spoken = words
         dictating = listening
@@ -347,7 +385,7 @@ class Crown(
         runCatching {
             val showing = level != Level.ACTIONS && (draft.isNotEmpty() || dictating)
             draft0?.entity?.setEnabled(showing)
-            count0?.entity?.setEnabled(showing && (dictating || spoken > 0))
+            count0?.entity?.setEnabled(showing && (dictating || spoken > 0 || generated))
             if (showing) {
                 val dp = Vector3(cx, headY + DRAFT_UP, cz)
                 draft0?.setText(
@@ -356,8 +394,14 @@ class Crown(
                 )
                 draft0?.entity?.setPose(Pose(dp, facing(dp, head)), Space.ACTIVITY)
                 val cp = Vector3(cx, dp.y - CAP * 1.5f, cz)
+                // THE GENERATED MARK LIVES ON THE COUNTER LINE, which is
+                // already positioned under the draft and already exists to say
+                // something about the words rather than to be one of them. A
+                // second line would push the buttons down; the note line above
+                // is on a timer and this must not expire.
                 count0?.setText(
-                    "$spoken/${Dictation.MAX_WORDS} WORDS" + if (full) "  FULL" else "",
+                    if (generated) Autopen.MARK
+                    else "$spoken/${Dictation.MAX_WORDS} WORDS" + if (full) "  FULL" else "",
                 )
                 count0?.entity?.setPose(Pose(cp, facing(cp, head)), Space.ACTIVITY)
             }
@@ -409,7 +453,8 @@ class Crown(
     fun clear() {
         items.clear(); slotAt.clear(); fired.clear(); note = null; draft0 = null
         open = false; level = Level.ACTIONS; noteUntil = 0L; focused = -1
-        draft = ""; dictating = false; spoken = 0; full = false
+        draft = ""; dictating = false; spoken = 0; full = false; generated = false
+        suggestion = null
         val doomed = entities.toList()
         entities.clear()
         doomed.forEach { runCatching { it.parent = null } }
@@ -422,7 +467,14 @@ class Crown(
     private companion object {
         const val TAG = "MeshmoreXR"
         /** Five actions, or three quick replies plus SPEAK and a way back. */
-        const val SLOTS = 5
+        /**
+         * Six, because COMPOSE can now carry four replies plus SPEAK and BACK.
+         *
+         * At the column's 0.078 m pitch that is 0.47 m, which is 27 degrees in
+         * a 34-degree field -- still inside it, with the draft line above. A
+         * seventh would not be.
+         */
+        const val SLOTS = 6
         /** 1.9° where the card sits — the same reasoning as the card's own cap. */
         /**
          * 1.5° at [DIST] — over §4.1's 1.2° floor and the 1.30° house standard.
