@@ -69,6 +69,7 @@ import com.iotj.meshmore.xr.spatial.Hud
 import com.iotj.meshmore.xr.spatial.MeshNodes
 import com.iotj.meshmore.xr.spatial.Notice
 import com.iotj.meshmore.xr.spatial.Stage
+import com.iotj.meshmore.xr.spatial.Theme
 import com.iotj.meshmore.xr.spatial.Unfold
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.offset
@@ -343,13 +344,34 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-// HALO FIELD — the chosen default theme (design brief §7.11).
-private val Ground = Color(0xFF070B10)
-private val Panel = Color(0xFF101722)
-private val Accent = Color(0xFF35E0F0)
-private val TextC = Color(0xFFDDE7EF)
-private val Dim = Color(0xFF6C8296)
-private val Ok = Color(0xFF7CFF6B)
+/**
+ * THE 2D PATH TAKES THE THEME TOO.
+ *
+ * These were six HALO FIELD constants, and everything they paint is what a
+ * wearer sees FIRST: the boot wordmark, the unfold, the pre-spatial panel. So
+ * picking TERMINAL VOID and relaunching gave a cyan boot screen that resolved
+ * into a green world — the one moment in the app where the theme is doing all
+ * the talking, and the only place it was ignored.
+ *
+ * Read once at class-init from the stored choice rather than plumbed through
+ * the composables: the 2D path exists only until Full Space is granted, which
+ * is before any surface that can change the theme is reachable, so it cannot go
+ * stale within a launch. [Ink] owns everything after that.
+ *
+ * DIM has no palette role of its own — it is the text colour at low emphasis —
+ * so it is derived rather than invented, which keeps it right in all nine.
+ */
+private var uiSkin: Theme.Skin = Theme.DEFAULT
+
+private fun c(rgb: Int, alpha: Float = 1f) =
+    Color(((alpha * 255).toInt() shl 24) or (rgb and 0xFFFFFF))
+
+private val Ground get() = c(uiSkin.palette.ground)
+private val Panel get() = c(uiSkin.palette.panel)
+private val Accent get() = c(uiSkin.palette.accent)
+private val TextC get() = c(uiSkin.palette.text)
+private val Dim get() = c(uiSkin.palette.text, 0.55f)
+private val Ok get() = c(uiSkin.palette.alt)
 
 @Composable
 private fun Root(facts: List<Pair<String, String>>, link: MeshLink, pinOverride: String?, debug: Boolean) {
@@ -812,7 +834,7 @@ private fun HorizonScene(link: MeshLink) {
             // The launch flag overrides for THIS RUN and is not written back.
             MainActivity.themeKey?.let { com.iotj.meshmore.xr.spatial.Theme.byKey(it) }
                 ?: themePrefs.current(),
-        )
+        ).also { uiSkin = it.value }
     }
     val speech = remember { Speech(ctx) }
     val dictation = remember { Dictation(ctx) }
