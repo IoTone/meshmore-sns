@@ -44,6 +44,45 @@ class RowsTest {
         )
     }
 
+    /**
+     * A THEME THAT SCALES ITS TYPE UP STILL FITS THE FIELD.
+     *
+     * SEELE runs at 1.23x and shows one row at a time — the two are the same
+     * decision, and it can only afford the first because of the second. At that
+     * size the row is 53 cm, which is 29.7 degrees at a metre: inside a
+     * 34-degree field with very little spare. That is close enough that the
+     * next person to nudge either number needs to be told, rather than finding
+     * out on the glasses.
+     *
+     * Measured against the FIELD and not the plate, because the themes that
+     * scale up are the ones with no plate under them.
+     */
+    @Test fun anOversizedRowStillFitsTheField() {
+        Theme.ALL.forEach { s ->
+            val w = ROW_WIDEST.length * ROW_CELL_EM * ROW_CAP_M * s.rowScale
+            val deg = Math.toDegrees(2.0 * Math.atan(w / 2.0))
+            assertTrue("${s.key} row is %.1f deg wide".format(deg), deg <= 31.0)
+            if (s.rowScale > 1f) {
+                assertEquals(
+                    "${s.key} scales its type up but still shows a plate",
+                    Theme.Plate.NONE, s.plate,
+                )
+            }
+        }
+    }
+
+    /**
+     * ...and a theme that shows one row at a time is the only one allowed to
+     * scale up. Six oversized rows would not fit vertically either.
+     */
+    @Test fun onlyASingleRowThemeScalesItsTypeUp() {
+        Theme.ALL.forEach { s ->
+            if (s.rowScale > 1f) {
+                assertTrue("${s.key} scales up on a multi-row page", s.rowsPerPage == 1)
+            }
+        }
+    }
+
     /** And the cap stays at or above the house standard while doing it. */
     @Test fun theRowCapIsStillAtTheHouseStandard() {
         val deg = Math.toDegrees(2.0 * Math.atan(ROW_CAP_M / 2.0))

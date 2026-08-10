@@ -115,7 +115,8 @@ class Stack(
         // wearer is watching for a response.
         repeat(MAX) {
             val run = TextRun.reusable(
-                session, context, WIDEST, CAP, argb(theme.text, 0.98f), "stack",
+                session, context, WIDEST, CAP * skin.rowScale,
+                argb(theme.text, 0.98f), "stack",
             ) ?: return@repeat
             run.entity.parent = root
             run.entity.setEnabled(false)
@@ -227,10 +228,26 @@ class Stack(
         this.footer = footer
     }
 
+    /**
+     * Rows of CONTENT per page, for this theme.
+     *
+     * MAX when everything fits and there is no MORE control to house; one
+     * fewer once paging starts, because the way forward has to occupy a row.
+     * SEELE says one and means it — see [Theme.Skin.rowsPerPage].
+     */
+    private val perPage: Int
+        get() {
+            val want = skin.rowsPerPage.coerceIn(1, MAX)
+            // A theme that shows fewer rows than the list has is ALWAYS paging,
+            // so it always pays the MORE row. A theme at MAX only pays it when
+            // the list actually overflows.
+            return if (want < MAX) want else MAX - 1
+        }
+
     /** How many pages the current list needs. */
     val pages: Int
-        get() = if (all.size <= MAX) 1
-        else ((all.size + PER_PAGE - 1) / PER_PAGE)
+        get() = if (all.size <= MAX && skin.rowsPerPage >= MAX) 1
+        else ((all.size + perPage - 1) / perPage).coerceAtLeast(1)
 
     /**
      * Window [all] onto the visible rows, appending the MORE control when there
@@ -241,15 +258,15 @@ class Stack(
      * to the next five beats six settings and no way to reach the seventh.
      */
     private fun repage() {
-        if (all.size <= MAX) {
+        if (all.size <= MAX && skin.rowsPerPage >= MAX) {
             rows = all
             page = 0
             return
         }
         val n = pages
         page = ((page % n) + n) % n
-        val from = page * PER_PAGE
-        val window = all.drop(from).take(PER_PAGE)
+        val from = page * perPage
+        val window = all.drop(from).take(perPage)
         rows = window + Row(
             id = MORE,
             label = "MORE  ${page + 2} OF $n",
@@ -443,12 +460,6 @@ class Stack(
          * so rather than the rows silently stopping.
          */
         const val MAX = 6
-
-        /**
-         * Rows of CONTENT per page once paging starts. One fewer than [MAX],
-         * because the way forward has to occupy a row.
-         */
-        const val PER_PAGE = MAX - 1
 
         /** The paging control's id. Never leaves this class — see [poll]. */
         const val MORE = "\u0001more"

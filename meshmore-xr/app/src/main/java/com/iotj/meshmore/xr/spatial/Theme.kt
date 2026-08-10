@@ -180,6 +180,27 @@ object Theme {
         val symbol: Symbol = Symbol.SOLID,
         /** What a menu plate is made of. See [Plate]. */
         val plate: Plate = Plate.SOLID,
+        /**
+         * How many rows of a menu are shown at once, before paging.
+         *
+         * Only SEELE MONOLITH moves this, and it moves it to ONE. "One item per
+         * page" is the treatment §7 names for it, and the reason it is a theme
+         * property rather than a preference is that it changes the SHAPE of a
+         * menu: a monolith shows you one enormous thing and nothing else, and a
+         * list of six would be a different theme wearing this palette.
+         *
+         * §8 parity survives because paging reaches every row — asserted in
+         * StackPagingTest, which is the check that makes this safe to do at all.
+         */
+        val rowsPerPage: Int = 6,
+        /**
+         * Row type size, as a multiple of the house standard.
+         *
+         * Above 1.0 only where there is room for it. SEELE can afford 1.23
+         * BECAUSE it shows one row at a time — the two properties are the same
+         * decision and would be wrong apart.
+         */
+        val rowScale: Float = 1f,
         /** Which audio pack fires (brief section 7, per theme). */
         val audio: String,
         /**
@@ -259,6 +280,8 @@ object Theme {
         ),
         substrate = Substrate.PANEL,
         motion = Motion.STILL,
+        rowsPerPage = 1,
+        rowScale = 1.23f,
         plate = Plate.NONE,
         symbol = Symbol.SLAB,
         audio = "tribunal",
