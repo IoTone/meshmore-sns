@@ -212,6 +212,25 @@ object Settings {
             .edit().putBoolean(KEY_FIRST_LIGHT, done).apply()
     }
 
+    /**
+     * REDUCE MOTION. Off by default, and it is a WEARER's setting rather than
+     * a theme's.
+     *
+     * The transition grammar has honoured this flag since it was written; it
+     * simply had no control, because the APP bay was full at six rows and the
+     * Stack could not show a seventh. That is a bad reason for an accessibility
+     * setting to be unreachable, and it is why the Stack learned to page.
+     */
+    fun reduceMotion(context: Context): Boolean =
+        context.getSharedPreferences(FILE, Context.MODE_PRIVATE)
+            .getBoolean(KEY_REDUCE_MOTION, false)
+
+    fun setReduceMotion(context: Context, on: Boolean) {
+        context.getSharedPreferences(FILE, Context.MODE_PRIVATE)
+            .edit().putBoolean(KEY_REDUCE_MOTION, on).apply()
+    }
+
+    private const val KEY_REDUCE_MOTION = "reduce_motion"
     private const val KEY_FIRST_LIGHT = "first_light_done"
     private const val KEY_AUTOPEN = "autopen"
     private const val KEY_DIAGNOSTICS = "diagnostics_panel"

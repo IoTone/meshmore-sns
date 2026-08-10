@@ -640,6 +640,7 @@ private fun appRows(
         row("SHARE", "SHARE MY LOCATION", Settings.shareLocation(ctx)),
         row("DIAG", "DIAGNOSTICS PANEL", Settings.diagnostics(ctx)),
         row("AUTOPEN", "SUGGEST A REPLY", Settings.autopen(ctx)),
+        row("MOTION", "REDUCE MOTION", Settings.reduceMotion(ctx)),
         row("CHANSEND", "SEND ON CHANNELS", Settings.channelSend(ctx), "ALLOWED", "OFF"),
         com.iotj.meshmore.xr.spatial.Stack.Row(
             id = "FORGET",
@@ -1025,6 +1026,7 @@ private fun HorizonScene(link: MeshLink) {
         // rebuild the scene.
         val palette = skin.value.palette
         com.iotj.meshmore.xr.spatial.Ink.begin(palette)
+        com.iotj.meshmore.xr.spatial.Reveal.reduced = Settings.reduceMotion(ctx)
         cue.pack = Cue.packFor(skin.value.audio)
         Log.i(TAG_UI, "[theme] wearing ${skin.value.key} (${skin.value.name})")
         // Recentre on the body BEFORE building anything, or the whole
@@ -2015,6 +2017,14 @@ private fun HorizonScene(link: MeshLink) {
                         "SHARE" -> Settings.setShareLocation(ctx, !Settings.shareLocation(ctx))
                         "DIAG" -> Settings.setDiagnostics(ctx, !Settings.diagnostics(ctx))
                         "AUTOPEN" -> Settings.setAutopen(ctx, !Settings.autopen(ctx))
+                        "MOTION" -> {
+                            val on = !Settings.reduceMotion(ctx)
+                            Settings.setReduceMotion(ctx, on)
+                            // Read by every surface's reveal on the next frame;
+                            // no rebuild, because a transition grammar is
+                            // arithmetic rather than geometry.
+                            com.iotj.meshmore.xr.spatial.Reveal.reduced = on
+                        }
                         // THE ONE THAT WIDENS WHAT THE RADIO SAYS. MeshLink
                         // stays the single gate; this only sets the flag it
                         // reads, and the refusal path is untouched.

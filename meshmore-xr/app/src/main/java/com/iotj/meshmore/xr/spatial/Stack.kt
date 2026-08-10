@@ -90,7 +90,11 @@ class Stack(
     private var head0: TextRun.Run? = null
     private var note: TextRun.Run? = null
 
+    /** Everything the host handed us, across all pages. */
+    private var all: List<Row> = emptyList()
+    /** Just what is on screen now — [all] windowed, plus a MORE row if needed. */
     private var rows: List<Row> = emptyList()
+    private var page = 0
     private var title: String = ""
     private var footer: String = ""
     /** When this surface opened, for [Reveal]. */
@@ -159,23 +163,19 @@ class Stack(
      * deliberately ignorant of either. It draws rows and reports picks.
      */
     fun show(list: List<Row>, title: String, footer: String) {
-        rows = list.take(MAX)
+        all = list
+        page = 0
+        repage()
         this.title = title
         this.footer = footer
         open = true
         focused = -1
         fired.clear()
         openedAt = android.os.SystemClock.uptimeMillis()
-        Log.i(TAG, "[stack] '$title' open with ${rows.size} of ${list.size} rows")
-        // NO SILENT TRUNCATION. A bay that grows past MAX drops its last rows
-        // and looks completely normal doing it — the setting is simply not
-        // there, and the person looking for it concludes the app does not have
-        // it. APP is already AT the ceiling, so the next row somebody adds is
-        // the one that vanishes.
-        if (list.size > MAX) {
-            Log.w(TAG, "[stack] '$title' DROPPED ${list.size - MAX} row(s): " +
-                list.drop(MAX).joinToString { it.id })
-        }
+        Log.i(
+            TAG,
+            "[stack] '$title' open with ${list.size} row(s) over $pages page(s)",
+        )
     }
 
     fun hide() {
@@ -196,13 +196,65 @@ class Stack(
         Log.i(TAG, "[stack] closed")
     }
 
-    /** Which row was picked, by its [Row.id]. */
-    fun poll(): String? = fired.poll()
+    /**
+     * Which row was picked, by its [Row.id].
+     *
+     * The MORE control is CONSUMED HERE and never reaches the host. Paging is
+     * this widget's business — the host asked for a list of settings, not a
+     * list of settings and a navigation control, and making every bay learn to
+     * ignore an id it never supplied is how a shared primitive stops being
+     * shared.
+     */
+    fun poll(): String? {
+        while (true) {
+            val id = fired.poll() ?: return null
+            if (id != MORE) return id
+            page++
+            repage()
+            Log.i(TAG, "[stack] page ${page + 1} of $pages")
+        }
+    }
 
-    /** Re-label after a toggle, without rebuilding anything. */
+    /**
+     * Re-label after a toggle, without rebuilding anything and WITHOUT losing
+     * the wearer's place. A toggle on page two that snapped back to page one
+     * would make the second page unusable — every pick would throw you out of
+     * it.
+     */
     fun update(list: List<Row>, footer: String = this.footer) {
-        rows = list.take(MAX)
+        all = list
+        repage()
         this.footer = footer
+    }
+
+    /** How many pages the current list needs. */
+    val pages: Int
+        get() = if (all.size <= MAX) 1
+        else ((all.size + PER_PAGE - 1) / PER_PAGE)
+
+    /**
+     * Window [all] onto the visible rows, appending the MORE control when there
+     * is more than one page.
+     *
+     * PER_PAGE IS MAX MINUS ONE WHEN PAGING, because the way forward has to
+     * live somewhere and the only somewhere is a row. Five settings and a way
+     * to the next five beats six settings and no way to reach the seventh.
+     */
+    private fun repage() {
+        if (all.size <= MAX) {
+            rows = all
+            page = 0
+            return
+        }
+        val n = pages
+        page = ((page % n) + n) % n
+        val from = page * PER_PAGE
+        val window = all.drop(from).take(PER_PAGE)
+        rows = window + Row(
+            id = MORE,
+            label = "MORE  ${page + 2} OF $n",
+            lit = false,
+        )
     }
 
     fun tick(head: Vector3?, yawRad: Float, nowMs: Long = android.os.SystemClock.uptimeMillis()) {
@@ -391,6 +443,15 @@ class Stack(
          * so rather than the rows silently stopping.
          */
         const val MAX = 6
+
+        /**
+         * Rows of CONTENT per page once paging starts. One fewer than [MAX],
+         * because the way forward has to occupy a row.
+         */
+        const val PER_PAGE = MAX - 1
+
+        /** The paging control's id. Never leaves this class — see [poll]. */
+        const val MORE = "\u0001more"
         const val DIST = 1.0f
         const val PLATE_W = ROW_PLATE_W
         /** Frame stroke. Not a hairline — under ~2 mm it vanishes on a wall. */
