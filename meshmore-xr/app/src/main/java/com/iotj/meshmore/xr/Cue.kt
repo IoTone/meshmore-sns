@@ -66,10 +66,54 @@ class Cue {
         val closed: Int,
         val closedMs: Int,
         val vol: Int = 70,
+        /**
+         * E10 — a channel message. Defaults to the pack's own OPEN tone so a
+         * pack that has not been given one is quiet-but-present rather than
+         * silent; every pack below states its own.
+         */
+        val msgChannel: Int = opened,
+        val msgChannelMs: Int = 300,
+        /**
+         * E11 — a DM. §2 is explicit that this "must be sonically distinct
+         * from E10": the difference between somebody talking to a room and
+         * somebody talking to YOU is the single most useful thing audio can
+         * carry here, and it is carried by pitch and length, never by volume.
+         */
+        val msgDirect: Int = recognised,
+        val msgDirectMs: Int = 400,
+        /** E13 — the radio linked. One tone, at the end of the four steps. */
+        val linkUp: Int = opened,
+        val linkUpMs: Int = 260,
+        /** E0 — WAKE. The only event allowed to run long; see [wake]. */
+        val wakeTone: Int = opened,
+        val wakeMs: Int = 900,
     )
 
     companion object {
         private const val TAG = "MeshmoreXR"
+
+        /**
+         * A tone id no pack plays. §4.4: "Any theme may declare an event
+         * silent; no theme may declare E16 CRITICAL silent."
+         *
+         * A sentinel rather than a nullable field, so a silent event is a
+         * VALUE in the table beside the loud ones and reads as a decision.
+         * Nullability would have made the same statement as an absence, which
+         * is indistinguishable from forgetting.
+         */
+        const val SILENT = -1
+
+        /** §2.1's ceiling, expressed as a minimum gap rather than a rate. */
+        const val CHANNEL_GAP_MS = 900L
+        const val DIRECT_GAP_MS = 400L
+
+        /**
+         * After this many channel arrivals inside the window the channel voice
+         * rests until the window rolls over — roughly the spec's "20 s of
+         * continuous traffic".
+         */
+        const val BURST_WINDOW_MS = 20_000L
+        const val BURST_MAX = 12
 
         /**
          * SONAR — HALO FIELD. A soft ping, sparse by design so it survives
@@ -81,6 +125,10 @@ class Cue {
             ToneGenerator.TONE_PROP_BEEP2, 120,
             ToneGenerator.TONE_PROP_ACK, 30,
             ToneGenerator.TONE_PROP_NACK, 140,
+            msgChannel = ToneGenerator.TONE_CDMA_PIP, msgChannelMs = 260,
+            msgDirect = ToneGenerator.TONE_CDMA_ABBR_ALERT, msgDirectMs = 420,
+            linkUp = ToneGenerator.TONE_CDMA_ANSWER, linkUpMs = 260,
+            wakeTone = ToneGenerator.TONE_CDMA_ONE_MIN_BEEP, wakeMs = 900,
         )
 
         /** MISSION CONTROL — NERV. Data chirps and a three-tone alert cadence. */
@@ -91,6 +139,10 @@ class Cue {
             ToneGenerator.TONE_CDMA_PIP, 30,
             ToneGenerator.TONE_SUP_ERROR, 180,
             vol = 78,
+            msgChannel = ToneGenerator.TONE_CDMA_PIP, msgChannelMs = 240,
+            msgDirect = ToneGenerator.TONE_CDMA_ABBR_ALERT, msgDirectMs = 440,
+            linkUp = ToneGenerator.TONE_CDMA_ALERT_CALL_GUARD, linkUpMs = 300,
+            wakeTone = ToneGenerator.TONE_CDMA_ABBR_ALERT, wakeMs = 950,
         )
 
         /** VELOCITY — AG-SYSTEMS. Confident and glossy; a race-start triad. */
@@ -101,6 +153,10 @@ class Cue {
             ToneGenerator.TONE_CDMA_PIP, 25,
             ToneGenerator.TONE_CDMA_ALERT_CALL_GUARD, 170,
             vol = 76,
+            msgChannel = ToneGenerator.TONE_CDMA_PIP, msgChannelMs = 220,
+            msgDirect = ToneGenerator.TONE_CDMA_HIGH_SLS, msgDirectMs = 430,
+            linkUp = ToneGenerator.TONE_CDMA_ANSWER, linkUpMs = 280,
+            wakeTone = ToneGenerator.TONE_CDMA_HIGH_SLS, wakeMs = 950,
         )
 
         /**
@@ -115,6 +171,14 @@ class Cue {
             ToneGenerator.TONE_CDMA_LOW_PBX_L, 25,
             ToneGenerator.TONE_CDMA_LOW_PBX_SLS, 220,
             vol = 52,
+            // "Near-silence otherwise" — a channel message on the busiest band
+            // in the app is exactly what TRIBUNAL declines to announce. §4.4
+            // permits any theme to render an event as deliberate silence, and
+            // this is the theme the permission was written for.
+            msgChannel = SILENT, msgChannelMs = 0,
+            msgDirect = ToneGenerator.TONE_CDMA_LOW_PBX_L, msgDirectMs = 460,
+            linkUp = ToneGenerator.TONE_CDMA_LOW_PBX_SS, linkUpMs = 320,
+            wakeTone = ToneGenerator.TONE_CDMA_LOW_PBX_SLS, wakeMs = 700,
         )
 
         /** PURE PHASE — DR POP. Y2K stabs. The loudest and most musical. */
@@ -125,6 +189,10 @@ class Cue {
             ToneGenerator.TONE_DTMF_1, 25,
             ToneGenerator.TONE_DTMF_S, 150,
             vol = 82,
+            msgChannel = ToneGenerator.TONE_DTMF_3, msgChannelMs = 220,
+            msgDirect = ToneGenerator.TONE_DTMF_B, msgDirectMs = 430,
+            linkUp = ToneGenerator.TONE_DTMF_A, linkUpMs = 280,
+            wakeTone = ToneGenerator.TONE_DTMF_D, wakeMs = 950,
         )
 
         /**
@@ -139,6 +207,10 @@ class Cue {
             ToneGenerator.TONE_CDMA_KEYPAD_VOLUME_KEY_LITE, 20,
             ToneGenerator.TONE_SUP_RADIO_NOTAVAIL, 180,
             vol = 66,
+            msgChannel = ToneGenerator.TONE_SUP_RADIO_ACK, msgChannelMs = 200,
+            msgDirect = ToneGenerator.TONE_SUP_RADIO_ACK, msgDirectMs = 460,
+            linkUp = ToneGenerator.TONE_SUP_RADIO_ACK, linkUpMs = 300,
+            wakeTone = ToneGenerator.TONE_SUP_RADIO_NOTAVAIL, wakeMs = 800,
         )
 
         /**
@@ -153,6 +225,10 @@ class Cue {
             ToneGenerator.TONE_DTMF_3, 22,
             ToneGenerator.TONE_DTMF_0, 150,
             vol = 74,
+            msgChannel = ToneGenerator.TONE_DTMF_7, msgChannelMs = 240,
+            msgDirect = ToneGenerator.TONE_DTMF_C, msgDirectMs = 440,
+            linkUp = ToneGenerator.TONE_DTMF_9, linkUpMs = 300,
+            wakeTone = ToneGenerator.TONE_DTMF_5, wakeMs = 950,
         )
 
         /** BLOOM — BIOLUME. Soft chimes, the least fatiguing pack. */
@@ -163,6 +239,10 @@ class Cue {
             ToneGenerator.TONE_CDMA_PIP, 22,
             ToneGenerator.TONE_CDMA_ONE_MIN_BEEP, 190,
             vol = 60,
+            msgChannel = ToneGenerator.TONE_CDMA_PIP, msgChannelMs = 280,
+            msgDirect = ToneGenerator.TONE_CDMA_ANSWER, msgDirectMs = 460,
+            linkUp = ToneGenerator.TONE_CDMA_NETWORK_USA_RINGBACK, linkUpMs = 320,
+            wakeTone = ToneGenerator.TONE_CDMA_NETWORK_USA_RINGBACK, wakeMs = 1000,
         )
 
         /** TELETYPE — TERMINAL VOID. Mechanical clacks, a real BEL. Lo-fi on purpose. */
@@ -173,6 +253,10 @@ class Cue {
             ToneGenerator.TONE_PROP_ACK, 15,
             ToneGenerator.TONE_SUP_ERROR, 160,
             vol = 72,
+            msgChannel = ToneGenerator.TONE_PROP_ACK, msgChannelMs = 200,
+            msgDirect = ToneGenerator.TONE_PROP_PROMPT, msgDirectMs = 420,
+            linkUp = ToneGenerator.TONE_PROP_BEEP2, linkUpMs = 260,
+            wakeTone = ToneGenerator.TONE_PROP_PROMPT, wakeMs = 900,
         )
 
         val PACKS = listOf(
@@ -252,6 +336,108 @@ class Cue {
     /** A surface closed, or an action declined. */
     fun closed() = play(pack.closed, pack.closedMs)
 
+    // --- arrival, §S4's fourth channel ---------------------------------------
+
+    /**
+     * E10 / E11 — a message landed.
+     *
+     * §S4 fires four things on arrival and says the design must survive losing
+     * any one. Three were built and this was the missing one, which meant every
+     * arrival was silent — and audio is the one channel that reaches a wearer
+     * who is not looking at anything.
+     *
+     * Channel and direct are DIFFERENT SOUNDS, not the same sound louder. §2
+     * requires it, and the reason is that the distinction being carried is
+     * categorical — a room, or you — and loudness is a scale.
+     */
+    fun arrived(direct: Boolean) {
+        if (!allow(if (direct) Kind.DIRECT else Kind.CHANNEL)) return
+        if (direct) play(pack.msgDirect, pack.msgDirectMs)
+        else play(pack.msgChannel, pack.msgChannelMs)
+    }
+
+    /** E13 — the radio linked. */
+    fun linked() = play(pack.linkUp, pack.linkUpMs)
+
+    /**
+     * E0 — WAKE, at first light, while the scene builds.
+     *
+     * Added to the taxonomy rather than found in it, because the wait is real:
+     * the scene takes about fourteen seconds on this hardware and for most of
+     * it the wearer has a wordmark and no evidence anything is happening. That
+     * is the longest unexplained silence in the product and the first thing
+     * anybody experiences.
+     */
+    fun wake() = play(pack.wakeTone, pack.wakeMs)
+
+    /**
+     * One rung of the link handshake, as pitch.
+     *
+     * The four steps already exist and already log; four ascending DTMF rows
+     * against them cost nothing and turn a readout into something you can HEAR
+     * go wrong — you stop hearing the ladder climb, and where it stopped is
+     * where the fault is.
+     *
+     * Deliberately the same four tones in every pack. This is a measurement,
+     * not an identity, and somebody who learns the ladder in one theme should
+     * not have to relearn it in another.
+     */
+    fun linkStep(n: Int) {
+        val row = intArrayOf(
+            ToneGenerator.TONE_DTMF_1,
+            ToneGenerator.TONE_DTMF_4,
+            ToneGenerator.TONE_DTMF_7,
+            ToneGenerator.TONE_DTMF_S,
+        )
+        play(row.getOrNull(n - 1) ?: return, 70)
+    }
+
+    // --- density control, §2.1, mandatory ------------------------------------
+
+    private enum class Kind { CHANNEL, DIRECT }
+
+    private val lastAt = HashMap<Kind, Long>()
+    private var burst = 0
+    private var burstFrom = 0L
+
+    /**
+     * THE RATE CEILING AND THE AMBIENT FLOOR, from §2.1.
+     *
+     * "Without limits the app becomes unwearable" is not a figure of speech on
+     * this mesh: the Portland channel lands three messages a second on a busy
+     * evening, and a companion app that chirps at that rate gets muted — at
+     * which point it has lost ALL FOUR arrival channels, not one.
+     *
+     * Two of the spec's three mechanisms are implementable against a
+     * ToneGenerator. The rate ceiling is exact. The ambient decay is not: the
+     * platform offers no per-tone gain, so the honest version of "floors at
+     * -18 dB" is "stops sounding" — which is a bigger intervention than
+     * specified and is therefore logged when it happens.
+     *
+     * DIRECT MESSAGES GET THEIR OWN BUCKET, and a shorter gap. Somebody
+     * addressing you personally three times in ten seconds is not noise; it is
+     * the most important thing that has happened all day.
+     */
+    private fun allow(kind: Kind): Boolean {
+        val now = android.os.SystemClock.uptimeMillis()
+        val gap = if (kind == Kind.DIRECT) DIRECT_GAP_MS else CHANNEL_GAP_MS
+        if (now - (lastAt[kind] ?: 0L) < gap) return false
+        if (kind == Kind.CHANNEL) {
+            if (now - burstFrom > BURST_WINDOW_MS) { burst = 0; burstFrom = now }
+            burst++
+            if (burst > BURST_MAX) {
+                // The mesh should FEEL busy without becoming fatiguing. The
+                // ember and the cuff still fire; only the sound stands down.
+                if (burst == BURST_MAX + 1) {
+                    Log.i(TAG, "[cue] channel audio resting — busy mesh")
+                }
+                return false
+            }
+        }
+        lastAt[kind] = now
+        return true
+    }
+
     /**
      * WHAT THIS PACK SOUNDS LIKE, on demand.
      *
@@ -263,6 +449,8 @@ class Cue {
     fun sample() = play(pack.opened, pack.openedMs)
 
     private fun play(id: Int, ms: Int) {
+        // SILENT is a value in the table, not an absence. See the constant.
+        if (id == SILENT || ms <= 0) return
         runCatching { tone()?.startTone(id, ms) }
             .onFailure { Log.w(TAG, "[cue] tone failed: ${it.javaClass.simpleName}") }
     }

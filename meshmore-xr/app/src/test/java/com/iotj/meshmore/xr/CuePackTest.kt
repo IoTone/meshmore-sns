@@ -65,6 +65,54 @@ class CuePackTest {
         assertEquals(Cue.PUREPHASE, Cue.PACKS.maxByOrNull { it.vol })
     }
 
+    /**
+     * §2: E11 "must be sonically distinct from E10". The distinction being
+     * carried is categorical — a room, or you — so it cannot be the same sound
+     * at a different volume, and every pack has to make the difference itself.
+     */
+    @Test fun aDirectMessageNeverSoundsLikeAChannelOne() {
+        Cue.PACKS.forEach { p ->
+            val differs = p.msgDirect != p.msgChannel || p.msgDirectMs != p.msgChannelMs
+            assertTrue("${p.key}: E10 and E11 are the same event", differs)
+        }
+    }
+
+    /** A DM is the longer of the two everywhere — it is the one worth turning for. */
+    @Test fun aDirectMessageIsAlwaysTheLongerEvent() {
+        Cue.PACKS.forEach { p ->
+            assertTrue(p.key, p.msgDirectMs > p.msgChannelMs)
+        }
+    }
+
+    /**
+     * §4.4 lets a theme declare an event silent. TRIBUNAL declares E10 silent
+     * and that is the permission's whole purpose — but no pack may go silent on
+     * a DM, which is the one arrival that is definitely for you.
+     */
+    @Test fun onlyChannelArrivalMayBeSilentAndOnlyForTribunal() {
+        Cue.PACKS.forEach { p ->
+            assertTrue("${p.key} silenced a DM", p.msgDirect != Cue.SILENT)
+            if (p.msgChannel == Cue.SILENT) assertEquals(Cue.TRIBUNAL.key, p.key)
+        }
+        assertEquals(Cue.SILENT, Cue.TRIBUNAL.msgChannel)
+    }
+
+    /** WAKE covers a fourteen-second build, so it may run long — but not forever. */
+    @Test fun wakeIsTheLongEventAndTheOnlyOne() {
+        Cue.PACKS.forEach { p ->
+            assertTrue("${p.key} wake ${p.wakeMs}", p.wakeMs in 600..1200)
+            assertTrue("${p.key}", p.wakeMs > p.openedMs)
+            assertTrue("${p.key}", p.msgDirectMs < p.wakeMs)
+        }
+    }
+
+    @Test fun everyPackStatesAllOfItsArrivalTones() {
+        Cue.PACKS.forEach { p ->
+            assertTrue(p.key, p.linkUpMs > 0)
+            assertTrue(p.key, p.msgChannelMs >= 0)
+        }
+    }
+
     @Test fun anUnknownPackFallsBackRatherThanThrowing() {
         assertEquals(Cue.SONAR, Cue.packFor("not-a-pack"))
         assertEquals(Cue.CODEC, Cue.packFor("codec"))

@@ -1061,6 +1061,10 @@ private fun HorizonScene(link: MeshLink) {
         // now, not when the first contact arrives.
         val boot = Boot(session, palette)
         boot.build(origin)
+        // E0 WAKE — once, as the boot surface appears. The scene takes about
+        // fourteen seconds to build on this hardware and until now the wearer
+        // had a wordmark and silence for all of it.
+        cue.wake()
         bootRef.value = boot
         val hud = Hud(session, palette)
         hud.build()
@@ -1416,6 +1420,10 @@ private fun HorizonScene(link: MeshLink) {
             // segment for channel traffic, the whole ring and a pulse for
             // something addressed to you personally.
             if (m.direct) cuffRef.value?.directArrived() else cuffRef.value?.channelArrived()
+            // E10 / E11 — the arrival channel that was silent. Rate-capped
+            // inside Cue (§2.1); the cuff and the ember are not, because a
+            // light you can ignore is not the thing that becomes unwearable.
+            cue.arrived(m.direct)
             // EMBER — the fourth arrival channel. WHERE it came from, at the
             // edge of vision, gone in three seconds.
             //
@@ -1924,6 +1932,10 @@ private fun HorizonScene(link: MeshLink) {
                         saidStep.value = step
                         if (step != null) {
                             noticeRef.value?.say(step)
+                            // The ladder, as pitch. You stop hearing it climb
+                            // and that is where the fault is.
+                            Regex("STEP (\\d)/4").find(step)?.groupValues?.get(1)
+                                ?.toIntOrNull()?.let { cue.linkStep(it) }
                             Log.i(TAG_UI, "[link] $step")
                         } else {
                             // Arrival is worth one line too; it is the only
@@ -1933,7 +1945,7 @@ private fun HorizonScene(link: MeshLink) {
                                 if (who != null) "LINKED — ${who.uppercase()}" else "RADIO LINKED",
                             )
                             Log.i(TAG_UI, "[link] READY (${who ?: "unnamed"})")
-                            cue.opened()
+                            cue.linked()
                         }
                     }
                 }
