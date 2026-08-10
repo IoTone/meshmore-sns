@@ -104,6 +104,38 @@ class SymbolTest {
         }
     }
 
+    // --- focus ---------------------------------------------------------------
+
+    /**
+     * Focus has to be VISIBLE and must not be a shove.
+     *
+     * Below about 1.02 nobody sees it and the control stops answering; above
+     * about 1.25 a row overlaps its neighbours, which at 0.078 m pitch is not a
+     * large margin. The push is bounded harder still — a plate that lunges at
+     * the wearer is the one motion complaint you cannot design your way out of.
+     */
+    @Test fun focusIsNoticeableAndNotAShove() {
+        Theme.ALL.forEach { s ->
+            assertTrue("${s.key} focus %.2f is invisible".format(s.focusScale), s.focusScale >= 1.02f)
+            assertTrue("${s.key} focus %.2f overlaps".format(s.focusScale), s.focusScale <= 1.25f)
+            assertTrue("${s.key} pushes ${s.focusPush} m", s.focusPush in 0f..0.03f)
+        }
+    }
+
+    /**
+     * A theme with NO PLATE has only the type to show focus with, so it cannot
+     * also be the subtlest. SEELE and VOID both draw type on nothing — SEELE
+     * grows it, VOID slides it forward — and neither may do nothing at all.
+     */
+    @Test fun aPlatelessThemeShowsFocusSomehow() {
+        Theme.ALL.filter { it.plate == Theme.Plate.NONE }.forEach { s ->
+            assertTrue(
+                "${s.key} has no plate and no visible focus",
+                s.focusScale >= 1.10f || s.focusPush >= 0.01f,
+            )
+        }
+    }
+
     /**
      * The single-hue themes are the ones that most need form to carry meaning,
      * because they have no colour left to spend on it. Both must have a symbol

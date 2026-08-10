@@ -157,6 +157,25 @@ verification cost before committing to the other four.
 
 ## 4. Motion budget
 
+> **Status, 10 August 2026 — deliberately not wired, and this is the reason.**
+> `Theme.Motion` still reads nothing, and after looking at what actually moves,
+> that is the honest state rather than an omission.
+>
+> **Nothing on the HORIZON idles today.** The boot mark spins (before the scene
+> exists), FIRST LIGHT breathes (onboarding, and the breath is what teaches a
+> first-time wearer the thing is interactive), and the cuff, reel and embers all
+> move on EVENTS. So STILL and MEASURED are already true of every theme, and
+> the whole content of this axis is the ALIVE row — *adding* continuous
+> animation to `Horizon`, the most load-bearing surface in the app.
+>
+> Wiring `Motion` to anything else — gating the boot spin, say — would be using
+> the field for the sake of using it, and the boot spin is the only reassurance
+> a wearer gets during a fourteen-second build.
+>
+> What DID land is the part that matters for accessibility: REDUCE MOTION is a
+> real setting now (APP bay), honoured by the transition grammar, which is what
+> `Motion.STILL` would mostly have bought anyway.
+
 `Theme.Motion` exists and nothing reads it. What it should mean:
 
 | Level | Idle animation | Event animation | Themes |

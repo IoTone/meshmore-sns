@@ -326,10 +326,14 @@ class Stack(
                 }
                 return@forEachIndexed
             }
+            // FOCUS IS SCALE AND A PUSH, per theme. Both are properties the
+            // reveal already owns, so focus and arrival cannot fight: they add.
+            val hot = i == focused
+            val push = if (hot) skin.focusPush else 0f
             val p = Vector3(
-                cx + rx * f.along - fx * f.depth,
+                cx + rx * f.along - fx * (f.depth + push),
                 top - i * PITCH,
-                cz + rz * f.along - fz * f.depth,
+                cz + rz * f.along - fz * (f.depth + push),
             )
             val r = facing(p, head)
             runCatching {
@@ -352,7 +356,7 @@ class Stack(
                 s.plate.setPose(Pose(back, r), Space.ACTIVITY)
                 s.lit.setEnabled(plated && row.lit)
                 s.lit.setPose(Pose(back, r), Space.ACTIVITY)
-                s.run.entity.setScale((if (i == focused) HOT else 1f) * f.scale)
+                s.run.entity.setScale((if (hot) skin.focusScale else 1f) * f.scale)
                 s.proxy.setEnabled(true)
                 s.proxy.setPose(Pose(p, r), Space.ACTIVITY)
             }

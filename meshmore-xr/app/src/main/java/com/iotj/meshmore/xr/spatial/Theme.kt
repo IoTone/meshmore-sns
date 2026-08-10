@@ -201,6 +201,21 @@ object Theme {
          * decision and would be wrong apart.
          */
         val rowScale: Float = 1f,
+        /**
+         * What FOCUS looks like — the row under the pointer.
+         *
+         * Scale and a push toward the wearer, because those are the two things
+         * a transition may animate (see [Reveal]) and focus is under the same
+         * rule: brightness belongs to [Ink], which owns every material, and a
+         * per-frame writer on the same one is the two-writers bug.
+         *
+         * Varied per theme because §7's treatments differ in KIND, not degree —
+         * AG-SYSTEMS slides a plate forward, BIOLUME swells, SEELE simply makes
+         * the type bigger because it has no plate to do anything else with.
+         */
+        val focusScale: Float = 1.10f,
+        /** Metres toward the wearer on focus. AG-SYSTEMS is the one that slides. */
+        val focusPush: Float = 0f,
         /** Which audio pack fires (brief section 7, per theme). */
         val audio: String,
         /**
@@ -232,6 +247,8 @@ object Theme {
         ),
         substrate = Substrate.HYBRID,
         motion = Motion.STILL,
+        focusScale = 1.10f,
+        focusPush = 0f,
         audio = "sonar",
     )
 
@@ -245,6 +262,8 @@ object Theme {
         ),
         substrate = Substrate.PANEL,
         symbol = Symbol.HEX,
+        focusScale = 1.06f,
+        focusPush = 0.008f,
         audio = "mission",
     )
 
@@ -259,6 +278,8 @@ object Theme {
         substrate = Substrate.HYBRID,
         motion = Motion.ALIVE,
         symbol = Symbol.CHEVRON,
+        focusScale = 1.04f,
+        focusPush = 0.020f,
         audio = "velocity",
     )
 
@@ -284,6 +305,8 @@ object Theme {
         rowScale = 1.23f,
         plate = Plate.NONE,
         symbol = Symbol.SLAB,
+        focusScale = 1.16f,
+        focusPush = 0f,
         audio = "tribunal",
     )
 
@@ -298,6 +321,8 @@ object Theme {
         substrate = Substrate.PANEL,
         plate = Plate.OFFSET,
         symbol = Symbol.BLOCK,
+        focusScale = 1.14f,
+        focusPush = 0f,
         audio = "purephase",
     )
 
@@ -323,6 +348,8 @@ object Theme {
         motion = Motion.STILL,
         plate = Plate.FRAME,
         symbol = Symbol.RADAR,
+        focusScale = 1.05f,
+        focusPush = 0f,
         audio = "codec",
     )
 
@@ -338,6 +365,8 @@ object Theme {
         motion = Motion.MEASURED,
         plate = Plate.FRAME,
         symbol = Symbol.WIRE,
+        focusScale = 1.09f,
+        focusPush = 0.006f,
         audio = "arcade",
     )
 
@@ -354,6 +383,8 @@ object Theme {
         posture = Posture.TABLETOP,
         motion = Motion.ALIVE,
         symbol = Symbol.SPORE,
+        focusScale = 1.18f,
+        focusPush = 0f,
         audio = "bloom",
     )
 
@@ -376,6 +407,8 @@ object Theme {
         motion = Motion.STILL,
         plate = Plate.NONE,
         symbol = Symbol.TEXT,
+        focusScale = 1.02f,
+        focusPush = 0.012f,
         audio = "teletype",
     )
 
