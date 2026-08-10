@@ -795,6 +795,17 @@ private fun HorizonScene(link: MeshLink) {
      * is deliberately ignorant of what a pick MEANS.
      */
     val armed = remember { mutableStateOf<Pair<String, Long>?>(null) }
+    /**
+     * The last link step announced, so each one is said once and not per frame.
+     *
+     * Seeded with a sentinel no real step can equal, because the honest initial
+     * value — null, meaning "no step, we are READY" — is also the value the
+     * radio reaches on a fast link. The scene takes about fourteen seconds to
+     * build and a bonded radio connects in two, so on every good launch the
+     * first comparison was null == null and the wearer was told nothing at all,
+     * including that the radio had linked.
+     */
+    val saidStep = remember { mutableStateOf<String?>("<not yet looked>") }
     val threadRef = remember { mutableStateOf<com.iotj.meshmore.xr.spatial.Thread?>(null) }
     val cuffRef = remember { mutableStateOf<com.iotj.meshmore.xr.spatial.Cuff?>(null) }
     val crownRef = remember { mutableStateOf<com.iotj.meshmore.xr.spatial.Crown?>(null) }
@@ -1790,6 +1801,32 @@ private fun HorizonScene(link: MeshLink) {
                 // makes you walk back in five times.
                 firstRef.value?.let { f ->
                     if (f.open) f.tick(stage.headNow()?.translation, nowMs)
+                }
+                // S2 · LINK — the handshake, out loud, as steps.
+                //
+                // Announced on CHANGE rather than drawn every frame: the notice
+                // band is shared, and a readout that reasserts itself sixty
+                // times a second would own it. Each step is said once, which is
+                // also what makes the sequence legible — you see 1/4, 2/4, 3/4
+                // go past, and where it stopped is where the fault is.
+                run {
+                    val step = link.linkStep()
+                    if (step != saidStep.value) {
+                        saidStep.value = step
+                        if (step != null) {
+                            noticeRef.value?.say(step)
+                            Log.i(TAG_UI, "[link] $step")
+                        } else {
+                            // Arrival is worth one line too; it is the only
+                            // moment the wearer learns the radio is theirs.
+                            val who = link.status.value.deviceName
+                            noticeRef.value?.say(
+                                if (who != null) "LINKED — ${who.uppercase()}" else "RADIO LINKED",
+                            )
+                            Log.i(TAG_UI, "[link] READY (${who ?: "unnamed"})")
+                            cue.opened()
+                        }
+                    }
                 }
                 channelsRef.value?.tick(
                     stage.headNow()?.translation,

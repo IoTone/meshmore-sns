@@ -61,6 +61,43 @@ class MeshLink(private val context: Context) {
         val error: String? = null,
     )
 
+    /**
+     * WHERE THE LINK IS, AS A STEP OUT OF FOUR — never a spinner.
+     *
+     * §S2: "shown as literal steps with step semantics (STEP 2/4), never a
+     * spinner." The reason is not decoration. A spinner says only "something is
+     * happening", so every failure looks identical: a radio that is switched
+     * off, a radio out of range, a bond the OS silently refused, and a
+     * handshake that stalled all present as the same turning circle, and a
+     * tester can only report "it didn't connect". A step number says WHICH of
+     * those four it got through, which is most of the diagnosis before anybody
+     * opens a log.
+     *
+     * Returns null once READY: a progress readout that lingers after arrival is
+     * a progress readout people stop reading.
+     */
+    fun linkStep(): String? {
+        val st = _status.value
+        if (st.state == SessionState.READY) return null
+        val n = when {
+            st.scanning -> 1
+            st.state == SessionState.DISCONNECTED -> if (st.deviceName == null) 1 else 2
+            st.state == SessionState.CONNECTING -> 2
+            st.state == SessionState.HANDSHAKING -> 3
+            else -> 4
+        }
+        val what = when (n) {
+            1 -> "LOOKING FOR A RADIO"
+            2 -> "CONNECTING TO ${st.deviceName ?: "RADIO"}"
+            3 -> "HANDSHAKING"
+            else -> "READING RADIO"
+        }
+        // The error replaces the step rather than sitting beside it: if we know
+        // why it stopped, the step it stopped on is the less useful half.
+        st.error?.let { return "LINK FAILED — ${it.uppercase()}" }
+        return "STEP $n/4  $what"
+    }
+
     private val _status = MutableStateFlow(Status())
     val status: StateFlow<Status> = _status.asStateFlow()
 
