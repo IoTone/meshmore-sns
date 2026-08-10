@@ -618,6 +618,113 @@ private fun channelBands(
         )
     }
 
+/**
+ * S9's rows: every radio parameter, its live value, and what it will become.
+ *
+ * PRESET FIRST because it is the only control that changes everything at once,
+ * and COMMIT/REVERT last because they are the ones you reach for when you have
+ * finished. Six rows, so it pages at seven — which is why the Stack learned to.
+ */
+private fun radioRows(
+    cfg: RadioConfig,
+): List<com.iotj.meshmore.xr.spatial.Stack.Row> {
+    val live = cfg.live
+    val pend = cfg.pending
+    fun row(id: String, name: String, l: String?, p: String?, lit: Boolean = false) =
+        com.iotj.meshmore.xr.spatial.Stack.Row(
+            id = id,
+            label = com.iotj.meshmore.xr.spatial.radioRow(name, l ?: "—", p),
+            lit = lit,
+        )
+    if (live == null) {
+        return listOf(
+            com.iotj.meshmore.xr.spatial.Stack.Row(
+                "NONE", "RADIO NOT READ YET", false,
+            ),
+        )
+    }
+    fun f(v: Double) = if (v == Math.floor(v)) v.toLong().toString() else v.toString()
+    return listOf(
+        row("PRESET", "PRESET", "STEP", null),
+        row("FREQ", "FREQ", "%.3f".format(live.freqMhz), pend?.let { "%.3f".format(it.freqMhz) }),
+        row("BW", "BANDWIDTH", f(live.bandwidthKhz), pend?.let { f(it.bandwidthKhz) }),
+        row("SF", "SPREADING", live.spreadingFactor.toString(), pend?.spreadingFactor?.toString()),
+        row("CR", "CODING RATE", "4/${live.codingRate}", pend?.let { "4/${it.codingRate}" }),
+        // LIT WHEN THERE IS SOMETHING TO COMMIT, so the one row that changes
+        // the radio is also the one that says whether it has anything to do.
+        row("COMMIT", "COMMIT", if (cfg.dirty()) "READY" else "NOTHING", null, cfg.dirty()),
+        row("REVERT", "UNDO CHANGES", if (cfg.dirty()) "PENDING" else "CLEAN", null),
+    )
+}
+
+/**
+ * What a radio row does when picked.
+ *
+ * COMMIT IS GUARDED and REVERT is not. Writing parameters to a radio can put it
+ * on a frequency where nothing can reach it — including this app — and that is
+ * not recoverable from inside the app. Discarding a staged edit costs nothing
+ * and asking twice for it would only teach people to double-pick everything.
+ */
+private fun onRadioRow(
+    id: String,
+    cfg: RadioConfig,
+    armed: androidx.compose.runtime.MutableState<Pair<String, Long>?>,
+    nowMs: Long,
+    say: (String) -> Unit,
+) {
+    when (id) {
+        "PRESET" -> {
+            val p = com.iotj.meshmore.xr.spatial.Rack.nextPresetAfter(cfg.pending ?: cfg.live)
+            if (p != null) {
+                cfg.stage { it.copy(
+                    freqMhz = p.second, bandwidthKhz = p.third,
+                    spreadingFactor = p.fourth, codingRate = p.fifth,
+                ) }
+                say(p.first)
+            }
+        }
+        "BW" -> cfg.stage { it.copy(bandwidthKhz = stepIn(BWS_UI, it.bandwidthKhz)) }
+        "SF" -> cfg.stage { it.copy(spreadingFactor = stepInt(SFS_UI, it.spreadingFactor)) }
+        "CR" -> cfg.stage { it.copy(codingRate = stepInt(CRS_UI, it.codingRate)) }
+        // FREQ is not stepped from a row. A frequency is a continuous value
+        // with legal bands around it, and cycling it one row-pick at a time
+        // through a list somebody cannot see is how a radio ends up somewhere
+        // it is not allowed to transmit. It moves with a PRESET, which is a
+        // complete and legal parameter set, or it does not move here.
+        "FREQ" -> say("FREQ FOLLOWS THE PRESET")
+        "COMMIT" -> {
+            if (!cfg.dirty()) { say("NOTHING TO COMMIT"); return }
+            if (armed.value?.first != "COMMIT") {
+                armed.value = "COMMIT" to nowMs
+                say("PICK AGAIN TO WRITE")
+                return
+            }
+            armed.value = null
+            val p = cfg.commit()
+            say(if (p != null) "WRITTEN — ${p.pretty().take(20)}" else "COMMIT FAILED")
+        }
+        "REVERT" -> {
+            armed.value = null
+            cfg.discard()
+            say("CHANGES DISCARDED")
+        }
+    }
+}
+
+private val BWS_UI = listOf(7.8, 10.4, 15.6, 20.8, 31.25, 41.7, 62.5, 125.0, 250.0, 500.0)
+private val SFS_UI = listOf(7, 8, 9, 10, 11, 12)
+private val CRS_UI = listOf(5, 6, 7, 8)
+
+private fun stepIn(xs: List<Double>, v: Double): Double {
+    val i = xs.indexOfFirst { kotlin.math.abs(it - v) < 1e-6 }
+    return if (i < 0) xs.first() else xs[(i + 1) % xs.size]
+}
+
+private fun stepInt(xs: List<Int>, v: Int): Int {
+    val i = xs.indexOf(v)
+    return if (i < 0) xs.first() else xs[(i + 1) % xs.size]
+}
+
 /** How long a guarded row stays armed before it forgets it was asked. */
 private const val ARM_MS = 6000L
 
@@ -856,6 +963,8 @@ private fun HorizonScene(link: MeshLink) {
      * setting whose row happened to share an index.
      */
     val aboutOpen = remember { mutableStateOf(false) }
+    /** Which bay the shared APP stack is currently serving. */
+    val bayMode = remember { mutableStateOf("APP") }
     /**
      * The last link step announced, so each one is said once and not per frame.
      *
@@ -2081,6 +2190,22 @@ private fun HorizonScene(link: MeshLink) {
                     // ABOUT is read-only. Drain the pick and do nothing with it
                     // rather than let it fall through to the settings table.
                     if (aboutOpen.value) { cue.closed(); continue }
+                    // THE RADIO BAY, on the same widget. Routed by mode rather
+                    // than by id so a settings row and a radio row can never
+                    // collide on a shared name.
+                    if (bayMode.value == "RADIO") {
+                        onRadioRow(id, link.radio, armed, nowMs) { note ->
+                            noticeRef.value?.say(note)
+                        }
+                        appRef.value?.update(
+                            radioRows(link.radio),
+                            if (armed.value?.first == "COMMIT") "PICK AGAIN TO WRITE TO THE RADIO"
+                            else if (link.radio.dirty()) "PENDING — COMMIT TO APPLY"
+                            else "PICK TO STEP    B TO CLOSE",
+                        )
+                        cue.recognised()
+                        continue
+                    }
                     val guarded = id in GUARDED_ROWS
                     if (guarded && armed.value?.first != id) {
                         armed.value = id to nowMs
@@ -2167,9 +2292,27 @@ private fun HorizonScene(link: MeshLink) {
                     when (bay) {
                         // The rack, unchanged and with its guards intact. The
                         // console changes how you REACH it, not how it works.
+                        // S9 — RADIO CONFIG, as rows rather than as a rack.
+                        //
+                        // The rack is still built and still reachable with
+                        // --ez radio true: it is a better OBJECT and a worse
+                        // CONTROL, and there is no reason to delete a thing
+                        // that photographs well. But the default path to
+                        // changing a radio parameter is now a surface whose
+                        // targets you can hit.
                         "DEVICE" -> {
-                            rackRef.value?.setVisible(true)
                             consoleRef.value?.hide()
+                            armed.value = null
+                            aboutOpen.value = false
+                            bayMode.value = "RADIO"
+                            appRef.value?.show(
+                                radioRows(link.radio),
+                                title = "RADIO — " + (
+                                    link.radio.live?.pretty()?.take(28) ?: "NOT READ YET"
+                                    ),
+                                footer = if (link.radio.dirty()) "PENDING — COMMIT TO APPLY"
+                                else "PICK TO STEP    B TO CLOSE",
+                            )
                             dockRef.value?.setLit("SETUP", false)
                             cue.opened()
                         }
@@ -2207,6 +2350,7 @@ private fun HorizonScene(link: MeshLink) {
                             consoleRef.value?.hide()
                             armed.value = null
                             aboutOpen.value = false
+                            bayMode.value = "APP"
                             appRef.value?.show(
                                 appRows(ctx, link, armed.value?.first),
                                 title = "APP — CONNECTION: " +
@@ -2223,6 +2367,7 @@ private fun HorizonScene(link: MeshLink) {
                         // listing is not somewhere a wearer can find.
                         "ABOUT" -> {
                             consoleRef.value?.hide()
+                            bayMode.value = "ABOUT"
                             appRef.value?.show(
                                 aboutRows(link),
                                 title = "ABOUT MESHMORE XR",

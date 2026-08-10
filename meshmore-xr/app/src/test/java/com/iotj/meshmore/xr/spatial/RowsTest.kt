@@ -248,6 +248,39 @@ class RowsTest {
         ).forEach { fits(it) }
     }
 
+    // --- S9 radio rows -------------------------------------------------------
+
+    /**
+     * A STAGED VALUE IS SHOWN BESIDE THE LIVE ONE, never instead of it.
+     *
+     * Substituting would let somebody walk away believing the radio had
+     * changed when nothing had been written to it. The arrow is the whole
+     * point: what it is, and what it becomes if you commit.
+     */
+    @Test fun aPendingValueIsShownAsAChangeNotAsTheTruth() {
+        assertEquals("BANDWIDTH  62.5", radioRow("Bandwidth", "62.5", null))
+        assertEquals("BANDWIDTH  62.5", radioRow("Bandwidth", "62.5", "62.5"))
+        assertEquals("BANDWIDTH  62.5\u2192125", radioRow("Bandwidth", "62.5", "125"))
+    }
+
+    @Test fun everyRadioRowFitsThePlate() {
+        listOf(
+            radioRow("Spreading", "12", "7"),
+            radioRow("Coding rate", "4/8", "4/5"),
+            radioRow("Frequency", "910.525", "869.525"),
+            radioRow("Commit", "READY", null),
+            radioRow("A parameter nobody has added yet", "999.999", "111.111"),
+            radioRow("Coding rate", "4/8", "4/5"),
+        ).forEach { fits(it) }
+    }
+
+    /** An unread radio says so rather than rendering a row of dashes. */
+    @Test fun anUnknownValueIsADashAndStillFits() {
+        val s = radioRow("Frequency", "—", null)
+        assertTrue(s, s.contains("—"))
+        fits(s)
+    }
+
     @Test fun aBlankSettingNameStillRenders() {
         assertTrue(settingLabel("  ", false).startsWith("SETTING"))
     }

@@ -599,7 +599,7 @@ class Rack(
     private fun argb(rgb: Int, a: Float) =
         (((a.coerceIn(0f, 1f) * 255).toInt() and 0xFF) shl 24) or (rgb and 0xFFFFFF)
 
-    private companion object {
+    companion object {
         const val TAG = "MeshmoreXR"
         /** Chosen from the angle we spend, not from 19 inches. ~39 deg at reach. */
         const val RACK_W = 0.44f
@@ -664,6 +664,22 @@ class Rack(
         val SFS = listOf(7, 8, 9, 10, 11, 12)
         val CRS = listOf(5, 6, 7, 8)
         /** name, freq, bw, sf, cr */
+        /**
+         * The next preset after whatever [from] matches, for callers that are
+         * not the rack. Exposed rather than duplicated: the presets are legal
+         * parameter SETS for a region, and a second copy that drifted would be
+         * a second copy that transmits somewhere it should not.
+         */
+        fun nextPresetAfter(from: RadioConfig.Params?): Quint? {
+            if (PRESETS.isEmpty()) return null
+            val i = PRESETS.indexOfFirst {
+                from != null && kotlin.math.abs(it.second - from.freqMhz) < 1e-6 &&
+                    kotlin.math.abs(it.third - from.bandwidthKhz) < 1e-6 &&
+                    it.fourth == from.spreadingFactor && it.fifth == from.codingRate
+            }
+            return PRESETS[(i + 1) % PRESETS.size]
+        }
+
         val PRESETS = listOf(
             Quint("US915 FAST", 910.525, 62.5, 7, 5),
             Quint("US915 LONG", 910.525, 62.5, 10, 5),

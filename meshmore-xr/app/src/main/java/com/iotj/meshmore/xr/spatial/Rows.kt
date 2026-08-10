@@ -135,3 +135,39 @@ internal fun settingLabel(
     }.ifBlank { "SETTING" }
     return n + "  " + if (armed) "CONFIRM?" else if (on) onWord else offWord
 }
+
+// --- S9 · radio configuration -----------------------------------------------
+
+/**
+ * One radio parameter, as a row.
+ *
+ * REPLACES THE RACK'S KNOBS, and the arithmetic is why. At the rack's reach of
+ * 0.62 m its face is 39 degrees wide — wider than the 34-degree field — while
+ * its knobs are 2.4 degrees across, barely above the 2-degree floor for
+ * anything reached for. Too big and too small at the same time is what "too
+ * many controls on one surface" looks like, and it cannot be fixed by moving
+ * it: at 0.5 m the same face is 47 degrees.
+ *
+ * The crown met this exact shape and the answer was fewer, bigger targets at
+ * pointing distance. A row is 46 cm x 6.2 cm at a metre — 26 x 3.6 degrees —
+ * and its hit volume IS the plate.
+ *
+ * PENDING IS SHOWN, NOT SUBSTITUTED. A staged value that simply replaced the
+ * live one would let somebody walk away believing the radio had changed. The
+ * arrow is the whole point: what it is, and what it will be if you commit.
+ */
+internal fun radioRow(name: String, live: String, pending: String?): String {
+    // THE NAME IS CLAMPED FIRST. Clamping only the value let a long parameter
+    // name push the whole row past the plate — the same overflow that was
+    // photographed on the APP bay, reintroduced by a function that checked the
+    // half it happened to be thinking about.
+    val n = name.trim().uppercase().let {
+        if (it.length <= RADIO_NAME_MAX) it else it.take(RADIO_NAME_MAX - 1) + "\u2026"
+    }
+    val v = if (pending == null || pending == live) live else live + "\u2192" + pending
+    val room = (ROW_WIDEST.length - n.length - 2).coerceAtLeast(1)
+    return n + "  " + (if (v.length <= room) v else v.take(room))
+}
+
+/** Longest parameter name that leaves room for a value and a pending arrow. */
+internal const val RADIO_NAME_MAX = 14
