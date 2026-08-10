@@ -349,7 +349,7 @@ class Stack(
          */
         const val MAX = 6
         const val DIST = 1.0f
-        const val PLATE_W = 0.40f
+        const val PLATE_W = ROW_PLATE_W
         const val PLATE_H = 0.062f
         const val DEPTH = 0.004f
         const val PLATE_BACK = 0.006f
@@ -360,8 +360,15 @@ class Stack(
         const val HOT = 1.10f
         const val DEBOUNCE_MS = 350L
 
-        /** 1.5 degrees at DIST — §4.1's floor is 1.2, the house standard 1.30. */
-        const val CAP = 0.026f
+        /**
+         * 1.30 degrees at DIST — the house standard, and it was 1.49.
+         *
+         * The larger cap is nicer to read and did not fit: at 1.49 degrees the
+         * row template rendered 23.6 cm wider than the plate under it. Between
+         * a legible row that overflows its button and one that sits inside it,
+         * the button wins — a control whose label is not on it is not a control.
+         */
+        const val CAP = ROW_CAP_M
 
         /** Sized for the longest row this can hold, once, so it never re-measures. */
         const val WIDEST = ROW_WIDEST

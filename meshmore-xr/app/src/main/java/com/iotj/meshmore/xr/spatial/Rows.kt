@@ -24,8 +24,21 @@ package com.iotj.meshmore.xr.spatial
  * mean a per-bay panel and the primitive would stop being one.
  */
 
-/** The longest row any bay may render. Everything below is measured against it. */
-internal const val ROW_WIDEST = "PUBLIC  PORTLAND METRO  999+  SPEAKS"
+/**
+ * The longest row any bay may render — and it is bounded by the PLATE, not by
+ * taste.
+ *
+ * This was 36 characters, which at the old 1.49-degree cap rendered a 63.6 cm
+ * panel onto a 40 cm plate: **23.6 cm of text hanging off both ends of its own
+ * button**, photographed on the glasses 2026-08-09. The template had been
+ * checked against itself and never against the thing it sits on.
+ *
+ * The chain is: 28 cells x 0.679 em/cell x 0.0227 m cap = 43.2 cm of text
+ * inside a 46 cm plate, which is 26 degrees at a metre and fits the field.
+ * `RowsTest` now asserts that relationship rather than the template's own
+ * length, because the length was never the point.
+ */
+internal const val ROW_WIDEST = "PUBLIC  PORTLAND METRO  999+"
 
 /** The longest title, and the longest footer. Same reasoning, different panels. */
 internal const val ROW_HEAD_WIDEST = "APP — CONNECTION: DISCONNECTED"
@@ -33,6 +46,11 @@ internal const val ROW_NOTE_WIDEST = "PICK AGAIN TO ALLOW CHANNEL SEND"
 
 /** Longest channel name that fits [ROW_WIDEST]. */
 internal const val CHAN_NAME_MAX = 14
+
+/** Metrics of the row, kept beside the template so the two cannot drift. */
+internal const val ROW_CAP_M = 0.0227f
+internal const val ROW_CELL_EM = 0.679f
+internal const val ROW_PLATE_W = 0.46f
 
 /**
  * One channel row.
@@ -70,16 +88,26 @@ internal fun channelLabel(
     // fault, and worse, teaches the eye to skim past the marker on every OTHER
     // row where it is the only warning there is.
     val mark = publicKey && !n.startsWith("PUBLIC")
+    // SPEAKS IS GONE, and the plate says it instead.
+    //
+    // It was the confirmation rather than the signal — the lit plate already
+    // carries "this channel reads itself aloud" — and it was eight characters
+    // of a template that turned out to be eight characters too long. When a row
+    // has to lose something, it loses the part that was already being said.
     return buildString {
         if (mark) append("PUBLIC  ")
         append(n)
         append("  ").append(c)
-        if (speaking) append("  SPEAKS")
     }
 }
 
-/** Longest setting name that fits [ROW_WIDEST] beside its state word. */
-internal const val SETTING_NAME_MAX = 26
+/**
+ * Longest setting name that fits [ROW_WIDEST] beside its state word.
+ *
+ * Eighteen, because the widest state word is `CONFIRM?` and it arrives with two
+ * spaces: 18 + 2 + 8 = 28, the whole template.
+ */
+internal const val SETTING_NAME_MAX = 18
 
 /**
  * One settings row.

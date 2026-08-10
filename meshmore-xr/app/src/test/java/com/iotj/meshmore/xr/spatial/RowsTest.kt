@@ -19,6 +19,37 @@ import org.junit.Test
  */
 class RowsTest {
 
+    /**
+     * THE INVARIANT THAT WAS MISSING, and the reason a row could ship hanging
+     * off both ends of its own button.
+     *
+     * Every check in this file compared a label to the TEMPLATE, and the
+     * template was never compared to the PLATE. At the old cap the template
+     * rendered 63.6 cm of text onto a 40 cm plate — 23.6 cm of overflow,
+     * photographed on the glasses before anything here failed.
+     *
+     * A row's width is exactly known: cells x em/cell x cap. So is the plate.
+     * This is that division, and it is the only one that matters.
+     */
+    @Test fun theRowTemplateFitsInsideThePlate() {
+        val textW = ROW_WIDEST.length * ROW_CELL_EM * ROW_CAP_M
+        assertTrue(
+            "template renders %.1f cm onto a %.1f cm plate".format(textW * 100, ROW_PLATE_W * 100),
+            textW <= ROW_PLATE_W,
+        )
+        // ...and with a real margin, so the ends are not touching the edge.
+        assertTrue(
+            "only %.1f cm of margin".format((ROW_PLATE_W - textW) * 100),
+            ROW_PLATE_W - textW >= 0.02f,
+        )
+    }
+
+    /** And the cap stays at or above the house standard while doing it. */
+    @Test fun theRowCapIsStillAtTheHouseStandard() {
+        val deg = Math.toDegrees(2.0 * Math.atan(ROW_CAP_M / 2.0))
+        assertTrue("row cap is %.2f deg".format(deg), deg >= 1.29)
+    }
+
     private fun fits(s: String) = assertTrue(
         "'$s' is ${s.length} chars, template is ${ROW_WIDEST.length}",
         s.length <= ROW_WIDEST.length,
@@ -28,9 +59,15 @@ class RowsTest {
         assertEquals("PORTLAND METRO  42", channelLabel("Portland Metro", false, 42, false))
     }
 
-    @Test fun publicComesFirstAndSpeaksLast() {
+    /**
+     * PUBLIC still leads. SPEAKS is gone — the lit plate says it, and the row
+     * needed the eight characters more than it needed the confirmation.
+     */
+    @Test fun publicComesFirstAndSpeakingIsLeftToThePlate() {
+        assertEquals("PUBLIC  MESH AMERICA  7", channelLabel("Mesh America", true, 7, true))
         assertEquals(
-            "PUBLIC  MESH AMERICA  7  SPEAKS",
+            "the speaking state must not change the row's width",
+            channelLabel("Mesh America", true, 7, false),
             channelLabel("Mesh America", true, 7, true),
         )
     }
@@ -60,7 +97,7 @@ class RowsTest {
     @Test fun countsSaturateAndSaySo() {
         val s = channelLabel("Public Chat", true, 12345, true)
         assertTrue(s, s.contains("999+"))
-        assertTrue("the state must survive a huge count", s.endsWith("SPEAKS"))
+        assertTrue("a saturated count must still end the row cleanly", s.endsWith("999+"))
         fits(s)
     }
 
@@ -137,8 +174,20 @@ class RowsTest {
         fits(settingLabel("A Very Long Setting Name That Somebody Added Later", true))
         fits(settingLabel("Send on channels", false, armed = true, onWord = "ALLOWED"))
         fits(settingLabel("Erase 99999 messages", false, offWord = "").trimEnd())
-        fits(ROW_HEAD_WIDEST)
-        fits(ROW_NOTE_WIDEST)
+    }
+
+    /**
+     * The title and footer are NOT plate-bounded — they have no plate under
+     * them — so they are measured against the FIELD instead. Holding them to
+     * the row template was the previous version of this test doing the right
+     * arithmetic against the wrong object.
+     */
+    @Test fun theHeaderAndFooterFitTheFieldEvenThoughTheyAreLongerThanARow() {
+        listOf(ROW_HEAD_WIDEST, ROW_NOTE_WIDEST).forEach { t ->
+            val w = t.length * ROW_CELL_EM * ROW_CAP_M
+            val deg = Math.toDegrees(2.0 * Math.atan(w / 2.0))
+            assertTrue("'%s' is %.1f deg wide".format(t, deg), deg <= 30.0)
+        }
     }
 
     /**
@@ -153,8 +202,8 @@ class RowsTest {
             "RADIO  MESHCORE-B727FE05",
             "MESHCORE  v1.7.1-companion",
             "DO NOT USE WHILE DRIVING",
-            "WATCH THE REAL WORLD, NOT THIS",
-            "MIC IS ON ONLY WHILE YOU SPEAK",
+            "WATCH THE ROOM, NOT THIS",
+            "MIC ON ONLY WHEN YOU SPEAK",
             "ABOUT MESHMORE XR",
             "READ ONLY — B TO CLOSE",
         ).forEach { fits(it) }
@@ -173,6 +222,7 @@ class RowsTest {
         listOf(
             "CHANNELS — PICK TO SPEAK",
             "APP — CONNECTION: DISCONNECTED",
+            "ABOUT MESHMORE XR",
         ).forEach { assertTrue(it, it.length <= ROW_HEAD_WIDEST.length) }
         listOf(
             "CONNECT A RADIO TO SEE ITS SLOTS",

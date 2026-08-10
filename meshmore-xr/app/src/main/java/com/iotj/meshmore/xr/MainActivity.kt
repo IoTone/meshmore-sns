@@ -593,8 +593,8 @@ private fun aboutRows(link: MeshLink): List<com.iotj.meshmore.xr.spatial.Stack.R
         // THE THREE THAT MATTER, in the order they matter. Driving first: it is
         // the only one where the consequence is not recoverable.
         row("DO NOT USE WHILE DRIVING"),
-        row("WATCH THE REAL WORLD, NOT THIS"),
-        row("MIC IS ON ONLY WHILE YOU SPEAK"),
+        row("WATCH THE ROOM, NOT THIS"),
+        row("MIC ON ONLY WHEN YOU SPEAK"),
     )
 }
 
@@ -633,7 +633,7 @@ private fun appRows(
             lit = on && armedId != id,
         )
     return listOf(
-        row("LOCATION", "USE HEADSET LOCATION", Settings.useDeviceLocation(ctx)),
+        row("LOCATION", "HEADSET LOCATION", Settings.useDeviceLocation(ctx)),
         // Two location settings, and they are separate on purpose: using a fix
         // to compute bearings is local and private, putting it in an advert
         // broadcasts it unencrypted to anyone in range.
