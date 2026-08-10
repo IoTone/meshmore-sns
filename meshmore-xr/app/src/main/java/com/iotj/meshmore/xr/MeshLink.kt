@@ -198,6 +198,33 @@ class MeshLink(private val context: Context) {
     var onMessage: ((Msg) -> Unit)? = null
 
     /**
+     * E7 — a peer this app has never heard before just joined the mesh.
+     *
+     * Raised from [upsert], the one place that knows the difference between
+     * "new" and "heard again"; every other caller sees a merged table and
+     * cannot tell. Deliberately NOT raised for a bare advert from an unknown
+     * key — a bare advert is a public key and nothing else, so announcing it
+     * would be announcing a node whose name we cannot say.
+     */
+    var onNodeFound: ((MeshNodes.Peer) -> Unit)? = null
+
+    /**
+     * NOT DURING THE CONTACT SYNC, and the number that settled it is 113.
+     *
+     * Every contact the radio has ever stored arrives through [upsert] at
+     * connect, so on a real mesh every one of them is "new" — 113 of them
+     * inside about one second, measured on the Portland mesh 2026-08-10. Fired
+     * as discovery that is not a mesh coming alive around you, it is a database
+     * being read, and announcing it would be the single most annoying thing
+     * this app does.
+     *
+     * E7 means "a peer entered the mesh WHILE I WAS WATCHING". So the signal is
+     * suppressed until the sync that follows a connect has finished, which is
+     * the same moment the loading vessel stops filling.
+     */
+    private var announceFinds = false
+
+    /**
      * One conversation: a channel, or one person.
      *
      * [id] is the channel tag or the sender's key prefix — whichever it is,
@@ -329,6 +356,7 @@ class MeshLink(private val context: Context) {
     }
 
     private fun upsert(p: MeshNodes.Peer) {
+        val isNew = !peers.containsKey(p.key)
         // Merge rather than replace: an advert carries a position and a name, a
         // contact also carries the hop count. Whichever arrives second must not
         // erase what the first one knew.
@@ -349,6 +377,10 @@ class MeshLink(private val context: Context) {
             )
         }
         publish()
+        // AFTER the table is consistent, never inside compute(): a listener
+        // that reads the mesh from within a ConcurrentHashMap remapping is a
+        // listener that can deadlock, and this one draws.
+        if (isNew && announceFinds) runCatching { onNodeFound?.invoke(p) }
     }
 
     private var transport: AndroidBleTransport? = null
@@ -360,6 +392,10 @@ class MeshLink(private val context: Context) {
 
     /** Scan for a radio whose advert name starts with [namePrefix], then handshake. */
     fun connect(namePrefix: String = "MeshCore", pin: String = BLE_PIN) {
+        // A RECONNECT REPLAYS THE WHOLE CONTACT LIST, so the suppression has to
+        // re-arm here and not only at construction. Otherwise the second
+        // connect of a session announces 113 strangers.
+        announceFinds = false
         if (!hasBlePermissions()) {
             Log.w(TAG, "[link] BLE permission not granted — fail safe, no scan")
             _status.value = _status.value.copy(error = "BLE permission denied", lastEvent = "permission")
@@ -1257,6 +1293,10 @@ class MeshLink(private val context: Context) {
                             }
                         }.onFailure { Log.w(TAG, "[topology] census failed: " + it) }
                         _load.value = _load.value.copy(done = true)
+                        // FROM HERE, A NEW PEER IS NEWS. Everything before this
+                        // was the radio reading out what it already knew.
+                        announceFinds = true
+                        Log.i(TAG, "[link] contact sync done — discovery is live")
                     }
                     is io.iotone.meshcore.frames.BatteryStorageFrame -> {
                         val mv = runCatching { frame.battery().batteryMillivolts() }.getOrNull()

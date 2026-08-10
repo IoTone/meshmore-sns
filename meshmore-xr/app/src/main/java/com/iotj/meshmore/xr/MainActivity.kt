@@ -1462,6 +1462,12 @@ private fun HorizonScene(link: MeshLink) {
         // window, and the design survives losing any one.
         //
         // Audio and the unread count exist today. CUFF and EMBER are owed.
+        // E7 — somebody new on the mesh. Rate-capped inside Cue: discovery is
+        // delightful and is also the event most able to become a hailstorm.
+        link.onNodeFound = { p ->
+            cue.nodeFound()
+            Log.i(TAG_UI, "[mesh] new peer '${p.name.ifBlank { p.key }}'")
+        }
         link.onMessage = { m ->
             unread.value += 1
             // CHANNEL AND DM DIFFER BY FORM, not by colour (§S4): one arc
@@ -1472,6 +1478,20 @@ private fun HorizonScene(link: MeshLink) {
             // inside Cue (§2.1); the cuff and the ember are not, because a
             // light you can ignore is not the thing that becomes unwearable.
             cue.arrived(m.direct)
+            // E16 CRITICAL — distress. The SAME reading that makes Autopen
+            // refuse to draft a reply is the one that makes the app insist you
+            // look: a classifier confident enough to decline to speak for you
+            // is confident enough to get your attention. Exempt from the
+            // density cap and never silent in any theme, per §2 and §4.4.
+            if (Autopen.read(m.text) == Autopen.Intent.EMERGENCY) {
+                cue.critical()
+                noticeRef.value?.say(
+                    "URGENT — ${com.iotj.meshmore.xr.spatial.TypeTier.clip(
+                        m.fromName.ifBlank { m.channelName ?: "UNKNOWN" }, 16,
+                    ).uppercase()}",
+                )
+                Log.w(TAG_UI, "[msg] reads as distress from '${m.fromName}'")
+            }
             // EMBER — the fourth arrival channel. WHERE it came from, at the
             // edge of vision, gone in three seconds.
             //

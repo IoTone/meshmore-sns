@@ -87,6 +87,9 @@ class Cue {
         /** E0 — WAKE. The only event allowed to run long; see [wake]. */
         val wakeTone: Int = opened,
         val wakeMs: Int = 900,
+        /** E7 — a peer nobody here has heard before. Short; the mesh is busy. */
+        val nodeFound: Int = tick,
+        val nodeFoundMs: Int = 160,
     )
 
     companion object {
@@ -114,6 +117,19 @@ class Cue {
          */
         const val BURST_WINDOW_MS = 20_000L
         const val BURST_MAX = 12
+
+        /**
+         * Discovery is the loosest bucket because it is the noisiest event: a
+         * radio waking in a busy area meets a dozen strangers in a minute.
+         */
+        const val DISCOVERY_GAP_MS = 2_500L
+
+        /**
+         * §2's duration for E16, and the only event allowed near it. Long
+         * enough that it cannot be mistaken for an ordinary arrival, which is
+         * the entire point of having it.
+         */
+        const val CRITICAL_MS = 1200
 
         /**
          * SONAR — HALO FIELD. A soft ping, sparse by design so it survives
@@ -176,6 +192,11 @@ class Cue {
             // permits any theme to render an event as deliberate silence, and
             // this is the theme the permission was written for.
             msgChannel = SILENT, msgChannelMs = 0,
+            // ...and silent on discovery too. "Near-silence otherwise" cannot
+            // survive a chirp at every stranger the radio meets, and discovery
+            // is the noisiest event in the taxonomy. E16 is still loud, because
+            // no theme may silence that one.
+            nodeFound = SILENT, nodeFoundMs = 0,
             msgDirect = ToneGenerator.TONE_CDMA_LOW_PBX_L, msgDirectMs = 460,
             linkUp = ToneGenerator.TONE_CDMA_LOW_PBX_SS, linkUpMs = 320,
             wakeTone = ToneGenerator.TONE_CDMA_LOW_PBX_SLS, wakeMs = 700,
@@ -360,6 +381,47 @@ class Cue {
     fun linked() = play(pack.linkUp, pack.linkUpMs)
 
     /**
+     * E7 — a new peer joined the mesh.
+     *
+     * Rate-capped hard, and on its own bucket. Discovery is genuinely delightful
+     * on a live mesh and it is also the event most likely to become a hailstorm:
+     * a radio coming up in a busy area can meet a dozen strangers in a minute,
+     * and the spec's §2.1 exists because of exactly that.
+     */
+    fun nodeFound() {
+        if (!allow(Kind.DISCOVERY)) return
+        play(pack.nodeFound, pack.nodeFoundMs)
+    }
+
+    /**
+     * E16 CRITICAL — and it is the one event with rules rather than a tone.
+     *
+     * §2 and §4.4 together: "E16 CRITICAL is exempt from all three [density
+     * mechanisms], ducks every other voice by 12 dB, and is the only event
+     * permitted to interrupt", and "no theme may declare E16 CRITICAL silent".
+     *
+     * So this is deliberately NOT a per-pack field. Every other event in this
+     * file is a theme's to choose, and making this one a table entry would be
+     * inviting a future theme to give it a soft chime or nothing at all —
+     * which the spec forbids, and which nobody would notice until it mattered.
+     * It is the same tone, at the same length, in all nine, exempt from the
+     * cap, and it stops the pack's own voice first.
+     *
+     * WHAT FIRES IT, today: a message whose intent reads as distress. Autopen
+     * already classifies that — it is the case where it refuses to draft a
+     * reply — so the same reading that declines to put words in your mouth is
+     * the one that makes the app get your attention.
+     */
+    fun critical() {
+        // Interrupt rather than mix. QUEUE_FLUSH stops whatever the pack was
+        // saying, which is what "the only event permitted to interrupt" means
+        // with the tools this path has.
+        runCatching { tone()?.stopTone() }
+        play(ToneGenerator.TONE_CDMA_ABBR_ALERT, CRITICAL_MS)
+        Log.i(TAG, "[cue] CRITICAL")
+    }
+
+    /**
      * E0 — WAKE, at first light, while the scene builds.
      *
      * Added to the taxonomy rather than found in it, because the wait is real:
@@ -394,7 +456,7 @@ class Cue {
 
     // --- density control, §2.1, mandatory ------------------------------------
 
-    private enum class Kind { CHANNEL, DIRECT }
+    private enum class Kind { CHANNEL, DIRECT, DISCOVERY }
 
     private val lastAt = HashMap<Kind, Long>()
     private var burst = 0
@@ -420,7 +482,11 @@ class Cue {
      */
     private fun allow(kind: Kind): Boolean {
         val now = android.os.SystemClock.uptimeMillis()
-        val gap = if (kind == Kind.DIRECT) DIRECT_GAP_MS else CHANNEL_GAP_MS
+        val gap = when (kind) {
+            Kind.DIRECT -> DIRECT_GAP_MS
+            Kind.CHANNEL -> CHANNEL_GAP_MS
+            Kind.DISCOVERY -> DISCOVERY_GAP_MS
+        }
         if (now - (lastAt[kind] ?: 0L) < gap) return false
         if (kind == Kind.CHANNEL) {
             if (now - burstFrom > BURST_WINDOW_MS) { burst = 0; burstFrom = now }

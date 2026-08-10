@@ -113,6 +113,54 @@ class CuePackTest {
         }
     }
 
+    /**
+     * E16 CRITICAL IS NOT A PACK FIELD, AND THAT IS THE POINT.
+     *
+     * §4.4: "Any theme may declare an event silent; NO THEME MAY DECLARE E16
+     * CRITICAL SILENT." Every other event in Cue.Pack is a theme's to choose,
+     * so making this one a table entry would invite a future theme to give it a
+     * soft chime or nothing at all — forbidden, and nobody would notice until
+     * it mattered. It is the same tone at the same length in all nine.
+     *
+     * This test cannot call critical() without a device, so it checks the
+     * structural guarantee instead: there is no per-pack field to weaken.
+     */
+    @Test fun noPackCanWeakenTheCriticalEvent() {
+        val fields = Cue.Pack::class.java.declaredFields.map { it.name.lowercase() }
+        listOf("critical", "alert", "emergency", "distress").forEach { banned ->
+            assertTrue(
+                "Cue.Pack has a '$banned' field — E16 must not be a theme's to choose",
+                fields.none { it.contains(banned) },
+            )
+        }
+    }
+
+    /** E7 is the noisiest event, so it must also be the shortest. */
+    @Test fun discoveryIsTheBriefestThingAPackSays() {
+        Cue.PACKS.forEach { p ->
+            assertTrue("${p.key} discovery ${p.nodeFoundMs}ms", p.nodeFoundMs <= 200)
+            // A silent channel event bounds nothing, so the comparison only
+            // means something where the pack actually speaks. TRIBUNAL is
+            // silent on both, which is its spec rather than an oversight.
+            if (p.msgChannel != Cue.SILENT) {
+                assertTrue(
+                    "${p.key} announces a stranger louder than a message",
+                    p.nodeFoundMs <= p.msgChannelMs,
+                )
+            }
+        }
+    }
+
+    /**
+     * A pack that silences ordinary channel traffic must not then announce
+     * every stranger it meets — that is louder overall, not quieter.
+     */
+    @Test fun aSilentChannelPackIsSilentOnDiscoveryToo() {
+        Cue.PACKS.filter { it.msgChannel == Cue.SILENT }.forEach { p ->
+            assertEquals("${p.key}", Cue.SILENT, p.nodeFound)
+        }
+    }
+
     @Test fun anUnknownPackFallsBackRatherThanThrowing() {
         assertEquals(Cue.SONAR, Cue.packFor("not-a-pack"))
         assertEquals(Cue.CODEC, Cue.packFor("codec"))
