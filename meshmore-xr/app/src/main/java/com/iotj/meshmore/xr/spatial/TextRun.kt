@@ -315,7 +315,11 @@ object TextRun {
         capHeightM: Float,
         argb: Int,
         name: String = "run",
-    ): Run? = create(session, context, widest, capHeightM, argb, name, reusable = true)
+        calibrate: Boolean = false,
+    ): Run? = create(
+        session, context, widest, capHeightM, argb, name,
+        reusable = true, calibrate = calibrate,
+    )
 
     fun create(
         session: Session,
@@ -325,6 +329,12 @@ object TextRun {
         argb: Int,
         name: String = "run",
         reusable: Boolean = false,
+        /**
+         * Whether this run's width should be checked against the constant the
+         * HORIZON reserves arc from. See the check itself for why almost
+         * nothing wants this.
+         */
+        calibrate: Boolean = false,
     ): Run? = runCatching {
         val tv = TextView(context).apply {
             this.text = text
@@ -443,7 +453,21 @@ object TextRun {
         // describing reality and the ring starts overlapping again with nothing
         // to say why. So: measure every run, log only when it disagrees.
         // Silence here means the constant is still true.
-        val cells = TypeTier.displayCells(text)
+        // ONLY WHERE THE NUMBER IS ACTUALLY USED, which is the label pool.
+        //
+        // This check ran on every run in the app and was firing constantly, on
+        // '—' and on 'MMMMMMMM'. Neither is a label: they are SIZING TEMPLATES,
+        // and a template of the widest glyph in the font measuring wider than a
+        // budget derived from ordinary names is arithmetic working correctly.
+        // Its panel is sized for itself and its neighbours are placed from
+        // constants, so it cannot overlap anything.
+        //
+        // The one place a measured cell width has consequences is the horizon,
+        // where MeshNodes reserves arc per label from RUN_CELL_EM without ever
+        // seeing a font. That is the pool, and the pool is quiet — so the
+        // constant is right and the warning was noise, drowning the signal it
+        // exists to carry.
+        val cells = if (calibrate) TypeTier.displayCells(text) else 0
         if (cells > 0) {
             val measured = (wPx / capPx) / cells
             // DIRECTIONAL. Only UNDER-reservation is a fault: the layout
@@ -454,9 +478,18 @@ object TextRun {
             // a harmless gap for a real overlap. Warning on both directions made
             // the check cry wolf about the safe one.
             if (measured > TypeTier.RUN_CELL_EM + CAL_TOLERANCE) {
-                Log.w(TAG, "[type] CELL WIDTH UNDER-RESERVED: measured %.3f em/cell, " +
-                    "budgeted %.3f — labels will overlap — '%s'"
-                    .format(measured, TypeTier.RUN_CELL_EM, text))
+                // PARENTHESISED. `.format` bound to the SECOND literal only, so
+                // the first %.3f was never substituted, the arguments shifted by
+                // one, and the text — the whole point of the warning — was
+                // dropped. It printed "measured %.3f em/cell, budgeted 0.986"
+                // where 0.986 was the MEASURED value, which is a warning that
+                // reports the opposite of what it means.
+                Log.w(
+                    TAG,
+                    ("[type] CELL WIDTH UNDER-RESERVED: measured %.3f em/cell, " +
+                        "budgeted %.3f — labels will overlap — '%s'")
+                        .format(measured, TypeTier.RUN_CELL_EM, text),
+                )
             }
         }
 

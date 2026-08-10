@@ -60,7 +60,13 @@ class LabelPool(
         clear()
         val root = session.scene.activitySpace
         repeat(capacity) {
-            val run = TextRun.reusable(session, context, TEMPLATE, TEMPLATE_CAP, argb, "label")
+            // THE ONE RUN THAT IS CALIBRATED. The horizon reserves arc per
+            // label from TypeTier.RUN_CELL_EM, computed with no access to a
+            // font, so this is where a drifting constant turns into callsigns
+            // printing through each other.
+            val run = TextRun.reusable(
+                session, context, TEMPLATE, TEMPLATE_CAP, argb, "label", calibrate = true,
+            )
                 ?: return@repeat
             run.entity.parent = root
             run.entity.setEnabled(false)
