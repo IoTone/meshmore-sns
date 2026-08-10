@@ -598,6 +598,26 @@ private fun aboutRows(link: MeshLink): List<com.iotj.meshmore.xr.spatial.Stack.R
     )
 }
 
+/**
+ * The channel band's contents — the same source the CHANNELS bay uses, so a
+ * channel cannot appear in one and not the other.
+ */
+private fun channelBands(
+    link: MeshLink,
+    voice: VoicePrefs,
+): List<com.iotj.meshmore.xr.spatial.Bands.Band> =
+    channelRows(link, voice).map { r ->
+        com.iotj.meshmore.xr.spatial.Bands.Band(
+            id = r.id,
+            // The bay's row is written for a 28-character plate; the band has
+            // its own width and its own template, so it is re-clipped here
+            // rather than shared. Same data, different budget.
+            label = com.iotj.meshmore.xr.spatial.TypeTier.clip(r.label, 20),
+            count = link.countFor(r.id),
+            speaking = r.lit,
+        )
+    }
+
 /** How long a guarded row stays armed before it forgets it was asked. */
 private const val ARM_MS = 6000L
 
@@ -815,6 +835,7 @@ private fun HorizonScene(link: MeshLink) {
     val channelsRef = remember { mutableStateOf<com.iotj.meshmore.xr.spatial.Stack?>(null) }
     val firstRef = remember { mutableStateOf<com.iotj.meshmore.xr.spatial.FirstLight?>(null) }
     val emberRef = remember { mutableStateOf<com.iotj.meshmore.xr.spatial.Ember?>(null) }
+    val bandsRef = remember { mutableStateOf<com.iotj.meshmore.xr.spatial.Bands?>(null) }
     val appRef = remember { mutableStateOf<com.iotj.meshmore.xr.spatial.Stack?>(null) }
     /**
      * A guarded row that has been pressed ONCE, and when it expires.
@@ -999,6 +1020,12 @@ private fun HorizonScene(link: MeshLink) {
             (lens?.let { ", MAGNIFIED $it" } ?: "") + ")")
         nodesRef.value = nodes
         h.build(nodes, o, st.floorHeight())
+        // S5 — the channel band, above the node lanes. Rebuilt with the horizon
+        // because it belongs to the same ring and shares its origin.
+        bandsRef.value?.show(
+            channelBands(link, voice),
+            o,
+        )
         // WHERE AM I, on the one surface that is always there.
         dockRef.value?.let { d ->
             // Pinned only while magnified: at 1:1 there is nothing to say and
@@ -1379,6 +1406,11 @@ private fun HorizonScene(link: MeshLink) {
         channels.build()
         channels.onFocus = { cue.recognised() }
         channelsRef.value = channels
+
+        val bands = com.iotj.meshmore.xr.spatial.Bands(session, palette, ctx)
+        bands.build()
+        bands.onFocus = { cue.recognised() }
+        bandsRef.value = bands
 
         val ember = com.iotj.meshmore.xr.spatial.Ember(session, palette)
         ember.build()
@@ -1799,6 +1831,7 @@ private fun HorizonScene(link: MeshLink) {
                         (consoleRef.value?.gazeTargets() ?: emptyList()) +
                         (themePickerRef.value?.gazeTargets() ?: emptyList()) +
                         (firstRef.value?.gazeTargets() ?: emptyList()) +
+                        (bandsRef.value?.gazeTargets() ?: emptyList()) +
                         (threadRef.value?.gazeTargets() ?: emptyList()) +
                         (crownRef.value?.gazeTargets() ?: emptyList()),
                 )
@@ -1934,6 +1967,38 @@ private fun HorizonScene(link: MeshLink) {
                 }
                 stage.headNow()?.let { hp ->
                     emberRef.value?.tick(hp.translation, yawOf(hp), nowMs)
+                    bandsRef.value?.tick(hp.translation)
+                }
+                // PICKING A BAND OPENS THAT CHANNEL'S THREAD. §S5 also asks
+                // that it re-tint "the corresponding MOTEs" and there are
+                // none — a channel message carries no sender key, so no node
+                // is on a channel in any way the protocol exposes. Opening the
+                // conversation is what somebody wanted anyway.
+                while (true) {
+                    val id = bandsRef.value?.poll() ?: break
+                    val h = stage.headNow() ?: continue
+                    val t = link.threads().firstOrNull { it.id == id } ?: run {
+                        noticeRef.value?.say("NOTHING HEARD ON THAT CHANNEL YET")
+                        cue.closed()
+                        null
+                    } ?: continue
+                    val nowS = System.currentTimeMillis() / 1000
+                    threadRef.value?.showAt(
+                        h.translation, yawOf(h), t.id, t.title,
+                        t.messages.map { m ->
+                            com.iotj.meshmore.xr.spatial.Thread.Line(
+                                who = "%-14s %s".format(
+                                    com.iotj.meshmore.xr.spatial.TypeTier.clip(
+                                        m.fromName.ifBlank { t.title }, 14,
+                                    ),
+                                    ago(nowS - m.atEpochSec),
+                                ),
+                                words = com.iotj.meshmore.xr.spatial.TypeTier.clip(m.text, 24),
+                                mine = m.direct,
+                            )
+                        },
+                    )
+                    cue.opened()
                 }
                 // S2 · LINK — the handshake, out loud, as steps.
                 //

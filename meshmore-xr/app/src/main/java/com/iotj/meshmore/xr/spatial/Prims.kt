@@ -437,6 +437,44 @@ object Prims {
     }
 
     /**
+     * ARC — a slice of a [halo], from [fromRad] through [spanRad].
+     *
+     * Same tube, same plane, just not the whole way round. The channel band
+     * needs it: several arcs sharing one ring, with gaps between them so they
+     * read as separate bands rather than one halo somebody drew badly.
+     *
+     * WHAT AN ARC'S POSITION DOES NOT MEAN. Everything else on this horizon is
+     * placed at a TRUE BEARING, and the brief is emphatic that inventing one is
+     * the worst thing this app can do. A channel has no bearing — it is not
+     * anywhere — so a channel arc must not be readable as pointing somewhere.
+     * The defence is that these are drawn as a CONTINUOUS ENCIRCLING BAND at
+     * their own elevation, well above the node lanes: a ring that goes all the
+     * way round claims no direction, where an isolated segment would.
+     */
+    fun arc(
+        radius: Float, tube: Float, fromRad: Float, spanRad: Float,
+        seg: Int = 40, sides: Int = 6,
+    ): Facets {
+        val f = Facets()
+        val n = seg.coerceAtLeast(2)
+        fun a(i: Int) = fromRad + spanRad * i / n
+        fun px(i: Int, j: Int) =
+            ((radius + tube * cos(2.0 * Math.PI * j / sides)) * cos(a(i).toDouble())).toFloat()
+        fun py(j: Int) = (tube * sin(2.0 * Math.PI * j / sides)).toFloat()
+        fun pz(i: Int, j: Int) =
+            ((radius + tube * cos(2.0 * Math.PI * j / sides)) * sin(a(i).toDouble())).toFloat()
+        for (i in 0 until n) for (j in 0 until sides) {
+            f.quad(
+                px(i, j), py(j), pz(i, j),
+                px(i + 1, j), py(j), pz(i + 1, j),
+                px(i + 1, j + 1), py(j + 1), pz(i + 1, j + 1),
+                px(i, j + 1), py(j + 1), pz(i, j + 1),
+            )
+        }
+        return f
+    }
+
+    /**
      * FRAME — a rectangle drawn as an outline, not filled.
      *
      * Four [bar]s, mitred by overlap rather than by geometry: the corners are

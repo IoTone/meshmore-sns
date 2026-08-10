@@ -290,3 +290,51 @@ permanently — and a muted app has lost all four arrival channels, not one.
 **Recommended: everything above the typography line, in that order.** Posture is
 the one to defer past launch — it is the only item that changes what surfaces
 exist, and that is not a thing to be discovering with testers in the room.
+
+---
+
+## 7. Parked, with reasons — 10 August 2026
+
+### 7.1 The fringe theme: 80s vector arcade
+
+Reserved as a deliberate exception rather than a general licence. **VECTORLINE is
+the theme that gets the excesses** — Battlezone and Lunar Lander are already its
+stated references, and its symbol is already open wire geometry, so it is the
+one place where ambient motion and a background track are in character instead
+of being decoration bolted onto a radio.
+
+What is reserved for it, and for it alone:
+
+- **Ambient background motion** — landers drifting off across the far field.
+  This is the ALIVE row of the motion budget, which is otherwise argued down
+  because nothing on the horizon idles and adding that to `Horizon` is not a
+  small change.
+- **A light background track.** No other theme gets one. Every audio pack so
+  far is EVENT sound; a continuous bed is a different thing and a different
+  battery cost, and a mesh radio you wear for eight hours is the wrong place
+  for it by default.
+- Whatever else reads as arcade, provided §8 parity holds and nothing
+  hand-anchored idles.
+
+**Why one theme and not a setting:** an effect that has to work in all nine gets
+designed for the most conservative of them. Giving it to one lets it be
+extravagant, and lets the other eight stay the calm instrument they are for.
+
+### 7.2 The two posture themes are NOT symmetrical
+
+§7.0 gives two themes a posture, and they are in very different states:
+
+**RECON AMBER · TRANSIT — buildable now.** TRANSIT is MICROHUD and HAND and
+nothing else. Both zones exist and are built: the HUD bands, the cuff, the reel,
+the crown. Its posture is mostly SUBTRACTION — hide the horizon and the console,
+keep the palm and the edge — and §8 parity is satisfied because the hand menu
+already reaches everything.
+
+**BIOLUME · TABLETOP — blocked on S6.** TABLETOP is GROUND, FOCUS and HAND,
+everything inside about 0.8 m, no horizon. The GROUND zone *is* S6 TERRAIN,
+which does not exist. Building BIOLUME's posture before the floor map would give
+a theme that removes the horizon and puts nothing where it was — the one thing
+§7.0's first rule forbids: "posture never removes information, only routes."
+
+So if posture is picked up before launch, it is RECON only, and BIOLUME stays
+FIELD until there is a floor to stand its mesh on.
