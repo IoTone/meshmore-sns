@@ -115,6 +115,35 @@ object Theme {
         TEXT,
     }
 
+    /**
+     * WHAT A MENU PLATE IS MADE OF.
+     *
+     * The second axis §7 never specified, and the reason every theme's console
+     * behaved identically. Derived from [Symbol] rather than chosen freely, so
+     * a theme whose nodes are open geometry has open menus too — RECON's gapped
+     * ring and VECTORLINE's wire node next to a solid slab of a button would be
+     * two applications in one view.
+     *
+     * ON ADDITIVE OPTICS THIS IS NOT A STYLE CHOICE. A filled plate emits
+     * across its whole area and washes out the room behind it; a frame emits
+     * along its edges only and leaves the middle of the control transparent.
+     * Which of those a theme wants is the same question as which substrate it
+     * bet on.
+     */
+    enum class Plate {
+        /** A dim slab with the label as ink on it. HALO, NERV, AG-SYS, BIOLUME. */
+        SOLID,
+
+        /** An outline. Nothing between the wearer and the room. RECON, VECTOR. */
+        FRAME,
+
+        /** A flat block with a hard offset block behind it in a second hue. DR POP. */
+        OFFSET,
+
+        /** No plate at all — the words, and a prompt. SEELE, TERMINAL VOID. */
+        NONE,
+    }
+
     /** How much the theme is allowed to move, before the wearer's reduce-motion setting. */
     enum class Motion {
         /** Nothing idles. Movement means an event happened. */
@@ -149,6 +178,8 @@ object Theme {
         val motion: Motion = Motion.MEASURED,
         /** What a horizon node is made of. See [Symbol]. */
         val symbol: Symbol = Symbol.SOLID,
+        /** What a menu plate is made of. See [Plate]. */
+        val plate: Plate = Plate.SOLID,
         /** Which audio pack fires (brief section 7, per theme). */
         val audio: String,
         /**
@@ -228,6 +259,7 @@ object Theme {
         ),
         substrate = Substrate.PANEL,
         motion = Motion.STILL,
+        plate = Plate.NONE,
         symbol = Symbol.SLAB,
         audio = "tribunal",
     )
@@ -241,6 +273,7 @@ object Theme {
             ground = 0x101014, panel = 0x1C1C24, alert = 0xFF2E88,
         ),
         substrate = Substrate.PANEL,
+        plate = Plate.OFFSET,
         symbol = Symbol.BLOCK,
         audio = "purephase",
     )
@@ -265,6 +298,7 @@ object Theme {
         substrate = Substrate.HYBRID,
         posture = Posture.TRANSIT,
         motion = Motion.STILL,
+        plate = Plate.FRAME,
         symbol = Symbol.RADAR,
         audio = "codec",
     )
@@ -279,6 +313,7 @@ object Theme {
         ),
         substrate = Substrate.ADDITIVE,
         motion = Motion.MEASURED,
+        plate = Plate.FRAME,
         symbol = Symbol.WIRE,
         audio = "arcade",
     )
@@ -316,6 +351,7 @@ object Theme {
         ),
         substrate = Substrate.ADDITIVE,
         motion = Motion.STILL,
+        plate = Plate.NONE,
         symbol = Symbol.TEXT,
         audio = "teletype",
     )

@@ -71,6 +71,39 @@ class SymbolTest {
         assertEquals(1, Theme.ALL.count { it.symbol == Theme.Symbol.TEXT })
     }
 
+    // --- menu plates ---------------------------------------------------------
+
+    /**
+     * A theme's PLATE follows its SYMBOL. A wire node next to a solid slab of a
+     * button is two applications in one view — and on additive optics the
+     * choice is not cosmetic: a filled plate washes out the room behind it and
+     * a frame does not.
+     */
+    @Test fun openSymbolsGetOpenPlates() {
+        Theme.ALL.forEach { s ->
+            if (s.symbol == Theme.Symbol.WIRE || s.symbol == Theme.Symbol.RADAR) {
+                assertEquals(
+                    "${s.key} draws open marks but a solid plate",
+                    Theme.Plate.FRAME, s.plate,
+                )
+            }
+        }
+    }
+
+    /** The two themes with no plate are the two that put type on nothing. */
+    @Test fun onlyTypeOnNothingThemesHaveNoPlate() {
+        val none = Theme.ALL.filter { it.plate == Theme.Plate.NONE }.map { it.key }.toSet()
+        assertEquals(setOf("seele", "void"), none)
+    }
+
+    /** Every plate style is used; none is dead code. */
+    @Test fun everyPlateStyleHasATheme() {
+        val used = Theme.ALL.map { it.plate }
+        Theme.Plate.entries.forEach { p ->
+            assertTrue("$p is defined but no theme uses it", p in used)
+        }
+    }
+
     /**
      * The single-hue themes are the ones that most need form to carry meaning,
      * because they have no colour left to spend on it. Both must have a symbol

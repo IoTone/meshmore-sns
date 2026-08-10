@@ -116,13 +116,18 @@ class Stack(
             run.entity.parent = root
             run.entity.setEnabled(false)
             entities += run.entity
+            // THE PLATE, per theme. See Theme.Plate: a filled slab washes out
+            // the room behind it and a frame does not, which on additive optics
+            // is a different mark rather than a cheaper one.
+            val dimFacets = plateFacets(skin.plate, lit = false)
+            val litFacets = plateFacets(skin.plate, lit = true)
             val plate = MeshEntity.create(
-                session, Prims.build(session, Prims.bar(PLATE_W, PLATE_H, DEPTH)),
-                listOf(Prims.material(session, theme.alt, 0.16f)),
+                session, Prims.build(session, dimFacets),
+                listOf(Prims.material(session, theme.alt, plateAlpha(skin.plate, false))),
             ).also { it.parent = root; it.setEnabled(false); entities += it }
             val lit = MeshEntity.create(
-                session, Prims.build(session, Prims.bar(PLATE_W, PLATE_H, DEPTH)),
-                listOf(Prims.material(session, theme.accent, 0.42f)),
+                session, Prims.build(session, litFacets),
+                listOf(Prims.material(session, theme.accent, plateAlpha(skin.plate, true))),
             ).also { it.parent = root; it.setEnabled(false); entities += it }
             val proxy = MeshEntity.create(
                 session, Prims.build(session, Prims.bar(PLATE_W, PLATE_H, HIT_D)),
@@ -271,9 +276,12 @@ class Stack(
                 // this channel reads itself aloud — and a light that means
                 // "focused" on one surface and "on" on another is a light that
                 // means nothing. Focus is the scale bump instead.
-                s.plate.setEnabled(!row.lit)
+                // NONE draws no plate at all; the row is its words. SEELE puts
+                // type on nothing by design, and VOID is a terminal.
+                val plated = skin.plate != Theme.Plate.NONE
+                s.plate.setEnabled(plated && !row.lit)
                 s.plate.setPose(Pose(back, r), Space.ACTIVITY)
-                s.lit.setEnabled(row.lit)
+                s.lit.setEnabled(plated && row.lit)
                 s.lit.setPose(Pose(back, r), Space.ACTIVITY)
                 s.run.entity.setScale((if (i == focused) HOT else 1f) * f.scale)
                 s.proxy.setEnabled(true)
@@ -292,6 +300,41 @@ class Stack(
     fun gazeTargets(): List<Gaze.Target> {
         if (!open) return emptyList()
         return emptyList()
+    }
+
+    /**
+     * The plate's geometry for this theme.
+     *
+     * NONE still builds something and the caller never enables it. Same trade
+     * the TEXT node symbol makes: every path downstream — focus, the lit swap,
+     * the reveal — is written against a plate that exists, and making it
+     * nullable to save one small mesh per row would put a branch in all of them
+     * for two themes out of nine.
+     */
+    private fun plateFacets(p: Theme.Plate, lit: Boolean): Prims.Facets = when (p) {
+        Theme.Plate.SOLID -> Prims.bar(PLATE_W, PLATE_H, DEPTH)
+        // A rule box. Thicker when lit, because a frame cannot brighten its
+        // middle — the only thing it has to say "on" with is its own weight.
+        Theme.Plate.FRAME ->
+            Prims.frame(PLATE_W, PLATE_H, if (lit) RULE * 2.2f else RULE, DEPTH)
+        // The block, and behind it a second one offset down and right. Y2K
+        // print, and the only plate in the set that is two solids.
+        Theme.Plate.OFFSET -> Prims.Facets().also { f ->
+            val back = Prims.bar(PLATE_W, PLATE_H, DEPTH)
+            f.addTranslated(back, OFFSET_X, -OFFSET_X, -DEPTH)
+            f.addTranslated(Prims.bar(PLATE_W, PLATE_H, DEPTH), 0f, 0f, 0f)
+        }
+        // Built and never shown. See the note above.
+        Theme.Plate.NONE -> Prims.bar(PLATE_W * 0.02f, PLATE_H * 0.02f, DEPTH)
+    }
+
+    private fun plateAlpha(p: Theme.Plate, lit: Boolean): Float = when (p) {
+        // A frame is a fraction of the area of a slab, so at the slab's alpha
+        // it reads as a faint scratch. Emission is per-pixel and there are far
+        // fewer pixels.
+        Theme.Plate.FRAME -> if (lit) 0.95f else 0.55f
+        Theme.Plate.OFFSET -> if (lit) 0.5f else 0.28f
+        else -> if (lit) 0.42f else 0.16f
     }
 
     private fun facing(at: Vector3, head: Vector3): Quaternion {
@@ -350,6 +393,10 @@ class Stack(
         const val MAX = 6
         const val DIST = 1.0f
         const val PLATE_W = ROW_PLATE_W
+        /** Frame stroke. Not a hairline — under ~2 mm it vanishes on a wall. */
+        const val RULE = 0.0035f
+        /** DR POP's shadow-block offset. Hard, and deliberately large. */
+        const val OFFSET_X = 0.012f
         const val PLATE_H = 0.062f
         const val DEPTH = 0.004f
         const val PLATE_BACK = 0.006f

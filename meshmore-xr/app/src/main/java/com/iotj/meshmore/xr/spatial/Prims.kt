@@ -437,6 +437,45 @@ object Prims {
     }
 
     /**
+     * FRAME — a rectangle drawn as an outline, not filled.
+     *
+     * Four [bar]s, mitred by overlap rather than by geometry: the corners are
+     * two solids occupying the same millimetre, which is invisible at any size
+     * this app draws and costs nothing, where a properly mitred corner costs
+     * eight more vertices per corner and a sign error waiting to happen.
+     *
+     * ON ADDITIVE OPTICS AN OUTLINE IS NOT A CHEAPER FILL, IT IS A DIFFERENT
+     * MARK. A filled plate emits across its whole area and washes out whatever
+     * is behind it; a frame emits along its edges only, so the room stays
+     * visible through the middle of the control. That is why the two themes
+     * that use it are the two whose node marks are also open — RECON's gapped
+     * ring and VECTORLINE's wire — and it is a coherence worth having rather
+     * than a coincidence.
+     *
+     * [t] is the stroke thickness. It is not a hairline on purpose: GPU line
+     * width is ignored on most platforms and anything under about 2 mm
+     * disappears against a bright wall.
+     */
+    fun frame(w: Float, h: Float, t: Float, d: Float): Facets {
+        val f = Facets()
+        val x = w / 2f; val y = h / 2f
+        fun put(bw: Float, bh: Float, cx: Float, cy: Float) {
+            val a = bw / 2f; val b = bh / 2f; val c = d / 2f
+            f.quad(cx - a, cy - b, c, cx + a, cy - b, c, cx + a, cy + b, c, cx - a, cy + b, c)
+            f.quad(cx + a, cy - b, -c, cx - a, cy - b, -c, cx - a, cy + b, -c, cx + a, cy + b, -c)
+            f.quad(cx + a, cy - b, c, cx + a, cy - b, -c, cx + a, cy + b, -c, cx + a, cy + b, c)
+            f.quad(cx - a, cy - b, -c, cx - a, cy - b, c, cx - a, cy + b, c, cx - a, cy + b, -c)
+            f.quad(cx - a, cy + b, c, cx + a, cy + b, c, cx + a, cy + b, -c, cx - a, cy + b, -c)
+            f.quad(cx - a, cy - b, -c, cx + a, cy - b, -c, cx + a, cy - b, c, cx - a, cy - b, c)
+        }
+        put(w, t, 0f, y - t / 2f)
+        put(w, t, 0f, -y + t / 2f)
+        put(t, h, -x + t / 2f, 0f)
+        put(t, h, x - t / 2f, 0f)
+        return f
+    }
+
+    /**
      * SPUR — a link. A square-section extruded tube between two points. Never a
      * line: GPU line width is ignored on most platforms, and anything under
      * ~1 cm is invisible in bright passthrough.
