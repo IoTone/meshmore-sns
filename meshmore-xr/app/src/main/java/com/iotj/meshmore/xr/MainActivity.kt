@@ -188,6 +188,8 @@ class MainActivity : ComponentActivity() {
         var retintProbe: Boolean = false
         /** --ez firstlight true : run S0 again on a device that has seen it. */
         var firstLight: Boolean = false
+        /** --ez emberprobe true : fire embers all round the compass, on a timer. */
+        var emberProbe: Boolean = false
         /**
          * --es bay "CHANNELS" : open one console bay at launch.
          *
@@ -285,6 +287,7 @@ class MainActivity : ComponentActivity() {
         themeKey = intent?.getStringExtra("theme")
         retintProbe = intent?.getBooleanExtra("retintprobe", false) ?: false
         firstLight = intent?.getBooleanExtra("firstlight", false) ?: false
+        emberProbe = intent?.getBooleanExtra("emberprobe", false) ?: false
         openBay = intent?.getStringExtra("bay")?.uppercase()
         showThread = intent?.getBooleanExtra("thread", false) ?: false
         northDeg = intent?.getStringExtra("north")?.toFloatOrNull()
@@ -785,6 +788,7 @@ private fun HorizonScene(link: MeshLink) {
         remember { mutableStateOf<com.iotj.meshmore.xr.spatial.ThemePicker?>(null) }
     val channelsRef = remember { mutableStateOf<com.iotj.meshmore.xr.spatial.Stack?>(null) }
     val firstRef = remember { mutableStateOf<com.iotj.meshmore.xr.spatial.FirstLight?>(null) }
+    val emberRef = remember { mutableStateOf<com.iotj.meshmore.xr.spatial.Ember?>(null) }
     val appRef = remember { mutableStateOf<com.iotj.meshmore.xr.spatial.Stack?>(null) }
     /**
      * A guarded row that has been pressed ONCE, and when it expires.
@@ -1321,6 +1325,10 @@ private fun HorizonScene(link: MeshLink) {
         channels.onFocus = { cue.recognised() }
         channelsRef.value = channels
 
+        val ember = com.iotj.meshmore.xr.spatial.Ember(session, palette)
+        ember.build()
+        emberRef.value = ember
+
         val first = com.iotj.meshmore.xr.spatial.FirstLight(session, palette, ctx)
         first.build()
         // TOUCHED ONCE AND NEVER AGAIN. Recorded before the cue so a crash in
@@ -1373,6 +1381,51 @@ private fun HorizonScene(link: MeshLink) {
             // segment for channel traffic, the whole ring and a pulse for
             // something addressed to you personally.
             if (m.direct) cuffRef.value?.directArrived() else cuffRef.value?.channelArrived()
+            // EMBER — the fourth arrival channel. WHERE it came from, at the
+            // edge of vision, gone in three seconds.
+            //
+            // The bearing is computed from the sender's own position against
+            // ours, and only when BOTH are known. An unlocated sender gets no
+            // ember rather than a plausible one: the mote would have to point
+            // somewhere, the wearer would turn and look, and there is nothing
+            // to check it against because it is gone before they get there.
+            run {
+                val me = link.here.value
+                val mesh = link.mesh.value
+                // TWO WAYS TO NAME A SENDER, because the protocol has two.
+                //
+                // A DIRECT message carries the sender's public key, which is an
+                // identity. A CHANNEL message carries none — it is a broadcast
+                // on a shared key — so the only thing available is the name the
+                // text was prefixed with, which is a convention rather than a
+                // protocol field.
+                //
+                // The name path is used, but only when it is UNAMBIGUOUS. Names
+                // on a mesh are user-supplied and duplicated, and two nodes
+                // called "shed" in different directions would give an ember
+                // that points at one of them arbitrarily — which is the
+                // invented bearing this whole surface refuses to draw. One
+                // match or none.
+                val peer = if (m.fromKey.isNotBlank()) {
+                    mesh.firstOrNull { p ->
+                        (p.fullKey ?: p.key).startsWith(m.fromKey, ignoreCase = true) ||
+                            m.fromKey.startsWith(p.key, ignoreCase = true)
+                    }
+                } else {
+                    m.fromName.takeIf { it.isNotBlank() }?.let { name ->
+                        mesh.filter { it.name.equals(name, ignoreCase = true) }
+                            .takeIf { it.size == 1 }?.first()
+                    }
+                }
+                val b = if (me.known && peer?.lat != null && peer.lon != null) {
+                    com.iotj.meshmore.xr.spatial.MeshNodes.bearingRad(
+                        me.lat!!, me.lon!!, peer.lat!!, peer.lon!!,
+                    ) - (originRef.value?.yawRad ?: 0f)
+                } else {
+                    null
+                }
+                emberRef.value?.arrived(b, m.direct, android.os.SystemClock.uptimeMillis())
+            }
             // AND IT READS ITSELF, if this conversation was opted in. Only if:
             // an app that starts talking unprompted is startling in a way a
             // light is not, because you can look away from a light and you
@@ -1522,6 +1575,24 @@ private fun HorizonScene(link: MeshLink) {
                     kotlinx.coroutines.delay(500); waited += 500
                 }
                 Log.w(TAG_UI, "[first] never got a head pose — skipped")
+            }
+            // EMBERS ON DEMAND. Mesh traffic arrives when it arrives, and an
+            // ember lasts three seconds — waiting for a real message to check
+            // the placement means missing it. Walks the compass so both sides,
+            // the front and the behind-you drop can be seen in one pass.
+            if (MainActivity.emberProbe) launch {
+                kotlinx.coroutines.delay(4000)
+                var deg = 0
+                while (deg < 360 * 2) {
+                    emberRef.value?.arrived(
+                        Math.toRadians(deg.toDouble()).toFloat(),
+                        direct = (deg / 45) % 2 == 0,
+                        nowMs = android.os.SystemClock.uptimeMillis(),
+                    )
+                    kotlinx.coroutines.delay(1200)
+                    deg += 45
+                }
+                Log.i(TAG_UI, "[ember] probe done")
             }
             MainActivity.openBay?.let { bay ->
                 launch {
@@ -1801,6 +1872,9 @@ private fun HorizonScene(link: MeshLink) {
                 // makes you walk back in five times.
                 firstRef.value?.let { f ->
                     if (f.open) f.tick(stage.headNow()?.translation, nowMs)
+                }
+                stage.headNow()?.let { hp ->
+                    emberRef.value?.tick(hp.translation, yawOf(hp), nowMs)
                 }
                 // S2 · LINK — the handshake, out loud, as steps.
                 //
