@@ -573,6 +573,31 @@ private fun channelRows(
     }
 }
 
+/**
+ * S12's rows. Facts first, then the safety copy — and the safety copy is the
+ * reason this surface exists.
+ *
+ * Every line is inside the Stack's shared row template, checked by RowsTest,
+ * because a safety line clipped in half is worse than one that is absent: it
+ * still looks like a complete sentence.
+ */
+private fun aboutRows(link: MeshLink): List<com.iotj.meshmore.xr.spatial.Stack.Row> {
+    fun row(text: String) = com.iotj.meshmore.xr.spatial.Stack.Row(
+        id = "about", label = text, lit = false,
+    )
+    val radio = link.status.value.deviceName?.uppercase() ?: "NO RADIO LINKED"
+    return listOf(
+        row("MESHMORE XR  ${BuildConfig.VERSION_NAME}"),
+        row("RADIO  ${com.iotj.meshmore.xr.spatial.TypeTier.clip(radio, 22)}"),
+        row("MESHCORE  ${MeshcoreConstants.FIRMWARE_PIN_TAG}"),
+        // THE THREE THAT MATTER, in the order they matter. Driving first: it is
+        // the only one where the consequence is not recoverable.
+        row("DO NOT USE WHILE DRIVING"),
+        row("WATCH THE REAL WORLD, NOT THIS"),
+        row("MIC IS ON ONLY WHILE YOU SPEAK"),
+    )
+}
+
 /** How long a guarded row stays armed before it forgets it was asked. */
 private const val ARM_MS = 6000L
 
@@ -799,6 +824,16 @@ private fun HorizonScene(link: MeshLink) {
      * is deliberately ignorant of what a pick MEANS.
      */
     val armed = remember { mutableStateOf<Pair<String, Long>?>(null) }
+    /**
+     * ABOUT borrows the APP bay's Stack rather than building a seventh surface.
+     *
+     * It is the same widget doing the same job — a column of lines you point
+     * at — and the only difference is that none of these lines does anything.
+     * This flag is what stops a pinch on "DO NOT USE WHILE DRIVING" being
+     * routed into the APP bay's toggle table, which would silently flip a
+     * setting whose row happened to share an index.
+     */
+    val aboutOpen = remember { mutableStateOf(false) }
     /**
      * The last link step announced, so each one is said once and not per frame.
      *
@@ -1930,6 +1965,9 @@ private fun HorizonScene(link: MeshLink) {
                 }
                 while (true) {
                     val id = appRef.value?.poll() ?: break
+                    // ABOUT is read-only. Drain the pick and do nothing with it
+                    // rather than let it fall through to the settings table.
+                    if (aboutOpen.value) { cue.closed(); continue }
                     val guarded = id in GUARDED_ROWS
                     if (guarded && armed.value?.first != id) {
                         armed.value = id to nowMs
@@ -2047,12 +2085,29 @@ private fun HorizonScene(link: MeshLink) {
                         "APP" -> {
                             consoleRef.value?.hide()
                             armed.value = null
+                            aboutOpen.value = false
                             appRef.value?.show(
                                 appRows(ctx, link, armed.value?.first),
                                 title = "APP — CONNECTION: " +
                                     link.status.value.state.name,
                                 footer = "LIT = ON    B TO CLOSE",
                             )
+                            dockRef.value?.setLit("SETUP", false)
+                            cue.opened()
+                        }
+                        // S12 · ABOUT · TERMS · SAFETY. Read-only, and the
+                        // safety copy is the reason it exists rather than the
+                        // version number: "do not use while driving" has to BE
+                        // somewhere a wearer can find, and a line in a store
+                        // listing is not somewhere a wearer can find.
+                        "ABOUT" -> {
+                            consoleRef.value?.hide()
+                            appRef.value?.show(
+                                aboutRows(link),
+                                title = "ABOUT MESHMORE XR",
+                                footer = "READ ONLY — B TO CLOSE",
+                            )
+                            aboutOpen.value = true
                             dockRef.value?.setLit("SETUP", false)
                             cue.opened()
                         }
@@ -2153,6 +2208,7 @@ private fun HorizonScene(link: MeshLink) {
                         if (a.open) {
                             lastBackAt = nowMs
                             armed.value = null
+                            aboutOpen.value = false
                             a.hide(); cue.closed()
                             Log.i(TAG_UI, "[hand] $hand:B — app bay closed")
                             return

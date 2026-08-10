@@ -141,6 +141,25 @@ class RowsTest {
         fits(ROW_NOTE_WIDEST)
     }
 
+    /**
+     * S12's safety lines share the Stack's row template with everything else. A
+     * safety line clipped in half is worse than one that is absent, because it
+     * still looks like a complete sentence — "DO NOT USE WHILE DRIV" reads as a
+     * rendering fault, but "WATCH THE REAL WORLD" reads as advice.
+     */
+    @Test fun everyAboutLineFitsTheSharedTemplate() {
+        listOf(
+            "MESHMORE XR  0.1.0",
+            "RADIO  MESHCORE-B727FE05",
+            "MESHCORE  v1.7.1-companion",
+            "DO NOT USE WHILE DRIVING",
+            "WATCH THE REAL WORLD, NOT THIS",
+            "MIC IS ON ONLY WHILE YOU SPEAK",
+            "ABOUT MESHMORE XR",
+            "READ ONLY — B TO CLOSE",
+        ).forEach { fits(it) }
+    }
+
     @Test fun aBlankSettingNameStillRenders() {
         assertTrue(settingLabel("  ", false).startsWith("SETTING"))
     }

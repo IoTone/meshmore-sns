@@ -2,12 +2,29 @@
 <!-- Copyright (c) 2026 IoTone, Inc. / SPDX-License-Identifier: MIT -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- REQUIRED, as of the checkpoint-2 tightening this comment promised.
-         Every surface in the app is spatial: the horizon, the reel on your
-         palm, the crown, the console. On a phone there is nothing to show and
-         nothing to touch, so listing it as installable there is an invitation
-         to a one-star review from somebody who could never have used it. -->
-    <uses-feature android:name="android.software.xr.immersive" android:required="true" />
+    <!-- REQUIRE THE FEATURE THE HARDWARE ACTUALLY REPORTS.
+         The app is entirely spatial — horizon, palm reel, crown, console — so
+         it must not list on phones, where there is nothing to show and nothing
+         to touch. But the first attempt at tightening this required
+         `android.software.xr.immersive`, and `pm list features` on the target
+         device says:
+
+             android.software.xr.api.spatial=1
+             android.software.xr.api.openxr=65538
+             android.hardware.xr.input.hand_tracking
+
+         There is no `xr.immersive` on it. Requiring that name would have
+         filtered MeshmoreXR off the Aura on Play while installing perfectly
+         over adb — a store-only failure, invisible to every test we run here,
+         and discovered only because the boot log prints the feature table. -->
+    <uses-feature android:name="android.software.xr.api.spatial" android:required="true" />
+
+    <!-- NOT required. §S0's fail-safe is explicit that a denial or an absence
+         must degrade to gaze plus head-dwell rather than lock the wearer out,
+         and that path is built. A device with the spatial API and no hands is
+         a device this app still works on. -->
+    <uses-feature android:name="android.hardware.xr.input.hand_tracking"
+        android:required="false" />
 
     <!-- Hand tracking is requested at runtime in a later checkpoint. Declared
          here so the permission model is visible from the start; a denial must

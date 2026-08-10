@@ -93,6 +93,13 @@ object Marks {
         "DIAG" to "M10 62 H26 L34 42 L44 78 L54 54 L62 62 H74 " +
             "M64 30 A24 24 0 0 1 88 54",
 
+        // ABOUT — a ring with a stem and a dot: the information glyph, which is
+        // the one symbol in this set that needs no explaining anywhere on
+        // earth. Drawn rather than borrowed so it is made of the same strokes
+        // as its five neighbours and does not read as an icon pasted in.
+        "ABOUT" to "M50 50 m-34 0 a34 34 0 1 0 68 0 a34 34 0 1 0 -68 0 " +
+            "M50 28 v6 M50 44 V72",
+
         // INBOX — an envelope. The one mark in the set that is not an
         // instrument, which is the point: this is the surface where the mesh
         // is people rather than hardware.

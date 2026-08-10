@@ -107,6 +107,10 @@ class Console(
         Plate("PROFILE", "Profile & personalization", "Theme, type, audio, access"),
         Plate("CHANNELS", "Channels", "Slots · name + key · active"),
         Plate("DIAG", "Diagnostics & connect", "Connect a radio · frame log"),
+        // S12 · ABOUT · TERMS · SAFETY. Sixth, and last, because it is the one
+        // plate nobody opens twice — but the safety copy has to BE somewhere
+        // findable, and "somewhere findable" is not a line in a store listing.
+        Plate("ABOUT", "About & safety", "Version, licences, safe use"),
     )
 
     suspend fun build() {

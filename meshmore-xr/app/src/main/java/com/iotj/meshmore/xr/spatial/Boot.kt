@@ -37,6 +37,23 @@ class Boot(private val session: Session, private val theme: Horizon.Palette) {
 
     private val entities = mutableListOf<Entity>()
     private var wordmark: Entity? = null
+    /**
+     * THE MARK — the launcher icon, as the thing it is a picture OF.
+     *
+     * `tools/gen_icon.py` renders the app icon offline from these exact
+     * primitives: signal rings as HALOs, links as SPURs, satellites as MOTEs, a
+     * core that is a very coarse mote and therefore an octahedron. The icon has
+     * always been "a frame OF the app rather than an illustration of it", and
+     * this closes the loop — the thing on the launcher and the thing turning
+     * over the boot vessel are the same object, one rendered ahead of time and
+     * one alive.
+     *
+     * The CORE IS THE PARENT. This SDK has no contentless group entity, so the
+     * one part that sits at the centre of rotation carries the rest as
+     * children: rotating it rotates the whole lockup, and the children's poses
+     * stay in its frame where they were authored.
+     */
+    private var core: MeshEntity? = null
     private var meniscus: MeshEntity? = null
     private val body = mutableListOf<MeshEntity>()
     private val motes = mutableListOf<MeshEntity>()
@@ -63,6 +80,61 @@ class Boot(private val session: Session, private val theme: Horizon.Palette) {
             it.parent = root
             it.setPose(Pose(at), Space.ACTIVITY)
             entities += it
+        }
+
+        // THE MARK, above the wordmark, forming a banner lockup: mark, then
+        // name, then the vessel it is filling.
+        val markAt = Vector3(at.x, at.y + MARK_UP, at.z)
+        core = MeshEntity.create(
+            session,
+            // rings=2, seg=4 is a sphere so coarse it IS an octahedron, which
+            // is what the icon's central diamond becomes in three dimensions.
+            Prims.build(session, Prims.mote(CORE_R, rings = 2, seg = 4)),
+            listOf(Prims.material(session, theme.accent, 0.95f)),
+        ).also {
+            it.parent = root
+            it.setPose(Pose(markAt), Space.ACTIVITY)
+            entities += it
+        }
+        val coreEntity = core
+        if (coreEntity != null) {
+            // SIGNAL RINGS. Two, at different radii, lying flat — seen in
+            // perspective from the wearer's eye they read as the concentric
+            // rings of the 2D mark, which is what the icon draws.
+            listOf(RING_A to 0.0035f, RING_B to 0.0026f).forEach { (rad, tube) ->
+                MeshEntity.create(
+                    session, Prims.build(session, Prims.halo(rad, tube, 32, 5)),
+                    listOf(Prims.material(session, theme.accent, 0.55f)),
+                ).also {
+                    it.parent = coreEntity
+                    it.setPose(Pose(Vector3(0f, 0f, 0f)), Space.PARENT)
+                    entities += it
+                }
+            }
+            // THREE LINKED SATELLITES, the mark's other half. Three because the
+            // icon has three and because three is the smallest number that
+            // reads as a network rather than as a pair.
+            repeat(SATS) { i ->
+                val a = 2.0 * PI * i / SATS
+                val x = (cos(a) * RING_A).toFloat()
+                val z = (sin(a) * RING_A).toFloat()
+                MeshEntity.create(
+                    session, Prims.build(session, Prims.mote(SAT_R, 5, 8)),
+                    listOf(Prims.material(session, theme.alt, 0.9f)),
+                ).also {
+                    it.parent = coreEntity
+                    it.setPose(Pose(Vector3(x, 0f, z)), Space.PARENT)
+                    entities += it
+                }
+                MeshEntity.create(
+                    session, Prims.build(session, Prims.spur(0f, 0f, 0f, x, 0f, z, 0.0022f)),
+                    listOf(Prims.material(session, theme.alt, 0.45f)),
+                ).also {
+                    it.parent = coreEntity
+                    it.setPose(Pose(Vector3(0f, 0f, 0f)), Space.PARENT)
+                    entities += it
+                }
+            }
         }
 
         // VESSEL. A cage, not a solid: on an additive display a filled tube
@@ -145,6 +217,27 @@ class Boot(private val session: Session, private val theme: Horizon.Palette) {
     fun tick(dt: Float, fraction: Float, hasTotal: Boolean) {
         t += dt
 
+        // THE MARK TURNS, AND IT MAY TURN ALL THE WAY.
+        //
+        // The wordmark below it oscillates rather than revolves, because stroke
+        // glyphs are flat and a letterform seen edge-on collapses to a bright
+        // line. The mark has no such problem: it is a solid with rings around
+        // it, and it reads from every angle — which is the whole reason the
+        // icon was built as geometry rather than as artwork.
+        //
+        // Tilted off the vertical so the rings are seen in perspective and not
+        // as a line, and slow enough to be ambient rather than a spinner
+        // demanding to be watched.
+        runCatching {
+            core?.setPose(
+                Pose(
+                    Vector3(at.x, at.y + MARK_UP, at.z),
+                    Quaternion.fromEulerAngles(MARK_TILT, t * SPIN_DPS, 0f),
+                ),
+                Space.ACTIVITY,
+            )
+        }
+
         // Slow turn, but an OSCILLATION rather than a full revolution. Stroke
         // glyphs are flat, so a wordmark spinning through 360 degrees goes
         // edge-on twice per turn and collapses to a bright line -- at 18 deg/s
@@ -199,7 +292,7 @@ class Boot(private val session: Session, private val theme: Horizon.Palette) {
         entities.forEach { runCatching { it.dispose() } }
         entities.forEach { runCatching { it.parent = null } }
         entities.clear(); body.clear(); motes.clear()
-        wordmark = null; meniscus = null; level = 0f
+        wordmark = null; meniscus = null; core = null; level = 0f
     }
 
     private companion object {
@@ -218,6 +311,25 @@ class Boot(private val session: Session, private val theme: Horizon.Palette) {
         const val RADIUS = 0.16f
         const val VESSEL_H = 0.42f
         const val VESSEL_DROP = 0.50f
+
+        /** The lockup: mark above, name below, vessel under both. */
+        const val MARK_UP = 0.34f
+        const val CORE_R = 0.055f
+        const val RING_A = 0.135f
+        const val RING_B = 0.185f
+        const val SAT_R = 0.024f
+        const val SATS = 3
+
+        /**
+         * 18 deg/s and a 22-degree tilt.
+         *
+         * The tilt is what makes the rings read as rings rather than as a line
+         * seen edge-on, and the rate is deliberately below the threshold where
+         * a turning object starts to feel like a progress indicator — the
+         * vessel is the progress indicator, and it is showing a real fraction.
+         */
+        const val SPIN_DPS = 18f
+        const val MARK_TILT = 22f
         const val STAVES = 8
         const val BODY_RINGS = 5
         const val BODY_GAP = 0.045f

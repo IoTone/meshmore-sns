@@ -13,7 +13,8 @@
              ground colour the app opens into — so launch is a continuous fade,
              not a cut between two different-looking screens. -->
         <item name="android:windowSplashScreenBackground">#FF070B10</item>
-        <item name="android:windowSplashScreenAnimatedIcon">@drawable/ic_splash</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/ic_splash_anim</item>
+        <item name="android:windowSplashScreenAnimationDuration">1000</item>
         <item name="android:windowSplashScreenIconBackgroundColor">@android:color/transparent</item>
     </style>
 </resources>

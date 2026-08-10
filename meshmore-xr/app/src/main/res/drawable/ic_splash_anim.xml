@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The splash mark, turning.
+
+     The window splash was already configured as an ANIMATED icon and pointed at
+     a plain VectorDrawable, which the platform renders perfectly still — so the
+     attribute was doing nothing and had been since it was written. This is the
+     animator it always wanted: one rotation of the group `spin`, which
+     tools/gen_icon.py now emits around the canvas centre.
+
+     ONE TURN, 1000 ms, linear. The platform caps a splash animation at one
+     second and will cut it off the moment the activity is ready, so anything
+     with an ease-out ends abruptly on a fast launch. A linear rotation looks
+     the same wherever it is interrupted, which is the only honest choice for an
+     animation whose end you do not control. -->
+<animated-vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:drawable="@drawable/ic_splash">
+    <target android:name="spin">
+        <aapt:attr xmlns:aapt="http://schemas.android.com/aapt"
+            name="android:animation">
+            <objectAnimator
+                android:propertyName="rotation"
+                android:valueFrom="0"
+                android:valueTo="360"
+                android:duration="1000"
+                android:interpolator="@android:anim/linear_interpolator"/>
+        </aapt:attr>
+    </target>
+</animated-vector>
