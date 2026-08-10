@@ -53,6 +53,14 @@ class Stack(
     private val session: Session,
     private val theme: Horizon.Palette,
     private val context: Context,
+    /**
+     * Which theme's transition grammar this surface arrives under.
+     *
+     * Passed at construction like [Horizon]'s symbol and for the same reason: a
+     * grammar changing mid-reveal would give a surface half of one entrance and
+     * half of another.
+     */
+    private val skin: Theme.Skin = Theme.DEFAULT,
 ) {
 
     /**
@@ -85,6 +93,8 @@ class Stack(
     private var rows: List<Row> = emptyList()
     private var title: String = ""
     private var footer: String = ""
+    /** When this surface opened, for [Reveal]. */
+    private var openedAt = 0L
     private var focused: Int = -1
 
     var open: Boolean = false
@@ -150,6 +160,7 @@ class Stack(
         open = true
         focused = -1
         fired.clear()
+        openedAt = android.os.SystemClock.uptimeMillis()
         Log.i(TAG, "[stack] '$title' open with ${rows.size} of ${list.size} rows")
         // NO SILENT TRUNCATION. A bay that grows past MAX drops its last rows
         // and looks completely normal doing it — the setting is simply not
@@ -189,7 +200,7 @@ class Stack(
         this.footer = footer
     }
 
-    fun tick(head: Vector3?, yawRad: Float) {
+    fun tick(head: Vector3?, yawRad: Float, nowMs: Long = android.os.SystemClock.uptimeMillis()) {
         if (!open) return
         if (head == null) {
             slots.forEach {
@@ -204,6 +215,10 @@ class Stack(
         // facing is the negative of the +Z axis yawOf reads. Same as Crown.
         val fx = kotlin.math.sin(yawRad)
         val fz = -kotlin.math.cos(yawRad)
+        // Across, so a theme whose entrance slides can slide sideways rather
+        // than only toward the wearer.
+        val rx = kotlin.math.cos(yawRad)
+        val rz = kotlin.math.sin(yawRad)
         val cx = head.x + fx * DIST
         val cz = head.z + fz * DIST
         // The header sits above the column, so the first row is where the gaze
@@ -226,7 +241,22 @@ class Stack(
                 }
                 return@forEachIndexed
             }
-            val p = Vector3(cx, top - i * PITCH, cz)
+            // HOW IT ARRIVES, per theme. Settled after a few hundred ms, at
+            // which point this is arithmetic that returns the layout's own
+            // answer and costs nothing.
+            val f = Reveal.at(skin, i, rows.size, nowMs - openedAt)
+            if (!f.on) {
+                runCatching {
+                    s.run.entity.setEnabled(false); s.plate.setEnabled(false)
+                    s.lit.setEnabled(false); s.proxy.setEnabled(false)
+                }
+                return@forEachIndexed
+            }
+            val p = Vector3(
+                cx + rx * f.along - fx * f.depth,
+                top - i * PITCH,
+                cz + rz * f.along - fz * f.depth,
+            )
             val r = facing(p, head)
             runCatching {
                 s.run.entity.setEnabled(true)
@@ -245,7 +275,7 @@ class Stack(
                 s.plate.setPose(Pose(back, r), Space.ACTIVITY)
                 s.lit.setEnabled(row.lit)
                 s.lit.setPose(Pose(back, r), Space.ACTIVITY)
-                s.run.entity.setScale(if (i == focused) HOT else 1f)
+                s.run.entity.setScale((if (i == focused) HOT else 1f) * f.scale)
                 s.proxy.setEnabled(true)
                 s.proxy.setPose(Pose(p, r), Space.ACTIVITY)
             }

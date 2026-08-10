@@ -68,13 +68,25 @@ and **stagger** (whether elements arrive together or in sequence).
 | **SEELE MONOLITH** | no transition. It is *there*. | it is *not there* | 0 | none |
 | **DR POP** | slam-cut at full scale, then a 3-frame colour-block flash behind it | slam-cut out | 90 | none — simultaneity is the point |
 | **RECON AMBER** | one-line scan wipe, top to bottom, as if drawn by a beam | reverse wipe | 200 | drawn, not staggered |
-| **VECTORLINE** | strokes draw themselves — vertices appear then edges connect | edges retract to vertices, vertices wink | 320 | per-element, 20 ms |
-| **BIOLUME** | grows from a point: scale 0→1 with a soft overshoot, threads reaching to neighbours | shrinks to a point and drifts | 380 | 40 ms, organic (non-linear) |
-| **TERMINAL VOID** | types itself, character by character, with a block cursor | clears line by line, bottom-up | 240 | per character |
+| **VECTORLINE** | strokes draw themselves — vertices appear then edges connect | edges retract to vertices, vertices wink | **290** | per-element, 20 ms |
+| **BIOLUME** | grows from a point: scale 0→1 with a soft overshoot, threads reaching to neighbours | shrinks to a point and drifts | **270** | **22 ms**, bottom-up |
+| **TERMINAL VOID** | types itself, character by character, with a block cursor | clears line by line, bottom-up | **230** | **30 ms**, per line |
 
 **SEELE's zero is not laziness and must not be "fixed" later.** A monolith does
 not animate; the absence *is* the identity, and it is also the only theme that
 gives a motion-sensitive wearer a first-class option rather than a degraded one.
+
+> **Correction, 9 August 2026 — these numbers were wrong when first published.**
+> The durations above are PER ELEMENT, and the rule is about the whole surface.
+> On the six-row bays the app actually draws, VECTORLINE totalled 420 ms,
+> TERMINAL VOID 410, and BIOLUME **580** — its last row landing more than half a
+> second after the surface opened. A per-element budget is not a budget. The
+> three marked in bold are the corrected figures, and `RevealTest` now measures
+> `duration + stagger × (rows − 1)` for all nine so this cannot recur.
+>
+> BIOLUME is the interesting one: it keeps its unhurried character from the
+> CURVE and the overshoot rather than from wall time, because wall time is
+> shared with five other rows and it does not get to spend all of it.
 
 **Implementation note.** Seven of these nine are `scale`, `pose` or `setEnabled`
 over time — all cheap, all already animatable. Only VECTORLINE's stroke-draw and

@@ -1359,7 +1359,7 @@ private fun HorizonScene(link: MeshLink) {
         picker.onFocus = { cue.recognised() }
         themePickerRef.value = picker
 
-        val channels = com.iotj.meshmore.xr.spatial.Stack(session, palette, ctx)
+        val channels = com.iotj.meshmore.xr.spatial.Stack(session, palette, ctx, skin.value)
         channels.build()
         channels.onFocus = { cue.recognised() }
         channelsRef.value = channels
@@ -1380,7 +1380,7 @@ private fun HorizonScene(link: MeshLink) {
         }
         firstRef.value = first
 
-        val appBay = com.iotj.meshmore.xr.spatial.Stack(session, palette, ctx)
+        val appBay = com.iotj.meshmore.xr.spatial.Stack(session, palette, ctx, skin.value)
         appBay.build()
         appBay.onFocus = { cue.recognised() }
         appRef.value = appBay
