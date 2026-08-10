@@ -1,10 +1,21 @@
 // Copyright (c) 2026 IoTone, Inc.
 // SPDX-License-Identifier: MIT
+
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("org.jetbrains.kotlin.plugin.compose")
 }
+
+// IMPORTED, not fully qualified. In a Gradle .kts the name `java` resolves to
+// the Java plugin's extension accessor at every scope in this file, so
+// `java.util.Properties` does not compile anywhere in it.
+val keystoreProps: Properties? =
+    rootProject.file("app/keystore.properties").takeIf { it.exists() }?.let { f ->
+        Properties().apply { f.inputStream().use { load(it) } }
+    }
 
 android {
     namespace = "com.iotj.meshmore.xr"
@@ -34,9 +45,44 @@ android {
         buildConfig = true
     }
 
+    /**
+     * SIGNING, from a file that is not in the repository.
+     *
+     * Put a `keystore.properties` next to this build file with:
+     *
+     *   storeFile=/absolute/path/to/meshmore.jks
+     *   storePassword=...
+     *   keyAlias=...
+     *   keyPassword=...
+     *
+     * If it is absent the release build still runs and produces an UNSIGNED
+     * apk, which is what happens on any machine that is not the release one —
+     * a build that fails outright because a secret is missing is a build
+     * nobody else can run.
+     */
+    signingConfigs {
+        if (keystoreProps != null) {
+            create("release") {
+                storeFile = file(keystoreProps.getProperty("storeFile"))
+                storePassword = keystoreProps.getProperty("storePassword")
+                keyAlias = keystoreProps.getProperty("keyAlias")
+                keyPassword = keystoreProps.getProperty("keyPassword")
+            }
+        }
+    }
+
     buildTypes {
         debug { isMinifyEnabled = false }
-        release { isMinifyEnabled = false }
+        release {
+            isMinifyEnabled = false
+            if (keystoreProps != null) {
+                signingConfig = signingConfigs.getByName("release")
+            } else {
+                logger.warn(
+                    "MeshmoreXR: no app/keystore.properties — release apk will be UNSIGNED",
+                )
+            }
+        }
     }
 
     packaging {

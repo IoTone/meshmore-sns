@@ -49,6 +49,34 @@ echo "JAVA_HOME=$JAVA_HOME ($(java_major "$JAVA_HOME"))  device=${ANDROID_SERIAL
 
 case "${1:-build}" in
   build)   ./gradlew :app:assembleDebug ;;
+  # RELEASE, --no-daemon ON PURPOSE.
+  #
+  # lintVitalRelease runs on every store build, cannot be skipped from Studio,
+  # and kills the Gradle daemon every time on this machine. Gradle reports it as
+  # "Gradle build daemon disappeared unexpectedly", which reads as a broken
+  # toolchain; the hs_err dump says what it actually is:
+  #
+  #   Internal Error (assembler_aarch64.hpp:267)
+  #   guarantee(chk == -1 || chk == 0) failed: Field too big for insn
+  #
+  # A JIT assertion in the JVM's aarch64 backend, not our code and not memory
+  # (it happens at 3g and at 6g on a 48 GB machine). A fresh JVM has not
+  # JIT-compiled the path that trips it, so --no-daemon passes first try.
+  # Slower by seconds, on a build you do rarely.
+  release)
+    ./gradlew --no-daemon :app:assembleRelease || exit $?
+    apk=$(ls -t app/build/outputs/apk/release/*.apk 2>/dev/null | head -1)
+    if [ -z "$apk" ]; then echo "no apk produced" >&2; exit 1; fi
+    echo
+    echo "APK: $apk"
+    case "$apk" in
+      *unsigned*)
+        echo "UNSIGNED -- Play will reject this."
+        echo "Create app/keystore.properties with storeFile/storePassword/keyAlias/keyPassword."
+        ;;
+      *) echo "signed." ;;
+    esac
+    ;;
   install) ./gradlew :app:installDebug \
              && "$ADB" ${ANDROID_SERIAL:+-s $ANDROID_SERIAL} shell monkey -p $PKG -c android.intent.category.LAUNCHER 1 ;;
   logcat)  "$ADB" ${ANDROID_SERIAL:+-s $ANDROID_SERIAL} logcat -s MeshmoreXR:V AndroidRuntime:E ;;

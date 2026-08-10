@@ -119,15 +119,19 @@ object Settings {
     }
 
     /**
-     * The decoded-traffic panel. ON by default FOR NOW: the advert path is
-     * still unproven and the panel is how we prove it. This default is
-     * temporary and should flip back to off once it has done its job -- a
-     * debugging instrument left switched on becomes part of the product by
-     * accident.
+     * The decoded-traffic panel. OFF by default, as the note below always said
+     * it should be once it had done its job.
+     *
+     * It was on to prove the advert path, and the advert path is proven — the
+     * horizon builds 24 motes from 50 peers off a live mesh. Shipping it on
+     * would be exactly the accident the old comment warned about: a debugging
+     * instrument becoming part of the product because nobody turned it off.
+     *
+     * Still one pinch away, in the console's DIAG plate and the APP bay.
      */
     fun diagnostics(context: Context): Boolean =
         context.getSharedPreferences(FILE, Context.MODE_PRIVATE)
-            .getBoolean(KEY_DIAGNOSTICS, true)
+            .getBoolean(KEY_DIAGNOSTICS, false)
 
     fun setDiagnostics(context: Context, on: Boolean) {
         context.getSharedPreferences(FILE, Context.MODE_PRIVATE)

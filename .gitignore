@@ -19,3 +19,12 @@ local.properties
 
 # Pop-11 session images (bin/xrdeploy.p helpers). State, not source.
 *.psv
+
+# Release signing secrets. Never committed.
+app/keystore.properties
+*.jks
+*.keystore
+
+# JVM crash dumps (the aarch64 JIT assert in lintVital, see bin/xr release)
+hs_err_pid*.log
+replay_pid*.log
