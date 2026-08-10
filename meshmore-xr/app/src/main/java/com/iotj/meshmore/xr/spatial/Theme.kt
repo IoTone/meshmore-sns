@@ -64,6 +64,39 @@ object Theme {
         TRANSIT,
     }
 
+    /**
+     * WHAT A NODE ON THE HORIZON ACTUALLY IS.
+     *
+     * The axis that makes nine themes rather than nine palettes. A node mark is
+     * the thing a wearer sees several hundred times a session, so changing it
+     * changes the app more than any amount of recolouring — and the brief has
+     * always specified it per theme (§7: "one primitive set, nine restylings").
+     *
+     * Deliberately a small closed set rather than a per-theme drawing routine.
+     * Every one of these still has to answer the same questions at 1.5 degrees —
+     * is it a node, a repeater or a cluster; is it located; how old is it — and
+     * a free-form hook is how a theme quietly stops answering one of them.
+     */
+    enum class Symbol {
+        /** Solid facetted body. A disc for a node, a dish for a repeater. */
+        SOLID,
+
+        /**
+         * Open geometry only: rings and tubes, no fill. VECTORLINE's whole
+         * proposition — Tempest and Battlezone drew light, not surfaces — and
+         * on additive optics an unfilled ring is also the cheapest mark that
+         * still reads against a bright wall.
+         */
+        WIRE,
+
+        /**
+         * No geometry at all. The node IS its text: `davi1 -71dBm 340m 042`.
+         * TERMINAL VOID, and the most literal reading of §1.3 — if black is
+         * transparent and only emission reads, then emit letters.
+         */
+        TEXT,
+    }
+
     /** How much the theme is allowed to move, before the wearer's reduce-motion setting. */
     enum class Motion {
         /** Nothing idles. Movement means an event happened. */
@@ -96,6 +129,8 @@ object Theme {
         val substrate: Substrate,
         val posture: Posture = Posture.FIELD,
         val motion: Motion = Motion.MEASURED,
+        /** What a horizon node is made of. See [Symbol]. */
+        val symbol: Symbol = Symbol.SOLID,
         /** Which audio pack fires (brief section 7, per theme). */
         val audio: String,
         /**
@@ -221,6 +256,7 @@ object Theme {
         ),
         substrate = Substrate.ADDITIVE,
         motion = Motion.MEASURED,
+        symbol = Symbol.WIRE,
         audio = "arcade",
     )
 
@@ -256,6 +292,7 @@ object Theme {
         ),
         substrate = Substrate.ADDITIVE,
         motion = Motion.STILL,
+        symbol = Symbol.TEXT,
         audio = "teletype",
     )
 

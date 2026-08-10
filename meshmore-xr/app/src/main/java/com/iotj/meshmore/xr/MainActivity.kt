@@ -1016,7 +1016,7 @@ private fun HorizonScene(link: MeshLink) {
             }
         }
 
-        val horizon = Horizon(session, palette, ctx)
+        val horizon = Horizon(session, palette, ctx, skin.value.symbol)
         // Deliberately includes the shapes real MeshCore names take: emoji,
         // fullwidth Latin, accents, kana, and a name that is nothing BUT emoji.
         // If any of these can break the label path, better it breaks here.

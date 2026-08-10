@@ -32,6 +32,15 @@ class Horizon(
     private val theme: Palette,
     /** Needed to build tier R runs, which are real Android Views. */
     private val context: android.content.Context? = null,
+    /**
+     * What a node is made of in the current theme.
+     *
+     * Passed at construction rather than read from a global, because the
+     * horizon rebuilds on mesh traffic and a symbol that changed under it
+     * mid-build would produce a ring of half one kind and half the other. A
+     * theme change rebuilds the horizon anyway.
+     */
+    private val symbol: Theme.Symbol = Theme.Symbol.SOLID,
 ) {
 
     data class Node(
@@ -195,6 +204,21 @@ class Horizon(
             // protocol says so authoritatively; the shape should too.
             val isRepeater = n.type == TYPE_REPEATER
             val isCluster = n.cluster > 0
+            val wire = symbol == Theme.Symbol.WIRE
+            val textOnly = symbol == Theme.Symbol.TEXT
+            // WHAT A NODE IS MADE OF, per theme (Theme.Symbol).
+            //
+            // WIRE draws the same three silhouettes as open geometry — a ring
+            // for a node, concentric rings for a repeater, a coarse wide ring
+            // for a cluster. The distinctions §4 requires survive because they
+            // were always carried by SIZE and FORM rather than by fill.
+            //
+            // TEXT builds a mote anyway and then hides it. That looks wasteful
+            // and is the cheap option: every downstream path — hover, select,
+            // veil, pulse, the hit proxy's anchor — is written against a mote
+            // that exists, and making it nullable to save one small mesh per
+            // node would put a branch in all of them for a theme that is one of
+            // nine.
             val moteMesh = Prims.build(
                 session,
                 when {
@@ -202,6 +226,9 @@ class Horizon(
                     // one radio with a strange name. Coarse facets and half again
                     // the size: bigger than any node and visibly built out of
                     // parts, which is what it is.
+                    wire && isCluster -> Prims.halo(r * 1.5f, r * 0.16f, seg = 14)
+                    wire && isRepeater -> Prims.halo(r * 1.65f, r * 0.12f, seg = 20)
+                    wire -> Prims.halo(r, r * 0.20f, seg = 16)
                     isCluster -> Prims.mote(r * 1.5f, rings = 3, seg = 5)
                     // Wide and SHALLOW: depth/radius near 0.3 reads as a dish,
                     // near 0.7 reads as a cup. Wider than the mote radius so the
@@ -218,6 +245,8 @@ class Horizon(
                 it.parent = root
                 it.setPose(Pose(Vector3(px, py, pz)), Space.ACTIVITY)
                 entities += it
+                // TERMINAL VOID: the node is its text and nothing else.
+                if (textOnly) it.setEnabled(false)
                 // A dish only reads as a dish from its open side, so it turns
                 // with the viewer exactly as the callsigns do.
                 if (isRepeater) facing += Facing(it, Vector3(px, py, pz))
@@ -273,7 +302,23 @@ class Horizon(
             // Clipped to the SAME budget MeshNodes laid out against. The layout
             // reserves space for a label of MAX_LABEL_CELLS; drawing a wider one
             // puts it through the neighbours the layout just carefully cleared.
-            val shown = TypeTier.clip(n.name, MeshNodes.MAX_LABEL_CELLS)
+            // In TEXT themes the label IS the node, so it carries what the
+            // mote would otherwise have said: range, and bearing as three
+            // digits. Kept inside the same cell budget MeshNodes laid out
+            // against — a longer label does not get more arc, it gets printed
+            // through its neighbours.
+            val shown = if (textOnly) {
+                TypeTier.clip(
+                    "%s %s %03d".format(
+                        TypeTier.clip(n.name, MeshNodes.MAX_LABEL_CELLS - 9),
+                        MeshNodes.km(n.dist.toDouble()),
+                        ((Math.toDegrees(bearing.toDouble()).toInt() % 360) + 360) % 360,
+                    ),
+                    MeshNodes.MAX_LABEL_CELLS,
+                )
+            } else {
+                TypeTier.clip(n.name, MeshNodes.MAX_LABEL_CELLS)
+            }
             val pooled = tier == TypeTier.Tier.RUN && !isCluster &&
                 labels?.place(shown, anchor, capH) == true
             val txt: Entity = if (pooled) {
