@@ -204,7 +204,6 @@ class Horizon(
             // protocol says so authoritatively; the shape should too.
             val isRepeater = n.type == TYPE_REPEATER
             val isCluster = n.cluster > 0
-            val wire = symbol == Theme.Symbol.WIRE
             val textOnly = symbol == Theme.Symbol.TEXT
             // WHAT A NODE IS MADE OF, per theme (Theme.Symbol).
             //
@@ -219,25 +218,7 @@ class Horizon(
             // that exists, and making it nullable to save one small mesh per
             // node would put a branch in all of them for a theme that is one of
             // nine.
-            val moteMesh = Prims.build(
-                session,
-                when {
-                    // A CLUSTER must not look like a node, or the count reads as
-                    // one radio with a strange name. Coarse facets and half again
-                    // the size: bigger than any node and visibly built out of
-                    // parts, which is what it is.
-                    wire && isCluster -> Prims.halo(r * 1.5f, r * 0.16f, seg = 14)
-                    wire && isRepeater -> Prims.halo(r * 1.65f, r * 0.12f, seg = 20)
-                    wire -> Prims.halo(r, r * 0.20f, seg = 16)
-                    isCluster -> Prims.mote(r * 1.5f, rings = 3, seg = 5)
-                    // Wide and SHALLOW: depth/radius near 0.3 reads as a dish,
-                    // near 0.7 reads as a cup. Wider than the mote radius so the
-                    // two are distinguishable by silhouette alone at 1.5 degrees,
-                    // which is the only cue the brief allows at this size.
-                    isRepeater -> Prims.dish(r * 1.65f, r * 0.5f)
-                    else -> Prims.mote(r)
-                },
-            )
+            val moteMesh = Prims.build(session, markFor(symbol, r, isRepeater, isCluster))
             val moteMat = Prims.material(
                 session, if (n.located) theme.accent else theme.warn, lum.coerceIn(0.25f, 1f)
             )
@@ -503,6 +484,87 @@ class Horizon(
      * there: alpha and scale on entities that already exist. Anything needing a
      * coroutine (building a pulse) is queued for [drainSelections].
      */
+    /**
+     * WHAT A NODE IS MADE OF, per theme.
+     *
+     * THE INVARIANT, and it is the reason this is one function rather than nine
+     * scattered branches: every symbol must keep NODE, REPEATER and CLUSTER
+     * apart BY SILHOUETTE. At 1.5 degrees that is the only cue section 4
+     * allows — colour is spoken for by recency, and a mark that needs its
+     * colour read is a mark that stops working in RECON AMBER, which has one
+     * hue on purpose.
+     *
+     * So each symbol answers all three, and the answers keep the same
+     * relationships throughout: a repeater is WIDER and SHALLOWER than its
+     * node, a cluster is BIGGER and visibly COARSER — built out of parts, which
+     * is what it is.
+     */
+    private fun markFor(
+        sym: Theme.Symbol, r: Float, isRepeater: Boolean, isCluster: Boolean,
+    ): Prims.Facets = when (sym) {
+        // Open geometry only — Tempest drew light, not surfaces.
+        Theme.Symbol.WIRE -> when {
+            isCluster -> Prims.halo(r * 1.5f, r * 0.16f, seg = 14)
+            isRepeater -> Prims.halo(r * 1.65f, r * 0.12f, seg = 20)
+            else -> Prims.halo(r, r * 0.20f, seg = 16)
+        }
+        // No geometry at all; the label IS the node. Something still has to
+        // exist for hover, veil and the hit proxy's anchor, and the caller
+        // hides it.
+        Theme.Symbol.TEXT -> Prims.mote(r * 0.2f, 3, 4)
+        // Six sides. A bipyramid is what a faceted hex looks like when it has
+        // to read from every angle rather than face-on.
+        Theme.Symbol.HEX -> when {
+            isCluster -> Prims.mote(r * 1.5f, rings = 2, seg = 6)
+            isRepeater -> Prims.dish(r * 1.65f, r * 0.45f, seg = 6)
+            else -> Prims.mote(r, rings = 4, seg = 6)
+        }
+        // The craft HUD's velocity mark. A repeater is the same chevron opened
+        // out and flattened, which reads as "this one passes things along".
+        Theme.Symbol.CHEVRON -> when {
+            isCluster -> Prims.caret(r * 1.5f, r * 1.8f, seg = 5)
+            isRepeater -> Prims.caret(r * 1.7f, r * 0.9f)
+            else -> Prims.caret(r, r * 1.6f)
+        }
+        // Nothing round anywhere. A monolith is a slab and so is everything
+        // near it; the distinctions are in proportion, which is all SEELE uses.
+        Theme.Symbol.SLAB -> when {
+            isCluster -> Prims.bar(r * 2.4f, r * 1.9f, r * 0.35f)
+            isRepeater -> Prims.bar(r * 2.6f, r * 0.7f, r * 0.35f)
+            else -> Prims.bar(r * 1.1f, r * 1.7f, r * 0.35f)
+        }
+        // A hard cube, and a cluster that is obviously several of them.
+        Theme.Symbol.BLOCK -> when {
+            isCluster -> Prims.mote(r * 1.6f, rings = 2, seg = 4)
+            isRepeater -> Prims.bar(r * 2.0f, r * 0.8f, r * 0.8f)
+            else -> Prims.bar(r * 1.3f, r * 1.3f, r * 1.3f)
+        }
+        // An instrument mark: a GAPPED ring, because the gaps are what make a
+        // ring legible edge-on and what let it read as a sweep rather than a
+        // circle. Prims.reticle was built for exactly this and had no caller.
+        Theme.Symbol.RADAR -> when {
+            isCluster -> Prims.reticle(r * 1.5f, r * 0.15f, arcs = 5, duty = 0.45f)
+            isRepeater -> Prims.reticle(r * 1.7f, r * 0.11f, arcs = 2, duty = 0.78f)
+            else -> Prims.reticle(r, r * 0.16f, arcs = 3)
+        }
+        // Rounder and smoother than a disc — more rings is literally a softer
+        // body, which is the difference between a mote and a spore.
+        Theme.Symbol.SPORE -> when {
+            isCluster -> Prims.mote(r * 1.5f, rings = 3, seg = 5)
+            isRepeater -> Prims.dish(r * 1.65f, r * 0.5f)
+            else -> Prims.mote(r * 0.9f, rings = 11, seg = 16)
+        }
+        Theme.Symbol.SOLID -> when {
+            // A CLUSTER must not look like a node, or the count reads as one
+            // radio with a strange name.
+            isCluster -> Prims.mote(r * 1.5f, rings = 3, seg = 5)
+            // Wide and SHALLOW: depth/radius near 0.3 reads as a dish, near 0.7
+            // reads as a cup.
+            isRepeater -> Prims.dish(r * 1.65f, r * 0.5f)
+            else -> Prims.mote(r)
+        }
+    }
+
     /**
      * TIER S — the extruded stroke label, and the fallback when a run will not
      * build. Folding and tofu live here and only here: a tofu box is an honest

@@ -78,8 +78,26 @@ object Theme {
      * a free-form hook is how a theme quietly stops answering one of them.
      */
     enum class Symbol {
-        /** Solid facetted body. A disc for a node, a dish for a repeater. */
+        /** Solid facetted body. A disc for a node, a dish for a repeater. HALO. */
         SOLID,
+
+        /** Hexagonal, bracketed, MAGI-console. NERV. */
+        HEX,
+
+        /** A forward chevron — the craft HUD's velocity mark. AG-SYSTEMS. */
+        CHEVRON,
+
+        /** A flat monolith seen edge-on: type on a slab, nothing round. SEELE. */
+        SLAB,
+
+        /** A hard flat cube. No curvature anywhere. DR POP. */
+        BLOCK,
+
+        /** A gapped sweep ring — an instrument mark, single hue. RECON AMBER. */
+        RADAR,
+
+        /** A soft round body with a faint halo, like something living. BIOLUME. */
+        SPORE,
 
         /**
          * Open geometry only: rings and tubes, no fill. VECTORLINE's whole
@@ -174,6 +192,7 @@ object Theme {
             ground = 0x0A0E1A, panel = 0x121826, alert = 0xE01B24,
         ),
         substrate = Substrate.PANEL,
+        symbol = Symbol.HEX,
         audio = "mission",
     )
 
@@ -187,6 +206,7 @@ object Theme {
         ),
         substrate = Substrate.HYBRID,
         motion = Motion.ALIVE,
+        symbol = Symbol.CHEVRON,
         audio = "velocity",
     )
 
@@ -208,6 +228,7 @@ object Theme {
         ),
         substrate = Substrate.PANEL,
         motion = Motion.STILL,
+        symbol = Symbol.SLAB,
         audio = "tribunal",
     )
 
@@ -220,6 +241,7 @@ object Theme {
             ground = 0x101014, panel = 0x1C1C24, alert = 0xFF2E88,
         ),
         substrate = Substrate.PANEL,
+        symbol = Symbol.BLOCK,
         audio = "purephase",
     )
 
@@ -243,6 +265,7 @@ object Theme {
         substrate = Substrate.HYBRID,
         posture = Posture.TRANSIT,
         motion = Motion.STILL,
+        symbol = Symbol.RADAR,
         audio = "codec",
     )
 
@@ -272,6 +295,7 @@ object Theme {
         substrate = Substrate.ADDITIVE,
         posture = Posture.TABLETOP,
         motion = Motion.ALIVE,
+        symbol = Symbol.SPORE,
         audio = "bloom",
     )
 
