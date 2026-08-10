@@ -878,6 +878,7 @@ private fun HorizonScene(link: MeshLink) {
      * way to whatever the wearer actually chose. Read here, applied at
      * `Ink.begin` before the first surface exists.
      */
+    val tagsRef = remember { NodeTags(ctx) }
     val themePrefs = remember { ThemePrefs(ctx) }
     val skin = remember {
         mutableStateOf(
@@ -967,8 +968,21 @@ private fun HorizonScene(link: MeshLink) {
         // Tell the mesh where we are, using the SAME fix the horizon is drawn
         // from, so what we broadcast and what we draw cannot disagree.
         if (Settings.shareLocation(ctx)) link.publishPosition(origin2)
+        // THE WEARER'S OWN FAVOURITES, folded in before ranking rather than
+        // taught to the ranker.
+        //
+        // MeshNodes.rank already puts favourites first and never clusters one
+        // away — it just believed only the RADIO's flag. Marking the peer here
+        // means an app-level favourite gets that behaviour for free and
+        // MeshNodes stays ignorant of preferences, which is what keeps it pure
+        // and testable.
+        val marked = if (MainActivity.simulate) mesh else mesh.map { p ->
+            if (p.favourite) p
+            else if (tagsRef.isFavourite(p.fullKey ?: p.key)) p.copy(favourite = true)
+            else p
+        }
         val nodes = if (MainActivity.simulate) simulatedMesh() else
-            MeshNodes.build(origin2, mesh, System.currentTimeMillis() / 1000, lens = lens)
+            MeshNodes.build(origin2, marked, System.currentTimeMillis() / 1000, lens = lens)
         // Count what was DRAWN, not what the cap would have dropped. The old
         // form was peers.size - MAX_MOTES, which stopped being true the moment
         // placement became fit-driven: a saturated bearing labels five nodes,

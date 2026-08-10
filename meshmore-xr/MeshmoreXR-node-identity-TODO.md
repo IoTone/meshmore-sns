@@ -56,7 +56,19 @@ the decision this flag is about.
 
 ---
 
-## 2. Favourites, tags, and search
+## 2. Favourites, tags, and search — **MODEL BUILT 10 August 2026**
+
+> **Correction.** This section originally said "Tags. Nothing exists. Not in
+> MeshCore either — tags would therefore be local to this app." Half right and
+> half lazy: MeshCore indeed has no tag field, but **Meshmore SNS has had tags
+> since R28**, in `lib/meshcore/node_tags_store.dart` and `favorite_store.dart`,
+> and I said they did not exist without looking. `NodeTags.kt` now ports those
+> semantics exactly. What remains is the UI.
+>
+> SNS also settled two things I had flagged as open questions:
+> **tags are keyed by `pubKeyHex`**, and **SNS keeps its own app-level
+> favourites set separate from MeshCore's contact flag** — so "favourite" is
+> the wearer's, not the radio's, and both are honoured.
 
 ### What exists
 
