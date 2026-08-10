@@ -2,84 +2,83 @@
 
 **Status: FLAGGED, NOT WRITTEN. Deferred deliberately, 9 August 2026.**
 
-This file exists so the gap is recorded rather than remembered. Nothing here is
-a design; it is a list of what has to be designed, and the questions that have
-to be answered before any of it can be.
+Nothing here is a design. It is an accurate inventory of the ten views SNS
+already ships, so that when §S6 TERRAIN is built it is not built for one view
+and then bent around nine more.
 
 ---
 
-## What we have, and what is asked for
+## The ten, resolved against the SNS source
 
-Meshmore SNS ships a suite of **hyperlocal map views**. MeshmoreXR has one of
-them — **RADAR** — and the brief's §S6 TERRAIN describes the *substrate*
-(PMTiles, the scale ladder, floor-scale relief) without ever naming the views
-that sit on it.
+They are the `_GridViewMode` enum in
+`meshmore_sns_app/responsive_starter_app/lib/screens/grid_screen.dart`, and
+every one has an implementation. Short names as spoken, mapped to what they
+actually are:
 
-Ten views, of which one exists:
+| Spoken | Enum | Source | What it is, from its own header |
+|---|---|---|---|
+| **radar** | `radial` | `grid_screen.dart` | R18/U9 — the hyperlocal radial range-ring view. The default, and the one MeshmoreXR's HORIZON already is. |
+| **globe** | `globe` | `globe_view.dart` | R27 — macro globe. Mesh fabric on a 3D earth from Natural Earth 110m land polygons. Pure Flutter, no WebView. |
+| **cells** | `equalGrid` | `equal_grid_view.dart` | R25 — rectangular canvas of equal-sized cells centred on us; each located peer placed in its cell. **See the conflict below.** |
+| **roads** | `streetMap` | `street_map_view.dart` | R25+2 — a standard interactive street map, full-colour OSM tiles. |
+| **mesh** | `fabric` | `fabric_survey_view.dart` | F8 — mesh COVERAGE as a quilt of shaded cells over a basemap. **Multi-session aggregation**: every cell where activity was ever observed. |
+| **fuji** | `elevation` | `elevation_profile_view.dart` | R45 — altitude profile. A NERV-style targeting HUD with real-world references at true height and our node pinned at its reported altitude. Its own header says it is meant to be *interesting* rather than useful. |
+| **tree** | `tree` | `mesh_tree_view.dart` | R50 — directed topology tree, force-directed. Data is `Contact.outPath`; shared repeaters become hubs. |
+| **sns** | `snsCells` | `sns_cells_view.dart` | R51 — social-activity heat map. Same cell idea as the grid, but plots CHATTER not presence; cells cool over an hour. |
+| **wx** | `weather` | `weather_view.dart` | Mesh weather — environment telemetry across the fabric: reporting-node count, min/avg/max temperature, nodes sorted warmest-first. |
+| **mbk** | `meshbook` | `meshbook_view.dart` | Meshbook — rolling last-24h social shape of the current channel: volume, reply rate, top voices, topics, hourly histogram. |
 
-| View | In XR | Needs a definition carried over from SNS |
-|---|---|---|
-| **radar** | assumed present | — |
-| **globe** | no | world scale; §S6.0 already ports `world-110m.geojson` for this |
-| **cells** | no | **see the conflict below** |
-| **roads** | no | street network; §S6.0 forbids the OSM tile approach |
-| **mesh** | no | the network itself — closest to what HORIZON already draws |
-| **fuji** | no | **undefined here** |
-| **tree** | no | **undefined here** |
-| **sns** | no | **undefined here** |
-| **wx** | no | weather, presumably — source and offline story unknown |
-| **mbk** | no | **undefined here** |
-
-**Five of the ten are names I cannot define from this repository**, and guessing
-at them is exactly the failure this file exists to prevent. `fuji`, `tree`,
-`sns`, `mbk` and the precise meaning of `wx` have to come from the SNS
-implementation or from the person who named them.
+**Correction to the previous version of this file:** it recorded five of these
+as undefined and said they had to come from elsewhere. They were all in this
+repository. Scanned rather than asked.
 
 ---
 
-## The three questions that block the brief
+## What the inventory changes
 
-**1. What is each view actually FOR?**
-Not what it draws — what question a wearer opens it to answer. A view that
-cannot state that in one sentence is a layer, not a view, and layers belong on
-one map rather than in a list of ten.
+**Four of the ten are not maps.** `tree` is a topology graph, `wx` is a
+telemetry table, `mbk` is a statistics readout, and `fuji` is an altitude
+chart. They live in the map picker in SNS because that is where the space was,
+not because they are geographic — and in XR, three of them have a more natural
+home: topology on the HORIZON, telemetry on a FOCUS panel, Meshbook as its own
+surface. **Porting the picker would carry a phone-shaped filing decision into a
+room-shaped app.**
 
-**2. Which of these are VIEWS and which are LAYERS?**
-Ten map modes is a list, and §2.1 rule 2 is explicit that more room means a
-bigger world window rather than more UI. It is very likely that some of these
-are toggles on a single terrain — roads, mesh and wx all sound like things you
-would want *at the same time* — while globe and radar are genuinely different
-scales. That distinction changes the whole surface.
+**Three ARE the same map with different data on it.** `cells`, `mesh` and `sns`
+all shade geographic cells — presence now, coverage ever, chatter lately. On a
+floor-scale terrain those are obviously three LAYERS, not three views, and §2.1
+rule 2 (more room means a bigger world window, not more UI) argues hard for
+collapsing them.
 
-**3. What is each one's offline story?**
-§S6.0 settled this for the base map and the answer was hard-won: OSM's usage
-policy forbids the prefetching the offline requirement needs, so PMTiles it is.
-Every view added here has to answer the same question, and `wx` in particular
-almost certainly cannot — weather is by definition live data, on a device whose
-whole proposition is working where there is no network.
+**`radar` is already built.** It is the HORIZON. That is worth saying plainly
+because it means the suite is 1 of 10 only if you count the way SNS counts.
 
 ---
 
-## One known conflict, recorded now so it is not discovered later
+## The conflict, now precisely identified
 
-**`cells` may already have been decided against.** §S6.0 says of SNS's R25
-equal-grid view:
+§S6.0 already ruled on `cells`:
 
 > *"R25's equal-grid map does not port, and should not. Equal-area cells exist
 > because a phone screen is small and you need comparability between buckets. At
 > floor scale you have a real map and real space, so the abstraction has nothing
 > to buy. Port the purpose, not the workaround."*
 
-If `cells` is that view, this list and the brief disagree and one of them is
-wrong. If `cells` is something else — cell-tower coverage, for instance — then
-the name collides with a decision already on the record, which is its own
-problem.
+That is exactly `equal_grid_view.dart`. So the brief has already declined one
+of the ten — and note there are **two** cell views (`equalGrid` and `snsCells`)
+which the short names `cells` and `sns` do not distinguish. Whatever the brief
+concludes, it has to say which of those two survives and in what form.
 
 ---
 
-## What this is not
+## Still open, and genuinely open
 
-Not a request to build ten maps. §S6 is a large surface that is not yet built at
-all, and the scale ladder has to exist before anything can sit on it. This is a
-note that the *view suite* is a design gap nobody has written down, so that when
-S6 does get built it is not built for one view and then bent around nine more.
+1. **Which of these are views, which are layers, and which are not maps at
+   all.** The inventory above is the argument; the decision is not made.
+2. **`roads` has no offline story.** §S6.0 settled that OSM tiles cannot be
+   prefetched under the usage policy, and PMTiles is the answer for the base
+   map. `street_map_view.dart` uses live OSM tiles today.
+3. **`wx` needs live data** on a device whose proposition is working where
+   there is no network — but unlike `roads` it may be fine, because its source
+   is *the mesh itself* (environment telemetry from peers), not the internet.
+   Worth confirming: that would make it the only "live" view that works offline.
