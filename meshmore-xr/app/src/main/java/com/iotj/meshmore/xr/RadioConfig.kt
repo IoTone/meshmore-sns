@@ -142,6 +142,12 @@ class RadioConfig(
         // time self-info arrived.
         if (pending == null) pending = p
         log("live = ${p.pretty()}")
+        // WHICH REGION THAT IS, in the same breath. The five numbers above are
+        // the ground truth but nobody reads a tuple and thinks "Australia"; a
+        // radio quietly sitting on a set that belongs to nowhere shipped is
+        // worth seeing in a boot log, because CUSTOM is either a deliberate
+        // hand-tune or the reason nobody can hear this node.
+        log("region = ${Regions.labelFor(p)}")
         previous?.let { log("previous set on disk = ${it.pretty()} — REVERT available") }
     }
 

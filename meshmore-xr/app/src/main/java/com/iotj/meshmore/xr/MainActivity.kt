@@ -595,7 +595,12 @@ private fun aboutRows(link: MeshLink): List<com.iotj.meshmore.xr.spatial.Stack.R
         row("DO NOT USE WHILE DRIVING"),
         row("WATCH THE ROOM, NOT THIS"),
         row("MIC ON ONLY WHEN YOU SPEAK"),
-    )
+        // THE REGION DISCLAIMER LIVES HERE, and here is a surface a wearer can
+        // actually reach — which is the whole argument for ABOUT existing. The
+        // region list itself only has room for a 32-character footer, and "not
+        // legal advice" without the part explaining that Japanese law is about
+        // the HARDWARE would be the misleading half of a true statement.
+    ) + Regions.DISCLAIMER.map { row(it) }
 }
 
 /**
@@ -645,7 +650,29 @@ private fun radioRows(
     }
     fun f(v: Double) = if (v == Math.floor(v)) v.toLong().toString() else v.toString()
     return listOf(
-        row("PRESET", "PRESET", "STEP", null),
+        // REGION REPLACED PRESET, and it is the first row because it is the
+        // only one most people should ever need.
+        //
+        // Stepping a preset one pick at a time was a control for someone who
+        // already knows which of four tuples they want. The question an actual
+        // wearer has is "I am in the US, make this radio correct" — the same
+        // question Meshmore SNS answers with a grid of region chips and a
+        // suggest-from-my-location button. The four parameter rows below stay
+        // for the person who genuinely wants to hand-tune, but they are no
+        // longer the only way in.
+        //
+        // The value says which region the LIVE radio matches, or CUSTOM. It
+        // reads the live set rather than the pending one deliberately: this row
+        // is where you find out what you are on, and a row that renamed itself
+        // to your staged choice before you committed would answer the question
+        // you are about to ask with the answer you were hoping for.
+        com.iotj.meshmore.xr.spatial.Stack.Row(
+            id = "REGION",
+            label = com.iotj.meshmore.xr.spatial.radioRow(
+                "REGION", Regions.labelFor(live), null,
+            ),
+            lit = Regions.match(live) != null,
+        ),
         row("FREQ", "FREQ", "%.3f".format(live.freqMhz), pend?.let { "%.3f".format(it.freqMhz) }),
         row("BW", "BANDWIDTH", f(live.bandwidthKhz), pend?.let { f(it.bandwidthKhz) }),
         row("SF", "SPREADING", live.spreadingFactor.toString(), pend?.spreadingFactor?.toString()),
@@ -655,6 +682,58 @@ private fun radioRows(
         row("COMMIT", "COMMIT", if (cfg.dirty()) "READY" else "NOTHING", null, cfg.dirty()),
         row("REVERT", "UNDO CHANGES", if (cfg.dirty()) "PENDING" else "CLEAN", null),
     )
+}
+
+/**
+ * THE REGION LIST — every shipped operating point, with the one your position
+ * suggests hoisted to the top.
+ *
+ * SNS puts this behind a "Suggest from my location" button that asks the phone
+ * for a GPS fix and then opens a confirmation dialog. Here the suggestion is
+ * just the first row, already resolved, because the position is already
+ * resolved: [HereSource] has settled the radio-then-headset-then-stated
+ * question long before this surface opens, and asking a wearer to press a
+ * button to start a fifteen-second location request they then have to confirm
+ * is three interactions to say something we could have simply shown.
+ *
+ * IT IS A ROW, NOT A DEFAULT. It sits with the others and has to be picked. A
+ * bounding box near a border resolves to the neighbouring country — the boxes
+ * are coarse on purpose — so the suggestion is a proposal from a machine that
+ * knows roughly where you are, and the wearer is the one who knows which side
+ * of the line they are standing on. It is lit, so it reads as an answer rather
+ * than as a duplicate of the entry further down the list.
+ *
+ * There is no row when there is no fix and no row when the fix lands outside
+ * every box. Both cases leave the full list, which is the right fallback and
+ * needs no explanation.
+ */
+private fun regionRows(
+    here: com.iotj.meshmore.xr.spatial.MeshNodes.Here,
+    live: RadioConfig.Params?,
+): List<com.iotj.meshmore.xr.spatial.Stack.Row> {
+    val rows = mutableListOf<com.iotj.meshmore.xr.spatial.Stack.Row>()
+    val suggested = Regions.suggest(here.lat, here.lon)
+    if (suggested != null) {
+        rows += com.iotj.meshmore.xr.spatial.Stack.Row(
+            id = "R:" + suggested.id,
+            label = com.iotj.meshmore.xr.spatial.radioRow(
+                "HERE", suggested.label, null,
+            ),
+            lit = true,
+        )
+    }
+    val on = Regions.match(live)?.id
+    Regions.ALL.forEach { r ->
+        rows += com.iotj.meshmore.xr.spatial.Stack.Row(
+            id = "R:" + r.id,
+            label = com.iotj.meshmore.xr.spatial.regionRow(r.label, r.freqMhz),
+            // The region the radio is ALREADY on is lit, so the list answers
+            // "where am I" as well as "where could I go" — and so picking the
+            // one you are on is visibly a no-op rather than a silent one.
+            lit = r.id == on,
+        )
+    }
+    return rows
 }
 
 /**
@@ -673,16 +752,10 @@ private fun onRadioRow(
     say: (String) -> Unit,
 ) {
     when (id) {
-        "PRESET" -> {
-            val p = com.iotj.meshmore.xr.spatial.Rack.nextPresetAfter(cfg.pending ?: cfg.live)
-            if (p != null) {
-                cfg.stage { it.copy(
-                    freqMhz = p.second, bandwidthKhz = p.third,
-                    spreadingFactor = p.fourth, codingRate = p.fifth,
-                ) }
-                say(p.first)
-            }
-        }
+        // NO PRESET CASE. Stepping through the preset table one pick at a time
+        // was replaced by the REGION list, which is handled at the call site
+        // because it opens a surface rather than staging a value — and which
+        // carries transmit power, as stepping a Quint never could.
         "BW" -> cfg.stage { it.copy(bandwidthKhz = stepIn(BWS_UI, it.bandwidthKhz)) }
         "SF" -> cfg.stage { it.copy(spreadingFactor = stepInt(SFS_UI, it.spreadingFactor)) }
         "CR" -> cfg.stage { it.copy(codingRate = stepInt(CRS_UI, it.codingRate)) }
@@ -2185,6 +2258,23 @@ private fun HorizonScene(link: MeshLink) {
                         appRef.value?.update(appRows(ctx, link, null), "LIT = ON    B TO CLOSE")
                     }
                 }
+                // Opening the region list, in one place. Two things reach it —
+                // the REGION row and `--es bay REGION` — and a launch flag that
+                // opened the surface by its own slightly different route would
+                // be verifying its own route rather than the one a hand takes.
+                val openRegions = {
+                    bayMode.value = "REGION"
+                    armed.value = null
+                    aboutOpen.value = false
+                    consoleRef.value?.hide()
+                    appRef.value?.show(
+                        regionRows(hereSource.here.value, link.radio.live),
+                        title = "REGION — " + Regions.labelFor(link.radio.live),
+                        footer = Regions.FOOTER,
+                    )
+                    dockRef.value?.setLit("SETUP", false)
+                    cue.opened()
+                }
                 while (true) {
                     val id = appRef.value?.poll() ?: break
                     // ABOUT is read-only. Drain the pick and do nothing with it
@@ -2193,7 +2283,39 @@ private fun HorizonScene(link: MeshLink) {
                     // THE RADIO BAY, on the same widget. Routed by mode rather
                     // than by id so a settings row and a radio row can never
                     // collide on a shared name.
+                    // THE REGION LIST, checked before the radio bay because
+                    // picking a region hands control straight back to it and a
+                    // shared poll must not run both handlers on one pick.
+                    if (bayMode.value == "REGION") {
+                        val r = Regions.byId(id.removePrefix("R:"))
+                        if (r != null) {
+                            // STAGES, NEVER SENDS. Everything else on this
+                            // surface is staged-then-committed and a region is
+                            // the single most consequential thing here: the
+                            // wrong one moves the radio to a band where nothing
+                            // can reach it, including the app that moved it.
+                            // SNS applies a region on tap because a phone can
+                            // always be plugged into a laptop; a headset cannot.
+                            link.radio.stage { r.params() }
+                            r.note?.let { noticeRef.value?.say(it) }
+                            bayMode.value = "RADIO"
+                            appRef.value?.show(
+                                radioRows(link.radio),
+                                title = com.iotj.meshmore.xr.spatial.radioTitle(
+                                    link.radio.live?.freqMhz, link.radio.live?.txDbm,
+                                ),
+                                footer = if (link.radio.dirty()) "PENDING — COMMIT TO APPLY"
+                                else "PICK TO STEP    B TO CLOSE",
+                            )
+                        }
+                        cue.recognised()
+                        continue
+                    }
                     if (bayMode.value == "RADIO") {
+                        // The way IN to the region list. It is not an edit, so
+                        // it does not go through onRadioRow — that function
+                        // stages parameters, and this one opens a surface.
+                        if (id == "REGION") { openRegions(); continue }
                         onRadioRow(id, link.radio, armed, nowMs) { note ->
                             noticeRef.value?.say(note)
                         }
@@ -2316,6 +2438,11 @@ private fun HorizonScene(link: MeshLink) {
                             dockRef.value?.setLit("SETUP", false)
                             cue.opened()
                         }
+                        // Not a console tile — there is no REGION pip. It is
+                        // here so `--es bay REGION` can reach the list the same
+                        // way a hand does, since the surface it lives behind is
+                        // two pinches deep and unverifiable from a shell.
+                        "REGION" -> openRegions()
                         "DIAG" -> {
                             val on = !Settings.diagnostics(ctx)
                             Settings.setDiagnostics(ctx, on)

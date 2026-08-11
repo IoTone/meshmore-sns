@@ -680,12 +680,28 @@ class Rack(
             return PRESETS[(i + 1) % PRESETS.size]
         }
 
-        val PRESETS = listOf(
-            Quint("US915 FAST", 910.525, 62.5, 7, 5),
-            Quint("US915 LONG", 910.525, 62.5, 10, 5),
-            Quint("EU868", 869.525, 250.0, 11, 5),
-            Quint("ANZ915", 915.800, 250.0, 11, 5),
-        )
+        /**
+         * THE RACK NO LONGER KEEPS ITS OWN TABLE.
+         *
+         * It used to hold four hand-written entries — US915 FAST, US915 LONG,
+         * EU868, ANZ915 — informally copied from Meshmore SNS and then left
+         * behind. By the time anyone looked, ANZ915 carried SF11 where SNS's
+         * Australian preset is SF10: two apps from the same project, pointed at
+         * the same continent, that could not have heard each other. Worse, a
+         * Quint has no transmit power, so stepping to a preset moved the four
+         * LoRa parameters and left the power wherever the last region put it —
+         * which is how a radio arrives in Japan still transmitting at 22 dBm
+         * against a 13 dBm legal ceiling.
+         *
+         * So the presets ARE the regions now, projected down to the shape the
+         * rack's knobs already speak. [Regions] is the table; power travels
+         * with the set everywhere it is applied as a region, and the rack's own
+         * stepping is the one path that still cannot carry it. That is a reason
+         * to reach for the REGION row rather than a reason to keep a copy.
+         */
+        val PRESETS: List<Quint> get() = com.iotj.meshmore.xr.Regions.ALL.map {
+            Quint(it.label, it.freqMhz, it.bandwidthKhz, it.spreadingFactor, it.codingRate)
+        }
     }
 }
 

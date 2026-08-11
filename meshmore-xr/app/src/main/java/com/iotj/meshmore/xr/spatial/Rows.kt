@@ -173,6 +173,28 @@ internal fun radioRow(name: String, live: String, pending: String?): String {
 internal const val RADIO_NAME_MAX = 14
 
 /**
+ * One region, as a row in the region list.
+ *
+ * THE FREQUENCY IS PART OF THE ROW, not decoration. A region name is a claim
+ * about a jurisdiction and the number is the thing you can actually check — a
+ * wearer who knows they are on 868 can see at a glance that JAPAN is not it,
+ * without picking anything to find out. It is also the only value that survives
+ * into the header after the pick, so showing it here means the confirmation and
+ * the choice are stated in the same terms.
+ *
+ * The name is NOT clamped to [RADIO_NAME_MAX] the way a parameter name is:
+ * `AUSTRALIA SA/WA/QLD` is nineteen characters and a region name that ends in
+ * an ellipsis is a region you cannot identify. It is the frequency that gives
+ * way, and `RegionsTest` asserts that no shipped region ever needs it to.
+ */
+internal fun regionRow(label: String, freqMhz: Double): String {
+    val n = label.trim().uppercase()
+    val f = "%.3f".format(freqMhz)
+    val room = (ROW_WIDEST.length - n.length - 2).coerceAtLeast(0)
+    return if (room >= f.length) "$n  $f" else n.take(ROW_WIDEST.length)
+}
+
+/**
  * The radio bay's header.
  *
  * IT SAYS WHAT THE ROWS DO NOT. The first cut pasted the radio's whole live

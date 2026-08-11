@@ -69,7 +69,7 @@ class Stack(
      * [id] is whatever the host wants back when this row is picked — a channel
      * thread id, a setting's name. This class never interprets it.
      */
-    class Row(
+    data class Row(
         val id: String,
         val label: String,
         val lit: Boolean,
@@ -164,7 +164,7 @@ class Stack(
      * deliberately ignorant of either. It draws rows and reports picks.
      */
     fun show(list: List<Row>, title: String, footer: String) {
-        all = list
+        all = fitAll(list)
         page = 0
         repage()
         this.title = fit(title, HEAD_WIDEST, "title")
@@ -202,6 +202,17 @@ class Stack(
      * are still the place the words are supposed to be made to fit, and
      * `RowsTest` still asserts that they do. This is the backstop, not the plan.
      */
+    /**
+     * The same clamp for row labels — applied where rows ENTER, never in the
+     * draw. The draw runs every frame, and a clamp there would either log the
+     * same warning sixty times a second or have to stay silent to avoid it;
+     * doing it once per [show]/[update] gets one warning per offending list.
+     */
+    private fun fitAll(list: List<Row>): List<Row> = list.map {
+        if (it.label.length <= WIDEST.length) it
+        else it.copy(label = fit(it.label, WIDEST, "row '${it.id}'"))
+    }
+
     private fun fit(s: String, template: String, what: String): String {
         if (s.length <= template.length) return s
         Log.w(
@@ -256,9 +267,9 @@ class Stack(
      * it.
      */
     fun update(list: List<Row>, footer: String = this.footer) {
-        all = list
+        all = fitAll(list)
         repage()
-        this.footer = footer
+        this.footer = fit(footer, NOTE_WIDEST, "footer")
     }
 
     /**
