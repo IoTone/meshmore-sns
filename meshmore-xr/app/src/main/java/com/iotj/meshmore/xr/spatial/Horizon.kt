@@ -40,7 +40,7 @@ class Horizon(
      * mid-build would produce a ring of half one kind and half the other. A
      * theme change rebuilds the horizon anyway.
      */
-    private val symbol: Theme.Symbol = Theme.Symbol.SOLID,
+    private var symbol: Theme.Symbol = Theme.Symbol.SOLID,
     /**
      * WHERE THE RING GOES, per theme — see [Theme.Frame].
      *
@@ -48,11 +48,38 @@ class Horizon(
      * changed mid-build would leave half the peers on the horizon and half on
      * the table. A theme change rebuilds the horizon anyway.
      */
-    private val posture: Theme.Posture = Theme.Posture.FIELD,
+    private var posture: Theme.Posture = Theme.Posture.FIELD,
 ) {
 
     /** The ring's geometry for this theme's posture. */
-    private val frame = Theme.frameFor(posture)
+    private var frame = Theme.frameFor(posture)
+
+    /**
+     * ADOPT A NEW THEME'S STRUCTURE, not just its colours.
+     *
+     * [symbol] and [posture] arrive as constructor arguments because a rebuild
+     * must not change shape halfway through — and the note above says a theme
+     * change rebuilds the horizon anyway. It does not. Choosing a theme in the
+     * picker calls `Ink.retint` and nothing else, so it repaints every material
+     * and leaves every SHAPE and every POSITION exactly as the launch theme
+     * built them.
+     *
+     * The effect was that eight of the nine themes' structural differences were
+     * invisible unless you launched into one with `--es theme`: pick BIOLUME
+     * from the picker and you got BIOLUME's greens on HALO's discs, standing on
+     * HALO's floor, at HALO's horizon distance. Which is exactly the complaint
+     * that started the whole nine-themes-not-nine-palettes effort.
+     *
+     * So the two facts become settable, and the caller follows with a rebuild.
+     * They stay private and change together, because a symbol without its
+     * posture is the half-applied theme this method exists to end.
+     */
+    fun retheme(symbol: Theme.Symbol, posture: Theme.Posture) {
+        this.symbol = symbol
+        this.posture = posture
+        this.frame = Theme.frameFor(posture)
+        Log.i(TAG, "[horizon] retheme -> $symbol / $posture")
+    }
 
     /**
      * The ring's centre in activity space.

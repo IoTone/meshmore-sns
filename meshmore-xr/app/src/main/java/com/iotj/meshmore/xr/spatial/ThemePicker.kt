@@ -213,6 +213,24 @@ class ThemePicker(
 
     fun poll(): Theme.Skin? = fired.poll()
 
+    /**
+     * Raise a pick that no hand made — `--es switchto <key>`.
+     *
+     * Same argument as `Console.fire`: routed through the SAME queue a real
+     * pinch uses, so what gets verified is the path the wearer takes rather
+     * than a shortcut around it.
+     *
+     * It exists because the bug it tests is invisible from a shell. Choosing a
+     * theme at LAUNCH has always applied that theme's structure; choosing one
+     * in the picker only ever recoloured, and telling those two apart needs a
+     * theme change to happen while the app is already running. Nothing else in
+     * the app can produce one without a hand in front of the glasses.
+     */
+    fun fire(skin: Theme.Skin) {
+        fired.add(skin)
+        Log.i(TAG, "[theme] '${skin.key}' picked by launch flag")
+    }
+
     fun tick(head: Vector3?) {
         if (!open) return
         val now = focused

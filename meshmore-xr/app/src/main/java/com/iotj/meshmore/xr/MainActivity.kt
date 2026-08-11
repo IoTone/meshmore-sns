@@ -156,6 +156,11 @@ class MainActivity : ComponentActivity() {
          */
         var probePlanes: Boolean = false
         /**
+         * --es switchto <key> : after the scene is up, change theme AS IF
+         * PICKED, to exercise the runtime path rather than the launch one.
+         */
+        var switchTo: String? = null
+        /**
          * --es telperm "battery,location,environment", each of deny|contacts|anyone.
          *
          * The rack is where this belongs (§9.5 lists it as a TUMBLER) and that
@@ -291,6 +296,7 @@ class MainActivity : ComponentActivity() {
         showFocus = intent?.getBooleanExtra("focus", false) ?: false
         probePaths = intent?.getBooleanExtra("probe", false) ?: false
         probePlanes = intent?.getBooleanExtra("planes", false) ?: false
+        switchTo = intent?.getStringExtra("switchto")
         telPerm = intent?.getStringExtra("telperm")
         showConsole = intent?.getBooleanExtra("console", false) ?: false
         themeKey = intent?.getStringExtra("theme")
@@ -1165,6 +1171,31 @@ private fun HorizonScene(link: MeshLink) {
         // route, and re-sync so the new path is visible to the census.
         kotlinx.coroutines.delay(60_000)
         link.refreshContacts()
+    }
+
+    // THE FLOOR FOLLOWS THE POSTURE, at runtime and not only at launch.
+    //
+    // Seeded with the LAUNCH posture, because the scene-setup path has already
+    // built the floor for it — so this fires only on an actual change and a
+    // FIELD launch does not pay for a second 34-bar build. Going to TABLETOP
+    // clears the grid; coming back from it puts the room's ground back.
+    val floorPosture = remember { mutableStateOf(skin.value.posture) }
+    LaunchedEffect(skin.value.posture, stageRef.value, originRef.value) {
+        val st = stageRef.value ?: return@LaunchedEffect
+        val o = originRef.value ?: return@LaunchedEffect
+        if (floorPosture.value == skin.value.posture) return@LaunchedEffect
+        floorPosture.value = skin.value.posture
+        st.buildFloor(o, skin.value.posture)
+    }
+
+    // Exercise the RUNTIME theme change, once the scene exists to change.
+    LaunchedEffect(themePickerRef.value) {
+        val key = MainActivity.switchTo ?: return@LaunchedEffect
+        val want = com.iotj.meshmore.xr.spatial.Theme.ALL.firstOrNull { it.key == key }
+            ?: return@LaunchedEffect
+        val picker = themePickerRef.value ?: return@LaunchedEffect
+        kotlinx.coroutines.delay(6_000)
+        picker.fire(want)
     }
 
     LaunchedEffect(signature, here, horizonRef.value, hereEpoch.value) {
@@ -2423,6 +2454,21 @@ private fun HorizonScene(link: MeshLink) {
                         skin.value = chosen
                         themePrefs.set(chosen)
                         com.iotj.meshmore.xr.spatial.Ink.retint(chosen.palette)
+                        // A THEME IS NOT A PALETTE, and until now choosing one
+                        // acted as though it were. retint() repaints every
+                        // material and moves nothing: pick BIOLUME here and you
+                        // got its greens on the launch theme's discs, on the
+                        // launch theme's floor, at the launch theme's distance.
+                        // The structural half only ever applied at launch, via
+                        // `--es theme`, which is not how anyone changes themes.
+                        //
+                        // So: hand the horizon the new symbol and posture, and
+                        // bump the epoch the mesh effect already watches. That
+                        // effect disposes and rebuilds the whole ring — which is
+                        // what a symbol change requires anyway, since a mote's
+                        // silhouette is baked into its mesh at build time.
+                        horizonRef.value?.retheme(chosen.symbol, chosen.posture)
+                        hereEpoch.value += 1
                         themePickerRef.value?.commit(chosen)
                         themePickerRef.value?.setPreviewing(chosen)
                         noticeRef.value?.say(chosen.name)
