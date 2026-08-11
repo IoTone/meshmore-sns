@@ -400,7 +400,34 @@ class Stack(
                 s.plate.setPose(Pose(back, r), Space.ACTIVITY)
                 s.lit.setEnabled(plated && row.lit)
                 s.lit.setPose(Pose(back, r), Space.ACTIVITY)
-                s.run.entity.setScale((if (hot) skin.focusScale else 1f) * f.scale)
+                // THE WHOLE ROW GROWS, not just the words on it.
+                //
+                // The focus bump used to scale the run alone and leave the plate
+                // at its built size, which is invisible for as long as no row is
+                // wide enough to reach the plate's edge — and every row was
+                // short, so it stayed invisible. The region list is the first
+                // surface whose labels actually spend the template: `AUSTRALIA
+                // SA/WA/QLD  923.125` is all 28 cells, 43.2 cm of ink on a 46 cm
+                // plate, and at a 1.10 focus bump it becomes 47.5 cm — text
+                // hanging off both ends of its own button. At the widest theme's
+                // 1.18 it is 51 cm, and 2.5 cm hangs off each end.
+                //
+                // Scaling the plate with it makes the relationship
+                // scale-invariant, which is the property the layout arithmetic
+                // has been assuming all along: a row is a row at any size. It
+                // also matches what the bump is FOR — the plate is the button,
+                // and a button that stays put while its label swells is not a
+                // button reacting to focus, it is a label coming loose from one.
+                //
+                // THE HIT VOLUME DOES NOT GROW. It is the only part of the row
+                // that stays put, because a target that expands under the
+                // pointer expands the region that keeps it focused, and a row
+                // that is easier to stay on than to leave is how a list starts
+                // resisting the hand moving down it.
+                val bump = (if (hot) skin.focusScale else 1f) * f.scale
+                s.run.entity.setScale(bump)
+                s.plate.setScale(bump)
+                s.lit.setScale(bump)
                 s.proxy.setEnabled(true)
                 s.proxy.setPose(Pose(p, r), Space.ACTIVITY)
             }
@@ -517,11 +544,11 @@ class Stack(
         const val RULE = 0.0035f
         /** DR POP's shadow-block offset. Hard, and deliberately large. */
         const val OFFSET_X = 0.012f
-        const val PLATE_H = 0.062f
+        const val PLATE_H = ROW_PLATE_H
         const val DEPTH = 0.004f
         const val PLATE_BACK = 0.006f
         const val HIT_D = 0.03f
-        const val PITCH = 0.078f
+        const val PITCH = ROW_PITCH
         const val TOP_DROP = 0.02f
         const val NOTE_DROP = 0.03f
         const val HOT = 1.10f

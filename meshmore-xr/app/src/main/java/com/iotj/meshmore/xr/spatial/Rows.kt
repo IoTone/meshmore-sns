@@ -53,6 +53,19 @@ internal const val ROW_CELL_EM = 0.679f
 internal const val ROW_PLATE_W = 0.46f
 
 /**
+ * ...and the two that the FOCUS BUMP multiplies, here for the same reason.
+ *
+ * They lived in [Stack]'s private companion, which meant the only arithmetic
+ * that could be checked without a headset was the arithmetic about width — so
+ * the width relationship got a test and the height relationship did not, and
+ * when focus started scaling the plate as well as the run, nothing anywhere
+ * could say whether a focused row still cleared the one below it. It does, by
+ * 4.8 mm at the widest theme. That is a number somebody should have to see.
+ */
+internal const val ROW_PLATE_H = 0.062f
+internal const val ROW_PITCH = 0.078f
+
+/**
  * One channel row.
  *
  * Order is deliberate: the PUBLIC warning first, because it is the thing that

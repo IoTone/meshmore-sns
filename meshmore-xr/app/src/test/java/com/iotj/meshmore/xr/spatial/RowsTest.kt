@@ -72,6 +72,48 @@ class RowsTest {
     }
 
     /**
+     * THE FOCUS BUMP WAS NEVER IN THE ARITHMETIC.
+     *
+     * [theRowTemplateFitsInsideThePlate] measures a row at rest and passes with
+     * 2.8 cm to spare. But a focused row is scaled by the theme's focusScale,
+     * and until this was fixed the RUN was scaled while the plate was left at
+     * its built size — so the margin was 2.8 cm minus however much the bump
+     * added. At HALO's 1.10 that is 43.2 cm of ink grown to 47.5 cm on a 46 cm
+     * plate; at the widest theme's 1.18 it is 51 cm, with 2.5 cm hanging off
+     * each end.
+     *
+     * It stayed invisible for as long as no row was wide enough to matter. The
+     * settings rows run to about 18 cells and never came close. The region list
+     * is the first surface that spends the whole template — `AUSTRALIA
+     * SA/WA/QLD  923.125` is exactly 28 — so it was the first to show it, which
+     * is why the report was "SOME text leaks": only the rows near the template.
+     *
+     * Stack now applies ONE factor to the run and both plates, so the fit is
+     * scale-invariant. What is still checkable here is the two things that
+     * factor must not break, and both are close enough to bite.
+     */
+    @Test fun aFocusedRowDoesNotTouchTheRowBelowIt() {
+        Theme.ALL.forEach { s ->
+            val h = ROW_PLATE_H * s.focusScale
+            assertTrue(
+                "${s.key}: focused plate is %.1f mm in a %.1f mm pitch".format(
+                    h * 1000, ROW_PITCH * 1000,
+                ),
+                h < ROW_PITCH,
+            )
+        }
+    }
+
+    @Test fun aFocusedPlateStillFitsTheField() {
+        Theme.ALL.forEach { s ->
+            if (s.plate == Theme.Plate.NONE) return@forEach
+            val w = ROW_PLATE_W * s.focusScale * s.rowScale
+            val deg = Math.toDegrees(2.0 * Math.atan(w / 2.0))
+            assertTrue("${s.key} focused plate is %.1f deg".format(deg), deg <= 34.0)
+        }
+    }
+
+    /**
      * ...and a theme that shows one row at a time is the only one allowed to
      * scale up. Six oversized rows would not fit vertically either.
      */
