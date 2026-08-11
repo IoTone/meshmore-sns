@@ -29,7 +29,45 @@
     <!-- Hand tracking is requested at runtime in a later checkpoint. Declared
          here so the permission model is visible from the start; a denial must
          degrade to gaze+dwell, never error (design brief 8.2 / L6). -->
+    <!--
+      OPENXR_SYSTEM — the right to ask the system broker which OpenXR runtime
+      is active. Protection level `normal`, so declaring it IS granting it; the
+      only way to not have it is to not ask.
+
+      Found on the emulator, where the app opened as a flat window and stayed
+      there: `isSpatialUiEnabled=false`, requestFullSpace() never returning, and
+      one line further up in logcat the actual cause —
+
+        OpenXR-Loader: Exception when querying system content resolver for
+        active runtime: SecurityException: Permission Denial ... requires
+        org.khronos.openxr.permission.OPENXR_SYSTEM
+
+      Without it the loader finds no runtime, so there is no XR session, so
+      spatial capability is false forever and every spatial surface silently
+      never builds. The glasses did not need it — their broker answers anyway —
+      which is exactly why it went unnoticed: the app was only ever run on the
+      one device that tolerates its absence.
+    -->
+    <uses-permission android:name="org.khronos.openxr.permission.OPENXR_SYSTEM" />
+
     <uses-permission android:name="android.permission.HAND_TRACKING" />
+
+    <!--
+      SCENE UNDERSTANDING — what lets the app find a real table to stand the
+      TABLETOP model on. Runtime-granted (protection level `dangerous`, group
+      XR_TRACKING_SENSITIVE), so declaring it only earns the right to ask.
+
+      SPELLED OUT, because there is no constant to reference. It is absent from
+      `android.Manifest$permission` in every installed platform including
+      android-CANARY — checked, not assumed — while `pm list permissions` on
+      the device does report it. So `Manifest.permission.SCENE_UNDERSTANDING_COARSE`
+      does not compile and the literal is the only spelling available, here and
+      at the checkSelfPermission call.
+
+      COARSE, not FINE. Planes and their labels are all this needs; FINE buys a
+      detailed mesh of the room and asks the wearer for a great deal more.
+    -->
+    <uses-permission android:name="android.permission.SCENE_UNDERSTANDING_COARSE" />
 
     <!-- MeshCore companion radio over BLE (checkpoint 3). BLUETOOTH_SCAN is
          marked neverForLocation: we derive position from the radio's own

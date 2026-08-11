@@ -148,6 +148,14 @@ class MainActivity : ComponentActivity() {
          */
         var probePaths: Boolean = false
         /**
+         * --ez planes true : report what surfaces the room offers, and shut up
+         * otherwise. See [com.iotj.meshmore.xr.spatial.Planes] — this exists to
+         * settle whether the runtime ever labels a plane TABLE, which decides
+         * whether the tabletop can anchor semantically or has to pick the
+         * largest horizontal surface itself.
+         */
+        var probePlanes: Boolean = false
+        /**
          * --es telperm "battery,location,environment", each of deny|contacts|anyone.
          *
          * The rack is where this belongs (§9.5 lists it as a TUMBLER) and that
@@ -282,6 +290,7 @@ class MainActivity : ComponentActivity() {
         showMenu = intent?.getBooleanExtra("menu", false) ?: false
         showFocus = intent?.getBooleanExtra("focus", false) ?: false
         probePaths = intent?.getBooleanExtra("probe", false) ?: false
+        probePlanes = intent?.getBooleanExtra("planes", false) ?: false
         telPerm = intent?.getStringExtra("telperm")
         showConsole = intent?.getBooleanExtra("console", false) ?: false
         themeKey = intent?.getStringExtra("theme")
@@ -447,6 +456,12 @@ private fun Root(facts: List<Pair<String, String>>, link: MeshLink, pinOverride:
                 // whole call, which is how requesting an optional gesture
                 // feature managed to take device tracking down with it.
                 add("android.permission.HAND_TRACKING")
+                // Same story as HAND_TRACKING: declared in the manifest, still
+                // runtime-granted, and configure() throws for the whole call
+                // without it. Spelled out because there is no SDK constant —
+                // absent from android.Manifest$permission in every installed
+                // platform including CANARY, though the device does report it.
+                add("android.permission.SCENE_UNDERSTANDING_COARSE")
             }.toTypedArray()
         )
     }
@@ -1241,7 +1256,18 @@ private fun HorizonScene(link: MeshLink) {
         // Recentre on the body BEFORE building anything, or the whole
         // experience can end up behind the user.
         val stage = Stage(session, palette)
-        val origin0 = stage.recentre()
+        // PERCEPTION IS ASKED FOR ONLY WHEN SOMETHING WANTS IT: the tabletop
+        // posture, which needs a real table to stand on, or the probe. Seven of
+        // the nine themes have no use for planes, and an unnecessary
+        // runtime-permission prompt at launch is a cost paid by every wearer
+        // for a feature two themes use.
+        val wantPlanes = MainActivity.probePlanes ||
+            skin.value.posture == com.iotj.meshmore.xr.spatial.Theme.Posture.TABLETOP
+        val origin0 = stage.recentre(wantPlanes)
+        Log.i(TAG_UI, "[boot] planes wanted=$wantPlanes granted=${stage.planesEnabled}")
+        if (stage.planesEnabled && MainActivity.probePlanes) {
+            launch { com.iotj.meshmore.xr.spatial.Planes.watch(session) }
+        }
         // WHICH WAY IS NORTH. Every node's bearing comes from real lat/lon, so
         // it is measured from TRUE north — while place() measures from the
         // launch facing. They agree only if the wearer happened to start facing

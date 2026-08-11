@@ -6,7 +6,9 @@ import android.util.Log
 import androidx.xr.arcore.ArDevice
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.DeviceTrackingMode
+import androidx.xr.runtime.AnchorPersistenceMode
 import androidx.xr.runtime.HandTrackingMode
+import androidx.xr.runtime.PlaneTrackingMode
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
@@ -58,6 +60,10 @@ class Stage(private val session: Session, private val theme: Horizon.Palette) {
     var handsEnabled = false
         private set
 
+    /** True once plane tracking and anchor persistence are actually on. */
+    var planesEnabled = false
+        private set
+
     /**
      * The head RIGHT NOW, in activity space, or null if tracking is unavailable.
      * Cheap enough to call every frame; billboarding needs it per-frame, since
@@ -100,7 +106,7 @@ class Stage(private val session: Session, private val theme: Horizon.Palette) {
      * fraction of a second at launch and is the difference between the scene
      * landing on the body and landing wherever the tracker booted.
      */
-    suspend fun recentre(): Origin {
+    suspend fun recentre(wantPlanes: Boolean = false): Origin {
         val fallback = Origin(0f, 0f, 0f, 0f)
         // ASK FOR HANDS, BUT NOT AT THE COST OF THE FLOOR.
         //
@@ -115,7 +121,38 @@ class Stage(private val session: Session, private val theme: Horizon.Palette) {
         // recentre, the entire experience anchored to the tracker's origin
         // because of an optional gesture feature. So it degrades: try with
         // hands, and if the platform refuses, come back without them.
-        runCatching {
+        // A THIRD RUNG, ADDED FOR THE TABLETOP, AND IT MUST NOT COST THE OTHER TWO.
+        //
+        // Planes are what let TABLETOP find a real table, and anchor
+        // persistence is what lets it be found again tomorrow. Both are
+        // gated — SCENE_UNDERSTANDING_COARSE is runtime-granted — and Config is
+        // a whole configuration rather than a patch, so a refusal here throws
+        // for the WHOLE call and would take hands and head pose with it. That
+        // is not hypothetical: it is exactly what asking for hands did to
+        // device tracking, which is why the ladder below exists at all.
+        //
+        // So the ladder grows a rung at the top rather than a flag in the
+        // middle: everything, then everything-but-perception, then hands off,
+        // then the floor. Each rung is strictly less than the one above, and
+        // the bottom rung is the one that must never fail.
+        if (wantPlanes) {
+            runCatching {
+                session.configure(
+                    Config(
+                        deviceTracking = DeviceTrackingMode.SPATIAL,
+                        handTracking = HandTrackingMode.BOTH,
+                        planeTracking = PlaneTrackingMode.HORIZONTAL_AND_VERTICAL,
+                        anchorPersistence = AnchorPersistenceMode.LOCAL,
+                    )
+                )
+                handsEnabled = true
+                planesEnabled = true
+            }.onFailure {
+                Log.w(TAG, "[stage] plane tracking refused (${it.javaClass.simpleName}) — " +
+                    "no table anchoring; the body-relative tabletop still works")
+            }
+        }
+        if (!planesEnabled) runCatching {
             session.configure(
                 Config(
                     deviceTracking = DeviceTrackingMode.SPATIAL,
