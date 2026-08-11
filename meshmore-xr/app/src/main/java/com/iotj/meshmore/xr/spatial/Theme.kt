@@ -65,6 +65,57 @@ object Theme {
     }
 
     /**
+     * WHERE A POSTURE PUTS THE MESH.
+     *
+     * The posture axis was declared on two themes and read by exactly one thing:
+     * the picker's caption, which printed the word TABLETOP under BIOLUME and
+     * TRANSIT under RECON AMBER and then changed nothing whatsoever. Two of the
+     * nine themes were advertising a spatial arrangement the app did not have.
+     *
+     * It was recorded as blocked on S6 TERRAIN, and it was not. TABLETOP does
+     * not need a terrain map, or any map: the horizon already knows every peer's
+     * bearing and range, and a tabletop is that same ring at arm's length,
+     * dropped below eye level and pushed out in front so you look AT it instead
+     * of standing inside it. Three numbers, not a new surface.
+     *
+     * THE NUMBERS ARE FROM THE FIELD, not from taste:
+     *
+     *   the disc     2 x atan(0.16 / 0.55) = 32.4 deg across, inside the 34 deg
+     *                window with 1.6 to spare. A larger model would need a head
+     *                turn to see one edge, which is the opposite of a tabletop.
+     *   the drop     0.42 m below eye is a table under a seated wearer, and it
+     *                clears the MICROHUD's lower band.
+     *   the marks    take care of themselves. Horizon sizes a mote from its
+     *                measured distance to the eye — `range * 0.0140`, a constant
+     *                1.6 deg — and moving the ring changes that distance, so the
+     *                model's nodes come out the same apparent size as the
+     *                horizon's without a scale factor anywhere.
+     *
+     * TRANSIT carries no geometry of its own because it is a SUBTRACTION: the
+     * ring goes away and the two surfaces that are already head- and hand-locked
+     * carry what is left. That is why [horizon] is a flag rather than a fourth
+     * number.
+     */
+    data class Frame(
+        /** Radius of the node ring, in metres. */
+        val radius: Float,
+        /** How far in FRONT of the wearer the ring's centre sits. */
+        val forward: Float,
+        /** The ring centre's height relative to the eye. Negative is below. */
+        val drop: Float,
+        /** Whether the ring is drawn at all. False is TRANSIT's whole idea. */
+        val horizon: Boolean = true,
+    )
+
+    fun frameFor(p: Posture): Frame = when (p) {
+        // Exactly what the horizon has always done, now said out loud.
+        Posture.FIELD -> Frame(radius = 2.5f, forward = 0f, drop = -0.30f)
+        Posture.TABLETOP -> Frame(radius = 0.16f, forward = 0.55f, drop = -0.42f)
+        // The ring is gone; Hud and the hand surfaces are the whole app.
+        Posture.TRANSIT -> Frame(radius = 2.5f, forward = 0f, drop = -0.30f, horizon = false)
+    }
+
+    /**
      * WHAT A NODE ON THE HORIZON ACTUALLY IS.
      *
      * The axis that makes nine themes rather than nine palettes. A node mark is

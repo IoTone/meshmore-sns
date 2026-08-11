@@ -41,7 +41,38 @@ class Horizon(
      * theme change rebuilds the horizon anyway.
      */
     private val symbol: Theme.Symbol = Theme.Symbol.SOLID,
+    /**
+     * WHERE THE RING GOES, per theme — see [Theme.Frame].
+     *
+     * Passed at construction for the same reason [symbol] is: a posture that
+     * changed mid-build would leave half the peers on the horizon and half on
+     * the table. A theme change rebuilds the horizon anyway.
+     */
+    private val posture: Theme.Posture = Theme.Posture.FIELD,
 ) {
+
+    /** The ring's geometry for this theme's posture. */
+    private val frame = Theme.frameFor(posture)
+
+    /**
+     * The ring's centre in activity space.
+     *
+     * FIELD leaves it on the wearer, which is what "horizon" means — you stand
+     * in the middle of it. TABLETOP pushes it out in front, because a model you
+     * are standing inside is not a model, it is a room.
+     */
+    private fun centre(o: Stage.Origin): Triple<Float, Float, Float> {
+        if (frame.forward == 0f) return Triple(o.x, o.y, o.z)
+        val c = o.place(0f, frame.forward, 0f)
+        return Triple(c.x, c.y, c.z)
+    }
+
+    /** [Stage.Origin.place], about this posture's centre rather than the wearer. */
+    private fun at(o: Stage.Origin, bearing: Float, radius: Float, height: Float): Vector3 {
+        val (cx, cy, cz) = centre(o)
+        val v = o.place(bearing, radius, height)
+        return Vector3(v.x + (cx - o.x), v.y + (cy - o.y), v.z + (cz - o.z))
+    }
 
     data class Node(
         val name: String,
@@ -149,6 +180,19 @@ class Horizon(
 
     suspend fun build(nodes: List<Node>, o: Stage.Origin, floorY: Float) {
         clear()
+        // TRANSIT DRAWS NO RING. Moving, hands busy, eyes on the world: the
+        // MICROHUD is head-locked and the cuff and the radial menu are on the
+        // hand, and between them they carry what a walking wearer can act on.
+        // A shell of 200 motes at 2.5 m is the one thing you do not want in
+        // front of you while crossing a street.
+        //
+        // Cleared and returned rather than built-and-hidden, because a hidden
+        // horizon is still several hundred entities the renderer walks every
+        // frame on the theme whose entire premise is having less to carry.
+        if (!frame.horizon) {
+            Log.i(TAG, "[horizon] TRANSIT — no ring; hud and hand surfaces only")
+            return
+        }
         val root = session.scene.activitySpace
         if (labels == null && context != null) {
             labels = LabelPool(session, context).also { it.build(tintOf(theme.text, 0.95f)) }
@@ -160,11 +204,11 @@ class Horizon(
         // Distance is read from which band a mote sits in, so the bands are the
         // scale and have to be legible from any angle -- hence torus, not disc.
         listOf(0.40f, 0.70f, 1.00f).forEachIndexed { i, f ->
-            val mesh = Prims.build(session, Prims.halo(R * f, 0.014f))
+            val mesh = Prims.build(session, Prims.halo(frame.radius * f, 0.014f))
             val mat = Prims.material(session, theme.accent, 0.30f + i * 0.06f)
             MeshEntity.create(session, mesh, listOf(mat)).also {
                 it.parent = root
-                it.setPose(Pose(o.place(0f, 0f, EYE_DROP)), Space.ACTIVITY)
+                it.setPose(Pose(at(o, 0f, 0f, frame.drop)), Space.ACTIVITY)
                 entities += it
             }
         }
@@ -185,7 +229,10 @@ class Horizon(
             // +/-19 deg and node callsigns printed straight through the link
             // readout. atan(R * 0.176 / R) is 10 deg, so the full lane spread
             // now exactly fills the window it was given and no further.
-            val v = o.place(bearing, R * dist, elev * R * ELEV_SPAN + EYE_DROP)
+            val v = at(
+                o, bearing, frame.radius * dist,
+                elev * frame.radius * ELEV_SPAN + frame.drop,
+            )
             val px = v.x; val py = v.y; val pz = v.z
             val dx = px - o.x; val dy = py - o.y; val dz = pz - o.z
             val range = kotlin.math.sqrt(dx * dx + dy * dy + dz * dz)
@@ -760,8 +807,8 @@ class Horizon(
 
     /** PULSE — the mesh visibly breathing. One expanding ring per packet. */
     suspend fun pulse(bearingRad: Float, dist: Float, o: Stage.Origin) {
-        val v = o.place(bearingRad, R * dist, EYE_DROP)
-        val r0 = (R * dist * 0.016f).coerceAtLeast(0.012f)
+        val v = at(o, bearingRad, frame.radius * dist, frame.drop)
+        val r0 = (frame.radius * dist * 0.016f).coerceAtLeast(0.012f)
         val mesh = Prims.build(session, Prims.halo(r0, r0 * 0.28f, 24, 4))
         val mat = Prims.material(session, theme.accent, 0.55f)
         val e = MeshEntity.create(session, mesh, listOf(mat))
