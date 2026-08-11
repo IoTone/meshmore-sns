@@ -81,10 +81,34 @@ object Marks {
         "APP" to "M14 30 H86 M14 50 H86 M14 70 H86 " +
             "M34 24 V36 M62 44 V56 M46 64 V76",
 
-        // PROFILE — a swatch ring. The one mark that is not static: it takes
-        // the theme's own colours, so it previews the thing its bay changes.
-        "PROFILE" to "M50 50 m-30 0 a30 30 0 1 0 60 0 a30 30 0 1 0 -60 0 " +
-            "M50 20 V50 L76 65",
+        // PROFILE — a painter's palette.
+        //
+        // IT WAS A CLOCK. The path said "swatch ring" in its comment and drew a
+        // circle with a hand at twelve and a hand at four: the universal symbol
+        // for a stopwatch, on the one pip that opens themes. The comment also
+        // claimed the mark took the theme's own colours, which was never true —
+        // every mark on this console is stroked in `theme.accent`, uniformly, at
+        // Console.build. Two wrong statements holding each other up.
+        //
+        // A palette instead, and the shape is chosen against its NEIGHBOURS as
+        // much as for itself. HERE and ABOUT are already concentric rings, so a
+        // third round mark at 3° would be a coin toss between them. This one is
+        // an OVAL — read as a silhouette it is the only non-circular closed form
+        // in the set — and the thumb hole sitting low and off-centre is the
+        // feature that makes an oval a palette rather than an egg.
+        //
+        // The three dabs are deliberately staggered. Level pairs inside a
+        // rounded outline read as eyes, and a face is a very hard thing to
+        // un-see once a wearer has seen it in a 3° mark.
+        "PROFILE" to
+            // the body
+            "M48 50 m-38 0 a38 32 0 1 0 76 0 a38 32 0 1 0 -76 0 " +
+            // the thumb hole
+            "M64 62 m-9 0 a9 9 0 1 0 18 0 a9 9 0 1 0 -18 0 " +
+            // and three dabs of paint, none of them level with another
+            "M26 48 m-7 0 a7 7 0 1 0 14 0 a7 7 0 1 0 -14 0 " +
+            "M42 32 m-7 0 a7 7 0 1 0 14 0 a7 7 0 1 0 -14 0 " +
+            "M62 31 m-7 0 a7 7 0 1 0 14 0 a7 7 0 1 0 -14 0",
 
         // CHANNELS — a hash. Universal, and the same symbol SNS uses.
         "CHANNELS" to "M32 16 L24 84 M62 16 L54 84 M16 36 H82 M14 64 H80",

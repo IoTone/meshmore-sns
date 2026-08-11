@@ -159,7 +159,21 @@ class Console(
         TextRun.reusable(session, context, widest, cap, argb(rgb, 0.95f), "console")
             ?.also { it.entity.parent = root; it.entity.setEnabled(false); entities += it.entity }
 
-    private fun markFor(bay: String) = bay
+    /**
+     * A bay's mark, which is NOT always its own name.
+     *
+     * This was the identity function, and DEVICE has no mark of that name — so
+     * the first plate on the console has been drawing the fallback ring since
+     * the marks were introduced: still there, still pickable, carrying exactly
+     * the identity-by-position that marks exist to replace. The RADIO mark was
+     * sitting in the table the whole time, authored with the comment "the rack
+     * in miniature, so the pip and the surface it opens agree", for this plate.
+     *
+     * The two names differ because SNS calls the bay "Device configuration"
+     * while the thing inside it is a radio. Both names are right; this is where
+     * they meet.
+     */
+    private fun markFor(bay: String) = MARK_FOR[bay] ?: bay
 
     /** Project from [at] — the dock pip the stack rises out of. */
     fun showAt(at: Vector3) {
@@ -312,7 +326,14 @@ class Console(
     private fun argb(rgb: Int, a: Float) =
         (((a.coerceIn(0f, 1f) * 255).toInt() and 0xFF) shl 24) or (rgb and 0xFFFFFF)
 
-    private companion object {
+    companion object {
+        /**
+         * Bays whose mark is filed under another name. Public so `MarksTest`
+         * can check the mapping actually lands on artwork — the failure it
+         * guards is silent, and it had already happened.
+         */
+        val MARK_FOR = mapOf("DEVICE" to "RADIO")
+
         const val TAG = "MeshmoreXR"
         /** 3.0° at the stack's distance — the icon floor argued in Marks. */
         const val MARK = 0.047f
