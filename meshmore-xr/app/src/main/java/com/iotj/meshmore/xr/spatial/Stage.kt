@@ -239,8 +239,24 @@ class Stage(private val session: Session, private val theme: Horizon.Palette) {
      * Bars, not lines: GPU line width is ignored on most platforms and a 1 px
      * line is invisible in bright passthrough anyway.
      */
-    suspend fun buildFloor(o: Origin) {
+    suspend fun buildFloor(o: Origin, posture: Theme.Posture = Theme.Posture.FIELD) {
         clearFloor()
+        // NOT AT TABLETOP SCALE.
+        //
+        // The grid exists to answer "am I standing anywhere" — it gives a
+        // room-sized experience a ground to sit on, and its 16 x 16 bars are
+        // sized for a horizon 2.5 m out. A tabletop model is 32 cm across and
+        // 42 cm below the eye: the floor is then neither the scale the content
+        // is at nor a surface the content stands on, just a lit grid two metres
+        // wide underneath a small object, competing with the actual table the
+        // model is meant to be sitting on.
+        //
+        // It costs 256 extruded bars, every one of them emitting light into a
+        // room the wearer is trying to see through.
+        if (posture == Theme.Posture.TABLETOP) {
+            Log.i(TAG, "[stage] tabletop — no floor grid")
+            return
+        }
         val root = session.scene.activitySpace
         val mat = Prims.material(session, theme.accent, 0.55f)
         val matDim = Prims.material(session, theme.accent, 0.22f)

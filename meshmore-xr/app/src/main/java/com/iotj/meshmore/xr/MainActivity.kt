@@ -1307,7 +1307,7 @@ private fun HorizonScene(link: MeshLink) {
         // fullwidth Latin, accents, kana, and a name that is nothing BUT emoji.
         // If any of these can break the label path, better it breaks here.
         // Floor first: the room claims itself, then the mesh arrives on top.
-        stage.buildFloor(origin)
+        stage.buildFloor(origin, skin.value.posture)
         // The boot surface goes up immediately -- the wait it covers starts
         // now, not when the first contact arrives.
         val boot = Boot(session, palette)
