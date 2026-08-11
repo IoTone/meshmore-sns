@@ -167,8 +167,8 @@ class Stack(
         all = list
         page = 0
         repage()
-        this.title = title
-        this.footer = footer
+        this.title = fit(title, HEAD_WIDEST, "title")
+        this.footer = fit(footer, NOTE_WIDEST, "footer")
         open = true
         focused = -1
         fired.clear()
@@ -177,6 +177,39 @@ class Stack(
             TAG,
             "[stack] '$title' open with ${list.size} row(s) over $pages page(s)",
         )
+    }
+
+    /**
+     * THE PANEL ENFORCES ITS OWN TEMPLATE, because the caller kept forgetting.
+     *
+     * [TextRun.reusable] sizes the head and note panels ONCE, for [HEAD_WIDEST]
+     * and [NOTE_WIDEST]. A longer string does not grow them — it is clipped
+     * inside the box, silently, at whatever character the box ends. The radio
+     * bay opened as `RADIO — 910.525MHz BW62.5 SF7 4/5 22`, having lost the
+     * `dBm` off the end: 36 characters posted into a 30-character panel by a
+     * caller that clamped the VALUE to 28 and forgot the 8-character prefix it
+     * was about to put in front of it. That is the same half-checked clamp that
+     * had already been fixed twice, in [radioRow] and in the row template, and
+     * fixing it a third time at the call site would only have queued up a
+     * fourth.
+     *
+     * So the clamp lives here, where the panel and its template are the same
+     * object. Two consequences, both deliberate: an over-long title now ends in
+     * an ellipsis, so a reader can SEE that something was cut rather than
+     * reading a truncation as the whole value; and it logs a warning naming the
+     * offender, so it is caught on the first launch of a new bay rather than in
+     * a photograph. Callers that fit are unaffected — the builders in `Rows.kt`
+     * are still the place the words are supposed to be made to fit, and
+     * `RowsTest` still asserts that they do. This is the backstop, not the plan.
+     */
+    private fun fit(s: String, template: String, what: String): String {
+        if (s.length <= template.length) return s
+        Log.w(
+            TAG,
+            "[stack] $what over template by ${s.length - template.length} " +
+                "char(s), clipping: '$s'",
+        )
+        return s.take(template.length - 1) + "…"
     }
 
     fun hide() {

@@ -171,3 +171,30 @@ internal fun radioRow(name: String, live: String, pending: String?): String {
 
 /** Longest parameter name that leaves room for a value and a pending arrow. */
 internal const val RADIO_NAME_MAX = 14
+
+/**
+ * The radio bay's header.
+ *
+ * IT SAYS WHAT THE ROWS DO NOT. The first cut pasted the radio's whole live
+ * string into the title — `910.525MHz BW62.5 SF7 4/5 22dBm` — which was four
+ * values already spelled out on the four rows immediately below it, plus one
+ * that was not: the transmit power. At 36 characters against a 30-character
+ * panel it clipped, and what it clipped off the end was the `dBm`. The header
+ * lost the only thing it was contributing and kept the duplicates.
+ *
+ * So the header carries the frequency and the power, and nothing else. Both
+ * earn their place by being unreachable from the rows: FREQ moves only with a
+ * PRESET (see `onRadioRow`), and TX POWER has no row at all. The rest is
+ * directly below, in a form you can pick.
+ *
+ * IT STAYS LIVE WHILE EDITS ARE PENDING. The rows show `62.5→125`; the header
+ * does not, because with seven rows over two pages the COMMIT row is on a page
+ * where no parameter is visible, and the question being asked at that moment is
+ * "what is this radio right now" — an anchor that quietly followed the staged
+ * edits would answer a question nobody asked. The footer says PENDING.
+ */
+internal fun radioTitle(freqMhz: Double?, txDbm: Int?): String {
+    if (freqMhz == null) return "RADIO — NOT READ YET"
+    val p = if (txDbm == null) "" else "  %ddBm".format(txDbm)
+    return "RADIO — %.3fMHz%s".format(freqMhz, p)
+}

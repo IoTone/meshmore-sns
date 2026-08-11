@@ -2307,9 +2307,9 @@ private fun HorizonScene(link: MeshLink) {
                             bayMode.value = "RADIO"
                             appRef.value?.show(
                                 radioRows(link.radio),
-                                title = "RADIO — " + (
-                                    link.radio.live?.pretty()?.take(28) ?: "NOT READ YET"
-                                    ),
+                                title = com.iotj.meshmore.xr.spatial.radioTitle(
+                                    link.radio.live?.freqMhz, link.radio.live?.txDbm,
+                                ),
                                 footer = if (link.radio.dirty()) "PENDING — COMMIT TO APPLY"
                                 else "PICK TO STEP    B TO CLOSE",
                             )

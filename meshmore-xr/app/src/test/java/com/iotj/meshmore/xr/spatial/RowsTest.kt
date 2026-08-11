@@ -300,7 +300,46 @@ class RowsTest {
             "CONNECT A RADIO TO SEE ITS SLOTS",
             "LIT = READS ALOUD    B TO CLOSE",
             "LIT = ON    B TO CLOSE",
+            "READ ONLY — B TO CLOSE",
+            "PENDING — COMMIT TO APPLY",
+            "PICK TO STEP    B TO CLOSE",
             "PICK AGAIN TO ALLOW CHANNEL SEND",
         ).forEach { assertTrue(it, it.length <= ROW_NOTE_WIDEST.length) }
+    }
+
+    /**
+     * THE HEADER THAT WAS NOT CHECKED BECAUSE IT WAS NOT A BUILDER.
+     *
+     * The test above enumerates literal titles, so it could only cover titles
+     * somebody remembered to type into it. The radio bay's was assembled at the
+     * call site out of a prefix and a clamped value, the clamp missed the
+     * prefix, and it shipped 36 characters into a 30-character panel — losing
+     * the transmit power off the end, on the one bay whose entire purpose is
+     * showing the transmit parameters.
+     *
+     * This checks the whole legal parameter space rather than one example,
+     * because the offender was a value that only overflows on some radios: at
+     * 433 MHz the old title fit and would have passed any single-case test.
+     */
+    @Test fun theRadioTitleFitsItsPanelOnEveryLegalRadio() {
+        // Every band MeshCore firmware ships for, at the widest formatting each
+        // can produce, against the highest power any of these radios will do.
+        val freqs = listOf(433.175, 868.0, 906.875, 910.525, 915.0, 923.125)
+        val powers = listOf(0, 22, 30)
+        freqs.forEach { f ->
+            powers.forEach { p ->
+                val t = radioTitle(f, p)
+                assertTrue(
+                    "$t is ${t.length}, template is ${ROW_HEAD_WIDEST.length}",
+                    t.length <= ROW_HEAD_WIDEST.length,
+                )
+                // It has to still SAY the power — losing it silently off the
+                // end is exactly the defect, and a title clamped short enough
+                // to fit while dropping it would pass a length check alone.
+                assertTrue(t, t.contains("${p}dBm"))
+            }
+        }
+        assertTrue(radioTitle(null, null).length <= ROW_HEAD_WIDEST.length)
+        assertTrue(radioTitle(null, null).contains("NOT READ"))
     }
 }
