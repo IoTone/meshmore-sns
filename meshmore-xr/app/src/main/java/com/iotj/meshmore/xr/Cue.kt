@@ -2,7 +2,9 @@
 // SPDX-License-Identifier: MIT
 package com.iotj.meshmore.xr
 
+import android.content.Context
 import android.media.AudioManager
+import android.media.MediaPlayer
 import android.media.ToneGenerator
 import android.util.Log
 
@@ -105,6 +107,35 @@ class Cue {
          * is indistinguishable from forgetting.
          */
         const val SILENT = -1
+
+        /**
+         * How loud a welcome plays, as a fraction of the stream.
+         *
+         * These are OPEN-EAR glasses. Nothing here is on headphones and nothing
+         * covers the wearer's ears — whatever plays is mixed with traffic,
+         * conversation, and the room. A greeting at full scale is the first
+         * thing anybody would turn off, and turning it off would take the whole
+         * audio identity with it. Low enough to sit under the room, present
+         * enough to be a greeting.
+         */
+        const val WELCOME_GAIN = 0.22f
+
+        /**
+         * WHICH TUNE A THEME ARRIVES ON.
+         *
+         * One tune exists today, composed for the first theme in the ladder
+         * (HALO), and every other theme falls back to it. That fallback is
+         * deliberate and it is the honest shape of an unfinished set: eight
+         * silent themes would read as eight broken ones, and the seam that has
+         * to be right is the CALL SITE — arrival asks for "this theme's
+         * welcome" and does not know which file that is. Dropping
+         * `welcome_<key>.mp3` into res/raw and adding a line here is the whole
+         * of adding the next one.
+         */
+        fun welcomeFor(key: String): Int = when (key) {
+            "halo" -> R.raw.welcome_halo
+            else -> R.raw.welcome_halo
+        }
 
         /** §2.1's ceiling, expressed as a minimum gap rather than a rate. */
         const val CHANNEL_GAP_MS = 900L
@@ -514,6 +545,60 @@ class Cue {
      */
     fun sample() = play(pack.opened, pack.openedMs)
 
+    /**
+     * THE THEME'S WELCOME — the one composed sound in the app, played once when
+     * a theme arrives.
+     *
+     * Everything else here is a TONE: a confirmation, a measurement, feedback
+     * you need and stop hearing after a day. This is the opposite kind of sound
+     * and needs the opposite treatment. It plays at arrival and never again,
+     * which is what makes it a greeting rather than a jingle — a sound that
+     * announces a theme every time you glance at something would be the first
+     * thing anybody turned off.
+     *
+     * QUIET, DELIBERATELY. [WELCOME_GAIN] is a fraction of full scale because
+     * these are open-ear glasses: whatever plays here is mixed with traffic,
+     * conversation and everything else the wearer needs to keep hearing, and a
+     * welcome that talks over the room is a welcome that makes the glasses
+     * unwearable in company.
+     *
+     * ONE AT A TIME, and a fast theme-switch cuts the previous one off rather
+     * than layering — two overlapping greetings is a noise, not a chord.
+     *
+     * Failure is silence. A missing resource, a busy audio path, or a codec
+     * this device does not have must never take down the theme change it is
+     * decorating.
+     */
+    fun welcome(context: Context, resId: Int) {
+        if (resId == 0) return
+        runCatching {
+            stopWelcome()
+            val mp = MediaPlayer.create(context, resId)
+            if (mp == null) {
+                Log.w(TAG, "[cue] welcome $resId would not open")
+                return
+            }
+            mp.setVolume(WELCOME_GAIN, WELCOME_GAIN)
+            // RELEASED BY THE PLAYER ITSELF. A MediaPlayer holds a codec and an
+            // audio track; leaving nine of them finished-but-alive is how a
+            // long session runs out of both.
+            mp.setOnCompletionListener {
+                runCatching { it.release() }
+                if (welcomer === it) welcomer = null
+            }
+            welcomer = mp
+            mp.start()
+            Log.i(TAG, "[cue] welcome playing at $WELCOME_GAIN")
+        }.onFailure { Log.w(TAG, "[cue] welcome failed: ${it.javaClass.simpleName}") }
+    }
+
+    private fun stopWelcome() {
+        welcomer?.let { runCatching { it.stop() }; runCatching { it.release() } }
+        welcomer = null
+    }
+
+    private var welcomer: MediaPlayer? = null
+
     private fun play(id: Int, ms: Int) {
         // SILENT is a value in the table, not an absence. See the constant.
         if (id == SILENT || ms <= 0) return
@@ -525,5 +610,6 @@ class Cue {
         runCatching { gen?.release() }
         gen = null
         genVol = -1
+        stopWelcome()
     }
 }

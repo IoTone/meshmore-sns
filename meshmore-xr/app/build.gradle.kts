@@ -36,7 +36,7 @@ val keystoreProps: Properties? =
 // backwards: an installer refuses a downgrade, and hand-maintained codes drift
 // out of order exactly when several builds are being flashed in a hurry.
 val verMajor = 0
-val verMinor = 2
+val verMinor = 3
 val verPatch = 0
 
 android {

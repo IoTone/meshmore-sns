@@ -1454,6 +1454,32 @@ private fun HorizonScene(link: MeshLink) {
         val undated = mesh.count { it.lastSeenEpochSec <= 0L }
         Log.i(TAG_UI, "[age] ${mesh.size} peers, $undated undated, " +
             "live=${nodes.count { it.age < 0.34f }} stale=${nodes.count { it.age >= 0.34f }}")
+        // THE WHOLE MESH'S AGES, not just the two dozen that got drawn.
+        //
+        // "Everything says stale" has two completely different causes and the
+        // drawn counts cannot tell them apart: either the threshold is wrong, or
+        // the RANKER is picking old nodes — it sorts by distance before
+        // recency, so 350 stored contacts compete for 24 slots and the near-but-
+        // ancient ones win. The first is a constant; the second is a design
+        // fault. This histogram is over every peer the radio holds, so the shape
+        // of the mesh itself is visible and the answer stops being a guess.
+        run {
+            val nowS = System.currentTimeMillis() / 1000
+            val buckets = intArrayOf(0, 0, 0, 0, 0)
+            mesh.forEach {
+                val d = if (it.lastSeenEpochSec <= 0L) Long.MAX_VALUE
+                    else (nowS - it.lastSeenEpochSec).coerceAtLeast(0L)
+                when {
+                    d < 600 -> buckets[0]++
+                    d < 3600 -> buckets[1]++
+                    d < 21600 -> buckets[2]++
+                    d < 86400 -> buckets[3]++
+                    else -> buckets[4]++
+                }
+            }
+            Log.i(TAG_UI, "[age] heard <10m ${buckets[0]}, <1h ${buckets[1]}, " +
+                "<6h ${buckets[2]}, <24h ${buckets[3]}, older ${buckets[4]}")
+        }
         // SAID OUT LOUD, ONCE, AT THE MOMENT THE RING COMES UP EMPTY.
         //
         // A radio with no GPS reports 0.0/0.0 forever and the app has nothing to
@@ -1598,6 +1624,12 @@ private fun HorizonScene(link: MeshLink) {
         // fourteen seconds to build on this hardware and until now the wearer
         // had a wordmark and silence for all of it.
         cue.wake()
+        // ...AND THE THEME'S WELCOME, under it. The wordmark appearing is the
+        // moment the wearer arrives, and it is followed by about fourteen
+        // seconds of scene building with nothing to hear. A three-second tune
+        // is a greeting; anything longer would be a loading screen with music,
+        // which is a different and worse thing.
+        cue.welcome(ctx, Cue.welcomeFor(skin.value.key))
         bootRef.value = boot
         val hud = Hud(session, palette)
         hud.build()
@@ -2838,6 +2870,12 @@ private fun HorizonScene(link: MeshLink) {
                         cue.closed()
                     } else {
                         skin.value = chosen
+                        // ARRIVAL, NOT PREVIEW. The picker samples a pack's
+                        // TONE as you scroll past each tile, which is what makes
+                        // the choice audible; the welcome plays only on the one
+                        // you land on. A tune firing on every tile you pass
+                        // would be nine of them fighting over three seconds.
+                        cue.welcome(ctx, Cue.welcomeFor(chosen.key))
                         // A TEST HOOK MUST NOT REWRITE A SETTING. `--es switchto`
                         // fires through this same queue on purpose — verifying
                         // the path a pinch takes is the whole point — but that
