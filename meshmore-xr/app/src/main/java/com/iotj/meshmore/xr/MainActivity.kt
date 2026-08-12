@@ -2922,7 +2922,11 @@ private fun HorizonScene(link: MeshLink) {
                     hereEpoch.value += 1
                     cue.opened()
                     noticeRef.value?.say(
-                if (northKnown) "VIEW RESET" else "VIEW RESET  NORTH NOT SET",
+                // NAMES WHAT MOVED. "VIEW RESET" reads as an undo — as though
+                // something were being put back — when what happened is that
+                // the scene picked itself up and re-centred on the wearer.
+                if (northKnown) "SCENE MOVED HERE"
+                else "SCENE MOVED HERE  NORTH NOT SET",
                     )
                     Log.i(TAG_UI, "[reset] $hand:R — origin moved to (%.2f, %.2f, %.2f), yaw kept %.1f°"
                 .format(t.x, t.y, t.z, Math.toDegrees(o.yawRad.toDouble())))
@@ -2964,10 +2968,28 @@ private fun HorizonScene(link: MeshLink) {
                     }
                     // Presented, like B: a reset is not something to issue by
                     // resting a hand somewhere.
-                    if (gotR == com.iotj.meshmore.xr.spatial.HandSign.Letter.R &&
+                    // H AND R BOTH RECENTRE, and that is a fix rather than a
+                    // convenience.
+                    //
+                    // They are the SAME TWO FINGERS and differ only by the
+                    // crossing — the classifier says so in as many words, and
+                    // tests R first so a crossed hand is not swallowed by H. The
+                    // consequence was silent: a wearer signing R whose crossing
+                    // the tracker did not resolve got H, which was bound to
+                    // nothing at all, so the gesture did nothing and looked like
+                    // a feature that was never built. Reported as exactly that.
+                    //
+                    // Binding both to the same action makes the crossing stop
+                    // mattering. It also gives the action the better letter: H
+                    // for HERE, which is already this app's word for where the
+                    // wearer is — the HERE pip, the HERE marker — and is a flat
+                    // two-finger shape rather than a crossed one, which is the
+                    // easier thing to do one-handed on a bike.
+                    if ((gotR == com.iotj.meshmore.xr.spatial.HandSign.Letter.R ||
+                            gotR == com.iotj.meshmore.xr.spatial.HandSign.Letter.H) &&
                         handsRef.value?.presented(j, it0) == true
                     ) {
-                        resetView("R")
+                        resetView(if (gotR == com.iotj.meshmore.xr.spatial.HandSign.Letter.H) "R:H" else "R")
                     }
                     if (gotR == com.iotj.meshmore.xr.spatial.HandSign.Letter.A) {
                         // BEFORE the action. Hearing this means the classifier
@@ -3002,10 +3024,12 @@ private fun HorizonScene(link: MeshLink) {
                     ) {
                         backOut("L")
                     }
-                    if (gotL == com.iotj.meshmore.xr.spatial.HandSign.Letter.R &&
+                    // Same on the left — see the note on the right hand.
+                    if ((gotL == com.iotj.meshmore.xr.spatial.HandSign.Letter.R ||
+                            gotL == com.iotj.meshmore.xr.spatial.HandSign.Letter.H) &&
                         handsRef.value?.presented(j, it0) == true
                     ) {
-                        resetView("L")
+                        resetView(if (gotL == com.iotj.meshmore.xr.spatial.HandSign.Letter.H) "L:H" else "L")
                     }
                     if (gotL == com.iotj.meshmore.xr.spatial.HandSign.Letter.A) {
                         cue.recognised()
