@@ -115,6 +115,34 @@ class HereSource(private val context: Context) {
 object Settings {
     private const val FILE = "meshmore-xr"
     private const val KEY_DEVICE_LOCATION = "use_device_location"
+    private const val KEY_TABLE_ANCHOR = "table_anchor_uuid"
+
+    /**
+     * THE TABLE THIS APP WAS LAST STOOD ON.
+     *
+     * A persisted anchor UUID, so a wearer sets their table up ONCE rather
+     * than on every launch — the runtime relocalises against the room it
+     * remembers and hands the same physical surface back.
+     *
+     * A UUID and not a position, deliberately. Coordinates are meaningless
+     * across sessions: activity space is re-established wherever the app
+     * happened to start, so yesterday's (x, y, z) points at a different part
+     * of the room today. The UUID is the runtime's own handle on a place, and
+     * it is the only thing that survives the origin moving.
+     *
+     * Null once the room stops being recognisable — a different building, a
+     * rearranged desk — which is why every read of it has to tolerate a miss.
+     */
+    fun tableAnchor(context: Context): String? =
+        context.getSharedPreferences(FILE, Context.MODE_PRIVATE)
+            .getString(KEY_TABLE_ANCHOR, null)
+
+    fun setTableAnchor(context: Context, uuid: String?) {
+        context.getSharedPreferences(FILE, Context.MODE_PRIVATE)
+            .edit().apply {
+                if (uuid == null) remove(KEY_TABLE_ANCHOR) else putString(KEY_TABLE_ANCHOR, uuid)
+            }.apply()
+    }
 
     /**
      * OFF by default. Falling back to headset GPS is useful, but switching on

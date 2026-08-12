@@ -1360,7 +1360,13 @@ private fun HorizonScene(link: MeshLink) {
         if (stage.planesEnabled &&
             skin.value.posture == com.iotj.meshmore.xr.spatial.Theme.Posture.TABLETOP
         ) {
-            tableRef.value = com.iotj.meshmore.xr.spatial.TableAnchor(session).also { it.seek() }
+            tableRef.value = com.iotj.meshmore.xr.spatial.TableAnchor(session, ctx).also {
+                // REMEMBERED FIRST, SEARCHED SECOND. A wearer sets a desk up
+                // once; if this room is one the runtime still recognises, the
+                // model goes straight back onto the same surface and the
+                // 20-second search never runs.
+                if (!it.recall()) it.seek()
+            }
         }
         // WHICH WAY IS NORTH. Every node's bearing comes from real lat/lon, so
         // it is measured from TRUE north — while place() measures from the

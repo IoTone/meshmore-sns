@@ -2,7 +2,10 @@
 // SPDX-License-Identifier: MIT
 package com.iotj.meshmore.xr.spatial
 
+import android.content.Context
 import android.util.Log
+import androidx.xr.arcore.Anchor
+import androidx.xr.arcore.AnchorCreateSuccess
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.math.FloatSize2d
 import androidx.xr.runtime.math.Vector3
@@ -11,6 +14,7 @@ import androidx.xr.scenecore.PlaneOrientation
 import androidx.xr.scenecore.PlaneSemanticType
 import androidx.xr.scenecore.Space
 import java.time.Duration
+import kotlinx.coroutines.launch
 
 /**
  * S6-TABLETOP — PUT THE MODEL ON A REAL TABLE.
@@ -42,13 +46,61 @@ import java.time.Duration
  * fallback is a working feature rather than an error state, so this can only
  * improve on it.
  */
-class TableAnchor(private val session: Session) {
+class TableAnchor(
+    private val session: Session,
+    /** For remembering the table between launches. Null disables that. */
+    private val context: Context? = null,
+) {
 
     private var entity: AnchorEntity? = null
 
     /** Where the table is, or null while there isn't one. */
     var at: Vector3? = null
         private set
+
+    /**
+     * THE REMEMBERED TABLE, TRIED FIRST.
+     *
+     * A wearer should set their desk up once, not once a launch. The runtime
+     * relocalises against the room it already knows and hands back the same
+     * physical surface, so this costs one call and skips the whole 20-second
+     * search when it works.
+     *
+     * IT OFTEN WILL NOT WORK, and that is ordinary rather than exceptional: a
+     * different building, a rearranged room, or simply a runtime that has not
+     * recognised where it is yet. Every failure falls straight through to
+     * [seek], which is the behaviour that existed before this method did.
+     *
+     * A UUID rather than a position, because coordinates do not survive a
+     * session: activity space is re-established wherever the app started, so
+     * yesterday's (x, y, z) points somewhere else in the room today. The UUID
+     * is the runtime's own handle on a PLACE.
+     */
+    fun recall(): Boolean {
+        val ctx = context ?: return false
+        val saved = com.iotj.meshmore.xr.Settings.tableAnchor(ctx) ?: return false
+        val uuid = runCatching { java.util.UUID.fromString(saved) }.getOrNull() ?: run {
+            com.iotj.meshmore.xr.Settings.setTableAnchor(ctx, null)
+            return false
+        }
+        val res = runCatching { Anchor.load(session, uuid) }.getOrNull()
+        val anchor = (res as? AnchorCreateSuccess)?.anchor ?: run {
+            // FORGET IT ON A MISS. A UUID the runtime will not load is a
+            // handle on a room this wearer is no longer in, and retrying it on
+            // every launch would spend the budget for a real anchor on a dead
+            // one. The next successful search writes a new one.
+            Log.i(TAG, "[table] remembered anchor did not load — forgetting it")
+            com.iotj.meshmore.xr.Settings.setTableAnchor(ctx, null)
+            return false
+        }
+        entity = runCatching { AnchorEntity.create(session, anchor) }.getOrNull() ?: return false
+        remembered = true
+        Log.i(TAG, "[table] recalled the remembered table ($uuid)")
+        return true
+    }
+
+    /** True when the current anchor came from disk rather than from a search. */
+    private var remembered = false
 
     /**
      * Ask the room for a table. Returns immediately; [poll] reports progress.
@@ -97,6 +149,11 @@ class TableAnchor(private val session: Session) {
         if (at != null) return false
         val p = runCatching { e.getPose(Space.ACTIVITY) }.getOrNull() ?: return false
         at = p.translation
+        // REMEMBER IT, so this room is set up once and not once a launch.
+        // Only a FOUND table is written: one that was recalled is already on
+        // disk under the same UUID, and rewriting it would churn the store on
+        // every launch for no change.
+        if (!remembered) persist(e)
         Log.i(
             TAG,
             "[table] found at (%.2f, %.2f, %.2f) — the model moves onto it".format(
@@ -112,10 +169,39 @@ class TableAnchor(private val session: Session) {
         return s == AnchorEntity.State.TIMED_OUT || s == AnchorEntity.State.ERROR
     }
 
+    /**
+     * Write the anchor's UUID so tomorrow's launch can ask for it by name.
+     *
+     * Fire-and-forget on purpose. `persist` is a suspend call into the
+     * runtime's own store and the model is ALREADY on the table by the time it
+     * runs — the wearer is looking at a finished result, so nothing here may
+     * block them, and a failure costs only the convenience of not re-searching
+     * next time.
+     */
+    private fun persist(e: AnchorEntity) {
+        val ctx = context ?: return
+        val anchor = runCatching { e.anchor }.getOrNull() ?: return
+        kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Main).launch {
+            runCatching { anchor.persist() }
+                .onSuccess {
+                    com.iotj.meshmore.xr.Settings.setTableAnchor(ctx, it.toString())
+                    Log.i(TAG, "[table] remembered as $it")
+                }
+                .onFailure { Log.w(TAG, "[table] not remembered: ${it.javaClass.simpleName}") }
+        }
+    }
+
     fun dispose() {
         runCatching { entity?.dispose() }
         entity = null
         at = null
+        remembered = false
+    }
+
+    /** Forget the remembered table — for a wearer who has moved desk. */
+    fun forget() {
+        context?.let { com.iotj.meshmore.xr.Settings.setTableAnchor(it, null) }
+        Log.i(TAG, "[table] forgotten")
     }
 
     private companion object {
