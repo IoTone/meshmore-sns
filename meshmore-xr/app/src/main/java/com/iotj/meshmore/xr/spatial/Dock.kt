@@ -97,9 +97,22 @@ class Dock(
     private inner class Pip(
         val name: String,
         val mark: Entity,
-        /** Where the pip itself sits. Needed by the gaze fallback. */
-        val at: Vector3,
-        val captionAt: Vector3,
+        /**
+         * Where the pip sits RIGHT NOW.
+         *
+         * A var, because on a worn dock it moves. It was a val, and everything
+         * that is not the mark itself reads it: [pipAt], which is the point
+         * every surface in the app rises from, and [gazeTargets], which is the
+         * dwell fallback's aim. So the marks rode the forearm while the dock's
+         * IDEA of where they were stayed on the floor at the launch origin —
+         * gaze aimed at empty ground, and picking SETUP opened the console out
+         * in front of wherever the wearer had been facing at launch rather than
+         * above the arm they just pinched.
+         *
+         * Two reported bugs, one stale field.
+         */
+        var at: Vector3,
+        var captionAt: Vector3,
         val toggle: () -> Unit,
     ) {
         /**
@@ -398,6 +411,13 @@ class Dock(
                 // at that size on a 6 cm pitch it would still swallow its
                 // neighbours, which is the whole defect being fixed here.
                 p.proxy?.setScale(WRIST_PROXY_SCALE)
+                // AND TELL THE REST OF THE APP. The mark moving is the visible
+                // half; this is the half that makes it pointable and makes the
+                // surfaces it opens rise from the arm.
+                p.at = at
+                // The caption hangs toward the wearer rather than below, since
+                // "below" on a forearm is the wearer's own sleeve.
+                p.captionAt = Vector3(at.x, at.y - R * 1.2f, at.z)
             }
         }
     }
