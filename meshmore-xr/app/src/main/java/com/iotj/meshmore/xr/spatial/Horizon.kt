@@ -996,6 +996,21 @@ class Horizon(
      * The two therefore agree by construction rather than by tuning.
      */
     fun veil(head: Pose) {
+        // NOTHING TO VEIL ON A TABLETOP, and running it there deleted the map.
+        //
+        // The veil exists to stop CALLSIGNS colliding with the microHUD's lower
+        // band. A tabletop has no callsigns — they do not fit, see the note at
+        // the label — so every peer's `label` points at its own MOTE with
+        // pooled = false, and this method then dimmed those motes to
+        // VEIL_ALPHA and called setEnabled(false) on them. The model sits 37
+        // degrees below the horizon, which is exactly where the veil considers
+        // things recessed, so it hid the whole diorama. Reported as the map no
+        // longer loading, and it had not: it was built, then switched off one
+        // frame later.
+        //
+        // The band is also not something a tabletop can collide with. The model
+        // is deliberately below the sightline; that is what a table is.
+        if (posture == Theme.Posture.TABLETOP) return
         val t = head.translation
         val q = head.rotation
         val fy = -2f * (q.y * q.z - q.w * q.x)
