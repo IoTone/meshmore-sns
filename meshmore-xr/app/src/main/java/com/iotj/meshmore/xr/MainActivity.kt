@@ -1474,9 +1474,10 @@ private fun HorizonScene(link: MeshLink) {
                 if (Settings.useDeviceLocation(ctx)) {
                     "NO POSITION YET — $unplaced NODES WAITING"
                 } else {
-                    // Names the remedy, not the fault. The toggle is two pinches
-                    // away and nothing else in the scene points at it.
-                    "NO POSITION — TURN ON HEADSET GPS IN APP"
+                    // Names the SHORTEST remedy, not the fault. The APP bay has
+                    // the same switch two pinches deep; the HERE pip is one, is
+                    // on the dock in every theme, and lights when it is on.
+                    "NO POSITION — PINCH HERE ON THE DOCK"
                 },
             )
             Log.w(TAG_UI, "[here] no fix — $unplaced located peer(s) cannot be drawn")
@@ -2073,6 +2074,13 @@ private fun HorizonScene(link: MeshLink) {
         // arrived — and it arrives BEFORE the pinch, which is when it helps.
         menuRef.value?.onFocus = { cue.recognised() }
         dockRef.value = dock
+        // THE ONE PIP THAT REMEMBERS. Every other pip toggles a surface that is
+        // closed at launch, so an unlit dock is the truth for all of them.
+        // Headset GPS is a stored setting that survives the app, and its pip
+        // came up dark on a build where it was already on — the state was
+        // persisted correctly and looked exactly like off, which is the wrong
+        // half to get right.
+        dock.setLit("HERE", Settings.useDeviceLocation(ctx))
         if (MainActivity.showHelp) {
             help.setVisible(true)
             dock.setLit("HELP", true)
@@ -3547,12 +3555,13 @@ private fun HorizonScene(link: MeshLink) {
                         "NO FIX  %d UNPLACED".format(mesh.size)
                     }
                     hudRef.value?.setStatus(
-                        "%s%s  %s%s".format(
+                        "%s%s  %s%s%s".format(
                             // LINK / DISC / "LOST 4M" — after a drop the chip
                             // carries the age of the outage, because that is the
                             // age of everything else on the horizon too.
                             link.linkChip(),
                             batt, count,
+                            positionMark(hereSource.source, Settings.shareLocation(ctx)),
                             // The unread count, in the band rather than the
                             // world window. Distinguished by FORM as well as
                             // number when the CUFF lands.
@@ -3602,6 +3611,38 @@ private fun HorizonScene(link: MeshLink) {
  * The no-fix case names the remedy rather than the fault. "NONE" alone tells
  * someone staring at an empty ring nothing they can act on.
  */
+/**
+ * THE POSITION MARK, in the lower band — is this thing using my GPS, and is it
+ * telling anybody.
+ *
+ * TWO SETTINGS, AND ONLY ONE OF THEM IS THE DOXXING ONE. Using a fix locally to
+ * work out which way a node lies is arithmetic that never leaves the headset;
+ * putting your coordinates into an advert is a broadcast, unencrypted, to
+ * everyone in radio range. They were equally invisible, which meant the safe one
+ * felt as risky as the dangerous one and got left off — and with it off the
+ * whole horizon is empty. So the safe one gets a quiet standing mark and the
+ * broadcast gets a louder one that names what it does.
+ *
+ * ARMED IS NOT THE SAME AS IN USE. With the radio's own fix good, the headset
+ * setting is on and doing nothing, and a band that said GPS then would be
+ * claiming the wearer's own GPS is running when it is not. The mark follows the
+ * SOURCE actually in use, which is the only thing that is true.
+ */
+internal fun positionMark(
+    source: String,
+    sharing: Boolean,
+): String {
+    val using = when (source) {
+        "headset" -> "  GPS"
+        "radio" -> "  POS RADIO"
+        "stated" -> "  POS SET"
+        else -> ""
+    }
+    // Appended to whatever the source is, because sharing is a fact about the
+    // air and not about where the number came from.
+    return using + if (sharing && using.isNotEmpty()) " SHARED" else ""
+}
+
 private fun hereCaption(
     ctx: android.content.Context,
     src: HereSource,
