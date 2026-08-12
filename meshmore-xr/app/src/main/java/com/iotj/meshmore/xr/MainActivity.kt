@@ -1558,6 +1558,13 @@ private fun HorizonScene(link: MeshLink) {
         // else. HELP, WIDE, LIST and LINK are one pinch away behind SETUP.
         val wristDock = skin.value.active
         val WRIST_SET = setOf("COMPASS", "INBOX", "HERE", "SETUP")
+        // A TABLETOP PUTS A MAP WHERE THE DOCK LIVES. See Dock.build's drop.
+        val dockDrop =
+            if (skin.value.posture == com.iotj.meshmore.xr.spatial.Theme.Posture.TABLETOP) {
+                com.iotj.meshmore.xr.spatial.Dock.TABLETOP_DROP
+            } else {
+                com.iotj.meshmore.xr.spatial.Dock.DROP
+            }
         dock.build(origin, listOf(
             "COMPASS" to {
                 hudRef.value?.let { h ->
@@ -1730,7 +1737,7 @@ private fun HorizonScene(link: MeshLink) {
                         .format(Math.toDegrees(yaw.toDouble())) + "north-referenced")
                 }
             },
-        ).filter { !wristDock || it.first in WRIST_SET }.map { (n, f) -> n to { f(); Unit } })
+        ).filter { !wristDock || it.first in WRIST_SET }.map { (n, f) -> n to { f(); Unit } }, dockDrop)
         // A short tick when a pip takes focus. On a display where you cannot
         // feel a control, sound is the only confirmation that the pointer has
         // arrived — and it arrives BEFORE the pinch, which is when it helps.

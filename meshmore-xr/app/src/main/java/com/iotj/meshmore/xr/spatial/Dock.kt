@@ -144,7 +144,26 @@ class Dock(
     /** Raised when a pip takes focus. The host makes the sound. */
     var onFocus: ((String) -> Unit)? = null
 
-    suspend fun build(o: Stage.Origin, items: List<Pair<String, () -> Unit>>) {
+    suspend fun build(
+        o: Stage.Origin,
+        items: List<Pair<String, () -> Unit>>,
+        /**
+         * How far below eye the row sits. Overridden by TABLETOP, which puts a
+         * map exactly where the default dock is.
+         *
+         * The default is 0.66 m out and 0.38 m down. The tabletop model is
+         * centred 0.55 m out and 0.42 m down with a 0.16 m radius, so it spans
+         * 0.39 to 0.71 m — the dock is INSIDE that footprint, four centimetres
+         * above the map. That is the "dock is in the way" report, and it is not
+         * a matter of taste: the two surfaces occupy the same volume.
+         *
+         * 0.20 m clears the model by 22 cm and sits 16.9 degrees down, just
+         * inside the field, so it reads as a row ABOVE the map rather than a
+         * row through it — and gives the tabletop something at eye level, which
+         * it badly needed.
+         */
+        drop: Float = DROP,
+    ) {
         clear()
         val root = session.scene.activitySpace
 
@@ -153,7 +172,7 @@ class Dock(
         // is one glance rather than a search. You look DOWN for settings, which
         // is the same place the HERE marker lives and the same place a wrist
         // would be.
-        val base = o.place(0f, REACH, DROP)
+        val base = o.place(0f, REACH, drop)
 
         items.forEachIndexed { i, (name, act) ->
             val x = (i - (items.size - 1) / 2f) * PITCH
@@ -450,11 +469,14 @@ class Dock(
         doomed.forEach { runCatching { it.dispose() } }
     }
 
-    private companion object {
+    companion object {
         const val TAG = "MeshmoreXR"
         const val REACH = 0.66f
         /** -0.38 at 0.66 m is about -30 degrees: below everything, above the floor. */
         const val DROP = -0.38f
+
+        /** Above the tabletop model rather than inside it. See [build]. */
+        const val TABLETOP_DROP = -0.20f
         const val R = 0.020f
         /**
          * Pip spacing. Widened with the marks: normalising their optical size

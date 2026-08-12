@@ -409,7 +409,16 @@ class Horizon(
             // accents, or nothing but a turtle. Callsign folds that into
             // something the stroke font can actually draw and tells us whether
             // to raise a badge for what it had to drop.
-            val anchor = Vector3(px, py - r * 2.6f - capH, pz)
+            // TEXT HANGS BELOW ITS MOTE — except on a table, where "below"
+            // is under the table. The wearer is looking DOWN at a tabletop, so
+            // anything under a mote is behind the surface it sits on and reads
+            // through the map rather than beside it. Reported as "data is below
+            // the map, so hard to read". Above, on a tabletop.
+            val anchor = if (posture == Theme.Posture.TABLETOP) {
+                Vector3(px, py + r * 2.6f + capH, pz)
+            } else {
+                Vector3(px, py - r * 2.6f - capH, pz)
+            }
 
             // WHICH MACHINERY DRAWS THIS NAME (T1). Latin goes to the stroke
             // font, which is the only text here with genuine volume and the
