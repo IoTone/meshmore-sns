@@ -1454,6 +1454,33 @@ private fun HorizonScene(link: MeshLink) {
         val undated = mesh.count { it.lastSeenEpochSec <= 0L }
         Log.i(TAG_UI, "[age] ${mesh.size} peers, $undated undated, " +
             "live=${nodes.count { it.age < 0.34f }} stale=${nodes.count { it.age >= 0.34f }}")
+        // SAID OUT LOUD, ONCE, AT THE MOMENT THE RING COMES UP EMPTY.
+        //
+        // A radio with no GPS reports 0.0/0.0 forever and the app has nothing to
+        // measure bearings from, so every located peer is unplaceable — 345 of
+        // them, on the mesh this was found on. The status band carries the
+        // standing fact; this is the sentence that arrives at the moment the
+        // wearer is looking at an empty ring and wondering what broke.
+        // 0/0 IS NOT A POSITION. It is what a GPS-less board reports forever,
+        // and it is a real place in the Gulf of Guinea — counting those as
+        // "waiting to be drawn" would promise the wearer 350 nodes that a fix
+        // will never produce. Same test the link's own census uses.
+        val unplaced = mesh.count {
+            it.lat != null && it.lon != null &&
+                (kotlin.math.abs(it.lat) > 1e-7 || kotlin.math.abs(it.lon) > 1e-7)
+        }
+        if (!origin2.known && unplaced > 0) {
+            noticeRef.value?.say(
+                if (Settings.useDeviceLocation(ctx)) {
+                    "NO POSITION YET — $unplaced NODES WAITING"
+                } else {
+                    // Names the remedy, not the fault. The toggle is two pinches
+                    // away and nothing else in the scene points at it.
+                    "NO POSITION — TURN ON HEADSET GPS IN APP"
+                },
+            )
+            Log.w(TAG_UI, "[here] no fix — $unplaced located peer(s) cannot be drawn")
+        }
         nodesRef.value = nodes
         h.build(nodes, o, st.floorHeight())
         // S5 — the channel band, above the node lanes. Rebuilt with the horizon
@@ -3054,6 +3081,21 @@ private fun HorizonScene(link: MeshLink) {
                     // who tried all nine has no other way to find the one they
                     // walked in with. Backing out of a preview must mean
                     // "nothing happened".
+                    // THE HELP CARD IS FIRST, because it is IN FRONT. It is the
+                    // one surface that covers the field rather than sitting in
+                    // it, so whatever else is open is open BEHIND it — closing
+                    // that instead would look like B doing nothing at all,
+                    // twice, which is what it looked like. It was also the only
+                    // surface never added to this chain: the card lists "B —
+                    // BACK" among its own rows and did not answer to it.
+                    helpRef.value?.let { h ->
+                        if (h.visible) {
+                            lastBackAt = nowMs
+                            h.setVisible(false); cue.closed()
+                            Log.i(TAG_UI, "[hand] $hand:B — help closed")
+                            return
+                        }
+                    }
                     appRef.value?.let { a ->
                         if (a.open) {
                             lastBackAt = nowMs
@@ -3481,13 +3523,36 @@ private fun HorizonScene(link: MeshLink) {
                         mv <= 0 -> " ${Glyphs.BOLT}"
                         else -> " %.1fV".format(mv / 1000f)
                     }
+                    // WHY THE RING IS EMPTY, in the one readout that is always
+                    // in front of the wearer.
+                    //
+                    // "4/349" is a true statement that answers the wrong
+                    // question. With no position fix there is nothing to
+                    // measure a bearing FROM, so 345 perfectly good nodes have
+                    // nowhere to be drawn — and the wearer sees an empty ring, a
+                    // connected radio, and no way at all to connect the two.
+                    // Reported as "I can't see anything (no nodes)" while the
+                    // radio was healthy and hearing repeaters.
+                    //
+                    // The HERE marker has carried this remedy for a while, but
+                    // it is a marker on the ground at the origin: it is not
+                    // where you are looking when you wonder, and in a theme that
+                    // draws little it may not be in the field at all. The status
+                    // band is head-locked, which is exactly the property this
+                    // needs.
+                    val placed = hereSource.here.value.known
+                    val count = if (placed) {
+                        "%d/%d".format(nodesRef.value.size, mesh.size)
+                    } else {
+                        "NO FIX  %d UNPLACED".format(mesh.size)
+                    }
                     hudRef.value?.setStatus(
-                        "%s%s  %d/%d%s".format(
+                        "%s%s  %s%s".format(
                             // LINK / DISC / "LOST 4M" — after a drop the chip
                             // carries the age of the outage, because that is the
                             // age of everything else on the horizon too.
                             link.linkChip(),
-                            batt, nodesRef.value.size, mesh.size,
+                            batt, count,
                             // The unread count, in the band rather than the
                             // world window. Distinguished by FORM as well as
                             // number when the CUFF lands.
