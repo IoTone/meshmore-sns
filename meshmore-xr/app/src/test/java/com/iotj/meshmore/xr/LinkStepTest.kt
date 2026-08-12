@@ -28,8 +28,10 @@ class LinkStepTest {
         scanning: Boolean = false,
         deviceName: String? = null,
         error: String? = null,
+        dropped: Boolean = false,
     ): String? {
         if (state == St.READY) return null
+        if (dropped) return "LINK LOST — RECONNECTING"
         val n = when {
             scanning -> 1
             state == St.DISCONNECTED -> if (deviceName == null) 1 else 2
@@ -93,5 +95,37 @@ class LinkStepTest {
     @Test fun disconnectedAfterAFindIsStepTwo() {
         assertTrue(step(St.DISCONNECTED, deviceName = "MeshCore-1")!!.startsWith("STEP 2/4"))
         assertTrue(step(St.DISCONNECTED)!!.startsWith("STEP 1/4"))
+    }
+
+    /**
+     * A DROP IS NOT A COLD START. Re-entering the ladder at "LOOKING FOR A
+     * RADIO" reads as a fresh boot; after a drop the wearer's question is
+     * whether the radio is gone and whether it is coming back.
+     */
+    @Test fun aDropSaysSoRatherThanRestartingTheLadder() {
+        val s = step(St.DISCONNECTED, deviceName = "MeshCore-1", dropped = true)
+        assertEquals("LINK LOST — RECONNECTING", s)
+        assertTrue(s!!, !s.contains("STEP"))
+    }
+
+    /**
+     * The drop line OUTRANKS the attempt's own error, and this is the test that
+     * keeps the notice band quiet. Each reconnect attempt ends in "no radio
+     * found"; if that replaced the drop line, the band would alternate between
+     * two strings for the length of the outage and announce both, over and over,
+     * every retry cycle.
+     */
+    @Test fun theDropLineDoesNotFlapAgainstEachFailedRetry() {
+        val attempts = listOf(
+            step(St.DISCONNECTED, deviceName = "r", dropped = true),
+            step(St.DISCONNECTED, deviceName = "r", dropped = true, error = "no radio found"),
+            step(St.DISCONNECTED, deviceName = "r", scanning = true, dropped = true),
+        )
+        assertEquals(1, attempts.toSet().size)
+    }
+
+    /** Recovery is silent in the same way arrival is: READY says nothing. */
+    @Test fun recoveryEndsTheDropLine() {
+        assertNull(step(St.READY, deviceName = "r", dropped = true))
     }
 }

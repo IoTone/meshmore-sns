@@ -2428,6 +2428,13 @@ private fun HorizonScene(link: MeshLink) {
                             // and that is where the fault is.
                             Regex("STEP (\\d)/4").find(step)?.groupValues?.get(1)
                                 ?.toIntOrNull()?.let { cue.linkStep(it) }
+                            // A DROP GETS ITS OWN SOUND. The ladder is for
+                            // arriving; losing the radio is the opposite motion
+                            // and the one you need to hear while looking at a
+                            // trail rather than at the band. Said once per
+                            // outage — the string does not change while the
+                            // retries run, so this cannot become a metronome.
+                            if (link.status.value.droppedAtMs != null) cue.closed()
                             Log.i(TAG_UI, "[link] $step")
                         } else {
                             // Arrival is worth one line too; it is the only
@@ -3267,7 +3274,6 @@ private fun HorizonScene(link: MeshLink) {
                     // the link readout, which is also when a commit or revert
                     // would have changed what LIVE means.
                     rackRef.value?.refresh()
-                    val st = link.status.value
                     // THREE STATES, NOT TWO. Silence used to cover both "the
                     // radio never answered the battery query" and "it answered
                     // 0 mV", which are different facts: the first is a link we
@@ -3281,7 +3287,10 @@ private fun HorizonScene(link: MeshLink) {
                     }
                     hudRef.value?.setStatus(
                         "%s%s  %d/%d%s".format(
-                            if (st.state == SessionState.READY) "LINK" else st.state.name.take(4),
+                            // LINK / DISC / "LOST 4M" — after a drop the chip
+                            // carries the age of the outage, because that is the
+                            // age of everything else on the horizon too.
+                            link.linkChip(),
                             batt, nodesRef.value.size, mesh.size,
                             // The unread count, in the band rather than the
                             // world window. Distinguished by FORM as well as

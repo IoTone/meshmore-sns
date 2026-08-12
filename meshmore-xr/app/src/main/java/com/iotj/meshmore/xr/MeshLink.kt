@@ -59,7 +59,39 @@ class MeshLink(private val context: Context) {
         val messages: Int = 0,
         val lastEvent: String = "idle",
         val error: String? = null,
+        /**
+         * When the link DROPPED, having previously been READY — the wall clock,
+         * or null if we are connected or have never connected at all.
+         *
+         * A cold start and a drop are different facts and used to look the same:
+         * both showed DISCONNECTED, and the horizon carried on drawing the mesh
+         * it last heard as though the radio were still feeding it. On a hike the
+         * radio goes out of BLE range in a backpack, in a pannier, behind a body,
+         * and the wearer's only evidence was that nothing new ever arrived —
+         * which is also what a quiet mesh looks like. This is the timestamp that
+         * separates them, and how long ago it was is the number worth showing.
+         */
+        val droppedAtMs: Long? = null,
     )
+
+    /**
+     * How long the app has been BLIND, in millis — null while the link is up or
+     * before it has ever come up.
+     */
+    fun blindForMs(nowMs: Long = System.currentTimeMillis()): Long? =
+        _status.value.droppedAtMs?.let { (nowMs - it).coerceAtLeast(0L) }
+
+    /**
+     * The link, in the four characters the status band can spare.
+     *
+     * "LINK" when it is up, the session's own state word when it has never been
+     * up, and after a drop the thing that is actually worth knowing: HOW LONG
+     * the app has been blind. `LOST 4M` says the mesh you are looking at is four
+     * minutes old at best. `DISC` said nothing at all, and said it identically
+     * whether the radio had been gone two seconds or the whole walk.
+     */
+    fun linkChip(nowMs: Long = System.currentTimeMillis()): String =
+        chipFor(_status.value.state, blindForMs(nowMs))
 
     /**
      * WHERE THE LINK IS, AS A STEP OUT OF FOUR — never a spinner.
@@ -79,6 +111,15 @@ class MeshLink(private val context: Context) {
     fun linkStep(): String? {
         val st = _status.value
         if (st.state == SessionState.READY) return null
+        // A DROP IS NOT STEP 1. Re-entering the ladder at "LOOKING FOR A RADIO"
+        // reads as a fresh boot, and the wearer's question after a drop is not
+        // "which step is it on" but "did I lose the radio, and is it coming
+        // back". Deliberately carries no duration: this string drives the notice
+        // band, which speaks on CHANGE, and a counting number would make it
+        // speak every second. The count belongs in the status chip.
+        if (st.droppedAtMs != null) {
+            return "LINK LOST — RECONNECTING"
+        }
         val n = when {
             st.scanning -> 1
             st.state == SessionState.DISCONNECTED -> if (st.deviceName == null) 1 else 2
@@ -386,6 +427,79 @@ class MeshLink(private val context: Context) {
     private var transport: AndroidBleTransport? = null
     private var session: MeshcoreSession? = null
 
+    // --- link loss and recovery ----------------------------------------------
+
+    /**
+     * True once a handshake has completed. This is what makes a drop a drop:
+     * DISCONNECTED before the first READY is a radio that was never found, and
+     * retrying that on a timer is a scan loop nobody asked for.
+     */
+    private var everReady = false
+
+    /** Set by [close] so a deliberate shutdown does not immediately reconnect. */
+    private var closedByUser = false
+
+    /** Which rung of [RETRY_MS] the next attempt uses. */
+    private var retryRung = 0
+
+    private val retryHandler = Handler(Looper.getMainLooper())
+    private var retry: Runnable? = null
+
+    /** The arguments of the last [connect], so a retry reaches the same radio. */
+    private var lastPrefix = "MeshCore"
+    private var lastPin = BLE_PIN
+
+    /**
+     * Come back on our own, on a widening interval.
+     *
+     * The wearer has no keyboard and, in a spatial scene, no reconnect button
+     * within reach — the only one that existed was on the flat fallback surface,
+     * which is not where anybody is when the radio drops. So the app has to be
+     * the thing that keeps trying.
+     *
+     * THE LADDER WIDENS because the two causes want opposite things. A radio
+     * that blinked (a body between it and the glasses, a moment of interference)
+     * is back in seconds and a fast first retry catches it before the wearer
+     * notices. A radio that is off, flat, or left at home is not coming back at
+     * all, and scanning at full rate for the rest of a hike costs battery on the
+     * one device that cannot be recharged from a pocket. Fast then patient
+     * serves both.
+     */
+    private fun scheduleReconnect() {
+        retry?.let { retryHandler.removeCallbacks(it) }
+        val wait = RETRY_MS[retryRung.coerceAtMost(RETRY_MS.size - 1)]
+        Log.i(TAG, "[link] reconnect in ${wait / 1000}s (rung $retryRung)")
+        val r = Runnable {
+            retry = null
+            if (closedByUser) return@Runnable
+            if (_status.value.state == SessionState.READY) return@Runnable
+            // Tear the old session down FIRST. Its transport still holds a GATT
+            // client for a device that is gone; opening a second one beside it
+            // leaks the first and, on some stacks, is refused outright.
+            runCatching { session?.close() }
+            session = null
+            transport = null
+            retryRung++
+            connect(lastPrefix, lastPin)
+        }
+        retry = r
+        retryHandler.postDelayed(r, wait)
+    }
+
+    /**
+     * Keep going after a reconnect ATTEMPT fails.
+     *
+     * [scheduleReconnect] fires once per drop; without this, a retry whose scan
+     * timed out — the overwhelmingly likely outcome while the radio is still out
+     * of range — would be the last one, and the app would sit blind forever
+     * having tried exactly once. Only ever re-arms while [Status.droppedAtMs] is
+     * set, so a cold start that cannot find a radio still fails quietly instead
+     * of scanning for the rest of the day.
+     */
+    private fun retryIfDropped() {
+        if (_status.value.droppedAtMs != null && !closedByUser) scheduleReconnect()
+    }
+
     fun hasBlePermissions(): Boolean =
         listOf(Manifest.permission.BLUETOOTH_SCAN, Manifest.permission.BLUETOOTH_CONNECT)
             .all { ContextCompat.checkSelfPermission(context, it) == PackageManager.PERMISSION_GRANTED }
@@ -396,6 +510,10 @@ class MeshLink(private val context: Context) {
         // re-arm here and not only at construction. Otherwise the second
         // connect of a session announces 113 strangers.
         announceFinds = false
+        lastPrefix = namePrefix
+        lastPin = pin
+        closedByUser = false
+        retry?.let { retryHandler.removeCallbacks(it); retry = null }
         if (!hasBlePermissions()) {
             Log.w(TAG, "[link] BLE permission not granted — fail safe, no scan")
             _status.value = _status.value.copy(error = "BLE permission denied", lastEvent = "permission")
@@ -406,6 +524,9 @@ class MeshLink(private val context: Context) {
         if (adapter == null || !adapter.isEnabled) {
             Log.w(TAG, "[link] bluetooth off/absent — Tier 0, app stays usable")
             _status.value = _status.value.copy(error = "Bluetooth off", lastEvent = "bt-off")
+            // Worth continuing to wait on: an adapter that is off can be turned
+            // back on, and on glasses that is done somewhere this app cannot see.
+            retryIfDropped()
             return
         }
         val scanner = adapter.bluetoothLeScanner ?: run {
@@ -452,6 +573,7 @@ class MeshLink(private val context: Context) {
             override fun onScanFailed(errorCode: Int) {
                 Log.e(TAG, "[link] scan failed code=$errorCode")
                 _status.value = _status.value.copy(scanning = false, error = "scan failed $errorCode")
+                retryIfDropped()
             }
         }
         scanner.startScan(emptyList(), settings, cb)
@@ -484,6 +606,7 @@ class MeshLink(private val context: Context) {
                     Log.w(TAG, "[link] no radio named '$namePrefix*' after ${SCAN_TIMEOUT_MS / 1000}s")
                     _status.value = _status.value.copy(
                         scanning = false, error = "no radio found", lastEvent = "timeout")
+                    retryIfDropped()
                 } else {
                     handler.postDelayed(settle, SCAN_SETTLE_MS)
                 }
@@ -562,6 +685,7 @@ class MeshLink(private val context: Context) {
                         } else if (st == BluetoothDevice.BOND_NONE) {
                             runCatching { context.unregisterReceiver(this) }
                             _status.value = _status.value.copy(error = "pairing failed", lastEvent = "bond-fail")
+                            retryIfDropped()
                         }
                     }
                 }
@@ -1030,6 +1154,31 @@ class MeshLink(private val context: Context) {
             override fun onStateChanged(state: SessionState) {
                 Log.i(TAG, "[link] state -> $state")
                 _status.value = _status.value.copy(state = state, lastEvent = state.name)
+                when {
+                    state == SessionState.READY -> {
+                        everReady = true
+                        retryRung = 0
+                        if (_status.value.droppedAtMs != null) {
+                            Log.i(TAG, "[link] recovered after " +
+                                "${(blindForMs() ?: 0L) / 1000}s blind")
+                            _status.value = _status.value.copy(droppedAtMs = null, error = null)
+                        }
+                    }
+                    // DISCONNECTED AFTER READY is the drop. Only stamped once:
+                    // the retry itself passes back through DISCONNECTED on its
+                    // way out, and restamping would reset the blind clock every
+                    // few seconds and report the outage as permanently new.
+                    state == SessionState.DISCONNECTED && everReady && !closedByUser -> {
+                        if (_status.value.droppedAtMs == null) {
+                            Log.w(TAG, "[link] DROPPED — radio out of range or off")
+                            _status.value = _status.value.copy(
+                                droppedAtMs = System.currentTimeMillis(),
+                                lastEvent = "dropped",
+                            )
+                        }
+                        scheduleReconnect()
+                    }
+                }
             }
 
             override fun onReady(selfInfo: SelfInfo) {
@@ -1347,6 +1496,11 @@ class MeshLink(private val context: Context) {
 
     fun close() {
         Log.i(TAG, "[link] close")
+        // BEFORE the teardown, so the DISCONNECTED that the session's own close
+        // delivers is not read as a drop and answered with a reconnect.
+        closedByUser = true
+        retry?.let { retryHandler.removeCallbacks(it); retry = null }
+        retryRung = 0
         runCatching { session?.close() }
         session = null
         transport = null
@@ -1354,6 +1508,25 @@ class MeshLink(private val context: Context) {
     }
 
     companion object {
+        /**
+         * [linkChip]'s arithmetic, without a Context — so it can be tested.
+         *
+         * Coarse on purpose. Seconds below a minute, then whole minutes, then
+         * whole hours: the wearer's decision is "is this worth stopping to fix",
+         * and that answer does not change between 4 and 5 minutes.
+         */
+        internal fun chipFor(state: SessionState, blindMs: Long?): String {
+            if (state == SessionState.READY) return "LINK"
+            if (blindMs == null) return state.name.take(4)
+            val s = blindMs / 1000
+            val d = when {
+                s < 60 -> "${s}S"
+                s < 3600 -> "${s / 60}M"
+                else -> "${s / 3600}H"
+            }
+            return "LOST $d"
+        }
+
         private const val TAG = "MeshmoreXR"
         private const val APP_NAME = "MeshmoreXR"
         /** ~11 m. Below this a "move" is GPS jitter, not a move. */
@@ -1365,6 +1538,17 @@ class MeshLink(private val context: Context) {
         /** Channel slots to enumerate at connect. The firmware has no count query. */
         private const val CHANNEL_SLOTS = 4
         private const val SCAN_TIMEOUT_MS = 12_000L
+        /**
+         * How long to wait before each reconnect attempt after a drop.
+         *
+         * The first rung is short because most drops are not outages: a hand,
+         * a body, a jacket over the pannier. The last rung is a minute and is
+         * where it stays — a radio that has been gone five minutes is off or
+         * left behind, and the cost of asking again is a 12-second scan on a
+         * head-worn battery. Roughly one scan a minute is the floor at which
+         * "walk back into range and it just comes back" still holds.
+         */
+        internal val RETRY_MS = longArrayOf(2_000, 5_000, 10_000, 20_000, 60_000)
         /**
          * How long to collect advertisers before choosing the strongest. Long
          * enough that a second radio gets a chance to be heard, short enough
