@@ -160,8 +160,23 @@ object Theme {
             radius = 1.8f,
             forward = 0f,
             drop = -0.30f,
-            // The circles go to the floor and stay there.
-            ringDrop = -1.25f,
+            // LOW, BUT NOT OVER THE HORIZON'S EDGE.
+            //
+            // -1.25 m put them on the actual floor, which at the 1.8 m ring is
+            // 34.8 degrees below the horizon — just outside a 34-degree field.
+            // Correct to the letter of "lay it at ground level, out of the way"
+            // and wrong in effect: with the grid gone and the circles past the
+            // lower edge, looking straight ahead showed a 360-degree ring of
+            // which the field covers 9 percent — one node mark of eleven, and
+            // nothing else. Confirmed by differencing a running frame against
+            // the same room with the app stopped: HALO was drawing the boot
+            // wordmark and a single mote.
+            //
+            // -0.45 m is 14 degrees down: inside the field with three to spare,
+            // so the outer circle lies along the bottom of the view where a map
+            // belongs while walking. Still well below the nodes at -0.30, still
+            // clear of the world window, and now actually present.
+            ringDrop = -0.45f,
             // No grid: 34 lit bars competing with a real trail. The circles
             // already say scale, and they say it without covering the ground.
             floorGrid = false,

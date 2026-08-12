@@ -122,10 +122,17 @@ class PostureTest {
         // Tighter than the standing ring — you turn with it instead of
         // repeatedly walking out of it.
         assertTrue("active radius %.2f".format(f.radius), f.radius < still.radius)
-        // The circles go to the FLOOR, well below the nodes, so they stop
-        // crossing the middle of the path.
-        assertTrue("ringDrop %.2f".format(f.ringDrop), f.ringDrop <= -1.0f)
+        // THE CIRCLES GO LOW, AND STAY IN THE FIELD. Two requirements, and the
+        // first version of this test only had the first — it asserted the
+        // circles were on the FLOOR, which is how they ended up 34.8 degrees
+        // down at the 1.8 m ring: past the lower edge of a 34-degree window,
+        // out of sight, with the grid already deleted. The theme rendered an
+        // empty room and the test was green, because the test was checking
+        // "low" when the requirement is "low AND visible".
         assertTrue("rings must sit below the nodes", f.ringDrop < f.drop)
+        val below = Math.toDegrees(Math.atan(-f.ringDrop.toDouble() / f.radius))
+        assertTrue("circles are %.1f deg down, out of the field".format(below), below <= 17.0)
+        assertTrue("circles at %.1f deg are in the sightline".format(below), below >= 10.0)
         // And the grid goes away entirely: the circles already say scale.
         assertFalse("active use must not draw the floor grid", f.floorGrid)
         assertTrue("every other FIELD theme keeps its floor", still.floorGrid)
