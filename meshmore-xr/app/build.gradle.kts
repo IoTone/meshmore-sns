@@ -17,6 +17,28 @@ val keystoreProps: Properties? =
         Properties().apply { f.inputStream().use { load(it) } }
     }
 
+// THE VERSION, IN ONE PLACE, BUMPED BY HAND ON PURPOSE.
+//
+// Operator's instruction, 2026-08-12: move the minor with the changes. Four
+// separate builds went onto the glasses in one afternoon all calling themselves
+// 0.1.0, and "is that the one you just installed?" cost a device cycle to
+// answer every time.
+//
+//   MINOR  moves whenever a change lands that alters what the app DOES. Every
+//          commit that ships behaviour moves it, not just the ones that feel
+//          big — a number that only moves for milestones cannot answer the
+//          question it exists to answer.
+//   PATCH  for a fix on top of a minor that has already been installed
+//          somewhere.
+//   MAJOR  stays 0 until launch.
+//
+// versionCode is DERIVED so nobody has to remember it and it cannot go
+// backwards: an installer refuses a downgrade, and hand-maintained codes drift
+// out of order exactly when several builds are being flashed in a hurry.
+val verMajor = 0
+val verMinor = 2
+val verPatch = 0
+
 android {
     namespace = "com.iotj.meshmore.xr"
 
@@ -28,17 +50,20 @@ android {
     defaultConfig {
         // WHEN THIS APK WAS BUILT, for the splash stamp.
         //
-        // versionName is a static 0.1.0 and does not move between debug builds,
-        // which is precisely when somebody needs to know whether the thing on
-        // the glasses is the thing they just compiled. The timestamp is the
-        // only field that actually answers that.
+        // STILL EARNS ITS PLACE now that the version moves. The version answers
+        // "which change is this"; the timestamp answers "is this the compile I
+        // just ran", and during an afternoon of fixes at one minor those are
+        // different questions. Both go under the wordmark.
         buildConfigField("long", "BUILD_TIME", "${System.currentTimeMillis()}L")
 
         applicationId = "com.iotj.meshmore.xr"
         minSdk = 34          // Android XR baseline
         targetSdk = 35
-        versionCode = 1
-        versionName = "0.1.0"
+        // 0.2.0 -> 200. Room for 100 patches under a minor and 100 minors under
+        // a major, which is more headroom than either will ever need and keeps
+        // the code readable as the name it came from.
+        versionCode = verMajor * 10000 + verMinor * 100 + verPatch
+        versionName = "$verMajor.$verMinor.$verPatch"
         ndk { abiFilters += "arm64-v8a" }   // XR devices are arm64
     }
 
@@ -80,7 +105,14 @@ android {
     }
 
     buildTypes {
-        debug { isMinifyEnabled = false }
+        debug {
+            isMinifyEnabled = false
+            // SAYS SO ON THE SPLASH. Every build that has gone onto the glasses
+            // so far has been a debug build, and a stamp reading "v0.2.0" on a
+            // pair of glasses is indistinguishable from the release of the same
+            // name — which matters the first time both exist.
+            versionNameSuffix = "-debug"
+        }
         release {
             isMinifyEnabled = false
             if (keystoreProps != null) {
