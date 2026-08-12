@@ -60,7 +60,7 @@ class Stack(
      * grammar changing mid-reveal would give a surface half of one entrance and
      * half of another.
      */
-    private val skin: Theme.Skin = Theme.DEFAULT,
+    private var skin: Theme.Skin = Theme.DEFAULT,
 ) {
 
     /**
@@ -221,6 +221,45 @@ class Stack(
                 "char(s), clipping: '$s'",
         )
         return s.take(template.length - 1) + "…"
+    }
+
+    /**
+     * WEAR A DIFFERENT THEME — the half of a theme change this surface missed.
+     *
+     * Choosing a theme retints every material and rebuilds the horizon, and
+     * until now did nothing at all to the bays. That left the menus wearing the
+     * LAUNCH theme's structure while the mesh wore the chosen one: VECTORLINE's
+     * wire nodes over HALO's solid slabs, SEELE's one-row-per-page discipline
+     * silently not applying, a 1.23 row scale that never arrived. The reported
+     * bug — "it just changes the theme color" — was fixed for the ring and left
+     * standing here, which is the worse half: the app looks like it restyles
+     * until you open a menu.
+     *
+     * A REBUILD, not a repaint, because [Theme.Plate] is GEOMETRY. A frame and
+     * a slab are different meshes, and on additive optics that is the whole
+     * difference between a control you can see the room through and one you
+     * cannot — not a colour that [Ink] could swap under it.
+     *
+     * The contents survive: what is on screen is re-shown afterwards, so
+     * restyling a bay you have open does not close it under your hand.
+     */
+    suspend fun restyle(next: Theme.Skin) {
+        if (next.key == skin.key) return
+        val was = open
+        val rows0 = all
+        val title0 = title
+        val footer0 = footer
+        val page0 = page
+        skin = next
+        build()
+        if (was) {
+            show(rows0, title0, footer0)
+            // show() resets to the first page; put the reader back where they
+            // were, unless the new theme's page size no longer reaches it.
+            page = page0.coerceIn(0, (pages - 1).coerceAtLeast(0))
+            repage()
+        }
+        Log.i(TAG, "[stack] restyled to ${next.key} (${next.plate}, ${skin.rowsPerPage}/page)")
     }
 
     fun hide() {

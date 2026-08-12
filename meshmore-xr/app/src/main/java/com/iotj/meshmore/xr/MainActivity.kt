@@ -2496,6 +2496,16 @@ private fun HorizonScene(link: MeshLink) {
                         // silhouette is baked into its mesh at build time.
                         horizonRef.value?.retheme(chosen.symbol, chosen.posture, chosen.active)
                         hereEpoch.value += 1
+                        // AND THE BAYS. A plate is GEOMETRY — a frame and a
+                        // slab are different meshes — so the menus need a
+                        // rebuild, not a repaint, and Ink cannot do it for
+                        // them. Off the frame loop, because rebuilding two
+                        // stacks means suspending on material creation and this
+                        // is the frame the wearer is watching for a response.
+                        launch {
+                            channelsRef.value?.restyle(chosen)
+                            appRef.value?.restyle(chosen)
+                        }
                         themePickerRef.value?.commit(chosen)
                         themePickerRef.value?.setPreviewing(chosen)
                         noticeRef.value?.say(chosen.name)
