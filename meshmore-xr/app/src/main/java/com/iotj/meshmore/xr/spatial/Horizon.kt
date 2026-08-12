@@ -29,7 +29,7 @@ import kotlin.math.sin
  */
 class Horizon(
     private val session: Session,
-    private val theme: Palette,
+    private var theme: Palette,
     /** Needed to build tier R runs, which are real Android Views. */
     private val context: android.content.Context? = null,
     /**
@@ -75,7 +75,25 @@ class Horizon(
      * They stay private and change together, because a symbol without its
      * posture is the half-applied theme this method exists to end.
      */
-    fun retheme(symbol: Theme.Symbol, posture: Theme.Posture, active: Boolean) {
+    fun retheme(
+        symbol: Theme.Symbol,
+        posture: Theme.Posture,
+        active: Boolean,
+        palette: Palette,
+    ) {
+        // THE PALETTE TOO, and this is the half that was missed.
+        //
+        // Ink.retint repaints every material that ALREADY EXISTS, which is what
+        // makes a theme change instant. But a retheme is followed by a REBUILD —
+        // a mote's silhouette is baked into its mesh, so the ring has to be made
+        // again — and every material made during that rebuild was mixed from the
+        // palette this object was CONSTRUCTED with. The launch one.
+        //
+        // So the sequence was: repaint everything correctly, then immediately
+        // rebuild it all in the old colours. Switching to HALO left the mesh
+        // wearing whatever had been on before, which is precisely how it was
+        // reported, and it looked like the theme change had not happened at all.
+        this.theme = palette
         this.symbol = symbol
         this.posture = posture
         this.active = active

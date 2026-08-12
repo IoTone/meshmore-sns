@@ -51,7 +51,7 @@ import kotlin.math.atan2
  */
 class Stack(
     private val session: Session,
-    private val theme: Horizon.Palette,
+    private var theme: Horizon.Palette,
     private val context: Context,
     /**
      * Which theme's transition grammar this surface arrives under.
@@ -245,6 +245,11 @@ class Stack(
      */
     suspend fun restyle(next: Theme.Skin) {
         if (next.key == skin.key) return
+        // Same trap as Horizon.retheme: build() mixes fresh materials from
+        // `theme`, so a restyle that changed only the skin rebuilt the bay's
+        // plates in the OLD theme's colours. The skin and the palette are two
+        // halves of one theme and have to move together.
+        theme = next.palette
         val was = open
         val rows0 = all
         val title0 = title

@@ -2566,7 +2566,7 @@ private fun HorizonScene(link: MeshLink) {
                         // effect disposes and rebuilds the whole ring — which is
                         // what a symbol change requires anyway, since a mote's
                         // silhouette is baked into its mesh at build time.
-                        horizonRef.value?.retheme(chosen.symbol, chosen.posture, chosen.active)
+                        horizonRef.value?.retheme(chosen.symbol, chosen.posture, chosen.active, chosen.palette)
                         hereEpoch.value += 1
                         // AND THE BAYS. A plate is GEOMETRY — a frame and a
                         // slab are different meshes — so the menus need a
