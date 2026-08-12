@@ -291,6 +291,7 @@ class Horizon(
         }
         labels?.begin()
         var unlabelled = 0
+        val labelledAny = posture != Theme.Posture.TABLETOP
 
         // --- range halos: real tori, lying flat below eye level --------------
         // Distance is read from which band a mote sits in, so the bands are the
@@ -444,9 +445,36 @@ class Horizon(
             } else {
                 TypeTier.clip(n.name, MeshNodes.MAX_LABEL_CELLS)
             }
-            val pooled = tier == TypeTier.Tier.RUN && !isCluster &&
+            // NO CALLSIGNS ON A TABLETOP, until they have somewhere to live.
+            //
+            // A label is sized by ANGLE and does not shrink with the model. At
+            // 0.55 m the cap is 12.5 mm, so an eight-character callsign is
+            // 68 mm of ink — 21 percent of a 320 mm model, where the same name
+            // on the horizon is 6 percent of a 5 m ring. Hanging one at each
+            // node put twenty of them through each other and through the mesh
+            // they were describing: photographed, and unreadable in a way no
+            // amount of clipping fixes, because the problem is the RATIO.
+            //
+            // The motes stay. What a tabletop is good at is the SHAPE of the
+            // mesh — where the density is, which way it runs — and that reads
+            // perfectly well without a name on every dot. Identity comes from
+            // focusing one, which already works.
+            //
+            // This is a holding position, not the answer. `Callout` is the
+            // answer: pins on the map, handles in a rack outside it, leaders
+            // between. It is written and tested and not yet wired to anything,
+            // and wiring it is what lets the names come back.
+            val labelled = labelledAny
+            val pooled = labelled && tier == TypeTier.Tier.RUN && !isCluster &&
                 labels?.place(shown, anchor, capH) == true
-            val txt: Entity = if (pooled) {
+            val txt: Entity = if (!labelled) {
+                // Point at the mote, exactly as the pooled path does: no run,
+                // no stroke label, nothing drawn. Suppressing only the POOL
+                // would have been worse than useless — the fallback below draws
+                // the same words as vector strokes, so the pile would have come
+                // back in a different typeface.
+                mote
+            } else if (pooled) {
                 // The pool owns the entity and its billboarding. Peer.label is
                 // only used for the veil, and a pooled label is shared — dimming
                 // it would dim whichever node borrows it next. Point the peer at
@@ -617,6 +645,7 @@ class Horizon(
         if (unlabelled > 0) {
             Log.i(TAG, "[horizon] $unlabelled node(s) fell back to stroke labels — pool exhausted")
         }
+        if (!labelledAny) Log.i(TAG, "[horizon] tabletop — motes only, no callsigns")
         Log.i(TAG, "[horizon] built ${entities.size} entities for ${nodes.size} nodes " +
             "(${nodes.count { it.type == TYPE_REPEATER }} repeaters, " +
             "${nodes.count { it.type == TYPE_CHAT }} chat, " +
