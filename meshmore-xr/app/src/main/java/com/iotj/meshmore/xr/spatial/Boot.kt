@@ -82,6 +82,32 @@ class Boot(private val session: Session, private val theme: Horizon.Palette) {
             entities += it
         }
 
+        // THE BUILD, under the wordmark.
+        //
+        // Asked for after an afternoon of "is the new version installed?" —
+        // twice out loud, and several more times implicitly, each costing a
+        // device cycle to answer. On glass there is no other way to tell
+        // whether an install landed: ABOUT carries the version but is two
+        // pinches deep, and the splash is the one surface nobody can miss.
+        //
+        // THE TIME, NOT JUST THE NAME. VERSION_NAME is a static 0.1.0 and does
+        // not move between debug builds, which is exactly when this matters —
+        // so it is the build timestamp that actually answers the question.
+        // Small and dim: this is a diagnostic riding a hero shot, and it must
+        // not compete with the wordmark it sits under.
+        val stamp = "v" + com.iotj.meshmore.xr.BuildConfig.VERSION_NAME + "  " +
+            java.text.SimpleDateFormat("MMM dd HH:mm", java.util.Locale.US)
+                .format(java.util.Date(com.iotj.meshmore.xr.BuildConfig.BUILD_TIME))
+        MeshEntity.create(
+            session,
+            Prims.build(session, Glyphs.text(stamp, CAP * STAMP_SCALE)),
+            listOf(Prims.material(session, theme.alt, 0.55f)),
+        ).also {
+            it.parent = root
+            it.setPose(Pose(Vector3(at.x, at.y - STAMP_DROP, at.z)), Space.ACTIVITY)
+            entities += it
+        }
+
         // THE MARK, above the wordmark, forming a banner lockup: mark, then
         // name, then the vessel it is filling.
         val markAt = Vector3(at.x, at.y + MARK_UP, at.z)
@@ -308,6 +334,10 @@ class Boot(private val session: Session, private val theme: Horizon.Palette) {
         const val HEIGHT = 0.50f
         const val FORWARD = 2.0f
         const val CAP = 0.115f
+
+        /** The build stamp, a quarter the wordmark's size and well under it. */
+        const val STAMP_SCALE = 0.26f
+        const val STAMP_DROP = 0.075f
         const val RADIUS = 0.16f
         const val VESSEL_H = 0.42f
         const val VESSEL_DROP = 0.50f

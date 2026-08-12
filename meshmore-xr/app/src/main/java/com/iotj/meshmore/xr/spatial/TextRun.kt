@@ -531,7 +531,25 @@ object TextRun {
         Run(
             panel, wPx * capHeightM / capPx, hPx * capHeightM / capPx,
             if (reusable) tv else null, wPx, hPx, mpp, capPx, tv,
-        ).also { Ink.registerText(it, argb) }
+        ).also {
+            // A TEMPLATE IS FOR MEASURING, NOT FOR SHOWING. Blank it now.
+            //
+            // A reusable panel is built holding the widest string it will ever
+            // carry, and it keeps holding it until somebody calls setText. Any
+            // surface that enables a run before writing to it therefore
+            // displays the sizing template — and one did: eighteen M's sat on
+            // the horizon in every theme, photographed repeatedly, indexed to
+            // no owner because every candidate guarded its own enable
+            // correctly. Chasing the culprit is the wrong shape of work when
+            // the failure is available to EVERY caller of this function.
+            //
+            // Blanked here, the same bug renders nothing instead of a row of
+            // M's. The panel's pixel size is already fixed by the measurement
+            // above, so emptying it changes no geometry — it only stops the
+            // measurement being mistaken for content.
+            if (reusable) it.setText("")
+            Ink.registerText(it, argb)
+        }
     }.onFailure {
         Log.w(TAG, "[type] run '$text' failed: ${it.javaClass.simpleName}: ${it.message}")
     }.getOrNull()

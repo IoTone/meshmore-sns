@@ -75,6 +75,8 @@ class LabelPool(
         Log.i(TAG, "[labels] pool of ${slots.size}")
     }
 
+    private var warned = false
+
     /** Start a build. Everything lent last time goes back. */
     fun begin() {
         lent = 0
@@ -89,7 +91,24 @@ class LabelPool(
     fun place(text: String, at: Vector3, capHeightM: Float): Boolean {
         if (lent >= slots.size) return false
         val s = slots[lent++]
-        s.run.setText(text)
+        // THE RETURN VALUE MATTERS, and ignoring it put the sizing template on
+        // screen. `setText` reports false when it could not write — a run built
+        // without a reusable view has nothing to write TO — and the next line
+        // enabled the slot regardless, so the panel was shown still holding the
+        // eighteen M's it was measured with. Photographed in every theme,
+        // sitting among real callsigns as though it were one of them.
+        //
+        // A label that could not take its text is not a label. Refuse the slot,
+        // say so once, and let the caller fall back to the unnamed mote exactly
+        // as it does when the pool runs dry — a state it already handles.
+        if (!s.run.setText(text)) {
+            lent--
+            if (!warned) {
+                warned = true
+                Log.w(TAG, "[labels] a pooled run cannot take text — template suppressed")
+            }
+            return false
+        }
         // World size from cap height. The panel's PIXEL size never changes; only
         // how large that fixed raster is drawn in the room — which is why this
         // is a SCALE and not an assignment to `size`. Assigning `size` re-derives

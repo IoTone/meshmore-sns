@@ -26,6 +26,14 @@ android {
     compileSdk = 36
 
     defaultConfig {
+        // WHEN THIS APK WAS BUILT, for the splash stamp.
+        //
+        // versionName is a static 0.1.0 and does not move between debug builds,
+        // which is precisely when somebody needs to know whether the thing on
+        // the glasses is the thing they just compiled. The timestamp is the
+        // only field that actually answers that.
+        buildConfigField("long", "BUILD_TIME", "${System.currentTimeMillis()}L")
+
         applicationId = "com.iotj.meshmore.xr"
         minSdk = 34          // Android XR baseline
         targetSdk = 35
