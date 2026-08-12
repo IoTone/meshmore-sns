@@ -239,7 +239,7 @@ class Stage(private val session: Session, private val theme: Horizon.Palette) {
      * Bars, not lines: GPU line width is ignored on most platforms and a 1 px
      * line is invisible in bright passthrough anyway.
      */
-    suspend fun buildFloor(o: Origin, posture: Theme.Posture = Theme.Posture.FIELD) {
+    suspend fun buildFloor(o: Origin, skin: Theme.Skin = Theme.DEFAULT) {
         clearFloor()
         // NOT AT TABLETOP SCALE.
         //
@@ -253,8 +253,11 @@ class Stage(private val session: Session, private val theme: Horizon.Palette) {
         //
         // It costs 256 extruded bars, every one of them emitting light into a
         // room the wearer is trying to see through.
-        if (posture == Theme.Posture.TABLETOP) {
-            Log.i(TAG, "[stage] tabletop — no floor grid")
+        val frame = Theme.frameFor(skin.posture, skin.active)
+        if (!frame.floorGrid) {
+            Log.i(TAG, "[stage] ${skin.key} — no floor grid (${
+                if (skin.posture == Theme.Posture.TABLETOP) "tabletop scale" else "active use, circles only"
+            })")
             return
         }
         val root = session.scene.activitySpace

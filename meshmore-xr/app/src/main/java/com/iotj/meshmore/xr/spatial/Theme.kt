@@ -105,12 +105,74 @@ object Theme {
         val drop: Float,
         /** Whether the ring is drawn at all. False is TRANSIT's whole idea. */
         val horizon: Boolean = true,
+        /**
+         * Where the RANGE CIRCLES sit, separately from the nodes.
+         *
+         * They were at [drop] with everything else — eye level minus 30 cm,
+         * which on a walk puts three bright circles across the middle of the
+         * path. On the ground they read as what they are, a scale on the floor,
+         * and they leave the sightline empty for the world.
+         */
+        val ringDrop: Float = drop,
+        /** The Tron grid. An ACTIVE theme replaces it with the circles alone. */
+        val floorGrid: Boolean = true,
     )
 
-    fun frameFor(p: Posture): Frame = when (p) {
-        // Exactly what the horizon has always done, now said out loud.
-        Posture.FIELD -> Frame(radius = 2.5f, forward = 0f, drop = -0.30f)
-        Posture.TABLETOP -> Frame(radius = 0.16f, forward = 0.55f, drop = -0.42f)
+    /*
+     * NOT HERE YET: `follows`.
+     *
+     * The active stance's other half is that the arrangement RE-CENTRES on the
+     * wearer as they walk — today everything is placed from the LAUNCH origin,
+     * so a walk carries you out of your own ring, which for a hiking theme is
+     * the whole feature rather than a detail.
+     *
+     * It is deliberately NOT a field on [Frame] yet, because a flag nothing
+     * reads is precisely the fault this file just finished repairing: `posture`
+     * sat on two themes for weeks as a caption the picker printed and nothing
+     * acted on. One inert axis is a bug; two would be a habit.
+     *
+     * What it needs is a reparent, not a number. Every horizon entity is posed
+     * in ACTIVITY space today, so following would mean rewriting ~118 poses per
+     * frame. The fix is a contentless container entity as the horizon's root,
+     * moved once per frame — `Entity.create(session, name, pose, parent)` in
+     * scenecore-1.0.0-beta01. Note the version: `GroupEntity`, which is what
+     * every sample and every memory of this API calls it, exists in alpha16 and
+     * is GONE in beta01. Checked against the API index, not recalled.
+     */
+
+    /**
+     * [active] is the ACTIVE-USE stance — hiking, cycling, riding as a
+     * passenger. HALO FIELD is the only theme that claims it, and the brief's
+     * §7.1 promise ("the one you can wear for eight hours") is a promise about
+     * exactly that: worn while moving, in daylight, for a long time.
+     *
+     * It pulls the ring in, drops the circles to the ground, deletes the floor
+     * grid, and re-centres on the wearer. Every one of those both serves the
+     * stance AND draws less, which is not a coincidence: what a moving wearer
+     * needs out of their way is the same thing a thermally-limited headset
+     * needs off its frame budget.
+     */
+    fun frameFor(p: Posture, active: Boolean = false): Frame = when (p) {
+        Posture.FIELD -> if (active) Frame(
+            // TIGHTER. 2.5 m of ring is a room-scale object to walk through; at
+            // 1.8 m it sits just outside arm's reach and turns with you rather
+            // than being something you keep stepping out of.
+            radius = 1.8f,
+            forward = 0f,
+            drop = -0.30f,
+            // The circles go to the floor and stay there.
+            ringDrop = -1.25f,
+            // No grid: 34 lit bars competing with a real trail. The circles
+            // already say scale, and they say it without covering the ground.
+            floorGrid = false,
+        ) else Frame(radius = 2.5f, forward = 0f, drop = -0.30f)
+        // floorGrid = false: a 2 m grid under a 32 cm model is neither the
+        // content's scale nor a surface it stands on. This used to be a posture
+        // check inside Stage; moving it onto the frame is what let it go
+        // missing, and PostureTest is what noticed.
+        Posture.TABLETOP -> Frame(
+            radius = 0.16f, forward = 0.55f, drop = -0.42f, floorGrid = false,
+        )
         // The ring is gone; Hud and the hand surfaces are the whole app.
         Posture.TRANSIT -> Frame(radius = 2.5f, forward = 0f, drop = -0.30f, horizon = false)
     }
@@ -253,6 +315,12 @@ object Theme {
          */
         val rowScale: Float = 1f,
         /**
+         * THE ACTIVE-USE STANCE — worn while moving. See [frameFor].
+         * HALO FIELD only: the brief's "wear it for eight hours" theme is the
+         * one that has to survive a trail, a bike lane and a passenger seat.
+         */
+        val active: Boolean = false,
+        /**
          * What FOCUS looks like — the row under the pointer.
          *
          * Scale and a push toward the wearer, because those are the two things
@@ -298,6 +366,7 @@ object Theme {
         ),
         substrate = Substrate.HYBRID,
         motion = Motion.STILL,
+        active = true,
         focusScale = 1.10f,
         focusPush = 0f,
         audio = "sonar",

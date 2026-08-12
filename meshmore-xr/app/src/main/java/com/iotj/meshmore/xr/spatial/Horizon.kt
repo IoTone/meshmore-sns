@@ -49,10 +49,11 @@ class Horizon(
      * the table. A theme change rebuilds the horizon anyway.
      */
     private var posture: Theme.Posture = Theme.Posture.FIELD,
+    private var active: Boolean = false,
 ) {
 
     /** The ring's geometry for this theme's posture. */
-    private var frame = Theme.frameFor(posture)
+    private var frame = Theme.frameFor(posture, active)
 
     /**
      * ADOPT A NEW THEME'S STRUCTURE, not just its colours.
@@ -74,11 +75,12 @@ class Horizon(
      * They stay private and change together, because a symbol without its
      * posture is the half-applied theme this method exists to end.
      */
-    fun retheme(symbol: Theme.Symbol, posture: Theme.Posture) {
+    fun retheme(symbol: Theme.Symbol, posture: Theme.Posture, active: Boolean) {
         this.symbol = symbol
         this.posture = posture
-        this.frame = Theme.frameFor(posture)
-        Log.i(TAG, "[horizon] retheme -> $symbol / $posture")
+        this.active = active
+        this.frame = Theme.frameFor(posture, active)
+        Log.i(TAG, "[horizon] retheme -> $symbol / $posture" + if (active) " / ACTIVE" else "")
     }
 
     /**
@@ -235,7 +237,7 @@ class Horizon(
             val mat = Prims.material(session, theme.accent, 0.30f + i * 0.06f)
             MeshEntity.create(session, mesh, listOf(mat)).also {
                 it.parent = root
-                it.setPose(Pose(at(o, 0f, 0f, frame.drop)), Space.ACTIVITY)
+                it.setPose(Pose(at(o, 0f, 0f, frame.ringDrop)), Space.ACTIVITY)
                 entities += it
             }
         }

@@ -103,6 +103,48 @@ class PostureTest {
     }
 
     /**
+     * THE ACTIVE STANCE — HALO, and only HALO.
+     *
+     * §7.1 calls it "the one you can wear for eight hours", which is a promise
+     * about being worn WHILE MOVING: hiking, cycling, riding as a passenger. It
+     * is the only theme that claims it, and each thing the stance changes has to
+     * both serve a moving wearer and draw less.
+     */
+    @Test fun onlyHaloTakesTheActiveStance() {
+        val active = Theme.ALL.filter { it.active }
+        assertEquals(active.map { it.key }.toString(), 1, active.size)
+        assertEquals("halo", active.first().key)
+    }
+
+    @Test fun theActiveStanceGetsOutOfAWalkersWay() {
+        val f = Theme.frameFor(Theme.Posture.FIELD, active = true)
+        val still = Theme.frameFor(Theme.Posture.FIELD, active = false)
+        // Tighter than the standing ring — you turn with it instead of
+        // repeatedly walking out of it.
+        assertTrue("active radius %.2f".format(f.radius), f.radius < still.radius)
+        // The circles go to the FLOOR, well below the nodes, so they stop
+        // crossing the middle of the path.
+        assertTrue("ringDrop %.2f".format(f.ringDrop), f.ringDrop <= -1.0f)
+        assertTrue("rings must sit below the nodes", f.ringDrop < f.drop)
+        // And the grid goes away entirely: the circles already say scale.
+        assertFalse("active use must not draw the floor grid", f.floorGrid)
+        assertTrue("every other FIELD theme keeps its floor", still.floorGrid)
+    }
+
+    /**
+     * A stance that draws MORE would be the wrong stance. Both of the frames
+     * that get out of the way also cost less, which is the property that makes
+     * this affordable on a thermally-limited headset.
+     */
+    @Test fun theStancesThatGetOutOfTheWayAlsoDrawLess() {
+        listOf(
+            Theme.frameFor(Theme.Posture.FIELD, active = true),
+            Theme.frameFor(Theme.Posture.TABLETOP),
+        ).forEach { assertFalse(it.floorGrid) }
+        assertTrue(Theme.frameFor(Theme.Posture.FIELD).floorGrid)
+    }
+
+    /**
      * The two odd themes are still the two odd themes. If a posture is ever
      * dropped from one of them this test says so, rather than the theme quietly
      * becoming the eighth FIELD theme in the picker.

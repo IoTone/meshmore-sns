@@ -1179,13 +1179,13 @@ private fun HorizonScene(link: MeshLink) {
     // built the floor for it — so this fires only on an actual change and a
     // FIELD launch does not pay for a second 34-bar build. Going to TABLETOP
     // clears the grid; coming back from it puts the room's ground back.
-    val floorPosture = remember { mutableStateOf(skin.value.posture) }
-    LaunchedEffect(skin.value.posture, stageRef.value, originRef.value) {
+    val floorFor = remember { mutableStateOf(skin.value.key) }
+    LaunchedEffect(skin.value.key, stageRef.value, originRef.value) {
         val st = stageRef.value ?: return@LaunchedEffect
         val o = originRef.value ?: return@LaunchedEffect
-        if (floorPosture.value == skin.value.posture) return@LaunchedEffect
-        floorPosture.value = skin.value.posture
-        st.buildFloor(o, skin.value.posture)
+        if (floorFor.value == skin.value.key) return@LaunchedEffect
+        floorFor.value = skin.value.key
+        st.buildFloor(o, skin.value)
     }
 
     // Exercise the RUNTIME theme change, once the scene exists to change.
@@ -1333,12 +1333,12 @@ private fun HorizonScene(link: MeshLink) {
             }
         }
 
-        val horizon = Horizon(session, palette, ctx, skin.value.symbol, skin.value.posture)
+        val horizon = Horizon(session, palette, ctx, skin.value.symbol, skin.value.posture, skin.value.active)
         // Deliberately includes the shapes real MeshCore names take: emoji,
         // fullwidth Latin, accents, kana, and a name that is nothing BUT emoji.
         // If any of these can break the label path, better it breaks here.
         // Floor first: the room claims itself, then the mesh arrives on top.
-        stage.buildFloor(origin, skin.value.posture)
+        stage.buildFloor(origin, skin.value)
         // The boot surface goes up immediately -- the wait it covers starts
         // now, not when the first contact arrives.
         val boot = Boot(session, palette)
@@ -2467,7 +2467,7 @@ private fun HorizonScene(link: MeshLink) {
                         // effect disposes and rebuilds the whole ring — which is
                         // what a symbol change requires anyway, since a mote's
                         // silhouette is baked into its mesh at build time.
-                        horizonRef.value?.retheme(chosen.symbol, chosen.posture)
+                        horizonRef.value?.retheme(chosen.symbol, chosen.posture, chosen.active)
                         hereEpoch.value += 1
                         themePickerRef.value?.commit(chosen)
                         themePickerRef.value?.setPreviewing(chosen)
