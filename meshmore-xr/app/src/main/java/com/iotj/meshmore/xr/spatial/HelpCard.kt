@@ -54,7 +54,7 @@ class HelpCard(
      * gone. A hand shape is a picture; describing it is a workaround for not
      * having one.
      */
-    private data class Row(
+    internal data class Row(
         val letter: Char?,
         val hand: String,
         val does: String,
@@ -80,36 +80,8 @@ class HelpCard(
         val mirrored: Boolean get() = hand == "LEFT"
     }
 
-    private val rows = listOf(
-        Row(null, "GESTURES", ""),
-        Row('a', "RIGHT", "COMPASS BAND ON / OFF"),
-        Row('a', "LEFT", "LINK BAND ON / OFF"),
-        // B was reachable but undocumented, which for a gesture is the same as
-        // absent: there is nothing to discover it from. It takes either hand.
-        Row('b', "RIGHT", "BACK OUT ONE LEVEL"),
-        Row('b', "LEFT", "BACK OUT ONE LEVEL"),
-        Row(null, "", "B ONLY ANSWERS WHILE MAGNIFIED"),
-        Row('h', "EITHER", "MOVE THE SCENE TO WHERE YOU STAND"),
-        Row('r', "EITHER", "SAME - R AND H BOTH WORK"),
-        Row(null, "", "HOLD STILL FOR HALF A SECOND"),
-        Row(null, "", "PALM AWAY - THE GLASSES SEE THE BACK"),
-        Row(null, "", "OR PINCH A DOCK RING INSTEAD"),
-        // The reel's gesture had no entry anywhere, and was duly reported as
-        // undiscoverable. Same lesson B taught: reachable and undocumented is
-        // the same as absent.
-        Row(null, "MESSAGES", ""),
-        // NOT the letter B, which this card already binds to BACK OUT. Palm-up
-        // is a POSE, not a hand shape, and borrowing a letter that means
-        // something else on the row above would teach a link that is not there.
-        Row(null, "LEFT", "PALM UP SHOWS THE MESSAGE REEL", mark = "HANDS"),
-        Row(null, "LEFT", "SLIDE THUMB ALONG INDEX TO TURN", mark = "SCRUB"),
-        Row(null, "", "EITHER WAY - IT WRAPS ROUND"),
-        // Asked directly -- "how do I turn on the audio to always do TTS for
-        // this channel" -- which is the answer to a feature that exists and
-        // could not be found. A control nobody can locate is not shipped.
-        Row(null, "", "POINT A CROWN BUTTON AND PINCH"),
-        Row(null, "", "VOICE: ON READS THAT CHANNEL ALOUD"),
-    )
+    private val rows = ROWS
+
 
     suspend fun build(o: Stage.Origin) {
         clear()
@@ -118,7 +90,23 @@ class HelpCard(
         // belongs to the mesh, and not where the rack is: two surfaces that
         // occupy the same place cannot be compared, and comparing them is what
         // a user does while learning.
-        val base = o.place(-0.75f, READ, 0.05f)
+        // CENTRED ON WHAT IT DRAWS, not on its own left edge.
+        //
+        // -0.75 rad put the card's ANCHOR 43 degrees to the left, and every
+        // column is laid out to the RIGHT of that anchor: the glyph at
+        // -ICON*0.9, the hand column at HAND_COL, the text at COL running its
+        // full width rightward. So the thing the wearer had to look at was
+        // roughly a metre of content hanging off a point most of a right angle
+        // away from where they were facing — the left of it outside the field
+        // on one side, the right of it outside on the other, depending which
+        // way they turned. Both were photographed.
+        //
+        // BEARING FROM THE CONTENT, then. The card spans from -ICON*0.9 to
+        // COL + the widest row, so its middle sits half that width right of
+        // the anchor; putting the anchor the same distance LEFT of straight
+        // ahead centres it. At READ that is about 15 degrees rather than 43.
+        val span = ICON * 0.9f + COL + HELP_WIDEST * ROW_CELL_EM * CAP
+        val base = o.place(-kotlin.math.atan((span / 2f) / READ), READ, 0.05f)
 
         rows.forEachIndexed { i, r ->
             val y = base.y + (rows.size / 2f - i) * LINE
@@ -212,7 +200,38 @@ class HelpCard(
     private fun argb(rgb: Int, a: Float) =
         (((a.coerceIn(0f, 1f) * 255).toInt() and 0xFF) shl 24) or (rgb and 0xFFFFFF)
 
-    private companion object {
+    internal companion object {
+            val ROWS = listOf(
+            Row(null, "GESTURES", ""),
+            Row('a', "RIGHT", "COMPASS BAND ON / OFF"),
+            Row('a', "LEFT", "LINK BAND ON / OFF"),
+            // B was reachable but undocumented, which for a gesture is the same as
+            // absent: there is nothing to discover it from. It takes either hand.
+            Row('b', "RIGHT", "BACK OUT ONE LEVEL"),
+            Row('b', "LEFT", "BACK OUT ONE LEVEL"),
+            Row(null, "", "ONLY WHILE MAGNIFIED"),
+            Row('h', "EITHER", "MOVE SCENE TO YOUR SPOT"),
+            Row('r', "EITHER", "SAME - R WORKS TOO"),
+            Row(null, "", "HOLD STILL HALF A SECOND"),
+            Row(null, "", "PALM AWAY FROM YOUR FACE"),
+            Row(null, "", "OR PINCH A DOCK RING"),
+            // The reel's gesture had no entry anywhere, and was duly reported as
+            // undiscoverable. Same lesson B taught: reachable and undocumented is
+            // the same as absent.
+            Row(null, "MESSAGES", ""),
+            // NOT the letter B, which this card already binds to BACK OUT. Palm-up
+            // is a POSE, not a hand shape, and borrowing a letter that means
+            // something else on the row above would teach a link that is not there.
+            Row(null, "LEFT", "PALM UP SHOWS THE REEL", mark = "HANDS"),
+            Row(null, "LEFT", "SLIDE THUMB ON INDEX", mark = "SCRUB"),
+            Row(null, "", "EITHER WAY - IT WRAPS"),
+            // Asked directly -- "how do I turn on the audio to always do TTS for
+            // this channel" -- which is the answer to a feature that exists and
+            // could not be found. A control nobody can locate is not shipped.
+            Row(null, "", "POINT A BUTTON AND PINCH"),
+            Row(null, "", "VOICE ON READS IT ALOUD"),
+        )
+
         const val TAG = "MeshmoreXR"
         const val READ = 1.5f
         const val LINE = 0.105f
@@ -220,6 +239,30 @@ class HelpCard(
         const val HAND_COL = 0.06f
         const val COL = 0.30f
         const val CAP = 0.034f
+
+        /**
+         * THE CARD HAD NO WIDTH, AND TEN OF ITS ROWS RAN OFF THE FIELD.
+         *
+         * `at()` places a row starting at [COL] and extending rightward by its
+         * whole measured width — nothing bounded it, so the copy grew until it
+         * left the viewport. Photographed with "MOVE THE SCENE TO WHERE YOU
+         * STA" cut mid-word against the right edge, over the top of the theme
+         * picker behind it.
+         *
+         * The arithmetic it never had: a row of n characters is
+         * n x 0.679 em x CAP metres of ink, read at READ = 1.5 m. Twenty-six
+         * characters is 0.60 m, which is 22.8 degrees — inside the 34-degree
+         * field with real margin for the hand column and the glyph to its left.
+         * Thirty-six, which is what the palm row was, is 31 degrees of text
+         * alone before either column is counted.
+         *
+         * This is the same contract [ROW_WIDEST] gives the stack, arrived at
+         * the same way: by measuring the container instead of trusting the
+         * copy. `HelpCardTest` holds every row to it, because help text is
+         * exactly the kind of thing somebody lengthens later while fixing a
+         * different problem.
+         */
+        const val HELP_WIDEST = 26
         /** The hand diagram, square. Big enough that finger separations read. */
         const val ICON = 0.085f
     }
