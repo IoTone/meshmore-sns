@@ -83,8 +83,26 @@ class MeshNodesTest {
 
     @Test fun ageSaturatesAndUnknownIsStale() {
         assertEquals(0f, MeshNodes.ageOf(NOW, NOW), 0.01f)
-        assertEquals(1f, MeshNodes.ageOf(NOW - 7200, NOW), 0.01f)
+        assertEquals(1f, MeshNodes.ageOf(NOW - 86_400, NOW), 0.01f)
         assertEquals(1f, MeshNodes.ageOf(0L, NOW), 0.01f)
+    }
+
+    /**
+     * A NODE HEARD AN HOUR AGO IS NOT STALE, and this is the test that would
+     * have said so. The old horizon was one hour, which made "LIVE" mean heard
+     * within twenty minutes — something most of a healthy LoRa mesh cannot
+     * satisfy, so the display reported a working mesh as dying. Measured on a
+     * live 350-peer mesh: 16 of 29 drawn nodes stale with zero peers undated,
+     * so the data was right and the constant was wrong.
+     *
+     * The thresholds are pinned in terms a person can check against how often a
+     * repeater actually speaks, rather than against the constant itself.
+     */
+    @Test fun aQuietHourIsNormalForALoRaMesh() {
+        val live = 0.34f
+        assertTrue("an hour must still read LIVE", MeshNodes.ageOf(NOW - 3600, NOW) < live)
+        assertTrue("two hours must still read LIVE", MeshNodes.ageOf(NOW - 7200, NOW) < live)
+        assertTrue("six hours is genuinely quiet", MeshNodes.ageOf(NOW - 21_600, NOW) >= 0.99f)
     }
 
     @Test fun blankNameFallsBackToStableId() {

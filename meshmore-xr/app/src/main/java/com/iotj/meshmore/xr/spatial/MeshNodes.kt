@@ -538,8 +538,27 @@ object MeshNodes {
      * be drawn and still be looked at.
      */
     const val NEAR_BAND = 0.24f
-    /** An hour with no advert and a node reads as fully stale. */
-    const val STALE_AFTER_SEC = 3600.0
+    /**
+     * How long without an advert before a node reads as fully stale.
+     *
+     * WAS ONE HOUR, AND EVERYTHING LOOKED DEAD. Reported as "every node always
+     * says stale", and the measurement on a live 350-peer mesh agreed: 16 of 29
+     * drawn nodes stale, 13 live, with ZERO peers undated — so the data was
+     * sound and the threshold was wrong.
+     *
+     * An hour is a phone's idea of recent. MeshCore adverts are minutes to
+     * hours apart by design — that is the point of a low-power mesh — so a
+     * node heard ninety minutes ago is not stale, it is NORMAL. At the old
+     * value "LIVE" meant heard within twenty minutes (age < 0.34), which most
+     * of a healthy mesh cannot satisfy, so the display told the wearer their
+     * mesh was dying when it was working exactly as designed.
+     *
+     * Six hours puts LIVE at roughly the last two, which matches how often a
+     * repeater actually speaks, and leaves the fade spanning a range where a
+     * dimming mote means something. A node silent for six hours has genuinely
+     * gone quiet.
+     */
+    const val STALE_AFTER_SEC = 21600.0
     /**
      * Motes on the horizon. Chosen for legibility first -- 24 over 360 degrees
      * is one every 15 degrees, which leaves room for a callsign beside each.

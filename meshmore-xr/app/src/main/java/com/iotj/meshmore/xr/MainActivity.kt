@@ -1348,6 +1348,14 @@ private fun HorizonScene(link: MeshLink) {
                 ", ${clusters.size} cluster(s) holding ${clusters.sumOf { it.cluster }}") +
             ", of ${mesh.size} peers" +
             (lens?.let { ", MAGNIFIED $it" } ?: "") + ")")
+        // WHY EVERYTHING READS STALE, if it does. `ageOf` returns fully-stale
+        // for any peer whose lastSeen is zero, so a radio that does not date
+        // its contacts turns the whole mesh grey — and "stale" then means
+        // "unknown", which is a different claim entirely and the one the wearer
+        // is not being told.
+        val undated = mesh.count { it.lastSeenEpochSec <= 0L }
+        Log.i(TAG_UI, "[age] ${mesh.size} peers, $undated undated, " +
+            "live=${nodes.count { it.age < 0.34f }} stale=${nodes.count { it.age >= 0.34f }}")
         nodesRef.value = nodes
         h.build(nodes, o, st.floorHeight())
         // S5 — the channel band, above the node lanes. Rebuilt with the horizon
