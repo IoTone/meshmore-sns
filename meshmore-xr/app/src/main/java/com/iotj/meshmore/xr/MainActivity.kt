@@ -1441,6 +1441,16 @@ private fun HorizonScene(link: MeshLink) {
         // reasons the user cannot see (hands out of the camera's view being the
         // common one). A surface reachable ONLY by gesture is a surface that is
         // sometimes unreachable.
+        // HALO WEARS ITS DOCK. Four pips on the forearm instead of eight on the
+        // ground — see Dock.tickWrist for why four: a wrist is 35 cm from the
+        // eye and a pinch target needs ~5 degrees of separation, so a pip costs
+        // 3.1 cm of arm and eight would want a quarter-metre of it.
+        //
+        // The four are the ones a moving wearer reaches for — which way am I
+        // facing, did anyone call me, where am I — plus the door to everything
+        // else. HELP, WIDE, LIST and LINK are one pinch away behind SETUP.
+        val wristDock = skin.value.active
+        val WRIST_SET = setOf("COMPASS", "INBOX", "HERE", "SETUP")
         dock.build(origin, listOf(
             "COMPASS" to {
                 hudRef.value?.let { h ->
@@ -1613,7 +1623,7 @@ private fun HorizonScene(link: MeshLink) {
                         .format(Math.toDegrees(yaw.toDouble())) + "north-referenced")
                 }
             },
-        ))
+        ).filter { !wristDock || it.first in WRIST_SET }.map { (n, f) -> n to { f(); Unit } })
         // A short tick when a pip takes focus. On a display where you cannot
         // feel a control, sound is the only confirmation that the pointer has
         // arrived — and it arrives BEFORE the pinch, which is when it helps.
@@ -2070,6 +2080,13 @@ private fun HorizonScene(link: MeshLink) {
                     horizon.veil(it)
                     rackRef.value?.tick(it.translation)
                     dockRef.value?.tick(it.translation)
+                    // WORN, FOR THE ACTIVE THEME. tick() still runs — it owns
+                    // focus, caption and the fired queue — and this only
+                    // re-places the pips onto the forearm afterwards, so the
+                    // dock behaves identically whichever body it is on.
+                    if (skin.value.active) {
+                        dockRef.value?.tickWrist(handR?.state?.value?.handJoints)
+                    }
                     menuRef.value?.tick(it.translation)
                     focusRef.value?.tick(it.translation)
                     noticeRef.value?.tick(it)

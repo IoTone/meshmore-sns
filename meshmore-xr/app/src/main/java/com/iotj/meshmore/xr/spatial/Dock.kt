@@ -102,6 +102,16 @@ class Dock(
         val captionAt: Vector3,
         val toggle: () -> Unit,
     ) {
+        /**
+         * The hit volume, kept so it can TRAVEL with the mark.
+         *
+         * It used to be created inline and never referenced again, which is
+         * fine for a dock nailed to one spot and wrong the moment the dock
+         * rides a wrist: the marks would follow the arm and the things you
+         * actually pinch would stay behind in the room.
+         */
+        var proxy: MeshEntity? = null
+
         /** Push [hot] and [lit] onto the mark. The only place either is drawn. */
         fun apply() {
             runCatching {
@@ -208,6 +218,7 @@ class Dock(
             ).also {
                 it.parent = root; it.setPose(Pose(at), Space.ACTIVITY)
                 entities += it
+                pip.proxy = it
                 runCatching {
                     it.addComponent(InteractableComponent.create(session) { ev -> onInput(pip, ev) })
                 }.onFailure { e -> Log.w(TAG, "[dock] no input on $name: $e") }
@@ -335,6 +346,68 @@ class Dock(
      * panel is a flat, one-sided quad — unlike every other thing in the dock,
      * which is extruded geometry that reads from any angle.
      */
+    /**
+     * WORN, NOT LAID ON THE FLOOR — the HALO variant.
+     *
+     * The dock's home is 66 cm forward and 38 cm down, which on glasses reads
+     * as lying on the ground: you look at your feet to change a setting. For a
+     * theme meant for a trail that is the wrong place twice over — it is in the
+     * way of where you are walking, and it stays behind at the launch origin
+     * the moment you walk on.
+     *
+     * So HALO wears it. Same joint maths the [Cuff] uses, and the same rule:
+     * present whenever the arm is tracked, hidden the instant it is not. A dock
+     * that outlived its arm would be a control panel floating in a field.
+     *
+     * WHY IT IS FOUR PIPS AND NOT EIGHT. At 66 cm the row spans 53 degrees —
+     * already wider than the 34-degree window, which is why it sprawls. A wrist
+     * is ~35 cm from the eye and pinch targets need about 5 degrees of
+     * separation to be distinguishable by hand, so a pip costs 3.1 cm of
+     * forearm. Eight would want a quarter of a metre of arm. Four fit, with the
+     * rest one pinch away behind SETUP.
+     */
+    fun tickWrist(joints: Map<androidx.xr.arcore.HandJointType, Pose>?) {
+        if (joints.isNullOrEmpty()) {
+            pips.forEach { p -> runCatching { p.mark.setEnabled(false); p.proxy?.setEnabled(false) } }
+            return
+        }
+        val ps = session.scene.perceptionSpace
+        fun act(t: androidx.xr.arcore.HandJointType): Vector3? = runCatching {
+            ps.getScenePoseFromPerceptionPose(joints[t] ?: return null)
+                .poseInActivitySpace.translation
+        }.getOrNull()
+        val w = act(androidx.xr.arcore.HandJointType.WRIST) ?: return
+        val m = act(androidx.xr.arcore.HandJointType.MIDDLE_METACARPAL) ?: return
+        // The forearm axis, running back from the wrist toward the elbow — the
+        // same direction the cuff sits along, so the two agree about where the
+        // arm is rather than each deciding for themselves.
+        var ax = w.x - m.x; var ay = w.y - m.y; var az = w.z - m.z
+        val len = kotlin.math.sqrt(ax * ax + ay * ay + az * az)
+        if (len < 1e-4f) return
+        ax /= len; ay /= len; az /= len
+        pips.forEachIndexed { i, p ->
+            val d = WRIST_FIRST + i * WRIST_PITCH
+            val at = Vector3(w.x + ax * d, w.y + ay * d, w.z + az * d)
+            runCatching {
+                p.mark.setEnabled(true)
+                p.mark.setPose(Pose(at, facingHead(at)), Space.ACTIVITY)
+                p.mark.setScale(WRIST_SCALE)
+                p.proxy?.setEnabled(true)
+                p.proxy?.setPose(Pose(at), Space.ACTIVITY)
+            }
+        }
+    }
+
+    private fun facingHead(at: Vector3): Quaternion {
+        val h = headAt ?: return Quaternion.fromEulerAngles(0f, 0f, 0f)
+        val dx = h.x - at.x
+        val dz = h.z - at.z
+        if (dx * dx + dz * dz < 1e-6f) return Quaternion.fromEulerAngles(0f, 0f, 0f)
+        return Quaternion.fromEulerAngles(
+            0f, Math.toDegrees(kotlin.math.atan2(dx, dz).toDouble()).toFloat(), 0f,
+        )
+    }
+
     fun tick(head: Vector3? = null) {
         headAt = head
         reconcileFocus()
@@ -401,6 +474,13 @@ class Dock(
          * the marks are not doing the job the captions were retired for.
          */
         const val MARK_DIM = 0.55f
+
+        /** Where the first pip sits along the forearm, back from the wrist. */
+        const val WRIST_FIRST = 0.035f
+        /** 3.1 cm is 5 degrees at a 35 cm wrist — the hand-separation floor. */
+        const val WRIST_PITCH = 0.034f
+        /** A pip at 35 cm needs to be a third the size it is at 66 cm. */
+        const val WRIST_SCALE = 0.53f
         const val DEBOUNCE_MS = 350L
         const val GRACE_MS = 180L
         /** Enough swell to read at a glance, not so much it looks like a press. */
