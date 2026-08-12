@@ -44,6 +44,9 @@ class HereSource(private val context: Context) {
     var source: String = "none"
         private set
 
+    /** What was last logged, so a poll only speaks when something changed. */
+    private var lastNote: String? = null
+
     fun hasLocationPermission(): Boolean =
         ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) ==
             PackageManager.PERMISSION_GRANTED ||
@@ -63,7 +66,16 @@ class HereSource(private val context: Context) {
             else -> { source = "none"; MeshNodes.Here(null, null) }
         }
         _here.value = chosen
-        Log.i(TAG, "[here] $source -> ${chosen.lat}, ${chosen.lon} (known=${chosen.known})")
+        // ONLY WHEN IT CHANGES. This used to run at launch and on a handful of
+        // explicit events, so logging every call was free. It is now polled
+        // every 15 seconds to keep the map measured from where the wearer
+        // actually is, and an unconditional line here put four identical
+        // entries a minute into the one log anybody debugs this app from.
+        val note = "$source ${chosen.lat},${chosen.lon}"
+        if (note != lastNote) {
+            lastNote = note
+            Log.i(TAG, "[here] $source -> ${chosen.lat}, ${chosen.lon} (known=${chosen.known})")
+        }
         return chosen
     }
 

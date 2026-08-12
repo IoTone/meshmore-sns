@@ -819,6 +819,16 @@ private fun stepInt(xs: List<Int>, v: Int): Int {
     return if (i < 0) xs.first() else xs[(i + 1) % xs.size]
 }
 
+/** How often the wearer's position is re-read while the app is up. */
+private const val LOCATION_POLL_MS = 15_000L
+
+/**
+ * How far the wearer must have moved before the map is rebuilt from the new
+ * position. Under the nearest range band, and well above the few metres a
+ * stationary GPS fix wanders, so sitting still never triggers it.
+ */
+private const val MOVED_ENOUGH_M = 25.0
+
 /** How long a guarded row stays armed before it forgets it was asked. */
 private const val ARM_MS = 6000L
 
@@ -1197,6 +1207,49 @@ private fun HorizonScene(link: MeshLink) {
         val picker = themePickerRef.value ?: return@LaunchedEffect
         kotlinx.coroutines.delay(6_000)
         picker.fire(want)
+    }
+
+    // WHERE YOU ARE NOW, not where you launched.
+    //
+    // Every bearing and every range on this map is measured FROM the wearer, so
+    // moving does not slide the map — it changes what the map SAYS. Walk ten
+    // miles east and a node that was north-east of you is north-west; the marks
+    // belong in different places, with different range bands, because the facts
+    // they draw have changed.
+    //
+    // Nothing was recomputing them. The mesh effect keys on `here`, so it
+    // reacts when the radio volunteers a new position — but the headset
+    // fallback reads `getLastKnownLocation` once at launch and never again
+    // (HereSource says so in as many words), and a radio that reports on
+    // self-info only is little better. A map that silently keeps measuring from
+    // this morning's position is worse than one that admits it does not know.
+    //
+    // THRESHOLD, NOT TIMER, for the rebuild. Re-placing 118 entities is a
+    // visible cost and standing still must not pay it; 25 m is under the
+    // nearest range band and far enough above GPS noise (a stationary fix
+    // wanders several metres) that a chair by a window does not thrash it.
+    LaunchedEffect(horizonRef.value) {
+        if (horizonRef.value == null) return@LaunchedEffect
+        var lastLat: Double? = null
+        var lastLon: Double? = null
+        while (true) {
+            kotlinx.coroutines.delay(LOCATION_POLL_MS)
+            val now = hereSource.resolve(link.here.value, MainActivity.homeOverride)
+            val la = now.lat
+            val lo = now.lon
+            if (la == null || lo == null) continue
+            val p0lat = lastLat
+            val p0lon = lastLon
+            if (p0lat == null || p0lon == null) {
+                lastLat = la; lastLon = lo
+                continue
+            }
+            val movedM = MeshNodes.haversineKm(p0lat, p0lon, la, lo) * 1000.0
+            if (movedM < MOVED_ENOUGH_M) continue
+            lastLat = la; lastLon = lo
+            Log.i(TAG_UI, "[here] moved %.0f m — re-placing the map from here".format(movedM))
+            hereEpoch.value += 1
+        }
     }
 
     LaunchedEffect(signature, here, horizonRef.value, hereEpoch.value) {

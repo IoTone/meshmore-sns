@@ -182,16 +182,25 @@ class Horizon(
     /**
      * The range circles, kept apart from [entities] so they can FOLLOW.
      *
-     * THE NODES MUST NOT FOLLOW, and that is the whole distinction. A node is
-     * at a real place in the world: a repeater on a hill stays on its hill
-     * while you walk, and a mesh that slid along with you would be lying about
-     * every bearing it draws. The CIRCLES are the opposite — they are a scale
-     * measured FROM the wearer, "100 m, 1 km, 10 km from me", and a scale
-     * centred on where you were ten minutes ago is measuring from nowhere.
+     * THE NODES MUST NOT SLIDE, which is a narrower claim than it first reads
+     * as, and the difference matters.
      *
-     * So "moves with you" resolves into: the rings do, the mesh does not. That
-     * is both the correct reading and the cheap one — three tori re-posed per
-     * frame instead of reparenting a scene of 118 entities.
+     * Sliding the mesh rigidly along with the wearer would be a lie: a repeater
+     * on a hill stays on its hill, and carrying its mark along beside you keeps
+     * a bearing pointing where the repeater ISN'T. That is what this follow
+     * does not do.
+     *
+     * RE-DERIVING the mesh from a new position is the opposite operation and is
+     * simply correct. Every bearing and range here is measured FROM the wearer,
+     * so moving changes what the map SAYS: walk ten miles east and the node
+     * that was north-east is now north-west, in a different range band. That
+     * belongs to the mesh rebuild, keyed on position — see the location poll in
+     * MainActivity — not here.
+     *
+     * What follows here is only the CIRCLES, because they are a scale measured
+     * from the wearer — "100 m, 1 km, 10 km from me" — and one centred where
+     * you stood ten minutes ago measures from nowhere. Three tori re-posed,
+     * rather than reparenting a scene of 118 entities.
      */
     private val rings = mutableListOf<MeshEntity>()
     private val pulses = mutableListOf<Pulse>()

@@ -394,6 +394,10 @@ class Dock(
                 p.mark.setScale(WRIST_SCALE)
                 p.proxy?.setEnabled(true)
                 p.proxy?.setPose(Pose(at), Space.ACTIVITY)
+                // The proxy is built for the floor dock's 8.3 cm spacing. Left
+                // at that size on a 6 cm pitch it would still swallow its
+                // neighbours, which is the whole defect being fixed here.
+                p.proxy?.setScale(WRIST_PROXY_SCALE)
             }
         }
     }
@@ -477,10 +481,41 @@ class Dock(
 
         /** Where the first pip sits along the forearm, back from the wrist. */
         const val WRIST_FIRST = 0.035f
-        /** 3.1 cm is 5 degrees at a 35 cm wrist — the hand-separation floor. */
-        const val WRIST_PITCH = 0.034f
-        /** A pip at 35 cm needs to be a third the size it is at 66 cm. */
-        const val WRIST_SCALE = 0.53f
+
+        /**
+         * THE SPACING WAS AT THE FLOOR, WHICH IS NOT THE SAME AS USABLE.
+         *
+         * The first cut used 3.4 cm — 5 degrees at a 35 cm wrist, exactly the
+         * hand-separation floor — and it was reported cramped and unhittable.
+         * Both, for the same reason: the HIT PROXY is a sphere of radius
+         * R * 2.0 = 4 cm, so at 3.4 cm spacing each proxy overlapped its
+         * neighbours by more than a whole slot and the raycast returned
+         * whichever it reached first rather than the one being aimed at. A
+         * floor is where a thing stops being possible, not where it starts
+         * being good.
+         *
+         * A forearm is about 22 cm of usable length, so four pips fit at 6 cm
+         * with room to spare: 0.035 + 3 x 0.060 = 0.215 m. At 35 cm that is
+         * 9.8 degrees apart, twice the floor.
+         */
+        const val WRIST_PITCH = 0.060f
+
+        /**
+         * ...and the proxy shrinks to match, because the spacing only helps if
+         * the targets stop overlapping. 2.2 cm radius is under half the pitch —
+         * so no two ever touch — and still subtends 3.6 degrees at a wrist,
+         * comfortably past the 2-degree floor for anything reached for.
+         */
+        const val WRIST_PROXY_SCALE = 0.55f
+
+        /**
+         * The mark itself. 0.042 m at 0.66 m is 3.6 degrees; the first cut
+         * scaled it to hold that angle at a 35 cm wrist and got a pip so small
+         * it read as a speck. With 6 cm of room there is no reason to be that
+         * austere: 0.75 gives 5.1 degrees, well clear of the 3-degree icon
+         * floor and actually visible on an arm in daylight.
+         */
+        const val WRIST_SCALE = 0.75f
         const val DEBOUNCE_MS = 350L
         const val GRACE_MS = 180L
         /** Enough swell to read at a glance, not so much it looks like a press. */
