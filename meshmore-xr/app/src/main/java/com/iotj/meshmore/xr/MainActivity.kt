@@ -823,6 +823,16 @@ private fun stepInt(xs: List<Int>, v: Int): Int {
 private const val LOCATION_POLL_MS = 15_000L
 
 /**
+ * How far the wearer walks before an ACTIVE theme re-centres the scene on them.
+ *
+ * Three metres is a few paces — far enough that tracker wander at a bench never
+ * reaches it, close enough that you are never outside your own ring. The rebuild
+ * it triggers is rate-limited by the poll interval rather than by this, which is
+ * what keeps it affordable at driving speed.
+ */
+private const val FOLLOW_RECENTRE_M = 3.0f
+
+/**
  * How far the wearer must have moved before the map is rebuilt from the new
  * position. Under the nearest range band, and well above the few metres a
  * stationary GPS fix wanders, so sitting still never triggers it.
@@ -1234,6 +1244,44 @@ private fun HorizonScene(link: MeshLink) {
         var lastLon: Double? = null
         while (true) {
             kotlinx.coroutines.delay(LOCATION_POLL_MS)
+
+            // THE ACTIVE THEME TRAVELS WITH THE WEARER.
+            //
+            // HALO is the theme for movement — hiking, cycling, riding — and on
+            // a walk the ring stayed pinned to wherever the app had launched,
+            // so the wearer simply walked out of their own horizon and the mesh
+            // sat behind them measuring from a place they had left.
+            //
+            // Re-centring is the SAME operation the H gesture performs: put the
+            // origin where the wearer is and rebuild. It is not sliding the
+            // mesh along beside them — every bearing and range is recomputed
+            // from the new position, so a repeater on a hill stays on its hill
+            // and simply reads from a different angle, which is what it should
+            // do once you have walked a hundred metres toward it.
+            //
+            // TWO GATES, and they are for different failures. THREE METRES,
+            // because a rebuild is visible and standing at a bench with the
+            // tracker wandering must not trigger one. FIFTEEN SECONDS between
+            // rebuilds, because in a car three metres passes in a fifth of a
+            // second and distance alone would ask for a rebuild continuously —
+            // the poll interval becomes the real cadence, which is what
+            // "updates periodically" means at speed.
+            val sk = skin.value
+            if (sk.active) {
+                val head = stageRef.value?.headNow()?.translation
+                val o = originRef.value
+                if (head != null && o != null) {
+                    val dx = head.x - o.x
+                    val dz = head.z - o.z
+                    val moved = kotlin.math.sqrt(dx * dx + dz * dz)
+                    if (moved >= FOLLOW_RECENTRE_M) {
+                        originRef.value = o.copy(x = head.x, y = head.y, z = head.z)
+                        hereEpoch.value += 1
+                        Log.i(TAG_UI, "[here] active theme — scene follows, %.1f m".format(moved))
+                    }
+                }
+            }
+
             val now = hereSource.resolve(link.here.value, MainActivity.homeOverride)
             val la = now.lat
             val lo = now.lon
