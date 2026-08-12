@@ -252,6 +252,38 @@ public final class MeshcoreSession {
     }
 
     /**
+     * Writes one channel slot ({@code CMD_SET_CHANNEL}, 0x20) — name and
+     * 16-byte PSK together, because they are one record.
+     *
+     * <p>THIS OVERWRITES. The firmware keeps one key per slot and takes the
+     * last one written; there is no merge and no undo. A slot whose key is
+     * replaced stops decrypting everything that was addressed to it, and the
+     * old key is gone from the device — recoverable only from wherever else
+     * the operator wrote it down. Callers that cannot show the user the key
+     * they are about to destroy should refuse to write an occupied slot rather
+     * than warn about it.</p>
+     *
+     * <p>The PSK is the AES-128 key for the channel and the whole of its
+     * secrecy. It must not be logged, and the firmware zero-pads it to the
+     * 32-byte HMAC secret itself (see
+     * {@code ChannelCrypto.channelSecretFromPsk}).</p>
+     *
+     * <p>Confirmation is a separate read: the device does not echo the slot,
+     * so callers that want to verify the write should follow it with
+     * {@link #requestChannel(int)}.</p>
+     *
+     * <p>No-op when not {@link SessionState#READY}.</p>
+     *
+     * @param channelIdx channel slot index
+     * @param name       channel name; the codec truncates/pads to 32 bytes
+     * @param psk        the 16-byte channel key
+     */
+    public void setChannel(int channelIdx, String name, byte[] psk) {
+        if (state.get() != SessionState.READY) return;
+        send(MeshcoreFrameCodec.setChannel(channelIdx, name, psk));
+    }
+
+    /**
      * Sets the position this node puts in its own adverts
      * ({@code CMD_SET_ADVERT_LATLON}, 0x0C). Degrees, converted to the
      * protocol's micro-degrees.

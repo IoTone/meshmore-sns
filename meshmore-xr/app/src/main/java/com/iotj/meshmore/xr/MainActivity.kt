@@ -574,6 +574,7 @@ private const val BACK_OUT_MS = 600L
 private fun channelRows(
     link: MeshLink,
     voice: VoicePrefs,
+    pending: ChanAction? = null,
 ): List<com.iotj.meshmore.xr.spatial.Stack.Row> {
     val slots = link.channels()
     val known = slots.map { it.threadId }.toSet()
@@ -590,6 +591,75 @@ private fun channelRows(
                 speaking = voice.isOn(c.threadId),
             ),
             lit = voice.isOn(c.threadId),
+        )
+    } + makeRows(link, pending)
+}
+
+/** A channel write the wearer has started but not yet confirmed. */
+private sealed interface ChanAction {
+    /** A rolled name, waiting for the second pinch that writes it. */
+    data class New(val name: String) : ChanAction
+    /** The public channel, waiting for the second pinch. */
+    data object Public : ChanAction
+}
+
+private const val ROW_NEW = "+new"
+private const val ROW_ROLL = "+roll"
+private const val ROW_PUBLIC = "+public"
+
+/**
+ * The two things this bay can DO, under the list of what already exists.
+ *
+ * ARMED, THEN DONE — every write takes two pinches, and the first one commits
+ * to nothing. A channel write is not undoable from here and gaze-dwell plus a
+ * pinch is a low bar for an irreversible act; the second pinch is also what
+ * gives the rolled name somewhere to appear before it becomes real, which is
+ * the only chance the wearer gets to decide they would rather have a different
+ * one.
+ *
+ * NO ACTIONS WHEN THERE IS NOWHERE TO PUT ONE. With four slots full the rows
+ * are absent rather than present-and-failing: a button that always refuses is a
+ * button that teaches people the app is broken. [MeshLink.writeChannel] still
+ * refuses independently, because the slot table can fill between a draw and a
+ * pinch.
+ */
+private fun makeRows(
+    link: MeshLink,
+    pending: ChanAction?,
+): List<com.iotj.meshmore.xr.spatial.Stack.Row> {
+    fun row(id: String, label: String, lit: Boolean = false) =
+        com.iotj.meshmore.xr.spatial.Stack.Row(id = id, label = label, lit = lit)
+    // NOT BEFORE THE RADIO HAS SPOKEN. With no link there is no slot table, so
+    // every slot looks free and the bay would offer to make a channel it has
+    // nowhere to put — and freeSlot()'s whole inference is that a slot missing
+    // from the table is one the radio SAID was empty, which is only true after
+    // the connect-time enumeration.
+    if (link.status.value.state != SessionState.READY) return emptyList()
+    if (link.freeSlot() == null) return emptyList()
+    return when (pending) {
+        // THE TAG IS SHOWN IN LOWERCASE, alone among the rows, and that is
+        // deliberate rather than a missed uppercase(). The key is SHA-256 over
+        // the tag's literal bytes, so "#pine-fox-47" and "#PINE-FOX-47" are two
+        // different channels that look like one. What is on the glasses has to
+        // be what the other person types, character for character, or the two
+        // radios derive different keys and neither ever hears the other.
+        is ChanAction.New -> listOf(
+            row(ROW_NEW, "MAKE  ${Channels.tagFor(pending.name)}", lit = true),
+            row(ROW_ROLL, "ROLL A DIFFERENT NAME"),
+        )
+        ChanAction.Public -> listOf(
+            row(ROW_PUBLIC, "JOIN PUBLIC — PINCH AGAIN", lit = true),
+        )
+        null -> listOfNotNull(
+            row(ROW_NEW, "+ NEW CHANNEL"),
+            // Offered only when the radio is NOT already on the public band.
+            // On a stock radio slot 0 is Public and this row would be an
+            // invitation to spend a slot on a channel you are already in.
+            if (link.channels().none { it.publicKey }) {
+                row(ROW_PUBLIC, "+ JOIN PUBLIC CHANNEL")
+            } else {
+                null
+            },
         )
     }
 }
@@ -625,6 +695,22 @@ private fun aboutRows(link: MeshLink): List<com.iotj.meshmore.xr.spatial.Stack.R
 }
 
 /**
+ * The line under the CHANNELS bay, which is where the honesty about a derived
+ * key goes.
+ *
+ * A hashtag channel is private the way an unlisted number is private: the key
+ * is `SHA-256` of the tag, so anybody who guesses the two words and the number
+ * is in, and nothing about a channel that says NEW and PRIVATE would tell you
+ * that. It is worth a whole footer at the moment of writing and worth nothing
+ * afterwards, so it only appears while the write is armed.
+ */
+private fun chanFooter(pending: ChanAction?): String = when (pending) {
+    is ChanAction.New -> "A GUESSED TAG JOINS. SAY IT ONCE"
+    ChanAction.Public -> "PUBLIC IS EVERYBODY. NO SECRETS"
+    null -> "LIT = READ ALOUD    B TO CLOSE"
+}
+
+/**
  * The channel band's contents — the same source the CHANNELS bay uses, so a
  * channel cannot appear in one and not the other.
  */
@@ -632,7 +718,11 @@ private fun channelBands(
     link: MeshLink,
     voice: VoicePrefs,
 ): List<com.iotj.meshmore.xr.spatial.Bands.Band> =
-    channelRows(link, voice).map { r ->
+    // WITHOUT THE ACTIONS. The bay's rows now end in things to DO, and a band
+    // is a place traffic arrives — "+ NEW CHANNEL" hanging in the horizon over
+    // the node lanes would be a control in the one part of the scene that has
+    // none.
+    channelRows(link, voice).filterNot { it.id.startsWith("+") }.map { r ->
         com.iotj.meshmore.xr.spatial.Bands.Band(
             id = r.id,
             // The bay's row is written for a 28-character plate; the band has
@@ -1068,6 +1158,14 @@ private fun HorizonScene(link: MeshLink) {
      * is deliberately ignorant of what a pick MEANS.
      */
     val armed = remember { mutableStateOf<Pair<String, Long>?>(null) }
+    /**
+     * The same idea for the CHANNELS bay, and separate from [armed] on purpose:
+     * they are two surfaces, and a rolled channel name left armed while the
+     * wearer goes to the APP bay must not be cancelled by — or worse, confused
+     * with — a pick over there.
+     */
+    val chanArmed = remember { mutableStateOf<ChanAction?>(null) }
+    val chanArmedAt = remember { mutableStateOf(0L) }
     /**
      * ABOUT borrows the APP bay's Stack rather than building a seventh surface.
      *
@@ -1988,6 +2086,11 @@ private fun HorizonScene(link: MeshLink) {
         var lastAdverts = -1
         var boot0Elapsed = 0f
         var statusTick = 0f
+        // How many slots the radio had confirmed last time the CHANNELS bay was
+        // drawn. A write is confirmed asynchronously — the reply lands in
+        // dumpChannel with nothing to redraw the bay — and comparing the count
+        // is cheaper every frame than re-texting six panels on a timer.
+        var chanCount = -1
         try {
             if (MainActivity.selfTest) launch { horizon.selfTest(origin) }
             if (MainActivity.showThread) launch {
@@ -2452,12 +2555,101 @@ private fun HorizonScene(link: MeshLink) {
                     stage.headNow()?.translation,
                     stage.headNow()?.let { yawOf(it) } ?: 0f,
                 )
+                // THE CHANNELS BAY. Its last rows MAKE channels rather than
+                // toggling them, so they are handled before the voice toggle —
+                // an action id that fell through to `voice.toggle` would set a
+                // read-aloud preference on a thread that does not exist.
                 while (true) {
                     val id = channelsRef.value?.poll() ?: break
-                    val now = voice.toggle(id)
-                    channelsRef.value?.update(channelRows(link, voice))
-                    noticeRef.value?.say(if (now) "READS ALOUD" else "SILENT")
-                    if (now) cue.opened() else cue.closed()
+                    val pending = chanArmed.value
+                    val disarm = { chanArmed.value = null }
+                    when {
+                        id == ROW_ROLL -> {
+                            // Re-roll in place. Costs nothing, commits nothing,
+                            // and is the reason the name is shown before it is
+                            // written rather than announced after.
+                            chanArmed.value = ChanAction.New(Channels.roll())
+                            chanArmedAt.value = nowMs
+                            cue.tick()
+                        }
+                        id == ROW_NEW && pending is ChanAction.New -> {
+                            val tag = Channels.tagFor(pending.name)
+                            disarm()
+                            when (val w = link.writeChannel(pending.name, Channels.pskFor(tag))) {
+                                is MeshLink.Wrote.Ok -> {
+                                    // THE TAG, NOT THE NAME. What the wearer has
+                                    // to pass on is the exact string the other
+                                    // person types; the channel's name is local
+                                    // decoration on both radios.
+                                    noticeRef.value?.say("MADE $tag — SAY IT TO SHARE")
+                                    Log.i(TAG_UI, "[chan] made ${w.name} in slot ${w.idx}")
+                                    cue.opened()
+                                }
+                                is MeshLink.Wrote.Refused -> {
+                                    noticeRef.value?.say("NO — ${w.why}")
+                                    cue.closed()
+                                }
+                            }
+                        }
+                        id == ROW_NEW -> {
+                            chanArmed.value = ChanAction.New(Channels.roll())
+                            chanArmedAt.value = nowMs
+                            cue.recognised()
+                        }
+                        id == ROW_PUBLIC && pending == ChanAction.Public -> {
+                            disarm()
+                            when (val w = link.writeChannel(
+                                Channels.PUBLIC_NAME, Channels.publicPsk(),
+                            )) {
+                                is MeshLink.Wrote.Ok ->
+                                    noticeRef.value?.say("JOINED THE PUBLIC CHANNEL")
+                                is MeshLink.Wrote.Refused ->
+                                    noticeRef.value?.say("NO — ${w.why}")
+                            }
+                            cue.opened()
+                        }
+                        id == ROW_PUBLIC -> {
+                            chanArmed.value = ChanAction.Public
+                            chanArmedAt.value = nowMs
+                            // THE WARNING BELONGS ON THE ARMING PINCH, where it
+                            // is still a choice. Everyone on the mesh can read
+                            // this band; that is the point of it and also the
+                            // thing a wearer should be told before they join.
+                            noticeRef.value?.say("PUBLIC IS READ BY EVERYONE")
+                            cue.recognised()
+                        }
+                        else -> {
+                            val now = voice.toggle(id)
+                            noticeRef.value?.say(if (now) "READS ALOUD" else "SILENT")
+                            if (now) cue.opened() else cue.closed()
+                        }
+                    }
+                    channelsRef.value?.update(
+                        channelRows(link, voice, chanArmed.value), chanFooter(chanArmed.value),
+                    )
+                }
+                // The arming lapses on its own, like the APP bay's. A rolled
+                // name left hanging in the air is a write the wearer walked away
+                // from, and it must not still be one pinch from happening when
+                // they come back to the bay for something else.
+                chanArmed.value?.let {
+                    if (nowMs - chanArmedAt.value > ARM_MS) {
+                        chanArmed.value = null
+                        channelsRef.value?.update(channelRows(link, voice, null), chanFooter(null))
+                    }
+                }
+                // A WRITE THE RADIO HAS CONFIRMED arrives asynchronously, in
+                // dumpChannel, with nothing to redraw the bay. Redrawn on the
+                // COUNT CHANGING rather than on a timer: re-texting the rows
+                // every frame churns a TextView per row, and doing it on a
+                // second's tick would show a channel that already exists as
+                // arriving up to a second late for no gain.
+                val slotsNow = link.channels().size
+                if (slotsNow != chanCount) {
+                    chanCount = slotsNow
+                    channelsRef.value?.update(
+                        channelRows(link, voice, chanArmed.value), chanFooter(chanArmed.value),
+                    )
                 }
                 // THE APP BAY. Two of its rows are GUARDED: the first pick
                 // arms and re-labels, the second within ARM_MS commits. One
@@ -2719,12 +2911,16 @@ private fun HorizonScene(link: MeshLink) {
                         // to turn it off.
                         "CHANNELS" -> {
                             consoleRef.value?.hide()
+                            // Opened UNARMED, always. A rolled name that
+                            // survived a trip out of the bay would be sitting
+                            // one pinch from a write next time it opened.
+                            chanArmed.value = null
                             channelsRef.value?.show(
-                                channelRows(link, voice),
+                                channelRows(link, voice, null),
                                 title = "CHANNELS — PICK TO SPEAK",
                                 footer = if (link.channels().isEmpty())
                                     "CONNECT A RADIO TO SEE ITS SLOTS"
-                                else "LIT = READS ALOUD    B TO CLOSE",
+                                else chanFooter(null),
                             )
                             dockRef.value?.setLit("SETUP", false)
                             cue.opened()

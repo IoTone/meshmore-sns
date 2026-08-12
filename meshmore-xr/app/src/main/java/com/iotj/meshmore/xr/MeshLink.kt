@@ -1119,6 +1119,67 @@ class MeshLink(private val context: Context) {
     /** How many messages are held for a channel, for a surface that shows weight. */
     fun countFor(threadId: String): Int = _msgs.value.count { it.channel == threadId }
 
+    /**
+     * The lowest slot the radio reported as EMPTY, or null when all four are
+     * spoken for.
+     *
+     * Empty is a real answer here rather than an absence: [dumpChannel] returns
+     * early on a slot with no name and a zero key, so a slot missing from
+     * [chans] is one the radio has told us is free — not one we failed to ask
+     * about. That distinction only holds AFTER the connect-time enumeration,
+     * which is why [writeChannel] refuses when the link is not READY.
+     */
+    fun freeSlot(): Int? = (0 until CHANNEL_SLOTS).firstOrNull { it !in chans }
+
+    /** What a channel write did, in a form a surface can put into words. */
+    sealed interface Wrote {
+        data class Ok(val idx: Int, val name: String) : Wrote
+        data class Refused(val why: String) : Wrote
+    }
+
+    /**
+     * Write a channel into a FREE slot.
+     *
+     * NEVER OVER AN OCCUPIED ONE, and that is a stronger rule than the phone
+     * app's. The firmware keeps one key per slot and takes the last written;
+     * replacing a key silently ends every conversation that used it, and the
+     * old key is gone from the radio. The phone can warn about that because it
+     * can show you the key you are about to destroy and let you write it down
+     * first. On the glasses there is nowhere to write it down and no way to get
+     * it back, so the only safe answer is to decline and say which surface can
+     * do it. Slot 0 in particular is the public channel on a stock radio, and
+     * an accidental pinch that takes it out takes the wearer off the band
+     * everybody else is on.
+     *
+     * THE KEY IS NEVER LOGGED — a fingerprint of the first four bytes goes to
+     * the log so a write can be correlated with what the radio reports back,
+     * and the other twelve bytes stay out of logcat and out of the diagnostics
+     * tail, which is a surface the wearer can open and read.
+     */
+    fun writeChannel(name: String, psk: ByteArray): Wrote {
+        val s = session
+        if (s == null || _status.value.state != SessionState.READY) {
+            return Wrote.Refused("NO RADIO")
+        }
+        if (psk.size != io.iotone.meshcore.MeshcoreConstants.CHANNEL_PSK_SIZE) {
+            // Not reachable from any surface today; here because a short key
+            // would be zero-padded by the codec into a DIFFERENT, weaker key
+            // than the one whose name we are about to tell people to type.
+            Log.e(TAG, "[chan] refused — key is ${psk.size} bytes, not 16")
+            return Wrote.Refused("BAD KEY")
+        }
+        val idx = freeSlot() ?: return Wrote.Refused("NO FREE SLOT")
+        val fp = psk.take(4).joinToString("") { "%02x".format(it) }
+        Log.i(TAG, "[chan] slot $idx <- \"$name\" psk $fp…")
+        diag(">>CHAN SET $idx $name")
+        s.setChannel(idx, name, psk)
+        // ASK FOR IT BACK. The device does not echo a slot write, so without
+        // this the app would show a channel it hoped it had made. The reply
+        // lands in dumpChannel and is what actually populates the bay.
+        s.requestChannel(idx)
+        return Wrote.Ok(idx, name)
+    }
+
     private fun dumpChannel(c: io.iotone.meshcore.model.ChannelInfo) {
         val psk = c.psk()
         if (c.name().isNullOrBlank() && (psk == null || psk.all { it.toInt() == 0 })) {
