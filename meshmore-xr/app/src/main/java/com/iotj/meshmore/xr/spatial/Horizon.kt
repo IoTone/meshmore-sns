@@ -178,6 +178,22 @@ class Horizon(
     private var labels: LabelPool? = null
 
     private val entities = mutableListOf<Entity>()
+
+    /**
+     * The range circles, kept apart from [entities] so they can FOLLOW.
+     *
+     * THE NODES MUST NOT FOLLOW, and that is the whole distinction. A node is
+     * at a real place in the world: a repeater on a hill stays on its hill
+     * while you walk, and a mesh that slid along with you would be lying about
+     * every bearing it draws. The CIRCLES are the opposite — they are a scale
+     * measured FROM the wearer, "100 m, 1 km, 10 km from me", and a scale
+     * centred on where you were ten minutes ago is measuring from nowhere.
+     *
+     * So "moves with you" resolves into: the rings do, the mesh does not. That
+     * is both the correct reading and the cheap one — three tori re-posed per
+     * frame instead of reparenting a scene of 118 entities.
+     */
+    private val rings = mutableListOf<MeshEntity>()
     private val pulses = mutableListOf<Pulse>()
     private val facing = mutableListOf<Facing>()
     private val peers = mutableListOf<Peer>()
@@ -259,6 +275,11 @@ class Horizon(
                 it.parent = root
                 it.setPose(Pose(at(o, 0f, 0f, frame.ringDrop)), Space.ACTIVITY)
                 entities += it
+                rings += it
+                if (ringY == null) {
+                    ringY = it.getPose(Space.ACTIVITY).translation.y
+                    ringAt = it.getPose(Space.ACTIVITY).translation
+                }
             }
         }
 
@@ -995,6 +1016,27 @@ class Horizon(
     }
 
     /** Drive the pulses. Called from a frame loop; cheap and allocation-free. */
+    /**
+     * Keep the range circles centred on the wearer. HALO only — see [Theme.Frame].
+     *
+     * Yaw is deliberately untouched: the circles are concentric, so rotating
+     * them would be invisible work, and anything that DID rotate with the head
+     * would take the mesh's bearings with it.
+     */
+    fun follow(head: Vector3?) {
+        if (!frame.follows || rings.isEmpty()) return
+        val h = head ?: return
+        val y = ringY ?: return
+        if (kotlin.math.abs(h.x - ringAt.x) < FOLLOW_SLACK &&
+            kotlin.math.abs(h.z - ringAt.z) < FOLLOW_SLACK
+        ) return
+        ringAt = Vector3(h.x, y, h.z)
+        rings.forEach { runCatching { it.setPose(Pose(ringAt), Space.ACTIVITY) } }
+    }
+
+    private var ringY: Float? = null
+    private var ringAt = Vector3(0f, 0f, 0f)
+
     fun tick(dt: Float) {
         reconcileHover()
         val it = pulses.iterator()
@@ -1084,5 +1126,15 @@ class Horizon(
 
         /** Clearance between a real tabletop and the model standing on it. */
         const val TABLE_LIFT = 0.02f
+
+        /**
+         * How far the wearer may drift before the circles are re-centred.
+         *
+         * Not zero, and not for the arithmetic's sake: head tracking jitters by
+         * a few millimetres while you stand still, and circles that chased that
+         * would shimmer. 15 cm is under a single pace, so it reads as the
+         * scale keeping up rather than as anything moving.
+         */
+        const val FOLLOW_SLACK = 0.15f
     }
 }

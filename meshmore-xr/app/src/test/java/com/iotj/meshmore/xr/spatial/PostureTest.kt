@@ -132,6 +132,23 @@ class PostureTest {
     }
 
     /**
+     * THE CIRCLES FOLLOW; THE MESH DOES NOT.
+     *
+     * The distinction is the whole of what "moves with you" means here. A node
+     * sits at a real place — a repeater on a hill stays on its hill — and a
+     * mesh that slid along with the wearer would be lying about every bearing
+     * it draws. The circles are a scale measured FROM the wearer, and one
+     * centred where they stood ten minutes ago measures from nowhere.
+     */
+    @Test fun onlyTheActiveStanceFollowsTheWearer() {
+        assertTrue(Theme.frameFor(Theme.Posture.FIELD, active = true).follows)
+        assertFalse(Theme.frameFor(Theme.Posture.FIELD).follows)
+        assertFalse(Theme.frameFor(Theme.Posture.TABLETOP).follows)
+        // A tabletop that chased the wearer would drag the model off its table.
+        assertFalse(Theme.frameFor(Theme.Posture.TRANSIT).follows)
+    }
+
+    /**
      * A stance that draws MORE would be the wrong stance. Both of the frames
      * that get out of the way also cost less, which is the property that makes
      * this affordable on a thermally-limited headset.

@@ -2079,6 +2079,9 @@ private fun HorizonScene(link: MeshLink) {
                     )
                     horizon.veil(it)
                     rackRef.value?.tick(it.translation)
+                    // The scale keeps up with the wearer; the mesh stays where
+                    // the mesh actually is. HALO only.
+                    horizonRef.value?.follow(it.translation)
                     dockRef.value?.tick(it.translation)
                     // WORN, FOR THE ACTIVE THEME. tick() still runs — it owns
                     // focus, caption and the fired queue — and this only

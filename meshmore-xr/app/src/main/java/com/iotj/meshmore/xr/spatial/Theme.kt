@@ -116,28 +116,28 @@ object Theme {
         val ringDrop: Float = drop,
         /** The Tron grid. An ACTIVE theme replaces it with the circles alone. */
         val floorGrid: Boolean = true,
+        /**
+         * Whether the RANGE CIRCLES re-centre on the wearer as they move.
+         *
+         * The nodes never do, and that distinction is the point: a node is at a
+         * real place and a mesh that slid along with you would be lying about
+         * every bearing it draws. The circles are a scale measured FROM the
+         * wearer — "100 m, 1 km, 10 km from me" — and one centred on where you
+         * stood ten minutes ago is measuring from nowhere.
+         */
+        val follows: Boolean = false,
     )
 
     /*
-     * NOT HERE YET: `follows`.
+     * WHAT FOLLOWING IS NOT.
      *
-     * The active stance's other half is that the arrangement RE-CENTRES on the
-     * wearer as they walk — today everything is placed from the LAUNCH origin,
-     * so a walk carries you out of your own ring, which for a hiking theme is
-     * the whole feature rather than a detail.
-     *
-     * It is deliberately NOT a field on [Frame] yet, because a flag nothing
-     * reads is precisely the fault this file just finished repairing: `posture`
-     * sat on two themes for weeks as a caption the picker printed and nothing
-     * acted on. One inert axis is a bug; two would be a habit.
-     *
-     * What it needs is a reparent, not a number. Every horizon entity is posed
-     * in ACTIVITY space today, so following would mean rewriting ~118 poses per
-     * frame. The fix is a contentless container entity as the horizon's root,
-     * moved once per frame — `Entity.create(session, name, pose, parent)` in
-     * scenecore-1.0.0-beta01. Note the version: `GroupEntity`, which is what
-     * every sample and every memory of this API calls it, exists in alpha16 and
-     * is GONE in beta01. Checked against the API index, not recalled.
+     * `follows` moves the range circles and nothing else. The obvious reading —
+     * carry the whole arrangement along — is wrong, and expensively so: it
+     * would mean reparenting 118 entities posed in ACTIVITY space onto a
+     * contentless container (`Entity.create` in scenecore-1.0.0-beta01; note
+     * `GroupEntity`, which every sample and every memory of this API calls it,
+     * exists in alpha16 and is GONE in beta01), and it would make the mesh lie
+     * about every bearing it draws.
      */
 
     /**
@@ -165,6 +165,7 @@ object Theme {
             // No grid: 34 lit bars competing with a real trail. The circles
             // already say scale, and they say it without covering the ground.
             floorGrid = false,
+            follows = true,
         ) else Frame(radius = 2.5f, forward = 0f, drop = -0.30f)
         // floorGrid = false: a 2 m grid under a 32 cm model is neither the
         // content's scale nor a surface it stands on. This used to be a posture
