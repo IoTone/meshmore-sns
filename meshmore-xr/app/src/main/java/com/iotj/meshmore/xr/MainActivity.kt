@@ -1016,6 +1016,7 @@ private fun HorizonScene(link: MeshLink) {
     val signature = remember(mesh) { mesh.joinToString(",") { "${it.key}:${it.lat != null}" } }
 
     val horizonRef = remember { mutableStateOf<Horizon?>(null) }
+    val tableRef = remember { mutableStateOf<com.iotj.meshmore.xr.spatial.TableAnchor?>(null) }
     val stageRef = remember { mutableStateOf<Stage?>(null) }
     val originRef = remember { mutableStateOf<Stage.Origin?>(null) }
     val nodesRef = remember { mutableStateOf<List<Horizon.Node>>(emptyList()) }
@@ -1298,6 +1299,15 @@ private fun HorizonScene(link: MeshLink) {
         Log.i(TAG_UI, "[boot] planes wanted=$wantPlanes granted=${stage.planesEnabled}")
         if (stage.planesEnabled && MainActivity.probePlanes) {
             launch { com.iotj.meshmore.xr.spatial.Planes.watch(session) }
+        }
+        // S6 — ask the room for a table to stand the model on. Only the
+        // tabletop posture wants one, and only if perception was granted; the
+        // body-relative placement carries on regardless and is what the wearer
+        // sees until (and unless) a table is found.
+        if (stage.planesEnabled &&
+            skin.value.posture == com.iotj.meshmore.xr.spatial.Theme.Posture.TABLETOP
+        ) {
+            tableRef.value = com.iotj.meshmore.xr.spatial.TableAnchor(session).also { it.seek() }
         }
         // WHICH WAY IS NORTH. Every node's bearing comes from real lat/lon, so
         // it is measured from TRUE north — while place() measures from the
@@ -2478,6 +2488,16 @@ private fun HorizonScene(link: MeshLink) {
                         // the sample is a real app sound rather than a demo.
                         cue.pack = Cue.packFor(chosen.audio)
                         cue.sample()
+                    }
+                }
+                // THE TABLE, IF ONE TURNS UP. Polled here rather than through a
+                // state callback because the callback arrives off the main
+                // thread and the scene may only be touched on it. One enum read
+                // a frame is cheaper than making that safe.
+                tableRef.value?.let { t ->
+                    if (t.poll()) {
+                        horizonRef.value?.tableAt = t.at
+                        hereEpoch.value += 1
                     }
                 }
                 consoleRef.value?.tick(stage.headNow()?.translation)

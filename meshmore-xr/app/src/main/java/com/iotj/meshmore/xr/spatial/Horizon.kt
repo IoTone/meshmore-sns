@@ -90,7 +90,27 @@ class Horizon(
      * in the middle of it. TABLETOP pushes it out in front, because a model you
      * are standing inside is not a model, it is a room.
      */
+    /**
+     * A REAL TABLE, when the room has offered one — see [TableAnchor].
+     *
+     * Overrides the body-relative centre for TABLETOP only. Set by the host
+     * when the anchor lands, which is also when it triggers a rebuild; null
+     * means "no table yet, or none here", and the guessed position stands.
+     */
+    var tableAt: Vector3? = null
+
     private fun centre(o: Stage.Origin): Triple<Float, Float, Float> {
+        // The measured table beats the assumed one. Only TABLETOP asks for a
+        // table, so only TABLETOP can be moved onto it.
+        tableAt?.takeIf { posture == Theme.Posture.TABLETOP }?.let {
+            // CANCEL THE ASSUMED DROP. `at()` adds frame.drop — the -0.42 m
+            // guess at where a table is under a seated wearer — to every
+            // height. Once the table's REAL height is known that guess must
+            // come back out, or the model is placed 42 cm into the furniture.
+            // What replaces it is a couple of centimetres of clearance so the
+            // diorama rests ON the surface rather than intersecting it.
+            return Triple(it.x, it.y + TABLE_LIFT - frame.drop, it.z)
+        }
         if (frame.forward == 0f) return Triple(o.x, o.y, o.z)
         val c = o.place(0f, frame.forward, 0f)
         return Triple(c.x, c.y, c.z)
@@ -1061,5 +1081,8 @@ class Horizon(
         private const val SELECT_DEBOUNCE_MS = 350L
         /** The shell sits at and below eye level; the forward arc stays clear. */
         const val EYE_DROP = -0.30f
+
+        /** Clearance between a real tabletop and the model standing on it. */
+        const val TABLE_LIFT = 0.02f
     }
 }
