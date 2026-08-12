@@ -2535,7 +2535,17 @@ private fun HorizonScene(link: MeshLink) {
                         cue.closed()
                     } else {
                         skin.value = chosen
-                        themePrefs.set(chosen)
+                        // A TEST HOOK MUST NOT REWRITE A SETTING. `--es switchto`
+                        // fires through this same queue on purpose — verifying
+                        // the path a pinch takes is the whole point — but that
+                        // made it persist too, and a debug launch left the
+                        // wearer's stored theme changed. It did: an afternoon
+                        // of `switchto` testing ended with the glasses booting
+                        // into SEELE, whose black-on-additive substrate draws
+                        // almost nothing, and the app read as frozen after the
+                        // splash. Diagnosing a "stuck" app that was in fact
+                        // working perfectly cost more than this line saves.
+                        if (MainActivity.switchTo == null) themePrefs.set(chosen)
                         com.iotj.meshmore.xr.spatial.Ink.retint(chosen.palette)
                         // A THEME IS NOT A PALETTE, and until now choosing one
                         // acted as though it were. retint() repaints every
@@ -2787,6 +2797,47 @@ private fun HorizonScene(link: MeshLink) {
                             lastBackAt = nowMs
                             c.hide(); cue.closed()
                             Log.i(TAG_UI, "[hand] $hand:B — channels closed")
+                            return
+                        }
+                    }
+                    // THE CONSOLE, AND THE TWO LISTS. Added because B did not
+                    // close them and the footers had been promising it did.
+                    //
+                    // B unwound the bays but not the surface the bays open OUT
+                    // of, so backing out of the settings fan fell through to
+                    // popping a lens level instead — a gesture that answered a
+                    // question about the horizon while a menu sat in front of
+                    // the wearer. The roster and the inbox were missed the same
+                    // way: every one of them is a thing you open and therefore
+                    // a thing "back" has to close, or the gesture means
+                    // something different depending on what is up, which is the
+                    // one property a back gesture cannot have.
+                    //
+                    // Ordered inside-out, like the rest of this chain: a bay
+                    // closes before the console it came from.
+                    consoleRef.value?.let { c ->
+                        if (c.open) {
+                            lastBackAt = nowMs
+                            c.hide(); cue.closed()
+                            Log.i(TAG_UI, "[hand] $hand:B — console closed")
+                            return
+                        }
+                    }
+                    rosterRef.value?.let { r ->
+                        if (r.open) {
+                            lastBackAt = nowMs
+                            r.hide(); cue.closed()
+                            dockRef.value?.setLit("LIST", false)
+                            Log.i(TAG_UI, "[hand] $hand:B — roster closed")
+                            return
+                        }
+                    }
+                    inboxRef.value?.let { i ->
+                        if (i.open) {
+                            lastBackAt = nowMs
+                            i.hide(); cue.closed()
+                            dockRef.value?.setLit("INBOX", false)
+                            Log.i(TAG_UI, "[hand] $hand:B — inbox closed")
                             return
                         }
                     }
