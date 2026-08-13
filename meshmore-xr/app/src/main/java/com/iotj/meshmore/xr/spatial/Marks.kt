@@ -133,6 +133,15 @@ object Marks {
         // that IS a list, so pretending otherwise in its mark would be coy.
         "LIST" to "M22 30 H78 M22 50 H78 M22 70 H78 M10 30 H12 M10 50 H12 M10 70 H12",
 
+        // FIND — a lens over the ring. The universal glass, and universal here
+        // is worth more than clever: this pip has to be recognised at 35 cm on
+        // a moving forearm, by somebody who has never opened the help card.
+        //
+        // The handle points down-right rather than the conventional down-left
+        // so it leans away from the pip that follows it along the arm, which is
+        // the only place a stroke of one mark can be read as part of the next.
+        "FIND" to "M44 44 m-26 0 a26 26 0 1 0 52 0 a26 26 0 1 0 -52 0 M63 63 L86 86",
+
         // NORTH — a compass needle, and deliberately NOT another rose.
         //
         // COMPASS (the band toggle) is already a four-point star, and two

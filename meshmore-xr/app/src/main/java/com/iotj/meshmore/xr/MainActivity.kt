@@ -17,8 +17,11 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -32,6 +35,8 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
@@ -128,6 +133,16 @@ class MainActivity : ComponentActivity() {
          * glasses is the only way to check it renders.
          */
         var showHelp: Boolean = false
+        /**
+         * --ez find true : raise the FIND panel at launch, with the keyboard.
+         *
+         * The panel only opens from a pip, and the question that has to be
+         * answered before anything else is whether the system IME comes up over
+         * a spatial panel at all — which cannot be checked with a hand in front
+         * of the glasses, because the emulator composites spatial content into
+         * screencap and the glasses do not.
+         */
+        var showFind: Boolean = false
         /**
          * --ez menu true : open the cluster menu on the first cluster found.
          *
@@ -292,6 +307,7 @@ class MainActivity : ComponentActivity() {
         showRadio = intent?.getBooleanExtra("radio", false) ?: false
         handDebug = intent?.getBooleanExtra("handdebug", false) ?: false
         showHelp = intent?.getBooleanExtra("help", false) ?: false
+        showFind = intent?.getBooleanExtra("find", false) ?: false
         showMenu = intent?.getBooleanExtra("menu", false) ?: false
         showFocus = intent?.getBooleanExtra("focus", false) ?: false
         probePaths = intent?.getBooleanExtra("probe", false) ?: false
@@ -1398,7 +1414,15 @@ private fun HorizonScene(link: MeshLink) {
         }
     }
 
-    LaunchedEffect(signature, here, horizonRef.value, hereEpoch.value) {
+    // THE FILTER, and whether its panel is up. Two states rather than one: a
+    // query survives the panel being closed, so a wearer who narrows the ring to
+    // three repeaters and puts the keyboard away is still looking at three
+    // repeaters. Closing a search and silently restoring 350 nodes would undo
+    // the thing they just did.
+    val query = remember { mutableStateOf("") }
+    val searchOpen = remember { mutableStateOf(MainActivity.showFind) }
+
+    LaunchedEffect(signature, here, horizonRef.value, hereEpoch.value, query.value) {
         // DEBOUNCE. A contact sync delivers the whole list one frame at a time
         // -- 58 contacts arrived as 58 separate membership changes, and without
         // this the scene is disposed and rebuilt 58 times in 1.5 s. LaunchedEffect
@@ -1431,8 +1455,17 @@ private fun HorizonScene(link: MeshLink) {
             else if (tagsRef.isFavourite(p.fullKey ?: p.key)) p.copy(favourite = true)
             else p
         }
+        // NARROWED BEFORE RANKED, never after. Ranking a filtered population is
+        // the whole point: with four matches, all four are drawn, at their true
+        // bearings, in the same ring as everything else. Filtering the RESULT
+        // instead would leave the ranker's 24 arbitrary picks and hide most of
+        // them, which is a way of showing less rather than of finding anything.
+        val found = Search.apply(marked, query.value)
+        if (found.size != marked.size) {
+            Log.i(TAG_UI, "[find] '${query.value}' -> ${found.size} of ${marked.size}")
+        }
         val nodes = if (MainActivity.simulate) simulatedMesh() else
-            MeshNodes.build(origin2, marked, System.currentTimeMillis() / 1000, lens = lens)
+            MeshNodes.build(origin2, found, System.currentTimeMillis() / 1000, lens = lens)
         // Count what was DRAWN, not what the cap would have dropped. The old
         // form was peers.size - MAX_MOTES, which stopped being true the moment
         // placement became fit-driven: a saturated bearing labels five nodes,
@@ -1723,7 +1756,14 @@ private fun HorizonScene(link: MeshLink) {
         // facing, did anyone call me, where am I — plus the door to everything
         // else. HELP, WIDE, LIST and LINK are one pinch away behind SETUP.
         val wristDock = skin.value.active
-        val WRIST_SET = setOf("COMPASS", "INBOX", "HERE", "SETUP")
+        // FIVE ON THE WRIST NOW, NOT FOUR. "Where is the search on HALO?" — it
+        // was nowhere, and behind SETUP is not an answer for the theme built for
+        // walking. The fifth pip is affordable: Dock.WRIST_PITCH is 5.2 cm,
+        // which at a 35 cm forearm is 8.5 degrees of separation against a 5
+        // degree floor, and five pips span 24 cm of an arm that has about 25.
+        // It is the tightest thing on the wrist and the first to give if it
+        // proves unreachable on a smaller arm.
+        val WRIST_SET = setOf("COMPASS", "INBOX", "HERE", "FIND", "SETUP")
         // A TABLETOP PUTS A MAP WHERE THE DOCK LIVES. See Dock.build's drop.
         val dockDrop =
             if (skin.value.posture == com.iotj.meshmore.xr.spatial.Theme.Posture.TABLETOP) {
@@ -1832,6 +1872,19 @@ private fun HorizonScene(link: MeshLink) {
                 }
             },
             // EVERY NODE, WITHOUT TURNING AROUND (§8.2).
+            // FIND — the keyboard, and the only pip that changes what the RING
+            // shows rather than raising a surface over it.
+            //
+            // Lit while a query is in force, not while the panel is up. The
+            // panel is a keyboard you put away; the filter is a state the mesh
+            // is in, and a wearer looking at nine motes needs to know whether
+            // that is the mesh or their own last search. This is the same fault
+            // the HERE pip had, caught before it shipped twice.
+            "FIND" to {
+                searchOpen.value = !searchOpen.value
+                dockRef.value?.setLit("FIND", searchOpen.value || query.value.isNotEmpty())
+                if (searchOpen.value) cue.opened() else cue.closed()
+            },
             "LIST" to {
                 val r = rosterRef.value
                 val h = stage.headNow()
@@ -3134,6 +3187,18 @@ private fun HorizonScene(link: MeshLink) {
                     // twice, which is what it looked like. It was also the only
                     // surface never added to this chain: the card lists "B —
                     // BACK" among its own rows and did not answer to it.
+                    // THE KEYBOARD, before anything else it might be sitting
+                    // over. B puts the panel away and LEAVES THE QUERY: backing
+                    // out of a keyboard is not a request to see all 350 nodes
+                    // again, and a wearer who wanted that has CLEAR.
+                    if (searchOpen.value) {
+                        lastBackAt = nowMs
+                        searchOpen.value = false
+                        dockRef.value?.setLit("FIND", query.value.isNotEmpty())
+                        cue.closed()
+                        Log.i(TAG_UI, "[hand] $hand:B — find closed, query '${query.value}'")
+                        return
+                    }
                     helpRef.value?.let { h ->
                         if (h.visible) {
                             lastBackAt = nowMs
@@ -3635,6 +3700,107 @@ private fun HorizonScene(link: MeshLink) {
             horizon.clear()
             hudRef.value?.clear()
             stage.clearFloor()
+        }
+    }
+
+    // THE ONE PANEL THIS APP ADMITS TO.
+    //
+    // Everything else here is geometry in the room, on principle — a panel is
+    // what makes an XR app feel like a phone app that happens to be floating.
+    // This is the exception and it earns it the same way the radio log does: a
+    // text field is a text field. It needs the system IME, the IME needs a real
+    // focusable view, and reinventing either in stroked geometry would produce
+    // a worse keyboard than the platform's and no speech input at all.
+    //
+    // It sits BESIDE the forward arc rather than in it, so the ring it is
+    // filtering stays visible while the query is typed. Watching the mesh narrow
+    // as you type is the entire feedback loop; a panel that covered the horizon
+    // would hide the result of its own filtering.
+    if (searchOpen.value) {
+        Subspace {
+            SpatialPanel(
+                SubspaceModifier.width(560.dp).height(190.dp)
+                    .offset(x = 300.dp, y = (-120).dp, z = 260.dp)
+                    .rotate(0f, -22f, 0f),
+            ) {
+                SearchSurface(
+                    query = query.value,
+                    onQuery = { query.value = Search.normalise(it) },
+                    matched = nodesRef.value.size,
+                    total = mesh.size,
+                    onClose = { searchOpen.value = false },
+                )
+            }
+        }
+    }
+}
+
+/**
+ * The field, the count, and a way out.
+ *
+ * DELIBERATELY PLAIN. This is the one surface in the app where the platform's
+ * own conventions beat the theme's — a text field that does not look like a text
+ * field does not get typed into, and the keyboard that appears over it is the
+ * system's and will not match any of the nine palettes however hard this tries.
+ *
+ * The count under the field is the whole confirmation loop, and it must
+ * distinguish "no matches" from "not searching": those look identical on a ring
+ * that was already sparse, and they call for opposite next moves.
+ */
+@Composable
+private fun SearchSurface(
+    query: String,
+    onQuery: (String) -> Unit,
+    matched: Int,
+    total: Int,
+    onClose: () -> Unit,
+) {
+    val focus = remember { FocusRequester() }
+    // THE KEYBOARD COMES UP WITH THE PANEL. A search you have to tap into
+    // before you can type is a search with an extra step that exists only
+    // because nobody asked for the focus.
+    LaunchedEffect(Unit) { runCatching { focus.requestFocus() } }
+    Column(
+        Modifier
+            .fillMaxSize()
+            .background(Color(0xE0121820))
+            .padding(18.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        Text("FIND", color = Color(0xFF66E8D0), fontSize = 15.sp)
+        OutlinedTextField(
+            value = query,
+            onValueChange = onQuery,
+            singleLine = true,
+            placeholder = { Text("CALLSIGN OR KEY", color = Color(0xFF6E7C88)) },
+            textStyle = LocalTextStyle.current.copy(color = Color(0xFFDDE7EF), fontSize = 22.sp),
+            modifier = Modifier.fillMaxWidth().focusRequester(focus),
+        )
+        Row(
+            Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Text(
+                Search.summary(matched, total, query),
+                color = if (matched == 0 && Search.normalise(query).isNotEmpty()) {
+                    Color(0xFFFF6B6B)
+                } else {
+                    Color(0xFFDDE7EF)
+                },
+                fontSize = 16.sp,
+            )
+            // CLEARING AND CLOSING ARE DIFFERENT ACTS, and both are needed: the
+            // query outlives the panel on purpose, so without a CLEAR the only
+            // way back to the whole mesh would be to reopen the panel and empty
+            // the field by hand.
+            Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                TextButton(onClick = { onQuery("") }) {
+                    Text("CLEAR", color = Color(0xFF66E8D0), fontSize = 15.sp)
+                }
+                TextButton(onClick = onClose) {
+                    Text("DONE", color = Color(0xFF66E8D0), fontSize = 15.sp)
+                }
+            }
         }
     }
 }

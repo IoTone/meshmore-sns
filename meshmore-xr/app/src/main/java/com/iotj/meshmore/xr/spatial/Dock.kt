@@ -539,8 +539,16 @@ class Dock(
          * A forearm is about 22 cm of usable length, so four pips fit at 6 cm
          * with room to spare: 0.035 + 3 x 0.060 = 0.215 m. At 35 cm that is
          * 9.8 degrees apart, twice the floor.
+         *
+         * TIGHTENED TO 5.2 cm FOR A FIFTH PIP. HALO gained FIND — search was
+         * reachable nowhere on the theme built for walking — and five at the old
+         * pitch would have wanted 27.5 cm of a 22 cm arm. At 5.2 the run is
+         * 0.035 + 4 x 0.052 = 0.243 m, and the separation is 8.5 degrees, still
+         * well over the 5 degree floor. The arm, not the eye, is what is tight
+         * here: this is the last pip that fits and a sixth would need a
+         * different idea rather than a smaller number.
          */
-        const val WRIST_PITCH = 0.060f
+        const val WRIST_PITCH = 0.052f
 
         /**
          * ...and the proxy shrinks to match, because the spacing only helps if
