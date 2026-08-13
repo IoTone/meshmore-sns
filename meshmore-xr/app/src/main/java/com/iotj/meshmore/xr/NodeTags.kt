@@ -183,11 +183,22 @@ class NodeTags(private val store: Store) {
      */
     private fun norm(key: String) = key.trim().lowercase()
 
-    private companion object {
-        const val FILE = "meshmore-nodes"
-        const val KEY_TAGS = "tags"
-        const val KEY_FAV = "favourites"
-        const val SEP = "\u001f"
-        const val REC = "\u001e"
+    companion object {
+        /**
+         * The longest tag a surface should let somebody type.
+         *
+         * Not enforced here — [add] takes what it is given, and a tag arriving
+         * from an import or a future sync is not this class's business to
+         * truncate. It is a UI bound, published so that the surfaces which
+         * offer tagging cannot disagree about it. Sixteen fits a chip beside a
+         * callsign and is longer than any word people file each other under.
+         */
+        const val TAG_MAX = 16
+
+        private const val FILE = "meshmore-nodes"
+        private const val KEY_TAGS = "tags"
+        private const val KEY_FAV = "favourites"
+        private const val SEP = "\u001f"
+        private const val REC = "\u001e"
     }
 }

@@ -15,8 +15,11 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -40,6 +43,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -1429,10 +1433,17 @@ private fun HorizonScene(link: MeshLink) {
     // three repeaters and puts the keyboard away is still looking at three
     // repeaters. Closing a search and silently restoring 350 nodes would undo
     // the thing they just did.
-    val query = remember { mutableStateOf("") }
+    val query = remember { mutableStateOf(Search.Query()) }
     val searchOpen = remember { mutableStateOf(MainActivity.showFind) }
+    // BUMPED WHEN A MARK CHANGES. Starring somebody alters which nodes match and
+    // which the ranker floats, and neither the mesh nor the query has moved — so
+    // without this the ring keeps showing the answer to the question that was
+    // asked before the star.
+    val tagEpoch = remember { mutableStateOf(0) }
 
-    LaunchedEffect(signature, here, horizonRef.value, hereEpoch.value, query.value) {
+    LaunchedEffect(
+        signature, here, horizonRef.value, hereEpoch.value, query.value, tagEpoch.value,
+    ) {
         // DEBOUNCE. A contact sync delivers the whole list one frame at a time
         // -- 58 contacts arrived as 58 separate membership changes, and without
         // this the scene is disposed and rebuilt 58 times in 1.5 s. LaunchedEffect
@@ -1470,9 +1481,18 @@ private fun HorizonScene(link: MeshLink) {
         // bearings, in the same ring as everything else. Filtering the RESULT
         // instead would leave the ranker's 24 arbitrary picks and hide most of
         // them, which is a way of showing less rather than of finding anything.
-        val found = Search.apply(marked, query.value)
+        val found = Search.apply(
+            marked, query.value,
+            isFavourite = { it.favourite || tagsRef.isFavourite(it.fullKey ?: it.key) },
+            tagsOf = { tagsRef.tagsFor(it.fullKey ?: it.key) },
+        )
         if (found.size != marked.size) {
-            Log.i(TAG_UI, "[find] '${query.value}' -> ${found.size} of ${marked.size}")
+            val q = query.value
+            Log.i(
+                TAG_UI,
+                "[find] text='${q.text}' fav=${q.favourites} tag=${q.tag ?: "-"} " +
+                    "-> ${found.size} of ${marked.size}",
+            )
         }
         // HALF AS MANY ORBS ON A TABLETOP, because the table cannot grow.
         //
@@ -1922,7 +1942,7 @@ private fun HorizonScene(link: MeshLink) {
             // the HERE pip had, caught before it shipped twice.
             "FIND" to {
                 searchOpen.value = !searchOpen.value
-                dockRef.value?.setLit("FIND", searchOpen.value || query.value.isNotEmpty())
+                dockRef.value?.setLit("FIND", searchOpen.value || query.value.active)
                 if (searchOpen.value) cue.opened() else cue.closed()
             },
             "LIST" to {
@@ -3244,9 +3264,9 @@ private fun HorizonScene(link: MeshLink) {
                     if (searchOpen.value) {
                         lastBackAt = nowMs
                         searchOpen.value = false
-                        dockRef.value?.setLit("FIND", query.value.isNotEmpty())
+                        dockRef.value?.setLit("FIND", query.value.active)
                         cue.closed()
-                        Log.i(TAG_UI, "[hand] $hand:B — find closed, query '${query.value}'")
+                        Log.i(TAG_UI, "[hand] $hand:B — find closed, query ${query.value}")
                         return
                     }
                     helpRef.value?.let { h ->
@@ -3769,15 +3789,51 @@ private fun HorizonScene(link: MeshLink) {
     if (searchOpen.value) {
         Subspace {
             SpatialPanel(
-                SubspaceModifier.width(560.dp).height(190.dp)
-                    .offset(x = 300.dp, y = (-120).dp, z = 260.dp)
+                SubspaceModifier.width(620.dp).height(460.dp)
+                    .offset(x = 320.dp, y = (-60).dp, z = 260.dp)
                     .rotate(0f, -22f, 0f),
             ) {
                 SearchSurface(
                     query = query.value,
-                    onQuery = { query.value = Search.normalise(it) },
-                    matched = nodesRef.value.size,
+                    onQuery = { query.value = it },
+                    // WHAT THE QUERY FINDS, not what the ring drew. The ring
+                    // caps at 24 (12 on a tabletop) and clusters the rest, so
+                    // listing its output would hide most of a wide match — and
+                    // the list is the one place the whole answer fits.
+                    matches = remember(query.value, mesh, tagEpoch.value) {
+                        Search.apply(
+                            mesh, query.value,
+                            isFavourite = {
+                                it.favourite || tagsRef.isFavourite(it.fullKey ?: it.key)
+                            },
+                            tagsOf = { tagsRef.tagsFor(it.fullKey ?: it.key) },
+                        )
+                    },
                     total = mesh.size,
+                    tags = remember(tagEpoch.value) { tagsRef.allTags() },
+                    isFavourite = {
+                        it.favourite || tagsRef.isFavourite(it.fullKey ?: it.key)
+                    },
+                    tagsOf = { tagsRef.tagsFor(it.fullKey ?: it.key) },
+                    onStar = {
+                        val now = tagsRef.toggleFavourite(it.fullKey ?: it.key)
+                        tagEpoch.value += 1
+                        Log.i(TAG_UI, "[find] ${it.name} favourite=$now")
+                        if (now) cue.opened() else cue.closed()
+                    },
+                    onTag = { p, t ->
+                        if (t.isNotBlank()) {
+                            tagsRef.add(p.fullKey ?: p.key, t)
+                            tagEpoch.value += 1
+                            Log.i(TAG_UI, "[find] ${p.name} tagged '$t'")
+                            cue.recognised()
+                        }
+                    },
+                    onUntag = { p, t ->
+                        tagsRef.remove(p.fullKey ?: p.key, t)
+                        tagEpoch.value += 1
+                        cue.closed()
+                    },
                     onClose = { searchOpen.value = false },
                 )
             }
@@ -3799,10 +3855,16 @@ private fun HorizonScene(link: MeshLink) {
  */
 @Composable
 private fun SearchSurface(
-    query: String,
-    onQuery: (String) -> Unit,
-    matched: Int,
+    query: Search.Query,
+    onQuery: (Search.Query) -> Unit,
+    matches: List<MeshNodes.Peer>,
     total: Int,
+    tags: List<String>,
+    isFavourite: (MeshNodes.Peer) -> Boolean,
+    tagsOf: (MeshNodes.Peer) -> List<String>,
+    onStar: (MeshNodes.Peer) -> Unit,
+    onTag: (MeshNodes.Peer, String) -> Unit,
+    onUntag: (MeshNodes.Peer, String) -> Unit,
     onClose: () -> Unit,
 ) {
     val focus = remember { FocusRequester() }
@@ -3810,48 +3872,175 @@ private fun SearchSurface(
     // before you can type is a search with an extra step that exists only
     // because nobody asked for the focus.
     LaunchedEffect(Unit) { runCatching { focus.requestFocus() } }
+    // Which row is having a tag typed into it. One at a time: the keyboard is
+    // one keyboard, and two open fields would be a race for it.
+    val tagging = remember { mutableStateOf<String?>(null) }
+    val draft = remember { mutableStateOf("") }
     Column(
         Modifier
             .fillMaxSize()
             .background(Color(0xE0121820))
-            .padding(18.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp),
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        Text("FIND", color = Color(0xFF66E8D0), fontSize = 15.sp)
         OutlinedTextField(
-            value = query,
-            onValueChange = onQuery,
+            value = query.text,
+            onValueChange = { onQuery(query.copy(text = Search.normalise(it))) },
             singleLine = true,
             placeholder = { Text("CALLSIGN OR KEY", color = Color(0xFF6E7C88)) },
-            textStyle = LocalTextStyle.current.copy(color = Color(0xFFDDE7EF), fontSize = 22.sp),
+            textStyle = LocalTextStyle.current.copy(color = Color(0xFFDDE7EF), fontSize = 20.sp),
             modifier = Modifier.fillMaxWidth().focusRequester(focus),
         )
+        // THE MARKS, AS CHIPS. "I can't remember the names or UIDs of my
+        // friend's nodes" — so the two things a person DOES remember get to be
+        // one tap each, and neither of them requires typing anything.
+        Row(
+            Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Chip("★ FAVOURITES", query.favourites) {
+                onQuery(query.copy(favourites = !query.favourites))
+            }
+            tags.forEach { t ->
+                Chip("#$t", query.tag.equals(t, ignoreCase = true)) {
+                    // Tapping the live tag clears it. A chip that can only be
+                    // turned on needs a second control to turn it off, and the
+                    // one people try first is the chip.
+                    onQuery(query.copy(tag = if (query.tag.equals(t, true)) null else t))
+                }
+            }
+        }
         Row(
             Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             Text(
-                Search.summary(matched, total, query),
-                color = if (matched == 0 && Search.normalise(query).isNotEmpty()) {
+                Search.summary(matches.size, total, query),
+                color = if (matches.isEmpty() && query.active) {
                     Color(0xFFFF6B6B)
                 } else {
                     Color(0xFFDDE7EF)
                 },
-                fontSize = 16.sp,
+                fontSize = 15.sp,
             )
             // CLEARING AND CLOSING ARE DIFFERENT ACTS, and both are needed: the
             // query outlives the panel on purpose, so without a CLEAR the only
-            // way back to the whole mesh would be to reopen the panel and empty
-            // the field by hand.
-            Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-                TextButton(onClick = { onQuery("") }) {
-                    Text("CLEAR", color = Color(0xFF66E8D0), fontSize = 15.sp)
+            // way back to the whole mesh would be to reopen the panel and undo
+            // every term by hand.
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                TextButton(onClick = { onQuery(Search.Query()) }) {
+                    Text("CLEAR", color = Color(0xFF66E8D0), fontSize = 14.sp)
                 }
                 TextButton(onClick = onClose) {
-                    Text("DONE", color = Color(0xFF66E8D0), fontSize = 15.sp)
+                    Text("DONE", color = Color(0xFF66E8D0), fontSize = 14.sp)
                 }
             }
         }
+        // THE LIST IS WHERE MARKS GET MADE. Starring from the ring would mean
+        // finding the node in the ring first, which is the thing you cannot do
+        // — that is why you are here. So the matches are listed, and each row
+        // carries the two acts that make it findable next time.
+        Column(
+            Modifier.fillMaxWidth().verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(2.dp),
+        ) {
+            matches.take(FIND_ROWS).forEach { p ->
+                val id = p.fullKey ?: p.key
+                Row(
+                    Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    TextButton(onClick = { onStar(p) }) {
+                        Text(
+                            if (isFavourite(p)) "★" else "☆",
+                            color = if (isFavourite(p)) Color(0xFFD7FF00) else Color(0xFF6E7C88),
+                            fontSize = 20.sp,
+                        )
+                    }
+                    Column(Modifier.weight(1f)) {
+                        Text(
+                            p.name.ifBlank { p.key },
+                            color = Color(0xFFDDE7EF),
+                            fontSize = 16.sp,
+                            maxLines = 1,
+                        )
+                        val own = tagsOf(p)
+                        if (own.isNotEmpty()) {
+                            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                own.forEach { t ->
+                                    // Tapping your own tag on a node removes it.
+                                    // The only other place it could live is a
+                                    // second menu, for an act that is one tap
+                                    // and always undoable by retyping it.
+                                    TextButton(onClick = { onUntag(p, t) }) {
+                                        Text("#$t", color = Color(0xFF66E8D0), fontSize = 13.sp)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    TextButton(onClick = {
+                        tagging.value = if (tagging.value == id) null else id
+                        draft.value = ""
+                    }) {
+                        Text("+TAG", color = Color(0xFF66E8D0), fontSize = 13.sp)
+                    }
+                }
+                if (tagging.value == id) {
+                    OutlinedTextField(
+                        value = draft.value,
+                        onValueChange = { draft.value = it.take(NodeTags.TAG_MAX) },
+                        singleLine = true,
+                        placeholder = { Text("TAG", color = Color(0xFF6E7C88)) },
+                        textStyle = LocalTextStyle.current
+                            .copy(color = Color(0xFFDDE7EF), fontSize = 16.sp),
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                        keyboardActions = KeyboardActions(onDone = {
+                            onTag(p, draft.value.trim())
+                            draft.value = ""
+                            tagging.value = null
+                        }),
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+            }
+            if (matches.size > FIND_ROWS) {
+                // SAID, NEVER SILENT. A list that stops at fifteen without
+                // saying so reads as "that is all there is", and the wearer
+                // stops narrowing exactly when narrowing is what would help.
+                Text(
+                    "+${matches.size - FIND_ROWS} MORE — NARROW IT",
+                    color = Color(0xFF6E7C88),
+                    fontSize = 13.sp,
+                )
+            }
+        }
+    }
+}
+
+/**
+ * How many matches the panel lists. The ring shows at most 24 and the panel is
+ * 460 dp tall; fifteen rows is what fits without scrolling becoming the primary
+ * way to read it, and anything past that is a query that has not been narrowed.
+ */
+private const val FIND_ROWS = 15
+
+/** A filter chip: on is filled, off is outlined. One tap either way. */
+@Composable
+private fun Chip(label: String, on: Boolean, onClick: () -> Unit) {
+    TextButton(
+        onClick = onClick,
+        modifier = Modifier.background(
+            if (on) Color(0x3366E8D0) else Color(0x22FFFFFF),
+        ),
+    ) {
+        Text(
+            label,
+            color = if (on) Color(0xFF66E8D0) else Color(0xFF9AA7B2),
+            fontSize = 13.sp,
+            maxLines = 1,
+        )
     }
 }
 

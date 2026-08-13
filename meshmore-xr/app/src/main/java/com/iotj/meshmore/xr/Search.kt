@@ -37,6 +37,35 @@ object Search {
     const val MAX = 24
 
     /**
+     * WHAT IS BEING ASKED FOR — three things, ANDed.
+     *
+     * "I can't remember the names or UIDs of my friend's nodes" is the report
+     * that made this a structure rather than a string, and it is the ordinary
+     * case rather than an edge one: a MeshCore name is whatever its owner typed
+     * into their radio, a key is 64 hex characters, and neither is something a
+     * person recalls about somebody they hiked with once. What they DO remember
+     * is that it was a friend, or that it was on that trip.
+     *
+     * So the wearer's own marks are first-class query terms beside the text. A
+     * favourite is a fact about a person, a tag is a fact about a group, and a
+     * substring is a fact about a name — three ways of remembering, and the one
+     * you have is not always the one the search wants.
+     *
+     * ANDed rather than ORed. Narrowing is the whole job: a ring showing
+     * favourites OR anything matching "rep" is bigger than the one you started
+     * from, which is the opposite of what somebody who opened a search wanted.
+     */
+    data class Query(
+        val text: String = "",
+        val favourites: Boolean = false,
+        val tag: String? = null,
+    ) {
+        /** Is this narrowing anything at all? */
+        val active: Boolean
+            get() = normalise(text).isNotEmpty() || favourites || tag != null
+    }
+
+    /**
      * Tidied for matching AND for display — one function, so the string shown
      * on the panel is the string being matched against. Two normalisations
      * would eventually disagree and the wearer would be reading a query the
@@ -68,6 +97,33 @@ object Search {
         if (normalise(q).isEmpty()) peers else peers.filter { matches(it, q) }
 
     /**
+     * The same, for the full query.
+     *
+     * The marks arrive as LAMBDAS rather than as a NodeTags. This object stays
+     * ignorant of storage and of Android — which is what lets every rule here
+     * be tested on a plain JVM, and is the same reason MeshNodes never learned
+     * about favourites either.
+     */
+    fun apply(
+        peers: List<MeshNodes.Peer>,
+        q: Query,
+        isFavourite: (MeshNodes.Peer) -> Boolean,
+        tagsOf: (MeshNodes.Peer) -> List<String>,
+    ): List<MeshNodes.Peer> {
+        if (!q.active) return peers
+        return peers.filter { p ->
+            if (!matches(p, q.text)) return@filter false
+            if (q.favourites && !isFavourite(p)) return@filter false
+            // TAGS COMPARE CASE-INSENSITIVELY, because a tag typed at the node
+            // and a tag tapped on a chip are the same tag however the keyboard
+            // capitalised either of them.
+            val t = q.tag
+            if (t != null && tagsOf(p).none { it.equals(t, ignoreCase = true) }) return@filter false
+            true
+        }
+    }
+
+    /**
      * What the panel says under the field.
      *
      * ZERO IS THE ANSWER THAT MATTERS. A search that finds nothing and says
@@ -77,6 +133,20 @@ object Search {
      */
     fun summary(matched: Int, total: Int, q: String): String = when {
         normalise(q).isEmpty() -> "$total NODES"
+        matched == 0 -> "NO MATCH IN $total"
+        else -> "$matched OF $total"
+    }
+
+    /**
+     * The same, for the full query — and it must not go quiet when the only
+     * term is a mark.
+     *
+     * A wearer who taps FAVOURITES and has never starred anybody gets an empty
+     * ring, and "350 NODES" underneath it would be the app disagreeing with
+     * itself. NO MATCH is the true answer whichever term produced it.
+     */
+    fun summary(matched: Int, total: Int, q: Query): String = when {
+        !q.active -> "$total NODES"
         matched == 0 -> "NO MATCH IN $total"
         else -> "$matched OF $total"
     }

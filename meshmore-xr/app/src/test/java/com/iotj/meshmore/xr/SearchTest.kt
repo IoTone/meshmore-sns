@@ -103,4 +103,69 @@ class SearchTest {
         assertEquals(Search.MAX, Search.normalise(long).length)
         assertEquals("abc", Search.normalise("  abc  "))
     }
+
+    // --- the wearer's own marks ---------------------------------------------
+    //
+    // "I can't remember the names or UIDs of my friend's nodes." A MeshCore name
+    // is whatever its owner typed and a key is 64 hex characters; what a person
+    // remembers is that it was a friend, or that it was on that trip.
+
+    private val favs = setOf("Downtown Repeater")
+    private val tagged = mapOf(
+        "Harness Mountain" to listOf("hike"),
+        "Downtown Repeater" to listOf("Hike", "work"),
+    )
+
+    private fun apply(q: Search.Query) = Search.apply(
+        mesh, q,
+        isFavourite = { it.name in favs },
+        tagsOf = { tagged[it.name] ?: emptyList() },
+    )
+
+    /** An empty query is still not a filter, whatever shape it has. */
+    @Test fun anEmptyQueryIsNotActive() {
+        assertTrue(!Search.Query().active)
+        assertEquals(mesh.size, apply(Search.Query()).size)
+    }
+
+    @Test fun favouritesNarrowToTheOnesYouMarked() {
+        val got = apply(Search.Query(favourites = true))
+        assertEquals(1, got.size)
+        assertEquals("Downtown Repeater", got[0].name)
+    }
+
+    /**
+     * TAGS MATCH CASE-INSENSITIVELY. A tag typed at the node and a tag tapped
+     * on a chip are the same tag however either keyboard capitalised it — "Hike"
+     * on one node and "hike" on another is one group to a person.
+     */
+    @Test fun aTagFindsItsGroupWhateverTheCase() {
+        assertEquals(2, apply(Search.Query(tag = "hike")).size)
+        assertEquals(2, apply(Search.Query(tag = "HIKE")).size)
+        assertEquals(1, apply(Search.Query(tag = "work")).size)
+    }
+
+    /**
+     * ANDed, NOT ORed. Narrowing is the whole job: favourites OR anything
+     * matching "rep" is a bigger ring than the one you started from, which is
+     * the opposite of what somebody who opened a search wanted.
+     */
+    @Test fun theTermsNarrowEachOther() {
+        // "hike" alone is two; a favourite alone is one; together, one.
+        assertEquals(1, apply(Search.Query(tag = "hike", favourites = true)).size)
+        // ...and text narrows it further, to nothing.
+        assertTrue(
+            apply(Search.Query(text = "harness", tag = "hike", favourites = true)).isEmpty(),
+        )
+    }
+
+    /**
+     * A wearer who taps FAVOURITES having starred nobody gets an empty ring, and
+     * "350 NODES" under it would be the app disagreeing with itself.
+     */
+    @Test fun aMarkOnlyQueryStillReportsNoMatch() {
+        assertEquals("NO MATCH IN 350", Search.summary(0, 350, Search.Query(favourites = true)))
+        assertEquals("350 NODES", Search.summary(350, 350, Search.Query()))
+        assertEquals("2 OF 350", Search.summary(2, 350, Search.Query(tag = "hike")))
+    }
 }
