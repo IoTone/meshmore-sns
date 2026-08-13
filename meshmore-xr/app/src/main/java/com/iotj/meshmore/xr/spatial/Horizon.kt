@@ -259,6 +259,12 @@ class Horizon(
          * so anything that hides "the label" must not go through it.
          */
         val pooled: Boolean = false,
+        /**
+         * The callsign that only appears under a pointer. Non-null exactly where
+         * standing labels were suppressed — the tabletop — and switched off
+         * until [onInput] hovers it.
+         */
+        val hoverName: Entity? = null,
         var open: Boolean = false,
     ) {
         /** Which pointers are currently on this peer. BOTH hands emit rays. */
@@ -498,6 +504,25 @@ class Horizon(
             }
             val cs = Callsign.render(n.name)
 
+            // THE NAME A TABLETOP CANNOT STAND ALL THE TIME, KEPT FOR HOVER.
+            //
+            // Two dozen callsigns on a half-metre model is the pile that made
+            // labels go away here — but "no labels so it's hard to know where
+            // things are" is the report that followed, and both are true at
+            // once. A hover label is the resolution: built with everything
+            // else, drawn for nobody, and switched on for the ONE orb a
+            // pointer is over. One name at a time is legible at any scale.
+            //
+            // A STROKE LABEL RATHER THAN A POOLED PANEL, because the pool is
+            // shared and lending an entity out on hover would take a name off
+            // whichever node is holding it. This is per-node and switched off,
+            // which costs one small mesh each and nothing to draw.
+            val hoverName: Entity? = if (labelledAny) null else {
+                strokeLabel(root, n, capH, lum, anchor).also {
+                    runCatching { it.setEnabled(false) }
+                }
+            }
+
             // PICTOGRAPH BADGE — the emoji we could not draw, acknowledged.
             // Parented to the label so it inherits the billboard rotation for
             // free and keeps its offset in the label's own frame; a sibling in
@@ -612,6 +637,7 @@ class Horizon(
                 node = n, mote = mote, label = txt, detail = detail,
                 at = Vector3(px, py, pz), labelAt = anchor, dist = dist, bearing = bearing,
                 baseAlpha = lum.coerceIn(0.25f, 1f), pooled = pooled,
+                hoverName = hoverName,
             )
             peers += peer
             runCatching {
@@ -858,10 +884,15 @@ class Horizon(
             InputEvent.Action.HOVER_ENTER -> {
                 p.mote.setScale(HOVER_SCALE)
                 p.mote.setAlpha(1f)
+                // ONE NAME, THE ONE UNDER THE POINTER. On a tabletop the
+                // callsigns are built and left dark; this is the only thing
+                // that lights one, and only ever one at a time.
+                p.hoverName?.let { runCatching { it.setEnabled(true) } }
             }
             InputEvent.Action.HOVER_EXIT -> {
                 p.mote.setScale(1f)
                 p.mote.setAlpha(p.baseAlpha)
+                p.hoverName?.let { runCatching { it.setEnabled(false) } }
             }
             else -> Unit
         }

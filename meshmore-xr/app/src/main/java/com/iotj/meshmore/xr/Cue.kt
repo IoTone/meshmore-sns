@@ -578,7 +578,7 @@ class Cue {
      * this device does not have must never take down the theme change it is
      * decorating.
      */
-    fun welcome(context: Context, resId: Int) {
+    fun welcome(context: Context, resId: Int, loop: Boolean = false) {
         if (resId == 0) return
         runCatching {
             stopWelcome()
@@ -596,6 +596,15 @@ class Cue {
                 return
             }
             mp.setVolume(WELCOME_GAIN, WELCOME_GAIN)
+            // LOOPED WHILE SOMETHING IS BEING WAITED FOR, once otherwise.
+            //
+            // The tune is three seconds and the boot is about fourteen, so a
+            // single pass leaves eleven seconds of silence in the middle of the
+            // one wait the wearer cannot skip. Looping is only ever right while
+            // a wait is in progress, which is why the caller says so rather than
+            // this deciding: a loop with nothing to end it is a jingle that
+            // never stops, and [endWelcome] is the other half of this call.
+            mp.isLooping = loop
             // WHAT THE HARDWARE IS ACTUALLY DOING, because "it played" and "it
             // was audible" are different claims and the first one is all a
             // start() can support. Reported as no sound at all while the log
@@ -617,6 +626,26 @@ class Cue {
             mp.start()
             Log.i(TAG, "[cue] welcome playing at $WELCOME_GAIN")
         }.onFailure { Log.w(TAG, "[cue] welcome failed: ${it.javaClass.simpleName}") }
+    }
+
+    /**
+     * END A LOOPING WELCOME — at the moment the thing it was covering happens.
+     *
+     * Stops LOOPING rather than stopping the sound: cutting a three-second tune
+     * off mid-phrase is more noticeable than the wait it was covering, and the
+     * event that ends the wait is a good moment to hear a phrase finish. If it
+     * is already on its last pass this does nothing at all, which is correct.
+     *
+     * Idempotent, because the caller is a frame loop and will call it on every
+     * frame after the one that mattered.
+     */
+    fun endWelcome() {
+        welcomer?.let {
+            if (it.isLooping) {
+                runCatching { it.isLooping = false }
+                Log.i(TAG, "[cue] welcome — last pass")
+            }
+        }
     }
 
     private fun stopWelcome() {

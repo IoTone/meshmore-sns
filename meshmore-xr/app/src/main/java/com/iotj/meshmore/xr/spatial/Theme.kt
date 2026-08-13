@@ -186,6 +186,19 @@ object Theme {
         // content's scale nor a surface it stands on. This used to be a posture
         // check inside Stage; moving it onto the frame is what let it go
         // missing, and PostureTest is what noticed.
+        // NOT MADE BIGGER, and the test is why.
+        //
+        // "Still too cramped" reads as a size problem and it is not one. This
+        // model is already 32.4 degrees across against a 34 degree window: it
+        // fills the field, and PostureTest exists to keep it doing that, because
+        // a tabletop you take in with your neck instead of your eyes is not a
+        // tabletop. Growing the radius means pushing it further away to stay
+        // inside the window, and angular density — which is the only thing
+        // crowding actually is — comes out identical.
+        //
+        // Two dozen nodes across 32 degrees is 1.3 degrees each. That is the
+        // real number, and the answer to it is FEWER NODES rather than more
+        // metres: see the TABLETOP limit at MeshNodes.build's call site.
         Posture.TABLETOP -> Frame(
             radius = 0.16f, forward = 0.55f, drop = -0.42f, floorGrid = false,
         )

@@ -926,6 +926,16 @@ private fun stepInt(xs: List<Int>, v: Int): Int {
 }
 
 /** How often the wearer's position is re-read while the app is up. */
+/**
+ * How many orbs a TABLETOP draws, against [MeshNodes.MAX_MOTES]' two dozen.
+ *
+ * The table is 32.4 degrees across and cannot grow — see the frame's note. At
+ * 24 that is 1.3 degrees a node, which is the pile that was reported twice; at
+ * 12 it is 2.7, wider than the 2.0 degree floor a thing has to clear to be
+ * reached for. The cap is the only lever the geometry leaves.
+ */
+private const val TABLETOP_MOTES = 12
+
 private const val LOCATION_POLL_MS = 15_000L
 
 /**
@@ -1464,8 +1474,29 @@ private fun HorizonScene(link: MeshLink) {
         if (found.size != marked.size) {
             Log.i(TAG_UI, "[find] '${query.value}' -> ${found.size} of ${marked.size}")
         }
+        // HALF AS MANY ORBS ON A TABLETOP, because the table cannot grow.
+        //
+        // "Still too cramped" is an angular complaint, and the model is already
+        // 32.4 degrees across against a 34 degree field — it fills the window,
+        // and PostureTest keeps it there because a model you take in with your
+        // neck is not a tabletop. Pushing it further out to make it physically
+        // bigger leaves the angular density identical, which is the only thing
+        // crowding is. Two dozen nodes across 32 degrees is 1.3 degrees each;
+        // twelve is 2.7, which is the difference between a cloud and a set of
+        // objects you can point at one at a time.
+        //
+        // What is lost is half the mesh, and that is what FIND is for: on a
+        // tabletop the wearer names what they want to see rather than being
+        // shown everything badly.
+        val cap = if (skin.value.posture == com.iotj.meshmore.xr.spatial.Theme.Posture.TABLETOP) {
+            TABLETOP_MOTES
+        } else {
+            MeshNodes.MAX_MOTES
+        }
         val nodes = if (MainActivity.simulate) simulatedMesh() else
-            MeshNodes.build(origin2, found, System.currentTimeMillis() / 1000, lens = lens)
+            MeshNodes.build(
+                origin2, found, System.currentTimeMillis() / 1000, limit = cap, lens = lens,
+            )
         // Count what was DRAWN, not what the cap would have dropped. The old
         // form was peers.size - MAX_MOTES, which stopped being true the moment
         // placement became fit-driven: a saturated bearing labels five nodes,
@@ -1662,7 +1693,12 @@ private fun HorizonScene(link: MeshLink) {
         // seconds of scene building with nothing to hear. A three-second tune
         // is a greeting; anything longer would be a loading screen with music,
         // which is a different and worse thing.
-        cue.welcome(ctx, Cue.welcomeFor(skin.value.key))
+        // LOOPED, because it is covering a wait. The tune is three seconds and
+        // the boot is about fourteen; one pass leaves eleven seconds of silence
+        // in the middle of the wait it exists to fill. It stops looping when the
+        // vessel starts filling — the point where the surface has something to
+        // say for itself and the wearer is no longer waiting on nothing.
+        cue.welcome(ctx, Cue.welcomeFor(skin.value.key), loop = true)
         bootRef.value = boot
         val hud = Hud(session, palette)
         hud.build()
@@ -1756,14 +1792,18 @@ private fun HorizonScene(link: MeshLink) {
         // facing, did anyone call me, where am I — plus the door to everything
         // else. HELP, WIDE, LIST and LINK are one pinch away behind SETUP.
         val wristDock = skin.value.active
-        // FIVE ON THE WRIST NOW, NOT FOUR. "Where is the search on HALO?" — it
-        // was nowhere, and behind SETUP is not an answer for the theme built for
-        // walking. The fifth pip is affordable: Dock.WRIST_PITCH is 5.2 cm,
-        // which at a 35 cm forearm is 8.5 degrees of separation against a 5
-        // degree floor, and five pips span 24 cm of an arm that has about 25.
-        // It is the tightest thing on the wrist and the first to give if it
-        // proves unreachable on a smaller arm.
-        val WRIST_SET = setOf("COMPASS", "INBOX", "HERE", "FIND", "SETUP")
+        // FOUR ON THE WRIST. It was four, I made it five to fit FIND, and the
+        // glasses said no: "too much stuff on the wrist menu, it isn't stable,
+        // hard to focus on anything since it's all too close together."
+        //
+        // So FIND stays and HERE goes, which is the right one to lose of the
+        // five. HERE is a stored setting somebody turns on once and forgets —
+        // it survives restarts, the status band now reports it standing, and
+        // the APP bay still holds the switch. FIND is a thing you do repeatedly
+        // while moving, which is the whole argument for anything being on a
+        // wrist at all. A pip you use once should not hold a slot against a pip
+        // you use all day.
+        val WRIST_SET = setOf("COMPASS", "INBOX", "FIND", "SETUP")
         // A TABLETOP PUTS A MAP WHERE THE DOCK LIVES. See Dock.build's drop.
         val dockDrop =
             if (skin.value.posture == com.iotj.meshmore.xr.spatial.Theme.Posture.TABLETOP) {
@@ -2405,9 +2445,19 @@ private fun HorizonScene(link: MeshLink) {
                 boot0Elapsed += 0.033f
                 if (loading) {
                     bootRef.value?.tick(0.033f, load.fraction, load.total > 0)
+                    // THE CYLINDER IS FILLING — the wait is now showing its own
+                    // progress and does not need covering. Stops the LOOP, not
+                    // the sound: cutting a phrase mid-bar is more noticeable
+                    // than the silence it was there to fill.
+                    if (load.total > 0) cue.endWelcome()
                 } else if (bootRef.value != null) {
                     Log.i(TAG_UI, "[boot] surface down after %.1fs (sync %s)"
                         .format(boot0Elapsed, if (load.done) "complete" else "TIMED OUT"))
+                    // BELT AND BRACES. A radio that never reports a total never
+                    // fills the cylinder, and the loop above would then have
+                    // nothing to end it — the surface coming down is the last
+                    // moment at which a boot tune is still a boot tune.
+                    cue.endWelcome()
                     bootRef.value?.clear()
                     bootRef.value = null
                 }
