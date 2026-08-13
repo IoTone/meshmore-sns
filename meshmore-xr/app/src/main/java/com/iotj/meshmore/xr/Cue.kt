@@ -3,6 +3,7 @@
 package com.iotj.meshmore.xr
 
 import android.content.Context
+import android.media.AudioAttributes
 import android.media.AudioManager
 import android.media.MediaPlayer
 import android.media.ToneGenerator
@@ -111,14 +112,22 @@ class Cue {
         /**
          * How loud a welcome plays, as a fraction of the stream.
          *
-         * These are OPEN-EAR glasses. Nothing here is on headphones and nothing
-         * covers the wearer's ears — whatever plays is mixed with traffic,
-         * conversation, and the room. A greeting at full scale is the first
-         * thing anybody would turn off, and turning it off would take the whole
-         * audio identity with it. Low enough to sit under the room, present
-         * enough to be a greeting.
+         * WAS 0.22 AND WAS INAUDIBLE. "Low level" was read as an attenuation to
+         * apply in the app, and that stacked three quiet things on top of each
+         * other: the asset's own level (mean −14.9 dBFS, which is ordinary for
+         * music), the wearer's music volume (7 of 15 on a USB route), and then
+         * another 13 dB from this number. The result was a tune that the log
+         * reported playing and nobody could hear.
+         *
+         * THE WEARER'S VOLUME CONTROL IS THE VOLUME CONTROL. An app that
+         * pre-attenuates by an amount it picked is fighting the one control the
+         * wearer actually has, and it loses in both directions — inaudible for
+         * anybody who has turned the device down, and no quieter for anybody who
+         * has turned it up. This keeps a little headroom under full scale so a
+         * greeting is not the loudest thing the app can do, and leaves the rest
+         * to the hardware.
          */
-        const val WELCOME_GAIN = 0.22f
+        const val WELCOME_GAIN = 0.8f
 
         /**
          * WHICH TUNE A THEME ARRIVES ON.
@@ -573,12 +582,30 @@ class Cue {
         if (resId == 0) return
         runCatching {
             stopWelcome()
-            val mp = MediaPlayer.create(context, resId)
+            // STATED ATTRIBUTES, not the default. On XR the default carries no
+            // usage and the platform is free to place the stream where it
+            // likes; MUSIC/MEDIA is what this is and what the wearer's own
+            // volume control governs.
+            val attrs = AudioAttributes.Builder()
+                .setUsage(AudioAttributes.USAGE_MEDIA)
+                .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                .build()
+            val mp = MediaPlayer.create(context, resId, attrs, 0)
             if (mp == null) {
                 Log.w(TAG, "[cue] welcome $resId would not open")
                 return
             }
             mp.setVolume(WELCOME_GAIN, WELCOME_GAIN)
+            // WHAT THE HARDWARE IS ACTUALLY DOING, because "it played" and "it
+            // was audible" are different claims and the first one is all a
+            // start() can support. Reported as no sound at all while the log
+            // said playing: the route was a USB device at 7 of 15 and the gain
+            // was a further 13 dB down on already-quiet content.
+            val am = context.getSystemService(AudioManager::class.java)
+            val vol = am?.getStreamVolume(AudioManager.STREAM_MUSIC) ?: -1
+            val max = am?.getStreamMaxVolume(AudioManager.STREAM_MUSIC) ?: -1
+            Log.i(TAG, "[cue] welcome gain=$WELCOME_GAIN stream=$vol/$max")
+            if (vol == 0) Log.w(TAG, "[cue] welcome inaudible — music volume is 0")
             // RELEASED BY THE PLAYER ITSELF. A MediaPlayer holds a codec and an
             // audio track; leaving nine of them finished-but-alive is how a
             // long session runs out of both.

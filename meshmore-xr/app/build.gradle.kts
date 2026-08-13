@@ -24,20 +24,24 @@ val keystoreProps: Properties? =
 // 0.1.0, and "is that the one you just installed?" cost a device cycle to
 // answer every time.
 //
-//   MINOR  moves whenever a change lands that alters what the app DOES. Every
-//          commit that ships behaviour moves it, not just the ones that feel
-//          big — a number that only moves for milestones cannot answer the
-//          question it exists to answer.
-//   PATCH  for a fix on top of a minor that has already been installed
-//          somewhere.
+//   BUILD  moves on EVERY build that goes onto a device. This is the one that
+//          answers "is that the one you just installed?", which is asked
+//          several times an afternoon, and it is cheap because it means
+//          nothing else.
+//   MINOR  moves for a real step in what the app is, not for each change that
+//          lands. Corrected 2026-08-12: the first cut moved the minor per
+//          change and the minor is not what a device test is asking about.
+//   PATCH  for a fix on top of a minor already installed somewhere.
 //   MAJOR  stays 0 until launch.
 //
-// versionCode is DERIVED so nobody has to remember it and it cannot go
-// backwards: an installer refuses a downgrade, and hand-maintained codes drift
-// out of order exactly when several builds are being flashed in a hurry.
+// BUILD RESETS TO 0 ON A MINOR BUMP, and versionCode is derived so it stays
+// monotonic across both: an installer refuses a downgrade, and hand-maintained
+// codes drift out of order exactly when several builds are being flashed in a
+// hurry.
 val verMajor = 0
 val verMinor = 3
 val verPatch = 0
+val verBuild = 1
 
 android {
     namespace = "com.iotj.meshmore.xr"
@@ -59,10 +63,12 @@ android {
         applicationId = "com.iotj.meshmore.xr"
         minSdk = 34          // Android XR baseline
         targetSdk = 35
-        // 0.2.0 -> 200. Room for 100 patches under a minor and 100 minors under
-        // a major, which is more headroom than either will ever need and keeps
-        // the code readable as the name it came from.
-        versionCode = verMajor * 10000 + verMinor * 100 + verPatch
+        // 0.3.0 build 1 -> 3001. The name's own digits, shifted up two places,
+        // with the build in the last two: readable back to the version it came
+        // from, and it still climbs when only the build moves. 100 builds under
+        // a minor is more than any minor has ever needed here.
+        versionCode =
+            (verMajor * 1000 + verMinor * 10 + verPatch) * 100 + verBuild
         versionName = "$verMajor.$verMinor.$verPatch"
         ndk { abiFilters += "arm64-v8a" }   // XR devices are arm64
     }
@@ -107,11 +113,12 @@ android {
     buildTypes {
         debug {
             isMinifyEnabled = false
-            // SAYS SO ON THE SPLASH. Every build that has gone onto the glasses
-            // so far has been a debug build, and a stamp reading "v0.2.0" on a
-            // pair of glasses is indistinguishable from the release of the same
-            // name — which matters the first time both exist.
-            versionNameSuffix = "-debug"
+            // SAYS SO ON THE SPLASH, AND SAYS WHICH BUILD. A stamp reading
+            // "v0.3.0" is indistinguishable from the release of the same name,
+            // and from the four other debug builds of that same minor that went
+            // onto the glasses the same afternoon. The build number is the part
+            // a device test actually reads.
+            versionNameSuffix = "-debug.$verBuild"
         }
         release {
             isMinifyEnabled = false
