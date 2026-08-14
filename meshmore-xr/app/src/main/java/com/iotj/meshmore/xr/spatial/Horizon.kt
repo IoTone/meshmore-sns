@@ -141,6 +141,25 @@ class Horizon(
         return Vector3(v.x + (cx - o.x), v.y + (cy - o.y), v.z + (cz - o.z))
     }
 
+    /**
+     * The same placement, from CARTESIAN map coordinates instead of polar ones.
+     *
+     * [at] takes a bearing and a radius because that is what a ring is. The
+     * callout rack is not on the ring — its handles sit at fixed lateral
+     * offsets beside the map, which is a position no bearing describes. Same
+     * frame, same yaw, same centre; only the input differs.
+     *
+     * u is lateral (right positive), v is forward, both in the map's own plane
+     * before the wearer's yaw is applied. Derived from [Stage.Origin.place], so
+     * u = sin(b)·r and v = cos(b)·r land exactly where `at(o, b, r, h)` does.
+     */
+    private fun fromLocal(o: Stage.Origin, u: Float, v: Float, height: Float): Vector3 {
+        val (cx, cy, cz) = centre(o)
+        val cy0 = kotlin.math.cos(o.yawRad)
+        val sy0 = kotlin.math.sin(o.yawRad)
+        return Vector3(cx + u * cy0 + v * sy0, cy + height, cz + u * sy0 - v * cy0)
+    }
+
     data class Node(
         val name: String,
         val bearingRad: Float,
@@ -275,6 +294,10 @@ class Horizon(
     }
 
     private class Pulse(val entity: MeshEntity, val base: Float, var life: Float = 1f)
+
+    /** Pins waiting for handles. Filled during the build, drained by [callouts]. */
+    private val wants = mutableListOf<Callout.Want>()
+
 
     suspend fun build(nodes: List<Node>, o: Stage.Origin, floorY: Float) {
         clear()
@@ -523,6 +546,24 @@ class Horizon(
                 }
             }
 
+            // THE PIN'S PLACE IN THE MAP, kept for the callout pass.
+            //
+            // Collected here rather than recomputed later because bearing and
+            // dist are the loop's own variables and re-deriving them from a
+            // world position would mean inverting the yaw — the same arithmetic
+            // twice, in two directions, with two chances to disagree.
+            if (!labelledAny) {
+                wants += Callout.Want(
+                    // Unique per pin, not per name: duplicate callsigns are
+                    // normal on a mesh and two wants sharing an id would be two
+                    // handles that cannot be told apart.
+                    id = n.name + "@" + wants.size,
+                    x = kotlin.math.sin(bearing) * frame.radius * dist,
+                    y = kotlin.math.cos(bearing) * frame.radius * dist,
+                    text = Callsign.render(n.name, maxGlyphs = CALLOUT_GLYPHS).text,
+                )
+            }
+
             // PICTOGRAPH BADGE — the emoji we could not draw, acknowledged.
             // Parented to the label so it inherits the billboard rotation for
             // free and keeps its offset in the label's own frame; a sibling in
@@ -680,7 +721,7 @@ class Horizon(
         if (unlabelled > 0) {
             Log.i(TAG, "[horizon] $unlabelled node(s) fell back to stroke labels — pool exhausted")
         }
-        if (!labelledAny) Log.i(TAG, "[horizon] tabletop — motes only, no callsigns")
+        if (!labelledAny) callouts(root, o)
         Log.i(TAG, "[horizon] built ${entities.size} entities for ${nodes.size} nodes " +
             "(${nodes.count { it.type == TYPE_REPEATER }} repeaters, " +
             "${nodes.count { it.type == TYPE_CHAT }} chat, " +
@@ -779,6 +820,82 @@ class Horizon(
      * report from a stroke font, which is correct on this path and would be a
      * product failure on the other one.
      */
+    /**
+     * PIN · LEADER · HANDLE, built — the tabletop's names, off the map.
+     *
+     * [Callout] answered the arithmetic months before anything drew it: the
+     * label is 21% of a 32 cm model against 6% of a 5 m ring, so five callsigns
+     * hanging at their nodes bury the diorama. That is why the tabletop had no
+     * names at all, and why "no labels so it's hard to know where things are"
+     * was the next report. Hover fixed one name at a time; this is the answer
+     * for all of them at once.
+     *
+     * ## The 7-shape, in three dimensions
+     *
+     * Callout works in a plane and the table is horizontal, so its two axes
+     * land as: the pin's x stays lateral, the pin's y becomes DEPTH (a node
+     * further across the table reads as higher from where the wearer sits, so
+     * far pins take the top slots and the leaders still cannot cross), and the
+     * handle's y becomes HEIGHT above the table.
+     *
+     * A riser goes straight UP from the pin to the rack's height, then a run
+     * goes out to the handle. Both segments live above the model, so nothing in
+     * the rack casts over the map — rule R1, which is the whole point.
+     *
+     * ## Why the rack is one plane through the centre
+     *
+     * Handles sit at the map's own depth rather than at their pin's, so all of
+     * them are coplanar and face the wearer as a column. Following each pin's
+     * depth would scatter the handles through the table's volume and the rack
+     * would stop reading as a list, which is the one thing it has to be.
+     */
+    private suspend fun callouts(root: Entity, o: Stage.Origin) {
+        if (wants.isEmpty()) return
+        val rules = Callout.Rules(
+            mapRadius = frame.radius,
+            gutter = frame.radius * GUTTER_OF_RADIUS,
+            rowPitch = ROW_PITCH_OF_RADIUS * frame.radius,
+            bandHeight = BAND_OF_RADIUS * frame.radius,
+        )
+        val placed = Callout.place(wants, rules)
+        val dropped = Callout.dropped(wants, rules)
+        // The rack's cap height is set from ITS OWN range, like everything
+        // else: it is nearer the wearer than the far edge of the map and the
+        // 1.3 degree floor is about where a thing is, not what it is.
+        val rackRange = kotlin.math.max(0.35f, frame.forward)
+        val capH = rackRange * 0.0227f
+        placed.forEach { p ->
+            val pin = fromLocal(o, p.pinX, p.pinY, frame.drop)
+            val top = frame.drop + RACK_LIFT + p.handleY
+            val knee = fromLocal(o, p.pinX, p.pinY, top)
+            val hand = fromLocal(o, p.handleX, 0f, top)
+            listOf(pin to knee, knee to hand).forEach { (a, b) ->
+                MeshEntity.create(
+                    session,
+                    Prims.build(session, Prims.spur(a.x, a.y, a.z, b.x, b.y, b.z, LEADER_R)),
+                    listOf(Prims.material(session, theme.alt, 0.55f)),
+                ).also { it.parent = root; entities += it }
+            }
+            // The handle's text sits just outside the elbow, on the side the
+            // rack is on, so the leader arrives at the word rather than
+            // through it.
+            val pad = capH * 0.6f
+            val label = fromLocal(o, p.handleX + if (p.left) -pad else pad, 0f, top)
+            MeshEntity.create(
+                session,
+                Prims.build(session, Glyphs.text(p.text, capH)),
+                listOf(Prims.material(session, theme.text, 0.95f)),
+            ).also {
+                it.parent = root
+                it.setPose(Pose(label), Space.ACTIVITY)
+                entities += it
+                facing += Facing(it, label)
+            }
+        }
+        Log.i(TAG, "[callout] ${placed.size} handle(s), $dropped dropped, " +
+            "${rules.perSide} per side")
+    }
+
     private suspend fun strokeLabel(
         root: Entity, n: Node, capH: Float, lum: Float, anchor: Vector3,
     ): Entity {
@@ -1198,6 +1315,10 @@ class Horizon(
         facing.clear()
         peers.clear()
         selected.clear()
+        // The callout pass reads this list at the END of a build, so a rebuild
+        // that did not empty it would place handles for the previous ring's
+        // pins as well as this one's — every rebuild adding another set.
+        wants.clear()
         pulses.forEach { runCatching { it.entity.dispose() } }
         pulses.clear()
     }
@@ -1237,6 +1358,40 @@ class Horizon(
 
         /** Clearance between a real tabletop and the model standing on it. */
         const val TABLE_LIFT = 0.02f
+
+        // --- the callout rack -------------------------------------------------
+        //
+        // AS FRACTIONS OF THE MAP, not as metres. Callout's own defaults are
+        // absolute, sized for a 0.16 m table, which was right when there was one
+        // table; the tabletop's radius has already been argued about twice and
+        // will be again, and a rack that does not follow it would end up either
+        // inside the map or out of the field.
+
+        /** Clear space between the map's edge and the rack. */
+        const val GUTTER_OF_RADIUS = 0.28f
+
+        /** Handle spacing: one text row plus a gap, at the 1.3 degree floor. */
+        const val ROW_PITCH_OF_RADIUS = 0.175f
+
+        /**
+         * How tall the rack may be — taller than the map is wide, deliberately.
+         * Vertical space beside a table is free and competes with nothing;
+         * horizontal space IS the map.
+         */
+        const val BAND_OF_RADIUS = 1.55f
+
+        /** How far the rack floats above the table plane. */
+        const val RACK_LIFT = 0.10f
+
+        /** Leader thickness. Thin enough to read as a line, thick enough to see. */
+        const val LEADER_R = 0.0016f
+
+        /**
+         * Glyphs a handle carries. Wider than the ring's clip, because the rack
+         * is off the map and has room the horizon never has — which is half the
+         * reason for moving the names out there.
+         */
+        const val CALLOUT_GLYPHS = 12
 
         /**
          * How far the wearer may drift before the circles are re-centred.

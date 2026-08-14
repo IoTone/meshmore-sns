@@ -199,8 +199,20 @@ object Theme {
         // Two dozen nodes across 32 degrees is 1.3 degrees each. That is the
         // real number, and the answer to it is FEWER NODES rather than more
         // metres: see the TABLETOP limit at MeshNodes.build's call site.
+        // RAISED AND PUSHED OUT, so it is a table you lean over rather than one
+        // in your lap. At 0.55 m out and 0.42 m down the model spanned 30 to 47
+        // degrees below the sightline: the far edge was at the bottom of the
+        // field and the near edge was outside it, so a wearer looking straight
+        // ahead saw part of a diorama and had to hunt for the rest by tilting
+        // their head. 0.60 and 0.36 put it at 25 to 39, which clears the near
+        // edge into the field and leaves the whole model reachable by looking
+        // down rather than by leaning.
+        //
+        // Its angular WIDTH is unchanged at 30 degrees — inside the 34 degree
+        // window PostureTest guards, and still the reason the table cannot
+        // simply be made bigger.
         Posture.TABLETOP -> Frame(
-            radius = 0.16f, forward = 0.55f, drop = -0.42f, floorGrid = false,
+            radius = 0.16f, forward = 0.60f, drop = -0.36f, floorGrid = false,
         )
         // The ring is gone; Hud and the hand surfaces are the whole app.
         Posture.TRANSIT -> Frame(radius = 2.5f, forward = 0f, drop = -0.30f, horizon = false)
