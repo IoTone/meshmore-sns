@@ -1069,6 +1069,24 @@ private const val TABLETOP_MOTES = 12
 private const val NODE_MENU_LIFT = 0.06f
 
 /**
+ * THE APP'S ONE COMPOSE FACE — M PLUS 1 Code, the same asset TextRun bakes
+ * into every spatial panel (typography plan §3: body/CJK in one face, and
+ * "never mix faces inside a run"). meshMono(LocalContext.current) was the stand-in, and
+ * a different monospace on the flat panels than in the room made the two feel
+ * like different products. Cached: Compose calls this per composition and
+ * createFromAsset is a disk read.
+ */
+private var meshMonoCache: FontFamily? = null
+private fun meshMono(ctx: android.content.Context): FontFamily =
+    meshMonoCache ?: FontFamily(
+        runCatching {
+            android.graphics.Typeface.createFromAsset(
+                ctx.assets, "fonts/MPLUS1Code-Regular.ttf",
+            )
+        }.getOrDefault(android.graphics.Typeface.MONOSPACE),
+    ).also { meshMonoCache = it }
+
+/**
  * How far beside its mote the menu stands. Wider than the menu's own
  * distance-scaled spread (0.163 at 2.5 m) plus a label, so no spoke reaches
  * back over the FOCUS card it opened next to.
@@ -1216,7 +1234,7 @@ private fun HoldingScreen() {
         Text(
             "MESHMORE XR",
             color = Accent, fontSize = 22.sp,
-            fontFamily = FontFamily.Monospace, fontWeight = FontWeight.SemiBold,
+            fontFamily = meshMono(LocalContext.current), fontWeight = FontWeight.SemiBold,
             modifier = Modifier.align(Alignment.Center),
         )
     }
@@ -4321,6 +4339,14 @@ private fun SearchSurface(
     onClose: () -> Unit,
 ) {
     val focus = remember { FocusRequester() }
+    // The panel wears the app's one face (see meshMono) — the ring outside
+    // this window is set in the same file, and a search that types in a
+    // different typeface than the mesh it filters reads as another app.
+    androidx.compose.runtime.CompositionLocalProvider(
+        LocalTextStyle provides LocalTextStyle.current.copy(
+            fontFamily = meshMono(androidx.compose.ui.platform.LocalContext.current),
+        ),
+    ) {
     // THE KEYBOARD COMES UP WITH THE PANEL. A search you have to tap into
     // before you can type is a search with an extra step that exists only
     // because nobody asked for the focus.
@@ -4477,6 +4503,7 @@ private fun SearchSurface(
             }
         }
     }
+    }
 }
 
 /**
@@ -4587,12 +4614,12 @@ private fun RadioLogPanel(link: MeshLink) {
     ) {
         Text(
             "RADIO TRAFFIC",
-            color = Color(0xFF66E8D0), fontFamily = FontFamily.Monospace,
+            color = Color(0xFF66E8D0), fontFamily = meshMono(LocalContext.current),
             fontWeight = FontWeight.Bold, fontSize = 15.sp,
         )
         Text(
             "${st.state}   adverts ${st.adverts}   contacts ${st.contacts}   ${lines.size} lines",
-            color = Color(0xFF7A8C96), fontFamily = FontFamily.Monospace, fontSize = 11.sp,
+            color = Color(0xFF7A8C96), fontFamily = meshMono(LocalContext.current), fontSize = 11.sp,
             modifier = Modifier.padding(bottom = 6.dp),
         )
         androidx.compose.foundation.lazy.LazyColumn(
@@ -4612,7 +4639,7 @@ private fun RadioLogPanel(link: MeshLink) {
                         l.contains("ADVERT") -> Color(0xFF66E8D0)
                         else -> Color(0xFFAFC0CA)
                     },
-                    fontFamily = FontFamily.Monospace, fontSize = 11.sp,
+                    fontFamily = meshMono(LocalContext.current), fontSize = 11.sp,
                 )
             }
         }
@@ -4659,12 +4686,12 @@ private fun StatusScreen(facts: List<Pair<String, String>>, link: MeshLink, spat
         Text(
             "MESHMORE XR",
             color = Accent, fontSize = 26.sp,
-            fontWeight = FontWeight.SemiBold, fontFamily = FontFamily.Monospace,
+            fontWeight = FontWeight.SemiBold, fontFamily = meshMono(LocalContext.current),
         )
         Text(
             if (spatial) "P0 · checkpoint 2 — SPATIAL PANEL" else "P0 · checkpoint 1 — home space (2D)",
             color = if (spatial) Ok else Dim,
-            fontSize = 13.sp, fontFamily = FontFamily.Monospace,
+            fontSize = 13.sp, fontFamily = meshMono(LocalContext.current),
             modifier = Modifier.padding(bottom = 12.dp),
         )
 
@@ -4675,7 +4702,7 @@ private fun StatusScreen(facts: List<Pair<String, String>>, link: MeshLink, spat
         Text(
             "MESH LINK",
             color = Accent, fontSize = 14.sp,
-            fontWeight = FontWeight.SemiBold, fontFamily = FontFamily.Monospace,
+            fontWeight = FontWeight.SemiBold, fontFamily = meshMono(LocalContext.current),
             modifier = Modifier.padding(top = 16.dp, bottom = 4.dp),
         )
         FactRow("state", mesh.state.name + if (mesh.scanning) " (scanning)" else "")
@@ -4752,7 +4779,7 @@ private fun Target(label: String, tint: Color, enabled: Boolean = true, onClick:
     ) {
         Text(
             label, color = c, fontSize = 12.sp,
-            fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Medium,
+            fontFamily = meshMono(LocalContext.current), fontWeight = FontWeight.Medium,
         )
     }
 }
@@ -4764,11 +4791,11 @@ private fun FactRow(key: String, value: String) {
         horizontalArrangement = Arrangement.spacedBy(10.dp),
         verticalAlignment = Alignment.Top,
     ) {
-        Text(key, color = Dim, fontSize = 13.sp, fontFamily = FontFamily.Monospace)
+        Text(key, color = Dim, fontSize = 13.sp, fontFamily = meshMono(LocalContext.current))
         Text(
             value,
             color = if (value == "YES") Ok else TextC,
-            fontSize = 13.sp, fontFamily = FontFamily.Monospace,
+            fontSize = 13.sp, fontFamily = meshMono(LocalContext.current),
             fontWeight = FontWeight.Medium,
         )
     }
