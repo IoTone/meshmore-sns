@@ -40,6 +40,16 @@ package com.iotj.meshmore.xr.spatial
  */
 internal const val ROW_WIDEST = "PUBLIC  PORTLAND METRO  999+"
 
+/**
+ * The same contracts at the KANJI floor. A JA row runs at 1.5x the cap
+ * (L10n.cap), so the same plate holds ~13 full-width glyphs instead of 28
+ * cells — these templates are what TextRun sizes a JA bay from, and what
+ * fit() clips against. 設 is a mid-density kanji: a fair widest-glyph proxy.
+ */
+internal val ROW_WIDEST_JA = "設".repeat(13)
+internal val ROW_HEAD_WIDEST_JA = "設".repeat(14)
+internal val ROW_NOTE_WIDEST_JA = "設".repeat(15)
+
 /** The longest title, and the longest footer. Same reasoning, different panels. */
 internal const val ROW_HEAD_WIDEST = "APP — CONNECTION: DISCONNECTED"
 internal const val ROW_NOTE_WIDEST = "PICK AGAIN TO ALLOW CHANNEL SEND"

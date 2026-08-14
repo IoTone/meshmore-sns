@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  THE STRING SURFACE, tranche 1: everything a wearer reads on the TextView
+  paths — notices, bay titles and footers, row labels, the FIND panel.
+
+  TRIMMED AT EXTRACTION (operator instruction, 2026-08-14): shorter labels both
+  fit the instrument register and shrink what has to be translated and what has
+  to fit a plate. Japanese runs ~1.5x the cap height of Latin (see L10n), so
+  every character trimmed here is width bought for the JA build.
+
+  NOT HERE, deliberately: callsigns, units, protocol tokens (SF7, dBm, CH0) —
+  Latin in every locale per MeshmoreXR-i18n-ja.md §5. The stroke-font surfaces
+  (HUD status, compass, node detail lines) also stay Latin: Glyphs cannot draw
+  CJK and instrument codes read as codes.
+-->
+<resources>
+    <string name="app_name">Meshmore XR</string>
+
+    <!-- ═══ notices — one line, said once, in the band ═══ -->
+    <string name="n_mic_denied">MIC NOT ALLOWED</string>
+    <string name="n_hands_busy">HANDS ARE WORKING</string>
+    <string name="n_says">%1$s says: %2$s</string>
+    <string name="n_chan_made">MADE %1$s — SAY IT TO SHARE</string>
+    <string name="n_refused">NO — %1$s</string>
+    <string name="n_joined_public">JOINED PUBLIC</string>
+    <string name="n_public_warn">PUBLIC IS READ BY EVERYONE</string>
+    <string name="n_erased">%1$d MESSAGES ERASED</string>
+    <string name="n_not_tracking">NOT TRACKING YET</string>
+    <string name="n_not_built">%1$s — NOT BUILT YET</string>
+    <string name="n_chan_quiet">NOTHING HEARD HERE YET</string>
+    <string name="n_reads_aloud">READS ALOUD</string>
+    <string name="n_silent">SILENT</string>
+    <string name="n_no_fix_pinch">NO POSITION — PINCH HERE ON DOCK</string>
+    <string name="n_no_fix_wait">NO POSITION — %1$d NODES WAIT</string>
+    <string name="n_linked">LINKED — %1$s</string>
+    <string name="n_linked_anon">RADIO LINKED</string>
+
+    <!-- crown / reel -->
+    <string name="n_nothing_to_read">NOTHING TO READ</string>
+    <string name="n_reading">READING ALOUD</string>
+    <string name="n_ask_mic">ASKING FOR MIC</string>
+    <string name="n_no_thread">NO THREAD FOR THIS</string>
+    <string name="n_no_suggestion">NO SUGGESTION</string>
+    <string name="n_nothing_to_send">NOTHING TO SEND</string>
+    <string name="n_sent">SENT</string>
+    <string name="n_radio_not_ready">RADIO NOT READY</string>
+
+    <!-- link ladder (MeshLink.linkStep; the notice band reads these) -->
+    <string name="link_step">STEP %1$d/4  %2$s</string>
+    <string name="link_scan">LOOKING FOR A RADIO</string>
+    <string name="link_connecting">CONNECTING TO %1$s</string>
+    <string name="link_handshake">HANDSHAKING</string>
+    <string name="link_reading">READING RADIO</string>
+    <string name="link_failed">LINK FAILED — %1$s</string>
+    <string name="link_lost">LINK LOST — RECONNECTING</string>
+
+    <!-- ═══ bay titles ═══ -->
+    <string name="t_region">REGION — %1$s</string>
+    <string name="t_telem">WHO MAY ASK ABOUT ME</string>
+    <string name="t_channels">CHANNELS — PICK TO SPEAK</string>
+    <string name="t_app">APP — CONNECTION: %1$s</string>
+    <string name="t_about">ABOUT MESHMORE XR</string>
+
+    <!-- ═══ footers ═══ -->
+    <string name="f_pending">PENDING — COMMIT TO APPLY</string>
+    <string name="f_radio_idle">PICK TO STEP    B TO CLOSE</string>
+    <string name="f_commit_arm">PICK AGAIN TO WRITE TO THE RADIO</string>
+    <string name="f_app">LIT = ON    B TO CLOSE</string>
+    <string name="f_about">READ ONLY — B TO CLOSE</string>
+    <string name="f_chan_no_radio">CONNECT A RADIO FOR SLOTS</string>
+    <string name="f_chan">LIT = READ ALOUD    B TO CLOSE</string>
+    <string name="f_chan_new">A GUESSED TAG JOINS. SAY IT ONCE</string>
+    <string name="f_chan_public">PUBLIC IS EVERYBODY. NO SECRETS</string>
+    <string name="f_telem">PICK TO CYCLE     B TO CLOSE</string>
+    <string name="f_chansend_arm">PICK AGAIN TO ALLOW CHANNEL SEND</string>
+    <string name="f_erase_arm">PICK AGAIN TO ERASE — NO UNDO</string>
+
+    <!-- ═══ APP bay rows ═══ -->
+    <string name="r_location">HEADSET LOCATION</string>
+    <string name="r_share">SHARE MY LOCATION</string>
+    <string name="r_diag">DIAGNOSTICS PANEL</string>
+    <string name="r_autopen">SUGGEST A REPLY</string>
+    <string name="r_motion">REDUCE MOTION</string>
+    <string name="r_chansend">SEND ON CHANNELS</string>
+    <string name="r_telem">WHO MAY ASK ABOUT ME</string>
+    <string name="r_erase">ERASE %1$d MESSAGES</string>
+
+    <!-- telemetry permission classes and levels -->
+    <string name="telem_battery">BATTERY</string>
+    <string name="telem_location">LOCATION</string>
+    <string name="telem_environment">ENVIRONMENT</string>
+    <string name="telem_deny">DENY</string>
+    <string name="telem_contacts">CONTACTS</string>
+    <string name="telem_anyone">ANYONE</string>
+
+    <!-- channel actions -->
+    <string name="c_new">+ NEW CHANNEL</string>
+    <string name="c_make">MAKE  %1$s</string>
+    <string name="c_reroll">ROLL A DIFFERENT NAME</string>
+    <string name="c_join_public">+ JOIN PUBLIC CHANNEL</string>
+    <string name="c_join_arm">JOIN PUBLIC — PINCH AGAIN</string>
+
+    <!-- ═══ FIND panel (Compose) ═══ -->
+    <string name="find_hint">CALLSIGN OR KEY</string>
+    <string name="find_favs">★ FAVOURITES</string>
+    <string name="find_clear">CLEAR</string>
+    <string name="find_done">DONE</string>
+    <string name="find_tag">+TAG</string>
+    <string name="find_tag_hint">TAG</string>
+    <string name="find_all">%1$d NODES</string>
+    <string name="find_none">NO MATCH IN %1$d</string>
+    <string name="find_some">%1$d OF %2$d</string>
+    <string name="find_more">+%1$d MORE — NARROW IT</string>
+
+    <!-- HERE caption -->
+    <string name="here_no_fix_pinch">HERE  NO FIX - PINCH FOR GPS</string>
+    <string name="here_no_fix">HERE  NO FIX</string>
+    <string name="here_headset">HERE  HEADSET GPS</string>
+    <string name="here_src">HERE  %1$s</string>
+    <string name="here_armed">  - HEADSET ARMED</string>
+
+    <!-- ABOUT safety lines (the reason the surface exists) -->
+    <string name="s_driving">DO NOT USE WHILE DRIVING</string>
+    <string name="s_room">WATCH THE ROOM, NOT THIS</string>
+    <string name="s_mic">MIC ON ONLY WHEN YOU SPEAK</string>
+    <!-- radio bay notices (onRadioRow) -->
+    <string name="n_freq_preset">FREQ FOLLOWS THE PRESET</string>
+    <string name="n_nothing_commit">NOTHING TO COMMIT</string>
+    <string name="n_commit_arm">PICK AGAIN TO WRITE</string>
+    <string name="n_written">WRITTEN — %1$s</string>
+    <string name="n_commit_failed">COMMIT FAILED</string>
+    <string name="n_discarded">CHANGES DISCARDED</string>
+</resources>

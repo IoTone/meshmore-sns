@@ -41,7 +41,7 @@ val keystoreProps: Properties? =
 val verMajor = 0
 val verMinor = 3
 val verPatch = 0
-val verBuild = 13
+val verBuild = 14
 
 android {
     namespace = "com.iotj.meshmore.xr"

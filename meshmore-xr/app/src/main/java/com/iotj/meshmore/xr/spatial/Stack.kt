@@ -115,7 +115,9 @@ class Stack(
         // wearer is watching for a response.
         repeat(MAX) {
             val run = TextRun.reusable(
-                session, context, WIDEST, CAP * skin.rowScale,
+                session, context,
+                com.iotj.meshmore.xr.L10n.tpl(WIDEST, ROW_WIDEST_JA),
+                com.iotj.meshmore.xr.L10n.cap(CAP) * skin.rowScale,
                 argb(theme.text, 0.98f), "stack",
             ) ?: return@repeat
             run.entity.parent = root
@@ -148,10 +150,14 @@ class Stack(
             slots += s
         }
         head0 = TextRun.reusable(
-            session, context, HEAD_WIDEST, CAP, argb(theme.accent, 0.95f), "stack-head",
+            session, context,
+            com.iotj.meshmore.xr.L10n.tpl(HEAD_WIDEST, ROW_HEAD_WIDEST_JA),
+            com.iotj.meshmore.xr.L10n.cap(CAP), argb(theme.accent, 0.95f), "stack-head",
         )?.also { it.entity.parent = root; it.entity.setEnabled(false); entities += it.entity }
         note = TextRun.reusable(
-            session, context, NOTE_WIDEST, CAP * 0.85f, argb(theme.alt, 0.9f), "stack-note",
+            session, context,
+            com.iotj.meshmore.xr.L10n.tpl(NOTE_WIDEST, ROW_NOTE_WIDEST_JA),
+            com.iotj.meshmore.xr.L10n.cap(CAP) * 0.85f, argb(theme.alt, 0.9f), "stack-note",
         )?.also { it.entity.parent = root; it.entity.setEnabled(false); entities += it.entity }
         Log.i(TAG, "[stack] ${slots.size} slots")
     }
@@ -167,8 +173,8 @@ class Stack(
         all = fitAll(list)
         page = 0
         repage()
-        this.title = fit(title, HEAD_WIDEST, "title")
-        this.footer = fit(footer, NOTE_WIDEST, "footer")
+        this.title = fit(title, com.iotj.meshmore.xr.L10n.tpl(HEAD_WIDEST, ROW_HEAD_WIDEST_JA), "title")
+        this.footer = fit(footer, com.iotj.meshmore.xr.L10n.tpl(NOTE_WIDEST, ROW_NOTE_WIDEST_JA), "footer")
         open = true
         focused = -1
         fired.clear()
@@ -214,13 +220,19 @@ class Stack(
     }
 
     private fun fit(s: String, template: String, what: String): String {
-        if (s.length <= template.length) return s
+        // CELLS, NOT CHARS. A Japanese title mixes full-width kanji with Latin
+        // tokens (アプリ — 接続: DISCONNECTED), and char-count calls that an
+        // overflow when its 24 chars are exactly the 26 cells the JA template
+        // reserves — clipping a string that fit. displayCells counts CJK as 2
+        // and ASCII as 1, which is also what the panel's pixels do.
+        val budget = TypeTier.displayCells(template)
+        if (TypeTier.displayCells(s) <= budget) return s
         Log.w(
             TAG,
-            "[stack] $what over template by ${s.length - template.length} " +
-                "char(s), clipping: '$s'",
+            "[stack] $what over template by " +
+                "${TypeTier.displayCells(s) - budget} cell(s), clipping: '$s'",
         )
-        return s.take(template.length - 1) + "…"
+        return TypeTier.clip(s, budget)
     }
 
     /**
@@ -313,7 +325,7 @@ class Stack(
     fun update(list: List<Row>, footer: String = this.footer) {
         all = fitAll(list)
         repage()
-        this.footer = fit(footer, NOTE_WIDEST, "footer")
+        this.footer = fit(footer, com.iotj.meshmore.xr.L10n.tpl(NOTE_WIDEST, ROW_NOTE_WIDEST_JA), "footer")
     }
 
     /**

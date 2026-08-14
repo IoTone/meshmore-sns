@@ -41,7 +41,9 @@ class Notice(
     suspend fun build() {
         clear()
         run = TextRun.reusable(
-            session, context, WIDEST, CAP, argb(theme.text, 0.95f), "notice",
+            session, context,
+            com.iotj.meshmore.xr.L10n.tpl(WIDEST, WIDEST_JA),
+            com.iotj.meshmore.xr.L10n.cap(CAP), argb(theme.text, 0.95f), "notice",
         )?.also {
             it.entity.parent = session.scene.activitySpace
             it.entity.setEnabled(false)
@@ -51,7 +53,7 @@ class Notice(
     /** Show [text] for a few seconds. */
     fun say(text: String) {
         val r = run ?: return
-        r.setText(text.take(WIDEST.length))
+        r.setText(text.take(com.iotj.meshmore.xr.L10n.tpl(WIDEST, WIDEST_JA).length))
         until = android.os.SystemClock.uptimeMillis() + HOLD_MS
         runCatching { r.entity.setEnabled(true) }
     }
@@ -93,6 +95,8 @@ class Notice(
     private companion object {
         /** Sized once for the longest answer either spoke produces. */
         const val WIDEST = "MMMMMMMMMMMMMM 99.9KM   MMMMMMMMMMMMMM 99.9KM"
+        /** Widest JA notice: a 12-char tag plus the made-channel phrase. */
+        const val WIDEST_JA = "MMMMMMMMMMMM 作成 — 口頭で共有"
         const val CAP = 0.026f
         const val DIST = 1.15f
         /** About -17 deg: under the world window, above the dock. */

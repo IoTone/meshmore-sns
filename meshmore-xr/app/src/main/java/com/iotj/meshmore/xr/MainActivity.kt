@@ -267,7 +267,9 @@ class MainActivity : ComponentActivity() {
 
     // One link per activity. Checkpoint 3 lives here.
     private val link by lazy {
-        MeshLink(this).also {
+        // L10n.wrap so the link's own strings (the connect ladder) follow the
+        // locale; `lazy` means this runs after onCreate has read --es lang.
+        MeshLink(L10n.wrap(this)).also {
             it.restore()
             // WHAT THE WEARER DECIDED, not what the build shipped with. Off
             // unless somebody has been to the APP bay and said so twice; the
@@ -291,6 +293,10 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // FIRST, before anything lazily touches a context: `--es lang ja`
+        // forces the locale for a device test without changing the glasses'
+        // system language. The link and every surface build from L10n.wrap.
+        L10n.override = intent?.getStringExtra("lang")?.takeIf { it.isNotBlank() }
         // WHICH KIND OF START THIS IS.
         //
         // Everything the session holds — the lens stack, which surfaces are
@@ -636,6 +642,7 @@ private const val BACK_OUT_MS = 600L
  * is unioned in, after, and only where the slot list does not already have it.
  */
 private fun channelRows(
+    ctx: android.content.Context,
     link: MeshLink,
     voice: VoicePrefs,
     pending: ChanAction? = null,
@@ -656,7 +663,7 @@ private fun channelRows(
             ),
             lit = voice.isOn(c.threadId),
         )
-    } + makeRows(link, pending)
+    } + makeRows(ctx, link, pending)
 }
 
 /** A channel write the wearer has started but not yet confirmed. */
@@ -688,6 +695,7 @@ private const val ROW_PUBLIC = "+public"
  * pinch.
  */
 private fun makeRows(
+    ctx: android.content.Context,
     link: MeshLink,
     pending: ChanAction?,
 ): List<com.iotj.meshmore.xr.spatial.Stack.Row> {
@@ -708,19 +716,19 @@ private fun makeRows(
         // be what the other person types, character for character, or the two
         // radios derive different keys and neither ever hears the other.
         is ChanAction.New -> listOf(
-            row(ROW_NEW, "MAKE  ${Channels.tagFor(pending.name)}", lit = true),
-            row(ROW_ROLL, "ROLL A DIFFERENT NAME"),
+            row(ROW_NEW, ctx.getString(R.string.c_make, Channels.tagFor(pending.name)), lit = true),
+            row(ROW_ROLL, ctx.getString(R.string.c_reroll)),
         )
         ChanAction.Public -> listOf(
-            row(ROW_PUBLIC, "JOIN PUBLIC — PINCH AGAIN", lit = true),
+            row(ROW_PUBLIC, ctx.getString(R.string.c_join_arm), lit = true),
         )
         null -> listOfNotNull(
-            row(ROW_NEW, "+ NEW CHANNEL"),
+            row(ROW_NEW, ctx.getString(R.string.c_new)),
             // Offered only when the radio is NOT already on the public band.
             // On a stock radio slot 0 is Public and this row would be an
             // invitation to spend a slot on a channel you are already in.
             if (link.channels().none { it.publicKey }) {
-                row(ROW_PUBLIC, "+ JOIN PUBLIC CHANNEL")
+                row(ROW_PUBLIC, ctx.getString(R.string.c_join_public))
             } else {
                 null
             },
@@ -736,7 +744,7 @@ private fun makeRows(
  * because a safety line clipped in half is worse than one that is absent: it
  * still looks like a complete sentence.
  */
-private fun aboutRows(link: MeshLink): List<com.iotj.meshmore.xr.spatial.Stack.Row> {
+private fun aboutRows(ctx: android.content.Context, link: MeshLink): List<com.iotj.meshmore.xr.spatial.Stack.Row> {
     fun row(text: String) = com.iotj.meshmore.xr.spatial.Stack.Row(
         id = "about", label = text, lit = false,
     )
@@ -747,9 +755,9 @@ private fun aboutRows(link: MeshLink): List<com.iotj.meshmore.xr.spatial.Stack.R
         row("MESHCORE  ${MeshcoreConstants.FIRMWARE_PIN_TAG}"),
         // THE THREE THAT MATTER, in the order they matter. Driving first: it is
         // the only one where the consequence is not recoverable.
-        row("DO NOT USE WHILE DRIVING"),
-        row("WATCH THE ROOM, NOT THIS"),
-        row("MIC ON ONLY WHEN YOU SPEAK"),
+        row(ctx.getString(R.string.s_driving)),
+        row(ctx.getString(R.string.s_room)),
+        row(ctx.getString(R.string.s_mic)),
         // THE REGION DISCLAIMER LIVES HERE, and here is a surface a wearer can
         // actually reach — which is the whole argument for ABOUT existing. The
         // region list itself only has room for a 32-character footer, and "not
@@ -777,6 +785,7 @@ private fun aboutRows(link: MeshLink): List<com.iotj.meshmore.xr.spatial.Stack.R
  * people already in the radio's contact list, per-contact flags), then ANYONE.
  */
 private fun telemetryRows(
+    ctx: android.content.Context,
     link: MeshLink,
 ): List<com.iotj.meshmore.xr.spatial.Stack.Row> {
     val p = link.telemetryPermissions()
@@ -785,7 +794,20 @@ private fun telemetryRows(
         com.iotj.meshmore.xr.spatial.Stack.Row(
             id = "TELEM$i",
             label = "%-12s %s".format(
-                cls, com.iotj.meshmore.xr.spatial.TelemetryPerms.name(level),
+                ctx.getString(
+                    when (i) {
+                        0 -> R.string.telem_battery
+                        1 -> R.string.telem_location
+                        else -> R.string.telem_environment
+                    },
+                ),
+                ctx.getString(
+                    when (level) {
+                        com.iotj.meshmore.xr.spatial.TelemetryPerms.DENY -> R.string.telem_deny
+                        com.iotj.meshmore.xr.spatial.TelemetryPerms.ALLOW_FLAGS -> R.string.telem_contacts
+                        else -> R.string.telem_anyone
+                    },
+                ),
             ),
             // Lit means "somebody other than me can have this", which is the
             // state worth seeing at a glance rather than the state that is safe.
@@ -804,10 +826,10 @@ private fun telemetryRows(
  * that. It is worth a whole footer at the moment of writing and worth nothing
  * afterwards, so it only appears while the write is armed.
  */
-private fun chanFooter(pending: ChanAction?): String = when (pending) {
-    is ChanAction.New -> "A GUESSED TAG JOINS. SAY IT ONCE"
-    ChanAction.Public -> "PUBLIC IS EVERYBODY. NO SECRETS"
-    null -> "LIT = READ ALOUD    B TO CLOSE"
+private fun chanFooter(ctx: android.content.Context, pending: ChanAction?): String = when (pending) {
+    is ChanAction.New -> ctx.getString(R.string.f_chan_new)
+    ChanAction.Public -> ctx.getString(R.string.f_chan_public)
+    null -> ctx.getString(R.string.f_chan)
 }
 
 /**
@@ -815,6 +837,7 @@ private fun chanFooter(pending: ChanAction?): String = when (pending) {
  * channel cannot appear in one and not the other.
  */
 private fun channelBands(
+    ctx: android.content.Context,
     link: MeshLink,
     voice: VoicePrefs,
 ): List<com.iotj.meshmore.xr.spatial.Bands.Band> =
@@ -822,7 +845,7 @@ private fun channelBands(
     // is a place traffic arrives — "+ NEW CHANNEL" hanging in the horizon over
     // the node lanes would be a control in the one part of the scene that has
     // none.
-    channelRows(link, voice).filterNot { it.id.startsWith("+") }.map { r ->
+    channelRows(ctx, link, voice).filterNot { it.id.startsWith("+") }.map { r ->
         com.iotj.meshmore.xr.spatial.Bands.Band(
             id = r.id,
             // The bay's row is written for a 28-character plate; the band has
@@ -956,6 +979,7 @@ private fun regionRows(
  * and asking twice for it would only teach people to double-pick everything.
  */
 private fun onRadioRow(
+    ctx: android.content.Context,
     id: String,
     cfg: RadioConfig,
     armed: androidx.compose.runtime.MutableState<Pair<String, Long>?>,
@@ -975,22 +999,22 @@ private fun onRadioRow(
         // through a list somebody cannot see is how a radio ends up somewhere
         // it is not allowed to transmit. It moves with a PRESET, which is a
         // complete and legal parameter set, or it does not move here.
-        "FREQ" -> say("FREQ FOLLOWS THE PRESET")
+        "FREQ" -> say(ctx.getString(R.string.n_freq_preset))
         "COMMIT" -> {
-            if (!cfg.dirty()) { say("NOTHING TO COMMIT"); return }
+            if (!cfg.dirty()) { say(ctx.getString(R.string.n_nothing_commit)); return }
             if (armed.value?.first != "COMMIT") {
                 armed.value = "COMMIT" to nowMs
-                say("PICK AGAIN TO WRITE")
+                say(ctx.getString(R.string.n_commit_arm))
                 return
             }
             armed.value = null
             val p = cfg.commit()
-            say(if (p != null) "WRITTEN — ${p.pretty().take(20)}" else "COMMIT FAILED")
+            say(if (p != null) ctx.getString(R.string.n_written, p.pretty().take(20)) else ctx.getString(R.string.n_commit_failed))
         }
         "REVERT" -> {
             armed.value = null
             cfg.discard()
-            say("CHANGES DISCARDED")
+            say(ctx.getString(R.string.n_discarded))
         }
     }
 }
@@ -1034,9 +1058,6 @@ private val SIM_HOME = MeshNodes.Here(45.5152, -122.6784)
  * reached for. The cap is the only lever the geometry leaves.
  */
 private const val TABLETOP_MOTES = 12
-
-/** Fits ROW_NOTE_WIDEST's 32 characters, checked by RowsTest's budget. */
-private const val TELEM_FOOTER = "PICK TO CYCLE     B TO CLOSE"
 
 private const val LOCATION_POLL_MS = 15_000L
 
@@ -1092,25 +1113,25 @@ private fun appRows(
             lit = on && armedId != id,
         )
     return listOf(
-        row("LOCATION", "HEADSET LOCATION", Settings.useDeviceLocation(ctx)),
+        row("LOCATION", ctx.getString(R.string.r_location), Settings.useDeviceLocation(ctx)),
         // Two location settings, and they are separate on purpose: using a fix
         // to compute bearings is local and private, putting it in an advert
         // broadcasts it unencrypted to anyone in range.
-        row("SHARE", "SHARE MY LOCATION", Settings.shareLocation(ctx)),
-        row("DIAG", "DIAGNOSTICS PANEL", Settings.diagnostics(ctx)),
-        row("AUTOPEN", "SUGGEST A REPLY", Settings.autopen(ctx)),
-        row("MOTION", "REDUCE MOTION", Settings.reduceMotion(ctx)),
+        row("SHARE", ctx.getString(R.string.r_share), Settings.shareLocation(ctx)),
+        row("DIAG", ctx.getString(R.string.r_diag), Settings.diagnostics(ctx)),
+        row("AUTOPEN", ctx.getString(R.string.r_autopen), Settings.autopen(ctx)),
+        row("MOTION", ctx.getString(R.string.r_motion), Settings.reduceMotion(ctx)),
         // WHO MAY ASK THIS RADIO WHAT IT KNOWS. Three permissions, not one
         // switch, so it opens its own list rather than toggling here — see
         // telemetryRows.
         com.iotj.meshmore.xr.spatial.Stack.Row(
-            id = "TELEM", label = "WHO MAY ASK ABOUT ME", lit = false,
+            id = "TELEM", label = ctx.getString(R.string.r_telem), lit = false,
         ),
-        row("CHANSEND", "SEND ON CHANNELS", Settings.channelSend(ctx), "ALLOWED", "OFF"),
+        row("CHANSEND", ctx.getString(R.string.r_chansend), Settings.channelSend(ctx), "ALLOWED", "OFF"),
         com.iotj.meshmore.xr.spatial.Stack.Row(
             id = "FORGET",
             label = com.iotj.meshmore.xr.spatial.settingLabel(
-                "ERASE ${link.msgs.value.size} MESSAGES",
+                ctx.getString(R.string.r_erase, link.msgs.value.size),
                 on = false, armed = armedId == "FORGET", offWord = "",
             ).trimEnd(),
             lit = false,
@@ -1211,7 +1232,11 @@ private fun DiagnosticSurface(content: @Composable () -> Unit) {
 @Composable
 private fun HorizonScene(link: MeshLink) {
     val session = LocalSession.current ?: return
-    val ctx = LocalContext.current
+    val rawCtx = LocalContext.current
+    // EVERY SURFACE IS BUILT FROM THE LOCALISED CONTEXT — a surface built from
+    // the raw one in a `--es lang ja` run comes out English with nothing to say
+    // why. Prefs and services are unaffected by a configuration context.
+    val ctx = remember { L10n.wrap(rawCtx) }
     val hereSource = remember { HereSource(ctx) }
 
     // LIVE MESH. The horizon is whatever the radio can actually see; the
@@ -1346,7 +1371,7 @@ private fun HorizonScene(link: MeshLink) {
     ) { granted ->
         Log.i(TAG_UI, "[stt] mic granted=$granted")
         if (granted) dictation.start()
-        else crownRef.value?.say("MIC NOT ALLOWED", android.os.SystemClock.uptimeMillis())
+        else crownRef.value?.say(ctx.getString(R.string.n_mic_denied), android.os.SystemClock.uptimeMillis())
     }
     val voice = remember { VoicePrefs(ctx) }
     // TextToSpeech holds a system engine binding. Leaking one is not fatal but
@@ -1674,12 +1699,12 @@ private fun HorizonScene(link: MeshLink) {
         if (!origin2.known && unplaced > 0) {
             noticeRef.value?.say(
                 if (Settings.useDeviceLocation(ctx)) {
-                    "NO POSITION YET — $unplaced NODES WAITING"
+                    ctx.getString(R.string.n_no_fix_wait, unplaced)
                 } else {
                     // Names the SHORTEST remedy, not the fault. The APP bay has
                     // the same switch two pinches deep; the HERE pip is one, is
                     // on the dock in every theme, and lights when it is on.
-                    "NO POSITION — PINCH HERE ON THE DOCK"
+                    ctx.getString(R.string.n_no_fix_pinch)
                 },
             )
             Log.w(TAG_UI, "[here] no fix — $unplaced located peer(s) cannot be drawn")
@@ -1689,7 +1714,7 @@ private fun HorizonScene(link: MeshLink) {
         // S5 — the channel band, above the node lanes. Rebuilt with the horizon
         // because it belongs to the same ring and shares its origin.
         bandsRef.value?.show(
-            channelBands(link, voice),
+            channelBands(ctx, link, voice),
             o,
         )
         // WHERE AM I, on the one surface that is always there.
@@ -2186,7 +2211,7 @@ private fun HorizonScene(link: MeshLink) {
         first.onTouched = {
             Settings.setFirstLightDone(ctx, true)
             first.hide()
-            noticeRef.value?.say("HANDS ARE WORKING")
+            noticeRef.value?.say(ctx.getString(R.string.n_hands_busy))
             cue.opened()
         }
         firstRef.value = first
@@ -2332,7 +2357,7 @@ private fun HorizonScene(link: MeshLink) {
                 if (!bootOver.value) {
                     Log.i(TAG_UI, "[tts] held — boot surface still up ('$who')")
                 } else {
-                    speech.say("$who says: ${m.text}")
+                    speech.say(ctx.getString(R.string.n_says, who, m.text))
                 }
             }
         }
@@ -2575,7 +2600,7 @@ private fun HorizonScene(link: MeshLink) {
                 consoleRef.value?.hide()
                 appRef.value?.show(
                     regionRows(hereSource.here.value, link.radio.live),
-                    title = "REGION — " + Regions.labelFor(link.radio.live),
+                    title = ctx.getString(R.string.t_region, Regions.labelFor(link.radio.live)),
                     footer = Regions.FOOTER,
                 )
                 dockRef.value?.setLit("SETUP", false)
@@ -2681,7 +2706,7 @@ private fun HorizonScene(link: MeshLink) {
                             while (true) {
                                 val act = cw.poll() ?: break
                                 onCrown(
-                                    act, link, r, cw, threadRef.value, speech,
+                                    ctx, act, link, r, cw, threadRef.value, speech,
                                     dictation, voice, cue, stage, nowMs,
                                     askMic = {
                                         askMic.launch(android.Manifest.permission.RECORD_AUDIO)
@@ -2708,7 +2733,8 @@ private fun HorizonScene(link: MeshLink) {
                             noticeRef.value?.say(step)
                             // The ladder, as pitch. You stop hearing it climb
                             // and that is where the fault is.
-                            Regex("STEP (\\d)/4").find(step)?.groupValues?.get(1)
+                            // Locale-blind: matches "STEP 1/4" and 手順 1/4 alike.
+                            Regex("(\\d)/4").find(step)?.groupValues?.get(1)
                                 ?.toIntOrNull()?.let { cue.linkStep(it) }
                             // A DROP GETS ITS OWN SOUND. The ladder is for
                             // arriving; losing the radio is the opposite motion
@@ -2723,7 +2749,8 @@ private fun HorizonScene(link: MeshLink) {
                             // moment the wearer learns the radio is theirs.
                             val who = link.status.value.deviceName
                             noticeRef.value?.say(
-                                if (who != null) "LINKED — ${who.uppercase()}" else "RADIO LINKED",
+                                if (who != null) ctx.getString(R.string.n_linked, who.uppercase())
+                                else ctx.getString(R.string.n_linked_anon),
                             )
                             Log.i(TAG_UI, "[link] READY (${who ?: "unnamed"})")
                             cue.linked()
@@ -2758,12 +2785,12 @@ private fun HorizonScene(link: MeshLink) {
                                     // to pass on is the exact string the other
                                     // person types; the channel's name is local
                                     // decoration on both radios.
-                                    noticeRef.value?.say("MADE $tag — SAY IT TO SHARE")
+                                    noticeRef.value?.say(ctx.getString(R.string.n_chan_made, tag))
                                     Log.i(TAG_UI, "[chan] made ${w.name} in slot ${w.idx}")
                                     cue.opened()
                                 }
                                 is MeshLink.Wrote.Refused -> {
-                                    noticeRef.value?.say("NO — ${w.why}")
+                                    noticeRef.value?.say(ctx.getString(R.string.n_refused, w.why))
                                     cue.closed()
                                 }
                             }
@@ -2779,9 +2806,9 @@ private fun HorizonScene(link: MeshLink) {
                                 Channels.PUBLIC_NAME, Channels.publicPsk(),
                             )) {
                                 is MeshLink.Wrote.Ok ->
-                                    noticeRef.value?.say("JOINED THE PUBLIC CHANNEL")
+                                    noticeRef.value?.say(ctx.getString(R.string.n_joined_public))
                                 is MeshLink.Wrote.Refused ->
-                                    noticeRef.value?.say("NO — ${w.why}")
+                                    noticeRef.value?.say(ctx.getString(R.string.n_refused, w.why))
                             }
                             cue.opened()
                         }
@@ -2792,17 +2819,17 @@ private fun HorizonScene(link: MeshLink) {
                             // is still a choice. Everyone on the mesh can read
                             // this band; that is the point of it and also the
                             // thing a wearer should be told before they join.
-                            noticeRef.value?.say("PUBLIC IS READ BY EVERYONE")
+                            noticeRef.value?.say(ctx.getString(R.string.n_public_warn))
                             cue.recognised()
                         }
                         else -> {
                             val now = voice.toggle(id)
-                            noticeRef.value?.say(if (now) "READS ALOUD" else "SILENT")
+                            noticeRef.value?.say(ctx.getString(if (now) R.string.n_reads_aloud else R.string.n_silent))
                             if (now) cue.opened() else cue.closed()
                         }
                     }
                     channelsRef.value?.update(
-                        channelRows(link, voice, chanArmed.value), chanFooter(chanArmed.value),
+                        channelRows(ctx, link, voice, chanArmed.value), chanFooter(ctx, chanArmed.value),
                     )
                 }
                 // The arming lapses on its own, like the APP bay's. A rolled
@@ -2812,7 +2839,7 @@ private fun HorizonScene(link: MeshLink) {
                 chanArmed.value?.let {
                     if (nowMs - chanArmedAt.value > ARM_MS) {
                         chanArmed.value = null
-                        channelsRef.value?.update(channelRows(link, voice, null), chanFooter(null))
+                        channelsRef.value?.update(channelRows(ctx, link, voice, null), chanFooter(ctx, null))
                     }
                 }
                 // A WRITE THE RADIO HAS CONFIRMED arrives asynchronously, in
@@ -2825,7 +2852,7 @@ private fun HorizonScene(link: MeshLink) {
                 if (slotsNow != chanCount) {
                     chanCount = slotsNow
                     channelsRef.value?.update(
-                        channelRows(link, voice, chanArmed.value), chanFooter(chanArmed.value),
+                        channelRows(ctx, link, voice, chanArmed.value), chanFooter(ctx, chanArmed.value),
                     )
                 }
                 // THE APP BAY. Two of its rows are GUARDED: the first pick
@@ -2874,8 +2901,8 @@ private fun HorizonScene(link: MeshLink) {
                                 title = com.iotj.meshmore.xr.spatial.radioTitle(
                                     link.radio.live?.freqMhz, link.radio.live?.txDbm,
                                 ),
-                                footer = if (link.radio.dirty()) "PENDING — COMMIT TO APPLY"
-                                else "PICK TO STEP    B TO CLOSE",
+                                footer = if (link.radio.dirty()) ctx.getString(R.string.f_pending)
+                                else ctx.getString(R.string.f_radio_idle),
                             )
                         }
                         cue.recognised()
@@ -2905,7 +2932,7 @@ private fun HorizonScene(link: MeshLink) {
                                 ),
                             )
                         }
-                        appRef.value?.update(telemetryRows(link), TELEM_FOOTER)
+                        appRef.value?.update(telemetryRows(ctx, link), ctx.getString(R.string.f_telem))
                         cue.recognised()
                         continue
                     }
@@ -2914,14 +2941,14 @@ private fun HorizonScene(link: MeshLink) {
                         // it does not go through onRadioRow — that function
                         // stages parameters, and this one opens a surface.
                         if (id == "REGION") { openRegions(); continue }
-                        onRadioRow(id, link.radio, armed, nowMs) { note ->
+                        onRadioRow(ctx, id, link.radio, armed, nowMs) { note ->
                             noticeRef.value?.say(note)
                         }
                         appRef.value?.update(
                             radioRows(link.radio),
-                            if (armed.value?.first == "COMMIT") "PICK AGAIN TO WRITE TO THE RADIO"
-                            else if (link.radio.dirty()) "PENDING — COMMIT TO APPLY"
-                            else "PICK TO STEP    B TO CLOSE",
+                            if (armed.value?.first == "COMMIT") ctx.getString(R.string.f_commit_arm)
+                            else if (link.radio.dirty()) ctx.getString(R.string.f_pending)
+                            else ctx.getString(R.string.f_radio_idle),
                         )
                         cue.recognised()
                         continue
@@ -2932,8 +2959,8 @@ private fun HorizonScene(link: MeshLink) {
                         appRef.value?.update(
                             appRows(ctx, link, id),
                             when (id) {
-                                "CHANSEND" -> "PICK AGAIN TO ALLOW CHANNEL SEND"
-                                else -> "PICK AGAIN TO ERASE — CANNOT BE UNDONE"
+                                "CHANSEND" -> ctx.getString(R.string.f_chansend_arm)
+                                else -> ctx.getString(R.string.f_erase_arm)
                             },
                         )
                         cue.closed()
@@ -2950,9 +2977,9 @@ private fun HorizonScene(link: MeshLink) {
                         "TELEM" -> {
                             bayMode.value = "TELEM"
                             appRef.value?.show(
-                                telemetryRows(link),
-                                title = "WHO MAY ASK ABOUT ME",
-                                footer = TELEM_FOOTER,
+                                telemetryRows(ctx, link),
+                                title = ctx.getString(R.string.t_telem),
+                                footer = ctx.getString(R.string.f_telem),
                             )
                             cue.opened()
                             continue
@@ -2979,7 +3006,7 @@ private fun HorizonScene(link: MeshLink) {
                         "FORGET" -> {
                             val n = link.msgs.value.size
                             link.forgetMessages()
-                            noticeRef.value?.say("$n MESSAGES ERASED")
+                            noticeRef.value?.say(ctx.getString(R.string.n_erased, n))
                         }
                     }
                     appRef.value?.update(appRows(ctx, link, null), "LIT = ON    B TO CLOSE")
@@ -3088,8 +3115,8 @@ private fun HorizonScene(link: MeshLink) {
                                 title = com.iotj.meshmore.xr.spatial.radioTitle(
                                     link.radio.live?.freqMhz, link.radio.live?.txDbm,
                                 ),
-                                footer = if (link.radio.dirty()) "PENDING — COMMIT TO APPLY"
-                                else "PICK TO STEP    B TO CLOSE",
+                                footer = if (link.radio.dirty()) ctx.getString(R.string.f_pending)
+                                else ctx.getString(R.string.f_radio_idle),
                             )
                             dockRef.value?.setLit("SETUP", false)
                             cue.opened()
@@ -3119,11 +3146,11 @@ private fun HorizonScene(link: MeshLink) {
                             // one pinch from a write next time it opened.
                             chanArmed.value = null
                             channelsRef.value?.show(
-                                channelRows(link, voice, null),
-                                title = "CHANNELS — PICK TO SPEAK",
+                                channelRows(ctx, link, voice, null),
+                                title = ctx.getString(R.string.t_channels),
                                 footer = if (link.channels().isEmpty())
-                                    "CONNECT A RADIO TO SEE ITS SLOTS"
-                                else chanFooter(null),
+                                    ctx.getString(R.string.f_chan_no_radio)
+                                else chanFooter(ctx, null),
                             )
                             dockRef.value?.setLit("SETUP", false)
                             cue.opened()
@@ -3140,9 +3167,8 @@ private fun HorizonScene(link: MeshLink) {
                             bayMode.value = "APP"
                             appRef.value?.show(
                                 appRows(ctx, link, armed.value?.first),
-                                title = "APP — CONNECTION: " +
-                                    link.status.value.state.name,
-                                footer = "LIT = ON    B TO CLOSE",
+                                title = ctx.getString(R.string.t_app, link.status.value.state.name),
+                                footer = ctx.getString(R.string.f_app),
                             )
                             dockRef.value?.setLit("SETUP", false)
                             cue.opened()
@@ -3156,9 +3182,9 @@ private fun HorizonScene(link: MeshLink) {
                             consoleRef.value?.hide()
                             bayMode.value = "ABOUT"
                             appRef.value?.show(
-                                aboutRows(link),
-                                title = "ABOUT MESHMORE XR",
-                                footer = "READ ONLY — B TO CLOSE",
+                                aboutRows(ctx, link),
+                                title = ctx.getString(R.string.t_about),
+                                footer = ctx.getString(R.string.f_about),
                             )
                             aboutOpen.value = true
                             dockRef.value?.setLit("SETUP", false)
@@ -3171,7 +3197,7 @@ private fun HorizonScene(link: MeshLink) {
                         "PROFILE" -> {
                             val h = stage.headNow()
                             if (h == null) {
-                                noticeRef.value?.say("NOT TRACKING YET")
+                                noticeRef.value?.say(ctx.getString(R.string.n_not_tracking))
                             } else {
                                 consoleRef.value?.hide()
                                 themePickerRef.value?.showAt(
@@ -3185,7 +3211,7 @@ private fun HorizonScene(link: MeshLink) {
                         // nothing and says nothing reads as a fault; one that
                         // says so reads as a roadmap.
                         else -> {
-                            noticeRef.value?.say("$bay — NOT BUILT YET")
+                            noticeRef.value?.say(ctx.getString(R.string.n_not_built, bay))
                             cue.closed()
                         }
                     }
@@ -3933,7 +3959,7 @@ private fun HorizonScene(link: MeshLink) {
                     val id = bandsRef.value?.poll() ?: break
                     val h = stage.headNow() ?: continue
                     val t = link.threads().firstOrNull { it.id == id } ?: run {
-                        noticeRef.value?.say("NOTHING HEARD ON THAT CHANNEL YET")
+                        noticeRef.value?.say(ctx.getString(R.string.n_chan_quiet))
                         cue.closed()
                         null
                     } ?: continue
@@ -4062,6 +4088,11 @@ private fun HorizonScene(link: MeshLink) {
                     .offset(x = 320.dp, y = (-60).dp, z = 260.dp)
                     .rotate(0f, -22f, 0f),
             ) {
+                // The panel composes under the ACTIVITY context; provide the
+                // localised one so stringResource follows --es lang.
+                androidx.compose.runtime.CompositionLocalProvider(
+                    androidx.compose.ui.platform.LocalContext provides ctx,
+                ) {
                 SearchSurface(
                     query = query.value,
                     onQuery = { query.value = it },
@@ -4105,6 +4136,7 @@ private fun HorizonScene(link: MeshLink) {
                     },
                     onClose = { searchOpen.value = false },
                 )
+                }
             }
         }
     }
@@ -4156,7 +4188,7 @@ private fun SearchSurface(
             value = query.text,
             onValueChange = { onQuery(query.copy(text = Search.normalise(it))) },
             singleLine = true,
-            placeholder = { Text("CALLSIGN OR KEY", color = Color(0xFF6E7C88)) },
+            placeholder = { Text(androidx.compose.ui.res.stringResource(R.string.find_hint), color = Color(0xFF6E7C88)) },
             textStyle = LocalTextStyle.current.copy(color = Color(0xFFDDE7EF), fontSize = 20.sp),
             modifier = Modifier.fillMaxWidth().focusRequester(focus),
         )
@@ -4167,7 +4199,7 @@ private fun SearchSurface(
             Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            Chip("★ FAVOURITES", query.favourites) {
+            Chip(androidx.compose.ui.res.stringResource(R.string.find_favs), query.favourites) {
                 onQuery(query.copy(favourites = !query.favourites))
             }
             tags.forEach { t ->
@@ -4184,7 +4216,14 @@ private fun SearchSurface(
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             Text(
-                Search.summary(matches.size, total, query),
+                // Localised here rather than in Search: the object stays pure
+                // (its summary is pinned by tests and used in logs) and the
+                // panel says the same thing in the wearer's language.
+                when {
+                    !query.active -> androidx.compose.ui.res.stringResource(R.string.find_all, total)
+                    matches.isEmpty() -> androidx.compose.ui.res.stringResource(R.string.find_none, total)
+                    else -> androidx.compose.ui.res.stringResource(R.string.find_some, matches.size, total)
+                },
                 color = if (matches.isEmpty() && query.active) {
                     Color(0xFFFF6B6B)
                 } else {
@@ -4198,10 +4237,10 @@ private fun SearchSurface(
             // every term by hand.
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 TextButton(onClick = { onQuery(Search.Query()) }) {
-                    Text("CLEAR", color = Color(0xFF66E8D0), fontSize = 14.sp)
+                    Text(androidx.compose.ui.res.stringResource(R.string.find_clear), color = Color(0xFF66E8D0), fontSize = 14.sp)
                 }
                 TextButton(onClick = onClose) {
-                    Text("DONE", color = Color(0xFF66E8D0), fontSize = 14.sp)
+                    Text(androidx.compose.ui.res.stringResource(R.string.find_done), color = Color(0xFF66E8D0), fontSize = 14.sp)
                 }
             }
         }
@@ -4253,7 +4292,7 @@ private fun SearchSurface(
                         tagging.value = if (tagging.value == id) null else id
                         draft.value = ""
                     }) {
-                        Text("+TAG", color = Color(0xFF66E8D0), fontSize = 13.sp)
+                        Text(androidx.compose.ui.res.stringResource(R.string.find_tag), color = Color(0xFF66E8D0), fontSize = 13.sp)
                     }
                 }
                 if (tagging.value == id) {
@@ -4261,7 +4300,7 @@ private fun SearchSurface(
                         value = draft.value,
                         onValueChange = { draft.value = it.take(NodeTags.TAG_MAX) },
                         singleLine = true,
-                        placeholder = { Text("TAG", color = Color(0xFF6E7C88)) },
+                        placeholder = { Text(androidx.compose.ui.res.stringResource(R.string.find_tag_hint), color = Color(0xFF6E7C88)) },
                         textStyle = LocalTextStyle.current
                             .copy(color = Color(0xFFDDE7EF), fontSize = 16.sp),
                         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
@@ -4279,7 +4318,7 @@ private fun SearchSurface(
                 // saying so reads as "that is all there is", and the wearer
                 // stops narrowing exactly when narrowing is what would help.
                 Text(
-                    "+${matches.size - FIND_ROWS} MORE — NARROW IT",
+                    androidx.compose.ui.res.stringResource(R.string.find_more, matches.size - FIND_ROWS),
                     color = Color(0xFF6E7C88),
                     fontSize = 13.sp,
                 )
@@ -4360,13 +4399,13 @@ private fun hereCaption(
     src: HereSource,
     resolved: MeshNodes.Here,
 ): String = when {
-    !resolved.known && !Settings.useDeviceLocation(ctx) -> "HERE  NO FIX - PINCH FOR HEADSET GPS"
-    !resolved.known -> "HERE  NO FIX"
+    !resolved.known && !Settings.useDeviceLocation(ctx) -> ctx.getString(R.string.here_no_fix_pinch)
+    !resolved.known -> ctx.getString(R.string.here_no_fix)
     // The armed-but-unused note only earns its place when the fallback is NOT
     // the source. "HEADSET (HEADSET ON)" says one thing twice.
-    src.source == "headset" -> "HERE  HEADSET GPS"
-    else -> "HERE  ${src.source.uppercase()}" +
-        if (Settings.useDeviceLocation(ctx)) "  - HEADSET ARMED" else ""
+    src.source == "headset" -> ctx.getString(R.string.here_headset)
+    else -> ctx.getString(R.string.here_src, src.source.uppercase()) +
+        if (Settings.useDeviceLocation(ctx)) ctx.getString(R.string.here_armed) else ""
 }
 
 /**
@@ -4594,6 +4633,7 @@ private fun FactRow(key: String, value: String) {
  * make anyone hold in their head.
  */
 private fun onCrown(
+    ctx: android.content.Context,
     act: Crown.Act,
     link: MeshLink,
     reel: com.iotj.meshmore.xr.spatial.Reel,
@@ -4632,13 +4672,13 @@ private fun onCrown(
         }
         Crown.Act.ALOUD -> {
             if (msg == null) {
-                crown.say("NOTHING TO READ", nowMs)
+                crown.say(ctx.getString(R.string.n_nothing_to_read), nowMs)
             } else {
                 // WHO, then what. A disembodied sentence in your ear is a worse
                 // experience than no audio at all.
                 val who = msg.fromName.ifBlank { msg.channelName ?: "someone" }
-                speech.say("$who says: ${msg.text}")
-                crown.say("READING ALOUD", nowMs)
+                speech.say(ctx.getString(R.string.n_says, who, msg.text))
+                crown.say(ctx.getString(R.string.n_reading), nowMs)
             }
             cue.recognised()
         }
@@ -4648,7 +4688,7 @@ private fun onCrown(
                 // The grant is requested HERE, the first time somebody asks to
                 // talk, rather than at startup where it would look like the app
                 // wanted to listen to the room.
-                !dictation.hasPermission() -> { crown.say("ASKING FOR MIC", nowMs); askMic() }
+                !dictation.hasPermission() -> { crown.say(ctx.getString(R.string.n_ask_mic), nowMs); askMic() }
                 else -> {
                     dictation.start()
                     dictation.problem?.let { crown.say(it, nowMs) }
@@ -4662,7 +4702,7 @@ private fun onCrown(
                 msg != null && th.messages.any { it.atEpochSec == msg.atEpochSec }
             }
             if (h == null || t == null) {
-                crown.say("NO THREAD FOR THIS", nowMs)
+                crown.say(ctx.getString(R.string.n_no_thread), nowMs)
                 cue.closed()
             } else {
                 val nowS = System.currentTimeMillis() / 1000
@@ -4699,7 +4739,7 @@ private fun onCrown(
         // pick raced a card change and doing nothing is right.
         Crown.Act.SEND_AUTO -> {
             val s = crown.suggestion
-            if (s.isNullOrBlank()) { crown.say("NO SUGGESTION", nowMs); cue.closed() }
+            if (s.isNullOrBlank()) { crown.say(ctx.getString(R.string.n_no_suggestion), nowMs); cue.closed() }
             else { crown.proposeGenerated(s); cue.opened() }
         }
         Crown.Act.CONFIRM -> {
@@ -4719,15 +4759,15 @@ private fun onCrown(
             )
             if (msg == null || text.isBlank()) {
                 Log.w(TAG_UI, "[crown] nothing to send: msg=${msg != null} blank=${text.isBlank()}")
-                crown.say("NOTHING TO SEND", nowMs)
+                crown.say(ctx.getString(R.string.n_nothing_to_send), nowMs)
                 cue.closed()
                 return
             }
             when (val r = link.replyTo(msg, text)) {
                 is MeshLink.Sent.Ok -> {
-                    crown.say("SENT", nowMs); crown.backToActions(); cue.recognised()
+                    crown.say(ctx.getString(R.string.n_sent), nowMs); crown.backToActions(); cue.recognised()
                 }
-                is MeshLink.Sent.NotReady -> { crown.say("RADIO NOT READY", nowMs); cue.closed() }
+                is MeshLink.Sent.NotReady -> { crown.say(ctx.getString(R.string.n_radio_not_ready), nowMs); cue.closed() }
                 is MeshLink.Sent.Refused -> {
                     // The reason verbatim. "It did not send" and "it is not
                     // allowed to send" want different things from the reader,

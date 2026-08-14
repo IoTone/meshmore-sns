@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  日本語 — NEEDS NATIVE REVIEW before release (i18n spec §9: plausible and
+  consistent is not the same as idiomatic). Conventions held throughout:
+
+  - Protocol tokens stay Latin: B, COMMIT, HERE, GPS, ON — they name gestures,
+    controls and pips whose marks are Latin, and a control's spoken name must
+    match its printed one.
+  - Terse over polite: this is an instrument register, so 未接続 rather than
+    接続されていません. It also buys width — kanji costs 1.5x the cap and 2
+    cells a glyph (see L10n).
+  - Half-width digits and %-args everywhere; counts read better beside Latin
+    units and callsigns, which never translate.
+-->
+<resources>
+    <string name="app_name">Meshmore XR</string>
+
+    <!-- notices -->
+    <string name="n_mic_denied">マイク不許可</string>
+    <string name="n_hands_busy">手を認識中</string>
+    <string name="n_says">%1$s: %2$s</string>
+    <string name="n_chan_made">%1$s 作成 — 口頭で共有</string>
+    <string name="n_refused">不可 — %1$s</string>
+    <string name="n_joined_public">公開chに参加</string>
+    <string name="n_public_warn">公開は全員が読める</string>
+    <string name="n_erased">%1$d件消去</string>
+    <string name="n_not_tracking">未トラッキング</string>
+    <string name="n_not_built">%1$s — 未実装</string>
+    <string name="n_chan_quiet">まだ受信なし</string>
+    <string name="n_reads_aloud">読み上げON</string>
+    <string name="n_silent">消音</string>
+    <string name="n_no_fix_pinch">位置なし — ドックのHERE</string>
+    <string name="n_no_fix_wait">位置待ち — %1$dノード保留</string>
+    <string name="n_linked">接続 — %1$s</string>
+    <string name="n_linked_anon">無線機 接続</string>
+
+    <!-- crown / reel -->
+    <string name="n_nothing_to_read">読む物なし</string>
+    <string name="n_reading">読み上げ中</string>
+    <string name="n_ask_mic">マイク許可を要求</string>
+    <string name="n_no_thread">スレッドなし</string>
+    <string name="n_no_suggestion">提案なし</string>
+    <string name="n_nothing_to_send">送信内容なし</string>
+    <string name="n_sent">送信済み</string>
+    <string name="n_radio_not_ready">無線機 未接続</string>
+
+    <!-- link ladder -->
+    <string name="link_step">手順 %1$d/4  %2$s</string>
+    <string name="link_scan">無線機を探索中</string>
+    <string name="link_connecting">%1$s へ接続中</string>
+    <string name="link_handshake">ハンドシェイク中</string>
+    <string name="link_reading">無線機を読込中</string>
+    <string name="link_failed">接続失敗 — %1$s</string>
+    <string name="link_lost">リンク断 — 再接続中</string>
+
+    <!-- bay titles -->
+    <string name="t_region">地域 — %1$s</string>
+    <string name="t_telem">データ照会の許可</string>
+    <string name="t_channels">チャンネル — 選択で読み上げ</string>
+    <string name="t_app">アプリ — 接続: %1$s</string>
+    <string name="t_about">MESHMORE XR について</string>
+
+    <!-- footers -->
+    <string name="f_pending">未確定 — COMMITで適用</string>
+    <string name="f_radio_idle">選択で変更  Bで閉じる</string>
+    <string name="f_commit_arm">もう一度で無線機に書込</string>
+    <string name="f_app">点灯=ON  Bで閉じる</string>
+    <string name="f_about">閲覧のみ — Bで閉じる</string>
+    <string name="f_chan_no_radio">無線機を接続してください</string>
+    <string name="f_chan">点灯=読み上げ  Bで閉じる</string>
+    <string name="f_chan_new">タグ推測で参加可。共有は一度</string>
+    <string name="f_chan_public">公開=全員。秘密なし</string>
+    <string name="f_telem">選択で切替  Bで閉じる</string>
+    <string name="f_chansend_arm">もう一度でch送信を許可</string>
+    <string name="f_erase_arm">もう一度で消去 — 取消不可</string>
+
+    <!-- APP bay rows -->
+    <string name="r_location">本体GPS</string>
+    <string name="r_share">位置を共有</string>
+    <string name="r_diag">診断パネル</string>
+    <string name="r_autopen">返信を提案</string>
+    <string name="r_motion">動きを減らす</string>
+    <string name="r_chansend">チャンネル送信</string>
+    <string name="r_telem">データ照会の許可</string>
+    <string name="r_erase">%1$d件を消去</string>
+
+    <!-- telemetry classes and levels -->
+    <string name="telem_battery">電池</string>
+    <string name="telem_location">位置</string>
+    <string name="telem_environment">環境</string>
+    <string name="telem_deny">拒否</string>
+    <string name="telem_contacts">連絡先のみ</string>
+    <string name="telem_anyone">誰でも</string>
+
+    <!-- channel actions -->
+    <string name="c_new">+ 新規チャンネル</string>
+    <string name="c_make">作成  %1$s</string>
+    <string name="c_reroll">別の名を振る</string>
+    <string name="c_join_public">+ 公開chに参加</string>
+    <string name="c_join_arm">公開参加 — もう一度</string>
+
+    <!-- FIND panel -->
+    <string name="find_hint">名前かキー</string>
+    <string name="find_favs">★ お気に入り</string>
+    <string name="find_clear">クリア</string>
+    <string name="find_done">完了</string>
+    <string name="find_tag">+タグ</string>
+    <string name="find_tag_hint">タグ</string>
+    <string name="find_all">ノード%1$d</string>
+    <string name="find_none">該当なし / %1$d</string>
+    <string name="find_some">%1$d / %2$d</string>
+    <string name="find_more">他%1$d件 — 絞り込みを</string>
+
+    <!-- HERE caption -->
+    <string name="here_no_fix_pinch">HERE  位置なし - GPSを</string>
+    <string name="here_no_fix">HERE  位置なし</string>
+    <string name="here_headset">HERE  本体GPS</string>
+    <string name="here_src">HERE  %1$s</string>
+    <string name="here_armed">  - 本体待機</string>
+
+    <!-- ABOUT safety -->
+    <string name="s_driving">運転中は使用しない</string>
+    <string name="s_room">周囲から目を離さない</string>
+    <string name="s_mic">マイクは発話時のみON</string>
+    <!-- radio bay notices -->
+    <string name="n_freq_preset">周波数はプリセット連動</string>
+    <string name="n_nothing_commit">変更なし</string>
+    <string name="n_commit_arm">もう一度で書込</string>
+    <string name="n_written">書込済 — %1$s</string>
+    <string name="n_commit_failed">書込失敗</string>
+    <string name="n_discarded">変更を破棄</string>
+</resources>

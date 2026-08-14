@@ -118,7 +118,7 @@ class MeshLink(private val context: Context) {
         // band, which speaks on CHANGE, and a counting number would make it
         // speak every second. The count belongs in the status chip.
         if (st.droppedAtMs != null) {
-            return "LINK LOST — RECONNECTING"
+            return context.getString(R.string.link_lost)
         }
         val n = when {
             st.scanning -> 1
@@ -128,15 +128,15 @@ class MeshLink(private val context: Context) {
             else -> 4
         }
         val what = when (n) {
-            1 -> "LOOKING FOR A RADIO"
-            2 -> "CONNECTING TO ${st.deviceName ?: "RADIO"}"
-            3 -> "HANDSHAKING"
-            else -> "READING RADIO"
+            1 -> context.getString(R.string.link_scan)
+            2 -> context.getString(R.string.link_connecting, st.deviceName ?: "RADIO")
+            3 -> context.getString(R.string.link_handshake)
+            else -> context.getString(R.string.link_reading)
         }
         // The error replaces the step rather than sitting beside it: if we know
         // why it stopped, the step it stopped on is the less useful half.
-        st.error?.let { return "LINK FAILED — ${it.uppercase()}" }
-        return "STEP $n/4  $what"
+        st.error?.let { return context.getString(R.string.link_failed, it.uppercase()) }
+        return context.getString(R.string.link_step, n, what)
     }
 
     private val _status = MutableStateFlow(Status())
