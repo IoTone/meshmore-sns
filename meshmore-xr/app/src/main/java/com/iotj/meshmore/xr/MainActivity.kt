@@ -1503,7 +1503,16 @@ private fun HorizonScene(link: MeshLink) {
         val o = originRef.value ?: return@LaunchedEffect
         if (floorFor.value == skin.value.key) return@LaunchedEffect
         floorFor.value = skin.value.key
-        st.buildFloor(o, skin.value)
+        // Fourth place the sweep found the same disease: this effect restarts
+        // per skin key, and the restart CANCELS a buildFloor mid-material —
+        // the orphaned placeholder is then double-freed by the next
+        // clearFloor. Same lock, same NonCancellable, same reasoning as the
+        // horizon rebuild.
+        themeWork.withLock {
+            kotlinx.coroutines.withContext(kotlinx.coroutines.NonCancellable) {
+                st.buildFloor(o, skin.value)
+            }
+        }
     }
 
     // Exercise the RUNTIME theme change, once the scene exists to change.
@@ -1794,13 +1803,28 @@ private fun HorizonScene(link: MeshLink) {
             Log.w(TAG_UI, "[here] no fix — $unplaced located peer(s) cannot be drawn")
         }
         nodesRef.value = nodes
-        h.build(nodes, o, st.floorHeight())
-        // S5 — the channel band, above the node lanes. Rebuilt with the horizon
-        // because it belongs to the same ring and shares its origin.
-        bandsRef.value?.show(
-            channelBands(ctx, link, voice),
-            o,
-        )
+        // UNDER THE THEME LOCK, AND UNSTOPPABLE ONCE STARTED. This effect
+        // restarts whenever its keys move, and a restart CANCELS the previous
+        // body — mid-build, mid-material-creation. The sweep caught the
+        // consequence twice from two angles: a native abort on a material
+        // "released with 1 outstanding borrowed objects", once from a rebuild
+        // racing a commit's restyles, once from a cancelled build's half-made
+        // placeholder being cleared by the next. The lock serialises this
+        // against the theme work; NonCancellable means a build that begins,
+        // finishes — the next rebuild is already queued behind the lock and
+        // supersedes it wholesale.
+        themeWork.withLock {
+            kotlinx.coroutines.withContext(kotlinx.coroutines.NonCancellable) {
+                h.build(nodes, o, st.floorHeight())
+                // S5 — the channel band, above the node lanes. Rebuilt with the
+                // horizon because it belongs to the same ring and shares its
+                // origin.
+                bandsRef.value?.show(
+                    channelBands(ctx, link, voice),
+                    o,
+                )
+            }
+        }
         // WHERE AM I, on the one surface that is always there.
         dockRef.value?.let { d ->
             // Pinned only while magnified: at 1:1 there is nothing to say and
@@ -3155,6 +3179,24 @@ private fun HorizonScene(link: MeshLink) {
                         // splash. Diagnosing a "stuck" app that was in fact
                         // working perfectly cost more than this line saves.
                         if (MainActivity.switchTo == null && !MainActivity.sweep) themePrefs.set(chosen)
+                        // AND THE BAYS. A plate is GEOMETRY — a frame and a
+                        // slab are different meshes — so the menus need a
+                        // rebuild, not a repaint, and Ink cannot do it for
+                        // them. Off the frame loop, because rebuilding two
+                        // stacks means suspending on material creation and this
+                        // is the frame the wearer is watching for a response.
+                        launch {
+                            themeWork.withLock {
+                            // THE SCENE-MUTATION HALF LIVES UNDER THE LOCK —
+                            // ALL of it. The first fix locked only the
+                            // restyles, and the sweep died at 4/9 anyway:
+                            // retint(N+1), still inline, walked the material
+                            // registry while restyle(N) was disposing it
+                            // inside the lock ("OwnedPtr of type imp::Material
+                            // ... 1 outstanding borrowed"). Tones, prefs and
+                            // the picker's own state stay inline — they touch
+                            // no scene material and are what the wearer needs
+                            // to feel immediately.
                         com.iotj.meshmore.xr.spatial.Ink.retint(chosen.palette)
                         // A THEME IS NOT A PALETTE, and until now choosing one
                         // acted as though it were. retint() repaints every
@@ -3184,14 +3226,6 @@ private fun HorizonScene(link: MeshLink) {
                         nodeMenuRef.value?.hide()
                         consoleRef.value?.hide()
                         helpRef.value?.setVisible(false)
-                        // AND THE BAYS. A plate is GEOMETRY — a frame and a
-                        // slab are different meshes — so the menus need a
-                        // rebuild, not a repaint, and Ink cannot do it for
-                        // them. Off the frame loop, because rebuilding two
-                        // stacks means suspending on material creation and this
-                        // is the frame the wearer is watching for a response.
-                        launch {
-                            themeWork.withLock {
                             channelsRef.value?.restyle(chosen)
                             appRef.value?.restyle(chosen)
                             // The dock last: it reads the settings the bays
@@ -3199,6 +3233,18 @@ private fun HorizonScene(link: MeshLink) {
                             // surface the wearer reaches for first in the new
                             // theme.
                             buildDock(chosen)
+                            // ARRIVING AT A TABLETOP MID-SESSION starts the
+                            // table hunt that until now only a tabletop LAUNCH
+                            // ran — switching into BIOLUME left the model at
+                            // the assumed drop forever, remembered desk or not.
+                            if (chosen.posture ==
+                                com.iotj.meshmore.xr.spatial.Theme.Posture.TABLETOP &&
+                                stage.planesEnabled && tableRef.value == null
+                            ) {
+                                tableRef.value =
+                                    com.iotj.meshmore.xr.spatial.TableAnchor(session, ctx)
+                                        .also { if (!it.recall()) it.seek() }
+                            }
                             }
                         }
                         themePickerRef.value?.commit(chosen)
@@ -3571,6 +3617,22 @@ private fun HorizonScene(link: MeshLink) {
                     }
                     val t = h.translation
                     originRef.value = o.copy(x = t.x, y = t.y, z = t.z)
+                    // IN A TABLETOP, RESET RESETS THE TABLE. The measured
+                    // anchor beats the origin on purpose, so a recentre alone
+                    // cannot rescue a model the anchor has put somewhere wrong
+                    // — which is exactly when a wearer reaches for this
+                    // gesture. H says "this is wrong, put it back in front of
+                    // me": the live lock clears (the model re-places at the
+                    // assumed drop immediately), the remembered anchor is
+                    // forgotten, and the search runs again on this room.
+                    if (skin.value.posture ==
+                        com.iotj.meshmore.xr.spatial.Theme.Posture.TABLETOP &&
+                        horizonRef.value?.tableAt != null
+                    ) {
+                        horizonRef.value?.tableAt = null
+                        tableRef.value?.rejectAndReseek()
+                        noticeRef.value?.say(ctx.getString(R.string.n_table_reset))
+                    }
                     hereEpoch.value += 1
                     cue.opened()
                     noticeRef.value?.say(
@@ -4273,8 +4335,35 @@ private fun HorizonScene(link: MeshLink) {
                 // a frame is cheaper than making that safe.
                 tableRef.value?.let { t ->
                     if (t.poll()) {
-                        horizonRef.value?.tableAt = t.at
-                        hereEpoch.value += 1
+                        // A TABLE IS BELOW YOUR EYES AND WITHIN REACH, or it is
+                        // not a table. A persisted anchor re-localising against
+                        // a stale tracking map can resolve ANYWHERE — the
+                        // reported case rendered BIOLUME on the ceiling, and
+                        // because the measured table beats the origin by
+                        // design, no recentre could undo it. Adopt only a
+                        // plausible pose; reject the rest and search the room
+                        // that exists.
+                        val head = stage.headNow()?.translation
+                        val at = t.at
+                        val dy = if (head != null && at != null) head.y - at.y else null
+                        val dh = if (head != null && at != null) {
+                            val dx = at.x - head.x
+                            val dz = at.z - head.z
+                            kotlin.math.sqrt(dx * dx + dz * dz)
+                        } else {
+                            null
+                        }
+                        if (dy != null && dh != null && dy in 0.25f..1.6f && dh <= 2.5f) {
+                            horizonRef.value?.tableAt = at
+                            hereEpoch.value += 1
+                        } else {
+                            Log.w(
+                                TAG_UI,
+                                "[table] REJECTED anchor at dy=%s dh=%s — not a table"
+                                    .format(dy?.toString() ?: "?", dh?.toString() ?: "?"),
+                            )
+                            t.rejectAndReseek()
+                        }
                     }
                 }
                 drainConsole(nowMs)

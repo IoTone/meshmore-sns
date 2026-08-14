@@ -191,6 +191,28 @@ class TableAnchor(
         }
     }
 
+    /**
+     * THE WEARER (or a sanity check) SAYS THE TABLE IS WRONG — forget it
+     * everywhere and hunt again.
+     *
+     * A persisted anchor is a claim about a PAST tracking map. When today's
+     * map disagrees, the anchor can re-localise anywhere — the reported case
+     * put the whole diorama on the CEILING — and because the measured table
+     * deliberately beats the origin, no recentre gesture could bring it back.
+     * The only honest recovery is to drop the memory, drop the live pose, and
+     * search the room that actually exists.
+     */
+    fun rejectAndReseek() {
+        forget()
+        runCatching { entity?.dispose() }
+        entity = null
+        at = null
+        remembered = false
+        said = null
+        seek()
+        Log.i(TAG, "[table] rejected — persisted anchor dropped, searching afresh")
+    }
+
     fun dispose() {
         runCatching { entity?.dispose() }
         entity = null

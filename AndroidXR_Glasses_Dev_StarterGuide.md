@@ -633,6 +633,16 @@ platform does not model is simply never granted. A material shared between two
 entities aborts in native code with no Java stack. And a frame loop past the
 JIT limit just runs slower.
 
+One more, found by running a nine-theme stress sweep repeatedly: **panel churn
+leaks input channels in system_server.** Every spatial panel registers an
+InputChannel with the system; disposing the panel does not reliably release it
+(runtime, not you). Enough create/dispose cycles and **system_server itself
+aborts** — `aborting due to fd leak … InputChannel::openInputChannelPair` —
+taking the whole Android session down with it, which then presents as your app
+"crashing" with no crash of its own anywhere. Budget panel churn: rebuild
+surfaces when a theme changes, not per frame, and run stress sweeps once per
+boot rather than in a loop.
+
 So: **grep the log for warnings nobody routes to you** as a standing habit —
 `exceeds compiler instruction limit`, `OwnedPtr`, `Unable to set property`,
 `lazy service` — and treat a clean run with a suspicious frame time as an

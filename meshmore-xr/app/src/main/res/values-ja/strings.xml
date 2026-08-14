@@ -202,4 +202,5 @@
     <string name="n_send_locked">自ノード以外へ送信不可</string>
     <string name="n_no_thread_yet">%1$s との会話なし</string>
     <string name="n_asked_telem">%1$s に照会</string>
+    <string name="n_table_reset">卓上リセット — 再探索</string>
 </resources>
