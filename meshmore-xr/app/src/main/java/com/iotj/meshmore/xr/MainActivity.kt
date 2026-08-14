@@ -8,6 +8,7 @@ import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import kotlinx.coroutines.sync.withLock
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -190,6 +191,16 @@ class MainActivity : ComponentActivity() {
          */
         var switchTo: String? = null
         /**
+         * --ez sweep true : commit every theme in sequence through the REAL
+         * picker path, four seconds apart.
+         *
+         * The regression this exists to catch was found by eye: a surface
+         * built once at launch surviving into the next theme's world. One run
+         * exercises all nine transitions; anything that lingers, crashes, or
+         * over-runs a template says so in the log.
+         */
+        var sweep: Boolean = false
+        /**
          * --es telperm "battery,location,environment", each of deny|contacts|anyone.
          *
          * The rack is where this belongs (§9.5 lists it as a TUMBLER) and that
@@ -334,6 +345,7 @@ class MainActivity : ComponentActivity() {
         probePaths = intent?.getBooleanExtra("probe", false) ?: false
         probePlanes = intent?.getBooleanExtra("planes", false) ?: false
         switchTo = intent?.getStringExtra("switchto")
+        sweep = intent?.getBooleanExtra("sweep", false) ?: false
         telPerm = intent?.getStringExtra("telperm")
         showConsole = intent?.getBooleanExtra("console", false) ?: false
         themeKey = intent?.getStringExtra("theme")
@@ -1336,6 +1348,18 @@ private fun HorizonScene(link: MeshLink) {
      * with — a pick over there.
      */
     val chanArmed = remember { mutableStateOf<ChanAction?>(null) }
+    /**
+     * ONE THEME COMMIT'S HEAVY WORK AT A TIME. The restyles and the dock
+     * rebuild are launched off the frame loop (a rebuild suspends on material
+     * creation, and the commit frame is the one the wearer is watching), which
+     * meant two quick commits ran them CONCURRENTLY on the same Stack
+     * instances — and the sweep proved where that ends: a native SIGABRT,
+     * "OwnedPtr of type imp::Mesh released with 1 outstanding borrowed
+     * objects", one commit disposing meshes the other still borrowed. No Java
+     * stack, process gone. Serial is correct and cheap; a commit's work
+     * finishes before the next begins.
+     */
+    val themeWork = remember { kotlinx.coroutines.sync.Mutex() }
     val chanArmedAt = remember { mutableStateOf(0L) }
     /**
      * ABOUT borrows the APP bay's Stack rather than building a seventh surface.
@@ -1490,6 +1514,20 @@ private fun HorizonScene(link: MeshLink) {
         val picker = themePickerRef.value ?: return@LaunchedEffect
         kotlinx.coroutines.delay(6_000)
         picker.fire(want)
+    }
+
+    // The full-rotation regression drive. Through picker.fire, so every
+    // transition takes exactly the path a pinch takes.
+    LaunchedEffect(themePickerRef.value) {
+        if (!MainActivity.sweep) return@LaunchedEffect
+        val picker = themePickerRef.value ?: return@LaunchedEffect
+        kotlinx.coroutines.delay(9_000)
+        com.iotj.meshmore.xr.spatial.Theme.ALL.forEachIndexed { i, s ->
+            picker.fire(s)
+            kotlinx.coroutines.delay(4_500)
+            Log.i(TAG_UI, "[sweep] ${i + 1}/${com.iotj.meshmore.xr.spatial.Theme.ALL.size} ${s.key}")
+        }
+        Log.i(TAG_UI, "[sweep] complete — all themes committed and survived")
     }
 
     // WHERE YOU ARE NOW, not where you launched.
@@ -1977,8 +2015,16 @@ private fun HorizonScene(link: MeshLink) {
             com.iotj.meshmore.xr.spatial.Horizon.Node>()
         // the dock and its ten actions — a PHASE, so its ~dozen suspend .build() calls spill
         // this small closure instead of the whole scene. See the JIT note.
-        suspend fun buildDock() {
-        val dock = Dock(session, palette, ctx)
+        // SKIN-PARAMETERIZED, because the dock is THEME GEOMETRY: its palette,
+        // WHICH PIPS EXIST (four on a wrist, ten on the ground) and its drop
+        // (a tabletop puts a map where the dock lives) all belong to the skin.
+        // It was built once at launch, and a switch left the OLD theme's dock
+        // standing in the NEW theme's world — photographed as NERV's orange
+        // column planted through BIOLUME's table.
+        suspend fun buildDock(s: com.iotj.meshmore.xr.spatial.Theme.Skin) {
+        // The previous dock's entities die first, or every switch leaks a dock.
+        dockRef.value?.clear()
+        val dock = Dock(session, s.palette, ctx)
         // EVERY SURFACE HAS A PINCHABLE WAY IN, gesture or no gesture.
         //
         // The ASL toggles are the fast path -- no glance, no target, usable
@@ -1995,7 +2041,7 @@ private fun HorizonScene(link: MeshLink) {
         // The four are the ones a moving wearer reaches for — which way am I
         // facing, did anyone call me, where am I — plus the door to everything
         // else. HELP, WIDE, LIST and LINK are one pinch away behind SETUP.
-        val wristDock = skin.value.active
+        val wristDock = s.active
         // FOUR ON THE WRIST. It was four, I made it five to fit FIND, and the
         // glasses said no: "too much stuff on the wrist menu, it isn't stable,
         // hard to focus on anything since it's all too close together."
@@ -2010,7 +2056,7 @@ private fun HorizonScene(link: MeshLink) {
         val WRIST_SET = setOf("COMPASS", "INBOX", "FIND", "SETUP")
         // A TABLETOP PUTS A MAP WHERE THE DOCK LIVES. See Dock.build's drop.
         val dockDrop =
-            if (skin.value.posture == com.iotj.meshmore.xr.spatial.Theme.Posture.TABLETOP) {
+            if (s.posture == com.iotj.meshmore.xr.spatial.Theme.Posture.TABLETOP) {
                 com.iotj.meshmore.xr.spatial.Dock.TABLETOP_DROP
             } else {
                 com.iotj.meshmore.xr.spatial.Dock.DROP
@@ -2205,8 +2251,12 @@ private fun HorizonScene(link: MeshLink) {
         // feel a control, sound is the only confirmation that the pointer has
         // arrived — and it arrives BEFORE the pinch, which is when it helps.
             dockRef.value = dock
+            // Rewired on EVERY build, not once at setup — a rebuilt dock with
+            // no focus cue and a dark HERE pip is the launch bug back again.
+            dock.onFocus = { cue.recognised() }
+            dock.setLit("HERE", Settings.useDeviceLocation(ctx))
         }
-        buildDock()
+        buildDock(skin.value)
         // THE DWELL FALLBACK (§8.2). Armed only when no hand is tracked, so it
         // is an alternative to the pinch rather than a second way to fire the
         // same control by accident.
@@ -2429,7 +2479,6 @@ private fun HorizonScene(link: MeshLink) {
             if (text.isNotBlank()) crownRef.value?.propose(text) else crownRef.value?.compose()
         }
 
-        dockRef.value?.onFocus = { cue.recognised() }
         // The menu gets the same tick the dock does. On a display where you
         // cannot feel a control, sound is the only confirmation the pointer
         // arrived — and it arrives BEFORE the pinch, which is when it helps.
@@ -2440,7 +2489,6 @@ private fun HorizonScene(link: MeshLink) {
         // came up dark on a build where it was already on — the state was
         // persisted correctly and looked exactly like off, which is the wrong
         // half to get right.
-        dockRef.value?.setLit("HERE", Settings.useDeviceLocation(ctx))
         if (MainActivity.showHelp) {
             helpRef.value?.setVisible(true)
             dockRef.value?.setLit("HELP", true)
@@ -3106,7 +3154,7 @@ private fun HorizonScene(link: MeshLink) {
                         // almost nothing, and the app read as frozen after the
                         // splash. Diagnosing a "stuck" app that was in fact
                         // working perfectly cost more than this line saves.
-                        if (MainActivity.switchTo == null) themePrefs.set(chosen)
+                        if (MainActivity.switchTo == null && !MainActivity.sweep) themePrefs.set(chosen)
                         com.iotj.meshmore.xr.spatial.Ink.retint(chosen.palette)
                         // A THEME IS NOT A PALETTE, and until now choosing one
                         // acted as though it were. retint() repaints every
@@ -3123,6 +3171,19 @@ private fun HorizonScene(link: MeshLink) {
                         // silhouette is baked into its mesh at build time.
                         horizonRef.value?.retheme(chosen.symbol, chosen.posture, chosen.active, chosen.palette)
                         hereEpoch.value += 1
+                        // SURFACES FROM THE OLD WORLD CLOSE. A theme change
+                        // rebuilds the world; a roster listing it in the old
+                        // theme's terms — photographed still standing over
+                        // BIOLUME's table — is a window into a room that no
+                        // longer exists. The stacks rebuild closed via
+                        // restyle; these are the ones that would linger.
+                        rosterRef.value?.hide()
+                        inboxRef.value?.hide()
+                        threadRef.value?.hide()
+                        focusRef.value?.hide()
+                        nodeMenuRef.value?.hide()
+                        consoleRef.value?.hide()
+                        helpRef.value?.setVisible(false)
                         // AND THE BAYS. A plate is GEOMETRY — a frame and a
                         // slab are different meshes — so the menus need a
                         // rebuild, not a repaint, and Ink cannot do it for
@@ -3130,8 +3191,15 @@ private fun HorizonScene(link: MeshLink) {
                         // stacks means suspending on material creation and this
                         // is the frame the wearer is watching for a response.
                         launch {
+                            themeWork.withLock {
                             channelsRef.value?.restyle(chosen)
                             appRef.value?.restyle(chosen)
+                            // The dock last: it reads the settings the bays
+                            // above may have just rebuilt, and it is the
+                            // surface the wearer reaches for first in the new
+                            // theme.
+                            buildDock(chosen)
+                            }
                         }
                         themePickerRef.value?.commit(chosen)
                         themePickerRef.value?.setPreviewing(chosen)

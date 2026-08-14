@@ -148,6 +148,7 @@ class Cue {
         fun welcomeFor(key: String): Int = when (key) {
             "halo" -> R.raw.welcome_halo
             "nerv" -> R.raw.welcome_nerv
+            "biolume" -> R.raw.welcome_biolume
             else -> R.raw.welcome_halo
         }
 
