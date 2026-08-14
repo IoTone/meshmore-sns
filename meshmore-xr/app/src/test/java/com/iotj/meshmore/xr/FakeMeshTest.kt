@@ -130,6 +130,31 @@ class FakeMeshTest {
         assertEquals(mesh.map { it.lastSeenEpochSec }, again.map { it.lastSeenEpochSec })
     }
 
+    /**
+     * THE WHOLE POINT OF THIS DATASET, AS AN ASSERTION.
+     *
+     * On the glasses, before the ranker was rescored: 350 peers of which 79 had
+     * been heard within ten minutes, and the ring drew live=10 stale=19. This
+     * is that measurement, on a bench, so the regression is caught here rather
+     * than three device reports later.
+     *
+     * A MAJORITY OF WHAT IS DRAWN SHOULD BE ALIVE. Not all of it — a live node
+     * at the rim can still lose to a fresher one, and clustering takes its own
+     * share — but a ring that is mostly grey while eighty nodes are talking is
+     * the defect this fake mesh exists to reproduce.
+     */
+    @Test fun theRingDrawsMostlyLiveNodes() {
+        val here = MeshNodes.Here(45.5152, -122.6784)
+        val drawn = MeshNodes.build(here, mesh, now)
+        val live = drawn.count { it.age < 0.34f }
+        val stale = drawn.size - live
+        assertTrue(
+            "drew $live live and $stale stale of ${drawn.size}, " +
+                "from a mesh with ${aged(600)} heard in the last ten minutes",
+            live > stale,
+        )
+    }
+
     /** A smaller mesh keeps the shape rather than losing its rare buckets. */
     @Test fun aSmallMeshIsStillShapedLikeAMesh() {
         val small = FakeMesh.peers(45.5152, -122.6784, now, count = 40)

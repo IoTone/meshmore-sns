@@ -474,24 +474,79 @@ object MeshNodes {
      * and this app ignored it. It is the operator saying "these are mine", and
      * a node they marked must never be one of the 326 that got clustered away.
      *
-     * THEN NEAREST, which is new. It used to sort by last-heard, so a quiet
-     * radio in the same room ranked below a chatty one forty kilometres off —
-     * and "I expected my own node to show up close to me" is exactly the
-     * complaint that produces. Recency only breaks ties now.
+     * THEN A SCORE, and this is the third answer to the same question.
+     *
+     * The first ordering was pure RECENCY, and it put a quiet radio in the same
+     * room below a chatty one forty kilometres off — "I expected my own node to
+     * show up close to me". So it became pure DISTANCE with recency as a
+     * tiebreak, and that is worse in a way that took three device reports to
+     * name: a contact list is mostly OLD, so with 350 stored peers competing
+     * for 24 slots the nearest two dozen are near-but-ancient almost every
+     * time, and the ring fills with grey while live nodes a few kilometres out
+     * are never drawn at all. Measured on a seeded 350-peer mesh: 79 peers
+     * heard within ten minutes, 10 of them drawn. Narrowing to 59 matches made
+     * it WORSE, one live out of 29, because with a small population nothing
+     * competes on distance and distance-first has an even freer hand.
+     *
+     * A LEXICOGRAPHIC SORT CANNOT EXPRESS THIS. Either key first means the
+     * other one only ever breaks exact ties, and both complaints above are
+     * complaints about a tiebreak being asked to carry a judgement. So the two
+     * are combined into one number and the ring shows the best of it.
+     *
+     * BOTH TERMS ARE PERCEPTUAL, not linear. Distance goes through [bandFor],
+     * the same log mapping the ring is drawn with, so "near" means what it
+     * looks like; age goes through [ageOf], which is already the fade's own
+     * curve.
+     *
+     * WHAT EQUAL WEIGHT ACTUALLY BUYS, stated exactly rather than approximately
+     * — the first version of this note guessed and the guess was wrong. A fully
+     * stale node maxes out at 0.5, because half the score is freshness it does
+     * not have; any LIVE located node scores above 0.5 unless it is at the
+     * 50 km rim. So freshness decides across the live/stale boundary and
+     * distance orders within it: among live nodes, 0.5 km beats 40 km 0.95 to
+     * 0.53, and among stale ones the same ordering holds a rung lower.
+     *
+     * That is a strong statement and it is the intended one: the ring answers
+     * "who is on the air near me", and a contact heard three weeks ago is not
+     * on the air however close it is parked. The near-and-silent node is still
+     * reachable — it is what FIND and favourites are for, and a favourite skips
+     * this scoring entirely.
      */
     fun rank(here: Here, peers: List<Peer>, nowEpochSec: Long): List<Peer> =
         peers.sortedWith(
             compareByDescending<Peer> { it.favourite }
                 .thenByDescending { here.known && valid(it.lat) && valid(it.lon) }
-                .thenBy {
-                    if (here.known && valid(it.lat) && valid(it.lon)) {
-                        haversineKm(here.lat!!, here.lon!!, it.lat!!, it.lon!!)
-                    } else {
-                        Double.MAX_VALUE
-                    }
-                }
-                .thenByDescending { it.lastSeenEpochSec }
+                .thenByDescending { score(here, it, nowEpochSec) }
+                // A stable last word, so two peers with identical scores do not
+                // swap places between frames and make the ring shuffle.
+                .thenBy { it.key }
         )
+
+    /**
+     * How much this peer deserves one of the two dozen slots: 0 is worthless,
+     * 1 is a node in your hand that just spoke.
+     *
+     * Public because it is the whole ranking argument, and a rule this
+     * consequential should be assertable directly rather than inferred from the
+     * order of a list.
+     */
+    fun score(here: Here, p: Peer, nowEpochSec: Long): Double {
+        val fresh = 1.0 - ageOf(p.lastSeenEpochSec, nowEpochSec)
+        val near = if (here.known && valid(p.lat) && valid(p.lon)) {
+            // bandFor returns NEAR_BAND..1 over 0..MAX_KM. Rescaled so that the
+            // nearest possible node scores a full 1 rather than 0.76 — the band
+            // is a drawing radius and this is a preference, and borrowing the
+            // curve should not borrow its floor.
+            val band = bandFor(haversineKm(here.lat!!, here.lon!!, p.lat!!, p.lon!!))
+            ((1f - band) / (1f - NEAR_BAND)).toDouble().coerceIn(0.0, 1.0)
+        } else {
+            // Unplaceable peers are already ordered behind everything with a
+            // position, so this only decides their order among themselves —
+            // where recency is the only thing left that means anything.
+            0.0
+        }
+        return RECENCY_WEIGHT * fresh + (1.0 - RECENCY_WEIGHT) * near
+    }
 
     /** How many of [peers] would be dropped at [limit]. For logging, not display. */
     fun droppedCount(peers: List<Peer>, limit: Int = MAX_MOTES): Int =
@@ -559,6 +614,18 @@ object MeshNodes {
      * gone quiet.
      */
     const val STALE_AFTER_SEC = 21600.0
+
+    /**
+     * How much of [score] is "did it speak recently" against "is it near me".
+     *
+     * HALF, and deliberately not a tuned number. The two complaints this
+     * balance exists between are symmetrical — one ordering hid the wearer's
+     * own quiet node, the other hid the whole live mesh — and there is no
+     * measurement that says either matters more. An equal split is the position
+     * that does not pretend to know, and it is the one to move first if the
+     * ring is still wrong in one direction.
+     */
+    const val RECENCY_WEIGHT = 0.5
     /**
      * Motes on the horizon. Chosen for legibility first -- 24 over 360 degrees
      * is one every 15 degrees, which leaves room for a callsign beside each.

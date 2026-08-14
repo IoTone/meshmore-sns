@@ -360,6 +360,92 @@ class MeshNodesTest {
         assertEquals("near", out.first().name)
     }
 
+    /**
+     * THE BUG THE RING WAS BUILT ON, and the reason ranking became a score.
+     *
+     * A contact list is mostly OLD. With 350 stored peers competing for 24
+     * slots, distance-first fills the ring with near-but-ancient entries and
+     * live nodes a few kilometres out are never drawn. Measured on a seeded
+     * 350-peer mesh: 79 heard within ten minutes, 10 of them drawn.
+     */
+    @Test fun aLiveNodeOutranksAnAncientOneParkedNearby() {
+        val here = MeshNodes.Here(londonLat, londonLon)
+        // Half a kilometre away, not heard for a week.
+        val ancient = peer(name = "ancient", lat = londonLat + 0.0045, lon = londonLon)
+            .copy(lastSeenEpochSec = NOW - 7 * 86_400)
+        // Five kilometres out, speaking now.
+        val live = peer(name = "live", lat = londonLat + 0.045, lon = londonLon)
+            .copy(lastSeenEpochSec = NOW)
+        assertEquals("live", MeshNodes.rank(here, listOf(ancient, live), NOW).first().name)
+    }
+
+    /**
+     * ...and it is not a near-miss that a small change of distance would flip.
+     * Freshness decides across the live/stale boundary: a fully stale node
+     * cannot reach 0.5, and a live located node inside the rim always does.
+     */
+    @Test fun freshnessDecidesAcrossTheBoundaryAndDistanceWithinIt() {
+        val here = MeshNodes.Here(londonLat, londonLon)
+        fun at(dLat: Double, ago: Long) =
+            MeshNodes.score(here, peer(lat = londonLat + dLat, lon = londonLon)
+                .copy(lastSeenEpochSec = NOW - ago), NOW)
+        // A week-old node in your hand cannot outscore half a mark.
+        assertTrue(at(0.0, 7 * 86_400) <= 0.5 + 1e-9)
+        // A live node 40 km out still clears it.
+        assertTrue(at(0.36, 0) > 0.5)
+        // Among live nodes, distance is what orders them, and clearly.
+        assertTrue(at(0.0045, 0) > at(0.36, 0) + 0.3)
+        // Among stale ones, the same ordering survives a rung lower.
+        assertTrue(at(0.0045, 7 * 86_400) > at(0.36, 7 * 86_400))
+    }
+
+    /**
+     * THE OTHER COMPLAINT, which produced distance-first in the first place and
+     * must not come back: a quiet radio in the same room outranks a chatty one
+     * far away. Both of these are now satisfied at once, which is the whole
+     * argument for a score rather than a tiebreak.
+     */
+    @Test fun aQuietNodeInTheRoomStillBeatsAChattyOneFarOff() {
+        val here = MeshNodes.Here(londonLat, londonLon)
+        val room = peer(name = "room", lat = londonLat + 0.0002, lon = londonLon)
+            .copy(lastSeenEpochSec = NOW - 3600)
+        val chatty = peer(name = "chatty", lat = 51.9, lon = -0.9)
+            .copy(lastSeenEpochSec = NOW)
+        assertEquals("room", MeshNodes.rank(here, listOf(room, chatty), NOW).first().name)
+    }
+
+    /**
+     * A placed peer always outranks an unplaceable one, whatever either has
+     * been doing. A node with no position cannot be drawn at a bearing, so a
+     * slot spent on it is a slot spent on the unlocated arc.
+     */
+    @Test fun aPlaceableNodeComesFirst() {
+        val here = MeshNodes.Here(londonLat, londonLon)
+        val nowhere = peer(name = "nowhere", lat = null, lon = null)
+            .copy(lastSeenEpochSec = NOW)
+        val somewhere = peer(name = "somewhere", lat = 51.9, lon = -0.9)
+            .copy(lastSeenEpochSec = NOW - 5 * 86_400)
+        assertEquals(
+            "somewhere",
+            MeshNodes.rank(here, listOf(nowhere, somewhere), NOW).first().name,
+        )
+    }
+
+    /**
+     * THE ORDER IS STABLE. Two peers that score identically must not swap
+     * between frames: the ring is rebuilt on every membership change, and a
+     * pair trading places would make motes jump for no reason a wearer could
+     * account for.
+     */
+    @Test fun equalScoresDoNotShuffle() {
+        val here = MeshNodes.Here(londonLat, londonLon)
+        val a = peer(name = "a", lat = londonLat + 0.01, lon = londonLon).copy(key = "aaaa")
+        val b = peer(name = "b", lat = londonLat + 0.01, lon = londonLon).copy(key = "bbbb")
+        val once = MeshNodes.rank(here, listOf(a, b), NOW).map { it.key }
+        val twice = MeshNodes.rank(here, listOf(b, a), NOW).map { it.key }
+        assertEquals(once, twice)
+    }
+
     /** A favourite is the operator saying "this one is mine". It wins outright. */
     @Test fun aFavouriteOutranksEverything() {
         val here = MeshNodes.Here(londonLat, londonLon)
