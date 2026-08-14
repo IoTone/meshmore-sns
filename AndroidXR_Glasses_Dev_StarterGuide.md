@@ -546,12 +546,90 @@ Skip unless the managed layer can't render your content. If you do:
 
 ---
 
+## 9a. The frame loop hits limits the compiler will not tell you about
+
+Every XR app grows a per-frame loop, and in Compose it is almost always one
+`LaunchedEffect` holding a `while (true)` with everything the scene does each
+tick. It starts as ten lines. Nothing pushes back as it grows, and there are
+two ceilings ahead of it that fail SILENTLY — no crash, no warning at compile
+time, no lint.
+
+### The one that actually bites: ART's JIT instruction limit
+
+Found on an XREAL Aura, 2026-08-14, in a `LaunchedEffect` frame loop that had
+been added to across a dozen sessions:
+
+```
+I com.example.app: Method exceeds compiler instruction limit: 46076 in
+    java.lang.Object ExampleKt$Scene$8$1.invokeSuspend(java.lang.Object)
+```
+
+**What it means:** ART refuses to JIT-compile a method past roughly 40 000
+instructions (`kMaxInstructionsForCompilation`), so that method runs
+**interpreted, forever**. On a frame loop that is every frame for the life of
+the process.
+
+**Why it is easy to miss:**
+
+- It is logged at `I`, from the app's own tag, buried in startup noise.
+- Nothing misbehaves. The app is correct, only slower — and slower by an amount
+  nobody has a baseline for, on a device where 72 Hz is the budget.
+- It gets worse one small addition at a time. No single commit is the culprit.
+- `suspend` makes it far more likely than it looks: a coroutine body is
+  compiled into ONE `invokeSuspend` state machine, so every branch of every
+  `when`, every inlined lambda and every string template in the whole loop lands
+  in a single method. A 400-line loop is not 400 lines of bytecode.
+
+**How to check** — do this once per release, not once per bug report:
+
+```bash
+adb logcat -d | grep -i "exceeds compiler instruction limit"
+```
+
+**How to fix:** extract, don't optimise. Pull cohesive blocks of the loop into
+private functions — input drain, status readout, surface ticking, arming
+timeouts. Each call site becomes a few instructions and each extracted body
+gets compiled on its own. This is mechanical and behaviour-preserving; the
+trap is that the blocks capture many locals, so extraction wants the state
+gathered into a small holder rather than passed as fifteen parameters. Do it
+before the loop is large, because doing it after means moving code you can no
+longer reason about in one screen.
+
+### The neighbouring ceilings, same family
+
+- **64 KB per method.** A hard `dex` limit, and this one IS a build error — but
+  the JIT limit above sits at roughly two thirds of it, so a loop hits the
+  silent ceiling long before the loud one.
+- **Compose recomposition scope.** A composable whose body reads a dozen
+  `mutableStateOf` values recomposes when ANY of them changes. Splitting it is
+  the same medicine for a different disease, and the symptom is also "slower,
+  no error".
+- **`@Composable` functions have their own limits**: very large composables can
+  blow the compiler's own inlining budgets and produce enormous synthetic
+  methods, which is how a UI file ends up with a `$8$1` in the log at all.
+
+### The general rule this belongs to
+
+**On XR, the failure mode of every limit is quiet.** A panel sized past the
+runtime's texture budget renders blank rather than throwing. A permission the
+platform does not model is simply never granted. A material shared between two
+entities aborts in native code with no Java stack. And a frame loop past the
+JIT limit just runs slower.
+
+So: **grep the log for warnings nobody routes to you** as a standing habit —
+`exceeds compiler instruction limit`, `OwnedPtr`, `Unable to set property`,
+`lazy service` — and treat a clean run with a suspicious frame time as an
+unanswered question rather than a pass.
+
+---
+
 ## 10. First-week checklist
 
 - [ ] JDK pinned to 17–21; `bin/` build wrapper in place
 - [ ] `compileSdk 36 / minSdk 34`; XR deps pinned to exact alpha versions
 - [ ] Manifest declares `xr.immersive` + the permissions you request at runtime
 - [ ] A `Subspace { SpatialPanel { … } }` renders your first screen
+- [ ] `adb logcat -d | grep "exceeds compiler instruction limit"` is clean (§9a)
 - [ ] `Session.create(activity)` resolved once; capability-gated before 3D
 - [ ] ARCore acquisition off-main-thread; one superset `Config`; fail-safe paths
 - [ ] World-derived poses in `REAL_WORLD`; hand UI oriented to the head
