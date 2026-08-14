@@ -4,3 +4,7 @@ local.properties
 .idea/
 *.iml
 .cxx/
+
+# Release signing — NEVER commit (see RELEASE-SIGNING.md)
+keys/
+app/keystore.properties

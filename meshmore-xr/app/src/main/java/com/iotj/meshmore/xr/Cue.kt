@@ -132,9 +132,9 @@ class Cue {
         /**
          * WHICH TUNE A THEME ARRIVES ON.
          *
-         * Two exist: HALO's and NERV's. The other seven fall back to HALO's,
-         * and that fallback is the honest shape of an unfinished set — seven
-         * silent themes would read as seven broken ones. The seam that had to
+         * Four exist — HALO, NERV, BIOLUME, VECTORLINE; the rest fall back to HALO's,
+         * and that fallback is the honest shape of an unfinished set — five
+         * silent themes would read as five broken ones. The seam that had to
          * be right is the CALL SITE, which asks for "this theme's welcome" and
          * does not know which file that is; adding the next one is a file in
          * res/raw and a line here.
@@ -149,6 +149,7 @@ class Cue {
             "halo" -> R.raw.welcome_halo
             "nerv" -> R.raw.welcome_nerv
             "biolume" -> R.raw.welcome_biolume
+            "vector" -> R.raw.welcome_vector
             else -> R.raw.welcome_halo
         }
 
