@@ -1794,6 +1794,9 @@ private fun HorizonScene(link: MeshLink) {
         stage.buildFloor(origin, skin.value)
         // The boot surface goes up immediately -- the wait it covers starts
         // now, not when the first contact arrives.
+        // boot, hud, rack — a PHASE, so its ~dozen suspend .build() calls spill
+        // this small closure instead of the whole scene. See the JIT note.
+        suspend fun buildCore() {
         val boot = Boot(session, palette)
         boot.build(origin)
         // E0 WAKE — once, as the boot surface appears. The scene takes about
@@ -1826,6 +1829,8 @@ private fun HorizonScene(link: MeshLink) {
         rackRef.value = rack
 
         // HANDS. The Aura reports hand tracking and nothing else, so a shape the
+        }
+        buildCore()
         // hand makes is the only command that costs neither world space nor a
         // glance — which is what "turn the HUD off" needs, since you want it
         // mid-stride without looking at anything.
@@ -1846,6 +1851,9 @@ private fun HorizonScene(link: MeshLink) {
         var lastShapeL = ""
         Log.i(TAG_UI, "[hand] tracking right=${handR != null} left=${handL != null}")
 
+        // menu, focus, notice, hands, help — a PHASE, so its ~dozen suspend .build() calls spill
+        // this small closure instead of the whole scene. See the JIT note.
+        suspend fun buildInput() {
         val menu = RadialMenu(session, palette)
         menu.build(listOf(
             RadialMenu.Item("magnify", "MAGNIFY"),
@@ -1882,10 +1890,15 @@ private fun HorizonScene(link: MeshLink) {
         helpRef.value = help
 
         // Roster picks, queued: Focus.showFor builds the spur and therefore
+        }
+        buildInput()
         // suspends, and a dock action is not a coroutine. Same shape as the
         // node-pinch queue below.
         val rosterWant = java.util.concurrent.ConcurrentLinkedQueue<
             com.iotj.meshmore.xr.spatial.Horizon.Node>()
+        // the dock and its ten actions — a PHASE, so its ~dozen suspend .build() calls spill
+        // this small closure instead of the whole scene. See the JIT note.
+        suspend fun buildDock() {
         val dock = Dock(session, palette, ctx)
         // EVERY SURFACE HAS A PINCHABLE WAY IN, gesture or no gesture.
         //
@@ -2112,9 +2125,15 @@ private fun HorizonScene(link: MeshLink) {
         // A short tick when a pip takes focus. On a display where you cannot
         // feel a control, sound is the only confirmation that the pointer has
         // arrived — and it arrives BEFORE the pinch, which is when it helps.
+            dockRef.value = dock
+        }
+        buildDock()
         // THE DWELL FALLBACK (§8.2). Armed only when no hand is tracked, so it
         // is an alternative to the pinch rather than a second way to fire the
         // same control by accident.
+        // reel, cuff, crown, thread, console, picker, channels, bands, ember, first light — a PHASE, so its ~dozen suspend .build() calls spill
+        // this small closure instead of the whole scene. See the JIT note.
+        suspend fun buildComms() {
         val reel = com.iotj.meshmore.xr.spatial.Reel(session, palette, ctx)
         reel.build()
         reel.onDetent = { cue.tick() }
@@ -2190,7 +2209,7 @@ private fun HorizonScene(link: MeshLink) {
         val gaze = com.iotj.meshmore.xr.spatial.Gaze(session, palette)
         gaze.build()
         gaze.onFire = { cue.recognised() }
-        gaze.setTargets(dock.gazeTargets())
+        gaze.setTargets(dockRef.value?.gazeTargets() ?: emptyList())
         gazeRef.value = gaze
 
         // ARRIVAL IS AMBIENT. §S4: "Nothing appears in front of your face,
@@ -2208,6 +2227,8 @@ private fun HorizonScene(link: MeshLink) {
         // Audio and the unread count exist today. CUFF and EMBER are owed.
         // E7 — somebody new on the mesh. Rate-capped inside Cue: discovery is
         // delightful and is also the event most able to become a hailstorm.
+        }
+        buildComms()
         link.onNodeFound = { p ->
             cue.nodeFound()
             Log.i(TAG_UI, "[mesh] new peer '${p.name.ifBlank { p.key }}'")
@@ -2329,26 +2350,25 @@ private fun HorizonScene(link: MeshLink) {
             if (text.isNotBlank()) crownRef.value?.propose(text) else crownRef.value?.compose()
         }
 
-        dock.onFocus = { cue.recognised() }
+        dockRef.value?.onFocus = { cue.recognised() }
         // The menu gets the same tick the dock does. On a display where you
         // cannot feel a control, sound is the only confirmation the pointer
         // arrived — and it arrives BEFORE the pinch, which is when it helps.
         menuRef.value?.onFocus = { cue.recognised() }
-        dockRef.value = dock
         // THE ONE PIP THAT REMEMBERS. Every other pip toggles a surface that is
         // closed at launch, so an unlit dock is the truth for all of them.
         // Headset GPS is a stored setting that survives the app, and its pip
         // came up dark on a build where it was already on — the state was
         // persisted correctly and looked exactly like off, which is the wrong
         // half to get right.
-        dock.setLit("HERE", Settings.useDeviceLocation(ctx))
+        dockRef.value?.setLit("HERE", Settings.useDeviceLocation(ctx))
         if (MainActivity.showHelp) {
-            help.setVisible(true)
-            dock.setLit("HELP", true)
+            helpRef.value?.setVisible(true)
+            dockRef.value?.setLit("HELP", true)
         }
-        rack.onDismiss = {
-            rack.setVisible(false)
-            dock.setLit("SETUP", false)
+        rackRef.value?.onDismiss = {
+            rackRef.value?.setVisible(false)
+            dockRef.value?.setLit("SETUP", false)
         }
         // DEFAULT CLOSED, no exception. A launch flag that opens a live radio
         // panel is the same hazard as leaving it standing, just triggered by a
@@ -2544,144 +2564,33 @@ private fun HorizonScene(link: MeshLink) {
             }
             if (MainActivity.typeProbe) launch { com.iotj.meshmore.xr.spatial.TypeProbe.run(session, ctx) }
             var panelWarned = false
-            while (true) {
-                delay(33)
-                // RE-ASSERT EVERY FRAME. Disabling the main panel once is not
-                // enough: the Compose XR layer re-enables it behind our back on
-                // later layout passes, and it comes back as a large translucent
-                // quad that writes depth -- so it does not just look wrong, it
-                // OCCLUDES the geometry behind it and the scene reads as empty.
-                val mp = session.scene.mainPanelEntity
-                if (mp.isEnabled()) {
-                    if (!panelWarned) {
-                        Log.i(TAG_UI, "[spatial] main panel came back — re-disabling")
-                        panelWarned = true
-                    }
-                    mp.setEnabled(false)
-                }
-                // Tron floor falls into place over ~1.6s, outward from the user.
-                if (fall < 1f) {
-                    fall = (fall + 0.033f / 1.6f).coerceAtMost(1f)
-                    stage.tickFloor(fall)
-                }
-                // Billboard the callsigns at the LIVE head, not the launch
-                // pose -- the labels have to keep facing the user as they walk.
-                // BOOT SURFACE. Held for a minimum dwell even if the sync is
-                // instant: a wordmark that appears and vanishes inside a second
-                // reads as a glitch, not as a launch.
-                // TIME-BOX THE WAIT. Teardown used to depend solely on the
-                // contact sync completing -- and on a reconnect to an already
-                // bonded radio the sync sometimes never starts at all. The app
-                // was then stuck on the loading surface forever while happily
-                // hearing live adverts behind it: connected, working, and
-                // apparently frozen. Whatever has arrived by MAX_BOOT_S is what
-                // we show; an incomplete horizon beats a permanent splash.
-                val loading = boot0Elapsed < MAX_BOOT_S &&
-                    (!load.done || boot0Elapsed < MIN_BOOT_S)
-                boot0Elapsed += 0.033f
-                if (loading) {
-                    bootRef.value?.tick(0.033f, load.fraction, load.total > 0)
-                    // THE CYLINDER IS FILLING — the wait is now showing its own
-                    // progress and does not need covering. Stops the LOOP, not
-                    // the sound: cutting a phrase mid-bar is more noticeable
-                    // than the silence it was there to fill.
-                    if (load.total > 0) cue.endWelcome()
-                } else if (bootRef.value != null) {
-                    Log.i(TAG_UI, "[boot] surface down after %.1fs (sync %s)"
-                        .format(boot0Elapsed, if (load.done) "complete" else "TIMED OUT"))
-                    // BELT AND BRACES. A radio that never reports a total never
-                    // fills the cylinder, and the loop above would then have
-                    // nothing to end it — the surface coming down is the last
-                    // moment at which a boot tune is still a boot tune.
-                    cue.endWelcome()
-                    bootRef.value?.clear()
-                    bootRef.value = null
-                    // THE SCENE IS THE PLACE A VOICE CAN BE ANSWERED. Until
-                    // here there is nowhere to look when the app speaks.
-                    bootOver.value = true
-                }
-                stage.headNow()?.let {
-                    horizon.faceViewer(it.translation)
-                    // Callsigns give way to the microhud bands where they cross.
-                    // ONE FOCUS AT A TIME (§2.1 rule 3). Set before veil, which
-                    // is what actually writes the alphas.
-                    // Either FOCUS surface quiets the ring's names — §2.1 rule
-                    // 3 is about how many things can hold the text layer, not
-                    // about which one happens to be up.
-                    //
-                    // AND EVERY OTHER SURFACE MADE OF WORDS, which is the fix
-                    // for green message text printed through cyan callsigns.
-                    // The inbox, the roster and a thread all open at 1.4 m,
-                    // INSIDE the 2.5 m ring, so the ring is directly behind
-                    // them — two layers of text at different depths, both lit,
-                    // and on an additive display neither occludes the other.
-                    // The eye cannot separate them and the reader loses both.
-                    //
-                    // The rule was already written and only two surfaces had
-                    // been told about it. It is not "focus recesses the ring",
-                    // it is "one thing holds the text layer at a time".
-                    horizon.setRecessed(
-                        menuRef.value?.open == true ||
-                            focusRef.value?.open == true ||
-                            inboxRef.value?.open == true ||
-                            rosterRef.value?.open == true ||
-                            threadRef.value?.open == true,
-                    )
-                    horizon.veil(it)
-                    rackRef.value?.tick(it.translation)
-                    // The scale keeps up with the wearer; the mesh stays where
-                    // the mesh actually is. HALO only.
-                    horizonRef.value?.follow(it.translation)
-                    dockRef.value?.tick(it.translation)
-                    // WORN, FOR THE ACTIVE THEME. tick() still runs — it owns
-                    // focus, caption and the fired queue — and this only
-                    // re-places the pips onto the forearm afterwards, so the
-                    // dock behaves identically whichever body it is on.
-                    if (skin.value.active) {
-                        dockRef.value?.tickWrist(handR?.state?.value?.handJoints)
-                    }
-                    menuRef.value?.tick(it.translation)
-                    focusRef.value?.tick(it.translation)
-                    noticeRef.value?.tick(it)
-                    helpRef.value?.tick(it.translation)
-                    launch { handsRef.value?.tick(handR, handL, it) }
-                    // The microhud is head-locked, so it is re-placed from the
-                    // live pose every frame rather than anchored once.
-                    hudRef.value?.tick(it)
-                }
-                // ASL QUICK ACTIONS. Right 'A' raises the compass band, left
-                // 'A' raises the link band. Per-hand rather than one gesture
-                // cycling both: two surfaces answering different questions
-                // should be two commands, and a cycle makes you pass through a
-                // state you did not want on the way to the one you did.
-                val nowMs = android.os.SystemClock.uptimeMillis()
-                // THE DWELL FALLBACK. Hands present means the pinch path is
-                // live, so dwell stands down — it is an alternative, not a
-                // second way to fire the same control without noticing.
-                val anyHand = listOf(handR, handL).any { h ->
-                    h?.state?.value?.handJoints?.isNotEmpty() == true
-                }
-                // Targets are refreshed each frame because the roster's rows
-                // come and go. Fourteen cones is nothing next to the ring.
-                gazeRef.value?.setTargets(
-                    (dockRef.value?.gazeTargets() ?: emptyList()) +
-                        (rosterRef.value?.gazeTargets() ?: emptyList()) +
-                        (inboxRef.value?.gazeTargets() ?: emptyList()) +
-                        (consoleRef.value?.gazeTargets() ?: emptyList()) +
-                        (themePickerRef.value?.gazeTargets() ?: emptyList()) +
-                        (firstRef.value?.gazeTargets() ?: emptyList()) +
-                        (bandsRef.value?.gazeTargets() ?: emptyList()) +
-                        (threadRef.value?.gazeTargets() ?: emptyList()) +
-                        (crownRef.value?.gazeTargets() ?: emptyList()),
+            // Opening the region list, in one place. Two things reach it —
+            // the REGION row and `--es bay REGION` — and a launch flag that
+            // opened the surface by its own slightly different route would
+            // be verifying its own route rather than the one a hand takes.
+            val openRegions = {
+                bayMode.value = "REGION"
+                armed.value = null
+                aboutOpen.value = false
+                consoleRef.value?.hide()
+                appRef.value?.show(
+                    regionRows(hereSource.here.value, link.radio.live),
+                    title = "REGION — " + Regions.labelFor(link.radio.live),
+                    footer = Regions.FOOTER,
                 )
-                gazeRef.value?.tick(stage.headNow(), anyHand, nowMs)
-                // THE CHAT HAND IS THE LEFT ONE by default (§5: one hand runs
-                // the system, the other runs the conversation), so the cuff
-                // rides the left wrist.
-                cuffRef.value?.tick(handL?.state?.value?.handJoints, nowMs)
-                // THE REEL RIDES THE SAME HAND AS THE CUFF — §5 puts the whole
-                // conversation on one hand so an arriving message can never
-                // disturb a control you are part-way through operating.
+                dockRef.value?.setLit("SETUP", false)
+                cue.opened()
+            }
+
+            // THE FRAME LOOP'S BODY, AS NAMED PARTS — see the JIT note.
+            //
+            // A suspend lambda compiles into ONE invokeSuspend state machine,
+            // and this loop's grew past ART's ~40k-instruction ceiling
+            // (measured 46,076), so the whole frame path ran INTERPRETED.
+            // Local functions compile as their own methods while keeping
+            // closure access to the scene, which is why these are declared
+            // here rather than at file scope with fifteen parameters each.
+            suspend fun tickReel(nowMs: Long) {
                 run {
                     val cj = handL?.state?.value?.handJoints
                     val hp = stage.headNow()
@@ -2782,63 +2691,8 @@ private fun HorizonScene(link: MeshLink) {
                         }
                     }
                 }
-                // Show the dwelled pip's caption. Same focus state a pointer
-                // produces, so the two input paths look identical as well as
-                // firing identically.
-                dockRef.value?.gazed = gazeRef.value?.onTarget
-                consoleRef.value?.setGazed(gazeRef.value?.onTarget)
-                themePickerRef.value?.setGazed(gazeRef.value?.onTarget)
-                // Paging the corridor further back. One code path owns it: the
-                // surface reports a pick, the host decides what a pick means.
-                while (threadRef.value?.poll() != null) threadRef.value?.older()
-                rosterRef.value?.tick(stage.headNow()?.translation)
-                while (true) {
-                    val pick = rosterRef.value?.poll() ?: break
-                    rosterRef.value?.activate(pick)
-                }
-                // THE CHANNELS BAY. A pick is a TOGGLE, not a navigation: the
-                // plate lights, the row re-labels, and the bay stays open,
-                // because setting up which channels talk to you is several
-                // decisions in a row and a surface that closes after each one
-                // makes you walk back in five times.
-                firstRef.value?.let { f ->
-                    if (f.open) f.tick(stage.headNow()?.translation, nowMs)
-                }
-                stage.headNow()?.let { hp ->
-                    emberRef.value?.tick(hp.translation, yawOf(hp), nowMs)
-                    bandsRef.value?.tick(hp.translation)
-                }
-                // PICKING A BAND OPENS THAT CHANNEL'S THREAD. §S5 also asks
-                // that it re-tint "the corresponding MOTEs" and there are
-                // none — a channel message carries no sender key, so no node
-                // is on a channel in any way the protocol exposes. Opening the
-                // conversation is what somebody wanted anyway.
-                while (true) {
-                    val id = bandsRef.value?.poll() ?: break
-                    val h = stage.headNow() ?: continue
-                    val t = link.threads().firstOrNull { it.id == id } ?: run {
-                        noticeRef.value?.say("NOTHING HEARD ON THAT CHANNEL YET")
-                        cue.closed()
-                        null
-                    } ?: continue
-                    val nowS = System.currentTimeMillis() / 1000
-                    threadRef.value?.showAt(
-                        h.translation, yawOf(h), t.id, t.title,
-                        t.messages.map { m ->
-                            com.iotj.meshmore.xr.spatial.Thread.Line(
-                                who = "%-14s %s".format(
-                                    com.iotj.meshmore.xr.spatial.TypeTier.clip(
-                                        m.fromName.ifBlank { t.title }, 14,
-                                    ),
-                                    ago(nowS - m.atEpochSec),
-                                ),
-                                words = com.iotj.meshmore.xr.spatial.TypeTier.clip(m.text, 24),
-                                mine = m.direct,
-                            )
-                        },
-                    )
-                    cue.opened()
-                }
+            }
+            suspend fun sayLinkStep() {
                 // S2 · LINK — the handshake, out loud, as steps.
                 //
                 // Announced on CHANGE rather than drawn every frame: the notice
@@ -2876,10 +2730,8 @@ private fun HorizonScene(link: MeshLink) {
                         }
                     }
                 }
-                channelsRef.value?.tick(
-                    stage.headNow()?.translation,
-                    stage.headNow()?.let { yawOf(it) } ?: 0f,
-                )
+            }
+            suspend fun drainChannels(nowMs: Long) {
                 // THE CHANNELS BAY. Its last rows MAKE channels rather than
                 // toggling them, so they are handled before the voice toggle —
                 // an action id that fell through to `voice.toggle` would set a
@@ -2977,6 +2829,8 @@ private fun HorizonScene(link: MeshLink) {
                     )
                 }
                 // THE APP BAY. Two of its rows are GUARDED: the first pick
+            }
+            suspend fun drainAppBay(nowMs: Long) {
                 // arms and re-labels, the second within ARM_MS commits. One
                 // widens what the radio transmits and the other erases history
                 // that cannot be got back, and a single pinch — which can land
@@ -2990,23 +2844,6 @@ private fun HorizonScene(link: MeshLink) {
                         armed.value = null
                         appRef.value?.update(appRows(ctx, link, null), "LIT = ON    B TO CLOSE")
                     }
-                }
-                // Opening the region list, in one place. Two things reach it —
-                // the REGION row and `--es bay REGION` — and a launch flag that
-                // opened the surface by its own slightly different route would
-                // be verifying its own route rather than the one a hand takes.
-                val openRegions = {
-                    bayMode.value = "REGION"
-                    armed.value = null
-                    aboutOpen.value = false
-                    consoleRef.value?.hide()
-                    appRef.value?.show(
-                        regionRows(hereSource.here.value, link.radio.live),
-                        title = "REGION — " + Regions.labelFor(link.radio.live),
-                        footer = Regions.FOOTER,
-                    )
-                    dockRef.value?.setLit("SETUP", false)
-                    cue.opened()
                 }
                 while (true) {
                     val id = appRef.value?.poll() ?: break
@@ -3154,6 +2991,8 @@ private fun HorizonScene(link: MeshLink) {
                 // restyled in place"). Persisted here rather than in the
                 // surface, so one place in the app owns what choosing means.
                 themePickerRef.value?.tick(stage.headNow()?.translation)
+            }
+            suspend fun drainThemePicker() {
                 while (true) {
                     val chosen = themePickerRef.value?.poll() ?: break
                     if (chosen == skin.value) {
@@ -3223,13 +3062,8 @@ private fun HorizonScene(link: MeshLink) {
                 // THE TABLE, IF ONE TURNS UP. Polled here rather than through a
                 // state callback because the callback arrives off the main
                 // thread and the scene may only be touched on it. One enum read
-                // a frame is cheaper than making that safe.
-                tableRef.value?.let { t ->
-                    if (t.poll()) {
-                        horizonRef.value?.tableAt = t.at
-                        hereEpoch.value += 1
-                    }
-                }
+            }
+            suspend fun drainConsole(nowMs: Long) {
                 consoleRef.value?.tick(stage.headNow()?.translation)
                 while (true) {
                     val bay = consoleRef.value?.poll() ?: break
@@ -3356,6 +3190,8 @@ private fun HorizonScene(link: MeshLink) {
                         }
                     }
                 }
+            }
+            suspend fun drainInbox() {
                 inboxRef.value?.tick(stage.headNow()?.translation)
                 threadRef.value?.tick(stage.headNow()?.translation)
                 while (true) {
@@ -3386,6 +3222,8 @@ private fun HorizonScene(link: MeshLink) {
                     inboxRef.value?.hide()
                     cue.opened()
                 }
+            }
+            suspend fun frameGestures(nowMs: Long) {
                 val it0 = stage.headNow()
                 // Hands that are operating a control are not signing. Feeding
                 // the gate NONE rather than skipping it also resets any partial
@@ -3702,9 +3540,8 @@ private fun HorizonScene(link: MeshLink) {
                         }
                     }
                 }
-
-                horizon.drainSelections(origin)
-
+            }
+            suspend fun drainFocus() {
                 // ONE FOCUS AT A TIME: a second node replaces the first, and
                 // the same node again closes it, so a pinch is always its own
                 // undo and there is no way to be left with a card you cannot
@@ -3739,7 +3576,8 @@ private fun HorizonScene(link: MeshLink) {
                         f.showFor(n, p, head); cue.opened()
                     }
                 }
-
+            }
+            suspend fun drainMenu() {
                 // THE MENU'S ANSWER, drained on the frame loop like every other
                 // input — nothing rebuilds the horizon from a pinch callback.
                 menuRef.value?.poll()?.let { choice ->
@@ -3853,6 +3691,8 @@ private fun HorizonScene(link: MeshLink) {
                     menuRef.value?.hide()
                 }
 
+            }
+            suspend fun tickStatus() {
 
                 // Link readout, refreshed about once a second. The strings are
                 // short on purpose: the microhud answers "is the radio there
@@ -3915,7 +3755,208 @@ private fun HorizonScene(link: MeshLink) {
                         )
                     )
                 }
-                horizon.tick(0.033f)
+            }
+            suspend fun tickBoot() {
+                // RE-ASSERT EVERY FRAME. Disabling the main panel once is not
+                // enough: the Compose XR layer re-enables it behind our back on
+                // later layout passes, and it comes back as a large translucent
+                // quad that writes depth -- so it does not just look wrong, it
+                // OCCLUDES the geometry behind it and the scene reads as empty.
+                val mp = session.scene.mainPanelEntity
+                if (mp.isEnabled()) {
+                    if (!panelWarned) {
+                        Log.i(TAG_UI, "[spatial] main panel came back — re-disabling")
+                        panelWarned = true
+                    }
+                    mp.setEnabled(false)
+                }
+                // Tron floor falls into place over ~1.6s, outward from the user.
+                if (fall < 1f) {
+                    fall = (fall + 0.033f / 1.6f).coerceAtMost(1f)
+                    stage.tickFloor(fall)
+                }
+                // Billboard the callsigns at the LIVE head, not the launch
+                // pose -- the labels have to keep facing the user as they walk.
+                // BOOT SURFACE. Held for a minimum dwell even if the sync is
+                // instant: a wordmark that appears and vanishes inside a second
+                // reads as a glitch, not as a launch.
+                // TIME-BOX THE WAIT. Teardown used to depend solely on the
+                // contact sync completing -- and on a reconnect to an already
+                // bonded radio the sync sometimes never starts at all. The app
+                // was then stuck on the loading surface forever while happily
+                // hearing live adverts behind it: connected, working, and
+                // apparently frozen. Whatever has arrived by MAX_BOOT_S is what
+                // we show; an incomplete horizon beats a permanent splash.
+                val loading = boot0Elapsed < MAX_BOOT_S &&
+                    (!load.done || boot0Elapsed < MIN_BOOT_S)
+                boot0Elapsed += 0.033f
+                if (loading) {
+                    bootRef.value?.tick(0.033f, load.fraction, load.total > 0)
+                    // THE CYLINDER IS FILLING — the wait is now showing its own
+                    // progress and does not need covering. Stops the LOOP, not
+                    // the sound: cutting a phrase mid-bar is more noticeable
+                    // than the silence it was there to fill.
+                    if (load.total > 0) cue.endWelcome()
+                } else if (bootRef.value != null) {
+                    Log.i(TAG_UI, "[boot] surface down after %.1fs (sync %s)"
+                        .format(boot0Elapsed, if (load.done) "complete" else "TIMED OUT"))
+                    // BELT AND BRACES. A radio that never reports a total never
+                    // fills the cylinder, and the loop above would then have
+                    // nothing to end it — the surface coming down is the last
+                    // moment at which a boot tune is still a boot tune.
+                    cue.endWelcome()
+                    bootRef.value?.clear()
+                    bootRef.value = null
+                    // THE SCENE IS THE PLACE A VOICE CAN BE ANSWERED. Until
+                    // here there is nowhere to look when the app speaks.
+                    bootOver.value = true
+                }
+            }
+            suspend fun tickHead() {
+                stage.headNow()?.let {
+                    horizon.faceViewer(it.translation)
+                    // Callsigns give way to the microhud bands where they cross.
+                    // ONE FOCUS AT A TIME (§2.1 rule 3). Set before veil, which
+                    // is what actually writes the alphas.
+                    // Either FOCUS surface quiets the ring's names — §2.1 rule
+                    // 3 is about how many things can hold the text layer, not
+                    // about which one happens to be up.
+                    //
+                    // AND EVERY OTHER SURFACE MADE OF WORDS, which is the fix
+                    // for green message text printed through cyan callsigns.
+                    // The inbox, the roster and a thread all open at 1.4 m,
+                    // INSIDE the 2.5 m ring, so the ring is directly behind
+                    // them — two layers of text at different depths, both lit,
+                    // and on an additive display neither occludes the other.
+                    // The eye cannot separate them and the reader loses both.
+                    //
+                    // The rule was already written and only two surfaces had
+                    // been told about it. It is not "focus recesses the ring",
+                    // it is "one thing holds the text layer at a time".
+                    horizon.setRecessed(
+                        menuRef.value?.open == true ||
+                            focusRef.value?.open == true ||
+                            inboxRef.value?.open == true ||
+                            rosterRef.value?.open == true ||
+                            threadRef.value?.open == true,
+                    )
+                    horizon.veil(it)
+                    rackRef.value?.tick(it.translation)
+                    // The scale keeps up with the wearer; the mesh stays where
+                    // the mesh actually is. HALO only.
+                    horizonRef.value?.follow(it.translation)
+                    dockRef.value?.tick(it.translation)
+                    // WORN, FOR THE ACTIVE THEME. tick() still runs — it owns
+                    // focus, caption and the fired queue — and this only
+                    // re-places the pips onto the forearm afterwards, so the
+                    // dock behaves identically whichever body it is on.
+                    if (skin.value.active) {
+                        dockRef.value?.tickWrist(handR?.state?.value?.handJoints)
+                    }
+                    menuRef.value?.tick(it.translation)
+                    focusRef.value?.tick(it.translation)
+                    noticeRef.value?.tick(it)
+                    helpRef.value?.tick(it.translation)
+                    launch { handsRef.value?.tick(handR, handL, it) }
+                    // The microhud is head-locked, so it is re-placed from the
+                    // live pose every frame rather than anchored once.
+                    hudRef.value?.tick(it)
+                }
+                // ASL QUICK ACTIONS. Right 'A' raises the compass band, left
+                // 'A' raises the link band. Per-hand rather than one gesture
+                // cycling both: two surfaces answering different questions
+                // should be two commands, and a cycle makes you pass through a
+                // state you did not want on the way to the one you did.
+            }
+            suspend fun tickGaze(nowMs: Long) {
+                // THE DWELL FALLBACK. Hands present means the pinch path is
+                // live, so dwell stands down — it is an alternative, not a
+                // second way to fire the same control without noticing.
+                val anyHand = listOf(handR, handL).any { h ->
+                    h?.state?.value?.handJoints?.isNotEmpty() == true
+                }
+                // Targets are refreshed each frame because the roster's rows
+                // come and go. Fourteen cones is nothing next to the ring.
+                gazeRef.value?.setTargets(
+                    (dockRef.value?.gazeTargets() ?: emptyList()) +
+                        (rosterRef.value?.gazeTargets() ?: emptyList()) +
+                        (inboxRef.value?.gazeTargets() ?: emptyList()) +
+                        (consoleRef.value?.gazeTargets() ?: emptyList()) +
+                        (themePickerRef.value?.gazeTargets() ?: emptyList()) +
+                        (firstRef.value?.gazeTargets() ?: emptyList()) +
+                        (bandsRef.value?.gazeTargets() ?: emptyList()) +
+                        (threadRef.value?.gazeTargets() ?: emptyList()) +
+                        (crownRef.value?.gazeTargets() ?: emptyList()),
+                )
+                gazeRef.value?.tick(stage.headNow(), anyHand, nowMs)
+                // THE CHAT HAND IS THE LEFT ONE by default (§5: one hand runs
+                // the system, the other runs the conversation), so the cuff
+                // rides the left wrist.
+                cuffRef.value?.tick(handL?.state?.value?.handJoints, nowMs)
+                // THE REEL RIDES THE SAME HAND AS THE CUFF — §5 puts the whole
+                // conversation on one hand so an arriving message can never
+                // disturb a control you are part-way through operating.
+            }
+            suspend fun drainSmall(nowMs: Long) {
+                // Show the dwelled pip's caption. Same focus state a pointer
+                // produces, so the two input paths look identical as well as
+                // firing identically.
+                dockRef.value?.gazed = gazeRef.value?.onTarget
+                consoleRef.value?.setGazed(gazeRef.value?.onTarget)
+                themePickerRef.value?.setGazed(gazeRef.value?.onTarget)
+                // Paging the corridor further back. One code path owns it: the
+                // surface reports a pick, the host decides what a pick means.
+                while (threadRef.value?.poll() != null) threadRef.value?.older()
+                rosterRef.value?.tick(stage.headNow()?.translation)
+                while (true) {
+                    val pick = rosterRef.value?.poll() ?: break
+                    rosterRef.value?.activate(pick)
+                }
+                // THE CHANNELS BAY. A pick is a TOGGLE, not a navigation: the
+                // plate lights, the row re-labels, and the bay stays open,
+                // because setting up which channels talk to you is several
+                // decisions in a row and a surface that closes after each one
+                // makes you walk back in five times.
+                firstRef.value?.let { f ->
+                    if (f.open) f.tick(stage.headNow()?.translation, nowMs)
+                }
+                stage.headNow()?.let { hp ->
+                    emberRef.value?.tick(hp.translation, yawOf(hp), nowMs)
+                    bandsRef.value?.tick(hp.translation)
+                }
+                // PICKING A BAND OPENS THAT CHANNEL'S THREAD. §S5 also asks
+                // that it re-tint "the corresponding MOTEs" and there are
+                // none — a channel message carries no sender key, so no node
+                // is on a channel in any way the protocol exposes. Opening the
+                // conversation is what somebody wanted anyway.
+                while (true) {
+                    val id = bandsRef.value?.poll() ?: break
+                    val h = stage.headNow() ?: continue
+                    val t = link.threads().firstOrNull { it.id == id } ?: run {
+                        noticeRef.value?.say("NOTHING HEARD ON THAT CHANNEL YET")
+                        cue.closed()
+                        null
+                    } ?: continue
+                    val nowS = System.currentTimeMillis() / 1000
+                    threadRef.value?.showAt(
+                        h.translation, yawOf(h), t.id, t.title,
+                        t.messages.map { m ->
+                            com.iotj.meshmore.xr.spatial.Thread.Line(
+                                who = "%-14s %s".format(
+                                    com.iotj.meshmore.xr.spatial.TypeTier.clip(
+                                        m.fromName.ifBlank { t.title }, 14,
+                                    ),
+                                    ago(nowS - m.atEpochSec),
+                                ),
+                                words = com.iotj.meshmore.xr.spatial.TypeTier.clip(m.text, 24),
+                                mine = m.direct,
+                            )
+                        },
+                    )
+                    cue.opened()
+                }
+            }
+            suspend fun tickPulse() {
                 // PULSE ON A REAL PACKET. The brief defines a pulse as a packet
                 // event, and until now it fired on a 1.4 s timer over invented
                 // nodes -- a screensaver pretending to be telemetry. It now
@@ -3938,6 +3979,61 @@ private fun HorizonScene(link: MeshLink) {
                         horizon.pulse(n.bearingRad, n.dist, origin)
                     }
                 }
+            }
+            // ONE FRAME. Everything the loop does, as its own method —
+            // the outer state machine keeps only the delay and this call.
+            // THREE HUBS, NOT ONE — and the reason is the CLOSURE TAX.
+            //
+            // A local function's captures are passed as parameters, so a hub
+            // that calls every helper receives every helper's captures — and a
+            // suspend hub then spills that whole set at each of its ~25 resume
+            // points. One frameTick calling everything measured 20,278 code
+            // units while every body it called was under 600. Three hubs of
+            // ~7 suspend sites each keep the product small.
+            suspend fun frameSurfaces(nowMs: Long) {
+                tickBoot()
+                tickHead()
+                tickGaze(nowMs)
+                tickReel(nowMs)
+                drainSmall(nowMs)
+                sayLinkStep()
+            }
+            suspend fun frameBays(nowMs: Long) {
+                channelsRef.value?.tick(
+                    stage.headNow()?.translation,
+                    stage.headNow()?.let { yawOf(it) } ?: 0f,
+                )
+                drainChannels(nowMs)
+                drainAppBay(nowMs)
+                drainThemePicker()
+                // a frame is cheaper than making that safe.
+                tableRef.value?.let { t ->
+                    if (t.poll()) {
+                        horizonRef.value?.tableAt = t.at
+                        hereEpoch.value += 1
+                    }
+                }
+                drainConsole(nowMs)
+                drainInbox()
+            }
+            suspend fun frameActions(nowMs: Long) {
+                frameGestures(nowMs)
+                horizon.drainSelections(origin)
+                drainFocus()
+                drainMenu()
+                tickStatus()
+                horizon.tick(0.033f)
+                tickPulse()
+            }
+            suspend fun frameTick() {
+                val nowMs = android.os.SystemClock.uptimeMillis()
+                frameSurfaces(nowMs)
+                frameBays(nowMs)
+                frameActions(nowMs)
+            }
+            while (true) {
+                delay(33)
+                frameTick()
             }
         } finally {
             horizon.clear()

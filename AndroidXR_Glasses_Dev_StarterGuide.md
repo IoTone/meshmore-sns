@@ -564,10 +564,12 @@ I com.example.app: Method exceeds compiler instruction limit: 46076 in
     java.lang.Object ExampleKt$Scene$8$1.invokeSuspend(java.lang.Object)
 ```
 
-**What it means:** ART refuses to JIT-compile a method past roughly 40 000
-instructions (`kMaxInstructionsForCompilation`), so that method runs
-**interpreted, forever**. On a frame loop that is every frame for the life of
-the process.
+**What it means:** ART's optimizing compiler skips any method past its
+huge-method threshold — **about 10 000 dex code units** in practice (we
+measured refusals at 46,076, 24,396 and 20,278, and acceptance below ~5,600) —
+so that method runs **interpreted, forever**. On a frame loop that is every
+frame for the life of the process. An earlier revision of this note said ~40k;
+that was wrong, and the correction came from measuring, not from source.
 
 **Why it is easy to miss:**
 
@@ -586,14 +588,29 @@ the process.
 adb logcat -d | grep -i "exceeds compiler instruction limit"
 ```
 
-**How to fix:** extract, don't optimise. Pull cohesive blocks of the loop into
-private functions — input drain, status readout, surface ticking, arming
-timeouts. Each call site becomes a few instructions and each extracted body
-gets compiled on its own. This is mechanical and behaviour-preserving; the
-trap is that the blocks capture many locals, so extraction wants the state
-gathered into a small holder rather than passed as fifteen parameters. Do it
-before the loop is large, because doing it after means moving code you can no
-longer reason about in one screen.
+**How to fix:** extract, don't optimise — but know the TWO taxes, both measured
+on this codebase:
+
+1. **The state-machine tax.** A suspend body spills every live local at every
+   suspend call site. Extracting the frame loop's body barely helped while the
+   ~25 suspend `.build()` calls of the SETUP still lived in the same lambda —
+   the loop was only ~7k of the 46k. Extract the setup into phase functions
+   too, so each phase's suspend calls spill a small closure instead of the
+   whole scene.
+
+2. **The closure tax.** A local function's captures are passed as parameters,
+   and they aggregate TRANSITIVELY: a hub that calls every extracted helper
+   receives every helper's captures, then spills that whole set at each of its
+   own resume points. One `frameTick()` hub calling thirteen helpers measured
+   20,278 code units while every body it called was under 600. The cure is
+   fanning out through two or three mid-level hubs of ~7 suspend sites each —
+   or gathering the shared state into a class, which removes the captures
+   entirely.
+
+Verify with `dexdump` on the built APK (`insns size` per method) rather than
+waiting for the runtime log — it makes the loop measurable per build. Do all
+of this before the loop is large, because doing it after means moving code you
+can no longer reason about in one screen.
 
 ### The neighbouring ceilings, same family
 
