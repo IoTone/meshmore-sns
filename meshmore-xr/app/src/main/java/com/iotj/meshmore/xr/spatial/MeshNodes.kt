@@ -131,6 +131,8 @@ object MeshNodes {
         val km = if (located) haversineKm(here.lat!!, here.lon!!, p.lat!!, p.lon!!) else 0.0
         return Horizon.Node(
             name = p.name.ifBlank { "#%04X".format(p.key.hashCode() and 0xFFFF) },
+            key = p.key,
+            fullKey = p.fullKey,
             bearingRad = if (located) bearingRad(here.lat!!, here.lon!!, p.lat!!, p.lon!!) else 0f,
             // No altitude anywhere in the MeshCore contact record, so there is
             // no elevation to show. Zero means Horizon draws no caret, which is

@@ -1061,6 +1061,20 @@ private val SIM_HOME = MeshNodes.Here(45.5152, -122.6784)
  */
 private const val TABLETOP_MOTES = 12
 
+/**
+ * How far above its mote a node's action menu opens. High enough that the ring
+ * of verbs clears the FOCUS card that opens at the same moment, low enough
+ * that both read as one answer to one pinch.
+ */
+private const val NODE_MENU_LIFT = 0.06f
+
+/**
+ * How far beside its mote the menu stands. Wider than the menu's own
+ * distance-scaled spread (0.163 at 2.5 m) plus a label, so no spoke reaches
+ * back over the FOCUS card it opened next to.
+ */
+private const val NODE_MENU_SIDE = 0.55f
+
 private const val LOCATION_POLL_MS = 15_000L
 
 /**
@@ -1270,6 +1284,12 @@ private fun HorizonScene(link: MeshLink) {
     val dockRef = remember { mutableStateOf<Dock?>(null) }
     val handsRef = remember { mutableStateOf<Hands?>(null) }
     val menuRef = remember { mutableStateOf<RadialMenu?>(null) }
+    /**
+     * THE NODE'S OWN MENU — the first per-node actions in the app. Separate
+     * from [menuRef] (the cluster menu) because the two can be open at once:
+     * a cluster and a node are different subjects with different verbs.
+     */
+    val nodeMenuRef = remember { mutableStateOf<RadialMenu?>(null) }
     val focusRef = remember { mutableStateOf<com.iotj.meshmore.xr.spatial.Focus?>(null) }
     val gazeRef = remember { mutableStateOf<com.iotj.meshmore.xr.spatial.Gaze?>(null) }
     val rosterRef = remember { mutableStateOf<com.iotj.meshmore.xr.spatial.Roster?>(null) }
@@ -1891,6 +1911,14 @@ private fun HorizonScene(link: MeshLink) {
             RadialMenu.Item("dismiss", "CLOSE"),
         ))
         menuRef.value = menu
+        val nodeMenu = RadialMenu(session, palette)
+        nodeMenu.build(listOf(
+            RadialMenu.Item("fav", ctx.getString(R.string.na_fav)),
+            RadialMenu.Item("msg", ctx.getString(R.string.na_msg)),
+            RadialMenu.Item("telem", ctx.getString(R.string.na_telem)),
+            RadialMenu.Item("dismiss", ctx.getString(R.string.na_close)),
+        ))
+        nodeMenuRef.value = nodeMenu
         val focus = com.iotj.meshmore.xr.spatial.Focus(session, palette, ctx)
         focus.build()
         focusRef.value = focus
@@ -2568,7 +2596,11 @@ private fun HorizonScene(link: MeshLink) {
                     val n = horizon.firstNode()
                     val h = stage.headNow()?.translation
                     if (n != null && h != null) {
-                        focusRef.value?.showFor(n.first, n.second, h)
+                        // THROUGH THE QUEUE, not straight to showFor — the
+                        // pinch path now also raises the node's action menu,
+                        // and a flag that skipped the drain would verify a
+                        // route no hand takes.
+                        focusWant.add(n.first to n.second)
                         Log.i(TAG_UI, "[focus] opened by launch flag on ${n.first.name}")
                         return@launch
                     }
@@ -3601,10 +3633,121 @@ private fun HorizonScene(link: MeshLink) {
                     val f = focusRef.value ?: break
                     val head = stage.headNow()?.translation ?: break
                     if (f.open && f.subject == n.name) {
-                        f.hide(); cue.closed()
+                        f.hide()
+                        nodeMenuRef.value?.hide()
+                        cue.closed()
                     } else {
-                        f.showFor(n, p, head); cue.opened()
+                        f.showFor(n, p, head)
+                        // THE VERBS, BESIDE THE CARD — the dock already taught
+                        // this: a menu that opens on the thing it is about
+                        // covers the thing it is about. The first cut lifted it
+                        // 0.16 m and the spokes still printed through the
+                        // card's name (photographed); the menu's spread is
+                        // distance-scaled and a vertical lift large enough to
+                        // clear it drifts the top spokes out of the field. So
+                        // it opens to the RIGHT of the node as seen — sideways
+                        // is the one direction the card does not grow.
+                        // Only nodes with an identity get verbs — a cluster
+                        // pseudo-node has no key to act on.
+                        if (n.key.isNotEmpty()) {
+                            val dx = p.x - head.x
+                            val dz = p.z - head.z
+                            val len = kotlin.math.sqrt(dx * dx + dz * dz)
+                                .coerceAtLeast(1e-4f)
+                            nodeMenuRef.value?.showAt(
+                                Vector3(
+                                    p.x - (dz / len) * NODE_MENU_SIDE,
+                                    p.y + NODE_MENU_LIFT,
+                                    p.z + (dx / len) * NODE_MENU_SIDE,
+                                ),
+                                n,
+                            )
+                        }
+                        cue.opened()
                     }
+                }
+                // THE NODE MENU'S ANSWER. Every verb confirms in the notice
+                // band, because half of these act on things (radio, storage)
+                // whose change is not otherwise visible from the ring.
+                while (true) {
+                    val choice = nodeMenuRef.value?.poll() ?: break
+                    val n = nodeMenuRef.value?.subject as? Horizon.Node ?: break
+                    val id = n.fullKey ?: n.key
+                    when (choice) {
+                        "fav" -> {
+                            val now = tagsRef.toggleFavourite(id)
+                            tagEpoch.value += 1
+                            noticeRef.value?.say(
+                                ctx.getString(
+                                    if (now) R.string.n_starred else R.string.n_unstarred,
+                                    com.iotj.meshmore.xr.spatial.TypeTier.clip(n.name, 18),
+                                ),
+                            )
+                            if (now) cue.opened() else cue.closed()
+                        }
+                        "msg" -> {
+                            // THE ALLOW-LIST, POLITELY. MeshLink refuses the
+                            // transmit anyway; this is the same rule applied
+                            // before a surface opens, so a compose the app
+                            // will not send from never appears.
+                            if (!link.mayMessage(n.name, n.fullKey)) {
+                                noticeRef.value?.say(ctx.getString(R.string.n_send_locked))
+                                cue.closed()
+                            } else {
+                                val t = link.threads().firstOrNull { th ->
+                                    th.direct && (
+                                        (n.fullKey ?: "").startsWith(th.id, true) ||
+                                            th.id.startsWith(n.key, true)
+                                        )
+                                }
+                                val h = stage.headNow()
+                                if (t == null || h == null) {
+                                    noticeRef.value?.say(
+                                        ctx.getString(
+                                            R.string.n_no_thread_yet,
+                                            com.iotj.meshmore.xr.spatial.TypeTier.clip(n.name, 14),
+                                        ),
+                                    )
+                                    cue.closed()
+                                } else {
+                                    val nowS = System.currentTimeMillis() / 1000
+                                    threadRef.value?.showAt(
+                                        h.translation, yawOf(h), t.id, t.title,
+                                        t.messages.map { m ->
+                                            com.iotj.meshmore.xr.spatial.Thread.Line(
+                                                who = "%-14s %s".format(
+                                                    com.iotj.meshmore.xr.spatial.TypeTier.clip(
+                                                        m.fromName.ifBlank { t.title }, 14,
+                                                    ),
+                                                    ago(ctx, nowS - m.atEpochSec),
+                                                ),
+                                                words = com.iotj.meshmore.xr.spatial.TypeTier
+                                                    .clip(m.text, 24),
+                                                mine = m.direct,
+                                            )
+                                        },
+                                    )
+                                    focusRef.value?.hide()
+                                    cue.opened()
+                                }
+                            }
+                        }
+                        "telem" -> {
+                            val ok = link.askTelemetry(n.fullKey)
+                            noticeRef.value?.say(
+                                if (ok) {
+                                    ctx.getString(
+                                        R.string.n_asked_telem,
+                                        com.iotj.meshmore.xr.spatial.TypeTier.clip(n.name, 16),
+                                    )
+                                } else {
+                                    ctx.getString(R.string.n_radio_not_ready)
+                                },
+                            )
+                            if (ok) cue.recognised() else cue.closed()
+                        }
+                    }
+                    nodeMenuRef.value?.hide()
                 }
             }
             suspend fun drainMenu() {
@@ -3884,6 +4027,7 @@ private fun HorizonScene(link: MeshLink) {
                         dockRef.value?.tickWrist(handR?.state?.value?.handJoints)
                     }
                     menuRef.value?.tick(it.translation)
+                    nodeMenuRef.value?.tick(it.translation)
                     focusRef.value?.tick(it.translation)
                     noticeRef.value?.tick(it)
                     helpRef.value?.tick(it.translation)

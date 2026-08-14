@@ -192,4 +192,14 @@
     <string name="hp_wraps">どちら向きでも循環</string>
     <string name="hp_point">ボタンを指してピンチ</string>
     <string name="hp_voice">VOICE ONで読み上げ</string>
+    <!-- per-node actions -->
+    <string name="na_fav">お気に入り</string>
+    <string name="na_msg">メッセージ</string>
+    <string name="na_telem">テレメトリ</string>
+    <string name="na_close">閉じる</string>
+    <string name="n_starred">"★ %1$s"</string>
+    <string name="n_unstarred">"☆ %1$s"</string>
+    <string name="n_send_locked">自ノード以外へ送信不可</string>
+    <string name="n_no_thread_yet">%1$s との会話なし</string>
+    <string name="n_asked_telem">%1$s に照会</string>
 </resources>

@@ -194,4 +194,14 @@
     <string name="hp_wraps">EITHER WAY - IT WRAPS</string>
     <string name="hp_point">POINT A BUTTON AND PINCH</string>
     <string name="hp_voice">VOICE ON READS IT ALOUD</string>
+    <!-- per-node actions -->
+    <string name="na_fav">FAVOURITE</string>
+    <string name="na_msg">MESSAGE</string>
+    <string name="na_telem">TELEMETRY</string>
+    <string name="na_close">CLOSE</string>
+    <string name="n_starred">"★ %1$s"</string>
+    <string name="n_unstarred">"☆ %1$s"</string>
+    <string name="n_send_locked">NOT YOUR NODE — SEND LOCKED</string>
+    <string name="n_no_thread_yet">NO THREAD WITH %1$s YET</string>
+    <string name="n_asked_telem">ASKED %1$s</string>
 </resources>

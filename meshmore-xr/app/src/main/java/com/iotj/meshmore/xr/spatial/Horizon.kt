@@ -162,6 +162,14 @@ class Horizon(
 
     data class Node(
         val name: String,
+        /**
+         * WHO THIS IS, not just what it is called. Names are user-supplied and
+         * duplicated; every per-node ACTION keys on these. Defaults keep the
+         * display-only constructions (clusters, tests) honest: a node with no
+         * key gets no actions.
+         */
+        val key: String = "",
+        val fullKey: String? = null,
         val bearingRad: Float,
         val elev: Float,          // -1..1, fraction of the shell's vertical span
         val dist: Float,          // 0..1, fraction of the outer range band

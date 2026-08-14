@@ -1032,6 +1032,45 @@ class MeshLink(private val context: Context) {
             _status.value.selfInfo?.telemetryModeRaw() ?: 0,
         )
 
+    /**
+     * May this app OPEN A CONVERSATION with this node?
+     *
+     * The same allow-list [isAllowed] enforces at transmit time, exposed so a
+     * surface can decline BEFORE offering a compose — a MESSAGE action that
+     * opens a keyboard and then refuses on send is a trap, not a guard. The
+     * refusal inside [reply] stays; this is the polite copy of it.
+     */
+    fun mayMessage(name: String, fullKey: String?): Boolean =
+        ALLOWED_SUFFIXES.any { sfx ->
+            name.endsWith(sfx, ignoreCase = true) ||
+                (fullKey ?: "").endsWith(sfx, ignoreCase = true)
+        }
+
+    /**
+     * Ask one peer for its telemetry, by full 32-byte key.
+     *
+     * MANUAL AND SINGULAR, which is the whole courtesy argument: a request
+     * costs the other node battery and shared airtime, so it happens when a
+     * wearer asks about a node they are looking at — never on a timer, never
+     * swept across the mesh. The reply arrives as a telemetry frame and lands
+     * on the peer like any other.
+     */
+    fun askTelemetry(fullKeyHex: String?): Boolean {
+        val s = session
+        if (s == null || _status.value.state != SessionState.READY) {
+            Log.w(TAG, "[telemetry] ask skipped — link not ready")
+            return false
+        }
+        val key = fullKeyHex?.takeIf { it.length == 64 }?.let { unhex(it) } ?: run {
+            Log.w(TAG, "[telemetry] ask skipped — no full key")
+            return false
+        }
+        Log.i(TAG, "[telemetry] asking ${fullKeyHex.take(12)}…")
+        diag(">>TELEM? ${fullKeyHex.take(12)}")
+        s.requestPeerTelemetry(key)
+        return true
+    }
+
     /** Re-sync contacts, which is how a newly learned path becomes visible. */
     fun refreshContacts() {
         val s = session ?: return
