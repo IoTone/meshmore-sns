@@ -1471,6 +1471,15 @@ private fun HorizonScene(link: MeshLink) {
     // without this the ring keeps showing the answer to the question that was
     // asked before the star.
     val tagEpoch = remember { mutableStateOf(0) }
+    /**
+     * False until the boot surface comes down.
+     *
+     * A separate flag rather than a `bootRef.value != null` test, because
+     * bootRef starts NULL — it is only assigned once the scene builds, about a
+     * second in — so reading it would leave the app unguarded during exactly
+     * the window where a connect-time backlog arrives.
+     */
+    val bootOver = remember { mutableStateOf(false) }
 
     LaunchedEffect(
         signature, here, horizonRef.value, hereEpoch.value, query.value, tagEpoch.value,
@@ -2234,7 +2243,31 @@ private fun HorizonScene(link: MeshLink) {
             val tid = if (m.direct) m.fromKey else (m.channel ?: "#")
             if (voice.isOn(tid)) {
                 val who = m.fromName.ifBlank { m.channelName ?: "someone" }
-                speech.say("$who says: ${m.text}")
+                // NOT DURING THE BOOT SEQUENCE.
+                //
+                // A voice arriving over the wordmark is the worst-timed sound
+                // the app can make. The wearer has just put the glasses on,
+                // there is nothing on screen but a hero surface and a filling
+                // cylinder, and a stranger's message is read aloud into a room
+                // that may have other people in it — with no visible message,
+                // no sender, and no surface to look at for context. It reads as
+                // a malfunction even when it is working perfectly.
+                //
+                // It is also exactly WHEN this fires: the radio delivers its
+                // backlog at connect, so the burst lands inside the one window
+                // where nothing can be shown.
+                //
+                // HELD MEANS DROPPED, not queued. A queue would empty itself
+                // into the wearer's ear the moment the ring appeared, which is
+                // the same startle moved fifteen seconds later and multiplied
+                // by however many arrived. The messages themselves are not
+                // lost — they are in the inbox, with their unread marks, which
+                // is where a message you did not hear belongs.
+                if (!bootOver.value) {
+                    Log.i(TAG_UI, "[tts] held — boot surface still up ('$who')")
+                } else {
+                    speech.say("$who says: ${m.text}")
+                }
             }
         }
 
@@ -2518,6 +2551,9 @@ private fun HorizonScene(link: MeshLink) {
                     cue.endWelcome()
                     bootRef.value?.clear()
                     bootRef.value = null
+                    // THE SCENE IS THE PLACE A VOICE CAN BE ANSWERED. Until
+                    // here there is nowhere to look when the app speaks.
+                    bootOver.value = true
                 }
                 stage.headNow()?.let {
                     horizon.faceViewer(it.translation)

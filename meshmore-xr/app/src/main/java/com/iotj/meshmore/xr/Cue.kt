@@ -132,17 +132,22 @@ class Cue {
         /**
          * WHICH TUNE A THEME ARRIVES ON.
          *
-         * One tune exists today, composed for the first theme in the ladder
-         * (HALO), and every other theme falls back to it. That fallback is
-         * deliberate and it is the honest shape of an unfinished set: eight
-         * silent themes would read as eight broken ones, and the seam that has
-         * to be right is the CALL SITE — arrival asks for "this theme's
-         * welcome" and does not know which file that is. Dropping
-         * `welcome_<key>.mp3` into res/raw and adding a line here is the whole
-         * of adding the next one.
+         * Two exist: HALO's and NERV's. The other seven fall back to HALO's,
+         * and that fallback is the honest shape of an unfinished set — seven
+         * silent themes would read as seven broken ones. The seam that had to
+         * be right is the CALL SITE, which asks for "this theme's welcome" and
+         * does not know which file that is; adding the next one is a file in
+         * res/raw and a line here.
+         *
+         * THE FALLBACK IS HALO'S AND NOT NERV'S, deliberately. HALO is the
+         * first theme in the ladder and the one a fresh install wears, so the
+         * tune most people hear first is the one written for the theme they are
+         * actually in — and a theme borrowing a neighbour's identity is less
+         * wrong when it borrows the default's.
          */
         fun welcomeFor(key: String): Int = when (key) {
             "halo" -> R.raw.welcome_halo
+            "nerv" -> R.raw.welcome_nerv
             else -> R.raw.welcome_halo
         }
 
