@@ -759,6 +759,42 @@ private fun aboutRows(link: MeshLink): List<com.iotj.meshmore.xr.spatial.Stack.R
 }
 
 /**
+ * WHO MAY ASK THIS RADIO WHAT IT KNOWS — three rows, three levels each.
+ *
+ * `TelemetryPerms` has been complete and unit-tested since it was written, and
+ * `MeshLink` has read and written the byte all along. The only way to change it
+ * was a launch flag, which means a privacy setting the app implements and
+ * honours could not be changed by the person it is about.
+ *
+ * THREE ROWS AND NOT ONE SWITCH, which is the file's own argument and worth
+ * repeating where the control is: battery level is a curiosity, environment is
+ * a weather station, and LOCATION is where the wearer is standing. Collapsing
+ * them into "share telemetry" would hide the one that matters behind the two
+ * that do not.
+ *
+ * Each row CYCLES rather than toggling, because the middle level is the useful
+ * default and a two-state control cannot reach it: DENY, then CONTACTS (only
+ * people already in the radio's contact list, per-contact flags), then ANYONE.
+ */
+private fun telemetryRows(
+    link: MeshLink,
+): List<com.iotj.meshmore.xr.spatial.Stack.Row> {
+    val p = link.telemetryPermissions()
+    return com.iotj.meshmore.xr.spatial.TelemetryPerms.CLASSES.mapIndexed { i, cls ->
+        val level = p.level(i)
+        com.iotj.meshmore.xr.spatial.Stack.Row(
+            id = "TELEM$i",
+            label = "%-12s %s".format(
+                cls, com.iotj.meshmore.xr.spatial.TelemetryPerms.name(level),
+            ),
+            // Lit means "somebody other than me can have this", which is the
+            // state worth seeing at a glance rather than the state that is safe.
+            lit = level != com.iotj.meshmore.xr.spatial.TelemetryPerms.DENY,
+        )
+    }
+}
+
+/**
  * The line under the CHANNELS bay, which is where the honesty about a derived
  * key goes.
  *
@@ -999,6 +1035,9 @@ private val SIM_HOME = MeshNodes.Here(45.5152, -122.6784)
  */
 private const val TABLETOP_MOTES = 12
 
+/** Fits ROW_NOTE_WIDEST's 32 characters, checked by RowsTest's budget. */
+private const val TELEM_FOOTER = "PICK TO CYCLE     B TO CLOSE"
+
 private const val LOCATION_POLL_MS = 15_000L
 
 /**
@@ -1061,6 +1100,12 @@ private fun appRows(
         row("DIAG", "DIAGNOSTICS PANEL", Settings.diagnostics(ctx)),
         row("AUTOPEN", "SUGGEST A REPLY", Settings.autopen(ctx)),
         row("MOTION", "REDUCE MOTION", Settings.reduceMotion(ctx)),
+        // WHO MAY ASK THIS RADIO WHAT IT KNOWS. Three permissions, not one
+        // switch, so it opens its own list rather than toggling here — see
+        // telemetryRows.
+        com.iotj.meshmore.xr.spatial.Stack.Row(
+            id = "TELEM", label = "WHO MAY ASK ABOUT ME", lit = false,
+        ),
         row("CHANSEND", "SEND ON CHANNELS", Settings.channelSend(ctx), "ALLOWED", "OFF"),
         com.iotj.meshmore.xr.spatial.Stack.Row(
             id = "FORGET",
@@ -2563,8 +2608,24 @@ private fun HorizonScene(link: MeshLink) {
                     // Either FOCUS surface quiets the ring's names — §2.1 rule
                     // 3 is about how many things can hold the text layer, not
                     // about which one happens to be up.
+                    //
+                    // AND EVERY OTHER SURFACE MADE OF WORDS, which is the fix
+                    // for green message text printed through cyan callsigns.
+                    // The inbox, the roster and a thread all open at 1.4 m,
+                    // INSIDE the 2.5 m ring, so the ring is directly behind
+                    // them — two layers of text at different depths, both lit,
+                    // and on an additive display neither occludes the other.
+                    // The eye cannot separate them and the reader loses both.
+                    //
+                    // The rule was already written and only two surfaces had
+                    // been told about it. It is not "focus recesses the ring",
+                    // it is "one thing holds the text layer at a time".
                     horizon.setRecessed(
-                        menuRef.value?.open == true || focusRef.value?.open == true,
+                        menuRef.value?.open == true ||
+                            focusRef.value?.open == true ||
+                            inboxRef.value?.open == true ||
+                            rosterRef.value?.open == true ||
+                            threadRef.value?.open == true,
                     )
                     horizon.veil(it)
                     rackRef.value?.tick(it.translation)
@@ -2983,6 +3044,34 @@ private fun HorizonScene(link: MeshLink) {
                         cue.recognised()
                         continue
                     }
+                    // WHO MAY ASK ABOUT ME. Its own bay because the answer is
+                    // three answers, and each row CYCLES because the useful
+                    // level is the middle one and a toggle cannot reach it.
+                    if (bayMode.value == "TELEM") {
+                        val i = id.removePrefix("TELEM").toIntOrNull()
+                        if (i != null) {
+                            val perms = link.telemetryPermissions()
+                            val next = (perms.level(i) + 1) %
+                                (com.iotj.meshmore.xr.spatial.TelemetryPerms.ALLOW_ALL + 1)
+                            // WRITTEN TO THE RADIO IMMEDIATELY, not staged. The
+                            // radio parameters next door are staged because a
+                            // wrong set makes it deaf and unrecoverable over
+                            // the air; a permission is one byte, reversible by
+                            // picking again, and leaving it pending would mean
+                            // a wearer who thought they had closed something
+                            // had not.
+                            link.setTelemetryPermissions(perms.with(i, next))
+                            noticeRef.value?.say(
+                                "%s — %s".format(
+                                    com.iotj.meshmore.xr.spatial.TelemetryPerms.CLASSES[i],
+                                    com.iotj.meshmore.xr.spatial.TelemetryPerms.name(next),
+                                ),
+                            )
+                        }
+                        appRef.value?.update(telemetryRows(link), TELEM_FOOTER)
+                        cue.recognised()
+                        continue
+                    }
                     if (bayMode.value == "RADIO") {
                         // The way IN to the region list. It is not an edit, so
                         // it does not go through onRadioRow — that function
@@ -3021,6 +3110,16 @@ private fun HorizonScene(link: MeshLink) {
                         "SHARE" -> Settings.setShareLocation(ctx, !Settings.shareLocation(ctx))
                         "DIAG" -> Settings.setDiagnostics(ctx, !Settings.diagnostics(ctx))
                         "AUTOPEN" -> Settings.setAutopen(ctx, !Settings.autopen(ctx))
+                        "TELEM" -> {
+                            bayMode.value = "TELEM"
+                            appRef.value?.show(
+                                telemetryRows(link),
+                                title = "WHO MAY ASK ABOUT ME",
+                                footer = TELEM_FOOTER,
+                            )
+                            cue.opened()
+                            continue
+                        }
                         "MOTION" -> {
                             val on = !Settings.reduceMotion(ctx)
                             Settings.setReduceMotion(ctx, on)
