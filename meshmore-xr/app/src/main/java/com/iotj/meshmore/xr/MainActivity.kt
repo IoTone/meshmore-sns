@@ -4438,8 +4438,18 @@ private fun HorizonScene(link: MeshLink) {
                     },
                     total = mesh.size,
                     tags = remember(tagEpoch.value) { tagsRef.allTags() },
-                    isFavourite = {
-                        it.favourite || tagsRef.isFavourite(it.fullKey ?: it.key)
+                    // A SET, NOT A LAMBDA — and the difference is whether the
+                    // star moves. A lambda's answer changing is invisible to
+                    // Compose: nothing in the row's inputs changed, so the row
+                    // skipped recomposition and the star sat unfilled while
+                    // the favourite was real everywhere else ("doesn't toggle
+                    // visually, but appears to actually work"). A set rebuilt
+                    // per tagEpoch is a new identity per toggle, which is the
+                    // signal skipping listens to.
+                    starred = remember(tagEpoch.value, mesh) {
+                        mesh.filter {
+                            it.favourite || tagsRef.isFavourite(it.fullKey ?: it.key)
+                        }.map { it.fullKey ?: it.key }.toSet()
                     },
                     tagsOf = { tagsRef.tagsFor(it.fullKey ?: it.key) },
                     onStar = {
@@ -4488,7 +4498,7 @@ private fun SearchSurface(
     matches: List<MeshNodes.Peer>,
     total: Int,
     tags: List<String>,
-    isFavourite: (MeshNodes.Peer) -> Boolean,
+    starred: Set<String>,
     tagsOf: (MeshNodes.Peer) -> List<String>,
     onStar: (MeshNodes.Peer) -> Unit,
     onTag: (MeshNodes.Peer, String) -> Unit,
@@ -4594,10 +4604,11 @@ private fun SearchSurface(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
                 ) {
+                    val fav = (p.fullKey ?: p.key) in starred
                     TextButton(onClick = { onStar(p) }) {
                         Text(
-                            if (isFavourite(p)) "★" else "☆",
-                            color = if (isFavourite(p)) Color(0xFFD7FF00) else Color(0xFF6E7C88),
+                            if (fav) "★" else "☆",
+                            color = if (fav) Color(0xFFD7FF00) else Color(0xFF6E7C88),
                             fontSize = 20.sp,
                         )
                     }
