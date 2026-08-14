@@ -350,6 +350,24 @@ class MeshLink(private val context: Context) {
     private val _here = MutableStateFlow(MeshNodes.Here(null, null))
     val here: StateFlow<MeshNodes.Here> = _here.asStateFlow()
 
+    /**
+     * Load a fabricated mesh, as though the radio had delivered it.
+     *
+     * INJECTED AT THE SOURCE rather than substituted at the surfaces. The mesh
+     * is read from `link.mesh` in half a dozen places — the horizon, the
+     * roster, the magnifier, the near-node menu — and a simulation that
+     * intercepted each one would be testing the interception. Putting the peers
+     * in the same table an advert fills means every one of those reads the fake
+     * mesh without knowing it is fake, which is the only version of this worth
+     * having.
+     */
+    fun loadSimulated(list: List<MeshNodes.Peer>) {
+        list.forEach { peers[it.key] = it }
+        _load.value = Load(done = true, total = list.size, received = list.size)
+        Log.i(TAG, "[link] SIMULATED mesh: ${list.size} peers")
+        publish()
+    }
+
     private fun publish() {
         val v = peers.values.sortedBy { it.name }
         _mesh.value = v

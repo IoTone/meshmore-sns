@@ -339,6 +339,14 @@ class MainActivity : ComponentActivity() {
             val lo = parts.getOrNull(1)?.trim()?.toDoubleOrNull()
             if (la != null && lo != null) MeshNodes.Here(la, lo) else null
         }
+        // A SIMULATION NEEDS SOMEWHERE TO STAND. Without a fix there is nothing
+        // to measure a bearing from and all 350 fake peers are unplaceable —
+        // which is a real failure mode, carefully signalled elsewhere, and not
+        // the one anybody runs a simulation to look at.
+        if (simulate && homeOverride == null) {
+            homeOverride = MeshNodes.Here(SIM_HOME.lat, SIM_HOME.lon)
+            Log.i(TAG, "[boot] simulated mesh — standing at $homeOverride")
+        }
         Log.i(TAG, "[boot] home override = ${homeOverride ?: "<none, using radio GPS>"}")
         // Until the spatial settings surface exists, the toggle is reachable
         // from the launch intent:  --ez devloc true
@@ -447,6 +455,21 @@ private fun Root(facts: List<Pair<String, String>>, link: MeshLink, pinOverride:
         linkTried = true
         Log.i(TAG_UI, "[link] auto-connect at startup")
         if (pinOverride != null) link.connect(pin = pinOverride) else link.connect()
+    }
+
+    // THE FAKE MESH, LOADED ONCE, AT THE SOURCE.
+    //
+    // --ez sim true used to fabricate eleven already-placed motes, which
+    // exercised the renderer and skipped every stage anybody has asked a
+    // question about since: ranking, clustering, filtering, favourites, the
+    // tabletop cap. This puts 350 peers into the same table an advert fills, so
+    // all of it runs, on a machine with no radio.
+    LaunchedEffect(MainActivity.simulate) {
+        if (!MainActivity.simulate) return@LaunchedEffect
+        val at = MainActivity.homeOverride ?: SIM_HOME
+        link.loadSimulated(
+            FakeMesh.peers(at.lat ?: 0.0, at.lon ?: 0.0, System.currentTimeMillis() / 1000),
+        )
     }
 
     // THE REASON THE LINK NEVER CONNECTED. The app logged "no BLE permission --
@@ -931,6 +954,21 @@ private fun stepInt(xs: List<Int>, v: Int): Int {
 
 /** How often the wearer's position is re-read while the app is up. */
 /**
+ * Where a simulated mesh is centred when no `--es home` was given.
+ *
+ * Portland, because that is the mesh this app is developed against and a fake
+ * dataset should sit where the real one does — a simulation an ocean away from
+ * the operator's own contacts is one whose distances mean nothing to whoever is
+ * looking at it.
+ *
+ * IT ALSO SUPPLIES THE FIX. Without a position there is nothing to measure a
+ * bearing from and every simulated peer would be unplaceable, which is a real
+ * failure mode (see the status band's NO FIX) but not the one a simulation is
+ * for. `--ez sim true --es home "lat,lon"` moves both the origin and the peers.
+ */
+private val SIM_HOME = MeshNodes.Here(45.5152, -122.6784)
+
+/**
  * How many orbs a TABLETOP draws, against [MeshNodes.MAX_MOTES]' two dozen.
  *
  * The table is 32.4 degrees across and cannot grow — see the frame's note. At
@@ -1066,11 +1104,6 @@ private const val MIN_BOOT_S = 4.5f
  */
 private const val MAX_BOOT_S = 28f
 
-/**
- * The only rectangle in the app, and it does not arrive like one: a targeting
- * reticle punches in, tears, then unfolds vertically from a slit with the
- * content fading up inside it. Diagnostics earn a panel; nothing else does.
- */
 /** Passing through home space. Deliberately almost nothing. */
 @Composable
 private fun HoldingScreen() {
@@ -1108,31 +1141,6 @@ private fun DiagnosticSurface(content: @Composable () -> Unit) {
  * Faking a bearing for an unlocated node is explicitly forbidden by the brief,
  * so those park in the unlocated arc instead. Real bearings arrive with S3.
  */
-/**
- * The fake ring. No longer the default -- it exists so the rendering, the
- * label pipeline and the interaction can be exercised with no radio present,
- * which is most of the time. The names deliberately include the shapes real
- * MeshCore names take: emoji, fullwidth Latin, accents, kana, and a name that
- * is nothing but emoji.
- */
-private fun simulatedMesh(): List<Horizon.Node> {
-    val names = listOf(
-        "kanako.1", "davi1 \uD83D\uDE80", "relay-nw", "t1000-e", "gate-cam",
-        "\uD83D\uDC22 turtle relay", "\uFF2F\uFF2B\uFF41\uFF59", "shed",
-        "\u00D6konomy", "\u3042\u304D\u306F\u3070\u3089", "\uD83C\uDF0A\uD83C\uDF0A",
-    )
-    return names.mapIndexed { i, nm ->
-        Horizon.Node(
-            name = nm,
-            bearingRad = (i.toFloat() / names.size * 2f * PI.toFloat()) + (i % 3) * 0.22f,
-            elev = kotlin.math.sin(i * 2.1f) * 0.34f,
-            dist = 0.28f + ((i * 37) % 100) / 140f,
-            age = ((i * 53) % 100) / 100f,
-            located = !nm.startsWith("shed"),
-            hops = 1 + (i % 3),
-        )
-    }
-}
 
 @Composable
 private fun HorizonScene(link: MeshLink) {
@@ -1471,7 +1479,12 @@ private fun HorizonScene(link: MeshLink) {
         // means an app-level favourite gets that behaviour for free and
         // MeshNodes stays ignorant of preferences, which is what keeps it pure
         // and testable.
-        val marked = if (MainActivity.simulate) mesh else mesh.map { p ->
+        // NO LONGER SKIPPED FOR THE SIMULATION. It was, back when a simulated
+        // mesh was a list of already-placed motes with no keys to tag; a
+        // simulated PEER has a key like any other, and starring one on the
+        // emulator has to behave exactly as it does on glass or the emulator is
+        // testing something else.
+        val marked = mesh.map { p ->
             if (p.favourite) p
             else if (tagsRef.isFavourite(p.fullKey ?: p.key)) p.copy(favourite = true)
             else p
@@ -1513,10 +1526,12 @@ private fun HorizonScene(link: MeshLink) {
         } else {
             MeshNodes.MAX_MOTES
         }
-        val nodes = if (MainActivity.simulate) simulatedMesh() else
-            MeshNodes.build(
-                origin2, found, System.currentTimeMillis() / 1000, limit = cap, lens = lens,
-            )
+        // ONE PATH, SIMULATED OR NOT. The fake mesh is fake at the SOURCE and
+        // nowhere else, so ranking, clustering, de-occlusion and the tabletop
+        // cap all run on it — which is the entire reason it was moved upstream.
+        val nodes = MeshNodes.build(
+            origin2, found, System.currentTimeMillis() / 1000, limit = cap, lens = lens,
+        )
         // Count what was DRAWN, not what the cap would have dropped. The old
         // form was peers.size - MAX_MOTES, which stopped being true the moment
         // placement became fit-driven: a saturated bearing labels five nodes,
