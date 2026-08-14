@@ -148,6 +148,16 @@ class MainActivity : ComponentActivity() {
          */
         var showFind: Boolean = false
         /**
+         * --es query "rep" : start with the filter already applied.
+         *
+         * The panel needs a keyboard and a hand, so the FILTER — which is the
+         * part with the arithmetic in it — could only ever be exercised by
+         * somebody wearing the glasses. This sets the same state a typed query
+         * would, which makes the narrowing measurable from a script: the
+         * horizon logs how many of how many survived.
+         */
+        var queryOverride: String? = null
+        /**
          * --ez menu true : open the cluster menu on the first cluster found.
          *
          * The menu only appears by pinching a cluster mote, so nothing about it
@@ -312,6 +322,7 @@ class MainActivity : ComponentActivity() {
         handDebug = intent?.getBooleanExtra("handdebug", false) ?: false
         showHelp = intent?.getBooleanExtra("help", false) ?: false
         showFind = intent?.getBooleanExtra("find", false) ?: false
+        queryOverride = intent?.getStringExtra("query")?.takeIf { it.isNotBlank() }
         showMenu = intent?.getBooleanExtra("menu", false) ?: false
         showFocus = intent?.getBooleanExtra("focus", false) ?: false
         probePaths = intent?.getBooleanExtra("probe", false) ?: false
@@ -453,6 +464,16 @@ private fun Root(facts: List<Pair<String, String>>, link: MeshLink, pinOverride:
     fun dial() {
         if (linkTried) return
         linkTried = true
+        // A SIMULATION DOES NOT SHARE A TABLE WITH A RADIO. Both write into the
+        // same keyed peer map, so on the operator's own glasses a simulated run
+        // would be 350 fabricated peers plus 350 real ones — a fine stress test
+        // and a useless measurement, because no count afterwards belongs to
+        // either mesh. The whole value of a seeded dataset is that the numbers
+        // are the same every time.
+        if (MainActivity.simulate) {
+            Log.i(TAG_UI, "[link] SIMULATING — radio not dialled")
+            return
+        }
         Log.i(TAG_UI, "[link] auto-connect at startup")
         if (pinOverride != null) link.connect(pin = pinOverride) else link.connect()
     }
@@ -1441,7 +1462,9 @@ private fun HorizonScene(link: MeshLink) {
     // three repeaters and puts the keyboard away is still looking at three
     // repeaters. Closing a search and silently restoring 350 nodes would undo
     // the thing they just did.
-    val query = remember { mutableStateOf(Search.Query()) }
+    val query = remember {
+        mutableStateOf(Search.Query(text = MainActivity.queryOverride.orEmpty()))
+    }
     val searchOpen = remember { mutableStateOf(MainActivity.showFind) }
     // BUMPED WHEN A MARK CHANGES. Starring somebody alters which nodes match and
     // which the ranker floats, and neither the mesh nor the query has moved — so
