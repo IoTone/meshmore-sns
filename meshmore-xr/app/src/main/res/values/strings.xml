@@ -174,4 +174,24 @@
         <item>MUST CARRY GITEKI — MOST</item>
         <item>IMPORTED BOARDS DO NOT.</item>
     </string-array>
+    <!-- help card -->
+    <string name="h_gestures">GESTURES</string>
+    <string name="h_messages">MESSAGES</string>
+    <string name="h_right">RIGHT</string>
+    <string name="h_left">LEFT</string>
+    <string name="h_either">EITHER</string>
+    <string name="hp_compass">COMPASS BAND ON / OFF</string>
+    <string name="hp_link">LINK BAND ON / OFF</string>
+    <string name="hp_back">BACK OUT ONE LEVEL</string>
+    <string name="hp_magnified">ONLY WHILE MAGNIFIED</string>
+    <string name="hp_recentre">MOVE SCENE TO YOUR SPOT</string>
+    <string name="hp_same_r">SAME - R WORKS TOO</string>
+    <string name="hp_hold">HOLD STILL HALF A SECOND</string>
+    <string name="hp_palm_away">PALM AWAY FROM YOUR FACE</string>
+    <string name="hp_dock_ring">OR PINCH A DOCK RING</string>
+    <string name="hp_reel">PALM UP SHOWS THE REEL</string>
+    <string name="hp_scrub">SLIDE THUMB ON INDEX</string>
+    <string name="hp_wraps">EITHER WAY - IT WRAPS</string>
+    <string name="hp_point">POINT A BUTTON AND PINCH</string>
+    <string name="hp_voice">VOICE ON READS IT ALOUD</string>
 </resources>

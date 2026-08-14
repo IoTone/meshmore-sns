@@ -59,6 +59,13 @@ class HelpCard(
         val hand: String,
         val does: String,
         /**
+         * The localised copies. The Latin literals above stay AUTHORITATIVE
+         * for HelpCardTest's width contract, which runs on the JVM; these are
+         * what build() renders, so EN resources must match the literals.
+         */
+        val handRes: Int? = null,
+        val doesRes: Int? = null,
+        /**
          * A [Marks] contour instead of an ASL letter, for the commands that
          * are not hand SHAPES at all.
          *
@@ -136,25 +143,42 @@ class HelpCard(
             // word "RIGHT". A table wants its columns to start in the same
             // place, which means anchoring the LEFT edge and letting the run
             // end where it ends.
-            if (r.hand.isNotEmpty()) {
-                line(root, r.hand, at(base, HAND_COL, r.hand, y), theme.text)
+            val hand = r.handRes?.let { context.getString(it) } ?: r.hand
+            val does = r.doesRes?.let { context.getString(it) } ?: r.does
+            if (hand.isNotEmpty()) {
+                line(root, hand, base, HAND_COL, y, theme.text)
             }
-            if (r.does.isNotEmpty()) {
-                line(root, r.does, at(base, COL, r.does, y), theme.alt)
+            if (does.isNotEmpty()) {
+                line(root, does, base, COL, y, theme.alt)
             }
         }
         setVisible(false)
         Log.i(TAG, "[help] card built, ${lines.size} lines")
     }
 
-    /** Where a run must be anchored for its LEFT edge to sit at [left]. */
-    private fun at(base: Vector3, left: Float, text: String, y: Float): Vector3 =
-        Vector3(base.x + left + Glyphs.width(text, CAP) / 2f, y, base.z)
-
-    private suspend fun line(root: Entity, text: String, at: Vector3, rgb: Int) {
-        // Tier S: short, Latin, fixed. Exactly what the stroke font is for, and
-        // it keeps the card in the same visual register as the rest of the app
-        // rather than looking like documentation pasted into the room.
+    private suspend fun line(
+        root: Entity, text: String, base: Vector3, left: Float, y: Float, rgb: Int,
+    ) {
+        // TWO RENDER PATHS, ONE PER SCRIPT. The stroke font is the card's home
+        // register — short, Latin, drawn like everything else — and it cannot
+        // form a single kanji. Japanese rows ride a TextRun panel at the
+        // promoted cap instead. Both anchor by their measured LEFT edge, which
+        // is the property a table actually needs.
+        if (com.iotj.meshmore.xr.L10n.ja) {
+            val run = TextRun.reusable(
+                session, context, text, com.iotj.meshmore.xr.L10n.cap(CAP),
+                argb(rgb, 0.9f), "help-ja",
+            ) ?: return
+            run.setText(text)
+            val at = Vector3(base.x + left + run.widthM / 2f, y, base.z)
+            run.entity.parent = root
+            run.entity.setPose(Pose(at), Space.ACTIVITY)
+            run.entity.setEnabled(false)
+            entities += run.entity
+            lines += run.entity as Entity to at
+            return
+        }
+        val at = Vector3(base.x + left + Glyphs.width(text, CAP) / 2f, y, base.z)
         MeshEntity.create(
             session, Prims.build(session, Glyphs.text(text, CAP)),
             listOf(Prims.material(session, rgb, 0.9f)),
@@ -202,34 +226,34 @@ class HelpCard(
 
     internal companion object {
             val ROWS = listOf(
-            Row(null, "GESTURES", ""),
-            Row('a', "RIGHT", "COMPASS BAND ON / OFF"),
-            Row('a', "LEFT", "LINK BAND ON / OFF"),
+            Row(null, "GESTURES", "", handRes = com.iotj.meshmore.xr.R.string.h_gestures),
+            Row('a', "RIGHT", "COMPASS BAND ON / OFF", handRes = com.iotj.meshmore.xr.R.string.h_right, doesRes = com.iotj.meshmore.xr.R.string.hp_compass),
+            Row('a', "LEFT", "LINK BAND ON / OFF", handRes = com.iotj.meshmore.xr.R.string.h_left, doesRes = com.iotj.meshmore.xr.R.string.hp_link),
             // B was reachable but undocumented, which for a gesture is the same as
             // absent: there is nothing to discover it from. It takes either hand.
-            Row('b', "RIGHT", "BACK OUT ONE LEVEL"),
-            Row('b', "LEFT", "BACK OUT ONE LEVEL"),
-            Row(null, "", "ONLY WHILE MAGNIFIED"),
-            Row('h', "EITHER", "MOVE SCENE TO YOUR SPOT"),
-            Row('r', "EITHER", "SAME - R WORKS TOO"),
-            Row(null, "", "HOLD STILL HALF A SECOND"),
-            Row(null, "", "PALM AWAY FROM YOUR FACE"),
-            Row(null, "", "OR PINCH A DOCK RING"),
+            Row('b', "RIGHT", "BACK OUT ONE LEVEL", handRes = com.iotj.meshmore.xr.R.string.h_right, doesRes = com.iotj.meshmore.xr.R.string.hp_back),
+            Row('b', "LEFT", "BACK OUT ONE LEVEL", handRes = com.iotj.meshmore.xr.R.string.h_left, doesRes = com.iotj.meshmore.xr.R.string.hp_back),
+            Row(null, "", "ONLY WHILE MAGNIFIED", doesRes = com.iotj.meshmore.xr.R.string.hp_magnified),
+            Row('h', "EITHER", "MOVE SCENE TO YOUR SPOT", handRes = com.iotj.meshmore.xr.R.string.h_either, doesRes = com.iotj.meshmore.xr.R.string.hp_recentre),
+            Row('r', "EITHER", "SAME - R WORKS TOO", handRes = com.iotj.meshmore.xr.R.string.h_either, doesRes = com.iotj.meshmore.xr.R.string.hp_same_r),
+            Row(null, "", "HOLD STILL HALF A SECOND", doesRes = com.iotj.meshmore.xr.R.string.hp_hold),
+            Row(null, "", "PALM AWAY FROM YOUR FACE", doesRes = com.iotj.meshmore.xr.R.string.hp_palm_away),
+            Row(null, "", "OR PINCH A DOCK RING", doesRes = com.iotj.meshmore.xr.R.string.hp_dock_ring),
             // The reel's gesture had no entry anywhere, and was duly reported as
             // undiscoverable. Same lesson B taught: reachable and undocumented is
             // the same as absent.
-            Row(null, "MESSAGES", ""),
+            Row(null, "MESSAGES", "", handRes = com.iotj.meshmore.xr.R.string.h_messages),
             // NOT the letter B, which this card already binds to BACK OUT. Palm-up
             // is a POSE, not a hand shape, and borrowing a letter that means
             // something else on the row above would teach a link that is not there.
-            Row(null, "LEFT", "PALM UP SHOWS THE REEL", mark = "HANDS"),
-            Row(null, "LEFT", "SLIDE THUMB ON INDEX", mark = "SCRUB"),
-            Row(null, "", "EITHER WAY - IT WRAPS"),
+            Row(null, "LEFT", "PALM UP SHOWS THE REEL", mark = "HANDS", handRes = com.iotj.meshmore.xr.R.string.h_left, doesRes = com.iotj.meshmore.xr.R.string.hp_reel),
+            Row(null, "LEFT", "SLIDE THUMB ON INDEX", mark = "SCRUB", handRes = com.iotj.meshmore.xr.R.string.h_left, doesRes = com.iotj.meshmore.xr.R.string.hp_scrub),
+            Row(null, "", "EITHER WAY - IT WRAPS", doesRes = com.iotj.meshmore.xr.R.string.hp_wraps),
             // Asked directly -- "how do I turn on the audio to always do TTS for
             // this channel" -- which is the answer to a feature that exists and
             // could not be found. A control nobody can locate is not shipped.
-            Row(null, "", "POINT A BUTTON AND PINCH"),
-            Row(null, "", "VOICE ON READS IT ALOUD"),
+            Row(null, "", "POINT A BUTTON AND PINCH", doesRes = com.iotj.meshmore.xr.R.string.hp_point),
+            Row(null, "", "VOICE ON READS IT ALOUD", doesRes = com.iotj.meshmore.xr.R.string.hp_voice),
         )
 
         const val TAG = "MeshmoreXR"

@@ -172,4 +172,24 @@
         <item>ハードに技適マークが必要 —</item>
         <item>輸入ボードの多くは未取得。</item>
     </string-array>
+    <!-- help card -->
+    <string name="h_gestures">ジェスチャー</string>
+    <string name="h_messages">メッセージ</string>
+    <string name="h_right">右</string>
+    <string name="h_left">左</string>
+    <string name="h_either">両方</string>
+    <string name="hp_compass">方位バンド ON/OFF</string>
+    <string name="hp_link">リンクバンド ON/OFF</string>
+    <string name="hp_back">一段戻る</string>
+    <string name="hp_magnified">拡大中のみ</string>
+    <string name="hp_recentre">現在地へシーン移動</string>
+    <string name="hp_same_r">Rでも同じ</string>
+    <string name="hp_hold">半秒静止</string>
+    <string name="hp_palm_away">掌は外向きに</string>
+    <string name="hp_dock_ring">ドックのピンチでも可</string>
+    <string name="hp_reel">掌を上でリール表示</string>
+    <string name="hp_scrub">親指で人差し指をなぞる</string>
+    <string name="hp_wraps">どちら向きでも循環</string>
+    <string name="hp_point">ボタンを指してピンチ</string>
+    <string name="hp_voice">VOICE ONで読み上げ</string>
 </resources>
