@@ -348,6 +348,13 @@ class Cue {
         fun packFor(key: String): Pack = PACKS.firstOrNull { it.key == key } ?: SONAR
     }
 
+    /**
+     * The touch channel, riding the same events as the tones. Optional and
+     * set by the host: Cue is constructed before a Context exists, and a cue
+     * with no haptics is the emulator's normal state, not a fault.
+     */
+    var haptics: Haptics? = null
+
     private var gen: ToneGenerator? = null
     private var genVol: Int = -1
 
@@ -384,10 +391,19 @@ class Cue {
     }
 
     /** A letter was recognised. Fires BEFORE the action, on purpose. */
-    fun recognised() = play(pack.recognised, pack.recognisedMs)
+    fun recognised() {
+        play(pack.recognised, pack.recognisedMs)
+        // A letter recognised IS the commit of a gesture: E3, not E2 — the
+        // spec keeps hover silent in the hand even on fast actuators.
+        haptics?.click()
+    }
 
     /** A surface opened. Higher and shorter than a rejection. */
-    fun opened() = play(pack.opened, pack.openedMs)
+    fun opened() {
+        play(pack.opened, pack.openedMs)
+        // E3 COMMIT. A surface opening is a selection that landed.
+        haptics?.click()
+    }
 
     /**
      * A DETENT PASSED — one notch of a continuous control.
@@ -417,13 +433,40 @@ class Cue {
      * categorical — a room, or you — and loudness is a scale.
      */
     fun arrived(direct: Boolean) {
+        // E11 only: a DM summons; channel traffic gets NO haptic — the
+        // difference between a room talking and somebody talking to YOU is
+        // carried by this channel existing only for the second.
+        if (direct) haptics?.summon()
         if (!allow(if (direct) Kind.DIRECT else Kind.CHANNEL)) return
         if (direct) play(pack.msgDirect, pack.msgDirectMs)
         else play(pack.msgChannel, pack.msgChannelMs)
     }
 
     /** E13 — the radio linked. */
-    fun linked() = play(pack.linkUp, pack.linkUpMs)
+    fun linked() {
+        play(pack.linkUp, pack.linkUpMs)
+        haptics?.rise()
+    }
+
+    /**
+     * E13's other half — the radio LEFT. The closed tone plus the falling
+     * buzz: this is the event most worth feeling, because it fires exactly
+     * when the wearer is looking at a trail rather than at the band.
+     */
+    fun dropped() {
+        play(pack.closed, pack.closedMs)
+        haptics?.fall()
+    }
+
+    /**
+     * E4 DENY — the closed tone with the double-click refusal under it.
+     * For actions the app REFUSES (allow-list, no radio), never for things
+     * that merely closed; a denial that feels like a close gets retried.
+     */
+    fun denied() {
+        play(pack.closed, pack.closedMs)
+        haptics?.refuse()
+    }
 
     /**
      * E7 — a new peer joined the mesh.
@@ -463,6 +506,7 @@ class Cue {
         // with the tools this path has.
         runCatching { tone()?.stopTone() }
         play(ToneGenerator.TONE_CDMA_ABBR_ALERT, CRITICAL_MS)
+        haptics?.alarm()
         Log.i(TAG, "[cue] CRITICAL")
     }
 

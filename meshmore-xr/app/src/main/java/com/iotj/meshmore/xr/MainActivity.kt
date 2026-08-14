@@ -1366,6 +1366,10 @@ private fun HorizonScene(link: MeshLink) {
     val unread = remember { mutableStateOf(0) }
     val helpRef = remember { mutableStateOf<HelpCard?>(null) }
     val cue = remember { Cue() }
+    // The touch channel rides the same Cue events as the tones — the puck's
+    // actuator was measured real (COMPOSE_EFFECTS) after the spec assumed none.
+    val haptics = remember { Haptics(ctx) }
+    cue.haptics = haptics
     /**
      * WHICH OF THE NINE, read before anything is built.
      *
@@ -2778,7 +2782,7 @@ private fun HorizonScene(link: MeshLink) {
                             // trail rather than at the band. Said once per
                             // outage — the string does not change while the
                             // retries run, so this cannot become a metronome.
-                            if (link.status.value.droppedAtMs != null) cue.closed()
+                            if (link.status.value.droppedAtMs != null) cue.dropped()
                             Log.i(TAG_UI, "[link] $step")
                         } else {
                             // Arrival is worth one line too; it is the only
@@ -2827,7 +2831,7 @@ private fun HorizonScene(link: MeshLink) {
                                 }
                                 is MeshLink.Wrote.Refused -> {
                                     noticeRef.value?.say(ctx.getString(R.string.n_refused, w.why))
-                                    cue.closed()
+                                    cue.denied()
                                 }
                             }
                         }
@@ -3692,7 +3696,7 @@ private fun HorizonScene(link: MeshLink) {
                             // will not send from never appears.
                             if (!link.mayMessage(n.name, n.fullKey)) {
                                 noticeRef.value?.say(ctx.getString(R.string.n_send_locked))
-                                cue.closed()
+                                cue.denied()
                             } else {
                                 val t = link.threads().firstOrNull { th ->
                                     th.direct && (
@@ -3744,7 +3748,7 @@ private fun HorizonScene(link: MeshLink) {
                                     ctx.getString(R.string.n_radio_not_ready)
                                 },
                             )
-                            if (ok) cue.recognised() else cue.closed()
+                            if (ok) cue.recognised() else cue.denied()
                         }
                     }
                     nodeMenuRef.value?.hide()
