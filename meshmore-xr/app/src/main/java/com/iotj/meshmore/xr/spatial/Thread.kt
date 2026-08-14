@@ -127,7 +127,7 @@ class Thread(
     }
 
     private suspend fun run(root: Entity, widest: String, cap: Float, rgb: Int): TextRun.Run? =
-        TextRun.reusable(session, context, widest, cap, argb(rgb, 0.95f), "thread")
+        TextRun.reusable(session, context, widest, com.iotj.meshmore.xr.L10n.cap(cap), argb(rgb, 0.95f), "thread")
             ?.also { it.entity.parent = root; it.entity.setEnabled(false); entities += it.entity }
 
     /** How far back the [i]th message sits. */
@@ -209,7 +209,7 @@ class Thread(
             deeperProxy?.setEnabled(more)
             if (more) {
                 deeper?.setText(
-                    "OLDER   %d-%d OF %d".format(
+                    context.getString(com.iotj.meshmore.xr.R.string.th_older,
                         first + 1, (first + DEPTH).coerceAtMost(lines.size), lines.size,
                     ),
                 )

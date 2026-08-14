@@ -338,14 +338,14 @@ class ThemePicker(
 
     private fun noteFor(s: Theme.Skin): String {
         val posture = when (s.posture) {
-            Theme.Posture.FIELD -> "FIELD"
-            Theme.Posture.TABLETOP -> "TABLETOP"
-            Theme.Posture.TRANSIT -> "TRANSIT"
+            Theme.Posture.FIELD -> context.getString(com.iotj.meshmore.xr.R.string.pk_field)
+            Theme.Posture.TABLETOP -> context.getString(com.iotj.meshmore.xr.R.string.pk_tabletop)
+            Theme.Posture.TRANSIT -> context.getString(com.iotj.meshmore.xr.R.string.pk_transit)
         }
         val sub = when (s.substrate) {
-            Theme.Substrate.PANEL -> "PANEL"
-            Theme.Substrate.ADDITIVE -> "ADDITIVE"
-            Theme.Substrate.HYBRID -> "HYBRID"
+            Theme.Substrate.PANEL -> context.getString(com.iotj.meshmore.xr.R.string.pk_panel)
+            Theme.Substrate.ADDITIVE -> context.getString(com.iotj.meshmore.xr.R.string.pk_additive)
+            Theme.Substrate.HYBRID -> context.getString(com.iotj.meshmore.xr.R.string.pk_hybrid)
         }
         val worn = if (s == previewing) " · WORN" else ""
         return "$sub · $posture · ${s.audio.uppercase()}$worn"

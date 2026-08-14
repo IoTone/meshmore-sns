@@ -90,12 +90,15 @@ internal fun channelLabel(
     publicKey: Boolean,
     count: Int,
     speaking: Boolean,
+    // Localised by the caller; defaults keep this pure for the JVM tests.
+    unnamedWord: String = "UNNAMED",
+    publicMark: String = "PUBLIC  ",
 ): String {
     val n = name.trim().uppercase().let {
         // Truncated with a real ellipsis rather than a hard cut, so a clipped
         // name reads as clipped rather than as a channel somebody named badly.
         if (it.length <= CHAN_NAME_MAX) it else it.take(CHAN_NAME_MAX - 1) + "…"
-    }.ifBlank { "UNNAMED" }
+    }.ifBlank { unnamedWord }
     // Counts saturate, AND SAY SO. A four-digit count would push the row past
     // the template and clip the SPEAKS off the end — losing the state to show
     // the traffic, which is the wrong trade.
@@ -118,7 +121,7 @@ internal fun channelLabel(
     // of a template that turned out to be eight characters too long. When a row
     // has to lose something, it loses the part that was already being said.
     return buildString {
-        if (mark) append("PUBLIC  ")
+        if (mark) append(publicMark)
         append(n)
         append("  ").append(c)
     }
@@ -152,11 +155,13 @@ internal fun settingLabel(
     armed: Boolean = false,
     onWord: String = "ON",
     offWord: String = "OFF",
+    armedWord: String = "CONFIRM?",
+    fallbackName: String = "SETTING",
 ): String {
     val n = name.trim().uppercase().let {
         if (it.length <= SETTING_NAME_MAX) it else it.take(SETTING_NAME_MAX - 1) + "…"
-    }.ifBlank { "SETTING" }
-    return n + "  " + if (armed) "CONFIRM?" else if (on) onWord else offWord
+    }.ifBlank { fallbackName }
+    return n + "  " + if (armed) armedWord else if (on) onWord else offWord
 }
 
 // --- S9 · radio configuration -----------------------------------------------

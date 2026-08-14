@@ -92,13 +92,16 @@ class FirstLight(
             proxy?.addComponent(InteractableComponent.create(session) { ev -> onInput(ev) })
         }.onFailure { Log.w(TAG, "[first] no input on the mote: $it") }
 
-        line = run(root, WIDEST, "first-line", theme.text)
-        hint = run(root, HINT_WIDEST, "first-hint", theme.alt)
+        line = run(root, com.iotj.meshmore.xr.L10n.tpl(WIDEST, "これに触れる"), "first-line", theme.text)
+        hint = run(root, com.iotj.meshmore.xr.L10n.tpl(HINT_WIDEST, "見つめて保持でも可"), "first-hint", theme.alt)
         Log.i(TAG, "[first] built")
     }
 
     private suspend fun run(root: Entity, widest: String, name: String, rgb: Int): TextRun.Run? =
-        TextRun.reusable(session, context, widest, CAP, argb(rgb, 0.95f), name)
+        TextRun.reusable(
+            session, context, widest,
+            com.iotj.meshmore.xr.L10n.cap(CAP), argb(rgb, 0.95f), name,
+        )
             ?.also { it.entity.parent = root; it.entity.setEnabled(false); entities += it.entity }
 
     fun showAt(head: Vector3, yawRad: Float, nowMs: Long) {
@@ -108,7 +111,7 @@ class FirstLight(
         open = true
         touched = false
         shownAt = nowMs
-        runCatching { line?.setText("TOUCH THIS") }
+        runCatching { line?.setText(context.getString(com.iotj.meshmore.xr.R.string.fl_touch)) }
         Log.i(TAG, "[first] open")
     }
 
@@ -148,7 +151,7 @@ class FirstLight(
             val stuck = nowMs - shownAt > HINT_MS
             hint?.entity?.setEnabled(stuck)
             if (stuck) {
-                hint?.setText("OR LOOK AT IT AND HOLD")
+                hint?.setText(context.getString(com.iotj.meshmore.xr.R.string.fl_hint))
                 val hp = Vector3(p.x, lp.y - CAP * 2.2f, p.z)
                 hint?.entity?.setPose(Pose(hp, facing(hp, head)), Space.ACTIVITY)
             }

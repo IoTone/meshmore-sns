@@ -160,7 +160,11 @@ class Crown(
      * in one pinch is not a lesser version of one that does everything in
      * twenty.
      */
-    private val quick = listOf("ROGER", "ON MY WAY", "STAND BY")
+    private val quick = listOf(
+        context.getString(com.iotj.meshmore.xr.R.string.q_roger),
+        context.getString(com.iotj.meshmore.xr.R.string.q_omw),
+        context.getString(com.iotj.meshmore.xr.R.string.q_standby),
+    )
 
     /** Whether this conversation reads itself aloud, for the toggle's label. */
     var voiceOn: Boolean = false
@@ -173,15 +177,15 @@ class Crown(
 
     private fun labels(): List<Pair<Act, String>> = when (level) {
         Level.ACTIONS -> listOf(
-            Act.REPLY to "REPLY",
-            Act.ALOUD to "READ ALOUD",
+            Act.REPLY to context.getString(com.iotj.meshmore.xr.R.string.a_reply),
+            Act.ALOUD to context.getString(com.iotj.meshmore.xr.R.string.a_aloud),
             // STATE, WITH A COLON, not a bare word. "VOICE OFF" reads as a
             // button that turns voice off; "VOICE: OFF" reads as the switch it
             // is. The difference decides whether pinching it does what the
             // wearer expected, which is the only thing a toggle label is for.
             Act.VOICE to if (voiceOn) "VOICE: ON" else "VOICE: OFF",
-            Act.THREAD to "THREAD",
-            Act.DISMISS to "CLOSE",
+            Act.THREAD to context.getString(com.iotj.meshmore.xr.R.string.a_thread),
+            Act.DISMISS to context.getString(com.iotj.meshmore.xr.R.string.a_close),
         )
         Level.COMPOSE -> quick.mapIndexed { i, q ->
             listOf(Act.SEND_1, Act.SEND_2, Act.SEND_3)[i] to q
@@ -193,12 +197,15 @@ class Crown(
             // something to say.
             suggestion?.let { Act.SEND_AUTO to Autopen.LABEL },
         ) + listOf(
-            Act.SPEAK to if (dictating) "LISTENING" else "SPEAK",
-            Act.BACK to "BACK",
+            Act.SPEAK to context.getString(if (dictating) com.iotj.meshmore.xr.R.string.a_listening else com.iotj.meshmore.xr.R.string.a_speak),
+            Act.BACK to context.getString(com.iotj.meshmore.xr.R.string.a_back),
         )
         // TWO ANSWERS AND NOTHING ELSE. A confirm screen with a third option is
         // a confirm screen somebody will misfire on.
-        Level.CONFIRM -> listOf(Act.CONFIRM to "SEND", Act.CANCEL to "CANCEL")
+        Level.CONFIRM -> listOf(
+            Act.CONFIRM to context.getString(com.iotj.meshmore.xr.R.string.a_send),
+            Act.CANCEL to context.getString(com.iotj.meshmore.xr.R.string.a_cancel),
+        )
     }
 
     suspend fun build() {
@@ -206,7 +213,7 @@ class Crown(
         val root = session.scene.activitySpace
         repeat(SLOTS) {
             val run = TextRun.reusable(
-                session, context, WIDEST, CAP, argb(theme.text, 0.98f), "crown",
+                session, context, WIDEST, com.iotj.meshmore.xr.L10n.cap(CAP), argb(theme.text, 0.98f), "crown",
             ) ?: return@repeat
             run.entity.parent = root
             run.entity.setEnabled(false)
@@ -243,10 +250,10 @@ class Crown(
         // other way to find out, and "did that send?" is not a question a
         // companion app should make people hold in their head.
         note = TextRun.reusable(
-            session, context, NOTE_WIDEST, CAP, argb(theme.text, 0.95f), "crown-note",
+            session, context, NOTE_WIDEST, com.iotj.meshmore.xr.L10n.cap(CAP), argb(theme.text, 0.95f), "crown-note",
         )?.also { it.entity.parent = root; it.entity.setEnabled(false); entities += it.entity }
         draft0 = TextRun.reusable(
-            session, context, NOTE_WIDEST, CAP * 1.15f, argb(theme.text, 0.98f), "crown-draft",
+            session, context, NOTE_WIDEST, com.iotj.meshmore.xr.L10n.cap(CAP) * 1.15f, argb(theme.text, 0.98f), "crown-draft",
         )?.also { it.entity.parent = root; it.entity.setEnabled(false); entities += it.entity }
         count0 = TextRun.reusable(
             session, context, "99/99 WORDS  FULL", CAP * 0.8f,

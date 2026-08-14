@@ -660,6 +660,8 @@ private fun channelRows(
                 publicKey = c.publicKey,
                 count = link.countFor(c.threadId),
                 speaking = voice.isOn(c.threadId),
+                unnamedWord = ctx.getString(R.string.w_unnamed),
+                publicMark = ctx.getString(R.string.w_public),
             ),
             lit = voice.isOn(c.threadId),
         )
@@ -763,7 +765,7 @@ private fun aboutRows(ctx: android.content.Context, link: MeshLink): List<com.io
         // region list itself only has room for a 32-character footer, and "not
         // legal advice" without the part explaining that Japanese law is about
         // the HARDWARE would be the misleading half of a true statement.
-    ) + Regions.DISCLAIMER.map { row(it) }
+    ) + ctx.resources.getStringArray(R.array.region_disclaimer).map { row(it) }
 }
 
 /**
@@ -1106,6 +1108,8 @@ private fun appRows(
             id = id,
             label = com.iotj.meshmore.xr.spatial.settingLabel(
                 name, on, armed = armedId == id, onWord = onWord, offWord = offWord,
+                armedWord = ctx.getString(R.string.w_confirm),
+                fallbackName = ctx.getString(R.string.w_setting),
             ),
             // AN ARMED ROW DOES NOT LIGHT. Lighting it would show the state it
             // is about to have rather than the one it has, which is a switch
@@ -1127,12 +1131,13 @@ private fun appRows(
         com.iotj.meshmore.xr.spatial.Stack.Row(
             id = "TELEM", label = ctx.getString(R.string.r_telem), lit = false,
         ),
-        row("CHANSEND", ctx.getString(R.string.r_chansend), Settings.channelSend(ctx), "ALLOWED", "OFF"),
+        row("CHANSEND", ctx.getString(R.string.r_chansend), Settings.channelSend(ctx), ctx.getString(R.string.w_allowed), "OFF"),
         com.iotj.meshmore.xr.spatial.Stack.Row(
             id = "FORGET",
             label = com.iotj.meshmore.xr.spatial.settingLabel(
                 ctx.getString(R.string.r_erase, link.msgs.value.size),
                 on = false, armed = armedId == "FORGET", offWord = "",
+                armedWord = ctx.getString(R.string.w_confirm),
             ).trimEnd(),
             lit = false,
         ),
@@ -1153,12 +1158,11 @@ private fun yawOf(h: androidx.xr.runtime.math.Pose): Float {
  * companion and not a packet analyser, and the difference shows up in small
  * places like this one before it shows up anywhere else.
  */
-private fun ago(sec: Long): String = when {
-    sec < 0 -> "JUST NOW"
-    sec < 60 -> "JUST NOW"
-    sec < 3600 -> "${sec / 60} MIN AGO"
-    sec < 86400 -> "${sec / 3600} HR AGO"
-    else -> "${sec / 86400} DAY AGO"
+private fun ago(ctx: android.content.Context, sec: Long): String = when {
+    sec < 60 -> ctx.getString(R.string.ago_now)
+    sec < 3600 -> ctx.getString(R.string.ago_min, sec / 60)
+    sec < 86400 -> ctx.getString(R.string.ago_hr, sec / 3600)
+    else -> ctx.getString(R.string.ago_day, sec / 86400)
 }
 
 /**
@@ -2044,7 +2048,7 @@ private fun HorizonScene(link: MeshLink) {
                             id = t.id,
                             who = "%-14s %s".format(
                                 com.iotj.meshmore.xr.spatial.TypeTier.clip(t.title, 14),
-                                last?.let { ago(now - it.atEpochSec) } ?: "",
+                                last?.let { ago(ctx, now - it.atEpochSec) } ?: "",
                             ),
                             // The last thing said, which is what a thread list
                             // is FOR — a row that only names the conversation
@@ -2449,7 +2453,7 @@ private fun HorizonScene(link: MeshLink) {
                                         com.iotj.meshmore.xr.spatial.TypeTier.clip(
                                             m.fromName.ifBlank { t.title }, 14,
                                         ),
-                                        ago(nowS - m.atEpochSec),
+                                        ago(ctx, nowS - m.atEpochSec),
                                     ),
                                     words = com.iotj.meshmore.xr.spatial.TypeTier.clip(m.text, 24),
                                     mine = m.direct,
@@ -2601,7 +2605,7 @@ private fun HorizonScene(link: MeshLink) {
                 appRef.value?.show(
                     regionRows(hereSource.here.value, link.radio.live),
                     title = ctx.getString(R.string.t_region, Regions.labelFor(link.radio.live)),
-                    footer = Regions.FOOTER,
+                    footer = ctx.getString(R.string.f_region),
                 )
                 dockRef.value?.setLit("SETUP", false)
                 cue.opened()
@@ -3238,7 +3242,7 @@ private fun HorizonScene(link: MeshLink) {
                                     com.iotj.meshmore.xr.spatial.TypeTier.clip(
                                         m.fromName.ifBlank { t.title }, 14,
                                     ),
-                                    ago(nowS - m.atEpochSec),
+                                    ago(ctx, nowS - m.atEpochSec),
                                 ),
                                 words = com.iotj.meshmore.xr.spatial.TypeTier.clip(m.text, 24),
                                 mine = m.direct,
@@ -3972,7 +3976,7 @@ private fun HorizonScene(link: MeshLink) {
                                     com.iotj.meshmore.xr.spatial.TypeTier.clip(
                                         m.fromName.ifBlank { t.title }, 14,
                                     ),
-                                    ago(nowS - m.atEpochSec),
+                                    ago(ctx, nowS - m.atEpochSec),
                                 ),
                                 words = com.iotj.meshmore.xr.spatial.TypeTier.clip(m.text, 24),
                                 mine = m.direct,
@@ -4714,7 +4718,7 @@ private fun onCrown(
                                 com.iotj.meshmore.xr.spatial.TypeTier.clip(
                                     m.fromName.ifBlank { t.title }, 14,
                                 ),
-                                ago(nowS - m.atEpochSec),
+                                ago(ctx, nowS - m.atEpochSec),
                             ),
                             words = com.iotj.meshmore.xr.spatial.TypeTier.clip(m.text, 24),
                             mine = m.direct,

@@ -46,7 +46,7 @@
     <string name="n_radio_not_ready">RADIO NOT READY</string>
 
     <!-- link ladder (MeshLink.linkStep; the notice band reads these) -->
-    <string name="link_step">STEP %1$d/4  %2$s</string>
+    <string name="link_step">"STEP %1$d/4  %2$s"</string>
     <string name="link_scan">LOOKING FOR A RADIO</string>
     <string name="link_connecting">CONNECTING TO %1$s</string>
     <string name="link_handshake">HANDSHAKING</string>
@@ -63,15 +63,15 @@
 
     <!-- ═══ footers ═══ -->
     <string name="f_pending">PENDING — COMMIT TO APPLY</string>
-    <string name="f_radio_idle">PICK TO STEP    B TO CLOSE</string>
+    <string name="f_radio_idle">"PICK TO STEP    B TO CLOSE"</string>
     <string name="f_commit_arm">PICK AGAIN TO WRITE TO THE RADIO</string>
-    <string name="f_app">LIT = ON    B TO CLOSE</string>
+    <string name="f_app">"LIT = ON    B TO CLOSE"</string>
     <string name="f_about">READ ONLY — B TO CLOSE</string>
     <string name="f_chan_no_radio">CONNECT A RADIO FOR SLOTS</string>
-    <string name="f_chan">LIT = READ ALOUD    B TO CLOSE</string>
+    <string name="f_chan">"LIT = READ ALOUD    B TO CLOSE"</string>
     <string name="f_chan_new">A GUESSED TAG JOINS. SAY IT ONCE</string>
     <string name="f_chan_public">PUBLIC IS EVERYBODY. NO SECRETS</string>
-    <string name="f_telem">PICK TO CYCLE     B TO CLOSE</string>
+    <string name="f_telem">"PICK TO CYCLE     B TO CLOSE"</string>
     <string name="f_chansend_arm">PICK AGAIN TO ALLOW CHANNEL SEND</string>
     <string name="f_erase_arm">PICK AGAIN TO ERASE — NO UNDO</string>
 
@@ -95,7 +95,7 @@
 
     <!-- channel actions -->
     <string name="c_new">+ NEW CHANNEL</string>
-    <string name="c_make">MAKE  %1$s</string>
+    <string name="c_make">"MAKE  %1$s"</string>
     <string name="c_reroll">ROLL A DIFFERENT NAME</string>
     <string name="c_join_public">+ JOIN PUBLIC CHANNEL</string>
     <string name="c_join_arm">JOIN PUBLIC — PINCH AGAIN</string>
@@ -113,11 +113,11 @@
     <string name="find_more">+%1$d MORE — NARROW IT</string>
 
     <!-- HERE caption -->
-    <string name="here_no_fix_pinch">HERE  NO FIX - PINCH FOR GPS</string>
-    <string name="here_no_fix">HERE  NO FIX</string>
-    <string name="here_headset">HERE  HEADSET GPS</string>
-    <string name="here_src">HERE  %1$s</string>
-    <string name="here_armed">  - HEADSET ARMED</string>
+    <string name="here_no_fix_pinch">"HERE  NO FIX - PINCH FOR GPS"</string>
+    <string name="here_no_fix">"HERE  NO FIX"</string>
+    <string name="here_headset">"HERE  HEADSET GPS"</string>
+    <string name="here_src">"HERE  %1$s"</string>
+    <string name="here_armed">"  - HEADSET ARMED"</string>
 
     <!-- ABOUT safety lines (the reason the surface exists) -->
     <string name="s_driving">DO NOT USE WHILE DRIVING</string>
@@ -130,4 +130,48 @@
     <string name="n_written">WRITTEN — %1$s</string>
     <string name="n_commit_failed">COMMIT FAILED</string>
     <string name="n_discarded">CHANGES DISCARDED</string>
+    <!-- first light / crown / inbox / thread / picker -->
+    <string name="fl_touch">TOUCH THIS</string>
+    <string name="fl_hint">OR LOOK AT IT AND HOLD</string>
+    <string name="q_roger">ROGER</string>
+    <string name="q_omw">ON MY WAY</string>
+    <string name="q_standby">STAND BY</string>
+    <string name="a_reply">REPLY</string>
+    <string name="a_aloud">READ ALOUD</string>
+    <string name="a_thread">THREAD</string>
+    <string name="a_close">CLOSE</string>
+    <string name="a_speak">SPEAK</string>
+    <string name="a_listening">LISTENING</string>
+    <string name="a_back">BACK</string>
+    <string name="a_send">SEND</string>
+    <string name="a_cancel">CANCEL</string>
+    <string name="inbox_empty_head">NO MESSAGES YET</string>
+    <string name="inbox_empty_body">they appear here as they arrive</string>
+    <string name="th_older">"OLDER   %1$d-%2$d OF %3$d"</string>
+    <string name="pk_field">FIELD</string>
+    <string name="pk_tabletop">TABLETOP</string>
+    <string name="pk_transit">TRANSIT</string>
+    <string name="pk_panel">PANEL</string>
+    <string name="pk_additive">ADDITIVE</string>
+    <string name="pk_hybrid">HYBRID</string>
+    <string name="w_allowed">ALLOWED</string>
+    <string name="w_confirm">CONFIRM?</string>
+    <string name="w_unnamed">UNNAMED</string>
+    <string name="w_public">"PUBLIC  "</string>
+    <string name="w_setting">SETTING</string>
+    <string name="ago_now">JUST NOW</string>
+    <string name="ago_min">%1$d MIN AGO</string>
+    <string name="ago_hr">%1$d HR AGO</string>
+    <string name="ago_day">%1$d DAY AGO</string>
+    <string name="f_region">COMMUNITY SET — NOT LEGAL ADVICE</string>
+    <string-array name="region_disclaimer">
+        <item>PRESETS ARE COMMUNITY SET,</item>
+        <item>NOT LEGAL ADVICE. PICK ONE</item>
+        <item>LEGAL WHERE YOU ARE, AND</item>
+        <item>USE IT ON EVERY NODE.</item>
+        <item>JAPAN: SETTINGS ALONE ARE</item>
+        <item>NOT ENOUGH. THE HARDWARE</item>
+        <item>MUST CARRY GITEKI — MOST</item>
+        <item>IMPORTED BOARDS DO NOT.</item>
+    </string-array>
 </resources>

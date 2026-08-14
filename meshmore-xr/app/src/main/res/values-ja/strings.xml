@@ -45,7 +45,7 @@
     <string name="n_radio_not_ready">無線機 未接続</string>
 
     <!-- link ladder -->
-    <string name="link_step">手順 %1$d/4  %2$s</string>
+    <string name="link_step">"手順 %1$d/4  %2$s"</string>
     <string name="link_scan">無線機を探索中</string>
     <string name="link_connecting">%1$s へ接続中</string>
     <string name="link_handshake">ハンドシェイク中</string>
@@ -62,15 +62,15 @@
 
     <!-- footers -->
     <string name="f_pending">未確定 — COMMITで適用</string>
-    <string name="f_radio_idle">選択で変更  Bで閉じる</string>
+    <string name="f_radio_idle">"選択で変更  Bで閉じる"</string>
     <string name="f_commit_arm">もう一度で無線機に書込</string>
-    <string name="f_app">点灯=ON  Bで閉じる</string>
+    <string name="f_app">"点灯=ON  Bで閉じる"</string>
     <string name="f_about">閲覧のみ — Bで閉じる</string>
     <string name="f_chan_no_radio">無線機を接続してください</string>
-    <string name="f_chan">点灯=読み上げ  Bで閉じる</string>
+    <string name="f_chan">"点灯=読み上げ  Bで閉じる"</string>
     <string name="f_chan_new">タグ推測で参加可。共有は一度</string>
     <string name="f_chan_public">公開=全員。秘密なし</string>
-    <string name="f_telem">選択で切替  Bで閉じる</string>
+    <string name="f_telem">"選択で切替  Bで閉じる"</string>
     <string name="f_chansend_arm">もう一度でch送信を許可</string>
     <string name="f_erase_arm">もう一度で消去 — 取消不可</string>
 
@@ -94,7 +94,7 @@
 
     <!-- channel actions -->
     <string name="c_new">+ 新規チャンネル</string>
-    <string name="c_make">作成  %1$s</string>
+    <string name="c_make">"作成  %1$s"</string>
     <string name="c_reroll">別の名を振る</string>
     <string name="c_join_public">+ 公開chに参加</string>
     <string name="c_join_arm">公開参加 — もう一度</string>
@@ -112,11 +112,11 @@
     <string name="find_more">他%1$d件 — 絞り込みを</string>
 
     <!-- HERE caption -->
-    <string name="here_no_fix_pinch">HERE  位置なし - GPSを</string>
-    <string name="here_no_fix">HERE  位置なし</string>
-    <string name="here_headset">HERE  本体GPS</string>
-    <string name="here_src">HERE  %1$s</string>
-    <string name="here_armed">  - 本体待機</string>
+    <string name="here_no_fix_pinch">"HERE  位置なし - GPSを"</string>
+    <string name="here_no_fix">"HERE  位置なし"</string>
+    <string name="here_headset">"HERE  本体GPS"</string>
+    <string name="here_src">"HERE  %1$s"</string>
+    <string name="here_armed">"  - 本体待機"</string>
 
     <!-- ABOUT safety -->
     <string name="s_driving">運転中は使用しない</string>
@@ -129,4 +129,47 @@
     <string name="n_written">書込済 — %1$s</string>
     <string name="n_commit_failed">書込失敗</string>
     <string name="n_discarded">変更を破棄</string>
+    <!-- first light / crown / inbox / thread / picker -->
+    <string name="fl_touch">これに触れる</string>
+    <string name="fl_hint">見つめて保持でも可</string>
+    <string name="q_roger">了解</string>
+    <string name="q_omw">向かっています</string>
+    <string name="q_standby">待機</string>
+    <string name="a_reply">返信</string>
+    <string name="a_aloud">読み上げ</string>
+    <string name="a_thread">スレッド</string>
+    <string name="a_close">閉じる</string>
+    <string name="a_speak">話す</string>
+    <string name="a_listening">認識中</string>
+    <string name="a_back">戻る</string>
+    <string name="a_send">送信</string>
+    <string name="a_cancel">取消</string>
+    <string name="inbox_empty_head">メッセージなし</string>
+    <string name="inbox_empty_body">受信するとここに表示</string>
+    <string name="th_older">"過去へ  %1$d-%2$d / %3$d"</string>
+    <string name="pk_field">空間</string>
+    <string name="pk_tabletop">卓上</string>
+    <string name="pk_transit">移動</string>
+    <string name="pk_panel">パネル</string>
+    <string name="pk_additive">加算</string>
+    <string name="pk_hybrid">混成</string>
+    <string name="w_allowed">許可</string>
+    <string name="w_confirm">確認?</string>
+    <string name="w_unnamed">無名</string>
+    <string name="w_public">"公開  "</string>
+    <string name="w_setting">設定</string>
+    <string name="ago_now">たった今</string>
+    <string name="ago_min">%1$d分前</string>
+    <string name="ago_hr">%1$d時間前</string>
+    <string name="ago_day">%1$d日前</string>
+    <string name="f_region">共同体設定 — 法的助言ではない</string>
+    <string-array name="region_disclaimer">
+        <item>プリセットは共同体の設定で</item>
+        <item>法的助言ではない。現地で</item>
+        <item>合法なものを選び、全ノード</item>
+        <item>で同じ設定を使うこと。</item>
+        <item>日本: 設定だけでは不十分。</item>
+        <item>ハードに技適マークが必要 —</item>
+        <item>輸入ボードの多くは未取得。</item>
+    </string-array>
 </resources>

@@ -74,7 +74,7 @@ class Roster(
         clear()
         val root = session.scene.activitySpace
         repeat(ROWS + 1) { i ->
-            val run = TextRun.reusable(session, context, WIDEST, CAP, argb(theme.text, 0.95f), "roster")
+            val run = TextRun.reusable(session, context, WIDEST, com.iotj.meshmore.xr.L10n.cap(CAP), argb(theme.text, 0.95f), "roster")
                 ?: return@repeat
             run.entity.parent = root
             run.entity.setEnabled(false)

@@ -25,7 +25,11 @@ class L10nTest {
             if (f.exists()) {
                 return Regex("<string name=\"([^\"]+)\">(.*?)</string>", RegexOption.DOT_MATCHES_ALL)
                     .findAll(f.readText())
-                    .associate { it.groupValues[1] to it.groupValues[2] }
+                    .associate {
+                        // Android strips a wrapping quote pair (it exists to
+                        // protect significant whitespace); read it as AAPT does.
+                        it.groupValues[1] to it.groupValues[2].removeSurrounding("\"")
+                    }
             }
             d = d.parentFile ?: return@repeat
         }

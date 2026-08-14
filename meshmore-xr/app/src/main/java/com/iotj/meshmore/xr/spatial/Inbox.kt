@@ -118,7 +118,7 @@ class Inbox(
     }
 
     private suspend fun run(root: Entity, widest: String, cap: Float, rgb: Int): TextRun.Run? =
-        TextRun.reusable(session, context, widest, cap, argb(rgb, 0.95f), "inbox")
+        TextRun.reusable(session, context, widest, com.iotj.meshmore.xr.L10n.cap(cap), argb(rgb, 0.95f), "inbox")
             ?.also { it.entity.parent = root; it.entity.setEnabled(false); entities += it.entity }
 
     fun showAt(head: Vector3, yawRad: Float, entries: List<Entry>) {
@@ -183,8 +183,8 @@ class Inbox(
                     r.body.entity.setEnabled(on)
                     r.proxy.setEnabled(false)
                     if (!on) return@runCatching
-                    r.head.setText("NO MESSAGES YET")
-                    r.body.setText("they appear here as they arrive")
+                    r.head.setText(context.getString(com.iotj.meshmore.xr.R.string.inbox_empty_head))
+                    r.body.setText(context.getString(com.iotj.meshmore.xr.R.string.inbox_empty_body))
                     val at = Vector3(a.x, a.y, a.z)
                     r.head.entity.setPose(Pose(at, facing(a)), Space.ACTIVITY)
                     r.body.entity.setPose(
