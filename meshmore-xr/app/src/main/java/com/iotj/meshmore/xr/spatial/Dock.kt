@@ -174,9 +174,35 @@ class Dock(
         // would be.
         val base = o.place(0f, REACH, drop)
 
+        // A PAD, NOT A ROW — because a row of ten does not fit a head.
+        //
+        // Ten pips at 0.083 m span 0.75 m, which at the dock's 0.76 m is 52
+        // DEGREES against a 34 degree field. The ends were outside the view: to
+        // reach the last control you had to turn your head, having first
+        // guessed that there was something there to turn towards. Photographed
+        // on the glasses as a pile of overlapping marks, and reported as
+        // unusable, which it was — the arithmetic says so and had said so since
+        // the ninth pip.
+        //
+        // Column-major, two columns of five. 5 x 0.083 = 0.415 m is 31 degrees
+        // tall and 2 x 0.083 = 0.166 m is 13 degrees wide, so the whole pad is
+        // inside the field at once and nothing has to be hunted for. Column
+        // major rather than row major so reading order runs DOWN the near
+        // column first — the one nearer the centre of vision is the one found
+        // first.
+        //
+        // OFF TO THE LEFT, clear of the world window's ±10 degrees, so it never
+        // sits over the ring. Menus open to the RIGHT of it, into the space it
+        // is standing beside; see [pipAt].
+        val rows = COLUMN_ROWS
+        padCentreY = base.y
         items.forEachIndexed { i, (name, act) ->
-            val x = (i - (items.size - 1) / 2f) * PITCH
-            val at = Vector3(base.x + x, base.y, base.z)
+            val col = i / rows
+            val row = i % rows
+            val used = kotlin.math.min(rows, items.size - col * rows)
+            val x = PAD_LEFT + col * PITCH
+            val y = (used - 1) / 2f * PITCH - row * PITCH
+            val at = Vector3(base.x + x, base.y + y, base.z)
 
             // THE MARK IS THE PIP. One object: silhouette says WHICH control,
             // scale says focus, brightness says whether its surface is open.
@@ -270,7 +296,23 @@ class Dock(
      * pinched one take exactly the same path and cannot drift apart.
      */
     /** Where a pip sits, for a surface that needs to grow out of one. */
-    fun pipAt(name: String): Vector3? = pips.firstOrNull { it.name == name }?.at
+    /**
+     * WHERE A MENU OPENED FROM THIS PIP SHOULD STAND — beside the pad, not on
+     * it.
+     *
+     * Returns the pip's position pushed [MENU_OUT] to the right and back to the
+     * pad's vertical centre. Two corrections in one, both from the same report:
+     * a surface that unfolded at the pip covered the controls it came from, and
+     * one that unfolded at the pip's HEIGHT started at whatever row happened to
+     * be pinched, so the same menu appeared at a different altitude depending
+     * on which pip opened it.
+     */
+    fun pipAt(name: String): Vector3? = pips.firstOrNull { it.name == name }?.let {
+        Vector3(it.at.x + MENU_OUT, padCentreY ?: it.at.y, it.at.z)
+    }
+
+    /** The pad's vertical middle, so every menu opens at the same height. */
+    private var padCentreY: Float? = null
 
     fun gazeTargets(): List<Gaze.Target> = pips.map { p ->
         Gaze.Target(p.name, p.at, CONE) { fired.add(p) }
@@ -485,6 +527,35 @@ class Dock(
          * gap between adjacent ink slightly wider than the ink itself.
          */
         const val PITCH = 0.083f
+
+        /**
+         * Pips per column. Five is 31 degrees of the 34 available — the most
+         * that fits without the pad becoming something you scan rather than
+         * see.
+         */
+        const val COLUMN_ROWS = 5
+
+        /**
+         * Where the pad's first column sits, laterally.
+         *
+         * -0.20 m at 0.66 m forward is 17 degrees left of centre: outside the
+         * ±10 degree world window, so the pad never stands over the ring, and
+         * well inside the field so it is found by glancing rather than by
+         * turning. The second column is one PITCH further right, which keeps
+         * the whole pad on the near side of the view.
+         */
+        const val PAD_LEFT = -0.20f
+
+        /**
+         * How far right of a pip its menu opens.
+         *
+         * Menus used to appear where the pip was, which on a left-hand pad
+         * means a surface unfolding across the pad it came from. One column's
+         * width plus a gutter puts it clear, opening INTO the field rather than
+         * over the controls — "menus need to pop out from the side, not
+         * vertically", reported from the glasses.
+         */
+        const val MENU_OUT = 0.30f
         /**
          * Caption cap height. 1.28° at the dock's 0.76 m — DERIVED from §4.1's
          * 1.2° floor, not chosen by eye. It was 0.011 m, which is 0.83°, and it
