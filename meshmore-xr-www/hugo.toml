@@ -1,0 +1,38 @@
+# Meshmore XR — meshmorexr.iotj.cc
+#
+# TEMPLATE-FIRST: the layouts/ here are a deliberately minimal, self-contained
+# placeholder (no external theme, no JS, no webfonts, nothing fetched) so the
+# site builds and deploys TODAY. Replacing them with a real theme is expected —
+# drop the theme in and delete layouts/; the content/ tree is the part that
+# stays.
+
+baseURL = "https://meshmorexr.iotj.cc/"
+title = "Meshmore XR"
+defaultContentLanguage = "en"
+defaultContentLanguageInSubdir = false
+enableRobotsTXT = true
+
+# Japan is a launch market: the language switcher exists from day one, and a
+# missing ja page falls back honestly rather than 404ing.
+[languages]
+  [languages.en]
+    languageName = "English"
+    contentDir = "content/en"
+    weight = 1
+  [languages.ja]
+    languageName = "日本語"
+    contentDir = "content/ja"
+    weight = 2
+    [languages.ja.params]
+      tagline = "メッシュが、あなたの周りに。"
+
+[params]
+  tagline = "The mesh, around you."
+  contact = "privacy@iotone.io"
+  company = "IoTone, Inc."
+  # Filled in when the distribution channel is decided.
+  downloadUrl = ""
+
+[markup.goldmark.renderer]
+  # The privacy page uses definition-style tables; nothing unsafe is rendered.
+  unsafe = false

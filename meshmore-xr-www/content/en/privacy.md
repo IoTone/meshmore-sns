@@ -3,14 +3,8 @@ title: "Privacy Policy"
 description: "Meshmore XR collects nothing. Here is what that means, precisely."
 date: 2026-08-14
 lastmod: 2026-08-14
-slug: privacy
-menu:
-  footer:
-    weight: 90
+url: /privacy/
 ---
-
-# Meshmore XR — Privacy Policy
-
 **Effective 14 August 2026** · applies to Meshmore XR (`com.iotj.meshmore.xr`)
 by IoTone, Inc. This page is the policy of record for the app; the same text
 ships inside the repository as `PRIVACY.md`.

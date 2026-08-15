@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="{{ .Site.Language.Lang }}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ if .IsHome }}{{ .Site.Title }} — {{ .Site.Params.tagline }}{{ else }}{{ .Title }} · {{ .Site.Title }}{{ end }}</title>
+<meta name="description" content="{{ with .Description }}{{ . }}{{ else }}{{ .Site.Params.tagline }}{{ end }}">
+<style>
+  /* Placeholder identity: the app's own register — near-black ground, one cyan
+     accent, monospace-leaning stack with M PLUS 1 Code first for JA parity.
+     Self-contained on purpose; the real theme replaces all of this. */
+  :root{
+    --ground:#0a1211; --panel:#101a19; --line:#243634;
+    --ink:#e4efed; --ink2:#9fb3b0; --ink3:#6d8280; --accent:#66e8d0;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--ground);color:var(--ink);
+    font-family:"M PLUS 1 Code","Avenir Next",system-ui,-apple-system,sans-serif;
+    line-height:1.65;font-size:16px;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:46rem;margin:0 auto;padding:2.2rem 1.25rem 4rem}
+  header.site{display:flex;justify-content:space-between;align-items:baseline;
+    gap:1rem;padding-bottom:1.4rem;border-bottom:1px solid var(--line)}
+  .mark{font-size:1.05rem;letter-spacing:.22em;color:var(--accent);
+    text-decoration:none;font-weight:600}
+  nav a{color:var(--ink2);text-decoration:none;margin-left:1.1rem;
+    font-size:.85rem;letter-spacing:.08em;text-transform:uppercase}
+  nav a:hover{color:var(--accent)}
+  main{padding-top:2rem}
+  h1{font-size:2rem;line-height:1.15;letter-spacing:-.01em;margin:0 0 .6rem}
+  h2{font-size:1.05rem;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--accent);margin:2.4rem 0 .7rem}
+  h3{font-size:1rem;margin:1.4rem 0 .4rem}
+  p,li{color:var(--ink2)} strong{color:var(--ink)}
+  a{color:var(--accent)}
+  code{background:var(--panel);border:1px solid var(--line);border-radius:3px;
+    padding:.1em .35em;font-size:.9em}
+  table{border-collapse:collapse;width:100%;font-size:.92rem;margin:1rem 0}
+  th,td{border:1px solid var(--line);padding:.5rem .65rem;text-align:left;
+    vertical-align:top;color:var(--ink2)}
+  th{color:var(--ink);background:var(--panel)}
+  .tagline{font-size:1.2rem;color:var(--ink2);max-width:34rem}
+  .cta{display:inline-block;margin-top:1.4rem;padding:.65rem 1.3rem;
+    border:1px solid var(--accent);color:var(--accent);text-decoration:none;
+    letter-spacing:.1em;text-transform:uppercase;font-size:.85rem}
+  .cta.soon{border-color:var(--line);color:var(--ink3);pointer-events:none}
+  footer.site{margin-top:4rem;padding-top:1.2rem;border-top:1px solid var(--line);
+    font-size:.82rem;color:var(--ink3);display:flex;flex-wrap:wrap;gap:.6rem 1.4rem}
+  footer.site a{color:var(--ink3)}
+  .langs{margin-left:auto}
+  @media (max-width:34rem){header.site{flex-direction:column}nav a{margin:0 1rem 0 0}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <a class="mark" href="{{ "/" | relLangURL }}">MESHMORE&nbsp;XR</a>
+    <nav>
+      {{ if eq .Site.Language.Lang "ja" }}
+      <a href="{{ "/privacy/" | relLangURL }}">プライバシー</a>
+      <a href="{{ "/support/" | relLangURL }}">サポート</a>
+      {{ else }}
+      <a href="{{ "/privacy/" | relLangURL }}">Privacy</a>
+      <a href="{{ "/support/" | relLangURL }}">Support</a>
+      {{ end }}
+    </nav>
+  </header>
+  <main>
+    {{ block "main" . }}{{ end }}
+  </main>
+  <footer class="site">
+    <span>© {{ now.Year }} {{ .Site.Params.company }}</span>
+    <a href="{{ "/privacy/" | relLangURL }}">{{ if eq .Site.Language.Lang "ja" }}プライバシーポリシー{{ else }}Privacy Policy{{ end }}</a>
+    <a href="mailto:{{ .Site.Params.contact }}">{{ .Site.Params.contact }}</a>
+    <span class="langs">
+      {{ range .AllTranslations }}<a href="{{ .Permalink }}">{{ .Language.LanguageName }}</a>&nbsp;{{ end }}
+    </span>
+  </footer>
+</div>
+</body>
+</html>
