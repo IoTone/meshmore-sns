@@ -17,6 +17,9 @@
 
 <div class="wrap">
 <main>
+  {{ with .Params.intro }}
+  <section class="intro">{{ . | markdownify }}</section>
+  {{ end }}
   {{ with .Params.shots }}
   <h2>{{ if eq $.Site.Language.Lang "ja" }}実機キャプチャ{{ else }}Captured in the field{{ end }}</h2>
   <ul class="shots">

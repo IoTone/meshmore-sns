@@ -1,6 +1,25 @@
 ---
 title: "Meshmore XR"
 description: "The mesh, around you. An off-grid LoRa mesh companion for Android XR glasses."
+intro: |
+  **Meshmore is what a mesh network looks like when you stop squeezing it into
+  a phone.** MeshCore radios already form resilient, encrypted, many-hop LoRa
+  networks that work where nothing else does — trails, festivals, disasters,
+  open water. But every client until now has rendered that living network the
+  same way: a list and a map, in a rectangle, in your hand.
+
+  A mesh is not a list. Every node is *somewhere* — over that ridge, three
+  streets east, behind you. Meshmore XR is the first application to take that
+  seriously: the network's real geography becomes the interface. Nodes stand
+  in the room and on the horizon at their true bearings. You do not scroll to
+  a repeater; you look toward it.
+
+  > To our knowledge this is the first mesh-networking
+  > application built for XR glasses — and certainly the first XR client for
+  > MeshCore. Glasses on your face, a radio in your pocket: a complete,
+  > infrastructure-free communications system with no server, no account, and
+  > no internet anywhere in the loop — heads up and hands free in exactly the
+  > situations a mesh exists for.
 shots:
   - src: /shots/horizon.jpg
     alt: "The mesh horizon ring placed in a living room through see-through glasses"
