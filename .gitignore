@@ -28,3 +28,6 @@ app/keystore.properties
 # JVM crash dumps (the aarch64 JIT assert in lintVital, see bin/xr release)
 hs_err_pid*.log
 replay_pid*.log
+
+# The xrvdc site template — its own repo (IoTone/xrvdc), never tracked here
+meshmore-xr-wwww/
