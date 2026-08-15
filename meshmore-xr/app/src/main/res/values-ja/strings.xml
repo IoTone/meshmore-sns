@@ -203,4 +203,5 @@
     <string name="n_no_thread_yet">%1$s との会話なし</string>
     <string name="n_asked_telem">%1$s に照会</string>
     <string name="n_table_reset">卓上リセット — 再探索</string>
+    <string name="n_region_mismatch">無線機は%1$s設定 — 現在地は%2$s</string>
 </resources>

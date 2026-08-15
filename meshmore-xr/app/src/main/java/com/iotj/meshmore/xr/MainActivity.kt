@@ -509,6 +509,12 @@ private fun Root(facts: List<Pair<String, String>>, link: MeshLink, pinOverride:
         link.loadSimulated(
             FakeMesh.peers(at.lat ?: 0.0, at.lon ?: 0.0, System.currentTimeMillis() / 1000),
         )
+        // A SIMULATED RADIO HAS PARAMETERS TOO. Without them the rack shows
+        // ghosts and the region-compliance check can never run on a bench —
+        // and that check is exactly the kind of thing that should be provable
+        // without flying somewhere. US/CA is the seed, so `--es home` with
+        // European or Japanese coordinates exercises the mismatch.
+        Regions.ALL.firstOrNull { it.id == "us_canada" }?.let { link.radio.observe(it.params()) }
     }
 
     // THE REASON THE LINK NEVER CONNECTED. The app logged "no BLE permission --
@@ -2558,6 +2564,8 @@ private fun HorizonScene(link: MeshLink) {
         // dumpChannel with nothing to redraw the bay — and comparing the count
         // is cheaper every frame than re-texting six panels on a timer.
         var chanCount = -1
+        // One region-compliance check per session, once both facts exist.
+        var regionChecked = false
         try {
             if (MainActivity.selfTest) launch { horizon.selfTest(origin) }
             if (MainActivity.showThread) launch {
@@ -4025,6 +4033,43 @@ private fun HorizonScene(link: MeshLink) {
                 statusTick += 0.033f
                 if (statusTick > 1f) {
                     statusTick = 0f
+                    // WHERE YOU ARE vs WHAT THE RADIO IS SET TO — checked once
+                    // per session, on the 1 Hz tick, as soon as both facts
+                    // exist. The Giteki disclaimer says presets are not
+                    // legality; this is the moment that paragraph becomes a
+                    // behaviour: land in a country the preset does not cover
+                    // and the app says so and opens the region list. The bay
+                    // auto-opens once per DISTINCT mismatch (acknowledged by
+                    // closing it); the notice repeats each boot, because a
+                    // radio transmitting on the wrong band is worth a line a
+                    // day and not worth a surface a day.
+                    if (!regionChecked) {
+                        val live = link.radio.live
+                        val h = hereSource.here.value
+                        if (live != null && h.known) {
+                            regionChecked = true
+                            val set = Regions.match(live)
+                            val here2 = Regions.suggest(h.lat, h.lon)
+                            if (here2 != null && set?.id != here2.id) {
+                                val pair = (set?.id ?: "CUSTOM") + ">" + here2.id
+                                noticeRef.value?.say(
+                                    ctx.getString(
+                                        R.string.n_region_mismatch,
+                                        set?.label ?: Regions.CUSTOM, here2.label,
+                                    ),
+                                )
+                                cue.denied()
+                                Log.w(TAG_UI, "[region] mismatch: radio=" +
+                                    (set?.id ?: "custom") + " here=${here2.id}")
+                                if (Settings.regionAck(ctx) != pair) {
+                                    Settings.setRegionAck(ctx, pair)
+                                    openRegions()
+                                }
+                            } else {
+                                Log.i(TAG_UI, "[region] ok: ${set?.id ?: "custom"}")
+                            }
+                        }
+                    }
                     // The rack is built at launch, BEFORE the radio has said
                     // what it is running -- so its segment displays showed the
                     // dark-8 ghost forever. Refreshed on the same ~1 Hz tick as

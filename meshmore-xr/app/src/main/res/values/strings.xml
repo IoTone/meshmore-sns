@@ -205,4 +205,5 @@
     <string name="n_no_thread_yet">NO THREAD WITH %1$s YET</string>
     <string name="n_asked_telem">ASKED %1$s</string>
     <string name="n_table_reset">TABLE RESET — SEARCHING</string>
+    <string name="n_region_mismatch">RADIO IS %1$s — YOU ARE IN %2$s</string>
 </resources>

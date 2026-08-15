@@ -208,6 +208,25 @@ object Settings {
      * consequence written next to it. [MeshLink.channelTxAuthorised] is loaded
      * from this at startup and remains the single gate at the radio.
      */
+    /**
+     * The region mismatch the wearer has already been shown, as
+     * "radioRegionId>hereRegionId" — so the bay auto-opens ONCE per distinct
+     * mismatch rather than on every boot, while the notice may still repeat.
+     * A wearer who deliberately runs an out-of-region preset has said so once
+     * and is not nagged with a surface; a wearer who lands in a NEW country
+     * gets the prompt again because the pair changed.
+     */
+    fun regionAck(context: Context): String? =
+        context.getSharedPreferences(FILE, Context.MODE_PRIVATE)
+            .getString(KEY_REGION_ACK, null)
+
+    fun setRegionAck(context: Context, pair: String?) {
+        context.getSharedPreferences(FILE, Context.MODE_PRIVATE)
+            .edit().apply {
+                if (pair == null) remove(KEY_REGION_ACK) else putString(KEY_REGION_ACK, pair)
+            }.apply()
+    }
+
     fun channelSend(context: Context): Boolean =
         context.getSharedPreferences(FILE, Context.MODE_PRIVATE)
             .getBoolean(KEY_CHANNEL_SEND, false)
@@ -275,5 +294,6 @@ object Settings {
     private const val KEY_AUTOPEN = "autopen"
     private const val KEY_DIAGNOSTICS = "diagnostics_panel"
     private const val KEY_SHARE_LOCATION = "share_location"
+    private const val KEY_REGION_ACK = "region_ack"
     private const val KEY_CHANNEL_SEND = "channel_send"
 }
