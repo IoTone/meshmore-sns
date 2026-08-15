@@ -1,7 +1,25 @@
 ---
 title: "Meshmore XR"
 description: "The mesh, around you. An off-grid LoRa mesh companion for Android XR glasses."
+shots:
+  - src: /shots/horizon.jpg
+    alt: "The mesh horizon ring placed in a living room through see-through glasses"
+    title: "The Horizon"
+    caption: "Every node your radio hears, standing in the room at its true bearing."
+  - src: /shots/verbs.jpg
+    alt: "A node's radial action menu: favourite, message, telemetry, close"
+    title: "Node actions"
+    caption: "Pinch a node: star it, message it, ask it for telemetry."
+  - src: /shots/find.jpg
+    alt: "The FIND panel with a search match and a filled favourite star"
+    title: "Find anyone"
+    caption: "Search 350 contacts by name or key; star the ones that matter."
+  - src: /shots/boot.jpg
+    alt: "The Meshmore XR wordmark and loading vessel during boot"
+    title: "First light"
+    caption: "Boot to a wordmark and a theme's own welcome tune."
 ---
+
 
 Meshmore XR turns a MeshCore LoRa radio and a pair of optical see-through
 glasses into a spatial view of your mesh. No phone in your hand, no map on a

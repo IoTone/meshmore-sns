@@ -6,48 +6,123 @@
 <title>{{ if .IsHome }}{{ .Site.Title }} — {{ .Site.Params.tagline }}{{ else }}{{ .Title }} · {{ .Site.Title }}{{ end }}</title>
 <meta name="description" content="{{ with .Description }}{{ . }}{{ else }}{{ .Site.Params.tagline }}{{ end }}">
 <style>
-  /* Placeholder identity: the app's own register — near-black ground, one cyan
-     accent, monospace-leaning stack with M PLUS 1 Code first for JA parity.
-     Self-contained on purpose; the real theme replaces all of this. */
+  /* Design language adapted from xrvdc-neon (scanlines, HUD brackets, kana
+     flourishes, glow hero, card grid) recoloured into MeshmoreXR's own
+     palette: the app's cyan as primary, DR POP's magenta as the second voice,
+     the favourite-star lime as punctuation. Self-contained: no webfonts, no
+     JS, nothing fetched. */
   :root{
-    --ground:#0a1211; --panel:#101a19; --line:#243634;
-    --ink:#e4efed; --ink2:#9fb3b0; --ink3:#6d8280; --accent:#66e8d0;
+    color-scheme: dark;
+    --bg:#050508; --bg-elev:#0b1113; --card:rgba(255,255,255,.025);
+    --cyan:#66e8d0; --magenta:#ff2e88; --lime:#d7ff00;
+    --ink:#e8f2f0; --muted:#7d8a8f;
+    --line:rgba(102,232,208,.45); --line-soft:rgba(102,232,208,.14);
   }
   *{box-sizing:border-box}
-  body{margin:0;background:var(--ground);color:var(--ink);
-    font-family:"M PLUS 1 Code","Avenir Next",system-ui,-apple-system,sans-serif;
-    line-height:1.65;font-size:16px;-webkit-font-smoothing:antialiased}
-  .wrap{max-width:46rem;margin:0 auto;padding:2.2rem 1.25rem 4rem}
-  header.site{display:flex;justify-content:space-between;align-items:baseline;
-    gap:1rem;padding-bottom:1.4rem;border-bottom:1px solid var(--line)}
-  .mark{font-size:1.05rem;letter-spacing:.22em;color:var(--accent);
-    text-decoration:none;font-weight:600}
-  nav a{color:var(--ink2);text-decoration:none;margin-left:1.1rem;
-    font-size:.85rem;letter-spacing:.08em;text-transform:uppercase}
-  nav a:hover{color:var(--accent)}
-  main{padding-top:2rem}
-  h1{font-size:2rem;line-height:1.15;letter-spacing:-.01em;margin:0 0 .6rem}
-  h2{font-size:1.05rem;letter-spacing:.14em;text-transform:uppercase;
-    color:var(--accent);margin:2.4rem 0 .7rem}
-  h3{font-size:1rem;margin:1.4rem 0 .4rem}
-  p,li{color:var(--ink2)} strong{color:var(--ink)}
-  a{color:var(--accent)}
-  code{background:var(--panel);border:1px solid var(--line);border-radius:3px;
-    padding:.1em .35em;font-size:.9em}
-  table{border-collapse:collapse;width:100%;font-size:.92rem;margin:1rem 0}
-  th,td{border:1px solid var(--line);padding:.5rem .65rem;text-align:left;
-    vertical-align:top;color:var(--ink2)}
-  th{color:var(--ink);background:var(--panel)}
-  .tagline{font-size:1.2rem;color:var(--ink2);max-width:34rem}
-  .cta{display:inline-block;margin-top:1.4rem;padding:.65rem 1.3rem;
-    border:1px solid var(--accent);color:var(--accent);text-decoration:none;
-    letter-spacing:.1em;text-transform:uppercase;font-size:.85rem}
-  .cta.soon{border-color:var(--line);color:var(--ink3);pointer-events:none}
-  footer.site{margin-top:4rem;padding-top:1.2rem;border-top:1px solid var(--line);
-    font-size:.82rem;color:var(--ink3);display:flex;flex-wrap:wrap;gap:.6rem 1.4rem}
-  footer.site a{color:var(--ink3)}
+  html{scroll-behavior:smooth}
+  html,body{margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);min-height:100vh;
+    font-family:"M PLUS 1 Code","Share Tech Mono",ui-monospace,Menlo,monospace;
+    line-height:1.65;font-size:16px}
+  /* scanline + grain overlays, straight from the source design */
+  body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:100;
+    background:repeating-linear-gradient(0deg,transparent 0 2px,
+      rgba(255,255,255,.03) 2px 3px);mix-blend-mode:overlay}
+  body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:99;
+    background-image:radial-gradient(rgba(255,255,255,.018) 1px,transparent 1px),
+      radial-gradient(rgba(255,255,255,.012) 1px,transparent 1px);
+    background-size:3px 3px,5px 5px;background-position:0 0,1px 1px;opacity:.7}
+
+  h1,h2,h3{font-weight:800;letter-spacing:.02em;margin:0 0 .5em;color:var(--ink)}
+  h2{font-size:clamp(1.3rem,2.6vw,1.9rem);color:var(--cyan);
+    letter-spacing:.18em;text-transform:uppercase}
+  h3{font-size:1.05rem;color:var(--lime)}
+  p{margin:0 0 1em}
+  p,li{color:var(--muted)} strong{color:var(--ink)} em{color:var(--magenta);font-style:normal}
+  a{color:var(--cyan);text-decoration:none;border-bottom:1px dotted rgba(102,232,208,.45);
+    transition:all 150ms}
+  a:hover{color:var(--lime);border-bottom-color:var(--lime)}
+  code{background:rgba(102,232,208,.08);border:1px solid var(--line-soft);
+    padding:.1em .4em;font-family:inherit;font-size:.92em;color:var(--cyan)}
+  ul{list-style:none;padding-left:0}
+  ul li{margin:.45rem 0;padding-left:1.2rem;position:relative}
+  ul li::before{content:"▸";position:absolute;left:0;color:var(--magenta)}
+  table{border-collapse:collapse;width:100%;font-size:.9rem;margin:1rem 0}
+  th,td{border:1px solid var(--line-soft);padding:.5rem .65rem;text-align:left;
+    vertical-align:top;color:var(--muted)}
+  th{color:var(--ink);background:var(--bg-elev)}
+
+  .wrap{max-width:62rem;margin:0 auto;padding:0 1.25rem}
+  header.site{display:flex;justify-content:space-between;align-items:baseline;gap:1rem;
+    padding:1.1rem 0;border-bottom:1px solid var(--line-soft)}
+  .mark{font-size:1rem;letter-spacing:.3em;color:var(--cyan);border:none;
+    font-weight:800;filter:drop-shadow(0 0 8px rgba(102,232,208,.55))}
+  nav a{color:var(--muted);border:none;margin-left:1.2rem;font-size:.8rem;
+    letter-spacing:.14em;text-transform:uppercase}
+  nav a:hover{color:var(--cyan)}
+
+  /* HUD corner brackets */
+  .brackets{position:relative}
+  .brackets::before,.brackets::after,
+  .brackets>.br-tr::before,.brackets>.br-bl::before{content:"";position:absolute;
+    width:26px;height:26px;border:2px solid var(--cyan);pointer-events:none;opacity:.8}
+  .brackets::before{top:1rem;left:1rem;border-right:none;border-bottom:none}
+  .brackets::after{bottom:1rem;right:1rem;border-left:none;border-top:none}
+  .brackets>.br-tr::before{top:1rem;right:1rem;border-left:none;border-bottom:none}
+  .brackets>.br-bl::before{bottom:1rem;left:1rem;border-right:none;border-top:none}
+
+  /* hero */
+  .hero{position:relative;padding:5.5rem 1.5rem 4rem;text-align:center;
+    border-bottom:1px solid var(--line-soft);
+    background:radial-gradient(ellipse at 30% 20%,rgba(102,232,208,.14) 0%,transparent 55%),
+      radial-gradient(ellipse at 75% 80%,rgba(255,46,136,.12) 0%,transparent 55%),
+      linear-gradient(180deg,#050508 0%,#071012 100%)}
+  .hero__id{font-size:.8rem;color:var(--lime);letter-spacing:.45em;margin:0 0 1rem;
+    text-transform:uppercase}
+  .hero h1{font-size:clamp(2.6rem,8vw,5.5rem);font-weight:900;letter-spacing:.02em;
+    line-height:.95;margin:0;text-shadow:0 0 26px rgba(102,232,208,.35)}
+  .hero__sub{font-size:clamp(.9rem,1.6vw,1.15rem);letter-spacing:.42em;margin:1.1rem 0 .4rem;
+    color:var(--cyan);text-transform:uppercase}
+  .hero__build{margin-top:1.3rem;display:inline-block;font-size:.78rem;color:var(--muted);
+    letter-spacing:.28em;border:1px solid var(--magenta);padding:.3rem .85rem;
+    background:rgba(255,46,136,.05)}
+  .hero__build span{color:var(--magenta)}
+  .kana{position:absolute;color:var(--magenta);opacity:.35;font-size:.78rem;
+    letter-spacing:.08em;pointer-events:none;line-height:1.6}
+  .kana--tr{top:4.2rem;right:1.4rem;text-align:right}
+  .kana--bl{bottom:1rem;left:1.4rem}
+  .cta{display:inline-block;margin-top:1.8rem;padding:.7rem 1.6rem;border:1px solid var(--cyan);
+    color:var(--cyan);letter-spacing:.2em;text-transform:uppercase;font-size:.85rem;
+    background:rgba(102,232,208,.06);box-shadow:0 0 18px rgba(102,232,208,.18)}
+  .cta.soon{border-color:var(--line-soft);color:var(--muted);box-shadow:none;pointer-events:none}
+
+  /* screenshot cards */
+  .shots{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+    gap:1.1rem;margin:2rem 0 1rem;padding:0}
+  .shots li{padding:0;margin:0}
+  .shots li::before{display:none}
+  .shot{background:var(--card);border:1px solid var(--line-soft);position:relative;
+    transition:all 180ms}
+  .shot:hover{border-color:var(--line);transform:translateY(-2px);
+    box-shadow:0 6px 30px rgba(102,232,208,.12)}
+  .shot::before{content:"";position:absolute;top:-1px;left:-1px;width:18px;height:18px;
+    border-top:2px solid var(--magenta);border-left:2px solid var(--magenta)}
+  .shot::after{content:"";position:absolute;bottom:-1px;right:-1px;width:18px;height:18px;
+    border-bottom:2px solid var(--magenta);border-right:2px solid var(--magenta)}
+  .shot img{display:block;width:100%;height:auto;filter:saturate(1.05)}
+  .shot figcaption{padding:.7rem .85rem .8rem;font-size:.82rem;color:var(--muted)}
+  .shot figcaption b{display:block;color:var(--cyan);letter-spacing:.14em;
+    text-transform:uppercase;font-size:.78rem;margin-bottom:.15rem}
+
+  main{padding:2.2rem 0 1rem}
+  section.page{padding:2.2rem 1.5rem}
+  footer.site{margin-top:3rem;padding:1.2rem 0 2.4rem;border-top:1px solid var(--line-soft);
+    font-size:.8rem;color:var(--muted);display:flex;flex-wrap:wrap;gap:.6rem 1.5rem}
+  footer.site a{color:var(--muted);border:none}
+  footer.site a:hover{color:var(--cyan)}
   .langs{margin-left:auto}
-  @media (max-width:34rem){header.site{flex-direction:column}nav a{margin:0 1rem 0 0}}
+  @media (max-width:34rem){header.site{flex-direction:column}nav a{margin:0 1rem 0 0}
+    .kana{display:none}}
 </style>
 </head>
 <body>
@@ -64,9 +139,9 @@
       {{ end }}
     </nav>
   </header>
-  <main>
-    {{ block "main" . }}{{ end }}
-  </main>
+</div>
+{{ block "main" . }}{{ end }}
+<div class="wrap">
   <footer class="site">
     <span>© {{ now.Year }} {{ .Site.Params.company }}</span>
     <a href="{{ "/privacy/" | relLangURL }}">{{ if eq .Site.Language.Lang "ja" }}プライバシーポリシー{{ else }}Privacy Policy{{ end }}</a>

@@ -1,7 +1,25 @@
 ---
 title: "Meshmore XR"
 description: "メッシュが、あなたの周りに。Android XRグラス向けのオフグリッドLoRaメッシュ・コンパニオン。"
+shots:
+  - src: /shots/horizon.jpg
+    alt: "シースルーグラス越しに部屋へ配置されたメッシュ・ホライズン"
+    title: "ホライズン"
+    caption: "無線機が聞こえる全ノードが、実方位で部屋に立つ。"
+  - src: /shots/verbs.jpg
+    alt: "ノードのラジアルメニュー:お気に入り・メッセージ・テレメトリ・閉じる"
+    title: "ノード操作"
+    caption: "ピンチで★、メッセージ、テレメトリ照会。"
+  - src: /shots/find.jpg
+    alt: "検索パネル。マッチしたノードと点灯した★"
+    title: "検索"
+    caption: "350件から名前かキーで。大事なノードに★を。"
+  - src: /shots/boot.jpg
+    alt: "起動時のMESHMORE XRワードマークとローディング"
+    title: "ファーストライト"
+    caption: "ワードマークと、テーマ固有のウェルカム音で起動。"
 ---
+
 
 Meshmore XR は、MeshCore LoRa 無線機と光学シースルーグラスで、メッシュ
 ネットワークを空間として見せるアプリです。手にスマホは要りません。ノードは
