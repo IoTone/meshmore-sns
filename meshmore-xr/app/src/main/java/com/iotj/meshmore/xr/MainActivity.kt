@@ -1330,7 +1330,18 @@ private fun HorizonScene(link: MeshLink) {
      * a cluster and a node are different subjects with different verbs.
      */
     val nodeMenuRef = remember { mutableStateOf<RadialMenu?>(null) }
-    val noRadioRef = remember { mutableStateOf<com.iotj.meshmore.xr.spatial.NoRadio?>(null) }
+    val adviceRef = remember { mutableStateOf<com.iotj.meshmore.xr.spatial.Advice?>(null) }
+    // HOW MANY PEERS ARE ONE PERMISSION AWAY FROM BEING DRAWN. Zero unless the
+    // app has no origin AND there is something the wearer can do about it —
+    // see the mesh effect, which is the only place that knows both.
+    val unplacedRef = remember { mutableStateOf(0) }
+    /** The board's name, only when we believe that board has no GNSS. */
+    val boardRef = remember { mutableStateOf<String?>(null) }
+    val deviceNoteRef = remember { mutableStateOf("") }
+    /** What the card should be saying. Written by the frame loop, built by an effect. */
+    val adviceKind = remember {
+        mutableStateOf(com.iotj.meshmore.xr.spatial.Advice.Kind.NONE)
+    }
     val focusRef = remember { mutableStateOf<com.iotj.meshmore.xr.spatial.Focus?>(null) }
     val gazeRef = remember { mutableStateOf<com.iotj.meshmore.xr.spatial.Gaze?>(null) }
     val rosterRef = remember { mutableStateOf<com.iotj.meshmore.xr.spatial.Roster?>(null) }
@@ -1478,6 +1489,27 @@ private fun HorizonScene(link: MeshLink) {
         locGrant.value = granted
     }
 
+    /**
+     * TURN ON THE HEADSET FIX, whatever it takes.
+     *
+     * The HERE pip is a TOGGLE and this is not: it is the remedy named on the
+     * NO POSITION card, and a remedy that turns the fix off when the wearer
+     * pinches it twice is a trap. It also closes the gap the pip left for a
+     * day — the preference alone moves nothing without the system's grant, so
+     * whichever half is missing is the half this asks for.
+     */
+    val useHeadsetFix: () -> Unit = {
+        Settings.setUseDeviceLocation(ctx, true)
+        dockRef.value?.setLit("HERE", true)
+        hereEpoch.value += 1
+        Log.i(TAG_UI, "[here] headset GPS -> ON (from the advice card)")
+        if (!hereSource.hasLocationPermission()) {
+            askLocation.launch(android.Manifest.permission.ACCESS_FINE_LOCATION)
+        } else {
+            locGrant.value = true
+        }
+    }
+
     // The mesh, rebuilt whenever membership changes.
     // TELEMETRY PERMISSIONS, if the launch asked to change them. Not in the
     // scene effect for the same reason the probe is not: it is a radio setting
@@ -1563,6 +1595,12 @@ private fun HorizonScene(link: MeshLink) {
             Log.i(TAG_UI, "[sweep] ${i + 1}/${com.iotj.meshmore.xr.spatial.Theme.ALL.size} ${s.key}")
         }
         Log.i(TAG_UI, "[sweep] complete — all themes committed and survived")
+    }
+
+    // THE CARD, BUILT OFF THE FRAME LOOP. Keyed on what it would say, so a
+    // steady state costs nothing and a change costs four panels once.
+    LaunchedEffect(adviceRef.value, adviceKind.value, boardRef.value) {
+        adviceRef.value?.say(adviceKind.value, boardRef.value)
     }
 
     // WHERE YOU ARE NOW, not where you launched.
@@ -1814,6 +1852,45 @@ private fun HorizonScene(link: MeshLink) {
         val unplaced = mesh.count {
             it.lat != null && it.lon != null &&
                 (kotlin.math.abs(it.lat) > 1e-7 || kotlin.math.abs(it.lon) > 1e-7)
+        }
+        // WHAT THIS RADIO IS, AND WHAT IT HAS ACTUALLY DONE.
+        //
+        // The companion protocol describes settings and never hardware, so a
+        // board with no GNSS is indistinguishable from one that has not got a
+        // fix yet — except by watching it, which is what RadioFacts is for.
+        // Keyed by public key: the BLE name's hex suffix is a MAC, not a key,
+        // and a fact filed under a name follows whoever renames their node.
+        run {
+            val self = link.status.value.selfInfo
+            val radioKey = self?.publicKey()?.joinToString("") { "%02x".format(it) }
+            val radioName = self?.name()
+            if (self != null) {
+                RadioFacts.notePosition(
+                    ctx, radioKey,
+                    MeshNodes.Here(self.latitude(), self.longitude()).known,
+                )
+                val note = DeviceBook.describe(ctx, radioKey, radioName)
+                if (note != deviceNoteRef.value) {
+                    deviceNoteRef.value = note
+                    Log.i(TAG_UI, "[device] $note")
+                }
+            }
+            // NAMED ONLY WHEN THE NAME IS EVIDENCE. The card says "X HAS NO
+            // GPS" only where the app believes that of X; otherwise it says
+            // the radio sends no position, which is the observation itself and
+            // cannot be wrong.
+            boardRef.value =
+                if (DeviceBook.gpsOf(ctx, radioKey, radioName) == false) {
+                    DeviceBook.nameOf(ctx, radioKey, radioName)
+                } else {
+                    null
+                }
+            // A CARD ONLY WHERE THERE IS A REMEDY. With the headset fix on and
+            // permitted, a missing origin is a cold GNSS rather than a
+            // misconfiguration — the notice covers that, and a standing card
+            // telling the wearer to do what they have already done is nagging.
+            val remedy = !(Settings.useDeviceLocation(ctx) && hereSource.hasLocationPermission())
+            unplacedRef.value = if (!origin2.known && remedy) unplaced else 0
         }
         if (!origin2.known && unplaced > 0) {
             noticeRef.value?.say(
@@ -2077,9 +2154,9 @@ private fun HorizonScene(link: MeshLink) {
         val help = HelpCard(session, palette, ctx)
         help.build(origin)
         helpRef.value = help
-        val noRadio = com.iotj.meshmore.xr.spatial.NoRadio(session, palette, ctx)
-        noRadio.build(origin)
-        noRadioRef.value = noRadio
+        val advice = com.iotj.meshmore.xr.spatial.Advice(session, palette, ctx)
+        advice.build(origin)
+        adviceRef.value = advice
 
         // Roster picks, queued: Focus.showFor builds the spur and therefore
         }
@@ -2183,6 +2260,7 @@ private fun HorizonScene(link: MeshLink) {
                 if (on && !hereSource.hasLocationPermission()) {
                     askLocation.launch(android.Manifest.permission.ACCESS_FINE_LOCATION)
                 }
+                Unit
             },
             "WIDE" to {
                 // Back out one level. The pip is also the ANCHOR: its caption
@@ -2619,8 +2697,8 @@ private fun HorizonScene(link: MeshLink) {
         // The no-radio card's automatic rescans: a few, gently spaced. Initial
         // not-found is one attempt by design; a wearer staring at the card is
         // the signal to try again without being asked.
-        var noRadioTries = 0
-        var noRadioLastTry = 0L
+        var adviceTries = 0
+        var adviceLastTry = 0L
         try {
             if (MainActivity.selfTest) launch { horizon.selfTest(origin) }
             if (MainActivity.showThread) launch {
@@ -4107,9 +4185,22 @@ private fun HorizonScene(link: MeshLink) {
                     // shows the search happening.
                     run {
                         val st2 = link.status.value
-                        val want = !link.everConnected &&
-                            !st2.scanning && st2.error != null
-                        noRadioRef.value?.setVisible(want)
+                        // TWO WAYS TO DRAW NOTHING, and the radio question
+                        // comes first: with no radio there is no position
+                        // question to answer.
+                        val waiting = unplacedRef.value
+                        val kind = when {
+                            !link.everConnected && !st2.scanning && st2.error != null ->
+                                com.iotj.meshmore.xr.spatial.Advice.Kind.NO_RADIO
+                            waiting > 0 ->
+                                com.iotj.meshmore.xr.spatial.Advice.Kind.NO_FIX
+                            else -> com.iotj.meshmore.xr.spatial.Advice.Kind.NONE
+                        }
+                        // THE FRAME LOOP DECIDES AND THE EFFECT BUILDS.
+                        // A PanelEntity created from this coroutine is created
+                        // and never attached — see Advice.say.
+                        adviceKind.value = kind
+                        val hunting = kind == com.iotj.meshmore.xr.spatial.Advice.Kind.NO_RADIO
                         val nowW = android.os.SystemClock.uptimeMillis()
                         // The retry clock starts when the card first SHOWS —
                         // at zero it fired instantly, so the card flashed for
@@ -4117,18 +4208,22 @@ private fun HorizonScene(link: MeshLink) {
                         // for. A card that appears must stand long enough to
                         // be read; thirty seconds is also about how long a
                         // person needs to walk over and switch a radio on.
-                        if (want && noRadioLastTry == 0L) noRadioLastTry = nowW
-                        if (noRadioRef.value?.poll() == true) {
-                            noRadioTries = 0
-                            noRadioLastTry = nowW
+                        if (hunting && adviceLastTry == 0L) adviceLastTry = nowW
+                        if (adviceRef.value?.poll() == true) {
                             cue.recognised()
-                            link.connect()
-                        } else if (want && noRadioTries < NO_RADIO_AUTO_TRIES &&
-                            nowW - noRadioLastTry > NO_RADIO_RETRY_MS
+                            if (kind == com.iotj.meshmore.xr.spatial.Advice.Kind.NO_FIX) {
+                                useHeadsetFix()
+                            } else {
+                                adviceTries = 0
+                                adviceLastTry = nowW
+                                link.connect()
+                            }
+                        } else if (hunting && adviceTries < NO_RADIO_AUTO_TRIES &&
+                            nowW - adviceLastTry > NO_RADIO_RETRY_MS
                         ) {
-                            noRadioTries++
-                            noRadioLastTry = nowW
-                            Log.i(TAG_UI, "[noradio] auto-rescan $noRadioTries/$NO_RADIO_AUTO_TRIES")
+                            adviceTries++
+                            adviceLastTry = nowW
+                            Log.i(TAG_UI, "[advice] auto-rescan $adviceTries/$NO_RADIO_AUTO_TRIES")
                             link.connect()
                         }
                     }

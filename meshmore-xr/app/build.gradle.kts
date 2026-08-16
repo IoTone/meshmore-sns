@@ -41,7 +41,7 @@ val keystoreProps: Properties? =
 val verMajor = 0
 val verMinor = 3
 val verPatch = 0
-val verBuild = 31
+val verBuild = 33
 
 android {
     namespace = "com.iotj.meshmore.xr"
@@ -169,6 +169,10 @@ dependencies {
     implementation("io.iotone.meshcore:libmeshcore-android")
 
     testImplementation("junit:junit:4.13.2")
+    // org.json ships in the Android SDK but is a stub in unit tests; the real
+    // implementation lets the DEVICE CATALOGUE be parsed and asserted on a
+    // desktop, which is where a typo in it should be caught.
+    testImplementation("org.json:json:20240303")
 }
 
 // androidx.lifecycle 2.11.0 raised its floor to compileSdk 37 AND AGP 9.1+.

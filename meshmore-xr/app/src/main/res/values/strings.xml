@@ -210,6 +210,11 @@
     <string name="n_region_mismatch">RADIO IS %1$s — YOU ARE IN %2$s</string>
     <!-- no-radio card + pairing hint -->
     <string name="link_pair_code">TYPE THE CODE FROM THE RADIO\'S SCREEN</string>
+    <string name="nf_title">NO POSITION</string>
+    <string name="nf_board_nogps">%1$s HAS NO GPS</string>
+    <string name="nf_nofix">THE RADIO SENDS NO POSITION</string>
+    <string name="nf_stuck">THE MESH CANNOT BE PLACED</string>
+    <string name="nf_act">PINCH HERE — USE HEADSET GPS</string>
     <string name="nr_title">NO RADIO</string>
     <string name="nr_check">IS IT ON AND NEARBY?</string>
     <string name="nr_phone">A PHONE MAY BE HOLDING IT</string>

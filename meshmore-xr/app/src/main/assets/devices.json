@@ -1,0 +1,85 @@
+{
+  "schema": 1,
+  "about": [
+    "WHAT WE KNOW ABOUT THE RADIOS PEOPLE ACTUALLY OWN.",
+    "",
+    "MeshCore's companion protocol describes a radio's SETTINGS — frequency,",
+    "spreading factor, power — and says nothing about its HARDWARE. A board",
+    "with no GPS is not defective and does not report itself as lacking one:",
+    "it simply answers 0/0 forever, which is a real place in the Gulf of",
+    "Guinea and therefore refused as a position. Everything downstream of that",
+    "refusal (an empty ring, no bearings, 316 peers that cannot be drawn) is",
+    "correct behaviour that looks exactly like a broken app.",
+    "",
+    "So the app carries its own knowledge. This file is that knowledge, and it",
+    "grows every time a new board is put on the bench.",
+    "",
+    "OBSERVATION OUTRANKS THIS FILE. What a radio actually does is a fact;",
+    "what this catalogue says about its model is a guess about which model it",
+    "is. RadioFacts records the first, DeviceBook supplies the second, and",
+    "where they disagree the radio in the room wins.",
+    "",
+    "confidence: 'tested' = connected to this board ourselves and watched it.",
+    "            'reported' = public documentation, not yet on our bench.",
+    "null in caps means UNKNOWN — which is different from false, and the UI",
+    "must never turn an unknown into a claim."
+  ],
+  "devices": [
+    {
+      "id": "m5-c6l",
+      "name": "M5STACK C6L",
+      "match": ["c6l", "c6-l", "m5c6l"],
+      "caps": { "gps": false, "screen": null, "battery": null },
+      "confidence": "tested",
+      "note": "Bench radio B727FE05, 2026-08-16: reported 0.0/0.0 for a whole session while holding 350 contacts, 316 of them positioned. Operator confirmed the board carries no GPS. This is the device that taught us the empty ring needs an explanation."
+    },
+    {
+      "id": "heltec-v3",
+      "name": "HELTEC LORA 32 V3",
+      "match": ["heltec", "wifi lora 32"],
+      "caps": { "gps": false, "screen": true, "battery": null },
+      "confidence": "reported",
+      "note": "0.96 inch OLED, so it can display a pairing code. No GNSS."
+    },
+    {
+      "id": "tbeam",
+      "name": "LILYGO T-BEAM",
+      "match": ["t-beam", "tbeam"],
+      "caps": { "gps": true, "screen": true, "battery": true },
+      "confidence": "reported",
+      "note": "GNSS on board — the radio can supply its own position, and then the headset fallback is never needed."
+    },
+    {
+      "id": "tdeck",
+      "name": "LILYGO T-DECK",
+      "match": ["t-deck", "tdeck"],
+      "caps": { "gps": false, "screen": true, "battery": true },
+      "confidence": "reported",
+      "note": "Has a screen and a keyboard. The T-Deck PLUS is a different entry: it adds GNSS."
+    },
+    {
+      "id": "tdeck-plus",
+      "name": "LILYGO T-DECK PLUS",
+      "match": ["t-deck plus", "tdeck plus", "tdeckplus"],
+      "caps": { "gps": true, "screen": true, "battery": true },
+      "confidence": "reported",
+      "note": "T-Deck with GNSS added."
+    },
+    {
+      "id": "rak4631",
+      "name": "RAK4631 WISBLOCK",
+      "match": ["rak", "wisblock", "4631"],
+      "caps": { "gps": null, "screen": null, "battery": true },
+      "confidence": "reported",
+      "note": "Modular: GNSS and display are separate WisBlock modules, so both are genuinely unknown until this radio is watched. Do not guess on this one."
+    },
+    {
+      "id": "xiao-sx1262",
+      "name": "XIAO ESP32S3 + WIO SX1262",
+      "match": ["xiao", "sx1262", "wio"],
+      "caps": { "gps": false, "screen": false, "battery": null },
+      "confidence": "reported",
+      "note": "No screen: a pairing code cannot be shown on the device, so pairing guidance that says 'read the code off the radio' is wrong for this board."
+    }
+  ]
+}
