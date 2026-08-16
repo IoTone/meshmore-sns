@@ -17,6 +17,8 @@
     <string name="app_name">Meshmore XR</string>
 
     <!-- ═══ notices — one line, said once, in the band ═══ -->
+    <string name="n_loc_placed">POSITION FOUND — PLACING THE MESH</string>
+    <string name="n_loc_denied">LOCATION DENIED — MESH STAYS UNPLACED</string>
     <string name="n_mic_denied">MIC NOT ALLOWED</string>
     <string name="n_hands_busy">HANDS ARE WORKING</string>
     <string name="n_says">%1$s says: %2$s</string>

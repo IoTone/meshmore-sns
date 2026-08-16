@@ -1462,6 +1462,21 @@ private fun HorizonScene(link: MeshLink) {
     }
     // Bumped by the HERE marker so the mesh rebuild below re-runs on a toggle.
     val hereEpoch = remember { mutableStateOf(0) }
+    // THE PERMISSION HALF OF THE HERE PIP. Asked at the moment of pinching
+    // HERE, never at startup — same doctrine as the mic above. Until now the
+    // pip flipped the preference and nobody ever asked the SYSTEM: on real
+    // hardware deviceFix() said "enabled but not permitted" into the log and
+    // returned null forever, so the remedy the empty ring names — pinch HERE —
+    // was a dead end, and the wearer stood in a placed-nothing mesh with the
+    // pip dutifully lit. The result lands in [locGrant]; the effect that
+    // answers it lives below the mesh effect, where the refs it needs exist.
+    val locGrant = remember { mutableStateOf<Boolean?>(null) }
+    val askLocation = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission(),
+    ) { granted ->
+        Log.i(TAG_UI, "[here] location granted=$granted")
+        locGrant.value = granted
+    }
 
     // The mesh, rebuilt whenever membership changes.
     // TELEMETRY PERMISSIONS, if the launch asked to change them. Not in the
@@ -1846,6 +1861,28 @@ private fun HorizonScene(link: MeshLink) {
         }
     }
 
+    // WHAT THE SYSTEM SAID when the HERE pip asked. Granted: the fix is
+    // usually already sitting in lastKnown — the puck runs a fused network
+    // provider — so one epoch bump places the whole mesh on the spot. Denied:
+    // the preference is rolled back so the pip's light does not stand there
+    // claiming a fix that can never arrive.
+    LaunchedEffect(locGrant.value) {
+        when (locGrant.value) {
+            true -> {
+                noticeRef.value?.say(ctx.getString(R.string.n_loc_placed))
+                hereEpoch.value += 1
+            }
+            false -> {
+                Settings.setUseDeviceLocation(ctx, false)
+                dockRef.value?.setLit("HERE", false)
+                noticeRef.value?.say(ctx.getString(R.string.n_loc_denied))
+                cue.denied()
+            }
+            null -> Unit
+        }
+        locGrant.value = null
+    }
+
     LaunchedEffect(session) {
         // THE PANEL YOU CANNOT SEE IN CODE. Entering Full Space does not remove
         // the Activity's own window -- it becomes `mainPanelEntity` and keeps
@@ -2141,6 +2178,11 @@ private fun HorizonScene(link: MeshLink) {
                 hereEpoch.value += 1
                 if (on) cue.opened() else cue.closed()
                 Log.i(TAG_UI, "[here] headset GPS -> ${if (on) "ON" else "OFF"}")
+                // The preference alone moves nothing without the system's
+                // grant; ask the moment the wearer expresses the intent.
+                if (on && !hereSource.hasLocationPermission()) {
+                    askLocation.launch(android.Manifest.permission.ACCESS_FINE_LOCATION)
+                }
             },
             "WIDE" to {
                 // Back out one level. The pip is also the ANCHOR: its caption

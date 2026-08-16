@@ -16,6 +16,8 @@
     <string name="app_name">Meshmore XR</string>
 
     <!-- notices -->
+    <string name="n_loc_placed">位置を取得 — メッシュを配置します</string>
+    <string name="n_loc_denied">位置情報が拒否 — 配置できません</string>
     <string name="n_mic_denied">マイク不許可</string>
     <string name="n_hands_busy">手を認識中</string>
     <string name="n_says">%1$s: %2$s</string>
