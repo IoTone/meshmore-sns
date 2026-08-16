@@ -1186,6 +1186,24 @@ private fun appRows(
         row("DIAG", ctx.getString(R.string.r_diag), Settings.diagnostics(ctx)),
         row("AUTOPEN", ctx.getString(R.string.r_autopen), Settings.autopen(ctx)),
         row("MOTION", ctx.getString(R.string.r_motion), Settings.reduceMotion(ctx)),
+        // LANGUAGE, IN THE APP AS WELL AS IN THE OS.
+        //
+        // Android 13's per-app language picker is the CORRECT place for this
+        // and the manifest opts into it — but it lives four screens deep in a
+        // system Settings app that a wearer is not wearing, and the person who
+        // most needs to flip this is a native speaker sitting down for twenty
+        // minutes of testing. One row, two states, no menus.
+        //
+        // Not a toggle over a stored preference: it calls the platform, which
+        // recreates the Activity in the new locale. That rebuild is not a
+        // side-effect to be minimised, it is the mechanism — every panel in
+        // this app is sized from a locale-specific template at build time and
+        // cannot be re-drawn afterwards, so a language change HAS to be a new
+        // scene.
+        row(
+            "LANG", ctx.getString(R.string.r_lang), L10n.ja,
+            onWord = "日本語", offWord = "ENGLISH",
+        ),
         // WHO MAY ASK THIS RADIO WHAT IT KNOWS. Three permissions, not one
         // switch, so it opens its own list rather than toggling here — see
         // telemetryRows.
@@ -3324,6 +3342,36 @@ private fun HorizonScene(link: MeshLink) {
                             // no rebuild, because a transition grammar is
                             // arithmetic rather than geometry.
                             com.iotj.meshmore.xr.spatial.Reveal.reduced = on
+                        }
+                        // THE WHOLE APP, IN THE OTHER LANGUAGE, NOW.
+                        //
+                        // setApplicationLocales is the platform's own per-app
+                        // language switch — the same one Settings drives — so
+                        // this row and the OS picker cannot disagree, and what
+                        // a tester sets here survives a restart because the
+                        // system stores it, not us.
+                        //
+                        // It recreates the Activity, and that is the point
+                        // rather than the price: every panel is sized from a
+                        // locale-specific template when it is built and cannot
+                        // be redrawn afterwards, so switching language means
+                        // building the scene again. The theme, the anchor and
+                        // the radio link all survive it.
+                        "LANG" -> {
+                            val toJa = !L10n.ja
+                            val tag = if (toJa) "ja" else "en"
+                            Log.i(TAG_UI, "[l10n] switching app locale -> $tag")
+                            noticeRef.value?.say(
+                                ctx.getString(if (toJa) R.string.n_lang_ja else R.string.n_lang_en),
+                            )
+                            runCatching {
+                                ctx.getSystemService(android.app.LocaleManager::class.java)
+                                    ?.applicationLocales =
+                                    android.os.LocaleList.forLanguageTags(tag)
+                            }.onFailure {
+                                Log.w(TAG_UI, "[l10n] locale switch refused: $it")
+                                noticeRef.value?.say(ctx.getString(R.string.n_lang_failed))
+                            }
                         }
                         // THE ONE THAT WIDENS WHAT THE RADIO SAYS. MeshLink
                         // stays the single gate; this only sets the flag it

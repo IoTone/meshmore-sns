@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  THE LANGUAGES THIS APP ADMITS TO SPEAKING.
+
+  Without this file Android will not offer Meshmore XR in Settings ▸ Apps ▸
+  Language at all: per-app locales are opt-in, and the opt-in is a resource
+  rather than code. With it, a wearer (or a reviewer, or a native speaker
+  sitting down to test) can put the app into Japanese without changing the
+  language of the whole headset — which is the difference between a testing
+  session that takes a minute and one that takes a reboot and a settings tour
+  in a language the tester may not read.
+
+  Keep this list and the values-* directories in step. A locale named here
+  with no resources falls back to English silently, which is exactly the
+  failure L10nTest exists to catch on the string side.
+-->
+<locale-config xmlns:android="http://schemas.android.com/apk/res/android">
+    <locale android:name="en" />
+    <locale android:name="ja" />
+</locale-config>

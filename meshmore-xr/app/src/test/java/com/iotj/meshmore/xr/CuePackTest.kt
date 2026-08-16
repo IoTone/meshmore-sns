@@ -31,6 +31,30 @@ class CuePackTest {
         assertEquals(Theme.ALL.map { it.audio }.toSet(), Cue.PACKS.map { it.key }.toSet())
     }
 
+    /**
+     * EVERY THEME ARRIVES IN ITS OWN VOICE.
+     *
+     * [Cue.welcomeFor] falls back to HALO's tune for an unknown key, which is
+     * the right behaviour and the perfect hiding place: a theme whose line was
+     * never added plays a neighbour's welcome, on a headset, once, at the
+     * moment the wearer is busy looking at a new scene. Five of the nine were
+     * in exactly that state until the last three tracks arrived and two more
+     * were synthesised.
+     */
+    @Test fun everyThemeHasItsOwnWelcome() {
+        val byKey = Theme.ALL.associate { it.key to Cue.welcomeFor(it.key) }
+        val fallback = Cue.welcomeFor("no-such-theme")
+        byKey.forEach { (k, res) ->
+            if (k != "halo") {
+                assertTrue("$k has no welcome of its own — it is playing HALO's", res != fallback)
+            }
+        }
+        assertEquals(
+            "two themes share a welcome tune",
+            byKey.size, byKey.values.toSet().size,
+        )
+    }
+
     @Test fun packKeysAreUnique() {
         assertEquals(Cue.PACKS.size, Cue.PACKS.map { it.key }.toSet().size)
     }

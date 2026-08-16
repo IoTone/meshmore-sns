@@ -150,6 +150,20 @@ class Cue {
             "nerv" -> R.raw.welcome_nerv
             "biolume" -> R.raw.welcome_biolume
             "vector" -> R.raw.welcome_vector
+            // AG-SYSTEMS TAKES THE HARD-DRIVING ONE. It is the Wipeout craft
+            // HUD at 900 km/h and its audio pack is called velocity; if a
+            // track is going to push, it pushes here.
+            "aghud" -> R.raw.welcome_aghud
+            "drpop" -> R.raw.welcome_drpop
+            "recon" -> R.raw.welcome_recon
+            // THE LAST TWO ARE SYNTHESISED, and they are the two that should
+            // be. TERMINAL VOID is a terminal waking up — three square blips,
+            // a sweep, and a phosphor hum that fades under the wordmark. SEELE
+            // MONOLITH does not chirp: one slab of low tone, a fifth arriving
+            // late, a single bell. A monolith that played a jingle would be
+            // arguing with its own theme.
+            "seele" -> R.raw.welcome_seele
+            "void" -> R.raw.welcome_void
             else -> R.raw.welcome_halo
         }
 

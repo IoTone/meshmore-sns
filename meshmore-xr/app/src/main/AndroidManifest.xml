@@ -94,11 +94,16 @@
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 
+    <!-- localeConfig puts Meshmore XR in Settings > Apps > Language. Per-app
+         locales are opt-in and the opt-in is that attribute; without it a
+         tester can only reach Japanese by changing the whole headset's
+         language. See res/xml/locales_config.xml. -->
     <application
         android:label="MeshmoreXR"
         android:icon="@mipmap/ic_launcher"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
+        android:localeConfig="@xml/locales_config"
         android:theme="@style/Theme.MeshmoreXR">
 
         <activity
