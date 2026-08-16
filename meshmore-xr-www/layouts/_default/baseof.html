@@ -137,9 +137,11 @@
     <a class="mark" href="{{ "/" | relLangURL }}">MESHMORE&nbsp;XR</a>
     <nav>
       {{ if eq .Site.Language.Lang "ja" }}
+      <a href="{{ "/guide/" | relLangURL }}">使い方</a>
       <a href="{{ "/privacy/" | relLangURL }}">プライバシー</a>
       <a href="{{ "/support/" | relLangURL }}">サポート</a>
       {{ else }}
+      <a href="{{ "/guide/" | relLangURL }}">Guide</a>
       <a href="{{ "/privacy/" | relLangURL }}">Privacy</a>
       <a href="{{ "/support/" | relLangURL }}">Support</a>
       {{ end }}

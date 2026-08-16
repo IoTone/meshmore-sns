@@ -13,6 +13,7 @@
   {{ else }}
   <span class="cta soon">{{ if eq .Site.Language.Lang "ja" }}近日公開{{ else }}Coming soon{{ end }}</span>
   {{ end }}
+  <a class="cta" style="margin-left:.7rem" href="{{ "/guide/" | relLangURL }}">{{ if eq .Site.Language.Lang "ja" }}使い方{{ else }}Read the guide{{ end }}</a>
 </div>
 
 <div class="wrap">

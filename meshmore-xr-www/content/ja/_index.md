@@ -68,3 +68,10 @@ Meshmore XR は、MeshCore LoRa 無線機と光学シースルーグラスで、
 ## 現在の状況
 
 実働350ノードのメッシュで開発中。日本での公開を準備しています。
+
+## Offline SNS ファミリー
+
+Meshmore XR はファミリーの空間担当です。同じメッシュをスマホで使う
+[Meshmore SNS](https://offlinesns.pages.dev/en/tboc/meshmore-sns/#/)、
+対応無線機をまとめた[デバイスガイド](https://offlinesns.pages.dev/en/tboc/devices/#/)、
+そして全体の思想は [Offline SNS プロジェクト](https://offlinesns.pages.dev/#/)へ。

@@ -75,3 +75,11 @@ glance.
 
 In active development against a live 350-node mesh, with a Japan launch in
 preparation. Follow this page for the release.
+
+## Part of Offline SNS
+
+Meshmore XR is the spatial member of a family: [Meshmore
+SNS](https://offlinesns.pages.dev/en/tboc/meshmore-sns/#/) carries the same
+mesh on phones, the [device guide](https://offlinesns.pages.dev/en/tboc/devices/#/)
+covers the radios that run it, and the [Offline SNS
+project](https://offlinesns.pages.dev/#/) is the why behind all of it.
