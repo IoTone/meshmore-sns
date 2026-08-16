@@ -85,6 +85,11 @@
          startup: a microphone prompt on first launch of a mesh radio reads as
          the app wanting to listen to the room. -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <!-- The whole haptic language — recognition click, refusal double-click,
+         the DM thud — threw SecurityException on device until this line
+         existed. runCatching ate it quietly; only the sweep's logcat said so.
+         Normal permission: granted at install, no prompt. -->
+    <uses-permission android:name="android.permission.VIBRATE" />
 
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
