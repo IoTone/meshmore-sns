@@ -120,6 +120,13 @@ class MeshLink(private val context: Context) {
         if (st.droppedAtMs != null) {
             return context.getString(R.string.link_lost)
         }
+        // PAIRING IS A HANDOFF TO THE WEARER, and the one moment in the whole
+        // connect where they must DO something: read six digits off the
+        // radio's screen and type them into the system dialog. Saying which is
+        // the difference between a first pairing and a support ticket.
+        if (st.lastEvent == "pairing") {
+            return context.getString(R.string.link_pair_code)
+        }
         val n = when {
             st.scanning -> 1
             st.state == SessionState.DISCONNECTED -> if (st.deviceName == null) 1 else 2
@@ -454,6 +461,9 @@ class MeshLink(private val context: Context) {
      */
     private var everReady = false
 
+    /** Has this session ever completed a handshake? The no-radio card keys on it. */
+    val everConnected: Boolean get() = everReady
+
     /** Set by [close] so a deliberate shutdown does not immediately reconnect. */
     private var closedByUser = false
 
@@ -465,7 +475,7 @@ class MeshLink(private val context: Context) {
 
     /** The arguments of the last [connect], so a retry reaches the same radio. */
     private var lastPrefix = "MeshCore"
-    private var lastPin = BLE_PIN
+    private var lastPin: String? = null
 
     /**
      * Come back on our own, on a widening interval.
@@ -523,7 +533,7 @@ class MeshLink(private val context: Context) {
             .all { ContextCompat.checkSelfPermission(context, it) == PackageManager.PERMISSION_GRANTED }
 
     /** Scan for a radio whose advert name starts with [namePrefix], then handshake. */
-    fun connect(namePrefix: String = "MeshCore", pin: String = BLE_PIN) {
+    fun connect(namePrefix: String = "MeshCore", pin: String? = null) {
         // A RECONNECT REPLAYS THE WHOLE CONTACT LIST, so the suppression has to
         // re-arm here and not only at construction. Otherwise the second
         // connect of a session announces 113 strangers.
@@ -579,10 +589,23 @@ class MeshLink(private val context: Context) {
         // looked before: "already bonded, connecting", and no state change ever.
         // A device in the scan results is a device that is actually there.
         val seen = LinkedHashMap<String, ScanResult>()
+        val others = LinkedHashSet<String>()
         val cb = object : ScanCallback() {
             override fun onScanResult(callbackType: Int, result: ScanResult) {
                 val name = try { result.device.name } catch (_: SecurityException) { null } ?: return
-                if (!name.startsWith(namePrefix, ignoreCase = true)) return
+                if (!name.startsWith(namePrefix, ignoreCase = true)) {
+                    // NAME THE AIR. "no radio found" with a silent scan is
+                    // undiagnosable from a log: the radio being off, renamed,
+                    // or captured by another central all look identical.
+                    // Logging every named stranger once turns two of those
+                    // into a visible fact — a renamed radio appears here under
+                    // its new name, and an empty list says the radio is not
+                    // advertising at all (off, or connected elsewhere).
+                    if (others.size < 12 && others.add(name)) {
+                        Log.i(TAG, "[link] in the air (not ours): '$name' rssi=${result.rssi}")
+                    }
+                    return
+                }
                 if (seen.put(result.device.address, result) == null) {
                     Log.i(TAG, "[link] found '$name' rssi=${result.rssi}")
                 }
@@ -653,13 +676,14 @@ class MeshLink(private val context: Context) {
      * for a fixed-PIN build there is nothing for the user to decide. A radio
      * built with a random PIN would need the dialog (or the QR path in S2 LINK).
      */
-    private fun bondThenOpen(device: BluetoothDevice, pin: String) {
+    private fun bondThenOpen(device: BluetoothDevice, pin: String?) {
         if (device.bondState == BluetoothDevice.BOND_BONDED) {
             Log.i(TAG, "[link] already bonded — connecting")
             openSession(device)
             return
         }
-        Log.i(TAG, "[link] not bonded — createBond() with PIN '$pin'")
+        Log.i(TAG, "[link] not bonded — createBond() " +
+            if (pin != null) "with explicit PIN" else "(system dialog will ask for the code)")
         _status.value = _status.value.copy(lastEvent = "pairing")
 
         val filter = IntentFilter().apply {
@@ -679,10 +703,31 @@ class MeshLink(private val context: Context) {
                         Log.i(TAG, "[link] pairing request variant=$variant key=$key")
                         runCatching {
                             when (variant) {
-                                // PAIRING_VARIANT_PIN(0) / PASSKEY(1): we supply digits
+                                // PAIRING_VARIANT_PIN(0) / PASSKEY(1).
+                                //
+                                // THE DIALOG IS THE PLAN, not a failure mode.
+                                // This firmware regenerates its PIN every boot
+                                // and shows it on the radio's screen; an app
+                                // constant can never be right, and the old one
+                                // ("888294", one long-dead boot's number)
+                                // auto-replied AND suppressed the system
+                                // dialog — so every real pairing failed
+                                // silently, and adb with --es pin was the only
+                                // path that ever worked. When no explicit PIN
+                                // was supplied we now do NOTHING here: the
+                                // system pairing dialog appears, the XR soft
+                                // keyboard raises with it, and the wearer
+                                // types the six digits straight off the
+                                // radio's screen. Auto-reply survives only for
+                                // an explicitly provided PIN (the test flag).
                                 0, 1 -> {
-                                    val ok = device.setPin(pin.toByteArray())
-                                    Log.i(TAG, "[link] setPin -> $ok")
+                                    if (pin != null) {
+                                        val ok = device.setPin(pin.toByteArray())
+                                        Log.i(TAG, "[link] setPin(explicit) -> $ok")
+                                    } else {
+                                        Log.i(TAG, "[link] passkey wanted — leaving the system dialog to ask")
+                                        return@runCatching
+                                    }
                                 }
                                 // PASSKEY_CONFIRMATION(2) / CONSENT(3): just say yes
                                 2, 3 -> {
@@ -1682,7 +1727,6 @@ class MeshLink(private val context: Context) {
          * Hardcoded here only to close P0 checkpoint 3; S2 LINK reads it from
          * the user (or a QR code, via arcore's QrCode API).
          */
-        private const val BLE_PIN = "888294"
         /**
          * How many messages to keep. Enough that a busy channel does not push
          * a direct message out of reach in a minute, few enough that it is

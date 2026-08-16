@@ -26,7 +26,10 @@ Offline SNS site; if you want the same mesh on a phone, that is
    strongest signal), and walks a four-step ladder it shows and sounds out:
    `LOOKING FOR A RADIO → CONNECTING → HANDSHAKING → READING RADIO`. Where the
    ladder stops is where the problem is.
-3. Your radio may show a **pairing PIN** on its screen the first time.
+3. First time only: your radio shows a **6-digit code on its screen** and the
+   glasses raise a pairing dialog — type the code with the soft keyboard.
+   After this one bond you will never be asked again (until the radio is
+   re-flashed; the code changes every reboot, so always read the current one).
 4. The boot scene plays your theme's welcome tune while the contact list
    loads into the vessel under the wordmark. The build version is printed
    right there — if you ever wonder what you're running, look at the splash.

@@ -206,4 +206,10 @@
     <string name="n_asked_telem">ASKED %1$s</string>
     <string name="n_table_reset">TABLE RESET — SEARCHING</string>
     <string name="n_region_mismatch">RADIO IS %1$s — YOU ARE IN %2$s</string>
+    <!-- no-radio card + pairing hint -->
+    <string name="link_pair_code">TYPE THE CODE FROM THE RADIO\'S SCREEN</string>
+    <string name="nr_title">NO RADIO</string>
+    <string name="nr_check">IS IT ON AND NEARBY?</string>
+    <string name="nr_phone">A PHONE MAY BE HOLDING IT</string>
+    <string name="nr_retry">PINCH HERE — SEARCH AGAIN</string>
 </resources>

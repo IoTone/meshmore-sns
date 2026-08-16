@@ -204,4 +204,10 @@
     <string name="n_asked_telem">%1$s に照会</string>
     <string name="n_table_reset">卓上リセット — 再探索</string>
     <string name="n_region_mismatch">無線機は%1$s設定 — 現在地は%2$s</string>
+    <!-- no-radio card + pairing hint -->
+    <string name="link_pair_code">無線機の画面のコードを入力</string>
+    <string name="nr_title">無線機なし</string>
+    <string name="nr_check">電源と距離を確認</string>
+    <string name="nr_phone">スマホが接続中かも</string>
+    <string name="nr_retry">ピンチで再検索</string>
 </resources>

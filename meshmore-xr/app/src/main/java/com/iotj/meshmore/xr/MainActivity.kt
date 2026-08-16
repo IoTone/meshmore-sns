@@ -1111,6 +1111,10 @@ private fun meshMono(ctx: android.content.Context): FontFamily =
  */
 private const val NODE_MENU_SIDE = 0.55f
 
+/** The no-radio card's own patience: three quiet rescans, half a minute apart. */
+private const val NO_RADIO_AUTO_TRIES = 3
+private const val NO_RADIO_RETRY_MS = 30_000L
+
 private const val LOCATION_POLL_MS = 15_000L
 
 /**
@@ -1326,6 +1330,7 @@ private fun HorizonScene(link: MeshLink) {
      * a cluster and a node are different subjects with different verbs.
      */
     val nodeMenuRef = remember { mutableStateOf<RadialMenu?>(null) }
+    val noRadioRef = remember { mutableStateOf<com.iotj.meshmore.xr.spatial.NoRadio?>(null) }
     val focusRef = remember { mutableStateOf<com.iotj.meshmore.xr.spatial.Focus?>(null) }
     val gazeRef = remember { mutableStateOf<com.iotj.meshmore.xr.spatial.Gaze?>(null) }
     val rosterRef = remember { mutableStateOf<com.iotj.meshmore.xr.spatial.Roster?>(null) }
@@ -2035,6 +2040,9 @@ private fun HorizonScene(link: MeshLink) {
         val help = HelpCard(session, palette, ctx)
         help.build(origin)
         helpRef.value = help
+        val noRadio = com.iotj.meshmore.xr.spatial.NoRadio(session, palette, ctx)
+        noRadio.build(origin)
+        noRadioRef.value = noRadio
 
         // Roster picks, queued: Focus.showFor builds the spur and therefore
         }
@@ -2566,6 +2574,11 @@ private fun HorizonScene(link: MeshLink) {
         var chanCount = -1
         // One region-compliance check per session, once both facts exist.
         var regionChecked = false
+        // The no-radio card's automatic rescans: a few, gently spaced. Initial
+        // not-found is one attempt by design; a wearer staring at the card is
+        // the signal to try again without being asked.
+        var noRadioTries = 0
+        var noRadioLastTry = 0L
         try {
             if (MainActivity.selfTest) launch { horizon.selfTest(origin) }
             if (MainActivity.showThread) launch {
@@ -4033,6 +4046,37 @@ private fun HorizonScene(link: MeshLink) {
                 statusTick += 0.033f
                 if (statusTick > 1f) {
                     statusTick = 0f
+                    // THE EMPTY RADAR EXPLAINS ITSELF. Shown only before the
+                    // first-ever link: after a drop, LOST-and-reconnecting owns
+                    // the story. Hidden while a scan runs, so the card itself
+                    // shows the search happening.
+                    run {
+                        val st2 = link.status.value
+                        val want = !link.everConnected &&
+                            !st2.scanning && st2.error != null
+                        noRadioRef.value?.setVisible(want)
+                        val nowW = android.os.SystemClock.uptimeMillis()
+                        // The retry clock starts when the card first SHOWS —
+                        // at zero it fired instantly, so the card flashed for
+                        // one frame and hid behind a scan it had not asked
+                        // for. A card that appears must stand long enough to
+                        // be read; thirty seconds is also about how long a
+                        // person needs to walk over and switch a radio on.
+                        if (want && noRadioLastTry == 0L) noRadioLastTry = nowW
+                        if (noRadioRef.value?.poll() == true) {
+                            noRadioTries = 0
+                            noRadioLastTry = nowW
+                            cue.recognised()
+                            link.connect()
+                        } else if (want && noRadioTries < NO_RADIO_AUTO_TRIES &&
+                            nowW - noRadioLastTry > NO_RADIO_RETRY_MS
+                        ) {
+                            noRadioTries++
+                            noRadioLastTry = nowW
+                            Log.i(TAG_UI, "[noradio] auto-rescan $noRadioTries/$NO_RADIO_AUTO_TRIES")
+                            link.connect()
+                        }
+                    }
                     // WHERE YOU ARE vs WHAT THE RADIO IS SET TO — checked once
                     // per session, on the 1 Hz tick, as soon as both facts
                     // exist. The Giteki disclaimer says presets are not
