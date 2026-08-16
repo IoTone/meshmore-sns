@@ -99,6 +99,8 @@ class Stack(
     private var footer: String = ""
     /** When this surface opened, for [Reveal]. */
     private var openedAt = 0L
+    /** When the last build finished; see the settle wait in [build]. */
+    private var lastBuiltAt = 0L
     private var focused: Int = -1
 
     var open: Boolean = false
@@ -107,6 +109,14 @@ class Stack(
     var onFocus: (() -> Unit)? = null
 
     suspend fun build() {
+        // Same settle the horizon build has, same reason: a restyle that
+        // arrives right behind the previous build would dispose panels whose
+        // async creation has not bound yet, and that is the renderer's
+        // placeholder-borrow abort.
+        val since = android.os.SystemClock.uptimeMillis() - lastBuiltAt
+        if (lastBuiltAt != 0L && since < SETTLE_MS) {
+            kotlinx.coroutines.delay(SETTLE_MS - since)
+        }
         clear()
         val root = session.scene.activitySpace
         // BUILT AT STARTUP AND HIDDEN, all MAX of them, because Prims.material
@@ -159,6 +169,7 @@ class Stack(
             com.iotj.meshmore.xr.L10n.tpl(NOTE_WIDEST, ROW_NOTE_WIDEST_JA),
             com.iotj.meshmore.xr.L10n.cap(CAP) * 0.85f, argb(theme.alt, 0.9f), "stack-note",
         )?.also { it.entity.parent = root; it.entity.setEnabled(false); entities += it.entity }
+        lastBuiltAt = android.os.SystemClock.uptimeMillis()
         Log.i(TAG, "[stack] ${slots.size} slots")
     }
 
@@ -622,6 +633,8 @@ class Stack(
 
         /** Sized for the longest row this can hold, once, so it never re-measures. */
         const val WIDEST = ROW_WIDEST
+        /** Renderer settle before a rebuild may dispose the previous one. */
+        const val SETTLE_MS = 600L
         const val HEAD_WIDEST = ROW_HEAD_WIDEST
         const val NOTE_WIDEST = ROW_NOTE_WIDEST
     }

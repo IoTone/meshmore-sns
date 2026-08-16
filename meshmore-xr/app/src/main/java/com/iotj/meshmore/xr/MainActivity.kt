@@ -3172,7 +3172,20 @@ private fun HorizonScene(link: MeshLink) {
             }
             suspend fun drainThemePicker() {
                 while (true) {
-                    val chosen = themePickerRef.value?.poll() ?: break
+                    var chosen = themePickerRef.value?.poll() ?: break
+                    // A LAPPED QUEUE COMMITS ONLY ITS LAST PICK. Each commit
+                    // rebuilds two bays, the dock and (via the epoch) the whole
+                    // ring; when picks arrive faster than commits finish, the
+                    // intermediate themes are rooms the wearer has already left
+                    // — and building them anyway meant disposing entities
+                    // milliseconds after their async creation, which is exactly
+                    // the window the renderer's placeholder-material borrow
+                    // abort lives in ("OwnedPtr ... Split Engine Placeholder").
+                    while (true) {
+                        val next = themePickerRef.value?.poll() ?: break
+                        Log.i(TAG_UI, "[theme] '${chosen.key}' superseded in queue by '${next.key}'")
+                        chosen = next
+                    }
                     if (chosen == skin.value) {
                         // PICKING WHAT YOU ARE ALREADY WEARING IS THE WAY OUT.
                         // There is no separate CLOSE control: the tile you are

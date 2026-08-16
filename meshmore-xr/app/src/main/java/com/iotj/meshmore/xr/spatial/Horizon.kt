@@ -308,6 +308,18 @@ class Horizon(
 
 
     suspend fun build(nodes: List<Node>, o: Stage.Origin, floorY: Float) {
+        // A BEAT BETWEEN UNMAKING AND THE LAST MAKING. Entity creation is
+        // async on the renderer's side: a mesh created here carries a
+        // placeholder material until the real one binds, and disposing it in
+        // that window is a native abort, not an exception. Back-to-back
+        // rebuilds (queued theme commits, rapid membership churn) put the
+        // previous build's last entities exactly there. This waits out the
+        // tail of the previous build before clear() unmakes it; a rebuild
+        // that arrives later than SETTLE_MS pays nothing.
+        val since = android.os.SystemClock.uptimeMillis() - lastBuiltAt
+        if (lastBuiltAt != 0L && since < SETTLE_MS) {
+            kotlinx.coroutines.delay(SETTLE_MS - since)
+        }
         clear()
         // TRANSIT DRAWS NO RING. Moving, hands busy, eyes on the world: the
         // MICROHUD is head-locked and the cuff and the radial menu are on the
@@ -730,6 +742,7 @@ class Horizon(
             Log.i(TAG, "[horizon] $unlabelled node(s) fell back to stroke labels — pool exhausted")
         }
         if (!labelledAny) callouts(root, o)
+        lastBuiltAt = android.os.SystemClock.uptimeMillis()
         Log.i(TAG, "[horizon] built ${entities.size} entities for ${nodes.size} nodes " +
             "(${nodes.count { it.type == TYPE_REPEATER }} repeaters, " +
             "${nodes.count { it.type == TYPE_CHAT }} chat, " +
@@ -1272,6 +1285,8 @@ class Horizon(
 
     private var ringY: Float? = null
     private var ringAt = Vector3(0f, 0f, 0f)
+    /** When the last build finished; see the settle wait at [build]'s top. */
+    private var lastBuiltAt = 0L
 
     fun tick(dt: Float) {
         reconcileHover()
@@ -1321,6 +1336,18 @@ class Horizon(
         // Labels hold the same entities; drop the references or faceViewer()
         // would keep posing disposed handles every frame after a rebuild.
         facing.clear()
+        // AND THE RANGE CIRCLES, for exactly the reason facing is cleared —
+        // except only HALO ever paid. follow() runs per frame solely when
+        // frame.follows, so on every other theme these stale handles sat
+        // harmless, and the one path that reads them was the one theme the
+        // sweep never rebuilds mid-wear: switching INTO the active theme
+        // disposed the tori here, follow() setPose'd the dead handles, and
+        // the renderer aborted natively ~2 s later ("OwnedPtr of type
+        // imp::Material ... outstanding borrowed objects"). No Java
+        // exception, process gone — which on an additive display reads as
+        // "HALO isn't populating", not as a crash.
+        rings.clear()
+        ringY = null
         peers.clear()
         selected.clear()
         // The callout pass reads this list at the END of a build, so a rebuild
@@ -1356,6 +1383,8 @@ class Horizon(
          * out every time the user tipped their head.
          */
         private const val VEIL_ALPHA = 0.12f
+        /** Renderer settle before a rebuild may dispose the previous one. */
+        private const val SETTLE_MS = 600L
         private const val HOVER_SCALE = 1.35f
         /** How long hover survives losing every pointer. Covers tracking jitter. */
         private const val HOVER_GRACE_MS = 180L
