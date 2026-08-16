@@ -1597,6 +1597,15 @@ private fun HorizonScene(link: MeshLink) {
         Log.i(TAG_UI, "[sweep] complete — all themes committed and survived")
     }
 
+    // IS IT CONNECTED? ANSWERED WITHOUT BEING ASKED — see Hud.lowerOn, which
+    // now stands by default. The dock's LINK pip was the other candidate and
+    // was deliberately NOT used: a pip caption is a reusable panel, and a
+    // panel's words on this runtime are whatever it held when it was first
+    // composited (see Advice). If those updates do not land, the pip would sit
+    // there reading LINK while the radio was gone, which is worse than silence.
+    // The band is stroke geometry and is REBUILT on every change, so it cannot
+    // lie about this.
+
     // THE CARD, BUILT OFF THE FRAME LOOP. Keyed on what it would say, so a
     // steady state costs nothing and a change costs four panels once.
     LaunchedEffect(adviceRef.value, adviceKind.value, boardRef.value) {
@@ -2413,6 +2422,8 @@ private fun HorizonScene(link: MeshLink) {
             // no focus cue and a dark HERE pip is the launch bug back again.
             dock.onFocus = { cue.recognised() }
             dock.setLit("HERE", Settings.useDeviceLocation(ctx))
+            // The pip agrees with the band it toggles, from the first frame.
+            dock.setLit("LINK", hudRef.value?.lowerOn ?: true)
         }
         buildDock(skin.value)
         // THE DWELL FALLBACK (§8.2). Armed only when no hand is tracked, so it

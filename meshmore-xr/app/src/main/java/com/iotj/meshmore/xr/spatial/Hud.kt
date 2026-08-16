@@ -67,7 +67,23 @@ class Hud(private val session: Session, private val theme: Horizon.Palette) {
      */
     var upperOn: Boolean = false
         private set
-    var lowerOn: Boolean = false
+    /**
+     * THE LINK BAND STANDS BY DEFAULT, and the compass does not.
+     *
+     * "No indication of connected to anything" was said after a day of an app
+     * that was connected the whole time: 350 contacts, live traffic, and a
+     * scene that looked identical to a dead one because the only surface that
+     * says LINK was raised by a hand sign the wearer had to know. An app whose
+     * answer to "is this working" costs a gesture answers it for nobody who
+     * has not already learned the gesture.
+     *
+     * The compass stays off: a bearing ribbon is a thing you ask for. Link
+     * state is a thing you are owed, and it is one short row at the bottom of
+     * the field — LINK 3.9V 24/350 GPS — which is also the row that already
+     * carries LOST 4M when the radio goes away. Left-hand A still puts it away
+     * for anyone who wants the room back.
+     */
+    var lowerOn: Boolean = true
         private set
 
     fun setUpper(on: Boolean) {
