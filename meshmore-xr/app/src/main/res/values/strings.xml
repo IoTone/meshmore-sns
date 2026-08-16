@@ -210,6 +210,7 @@
     <string name="n_region_mismatch">RADIO IS %1$s — YOU ARE IN %2$s</string>
     <!-- no-radio card + pairing hint -->
     <string name="link_pair_code">TYPE THE CODE FROM THE RADIO\'S SCREEN</string>
+    <string name="n_dm_to">TO %1$s</string>
     <string name="nf_title">NO POSITION</string>
     <string name="nf_board_nogps">%1$s HAS NO GPS</string>
     <string name="nf_nofix">THE RADIO SENDS NO POSITION</string>

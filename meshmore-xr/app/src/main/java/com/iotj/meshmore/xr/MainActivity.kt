@@ -149,6 +149,12 @@ class MainActivity : ComponentActivity() {
          */
         var showFind: Boolean = false
         /**
+         * `--ez dm true` : address the first node on the ring, as though its
+         * MESSAGE verb had been pinched. The compose crown is otherwise
+         * reachable only through a hand, which no emulator has.
+         */
+        var dmProbe: Boolean = false
+        /**
          * --es query "rep" : start with the filter already applied.
          *
          * The panel needs a keyboard and a hand, so the FILTER — which is the
@@ -339,6 +345,7 @@ class MainActivity : ComponentActivity() {
         handDebug = intent?.getBooleanExtra("handdebug", false) ?: false
         showHelp = intent?.getBooleanExtra("help", false) ?: false
         showFind = intent?.getBooleanExtra("find", false) ?: false
+        dmProbe = intent?.getBooleanExtra("dm", false) ?: false
         queryOverride = intent?.getStringExtra("query")?.takeIf { it.isNotBlank() }
         showMenu = intent?.getBooleanExtra("menu", false) ?: false
         showFocus = intent?.getBooleanExtra("focus", false) ?: false
@@ -1605,6 +1612,38 @@ private fun HorizonScene(link: MeshLink) {
     // there reading LINK while the radio was gone, which is worse than silence.
     // The band is stroke geometry and is REBUILT on every change, so it cannot
     // lie about this.
+
+    // THE CROWN'S WORDS. Off the frame loop, because that is the only place
+    // they land — see Crown.applyWords. Polled rather than keyed: the crown's
+    // level and draft change inside the frame loop's own drain, and a Compose
+    // key cannot see a field on a plain object.
+    LaunchedEffect(crownRef.value) {
+        val c = crownRef.value ?: return@LaunchedEffect
+        while (true) {
+            if (c.applyWords()) Log.i(TAG_UI, "[crown] words: ${c.state()}")
+            kotlinx.coroutines.delay(80)
+        }
+    }
+
+    // THE COMPOSE CROWN, WITHOUT A HAND. See MainActivity.dmProbe.
+    LaunchedEffect(crownRef.value, nodesRef.value) {
+        if (!MainActivity.dmProbe) return@LaunchedEffect
+        val c = crownRef.value ?: return@LaunchedEffect
+        val n = nodesRef.value.firstOrNull() ?: return@LaunchedEffect
+        if (c.target != null) return@LaunchedEffect
+        kotlinx.coroutines.delay(2_000)
+        c.target = com.iotj.meshmore.xr.spatial.Crown.Target(n.fullKey ?: n.key, n.name)
+        c.show()
+        c.compose()
+        c.say(
+            ctx.getString(
+                R.string.n_dm_to,
+                com.iotj.meshmore.xr.spatial.TypeTier.clip(n.name, 14),
+            ),
+            android.os.SystemClock.uptimeMillis(),
+        )
+        Log.i(TAG_UI, "[dm] probe — composing to '${n.name}'")
+    }
 
     // THE CARD, BUILT OFF THE FRAME LOOP. Keyed on what it would say, so a
     // steady state costs nothing and a change costs four panels once.
@@ -2948,7 +2987,14 @@ private fun HorizonScene(link: MeshLink) {
                         // there is a card, there is something to do about it.
                         val cw = crownRef.value
                         if (cw != null) {
-                            if (r.open && r.cardAt != null) {
+                            // A CROWN WITH A TARGET IS NOT THE CARD'S. It was
+                            // summoned from a node that has no card and no
+                            // thread, so the card's life cannot end it — only
+                            // sending, cancelling or B can.
+                            val addressed = cw.target != null
+                            if (addressed) {
+                                if (!cw.open) { cw.show(); cw.compose() }
+                            } else if (r.open && r.cardAt != null) {
                                 if (!cw.open) cw.show()
                             } else if (cw.open) {
                                 cw.hide()
@@ -2958,7 +3004,8 @@ private fun HorizonScene(link: MeshLink) {
                             // wearer last toggled — otherwise turning voice on
                             // for one conversation appears to have turned it on
                             // for every message you scroll past.
-                            val sel = link.msgs.value.getOrNull(r.selectedIndex)
+                            val sel = if (cw.target != null) null
+                                else link.msgs.value.getOrNull(r.selectedIndex)
                             cw.voiceOn = voice.isOn(
                                 sel?.let { if (it.direct) it.fromKey else (it.channel ?: "#") },
                             )
@@ -2982,7 +3029,11 @@ private fun HorizonScene(link: MeshLink) {
                             // called FROM, not the place it runs.
                             cw.suggestion = sel?.text?.takeIf { Settings.autopen(ctx) }?.let { Autopen.suggest(it) }
                             cw.tick(
-                                r.cardAt, hp?.translation,
+                                // `at` only gates the crown; the rows are
+                                // placed from the head and its yaw either way,
+                                // so a targeted crown hangs off the wearer.
+                                if (cw.target != null) hp?.translation else r.cardAt,
+                                hp?.translation,
                                 hp?.let { yawOf(it) } ?: 0f, nowMs,
                             )
                             while (true) {
@@ -4018,13 +4069,42 @@ private fun HorizonScene(link: MeshLink) {
                                         )
                                 }
                                 val h = stage.headNow()
-                                if (t == null || h == null) {
-                                    noticeRef.value?.say(
-                                        ctx.getString(
-                                            R.string.n_no_thread_yet,
-                                            com.iotj.meshmore.xr.spatial.TypeTier.clip(n.name, 14),
-                                        ),
-                                    )
+                                if (t == null) {
+                                    // NO THREAD IS NOT A REFUSAL ANY MORE.
+                                    // "NO THREAD YET" was the app describing
+                                    // its own missing feature as though it
+                                    // were a fact about the mesh. Address the
+                                    // node: the crown opens on compose, the
+                                    // canned openers and dictation are already
+                                    // there, and CONFIRM sends to this key.
+                                    crownRef.value?.let { c ->
+                                        c.target = com.iotj.meshmore.xr.spatial.Crown.Target(
+                                            n.fullKey ?: n.key, n.name,
+                                        )
+                                        // STRAIGHT TO THE WORDS. show() alone
+                                        // lands on ACTIONS — read aloud, open
+                                        // the thread, toggle this
+                                        // conversation's voice — every one of
+                                        // which is about a conversation that
+                                        // does not exist yet. And it must be
+                                        // said even when the crown is already
+                                        // up for the reel, which is the state
+                                        // it was in the first time this was
+                                        // tried.
+                                        c.show()
+                                        c.compose()
+                                        c.say(
+                                            ctx.getString(
+                                                R.string.n_dm_to,
+                                                com.iotj.meshmore.xr.spatial.TypeTier.clip(n.name, 14),
+                                            ),
+                                            android.os.SystemClock.uptimeMillis(),
+                                        )
+                                        focusRef.value?.hide()
+                                        cue.opened()
+                                        Log.i(TAG_UI, "[dm] composing to '${n.name}' key=${n.key}")
+                                    }
+                                } else if (h == null) {
                                     cue.closed()
                                 } else {
                                     val nowS = System.currentTimeMillis() / 1000
@@ -5248,9 +5328,20 @@ private fun onCrown(
     // the card and acting on a clipped message would be its own bug.
     val msg = link.msgs.value.getOrNull(reel.selectedIndex)
     val threadId = msg?.let { if (it.direct) it.fromKey else (it.channel ?: "#") }
+    // ADDRESSED, rather than answering. Set when the crown was summoned from a
+    // node with no conversation; every branch that assumes a message under the
+    // reel's cursor has to ask about this first.
+    val to = crown.target
     when (act) {
         Crown.Act.REPLY -> { crown.compose(); cue.opened() }
-        Crown.Act.BACK -> { dictation.cancel(); crown.backToActions(); cue.closed() }
+        Crown.Act.BACK -> {
+            dictation.cancel()
+            // BACK OUT OF WHAT? An addressed crown has no actions level to go
+            // back TO — ALOUD, THREAD and VOICE are all about a conversation
+            // that does not exist yet — so back is out.
+            if (to != null) crown.hide() else crown.backToActions()
+            cue.closed()
+        }
         Crown.Act.CANCEL -> {
             // Back to composing rather than out altogether: cancelling a draft
             // means "not those words", almost never "not at all".
@@ -5354,15 +5445,23 @@ private fun onCrown(
                         ?: "NONE") +
                     " text='" + text.take(40) + "'",
             )
-            if (msg == null || text.isBlank()) {
-                Log.w(TAG_UI, "[crown] nothing to send: msg=${msg != null} blank=${text.isBlank()}")
+            if ((msg == null && to == null) || text.isBlank()) {
+                Log.w(TAG_UI, "[crown] nothing to send: msg=${msg != null} to=${to?.name} blank=${text.isBlank()}")
                 crown.say(ctx.getString(R.string.n_nothing_to_send), nowMs)
                 cue.closed()
                 return
             }
-            when (val r = link.replyTo(msg, text)) {
+            val sent = if (to != null) link.sendTo(to.key, text) else link.replyTo(msg!!, text)
+            when (val r = sent) {
                 is MeshLink.Sent.Ok -> {
-                    crown.say(ctx.getString(R.string.n_sent), nowMs); crown.backToActions(); cue.recognised()
+                    crown.say(ctx.getString(R.string.n_sent), nowMs)
+                    // A FIRST MESSAGE ENDS THE CROWN. There is a thread now —
+                    // the send remembered our own line — so the next MESSAGE on
+                    // that node opens the conversation like any other, and
+                    // leaving a compose screen standing invites a second send
+                    // nobody asked for.
+                    if (to != null) crown.hide() else crown.backToActions()
+                    cue.recognised()
                 }
                 is MeshLink.Sent.NotReady -> { crown.say(ctx.getString(R.string.n_radio_not_ready), nowMs); cue.closed() }
                 is MeshLink.Sent.Refused -> {

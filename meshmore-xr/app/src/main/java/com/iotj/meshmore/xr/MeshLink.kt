@@ -973,7 +973,38 @@ class MeshLink(private val context: Context) {
                 ((it.fullKey ?: it.key).startsWith(m.fromKey, ignoreCase = true) ||
                     m.fromKey.startsWith(it.key, ignoreCase = true))
         } ?: return Sent.Refused("SENDER NOT IN CONTACTS")
+        return sendDirect(peer, text)
+    }
 
+    /**
+     * SPEAK FIRST. Start a conversation with a node that has never sent you
+     * one.
+     *
+     * Until now every path to the radio's transmitter began with somebody
+     * else's message: reply to a card, reply in a thread. A node you had never
+     * heard from could be starred, ranged, asked for telemetry — and not
+     * addressed, which for a messaging application is the one verb that cannot
+     * be missing. MESSAGE on such a node answered "NO THREAD YET", which is a
+     * true statement of the app's own limitation offered as though it were a
+     * fact about the mesh.
+     *
+     * Same transmitter, same allow-list, same one place that refuses.
+     */
+    fun sendTo(peerKey: String?, text: String): Sent {
+        if (session == null || _status.value.state != SessionState.READY) return Sent.NotReady
+        if (text.isBlank()) return Sent.Refused("NOTHING TO SEND")
+        val want = peerKey?.trim().orEmpty()
+        if (want.isEmpty()) return Sent.Refused("NO ADDRESS")
+        val peer = peers.values.firstOrNull {
+            (it.fullKey ?: it.key).startsWith(want, ignoreCase = true) ||
+                want.startsWith(it.key, ignoreCase = true)
+        } ?: return Sent.Refused("NOT IN CONTACTS")
+        return sendDirect(peer, text)
+    }
+
+    /** The one path to the transmitter for a direct message. */
+    private fun sendDirect(peer: MeshNodes.Peer, text: String): Sent {
+        val s = session ?: return Sent.NotReady
         if (!isAllowed(peer)) {
             // Named, so the refusal is checkable rather than mysterious.
             Log.w(TAG, "[tx] refused — '${peer.name}' key=${peer.key} not in $ALLOWED_SUFFIXES")

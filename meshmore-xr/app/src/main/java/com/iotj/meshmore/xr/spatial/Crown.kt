@@ -166,6 +166,22 @@ class Crown(
         context.getString(com.iotj.meshmore.xr.R.string.q_standby),
     )
 
+    /**
+     * WHO THIS IS FOR, when it is not a reply.
+     *
+     * Null is the crown's whole history: it acted on the message under the
+     * reel's cursor, so its subject was always somebody else's words. A node
+     * you have never heard from has no card and no thread, and addressing it
+     * is the one verb a messaging app cannot be missing — so the crown grows a
+     * subject of its own. When this is set the crown belongs to a NODE rather
+     * than to a card: it opens straight into compose (there is nothing to read
+     * aloud, no thread to open, no per-conversation voice to toggle), it stays
+     * up without a card under it, and CONFIRM addresses this key.
+     */
+    data class Target(val key: String, val name: String)
+
+    var target: Target? = null
+
     /** Whether this conversation reads itself aloud, for the toggle's label. */
     var voiceOn: Boolean = false
 
@@ -174,6 +190,34 @@ class Crown(
 
     /** The pointer arrived on a button. The host owns the tick sound. */
     var onFocus: (() -> Unit)? = null
+
+    /**
+     * EVERY WORD THIS WIDGET CAN EVER SHOW.
+     *
+     * On this runtime a PanelEntity cannot be created after the scene is up
+     * and cannot be rewritten once it has been displayed — see [build]. So the
+     * crown cannot have six panels that say different things at different
+     * times; it has one panel per THING IT MIGHT SAY, built at startup, and a
+     * screen is a choice of which of them to stand in which slot.
+     *
+     * That is only possible because the vocabulary is closed: five actions,
+     * three canned openers, one suggestion label, two confirm answers. The one
+     * string that is not in this list is the DRAFT — arbitrary dictated words
+     * — and it is the one thing the crown can no longer show. See [draftable].
+     */
+    private fun vocabulary(): List<String> = listOf(
+        context.getString(com.iotj.meshmore.xr.R.string.a_reply),
+        context.getString(com.iotj.meshmore.xr.R.string.a_aloud),
+        "VOICE: ON", "VOICE: OFF",
+        context.getString(com.iotj.meshmore.xr.R.string.a_thread),
+        context.getString(com.iotj.meshmore.xr.R.string.a_close),
+        context.getString(com.iotj.meshmore.xr.R.string.a_speak),
+        context.getString(com.iotj.meshmore.xr.R.string.a_listening),
+        context.getString(com.iotj.meshmore.xr.R.string.a_back),
+        context.getString(com.iotj.meshmore.xr.R.string.a_send),
+        context.getString(com.iotj.meshmore.xr.R.string.a_cancel),
+        Autopen.LABEL,
+    ) + quick
 
     private fun labels(): List<Pair<Act, String>> = when (level) {
         Level.ACTIONS -> listOf(
@@ -208,9 +252,35 @@ class Crown(
         )
     }
 
+    /**
+     * TWO PLATFORM RULES SHAPE THIS WHOLE WIDGET.
+     *
+     * A PanelEntity created after the scene is up never attaches — created
+     * without error, sized correctly, simply not in the world. And a panel's
+     * pixels are settled the first time it is displayed: no later write
+     * reaches them, from the frame loop or an effect, hidden first or not.
+     * The crown wrote its labels every frame and therefore rendered, forever,
+     * whichever screen it happened to show first — five plates reading REPLY,
+     * READ ALOUD, VOICE, THREAD, CLOSE over a compose screen that was offering
+     * ROGER, ON MY WAY and STAND BY underneath them.
+     *
+     * So: every word gets its own panel here, at startup, and showing a screen
+     * is choosing which panels to stand in which slots.
+     */
     suspend fun build() {
         clear()
         val root = session.scene.activitySpace
+        vocabulary().distinct().forEach { text ->
+            TextRun.create(
+                session, context, text, com.iotj.meshmore.xr.L10n.cap(CAP),
+                argb(theme.text, 0.98f), "crown-word",
+            )?.let {
+                it.entity.parent = root
+                it.entity.setEnabled(false)
+                entities += it.entity
+                wordFor[text] = it.entity
+            }
+        }
         repeat(SLOTS) {
             val run = TextRun.reusable(
                 session, context, WIDEST, com.iotj.meshmore.xr.L10n.cap(CAP), argb(theme.text, 0.98f), "crown",
@@ -303,6 +373,7 @@ class Crown(
     }
 
     fun hide() {
+        target = null
         if (!open) return
         open = false
         level = Level.ACTIONS
@@ -346,6 +417,48 @@ class Crown(
      * An action is what the wearer aimed at when they pinched. It cannot depend
      * on what happened afterwards.
      */
+    /**
+     * WRITE THE WORDS. Call from an effect, never from the frame loop.
+     *
+     * The crown wrote its labels inside tick(), every frame, and every one of
+     * those writes was lost: a panel-hosted View's text reaches the surface
+     * when it is written from an effect or an input handler, and not when it is
+     * written from the frame-loop coroutine. The buttons rendered — plate, lit
+     * plate, hit proxy, all correct — and were blank. A confirm screen with two
+     * unlabelled slabs is not a confirm screen.
+     *
+     * Returns true when it wrote anything, so the host can spend a log line on
+     * it rather than a guess.
+     */
+    /**
+     * Nothing to write any more — [tick] stands prebuilt words in the slots.
+     * Kept as the host's heartbeat into this widget: it reports when the SCREEN
+     * changed, which is the only thing worth a log line.
+     */
+    fun applyWords(): Boolean {
+        val stamp = labels().joinToString("|") { it.second }
+        if (stamp == wordStamp) return false
+        wordStamp = stamp
+        return true
+    }
+
+    /** What the draft line will say, so [applyWords] can tell when it changed. */
+    private fun draftLine(): String =
+        (if (draft.isBlank() && dictating) "LISTENING" else draft) +
+            "/" + spoken + "/" + generated + "/" + full
+
+    private var wordStamp: String = ""
+
+    /** Words placed this frame; everything else in [wordFor] is hidden. */
+    private val standing = mutableSetOf<String>()
+
+    /** The labels currently on screen, one per slot. Rebuilt per screen. */
+    /** One panel per word in the [vocabulary], built once. */
+    private val wordFor = linkedMapOf<String, Entity>()
+
+    /** For the log: which screen is up, and whether it is addressed. */
+    fun state(): String = "$level open=$open to=${target?.name ?: "-"}"
+
     fun poll(): Act? = fired.poll()
 
     /**
@@ -367,6 +480,7 @@ class Crown(
             }
             return
         }
+        standing.clear()
         val fx = kotlin.math.sin(yawRad)
         val fz = -kotlin.math.cos(yawRad)
         val cx = head.x + fx * DIST
@@ -398,9 +512,16 @@ class Crown(
             val item = items.getOrNull(i) ?: return@forEachIndexed
             val r = facing(p, head)
             runCatching {
-                item.run.entity.setEnabled(true)
-                item.run.setText(text)
-                item.run.entity.setPose(Pose(p, r), Space.ACTIVITY)
+                // THE TEMPLATE RUN NEVER SHOWS. A panel's pixels are fixed the
+                // first time it is displayed, so a widget whose words change
+                // cannot reuse one; [applyWords] builds a fresh label per
+                // screen and this only carries it to the right place.
+                item.run.entity.setEnabled(false)
+                wordFor[text]?.let { w ->
+                    w.setEnabled(true)
+                    w.setPose(Pose(p, r), Space.ACTIVITY)
+                    standing += text
+                }
                 // The lit plate sits a hair in front of the dim one so the two
                 // can never z-fight over the same millimetre.
                 val back = Vector3(p.x - fx * PLATE_BACK, p.y, p.z - fz * PLATE_BACK)
@@ -419,6 +540,9 @@ class Crown(
                 items[i].lit.setEnabled(false); items[i].proxy.setEnabled(false)
             }
         }
+        // Every word this screen is not using, off. Without this a shorter
+        // screen leaves the previous screen's words hanging in mid-air.
+        wordFor.forEach { (t, e) -> if (t !in standing) runCatching { e.setEnabled(false) } }
         if (focused >= ls.size) focused = -1
 
         // The words themselves, ABOVE the buttons, wherever they came from --
@@ -432,10 +556,7 @@ class Crown(
             count0?.entity?.setEnabled(showing && (dictating || spoken > 0 || generated))
             if (showing) {
                 val dp = Vector3(cx, headY + DRAFT_UP, cz)
-                draft0?.setText(
-                    if (draft.isBlank() && dictating) "LISTENING\u2026"
-                    else TypeTier.clip(draft, DRAFT_COLS),
-                )
+                // Words by applyWords; poses here. See applyWords.
                 draft0?.entity?.setPose(Pose(dp, facing(dp, head)), Space.ACTIVITY)
                 val cp = Vector3(cx, dp.y - CAP * 1.5f, cz)
                 // THE GENERATED MARK LIVES ON THE COUNTER LINE, which is
@@ -443,10 +564,6 @@ class Crown(
                 // something about the words rather than to be one of them. A
                 // second line would push the buttons down; the note line above
                 // is on a timer and this must not expire.
-                count0?.setText(
-                    if (generated) Autopen.MARK
-                    else "$spoken/${Dictation.MAX_WORDS} WORDS" + if (full) "  FULL" else "",
-                )
                 count0?.entity?.setPose(Pose(cp, facing(cp, head)), Space.ACTIVITY)
             }
         }
