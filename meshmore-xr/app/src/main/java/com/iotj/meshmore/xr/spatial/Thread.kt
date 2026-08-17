@@ -72,9 +72,25 @@ class Thread(
     private var deeperProxy: MeshEntity? = null
     private var deeperAt: Vector3? = null
     private val fired = java.util.concurrent.ConcurrentLinkedQueue<Int>()
+
+    /**
+     * WHOSE CONVERSATION THIS IS, so the corridor can answer it.
+     *
+     * A thread you can read and cannot reply to is a strange object: MESSAGE
+     * on a node opened this, showed the conversation, and offered no way to
+     * say anything back — which is why it was reported as "the message action
+     * is a no-op". It was not doing nothing; it was doing half.
+     */
+    var peerKey: String? = null
+        private set
+    var peerName: String = ""
+        private set
     private var lastFire = 0L
     private val entities = mutableListOf<Entity>()
 
+    private var replyCtl: TextRun.Run? = null
+    private var replyProxy: MeshEntity? = null
+    private var replyAt: Vector3? = null
     private var origin: Vector3? = null
     private var yaw = 0f
     private var headAt: Vector3? = null
@@ -123,7 +139,41 @@ class Thread(
                 )
             }.onFailure { Log.w(TAG, "[thread] no input on older: $it") }
         }
-        Log.i(TAG, "[thread] ${slots.size} deep, paging wired")
+        // REPLY, at the near end where the newest message is and where the eye
+        // already is. Built here with its final word — the corridor's only
+        // fixed string — so it needs nothing written to it later.
+        // BORN HOLDING ITS WORD. run() is the reusable path — sized from a
+        // template and blanked, then written to per frame, which is right for
+        // the message slots because their text changes. This label never
+        // changes, and a reusable panel that nobody writes to shows nothing at
+        // all: the control was there, hit-testable, and invisible.
+        replyCtl = TextRun.create(
+            session, context,
+            context.getString(com.iotj.meshmore.xr.R.string.th_reply),
+            com.iotj.meshmore.xr.L10n.cap(NEAR * CAP_FRAC),
+            argb(theme.alt, 0.95f), "thread-reply",
+        )?.also { it.entity.parent = root; it.entity.setEnabled(false); entities += it.entity }
+        replyProxy = MeshEntity.create(
+            session, Prims.build(session, Prims.bar(NEAR * 0.30f, NEAR * 0.12f, 0.02f)),
+            listOf(Prims.ghost(session)),
+        ).also { p ->
+            p.parent = root; p.setEnabled(false); entities += p
+            runCatching {
+                p.addComponent(
+                    InteractableComponent.create(session) { ev ->
+                        if (open && ev.action == InputEvent.Action.UP) {
+                            val now = android.os.SystemClock.uptimeMillis()
+                            if (now - lastFire >= DEBOUNCE_MS) {
+                                lastFire = now
+                                Reach.consumed()
+                                fired.add(REPLY)
+                            }
+                        }
+                    },
+                )
+            }.onFailure { Log.w(TAG, "[thread] no input on reply: $it") }
+        }
+        Log.i(TAG, "[thread] ${slots.size} deep, paging and reply wired")
     }
 
     private suspend fun run(root: Entity, widest: String, cap: Float, rgb: Int): TextRun.Run? =
@@ -133,7 +183,16 @@ class Thread(
     /** How far back the [i]th message sits. */
     private fun distAt(i: Int): Float = NEAR + i * STEP
 
-    fun showAt(head: Vector3, yawRad: Float, threadId: String, title: String, msgs: List<Line>) {
+    fun showAt(
+        head: Vector3,
+        yawRad: Float,
+        threadId: String,
+        title: String,
+        msgs: List<Line>,
+        peer: Pair<String, String>? = null,
+    ) {
+        peerKey = peer?.first
+        peerName = peer?.second ?: title
         origin = head
         yaw = yawRad
         id = threadId
@@ -156,6 +215,8 @@ class Thread(
             header?.entity?.setEnabled(false)
             deeper?.entity?.setEnabled(false)
             deeperProxy?.setEnabled(false)
+            replyCtl?.entity?.setEnabled(false)
+            replyProxy?.setEnabled(false)
         }
         fired.clear()
         Log.i(TAG, "[thread] closed")
@@ -217,6 +278,17 @@ class Thread(
                 deeperProxy?.setPose(Pose(dAt), Space.ACTIVITY)
             }
         }
+        // BELOW THE NEWEST MESSAGE, not beside the header: the reply belongs to
+        // the conversation rather than to its title, and the bottom of the
+        // near end is the one place in this corridor nothing else occupies.
+        val rAt = Vector3(o.x + fx * NEAR, o.y - EYE_DROP - REPLY_DROP, o.z + fz * NEAR)
+        replyAt = rAt
+        runCatching {
+            replyCtl?.entity?.setEnabled(true)
+            replyProxy?.setEnabled(true)
+            replyCtl?.entity?.setPose(Pose(rAt, facing(rAt)), Space.ACTIVITY)
+            replyProxy?.setPose(Pose(rAt), Space.ACTIVITY)
+        }
         slots.forEachIndexed { i, s ->
             val line = lines.getOrNull(first + i)
             val d = distAt(i)
@@ -253,6 +325,7 @@ class Thread(
     fun clear() {
         slots.clear(); header = null
         deeper = null; deeperProxy = null; deeperAt = null; fired.clear(); lastFire = 0L
+        replyCtl = null; replyProxy = null; replyAt = null; peerKey = null; peerName = ""
         open = false; id = null; lines = emptyList(); page = 0; origin = null
         val doomed = entities.toList()
         entities.clear()
@@ -263,7 +336,7 @@ class Thread(
     private fun argb(rgb: Int, a: Float) =
         (((a.coerceIn(0f, 1f) * 255).toInt() and 0xFF) shl 24) or (rgb and 0xFFFFFF)
 
-    private companion object {
+    companion object {
         const val TAG = "MeshmoreXR"
         /** How many messages are present at once. */
         const val DEPTH = 6
@@ -275,6 +348,19 @@ class Thread(
         const val RISE = 0.10f
         const val EYE_DROP = 0.12f
         const val HEADER_UP = 0.26f
+        /**
+         * Under the newest message AND under the status band.
+         *
+         * 0.16 put it at 12.6 degrees below the eye line; the band sits at
+         * 13.5 (y -0.252 at D 1.05) and now stands by default, so REPLY landed
+         * inside LINK 3.9V 24/350 GPS — photographed doing exactly that. 0.36
+         * is 21 degrees, a clear seven and a half below the band and still
+         * comfortably inside the field.
+         */
+        const val REPLY_DROP = 0.36f
+        /** What [poll] returns for the reply control, vs 1 for OLDER. */
+        const val REPLY = 2
+
         /**
          * 1.30° — the same figure the ring labels use. Multiplied by the
          * distance, which is what keeps the far end of the thread readable

@@ -2992,6 +2992,9 @@ private fun HorizonScene(link: MeshLink) {
                                     mine = m.direct,
                                 )
                             },
+                            // The probe path answers too, or it is not
+                            // exercising the surface a hand reaches.
+                            peer = t.id to t.title,
                         )
                         Log.i(TAG_UI, "[thread] opened by launch flag on " + t.title)
                         return@launch
@@ -4488,6 +4491,9 @@ private fun HorizonScene(link: MeshLink) {
                                                 mine = m.direct,
                                             )
                                         },
+                                        // WHO THIS IS WITH, so the corridor's
+                                        // REPLY knows where to send.
+                                        peer = (n.fullKey ?: n.key) to n.name,
                                     )
                                     focusRef.value?.hide()
                                     cue.opened()
@@ -4927,7 +4933,40 @@ private fun HorizonScene(link: MeshLink) {
                 themePickerRef.value?.setGazed(gazeRef.value?.onTarget)
                 // Paging the corridor further back. One code path owns it: the
                 // surface reports a pick, the host decides what a pick means.
-                while (threadRef.value?.poll() != null) threadRef.value?.older()
+                while (true) {
+                    val t = threadRef.value?.poll() ?: break
+                    if (t == com.iotj.meshmore.xr.spatial.Thread.REPLY) {
+                        // THE OTHER HALF OF "MESSAGE". Reading a conversation
+                        // and being unable to answer it is what got reported as
+                        // a no-op: the verb opened the corridor, the corridor
+                        // had no way out, and the only compose in the app was
+                        // on the reel's crown — which is about the message
+                        // under the wrist cursor, not about the node you are
+                        // looking at.
+                        val key = threadRef.value?.peerKey
+                        val who = threadRef.value?.peerName.orEmpty()
+                        if (key == null) {
+                            cue.denied()
+                        } else {
+                            crownRef.value?.let { c ->
+                                c.target = com.iotj.meshmore.xr.spatial.Crown.Target(key, who)
+                                c.show()
+                                c.compose()
+                                c.say(
+                                    ctx.getString(
+                                        R.string.n_dm_to,
+                                        com.iotj.meshmore.xr.spatial.TypeTier.clip(who, 14),
+                                    ),
+                                    android.os.SystemClock.uptimeMillis(),
+                                )
+                                Log.i(TAG_UI, "[dm] replying to '$who' from the thread")
+                                cue.opened()
+                            }
+                        }
+                    } else {
+                        threadRef.value?.older()
+                    }
+                }
                 rosterRef.value?.tick(stage.headNow()?.translation)
                 while (true) {
                     val pick = rosterRef.value?.poll() ?: break
