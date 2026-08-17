@@ -235,6 +235,7 @@
     <string name="n_flood_sent">FLOOD ADVERT SENT</string>
     <string name="n_rescan">SCANNING FOR A RADIO</string>
     <string name="f_flood_arm">PICK AGAIN TO FLOOD THE MESH</string>
+    <string name="f_gc_arm">PICK AGAIN TO FORGET THEM</string>
     <string name="nf_title">NO POSITION</string>
     <string name="nf_board_nogps">%1$s HAS NO GPS</string>
     <string name="nf_nofix">THE RADIO SENDS NO POSITION</string>

@@ -1531,6 +1531,18 @@ private fun HorizonScene(link: MeshLink) {
      */
     val armed = remember { mutableStateOf<Pair<String, Long>?>(null) }
     /**
+     * THE SWEEP KEEPS ITS OWN ARM, and it has to.
+     *
+     * `armed` is cleared unconditionally at the top of every settings pick —
+     * one line, above the table, older than any of this — so an arm set inside
+     * a row's own handler is wiped by the very next pinch. The sweep therefore
+     * armed, re-armed, and could never reach its confirm: pinched twice 1.1
+     * seconds apart on a live radio and logged "armed — 191" both times, which
+     * is what the operator saw as "I clicked immediately and nothing happened".
+     * Same shape as chanArmedAt, and for the same reason.
+     */
+    val gcArmedAt = remember { mutableStateOf(0L) }
+    /**
      * The same idea for the CHANNELS bay, and separate from [armed] on purpose:
      * they are two surfaces, and a rolled channel name left armed while the
      * wearer goes to the APP bay must not be cancelled by — or worse, confused
@@ -3640,6 +3652,7 @@ private fun HorizonScene(link: MeshLink) {
                             val doomed = link.farContacts(here, GC_FAR_KM) {
                                 tagsRef.isFavourite(it)
                             }
+                            val armedNow = nowMs - gcArmedAt.value <= ARM_MS
                             when {
                                 !here.known -> {
                                     // Distance is measured FROM somewhere. With
@@ -3647,29 +3660,37 @@ private fun HorizonScene(link: MeshLink) {
                                     // equally near, and a sweep would be a coin
                                     // toss with someone's contact list.
                                     noticeRef.value?.say(ctx.getString(R.string.n_gc_nofix))
-                                    armed.value = null
+                                    gcArmedAt.value = 0L
                                     cue.denied()
                                 }
                                 doomed.isEmpty() -> {
                                     noticeRef.value?.say(
                                         ctx.getString(R.string.n_gc_none, GC_FAR_KM.toInt()),
                                     )
-                                    armed.value = null
+                                    gcArmedAt.value = 0L
                                     cue.closed()
                                 }
-                                armed.value?.first != "GC" -> {
-                                    armed.value = "GC" to nowMs
+                                !armedNow -> {
+                                    gcArmedAt.value = nowMs
                                     noticeRef.value?.say(
                                         ctx.getString(R.string.r_gc, GC_FAR_KM.toInt(), doomed.size),
                                     )
                                     Log.i(TAG_UI, "[gc] armed — ${doomed.size} over $GC_FAR_KM km")
+                                    // Refreshed HERE and the loop continued, so
+                                    // the generic refresh below cannot rebuild
+                                    // this row unarmed a frame later.
+                                    appRef.value?.update(
+                                        appRows(ctx, link, "GC", doomed.size),
+                                        ctx.getString(R.string.f_gc_arm),
+                                    )
                                     cue.opened()
+                                    continue
                                 }
                                 else -> {
                                     val n = link.forgetContacts(doomed)
-                                    armed.value = null
+                                    gcArmedAt.value = 0L
                                     noticeRef.value?.say(ctx.getString(R.string.n_gc_done, n))
-                                    Log.i(TAG_UI, "[gc] swept $n of ${doomed.size}")
+                                    Log.i(TAG_UI, "[gc] swept $n of ${doomed.size} candidates")
                                     hereEpoch.value += 1
                                 }
                             }
