@@ -380,7 +380,7 @@ class Stack(
         val window = all.drop(from).take(perPage)
         rows = window + Row(
             id = MORE,
-            label = "MORE  ${page + 2} OF $n",
+            label = moreLabel(page, n, context.getString(com.iotj.meshmore.xr.R.string.w_more)),
             lit = false,
         )
     }

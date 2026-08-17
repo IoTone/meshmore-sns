@@ -1178,15 +1178,7 @@ private fun appRows(
             lit = on && armedId != id,
         )
     return listOf(
-        row("LOCATION", ctx.getString(R.string.r_location), Settings.useDeviceLocation(ctx)),
-        // Two location settings, and they are separate on purpose: using a fix
-        // to compute bearings is local and private, putting it in an advert
-        // broadcasts it unencrypted to anyone in range.
-        row("SHARE", ctx.getString(R.string.r_share), Settings.shareLocation(ctx)),
-        row("DIAG", ctx.getString(R.string.r_diag), Settings.diagnostics(ctx)),
-        row("AUTOPEN", ctx.getString(R.string.r_autopen), Settings.autopen(ctx)),
-        row("MOTION", ctx.getString(R.string.r_motion), Settings.reduceMotion(ctx)),
-        // LANGUAGE, IN THE APP AS WELL AS IN THE OS.
+        // LANGUAGE FIRST, IN THE APP AS WELL AS IN THE OS.
         //
         // Android 13's per-app language picker is the CORRECT place for this
         // and the manifest opts into it — but it lives four screens deep in a
@@ -1204,6 +1196,14 @@ private fun appRows(
             "LANG", ctx.getString(R.string.r_lang), L10n.ja,
             onWord = "日本語", offWord = "ENGLISH",
         ),
+        row("LOCATION", ctx.getString(R.string.r_location), Settings.useDeviceLocation(ctx)),
+        // Two location settings, and they are separate on purpose: using a fix
+        // to compute bearings is local and private, putting it in an advert
+        // broadcasts it unencrypted to anyone in range.
+        row("SHARE", ctx.getString(R.string.r_share), Settings.shareLocation(ctx)),
+        row("DIAG", ctx.getString(R.string.r_diag), Settings.diagnostics(ctx)),
+        row("AUTOPEN", ctx.getString(R.string.r_autopen), Settings.autopen(ctx)),
+        row("MOTION", ctx.getString(R.string.r_motion), Settings.reduceMotion(ctx)),
         // WHO MAY ASK THIS RADIO WHAT IT KNOWS. Three permissions, not one
         // switch, so it opens its own list rather than toggling here — see
         // telemetryRows.

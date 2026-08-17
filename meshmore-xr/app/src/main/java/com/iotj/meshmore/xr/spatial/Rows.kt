@@ -184,6 +184,25 @@ internal fun settingLabel(
  * live one would let somebody walk away believing the radio had changed. The
  * arrow is the whole point: what it is, and what it will be if you commit.
  */
+/**
+ * The MORE control's label: WHERE IT TAKES YOU, not where you are.
+ *
+ * It read `page + 2`, which is the next page counted from one — correct on
+ * every page except the last, where paging WRAPS. On the last of two pages it
+ * announced "MORE 3 OF 2": a page that does not exist, in a count that says so
+ * in the same breath. StackPagingTest had covered the windowing and the wrap
+ * for months and never looked at the words, because the words were built
+ * inline in the surface. They are built here now, where they can be checked.
+ *
+ * [word] is passed in rather than read, so this stays free of a Context and
+ * the JA label is the caller's business.
+ */
+internal fun moreLabel(page: Int, pages: Int, word: String = "MORE"): String {
+    val n = pages.coerceAtLeast(1)
+    val next = (((page + 1) % n) + n) % n
+    return "$word  ${next + 1} OF $n"
+}
+
 internal fun radioRow(name: String, live: String, pending: String?): String {
     // THE NAME IS CLAMPED FIRST. Clamping only the value let a long parameter
     // name push the whole row past the plate — the same overflow that was

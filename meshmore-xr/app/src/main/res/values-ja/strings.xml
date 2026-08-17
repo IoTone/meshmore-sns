@@ -213,6 +213,7 @@
     <string name="n_lang_ja">日本語に切り替えます</string>
     <string name="n_lang_en">英語に切り替えます</string>
     <string name="n_lang_failed">言語を切り替えられません</string>
+    <string name="w_more">つづき</string>
     <string name="nf_title">位置がありません</string>
     <string name="nf_board_nogps">%1$s にGPSがありません</string>
     <string name="nf_nofix">無線機が位置を送りません</string>

@@ -66,6 +66,46 @@ class StackPagingTest {
         }
     }
 
+    /**
+     * THE LABEL HAS TO AGREE WITH THE WRAP.
+     *
+     * This file has covered the windowing and the wrap since it was written,
+     * and never once looked at the words on the control — which were built
+     * inline in the surface, out of reach. So MORE announced `page + 2`: right
+     * on every page but the last, where paging wraps back to the first. Two
+     * pages of app settings therefore ended on "MORE 3 OF 2", a page that does
+     * not exist, in a count that says so in the same breath. Reported from a
+     * headset, which is the expensive way to find a string bug.
+     */
+    @Test fun theMoreControlNeverPromisesAPageThatDoesNotExist() {
+        for (n in 1..6) {
+            for (p in 0 until n) {
+                val label = moreLabel(p, n)
+                val shown = Regex("(\\d+) OF (\\d+)").find(label)
+                    ?: error("unreadable MORE label '$label'")
+                val to = shown.groupValues[1].toInt()
+                val of = shown.groupValues[2].toInt()
+                assertEquals("the count is the page count", n, of)
+                assertTrue("'$label' offers page $to of $n", to in 1..n)
+                // And it is the page the wrap actually lands on.
+                assertEquals("'$label' does not match where MORE goes", ((p + 1) % n) + 1, to)
+            }
+        }
+    }
+
+    /** The last page sends you home rather than nowhere. */
+    @Test fun theLastPageOffersTheFirst() {
+        assertEquals("MORE  1 OF 2", moreLabel(1, 2))
+        assertEquals("MORE  2 OF 2", moreLabel(0, 2))
+        assertEquals("MORE  1 OF 3", moreLabel(2, 3))
+        assertEquals("MORE  1 OF 1", moreLabel(0, 1))
+    }
+
+    /** The word is the caller's, so the JA bay does not say MORE in English. */
+    @Test fun theWordIsTranslatable() {
+        assertEquals("つづき  1 OF 2", moreLabel(1, 2, "つづき"))
+    }
+
     /** Paging wraps, so MORE is never a dead end on the last page. */
     @Test fun pagingWrapsBackToTheStart() {
         val n = 8

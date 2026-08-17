@@ -215,6 +215,7 @@
     <string name="n_lang_ja">日本語に切り替えます</string>
     <string name="n_lang_en">SWITCHING TO ENGLISH</string>
     <string name="n_lang_failed">LANGUAGE SWITCH REFUSED</string>
+    <string name="w_more">MORE</string>
     <string name="nf_title">NO POSITION</string>
     <string name="nf_board_nogps">%1$s HAS NO GPS</string>
     <string name="nf_nofix">THE RADIO SENDS NO POSITION</string>
