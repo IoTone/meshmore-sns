@@ -1859,6 +1859,14 @@ private fun HorizonScene(link: MeshLink) {
             Log.w(TAG_UI, "[gc] no origin — a sweep would refuse, and so does this")
             return@LaunchedEffect
         }
+        // WHAT EACH THRESHOLD WOULD ACTUALLY BUY, because the right number is
+        // a property of the mesh you are standing in and not of this app. A
+        // store that refills to capacity in a day needs a different answer
+        // from one that fills over a season.
+        Search.FAR_STEPS.forEach { km ->
+            val n = link.farContacts(here, km) { tagsRef.isFavourite(it) }.size
+            Log.i(TAG_UI, "[gc] over ${km.toInt()} km: $n of ${all.size}")
+        }
         val doomed = link.farContacts(here, GC_FAR_KM) { tagsRef.isFavourite(it) }
         Log.i(TAG_UI, "[gc] ${doomed.size} of ${all.size} are over $GC_FAR_KM km")
         // WHY EACH SURVIVOR SURVIVED, for the first handful. "Nothing to do"
