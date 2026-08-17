@@ -154,6 +154,20 @@ class MainActivity : ComponentActivity() {
          * reachable only through a hand, which no emulator has.
          */
         var dmProbe: Boolean = false
+
+        /**
+         * `--es gc dry` : say what a sweep would take, touching nothing.
+         * `--es gc go`  : take it.
+         *
+         * The sweep lives on a settings row, which means it can only be run by
+         * a hand — and the first time it was run in anger the operator could
+         * not tell whether it had worked, the log had rotated out of a 4 MiB
+         * ring buffer, and the radio still held 349 contacts. A destructive
+         * operation with no way to rehearse it and no durable account of what
+         * it did is not finished. DRY IS THE DEFAULT for anything but the
+         * literal string "go".
+         */
+        var gcProbe: String? = null
         /**
          * --es query "rep" : start with the filter already applied.
          *
@@ -346,6 +360,7 @@ class MainActivity : ComponentActivity() {
         showHelp = intent?.getBooleanExtra("help", false) ?: false
         showFind = intent?.getBooleanExtra("find", false) ?: false
         dmProbe = intent?.getBooleanExtra("dm", false) ?: false
+        gcProbe = intent?.getStringExtra("gc")
         queryOverride = intent?.getStringExtra("query")?.takeIf { it.isNotBlank() }
         showMenu = intent?.getBooleanExtra("menu", false) ?: false
         showFocus = intent?.getBooleanExtra("focus", false) ?: false
@@ -1714,6 +1729,54 @@ private fun HorizonScene(link: MeshLink) {
             if (c.applyWords()) Log.i(TAG_UI, "[crown] words: ${c.state()}")
             kotlinx.coroutines.delay(80)
         }
+    }
+
+    // THE SWEEP, WITHOUT A HAND, AND WITHOUT REGRET BY DEFAULT.
+    // See MainActivity.gcProbe.
+    LaunchedEffect(signature) {
+        val mode = MainActivity.gcProbe ?: return@LaunchedEffect
+        if (link.status.value.state != io.iotone.meshcore.android.SessionState.READY) {
+            return@LaunchedEffect
+        }
+        // Let the contact sync finish; a sweep over a half-loaded list would
+        // report a number that means nothing.
+        kotlinx.coroutines.delay(3_000)
+        val here = hereSource.resolve(link.here.value, MainActivity.homeOverride)
+        val all = link.mesh.value
+        Log.i(TAG_UI, "[gc] probe '$mode' — ${all.size} contacts held, " +
+            "origin known=${here.known} (${here.lat}, ${here.lon})")
+        if (!here.known) {
+            Log.w(TAG_UI, "[gc] no origin — a sweep would refuse, and so does this")
+            return@LaunchedEffect
+        }
+        val doomed = link.farContacts(here, GC_FAR_KM) { tagsRef.isFavourite(it) }
+        Log.i(TAG_UI, "[gc] ${doomed.size} of ${all.size} are over $GC_FAR_KM km")
+        // WHY EACH SURVIVOR SURVIVED, for the first handful. "Nothing to do"
+        // and "everything was excluded" look identical from a count.
+        val kept = all - doomed.toSet()
+        kept.take(6).forEach { p ->
+            val d = if (p.lat != null && p.lon != null && here.lat != null && here.lon != null) {
+                "%.0f km".format(MeshNodes.haversineKm(here.lat!!, here.lon!!, p.lat!!, p.lon!!))
+            } else {
+                "no position"
+            }
+            Log.i(TAG_UI, "[gc] keeping '${p.name.take(18)}' $d full=${p.fullKey?.length ?: 0}")
+        }
+        doomed.take(8).forEach { p ->
+            Log.i(TAG_UI, "[gc] candidate '${p.name.take(18)}' " +
+                "%.0f km".format(
+                    MeshNodes.haversineKm(here.lat!!, here.lon!!, p.lat ?: 0.0, p.lon ?: 0.0),
+                ) + " key=${p.key} full=${p.fullKey?.length ?: 0} hex")
+        }
+        if (mode != "go") {
+            Log.i(TAG_UI, "[gc] DRY RUN — nothing sent. Pass --es gc go to sweep.")
+            return@LaunchedEffect
+        }
+        val n = link.forgetContacts(doomed)
+        Log.i(TAG_UI, "[gc] sent $n removal(s) of ${doomed.size} candidates")
+        kotlinx.coroutines.delay(2_000)
+        Log.i(TAG_UI, "[gc] app now holds ${link.mesh.value.size} contacts " +
+            "(the radio's own count returns on the next connect)")
     }
 
     // THE COMPOSE CROWN, WITHOUT A HAND. See MainActivity.dmProbe.
