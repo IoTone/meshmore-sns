@@ -185,11 +185,91 @@ class MeshLink(private val context: Context) {
      * Still an allow-list, and still explicit: a name is weaker evidence than
      * a key, so the match is logged with both before anything is transmitted.
      */
-    private fun isAllowed(p: MeshNodes.Peer): Boolean =
-        ALLOWED_SUFFIXES.any { sfx ->
-            p.name.endsWith(sfx, ignoreCase = true) ||
-                (p.fullKey ?: p.key).endsWith(sfx, ignoreCase = true)
+    /**
+     * FOUR HEX CHARACTERS IS NOT AN IDENTITY, and a 350-node mesh proved it.
+     *
+     * A contact called '7182', 12,486 km away, was being treated as the
+     * operator's own hardware — protected from the sweep and, far more
+     * seriously, MESSAGEABLE — because its public key happens to end in the
+     * same four characters as one of the allowed suffixes. Across 350 contacts
+     * and two suffixes that is about a one-in-a-hundred event, so it was due.
+     *
+     * The suffixes are the operator's stated authorisation and stay exactly as
+     * given. What changes is how a peer is matched against them:
+     *
+     *  1. A PINNED FULL KEY always wins. Once a node has identified itself by
+     *     NAME, its whole 32-byte key is remembered and only that key is that
+     *     node from then on.
+     *  2. A NAME ending in the suffix is how these radios are actually
+     *     identified — MeshCore's advert name is not derived from the key, the
+     *     operator quotes their hardware by name, and it is what every other
+     *     app shows. This match also PINS, so it happens once.
+     *  3. A KEY ending in the suffix and nothing else is no longer enough. It
+     *     is logged, once per peer, saying precisely that it was ignored — so
+     *     if a genuine node of the operator's is ever identified only that way,
+     *     the log says so instead of the app silently refusing to talk to it.
+     *
+     * This can only ever NARROW what the app will transmit to, which is the
+     * right direction for a rule the operator gave in one sentence.
+     */
+    private fun isAllowed(p: MeshNodes.Peer): Boolean {
+        val full = p.fullKey?.lowercase()
+        if (full != null && OwnNodes.isPinned(context, full)) return true
+        val byName = ALLOWED_SUFFIXES.firstOrNull { p.name.endsWith(it, ignoreCase = true) }
+        if (byName != null) {
+            if (full != null && full.length >= 64) OwnNodes.pin(context, byName, full, p.name)
+            return true
         }
+        val byKey = ALLOWED_SUFFIXES.firstOrNull {
+            (p.fullKey ?: p.key).endsWith(it, ignoreCase = true)
+        }
+        if (byKey != null && warnedKeyOnly.add(p.key)) {
+            Log.w(
+                TAG,
+                "[allow] '${p.name}' key=${p.key} ends in '$byKey' but its NAME does not — " +
+                    "not treated as your node. If this IS yours, say so and it will be pinned.",
+            )
+        }
+        return false
+    }
+
+    /**
+     * Settle WHICH radios are the operator's, once the store is fully read.
+     *
+     * isAllowed pins as a side effect, but it is only called when something
+     * asks — a transmit, a sweep, a menu — so on a session where nobody
+     * messaged anyone the app never wrote down whose hardware was in the room.
+     * Doing it at sync means the identity is settled before the first send can
+     * happen, and the log carries the answer whether or not anyone asks.
+     */
+    private fun resolveOwnNodes() {
+        val all = peers.values.toList()
+        val mine = all.filter { p ->
+            ALLOWED_SUFFIXES.any { p.name.endsWith(it, ignoreCase = true) }
+        }
+        mine.forEach { p ->
+            val sfx = ALLOWED_SUFFIXES.first { p.name.endsWith(it, ignoreCase = true) }
+            p.fullKey?.takeIf { it.length >= 64 }
+                ?.let { OwnNodes.pin(context, sfx, it.lowercase(), p.name) }
+        }
+        val collisions = all.filter { p ->
+            !mine.contains(p) &&
+                ALLOWED_SUFFIXES.any { (p.fullKey ?: p.key).endsWith(it, ignoreCase = true) }
+        }
+        Log.i(
+            TAG,
+            "[allow] your nodes: " +
+                (mine.joinToString { "'${it.name}'" }.ifBlank { "none in this store" }) +
+                "; pinned=" + OwnNodes.pinned(context).size +
+                "; key-only lookalikes ignored=" + collisions.size,
+        )
+        collisions.take(4).forEach {
+            Log.i(TAG, "[allow] lookalike '${it.name}' key=${it.key} — not yours")
+        }
+    }
+
+    /** Peers already reported as key-only matches, so the log says it once. */
+    private val warnedKeyOnly = java.util.concurrent.ConcurrentHashMap.newKeySet<String>()
     private val _mesh = MutableStateFlow<List<MeshNodes.Peer>>(emptyList())
     val mesh: StateFlow<List<MeshNodes.Peer>> = _mesh.asStateFlow()
 
@@ -1236,11 +1316,18 @@ class MeshLink(private val context: Context) {
      * opens a keyboard and then refuses on send is a trap, not a guard. The
      * refusal inside [reply] stays; this is the polite copy of it.
      */
-    fun mayMessage(name: String, fullKey: String?): Boolean =
-        ALLOWED_SUFFIXES.any { sfx ->
-            name.endsWith(sfx, ignoreCase = true) ||
-                (fullKey ?: "").endsWith(sfx, ignoreCase = true)
-        }
+    /**
+     * The same rule [isAllowed] transmits under, asked before a surface opens.
+     *
+     * It must be the same rule and not a similar one: a compose screen that
+     * appears for a node the transmitter will refuse is a trap, and one that
+     * refuses a node the transmitter would accept is a bug nobody can see.
+     */
+    fun mayMessage(name: String, fullKey: String?): Boolean {
+        val full = fullKey?.lowercase()
+        if (full != null && OwnNodes.isPinned(context, full)) return true
+        return ALLOWED_SUFFIXES.any { name.endsWith(it, ignoreCase = true) }
+    }
 
     /**
      * Ask one peer for its telemetry, by full 32-byte key.
@@ -1760,6 +1847,7 @@ class MeshLink(private val context: Context) {
                         // was the radio reading out what it already knew.
                         announceFinds = true
                         Log.i(TAG, "[link] contact sync done — discovery is live")
+                        resolveOwnNodes()
                     }
                     is io.iotone.meshcore.frames.BatteryStorageFrame -> {
                         val mv = runCatching { frame.battery().batteryMillivolts() }.getOrNull()
