@@ -173,6 +173,23 @@ object Settings {
         context.getSharedPreferences(FILE, Context.MODE_PRIVATE)
             .getBoolean(KEY_DIAGNOSTICS, false)
 
+    /**
+     * The alerts panel, off by default.
+     *
+     * Same doctrine as the radio log: a scrolling history belongs in a panel
+     * you open when you want it, not in the room. Separate from diagnostics
+     * because they answer different questions — one is "what is the app
+     * telling me", the other is "what is on the wire".
+     */
+    fun alerts(context: Context): Boolean =
+        context.getSharedPreferences(FILE, Context.MODE_PRIVATE)
+            .getBoolean(KEY_ALERTS, false)
+
+    fun setAlerts(context: Context, on: Boolean) {
+        context.getSharedPreferences(FILE, Context.MODE_PRIVATE)
+            .edit().putBoolean(KEY_ALERTS, on).apply()
+    }
+
     fun setDiagnostics(context: Context, on: Boolean) {
         context.getSharedPreferences(FILE, Context.MODE_PRIVATE)
             .edit().putBoolean(KEY_DIAGNOSTICS, on).apply()
@@ -292,6 +309,7 @@ object Settings {
     private const val KEY_REDUCE_MOTION = "reduce_motion"
     private const val KEY_FIRST_LIGHT = "first_light_done"
     private const val KEY_AUTOPEN = "autopen"
+    private const val KEY_ALERTS = "alerts_panel"
     private const val KEY_DIAGNOSTICS = "diagnostics_panel"
     private const val KEY_SHARE_LOCATION = "share_location"
     private const val KEY_REGION_ACK = "region_ack"

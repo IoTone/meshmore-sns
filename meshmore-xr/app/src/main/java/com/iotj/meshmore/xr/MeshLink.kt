@@ -62,6 +62,8 @@ class MeshLink(private val context: Context) {
          * a number nobody knows.
          */
         val maxContacts: Int = 0,
+        /** What the radio said it holds, at the last sync. */
+        val heldByRadio: Int = 0,
         val messages: Int = 0,
         val lastEvent: String = "idle",
         val error: String? = null,
@@ -234,6 +236,13 @@ class MeshLink(private val context: Context) {
                 TAG,
                 "[allow] '${p.name}' key=${p.key} ends in '$byKey' but its NAME does not — " +
                     "not treated as your node. If this IS yours, say so and it will be pinned.",
+            )
+            // Worth a line in the alerts panel too: this is the app declining
+            // to treat something as the operator's hardware, and a refusal
+            // nobody can see is indistinguishable from a bug.
+            Alerts.warn(
+                "ALLOW",
+                context.getString(com.iotj.meshmore.xr.R.string.al_lookalike, p.name.take(18)),
             )
         }
         return false
@@ -1852,6 +1861,13 @@ class MeshLink(private val context: Context) {
                     }
                     is io.iotone.meshcore.frames.ContactsStartFrame -> {
                         Log.i(TAG, "[link] contacts sync: ${frame.count()} expected")
+                        // THE RADIO'S OWN COUNT, and the only one that can be
+                        // compared with the radio's own capacity. The app's map
+                        // is keyed by a 6-byte prefix and quietly holds one
+                        // fewer when two contacts collide there — 349 against a
+                        // 350-contact store, which made "full" untestable by a
+                        // single off-by-one.
+                        _status.value = _status.value.copy(heldByRadio = frame.count().toInt())
                         _load.value = Load(total = frame.count().toInt(), received = 0)
                     }
                     is io.iotone.meshcore.frames.EndOfContactsFrame -> {

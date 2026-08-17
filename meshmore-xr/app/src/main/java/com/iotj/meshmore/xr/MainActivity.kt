@@ -414,6 +414,13 @@ class MainActivity : ComponentActivity() {
         // A flood advert reaches the whole mesh through every repeater that
         // hears it. That is someone else's airtime, so it is opt-in per launch:
         //   --ez flood true
+        // `--ez alerts true` — the same door the DIAG panel has, for the same
+        // reason: a panel that is off by default needs a way on that does not
+        // require finding a settings row while wearing a headset.
+        if (intent?.hasExtra("alerts") == true) {
+            Settings.setAlerts(this, intent.getBooleanExtra("alerts", true))
+        }
+        Log.i(TAG, "[boot] alerts panel = ${Settings.alerts(this)}")
         if (intent?.hasExtra("diag") == true) {
             Settings.setDiagnostics(this, intent.getBooleanExtra("diag", true))
         }
@@ -644,6 +651,25 @@ private fun Root(facts: List<Pair<String, String>>, link: MeshLink, pinOverride:
         // Pushed to the right and turned away from the forward arc so it never
         // sits in front of the horizon. Default ON while the advert path is
         // still in question; `--ez diag false` turns it off.
+        // THE ALERTS PANEL. Everything the app has to say that does not stop it
+        // working: a full contact store, a region mismatch, a sweep's result.
+        // Off by default and opened from SETUP > APP, because an alert that
+        // interrupts is an alarm, and almost none of these are alarms.
+        //
+        // On the LEFT, mirroring the radio log on the right, so neither ever
+        // sits in front of the horizon.
+        if (Settings.alerts(LocalContext.current)) {
+            Subspace {
+                SpatialPanel(
+                    SubspaceModifier
+                        .width(520.dp).height(560.dp)
+                        .offset(x = (-620).dp, z = (-140).dp)
+                        .rotate(androidx.xr.runtime.math.Vector3(0f, 1f, 0f), 34f),
+                ) {
+                    AlertsPanel()
+                }
+            }
+        }
         if (Settings.diagnostics(LocalContext.current)) {
             Subspace {
                 SpatialPanel(
@@ -1372,6 +1398,7 @@ private fun appRows(
         // to compute bearings is local and private, putting it in an advert
         // broadcasts it unencrypted to anyone in range.
         row("SHARE", ctx.getString(R.string.r_share), Settings.shareLocation(ctx)),
+        row("ALERTS", ctx.getString(R.string.r_alerts), Settings.alerts(ctx)),
         row("DIAG", ctx.getString(R.string.r_diag), Settings.diagnostics(ctx)),
         row("AUTOPEN", ctx.getString(R.string.r_autopen), Settings.autopen(ctx)),
         row("MOTION", ctx.getString(R.string.r_motion), Settings.reduceMotion(ctx)),
@@ -1551,15 +1578,7 @@ private fun HorizonScene(link: MeshLink) {
     val adviceKind = remember {
         mutableStateOf(com.iotj.meshmore.xr.spatial.Advice.Kind.NONE)
     }
-    /**
-     * The capacity card is answered ONCE per session.
-     *
-     * It is the only advice whose condition survives being acted on: a store
-     * at capacity is still at capacity a second after the sweep panel opens,
-     * and a card that reappeared every second while the wearer was reading the
-     * very list it sent them to would be an alarm rather than a notice.
-     */
-    val fullDismissed = remember { mutableStateOf(false) }
+
     val focusRef = remember { mutableStateOf<com.iotj.meshmore.xr.spatial.Focus?>(null) }
     val gazeRef = remember { mutableStateOf<com.iotj.meshmore.xr.spatial.Gaze?>(null) }
     val rosterRef = remember { mutableStateOf<com.iotj.meshmore.xr.spatial.Roster?>(null) }
@@ -2215,6 +2234,7 @@ private fun HorizonScene(link: MeshLink) {
                 if (note != deviceNoteRef.value) {
                     deviceNoteRef.value = note
                     Log.i(TAG_UI, "[device] $note")
+                    Alerts.info("RADIO", note)
                 }
             }
             // NAMED ONLY WHEN THE NAME IS EVIDENCE. The card says "X HAS NO
@@ -3666,6 +3686,7 @@ private fun HorizonScene(link: MeshLink) {
                             ctx, !Settings.useDeviceLocation(ctx),
                         )
                         "SHARE" -> Settings.setShareLocation(ctx, !Settings.shareLocation(ctx))
+                        "ALERTS" -> Settings.setAlerts(ctx, !Settings.alerts(ctx))
                         "DIAG" -> Settings.setDiagnostics(ctx, !Settings.diagnostics(ctx))
                         "AUTOPEN" -> Settings.setAutopen(ctx, !Settings.autopen(ctx))
                         "TELEM" -> {
@@ -3773,6 +3794,7 @@ private fun HorizonScene(link: MeshLink) {
                                     gcArmedAt.value = 0L
                                     noticeRef.value?.say(ctx.getString(R.string.n_gc_done, n))
                                     Log.i(TAG_UI, "[gc] swept $n of ${doomed.size} candidates")
+                                    Alerts.info("CONTACTS", ctx.getString(R.string.al_swept, n))
                                     hereEpoch.value += 1
                                 }
                             }
@@ -4787,19 +4809,25 @@ private fun HorizonScene(link: MeshLink) {
                         // comes first: with no radio there is no position
                         // question to answer.
                         val waiting = unplacedRef.value
-                        // A FULL STORE OUTRANKS A MISSING FIX. Both are true
-                        // at once often enough — a store full of distant nodes
-                        // is a store full of nodes you cannot place — and only
-                        // one of them explains why the radio in the room never
-                        // appeared. Under the radio question, though: with no
-                        // radio there is no store to be full of anything.
-                        val full = st2.maxContacts > 0 &&
-                            st2.contacts >= st2.maxContacts &&
-                            !fullDismissed.value
+                        // A FULL STORE IS AN ALERT, NOT A CARD.
+                        //
+                        // Two conditions earn a surface in the world — no radio
+                        // and no position — because both stop the app doing the
+                        // thing it exists for. A full contact store does not:
+                        // it explains why a node never appeared, it wants
+                        // acting on eventually, and standing it in front of a
+                        // wearer who is doing something else reads as an alarm.
+                        // It goes where the radio log goes, and that is off
+                        // unless asked for.
+                        if (st2.maxContacts > 0 && st2.heldByRadio >= st2.maxContacts) {
+                            Alerts.warn(
+                                "CONTACTS",
+                                ctx.getString(R.string.al_full, st2.heldByRadio, st2.maxContacts),
+                            )
+                        }
                         val kind = when {
                             !link.everConnected && !st2.scanning && st2.error != null ->
                                 com.iotj.meshmore.xr.spatial.Advice.Kind.NO_RADIO
-                            full -> com.iotj.meshmore.xr.spatial.Advice.Kind.FULL
                             waiting > 0 ->
                                 com.iotj.meshmore.xr.spatial.Advice.Kind.NO_FIX
                             else -> com.iotj.meshmore.xr.spatial.Advice.Kind.NONE
@@ -4819,16 +4847,7 @@ private fun HorizonScene(link: MeshLink) {
                         if (hunting && adviceLastTry == 0L) adviceLastTry = nowW
                         if (adviceRef.value?.poll() == true) {
                             cue.recognised()
-                            if (kind == com.iotj.meshmore.xr.spatial.Advice.Kind.FULL) {
-                                // STRAIGHT TO THE SET WORTH FORGETTING, with
-                                // the count in front of the wearer and the
-                                // destroying still one deliberate pinch away.
-                                // Nothing is swept by answering a notice.
-                                query.value = query.value.copy(farKm = Search.FAR_STEPS.first())
-                                searchOpen.value = true
-                                fullDismissed.value = true
-                                Log.i(TAG_UI, "[gc] capacity card opened FIND at ≥${Search.FAR_STEPS.first()} km")
-                            } else if (kind == com.iotj.meshmore.xr.spatial.Advice.Kind.NO_FIX) {
+                            if (kind == com.iotj.meshmore.xr.spatial.Advice.Kind.NO_FIX) {
                                 useHeadsetFix()
                             } else {
                                 adviceTries = 0
@@ -5394,6 +5413,7 @@ private fun HorizonScene(link: MeshLink) {
                         ) { tagsRef.isFavourite(it) }
                         val n = link.forgetContacts(doomed)
                         Log.i(TAG_UI, "[gc] filter forgot $n of ${doomed.size}")
+                        Alerts.info("CONTACTS", ctx.getString(R.string.al_swept, n))
                         noticeRef.value?.say(ctx.getString(R.string.n_gc_done, n))
                         hereEpoch.value += 1
                         tagEpoch.value += 1
@@ -5753,6 +5773,68 @@ private fun hereCaption(
  * itself back to the bottom while you are reading three lines up is unusable
  * for the one thing it is for, which is reading what already happened.
  */
+/**
+ * THE ALERTS PANEL — the same shape as the radio log, on purpose.
+ *
+ * A scrolling list with a timestamp per line is the right form for a history,
+ * and the operator asked for exactly this: put it where the debug log is, and
+ * leave it off. Newest at the bottom, warnings in amber, repeats collapsed to
+ * a count rather than repeated — a standing condition should read as one line
+ * that has been true for a while, not as forty identical ones.
+ */
+@Composable
+private fun AlertsPanel() {
+    val entries by Alerts.log.collectAsState()
+    val listState = androidx.compose.foundation.lazy.rememberLazyListState()
+    LaunchedEffect(entries.size) {
+        if (entries.isNotEmpty()) listState.scrollToItem(entries.size - 1)
+    }
+    val ctx = LocalContext.current
+    Column(
+        Modifier.fillMaxSize().background(Color(0xF00A0E12)).padding(12.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        Text(
+            androidx.compose.ui.res.stringResource(R.string.al_title, entries.size),
+            color = Color(0xFF66E8D0),
+            fontFamily = meshMono(ctx),
+            fontSize = 14.sp,
+        )
+        androidx.compose.foundation.lazy.LazyColumn(
+            state = listState,
+            modifier = Modifier.weight(1f).fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            items(entries.size) { i ->
+                val e = entries[i]
+                val clock = java.text.SimpleDateFormat("HH:mm:ss", java.util.Locale.US)
+                    .format(java.util.Date(e.atMs))
+                Text(
+                    "$clock  ${e.tag}  ${e.text}" + if (e.count > 1) "  ×${e.count}" else "",
+                    color = if (e.level == Alerts.Level.WARN) Color(0xFFFFB86B) else Color(0xFFAFC0CA),
+                    fontFamily = meshMono(ctx),
+                    fontSize = 11.sp,
+                )
+            }
+        }
+        if (entries.isEmpty()) {
+            Text(
+                androidx.compose.ui.res.stringResource(R.string.al_none),
+                color = Color(0xFF6E7C88),
+                fontFamily = meshMono(ctx),
+                fontSize = 12.sp,
+            )
+        }
+        TextButton(onClick = { Alerts.clear() }) {
+            Text(
+                androidx.compose.ui.res.stringResource(R.string.find_clear),
+                color = Color(0xFF7A8C96),
+                fontSize = 13.sp,
+            )
+        }
+    }
+}
+
 @Composable
 private fun RadioLogPanel(link: MeshLink) {
     val lines by link.diag.collectAsState()

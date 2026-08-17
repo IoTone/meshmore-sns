@@ -46,7 +46,16 @@ class Advice(
     private val context: Context,
 ) {
 
-    enum class Kind { NONE, NO_RADIO, NO_FIX, FULL }
+    /**
+     * NONE, and the two conditions that stop this app being what it is.
+     *
+     * A third — the radio's contact store being full — was briefly built here
+     * and moved to [com.iotj.meshmore.xr.Alerts]: it explains something rather
+     * than preventing everything, and a card for it reads as an alarm. The bar
+     * for standing in somebody's world is that the app cannot function, not
+     * that it has something true to say.
+     */
+    enum class Kind { NONE, NO_RADIO, NO_FIX }
 
     /** Every line of every message, built once, shown by the set. */
     private val sets = linkedMapOf<Kind, List<Entity>>()
@@ -119,20 +128,6 @@ class Advice(
                 ctx.getString(com.iotj.meshmore.xr.R.string.nr_check),
                 ctx.getString(com.iotj.meshmore.xr.R.string.nr_phone),
                 ctx.getString(com.iotj.meshmore.xr.R.string.nr_retry),
-            ),
-        )
-        // THE THIRD WAY AN HONEST APP LOOKS BROKEN. The radio's contact store
-        // is finite; when it is full the radio stops accepting new nodes, so
-        // the one you are standing next to never appears and nothing anywhere
-        // says why. The operator hit this with 350 of 350 held and their own
-        // second radio unable to get in.
-        set(
-            Kind.FULL,
-            listOf(
-                ctx.getString(com.iotj.meshmore.xr.R.string.fu_title),
-                ctx.getString(com.iotj.meshmore.xr.R.string.fu_why),
-                ctx.getString(com.iotj.meshmore.xr.R.string.fu_new),
-                ctx.getString(com.iotj.meshmore.xr.R.string.fu_act),
             ),
         )
         set(
