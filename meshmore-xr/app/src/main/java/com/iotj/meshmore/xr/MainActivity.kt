@@ -990,6 +990,20 @@ private fun radioRows(
         // the radio is also the one that says whether it has anything to do.
         row("COMMIT", "COMMIT", if (cfg.dirty()) "READY" else "NOTHING", null, cfg.dirty()),
         row("REVERT", "UNDO CHANGES", if (cfg.dirty()) "PENDING" else "CLEAN", null),
+        // SAY YOU ARE HERE. Both of these existed only as buttons on the 2D
+        // debug panel and a launch flag — which is to say they existed for
+        // anyone holding a laptop, and for nobody wearing the glasses.
+        //
+        // A ZERO-HOP advert is heard by direct neighbours and stops there; it
+        // costs one transmission and is the right way to say "I am in this
+        // room" to a node you are standing next to. A FLOOD advert is repeated
+        // by every repeater that hears it, across the whole mesh — that is
+        // other people's airtime, and on a 350-node mesh it is a lot of it, so
+        // it is armed like the destructive controls are.
+        row("ADVERT", "SELF ADVERT", "ZERO HOP", null),
+        row("FLOOD", "FLOOD ADVERT", "ALL REPEATERS", null),
+        // The radio's own store, from the surface that is about the radio.
+        row("RESCAN", "RESCAN FOR RADIO", "BLUETOOTH", null),
     )
 }
 
@@ -1053,6 +1067,46 @@ private fun regionRows(
  * not recoverable from inside the app. Discarding a staged edit costs nothing
  * and asking twice for it would only teach people to double-pick everything.
  */
+/**
+ * The DEVICE bay's three ACTIONS, as opposed to its parameters.
+ *
+ * Kept out of [onRadioRow] on purpose: that function stages values to be
+ * committed later, and these three do something the moment they are picked.
+ * Mixing "type a number, commit it in a minute" with "transmit now" in one
+ * table is how a wearer ends up flooding a mesh they meant to tune.
+ */
+private fun onRadioAction(
+    ctx: android.content.Context,
+    id: String,
+    link: MeshLink,
+    armed: androidx.compose.runtime.MutableState<Pair<String, Long>?>,
+    nowMs: Long,
+    say: (String) -> Unit,
+): Boolean = when (id) {
+    "ADVERT" -> {
+        link.announce(false)
+        say(ctx.getString(R.string.n_advert_sent))
+        true
+    }
+    "FLOOD" -> {
+        if (armed.value?.first != "FLOOD") {
+            armed.value = "FLOOD" to nowMs
+            say(ctx.getString(R.string.n_flood_arm))
+        } else {
+            armed.value = null
+            link.announce(true)
+            say(ctx.getString(R.string.n_flood_sent))
+        }
+        true
+    }
+    "RESCAN" -> {
+        link.connect()
+        say(ctx.getString(R.string.n_rescan))
+        true
+    }
+    else -> false
+}
+
 private fun onRadioRow(
     ctx: android.content.Context,
     id: String,
@@ -3470,6 +3524,23 @@ private fun HorizonScene(link: MeshLink) {
                         // it does not go through onRadioRow — that function
                         // stages parameters, and this one opens a surface.
                         if (id == "REGION") { openRegions(); continue }
+                        // ACTIONS FIRST. They fire now; the parameter rows
+                        // below only stage. See onRadioAction.
+                        if (onRadioAction(ctx, id, link, armed, nowMs) { note ->
+                                noticeRef.value?.say(note)
+                            }
+                        ) {
+                            appRef.value?.update(
+                                radioRows(link.radio),
+                                if (armed.value?.first == "FLOOD") {
+                                    ctx.getString(R.string.f_flood_arm)
+                                } else {
+                                    ctx.getString(R.string.f_radio_idle)
+                                },
+                            )
+                            cue.recognised()
+                            continue
+                        }
                         onRadioRow(ctx, id, link.radio, armed, nowMs) { note ->
                             noticeRef.value?.say(note)
                         }

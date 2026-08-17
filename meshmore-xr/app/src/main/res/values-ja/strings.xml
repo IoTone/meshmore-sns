@@ -228,6 +228,11 @@
     <string name="n_gc_none">%1$dkm 超の相手はいません</string>
     <string name="n_gc_nofix">位置不明のため距離を判定できません</string>
     <string name="n_gc_done">%1$d 件を削除しました</string>
+    <string name="n_advert_sent">アドバート送信 — 隣接ノードのみ</string>
+    <string name="n_flood_arm">フラッドは全体に届きます — もう一度</string>
+    <string name="n_flood_sent">フラッドを送信しました</string>
+    <string name="n_rescan">無線機を検索中</string>
+    <string name="f_flood_arm">もう一度でフラッド送信</string>
     <string name="nf_title">位置がありません</string>
     <string name="nf_board_nogps">%1$s にGPSがありません</string>
     <string name="nf_nofix">無線機が位置を送りません</string>
