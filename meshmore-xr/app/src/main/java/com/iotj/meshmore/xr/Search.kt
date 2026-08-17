@@ -59,11 +59,33 @@ object Search {
         val text: String = "",
         val favourites: Boolean = false,
         val tag: String? = null,
+        /**
+         * Keep only nodes at least this far away. Null is off.
+         *
+         * "In a busy environment we rapidly fill up the device contacts list
+         * and it becomes impossible to SEE new nodes." Distance is the axis
+         * that separates the hilltop repeater heard once from the radio in the
+         * same room, and it is the axis a wearer can reason about without
+         * knowing anything else about the mesh.
+         */
+        val farKm: Double? = null,
+        /** Keep only nodes unheard for at least this long. Null is off. */
+        val staleHours: Int? = null,
     ) {
         /** Is this narrowing anything at all? */
         val active: Boolean
-            get() = normalise(text).isNotEmpty() || favourites || tag != null
+            get() = normalise(text).isNotEmpty() || favourites || tag != null ||
+                farKm != null || staleHours != null
+
+        /** True when the query is about WHICH nodes rather than about a name. */
+        val isSweepable: Boolean get() = farKm != null || staleHours != null
     }
+
+    /** The distances a wearer can step through. See [Query.farKm]. */
+    val FAR_STEPS = listOf(25.0, 50.0, 100.0, 250.0)
+
+    /** The silences a wearer can step through, in hours. See [Query.staleHours]. */
+    val STALE_STEPS = listOf(6, 24, 168)
 
     /**
      * Tidied for matching AND for display — one function, so the string shown
@@ -109,9 +131,28 @@ object Search {
         q: Query,
         isFavourite: (MeshNodes.Peer) -> Boolean,
         tagsOf: (MeshNodes.Peer) -> List<String>,
+        /**
+         * How far away a peer is, or null when nobody knows. NULL IS NOT FAR:
+         * a GPS-less board reports nothing forever, and a filter that treated
+         * silence as distance would select exactly the quiet local nodes a
+         * wearer is trying to keep.
+         */
+        distanceKm: (MeshNodes.Peer) -> Double? = { null },
+        /** How long since this peer was heard, in hours; null when unknown. */
+        ageHours: (MeshNodes.Peer) -> Double? = { null },
     ): List<MeshNodes.Peer> {
         if (!q.active) return peers
         return peers.filter { p ->
+            val far = q.farKm
+            if (far != null) {
+                val d = distanceKm(p) ?: return@filter false
+                if (d < far) return@filter false
+            }
+            val stale = q.staleHours
+            if (stale != null) {
+                val a = ageHours(p) ?: return@filter false
+                if (a < stale) return@filter false
+            }
             if (!matches(p, q.text)) return@filter false
             if (q.favourites && !isFavourite(p)) return@filter false
             // TAGS COMPARE CASE-INSENSITIVELY, because a tag typed at the node

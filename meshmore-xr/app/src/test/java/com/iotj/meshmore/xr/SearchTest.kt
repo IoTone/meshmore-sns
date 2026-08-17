@@ -4,6 +4,7 @@ package com.iotj.meshmore.xr
 
 import com.iotj.meshmore.xr.spatial.MeshNodes
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -167,5 +168,80 @@ class SearchTest {
         assertEquals("NO MATCH IN 350", Search.summary(0, 350, Search.Query(favourites = true)))
         assertEquals("350 NODES", Search.summary(350, 350, Search.Query()))
         assertEquals("2 OF 350", Search.summary(2, 350, Search.Query(tag = "hike")))
+    }
+
+    // ------------------------------------------------------------------
+    // DISTANCE AND SILENCE — the two axes a crowded mesh is pruned along.
+    // ------------------------------------------------------------------
+
+    private fun far(km: Double) = Search.Query(farKm = km)
+
+    /**
+     * NULL IS NOT FAR, and this is the test that says so. A GPS-less board
+     * reports nothing forever; if "unknown" satisfied a distance filter, the
+     * bulk forget behind that filter would select precisely the quiet local
+     * nodes the operator is trying to keep.
+     */
+    @Test fun unknownDistanceNeverMatchesAFarFilter() {
+        val peers = listOf(peer("a", key = "a"), peer("b", key = "b"))
+        val out = Search.apply(
+            peers, far(50.0), isFavourite = { false }, tagsOf = { emptyList() },
+            distanceKm = { p -> if (p.key == "a") 400.0 else null },
+        )
+        assertEquals(listOf("a"), out.map { it.key })
+    }
+
+    @Test fun theFarFilterIsInclusiveAtItsThreshold() {
+        val peers = listOf(peer("under", key = "under"), peer("on", key = "on"), peer("over", key = "over"))
+        val d = mapOf("under" to 49.9, "on" to 50.0, "over" to 50.1)
+        val out = Search.apply(
+            peers, far(50.0), isFavourite = { false }, tagsOf = { emptyList() },
+            distanceKm = { d[it.key] },
+        )
+        assertEquals(listOf("on", "over"), out.map { it.key })
+    }
+
+    @Test fun unknownAgeNeverMatchesAStaleFilter() {
+        val peers = listOf(peer("old", key = "old"), peer("undated", key = "undated"))
+        val out = Search.apply(
+            peers, Search.Query(staleHours = 6), isFavourite = { false }, tagsOf = { emptyList() },
+            ageHours = { p -> if (p.key == "old") 48.0 else null },
+        )
+        assertEquals(listOf("old"), out.map { it.key })
+    }
+
+    /** Terms narrow together, so FAR + STALE is the intersection and not the union. */
+    @Test fun distanceAndSilenceNarrowTogether() {
+        val peers = listOf(peer("farOld", key = "farOld"), peer("farFresh", key = "farFresh"), peer("nearOld", key = "nearOld"))
+        val km = mapOf("farOld" to 300.0, "farFresh" to 300.0, "nearOld" to 2.0)
+        val hrs = mapOf("farOld" to 90.0, "farFresh" to 0.2, "nearOld" to 90.0)
+        val out = Search.apply(
+            peers, Search.Query(farKm = 100.0, staleHours = 24),
+            isFavourite = { false }, tagsOf = { emptyList() },
+            distanceKm = { km[it.key] }, ageHours = { hrs[it.key] },
+        )
+        assertEquals(listOf("farOld"), out.map { it.key })
+    }
+
+    /**
+     * A TEXT SEARCH IS NOT A SWEEP. The bulk forget only appears for filters
+     * that are about WHICH nodes; without this, typing "a" and hitting forget
+     * would delete half a mesh.
+     */
+    @Test fun onlyDistanceOrSilenceMakesAQuerySweepable() {
+        assertFalse(Search.Query(text = "portland").isSweepable)
+        assertFalse(Search.Query(favourites = true).isSweepable)
+        assertFalse(Search.Query(tag = "hike").isSweepable)
+        assertTrue(Search.Query(farKm = 25.0).isSweepable)
+        assertTrue(Search.Query(staleHours = 6).isSweepable)
+    }
+
+    @Test fun theStepsAreOrderedAndEndInOff() {
+        assertEquals(Search.FAR_STEPS.sorted(), Search.FAR_STEPS)
+        assertEquals(Search.STALE_STEPS.sorted(), Search.STALE_STEPS)
+        // Stepping past the last one turns the chip off, which is how a wearer
+        // gets back to "no distance filter" without a second control.
+        assertEquals(null, Search.FAR_STEPS.getOrNull(Search.FAR_STEPS.size))
+        assertEquals(null, Search.STALE_STEPS.getOrNull(Search.STALE_STEPS.size))
     }
 }

@@ -110,9 +110,15 @@ class RadialMenu(
         val root = session.scene.activitySpace
         // Four diagonals. More than four and the spokes crowd; fewer and the
         // menu stops looking like a menu.
+        // FOUR DIAGONALS, THEN UP, THEN DOWN — and the order is load-bearing.
+        // Every existing menu has four items and must keep the layout it was
+        // designed with, so the new positions are APPENDED: a fifth item goes
+        // straight up, a sixth straight down. Beyond six the spokes crowd and
+        // the menu stops being pointable.
         val dirs = listOf(
             -0.7071f to 0.7071f, 0.7071f to 0.7071f,
             -0.7071f to -0.7071f, 0.7071f to -0.7071f,
+            0f to 1f, 0f to -1f,
         )
         items.forEachIndexed { i, item ->
             val (dx, dy) = dirs.getOrElse(i) { 0f to 0f }

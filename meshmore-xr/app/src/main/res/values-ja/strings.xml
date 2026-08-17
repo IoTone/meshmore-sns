@@ -235,6 +235,16 @@
     <string name="f_flood_arm">もう一度でフラッド送信</string>
     <string name="f_gc_arm">もう一度で削除します</string>
     <string name="th_reply">返信</string>
+    <string name="find_far">遠い</string>
+    <string name="find_stale">古い</string>
+    <string name="find_forget">%1$d 件を削除</string>
+    <string name="find_forget_arm">もう一度で削除</string>
+    <string name="na_forget">削除</string>
+    <string name="n_forget_arm">%1$s を削除?もう一度</string>
+    <string name="n_forget_done">%1$s を削除しました</string>
+    <string name="n_forget_failed">%1$s を削除できません</string>
+    <string name="n_forget_kept">自ノードまたはお気に入りのため保持</string>
+    <string name="n_forget_unknown">無線機の連絡先にありません</string>
     <string name="nf_title">位置がありません</string>
     <string name="nf_board_nogps">%1$s にGPSがありません</string>
     <string name="nf_nofix">無線機が位置を送りません</string>

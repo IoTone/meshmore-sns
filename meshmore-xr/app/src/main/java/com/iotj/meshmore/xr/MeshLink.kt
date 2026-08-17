@@ -1057,6 +1057,38 @@ class MeshLink(private val context: Context) {
      * Returns the candidates rather than acting, so a caller can count them,
      * name them, and ask before anything is destroyed.
      */
+    /**
+     * THE ONE RULE ABOUT WHAT MAY BE FORGOTTEN, so two callers cannot disagree.
+     *
+     * The distance sweep and the filter-driven bulk forget arrive at their
+     * candidates completely differently — one measures, one is handed whatever
+     * the wearer narrowed to — and both must refuse the same things. Written
+     * once, here, beside the transmitter that enforces the other allow-list.
+     *
+     * Never: the operator's own radios (the sweep exists to make room FOR
+     * them), favourites (a star outranks anything automatic), and anything
+     * without a full 32-byte key (REMOVE_CONTACT is keyed by the whole thing;
+     * a prefix would either miss or match something else).
+     */
+    fun forgettable(
+        candidates: List<MeshNodes.Peer>,
+        isFavourite: (String) -> Boolean = { false },
+    ): List<MeshNodes.Peer> = candidates.filter { p ->
+        when {
+            isAllowed(p) -> false
+            // BOTH KINDS OF STAR. A favourite set on the RADIO arrives on the
+            // peer's own flag and a favourite set in this app lives in
+            // NodeTags; the ring and the search list draw them identically, so
+            // a sweep that honoured only one would delete a node the wearer
+            // can see is starred. Caught on the emulator: 'Alberta Base' sat
+            // in a FORGET 76 with a filled star beside it.
+            p.favourite -> false
+            isFavourite(p.fullKey ?: p.key) -> false
+            (p.fullKey?.length ?: 0) < 64 -> false
+            else -> true
+        }
+    }
+
     fun farContacts(
         origin: MeshNodes.Here,
         km: Double,
@@ -1065,12 +1097,10 @@ class MeshLink(private val context: Context) {
         if (!origin.known) return emptyList()
         val oLat = origin.lat ?: return emptyList()
         val oLon = origin.lon ?: return emptyList()
-        return peers.values.filter { p ->
+        return forgettable(peers.values.toList(), isFavourite).filter { p ->
             val lat = p.lat
             val lon = p.lon
             when {
-                isAllowed(p) -> false
-                isFavourite(p.fullKey ?: p.key) -> false
                 lat == null || lon == null -> false
                 kotlin.math.abs(lat) < 1e-7 && kotlin.math.abs(lon) < 1e-7 -> false
                 else -> MeshNodes.haversineKm(oLat, oLon, lat, lon) >= km

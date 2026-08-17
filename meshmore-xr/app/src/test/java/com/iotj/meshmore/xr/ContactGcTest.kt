@@ -47,6 +47,7 @@ class ContactGcTest {
         val lon = p.lon
         return when {
             isMine -> false
+            p.favourite -> false
             (p.fullKey ?: p.key) in favourites -> false
             lat == null || lon == null -> false
             kotlin.math.abs(lat) < 1e-7 && kotlin.math.abs(lon) < 1e-7 -> false
@@ -66,6 +67,18 @@ class ContactGcTest {
             here.lat!!, here.lon!!, -33.86, 151.20,
         ))
         assertFalse("an allow-listed node was collectable", collectable(mine))
+    }
+
+    /**
+     * THE OTHER KIND OF STAR. MeshCore stores a favourite flag on the contact
+     * itself, and this app stores its own in NodeTags; both render as the same
+     * filled star. A sweep that honoured only the app's would delete a node
+     * the wearer is looking at a star beside.
+     */
+    @Test fun radioSideFavouritesAreNeverCollected() {
+        val far = peer("dddd0001", lat = -33.86, lon = 151.20)
+        assertTrue(collectable(far))
+        assertFalse("a radio-side favourite was collectable", collectable(far.copy(favourite = true)))
     }
 
     @Test fun favouritesAreNeverCollected() {

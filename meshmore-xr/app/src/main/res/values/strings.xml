@@ -237,6 +237,16 @@
     <string name="f_flood_arm">PICK AGAIN TO FLOOD THE MESH</string>
     <string name="f_gc_arm">PICK AGAIN TO FORGET THEM</string>
     <string name="th_reply">REPLY</string>
+    <string name="find_far">FAR</string>
+    <string name="find_stale">STALE</string>
+    <string name="find_forget">FORGET %1$d</string>
+    <string name="find_forget_arm">TAP AGAIN TO FORGET</string>
+    <string name="na_forget">FORGET</string>
+    <string name="n_forget_arm">FORGET %1$s? PINCH AGAIN</string>
+    <string name="n_forget_done">FORGOT %1$s</string>
+    <string name="n_forget_failed">COULD NOT FORGET %1$s</string>
+    <string name="n_forget_kept">KEPT — YOUR NODE OR A FAVOURITE</string>
+    <string name="n_forget_unknown">NOT IN THE RADIO\'S CONTACTS</string>
     <string name="nf_title">NO POSITION</string>
     <string name="nf_board_nogps">%1$s HAS NO GPS</string>
     <string name="nf_nofix">THE RADIO SENDS NO POSITION</string>

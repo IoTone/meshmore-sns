@@ -178,6 +178,8 @@ class MainActivity : ComponentActivity() {
          * horizon logs how many of how many survived.
          */
         var queryOverride: String? = null
+        var farOverride: Double? = null
+        var staleOverride: Int? = null
         /**
          * --ez menu true : open the cluster menu on the first cluster found.
          *
@@ -362,6 +364,10 @@ class MainActivity : ComponentActivity() {
         dmProbe = intent?.getBooleanExtra("dm", false) ?: false
         gcProbe = intent?.getStringExtra("gc")
         queryOverride = intent?.getStringExtra("query")?.takeIf { it.isNotBlank() }
+        // `--es far 100` / `--es stale 24` : open FIND with the sweep filters
+        // already set. The chips are a hand's work and no emulator has one.
+        farOverride = intent?.getStringExtra("far")?.toDoubleOrNull()
+        staleOverride = intent?.getStringExtra("stale")?.toIntOrNull()
         showMenu = intent?.getBooleanExtra("menu", false) ?: false
         showFocus = intent?.getBooleanExtra("focus", false) ?: false
         probePaths = intent?.getBooleanExtra("probe", false) ?: false
@@ -1239,6 +1245,42 @@ private const val NODE_MENU_SIDE = 0.55f
 private const val GC_FAR_KM = 100.0
 
 /** How many contacts a sweep would take right now, for the row's own label. */
+/**
+ * The set a filter-driven sweep would act on, computed the same way the panel
+ * computes what it is showing. One function, so the number on the button and
+ * the contacts that go cannot drift apart.
+ */
+private fun matchedForSweep(
+    link: MeshLink,
+    mesh: List<MeshNodes.Peer>,
+    q: Search.Query,
+    tags: NodeTags,
+    hereSource: HereSource,
+): List<MeshNodes.Peer> {
+    val from = hereSource.resolve(link.here.value, MainActivity.homeOverride)
+    val nowS = System.currentTimeMillis() / 1000
+    return Search.apply(
+        mesh, q,
+        isFavourite = { it.favourite || tags.isFavourite(it.fullKey ?: it.key) },
+        tagsOf = { tags.tagsFor(it.fullKey ?: it.key) },
+        distanceKm = { p ->
+            val la = p.lat
+            val lo = p.lon
+            if (!from.known || la == null || lo == null ||
+                (kotlin.math.abs(la) < 1e-7 && kotlin.math.abs(lo) < 1e-7)
+            ) {
+                null
+            } else {
+                MeshNodes.haversineKm(from.lat!!, from.lon!!, la, lo)
+            }
+        },
+        ageHours = { p ->
+            if (p.lastSeenEpochSec <= 0L) null
+            else (nowS - p.lastSeenEpochSec).coerceAtLeast(0L) / 3600.0
+        },
+    )
+}
+
 private fun gcCount(
     link: MeshLink,
     here: MeshNodes.Here,
@@ -1542,6 +1584,8 @@ private fun HorizonScene(link: MeshLink) {
      * Same shape as chanArmedAt, and for the same reason.
      */
     val gcArmedAt = remember { mutableStateOf(0L) }
+    /** Which node's FORGET spoke is armed, and when. See the node menu. */
+    val nodeForget = remember { mutableStateOf<Pair<String, Long>?>(null) }
     /**
      * The same idea for the CHANNELS bay, and separate from [armed] on purpose:
      * they are two surfaces, and a rolled channel name left armed while the
@@ -1958,7 +2002,13 @@ private fun HorizonScene(link: MeshLink) {
     // repeaters. Closing a search and silently restoring 350 nodes would undo
     // the thing they just did.
     val query = remember {
-        mutableStateOf(Search.Query(text = MainActivity.queryOverride.orEmpty()))
+        mutableStateOf(
+            Search.Query(
+                text = MainActivity.queryOverride.orEmpty(),
+                farKm = MainActivity.farOverride,
+                staleHours = MainActivity.staleOverride,
+            ),
+        )
     }
     val searchOpen = remember { mutableStateOf(MainActivity.showFind) }
     // BUMPED WHEN A MARK CHANGES. Starring somebody alters which nodes match and
@@ -2394,6 +2444,11 @@ private fun HorizonScene(link: MeshLink) {
             RadialMenu.Item("msg", ctx.getString(R.string.na_msg)),
             RadialMenu.Item("telem", ctx.getString(R.string.na_telem)),
             RadialMenu.Item("dismiss", ctx.getString(R.string.na_close)),
+            // THE FIFTH SPOKE, straight up. One node, forgotten from the
+            // radio's store — the single-node answer to the same problem the
+            // sweep solves in bulk, for when you can see the offender and do
+            // not want to describe it with a filter.
+            RadialMenu.Item("forget", ctx.getString(R.string.na_forget)),
         ))
         nodeMenuRef.value = nodeMenu
         val focus = com.iotj.meshmore.xr.spatial.Focus(session, palette, ctx)
@@ -4500,6 +4555,63 @@ private fun HorizonScene(link: MeshLink) {
                                 }
                             }
                         }
+                        // ARMED, LIKE EVERY OTHER REMOVAL. The menu has no
+                        // arming of its own, so the state lives here: the first
+                        // pinch names the node and waits, the second within
+                        // ARM_MS forgets it. A radial spoke is easy to catch
+                        // with a stray hand and this one talks to the radio.
+                        "forget" -> {
+                            val peer = link.mesh.value.firstOrNull {
+                                (it.fullKey ?: it.key).equals(id, ignoreCase = true) ||
+                                    it.key.equals(n.key, ignoreCase = true)
+                            }
+                            val tNow = android.os.SystemClock.uptimeMillis()
+                            val armedNow = nodeForget.value?.let {
+                                it.first == id && tNow - it.second <= ARM_MS
+                            } == true
+                            when {
+                                peer == null -> {
+                                    noticeRef.value?.say(ctx.getString(R.string.n_forget_unknown))
+                                    cue.denied()
+                                }
+                                link.forgettable(listOf(peer)) {
+                                    tagsRef.isFavourite(it)
+                                }.isEmpty() -> {
+                                    // Own node, favourite, or no full key. The
+                                    // refusal is the same rule the sweep uses,
+                                    // said out loud rather than silently.
+                                    noticeRef.value?.say(ctx.getString(R.string.n_forget_kept))
+                                    cue.denied()
+                                }
+                                !armedNow -> {
+                                    nodeForget.value = id to tNow
+                                    noticeRef.value?.say(
+                                        ctx.getString(
+                                            R.string.n_forget_arm,
+                                            com.iotj.meshmore.xr.spatial.TypeTier.clip(n.name, 14),
+                                        ),
+                                    )
+                                    cue.opened()
+                                }
+                                else -> {
+                                    nodeForget.value = null
+                                    val ok = link.forgetContact(peer)
+                                    noticeRef.value?.say(
+                                        ctx.getString(
+                                            if (ok) R.string.n_forget_done
+                                            else R.string.n_forget_failed,
+                                            com.iotj.meshmore.xr.spatial.TypeTier.clip(n.name, 14),
+                                        ),
+                                    )
+                                    if (ok) {
+                                        hereEpoch.value += 1
+                                        cue.recognised()
+                                    } else {
+                                        cue.denied()
+                                    }
+                                }
+                            }
+                        }
                         "telem" -> {
                             val ok = link.askTelemetry(n.fullKey)
                             noticeRef.value?.say(
@@ -5161,13 +5273,35 @@ private fun HorizonScene(link: MeshLink) {
                     // caps at 24 (12 on a tabletop) and clusters the rest, so
                     // listing its output would hide most of a wide match — and
                     // the list is the one place the whole answer fits.
-                    matches = remember(query.value, mesh, tagEpoch.value) {
+                    matches = remember(query.value, mesh, tagEpoch.value, hereEpoch.value) {
+                        val from = hereSource.resolve(link.here.value, MainActivity.homeOverride)
+                        val nowS = System.currentTimeMillis() / 1000
                         Search.apply(
                             mesh, query.value,
                             isFavourite = {
                                 it.favourite || tagsRef.isFavourite(it.fullKey ?: it.key)
                             },
                             tagsOf = { tagsRef.tagsFor(it.fullKey ?: it.key) },
+                            // NULL WHERE NOBODY KNOWS, in both of these. The
+                            // filter treats null as "does not match" rather
+                            // than as far or as stale, so an unplaceable node
+                            // is never selected by a distance sweep and a node
+                            // with no timestamp is never selected as silent.
+                            distanceKm = { p ->
+                                val la = p.lat
+                                val lo = p.lon
+                                if (!from.known || la == null || lo == null ||
+                                    (kotlin.math.abs(la) < 1e-7 && kotlin.math.abs(lo) < 1e-7)
+                                ) {
+                                    null
+                                } else {
+                                    MeshNodes.haversineKm(from.lat!!, from.lon!!, la, lo)
+                                }
+                            },
+                            ageHours = { p ->
+                                if (p.lastSeenEpochSec <= 0L) null
+                                else (nowS - p.lastSeenEpochSec).coerceAtLeast(0L) / 3600.0
+                            },
                         )
                     },
                     total = mesh.size,
@@ -5205,6 +5339,22 @@ private fun HorizonScene(link: MeshLink) {
                         tagEpoch.value += 1
                         cue.closed()
                     },
+                    forgettable = remember(query.value, mesh, tagEpoch.value, hereEpoch.value) {
+                        if (!query.value.isSweepable) 0
+                        else link.forgettable(matchedForSweep(link, mesh, query.value, tagsRef, hereSource)) {
+                            tagsRef.isFavourite(it)
+                        }.size
+                    },
+                    onForget = {
+                        val doomed = link.forgettable(
+                            matchedForSweep(link, mesh, query.value, tagsRef, hereSource),
+                        ) { tagsRef.isFavourite(it) }
+                        val n = link.forgetContacts(doomed)
+                        Log.i(TAG_UI, "[gc] filter forgot $n of ${doomed.size}")
+                        noticeRef.value?.say(ctx.getString(R.string.n_gc_done, n))
+                        hereEpoch.value += 1
+                        tagEpoch.value += 1
+                    },
                     onClose = { searchOpen.value = false },
                 )
                 }
@@ -5238,6 +5388,14 @@ private fun SearchSurface(
     onTag: (MeshNodes.Peer, String) -> Unit,
     onUntag: (MeshNodes.Peer, String) -> Unit,
     onClose: () -> Unit,
+    /**
+     * How many of [matches] this app would actually forget, and the act of
+     * doing it. Zero hides the control entirely — a destructive button that
+     * does nothing is worse than no button, and with the exclusions in place
+     * (own nodes, favourites) a filter can easily match forty and forget none.
+     */
+    forgettable: Int = 0,
+    onForget: () -> Unit = {},
 ) {
     val focus = remember { FocusRequester() }
     // The panel wears the app's one face (see meshMono) — the ring outside
@@ -5281,6 +5439,31 @@ private fun SearchSurface(
             Chip(androidx.compose.ui.res.stringResource(R.string.find_favs), query.favourites) {
                 onQuery(query.copy(favourites = !query.favourites))
             }
+            // DISTANCE AND SILENCE, AS STEPS RATHER THAN SWITCHES.
+            //
+            // "In a busy environment we rapidly fill up the device contacts
+            // list and it becomes impossible to see new nodes." Both of these
+            // cycle through their thresholds and then off, because the right
+            // number depends on the mesh you are standing in: 25 km is a city,
+            // 250 km is a mountain range, and a fixed value would be wrong in
+            // one of those places.
+            Chip(
+                query.farKm?.let { "≥ ${it.toInt()} KM" }
+                    ?: androidx.compose.ui.res.stringResource(R.string.find_far),
+                query.farKm != null,
+            ) {
+                val i = Search.FAR_STEPS.indexOf(query.farKm)
+                onQuery(query.copy(farKm = Search.FAR_STEPS.getOrNull(i + 1)))
+            }
+            Chip(
+                query.staleHours?.let { h ->
+                    if (h >= 24) "≥ ${h / 24} D" else "≥ $h H"
+                } ?: androidx.compose.ui.res.stringResource(R.string.find_stale),
+                query.staleHours != null,
+            ) {
+                val i = Search.STALE_STEPS.indexOf(query.staleHours)
+                onQuery(query.copy(staleHours = Search.STALE_STEPS.getOrNull(i + 1)))
+            }
             tags.forEach { t ->
                 Chip("#$t", query.tag.equals(t, ignoreCase = true)) {
                     // Tapping the live tag clears it. A chip that can only be
@@ -5315,6 +5498,36 @@ private fun SearchSurface(
             // way back to the whole mesh would be to reopen the panel and undo
             // every term by hand.
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                // THE FILTER IS THE SELECTION.
+                //
+                // No checkboxes, no marked list to lose track of: you narrow
+                // with the chips until the count reads right, and this forgets
+                // exactly the set the panel is showing. The ring behind the
+                // panel is drawn from the same filter, so the thing being
+                // destroyed is on screen the whole time.
+                //
+                // Shown only when the filter is ABOUT which nodes (distance or
+                // silence) rather than about a name — bulk-forgetting a text
+                // search is a way to delete half a mesh by typing "a" — and
+                // only when something in it is actually forgettable.
+                if (query.isSweepable && forgettable > 0) {
+                    val armed = remember { mutableStateOf(false) }
+                    TextButton(onClick = {
+                        if (armed.value) { armed.value = false; onForget() } else armed.value = true
+                    }) {
+                        Text(
+                            if (armed.value) {
+                                androidx.compose.ui.res.stringResource(R.string.find_forget_arm)
+                            } else {
+                                androidx.compose.ui.res.stringResource(
+                                    R.string.find_forget, forgettable,
+                                )
+                            },
+                            color = if (armed.value) Color(0xFFFF6B6B) else Color(0xFFFFB86B),
+                            fontSize = 14.sp,
+                        )
+                    }
+                }
                 TextButton(onClick = { onQuery(Search.Query()) }) {
                     Text(androidx.compose.ui.res.stringResource(R.string.find_clear), color = Color(0xFF66E8D0), fontSize = 14.sp)
                 }
