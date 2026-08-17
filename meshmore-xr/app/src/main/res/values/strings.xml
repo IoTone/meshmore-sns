@@ -247,6 +247,10 @@
     <string name="n_forget_failed">COULD NOT FORGET %1$s</string>
     <string name="n_forget_kept">KEPT — YOUR NODE OR A FAVOURITE</string>
     <string name="n_forget_unknown">NOT IN THE RADIO\'S CONTACTS</string>
+    <string name="fu_title">CONTACTS FULL</string>
+    <string name="fu_why">THE RADIO CANNOT HOLD MORE</string>
+    <string name="fu_new">NEW NODES ARE BEING TURNED AWAY</string>
+    <string name="fu_act">PINCH HERE — CLEAR SOME ROOM</string>
     <string name="nf_title">NO POSITION</string>
     <string name="nf_board_nogps">%1$s HAS NO GPS</string>
     <string name="nf_nofix">THE RADIO SENDS NO POSITION</string>

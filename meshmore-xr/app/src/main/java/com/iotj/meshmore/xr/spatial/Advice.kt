@@ -46,7 +46,7 @@ class Advice(
     private val context: Context,
 ) {
 
-    enum class Kind { NONE, NO_RADIO, NO_FIX }
+    enum class Kind { NONE, NO_RADIO, NO_FIX, FULL }
 
     /** Every line of every message, built once, shown by the set. */
     private val sets = linkedMapOf<Kind, List<Entity>>()
@@ -119,6 +119,20 @@ class Advice(
                 ctx.getString(com.iotj.meshmore.xr.R.string.nr_check),
                 ctx.getString(com.iotj.meshmore.xr.R.string.nr_phone),
                 ctx.getString(com.iotj.meshmore.xr.R.string.nr_retry),
+            ),
+        )
+        // THE THIRD WAY AN HONEST APP LOOKS BROKEN. The radio's contact store
+        // is finite; when it is full the radio stops accepting new nodes, so
+        // the one you are standing next to never appears and nothing anywhere
+        // says why. The operator hit this with 350 of 350 held and their own
+        // second radio unable to get in.
+        set(
+            Kind.FULL,
+            listOf(
+                ctx.getString(com.iotj.meshmore.xr.R.string.fu_title),
+                ctx.getString(com.iotj.meshmore.xr.R.string.fu_why),
+                ctx.getString(com.iotj.meshmore.xr.R.string.fu_new),
+                ctx.getString(com.iotj.meshmore.xr.R.string.fu_act),
             ),
         )
         set(

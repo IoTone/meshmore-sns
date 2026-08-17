@@ -1551,6 +1551,15 @@ private fun HorizonScene(link: MeshLink) {
     val adviceKind = remember {
         mutableStateOf(com.iotj.meshmore.xr.spatial.Advice.Kind.NONE)
     }
+    /**
+     * The capacity card is answered ONCE per session.
+     *
+     * It is the only advice whose condition survives being acted on: a store
+     * at capacity is still at capacity a second after the sweep panel opens,
+     * and a card that reappeared every second while the wearer was reading the
+     * very list it sent them to would be an alarm rather than a notice.
+     */
+    val fullDismissed = remember { mutableStateOf(false) }
     val focusRef = remember { mutableStateOf<com.iotj.meshmore.xr.spatial.Focus?>(null) }
     val gazeRef = remember { mutableStateOf<com.iotj.meshmore.xr.spatial.Gaze?>(null) }
     val rosterRef = remember { mutableStateOf<com.iotj.meshmore.xr.spatial.Roster?>(null) }
@@ -2189,7 +2198,14 @@ private fun HorizonScene(link: MeshLink) {
         run {
             val self = link.status.value.selfInfo
             val radioKey = self?.publicKey()?.joinToString("") { "%02x".format(it) }
-            val radioName = self?.name()
+            // THE HARDWARE'S OWN WORD FOR ITSELF, now that DEVICE_QUERY is
+            // wired: 'Unit C6L' is the manufacturer string the radio reports,
+            // and it identifies the BOARD. The node name is a label a human
+            // typed and is only a fallback — the catalogue was built to guess
+            // from it because nothing better was reachable, and now something
+            // is.
+            val radioName = link.deviceInfo?.manufacturer()?.trim()?.ifBlank { null }
+                ?: self?.name()
             if (self != null) {
                 RadioFacts.notePosition(
                     ctx, radioKey,
@@ -4771,9 +4787,19 @@ private fun HorizonScene(link: MeshLink) {
                         // comes first: with no radio there is no position
                         // question to answer.
                         val waiting = unplacedRef.value
+                        // A FULL STORE OUTRANKS A MISSING FIX. Both are true
+                        // at once often enough — a store full of distant nodes
+                        // is a store full of nodes you cannot place — and only
+                        // one of them explains why the radio in the room never
+                        // appeared. Under the radio question, though: with no
+                        // radio there is no store to be full of anything.
+                        val full = st2.maxContacts > 0 &&
+                            st2.contacts >= st2.maxContacts &&
+                            !fullDismissed.value
                         val kind = when {
                             !link.everConnected && !st2.scanning && st2.error != null ->
                                 com.iotj.meshmore.xr.spatial.Advice.Kind.NO_RADIO
+                            full -> com.iotj.meshmore.xr.spatial.Advice.Kind.FULL
                             waiting > 0 ->
                                 com.iotj.meshmore.xr.spatial.Advice.Kind.NO_FIX
                             else -> com.iotj.meshmore.xr.spatial.Advice.Kind.NONE
@@ -4793,7 +4819,16 @@ private fun HorizonScene(link: MeshLink) {
                         if (hunting && adviceLastTry == 0L) adviceLastTry = nowW
                         if (adviceRef.value?.poll() == true) {
                             cue.recognised()
-                            if (kind == com.iotj.meshmore.xr.spatial.Advice.Kind.NO_FIX) {
+                            if (kind == com.iotj.meshmore.xr.spatial.Advice.Kind.FULL) {
+                                // STRAIGHT TO THE SET WORTH FORGETTING, with
+                                // the count in front of the wearer and the
+                                // destroying still one deliberate pinch away.
+                                // Nothing is swept by answering a notice.
+                                query.value = query.value.copy(farKm = Search.FAR_STEPS.first())
+                                searchOpen.value = true
+                                fullDismissed.value = true
+                                Log.i(TAG_UI, "[gc] capacity card opened FIND at ≥${Search.FAR_STEPS.first()} km")
+                            } else if (kind == com.iotj.meshmore.xr.spatial.Advice.Kind.NO_FIX) {
                                 useHeadsetFix()
                             } else {
                                 adviceTries = 0

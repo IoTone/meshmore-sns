@@ -56,6 +56,12 @@ class MeshLink(private val context: Context) {
         val selfInfo: SelfInfo? = null,
         val adverts: Int = 0,
         val contacts: Int = 0,
+        /**
+         * How many the radio can hold, once it has been asked. Zero means
+         * nobody knows yet — and a capacity warning must never be raised from
+         * a number nobody knows.
+         */
+        val maxContacts: Int = 0,
         val messages: Int = 0,
         val lastEvent: String = "idle",
         val error: String? = null,
@@ -841,6 +847,14 @@ class MeshLink(private val context: Context) {
             _status.value = _status.value.copy(error = "createBond refused")
         }
     }
+
+    /** What the radio said it is, once DEVICE_QUERY has been answered. */
+    var deviceInfo: io.iotone.meshcore.model.DeviceInfo? = null
+        private set
+
+    /** How many contacts this radio can hold; 0 until the query is answered. */
+    var maxContacts: Int = 0
+        private set
 
     /** Set before connect to make the connect-time advert a flood. */
     var floodOnConnect: Boolean = false
@@ -1776,6 +1790,26 @@ class MeshLink(private val context: Context) {
 
             override fun onOtherFrame(frame: io.iotone.meshcore.frames.MeshcoreInbound) {
                 when (frame) {
+                    // WHAT THE RADIO IS, AND HOW MUCH IT CAN HOLD.
+                    //
+                    // maxContacts is the number that makes "your contact store
+                    // is full" a fact rather than an inference. Everything else
+                    // here is the board identification the DeviceBook has been
+                    // guessing at from names: manufacturer is the closest thing
+                    // MeshCore has to a model string, and firmware version and
+                    // build date pin down what is actually running.
+                    is io.iotone.meshcore.frames.DeviceInfoFrame -> {
+                        val d = frame.info()
+                        deviceInfo = d
+                        maxContacts = d.maxContacts()
+                        Log.i(
+                            TAG,
+                            "[device] '${d.manufacturer().trim()}' fw ${d.firmwareVersion().trim()} " +
+                                "(${d.firmwareBuildDate().trim()}) — holds ${d.maxContacts()} contacts, " +
+                                "${d.maxGroupChannels()} channels",
+                        )
+                        _status.value = _status.value.copy(maxContacts = d.maxContacts())
+                    }
                     is io.iotone.meshcore.frames.TelemetryResponseFrame -> {
                         // WHICH PEER, by key PREFIX — the reply carries the
                         // first bytes of the public key, not the whole thing.
@@ -1848,6 +1882,9 @@ class MeshLink(private val context: Context) {
                         announceFinds = true
                         Log.i(TAG, "[link] contact sync done — discovery is live")
                         resolveOwnNodes()
+                        // ASKED AFTER THE STORE IS READ, so the answer arrives
+                        // beside the count it explains.
+                        runCatching { session?.deviceQuery(1) }
                     }
                     is io.iotone.meshcore.frames.BatteryStorageFrame -> {
                         val mv = runCatching { frame.battery().batteryMillivolts() }.getOrNull()

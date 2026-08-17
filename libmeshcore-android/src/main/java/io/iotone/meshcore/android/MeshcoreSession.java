@@ -402,6 +402,26 @@ public final class MeshcoreSession {
     }
 
     /**
+     * Asks the device what it is: firmware version and build date, the
+     * manufacturer string, its BLE pin, and — the field this was finally
+     * wired for — {@code maxContacts}, the size of its contact store.
+     *
+     * The reply is a {@link io.iotone.meshcore.frames.DeviceInfoFrame} on
+     * {@link SessionListener#onOtherFrame}. Every part of this has been
+     * decodable since the codec was written and unreachable because nothing
+     * ever sent the query, which meant an app could watch a contact store fill
+     * up and had no way to know how full "full" was.
+     *
+     * No-op when not {@link SessionState#READY}.
+     *
+     * @param appTargetVer the app's protocol target version
+     */
+    public void deviceQuery(int appTargetVer) {
+        if (state.get() != SessionState.READY) return;
+        send(MeshcoreFrameCodec.deviceQuery(appTargetVer));
+    }
+
+    /**
      * Removes a contact from the RADIO'S store, by full 32-byte public key.
      *
      * The codec has been able to build this frame since it was written and

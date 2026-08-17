@@ -245,6 +245,10 @@
     <string name="n_forget_failed">%1$s を削除できません</string>
     <string name="n_forget_kept">自ノードまたはお気に入りのため保持</string>
     <string name="n_forget_unknown">無線機の連絡先にありません</string>
+    <string name="fu_title">連絡先が満杯</string>
+    <string name="fu_why">無線機がこれ以上保持できません</string>
+    <string name="fu_new">新しいノードを取り込めません</string>
+    <string name="fu_act">ピンチで空きを作る</string>
     <string name="nf_title">位置がありません</string>
     <string name="nf_board_nogps">%1$s にGPSがありません</string>
     <string name="nf_nofix">無線機が位置を送りません</string>
