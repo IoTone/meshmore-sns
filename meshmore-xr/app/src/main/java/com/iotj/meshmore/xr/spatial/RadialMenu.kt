@@ -44,7 +44,12 @@ import kotlin.math.sin
 class RadialMenu(
     private val session: Session,
     private val theme: Horizon.Palette,
+    /** Needed to draw a panel; null keeps the old stroke labels (Latin only). */
+    private val context: android.content.Context? = null,
 ) {
+
+    private fun argb(rgb: Int, a: Float): Int =
+        (((a.coerceIn(0f, 1f) * 255).toInt() and 0xFF) shl 24) or (rgb and 0xFFFFFF)
 
     /** One spoke. [label] is what it says; [id] is what the caller switches on. */
     class Item(val id: String, val label: String)
@@ -52,7 +57,8 @@ class RadialMenu(
     private class Spoke(
         val id: String,
         val ring: MeshEntity,
-        val text: MeshEntity,
+        /** Entity, not MeshEntity: a localised label is a PANEL. See [build]. */
+        val text: Entity,
         val proxy: MeshEntity,
         val dx: Float,
         val dy: Float,
@@ -122,10 +128,34 @@ class RadialMenu(
                 session, Prims.build(session, Prims.reticle(R, R * 0.20f)),
                 listOf(Prims.material(session, theme.alt, 0.85f)),
             ).also { it.parent = root; it.setEnabled(false); entities += it }
-            val text = MeshEntity.create(
+            // A PANEL, NOT STROKES. Glyphs is a stroke font with no CJK in
+            // it, and it draws tofu for anything it does not know — so in
+            // Japanese the four node verbs came up as rows of identical boxes.
+            // Reported from a headset as "all node actions are 000 zeros",
+            // which is exactly what four tofu glyphs look like.
+            //
+            // The labels are fixed at build time, which is the one case a
+            // panel handles without argument: created here, during setup, each
+            // holding its final string. See TextRun and the crown's vocabulary
+            // for why that matters.
+            val label = context?.let { ctx ->
+                TextRun.create(
+                    session, ctx, item.label,
+                    // PANEL CAP IS NOT STROKE CAP. Glyphs draws every letter to
+                    // the full cap height; a proportional face fills perhaps
+                    // three-quarters of it, and kana sit smaller still inside
+                    // their em box. Matching the numbers gave labels that were
+                    // legibly Japanese and visibly smaller than the reticles
+                    // they belong to. PANEL_CAP is the same optical size.
+                    com.iotj.meshmore.xr.L10n.cap(CAP) * PANEL_CAP,
+                    argb(theme.text, 0.95f), "menu-${item.id}",
+                )
+            }
+            val text = label?.entity ?: MeshEntity.create(
                 session, Prims.build(session, Glyphs.text(item.label, CAP)),
                 listOf(Prims.material(session, theme.text, 0.95f)),
-            ).also { it.parent = root; it.setEnabled(false); entities += it }
+            )
+            text.also { it.parent = root; it.setEnabled(false); entities += it }
             // GHOST, and bigger. A near-zero-alpha material is still drawn and
             // still writes depth, so the old proxy was a sphere quietly
             // occluding its own reticle; Prims.ghost discards the fragments
@@ -137,7 +167,10 @@ class RadialMenu(
                 session, Prims.build(session, Prims.mote(R * 2.2f, 5, 8)),
                 listOf(Prims.ghost(session)),
             ).also { it.parent = root; it.setEnabled(false); entities += it }
-            val sp = Spoke(item.id, ring, text, proxy, dx, dy, Glyphs.width(item.label, CAP))
+            val sp = Spoke(
+                item.id, ring, text, proxy, dx, dy,
+                label?.widthM ?: Glyphs.width(item.label, CAP),
+            )
             spokes += sp
             runCatching {
                 proxy.addComponent(InteractableComponent.create(session) { ev -> onInput(sp, ev) })
@@ -315,6 +348,9 @@ class RadialMenu(
         const val SPREAD = 0.163f
         /** 1.30°, the same figure the ring labels use. */
         const val CAP = 0.0568f
+
+        /** See the panel branch of [build]: optical match to the stroke cap. */
+        const val PANEL_CAP = 1.3f
         /** Clearance between two outward-offset labels, at nominal distance. */
         const val LABEL_GAP = 0.020f
         const val DEBOUNCE_MS = 350L

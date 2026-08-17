@@ -396,6 +396,15 @@ class Crown(
             draft0?.entity?.setEnabled(false)
             count0?.entity?.setEnabled(false)
         }
+        hideWords()
+    }
+
+    /** Every word in the pool, down. See [hide] and the no-hand path in [tick]. */
+    private fun hideWords() {
+        if (standing.isEmpty() && !anyWordUp) return
+        wordFor.values.forEach { runCatching { it.setEnabled(false) } }
+        standing.clear()
+        anyWordUp = false
     }
 
     /** Say what happened, for a few seconds. */
@@ -452,6 +461,9 @@ class Crown(
     /** Words placed this frame; everything else in [wordFor] is hidden. */
     private val standing = mutableSetOf<String>()
 
+    /** Whether anything from the pool is up, so hiding it all is cheap to skip. */
+    private var anyWordUp = false
+
     /** The labels currently on screen, one per slot. Rebuilt per screen. */
     /** One panel per word in the [vocabulary], built once. */
     private val wordFor = linkedMapOf<String, Entity>()
@@ -471,13 +483,22 @@ class Crown(
      */
     fun tick(at: Vector3?, head: Vector3?, yawRad: Float, nowMs: Long) {
         if (!open || at == null || head == null) {
-            if (!open) return
+            if (!open) { hideWords(); return }
             items.forEach {
                 runCatching {
                     it.run.entity.setEnabled(false); it.plate.setEnabled(false)
                     it.lit.setEnabled(false); it.proxy.setEnabled(false)
                 }
             }
+            // AND THE WORDS. The plates are the crown's furniture and the words
+            // are a separate pool now — one panel per thing it can say, built
+            // at startup because panels cannot be written to later — so every
+            // path that puts the crown away has to put both down. This one is
+            // the hand going away: the reel's card disappears with it, `at`
+            // goes null, and until this line the labels stayed hanging in the
+            // room with nothing under them. Photographed on the glasses:
+            // REPLY / READ ALOUD / VOICE: OFF / THREAD / CLOSE, floating.
+            hideWords()
             return
         }
         standing.clear()
@@ -521,6 +542,7 @@ class Crown(
                     w.setEnabled(true)
                     w.setPose(Pose(p, r), Space.ACTIVITY)
                     standing += text
+                    anyWordUp = true
                 }
                 // The lit plate sits a hair in front of the dim one so the two
                 // can never z-fight over the same millimetre.

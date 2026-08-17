@@ -1032,6 +1032,96 @@ class MeshLink(private val context: Context) {
         }.getOrElse { Sent.Refused("SEND FAILED") }
     }
 
+    /**
+     * WHAT A GARBAGE COLLECTION WOULD TAKE, and why each one is safe to take.
+     *
+     * A companion radio holds a fixed number of contacts. A mesh that has been
+     * running for months fills that store with nodes heard once, from a
+     * hilltop, at 300 km — and when it is full the radio stops accepting new
+     * ones. The node that matters, the one in the same room, cannot be added.
+     * The operator is then locked out of their own hardware by a list of
+     * strangers, which is exactly what happened here on 2026-08-16.
+     *
+     * FOUR THINGS ARE NEVER COLLECTED, and the order of these checks is the
+     * safety argument:
+     *  1. Anything on the allow-list. These are the operator's OWN radios —
+     *     the only nodes this app may transmit to — and a sweep that removed
+     *     one would delete the thing the sweep was run to make room for.
+     *  2. Favourites. A star is the wearer saying "this one matters"; nothing
+     *     automatic gets to overrule that.
+     *  3. Anything without a usable position. No position is not evidence of
+     *     distance — a GPS-less board reports 0/0 forever — and treating
+     *     unknown as far would collect the quiet local nodes first.
+     *  4. Anything nearer than [km]. That is the whole criterion.
+     *
+     * Returns the candidates rather than acting, so a caller can count them,
+     * name them, and ask before anything is destroyed.
+     */
+    fun farContacts(
+        origin: MeshNodes.Here,
+        km: Double,
+        isFavourite: (String) -> Boolean = { false },
+    ): List<MeshNodes.Peer> {
+        if (!origin.known) return emptyList()
+        val oLat = origin.lat ?: return emptyList()
+        val oLon = origin.lon ?: return emptyList()
+        return peers.values.filter { p ->
+            val lat = p.lat
+            val lon = p.lon
+            when {
+                isAllowed(p) -> false
+                isFavourite(p.fullKey ?: p.key) -> false
+                lat == null || lon == null -> false
+                kotlin.math.abs(lat) < 1e-7 && kotlin.math.abs(lon) < 1e-7 -> false
+                else -> MeshNodes.haversineKm(oLat, oLon, lat, lon) >= km
+            }
+        }.sortedByDescending { p ->
+            MeshNodes.haversineKm(oLat, oLon, p.lat ?: 0.0, p.lon ?: 0.0)
+        }
+    }
+
+    /**
+     * Forget one contact, on the radio.
+     *
+     * NOT A BLOCK. The radio drops it from its store and frees the slot; if
+     * that node adverts again it is learned again. Every caller must say so —
+     * "forget" rather than "delete" — because a wearer who thinks this stops
+     * someone contacting them is wrong in a way that matters.
+     */
+    fun forgetContact(peer: MeshNodes.Peer): Boolean {
+        val s = session
+        if (s == null || _status.value.state != SessionState.READY) return false
+        if (isAllowed(peer)) {
+            // The one refusal that is not about safety of the air but about
+            // the operator's own kit. Loud, because a silent no here would
+            // look like a bug in the sweep.
+            Log.w(TAG, "[gc] refused to forget own node '${peer.name}' (${peer.key})")
+            return false
+        }
+        val full = unhex(peer.fullKey ?: peer.key) ?: return false
+        if (full.size < 32) {
+            // REMOVE_CONTACT is keyed by the FULL 32 bytes. A prefix would
+            // either miss or, far worse, match something else.
+            Log.w(TAG, "[gc] no full key for '${peer.name}' — not forgetting on a prefix")
+            return false
+        }
+        return runCatching {
+            s.removeContact(full)
+            peers.remove(peer.key)
+            diag("--DROP ${peer.name.ifBlank { peer.key.takeLast(4) }}")
+            Log.i(TAG, "[gc] forgot '${peer.name}' key=${peer.key}")
+            _mesh.value = peers.values.toList()
+            true
+        }.getOrElse {
+            Log.w(TAG, "[gc] remove failed for ${peer.key}: $it")
+            false
+        }
+    }
+
+    /** Forget many. Returns how many the radio was actually told to drop. */
+    fun forgetContacts(list: List<MeshNodes.Peer>): Int =
+        list.count { forgetContact(it) }
+
     fun probePaths(text: String = "meshmore-xr path probe") {
         val s = session
         if (s == null || _status.value.state != SessionState.READY) {

@@ -73,7 +73,11 @@ class Focus(
         val root = session.scene.activitySpace
         name = run(root, WIDEST_NAME, NAME_CAP, theme.text, "focus-name")
         range = run(root, WIDEST_RANGE, READ_CAP, theme.accent, "focus-range")
-        path = run(root, WIDEST_PATH, READ_CAP, theme.alt, "focus-path")
+        path = run(
+            root,
+            com.iotj.meshmore.xr.L10n.tpl(WIDEST_PATH, WIDEST_PATH_JA),
+            READ_CAP, theme.alt, "focus-path",
+        )
         Log.i(TAG, "[focus] card built")
     }
 
@@ -137,13 +141,20 @@ class Focus(
      * is not "255 hops" and must not print as one.
      */
     private fun pathOf(n: Horizon.Node): String {
+        // TRANSLATED, because this card is PANELS and panels can carry kanji.
+        // The status band next to it cannot and stays Latin — that is the line
+        // between what this app can localise and what it cannot, and it runs
+        // exactly along the stroke font. See Glyphs.
         val hops = when {
-            n.hops <= 0 || n.hops >= 250 -> "PATH UNKNOWN"
-            n.hops == 1 -> "DIRECT"
-            else -> "%d HOPS".format(n.hops)
+            n.hops <= 0 || n.hops >= 250 -> context.getString(com.iotj.meshmore.xr.R.string.p_unknown)
+            n.hops == 1 -> context.getString(com.iotj.meshmore.xr.R.string.p_direct)
+            else -> context.getString(com.iotj.meshmore.xr.R.string.p_hops, n.hops)
         }
-        val fresh = if (n.age < 0.34f) "LIVE" else "STALE"
-        val fix = if (n.located) "" else "  EST"
+        val fresh = context.getString(
+            if (n.age < 0.34f) com.iotj.meshmore.xr.R.string.p_live
+            else com.iotj.meshmore.xr.R.string.p_stale,
+        )
+        val fix = if (n.located) "" else "  " + context.getString(com.iotj.meshmore.xr.R.string.p_est)
         return "$hops  $fresh$fix"
     }
 
@@ -277,5 +288,12 @@ class Focus(
         const val WIDEST_NAME = "MMMMMMMMMMMMMMMMMMMMMM"
         const val WIDEST_RANGE = "9999KM  NNW 359"
         const val WIDEST_PATH = "PATH UNKNOWN  STALE  EST"
+
+        /**
+         * The same row at the kanji floor. A JA panel sized from the Latin
+         * template holds the promoted glyphs badly — see L10n.tpl, and Rows.kt
+         * for the same pairing on every bay.
+         */
+        val WIDEST_PATH_JA = "設".repeat(12)
     }
 }

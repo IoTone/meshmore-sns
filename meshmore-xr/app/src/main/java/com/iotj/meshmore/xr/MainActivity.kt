@@ -811,6 +811,39 @@ private fun aboutRows(ctx: android.content.Context, link: MeshLink): List<com.io
  * default and a two-state control cannot reach it: DENY, then CONTACTS (only
  * people already in the radio's contact list, per-contact flags), then ANYONE.
  */
+/**
+ * THE LANGUAGES, AS A LIST YOU CHOOSE FROM.
+ *
+ * This began as a toggle, which was wrong twice over: a wearer cannot see what
+ * they are toggling BETWEEN — with two languages a switch is guessable, with
+ * three it is a lottery — and a language change rebuilds the whole scene, which
+ * is far too abrupt to hang off a control that can be brushed by accident.
+ *
+ * SYSTEM DEFAULT is a first-class choice and not an absence. It is what an
+ * unmodified install is in, it is what a Japanese wearer's headset already
+ * gives them, and without it a tester who switched to English for an afternoon
+ * has no way back to "whatever the device says" — only to a language they have
+ * now pinned by hand.
+ *
+ * Endonyms, deliberately: 日本語 says what it is to the person who needs it,
+ * where "JAPANESE" is only useful to somebody who already reads English.
+ */
+private fun langRows(
+    ctx: android.content.Context,
+): List<com.iotj.meshmore.xr.spatial.Stack.Row> {
+    val current = runCatching {
+        ctx.getSystemService(android.app.LocaleManager::class.java)
+            ?.applicationLocales?.takeIf { !it.isEmpty }?.get(0)?.language
+    }.getOrNull()
+    fun row(id: String, label: String, on: Boolean) =
+        com.iotj.meshmore.xr.spatial.Stack.Row(id = id, label = label, lit = on)
+    return listOf(
+        row("LANG_sys", ctx.getString(R.string.lang_system), current == null),
+        row("LANG_en", "ENGLISH", current == "en"),
+        row("LANG_ja", "日本語", current == "ja"),
+    )
+}
+
 private fun telemetryRows(
     ctx: android.content.Context,
     link: MeshLink,
@@ -1119,6 +1152,31 @@ private fun meshMono(ctx: android.content.Context): FontFamily =
 private const val NODE_MENU_SIDE = 0.55f
 
 /** The no-radio card's own patience: three quiet rescans, half a minute apart. */
+/**
+ * How long the notice stands before the scene is rebuilt in the new language.
+ * Long enough to read one short sentence; short enough that nobody wonders
+ * whether the pinch registered.
+ */
+/**
+ * The distance past which a contact is a candidate for collection.
+ *
+ * 100 km is not a guess about radio range — LoRa does far more than that from
+ * a hilltop — it is a guess about USEFULNESS: a node that far away is not one
+ * you are about to walk over to, and if it adverts again it comes straight
+ * back. The number is deliberately generous, because the cost of collecting
+ * too little is another sweep and the cost of collecting too much is a contact
+ * the operator wanted.
+ */
+private const val GC_FAR_KM = 100.0
+
+/** How many contacts a sweep would take right now, for the row's own label. */
+private fun gcCount(
+    link: MeshLink,
+    here: MeshNodes.Here,
+    isFavourite: (String) -> Boolean,
+): Int = link.farContacts(here, GC_FAR_KM, isFavourite).size
+
+private const val LANG_SETTLE_MS = 1_200L
 private const val NO_RADIO_AUTO_TRIES = 3
 private const val NO_RADIO_RETRY_MS = 30_000L
 
@@ -1163,6 +1221,8 @@ private fun appRows(
     ctx: android.content.Context,
     link: MeshLink,
     armedId: String?,
+    /** How many contacts a sweep would forget right now. */
+    gcCount: Int = 0,
 ): List<com.iotj.meshmore.xr.spatial.Stack.Row> {
     fun row(id: String, name: String, on: Boolean, onWord: String = "ON", offWord: String = "OFF") =
         com.iotj.meshmore.xr.spatial.Stack.Row(
@@ -1211,6 +1271,19 @@ private fun appRows(
             id = "TELEM", label = ctx.getString(R.string.r_telem), lit = false,
         ),
         row("CHANSEND", ctx.getString(R.string.r_chansend), Settings.channelSend(ctx), ctx.getString(R.string.w_allowed), "OFF"),
+        // GARBAGE COLLECTION, because a full contact store locks you out of
+        // your own radio. See MeshLink.farContacts for what it will never
+        // take. The count is in the label: a destructive control that does not
+        // say how much it destroys is asking for consent it has not earned.
+        com.iotj.meshmore.xr.spatial.Stack.Row(
+            id = "GC",
+            label = com.iotj.meshmore.xr.spatial.settingLabel(
+                ctx.getString(R.string.r_gc, GC_FAR_KM.toInt(), gcCount),
+                on = false, armed = armedId == "GC", offWord = "",
+                armedWord = ctx.getString(R.string.w_confirm),
+            ).trimEnd(),
+            lit = false,
+        ),
         com.iotj.meshmore.xr.spatial.Stack.Row(
             id = "FORGET",
             label = com.iotj.meshmore.xr.spatial.settingLabel(
@@ -2178,7 +2251,7 @@ private fun HorizonScene(link: MeshLink) {
         // menu, focus, notice, hands, help — a PHASE, so its ~dozen suspend .build() calls spill
         // this small closure instead of the whole scene. See the JIT note.
         suspend fun buildInput() {
-        val menu = RadialMenu(session, palette)
+        val menu = RadialMenu(session, palette, ctx)
         menu.build(listOf(
             RadialMenu.Item("magnify", "MAGNIFY"),
             RadialMenu.Item("bearing", "BEARING"),
@@ -2186,7 +2259,7 @@ private fun HorizonScene(link: MeshLink) {
             RadialMenu.Item("dismiss", "CLOSE"),
         ))
         menuRef.value = menu
-        val nodeMenu = RadialMenu(session, palette)
+        val nodeMenu = RadialMenu(session, palette, ctx)
         nodeMenu.build(listOf(
             RadialMenu.Item("fav", ctx.getString(R.string.na_fav)),
             RadialMenu.Item("msg", ctx.getString(R.string.na_msg)),
@@ -3208,6 +3281,10 @@ private fun HorizonScene(link: MeshLink) {
                 }
                 // THE APP BAY. Two of its rows are GUARDED: the first pick
             }
+            fun appGcCount(): Int = gcCount(
+                link,
+                hereSource.resolve(link.here.value, MainActivity.homeOverride),
+            ) { tagsRef.isFavourite(it) }
             suspend fun drainAppBay(nowMs: Long) {
                 // arms and re-labels, the second within ARM_MS commits. One
                 // widens what the radio transmits and the other erases history
@@ -3220,7 +3297,10 @@ private fun HorizonScene(link: MeshLink) {
                 armed.value?.let { (_, at) ->
                     if (nowMs - at > ARM_MS) {
                         armed.value = null
-                        appRef.value?.update(appRows(ctx, link, null), "LIT = ON    B TO CLOSE")
+                        appRef.value?.update(
+                            appRows(ctx, link, null, appGcCount()),
+                            "LIT = ON    B TO CLOSE",
+                        )
                     }
                 }
                 while (true) {
@@ -3285,6 +3365,41 @@ private fun HorizonScene(link: MeshLink) {
                         }
                         appRef.value?.update(telemetryRows(ctx, link), ctx.getString(R.string.f_telem))
                         cue.recognised()
+                        continue
+                    }
+                    // A LANGUAGE IS PICKED, THEN ANNOUNCED, THEN APPLIED.
+                    //
+                    // setApplicationLocales recreates the Activity the moment
+                    // it is called, so calling it inline meant the scene tore
+                    // down under the wearer's hand with no warning — "abrupt
+                    // and jarring", and they were right. The notice goes up
+                    // first and the switch waits a beat behind it, so the last
+                    // thing seen before the rebuild is a sentence explaining
+                    // the rebuild.
+                    if (bayMode.value == "LANG") {
+                        val tag = when (id) {
+                            "LANG_en" -> "en"
+                            "LANG_ja" -> "ja"
+                            else -> null
+                        }
+                        Log.i(TAG_UI, "[l10n] picked ${tag ?: "system default"}")
+                        noticeRef.value?.say(ctx.getString(R.string.n_lang_switching))
+                        cue.recognised()
+                        launch {
+                            kotlinx.coroutines.delay(LANG_SETTLE_MS)
+                            runCatching {
+                                ctx.getSystemService(android.app.LocaleManager::class.java)
+                                    ?.applicationLocales =
+                                    if (tag == null) {
+                                        android.os.LocaleList.getEmptyLocaleList()
+                                    } else {
+                                        android.os.LocaleList.forLanguageTags(tag)
+                                    }
+                            }.onFailure {
+                                Log.w(TAG_UI, "[l10n] locale switch refused: $it")
+                                noticeRef.value?.say(ctx.getString(R.string.n_lang_failed))
+                            }
+                        }
                         continue
                     }
                     if (bayMode.value == "RADIO") {
@@ -3358,20 +3473,14 @@ private fun HorizonScene(link: MeshLink) {
                         // building the scene again. The theme, the anchor and
                         // the radio link all survive it.
                         "LANG" -> {
-                            val toJa = !L10n.ja
-                            val tag = if (toJa) "ja" else "en"
-                            Log.i(TAG_UI, "[l10n] switching app locale -> $tag")
-                            noticeRef.value?.say(
-                                ctx.getString(if (toJa) R.string.n_lang_ja else R.string.n_lang_en),
+                            bayMode.value = "LANG"
+                            appRef.value?.show(
+                                langRows(ctx),
+                                title = ctx.getString(R.string.t_lang),
+                                footer = ctx.getString(R.string.f_lang),
                             )
-                            runCatching {
-                                ctx.getSystemService(android.app.LocaleManager::class.java)
-                                    ?.applicationLocales =
-                                    android.os.LocaleList.forLanguageTags(tag)
-                            }.onFailure {
-                                Log.w(TAG_UI, "[l10n] locale switch refused: $it")
-                                noticeRef.value?.say(ctx.getString(R.string.n_lang_failed))
-                            }
+                            cue.opened()
+                            continue
                         }
                         // THE ONE THAT WIDENS WHAT THE RADIO SAYS. MeshLink
                         // stays the single gate; this only sets the flag it
@@ -3384,13 +3493,66 @@ private fun HorizonScene(link: MeshLink) {
                                 if (on) "CHANNEL SEND ALLOWED" else "CHANNEL SEND OFF",
                             )
                         }
+                        // TWO PINCHES, AND THE FIRST ONE COUNTS OUT LOUD.
+                        //
+                        // The first pinch names the number it would forget and
+                        // arms; the second, within ARM_MS, sends the removals.
+                        // A wearer who pinched by accident sees a count and
+                        // does nothing, which is the whole point of arming a
+                        // control whose effect is on the RADIO and cannot be
+                        // undone from the glasses.
+                        "GC" -> {
+                            val here = hereSource.resolve(link.here.value, MainActivity.homeOverride)
+                            val doomed = link.farContacts(here, GC_FAR_KM) {
+                                tagsRef.isFavourite(it)
+                            }
+                            when {
+                                !here.known -> {
+                                    // Distance is measured FROM somewhere. With
+                                    // no fix every contact is equally far and
+                                    // equally near, and a sweep would be a coin
+                                    // toss with someone's contact list.
+                                    noticeRef.value?.say(ctx.getString(R.string.n_gc_nofix))
+                                    armed.value = null
+                                    cue.denied()
+                                }
+                                doomed.isEmpty() -> {
+                                    noticeRef.value?.say(
+                                        ctx.getString(R.string.n_gc_none, GC_FAR_KM.toInt()),
+                                    )
+                                    armed.value = null
+                                    cue.closed()
+                                }
+                                armed.value?.first != "GC" -> {
+                                    armed.value = "GC" to nowMs
+                                    noticeRef.value?.say(
+                                        ctx.getString(R.string.r_gc, GC_FAR_KM.toInt(), doomed.size),
+                                    )
+                                    Log.i(TAG_UI, "[gc] armed — ${doomed.size} over $GC_FAR_KM km")
+                                    cue.opened()
+                                }
+                                else -> {
+                                    val n = link.forgetContacts(doomed)
+                                    armed.value = null
+                                    noticeRef.value?.say(ctx.getString(R.string.n_gc_done, n))
+                                    Log.i(TAG_UI, "[gc] swept $n of ${doomed.size}")
+                                    hereEpoch.value += 1
+                                }
+                            }
+                        }
                         "FORGET" -> {
                             val n = link.msgs.value.size
                             link.forgetMessages()
                             noticeRef.value?.say(ctx.getString(R.string.n_erased, n))
                         }
                     }
-                    appRef.value?.update(appRows(ctx, link, null), "LIT = ON    B TO CLOSE")
+                    // ARMED SURVIVES THE REFRESH. Passing null here rebuilt the
+                    // row unarmed the instant it was armed, so the confirm the
+                    // sweep asks for could never be given.
+                    appRef.value?.update(
+                        appRows(ctx, link, armed.value?.first, appGcCount()),
+                        "LIT = ON    B TO CLOSE",
+                    )
                     cue.recognised()
                 }
                 // THE THEME PICKER. A pick retints the whole scene in place —
@@ -3602,7 +3764,7 @@ private fun HorizonScene(link: MeshLink) {
                             aboutOpen.value = false
                             bayMode.value = "APP"
                             appRef.value?.show(
-                                appRows(ctx, link, armed.value?.first),
+                                appRows(ctx, link, armed.value?.first, appGcCount()),
                                 title = ctx.getString(R.string.t_app, link.status.value.state.name),
                                 footer = ctx.getString(R.string.f_app),
                             )

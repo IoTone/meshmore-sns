@@ -402,6 +402,30 @@ public final class MeshcoreSession {
     }
 
     /**
+     * Removes a contact from the RADIO'S store, by full 32-byte public key.
+     *
+     * The codec has been able to build this frame since it was written and
+     * nothing could reach it: a companion radio holds a fixed number of
+     * contacts, and a mesh that has been running for months fills that store
+     * with nodes heard once from a hilltop. When it is full the radio stops
+     * taking new ones — so the node that matters, the one in the same room,
+     * cannot be added, and the operator is locked out of their own hardware by
+     * a list of strangers. Reported exactly that way, 2026-08-16.
+     *
+     * NOT A BLOCK, and callers must not present it as one. The contact is
+     * forgotten; if that node adverts again it will be learned again, which is
+     * usually what makes this safe to do in bulk.
+     *
+     * No-op when not {@link SessionState#READY}.
+     *
+     * @param publicKey the contact's full 32-byte public key
+     */
+    public void removeContact(@NonNull byte[] publicKey) {
+        if (state.get() != SessionState.READY) return;
+        send(MeshcoreFrameCodec.removeContact(publicKey));
+    }
+
+    /**
      * Closes the session and disconnects the transport.
      */
     public void close() {
