@@ -71,7 +71,6 @@ import com.iotj.meshmore.xr.spatial.Dock
 import com.iotj.meshmore.xr.spatial.Glyphs
 import com.iotj.meshmore.xr.spatial.Hands
 import com.iotj.meshmore.xr.spatial.HelpCard
-import com.iotj.meshmore.xr.spatial.HereMark
 import com.iotj.meshmore.xr.spatial.Horizon
 import com.iotj.meshmore.xr.spatial.Lens
 import com.iotj.meshmore.xr.spatial.RadialMenu
@@ -207,6 +206,16 @@ class MainActivity : ComponentActivity() {
         var queryOverride: String? = null
         var farOverride: Double? = null
         var staleOverride: Int? = null
+        /**
+         * --es board "M5 C6L" : claim the attached radio is a board we believe
+         * has no GNSS, without owning one.
+         *
+         * The hint this drives is the answer to "why is nothing on the ring",
+         * and the only honest way to see it is with a radio that really cannot
+         * report a position. Testing it by carrying the right board to the
+         * right place is not a test, it is a coincidence.
+         */
+        var boardOverride: String? = null
         /**
          * --ez menu true : open the cluster menu on the first cluster found.
          *
@@ -401,6 +410,7 @@ class MainActivity : ComponentActivity() {
         // already set. The chips are a hand's work and no emulator has one.
         farOverride = intent?.getStringExtra("far")?.toDoubleOrNull()
         staleOverride = intent?.getStringExtra("stale")?.toIntOrNull()
+        boardOverride = intent?.getStringExtra("board")?.takeIf { it.isNotBlank() }
         showMenu = intent?.getBooleanExtra("menu", false) ?: false
         showFocus = intent?.getBooleanExtra("focus", false) ?: false
         probePaths = intent?.getBooleanExtra("probe", false) ?: false
@@ -424,7 +434,9 @@ class MainActivity : ComponentActivity() {
         Log.i(TAG, "[boot] radio rack = $showRadio")
         simulate = intent?.getBooleanExtra("sim", false) ?: false
         Log.i(TAG, "[boot] simulate = $simulate")
-        homeOverride = intent?.getStringExtra("home")?.split(",")?.let { parts ->
+        // `--es home none` : simulate, and stand nowhere. See below.
+        val homeRaw = intent?.getStringExtra("home")
+        homeOverride = homeRaw?.split(",")?.let { parts ->
             val la = parts.getOrNull(0)?.trim()?.toDoubleOrNull()
             val lo = parts.getOrNull(1)?.trim()?.toDoubleOrNull()
             if (la != null && lo != null) MeshNodes.Here(la, lo) else null
@@ -433,7 +445,11 @@ class MainActivity : ComponentActivity() {
         // to measure a bearing from and all 350 fake peers are unplaceable —
         // which is a real failure mode, carefully signalled elsewhere, and not
         // the one anybody runs a simulation to look at.
-        if (simulate && homeOverride == null) {
+        // EXCEPT WHEN THAT IS THE POINT. `--es home none` asks for the failure
+        // itself: a mesh with no origin, which is what a wearer holding a
+        // board with no GNSS actually has. It is the only way to see the card
+        // and the hint that names their board without owning one.
+        if (simulate && homeOverride == null && !homeRaw.equals("none", ignoreCase = true)) {
             homeOverride = MeshNodes.Here(SIM_HOME.lat, SIM_HOME.lon)
             Log.i(TAG, "[boot] simulated mesh — standing at $homeOverride")
         }
@@ -1625,7 +1641,6 @@ private fun HorizonScene(link: MeshLink) {
     val nodesRef = remember { mutableStateOf<List<Horizon.Node>>(emptyList()) }
     val bootRef = remember { mutableStateOf<Boot?>(null) }
     val hudRef = remember { mutableStateOf<Hud?>(null) }
-    val hereMarkRef = remember { mutableStateOf<HereMark?>(null) }
     val rackRef = remember { mutableStateOf<Rack?>(null) }
     val dockRef = remember { mutableStateOf<Dock?>(null) }
     val handsRef = remember { mutableStateOf<Hands?>(null) }
@@ -1643,6 +1658,8 @@ private fun HorizonScene(link: MeshLink) {
     val unplacedRef = remember { mutableStateOf(0) }
     /** The board's name, only when we believe that board has no GNSS. */
     val boardRef = remember { mutableStateOf<String?>(null) }
+    /** The last board named to the wearer, so the band says it once per state. */
+    val boardSaid = remember { mutableStateOf<String?>(null) }
     val deviceNoteRef = remember { mutableStateOf("") }
     /** What the card should be saying. Written by the frame loop, built by an effect. */
     val adviceKind = remember {
@@ -2181,6 +2198,27 @@ private fun HorizonScene(link: MeshLink) {
     // steady state costs nothing and a change costs four panels once.
     LaunchedEffect(adviceRef.value, adviceKind.value, boardRef.value) {
         adviceRef.value?.say(adviceKind.value, boardRef.value)
+        // AND SAY WHICH BOARD, WHERE A BOARD CAN BE SAID.
+        //
+        // The card cannot name it — every line on it is a panel built around
+        // its final string at startup, which is what makes the card certain to
+        // appear and also what stops it composing anything. So the specific
+        // half of the answer goes to the notice band, which exists to carry
+        // runtime text: the card says a position is missing, the band says the
+        // radio in question has no GNSS to give one.
+        //
+        // Only alongside NO_FIX. "M5 C6L HAS NO GPS" is true whenever it is
+        // true, and announcing it to somebody who is not currently missing a
+        // position is trivia.
+        val board = boardRef.value
+        if (adviceKind.value == com.iotj.meshmore.xr.spatial.Advice.Kind.NO_FIX &&
+            board != null && board != boardSaid.value) {
+            boardSaid.value = board
+            noticeRef.value?.say(ctx.getString(R.string.nf_board_nogps, board))
+        }
+        if (adviceKind.value != com.iotj.meshmore.xr.spatial.Advice.Kind.NO_FIX) {
+            boardSaid.value = null
+        }
     }
 
     // WHERE YOU ARE NOW, not where you launched.
@@ -2478,7 +2516,9 @@ private fun HorizonScene(link: MeshLink) {
             // the radio sends no position, which is the observation itself and
             // cannot be wrong.
             boardRef.value =
-                if (DeviceBook.gpsOf(ctx, radioKey, radioName) == false) {
+                if (MainActivity.boardOverride != null) {
+                    MainActivity.boardOverride
+                } else if (DeviceBook.gpsOf(ctx, radioKey, radioName) == false) {
                     DeviceBook.nameOf(ctx, radioKey, radioName)
                 } else {
                     null
@@ -6024,19 +6064,6 @@ internal fun positionMark(
     return using + if (sharing && using.isNotEmpty()) " SHARED" else ""
 }
 
-private fun hereCaption(
-    ctx: android.content.Context,
-    src: HereSource,
-    resolved: MeshNodes.Here,
-): String = when {
-    !resolved.known && !Settings.useDeviceLocation(ctx) -> ctx.getString(R.string.here_no_fix_pinch)
-    !resolved.known -> ctx.getString(R.string.here_no_fix)
-    // The armed-but-unused note only earns its place when the fallback is NOT
-    // the source. "HEADSET (HEADSET ON)" says one thing twice.
-    src.source == "headset" -> ctx.getString(R.string.here_headset)
-    else -> ctx.getString(R.string.here_src, src.source.uppercase()) +
-        if (Settings.useDeviceLocation(ctx)) ctx.getString(R.string.here_armed) else ""
-}
 
 /**
  * The radio transcript. Deliberately an ordinary widget: header, scrolling

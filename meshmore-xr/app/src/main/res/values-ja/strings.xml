@@ -114,11 +114,6 @@
     <string name="find_more">他%1$d件 — 絞り込みを</string>
 
     <!-- HERE caption -->
-    <string name="here_no_fix_pinch">"HERE  位置なし - GPSを"</string>
-    <string name="here_no_fix">"HERE  位置なし"</string>
-    <string name="here_headset">"HERE  本体GPS"</string>
-    <string name="here_src">"HERE  %1$s"</string>
-    <string name="here_armed">"  - 本体待機"</string>
 
     <!-- ABOUT safety -->
     <string name="s_driving">運転中は使用しない</string>
@@ -202,7 +197,6 @@
     <string name="n_starred">"★ %1$s"</string>
     <string name="n_unstarred">"☆ %1$s"</string>
     <string name="n_send_locked">自ノード以外へ送信不可</string>
-    <string name="n_no_thread_yet">%1$s との会話なし</string>
     <string name="n_asked_telem">%1$s に照会</string>
     <string name="n_table_reset">卓上リセット — 再探索</string>
     <string name="n_region_mismatch">無線機は%1$s設定 — 現在地は%2$s</string>
@@ -210,8 +204,6 @@
     <string name="link_pair_code">無線機の画面のコードを入力</string>
     <string name="n_dm_to">%1$s へ</string>
     <string name="r_lang">言語</string>
-    <string name="n_lang_ja">日本語に切り替えます</string>
-    <string name="n_lang_en">英語に切り替えます</string>
     <string name="n_lang_failed">言語を切り替えられません</string>
     <string name="w_more">つづき</string>
     <string name="t_lang">言語</string>
@@ -245,10 +237,6 @@
     <string name="n_forget_failed">%1$s を削除できません</string>
     <string name="n_forget_kept">自ノードまたはお気に入りのため保持</string>
     <string name="n_forget_unknown">無線機の連絡先にありません</string>
-    <string name="fu_title">連絡先が満杯</string>
-    <string name="fu_why">無線機がこれ以上保持できません</string>
-    <string name="fu_new">新しいノードを取り込めません</string>
-    <string name="fu_act">ピンチで空きを作る</string>
     <string name="al_full">連絡先が満杯 — %1$d/%2$d。新規ノードを取り込めません</string>
     <string name="r_alerts">アラート表示</string>
     <string name="al_title">アラート  (%1$d)</string>

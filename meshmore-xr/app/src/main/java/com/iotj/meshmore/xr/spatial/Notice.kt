@@ -3,6 +3,7 @@
 package com.iotj.meshmore.xr.spatial
 
 import android.content.Context
+import android.util.Log
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
@@ -50,10 +51,28 @@ class Notice(
         }
     }
 
-    /** Show [text] for a few seconds. */
+    /**
+     * Show [text] for a few seconds.
+     *
+     * LOGGED, because a band is the one surface whose whole job is to have
+     * said something and then stop existing. Nothing else records it, so an
+     * unanswered "did it tell me?" had no way to be settled — including for
+     * the notices raised on glass, where nobody can read a screenshot back.
+     *
+     * The clip is logged separately and as a warning: a sentence trimmed to
+     * the template's width is not a shorter sentence, it is a different one,
+     * and the Japanese template is a different length again.
+     */
     fun say(text: String) {
         val r = run ?: return
-        r.setText(text.take(com.iotj.meshmore.xr.L10n.tpl(WIDEST, WIDEST_JA).length))
+        val cap = com.iotj.meshmore.xr.L10n.tpl(WIDEST, WIDEST_JA).length
+        val shown = text.take(cap)
+        if (shown.length < text.length) {
+            Log.w(TAG, "[notice] CLIPPED at $cap of ${text.length}: '$text'")
+        } else {
+            Log.i(TAG, "[notice] $shown")
+        }
+        r.setText(shown)
         until = android.os.SystemClock.uptimeMillis() + HOLD_MS
         runCatching { r.entity.setEnabled(true) }
     }
@@ -94,6 +113,7 @@ class Notice(
 
     private companion object {
         /** Sized once for the longest answer either spoke produces. */
+        private const val TAG = "MeshmoreXR"
         const val WIDEST = "MMMMMMMMMMMMMM 99.9KM   MMMMMMMMMMMMMM 99.9KM"
         /** Widest JA notice: a 12-char tag plus the made-channel phrase. */
         const val WIDEST_JA = "MMMMMMMMMMMM 作成 — 口頭で共有"

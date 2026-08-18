@@ -99,7 +99,7 @@
          tester can only reach Japanese by changing the whole headset's
          language. See res/xml/locales_config.xml. -->
     <application
-        android:label="MeshmoreXR"
+        android:label="@string/app_name"
         android:icon="@mipmap/ic_launcher"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"

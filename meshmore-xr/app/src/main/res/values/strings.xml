@@ -115,11 +115,6 @@
     <string name="find_more">+%1$d MORE — NARROW IT</string>
 
     <!-- HERE caption -->
-    <string name="here_no_fix_pinch">"HERE  NO FIX - PINCH FOR GPS"</string>
-    <string name="here_no_fix">"HERE  NO FIX"</string>
-    <string name="here_headset">"HERE  HEADSET GPS"</string>
-    <string name="here_src">"HERE  %1$s"</string>
-    <string name="here_armed">"  - HEADSET ARMED"</string>
 
     <!-- ABOUT safety lines (the reason the surface exists) -->
     <string name="s_driving">DO NOT USE WHILE DRIVING</string>
@@ -204,7 +199,6 @@
     <string name="n_starred">"★ %1$s"</string>
     <string name="n_unstarred">"☆ %1$s"</string>
     <string name="n_send_locked">NOT YOUR NODE — SEND LOCKED</string>
-    <string name="n_no_thread_yet">NO THREAD WITH %1$s YET</string>
     <string name="n_asked_telem">ASKED %1$s</string>
     <string name="n_table_reset">TABLE RESET — SEARCHING</string>
     <string name="n_region_mismatch">RADIO IS %1$s — YOU ARE IN %2$s</string>
@@ -212,8 +206,6 @@
     <string name="link_pair_code">TYPE THE CODE FROM THE RADIO\'S SCREEN</string>
     <string name="n_dm_to">TO %1$s</string>
     <string name="r_lang">LANGUAGE</string>
-    <string name="n_lang_ja">日本語に切り替えます</string>
-    <string name="n_lang_en">SWITCHING TO ENGLISH</string>
     <string name="n_lang_failed">LANGUAGE SWITCH REFUSED</string>
     <string name="w_more">MORE</string>
     <string name="t_lang">LANGUAGE</string>
@@ -247,10 +239,6 @@
     <string name="n_forget_failed">COULD NOT FORGET %1$s</string>
     <string name="n_forget_kept">KEPT — YOUR NODE OR A FAVOURITE</string>
     <string name="n_forget_unknown">NOT IN THE RADIO\'S CONTACTS</string>
-    <string name="fu_title">CONTACTS FULL</string>
-    <string name="fu_why">THE RADIO CANNOT HOLD MORE</string>
-    <string name="fu_new">NEW NODES ARE BEING TURNED AWAY</string>
-    <string name="fu_act">PINCH HERE — CLEAR SOME ROOM</string>
     <string name="al_full">CONTACT STORE FULL — %1$d OF %2$d. NEW NODES ARE TURNED AWAY</string>
     <string name="r_alerts">ALERTS PANEL</string>
     <string name="al_title">ALERTS  (%1$d)</string>
