@@ -303,6 +303,10 @@ class Thread(
                 if (line == null) return@runCatching
                 s.head.setText(line.who)
                 s.body.setText(line.words)
+                // The corridor, read back. The head line carries who, and then
+                // either when or what became of it — the second half is the
+                // one that has to fit, and the one that did not.
+                Log.i(TAG, "[thread] line '${line.who}' | '${line.words}'")
                 val r = facing(at)
                 s.head.entity.setPose(Pose(at, r), Space.ACTIVITY)
                 s.body.entity.setPose(

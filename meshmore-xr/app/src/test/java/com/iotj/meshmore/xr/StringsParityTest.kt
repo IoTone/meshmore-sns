@@ -7,6 +7,8 @@ import javax.xml.parsers.DocumentBuilderFactory
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import com.iotj.meshmore.xr.spatial.Crown
+import com.iotj.meshmore.xr.spatial.Dock
 import com.iotj.meshmore.xr.spatial.Notice
 import com.iotj.meshmore.xr.spatial.TypeTier
 import org.w3c.dom.Element
@@ -35,6 +37,10 @@ import org.w3c.dom.Element
 class StringsParityTest {
 
     private class Res(val strings: Map<String, String>, val arrays: Map<String, Int>)
+
+    /** Thread.WIDEST_HEAD, and MainActivity's WHO_COLUMN — both private. */
+    private val THREAD_HEAD = "MMMMMMMMMMMMMM  99 MIN AGO"
+    private val NAME_COLUMN = 15
 
     private fun read(path: String): Res {
         val f = File(path)
@@ -154,6 +160,68 @@ class StringsParityTest {
             }
         }
         assertEquals("notices wider than the band they are shown in", emptyList<String>(), over)
+    }
+
+    /**
+     * AND EVERY OTHER FIXED-WIDTH SURFACE.
+     *
+     * The band was the first of these to be measured and the first to be found
+     * cutting a warning in half. The rest of the app's fixed vocabularies sit
+     * on plates sized once from a template, and every one of them has the same
+     * failure mode and the same silence: the crown's verbs, the dock's
+     * captions, the help card's rows.
+     *
+     * They all pass today. That is the point of writing it down — the check
+     * costs nothing and the next translation to arrive is the one that would
+     * have gone over.
+     */
+    @Test fun everyFixedVocabularyFitsItsPlate() {
+        val over = mutableListOf<String>()
+        fun check(what: String, prefix: String, enPlate: String, jaPlate: String) {
+            val e = en
+            val j = ja
+            e.strings.keys.filter { it.startsWith(prefix) }.forEach { k ->
+                listOf("default" to (e.strings[k] to enPlate), "ja" to (j.strings[k] to jaPlate))
+                    .forEach { (loc, pair) ->
+                        val (text, plate) = pair
+                        if (text == null) return@forEach
+                        val w = TypeTier.displayCells(text)
+                        val b = TypeTier.displayCells(plate)
+                        if (w > b) over += "$loc/$k on $what is $w cells of $b: $text"
+                    }
+            }
+        }
+        check("the crown", "a_", Crown.WIDEST, Crown.WIDEST)
+        check("the dock", "d_", Dock.CAPTION_WIDEST, Dock.CAPTION_WIDEST_JA)
+        assertEquals("words wider than the surface that holds them", emptyList<String>(), over)
+    }
+
+    /**
+     * THE MESSAGE LINE, WITH THE WORST CASE IN EVERY SLOT.
+     *
+     * `name + when-or-what` on a 26-cell head panel. This is the check that
+     * was missing when delivery marks were added: they were appended AFTER the
+     * timestamp, which came to 38 cells in English and 33 in Japanese, and a
+     * panel sized once clips from the end — so the mark was the first thing
+     * lost, on the line that exists to carry it.
+     *
+     * The name column is 15 by construction (`WHO_COLUMN`), so the only free
+     * variable is what follows it, and the widest of those is what this
+     * measures.
+     */
+    @Test fun theMessageLineFitsItsPanelWithADeliveryMark() {
+        val plate = TypeTier.displayCells(THREAD_HEAD)
+        val over = mutableListOf<String>()
+        listOf("default" to en, "ja" to ja).forEach { (loc, res) ->
+            val tails = res.strings.filterKeys {
+                it.startsWith("dm_") || it.startsWith("ago_")
+            }.map { (k, v) -> k to v.replace(Regex("""%\d+[$]d"""), "99") }
+            tails.forEach { (k, tail) ->
+                val w = NAME_COLUMN + TypeTier.displayCells(tail)
+                if (w > plate) over += "$loc/$k makes the line $w cells of $plate: '$tail'"
+            }
+        }
+        assertEquals("message lines wider than the panel", emptyList<String>(), over)
     }
 
     /**

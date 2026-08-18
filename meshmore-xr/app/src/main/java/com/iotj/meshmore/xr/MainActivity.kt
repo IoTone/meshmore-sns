@@ -1566,9 +1566,23 @@ private fun appRows(
  * every line and train the eye to skip exactly the place the interesting word
  * appears. Silence means it worked; a word means it did not, or not yet.
  */
+/**
+ * WHAT BECAME OF A MESSAGE, IN PLACE OF WHEN IT WAS SENT.
+ *
+ * It used to be appended after the timestamp, and it did not fit: the head
+ * panel is 26 cells and `name(15) + "99 MIN AGO"(10) + "  · NO ANSWER"(13)` is
+ * 38. The panel is sized once and clips what it cannot hold, from the end —
+ * so the mark, which is the entire point of the line, was the first thing
+ * gone. In both locales, since the Japanese arithmetic comes to 33.
+ *
+ * Replacing the timestamp rather than following it fits, and is also the
+ * better line: a message that is still SENDING is seconds old, so "8 MIN AGO"
+ * is the least interesting thing that could be said about it, and NO ANSWER
+ * is more use than the hour at which the silence started.
+ */
 private fun deliveryMark(ctx: android.content.Context, m: MeshLink.Msg): String = when (m.delivery) {
-    MeshLink.Delivered.LOST -> "  " + ctx.getString(R.string.d_lost)
-    MeshLink.Delivered.SENT -> "  " + ctx.getString(R.string.d_sent)
+    MeshLink.Delivered.LOST -> ctx.getString(R.string.dm_lost)
+    MeshLink.Delivered.SENT -> ctx.getString(R.string.dm_sent)
     else -> ""
 }
 
@@ -3499,18 +3513,23 @@ private fun HorizonScene(link: MeshLink) {
                         listOf(
                             Triple("newest, nearest to you", "JUST NOW", ""),
                             Triple("mine, still in flight", "1 MIN AGO",
-                                ctx.getString(R.string.d_sent)),
+                                ctx.getString(R.string.dm_sent)),
                             Triple("mine, never answered", "8 MIN AGO",
-                                ctx.getString(R.string.d_lost)),
+                                ctx.getString(R.string.dm_lost)),
                             Triple("fourth step into the past", "20 MIN AGO", ""),
                             Triple("fifth, still readable", "1 HR AGO", ""),
                             Triple("sixth and furthest", "3 HR AGO", ""),
                         ).map { (t, w, mark) ->
                             com.iotj.meshmore.xr.spatial.Thread.Line(
+                                // MIRRORS THE REAL LINE, including the part
+                                // that changed: a delivery mark REPLACES the
+                                // timestamp rather than following it. A probe
+                                // that exercises a shape the app no longer
+                                // draws is worse than no probe.
                                 who = whoLine(
-if (mark.isEmpty()) "SAMPLE" else "ME",
-(w) + (if (mark.isEmpty()) "" else "  $mark"),
-),
+                                    if (mark.isEmpty()) "SAMPLE" else "ME",
+                                    mark.ifEmpty { w },
+                                ),
                                 words = t, mine = mark.isNotEmpty(),
                             )
                         },
@@ -5019,8 +5038,10 @@ if (mark.isEmpty()) "SAMPLE" else "ME",
                                                     // messages we sent; nothing
                                                     // is claimed about anyone
                                                     // else's.
-                                                    ago(ctx, nowS - m.atEpochSec) +
-                                                        deliveryMark(ctx, m),
+                                                    deliveryMark(ctx, m)
+                                                        .ifEmpty {
+                                                            ago(ctx, nowS - m.atEpochSec)
+                                                        },
                                                 ),
                                                 words = com.iotj.meshmore.xr.spatial.TypeTier
                                                     .clip(m.text, 24),

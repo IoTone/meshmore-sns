@@ -289,8 +289,8 @@
     <string name="al_none">NOTHING TO REPORT</string>
     <string name="al_swept">FORGOT %1$d CONTACT(S)</string>
     <string name="al_lookalike">\'%1$s\' LOOKS LIKE YOURS BY KEY ONLY — IGNORED</string>
-    <string name="d_sent">· SENDING</string>
-    <string name="d_lost">· NO ANSWER</string>
+    <string name="dm_sent">· SENDING</string>
+    <string name="dm_lost">· NO ANSWER</string>
     <string name="a_resend">RESEND</string>
     <string name="n_resent">RESENDING TO %1$s</string>
     <string name="d_compass">COMPASS</string>

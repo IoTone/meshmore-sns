@@ -702,7 +702,12 @@ class Crown(
     private fun argb(rgb: Int, a: Float) =
         (((a.coerceIn(0f, 1f) * 255).toInt() and 0xFF) shl 24) or (rgb and 0xFFFFFF)
 
-    private companion object {
+    /**
+     * INTERNAL, not private: WIDEST is the plate every crown word has to fit,
+     * and StringsParityTest measures the word list against it rather than
+     * against a copy that could drift.
+     */
+    internal companion object {
         const val TAG = "MeshmoreXR"
         /** Five actions, or three quick replies plus SPEAK and a way back. */
         /**
