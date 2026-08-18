@@ -1977,6 +1977,22 @@ class MeshLink(private val context: Context) {
                     // received it. Everything this app could previously say
                     // about a message was "we asked the radio to send it".
                     is io.iotone.meshcore.frames.MsgSentFrame -> {
+                        // FLOOD OR DIRECT IS THE COST OF THE MESSAGE.
+                        //
+                        // A direct message with a known route is one
+                        // transmission. A flooded one is repeated by every
+                        // repeater that hears it, and 310 of the 350 contacts
+                        // in this operator's store are repeaters — so the same
+                        // message can cost ten or twenty times the airtime,
+                        // which is the difference between a test and an
+                        // imposition. It was only ever visible in the in-app
+                        // diagnostics ring, which is not where anyone analysing
+                        // an hour-long run is looking.
+                        Log.i(TAG, "[tx] accepted tag=0x%08x %s timeout=%dms".format(
+                            frame.sent().expectedAck(),
+                            if (frame.sent().isFlood()) "FLOOD" else "direct",
+                            frame.sent().estTimeoutMs(),
+                        ))
                         val tag = frame.sent().expectedAck()
                         pending[tag] = System.currentTimeMillis()
                         _delivery.value = _delivery.value.copy(
