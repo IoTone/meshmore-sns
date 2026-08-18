@@ -1035,7 +1035,7 @@ private fun radioRows(
     if (live == null) {
         return listOf(
             com.iotj.meshmore.xr.spatial.Stack.Row(
-                "NONE", "RADIO NOT READ YET", false,
+                "NONE", ctx.getString(R.string.rr_unread), false,
             ),
         )
     }
@@ -1130,6 +1130,7 @@ private fun radioRows(
  * needs no explanation.
  */
 private fun regionRows(
+    ctx: android.content.Context,
     here: com.iotj.meshmore.xr.spatial.MeshNodes.Here,
     live: RadioConfig.Params?,
 ): List<com.iotj.meshmore.xr.spatial.Stack.Row> {
@@ -1139,7 +1140,7 @@ private fun regionRows(
         rows += com.iotj.meshmore.xr.spatial.Stack.Row(
             id = "R:" + suggested.id,
             label = com.iotj.meshmore.xr.spatial.radioRow(
-                "HERE", suggested.label, null,
+                ctx.getString(R.string.d_here), suggested.label, null,
             ),
             lit = true,
         )
@@ -3222,9 +3223,15 @@ private fun HorizonScene(link: MeshLink) {
             if (Autopen.read(m.text) == Autopen.Intent.EMERGENCY) {
                 cue.critical()
                 noticeRef.value?.say(
-                    "URGENT — ${com.iotj.meshmore.xr.spatial.TypeTier.clip(
-                        m.fromName.ifBlank { m.channelName ?: "UNKNOWN" }, 16,
-                    ).uppercase()}",
+                    ctx.getString(
+                        R.string.n_urgent,
+                        com.iotj.meshmore.xr.spatial.TypeTier.clip(
+                            m.fromName.ifBlank {
+                                m.channelName ?: ctx.getString(R.string.n_unknown_sender)
+                            },
+                            16,
+                        ).uppercase(),
+                    ),
                 )
                 Log.w(TAG_UI, "[msg] reads as distress from '${m.fromName}'")
             }
@@ -3568,7 +3575,7 @@ private fun HorizonScene(link: MeshLink) {
                 aboutOpen.value = false
                 consoleRef.value?.hide()
                 appRef.value?.show(
-                    regionRows(hereSource.here.value, link.radio.live),
+                    regionRows(ctx, hereSource.here.value, link.radio.live),
                     title = ctx.getString(R.string.t_region, Regions.labelFor(link.radio.live)),
                     footer = ctx.getString(R.string.f_region),
                 )
@@ -4068,7 +4075,10 @@ private fun HorizonScene(link: MeshLink) {
                             Settings.setChannelSend(ctx, on)
                             link.channelTxAuthorised = on
                             noticeRef.value?.say(
-                                if (on) "CHANNEL SEND ALLOWED" else "CHANNEL SEND OFF",
+                                ctx.getString(
+                                    if (on) R.string.n_chansend_on
+                                    else R.string.n_chansend_off,
+                                ),
                             )
                         }
                         // TWO PINCHES, AND THE FIRST ONE COUNTS OUT LOUD.
@@ -4316,7 +4326,9 @@ private fun HorizonScene(link: MeshLink) {
                             val on = !Settings.diagnostics(ctx)
                             Settings.setDiagnostics(ctx, on)
                             noticeRef.value?.say(
-                                if (on) "DIAGNOSTICS ON" else "DIAGNOSTICS OFF",
+                                ctx.getString(
+                                    if (on) R.string.n_diag_on else R.string.n_diag_off,
+                                ),
                             )
                             cue.opened()
                         }
@@ -4653,8 +4665,10 @@ private fun HorizonScene(link: MeshLink) {
                 // NAMES WHAT MOVED. "VIEW RESET" reads as an undo — as though
                 // something were being put back — when what happened is that
                 // the scene picked itself up and re-centred on the wearer.
-                if (northKnown) "SCENE MOVED HERE"
-                else "SCENE MOVED HERE  NORTH NOT SET",
+                ctx.getString(
+                    if (northKnown) R.string.n_scene_moved
+                    else R.string.n_scene_moved_nonorth,
+                ),
                     )
                     Log.i(TAG_UI, "[reset] $hand:R — origin moved to (%.2f, %.2f, %.2f), yaw kept %.1f°"
                 .format(t.x, t.y, t.z, Math.toDegrees(o.yawRad.toDouble())))
@@ -5080,7 +5094,7 @@ private fun HorizonScene(link: MeshLink) {
                                 }
                             }.sortedBy { it.second }.take(3)
                             noticeRef.value?.say(
-                                if (near.isEmpty()) "NOTHING RESOLVABLE THERE"
+                                if (near.isEmpty()) ctx.getString(R.string.n_nothing_there)
                                 else near.joinToString("   ") {
                                     "%s %.1fKM".format(it.first.name.take(14), it.second)
                                 },
@@ -5218,11 +5232,15 @@ private fun HorizonScene(link: MeshLink) {
                             val here2 = Regions.suggest(h.lat, h.lon)
                             if (here2 != null && set?.id != here2.id) {
                                 val pair = (set?.id ?: "CUSTOM") + ">" + here2.id
+                                // THE BAND SAYS THE SHORT TRUE THING, and the
+                                // list that opens behind it names both regions.
+                                // Naming them here cost the sentence its second
+                                // half in Japanese, where the band is 30 cells
+                                // and two region labels are fifty — and the
+                                // half that went missing was where the wearer
+                                // actually is.
                                 noticeRef.value?.say(
-                                    ctx.getString(
-                                        R.string.n_region_mismatch,
-                                        set?.label ?: Regions.CUSTOM, here2.label,
-                                    ),
+                                    ctx.getString(R.string.n_region_mismatch),
                                 )
                                 cue.denied()
                                 Log.w(TAG_UI, "[region] mismatch: radio=" +
@@ -6511,9 +6529,9 @@ private fun onCrown(
         // the spot, which is the accidental send this was built to prevent: a
         // pinch landing one slot wrong put words on a shared band with nothing
         // in between. Now they propose, and the confirm level sends.
-        Crown.Act.SEND_1 -> { crown.propose("ROGER"); cue.opened() }
-        Crown.Act.SEND_2 -> { crown.propose("ON MY WAY"); cue.opened() }
-        Crown.Act.SEND_3 -> { crown.propose("STAND BY"); cue.opened() }
+        Crown.Act.SEND_1 -> { crown.propose(ctx.getString(R.string.q_roger)); cue.opened() }
+        Crown.Act.SEND_2 -> { crown.propose(ctx.getString(R.string.q_omw)); cue.opened() }
+        Crown.Act.SEND_3 -> { crown.propose(ctx.getString(R.string.q_standby)); cue.opened() }
         // AUTOPEN. Routed through the SAME confirm level as every other draft
         // -- proposeGenerated differs only in that it remembers the words were
         // not the wearer's, so the confirm screen can say so. The row is only

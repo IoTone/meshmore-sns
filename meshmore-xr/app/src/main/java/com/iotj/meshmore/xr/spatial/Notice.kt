@@ -65,10 +65,21 @@ class Notice(
      */
     fun say(text: String) {
         val r = run ?: return
-        val cap = com.iotj.meshmore.xr.L10n.tpl(WIDEST, WIDEST_JA).length
-        val shown = text.take(cap)
-        if (shown.length < text.length) {
-            Log.w(TAG, "[notice] CLIPPED at $cap of ${text.length}: '$text'")
+        // IN CELLS, because the band's own template is. Counting code units
+        // here cost the region warning half of itself the first time it was
+        // said in Japanese —
+        //
+        //   CLIPPED at 23 of 42: 無線機はUSA / CANADA設定 — 現在地はJAPAN…
+        //
+        // 23 was the template's character count; the plate is 46 cells wide,
+        // and the sentence is a mixture of kanji at two cells and Latin at one,
+        // so measuring the mixture with `length` threw away everything after
+        // the dash. That the sentence was the ILLEGAL-BAND warning is luck
+        // deciding which string got mismeasured.
+        val cap = TypeTier.displayCells(com.iotj.meshmore.xr.L10n.tpl(WIDEST, WIDEST_JA))
+        val shown = if (TypeTier.displayCells(text) <= cap) text else TypeTier.clip(text, cap)
+        if (shown !== text) {
+            Log.w(TAG, "[notice] CLIPPED at $cap cells: '$text'")
         } else {
             Log.i(TAG, "[notice] $shown")
         }
@@ -111,7 +122,13 @@ class Notice(
     private fun argb(rgb: Int, a: Float) =
         (((a.coerceIn(0f, 1f) * 255).toInt() and 0xFF) shl 24) or (rgb and 0xFFFFFF)
 
-    private companion object {
+    /**
+     * INTERNAL, not private: the sizing templates are what every notice string
+     * has to fit, and StringsParityTest measures them against it. A test that
+     * copied these two strings instead would pass happily the day one of them
+     * changed.
+     */
+    internal companion object {
         /** Sized once for the longest answer either spoke produces. */
         private const val TAG = "MeshmoreXR"
         const val WIDEST = "MMMMMMMMMMMMMM 99.9KM   MMMMMMMMMMMMMM 99.9KM"

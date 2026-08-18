@@ -7,6 +7,8 @@ import javax.xml.parsers.DocumentBuilderFactory
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import com.iotj.meshmore.xr.spatial.Notice
+import com.iotj.meshmore.xr.spatial.TypeTier
 import org.w3c.dom.Element
 
 /**
@@ -115,6 +117,43 @@ class StringsParityTest {
                 }
             }
         }
+    }
+
+    /**
+     * A NOTICE HAS TO FIT THE BAND.
+     *
+     * The band is one head-locked line, sized once from a per-locale template
+     * and never re-sized. Anything longer is cut, and until the band started
+     * logging, cut silently — which is how the illegal-band warning came to
+     * show a Japanese wearer that their radio was set to USA / CANADA and
+     * nothing at all about where they were standing.
+     *
+     * The Japanese band is 30 cells where the English one is 45. That is not a
+     * smaller band: kanji are set 1.5x larger so they can be read at all, so
+     * the same strip of the world holds fewer of them. A translation that is
+     * the same length as its English source is therefore too long by half, and
+     * the only place that can be caught before a wearer sees it is here.
+     *
+     * Arguments are filled with a plausible worst case — a fourteen-cell name,
+     * a three-digit count — because a notice is only ever seen filled in.
+     */
+    @Test fun everyNoticeFitsTheBandInBothLocales() {
+        // THE BAND'S OWN TEMPLATES, read from the band. Copying them here
+        // would make this test pass on the day one of them changed, which is
+        // the day it would matter.
+        val enBand = TypeTier.displayCells(Notice.WIDEST)
+        val jaBand = TypeTier.displayCells(Notice.WIDEST_JA)
+        fun fill(t: String) = t
+            .replace(Regex("%\\d+[$]s"), "MMMMMMMMMMMMMM")
+            .replace(Regex("%\\d+[$]d"), "999")
+        val over = mutableListOf<String>()
+        listOf(Triple("default", en, enBand), Triple("ja", ja, jaBand)).forEach { (label, res, band) ->
+            res.strings.filterKeys { it.startsWith("n_") }.forEach { (k, v) ->
+                val w = TypeTier.displayCells(fill(v))
+                if (w > band) over += "$label/$k is $w cells, band is $band: ${fill(v)}"
+            }
+        }
+        assertEquals("notices wider than the band they are shown in", emptyList<String>(), over)
     }
 
     /**

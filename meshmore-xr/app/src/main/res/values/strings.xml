@@ -114,8 +114,6 @@
     <string name="find_some">%1$d OF %2$d</string>
     <string name="find_more">+%1$d MORE — NARROW IT</string>
 
-    <!-- HERE caption -->
-
     <!-- ABOUT safety lines (the reason the surface exists) -->
     <string name="s_driving">DO NOT USE WHILE DRIVING</string>
     <string name="s_room">WATCH THE ROOM, NOT THIS</string>
@@ -208,6 +206,17 @@
     <string name="rr_flood_sub">ALL REPEATERS</string>
     <string name="rr_rescan">RESCAN FOR RADIO</string>
     <string name="rr_rescan_sub">BLUETOOTH</string>
+    <!-- ═══ notices that were literals until 2026-08-18 ═══ -->
+    <string name="rr_unread">RADIO NOT READ YET</string>
+    <string name="n_urgent">URGENT — %1$s</string>
+    <string name="n_unknown_sender">UNKNOWN</string>
+    <string name="n_chansend_on">CHANNEL SEND ALLOWED</string>
+    <string name="n_chansend_off">CHANNEL SEND OFF</string>
+    <string name="n_diag_on">DIAGNOSTICS ON</string>
+    <string name="n_diag_off">DIAGNOSTICS OFF</string>
+    <string name="n_scene_moved">SCENE MOVED HERE</string>
+    <string name="n_scene_moved_nonorth">SCENE MOVED HERE  NORTH NOT SET</string>
+    <string name="n_nothing_there">NOTHING RESOLVABLE THERE</string>
     <string name="cm_magnify">MAGNIFY</string>
     <string name="cm_bearing">BEARING</string>
     <string name="cm_nearest">NEAREST</string>
@@ -220,7 +229,7 @@
     <string name="n_send_locked">NOT YOUR NODE — SEND LOCKED</string>
     <string name="n_asked_telem">ASKED %1$s</string>
     <string name="n_table_reset">TABLE RESET — SEARCHING</string>
-    <string name="n_region_mismatch">RADIO IS %1$s — YOU ARE IN %2$s</string>
+    <string name="n_region_mismatch">WRONG REGION FOR WHERE YOU ARE</string>
     <!-- no-radio card + pairing hint -->
     <string name="link_pair_code">TYPE THE CODE FROM THE RADIO\'S SCREEN</string>
     <string name="n_dm_to">TO %1$s</string>
