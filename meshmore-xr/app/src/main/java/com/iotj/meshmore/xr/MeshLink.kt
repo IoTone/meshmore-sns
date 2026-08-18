@@ -857,6 +857,47 @@ class MeshLink(private val context: Context) {
         }
     }
 
+    /**
+     * WHAT HAPPENED TO THE MESSAGES WE SENT.
+     *
+     * Three numbers that are genuinely different: how many we handed to the
+     * radio, how many the radio accepted for transmission, and how many the
+     * far end acknowledged. On a mesh the gap between the second and third is
+     * the only honest measure of reliability, and nothing in this app was
+     * counting it.
+     */
+    data class Delivery(
+        val attempted: Int = 0,
+        val accepted: Int = 0,
+        val acked: Int = 0,
+        val refused: Int = 0,
+        val lastTag: Long = 0L,
+        val lastLatencyMs: Long? = null,
+        val totalLatencyMs: Long = 0L,
+    ) {
+        /** Acked over accepted, as a percentage; null when nothing was sent. */
+        val reliability: Double?
+            get() = if (accepted == 0) null else acked * 100.0 / accepted
+        val meanLatencyMs: Long? get() = if (acked == 0) null else totalLatencyMs / acked
+    }
+
+    private val _delivery = MutableStateFlow(Delivery())
+    val delivery: StateFlow<Delivery> = _delivery.asStateFlow()
+
+    /** Ack tags we are waiting on, and when each was accepted. */
+    private val pending = java.util.concurrent.ConcurrentHashMap<Long, Long>()
+
+    /** Sent but never acknowledged within the window; the drops. */
+    fun lostAfter(ms: Long, nowMs: Long = System.currentTimeMillis()): Int =
+        pending.count { nowMs - it.value > ms }
+
+    fun noteAttempt(ok: Boolean) {
+        _delivery.value = _delivery.value.copy(
+            attempted = _delivery.value.attempted + 1,
+            refused = _delivery.value.refused + if (ok) 0 else 1,
+        )
+    }
+
     /** What the radio said it is, once DEVICE_QUERY has been answered. */
     var deviceInfo: io.iotone.meshcore.model.DeviceInfo? = null
         private set
@@ -1927,8 +1968,36 @@ class MeshLink(private val context: Context) {
                         diag("RF       ${frame.log()}")
                     is io.iotone.meshcore.frames.TelemetryResponseFrame ->
                         diag("TELEM    ${frame}")
-                    is io.iotone.meshcore.frames.AckFrame -> diag("ACK      $frame")
-                    is io.iotone.meshcore.frames.MsgSentFrame -> diag("SENT     $frame")
+                    // DELIVERY, AS THE PROTOCOL ACTUALLY REPORTS IT.
+                    //
+                    // Two different facts, and until now both were a line of
+                    // text in the radio log: RESP_CODE_SENT says the radio
+                    // ACCEPTED the message and hands back the CRC tag it will
+                    // be acknowledged by; PUSH_CODE_ACK says the DESTINATION
+                    // received it. Everything this app could previously say
+                    // about a message was "we asked the radio to send it".
+                    is io.iotone.meshcore.frames.MsgSentFrame -> {
+                        val tag = frame.sent().expectedAck()
+                        pending[tag] = System.currentTimeMillis()
+                        _delivery.value = _delivery.value.copy(
+                            accepted = _delivery.value.accepted + 1,
+                            lastTag = tag,
+                        )
+                        diag("SENT     $frame")
+                    }
+                    is io.iotone.meshcore.frames.AckFrame -> {
+                        val at = pending.remove(frame.ackCrc())
+                        val ms = at?.let { System.currentTimeMillis() - it }
+                        _delivery.value = _delivery.value.copy(
+                            acked = _delivery.value.acked + 1,
+                            lastLatencyMs = ms ?: _delivery.value.lastLatencyMs,
+                            totalLatencyMs = _delivery.value.totalLatencyMs + (ms ?: 0L),
+                        )
+                        Log.i(TAG, "[tx] delivered tag=0x%08x%s".format(
+                            frame.ackCrc(), ms?.let { " in ${it}ms" } ?: " (unmatched)",
+                        ))
+                        diag("ACK      $frame")
+                    }
                     is io.iotone.meshcore.frames.UnsupportedFrame ->
                         diag("UNSUP    $frame")
                     else -> diag("FRAME    ${frame.javaClass.simpleName}")

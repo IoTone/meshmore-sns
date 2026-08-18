@@ -168,6 +168,21 @@ class MainActivity : ComponentActivity() {
          * literal string "go".
          */
         var gcProbe: String? = null
+
+        /**
+         * `--es soak d563` : send a message to the operator's own node on a
+         * timer and account for every one of them, for `--es soakmin` minutes
+         * at `--es soakint` seconds apart.
+         *
+         * ONLY EVER TO A NODE THE ALLOW-LIST ADMITS — MeshLink refuses anything
+         * else, and this passes the suffix through rather than a key so it
+         * cannot be pointed at a stranger by a typo. Airtime is shared: one a
+         * minute for an hour is sixty transmissions, which is a test; one a
+         * second would be an attack on everybody else's mesh.
+         */
+        var soakTo: String? = null
+        var soakMinutes: Int = 60
+        var soakEverySec: Int = 60
         /**
          * --es query "rep" : start with the filter already applied.
          *
@@ -363,6 +378,11 @@ class MainActivity : ComponentActivity() {
         showFind = intent?.getBooleanExtra("find", false) ?: false
         dmProbe = intent?.getBooleanExtra("dm", false) ?: false
         gcProbe = intent?.getStringExtra("gc")
+        soakTo = intent?.getStringExtra("soak")
+        soakMinutes = intent?.getStringExtra("soakmin")?.toIntOrNull() ?: 60
+        soakEverySec = intent?.getStringExtra("soakint")?.toIntOrNull() ?: 60
+        Log.i(TAG, "[boot] soak = ${soakTo ?: "off"} " +
+            "(${soakMinutes}min every ${soakEverySec}s)")
         queryOverride = intent?.getStringExtra("query")?.takeIf { it.isNotBlank() }
         // `--es far 100` / `--es stale 24` : open FIND with the sweep filters
         // already set. The chips are a hand's work and no emulator has one.
@@ -1578,6 +1598,8 @@ private fun HorizonScene(link: MeshLink) {
     val adviceKind = remember {
         mutableStateOf(com.iotj.meshmore.xr.spatial.Advice.Kind.NONE)
     }
+    /** True while the soak is running, so a recomposition cannot start a second. */
+    val soakRunning = remember { mutableStateOf(false) }
 
     val focusRef = remember { mutableStateOf<com.iotj.meshmore.xr.spatial.Focus?>(null) }
     val gazeRef = remember { mutableStateOf<com.iotj.meshmore.xr.spatial.Gaze?>(null) }
@@ -1923,6 +1945,108 @@ private fun HorizonScene(link: MeshLink) {
         kotlinx.coroutines.delay(2_000)
         Log.i(TAG_UI, "[gc] app now holds ${link.mesh.value.size} contacts " +
             "(the radio's own count returns on the next connect)")
+    }
+
+    // THE SOAK. See MainActivity.soakTo.
+    //
+    // KEYED ON THE LINK AND NOT ON THE MESH. Keyed on the mesh signature this
+    // effect was cancelled and restarted every time a contact arrived — 350 of
+    // them during the sync — and since the first invocation had already set
+    // the running flag, every restart returned immediately at the guard. The
+    // test never started and never said why. An hour-long soak must hang off
+    // something that does not move.
+    LaunchedEffect(link) {
+        val want = MainActivity.soakTo ?: return@LaunchedEffect
+        if (soakRunning.value) return@LaunchedEffect
+        soakRunning.value = true
+        // WAIT FOR THE RADIO RATHER THAN GIVING UP ON IT. This effect is keyed
+        // on the mesh signature, which settles once the store is read — so a
+        // single early "not ready yet" return meant the test never ran at all,
+        // and said nothing about why. An hour-long test can afford a minute of
+        // patience.
+        var waited = 0
+        while (link.status.value.state != io.iotone.meshcore.android.SessionState.READY &&
+            waited < 120_000
+        ) {
+            kotlinx.coroutines.delay(2_000)
+            waited += 2_000
+        }
+        if (link.status.value.state != io.iotone.meshcore.android.SessionState.READY) {
+            Log.w(TAG_UI, "[soak] no link after ${waited / 1000}s — not starting")
+            soakRunning.value = false
+            return@LaunchedEffect
+        }
+        // AND FOR THE TARGET TO ARRIVE, not for a guessed number of seconds.
+        // The contact sync takes about twenty seconds for 350 contacts and the
+        // node under test is somewhere in the middle of it; a fixed eight-second
+        // wait declared the mesh empty before the radio had finished reading
+        // its own store.
+        fun find() = link.mesh.value.firstOrNull { p ->
+            p.name.endsWith(want, ignoreCase = true) ||
+                (p.fullKey ?: p.key).endsWith(want, ignoreCase = true)
+        }
+        var looked = 0
+        while (find() == null && looked < 120_000) {
+            kotlinx.coroutines.delay(2_000)
+            looked += 2_000
+        }
+        val target = find()
+        if (target == null) {
+            Log.w(TAG_UI, "[soak] no node matching '$want' in the store — nothing to test against")
+            Alerts.warn("SOAK", "NO NODE MATCHING '$want'")
+            return@LaunchedEffect
+        }
+        val key = target.fullKey ?: target.key
+        val every = MainActivity.soakEverySec.coerceAtLeast(10) * 1000L
+        val until = System.currentTimeMillis() + MainActivity.soakMinutes * 60_000L
+        var drops = 0
+        var lastState = link.status.value.state
+        Log.i(
+            TAG_UI,
+            "[soak] start -> '${target.name}' key=${target.key} " +
+                "every ${every / 1000}s for ${MainActivity.soakMinutes}min",
+        )
+        Alerts.info("SOAK", "STARTED TO ${target.name.take(16)}")
+        var n = 0
+        while (System.currentTimeMillis() < until) {
+            // A DROP IS PART OF THE RESULT, not a reason to stop. The point of
+            // an hour is to find out what happens across one.
+            val st = link.status.value.state
+            if (st != lastState) {
+                if (st != io.iotone.meshcore.android.SessionState.READY) drops++
+                Log.i(TAG_UI, "[soak] link $lastState -> $st (drops=$drops)")
+                lastState = st
+            }
+            val stamp = java.text.SimpleDateFormat("HH:mm:ss", java.util.Locale.US)
+                .format(java.util.Date())
+            val text = "HELLO, TODAY IS $stamp. PLEASE CALL ME."
+            val r = link.sendTo(key, text)
+            n++
+            link.noteAttempt(r is MeshLink.Sent.Ok)
+            val d = link.delivery.value
+            Log.i(
+                TAG_UI,
+                "[soak] #$n ${r.javaClass.simpleName}" +
+                    (if (r is MeshLink.Sent.Refused) " (${r.why})" else "") +
+                    " — attempted=${d.attempted} accepted=${d.accepted} acked=${d.acked} " +
+                    "refused=${d.refused} drops=$drops pending=${link.lostAfter(0L)}",
+            )
+            kotlinx.coroutines.delay(every)
+        }
+        val d = link.delivery.value
+        val lost = link.lostAfter(60_000L)
+        Log.i(
+            TAG_UI,
+            "[soak] DONE sent=$n attempted=${d.attempted} accepted=${d.accepted} " +
+                "acked=${d.acked} refused=${d.refused} unacked>60s=$lost drops=$drops " +
+                "reliability=${d.reliability?.let { "%.1f%%".format(it) } ?: "n/a"} " +
+                "meanLatency=${d.meanLatencyMs ?: -1}ms",
+        )
+        Alerts.info(
+            "SOAK",
+            "DONE — ${d.acked}/${d.accepted} ACKED, $drops DROP(S)",
+        )
+        soakRunning.value = false
     }
 
     // THE COMPOSE CROWN, WITHOUT A HAND. See MainActivity.dmProbe.
