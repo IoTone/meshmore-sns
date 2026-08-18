@@ -332,7 +332,26 @@ class MeshLink(private val context: Context) {
          * which are fine for a label and fatal for an identity.
          */
         val channelName: String? = null,
+        /**
+         * WHAT BECAME OF A MESSAGE WE SENT. Null for everything received.
+         *
+         * Two hours of soak established that about one direct message in ten
+         * is never acknowledged, and that the app had no idea: it said "sent"
+         * the moment the radio took the frame and never revisited it. A
+         * messaging app that cannot tell you whether your message arrived is
+         * asking you to trust it about the one thing you actually care about.
+         */
+        val delivery: Delivered? = null,
+        /** The CRC tag the radio will acknowledge this by. See [Delivered]. */
+        val ackTag: Long? = null,
     )
+
+    /**
+     * SENT is what the radio accepted. DELIVERED is what the far end confirmed.
+     * LOST is what never came back inside the radio's own estimated timeout —
+     * and MeshCore does not retry, so lost means lost until somebody resends.
+     */
+    enum class Delivered { SENT, DELIVERED, LOST }
 
     private val _msgs = MutableStateFlow<List<Msg>>(emptyList())
     val msgs: StateFlow<List<Msg>> = _msgs.asStateFlow()
@@ -440,6 +459,40 @@ class MeshLink(private val context: Context) {
         runCatching { store.save(_msgs.value) }
             .onFailure { Log.w(TAG, "[store] save failed: ${it.javaClass.simpleName}") }
         onMessage?.invoke(m)
+    }
+
+    /** Save without adding, for when only a message's STATE changed. */
+    private fun persist() {
+        runCatching { store.save(_msgs.value) }
+            .onFailure { Log.w(TAG, "[store] save failed: ${it.javaClass.simpleName}") }
+    }
+
+    /**
+     * Send an unanswered message again.
+     *
+     * MeshCore does not retry direct messages, so a lost one stays lost — and
+     * two hours of measurement put that at roughly one in ten. Resending is
+     * therefore not a convenience, it is the only recovery there is.
+     *
+     * NEW MESSAGE, NEW TAG. The mesh has no notion of "the same message twice",
+     * so this is an ordinary send that happens to carry identical words, and it
+     * goes through the same allow-list as everything else. The old line's state
+     * is left alone: it really did go unanswered, and rewriting history to say
+     * otherwise would be the app lying to make itself look better.
+     */
+    fun resend(m: Msg): Sent {
+        if (!m.direct) return Sent.Refused("ONLY DIRECT MESSAGES CAN BE RESENT")
+        val peer = peers.values.firstOrNull {
+            (it.fullKey ?: it.key).startsWith(m.fromKey, ignoreCase = true) ||
+                m.fromKey.startsWith(it.key, ignoreCase = true)
+        } ?: return Sent.Refused("NOT IN CONTACTS")
+        Log.i(TAG, "[tx] resending to '${peer.name}': '${m.text.take(32)}'")
+        return sendDirect(peer, m.text)
+    }
+
+    /** The most recent message we sent that never came back. */
+    fun lastUnanswered(): Msg? = _msgs.value.firstOrNull {
+        it.fromName == "ME" && it.delivery == Delivered.LOST
     }
 
     /** Forget everything. The one thing a message log must always allow. */
@@ -884,6 +937,61 @@ class MeshLink(private val context: Context) {
     private val _delivery = MutableStateFlow(Delivery())
     val delivery: StateFlow<Delivery> = _delivery.asStateFlow()
 
+    /**
+     * The message whose SENT confirmation has not arrived yet.
+     *
+     * Set the instant a send is handed to the radio and cleared by the very
+     * next MsgSentFrame. One at a time is not an assumption about the protocol
+     * being polite — the app only ever has one send in flight, because a send
+     * is a deliberate act by a wearer.
+     */
+    private var awaitingTag: Msg? = null
+
+    private fun tagMessage(m: Msg, tag: Long) {
+        _msgs.value = _msgs.value.map {
+            if (it === m) it.copy(ackTag = tag, delivery = Delivered.SENT) else it
+        }
+        persist()
+    }
+
+    private fun markDelivered(tag: Long) {
+        var hit = false
+        _msgs.value = _msgs.value.map {
+            if (it.ackTag == tag && it.delivery != Delivered.DELIVERED) {
+                hit = true
+                it.copy(delivery = Delivered.DELIVERED)
+            } else {
+                it
+            }
+        }
+        if (hit) persist()
+    }
+
+    /**
+     * Give up on anything still unacknowledged past [afterMs].
+     *
+     * The radio publishes its own estimated round trip — about 2.2 s direct,
+     * 8 s flooded — and everything measured in two hours of soak came back
+     * inside 2.4 s. A minute is therefore not a judgement call, it is a
+     * generous multiple of the longest thing ever observed.
+     */
+    fun sweepLost(afterMs: Long = 60_000L, nowMs: Long = System.currentTimeMillis()) {
+        val stale = pending.filter { nowMs - it.value > afterMs }.keys
+        if (stale.isEmpty()) return
+        stale.forEach { pending.remove(it) }
+        var hit = false
+        _msgs.value = _msgs.value.map {
+            if (it.ackTag in stale && it.delivery == Delivered.SENT) {
+                hit = true
+                Log.w(TAG, "[tx] no ack for tag=0x%08x — marking lost".format(it.ackTag))
+                it.copy(delivery = Delivered.LOST)
+            } else {
+                it
+            }
+        }
+        if (hit) persist()
+    }
+
     /** Ack tags we are waiting on, and when each was accepted. */
     private val pending = java.util.concurrent.ConcurrentHashMap<Long, Long>()
 
@@ -1165,13 +1273,16 @@ class MeshLink(private val context: Context) {
             // OUR OWN WORDS GO IN THE LOG TOO. A conversation that shows only
             // the other half is not a conversation, and the thread corridor
             // already knows how to draw a line as mine.
-            remember(
-                Msg(
-                    fromKey = peer.key, fromName = "ME", text = text,
-                    atEpochSec = System.currentTimeMillis() / 1000,
-                    direct = true, channel = null,
-                ),
+            val mine = Msg(
+                fromKey = peer.key, fromName = "ME", text = text,
+                atEpochSec = System.currentTimeMillis() / 1000,
+                direct = true, channel = null,
+                delivery = Delivered.SENT,
             )
+            remember(mine)
+            // The radio answers with the tag a moment from now; this is the
+            // message it belongs to.
+            awaitingTag = mine
             Sent.Ok as Sent
         }.getOrElse { Sent.Refused("SEND FAILED") }
     }
@@ -1977,6 +2088,13 @@ class MeshLink(private val context: Context) {
                     // received it. Everything this app could previously say
                     // about a message was "we asked the radio to send it".
                     is io.iotone.meshcore.frames.MsgSentFrame -> {
+                        // The tag belongs to the message submitted a moment
+                        // ago — the radio answers one send at a time, and the
+                        // app has exactly one outstanding when this arrives.
+                        awaitingTag?.let { mine ->
+                            awaitingTag = null
+                            tagMessage(mine, frame.sent().expectedAck())
+                        }
                         // FLOOD OR DIRECT IS THE COST OF THE MESSAGE.
                         //
                         // A direct message with a known route is one
@@ -2002,6 +2120,7 @@ class MeshLink(private val context: Context) {
                         diag("SENT     $frame")
                     }
                     is io.iotone.meshcore.frames.AckFrame -> {
+                        markDelivered(frame.ackCrc())
                         val at = pending.remove(frame.ackCrc())
                         val ms = at?.let { System.currentTimeMillis() - it }
                         _delivery.value = _delivery.value.copy(

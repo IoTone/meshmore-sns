@@ -255,6 +255,10 @@
     <string name="al_none">報告事項はありません</string>
     <string name="al_swept">%1$d 件を削除しました</string>
     <string name="al_lookalike">「%1$s」は鍵の末尾のみ一致 — 自ノード扱いにしません</string>
+    <string name="d_sent">・送信中</string>
+    <string name="d_lost">・応答なし</string>
+    <string name="a_resend">再送</string>
+    <string name="n_resent">%1$s へ再送します</string>
     <string name="nf_title">位置がありません</string>
     <string name="nf_board_nogps">%1$s にGPSがありません</string>
     <string name="nf_nofix">無線機が位置を送りません</string>

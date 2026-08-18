@@ -70,6 +70,8 @@ class Crown(
 
     /** What was chosen. The host decides what any of it means. */
     enum class Act {
+        /** Send the last unanswered message again. See MeshLink.resend. */
+        RESEND,
         REPLY, ALOUD, VOICE, THREAD, DISMISS,
         SEND_1, SEND_2, SEND_3, SPEAK, BACK,
         CONFIRM, CANCEL,
@@ -182,6 +184,9 @@ class Crown(
 
     var target: Target? = null
 
+    /** True when the host has an unanswered message worth offering again. */
+    var canResend: Boolean = false
+
     /** Whether this conversation reads itself aloud, for the toggle's label. */
     var voiceOn: Boolean = false
 
@@ -206,6 +211,7 @@ class Crown(
      * — and it is the one thing the crown can no longer show. See [draftable].
      */
     private fun vocabulary(): List<String> = listOf(
+        context.getString(com.iotj.meshmore.xr.R.string.a_resend),
         context.getString(com.iotj.meshmore.xr.R.string.a_reply),
         context.getString(com.iotj.meshmore.xr.R.string.a_aloud),
         "VOICE: ON", "VOICE: OFF",
@@ -220,8 +226,17 @@ class Crown(
     ) + quick
 
     private fun labels(): List<Pair<Act, String>> = when (level) {
-        Level.ACTIONS -> listOf(
+        Level.ACTIONS -> listOfNotNull(
             Act.REPLY to context.getString(com.iotj.meshmore.xr.R.string.a_reply),
+            // PRESENT ONLY WHEN THERE IS SOMETHING TO RESEND. A row that is
+            // usually dead is a row people learn to skip, which costs it the
+            // one moment it matters — the same argument the suggestion row
+            // already makes for itself.
+            if (canResend) {
+                Act.RESEND to context.getString(com.iotj.meshmore.xr.R.string.a_resend)
+            } else {
+                null
+            },
             Act.ALOUD to context.getString(com.iotj.meshmore.xr.R.string.a_aloud),
             // STATE, WITH A COLON, not a bare word. "VOICE OFF" reads as a
             // button that turns voice off; "VOICE: OFF" reads as the switch it

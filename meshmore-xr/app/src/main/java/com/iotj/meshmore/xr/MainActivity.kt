@@ -1467,6 +1467,20 @@ private fun appRows(
     )
 }
 
+/**
+ * The one-word verdict on a message we sent, or nothing at all.
+ *
+ * Deliberately quiet for DELIVERED. Two hours of measurement say roughly nine
+ * in ten arrive, so marking the ordinary case would put a badge on almost
+ * every line and train the eye to skip exactly the place the interesting word
+ * appears. Silence means it worked; a word means it did not, or not yet.
+ */
+private fun deliveryMark(ctx: android.content.Context, m: MeshLink.Msg): String = when (m.delivery) {
+    MeshLink.Delivered.LOST -> "  " + ctx.getString(R.string.d_lost)
+    MeshLink.Delivered.SENT -> "  " + ctx.getString(R.string.d_sent)
+    else -> ""
+}
+
 private fun yawOf(h: androidx.xr.runtime.math.Pose): Float {
     val q = h.rotation
     val fx = 2f * (q.x * q.z + q.w * q.y)
@@ -2003,6 +2017,19 @@ private fun HorizonScene(link: MeshLink) {
                         "hops=${p.hops} ${(now - p.lastSeenEpochSec) / 60} min ago",
                 )
             }
+    }
+
+    // GIVE UP ON THE UNANSWERED, on a timer.
+    //
+    // Nothing else can do it: an acknowledgement that never arrives generates
+    // no event, so "lost" is a conclusion drawn from silence and somebody has
+    // to be watching the clock to draw it. Ten seconds is often enough that a
+    // wearer sees the state settle while still looking at what they sent.
+    LaunchedEffect(link) {
+        while (true) {
+            kotlinx.coroutines.delay(10_000)
+            link.sweepLost()
+        }
     }
 
     // THE SOAK. See MainActivity.soakTo.
@@ -3309,17 +3336,28 @@ private fun HorizonScene(link: MeshLink) {
                 stage.headNow()?.let { h ->
                     threadRef.value?.showAt(
                         h.translation, yawOf(h), "sample", "SAMPLE THREAD",
+                        // TWO OF THESE ARE OURS, and they carry the two
+                        // states worth seeing: one still waiting for an
+                        // acknowledgement, one that never got one. The sample
+                        // exists to check geometry, and delivery marks are
+                        // geometry too — they lengthen the line that already
+                        // carries who and when.
                         listOf(
-                            "newest, nearest to you" to "JUST NOW",
-                            "second message back" to "2 MIN AGO",
-                            "third, further away" to "8 MIN AGO",
-                            "fourth step into the past" to "20 MIN AGO",
-                            "fifth, still readable" to "1 HR AGO",
-                            "sixth and furthest" to "3 HR AGO",
-                        ).map { (t, w) ->
+                            Triple("newest, nearest to you", "JUST NOW", ""),
+                            Triple("mine, still in flight", "1 MIN AGO",
+                                ctx.getString(R.string.d_sent)),
+                            Triple("mine, never answered", "8 MIN AGO",
+                                ctx.getString(R.string.d_lost)),
+                            Triple("fourth step into the past", "20 MIN AGO", ""),
+                            Triple("fifth, still readable", "1 HR AGO", ""),
+                            Triple("sixth and furthest", "3 HR AGO", ""),
+                        ).map { (t, w, mark) ->
                             com.iotj.meshmore.xr.spatial.Thread.Line(
-                                who = "%-14s %s".format("SAMPLE", w),
-                                words = t, mine = false,
+                                who = "%-14s %s%s".format(
+                                    if (mark.isEmpty()) "SAMPLE" else "ME", w,
+                                    if (mark.isEmpty()) "" else "  $mark",
+                                ),
+                                words = t, mine = mark.isNotEmpty(),
                             )
                         },
                     )
@@ -3552,6 +3590,9 @@ private fun HorizonScene(link: MeshLink) {
                             // one arrives, this line becomes the place it is
                             // called FROM, not the place it runs.
                             cw.suggestion = sel?.text?.takeIf { Settings.autopen(ctx) }?.let { Autopen.suggest(it) }
+                            // Offered only while something is actually
+                            // unanswered. See Crown.canResend.
+                            cw.canResend = link.lastUnanswered() != null
                             cw.tick(
                                 // `at` only gates the crown; the rows are
                                 // placed from the head and its yaw either way,
@@ -4783,11 +4824,18 @@ private fun HorizonScene(link: MeshLink) {
                                         h.translation, yawOf(h), t.id, t.title,
                                         t.messages.map { m ->
                                             com.iotj.meshmore.xr.spatial.Thread.Line(
-                                                who = "%-14s %s".format(
+                                                who = "%-14s %s%s".format(
                                                     com.iotj.meshmore.xr.spatial.TypeTier.clip(
                                                         m.fromName.ifBlank { t.title }, 14,
                                                     ),
                                                     ago(ctx, nowS - m.atEpochSec),
+                                                    // WHAT BECAME OF IT, on the
+                                                    // line that already carries
+                                                    // who and when. Only for
+                                                    // messages we sent; nothing
+                                                    // is claimed about anyone
+                                                    // else's.
+                                                    deliveryMark(ctx, m),
                                                 ),
                                                 words = com.iotj.meshmore.xr.spatial.TypeTier
                                                     .clip(m.text, 24),
@@ -6277,6 +6325,35 @@ private fun onCrown(
     // reel's cursor has to ask about this first.
     val to = crown.target
     when (act) {
+        // AGAIN, THEN. The mesh does not retry and roughly one direct message
+        // in ten goes unanswered, so this is the only recovery there is. A new
+        // send with the same words: the old line keeps its NO ANSWER, because
+        // it really did go unanswered and rewriting that would be the app
+        // flattering itself.
+        Crown.Act.RESEND -> {
+            val lost = link.lastUnanswered()
+            if (lost == null) {
+                crown.say(ctx.getString(R.string.n_nothing_to_send), nowMs)
+                cue.closed()
+            } else {
+                when (val r = link.resend(lost)) {
+                    is MeshLink.Sent.Ok -> {
+                        crown.say(
+                            ctx.getString(
+                                R.string.n_resent,
+                                com.iotj.meshmore.xr.spatial.TypeTier.clip(lost.fromName, 12),
+                            ),
+                            nowMs,
+                        )
+                        cue.recognised()
+                    }
+                    is MeshLink.Sent.NotReady -> {
+                        crown.say(ctx.getString(R.string.n_radio_not_ready), nowMs); cue.closed()
+                    }
+                    is MeshLink.Sent.Refused -> { crown.say(r.why, nowMs); cue.closed() }
+                }
+            }
+        }
         Crown.Act.REPLY -> { crown.compose(); cue.opened() }
         Crown.Act.BACK -> {
             dictation.cancel()

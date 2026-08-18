@@ -67,6 +67,10 @@ class MsgStore(private val store: Store, private val log: (String) -> Unit = {})
     private fun encode(m: MeshLink.Msg): String = listOf(
         m.fromKey, m.fromName, esc(m.text), m.atEpochSec.toString(),
         if (m.direct) "1" else "0", m.channel.orEmpty(), m.channelName.orEmpty(),
+        // APPENDED, NEVER INSERTED. Older records have seven fields and decode
+        // into the same message with an unknown delivery, which is exactly what
+        // they are: written before the app could tell.
+        m.delivery?.name.orEmpty(), m.ackTag?.toString().orEmpty(),
     ).joinToString(US)
 
     private fun decode(s: String): MeshLink.Msg? {
@@ -85,6 +89,10 @@ class MsgStore(private val store: Store, private val log: (String) -> Unit = {})
             direct = f[4] == "1",
             channel = f.getOrNull(5)?.takeIf { it.isNotEmpty() },
             channelName = f.getOrNull(6)?.takeIf { it.isNotEmpty() },
+            delivery = f.getOrNull(7)?.takeIf { it.isNotEmpty() }?.let {
+                runCatching { MeshLink.Delivered.valueOf(it) }.getOrNull()
+            },
+            ackTag = f.getOrNull(8)?.takeIf { it.isNotEmpty() }?.toLongOrNull(),
         )
     }
 
