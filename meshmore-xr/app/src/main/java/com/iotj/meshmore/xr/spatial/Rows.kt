@@ -208,33 +208,22 @@ internal fun radioRow(name: String, live: String, pending: String?): String {
     // name push the whole row past the plate — the same overflow that was
     // photographed on the APP bay, reintroduced by a function that checked the
     // half it happened to be thinking about.
-    // MEASURED IN HALF-CELLS, NOT CODE UNITS. A kanji parameter name is half
-    // as many characters and twice as wide as the Latin one it replaced, so
-    // `length` hands it most of the plate and pushes the value off the end.
-    // See L10n.width; the budget comes from whichever template this locale's
-    // plate was actually sized from.
-    val budget = com.iotj.meshmore.xr.L10n.width(
-        com.iotj.meshmore.xr.L10n.tpl(ROW_WIDEST, ROW_WIDEST_JA),
-    )
+    // MEASURED IN CELLS, NOT CODE UNITS, and measured by TypeTier because
+    // TypeTier is where that quantity lives. A kanji parameter name is half as
+    // many characters and twice as wide as the Latin one it replaced, so
+    // `length` hands it most of the plate and pushes the value off the end —
+    // the overflow already photographed once on the APP bay, waiting to happen
+    // again in the locale nobody reads the screenshots of.
+    //
+    // The budget comes from whichever template this locale's plate was sized
+    // from: 28 Latin cells, or 13 kanji, which is 26. The same plate.
+    val budget = TypeTier.displayCells(com.iotj.meshmore.xr.L10n.tpl(ROW_WIDEST, ROW_WIDEST_JA))
     val n = name.trim().uppercase().let {
-        if (com.iotj.meshmore.xr.L10n.width(it) <= RADIO_NAME_MAX) it else clipTo(it, RADIO_NAME_MAX - 1) + "\u2026"
+        if (TypeTier.displayCells(it) <= RADIO_NAME_MAX) it else TypeTier.clip(it, RADIO_NAME_MAX)
     }
     val v = if (pending == null || pending == live) live else live + "\u2192" + pending
-    val room = (budget - com.iotj.meshmore.xr.L10n.width(n) - 2).coerceAtLeast(1)
-    return n + "  " + (if (com.iotj.meshmore.xr.L10n.width(v) <= room) v else clipTo(v, room))
-}
-
-/** Take as much of [s] as fits [halfCells], never splitting a wide character. */
-internal fun clipTo(s: String, halfCells: Int): String {
-    var used = 0
-    val out = StringBuilder()
-    for (c in s) {
-        val w = if (com.iotj.meshmore.xr.L10n.isWide(c)) 2 else 1
-        if (used + w > halfCells) break
-        out.append(c)
-        used += w
-    }
-    return out.toString()
+    val room = (budget - TypeTier.displayCells(n) - 2).coerceAtLeast(1)
+    return n + "  " + (if (TypeTier.displayCells(v) <= room) v else TypeTier.clip(v, room))
 }
 
 /** Longest parameter name that leaves room for a value and a pending arrow. */

@@ -5,7 +5,7 @@ package com.iotj.meshmore.xr
 import com.iotj.meshmore.xr.spatial.RADIO_NAME_MAX
 import com.iotj.meshmore.xr.spatial.ROW_WIDEST
 import com.iotj.meshmore.xr.spatial.ROW_WIDEST_JA
-import com.iotj.meshmore.xr.spatial.clipTo
+import com.iotj.meshmore.xr.spatial.TypeTier
 import com.iotj.meshmore.xr.spatial.radioRow
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -31,17 +31,17 @@ class CellWidthTest {
     @After fun reset() { L10n.ja = false }
 
     @Test fun latinCountsOneAndKanjiCountsTwo() {
-        assertEquals(3, L10n.width("ABC"))
-        assertEquals(6, L10n.width("周波数"))
-        assertEquals(9, L10n.width("周波数ABC"))
-        assertEquals(0, L10n.width(""))
+        assertEquals(3, TypeTier.displayCells("ABC"))
+        assertEquals(6, TypeTier.displayCells("周波数"))
+        assertEquals(9, TypeTier.displayCells("周波数ABC"))
+        assertEquals(0, TypeTier.displayCells(""))
     }
 
     /** Kana and fullwidth forms draw wide too, not only kanji. */
     @Test fun kanaAndFullwidthAreWide() {
-        assertEquals(10, L10n.width("ゼロホップ"))
-        assertEquals(4, L10n.width("ＡＢ"))
-        assertEquals("wide punctuation, plus one narrow space", 3, L10n.width("。 "))
+        assertEquals(10, TypeTier.displayCells("ゼロホップ"))
+        assertEquals(4, TypeTier.displayCells("ＡＢ"))
+        assertEquals("wide punctuation, plus one narrow space", 3, TypeTier.displayCells("。 "))
     }
 
     /**
@@ -52,18 +52,20 @@ class CellWidthTest {
      * matching itself.
      */
     @Test fun bothRowTemplatesMeasureTheSamePlate() {
-        val en = L10n.width(ROW_WIDEST)
-        val ja = L10n.width(ROW_WIDEST_JA)
+        val en = TypeTier.displayCells(ROW_WIDEST)
+        val ja = TypeTier.displayCells(ROW_WIDEST_JA)
         assertTrue("en=$en ja=$ja", kotlin.math.abs(en - ja) <= 2)
     }
 
+    /**
+     * CLIPPING IS TypeTier'S, not a second copy of it. TypeTier.clip reserves
+     * one cell for the ellipsis it appends and never splits a wide character,
+     * which is what a row needs and what this asserts rather than reimplements.
+     */
     @Test fun clippingNeverSplitsAWideCharacter() {
-        // 5 half-cells of "全中継局" (8 wide) must stop at two characters, not
-        // take two and a half.
-        assertEquals("全中", clipTo("全中継局", 5))
-        assertEquals("全中継", clipTo("全中継局", 6))
-        assertEquals("ABCD", clipTo("ABCDE", 4))
-        assertEquals("", clipTo("全", 1))
+        assertEquals("全中…", TypeTier.clip("全中継局", 6))
+        assertEquals("ABCD…", TypeTier.clip("ABCDEFG", 5))
+        assertEquals("全中継局", TypeTier.clip("全中継局", 8))
     }
 
     /** A Latin row is exactly what it always was — nothing regressed. */
@@ -83,7 +85,7 @@ class CellWidthTest {
         val r = radioRow("無線機を再検索", "Bluetooth", null)
         // Only the NAME is uppercased by radioRow; a value is shown as given.
         assertTrue("value was trimmed away: '$r'", r.endsWith("Bluetooth"))
-        assertTrue("row is wider than the plate: '$r'", L10n.width(r) <= L10n.width(ROW_WIDEST_JA) + 2)
+        assertTrue("row is wider than the plate: '$r'", TypeTier.displayCells(r) <= TypeTier.displayCells(ROW_WIDEST_JA) + 2)
     }
 
     /** An over-long kanji name is clipped by WIDTH and marked as clipped. */
@@ -93,7 +95,7 @@ class CellWidthTest {
         assertTrue("no ellipsis: '$r'", r.contains("…"))
         assertTrue(
             "name took more than its budget: '$r'",
-            L10n.width(r.substringBefore("  ")) <= RADIO_NAME_MAX,
+            TypeTier.displayCells(r.substringBefore("  ")) <= RADIO_NAME_MAX,
         )
     }
 }

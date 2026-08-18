@@ -76,38 +76,6 @@ object L10n {
         if (ja) (latinBudget / KANJI_PROMOTE).toInt() else latinBudget
 
     /**
-     * HOW WIDE A STRING ACTUALLY DRAWS, in half-cells.
-     *
-     * `String.length` counts code units, which is the wrong ruler for a row
-     * that lines a value up beside a name: 周波数 is three code units and
-     * draws as wide as six Latin characters. Rows measured with `length`
-     * therefore believe a kanji label is tiny, hand it most of the plate, and
-     * push the value off the end — which is the overflow already photographed
-     * once on the APP bay, waiting to happen again in the locale nobody reads
-     * the screenshots of.
-     *
-     * A Latin character is one half-cell; anything in the CJK ranges (kanji,
-     * kana, fullwidth forms) is two. That is the same model the templates
-     * were measured against — ROW_WIDEST is 28 Latin characters, ROW_WIDEST_JA
-     * is 13 kanji, and 13 x 2 = 26 is the same plate to within a character.
-     */
-    fun width(s: String): Int = s.sumOf { c -> if (isWide(c)) 2 else 1 }
-
-    /** True for the blocks that draw fullwidth. Ranges, not a table. */
-    fun isWide(c: Char): Boolean = c.code.let { u ->
-        (u in 0x1100..0x115F) ||        // hangul jamo
-            (u in 0x2E80..0x303E) ||    // CJK radicals, kangxi, punctuation
-            (u in 0x3041..0x33FF) ||    // kana, compatibility, squared forms
-            (u in 0x3400..0x4DBF) ||    // CJK ext A
-            (u in 0x4E00..0x9FFF) ||    // CJK unified
-            (u in 0xA000..0xA4CF) ||    // yi
-            (u in 0xF900..0xFAFF) ||    // compatibility ideographs
-            (u in 0xFE30..0xFE6F) ||    // compatibility forms
-            (u in 0xFF00..0xFF60) ||    // fullwidth forms
-            (u in 0xFFE0..0xFFE6)
-    }
-
-    /**
      * Pick a sizing template per locale. Reusable panels are sized ONCE from
      * their template, so a JA surface must be sized from a JA-widest string —
      * a panel sized for M's and filled with kanji at a promoted cap clips.
