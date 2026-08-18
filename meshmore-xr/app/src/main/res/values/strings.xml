@@ -221,6 +221,18 @@
     <string name="ab_radio">RADIO</string>
     <string name="ab_firmware">FW</string>
     <string name="ab_no_radio">NO RADIO LINKED</string>
+    <!-- ═══ pagers and palm reel — written straight to panels until 2026-08-18 ═══ -->
+    <string name="pg_more">%1$d-%2$d OF %3$d   MORE</string>
+    <!-- Two strings rather than a plurals resource: the only distinction
+         English needs here is one-versus-many, Japanese needs none, and the
+         parity test that guards this file understands strings. -->
+    <string name="pg_msgs_one">1 MESSAGE</string>
+    <string name="pg_msgs_many">%1$d MESSAGES</string>
+    <string name="reel_scrub">◀  %1$d OF %2$d  ▶</string>
+    <string name="reel_to_you">%1$s → YOU</string>
+    <string name="reel_from">%1$s · %2$s</string>
+    <string name="reel_channel">CHANNEL</string>
+    <string name="reel_hint">THUMB ALONG INDEX TO TURN</string>
     <string name="cm_magnify">MAGNIFY</string>
     <string name="cm_bearing">BEARING</string>
     <string name="cm_nearest">NEAREST</string>

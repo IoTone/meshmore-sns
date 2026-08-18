@@ -197,7 +197,9 @@ class Reel(
         // is short enough to be new to somebody, and only when there is
         // somewhere to turn TO.
         hint = TextRun.reusable(
-            session, context, HINT_WIDEST, CAP * 0.85f, argb(theme.alt, 0.75f), "reel-hint",
+            session, context,
+            com.iotj.meshmore.xr.L10n.tpl(HINT_WIDEST, HINT_WIDEST_JA),
+            com.iotj.meshmore.xr.L10n.cap(CAP * 0.85f), argb(theme.alt, 0.75f), "reel-hint",
         )?.also { it.entity.parent = root; it.entity.setEnabled(false); entities += it.entity }
         Log.i(TAG, "[reel] $SLOTS slots, $FRONT named, raised card")
     }
@@ -429,7 +431,13 @@ class Reel(
                     cz - az * (RY + HINT_DROP),
                 )
                 hint?.setText(
-                    if (scrubbing) "\u25c0  ${current + 1} OF $n  \u25b6" else HINT,
+                    if (scrubbing) {
+                        context.getString(
+                            com.iotj.meshmore.xr.R.string.reel_scrub, current + 1, n,
+                        )
+                    } else {
+                        context.getString(com.iotj.meshmore.xr.R.string.reel_hint)
+                    },
                 )
                 hint?.entity?.setPose(Pose(hAt, facing(hAt, h)), Space.ACTIVITY)
             }
@@ -464,8 +472,16 @@ class Reel(
             // that guessing wrong is embarrassing in one direction and a missed
             // message in the other.
             cardWho?.setText(
-                if (sel.direct) "${sel.who} \u2192 YOU"
-                else "${sel.who} \u00b7 ${sel.origin.ifBlank { "CHANNEL" }}",
+                if (sel.direct) {
+                    context.getString(com.iotj.meshmore.xr.R.string.reel_to_you, sel.who)
+                } else {
+                    context.getString(
+                        com.iotj.meshmore.xr.R.string.reel_from, sel.who,
+                        sel.origin.ifBlank {
+                            context.getString(com.iotj.meshmore.xr.R.string.reel_channel)
+                        },
+                    )
+                },
             )
             cardWho?.entity?.setPose(Pose(at, r), Space.ACTIVITY)
             cardBody.forEachIndexed { i, line ->
@@ -562,6 +578,15 @@ class Reel(
         const val HINT = "THUMB ALONG INDEX TO TURN"
         /** Wide enough for the hint AND for the position readout it becomes. */
         const val HINT_WIDEST = "THUMB ALONG INDEX TO TURN"
+
+        /**
+         * The Japanese hint, which is the widest thing this panel holds in
+         * that locale. Sized from its own template rather than the Latin one:
+         * a panel measured for twenty-five M's at the promoted kanji cap is
+         * half again wider than it needs to be, hanging under a reel that has
+         * to sit on a palm.
+         */
+        const val HINT_WIDEST_JA = "親指を人差し指で回す"
         const val HINT_DROP = 0.022f
     }
 }

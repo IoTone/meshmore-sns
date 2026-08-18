@@ -151,19 +151,27 @@ class Roster(
             val y = a.y + (ROWS / 2f - i) * LINE
             val at = Vector3(a.x, y, a.z)
             place(r, at, e != null)
-            if (e != null) r.run.setText(e.label)
+            if (e != null) {
+                r.run.setText(e.label)
+                // WHAT THE LIST ACTUALLY SAYS, once per page turn rather than
+                // per frame. Row text here is composed from a node's own name,
+                // which is arbitrary user text in an arbitrary script — the one
+                // place a Japanese string appears in the English build too.
+                Log.i(TAG, "[roster] row ${first + i} = '${e.label}'")
+            }
         }
         pager?.let { p ->
             val y = a.y + (ROWS / 2f - ROWS) * LINE - LINE * 0.4f
             place(p, Vector3(a.x, y, a.z), true)
             // Says where you are as well as what it does. "MORE" alone in a
             // list of 300 is a button with no scale attached to it.
-            p.run.setText(
-                "%d-%d OF %d   MORE".format(
-                    (first + 1).coerceAtMost(all.size),
-                    (first + ROWS).coerceAtMost(all.size), all.size,
-                ),
+            val pageText = context.getString(
+                com.iotj.meshmore.xr.R.string.pg_more,
+                (first + 1).coerceAtMost(all.size),
+                (first + ROWS).coerceAtMost(all.size), all.size,
             )
+            Log.i(TAG, "[roster] pager = '$pageText'")
+            p.run.setText(pageText)
         }
     }
 

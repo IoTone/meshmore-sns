@@ -207,6 +207,9 @@ class Inbox(
                 r.proxy.setEnabled(e != null)
                 if (e == null) return@runCatching
                 r.head.setText(e.who)
+                // The message list, read back once per page turn. Bodies are
+                // whatever somebody typed into a radio, in whatever script.
+                Log.i(TAG, "[inbox] row = '${e.who}'")
                 r.body.setText(e.words)
                 r.head.entity.setPose(
                     Pose(Vector3(a.x, y, a.z), facing(a)), Space.ACTIVITY,
@@ -224,13 +227,20 @@ class Inbox(
             pager?.entity?.setEnabled(on)
             pagerProxy?.setEnabled(on)
             if (on) {
-                pager?.setText(
-                    if (all.size <= ROWS) "%d MESSAGE%s".format(
-                        all.size, if (all.size == 1) "" else "S",
-                    ) else "%d-%d OF %d   MORE".format(
+                val pageText = if (all.size <= ROWS) {
+                    context.getString(
+                        if (all.size == 1) com.iotj.meshmore.xr.R.string.pg_msgs_one
+                        else com.iotj.meshmore.xr.R.string.pg_msgs_many,
+                        all.size,
+                    )
+                } else {
+                    context.getString(
+                        com.iotj.meshmore.xr.R.string.pg_more,
                         first + 1, (first + ROWS).coerceAtMost(all.size), all.size,
-                    ),
-                )
+                    )
+                }
+                Log.i(TAG, "[inbox] pager = '$pageText'")
+                pager?.setText(pageText)
                 pager?.entity?.setPose(Pose(Vector3(a.x, py, a.z), facing(a)), Space.ACTIVITY)
                 pagerProxy?.setPose(Pose(Vector3(a.x, py, a.z)), Space.ACTIVITY)
             }

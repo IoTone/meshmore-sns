@@ -968,10 +968,26 @@ private fun langRows(
  * the string only while the string is Latin. Kanji are two cells each, so a
  * padded Japanese column lands wherever the character count happens to put it.
  */
-private fun padCells(name: String, value: String, column: Int = 13): String {
+private fun padCells(name: String, value: String, column: Int): String {
     val used = com.iotj.meshmore.xr.spatial.TypeTier.displayCells(name)
     return name + " ".repeat((column - used).coerceAtLeast(1)) + value
 }
+
+/**
+ * WHO SAID IT AND WHEN, on one line, in every list that shows messages.
+ *
+ * The column is shared by the inbox, the thread, the palm reel and the crown,
+ * and it was `"%-14s %s"` in all six places — six copies of a number and six
+ * copies of the same wrong ruler. A sender's name is the one string in this
+ * app that is arbitrary user text in an arbitrary script, so it is exactly
+ * where code-unit padding goes wrong, and it goes wrong in the ENGLISH build
+ * too: a node called 中継局 is three units and six cells, and the timestamp
+ * beside it landed eight cells left of where every other row put it.
+ */
+private fun whoLine(name: String, rest: String) = padCells(name, rest, column = WHO_COLUMN)
+
+/** One past the 14-cell name budget every caller clips to. */
+private const val WHO_COLUMN = 15
 
 private fun telemetryRows(
     ctx: android.content.Context,
@@ -989,14 +1005,15 @@ private fun telemetryRows(
             // Japanese names happen to be two kanji; the first three-kanji one
             // would have stepped out of the column with nothing to explain it.
             label = padCells(
-                ctx.getString(
+                column = 13,
+                name = ctx.getString(
                     when (i) {
                         0 -> R.string.telem_battery
                         1 -> R.string.telem_location
                         else -> R.string.telem_environment
                     },
                 ),
-                ctx.getString(
+                value = ctx.getString(
                     when (level) {
                         com.iotj.meshmore.xr.spatial.TelemetryPerms.DENY -> R.string.telem_deny
                         com.iotj.meshmore.xr.spatial.TelemetryPerms.ALLOW_FLAGS -> R.string.telem_contacts
@@ -3021,10 +3038,7 @@ private fun HorizonScene(link: MeshLink) {
                         val last = t.newest
                         com.iotj.meshmore.xr.spatial.Inbox.Entry(
                             id = t.id,
-                            who = "%-14s %s".format(
-                                com.iotj.meshmore.xr.spatial.TypeTier.clip(t.title, 14),
-                                last?.let { ago(ctx, now - it.atEpochSec) } ?: "",
-                            ),
+                            who = whoLine(com.iotj.meshmore.xr.spatial.TypeTier.clip(t.title, 14), last?.let { ago(ctx, now - it.atEpochSec) } ?: ""),
                             // The last thing said, which is what a thread list
                             // is FOR — a row that only names the conversation
                             // makes you open every one to find the live one.
@@ -3072,10 +3086,21 @@ private fun HorizonScene(link: MeshLink) {
                     }.sortedBy { it.second }.map { (p, km) ->
                         val n = MeshNodes.nodeFor(o2, p, now)
                         com.iotj.meshmore.xr.spatial.Roster.Entry(
-                            "%-14s %5s %s".format(
+                            // THE NAME COLUMN IS PADDED IN CELLS. `%-14s` counts
+                            // code units, and a node name is the one string here
+                            // that is arbitrary user text in an arbitrary script
+                            // — 中継局 is three units and six cells, so a
+                            // Japanese name shifted the range and bearing eight
+                            // cells left of the column every other row uses.
+                            // That happens in the ENGLISH build too: it is a
+                            // fact about the name, not about the locale.
+                            padCells(
                                 com.iotj.meshmore.xr.spatial.TypeTier.clip(n.name, 14),
-                                MeshNodes.km(n.dist.toDouble()),
-                                MeshNodes.compass(n.bearingRad),
+                                "%5s %s".format(
+                                    MeshNodes.km(n.dist.toDouble()),
+                                    MeshNodes.compass(n.bearingRad),
+                                ),
+                                column = 15,
                             ),
                         ) {
                             rosterWant.add(n)
@@ -3442,12 +3467,9 @@ private fun HorizonScene(link: MeshLink) {
                             h.translation, yawOf(h), t.id, t.title,
                             t.messages.map { m ->
                                 com.iotj.meshmore.xr.spatial.Thread.Line(
-                                    who = "%-14s %s".format(
-                                        com.iotj.meshmore.xr.spatial.TypeTier.clip(
+                                    who = whoLine(com.iotj.meshmore.xr.spatial.TypeTier.clip(
                                             m.fromName.ifBlank { t.title }, 14,
-                                        ),
-                                        ago(ctx, nowS - m.atEpochSec),
-                                    ),
+                                        ), ago(ctx, nowS - m.atEpochSec)),
                                     words = com.iotj.meshmore.xr.spatial.TypeTier.clip(m.text, 24),
                                     mine = m.direct,
                                 )
@@ -3485,10 +3507,10 @@ private fun HorizonScene(link: MeshLink) {
                             Triple("sixth and furthest", "3 HR AGO", ""),
                         ).map { (t, w, mark) ->
                             com.iotj.meshmore.xr.spatial.Thread.Line(
-                                who = "%-14s %s%s".format(
-                                    if (mark.isEmpty()) "SAMPLE" else "ME", w,
-                                    if (mark.isEmpty()) "" else "  $mark",
-                                ),
+                                who = whoLine(
+if (mark.isEmpty()) "SAMPLE" else "ME",
+(w) + (if (mark.isEmpty()) "" else "  $mark"),
+),
                                 words = t, mine = mark.isNotEmpty(),
                             )
                         },
@@ -4498,12 +4520,9 @@ private fun HorizonScene(link: MeshLink) {
                         h.translation, yawOf(h), t.id, t.title,
                         t.messages.map { m ->
                             com.iotj.meshmore.xr.spatial.Thread.Line(
-                                who = "%-14s %s".format(
-                                    com.iotj.meshmore.xr.spatial.TypeTier.clip(
+                                who = whoLine(com.iotj.meshmore.xr.spatial.TypeTier.clip(
                                         m.fromName.ifBlank { t.title }, 14,
-                                    ),
-                                    ago(ctx, nowS - m.atEpochSec),
-                                ),
+                                    ), ago(ctx, nowS - m.atEpochSec)),
                                 words = com.iotj.meshmore.xr.spatial.TypeTier.clip(m.text, 24),
                                 mine = m.direct,
                             )
@@ -4990,18 +5009,18 @@ private fun HorizonScene(link: MeshLink) {
                                         h.translation, yawOf(h), t.id, t.title,
                                         t.messages.map { m ->
                                             com.iotj.meshmore.xr.spatial.Thread.Line(
-                                                who = "%-14s %s%s".format(
+                                                who = whoLine(
                                                     com.iotj.meshmore.xr.spatial.TypeTier.clip(
                                                         m.fromName.ifBlank { t.title }, 14,
                                                     ),
-                                                    ago(ctx, nowS - m.atEpochSec),
                                                     // WHAT BECAME OF IT, on the
                                                     // line that already carries
                                                     // who and when. Only for
                                                     // messages we sent; nothing
                                                     // is claimed about anyone
                                                     // else's.
-                                                    deliveryMark(ctx, m),
+                                                    ago(ctx, nowS - m.atEpochSec) +
+                                                        deliveryMark(ctx, m),
                                                 ),
                                                 words = com.iotj.meshmore.xr.spatial.TypeTier
                                                     .clip(m.text, 24),
@@ -5596,12 +5615,9 @@ private fun HorizonScene(link: MeshLink) {
                         h.translation, yawOf(h), t.id, t.title,
                         t.messages.map { m ->
                             com.iotj.meshmore.xr.spatial.Thread.Line(
-                                who = "%-14s %s".format(
-                                    com.iotj.meshmore.xr.spatial.TypeTier.clip(
+                                who = whoLine(com.iotj.meshmore.xr.spatial.TypeTier.clip(
                                         m.fromName.ifBlank { t.title }, 14,
-                                    ),
-                                    ago(ctx, nowS - m.atEpochSec),
-                                ),
+                                    ), ago(ctx, nowS - m.atEpochSec)),
                                 words = com.iotj.meshmore.xr.spatial.TypeTier.clip(m.text, 24),
                                 mine = m.direct,
                             )
@@ -6576,12 +6592,9 @@ private fun onCrown(
                     h.translation, yawOf(h), t.id, t.title,
                     t.messages.map { m ->
                         com.iotj.meshmore.xr.spatial.Thread.Line(
-                            who = "%-14s %s".format(
-                                com.iotj.meshmore.xr.spatial.TypeTier.clip(
+                            who = whoLine(com.iotj.meshmore.xr.spatial.TypeTier.clip(
                                     m.fromName.ifBlank { t.title }, 14,
-                                ),
-                                ago(ctx, nowS - m.atEpochSec),
-                            ),
+                                ), ago(ctx, nowS - m.atEpochSec)),
                             words = com.iotj.meshmore.xr.spatial.TypeTier.clip(m.text, 24),
                             mine = m.direct,
                         )

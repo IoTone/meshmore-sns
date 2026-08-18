@@ -214,6 +214,14 @@
     <string name="ab_radio">無線機</string>
     <string name="ab_firmware">FW</string>
     <string name="ab_no_radio">無線機なし</string>
+    <string name="pg_more">%1$d-%2$d / %3$d   次へ</string>
+    <string name="pg_msgs_one">1 件</string>
+    <string name="pg_msgs_many">%1$d 件</string>
+    <string name="reel_scrub">◀  %1$d / %2$d  ▶</string>
+    <string name="reel_to_you">%1$s → 自分</string>
+    <string name="reel_from">%1$s · %2$s</string>
+    <string name="reel_channel">チャンネル</string>
+    <string name="reel_hint">親指を人差し指で回す</string>
     <string name="cm_magnify">拡大</string>
     <string name="cm_bearing">方位</string>
     <string name="cm_nearest">最寄り</string>
