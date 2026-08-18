@@ -269,6 +269,8 @@
     <string name="d_list">一覧</string>
     <string name="d_north">北</string>
     <string name="d_find">検索</string>
+    <string name="a_words">語</string>
+    <string name="a_full">上限</string>
     <string name="nf_title">位置がありません</string>
     <string name="nf_board_nogps">%1$s にGPSがありません</string>
     <string name="nf_nofix">無線機が位置を送りません</string>

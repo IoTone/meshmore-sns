@@ -460,9 +460,40 @@ class Crown(
      * changed, which is the only thing worth a log line.
      */
     fun applyWords(): Boolean {
-        val stamp = labels().joinToString("|") { it.second }
+        val stamp = labels().joinToString("|") { it.second } + "/" + draftLine()
         if (stamp == wordStamp) return false
         wordStamp = stamp
+        // THE WORDS ABOUT TO LEAVE THE RADIO, restored.
+        //
+        // The buttons are prebuilt panels chosen from a closed vocabulary, and
+        // a dictated sentence is in no vocabulary — so the draft is the one
+        // thing here that has to be WRITTEN. It was dropped when the buttons
+        // moved to the vocabulary and dictation has been reaching the confirm
+        // screen unshown ever since: a wearer asked to approve words the app
+        // would not show them, which is worse than no preview at all.
+        //
+        // Written here rather than in tick(): once per change, from the host's
+        // effect, which is where every write in this app that has ever reached
+        // the glass has come from.
+        runCatching {
+            draft0?.setText(
+                if (draft.isBlank() && dictating) {
+                    context.getString(com.iotj.meshmore.xr.R.string.a_listening)
+                } else {
+                    TypeTier.clip(draft, DRAFT_COLS)
+                },
+            )
+            count0?.setText(
+                if (generated) {
+                    Autopen.MARK
+                } else {
+                    "$spoken/${Dictation.MAX_WORDS} " +
+                        context.getString(com.iotj.meshmore.xr.R.string.a_words) +
+                        if (full) "  " + context.getString(com.iotj.meshmore.xr.R.string.a_full)
+                        else ""
+                },
+            )
+        }
         return true
     }
 

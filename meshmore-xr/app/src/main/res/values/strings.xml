@@ -271,6 +271,8 @@
     <string name="d_list">LIST</string>
     <string name="d_north">NORTH</string>
     <string name="d_find">FIND</string>
+    <string name="a_words">WORDS</string>
+    <string name="a_full">FULL</string>
     <string name="nf_title">NO POSITION</string>
     <string name="nf_board_nogps">%1$s HAS NO GPS</string>
     <string name="nf_nofix">THE RADIO SENDS NO POSITION</string>
