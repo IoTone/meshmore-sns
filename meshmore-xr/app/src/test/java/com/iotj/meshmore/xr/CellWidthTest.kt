@@ -88,6 +88,29 @@ class CellWidthTest {
         assertTrue("row is wider than the plate: '$r'", TypeTier.displayCells(r) <= TypeTier.displayCells(ROW_WIDEST_JA) + 2)
     }
 
+    /**
+     * THE ABOUT BAY'S IDENTITY ROWS SURVIVE THE JAPANESE PLATE.
+     *
+     * These were three hand-spaced strings and two of them were exactly one
+     * cell over in Japanese, so the clamp took the last character — which on
+     * the version row is the build number, the single thing anybody opens that
+     * surface to read. Checked at build 999 rather than at today's, because
+     * a row that fits until the build number gains a digit is not fixed.
+     */
+    @Test fun theAboutRowsKeepTheirValuesInJapanese() {
+        L10n.ja = true
+        val plate = TypeTier.displayCells(ROW_WIDEST_JA)
+        listOf(
+            "版" to "0.3.0-debug.999",
+            "FW" to "companion-v1.15.0",
+            "無線機" to "MESHCORE-ABCD",
+        ).forEach { (name, value) ->
+            val r = radioRow(name, value, null)
+            assertTrue("'$r' is wider than the $plate-cell plate", TypeTier.displayCells(r) <= plate)
+            assertTrue("'$r' lost part of '$value'", r.endsWith(value))
+        }
+    }
+
     /** An over-long kanji name is clipped by WIDTH and marked as clipped. */
     @Test fun anOverlongKanjiNameIsClippedNotOverflowed() {
         L10n.ja = true

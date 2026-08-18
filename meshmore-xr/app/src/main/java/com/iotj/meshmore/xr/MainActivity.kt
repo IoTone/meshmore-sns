@@ -871,11 +871,32 @@ private fun aboutRows(ctx: android.content.Context, link: MeshLink): List<com.io
     fun row(text: String) = com.iotj.meshmore.xr.spatial.Stack.Row(
         id = "about", label = text, lit = false,
     )
-    val radio = link.status.value.deviceName?.uppercase() ?: "NO RADIO LINKED"
+    val radio = link.status.value.deviceName?.uppercase()
+        ?: ctx.getString(R.string.ab_no_radio)
+    // NAME AND VALUE, THROUGH THE BUILDER THAT MEASURES. These were three
+    // hand-spaced strings, and in Japanese two of them were a cell over the
+    // plate and lost their last character to the clamp:
+    //
+    //   MESHMORE XR  0.3.0-debug.70   ->   MESHMORE XR  0.3.0-debug.…
+    //
+    // Which is the build number — the one thing on this surface a person is
+    // reading it to find out. The Japanese plate is 26 cells against the
+    // Latin 28, so a row that exactly fits in English is over by one there.
+    //
+    // The labels give way rather than the values: this bay's title already
+    // says MESHMORE XR, so the row does not need to, and `radioRow` clips
+    // whatever is left over against the locale's own template instead of a
+    // constant somebody has to remember to update.
     return listOf(
-        row("MESHMORE XR  ${BuildConfig.VERSION_NAME}"),
-        row("RADIO  ${com.iotj.meshmore.xr.spatial.TypeTier.clip(radio, 22)}"),
-        row("MESHCORE  ${MeshcoreConstants.FIRMWARE_PIN_TAG}"),
+        row(com.iotj.meshmore.xr.spatial.radioRow(
+            ctx.getString(R.string.ab_version), BuildConfig.VERSION_NAME, null,
+        )),
+        row(com.iotj.meshmore.xr.spatial.radioRow(
+            ctx.getString(R.string.ab_radio), radio, null,
+        )),
+        row(com.iotj.meshmore.xr.spatial.radioRow(
+            ctx.getString(R.string.ab_firmware), MeshcoreConstants.FIRMWARE_PIN_TAG, null,
+        )),
         // THE THREE THAT MATTER, in the order they matter. Driving first: it is
         // the only one where the consequence is not recoverable.
         row(ctx.getString(R.string.s_driving)),
@@ -940,6 +961,18 @@ private fun langRows(
     )
 }
 
+/**
+ * A name, a gutter, and a value, with the gutter measured in CELLS.
+ *
+ * `String.format("%-12s")` pads to a count of code units, which is the width of
+ * the string only while the string is Latin. Kanji are two cells each, so a
+ * padded Japanese column lands wherever the character count happens to put it.
+ */
+private fun padCells(name: String, value: String, column: Int = 13): String {
+    val used = com.iotj.meshmore.xr.spatial.TypeTier.displayCells(name)
+    return name + " ".repeat((column - used).coerceAtLeast(1)) + value
+}
+
 private fun telemetryRows(
     ctx: android.content.Context,
     link: MeshLink,
@@ -949,7 +982,13 @@ private fun telemetryRows(
         val level = p.level(i)
         com.iotj.meshmore.xr.spatial.Stack.Row(
             id = "TELEM$i",
-            label = "%-12s %s".format(
+            // PADDED IN CELLS. "%-12s" counts code units, so 電池 — two units
+            // and four cells — was padded as though it were ten cells narrower
+            // than it draws, putting the value two cells past the column the
+            // English rows use. It reads straight today only because all three
+            // Japanese names happen to be two kanji; the first three-kanji one
+            // would have stepped out of the column with nothing to explain it.
+            label = padCells(
                 ctx.getString(
                     when (i) {
                         0 -> R.string.telem_battery
@@ -4322,6 +4361,33 @@ private fun HorizonScene(link: MeshLink) {
                         // way a hand does, since the surface it lives behind is
                         // two pinches deep and unverifiable from a shell.
                         "REGION" -> openRegions()
+                        // AND THE TWO THAT LIVE INSIDE ANOTHER BAY, for the
+                        // same reason REGION is here: they are rows on the APP
+                        // surface, so reaching them takes two pinches and no
+                        // shell could open them at all. LANG is the surface a
+                        // Japanese build is switched with — being unable to
+                        // look at it from a bench is the worst possible place
+                        // for that gap.
+                        "TELEM" -> {
+                            consoleRef.value?.hide()
+                            bayMode.value = "TELEM"
+                            appRef.value?.show(
+                                telemetryRows(ctx, link),
+                                title = ctx.getString(R.string.t_telem),
+                                footer = ctx.getString(R.string.f_telem),
+                            )
+                            cue.opened()
+                        }
+                        "LANG" -> {
+                            consoleRef.value?.hide()
+                            bayMode.value = "LANG"
+                            appRef.value?.show(
+                                langRows(ctx),
+                                title = ctx.getString(R.string.t_lang),
+                                footer = ctx.getString(R.string.f_lang),
+                            )
+                            cue.opened()
+                        }
                         "DIAG" -> {
                             val on = !Settings.diagnostics(ctx)
                             Settings.setDiagnostics(ctx, on)

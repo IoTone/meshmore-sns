@@ -3,6 +3,8 @@
 package com.iotj.meshmore.xr
 
 import com.iotj.meshmore.xr.spatial.ROW_WIDEST
+import com.iotj.meshmore.xr.spatial.ROW_WIDEST_JA
+import com.iotj.meshmore.xr.spatial.TypeTier
 import com.iotj.meshmore.xr.spatial.regionRow
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
@@ -112,11 +114,46 @@ class RegionsTest {
      * No shipped region may be wide enough to trigger that.
      */
     @Test fun everyRegionRowKeepsBothItsNameAndItsFrequency() {
+        L10n.ja = false
         Regions.ALL.forEach {
             val row = regionRow(it.label, it.freqMhz)
             assertTrue("$row is ${row.length}", row.length <= ROW_WIDEST.length)
             assertTrue(row, row.startsWith(it.label))
             assertTrue("$row lost its frequency", row.contains("%.3f".format(it.freqMhz)))
+        }
+    }
+
+    /**
+     * AND IN JAPANESE, WHERE ONE OF THEM CANNOT.
+     *
+     * The Japanese plate is 26 cells against the Latin 28, and AUSTRALIA
+     * SA/WA/QLD with its frequency is 28. Something has to give, and the rule
+     * this list is built on is that the NAME never does — a region you cannot
+     * identify is useless, and a frequency with its last digits missing is
+     * worse than useless on a surface whose argument is that the number is the
+     * part you can check.
+     *
+     * So the frequency is dropped whole, and never trimmed. That is what this
+     * asserts: every row fits, every name survives intact, and no row ends in
+     * a fragment of a number.
+     */
+    @Test fun aJapanesePlateDropsTheFrequencyRatherThanTrimmingIt() {
+        L10n.ja = true
+        try {
+            val plate = TypeTier.displayCells(ROW_WIDEST_JA)
+            Regions.ALL.forEach {
+                val row = regionRow(it.label, it.freqMhz)
+                val f = "%.3f".format(it.freqMhz)
+                assertTrue("'$row' is ${TypeTier.displayCells(row)} of $plate cells",
+                    TypeTier.displayCells(row) <= plate)
+                assertTrue("'$row' lost part of its name", row.startsWith(it.label))
+                assertTrue(
+                    "'$row' shows a partial frequency",
+                    row == it.label || row.endsWith(f),
+                )
+            }
+        } finally {
+            L10n.ja = false
         }
     }
 

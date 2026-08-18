@@ -247,8 +247,21 @@ internal const val RADIO_NAME_MAX = 14
 internal fun regionRow(label: String, freqMhz: Double): String {
     val n = label.trim().uppercase()
     val f = "%.3f".format(freqMhz)
-    val room = (ROW_WIDEST.length - n.length - 2).coerceAtLeast(0)
-    return if (room >= f.length) "$n  $f" else n.take(ROW_WIDEST.length)
+    // THE LOCALE'S OWN PLATE, IN CELLS. Measured against the Latin template in
+    // Latin units, this said AUSTRALIA SA/WA/QLD had seven cells spare for its
+    // frequency — true in English, two cells short in Japanese, where the plate
+    // is 26 cells rather than 28. The row went out over-long and the panel's
+    // backstop trimmed the end, which is the frequency:
+    //
+    //     AUSTRALIA SA/WA/QLD  923.…
+    //
+    // A HALF-WRITTEN FREQUENCY IS A WRONG FREQUENCY, and this is the surface
+    // whose entire argument is that the number is the part a wearer can check.
+    // So the fallback that was always intended — the frequency gives way, the
+    // name never does — now actually fires, and gives way completely.
+    val budget = TypeTier.displayCells(com.iotj.meshmore.xr.L10n.tpl(ROW_WIDEST, ROW_WIDEST_JA))
+    val room = (budget - TypeTier.displayCells(n) - 2).coerceAtLeast(0)
+    return if (room >= TypeTier.displayCells(f)) "$n  $f" else TypeTier.clip(n, budget)
 }
 
 /**

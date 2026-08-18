@@ -194,6 +194,13 @@ class Stack(
             TAG,
             "[stack] '$title' open with ${list.size} row(s) over $pages page(s)",
         )
+        // WHAT IT ACTUALLY SAYS. A bay is two pinches deep and its rows are
+        // composed at runtime from several sources, so "the bay opened" has
+        // never been the same claim as "the bay reads correctly" — and in
+        // Japanese, on an emulator that cannot draw text into a panel at all,
+        // there was no way to tell the two apart. One line per row is the
+        // difference between checking a locale and hoping.
+        all.forEach { Log.i(TAG, "[stack] row '${it.id}' = '${it.label}'") }
     }
 
     /**
@@ -225,9 +232,21 @@ class Stack(
      * same warning sixty times a second or have to stay silent to avoid it;
      * doing it once per [show]/[update] gets one warning per offending list.
      */
-    private fun fitAll(list: List<Row>): List<Row> = list.map {
-        if (it.label.length <= WIDEST.length) it
-        else it.copy(label = fit(it.label, WIDEST, "row '${it.id}'"))
+    private fun fitAll(list: List<Row>): List<Row> {
+        // THE TEMPLATE THIS LOCALE'S PLATE WAS ACTUALLY SIZED FROM. `show`
+        // already picks per-locale templates for the title and the footer; the
+        // rows were measured against the Latin one, which is the plate they are
+        // not drawn on in Japanese.
+        //
+        // AND NO LENGTH GATE. `it.label.length <= WIDEST.length` skipped `fit`
+        // for anything under 28 CODE UNITS, so a thirteen-kanji row — which is
+        // twenty-six cells and exactly fills the Japanese plate — was never
+        // measured at all, and a fourteen-kanji one overflowed in silence. The
+        // gate was doing the comparison `fit` exists to do, in the units `fit`
+        // exists to avoid. `fit` returns the string untouched when it fits, so
+        // there is nothing to gate.
+        val template = com.iotj.meshmore.xr.L10n.tpl(WIDEST, ROW_WIDEST_JA)
+        return list.map { it.copy(label = fit(it.label, template, "row '${it.id}'")) }
     }
 
     private fun fit(s: String, template: String, what: String): String {

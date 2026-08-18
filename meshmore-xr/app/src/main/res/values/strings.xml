@@ -217,6 +217,10 @@
     <string name="n_scene_moved">SCENE MOVED HERE</string>
     <string name="n_scene_moved_nonorth">SCENE MOVED HERE  NORTH NOT SET</string>
     <string name="n_nothing_there">NOTHING RESOLVABLE THERE</string>
+    <string name="ab_version">VERSION</string>
+    <string name="ab_radio">RADIO</string>
+    <string name="ab_firmware">FW</string>
+    <string name="ab_no_radio">NO RADIO LINKED</string>
     <string name="cm_magnify">MAGNIFY</string>
     <string name="cm_bearing">BEARING</string>
     <string name="cm_nearest">NEAREST</string>
