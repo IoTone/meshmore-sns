@@ -259,6 +259,16 @@
     <string name="d_lost">・応答なし</string>
     <string name="a_resend">再送</string>
     <string name="n_resent">%1$s へ再送します</string>
+    <string name="d_compass">方位</string>
+    <string name="d_link">リンク</string>
+    <string name="d_setup">設定</string>
+    <string name="d_help">ヘルプ</string>
+    <string name="d_here">現在地</string>
+    <string name="d_wide">全体</string>
+    <string name="d_inbox">受信箱</string>
+    <string name="d_list">一覧</string>
+    <string name="d_north">北</string>
+    <string name="d_find">検索</string>
     <string name="nf_title">位置がありません</string>
     <string name="nf_board_nogps">%1$s にGPSがありません</string>
     <string name="nf_nofix">無線機が位置を送りません</string>

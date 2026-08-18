@@ -108,4 +108,31 @@ class AdviceTextTest {
             sentence.length + 6 <= Advice.WIDEST.length,
         )
     }
+
+    /**
+     * THE DOCK IS ON SCREEN THE WHOLE TIME, so its ten words are the most-read
+     * text in the app — and until now they were the pip IDENTITIES, drawn
+     * straight onto the glass, which made the dock the one surface in a fully
+     * translated app that could only speak English.
+     *
+     * The captions are sized from an eight-cell template, five glyphs once the
+     * kanji promotion applies, so this checks the words fit the plate they are
+     * drawn on rather than merely existing.
+     */
+    @Test
+    fun `every dock word fits its caption plate in both languages`() {
+        val keys = listOf(
+            "d_compass", "d_link", "d_setup", "d_help", "d_here",
+            "d_wide", "d_inbox", "d_list", "d_north", "d_find",
+        )
+        val en = res("values")
+        val ja = res("values-ja")
+        keys.forEach {
+            val e = filled(en.getValue(it))
+            assertTrue("$it is ${e.length} cells, the plate holds 8: '$e'", e.length <= 8)
+            val j = filled(ja.getValue(it))
+            assertTrue("$it is ${j.length} glyphs, the JA plate holds 5: '$j'", j.length <= 5)
+            assertTrue("$it is untranslated", j != e || it == "d_north")
+        }
+    }
 }

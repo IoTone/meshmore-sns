@@ -170,6 +170,16 @@ class Dock(
         reach: Float = REACH,
         rows: Int = COLUMN_ROWS,
         padLeft: Float = PAD_LEFT,
+        /**
+         * What a pip is CALLED, as opposed to what it is.
+         *
+         * The name is an identity — setLit, pipAt and the whole action table
+         * switch on it — and it was also being drawn on the glass, which made
+         * the dock the one surface in a fully translated app that could only
+         * speak English. Ten words, on screen the entire time somebody is
+         * wearing this.
+         */
+        label: (String) -> String = { it },
     ) {
         clear()
         val root = session.scene.activitySpace
@@ -261,11 +271,14 @@ class Dock(
             // this row: it wants its own line below the dock, where it can be as
             // wide as it likes without pushing the names around.
             TextRun.reusable(
-                session, context, CAPTION_WIDEST, CAP, argb(theme.alt, 0.95f), "dock-caption",
+                session, context,
+                com.iotj.meshmore.xr.L10n.tpl(CAPTION_WIDEST, CAPTION_WIDEST_JA),
+                com.iotj.meshmore.xr.L10n.cap(CAP), argb(theme.alt, 0.95f), "dock-caption",
             )?.also {
                 captions[name] = it
+                labels[name] = label(name)
                 it.entity.parent = root
-                it.setText(name)
+                it.setText(label(name))
                 it.entity.setEnabled(false)
                 entities += it.entity
             }
@@ -357,12 +370,15 @@ class Dock(
      * useless if you had to go and ask. It no longer pins anything visible:
      * every caption is visible.
      */
+    /** What each pip is called, so a caption can be restored to it. */
+    private val labels = mutableMapOf<String, String>()
+
     fun setCaption(name: String, caption: String?) {
         captions[name]?.let { c ->
             // The words change; the label does not come and go. An override
             // that appeared and vanished was readable only as "something just
             // happened here", which is not what a state readout is for.
-            runCatching { c.setText(caption ?: name) }
+            runCatching { c.setText(caption ?: labels[name] ?: name) }
         }
     }
 
@@ -530,7 +546,7 @@ class Dock(
     }
 
     fun clear() {
-        pips.clear(); fired.clear(); captions.clear()
+        pips.clear(); fired.clear(); captions.clear(); labels.clear()
         val doomed = entities.toList()
         entities.clear()
         doomed.forEach { runCatching { it.parent = null } }
@@ -713,6 +729,14 @@ class Dock(
          * is 0.063 m against a 0.075 m pip pitch, so the row never collides.
          */
         const val CAPTION_WIDEST = "MMMMMMMM"
+
+        /**
+         * The same budget at the kanji floor. Eight Latin cells is about five
+         * full-width glyphs once L10n promotes the cap, and every dock word in
+         * Japanese fits in four — 受信箱, 現在地, ヘルプ. Sized from a JA
+         * template because a panel sized for M's and filled with kanji clips.
+         */
+        val CAPTION_WIDEST_JA = "設".repeat(5)
         /** Unfocused caption. Legible, but the focused one is plainly brighter. */
         const val CAPTION_DIM = 0.62f
 

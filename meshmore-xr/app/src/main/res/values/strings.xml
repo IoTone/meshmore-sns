@@ -261,6 +261,16 @@
     <string name="d_lost">· NO ANSWER</string>
     <string name="a_resend">RESEND</string>
     <string name="n_resent">RESENDING TO %1$s</string>
+    <string name="d_compass">COMPASS</string>
+    <string name="d_link">LINK</string>
+    <string name="d_setup">SETUP</string>
+    <string name="d_help">HELP</string>
+    <string name="d_here">HERE</string>
+    <string name="d_wide">WIDE</string>
+    <string name="d_inbox">INBOX</string>
+    <string name="d_list">LIST</string>
+    <string name="d_north">NORTH</string>
+    <string name="d_find">FIND</string>
     <string name="nf_title">NO POSITION</string>
     <string name="nf_board_nogps">%1$s HAS NO GPS</string>
     <string name="nf_nofix">THE RADIO SENDS NO POSITION</string>

@@ -1481,6 +1481,29 @@ private fun deliveryMark(ctx: android.content.Context, m: MeshLink.Msg): String 
     else -> ""
 }
 
+/**
+ * The word under a pip, in the wearer's language.
+ *
+ * The pip's NAME is its identity — the action table, setLit and pipAt all
+ * switch on it — so it cannot itself be translated. This maps identity to the
+ * word drawn beside it, which is the only part a reader sees. Anything without
+ * an entry falls back to its own name, so a new pip is legible in English
+ * rather than blank in every language.
+ */
+private fun dockLabel(ctx: android.content.Context, id: String): String = when (id) {
+    "COMPASS" -> ctx.getString(R.string.d_compass)
+    "LINK" -> ctx.getString(R.string.d_link)
+    "SETUP" -> ctx.getString(R.string.d_setup)
+    "HELP" -> ctx.getString(R.string.d_help)
+    "HERE" -> ctx.getString(R.string.d_here)
+    "WIDE" -> ctx.getString(R.string.d_wide)
+    "INBOX" -> ctx.getString(R.string.d_inbox)
+    "LIST" -> ctx.getString(R.string.d_list)
+    "NORTH" -> ctx.getString(R.string.d_north)
+    "FIND" -> ctx.getString(R.string.d_find)
+    else -> id
+}
+
 private fun yawOf(h: androidx.xr.runtime.math.Pose): Float {
     val q = h.rotation
     val fx = 2f * (q.x * q.z + q.w * q.y)
@@ -3000,7 +3023,7 @@ private fun HorizonScene(link: MeshLink) {
                 }
             },
         ).filter { !wristDock || it.first in WRIST_SET }.map { (n, f) -> n to { f(); Unit } },
-            dockDrop, dockReach, dockRows, dockLeft)
+            dockDrop, dockReach, dockRows, dockLeft) { id -> dockLabel(ctx, id) }
         // A short tick when a pip takes focus. On a display where you cannot
         // feel a control, sound is the only confirmation that the pointer has
         // arrived — and it arrives BEFORE the pinch, which is when it helps.
