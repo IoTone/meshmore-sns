@@ -466,4 +466,29 @@ class MeshNodesTest {
         MeshNodes.Peer("k1", name, 2, 2, lat, lon, NOW)
 
     private companion object { const val NOW = 1_785_000_000L }
+
+    /**
+     * A CONTACT FROM THE FUTURE IS NOT A FRESH ONE.
+     *
+     * Found in the operator's own store: contacts dated days — and one seven
+     * years — ahead, because a node with an unset clock advertises a time that
+     * has not happened. The old arithmetic clamped the difference at zero, so
+     * every one of them read as "heard just now": full brightness on the ring,
+     * front of the ranker, and permanently invisible to a STALE filter built to
+     * find exactly this junk.
+     */
+    @Test fun aTimestampFromTheFutureIsTreatedAsNoTimestamp() {
+        val now = 1_700_000_000L
+        assertEquals(1f, MeshNodes.ageOf(now + 86_400, now))
+        assertEquals(1f, MeshNodes.ageOf(now + 240_000_000L, now))
+        assertTrue(MeshNodes.undated(now + 86_400, now))
+    }
+
+    /** Ordinary skew between devices that never see a time source is fine. */
+    @Test fun smallClockSkewIsStillBelieved() {
+        val now = 1_700_000_000L
+        assertEquals(0f, MeshNodes.ageOf(now + 60, now))
+        assertFalse(MeshNodes.undated(now + 60, now))
+        assertFalse(MeshNodes.undated(now - 3600, now))
+    }
 }

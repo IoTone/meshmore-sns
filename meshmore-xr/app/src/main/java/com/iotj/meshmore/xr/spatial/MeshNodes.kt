@@ -579,11 +579,39 @@ object MeshNodes {
     }
 
     /** 0 = heard just now, 1 = stale. Linear over [STALE_AFTER_SEC]. */
+    /**
+     * A CONTACT FROM THE FUTURE IS NOT A FRESH ONE.
+     *
+     * MeshCore stores the timestamp a node put in its own advert, and a node
+     * with an unset or wrong clock advertises a time that has not happened.
+     * The operator's store is full of them: contacts dated five days, and in
+     * one case seven YEARS, ahead. Clamping the difference at zero — which is
+     * what this did — turned every one of those into "heard just now": they
+     * glowed at full brightness on the ring, sorted to the front of the
+     * ranker, and could never be selected by a STALE filter that was built to
+     * find exactly this kind of junk.
+     *
+     * A timestamp beyond [CLOCK_SLOP] into the future is not evidence of
+     * anything, so it is treated as no timestamp at all — the same as a
+     * contact that has never been heard, which is what it actually is.
+     */
     fun ageOf(lastSeenEpochSec: Long, nowEpochSec: Long): Float {
         if (lastSeenEpochSec <= 0L) return 1f
+        if (lastSeenEpochSec > nowEpochSec + CLOCK_SLOP_SEC) return 1f
         val d = (nowEpochSec - lastSeenEpochSec).coerceAtLeast(0L)
         return (d.toDouble() / STALE_AFTER_SEC).coerceIn(0.0, 1.0).toFloat()
     }
+
+    /**
+     * How far ahead a clock may be and still be believed. Two minutes covers
+     * ordinary skew between devices that have never spoken to a time source;
+     * beyond that the number is not a time, it is a fault.
+     */
+    const val CLOCK_SLOP_SEC = 120L
+
+    /** True when a contact's timestamp is not usable as a time. */
+    fun undated(lastSeenEpochSec: Long, nowEpochSec: Long): Boolean =
+        lastSeenEpochSec <= 0L || lastSeenEpochSec > nowEpochSec + CLOCK_SLOP_SEC
 
     private const val EARTH_KM = 6371.0088
     /** Outer range band. Beyond this everything pins to the rim. */

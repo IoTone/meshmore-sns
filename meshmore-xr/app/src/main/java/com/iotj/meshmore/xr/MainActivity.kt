@@ -170,6 +170,18 @@ class MainActivity : ComponentActivity() {
         var gcProbe: String? = null
 
         /**
+         * `--ez neighbours true` : who is actually one hop away.
+         *
+         * "We should have four devices in range at zero hops" is a claim about
+         * RF adjacency, and the app has never been able to answer it: the ring
+         * draws everything the radio holds, and an advert heard once an hour
+         * looks identical whether it arrived directly or was relayed across the
+         * county. MeshCore stores a PATH LENGTH per contact — one hop means a
+         * direct neighbour — and that is the number this prints.
+         */
+        var neighbourProbe: Boolean = false
+
+        /**
          * `--es soak d563` : send a message to the operator's own node on a
          * timer and account for every one of them, for `--es soakmin` minutes
          * at `--es soakint` seconds apart.
@@ -378,6 +390,7 @@ class MainActivity : ComponentActivity() {
         showFind = intent?.getBooleanExtra("find", false) ?: false
         dmProbe = intent?.getBooleanExtra("dm", false) ?: false
         gcProbe = intent?.getStringExtra("gc")
+        neighbourProbe = intent?.getBooleanExtra("neighbours", false) ?: false
         soakTo = intent?.getStringExtra("soak")
         soakMinutes = intent?.getStringExtra("soakmin")?.toIntOrNull() ?: 60
         soakEverySec = intent?.getStringExtra("soakint")?.toIntOrNull() ?: 60
@@ -1947,6 +1960,51 @@ private fun HorizonScene(link: MeshLink) {
             "(the radio's own count returns on the next connect)")
     }
 
+    // WHO IS ONE HOP AWAY. See MainActivity.neighbourProbe.
+    LaunchedEffect(link) {
+        if (!MainActivity.neighbourProbe) return@LaunchedEffect
+        while (link.status.value.state != io.iotone.meshcore.android.SessionState.READY) {
+            kotlinx.coroutines.delay(2_000)
+        }
+        kotlinx.coroutines.delay(25_000)
+        val now = System.currentTimeMillis() / 1000
+        val all = link.mesh.value
+        // MeshCore's own convention, and the same one the focus card reads:
+        // 1 is a direct neighbour, 0 and 250+ mean the path is simply unknown,
+        // and anything between is the number of relays in the stored route.
+        val direct = all.filter { it.hops == 1 }
+        val relayed = all.filter { it.hops in 2..249 }
+        val unknown = all.size - direct.size - relayed.size
+        Log.i(
+            TAG_UI,
+            "[near] of ${all.size} contacts: ${direct.size} direct (1 hop), " +
+                "${relayed.size} with a known route, $unknown with no route at all",
+        )
+        direct.sortedByDescending { it.lastSeenEpochSec }.take(12).forEach { p ->
+            val age = if (p.lastSeenEpochSec <= 0) "never heard"
+                else "${((now - p.lastSeenEpochSec) / 60)} min ago"
+            Log.i(TAG_UI, "[near] 1 hop — '${p.name.take(22)}' key=${p.key} $age")
+        }
+        // And the ones we have heard RECENTLY, whatever their stored path says:
+        // being heard is RF adjacency, which is the thing actually being asked
+        // about, and a stale route can hide it.
+        // The same rule the ring uses, or this line reports the future-dated
+        // contacts as the freshest thing on the mesh — which is exactly the
+        // bug it was written to look for.
+        all.filter {
+            !MeshNodes.undated(it.lastSeenEpochSec, now) && now - it.lastSeenEpochSec < 3600
+        }
+            .sortedByDescending { it.lastSeenEpochSec }
+            .take(12)
+            .forEach { p ->
+                Log.i(
+                    TAG_UI,
+                    "[near] heard within the hour — '${p.name.take(22)}' " +
+                        "hops=${p.hops} ${(now - p.lastSeenEpochSec) / 60} min ago",
+                )
+            }
+    }
+
     // THE SOAK. See MainActivity.soakTo.
     //
     // KEYED ON THE LINK AND NOT ON THE MESH. Keyed on the mesh signature this
@@ -2302,8 +2360,11 @@ private fun HorizonScene(link: MeshLink) {
         run {
             val nowS = System.currentTimeMillis() / 1000
             val buckets = intArrayOf(0, 0, 0, 0, 0)
+            val future = mesh.count {
+                it.lastSeenEpochSec > nowS + MeshNodes.CLOCK_SLOP_SEC
+            }
             mesh.forEach {
-                val d = if (it.lastSeenEpochSec <= 0L) Long.MAX_VALUE
+                val d = if (MeshNodes.undated(it.lastSeenEpochSec, nowS)) Long.MAX_VALUE
                     else (nowS - it.lastSeenEpochSec).coerceAtLeast(0L)
                 when {
                     d < 600 -> buckets[0]++
@@ -2314,7 +2375,8 @@ private fun HorizonScene(link: MeshLink) {
                 }
             }
             Log.i(TAG_UI, "[age] heard <10m ${buckets[0]}, <1h ${buckets[1]}, " +
-                "<6h ${buckets[2]}, <24h ${buckets[3]}, older ${buckets[4]}")
+                "<6h ${buckets[2]}, <24h ${buckets[3]}, older ${buckets[4]}" +
+                (if (future > 0) " — $future dated in the FUTURE, counted as never heard" else ""))
         }
         // SAID OUT LOUD, ONCE, AT THE MOMENT THE RING COMES UP EMPTY.
         //
