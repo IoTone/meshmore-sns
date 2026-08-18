@@ -1,0 +1,1138 @@
+--------- beginning of main
+08-17 22:21:23.668  7285  7285 I MeshmoreXR: [boot] onCreate — Google Android XR Puck api=34 start=#1 fresh process
+08-17 22:21:23.678  7285  7285 I MeshmoreXR: [boot] app = com.iotj.meshmore.xr 0.3.0-debug.60
+08-17 22:21:23.678  7285  7285 I MeshmoreXR: [boot] device = Google Android XR Puck (axrpuck)
+08-17 22:21:23.678  7285  7285 I MeshmoreXR: [boot] android = 14 / API 34
+08-17 22:21:23.678  7285  7285 I MeshmoreXR: [boot] software.xr.immersive = no
+08-17 22:21:23.678  7285  7285 I MeshmoreXR: [boot] software.xr.api.spatial = YES
+08-17 22:21:23.678  7285  7285 I MeshmoreXR: [boot] software.xr.api.openxr = YES
+08-17 22:21:23.678  7285  7285 I MeshmoreXR: [boot] hardware.xr.input.hand_tracking = YES
+08-17 22:21:23.678  7285  7285 I MeshmoreXR: [boot] libmeshcore pin = companion-v1.15.0
+08-17 22:21:23.678  7285  7285 I MeshmoreXR: [boot] libmeshcore commit = dee3e26ac081
+08-17 22:21:23.678  7285  7285 I MeshmoreXR: [boot] meshcore BLE svc = 6E400001-B5A3…
+08-17 22:21:23.678  7285  7285 I MeshmoreXR: [boot] pin override = <none, using built-in>
+08-17 22:21:23.679  7285  7285 I MeshmoreXR: [boot] debug surface = false
+08-17 22:21:23.679  7285  7285 I MeshmoreXR: [boot] selftest = false
+08-17 22:21:23.679  7285  7285 I MeshmoreXR: [boot] soak = d563 (60min every 60s)
+08-17 22:21:23.679  7285  7285 I MeshmoreXR: [boot] north at launch = <unknown, ring is relative>
+08-17 22:21:23.680  7285  7285 I MeshmoreXR: [boot] radio rack = false
+08-17 22:21:23.680  7285  7285 I MeshmoreXR: [boot] simulate = false
+08-17 22:21:23.680  7285  7285 I MeshmoreXR: [boot] home override = <none, using radio GPS>
+08-17 22:21:23.687  7285  7285 I MeshmoreXR: [boot] device-location fallback = false
+08-17 22:21:23.688  7285  7285 I MeshmoreXR: [boot] alerts panel = false
+08-17 22:21:23.688  7285  7285 I MeshmoreXR: [boot] diagnostics panel = false
+08-17 22:21:23.887  7285  7285 I MeshmoreXR: [store] restored 500 message(s)
+08-17 22:21:23.887  7285  7285 I MeshmoreXR: [tx] channel send authorised = false
+08-17 22:21:23.887  7285  7285 I MeshmoreXR: [boot] connect advert = zero-hop
+08-17 22:21:23.908  7285  7285 I MeshmoreXR: [boot] setContent done
+08-17 22:21:24.510  7285  7285 I MeshmoreXR: [spatial] isSpatialUiEnabled=false isContent3d=false
+08-17 22:21:24.514  7285  7285 I MeshmoreXR: [link] auto-connect at startup
+08-17 22:21:24.518  7285  7285 I MeshmoreXR: [link] scan start prefix='MeshCore'
+08-17 22:21:24.616  7285  7285 I MeshmoreXR: [link] in the air (not ours): 'MagNET-ad97' rssi=-48
+08-17 22:21:24.689  7285  7285 I MeshmoreXR: [link] found 'MeshCore-B727FE05' rssi=-54
+08-17 22:21:24.731  7285  7285 I MeshmoreXR: [link] in the air (not ours): '[TV] Samsung 6 Series (70)' rssi=-61
+08-17 22:21:24.838  7285  7285 I MeshmoreXR: [link] in the air (not ours): 'Nest Cam' rssi=-87
+08-17 22:21:24.864  7285  7285 I MeshmoreXR: [link] in the air (not ours): 'Linksys' rssi=-81
+08-17 22:21:24.935  7285  7285 I MeshmoreXR: [spatial] auto requestFullSpace -> androidx.xr.compose.platform.SpaceRequestResult$Success@5943a7e
+08-17 22:21:24.947  7285  7285 I MeshmoreXR: [haptic] actuator=true composed=true
+08-17 22:21:24.990  7285  7285 I MeshmoreXR: [spatial] isSpatialUiEnabled=true isContent3d=true
+08-17 22:21:24.994  7285  7285 I MeshmoreXR: [cue] pack -> velocity
+08-17 22:21:24.994  7285  7285 I MeshmoreXR: [theme] wearing aghud (AG-SYSTEMS)
+08-17 22:21:25.030  7285  7285 I MeshmoreXR: [stage] pose settled after 1 polls
+08-17 22:21:25.032  7285  7285 I MeshmoreXR: [stage] recentre at (-0.00, 0.00, 1.75) yaw=0.0° floorY=-1.60
+08-17 22:21:25.032  7285  7285 I MeshmoreXR: [boot] planes wanted=false granted=false
+08-17 22:21:25.320  7285  7285 W MeshmoreXR: [heading] no position yet — declination NOT applied, reading is magnetic north
+08-17 22:21:25.323  7285  7285 I MeshmoreXR: [heading] magnetic=-114.9° declination=0.0°E true=-114.9° accuracy=3 trust=false
+08-17 22:21:25.323  7285  7285 W MeshmoreXR: [heading] ring is RELATIVE to launch facing — 'N' means 'the way you were pointing', not north
+08-17 22:21:25.598  7285  7285 I MeshmoreXR: [stage] floor: 34 bars at y=-1.60
+08-17 22:21:26.041  7285  7285 I MeshmoreXR: [link] 1 candidate(s) after 1500ms — bonded 'MeshCore-B727FE05' rssi=-51
+08-17 22:21:26.042  7285  7285 I MeshmoreXR: [link] already bonded — connecting
+08-17 22:21:26.360  7285  7285 I MeshmoreXR: [boot] surface up: 41 entities
+08-17 22:21:26.540  7285  7285 I MeshmoreXR: [cue] welcome gain=0.8 stream=7/15
+08-17 22:21:26.542  7285  7285 I MeshmoreXR: [cue] welcome playing at 0.8
+08-17 22:21:27.470  7285  7285 I MeshmoreXR: [hud] built 40 entities
+08-17 22:21:27.969  7285  7285 I MeshmoreXR: [type] panel '—' view=70x141px mpp=3.9215686E-4 scale=0.45576763 cap=71.0px -> 0.012511267x0.025201268m
+08-17 22:21:28.102  7285  7285 I MeshmoreXR: [link] state -> HANDSHAKING
+08-17 22:21:28.190  7285  7285 I MeshmoreXR: [link] state -> READY
+08-17 22:21:28.194  7285  7285 I MeshmoreXR: [radio] ======== MeshCore radio ========
+08-17 22:21:28.194  7285  7285 I MeshmoreXR: [radio] name          = B727FE05
+08-17 22:21:28.194  7285  7285 I MeshmoreXR: [radio] public key    = b727fe054a42a08d8c10a4db4bd92fa18d1dbde671d11611e862200e97dbec4b
+08-17 22:21:28.194  7285  7285 I MeshmoreXR: [radio] advert type   = 1 (chat/companion)
+08-17 22:21:28.194  7285  7285 I MeshmoreXR: [radio] frequency     = 910.525 MHz
+08-17 22:21:28.194  7285  7285 I MeshmoreXR: [radio] bandwidth     = 62.5 kHz
+08-17 22:21:28.194  7285  7285 I MeshmoreXR: [radio] spread factor = SF7
+08-17 22:21:28.194  7285  7285 I MeshmoreXR: [radio] coding rate   = 4/5
+08-17 22:21:28.195  7285  7285 I MeshmoreXR: [radio] tx power      = 22 dBm (max 22)
+08-17 22:21:28.195  7285  7285 I MeshmoreXR: [radio] position      = 45.507087, -122.766247
+08-17 22:21:28.195  7285  7285 I MeshmoreXR: [radio] adv loc policy= 1
+08-17 22:21:28.196  7285  7285 I MeshmoreXR: [radio] telemetry     = base=DENY loc=DENY env=DENY  (raw 0x00)
+08-17 22:21:28.196  7285  7285 I MeshmoreXR: [radio] multi-acks    = 0
+08-17 22:21:28.196  7285  7285 I MeshmoreXR: [radio] manual add    = false
+08-17 22:21:28.196  7285  7285 I MeshmoreXR: [radio] live = 910.525MHz BW62.5 SF7 4/5 22dBm
+08-17 22:21:28.197  7285  7285 I MeshmoreXR: [radio] region = USA / CANADA
+08-17 22:21:28.197  7285  7285 I MeshmoreXR: [link] here = 45.507087, -122.766247 (fix=true)
+08-17 22:21:28.197  7285  7285 I MeshmoreXR: [link] self-advert -> zero-hop
+08-17 22:21:28.198  7285  7285 I MeshmoreXR: [link] requesting contacts
+08-17 22:21:28.254  7285  7285 I MeshmoreXR: [link] channel msg: Mojo EMCOMM V3: night all
+08-17 22:21:28.377  7285  7285 I MeshmoreXR: [link] contacts sync: 350 expected
+08-17 22:21:28.437  7285  7285 I MeshmoreXR: [radio] battery       = 0mV  (no cell reported — external power)
+08-17 22:21:28.498  7285  7285 I MeshmoreXR: [radio] channel 0     = "Public"  psk 8b3387e9…  PUBLIC (well-known key)
+08-17 22:21:28.552  7285  7285 I MeshmoreXR: [link] channel msg: LZTY: Night
+08-17 22:21:28.614  7285  7285 I MeshmoreXR: [link] channel msg: Jeff - AD7LN: G'night 🌜 I'm out 
+08-17 22:21:28.671  7285  7285 I MeshmoreXR: [link] channel msg: DCCarl: @[Jeff - AD7LN] later
+08-17 22:21:28.734  7285  7285 I MeshmoreXR: [link] channel msg: Chuck@🏠: @[Jeff - AD7LN]: Night Jeff!
+08-17 22:21:28.798  7285  7285 I MeshmoreXR: [link] channel msg: 🏷️ Andrew: Hello from Millersylvania State Park
+08-17 22:21:28.867  7285  7285 I MeshmoreXR: [link] channel msg: DCCarl: @[🏷️ Andrew] 🖐️
+08-17 22:21:28.919  7285  7285 I MeshmoreXR: [link] channel msg: Chuck@🏠: @[🏷️ Andrew]: Yoo
+08-17 22:21:28.975  7285  7285 I MeshmoreXR: [link] channel msg: Chuck@🏠: @[Joel]: Good Night man!
+08-17 22:21:29.037  7285  7285 I MeshmoreXR: [link] channel msg: argon: Everyone is sleeping? It’s such a nice night tho! 
+08-17 22:21:29.106  7285  7285 I MeshmoreXR: [link] channel msg: 🏷️ Andrew: @[DCCarl] @[Chuck@🏠] 👋
+08-17 22:21:29.156  7285  7285 I MeshmoreXR: [link] channel msg: argon: #insomnia is always open tho. 
+08-17 22:21:32.425  7285  7285 I MeshmoreXR: [link] mesh: 50 peers, 35 with a position
+08-17 22:21:32.739  7285  7285 I MeshmoreXR: [type] panel 'Public 8b3387e' view=742x141px mpp=3.9215686E-4 scale=0.45576763 cap=71.0px -> 0.13261944x0.025201268m
+08-17 22:21:32.791  7285  7285 I MeshmoreXR: [type] panel '— empty —' view=454x141px mpp=3.9215686E-4 scale=0.45576763 cap=71.0px -> 0.081144504x0.025201268m
+08-17 22:21:33.240  7285  7285 I MeshmoreXR: [rack] built 276 entities, 12 controls, visible=false
+08-17 22:21:33.240  7285  7285 I MeshmoreXR: [hand] tracking right=true left=true
+08-17 22:21:33.318  7285  7285 I MeshmoreXR: [type] panel 'MAGNIFY' view=358x141px mpp=3.9215686E-4 scale=2.652 cap=71.0px -> 0.37232x0.14664m
+08-17 22:21:33.412  7285  7285 I MeshmoreXR: [type] panel 'BEARING' view=358x141px mpp=3.9215686E-4 scale=2.652 cap=71.0px -> 0.37232x0.14664m
+08-17 22:21:33.496  7285  7285 I MeshmoreXR: [type] panel 'NEAREST' view=358x141px mpp=3.9215686E-4 scale=2.652 cap=71.0px -> 0.37232x0.14664m
+08-17 22:21:33.582  7285  7285 I MeshmoreXR: [type] panel 'CLOSE' view=262x141px mpp=3.9215686E-4 scale=2.652 cap=71.0px -> 0.27248x0.14664m
+08-17 22:21:33.602  7285  7285 I MeshmoreXR: [menu] 4 spokes
+08-17 22:21:33.654  7285  7285 I MeshmoreXR: [type] panel 'FAVOURITE' view=454x141px mpp=3.9215686E-4 scale=2.652 cap=71.0px -> 0.47216x0.14664m
+08-17 22:21:33.748  7285  7285 I MeshmoreXR: [type] panel 'MESSAGE' view=358x141px mpp=3.9215686E-4 scale=2.652 cap=71.0px -> 0.37232x0.14664m
+08-17 22:21:33.834  7285  7285 I MeshmoreXR: [type] panel 'TELEMETRY' view=454x141px mpp=3.9215686E-4 scale=2.652 cap=71.0px -> 0.47216x0.14664m
+08-17 22:21:33.889  7285  7285 I MeshmoreXR: [type] panel 'CLOSE' view=262x141px mpp=3.9215686E-4 scale=2.652 cap=71.0px -> 0.27248x0.14664m
+08-17 22:21:33.975  7285  7285 I MeshmoreXR: [type] panel 'FORGET' view=310x141px mpp=3.9215686E-4 scale=2.652 cap=71.0px -> 0.3224x0.14664m
+08-17 22:21:34.013  7285  7285 I MeshmoreXR: [menu] 5 spokes
+08-17 22:21:34.031  7285  7285 I MeshmoreXR: [type] panel 'MMMMMMMMMMMMMM' view=1078x141px mpp=3.9215686E-4 scale=1.2211268 cap=71.0px -> 0.51622534x0.06752113m
+08-17 22:21:34.052  7285  7285 I MeshmoreXR: [type] panel '9999KM  NNW 35' view=742x141px mpp=3.9215686E-4 scale=1.0056338 cap=71.0px -> 0.29261974x0.055605635m
+08-17 22:21:34.070  7285  7285 I MeshmoreXR: [type] panel 'PATH UNKNOWN  ' view=1174x141px mpp=3.9215686E-4 scale=1.0056338 cap=71.0px -> 0.46298593x0.055605635m
+08-17 22:21:34.072  7285  7285 I MeshmoreXR: [focus] card built
+08-17 22:21:34.074  7285  7285 I MeshmoreXR: [type] 'MMMMMMMMMMMMMM 99.9KM   ' shrunk to 90 px to fit 2048
+08-17 22:21:34.098  7285  7285 I MeshmoreXR: [type] panel 'MMMMMMMMMMMMMM' view=2047x133px mpp=3.9215686E-4 scale=1.0045455 cap=66.0px -> 0.8063939x0.052393943m
+08-17 22:21:35.266  7285  7285 I MeshmoreXR: [type] 'R TRAC NONE back p0.00 i' shrunk to 88 px to fit 2048
+08-17 22:21:35.279  7285  7285 I MeshmoreXR: [type] panel 'R TRAC NONE ba' view=2046x131px mpp=3.921569E-4 scale=0.78461534 cap=65.0px -> 0.6295384x0.04030769m
+08-17 22:21:35.283  7285  7285 I MeshmoreXR: [type] 'R TRAC NONE back p0.00 i' shrunk to 88 px to fit 2048
+08-17 22:21:35.298  7285  7285 I MeshmoreXR: [type] panel 'R TRAC NONE ba' view=2046x131px mpp=3.921569E-4 scale=0.78461534 cap=65.0px -> 0.6295384x0.04030769m
+08-17 22:21:35.316  7285  7285 I MeshmoreXR: [hands] 26 joints per hand
+08-17 22:21:35.432  7285  7285 I MeshmoreXR: [link] mesh: 100 peers, 80 with a position
+08-17 22:21:36.240  7285  7285 I MeshmoreXR: [help] card built, 33 lines
+08-17 22:21:36.254  7285  7285 I MeshmoreXR: [type] panel 'NO RADIO' view=406x141px mpp=3.9215686E-4 scale=1.5084506 cap=71.0px -> 0.24016902x0.08340845m
+08-17 22:21:36.269  7285  7285 I MeshmoreXR: [type] panel 'IS IT ON AND N' view=982x141px mpp=3.9215686E-4 scale=1.0774648 cap=71.0px -> 0.41492957x0.059577465m
+08-17 22:21:36.283  7285  7285 I MeshmoreXR: [type] panel 'A PHONE MAY BE' view=1222x141px mpp=3.9215686E-4 scale=1.0774648 cap=71.0px -> 0.51633805x0.059577465m
+08-17 22:21:36.295  7285  7285 I MeshmoreXR: [type] panel 'PINCH HERE — S' view=1222x141px mpp=3.9215686E-4 scale=1.0774648 cap=71.0px -> 0.51633805x0.059577465m
+08-17 22:21:36.307  7285  7285 I MeshmoreXR: [type] panel 'NO POSITION' view=550x141px mpp=3.9215686E-4 scale=1.5084506 cap=71.0px -> 0.32535213x0.08340845m
+08-17 22:21:36.321  7285  7285 I MeshmoreXR: [type] panel 'THE RADIO SEND' view=1318x141px mpp=3.9215686E-4 scale=1.0774648 cap=71.0px -> 0.5569014x0.059577465m
+08-17 22:21:36.342  7285  7285 I MeshmoreXR: [type] panel 'THE MESH CANNO' view=1222x141px mpp=3.9215686E-4 scale=1.0774648 cap=71.0px -> 0.51633805x0.059577465m
+08-17 22:21:36.357  7285  7285 I MeshmoreXR: [type] panel 'PINCH HERE — U' view=1366x141px mpp=3.9215686E-4 scale=1.0774648 cap=71.0px -> 0.57718307x0.059577465m
+08-17 22:21:36.463  7285  7285 I MeshmoreXR: [advice] built 8 line(s) for 2 message(s)
+08-17 22:21:36.497  7285  7285 I MeshmoreXR: [type] panel 'MMMMMMMM' view=406x141px mpp=3.9215686E-4 scale=0.6105634 cap=71.0px -> 0.09721127x0.033760566m
+08-17 22:21:36.563  7285  7285 I MeshmoreXR: [type] panel 'MMMMMMMM' view=406x141px mpp=3.9215686E-4 scale=0.6105634 cap=71.0px -> 0.09721127x0.033760566m
+08-17 22:21:36.646  7285  7285 I MeshmoreXR: [type] panel 'MMMMMMMM' view=406x141px mpp=3.9215686E-4 scale=0.6105634 cap=71.0px -> 0.09721127x0.033760566m
+08-17 22:21:36.733  7285  7285 I MeshmoreXR: [type] panel 'MMMMMMMM' view=406x141px mpp=3.9215686E-4 scale=0.6105634 cap=71.0px -> 0.09721127x0.033760566m
+08-17 22:21:36.800  7285  7285 I MeshmoreXR: [type] panel 'MMMMMMMM' view=406x141px mpp=3.9215686E-4 scale=0.6105634 cap=71.0px -> 0.09721127x0.033760566m
+08-17 22:21:36.876  7285  7285 I MeshmoreXR: [type] panel 'MMMMMMMM' view=406x141px mpp=3.9215686E-4 scale=0.6105634 cap=71.0px -> 0.09721127x0.033760566m
+08-17 22:21:36.958  7285  7285 I MeshmoreXR: [type] panel 'MMMMMMMM' view=406x141px mpp=3.9215686E-4 scale=0.6105634 cap=71.0px -> 0.09721127x0.033760566m
+08-17 22:21:37.035  7285  7285 I MeshmoreXR: [type] panel 'MMMMMMMM' view=406x141px mpp=3.9215686E-4 scale=0.6105634 cap=71.0px -> 0.09721127x0.033760566m
+08-17 22:21:37.121  7285  7285 I MeshmoreXR: [type] panel 'MMMMMMMM' view=406x141px mpp=3.9215686E-4 scale=0.6105634 cap=71.0px -> 0.09721127x0.033760566m
+08-17 22:21:37.198  7285  7285 I MeshmoreXR: [type] panel 'MMMMMMMM' view=406x141px mpp=3.9215686E-4 scale=0.6105634 cap=71.0px -> 0.09721127x0.033760566m
+08-17 22:21:37.244  7285  7285 I MeshmoreXR: [dock] 10 pip(s) up — 2x5 at 0.66m, 18 to 40 deg below eye, 17 to 10 deg left
+08-17 22:21:37.264  7285  7285 I MeshmoreXR: [type] panel 'MMMMMMMM' view=406x141px mpp=3.9215686E-4 scale=0.33760563 cap=71.0px -> 0.053752113x0.018667605m
+08-17 22:21:37.340  7285  7285 I MeshmoreXR: [type] panel 'MMMMMMMM' view=406x141px mpp=3.9215686E-4 scale=0.33760563 cap=71.0px -> 0.053752113x0.018667605m
+08-17 22:21:37.415  7285  7285 I MeshmoreXR: [type] panel 'MMMMMMMM' view=406x141px mpp=3.9215686E-4 scale=0.33760563 cap=71.0px -> 0.053752113x0.018667605m
+08-17 22:21:37.474  7285  7285 I MeshmoreXR: [type] panel 'MMMMMMMM' view=406x141px mpp=3.9215686E-4 scale=0.33760563 cap=71.0px -> 0.053752113x0.018667605m
+08-17 22:21:37.523  7285  7285 I MeshmoreXR: [type] panel 'MMMMMMMM' view=406x141px mpp=3.9215686E-4 scale=0.33760563 cap=71.0px -> 0.053752113x0.018667605m
+08-17 22:21:37.600  7285  7285 I MeshmoreXR: [type] panel 'MMMMMMMM' view=406x141px mpp=3.9215686E-4 scale=0.33760563 cap=71.0px -> 0.053752113x0.018667605m
+08-17 22:21:37.667  7285  7285 I MeshmoreXR: [type] panel 'MMMMMMMM' view=406x141px mpp=3.9215686E-4 scale=0.33760563 cap=71.0px -> 0.053752113x0.018667605m
+08-17 22:21:37.719  7285  7285 I MeshmoreXR: [type] panel 'MMMMMMMM' view=406x141px mpp=3.9215686E-4 scale=0.33760563 cap=71.0px -> 0.053752113x0.018667605m
+08-17 22:21:37.778  7285  7285 I MeshmoreXR: [type] panel 'MMMMMMMM' view=406x141px mpp=3.9215686E-4 scale=0.33760563 cap=71.0px -> 0.053752113x0.018667605m
+08-17 22:21:37.847  7285  7285 I MeshmoreXR: [type] panel 'MMMMMMMM' view=406x141px mpp=3.9215686E-4 scale=0.33760563 cap=71.0px -> 0.053752113x0.018667605m
+08-17 22:21:37.914  7285  7285 I MeshmoreXR: [type] panel 'MMMMMMMM' view=406x141px mpp=3.9215686E-4 scale=0.33760563 cap=71.0px -> 0.053752113x0.018667605m
+08-17 22:21:37.966  7285  7285 I MeshmoreXR: [type] panel 'MMMMMMMM' view=406x141px mpp=3.9215686E-4 scale=0.33760563 cap=71.0px -> 0.053752113x0.018667605m
+08-17 22:21:38.073  7285  7285 I MeshmoreXR: [type] panel 'MMMMMMMMMMMMMM' view=982x141px mpp=3.9215686E-4 scale=0.2693662 cap=71.0px -> 0.10373239x0.014894366m
+08-17 22:21:38.101  7285  7285 I MeshmoreXR: [type] panel 'MMMMMMMMMMMMMM' view=886x141px mpp=3.9215686E-4 scale=0.3591549 cap=71.0px -> 0.124788724x0.019859154m
+08-17 22:21:38.114  7285  7285 I MeshmoreXR: [type] panel 'MMMMMMMMMMMMMM' view=886x141px mpp=3.9215686E-4 scale=0.3591549 cap=71.0px -> 0.124788724x0.019859154m
+08-17 22:21:38.132  7285  7285 I MeshmoreXR: [type] panel 'MMMMMMMMMMMMMM' view=886x141px mpp=3.9215686E-4 scale=0.3591549 cap=71.0px -> 0.124788724x0.019859154m
+08-17 22:21:38.145  7285  7285 I MeshmoreXR: [type] panel 'MMMMMMMMMMMMMM' view=886x141px mpp=3.9215686E-4 scale=0.3591549 cap=71.0px -> 0.124788724x0.019859154m
+08-17 22:21:38.169  7285  7285 I MeshmoreXR: [type] panel 'MMMMMMMMMMMMMM' view=886x141px mpp=3.9215686E-4 scale=0.3591549 cap=71.0px -> 0.124788724x0.019859154m
+08-17 22:21:38.192  7285  7285 I MeshmoreXR: [type] panel 'MMMMMMMMMMMMMM' view=886x141px mpp=3.9215686E-4 scale=0.3591549 cap=71.0px -> 0.124788724x0.019859154m
+08-17 22:21:38.206  7285  7285 I MeshmoreXR: [type] panel 'MMMMMMMMMMMMMM' view=886x141px mpp=3.9215686E-4 scale=0.3591549 cap=71.0px -> 0.124788724x0.019859154m
+08-17 22:21:38.222  7285  7285 I MeshmoreXR: [type] panel 'MMMMMMMMMMMMMM' view=886x141px mpp=3.9215686E-4 scale=0.3591549 cap=71.0px -> 0.124788724x0.019859154m
+08-17 22:21:38.239  7285  7285 I MeshmoreXR: [type] panel 'MMMMMMMMMMMMMM' view=886x141px mpp=3.9215686E-4 scale=0.3591549 cap=71.0px -> 0.124788724x0.019859154m
+08-17 22:21:38.260  7285  7285 I MeshmoreXR: [type] panel 'THUMB ALONG IN' view=1222x141px mpp=3.9215686E-4 scale=0.28696477 cap=71.0px -> 0.13751802x0.015867464m
+08-17 22:21:38.262  7285  7285 I MeshmoreXR: [reel] 12 slots, 5 named, raised card
+08-17 22:21:38.418  7285  7285 I MeshmoreXR: [link] mesh: 150 peers, 124 with a position
+08-17 22:21:38.655  7285  7285 I MeshmoreXR: [cuff] 12 segments + resting ring
+08-17 22:21:38.668  7285  7285 I MeshmoreXR: [type] panel 'REPLY' view=262x141px mpp=3.9215686E-4 scale=0.9338029 cap=71.0px -> 0.09594367x0.051633805m
+08-17 22:21:38.684  7285  7285 I MeshmoreXR: [type] panel 'READ ALOUD' view=502x141px mpp=3.9215686E-4 scale=0.9338029 cap=71.0px -> 0.18383099x0.051633805m
+08-17 22:21:38.707  7285  7285 I MeshmoreXR: [type] panel 'VOICE: ON' view=454x141px mpp=3.9215686E-4 scale=0.9338029 cap=71.0px -> 0.16625352x0.051633805m
+08-17 22:21:38.721  7285  7285 I MeshmoreXR: [type] panel 'VOICE: OFF' view=502x141px mpp=3.9215686E-4 scale=0.9338029 cap=71.0px -> 0.18383099x0.051633805m
+08-17 22:21:38.736  7285  7285 I MeshmoreXR: [type] panel 'THREAD' view=310x141px mpp=3.9215686E-4 scale=0.9338029 cap=71.0px -> 0.11352114x0.051633805m
+08-17 22:21:38.751  7285  7285 I MeshmoreXR: [type] panel 'CLOSE' view=262x141px mpp=3.9215686E-4 scale=0.9338029 cap=71.0px -> 0.09594367x0.051633805m
+08-17 22:21:38.768  7285  7285 I MeshmoreXR: [type] panel 'SPEAK' view=262x141px mpp=3.9215686E-4 scale=0.9338029 cap=71.0px -> 0.09594367x0.051633805m
+08-17 22:21:38.780  7285  7285 I MeshmoreXR: [type] panel 'LISTENING' view=454x141px mpp=3.9215686E-4 scale=0.9338029 cap=71.0px -> 0.16625352x0.051633805m
+08-17 22:21:38.807  7285  7285 I MeshmoreXR: [type] panel 'BACK' view=214x141px mpp=3.9215686E-4 scale=0.9338029 cap=71.0px -> 0.0783662x0.051633805m
+08-17 22:21:38.822  7285  7285 I MeshmoreXR: [type] panel 'SEND' view=214x141px mpp=3.9215686E-4 scale=0.9338029 cap=71.0px -> 0.0783662x0.051633805m
+08-17 22:21:38.836  7285  7285 I MeshmoreXR: [type] panel 'CANCEL' view=310x141px mpp=3.9215686E-4 scale=0.9338029 cap=71.0px -> 0.11352114x0.051633805m
+08-17 22:21:38.858  7285  7285 I MeshmoreXR: [type] panel 'AUTO REPLY' view=502x141px mpp=3.9215686E-4 scale=0.9338029 cap=71.0px -> 0.18383099x0.051633805m
+08-17 22:21:38.873  7285  7285 I MeshmoreXR: [type] panel 'ROGER' view=262x141px mpp=3.9215686E-4 scale=0.9338029 cap=71.0px -> 0.09594367x0.051633805m
+08-17 22:21:38.887  7285  7285 I MeshmoreXR: [type] panel 'ON MY WAY' view=454x141px mpp=3.9215686E-4 scale=0.9338029 cap=71.0px -> 0.16625352x0.051633805m
+08-17 22:21:38.905  7285  7285 I MeshmoreXR: [type] panel 'STAND BY' view=406x141px mpp=3.9215686E-4 scale=0.9338029 cap=71.0px -> 0.14867605x0.051633805m
+08-17 22:21:38.924  7285  7285 I MeshmoreXR: [type] panel 'MMMMMMMMMMMM' view=598x141px mpp=3.9215686E-4 scale=0.9338029 cap=71.0px -> 0.21898592x0.051633805m
+08-17 22:21:39.139  7285  7285 I MeshmoreXR: [type] panel 'MMMMMMMMMMMM' view=598x141px mpp=3.9215686E-4 scale=0.9338029 cap=71.0px -> 0.21898592x0.051633805m
+08-17 22:21:39.221  7285  7285 I MeshmoreXR: [type] panel 'MMMMMMMMMMMM' view=598x141px mpp=3.9215686E-4 scale=0.9338029 cap=71.0px -> 0.21898592x0.051633805m
+08-17 22:21:39.296  7285  7285 I MeshmoreXR: [type] panel 'MMMMMMMMMMMM' view=598x141px mpp=3.9215686E-4 scale=0.9338029 cap=71.0px -> 0.21898592x0.051633805m
+08-17 22:21:39.389  7285  7285 I MeshmoreXR: [type] panel 'MMMMMMMMMMMM' view=598x141px mpp=3.9215686E-4 scale=0.9338029 cap=71.0px -> 0.21898592x0.051633805m
+08-17 22:21:39.459  7285  7285 I MeshmoreXR: [type] panel 'MMMMMMMMMMMM' view=598x141px mpp=3.9215686E-4 scale=0.9338029 cap=71.0px -> 0.21898592x0.051633805m
+08-17 22:21:39.541  7285  7285 I MeshmoreXR: [type] panel 'MMMMMMMMMMMMMM' view=982x141px mpp=3.9215686E-4 scale=0.9338029 cap=71.0px -> 0.35960564x0.051633805m
+08-17 22:21:39.556  7285  7285 I MeshmoreXR: [type] panel 'MMMMMMMMMMMMMM' view=982x141px mpp=3.9215686E-4 scale=1.0738733 cap=71.0px -> 0.41354647x0.059378874m
+08-17 22:21:39.572  7285  7285 I MeshmoreXR: [type] panel '99/99 WORDS  F' view=838x141px mpp=3.9215686E-4 scale=0.7470423 cap=71.0px -> 0.2454986x0.041307043m
+08-17 22:21:39.576  7285  7285 I MeshmoreXR: [crown] 6 slots
+08-17 22:21:39.599  7285  7285 I MeshmoreXR: [type] panel 'MMMMMMMMMMMMMM' view=1270x141px mpp=3.9215686E-4 scale=1.0774648 cap=71.0px -> 0.5366197x0.059577465m
+08-17 22:21:39.613  7285  7285 I MeshmoreXR: [type] panel 'MMMMMMMMMMMMMM' view=1270x141px mpp=3.9215686E-4 scale=0.86623687 cap=71.0px -> 0.4314199x0.0478978m
+08-17 22:21:39.638  7285  7285 I MeshmoreXR: [type] panel 'MMMMMMMMMMMMMM' view=1174x141px mpp=3.9215686E-4 scale=1.0191021 cap=71.0px -> 0.4691866x0.05635035m
+08-17 22:21:39.653  7285  7285 I MeshmoreXR: [type] panel 'MMMMMMMMMMMMMM' view=1270x141px mpp=3.9215686E-4 scale=1.1780821 cap=71.0px -> 0.5867311x0.065141015m
+08-17 22:21:39.673  7285  7285 I MeshmoreXR: [type] panel 'MMMMMMMMMMMMMM' view=1174x141px mpp=3.9215686E-4 scale=1.385979 cap=71.0px -> 0.6380939x0.076636486m
+08-17 22:21:39.693  7285  7285 I MeshmoreXR: [type] panel 'MMMMMMMMMMMMMM' view=1270x141px mpp=3.9215686E-4 scale=1.4899274 cap=71.0px -> 0.74204224x0.082384214m
+08-17 22:21:39.707  7285  7285 I MeshmoreXR: [type] panel 'MMMMMMMMMMMMMM' view=1174x141px mpp=3.9215686E-4 scale=1.7528558 cap=71.0px -> 0.80700105x0.09692261m
+08-17 22:21:39.722  7285  7285 I MeshmoreXR: [type] panel 'MMMMMMMMMMMMMM' view=1270x141px mpp=3.9215686E-4 scale=1.8017725 cap=71.0px -> 0.8973533x0.09962742m
+08-17 22:21:39.740  7285  7285 I MeshmoreXR: [type] panel 'MMMMMMMMMMMMMM' view=1174x141px mpp=3.9215686E-4 scale=2.1197324 cap=71.0px -> 0.9759081x0.11720872m
+08-17 22:21:39.761  7285  7285 I MeshmoreXR: [type] panel 'MMMMMMMMMMMMMM' view=1270x141px mpp=3.9215686E-4 scale=2.1136177 cap=71.0px -> 1.0526645x0.11687063m
+08-17 22:21:39.777  7285  7285 I MeshmoreXR: [type] panel 'MMMMMMMMMMMMMM' view=1174x141px mpp=3.9215686E-4 scale=2.486609 cap=71.0px -> 1.1448152x0.13749485m
+08-17 22:21:39.797  7285  7285 I MeshmoreXR: [type] panel 'MMMMMMMMMMMMMM' view=1270x141px mpp=3.9215686E-4 scale=2.4254632 cap=71.0px -> 1.2079757x0.13411383m
+08-17 22:21:39.810  7285  7285 I MeshmoreXR: [type] panel 'MMMMMMMMMMMMMM' view=1174x141px mpp=3.9215686E-4 scale=2.853486 cap=71.0px -> 1.3137226x0.15778099m
+08-17 22:21:39.832  7285  7285 I MeshmoreXR: [type] panel 'OLDER   99-99 ' view=982x141px mpp=3.9215686E-4 scale=2.737308 cap=71.0px -> 1.054132x0.15135704m
+08-17 22:21:39.935  7285  7285 I MeshmoreXR: [crown] words: ACTIONS open=false to=-
+08-17 22:21:40.040  7285  7285 I MeshmoreXR: [type] panel 'REPLY' view=262x141px mpp=3.9215686E-4 scale=1.0191021 cap=71.0px -> 0.10470775x0.05635035m
+08-17 22:21:40.076  7285  7285 I MeshmoreXR: [thread] 6 deep, paging and reply wired
+08-17 22:21:40.428  7285  7285 I MeshmoreXR: [type] panel 'Profile & pers' view=1222x141px mpp=3.9215686E-4 scale=0.7901408 cap=71.0px -> 0.3786479x0.04369014m
+08-17 22:21:40.444  7285  7285 I MeshmoreXR: [type] panel 'Connection, la' view=1270x141px mpp=3.9215686E-4 scale=0.7183098 cap=71.0px -> 0.35774648x0.039718308m
+08-17 22:21:40.445  7285  7285 I MeshmoreXR: [console] 6 plates
+08-17 22:21:40.682  7285  7285 I MeshmoreXR: [topology] ROUTE LEARNED for D38F07AED563 — DIRECT, no relays
+08-17 22:21:41.094  7285  7285 I MeshmoreXR: [soak] start -> 'D38F07AED563' key=4b30fe61bf82 every 60s for 60min
+08-17 22:21:41.095  7285  7285 I MeshmoreXR: [alert] SOAK — STARTED TO D38F07AED563
+08-17 22:21:41.102  7285  7285 I MeshmoreXR: [tx] -> name='D38F07AED563' key=4b30fe61bf82 (authorised)
+08-17 22:21:41.137  7285  7285 I MeshmoreXR: [soak] #1 Ok — attempted=1 accepted=0 acked=0 refused=0 drops=0 pending=0
+08-17 22:21:41.173  7285  7285 I MeshmoreXR: [tx] accepted tag=0x9cc27307 direct timeout=2202ms
+08-17 22:21:41.209  7285  7285 I MeshmoreXR: [type] panel 'SEELE MONOLITH' view=694x141px mpp=3.9215686E-4 scale=0.9697184 cap=71.0px -> 0.2639155x0.05361972m
+08-17 22:21:41.213  7285  7285 I MeshmoreXR: [type] 'Drifting spores, mycelia' shrunk to 73 px to fit 2048
+08-17 22:21:41.224  7285  7285 I MeshmoreXR: [type] panel 'Drifting spore' view=2038x112px mpp=3.9215686E-4 scale=1.1066037 cap=53.0px -> 0.8844151x0.048603773m
+08-17 22:21:41.241  7285  7285 I MeshmoreXR: [type] panel 'ADDITIVE · TAB' view=1846x141px mpp=3.9215686E-4 scale=0.8260563 cap=71.0px -> 0.598x0.045676056m
+08-17 22:21:41.245  7285  7285 I MeshmoreXR: [theme] picker built with 9 tiles
+08-17 22:21:41.262  7285  7285 I MeshmoreXR: [type] panel 'PUBLIC  PORTLA' view=1366x141px mpp=3.9215686E-4 scale=0.81528175 cap=71.0px -> 0.43673524x0.04508028m
+08-17 22:21:41.380  7285  7285 I MeshmoreXR: [type] panel 'PUBLIC  PORTLA' view=1366x141px mpp=3.9215686E-4 scale=0.81528175 cap=71.0px -> 0.43673524x0.04508028m
+08-17 22:21:41.455  7285  7285 I MeshmoreXR: [type] panel 'PUBLIC  PORTLA' view=1366x141px mpp=3.9215686E-4 scale=0.81528175 cap=71.0px -> 0.43673524x0.04508028m
+08-17 22:21:41.479  7285  7285 I MeshmoreXR: [link] mesh: 200 peers, 165 with a position
+08-17 22:21:41.525  7285  7285 I MeshmoreXR: [type] panel 'PUBLIC  PORTLA' view=1366x141px mpp=3.9215686E-4 scale=0.81528175 cap=71.0px -> 0.43673524x0.04508028m
+08-17 22:21:41.610  7285  7285 I MeshmoreXR: [type] panel 'PUBLIC  PORTLA' view=1366x141px mpp=3.9215686E-4 scale=0.81528175 cap=71.0px -> 0.43673524x0.04508028m
+08-17 22:21:41.678  7285  7285 I MeshmoreXR: [type] panel 'PUBLIC  PORTLA' view=1366x141px mpp=3.9215686E-4 scale=0.81528175 cap=71.0px -> 0.43673524x0.04508028m
+08-17 22:21:41.755  7285  7285 I MeshmoreXR: [type] panel 'APP — CONNECTI' view=1462x141px mpp=3.9215686E-4 scale=0.81528175 cap=71.0px -> 0.46742818x0.04508028m
+08-17 22:21:41.777  7285  7285 I MeshmoreXR: [type] panel 'PICK AGAIN TO ' view=1558x141px mpp=3.9215686E-4 scale=0.6929895 cap=71.0px -> 0.423403x0.038318243m
+08-17 22:21:41.778  7285  7285 I MeshmoreXR: [stack] 6 slots
+08-17 22:21:41.814  7285  7285 I MeshmoreXR: [tx] delivered tag=0x9cc27307 in 641ms
+08-17 22:21:41.854  7285  7285 I MeshmoreXR: [type] panel 'PORTLAND METRO' view=982x141px mpp=3.9215686E-4 scale=2.190845 cap=71.0px -> 0.84369016x0.121140845m
+08-17 22:21:41.924  7285  7285 I MeshmoreXR: [type] panel 'PORTLAND METRO' view=982x141px mpp=3.9215686E-4 scale=2.190845 cap=71.0px -> 0.84369016x0.121140845m
+08-17 22:21:41.998  7285  7285 I MeshmoreXR: [type] panel 'PORTLAND METRO' view=982x141px mpp=3.9215686E-4 scale=2.190845 cap=71.0px -> 0.84369016x0.121140845m
+08-17 22:21:42.068  7285  7285 I MeshmoreXR: [type] panel 'PORTLAND METRO' view=982x141px mpp=3.9215686E-4 scale=2.190845 cap=71.0px -> 0.84369016x0.121140845m
+08-17 22:21:42.171  7285  7285 I MeshmoreXR: [type] panel 'PORTLAND METRO' view=982x141px mpp=3.9215686E-4 scale=2.190845 cap=71.0px -> 0.84369016x0.121140845m
+08-17 22:21:42.244  7285  7285 I MeshmoreXR: [type] panel 'PORTLAND METRO' view=982x141px mpp=3.9215686E-4 scale=2.190845 cap=71.0px -> 0.84369016x0.121140845m
+08-17 22:21:42.246  7285  7285 I MeshmoreXR: [bands] 6 segments
+08-17 22:21:42.385  7285  7285 I MeshmoreXR: [ember] pool of 6
+08-17 22:21:42.448  7285  7285 I MeshmoreXR: [type] panel 'TOUCH THIS' view=502x141px mpp=3.9215686E-4 scale=0.36633804 cap=71.0px -> 0.07211831x0.020256339m
+08-17 22:21:42.473  7285  7285 I MeshmoreXR: [type] panel 'OR LOOK AT IT ' view=1078x141px mpp=3.9215686E-4 scale=0.36633804 cap=71.0px -> 0.15486762x0.020256339m
+08-17 22:21:42.474  7285  7285 I MeshmoreXR: [first] built
+08-17 22:21:42.491  7285  7285 I MeshmoreXR: [type] panel 'PUBLIC  PORTLA' view=1366x141px mpp=3.9215686E-4 scale=0.81528175 cap=71.0px -> 0.43673524x0.04508028m
+08-17 22:21:42.587  7285  7285 I MeshmoreXR: [type] panel 'PUBLIC  PORTLA' view=1366x141px mpp=3.9215686E-4 scale=0.81528175 cap=71.0px -> 0.43673524x0.04508028m
+08-17 22:21:42.666  7285  7285 I MeshmoreXR: [type] panel 'PUBLIC  PORTLA' view=1366x141px mpp=3.9215686E-4 scale=0.81528175 cap=71.0px -> 0.43673524x0.04508028m
+08-17 22:21:42.748  7285  7285 I MeshmoreXR: [type] panel 'PUBLIC  PORTLA' view=1366x141px mpp=3.9215686E-4 scale=0.81528175 cap=71.0px -> 0.43673524x0.04508028m
+08-17 22:21:42.835  7285  7285 I MeshmoreXR: [type] panel 'PUBLIC  PORTLA' view=1366x141px mpp=3.9215686E-4 scale=0.81528175 cap=71.0px -> 0.43673524x0.04508028m
+08-17 22:21:42.901  7285  7285 I MeshmoreXR: [type] panel 'PUBLIC  PORTLA' view=1366x141px mpp=3.9215686E-4 scale=0.81528175 cap=71.0px -> 0.43673524x0.04508028m
+08-17 22:21:43.000  7285  7285 I MeshmoreXR: [type] panel 'APP — CONNECTI' view=1462x141px mpp=3.9215686E-4 scale=0.81528175 cap=71.0px -> 0.46742818x0.04508028m
+08-17 22:21:43.014  7285  7285 I MeshmoreXR: [type] panel 'PICK AGAIN TO ' view=1558x141px mpp=3.9215686E-4 scale=0.6929895 cap=71.0px -> 0.423403x0.038318243m
+08-17 22:21:43.016  7285  7285 I MeshmoreXR: [stack] 6 slots
+08-17 22:21:43.032  7285  7285 I MeshmoreXR: [type] panel 'MMMMMMMMMMMMMM' view=1270x141px mpp=3.9215686E-4 scale=1.1492958 cap=71.0px -> 0.57239443x0.063549295m
+08-17 22:21:43.054  7285  7285 I MeshmoreXR: [type] panel 'MMMMMMMMMMMMMM' view=1174x141px mpp=3.9215686E-4 scale=1.2570423 cap=71.0px -> 0.5787324x0.06950704m
+08-17 22:21:43.122  7285  7285 I MeshmoreXR: [type] panel 'MMMMMMMMMMMMMM' view=1270x141px mpp=3.9215686E-4 scale=1.1492958 cap=71.0px -> 0.57239443x0.063549295m
+08-17 22:21:43.139  7285  7285 I MeshmoreXR: [type] panel 'MMMMMMMMMMMMMM' view=1174x141px mpp=3.9215686E-4 scale=1.2570423 cap=71.0px -> 0.5787324x0.06950704m
+08-17 22:21:43.196  7285  7285 I MeshmoreXR: [type] panel 'MMMMMMMMMMMMMM' view=1270x141px mpp=3.9215686E-4 scale=1.1492958 cap=71.0px -> 0.57239443x0.063549295m
+08-17 22:21:43.210  7285  7285 I MeshmoreXR: [type] panel 'MMMMMMMMMMMMMM' view=1174x141px mpp=3.9215686E-4 scale=1.2570423 cap=71.0px -> 0.5787324x0.06950704m
+08-17 22:21:43.266  7285  7285 I MeshmoreXR: [type] panel 'MMMMMMMMMMMMMM' view=1270x141px mpp=3.9215686E-4 scale=1.1492958 cap=71.0px -> 0.57239443x0.063549295m
+08-17 22:21:43.280  7285  7285 I MeshmoreXR: [type] panel 'MMMMMMMMMMMMMM' view=1174x141px mpp=3.9215686E-4 scale=1.2570423 cap=71.0px -> 0.5787324x0.06950704m
+08-17 22:21:43.344  7285  7285 I MeshmoreXR: [type] panel 'NEWER   1-4 OF' view=1222x141px mpp=3.9215686E-4 scale=1.1492958 cap=71.0px -> 0.55076057x0.063549295m
+08-17 22:21:43.373  7285  7285 I MeshmoreXR: [inbox] 4 rows
+08-17 22:21:43.385  7285  7285 I MeshmoreXR: [type] panel 'MMMMMMMMMMMMMM' view=1174x141px mpp=3.9215686E-4 scale=1.1492958 cap=71.0px -> 0.52912676x0.063549295m
+08-17 22:21:43.442  7285  7285 I MeshmoreXR: [type] panel 'MMMMMMMMMMMMMM' view=1174x141px mpp=3.9215686E-4 scale=1.1492958 cap=71.0px -> 0.52912676x0.063549295m
+08-17 22:21:43.488  7285  7285 I MeshmoreXR: [type] panel 'MMMMMMMMMMMMMM' view=1174x141px mpp=3.9215686E-4 scale=1.1492958 cap=71.0px -> 0.52912676x0.063549295m
+08-17 22:21:43.553  7285  7285 I MeshmoreXR: [type] panel 'MMMMMMMMMMMMMM' view=1174x141px mpp=3.9215686E-4 scale=1.1492958 cap=71.0px -> 0.52912676x0.063549295m
+08-17 22:21:43.608  7285  7285 I MeshmoreXR: [type] panel 'MMMMMMMMMMMMMM' view=1174x141px mpp=3.9215686E-4 scale=1.1492958 cap=71.0px -> 0.52912676x0.063549295m
+08-17 22:21:43.644  7285  7285 I MeshmoreXR: [type] panel 'MMMMMMMMMMMMMM' view=1174x141px mpp=3.9215686E-4 scale=1.1492958 cap=71.0px -> 0.52912676x0.063549295m
+08-17 22:21:43.696  7285  7285 I MeshmoreXR: [type] panel 'MMMMMMMMMMMMMM' view=1174x141px mpp=3.9215686E-4 scale=1.1492958 cap=71.0px -> 0.52912676x0.063549295m
+08-17 22:21:43.732  7285  7285 I MeshmoreXR: [roster] 6 rows + pager
+08-17 22:21:43.755  7285  7285 I MeshmoreXR: [gaze] ready
+08-17 22:21:43.813  7285  7285 I MeshmoreXR: [cue] welcome — last pass
+08-17 22:21:43.814  7285  7285 I MeshmoreXR: [horizon] veiled 0 callsign(s) under the hud (pitch -1°)
+08-17 22:21:43.866  7285  7285 I MeshmoreXR: [link] READY (MeshCore-B727FE05)
+08-17 22:21:43.877  7285  7285 I MeshmoreXR: [hands] R seen=NONE -1.00 (B limit 0.5)
+08-17 22:21:43.877  7285  7285 I MeshmoreXR: [hands] L seen=NONE -1.00 (B limit 0.5)
+08-17 22:21:44.643  7285  7285 I MeshmoreXR: [link] mesh: 250 peers, 211 with a position
+08-17 22:21:47.647  7285  7285 I MeshmoreXR: [link] mesh: 300 peers, 258 with a position
+08-17 22:21:50.651  7285  7285 I MeshmoreXR: [link] mesh: 350 peers, 305 with a position
+08-17 22:21:50.711  7285  7285 I MeshmoreXR: [link] contacts sync complete
+08-17 22:21:50.730  7285  7285 I MeshmoreXR: [topology] peers=350 resolvable=1 (direct=1 relayed=0) flood=349 floaters=0 | repeaters=304 collisions=86 ambiguousHops=0 unresolvedHops=0
+08-17 22:21:50.732  7285  7285 I MeshmoreXR: [topology] edges=350 by kind {FLOOD=349, DIRECT=1}
+08-17 22:21:50.732  7285  7285 I MeshmoreXR: [topology] routed: D38F07AED563 key=4b30fe61bf82 hops=0
+08-17 22:21:50.733  7285  7285 I MeshmoreXR: [link] contact sync done — discovery is live
+08-17 22:21:50.740  7285  7285 I MeshmoreXR: [allow] your nodes: 'D38F07AED563'; pinned=1; key-only lookalikes ignored=0
+08-17 22:21:50.815  7285  7285 I MeshmoreXR: [device] 'Unit C6L' fw v1.15.0 (19 Apr 2026) — holds 350 contacts, 40 channels
+08-17 22:21:51.358  7285  7285 I MeshmoreXR: [here] radio -> 45.507087, -122.766247 (known=true)
+08-17 22:21:51.358  7285  7285 I MeshmoreXR: [link] advertising position 45.507087, -122.766247 (policy -> share)
+08-17 22:21:51.361  7285  7285 I MeshmoreXR: [link] self-advert -> zero-hop
+08-17 22:21:51.465  7285  7285 I MeshmoreXR: [horizon] building 29 motes (live, fix=true via radio, labelled=24, 5 cluster(s) holding 281, of 350 peers)
+08-17 22:21:51.465  7285  7285 I MeshmoreXR: [age] 350 peers, 0 undated, live=19 stale=10
+08-17 22:21:51.466  7285  7285 I MeshmoreXR: [age] heard <10m 3, <1h 10, <6h 33, <24h 70, older 234 — 82 dated in the FUTURE, counted as never heard
+08-17 22:21:51.477  7285  7285 I MeshmoreXR: [device] M5STACK C6L (tested) — position yes, observed
+08-17 22:21:51.477  7285  7285 I MeshmoreXR: [alert] RADIO — M5STACK C6L (tested) — position yes, observed
+08-17 22:21:51.500  7285  7285 I MeshmoreXR: [type] panel 'MMMMMMMMMMMMMM' view=886x141px mpp=3.9215686E-4 scale=1.7957748 cap=71.0px -> 0.6239436x0.09929578m
+08-17 22:21:51.525  7285  7285 I MeshmoreXR: [type] panel 'MMMMMMMMMMMMMM' view=886x141px mpp=3.9215686E-4 scale=1.7957748 cap=71.0px -> 0.6239436x0.09929578m
+08-17 22:21:51.540  7285  7285 I MeshmoreXR: [type] panel 'MMMMMMMMMMMMMM' view=886x141px mpp=3.9215686E-4 scale=1.7957748 cap=71.0px -> 0.6239436x0.09929578m
+08-17 22:21:51.556  7285  7285 I MeshmoreXR: [type] panel 'MMMMMMMMMMMMMM' view=886x141px mpp=3.9215686E-4 scale=1.7957748 cap=71.0px -> 0.6239436x0.09929578m
+08-17 22:21:51.580  7285  7285 I MeshmoreXR: [type] panel 'MMMMMMMMMMMMMM' view=886x141px mpp=3.9215686E-4 scale=1.7957748 cap=71.0px -> 0.6239436x0.09929578m
+08-17 22:21:51.601  7285  7285 I MeshmoreXR: [type] panel 'MMMMMMMMMMMMMM' view=886x141px mpp=3.9215686E-4 scale=1.7957748 cap=71.0px -> 0.6239436x0.09929578m
+08-17 22:21:51.615  7285  7285 I MeshmoreXR: [type] panel 'MMMMMMMMMMMMMM' view=886x141px mpp=3.9215686E-4 scale=1.7957748 cap=71.0px -> 0.6239436x0.09929578m
+08-17 22:21:51.638  7285  7285 I MeshmoreXR: [type] panel 'MMMMMMMMMMMMMM' view=886x141px mpp=3.9215686E-4 scale=1.7957748 cap=71.0px -> 0.6239436x0.09929578m
+08-17 22:21:51.661  7285  7285 I MeshmoreXR: [type] panel 'MMMMMMMMMMMMMM' view=886x141px mpp=3.9215686E-4 scale=1.7957748 cap=71.0px -> 0.6239436x0.09929578m
+08-17 22:21:51.678  7285  7285 I MeshmoreXR: [type] panel 'MMMMMMMMMMMMMM' view=886x141px mpp=3.9215686E-4 scale=1.7957748 cap=71.0px -> 0.6239436x0.09929578m
+08-17 22:21:51.697  7285  7285 I MeshmoreXR: [type] panel 'MMMMMMMMMMMMMM' view=886x141px mpp=3.9215686E-4 scale=1.7957748 cap=71.0px -> 0.6239436x0.09929578m
+08-17 22:21:51.732  7285  7285 I MeshmoreXR: [type] panel 'MMMMMMMMMMMMMM' view=886x141px mpp=3.9215686E-4 scale=1.7957748 cap=71.0px -> 0.6239436x0.09929578m
+08-17 22:21:51.746  7285  7285 I MeshmoreXR: [type] panel 'MMMMMMMMMMMMMM' view=886x141px mpp=3.9215686E-4 scale=1.7957748 cap=71.0px -> 0.6239436x0.09929578m
+08-17 22:21:51.779  7285  7285 I MeshmoreXR: [type] panel 'MMMMMMMMMMMMMM' view=886x141px mpp=3.9215686E-4 scale=1.7957748 cap=71.0px -> 0.6239436x0.09929578m
+08-17 22:21:51.804  7285  7285 I MeshmoreXR: [type] panel 'MMMMMMMMMMMMMM' view=886x141px mpp=3.9215686E-4 scale=1.7957748 cap=71.0px -> 0.6239436x0.09929578m
+08-17 22:21:51.831  7285  7285 I MeshmoreXR: [type] panel 'MMMMMMMMMMMMMM' view=886x141px mpp=3.9215686E-4 scale=1.7957748 cap=71.0px -> 0.6239436x0.09929578m
+08-17 22:21:51.846  7285  7285 I MeshmoreXR: [type] panel 'MMMMMMMMMMMMMM' view=886x141px mpp=3.9215686E-4 scale=1.7957748 cap=71.0px -> 0.6239436x0.09929578m
+08-17 22:21:51.865  7285  7285 I MeshmoreXR: [type] panel 'MMMMMMMMMMMMMM' view=886x141px mpp=3.9215686E-4 scale=1.7957748 cap=71.0px -> 0.6239436x0.09929578m
+08-17 22:21:51.879  7285  7285 I MeshmoreXR: [type] panel 'MMMMMMMMMMMMMM' view=886x141px mpp=3.9215686E-4 scale=1.7957748 cap=71.0px -> 0.6239436x0.09929578m
+08-17 22:21:51.897  7285  7285 I MeshmoreXR: [type] panel 'MMMMMMMMMMMMMM' view=886x141px mpp=3.9215686E-4 scale=1.7957748 cap=71.0px -> 0.6239436x0.09929578m
+08-17 22:21:51.916  7285  7285 I MeshmoreXR: [type] panel 'MMMMMMMMMMMMMM' view=886x141px mpp=3.9215686E-4 scale=1.7957748 cap=71.0px -> 0.6239436x0.09929578m
+08-17 22:21:51.929  7285  7285 I MeshmoreXR: [type] panel 'MMMMMMMMMMMMMM' view=886x141px mpp=3.9215686E-4 scale=1.7957748 cap=71.0px -> 0.6239436x0.09929578m
+08-17 22:21:51.946  7285  7285 I MeshmoreXR: [type] panel 'MMMMMMMMMMMMMM' view=886x141px mpp=3.9215686E-4 scale=1.7957748 cap=71.0px -> 0.6239436x0.09929578m
+08-17 22:21:51.976  7285  7285 I MeshmoreXR: [type] panel 'MMMMMMMMMMMMMM' view=886x141px mpp=3.9215686E-4 scale=1.7957748 cap=71.0px -> 0.6239436x0.09929578m
+08-17 22:21:51.997  7285  7285 I MeshmoreXR: [type] panel 'MMMMMMMMMMMMMM' view=886x141px mpp=3.9215686E-4 scale=1.7957748 cap=71.0px -> 0.6239436x0.09929578m
+08-17 22:21:52.011  7285  7285 I MeshmoreXR: [type] panel 'MMMMMMMMMMMMMM' view=886x141px mpp=3.9215686E-4 scale=1.7957748 cap=71.0px -> 0.6239436x0.09929578m
+08-17 22:21:52.030  7285  7285 I MeshmoreXR: [type] panel 'MMMMMMMMMMMMMM' view=886x141px mpp=3.9215686E-4 scale=1.7957748 cap=71.0px -> 0.6239436x0.09929578m
+08-17 22:21:52.046  7285  7285 I MeshmoreXR: [type] panel 'MMMMMMMMMMMMMM' view=886x141px mpp=3.9215686E-4 scale=1.7957748 cap=71.0px -> 0.6239436x0.09929578m
+08-17 22:21:52.069  7285  7285 I MeshmoreXR: [type] panel 'MMMMMMMMMMMMMM' view=886x141px mpp=3.9215686E-4 scale=1.7957748 cap=71.0px -> 0.6239436x0.09929578m
+08-17 22:21:52.088  7285  7285 I MeshmoreXR: [type] panel 'MMMMMMMMMMMMMM' view=886x141px mpp=3.9215686E-4 scale=1.7957748 cap=71.0px -> 0.6239436x0.09929578m
+08-17 22:21:52.108  7285  7285 I MeshmoreXR: [type] panel 'MMMMMMMMMMMMMM' view=886x141px mpp=3.9215686E-4 scale=1.7957748 cap=71.0px -> 0.6239436x0.09929578m
+08-17 22:21:52.122  7285  7285 I MeshmoreXR: [type] panel 'MMMMMMMMMMMMMM' view=886x141px mpp=3.9215686E-4 scale=1.7957748 cap=71.0px -> 0.6239436x0.09929578m
+08-17 22:21:52.139  7285  7285 I MeshmoreXR: [type] panel 'MMMMMMMMMMMMMM' view=886x141px mpp=3.9215686E-4 scale=1.7957748 cap=71.0px -> 0.6239436x0.09929578m
+08-17 22:21:52.158  7285  7285 I MeshmoreXR: [type] panel 'MMMMMMMMMMMMMM' view=886x141px mpp=3.9215686E-4 scale=1.7957748 cap=71.0px -> 0.6239436x0.09929578m
+08-17 22:21:52.180  7285  7285 I MeshmoreXR: [type] panel 'MMMMMMMMMMMMMM' view=886x141px mpp=3.9215686E-4 scale=1.7957748 cap=71.0px -> 0.6239436x0.09929578m
+08-17 22:21:52.195  7285  7285 I MeshmoreXR: [type] panel 'MMMMMMMMMMMMMM' view=886x141px mpp=3.9215686E-4 scale=1.7957748 cap=71.0px -> 0.6239436x0.09929578m
+08-17 22:21:52.210  7285  7285 I MeshmoreXR: [type] panel 'MMMMMMMMMMMMMM' view=886x141px mpp=3.9215686E-4 scale=1.7957748 cap=71.0px -> 0.6239436x0.09929578m
+08-17 22:21:52.232  7285  7285 I MeshmoreXR: [type] panel 'MMMMMMMMMMMMMM' view=886x141px mpp=3.9215686E-4 scale=1.7957748 cap=71.0px -> 0.6239436x0.09929578m
+08-17 22:21:52.249  7285  7285 I MeshmoreXR: [type] panel 'MMMMMMMMMMMMMM' view=886x141px mpp=3.9215686E-4 scale=1.7957748 cap=71.0px -> 0.6239436x0.09929578m
+08-17 22:21:52.265  7285  7285 I MeshmoreXR: [type] panel 'MMMMMMMMMMMMMM' view=886x141px mpp=3.9215686E-4 scale=1.7957748 cap=71.0px -> 0.6239436x0.09929578m
+08-17 22:21:52.267  7285  7285 I MeshmoreXR: [labels] pool of 40
+08-17 22:21:53.073  7285  7285 I MeshmoreXR: [horizon] veiled 1 callsign(s) under the hud (pitch -1°)
+08-17 22:21:53.327  7285  7285 I MeshmoreXR: [horizon] veiled 2 callsign(s) under the hud (pitch -1°)
+08-17 22:21:53.524  7285  7285 I MeshmoreXR: [alert] CONTACTS — CONTACT STORE FULL — 350 OF 350. NEW NODES ARE TURNED AWAY
+08-17 22:21:53.525  7285  7285 I MeshmoreXR: [region] ok: us_canada
+08-17 22:21:53.631  7285  7285 I MeshmoreXR: [horizon] veiled 3 callsign(s) under the hud (pitch -1°)
+08-17 22:21:53.815  7285  7285 I MeshmoreXR: [horizon] veiled 4 callsign(s) under the hud (pitch -1°)
+08-17 22:21:53.902  7285  7285 I MeshmoreXR: [horizon] veiled 5 callsign(s) under the hud (pitch -1°)
+08-17 22:21:54.076  7285  7285 I MeshmoreXR: [horizon] veiled 6 callsign(s) under the hud (pitch -1°)
+08-17 22:21:54.353  7285  7285 I MeshmoreXR: [horizon] veiled 7 callsign(s) under the hud (pitch -1°)
+08-17 22:21:55.035  7285  7285 I MeshmoreXR: [horizon] veiled 8 callsign(s) under the hud (pitch -1°)
+08-17 22:21:56.205  7285  7285 I MeshmoreXR: [horizon] veiled 9 callsign(s) under the hud (pitch -1°)
+08-17 22:21:56.922  7285  7285 I MeshmoreXR: [horizon] built 118 entities for 29 nodes (22 repeaters, 2 chat, 5 other)
+08-17 22:21:56.932  7285  7285 I MeshmoreXR: [bands] showing 1 channel band(s)
+08-17 22:21:58.196  7285  7285 I MeshmoreXR: [boot] surface down after 4.6s (sync complete)
+08-17 22:21:58.611  7285  7285 I MeshmoreXR: [link] mesh: 350 peers, 305 with a position
+08-17 22:21:58.611  7285  7285 I MeshmoreXR: [link] heard c89e52da27ee OR-City Repeater
+08-17 22:22:07.748  7285  7285 I MeshmoreXR: [gaze] dwell ARMED
+08-17 22:22:07.839  7285  7285 I MeshmoreXR: [horizon] veiled 6 callsign(s) under the hud (pitch -2°)
+08-17 22:22:08.165  7285  7285 I MeshmoreXR: [horizon] veiled 7 callsign(s) under the hud (pitch -2°)
+08-17 22:22:10.312  7285  7285 I MeshmoreXR: [gaze] dwell stood down (still)
+08-17 22:22:10.426  7285  7285 I MeshmoreXR: [link] mesh: 350 peers, 305 with a position
+08-17 22:22:10.426  7285  7285 I MeshmoreXR: [link] heard 4b30fe61bf82 D38F07AED563
+08-17 22:22:26.248  7285  7285 I MeshmoreXR: [link] mesh: 350 peers, 305 with a position
+08-17 22:22:26.248  7285  7285 I MeshmoreXR: [link] heard 7481c584bc23 Rogue
+08-17 22:22:30.007  7285  7285 I MeshmoreXR: [horizon] veiled 6 callsign(s) under the hud (pitch -2°)
+08-17 22:22:36.586  7285  7285 I MeshmoreXR: [horizon] veiled 7 callsign(s) under the hud (pitch -2°)
+08-17 22:22:41.184  7285  7285 I MeshmoreXR: [tx] -> name='D38F07AED563' key=4b30fe61bf82 (authorised)
+08-17 22:22:41.277  7285  7285 I MeshmoreXR: [ember] DM at 141 deg
+08-17 22:22:41.277  7285  7285 I MeshmoreXR: [soak] #2 Ok — attempted=2 accepted=1 acked=1 refused=0 drops=0 pending=0
+08-17 22:22:41.359  7285  7285 I MeshmoreXR: [tx] accepted tag=0x4aca97a9 direct timeout=2202ms
+08-17 22:22:41.858  7285  7285 I MeshmoreXR: [tx] delivered tag=0x4aca97a9 in 499ms
+08-17 22:22:56.293  7285  7285 I MeshmoreXR: [horizon] veiled 6 callsign(s) under the hud (pitch -2°)
+08-17 22:23:07.237  7285  7285 I MeshmoreXR: [link] mesh: 350 peers, 305 with a position
+08-17 22:23:07.237  7285  7285 I MeshmoreXR: [link] heard 4b30fe61bf82 D38F07AED563
+08-17 22:23:23.416  7285  7285 I MeshmoreXR: [horizon] veiled 7 callsign(s) under the hud (pitch -2°)
+08-17 22:23:41.280  7285  7285 I MeshmoreXR: [tx] -> name='D38F07AED563' key=4b30fe61bf82 (authorised)
+08-17 22:23:41.368  7285  7285 I MeshmoreXR: [ember] DM at 141 deg
+08-17 22:23:41.368  7285  7285 I MeshmoreXR: [soak] #3 Ok — attempted=3 accepted=2 acked=2 refused=0 drops=0 pending=0
+08-17 22:23:41.443  7285  7285 I MeshmoreXR: [tx] accepted tag=0xd82be331 direct timeout=2202ms
+08-17 22:23:42.332  7285  7285 I MeshmoreXR: [tx] delivered tag=0xd82be331 in 888ms
+08-17 22:23:58.453  7285  7285 I MeshmoreXR: [horizon] veiled 6 callsign(s) under the hud (pitch -2°)
+08-17 22:23:59.637  7285  7285 I MeshmoreXR: [horizon] veiled 7 callsign(s) under the hud (pitch -2°)
+08-17 22:24:07.048  7285  7285 I MeshmoreXR: [horizon] veiled 6 callsign(s) under the hud (pitch -2°)
+08-17 22:24:07.346  7285  7285 I MeshmoreXR: [link] mesh: 350 peers, 305 with a position
+08-17 22:24:07.346  7285  7285 I MeshmoreXR: [link] heard 4b30fe61bf82 D38F07AED563
+08-17 22:24:08.347  7285  7285 I MeshmoreXR: [horizon] veiled 7 callsign(s) under the hud (pitch -2°)
+08-17 22:24:09.149  7285  7285 I MeshmoreXR: [horizon] veiled 6 callsign(s) under the hud (pitch -2°)
+08-17 22:24:14.591  7285  7285 I MeshmoreXR: [horizon] veiled 7 callsign(s) under the hud (pitch -2°)
+08-17 22:24:23.476  7285  7285 I MeshmoreXR: [horizon] veiled 6 callsign(s) under the hud (pitch -2°)
+08-17 22:24:24.553  7285  7285 I MeshmoreXR: [horizon] veiled 7 callsign(s) under the hud (pitch -2°)
+08-17 22:24:41.401  7285  7285 I MeshmoreXR: [tx] -> name='D38F07AED563' key=4b30fe61bf82 (authorised)
+08-17 22:24:41.494  7285  7285 I MeshmoreXR: [ember] DM at 141 deg
+08-17 22:24:41.494  7285  7285 I MeshmoreXR: [soak] #4 Ok — attempted=4 accepted=3 acked=3 refused=0 drops=0 pending=0
+08-17 22:24:41.565  7285  7285 I MeshmoreXR: [tx] accepted tag=0x8e61102d direct timeout=2202ms
+08-17 22:24:42.474  7285  7285 I MeshmoreXR: [tx] delivered tag=0x8e61102d in 909ms
+08-17 22:25:07.290  7285  7285 I MeshmoreXR: [link] mesh: 350 peers, 305 with a position
+08-17 22:25:07.290  7285  7285 I MeshmoreXR: [link] heard 4b30fe61bf82 D38F07AED563
+08-17 22:25:41.523  7285  7285 I MeshmoreXR: [tx] -> name='D38F07AED563' key=4b30fe61bf82 (authorised)
+08-17 22:25:41.609  7285  7285 I MeshmoreXR: [ember] DM at 141 deg
+08-17 22:25:41.609  7285  7285 I MeshmoreXR: [soak] #5 Ok — attempted=5 accepted=4 acked=4 refused=0 drops=0 pending=0
+08-17 22:25:41.678  7285  7285 I MeshmoreXR: [tx] accepted tag=0x130b18dd direct timeout=2202ms
+08-17 22:25:42.226  7285  7285 I MeshmoreXR: [tx] delivered tag=0x130b18dd in 547ms
+08-17 22:26:07.507  7285  7285 I MeshmoreXR: [link] mesh: 350 peers, 305 with a position
+08-17 22:26:07.507  7285  7285 I MeshmoreXR: [link] heard 4b30fe61bf82 D38F07AED563
+08-17 22:26:16.151  7285  7285 I MeshmoreXR: [horizon] veiled 6 callsign(s) under the hud (pitch -2°)
+08-17 22:26:16.332  7285  7285 I MeshmoreXR: [horizon] veiled 7 callsign(s) under the hud (pitch -2°)
+08-17 22:26:16.593  7285  7285 I MeshmoreXR: [horizon] veiled 6 callsign(s) under the hud (pitch -2°)
+08-17 22:26:17.027  7285  7285 I MeshmoreXR: [horizon] veiled 7 callsign(s) under the hud (pitch -2°)
+08-17 22:26:18.813  7285  7285 I MeshmoreXR: [horizon] veiled 6 callsign(s) under the hud (pitch -2°)
+08-17 22:26:19.295  7285  7285 I MeshmoreXR: [link] mesh: 350 peers, 305 with a position
+08-17 22:26:19.295  7285  7285 I MeshmoreXR: [link] heard 0e695d462cbc Summit1.2Rak4631EasySky
+08-17 22:26:20.052  7285  7285 I MeshmoreXR: [horizon] veiled 7 callsign(s) under the hud (pitch -2°)
+08-17 22:26:23.503  7285  7285 I MeshmoreXR: [horizon] veiled 6 callsign(s) under the hud (pitch -2°)
+08-17 22:26:25.636  7285  7285 I MeshmoreXR: [horizon] veiled 7 callsign(s) under the hud (pitch -2°)
+08-17 22:26:26.865  7285  7285 I MeshmoreXR: [horizon] veiled 6 callsign(s) under the hud (pitch -2°)
+08-17 22:26:27.211  7285  7285 I MeshmoreXR: [horizon] veiled 7 callsign(s) under the hud (pitch -2°)
+08-17 22:26:29.320  7285  7285 I MeshmoreXR: [horizon] veiled 6 callsign(s) under the hud (pitch -2°)
+08-17 22:26:29.498  7285  7285 I MeshmoreXR: [horizon] veiled 7 callsign(s) under the hud (pitch -2°)
+08-17 22:26:30.015  7285  7285 I MeshmoreXR: [horizon] veiled 6 callsign(s) under the hud (pitch -2°)
+08-17 22:26:30.360  7285  7285 I MeshmoreXR: [horizon] veiled 7 callsign(s) under the hud (pitch -2°)
+08-17 22:26:30.620  7285  7285 I MeshmoreXR: [horizon] veiled 6 callsign(s) under the hud (pitch -2°)
+08-17 22:26:30.708  7285  7285 I MeshmoreXR: [horizon] veiled 7 callsign(s) under the hud (pitch -2°)
+08-17 22:26:41.612  7285  7285 I MeshmoreXR: [tx] -> name='D38F07AED563' key=4b30fe61bf82 (authorised)
+08-17 22:26:41.704  7285  7285 I MeshmoreXR: [ember] DM at 141 deg
+08-17 22:26:41.704  7285  7285 I MeshmoreXR: [soak] #6 Ok — attempted=6 accepted=5 acked=5 refused=0 drops=0 pending=0
+08-17 22:26:41.771  7285  7285 I MeshmoreXR: [tx] accepted tag=0x101ca742 direct timeout=2202ms
+08-17 22:26:42.272  7285  7285 I MeshmoreXR: [tx] delivered tag=0x101ca742 in 501ms
+08-17 22:27:07.368  7285  7285 I MeshmoreXR: [link] mesh: 350 peers, 305 with a position
+08-17 22:27:07.368  7285  7285 I MeshmoreXR: [link] heard 4b30fe61bf82 D38F07AED563
+08-17 22:27:41.744  7285  7285 I MeshmoreXR: [tx] -> name='D38F07AED563' key=4b30fe61bf82 (authorised)
+08-17 22:27:41.830  7285  7285 I MeshmoreXR: [ember] DM at 141 deg
+08-17 22:27:41.830  7285  7285 I MeshmoreXR: [soak] #7 Ok — attempted=7 accepted=6 acked=6 refused=0 drops=0 pending=0
+08-17 22:27:41.898  7285  7285 I MeshmoreXR: [tx] accepted tag=0x334bf349 direct timeout=2202ms
+08-17 22:27:42.401  7285  7285 I MeshmoreXR: [tx] delivered tag=0x334bf349 in 503ms
+08-17 22:28:07.323  7285  7285 I MeshmoreXR: [link] mesh: 350 peers, 305 with a position
+08-17 22:28:07.323  7285  7285 I MeshmoreXR: [link] heard 4b30fe61bf82 D38F07AED563
+08-17 22:28:41.882  7285  7285 I MeshmoreXR: [tx] -> name='D38F07AED563' key=4b30fe61bf82 (authorised)
+08-17 22:28:41.971  7285  7285 I MeshmoreXR: [ember] DM at 141 deg
+08-17 22:28:41.971  7285  7285 I MeshmoreXR: [soak] #8 Ok — attempted=8 accepted=7 acked=7 refused=0 drops=0 pending=0
+08-17 22:28:42.045  7285  7285 I MeshmoreXR: [tx] accepted tag=0xcf60f07e direct timeout=2202ms
+08-17 22:29:07.669  7285  7285 I MeshmoreXR: [link] mesh: 350 peers, 305 with a position
+08-17 22:29:07.669  7285  7285 I MeshmoreXR: [link] heard 4b30fe61bf82 D38F07AED563
+08-17 22:29:17.350  7285  7285 I MeshmoreXR: [horizon] veiled 6 callsign(s) under the hud (pitch -2°)
+08-17 22:29:26.491  7285  7285 I MeshmoreXR: [horizon] veiled 7 callsign(s) under the hud (pitch -2°)
+08-17 22:29:31.918  7285  7285 I MeshmoreXR: [gaze] dwell ARMED
+08-17 22:29:32.219  7285  7285 I MeshmoreXR: [horizon] veiled 9 callsign(s) under the hud (pitch -2°)
+08-17 22:29:32.316  7285  7285 I MeshmoreXR: [horizon] veiled 8 callsign(s) under the hud (pitch -2°)
+08-17 22:29:32.923  7285  7285 I MeshmoreXR: [horizon] veiled 7 callsign(s) under the hud (pitch -2°)
+08-17 22:29:34.656  7285  7285 I MeshmoreXR: [horizon] veiled 8 callsign(s) under the hud (pitch -2°)
+08-17 22:29:34.671  7285  7285 I MeshmoreXR: [gaze] dwell stood down (still)
+08-17 22:29:34.745  7285  7285 I MeshmoreXR: [horizon] veiled 7 callsign(s) under the hud (pitch -2°)
+08-17 22:29:34.836  7285  7285 I MeshmoreXR: [horizon] veiled 8 callsign(s) under the hud (pitch -2°)
+08-17 22:29:41.271  7285  7285 I MeshmoreXR: [link] mesh: 350 peers, 305 with a position
+08-17 22:29:41.271  7285  7285 I MeshmoreXR: [link] heard f31c015d0209 GandalRF Base 🧙
+08-17 22:29:41.975  7285  7285 I MeshmoreXR: [tx] -> name='D38F07AED563' key=4b30fe61bf82 (authorised)
+08-17 22:29:42.068  7285  7285 I MeshmoreXR: [ember] DM at 141 deg
+08-17 22:29:42.068  7285  7285 I MeshmoreXR: [soak] #9 Ok — attempted=9 accepted=8 acked=7 refused=0 drops=0 pending=1
+08-17 22:29:42.137  7285  7285 I MeshmoreXR: [tx] accepted tag=0x3c6e60af direct timeout=2202ms
+08-17 22:29:42.999  7285  7285 I MeshmoreXR: [tx] delivered tag=0x3c6e60af in 862ms
+08-17 22:29:45.352  7285  7285 I MeshmoreXR: [horizon] veiled 7 callsign(s) under the hud (pitch -2°)
+08-17 22:29:59.310  7285  7285 I MeshmoreXR: [horizon] veiled 8 callsign(s) under the hud (pitch -2°)
+08-17 22:29:59.822  7285  7285 I MeshmoreXR: [horizon] veiled 9 callsign(s) under the hud (pitch -2°)
+08-17 22:30:07.401  7285  7285 I MeshmoreXR: [link] mesh: 350 peers, 305 with a position
+08-17 22:30:07.401  7285  7285 I MeshmoreXR: [link] heard 4b30fe61bf82 D38F07AED563
+08-17 22:30:42.099  7285  7285 I MeshmoreXR: [tx] -> name='D38F07AED563' key=4b30fe61bf82 (authorised)
+08-17 22:30:42.185  7285  7285 I MeshmoreXR: [ember] DM at 141 deg
+08-17 22:30:42.185  7285  7285 I MeshmoreXR: [soak] #10 Ok — attempted=10 accepted=9 acked=8 refused=0 drops=0 pending=1
+08-17 22:30:42.252  7285  7285 I MeshmoreXR: [tx] accepted tag=0x89d56609 direct timeout=2202ms
+08-17 22:30:42.790  7285  7285 I MeshmoreXR: [tx] delivered tag=0x89d56609 in 538ms
+08-17 22:30:55.505  7285  7285 I MeshmoreXR: [horizon] veiled 8 callsign(s) under the hud (pitch -1°)
+08-17 22:30:56.714  7285  7285 I MeshmoreXR: [horizon] veiled 9 callsign(s) under the hud (pitch -1°)
+08-17 22:30:56.797  7285  7285 I MeshmoreXR: [horizon] veiled 8 callsign(s) under the hud (pitch -1°)
+08-17 22:31:06.316  7285  7285 I MeshmoreXR: [horizon] veiled 7 callsign(s) under the hud (pitch -1°)
+08-17 22:31:07.474  7285  7285 I MeshmoreXR: [link] mesh: 350 peers, 305 with a position
+08-17 22:31:07.474  7285  7285 I MeshmoreXR: [link] heard 4b30fe61bf82 D38F07AED563
+08-17 22:31:34.039  7285  7285 I MeshmoreXR: [horizon] veiled 8 callsign(s) under the hud (pitch -0°)
+08-17 22:31:34.291  7285  7285 I MeshmoreXR: [horizon] veiled 7 callsign(s) under the hud (pitch -0°)
+08-17 22:31:34.378  7285  7285 I MeshmoreXR: [horizon] veiled 8 callsign(s) under the hud (pitch -0°)
+08-17 22:31:39.815  7285  7285 I MeshmoreXR: [horizon] veiled 9 callsign(s) under the hud (pitch 0°)
+08-17 22:31:42.188  7285  7285 I MeshmoreXR: [tx] -> name='D38F07AED563' key=4b30fe61bf82 (authorised)
+08-17 22:31:42.278  7285  7285 I MeshmoreXR: [ember] DM at 141 deg
+08-17 22:31:42.278  7285  7285 I MeshmoreXR: [soak] #11 Ok — attempted=11 accepted=10 acked=9 refused=0 drops=0 pending=1
+08-17 22:31:42.336  7285  7285 I MeshmoreXR: [tx] accepted tag=0x809ab17b direct timeout=2202ms
+08-17 22:31:42.879  7285  7285 I MeshmoreXR: [tx] delivered tag=0x809ab17b in 543ms
+08-17 22:32:03.214  7285  7285 I MeshmoreXR: [horizon] veiled 10 callsign(s) under the hud (pitch 0°)
+08-17 22:32:07.368  7285  7285 I MeshmoreXR: [link] mesh: 350 peers, 305 with a position
+08-17 22:32:07.368  7285  7285 I MeshmoreXR: [link] heard 4b30fe61bf82 D38F07AED563
+08-17 22:32:37.340  7285  7285 I MeshmoreXR: [link] mesh: 350 peers, 305 with a position
+08-17 22:32:37.340  7285  7285 I MeshmoreXR: [link] heard 0493b41b40d0 tu-cert-rptr
+08-17 22:32:42.310  7285  7285 I MeshmoreXR: [tx] -> name='D38F07AED563' key=4b30fe61bf82 (authorised)
+08-17 22:32:42.400  7285  7285 I MeshmoreXR: [ember] DM at 141 deg
+08-17 22:32:42.400  7285  7285 I MeshmoreXR: [soak] #12 Ok — attempted=12 accepted=11 acked=10 refused=0 drops=0 pending=1
+08-17 22:32:42.458  7285  7285 I MeshmoreXR: [tx] accepted tag=0x1ab8ef3a direct timeout=2202ms
+08-17 22:32:43.257  7285  7285 I MeshmoreXR: [tx] delivered tag=0x1ab8ef3a in 799ms
+08-17 22:33:07.250  7285  7285 I MeshmoreXR: [link] mesh: 350 peers, 305 with a position
+08-17 22:33:07.250  7285  7285 I MeshmoreXR: [link] heard 4b30fe61bf82 D38F07AED563
+08-17 22:33:14.172  7285  7285 I MeshmoreXR: [horizon] veiled 8 callsign(s) under the hud (pitch -2°)
+08-17 22:33:14.184  7285  7285 I MeshmoreXR: [gaze] dwell ARMED
+08-17 22:33:14.912  7285  7285 I MeshmoreXR: [horizon] veiled 9 callsign(s) under the hud (pitch -2°)
+08-17 22:33:16.080  7285  7285 I MeshmoreXR: [horizon] veiled 8 callsign(s) under the hud (pitch -2°)
+08-17 22:33:16.703  7285  7285 I MeshmoreXR: [gaze] dwell stood down (still)
+08-17 22:33:18.654  7285  7285 I MeshmoreXR: [horizon] veiled 9 callsign(s) under the hud (pitch -2°)
+08-17 22:33:20.010  7285  7285 I MeshmoreXR: [horizon] veiled 8 callsign(s) under the hud (pitch -2°)
+08-17 22:33:20.695  7285  7285 I MeshmoreXR: [horizon] veiled 9 callsign(s) under the hud (pitch -2°)
+08-17 22:33:42.411  7285  7285 I MeshmoreXR: [tx] -> name='D38F07AED563' key=4b30fe61bf82 (authorised)
+08-17 22:33:42.496  7285  7285 I MeshmoreXR: [ember] DM at 141 deg
+08-17 22:33:42.496  7285  7285 I MeshmoreXR: [soak] #13 Ok — attempted=13 accepted=12 acked=11 refused=0 drops=0 pending=1
+08-17 22:33:42.558  7285  7285 I MeshmoreXR: [tx] accepted tag=0x7fbb1a8d direct timeout=2202ms
+08-17 22:33:43.097  7285  7285 I MeshmoreXR: [tx] delivered tag=0x7fbb1a8d in 539ms
+08-17 22:34:07.253  7285  7285 I MeshmoreXR: [link] mesh: 350 peers, 305 with a position
+08-17 22:34:07.253  7285  7285 I MeshmoreXR: [link] heard 4b30fe61bf82 D38F07AED563
+08-17 22:34:42.503  7285  7285 I MeshmoreXR: [tx] -> name='D38F07AED563' key=4b30fe61bf82 (authorised)
+08-17 22:34:42.590  7285  7285 I MeshmoreXR: [ember] DM at 141 deg
+08-17 22:34:42.591  7285  7285 I MeshmoreXR: [soak] #14 Ok — attempted=14 accepted=13 acked=12 refused=0 drops=0 pending=1
+08-17 22:34:42.662  7285  7285 I MeshmoreXR: [tx] accepted tag=0x7193ce95 direct timeout=2202ms
+08-17 22:34:43.574  7285  7285 I MeshmoreXR: [tx] delivered tag=0x7193ce95 in 912ms
+08-17 22:34:58.533  7285  7285 I MeshmoreXR: [link] mesh: 350 peers, 305 with a position
+08-17 22:34:58.533  7285  7285 I MeshmoreXR: [link] heard 5e5c9b48533b RBP SENSE CAP REPEATER 
+08-17 22:35:10.032  7285  7285 I MeshmoreXR: [horizon] veiled 8 callsign(s) under the hud (pitch -1°)
+08-17 22:35:10.495  7285  7285 I MeshmoreXR: [link] mesh: 350 peers, 305 with a position
+08-17 22:35:10.495  7285  7285 I MeshmoreXR: [link] heard 4b30fe61bf82 D38F07AED563
+08-17 22:35:11.098  7285  7285 I MeshmoreXR: [horizon] veiled 7 callsign(s) under the hud (pitch -1°)
+08-17 22:35:42.600  7285  7285 I MeshmoreXR: [tx] -> name='D38F07AED563' key=4b30fe61bf82 (authorised)
+08-17 22:35:42.684  7285  7285 I MeshmoreXR: [ember] DM at 141 deg
+08-17 22:35:42.684  7285  7285 I MeshmoreXR: [soak] #15 Ok — attempted=15 accepted=14 acked=13 refused=0 drops=0 pending=1
+08-17 22:35:42.748  7285  7285 I MeshmoreXR: [tx] accepted tag=0xbaef0220 direct timeout=2202ms
+08-17 22:35:44.094  7285  7285 I MeshmoreXR: [tx] delivered tag=0xbaef0220 in 1346ms
+08-17 22:36:07.266  7285  7285 I MeshmoreXR: [link] mesh: 350 peers, 305 with a position
+08-17 22:36:07.266  7285  7285 I MeshmoreXR: [link] heard 4b30fe61bf82 D38F07AED563
+08-17 22:36:41.440  7285  7285 I MeshmoreXR: [horizon] veiled 8 callsign(s) under the hud (pitch -1°)
+08-17 22:36:41.862  7285  7285 I MeshmoreXR: [horizon] veiled 7 callsign(s) under the hud (pitch -1°)
+08-17 22:36:41.951  7285  7285 I MeshmoreXR: [horizon] veiled 8 callsign(s) under the hud (pitch -1°)
+08-17 22:36:42.041  7285  7285 I MeshmoreXR: [horizon] veiled 7 callsign(s) under the hud (pitch -1°)
+08-17 22:36:42.687  7285  7285 I MeshmoreXR: [tx] -> name='D38F07AED563' key=4b30fe61bf82 (authorised)
+08-17 22:36:42.774  7285  7285 I MeshmoreXR: [ember] DM at 141 deg
+08-17 22:36:42.774  7285  7285 I MeshmoreXR: [soak] #16 Ok — attempted=16 accepted=15 acked=14 refused=0 drops=0 pending=1
+08-17 22:36:42.843  7285  7285 I MeshmoreXR: [tx] accepted tag=0xc3634544 direct timeout=2202ms
+08-17 22:36:43.352  7285  7285 I MeshmoreXR: [horizon] veiled 8 callsign(s) under the hud (pitch -1°)
+08-17 22:36:43.376  7285  7285 I MeshmoreXR: [tx] delivered tag=0xc3634544 in 533ms
+08-17 22:36:43.444  7285  7285 I MeshmoreXR: [horizon] veiled 7 callsign(s) under the hud (pitch -1°)
+08-17 22:36:44.270  7285  7285 I MeshmoreXR: [horizon] veiled 8 callsign(s) under the hud (pitch -1°)
+08-17 22:36:48.552  7285  7285 I MeshmoreXR: [horizon] veiled 7 callsign(s) under the hud (pitch -1°)
+08-17 22:36:49.055  7285  7285 I MeshmoreXR: [horizon] veiled 8 callsign(s) under the hud (pitch -1°)
+08-17 22:37:07.522  7285  7285 I MeshmoreXR: [link] mesh: 350 peers, 305 with a position
+08-17 22:37:07.522  7285  7285 I MeshmoreXR: [link] heard 4b30fe61bf82 D38F07AED563
+08-17 22:37:10.688  7285  7285 I MeshmoreXR: [horizon] veiled 9 callsign(s) under the hud (pitch -0°)
+08-17 22:37:16.627  7285  7285 I MeshmoreXR: [horizon] veiled 10 callsign(s) under the hud (pitch -0°)
+08-17 22:37:42.786  7285  7285 I MeshmoreXR: [tx] -> name='D38F07AED563' key=4b30fe61bf82 (authorised)
+08-17 22:37:42.876  7285  7285 I MeshmoreXR: [ember] DM at 141 deg
+08-17 22:37:42.877  7285  7285 I MeshmoreXR: [soak] #17 Ok — attempted=17 accepted=16 acked=15 refused=0 drops=0 pending=1
+08-17 22:37:42.967  7285  7285 I MeshmoreXR: [tx] accepted tag=0x96bbf94a direct timeout=2202ms
+08-17 22:37:43.438  7285  7285 I MeshmoreXR: [tx] delivered tag=0x96bbf94a in 471ms
+08-17 22:38:07.323  7285  7285 I MeshmoreXR: [link] mesh: 350 peers, 305 with a position
+08-17 22:38:07.323  7285  7285 I MeshmoreXR: [link] heard 4b30fe61bf82 D38F07AED563
+08-17 22:38:19.788  7285  7285 I MeshmoreXR: [horizon] veiled 9 callsign(s) under the hud (pitch -0°)
+08-17 22:38:19.867  7285  7285 I MeshmoreXR: [horizon] veiled 10 callsign(s) under the hud (pitch -0°)
+08-17 22:38:37.493  7285  7285 I MeshmoreXR: [gaze] dwell ARMED
+08-17 22:38:37.582  7285  7285 I MeshmoreXR: [horizon] veiled 8 callsign(s) under the hud (pitch -2°)
+08-17 22:38:37.783  7285  7285 I MeshmoreXR: [horizon] veiled 9 callsign(s) under the hud (pitch -2°)
+08-17 22:38:40.369  7285  7285 I MeshmoreXR: [gaze] dwell stood down (still)
+08-17 22:38:42.907  7285  7285 I MeshmoreXR: [tx] -> name='D38F07AED563' key=4b30fe61bf82 (authorised)
+08-17 22:38:42.991  7285  7285 I MeshmoreXR: [ember] DM at 141 deg
+08-17 22:38:42.991  7285  7285 I MeshmoreXR: [soak] #18 Ok — attempted=18 accepted=17 acked=16 refused=0 drops=0 pending=1
+08-17 22:38:43.055  7285  7285 I MeshmoreXR: [tx] accepted tag=0x47e06a25 direct timeout=2202ms
+08-17 22:38:43.683  7285  7285 I MeshmoreXR: [tx] delivered tag=0x47e06a25 in 628ms
+08-17 22:39:07.264  7285  7285 I MeshmoreXR: [link] mesh: 350 peers, 305 with a position
+08-17 22:39:07.264  7285  7285 I MeshmoreXR: [link] heard 4b30fe61bf82 D38F07AED563
+08-17 22:39:36.200  7285  7285 I MeshmoreXR: [link] mesh: 350 peers, 305 with a position
+08-17 22:39:36.200  7285  7285 I MeshmoreXR: [link] heard 4576731ddc81 tu-charlie-rptr
+08-17 22:39:42.580  7285  7285 I MeshmoreXR: [link] mesh: 350 peers, 305 with a position
+08-17 22:39:42.580  7285  7285 I MeshmoreXR: [link] heard 4576731ddc81 tu-charlie-rptr
+08-17 22:39:43.005  7285  7285 I MeshmoreXR: [tx] -> name='D38F07AED563' key=4b30fe61bf82 (authorised)
+08-17 22:39:43.092  7285  7285 I MeshmoreXR: [ember] DM at 141 deg
+08-17 22:39:43.092  7285  7285 I MeshmoreXR: [soak] #19 Ok — attempted=19 accepted=18 acked=17 refused=0 drops=0 pending=1
+08-17 22:39:43.158  7285  7285 I MeshmoreXR: [tx] accepted tag=0x2bd2ba56 direct timeout=2202ms
+08-17 22:39:43.723  7285  7285 I MeshmoreXR: [tx] delivered tag=0x2bd2ba56 in 565ms
+08-17 22:39:58.306  7285  7285 I MeshmoreXR: [link] mesh: 350 peers, 305 with a position
+08-17 22:39:58.306  7285  7285 I MeshmoreXR: [link] heard 4576731ddc81 tu-charlie-rptr
+08-17 22:40:09.992  7285  7285 I MeshmoreXR: [link] mesh: 350 peers, 305 with a position
+08-17 22:40:09.992  7285  7285 I MeshmoreXR: [link] heard 4b30fe61bf82 D38F07AED563
+08-17 22:40:32.273  7285  7285 I MeshmoreXR: [horizon] veiled 8 callsign(s) under the hud (pitch -1°)
+08-17 22:40:43.128  7285  7285 I MeshmoreXR: [tx] -> name='D38F07AED563' key=4b30fe61bf82 (authorised)
+08-17 22:40:43.214  7285  7285 I MeshmoreXR: [ember] DM at 141 deg
+08-17 22:40:43.214  7285  7285 I MeshmoreXR: [soak] #20 Ok — attempted=20 accepted=19 acked=18 refused=0 drops=0 pending=1
+08-17 22:40:43.270  7285  7285 I MeshmoreXR: [tx] accepted tag=0x450b3fde direct timeout=2202ms
+08-17 22:40:43.802  7285  7285 I MeshmoreXR: [tx] delivered tag=0x450b3fde in 532ms
+08-17 22:40:43.951  7285  7285 I MeshmoreXR: [horizon] veiled 9 callsign(s) under the hud (pitch -1°)
+08-17 22:40:44.042  7285  7285 I MeshmoreXR: [horizon] veiled 8 callsign(s) under the hud (pitch -1°)
+08-17 22:40:44.126  7285  7285 I MeshmoreXR: [horizon] veiled 9 callsign(s) under the hud (pitch -1°)
+08-17 22:40:44.298  7285  7285 I MeshmoreXR: [horizon] veiled 8 callsign(s) under the hud (pitch -1°)
+08-17 22:40:44.467  7285  7285 I MeshmoreXR: [horizon] veiled 9 callsign(s) under the hud (pitch -1°)
+08-17 22:40:57.241  7285  7285 I MeshmoreXR: [horizon] veiled 8 callsign(s) under the hud (pitch -1°)
+08-17 22:41:07.300  7285  7285 I MeshmoreXR: [link] mesh: 350 peers, 305 with a position
+08-17 22:41:07.300  7285  7285 I MeshmoreXR: [link] heard 4b30fe61bf82 D38F07AED563
+08-17 22:41:09.953  7285  7285 I MeshmoreXR: [horizon] veiled 9 callsign(s) under the hud (pitch -1°)
+08-17 22:41:34.961  7285  7285 I MeshmoreXR: [link] mesh: 350 peers, 305 with a position
+08-17 22:41:34.961  7285  7285 I MeshmoreXR: [link] heard d3de221024e2 RAS Repeater
+08-17 22:41:35.098  7285  7285 I MeshmoreXR: [horizon] veiled 8 callsign(s) under the hud (pitch -1°)
+08-17 22:41:43.217  7285  7285 I MeshmoreXR: [tx] -> name='D38F07AED563' key=4b30fe61bf82 (authorised)
+08-17 22:41:43.305  7285  7285 I MeshmoreXR: [ember] DM at 141 deg
+08-17 22:41:43.305  7285  7285 I MeshmoreXR: [soak] #21 Ok — attempted=21 accepted=20 acked=19 refused=0 drops=0 pending=1
+08-17 22:41:43.376  7285  7285 I MeshmoreXR: [tx] accepted tag=0xefa93ce5 direct timeout=2202ms
+08-17 22:41:44.230  7285  7285 I MeshmoreXR: [tx] delivered tag=0xefa93ce5 in 853ms
+08-17 22:42:07.645  7285  7285 I MeshmoreXR: [link] mesh: 350 peers, 305 with a position
+08-17 22:42:07.645  7285  7285 I MeshmoreXR: [link] heard 4b30fe61bf82 D38F07AED563
+08-17 22:42:12.174  7285  7285 I MeshmoreXR: [horizon] veiled 9 callsign(s) under the hud (pitch -1°)
+08-17 22:42:12.531  7285  7285 I MeshmoreXR: [horizon] veiled 8 callsign(s) under the hud (pitch -1°)
+08-17 22:42:17.078  7285  7285 I MeshmoreXR: [horizon] veiled 9 callsign(s) under the hud (pitch -1°)
+08-17 22:42:17.334  7285  7285 I MeshmoreXR: [horizon] veiled 8 callsign(s) under the hud (pitch -1°)
+08-17 22:42:18.712  7285  7285 I MeshmoreXR: [horizon] veiled 9 callsign(s) under the hud (pitch -1°)
+08-17 22:42:20.058  7285  7285 I MeshmoreXR: [horizon] veiled 8 callsign(s) under the hud (pitch -1°)
+08-17 22:42:20.139  7285  7285 I MeshmoreXR: [horizon] veiled 9 callsign(s) under the hud (pitch -1°)
+08-17 22:42:20.224  7285  7285 I MeshmoreXR: [horizon] veiled 8 callsign(s) under the hud (pitch -1°)
+08-17 22:42:20.304  7285  7285 I MeshmoreXR: [horizon] veiled 9 callsign(s) under the hud (pitch -1°)
+08-17 22:42:23.190  7285  7285 I MeshmoreXR: [horizon] veiled 8 callsign(s) under the hud (pitch -1°)
+08-17 22:42:28.381  7285  7285 I MeshmoreXR: [horizon] veiled 9 callsign(s) under the hud (pitch -1°)
+08-17 22:42:28.545  7285  7285 I MeshmoreXR: [horizon] veiled 8 callsign(s) under the hud (pitch -1°)
+08-17 22:42:28.821  7285  7285 I MeshmoreXR: [horizon] veiled 9 callsign(s) under the hud (pitch -1°)
+08-17 22:42:29.590  7285  7285 I MeshmoreXR: [horizon] veiled 8 callsign(s) under the hud (pitch -1°)
+08-17 22:42:41.478  7285  7285 I MeshmoreXR: [horizon] veiled 9 callsign(s) under the hud (pitch -1°)
+08-17 22:42:41.562  7285  7285 I MeshmoreXR: [horizon] veiled 8 callsign(s) under the hud (pitch -1°)
+08-17 22:42:41.643  7285  7285 I MeshmoreXR: [horizon] veiled 9 callsign(s) under the hud (pitch -1°)
+08-17 22:42:41.731  7285  7285 I MeshmoreXR: [horizon] veiled 8 callsign(s) under the hud (pitch -1°)
+08-17 22:42:43.308  7285  7285 I MeshmoreXR: [tx] -> name='D38F07AED563' key=4b30fe61bf82 (authorised)
+08-17 22:42:43.392  7285  7285 I MeshmoreXR: [ember] DM at 141 deg
+08-17 22:42:43.392  7285  7285 I MeshmoreXR: [soak] #22 Ok — attempted=22 accepted=21 acked=20 refused=0 drops=0 pending=1
+08-17 22:42:43.459  7285  7285 I MeshmoreXR: [tx] accepted tag=0x1de0c109 direct timeout=2202ms
+08-17 22:42:44.865  7285  7285 I MeshmoreXR: [tx] delivered tag=0x1de0c109 in 1405ms
+08-17 22:42:49.831  7285  7285 I MeshmoreXR: [horizon] veiled 9 callsign(s) under the hud (pitch -1°)
+08-17 22:42:56.267  7285  7285 I MeshmoreXR: [horizon] veiled 8 callsign(s) under the hud (pitch -1°)
+08-17 22:42:56.447  7285  7285 I MeshmoreXR: [horizon] veiled 9 callsign(s) under the hud (pitch -1°)
+08-17 22:42:56.527  7285  7285 I MeshmoreXR: [horizon] veiled 8 callsign(s) under the hud (pitch -1°)
+08-17 22:42:56.880  7285  7285 I MeshmoreXR: [horizon] veiled 9 callsign(s) under the hud (pitch -1°)
+08-17 22:42:57.216  7285  7285 I MeshmoreXR: [horizon] veiled 8 callsign(s) under the hud (pitch -1°)
+08-17 22:42:57.298  7285  7285 I MeshmoreXR: [horizon] veiled 9 callsign(s) under the hud (pitch -1°)
+08-17 22:43:07.214  7285  7285 I MeshmoreXR: [link] mesh: 350 peers, 305 with a position
+08-17 22:43:07.214  7285  7285 I MeshmoreXR: [link] heard 4b30fe61bf82 D38F07AED563
+08-17 22:43:27.527  7285  7285 I MeshmoreXR: [horizon] veiled 10 callsign(s) under the hud (pitch -1°)
+08-17 22:43:27.616  7285  7285 I MeshmoreXR: [horizon] veiled 9 callsign(s) under the hud (pitch -1°)
+08-17 22:43:27.700  7285  7285 I MeshmoreXR: [horizon] veiled 10 callsign(s) under the hud (pitch -1°)
+08-17 22:43:27.778  7285  7285 I MeshmoreXR: [horizon] veiled 9 callsign(s) under the hud (pitch -1°)
+08-17 22:43:27.870  7285  7285 I MeshmoreXR: [horizon] veiled 10 callsign(s) under the hud (pitch -1°)
+08-17 22:43:27.956  7285  7285 I MeshmoreXR: [horizon] veiled 9 callsign(s) under the hud (pitch -1°)
+08-17 22:43:43.404  7285  7285 I MeshmoreXR: [tx] -> name='D38F07AED563' key=4b30fe61bf82 (authorised)
+08-17 22:43:43.481  7285  7285 I MeshmoreXR: [ember] DM at 141 deg
+08-17 22:43:43.482  7285  7285 I MeshmoreXR: [soak] #23 Ok — attempted=23 accepted=22 acked=21 refused=0 drops=0 pending=1
+08-17 22:43:43.559  7285  7285 I MeshmoreXR: [tx] accepted tag=0xe5aa9422 direct timeout=2202ms
+08-17 22:43:44.533  7285  7285 I MeshmoreXR: [tx] delivered tag=0xe5aa9422 in 974ms
+08-17 22:43:45.974  7285  7285 I MeshmoreXR: [horizon] veiled 10 callsign(s) under the hud (pitch -1°)
+08-17 22:43:50.875  7285  7285 I MeshmoreXR: [horizon] veiled 9 callsign(s) under the hud (pitch -1°)
+08-17 22:44:07.350  7285  7285 I MeshmoreXR: [link] mesh: 350 peers, 305 with a position
+08-17 22:44:07.350  7285  7285 I MeshmoreXR: [link] heard 4b30fe61bf82 D38F07AED563
+08-17 22:44:43.500  7285  7285 I MeshmoreXR: [tx] -> name='D38F07AED563' key=4b30fe61bf82 (authorised)
+08-17 22:44:43.593  7285  7285 I MeshmoreXR: [ember] DM at 141 deg
+08-17 22:44:43.593  7285  7285 I MeshmoreXR: [soak] #24 Ok — attempted=24 accepted=23 acked=22 refused=0 drops=0 pending=1
+08-17 22:44:43.660  7285  7285 I MeshmoreXR: [tx] accepted tag=0x32981444 direct timeout=2202ms
+08-17 22:44:44.190  7285  7285 I MeshmoreXR: [tx] delivered tag=0x32981444 in 529ms
+08-17 22:45:07.309  7285  7285 I MeshmoreXR: [link] mesh: 350 peers, 305 with a position
+08-17 22:45:07.309  7285  7285 I MeshmoreXR: [link] heard 4b30fe61bf82 D38F07AED563
+08-17 22:45:12.734  7285  7285 I MeshmoreXR: [gaze] dwell ARMED
+08-17 22:45:15.227  7285  7285 I MeshmoreXR: [gaze] dwell stood down (still)
+08-17 22:45:43.596  7285  7285 I MeshmoreXR: [tx] -> name='D38F07AED563' key=4b30fe61bf82 (authorised)
+08-17 22:45:43.680  7285  7285 I MeshmoreXR: [ember] DM at 141 deg
+08-17 22:45:43.680  7285  7285 I MeshmoreXR: [soak] #25 Ok — attempted=25 accepted=24 acked=23 refused=0 drops=0 pending=1
+08-17 22:45:43.737  7285  7285 I MeshmoreXR: [tx] accepted tag=0x647e200b direct timeout=2202ms
+08-17 22:45:44.285  7285  7285 I MeshmoreXR: [tx] delivered tag=0x647e200b in 548ms
+08-17 22:46:07.308  7285  7285 I MeshmoreXR: [link] mesh: 350 peers, 305 with a position
+08-17 22:46:07.309  7285  7285 I MeshmoreXR: [link] heard 4b30fe61bf82 D38F07AED563
+08-17 22:46:11.901  7285  7285 I MeshmoreXR: [horizon] veiled 10 callsign(s) under the hud (pitch -2°)
+08-17 22:46:15.334  7285  7285 I MeshmoreXR: [horizon] veiled 9 callsign(s) under the hud (pitch -1°)
+08-17 22:46:43.694  7285  7285 I MeshmoreXR: [tx] -> name='D38F07AED563' key=4b30fe61bf82 (authorised)
+08-17 22:46:43.774  7285  7285 I MeshmoreXR: [ember] DM at 141 deg
+08-17 22:46:43.774  7285  7285 I MeshmoreXR: [soak] #26 Ok — attempted=26 accepted=25 acked=24 refused=0 drops=0 pending=1
+08-17 22:46:43.832  7285  7285 I MeshmoreXR: [tx] accepted tag=0x80637c1f direct timeout=2202ms
+08-17 22:46:44.398  7285  7285 I MeshmoreXR: [tx] delivered tag=0x80637c1f in 566ms
+08-17 22:47:07.308  7285  7285 I MeshmoreXR: [link] mesh: 350 peers, 305 with a position
+08-17 22:47:07.308  7285  7285 I MeshmoreXR: [link] heard 4b30fe61bf82 D38F07AED563
+08-17 22:47:08.743  7285  7285 I MeshmoreXR: [horizon] veiled 10 callsign(s) under the hud (pitch -1°)
+08-17 22:47:26.956  7285  7285 I MeshmoreXR: [horizon] veiled 9 callsign(s) under the hud (pitch -1°)
+08-17 22:47:43.839  7285  7285 I MeshmoreXR: [tx] -> name='D38F07AED563' key=4b30fe61bf82 (authorised)
+08-17 22:47:43.916  7285  7285 I MeshmoreXR: [ember] DM at 141 deg
+08-17 22:47:43.916  7285  7285 I MeshmoreXR: [soak] #27 Ok — attempted=27 accepted=26 acked=25 refused=0 drops=0 pending=1
+08-17 22:47:43.985  7285  7285 I MeshmoreXR: [tx] accepted tag=0xec477efc direct timeout=2202ms
+08-17 22:47:44.519  7285  7285 I MeshmoreXR: [tx] delivered tag=0xec477efc in 534ms
+08-17 22:47:47.271  7285  7285 I MeshmoreXR: [horizon] veiled 8 callsign(s) under the hud (pitch -1°)
+08-17 22:48:02.620  7285  7285 I MeshmoreXR: [horizon] veiled 9 callsign(s) under the hud (pitch -1°)
+08-17 22:48:07.333  7285  7285 I MeshmoreXR: [link] mesh: 350 peers, 305 with a position
+08-17 22:48:07.333  7285  7285 I MeshmoreXR: [link] heard 4b30fe61bf82 D38F07AED563
+08-17 22:48:20.819  7285  7285 I MeshmoreXR: [horizon] veiled 10 callsign(s) under the hud (pitch -1°)
+08-17 22:48:21.178  7285  7285 I MeshmoreXR: [horizon] veiled 9 callsign(s) under the hud (pitch -1°)
+08-17 22:48:21.690  7285  7285 I MeshmoreXR: [horizon] veiled 10 callsign(s) under the hud (pitch -1°)
+08-17 22:48:21.772  7285  7285 I MeshmoreXR: [horizon] veiled 9 callsign(s) under the hud (pitch -1°)
+08-17 22:48:21.955  7285  7285 I MeshmoreXR: [horizon] veiled 10 callsign(s) under the hud (pitch -1°)
+08-17 22:48:22.042  7285  7285 I MeshmoreXR: [horizon] veiled 9 callsign(s) under the hud (pitch -1°)
+08-17 22:48:22.392  7285  7285 I MeshmoreXR: [horizon] veiled 10 callsign(s) under the hud (pitch -1°)
+08-17 22:48:23.571  7285  7285 I MeshmoreXR: [horizon] veiled 9 callsign(s) under the hud (pitch -1°)
+08-17 22:48:32.661  7285  7285 I MeshmoreXR: [horizon] veiled 10 callsign(s) under the hud (pitch -1°)
+08-17 22:48:43.919  7285  7285 I MeshmoreXR: [tx] -> name='D38F07AED563' key=4b30fe61bf82 (authorised)
+08-17 22:48:43.997  7285  7285 I MeshmoreXR: [ember] DM at 141 deg
+08-17 22:48:43.997  7285  7285 I MeshmoreXR: [soak] #28 Ok — attempted=28 accepted=27 acked=26 refused=0 drops=0 pending=1
+08-17 22:48:44.076  7285  7285 I MeshmoreXR: [tx] accepted tag=0x4d27da1f direct timeout=2202ms
+08-17 22:48:44.701  7285  7285 I MeshmoreXR: [tx] delivered tag=0x4d27da1f in 625ms
+08-17 22:49:07.114  7285  7285 I MeshmoreXR: [link] mesh: 350 peers, 305 with a position
+08-17 22:49:07.114  7285  7285 I MeshmoreXR: [link] heard 4b30fe61bf82 D38F07AED563
+08-17 22:49:44.028  7285  7285 I MeshmoreXR: [tx] -> name='D38F07AED563' key=4b30fe61bf82 (authorised)
+08-17 22:49:44.104  7285  7285 I MeshmoreXR: [ember] DM at 141 deg
+08-17 22:49:44.104  7285  7285 I MeshmoreXR: [soak] #29 Ok — attempted=29 accepted=28 acked=27 refused=0 drops=0 pending=1
+08-17 22:49:44.162  7285  7285 I MeshmoreXR: [tx] accepted tag=0x2df0350c direct timeout=2202ms
+08-17 22:49:44.722  7285  7285 I MeshmoreXR: [tx] delivered tag=0x2df0350c in 560ms
+08-17 22:50:07.035  7285  7285 I MeshmoreXR: [link] mesh: 350 peers, 305 with a position
+08-17 22:50:07.035  7285  7285 I MeshmoreXR: [link] heard 4b30fe61bf82 D38F07AED563
+08-17 22:50:44.109  7285  7285 I MeshmoreXR: [tx] -> name='D38F07AED563' key=4b30fe61bf82 (authorised)
+08-17 22:50:44.194  7285  7285 I MeshmoreXR: [ember] DM at 141 deg
+08-17 22:50:44.195  7285  7285 I MeshmoreXR: [soak] #30 Ok — attempted=30 accepted=29 acked=28 refused=0 drops=0 pending=1
+08-17 22:50:44.250  7285  7285 I MeshmoreXR: [tx] accepted tag=0xb251be4a direct timeout=2202ms
+08-17 22:50:44.759  7285  7285 I MeshmoreXR: [tx] delivered tag=0xb251be4a in 509ms
+08-17 22:51:07.905  7285  7285 I MeshmoreXR: [link] mesh: 350 peers, 305 with a position
+08-17 22:51:07.905  7285  7285 I MeshmoreXR: [link] heard 4b30fe61bf82 D38F07AED563
+08-17 22:51:16.576  7285  7285 I MeshmoreXR: [gaze] dwell ARMED
+08-17 22:51:16.651  7285  7285 I MeshmoreXR: [horizon] veiled 8 callsign(s) under the hud (pitch -2°)
+08-17 22:51:16.933  7285  7285 I MeshmoreXR: [horizon] veiled 9 callsign(s) under the hud (pitch -2°)
+08-17 22:51:19.530  7285  7285 I MeshmoreXR: [gaze] dwell stood down (still)
+08-17 22:51:33.342  7285  7285 I MeshmoreXR: [horizon] veiled 6 callsign(s) under the hud (pitch -3°)
+08-17 22:51:33.351  7285  7285 I MeshmoreXR: [gaze] dwell ARMED
+08-17 22:51:33.520  7285  7285 I MeshmoreXR: [horizon] veiled 5 callsign(s) under the hud (pitch -14°)
+08-17 22:51:33.602  7285  7285 I MeshmoreXR: [horizon] veiled 7 callsign(s) under the hud (pitch -20°)
+08-17 22:51:33.690  7285  7285 I MeshmoreXR: [horizon] veiled 8 callsign(s) under the hud (pitch -19°)
+08-17 22:51:33.782  7285  7285 I MeshmoreXR: [horizon] veiled 6 callsign(s) under the hud (pitch -14°)
+08-17 22:51:33.873  7285  7285 I MeshmoreXR: [horizon] veiled 10 callsign(s) under the hud (pitch -6°)
+08-17 22:51:33.966  7285  7285 I MeshmoreXR: [horizon] veiled 9 callsign(s) under the hud (pitch -5°)
+08-17 22:51:34.024  7285  7285 I MeshmoreXR: [link] mesh: 350 peers, 305 with a position
+08-17 22:51:34.025  7285  7285 I MeshmoreXR: [link] heard 64ee4ffb7c80 TL29 64ee
+08-17 22:51:34.172  7285  7285 I MeshmoreXR: [horizon] veiled 7 callsign(s) under the hud (pitch -2°)
+08-17 22:51:34.259  7285  7285 I MeshmoreXR: [horizon] veiled 3 callsign(s) under the hud (pitch -1°)
+08-17 22:51:34.358  7285  7285 I MeshmoreXR: [horizon] veiled 1 callsign(s) under the hud (pitch 1°)
+08-17 22:51:34.538  7285  7285 I MeshmoreXR: [horizon] veiled 0 callsign(s) under the hud (pitch 7°)
+08-17 22:51:34.812  7285  7285 I MeshmoreXR: [horizon] veiled 8 callsign(s) under the hud (pitch -7°)
+08-17 22:51:34.902  7285  7285 I MeshmoreXR: [horizon] veiled 6 callsign(s) under the hud (pitch -19°)
+08-17 22:51:35.003  7285  7285 I MeshmoreXR: [horizon] veiled 4 callsign(s) under the hud (pitch -28°)
+08-17 22:51:35.093  7285  7285 I MeshmoreXR: [horizon] veiled 6 callsign(s) under the hud (pitch -34°)
+08-17 22:51:35.192  7285  7285 I MeshmoreXR: [horizon] veiled 10 callsign(s) under the hud (pitch -41°)
+08-17 22:51:35.282  7285  7285 I MeshmoreXR: [horizon] veiled 9 callsign(s) under the hud (pitch -41°)
+08-17 22:51:35.467  7285  7285 I MeshmoreXR: [horizon] veiled 8 callsign(s) under the hud (pitch -37°)
+08-17 22:51:35.554  7285  7285 I MeshmoreXR: [horizon] veiled 9 callsign(s) under the hud (pitch -37°)
+08-17 22:51:35.644  7285  7285 I MeshmoreXR: [horizon] veiled 8 callsign(s) under the hud (pitch -38°)
+08-17 22:51:35.835  7285  7285 I MeshmoreXR: [horizon] veiled 6 callsign(s) under the hud (pitch -46°)
+08-17 22:51:36.121  7285  7285 I MeshmoreXR: [horizon] veiled 8 callsign(s) under the hud (pitch -49°)
+08-17 22:51:36.245  7285  7285 I MeshmoreXR: [horizon] veiled 1 callsign(s) under the hud (pitch -56°)
+08-17 22:51:36.337  7285  7285 I MeshmoreXR: [horizon] veiled 0 callsign(s) under the hud (pitch -61°)
+08-17 22:51:36.665  7285  7285 I MeshmoreXR: [gaze] dwell stood down (hands)
+08-17 22:51:36.677  7285  7285 I MeshmoreXR: [hands] L seen=NONE 0.34 (B limit 0.5)
+08-17 22:51:36.777  7285  7285 I MeshmoreXR: [hands] L seen=NONE 0.30 (B limit 0.5)
+08-17 22:51:36.870  7285  7285 I MeshmoreXR: [hands] L seen=H 0.27 (B limit 0.5)
+08-17 22:51:36.956  7285  7285 I MeshmoreXR: [hands] L seen=NONE 0.33 (B limit 0.5)
+08-17 22:51:37.048  7285  7285 I MeshmoreXR: [hands] L seen=NONE 0.31 (B limit 0.5)
+08-17 22:51:37.134  7285  7285 I MeshmoreXR: [gaze] dwell ARMED
+08-17 22:51:37.143  7285  7285 I MeshmoreXR: [hands] L seen=NONE -1.00 (B limit 0.5)
+08-17 22:51:37.395  7285  7285 I MeshmoreXR: [horizon] veiled 1 callsign(s) under the hud (pitch -61°)
+08-17 22:51:37.493  7285  7285 I MeshmoreXR: [horizon] veiled 8 callsign(s) under the hud (pitch -54°)
+08-17 22:51:37.582  7285  7285 I MeshmoreXR: [horizon] veiled 6 callsign(s) under the hud (pitch -51°)
+08-17 22:51:37.669  7285  7285 I MeshmoreXR: [horizon] veiled 9 callsign(s) under the hud (pitch -45°)
+08-17 22:51:37.759  7285  7285 I MeshmoreXR: [horizon] veiled 7 callsign(s) under the hud (pitch -33°)
+08-17 22:51:37.848  7285  7285 I MeshmoreXR: [horizon] veiled 5 callsign(s) under the hud (pitch -26°)
+08-17 22:51:37.941  7285  7285 I MeshmoreXR: [horizon] veiled 6 callsign(s) under the hud (pitch -16°)
+08-17 22:51:38.034  7285  7285 I MeshmoreXR: [horizon] veiled 7 callsign(s) under the hud (pitch -10°)
+08-17 22:51:38.118  7285  7285 I MeshmoreXR: [horizon] veiled 4 callsign(s) under the hud (pitch -4°)
+08-17 22:51:38.212  7285  7285 I MeshmoreXR: [horizon] veiled 0 callsign(s) under the hud (pitch -0°)
+08-17 22:51:39.043  7285  7285 I MeshmoreXR: [horizon] veiled 2 callsign(s) under the hud (pitch -3°)
+08-17 22:51:39.152  7285  7285 I MeshmoreXR: [horizon] veiled 5 callsign(s) under the hud (pitch -5°)
+08-17 22:51:39.243  7285  7285 I MeshmoreXR: [horizon] veiled 9 callsign(s) under the hud (pitch -8°)
+08-17 22:51:39.329  7285  7285 I MeshmoreXR: [horizon] veiled 6 callsign(s) under the hud (pitch -10°)
+08-17 22:51:39.519  7285  7285 I MeshmoreXR: [horizon] veiled 7 callsign(s) under the hud (pitch -13°)
+08-17 22:51:39.694  7285  7285 I MeshmoreXR: [horizon] veiled 6 callsign(s) under the hud (pitch -16°)
+08-17 22:51:39.794  7285  7285 I MeshmoreXR: [horizon] veiled 7 callsign(s) under the hud (pitch -16°)
+08-17 22:51:39.890  7285  7285 I MeshmoreXR: [horizon] veiled 5 callsign(s) under the hud (pitch -17°)
+08-17 22:51:39.973  7285  7285 I MeshmoreXR: [horizon] veiled 7 callsign(s) under the hud (pitch -17°)
+08-17 22:51:40.153  7285  7285 I MeshmoreXR: [horizon] veiled 5 callsign(s) under the hud (pitch -17°)
+08-17 22:51:40.249  7285  7285 I MeshmoreXR: [horizon] veiled 7 callsign(s) under the hud (pitch -18°)
+08-17 22:51:40.343  7285  7285 I MeshmoreXR: [horizon] veiled 6 callsign(s) under the hud (pitch -19°)
+08-17 22:51:40.511  7285  7285 I MeshmoreXR: [horizon] veiled 5 callsign(s) under the hud (pitch -21°)
+08-17 22:51:40.604  7285  7285 I MeshmoreXR: [horizon] veiled 3 callsign(s) under the hud (pitch -24°)
+08-17 22:51:40.694  7285  7285 I MeshmoreXR: [horizon] veiled 4 callsign(s) under the hud (pitch -25°)
+08-17 22:51:40.870  7285  7285 I MeshmoreXR: [horizon] veiled 3 callsign(s) under the hud (pitch -24°)
+08-17 22:51:41.067  7285  7285 I MeshmoreXR: [horizon] veiled 4 callsign(s) under the hud (pitch -23°)
+08-17 22:51:41.160  7285  7285 I MeshmoreXR: [horizon] veiled 5 callsign(s) under the hud (pitch -22°)
+08-17 22:51:41.335  7285  7285 I MeshmoreXR: [horizon] veiled 3 callsign(s) under the hud (pitch -24°)
+08-17 22:51:41.417  7285  7285 I MeshmoreXR: [horizon] veiled 5 callsign(s) under the hud (pitch -26°)
+08-17 22:51:41.512  7285  7285 I MeshmoreXR: [horizon] veiled 7 callsign(s) under the hud (pitch -28°)
+08-17 22:51:41.599  7285  7285 I MeshmoreXR: [horizon] veiled 8 callsign(s) under the hud (pitch -28°)
+08-17 22:51:41.796  7285  7285 I MeshmoreXR: [horizon] veiled 11 callsign(s) under the hud (pitch -29°)
+08-17 22:51:41.871  7285  7285 I MeshmoreXR: [horizon] veiled 10 callsign(s) under the hud (pitch -30°)
+08-17 22:51:41.995  7285  7285 I MeshmoreXR: [horizon] veiled 11 callsign(s) under the hud (pitch -32°)
+08-17 22:51:42.103  7285  7285 I MeshmoreXR: [horizon] veiled 7 callsign(s) under the hud (pitch -35°)
+08-17 22:51:42.302  7285  7285 I MeshmoreXR: [horizon] veiled 8 callsign(s) under the hud (pitch -34°)
+08-17 22:51:42.478  7285  7285 I MeshmoreXR: [horizon] veiled 10 callsign(s) under the hud (pitch -32°)
+08-17 22:51:42.951  7285  7285 I MeshmoreXR: [horizon] veiled 9 callsign(s) under the hud (pitch -30°)
+08-17 22:51:43.055  7285  7285 I MeshmoreXR: [horizon] veiled 8 callsign(s) under the hud (pitch -29°)
+08-17 22:51:43.613  7285  7285 I MeshmoreXR: [horizon] veiled 9 callsign(s) under the hud (pitch -29°)
+08-17 22:51:44.092  7285  7285 I MeshmoreXR: [horizon] veiled 7 callsign(s) under the hud (pitch -28°)
+08-17 22:51:44.204  7285  7285 I MeshmoreXR: [tx] -> name='D38F07AED563' key=4b30fe61bf82 (authorised)
+08-17 22:51:44.297  7285  7285 I MeshmoreXR: [ember] DM at 141 deg
+08-17 22:51:44.297  7285  7285 I MeshmoreXR: [soak] #31 Ok — attempted=31 accepted=30 acked=29 refused=0 drops=0 pending=1
+08-17 22:51:44.344  7285  7285 I MeshmoreXR: [horizon] veiled 6 callsign(s) under the hud (pitch -26°)
+08-17 22:51:44.371  7285  7285 I MeshmoreXR: [tx] accepted tag=0x535ddc41 direct timeout=2202ms
+08-17 22:51:44.455  7285  7285 I MeshmoreXR: [horizon] veiled 5 callsign(s) under the hud (pitch -26°)
+08-17 22:51:44.642  7285  7285 I MeshmoreXR: [horizon] veiled 4 callsign(s) under the hud (pitch -25°)
+08-17 22:51:44.912  7285  7285 I MeshmoreXR: [horizon] veiled 6 callsign(s) under the hud (pitch -26°)
+08-17 22:51:45.132  7285  7285 I MeshmoreXR: [horizon] veiled 4 callsign(s) under the hud (pitch -26°)
+08-17 22:51:45.299  7285  7285 I MeshmoreXR: [horizon] veiled 5 callsign(s) under the hud (pitch -25°)
+08-17 22:51:45.990  7285  7285 I MeshmoreXR: [horizon] veiled 4 callsign(s) under the hud (pitch -25°)
+08-17 22:51:46.160  7285  7285 I MeshmoreXR: [horizon] veiled 5 callsign(s) under the hud (pitch -25°)
+08-17 22:51:46.780  7285  7285 I MeshmoreXR: [horizon] veiled 4 callsign(s) under the hud (pitch -24°)
+08-17 22:51:47.400  7285  7285 I MeshmoreXR: [horizon] veiled 5 callsign(s) under the hud (pitch -21°)
+08-17 22:51:47.480  7285  7285 I MeshmoreXR: [horizon] veiled 6 callsign(s) under the hud (pitch -19°)
+08-17 22:51:47.571  7285  7285 I MeshmoreXR: [horizon] veiled 5 callsign(s) under the hud (pitch -18°)
+08-17 22:51:47.850  7285  7285 I MeshmoreXR: [horizon] veiled 6 callsign(s) under the hud (pitch -15°)
+08-17 22:51:48.029  7285  7285 I MeshmoreXR: [horizon] veiled 5 callsign(s) under the hud (pitch -16°)
+08-17 22:51:48.113  7285  7285 I MeshmoreXR: [horizon] veiled 6 callsign(s) under the hud (pitch -15°)
+08-17 22:51:49.976  7285  7285 I MeshmoreXR: [horizon] veiled 7 callsign(s) under the hud (pitch -15°)
+08-17 22:51:50.067  7285  7285 I MeshmoreXR: [horizon] veiled 6 callsign(s) under the hud (pitch -15°)
+08-17 22:51:50.163  7285  7285 I MeshmoreXR: [horizon] veiled 5 callsign(s) under the hud (pitch -15°)
+08-17 22:51:50.249  7285  7285 I MeshmoreXR: [horizon] veiled 6 callsign(s) under the hud (pitch -15°)
+08-17 22:51:50.570  7285  7285 I MeshmoreXR: [horizon] veiled 7 callsign(s) under the hud (pitch -12°)
+08-17 22:51:50.670  7285  7285 I MeshmoreXR: [horizon] veiled 6 callsign(s) under the hud (pitch -13°)
+08-17 22:51:52.874  7285  7285 I MeshmoreXR: [horizon] veiled 7 callsign(s) under the hud (pitch -16°)
+08-17 22:51:53.044  7285  7285 I MeshmoreXR: [horizon] veiled 8 callsign(s) under the hud (pitch -18°)
+08-17 22:51:53.313  7285  7285 I MeshmoreXR: [horizon] veiled 6 callsign(s) under the hud (pitch -18°)
+08-17 22:51:53.420  7285  7285 I MeshmoreXR: [horizon] veiled 5 callsign(s) under the hud (pitch -20°)
+08-17 22:51:53.675  7285  7285 I MeshmoreXR: [horizon] veiled 6 callsign(s) under the hud (pitch -21°)
+08-17 22:51:53.761  7285  7285 I MeshmoreXR: [horizon] veiled 5 callsign(s) under the hud (pitch -20°)
+08-17 22:51:53.943  7285  7285 I MeshmoreXR: [horizon] veiled 4 callsign(s) under the hud (pitch -23°)
+08-17 22:51:54.114  7285  7285 I MeshmoreXR: [horizon] veiled 7 callsign(s) under the hud (pitch -27°)
+08-17 22:51:54.205  7285  7285 I MeshmoreXR: [horizon] veiled 8 callsign(s) under the hud (pitch -33°)
+08-17 22:51:54.300  7285  7285 I MeshmoreXR: [horizon] veiled 6 callsign(s) under the hud (pitch -33°)
+08-17 22:51:54.385  7285  7285 I MeshmoreXR: [horizon] veiled 7 callsign(s) under the hud (pitch -31°)
+08-17 22:51:54.558  7285  7285 I MeshmoreXR: [horizon] veiled 6 callsign(s) under the hud (pitch -10°)
+08-17 22:51:54.652  7285  7285 I MeshmoreXR: [horizon] veiled 1 callsign(s) under the hud (pitch 2°)
+08-17 22:51:54.742  7285  7285 I MeshmoreXR: [horizon] veiled 0 callsign(s) under the hud (pitch 6°)
+08-17 22:51:55.121  7285  7285 I MeshmoreXR: [horizon] veiled 1 callsign(s) under the hud (pitch 7°)
+08-17 22:51:55.207  7285  7285 I MeshmoreXR: [horizon] veiled 0 callsign(s) under the hud (pitch 9°)
+08-17 22:51:55.385  7285  7285 I MeshmoreXR: [horizon] veiled 1 callsign(s) under the hud (pitch 11°)
+08-17 22:51:55.571  7285  7285 I MeshmoreXR: [horizon] veiled 2 callsign(s) under the hud (pitch 10°)
+08-17 22:51:55.661  7285  7285 I MeshmoreXR: [horizon] veiled 5 callsign(s) under the hud (pitch 6°)
+08-17 22:51:55.753  7285  7285 I MeshmoreXR: [horizon] veiled 10 callsign(s) under the hud (pitch 2°)
+08-17 22:51:55.852  7285  7285 I MeshmoreXR: [horizon] veiled 8 callsign(s) under the hud (pitch -0°)
+08-17 22:51:55.940  7285  7285 I MeshmoreXR: [horizon] veiled 10 callsign(s) under the hud (pitch -1°)
+08-17 22:51:56.130  7285  7285 I MeshmoreXR: [horizon] veiled 6 callsign(s) under the hud (pitch -5°)
+08-17 22:51:56.421  7285  7285 I MeshmoreXR: [horizon] veiled 7 callsign(s) under the hud (pitch -7°)
+08-17 22:51:56.524  7285  7285 I MeshmoreXR: [horizon] veiled 5 callsign(s) under the hud (pitch -5°)
+08-17 22:51:56.615  7285  7285 I MeshmoreXR: [horizon] veiled 6 callsign(s) under the hud (pitch -4°)
+08-17 22:51:56.705  7285  7285 I MeshmoreXR: [horizon] veiled 9 callsign(s) under the hud (pitch -2°)
+08-17 22:51:56.802  7285  7285 I MeshmoreXR: [horizon] veiled 8 callsign(s) under the hud (pitch -3°)
+08-17 22:51:56.889  7285  7285 I MeshmoreXR: [horizon] veiled 5 callsign(s) under the hud (pitch -6°)
+08-17 22:51:56.991  7285  7285 I MeshmoreXR: [horizon] veiled 7 callsign(s) under the hud (pitch -7°)
+08-17 22:51:57.075  7285  7285 I MeshmoreXR: [horizon] veiled 6 callsign(s) under the hud (pitch -6°)
+08-17 22:51:57.252  7285  7285 I MeshmoreXR: [horizon] veiled 5 callsign(s) under the hud (pitch -9°)
+08-17 22:51:57.338  7285  7285 I MeshmoreXR: [horizon] veiled 7 callsign(s) under the hud (pitch -11°)
+08-17 22:51:57.429  7285  7285 I MeshmoreXR: [horizon] veiled 6 callsign(s) under the hud (pitch -10°)
+08-17 22:51:57.519  7285  7285 I MeshmoreXR: [horizon] veiled 8 callsign(s) under the hud (pitch -12°)
+08-17 22:51:57.608  7285  7285 I MeshmoreXR: [horizon] veiled 6 callsign(s) under the hud (pitch -11°)
+08-17 22:51:57.702  7285  7285 I MeshmoreXR: [horizon] veiled 7 callsign(s) under the hud (pitch -13°)
+08-17 22:51:57.782  7285  7285 I MeshmoreXR: [horizon] veiled 5 callsign(s) under the hud (pitch -12°)
+08-17 22:51:57.874  7285  7285 I MeshmoreXR: [horizon] veiled 6 callsign(s) under the hud (pitch -5°)
+08-17 22:51:58.050  7285  7285 I MeshmoreXR: [horizon] veiled 5 callsign(s) under the hud (pitch -4°)
+08-17 22:51:58.141  7285  7285 I MeshmoreXR: [horizon] veiled 8 callsign(s) under the hud (pitch -2°)
+08-17 22:51:58.223  7285  7285 I MeshmoreXR: [horizon] veiled 10 callsign(s) under the hud (pitch -1°)
+08-17 22:51:58.400  7285  7285 I MeshmoreXR: [horizon] veiled 9 callsign(s) under the hud (pitch 1°)
+08-17 22:51:58.487  7285  7285 I MeshmoreXR: [horizon] veiled 10 callsign(s) under the hud (pitch -0°)
+08-17 22:51:58.572  7285  7285 I MeshmoreXR: [horizon] veiled 8 callsign(s) under the hud (pitch 5°)
+08-17 22:51:58.650  7285  7285 I MeshmoreXR: [horizon] veiled 1 callsign(s) under the hud (pitch 10°)
+08-17 22:51:58.745  7285  7285 I MeshmoreXR: [horizon] veiled 2 callsign(s) under the hud (pitch 11°)
+08-17 22:51:58.836  7285  7285 I MeshmoreXR: [horizon] veiled 10 callsign(s) under the hud (pitch -0°)
+08-17 22:51:59.112  7285  7285 I MeshmoreXR: [horizon] veiled 8 callsign(s) under the hud (pitch 1°)
+08-17 22:51:59.199  7285  7285 I MeshmoreXR: [horizon] veiled 10 callsign(s) under the hud (pitch -1°)
+08-17 22:51:59.400  7285  7285 I MeshmoreXR: [horizon] veiled 6 callsign(s) under the hud (pitch -6°)
+08-17 22:51:59.490  7285  7285 I MeshmoreXR: [horizon] veiled 5 callsign(s) under the hud (pitch -6°)
+08-17 22:51:59.747  7285  7285 I MeshmoreXR: [horizon] veiled 6 callsign(s) under the hud (pitch -6°)
+08-17 22:51:59.835  7285  7285 I MeshmoreXR: [horizon] veiled 5 callsign(s) under the hud (pitch -6°)
+08-17 22:51:59.926  7285  7285 I MeshmoreXR: [horizon] veiled 7 callsign(s) under the hud (pitch -7°)
+08-17 22:52:00.118  7285  7285 I MeshmoreXR: [horizon] veiled 5 callsign(s) under the hud (pitch -8°)
+08-17 22:52:00.204  7285  7285 I MeshmoreXR: [horizon] veiled 6 callsign(s) under the hud (pitch -8°)
+08-17 22:52:00.291  7285  7285 I MeshmoreXR: [horizon] veiled 5 callsign(s) under the hud (pitch -5°)
+08-17 22:52:00.635  7285  7285 I MeshmoreXR: [horizon] veiled 6 callsign(s) under the hud (pitch -4°)
+08-17 22:52:00.803  7285  7285 I MeshmoreXR: [horizon] veiled 5 callsign(s) under the hud (pitch -5°)
+08-17 22:52:00.895  7285  7285 I MeshmoreXR: [horizon] veiled 6 callsign(s) under the hud (pitch -4°)
+08-17 22:52:01.064  7285  7285 I MeshmoreXR: [horizon] veiled 5 callsign(s) under the hud (pitch -5°)
+08-17 22:52:01.238  7285  7285 I MeshmoreXR: [horizon] veiled 6 callsign(s) under the hud (pitch -5°)
+08-17 22:52:03.687  7285  7285 I MeshmoreXR: [gaze] dwell stood down (still)
+08-17 22:52:07.127  7285  7285 I MeshmoreXR: [link] mesh: 350 peers, 305 with a position
+08-17 22:52:07.127  7285  7285 I MeshmoreXR: [link] heard 4b30fe61bf82 D38F07AED563
+08-17 22:52:14.969  7285  7285 I MeshmoreXR: [horizon] veiled 5 callsign(s) under the hud (pitch -6°)
+08-17 22:52:15.227  7285  7285 I MeshmoreXR: [horizon] veiled 6 callsign(s) under the hud (pitch -6°)
+08-17 22:52:15.502  7285  7285 I MeshmoreXR: [horizon] veiled 5 callsign(s) under the hud (pitch -6°)
+08-17 22:52:44.302  7285  7285 I MeshmoreXR: [tx] -> name='D38F07AED563' key=4b30fe61bf82 (authorised)
+08-17 22:52:44.389  7285  7285 I MeshmoreXR: [ember] DM at 141 deg
+08-17 22:52:44.389  7285  7285 I MeshmoreXR: [soak] #32 Ok — attempted=32 accepted=31 acked=29 refused=0 drops=0 pending=2
+08-17 22:52:44.450  7285  7285 I MeshmoreXR: [tx] accepted tag=0xd1d958ca direct timeout=2202ms
+08-17 22:52:44.945  7285  7285 I MeshmoreXR: [tx] delivered tag=0xd1d958ca in 494ms
+08-17 22:52:58.353  7285  7285 I MeshmoreXR: [horizon] veiled 6 callsign(s) under the hud (pitch -6°)
+08-17 22:53:07.329  7285  7285 I MeshmoreXR: [link] mesh: 350 peers, 305 with a position
+08-17 22:53:07.330  7285  7285 I MeshmoreXR: [link] heard 4b30fe61bf82 D38F07AED563
+08-17 22:53:44.399  7285  7285 I MeshmoreXR: [tx] -> name='D38F07AED563' key=4b30fe61bf82 (authorised)
+08-17 22:53:44.483  7285  7285 I MeshmoreXR: [ember] DM at 141 deg
+08-17 22:53:44.484  7285  7285 I MeshmoreXR: [soak] #33 Ok — attempted=33 accepted=32 acked=30 refused=0 drops=0 pending=2
+08-17 22:53:44.549  7285  7285 I MeshmoreXR: [tx] accepted tag=0xc9c305cd direct timeout=2202ms
+08-17 22:53:45.068  7285  7285 I MeshmoreXR: [tx] delivered tag=0xc9c305cd in 518ms
+08-17 22:54:07.081  7285  7285 I MeshmoreXR: [link] mesh: 350 peers, 305 with a position
+08-17 22:54:07.081  7285  7285 I MeshmoreXR: [link] heard 4b30fe61bf82 D38F07AED563
+08-17 22:54:36.984  7285  7285 I MeshmoreXR: [link] mesh: 350 peers, 305 with a position
+08-17 22:54:36.984  7285  7285 I MeshmoreXR: [link] heard 59219d35d8bd NR7Y Repeater
+08-17 22:54:44.491  7285  7285 I MeshmoreXR: [tx] -> name='D38F07AED563' key=4b30fe61bf82 (authorised)
+08-17 22:54:44.577  7285  7285 I MeshmoreXR: [ember] DM at 141 deg
+08-17 22:54:44.578  7285  7285 I MeshmoreXR: [soak] #34 Ok — attempted=34 accepted=33 acked=31 refused=0 drops=0 pending=2
+08-17 22:54:44.659  7285  7285 I MeshmoreXR: [tx] accepted tag=0x7e82d0c7 direct timeout=2202ms
+08-17 22:54:45.195  7285  7285 I MeshmoreXR: [tx] delivered tag=0x7e82d0c7 in 536ms
+08-17 22:54:47.975  8147  8147 I MeshmoreXR: MARK aura ~3ft from radio, was ~20ft
+08-17 22:54:50.726  7285  7285 I MeshmoreXR: [link] channel msg: Thalestr 🐠: Beep boop
+08-17 22:54:50.804  7285  7285 I MeshmoreXR: [ember] no bearing for this sender — no ember (cuff still fires)
+08-17 22:55:07.303  7285  7285 I MeshmoreXR: [link] mesh: 350 peers, 305 with a position
+08-17 22:55:07.303  7285  7285 I MeshmoreXR: [link] heard 4b30fe61bf82 D38F07AED563
+08-17 22:55:44.622  7285  7285 I MeshmoreXR: [tx] -> name='D38F07AED563' key=4b30fe61bf82 (authorised)
+08-17 22:55:44.704  7285  7285 I MeshmoreXR: [ember] DM at 141 deg
+08-17 22:55:44.704  7285  7285 I MeshmoreXR: [soak] #35 Ok — attempted=35 accepted=34 acked=32 refused=0 drops=0 pending=2
+08-17 22:55:44.768  7285  7285 I MeshmoreXR: [tx] accepted tag=0x243dd0b5 direct timeout=2202ms
+08-17 22:55:45.319  7285  7285 I MeshmoreXR: [tx] delivered tag=0x243dd0b5 in 551ms
+08-17 22:56:07.366  7285  7285 I MeshmoreXR: [link] mesh: 350 peers, 305 with a position
+08-17 22:56:07.366  7285  7285 I MeshmoreXR: [link] heard 4b30fe61bf82 D38F07AED563
+08-17 22:56:43.468  7285  7285 I MeshmoreXR: [link] mesh: 350 peers, 305 with a position
+08-17 22:56:43.469  7285  7285 I MeshmoreXR: [link] heard 49faf002b4ad Odell Butte 7000 🦆
+08-17 22:56:44.726  7285  7285 I MeshmoreXR: [tx] -> name='D38F07AED563' key=4b30fe61bf82 (authorised)
+08-17 22:56:44.806  7285  7285 I MeshmoreXR: [ember] DM at 141 deg
+08-17 22:56:44.807  7285  7285 I MeshmoreXR: [soak] #36 Ok — attempted=36 accepted=35 acked=33 refused=0 drops=0 pending=2
+08-17 22:56:44.877  7285  7285 I MeshmoreXR: [tx] accepted tag=0x97a7aca8 direct timeout=2202ms
+08-17 22:56:45.410  7285  7285 I MeshmoreXR: [tx] delivered tag=0x97a7aca8 in 533ms
+08-17 22:57:07.322  7285  7285 I MeshmoreXR: [link] mesh: 350 peers, 305 with a position
+08-17 22:57:07.322  7285  7285 I MeshmoreXR: [link] heard 4b30fe61bf82 D38F07AED563
+08-17 22:57:44.809  7285  7285 I MeshmoreXR: [tx] -> name='D38F07AED563' key=4b30fe61bf82 (authorised)
+08-17 22:57:44.899  7285  7285 I MeshmoreXR: [ember] DM at 141 deg
+08-17 22:57:44.899  7285  7285 I MeshmoreXR: [soak] #37 Ok — attempted=37 accepted=36 acked=34 refused=0 drops=0 pending=2
+08-17 22:57:44.954  7285  7285 I MeshmoreXR: [tx] accepted tag=0x6bbe7abf direct timeout=2202ms
+08-17 22:57:45.499  7285  7285 I MeshmoreXR: [tx] delivered tag=0x6bbe7abf in 545ms
+08-17 22:58:07.349  7285  7285 I MeshmoreXR: [link] mesh: 350 peers, 305 with a position
+08-17 22:58:07.349  7285  7285 I MeshmoreXR: [link] heard 4b30fe61bf82 D38F07AED563
+08-17 22:58:09.290  7285  7285 I MeshmoreXR: [link] mesh: 350 peers, 305 with a position
+08-17 22:58:09.290  7285  7285 I MeshmoreXR: [link] heard eebbe6dfedb9 k7jbs-skyline-rptr
+08-17 22:58:44.951  7285  7285 I MeshmoreXR: [tx] -> name='D38F07AED563' key=4b30fe61bf82 (authorised)
+08-17 22:58:45.032  7285  7285 I MeshmoreXR: [ember] DM at 141 deg
+08-17 22:58:45.032  7285  7285 I MeshmoreXR: [soak] #38 Ok — attempted=38 accepted=37 acked=35 refused=0 drops=0 pending=2
+08-17 22:58:45.099  7285  7285 I MeshmoreXR: [tx] accepted tag=0xffb30a81 direct timeout=2202ms
+08-17 22:59:02.693  7285  7285 I MeshmoreXR: [link] channel msg: Madp03t-NorthTacoma: Evening… anyone? Anyone? Bueller… 
+08-17 22:59:02.770  7285  7285 I MeshmoreXR: [ember] no bearing for this sender — no ember (cuff still fires)
+08-17 22:59:07.920  7285  7285 I MeshmoreXR: [link] mesh: 350 peers, 305 with a position
+08-17 22:59:07.920  7285  7285 I MeshmoreXR: [link] heard 4b30fe61bf82 D38F07AED563
+08-17 22:59:36.011  7285  7285 I MeshmoreXR: [link] mesh: 350 peers, 305 with a position
+08-17 22:59:36.012  7285  7285 I MeshmoreXR: [link] heard 3837f2168d6e BingCherry
+08-17 22:59:45.035  7285  7285 I MeshmoreXR: [tx] -> name='D38F07AED563' key=4b30fe61bf82 (authorised)
+08-17 22:59:45.127  7285  7285 I MeshmoreXR: [ember] DM at 141 deg
+08-17 22:59:45.127  7285  7285 I MeshmoreXR: [soak] #39 Ok — attempted=39 accepted=38 acked=35 refused=0 drops=0 pending=3
+08-17 22:59:45.197  7285  7285 I MeshmoreXR: [tx] accepted tag=0x56bccaf7 direct timeout=2202ms
+08-17 22:59:45.685  7285  7285 I MeshmoreXR: [tx] delivered tag=0x56bccaf7 in 488ms
+08-17 23:00:07.355  7285  7285 I MeshmoreXR: [link] mesh: 350 peers, 305 with a position
+08-17 23:00:07.355  7285  7285 I MeshmoreXR: [link] heard 4b30fe61bf82 D38F07AED563
+08-17 23:00:45.130  7285  7285 I MeshmoreXR: [tx] -> name='D38F07AED563' key=4b30fe61bf82 (authorised)
+08-17 23:00:45.211  7285  7285 I MeshmoreXR: [ember] DM at 141 deg
+08-17 23:00:45.211  7285  7285 I MeshmoreXR: [soak] #40 Ok — attempted=40 accepted=39 acked=36 refused=0 drops=0 pending=3
+08-17 23:00:45.271  7285  7285 I MeshmoreXR: [tx] accepted tag=0x3ddbae29 direct timeout=2202ms
+08-17 23:00:45.819  7285  7285 I MeshmoreXR: [tx] delivered tag=0x3ddbae29 in 548ms
+08-17 23:01:07.338  7285  7285 I MeshmoreXR: [link] mesh: 350 peers, 305 with a position
+08-17 23:01:07.338  7285  7285 I MeshmoreXR: [link] heard 4b30fe61bf82 D38F07AED563
+08-17 23:01:45.257  7285  7285 I MeshmoreXR: [tx] -> name='D38F07AED563' key=4b30fe61bf82 (authorised)
+08-17 23:01:45.343  7285  7285 I MeshmoreXR: [ember] DM at 141 deg
+08-17 23:01:45.343  7285  7285 I MeshmoreXR: [soak] #41 Ok — attempted=41 accepted=40 acked=37 refused=0 drops=0 pending=3
+08-17 23:01:45.400  7285  7285 I MeshmoreXR: [tx] accepted tag=0xcf64c5f2 direct timeout=2202ms
+08-17 23:01:46.295  7285  7285 I MeshmoreXR: [tx] delivered tag=0xcf64c5f2 in 895ms
+08-17 23:01:47.556  7285  7285 I MeshmoreXR: [link] channel msg: 📻: 🏳️‍🌈
+08-17 23:01:47.636  7285  7285 I MeshmoreXR: [ember] no bearing for this sender — no ember (cuff still fires)
+08-17 23:02:00.348  7285  7285 I MeshmoreXR: [link] channel msg: Thalestr 🐠: @[Madp03t-NorthTacoma] evening 👋
+08-17 23:02:00.429  7285  7285 I MeshmoreXR: [ember] no bearing for this sender — no ember (cuff still fires)
+08-17 23:02:07.322  7285  7285 I MeshmoreXR: [link] mesh: 350 peers, 305 with a position
+08-17 23:02:07.322  7285  7285 I MeshmoreXR: [link] heard 4b30fe61bf82 D38F07AED563
+08-17 23:02:45.346  7285  7285 I MeshmoreXR: [tx] -> name='D38F07AED563' key=4b30fe61bf82 (authorised)
+08-17 23:02:45.427  7285  7285 I MeshmoreXR: [ember] DM at 141 deg
+08-17 23:02:45.427  7285  7285 I MeshmoreXR: [soak] #42 Ok — attempted=42 accepted=41 acked=38 refused=0 drops=0 pending=3
+08-17 23:02:45.491  7285  7285 I MeshmoreXR: [tx] accepted tag=0x29d86ef6 direct timeout=2202ms
+08-17 23:02:46.033  7285  7285 I MeshmoreXR: [tx] delivered tag=0x29d86ef6 in 542ms
+08-17 23:03:07.405  7285  7285 I MeshmoreXR: [link] mesh: 350 peers, 305 with a position
+08-17 23:03:07.405  7285  7285 I MeshmoreXR: [link] heard 4b30fe61bf82 D38F07AED563
+08-17 23:03:45.430  7285  7285 I MeshmoreXR: [tx] -> name='D38F07AED563' key=4b30fe61bf82 (authorised)
+08-17 23:03:45.514  7285  7285 I MeshmoreXR: [ember] DM at 141 deg
+08-17 23:03:45.514  7285  7285 I MeshmoreXR: [soak] #43 Ok — attempted=43 accepted=42 acked=39 refused=0 drops=0 pending=3
+08-17 23:03:45.580  7285  7285 I MeshmoreXR: [tx] accepted tag=0xac7ebdfc direct timeout=2202ms
+08-17 23:03:46.115  7285  7285 I MeshmoreXR: [tx] delivered tag=0xac7ebdfc in 534ms
+08-17 23:04:07.325  7285  7285 I MeshmoreXR: [link] mesh: 350 peers, 305 with a position
+08-17 23:04:07.326  7285  7285 I MeshmoreXR: [link] heard 4b30fe61bf82 D38F07AED563
+08-17 23:04:45.567  7285  7285 I MeshmoreXR: [tx] -> name='D38F07AED563' key=4b30fe61bf82 (authorised)
+08-17 23:04:45.655  7285  7285 I MeshmoreXR: [ember] DM at 141 deg
+08-17 23:04:45.655  7285  7285 I MeshmoreXR: [soak] #44 Ok — attempted=44 accepted=43 acked=40 refused=0 drops=0 pending=3
+08-17 23:04:45.718  7285  7285 I MeshmoreXR: [tx] accepted tag=0xe87631cc direct timeout=2202ms
+08-17 23:04:46.626  7285  7285 I MeshmoreXR: [tx] delivered tag=0xe87631cc in 908ms
+08-17 23:04:57.668  7285  7285 I MeshmoreXR: [link] mesh: 350 peers, 305 with a position
+08-17 23:04:57.668  7285  7285 I MeshmoreXR: [link] heard d42b03415ec0 Griffon Tower
+08-17 23:05:07.618  7285  7285 I MeshmoreXR: [link] mesh: 350 peers, 305 with a position
+08-17 23:05:07.618  7285  7285 I MeshmoreXR: [link] heard 4b30fe61bf82 D38F07AED563
+08-17 23:05:27.520  7285  7285 I MeshmoreXR: [link] mesh: 350 peers, 305 with a position
+08-17 23:05:27.520  7285  7285 I MeshmoreXR: [link] heard a0815f7da680 orange0-rakbot
+08-17 23:05:45.658  7285  7285 I MeshmoreXR: [tx] -> name='D38F07AED563' key=4b30fe61bf82 (authorised)
+08-17 23:05:45.741  7285  7285 I MeshmoreXR: [ember] DM at 141 deg
+08-17 23:05:45.741  7285  7285 I MeshmoreXR: [soak] #45 Ok — attempted=45 accepted=44 acked=41 refused=0 drops=0 pending=3
+08-17 23:05:45.797  7285  7285 I MeshmoreXR: [tx] accepted tag=0x2ebfccb5 direct timeout=2202ms
+08-17 23:05:46.366  7285  7285 I MeshmoreXR: [tx] delivered tag=0x2ebfccb5 in 569ms
+08-17 23:06:07.409  7285  7285 I MeshmoreXR: [link] mesh: 350 peers, 305 with a position
+08-17 23:06:07.409  7285  7285 I MeshmoreXR: [link] heard 4b30fe61bf82 D38F07AED563
+08-17 23:06:45.765  7285  7285 I MeshmoreXR: [tx] -> name='D38F07AED563' key=4b30fe61bf82 (authorised)
+08-17 23:06:45.851  7285  7285 I MeshmoreXR: [ember] DM at 141 deg
+08-17 23:06:45.851  7285  7285 I MeshmoreXR: [soak] #46 Ok — attempted=46 accepted=45 acked=42 refused=0 drops=0 pending=3
+08-17 23:06:45.918  7285  7285 I MeshmoreXR: [tx] accepted tag=0xe168f096 direct timeout=2202ms
+08-17 23:06:47.657  7285  7285 I MeshmoreXR: [tx] delivered tag=0xe168f096 in 1739ms
+08-17 23:07:07.215  7285  7285 I MeshmoreXR: [link] mesh: 350 peers, 305 with a position
+08-17 23:07:07.215  7285  7285 I MeshmoreXR: [link] heard 4b30fe61bf82 D38F07AED563
+08-17 23:07:45.854  7285  7285 I MeshmoreXR: [tx] -> name='D38F07AED563' key=4b30fe61bf82 (authorised)
+08-17 23:07:45.937  7285  7285 I MeshmoreXR: [ember] DM at 141 deg
+08-17 23:07:45.937  7285  7285 I MeshmoreXR: [soak] #47 Ok — attempted=47 accepted=46 acked=43 refused=0 drops=0 pending=3
+08-17 23:07:45.999  7285  7285 I MeshmoreXR: [tx] accepted tag=0xd1a2bd53 direct timeout=2202ms
+08-17 23:07:46.548  7285  7285 I MeshmoreXR: [tx] delivered tag=0xd1a2bd53 in 549ms
+08-17 23:08:07.368  7285  7285 I MeshmoreXR: [link] mesh: 350 peers, 305 with a position
+08-17 23:08:07.368  7285  7285 I MeshmoreXR: [link] heard 4b30fe61bf82 D38F07AED563
+08-17 23:08:45.963  7285  7285 I MeshmoreXR: [tx] -> name='D38F07AED563' key=4b30fe61bf82 (authorised)
+08-17 23:08:46.046  7285  7285 I MeshmoreXR: [ember] DM at 141 deg
+08-17 23:08:46.046  7285  7285 I MeshmoreXR: [soak] #48 Ok — attempted=48 accepted=47 acked=44 refused=0 drops=0 pending=3
+08-17 23:08:46.106  7285  7285 I MeshmoreXR: [tx] accepted tag=0x0679437a direct timeout=2202ms
+08-17 23:08:46.645  7285  7285 I MeshmoreXR: [tx] delivered tag=0x0679437a in 539ms
+08-17 23:09:07.303  7285  7285 I MeshmoreXR: [link] mesh: 350 peers, 305 with a position
+08-17 23:09:07.303  7285  7285 I MeshmoreXR: [link] heard 4b30fe61bf82 D38F07AED563
+08-17 23:09:46.060  7285  7285 I MeshmoreXR: [tx] -> name='D38F07AED563' key=4b30fe61bf82 (authorised)
+08-17 23:09:46.140  7285  7285 I MeshmoreXR: [ember] DM at 141 deg
+08-17 23:09:46.140  7285  7285 I MeshmoreXR: [soak] #49 Ok — attempted=49 accepted=48 acked=45 refused=0 drops=0 pending=3
+08-17 23:09:46.202  7285  7285 I MeshmoreXR: [tx] accepted tag=0x09d783bf direct timeout=2202ms
+08-17 23:09:46.746  7285  7285 I MeshmoreXR: [tx] delivered tag=0x09d783bf in 543ms
+08-17 23:09:55.324  7285  7285 I MeshmoreXR: [link] channel msg: 🐶WO0F_PugetMesh: @[JENNY] Welcome 👋 
+08-17 23:09:55.400  7285  7285 I MeshmoreXR: [ember] no bearing for this sender — no ember (cuff still fires)
+08-17 23:10:07.309  7285  7285 I MeshmoreXR: [link] mesh: 350 peers, 305 with a position
+08-17 23:10:07.309  7285  7285 I MeshmoreXR: [link] heard 4b30fe61bf82 D38F07AED563
+08-17 23:10:32.359  7285  7285 I MeshmoreXR: [link] channel msg: Madp03t-NorthTacoma: @[Thalestr 🐠] 👋
+08-17 23:10:32.438  7285  7285 I MeshmoreXR: [ember] no bearing for this sender — no ember (cuff still fires)
+08-17 23:10:46.153  7285  7285 I MeshmoreXR: [tx] -> name='D38F07AED563' key=4b30fe61bf82 (authorised)
+08-17 23:10:46.239  7285  7285 I MeshmoreXR: [ember] DM at 141 deg
+08-17 23:10:46.239  7285  7285 I MeshmoreXR: [soak] #50 Ok — attempted=50 accepted=49 acked=46 refused=0 drops=0 pending=3
+08-17 23:10:46.309  7285  7285 I MeshmoreXR: [tx] accepted tag=0x14ac62bb direct timeout=2202ms
+08-17 23:10:46.819  7285  7285 I MeshmoreXR: [tx] delivered tag=0x14ac62bb in 510ms
+08-17 23:11:07.348  7285  7285 I MeshmoreXR: [link] mesh: 350 peers, 305 with a position
+08-17 23:11:07.348  7285  7285 I MeshmoreXR: [link] heard 4b30fe61bf82 D38F07AED563
+08-17 23:11:46.245  7285  7285 I MeshmoreXR: [tx] -> name='D38F07AED563' key=4b30fe61bf82 (authorised)
+08-17 23:11:46.326  7285  7285 I MeshmoreXR: [ember] DM at 141 deg
+08-17 23:11:46.326  7285  7285 I MeshmoreXR: [soak] #51 Ok — attempted=51 accepted=50 acked=47 refused=0 drops=0 pending=3
+08-17 23:11:46.390  7285  7285 I MeshmoreXR: [tx] accepted tag=0x4f8e7ca4 direct timeout=2202ms
+08-17 23:11:46.967  7285  7285 I MeshmoreXR: [tx] delivered tag=0x4f8e7ca4 in 577ms
+08-17 23:12:08.154  7285  7285 I MeshmoreXR: [link] mesh: 350 peers, 305 with a position
+08-17 23:12:08.154  7285  7285 I MeshmoreXR: [link] heard 4b30fe61bf82 D38F07AED563
+08-17 23:12:29.428  7285  7285 I MeshmoreXR: [link] channel msg: Thalestr 🐠 nRF: @[Madp03t-NorthTacoma] Heyo!
+08-17 23:12:29.508  7285  7285 I MeshmoreXR: [ember] no bearing for this sender — no ember (cuff still fires)
+08-17 23:12:46.377  7285  7285 I MeshmoreXR: [tx] -> name='D38F07AED563' key=4b30fe61bf82 (authorised)
+08-17 23:12:46.451  7285  7285 I MeshmoreXR: [ember] DM at 141 deg
+08-17 23:12:46.451  7285  7285 I MeshmoreXR: [soak] #52 Ok — attempted=52 accepted=51 acked=48 refused=0 drops=0 pending=3
+08-17 23:12:46.510  7285  7285 I MeshmoreXR: [tx] accepted tag=0xfbf817b8 direct timeout=2202ms
+08-17 23:12:47.067  7285  7285 I MeshmoreXR: [tx] delivered tag=0xfbf817b8 in 557ms
+08-17 23:13:07.347  7285  7285 I MeshmoreXR: [link] mesh: 350 peers, 305 with a position
+08-17 23:13:07.347  7285  7285 I MeshmoreXR: [link] heard 4b30fe61bf82 D38F07AED563
+08-17 23:13:46.478  7285  7285 I MeshmoreXR: [tx] -> name='D38F07AED563' key=4b30fe61bf82 (authorised)
+08-17 23:13:46.559  7285  7285 I MeshmoreXR: [ember] DM at 141 deg
+08-17 23:13:46.560  7285  7285 I MeshmoreXR: [soak] #53 Ok — attempted=53 accepted=52 acked=49 refused=0 drops=0 pending=3
+08-17 23:13:46.624  7285  7285 I MeshmoreXR: [tx] accepted tag=0xde441987 direct timeout=2202ms
+08-17 23:13:47.155  7285  7285 I MeshmoreXR: [tx] delivered tag=0xde441987 in 531ms
+08-17 23:13:59.787  7285  7285 I MeshmoreXR: [link] mesh: 350 peers, 305 with a position
+08-17 23:13:59.787  7285  7285 I MeshmoreXR: [link] heard b2b0b6d4e8ee PDX Powell Butte Repeat
+08-17 23:14:11.849  7285  7285 I MeshmoreXR: [link] mesh: 350 peers, 305 with a position
+08-17 23:14:11.849  7285  7285 I MeshmoreXR: [link] heard 4b30fe61bf82 D38F07AED563
+08-17 23:14:46.607  7285  7285 I MeshmoreXR: [tx] -> name='D38F07AED563' key=4b30fe61bf82 (authorised)
+08-17 23:14:46.688  7285  7285 I MeshmoreXR: [ember] DM at 141 deg
+08-17 23:14:46.688  7285  7285 I MeshmoreXR: [soak] #54 Ok — attempted=54 accepted=53 acked=50 refused=0 drops=0 pending=3
+08-17 23:14:46.748  7285  7285 I MeshmoreXR: [tx] accepted tag=0xc3fd425b direct timeout=2202ms
+08-17 23:14:47.281  7285  7285 I MeshmoreXR: [tx] delivered tag=0xc3fd425b in 533ms
+08-17 23:15:06.213  7285  7285 I MeshmoreXR: [link] mesh: 350 peers, 305 with a position
+08-17 23:15:06.213  7285  7285 I MeshmoreXR: [link] heard c87bf2919868 KK7MLS/m(2)
+08-17 23:15:06.670  7285  7285 I MeshmoreXR: [link] mesh: 350 peers, 305 with a position
+08-17 23:15:06.670  7285  7285 I MeshmoreXR: [link] heard 2e38c81f7dc0 MennisD
+08-17 23:15:08.684  7285  7285 I MeshmoreXR: [link] mesh: 350 peers, 305 with a position
+08-17 23:15:08.684  7285  7285 I MeshmoreXR: [link] heard 4b30fe61bf82 D38F07AED563
+08-17 23:15:46.723  7285  7285 I MeshmoreXR: [tx] -> name='D38F07AED563' key=4b30fe61bf82 (authorised)
+08-17 23:15:46.805  7285  7285 I MeshmoreXR: [ember] DM at 141 deg
+08-17 23:15:46.806  7285  7285 I MeshmoreXR: [soak] #55 Ok — attempted=55 accepted=54 acked=51 refused=0 drops=0 pending=3
+08-17 23:15:46.867  7285  7285 I MeshmoreXR: [tx] accepted tag=0x80fe0d30 direct timeout=2202ms
+08-17 23:15:47.379  7285  7285 I MeshmoreXR: [tx] delivered tag=0x80fe0d30 in 512ms
+08-17 23:16:07.570  7285  7285 I MeshmoreXR: [link] mesh: 350 peers, 305 with a position
+08-17 23:16:07.570  7285  7285 I MeshmoreXR: [link] heard 4b30fe61bf82 D38F07AED563
+08-17 23:16:46.808  7285  7285 I MeshmoreXR: [tx] -> name='D38F07AED563' key=4b30fe61bf82 (authorised)
+08-17 23:16:46.889  7285  7285 I MeshmoreXR: [ember] DM at 141 deg
+08-17 23:16:46.889  7285  7285 I MeshmoreXR: [soak] #56 Ok — attempted=56 accepted=55 acked=52 refused=0 drops=0 pending=3
+08-17 23:16:46.947  7285  7285 I MeshmoreXR: [tx] accepted tag=0x233d1073 direct timeout=2202ms
+08-17 23:16:47.490  7285  7285 I MeshmoreXR: [tx] delivered tag=0x233d1073 in 543ms
+08-17 23:17:07.441  7285  7285 I MeshmoreXR: [link] mesh: 350 peers, 305 with a position
+08-17 23:17:07.441  7285  7285 I MeshmoreXR: [link] heard 4b30fe61bf82 D38F07AED563
+08-17 23:17:44.049  7285  7285 I MeshmoreXR: [link] mesh: 350 peers, 305 with a position
+08-17 23:17:44.049  7285  7285 I MeshmoreXR: [link] heard 424242a0de73 Golf Creek
+08-17 23:17:46.906  7285  7285 I MeshmoreXR: [tx] -> name='D38F07AED563' key=4b30fe61bf82 (authorised)
+08-17 23:17:46.988  7285  7285 I MeshmoreXR: [ember] DM at 141 deg
+08-17 23:17:46.988  7285  7285 I MeshmoreXR: [soak] #57 Ok — attempted=57 accepted=56 acked=53 refused=0 drops=0 pending=3
+08-17 23:17:47.047  7285  7285 I MeshmoreXR: [tx] accepted tag=0x7d1d7674 direct timeout=2202ms
+08-17 23:17:47.572  7285  7285 I MeshmoreXR: [tx] delivered tag=0x7d1d7674 in 525ms
+08-17 23:18:05.319  7285  7285 I MeshmoreXR: [link] mesh: 350 peers, 305 with a position
+08-17 23:18:05.319  7285  7285 I MeshmoreXR: [link] heard 50c5b93dc020 🦊 Fox Hangout
+08-17 23:18:07.935  7285  7285 I MeshmoreXR: [link] mesh: 350 peers, 305 with a position
+08-17 23:18:07.935  7285  7285 I MeshmoreXR: [link] heard 4b30fe61bf82 D38F07AED563
+08-17 23:18:43.856  7285  7285 I MeshmoreXR: [link] mesh: 350 peers, 305 with a position
+08-17 23:18:43.857  7285  7285 I MeshmoreXR: [link] heard 54762476b05b Seeed_roam
+08-17 23:18:46.995  7285  7285 I MeshmoreXR: [tx] -> name='D38F07AED563' key=4b30fe61bf82 (authorised)
+08-17 23:18:47.079  7285  7285 I MeshmoreXR: [ember] DM at 141 deg
+08-17 23:18:47.079  7285  7285 I MeshmoreXR: [soak] #58 Ok — attempted=58 accepted=57 acked=54 refused=0 drops=0 pending=3
+08-17 23:18:47.145  7285  7285 I MeshmoreXR: [tx] accepted tag=0x5b19d77b direct timeout=2202ms
+08-17 23:18:48.019  7285  7285 I MeshmoreXR: [tx] delivered tag=0x5b19d77b in 874ms
+08-17 23:19:07.362  7285  7285 I MeshmoreXR: [link] mesh: 350 peers, 305 with a position
+08-17 23:19:07.362  7285  7285 I MeshmoreXR: [link] heard 4b30fe61bf82 D38F07AED563
+08-17 23:19:17.646  7285  7285 I MeshmoreXR: [link] channel msg: ```KC7HTA 'Mаrk #MC-Open ☕: Hello all
+08-17 23:19:17.722  7285  7285 I MeshmoreXR: [ember] no bearing for this sender — no ember (cuff still fires)
+08-17 23:19:47.082  7285  7285 I MeshmoreXR: [tx] -> name='D38F07AED563' key=4b30fe61bf82 (authorised)
+08-17 23:19:47.160  7285  7285 I MeshmoreXR: [ember] DM at 141 deg
+08-17 23:19:47.160  7285  7285 I MeshmoreXR: [soak] #59 Ok — attempted=59 accepted=58 acked=55 refused=0 drops=0 pending=3
+08-17 23:19:47.223  7285  7285 I MeshmoreXR: [tx] accepted tag=0xf8a46fa5 direct timeout=2202ms
+08-17 23:19:47.760  7285  7285 I MeshmoreXR: [tx] delivered tag=0xf8a46fa5 in 537ms
+08-17 23:20:07.573  7285  7285 I MeshmoreXR: [link] mesh: 350 peers, 305 with a position
+08-17 23:20:07.573  7285  7285 I MeshmoreXR: [link] heard 4b30fe61bf82 D38F07AED563
+08-17 23:20:47.162  7285  7285 I MeshmoreXR: [tx] -> name='D38F07AED563' key=4b30fe61bf82 (authorised)
+08-17 23:20:47.248  7285  7285 I MeshmoreXR: [ember] DM at 141 deg
+08-17 23:20:47.249  7285  7285 I MeshmoreXR: [soak] #60 Ok — attempted=60 accepted=59 acked=56 refused=0 drops=0 pending=3
+08-17 23:20:47.321  7285  7285 I MeshmoreXR: [tx] accepted tag=0xf7a9a5f8 direct timeout=2202ms
+08-17 23:20:48.246  7285  7285 I MeshmoreXR: [tx] delivered tag=0xf7a9a5f8 in 925ms
+08-17 23:21:07.278  7285  7285 I MeshmoreXR: [link] mesh: 350 peers, 305 with a position
+08-17 23:21:07.278  7285  7285 I MeshmoreXR: [link] heard 4b30fe61bf82 D38F07AED563
+08-17 23:21:47.309  7285  7285 I MeshmoreXR: [soak] DONE sent=60 attempted=60 accepted=60 acked=57 refused=0 unacked>60s=3 drops=0 reliability=95.0% meanLatency=658ms
+08-17 23:21:47.309  7285  7285 I MeshmoreXR: [alert] SOAK — DONE — 57/60 ACKED, 0 DROP(S)
+08-17 23:21:49.957  7285  7285 I MeshmoreXR: [alert] CONTACTS — CONTACT STORE FULL — 350 OF 350. NEW NODES ARE TURNED AWAY
+08-17 23:21:57.002  7285  7285 I MeshmoreXR: [horizon] veiled 7 callsign(s) under the hud (pitch -5°)
+08-17 23:22:07.308  7285  7285 I MeshmoreXR: [link] mesh: 350 peers, 305 with a position
+08-17 23:22:07.308  7285  7285 I MeshmoreXR: [link] heard 4b30fe61bf82 D38F07AED563

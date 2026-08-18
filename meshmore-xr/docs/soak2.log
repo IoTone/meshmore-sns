@@ -1,0 +1,182 @@
+08-17 22:21:28.102  7285  7285 I MeshmoreXR: [link] state -> HANDSHAKING
+08-17 22:21:28.190  7285  7285 I MeshmoreXR: [link] state -> READY
+08-17 22:21:41.094  7285  7285 I MeshmoreXR: [soak] start -> 'D38F07AED563' key=4b30fe61bf82 every 60s for 60min
+08-17 22:21:41.137  7285  7285 I MeshmoreXR: [soak] #1 Ok — attempted=1 accepted=0 acked=0 refused=0 drops=0 pending=0
+08-17 22:21:41.173  7285  7285 I MeshmoreXR: [tx] accepted tag=0x9cc27307 direct timeout=2202ms
+08-17 22:21:41.814  7285  7285 I MeshmoreXR: [tx] delivered tag=0x9cc27307 in 641ms
+08-17 22:22:41.277  7285  7285 I MeshmoreXR: [soak] #2 Ok — attempted=2 accepted=1 acked=1 refused=0 drops=0 pending=0
+08-17 22:22:41.359  7285  7285 I MeshmoreXR: [tx] accepted tag=0x4aca97a9 direct timeout=2202ms
+08-17 22:22:41.858  7285  7285 I MeshmoreXR: [tx] delivered tag=0x4aca97a9 in 499ms
+08-17 22:23:41.368  7285  7285 I MeshmoreXR: [soak] #3 Ok — attempted=3 accepted=2 acked=2 refused=0 drops=0 pending=0
+08-17 22:23:41.443  7285  7285 I MeshmoreXR: [tx] accepted tag=0xd82be331 direct timeout=2202ms
+08-17 22:23:42.332  7285  7285 I MeshmoreXR: [tx] delivered tag=0xd82be331 in 888ms
+08-17 22:24:41.494  7285  7285 I MeshmoreXR: [soak] #4 Ok — attempted=4 accepted=3 acked=3 refused=0 drops=0 pending=0
+08-17 22:24:41.565  7285  7285 I MeshmoreXR: [tx] accepted tag=0x8e61102d direct timeout=2202ms
+08-17 22:24:42.474  7285  7285 I MeshmoreXR: [tx] delivered tag=0x8e61102d in 909ms
+08-17 22:25:41.609  7285  7285 I MeshmoreXR: [soak] #5 Ok — attempted=5 accepted=4 acked=4 refused=0 drops=0 pending=0
+08-17 22:25:41.678  7285  7285 I MeshmoreXR: [tx] accepted tag=0x130b18dd direct timeout=2202ms
+08-17 22:25:42.226  7285  7285 I MeshmoreXR: [tx] delivered tag=0x130b18dd in 547ms
+08-17 22:26:41.704  7285  7285 I MeshmoreXR: [soak] #6 Ok — attempted=6 accepted=5 acked=5 refused=0 drops=0 pending=0
+08-17 22:26:41.771  7285  7285 I MeshmoreXR: [tx] accepted tag=0x101ca742 direct timeout=2202ms
+08-17 22:26:42.272  7285  7285 I MeshmoreXR: [tx] delivered tag=0x101ca742 in 501ms
+08-17 22:27:41.830  7285  7285 I MeshmoreXR: [soak] #7 Ok — attempted=7 accepted=6 acked=6 refused=0 drops=0 pending=0
+08-17 22:27:41.898  7285  7285 I MeshmoreXR: [tx] accepted tag=0x334bf349 direct timeout=2202ms
+08-17 22:27:42.401  7285  7285 I MeshmoreXR: [tx] delivered tag=0x334bf349 in 503ms
+08-17 22:28:41.971  7285  7285 I MeshmoreXR: [soak] #8 Ok — attempted=8 accepted=7 acked=7 refused=0 drops=0 pending=0
+08-17 22:28:42.045  7285  7285 I MeshmoreXR: [tx] accepted tag=0xcf60f07e direct timeout=2202ms
+08-17 22:29:42.068  7285  7285 I MeshmoreXR: [soak] #9 Ok — attempted=9 accepted=8 acked=7 refused=0 drops=0 pending=1
+08-17 22:29:42.137  7285  7285 I MeshmoreXR: [tx] accepted tag=0x3c6e60af direct timeout=2202ms
+08-17 22:29:42.999  7285  7285 I MeshmoreXR: [tx] delivered tag=0x3c6e60af in 862ms
+08-17 22:30:42.185  7285  7285 I MeshmoreXR: [soak] #10 Ok — attempted=10 accepted=9 acked=8 refused=0 drops=0 pending=1
+08-17 22:30:42.252  7285  7285 I MeshmoreXR: [tx] accepted tag=0x89d56609 direct timeout=2202ms
+08-17 22:30:42.790  7285  7285 I MeshmoreXR: [tx] delivered tag=0x89d56609 in 538ms
+08-17 22:31:42.278  7285  7285 I MeshmoreXR: [soak] #11 Ok — attempted=11 accepted=10 acked=9 refused=0 drops=0 pending=1
+08-17 22:31:42.336  7285  7285 I MeshmoreXR: [tx] accepted tag=0x809ab17b direct timeout=2202ms
+08-17 22:31:42.879  7285  7285 I MeshmoreXR: [tx] delivered tag=0x809ab17b in 543ms
+08-17 22:32:42.400  7285  7285 I MeshmoreXR: [soak] #12 Ok — attempted=12 accepted=11 acked=10 refused=0 drops=0 pending=1
+08-17 22:32:42.458  7285  7285 I MeshmoreXR: [tx] accepted tag=0x1ab8ef3a direct timeout=2202ms
+08-17 22:32:43.257  7285  7285 I MeshmoreXR: [tx] delivered tag=0x1ab8ef3a in 799ms
+08-17 22:33:42.496  7285  7285 I MeshmoreXR: [soak] #13 Ok — attempted=13 accepted=12 acked=11 refused=0 drops=0 pending=1
+08-17 22:33:42.558  7285  7285 I MeshmoreXR: [tx] accepted tag=0x7fbb1a8d direct timeout=2202ms
+08-17 22:33:43.097  7285  7285 I MeshmoreXR: [tx] delivered tag=0x7fbb1a8d in 539ms
+08-17 22:34:42.591  7285  7285 I MeshmoreXR: [soak] #14 Ok — attempted=14 accepted=13 acked=12 refused=0 drops=0 pending=1
+08-17 22:34:42.662  7285  7285 I MeshmoreXR: [tx] accepted tag=0x7193ce95 direct timeout=2202ms
+08-17 22:34:43.574  7285  7285 I MeshmoreXR: [tx] delivered tag=0x7193ce95 in 912ms
+08-17 22:35:42.684  7285  7285 I MeshmoreXR: [soak] #15 Ok — attempted=15 accepted=14 acked=13 refused=0 drops=0 pending=1
+08-17 22:35:42.748  7285  7285 I MeshmoreXR: [tx] accepted tag=0xbaef0220 direct timeout=2202ms
+08-17 22:35:44.094  7285  7285 I MeshmoreXR: [tx] delivered tag=0xbaef0220 in 1346ms
+08-17 22:36:42.774  7285  7285 I MeshmoreXR: [soak] #16 Ok — attempted=16 accepted=15 acked=14 refused=0 drops=0 pending=1
+08-17 22:36:42.843  7285  7285 I MeshmoreXR: [tx] accepted tag=0xc3634544 direct timeout=2202ms
+08-17 22:36:43.376  7285  7285 I MeshmoreXR: [tx] delivered tag=0xc3634544 in 533ms
+08-17 22:37:42.877  7285  7285 I MeshmoreXR: [soak] #17 Ok — attempted=17 accepted=16 acked=15 refused=0 drops=0 pending=1
+08-17 22:37:42.967  7285  7285 I MeshmoreXR: [tx] accepted tag=0x96bbf94a direct timeout=2202ms
+08-17 22:37:43.438  7285  7285 I MeshmoreXR: [tx] delivered tag=0x96bbf94a in 471ms
+08-17 22:38:42.991  7285  7285 I MeshmoreXR: [soak] #18 Ok — attempted=18 accepted=17 acked=16 refused=0 drops=0 pending=1
+08-17 22:38:43.055  7285  7285 I MeshmoreXR: [tx] accepted tag=0x47e06a25 direct timeout=2202ms
+08-17 22:38:43.683  7285  7285 I MeshmoreXR: [tx] delivered tag=0x47e06a25 in 628ms
+08-17 22:39:43.092  7285  7285 I MeshmoreXR: [soak] #19 Ok — attempted=19 accepted=18 acked=17 refused=0 drops=0 pending=1
+08-17 22:39:43.158  7285  7285 I MeshmoreXR: [tx] accepted tag=0x2bd2ba56 direct timeout=2202ms
+08-17 22:39:43.723  7285  7285 I MeshmoreXR: [tx] delivered tag=0x2bd2ba56 in 565ms
+08-17 22:40:43.214  7285  7285 I MeshmoreXR: [soak] #20 Ok — attempted=20 accepted=19 acked=18 refused=0 drops=0 pending=1
+08-17 22:40:43.270  7285  7285 I MeshmoreXR: [tx] accepted tag=0x450b3fde direct timeout=2202ms
+08-17 22:40:43.802  7285  7285 I MeshmoreXR: [tx] delivered tag=0x450b3fde in 532ms
+08-17 22:41:43.305  7285  7285 I MeshmoreXR: [soak] #21 Ok — attempted=21 accepted=20 acked=19 refused=0 drops=0 pending=1
+08-17 22:41:43.376  7285  7285 I MeshmoreXR: [tx] accepted tag=0xefa93ce5 direct timeout=2202ms
+08-17 22:41:44.230  7285  7285 I MeshmoreXR: [tx] delivered tag=0xefa93ce5 in 853ms
+08-17 22:42:43.392  7285  7285 I MeshmoreXR: [soak] #22 Ok — attempted=22 accepted=21 acked=20 refused=0 drops=0 pending=1
+08-17 22:42:43.459  7285  7285 I MeshmoreXR: [tx] accepted tag=0x1de0c109 direct timeout=2202ms
+08-17 22:42:44.865  7285  7285 I MeshmoreXR: [tx] delivered tag=0x1de0c109 in 1405ms
+08-17 22:43:43.482  7285  7285 I MeshmoreXR: [soak] #23 Ok — attempted=23 accepted=22 acked=21 refused=0 drops=0 pending=1
+08-17 22:43:43.559  7285  7285 I MeshmoreXR: [tx] accepted tag=0xe5aa9422 direct timeout=2202ms
+08-17 22:43:44.533  7285  7285 I MeshmoreXR: [tx] delivered tag=0xe5aa9422 in 974ms
+08-17 22:44:43.593  7285  7285 I MeshmoreXR: [soak] #24 Ok — attempted=24 accepted=23 acked=22 refused=0 drops=0 pending=1
+08-17 22:44:43.660  7285  7285 I MeshmoreXR: [tx] accepted tag=0x32981444 direct timeout=2202ms
+08-17 22:44:44.190  7285  7285 I MeshmoreXR: [tx] delivered tag=0x32981444 in 529ms
+08-17 22:45:43.680  7285  7285 I MeshmoreXR: [soak] #25 Ok — attempted=25 accepted=24 acked=23 refused=0 drops=0 pending=1
+08-17 22:45:43.737  7285  7285 I MeshmoreXR: [tx] accepted tag=0x647e200b direct timeout=2202ms
+08-17 22:45:44.285  7285  7285 I MeshmoreXR: [tx] delivered tag=0x647e200b in 548ms
+08-17 22:46:43.774  7285  7285 I MeshmoreXR: [soak] #26 Ok — attempted=26 accepted=25 acked=24 refused=0 drops=0 pending=1
+08-17 22:46:43.832  7285  7285 I MeshmoreXR: [tx] accepted tag=0x80637c1f direct timeout=2202ms
+08-17 22:46:44.398  7285  7285 I MeshmoreXR: [tx] delivered tag=0x80637c1f in 566ms
+08-17 22:47:43.916  7285  7285 I MeshmoreXR: [soak] #27 Ok — attempted=27 accepted=26 acked=25 refused=0 drops=0 pending=1
+08-17 22:47:43.985  7285  7285 I MeshmoreXR: [tx] accepted tag=0xec477efc direct timeout=2202ms
+08-17 22:47:44.519  7285  7285 I MeshmoreXR: [tx] delivered tag=0xec477efc in 534ms
+08-17 22:48:43.997  7285  7285 I MeshmoreXR: [soak] #28 Ok — attempted=28 accepted=27 acked=26 refused=0 drops=0 pending=1
+08-17 22:48:44.076  7285  7285 I MeshmoreXR: [tx] accepted tag=0x4d27da1f direct timeout=2202ms
+08-17 22:48:44.701  7285  7285 I MeshmoreXR: [tx] delivered tag=0x4d27da1f in 625ms
+08-17 22:49:44.104  7285  7285 I MeshmoreXR: [soak] #29 Ok — attempted=29 accepted=28 acked=27 refused=0 drops=0 pending=1
+08-17 22:49:44.162  7285  7285 I MeshmoreXR: [tx] accepted tag=0x2df0350c direct timeout=2202ms
+08-17 22:49:44.722  7285  7285 I MeshmoreXR: [tx] delivered tag=0x2df0350c in 560ms
+08-17 22:50:44.195  7285  7285 I MeshmoreXR: [soak] #30 Ok — attempted=30 accepted=29 acked=28 refused=0 drops=0 pending=1
+08-17 22:50:44.250  7285  7285 I MeshmoreXR: [tx] accepted tag=0xb251be4a direct timeout=2202ms
+08-17 22:50:44.759  7285  7285 I MeshmoreXR: [tx] delivered tag=0xb251be4a in 509ms
+08-17 22:51:44.297  7285  7285 I MeshmoreXR: [soak] #31 Ok — attempted=31 accepted=30 acked=29 refused=0 drops=0 pending=1
+08-17 22:51:44.371  7285  7285 I MeshmoreXR: [tx] accepted tag=0x535ddc41 direct timeout=2202ms
+08-17 22:52:44.389  7285  7285 I MeshmoreXR: [soak] #32 Ok — attempted=32 accepted=31 acked=29 refused=0 drops=0 pending=2
+08-17 22:52:44.450  7285  7285 I MeshmoreXR: [tx] accepted tag=0xd1d958ca direct timeout=2202ms
+08-17 22:52:44.945  7285  7285 I MeshmoreXR: [tx] delivered tag=0xd1d958ca in 494ms
+08-17 22:53:44.484  7285  7285 I MeshmoreXR: [soak] #33 Ok — attempted=33 accepted=32 acked=30 refused=0 drops=0 pending=2
+08-17 22:53:44.549  7285  7285 I MeshmoreXR: [tx] accepted tag=0xc9c305cd direct timeout=2202ms
+08-17 22:53:45.068  7285  7285 I MeshmoreXR: [tx] delivered tag=0xc9c305cd in 518ms
+08-17 22:54:44.578  7285  7285 I MeshmoreXR: [soak] #34 Ok — attempted=34 accepted=33 acked=31 refused=0 drops=0 pending=2
+08-17 22:54:44.659  7285  7285 I MeshmoreXR: [tx] accepted tag=0x7e82d0c7 direct timeout=2202ms
+08-17 22:54:45.195  7285  7285 I MeshmoreXR: [tx] delivered tag=0x7e82d0c7 in 536ms
+08-17 22:54:47.975  8147  8147 I MeshmoreXR: MARK aura ~3ft from radio, was ~20ft
+08-17 22:55:44.704  7285  7285 I MeshmoreXR: [soak] #35 Ok — attempted=35 accepted=34 acked=32 refused=0 drops=0 pending=2
+08-17 22:55:44.768  7285  7285 I MeshmoreXR: [tx] accepted tag=0x243dd0b5 direct timeout=2202ms
+08-17 22:55:45.319  7285  7285 I MeshmoreXR: [tx] delivered tag=0x243dd0b5 in 551ms
+08-17 22:56:44.807  7285  7285 I MeshmoreXR: [soak] #36 Ok — attempted=36 accepted=35 acked=33 refused=0 drops=0 pending=2
+08-17 22:56:44.877  7285  7285 I MeshmoreXR: [tx] accepted tag=0x97a7aca8 direct timeout=2202ms
+08-17 22:56:45.410  7285  7285 I MeshmoreXR: [tx] delivered tag=0x97a7aca8 in 533ms
+08-17 22:57:44.899  7285  7285 I MeshmoreXR: [soak] #37 Ok — attempted=37 accepted=36 acked=34 refused=0 drops=0 pending=2
+08-17 22:57:44.954  7285  7285 I MeshmoreXR: [tx] accepted tag=0x6bbe7abf direct timeout=2202ms
+08-17 22:57:45.499  7285  7285 I MeshmoreXR: [tx] delivered tag=0x6bbe7abf in 545ms
+08-17 22:58:45.032  7285  7285 I MeshmoreXR: [soak] #38 Ok — attempted=38 accepted=37 acked=35 refused=0 drops=0 pending=2
+08-17 22:58:45.099  7285  7285 I MeshmoreXR: [tx] accepted tag=0xffb30a81 direct timeout=2202ms
+08-17 22:59:45.127  7285  7285 I MeshmoreXR: [soak] #39 Ok — attempted=39 accepted=38 acked=35 refused=0 drops=0 pending=3
+08-17 22:59:45.197  7285  7285 I MeshmoreXR: [tx] accepted tag=0x56bccaf7 direct timeout=2202ms
+08-17 22:59:45.685  7285  7285 I MeshmoreXR: [tx] delivered tag=0x56bccaf7 in 488ms
+08-17 23:00:45.211  7285  7285 I MeshmoreXR: [soak] #40 Ok — attempted=40 accepted=39 acked=36 refused=0 drops=0 pending=3
+08-17 23:00:45.271  7285  7285 I MeshmoreXR: [tx] accepted tag=0x3ddbae29 direct timeout=2202ms
+08-17 23:00:45.819  7285  7285 I MeshmoreXR: [tx] delivered tag=0x3ddbae29 in 548ms
+08-17 23:01:45.343  7285  7285 I MeshmoreXR: [soak] #41 Ok — attempted=41 accepted=40 acked=37 refused=0 drops=0 pending=3
+08-17 23:01:45.400  7285  7285 I MeshmoreXR: [tx] accepted tag=0xcf64c5f2 direct timeout=2202ms
+08-17 23:01:46.295  7285  7285 I MeshmoreXR: [tx] delivered tag=0xcf64c5f2 in 895ms
+08-17 23:02:45.427  7285  7285 I MeshmoreXR: [soak] #42 Ok — attempted=42 accepted=41 acked=38 refused=0 drops=0 pending=3
+08-17 23:02:45.491  7285  7285 I MeshmoreXR: [tx] accepted tag=0x29d86ef6 direct timeout=2202ms
+08-17 23:02:46.033  7285  7285 I MeshmoreXR: [tx] delivered tag=0x29d86ef6 in 542ms
+08-17 23:03:45.514  7285  7285 I MeshmoreXR: [soak] #43 Ok — attempted=43 accepted=42 acked=39 refused=0 drops=0 pending=3
+08-17 23:03:45.580  7285  7285 I MeshmoreXR: [tx] accepted tag=0xac7ebdfc direct timeout=2202ms
+08-17 23:03:46.115  7285  7285 I MeshmoreXR: [tx] delivered tag=0xac7ebdfc in 534ms
+08-17 23:04:45.655  7285  7285 I MeshmoreXR: [soak] #44 Ok — attempted=44 accepted=43 acked=40 refused=0 drops=0 pending=3
+08-17 23:04:45.718  7285  7285 I MeshmoreXR: [tx] accepted tag=0xe87631cc direct timeout=2202ms
+08-17 23:04:46.626  7285  7285 I MeshmoreXR: [tx] delivered tag=0xe87631cc in 908ms
+08-17 23:05:45.741  7285  7285 I MeshmoreXR: [soak] #45 Ok — attempted=45 accepted=44 acked=41 refused=0 drops=0 pending=3
+08-17 23:05:45.797  7285  7285 I MeshmoreXR: [tx] accepted tag=0x2ebfccb5 direct timeout=2202ms
+08-17 23:05:46.366  7285  7285 I MeshmoreXR: [tx] delivered tag=0x2ebfccb5 in 569ms
+08-17 23:06:45.851  7285  7285 I MeshmoreXR: [soak] #46 Ok — attempted=46 accepted=45 acked=42 refused=0 drops=0 pending=3
+08-17 23:06:45.918  7285  7285 I MeshmoreXR: [tx] accepted tag=0xe168f096 direct timeout=2202ms
+08-17 23:06:47.657  7285  7285 I MeshmoreXR: [tx] delivered tag=0xe168f096 in 1739ms
+08-17 23:07:45.937  7285  7285 I MeshmoreXR: [soak] #47 Ok — attempted=47 accepted=46 acked=43 refused=0 drops=0 pending=3
+08-17 23:07:45.999  7285  7285 I MeshmoreXR: [tx] accepted tag=0xd1a2bd53 direct timeout=2202ms
+08-17 23:07:46.548  7285  7285 I MeshmoreXR: [tx] delivered tag=0xd1a2bd53 in 549ms
+08-17 23:08:46.046  7285  7285 I MeshmoreXR: [soak] #48 Ok — attempted=48 accepted=47 acked=44 refused=0 drops=0 pending=3
+08-17 23:08:46.106  7285  7285 I MeshmoreXR: [tx] accepted tag=0x0679437a direct timeout=2202ms
+08-17 23:08:46.645  7285  7285 I MeshmoreXR: [tx] delivered tag=0x0679437a in 539ms
+08-17 23:09:46.140  7285  7285 I MeshmoreXR: [soak] #49 Ok — attempted=49 accepted=48 acked=45 refused=0 drops=0 pending=3
+08-17 23:09:46.202  7285  7285 I MeshmoreXR: [tx] accepted tag=0x09d783bf direct timeout=2202ms
+08-17 23:09:46.746  7285  7285 I MeshmoreXR: [tx] delivered tag=0x09d783bf in 543ms
+08-17 23:10:46.239  7285  7285 I MeshmoreXR: [soak] #50 Ok — attempted=50 accepted=49 acked=46 refused=0 drops=0 pending=3
+08-17 23:10:46.309  7285  7285 I MeshmoreXR: [tx] accepted tag=0x14ac62bb direct timeout=2202ms
+08-17 23:10:46.819  7285  7285 I MeshmoreXR: [tx] delivered tag=0x14ac62bb in 510ms
+08-17 23:11:46.326  7285  7285 I MeshmoreXR: [soak] #51 Ok — attempted=51 accepted=50 acked=47 refused=0 drops=0 pending=3
+08-17 23:11:46.390  7285  7285 I MeshmoreXR: [tx] accepted tag=0x4f8e7ca4 direct timeout=2202ms
+08-17 23:11:46.967  7285  7285 I MeshmoreXR: [tx] delivered tag=0x4f8e7ca4 in 577ms
+08-17 23:12:46.451  7285  7285 I MeshmoreXR: [soak] #52 Ok — attempted=52 accepted=51 acked=48 refused=0 drops=0 pending=3
+08-17 23:12:46.510  7285  7285 I MeshmoreXR: [tx] accepted tag=0xfbf817b8 direct timeout=2202ms
+08-17 23:12:47.067  7285  7285 I MeshmoreXR: [tx] delivered tag=0xfbf817b8 in 557ms
+08-17 23:13:46.560  7285  7285 I MeshmoreXR: [soak] #53 Ok — attempted=53 accepted=52 acked=49 refused=0 drops=0 pending=3
+08-17 23:13:46.624  7285  7285 I MeshmoreXR: [tx] accepted tag=0xde441987 direct timeout=2202ms
+08-17 23:13:47.155  7285  7285 I MeshmoreXR: [tx] delivered tag=0xde441987 in 531ms
+08-17 23:14:46.688  7285  7285 I MeshmoreXR: [soak] #54 Ok — attempted=54 accepted=53 acked=50 refused=0 drops=0 pending=3
+08-17 23:14:46.748  7285  7285 I MeshmoreXR: [tx] accepted tag=0xc3fd425b direct timeout=2202ms
+08-17 23:14:47.281  7285  7285 I MeshmoreXR: [tx] delivered tag=0xc3fd425b in 533ms
+08-17 23:15:46.806  7285  7285 I MeshmoreXR: [soak] #55 Ok — attempted=55 accepted=54 acked=51 refused=0 drops=0 pending=3
+08-17 23:15:46.867  7285  7285 I MeshmoreXR: [tx] accepted tag=0x80fe0d30 direct timeout=2202ms
+08-17 23:15:47.379  7285  7285 I MeshmoreXR: [tx] delivered tag=0x80fe0d30 in 512ms
+08-17 23:16:46.889  7285  7285 I MeshmoreXR: [soak] #56 Ok — attempted=56 accepted=55 acked=52 refused=0 drops=0 pending=3
+08-17 23:16:46.947  7285  7285 I MeshmoreXR: [tx] accepted tag=0x233d1073 direct timeout=2202ms
+08-17 23:16:47.490  7285  7285 I MeshmoreXR: [tx] delivered tag=0x233d1073 in 543ms
+08-17 23:17:46.988  7285  7285 I MeshmoreXR: [soak] #57 Ok — attempted=57 accepted=56 acked=53 refused=0 drops=0 pending=3
+08-17 23:17:47.047  7285  7285 I MeshmoreXR: [tx] accepted tag=0x7d1d7674 direct timeout=2202ms
+08-17 23:17:47.572  7285  7285 I MeshmoreXR: [tx] delivered tag=0x7d1d7674 in 525ms
+08-17 23:18:47.079  7285  7285 I MeshmoreXR: [soak] #58 Ok — attempted=58 accepted=57 acked=54 refused=0 drops=0 pending=3
+08-17 23:18:47.145  7285  7285 I MeshmoreXR: [tx] accepted tag=0x5b19d77b direct timeout=2202ms
+08-17 23:18:48.019  7285  7285 I MeshmoreXR: [tx] delivered tag=0x5b19d77b in 874ms
+08-17 23:19:47.160  7285  7285 I MeshmoreXR: [soak] #59 Ok — attempted=59 accepted=58 acked=55 refused=0 drops=0 pending=3
+08-17 23:19:47.223  7285  7285 I MeshmoreXR: [tx] accepted tag=0xf8a46fa5 direct timeout=2202ms
+08-17 23:19:47.760  7285  7285 I MeshmoreXR: [tx] delivered tag=0xf8a46fa5 in 537ms
+08-17 23:20:47.249  7285  7285 I MeshmoreXR: [soak] #60 Ok — attempted=60 accepted=59 acked=56 refused=0 drops=0 pending=3
+08-17 23:20:47.321  7285  7285 I MeshmoreXR: [tx] accepted tag=0xf7a9a5f8 direct timeout=2202ms
+08-17 23:20:48.246  7285  7285 I MeshmoreXR: [tx] delivered tag=0xf7a9a5f8 in 925ms
+08-17 23:21:47.309  7285  7285 I MeshmoreXR: [soak] DONE sent=60 attempted=60 accepted=60 acked=57 refused=0 unacked>60s=3 drops=0 reliability=95.0% meanLatency=658ms

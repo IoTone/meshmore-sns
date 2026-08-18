@@ -1,0 +1,16 @@
+{
+  "lost": [
+    "22:28",
+    "22:51",
+    "22:58"
+  ],
+  "lost_idx": [
+    8,
+    31,
+    38
+  ],
+  "traffic_lost": 1.67,
+  "traffic_kept": 1.7,
+  "target_always_heard": true,
+  "gaps": []
+}
