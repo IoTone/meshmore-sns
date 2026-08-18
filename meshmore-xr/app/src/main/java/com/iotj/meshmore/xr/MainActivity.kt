@@ -2760,12 +2760,27 @@ private fun HorizonScene(link: MeshLink) {
         // you use all day.
         val WRIST_SET = setOf("COMPASS", "INBOX", "FIND", "SETUP")
         // A TABLETOP PUTS A MAP WHERE THE DOCK LIVES. See Dock.build's drop.
-        val dockDrop =
-            if (s.posture == com.iotj.meshmore.xr.spatial.Theme.Posture.TABLETOP) {
-                com.iotj.meshmore.xr.spatial.Dock.TABLETOP_DROP
-            } else {
-                com.iotj.meshmore.xr.spatial.Dock.DROP
-            }
+        val tabletop = s.posture == com.iotj.meshmore.xr.spatial.Theme.Posture.TABLETOP
+        val dockDrop = if (tabletop) {
+            com.iotj.meshmore.xr.spatial.Dock.TABLETOP_DROP
+        } else {
+            com.iotj.meshmore.xr.spatial.Dock.DROP
+        }
+        val dockReach = if (tabletop) {
+            com.iotj.meshmore.xr.spatial.Dock.TABLETOP_REACH
+        } else {
+            com.iotj.meshmore.xr.spatial.Dock.REACH
+        }
+        val dockRows = if (tabletop) {
+            com.iotj.meshmore.xr.spatial.Dock.TABLETOP_ROWS
+        } else {
+            com.iotj.meshmore.xr.spatial.Dock.COLUMN_ROWS
+        }
+        val dockLeft = if (tabletop) {
+            com.iotj.meshmore.xr.spatial.Dock.TABLETOP_PAD_LEFT
+        } else {
+            com.iotj.meshmore.xr.spatial.Dock.PAD_LEFT
+        }
         dock.build(origin, listOf(
             "COMPASS" to {
                 hudRef.value?.let { h ->
@@ -2957,7 +2972,8 @@ private fun HorizonScene(link: MeshLink) {
                         .format(Math.toDegrees(yaw.toDouble())) + "north-referenced")
                 }
             },
-        ).filter { !wristDock || it.first in WRIST_SET }.map { (n, f) -> n to { f(); Unit } }, dockDrop)
+        ).filter { !wristDock || it.first in WRIST_SET }.map { (n, f) -> n to { f(); Unit } },
+            dockDrop, dockReach, dockRows, dockLeft)
         // A short tick when a pip takes focus. On a display where you cannot
         // feel a control, sound is the only confirmation that the pointer has
         // arrived — and it arrives BEFORE the pinch, which is when it helps.

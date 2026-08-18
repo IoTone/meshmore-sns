@@ -163,6 +163,13 @@ class Dock(
          * it badly needed.
          */
         drop: Float = DROP,
+        /**
+         * How far out the pad sits, and how it is shaped. Both are overridden
+         * by TABLETOP — see [TABLETOP_DROP].
+         */
+        reach: Float = REACH,
+        rows: Int = COLUMN_ROWS,
+        padLeft: Float = PAD_LEFT,
     ) {
         clear()
         val root = session.scene.activitySpace
@@ -172,7 +179,7 @@ class Dock(
         // is one glance rather than a search. You look DOWN for settings, which
         // is the same place the HERE marker lives and the same place a wrist
         // would be.
-        val base = o.place(0f, REACH, drop)
+        val base = o.place(0f, reach, drop)
 
         // A PAD, NOT A ROW — because a row of ten does not fit a head.
         //
@@ -194,13 +201,12 @@ class Dock(
         // OFF TO THE LEFT, clear of the world window's ±10 degrees, so it never
         // sits over the ring. Menus open to the RIGHT of it, into the space it
         // is standing beside; see [pipAt].
-        val rows = COLUMN_ROWS
         padCentreY = base.y
         items.forEachIndexed { i, (name, act) ->
             val col = i / rows
             val row = i % rows
             val used = kotlin.math.min(rows, items.size - col * rows)
-            val x = PAD_LEFT + col * PITCH
+            val x = padLeft + col * PITCH
             val y = (used - 1) / 2f * PITCH - row * PITCH
             val at = Vector3(base.x + x, base.y + y, base.z)
 
@@ -282,7 +288,27 @@ class Dock(
                 }.onFailure { e -> Log.w(TAG, "[dock] no input on $name: $e") }
             }
         }
-        Log.i(TAG, "[dock] ${pips.size} pip(s) up")
+        // WHERE IT ACTUALLY IS, IN DEGREES. Metres are how this is built and
+        // degrees are how it is seen — and the collision with the tabletop's
+        // label rack was invisible in metres because six centimetres of depth
+        // looked like clearance and, on an additive display, is not.
+        run {
+            val cols = (pips.size + rows - 1) / rows
+            val top = drop + (rows - 1) / 2f * PITCH
+            val bot = drop - (rows - 1) / 2f * PITCH
+            fun deg(y: Float) = Math.toDegrees(kotlin.math.atan2(-y.toDouble(), reach.toDouble()))
+            val lft = Math.toDegrees(kotlin.math.atan2(-padLeft.toDouble(), reach.toDouble()))
+            val rgt = Math.toDegrees(
+                kotlin.math.atan2(-(padLeft + (cols - 1) * PITCH).toDouble(), reach.toDouble()),
+            )
+            Log.i(
+                TAG,
+                "[dock] ${pips.size} pip(s) up — ${cols}x$rows at ${reach}m, " +
+                    "%.0f to %.0f deg below eye, %.0f to %.0f deg left".format(
+                        deg(top), deg(bot), lft, rgt,
+                    ),
+            )
+        }
     }
 
     /**
@@ -517,8 +543,43 @@ class Dock(
         /** -0.38 at 0.66 m is about -30 degrees: below everything, above the floor. */
         const val DROP = -0.38f
 
-        /** Above the tabletop model rather than inside it. See [build]. */
-        const val TABLETOP_DROP = -0.20f
+        /**
+         * BELOW THE MAP, NOT ABOVE IT — and short and wide rather than tall.
+         *
+         * -0.20 put the pad above the model, which was right about the model
+         * and wrong about everything around it: the tabletop hangs its node
+         * names on a rack either side, spanning roughly 21 to 39 degrees below
+         * the eye, and a five-row pad centred at 17 degrees reaches down to 29.
+         * The two interleaved. Photographed on the glasses with leader lines
+         * running straight through the controls, and reported as the dock
+         * crashing into the scene, which is exactly what it was.
+         *
+         * There is no depth cue to separate them: an additive display draws
+         * both, so six centimetres of z buys nothing. The only free space is
+         * BELOW the map — the near edge of the desk, where controls belong on
+         * a desk anyway.
+         *
+         * TWO THINGS TO CLEAR, not one. The label rack runs 13 to 33 degrees
+         * below the eye — the app now prints that, which is how this was
+         * finally measured rather than argued about — and the MAP ITSELF has a
+         * near edge at 39 degrees, because a disc 0.16 m across centred 0.60 m
+         * out reaches back to 0.44 m.
+         *
+         * 0.52 m out and 0.62 m down puts the three rows at 45, 50 and 55
+         * degrees. With the marks' own height that is 43 to 57 — four degrees
+         * under the map's near edge and ten under the lowest label. Wide and
+         * short (four columns of three) rather than tall, because the room down
+         * there is horizontal, and centred under the map rather than off to the
+         * left, because that is where the space is.
+         *
+         * It is a deliberate look-down. The posture is leaning over a desk, and
+         * on a desk the controls are at the near edge.
+         */
+        const val TABLETOP_DROP = -0.62f
+        const val TABLETOP_REACH = 0.52f
+        const val TABLETOP_ROWS = 3
+        /** Centred under the map rather than off to the left. */
+        const val TABLETOP_PAD_LEFT = -0.125f
         const val R = 0.020f
         /**
          * Pip spacing. Widened with the marks: normalising their optical size

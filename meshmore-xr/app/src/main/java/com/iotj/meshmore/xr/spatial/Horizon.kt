@@ -913,8 +913,21 @@ class Horizon(
                 facing += Facing(it, label)
             }
         }
-        Log.i(TAG, "[callout] ${placed.size} handle(s), $dropped dropped, " +
-            "${rules.perSide} per side")
+        // The rack's own angular extent, for comparison with the dock's. These
+        // two surfaces occupied the same degrees and nothing said so.
+        run {
+            val hi = frame.drop + RACK_LIFT + rules.bandHeight / 2f
+            val lo = frame.drop + RACK_LIFT - rules.bandHeight / 2f
+            fun deg(y: Float) =
+                Math.toDegrees(kotlin.math.atan2(-y.toDouble(), frame.forward.toDouble()))
+            Log.i(
+                TAG,
+                "[callout] ${placed.size} handle(s), $dropped dropped, " +
+                    "${rules.perSide} per side — rack spans %.0f to %.0f deg below eye".format(
+                        deg(hi), deg(lo),
+                    ),
+            )
+        }
     }
 
     private suspend fun strokeLabel(
