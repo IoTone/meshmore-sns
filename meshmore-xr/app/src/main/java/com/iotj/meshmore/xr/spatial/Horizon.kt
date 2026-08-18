@@ -307,6 +307,34 @@ class Horizon(
     private val wants = mutableListOf<Callout.Want>()
 
 
+    /**
+     * WHAT A NAME COST, once it has been placed.
+     *
+     * A callsign can end up as a pooled panel, a stroke mesh, or nothing at all
+     * with the mote standing in for it. Everything downstream — the veil, the
+     * hover path — has to know which, because a pooled entity is SHARED and
+     * dimming it dims whichever node borrows it next.
+     */
+    private class Named(val label: Entity, val pooled: Boolean, val hover: Entity?)
+
+    /**
+     * THE RING.
+     *
+     * Split into named steps rather than written as one long body, and not for
+     * readability: ART refuses to JIT-compile a method over ~10,000 dex code
+     * units and says nothing when it declines. This one reached 9,338 — six
+     * percent short — while being the surface the app changes most often, so
+     * the next feature added to a node was going to push the whole horizon
+     * rebuild into the interpreter with no error to explain why it got slow.
+     * The frame loop already hit this and was fixed the same way (see
+     * `frameActions` and friends); the sizes are checked with dexdump.
+     *
+     * The steps are local functions on purpose. Everything they touch —
+     * `root`, `entities`, `facing`, `wants`, the pool, the counters — is
+     * either loop state or per-build state, and capturing it costs one
+     * synthetic parameter each where hoisting them to members would mean
+     * threading a dozen arguments through five signatures.
+     */
     suspend fun build(nodes: List<Node>, o: Stage.Origin, floorY: Float) {
         // A BEAT BETWEEN UNMAKING AND THE LAST MAKING. Entity creation is
         // async on the renderer's side: a mesh created here carries a
@@ -345,60 +373,34 @@ class Horizon(
         // --- range halos: real tori, lying flat below eye level --------------
         // Distance is read from which band a mote sits in, so the bands are the
         // scale and have to be legible from any angle -- hence torus, not disc.
-        listOf(0.40f, 0.70f, 1.00f).forEachIndexed { i, f ->
-            val mesh = Prims.build(session, Prims.halo(frame.radius * f, 0.014f))
-            val mat = Prims.material(session, theme.accent, 0.30f + i * 0.06f)
-            MeshEntity.create(session, mesh, listOf(mat)).also {
-                it.parent = root
-                it.setPose(Pose(at(o, 0f, 0f, frame.ringDrop)), Space.ACTIVITY)
-                entities += it
-                rings += it
-                if (ringY == null) {
-                    ringY = it.getPose(Space.ACTIVITY).translation.y
-                    ringAt = it.getPose(Space.ACTIVITY).translation
+        suspend fun rangeHalos() {
+            listOf(0.40f, 0.70f, 1.00f).forEachIndexed { i, f ->
+                val mesh = Prims.build(session, Prims.halo(frame.radius * f, 0.014f))
+                val mat = Prims.material(session, theme.accent, 0.30f + i * 0.06f)
+                MeshEntity.create(session, mesh, listOf(mat)).also {
+                    it.parent = root
+                    it.setPose(Pose(at(o, 0f, 0f, frame.ringDrop)), Space.ACTIVITY)
+                    entities += it
+                    rings += it
+                    if (ringY == null) {
+                        ringY = it.getPose(Space.ACTIVITY).translation.y
+                        ringAt = it.getPose(Space.ACTIVITY).translation
+                    }
                 }
             }
         }
 
-        // --- the peers -------------------------------------------------------
-        nodes.forEach { n ->
-            // A node with no position estimate MUST NOT be given a fake bearing.
-            // It parks in a dedicated unlocated arc behind the dominant shoulder.
-            val bearing = if (n.located) n.bearingRad else (PI * 0.78f).toFloat()
-            val dist = if (n.located) n.dist else 0.42f
-            val elev = if (n.located) n.elev else -0.3f
-
-            // Bearings are measured from the user's LAUNCH FACING, so the mesh
-            // wraps the body rather than the tracker's arbitrary origin.
-            // ELEV_SPAN keeps the ring inside the WORLD WINDOW. The microhud
-            // spec reserves +/-10 deg for world content and places its ribbon
-            // and stats bands outside that; at 0.35 the outermost lane reached
-            // +/-19 deg and node callsigns printed straight through the link
-            // readout. atan(R * 0.176 / R) is 10 deg, so the full lane spread
-            // now exactly fills the window it was given and no further.
-            val v = at(
-                o, bearing, frame.radius * dist,
-                elev * frame.radius * ELEV_SPAN + frame.drop,
-            )
-            val px = v.x; val py = v.y; val pz = v.z
-            val dx = px - o.x; val dy = py - o.y; val dz = pz - o.z
-            val range = kotlin.math.sqrt(dx * dx + dy * dy + dz * dz)
-
-            // CONSTANT ANGULAR SIZE (~1.6 deg). A fixed-radius mote subtends 9
-            // deg up close and 2 deg far away; distance is already carried by
-            // the range bands, so letting it drive apparent size just makes
-            // near nodes shout.
-            val r = (range * 0.0140f).coerceAtLeast(0.010f)
-            val lum = 1f - n.age * 0.72f
-
+        // --- one node's mark, and the band that says how far away it got -----
+        suspend fun moteFor(
+            n: Node, px: Float, py: Float, pz: Float, r: Float, lum: Float,
+            isRepeater: Boolean, isCluster: Boolean, textOnly: Boolean,
+        ): MeshEntity {
             // SILHOUETTE CARRIES TYPE. Until now every node was the same
             // sphere and the only way to tell a repeater from a phone was that
             // some owners happened to type "Repeater" into the name -- which
             // is unreliable, untranslatable, and occasionally just wrong. The
             // protocol says so authoritatively; the shape should too.
-            val isRepeater = n.type == TYPE_REPEATER
-            val isCluster = n.cluster > 0
-            val textOnly = symbol == Theme.Symbol.TEXT
+            //
             // WHAT A NODE IS MADE OF, per theme (Theme.Symbol).
             //
             // WIRE draws the same three silhouettes as open geometry — a ring
@@ -448,27 +450,14 @@ class Horizon(
                     facing += Facing(it, Vector3(px, py, pz))
                 }
             }
+            return mote
+        }
 
-            // CALLSIGN — extruded stroke glyphs, so the label is made of light
-            // in the room rather than printed on a surface. Sized by VISUAL
-            // ANGLE (~1.3 deg cap height at its own range), never in absolute
-            // metres, or distant nodes become unreadable.
-            val capH = range * 0.0227f
-            // Node names are arbitrary user text -- emoji, fullwidth kana,
-            // accents, or nothing but a turtle. Callsign folds that into
-            // something the stroke font can actually draw and tells us whether
-            // to raise a badge for what it had to drop.
-            // TEXT HANGS BELOW ITS MOTE — except on a table, where "below"
-            // is under the table. The wearer is looking DOWN at a tabletop, so
-            // anything under a mote is behind the surface it sits on and reads
-            // through the map rather than beside it. Reported as "data is below
-            // the map, so hard to read". Above, on a tabletop.
-            val anchor = if (posture == Theme.Posture.TABLETOP) {
-                Vector3(px, py + r * 2.6f + capH, pz)
-            } else {
-                Vector3(px, py - r * 2.6f - capH, pz)
-            }
-
+        // --- the callsign, wherever it ends up being drawn -------------------
+        suspend fun nameFor(
+            n: Node, mote: MeshEntity, capH: Float, lum: Float, anchor: Vector3,
+            bearing: Float, dist: Float, textOnly: Boolean, isCluster: Boolean,
+        ): Named {
             // WHICH MACHINERY DRAWS THIS NAME (T1). Latin goes to the stroke
             // font, which is the only text here with genuine volume and the
             // reason the ring reads as Wipeout. Anything else -- kanji, kana,
@@ -607,13 +596,20 @@ class Horizon(
                     entities += it
                 }
             }
+            return Named(txt, pooled, hoverName)
+        }
 
+        // --- the line that only a selected node shows ------------------------
+        suspend fun detailFor(
+            n: Node, capH: Float, anchor: Vector3, isCluster: Boolean,
+        ): MeshEntity {
             // NODE DETAIL — hidden until selected. Stroke glyphs, so selection
             // does not drag in the whole tier-R font pipeline for three numbers.
             // The horizon label is clipped to stay glanceable; the detail line
             // is where the full name lives, because exactly one node is open at
             // a time and the width costs nothing there. Truncating in both
             // places would mean the app never shows you what a node is called.
+            val cs = Callsign.render(n.name)
             val full = if (cs.truncated) Callsign.render(n.name, maxGlyphs = 40).text else ""
             val det = if (isCluster) {
                 // Say what it is, in words. "+19" alone is ambiguous -- it could
@@ -647,7 +643,7 @@ class Horizon(
             // fixes it for both label paths, and stops the fix depending on
             // which tier a name happened to route to.
             val detAt = Vector3(anchor.x, anchor.y - capH * 1.5f, anchor.z)
-            val detail = MeshEntity.create(session, detMesh, listOf(detMat)).also {
+            return MeshEntity.create(session, detMesh, listOf(detMat)).also {
                 it.parent = root
                 it.setPose(Pose(detAt), Space.ACTIVITY)
                 // setEnabled, NOT setAlpha(0): a hidden line must not come back
@@ -656,6 +652,106 @@ class Horizon(
                 entities += it
                 facing += Facing(it, detAt)
             }
+        }
+
+        // --- height, for the nodes that actually report it -------------------
+        suspend fun altitudeFor(
+            n: Node, txt: Entity, px: Float, py: Float, pz: Float,
+            r: Float, capH: Float, lum: Float,
+        ) {
+            // ALTITUDE, and only altitude. This caret used to fire on `elev`,
+            // which is now also the de-occlusion lane -- pointing it at a lane
+            // offset would turn a legibility trick into a claim that the node
+            // is up a hill. It is drawn ONLY for a node with real telemetry
+            // altitude, and it comes with the figure in metres, because "above
+            // you" without a number is the kind of half-fact that gets someone
+            // walking uphill for no reason.
+            val altM = n.altM ?: return
+            val up = altM >= 0
+            val aMesh = Prims.build(session, Prims.caret(r * 0.9f, r * 1.6f))
+            val aMat = Prims.material(session, theme.alt, 0.9f * lum)
+            MeshEntity.create(session, aMesh, listOf(aMat)).also {
+                it.parent = root
+                it.setPose(
+                    Pose(Vector3(px, py + if (up) r * 2.4f else -r * 3.8f, pz)),
+                    Space.ACTIVITY,
+                )
+                entities += it
+            }
+            val txtAlt = "%.0fM".format(altM)
+            val altMesh = Prims.build(session, Glyphs.text(txtAlt, capH * 0.72f))
+            MeshEntity.create(
+                session, altMesh, listOf(Prims.material(session, theme.alt, 0.85f * lum)),
+            ).also {
+                it.parent = txt          // billboards with the callsign
+                it.setPose(Pose(Vector3(0f, capH * 1.35f, 0f)), Space.PARENT)
+                entities += it
+            }
+        }
+
+        rangeHalos()
+
+        // --- the peers -------------------------------------------------------
+        nodes.forEach { n ->
+            // A node with no position estimate MUST NOT be given a fake bearing.
+            // It parks in a dedicated unlocated arc behind the dominant shoulder.
+            val bearing = if (n.located) n.bearingRad else (PI * 0.78f).toFloat()
+            val dist = if (n.located) n.dist else 0.42f
+            val elev = if (n.located) n.elev else -0.3f
+
+            // Bearings are measured from the user's LAUNCH FACING, so the mesh
+            // wraps the body rather than the tracker's arbitrary origin.
+            // ELEV_SPAN keeps the ring inside the WORLD WINDOW. The microhud
+            // spec reserves +/-10 deg for world content and places its ribbon
+            // and stats bands outside that; at 0.35 the outermost lane reached
+            // +/-19 deg and node callsigns printed straight through the link
+            // readout. atan(R * 0.176 / R) is 10 deg, so the full lane spread
+            // now exactly fills the window it was given and no further.
+            val v = at(
+                o, bearing, frame.radius * dist,
+                elev * frame.radius * ELEV_SPAN + frame.drop,
+            )
+            val px = v.x; val py = v.y; val pz = v.z
+            val dx = px - o.x; val dy = py - o.y; val dz = pz - o.z
+            val range = kotlin.math.sqrt(dx * dx + dy * dy + dz * dz)
+
+            // CONSTANT ANGULAR SIZE (~1.6 deg). A fixed-radius mote subtends 9
+            // deg up close and 2 deg far away; distance is already carried by
+            // the range bands, so letting it drive apparent size just makes
+            // near nodes shout.
+            val r = (range * 0.0140f).coerceAtLeast(0.010f)
+            val lum = 1f - n.age * 0.72f
+
+            val isRepeater = n.type == TYPE_REPEATER
+            val isCluster = n.cluster > 0
+            val textOnly = symbol == Theme.Symbol.TEXT
+
+            val mote = moteFor(n, px, py, pz, r, lum, isRepeater, isCluster, textOnly)
+
+            // CALLSIGN — extruded stroke glyphs, so the label is made of light
+            // in the room rather than printed on a surface. Sized by VISUAL
+            // ANGLE (~1.3 deg cap height at its own range), never in absolute
+            // metres, or distant nodes become unreadable.
+            val capH = range * 0.0227f
+            // Node names are arbitrary user text -- emoji, fullwidth kana,
+            // accents, or nothing but a turtle. Callsign folds that into
+            // something the stroke font can actually draw and tells us whether
+            // to raise a badge for what it had to drop.
+            // TEXT HANGS BELOW ITS MOTE — except on a table, where "below"
+            // is under the table. The wearer is looking DOWN at a tabletop, so
+            // anything under a mote is behind the surface it sits on and reads
+            // through the map rather than beside it. Reported as "data is below
+            // the map, so hard to read". Above, on a tabletop.
+            val anchor = if (posture == Theme.Posture.TABLETOP) {
+                Vector3(px, py + r * 2.6f + capH, pz)
+            } else {
+                Vector3(px, py - r * 2.6f - capH, pz)
+            }
+
+            val named = nameFor(
+                n, mote, capH, lum, anchor, bearing, dist, textOnly, isCluster,
+            )
+            val detail = detailFor(n, capH, anchor, isCluster)
 
             // HIT PROXY — an invisible sphere ~3 deg across around the mote.
             // The mote itself is ~1.6 deg, which clears the 0.6 deg *visibility*
@@ -695,10 +791,10 @@ class Horizon(
             }
 
             val peer = Peer(
-                node = n, mote = mote, label = txt, detail = detail,
+                node = n, mote = mote, label = named.label, detail = detail,
                 at = Vector3(px, py, pz), labelAt = anchor, dist = dist, bearing = bearing,
-                baseAlpha = lum.coerceIn(0.25f, 1f), pooled = pooled,
-                hoverName = hoverName,
+                baseAlpha = lum.coerceIn(0.25f, 1f), pooled = named.pooled,
+                hoverName = named.hover,
             )
             peers += peer
             runCatching {
@@ -707,36 +803,7 @@ class Horizon(
                 )
             }.onFailure { Log.w(TAG, "[horizon] no input on ${n.name}: $it") }
 
-            // ALTITUDE, and only altitude. This caret used to fire on `elev`,
-            // which is now also the de-occlusion lane -- pointing it at a lane
-            // offset would turn a legibility trick into a claim that the node
-            // is up a hill. It is drawn ONLY for a node with real telemetry
-            // altitude, and it comes with the figure in metres, because "above
-            // you" without a number is the kind of half-fact that gets someone
-            // walking uphill for no reason.
-            if (n.altM != null) {
-                val up = n.altM >= 0
-                val aMesh = Prims.build(session, Prims.caret(r * 0.9f, r * 1.6f))
-                val aMat = Prims.material(session, theme.alt, 0.9f * lum)
-                MeshEntity.create(session, aMesh, listOf(aMat)).also {
-                    it.parent = root
-                    it.setPose(
-                        Pose(Vector3(px, py + if (up) r * 2.4f else -r * 3.8f, pz)),
-                        Space.ACTIVITY,
-                    )
-                    entities += it
-                }
-                val txtAlt = "%.0fM".format(n.altM)
-                val altMesh = Prims.build(session, Glyphs.text(txtAlt, capH * 0.72f))
-                MeshEntity.create(
-                    session, altMesh, listOf(Prims.material(session, theme.alt, 0.85f * lum)),
-                ).also {
-                    it.parent = txt          // billboards with the callsign
-                    it.setPose(Pose(Vector3(0f, capH * 1.35f, 0f)), Space.PARENT)
-                    entities += it
-                }
-            }
-
+            altitudeFor(n, named.label, px, py, pz, r, capH, lum)
         }
         if (unlabelled > 0) {
             Log.i(TAG, "[horizon] $unlabelled node(s) fell back to stroke labels — pool exhausted")
