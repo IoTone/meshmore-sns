@@ -192,6 +192,25 @@
     <string name="hp_point">POINT A BUTTON AND PINCH</string>
     <string name="hp_voice">VOICE ON READS IT ALOUD</string>
     <!-- per-node actions -->
+    <!-- ═══ radio bay — the prose half. The four RF parameter names stay
+         Latin per MeshmoreXR-i18n-ja.md §5 (SF, BW, CR and their values are
+         protocol tokens and read as codes in every locale); these are
+         sentences, and sentences translate. ═══ -->
+    <string name="rr_commit">COMMIT</string>
+    <string name="rr_commit_ready">READY</string>
+    <string name="rr_commit_none">NOTHING</string>
+    <string name="rr_revert">UNDO CHANGES</string>
+    <string name="rr_revert_pending">PENDING</string>
+    <string name="rr_revert_clean">CLEAN</string>
+    <string name="rr_advert">SELF ADVERT</string>
+    <string name="rr_advert_sub">ZERO HOP</string>
+    <string name="rr_flood">FLOOD ADVERT</string>
+    <string name="rr_flood_sub">ALL REPEATERS</string>
+    <string name="rr_rescan">RESCAN FOR RADIO</string>
+    <string name="rr_rescan_sub">BLUETOOTH</string>
+    <string name="cm_magnify">MAGNIFY</string>
+    <string name="cm_bearing">BEARING</string>
+    <string name="cm_nearest">NEAREST</string>
     <string name="na_fav">FAVOURITE</string>
     <string name="na_msg">MESSAGE</string>
     <string name="na_telem">TELEMETRY</string>

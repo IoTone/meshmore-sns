@@ -190,6 +190,21 @@
     <string name="hp_point">ボタンを指してピンチ</string>
     <string name="hp_voice">VOICE ONで読み上げ</string>
     <!-- per-node actions -->
+    <string name="rr_commit">適用</string>
+    <string name="rr_commit_ready">準備完了</string>
+    <string name="rr_commit_none">なし</string>
+    <string name="rr_revert">変更を取消</string>
+    <string name="rr_revert_pending">保留中</string>
+    <string name="rr_revert_clean">変更なし</string>
+    <string name="rr_advert">自己通知</string>
+    <string name="rr_advert_sub">ゼロホップ</string>
+    <string name="rr_flood">全体通知</string>
+    <string name="rr_flood_sub">全中継局</string>
+    <string name="rr_rescan">無線機を再検索</string>
+    <string name="rr_rescan_sub">Bluetooth</string>
+    <string name="cm_magnify">拡大</string>
+    <string name="cm_bearing">方位</string>
+    <string name="cm_nearest">最寄り</string>
     <string name="na_fav">お気に入り</string>
     <string name="na_msg">メッセージ</string>
     <string name="na_telem">テレメトリ</string>

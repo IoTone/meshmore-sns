@@ -1021,6 +1021,7 @@ private fun channelBands(
  * finished. Six rows, so it pages at seven — which is why the Stack learned to.
  */
 private fun radioRows(
+    ctx: android.content.Context,
     cfg: RadioConfig,
 ): List<com.iotj.meshmore.xr.spatial.Stack.Row> {
     val live = cfg.live
@@ -1069,8 +1070,16 @@ private fun radioRows(
         row("CR", "CODING RATE", "4/${live.codingRate}", pend?.let { "4/${it.codingRate}" }),
         // LIT WHEN THERE IS SOMETHING TO COMMIT, so the one row that changes
         // the radio is also the one that says whether it has anything to do.
-        row("COMMIT", "COMMIT", if (cfg.dirty()) "READY" else "NOTHING", null, cfg.dirty()),
-        row("REVERT", "UNDO CHANGES", if (cfg.dirty()) "PENDING" else "CLEAN", null),
+        row(
+            "COMMIT", ctx.getString(R.string.rr_commit),
+            ctx.getString(if (cfg.dirty()) R.string.rr_commit_ready else R.string.rr_commit_none),
+            null, cfg.dirty(),
+        ),
+        row(
+            "REVERT", ctx.getString(R.string.rr_revert),
+            ctx.getString(if (cfg.dirty()) R.string.rr_revert_pending else R.string.rr_revert_clean),
+            null,
+        ),
         // SAY YOU ARE HERE. Both of these existed only as buttons on the 2D
         // debug panel and a launch flag — which is to say they existed for
         // anyone holding a laptop, and for nobody wearing the glasses.
@@ -1081,10 +1090,19 @@ private fun radioRows(
         // by every repeater that hears it, across the whole mesh — that is
         // other people's airtime, and on a 350-node mesh it is a lot of it, so
         // it is armed like the destructive controls are.
-        row("ADVERT", "SELF ADVERT", "ZERO HOP", null),
-        row("FLOOD", "FLOOD ADVERT", "ALL REPEATERS", null),
+        row(
+            "ADVERT", ctx.getString(R.string.rr_advert),
+            ctx.getString(R.string.rr_advert_sub), null,
+        ),
+        row(
+            "FLOOD", ctx.getString(R.string.rr_flood),
+            ctx.getString(R.string.rr_flood_sub), null,
+        ),
         // The radio's own store, from the surface that is about the radio.
-        row("RESCAN", "RESCAN FOR RADIO", "BLUETOOTH", null),
+        row(
+            "RESCAN", ctx.getString(R.string.rr_rescan),
+            ctx.getString(R.string.rr_rescan_sub), null,
+        ),
     )
 }
 
@@ -2751,11 +2769,16 @@ private fun HorizonScene(link: MeshLink) {
         // this small closure instead of the whole scene. See the JIT note.
         suspend fun buildInput() {
         val menu = RadialMenu(session, palette, ctx)
+        // THROUGH RESOURCES, like the node menu beside it. These four were
+        // written before there was a second locale and stayed literals through
+        // the whole localisation pass — so a Japanese wearer pinching a cluster
+        // got four English words on a surface that can draw kanji perfectly
+        // well, next to a node menu that reads correctly.
         menu.build(listOf(
-            RadialMenu.Item("magnify", "MAGNIFY"),
-            RadialMenu.Item("bearing", "BEARING"),
-            RadialMenu.Item("nearest", "NEAREST"),
-            RadialMenu.Item("dismiss", "CLOSE"),
+            RadialMenu.Item("magnify", ctx.getString(R.string.cm_magnify)),
+            RadialMenu.Item("bearing", ctx.getString(R.string.cm_bearing)),
+            RadialMenu.Item("nearest", ctx.getString(R.string.cm_nearest)),
+            RadialMenu.Item("dismiss", ctx.getString(R.string.na_close)),
         ))
         menuRef.value = menu
         val nodeMenu = RadialMenu(session, palette, ctx)
@@ -3865,7 +3888,7 @@ private fun HorizonScene(link: MeshLink) {
                             r.note?.let { noticeRef.value?.say(it) }
                             bayMode.value = "RADIO"
                             appRef.value?.show(
-                                radioRows(link.radio),
+                                radioRows(ctx, link.radio),
                                 title = com.iotj.meshmore.xr.spatial.radioTitle(
                                     link.radio.live?.freqMhz, link.radio.live?.txDbm,
                                 ),
@@ -3951,7 +3974,7 @@ private fun HorizonScene(link: MeshLink) {
                             }
                         ) {
                             appRef.value?.update(
-                                radioRows(link.radio),
+                                radioRows(ctx, link.radio),
                                 if (armed.value?.first == "FLOOD") {
                                     ctx.getString(R.string.f_flood_arm)
                                 } else {
@@ -3965,7 +3988,7 @@ private fun HorizonScene(link: MeshLink) {
                             noticeRef.value?.say(note)
                         }
                         appRef.value?.update(
-                            radioRows(link.radio),
+                            radioRows(ctx, link.radio),
                             if (armed.value?.first == "COMMIT") ctx.getString(R.string.f_commit_arm)
                             else if (link.radio.dirty()) ctx.getString(R.string.f_pending)
                             else ctx.getString(R.string.f_radio_idle),
@@ -4274,7 +4297,7 @@ private fun HorizonScene(link: MeshLink) {
                             aboutOpen.value = false
                             bayMode.value = "RADIO"
                             appRef.value?.show(
-                                radioRows(link.radio),
+                                radioRows(ctx, link.radio),
                                 title = com.iotj.meshmore.xr.spatial.radioTitle(
                                     link.radio.live?.freqMhz, link.radio.live?.txDbm,
                                 ),
