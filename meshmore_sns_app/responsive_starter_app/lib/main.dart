@@ -54,7 +54,11 @@ void main() {
             create: (_) => ThemeController()..load(),
           ),
           ChangeNotifierProvider<TtsController>(
-            create: (_) => TtsController()..load(),
+            // Speech answers to the same audio master as the cues —
+            // without this the quick-mute silenced every chime and
+            // left inbound messages speaking aloud.
+            create: (BuildContext ctx) =>
+                TtsController(theme: ctx.read<ThemeController>())..load(),
           ),
           Provider<CueService>(
             create: (BuildContext ctx) {

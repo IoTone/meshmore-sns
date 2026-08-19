@@ -1,6 +1,7 @@
 // Copyright (c) 2026 IoTone, Inc.
 // SPDX-License-Identifier: MIT
 import 'package:flutter_test/flutter_test.dart';
+import 'package:meshmore_sns_app/theme/theme_controller.dart';
 import 'package:meshmore_sns_app/tts/tts_controller.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -39,6 +40,99 @@ class FakeTtsSpeaker implements TtsSpeaker {
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+
+  group('speech obeys the audio master', () {
+    test('audioMaster off silences the automatic path', () async {
+      SharedPreferences.setMockInitialValues(<String, Object>{});
+      final FakeTtsSpeaker spk = FakeTtsSpeaker();
+      final ThemeController tc = ThemeController();
+      final TtsController tts =
+          TtsController(speaker: spk, theme: tc);
+      await tts.setEnabled(true);
+
+      expect(tts.speechAudible, isTrue);
+      await tts.speakForChannel(0, 'audible');
+      expect(spk.spoken, <String>['audible']);
+
+      await tc.setAudioMaster(false);
+      expect(tts.speechAudible, isFalse);
+      expect(tts.channelSpeaks(0), isFalse,
+          reason: 'the master mute outranks the per-channel state');
+      await tts.speakForChannel(0, 'should not speak');
+      expect(spk.spoken, <String>['audible']);
+    });
+
+    test('visualHapticOnly silences it too', () async {
+      SharedPreferences.setMockInitialValues(<String, Object>{});
+      final FakeTtsSpeaker spk = FakeTtsSpeaker();
+      final ThemeController tc = ThemeController();
+      final TtsController tts =
+          TtsController(speaker: spk, theme: tc);
+      await tts.setEnabled(true);
+
+      await tc.setVisualHapticOnly(true);
+      expect(tts.speechAudible, isFalse);
+      await tts.speakForChannel(0, 'silent mode');
+      expect(spk.spoken, isEmpty);
+    });
+
+    test('enabled state is preserved, not clobbered, by the master',
+        () async {
+      SharedPreferences.setMockInitialValues(<String, Object>{});
+      final ThemeController tc = ThemeController();
+      final TtsController tts =
+          TtsController(speaker: FakeTtsSpeaker(), theme: tc);
+      await tts.setEnabled(true);
+
+      await tc.setAudioMaster(false);
+      expect(tts.enabled, isTrue,
+          reason: 'muting is not the same as turning speech off');
+      await tc.setAudioMaster(true);
+      expect(tts.channelSpeaks(0), isTrue);
+    });
+
+    test('notifies only when audibility flips, not on every theme change',
+        () async {
+      SharedPreferences.setMockInitialValues(<String, Object>{});
+      final ThemeController tc = ThemeController();
+      final TtsController tts =
+          TtsController(speaker: FakeTtsSpeaker(), theme: tc);
+      int notifications = 0;
+      tts.addListener(() => notifications++);
+
+      await tc.setFontScale(1.2); // unrelated theme change
+      expect(notifications, 0);
+
+      await tc.setAudioMaster(false); // flips audibility
+      expect(notifications, 1);
+    });
+
+    test('no theme wired is permissive (tests, unwired call sites)',
+        () async {
+      SharedPreferences.setMockInitialValues(<String, Object>{});
+      final FakeTtsSpeaker spk = FakeTtsSpeaker();
+      final TtsController tts = TtsController(speaker: spk);
+      await tts.setEnabled(true);
+      expect(tts.speechAudible, isTrue);
+      await tts.speakForChannel(0, 'hi');
+      expect(spk.spoken, <String>['hi']);
+    });
+
+    test('preview is deliberately ungated — it is an explicit request',
+        () async {
+      SharedPreferences.setMockInitialValues(<String, Object>{});
+      final FakeTtsSpeaker spk = FakeTtsSpeaker();
+      final ThemeController tc = ThemeController();
+      final TtsController tts =
+          TtsController(speaker: spk, theme: tc);
+      await tts.setEnabled(true);
+      await tc.setAudioMaster(false);
+
+      await tts.previewPhrase('sample');
+      expect(spk.spoken, <String>['sample'],
+          reason: 'choosing a voice while muted must still be possible');
+    });
+  });
 
   test('off by default; speak is a no-op until enabled (R5)', () async {
     SharedPreferences.setMockInitialValues(<String, Object>{});

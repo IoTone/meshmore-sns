@@ -4,6 +4,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../theme/theme_controller.dart';
+
 /// A voice the platform TTS engine can synthesize with. The pair
 /// `(name, locale)` is the unique identifier flutter_tts expects on
 /// `setVoice`; the optional `qualityHint` lets us bubble up a
@@ -144,8 +146,34 @@ class FlutterTtsSpeaker implements TtsSpeaker {
 /// also push the new value down into the speaker so the next
 /// `speak` reflects it immediately.
 class TtsController extends ChangeNotifier {
-  TtsController({TtsSpeaker? speaker})
-      : _speaker = speaker ?? FlutterTtsSpeaker();
+  TtsController({TtsSpeaker? speaker, this.theme})
+      : _speaker = speaker ?? FlutterTtsSpeaker() {
+    _lastAudible = speechAudible;
+    theme?.addListener(_onThemeChanged);
+  }
+
+  /// Re-notify only when audibility actually flips. The theme fires
+  /// for font scale, preset and contrast too; rebuilding every
+  /// speech-related widget on those would be churn for nothing.
+  void _onThemeChanged() {
+    final bool now = speechAudible;
+    if (now == _lastAudible) return;
+    _lastAudible = now;
+    notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    theme?.removeListener(_onThemeChanged);
+    super.dispose();
+  }
+
+  /// The audio master this controller answers to. Speech is alert
+  /// audio like any cue, so it obeys the same quick-mute the chimes
+  /// do — see [speechAudible]. Null (tests, and any call site that
+  /// hasn't wired one) means "no master", i.e. permissive, matching
+  /// how [SystemHapticBackend] treats a null theme.
+  final ThemeController? theme;
 
   static const String _kEnabled = 'mm.tts';
   static const String _kRate = 'mm.tts.rate';
@@ -167,6 +195,7 @@ class TtsController extends ChangeNotifier {
   double _pitch = defaultPitch;
   TtsVoice? _voice;
   final Set<int> _mutedChannels = <int>{};
+  late bool _lastAudible;
 
   /// Global TTS on/off.
   bool get enabled => _enabled;
@@ -174,9 +203,21 @@ class TtsController extends ChangeNotifier {
   double get pitch => _pitch;
   TtsVoice? get voice => _voice;
 
-  /// True when [channelIdx] would be spoken: global on AND not muted.
+  /// Whether the audio master currently permits *any* speech.
+  ///
+  /// `CueService` gates its chimes on exactly this expression. Speech
+  /// is the loudest thing the app emits, so leaving it outside the
+  /// quick-mute made "audio off" untrue — a message still spoke aloud
+  /// while every cue stayed silent.
+  bool get speechAudible {
+    final ThemeController? t = theme;
+    return t == null || (t.audioMaster && !t.visualHapticOnly);
+  }
+
+  /// True when [channelIdx] would be spoken: audio master permits it
+  /// AND global on AND not muted.
   bool channelSpeaks(int channelIdx) =>
-      _enabled && !_mutedChannels.contains(channelIdx);
+      speechAudible && _enabled && !_mutedChannels.contains(channelIdx);
 
   bool isChannelMuted(int channelIdx) =>
       _mutedChannels.contains(channelIdx);
@@ -254,6 +295,10 @@ class TtsController extends ChangeNotifier {
   /// a phrase" button). Bypasses the per-channel mute since the user
   /// is auditioning the *quality* knobs, not the channel routing.
   /// Still respects the global enable.
+  /// Deliberately **not** gated on [speechAudible]: this is an
+  /// explicit, momentary request to hear a voice while choosing one,
+  /// the same way a ringtone preview plays on a silenced handset.
+  /// Only the automatic inbound-message path answers to the master.
   Future<void> previewPhrase(String phrase) async {
     if (!_enabled) return;
     await _speaker.speak(phrase);

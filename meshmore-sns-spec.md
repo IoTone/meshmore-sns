@@ -780,18 +780,26 @@ While Meshcore protocol is open source, the client is not open source.  We want 
   active pack**, not the slot id: two slots that are clearly distinct
   as tones may be near-identical as haptics.
 
-  **Speech must obey the audio master — it does not today.** Found
-  while designing this: `CueService` gates audio on
-  `theme.audioMaster && !theme.visualHapticOnly`, but `TtsController`
-  gates only on its own `enabled` plus per-channel mute (sole call
-  site `chat_screen.dart:74`). The two subsystems never consult each
-  other, so the audio quick-mute silences chimes and leaves **speech
-  — the loudest thing the app emits — running**. R58 has to unify
-  this, because a per-peer voice and its chime would otherwise sit on
-  opposite sides of the mute. In haptic-only mode a peer's arrival is
-  its signature rhythm and nothing is spoken. Otherwise "silent" is a
-  lie, and this is the pre-existing bug R58 inherits rather than
-  introduces.
+  **Speech obeys the audio master (fixed ahead of R58).** Found
+  while designing this and corrected as a standalone change, so R58
+  no longer carries it: `CueService` gated audio on
+  `theme.audioMaster && !theme.visualHapticOnly` while
+  `TtsController` gated only on its own `enabled` plus per-channel
+  mute, so the quick-mute silenced every chime and left **speech —
+  the loudest thing the app emits — running**.
+
+  `TtsController` now takes the `ThemeController` (optional, null =
+  permissive, matching how `SystemHapticBackend` treats a null theme)
+  and exposes `speechAudible`, folded into `channelSpeaks` so the
+  single-gate design survives. It re-notifies only when audibility
+  *flips*, not on unrelated theme changes. `previewPhrase` stays
+  ungated on purpose — choosing a voice while muted must remain
+  possible, the way a ringtone preview plays on a silenced handset.
+  Muting never clears `enabled`; the two are different facts.
+
+  R58 inherits the fixed behaviour: a per-peer voice and its
+  signature now sit on the same side of the mute, and in haptic-only
+  mode a peer's arrival is its rhythm with nothing spoken.
 
   **Where it lives.** Three entry points, one sheet:
   - **Node detail sheet → "Voice & chime"** — primary. This is where

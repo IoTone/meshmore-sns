@@ -112,6 +112,7 @@
   "settingsSpeech": "音声読み上げ (R5)",
   "settingsSpeechOn": "音声読み上げ ON · チャネル別切替はチャット内",
   "settingsSpeechOff": "音声読み上げ OFF (既定) · チャネルメッセージを読み上げ",
+  "settingsSpeechMuted": "読み上げは ON ですが、オーディオミュートにより消音されています",
   "settingsNotifications": "通知",
   "settingsNotificationsSubtitle": "重要 → システム通知 + バイブレーション",
   "settingsData": "データ / アプリ情報",

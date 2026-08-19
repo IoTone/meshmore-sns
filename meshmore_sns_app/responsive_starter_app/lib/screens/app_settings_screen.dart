@@ -183,14 +183,25 @@ class AppSettingsScreen extends StatelessWidget {
           ),
           // SPEECH (R5) — functional from U3. Off by default; the
           // per-channel toggle in the Chat header is gated on this.
+          // Speech also answers to the audio master, so an enabled
+          // switch can still be inaudible — say so rather than
+          // leaving the user with a toggle that does nothing.
           SwitchListTile(
             title: Text(l.settingsSpeech),
             subtitle: Text(
-              tts.enabled ? l.settingsSpeechOn : l.settingsSpeechOff,
-              style: TextStyle(color: cs.onSurface.withValues(alpha: .6)),
+              !tts.enabled
+                  ? l.settingsSpeechOff
+                  : tts.speechAudible
+                      ? l.settingsSpeechOn
+                      : l.settingsSpeechMuted,
+              style: TextStyle(
+                  color: tts.enabled && !tts.speechAudible
+                      ? cs.error
+                      : cs.onSurface.withValues(alpha: .6)),
             ),
-            secondary: Icon(
-                tts.enabled ? Icons.record_voice_over : Icons.voice_over_off),
+            secondary: Icon(tts.enabled && tts.speechAudible
+                ? Icons.record_voice_over
+                : Icons.voice_over_off),
             value: tts.enabled,
             onChanged: (bool v) => tts.setEnabled(v),
           ),

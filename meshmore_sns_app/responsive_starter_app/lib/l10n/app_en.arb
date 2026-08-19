@@ -112,6 +112,7 @@
   "settingsSpeech": "SPEECH (R5)",
   "settingsSpeechOn": "Text-to-speech ON · per-channel toggle in Chat",
   "settingsSpeechOff": "Text-to-speech OFF (default) · reads channel messages",
+  "settingsSpeechMuted": "Text-to-speech ON, but the audio mute is silencing it",
   "settingsNotifications": "NOTIFICATIONS",
   "settingsNotificationsSubtitle": "Critical → system notification + vibrate",
   "settingsData": "DATA / ABOUT",

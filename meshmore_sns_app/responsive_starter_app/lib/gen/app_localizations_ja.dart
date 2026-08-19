@@ -287,6 +287,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get settingsSpeechOff => '音声読み上げ OFF (既定) · チャネルメッセージを読み上げ';
 
   @override
+  String get settingsSpeechMuted => '読み上げは ON ですが、オーディオミュートにより消音されています';
+
+  @override
   String get settingsNotifications => '通知';
 
   @override

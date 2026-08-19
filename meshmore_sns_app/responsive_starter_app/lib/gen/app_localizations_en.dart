@@ -300,6 +300,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'Text-to-speech OFF (default) · reads channel messages';
 
   @override
+  String get settingsSpeechMuted =>
+      'Text-to-speech ON, but the audio mute is silencing it';
+
+  @override
   String get settingsNotifications => 'NOTIFICATIONS';
 
   @override
