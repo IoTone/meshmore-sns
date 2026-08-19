@@ -2330,6 +2330,36 @@ abstract class AppLocalizations {
   /// **'Peer details'**
   String get dmOpenPeerDetail;
 
+  /// No description provided for @dmSpeech.
+  ///
+  /// In en, this message translates to:
+  /// **'Speak this peer'**
+  String get dmSpeech;
+
+  /// No description provided for @dmSpeechInherit.
+  ///
+  /// In en, this message translates to:
+  /// **'Follow global speech setting'**
+  String get dmSpeechInherit;
+
+  /// No description provided for @dmSpeechAlways.
+  ///
+  /// In en, this message translates to:
+  /// **'Always speak'**
+  String get dmSpeechAlways;
+
+  /// No description provided for @dmSpeechNever.
+  ///
+  /// In en, this message translates to:
+  /// **'Never speak'**
+  String get dmSpeechNever;
+
+  /// No description provided for @dmSpeechMutedByMaster.
+  ///
+  /// In en, this message translates to:
+  /// **'Silenced by the audio mute'**
+  String get dmSpeechMutedByMaster;
+
   /// No description provided for @dmPeerNotInFabric.
   ///
   /// In en, this message translates to:

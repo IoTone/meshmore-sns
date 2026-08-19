@@ -1271,6 +1271,21 @@ class AppLocalizationsJa extends AppLocalizations {
   String get dmOpenPeerDetail => '相手の詳細';
 
   @override
+  String get dmSpeech => 'この相手を読み上げる';
+
+  @override
+  String get dmSpeechInherit => '全体の読み上げ設定に従う';
+
+  @override
+  String get dmSpeechAlways => '常に読み上げる';
+
+  @override
+  String get dmSpeechNever => '読み上げない';
+
+  @override
+  String get dmSpeechMutedByMaster => 'オーディオミュートにより消音中';
+
+  @override
   String get dmPeerNotInFabric => 'この相手はまだメッシュ上で確認されていません（アドバート未受信）。';
 
   @override

@@ -5,6 +5,7 @@ import 'dart:async';
 import '../meshcore/chat_message.dart';
 import '../meshcore/meshcore_connection.dart';
 import '../meshcore/meshcore_controller.dart';
+import '../tts/tts_controller.dart';
 import 'cue_service.dart';
 
 /// Wires [MeshcoreController] events to [CueService] (R12). Lives
@@ -12,7 +13,7 @@ import 'cue_service.dart';
 /// foregrounded — and the call site (UI) is free to provide the
 /// matching visual parity.
 class CueBridge {
-  CueBridge(this._mc, this._cue) {
+  CueBridge(this._mc, this._cue, [this._tts]) {
     _prev = _mc.state;
     _wasScanning = _mc.isScanning;
     _mc.addListener(_onChange);
@@ -26,6 +27,17 @@ class CueBridge {
 
   final MeshcoreController _mc;
   final CueService _cue;
+
+  /// R58 — speaks inbound DMs per the peer's tri-state. Optional so
+  /// existing construction sites (and the cue tests) are unaffected;
+  /// null simply means no speech.
+  ///
+  /// DM speech belongs **here** rather than in `DmScreen` precisely
+  /// because this bridge is app-scoped. `PeerSpeechMode.always` means
+  /// "I always want to hear this radio" — if it only fired while that
+  /// thread was open, the mode would be pointless, since a user
+  /// staring at the thread can read it.
+  final TtsController? _tts;
   StreamSubscription<ChatMessage>? _msgSub;
   StreamSubscription<ChatMessage>? _dmSub;
   StreamSubscription<String>? _errSub;
@@ -91,7 +103,15 @@ class CueBridge {
   void _onIncomingChannelMessage(ChatMessage _) =>
       _cue.play(CueKind.messageIn);
 
-  void _onIncomingDm(ChatMessage _) => _cue.play(CueKind.dmIn);
+  void _onIncomingDm(ChatMessage m) {
+    _cue.play(CueKind.dmIn);
+    final String? peer = m.peerPubKeyHex;
+    final TtsController? tts = _tts;
+    if (peer == null || tts == null) return;
+    // Fire-and-forget: a slow platform TTS call must not stall the
+    // cue path or the message store behind it.
+    unawaited(tts.speakForPeer(peer, m.text));
+  }
 
   void dispose() {
     _cue.stopScanHum(); // don't leave the drone looping if torn down mid-scan

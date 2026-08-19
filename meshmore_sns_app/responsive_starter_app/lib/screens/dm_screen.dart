@@ -13,6 +13,7 @@ import '../meshcore/discovered_node.dart';
 import '../meshcore/meshcore_connection.dart';
 import '../meshcore/meshcore_controller.dart';
 import '../theme/mm_skin.dart';
+import '../tts/tts_controller.dart';
 import '../ui/mm_scaffold.dart';
 import 'node_detail_sheet.dart';
 
@@ -174,6 +175,7 @@ class _DmScreenState extends State<DmScreen> {
   @override
   Widget build(BuildContext context) {
     final MeshcoreController mc = context.watch<MeshcoreController>();
+    final TtsController tts = context.watch<TtsController>();
     final ColorScheme cs = Theme.of(context).colorScheme;
     final bool ready = mc.state == MeshcoreConnectionState.ready;
     final AppLocalizations l = AppLocalizations.of(context);
@@ -188,6 +190,7 @@ class _DmScreenState extends State<DmScreen> {
       appBar: AppBar(
         title: Text(l.dmTitle(_peerName(mc))),
         actions: <Widget>[
+          _SpeechMenu(tts: tts, peerPubKeyHex: widget.peerPubKeyHex, l: l),
           IconButton(
             tooltip: l.dmOpenPeerDetail,
             icon: const Icon(Icons.info_outline),
@@ -332,6 +335,55 @@ class _DmRow extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// R58 — per-peer DM speech tri-state, in the DM header.
+///
+/// The icon reports **effective** audibility (`peerSpeaks`), not the
+/// stored mode, so a peer set to `always` while the audio master is
+/// muted reads as silent — which it is. The menu still shows which
+/// mode is chosen, so the two facts stay separable.
+class _SpeechMenu extends StatelessWidget {
+  const _SpeechMenu({
+    required this.tts,
+    required this.peerPubKeyHex,
+    required this.l,
+  });
+
+  final TtsController tts;
+  final String peerPubKeyHex;
+  final AppLocalizations l;
+
+  @override
+  Widget build(BuildContext context) {
+    final PeerSpeechMode mode = tts.peerSpeechMode(peerPubKeyHex);
+    final bool audible = tts.peerSpeaks(peerPubKeyHex);
+    final bool mastered = mode != PeerSpeechMode.never && !tts.speechAudible;
+    return PopupMenuButton<PeerSpeechMode>(
+      tooltip: mastered ? l.dmSpeechMutedByMaster : l.dmSpeech,
+      icon: Icon(
+        audible ? Icons.record_voice_over : Icons.voice_over_off,
+        color: mastered ? Theme.of(context).colorScheme.error : null,
+      ),
+      initialValue: mode,
+      onSelected: (PeerSpeechMode m) =>
+          tts.setPeerSpeechMode(peerPubKeyHex, m),
+      itemBuilder: (BuildContext _) => <PopupMenuEntry<PeerSpeechMode>>[
+        PopupMenuItem<PeerSpeechMode>(
+          value: PeerSpeechMode.inherit,
+          child: Text(l.dmSpeechInherit),
+        ),
+        PopupMenuItem<PeerSpeechMode>(
+          value: PeerSpeechMode.always,
+          child: Text(l.dmSpeechAlways),
+        ),
+        PopupMenuItem<PeerSpeechMode>(
+          value: PeerSpeechMode.never,
+          child: Text(l.dmSpeechNever),
+        ),
+      ],
     );
   }
 }

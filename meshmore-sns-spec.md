@@ -725,7 +725,8 @@ While Meshcore protocol is open source, the client is not open source.  We want 
 
   **Per-peer record** (every field defaults to *inherit*):
   - `speak`: inherit / always / never — tri-state, not a bool, so
-    "follow the global setting" stays expressible.
+    "follow the global setting" stays expressible. **Landed** (see
+    below); the rest of the record is still design.
   - `voice`: inherit, or a `TtsVoice.id`. Picker reuses the existing
     installed-voice filter and the only-my-language toggle.
   - `pitchOffset` / `rateOffset`: **relative** nudges (±0.3) applied
@@ -800,6 +801,34 @@ While Meshcore protocol is open source, the client is not open source.  We want 
   R58 inherits the fixed behaviour: a per-peer voice and its
   signature now sit on the same side of the mute, and in haptic-only
   mode a peer's arrival is its rhythm with nothing spoken.
+
+  **Shipped: the `speak` tri-state and DM speech.** `PeerSpeechStore`
+  persists overrides keyed by pubkey hex (absence *is* inherit, so an
+  unconfigured peer costs no row), and `TtsController` gained
+  `peerSpeechMode` / `setPeerSpeechMode` / `peerSpeaks` /
+  `speakForPeer`. Precedence resolves master → per-peer → global.
+
+  Two implementation facts worth keeping:
+  - **DM speech is wired into `CueBridge`, not `DmScreen`.** The
+    bridge is app-scoped ("cues fire wherever — independent of which
+    screen is foregrounded"), and `always` means *I always want to
+    hear this radio*. Hanging it off the DM screen would have made
+    the mode near-useless, since a user looking at the thread can
+    read it.
+  - **Peer keys are matched prefix-tolerantly.** A DM carries the
+    full 64-hex pubkey when the fabric resolves it and only the
+    12-hex prefix when it does not, while the user sets an override
+    from a sheet that usually knows the full key. Exact lookup would
+    silently miss. Setting an override re-keys onto the longer form
+    so one peer converges on one row.
+
+  **Known asymmetry:** *channel* speech is still screen-scoped —
+  `ChatScreen.initState` owns that subscription, so channel messages
+  are spoken only while that screen is mounted, whereas DM speech now
+  works anywhere. Deliberate (the ask was DMs) and left as-is rather
+  than quietly changed, but the two should converge: moving channel
+  speech into `CueBridge` alongside DMs is the obvious follow-up, and
+  R24's per-channel bundle is where it belongs.
 
   **Where it lives.** Three entry points, one sheet:
   - **Node detail sheet → "Voice & chime"** — primary. This is where

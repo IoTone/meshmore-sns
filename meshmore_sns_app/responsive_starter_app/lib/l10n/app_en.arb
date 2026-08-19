@@ -599,6 +599,11 @@
   },
   "dmEmpty": "— no messages yet —",
   "dmOpenPeerDetail": "Peer details",
+  "dmSpeech": "Speak this peer",
+  "dmSpeechInherit": "Follow global speech setting",
+  "dmSpeechAlways": "Always speak",
+  "dmSpeechNever": "Never speak",
+  "dmSpeechMutedByMaster": "Silenced by the audio mute",
   "dmPeerNotInFabric": "This peer hasn't shown up on the mesh yet (no advert heard).",
   "dmComposerHint": "Message {peer}",
   "@dmComposerHint": {

@@ -1330,6 +1330,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String get dmOpenPeerDetail => 'Peer details';
 
   @override
+  String get dmSpeech => 'Speak this peer';
+
+  @override
+  String get dmSpeechInherit => 'Follow global speech setting';
+
+  @override
+  String get dmSpeechAlways => 'Always speak';
+
+  @override
+  String get dmSpeechNever => 'Never speak';
+
+  @override
+  String get dmSpeechMutedByMaster => 'Silenced by the audio mute';
+
+  @override
   String get dmPeerNotInFabric =>
       'This peer hasn\'t shown up on the mesh yet (no advert heard).';
 

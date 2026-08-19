@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 
 import '../app_state_model.dart';
 import '../cue/cue_bridge.dart';
+import '../tts/tts_controller.dart';
 import '../cue/cue_service.dart';
 import '../gen/app_localizations.dart';
 import '../meshcore/meshcore_connection.dart';
@@ -74,6 +75,9 @@ class _HomeShellState extends State<HomeShell>
     _cueBridge = CueBridge(
       context.read<MeshcoreController>(),
       context.read<CueService>(),
+      // R58 — inbound DM speech, per-peer tri-state. App-scoped so a
+      // peer set to `always` is heard wherever the user is.
+      context.read<TtsController>(),
     );
     // Owns splash teardown now (replaces the old demo home).
     WidgetsBinding.instance.addPostFrameCallback((_) {

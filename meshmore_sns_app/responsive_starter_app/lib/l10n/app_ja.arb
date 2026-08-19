@@ -599,6 +599,11 @@
   },
   "dmEmpty": "— メッセージはまだありません —",
   "dmOpenPeerDetail": "相手の詳細",
+  "dmSpeech": "この相手を読み上げる",
+  "dmSpeechInherit": "全体の読み上げ設定に従う",
+  "dmSpeechAlways": "常に読み上げる",
+  "dmSpeechNever": "読み上げない",
+  "dmSpeechMutedByMaster": "オーディオミュートにより消音中",
   "dmPeerNotInFabric": "この相手はまだメッシュ上で確認されていません（アドバート未受信）。",
   "dmComposerHint": "{peer} へメッセージ",
   "@dmComposerHint": {

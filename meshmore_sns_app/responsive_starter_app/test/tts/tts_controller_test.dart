@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: MIT
 import 'package:flutter_test/flutter_test.dart';
 import 'package:meshmore_sns_app/theme/theme_controller.dart';
+import 'package:meshmore_sns_app/tts/peer_speech_store.dart';
 import 'package:meshmore_sns_app/tts/tts_controller.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -40,6 +41,119 @@ class FakeTtsSpeaker implements TtsSpeaker {
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+
+  group('R58 per-peer DM speech tri-state', () {
+    const String full =
+        'aabbccddeeff00112233445566778899aabbccddeeff001122334455667788ff';
+    const String prefix = 'aabbccddeeff';
+
+    test('inherit follows the global switch in both directions', () async {
+      SharedPreferences.setMockInitialValues(<String, Object>{});
+      final FakeTtsSpeaker spk = FakeTtsSpeaker();
+      final TtsController tts = TtsController(speaker: spk);
+
+      expect(tts.peerSpeechMode(full), PeerSpeechMode.inherit);
+      await tts.speakForPeer(full, 'quiet');
+      expect(spk.spoken, isEmpty, reason: 'global off');
+
+      await tts.setEnabled(true);
+      await tts.speakForPeer(full, 'now heard');
+      expect(spk.spoken, <String>['now heard']);
+    });
+
+    test('always speaks even with the global switch off', () async {
+      SharedPreferences.setMockInitialValues(<String, Object>{});
+      final FakeTtsSpeaker spk = FakeTtsSpeaker();
+      final TtsController tts = TtsController(speaker: spk);
+      await tts.setPeerSpeechMode(full, PeerSpeechMode.always);
+
+      expect(tts.enabled, isFalse);
+      await tts.speakForPeer(full, 'favourite radio');
+      expect(spk.spoken, <String>['favourite radio']);
+    });
+
+    test('never stays silent with the global switch on', () async {
+      SharedPreferences.setMockInitialValues(<String, Object>{});
+      final FakeTtsSpeaker spk = FakeTtsSpeaker();
+      final TtsController tts = TtsController(speaker: spk);
+      await tts.setEnabled(true);
+      await tts.setPeerSpeechMode(full, PeerSpeechMode.never);
+
+      await tts.speakForPeer(full, 'shush');
+      expect(spk.spoken, isEmpty);
+    });
+
+    test('the audio master outranks even always', () async {
+      SharedPreferences.setMockInitialValues(<String, Object>{});
+      final FakeTtsSpeaker spk = FakeTtsSpeaker();
+      final ThemeController tc = ThemeController();
+      final TtsController tts = TtsController(speaker: spk, theme: tc);
+      await tts.setPeerSpeechMode(full, PeerSpeechMode.always);
+      await tc.setAudioMaster(false);
+
+      expect(tts.peerSpeaks(full), isFalse);
+      await tts.speakForPeer(full, 'no');
+      expect(spk.spoken, isEmpty);
+    });
+
+    test('an override set on the full key matches a prefix-only DM',
+        () async {
+      SharedPreferences.setMockInitialValues(<String, Object>{});
+      final FakeTtsSpeaker spk = FakeTtsSpeaker();
+      final TtsController tts = TtsController(speaker: spk);
+      await tts.setPeerSpeechMode(full, PeerSpeechMode.always);
+
+      // Legacy CONTACT_MSG_RECV carries only the 6-byte prefix.
+      expect(tts.peerSpeechMode(prefix), PeerSpeechMode.always);
+      await tts.speakForPeer(prefix, 'prefix only');
+      expect(spk.spoken, <String>['prefix only']);
+    });
+
+    test('a prefix-set override converges on the full key, not two rows',
+        () async {
+      SharedPreferences.setMockInitialValues(<String, Object>{});
+      final TtsController tts = TtsController(speaker: FakeTtsSpeaker());
+      await tts.setPeerSpeechMode(prefix, PeerSpeechMode.never);
+      await tts.setPeerSpeechMode(full, PeerSpeechMode.never);
+
+      expect(await PeerSpeechStore.load(), <String, PeerSpeechMode>{
+        full: PeerSpeechMode.never,
+      });
+    });
+
+    test('inherit clears the row — absence is inherit', () async {
+      SharedPreferences.setMockInitialValues(<String, Object>{});
+      final TtsController tts = TtsController(speaker: FakeTtsSpeaker());
+      await tts.setPeerSpeechMode(full, PeerSpeechMode.always);
+      expect(await PeerSpeechStore.load(), isNotEmpty);
+
+      await tts.setPeerSpeechMode(full, PeerSpeechMode.inherit);
+      expect(await PeerSpeechStore.load(), isEmpty);
+      expect(tts.peerSpeechMode(full), PeerSpeechMode.inherit);
+    });
+
+    test('overrides persist across a reload', () async {
+      SharedPreferences.setMockInitialValues(<String, Object>{});
+      final TtsController a = TtsController(speaker: FakeTtsSpeaker());
+      await a.setPeerSpeechMode(full, PeerSpeechMode.always);
+
+      final TtsController b = TtsController(speaker: FakeTtsSpeaker());
+      await b.load();
+      expect(b.peerSpeechMode(full), PeerSpeechMode.always);
+    });
+
+    test('an unconfigured peer is untouched by another peer override',
+        () async {
+      SharedPreferences.setMockInitialValues(<String, Object>{});
+      final TtsController tts = TtsController(speaker: FakeTtsSpeaker());
+      await tts.setEnabled(true);
+      await tts.setPeerSpeechMode(full, PeerSpeechMode.never);
+
+      const String other = '99887766554433221100ffeeddccbbaa';
+      expect(tts.peerSpeechMode(other), PeerSpeechMode.inherit);
+      expect(tts.peerSpeaks(other), isTrue);
+    });
+  });
 
   group('speech obeys the audio master', () {
     test('audioMaster off silences the automatic path', () async {
