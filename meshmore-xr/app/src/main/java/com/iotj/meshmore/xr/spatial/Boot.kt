@@ -33,10 +33,13 @@ import kotlin.math.sin
  * Everything here is disposed the moment loading ends. A loading surface that
  * lingers is just clutter with a good excuse.
  */
-class Boot(private val session: Session, private val theme: Horizon.Palette) {
+class Boot(private val session: Session, private val skin: Theme.Skin) {
+
+    /** Kept under the old name so every existing reference reads unchanged. */
+    private val theme: Horizon.Palette = skin.palette
 
     private val entities = mutableListOf<Entity>()
-    private var wordmark: Entity? = null
+    private var hero: Hero? = null
     /**
      * THE MARK — the launcher icon, as the thing it is a picture OF.
      *
@@ -71,16 +74,15 @@ class Boot(private val session: Session, private val theme: Horizon.Palette) {
         val root = session.scene.activitySpace
         at = o.place(0f, FORWARD, HEIGHT)
 
-        // WORDMARK. Stroke glyphs, so it is made of the same light as the
-        // symbology rather than being a logo pasted into the room.
-        val mark = Prims.build(session, Glyphs.text("MESHMORE XR", CAP))
-        wordmark = MeshEntity.create(
-            session, mark, listOf(Prims.material(session, theme.accent, 0.9f)),
-        ).also {
-            it.parent = root
-            it.setPose(Pose(at), Space.ACTIVITY)
-            entities += it
-        }
+        // THE HERO — the theme's own introduction, in place of the one
+        // wordmark that used to serve all nine. See Hero.kt: a theme without
+        // one still gets exactly the stroke mesh this line used to build, so
+        // the heroes can arrive one at a time without leaving a hole.
+        //
+        // NOT ADDED TO `entities`. The hero owns what it made and disposes it
+        // in its own clear(), which is the rule that keeps a surface's teardown
+        // in one place — the lesson from HALO dying on a list it did not empty.
+        hero = Heroes.forTheme(session, skin, root, at, CAP)
 
         // THE BUILD, under the wordmark.
         //
@@ -242,6 +244,8 @@ class Boot(private val session: Session, private val theme: Horizon.Palette) {
      */
     fun tick(dt: Float, fraction: Float, hasTotal: Boolean) {
         t += dt
+        // The hero repaints against elapsed time; it creates nothing here.
+        hero?.tick(t)
 
         // THE MARK TURNS, AND IT MAY TURN ALL THE WAY.
         //
@@ -264,18 +268,9 @@ class Boot(private val session: Session, private val theme: Horizon.Palette) {
             )
         }
 
-        // Slow turn, but an OSCILLATION rather than a full revolution. Stroke
-        // glyphs are flat, so a wordmark spinning through 360 degrees goes
-        // edge-on twice per turn and collapses to a bright line -- at 18 deg/s
-        // that is an unreadable moment every ten seconds, which reads as a
-        // fault rather than as motion. Swinging through +/-38 keeps it legible
-        // at every instant while still clearly turning in space.
-        val yaw = SWING_DEG * sin(t * SWING_RATE)
-        wordmark?.setPose(Pose(at, Quaternion.fromEulerAngles(0f, yaw, 0f)), Space.ACTIVITY)
-        // Breathing alpha rather than a hard blink: a flashing wordmark at this
-        // size reads as an alarm.
-        val pulse = 0.55f + 0.45f * (0.5f + 0.5f * sin(t * 2.2f))
-        wordmark?.setAlpha(pulse)
+        // The wordmark's own swing and breath moved to PlainWordmark, which is
+        // the hero every theme without one still gets. It is the same motion,
+        // driven from the same clock — see Hero.kt.
 
         // Ease toward real progress rather than snapping. Contacts arrive in
         // bursts, and a level that jumps in steps reads as a progress bar
@@ -318,7 +313,11 @@ class Boot(private val session: Session, private val theme: Horizon.Palette) {
         entities.forEach { runCatching { it.dispose() } }
         entities.forEach { runCatching { it.parent = null } }
         entities.clear(); body.clear(); motes.clear()
-        wordmark = null; meniscus = null; core = null; level = 0f
+        // THE HERO UNMAKES ITSELF. Its entities were never on `entities` —
+        // one surface, one owner, which is the rule HALO broke when it left
+        // ring handles on a list clear() did not empty and then posed them.
+        hero?.clear(); hero = null
+        meniscus = null; core = null; level = 0f
     }
 
     private companion object {

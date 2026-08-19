@@ -2802,7 +2802,7 @@ private fun HorizonScene(link: MeshLink) {
         // boot, hud, rack — a PHASE, so its ~dozen suspend .build() calls spill
         // this small closure instead of the whole scene. See the JIT note.
         suspend fun buildCore() {
-        val boot = Boot(session, palette)
+        val boot = Boot(session, skin.value)
         boot.build(origin)
         // E0 WAKE — once, as the boot surface appears. The scene takes about
         // fourteen seconds to build on this hardware and until now the wearer
