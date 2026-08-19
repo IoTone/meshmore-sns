@@ -621,9 +621,21 @@ class Horizon(
                 // read of it, which is the exact error km()'s own note warns
                 // about: it puts a node at 4 km when it is at 25. A distance on
                 // a label is a claim someone might walk on.
-                "%s%d HOP  %s  %s".format(
+                // NO HOP COUNT RATHER THAN A WRONG ONE. `hops` arrives as
+                // outPathLen + 1, and outPathLen is 0xFF when the radio has no
+                // resolved route — so an unrouted contact reaches here as 256
+                // and printed as "256 HOP". Seen on the operator's own mesh:
+                //
+                //     [focus] esb.rptr1 4.0KM N hops=256
+                //
+                // Focus already refuses to print that (>= 250 reads as PATH
+                // UNKNOWN); this line did not. It stays silent instead of
+                // borrowing Focus's wording, because this is a STROKE surface
+                // and cannot draw the Japanese for it.
+                "%s%s%s  %s".format(
                     if (full.isNotEmpty()) "$full   " else "",
-                    n.hops, MeshNodes.km(n.dist.toDouble()),
+                    if (n.hops in 1..249) "${n.hops} HOP  " else "",
+                    MeshNodes.km(n.dist.toDouble()),
                     if (n.age < 0.34f) "LIVE" else "STALE",
                 )
             }

@@ -85,6 +85,8 @@ class Reel(
 
     private val cells = mutableListOf<Cell>()
     /** The oval itself, so the slots read as sitting ON something. */
+    /** The last card text logged, so the reel speaks on change only. */
+    private var lastCardSaid: String? = null
     private var panel: MeshEntity? = null
     /** The raised card: whichever slot is current, big enough to read. */
     private var stem: MeshEntity? = null
@@ -455,6 +457,14 @@ class Reel(
                 return@runCatching
             }
             val wrapped = wrap(sel.words, CARD_COLS, CARD_LINES)
+            // WHAT THE CARD DREW, on change only — this runs every frame, so
+            // logging unconditionally would put the palm reel in the log at
+            // sixty lines a second. Keyed on the text so a scrub says its new
+            // card once and a held hand says nothing.
+            if (sel.words != lastCardSaid) {
+                lastCardSaid = sel.words
+                Log.i(TAG, "[reel] card from '${sel.who}' -> ${wrapped.map { it }}")
+            }
             // THE BLOCK GROWS UPWARD FROM A FIXED CLEARANCE, rather than
             // hanging down from a fixed top. A long message that hangs down
             // runs into the hand it is sitting on, and raising the anchor by a

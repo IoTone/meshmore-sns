@@ -215,20 +215,20 @@
     <string name="n_diag_on">DIAGNOSTICS ON</string>
     <string name="n_diag_off">DIAGNOSTICS OFF</string>
     <string name="n_scene_moved">SCENE MOVED HERE</string>
-    <string name="n_scene_moved_nonorth">SCENE MOVED HERE  NORTH NOT SET</string>
+    <string name="n_scene_moved_nonorth">"SCENE MOVED HERE  NORTH NOT SET"</string>
     <string name="n_nothing_there">NOTHING RESOLVABLE THERE</string>
     <string name="ab_version">VERSION</string>
     <string name="ab_radio">RADIO</string>
     <string name="ab_firmware">FW</string>
     <string name="ab_no_radio">NO RADIO LINKED</string>
     <!-- ═══ pagers and palm reel — written straight to panels until 2026-08-18 ═══ -->
-    <string name="pg_more">%1$d-%2$d OF %3$d   MORE</string>
+    <string name="pg_more">"%1$d-%2$d OF %3$d   MORE"</string>
     <!-- Two strings rather than a plurals resource: the only distinction
          English needs here is one-versus-many, Japanese needs none, and the
          parity test that guards this file understands strings. -->
     <string name="pg_msgs_one">1 MESSAGE</string>
     <string name="pg_msgs_many">%1$d MESSAGES</string>
-    <string name="reel_scrub">◀  %1$d OF %2$d  ▶</string>
+    <string name="reel_scrub">"◀  %1$d OF %2$d  ▶"</string>
     <string name="reel_to_you">%1$s → YOU</string>
     <string name="reel_from">%1$s · %2$s</string>
     <string name="reel_channel">CHANNEL</string>
@@ -262,7 +262,7 @@
     <string name="p_live">LIVE</string>
     <string name="p_stale">STALE</string>
     <string name="p_est">EST</string>
-    <string name="r_gc">FORGET OVER %1$dKM  (%2$d)</string>
+    <string name="r_gc">"FORGET OVER %1$dKM  (%2$d)"</string>
     <string name="n_gc_none">NOTHING OVER %1$dKM TO FORGET</string>
     <string name="n_gc_nofix">NO POSITION — CANNOT JUDGE DISTANCE</string>
     <string name="n_gc_done">FORGOT %1$d CONTACT(S)</string>
@@ -285,7 +285,7 @@
     <string name="n_forget_unknown">NOT IN THE RADIO\'S CONTACTS</string>
     <string name="al_full">CONTACT STORE FULL — %1$d OF %2$d. NEW NODES ARE TURNED AWAY</string>
     <string name="r_alerts">ALERTS PANEL</string>
-    <string name="al_title">ALERTS  (%1$d)</string>
+    <string name="al_title">"ALERTS  (%1$d)"</string>
     <string name="al_none">NOTHING TO REPORT</string>
     <string name="al_swept">FORGOT %1$d CONTACT(S)</string>
     <string name="al_lookalike">\'%1$s\' LOOKS LIKE YOURS BY KEY ONLY — IGNORED</string>

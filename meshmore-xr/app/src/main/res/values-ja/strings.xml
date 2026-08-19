@@ -208,16 +208,16 @@
     <string name="n_diag_on">診断 オン</string>
     <string name="n_diag_off">診断 オフ</string>
     <string name="n_scene_moved">シーンを現在地へ移動</string>
-    <string name="n_scene_moved_nonorth">現在地へ移動 — 北は未設定</string>
+    <string name="n_scene_moved_nonorth">"現在地へ移動 — 北は未設定"</string>
     <string name="n_nothing_there">解決できるノードなし</string>
     <string name="ab_version">版</string>
     <string name="ab_radio">無線機</string>
     <string name="ab_firmware">FW</string>
     <string name="ab_no_radio">無線機なし</string>
-    <string name="pg_more">%1$d-%2$d / %3$d   次へ</string>
+    <string name="pg_more">"%1$d-%2$d / %3$d   次へ"</string>
     <string name="pg_msgs_one">1 件</string>
     <string name="pg_msgs_many">%1$d 件</string>
-    <string name="reel_scrub">◀  %1$d / %2$d  ▶</string>
+    <string name="reel_scrub">"◀  %1$d / %2$d  ▶"</string>
     <string name="reel_to_you">%1$s → 自分</string>
     <string name="reel_from">%1$s · %2$s</string>
     <string name="reel_channel">チャンネル</string>
@@ -251,7 +251,7 @@
     <string name="p_live">最近受信</string>
     <string name="p_stale">古い</string>
     <string name="p_est">推定</string>
-    <string name="r_gc">%1$dkm 超を削除  (%2$d)</string>
+    <string name="r_gc">"%1$dkm 超を削除  (%2$d)"</string>
     <string name="n_gc_none">%1$dkm 超の相手はいません</string>
     <string name="n_gc_nofix">位置不明で距離を判定不可</string>
     <string name="n_gc_done">%1$d 件を削除しました</string>
@@ -274,7 +274,7 @@
     <string name="n_forget_unknown">無線機の連絡先にありません</string>
     <string name="al_full">連絡先が満杯 — %1$d/%2$d。新規ノードを取り込めません</string>
     <string name="r_alerts">アラート表示</string>
-    <string name="al_title">アラート  (%1$d)</string>
+    <string name="al_title">"アラート  (%1$d)"</string>
     <string name="al_none">報告事項はありません</string>
     <string name="al_swept">%1$d 件を削除しました</string>
     <string name="al_lookalike">「%1$s」は鍵の末尾のみ一致 — 自ノード扱いにしません</string>

@@ -62,9 +62,18 @@ class Inbox(
         val proxy: MeshEntity,
     ) {
         var lastFire = 0L
+
+        /** What this row is currently showing, so a frame that changes nothing writes nothing. */
+        var said: String? = null
     }
 
     private val rows = mutableListOf<Row>()
+
+    /** The pager's current words, for the same reason [Row.said] exists. */
+    private var pagerSaid: String? = null
+
+    /** The empty-state marker, distinct from any real message pair. */
+    private val EMPTY_MARK = "\u0000empty"
     private var pager: TextRun.Run? = null
     private var pagerProxy: MeshEntity? = null
     private val entities = mutableListOf<Entity>()
@@ -183,8 +192,15 @@ class Inbox(
                     r.body.entity.setEnabled(on)
                     r.proxy.setEnabled(false)
                     if (!on) return@runCatching
-                    r.head.setText(context.getString(com.iotj.meshmore.xr.R.string.inbox_empty_head))
-                    r.body.setText(context.getString(com.iotj.meshmore.xr.R.string.inbox_empty_body))
+                    if (r.said != EMPTY_MARK) {
+                        r.said = EMPTY_MARK
+                        r.head.setText(
+                            context.getString(com.iotj.meshmore.xr.R.string.inbox_empty_head),
+                        )
+                        r.body.setText(
+                            context.getString(com.iotj.meshmore.xr.R.string.inbox_empty_body),
+                        )
+                    }
                     val at = Vector3(a.x, a.y, a.z)
                     r.head.entity.setPose(Pose(at, facing(a)), Space.ACTIVITY)
                     r.body.entity.setPose(
@@ -206,11 +222,23 @@ class Inbox(
                 r.body.entity.setEnabled(e != null)
                 r.proxy.setEnabled(e != null)
                 if (e == null) return@runCatching
-                r.head.setText(e.who)
-                // The message list, read back once per page turn. Bodies are
-                // whatever somebody typed into a radio, in whatever script.
-                Log.i(TAG, "[inbox] row = '${e.who}'")
-                r.body.setText(e.words)
+                // TEXT ONLY WHEN IT CHANGED. `render` runs from `tick`, which
+                // is every frame — so this rewrote every row and the pager
+                // fifteen times a second for as long as the inbox was open.
+                // Each write rasterises an Android view behind the panel, and
+                // panel churn is what this platform aborts system_server over.
+                // Caught by the read-back logging added an hour earlier, which
+                // arrived in the log at 15 Hz and got the monitor shut off for
+                // flooding — the log was telling the truth about the surface.
+                //
+                // Poses still update every frame: the panels have to keep
+                // facing the wearer. It is the TEXT that does not change.
+                if (r.said != e.who + "\u0000" + e.words) {
+                    r.said = e.who + "\u0000" + e.words
+                    r.head.setText(e.who)
+                    r.body.setText(e.words)
+                    Log.i(TAG, "[inbox] row = '${e.who}' | '${e.words}'")
+                }
                 r.head.entity.setPose(
                     Pose(Vector3(a.x, y, a.z), facing(a)), Space.ACTIVITY,
                 )
@@ -239,8 +267,11 @@ class Inbox(
                         first + 1, (first + ROWS).coerceAtMost(all.size), all.size,
                     )
                 }
-                Log.i(TAG, "[inbox] pager = '$pageText'")
-                pager?.setText(pageText)
+                if (pageText != pagerSaid) {
+                    pagerSaid = pageText
+                    Log.i(TAG, "[inbox] pager = '$pageText'")
+                    pager?.setText(pageText)
+                }
                 pager?.entity?.setPose(Pose(Vector3(a.x, py, a.z), facing(a)), Space.ACTIVITY)
                 pagerProxy?.setPose(Pose(Vector3(a.x, py, a.z)), Space.ACTIVITY)
             }
