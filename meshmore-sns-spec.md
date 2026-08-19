@@ -822,13 +822,27 @@ While Meshcore protocol is open source, the client is not open source.  We want 
     silently miss. Setting an override re-keys onto the longer form
     so one peer converges on one row.
 
-  **Known asymmetry:** *channel* speech is still screen-scoped —
-  `ChatScreen.initState` owns that subscription, so channel messages
-  are spoken only while that screen is mounted, whereas DM speech now
-  works anywhere. Deliberate (the ask was DMs) and left as-is rather
-  than quietly changed, but the two should converge: moving channel
-  speech into `CueBridge` alongside DMs is the obvious follow-up, and
-  R24's per-channel bundle is where it belongs.
+  **Resolved — channel speech is app-scoped too.** This shipped with a
+  known asymmetry: *channel* speech stayed screen-scoped, owned by
+  `ChatScreen.initState`, so channel messages were spoken only while
+  that screen was mounted while DM speech worked anywhere. That has
+  since been fixed — `CueBridge._onIncomingChannelMessage` now calls
+  `speakForChannel`, and `ChatScreen` subscribes to nothing.
+
+  The old behaviour was worse than merely inconsistent. It spoke the
+  channel you were *already reading* — the one case where you do not
+  need it read aloud — and went silent the moment you switched to Map
+  or Nodes, which is exactly when speech earns its keep. The mute
+  toggle in the chat header was also misleading: it looked like a
+  property of the channel, but the channel was inaudible from every
+  other tab regardless of its setting.
+
+  What did **not** move: the per-channel mute UI stays in the chat
+  header, and the gate (`master → per-channel mute → global`) stays in
+  `TtsController`. Only the subscription changed hands. A widget test
+  in `chat_screen_test.dart` now asserts the screen speaks *nothing*
+  on its own, guarding against the subscription being re-added and
+  every message being spoken twice.
 
   **Where it lives.** Three entry points, one sheet:
   - **Node detail sheet → "Voice & chime"** — primary. This is where

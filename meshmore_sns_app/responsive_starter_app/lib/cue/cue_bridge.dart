@@ -28,15 +28,19 @@ class CueBridge {
   final MeshcoreController _mc;
   final CueService _cue;
 
-  /// R58 — speaks inbound DMs per the peer's tri-state. Optional so
+  /// Speaks inbound traffic: channel messages per their per-channel
+  /// mute (R5), DMs per the peer's tri-state (R58). Optional so
   /// existing construction sites (and the cue tests) are unaffected;
   /// null simply means no speech.
   ///
-  /// DM speech belongs **here** rather than in `DmScreen` precisely
-  /// because this bridge is app-scoped. `PeerSpeechMode.always` means
-  /// "I always want to hear this radio" — if it only fired while that
-  /// thread was open, the mode would be pointless, since a user
-  /// staring at the thread can read it.
+  /// Speech belongs **here** rather than in `ChatScreen` / `DmScreen`
+  /// precisely because this bridge is app-scoped. Channel speech used
+  /// to live in `ChatScreen.initState`, which meant it only spoke the
+  /// channel you were already looking at — the one case where you did
+  /// not need it read aloud — and went silent the moment you switched
+  /// to Map or Nodes. `PeerSpeechMode.always` has the same shape: it
+  /// means "I always want to hear this radio", which a screen-scoped
+  /// subscription cannot honour.
   final TtsController? _tts;
   StreamSubscription<ChatMessage>? _msgSub;
   StreamSubscription<ChatMessage>? _dmSub;
@@ -100,8 +104,15 @@ class CueBridge {
     _cue.play(CueKind.advert);
   }
 
-  void _onIncomingChannelMessage(ChatMessage _) =>
-      _cue.play(CueKind.messageIn);
+  void _onIncomingChannelMessage(ChatMessage m) {
+    _cue.play(CueKind.messageIn);
+    final TtsController? tts = _tts;
+    if (tts == null) return;
+    // Fire-and-forget, as with DMs: a slow platform TTS call must not
+    // stall the cue path or the message store behind it. The gate
+    // (master + global + per-channel mute) lives in the controller.
+    unawaited(tts.speakForChannel(m.channelIdx, m.text));
+  }
 
   void _onIncomingDm(ChatMessage m) {
     _cue.play(CueKind.dmIn);

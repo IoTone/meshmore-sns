@@ -44,6 +44,79 @@ class _RecordingSpeaker implements TtsSpeaker {
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
+  group('R5 channel speech is app-scoped, not screen-scoped', () {
+    test('an inbound channel message is spoken with no ChatScreen mounted',
+        () async {
+      SharedPreferences.setMockInitialValues(<String, Object>{});
+      final FakeMeshcoreTransport fake =
+          FakeMeshcoreTransport(connected: true);
+      final MeshcoreController ctrl =
+          MeshcoreController(transportFactory: () async => fake);
+      final _RecordingSpeaker spk = _RecordingSpeaker();
+      final TtsController tts = TtsController(speaker: spk);
+      await tts.setEnabled(true);
+
+      final CueBridge bridge =
+          CueBridge(ctrl, _RecordingCue(ThemeController()), tts);
+      await ctrl.connect();
+      fake.emit(channelMsgFrame(idx: 0, text: 'anyone on frequency'));
+      await Future<void>.delayed(Duration.zero);
+
+      // No widget tree at all — this is the whole point of the move.
+      expect(spk.spoken, <String>['anyone on frequency']);
+      bridge.dispose();
+      ctrl.dispose();
+    });
+
+    test('the per-channel mute still wins, and only for that channel',
+        () async {
+      SharedPreferences.setMockInitialValues(<String, Object>{});
+      final FakeMeshcoreTransport fake =
+          FakeMeshcoreTransport(connected: true);
+      final MeshcoreController ctrl =
+          MeshcoreController(transportFactory: () async => fake);
+      final _RecordingSpeaker spk = _RecordingSpeaker();
+      final TtsController tts = TtsController(speaker: spk);
+      await tts.setEnabled(true);
+      tts.toggleChannelMute(2);
+
+      final CueBridge bridge =
+          CueBridge(ctrl, _RecordingCue(ThemeController()), tts);
+      await ctrl.connect();
+      fake.emit(channelMsgFrame(idx: 2, text: 'muted channel'));
+      await Future<void>.delayed(Duration.zero);
+      fake.emit(channelMsgFrame(idx: 1, text: 'other channel'));
+      await Future<void>.delayed(Duration.zero);
+
+      expect(spk.spoken, <String>['other channel']);
+      bridge.dispose();
+      ctrl.dispose();
+    });
+
+    test('the audio master silences channel speech', () async {
+      SharedPreferences.setMockInitialValues(<String, Object>{});
+      final FakeMeshcoreTransport fake =
+          FakeMeshcoreTransport(connected: true);
+      final MeshcoreController ctrl =
+          MeshcoreController(transportFactory: () async => fake);
+      final _RecordingSpeaker spk = _RecordingSpeaker();
+      final ThemeController theme = ThemeController();
+      await theme.setAudioMaster(false);
+      final TtsController tts =
+          TtsController(speaker: spk, theme: theme);
+      await tts.setEnabled(true);
+
+      final CueBridge bridge = CueBridge(ctrl, _RecordingCue(theme), tts);
+      await ctrl.connect();
+      fake.emit(channelMsgFrame(text: 'should stay quiet'));
+      await Future<void>.delayed(Duration.zero);
+
+      expect(spk.spoken, isEmpty);
+      bridge.dispose();
+      ctrl.dispose();
+    });
+  });
+
   group('R58 DM speech is app-scoped, not screen-scoped', () {
     test('an inbound DM from an always-peer is spoken with no DM screen open',
         () async {

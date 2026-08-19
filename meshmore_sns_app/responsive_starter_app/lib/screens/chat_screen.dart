@@ -42,7 +42,6 @@ class _ChatScreenState extends State<ChatScreen>
 
   final TextEditingController _input = TextEditingController();
   final ScrollController _scroll = ScrollController();
-  StreamSubscription<ChatMessage>? _incomingSub;
   bool _stripCollapsed = false;
   int _lastCount = 0;
 
@@ -66,13 +65,11 @@ class _ChatScreenState extends State<ChatScreen>
   @override
   void initState() {
     super.initState();
-    final MeshcoreController mc = context.read<MeshcoreController>();
-    final TtsController tts = context.read<TtsController>();
-    // Speak inbound channel messages (the gate — global on + channel
-    // not muted — lives inside the controller).
-    _incomingSub = mc.incomingChannelMessages.listen((ChatMessage m) {
-      unawaited(tts.speakForChannel(m.channelIdx, m.text));
-    });
+    // Channel speech is *not* subscribed here. It lives in `CueBridge`,
+    // which is app-scoped, so a channel speaks whether or not you are
+    // looking at it — see the note there. This screen still owns the
+    // per-channel mute toggle in its header; only the playback moved.
+
     // R29 — track scroll position so we know whether to follow the
     // newest message automatically or surface a jump-to-newest pill.
     _scroll.addListener(_onScroll);
@@ -111,7 +108,6 @@ class _ChatScreenState extends State<ChatScreen>
 
   @override
   void dispose() {
-    _incomingSub?.cancel();
     _scroll.removeListener(_onScroll);
     _input.dispose();
     _scroll.dispose();

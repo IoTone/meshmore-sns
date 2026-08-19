@@ -113,30 +113,6 @@ void main() {
     mc.dispose();
   });
 
-  testWidgets('inbound message is NOT spoken when TTS is off (R5)',
-      (WidgetTester t) async {
-    await t.binding.setSurfaceSize(const Size(900, 1600));
-    addTearDown(() => t.binding.setSurfaceSize(null));
-    final FakeMeshcoreTransport fake =
-        FakeMeshcoreTransport(connected: true);
-    final MeshcoreController mc = MeshcoreController(
-      transportFactory: () async => fake,
-      connection:
-          MeshcoreConnection(handshakeTimeout: const Duration(seconds: 5)),
-    );
-    final FakeTtsSpeaker spk = FakeTtsSpeaker();
-    final TtsController off = TtsController(speaker: spk); // default off
-    await t.pumpWidget(_host(mc, off));
-    await mc.connect();
-    fake.emit(selfInfoFrame()); // → ready (no reconnect churn)
-    await t.pump();
-    fake.emit(channelMsgFrame(text: 'silent'));
-    await t.pump();
-    await t.pump(const Duration(milliseconds: 10));
-    expect(spk.spoken, isEmpty);
-    mc.dispose();
-  });
-
   testWidgets('long-press → Delete removes the row locally (R20)',
       (WidgetTester t) async {
     await t.binding.setSurfaceSize(const Size(900, 1600));
@@ -202,7 +178,12 @@ void main() {
     mc.dispose();
   });
 
-  testWidgets('inbound message IS spoken when TTS is on (R5)',
+  // The screen must NOT speak on its own: playback moved to `CueBridge`
+  // so a channel is heard whether or not you are looking at it. Both
+  // halves of the old pair (on → spoken, off → silent) now live in
+  // test/cue/cue_bridge_test.dart. This is the guard against someone
+  // re-adding the subscription here and double-speaking every message.
+  testWidgets('ChatScreen does not itself speak inbound messages (R5)',
       (WidgetTester t) async {
     await t.binding.setSurfaceSize(const Size(900, 1600));
     addTearDown(() => t.binding.setSurfaceSize(null));
@@ -215,7 +196,7 @@ void main() {
     );
     final FakeTtsSpeaker spk = FakeTtsSpeaker();
     final TtsController on = TtsController(speaker: spk);
-    await on.setEnabled(true);
+    await on.setEnabled(true); // everything permits speech...
     await t.pumpWidget(_host(mc, on));
     await mc.connect();
     fake.emit(selfInfoFrame()); // → ready
@@ -223,7 +204,8 @@ void main() {
     fake.emit(channelMsgFrame(text: 'spoken aloud'));
     await t.pump();
     await t.pump(const Duration(milliseconds: 10));
-    expect(spk.spoken, <String>['spoken aloud']);
+    // ...but no CueBridge is wired in this host, so nothing speaks.
+    expect(spk.spoken, isEmpty);
     mc.dispose();
   });
 }
