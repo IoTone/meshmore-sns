@@ -199,110 +199,42 @@ private class PlainWordmark(
  * never ticks at all, the wordmark is still standing there.
  */
 private class VectorlineHero(
-    private val session: Session,
-    private val context: android.content.Context,
-    private val theme: Horizon.Palette,
-    private val cap: Float,
-) : Hero {
+    session: Session, context: android.content.Context, theme: Horizon.Palette, cap: Float,
+) : TypeHero(session, context, theme, cap) {
 
-    private var word: TextRun.Run? = null
-    private var beam: MeshEntity? = null
-    private var beamMat: KhronosUnlitMaterial? = null
-    private var origin = Vector3(0f, 0f, 0f)
-    private var span = 0f
-    /** Half the panel's height — everything here rides above the baseline. */
-    private var mid = 0f
+    private var beam = -1
 
     override suspend fun build(root: Entity, at: Vector3) {
-        origin = at
-
-        // A PANEL IS RIGHT HERE for the reason panels are usually wrong: it is
-        // born holding its final text and is never written again, which is the
-        // one case that renders reliably on every device.
-        // ON THE BASELINE, NOT ON THE CENTRE. Glyphs.text sits on its baseline
-        // and grows upward, so the boot surface's stack — mark above, stamp
-        // below, vessel under that — was laid out around a wordmark that
-        // occupied nothing below the anchor. A panel is centred instead and
-        // reaches half its height down, which is how the first real-type build
-        // printed the version straight through the letterforms. Lifting it by
-        // half its height restores the convention the layout was written for.
-        word = TextRun.create(
-            session, context, Heroes.WORD, cap, argb(theme.accent, 0.95f), "hero-vector",
-        )?.also {
-            it.entity.parent = root
-            it.entity.setPose(
-                Pose(Vector3(at.x, at.y + it.heightM / 2f, at.z)), Space.ACTIVITY,
-            )
-        }
-        span = word?.widthM ?: Glyphs.width(Heroes.WORD, cap)
-
+        buildWord(root, at, "hero-vector")
         // THE BEAM — a bright bar taller than the type, crossing it. On
         // additive optics it needs no mask and no invert: it adds light where
         // it passes, which is what a beam did on a phosphor tube.
-        beamMat = Prims.material(session, theme.text, 0f)
-        mid = (word?.heightM ?: cap) / 2f
-        beam = MeshEntity.create(
-            session, Prims.build(session, Prims.bar(cap * 0.075f, cap * 1.8f, cap * 0.05f)),
-            listOf(beamMat!!),
-        ).also {
-            it.parent = root
-            it.setPose(Pose(Vector3(at.x - span / 2f, at.y + mid, at.z)), Space.ACTIVITY)
-        }
-
-        // NO GROUND PLANE. The first cut hung five rules under the word; seen
-        // in a capture they ran the full width of the view and fought the
-        // stage's own floor grid, which already draws teal lines across the
-        // room. Two grids is noise, and the rules also reached down into the
-        // build stamp. The beam crossing real type is the idea; the room
-        // supplies the rest.
-
-        Log.i(
-            Heroes.TAG,
-            ("[hero] vectorline — real type %.3fm x %.3fm on the baseline + beam, " +
-                "sweep every %.1fs").format(span, word?.heightM ?: 0f, REFRESH_S),
+        beam = part(
+            root, Prims.bar(cap * 0.075f, cap * 1.8f, cap * 0.05f), theme.text, 0f,
+            Vector3(at.x - span / 2f, at.y + mid, at.z),
         )
+        say("vectorline — wordmark + beam every ${REFRESH_S}s")
     }
 
-    /** Moves the beam. The type is never touched — it was finished at build. */
     override fun tick(t: Float) {
+        // JITTER AND SAG. A vector monitor never held a shape perfectly still:
+        // the deflection amplifiers drifted, and the image swelled a fraction
+        // when the beam had a lot to draw. Two sine waves at deliberately
+        // unrelated rates give a wobble that never repeats on a beat, which is
+        // what makes it read as instability rather than as animation.
+        val jx = kotlin.math.sin(t * 7.3f) * 0.0035f + kotlin.math.sin(t * 3.1f) * 0.0022f
+        val jy = kotlin.math.sin(t * 5.9f) * 0.0028f + kotlin.math.sin(t * 2.3f) * 0.0018f
+        moveWord(dx = jx, dy = jy, capScale = 1f + kotlin.math.sin(t * 1.7f) * 0.012f)
+
         val cycle = t % REFRESH_S
         val sweeping = cycle < REFRESH_SWEEP_S
         val phase = (cycle / REFRESH_SWEEP_S).coerceIn(0f, 1f)
         val x = -span / 2f - cap * 0.3f + (span + cap * 0.6f) * phase
-        runCatching {
-            beam?.setPose(
-                Pose(Vector3(origin.x + x, origin.y + mid, origin.z)), Space.ACTIVITY,
-            )
-            // Fades at both margins so the beam enters and leaves rather than
-            // snapping on at the edge of the word.
-            val edge = kotlin.math.sin(phase * Math.PI).toFloat()
-            beamMat?.setBaseColorFactor(rgba(theme.text, if (sweeping) 0.85f * edge else 0f))
-        }
-    }
-
-    /** Baseline-aligned: this hero reaches nothing below the anchor. */
-    override val dropM: Float get() = 0f
-
-    private fun argb(rgb: Int, a: Float): Int =
-        (((a.coerceIn(0f, 1f) * 255).toInt() and 0xFF) shl 24) or (rgb and 0xFFFFFF)
-
-    private fun rgba(rgb: Int, a: Float) = Vector4(
-        ((rgb shr 16) and 0xFF) / 255f,
-        ((rgb shr 8) and 0xFF) / 255f,
-        (rgb and 0xFF) / 255f,
-        a,
-    )
-
-    override fun clear() {
-        runCatching { word?.entity?.parent = null }
-        runCatching { word?.entity?.dispose() }
-        word = null
-        listOfNotNull(beam).forEach {
-            runCatching { it.parent = null }
-            runCatching { it.dispose() }
-        }
-        beam = null
-        beamMat = null
+        place(beam, Vector3(origin.x + x, origin.y + mid, origin.z))
+        // Fades at both margins so the beam enters and leaves rather than
+        // snapping on at the edge of the word.
+        val edge = kotlin.math.sin(phase * Math.PI).toFloat()
+        paint(beam, theme.text, if (sweeping) 0.85f * edge else 0f)
     }
 
     private companion object {
@@ -313,19 +245,6 @@ private class VectorlineHero(
     }
 }
 
-/**
- * WHAT EVERY HERO SHARES: a wordmark of real type, standing on the baseline.
- *
- * The letterforms are the one thing all nine agree on — they are the app's
- * name, and the operator's brief was that they stop being stroke glyphs. What
- * differs is what each theme puts AROUND them, which is the whole point of a
- * per-theme hero: the word is the constant, the room it stands in is the
- * theme.
- *
- * Panels are used here in the one way that is safe: born holding their final
- * text and never written again. Everything else a hero adds is meshes, which
- * are free to move.
- */
 /**
  * A NOTE ON LINE WEIGHT, paid for once and applied to every hero below.
  *
@@ -347,6 +266,10 @@ private abstract class TypeHero(
 ) : Hero {
 
     protected var word: TextRun.Run? = null
+    /** Where the word was built. All motion is measured from here, never accumulated. */
+    protected var home = Vector3(0f, 0f, 0f)
+    /** The cap height it was built at, so a breath can be a ratio of it. */
+    protected var baseCap = 0f
     protected var span = 0f
     /** Half the panel's height: everything rides above the baseline. */
     protected var mid = 0f
@@ -372,6 +295,56 @@ private abstract class TypeHero(
         }
         span = word?.widthM ?: Glyphs.width(Heroes.WORD, cap * scale)
         mid = (word?.heightM ?: cap * scale) / 2f
+        home = Vector3(at.x, at.y + mid, at.z)
+        baseCap = cap * scale
+    }
+
+    /**
+     * HOW THE WORD ITSELF MOVES.
+     *
+     * Every hero got furniture that moves and left the type dead still, which
+     * made nine themes share one gesture: none. This is the other half — the
+     * wordmark's own behaviour, which is the most characteristic thing a
+     * theme can do, because it is the one object all nine have in common.
+     *
+     * THREE RULES, and they are the same three the surface already lives by:
+     *
+     *  1. FROM HOME, NEVER ACCUMULATED. Every call is an absolute offset from
+     *     where the word was built. A motion that integrates drifts, and a
+     *     drifting wordmark walks out of a layout that was measured once.
+     *  2. TRANSFORMS ONLY. Pose, scale and alpha are transforms on a panel
+     *     that already holds its raster. `setCapHeight` is `setScale` — it
+     *     does not re-render type, which per-frame would be the inbox bug
+     *     with a different surface's name on it.
+     *  3. SMALL, BUT NOT INVISIBLE. At two metres one degree is 35 mm, so
+     *     millimetres are the working unit — and the first cut of every gesture
+     *     below was three to five of them, which a centroid tracked across
+     *     thirty captured frames could not separate from its own noise. SEELE,
+     *     which provably does not move, measured 1.0 mm of travel; half the
+     *     themes measured the same. Motion nobody can see is not restraint, it
+     *     is a rounding error. The working range is 10-20 mm.
+     */
+    protected fun moveWord(
+        dx: Float = 0f,
+        dy: Float = 0f,
+        dz: Float = 0f,
+        yawDeg: Float = 0f,
+        rollDeg: Float = 0f,
+        capScale: Float = 1f,
+        alpha: Float? = null,
+    ) {
+        val w = word ?: return
+        runCatching {
+            w.entity.setPose(
+                Pose(
+                    Vector3(home.x + dx, home.y + dy, home.z + dz),
+                    Quaternion.fromEulerAngles(0f, yawDeg, rollDeg),
+                ),
+                Space.ACTIVITY,
+            )
+            if (capScale != 1f) w.setCapHeight(baseCap * capScale)
+            alpha?.let { w.entity.setAlpha(it) }
+        }
     }
 
     /** A mesh in this hero's frame, remembered for teardown and repainting. */
@@ -463,7 +436,23 @@ private class VoidHero(
         // period, on for slightly longer than off, which is what a VT100 did.
         val on = (t % 1.4f) < 0.8f
         paint(cursor, theme.accent, if (on) 0.9f else 0.05f)
+
+        // PHOSPHOR, AND INTERFERENCE. The word does not move at all for most
+        // of its life — this is a terminal, and terminals hold. What it does
+        // is FLICKER, faintly and irregularly, the way a phosphor screen does;
+        // and once every few seconds the picture tears upward by two
+        // millimetres for a single beat, which is a tube losing its lock. The
+        // hold is the character. The interruption is what makes the hold read
+        // as a screen rather than as a sticker.
+        val roll = t % ROLL_S
+        val torn = roll < 0.10f
+        moveWord(
+            dy = if (torn) 0.010f else 0f,
+            alpha = 0.90f + 0.09f * kotlin.math.sin(t * 11.7f) * kotlin.math.sin(t * 4.3f),
+        )
     }
+
+    private companion object { const val ROLL_S = 4.7f }
 }
 
 /**
@@ -510,6 +499,16 @@ private class BiolumeHero(
     }
 
     override fun tick(t: Float) {
+        // FLOATING, NOT ANIMATED. The word drifts the way something suspended
+        // in water drifts — five millimetres up and down over nine seconds,
+        // with a slow swell in scale a beat out of phase with it, so the rise
+        // and the growth never quite agree. Nothing in a living thing moves on
+        // one clock.
+        moveWord(
+            dy = kotlin.math.sin(t * 0.68f) * 0.018f,
+            dx = kotlin.math.sin(t * 0.41f) * 0.008f,
+            capScale = 1f + kotlin.math.sin(t * 0.52f) * 0.022f,
+        )
         spores.forEach { s ->
             val d = t * DRIFT + s.ph
             place(
@@ -574,6 +573,14 @@ private class ReconHero(
     }
 
     override fun tick(t: Float) {
+        // A RE-LOCK, NOT A DRIFT. Night operations, and the word behaves like
+        // a stabilised sight: it holds dead still, then steps two millimetres
+        // and settles, on a strict interval. The step is instant and the
+        // settle is fast — an instrument correcting itself, never a thing
+        // gliding around. Nothing in this theme eases.
+        val since = t % RELOCK_S
+        val kick = if (since < 0.22f) (1f - since / 0.22f) else 0f
+        moveWord(dx = kick * 0.009f, dy = kick * -0.006f)
         // The bar is drawn along +X from the hub, so it is posed at the hub
         // offset by half its length in the direction it points.
         val a = t * SWEEP_RATE
@@ -593,7 +600,10 @@ private class ReconHero(
         runCatching { parts[i].setPose(Pose(at, q), Space.ACTIVITY) }
     }
 
-    private companion object { const val SWEEP_RATE = 1.6f }
+    private companion object {
+        const val SWEEP_RATE = 1.6f
+        const val RELOCK_S = 2.4f
+    }
 }
 
 /**
@@ -634,6 +644,12 @@ private class AgHero(
     }
 
     override fun tick(t: Float) {
+        // UNDER LOAD. A craft HUD at speed is not bolted to the world — it
+        // rides the airframe. The word banks a degree either side and drifts
+        // four millimetres against the bank, which reads as the whole thing
+        // being pushed rather than as the letters wobbling.
+        val sway = kotlin.math.sin(t * 0.75f)
+        moveWord(dx = sway * -0.015f, yawDeg = sway * 3.0f, rollDeg = sway * 1.4f)
         chev.forEachIndexed { k, i ->
             // Each chevron runs the same track on its own phase, so the stream
             // is continuous rather than a row of things bobbing together.
@@ -712,6 +728,14 @@ private class NervHero(
     }
 
     override fun tick(t: Float) {
+        // A HARD RE-SEAT. Evangelion's title cards cut, they do not dissolve,
+        // and the MAGI does not ease into a decision. So the word SNAPS six
+        // millimetres and snaps back eighty milliseconds later, with nothing
+        // in between: the only motion in this app with no interpolation in it
+        // at all, which is the point.
+        val phase = t % RESEAT_S
+        val cut = phase < 0.13f
+        moveWord(dx = if (cut) -0.020f else 0f, alpha = if (cut) 1f else 0.93f)
         arcs.forEachIndexed { k, i ->
             // Counter-rotating, and slowly: a command deck is not a fairground.
             val dir = if (k % 2 == 0) 1f else -1f
@@ -726,6 +750,8 @@ private class NervHero(
             }
         }
     }
+
+    private companion object { const val RESEAT_S = 3.0f }
 }
 
 /**
@@ -758,6 +784,14 @@ private class HaloHero(
     }
 
     override fun tick(t: Float) {
+        // A BREATH. The theme that claims eight hours of wear does the least
+        // of the nine — twelve millimetres of rise and fall over seven seconds,
+        // the light coming up as it rises. The first cut used three, which
+        // measured at the noise floor of the capture: at two metres a degree is
+        // 35 mm, so 3 mm is a twelfth of one and nobody was ever going to see
+        // it. Calm has to be visible before it can be calm.
+        val b = kotlin.math.sin(t * 0.9f)
+        moveWord(dy = b * 0.012f, alpha = 0.88f + 0.09f * b)
         rings.forEachIndexed { k, i ->
             // A wave travelling outward, one ring at a time, at walking pace.
             val ph = t * 0.42f - k * 0.55f
@@ -807,7 +841,15 @@ private class SeeleHero(
         say("seele monolith — wordmark at ${SCALE}x + $SLABS slabs")
     }
 
-    /** Nothing. A monolith that moves is not one. */
+    /**
+     * NOTHING. AND THAT IS THE GESTURE.
+     *
+     * Eight themes were given a way of moving the word, and this one keeps
+     * absolute stillness on purpose. A monolith that drifts, breathes or
+     * flickers is a screensaver; the whole authority of the thing is that it
+     * does not react to you. In a set where everything else is alive, the one
+     * that refuses is the one you notice.
+     */
     override fun tick(t: Float) = Unit
 
     private companion object {
@@ -869,8 +911,18 @@ private class DrPopHero(
         say("dr pop — wordmark + katakana + ${blocks.size} blocks")
     }
 
-    /** Print does not animate. The blocks hold; only the ink is alive. */
-    override fun tick(t: Float) = Unit
+    /**
+     * REGISTRATION SHIFT. Print does not animate — but print MISREGISTERS, and
+     * a plate that lands a hair off is the most print thing that can happen to
+     * a word. Every couple of seconds the type jumps three millimetres and a
+     * hair up, for a tenth of a second, exactly as though the sheet moved
+     * under the press. Everything else here holds absolutely still.
+     */
+    override fun tick(t: Float) {
+        val phase = t % REGISTER_S
+        val off = phase < 0.14f
+        moveWord(dx = if (off) 0.011f else 0f, dy = if (off) 0.007f else 0f)
+    }
 
     override val riseM: Float get() = mid * 2.9f
 
@@ -881,5 +933,8 @@ private class DrPopHero(
         super.clear()
     }
 
-    private companion object { const val KANA = "メッシュモア" }
+    private companion object {
+        const val KANA = "メッシュモア"
+        const val REGISTER_S = 2.2f
+    }
 }
