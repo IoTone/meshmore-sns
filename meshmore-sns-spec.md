@@ -732,11 +732,66 @@ While Meshcore protocol is open source, the client is not open source.  We want 
     on top of the global values, not absolutes. Global rate is a
     comprehension setting the user tunes once; per-peer pitch is an
     identity setting. Absolutes would fight each other.
-  - `chime`: inherit, or one of the skin pack's sounds / a small set
-    of distinct signature tones. Inherit = the pack's `dmIn`.
+  - `signature`: inherit, or one of a small set of **signature
+    slots** (`sig1..sigN`). Inherit = the pack's ordinary `dmIn`.
+    A slot is an *identity*, not a file — see below.
   - `announceName`: inherit / on / off. With a signature chime *and*
     voice, a spoken "message from Alpha" is redundant and delays the
     content; without them it is essential. The user decides.
+
+  **A signature is a slot; the active pack renders it.** Everything
+  is per theme pack, so the per-peer record stores a slot id and the
+  pack decides what that sounds — or feels — like:
+  - **Audible pack:** `assets/audio/<packKey>/sig<N>.wav`, generated
+    by `brand/_audio_pack.py` alongside the existing cues. That
+    script already owns each pack's aesthetic (SEELE stark, NERV
+    terse, Recon codec-chirp…), so extending its `CUES` table gives
+    every pack signatures in its own voice **by construction** —
+    6 themes × N slots, same as the current 6 × 14.
+  - **Silent pack or silent mode:** the same slot resolves to a
+    distinct **haptic rhythm**. Recon is already built this way — the
+    haptic profile comments call it out: *"built to run silent →
+    haptic carries the parity"* — and `visualHapticOnly` (which
+    forces `audioMaster` off) is the user-driven version of the same
+    state. The infrastructure is there: haptic patterns are already
+    `List<HapticHit>` sequenced with a `stepGap`, so a signature is a
+    short rhythm rather than a new mechanism.
+
+  A peer therefore keeps its identity across a theme switch while its
+  *expression* changes with the theme — which is the behaviour the
+  skin system already promises for everything else.
+
+  **The haptic channel is the binding constraint on slot count.**
+  `HapticHit` offers four intensities, and through a pocket a person
+  reliably tells apart far fewer rhythms than tones. So **N is set by
+  the haptic pool, not the audio pool** — target ~4–6 slots. A
+  signature that only works when the phone is already in your hand is
+  not a signature.
+
+  Two rules that follow from that:
+  - **A signature replaces the tier haptic; it does not stack.**
+    `_HTier.dm` already fires a per-theme pattern for every DM. When a
+    peer has a signature, it substitutes for that pattern — playing
+    both produces mush and destroys both identities.
+  - **Cap the rhythm** (≈3 pulses) so a burst of inbound messages
+    cannot queue into one continuous buzz.
+
+  The collision guard checks the **resolved rendering under the
+  active pack**, not the slot id: two slots that are clearly distinct
+  as tones may be near-identical as haptics.
+
+  **Speech must obey the audio master — it does not today.** Found
+  while designing this: `CueService` gates audio on
+  `theme.audioMaster && !theme.visualHapticOnly`, but `TtsController`
+  gates only on its own `enabled` plus per-channel mute (sole call
+  site `chat_screen.dart:74`). The two subsystems never consult each
+  other, so the audio quick-mute silences chimes and leaves **speech
+  — the loudest thing the app emits — running**. R58 has to unify
+  this, because a per-peer voice and its chime would otherwise sit on
+  opposite sides of the mute. In haptic-only mode a peer's arrival is
+  its signature rhythm and nothing is spoken. Otherwise "silent" is a
+  lie, and this is the pre-existing bug R58 inherits rather than
+  introduces.
 
   **Where it lives.** Three entry points, one sheet:
   - **Node detail sheet → "Voice & chime"** — primary. This is where
@@ -749,9 +804,12 @@ While Meshcore protocol is open source, the client is not open source.  We want 
     peers voices you cannot actually tell apart.
 
   **Audition the arrival, not the parts.** The sheet's preview plays
-  the chosen chime *then* speaks a canned line in the chosen voice —
-  the real sequence a message will produce. Previewing a voice alone
-  is how you end up with two peers that sound the same.
+  the chosen signature *then* speaks a canned line in the chosen
+  voice — the real sequence a message will produce, rendered by the
+  pack that is active right now. Previewing a voice alone is how you
+  end up with two peers that sound the same. In a silent pack the
+  preview is the haptic, so the user feels exactly what they are
+  assigning.
 
   **Collision guard.** Assigning a voice or chime already held by
   another peer shows an inline note naming them ("also used by
