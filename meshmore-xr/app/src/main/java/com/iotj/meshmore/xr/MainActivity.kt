@@ -4532,10 +4532,19 @@ private fun HorizonScene(link: MeshLink) {
                                 cue.opened()
                             }
                         }
-                        // HONEST ABOUT WHAT IS NOT BUILT. A plate that opens
-                        // nothing and says nothing reads as a fault; one that
-                        // says so reads as a roadmap.
-                        else -> {
+                        // A DOCK PIP IS A BAY TOO, and it is tried before
+                        // giving up. INBOX, LIST and FIND are pips rather than
+                        // console tiles, so no flag reached them and they could
+                        // only be opened by a hand inside the glasses — which
+                        // is how the inbox came to be rewriting every row
+                        // fifteen times a second for however long that had been
+                        // true. Firing the dock's own action runs exactly what
+                        // a pinch runs, rather than a copy of it that can drift.
+                        //
+                        // HONEST ABOUT WHAT IS NOT BUILT, when it is neither. A
+                        // plate that opens nothing and says nothing reads as a
+                        // fault; one that says so reads as a roadmap.
+                        else -> if (dockRef.value?.fire(bay) != true) {
                             noticeRef.value?.say(ctx.getString(R.string.n_not_built, bay))
                             cue.closed()
                         }

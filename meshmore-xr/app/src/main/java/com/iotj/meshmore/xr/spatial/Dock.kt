@@ -144,6 +144,25 @@ class Dock(
     /** Raised when a pip takes focus. The host makes the sound. */
     var onFocus: ((String) -> Unit)? = null
 
+    /**
+     * What each pip does, kept so a pip can be fired without a hand.
+     *
+     * The bays reachable by `--es bay` are the ones wired into the console's
+     * own list; a dock pip is not one of them, so INBOX, LIST and FIND — three
+     * surfaces with real layout to check — could only ever be opened by
+     * pinching them while wearing the glasses. That makes them the surfaces
+     * least likely to be checked and the most likely to be checked only once.
+     */
+    private var acts: Map<String, () -> Unit> = emptyMap()
+
+    /** Fire a pip's action by name, as `--es bay INBOX` now does. */
+    fun fire(id: String): Boolean {
+        val a = acts[id] ?: return false
+        Log.i(TAG, "[dock] '$id' fired by launch flag")
+        a.invoke()
+        return true
+    }
+
     suspend fun build(
         o: Stage.Origin,
         items: List<Pair<String, () -> Unit>>,
@@ -212,6 +231,7 @@ class Dock(
         // sits over the ring. Menus open to the RIGHT of it, into the space it
         // is standing beside; see [pipAt].
         padCentreY = base.y
+        acts = items.toMap()
         items.forEachIndexed { i, (name, act) ->
             val col = i / rows
             val row = i % rows
