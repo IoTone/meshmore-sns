@@ -250,7 +250,8 @@ While Meshcore protocol is open source, the client is not open source.  We want 
   Defaults inherit from the global setting; an explicit channel
   override is persisted. Reached from **Channel management → per-
   slot Notifications** (and a quick toggle in the Chat header). DMs
-  may later get the same treatment per-peer; out of R24 scope.
+  get the same treatment per-peer under **R58**, which also adds
+  per-peer voice and chime identity; out of R24 scope.
 - R25 (future): **reverse-geocoded equal-grid map** — a second map
   option in the **Hyperlocal grid** picker (the existing radial
   range-ring view becomes "Hyperlocal grid · radial" / default).
@@ -700,6 +701,131 @@ While Meshcore protocol is open source, the client is not open source.  We want 
     + Dashboard in two divergent skins). Remaining: migrate the other
     screens + concepts (B/C/E/F), bundle the brief's OSS display/mono
     faces, palette-ize the 9 visualisation painters.
+
+- R58: **per-peer voice & signature chime (DM identity)**. R24 gave
+  channels their own notification overrides and explicitly deferred
+  the per-peer case; this is that case. Today TTS is one global voice
+  (`TtsController`: enabled/rate/pitch/voice) with per-*channel* mute
+  only, and every DM plays the same `CueKind.dmIn` from the active
+  skin's pack. So every peer sounds identical, and the user cannot
+  tell **who** is talking without looking at the screen.
+
+  The goal is **eyes-free sender identification**: a favourite peer
+  gets a distinct voice and a distinct arrival chime, so a message
+  from them is recognisable from across the room with the phone in a
+  pocket. This is app-side only and has nothing to do with the
+  device's own buzzer (see the Devices doc — that is firmware and is
+  not reachable from here).
+
+  **Model.** An override is an act of attention, exactly like
+  favouriting. Peers with no override are not stored at all; the
+  per-peer record exists only once the user creates one. Records are
+  keyed by **pubkey hex** (like `FavoriteStore`) so an override
+  survives a peer being deleted and re-added (R56).
+
+  **Per-peer record** (every field defaults to *inherit*):
+  - `speak`: inherit / always / never — tri-state, not a bool, so
+    "follow the global setting" stays expressible.
+  - `voice`: inherit, or a `TtsVoice.id`. Picker reuses the existing
+    installed-voice filter and the only-my-language toggle.
+  - `pitchOffset` / `rateOffset`: **relative** nudges (±0.3) applied
+    on top of the global values, not absolutes. Global rate is a
+    comprehension setting the user tunes once; per-peer pitch is an
+    identity setting. Absolutes would fight each other.
+  - `chime`: inherit, or one of the skin pack's sounds / a small set
+    of distinct signature tones. Inherit = the pack's `dmIn`.
+  - `announceName`: inherit / on / off. With a signature chime *and*
+    voice, a spoken "message from Alpha" is redundant and delays the
+    content; without them it is essential. The user decides.
+
+  **Where it lives.** Three entry points, one sheet:
+  - **Node detail sheet → "Voice & chime"** — primary. This is where
+    peer identity already lives (the favourite toggle is there).
+  - **DM app bar** — a speaker icon reflecting the peer's current
+    state (inherits / custom / muted). Tap opens the sheet, long-press
+    is a quick mute. The DM bar currently carries only `info_outline`.
+  - **Voice Settings → "Assigned voices"** — the whole cast in one
+    list, because the failure mode of this feature is assigning two
+    peers voices you cannot actually tell apart.
+
+  **Audition the arrival, not the parts.** The sheet's preview plays
+  the chosen chime *then* speaks a canned line in the chosen voice —
+  the real sequence a message will produce. Previewing a voice alone
+  is how you end up with two peers that sound the same.
+
+  **Collision guard.** Assigning a voice or chime already held by
+  another peer shows an inline note naming them ("also used by
+  Bravo"). Not a block — the user may want a group to share a voice —
+  but never silent, since an unnoticed collision defeats the feature.
+
+  **Precedence**, consistent with R24: an explicit per-peer override
+  wins over the global setting; *inherit* follows it. The audio
+  master remains a master — when it is off, nothing sounds.
+
+  **Missing-voice honesty.** An assigned voice may not exist on this
+  handset (prefs restored from another phone, or the language pack
+  was removed). Resolve via `isLanguageAvailable`, fall back to the
+  global voice, and say so in the sheet — never silently speak in the
+  wrong voice, which reads as a bug and destroys the identification
+  the feature exists to provide.
+
+- R59 (future): **deterministic bot responder + local NLP engine**.
+  A conversation can be handed to a local rule engine that answers
+  inbound messages automatically. The driving use case is **soak
+  testing against our other projects**: a client that always replies,
+  deterministically when you need a reproducible trace, randomly when
+  you want traffic variety. Secondary use is genuine utility bots
+  (status, canned Q&A) on a private channel.
+
+  **Never on Public.** The responder must not bind to the public
+  channel (slot `#0` / the well-known public PSK). This is enforced
+  **structurally** — the binding is refused for any scope whose key
+  is the public PSK, which `Chan.publicKey` already identifies — not
+  by hiding a control. Eligible scopes are private channels and DMs.
+
+  **Configured where the conversation is configured.** The bot is a
+  section in the same per-peer (R58) and per-channel (R24) sheet,
+  off by default. Those sheets then answer one coherent question:
+  when this conversation receives a message, do we speak it, chime
+  it, or answer it?
+
+  **Engine.** `petitparser` (github.com/petitparser/dart-petitparser)
+  over a small term language. **Prolog-style beats LISP here**:
+  unification gives pattern-matching-with-capture over message text
+  for free, which is precisely the shape of a responder rule. Rules
+  are `reply(Pattern, Response)` with variables bound from the
+  inbound text.
+  - **Deterministic mode:** first matching rule wins under a stable
+    rule ordering — identical input always yields identical output.
+    This is the property that makes a soak trace diffable.
+  - **Random mode:** a **seeded** PRNG, with the seed persisted and
+    displayed. "Random" must stay reproducible from its seed, or a
+    soak failure is undebuggable.
+
+  **Rulepacks** ship as assets and are user-editable. The default
+  pack is **echo with a monotonic counter** — the single most useful
+  soak behaviour, since it proves round-trip and exposes drops,
+  duplicates, and reordering in one read.
+
+  **Loop and airtime guards — mandatory, not polish.** Two bots in
+  one channel ping-pong forever, and LoRa airtime is a shared, scarce
+  resource on somebody else's mesh as well as ours:
+  - never answer a message we sent (own-pubkey check);
+  - a minimum inter-reply interval per scope;
+  - a max-replies-per-window budget, with the remaining budget
+    visible in the UI rather than silently enforced;
+  - a loop breaker that declines to answer traffic matching our own
+    output signature.
+
+  **Machine output is labelled.** Bot-sent messages are tagged
+  distinctly in the transcript. Someone reading the log later — or
+  the human on the other end — must be able to tell what a machine
+  wrote. This is not negotiable.
+
+  **Soak instrumentation.** Per-scope counters (received, replied,
+  suppressed by rate limit, parse errors), surfaced on Diagnostics
+  and exportable, so a soak run produces evidence rather than a
+  vibe.
 
 ### Terminology — Fabric vs Contact
 
