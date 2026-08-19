@@ -69,6 +69,7 @@ class Boot(
     private var at: Vector3 = Vector3(0f, 0f, 0f)
     private var t = 0f
     private var lastTickMs = 0L
+    private var markUp = MARK_UP
 
     /**
      * Build overhead and slightly forward. HIGH, because the horizon is at eye
@@ -89,6 +90,10 @@ class Boot(
         // in its own clear(), which is the rule that keeps a surface's teardown
         // in one place — the lesson from HALO dying on a list it did not empty.
         hero = Heroes.forTheme(session, context, skin, root, at, CAP)
+        // THE MARK CLEARS WHATEVER THE HERO TURNED OUT TO BE. MARK_UP was
+        // chosen against a one-cap stroke line; a hero with taller type says
+        // how far it reaches and the mark goes above that instead.
+        markUp = maxOf(MARK_UP, (hero?.riseM ?: 0f) + MARK_GAP)
 
         // THE BUILD, under the wordmark.
         //
@@ -125,7 +130,7 @@ class Boot(
 
         // THE MARK, above the wordmark, forming a banner lockup: mark, then
         // name, then the vessel it is filling.
-        val markAt = Vector3(at.x, at.y + MARK_UP, at.z)
+        val markAt = Vector3(at.x, at.y + markUp, at.z)
         core = MeshEntity.create(
             session,
             // rings=2, seg=4 is a sphere so coarse it IS an octahedron, which
@@ -293,7 +298,7 @@ class Boot(
         runCatching {
             core?.setPose(
                 Pose(
-                    Vector3(at.x, at.y + MARK_UP, at.z),
+                    Vector3(at.x, at.y + markUp, at.z),
                     Quaternion.fromEulerAngles(MARK_TILT, t * SPIN_DPS, 0f),
                 ),
                 Space.ACTIVITY,
@@ -386,6 +391,8 @@ class Boot(
          * before anybody had to notice it on glass.
          */
         const val MARK_UP = 0.46f
+        /** Clear air between the hero's highest ink and the mark's outer ring. */
+        const val MARK_GAP = 0.09f
         const val CORE_R = 0.055f
         const val RING_A = 0.135f
         const val RING_B = 0.185f
