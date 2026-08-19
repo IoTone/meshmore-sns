@@ -690,27 +690,33 @@ internal fun scrub(bones: List<Vector3>, thumb: Vector3): Scrub {
  */
 internal fun wrap(text: String, cols: Int, lines: Int): List<String> {
     if (cols <= 0 || lines <= 0) return emptyList()
-    val all = mutableListOf<String>()
-    var cur = StringBuilder()
-    for (word in text.trim().split(' ')) {
-        var w = word
-        while (w.length > cols) {
-            if (cur.isNotEmpty()) { all += cur.toString(); cur = StringBuilder() }
-            all += w.take(cols)
-            w = w.drop(cols)
-        }
-        if (w.isEmpty()) continue
-        when {
-            cur.isEmpty() -> cur.append(w)
-            cur.length + 1 + w.length <= cols -> cur.append(' ').append(w)
-            else -> { all += cur.toString(); cur = StringBuilder(w) }
-        }
-    }
-    if (cur.isNotEmpty()) all += cur.toString()
+    val t = text.trim()
+    if (t.isEmpty()) return emptyList()
+    // THE BREAKING IS TypeRules', NOT A SECOND COPY OF IT.
+    //
+    // This used to split on ' ' and measure with `length`, which is two
+    // assumptions Japanese does not share: it has no spaces, so the whole
+    // message arrived as ONE unbreakable token and was chopped at fixed
+    // character counts — every line twice as wide as the card, cut wherever
+    // the count landed, including in the places kinsoku exists to forbid.
+    //
+    // TypeRules.wrap was written for exactly this and was sitting unused one
+    // file away: BreakIterator for the legal opportunities, kinsoku to reject
+    // the ugly ones, displayCells to measure. All this adds is the card's own
+    // limit on how many lines it has room for.
+    val all = TypeRules.wrap(t, cols).filter { it.isNotBlank() }
     if (all.size <= lines) return all
     val kept = all.take(lines).toMutableList()
     val last = kept[lines - 1]
+    // THE MARK THAT SAYS THERE IS MORE. A line with a cell to spare simply
+    // gains an ellipsis; a full one has to give a cell back first, and it gives
+    // it back at a legal break rather than mid-character — which is the same
+    // wrap again, one cell narrower.
     kept[lines - 1] =
-        if (last.length < cols) "$last\u2026" else last.take(cols - 1) + "\u2026"
+        if (TypeTier.displayCells(last) < cols) {
+            "$last\u2026"
+        } else {
+            TypeRules.wrap(last, cols - 1).first().trimEnd() + "\u2026"
+        }
     return kept
 }

@@ -98,7 +98,43 @@ class ReelWrapTest {
         // The case that would spin forever if the long-word branch forgot to
         // consume: no spaces at all, far wider than a line.
         check("https://example.invalid/a/very/long/path/indeed")
-        assertEquals(14, wrap("https://example.invalid/a/very/long/path").first().length)
+        // CHANGED DELIBERATELY 2026-08-18, and worth stating rather than
+        // quietly relaxing: this used to assert the first line was exactly 14
+        // characters, because the old wrap packed a long token to the column
+        // and cut it there. The wrap now defers to TypeRules, which breaks at
+        // the opportunities the LANGUAGE offers and takes the longest one that
+        // fits — so a URL breaks after "https:" rather than mid-host.
+        //
+        // The old number was a property of the algorithm, not a requirement.
+        // What the card requires is that nothing overflows and nothing loops,
+        // and that is what is asserted. A URL now uses its three lines less
+        // densely; a Japanese sentence stops being chopped at arbitrary
+        // character counts, which is the trade this was made for.
+        val url = wrap("https://example.invalid/a/very/long/path")
+        assertTrue("first line overflows: $url", url.first().length <= 14)
+        assertTrue("nothing was emitted", url.isNotEmpty())
+    }
+
+    /**
+     * JAPANESE HAS NO SPACES, which the old wrap assumed twice: it split on
+     * ' ' and measured with `length`. A Japanese message therefore arrived as
+     * one unbreakable token and was cut at fixed character counts — every line
+     * twice as wide as the card, chopped wherever the count fell.
+     */
+    @Test
+    fun `japanese wraps by cells at legal break points`() {
+        val text = "無線機の設定を確認してください。中継局は稼働しています。"
+        val r = wrap(text)
+        assertTrue("no lines", r.isNotEmpty())
+        r.forEach {
+            assertTrue(
+                "'$it' is ${TypeTier.displayCells(it)} cells of $cols",
+                TypeTier.displayCells(it) <= cols,
+            )
+        }
+        // A line may not BEGIN with a full stop — that is the kinsoku rule the
+        // old wrap could not have honoured, since it never looked.
+        r.drop(1).forEach { assertTrue("'$it' starts on a stop", !it.startsWith("。")) }
     }
 
     @Test

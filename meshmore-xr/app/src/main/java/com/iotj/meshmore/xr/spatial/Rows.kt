@@ -97,7 +97,12 @@ internal fun channelLabel(
     val n = name.trim().uppercase().let {
         // Truncated with a real ellipsis rather than a hard cut, so a clipped
         // name reads as clipped rather than as a channel somebody named badly.
-        if (it.length <= CHAN_NAME_MAX) it else it.take(CHAN_NAME_MAX - 1) + "…"
+        //
+        // IN CELLS: a channel name is user text and can be kanji, in either
+        // locale — someone naming a channel 中継局 is not a Japanese-build
+        // problem, it is a Tuesday.
+        if (TypeTier.displayCells(it) <= CHAN_NAME_MAX) it
+        else TypeTier.clip(it, CHAN_NAME_MAX)
     }.ifBlank { unnamedWord }
     // Counts saturate, AND SAY SO. A four-digit count would push the row past
     // the template and clip the SPEAKS off the end — losing the state to show
@@ -159,7 +164,11 @@ internal fun settingLabel(
     fallbackName: String = "SETTING",
 ): String {
     val n = name.trim().uppercase().let {
-        if (it.length <= SETTING_NAME_MAX) it else it.take(SETTING_NAME_MAX - 1) + "…"
+        // In cells, because in the Japanese build every setting name IS kanji:
+        // 位置を共有 is five code units and ten cells, so a character count
+        // waves through a name that draws twice its measured width.
+        if (TypeTier.displayCells(it) <= SETTING_NAME_MAX) it
+        else TypeTier.clip(it, SETTING_NAME_MAX)
     }.ifBlank { fallbackName }
     return n + "  " + if (armed) armedWord else if (on) onWord else offWord
 }
