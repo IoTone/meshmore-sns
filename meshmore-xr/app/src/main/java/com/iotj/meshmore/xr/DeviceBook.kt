@@ -194,20 +194,45 @@ object RadioFacts {
      * later fix overwrites the suspicion, and the suspicion never overwrites a
      * fix.
      */
-    fun notePosition(context: Context, radioKey: String?, known: Boolean) {
+    fun notePosition(context: Context, radioKey: String?, known: Boolean, ours: Boolean) {
         val k = radioKey?.takeIf { it.isNotBlank() } ?: return
+        // WE CANNOT BE OUR OWN EVIDENCE.
+        //
+        // With SHARE MY LOCATION on, the app writes the HEADSET's position
+        // into the radio's SelfInfo — and this function then read the same
+        // field back and filed it as proof the board has GNSS. Circular, and
+        // it went unnoticed because the answer it produced was cheerful: the
+        // operator's M5 C6L, a board the catalogue records as having no GPS
+        // ON THEIR OWN TESTIMONY, came up as "position yes, observed" on the
+        // first run against real hardware. The hint that exists to explain an
+        // empty ring could never have fired for the radio it was written for.
+        //
+        // A position we put there says nothing about the board, so nothing is
+        // what gets recorded. Not "no" either: absence of evidence.
+        if (ours) return
         val p = prefs(context)
-        val cur = p.getString("pos:$k", null)
+        val cur = p.getString(POS + k, null)
         when {
-            known && cur != "yes" -> p.edit().putString("pos:$k", "yes").apply()
-            !known && cur == null -> p.edit().putString("pos:$k", "no").apply()
+            known && cur != "yes" -> p.edit().putString(POS + k, "yes").apply()
+            !known && cur == null -> p.edit().putString(POS + k, "no").apply()
         }
     }
+
+    /**
+     * VERSIONED, so the poisoned facts go away.
+     *
+     * Everything filed under the old `pos:` key was written by a rule that
+     * could not tell the radio's own fix from the position this app had just
+     * published to it, so any "yes" under it may be an echo. They are not
+     * migrated and not read — a wrong fact about hardware is worse than no
+     * fact, and the right one is one session away from being observed again.
+     */
+    private const val POS = "pos2:"
 
     /** True: seen a fix. False: watched and never saw one. Null: no data. */
     fun everPositioned(context: Context, radioKey: String?): Boolean? {
         val k = radioKey?.takeIf { it.isNotBlank() } ?: return null
-        return when (prefs(context).getString("pos:$k", null)) {
+        return when (prefs(context).getString(POS + k, null)) {
             "yes" -> true
             "no" -> false
             else -> null

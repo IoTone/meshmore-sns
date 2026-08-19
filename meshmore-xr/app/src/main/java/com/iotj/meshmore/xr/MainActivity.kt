@@ -2592,6 +2592,10 @@ private fun HorizonScene(link: MeshLink) {
                 RadioFacts.notePosition(
                     ctx, radioKey,
                     MeshNodes.Here(self.latitude(), self.longitude()).known,
+                    // The position may be one WE published a moment ago; see
+                    // RadioFacts.notePosition. While sharing, this radio's
+                    // SelfInfo is not evidence about this radio.
+                    ours = Settings.shareLocation(ctx),
                 )
                 val note = DeviceBook.describe(ctx, radioKey, radioName)
                 if (note != deviceNoteRef.value) {

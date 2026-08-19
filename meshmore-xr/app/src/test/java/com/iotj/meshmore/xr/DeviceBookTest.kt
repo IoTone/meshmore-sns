@@ -32,6 +32,22 @@ class DeviceBookTest {
         assertTrue("no devices parsed", book.isNotEmpty())
     }
 
+    /**
+     * THE STRING THE OPERATOR'S RADIO ACTUALLY SENDS.
+     *
+     * `Unit C6L` is what DEVICE_QUERY returned from the bench radio on
+     * 2026-08-18 — not a name anybody typed, the manufacturer field. It has to
+     * land on the profile that records what that board cannot do, because the
+     * catalogue is the fallback when there is no observation, and after the
+     * self-evidence fix there will often be no observation.
+     */
+    @Test
+    fun `the radios own manufacturer string names the board`() {
+        val p = DeviceBook.match(book, "Unit C6L")
+        assertEquals("m5-c6l", p?.id)
+        assertEquals(false, p?.caps?.gps)
+    }
+
     @Test
     fun `ids are unique`() {
         val ids = book.map { it.id }
