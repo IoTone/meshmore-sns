@@ -1775,7 +1775,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get docsHubSubtitle =>
-      'Read the MeshCore protocol, your device firmware, and this app — offline. Snapshots refresh from GitHub when you\'re online.';
+      'Read the MeshCore protocol, your device firmware, this app, and our per-device field notes — offline. Snapshots refresh from GitHub when you\'re online.';
 
   @override
   String get docsHubFooter =>
@@ -1804,6 +1804,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get docsAppSub => 'How Meshmore SNS works, and how it uses the mesh.';
+
+  @override
+  String get docsDevicesTitle => 'Devices';
+
+  @override
+  String get docsDevicesSub =>
+      'Field notes and quirks for the radios we run — T1000-E, Wio Tracker L1 Pro, Heltec V3.';
 
   @override
   String get docsRefresh => 'Refresh from GitHub';

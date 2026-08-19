@@ -63,7 +63,7 @@ import 'app_localizations_ja.dart';
 /// property.
 abstract class AppLocalizations {
   AppLocalizations(String locale)
-      : localeName = intl.Intl.canonicalizedLocale(locale.toString());
+    : localeName = intl.Intl.canonicalizedLocale(locale.toString());
 
   final String localeName;
 
@@ -86,16 +86,16 @@ abstract class AppLocalizations {
   /// of delegates is preferred or required.
   static const List<LocalizationsDelegate<dynamic>> localizationsDelegates =
       <LocalizationsDelegate<dynamic>>[
-    delegate,
-    GlobalMaterialLocalizations.delegate,
-    GlobalCupertinoLocalizations.delegate,
-    GlobalWidgetsLocalizations.delegate,
-  ];
+        delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+      ];
 
   /// A list of this localizations delegate's supported locales.
   static const List<Locale> supportedLocales = <Locale>[
     Locale('en'),
-    Locale('ja')
+    Locale('ja'),
   ];
 
   /// No description provided for @appName.
@@ -3095,7 +3095,7 @@ abstract class AppLocalizations {
   /// No description provided for @docsHubSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Read the MeshCore protocol, your device firmware, and this app — offline. Snapshots refresh from GitHub when you\'re online.'**
+  /// **'Read the MeshCore protocol, your device firmware, this app, and our per-device field notes — offline. Snapshots refresh from GitHub when you\'re online.'**
   String get docsHubSubtitle;
 
   /// No description provided for @docsHubFooter.
@@ -3145,6 +3145,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'How Meshmore SNS works, and how it uses the mesh.'**
   String get docsAppSub;
+
+  /// No description provided for @docsDevicesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Devices'**
+  String get docsDevicesTitle;
+
+  /// No description provided for @docsDevicesSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Field notes and quirks for the radios we run — T1000-E, Wio Tracker L1 Pro, Heltec V3.'**
+  String get docsDevicesSub;
 
   /// No description provided for @docsRefresh.
   ///
@@ -4842,8 +4854,9 @@ AppLocalizations lookupAppLocalizations(Locale locale) {
   }
 
   throw FlutterError(
-      'AppLocalizations.delegate failed to load unsupported locale "$locale". This is likely '
-      'an issue with the localizations generation tool. Please file an issue '
-      'on GitHub with a reproducible sample app and the gen-l10n configuration '
-      'that was used.');
+    'AppLocalizations.delegate failed to load unsupported locale "$locale". This is likely '
+    'an issue with the localizations generation tool. Please file an issue '
+    'on GitHub with a reproducible sample app and the gen-l10n configuration '
+    'that was used.',
+  );
 }

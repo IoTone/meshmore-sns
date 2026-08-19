@@ -804,7 +804,7 @@
   "@weatherReporting": { "placeholders": { "count": { "type": "int" } } },
 
   "docsHubTitle": "Docs",
-  "docsHubSubtitle": "Read the MeshCore protocol, your device firmware, and this app — offline. Snapshots refresh from GitHub when you're online.",
+  "docsHubSubtitle": "Read the MeshCore protocol, your device firmware, this app, and our per-device field notes — offline. Snapshots refresh from GitHub when you're online.",
   "docsHubFooter": "Documentation is cached on-device for offline reading. Tap a doc, then ↻ to pull the latest. Upstream: meshcore-dev/MeshCore.",
   "docsProtocolTitle": "Protocol",
   "docsProtocolSub": "MeshCore companion radio protocol — frames, opcodes, and flow.",
@@ -814,6 +814,8 @@
   "@docsFirmwareSubVersion": { "placeholders": { "version": { "type": "String" } } },
   "docsAppTitle": "App",
   "docsAppSub": "How Meshmore SNS works, and how it uses the mesh.",
+  "docsDevicesTitle": "Devices",
+  "docsDevicesSub": "Field notes and quirks for the radios we run — T1000-E, Wio Tracker L1 Pro, Heltec V3.",
   "docsRefresh": "Refresh from GitHub",
   "docsUpdated": "Updated to the latest version",
   "docsUpToDate": "Already up to date",

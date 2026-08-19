@@ -1710,7 +1710,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get docsHubSubtitle =>
-      'MeshCore プロトコル、デバイスのファームウェア、本アプリの解説をオフラインで読めます。オンライン時に GitHub から最新版を取得します。';
+      'MeshCore プロトコル、デバイスのファームウェア、本アプリの解説、機種別の実地メモをオフラインで読めます。オンライン時に GitHub から最新版を取得します。';
 
   @override
   String get docsHubFooter =>
@@ -1738,6 +1738,13 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get docsAppSub => 'Meshmore SNS の仕組みとメッシュの活用方法。';
+
+  @override
+  String get docsDevicesTitle => 'デバイス';
+
+  @override
+  String get docsDevicesSub =>
+      '運用中の無線機（T1000-E、Wio Tracker L1 Pro、Heltec V3）の実地メモと注意点。';
 
   @override
   String get docsRefresh => 'GitHub から更新';

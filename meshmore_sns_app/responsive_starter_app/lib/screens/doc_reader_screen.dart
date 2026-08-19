@@ -111,6 +111,7 @@ class _DocReaderScreenState extends State<DocReaderScreen> {
         DocSection.protocol => l.docsProtocolTitle,
         DocSection.firmware => l.docsFirmwareTitle,
         DocSection.app => l.docsAppTitle,
+        DocSection.devices => l.docsDevicesTitle,
       };
 }
 

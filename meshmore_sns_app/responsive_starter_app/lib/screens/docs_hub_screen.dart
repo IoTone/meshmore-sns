@@ -7,9 +7,10 @@ import 'package:provider/provider.dart';
 import '../gen/app_localizations.dart';
 import '../meshcore/meshcore_controller.dart';
 
-/// R53 — the Docs tab: a menu into the three offline-readable docs
-/// (companion protocol, device firmware, and this app). Rendered in the
-/// futuristic monospace style; each row opens a [DocReaderScreen].
+/// R53 — the Docs tab: a menu into the offline-readable docs (companion
+/// protocol, device firmware, this app, and our per-device field notes).
+/// Rendered in the futuristic monospace style; each row opens a
+/// [DocReaderScreen].
 class DocsHubScreen extends StatelessWidget {
   const DocsHubScreen({super.key});
 
@@ -61,6 +62,12 @@ class DocsHubScreen extends StatelessWidget {
           title: l.docsAppTitle,
           subtitle: l.docsAppSub,
           onTap: () => context.push('/docs/app'),
+        ),
+        _DocCard(
+          icon: Icons.settings_input_antenna,
+          title: l.docsDevicesTitle,
+          subtitle: l.docsDevicesSub,
+          onTap: () => context.push('/docs/devices'),
         ),
         const SizedBox(height: 16),
         Text(

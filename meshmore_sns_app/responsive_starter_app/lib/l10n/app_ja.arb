@@ -804,7 +804,7 @@
   "@weatherReporting": { "placeholders": { "count": { "type": "int" } } },
 
   "docsHubTitle": "ドキュメント",
-  "docsHubSubtitle": "MeshCore プロトコル、デバイスのファームウェア、本アプリの解説をオフラインで読めます。オンライン時に GitHub から最新版を取得します。",
+  "docsHubSubtitle": "MeshCore プロトコル、デバイスのファームウェア、本アプリの解説、機種別の実地メモをオフラインで読めます。オンライン時に GitHub から最新版を取得します。",
   "docsHubFooter": "ドキュメントはオフライン閲覧用に端末にキャッシュされます。項目を開いて ↻ で最新版を取得。出典: meshcore-dev/MeshCore。",
   "docsProtocolTitle": "プロトコル",
   "docsProtocolSub": "MeshCore コンパニオン無線プロトコル — フレーム、オペコード、フロー。",
@@ -814,6 +814,8 @@
   "@docsFirmwareSubVersion": { "placeholders": { "version": { "type": "String" } } },
   "docsAppTitle": "アプリ",
   "docsAppSub": "Meshmore SNS の仕組みとメッシュの活用方法。",
+  "docsDevicesTitle": "デバイス",
+  "docsDevicesSub": "運用中の無線機（T1000-E、Wio Tracker L1 Pro、Heltec V3）の実地メモと注意点。",
   "docsRefresh": "GitHub から更新",
   "docsUpdated": "最新版に更新しました",
   "docsUpToDate": "すでに最新です",
