@@ -239,6 +239,31 @@ object RadioFacts {
         }
     }
 
+    /**
+     * WHAT THIS APP LAST TOLD THE RADIO ITS POSITION WAS.
+     *
+     * Persisted, because the echo is invisible from inside one session: the
+     * in-memory record of what we published dies with the process, and the
+     * next launch reads the radio's SelfInfo as though a board with no GNSS
+     * had sensed it. Kept as plain degrees and a wall-clock stamp — this is
+     * evidence about provenance, not a fix to navigate by.
+     */
+    fun notePublished(context: Context, lat: Double, lon: Double, atMs: Long) {
+        prefs(context).edit()
+            .putString("pub", "%.6f,%.6f,%d".format(lat, lon, atMs))
+            .apply()
+    }
+
+    /** Lat, lon and when — or null if this app has never shared a position. */
+    fun lastPublished(context: Context): Triple<Double, Double, Long>? {
+        val raw = prefs(context).getString("pub", null) ?: return null
+        val p = raw.split(",")
+        val la = p.getOrNull(0)?.toDoubleOrNull() ?: return null
+        val lo = p.getOrNull(1)?.toDoubleOrNull() ?: return null
+        val at = p.getOrNull(2)?.toLongOrNull() ?: return null
+        return Triple(la, lo, at)
+    }
+
     /** The operator naming their own hardware outranks any guess from a name. */
     fun pinBoard(context: Context, radioKey: String?, deviceId: String?) {
         val k = radioKey?.takeIf { it.isNotBlank() } ?: return

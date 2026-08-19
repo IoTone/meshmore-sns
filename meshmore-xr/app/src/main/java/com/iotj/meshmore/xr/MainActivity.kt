@@ -2442,7 +2442,23 @@ private fun HorizonScene(link: MeshLink) {
         val lens = lensStack.lastOrNull()
         // Tell the mesh where we are, using the SAME fix the horizon is drawn
         // from, so what we broadcast and what we draw cannot disagree.
-        if (Settings.shareLocation(ctx)) link.publishPosition(origin2)
+        //
+        // BUT ONLY WHAT WE MEASURED. Broadcasting a position that came out of
+        // the radio closes a loop with no sensor anywhere in it: the app reads
+        // SelfInfo, re-advertises it as the wearer's location, and the radio
+        // stores it again. On a board with no GNSS — the operator's — that
+        // makes the first position it is ever given permanent. It survives
+        // reboots, it goes out to the mesh on every launch, and it would
+        // follow the radio to another city still naming the place it was
+        // switched on. Observed on glass 2026-08-18:
+        //
+        //   [here] radio -> 45.507087, -122.766247
+        //   [link] advertising position 45.507087, -122.766247
+        //
+        // A fix from the headset, or one the operator stated, is a real claim
+        // about where they are and still goes out. An echo does not.
+        val measured = hereSource.source == "headset" || hereSource.source == "stated"
+        if (Settings.shareLocation(ctx) && measured) link.publishPosition(origin2)
         // THE WEARER'S OWN FAVOURITES, folded in before ranking rather than
         // taught to the ranker.
         //

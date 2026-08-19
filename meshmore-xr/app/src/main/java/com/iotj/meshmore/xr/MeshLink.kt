@@ -1129,6 +1129,10 @@ class MeshLink(private val context: Context) {
             kotlin.math.abs(prev.lon!! - here.lon!!) > MOVE_DEG
         if (!moved) return
         published = here
+        // Remembered across launches too: see RadioFacts.notePublished. A
+        // radio with no GNSS will hand this exact position back to us next
+        // time, and without this the app has no way to know it wrote it.
+        RadioFacts.notePublished(context, here.lat!!, here.lon!!, System.currentTimeMillis())
         Log.i(TAG, "[link] advertising position ${here.lat}, ${here.lon} (policy -> share)")
         diag(">>POS    %.5f, %.5f  policy=share".format(here.lat, here.lon))
         s.setAdvertPosition(here.lat!!, here.lon!!)

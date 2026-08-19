@@ -60,7 +60,7 @@ class HereSource(private val context: Context) {
     fun resolve(radio: MeshNodes.Here, stated: MeshNodes.Here?): MeshNodes.Here {
         val chosen = when {
             stated != null && stated.known -> { source = "stated"; stated }
-            radio.known -> { source = "radio"; radio }
+            radio.known -> { source = if (isOurEcho(radio)) "shared" else "radio"; radio }
             Settings.useDeviceLocation(context) -> deviceFix()?.also { source = "headset" }
                 ?: MeshNodes.Here(null, null).also { source = "none" }
             else -> { source = "none"; MeshNodes.Here(null, null) }
@@ -78,6 +78,43 @@ class HereSource(private val context: Context) {
         }
         return chosen
     }
+
+    /**
+     * IS THIS THE POSITION WE GAVE IT?
+     *
+     * With SHARE MY LOCATION on, the app writes the headset's position into
+     * the radio's SelfInfo — and the radio hands it straight back as its own.
+     * On the operator's board, which has no GNSS at all, that echo is the ONLY
+     * position it will ever report, and it survives reboots: the ring is
+     * placed from wherever this app last happened to know it was.
+     *
+     * That is not necessarily wrong — a node that has not moved is still
+     * there, and MeshCore users deliberately set fixed positions on stationary
+     * nodes — so the value is still used. What changes is that it stops
+     * calling itself `radio`. A wearer who has travelled since then is being
+     * shown a mesh measured from the old place, and the source is the only
+     * clue that would tell them.
+     */
+    private fun isOurEcho(radio: MeshNodes.Here): Boolean {
+        val (la, lo, at) = RadioFacts.lastPublished(context) ?: return false
+        val same = kotlin.math.abs(la - (radio.lat ?: return false)) < ECHO_DEG &&
+            kotlin.math.abs(lo - (radio.lon ?: return false)) < ECHO_DEG
+        if (same && at != lastEchoNoted) {
+            lastEchoNoted = at
+            val ageMin = (System.currentTimeMillis() - at) / 60_000
+            Log.w(
+                TAG,
+                "[here] the radio is repeating a position THIS APP published " +
+                    "${ageMin}min ago — a board with no GNSS has nothing else to say",
+            )
+        }
+        return same
+    }
+
+    private var lastEchoNoted = 0L
+
+    /** About 11 m, the same figure MeshLink dedupes its adverts on. */
+    private val ECHO_DEG = 0.0001
 
     /**
      * Last known fix from the headset. Deliberately `getLastKnownLocation`
