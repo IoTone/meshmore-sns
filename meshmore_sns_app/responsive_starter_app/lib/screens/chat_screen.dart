@@ -686,9 +686,10 @@ class _MessageRow extends StatelessWidget {
 /// Empty = anonymous (no parseable `name:` prefix) → no tag.
 ///
 /// The sentinel is NUL-prefixed so it can never collide with a real
-/// handle. Write it as the ` ` **escape**, never as a literal NUL
-/// byte: a raw NUL makes the whole file read as binary, and `grep` /
-/// `ripgrep` then skip it silently rather than reporting an error.
+/// handle. It MUST be written as the six-character escape below, not
+/// as a literal NUL byte: a raw NUL makes the whole file read as
+/// binary, and grep / ripgrep then skip it silently rather than
+/// reporting an error -- searches come back empty instead of failing.
 String _identityKey(ChatMessage m) =>
     m.outgoing ? '\u0000self' : (parseChannelSenderName(m.text) ?? '');
 
