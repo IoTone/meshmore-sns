@@ -242,7 +242,7 @@ private class VectorlineHero(
         beamMat = Prims.material(session, theme.text, 0f)
         mid = (word?.heightM ?: cap) / 2f
         beam = MeshEntity.create(
-            session, Prims.build(session, Prims.bar(cap * 0.05f, cap * 1.8f, cap * 0.04f)),
+            session, Prims.build(session, Prims.bar(cap * 0.075f, cap * 1.8f, cap * 0.05f)),
             listOf(beamMat!!),
         ).also {
             it.parent = root
@@ -325,6 +325,19 @@ private class VectorlineHero(
  * Panels are used here in the one way that is safe: born holding their final
  * text and never written again. Everything else a hero adds is meshes, which
  * are free to move.
+ */
+/**
+ * A NOTE ON LINE WEIGHT, paid for once and applied to every hero below.
+ *
+ * The first NERV build put 27 hex cells and 3 arcs in the scene and a capture
+ * showed none of them — only the wordmark. They were drawn with tubes of
+ * `cap * 0.012`, which is 1.4 mm, which at the boot surface's two metres is
+ * 0.04 degrees. The brief's own floor for anything that must be SEEN is 0.6.
+ *
+ * Stroke weight on this surface is therefore never below about `cap * 0.045`
+ * (5 mm, 0.15 degrees) and usually above it. Real type gets away with less
+ * because a glyph is a filled shape read as a whole; a lone line has nothing
+ * to be read as.
  */
 private abstract class TypeHero(
     protected val session: Session,
@@ -544,10 +557,17 @@ private class ReconHero(
         dish = Vector3(at.x + span / 2f + cap * 1.5f, at.y + mid, at.z)
         // Two rings: the scale a radar reads by. Dim, because in this theme
         // brightness carries information and chrome may not spend it.
-        part(root, Prims.halo(cap * 1.15f, cap * 0.022f, 40, 5), theme.alt, 0.85f, dish)
-        part(root, Prims.halo(cap * 0.58f, cap * 0.018f, 32, 5), theme.alt, 0.7f, dish)
+        //
+        // STOOD UP TO FACE THE WEARER. Prims.halo lies in the horizontal plane
+        // — a ring on a table — so from a surface above eye level it reads as a
+        // thin ellipse. The sweep bar was already turning in the vertical
+        // plane, so the first capture showed a dish and its hand in two
+        // different planes. A radar is a disc you look AT.
+        val facing = Quaternion.fromEulerAngles(90f, 0f, 0f)
+        upright(part(root, Prims.halo(cap * 1.15f, cap * 0.055f, 40, 5), theme.alt, 0.85f, dish), dish, facing)
+        upright(part(root, Prims.halo(cap * 0.58f, cap * 0.050f, 32, 5), theme.alt, 0.7f, dish), dish, facing)
         sweep = part(
-            root, Prims.bar(cap * 1.1f, cap * 0.025f, cap * 0.025f), theme.accent, 0.9f,
+            root, Prims.bar(cap * 1.1f, cap * 0.060f, cap * 0.060f), theme.accent, 0.95f,
             Vector3(dish.x + cap * 0.55f, dish.y, dish.z),
         )
         say("recon amber — wordmark + radar")
@@ -567,6 +587,10 @@ private class ReconHero(
                 Space.ACTIVITY,
             )
         }
+    }
+
+    private fun upright(i: Int, at: Vector3, q: Quaternion) {
+        runCatching { parts[i].setPose(Pose(at, q), Space.ACTIVITY) }
     }
 
     private companion object { const val SWEEP_RATE = 1.6f }
@@ -599,11 +623,11 @@ private class AgHero(
         // Livery: two bars under the word, the wide one in the accent and a
         // short one in the alt, offset like a racing stripe rather than centred.
         part(
-            root, Prims.bar(span * 0.72f, cap * 0.045f, cap * 0.03f), theme.accent, 0.85f,
+            root, Prims.bar(span * 0.72f, cap * 0.085f, cap * 0.04f), theme.accent, 0.9f,
             Vector3(at.x, at.y + mid - mid * 0.78f, at.z),
         )
         part(
-            root, Prims.bar(span * 0.30f, cap * 0.030f, cap * 0.03f), theme.alt, 0.9f,
+            root, Prims.bar(span * 0.30f, cap * 0.060f, cap * 0.04f), theme.alt, 0.95f,
             Vector3(at.x - span * 0.19f, at.y + mid - mid * 0.92f, at.z),
         )
         say("ag-systems — wordmark + $CHEVRONS chevrons + livery")
@@ -615,7 +639,19 @@ private class AgHero(
             // is continuous rather than a row of things bobbing together.
             val ph = ((t * SPEED + k * (1f / CHEVRONS)) % 1f)
             val x = -span / 2f - cap * 3.4f + ph * cap * 3.0f
-            place(i, Vector3(origin.x + x, origin.y + mid, origin.z))
+            // POINTING WHERE THE SPEED GOES. Prims.caret builds a cone on its
+            // vertical axis, so the first build had six chevrons pointing at
+            // the ceiling while streaming sideways — visible the moment there
+            // was a capture to look at. Laid over to face along the track.
+            runCatching {
+                parts[i].setPose(
+                    Pose(
+                        Vector3(origin.x + x, origin.y + mid, origin.z),
+                        Quaternion.fromEulerAngles(0f, 0f, -90f),
+                    ),
+                    Space.ACTIVITY,
+                )
+            }
             // Brightest mid-track, gone at both ends: it enters and leaves.
             val a = kotlin.math.sin(ph * Math.PI).toFloat() * 0.75f
             paint(i, if (k % 2 == 0) theme.accent else theme.alt, a)
@@ -658,7 +694,7 @@ private class NervHero(
                 val hy = row * cap * 0.54f
                 if (kotlin.math.abs(hx) < span * 0.52f && kotlin.math.abs(hy) < mid * 1.6f) {
                     part(
-                        root, Prims.halo(cap * 0.30f, cap * 0.012f, 6, 4), theme.accent, 0.22f,
+                        root, Prims.halo(cap * 0.42f, cap * 0.045f, 6, 4), theme.accent, 0.45f,
                         Vector3(c.x + hx, c.y + hy, c.z - cap * 0.15f),
                     )
                     cells++
@@ -668,7 +704,7 @@ private class NervHero(
         // The three that must agree.
         repeat(3) { k ->
             arcs += part(
-                root, Prims.halo(span * (0.60f + k * 0.09f), cap * 0.02f, 30, 5),
+                root, Prims.halo(span * (0.60f + k * 0.09f), cap * 0.055f, 30, 5),
                 if (k == 1) theme.alt else theme.accent, 0.7f, c,
             )
         }
@@ -711,7 +747,7 @@ private class HaloHero(
         buildWord(root, at, "hero-halo")
         repeat(RINGS) { k ->
             rings += part(
-                root, Prims.halo(span * (0.34f + k * 0.20f), cap * 0.018f, 44, 5),
+                root, Prims.halo(span * (0.34f + k * 0.20f), cap * 0.055f, 44, 5),
                 if (k == 1) theme.alt else theme.accent, 0.5f,
                 // Flat, and below the word — the same posture the range bands
                 // take on the horizon this theme is named for.
@@ -729,15 +765,8 @@ private class HaloHero(
                 i, if (k == 1) theme.alt else theme.accent,
                 0.30f + 0.35f * (0.5f + 0.5f * kotlin.math.sin(ph)),
             )
-            runCatching {
-                parts[i].setPose(
-                    Pose(
-                        Vector3(origin.x, origin.y + mid * 0.16f, origin.z),
-                        Quaternion.fromEulerAngles(88f, 0f, 0f),
-                    ),
-                    Space.ACTIVITY,
-                )
-            }
+            // No rotation: Prims.halo already lies flat, which is what a range
+            // band is. Standing them up would make them a target, not a scale.
         }
     }
 
@@ -823,7 +852,7 @@ private class DrPopHero(
         blocks.forEachIndexed { k, (x, y, rgb) ->
             part(
                 root, Prims.bar(span * (0.30f - k * 0.06f), mid * (0.62f - k * 0.10f), cap * 0.02f),
-                rgb, 0.42f, Vector3(at.x + x, at.y + y, at.z - cap * 0.25f),
+                rgb, 0.55f, Vector3(at.x + x, at.y + y, at.z - cap * 0.25f),
             )
         }
         kana = TextRun.create(
@@ -831,7 +860,10 @@ private class DrPopHero(
         )?.also {
             it.entity.parent = root
             it.entity.setPose(
-                Pose(Vector3(at.x - span * 0.22f, at.y + mid * 2.05f, at.z), ), Space.ACTIVITY,
+                // Closer than the first cut, which put it at 2.05 and pushed the
+                // katakana off the top of the frame — it is the graphic this
+                // theme is named for and it cannot be the part that gets cropped.
+                Pose(Vector3(at.x - span * 0.22f, at.y + mid * 1.42f, at.z)), Space.ACTIVITY,
             )
         }
         say("dr pop — wordmark + katakana + ${blocks.size} blocks")
@@ -840,7 +872,7 @@ private class DrPopHero(
     /** Print does not animate. The blocks hold; only the ink is alive. */
     override fun tick(t: Float) = Unit
 
-    override val riseM: Float get() = mid * 2f + cap * 1.2f
+    override val riseM: Float get() = mid * 2.9f
 
     override fun clear() {
         runCatching { kana?.entity?.parent = null }
