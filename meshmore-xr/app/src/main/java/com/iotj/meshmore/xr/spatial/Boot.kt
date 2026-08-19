@@ -33,7 +33,12 @@ import kotlin.math.sin
  * Everything here is disposed the moment loading ends. A loading surface that
  * lingers is just clutter with a good excuse.
  */
-class Boot(private val session: Session, private val skin: Theme.Skin) {
+class Boot(
+    private val session: Session,
+    private val skin: Theme.Skin,
+    /** Needed by heroes that draw with real type rather than stroke glyphs. */
+    private val context: android.content.Context,
+) {
 
     /** Kept under the old name so every existing reference reads unchanged. */
     private val theme: Horizon.Palette = skin.palette
@@ -63,6 +68,7 @@ class Boot(private val session: Session, private val skin: Theme.Skin) {
     private var level = 0f
     private var at: Vector3 = Vector3(0f, 0f, 0f)
     private var t = 0f
+    private var lastTickMs = 0L
 
     /**
      * Build overhead and slightly forward. HIGH, because the horizon is at eye
@@ -82,7 +88,7 @@ class Boot(private val session: Session, private val skin: Theme.Skin) {
         // NOT ADDED TO `entities`. The hero owns what it made and disposes it
         // in its own clear(), which is the rule that keeps a surface's teardown
         // in one place — the lesson from HALO dying on a list it did not empty.
-        hero = Heroes.forTheme(session, skin, root, at, CAP)
+        hero = Heroes.forTheme(session, context, skin, root, at, CAP)
 
         // THE BUILD, under the wordmark.
         //
@@ -106,7 +112,14 @@ class Boot(private val session: Session, private val skin: Theme.Skin) {
             listOf(Prims.material(session, theme.alt, 0.55f)),
         ).also {
             it.parent = root
-            it.setPose(Pose(Vector3(at.x, at.y - STAMP_DROP, at.z)), Space.ACTIVITY)
+            // UNDER WHATEVER THE HERO ACTUALLY IS. STAMP_DROP was written when
+            // every wordmark was stroke glyphs on a baseline and nothing hung
+            // below the anchor; a panel of real type is centred and reaches
+            // half its height down, so the version printed through the word.
+            val drop = maxOf(STAMP_DROP, (hero?.dropM ?: 0f) + STAMP_GAP)
+            it.setPose(Pose(Vector3(at.x, at.y - drop, at.z)), Space.ACTIVITY)
+            Log.i(TAG, "[boot] stamp %.3fm below the anchor (hero drops %.3fm)"
+                .format(drop, hero?.dropM ?: 0f))
             entities += it
         }
 
@@ -242,7 +255,26 @@ class Boot(private val session: Session, private val skin: Theme.Skin) {
      * Drive it. [fraction] is real progress 0..1; [active] false starts the
      * teardown. Called from the same frame loop as everything else.
      */
-    fun tick(dt: Float, fraction: Float, hasTotal: Boolean) {
+    /**
+     * A CLOCK, NOT A FRAME COUNT.
+     *
+     * This used to take `dt` from the caller, which passed a hardcoded 0.033f —
+     * thirty frames a second, asserted rather than measured. Every duration on
+     * this surface was therefore in FRAMES wearing the units of seconds, and
+     * the error is not small: the emulator runs the loop at about ten frames a
+     * second, so a 1.8s beam took five real seconds there, while the glasses
+     * run faster than thirty and fired the same beam in under one. The
+     * operator's report was "nothing new" — the animation had finished before
+     * anyone could look at it.
+     *
+     * Real elapsed time, clamped so a stalled frame cannot teleport the
+     * choreography. SPIN_DPS is now honestly degrees per second, and the
+     * vessel's ease is honestly per-second too.
+     */
+    fun tick(fraction: Float, hasTotal: Boolean) {
+        val now = android.os.SystemClock.uptimeMillis()
+        val dt = if (lastTickMs == 0L) 0f else ((now - lastTickMs) / 1000f).coerceIn(0f, 0.25f)
+        lastTickMs = now
         t += dt
         // The hero repaints against elapsed time; it creates nothing here.
         hero?.tick(t)
@@ -317,6 +349,7 @@ class Boot(private val session: Session, private val skin: Theme.Skin) {
         // one surface, one owner, which is the rule HALO broke when it left
         // ring handles on a list clear() did not empty and then posed them.
         hero?.clear(); hero = null
+        lastTickMs = 0L
         meniscus = null; core = null; level = 0f
     }
 
@@ -337,12 +370,22 @@ class Boot(private val session: Session, private val skin: Theme.Skin) {
         /** The build stamp, a quarter the wordmark's size and well under it. */
         const val STAMP_SCALE = 0.26f
         const val STAMP_DROP = 0.075f
+        /** Clear air between the hero's lowest ink and the build stamp. */
+        const val STAMP_GAP = 0.035f
         const val RADIUS = 0.16f
         const val VESSEL_H = 0.42f
         const val VESSEL_DROP = 0.50f
 
         /** The lockup: mark above, name below, vessel under both. */
-        const val MARK_UP = 0.34f
+        /**
+         * Raised from 0.34 when the wordmark became real type. A stroke
+         * wordmark was one cap tall; a panel of the same cap height is twice
+         * that, because a rasterised line carries its leading with it. At 0.34
+         * the mark's outer ring sat 0.155 above the anchor and the new
+         * wordmark reached 0.228 — they overlapped, which a capture showed
+         * before anybody had to notice it on glass.
+         */
+        const val MARK_UP = 0.46f
         const val CORE_R = 0.055f
         const val RING_A = 0.135f
         const val RING_B = 0.185f

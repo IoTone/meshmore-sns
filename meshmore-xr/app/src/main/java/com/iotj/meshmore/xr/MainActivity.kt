@@ -2802,7 +2802,7 @@ private fun HorizonScene(link: MeshLink) {
         // boot, hud, rack — a PHASE, so its ~dozen suspend .build() calls spill
         // this small closure instead of the whole scene. See the JIT note.
         suspend fun buildCore() {
-        val boot = Boot(session, skin.value)
+        val boot = Boot(session, skin.value, ctx)
         boot.build(origin)
         // E0 WAKE — once, as the boot surface appears. The scene takes about
         // fourteen seconds to build on this hardware and until now the wearer
@@ -3474,6 +3474,13 @@ private fun HorizonScene(link: MeshLink) {
         var since = 0f
         var fall = 0f
         var lastAdverts = -1
+        // WALL CLOCK, not a frame count. See Boot.tick: this counter decided
+        // how long the boot surface stands, in units of "one frame is 33 ms" —
+        // an assertion, not a measurement. The emulator's loop runs at about a
+        // third of that and the glasses run faster, so MIN_BOOT_S and
+        // MAX_BOOT_S meant different amounts of time on every device, and on
+        // the fast one the surface could come down before its hero finished.
+        var boot0StartMs = 0L
         var boot0Elapsed = 0f
         var statusTick = 0f
         // How many slots the radio had confirmed last time the CHANNELS bay was
@@ -5476,11 +5483,12 @@ private fun HorizonScene(link: MeshLink) {
                 // hearing live adverts behind it: connected, working, and
                 // apparently frozen. Whatever has arrived by MAX_BOOT_S is what
                 // we show; an incomplete horizon beats a permanent splash.
+                if (boot0StartMs == 0L) boot0StartMs = android.os.SystemClock.uptimeMillis()
+                boot0Elapsed = (android.os.SystemClock.uptimeMillis() - boot0StartMs) / 1000f
                 val loading = boot0Elapsed < MAX_BOOT_S &&
                     (!load.done || boot0Elapsed < MIN_BOOT_S)
-                boot0Elapsed += 0.033f
                 if (loading) {
-                    bootRef.value?.tick(0.033f, load.fraction, load.total > 0)
+                    bootRef.value?.tick(load.fraction, load.total > 0)
                     // THE CYLINDER IS FILLING — the wait is now showing its own
                     // progress and does not need covering. Stops the LOOP, not
                     // the sound: cutting a phrase mid-bar is more noticeable

@@ -5,46 +5,63 @@ package com.iotj.meshmore.xr.spatial
 import android.util.Log
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.math.Pose
+import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Vector3
+import androidx.xr.runtime.math.Vector4
 import androidx.xr.scenecore.Entity
+import androidx.xr.scenecore.KhronosUnlitMaterial
 import androidx.xr.scenecore.MeshEntity
 import androidx.xr.scenecore.Space
 
 /**
  * THE BOOT HERO — how a theme introduces itself.
  *
- * The wordmark used to be one thing in all nine themes: `Glyphs.text` extruded
- * into strokes, the same vector font the node callsigns use. The operator's
- * verdict was that it "looks like it was made out of sticks", and the deeper
- * problem is that it wasted the one moment a theme has to say what it is. Boot
- * is fifteen to thirty seconds of a wearer waiting on a contact sync with
- * nothing else to look at; that is not dead time, it is the only uninterrupted
- * attention this app ever gets.
+ * The wordmark used to be one object in all nine themes: `Glyphs.text` extruded
+ * into strokes, the same vector font the callsigns use. The verdict was that it
+ * "looks like it was made out of sticks", and the deeper waste is that boot is
+ * fifteen to thirty seconds of a wearer with nothing else to look at. That is
+ * the only uninterrupted attention this app ever gets, and every theme was
+ * spending it on the same object.
  *
- * So the wordmark becomes a per-theme surface, and this is its contract.
+ * THREE RULES, each one a bill this project has already paid:
  *
- * THREE RULES, all of them learned the hard way elsewhere in this app:
- *
- *  1. BUILT ONCE, ANIMATED FREELY. Everything a hero will ever show is created
- *     in [build]; [tick] only moves and repaints what already exists. Meshes
- *     are cheap to pose and materials are mutable, but a panel rewritten per
- *     frame rasterises an Android view every time — the habit that had the
- *     inbox writing itself fifteen times a second.
- *  2. IT MUST SETTLE. The vessel beside it is showing real sync progress, and
- *     an animation still running after four seconds competes with the only
- *     honest information on the surface. Enter, land, hold.
- *  3. IT MUST SAY WHAT IT BUILT. There is no visual check available: the
- *     emulator's only display is FLAG_SECURE, so spatial screencap returns
- *     blank. A hero reports its own geometry and cost to logcat or it cannot
- *     be reviewed at all.
+ *  1. BORN FINISHED. Everything a hero shows is created in [build], complete
+ *     and visible. The frame loop does not start until the whole scene has been
+ *     built — fifteen to twenty seconds on this hardware — so a hero that fades
+ *     itself in from nothing shows the wearer nothing for most of the surface's
+ *     life. [tick] adds motion to something already standing; it must never be
+ *     what makes it appear.
+ *  2. POSE AND REPAINT ONLY. Meshes are free to move and materials are mutable,
+ *     but a panel rewritten per frame rasterises an Android view every time —
+ *     the habit that had the inbox writing itself fifteen times a second. A
+ *     panel here is born holding its final text and is never written again.
+ *  3. IT MUST SAY WHAT IT BUILT. The emulator's one display is FLAG_SECURE, so
+ *     there is no spatial screenshot to check. A hero reports its geometry and
+ *     cost to logcat or it cannot be reviewed at all.
  */
 interface Hero {
 
-    /** Create everything, parented to [root], centred on [at]. Never called twice. */
+    /** Create everything, complete and visible, parented to [root] at [at]. */
     suspend fun build(root: Entity, at: Vector3)
 
     /** [t] is seconds since the boot surface appeared. Pose and repaint only. */
     fun tick(t: Float)
+
+    /**
+     * How far this hero's ink reaches BELOW its anchor, in metres.
+     *
+     * The boot surface stacks a build stamp under the wordmark, and that
+     * layout was written when every wordmark was stroke glyphs sitting ON the
+     * baseline — nothing extended downward at all. A panel of real type is
+     * centred instead, and reaches half its height below; VECTORLINE adds a
+     * ground plane below that. The first real-type hero therefore printed the
+     * version straight through the letterforms.
+     *
+     * So a hero declares its own extent and the stamp is placed under whatever
+     * that turns out to be, rather than under a constant that was only ever
+     * true for one kind of wordmark.
+     */
+    val dropM: Float get() = 0f
 
     fun clear()
 }
@@ -54,20 +71,21 @@ interface Hero {
  *
  * DEFAULTING TO THE OLD WORDMARK IS DELIBERATE. The heroes arrive one at a
  * time, and a theme without one must look exactly as it did rather than
- * degrading to nothing — so [PlainWordmark] is the same mesh, the same
- * material and the same pose the boot surface has always built.
+ * degrading to nothing — so [PlainWordmark] is the same mesh, material, pose
+ * and motion the boot surface has always built.
  */
 object Heroes {
 
     suspend fun forTheme(
         session: Session,
+        context: android.content.Context,
         skin: Theme.Skin,
         root: Entity,
         at: Vector3,
         cap: Float,
     ): Hero {
         val hero: Hero = when (skin.key) {
-            "vector" -> VectorlineHero(session, skin.palette, cap)
+            "vector" -> VectorlineHero(session, context, skin.palette, cap)
             else -> PlainWordmark(session, skin.palette, cap)
         }
         hero.build(root, at)
@@ -78,7 +96,7 @@ object Heroes {
     const val TAG = "MeshmoreXR"
 }
 
-/** The wordmark as it has always been: one extruded stroke mesh, held still. */
+/** The wordmark as it has always been: one extruded stroke mesh, swinging. */
 private class PlainWordmark(
     private val session: Session,
     private val theme: Horizon.Palette,
@@ -97,14 +115,13 @@ private class PlainWordmark(
             it.parent = root
             it.setPose(Pose(at), Space.ACTIVITY)
         }
-        Log.i(Heroes.TAG, "[hero] plain wordmark, 1 mesh")
+        Log.i(Heroes.TAG, "[hero] plain wordmark, 1 stroke mesh")
     }
 
     /**
-     * The swing and the breath, moved here verbatim from `Boot.tick` when the
-     * wordmark stopped being the boot surface's own property. Unchanged on
-     * purpose: eight themes still see this, and a refactor is not the place to
-     * quietly restyle them.
+     * The swing and the breath, moved here verbatim when the wordmark stopped
+     * being the boot surface's own property. Unchanged on purpose: eight themes
+     * still see this, and a refactor is not the place to restyle them.
      */
     override fun tick(t: Float) {
         // Slow turn, but an OSCILLATION rather than a full revolution. Stroke
@@ -115,155 +132,143 @@ private class PlainWordmark(
         // at every instant while still clearly turning in space.
         val yaw = SWING_DEG * kotlin.math.sin(t * SWING_RATE)
         runCatching {
-            entity?.setPose(
-                Pose(at, androidx.xr.runtime.math.Quaternion.fromEulerAngles(0f, yaw, 0f)),
-                Space.ACTIVITY,
-            )
+            entity?.setPose(Pose(at, Quaternion.fromEulerAngles(0f, yaw, 0f)), Space.ACTIVITY)
             // Breathing alpha rather than a hard blink: a flashing wordmark at
             // this size reads as an alarm.
             entity?.setAlpha(0.55f + 0.45f * (0.5f + 0.5f * kotlin.math.sin(t * 2.2f)))
         }
     }
 
-    private companion object {
-        const val SWING_DEG = 38f
-        const val SWING_RATE = 0.55f
-    }
+    /** Stroke glyphs sit on the baseline: nothing reaches below the anchor. */
+    override val dropM: Float get() = 0f
 
     override fun clear() {
         runCatching { entity?.parent = null }
         runCatching { entity?.dispose() }
         entity = null
     }
+
+    private companion object {
+        const val SWING_DEG = 38f
+        const val SWING_RATE = 0.55f
+    }
 }
 
 /**
- * VECTORLINE — the wordmark drawn by a beam, letter by letter.
+ * VECTORLINE — real type, and the beam that crosses it.
  *
- * THE ONE THEME WHERE STICKS ARE CORRECT. Its brief is Tempest, Rez and
- * Battlezone, and those were vector displays: a beam deflected across a
- * phosphor screen, drawing line segments and leaving them glowing. The stroke
- * font is not a compromise here, it is the medium — what was missing was the
- * BEAM. A vector display never showed you a finished frame; it showed you the
- * beam getting there, and the letters behind it burning down to a resting
- * brightness.
+ * THE CORRECTION THAT TOOK TWO LOOKS. The brief was "I really don't want this
+ * to look like stick figures", and the first cut kept `Glyphs` anyway and
+ * defended it: Battlezone drew vectors, so the stroke font looked like the
+ * medium rather than the compromise. Then, with everything AROUND the word
+ * rebuilt — beam, ground plane, refresh sweep — came the verdict that settled
+ * it: "the Meshmore XR part is the same. I'm trying to get rid of that."
  *
- * So the word is built one character at a time rather than as a single mesh,
- * and each character's material is repainted every frame against the beam's
- * position: full brightness where the beam just passed, decaying to a steady
- * glow behind it, dark ahead of it. Ten small meshes and one head, all created
- * at build; [tick] only writes colour.
+ * The stroke font IS the sticks. No amount of beam work around a stick
+ * wordmark stops it being one. The letterforms come from the app's real face;
+ * the vector character comes from what crosses them.
+ *
+ * BORN FINISHED, which the first cut also got wrong. It built the letters dark
+ * and drew them in over 1.8 seconds, and on glass that produced eighteen
+ * seconds of nothing where the wordmark should have been:
+ *
+ *     02:37:20.883  [hero] vectorline — built
+ *     02:37:38.741  [hero] t=0.0
+ *
+ * `tick` is not called until the whole scene has been built. An entrance
+ * animation cannot play when there is nothing running to play it, so the beam
+ * is a REFRESH — what a beam on a phosphor tube actually is — and if the loop
+ * never ticks at all, the wordmark is still standing there.
  */
 private class VectorlineHero(
     private val session: Session,
+    private val context: android.content.Context,
     private val theme: Horizon.Palette,
     private val cap: Float,
 ) : Hero {
 
-    private class Stroke(val entity: MeshEntity, val mat: androidx.xr.scenecore.KhronosUnlitMaterial, val x: Float)
-
-    private val strokes = mutableListOf<Stroke>()
-    private var head: MeshEntity? = null
-    private var headMat: androidx.xr.scenecore.KhronosUnlitMaterial? = null
-    private val horizon = mutableListOf<Pair<MeshEntity, androidx.xr.scenecore.KhronosUnlitMaterial>>()
+    private var word: TextRun.Run? = null
+    private var beam: MeshEntity? = null
+    private var beamMat: KhronosUnlitMaterial? = null
     private var origin = Vector3(0f, 0f, 0f)
     private var span = 0f
+    /** Half the panel's height — everything here rides above the baseline. */
+    private var mid = 0f
 
     override suspend fun build(root: Entity, at: Vector3) {
         origin = at
-        val word = Heroes.WORD
-        // ADVANCE FROM THE PUBLIC MEASURE, not from the font's private metrics.
-        // width(k cells) is linear in k, so the per-cell advance is the
-        // difference between two of them and the ink box is the width of one.
-        // That keeps this arithmetic correct if the font's spacing ever moves.
-        val one = Glyphs.width("M", cap)
-        val adv = Glyphs.width("MM", cap) - one
-        span = Glyphs.width(word, cap)
-        val left = -span / 2f
 
-        word.forEachIndexed { i, ch ->
-            if (ch == ' ') return@forEachIndexed
-            // Each character is centred on its own ink box by Glyphs.text, so
-            // it is placed at the centre of the cell it would occupy in the
-            // full word.
-            val cx = left + i * adv + one / 2f
-            val mesh = Prims.build(session, Glyphs.text(ch.toString(), cap))
-            val mat = Prims.material(session, theme.accent, 0f)
-            val e = MeshEntity.create(session, mesh, listOf(mat)).also {
-                it.parent = root
-                it.setPose(Pose(Vector3(at.x + cx, at.y, at.z)), Space.ACTIVITY)
-            }
-            strokes += Stroke(e, mat, cx)
+        // A PANEL IS RIGHT HERE for the reason panels are usually wrong: it is
+        // born holding its final text and is never written again, which is the
+        // one case that renders reliably on every device.
+        // ON THE BASELINE, NOT ON THE CENTRE. Glyphs.text sits on its baseline
+        // and grows upward, so the boot surface's stack — mark above, stamp
+        // below, vessel under that — was laid out around a wordmark that
+        // occupied nothing below the anchor. A panel is centred instead and
+        // reaches half its height down, which is how the first real-type build
+        // printed the version straight through the letterforms. Lifting it by
+        // half its height restores the convention the layout was written for.
+        word = TextRun.create(
+            session, context, Heroes.WORD, cap, argb(theme.accent, 0.95f), "hero-vector",
+        )?.also {
+            it.entity.parent = root
+            it.entity.setPose(
+                Pose(Vector3(at.x, at.y + it.heightM / 2f, at.z)), Space.ACTIVITY,
+            )
         }
+        span = word?.widthM ?: Glyphs.width(Heroes.WORD, cap)
 
-        // THE BEAM HEAD. A small bright mote riding the baseline — the only
-        // part of a vector display that is actually moving.
-        headMat = Prims.material(session, theme.text, 0f)
-        head = MeshEntity.create(
-            session, Prims.build(session, Prims.mote(cap * 0.14f, 5, 8)),
-            listOf(headMat!!),
+        // THE BEAM — a bright bar taller than the type, crossing it. On
+        // additive optics it needs no mask and no invert: it adds light where
+        // it passes, which is what a beam did on a phosphor tube.
+        beamMat = Prims.material(session, theme.text, 0f)
+        mid = (word?.heightM ?: cap) / 2f
+        beam = MeshEntity.create(
+            session, Prims.build(session, Prims.bar(cap * 0.05f, cap * 1.8f, cap * 0.04f)),
+            listOf(beamMat!!),
         ).also {
             it.parent = root
-            it.setPose(Pose(Vector3(at.x + left, at.y + cap * 0.45f, at.z)), Space.ACTIVITY)
+            it.setPose(Pose(Vector3(at.x - span / 2f, at.y + mid, at.z)), Space.ACTIVITY)
         }
 
-        // A HORIZON IN ONE PASS, under the word. Five rules widening with
-        // distance: the cheapest possible reading of Battlezone's ground plane,
-        // and five meshes rather than a grid because the wearer's real room is
-        // already behind it.
-        repeat(HORIZON_LINES) { i ->
-            val w = span * (0.30f + i * 0.19f)
-            val mat = Prims.material(session, theme.alt, 0f)
-            val e = MeshEntity.create(
-                session, Prims.build(session, Prims.bar(w, cap * 0.02f, cap * 0.02f)),
-                listOf(mat),
-            ).also {
-                it.parent = root
-                it.setPose(
-                    Pose(Vector3(at.x, at.y - cap * (0.55f + i * 0.28f), at.z)),
-                    Space.ACTIVITY,
-                )
-            }
-            horizon += e to mat
-        }
+        // NO GROUND PLANE. The first cut hung five rules under the word; seen
+        // in a capture they ran the full width of the view and fought the
+        // stage's own floor grid, which already draws teal lines across the
+        // room. Two grids is noise, and the rules also reached down into the
+        // build stamp. The beam crossing real type is the idea; the room
+        // supplies the rest.
 
         Log.i(
             Heroes.TAG,
-            "[hero] vectorline — ${strokes.size} stroke(s) + head + $HORIZON_LINES rule(s), " +
-                "span %.3fm, trace %.1fs".format(span, TRACE_S),
+            ("[hero] vectorline — real type %.3fm x %.3fm on the baseline + beam, " +
+                "sweep every %.1fs").format(span, word?.heightM ?: 0f, REFRESH_S),
         )
     }
 
-    /**
-     * REPAINT ONLY. No entity is created, moved or destroyed here except the
-     * head, which is the one thing that travels.
-     */
+    /** Moves the beam. The type is never touched — it was finished at build. */
     override fun tick(t: Float) {
-        val phase = (t / TRACE_S).coerceIn(0f, 1f)
-        val beam = -span / 2f + span * phase
-        strokes.forEach { s ->
-            val behind = beam - s.x
-            val a = when {
-                behind < 0f -> 0f
-                else -> REST + (1f - REST) * kotlin.math.exp(-behind / (span * TAIL))
-            }
-            runCatching { s.mat.setBaseColorFactor(rgba(theme.accent, a)) }
-        }
+        val cycle = t % REFRESH_S
+        val sweeping = cycle < REFRESH_SWEEP_S
+        val phase = (cycle / REFRESH_SWEEP_S).coerceIn(0f, 1f)
+        val x = -span / 2f - cap * 0.3f + (span + cap * 0.6f) * phase
         runCatching {
-            head?.setPose(
-                Pose(Vector3(origin.x + beam, origin.y + cap * 0.45f, origin.z)),
-                Space.ACTIVITY,
+            beam?.setPose(
+                Pose(Vector3(origin.x + x, origin.y + mid, origin.z)), Space.ACTIVITY,
             )
-            headMat?.setBaseColorFactor(rgba(theme.text, if (phase < 1f) 0.95f else 0f))
-        }
-        // The ground arrives after the word, one rule at a time.
-        horizon.forEachIndexed { i, (_, mat) ->
-            val up = ((t - HORIZON_AT - i * 0.12f) / 0.5f).coerceIn(0f, 1f)
-            runCatching { mat.setBaseColorFactor(rgba(theme.alt, up * 0.55f)) }
+            // Fades at both margins so the beam enters and leaves rather than
+            // snapping on at the edge of the word.
+            val edge = kotlin.math.sin(phase * Math.PI).toFloat()
+            beamMat?.setBaseColorFactor(rgba(theme.text, if (sweeping) 0.85f * edge else 0f))
         }
     }
 
-    private fun rgba(rgb: Int, a: Float) = androidx.xr.runtime.math.Vector4(
+    /** Baseline-aligned: this hero reaches nothing below the anchor. */
+    override val dropM: Float get() = 0f
+
+    private fun argb(rgb: Int, a: Float): Int =
+        (((a.coerceIn(0f, 1f) * 255).toInt() and 0xFF) shl 24) or (rgb and 0xFFFFFF)
+
+    private fun rgba(rgb: Int, a: Float) = Vector4(
         ((rgb shr 16) and 0xFF) / 255f,
         ((rgb shr 8) and 0xFF) / 255f,
         (rgb and 0xFF) / 255f,
@@ -271,23 +276,21 @@ private class VectorlineHero(
     )
 
     override fun clear() {
-        val doomed = strokes.map { it.entity } + listOfNotNull(head) + horizon.map { it.first }
-        doomed.forEach { runCatching { it.parent = null } }
-        doomed.forEach { runCatching { it.dispose() } }
-        strokes.clear()
-        horizon.clear()
-        head = null
-        headMat = null
+        runCatching { word?.entity?.parent = null }
+        runCatching { word?.entity?.dispose() }
+        word = null
+        listOfNotNull(beam).forEach {
+            runCatching { it.parent = null }
+            runCatching { it.dispose() }
+        }
+        beam = null
+        beamMat = null
     }
 
     private companion object {
-        /** How long the beam takes to cross the word. */
-        const val TRACE_S = 1.8f
-        /** What a drawn letter settles to once the beam has gone. */
-        const val REST = 0.55f
-        /** Persistence, as a fraction of the word's span. */
-        const val TAIL = 0.16f
-        const val HORIZON_AT = 2.4f
-        const val HORIZON_LINES = 5
+        /** How often the beam comes round. */
+        const val REFRESH_S = 3.2f
+        /** How long one sweep takes to cross. */
+        const val REFRESH_SWEEP_S = 1.0f
     }
 }
