@@ -140,7 +140,19 @@ class Inbox(
             head.z - kotlin.math.cos(yawRad) * DIST,
         )
         render()
-        Log.i(TAG, "[inbox] open, ${entries.size} message(s)")
+        // SAYS ITS OWN GEOMETRY, like the dock and the callout rack do. The
+        // complaint this answers — the pager being too close to the messages to
+        // aim at — is a measurement, so the surface reports the measurement and
+        // a later regression shows up as a number rather than as a wearer
+        // struggling to hit a control.
+        run {
+            val lastBottom = (ROWS / 2f - (ROWS - 1)) * LINE + PAGER_GAP * 0.5f -
+                HEAD_CAP - HIT_H / 2f
+            val pagerTop = (ROWS / 2f - ROWS) * LINE - PAGER_GAP * 0.5f + HIT_H * 0.35f
+            val deg = Math.toDegrees(kotlin.math.atan2((lastBottom - pagerTop), DIST).toDouble())
+            Log.i(TAG, "[inbox] open, ${entries.size} message(s) — " +
+                "%.1f° of clear air between the last row and the pager".format(deg))
+        }
     }
 
     fun hide() {
@@ -215,7 +227,7 @@ class Inbox(
         val first = page * ROWS
         rows.forEachIndexed { i, r ->
             val e = all.getOrNull(first + i)
-            val y = a.y + (ROWS / 2f - i) * LINE
+            val y = a.y + (ROWS / 2f - i) * LINE + PAGER_GAP * 0.5f
             rowAt[i] = Vector3(a.x, y, a.z)
             runCatching {
                 r.head.entity.setEnabled(e != null)
@@ -248,7 +260,7 @@ class Inbox(
                 r.proxy.setPose(Pose(Vector3(a.x, y - HEAD_CAP, a.z)), Space.ACTIVITY)
             }
         }
-        val py = a.y + (ROWS / 2f - ROWS) * LINE
+        val py = a.y + (ROWS / 2f - ROWS) * LINE - PAGER_GAP * 0.5f
         rowAt[PAGER] = Vector3(a.x, py, a.z)
         runCatching {
             val on = all.isNotEmpty()
@@ -343,6 +355,25 @@ class Inbox(
         /** 1.32° and 1.45° at DIST — derived from §4.1, not chosen by eye. */
         const val HEAD_CAP = 0.032f
         const val BODY_CAP = 0.035f
+        /**
+         * CLEAR AIR ABOVE THE PAGER.
+         *
+         * Reported from the glasses: the control for page 2 of N is "very hard
+         * to select because it is too close to the messages in a Y direction".
+         * It was: the pager sat exactly one LINE below the last row, and a row
+         * here is TWO lines tall, so its body text and its 0.15 m hit bar
+         * reached down to within 1.5 cm of the pager's bar — six tenths of a
+         * degree of clear air at 1.4 m, threaded with a gaze ray.
+         *
+         * The roster has had this gap since it was built (LINE * 0.4); the
+         * inbox never got one, and the inbox is the surface that needs it more.
+         * Half a line puts about four degrees between the two targets.
+         *
+         * SPENT SYMMETRICALLY: the rows move up by half of it and the pager
+         * down by half, so the surface keeps its centre instead of growing
+         * into the lower field where a wearer has to tip their head.
+         */
+        const val PAGER_GAP = LINE * 0.5f
         const val HIT_W = 0.66f
         const val HIT_H = 0.15f
         const val CONE = 0.05f

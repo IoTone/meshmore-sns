@@ -222,6 +222,9 @@
     <string name="reel_from">%1$s · %2$s</string>
     <string name="reel_channel">チャンネル</string>
     <string name="reel_hint">親指を人差し指で回す</string>
+    <string name="chan_public">公開</string>
+    <string name="chan_numbered">チャンネル %1$d</string>
+    <string name="chan_generic">チャンネル</string>
     <string name="cm_magnify">拡大</string>
     <string name="cm_bearing">方位</string>
     <string name="cm_nearest">最寄り</string>

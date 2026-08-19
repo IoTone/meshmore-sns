@@ -420,13 +420,42 @@ class MeshLink(private val context: Context) {
                     title = if (first.direct) {
                         first.fromName.ifBlank { id }
                     } else {
-                        first.channel ?: "CHANNEL"
+                        channelTitle(id, first.channelName)
                     },
                     direct = first.direct,
                     messages = ms,
                 )
             }
             .sortedByDescending { it.newest?.atEpochSec ?: 0L }
+
+    /**
+     * WHAT TO CALL A CHANNEL, given that "#0" is not a name.
+     *
+     * `#0` is the radio's filing system — the slot number the hardware and the
+     * phone app use — and it went straight onto the inbox row and the thread
+     * header as though it were what people call the channel. Reported from the
+     * glasses: "channel indicated as #0 is confusing. What is #0?"
+     *
+     * In order of authority: the name the radio reports for that slot, then the
+     * name carried on the message itself, then PUBLIC if the slot is on the
+     * well-known public key — a FACT about the channel rather than a guess from
+     * its number, and the reason `Chan.publicKey` exists — and only then a
+     * numbered fallback, which at least says what KIND of thing it is.
+     */
+    private fun channelTitle(threadId: String, fromMessage: String?): String {
+        val idx = threadId.removePrefix("#").toIntOrNull()
+        val slot = idx?.let { chans[it] }
+        val named = slot?.name?.trim()?.ifBlank { null }
+            ?: fromMessage?.trim()?.ifBlank { null }
+        return when {
+            named != null -> named
+            slot?.publicKey == true ->
+                context.getString(com.iotj.meshmore.xr.R.string.chan_public)
+            idx != null ->
+                context.getString(com.iotj.meshmore.xr.R.string.chan_numbered, idx)
+            else -> context.getString(com.iotj.meshmore.xr.R.string.chan_generic)
+        }
+    }
 
     /**
      * History across restarts.
