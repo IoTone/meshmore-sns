@@ -688,8 +688,13 @@ class _MessageRow extends StatelessWidget {
 /// The identity a message is attributed to for the session: an incoming
 /// channel sender's handle, or a sentinel for our own outgoing messages.
 /// Empty = anonymous (no parseable `name:` prefix) → no tag.
+///
+/// The sentinel is NUL-prefixed so it can never collide with a real
+/// handle. Write it as the ` ` **escape**, never as a literal NUL
+/// byte: a raw NUL makes the whole file read as binary, and `grep` /
+/// `ripgrep` then skip it silently rather than reporting an error.
 String _identityKey(ChatMessage m) =>
-    m.outgoing ? ' self' : (parseChannelSenderName(m.text) ?? '');
+    m.outgoing ? '\u0000self' : (parseChannelSenderName(m.text) ?? '');
 
 /// Time since the same identity last spoke before message [i] in [msgs]
 /// (chronological). Null = first time we've heard this identity in-buffer.
