@@ -844,6 +844,32 @@ While Meshcore protocol is open source, the client is not open source.  We want 
   on its own, guarding against the subscription being re-added and
   every message being spoken twice.
 
+  **Verified on hardware** (SH-53D, MeshCore-D38F07AED563, 910.525 MHz
+  SF7, live Public channel). Method: `GoogleTTSServiceImpl: Synthesis
+  request` in logcat is a reliable marker for an actual speak call.
+  Under the strict condition -- freshly launched process, **Nodes** tab
+  foregrounded, Chat never opened in that process -- three inbound
+  channel messages produced three synthesis events, 1:1:
+
+  | message | synthesis |
+  |---|---|
+  | 14:48 `PDX KC7HTA Mark KiekR: @[VanWA85]: 1 hop to NE Portland ...` | 14:48:31 |
+  | 14:49 `VanWA85: @[PDX KC7HTA Mark KiekR] thanks` | 14:49:17 |
+  | 14:49 `Thalestr: @[VanWA85] 11 hops Van BC` | 14:49:37 |
+
+  That condition is the decisive one: with the old screen-scoped
+  subscription, `ChatScreen.initState` never runs if Chat is never
+  opened, so no subscription could exist and none of those messages
+  could have been spoken.
+
+  Worth recording for whoever tests this next: **the Public channel has
+  long quiet gaps** (an observed 15-minute one, 14:22 to 14:37). Two
+  earlier capture windows returned zero speech events purely because no
+  channel traffic arrived in them. Cue playback (`audioplayers` in
+  logcat) is *not* a usable proxy for "a channel message arrived" --
+  adverts and discovery fire cues too, and one starved window logged 20
+  cues with no messages at all. Confirm against chat timestamps.
+
   **Where it lives.** Three entry points, one sheet:
   - **Node detail sheet → "Voice & chime"** — primary. This is where
     peer identity already lives (the favourite toggle is there).
