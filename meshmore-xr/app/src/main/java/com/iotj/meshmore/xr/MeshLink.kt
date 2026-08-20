@@ -1036,6 +1036,10 @@ class MeshLink(private val context: Context) {
     }
 
     /** What the radio said it is, once DEVICE_QUERY has been answered. */
+    /** Whatever the firmware exposes as key/value settings. Empty until asked. */
+    var customVars: Map<String, String> = emptyMap()
+        private set
+
     var deviceInfo: io.iotone.meshcore.model.DeviceInfo? = null
         private set
 
@@ -1992,6 +1996,25 @@ class MeshLink(private val context: Context) {
                     // guessing at from names: manufacturer is the closest thing
                     // MeshCore has to a model string, and firmware version and
                     // build date pin down what is actually running.
+                    // EVERY KEY THE FIRMWARE ADMITS TO, printed once.
+                    //
+                    // Custom vars are firmware-defined and board-specific, and
+                    // this app has never asked for them. The operator's
+                    // question was whether a T1000E's buzzer can be silenced;
+                    // CMD_SET_OTHER_PARAMS carries four fields and none is
+                    // sound, so if the switch exists at all it is here. Rather
+                    // than guess at a key name, log the whole map and let the
+                    // hardware answer.
+                    is io.iotone.meshcore.frames.CustomVarsFrame -> {
+                        val vars = frame.values()
+                        customVars = vars
+                        if (vars.isEmpty()) {
+                            Log.w(TAG, "[vars] the radio exposes NO custom variables")
+                        } else {
+                            Log.i(TAG, "[vars] ${vars.size} custom variable(s):")
+                            vars.forEach { (k, v) -> Log.i(TAG, "[vars]   $k = $v") }
+                        }
+                    }
                     is io.iotone.meshcore.frames.DeviceInfoFrame -> {
                         val d = frame.info()
                         deviceInfo = d
@@ -2086,6 +2109,10 @@ class MeshLink(private val context: Context) {
                         // ASKED AFTER THE STORE IS READ, so the answer arrives
                         // beside the count it explains.
                         runCatching { session?.deviceQuery(1) }
+                        // AND WHAT ELSE IT WILL TELL US. See customVars(): the
+                        // firmware's own key/value settings, which nothing in
+                        // this app has ever asked for.
+                        runCatching { session?.customVars() }
                     }
                     is io.iotone.meshcore.frames.BatteryStorageFrame -> {
                         val mv = runCatching { frame.battery().batteryMillivolts() }.getOrNull()

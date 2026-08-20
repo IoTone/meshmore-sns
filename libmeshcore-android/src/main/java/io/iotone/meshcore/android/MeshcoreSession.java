@@ -416,6 +416,29 @@ public final class MeshcoreSession {
      *
      * @param appTargetVer the app's protocol target version
      */
+    /**
+     * Asks the device for its CUSTOM VARIABLES
+     * ({@code CMD_GET_CUSTOM_VARS}, 0x28). The reply arrives as a
+     * {@code CustomVarsFrame} carrying a string-keyed map.
+     *
+     * <p>These are whatever the FIRMWARE chooses to expose, and they differ by
+     * board and by build — which is exactly why they are worth asking for
+     * rather than assuming. The SNS app has read two of them for a year
+     * ({@code gps}, {@code gps_interval}); nothing has ever enumerated the
+     * rest, so nobody knows what else a given radio is willing to be told.</p>
+     *
+     * <p>The immediate question is a buzzer: a T1000E beeps at every message
+     * with no way to stop it, and if a key for that exists it lives here,
+     * because {@code CMD_SET_OTHER_PARAMS} carries only four fields and none
+     * of them is sound.</p>
+     *
+     * <p>No-op when not {@link SessionState#READY}.</p>
+     */
+    public void customVars() {
+        if (state.get() != SessionState.READY) return;
+        send(MeshcoreFrameCodec.getCustomVars());
+    }
+
     public void deviceQuery(int appTargetVer) {
         if (state.get() != SessionState.READY) return;
         send(MeshcoreFrameCodec.deviceQuery(appTargetVer));
