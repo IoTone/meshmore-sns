@@ -224,6 +224,17 @@ class MainActivity : ComponentActivity() {
          * it shipped with no focus state at all and nobody noticed.
          */
         var showMenu: Boolean = false
+        /**
+         * `--ez crown true` opens the crown's ACTIONS screen on a node,
+         * preferring a starred one.
+         *
+         * The screen only ever opened under a hand before, so the rows it
+         * chooses — which is where SOAK and RESEND compete for the last slot —
+         * could not be read anywhere but on worn glass. The row budget is
+         * exactly the thing that failed silently, so it needed a way to be
+         * looked at.
+         */
+        var crownProbe: Boolean = false
         /** --ez focus true : open S3 NODE FOCUS on the first node that arrives. */
         var showFocus: Boolean = false
         /**
@@ -415,6 +426,7 @@ class MainActivity : ComponentActivity() {
         staleOverride = intent?.getStringExtra("stale")?.toIntOrNull()
         boardOverride = intent?.getStringExtra("board")?.takeIf { it.isNotBlank() }
         showMenu = intent?.getBooleanExtra("menu", false) ?: false
+        crownProbe = intent?.getBooleanExtra("crown", false) ?: false
         showFocus = intent?.getBooleanExtra("focus", false) ?: false
         probePaths = intent?.getBooleanExtra("probe", false) ?: false
         probePlanes = intent?.getBooleanExtra("planes", false) ?: false
@@ -2328,7 +2340,22 @@ private fun HorizonScene(link: MeshLink) {
             ),
             android.os.SystemClock.uptimeMillis(),
         )
-        Log.i(TAG_UI, "[dm] probe — composing to '${n.name}'")
+        Log.i(TAG_UI, "[dm] probe — composing to '${n.name}' key=${n.key}")
+    }
+
+    LaunchedEffect(crownRef.value, nodesRef.value) {
+        if (!MainActivity.crownProbe) return@LaunchedEffect
+        val c = crownRef.value ?: return@LaunchedEffect
+        val all = nodesRef.value
+        if (all.isEmpty() || c.target != null) return@LaunchedEffect
+        kotlinx.coroutines.delay(2_000)
+        // A STARRED NODE IF THERE IS ONE, because the row this probe exists to
+        // look at is the one that only a starred node brings.
+        val n = all.firstOrNull { link.isStarred(it.fullKey ?: it.key, tagsRef::isFavourite) }
+            ?: all.first()
+        c.target = com.iotj.meshmore.xr.spatial.Crown.Target(n.fullKey ?: n.key, n.name)
+        c.show()
+        Log.i(TAG_UI, "[crown] probe — actions on '${n.name}' key=${n.key}")
     }
 
     // THE CARD, BUILT OFF THE FRAME LOOP. Keyed on what it would say, so a
@@ -3843,6 +3870,20 @@ private fun HorizonScene(link: MeshLink) {
                             // Offered only while something is actually
                             // unanswered. See Crown.canResend.
                             cw.canResend = link.lastUnanswered() != null
+                            // OFFERED ONLY AT A FAVOURITE, and only at a
+                            // person. Ten full-length packets is real airtime
+                            // on a shared band; the nodes worth spending it on
+                            // are the ones the operator has marked as theirs.
+                            // A channel is excluded outright — a soak on a
+                            // public band is ten messages of noise for
+                            // everybody within range.
+                            //
+                            // Both notions of favourite count: the star this
+                            // app keeps and the flag the radio itself stores,
+                            // because a wearer who starred a node in either
+                            // place means the same thing by it.
+                            cw.canSoak = !soakRunning.value && cw.target?.channel != true &&
+                                link.isStarred(cw.target?.key ?: sel?.fromKey, tagsRef::isFavourite)
                             cw.tick(
                                 // `at` only gates the crown; the rows are
                                 // placed from the head and its yaw either way,
@@ -3858,6 +3899,88 @@ private fun HorizonScene(link: MeshLink) {
                                     dictation, voice, cue, stage, nowMs,
                                     askMic = {
                                         askMic.launch(android.Manifest.permission.RECORD_AUDIO)
+                                    },
+                                    // THE RUN LIVES IN THE FRAME LOOP'S SCOPE,
+                                    // so it dies with the scene rather than
+                                    // outliving it and transmitting into a
+                                    // session that has gone.
+                                    runSoak = { peerKey ->
+                                        soakRunning.value = true
+                                        launch {
+                                            val fmt = java.text.SimpleDateFormat(
+                                                "HH:mm:ss", java.util.Locale.US,
+                                            )
+                                            val before = link.delivery.value
+                                            var accepted = 0
+                                            // COUNTED, NOT ASSUMED. The run can
+                                            // stop early at a refusal, and a
+                                            // report that says ten when six
+                                            // left is a reliability figure
+                                            // computed from a number nobody
+                                            // measured.
+                                            var attempted = 0
+                                            var why: String? = null
+                                            for (n in 1..MiniSoak.COUNT) {
+                                                val text = MiniSoak.message(
+                                                    fmt.format(java.util.Date()), n,
+                                                )
+                                                val res = link.sendTo(peerKey, text)
+                                                attempted++
+                                                link.noteAttempt(res is MeshLink.Sent.Ok)
+                                                if (res is MeshLink.Sent.Ok) accepted++
+                                                else if (why == null) {
+                                                    why = (res as? MeshLink.Sent.Refused)?.why
+                                                        ?: res.toString()
+                                                }
+                                                Log.i(
+                                                    TAG_UI,
+                                                    "[minisoak] %02d/%d %dB (%d chars) %s".format(
+                                                        n, MiniSoak.COUNT,
+                                                        MiniSoak.bytes(text), text.length,
+                                                        if (res is MeshLink.Sent.Ok) "accepted"
+                                                        else "REFUSED $why",
+                                                    ),
+                                                )
+                                                // A REFUSAL DOES NOT HEAL. The
+                                                // reasons sendTo can refuse are
+                                                // the allow-list and a radio
+                                                // that is not there; neither
+                                                // changes in six seconds, so
+                                                // the other nine attempts would
+                                                // only spend a minute arriving
+                                                // at the same sentence.
+                                                if (res is MeshLink.Sent.Refused) {
+                                                    Log.w(TAG_UI, "[minisoak] stopped at $n: $why")
+                                                    break
+                                                }
+                                                if (n < MiniSoak.COUNT) {
+                                                    kotlinx.coroutines.delay(
+                                                        MiniSoak.EVERY_S * 1000L,
+                                                    )
+                                                }
+                                            }
+                                            // A beat for the last ack: the radio
+                                            // estimates 2.2s direct, and the run
+                                            // is already a minute long.
+                                            kotlinx.coroutines.delay(10_000)
+                                            val d = link.delivery.value
+                                            val acked =
+                                                (d.acked - before.acked).coerceAtLeast(0)
+                                            val line = MiniSoak.report(
+                                                attempted, accepted, acked,
+                                                d.meanLatencyMs ?: 0L,
+                                            )
+                                            Log.i(TAG_UI, "[minisoak] DONE $line")
+                                            Alerts.info("SOAK", line.uppercase())
+                                            cw.say(
+                                                ctx.getString(
+                                                    R.string.n_soak_done, acked, MiniSoak.COUNT,
+                                                ),
+                                                android.os.SystemClock.uptimeMillis(),
+                                            )
+                                            soakRunning.value = false
+                                        }
+                                        Unit
                                     },
                                 )
                             }
@@ -6643,6 +6766,8 @@ private fun onCrown(
     stage: com.iotj.meshmore.xr.spatial.Stage,
     nowMs: Long,
     askMic: () -> Unit,
+    /** Start the ten-packet run at this key. Owned by the caller's scope. */
+    runSoak: (String) -> Unit = {},
 ) {
     // The REAL message, not the reel's display copy: the copy is clipped for
     // the card and acting on a clipped message would be its own bug.
@@ -6685,6 +6810,34 @@ private fun onCrown(
                     }
                     is MeshLink.Sent.Refused -> { crown.say(r.why, nowMs); cue.closed() }
                 }
+            }
+        }
+        // TEN PACKETS, SIX SECONDS APART, AT A NODE YOU OWN.
+        //
+        // Asked for to test one radio rather than the band: full-length
+        // messages mixing latin, kanji and emoji, so the bytes and the
+        // characters disagree by a factor of three and a firmware that counts
+        // the wrong one fails on exactly this. The allow-list still gates every
+        // send underneath — a favourite that is not on it is refused per
+        // message, and the run says so rather than reporting a silent zero.
+        // TEN PACKETS, SIX SECONDS APART, AT A NODE YOU OWN.
+        //
+        // Asked for to test one radio rather than the band: full-length
+        // messages mixing latin, kanji and emoji, so the byte count and the
+        // character count disagree by a factor of three and a firmware that
+        // counts the wrong one fails on exactly this input. The allow-list
+        // still gates every send underneath — a favourite that is not on it is
+        // refused per message, and the run reports that rather than a silent
+        // zero.
+        Crown.Act.SOAK -> {
+            val peer = to?.key ?: msg?.fromKey
+            if (peer.isNullOrBlank()) {
+                crown.say(ctx.getString(R.string.n_nothing_to_send), nowMs)
+                cue.denied()
+            } else {
+                crown.say(ctx.getString(R.string.n_soak_start, MiniSoak.COUNT), nowMs)
+                cue.recognised()
+                runSoak(peer)
             }
         }
         Crown.Act.REPLY -> { crown.compose(); cue.opened() }

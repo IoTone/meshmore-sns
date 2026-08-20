@@ -72,6 +72,8 @@ class Crown(
     enum class Act {
         /** Send the last unanswered message again. See MeshLink.resend. */
         RESEND,
+        /** Ten full-length packets in a minute, at a node you own. See MiniSoak. */
+        SOAK,
         REPLY, ALOUD, VOICE, THREAD, DISMISS,
         SEND_1, SEND_2, SEND_3, SPEAK, BACK,
         CONFIRM, CANCEL,
@@ -213,6 +215,18 @@ class Crown(
     /** True when the host has an unanswered message worth offering again. */
     var canResend: Boolean = false
 
+    /**
+     * Whether to offer the ten-packet soak.
+     *
+     * FAVOURITES ONLY, and that is a deliberate narrowing rather than a
+     * permission: ten full-length packets is real airtime on a shared band,
+     * and the only nodes worth spending it on are ones the operator has marked
+     * as theirs to care about. The transmitter enforces its own allow-list
+     * underneath this regardless — a favourite that is not on it is refused
+     * per message, which is the correct answer and one the run reports.
+     */
+    var canSoak: Boolean = false
+
     /** Whether this conversation reads itself aloud, for the toggle's label. */
     var voiceOn: Boolean = false
 
@@ -238,6 +252,7 @@ class Crown(
      */
     private fun vocabulary(): List<String> = listOf(
         context.getString(com.iotj.meshmore.xr.R.string.a_resend),
+        context.getString(com.iotj.meshmore.xr.R.string.a_soak),
         context.getString(com.iotj.meshmore.xr.R.string.a_reply),
         context.getString(com.iotj.meshmore.xr.R.string.a_aloud),
         "VOICE: ON", "VOICE: OFF",
@@ -252,26 +267,22 @@ class Crown(
     ) + quick
 
     private fun labels(): List<Pair<Act, String>> = when (level) {
-        Level.ACTIONS -> listOfNotNull(
-            Act.REPLY to context.getString(com.iotj.meshmore.xr.R.string.a_reply),
-            // PRESENT ONLY WHEN THERE IS SOMETHING TO RESEND. A row that is
-            // usually dead is a row people learn to skip, which costs it the
-            // one moment it matters — the same argument the suggestion row
-            // already makes for itself.
-            if (canResend) {
-                Act.RESEND to context.getString(com.iotj.meshmore.xr.R.string.a_resend)
-            } else {
-                null
-            },
-            Act.ALOUD to context.getString(com.iotj.meshmore.xr.R.string.a_aloud),
-            // STATE, WITH A COLON, not a bare word. "VOICE OFF" reads as a
-            // button that turns voice off; "VOICE: OFF" reads as the switch it
-            // is. The difference decides whether pinching it does what the
-            // wearer expected, which is the only thing a toggle label is for.
-            Act.VOICE to if (voiceOn) "VOICE: ON" else "VOICE: OFF",
-            Act.THREAD to context.getString(com.iotj.meshmore.xr.R.string.a_thread),
-            Act.DISMISS to context.getString(com.iotj.meshmore.xr.R.string.a_close),
-        )
+        Level.ACTIONS -> actionOrder(canSoak, canResend).map { act ->
+            act to when (act) {
+                Act.REPLY -> context.getString(com.iotj.meshmore.xr.R.string.a_reply)
+                Act.SOAK -> context.getString(com.iotj.meshmore.xr.R.string.a_soak)
+                Act.RESEND -> context.getString(com.iotj.meshmore.xr.R.string.a_resend)
+                Act.ALOUD -> context.getString(com.iotj.meshmore.xr.R.string.a_aloud)
+                // STATE, WITH A COLON, not a bare word. "VOICE OFF" reads as a
+                // button that turns voice off; "VOICE: OFF" reads as the switch
+                // it is. The difference decides whether pinching it does what
+                // the wearer expected, which is the only thing a toggle label
+                // is for.
+                Act.VOICE -> if (voiceOn) "VOICE: ON" else "VOICE: OFF"
+                Act.THREAD -> context.getString(com.iotj.meshmore.xr.R.string.a_thread)
+                else -> context.getString(com.iotj.meshmore.xr.R.string.a_close)
+            }
+        }
         Level.COMPOSE -> quick.mapIndexed { i, q ->
             listOf(Act.SEND_1, Act.SEND_2, Act.SEND_3)[i] to q
         } + listOfNotNull(
@@ -545,7 +556,9 @@ class Crown(
     private val wordFor = linkedMapOf<String, Entity>()
 
     /** For the log: which screen is up, and whether it is addressed. */
-    fun state(): String = "$level open=$open to=${target?.name ?: "-"}"
+    fun state(): String =
+        "$level open=$open to=${target?.name ?: "-"} soak=$canSoak " +
+            "rows=[${labels().joinToString(" ") { it.first.name }}]"
 
     fun poll(): Act? = fired.poll()
 
@@ -763,6 +776,34 @@ class Crown(
          * seventh would not be.
          */
         const val SLOTS = 6
+
+        /**
+         * WHICH ROWS THE ACTIONS SCREEN SHOWS, AND WHAT GIVES WAY.
+         *
+         * There are seven things this screen can offer and six places to put
+         * them, and the column cannot grow: a seventh row is 31 degrees of a
+         * 34-degree field. The overflow used to be silent — the placement loop
+         * takes `items.getOrNull(i)`, so a seventh label drew NOTHING, and the
+         * row it dropped was the last one, which is CLOSE. A wearer with a
+         * starred contact and an unanswered message would have found the menu
+         * with no way out of it.
+         *
+         * So the budget is spent on purpose. REPLY leads because it is why the
+         * menu opened. SOAK and RESEND come next and only appear when they
+         * would do something. THREAD is what gives way when both do, because
+         * the thread is also reachable from the inbox, and CLOSE is not
+         * reachable from anywhere else.
+         */
+        fun actionOrder(canSoak: Boolean, canResend: Boolean): List<Act> {
+            val rows = mutableListOf(Act.REPLY)
+            if (canSoak) rows += Act.SOAK
+            if (canResend) rows += Act.RESEND
+            rows += Act.ALOUD
+            rows += Act.VOICE
+            if (rows.size < SLOTS - 1) rows += Act.THREAD
+            rows += Act.DISMISS
+            return rows
+        }
         /** 1.9° where the card sits — the same reasoning as the card's own cap. */
         /**
          * 1.5° at [DIST] — over §4.1's 1.2° floor and the 1.30° house standard.

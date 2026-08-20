@@ -232,6 +232,9 @@
     <string name="n_clock_arm">もう一度で時計を設定</string>
     <string name="n_clock_set">無線機の時計を設定</string>
     <string name="w_this">これ</string>
+    <string name="a_soak">連続10通</string>
+    <string name="n_soak_start">%1$d通を送信中 — 相手機を確認</string>
+    <string name="n_soak_done">%2$d通中 %1$d通が応答</string>
     <string name="cm_magnify">拡大</string>
     <string name="cm_bearing">方位</string>
     <string name="cm_nearest">最寄り</string>

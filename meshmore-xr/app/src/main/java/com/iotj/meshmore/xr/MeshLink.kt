@@ -1428,6 +1428,24 @@ class MeshLink(private val context: Context) {
      * without a full 32-byte key (REMOVE_CONTACT is keyed by the whole thing;
      * a prefix would either miss or match something else).
      */
+    /**
+     * IS THIS NODE ONE THE OPERATOR MARKED AS THEIRS?
+     *
+     * Both stars count — the one this app keeps in [NodeTags] and the flag the
+     * radio itself stores on the contact — because a wearer who starred a node
+     * in either place means the same thing by it. Same rule [forgettable]
+     * already uses for the opposite decision.
+     *
+     * The keys are the hazard. A message carries a PREFIX of the sender's
+     * public key while a contact carries the whole 32 bytes, so the match has
+     * to run in whichever direction is shorter — and a blank key would make
+     * `startsWith` true against everything, which would star the entire mesh.
+     * Measured on the emulator: the soak item appeared at a node with no star
+     * on it at all, because one peer in the fake mesh had an empty key.
+     */
+    fun isStarred(key: String?, isFavourite: (String) -> Boolean = { false }): Boolean =
+        isStarred(peers.values, key, isFavourite)
+
     fun forgettable(
         candidates: List<MeshNodes.Peer>,
         isFavourite: (String) -> Boolean = { false },
@@ -2320,6 +2338,32 @@ class MeshLink(private val context: Context) {
     }
 
     companion object {
+
+        /** [isStarred]'s rule, over any peer list, so a test can reach it. */
+        fun isStarred(
+            peers: Collection<MeshNodes.Peer>,
+            key: String?,
+            isFavourite: (String) -> Boolean = { false },
+        ): Boolean {
+            val k = key?.trim().orEmpty()
+            if (k.isBlank()) return false
+            if (isFavourite(k)) return true
+            return peers.any { p ->
+                if (!p.favourite) return@any false
+                val full = (p.fullKey ?: p.key).trim()
+                if (full.isBlank()) return@any false
+                val n = minOf(full.length, k.length)
+                n >= KEY_MATCH_MIN && full.regionMatches(0, k, 0, n, ignoreCase = true)
+            }
+        }
+
+        /**
+         * The fewest hex characters two keys must share before they are called
+         * the same node. Eight is four bytes — enough that a collision in a
+         * mesh of a few hundred is not a thing that happens, and short enough
+         * that the prefix on a message still matches its contact.
+         */
+        const val KEY_MATCH_MIN = 8
         /**
          * [linkChip]'s arithmetic, without a Context — so it can be tested.
          *
