@@ -29,8 +29,8 @@
     <string name="n_not_tracking">未トラッキング</string>
     <string name="n_not_built">%1$s — 未実装</string>
     <string name="n_chan_quiet">まだ受信なし</string>
-    <string name="n_reads_aloud">読み上げON</string>
-    <string name="n_silent">消音</string>
+    <string name="n_reads_aloud">%1$s を読み上げ</string>
+    <string name="n_silent">%1$s は無音</string>
     <string name="n_no_fix_pinch">位置なし — ドックのHERE</string>
     <string name="n_no_fix_wait">位置待ち — %1$dノード保留</string>
     <string name="n_linked">接続 — %1$s</string>
@@ -58,7 +58,7 @@
     <!-- bay titles -->
     <string name="t_region">地域 — %1$s</string>
     <string name="t_telem">データ照会の許可</string>
-    <string name="t_channels">チャンネル — 選択で読み上げ</string>
+    <string name="t_channels">チャンネル — 選択で送信</string>
     <string name="t_app">アプリ — 接続: %1$s</string>
     <string name="t_about">MESHMORE XR について</string>
 
@@ -69,7 +69,7 @@
     <string name="f_app">"点灯=ON  Bで閉じる"</string>
     <string name="f_about">閲覧のみ — Bで閉じる</string>
     <string name="f_chan_no_radio">無線機を接続してください</string>
-    <string name="f_chan">"点灯=読み上げ  Bで閉じる"</string>
+    <string name="f_chan">"点灯=読み上げ  選択=送信"</string>
     <string name="f_chan_new">タグ推測で参加可。共有は一度</string>
     <string name="f_chan_public">公開=全員。秘密なし</string>
     <string name="f_telem">"選択で切替  Bで閉じる"</string>
@@ -231,6 +231,7 @@
     <string name="rr_clock_ahead">%1$s 進み</string>
     <string name="n_clock_arm">もう一度で時計を設定</string>
     <string name="n_clock_set">無線機の時計を設定</string>
+    <string name="w_this">これ</string>
     <string name="cm_magnify">拡大</string>
     <string name="cm_bearing">方位</string>
     <string name="cm_nearest">最寄り</string>

@@ -30,8 +30,8 @@
     <string name="n_not_tracking">NOT TRACKING YET</string>
     <string name="n_not_built">%1$s — NOT BUILT YET</string>
     <string name="n_chan_quiet">NOTHING HEARD HERE YET</string>
-    <string name="n_reads_aloud">READS ALOUD</string>
-    <string name="n_silent">SILENT</string>
+    <string name="n_reads_aloud">SPEAKING %1$s</string>
+    <string name="n_silent">SILENT: %1$s</string>
     <string name="n_no_fix_pinch">NO POSITION — PINCH HERE ON DOCK</string>
     <string name="n_no_fix_wait">NO POSITION — %1$d NODES WAIT</string>
     <string name="n_linked">LINKED — %1$s</string>
@@ -59,7 +59,7 @@
     <!-- ═══ bay titles ═══ -->
     <string name="t_region">REGION — %1$s</string>
     <string name="t_telem">WHO MAY ASK ABOUT ME</string>
-    <string name="t_channels">CHANNELS — PICK TO SPEAK</string>
+    <string name="t_channels">CHANNELS — PICK TO SAY</string>
     <string name="t_app">APP — CONNECTION: %1$s</string>
     <string name="t_about">ABOUT MESHMORE XR</string>
 
@@ -70,7 +70,7 @@
     <string name="f_app">"LIT = ON    B TO CLOSE"</string>
     <string name="f_about">READ ONLY — B TO CLOSE</string>
     <string name="f_chan_no_radio">CONNECT A RADIO FOR SLOTS</string>
-    <string name="f_chan">"LIT = READ ALOUD    B TO CLOSE"</string>
+    <string name="f_chan">"LIT = READ ALOUD    PICK = SPEAK"</string>
     <string name="f_chan_new">A GUESSED TAG JOINS. SAY IT ONCE</string>
     <string name="f_chan_public">PUBLIC IS EVERYBODY. NO SECRETS</string>
     <string name="f_telem">"PICK TO CYCLE     B TO CLOSE"</string>
@@ -243,6 +243,7 @@
     <string name="rr_clock_ahead">%1$s AHEAD</string>
     <string name="n_clock_arm">PICK AGAIN TO SET THE RADIO CLOCK</string>
     <string name="n_clock_set">RADIO CLOCK SET</string>
+    <string name="w_this">THIS</string>
     <string name="cm_magnify">MAGNIFY</string>
     <string name="cm_bearing">BEARING</string>
     <string name="cm_nearest">NEAREST</string>

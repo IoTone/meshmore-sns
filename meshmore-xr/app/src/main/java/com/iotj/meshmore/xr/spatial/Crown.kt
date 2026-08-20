@@ -103,6 +103,22 @@ class Crown(
     private val fired = java.util.concurrent.ConcurrentLinkedQueue<Act>()
     private val slotAt = HashMap<Int, Vector3>()
     private var note: TextRun.Run? = null
+
+    /**
+     * WHO THIS IS WITH, and it does not expire.
+     *
+     * The addressee was announced once, by the same note line that shows
+     * "SENT" and "NOTHING TO SEND" — so it appeared for two seconds when the
+     * crown opened and was gone by the time anybody had dictated a word.
+     * Asked for in those terms: show the full name somewhere floating, so we
+     * can be sure who we are conversing with.
+     *
+     * A REUSABLE RUN, written on target change only. The name is arbitrary
+     * user text — emoji, kana, a turtle — so it cannot be a vocabulary of
+     * pre-built panels, and it must never be written per frame.
+     */
+    private var who: TextRun.Run? = null
+    private var whoSaid: String? = null
     private var noteUntil = 0L
     /**
      * THE DRAFT, SHOWN BEFORE IT IS SENT — and the word count with it.
@@ -180,7 +196,17 @@ class Crown(
      * aloud, no thread to open, no per-conversation voice to toggle), it stays
      * up without a card under it, and CONFIRM addresses this key.
      */
-    data class Target(val key: String, val name: String)
+    /**
+     * Who the crown is addressing.
+     *
+     * [channel] distinguishes a band from a person, which the key alone cannot
+     * do safely: a channel key is "#0" and a node key is hex, and telling them
+     * apart by shape is the kind of inference that works until somebody names
+     * something oddly. It also changes the WORD shown above the ring — you
+     * speak TO a person and ON a channel — and it changes which transmitter
+     * the send goes to.
+     */
+    data class Target(val key: String, val name: String, val channel: Boolean = false)
 
     var target: Target? = null
 
@@ -334,6 +360,10 @@ class Crown(
         // left is worse than no reply button: on a mesh radio the wearer has no
         // other way to find out, and "did that send?" is not a question a
         // companion app should make people hold in their head.
+        who = TextRun.reusable(
+            session, context, WHO_WIDEST, com.iotj.meshmore.xr.L10n.cap(CAP) * 1.1f,
+            argb(theme.accent, 0.95f), "crown-who",
+        )?.also { it.entity.parent = root; it.entity.setEnabled(false); entities += it.entity }
         note = TextRun.reusable(
             session, context, NOTE_WIDEST, com.iotj.meshmore.xr.L10n.cap(CAP), argb(theme.text, 0.95f), "crown-note",
         )?.also { it.entity.parent = root; it.entity.setEnabled(false); entities += it.entity }
@@ -636,6 +666,20 @@ class Crown(
             }
         }
         runCatching {
+            // ABOVE THE NOTE, and standing for as long as the crown does.
+            val t = target
+            val on2 = open && t != null
+            who?.entity?.setEnabled(on2)
+            if (on2 && t != null) {
+                val label = (if (t.channel) "ON " else "TO ") +
+                    TypeTier.clip(t.name.uppercase(), WHO_CELLS)
+                if (label != whoSaid) {
+                    whoSaid = label
+                    who?.setText(label)
+                }
+                val wp = Vector3(cx, headY + WHO_UP, cz)
+                who?.entity?.setPose(Pose(wp, facing(wp, head)), Space.ACTIVITY)
+            }
             val on = nowMs < noteUntil
             note?.entity?.setEnabled(on)
             if (on) {
@@ -690,6 +734,7 @@ class Crown(
 
     fun clear() {
         items.clear(); slotAt.clear(); fired.clear(); note = null; draft0 = null
+        who = null; whoSaid = null
         open = false; level = Level.ACTIONS; noteUntil = 0L; focused = -1
         draft = ""; dictating = false; spoken = 0; full = false; generated = false
         suggestion = null
@@ -743,6 +788,10 @@ class Crown(
         const val TOP_DROP = -0.06f
         const val DRAFT_UP = 0.055f
         const val NOTE_UP = 0.16f
+        /** The addressee sits above the note, clear of it and of the ring. */
+        const val WHO_UP = 0.215f
+        const val WHO_WIDEST = "ON MMMMMMMMMMMMMMMMMM"
+        const val WHO_CELLS = 18
         const val CONE = 0.045f
         const val DEBOUNCE_MS = 350L
         const val NOTE_MS = 3500L

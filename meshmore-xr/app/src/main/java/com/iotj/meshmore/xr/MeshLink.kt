@@ -1291,6 +1291,47 @@ class MeshLink(private val context: Context) {
     }
 
     /**
+     * SPEAK FIRST ON A CHANNEL, which until now could not be done at all.
+     *
+     * Every path to a channel began with somebody else's message: [replyTo]
+     * answers where a message came from, so a channel could be spoken on only
+     * if it had already been spoken on. A quiet channel was therefore
+     * unreachable — you could join it, name it, see its traffic count and its
+     * key, and not say anything on it. Reported exactly that way: "it doesn't
+     * seem there is a way to initiate a message on its own".
+     *
+     * The authorisation is the same one [replyTo] enforces, in the same place,
+     * for the same reason: channel traffic is read by everyone on the band and
+     * the switch for it belongs at the transmitter, not on whichever surface
+     * happens to be calling.
+     */
+    fun sendToChannel(idx: Int, text: String): Sent {
+        val s = session
+        if (s == null || _status.value.state != SessionState.READY) return Sent.NotReady
+        if (text.isBlank()) return Sent.Refused("NOTHING TO SEND")
+        if (!channelTxAuthorised) {
+            Log.w(TAG, "[tx] channel send refused — channel TX not authorised")
+            return Sent.Refused("CHANNEL SEND IS OFF")
+        }
+        val name = chans[idx]?.name?.ifBlank { null } ?: "#$idx"
+        return runCatching {
+            s.sendChannelMessage(idx, System.currentTimeMillis() / 1000, text)
+            diag(">>CHAN $name")
+            Log.i(TAG, "[tx] -> channel $idx ('$name') first word: '${text.take(24)}'")
+            // REMEMBERED LIKE ANY OTHER LINE, so the thread this starts exists
+            // the moment it is sent rather than when somebody answers.
+            remember(
+                Msg(
+                    fromKey = "", fromName = "ME", text = text,
+                    atEpochSec = System.currentTimeMillis() / 1000,
+                    direct = false, channel = "#$idx", channelName = chans[idx]?.name,
+                ),
+            )
+            Sent.Ok as Sent
+        }.getOrElse { Sent.Refused("SEND FAILED") }
+    }
+
+    /**
      * SPEAK FIRST. Start a conversation with a node that has never sent you
      * one.
      *

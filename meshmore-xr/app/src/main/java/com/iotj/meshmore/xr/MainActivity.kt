@@ -3962,10 +3962,36 @@ private fun HorizonScene(link: MeshLink) {
                             noticeRef.value?.say(ctx.getString(R.string.n_public_warn))
                             cue.recognised()
                         }
+                        // SPEAKING ON A CHANNEL IS WHAT A CHANNEL IS FOR.
+                        //
+                        // A pick used to toggle read-aloud, which left the app
+                        // with no way to start a message on a channel at all —
+                        // `replyTo` answers where a message came from, so a
+                        // quiet channel could be joined, named and counted but
+                        // never spoken on. Reported exactly that way.
+                        //
+                        // The read-aloud setting did not go anywhere: the crown
+                        // owns it, under VOICE, keyed on the same thread id —
+                        // which is also where it belongs, beside the rest of a
+                        // conversation's settings rather than on a shelf.
                         else -> {
-                            val now = voice.toggle(id)
-                            noticeRef.value?.say(ctx.getString(if (now) R.string.n_reads_aloud else R.string.n_silent))
-                            if (now) cue.opened() else cue.closed()
+                            val c = crownRef.value
+                            val idx = id.removePrefix("#").toIntOrNull()
+                            if (c == null || idx == null) {
+                                cue.closed()
+                            } else {
+                                val chan = link.channels().firstOrNull { it.idx == idx }
+                                val name = chan?.name?.ifBlank { null }
+                                    ?: ctx.getString(R.string.chan_numbered, idx)
+                                channelsRef.value?.hide()
+                                c.target = com.iotj.meshmore.xr.spatial.Crown.Target(
+                                    id, name, channel = true,
+                                )
+                                c.show()
+                                c.compose()
+                                Log.i(TAG_UI, "[chan] composing on $id ('$name')")
+                                cue.opened()
+                            }
                         }
                     }
                     channelsRef.value?.update(
@@ -6606,7 +6632,12 @@ private fun onCrown(
     // The REAL message, not the reel's display copy: the copy is clipped for
     // the card and acting on a clipped message would be its own bug.
     val msg = link.msgs.value.getOrNull(reel.selectedIndex)
-    val threadId = msg?.let { if (it.direct) it.fromKey else (it.channel ?: "#") }
+    // THE CONVERSATION THE CROWN IS ACTUALLY IN. A channel target has no
+    // message under the reel's cursor to derive an id from — that is the whole
+    // point of being able to speak on a quiet channel — so asking the reel
+    // would key VOICE to whatever card happened to be selected behind it.
+    val threadId = crown.target?.takeIf { it.channel }?.key
+        ?: msg?.let { if (it.direct) it.fromKey else (it.channel ?: "#") }
     // ADDRESSED, rather than answering. Set when the crown was summoned from a
     // node with no conversation; every branch that assumes a message under the
     // reel's cursor has to ask about this first.
@@ -6662,8 +6693,15 @@ private fun onCrown(
             // NAMED. "VOICE ON FOR THIS" leaves the wearer to work out what
             // "this" was, which on a surface that scrolls between conversations
             // is exactly the thing they cannot be sure of.
-            val what = crown.voiceScope.ifBlank { "THIS" }
-            crown.say(if (now) "SPEAKING $what" else "SILENT: $what", nowMs)
+            // NAMED, AND IN THE WEARER'S LANGUAGE. These two lines were English
+            // literals; the strings that used to carry them were orphaned when
+            // the channel bay stopped owning this toggle, so they moved here
+            // and gained the scope the message always wanted.
+            val what = crown.voiceScope.ifBlank { ctx.getString(R.string.w_this) }
+            crown.say(
+                ctx.getString(if (now) R.string.n_reads_aloud else R.string.n_silent, what),
+                nowMs,
+            )
             cue.recognised()
         }
         Crown.Act.ALOUD -> {
@@ -6756,7 +6794,15 @@ private fun onCrown(
                 cue.closed()
                 return
             }
-            val sent = if (to != null) link.sendTo(to.key, text) else link.replyTo(msg!!, text)
+            // THREE TRANSMITTERS, ONE CONFIRM. A channel target speaks on the
+            // band, a node target opens a conversation, and no target at all
+            // means this is an answer to whatever card is in front of us.
+            val sent = when {
+                to != null && to.channel ->
+                    link.sendToChannel(to.key.removePrefix("#").toIntOrNull() ?: -1, text)
+                to != null -> link.sendTo(to.key, text)
+                else -> link.replyTo(msg!!, text)
+            }
             when (val r = sent) {
                 is MeshLink.Sent.Ok -> {
                     crown.say(ctx.getString(R.string.n_sent), nowMs)
