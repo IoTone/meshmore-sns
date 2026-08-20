@@ -52,6 +52,11 @@ dependencies:
   # --- Localization (R4: EN + JA) ---
   intl: ^0.20.2
 
+  # --- R59 bot responder: rulepack grammar ---
+  # Prolog-style unification gives pattern-matching-with-capture over
+  # message text, which is exactly the shape of a responder rule.
+  petitparser: ^6.0.2
+
   # --- Meshcore companion protocol (pure-Dart, in-repo package) ---
   meshcore:
     path: ../packages/meshcore
