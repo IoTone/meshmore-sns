@@ -238,6 +238,48 @@ class BotController extends ChangeNotifier {
     await _save();
   }
 
+  /// A soak report: every scope with a binding, its configuration and
+  /// its counters, as pretty JSON.
+  ///
+  /// The point of R59 is that a soak run produces *evidence* rather
+  /// than a claim, and evidence has to leave the phone. Includes the
+  /// seed and mode alongside the counts, because a result nobody can
+  /// replay is not a result — with these three fields plus the
+  /// rulepack, a run is reproducible.
+  String exportReport({DateTime? at}) {
+    final Map<String, Object?> out = <String, Object?>{
+      'generatedAt': (at ?? _now()).toUtc().toIso8601String(),
+      if (ownPubKeyHex != null) 'self': ownPubKeyHex,
+      'scopes': <Map<String, Object?>>[
+        for (final MapEntry<String, BotBinding> e in _bindings.entries)
+          <String, Object?>{
+            'scope': e.key,
+            'enabled': e.value.enabled,
+            'mode': e.value.mode.id,
+            'seed': e.value.seed,
+            'replyCounter': e.value.counter,
+            'customRulepack': e.value.rulepackSource != null,
+            'counters': e.value.counters.toJson(),
+          },
+      ],
+    };
+    return const JsonEncoder.withIndent('  ').convert(out);
+  }
+
+  /// Totals across every scope, for an at-a-glance line.
+  BotCounters totals() {
+    final BotCounters t = BotCounters();
+    for (final BotBinding b in _bindings.values) {
+      t.received += b.counters.received;
+      t.replied += b.counters.replied;
+      t.suppressedOwn += b.counters.suppressedOwn;
+      t.suppressedLoop += b.counters.suppressedLoop;
+      t.suppressedRate += b.counters.suppressedRate;
+      t.noMatch += b.counters.noMatch;
+    }
+    return t;
+  }
+
   /// Decide what, if anything, to send in reply to [text] on [scope].
   ///
   /// Returns the **labelled** outbound text, or null. Every null path

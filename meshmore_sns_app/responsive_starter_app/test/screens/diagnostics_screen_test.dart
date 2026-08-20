@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 import 'package:meshmore_sns_app/gen/app_localizations.dart';
 import 'package:meshmore_sns_app/l10n/locale_controller.dart';
 import 'package:meshmore_sns_app/meshcore/meshcore_connection.dart';
+import 'package:meshmore_sns_app/bot/bot_controller.dart';
 import 'package:meshmore_sns_app/meshcore/meshcore_controller.dart';
 import 'package:meshmore_sns_app/screens/diagnostics_screen.dart';
 
@@ -33,8 +34,13 @@ void main() {
           GlobalWidgetsLocalizations.delegate,
           GlobalCupertinoLocalizations.delegate,
         ],
-        home: ChangeNotifierProvider<MeshcoreController>.value(
-          value: ctrl,
+        home: MultiProvider(
+          providers: <ChangeNotifierProvider<ChangeNotifier>>[
+            ChangeNotifierProvider<MeshcoreController>.value(value: ctrl),
+            // R59 — Diagnostics carries the bot soak panel.
+            ChangeNotifierProvider<BotController>(
+                create: (_) => BotController()),
+          ],
           child: const DiagnosticsScreen(),
         ),
       ),

@@ -7,6 +7,9 @@ import 'package:flutter/services.dart';
 import 'package:meshcore/meshcore.dart';
 import 'package:provider/provider.dart';
 
+import '../bot/bot_controller.dart';
+import '../bot/bot_guards.dart';
+import '../bot/responder.dart';
 import '../gen/app_localizations.dart';
 import '../ui/mm_scaffold.dart';
 import '../meshcore/meshcore_connection.dart';
@@ -279,6 +282,9 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
                 ],
               ),
             ),
+          // R59 — soak evidence. Per-scope counters aggregated here so a
+          // run can be read and exported without opening each sheet.
+          const _BotSoakPanel(),
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 18, 8, 6),
             child: Row(
@@ -365,5 +371,84 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
     } catch (_) {
       return 'op 0x${hex.length >= 2 ? hex.substring(0, 2) : '?'}';
     }
+  }
+}
+
+/// R59 — bot soak counters, aggregated across every bound scope.
+///
+/// Lives on Diagnostics rather than only in the per-scope sheets
+/// because a soak run is read *afterwards*, often by someone who was
+/// not the one who configured it. "Which scopes were running, what did
+/// they do, and can I replay it" should be one screen, not a tour.
+class _BotSoakPanel extends StatelessWidget {
+  const _BotSoakPanel();
+
+  @override
+  Widget build(BuildContext context) {
+    final ColorScheme cs = Theme.of(context).colorScheme;
+    final BotController bot = context.watch<BotController>();
+    final List<MapEntry<String, BotBinding>> scopes =
+        bot.bindings.entries.toList();
+
+    // Nothing has ever been bound — say so plainly rather than showing
+    // an empty table that looks like a broken readout.
+    if (scopes.isEmpty) {
+      return const Padding(
+        padding: EdgeInsets.fromLTRB(16, 18, 16, 0),
+        child: Text('BOT — no scopes bound',
+            style: TextStyle(fontSize: 11, letterSpacing: 2)),
+      );
+    }
+
+    final BotCounters t = bot.totals();
+    const TextStyle mono =
+        TextStyle(fontFamily: 'JetBrains Mono', fontSize: 11);
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 18, 16, 0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Text('BOT SOAK',
+              style: TextStyle(
+                  fontSize: 11, letterSpacing: 2, color: cs.primary)),
+          const SizedBox(height: 6),
+          Text(
+            'total  rx ${t.received}  tx ${t.replied}  '
+            'own ${t.suppressedOwn}  loop ${t.suppressedLoop}  '
+            'rate ${t.suppressedRate}  nomatch ${t.noMatch}',
+            style: mono,
+          ),
+          const SizedBox(height: 4),
+          for (final MapEntry<String, BotBinding> e in scopes)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 2),
+              child: Text(
+                '${e.value.enabled ? "on " : "off"} ${e.key}  '
+                'rx ${e.value.counters.received} '
+                'tx ${e.value.counters.replied} '
+                '(${e.value.mode.id}'
+                '${e.value.mode == BotMode.random ? " seed ${e.value.seed}" : ""})',
+                style: mono.copyWith(
+                    color: e.value.enabled ? cs.onSurface : cs.onSurfaceVariant),
+              ),
+            ),
+          const SizedBox(height: 4),
+          TextButton.icon(
+            icon: const Icon(Icons.copy, size: 16),
+            label: const Text('Copy soak report'),
+            onPressed: () {
+              Clipboard.setData(ClipboardData(text: bot.exportReport()));
+              ScaffoldMessenger.maybeOf(context)
+                ?..hideCurrentSnackBar()
+                ..showSnackBar(const SnackBar(
+                  content: Text('Soak report copied'),
+                  duration: Duration(seconds: 2),
+                ));
+            },
+          ),
+        ],
+      ),
+    );
   }
 }
