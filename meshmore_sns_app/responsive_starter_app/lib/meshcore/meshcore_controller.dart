@@ -2880,12 +2880,21 @@ class MeshcoreController extends ChangeNotifier {
   /// Send a text message on the active channel (`SEND_CHANNEL_TXT_MSG`,
   /// 0x03). The radio does the OTA channel encryption; we append an
   /// optimistic outgoing line. No-op if not ready or text is blank.
-  Future<void> sendChannelText(String text) async {
+  Future<void> sendChannelText(String text) =>
+      sendChannelTextTo(_activeChannel, text);
+
+  /// Send on a **specific** channel slot rather than the active one.
+  ///
+  /// The bot (R59) needs this: it may be bound to a private slot while
+  /// the user is looking at another channel entirely, and routing its
+  /// reply to whatever happens to be on screen would put private
+  /// traffic somewhere it was never meant to go.
+  Future<void> sendChannelTextTo(int channelIdx, String text) async {
     final String t = text.trim();
     if (t.isEmpty || !isReady) return;
     final int ts = DateTime.now().millisecondsSinceEpoch ~/ 1000;
     final ChatMessage m = ChatMessage(
-      channelIdx: _activeChannel,
+      channelIdx: channelIdx,
       text: t,
       outgoing: true,
       delivery: MessageDelivery.sending,
@@ -2895,7 +2904,7 @@ class MeshcoreController extends ChangeNotifier {
     notifyListeners();
     try {
       await send(MeshcoreFrameCodec.sendChannelTextMessage(
-        channelIdx: _activeChannel,
+        channelIdx: channelIdx,
         timestamp: ts,
         text: t,
       ));
