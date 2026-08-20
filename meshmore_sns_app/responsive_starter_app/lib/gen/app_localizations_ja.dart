@@ -41,6 +41,17 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
+  String dashboardMyPubkey(String hex) {
+    return '自分の公開鍵 · $hex';
+  }
+
+  @override
+  String get dashboardPubkeyAwaiting => '自分の公開鍵 · デバイス待機中';
+
+  @override
+  String get dashboardPubkeyHint => 'タップでコピー。相手が連絡先として追加する際に必要です。';
+
+  @override
   String get dashboardRadio => 'ラジオ';
 
   @override

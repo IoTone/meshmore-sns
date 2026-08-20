@@ -158,6 +158,24 @@ abstract class AppLocalizations {
   /// **'{n, plural, =0{0 known} =1{1 known} other{{n} known}}'**
   String dashboardKnownCount(int n);
 
+  /// No description provided for @dashboardMyPubkey.
+  ///
+  /// In en, this message translates to:
+  /// **'my pubkey · {hex}'**
+  String dashboardMyPubkey(String hex);
+
+  /// No description provided for @dashboardPubkeyAwaiting.
+  ///
+  /// In en, this message translates to:
+  /// **'my pubkey · awaiting device'**
+  String get dashboardPubkeyAwaiting;
+
+  /// No description provided for @dashboardPubkeyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to copy. This is what someone else needs to add you as a contact.'**
+  String get dashboardPubkeyHint;
+
   /// No description provided for @dashboardRadio.
   ///
   /// In en, this message translates to:

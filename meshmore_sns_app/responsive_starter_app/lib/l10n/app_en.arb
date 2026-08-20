@@ -16,6 +16,12 @@
   "@dashboardKnownCount": {
     "placeholders": {"n": {"type": "int"}}
   },
+  "dashboardMyPubkey": "my pubkey · {hex}",
+  "@dashboardMyPubkey": {
+    "placeholders": {"hex": {"type": "String"}}
+  },
+  "dashboardPubkeyAwaiting": "my pubkey · awaiting device",
+  "dashboardPubkeyHint": "Tap to copy. This is what someone else needs to add you as a contact.",
   "dashboardRadio": "RADIO",
   "dashNervLink": "Link",
   "dashNervNode": "Node",

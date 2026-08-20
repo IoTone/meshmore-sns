@@ -48,6 +48,18 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String dashboardMyPubkey(String hex) {
+    return 'my pubkey · $hex';
+  }
+
+  @override
+  String get dashboardPubkeyAwaiting => 'my pubkey · awaiting device';
+
+  @override
+  String get dashboardPubkeyHint =>
+      'Tap to copy. This is what someone else needs to add you as a contact.';
+
+  @override
   String get dashboardRadio => 'RADIO';
 
   @override

@@ -16,6 +16,12 @@
   "@dashboardKnownCount": {
     "placeholders": {"n": {"type": "int"}}
   },
+  "dashboardMyPubkey": "自分の公開鍵 · {hex}",
+  "@dashboardMyPubkey": {
+    "placeholders": {"hex": {"type": "String"}}
+  },
+  "dashboardPubkeyAwaiting": "自分の公開鍵 · デバイス待機中",
+  "dashboardPubkeyHint": "タップでコピー。相手が連絡先として追加する際に必要です。",
   "dashboardRadio": "ラジオ",
   "dashNervLink": "リンク",
   "dashNervNode": "ノード",
