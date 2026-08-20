@@ -10,6 +10,7 @@ import '../../ui/mm_audio_toggle.dart';
 import '../../ui/mm_scaffold.dart';
 import '../device_manager_sheet.dart';
 import 'dashboard_model.dart';
+import 'my_pubkey_line.dart';
 
 /// Concept E — **DR Pop** dashboard: Designers-Republic maximalism. Flat
 /// saturated colour blocks, bold numerals, katakana run as graphics, and
@@ -158,6 +159,20 @@ class DrPopDashboard extends StatelessWidget {
                     color: skin.color.fg,
                     fontFamily: skin.type.monoFamily,
                     fontSize: 12)),
+          ),
+          // Own pubkey — the identifier another operator needs to add
+          // you before their DMs can route.
+          Container(
+            width: double.infinity,
+            color: skin.color.surface,
+            padding: const EdgeInsets.fromLTRB(12, 0, 12, 10),
+            child: MyPubkeyLine(
+              pubKeyHex: m.pubKeyHex,
+              style: TextStyle(
+                  color: skin.color.fg,
+                  fontFamily: skin.type.monoFamily,
+                  fontSize: 12),
+            ),
           ),
         ],
       ),

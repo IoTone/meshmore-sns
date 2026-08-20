@@ -17,6 +17,7 @@ import '../../util/geo.dart';
 import '../device_manager_sheet.dart';
 import '../node_detail_sheet.dart';
 import 'dashboard_model.dart';
+import 'my_pubkey_line.dart';
 
 /// Concept F — **Tactical Recon** dashboard: night-ops codec. OLED-black,
 /// single amber phosphor, map/bearing-first. A small sweep compass + a
@@ -165,6 +166,12 @@ class _ReconDashboardState extends State<ReconDashboard>
                       _kv('SNR',
                           bestSnr == null ? '—' : '${bestSnr.toStringAsFixed(0)}dB',
                           mono, dim),
+                      // Own pubkey — needed by anyone who wants to
+                      // add you before their DMs can route.
+                      MyPubkeyLine(
+                          pubKeyHex: m.pubKeyHex,
+                          style: mono.copyWith(color: dim),
+                          shownChars: 12),
                     ],
                   ),
                 ),

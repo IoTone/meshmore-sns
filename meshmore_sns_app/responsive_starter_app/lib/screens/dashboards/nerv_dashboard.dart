@@ -11,6 +11,7 @@ import '../../ui/mm_components.dart';
 import '../../ui/mm_scaffold.dart';
 import '../device_manager_sheet.dart';
 import 'dashboard_model.dart';
+import 'my_pubkey_line.dart';
 
 /// Concept A — **NERV Terminal** dashboard: an information-maximal
 /// operations console. Chamfered HUD panels, hazard-stripe section
@@ -106,6 +107,8 @@ class NervDashboard extends StatelessWidget {
                 MmSectionHeader(l.dashboardRadio),
                 const SizedBox(height: 8),
                 Text(m.radioLine ?? l.dashboardAwaitingDevice, style: mono),
+                const SizedBox(height: 2),
+                MyPubkeyLine(pubKeyHex: m.pubKeyHex, style: mono),
                 const SizedBox(height: 4),
                 MmReadout(label: l.dashNervRegion, value: m.region),
               ],

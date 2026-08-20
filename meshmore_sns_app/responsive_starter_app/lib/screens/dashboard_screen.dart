@@ -1,7 +1,6 @@
 // Copyright (c) 2026 IoTone, Inc.
 // SPDX-License-Identifier: MIT
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:meshcore/meshcore.dart';
 import 'package:provider/provider.dart';
@@ -12,6 +11,7 @@ import '../meshcore/mesh_event.dart';
 import '../meshcore/meshcore_connection.dart';
 import '../meshcore/meshcore_controller.dart';
 import '../meshcore/own_location.dart';
+import 'dashboards/my_pubkey_line.dart';
 import '../meshcore/region_presets.dart';
 import '../ui/mm_audio_toggle.dart';
 import 'device_manager_sheet.dart';
@@ -206,7 +206,7 @@ class DashboardScreen extends StatelessWidget {
           // until now the app knew it (`ownPubKeyHex`, used all over
           // for self-filtering) but never showed it to you -- leaving
           // "why can't they message me?" with nothing to check.
-          _MyPubkeyRow(pubKeyHex: mc.ownPubKeyHex),
+          MyPubkeyLine(pubKeyHex: mc.ownPubKeyHex),
           const SizedBox(height: 2),
           Text(
             '${selfInfo.frequencyMhz}MHz  '
@@ -599,78 +599,6 @@ class _RenameDeviceDialogState extends State<_RenameDeviceDialog> {
             onPressed: () => Navigator.pop(context, _c.text),
             child: Text(l.deviceSetName)),
       ],
-    );
-  }
-}
-
-/// Your own public key, on the dashboard next to the device name.
-///
-/// The app has always *had* this (`MeshcoreController.ownPubKeyHex`,
-/// derived from the `SelfInfo` frame) but every call site used it for
-/// self-filtering only — hiding you from your own Nodes list and grid.
-/// That left the most common field question, "why can't they message
-/// me?", with nothing to check: the pubkey is what another operator
-/// needs to add you as a contact, and there was no way to read it off
-/// your own phone.
-///
-/// Shown truncated because 64 hex characters is unreadable and the
-/// prefix is what people compare in practice; the **full** key goes to
-/// the clipboard, since that is what has to be pasted somewhere else.
-class _MyPubkeyRow extends StatelessWidget {
-  const _MyPubkeyRow({required this.pubKeyHex});
-
-  /// Null until `SelfInfo` arrives — the row still renders, saying so,
-  /// rather than vanishing and leaving a gap where an answer was.
-  final String? pubKeyHex;
-
-  @override
-  Widget build(BuildContext context) {
-    final AppLocalizations l = AppLocalizations.of(context);
-    final ColorScheme cs = Theme.of(context).colorScheme;
-    final String? hex = pubKeyHex;
-    final TextStyle style = TextStyle(
-      color: cs.onSurfaceVariant,
-      fontFamily: 'JetBrains Mono',
-      fontSize: 12,
-      height: 1.5,
-    );
-
-    if (hex == null || hex.isEmpty) {
-      return Text(l.dashboardPubkeyAwaiting, style: style);
-    }
-
-    final String shown =
-        hex.length > 16 ? '${hex.substring(0, 16)}…' : hex;
-
-    return Tooltip(
-      message: l.dashboardPubkeyHint,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(6),
-        onTap: () async {
-          await Clipboard.setData(ClipboardData(text: hex));
-          if (!context.mounted) return;
-          ScaffoldMessenger.maybeOf(context)?.showSnackBar(
-            SnackBar(
-              content: Text(l.nodeDetailPubkeyCopied),
-              duration: const Duration(seconds: 2),
-            ),
-          );
-        },
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 2),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              Flexible(
-                child: Text(l.dashboardMyPubkey(shown),
-                    style: style, overflow: TextOverflow.ellipsis),
-              ),
-              const SizedBox(width: 6),
-              Icon(Icons.copy, size: 13, color: cs.primary),
-            ],
-          ),
-        ),
-      ),
     );
   }
 }

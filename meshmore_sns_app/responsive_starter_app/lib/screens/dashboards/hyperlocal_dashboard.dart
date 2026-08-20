@@ -18,6 +18,7 @@ import '../../util/geo.dart';
 import '../device_manager_sheet.dart';
 import '../node_detail_sheet.dart';
 import 'dashboard_model.dart';
+import 'my_pubkey_line.dart';
 
 /// Concept C — **Hyperlocal Field** dashboard: discovery-first. The hero
 /// is a **node radar** — self at the centre, peers plotted as blips by
@@ -666,6 +667,16 @@ class _StatusRail extends StatelessWidget {
                 ],
               ),
             ),
+          // Own pubkey — needed by anyone who wants to add you as a
+          // contact before their DMs can route.
+          MyPubkeyLine(
+            pubKeyHex: model.pubKeyHex,
+            style: TextStyle(
+                fontFamily: skin.type.monoFamily,
+                fontSize: 12,
+                color: skin.color.fg),
+            shownChars: 12,
+          ),
         ],
       ),
     );

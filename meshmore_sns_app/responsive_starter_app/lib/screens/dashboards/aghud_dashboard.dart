@@ -14,6 +14,7 @@ import '../../ui/mm_audio_toggle.dart';
 import '../../ui/mm_scaffold.dart';
 import '../device_manager_sheet.dart';
 import 'dashboard_model.dart';
+import 'my_pubkey_line.dart';
 
 /// Concept B — **AG Systems HUD** dashboard: a Wipeout anti-grav cockpit.
 /// One hero **radial gauge** (signal quality) with a rotating HUD sweep,
@@ -138,8 +139,7 @@ class _AgHudDashboardState extends State<AgHudDashboard>
 /// Recent-activity feed — fills the cockpit's lower deck with the mesh
 /// event ticker (links, messages, discoveries) in the livery style.
 class _FeedPanel extends StatelessWidget {
-  const _FeedPanel(
-      {required this.model, required this.skin, required this.l});
+  const _FeedPanel({required this.model, required this.skin, required this.l});
   final DashboardModel model;
   final MmSkin skin;
   final AppLocalizations l;
@@ -169,8 +169,7 @@ class _FeedPanel extends StatelessWidget {
             Text(l.dashboardNoActivity,
                 style: mono.copyWith(color: skin.color.fgMuted))
           else
-            for (final ({String time, String text}) e
-                in model.events.take(8))
+            for (final ({String time, String text}) e in model.events.take(8))
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 3),
                 child: Row(
@@ -217,7 +216,8 @@ class _BrandBar extends StatelessWidget {
                 fontWeight: FontWeight.w700,
               )),
         ),
-        _pill(model.statusLabel, model.alert ? skin.color.alert : skin.color.ok),
+        _pill(
+            model.statusLabel, model.alert ? skin.color.alert : skin.color.ok),
         const MmAudioToggle(),
         IconButton(
           tooltip: 'BLE',
@@ -317,9 +317,7 @@ class _RadialGauge extends StatelessWidget {
               const SizedBox(height: 2),
               Text(label,
                   style: TextStyle(
-                      color: textMuted,
-                      fontSize: 11,
-                      letterSpacing: 3)),
+                      color: textMuted, fontSize: 11, letterSpacing: 3)),
             ],
           ),
         ],
@@ -371,10 +369,10 @@ class _GaugePainter extends CustomPainter {
       ..color = tick.withValues(alpha: 0.5);
     for (int i = 0; i <= 10; i++) {
       final double a = _start + _span * (i / 10);
-      final Offset o = Offset(c.dx + math.cos(a) * (r + 5),
-          c.dy + math.sin(a) * (r + 5));
-      final Offset inn = Offset(c.dx + math.cos(a) * (r + 1),
-          c.dy + math.sin(a) * (r + 1));
+      final Offset o =
+          Offset(c.dx + math.cos(a) * (r + 5), c.dy + math.sin(a) * (r + 5));
+      final Offset inn =
+          Offset(c.dx + math.cos(a) * (r + 1), c.dy + math.sin(a) * (r + 1));
       canvas.drawLine(inn, o, tk);
     }
     // Value arc.
@@ -460,8 +458,7 @@ class _LiveryTile extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           Text(label,
-              style: TextStyle(
-                  color: livery, fontSize: 11, letterSpacing: 2)),
+              style: TextStyle(color: livery, fontSize: 11, letterSpacing: 2)),
           const SizedBox(height: 4),
           Text(value,
               style: TextStyle(
@@ -481,8 +478,7 @@ class _LiveryTile extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 6),
-          Text(sub,
-              style: TextStyle(color: skin.color.fgMuted, fontSize: 11)),
+          Text(sub, style: TextStyle(color: skin.color.fgMuted, fontSize: 11)),
         ],
       ),
     );
@@ -507,24 +503,31 @@ class _RadioStrip extends StatelessWidget {
         color: skin.color.surface,
         borderRadius: BorderRadius.circular(16),
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          Icon(Icons.cell_tower, size: 16, color: skin.color.accent),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(model.radioLine ?? '—',
-                overflow: TextOverflow.ellipsis, style: mono),
+          Row(
+            children: <Widget>[
+              Icon(Icons.cell_tower, size: 16, color: skin.color.accent),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(model.radioLine ?? '—',
+                    overflow: TextOverflow.ellipsis, style: mono),
+              ),
+              if (model.contactsLabel != null) ...<Widget>[
+                const SizedBox(width: 8),
+                Icon(Icons.contacts_outlined,
+                    size: 13, color: skin.color.fgMuted),
+                const SizedBox(width: 2),
+                Text(model.contactsLabel!, style: mono),
+              ],
+              if (model.batteryLine != null) ...<Widget>[
+                const SizedBox(width: 8),
+                Text(model.batteryLine!, style: mono),
+              ],
+            ],
           ),
-          if (model.contactsLabel != null) ...<Widget>[
-            const SizedBox(width: 8),
-            Icon(Icons.contacts_outlined, size: 13, color: skin.color.fgMuted),
-            const SizedBox(width: 2),
-            Text(model.contactsLabel!, style: mono),
-          ],
-          if (model.batteryLine != null) ...<Widget>[
-            const SizedBox(width: 8),
-            Text(model.batteryLine!, style: mono),
-          ],
+          MyPubkeyLine(pubKeyHex: model.pubKeyHex, style: mono),
         ],
       ),
     );

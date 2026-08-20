@@ -21,6 +21,7 @@ class DashboardModel {
     required this.peersInRange,
     required this.knownCount,
     required this.nodeName,
+    required this.pubKeyHex,
     required this.radioLine,
     required this.channelLabel,
     required this.region,
@@ -43,6 +44,12 @@ class DashboardModel {
 
   /// Device advertised name, or null when SelfInfo isn't in yet.
   final String? nodeName;
+
+  /// Our own 64-hex public key, or null awaiting SelfInfo. This is
+  /// the identifier another operator needs before their DMs can route
+  /// to us, so every skin should surface it somewhere — see
+  /// [MyPubkeyLine], which renders it consistently.
+  final String? pubKeyHex;
 
   /// `915.0MHz SF7 CR5 22dBm`, or null awaiting SelfInfo.
   final String? radioLine;
@@ -102,6 +109,7 @@ class DashboardModel {
       nodeName: si == null
           ? null
           : (si.name.isEmpty ? l.dashboardUnnamed : si.name),
+      pubKeyHex: mc.ownPubKeyHex,
       radioLine: si == null
           ? null
           : '${si.frequencyMhz}MHz  SF${si.spreadingFactor}  '
