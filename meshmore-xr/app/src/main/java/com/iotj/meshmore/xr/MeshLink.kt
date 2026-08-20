@@ -1036,6 +1036,31 @@ class MeshLink(private val context: Context) {
     }
 
     /** What the radio said it is, once DEVICE_QUERY has been answered. */
+    /**
+     * Set the radio's clock to this device's, and re-read it to confirm.
+     *
+     * NEVER AUTOMATIC. A radio's clock stamps every contact it stores and
+     * every message it relays; correcting it is right when it is wrong and
+     * presumptuous when it is not, and the operator is the one who knows. This
+     * is called from an ARMED row in the radio bay, like every other write on
+     * that surface.
+     */
+    fun syncClock(): Boolean {
+        val s = session ?: return false
+        if (_status.value.state != SessionState.READY) return false
+        val now = System.currentTimeMillis() / 1000
+        Log.i(TAG, "[clock] setting the radio to $now (was ${now + clockSkewSec})")
+        diag(">>CLOCK  $now")
+        runCatching { s.setDeviceTime(now) }.onFailure { return false }
+        // Read it back rather than assuming: the row's value is the proof.
+        runCatching { s.deviceTime() }
+        return true
+    }
+
+    /** Radio clock minus phone clock, in seconds. Zero until measured. */
+    var clockSkewSec: Long = 0L
+        private set
+
     /** Whatever the firmware exposes as key/value settings. Empty until asked. */
     var customVars: Map<String, String> = emptyMap()
         private set
@@ -1996,6 +2021,32 @@ class MeshLink(private val context: Context) {
                     // guessing at from names: manufacturer is the closest thing
                     // MeshCore has to a model string, and firmware version and
                     // build date pin down what is actually running.
+                    // WHAT TIME THE RADIO THINKS IT IS, against what we think.
+                    //
+                    // Contacts are stamped by the radio's clock and aged
+                    // against the phone's, so any difference between them is
+                    // an error applied to every node on the ring. The horizon
+                    // already throws away future timestamps as junk — 82 of
+                    // 350 on this operator's store — which was a workaround
+                    // for a cause nothing could measure. This measures it.
+                    is io.iotone.meshcore.frames.CurrentTimeFrame -> {
+                        val radio = frame.unixSeconds()
+                        val here = System.currentTimeMillis() / 1000
+                        clockSkewSec = radio - here
+                        val s = clockSkewSec
+                        Log.i(
+                            TAG,
+                            "[clock] radio=$radio here=$here skew=${s}s" + when {
+                                kotlin.math.abs(s) <= 2 -> " — agreed"
+                                kotlin.math.abs(s) < 120 -> " — inside the slop the ring already tolerates"
+                                s > 0 -> " — the radio is AHEAD, which is what makes contacts read as heard just now"
+                                else -> " — the radio is BEHIND; everything it stamped looks older than it is"
+                            },
+                        )
+                        if (kotlin.math.abs(s) >= 120) {
+                            Alerts.warn("CLOCK", "RADIO CLOCK OFF BY ${s}s")
+                        }
+                    }
                     // EVERY KEY THE FIRMWARE ADMITS TO, printed once.
                     //
                     // Custom vars are firmware-defined and board-specific, and
@@ -2113,6 +2164,7 @@ class MeshLink(private val context: Context) {
                         // firmware's own key/value settings, which nothing in
                         // this app has ever asked for.
                         runCatching { session?.customVars() }
+                        runCatching { session?.deviceTime() }
                     }
                     is io.iotone.meshcore.frames.BatteryStorageFrame -> {
                         val mv = runCatching { frame.battery().batteryMillivolts() }.getOrNull()

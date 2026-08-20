@@ -1076,9 +1076,25 @@ private fun channelBands(
  * and COMMIT/REVERT last because they are the ones you reach for when you have
  * finished. Six rows, so it pages at seven — which is why the Stack learned to.
  */
+/** How far out the radio's clock is, said the way a person would say it. */
+private fun clockWord(ctx: android.content.Context, skew: Long): String {
+    val a = kotlin.math.abs(skew)
+    if (a < 120) return ctx.getString(R.string.rr_clock_ok)
+    val amount = when {
+        a >= 86400 -> "%.1fD".format(a / 86400.0)
+        a >= 3600 -> "%.1fH".format(a / 3600.0)
+        else -> "%dM".format(a / 60)
+    }
+    return ctx.getString(
+        if (skew < 0) R.string.rr_clock_off else R.string.rr_clock_ahead, amount,
+    )
+}
+
 private fun radioRows(
     ctx: android.content.Context,
     cfg: RadioConfig,
+    /** Radio clock minus headset clock, for the row that reports it. */
+    skewSec: Long = 0L,
 ): List<com.iotj.meshmore.xr.spatial.Stack.Row> {
     val live = cfg.live
     val pend = cfg.pending
@@ -1158,6 +1174,17 @@ private fun radioRows(
         row(
             "RESCAN", ctx.getString(R.string.rr_rescan),
             ctx.getString(R.string.rr_rescan_sub), null,
+        ),
+        // THE RADIO'S OWN CLOCK, and how far out it is.
+        //
+        // Every contact in the store carries a last-heard stamp written by
+        // this clock, and the ring ages the whole mesh against the headset's.
+        // The bench radio was found 16.8 DAYS behind — it believed it was the
+        // third of August on the twentieth — which nothing could have noticed
+        // because nothing had ever asked. Lit when it is worth acting on.
+        row(
+            "CLOCK", ctx.getString(R.string.rr_clock), clockWord(ctx, skewSec),
+            null, kotlin.math.abs(skewSec) >= 120,
         ),
     )
 }
@@ -1258,6 +1285,19 @@ private fun onRadioAction(
     "RESCAN" -> {
         link.connect()
         say(ctx.getString(R.string.n_rescan))
+        true
+    }
+    // ARMED, because it writes to hardware the operator owns and the app does
+    // not. A clock is right until somebody decides it is not.
+    "CLOCK" -> {
+        if (armed.value?.first != "CLOCK") {
+            armed.value = "CLOCK" to nowMs
+            say(ctx.getString(R.string.n_clock_arm))
+        } else {
+            armed.value = null
+            if (link.syncClock()) say(ctx.getString(R.string.n_clock_set))
+            else say(ctx.getString(R.string.n_radio_not_ready))
+        }
         true
     }
     else -> false
@@ -3685,6 +3725,8 @@ private fun HorizonScene(link: MeshLink) {
                     regionRows(ctx, hereSource.here.value, link.radio.live),
                     title = ctx.getString(R.string.t_region, Regions.labelFor(link.radio.live)),
                     footer = ctx.getString(R.string.f_region),
+                    // A SET, NOT A SEQUENCE — see Stack.show.
+                    form = true,
                 )
                 dockRef.value?.setLit("SETUP", false)
                 cue.opened()
@@ -4002,12 +4044,14 @@ private fun HorizonScene(link: MeshLink) {
                             r.note?.let { noticeRef.value?.say(it) }
                             bayMode.value = "RADIO"
                             appRef.value?.show(
-                                radioRows(ctx, link.radio),
+                                radioRows(ctx, link.radio, link.clockSkewSec),
                                 title = com.iotj.meshmore.xr.spatial.radioTitle(
                                     link.radio.live?.freqMhz, link.radio.live?.txDbm,
                                 ),
                                 footer = if (link.radio.dirty()) ctx.getString(R.string.f_pending)
                                 else ctx.getString(R.string.f_radio_idle),
+                                // A SET, NOT A SEQUENCE — see Stack.show.
+                                form = true,
                             )
                         }
                         cue.recognised()
@@ -4088,7 +4132,7 @@ private fun HorizonScene(link: MeshLink) {
                             }
                         ) {
                             appRef.value?.update(
-                                radioRows(ctx, link.radio),
+                                radioRows(ctx, link.radio, link.clockSkewSec),
                                 if (armed.value?.first == "FLOOD") {
                                     ctx.getString(R.string.f_flood_arm)
                                 } else {
@@ -4102,7 +4146,7 @@ private fun HorizonScene(link: MeshLink) {
                             noticeRef.value?.say(note)
                         }
                         appRef.value?.update(
-                            radioRows(ctx, link.radio),
+                            radioRows(ctx, link.radio, link.clockSkewSec),
                             if (armed.value?.first == "COMMIT") ctx.getString(R.string.f_commit_arm)
                             else if (link.radio.dirty()) ctx.getString(R.string.f_pending)
                             else ctx.getString(R.string.f_radio_idle),
@@ -4138,6 +4182,8 @@ private fun HorizonScene(link: MeshLink) {
                                 telemetryRows(ctx, link),
                                 title = ctx.getString(R.string.t_telem),
                                 footer = ctx.getString(R.string.f_telem),
+                                // A SET, NOT A SEQUENCE — see Stack.show.
+                                form = true,
                             )
                             cue.opened()
                             continue
@@ -4170,6 +4216,8 @@ private fun HorizonScene(link: MeshLink) {
                                 langRows(ctx),
                                 title = ctx.getString(R.string.t_lang),
                                 footer = ctx.getString(R.string.f_lang),
+                                // A SET, NOT A SEQUENCE — see Stack.show.
+                                form = true,
                             )
                             cue.opened()
                             continue
@@ -4414,12 +4462,14 @@ private fun HorizonScene(link: MeshLink) {
                             aboutOpen.value = false
                             bayMode.value = "RADIO"
                             appRef.value?.show(
-                                radioRows(ctx, link.radio),
+                                radioRows(ctx, link.radio, link.clockSkewSec),
                                 title = com.iotj.meshmore.xr.spatial.radioTitle(
                                     link.radio.live?.freqMhz, link.radio.live?.txDbm,
                                 ),
                                 footer = if (link.radio.dirty()) ctx.getString(R.string.f_pending)
                                 else ctx.getString(R.string.f_radio_idle),
+                                // A SET, NOT A SEQUENCE — see Stack.show.
+                                form = true,
                             )
                             dockRef.value?.setLit("SETUP", false)
                             cue.opened()
@@ -4443,6 +4493,8 @@ private fun HorizonScene(link: MeshLink) {
                                 telemetryRows(ctx, link),
                                 title = ctx.getString(R.string.t_telem),
                                 footer = ctx.getString(R.string.f_telem),
+                                // A SET, NOT A SEQUENCE — see Stack.show.
+                                form = true,
                             )
                             cue.opened()
                         }
@@ -4453,6 +4505,8 @@ private fun HorizonScene(link: MeshLink) {
                                 langRows(ctx),
                                 title = ctx.getString(R.string.t_lang),
                                 footer = ctx.getString(R.string.f_lang),
+                                // A SET, NOT A SEQUENCE — see Stack.show.
+                                form = true,
                             )
                             cue.opened()
                         }
@@ -4501,6 +4555,8 @@ private fun HorizonScene(link: MeshLink) {
                                 appRows(ctx, link, armed.value?.first, appGcCount()),
                                 title = ctx.getString(R.string.t_app, link.status.value.state.name),
                                 footer = ctx.getString(R.string.f_app),
+                                // A SET, NOT A SEQUENCE — see Stack.show.
+                                form = true,
                             )
                             dockRef.value?.setLit("SETUP", false)
                             cue.opened()

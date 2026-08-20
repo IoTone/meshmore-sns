@@ -237,6 +237,12 @@
     <string name="chan_public">PUBLIC</string>
     <string name="chan_numbered">CHANNEL %1$d</string>
     <string name="chan_generic">CHANNEL</string>
+    <string name="rr_clock">CLOCK</string>
+    <string name="rr_clock_ok">IN STEP</string>
+    <string name="rr_clock_off">%1$s BEHIND</string>
+    <string name="rr_clock_ahead">%1$s AHEAD</string>
+    <string name="n_clock_arm">PICK AGAIN TO SET THE RADIO CLOCK</string>
+    <string name="n_clock_set">RADIO CLOCK SET</string>
     <string name="cm_magnify">MAGNIFY</string>
     <string name="cm_bearing">BEARING</string>
     <string name="cm_nearest">NEAREST</string>

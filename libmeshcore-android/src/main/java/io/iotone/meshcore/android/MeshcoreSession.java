@@ -434,6 +434,44 @@ public final class MeshcoreSession {
      *
      * <p>No-op when not {@link SessionState#READY}.</p>
      */
+    /**
+     * Asks the device for its clock ({@code CMD_GET_DEVICE_TIME}). The reply
+     * arrives as a {@code CurrentTimeFrame} of Unix seconds.
+     *
+     * <p>WHY THIS MATTERS MORE THAN IT SOUNDS. Every contact in the store
+     * carries a last-heard timestamp written by the RADIO's clock, and the app
+     * ages the whole mesh against the PHONE's. On the operator's own store, 82
+     * of 350 contacts once read as "heard just now" because their timestamps
+     * were in the future — which the horizon now discards as junk (see
+     * MeshNodes.CLOCK_SLOP_SEC). That was a workaround for a cause nobody had
+     * measured, because nothing could ask the radio what time it thought it
+     * was.</p>
+     *
+     * <p>No-op when not {@link SessionState#READY}.</p>
+     */
+    public void deviceTime() {
+        if (state.get() != SessionState.READY) return;
+        send(MeshcoreFrameCodec.getDeviceTime());
+    }
+
+    /**
+     * Sets the device clock ({@code CMD_SET_DEVICE_TIME}), in Unix seconds.
+     *
+     * <p>A WRITE TO SOMEBODY ELSE'S HARDWARE, so it is never automatic. A
+     * radio's clock stamps every message it relays and every contact it
+     * stores; correcting it is right when it is wrong and rude when it is not,
+     * and only the operator knows which. Callers are expected to have measured
+     * the skew first and to be acting on it deliberately.</p>
+     *
+     * <p>No-op when not {@link SessionState#READY}.</p>
+     *
+     * @param unixSeconds the time to write
+     */
+    public void setDeviceTime(long unixSeconds) {
+        if (state.get() != SessionState.READY) return;
+        send(MeshcoreFrameCodec.setDeviceTime(unixSeconds));
+    }
+
     public void customVars() {
         if (state.get() != SessionState.READY) return;
         send(MeshcoreFrameCodec.getCustomVars());

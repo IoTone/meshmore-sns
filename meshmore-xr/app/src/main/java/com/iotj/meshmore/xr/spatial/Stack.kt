@@ -180,7 +180,12 @@ class Stack(
      * radio's slots and the wearer's voice preferences — and this surface is
      * deliberately ignorant of either. It draws rows and reports picks.
      */
-    fun show(list: List<Row>, title: String, footer: String) {
+    /**
+     * [form] marks a surface where the rows are a SET rather than a sequence —
+     * radio parameters, app settings, telemetry permissions. See [perPage].
+     */
+    fun show(list: List<Row>, title: String, footer: String, form: Boolean = false) {
+        isForm = form
         all = fitAll(list)
         page = 0
         repage()
@@ -365,9 +370,22 @@ class Stack(
      * fewer once paging starts, because the way forward has to occupy a row.
      * SEELE says one and means it — see [Theme.Skin.rowsPerPage].
      */
+    /** True while the open surface is a form. See [show]. */
+    private var isForm = false
+
     private val perPage: Int
         get() {
-            val want = skin.rowsPerPage.coerceIn(1, MAX)
+            // A FORM IS NOT A SEQUENCE. SEELE's one-row treatment is right for
+            // a list you browse — nodes, messages, a shelf of channels — where
+            // each row is a destination and the point is to give it the whole
+            // surface. It is wrong for a set of related values: the radio bay
+            // is FREQ, BANDWIDTH, SPREADING and CODING RATE, which only mean
+            // anything beside each other, and at one per page eleven rows
+            // became eleven pages. Reported from the glasses in those words.
+            //
+            // So a form keeps the theme's plate, its type and its colour — and
+            // pages like everything else.
+            val want = if (isForm) MAX else skin.rowsPerPage.coerceIn(1, MAX)
             // A theme that shows fewer rows than the list has is ALWAYS paging,
             // so it always pays the MORE row. A theme at MAX only pays it when
             // the list actually overflows.
@@ -376,7 +394,7 @@ class Stack(
 
     /** How many pages the current list needs. */
     val pages: Int
-        get() = if (all.size <= MAX && skin.rowsPerPage >= MAX) 1
+        get() = if (all.size <= MAX && (isForm || skin.rowsPerPage >= MAX)) 1
         else ((all.size + perPage - 1) / perPage).coerceAtLeast(1)
 
     /**
@@ -388,7 +406,7 @@ class Stack(
      * to the next five beats six settings and no way to reach the seventh.
      */
     private fun repage() {
-        if (all.size <= MAX && skin.rowsPerPage >= MAX) {
+        if (all.size <= MAX && (isForm || skin.rowsPerPage >= MAX)) {
             rows = all
             page = 0
             return

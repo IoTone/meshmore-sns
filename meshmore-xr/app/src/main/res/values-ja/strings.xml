@@ -225,6 +225,12 @@
     <string name="chan_public">公開</string>
     <string name="chan_numbered">チャンネル %1$d</string>
     <string name="chan_generic">チャンネル</string>
+    <string name="rr_clock">時計</string>
+    <string name="rr_clock_ok">一致</string>
+    <string name="rr_clock_off">%1$s 遅れ</string>
+    <string name="rr_clock_ahead">%1$s 進み</string>
+    <string name="n_clock_arm">もう一度で時計を設定</string>
+    <string name="n_clock_set">無線機の時計を設定</string>
     <string name="cm_magnify">拡大</string>
     <string name="cm_bearing">方位</string>
     <string name="cm_nearest">最寄り</string>
