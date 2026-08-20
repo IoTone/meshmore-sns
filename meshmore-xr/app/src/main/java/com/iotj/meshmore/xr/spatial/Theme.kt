@@ -573,6 +573,116 @@ object Theme {
         audio = "teletype",
     )
 
+    /**
+     * WHAT A THEME IS LIKE TO WEAR, AS FOUR MARKS.
+     *
+     * The picker already prints a sentence and three words under whatever the
+     * pointer is on, and a sentence is the wrong shape for the question people
+     * actually ask at a grid of nine — which of these can I use where I am
+     * going, and which of them will move while I read. Marks answer that at a
+     * glance and in any language, which matters for a picker that ships in two.
+     *
+     * Every mark MEANS something by being there. A badge that appears on all
+     * nine is a decoration, so the only ones that appear unconditionally are
+     * the three postures, which are mutually exclusive and therefore carry a
+     * choice. The rest appear only when true.
+     *
+     * There is no SILENT mark, and that is a finding rather than an omission:
+     * all nine themes name an audio pack, so a "sounds" badge would sit on
+     * every tile and say nothing. Silence is a preference the wearer sets
+     * (see Settings), not a property a theme has.
+     */
+    enum class Badge(val glyph: String, val plain: String) {
+        /**
+         * WHAT IT IS MADE OF — the axis that splits the nine three and three
+         * and three, and the one a wearer feels first.
+         *
+         * A PANEL theme paints an opaque ground behind read text, so it holds
+         * contrast in daylight and costs you the room behind it. An ADDITIVE
+         * theme is pure emitted light with nothing behind it, so the world
+         * stays whole and bright rooms wash it out. HYBRID does both by zone.
+         * That is a real choice about where the glasses will be worn, and
+         * without this mark six of the nine tiles carried a posture and
+         * nothing else.
+         */
+        PANEL("\u25AE", "[|]"),
+        ADDITIVE("\u2727", "*"),
+        HYBRID("\u25E7", "[:]"),
+
+        /** Stand, walk, stop to look. Seven of the nine. */
+        FIELD("\u25CE", "(o)"),
+
+        /** Seated, indoors, everything inside arm's reach. */
+        TABLETOP("\u25A4", "[=]"),
+
+        /** Moving, hands busy, eyes on the world. */
+        TRANSIT("\u2192", "->"),
+
+        /**
+         * Low blue, monochrome enough to wear in the dark.
+         *
+         * MEASURED, not declared: the mean blue channel across the four lit
+         * roles. Blue is the part of the spectrum that costs dark adaptation
+         * and keeps people awake, so the amber and phosphor themes pass and
+         * the bone-white one does not, which is the right answer and not one
+         * anybody had to type in.
+         */
+        NIGHT("\u25D0", "(("),
+
+        /**
+         * Built to be worn for hours while moving — a trail, a bike lane, a
+         * passenger seat.
+         *
+         * Not shown on a TRANSIT theme, which already says so with its posture
+         * and would otherwise carry two marks for one fact.
+         */
+        ACTIVE("\u226B", ">>"),
+
+        /** Something is always moving in it. Worth knowing before you wear it. */
+        ALIVE("\u2248", "~"),
+    }
+
+    /**
+     * The blue level below which a palette is dark-adapted, 0-255.
+     *
+     * RECON AMBER measures 2 and VOID TERMINAL 103. SEELE MONOLITH is 215 —
+     * monochrome but bone-white, which is not the same thing, and is the case
+     * a hand-written list would have got wrong.
+     */
+    const val NIGHT_BLUE_MAX = 128
+
+    /**
+     * THE WORST OF THE LIT ROLES, NOT THE AVERAGE OF THEM.
+     *
+     * The first version took the mean and made NERV MISSION a night theme: its
+     * accent, alt and warn are orange and lime with no blue in them at all, so
+     * three zeroes averaged away a near-white text at 245 — the one surface a
+     * wearer actually looks AT. Dark adaptation is broken by the brightest blue
+     * in the field, not by the typical one, so the measure is a maximum.
+     */
+    fun blueLevel(p: Horizon.Palette): Int =
+        listOf(p.accent, p.alt, p.warn, p.text).maxOf { it and 0xFF }
+
+    fun badgesFor(s: Skin): List<Badge> = buildList {
+        add(
+            when (s.substrate) {
+                Substrate.PANEL -> Badge.PANEL
+                Substrate.ADDITIVE -> Badge.ADDITIVE
+                Substrate.HYBRID -> Badge.HYBRID
+            },
+        )
+        add(
+            when (s.posture) {
+                Posture.FIELD -> Badge.FIELD
+                Posture.TABLETOP -> Badge.TABLETOP
+                Posture.TRANSIT -> Badge.TRANSIT
+            },
+        )
+        if (blueLevel(s.palette) <= NIGHT_BLUE_MAX) add(Badge.NIGHT)
+        if (s.active && s.posture != Posture.TRANSIT) add(Badge.ACTIVE)
+        if (s.motion == Motion.ALIVE) add(Badge.ALIVE)
+    }
+
     /** Picker order. HALO first because it is the default and the reference. */
     val ALL: List<Skin> = listOf(HALO, SEELE, RECON, AGSYS, NERV, DRPOP, VECTOR, BIOLUME, VOID)
 

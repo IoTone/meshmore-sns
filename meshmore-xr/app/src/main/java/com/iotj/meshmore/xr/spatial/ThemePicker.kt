@@ -70,6 +70,17 @@ class ThemePicker(
     private var note: TextRun.Run? = null
     private var cursor: MeshEntity? = null
 
+    /**
+     * One badge row per theme, built once and shown under whatever the pointer
+     * is on.
+     *
+     * Per SKIN rather than per badge, because a panel shows only the text it
+     * was born with and there are exactly nine possible rows. Nine panels is
+     * cheaper than the machinery for composing them, and it renders on the
+     * emulator too, where a written-to panel does not.
+     */
+    private val badgeFor = mutableMapOf<String, TextRun.Run>()
+
     /** Picks, drained by the host, which owns what a pick MEANS. */
     private val fired = java.util.concurrent.ConcurrentLinkedQueue<Theme.Skin>()
 
@@ -141,6 +152,34 @@ class ThemePicker(
             listOf(Prims.material(session, theme.text, 0.95f)),
         ).also { it.parent = root; it.setEnabled(false); entities += it }
 
+        // THE GLYPHS, CHECKED AGAINST THE FONT THAT WILL DRAW THEM.
+        // A missing glyph does not fail: it draws a tofu box, which on a badge
+        // row is indistinguishable from a badge. Paint.hasGlyph answers for
+        // real, so the fallback is chosen by measurement and the answer is in
+        // the log where a Japanese build or a different system font can be
+        // checked without a screenshot — which is just as well, because
+        // neither the glass nor the emulator can produce one.
+        val paint = android.graphics.Paint()
+        val missing = Theme.Badge.entries.filterNot { paint.hasGlyph(it.glyph) }
+        if (missing.isNotEmpty()) {
+            Log.w(TAG, "[theme] no glyph for ${missing.joinToString { it.name }} — using plain marks")
+        }
+        Theme.ALL.forEach { s ->
+            val row = Theme.badgesFor(s).joinToString(BADGE_GAP) {
+                if (it in missing) it.plain else it.glyph
+            }
+            TextRun.create(
+                session, context, row, BADGE_CAP,
+                argb(s.palette.text, 0.95f), "theme-badge",
+            )?.let {
+                it.entity.parent = root
+                it.entity.setEnabled(false)
+                entities += it.entity
+                badgeFor[s.key] = it
+            }
+            Log.i(TAG, "[theme] ${s.key} marks '$row' blue=${Theme.blueLevel(s.palette)}")
+        }
+
         name = run(root, WIDEST_NAME, NAME_CAP, theme.accent, "theme-name")
         line = run(root, WIDEST_LINE, LINE_CAP, theme.text, "theme-line")
         note = run(root, WIDEST_NOTE, LINE_CAP, theme.alt, "theme-note")
@@ -182,6 +221,7 @@ class ThemePicker(
                 it.pip.setEnabled(false); it.proxy.setEnabled(false)
             }
         }
+        badgeFor.values.forEach { runCatching { it.entity.setEnabled(false) } }
         runCatching {
             cursor?.setEnabled(false)
             name?.entity?.setEnabled(false)
@@ -316,6 +356,19 @@ class ThemePicker(
         val np = at(0f, ry)
         val lp = at(0f, ry - NAME_CAP * 2.0f)
         val op = at(0f, ry - NAME_CAP * 2.0f - LINE_CAP * 2.2f)
+        // THE MARKS SIT WITH THE WORDS, NOT UNDER THE TILE.
+        //
+        // Under the tile was the first placement and the arithmetic killed it:
+        // the badge line lands 0.0815 m below a tile's centre and the next row
+        // of tiles starts 0.0675 m below it, so every badge row but the last
+        // would have been printed across the tile beneath it. Nothing in a log
+        // would have said so, and neither the glass nor the emulator can take
+        // a picture of it.
+        //
+        // The readout is where the hover already speaks — name, one-liner,
+        // then the marks — and the whole column comes to 27 degrees of a
+        // 34-degree field.
+        val gp = at(0f, ry - NAME_CAP * 2.0f - LINE_CAP * 4.4f)
         runCatching {
             name?.entity?.setEnabled(true)
             line?.entity?.setEnabled(true)
@@ -323,6 +376,15 @@ class ThemePicker(
             name?.entity?.setPose(Pose(np, facing(np)), Space.ACTIVITY)
             line?.entity?.setPose(Pose(lp, facing(lp)), Space.ACTIVITY)
             note?.entity?.setPose(Pose(op, facing(op)), Space.ACTIVITY)
+        }
+        // ONE ROW SHOWS: the theme under the pointer, or the one being worn
+        // when the pointer is off the grid — the same rule the words follow.
+        val marked = focused ?: previewing.key
+        badgeFor.forEach { (key, r) ->
+            runCatching {
+                r.entity.setEnabled(key == marked)
+                if (key == marked) r.entity.setPose(Pose(gp, facing(gp)), Space.ACTIVITY)
+            }
         }
     }
 
@@ -392,7 +454,12 @@ class ThemePicker(
     }
 
     fun clear() {
-        tiles.clear(); cursor = null; name = null; line = null; note = null
+        // EVERY LIST THAT HOLDS AN ENTITY HANDLE, EMPTIED HERE. The handles
+        // below are about to be disposed, and a map still holding them is a
+        // native pose call on freed memory the next time the picker is built —
+        // which is how HALO died once already.
+        tiles.clear(); badgeFor.clear()
+        cursor = null; name = null; line = null; note = null
         open = false; anchor = null; fired.clear()
         pointerFocus = null; gazeFocus = null; announced = null
         val doomed = entities.toList()
@@ -449,6 +516,19 @@ class ThemePicker(
         const val DEBOUNCE_MS = 350L
 
         /** 1.55° and 1.32° at DIST. §4.1 floor is 1.2°; house standard 1.30°. */
+        /**
+         * Badge type, a shade under the readout line.
+         *
+         * The marks sit under a 7.5 cm tile at 1.15 m, so this is about 1.0
+         * degree of arc — above the 0.15 degree floor by a wide margin, which
+         * it needs to be: a badge is read as a SHAPE, and a shape needs more
+         * angle than a letterform whose neighbours give it away.
+         */
+        const val BADGE_CAP = 0.020f
+
+        /** Wide enough that two marks never read as one. */
+        const val BADGE_GAP = "  "
+
         const val NAME_CAP = 0.027f
         const val LINE_CAP = 0.023f
 
