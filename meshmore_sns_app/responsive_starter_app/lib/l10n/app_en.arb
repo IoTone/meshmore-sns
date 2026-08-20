@@ -22,6 +22,36 @@
   },
   "dashboardPubkeyAwaiting": "my pubkey · awaiting device",
   "dashboardPubkeyHint": "Tap to copy. This is what someone else needs to add you as a contact.",
+  "botTitle": "Auto-reply bot",
+  "botSubtitle": "Answers messages here automatically. Off by default.",
+  "botOnWire": "Replies are sent with a [bot] prefix, so the person on the other end can tell a machine wrote them.",
+  "botRefusedPublicSlot": "Not available on Public. Slot 0 is the public channel.",
+  "botRefusedPublicPsk": "This slot still uses the well-known public key, so it is Public under another number. Give it a private key first.",
+  "botRefusedUnknownPsk": "Waiting for this slot's key from the radio.",
+  "botMode": "Reply mode",
+  "botModeDeterministic": "Deterministic",
+  "botModeRandom": "Random",
+  "botModeDeterministicSub": "First matching rule always wins, so a soak trace is diffable.",
+  "botModeRandomSub": "Picks among matching rules, replayable from the seed.",
+  "botSeed": "Seed",
+  "botBudget": "{n} replies left this window",
+  "@botBudget": {
+    "placeholders": {"n": {"type": "int"}}
+  },
+  "botCounters": "received {r} · replied {p} · held back {s}",
+  "@botCounters": {
+    "placeholders": {"r": {"type": "int"}, "p": {"type": "int"}, "s": {"type": "int"}}
+  },
+  "botResetCounters": "Reset counters",
+  "botEditRules": "Edit rules",
+  "botRulesTitle": "Rulepack",
+  "botRulesRestore": "Restore default",
+  "botRulesErrors": "{n} line(s) could not be read and were skipped",
+  "@botRulesErrors": {
+    "placeholders": {"n": {"type": "int"}}
+  },
+  "botRulesSave": "Save",
+  "botFromBot": "bot",
   "dashboardRadio": "RADIO",
   "dashNervLink": "Link",
   "dashNervNode": "Node",

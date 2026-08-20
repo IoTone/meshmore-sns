@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 import 'package:meshmore_sns_app/gen/app_localizations.dart';
 import 'package:meshmore_sns_app/l10n/locale_controller.dart';
 import 'package:meshmore_sns_app/meshcore/meshcore_connection.dart';
+import 'package:meshmore_sns_app/bot/bot_controller.dart';
 import 'package:meshmore_sns_app/meshcore/meshcore_controller.dart';
 import 'package:meshmore_sns_app/screens/channels_screen.dart';
 
@@ -28,8 +29,12 @@ Future<MeshcoreController> _ready(FakeMeshcoreTransport fake) async {
 // navigator) can also read the controller — matches the real app's
 // MultiProvider-over-MaterialApp structure.
 Widget _host(MeshcoreController mc) =>
-    ChangeNotifierProvider<MeshcoreController>.value(
-      value: mc,
+    MultiProvider(
+      providers: <ChangeNotifierProvider<ChangeNotifier>>[
+        ChangeNotifierProvider<MeshcoreController>.value(value: mc),
+        // The edit dialog embeds R59's BotSection.
+        ChangeNotifierProvider<BotController>(create: (_) => BotController()),
+      ],
       child: MaterialApp(
         locale: const Locale('en'),
         supportedLocales: LocaleController.supported,

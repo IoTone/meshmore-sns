@@ -7,6 +7,8 @@ import 'package:provider/provider.dart';
 
 import '../chat/chat_actions.dart';
 import '../gen/app_localizations.dart';
+import '../bot/bot_guards.dart';
+import '../bot/bot_tag.dart';
 import '../meshcore/chat_message.dart';
 import 'delivery_status_icon.dart';
 import '../meshcore/discovered_node.dart';
@@ -303,7 +305,12 @@ class _DmRow extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
-                  Text(m.text,
+                  if (looksLikeBot(m.text))
+                    const Padding(
+                      padding: EdgeInsets.only(bottom: 2),
+                      child: BotTag(),
+                    ),
+                  Text(stripBotMarker(m.text),
                       style: TextStyle(color: skin.color.fg, fontFamily: mono)),
                   if (meta.isNotEmpty || m.outgoing && m.delivery != null)
                     Row(

@@ -6,6 +6,8 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../app_state_model.dart';
+import '../bot/bot_bridge.dart';
+import '../bot/bot_controller.dart';
 import '../cue/cue_bridge.dart';
 import '../tts/tts_controller.dart';
 import '../cue/cue_service.dart';
@@ -65,6 +67,7 @@ class _HomeShellState extends State<HomeShell>
   final PageController _pc = PageController();
   int _index = 0;
   CueBridge? _cueBridge;
+  BotBridge? _botBridge;
 
   @override
   void initState() {
@@ -79,6 +82,13 @@ class _HomeShellState extends State<HomeShell>
       // peer set to `always` is heard wherever the user is.
       context.read<TtsController>(),
     );
+    // R59 — the bot answers wherever it is bound, for the same reason
+    // the cues fire wherever: a soak client that only replied while
+    // you happened to be looking at the thread would be useless.
+    _botBridge = BotBridge(
+      context.read<MeshcoreController>(),
+      context.read<BotController>(),
+    );
     // Owns splash teardown now (replaces the old demo home).
     WidgetsBinding.instance.addPostFrameCallback((_) {
       FlutterNativeSplash.remove();
@@ -91,6 +101,7 @@ class _HomeShellState extends State<HomeShell>
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _cueBridge?.dispose();
+    _botBridge?.dispose();
     _pc.dispose();
     super.dispose();
   }

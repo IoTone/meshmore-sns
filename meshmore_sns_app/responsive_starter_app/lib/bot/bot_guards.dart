@@ -21,6 +21,17 @@ String labelAsBot(String text) => '$kBotMarker $text';
 /// anyone else's running this marker.
 bool looksLikeBot(String text) => text.trimLeft().startsWith(kBotMarker);
 
+/// The message without its marker, for display next to a bot tag.
+///
+/// The marker earns its airtime on the wire, where the other end has
+/// no UI to tell them. In our own transcript the tag says it better,
+/// and showing both would label the message twice.
+String stripBotMarker(String text) {
+  final String t = text.trimLeft();
+  if (!t.startsWith(kBotMarker)) return text;
+  return t.substring(kBotMarker.length).trimLeft();
+}
+
 /// Why an inbound message did not get answered.
 enum BotSuppression {
   /// We wrote it. Answering our own traffic is the fastest possible

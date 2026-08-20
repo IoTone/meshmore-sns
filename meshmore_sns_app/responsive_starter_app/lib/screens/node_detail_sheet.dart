@@ -15,6 +15,8 @@ import '../gen/app_localizations.dart';
 import '../meshcore/chat_message.dart';
 import '../meshcore/discovered_node.dart';
 import '../meshcore/meshcore_controller.dart';
+import '../bot/bot_scope.dart';
+import '../bot/bot_section.dart';
 import '../cue/cue_service.dart';
 import '../meshcore/node_telemetry.dart';
 import '../peer/peer_profiles.dart';
@@ -555,6 +557,11 @@ class _NodeDetailSheetState extends State<NodeDetailSheet> {
             if (!widget.isSelf) ...<Widget>[
               const SizedBox(height: 14),
               _SignaturePicker(pubKeyHex: n.pubKeyHex),
+            ],
+            // R59 — the bot can answer this peer's DMs.
+            if (!widget.isSelf) ...<Widget>[
+              const SizedBox(height: 10),
+              BotSection(scope: DmScope(n.pubKeyHex)),
             ],
             // R57 — a node we've heard but the *radio* doesn't have as a
             // contact can't be DM'd (channel works; DMs route via the

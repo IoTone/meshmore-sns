@@ -20,6 +20,7 @@ import 'package:meshmore_sns_app/meshcore/auto_publish_controller.dart';
 import 'package:meshmore_sns_app/meshcore/background_keepalive.dart';
 import 'package:meshmore_sns_app/meshcore/city_lookup.dart';
 import 'package:meshmore_sns_app/meshcore/meshcore_controller.dart';
+import 'package:meshmore_sns_app/bot/bot_controller.dart';
 import 'package:meshmore_sns_app/peer/peer_profiles.dart';
 import 'package:meshmore_sns_app/perms/first_run_controller.dart';
 import 'package:meshmore_sns_app/perms/location_service.dart';
@@ -88,6 +89,14 @@ void main() {
               backgroundKeepalive: createBackgroundKeepalive(),
               locationService: const GeolocatorLocationService(),
             )..autoConnectIfPaired(),
+          ),
+          // R59 — the bot. `pskFor` is what makes the "never on Public"
+          // refusal real: it reads the slot's live key off the radio,
+          // so a slot reset to the stock key stops qualifying at once.
+          ChangeNotifierProvider<BotController>(
+            create: (BuildContext ctx) => BotController(
+              pskFor: ctx.read<MeshcoreController>().channelPsk,
+            )..load(),
           ),
           Provider<PermissionsService>(
             create: (_) => const PlatformPermissionsService(),

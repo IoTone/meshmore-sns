@@ -52,6 +52,76 @@ class AppLocalizationsJa extends AppLocalizations {
   String get dashboardPubkeyHint => 'タップでコピー。相手が連絡先として追加する際に必要です。';
 
   @override
+  String get botTitle => '自動応答ボット';
+
+  @override
+  String get botSubtitle => 'ここのメッセージに自動で返信します。既定はオフ。';
+
+  @override
+  String get botOnWire => '返信には [bot] を付けて送信し、相手が機械の発言だと分かるようにします。';
+
+  @override
+  String get botRefusedPublicSlot => 'パブリックでは使用できません。スロット0は公開チャンネルです。';
+
+  @override
+  String get botRefusedPublicPsk =>
+      'このスロットは公開鍵のままなので、実質パブリックです。先に専用の鍵を設定してください。';
+
+  @override
+  String get botRefusedUnknownPsk => '無線機からこのスロットの鍵を取得中です。';
+
+  @override
+  String get botMode => '返信モード';
+
+  @override
+  String get botModeDeterministic => '決定的';
+
+  @override
+  String get botModeRandom => 'ランダム';
+
+  @override
+  String get botModeDeterministicSub => '常に最初に一致した規則を使うため、記録を差分比較できます。';
+
+  @override
+  String get botModeRandomSub => '一致した規則から選択します。シードで再現可能。';
+
+  @override
+  String get botSeed => 'シード';
+
+  @override
+  String botBudget(int n) {
+    return 'このウィンドウで残り $n 件';
+  }
+
+  @override
+  String botCounters(int r, int p, int s) {
+    return '受信 $r · 返信 $p · 抑制 $s';
+  }
+
+  @override
+  String get botResetCounters => 'カウンタをリセット';
+
+  @override
+  String get botEditRules => '規則を編集';
+
+  @override
+  String get botRulesTitle => 'ルールパック';
+
+  @override
+  String get botRulesRestore => '既定に戻す';
+
+  @override
+  String botRulesErrors(int n) {
+    return '$n 行を読み取れずスキップしました';
+  }
+
+  @override
+  String get botRulesSave => '保存';
+
+  @override
+  String get botFromBot => 'ボット';
+
+  @override
   String get dashboardRadio => 'ラジオ';
 
   @override

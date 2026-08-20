@@ -60,6 +60,82 @@ class AppLocalizationsEn extends AppLocalizations {
       'Tap to copy. This is what someone else needs to add you as a contact.';
 
   @override
+  String get botTitle => 'Auto-reply bot';
+
+  @override
+  String get botSubtitle =>
+      'Answers messages here automatically. Off by default.';
+
+  @override
+  String get botOnWire =>
+      'Replies are sent with a [bot] prefix, so the person on the other end can tell a machine wrote them.';
+
+  @override
+  String get botRefusedPublicSlot =>
+      'Not available on Public. Slot 0 is the public channel.';
+
+  @override
+  String get botRefusedPublicPsk =>
+      'This slot still uses the well-known public key, so it is Public under another number. Give it a private key first.';
+
+  @override
+  String get botRefusedUnknownPsk =>
+      'Waiting for this slot\'s key from the radio.';
+
+  @override
+  String get botMode => 'Reply mode';
+
+  @override
+  String get botModeDeterministic => 'Deterministic';
+
+  @override
+  String get botModeRandom => 'Random';
+
+  @override
+  String get botModeDeterministicSub =>
+      'First matching rule always wins, so a soak trace is diffable.';
+
+  @override
+  String get botModeRandomSub =>
+      'Picks among matching rules, replayable from the seed.';
+
+  @override
+  String get botSeed => 'Seed';
+
+  @override
+  String botBudget(int n) {
+    return '$n replies left this window';
+  }
+
+  @override
+  String botCounters(int r, int p, int s) {
+    return 'received $r · replied $p · held back $s';
+  }
+
+  @override
+  String get botResetCounters => 'Reset counters';
+
+  @override
+  String get botEditRules => 'Edit rules';
+
+  @override
+  String get botRulesTitle => 'Rulepack';
+
+  @override
+  String get botRulesRestore => 'Restore default';
+
+  @override
+  String botRulesErrors(int n) {
+    return '$n line(s) could not be read and were skipped';
+  }
+
+  @override
+  String get botRulesSave => 'Save';
+
+  @override
+  String get botFromBot => 'bot';
+
+  @override
   String get dashboardRadio => 'RADIO';
 
   @override

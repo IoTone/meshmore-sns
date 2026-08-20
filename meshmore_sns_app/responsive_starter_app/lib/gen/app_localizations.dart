@@ -176,6 +176,132 @@ abstract class AppLocalizations {
   /// **'Tap to copy. This is what someone else needs to add you as a contact.'**
   String get dashboardPubkeyHint;
 
+  /// No description provided for @botTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto-reply bot'**
+  String get botTitle;
+
+  /// No description provided for @botSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Answers messages here automatically. Off by default.'**
+  String get botSubtitle;
+
+  /// No description provided for @botOnWire.
+  ///
+  /// In en, this message translates to:
+  /// **'Replies are sent with a [bot] prefix, so the person on the other end can tell a machine wrote them.'**
+  String get botOnWire;
+
+  /// No description provided for @botRefusedPublicSlot.
+  ///
+  /// In en, this message translates to:
+  /// **'Not available on Public. Slot 0 is the public channel.'**
+  String get botRefusedPublicSlot;
+
+  /// No description provided for @botRefusedPublicPsk.
+  ///
+  /// In en, this message translates to:
+  /// **'This slot still uses the well-known public key, so it is Public under another number. Give it a private key first.'**
+  String get botRefusedPublicPsk;
+
+  /// No description provided for @botRefusedUnknownPsk.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for this slot\'s key from the radio.'**
+  String get botRefusedUnknownPsk;
+
+  /// No description provided for @botMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Reply mode'**
+  String get botMode;
+
+  /// No description provided for @botModeDeterministic.
+  ///
+  /// In en, this message translates to:
+  /// **'Deterministic'**
+  String get botModeDeterministic;
+
+  /// No description provided for @botModeRandom.
+  ///
+  /// In en, this message translates to:
+  /// **'Random'**
+  String get botModeRandom;
+
+  /// No description provided for @botModeDeterministicSub.
+  ///
+  /// In en, this message translates to:
+  /// **'First matching rule always wins, so a soak trace is diffable.'**
+  String get botModeDeterministicSub;
+
+  /// No description provided for @botModeRandomSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Picks among matching rules, replayable from the seed.'**
+  String get botModeRandomSub;
+
+  /// No description provided for @botSeed.
+  ///
+  /// In en, this message translates to:
+  /// **'Seed'**
+  String get botSeed;
+
+  /// No description provided for @botBudget.
+  ///
+  /// In en, this message translates to:
+  /// **'{n} replies left this window'**
+  String botBudget(int n);
+
+  /// No description provided for @botCounters.
+  ///
+  /// In en, this message translates to:
+  /// **'received {r} · replied {p} · held back {s}'**
+  String botCounters(int r, int p, int s);
+
+  /// No description provided for @botResetCounters.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset counters'**
+  String get botResetCounters;
+
+  /// No description provided for @botEditRules.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit rules'**
+  String get botEditRules;
+
+  /// No description provided for @botRulesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Rulepack'**
+  String get botRulesTitle;
+
+  /// No description provided for @botRulesRestore.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore default'**
+  String get botRulesRestore;
+
+  /// No description provided for @botRulesErrors.
+  ///
+  /// In en, this message translates to:
+  /// **'{n} line(s) could not be read and were skipped'**
+  String botRulesErrors(int n);
+
+  /// No description provided for @botRulesSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get botRulesSave;
+
+  /// No description provided for @botFromBot.
+  ///
+  /// In en, this message translates to:
+  /// **'bot'**
+  String get botFromBot;
+
   /// No description provided for @dashboardRadio.
   ///
   /// In en, this message translates to:

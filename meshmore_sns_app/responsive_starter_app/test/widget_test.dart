@@ -10,6 +10,7 @@ import 'package:meshmore_sns_app/app_state_model.dart';
 import 'package:meshmore_sns_app/cue/cue_service.dart';
 import 'package:meshmore_sns_app/l10n/locale_controller.dart';
 import 'package:meshmore_sns_app/main.dart';
+import 'package:meshmore_sns_app/bot/bot_controller.dart';
 import 'package:meshmore_sns_app/meshcore/meshcore_controller.dart';
 import 'package:meshmore_sns_app/perms/first_run_controller.dart';
 import 'package:meshmore_sns_app/perms/permissions_service.dart';
@@ -49,6 +50,11 @@ void main() {
           Provider<CueService>(
             create: (BuildContext ctx) =>
                 CueService(theme: ctx.read<ThemeController>()),
+          ),
+          // R59 — HomeShell builds a BotBridge, so the bot must be
+          // above it exactly as in main.dart.
+          ChangeNotifierProvider<BotController>(
+            create: (_) => BotController(),
           ),
           ChangeNotifierProvider<MeshcoreController>(
             create: (_) => MeshcoreController(),

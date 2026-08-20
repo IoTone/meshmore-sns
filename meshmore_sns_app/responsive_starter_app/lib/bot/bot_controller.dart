@@ -219,7 +219,12 @@ class BotController extends ChangeNotifier {
 
   /// Parse errors in this scope's pack, for Diagnostics.
   List<String> rulepackErrorsFor(BotScope s) =>
-      _parser.parse(rulepackSourceFor(s)).errors;
+      errorsIn(rulepackSourceFor(s));
+
+  /// Parse errors in an arbitrary source, for the editor to report on
+  /// a draft that has not been saved yet.
+  static List<String> errorsIn(String source) =>
+      RulepackParser().parse(source).errors;
 
   BotCounters countersFor(BotScope s) => bindingFor(s).counters;
 

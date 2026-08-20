@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:meshmore_sns_app/cue/cue_service.dart';
 import 'package:meshmore_sns_app/gen/app_localizations.dart';
 import 'package:meshmore_sns_app/meshcore/discovered_node.dart';
+import 'package:meshmore_sns_app/bot/bot_controller.dart';
 import 'package:meshmore_sns_app/meshcore/meshcore_controller.dart';
 import 'package:meshmore_sns_app/peer/peer_profiles.dart';
 import 'package:meshmore_sns_app/screens/node_detail_sheet.dart';
@@ -46,6 +47,8 @@ Widget _host({
         ChangeNotifierProvider<PeerProfiles>.value(value: peers),
         ChangeNotifierProvider<ThemeController>.value(value: theme),
         ChangeNotifierProvider<MeshcoreController>.value(value: mc),
+        // The sheet embeds R59's BotSection.
+        ChangeNotifierProvider<BotController>(create: (_) => BotController()),
       ],
       child: Provider<CueService>.value(
         value: cue,

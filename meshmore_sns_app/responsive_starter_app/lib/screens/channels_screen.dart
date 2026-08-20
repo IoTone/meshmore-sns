@@ -6,6 +6,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:meshcore/meshcore.dart';
 import 'package:provider/provider.dart';
+
+import '../bot/bot_scope.dart';
+import '../bot/bot_section.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
 import '../cryptokit/dice_roll_entropy.dart';
@@ -644,6 +647,11 @@ class _EditChannelDialogState extends State<_EditChannelDialog> {
                     mc.setPlaceInferenceEnabled(widget.idx, v),
               );
             }),
+            // R59 — the bot binds per channel. The section renders on
+            // every slot, including Public, because a refusal that
+            // explains itself teaches more than a missing control.
+            const Divider(height: 20),
+            BotSection(scope: ChannelScope(widget.idx)),
             if (_error != null) ...<Widget>[
               const SizedBox(height: 8),
               Text(_error!,

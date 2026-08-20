@@ -13,6 +13,8 @@ import 'delivery_status_icon.dart';
 import '../meshcore/meshcore_connection.dart';
 import '../meshcore/meshcore_controller.dart';
 import '../meshcore/message_heat.dart' show parseChannelSenderName;
+import '../bot/bot_guards.dart';
+import '../bot/bot_tag.dart';
 import '../theme/mm_skin.dart';
 import '../theme/mm_tokens.dart';
 import '../tts/tts_controller.dart';
@@ -451,7 +453,12 @@ class _MessageRow extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
-                  Text(m.text,
+                  if (looksLikeBot(m.text))
+                    const Padding(
+                      padding: EdgeInsets.only(bottom: 2),
+                      child: BotTag(),
+                    ),
+                  Text(stripBotMarker(m.text),
                       style:
                           TextStyle(color: skin.color.fg, fontFamily: mono)),
                   _metaRow(skin, meta, mono),
@@ -534,7 +541,14 @@ class _MessageRow extends StatelessWidget {
                       letterSpacing: 1,
                       fontWeight: FontWeight.w800)),
             ),
-          Text(s.body,
+          // The sender prefix is split off first, so the marker sits at
+          // the head of the BODY here, not of the raw text.
+          if (looksLikeBot(s.body))
+            Padding(
+              padding: const EdgeInsets.only(bottom: 2),
+              child: BotTag(color: ink),
+            ),
+          Text(stripBotMarker(s.body),
               style: TextStyle(
                   color: ink,
                   fontFamily: skin.type.bodyFamily,
