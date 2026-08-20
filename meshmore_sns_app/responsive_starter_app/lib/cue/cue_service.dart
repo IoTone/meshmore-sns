@@ -56,7 +56,35 @@ enum CueKind {
   /// any inbound, connect attempt failed). Less harsh than `alert`;
   /// alert is reserved for protocol-level critical errors.
   taskError,
+
+  // ---- R58 signature slots ------------------------------------
+  // These are not events like the rest of the enum; they are the
+  // five *renderings* a peer's DM arrival can take instead of
+  // [dmIn]. They live here rather than in a parallel enum so a
+  // signature travels the existing path for free: `assetPathFor`
+  // already yields `audio/<pack>/sig3.wav` from `kind.name`, the
+  // generator writes exactly those filenames, and the two tests
+  // that sweep `CueKind.values` extend their coverage without
+  // being touched. Dispatch a signature with
+  // [CueService.playSignature], never as a bare event.
+  sig1,
+  sig2,
+  sig3,
+  sig4,
+  sig5,
 }
+
+/// The signature slots, in order. Empty-safe to index for UI.
+const List<CueKind> kSignatureSlots = <CueKind>[
+  CueKind.sig1,
+  CueKind.sig2,
+  CueKind.sig3,
+  CueKind.sig4,
+  CueKind.sig5,
+];
+
+/// True when [k] is a signature slot rather than an event cue.
+bool isSignature(CueKind k) => kSignatureSlots.contains(k);
 
 /// Pluggable audio backend. The default uses built-in system sounds —
 /// per-theme asset packs (R12: "Mission Control" / "Velocity" / etc.)
@@ -129,6 +157,16 @@ _HTier _tierOf(CueKind k) => switch (k) {
       CueKind.navPrev ||
       CueKind.scanStart =>
         _HTier.nav,
+      // Signatures never actually reach here -- [hapticPatternFor]
+      // intercepts them first and resolves a per-slot rhythm. The arm
+      // exists to keep this switch exhaustive, and `dm` is the honest
+      // fallback: a signature *is* a DM arrival, just a named one.
+      CueKind.sig1 ||
+      CueKind.sig2 ||
+      CueKind.sig3 ||
+      CueKind.sig4 ||
+      CueKind.sig5 =>
+        _HTier.dm,
     };
 
 // Per-theme haptic "feel". SEELE grave/single, NERV terse multi-tick,
@@ -223,10 +261,126 @@ const Map<MmThemePreset, Map<_HTier, List<HapticHit>>> _hapticProfiles =
   MmThemePreset.recon: _reconHaptics,
 };
 
+// ---- R58 signature rhythms ------------------------------------
+//
+// A signature must be recognisable through a pocket, and that is a
+// far tighter budget than sound. `HapticHit` offers four intensities,
+// but a person holding a conversation elsewhere reliably distinguishes
+// only a handful of *rhythms* -- so the slot count is set here, not by
+// how many tones the synth can make.
+//
+// Each slot is a CONTOUR of strong/weak beats. The theme supplies what
+// "strong" and "weak" mean in its own vocabulary, exactly as it does
+// for the tier patterns, so a signature keeps its identity across a
+// theme switch while its expression changes.
+//
+// Capped at three beats: a burst of inbound messages must not queue
+// into one continuous buzz. And no slot may be ONE beat either --
+// several themes already spend their single-beat patterns on `ambient`
+// or `dm`, so a one-beat signature cannot be told from an ordinary
+// channel message or an unsigned DM in those packs. That is why `sig1`
+// is a double rather than the obvious single thump.
+enum _SigBeat { strong, weak }
+
+const Map<CueKind, List<_SigBeat>> _sigContours =
+    <CueKind, List<_SigBeat>>{
+  CueKind.sig1: <_SigBeat>[_SigBeat.strong, _SigBeat.strong],
+  CueKind.sig2: <_SigBeat>[_SigBeat.weak, _SigBeat.strong],
+  CueKind.sig3: <_SigBeat>[_SigBeat.strong, _SigBeat.weak],
+  CueKind.sig4: <_SigBeat>[_SigBeat.weak, _SigBeat.weak, _SigBeat.weak],
+  CueKind.sig5: <_SigBeat>[_SigBeat.weak, _SigBeat.weak],
+};
+
+/// (strong, weak) per theme -- the theme's own reading of the contour.
+///
+/// These are not free choices. Each theme has already spent part of the
+/// `HapticHit` vocabulary on `ambient` and `dm`, and a signature may
+/// not land on either: colliding with `dm` would make a signed peer
+/// feel exactly like an unsigned one, which defeats the whole feature.
+/// [signatureCollisions] enforces it and a test sweeps every pack.
+///
+/// The pairs below are the most in-character legal option per theme --
+/// SEELE grave, NERV and AG-HUD terse, Hyperlocal never heavy, DR Pop
+/// punchy, Recon crisp. **DR Pop has only two legal pairs at all**
+/// (its `ambient` and `dm` already occupy both same-intensity doubles),
+/// which is the clearest signal that this vocabulary is close to full.
+/// A sixth slot would not fit; see the note on slot count above.
+const Map<MmThemePreset, (HapticHit, HapticHit)> _sigIntensities =
+    <MmThemePreset, (HapticHit, HapticHit)>{
+  MmThemePreset.seele: (HapticHit.heavy, HapticHit.medium),
+  MmThemePreset.nerv: (HapticHit.medium, HapticHit.selection),
+  MmThemePreset.agHud: (HapticHit.medium, HapticHit.selection),
+  MmThemePreset.hyperlocal: (HapticHit.medium, HapticHit.light),
+  MmThemePreset.drPop: (HapticHit.heavy, HapticHit.selection),
+  MmThemePreset.recon: (HapticHit.medium, HapticHit.light),
+};
+const (HapticHit, HapticHit) _defaultSigIntensity =
+    (HapticHit.medium, HapticHit.light);
+
+List<HapticHit> _signaturePattern(MmThemePreset? preset, CueKind slot) {
+  final (HapticHit strong, HapticHit weak) =
+      _sigIntensities[preset] ?? _defaultSigIntensity;
+  return <HapticHit>[
+    for (final _SigBeat b in _sigContours[slot]!)
+      b == _SigBeat.strong ? strong : weak,
+  ];
+}
+
+/// Signature slots that are indistinguishable **as rendered** under
+/// [preset] -- either from each other, or from the two patterns a user
+/// meets in the same breath: `ambient` (a channel message) and `dm`
+/// (a DM from a peer with no signature).
+///
+/// The guard deliberately compares resolved renderings rather than slot
+/// ids. Two slots that are obviously different as tones can collapse to
+/// the same rhythm once a theme maps them, and the rhythm is the half
+/// that has to work from a pocket.
+///
+/// Returns a human-readable description per collision; empty means the
+/// pack is clean. Exercised for every preset in the cue tests.
+List<String> signatureCollisions(MmThemePreset? preset) {
+  final List<String> out = <String>[];
+  final Map<CueKind, List<HapticHit>> rendered =
+      <CueKind, List<HapticHit>>{
+    for (final CueKind s in kSignatureSlots)
+      s: _signaturePattern(preset, s),
+  };
+  bool same(List<HapticHit> a, List<HapticHit> b) =>
+      a.length == b.length &&
+      List<int>.generate(a.length, (int i) => i)
+          .every((int i) => a[i] == b[i]);
+
+  for (int i = 0; i < kSignatureSlots.length; i++) {
+    for (int j = i + 1; j < kSignatureSlots.length; j++) {
+      final CueKind a = kSignatureSlots[i];
+      final CueKind b = kSignatureSlots[j];
+      if (same(rendered[a]!, rendered[b]!)) {
+        out.add('${a.name} == ${b.name}');
+      }
+    }
+  }
+  final Map<_HTier, List<HapticHit>> prof =
+      _hapticProfiles[preset] ?? _defaultHaptics;
+  for (final CueKind s in kSignatureSlots) {
+    if (same(rendered[s]!, prof[_HTier.ambient]!)) {
+      out.add('${s.name} == ambient (a channel message)');
+    }
+    if (same(rendered[s]!, prof[_HTier.dm]!)) {
+      out.add('${s.name} == dm (an unsigned peer)');
+    }
+  }
+  return out;
+}
+
 /// The per-theme haptic pattern for a cue (pure — exported for tests).
 /// `preset == null` → the neutral default profile.
+///
+/// Signature slots resolve to their own per-slot rhythm; every other
+/// cue resolves through its tier as before.
 List<HapticHit> hapticPatternFor(MmThemePreset? preset, CueKind kind) =>
-    (_hapticProfiles[preset] ?? _defaultHaptics)[_tierOf(kind)]!;
+    isSignature(kind)
+        ? _signaturePattern(preset, kind)
+        : (_hapticProfiles[preset] ?? _defaultHaptics)[_tierOf(kind)]!;
 
 /// Default haptic: per-theme `HapticFeedback` patterns (system-respecting:
 /// silent/vibrate modes are honoured by the OS). Reads `theme.preset` at
@@ -288,6 +442,23 @@ class CueService {
       unawaited(audio.play(kind));
     }
     unawaited(haptic.play(kind));
+  }
+
+  /// Play a peer's signature (R58) **instead of** [CueKind.dmIn].
+  ///
+  /// Substitution, never addition. `_HTier.dm` already fires a
+  /// per-theme pattern for every DM; playing that *and* a signature
+  /// produces mush and destroys both identities -- the signature stops
+  /// being recognisable and the ordinary DM feel stops being ordinary.
+  /// So this is a plain [play] of the slot, and the caller must not
+  /// also play `dmIn`.
+  ///
+  /// A null [slot] means the peer has no signature, and the ordinary
+  /// `dmIn` is played -- so call sites can stay branch-free.
+  Future<void> playSignature(CueKind? slot) {
+    assert(slot == null || isSignature(slot),
+        'playSignature expects a signature slot, got $slot');
+    return play(slot ?? CueKind.dmIn);
   }
 
   /// Begin the sustained scanning drone (loops [CueKind.scanStart] for

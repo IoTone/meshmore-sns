@@ -444,6 +444,48 @@ CUES = {
         score=[(1.0, 0.10), (5 / 6, 0.16)],
         amp=0.60,
     ),
+
+    # ---- R58 signature slots -------------------------------------
+    # A *signature* is the arrival sound for one specific peer: it
+    # REPLACES `dmIn` for a peer the user has given an identity to.
+    # Slots are deliberately generic here so every theme renders them
+    # in its own base note, timbre and decay -- a signature keeps its
+    # identity across a theme switch while its expression changes,
+    # which is what the skin system promises for everything else.
+    #
+    # Five slots, and the ceiling is set by the HAPTIC channel, not
+    # this one: through a pocket a person tells apart far fewer
+    # rhythms than tones (see `_sigContours` in cue_service.dart).
+    # Adding a sixth tone here would be easy and useless.
+    #
+    # The five differ by CONTOUR, not just pitch, so they survive a
+    # cheap phone speaker: flat / small rise / fall / triple / big
+    # rise. Pitched above `dmIn` so a signature reads as "someone
+    # specific" against the ordinary DM tone.
+    "sig1": dict(  # flat -- two clear octave-up pings, same note
+        # A double rather than a single, to stay coherent with the
+        # haptic: no signature may be one beat long, because several
+        # themes already spend their single-beat patterns on `ambient`
+        # and `dm`. See `_sigContours` in cue_service.dart.
+        score=[(2.0, 0.07), (2.0, 0.09)],
+        amp=0.55,
+    ),
+    "sig2": dict(  # small rise -- major third up
+        score=[(1.0, 0.08), (1.25, 0.11)],
+        amp=0.55,
+    ),
+    "sig3": dict(  # fall -- fifth down
+        score=[(1.5, 0.08), (1.0, 0.12)],
+        amp=0.55,
+    ),
+    "sig4": dict(  # triple -- same note three times, rhythmic not melodic
+        score=[(1.25, 0.06), (1.25, 0.06), (1.25, 0.10)],
+        amp=0.52,
+    ),
+    "sig5": dict(  # big rise -- octave up, the widest leap in the set
+        score=[(1.0, 0.07), (2.0, 0.13)],
+        amp=0.55,
+    ),
 }
 
 # ---------------------------------------------------------------- synth
