@@ -4,10 +4,10 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../peer/peer_profiles.dart';
 import '../theme/theme_controller.dart';
-import 'peer_speech_store.dart';
 
-export 'peer_speech_store.dart' show PeerSpeechMode;
+export '../peer/peer_profiles.dart' show PeerSpeechMode;
 
 /// A voice the platform TTS engine can synthesize with. The pair
 /// `(name, locale)` is the unique identifier flutter_tts expects on
@@ -149,10 +149,12 @@ class FlutterTtsSpeaker implements TtsSpeaker {
 /// also push the new value down into the speaker so the next
 /// `speak` reflects it immediately.
 class TtsController extends ChangeNotifier {
-  TtsController({TtsSpeaker? speaker, this.theme})
-      : _speaker = speaker ?? FlutterTtsSpeaker() {
+  TtsController({TtsSpeaker? speaker, this.theme, PeerProfiles? peers})
+      : _speaker = speaker ?? FlutterTtsSpeaker(),
+        _peers = peers ?? PeerProfiles() {
     _lastAudible = speechAudible;
     theme?.addListener(_onThemeChanged);
+    _peers.addListener(notifyListeners);
   }
 
   /// Re-notify only when audibility actually flips. The theme fires
@@ -168,6 +170,7 @@ class TtsController extends ChangeNotifier {
   @override
   void dispose() {
     theme?.removeListener(_onThemeChanged);
+    _peers.removeListener(notifyListeners);
     super.dispose();
   }
 
@@ -198,8 +201,17 @@ class TtsController extends ChangeNotifier {
   double _pitch = defaultPitch;
   TtsVoice? _voice;
   final Set<int> _mutedChannels = <int>{};
-  Map<String, PeerSpeechMode> _peerModes = <String, PeerSpeechMode>{};
+
+  /// The per-peer record owner (R58). Speech is only one of its
+  /// fields, so it lives outside this controller — see [PeerProfiles].
+  /// Constructing one here when none is injected keeps every existing
+  /// call site and test working unchanged.
+  final PeerProfiles _peers;
   late bool _lastAudible;
+
+  /// The shared per-peer record store, for call sites that need the
+  /// non-speech fields (a signature slot, say).
+  PeerProfiles get peers => _peers;
 
   /// Global TTS on/off.
   bool get enabled => _enabled;
@@ -236,7 +248,7 @@ class TtsController extends ChangeNotifier {
         (p.getDouble(_kPitch) ?? defaultPitch).clamp(minPitch, maxPitch);
     final String? vid = p.getString(_kVoiceId);
     _voice = vid == null ? null : TtsVoice.parseId(vid);
-    _peerModes = await PeerSpeechStore.load();
+    await _peers.load();
     // Push to speaker so the very first speak() reflects loaded prefs.
     await _speaker.setRate(_rate);
     await _speaker.setPitch(_pitch);
@@ -318,31 +330,15 @@ class TtsController extends ChangeNotifier {
   }
 
   // --- R58: per-peer DM speech ---------------------------------
-
-  /// Resolve a peer key against the stored overrides.
-  ///
-  /// A DM carries the peer's **full 64-hex pubkey when the fabric can
-  /// resolve it, or only the 12-hex prefix when it cannot** (see
-  /// `ChatMessage.peerPubKeyHex`), while the user sets an override
-  /// from a node detail sheet that usually knows the full key. So an
-  /// exact lookup would silently miss: match exactly first, then let
-  /// either side be a prefix of the other.
-  String? _resolvePeerKey(String pubKeyHex) {
-    if (pubKeyHex.isEmpty) return null;
-    final String k = pubKeyHex.toLowerCase();
-    if (_peerModes.containsKey(k)) return k;
-    for (final String stored in _peerModes.keys) {
-      if (stored.startsWith(k) || k.startsWith(stored)) return stored;
-    }
-    return null;
-  }
+  //
+  // The record itself lives in [PeerProfiles]; these are thin
+  // delegations so existing call sites (the DM header, the tests)
+  // keep one obvious place to ask "will this peer be spoken?".
 
   /// The peer's explicit mode, or [PeerSpeechMode.inherit] when the
   /// user has never expressed one.
-  PeerSpeechMode peerSpeechMode(String pubKeyHex) {
-    final String? k = _resolvePeerKey(pubKeyHex);
-    return k == null ? PeerSpeechMode.inherit : _peerModes[k]!;
-  }
+  PeerSpeechMode peerSpeechMode(String pubKeyHex) =>
+      _peers.speechMode(pubKeyHex);
 
   /// True when a DM from [pubKeyHex] would be spoken.
   ///
@@ -359,26 +355,9 @@ class TtsController extends ChangeNotifier {
   }
 
   /// Set (or clear, with [PeerSpeechMode.inherit]) a peer's override.
-  /// Writing `inherit` removes the row — absence *is* inherit.
-  Future<void> setPeerSpeechMode(
-      String pubKeyHex, PeerSpeechMode mode) async {
-    final String k = pubKeyHex.toLowerCase();
-    final String? existing = _resolvePeerKey(k);
-    if (mode == PeerSpeechMode.inherit) {
-      if (existing == null) return;
-      _peerModes.remove(existing);
-    } else {
-      // Re-key onto the longer form when we learn it, so a prefix-set
-      // override converges on the full pubkey rather than accreting
-      // two rows for one peer.
-      if (existing != null && existing != k) _peerModes.remove(existing);
-      final String key =
-          (existing != null && existing.length > k.length) ? existing : k;
-      _peerModes[key] = mode;
-    }
-    notifyListeners();
-    await PeerSpeechStore.save(_peerModes);
-  }
+  /// Writing `inherit` drops the field — absence *is* inherit.
+  Future<void> setPeerSpeechMode(String pubKeyHex, PeerSpeechMode mode) =>
+      _peers.setSpeechMode(pubKeyHex, mode);
 
   /// Speak an inbound DM from [pubKeyHex] iff [peerSpeaks]. A no-op
   /// otherwise — the single gate, as with [speakForChannel].

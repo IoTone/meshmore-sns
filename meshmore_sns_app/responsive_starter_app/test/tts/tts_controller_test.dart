@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MIT
 import 'package:flutter_test/flutter_test.dart';
 import 'package:meshmore_sns_app/theme/theme_controller.dart';
-import 'package:meshmore_sns_app/tts/peer_speech_store.dart';
+import 'package:meshmore_sns_app/peer/peer_profiles.dart';
 import 'package:meshmore_sns_app/tts/tts_controller.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -116,8 +116,8 @@ void main() {
       await tts.setPeerSpeechMode(prefix, PeerSpeechMode.never);
       await tts.setPeerSpeechMode(full, PeerSpeechMode.never);
 
-      expect(await PeerSpeechStore.load(), <String, PeerSpeechMode>{
-        full: PeerSpeechMode.never,
+      expect(await PeerProfileStore.load(), <String, PeerProfile>{
+        full: const PeerProfile(speak: PeerSpeechMode.never),
       });
     });
 
@@ -125,10 +125,10 @@ void main() {
       SharedPreferences.setMockInitialValues(<String, Object>{});
       final TtsController tts = TtsController(speaker: FakeTtsSpeaker());
       await tts.setPeerSpeechMode(full, PeerSpeechMode.always);
-      expect(await PeerSpeechStore.load(), isNotEmpty);
+      expect(await PeerProfileStore.load(), isNotEmpty);
 
       await tts.setPeerSpeechMode(full, PeerSpeechMode.inherit);
-      expect(await PeerSpeechStore.load(), isEmpty);
+      expect(await PeerProfileStore.load(), isEmpty);
       expect(tts.peerSpeechMode(full), PeerSpeechMode.inherit);
     });
 

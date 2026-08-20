@@ -20,6 +20,7 @@ import 'package:meshmore_sns_app/meshcore/auto_publish_controller.dart';
 import 'package:meshmore_sns_app/meshcore/background_keepalive.dart';
 import 'package:meshmore_sns_app/meshcore/city_lookup.dart';
 import 'package:meshmore_sns_app/meshcore/meshcore_controller.dart';
+import 'package:meshmore_sns_app/peer/peer_profiles.dart';
 import 'package:meshmore_sns_app/perms/first_run_controller.dart';
 import 'package:meshmore_sns_app/perms/location_service.dart';
 import 'package:meshmore_sns_app/perms/permissions_service.dart';
@@ -53,12 +54,20 @@ void main() {
           ChangeNotifierProvider<ThemeController>(
             create: (_) => ThemeController()..load(),
           ),
+          // One owner for the per-peer record (R58). Speech reads it,
+          // the cue path reads it, the node sheet writes it — but only
+          // this instance touches the prefs key.
+          ChangeNotifierProvider<PeerProfiles>(create: (_) => PeerProfiles()),
           ChangeNotifierProvider<TtsController>(
             // Speech answers to the same audio master as the cues —
             // without this the quick-mute silenced every chime and
             // left inbound messages speaking aloud.
-            create: (BuildContext ctx) =>
-                TtsController(theme: ctx.read<ThemeController>())..load(),
+            // `TtsController.load()` loads the shared per-peer records
+            // too, so `PeerProfiles` needs no separate load() here.
+            create: (BuildContext ctx) => TtsController(
+              theme: ctx.read<ThemeController>(),
+              peers: ctx.read<PeerProfiles>(),
+            )..load(),
           ),
           Provider<CueService>(
             create: (BuildContext ctx) {
