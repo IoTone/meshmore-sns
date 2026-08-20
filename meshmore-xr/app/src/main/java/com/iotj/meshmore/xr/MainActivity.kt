@@ -243,6 +243,9 @@ class MainActivity : ComponentActivity() {
          * largest horizontal surface itself.
          */
         var probePlanes: Boolean = false
+        var probeEarth: Boolean = false
+        /** vps | inertial | spatial — which geospatial mode the probe asks for. */
+        var earthMode: String? = null
         /**
          * --es switchto <key> : after the scene is up, change theme AS IF
          * PICKED, to exercise the runtime path rather than the launch one.
@@ -415,6 +418,11 @@ class MainActivity : ComponentActivity() {
         showFocus = intent?.getBooleanExtra("focus", false) ?: false
         probePaths = intent?.getBooleanExtra("probe", false) ?: false
         probePlanes = intent?.getBooleanExtra("planes", false) ?: false
+        // --ez earth true : ask the planet which way north is, and say what it
+        // answers. Off by default because earth-relative tracking wants a
+        // location grant and a network.
+        earthMode = intent?.getStringExtra("earth")?.lowercase()
+        probeEarth = earthMode != null
         switchTo = intent?.getStringExtra("switchto")
         sweep = intent?.getBooleanExtra("sweep", false) ?: false
         telPerm = intent?.getStringExtra("telperm")
@@ -2777,7 +2785,7 @@ private fun HorizonScene(link: MeshLink) {
         // for a feature two themes use.
         val wantPlanes = MainActivity.probePlanes ||
             skin.value.posture == com.iotj.meshmore.xr.spatial.Theme.Posture.TABLETOP
-        val origin0 = stage.recentre(wantPlanes)
+        val origin0 = stage.recentre(wantPlanes, geoMode = MainActivity.earthMode)
         Log.i(TAG_UI, "[boot] planes wanted=$wantPlanes granted=${stage.planesEnabled}")
         if (stage.planesEnabled && MainActivity.probePlanes) {
             launch { com.iotj.meshmore.xr.spatial.Planes.watch(session) }
@@ -5591,6 +5599,12 @@ private fun HorizonScene(link: MeshLink) {
                     bootOver.value = true
                 }
             }
+            fun tickEarth() {
+                if (!MainActivity.probeEarth || !stage.geoEnabled) return
+                com.iotj.meshmore.xr.spatial.Earth.probe(
+                    session, android.os.SystemClock.uptimeMillis(),
+                )
+            }
             suspend fun tickHead() {
                 stage.headNow()?.let {
                     horizon.faceViewer(it.translation)
@@ -5803,6 +5817,7 @@ private fun HorizonScene(link: MeshLink) {
             suspend fun frameSurfaces(nowMs: Long) {
                 tickBoot()
                 tickHead()
+                tickEarth()
                 tickGaze(nowMs)
                 tickReel(nowMs)
                 drainSmall(nowMs)

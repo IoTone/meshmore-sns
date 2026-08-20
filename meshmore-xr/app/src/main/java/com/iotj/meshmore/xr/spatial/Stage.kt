@@ -62,6 +62,9 @@ class Stage(private val session: Session, private val theme: Horizon.Palette) {
 
     /** True once plane tracking and anchor persistence are actually on. */
     var planesEnabled = false
+
+    /** True once the session accepted a geospatial configuration. */
+    var geoEnabled = false
         private set
 
     /**
@@ -106,7 +109,12 @@ class Stage(private val session: Session, private val theme: Horizon.Palette) {
      * fraction of a second at launch and is the difference between the scene
      * landing on the body and landing wherever the tracker booted.
      */
-    suspend fun recentre(wantPlanes: Boolean = false): Origin {
+    /**
+     * [wantGeo] asks for earth-relative tracking — the only path to TRUE north
+     * on hardware with no magnetometer. Off by default: it wants a location
+     * grant and a network, and a refusal must never cost the rungs below it.
+     */
+    suspend fun recentre(wantPlanes: Boolean = false, geoMode: String? = null): Origin {
         val fallback = Origin(0f, 0f, 0f, 0f)
         // ASK FOR HANDS, BUT NOT AT THE COST OF THE FLOOR.
         //
@@ -135,7 +143,63 @@ class Stage(private val session: Session, private val theme: Horizon.Palette) {
         // middle: everything, then everything-but-perception, then hands off,
         // then the floor. Each rung is strictly less than the one above, and
         // the bottom rung is the one that must never fail.
-        if (wantPlanes) {
+        // A FOURTH RUNG, AND THE SAME BARGAIN AS THE THIRD.
+        //
+        // GEOSPATIAL is the only thing that can tell this app which way NORTH
+        // is. The glasses publish no magnetometer — two sensors reach apps and
+        // neither is a compass — so every bearing on the ring is measured from
+        // wherever the wearer happened to be facing at launch, and the heading
+        // band says so out loud because it cannot do better. Earth-relative
+        // pose would make "2.6KM NW" mean north-west rather than
+        // north-west-of-however-you-were-standing.
+        //
+        // It goes ON TOP because it is the most likely rung to be refused: it
+        // wants a location grant, a network, and a device the service supports.
+        // Config is a whole configuration rather than a patch, so a refusal
+        // throws for the WHOLE call — which is exactly how asking for hands
+        // once took device tracking down with it. Everything below this line
+        // is unchanged if the earth says no.
+        if (geoMode != null) {
+            val mode = when (geoMode) {
+                "vps" -> androidx.xr.runtime.GeospatialMode.VPS_AND_GPS
+                "inertial" -> androidx.xr.runtime.GeospatialMode.INERTIAL
+                else -> androidx.xr.runtime.GeospatialMode.SPATIAL
+            }
+            // MEASURED ON THE AURA, 2026-08-20, and the reason this is a
+            // developer flag rather than a feature:
+            //
+            //   INERTIAL      refused cleanly — UnsupportedOperationException,
+            //                 "runtime does not support GeospatialMode.INERTIAL"
+            //   SPATIAL       SIGSEGV, process gone
+            //   VPS_AND_GPS   SIGSEGV in nativeConfigureSession
+            //
+            // Two of three modes segfault inside libandroidx.xr.arcore.openxr
+            // instead of refusing, and a native fault is not a Throwable — the
+            // runCatching below cannot catch it and the whole app dies. The
+            // ladder's promise that a top rung costs the rungs beneath it
+            // nothing holds only for refusals that are EXCEPTIONS, which is
+            // worth knowing before adding another rung to it.
+            Log.w(TAG, "[stage] asking for geospatial $geoMode — SPATIAL and VPS crash this runtime")
+            runCatching {
+                session.configure(
+                    Config(
+                        deviceTracking = DeviceTrackingMode.SPATIAL,
+                        handTracking = HandTrackingMode.BOTH,
+                        planeTracking = PlaneTrackingMode.HORIZONTAL_AND_VERTICAL,
+                        anchorPersistence = AnchorPersistenceMode.LOCAL,
+                        geospatial = mode,
+                    )
+                )
+                handsEnabled = true
+                planesEnabled = true
+                geoEnabled = true
+                Log.i(TAG, "[stage] geospatial ENABLED ($geoMode) — true north is possible")
+            }.onFailure {
+                Log.w(TAG, "[stage] geospatial refused (${it.javaClass.simpleName}: " +
+                    "${it.message}) — the ring stays relative to launch facing")
+            }
+        }
+        if (wantPlanes && !geoEnabled) {
             runCatching {
                 session.configure(
                     Config(
@@ -152,7 +216,7 @@ class Stage(private val session: Session, private val theme: Horizon.Palette) {
                     "no table anchoring; the body-relative tabletop still works")
             }
         }
-        if (!planesEnabled) runCatching {
+        if (!planesEnabled && !geoEnabled) runCatching {
             session.configure(
                 Config(
                     deviceTracking = DeviceTrackingMode.SPATIAL,
