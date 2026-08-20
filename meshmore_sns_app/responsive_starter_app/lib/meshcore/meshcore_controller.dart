@@ -2929,6 +2929,18 @@ class MeshcoreController extends ChangeNotifier {
   int _drainSteps = 0;
   static const int _drainStepCap = 512; // runaway guard
 
+  /// Watchdog for a drain that never finishes.
+  ///
+  /// The step cap only advances when frames *arrive*. If the radio goes
+  /// quiet after we send a SYNC — link wedged, firmware busy, unit out
+  /// of range mid-drain — nothing ever calls `_maybeDrain` again and
+  /// `_draining` stays true forever. That is worse than it sounds:
+  /// `CueBridge` mutes advert cues while draining and R59's bot
+  /// declines to answer, so a stuck drain silently disables both with
+  /// no visible symptom. Time-box it instead.
+  Timer? _drainWatchdog;
+  static const Duration _drainStall = Duration(seconds: 20);
+
   /// True while the controller is in the middle of a SYNC drain
   /// (post-handshake: pulling queued contacts/adverts/messages off the
   /// radio). Exposed so the Dashboard can flag the initial 1–3 s
@@ -2951,12 +2963,31 @@ class MeshcoreController extends ChangeNotifier {
 
   void _drainStep() {
     if (++_drainSteps > _drainStepCap) {
-      _setDraining(false);
+      _endDrain();
       return;
     }
+    _armDrainWatchdog();
     unawaited(send(MeshcoreFrameCodec.syncNextMessage()).catchError((_) {
-      _setDraining(false);
+      _endDrain();
     }));
+  }
+
+  /// Restart the stall timer — called on every SYNC we send, so the
+  /// window is "silence since the last request", not total drain time.
+  /// A long but healthy drain must not be cut short.
+  void _armDrainWatchdog() {
+    _drainWatchdog?.cancel();
+    _drainWatchdog = Timer(_drainStall, () {
+      if (!_draining) return;
+      _emitTaskError('drainStalled');
+      _endDrain();
+    });
+  }
+
+  void _endDrain() {
+    _drainWatchdog?.cancel();
+    _drainWatchdog = null;
+    _setDraining(false);
   }
 
   void _maybeDrain(MeshcoreInbound f) {
@@ -2972,7 +3003,7 @@ class MeshcoreController extends ChangeNotifier {
     }
     if (!_draining) return;
     if (f is NoMoreMessagesFrame) {
-      _setDraining(false); // queue emptied
+      _endDrain(); // queue emptied
     } else {
       // The frame we just received was the reply to our SYNC (a
       // queued contact/advert/message); pull the next one.
@@ -3545,6 +3576,7 @@ class MeshcoreController extends ChangeNotifier {
     _battHistorySaveTimer?.cancel();
     _telemPollTimer?.cancel();
     _meshbookSaveTimer?.cancel();
+    _drainWatchdog?.cancel();
     for (final Timer t in _deliveryTimers.values) {
       t.cancel();
     }
