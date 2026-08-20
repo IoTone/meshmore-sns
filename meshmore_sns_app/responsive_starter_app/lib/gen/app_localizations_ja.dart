@@ -1265,6 +1265,24 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
+  String get nodeDetailSignature => '着信シグネチャ';
+
+  @override
+  String get nodeDetailSignatureHint =>
+      'この相手専用の音と振動を、通常のDM通知の代わりに使います。タップで試聴できます。';
+
+  @override
+  String get nodeDetailSignatureNone => 'デフォルト';
+
+  @override
+  String nodeDetailSignatureSlot(int n) {
+    return 'シグネチャ $n';
+  }
+
+  @override
+  String get nodeDetailSignatureMutedHint => '音声はミュート中です。振動は伝わりますが音は鳴りません。';
+
+  @override
   String get dmEmpty => '— メッセージはまだありません —';
 
   @override

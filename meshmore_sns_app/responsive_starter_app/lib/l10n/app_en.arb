@@ -597,6 +597,14 @@
   "@dmPubkeyLabel": {
     "placeholders": {"hex": {"type": "String"}}
   },
+  "nodeDetailSignature": "Arrival signature",
+  "nodeDetailSignatureHint": "A sound and a vibration just for this peer, in place of the usual DM cue. Tap to try one.",
+  "nodeDetailSignatureNone": "Default",
+  "nodeDetailSignatureSlot": "Signature {n}",
+  "@nodeDetailSignatureSlot": {
+    "placeholders": {"n": {"type": "int"}}
+  },
+  "nodeDetailSignatureMutedHint": "Audio is muted — you will feel the vibration but not hear it.",
   "dmEmpty": "— no messages yet —",
   "dmOpenPeerDetail": "Peer details",
   "dmSpeech": "Speak this peer",

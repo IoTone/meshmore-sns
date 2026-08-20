@@ -15,7 +15,10 @@ import '../gen/app_localizations.dart';
 import '../meshcore/chat_message.dart';
 import '../meshcore/discovered_node.dart';
 import '../meshcore/meshcore_controller.dart';
+import '../cue/cue_service.dart';
 import '../meshcore/node_telemetry.dart';
+import '../peer/peer_profiles.dart';
+import '../theme/theme_controller.dart';
 import '../util/geo.dart' as geo;
 
 /// R18 polish — modal bottom sheet shown when the user taps a node
@@ -548,6 +551,11 @@ class _NodeDetailSheetState extends State<NodeDetailSheet> {
                 ),
               ],
             ),
+            // R58 — give this peer its own arrival sound + vibration.
+            if (!widget.isSelf) ...<Widget>[
+              const SizedBox(height: 14),
+              _SignaturePicker(pubKeyHex: n.pubKeyHex),
+            ],
             // R57 — a node we've heard but the *radio* doesn't have as a
             // contact can't be DM'd (channel works; DMs route via the
             // device contact list). Offer to push it so DMs reach it.
@@ -1172,4 +1180,80 @@ String? parsePastedPubKey(String query) {
   final String hex =
       query.trim().toLowerCase().replaceAll(RegExp(r'[\s:_\-]'), '');
   return RegExp(r'^[0-9a-f]{12,64}$').hasMatch(hex) ? hex : null;
+}
+
+/// R58 — pick this peer's arrival signature.
+///
+/// Selecting a slot immediately **plays** it. That is the whole point:
+/// a signature has to be recognised, not read, so the only useful way
+/// to choose one is to feel the alternatives back to back. The chip
+/// label is a number rather than a name because the pack decides what
+/// the slot sounds and feels like — naming it "chirp" here would be a
+/// lie under five of the six themes.
+class _SignaturePicker extends StatelessWidget {
+  const _SignaturePicker({required this.pubKeyHex});
+
+  final String pubKeyHex;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations l = AppLocalizations.of(context);
+    final ColorScheme cs = Theme.of(context).colorScheme;
+    final PeerProfiles peers = context.watch<PeerProfiles>();
+    final ThemeController theme = context.watch<ThemeController>();
+    final CueKind? current = peers.signatureFor(pubKeyHex);
+    final bool audioMuted = !theme.audioMaster || theme.visualHapticOnly;
+
+    void choose(CueKind? slot) {
+      unawaited(peers.setSignature(pubKeyHex, slot));
+      // Play what was just chosen, so picking and auditioning are the
+      // same gesture. `playSignature(null)` is the ordinary DM cue,
+      // which is exactly what "Default" should preview.
+      unawaited(context.read<CueService>().playSignature(slot));
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Text(l.nodeDetailSignature,
+            style: Theme.of(context).textTheme.labelLarge),
+        const SizedBox(height: 2),
+        Text(
+          l.nodeDetailSignatureHint,
+          style: Theme.of(context)
+              .textTheme
+              .bodySmall
+              ?.copyWith(color: cs.onSurfaceVariant),
+        ),
+        if (audioMuted) ...<Widget>[
+          const SizedBox(height: 4),
+          Text(
+            l.nodeDetailSignatureMutedHint,
+            style: Theme.of(context)
+                .textTheme
+                .bodySmall
+                ?.copyWith(color: cs.error),
+          ),
+        ],
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: <Widget>[
+            ChoiceChip(
+              label: Text(l.nodeDetailSignatureNone),
+              selected: current == null,
+              onSelected: (_) => choose(null),
+            ),
+            for (int i = 0; i < kSignatureSlots.length; i++)
+              ChoiceChip(
+                label: Text(l.nodeDetailSignatureSlot(i + 1)),
+                selected: current == kSignatureSlots[i],
+                onSelected: (_) => choose(kSignatureSlots[i]),
+              ),
+          ],
+        ),
+      ],
+    );
+  }
 }

@@ -5,6 +5,7 @@ import 'dart:async';
 import '../meshcore/chat_message.dart';
 import '../meshcore/meshcore_connection.dart';
 import '../meshcore/meshcore_controller.dart';
+import '../peer/peer_profiles.dart';
 import '../tts/tts_controller.dart';
 import 'cue_service.dart';
 
@@ -115,9 +116,17 @@ class CueBridge {
   }
 
   void _onIncomingDm(ChatMessage m) {
-    _cue.play(CueKind.dmIn);
     final String? peer = m.peerPubKeyHex;
     final TtsController? tts = _tts;
+
+    // R58 — a peer with a signature gets it *instead of* `dmIn`, never
+    // as well as it. `playSignature(null)` is the ordinary DM cue, so
+    // there is no branch here and no way to accidentally play both.
+    final PeerProfiles? peers = _tts?.peers;
+    _cue.playSignature(
+      peer == null || peers == null ? null : peers.signatureFor(peer),
+    );
+
     if (peer == null || tts == null) return;
     // Fire-and-forget: a slow platform TTS call must not stall the
     // cue path or the message store behind it.

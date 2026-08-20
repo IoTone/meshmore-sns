@@ -597,6 +597,14 @@
   "@dmPubkeyLabel": {
     "placeholders": {"hex": {"type": "String"}}
   },
+  "nodeDetailSignature": "着信シグネチャ",
+  "nodeDetailSignatureHint": "この相手専用の音と振動を、通常のDM通知の代わりに使います。タップで試聴できます。",
+  "nodeDetailSignatureNone": "デフォルト",
+  "nodeDetailSignatureSlot": "シグネチャ {n}",
+  "@nodeDetailSignatureSlot": {
+    "placeholders": {"n": {"type": "int"}}
+  },
+  "nodeDetailSignatureMutedHint": "音声はミュート中です。振動は伝わりますが音は鳴りません。",
   "dmEmpty": "— メッセージはまだありません —",
   "dmOpenPeerDetail": "相手の詳細",
   "dmSpeech": "この相手を読み上げる",

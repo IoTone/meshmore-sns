@@ -2318,6 +2318,36 @@ abstract class AppLocalizations {
   /// **'pubkey · {hex}'**
   String dmPubkeyLabel(String hex);
 
+  /// No description provided for @nodeDetailSignature.
+  ///
+  /// In en, this message translates to:
+  /// **'Arrival signature'**
+  String get nodeDetailSignature;
+
+  /// No description provided for @nodeDetailSignatureHint.
+  ///
+  /// In en, this message translates to:
+  /// **'A sound and a vibration just for this peer, in place of the usual DM cue. Tap to try one.'**
+  String get nodeDetailSignatureHint;
+
+  /// No description provided for @nodeDetailSignatureNone.
+  ///
+  /// In en, this message translates to:
+  /// **'Default'**
+  String get nodeDetailSignatureNone;
+
+  /// No description provided for @nodeDetailSignatureSlot.
+  ///
+  /// In en, this message translates to:
+  /// **'Signature {n}'**
+  String nodeDetailSignatureSlot(int n);
+
+  /// No description provided for @nodeDetailSignatureMutedHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Audio is muted — you will feel the vibration but not hear it.'**
+  String get nodeDetailSignatureMutedHint;
+
   /// No description provided for @dmEmpty.
   ///
   /// In en, this message translates to:

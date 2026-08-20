@@ -1324,6 +1324,25 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get nodeDetailSignature => 'Arrival signature';
+
+  @override
+  String get nodeDetailSignatureHint =>
+      'A sound and a vibration just for this peer, in place of the usual DM cue. Tap to try one.';
+
+  @override
+  String get nodeDetailSignatureNone => 'Default';
+
+  @override
+  String nodeDetailSignatureSlot(int n) {
+    return 'Signature $n';
+  }
+
+  @override
+  String get nodeDetailSignatureMutedHint =>
+      'Audio is muted — you will feel the vibration but not hear it.';
+
+  @override
   String get dmEmpty => '— no messages yet —';
 
   @override

@@ -44,6 +44,94 @@ class _RecordingSpeaker implements TtsSpeaker {
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
+  group('R58 signature replaces dmIn, never stacks with it', () {
+    test('a peer with a signature gets the slot and NOT dmIn', () async {
+      SharedPreferences.setMockInitialValues(<String, Object>{});
+      final FakeMeshcoreTransport fake =
+          FakeMeshcoreTransport(connected: true);
+      final MeshcoreController ctrl =
+          MeshcoreController(transportFactory: () async => fake);
+      final TtsController tts = TtsController(speaker: _RecordingSpeaker());
+      await tts.peers.setSignature('010203040506', CueKind.sig3);
+
+      final _RecordingCue cue = _RecordingCue(ThemeController());
+      final CueBridge bridge = CueBridge(ctrl, cue, tts);
+      await ctrl.connect();
+      fake.emit(contactMessageFrame(
+          prefix: <int>[1, 2, 3, 4, 5, 6], text: 'hi'));
+      await Future<void>.delayed(Duration.zero);
+
+      expect(cue.calls, contains(CueKind.sig3));
+      // Playing both would produce mush and destroy both identities.
+      expect(cue.calls, isNot(contains(CueKind.dmIn)));
+      bridge.dispose();
+      ctrl.dispose();
+    });
+
+    test('a peer without a signature still gets the ordinary dmIn',
+        () async {
+      SharedPreferences.setMockInitialValues(<String, Object>{});
+      final FakeMeshcoreTransport fake =
+          FakeMeshcoreTransport(connected: true);
+      final MeshcoreController ctrl =
+          MeshcoreController(transportFactory: () async => fake);
+      final _RecordingCue cue = _RecordingCue(ThemeController());
+      final CueBridge bridge = CueBridge(
+          ctrl, cue, TtsController(speaker: _RecordingSpeaker()));
+      await ctrl.connect();
+      fake.emit(contactMessageFrame(
+          prefix: <int>[9, 9, 9, 9, 9, 9], text: 'plain'));
+      await Future<void>.delayed(Duration.zero);
+
+      expect(cue.calls, contains(CueKind.dmIn));
+      bridge.dispose();
+      ctrl.dispose();
+    });
+
+    test('a signature set on the full key fires for a prefix-only DM',
+        () async {
+      SharedPreferences.setMockInitialValues(<String, Object>{});
+      final FakeMeshcoreTransport fake =
+          FakeMeshcoreTransport(connected: true);
+      final MeshcoreController ctrl =
+          MeshcoreController(transportFactory: () async => fake);
+      final TtsController tts = TtsController(speaker: _RecordingSpeaker());
+      // The sheet knows the full pubkey; the DM may carry only 12 hex.
+      await tts.peers.setSignature(
+          '010203040506aabbccddeeff00112233', CueKind.sig5);
+
+      final _RecordingCue cue = _RecordingCue(ThemeController());
+      final CueBridge bridge = CueBridge(ctrl, cue, tts);
+      await ctrl.connect();
+      fake.emit(contactMessageFrame(
+          prefix: <int>[1, 2, 3, 4, 5, 6], text: 'short form'));
+      await Future<void>.delayed(Duration.zero);
+
+      expect(cue.calls, contains(CueKind.sig5));
+      expect(cue.calls, isNot(contains(CueKind.dmIn)));
+      bridge.dispose();
+      ctrl.dispose();
+    });
+
+    test('no TtsController wired -> DMs fall back to dmIn', () async {
+      SharedPreferences.setMockInitialValues(<String, Object>{});
+      final FakeMeshcoreTransport fake =
+          FakeMeshcoreTransport(connected: true);
+      final MeshcoreController ctrl =
+          MeshcoreController(transportFactory: () async => fake);
+      final _RecordingCue cue = _RecordingCue(ThemeController());
+      final CueBridge bridge = CueBridge(ctrl, cue); // no tts
+      await ctrl.connect();
+      fake.emit(contactMessageFrame(
+          prefix: <int>[1, 2, 3, 4, 5, 6], text: 'hi'));
+      await Future<void>.delayed(Duration.zero);
+
+      expect(cue.calls, contains(CueKind.dmIn));
+      bridge.dispose();
+      ctrl.dispose();
+    });
+  });
+
   group('R5 channel speech is app-scoped, not screen-scoped', () {
     test('an inbound channel message is spoken with no ChatScreen mounted',
         () async {
