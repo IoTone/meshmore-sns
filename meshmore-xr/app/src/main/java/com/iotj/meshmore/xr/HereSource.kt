@@ -153,6 +153,7 @@ object Settings {
     private const val FILE = "meshmore-xr"
     private const val KEY_DEVICE_LOCATION = "use_device_location"
     private const val KEY_TABLE_ANCHOR = "table_anchor_uuid"
+    private const val KEY_HOME_RADIO = "home_radio_name"
 
     /**
      * THE TABLE THIS APP WAS LAST STOOD ON.
@@ -178,6 +179,38 @@ object Settings {
         context.getSharedPreferences(FILE, Context.MODE_PRIVATE)
             .edit().apply {
                 if (uuid == null) remove(KEY_TABLE_ANCHOR) else putString(KEY_TABLE_ANCHOR, uuid)
+            }.apply()
+    }
+
+    /**
+     * THE RADIO THIS APP LAST HELD A SESSION WITH.
+     *
+     * The scanner used to rank bonded first and loudest second, which is right
+     * exactly once: while an operator owns one radio. The moment they own two
+     * — a companion in a pocket and a node on a bench, which is the normal
+     * case and the case this project has had all along — "loudest bonded" is a
+     * coin toss decided by where somebody is standing.
+     *
+     * It bit on 2026-08-21. Reading D38F07AED563's inbox meant bonding to it,
+     * and from that moment the glasses had two bonded radios and picked
+     * between them by signal strength. The operator's companion is not
+     * whichever of their radios is nearest; it is the one they have been
+     * using, and use is the only evidence of it this app can gather without
+     * asking a question nobody wants to answer twice.
+     *
+     * Stored by BLE name rather than address because the name is what the scan
+     * reports, what the log prints and what the wearer would recognise. Null
+     * until the first successful session, which is when the old ranking is
+     * still the right one.
+     */
+    fun homeRadio(context: Context): String? =
+        context.getSharedPreferences(FILE, Context.MODE_PRIVATE)
+            .getString(KEY_HOME_RADIO, null)
+
+    fun setHomeRadio(context: Context, name: String?) {
+        context.getSharedPreferences(FILE, Context.MODE_PRIVATE)
+            .edit().apply {
+                if (name == null) remove(KEY_HOME_RADIO) else putString(KEY_HOME_RADIO, name)
             }.apply()
     }
 

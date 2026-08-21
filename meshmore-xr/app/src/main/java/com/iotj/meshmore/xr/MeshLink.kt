@@ -651,7 +651,7 @@ class MeshLink(private val context: Context) {
     private var retry: Runnable? = null
 
     /** The arguments of the last [connect], so a retry reaches the same radio. */
-    private var lastPrefix = "MeshCore"
+    private var lastPrefix = DEFAULT_PREFIX
     private var lastPin: String? = null
 
     /**
@@ -710,7 +710,7 @@ class MeshLink(private val context: Context) {
             .all { ContextCompat.checkSelfPermission(context, it) == PackageManager.PERMISSION_GRANTED }
 
     /** Scan for a radio whose advert name starts with [namePrefix], then handshake. */
-    fun connect(namePrefix: String = "MeshCore", pin: String? = null) {
+    fun connect(namePrefix: String = DEFAULT_PREFIX, pin: String? = null) {
         // A RECONNECT REPLAYS THE WHOLE CONTACT LIST, so the suppression has to
         // re-arm here and not only at construction. Otherwise the second
         // connect of a session announces 113 strangers.
@@ -814,8 +814,23 @@ class MeshLink(private val context: Context) {
             // Bonded first, then signal. compareBy is ascending, so maxWith over
             // (isBonded, rssi) picks a bonded radio if there is one and the
             // loudest stranger otherwise.
+            // THE ONE YOU HAVE BEEN USING, THEN BONDED, THEN LOUDEST.
+            //
+            // The first rung is new and the reason is a mistake this app made
+            // on 2026-08-21: reading the receiving radio's inbox meant bonding
+            // to it, and from then on the glasses had two bonded radios and
+            // chose between them by signal strength — so which radio was
+            // "ours" depended on where somebody was standing. An operator's
+            // companion is not whichever of their radios is nearest. It is the
+            // one they have been using, and Settings.homeRadio remembers it
+            // from use rather than from a menu nobody wants to visit twice.
+            val home = Settings.homeRadio(context)
             val best = seen.values.maxWithOrNull(
-                compareBy<ScanResult>({ if (it.device.bondState == BluetoothDevice.BOND_BONDED) 1 else 0 }, { it.rssi })
+                compareBy<ScanResult>(
+                    { if (home != null && runCatching { it.device.name }.getOrNull() == home) 1 else 0 },
+                    { if (it.device.bondState == BluetoothDevice.BOND_BONDED) 1 else 0 },
+                    { it.rssi },
+                ),
             )
             if (best == null) {
                 waited += SCAN_SETTLE_MS
@@ -832,7 +847,11 @@ class MeshLink(private val context: Context) {
             }
             scanner.stopScan(cb)
             val name = runCatching { best.device.name }.getOrNull() ?: best.device.address
-            val why = if (best.device.bondState == BluetoothDevice.BOND_BONDED) "bonded" else "strongest"
+            val why = when {
+                home != null && name == home -> "home"
+                best.device.bondState == BluetoothDevice.BOND_BONDED -> "bonded"
+                else -> "strongest"
+            }
             Log.i(TAG, "[link] ${seen.size} candidate(s) after ${waited + SCAN_SETTLE_MS}ms — " +
                 "$why '$name' rssi=${best.rssi}")
             _status.value = _status.value.copy(scanning = false, deviceName = name, lastEvent = "found $name")
@@ -1945,6 +1964,23 @@ class MeshLink(private val context: Context) {
                     state == SessionState.READY -> {
                         everReady = true
                         retryRung = 0
+                        // REMEMBERED HERE AND NOWHERE EARLIER. A scan finding a
+                        // radio proves nothing, and a bond proves only that a
+                        // code was right — the diagnostic connect to another
+                        // operator's-own node does both. A completed session is
+                        // the first point at which "this is the radio I use" is
+                        // supported by anything, so it is the only point that
+                        // writes it. An explicitly targeted connect never sets
+                        // it either: asking a node a question is not adopting
+                        // it. See Settings.homeRadio.
+                        if (lastPrefix == DEFAULT_PREFIX) {
+                            _status.value.deviceName?.let { n ->
+                                if (Settings.homeRadio(context) != n) {
+                                    Settings.setHomeRadio(context, n)
+                                    Log.i(TAG, "[link] home radio is now '$n'")
+                                }
+                            }
+                        }
                         if (_status.value.droppedAtMs != null) {
                             Log.i(TAG, "[link] recovered after " +
                                 "${(blindForMs() ?: 0L) / 1000}s blind")
@@ -2462,6 +2498,16 @@ class MeshLink(private val context: Context) {
          * link worse than any yet seen — while still settling in fifteen
          * seconds rather than sixty.
          */
+        /**
+         * What every MeshCore radio's BLE name begins with.
+         *
+         * Also the marker for an ORDINARY connect: a prefix narrower than this
+         * came from `--es prefix`, which means somebody is deliberately
+         * reaching one specific radio, and that connect must not be mistaken
+         * for the operator adopting it. See where homeRadio is written.
+         */
+        const val DEFAULT_PREFIX = "MeshCore"
+
         const val LOST_MULTIPLE = 4
 
         /**
