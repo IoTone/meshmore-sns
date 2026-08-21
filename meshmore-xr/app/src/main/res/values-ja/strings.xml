@@ -343,4 +343,6 @@
     <string name="wx_cool">-%1$d 照会直後</string>
     <string name="wx_budget">-%1$d 上限超過</string>
     <string name="wx_to_ask">= %1$d局に照会</string>
+    <string name="wx_unrouted">-%1$d 経路なし・古い</string>
+    <string name="wx_floodcap">-%1$d 経路なし・上限</string>
 </resources>

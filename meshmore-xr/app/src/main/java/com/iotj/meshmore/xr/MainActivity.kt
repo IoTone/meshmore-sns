@@ -1185,6 +1185,10 @@ private fun wxRows(
                             ctx.getString(R.string.wx_hops, n, TelemetryAsk.MAX_HOPS)
                         TelemetryAsk.Skip.TOO_FAR_IN_KM ->
                             ctx.getString(R.string.wx_km, n, TelemetryAsk.MAX_KM.toInt())
+                        TelemetryAsk.Skip.UNROUTED_AND_STALE ->
+                            ctx.getString(R.string.wx_unrouted, n)
+                        TelemetryAsk.Skip.OVER_FLOOD_BUDGET ->
+                            ctx.getString(R.string.wx_floodcap, n)
                         TelemetryAsk.Skip.ALREADY_FRESH -> ctx.getString(R.string.wx_fresh, n)
                         TelemetryAsk.Skip.COOLING_DOWN -> ctx.getString(R.string.wx_cool, n)
                         TelemetryAsk.Skip.OVER_BUDGET -> ctx.getString(R.string.wx_budget, n)

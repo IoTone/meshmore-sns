@@ -2280,6 +2280,19 @@ class MeshLink(
                         var volts: Double? = null
                         var tempC: Double? = null
                         var hum: Double? = null
+                        // ALTITUDE, WHICH NOTHING HAS EVER SET.
+                        //
+                        // MeshNodes.altM is documented as coming from CayenneLPP
+                        // telemetry and the HORIZON draws real altitude ticks
+                        // from it — but no code path ever assigned it, so it has
+                        // been null since it was written and those ticks have
+                        // never drawn once. Found while looking for where the
+                        // temperature was supposed to be displayed.
+                        //
+                        // Two carriers: a bare ALTITUDE reading, and the third
+                        // value of a GPS fix. Prefer the bare one when both
+                        // arrive — it is the sensor rather than a by-product.
+                        var altM: Double? = null
                         val other = HashMap<Int, List<Double>>()
                         entries.forEach { e ->
                             when (e.type()) {
@@ -2289,6 +2302,17 @@ class MeshLink(
                                     tempC = e.values().firstOrNull()
                                 io.iotone.meshcore.codec.CayenneLpp.LppType.HUMIDITY ->
                                     hum = e.values().firstOrNull()
+                                io.iotone.meshcore.codec.CayenneLpp.LppType.ALTITUDE ->
+                                    altM = e.values().firstOrNull()
+                                io.iotone.meshcore.codec.CayenneLpp.LppType.GPS_LOCATION -> {
+                                    // lat, lon, altitude — the altitude only,
+                                    // because a position learned from telemetry
+                                    // has a different provenance from one learned
+                                    // from a contact record and notePosition is
+                                    // the one place allowed to decide that.
+                                    if (altM == null) altM = e.values().getOrNull(2)
+                                    other[e.type()] = e.values()
+                                }
                                 // KEPT, not dropped. A sensor we have not seen
                                 // before is information; a decoder that
                                 // discards the unfamiliar makes a mesh look
@@ -2306,7 +2330,17 @@ class MeshLink(
                             (if (other.isEmpty()) "" else "  types=${other.keys}"))
                         diag("TELEM    ${hit?.name?.ifBlank { null } ?: pre}  $t")
                         if (hit != null) {
-                            peers[hit.key] = hit.copy(telemetry = t)
+                            peers[hit.key] = hit.copy(
+                                telemetry = t,
+                                // KEPT WHEN THIS REPLY CARRIES NONE. A radio
+                                // that reported its altitude once has not
+                                // descended to sea level by failing to mention
+                                // it again.
+                                altM = altM ?: hit.altM,
+                            )
+                            if (altM != null) {
+                                Log.i(TAG, "[telemetry] ${hit.name} altitude ${altM}m")
+                            }
                             publish()
                         }
                     }

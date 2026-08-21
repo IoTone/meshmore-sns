@@ -37,6 +37,15 @@ class TelemetryAskTest {
         telemetry = telemAgeS?.let { MeshNodes.Telemetry(atEpochSec = NOW - it, tempC = 20.0) },
     )
 
+    /**
+     * A contact with NO STORED ROUTE, which is what MeshCore's 0xFF path
+     * length becomes: hops = 256 and the flood flag set. On the operator's own
+     * mesh this is 349 of 350 contacts.
+     */
+    private fun unrouted(n: String, heardAgoS: Long = 60) = peer(n).copy(
+        hops = 256, flood = true, lastSeenEpochSec = NOW - heardAgoS,
+    )
+
     private val here = MeshNodes.Here(45.5152, -122.6784)
 
     @Test fun aPlainNearbyNodeIsAsked() {
@@ -148,5 +157,61 @@ class TelemetryAskTest {
             TelemetryAsk.report(40, 6, 4),
         )
         assertEquals("asked 0, answered 0, 0 with a sensor", TelemetryAsk.report(0, 0, 0))
+    }
+
+    // --- the unrouted, which is nearly the whole mesh ------------------------
+
+    /**
+     * THE BUG THIS FILE EXISTS FOR. A first sweep on the real mesh asked ONE
+     * radio of 350 and reported "-349 more than 2 hops away", because a
+     * contact with no stored route arrives as hops = 256 and the planner read
+     * the sentinel as a distance. The rest of the app already knew better —
+     * the roster splits on `hops in 2..249`.
+     */
+    @Test fun anUnroutedNodeIsNotAFarawayNode() {
+        val mesh = (1..20).map { unrouted("u$it") }
+        val p = TelemetryAsk.plan(mesh, here, NOW)
+        assertEquals(0, p.skipped[TelemetryAsk.Skip.TOO_FAR_IN_HOPS] ?: 0)
+        assertEquals(TelemetryAsk.FLOOD_BUDGET, p.askCount)
+    }
+
+    /** Flooding is rationed separately, and the remainder is reported. */
+    @Test fun unroutedNodesGetTheirOwnSmallerBudget() {
+        val mesh = (1..30).map { unrouted("u$it") }
+        val p = TelemetryAsk.plan(mesh, here, NOW)
+        assertEquals(TelemetryAsk.FLOOD_BUDGET, p.askCount)
+        assertEquals(30 - TelemetryAsk.FLOOD_BUDGET, p.skipped[TelemetryAsk.Skip.OVER_FLOOD_BUDGET])
+    }
+
+    /** A flood at a node nobody has heard from in days is a shot in the dark. */
+    @Test fun anUnroutedNodeNotHeardLatelyIsNotWorthAFlood() {
+        val p = TelemetryAsk.plan(listOf(unrouted("gone", heardAgoS = 3 * 24 * 3600)), here, NOW)
+        assertEquals(0, p.askCount)
+        assertEquals(1, p.skipped[TelemetryAsk.Skip.UNROUTED_AND_STALE])
+    }
+
+    /** Cheap before expensive: a stored route costs less than a flood. */
+    @Test fun routedNodesAreAskedBeforeUnroutedOnes() {
+        val mesh = listOf(unrouted("flood1"), peer("routed"), unrouted("flood2"))
+        val p = TelemetryAsk.plan(mesh, here, NOW)
+        assertEquals("routed", p.ask.first().name)
+    }
+
+    /** And among floods, the one heard most recently is the best bet. */
+    @Test fun theMostRecentlyHeardFloodGoesFirst() {
+        val mesh = listOf(unrouted("old", heardAgoS = 3000), unrouted("fresh", heardAgoS = 30))
+        val p = TelemetryAsk.plan(mesh, here, NOW)
+        assertEquals(listOf("fresh", "old"), p.ask.map { it.name })
+    }
+
+    /** The census still closes with the two new reasons in it. */
+    @Test fun everyNodeIsStillEitherAskedOrExplained() {
+        val mesh = (1..40).map { unrouted("u$it") } +
+            (1..5).map { unrouted("s$it", heardAgoS = 9 * 3600) } +
+            (1..10).map { peer("r$it") } +
+            (1..6).map { peer("k$it", full = false) }
+        val p = TelemetryAsk.plan(mesh, here, NOW)
+        assertEquals(61, p.considered)
+        assertEquals(p.considered, p.askCount + p.skipped.values.sum())
     }
 }

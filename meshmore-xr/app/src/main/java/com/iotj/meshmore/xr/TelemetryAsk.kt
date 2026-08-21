@@ -56,6 +56,43 @@ object TelemetryAsk {
     /** Furthest tier: two hops, and only if we also know it is close. */
     const val MAX_HOPS = 2
 
+    /**
+     * At or above this, the hop count is not a hop count.
+     *
+     * MeshCore stores 0xFF in a contact's path length to mean NO STORED ROUTE,
+     * and this app turns that into hops = 256. The rest of the app already
+     * reads it correctly — the roster splits on `hops in 2..249`, node focus
+     * says "unknown" at 250 and above — and the first version of this planner
+     * did not, so it called 349 of 350 contacts "more than 2 hops away" and
+     * asked exactly one radio for the weather. Measured on the operator's own
+     * mesh, 2026-08-21, which is how it was found.
+     *
+     * An unrouted contact is not far. It is unrouted, and MeshCore reaches it
+     * by flooding — reachable immediately, at a price.
+     */
+    const val HOPS_UNKNOWN = 250
+
+    /**
+     * How many UNROUTED nodes one sweep will ask.
+     *
+     * Lower than the sweep budget on purpose. A request to a node with a
+     * stored path travels that path; a request to an unrouted one is repeated
+     * by every repeater that hears it, so a dozen of those is already a
+     * noticeable amount of somebody else's evening. Twelve is enough to fill a
+     * weather readout and small enough to defend.
+     */
+    const val FLOOD_BUDGET = 12
+
+    /**
+     * And an unrouted node is only worth a flood if it has been heard lately.
+     *
+     * A contact last heard three days ago may be switched off, moved, or a
+     * hilltop echo. Spending a flood on it is a shot in the dark that everyone
+     * within range pays for; six hours is the window in which "it was there
+     * recently" is still evidence.
+     */
+    const val FLOOD_MAX_AGE_S = 6 * 3600L
+
     /** Kilometres. A node heard from a hilltop is not a weather station. */
     const val MAX_KM = 100.0
 
@@ -72,6 +109,12 @@ object TelemetryAsk {
 
         /** Two hops away is only acceptable if it is also near. */
         TOO_FAR_IN_KM,
+
+        /** No stored route, and not heard recently enough to justify a flood. */
+        UNROUTED_AND_STALE,
+
+        /** No stored route, heard lately, but past this sweep's flood budget. */
+        OVER_FLOOD_BUDGET,
 
         /** We already know, recently enough. */
         ALREADY_FRESH,
@@ -115,6 +158,8 @@ object TelemetryAsk {
         private fun reason(s: Skip): String = when (s) {
             Skip.NO_FULL_KEY -> "no full key (heard, never synced)"
             Skip.TOO_FAR_IN_HOPS -> "more than $MAX_HOPS hops away"
+            Skip.UNROUTED_AND_STALE -> "no route, not heard in ${FLOOD_MAX_AGE_S / 3600} h"
+            Skip.OVER_FLOOD_BUDGET -> "no route, past the flood budget of $FLOOD_BUDGET"
             Skip.TOO_FAR_IN_KM -> "further than ${MAX_KM.toInt()} km"
             Skip.ALREADY_FRESH -> "already answered in the last ${FRESH_S / 60} min"
             Skip.COOLING_DOWN -> "asked in the last ${COOLDOWN_S / 60} min"
@@ -139,31 +184,56 @@ object TelemetryAsk {
         val skipped = mutableMapOf<Skip, Int>()
         fun drop(s: Skip) { skipped[s] = (skipped[s] ?: 0) + 1 }
 
-        val eligible = peers.mapNotNull { p ->
+        // ROUTED AND UNROUTED ARE DIFFERENT QUESTIONS, so they are separated
+        // here and rejoined at the end. A routed node is judged on how far the
+        // question has to travel; an unrouted one on whether it is worth a
+        // flood at all.
+        val routed = mutableListOf<Pair<MeshNodes.Peer, Double?>>()
+        val unrouted = mutableListOf<MeshNodes.Peer>()
+
+        peers.forEach { p ->
             val full = p.fullKey
-            if (full == null || full.length != 64) { drop(Skip.NO_FULL_KEY); return@mapNotNull null }
-            if (p.hops > MAX_HOPS) { drop(Skip.TOO_FAR_IN_HOPS); return@mapNotNull null }
+            if (full == null || full.length != 64) { drop(Skip.NO_FULL_KEY); return@forEach }
+            val age = p.telemetry?.atEpochSec?.let { nowEpochSec - it }
+            if (age != null && age in 0 until FRESH_S) { drop(Skip.ALREADY_FRESH); return@forEach }
+            val since = asked[full]?.let { nowEpochSec - it }
+            if (since != null && since in 0 until COOLDOWN_S) { drop(Skip.COOLING_DOWN); return@forEach }
+
+            if (p.hops >= HOPS_UNKNOWN || p.flood) {
+                val heard = nowEpochSec - p.lastSeenEpochSec
+                if (heard > FLOOD_MAX_AGE_S) { drop(Skip.UNROUTED_AND_STALE); return@forEach }
+                unrouted += p
+                return@forEach
+            }
+            if (p.hops > MAX_HOPS) { drop(Skip.TOO_FAR_IN_HOPS); return@forEach }
             val km = distanceKm(origin, p)
             // ONLY A KNOWN distance can disqualify. A node with no position is
             // not thereby far away — it is unmeasured, and the hop count has
             // already vouched for it.
-            if (km != null && km > MAX_KM) { drop(Skip.TOO_FAR_IN_KM); return@mapNotNull null }
-            val age = p.telemetry?.atEpochSec?.let { nowEpochSec - it }
-            if (age != null && age in 0 until FRESH_S) { drop(Skip.ALREADY_FRESH); return@mapNotNull null }
-            val since = asked[full]?.let { nowEpochSec - it }
-            if (since != null && since in 0 until COOLDOWN_S) { drop(Skip.COOLING_DOWN); return@mapNotNull null }
-            p to km
+            if (km != null && km > MAX_KM) { drop(Skip.TOO_FAR_IN_KM); return@forEach }
+            routed += p to km
         }
 
         // NEAREST FIRST, IN THE SENSE THAT COSTS LEAST. Hops before kilometres
         // because hops are what other people's radios pay; a node with no
         // position sorts after the located ones at the same hop count rather
         // than being pushed to the back of the whole queue.
-        val ordered = eligible.sortedWith(
+        val routedOrder = routed.sortedWith(
             compareBy<Pair<MeshNodes.Peer, Double?>>({ it.first.hops })
                 .thenBy { it.second ?: Double.MAX_VALUE / 2 }
                 .thenByDescending { it.first.lastSeenEpochSec },
         ).map { it.first }
+
+        // MOST RECENTLY HEARD FIRST among the unrouted, because recency is the
+        // only evidence available that a flood will reach anybody.
+        val floodOrder = unrouted.sortedByDescending { it.lastSeenEpochSec }
+        if (floodOrder.size > FLOOD_BUDGET) {
+            skipped[Skip.OVER_FLOOD_BUDGET] = floodOrder.size - FLOOD_BUDGET
+        }
+
+        // Routed first: they are cheaper, and if the budget runs out it should
+        // run out on the expensive ones.
+        val ordered = routedOrder + floodOrder.take(FLOOD_BUDGET)
 
         if (ordered.size > budget) skipped[Skip.OVER_BUDGET] = ordered.size - budget
         return Plan(ordered.take(budget), skipped, peers.size)
