@@ -61,4 +61,29 @@ class MiniSoakTest {
         val m = MiniSoak.message("00:00:00", 1)
         assertEquals(m, String(m.toByteArray(Charsets.UTF_8), Charsets.UTF_8))
     }
+
+    /**
+     * A RUN HAS TO VARY WHAT IT MEASURES.
+     *
+     * Twenty identical packets produced a by-size breakdown of exactly one
+     * row, which is the aggregate wearing a label. Each length must land in a
+     * different TxLog bucket or the comparison is not a comparison.
+     */
+    @Test
+    fun aRunCoversThreeDifferentSizeBuckets() {
+        val buckets = (1..MiniSoak.COUNT).map {
+            TxLog.sizeBucket(MiniSoak.bytes(MiniSoak.message("14:03:22", it, MiniSoak.sizeFor(it))))
+        }.toSet()
+        org.junit.Assert.assertEquals(3, buckets.size)
+    }
+
+    /** And each length must actually be close to what it asked for. */
+    @Test
+    fun everyLengthFillsItsBudget() {
+        MiniSoak.SIZES.forEach { want ->
+            val n = MiniSoak.bytes(MiniSoak.message("14:03:22", 1, want))
+            org.junit.Assert.assertTrue("$want asked, $n built", n <= want)
+            org.junit.Assert.assertTrue("$want asked, only $n built", n >= want - 8)
+        }
+    }
 }

@@ -235,6 +235,17 @@ class MainActivity : ComponentActivity() {
          * looked at.
          */
         var crownProbe: Boolean = false
+
+        /**
+         * `--ei soak N` runs N soaks back to back at a starred node and prints
+         * the ledger after each.
+         *
+         * A one-in-ten loss cannot be seen in ten messages: the run that shows
+         * 10/10 and the run that shows 8/10 are the same mesh. The rate needs
+         * a few hundred packets, which is an hour of somebody pinching a menu
+         * — so it is a flag, and the glasses can be left on a table doing it.
+         */
+        var soakRuns: Int = 0
         /** --ez focus true : open S3 NODE FOCUS on the first node that arrives. */
         var showFocus: Boolean = false
         /**
@@ -427,6 +438,7 @@ class MainActivity : ComponentActivity() {
         boardOverride = intent?.getStringExtra("board")?.takeIf { it.isNotBlank() }
         showMenu = intent?.getBooleanExtra("menu", false) ?: false
         crownProbe = intent?.getBooleanExtra("crown", false) ?: false
+        soakRuns = intent?.getIntExtra("soak", 0) ?: 0
         showFocus = intent?.getBooleanExtra("focus", false) ?: false
         probePaths = intent?.getBooleanExtra("probe", false) ?: false
         probePlanes = intent?.getBooleanExtra("planes", false) ?: false
@@ -1452,6 +1464,93 @@ private const val NODE_MENU_SIDE = 0.55f
  * too little is another sweep and the cost of collecting too much is a contact
  * the operator wanted.
  */
+/**
+ * How long a soak waits after its last packet before it calls a message lost.
+ *
+ * The radio publishes its own estimate — 2.2 s on a known route, 8 s flooded —
+ * and nothing measured on this mesh has come back past 2.4 s. Twenty seconds
+ * is therefore not a guess, it is a wide margin around the worst thing ever
+ * observed, chosen so that an unanswered message means the mesh dropped it and
+ * not that the report was written too early.
+ */
+private const val SOAK_SETTLE_MS = 20_000L
+
+/**
+ * THE SOAK ITSELF, IN ONE PLACE.
+ *
+ * Ten full-length packets six seconds apart at one node, then a wait long
+ * enough that silence means the mesh dropped something rather than that the
+ * report was written early. Extracted from the crown's action because a
+ * measurement you can only start by pinching a menu is a measurement you
+ * cannot repeat, and repeating it is the entire point — the loss being chased
+ * is roughly one in ten, which no single run can resolve.
+ *
+ * Returns the finished ledger so a caller can report it however it likes.
+ */
+private suspend fun runSoakAt(
+    ctx: android.content.Context,
+    link: MeshLink,
+    peerKey: String,
+    say: (String) -> Unit = {},
+): List<TxLog.Attempt> {
+    val fmt = java.text.SimpleDateFormat("HH:mm:ss", java.util.Locale.US)
+    val before = link.delivery.value
+    // THE RUN MEASURES ITSELF. The ledger is a rolling window over everything
+    // the app has ever sent, and a soak whose report includes this morning's
+    // messages is not a measurement of anything.
+    link.clearTxLog()
+    var accepted = 0
+    // COUNTED, NOT ASSUMED. The run can stop early at a refusal, and a report
+    // that says ten when six left is a reliability figure computed from a
+    // number nobody measured.
+    var attempted = 0
+    var why: String? = null
+    for (n in 1..MiniSoak.COUNT) {
+        val text = MiniSoak.message(fmt.format(java.util.Date()), n, MiniSoak.sizeFor(n))
+        val res = link.sendTo(peerKey, text)
+        attempted++
+        link.noteAttempt(res is MeshLink.Sent.Ok)
+        if (res is MeshLink.Sent.Ok) accepted++
+        else if (why == null) why = (res as? MeshLink.Sent.Refused)?.why ?: res.toString()
+        Log.i(
+            TAG_UI,
+            "[minisoak] %02d/%d %dB (%d chars) %s".format(
+                n, MiniSoak.COUNT, MiniSoak.bytes(text), text.length,
+                if (res is MeshLink.Sent.Ok) "accepted" else "REFUSED $why",
+            ),
+        )
+        // A REFUSAL DOES NOT HEAL. The reasons sendTo can refuse are the
+        // allow-list and a radio that is not there; neither changes in six
+        // seconds, so the other nine attempts would only spend a minute
+        // arriving at the same sentence.
+        if (res is MeshLink.Sent.Refused) {
+            Log.w(TAG_UI, "[minisoak] stopped at $n: $why")
+            break
+        }
+        if (n < MiniSoak.COUNT) kotlinx.coroutines.delay(MiniSoak.EVERY_S * 1000L)
+    }
+    // LONG ENOUGH THAT SILENCE MEANS SOMETHING. The radio estimates 2.2 s
+    // direct and 8 s flooded, and nothing measured here has ever come back past
+    // 2.4 s — so twenty seconds is a generous multiple, and the sweep at the
+    // end of it turns "no ack yet" into "no ack", which is what is counted.
+    kotlinx.coroutines.delay(SOAK_SETTLE_MS)
+    link.sweepLost(afterMs = SOAK_SETTLE_MS)
+    val d = link.delivery.value
+    val acked = (d.acked - before.acked).coerceAtLeast(0)
+    val ledger = link.txAttempts()
+    Log.i(
+        TAG_UI,
+        "[minisoak] DONE " + MiniSoak.report(attempted, accepted, acked, d.meanLatencyMs ?: 0L),
+    )
+    // AND WHERE THEY WENT. The line above is the count this app always had;
+    // these are the slices that say which repair the loss is asking for.
+    TxLog.report(ledger).forEach { Log.i(TAG_UI, "[minisoak] $it") }
+    Alerts.info("SOAK", TxLog.headline(ledger))
+    say(ctx.getString(R.string.n_soak_done, acked, MiniSoak.COUNT))
+    return ledger
+}
+
+
 private const val GC_FAR_KM = 100.0
 
 /** How many contacts a sweep would take right now, for the row's own label. */
@@ -2356,6 +2455,35 @@ private fun HorizonScene(link: MeshLink) {
         c.target = com.iotj.meshmore.xr.spatial.Crown.Target(n.fullKey ?: n.key, n.name)
         c.show()
         Log.i(TAG_UI, "[crown] probe — actions on '${n.name}' key=${n.key}")
+    }
+
+    LaunchedEffect(link, nodesRef.value) {
+        val runs = MainActivity.soakRuns
+        if (runs <= 0 || soakRunning.value) return@LaunchedEffect
+        val all = nodesRef.value
+        if (all.isEmpty()) return@LaunchedEffect
+        // A NODE THE OPERATOR OWNS, or nothing. The transmitter refuses
+        // anything else anyway; picking a starred node here means the run
+        // fails as "no authorised node in range" rather than as ten refusals.
+        val n = all.firstOrNull { link.isStarred(it.fullKey ?: it.key, tagsRef::isFavourite) }
+        if (n == null) {
+            Log.w(TAG_UI, "[minisoak] --ei soak: no starred node in the mesh yet")
+            return@LaunchedEffect
+        }
+        soakRunning.value = true
+        val key = n.fullKey ?: n.key
+        Log.i(TAG_UI, "[minisoak] probe — $runs run(s) at '${n.name}'")
+        val all0 = mutableListOf<TxLog.Attempt>()
+        repeat(runs) { i ->
+            Log.i(TAG_UI, "[minisoak] === run ${i + 1}/$runs ===")
+            all0 += runSoakAt(ctx, link, key)
+            // THE WHOLE SESSION, NOT JUST THE LAST MINUTE. Each run clears the
+            // ledger so its own report is about itself; this keeps the union so
+            // the rate has enough packets under it to mean something.
+            TxLog.report(all0).forEach { Log.i(TAG_UI, "[minisoak] all| $it") }
+        }
+        Log.i(TAG_UI, "[minisoak] probe complete — ${all0.size} packets over $runs run(s)")
+        soakRunning.value = false
     }
 
     // THE CARD, BUILT OFF THE FRAME LOOP. Keyed on what it would say, so a
@@ -3907,77 +4035,12 @@ private fun HorizonScene(link: MeshLink) {
                                     runSoak = { peerKey ->
                                         soakRunning.value = true
                                         launch {
-                                            val fmt = java.text.SimpleDateFormat(
-                                                "HH:mm:ss", java.util.Locale.US,
-                                            )
-                                            val before = link.delivery.value
-                                            var accepted = 0
-                                            // COUNTED, NOT ASSUMED. The run can
-                                            // stop early at a refusal, and a
-                                            // report that says ten when six
-                                            // left is a reliability figure
-                                            // computed from a number nobody
-                                            // measured.
-                                            var attempted = 0
-                                            var why: String? = null
-                                            for (n in 1..MiniSoak.COUNT) {
-                                                val text = MiniSoak.message(
-                                                    fmt.format(java.util.Date()), n,
+                                            runSoakAt(ctx, link, peerKey) {
+                                                cw.say(
+                                                    it,
+                                                    android.os.SystemClock.uptimeMillis(),
                                                 )
-                                                val res = link.sendTo(peerKey, text)
-                                                attempted++
-                                                link.noteAttempt(res is MeshLink.Sent.Ok)
-                                                if (res is MeshLink.Sent.Ok) accepted++
-                                                else if (why == null) {
-                                                    why = (res as? MeshLink.Sent.Refused)?.why
-                                                        ?: res.toString()
-                                                }
-                                                Log.i(
-                                                    TAG_UI,
-                                                    "[minisoak] %02d/%d %dB (%d chars) %s".format(
-                                                        n, MiniSoak.COUNT,
-                                                        MiniSoak.bytes(text), text.length,
-                                                        if (res is MeshLink.Sent.Ok) "accepted"
-                                                        else "REFUSED $why",
-                                                    ),
-                                                )
-                                                // A REFUSAL DOES NOT HEAL. The
-                                                // reasons sendTo can refuse are
-                                                // the allow-list and a radio
-                                                // that is not there; neither
-                                                // changes in six seconds, so
-                                                // the other nine attempts would
-                                                // only spend a minute arriving
-                                                // at the same sentence.
-                                                if (res is MeshLink.Sent.Refused) {
-                                                    Log.w(TAG_UI, "[minisoak] stopped at $n: $why")
-                                                    break
-                                                }
-                                                if (n < MiniSoak.COUNT) {
-                                                    kotlinx.coroutines.delay(
-                                                        MiniSoak.EVERY_S * 1000L,
-                                                    )
-                                                }
                                             }
-                                            // A beat for the last ack: the radio
-                                            // estimates 2.2s direct, and the run
-                                            // is already a minute long.
-                                            kotlinx.coroutines.delay(10_000)
-                                            val d = link.delivery.value
-                                            val acked =
-                                                (d.acked - before.acked).coerceAtLeast(0)
-                                            val line = MiniSoak.report(
-                                                attempted, accepted, acked,
-                                                d.meanLatencyMs ?: 0L,
-                                            )
-                                            Log.i(TAG_UI, "[minisoak] DONE $line")
-                                            Alerts.info("SOAK", line.uppercase())
-                                            cw.say(
-                                                ctx.getString(
-                                                    R.string.n_soak_done, acked, MiniSoak.COUNT,
-                                                ),
-                                                android.os.SystemClock.uptimeMillis(),
-                                            )
                                             soakRunning.value = false
                                         }
                                         Unit

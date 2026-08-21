@@ -967,6 +967,63 @@ class MeshLink(private val context: Context) {
     val delivery: StateFlow<Delivery> = _delivery.asStateFlow()
 
     /**
+     * ONE RECORD PER SEND, so a loss can be attributed rather than counted.
+     *
+     * The counters above say nine in ten arrived. This says which one did not,
+     * how long it was, whether the radio flooded it and how far the contact
+     * was — which is the difference between knowing there is a problem and
+     * knowing what to change. See [TxLog].
+     *
+     * A plain synchronised list: writes happen on the transport callback
+     * thread and reads on the frame loop, and at one entry per send the lock
+     * is never contended.
+     */
+    private val txLog = java.util.Collections.synchronizedList(mutableListOf<TxLog.Attempt>())
+    private var txSeq = 0
+
+    /** The ledger, newest last. A copy, so a caller cannot be torn mid-read. */
+    fun txAttempts(): List<TxLog.Attempt> = synchronized(txLog) { txLog.toList() }
+
+    /** Forget the run so far, so a soak measures itself and not the morning. */
+    fun clearTxLog() {
+        synchronized(txLog) { txLog.clear() }
+        Log.i(TAG, "[tx] ledger cleared")
+    }
+
+    private fun openAttempt(peer: MeshNodes.Peer, text: String) {
+        synchronized(txLog) {
+            txSeq += 1
+            txLog += TxLog.Attempt(
+                seq = txSeq,
+                atMs = System.currentTimeMillis(),
+                bytes = text.toByteArray(Charsets.UTF_8).size,
+                peer = peer.name.ifBlank { peer.key },
+                hops = peer.hops,
+            )
+            while (txLog.size > TxLog.KEEP) txLog.removeAt(0)
+        }
+    }
+
+    /**
+     * Complete the newest record in place.
+     *
+     * THE NEWEST RATHER THAN A MATCHED ONE, for the acceptance: the radio
+     * answers a send with its tag before this app can send anything else — the
+     * same single-in-flight fact [awaitingTag] already relies on. An ack, by
+     * contrast, arrives long after and out of order, so it is matched by tag.
+     */
+    private fun editAttempt(tag: Long?, edit: (TxLog.Attempt) -> TxLog.Attempt) {
+        synchronized(txLog) {
+            val i = if (tag == null) {
+                txLog.indexOfLast { !it.accepted }
+            } else {
+                txLog.indexOfLast { it.tag == tag }
+            }
+            if (i >= 0) txLog[i] = edit(txLog[i])
+        }
+    }
+
+    /**
      * The message whose SENT confirmation has not arrived yet.
      *
      * Set the instant a send is handed to the radio and cleared by the very
@@ -1008,6 +1065,7 @@ class MeshLink(private val context: Context) {
         val stale = pending.filter { nowMs - it.value > afterMs }.keys
         if (stale.isEmpty()) return
         stale.forEach { pending.remove(it) }
+        stale.forEach { t -> editAttempt(t) { it.copy(gaveUp = true) } }
         var hit = false
         _msgs.value = _msgs.value.map {
             if (it.ackTag in stale && it.delivery == Delivered.SENT) {
@@ -1368,6 +1426,7 @@ class MeshLink(private val context: Context) {
         val full = unhex(peer.fullKey ?: peer.key)
         if (full == null || full.size < 6) return Sent.Refused("UNUSABLE KEY")
         Log.i(TAG, "[tx] -> name='${peer.name}' key=${peer.key} (authorised)")
+        openAttempt(peer, text)
         diag(">>DM   ${peer.name.ifBlank { peer.key.takeLast(4) }}")
         return runCatching {
             s.sendDirectMessage(
@@ -2284,6 +2343,13 @@ class MeshLink(private val context: Context) {
                         ))
                         val tag = frame.sent().expectedAck()
                         pending[tag] = System.currentTimeMillis()
+                        editAttempt(null) {
+                            it.copy(
+                                accepted = true, tag = tag,
+                                flood = frame.sent().isFlood(),
+                                estTimeoutMs = frame.sent().estTimeoutMs(),
+                            )
+                        }
                         _delivery.value = _delivery.value.copy(
                             accepted = _delivery.value.accepted + 1,
                             lastTag = tag,
@@ -2294,6 +2360,7 @@ class MeshLink(private val context: Context) {
                         markDelivered(frame.ackCrc())
                         val at = pending.remove(frame.ackCrc())
                         val ms = at?.let { System.currentTimeMillis() - it }
+                        if (ms != null) editAttempt(frame.ackCrc()) { it.copy(ackMs = ms) }
                         _delivery.value = _delivery.value.copy(
                             acked = _delivery.value.acked + 1,
                             lastLatencyMs = ms ?: _delivery.value.lastLatencyMs,

@@ -38,6 +38,27 @@ object MiniSoak {
      */
     const val TARGET_BYTES = 140
 
+    /**
+     * THE THREE LENGTHS A RUN CYCLES THROUGH.
+     *
+     * The first twenty packets this instrument sent were all 135 bytes, all
+     * direct, all one hop — so the ledger's by-size, by-route and by-hop
+     * breakdowns each came back as a single row saying 95%, which is the
+     * number that was already known. A measurement that cannot vary the thing
+     * it is measuring cannot attribute anything.
+     *
+     * So a run rotates through a short, a middling and a full-length message,
+     * and each lands in a different one of [TxLog]'s size buckets. If loss
+     * concentrates in the long one, the packet is over the link budget in use
+     * and the repair is a spreading factor. If it does not, the loss is the
+     * radio link itself and no amount of shortening will help — which is worth
+     * knowing before anybody spends a week shortening things.
+     */
+    val SIZES = listOf(48, 96, TARGET_BYTES)
+
+    /** Which length message [n] of a run should be, 1-based. */
+    fun sizeFor(n: Int): Int = SIZES[(n - 1) % SIZES.size]
+
     /** Latin, kanji and emoji in rotation — one of each per cycle. */
     private val FILLER = listOf(
         "MESH", "電波", "🛰", "TEST", "受信", "📡", "LINK", "中継", "🔆", "NODE", "確認", "✅",
