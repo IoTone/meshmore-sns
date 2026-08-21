@@ -44,7 +44,20 @@ object TxLog {
         val hops: Int,
         /** False until the radio says it accepted it for transmission. */
         val accepted: Boolean = false,
-        /** Null until accepted; the radio repeated it to every repeater in range. */
+        /**
+         * Null until accepted. What the SENDING radio said it did.
+         *
+         * TREAT THIS SLICE WITH SUSPICION. On 2026-08-21 every one of thirty
+         * messages was reported "direct" by the sending radio's own sent-frame
+         * and arrived at D38F07AED563 with pathLen 0xFF, which is FLOOD — read
+         * off the receiving radio by connecting to it. Both numbers come from
+         * MeshCore and they disagree about every single packet, so at most one
+         * of them means what this app takes it to mean.
+         *
+         * Until that is resolved the by-route breakdown is measuring the
+         * sender's claim rather than the route, and a finding that rests on it
+         * should not be believed. Nothing else in the ledger depends on it.
+         */
         val flood: Boolean? = null,
         /** The radio's own estimate of the round trip, milliseconds. */
         val estTimeoutMs: Long = 0L,

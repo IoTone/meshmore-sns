@@ -246,6 +246,14 @@ class MainActivity : ComponentActivity() {
          * — so it is a flag, and the glasses can be left on a table doing it.
          */
         var soakRuns: Int = 0
+
+        /**
+         * `--es prefix <BLE name>` restricts the connect to one radio.
+         *
+         * Only for asking a specific device a question — see where it is read.
+         * Left null in normal use, where the scanner's own ranking is right.
+         */
+        var namePrefix: String? = null
         /** --ez focus true : open S3 NODE FOCUS on the first node that arrives. */
         var showFocus: Boolean = false
         /**
@@ -411,6 +419,17 @@ class MainActivity : ComponentActivity() {
 
         // The radio's PIN is random per boot (MyMesh.cpp:932), so allow it to be
         // supplied at launch:  adb shell am start -n .../.MainActivity --es pin 123456
+        // WHICH RADIO, WHEN THERE ARE THREE IN THE ROOM.
+        //
+        // The scanner ranks bonded first and strongest second, which is right
+        // for a wearer putting the glasses on. It is wrong for the one job
+        // that needs a specific radio: asking the RECEIVING end whether the
+        // messages arrived. The soak sends from whichever radio the glasses
+        // are bonded to; the only device that knows whether the mesh delivered
+        // them is the one they were addressed to, and the only way to ask it
+        // is to connect to it. `--es prefix MeshCore-D38F07AED563` does that.
+        val prefix = intent?.getStringExtra("prefix")
+        namePrefix = prefix?.takeIf { it.isNotBlank() }
         val pin = intent?.getStringExtra("pin")
         Log.i(TAG, "[boot] pin override = ${pin ?: "<none, using built-in>"}")
         val debug = intent?.getBooleanExtra("debug", false) ?: false
@@ -609,7 +628,15 @@ private fun Root(facts: List<Pair<String, String>>, link: MeshLink, pinOverride:
             return
         }
         Log.i(TAG_UI, "[link] auto-connect at startup")
-        if (pinOverride != null) link.connect(pin = pinOverride) else link.connect()
+        val want = MainActivity.namePrefix
+        when {
+            want != null -> {
+                Log.i(TAG_UI, "[link] auto-connect restricted to '$want'")
+                link.connect(namePrefix = want, pin = pinOverride)
+            }
+            pinOverride != null -> link.connect(pin = pinOverride)
+            else -> link.connect()
+        }
     }
 
     // THE FAKE MESH, LOADED ONCE, AT THE SOURCE.
