@@ -47,16 +47,38 @@ object TxLog {
         /**
          * Null until accepted. What the SENDING radio said it did.
          *
-         * TREAT THIS SLICE WITH SUSPICION. On 2026-08-21 every one of thirty
-         * messages was reported "direct" by the sending radio's own sent-frame
-         * and arrived at D38F07AED563 with pathLen 0xFF, which is FLOOD — read
-         * off the receiving radio by connecting to it. Both numbers come from
-         * MeshCore and they disagree about every single packet, so at most one
-         * of them means what this app takes it to mean.
+         * READ IT AS THE DISPATCH MODE, NOT AS THE ROUTE. On 2026-08-21 every
+         * one of thirty messages was reported "direct" by the sending radio
+         * and arrived at D38F07AED563 with pathLen 0xFF, which is FLOOD. That
+         * looked like a contradiction and is not quite one — the two bytes are
+         * produced at different layers, and the evidence says both are honest:
          *
-         * Until that is resolved the by-route breakdown is measuring the
-         * sender's claim rather than the route, and a finding that rests on it
-         * should not be believed. Nothing else in the ledger depends on it.
+         *  - The SENDER had a stored route to d563 with zero relays
+         *    (outPathLen 0, which is how the ledger's hop count comes out at
+         *    1), and it quoted 2448-3858 ms for the round trip. Its flooded
+         *    estimate is around 8 s. So the sending radio believed it was
+         *    doing something direct, and priced it that way.
+         *  - The RECEIVER reports 0xFF, which the shipping SNS client reads
+         *    the same way this one does. Every inbound message in every log
+         *    captured here — 53 of them, both directions, several senders —
+         *    says 0xFF. A field that never varies is not distinguishing
+         *    anything.
+         *
+         * The reading that fits both: a neighbour with no relays between has
+         * no path to put in the packet, so the delivery is not path-routed and
+         * the receiver has no hops to report.
+         *
+         * WHAT IS STILL UNKNOWN, and it matters: whether such a packet is
+         * repeated by every repeater that hears it. If it is, a direct message
+         * to a node in the same room costs the band far more than this app has
+         * been assuming. It cannot be settled from either end of the
+         * conversation — it needs a third radio listening, and a repeater does
+         * not show its companion what it repeated. Left open on purpose rather
+         * than assumed either way.
+         *
+         * The by-route breakdown is therefore reporting the sender's dispatch
+         * mode, which is a real thing, and on this mesh it has been the same
+         * for every packet — so it has yet to discriminate anything.
          */
         val flood: Boolean? = null,
         /** The radio's own estimate of the round trip, milliseconds. */
