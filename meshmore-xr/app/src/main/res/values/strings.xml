@@ -357,4 +357,5 @@
     <string name="wx_to_ask">= %1$d TO ASK</string>
     <string name="wx_unrouted">-%1$d NO ROUTE, OLD</string>
     <string name="wx_floodcap">-%1$d NO ROUTE, CAPPED</string>
+    <string name="al_wx_silent">NOBODY ANSWERED — MOST RADIOS SHARE NOTHING BY DEFAULT</string>
 </resources>

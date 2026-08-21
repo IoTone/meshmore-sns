@@ -4563,6 +4563,18 @@ private fun HorizonScene(link: MeshLink) {
                                 Log.i(TAG_UI, "[wx] $line")
                                 plan.census().forEach { Log.i(TAG_UI, "[wx] $it") }
                                 Alerts.info("WX", line.uppercase())
+                                // SILENCE, EXPLAINED. A sweep that asks
+                                // thirteen radios and hears nothing back looks
+                                // exactly like a broken app, and it is not:
+                                // MeshCore ships with every telemetry class
+                                // set to DENY — this operator's own radio
+                                // reads raw 0x00 — so the ordinary case is
+                                // that nobody may answer. Measured 2026-08-21:
+                                // 13 asked, 0 answered.
+                                if (asked > 0 && answered <= 0) {
+                                    Alerts.warn("WX", ctx.getString(R.string.al_wx_silent))
+                                    Log.i(TAG_UI, "[wx] nobody answered — permissions default to DENY")
+                                }
                                 noticeRef.value?.say(
                                     ctx.getString(
                                         R.string.n_wx_done,
