@@ -84,3 +84,53 @@ this procedure, ship the next release signed with it as a NEW applicationId or
 via Play's key-upgrade flow (Play App Signing only), and publish the new
 fingerprint. This is painful by design — which is the argument for the backup
 paragraph above.
+
+## The release build, verified end to end (2026-08-21, build 112)
+
+Verified for the first time on this date. It works, and both artefacts build:
+
+| Artefact | Size | Signature |
+|---|---|---|
+| `app/build/outputs/apk/release/app-release.apk` | 47 MB | v2 scheme, `CN=Meshmore XR` |
+| `app/build/outputs/bundle/release/app-release.aab` | 18 MB | jar verified |
+
+```bash
+./gradlew :app:assembleRelease :app:bundleRelease
+$ANDROID_HOME/build-tools/*/apksigner verify --print-certs \
+    app/build/outputs/apk/release/app-release.apk
+```
+
+`isMinifyEnabled = false` on release, so there is no R8 pass and no shrinker
+configuration to get wrong — the usual way an XR release differs from its
+debug build does not apply here. The release APK was installed on the XR
+emulator and reached a full spatial scene: `requestFullSpace -> Success`,
+`isSpatialUiEnabled=true`, and the reel, crown, console, theme picker and
+stack all built. No exceptions. The version stamp reads `0.3.0` with no
+`-debug` suffix, which is how to tell at a glance which build is on a device.
+
+### Two things that will look like a broken release and are not
+
+Both cost an hour on 2026-08-21, and neither has anything to do with the APK.
+
+1. **Another XR app holding Full Space.** Only one app can be in full space at
+   a time. With `com.iotj.diana.xr` resumed as `full-space-managed`, MeshmoreXR
+   starts, logs `isSpatialUiEnabled=false`, builds no surfaces and sits there
+   looking exactly like a release-only failure. `adb shell dumpsys activity
+   activities | grep topResumedActivity` names the culprit; force-stop it.
+2. **Uninstalling revokes the runtime permissions.** Testing a release build
+   means `adb uninstall` first (debug and release are signed differently), and
+   the reinstalled app comes up with no BLE, microphone or location grant. The
+   permission dialog takes focus and the app is behind it. Grant them from the
+   shell before launching, or answer the dialog.
+
+### Still owed before a store submission
+
+- **v3 signing is off.** The APK verifies under v2 only, which Play accepts at
+  minSdk 34, but v3 is what allows the signing key to be ROTATED later. Worth
+  turning on deliberately rather than discovering the limitation the day a key
+  needs replacing — it changes the signed artefact, so it is a decision rather
+  than a tidy-up.
+- The release build has not been run on the Aura. Doing so means uninstalling
+  the debug build, which erases the wearer's theme, favourites, tags and home
+  radio, so it should be done when losing those is acceptable.
+
