@@ -179,6 +179,47 @@ object TxLog {
     }
 
     /**
+     * THE SAME FINDING, SHAPED FOR A ROW OF TYPE RATHER THAN A LOG LINE.
+     *
+     * A bay row is 28 cells in English and 26 in Japanese, and the log format
+     * above is thirty-five characters of fixed columns — it would be clipped
+     * exactly where the numbers are. So this returns name/value pairs for the
+     * row builder to measure and fit, and it stays numeric wherever it can:
+     * "128-160 B" and "2 HOPS" need no translation, and a count is a count in
+     * every language.
+     *
+     * Ordered by what a wearer looks for first — did they arrive, how fast,
+     * and only then the breakdowns.
+     */
+    fun rows(attempts: List<Attempt>): List<Pair<String, String>> {
+        if (attempts.isEmpty()) return emptyList()
+        val settled = attempts.filter { it.settled }
+        val air = settled.filter { it.accepted }
+        val acked = air.count { it.ackMs != null }
+        val out = mutableListOf<Pair<String, String>>()
+        out += "SENT" to "${attempts.size}"
+        val refused = settled.count { !it.accepted }
+        if (refused > 0) out += "REFUSED" to "$refused"
+        out += "ACKED" to "$acked / ${air.size}" +
+            (if (air.isEmpty()) "" else "  %.0f%%".format(acked * 100.0 / air.size))
+        val inFlight = attempts.size - settled.size
+        if (inFlight > 0) out += "IN FLIGHT" to "$inFlight"
+        latency(air)?.let {
+            out += "ROUND TRIP" to "${it.p50} ms"
+            out += "SLOWEST" to "${it.worst} ms"
+        }
+        (
+            sliceBy(air, listOf("direct", "flood")) { if (it.flood == true) "flood" else "direct" } +
+                sliceBy(air) { sizeBucket(it.bytes) } +
+                sliceBy(air) { "${it.hops} hop" + if (it.hops == 1) "" else "s" }
+            ).forEach { sl ->
+            out += sl.name.uppercase() to "${sl.acked}/${sl.accepted}" +
+                (sl.reliability?.let { "  %.0f%%".format(it) } ?: "")
+        }
+        return out
+    }
+
+    /**
      * How far below the run's own rate a slice must fall to be called out.
      *
      * A slice is only news if it is worse than the thing it is part of, and by

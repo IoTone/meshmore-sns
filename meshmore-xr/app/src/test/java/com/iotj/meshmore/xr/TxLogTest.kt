@@ -100,4 +100,51 @@ class TxLogTest {
         val run = (1..12).map { a(it, flood = it == 12, acked = it != 12) }
         assertEquals("11/12 DELIVERED", TxLog.headline(run))
     }
+
+    /**
+     * THE BAY'S OWN CONTENT.
+     *
+     * A row is 28 cells in English and 26 in Japanese, so the pairs have to be
+     * short enough that the row builder is trimming nothing that matters. The
+     * exact strings are asserted because this surface cannot be photographed:
+     * the emulator's only display is FLAG_SECURE and the glass refuses too, so
+     * a test is the only place the words can be read before a wearer reads
+     * them.
+     */
+    @Test fun theBayRowsSayWhatHappened() {
+        val run = (1..10).map { a(it, bytes = if (it % 2 == 0) 140 else 40, acked = it != 4) }
+        val rows = TxLog.rows(run).toMap()
+        assertEquals("10", rows["SENT"])
+        assertEquals("9 / 10  90%", rows["ACKED"])
+        assertEquals("2000 ms", rows["ROUND TRIP"])
+        assertEquals("9/10  90%", rows["DIRECT"])
+        assertEquals("4/5  80%", rows["128-160 B"])
+        assertEquals("5/5  100%", rows["32-64 B"])
+        // Nothing was refused and nothing is in flight, so neither row is shown
+        // — a row that says zero is a row that has to be read to be dismissed.
+        assertTrue(rows.keys.none { it == "REFUSED" || it == "IN FLIGHT" })
+    }
+
+    /** Every row must fit the plate it is drawn on, in both locales. */
+    @Test fun everyRowFitsTheNarrowerPlate() {
+        val run = (1..30).map { a(it, bytes = 40 + it * 4, hops = it % 3 + 1, acked = it % 7 != 0) }
+        // ROW_WIDEST_JA is 13 wide characters = 26 cells, the narrower of the
+        // two plates. Name and value share it with two spaces between.
+        TxLog.rows(run).forEach { (name, value) ->
+            val cells = name.length + 2 + value.length
+            assertTrue("'$name  $value' is $cells cells", cells <= 26)
+        }
+    }
+
+    /** A refusal and an in-flight message each get their own row when real. */
+    @Test fun refusedAndInFlightAppearWhenTheyExist() {
+        val run = listOf(
+            a(1),
+            a(2, accepted = false, acked = false),
+            TxLog.Attempt(3, 0, 64, "d563", 1, accepted = true, flood = false),
+        )
+        val rows = TxLog.rows(run).toMap()
+        assertEquals("1", rows["REFUSED"])
+        assertEquals("1", rows["IN FLIGHT"])
+    }
 }

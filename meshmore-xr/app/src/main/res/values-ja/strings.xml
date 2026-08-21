@@ -316,4 +316,10 @@
     <string name="nr_check">電源と距離を確認</string>
     <string name="nr_phone">スマホが接続中かも</string>
     <string name="nr_retry">ピンチで再検索</string>
+    <!-- S · DELIVERY. What became of the messages this app sent, from TxLog. -->
+    <string name="t_tx">送信の到達</string>
+    <string name="f_tx">"消去で最初から"</string>
+    <string name="tx_none">送信履歴なし</string>
+    <string name="r_txclear">記録を消去</string>
+    <string name="n_txcleared">到達記録を消去した</string>
 </resources>

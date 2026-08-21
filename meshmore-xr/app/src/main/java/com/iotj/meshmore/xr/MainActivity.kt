@@ -899,6 +899,41 @@ private fun makeRows(
  * because a safety line clipped in half is worse than one that is absent: it
  * still looks like a complete sentence.
  */
+/**
+ * S · DELIVERY — what became of the messages this app sent.
+ *
+ * The numbers come from [TxLog], which keeps one record per send; this only
+ * puts them on rows and lets the row builder measure them against the plate,
+ * because the log format they are also printed in is thirty-five columns wide
+ * and would be clipped exactly where the figures are.
+ *
+ * Read-only apart from CLEAR. A wearer cannot repair a mesh from a settings
+ * bay, but they can find out whether the thing they just sent arrived, and
+ * whether that is normal — which is the question this surface exists for.
+ */
+private fun txRows(
+    ctx: android.content.Context,
+    link: MeshLink,
+): List<com.iotj.meshmore.xr.spatial.Stack.Row> {
+    val pairs = TxLog.rows(link.txAttempts())
+    if (pairs.isEmpty()) {
+        return listOf(
+            com.iotj.meshmore.xr.spatial.Stack.Row(
+                id = "tx", label = ctx.getString(R.string.tx_none), lit = false,
+            ),
+        )
+    }
+    return pairs.map { (name, value) ->
+        com.iotj.meshmore.xr.spatial.Stack.Row(
+            id = "tx",
+            label = com.iotj.meshmore.xr.spatial.radioRow(name, value, null),
+            lit = false,
+        )
+    } + com.iotj.meshmore.xr.spatial.Stack.Row(
+        id = "TXCLEAR", label = ctx.getString(R.string.r_txclear), lit = false,
+    )
+}
+
 private fun aboutRows(ctx: android.content.Context, link: MeshLink): List<com.iotj.meshmore.xr.spatial.Stack.Row> {
     fun row(text: String) = com.iotj.meshmore.xr.spatial.Stack.Row(
         id = "about", label = text, lit = false,
@@ -4277,6 +4312,18 @@ private fun HorizonScene(link: MeshLink) {
                         cue.recognised()
                         continue
                     }
+                    // DID THEY ARRIVE. Read-only except for CLEAR, which is
+                    // the only control a delivery record needs: everything else
+                    // on this surface is the mesh answering for itself.
+                    if (bayMode.value == "TX") {
+                        if (id == "TXCLEAR") {
+                            link.clearTxLog()
+                            noticeRef.value?.say(ctx.getString(R.string.n_txcleared))
+                        }
+                        appRef.value?.update(txRows(ctx, link), ctx.getString(R.string.f_tx))
+                        cue.recognised()
+                        continue
+                    }
                     // WHO MAY ASK ABOUT ME. Its own bay because the answer is
                     // three answers, and each row CYCLES because the useful
                     // level is the middle one and a toggle cannot reach it.
@@ -4394,7 +4441,21 @@ private fun HorizonScene(link: MeshLink) {
                         )
                         "SHARE" -> Settings.setShareLocation(ctx, !Settings.shareLocation(ctx))
                         "ALERTS" -> Settings.setAlerts(ctx, !Settings.alerts(ctx))
-                        "DIAG" -> Settings.setDiagnostics(ctx, !Settings.diagnostics(ctx))
+                        // SAID OUT LOUD, like every other switch that changes
+                        // what the app records rather than what it shows. The
+                        // spoken confirmation used to belong to the console
+                        // plate; the plate now opens the delivery bay, and a
+                        // toggle that changes logging with no acknowledgement
+                        // is a toggle a wearer pinches twice to be sure.
+                        "DIAG" -> {
+                            val on = !Settings.diagnostics(ctx)
+                            Settings.setDiagnostics(ctx, on)
+                            noticeRef.value?.say(
+                                ctx.getString(
+                                    if (on) R.string.n_diag_on else R.string.n_diag_off,
+                                ),
+                            )
+                        }
                         "AUTOPEN" -> Settings.setAutopen(ctx, !Settings.autopen(ctx))
                         "TELEM" -> {
                             bayMode.value = "TELEM"
@@ -4730,14 +4791,26 @@ private fun HorizonScene(link: MeshLink) {
                             )
                             cue.opened()
                         }
+                        // DIAGNOSTICS. The plate promised "connect a radio,
+                        // frame log" and delivered a silent settings toggle —
+                        // one spoken notice and nothing to look at. It now
+                        // opens what a wearer actually comes here to find out:
+                        // whether the things they sent arrived. The frame-log
+                        // toggle keeps its home in the APP bay, where every
+                        // other app setting is.
                         "DIAG" -> {
-                            val on = !Settings.diagnostics(ctx)
-                            Settings.setDiagnostics(ctx, on)
-                            noticeRef.value?.say(
-                                ctx.getString(
-                                    if (on) R.string.n_diag_on else R.string.n_diag_off,
-                                ),
+                            consoleRef.value?.hide()
+                            bayMode.value = "TX"
+                            armed.value = null
+                            aboutOpen.value = false
+                            appRef.value?.show(
+                                txRows(ctx, link),
+                                title = ctx.getString(R.string.t_tx),
+                                footer = ctx.getString(R.string.f_tx),
+                                // A SET, NOT A SEQUENCE — see Stack.show.
+                                form = true,
                             )
+                            dockRef.value?.setLit("SETUP", false)
                             cue.opened()
                         }
                         // S5 — CHANNELS. Which bands the radio carries, and

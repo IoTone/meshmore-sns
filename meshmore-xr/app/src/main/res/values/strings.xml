@@ -328,4 +328,10 @@
     <string name="nr_check">IS IT ON AND NEARBY?</string>
     <string name="nr_phone">A PHONE MAY BE HOLDING IT</string>
     <string name="nr_retry">PINCH HERE — SEARCH AGAIN</string>
+    <!-- S · DELIVERY. What became of the messages this app sent, from TxLog. -->
+    <string name="t_tx">MESSAGE DELIVERY</string>
+    <string name="f_tx">"PICK CLEAR TO START OVER"</string>
+    <string name="tx_none">NOTHING SENT YET</string>
+    <string name="r_txclear">CLEAR THE RECORD</string>
+    <string name="n_txcleared">DELIVERY RECORD CLEARED</string>
 </resources>
