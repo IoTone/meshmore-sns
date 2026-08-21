@@ -1045,6 +1045,13 @@ class MeshLink(private val context: Context) {
         _msgs.value = _msgs.value.map {
             if (it.ackTag == tag && it.delivery != Delivered.DELIVERED) {
                 hit = true
+                // WORTH SAYING OUT LOUD IN THE LOG. A message that was already
+                // called LOST and then acknowledged is the app having been
+                // wrong in front of a wearer, and how often it happens is the
+                // measurement that says whether the deadline is too short.
+                if (it.delivery == Delivered.LOST) {
+                    Log.w(TAG, "[tx] late ack for tag=0x%08x — was marked LOST".format(tag))
+                }
                 it.copy(delivery = Delivered.DELIVERED)
             } else {
                 it
@@ -1054,17 +1061,31 @@ class MeshLink(private val context: Context) {
     }
 
     /**
-     * Give up on anything still unacknowledged past [afterMs].
+     * Give up on anything still unacknowledged past ITS OWN deadline.
      *
-     * The radio publishes its own estimated round trip — about 2.2 s direct,
-     * 8 s flooded — and everything measured in two hours of soak came back
-     * inside 2.4 s. A minute is therefore not a judgement call, it is a
-     * generous multiple of the longest thing ever observed.
+     * A minute was the old answer, and it was a wearer-visible mistake rather
+     * than merely a conservative one. "Sending" for sixty seconds on a link
+     * whose slowest measured round trip is 1.5 s is not caution — it is the
+     * app declining to answer the one question a person asks after pressing
+     * send, for a full minute, every time the mesh drops something. RESEND is
+     * gated on the same conclusion, so the repair was unreachable for exactly
+     * as long as it was needed.
+     *
+     * The radio has been quoting a per-message estimate all along and nothing
+     * read it. Thirty packets at d563 measured 2448 ms for 48 bytes, 3000 for
+     * 96 and 3858 for 140 — airtime arithmetic that already accounts for size
+     * and route, and which this app has no business recomputing. So the
+     * deadline is a multiple of the radio's own number, clamped at both ends;
+     * see [lostAfterMsFor].
+     *
+     * [afterMs] overrides it for a caller that wants a single flat window.
      */
-    fun sweepLost(afterMs: Long = 60_000L, nowMs: Long = System.currentTimeMillis()) {
-        val stale = pending.filter { nowMs - it.value > afterMs }.keys
+    fun sweepLost(afterMs: Long? = null, nowMs: Long = System.currentTimeMillis()) {
+        val stale = pending.filter { (tag, at) ->
+            nowMs - at > (afterMs ?: deadline[tag] ?: LOST_AFTER_DEFAULT_MS)
+        }.keys
         if (stale.isEmpty()) return
-        stale.forEach { pending.remove(it) }
+        stale.forEach { pending.remove(it); deadline.remove(it) }
         stale.forEach { t -> editAttempt(t) { it.copy(gaveUp = true) } }
         var hit = false
         _msgs.value = _msgs.value.map {
@@ -1081,6 +1102,16 @@ class MeshLink(private val context: Context) {
 
     /** Ack tags we are waiting on, and when each was accepted. */
     private val pending = java.util.concurrent.ConcurrentHashMap<Long, Long>()
+
+    /**
+     * How long each pending message is allowed, from the radio's own estimate.
+     *
+     * The estimate is per MESSAGE, not per link, and it is not a constant: the
+     * radio quoted 2448 ms for a 48-byte packet, 3000 for 96 and 3858 for 140
+     * on the same direct route, which is airtime arithmetic this app has no
+     * business repeating. Absent an estimate the flat default stands.
+     */
+    private val deadline = java.util.concurrent.ConcurrentHashMap<Long, Long>()
 
     /** Sent but never acknowledged within the window; the drops. */
     fun lostAfter(ms: Long, nowMs: Long = System.currentTimeMillis()): Int =
@@ -2343,6 +2374,7 @@ class MeshLink(private val context: Context) {
                         ))
                         val tag = frame.sent().expectedAck()
                         pending[tag] = System.currentTimeMillis()
+                        deadline[tag] = lostAfterMsFor(frame.sent().estTimeoutMs())
                         editAttempt(null) {
                             it.copy(
                                 accepted = true, tag = tag,
@@ -2359,8 +2391,23 @@ class MeshLink(private val context: Context) {
                     is io.iotone.meshcore.frames.AckFrame -> {
                         markDelivered(frame.ackCrc())
                         val at = pending.remove(frame.ackCrc())
+                        // Both maps, always together. The sweep clears them as
+                        // a pair too; a deadline left behind for a message that
+                        // has already been answered is a slow leak on a device
+                        // that stays on all day.
+                        deadline.remove(frame.ackCrc())
                         val ms = at?.let { System.currentTimeMillis() - it }
-                        if (ms != null) editAttempt(frame.ackCrc()) { it.copy(ackMs = ms) }
+                        // A LATE ACK OVERTURNS THE VERDICT. The sweep concludes
+                        // from silence, and silence can end — a repeater that
+                        // was busy, a route that re-formed. When the pending
+                        // entry is already gone the round trip is measured from
+                        // the send instead of the acceptance, which is a
+                        // slightly longer number and a true one; inventing the
+                        // difference would be worse than reporting it.
+                        val at2 = System.currentTimeMillis()
+                        editAttempt(frame.ackCrc()) {
+                            it.copy(ackMs = ms ?: (at2 - it.atMs), gaveUp = false)
+                        }
                         _delivery.value = _delivery.value.copy(
                             acked = _delivery.value.acked + 1,
                             lastLatencyMs = ms ?: _delivery.value.lastLatencyMs,
@@ -2405,6 +2452,52 @@ class MeshLink(private val context: Context) {
     }
 
     companion object {
+
+        /**
+         * HOW MANY TIMES THE RADIO'S OWN ESTIMATE TO WAIT.
+         *
+         * Four. Every acknowledgement ever measured on this mesh came back
+         * inside 1.6 s against estimates of 2.4 to 3.9 s, so one estimate is
+         * already generous and four is room for a retry, a busy repeater and a
+         * link worse than any yet seen — while still settling in fifteen
+         * seconds rather than sixty.
+         */
+        const val LOST_MULTIPLE = 4
+
+        /**
+         * Never conclude sooner than this, whatever the estimate says.
+         *
+         * Ten seconds is about the shortest interval in which a wearer reads
+         * "sending" as the app working rather than the app being wrong, and it
+         * is also the sweep's own tick, so a shorter floor would only ever be
+         * rounded up to it.
+         */
+        const val LOST_FLOOR_MS = 10_000L
+
+        /**
+         * And never wait longer than this.
+         *
+         * A flooded message across a big mesh can be quoted tens of seconds;
+         * past a minute the answer has stopped being useful, which is the same
+         * minute the old flat rule used — kept as the ceiling it always should
+         * have been rather than the rule it was.
+         */
+        const val LOST_CAP_MS = 60_000L
+
+        /** Used when a message was accepted without any estimate at all. */
+        const val LOST_AFTER_DEFAULT_MS = 30_000L
+
+        /**
+         * The deadline one message gets, from the radio's estimate for it.
+         *
+         * Pure, so the rule can be checked against the numbers a real radio
+         * actually quoted rather than against a story about them.
+         */
+        fun lostAfterMsFor(estTimeoutMs: Long): Long {
+            if (estTimeoutMs <= 0L) return LOST_AFTER_DEFAULT_MS
+            return (estTimeoutMs * LOST_MULTIPLE).coerceIn(LOST_FLOOR_MS, LOST_CAP_MS)
+        }
+
 
         /** [isStarred]'s rule, over any peer list, so a test can reach it. */
         fun isStarred(

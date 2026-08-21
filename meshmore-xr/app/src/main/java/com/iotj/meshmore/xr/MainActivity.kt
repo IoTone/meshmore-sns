@@ -1569,7 +1569,11 @@ private suspend fun runSoakAt(
     // 2.4 s — so twenty seconds is a generous multiple, and the sweep at the
     // end of it turns "no ack yet" into "no ack", which is what is counted.
     kotlinx.coroutines.delay(SOAK_SETTLE_MS)
-    link.sweepLost(afterMs = SOAK_SETTLE_MS)
+    // NO OVERRIDE. Each message now carries the deadline the radio quoted for
+    // it — at most 15.4 s of the 20 s already waited above — so by here every
+    // one of them has either been acknowledged or run out of time on its own
+    // terms, and a flat window would only overrule that with a worse number.
+    link.sweepLost()
     val d = link.delivery.value
     val acked = (d.acked - before.acked).coerceAtLeast(0)
     val ledger = link.txAttempts()
