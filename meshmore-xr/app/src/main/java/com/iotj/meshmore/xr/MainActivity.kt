@@ -254,6 +254,21 @@ class MainActivity : ComponentActivity() {
          * Left null in normal use, where the scanner's own ranking is right.
          */
         var namePrefix: String? = null
+
+        /**
+         * `--ez adopt true` alongside `--es prefix` means THIS ONE IS MINE.
+         *
+         * A prefixed connect deliberately does not adopt: reaching one radio
+         * to ask it a question is not choosing it, and that rule is what keeps
+         * an inbox read from silently rehoming the app. But a fresh install
+         * has no memory at all, and if the operator owns two bonded radios the
+         * first connect is decided by which happens to be louder — a coin toss
+         * that then persists, because the first completed session is what
+         * writes the memory.
+         *
+         * So there is a way to say it outright, used once, on a new install.
+         */
+        var adopt: Boolean = false
         /** --ez focus true : open S3 NODE FOCUS on the first node that arrives. */
         var showFocus: Boolean = false
         /**
@@ -430,6 +445,7 @@ class MainActivity : ComponentActivity() {
         // is to connect to it. `--es prefix MeshCore-D38F07AED563` does that.
         val prefix = intent?.getStringExtra("prefix")
         namePrefix = prefix?.takeIf { it.isNotBlank() }
+        adopt = intent?.getBooleanExtra("adopt", false) ?: false
         val pin = intent?.getStringExtra("pin")
         Log.i(TAG, "[boot] pin override = ${pin ?: "<none, using built-in>"}")
         val debug = intent?.getBooleanExtra("debug", false) ?: false
@@ -631,7 +647,12 @@ private fun Root(facts: List<Pair<String, String>>, link: MeshLink, pinOverride:
         val want = MainActivity.namePrefix
         when {
             want != null -> {
-                Log.i(TAG_UI, "[link] auto-connect restricted to '$want'")
+                Log.i(
+                    TAG_UI,
+                    "[link] auto-connect restricted to '$want'" +
+                        if (MainActivity.adopt) " — ADOPTING it as home" else "",
+                )
+                if (MainActivity.adopt) Settings.setHomeRadio(link.context, want)
                 link.connect(namePrefix = want, pin = pinOverride)
             }
             pinOverride != null -> link.connect(pin = pinOverride)

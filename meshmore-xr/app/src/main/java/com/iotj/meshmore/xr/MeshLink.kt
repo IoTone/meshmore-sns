@@ -47,7 +47,14 @@ import kotlinx.coroutines.flow.asStateFlow
  * State is exposed as a StateFlow so Compose can observe it; the library
  * dispatches its callbacks on the main thread already.
  */
-class MeshLink(private val context: Context) {
+class MeshLink(
+    /**
+     * Public because adoption is decided by the caller, not here: see
+     * `--ez adopt` in MainActivity, which writes the home radio BEFORE the
+     * connect so a fresh install cannot pick by signal strength.
+     */
+    val context: Context,
+) {
 
     data class Status(
         val state: SessionState = SessionState.DISCONNECTED,
