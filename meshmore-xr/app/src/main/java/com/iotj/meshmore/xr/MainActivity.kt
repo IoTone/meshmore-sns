@@ -269,6 +269,17 @@ class MainActivity : ComponentActivity() {
          * So there is a way to say it outright, used once, on a new install.
          */
         var adopt: Boolean = false
+
+        /**
+         * `--ez wxsweep true` runs one telemetry sweep and reports.
+         *
+         * The sweep is a pinch on a row, and a row cannot be pinched from a
+         * cable. What it measures — how many of a real mesh's radios answer a
+         * telemetry request at all — cannot be measured on the emulator
+         * either, because a simulated peer has no radio to answer with. So it
+         * needs a flag, and the answer needs the glasses on a live mesh.
+         */
+        var wxSweep: Boolean = false
         /** --ez focus true : open S3 NODE FOCUS on the first node that arrives. */
         var showFocus: Boolean = false
         /**
@@ -446,6 +457,7 @@ class MainActivity : ComponentActivity() {
         val prefix = intent?.getStringExtra("prefix")
         namePrefix = prefix?.takeIf { it.isNotBlank() }
         adopt = intent?.getBooleanExtra("adopt", false) ?: false
+        wxSweep = intent?.getBooleanExtra("wxsweep", false) ?: false
         val pin = intent?.getStringExtra("pin")
         Log.i(TAG, "[boot] pin override = ${pin ?: "<none, using built-in>"}")
         val debug = intent?.getBooleanExtra("debug", false) ?: false
@@ -1103,6 +1115,101 @@ private fun whoLine(name: String, rest: String) = padCells(name, rest, column = 
 
 /** One past the 14-cell name budget every caller clips to. */
 private const val WHO_COLUMN = 15
+
+/**
+ * S · MESH WEATHER — what other people's radios say the world is like.
+ *
+ * THE POINT OF THIS SURFACE IS THAT IT EXISTS. The app has been able to ask a
+ * peer for telemetry, decode the answer and store it for weeks; nothing has
+ * ever displayed a byte of it. A wearer who used the node menu's TELEM action
+ * heard "asked NAME" and then, whatever came back, saw nothing at all. That is
+ * the whole of why telemetry felt impossible to get — not airtime, not policy,
+ * an absent readout.
+ *
+ * Sorted warmest first, which is what SNS does and is right for the same
+ * reason: a list of temperatures has no natural order, and the extremes are
+ * the only rows anybody looks for.
+ */
+private fun wxRows(
+    ctx: android.content.Context,
+    link: MeshLink,
+    plan: TelemetryAsk.Plan?,
+    nowEpochSec: Long,
+): List<com.iotj.meshmore.xr.spatial.Stack.Row> {
+    fun plain(text: String) =
+        com.iotj.meshmore.xr.spatial.Stack.Row(id = "wx", label = text, lit = false)
+
+    val readings = link.mesh.value
+        .mapNotNull { p -> p.telemetry?.let { p to it } }
+        .sortedByDescending { it.second.tempC ?: -1000.0 }
+
+    val rows = mutableListOf<com.iotj.meshmore.xr.spatial.Stack.Row>()
+
+    // THE ASK IS THE FIRST ROW AND IT SAYS WHAT IT WILL COST. Same rule the
+    // contact sweep follows: a control that reaches other people's hardware
+    // names the number of them before it does it.
+    val n = plan?.askCount ?: 0
+    rows += com.iotj.meshmore.xr.spatial.Stack.Row(
+        id = if (n > 0) "WXASK" else "wx",
+        label = if (n > 0) ctx.getString(R.string.r_wxask, n)
+                else ctx.getString(R.string.r_wxnone),
+        lit = n > 0,
+    )
+
+    val temps = readings.mapNotNull { it.second.tempC }
+    if (temps.isNotEmpty()) {
+        rows += plain(
+            com.iotj.meshmore.xr.spatial.radioRow(
+                ctx.getString(R.string.wx_summary, temps.size),
+                "%.0f / %.0f / %.0f°".format(temps.min(), temps.average(), temps.max()),
+                null,
+            ),
+        )
+    }
+
+    if (readings.isEmpty()) {
+        rows += plain(ctx.getString(R.string.wx_empty))
+        // AND WHY. "No readings" with three hundred contacts in the store is
+        // the sentence that made this feel broken; this says where they went.
+        //
+        // Built from resources rather than from Plan.census(), which is
+        // English for the log. A wearer reads this one.
+        plan?.let { pl ->
+            rows += plain(ctx.getString(R.string.wx_all, pl.considered))
+            pl.skipped.forEach { (why, n) ->
+                if (n <= 0) return@forEach
+                rows += plain(
+                    when (why) {
+                        TelemetryAsk.Skip.NO_FULL_KEY -> ctx.getString(R.string.wx_no_key, n)
+                        TelemetryAsk.Skip.TOO_FAR_IN_HOPS ->
+                            ctx.getString(R.string.wx_hops, n, TelemetryAsk.MAX_HOPS)
+                        TelemetryAsk.Skip.TOO_FAR_IN_KM ->
+                            ctx.getString(R.string.wx_km, n, TelemetryAsk.MAX_KM.toInt())
+                        TelemetryAsk.Skip.ALREADY_FRESH -> ctx.getString(R.string.wx_fresh, n)
+                        TelemetryAsk.Skip.COOLING_DOWN -> ctx.getString(R.string.wx_cool, n)
+                        TelemetryAsk.Skip.OVER_BUDGET -> ctx.getString(R.string.wx_budget, n)
+                    },
+                )
+            }
+            rows += plain(ctx.getString(R.string.wx_to_ask, pl.askCount))
+        }
+        return rows
+    }
+
+    readings.forEach { (p, t) ->
+        val age = (nowEpochSec - t.atEpochSec).coerceAtLeast(0)
+        val ageWord = if (age < 3600) ctx.getString(R.string.ago_min_short, age / 60)
+                      else ctx.getString(R.string.ago_hr_short, age / 3600)
+        rows += plain(
+            com.iotj.meshmore.xr.spatial.radioRow(
+                com.iotj.meshmore.xr.spatial.TypeTier.clip(p.name.uppercase(), 12),
+                "$t  $ageWord",
+                null,
+            ),
+        )
+    }
+    return rows
+}
 
 private fun telemetryRows(
     ctx: android.content.Context,
@@ -1778,6 +1885,12 @@ private fun appRows(
         com.iotj.meshmore.xr.spatial.Stack.Row(
             id = "TELEM", label = ctx.getString(R.string.r_telem), lit = false,
         ),
+        // AND THE OTHER END OF THE SAME SUBJECT: what this radio can learn by
+        // asking. Next to the permissions row on purpose — a wearer deciding
+        // what to share should see, in the same list, what sharing is for.
+        com.iotj.meshmore.xr.spatial.Stack.Row(
+            id = "WX", label = ctx.getString(R.string.r_wx), lit = false,
+        ),
         row("CHANSEND", ctx.getString(R.string.r_chansend), Settings.channelSend(ctx), ctx.getString(R.string.w_allowed), "OFF"),
         // GARBAGE COLLECTION, because a full contact store locks you out of
         // your own radio. See MeshLink.farContacts for what it will never
@@ -2002,6 +2115,13 @@ private fun HorizonScene(link: MeshLink) {
     }
     /** True while the soak is running, so a recomposition cannot start a second. */
     val soakRunning = remember { mutableStateOf(false) }
+    // WHEN EACH NODE WAS LAST ASKED FOR TELEMETRY, kept for the session so a
+    // cooldown means something. Sweeping twice in a minute should ask nobody
+    // twice — see TelemetryAsk.COOLDOWN_S.
+    val telAsked = remember { mutableMapOf<String, Long>() }
+    val telSweeping = remember { mutableStateOf(false) }
+    // Offered once, ever, and only after a sweep has actually happened.
+    val sharingOffered = remember { mutableStateOf(false) }
 
     val focusRef = remember { mutableStateOf<com.iotj.meshmore.xr.spatial.Focus?>(null) }
     val gazeRef = remember { mutableStateOf<com.iotj.meshmore.xr.spatial.Gaze?>(null) }
@@ -3899,13 +4019,51 @@ private fun HorizonScene(link: MeshLink) {
                 }
                 Log.i(TAG_UI, "[ember] probe done")
             }
+            // MESH WEATHER, opened in ONE place for the same reason the region
+            // list is: two routes to a surface means the launch flag verifies
+            // its own route rather than the one a hand takes.
+            val openWx = {
+                val nowS = System.currentTimeMillis() / 1000
+                bayMode.value = "WX"
+                armed.value = null
+                aboutOpen.value = false
+                consoleRef.value?.hide()
+                appRef.value?.show(
+                    wxRows(
+                        ctx, link,
+                        TelemetryAsk.plan(
+                            link.mesh.value, hereSource.here.value, nowS, telAsked.toMap(),
+                        ),
+                        nowS,
+                    ),
+                    title = ctx.getString(R.string.t_wx),
+                    footer = ctx.getString(R.string.f_wx),
+                    // A SET, NOT A SEQUENCE — see Stack.show.
+                    form = true,
+                )
+                dockRef.value?.setLit("SETUP", false)
+                cue.opened()
+            }
+
+            if (MainActivity.wxSweep) launch {
+                // Long enough for the contact sync to finish: a sweep planned
+                // against a half-loaded store asks a fraction of the mesh and
+                // reports a census that is wrong about the rest.
+                kotlinx.coroutines.delay(45_000)
+                openWx()
+                kotlinx.coroutines.delay(1_500)
+                Log.i(TAG_UI, "[wx] probe — sweeping")
+                appRef.value?.fire("WXASK")
+            }
             MainActivity.openBay?.let { bay ->
                 launch {
                     // After the scene is up and the radio has enumerated its
                     // channels, or CHANNELS opens onto an empty list and the
                     // check says nothing.
                     kotlinx.coroutines.delay(9000)
-                    consoleRef.value?.fire(bay)
+                    // WX IS A ROW, NOT A PLATE, so the console cannot fire it.
+                    // Same surface, same single route — see openWx.
+                    if (bay == "WX") openWx() else consoleRef.value?.fire(bay)
                 }
             }
             // THE ONE CLAIM THE THEME SYSTEM RESTS ON, put in front of an eye.
@@ -4364,6 +4522,85 @@ private fun HorizonScene(link: MeshLink) {
                         cue.recognised()
                         continue
                     }
+                    // MESH WEATHER. One control — ASK — and it says how many
+                    // radios it is about to wake before it wakes them.
+                    if (bayMode.value == "WX") {
+                        val nowS = System.currentTimeMillis() / 1000
+                        if (id == "WXASK" && !telSweeping.value) {
+                            val plan = TelemetryAsk.plan(
+                                link.mesh.value, hereSource.here.value, nowS, telAsked.toMap(),
+                            )
+                            telSweeping.value = true
+                            noticeRef.value?.say(
+                                ctx.getString(R.string.n_wx_start, plan.askCount),
+                            )
+                            launch {
+                                val before = link.mesh.value.count { it.telemetry != null }
+                                var asked = 0
+                                plan.ask.forEach { p ->
+                                    val full = p.fullKey ?: return@forEach
+                                    if (link.askTelemetry(full)) {
+                                        asked++
+                                        telAsked[full] = System.currentTimeMillis() / 1000
+                                    }
+                                    // ONE AT A TIME, SPACED. The pacing is the
+                                    // whole of this app's claim to be a polite
+                                    // neighbour on a shared band.
+                                    kotlinx.coroutines.delay(TelemetryAsk.GAP_MS)
+                                }
+                                // A beat for the last replies to come back.
+                                kotlinx.coroutines.delay(20_000)
+                                val now = link.mesh.value
+                                val answered = now.count { it.telemetry != null } - before
+                                val withEnv = now.count { it.telemetry?.tempC != null }
+                                val line = TelemetryAsk.report(
+                                    asked, answered.coerceAtLeast(0), withEnv,
+                                )
+                                Log.i(TAG_UI, "[wx] $line")
+                                plan.census().forEach { Log.i(TAG_UI, "[wx] $it") }
+                                Alerts.info("WX", line.uppercase())
+                                noticeRef.value?.say(
+                                    ctx.getString(
+                                        R.string.n_wx_done,
+                                        answered.coerceAtLeast(0), asked,
+                                    ),
+                                )
+                                telSweeping.value = false
+                                appRef.value?.update(
+                                    wxRows(ctx, link, null, System.currentTimeMillis() / 1000),
+                                    ctx.getString(R.string.f_wx),
+                                )
+                                // THE NUDGE, ONCE. Asking without sharing is
+                                // allowed — the operator ruled on that — but
+                                // the asymmetry is worth mentioning at the one
+                                // moment it is concrete rather than abstract.
+                                if (TelemetryAsk.shouldOfferSharing(
+                                        link.telemetryPermissions().level(2),
+                                        sharingOffered.value,
+                                        asked,
+                                    )
+                                ) {
+                                    sharingOffered.value = true
+                                    kotlinx.coroutines.delay(2_500)
+                                    noticeRef.value?.say(ctx.getString(R.string.n_wx_share))
+                                    Alerts.info("WX", ctx.getString(R.string.n_wx_share))
+                                }
+                            }
+                        }
+                        appRef.value?.update(
+                            wxRows(
+                                ctx, link,
+                                if (telSweeping.value) null else TelemetryAsk.plan(
+                                    link.mesh.value, hereSource.here.value, nowS,
+                                    telAsked.toMap(),
+                                ),
+                                nowS,
+                            ),
+                            ctx.getString(R.string.f_wx),
+                        )
+                        cue.recognised()
+                        continue
+                    }
                     // DID THEY ARRIVE. Read-only except for CLEAR, which is
                     // the only control a delivery record needs: everything else
                     // on this surface is the mesh answering for itself.
@@ -4509,6 +4746,10 @@ private fun HorizonScene(link: MeshLink) {
                             )
                         }
                         "AUTOPEN" -> Settings.setAutopen(ctx, !Settings.autopen(ctx))
+                        // MESH WEATHER sits beside the permissions row because
+                        // the two are the same subject seen from either end:
+                        // who may ask about me, and what I may learn by asking.
+                        "WX" -> { openWx(); continue }
                         "TELEM" -> {
                             bayMode.value = "TELEM"
                             appRef.value?.show(

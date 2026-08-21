@@ -341,6 +341,20 @@ class Stack(
      * ignore an id it never supplied is how a shared primitive stops being
      * shared.
      */
+    /**
+     * Press a row from code, as a probe.
+     *
+     * THE SAME QUEUE A PINCH USES, so whatever it triggers runs through the
+     * host's ordinary row handling and not a second path built for testing.
+     * The rule the region list already established: a flag that opened a
+     * surface by its own slightly different route would be verifying its own
+     * route rather than the one a hand takes.
+     */
+    fun fire(id: String) {
+        Log.i(TAG, "[stack] fire '$id' (probe)")
+        fired.add(id)
+    }
+
     fun poll(): String? {
         while (true) {
             val id = fired.poll() ?: return null

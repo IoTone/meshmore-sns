@@ -322,4 +322,25 @@
     <string name="tx_none">送信履歴なし</string>
     <string name="r_txclear">記録を消去</string>
     <string name="n_txcleared">到達記録を消去した</string>
+    <!-- S · MESH WEATHER. Telemetry gathered from other people's radios. -->
+    <string name="t_wx">メッシュ気象</string>
+    <string name="f_wx">"照会で一括取得  Bで閉じる"</string>
+    <string name="r_wx">メッシュ気象</string>
+    <string name="r_wxask">%1$d局に照会</string>
+    <string name="r_wxnone">今は照会先なし</string>
+    <string name="wx_empty">データなし</string>
+    <string name="wx_summary">%1$d局</string>
+    <string name="n_wx_start">%1$d局に照会中</string>
+    <string name="n_wx_done">%2$d局中 %1$d局が応答</string>
+    <string name="n_wx_share">自分も共有する? 許可設定へ</string>
+    <string name="ago_min_short">%1$d分</string>
+    <string name="ago_hr_short">%1$d時間</string>
+    <string name="wx_all">登録 %1$d局</string>
+    <string name="wx_no_key">-%1$d 鍵が不完全</string>
+    <string name="wx_hops">-%1$d %2$dホップ超</string>
+    <string name="wx_km">-%1$d %2$dkm超</string>
+    <string name="wx_fresh">-%1$d 取得済み</string>
+    <string name="wx_cool">-%1$d 照会直後</string>
+    <string name="wx_budget">-%1$d 上限超過</string>
+    <string name="wx_to_ask">= %1$d局に照会</string>
 </resources>

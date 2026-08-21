@@ -334,4 +334,25 @@
     <string name="tx_none">NOTHING SENT YET</string>
     <string name="r_txclear">CLEAR THE RECORD</string>
     <string name="n_txcleared">DELIVERY RECORD CLEARED</string>
+    <!-- S · MESH WEATHER. Telemetry gathered from other people's radios. -->
+    <string name="t_wx">MESH WEATHER</string>
+    <string name="f_wx">"PICK ASK TO SWEEP     B TO CLOSE"</string>
+    <string name="r_wx">MESH WEATHER</string>
+    <string name="r_wxask">ASK %1$d NODES</string>
+    <string name="r_wxnone">NOBODY TO ASK RIGHT NOW</string>
+    <string name="wx_empty">NO READINGS YET</string>
+    <string name="wx_summary">%1$d NODES</string>
+    <string name="n_wx_start">ASKING %1$d NODES</string>
+    <string name="n_wx_done">%1$d OF %2$d ANSWERED</string>
+    <string name="n_wx_share">SHARE YOURS TOO? SEE WHO MAY ASK</string>
+    <string name="ago_min_short">%1$dM</string>
+    <string name="ago_hr_short">%1$dH</string>
+    <string name="wx_all">%1$d IN STORE</string>
+    <string name="wx_no_key">-%1$d NO FULL KEY</string>
+    <string name="wx_hops">-%1$d OVER %2$d HOPS</string>
+    <string name="wx_km">-%1$d OVER %2$d KM</string>
+    <string name="wx_fresh">-%1$d ALREADY FRESH</string>
+    <string name="wx_cool">-%1$d ASKED LATELY</string>
+    <string name="wx_budget">-%1$d OVER BUDGET</string>
+    <string name="wx_to_ask">= %1$d TO ASK</string>
 </resources>
