@@ -108,7 +108,16 @@ emulator and reached a full spatial scene: `requestFullSpace -> Success`,
 stack all built. No exceptions. The version stamp reads `0.3.0` with no
 `-debug` suffix, which is how to tell at a glance which build is on a device.
 
-### Two things that will look like a broken release and are not
+### Install with `bin/install.sh`, not with `adb install`
+
+    bin/install.sh release v1l264b1186364
+
+It grants every runtime permission the manifest asks for, reading the list out
+of the manifest rather than repeating it, and refuses to finish quietly if hand
+tracking did not take. Use it. The hand-written alternative was got wrong on
+2026-08-21 and cost most of the app for an evening — see below.
+
+### Three things that will look like a broken release and are not
 
 Both cost an hour on 2026-08-21, and neither has anything to do with the APK.
 
@@ -122,6 +131,26 @@ Both cost an hour on 2026-08-21, and neither has anything to do with the APK.
    the reinstalled app comes up with no BLE, microphone or location grant. The
    permission dialog takes focus and the app is behind it. Grant them from the
    shell before launching, or answer the dialog.
+
+3. **An uninstall revokes HAND_TRACKING, and nothing obvious says so.** This
+   is the expensive one. Installing release over debug means uninstalling, and
+   the app then comes up looking entirely healthy — it draws, it connects to
+   the radio, it syncs 350 contacts — while seeing nothing of your hands. The
+   only evidence is one line:
+
+       [stage] hand tracking refused (SecurityException) — gestures off
+
+   With hands gone, gestures, ASL and every pinch go with them, and the dock
+   becomes unreachable rather than absent. Reported as "hand tracking and ASL
+   are now broken, the dock menu is gone too", which is exactly what it looks
+   like from inside the glasses. `bin/install.sh` exists so it cannot recur.
+
+   A second, unrelated-looking symptom lands at the same moment: the wipe also
+   resets the THEME to HALO FIELD, and HALO is the one theme with
+   `active = true`, which switches the dock to its four-pip WRIST form down by
+   your hand. A wearer who had RECON sees a different, smaller dock somewhere
+   else and reasonably reports the dock as missing. Nothing is wrong; re-pick
+   the theme.
 
 ### Still owed before a store submission
 
