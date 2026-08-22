@@ -5,6 +5,7 @@ package com.iotj.meshmore.xr
 import io.iotone.meshcore.crypto.ChannelCrypto
 import java.util.Random
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -208,5 +209,22 @@ class ChannelsTest {
     @Test fun theNameDefaultsToTheTag() {
         assertEquals("soaktest", Channels.nameFor("#soaktest"))
         assertTrue(Channels.nameFor("#" + "x".repeat(40)).length <= 14)
+    }
+
+    /**
+     * A TAG THAT CANNOT BE READ CANNOT BE CHECKED.
+     *
+     * The confirm row's footer tells the wearer to check the tag character by
+     * character, which is only honest if every character is on the row. Longer
+     * tags are refused rather than clipped, because shortening one changes its
+     * key silently and would put the wearer on a channel of one.
+     */
+    @Test fun aTagTooWideToShowIsRefused() {
+        assertTrue(Channels.fitsOnARow("#soaktest"))
+        assertTrue(Channels.fitsOnARow("#pine-fox-47"))
+        assertFalse(Channels.fitsOnARow("#" + "a".repeat(Channels.TAG_MAX_SHOWN)))
+        // Kanji are two cells each, so a Japanese tag runs out of row twice as
+        // fast — the reason the limit is measured in cells and not characters.
+        assertFalse(Channels.fitsOnARow("#" + "設".repeat(11)))
     }
 }

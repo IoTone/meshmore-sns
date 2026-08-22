@@ -358,4 +358,13 @@
     <string name="wx_unrouted">-%1$d NO ROUTE, OLD</string>
     <string name="wx_floodcap">-%1$d NO ROUTE, CAPPED</string>
     <string name="al_wx_silent">NOBODY ANSWERED — MOST RADIOS SHARE NOTHING BY DEFAULT</string>
+    <!-- Joining a channel somebody else made, by saying its tag. -->
+    <string name="c_join_tag">JOIN A TAG</string>
+    <string name="c_join_tag_arm">JOIN %1$s</string>
+    <string name="c_say_again">SAY IT AGAIN</string>
+    <string name="n_say_tag">SAY THE TAG</string>
+    <string name="n_tag_heard">HEARD %1$s</string>
+    <string name="n_tag_none">NOTHING HEARD</string>
+    <string name="f_chan_join">"THE KEY COMES FROM THE TAG — CHECK IT CHARACTER BY CHARACTER"</string>
+    <string name="n_tag_long">TAG TOO LONG TO CHECK BY EYE</string>
 </resources>

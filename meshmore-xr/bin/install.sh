@@ -39,6 +39,30 @@ esac
 
 [ -f "$APK" ] || { echo "no $APK — build it first" >&2; exit 1; }
 
+# THE APK MUST BE THE BUILD YOU THINK IT IS.
+#
+# Installed a stale APK twice on 2026-08-22, both times after bumping the
+# version and running assembleRelease in the same breath: the install read an
+# older file, the glasses ran code from two edits ago, and the missing feature
+# looked like a feature that did not work. The version code is derived from
+# verBuild, so comparing them costs nothing and catches it every time.
+# The whole version code, computed the same way build.gradle.kts computes it:
+# (major*1000 + minor*10 + patch)*100 + verBuild. Comparing the derived pieces
+# separately is what broke the first version of this check — verBuild passed
+# 99 and stopped being "the last two digits".
+ver() { sed -n "s/^val $1 = \([0-9]*\).*/\1/p" app/build.gradle.kts; }
+WANT=$(( ($(ver verMajor) * 1000 + $(ver verMinor) * 10 + $(ver verPatch)) * 100 + $(ver verBuild) ))
+AAPT=$(ls -d "${ANDROID_HOME:-$HOME/Library/Android/sdk}"/build-tools/* 2>/dev/null | sort -V | tail -1)/aapt2
+if [ -n "$WANT" ] && [ -x "$AAPT" ]; then
+  GOT=$("$AAPT" dump badging "$APK" 2>/dev/null |
+          sed -n "s/.*versionCode='\([0-9]*\)'.*/\1/p" | head -1)
+  if [ -n "$GOT" ] && [ "$GOT" != "$WANT" ]; then
+    echo "STALE APK: $APK is versionCode $GOT, the source says $WANT" >&2
+    echo "  run: ./gradlew :app:assemble<Variant> and try again" >&2
+    exit 1
+  fi
+fi
+
 # THE SIGNATURES DIFFER, so debug over release (or the reverse) cannot be an
 # upgrade. Try the cheap path, fall back to the one that loses the app's data.
 echo "installing ${VARIANT} build"

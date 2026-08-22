@@ -911,11 +911,23 @@ private sealed interface ChanAction {
     data class New(val name: String) : ChanAction
     /** The public channel, waiting for the second pinch. */
     data object Public : ChanAction
+
+    /**
+     * A tag somebody else gave us, heard and waiting to be confirmed.
+     *
+     * THE LITERAL STRING IS CARRIED, not the words that were said. The key is
+     * SHA-256 over these exact bytes, so what the wearer confirms has to be
+     * what gets hashed — including its case, which dictation decides and this
+     * app must not quietly change.
+     */
+    data class Join(val tag: String) : ChanAction
 }
 
 private const val ROW_NEW = "+new"
 private const val ROW_ROLL = "+roll"
 private const val ROW_PUBLIC = "+public"
+private const val ROW_SAYTAG = "+saytag"
+private const val ROW_JOINTAG = "+jointag"
 
 /**
  * The two things this bay can DO, under the list of what already exists.
@@ -961,8 +973,21 @@ private fun makeRows(
         ChanAction.Public -> listOf(
             row(ROW_PUBLIC, ctx.getString(R.string.c_join_arm), lit = true),
         )
+        // THE TAG IS SHOWN EXACTLY AS IT WILL BE HASHED, for the same reason
+        // the rolled tag is shown in lowercase: "#Soak" and "#soak" are two
+        // channels that look like one, and this is the wearer's only chance to
+        // see that dictation heard a capital.
+        is ChanAction.Join -> listOf(
+            row(ROW_JOINTAG, ctx.getString(R.string.c_join_tag_arm, pending.tag), lit = true),
+            row(ROW_SAYTAG, ctx.getString(R.string.c_say_again)),
+        )
         null -> listOfNotNull(
             row(ROW_NEW, ctx.getString(R.string.c_new)),
+            // JOINING IS THE OTHER HALF OF MAKING, and the half this app did
+            // not have. A rolled channel has exactly one member until somebody
+            // else can type its tag; a wearer who is TOLD a tag had no way to
+            // use it at all.
+            row(ROW_SAYTAG, ctx.getString(R.string.c_join_tag)),
             // Offered only when the radio is NOT already on the public band.
             // On a stock radio slot 0 is Public and this row would be an
             // invitation to spend a slot on a channel you are already in.
@@ -1291,6 +1316,11 @@ private fun telemetryRows(
 private fun chanFooter(ctx: android.content.Context, pending: ChanAction?): String = when (pending) {
     is ChanAction.New -> ctx.getString(R.string.f_chan_new)
     ChanAction.Public -> ctx.getString(R.string.f_chan_public)
+    // A DIFFERENT WARNING FROM THE OTHER TWO. Rolling a name is told that the
+    // key is only as good as the words; joining somebody else's is told to
+    // check the characters, because the failure here is not weakness, it is
+    // landing on a channel nobody else is on and having nothing say so.
+    is ChanAction.Join -> ctx.getString(R.string.f_chan_join)
     null -> ctx.getString(R.string.f_chan)
 }
 
@@ -2192,6 +2222,15 @@ private fun HorizonScene(link: MeshLink) {
      * wearer goes to the APP bay must not be cancelled by — or worse, confused
      * with — a pick over there.
      */
+    /**
+     * True while dictation is being used for a TAG rather than a message.
+     *
+     * Dictation has one final-result callback and the crown owns it, because
+     * every other spoken thing in this app becomes a message. A tag is not a
+     * message and must never become one — so this flag says which surface the
+     * next result belongs to, and it is cleared the instant the result lands.
+     */
+    val hearingTag = remember { mutableStateOf(false) }
     val chanArmed = remember { mutableStateOf<ChanAction?>(null) }
     /**
      * ONE THEME COMMIT'S HEAVY WORK AT A TIME. The restyles and the dock
@@ -3861,7 +3900,39 @@ private fun HorizonScene(link: MeshLink) {
         // transmission. Speech recognition mishears; a radio that sends what it
         // thought it heard puts that mistake on somebody else's screen.
         dictation.onFinal = { text ->
-            if (text.isNotBlank()) crownRef.value?.propose(text) else crownRef.value?.compose()
+            if (hearingTag.value) {
+                // A TAG, NOT A MESSAGE. Nothing is written yet: the words
+                // become an armed row showing the literal string, and the
+                // second pinch is what reaches the radio.
+                hearingTag.value = false
+                if (text.isBlank()) {
+                    noticeRef.value?.say(ctx.getString(R.string.n_tag_none))
+                    cue.denied()
+                } else {
+                    val tag = Channels.joinTag(text)
+                    if (!Channels.fitsOnARow(tag)) {
+                        // Refused rather than clipped — see Channels.TAG_MAX_SHOWN.
+                        Log.w(TAG_UI, "[chan] tag '$tag' is too wide to confirm")
+                        noticeRef.value?.say(ctx.getString(R.string.n_tag_long))
+                        cue.denied()
+                    } else {
+                        chanArmed.value = ChanAction.Join(tag)
+                        chanArmedAt.value = android.os.SystemClock.uptimeMillis()
+                        Log.i(TAG_UI, "[chan] heard tag '$tag' from '$text'")
+                        noticeRef.value?.say(ctx.getString(R.string.n_tag_heard, tag))
+                        channelsRef.value?.show(
+                            channelRows(ctx, link, voice, chanArmed.value),
+                            title = ctx.getString(R.string.t_channels),
+                            footer = chanFooter(ctx, chanArmed.value),
+                        )
+                        cue.recognised()
+                    }
+                }
+            } else if (text.isNotBlank()) {
+                crownRef.value?.propose(text)
+            } else {
+                crownRef.value?.compose()
+            }
         }
 
         // The menu gets the same tick the dock does. On a display where you
@@ -4430,6 +4501,47 @@ private fun HorizonScene(link: MeshLink) {
                                 }
                                 is MeshLink.Wrote.Refused -> {
                                     noticeRef.value?.say(ctx.getString(R.string.n_refused, w.why))
+                                    cue.denied()
+                                }
+                            }
+                        }
+                        // SAY THE TAG. The mic is asked for at the moment of
+                        // speaking, like every other spoken path in this app —
+                        // a microphone prompt at launch reads as an app that
+                        // wants to listen to the room.
+                        id == ROW_SAYTAG -> {
+                            if (ctx.checkSelfPermission(
+                                    android.Manifest.permission.RECORD_AUDIO,
+                                ) != android.content.pm.PackageManager.PERMISSION_GRANTED
+                            ) {
+                                askMic.launch(android.Manifest.permission.RECORD_AUDIO)
+                            } else {
+                                hearingTag.value = true
+                                chanArmed.value = null
+                                dictation.start()
+                                noticeRef.value?.say(ctx.getString(R.string.n_say_tag))
+                                cue.recognised()
+                            }
+                        }
+                        id == ROW_JOINTAG && pending is ChanAction.Join -> {
+                            val tag = pending.tag
+                            disarm()
+                            when (
+                                val w = link.writeChannel(
+                                    Channels.nameFor(tag), Channels.pskFor(tag),
+                                )
+                            ) {
+                                is MeshLink.Wrote.Ok -> {
+                                    Log.i(TAG_UI, "[chan] joined '$tag' in slot ${w.idx}")
+                                    noticeRef.value?.say(
+                                        ctx.getString(R.string.n_chan_made, tag),
+                                    )
+                                    cue.opened()
+                                }
+                                is MeshLink.Wrote.Refused -> {
+                                    noticeRef.value?.say(
+                                        ctx.getString(R.string.n_refused, w.why),
+                                    )
                                     cue.denied()
                                 }
                             }

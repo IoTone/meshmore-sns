@@ -136,6 +136,23 @@ object Channels {
      * capitalised. [tagFor] lowercases because it is naming a channel this app
      * is inventing; this one is quoting somebody else's.
      */
+    /**
+     * The longest tag a wearer can actually CHECK on a bay row.
+     *
+     * A row is 26 cells in Japanese and the confirm row spends some of them on
+     * the verb, so a tag past this is clipped — and a clipped tag under a
+     * footer that says "check it character by character" is the app lying about
+     * the one thing that decides whether two radios ever hear each other.
+     *
+     * TRUNCATION IS NOT AN OPTION anywhere near this: shortening a tag changes
+     * its key silently. So a tag too long to display is refused, and the flag
+     * path stays available for one that has to be exact.
+     */
+    const val TAG_MAX_SHOWN = 20
+
+    fun fitsOnARow(tag: String): Boolean =
+        com.iotj.meshmore.xr.spatial.TypeTier.displayCells(tag) <= TAG_MAX_SHOWN
+
     fun joinTag(raw: String): String {
         val body = raw.trim().replace(Regex("\\s+"), "-").trimStart('#')
         return "#" + body
