@@ -353,6 +353,11 @@
     <string name="n_say_tag">タグを言って</string>
     <string name="n_tag_heard">%1$s と認識</string>
     <string name="n_tag_none">聞き取れず</string>
-    <string name="f_chan_join">"鍵はタグから生成 — 一字ずつ確認を"</string>
+    <string name="f_chan_join">一字ずつ確認すること</string>
     <string name="n_tag_long">タグが長すぎて確認できない</string>
+    <string name="c_type_tag">タグを入力</string>
+    <string name="c_delete">%1$s を削除</string>
+    <string name="c_delete_arm">もう一度で削除</string>
+    <string name="n_chan_gone">%1$s を削除した</string>
+    <string name="f_chan_del">"鍵は完全に失われる"</string>
 </resources>

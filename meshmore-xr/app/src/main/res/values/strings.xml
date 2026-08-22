@@ -365,6 +365,11 @@
     <string name="n_say_tag">SAY THE TAG</string>
     <string name="n_tag_heard">HEARD %1$s</string>
     <string name="n_tag_none">NOTHING HEARD</string>
-    <string name="f_chan_join">"THE KEY COMES FROM THE TAG — CHECK IT CHARACTER BY CHARACTER"</string>
+    <string name="f_chan_join">CHECK EVERY CHARACTER FIRST</string>
     <string name="n_tag_long">TAG TOO LONG TO CHECK BY EYE</string>
+    <string name="c_type_tag">TYPE A TAG</string>
+    <string name="c_delete">DELETE %1$s</string>
+    <string name="c_delete_arm">PICK AGAIN TO DELETE</string>
+    <string name="n_chan_gone">%1$s DELETED</string>
+    <string name="f_chan_del">"THE KEY IS GONE FOR GOOD"</string>
 </resources>

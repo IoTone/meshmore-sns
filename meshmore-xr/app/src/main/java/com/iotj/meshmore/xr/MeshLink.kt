@@ -1919,6 +1919,34 @@ class MeshLink(
      * tail, which is a surface the wearer can open and read.
      */
     /**
+     * EMPTY A SLOT — or find out that the firmware will not let you.
+     *
+     * MeshCore's companion protocol has no CLEAR_CHANNEL opcode. The phone app
+     * takes the pragmatic route and overwrites the slot with the well-known
+     * Public name and key, which leaves a slot that works but claims to be a
+     * second Public. This tries the other reading first: [dumpChannel] treats a
+     * blank name with an all-zero key as `<empty slot>`, which means the
+     * firmware has a way to SAY empty — so it may also accept being told it.
+     *
+     * The caller reads the slot back and finds out. Nothing here assumes.
+     */
+    fun clearChannel(idx: Int): Wrote {
+        val s = session
+        if (s == null || _status.value.state != SessionState.READY) {
+            return Wrote.Refused("NO RADIO")
+        }
+        if (idx !in 0 until CHANNEL_SLOTS) return Wrote.Refused("NO SUCH SLOT")
+        val had = chans[idx]
+        Log.w(TAG, "[chan] clearing slot $idx (held ${had?.name ?: "<nothing>"})")
+        diag(">>CHAN CLR $idx")
+        s.setChannel(idx, "", ByteArray(io.iotone.meshcore.MeshcoreConstants.CHANNEL_PSK_SIZE))
+        chans.remove(idx)
+        answered.remove(idx)
+        s.requestChannel(idx)
+        return Wrote.Ok(idx, "")
+    }
+
+    /**
      * Write a channel into a NAMED slot, occupied or not.
      *
      * [writeChannel] refuses to overwrite, and that rule is right for anything

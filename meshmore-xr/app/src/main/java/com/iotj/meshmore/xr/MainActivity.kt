@@ -300,6 +300,9 @@ class MainActivity : ComponentActivity() {
 
         /** `--ez chanpublic true` writes the well-known public key. For repairs. */
         var chanPublic: Boolean = false
+
+        /** `--ei chanclear N` empties a slot, to find out if the radio allows it. */
+        var chanClear: Int = -1
         /** --ez focus true : open S3 NODE FOCUS on the first node that arrives. */
         var showFocus: Boolean = false
         /**
@@ -482,6 +485,7 @@ class MainActivity : ComponentActivity() {
         joinName = intent?.getStringExtra("channame")?.takeIf { it.isNotBlank() }
         chanSlot = intent?.getIntExtra("chanslot", -1) ?: -1
         chanPublic = intent?.getBooleanExtra("chanpublic", false) ?: false
+        chanClear = intent?.getIntExtra("chanclear", -1) ?: -1
         val pin = intent?.getStringExtra("pin")
         Log.i(TAG, "[boot] pin override = ${pin ?: "<none, using built-in>"}")
         val debug = intent?.getBooleanExtra("debug", false) ?: false
@@ -902,7 +906,43 @@ private fun channelRows(
             ),
             lit = voice.isOn(c.threadId),
         )
-    } + makeRows(ctx, link, pending)
+    } + makeRows(ctx, link, pending) + deleteRows(ctx, link, pending)
+}
+
+/**
+ * A DELETE ROW PER CHANNEL WORTH DELETING.
+ *
+ * MeshCore's companion protocol has no CLEAR_CHANNEL opcode and the phone app
+ * concluded there was no delete — it overwrites a slot with the Public name and
+ * key instead, leaving a slot that works and lies about what it is. Measured on
+ * the operator's radio 2026-08-22: writing an EMPTY name with an all-zero key
+ * makes the firmware report `<empty slot>`, and it stays empty across a
+ * reconnect. So this app deletes properly. See MeshLink.clearChannel.
+ *
+ * NOT OFFERED FOR THE PUBLIC BAND. Deleting Public takes the wearer off the
+ * channel everybody else is on, and unlike a private key it can be restored
+ * from a constant — so the row would be an invitation to break something for no
+ * reason. Nor for a channel known only from traffic: there is no slot to clear.
+ */
+private fun deleteRows(
+    ctx: android.content.Context,
+    link: MeshLink,
+    pending: ChanAction?,
+): List<com.iotj.meshmore.xr.spatial.Stack.Row> {
+    if (pending != null) return emptyList()
+    if (link.status.value.state != SessionState.READY) return emptyList()
+    return link.channels()
+        .filter { !it.publicKey && it.idx >= 0 }
+        .map { c ->
+            com.iotj.meshmore.xr.spatial.Stack.Row(
+                id = ROW_DEL + c.idx,
+                label = ctx.getString(
+                    R.string.c_delete,
+                    com.iotj.meshmore.xr.spatial.TypeTier.clip(c.name.uppercase(), 12),
+                ),
+                lit = false,
+            )
+        }
 }
 
 /** A channel write the wearer has started but not yet confirmed. */
@@ -921,6 +961,15 @@ private sealed interface ChanAction {
      * app must not quietly change.
      */
     data class Join(val tag: String) : ChanAction
+
+    /**
+     * A channel about to be deleted, waiting for the second pinch.
+     *
+     * Carries the SLOT as well as the name, because the name is decoration and
+     * the slot is what gets written. Two channels may share a name; only one
+     * occupies slot 2.
+     */
+    data class Delete(val idx: Int, val name: String) : ChanAction
 }
 
 private const val ROW_NEW = "+new"
@@ -928,6 +977,8 @@ private const val ROW_ROLL = "+roll"
 private const val ROW_PUBLIC = "+public"
 private const val ROW_SAYTAG = "+saytag"
 private const val ROW_JOINTAG = "+jointag"
+private const val ROW_TYPETAG = "+typetag"
+private const val ROW_DEL = "+del:"
 
 /**
  * The two things this bay can DO, under the list of what already exists.
@@ -981,6 +1032,9 @@ private fun makeRows(
             row(ROW_JOINTAG, ctx.getString(R.string.c_join_tag_arm, pending.tag), lit = true),
             row(ROW_SAYTAG, ctx.getString(R.string.c_say_again)),
         )
+        is ChanAction.Delete -> listOf(
+            row(ROW_DEL + pending.idx, ctx.getString(R.string.c_delete_arm), lit = true),
+        )
         null -> listOfNotNull(
             row(ROW_NEW, ctx.getString(R.string.c_new)),
             // JOINING IS THE OTHER HALF OF MAKING, and the half this app did
@@ -988,6 +1042,10 @@ private fun makeRows(
             // else can type its tag; a wearer who is TOLD a tag had no way to
             // use it at all.
             row(ROW_SAYTAG, ctx.getString(R.string.c_join_tag)),
+            // TYPING IS THE ONE THAT WORKS. Dictation is kept because it is
+            // faster when it lands, but the log of four failed attempts at
+            // "#soaktest" is why this row exists — see TagPad.
+            row(ROW_TYPETAG, ctx.getString(R.string.c_type_tag)),
             // Offered only when the radio is NOT already on the public band.
             // On a stock radio slot 0 is Public and this row would be an
             // invitation to spend a slot on a channel you are already in.
@@ -1321,6 +1379,7 @@ private fun chanFooter(ctx: android.content.Context, pending: ChanAction?): Stri
     // check the characters, because the failure here is not weakness, it is
     // landing on a channel nobody else is on and having nothing say so.
     is ChanAction.Join -> ctx.getString(R.string.f_chan_join)
+    is ChanAction.Delete -> ctx.getString(R.string.f_chan_del)
     null -> ctx.getString(R.string.f_chan)
 }
 
@@ -2150,6 +2209,7 @@ private fun HorizonScene(link: MeshLink) {
     val rackRef = remember { mutableStateOf<Rack?>(null) }
     val dockRef = remember { mutableStateOf<Dock?>(null) }
     val handsRef = remember { mutableStateOf<Hands?>(null) }
+    val tagPadRef = remember { mutableStateOf<com.iotj.meshmore.xr.spatial.TagPad?>(null) }
     val menuRef = remember { mutableStateOf<RadialMenu?>(null) }
     /**
      * THE NODE'S OWN MENU — the first per-node actions in the app. Separate
@@ -3373,6 +3433,38 @@ private fun HorizonScene(link: MeshLink) {
         val hands = Hands(session, palette, ctx)
         hands.build()
         handsRef.value = hands
+
+        // THE TAG KEYBOARD, born hidden like every other panel. A tag is the
+        // one string in this app that must be exact, and dictation cannot
+        // produce an exact string — see TagPad for the four attempts that
+        // settled it.
+        val tagPad = com.iotj.meshmore.xr.spatial.TagPad(session, palette, ctx)
+        tagPad.build()
+        tagPadRef.value = tagPad
+        tagPad.onDone = { typed ->
+            val tag = com.iotj.meshmore.xr.Channels.joinTag(typed)
+            if (typed.isBlank() || tag == "#") {
+                noticeRef.value?.say(ctx.getString(R.string.n_tag_none))
+                cue.denied()
+            } else if (!com.iotj.meshmore.xr.Channels.fitsOnARow(tag)) {
+                noticeRef.value?.say(ctx.getString(R.string.n_tag_long))
+                cue.denied()
+            } else {
+                // THE SAME CONFIRM STEP THE SPOKEN PATH USES. Typing is more
+                // reliable, not infallible, and the row showing the literal
+                // string is where a stray character is caught either way.
+                chanArmed.value = ChanAction.Join(tag)
+                chanArmedAt.value = android.os.SystemClock.uptimeMillis()
+                Log.i(TAG_UI, "[chan] typed tag '$tag'")
+                channelsRef.value?.show(
+                    channelRows(ctx, link, voice, chanArmed.value),
+                    title = ctx.getString(R.string.t_channels),
+                    footer = chanFooter(ctx, chanArmed.value),
+                )
+                cue.recognised()
+            }
+        }
+        tagPad.onCancel = { cue.closed() }
         // THE SKELETON IS DEBUG SCAFFOLDING AND NEEDS A WAY IN.
         //
         // Its dock pip was given to the inbox, on the argument that a wireframe
@@ -4144,6 +4236,14 @@ private fun HorizonScene(link: MeshLink) {
                 cue.opened()
             }
 
+            if (MainActivity.chanClear >= 0) launch {
+                kotlinx.coroutines.delay(20_000)
+                val idx = MainActivity.chanClear
+                when (val w = link.clearChannel(idx)) {
+                    is MeshLink.Wrote.Ok -> Log.i(TAG_UI, "[chan] cleared slot $idx — reading back")
+                    is MeshLink.Wrote.Refused -> Log.w(TAG_UI, "[chan] clear refused: ${w.why}")
+                }
+            }
             MainActivity.joinTag?.let { raw ->
                 launch {
                     // After the connect-time slot enumeration, or freeSlot()
@@ -4509,6 +4609,58 @@ private fun HorizonScene(link: MeshLink) {
                         // speaking, like every other spoken path in this app —
                         // a microphone prompt at launch reads as an app that
                         // wants to listen to the room.
+                        // TYPED, WHICH IS THE ONE THAT WORKS. The pad is
+                        // built at setup and hidden; this only places it and
+                        // asks for the keyboard. See TagPad.
+                        id == ROW_TYPETAG -> {
+                            val h = stage.headNow()
+                            if (h == null) {
+                                noticeRef.value?.say(ctx.getString(R.string.n_not_tracking))
+                                cue.denied()
+                            } else {
+                                chanArmed.value = null
+                                tagPadRef.value?.showAt(h.translation, yawOf(h))
+                                cue.opened()
+                            }
+                        }
+                        // ARMED, LIKE EVERY OTHER IRREVERSIBLE ACT HERE. The
+                        // second pinch is on a row that says what it will do,
+                        // under a footer that says the key does not come back.
+                        id.startsWith(ROW_DEL) && pending !is ChanAction.Delete -> {
+                            val idx = id.removePrefix(ROW_DEL).toIntOrNull()
+                            val c = idx?.let { i -> link.channels().firstOrNull { it.idx == i } }
+                            if (c == null) {
+                                cue.denied()
+                            } else {
+                                chanArmed.value = ChanAction.Delete(c.idx, c.name)
+                                chanArmedAt.value = nowMs
+                                cue.recognised()
+                            }
+                        }
+                        id.startsWith(ROW_DEL) && pending is ChanAction.Delete -> {
+                            val gone = pending.name
+                            disarm()
+                            when (val w = link.clearChannel(pending.idx)) {
+                                is MeshLink.Wrote.Ok -> {
+                                    Log.i(TAG_UI, "[chan] deleted '$gone' from slot ${pending.idx}")
+                                    noticeRef.value?.say(
+                                        ctx.getString(R.string.n_chan_gone, gone.uppercase()),
+                                    )
+                                    // AND STOP READING IT ALOUD. A deleted
+                                    // channel that kept its read-aloud flag
+                                    // would speak again the moment the slot was
+                                    // reused for something else.
+                                    voice.set("#${pending.idx}", false)
+                                    cue.opened()
+                                }
+                                is MeshLink.Wrote.Refused -> {
+                                    noticeRef.value?.say(
+                                        ctx.getString(R.string.n_refused, w.why),
+                                    )
+                                    cue.denied()
+                                }
+                            }
+                        }
                         id == ROW_SAYTAG -> {
                             if (ctx.checkSelfPermission(
                                     android.Manifest.permission.RECORD_AUDIO,
