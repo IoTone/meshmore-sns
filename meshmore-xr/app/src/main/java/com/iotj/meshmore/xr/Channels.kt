@@ -111,6 +111,47 @@ object Channels {
      */
     fun pskFor(tag: String): ByteArray = ChannelCrypto.channelPskFromHashtag(tag)
 
+    /**
+     * SOMEBODY ELSE'S TAG, TAKEN AS LITERALLY AS POSSIBLE.
+     *
+     * [tagFor] builds the tag this app would have rolled. This is the other
+     * direction: a tag that already exists, said or typed by the person whose
+     * channel it is, which this app must reproduce BYTE FOR BYTE or the two
+     * radios derive different keys and neither ever hears the other.
+     *
+     * So the only edits are the ones that cannot change the meaning:
+     *
+     *  - Surrounding whitespace goes. Dictation and a soft keyboard both add
+     *    it, and no tag can begin or end with a space anybody could reproduce
+     *    on purpose.
+     *  - Internal whitespace becomes a hyphen. "#pine fox 47" said aloud is
+     *    "#pine-fox-47" written down — the convention [tagFor] already
+     *    establishes for rolled names, and what makes a tag sayable at all.
+     *  - A leading marker is added if absent, because every tag in the
+     *    ecosystem carries one and a wearer saying "soaktest" means "#soaktest".
+     *
+     * WHAT IS DELIBERATELY NOT DONE IS LOWERCASING. "#Soak" and "#soak" are
+     * different channels — the key is SHA-256 over the literal bytes — so
+     * folding case here would silently join the wrong band whenever somebody
+     * capitalised. [tagFor] lowercases because it is naming a channel this app
+     * is inventing; this one is quoting somebody else's.
+     */
+    fun joinTag(raw: String): String {
+        val body = raw.trim().replace(Regex("\\s+"), "-").trimStart('#')
+        return "#" + body
+    }
+
+    /**
+     * The default local NAME for a tag: the tag without its marker.
+     *
+     * The name is decoration — the radio stores it, the mesh never sees it,
+     * and the on-air identity is SHA256(psk)[0]. So a wearer joining somebody
+     * else's channel gets a sane label without being asked a second question,
+     * and one who wants a different name says so.
+     */
+    fun nameFor(tag: String): String =
+        tag.trimStart('#').take(CHAN_NAME_MAX_LOCAL)
+
     /** The well-known public key, for the JOIN PUBLIC action. */
     fun publicPsk(): ByteArray = MeshcoreConstants.publicChannelPsk()
 

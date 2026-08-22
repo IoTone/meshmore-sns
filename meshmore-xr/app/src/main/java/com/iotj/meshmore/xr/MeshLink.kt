@@ -1875,13 +1875,23 @@ class MeshLink(
      * The lowest slot the radio reported as EMPTY, or null when all four are
      * spoken for.
      *
-     * Empty is a real answer here rather than an absence: [dumpChannel] returns
-     * early on a slot with no name and a zero key, so a slot missing from
-     * [chans] is one the radio has told us is free — not one we failed to ask
-     * about. That distinction only holds AFTER the connect-time enumeration,
-     * which is why [writeChannel] refuses when the link is not READY.
+     * A SLOT IS FREE ONLY IF THE RADIO SAID SO. This used to read "absent from
+     * [chans]" as free, on the argument that [dumpChannel] returns early for an
+     * empty slot so anything missing must have been reported empty. That is
+     * true only if every reply arrives, and on 2026-08-22 the reply for slot 0
+     * did not: slot 1 came back empty, slot 0 came back not at all, and this
+     * function offered slot 0 — the live public band the wearer was reading —
+     * as somewhere to put a new channel. It was taken, and the public key was
+     * gone from the radio.
+     *
+     * So [answered] records what was actually heard, and a slot the radio has
+     * never spoken about is treated as OCCUPIED. The cost of that mistake is
+     * "no free slot" on a radio that had one; the cost of the other mistake is
+     * somebody's channel.
      */
-    fun freeSlot(): Int? = (0 until CHANNEL_SLOTS).firstOrNull { it !in chans }
+    fun freeSlot(): Int? = (0 until CHANNEL_SLOTS).firstOrNull {
+        it in answered && it !in chans
+    }
 
     /** What a channel write did, in a form a surface can put into words. */
     sealed interface Wrote {
@@ -1908,6 +1918,43 @@ class MeshLink(
      * and the other twelve bytes stay out of logcat and out of the diagnostics
      * tail, which is a surface the wearer can open and read.
      */
+    /**
+     * Write a channel into a NAMED slot, occupied or not.
+     *
+     * [writeChannel] refuses to overwrite, and that rule is right for anything
+     * a hand can reach: a key destroyed on the glasses cannot be written down
+     * or recovered. But refusing is not the same as being unable, and there is
+     * one job that needs the capability — putting back what should be there.
+     * The public key is the case that matters: it is well-known, so restoring
+     * it destroys nothing, and slot 0 holding the wrong thing is the single
+     * most damaging state this app can leave a radio in.
+     *
+     * Deliberately not reachable from any surface. It exists for a repair, it
+     * announces what it is about to displace, and the caller has to name the
+     * slot — nothing here chooses one.
+     */
+    fun writeChannelAt(idx: Int, name: String, psk: ByteArray): Wrote {
+        val s = session
+        if (s == null || _status.value.state != SessionState.READY) {
+            return Wrote.Refused("NO RADIO")
+        }
+        if (psk.size != io.iotone.meshcore.MeshcoreConstants.CHANNEL_PSK_SIZE) {
+            return Wrote.Refused("BAD KEY")
+        }
+        if (idx !in 0 until CHANNEL_SLOTS) return Wrote.Refused("NO SUCH SLOT")
+        val had = chans[idx]
+        val fp = psk.take(4).joinToString("") { "%02x".format(it) }
+        Log.w(
+            TAG,
+            "[chan] OVERWRITING slot $idx (held ${had?.name ?: "<nothing the app knew of>"}) " +
+                "<- \"$name\" psk $fp…",
+        )
+        diag(">>CHAN SET $idx $name")
+        s.setChannel(idx, name, psk)
+        s.requestChannel(idx)
+        return Wrote.Ok(idx, name)
+    }
+
     fun writeChannel(name: String, psk: ByteArray): Wrote {
         val s = session
         if (s == null || _status.value.state != SessionState.READY) {
@@ -1932,8 +1979,60 @@ class MeshLink(
         return Wrote.Ok(idx, name)
     }
 
+    /**
+     * Slots the radio has actually ANSWERED for, empty or not.
+     *
+     * The distinction this holds is the one that cost the operator their
+     * public channel on 2026-08-22. [freeSlot] read "absent from chans" as
+     * "the radio said it was empty", and the comment there asserted exactly
+     * that — but a reply that never arrives is also absent, and on that
+     * connect the reply for slot 0 never came. Slot 1 was reported empty,
+     * slot 0 was reported as nothing at all, and the app wrote a new channel
+     * over the live public band the wearer was reading traffic on.
+     *
+     * Silence is not consent. A slot is only free if we heard it said.
+     */
+    private val answered = java.util.Collections.synchronizedSet(mutableSetOf<Int>())
+
+    /**
+     * Ask again for any slot that has not answered, a few times, spaced out.
+     *
+     * Measured on the operator's radio 2026-08-22: asking for all four slots in
+     * one burst reliably loses replies — one connect answered for slot 1 alone,
+     * the next for slot 0 alone. That was survivable while a lost reply merely
+     * hid a channel from the list. It stopped being survivable when [freeSlot]
+     * started treating an unanswered slot as occupied, because then a lost
+     * reply makes the app refuse to create a channel on a radio with three
+     * slots free.
+     *
+     * Spaced rather than repeated in bulk, since a burst is what loses them.
+     */
+    private fun chaseChannelSlots(round: Int) {
+        if (round >= CHANNEL_CHASES) {
+            val missing = (0 until CHANNEL_SLOTS).filter { it !in answered }
+            if (missing.isNotEmpty()) {
+                Log.w(TAG, "[chan] slot(s) $missing never answered — treated as occupied")
+            }
+            return
+        }
+        retryHandler.postDelayed({
+            if (_status.value.state != SessionState.READY) return@postDelayed
+            val missing = (0 until CHANNEL_SLOTS).filter { it !in answered }
+            if (missing.isEmpty()) {
+                Log.i(TAG, "[chan] all $CHANNEL_SLOTS slots accounted for")
+                return@postDelayed
+            }
+            Log.i(TAG, "[chan] no reply yet for slot(s) $missing — asking again")
+            missing.forEachIndexed { n, i ->
+                retryHandler.postDelayed({ session?.requestChannel(i) }, n * 300L)
+            }
+            chaseChannelSlots(round + 1)
+        }, CHANNEL_CHASE_MS)
+    }
+
     private fun dumpChannel(c: io.iotone.meshcore.model.ChannelInfo) {
         val psk = c.psk()
+        answered += c.channelIdx()
         if (c.name().isNullOrBlank() && (psk == null || psk.all { it.toInt() == 0 })) {
             Log.i(TAG, "[radio] channel ${c.channelIdx()}     = <empty slot>")
             return
@@ -2058,7 +2157,21 @@ class MeshLink(
                 // Enumerate the channel slots. There is no "how many channels"
                 // query -- an unconfigured slot simply answers with an empty
                 // name -- so we ask for a fixed few and print what comes back.
+                //
+                // AND ASK AGAIN FOR THE ONES THAT DO NOT ANSWER. Measured on
+                // the operator's radio: asking for all four in a burst reliably
+                // loses replies — one connect answered for slot 1 alone, the
+                // next for slot 0 alone. That was survivable while a missing
+                // reply merely hid a channel; now that freeSlot treats an
+                // unanswered slot as OCCUPIED (it has to — see there), a lost
+                // reply would make the app refuse to create a channel on a
+                // radio with three slots free.
+                //
+                // Spaced retries rather than a bigger burst, because a burst is
+                // what loses them.
+                answered.clear()
                 for (i in 0 until CHANNEL_SLOTS) session?.requestChannel(i)
+                chaseChannelSlots(0)
             }
 
             override fun onAdvert(frame: AdvertFrame) {
@@ -2548,6 +2661,12 @@ class MeshLink(
          * for the operator adopting it. See where homeRadio is written.
          */
         const val DEFAULT_PREFIX = "MeshCore"
+
+        /** How many times to re-ask for a channel slot that has not answered. */
+        const val CHANNEL_CHASES = 3
+
+        /** And how long to wait between rounds. */
+        const val CHANNEL_CHASE_MS = 2_500L
 
         const val LOST_MULTIPLE = 4
 

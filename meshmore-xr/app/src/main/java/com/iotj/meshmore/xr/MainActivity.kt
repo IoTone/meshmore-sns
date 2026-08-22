@@ -280,6 +280,26 @@ class MainActivity : ComponentActivity() {
          * needs a flag, and the answer needs the glasses on a live mesh.
          */
         var wxSweep: Boolean = false
+
+        /**
+         * `--es jointag "#soaktest" [--es channame soak]` writes a channel
+         * whose KEY comes from a tag and whose NAME is whatever you say.
+         *
+         * The bay can only make a channel this app rolled itself, where the
+         * tag is the name with a marker in front — which cannot express the
+         * two things an operator actually needs: a channel called one thing
+         * and keyed on another, and joining a channel somebody else made. The
+         * derivation is the same either way, so this flag is the same write
+         * with the two strings separated.
+         */
+        var joinTag: String? = null
+        var joinName: String? = null
+
+        /** `--ei chanslot N` writes to that slot even if it is occupied. */
+        var chanSlot: Int = -1
+
+        /** `--ez chanpublic true` writes the well-known public key. For repairs. */
+        var chanPublic: Boolean = false
         /** --ez focus true : open S3 NODE FOCUS on the first node that arrives. */
         var showFocus: Boolean = false
         /**
@@ -458,6 +478,10 @@ class MainActivity : ComponentActivity() {
         namePrefix = prefix?.takeIf { it.isNotBlank() }
         adopt = intent?.getBooleanExtra("adopt", false) ?: false
         wxSweep = intent?.getBooleanExtra("wxsweep", false) ?: false
+        joinTag = intent?.getStringExtra("jointag")?.takeIf { it.isNotBlank() }
+        joinName = intent?.getStringExtra("channame")?.takeIf { it.isNotBlank() }
+        chanSlot = intent?.getIntExtra("chanslot", -1) ?: -1
+        chanPublic = intent?.getBooleanExtra("chanpublic", false) ?: false
         val pin = intent?.getStringExtra("pin")
         Log.i(TAG, "[boot] pin override = ${pin ?: "<none, using built-in>"}")
         val debug = intent?.getBooleanExtra("debug", false) ?: false
@@ -4049,6 +4073,38 @@ private fun HorizonScene(link: MeshLink) {
                 cue.opened()
             }
 
+            MainActivity.joinTag?.let { raw ->
+                launch {
+                    // After the connect-time slot enumeration, or freeSlot()
+                    // has no table to choose from and the write is refused for
+                    // a reason that has nothing to do with the channel.
+                    kotlinx.coroutines.delay(20_000)
+                    val tag = com.iotj.meshmore.xr.Channels.joinTag(raw)
+                    val name = MainActivity.joinName
+                        ?: com.iotj.meshmore.xr.Channels.nameFor(tag)
+                    val psk = if (MainActivity.chanPublic) {
+                        com.iotj.meshmore.xr.Channels.publicPsk()
+                    } else {
+                        com.iotj.meshmore.xr.Channels.pskFor(tag)
+                    }
+                    // THE TAG IS LOGGED AND THE KEY IS NOT. The tag is the
+                    // shareable half — it is meant to be said out loud — and
+                    // the key is the half that must never reach a surface a
+                    // wearer can open. writeChannel logs four bytes of
+                    // fingerprint so a write can be correlated with what the
+                    // radio reports back, and no more.
+                    Log.i(TAG_UI, "[chan] joining '$tag' as \"$name\"")
+                    val slot = MainActivity.chanSlot
+                    val w = if (slot >= 0) link.writeChannelAt(slot, name, psk)
+                            else link.writeChannel(name, psk)
+                    when (w) {
+                        is MeshLink.Wrote.Ok ->
+                            Log.i(TAG_UI, "[chan] joined '$tag' in slot ${w.idx}")
+                        is MeshLink.Wrote.Refused ->
+                            Log.w(TAG_UI, "[chan] refused: ${w.why}")
+                    }
+                }
+            }
             if (MainActivity.wxSweep) launch {
                 // Long enough for the contact sync to finish: a sweep planned
                 // against a half-loaded store asks a fraction of the mesh and

@@ -153,4 +153,60 @@ class ChannelsTest {
         val psk = Channels.pskFor(Channels.tagFor(Channels.roll()))
         assertTrue(!psk.contentEquals(Channels.publicPsk()))
     }
+
+    // --- joining somebody else's channel -------------------------------------
+
+    /**
+     * THE OPERATOR'S OWN REQUIREMENT, 2026-08-22: a channel named "soak" whose
+     * key comes from the tag "#soaktest" — a name and a tag that are
+     * deliberately NOT the same string.
+     *
+     * The key is pinned to a literal here rather than recomputed, because a
+     * test that derives the expected value the same way the code does would
+     * pass even if both were wrong. This value is SHA-256("#soaktest")[0..16]
+     * computed independently, and the derivation is the one the phone app
+     * publishes a vector for.
+     */
+    @Test fun theOperatorsSoakChannel() {
+        val tag = Channels.joinTag("soaktest")
+        assertEquals("#soaktest", tag)
+        assertEquals(
+            "8ce85dc561fc89088212c2c3e4d306e9",
+            Channels.pskFor(tag).joinToString("") { "%02x".format(it) },
+        )
+    }
+
+    /** The published ecosystem vector, so a change to the derivation is caught. */
+    @Test fun theDocumentedHashtagVector() {
+        assertEquals(
+            "9cd8fcf22a47333b591d96a2b848b73f",
+            Channels.pskFor("#test").joinToString("") { "%02x".format(it) },
+        )
+    }
+
+    /** A tag said aloud arrives with spaces; a tag typed arrives with a marker. */
+    @Test fun aTagIsQuotedNotRewritten() {
+        assertEquals("#soaktest", Channels.joinTag("  soaktest  "))
+        assertEquals("#soaktest", Channels.joinTag("#soaktest"))
+        assertEquals("#pine-fox-47", Channels.joinTag("pine fox 47"))
+        assertEquals("#pine-fox-47", Channels.joinTag("#pine  fox\t47"))
+    }
+
+    /**
+     * CASE IS NEVER FOLDED. "#Soak" and "#soak" are different channels, and a
+     * join that quietly lowercased would put a wearer on a band the person who
+     * gave them the tag is not on — with nothing anywhere saying why.
+     */
+    @Test fun caseIsPartOfTheChannel() {
+        assertEquals("#Soak", Channels.joinTag("Soak"))
+        val upper = Channels.pskFor("#Soak").joinToString("") { "%02x".format(it) }
+        val lower = Channels.pskFor("#soak").joinToString("") { "%02x".format(it) }
+        assertTrue("case must change the key", upper != lower)
+    }
+
+    /** The local name is decoration and defaults to the tag without its marker. */
+    @Test fun theNameDefaultsToTheTag() {
+        assertEquals("soaktest", Channels.nameFor("#soaktest"))
+        assertTrue(Channels.nameFor("#" + "x".repeat(40)).length <= 14)
+    }
 }
