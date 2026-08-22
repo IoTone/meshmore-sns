@@ -226,30 +226,99 @@ object TxLog {
      * Ordered by what a wearer looks for first — did they arrive, how fast,
      * and only then the breakdowns.
      */
-    fun rows(attempts: List<Attempt>): List<Pair<String, String>> {
+    /**
+     * WHAT A ROW IS, WITHOUT SAYING IT IN ANY LANGUAGE.
+     *
+     * [rows] used to return English names — "SENT", "ROUND TRIP", "128-160 B" —
+     * and the delivery bay printed them straight onto the glasses, so the whole
+     * surface was in English on a Japanese build. Nothing could catch that: the
+     * strings fit their plate, and the parity test compares resource files
+     * while these lived in Kotlin.
+     *
+     * This file stays pure — no Context, no resources, so the analysis can be
+     * exercised on a desktop JVM — by naming the row rather than wording it.
+     * The words live in strings.xml where the parity test can see them, and
+     * `wxRows`' sibling `txRows` does the joining.
+     */
+    sealed interface Name {
+        data object Sent : Name
+        data object Refused : Name
+        data object Acked : Name
+        data object InFlight : Name
+        data object RoundTrip : Name
+        data object Slowest : Name
+        data object Direct : Name
+        data object Flood : Name
+        data class Hops(val n: Int) : Name
+        data class Size(val lo: Int, val hi: Int) : Name
+        data class Over(val lo: Int) : Name
+    }
+
+    /** A row: what it is, and the figures that go beside it. */
+    data class Row(val name: Name, val value: String)
+
+    private fun nameOfBucket(bytes: Int): Name {
+        var low = 0
+        SIZE_EDGES.forEach { hi ->
+            if (bytes <= hi) return Name.Size(low, hi)
+            low = hi
+        }
+        return Name.Over(low)
+    }
+
+    /**
+     * THE SAME FINDING, SHAPED FOR A ROW OF TYPE RATHER THAN A LOG LINE.
+     *
+     * A bay row is 28 cells in English and 26 in Japanese, and the log format
+     * is thirty-five columns wide — it would be clipped exactly where the
+     * figures are. Ordered by what a wearer looks for first: did they arrive,
+     * how fast, and only then the breakdowns.
+     */
+    fun rows(attempts: List<Attempt>): List<Row> {
         if (attempts.isEmpty()) return emptyList()
         val settled = attempts.filter { it.settled }
         val air = settled.filter { it.accepted }
         val acked = air.count { it.ackMs != null }
-        val out = mutableListOf<Pair<String, String>>()
-        out += "SENT" to "${attempts.size}"
+        val out = mutableListOf<Row>()
+        out += Row(Name.Sent, "${attempts.size}")
         val refused = settled.count { !it.accepted }
-        if (refused > 0) out += "REFUSED" to "$refused"
-        out += "ACKED" to "$acked / ${air.size}" +
-            (if (air.isEmpty()) "" else "  %.0f%%".format(acked * 100.0 / air.size))
+        if (refused > 0) out += Row(Name.Refused, "$refused")
+        out += Row(
+            Name.Acked,
+            "$acked / ${air.size}" +
+                (if (air.isEmpty()) "" else "  %.0f%%".format(acked * 100.0 / air.size)),
+        )
         val inFlight = attempts.size - settled.size
-        if (inFlight > 0) out += "IN FLIGHT" to "$inFlight"
+        if (inFlight > 0) out += Row(Name.InFlight, "$inFlight")
         latency(air)?.let {
-            out += "ROUND TRIP" to "${it.p50} ms"
-            out += "SLOWEST" to "${it.worst} ms"
+            out += Row(Name.RoundTrip, "${it.p50}")
+            out += Row(Name.Slowest, "${it.worst}")
         }
-        (
-            sliceBy(air, listOf("direct", "flood")) { if (it.flood == true) "flood" else "direct" } +
-                sliceBy(air) { sizeBucket(it.bytes) } +
-                sliceBy(air) { "${it.hops} hop" + if (it.hops == 1) "" else "s" }
-            ).forEach { sl ->
-            out += sl.name.uppercase() to "${sl.acked}/${sl.accepted}" +
-                (sl.reliability?.let { "  %.0f%%".format(it) } ?: "")
+        fun slices(list: List<Slice>, name: (String) -> Name) = list.forEach { sl ->
+            out += Row(
+                name(sl.name),
+                "${sl.acked}/${sl.accepted}" +
+                    (sl.reliability?.let { "  %.0f%%".format(it) } ?: ""),
+            )
+        }
+        slices(
+            sliceBy(air, listOf("direct", "flood")) { if (it.flood == true) "flood" else "direct" },
+        ) { if (it == "flood") Name.Flood else Name.Direct }
+        // Bucketed by the same edges the log uses, but carried as numbers so
+        // the unit is the resource's business rather than this file's.
+        air.filter { it.settled }.groupBy { nameOfBucket(it.bytes) }.forEach { (n, g) ->
+            out += Row(
+                n,
+                "${g.count { it.ackMs != null }}/${g.size}" +
+                    "  %.0f%%".format(g.count { it.ackMs != null } * 100.0 / g.size),
+            )
+        }
+        air.groupBy { it.hops }.toSortedMap().forEach { (h, g) ->
+            out += Row(
+                Name.Hops(h),
+                "${g.count { it.ackMs != null }}/${g.size}" +
+                    "  %.0f%%".format(g.count { it.ackMs != null } * 100.0 / g.size),
+            )
         }
         return out
     }

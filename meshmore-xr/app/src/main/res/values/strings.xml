@@ -372,4 +372,28 @@
     <string name="c_delete_arm">PICK AGAIN TO DELETE</string>
     <string name="n_chan_gone">%1$s DELETED</string>
     <string name="f_chan_del">"THE KEY IS GONE FOR GOOD"</string>
+    <!-- The radio link's state, as a word rather than an enum name. -->
+    <string name="ls_off">DISCONNECTED</string>
+    <string name="ls_scan">SCANNING</string>
+    <string name="ls_shake">CONNECTING</string>
+    <string name="ls_ready">READY</string>
+    <!-- Words that were Kotlin literals and so never reached the Japanese build. -->
+    <string name="a_voice_on">VOICE: ON</string>
+    <string name="a_voice_off">VOICE: OFF</string>
+    <string name="w_listening">LISTENING</string>
+    <string name="w_on_chan">ON %1$s</string>
+    <string name="w_to_who">TO %1$s</string>
+    <!-- MESSAGE DELIVERY row names. Were Kotlin literals; see TxLog.rows. -->
+    <string name="tx_sent">SENT</string>
+    <string name="tx_refused">REFUSED</string>
+    <string name="tx_acked">ACKED</string>
+    <string name="tx_inflight">IN FLIGHT</string>
+    <string name="tx_rtt">ROUND TRIP</string>
+    <string name="tx_worst">SLOWEST</string>
+    <string name="tx_direct">DIRECT</string>
+    <string name="tx_flood">FLOOD</string>
+    <string name="tx_hops">%1$d HOPS</string>
+    <string name="tx_size">%1$d-%2$d B</string>
+    <string name="tx_size_over">OVER %1$d B</string>
+    <string name="tx_ms">%1$d ms</string>
 </resources>

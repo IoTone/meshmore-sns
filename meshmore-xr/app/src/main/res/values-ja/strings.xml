@@ -360,4 +360,28 @@
     <string name="c_delete_arm">もう一度で削除</string>
     <string name="n_chan_gone">%1$s を削除した</string>
     <string name="f_chan_del">"鍵は完全に失われる"</string>
+    <!-- The radio link's state, as a word rather than an enum name. -->
+    <string name="ls_off">未接続</string>
+    <string name="ls_scan">探索中</string>
+    <string name="ls_shake">接続中</string>
+    <string name="ls_ready">接続済み</string>
+    <!-- Words that were Kotlin literals and so never reached the Japanese build. -->
+    <string name="a_voice_on">読上: オン</string>
+    <string name="a_voice_off">読上: オフ</string>
+    <string name="w_listening">認識中</string>
+    <string name="w_on_chan">%1$s で</string>
+    <string name="w_to_who">%1$s へ</string>
+    <!-- MESSAGE DELIVERY row names. Were Kotlin literals; see TxLog.rows. -->
+    <string name="tx_sent">送信</string>
+    <string name="tx_refused">拒否</string>
+    <string name="tx_acked">応答あり</string>
+    <string name="tx_inflight">送信中</string>
+    <string name="tx_rtt">往復時間</string>
+    <string name="tx_worst">最遅</string>
+    <string name="tx_direct">直接</string>
+    <string name="tx_flood">フラッド</string>
+    <string name="tx_hops">%1$dホップ</string>
+    <string name="tx_size">%1$d-%2$dバイト</string>
+    <string name="tx_size_over">%1$dバイト超</string>
+    <string name="tx_ms">%1$d ms</string>
 </resources>

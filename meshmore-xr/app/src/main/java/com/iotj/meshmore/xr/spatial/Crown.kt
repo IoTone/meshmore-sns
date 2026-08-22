@@ -255,7 +255,8 @@ class Crown(
         context.getString(com.iotj.meshmore.xr.R.string.a_soak),
         context.getString(com.iotj.meshmore.xr.R.string.a_reply),
         context.getString(com.iotj.meshmore.xr.R.string.a_aloud),
-        "VOICE: ON", "VOICE: OFF",
+        context.getString(com.iotj.meshmore.xr.R.string.a_voice_on),
+        context.getString(com.iotj.meshmore.xr.R.string.a_voice_off),
         context.getString(com.iotj.meshmore.xr.R.string.a_thread),
         context.getString(com.iotj.meshmore.xr.R.string.a_close),
         context.getString(com.iotj.meshmore.xr.R.string.a_speak),
@@ -278,7 +279,10 @@ class Crown(
                 // it is. The difference decides whether pinching it does what
                 // the wearer expected, which is the only thing a toggle label
                 // is for.
-                Act.VOICE -> if (voiceOn) "VOICE: ON" else "VOICE: OFF"
+                Act.VOICE -> context.getString(
+                    if (voiceOn) com.iotj.meshmore.xr.R.string.a_voice_on
+                    else com.iotj.meshmore.xr.R.string.a_voice_off,
+                )
                 Act.THREAD -> context.getString(com.iotj.meshmore.xr.R.string.a_thread)
                 else -> context.getString(com.iotj.meshmore.xr.R.string.a_close)
             }
@@ -540,7 +544,13 @@ class Crown(
 
     /** What the draft line will say, so [applyWords] can tell when it changed. */
     private fun draftLine(): String =
-        (if (draft.isBlank() && dictating) "LISTENING" else draft) +
+        (
+            if (draft.isBlank() && dictating) {
+                context.getString(com.iotj.meshmore.xr.R.string.w_listening)
+            } else {
+                draft
+            }
+            ) +
             "/" + spoken + "/" + generated + "/" + full
 
     private var wordStamp: String = ""
@@ -684,8 +694,16 @@ class Crown(
             val on2 = open && t != null
             who?.entity?.setEnabled(on2)
             if (on2 && t != null) {
-                val label = (if (t.channel) "ON " else "TO ") +
-                    TypeTier.clip(t.name.uppercase(), WHO_CELLS)
+                // WHO, IN THE WEARER'S LANGUAGE. "ON " and "TO " were
+                // literals, so the one panel that says who you are about to
+                // transmit to spoke English on a Japanese build — and the
+                // word order differs: Japanese marks the target with a
+                // particle AFTER the name, which a prefix cannot express.
+                val label = context.getString(
+                    if (t.channel) com.iotj.meshmore.xr.R.string.w_on_chan
+                    else com.iotj.meshmore.xr.R.string.w_to_who,
+                    TypeTier.clip(t.name.uppercase(), WHO_CELLS),
+                )
                 if (label != whoSaid) {
                     whoSaid = label
                     who?.setText(label)

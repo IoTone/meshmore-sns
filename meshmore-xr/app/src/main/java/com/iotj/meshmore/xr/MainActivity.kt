@@ -1078,6 +1078,27 @@ private fun makeRows(
  * bay, but they can find out whether the thing they just sent arrived, and
  * whether that is normal — which is the question this surface exists for.
  */
+/**
+ * A delivery row's name, in the wearer's language.
+ *
+ * [TxLog] deliberately knows no words — it is pure so it can be measured on a
+ * desktop JVM — so the joining happens here, where a Context exists and where
+ * the parity test can see every string it uses.
+ */
+private fun txName(ctx: android.content.Context, n: TxLog.Name): String = when (n) {
+    TxLog.Name.Sent -> ctx.getString(R.string.tx_sent)
+    TxLog.Name.Refused -> ctx.getString(R.string.tx_refused)
+    TxLog.Name.Acked -> ctx.getString(R.string.tx_acked)
+    TxLog.Name.InFlight -> ctx.getString(R.string.tx_inflight)
+    TxLog.Name.RoundTrip -> ctx.getString(R.string.tx_rtt)
+    TxLog.Name.Slowest -> ctx.getString(R.string.tx_worst)
+    TxLog.Name.Direct -> ctx.getString(R.string.tx_direct)
+    TxLog.Name.Flood -> ctx.getString(R.string.tx_flood)
+    is TxLog.Name.Hops -> ctx.getString(R.string.tx_hops, n.n)
+    is TxLog.Name.Size -> ctx.getString(R.string.tx_size, n.lo, n.hi)
+    is TxLog.Name.Over -> ctx.getString(R.string.tx_size_over, n.lo)
+}
+
 private fun txRows(
     ctx: android.content.Context,
     link: MeshLink,
@@ -1090,10 +1111,20 @@ private fun txRows(
             ),
         )
     }
-    return pairs.map { (name, value) ->
+    return pairs.map { r ->
         com.iotj.meshmore.xr.spatial.Stack.Row(
             id = "tx",
-            label = com.iotj.meshmore.xr.spatial.radioRow(name, value, null),
+            label = com.iotj.meshmore.xr.spatial.radioRow(
+                txName(ctx, r.name),
+                // The two timings are bare numbers so the unit can be a
+                // resource; everything else already carries its own.
+                if (r.name == TxLog.Name.RoundTrip || r.name == TxLog.Name.Slowest) {
+                    ctx.getString(R.string.tx_ms, r.value.toLongOrNull() ?: 0L)
+                } else {
+                    r.value
+                },
+                null,
+            ),
             lit = false,
         )
     } + com.iotj.meshmore.xr.spatial.Stack.Row(
@@ -1321,6 +1352,24 @@ private fun wxRows(
     }
     return rows
 }
+
+/**
+ * The radio link's state in the wearer's language.
+ *
+ * Every other surface that reports the link already says it in words — the
+ * notice band has link_scan, link_handshake and the rest. Only the APP bay's
+ * title took the shortcut of printing the enum, and it was the one place the
+ * Japanese build showed an English identifier.
+ */
+private fun linkWord(ctx: android.content.Context, link: MeshLink): String =
+    ctx.getString(
+        when (link.status.value.state) {
+            SessionState.READY -> R.string.ls_ready
+            SessionState.HANDSHAKING -> R.string.ls_shake
+            SessionState.CONNECTING -> R.string.ls_shake
+            else -> if (link.status.value.scanning) R.string.ls_scan else R.string.ls_off
+        },
+    )
 
 private fun telemetryRows(
     ctx: android.content.Context,
@@ -5499,7 +5548,16 @@ private fun HorizonScene(link: MeshLink) {
                             bayMode.value = "APP"
                             appRef.value?.show(
                                 appRows(ctx, link, armed.value?.first, appGcCount()),
-                                title = ctx.getString(R.string.t_app, link.status.value.state.name),
+                                // THE STATE AS A WORD, NOT AN ENUM NAME. This
+                                // title interpolated SessionState.name, so a
+                                // Japanese wearer read "アプリ — 接続:
+                                // DISCONNECTED" — a localised sentence with an
+                                // untranslated identifier inside it. Nothing
+                                // measures that: the string fits its plate and
+                                // the parity test compares resources, and the
+                                // gap is in the value the app supplies at
+                                // runtime rather than in either file.
+                                title = ctx.getString(R.string.t_app, linkWord(ctx, link)),
                                 footer = ctx.getString(R.string.f_app),
                                 // A SET, NOT A SEQUENCE — see Stack.show.
                                 form = true,
