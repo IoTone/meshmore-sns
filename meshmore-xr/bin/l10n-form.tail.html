@@ -1,0 +1,205 @@
+  <footer>
+    <p><b>When you are done</b> — or whenever you want to stop — press <b>Copy results</b>.
+      It puts every approval and every rewrite on the clipboard as plain text. Paste it back
+      to the developer; nothing here reaches the app on its own.</p>
+    <p class="quiet">Your work is kept in this browser, so you can close the page and come
+      back to it. “Reset all” clears it.</p>
+    <p class="quiet">Generated from <code>values/strings.xml</code> and
+      <code>values-ja/strings.xml</code> by <code>bin/l10n-form.py</code>. Widths use the
+      app’s own measure: emoji 3 cells, CJK 2, everything else 1, with placeholders filled
+      by a plausible worst case.</p>
+  </footer>
+</div>
+
+<dialog id="out">
+  <p style="margin:0 0 .6rem"><b>Your review</b> — copied to the clipboard. If the copy did
+    not work, select this and copy it by hand.</p>
+  <textarea id="outtext" readonly></textarea>
+  <div style="display:flex;gap:.5rem;margin-top:.7rem;justify-content:flex-end">
+    <button type="button" id="outclose" class="ghost">Close</button>
+  </div>
+</dialog>
+
+<script>
+(function () {
+  "use strict";
+  var KEY = "meshmorexr-ja-review-v1";
+  var rows = Array.prototype.slice.call(document.querySelectorAll(".row"));
+  var state = {};
+
+  try { state = JSON.parse(localStorage.getItem(KEY) || "{}") || {}; } catch (e) { state = {}; }
+
+  function save() {
+    try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {}
+  }
+
+  // Cells, exactly as the app measures them: emoji 3, CJK 2, everything else 1.
+  function cells(t) {
+    var n = 0;
+    for (var i = 0; i < t.length; i++) {
+      var cp = t.codePointAt(i);
+      if (cp > 0xFFFF) i++;
+      if ((cp >= 0x1F300 && cp <= 0x1FAFF) || (cp >= 0x2600 && cp <= 0x27BF)) n += 3;
+      else if ((cp >= 0x1100 && cp <= 0x115F) || (cp >= 0x2E80 && cp <= 0x303E) ||
+               (cp >= 0x3041 && cp <= 0x33FF) || (cp >= 0x3400 && cp <= 0x4DBF) ||
+               (cp >= 0x4E00 && cp <= 0x9FFF) || (cp >= 0xAC00 && cp <= 0xD7A3) ||
+               (cp >= 0xF900 && cp <= 0xFAFF) || (cp >= 0xFE30 && cp <= 0xFE6F) ||
+               (cp >= 0xFF00 && cp <= 0xFF60) || (cp >= 0xFFE0 && cp <= 0xFFE6)) n += 2;
+      else n += 1;
+    }
+    return n;
+  }
+
+  function budgetOf(row) {
+    var sec = row.closest("section");
+    var b = sec && sec.querySelector(".budget b");
+    if (!b) return null;
+    var m = /(\d+)/.exec(b.textContent || "");
+    return m ? parseInt(m[1], 10) : null;
+  }
+
+  function paint(row) {
+    var k = row.getAttribute("data-key");
+    var st = state[k];
+    var edited = row.querySelector(".ja.edited");
+    if (st && st.t === "edit") {
+      row.setAttribute("data-state", "edit");
+      edited.textContent = st.v;
+      edited.hidden = false;
+    } else {
+      edited.hidden = true;
+      row.setAttribute("data-state", st && st.t === "ok" ? "ok"
+        : (row.getAttribute("data-orig") || "todo"));
+    }
+    var ok = row.querySelector('button[data-act="ok"]');
+    if (ok) ok.setAttribute("aria-pressed", st && st.t === "ok" ? "true" : "false");
+  }
+
+  function tally() {
+    var nok = 0, ned = 0;
+    var per = {};
+    rows.forEach(function (row) {
+      var g = row.getAttribute("data-g") || "";
+      per[g] = per[g] || 0;
+      var st = state[row.getAttribute("data-key")];
+      if (st && st.t === "ok") { nok++; per[g]++; }
+      else if (st && st.t === "edit") { ned++; per[g]++; }
+    });
+    document.getElementById("nok").textContent = nok;
+    document.getElementById("ned").textContent = ned;
+    document.getElementById("nleft").textContent = rows.length - nok - ned;
+    document.getElementById("fill").style.width =
+      Math.round(((nok + ned) / rows.length) * 100) + "%";
+    Object.keys(per).forEach(function (g) {
+      var el = document.querySelector('[data-done="' + g + '"]');
+      if (el) el.textContent = per[g];
+    });
+  }
+
+  function filter() {
+    var on = document.getElementById("only").getAttribute("aria-pressed") === "true";
+    rows.forEach(function (row) {
+      var st = state[row.getAttribute("data-key")];
+      row.style.display = (on && st && (st.t === "ok" || st.t === "edit")) ? "none" : "";
+    });
+    document.querySelectorAll("section").forEach(function (sec) {
+      var any = Array.prototype.some.call(sec.querySelectorAll(".row"), function (r) {
+        return r.style.display !== "none";
+      });
+      sec.style.display = any ? "" : "none";
+    });
+  }
+
+  rows.forEach(function (row) {
+    row.setAttribute("data-orig", row.getAttribute("data-state"));
+    paint(row);
+    var box = row.querySelector(".edit");
+    var ta = row.querySelector("textarea");
+
+    // A live width read-out, because the limit is the one thing a reviewer
+    // cannot judge by eye — Japanese looks shorter and measures wider.
+    var meter = document.createElement("span");
+    meter.className = "meter";
+    row.querySelector(".edit-act").appendChild(meter);
+    var bud = budgetOf(row);
+    function meterUp() {
+      var w = cells(ta.value.replace(/%\d+\$s/g, "名前").replace(/%\d+\$d/g, "99"));
+      meter.textContent = bud ? w + " / " + bud + " cells" : w + " cells";
+      meter.className = "meter" + (bud && w > bud ? " over" : "");
+    }
+    ta.addEventListener("input", meterUp);
+    meterUp();
+
+    row.addEventListener("click", function (ev) {
+      var b = ev.target.closest("button");
+      if (!b) return;
+      var act = b.getAttribute("data-act");
+      var k = row.getAttribute("data-key");
+      if (act === "ok") {
+        state[k] = { t: "ok" };
+        box.hidden = true;
+      } else if (act === "open") {
+        box.hidden = false;
+        ta.focus();
+        meterUp();
+        return;
+      } else if (act === "save") {
+        var v = ta.value.trim();
+        var orig = (row.querySelector(".ja:not(.edited)").textContent || "").trim();
+        state[k] = (v && v !== orig) ? { t: "edit", v: v } : { t: "ok" };
+        box.hidden = true;
+      } else if (act === "cancel") {
+        box.hidden = true;
+        return;
+      } else if (act === "reset") {
+        delete state[k];
+        box.hidden = true;
+      }
+      save(); paint(row); tally(); filter();
+    });
+  });
+
+  document.getElementById("only").addEventListener("click", function () {
+    var on = this.getAttribute("aria-pressed") === "true";
+    this.setAttribute("aria-pressed", on ? "false" : "true");
+    filter();
+  });
+
+  document.getElementById("reset").addEventListener("click", function () {
+    if (!confirm("Clear every approval and rewrite on this page?")) return;
+    state = {}; save();
+    rows.forEach(paint); tally(); filter();
+  });
+
+  document.getElementById("copy").addEventListener("click", function () {
+    var lines = ["MeshmoreXR Japanese review", ""];
+    var edits = [], oks = [];
+    rows.forEach(function (row) {
+      var k = row.getAttribute("data-key");
+      var st = state[k];
+      if (!st) return;
+      if (st.t === "edit") edits.push(k + "\t" + st.v);
+      else oks.push(k);
+    });
+    lines.push("REWRITTEN (" + edits.length + ") — key, then the Japanese that should ship");
+    lines.push.apply(lines, edits.length ? edits : ["(none)"]);
+    lines.push("", "APPROVED (" + oks.length + ")");
+    lines.push(oks.length ? oks.join(" ") : "(none)");
+    var left = rows.length - edits.length - oks.length;
+    lines.push("", "NOT YET REVIEWED: " + left + " of " + rows.length);
+    var text = lines.join("\n");
+    var dlg = document.getElementById("out");
+    document.getElementById("outtext").value = text;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).catch(function () {});
+    }
+    if (dlg.showModal) dlg.showModal();
+  });
+
+  document.getElementById("outclose").addEventListener("click", function () {
+    document.getElementById("out").close();
+  });
+
+  tally();
+})();
+</script>
