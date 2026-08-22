@@ -1559,6 +1559,33 @@ class MeshLink(
      * Measured on the emulator: the soak item appeared at a node with no star
      * on it at all, because one peer in the fake mesh had an empty key.
      */
+    /**
+     * MAY A SOAK RUN ON THIS CHANNEL?
+     *
+     * Ten full-length packets is real occupancy, so the answer is no for the
+     * public band under any circumstances — that is a shared room, and filling
+     * it with test traffic is the antisocial act the whole channel-transmit
+     * lock exists to prevent.
+     *
+     * For a PRIVATE channel it is a different question, and the honest answer
+     * is yes once the wearer has authorised channel transmit at all. A hashtag
+     * channel only the operator's own radios are on is much closer to "talking
+     * to my own hardware" — which the standing authorisation covers — than to
+     * broadcasting at strangers. The operator built #soaktest to soak on, and
+     * a rule that forbids it is a rule that has stopped meaning what it says.
+     *
+     * Both conditions, every time: authorised AND not public AND a real slot.
+     */
+    fun soakableChannel(threadId: String?): Boolean {
+        if (!channelTxAuthorised) return false
+        val c = chans.values.firstOrNull { it.threadId == threadId } ?: return false
+        return !c.publicKey && c.idx >= 0
+    }
+
+    /** The slot behind a channel thread id, for a caller that has to transmit. */
+    fun slotOf(threadId: String?): Int? =
+        chans.values.firstOrNull { it.threadId == threadId }?.idx
+
     fun isStarred(key: String?, isFavourite: (String) -> Boolean = { false }): Boolean =
         isStarred(peers.values, key, isFavourite)
 

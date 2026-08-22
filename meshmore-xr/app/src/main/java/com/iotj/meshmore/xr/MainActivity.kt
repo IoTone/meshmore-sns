@@ -1798,6 +1798,7 @@ private suspend fun runSoakAt(
     ctx: android.content.Context,
     link: MeshLink,
     peerKey: String,
+    onChannel: Boolean = false,
     say: (String) -> Unit = {},
 ): List<TxLog.Attempt> {
     val fmt = java.text.SimpleDateFormat("HH:mm:ss", java.util.Locale.US)
@@ -1814,7 +1815,17 @@ private suspend fun runSoakAt(
     var why: String? = null
     for (n in 1..MiniSoak.COUNT) {
         val text = MiniSoak.message(fmt.format(java.util.Date()), n, MiniSoak.sizeFor(n))
-        val res = link.sendTo(peerKey, text)
+        // TWO DIFFERENT TRANSMITTERS. A direct message is addressed to a key
+        // and is acknowledged; a channel message goes to a slot and is NOT —
+        // MeshCore group traffic carries no ack, so a channel soak can only
+        // report what the radio accepted. What ARRIVED has to be read on the
+        // receiving radio, which is exactly how the direct soak was verified.
+        val res = if (onChannel) {
+            link.slotOf(peerKey)?.let { link.sendToChannel(it, text) }
+                ?: MeshLink.Sent.Refused("NO SUCH CHANNEL")
+        } else {
+            link.sendTo(peerKey, text)
+        }
         attempted++
         link.noteAttempt(res is MeshLink.Sent.Ok)
         if (res is MeshLink.Sent.Ok) accepted++
@@ -4486,8 +4497,21 @@ private fun HorizonScene(link: MeshLink) {
                             // app keeps and the flag the radio itself stores,
                             // because a wearer who starred a node in either
                             // place means the same thing by it.
-                            cw.canSoak = !soakRunning.value && cw.target?.channel != true &&
-                                link.isStarred(cw.target?.key ?: sel?.fromKey, tagsRef::isFavourite)
+                            cw.canSoak = !soakRunning.value &&
+                                if (cw.target?.channel == true) {
+                                    // A PRIVATE CHANNEL THE WEARER AUTHORISED,
+                                    // never the public band — see
+                                    // MeshLink.soakableChannel. The operator
+                                    // made #soaktest to soak on, and a blanket
+                                    // "no channels" forbade the one case the
+                                    // rule was never aimed at.
+                                    link.soakableChannel(cw.target?.key)
+                                } else {
+                                    link.isStarred(
+                                        cw.target?.key ?: sel?.fromKey,
+                                        tagsRef::isFavourite,
+                                    )
+                                }
                             cw.tick(
                                 // `at` only gates the crown; the rows are
                                 // placed from the head and its yaw either way,
@@ -4508,10 +4532,10 @@ private fun HorizonScene(link: MeshLink) {
                                     // so it dies with the scene rather than
                                     // outliving it and transmitting into a
                                     // session that has gone.
-                                    runSoak = { peerKey ->
+                                    runSoak = { peerKey, onChannel ->
                                         soakRunning.value = true
                                         launch {
-                                            runSoakAt(ctx, link, peerKey) {
+                                            runSoakAt(ctx, link, peerKey, onChannel) {
                                                 cw.say(
                                                     it,
                                                     android.os.SystemClock.uptimeMillis(),
@@ -7532,7 +7556,7 @@ private fun onCrown(
     nowMs: Long,
     askMic: () -> Unit,
     /** Start the ten-packet run at this key. Owned by the caller's scope. */
-    runSoak: (String) -> Unit = {},
+    runSoak: (String, Boolean) -> Unit = { _, _ -> },
 ) {
     // The REAL message, not the reel's display copy: the copy is clipped for
     // the card and acting on a clipped message would be its own bug.
@@ -7595,14 +7619,18 @@ private fun onCrown(
         // refused per message, and the run reports that rather than a silent
         // zero.
         Crown.Act.SOAK -> {
-            val peer = to?.key ?: msg?.fromKey
+            // A CHANNEL SOAK ADDRESSES A SLOT, a person soak a key, and the
+            // two take different paths to the radio. The crown already knows
+            // which of the two it is holding.
+            val onChannel = to?.channel == true
+            val peer = if (onChannel) to?.key else (to?.key ?: msg?.fromKey)
             if (peer.isNullOrBlank()) {
                 crown.say(ctx.getString(R.string.n_nothing_to_send), nowMs)
                 cue.denied()
             } else {
                 crown.say(ctx.getString(R.string.n_soak_start, MiniSoak.COUNT), nowMs)
                 cue.recognised()
-                runSoak(peer)
+                runSoak(peer, onChannel)
             }
         }
         Crown.Act.REPLY -> { crown.compose(); cue.opened() }
