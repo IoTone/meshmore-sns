@@ -282,6 +282,16 @@ class MainActivity : ComponentActivity() {
         var wxSweep: Boolean = false
 
         /**
+         * `--ez chansoak true` opens the crown on the first private channel,
+         * at its ACTIONS level — the screen the SOAK row lives on.
+         *
+         * The route there is two pinches a cable cannot make, and the row's
+         * absence was invisible from outside: every gate said yes while the
+         * level holding the row was unreachable.
+         */
+        var chanSoakProbe: Boolean = false
+
+        /**
          * `--es jointag "#soaktest" [--es channame soak]` writes a channel
          * whose KEY comes from a tag and whose NAME is whatever you say.
          *
@@ -481,6 +491,7 @@ class MainActivity : ComponentActivity() {
         namePrefix = prefix?.takeIf { it.isNotBlank() }
         adopt = intent?.getBooleanExtra("adopt", false) ?: false
         wxSweep = intent?.getBooleanExtra("wxsweep", false) ?: false
+        chanSoakProbe = intent?.getBooleanExtra("chansoak", false) ?: false
         joinTag = intent?.getStringExtra("jointag")?.takeIf { it.isNotBlank() }
         joinName = intent?.getStringExtra("channame")?.takeIf { it.isNotBlank() }
         chanSlot = intent?.getIntExtra("chanslot", -1) ?: -1
@@ -4351,6 +4362,24 @@ private fun HorizonScene(link: MeshLink) {
                     }
                 }
             }
+            if (MainActivity.chanSoakProbe) launch {
+                kotlinx.coroutines.delay(25_000)
+                val c0 = crownRef.value
+                val chan = link.channels().firstOrNull { !it.publicKey && it.idx >= 0 }
+                if (c0 == null || chan == null) {
+                    Log.w(TAG_UI, "[chan] soak probe — no private channel")
+                    return@launch
+                }
+                c0.target = com.iotj.meshmore.xr.spatial.Crown.Target(
+                    chan.threadId, chan.name, channel = true,
+                )
+                c0.show()
+                Log.i(
+                    TAG_UI,
+                    "[chan] soak probe — crown on '${chan.name}' (${chan.threadId}), " +
+                        "soakable=${link.soakableChannel(chan.threadId)}",
+                )
+            }
             if (MainActivity.wxSweep) launch {
                 // Long enough for the contact sync to finish: a sweep planned
                 // against a half-loaded store asks a fraction of the mesh and
@@ -7709,10 +7738,22 @@ private fun onCrown(
         Crown.Act.REPLY -> { crown.compose(); cue.opened() }
         Crown.Act.BACK -> {
             dictation.cancel()
-            // BACK OUT OF WHAT? An addressed crown has no actions level to go
-            // back TO — ALOUD, THREAD and VOICE are all about a conversation
-            // that does not exist yet — so back is out.
-            if (to != null) crown.hide() else crown.backToActions()
+            // BACK OUT OF WHAT? A crown addressed to a NODE has no actions
+            // level worth going back to — ALOUD, THREAD and VOICE are all
+            // about a conversation that does not exist yet — so back is out.
+            //
+            // A CHANNEL IS THE OTHER CASE, and it was swept up in that rule.
+            // A channel already has a thread, already has a read-aloud switch,
+            // and on a private one it has a SOAK. Picking a channel opens
+            // straight at COMPOSE because speaking is what a channel is for;
+            // that stays, and this gives back the level it was skipping. It is
+            // how the operator's own #soaktest was unreachable to soak on:
+            // every gate said yes and there was no way to walk to the row.
+            when {
+                to?.channel == true -> crown.backToActions()
+                to != null -> crown.hide()
+                else -> crown.backToActions()
+            }
             cue.closed()
         }
         Crown.Act.CANCEL -> {
