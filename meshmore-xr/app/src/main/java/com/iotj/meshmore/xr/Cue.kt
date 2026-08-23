@@ -408,7 +408,7 @@ class Cue {
 
     /** A letter was recognised. Fires BEFORE the action, on purpose. */
     fun recognised() {
-        play(pack.recognised, pack.recognisedMs)
+        play(Motifs.RECOGNISED, pack.recognised, pack.recognisedMs)
         // A letter recognised IS the commit of a gesture: E3, not E2 — the
         // spec keeps hover silent in the hand even on fast actuators.
         haptics?.click()
@@ -416,7 +416,7 @@ class Cue {
 
     /** A surface opened. Higher and shorter than a rejection. */
     fun opened() {
-        play(pack.opened, pack.openedMs)
+        play(Motifs.OPENED, pack.opened, pack.openedMs)
         // E3 COMMIT. A surface opening is a selection that landed.
         haptics?.click()
     }
@@ -429,10 +429,10 @@ class Cue {
      * that is satisfying once is intolerable at that rate; this one has to
      * disappear into the gesture rather than announce it.
      */
-    fun tick() = play(pack.tick, pack.tickMs)
+    fun tick() = play(Motifs.TICK, pack.tick, pack.tickMs)
 
     /** A surface closed, or an action declined. */
-    fun closed() = play(pack.closed, pack.closedMs)
+    fun closed() = play(Motifs.CLOSED, pack.closed, pack.closedMs)
 
     // --- arrival, §S4's fourth channel ---------------------------------------
 
@@ -454,13 +454,13 @@ class Cue {
         // carried by this channel existing only for the second.
         if (direct) haptics?.summon()
         if (!allow(if (direct) Kind.DIRECT else Kind.CHANNEL)) return
-        if (direct) play(pack.msgDirect, pack.msgDirectMs)
-        else play(pack.msgChannel, pack.msgChannelMs)
+        if (direct) play(Motifs.DM, pack.msgDirect, pack.msgDirectMs)
+        else play(Motifs.CHANNEL, pack.msgChannel, pack.msgChannelMs)
     }
 
     /** E13 — the radio linked. */
     fun linked() {
-        play(pack.linkUp, pack.linkUpMs)
+        play(Motifs.LINKED, pack.linkUp, pack.linkUpMs)
         haptics?.rise()
     }
 
@@ -470,7 +470,10 @@ class Cue {
      * when the wearer is looking at a trail rather than at the band.
      */
     fun dropped() {
-        play(pack.closed, pack.closedMs)
+        // ITS OWN SHAPE NOW. Losing the radio used to play the same tone as
+        // closing a menu — the biggest event in the app and the smallest,
+        // indistinguishable. See Motifs.DROPPED, the inverse of LINKED.
+        play(Motifs.DROPPED, pack.closed, pack.closedMs)
         haptics?.fall()
     }
 
@@ -480,7 +483,9 @@ class Cue {
      * that merely closed; a denial that feels like a close gets retried.
      */
     fun denied() {
-        play(pack.closed, pack.closedMs)
+        // Unpitched, in every pack — see Motifs.timbreFor. A refusal that
+        // shares a tone with "a surface closed" is a refusal nobody notices.
+        play(Motifs.DENIED, pack.closed, pack.closedMs)
         haptics?.refuse()
     }
 
@@ -494,7 +499,7 @@ class Cue {
      */
     fun nodeFound() {
         if (!allow(Kind.DISCOVERY)) return
-        play(pack.nodeFound, pack.nodeFoundMs)
+        play(Motifs.NODE_FOUND, pack.nodeFound, pack.nodeFoundMs)
     }
 
     /**
@@ -521,7 +526,7 @@ class Cue {
         // saying, which is what "the only event permitted to interrupt" means
         // with the tools this path has.
         runCatching { tone()?.stopTone() }
-        play(ToneGenerator.TONE_CDMA_ABBR_ALERT, CRITICAL_MS)
+        play(Motifs.CRITICAL, ToneGenerator.TONE_CDMA_ABBR_ALERT, CRITICAL_MS)
         haptics?.alarm()
         Log.i(TAG, "[cue] CRITICAL")
     }
@@ -535,7 +540,33 @@ class Cue {
      * is the longest unexplained silence in the product and the first thing
      * anybody experiences.
      */
-    fun wake() = play(pack.wakeTone, pack.wakeMs)
+    /**
+     * E12 — A MESSAGE YOU SENT ARRIVED.
+     *
+     * The reliability work has known this to the millisecond for weeks and had
+     * nowhere to say it: a wearer had to open a bay to discover whether their
+     * message landed. Short and high, and quiet enough to fire on every
+     * message without becoming the sound of the app.
+     */
+    fun delivered() = play(Motifs.DELIVERED, pack.tick, pack.tickMs)
+
+    /**
+     * AND ONE THAT DID NOT.
+     *
+     * The only descending motif in the set, so a loss can never be mistaken
+     * for anything else. Unpleasant on purpose; short so it is not a
+     * punishment. A haptic goes with it because this is the one outcome a
+     * wearer would want to feel while looking somewhere else.
+     */
+    fun lost() {
+        play(Motifs.LOST, pack.closed, pack.closedMs)
+        haptics?.fall()
+    }
+
+    /** A node that was there is not any more — NODE_FOUND, mirrored. */
+    fun nodeLost() = play(Motifs.NODE_LOST, pack.closed, pack.closedMs)
+
+    fun wake() = play(Motifs.OPENED, pack.wakeTone, pack.wakeMs)
 
     /**
      * One rung of the link handshake, as pitch.
@@ -617,7 +648,7 @@ class Cue {
      * demo of nothing, and the point is to let somebody choose a pack they will
      * be hearing all day.
      */
-    fun sample() = play(pack.opened, pack.openedMs)
+    fun sample() = play(Motifs.OPENED, pack.opened, pack.openedMs)
 
     /**
      * THE THEME'S WELCOME — the one composed sound in the app, played once when
@@ -720,6 +751,40 @@ class Cue {
 
     private var welcomer: MediaPlayer? = null
 
+    /**
+     * THE SYNTHESISER, WHICH IS NOW WHAT MAKES THE SOUND.
+     *
+     * §1.2 asked for procedural synthesis and zero audio assets from the
+     * start; what shipped was the platform's DTMF and CDMA tones because they
+     * were there. [Synth] and [Motifs] replace them, and this is the seam the
+     * class note above promised would be the only thing that had to change —
+     * all 148 call sites still name an event.
+     */
+    private val audio = Audio()
+
+    /** Off with the wearer's silent preference; nothing sounds at all. */
+    var enabled: Boolean
+        get() = audio.enabled
+        set(v) { audio.enabled = v; if (!v) audio.silence() }
+
+    /**
+     * Play a shape, in this pack's voice.
+     *
+     * [fallbackId] and [fallbackMs] are the old ToneGenerator values, kept for
+     * one reason: a device that refuses an AudioTrack should still answer a
+     * gesture. A silent app on a headset is indistinguishable from an app that
+     * did not see the hand, which is the whole failure Cue was written for.
+     */
+    private fun play(motif: Synth.Motif, fallbackId: Int, fallbackMs: Int) {
+        if (!audio.enabled) return
+        val timbre = Motifs.timbreFor(pack.key, motif)
+        runCatching { audio.play(motif, timbre) }
+            .onFailure {
+                Log.w(TAG, "[cue] synth failed: ${it.javaClass.simpleName} — tone")
+                play(fallbackId, fallbackMs)
+            }
+    }
+
     private fun play(id: Int, ms: Int) {
         // SILENT is a value in the table, not an absence. See the constant.
         if (id == SILENT || ms <= 0) return
@@ -728,6 +793,7 @@ class Cue {
     }
 
     fun release() {
+        audio.release()
         runCatching { gen?.release() }
         gen = null
         genVol = -1

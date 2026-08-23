@@ -1004,6 +1004,17 @@ class MeshLink(
      * thread and reads on the frame loop, and at one entry per send the lock
      * is never contended.
      */
+    /**
+     * RAISED WHEN A MESSAGE IS ANSWERED, AND WHEN ONE IS GIVEN UP ON.
+     *
+     * The two outcomes the wearer most wants and could least easily get: until
+     * now both were a number in a bay they had to go and open. The host wires
+     * these to the cue vocabulary, so a delivery is a tick and a loss is the
+     * one falling shape in the set.
+     */
+    var onDelivered: (() -> Unit)? = null
+    var onLost: (() -> Unit)? = null
+
     private val txLog = java.util.Collections.synchronizedList(mutableListOf<TxLog.Attempt>())
     private var txSeq = 0
 
@@ -1084,6 +1095,7 @@ class MeshLink(
             }
         }
         if (hit) persist()
+        if (hit) runCatching { onDelivered?.invoke() }
     }
 
     /**
@@ -1124,6 +1136,10 @@ class MeshLink(
             }
         }
         if (hit) persist()
+        // ONE SOUND PER SWEEP, not one per message. A radio that comes back
+        // from a long silence can mark several lost at once, and three falling
+        // motifs on top of each other is an alarm rather than a report.
+        if (hit) runCatching { onLost?.invoke() }
     }
 
     /** Ack tags we are waiting on, and when each was accepted. */

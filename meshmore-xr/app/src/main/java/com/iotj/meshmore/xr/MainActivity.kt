@@ -4090,6 +4090,21 @@ private fun HorizonScene(link: MeshLink) {
         // The menu gets the same tick the dock does. On a display where you
         // cannot feel a control, sound is the only confirmation the pointer
         // arrived — and it arrives BEFORE the pinch, which is when it helps.
+        // THE TWO OUTCOMES THE LEDGER ALREADY KNEW AND COULD NOT SAY.
+        //
+        // A message answered is a tick; a message given up on is the one
+        // falling shape in the vocabulary, with a matching fall in the hand.
+        // Both fire from MeshLink, which is where the verdict is actually
+        // reached, rather than from whichever surface happens to be open —
+        // the same argument that put the allow-list at the transmitter.
+        link.onDelivered = { cue.delivered() }
+        link.onLost = { cue.lost() }
+        // NO SILENT SWITCH YET, and that is a gap rather than a decision: §6
+        // asks for the audio pack and TTS to be separate switches, and only
+        // TTS has one today. Cue.enabled is the seam it will hang on — the
+        // synthesiser already honours it — so adding the row is a settings
+        // change rather than an audio one.
+
         menuRef.value?.onFocus = { cue.recognised() }
         // THE ONE PIP THAT REMEMBERS. Every other pip toggles a surface that is
         // closed at launch, so an unlit dock is the truth for all of them.
