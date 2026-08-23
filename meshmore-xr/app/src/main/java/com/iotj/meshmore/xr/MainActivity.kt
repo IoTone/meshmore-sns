@@ -350,6 +350,9 @@ class MainActivity : ComponentActivity() {
          * --es switchto <key> : after the scene is up, change theme AS IF
          * PICKED, to exercise the runtime path rather than the launch one.
          */
+        /** When the wearer asked for the app, for anything measuring the wait. */
+        var launchedAtMs: Long = 0L
+
         var switchTo: String? = null
         /**
          * --ez sweep true : commit every theme in sequence through the REAL
@@ -465,6 +468,11 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // THE WEARER'S CLOCK STARTS HERE, not at the first frame. See
+        // boot0StartMs: the launch time-box was measured from the moment the
+        // frame loop began, which on the glasses is twelve seconds after
+        // somebody asked for the app.
+        launchedAtMs = android.os.SystemClock.uptimeMillis()
         // FIRST, before anything lazily touches a context: `--es lang ja`
         // forces the locale for a device test without changing the glasses'
         // system language. The link and every surface build from L10n.wrap.
@@ -6783,7 +6791,20 @@ private fun HorizonScene(link: MeshLink) {
                 // hearing live adverts behind it: connected, working, and
                 // apparently frozen. Whatever has arrived by MAX_BOOT_S is what
                 // we show; an incomplete horizon beats a permanent splash.
-                if (boot0StartMs == 0L) boot0StartMs = android.os.SystemClock.uptimeMillis()
+                // MEASURED FROM THE LAUNCH, NOT FROM THE FIRST FRAME.
+                //
+                // This clock exists to time-box how long a wearer stares at the
+                // wordmark, and it was started when the frame loop began —
+                // which on the glasses is about twelve seconds after onCreate,
+                // because the scene has to be built first. So a 28-second box
+                // was really a 40-second one, and every figure it logged was
+                // twelve seconds shorter than the wait it was describing.
+                // Measured on the Aura 2026-08-23: "surface down after 13.1s"
+                // for a wait that was 26.2s from the launcher.
+                if (boot0StartMs == 0L) {
+                    boot0StartMs = MainActivity.launchedAtMs.takeIf { it > 0L }
+                        ?: android.os.SystemClock.uptimeMillis()
+                }
                 boot0Elapsed = (android.os.SystemClock.uptimeMillis() - boot0StartMs) / 1000f
                 val loading = boot0Elapsed < MAX_BOOT_S &&
                     (!load.done || boot0Elapsed < MIN_BOOT_S)
