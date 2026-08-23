@@ -292,6 +292,17 @@ class MainActivity : ComponentActivity() {
         var chanSoakProbe: Boolean = false
 
         /**
+         * `--ez voiceprobe true` reproduces the voice-send bug without a voice.
+         *
+         * It starts a TAG dictation, says nothing, lets the recogniser give up
+         * — the path that produces no result and therefore cleared nothing —
+         * and then starts an ordinary one and reports what the session thinks
+         * it is for. Before the fix the second session still said "tag", which
+         * is why a dictated message became a channel tag instead of being sent.
+         */
+        var voiceProbe: Boolean = false
+
+        /**
          * `--es jointag "#soaktest" [--es channame soak]` writes a channel
          * whose KEY comes from a tag and whose NAME is whatever you say.
          *
@@ -492,6 +503,7 @@ class MainActivity : ComponentActivity() {
         adopt = intent?.getBooleanExtra("adopt", false) ?: false
         wxSweep = intent?.getBooleanExtra("wxsweep", false) ?: false
         chanSoakProbe = intent?.getBooleanExtra("chansoak", false) ?: false
+        voiceProbe = intent?.getBooleanExtra("voiceprobe", false) ?: false
         joinTag = intent?.getStringExtra("jointag")?.takeIf { it.isNotBlank() }
         joinName = intent?.getStringExtra("channame")?.takeIf { it.isNotBlank() }
         chanSlot = intent?.getIntExtra("chanslot", -1) ?: -1
@@ -988,6 +1000,18 @@ private const val ROW_ROLL = "+roll"
 private const val ROW_PUBLIC = "+public"
 private const val ROW_SAYTAG = "+saytag"
 private const val ROW_JOINTAG = "+jointag"
+/**
+ * What a dictation was started FOR, carried by the session rather than a flag.
+ *
+ * A flag here said "the next result is a tag" and was cleared when a result
+ * arrived — but cancelling produces no result, and neither does an error with
+ * nothing heard. Opening the tag field and saying nothing therefore left it
+ * set, and every message dictated afterwards was quietly turned into a channel
+ * tag instead of being sent. Reported as "sending a message with voice does
+ * not work", which is exactly what it looked like from the outside.
+ */
+private const val PURPOSE_TAG = "tag"
+
 private const val ROW_TYPETAG = "+typetag"
 private const val ROW_DEL = "+del:"
 
@@ -2353,15 +2377,6 @@ private fun HorizonScene(link: MeshLink) {
      * wearer goes to the APP bay must not be cancelled by — or worse, confused
      * with — a pick over there.
      */
-    /**
-     * True while dictation is being used for a TAG rather than a message.
-     *
-     * Dictation has one final-result callback and the crown owns it, because
-     * every other spoken thing in this app becomes a message. A tag is not a
-     * message and must never become one — so this flag says which surface the
-     * next result belongs to, and it is cleared the instant the result lands.
-     */
-    val hearingTag = remember { mutableStateOf(false) }
     val chanArmed = remember { mutableStateOf<ChanAction?>(null) }
     /**
      * ONE THEME COMMIT'S HEAVY WORK AT A TIME. The restyles and the dock
@@ -4062,12 +4077,11 @@ private fun HorizonScene(link: MeshLink) {
         // And when the wearer stops talking, the words become a DRAFT — never a
         // transmission. Speech recognition mishears; a radio that sends what it
         // thought it heard puts that mistake on somebody else's screen.
-        dictation.onFinal = { text ->
-            if (hearingTag.value) {
+        dictation.onFinal = { text, why ->
+            if (why == PURPOSE_TAG) {
                 // A TAG, NOT A MESSAGE. Nothing is written yet: the words
                 // become an armed row showing the literal string, and the
                 // second pinch is what reaches the radio.
-                hearingTag.value = false
                 if (text.isBlank()) {
                     noticeRef.value?.say(ctx.getString(R.string.n_tag_none))
                     cue.denied()
@@ -4361,6 +4375,23 @@ private fun HorizonScene(link: MeshLink) {
                             Log.w(TAG_UI, "[chan] refused: ${w.why}")
                     }
                 }
+            }
+            if (MainActivity.voiceProbe) launch {
+                kotlinx.coroutines.delay(20_000)
+                Log.i(TAG_UI, "[voice] probe — starting a TAG dictation and saying nothing")
+                dictation.start(PURPOSE_TAG)
+                // Long enough for the recogniser to give up on a silent room.
+                kotlinx.coroutines.delay(15_000)
+                Log.i(TAG_UI, "[voice] after the silent tag, purpose=${dictation.purpose}")
+                dictation.start()
+                kotlinx.coroutines.delay(1_000)
+                Log.i(
+                    TAG_UI,
+                    "[voice] an ordinary dictation now reports purpose=${dictation.purpose} " +
+                        "(must be null, or a spoken message becomes a channel tag)",
+                )
+                dictation.cancel()
+                Log.i(TAG_UI, "[voice] after cancel, purpose=${dictation.purpose}")
             }
             if (MainActivity.chanSoakProbe) launch {
                 kotlinx.coroutines.delay(25_000)
@@ -4785,9 +4816,8 @@ private fun HorizonScene(link: MeshLink) {
                             ) {
                                 askMic.launch(android.Manifest.permission.RECORD_AUDIO)
                             } else {
-                                hearingTag.value = true
                                 chanArmed.value = null
-                                dictation.start()
+                                dictation.start(PURPOSE_TAG)
                                 noticeRef.value?.say(ctx.getString(R.string.n_say_tag))
                                 cue.recognised()
                             }

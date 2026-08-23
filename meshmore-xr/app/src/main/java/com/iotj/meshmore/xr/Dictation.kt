@@ -52,7 +52,21 @@ class Dictation(private val context: Context) {
     var onUpdate: ((Draft) -> Unit)? = null
 
     /** Raised once, with the final text, when the wearer stops talking. */
-    var onFinal: ((String) -> Unit)? = null
+    /**
+     * The finished words, and WHAT THEY WERE FOR.
+     *
+     * The purpose travels with the result because the alternative was tried
+     * and broke: the host kept a flag saying "the next result is a channel
+     * tag", set when the tag row was pinched and cleared when a result
+     * arrived. A result does not always arrive. Cancel does not produce one,
+     * and neither does an error with nothing heard — so opening the tag field
+     * and saying nothing left the flag set, and every message dictated
+     * afterwards was silently treated as a channel tag instead of being sent.
+     *
+     * A flag that only one of several exits clears is a latch. This is a
+     * label on the session that produced the text, and it cannot go stale.
+     */
+    var onFinal: ((String, String?) -> Unit)? = null
 
     val listening: Boolean get() = running
 
@@ -64,7 +78,15 @@ class Dictation(private val context: Context) {
             PackageManager.PERMISSION_GRANTED
 
     /** Must be called on the main thread — SpeechRecognizer insists. */
-    fun start() {
+    /** What the CURRENT dictation is for; null for an ordinary message. */
+    var purpose: String? = null
+        private set
+
+    // NAMED `why` RATHER THAN `purpose` ON PURPOSE: the recogniser's listener
+    // is built inside this function, so a parameter of the same name shadows
+    // the property everywhere the listener needs to clear it.
+    fun start(why: String? = null) {
+        purpose = why
         if (running) return
         failure = null
         heard = ""
@@ -105,7 +127,9 @@ class Dictation(private val context: Context) {
                 take(results)
                 running = false
                 emit()
-                onFinal?.invoke(clipped())
+                val why = purpose
+                purpose = null
+                onFinal?.invoke(clipped(), why)
             }
 
             override fun onError(code: Int) {
@@ -121,7 +145,13 @@ class Dictation(private val context: Context) {
                     else -> "COULD NOT HEAR"
                 }
                 emit()
-                if (heard.isNotBlank()) onFinal?.invoke(clipped())
+                val why = purpose
+                // CLEARED WHETHER OR NOT ANYTHING IS REPORTED. This is the
+                // path that stranded the old flag: an error with nothing heard
+                // tells the host nothing, so the host must not be relying on
+                // being told.
+                purpose = null
+                if (heard.isNotBlank()) onFinal?.invoke(clipped(), why)
             }
 
             override fun onBeginningOfSpeech() = Unit
@@ -157,6 +187,7 @@ class Dictation(private val context: Context) {
 
     fun cancel() {
         runCatching { rec?.cancel() }
+        purpose = null
         running = false
         heard = ""
         emit()
@@ -165,6 +196,7 @@ class Dictation(private val context: Context) {
     fun release() {
         runCatching { rec?.destroy() }
         rec = null
+        purpose = null
         running = false
         heard = ""
     }
