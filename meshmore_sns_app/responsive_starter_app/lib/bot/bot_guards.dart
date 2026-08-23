@@ -50,6 +50,12 @@ enum BotSuppression {
 
   /// No rule matched. Not a fault — a quiet bot is a valid rulepack.
   noMatch,
+
+  /// The scope stopped qualifying — its key went public, or we no
+  /// longer know it. Counted rather than returned silently: this is
+  /// the one refusal that can appear *after* the user switched the bot
+  /// on, so it has to be visible or the bot looks broken.
+  refused,
 }
 
 /// Per-scope evidence for a soak run.
@@ -64,6 +70,7 @@ class BotCounters {
   int suppressedLoop = 0;
   int suppressedRate = 0;
   int noMatch = 0;
+  int refused = 0;
 
   void countSuppression(BotSuppression s) {
     switch (s) {
@@ -76,6 +83,8 @@ class BotCounters {
         suppressedRate++;
       case BotSuppression.noMatch:
         noMatch++;
+      case BotSuppression.refused:
+        refused++;
     }
   }
 
@@ -86,6 +95,7 @@ class BotCounters {
         'loop': suppressedLoop,
         'rate': suppressedRate,
         'noMatch': noMatch,
+        'refused': refused,
       };
 
   static BotCounters fromJson(Map<String, Object?> j) {
@@ -96,7 +106,8 @@ class BotCounters {
       ..suppressedOwn = n('own')
       ..suppressedLoop = n('loop')
       ..suppressedRate = n('rate')
-      ..noMatch = n('noMatch');
+      ..noMatch = n('noMatch')
+      ..refused = n('refused');
   }
 
   void reset() {
@@ -106,6 +117,7 @@ class BotCounters {
     suppressedLoop = 0;
     suppressedRate = 0;
     noMatch = 0;
+    refused = 0;
   }
 }
 

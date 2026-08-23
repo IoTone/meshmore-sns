@@ -138,23 +138,65 @@ void main() {
     rec.mc.dispose();
   });
 
-  // Answering a replayed queue would produce a burst of stale replies
-  // and burn the airtime budget on messages nobody is waiting for.
-  test('the reconnect drain is not answered', () async {
+  // THE regression test for this feature. The firmware does not push
+  // text messages in real time: every inbound message arrives through
+  // a drain triggered by MSGS_WAITING. The first version of the guard
+  // skipped all drained traffic, which skipped everything and made the
+  // bot permanently inert — and the old test asserted exactly that,
+  // so a green suite proved nothing.
+  test('a live MSGS_WAITING drain IS answered — the normal path',
+      () async {
     final rec = await rig();
     await rec.bot.setEnabled(const ChannelScope(2), true);
-    // The real trigger: the device says it has queued items (0x83).
+
+    // Exactly how a real message arrives while connected.
     rec.fake.emit(msgsWaitingFrame());
     await Future<void>.delayed(Duration.zero);
-    expect(rec.mc.isDraining, isTrue, reason: 'fixture must actually drain');
+    expect(rec.mc.isDraining, isTrue);
+    expect(rec.mc.isBacklogDrain, isFalse,
+        reason: 'a live push is not a backlog');
 
     rec.fake.emit(channelMsgFrame(idx: 2, text: 'ping'));
     await Future<void>.delayed(Duration.zero);
 
-    expect(rec.mc.messagesFor(2).where((ChatMessage m) => m.outgoing),
-        isEmpty);
+    expect(
+      rec.mc.messagesFor(2).where((ChatMessage m) => m.outgoing),
+      hasLength(1),
+      reason: 'the bot must answer traffic delivered by a live drain',
+    );
     rec.bridge.dispose();
     rec.mc.dispose();
+  });
+
+  // The legitimate half of the original concern: history replayed on
+  // connect is not answered, or reconnecting floods the mesh with
+  // stale replies nobody is waiting for.
+  test('the connect backlog is NOT answered', () async {
+    final FakeMeshcoreTransport fake =
+        FakeMeshcoreTransport(connected: true);
+    final MeshcoreController mc =
+        MeshcoreController(transportFactory: () async => fake);
+    final BotController bot = BotController(
+      pskFor: (int _) => privatePsk(),
+      now: () => DateTime.utc(2026, 1, 1, 12),
+      rateLimit: const BotRateLimit(
+          minInterval: Duration.zero, maxPerWindow: 1000),
+    );
+    final BotBridge bridge = BotBridge(mc, bot);
+    await bot.setEnabled(const ChannelScope(2), true);
+
+    await mc.connect();
+    fake.emit(selfInfoFrame()); // → ready, which starts the BACKLOG drain
+    await Future<void>.delayed(Duration.zero);
+    expect(mc.isBacklogDrain, isTrue);
+
+    fake.emit(channelMsgFrame(idx: 2, text: 'ping'));
+    await Future<void>.delayed(Duration.zero);
+
+    expect(mc.messagesFor(2).where((ChatMessage m) => m.outgoing), isEmpty,
+        reason: 'replayed history must not be answered');
+    bridge.dispose();
+    mc.dispose();
   });
 
   test('the bridge learns our own key so the self-guard can fire',

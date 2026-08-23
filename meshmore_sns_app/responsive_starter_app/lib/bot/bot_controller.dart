@@ -276,6 +276,7 @@ class BotController extends ChangeNotifier {
       t.suppressedLoop += b.counters.suppressedLoop;
       t.suppressedRate += b.counters.suppressedRate;
       t.noMatch += b.counters.noMatch;
+      t.refused += b.counters.refused;
     }
     return t;
   }
@@ -292,13 +293,24 @@ class BotController extends ChangeNotifier {
     final BotBinding b = bindingFor(scope);
     if (!b.enabled) return null;
 
+    final BotCounters c = b.counters;
+    c.received++;
+
     // Re-check on every message, not just at bind time. A slot's key
     // can be changed on the device after the bot was switched on, and
     // the binding must not outlive the privacy it was granted under.
-    if (refusalFor(scope) != null) return null;
-
-    final BotCounters c = b.counters;
-    c.received++;
+    //
+    // Counted, not returned silently. This check used to sit above
+    // `received++`, so a scope that stopped qualifying produced total
+    // silence and left no trace — indistinguishable from "no traffic
+    // arrived", which is the one thing the counters exist to tell
+    // apart.
+    if (refusalFor(scope) != null) {
+      c.countSuppression(BotSuppression.refused);
+      notifyListeners();
+      unawaited(_save());
+      return null;
+    }
 
     BotSuppression? suppress;
     final String? own = ownPubKeyHex;

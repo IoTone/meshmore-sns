@@ -70,6 +70,13 @@ void main() {
       psk = List<int>.from(kPublicChannelPsk);
       expect(c.handleInbound(scope: priv, text: 'ping'), isNull,
           reason: 'the bot must stop the moment the slot goes public');
+
+      // And says so. This check used to sit above `received++`, so a
+      // scope that stopped qualifying went silent leaving no trace —
+      // indistinguishable from "no traffic arrived", which is the one
+      // thing the counters exist to tell apart.
+      expect(c.countersFor(priv).received, 2);
+      expect(c.countersFor(priv).refused, 1);
     });
   });
 

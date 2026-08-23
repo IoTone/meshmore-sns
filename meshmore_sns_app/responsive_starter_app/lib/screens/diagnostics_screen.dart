@@ -416,7 +416,8 @@ class _BotSoakPanel extends StatelessWidget {
           Text(
             'total  rx ${t.received}  tx ${t.replied}  '
             'own ${t.suppressedOwn}  loop ${t.suppressedLoop}  '
-            'rate ${t.suppressedRate}  nomatch ${t.noMatch}',
+            'rate ${t.suppressedRate}  nomatch ${t.noMatch}  '
+            'refused ${t.refused}',
             style: mono,
           ),
           const SizedBox(height: 4),

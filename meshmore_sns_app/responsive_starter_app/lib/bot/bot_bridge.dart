@@ -39,10 +39,16 @@ class BotBridge {
   void _onChannel(ChatMessage m) {
     // Never answer our own echo, whatever the guards would say.
     if (m.outgoing) return;
-    // Draining the device queue on reconnect replays old traffic;
-    // answering all of it would produce a burst of stale replies and
-    // burn the airtime budget on messages nobody is waiting for.
-    if (_mc.isDraining) return;
+    // Replaying a backlog on connect/resume must not be answered: it
+    // is history, and a burst of stale replies would burn the airtime
+    // budget on messages nobody is waiting for.
+    //
+    // Deliberately NOT `isDraining`. The firmware does not push text
+    // messages in real time — every inbound message arrives through a
+    // drain — so skipping all drained traffic skips everything and the
+    // bot can never reply to anything at all. That was the first
+    // version of this guard, and it made the whole feature inert.
+    if (_mc.isBacklogDrain) return;
 
     final BotScope scope = ChannelScope(m.channelIdx);
     final String? reply = _bot.handleInbound(
@@ -56,7 +62,7 @@ class BotBridge {
 
   void _onDm(ChatMessage m) {
     if (m.outgoing) return;
-    if (_mc.isDraining) return;
+    if (_mc.isBacklogDrain) return; // see _onChannel
     final String? peer = m.peerPubKeyHex;
     if (peer == null) return;
 

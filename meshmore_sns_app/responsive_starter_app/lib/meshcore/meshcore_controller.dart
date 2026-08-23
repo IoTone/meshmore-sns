@@ -132,8 +132,9 @@ class MeshcoreController extends ChangeNotifier {
         // temperature / altitude populate across the fabric.
         _startTelemetryPolling();
         // Drain anything the device queued before/while we connected
-        // (heard contacts/adverts + received messages).
-        _drainStart();
+        // (heard contacts/adverts + received messages). This one IS a
+        // backlog: it is history, not traffic arriving now.
+        _drainStart(backlog: true);
         // Keep the process alive in the background so the link +
         // drain survive Doze (Android only; no-op elsewhere).
         if (_bgKeepaliveEnabled) unawaited(_keepalive.start());
@@ -2954,8 +2955,22 @@ class MeshcoreController extends ChangeNotifier {
     notifyListeners();
   }
 
-  void _drainStart() {
+  /// True while the current drain is replaying a **backlog** — traffic
+  /// the device queued before we were listening (link-up, resume,
+  /// reconnect) rather than a message that just arrived.
+  ///
+  /// The distinction matters because the firmware does **not** push
+  /// text messages in real time: every inbound message reaches us
+  /// through a drain, so "skip everything drained" would skip
+  /// everything, full stop. A drain kicked off by a live
+  /// `MSGS_WAITING` push while we were already connected is delivering
+  /// fresh traffic and must be treated as such.
+  bool get isBacklogDrain => _draining && _drainIsBacklog;
+  bool _drainIsBacklog = false;
+
+  void _drainStart({bool backlog = false}) {
     if (_draining) return;
+    _drainIsBacklog = backlog;
     _setDraining(true);
     _drainSteps = 0;
     _drainStep();
@@ -3394,8 +3409,9 @@ class MeshcoreController extends ChangeNotifier {
       await sendSelfAdvert(flood: true);
       await requestContacts();
       // Pull anything the device has already queued (heard adverts
-      // may be sitting behind MSGS_WAITING, not pushed live).
-      _drainStart();
+      // may be sitting behind MSGS_WAITING, not pushed live). A scan
+      // reaches back over whatever accumulated, so this is backlog.
+      _drainStart(backlog: true);
     } catch (_) {
       // Surface via state/error elsewhere; scan window still elapses.
     }
@@ -3409,7 +3425,7 @@ class MeshcoreController extends ChangeNotifier {
   Future<void> onAppResumed() async {
     if (_manualDisconnect) return; // user chose to stay disconnected
     if (isReady) {
-      _drainStart(); // drain backlog buffered while backgrounded
+      _drainStart(backlog: true); // buffered while backgrounded
       return;
     }
     if (_connecting) return; // a (re)connect is already in flight
