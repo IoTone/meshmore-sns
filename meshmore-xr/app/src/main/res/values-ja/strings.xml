@@ -399,4 +399,8 @@
     <string name="mb_busiest">最多時間</string>
     <string name="mb_hour">%1$02d時</string>
     <string name="mb_pct">%2$d中 %1$d  %3$d%%</string>
+    <string name="n_compass_ribbon">方位帯</string>
+    <string name="n_heading_true">方位: 真北基準</string>
+    <string name="n_heading_rel">方位: 相対 — 先に北を設定</string>
+    <string name="n_compass_off">方位表示 オフ</string>
 </resources>

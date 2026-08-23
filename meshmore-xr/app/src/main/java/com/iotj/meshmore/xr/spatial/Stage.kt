@@ -296,6 +296,31 @@ class Stage(private val session: Session, private val theme: Horizon.Palette) {
     }
 
     /**
+     * PUT THE FLOOR BACK UNDER THE WEARER.
+     *
+     * [floorY] is estimated once, at recentre, as eye height below wherever the
+     * head was — and then never revisited. That is fine for a session that
+     * starts with the glasses on somebody's face, and wrong for every other
+     * way a session can start: sitting down, standing up, or a run of testing
+     * that began with the headset on a desk. The floor ends up at desk height
+     * and the rings hang at the wearer's knees or over their head, with no way
+     * to correct it short of relaunching.
+     *
+     * The reset gesture already means "put things back where I am". It moved
+     * the origin and left the floor where it was, which is half a reset.
+     *
+     * Returns true when the floor actually moved, so a caller can skip
+     * rebuilding a grid that has not changed.
+     */
+    fun refloor(head: Vector3, threshold: Float = 0.05f): Boolean {
+        val want = head.y - EYE_HEIGHT
+        if (kotlin.math.abs(want - floorY) < threshold) return false
+        Log.i(TAG, "[stage] floor %.2f -> %.2f (head at %.2f)".format(floorY, want, head.y))
+        floorY = want
+        return true
+    }
+
+    /**
      * The Tron floor. A grid of thin extruded bars laid on the estimated floor,
      * built once and then FALLEN into place: each ring of tiles drops from above
      * with a short stagger, so the room assembles outward from under the user.

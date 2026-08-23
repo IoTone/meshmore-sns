@@ -3522,15 +3522,6 @@ private fun HorizonScene(link: MeshLink) {
         val hud = Hud(session, palette)
         hud.build()
         hudRef.value = hud
-        // THE RADIO RACK, built but NOT SHOWN. Settings are summoned from the
-        // dock; leaving a live radio configuration standing in the room is how
-        // it gets changed by someone reaching for something else.
-        val rack = Rack(session, palette, ctx, link.radio)
-        rack.onCommit = { link.commitRadio() }
-        rack.onRevert = { link.revertRadio() }
-        rack.build(origin)
-        rack.setVisible(false)
-        rackRef.value = rack
 
         // HANDS. The Aura reports hand tracking and nothing else, so a shape the
         }
@@ -3639,9 +3630,6 @@ private fun HorizonScene(link: MeshLink) {
             hands.setVisible(true)
             Log.i(TAG_UI, "[hands] skeleton shown by --ez handdebug")
         }
-        val help = HelpCard(session, palette, ctx)
-        help.build(origin)
-        helpRef.value = help
         val advice = com.iotj.meshmore.xr.spatial.Advice(session, palette, ctx)
         advice.build(origin)
         adviceRef.value = advice
@@ -3717,9 +3705,31 @@ private fun HorizonScene(link: MeshLink) {
             com.iotj.meshmore.xr.spatial.Dock.PAD_LEFT
         }
         dock.build(origin, listOf(
+            // ONE PIP, THREE STATES: off, the bearing ribbon, then the same
+            // heading as a number. The operator asked for "true north or
+            // simply your heading" as a toggle here — and the honest half is
+            // the second, since this hardware has no magnetometer and the
+            // geospatial path that would give true north SIGSEGVs on it. The
+            // readout says REL until somebody establishes north, which the
+            // NORTH pip is for.
             "COMPASS" to {
                 hudRef.value?.let { h ->
-                    h.setUpper(!h.upperOn); dockRef.value?.setLit("COMPASS", h.upperOn)
+                    val mode = h.cycleUpper()
+                    h.northKnown = MainActivity.northDeg != null
+                    h.northRefRad = originRef.value?.yawRad ?: 0f
+                    dockRef.value?.setLit("COMPASS", h.upperOn)
+                    noticeRef.value?.say(
+                        ctx.getString(
+                            when (mode) {
+                                com.iotj.meshmore.xr.spatial.Hud.Upper.RIBBON ->
+                                    R.string.n_compass_ribbon
+                                com.iotj.meshmore.xr.spatial.Hud.Upper.HEADING ->
+                                    if (MainActivity.northDeg != null) R.string.n_heading_true
+                                    else R.string.n_heading_rel
+                                else -> R.string.n_compass_off
+                            },
+                        ),
+                    )
                 }
             },
             "LINK" to {
@@ -3970,6 +3980,29 @@ private fun HorizonScene(link: MeshLink) {
         channels.build()
         channels.onFocus = { cue.recognised() }
         channelsRef.value = channels
+
+        // LAST, BECAUSE NOBODY IS LOOKING AT THEM YET.
+        //
+        // Measured on the emulator: the scene takes about fifteen seconds to
+        // build, and the wearer watches the wordmark for all of it. The RACK
+        // is 276 entities and 4.7 s of that, and it is invisible until somebody
+        // summons it from the dock; the help card is another 2 s of 33 lines
+        // nobody reads on launch. Built before the dock, the crown and the
+        // console, they delayed every surface a wearer might actually reach
+        // for by nearly seven seconds — which reads as an app that has hung.
+        //
+        // They still build AT SETUP, because a panel created after the scene
+        // is up does not attach. Later within setup is not later than setup.
+        val rack = Rack(session, palette, ctx, link.radio)
+        rack.onCommit = { link.commitRadio() }
+        rack.onRevert = { link.revertRadio() }
+        rack.build(origin)
+        rack.setVisible(false)
+        rackRef.value = rack
+
+        val help = HelpCard(session, palette, ctx)
+        help.build(origin)
+        helpRef.value = help
 
         val bands = com.iotj.meshmore.xr.spatial.Bands(session, palette, ctx)
         bands.build()
@@ -6037,6 +6070,19 @@ private fun HorizonScene(link: MeshLink) {
                     }
                     val t = h.translation
                     originRef.value = o.copy(x = t.x, y = t.y, z = t.z)
+                    // AND PUT THE FLOOR BACK UNDER YOU, which this gesture did
+                    // not do and should always have. floorY is estimated once
+                    // at recentre — eye height below wherever the head was —
+                    // so a session that began with the headset on a desk keeps
+                    // a desk-height floor for the rest of its life, with the
+                    // rings hanging at the knees. Reset already means "put
+                    // things back where I am"; moving the origin and leaving
+                    // the floor behind was half a reset. Rebuilt only when it
+                    // actually moved, since the grid is 34 bars of geometry.
+                    if (stage.refloor(t)) {
+                        launch { originRef.value?.let { stage.buildFloor(it, skin.value) } }
+                        Log.i(TAG_UI, "[reset] floor re-derived from head at %.2f".format(t.y))
+                    }
                     // IN A TABLETOP, RESET RESETS THE TABLE. The measured
                     // anchor beats the origin on purpose, so a recentre alone
                     // cannot rescue a model the anchor has put somewhere wrong
@@ -6819,6 +6865,14 @@ private fun HorizonScene(link: MeshLink) {
                     // The microhud is head-locked, so it is re-placed from the
                     // live pose every frame rather than anchored once.
                     hudRef.value?.tick(it)
+                    // The heading readout throttles itself to 4 Hz and only
+                    // rebuilds when the printed number changes — see
+                    // Hud.tickHeading, and the churn bug it is avoiding.
+                    hudRef.value?.let { h ->
+                        h.northKnown = MainActivity.northDeg != null
+                        h.northRefRad = originRef.value?.yawRad ?: 0f
+                        h.tickHeading(it, android.os.SystemClock.uptimeMillis())
+                    }
                 }
                 // ASL QUICK ACTIONS. Right 'A' raises the compass band, left
                 // 'A' raises the link band. Per-hand rather than one gesture

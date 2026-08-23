@@ -50,6 +50,37 @@ class Hud(private val session: Session, private val theme: Horizon.Palette) {
     private val minors = mutableListOf<MeshEntity>()
     private val majors = mutableListOf<Pair<Int, MeshEntity>>()   // bearing deg -> entity
     private var status: MeshEntity? = null
+    private var heading: MeshEntity? = null
+    private var lastHeading: String? = null
+    private var headingAt = 0L
+
+    /**
+     * WHAT THE UPPER BAND IS FOR, which used to be one thing.
+     *
+     * RIBBON is the compass strip: bearings across the top of the view.
+     * HEADING is the same fact as a number, which is what somebody wants when
+     * they are reading a bearing off a node rather than steering by it.
+     *
+     * The operator asked for "true north or simply your heading" as a toggle
+     * on the compass pip, and the honest part of that request is the second
+     * half: this hardware publishes no magnetometer, and the geospatial API
+     * that would supply true north SIGSEGVs on it (two of three modes,
+     * measured 2026-08-10). North here is whatever somebody has TOLD the app —
+     * see [northKnown], which is why the readout says so.
+     */
+    enum class Upper { OFF, RIBBON, HEADING }
+
+    var upperMode: Upper = Upper.OFF
+        private set
+
+    /**
+     * Where north sits, in the same yaw frame the head pose uses, and whether
+     * anybody has actually established it. Set by the host; both are needed
+     * because a heading against an assumed north is a number that looks true
+     * and is not.
+     */
+    var northRefRad: Float = 0f
+    var northKnown: Boolean = false
 
     /**
      * BOTH BANDS START OFF.
@@ -86,8 +117,31 @@ class Hud(private val session: Session, private val theme: Horizon.Palette) {
     var lowerOn: Boolean = true
         private set
 
+    /**
+     * OFF -> RIBBON -> HEADING -> OFF.
+     *
+     * One pip, three states, because the pip is already the thing a wearer
+     * reaches for when they want to know which way they are pointing and there
+     * is no room on that wrist for a second one.
+     */
+    fun cycleUpper(): Upper {
+        upperMode = when (upperMode) {
+            Upper.OFF -> Upper.RIBBON
+            Upper.RIBBON -> Upper.HEADING
+            Upper.HEADING -> Upper.OFF
+        }
+        setUpper(upperMode != Upper.OFF)
+        return upperMode
+    }
+
     fun setUpper(on: Boolean) {
         upperOn = on
+        if (!on) {
+            upperMode = Upper.OFF
+            runCatching { heading?.setEnabled(false) }
+        } else if (upperMode == Upper.OFF) {
+            upperMode = Upper.RIBBON
+        }
         // Only ever turns things OFF here. Which ticks should be lit depends on
         // where the head is pointing, and tick() decides that every frame — so
         // switching the band on is just permission for tick() to do its job.
@@ -217,13 +271,14 @@ class Hud(private val session: Session, private val theme: Horizon.Palette) {
         // The ribbon is re-placed every frame, and placing implies enabling —
         // so the gate has to be here, not only in setUpper(). Otherwise the
         // first frame after a toggle-off puts every tick straight back.
-        if (!upperOn) {
+        val ribbon = upperOn && upperMode == Upper.RIBBON
+        if (!ribbon) {
             minors.forEach { it.setEnabled(false) }
             majors.forEach { it.second.setEnabled(false) }
         }
         var slot = 0
         var bearing = 0
-        while (upperOn && bearing < 360) {
+        while (ribbon && bearing < 360) {
             val d = wrapDeg(bearing - Math.toDegrees(yaw.toDouble()).toFloat())
             if (abs(d) <= SAFE_H_DEG) {
                 val x = D * tan(Math.toRadians(d.toDouble())).toFloat()
@@ -242,6 +297,8 @@ class Hud(private val session: Session, private val theme: Horizon.Palette) {
         }
         for (i in slot until minors.size) minors[i].setEnabled(false)
 
+        heading?.let { it.setEnabled(upperMode == Upper.HEADING); place(it, 0f, RIBBON_Y) }
+
         status?.let { it.setEnabled(lowerOn); if (lowerOn) place(it, 0f, STATS_Y) }
     }
 
@@ -251,6 +308,42 @@ class Hud(private val session: Session, private val theme: Horizon.Palette) {
      * rebuilding a mesh every frame to move three characters is how a HUD eats
      * a frame budget.
      */
+    /**
+     * The heading, as a number, rebuilt only when the number changes.
+     *
+     * THROTTLED HARD, and the reason is a bug this app has already paid for
+     * once: a stroke-glyph readout rebuilt every frame is the inbox churn —
+     * geometry created and disposed at 30 Hz. A heading changes by a degree
+     * with the smallest head movement, so it is rebuilt at most four times a
+     * second and only when the printed text actually differs.
+     *
+     * Says REL when nobody has established north. A bearing against an assumed
+     * north is a number that looks true and is not, and on a device with no
+     * magnetometer that is the normal case rather than the exception.
+     */
+    suspend fun tickHeading(head: Pose, nowMs: Long) {
+        if (upperMode != Upper.HEADING) return
+        if (nowMs - headingAt < HEADING_MS) return
+        headingAt = nowMs
+        val deg = wrapDeg(
+            Math.toDegrees((yawOf(head) - northRefRad).toDouble()).toFloat(),
+        )
+        val whole = ((deg + 360f) % 360f).toInt()
+        val text = "%03d\u00B0%s".format(whole, if (northKnown) "" else " REL")
+        if (text == lastHeading) return
+        lastHeading = text
+        // BUILD, SWAP, THEN DISPOSE — same order and same reason as setStatus.
+        val fresh = MeshEntity.create(
+            session, Prims.build(session, Glyphs.text(text, STATS_CAP)),
+            listOf(Prims.material(session, theme.accent, 0.9f)),
+        ).also { it.parent = session.scene.activitySpace; it.setEnabled(true) }
+        val old = heading
+        heading = fresh
+        runCatching { old?.parent = null }
+        runCatching { old?.dispose() }
+        entities += fresh
+    }
+
     suspend fun setStatus(text: String) {
         if (text == lastStatus) return
         lastStatus = text
@@ -276,6 +369,7 @@ class Hud(private val session: Session, private val theme: Horizon.Palette) {
         // References dropped BEFORE disposal, so whatever runs next finds empty
         // collections rather than handles to dead entities.
         status = null; lastStatus = null
+        heading = null; lastHeading = null
         val doomed = entities.toList()
         entities.clear(); minors.clear(); majors.clear()
         doomed.forEach { runCatching { it.parent = null } }
@@ -328,6 +422,9 @@ class Hud(private val session: Session, private val theme: Horizon.Palette) {
         const val SAFE_H_DEG = 28f
         /** Ribbon centre: +13.5 deg, mid-band of +11.9..+15.1. */
         const val RIBBON_Y = 0.252f
+
+        /** Four times a second is faster than anybody reads a compass. */
+        const val HEADING_MS = 250L
         /** Stats centre: -13.5 deg. */
         const val STATS_Y = -0.252f
         const val MINOR_STEP = 5
