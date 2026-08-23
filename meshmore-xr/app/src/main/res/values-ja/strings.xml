@@ -386,4 +386,17 @@
     <string name="tx_ms">%1$d ms</string>
     <!-- A bot told us how well it heard this radio. -->
     <string name="n_heard_us">受信報告: %1$s</string>
+    <!-- S · MESHBOOK. The last day on this mesh, from messages already here. -->
+    <string name="t_meshbook">メッシュ帳 — 24時間</string>
+    <string name="f_meshbook">"照会は一切していない"</string>
+    <string name="r_meshbook">メッシュ帳</string>
+    <string name="mb_quiet">今日は発言なし</string>
+    <string name="mb_heard">受信</string>
+    <string name="mb_sent">送信</string>
+    <string name="mb_delivered">到達</string>
+    <string name="mb_answered">返信あり</string>
+    <string name="mb_voices">発言者</string>
+    <string name="mb_busiest">最多時間</string>
+    <string name="mb_hour">%1$02d時</string>
+    <string name="mb_pct">%2$d中 %1$d  %3$d%%</string>
 </resources>

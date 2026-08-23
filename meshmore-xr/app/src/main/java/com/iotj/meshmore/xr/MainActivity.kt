@@ -1134,6 +1134,77 @@ private fun txName(ctx: android.content.Context, n: TxLog.Name): String = when (
     is TxLog.Name.Over -> ctx.getString(R.string.tx_size_over, n.lo)
 }
 
+/**
+ * S · MESHBOOK — what kind of day this mesh has had.
+ *
+ * The inbox says what was said. This says what sort of day it was, which is a
+ * different question and the one a log cannot answer: was it busy, who carried
+ * it, did anybody answer YOU, and when is this band actually awake.
+ *
+ * COSTS NOTHING. Every figure is computed from messages already on this
+ * device — no query, no airtime, no permission — which makes it the one
+ * surface in the app that is fully useful with the radio switched off. The
+ * footer says so, because a wearer looking at a page of numbers about their
+ * mesh may reasonably wonder what it just spent to make them.
+ */
+private fun meshbookRows(
+    ctx: android.content.Context,
+    link: MeshLink,
+    nowEpochSec: Long,
+): List<com.iotj.meshmore.xr.spatial.Stack.Row> {
+    fun plain(text: String) =
+        com.iotj.meshmore.xr.spatial.Stack.Row(id = "mb", label = text, lit = false)
+    val book = Meshbook.of(link.msgs.value, nowEpochSec) { at ->
+        java.util.Calendar.getInstance().apply { timeInMillis = at * 1000 }
+            .get(java.util.Calendar.HOUR_OF_DAY)
+    }
+    if (book.total == 0) return listOf(plain(ctx.getString(R.string.mb_quiet)))
+
+    val rows = mutableListOf<com.iotj.meshmore.xr.spatial.Stack.Row>()
+    fun pair(name: Int, value: String) =
+        rows.add(plain(com.iotj.meshmore.xr.spatial.radioRow(ctx.getString(name), value, null)))
+
+    pair(R.string.mb_heard, "${book.theirs}")
+    pair(R.string.mb_voices, "${book.speakers}")
+    if (book.mine > 0) {
+        pair(R.string.mb_sent, "${book.mine}")
+        book.deliveryPct?.let {
+            // OF THE TRACKABLE ONES, not of everything sent. The percentage
+            // was already computed that way while the fraction beside it used
+            // the total, so the row read "1 OF 22 100%" on the operator's own
+            // mesh — a sentence that argues with itself. Channel sends are not
+            // in either half: nothing will ever acknowledge them.
+            pair(
+                R.string.mb_delivered,
+                ctx.getString(R.string.mb_pct, book.delivered, book.trackable, it),
+            )
+        }
+        book.replyPct?.let {
+            pair(
+                R.string.mb_answered,
+                ctx.getString(R.string.mb_pct, book.answered, book.mine, it),
+            )
+        }
+    }
+    book.busiestHour?.let { pair(R.string.mb_busiest, ctx.getString(R.string.mb_hour, it)) }
+    // THE DAY'S SHAPE, ON ONE ROW. Twenty-four buckets of block characters
+    // scaled to the day's own peak, so a quiet day still has a shape rather
+    // than a flat line. It is the only row here that is a picture, and it is
+    // the one worth looking at.
+    rows += plain(Meshbook.sparkline(book.hourly))
+    // Then who carried it, most first.
+    book.voices.forEach { v ->
+        rows += plain(
+            com.iotj.meshmore.xr.spatial.radioRow(
+                com.iotj.meshmore.xr.spatial.TypeTier.clip(v.name.uppercase(), 14),
+                "${v.said}",
+                null,
+            ),
+        )
+    }
+    return rows
+}
+
 private fun txRows(
     ctx: android.content.Context,
     link: MeshLink,
@@ -2102,6 +2173,11 @@ private fun appRows(
         // what to share should see, in the same list, what sharing is for.
         com.iotj.meshmore.xr.spatial.Stack.Row(
             id = "WX", label = ctx.getString(R.string.r_wx), lit = false,
+        ),
+        // AND WHAT THE MESH HAS BEEN DOING, which costs nothing to ask because
+        // it asks nobody — see meshbookRows.
+        com.iotj.meshmore.xr.spatial.Stack.Row(
+            id = "MESHBOOK", label = ctx.getString(R.string.r_meshbook), lit = false,
         ),
         row("CHANSEND", ctx.getString(R.string.r_chansend), Settings.channelSend(ctx), ctx.getString(R.string.w_allowed), "OFF"),
         // GARBAGE COLLECTION, because a full contact store locks you out of
@@ -4441,6 +4517,25 @@ private fun HorizonScene(link: MeshLink) {
                 Log.i(TAG_UI, "[wx] probe — sweeping")
                 appRef.value?.fire("WXASK")
             }
+            // MESHBOOK, opened in one place — same rule as the region list and
+            // the weather bay: two routes to a surface means the launch flag
+            // verifies its own route rather than the one a hand takes.
+            val openMeshbook = {
+                bayMode.value = "MESHBOOK"
+                armed.value = null
+                aboutOpen.value = false
+                consoleRef.value?.hide()
+                appRef.value?.show(
+                    meshbookRows(ctx, link, System.currentTimeMillis() / 1000),
+                    title = ctx.getString(R.string.t_meshbook),
+                    footer = ctx.getString(R.string.f_meshbook),
+                    // A SET, NOT A SEQUENCE — see Stack.show.
+                    form = true,
+                )
+                dockRef.value?.setLit("SETUP", false)
+                cue.opened()
+            }
+
             MainActivity.openBay?.let { bay ->
                 launch {
                     // After the scene is up and the radio has enumerated its
@@ -4449,7 +4544,11 @@ private fun HorizonScene(link: MeshLink) {
                     kotlinx.coroutines.delay(9000)
                     // WX IS A ROW, NOT A PLATE, so the console cannot fire it.
                     // Same surface, same single route — see openWx.
-                    if (bay == "WX") openWx() else consoleRef.value?.fire(bay)
+                    when (bay) {
+                        "WX" -> openWx()
+                        "MESHBOOK" -> openMeshbook()
+                        else -> consoleRef.value?.fire(bay)
+                    }
                 }
             }
             // THE ONE CLAIM THE THEME SYSTEM RESTS ON, put in front of an eye.
@@ -5253,6 +5352,7 @@ private fun HorizonScene(link: MeshLink) {
                         // the two are the same subject seen from either end:
                         // who may ask about me, and what I may learn by asking.
                         "WX" -> { openWx(); continue }
+                        "MESHBOOK" -> { openMeshbook(); continue }
                         "TELEM" -> {
                             bayMode.value = "TELEM"
                             appRef.value?.show(

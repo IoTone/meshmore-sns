@@ -398,4 +398,17 @@
     <string name="tx_ms">%1$d ms</string>
     <!-- A bot told us how well it heard this radio. -->
     <string name="n_heard_us">HEARD US: %1$s</string>
+    <!-- S · MESHBOOK. The last day on this mesh, from messages already here. -->
+    <string name="t_meshbook">MESHBOOK — LAST 24H</string>
+    <string name="f_meshbook">"NOTHING WAS ASKED OF THE MESH"</string>
+    <string name="r_meshbook">MESHBOOK</string>
+    <string name="mb_quiet">NOBODY SPOKE TODAY</string>
+    <string name="mb_heard">HEARD</string>
+    <string name="mb_sent">YOU SENT</string>
+    <string name="mb_delivered">DELIVERED</string>
+    <string name="mb_answered">ANSWERED</string>
+    <string name="mb_voices">VOICES</string>
+    <string name="mb_busiest">BUSIEST</string>
+    <string name="mb_hour">%1$02d:00</string>
+    <string name="mb_pct">%1$d OF %2$d  %3$d%%</string>
 </resources>
