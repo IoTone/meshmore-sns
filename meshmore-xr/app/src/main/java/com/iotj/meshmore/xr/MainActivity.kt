@@ -4122,6 +4122,26 @@ private fun HorizonScene(link: MeshLink) {
         // Both fire from MeshLink, which is where the verdict is actually
         // reached, rather than from whichever surface happens to be open —
         // the same argument that put the allow-list at the transmitter.
+        // SOMEBODY'S BOT MEASURED OUR TRANSMITTER. Said out loud because it
+        // is the one fact about this radio's sending that the radio itself
+        // cannot produce, and it arrives unpredictably — there is no surface a
+        // wearer would think to open at the moment it lands.
+        link.onSignalReport = { who, rep ->
+            // ONE ARGUMENT, COMPOSED HERE. The band is 30 cells in Japanese
+            // and the parity test fills every %s with a fourteen-cell worst
+            // case — so two of them cannot fit whatever the words between them
+            // are, and a notice that overruns is cut rather than wrapped.
+            noticeRef.value?.say(
+                ctx.getString(
+                    R.string.n_heard_us,
+                    com.iotj.meshmore.xr.spatial.TypeTier.clip(
+                        "${who.uppercase()} ${rep.line()}", 20,
+                    ),
+                ),
+            )
+            Alerts.info("SIGNAL", "$who: ${rep.line()}".uppercase())
+            cue.delivered()
+        }
         link.onDelivered = { cue.delivered() }
         link.onLost = { cue.lost() }
         // NO SILENT SWITCH YET, and that is a gap rather than a decision: §6

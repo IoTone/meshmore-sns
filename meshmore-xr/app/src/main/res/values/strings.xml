@@ -396,4 +396,6 @@
     <string name="tx_size">%1$d-%2$d B</string>
     <string name="tx_size_over">OVER %1$d B</string>
     <string name="tx_ms">%1$d ms</string>
+    <!-- A bot told us how well it heard this radio. -->
+    <string name="n_heard_us">HEARD US: %1$s</string>
 </resources>

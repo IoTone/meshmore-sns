@@ -1012,6 +1012,14 @@ class MeshLink(
      * these to the cue vocabulary, so a delivery is a tick and a loss is the
      * one falling shape in the set.
      */
+    /**
+     * Raised when somebody's bot tells us how well it heard this radio.
+     *
+     * The one measurement of our own transmitter that cannot be made on this
+     * side of the link. See SignalReport.
+     */
+    var onSignalReport: ((String, SignalReport.Report) -> Unit)? = null
+
     var onDelivered: (() -> Unit)? = null
     var onLost: (() -> Unit)? = null
 
@@ -1844,7 +1852,19 @@ class MeshLink(
      * factor and bandwidth have to match the mesh exactly or the radio hears
      * nothing while looking perfectly healthy.
      */
+    /**
+     * This radio's own node name, as the radio reports it.
+     *
+     * Needed to tell whether a bot's reply is about US. A channel bot answers
+     * everybody, and recording somebody else's signal report against our own
+     * transmitter would be worse than recording nothing — it would look like
+     * data. Null until the radio has introduced itself.
+     */
+    var selfName: String? = null
+        private set
+
     private fun dumpRadio(s: SelfInfo) {
+        selfName = s.name()?.takeIf { it.isNotBlank() }
         val key = s.publicKey()?.joinToString("") { "%02x".format(it) } ?: "?"
         Log.i(TAG, "[radio] ======== MeshCore radio ========")
         Log.i(TAG, "[radio] name          = ${s.name()}")
@@ -2323,6 +2343,23 @@ class MeshLink(
                         atEpochSec = m.timestamp(), direct = true,
                     ),
                 )
+                // A BOT'S REPLY IS A MEASUREMENT OF OUR OWN TRANSMITTER.
+                //
+                // There are auto-responders on this mesh that answer with the
+                // quality of the packet they received. Everything else this app
+                // knows about its own sending is one bit — acknowledged or not
+                // — which cannot tell a packet heard at -80 dBm from one heard
+                // at -116, and only one of those is about to stop working. This
+                // is the far end's view of us, arriving as ordinary text the
+                // app was already receiving and discarding. See SignalReport.
+                SignalReport.parse(m.text())
+                    ?.takeIf { SignalReport.addressesUs(m.text() ?: "", selfName) }
+                    ?.let { rep ->
+                        Log.i(TAG, "[signal] $name heard us: ${rep.line()}" +
+                            (if (rep.via.isEmpty()) "" else " via ${rep.via.joinToString(",")}"))
+                        diag("SIGNAL   $name  ${rep.line()}")
+                        onSignalReport?.invoke(name, rep)
+                    }
                 // A message arriving is when the radio learns a route back, so
                 // go looking for one now rather than at the next sync.
                 session?.requestContacts()
@@ -2377,6 +2414,23 @@ class MeshLink(
                 val cut = raw.indexOf(": ")
                 val who = if (cut in 1..24) raw.take(cut) else ""
                 val body = if (cut in 1..24) raw.substring(cut + 2) else raw
+                // AND THIS IS WHERE THE BOTS ACTUALLY ARE.
+                //
+                // The report parser was wired to the DIRECT path first, which
+                // was the wrong half: every auto-responder captured on this
+                // mesh answers ON THE CHANNEL, addressing its subject by name
+                // in the text. Hooked only to DMs it would have compiled,
+                // passed its tests against real captured lines, and never once
+                // fired. So it hangs here too — and here the addressee test
+                // earns its place, because a channel bot answers everybody and
+                // its reply about somebody else's radio is not about ours.
+                SignalReport.parse(body)
+                    ?.takeIf { SignalReport.addressesUs(body, selfName) }
+                    ?.let { rep ->
+                        Log.i(TAG, "[signal] $who heard us: ${rep.line()}")
+                        diag("SIGNAL   $who  ${rep.line()}")
+                        onSignalReport?.invoke(who.ifBlank { "?" }, rep)
+                    }
                 remember(
                     Msg(
                         fromKey = "", fromName = who, text = body,
