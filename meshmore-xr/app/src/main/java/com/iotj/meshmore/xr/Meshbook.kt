@@ -46,6 +46,9 @@ object Meshbook {
 
     data class Voice(val name: String, val said: Int, val lastAtEpochSec: Long)
 
+    /** A word the day kept coming back to, and how many messages carried it. */
+    data class Topic(val term: String, val said: Int)
+
     data class Book(
         /** Messages in the window, ours and theirs. */
         val total: Int,
@@ -69,6 +72,8 @@ object Meshbook {
         val voices: List<Voice>,
         /** Distinct senders heard, ourselves excluded. */
         val speakers: Int,
+        /** What the day was ABOUT, strongest first. May be empty; usually is on a quiet day. */
+        val topics: List<Topic>,
     ) {
         val theirs: Int get() = total - mine
 
@@ -137,6 +142,11 @@ object Meshbook {
             hourly = hourly,
             voices = voices.take(TOP_VOICES),
             speakers = voices.size,
+            // EVERY message in the window, ours included. A day where the only
+            // person talking about the ferry was you is still a day about the
+            // ferry, and excluding our own words would make the book quieter
+            // the more we said.
+            topics = topics(win, voices.map { it.name }),
         )
     }
 
@@ -166,6 +176,167 @@ object Meshbook {
         }
         return n
     }
+
+    /**
+     * WHAT THE DAY WAS ABOUT.
+     *
+     * SNS settled the shape and its two good decisions are kept. A term counts
+     * ONCE PER MESSAGE, so "topics" measures how many messages mentioned a
+     * thing rather than how emphatically one person repeated it — otherwise a
+     * single excited sender owns the whole list. And a term must appear in at
+     * least [TOPIC_MIN] messages, because one mention is a remark, not a topic.
+     *
+     * PEOPLE ARE NOT TOPICS. The day's own voice handles are struck out, or a
+     * channel where everybody prefixes their name turns "topics" into a second,
+     * worse copy of the voices list — which is the row directly above it.
+     *
+     * ## Where this departs from the phone
+     *
+     * SNS tokenises on a character-class split that treats every CJK range as
+     * word characters. Japanese does not put spaces between words, so a
+     * sentence of kana and kanji survives that split as ONE token — an entire
+     * clause, offered to the wearer as a topic. It passes every test written
+     * in English and produces nonsense in Japanese, in an app that ships in
+     * Japanese.
+     *
+     * So a CJK run is kept only when it is short enough to plausibly BE a word
+     * — [CJK_MIN] to [CJK_MAX] characters, which covers ordinary compound
+     * nouns — and a longer run is dropped rather than shown. Dropping is the
+     * honest failure here: a missing topic reads as a quiet day, an invented
+     * one reads as a lie about what people said. Proper segmentation needs a
+     * dictionary this app has no room for.
+     */
+    private fun topics(win: List<MeshLink.Msg>, voiceNames: List<String>): List<Topic> {
+        val banned = voiceNames.flatMap { tokens(it) }.toSet()
+        val counts = mutableMapOf<String, Int>()
+        win.forEach { m ->
+            // ONCE PER MESSAGE — a set, not a list.
+            termsOf(m.text).forEach { t ->
+                if (t !in banned) counts[t] = (counts[t] ?: 0) + 1
+            }
+        }
+        return counts.entries
+            .filter { it.value >= TOPIC_MIN }
+            .map { Topic(it.key, it.value) }
+            .sortedWith(compareByDescending<Topic> { it.said }.thenBy { it.term })
+            .take(TOP_TOPICS)
+    }
+
+    /** The distinct topic-worthy terms in one message. */
+    internal fun termsOf(text: String): Set<String> =
+        tokens(body(text))
+            .filter { keep(it) }
+            .toSet()
+
+    private fun keep(t: String): Boolean {
+        // PLURALS TOO. The list is written in the singular, and the operator's
+        // own mesh promptly reported MESSAGES as the topic of the day because
+        // "message" was struck out and "messages" was not. Crude, and right
+        // far more often than it is wrong: the only way this misfires is a real
+        // topic whose singular happens to be a stopword.
+        if (t in STOPWORDS || t.removeSuffix("s") in STOPWORDS) return false
+        if (t.all { it.isDigit() }) return false
+        return if (isCjk(t)) t.length in CJK_MIN..CJK_MAX else t.length >= LATIN_MIN
+    }
+
+    private fun isCjk(t: String): Boolean = t.any { it.code >= 0x3040 }
+
+    /**
+     * The message without its `name: ` prefix.
+     *
+     * Channel traffic carries the sender as text rather than as a key, and
+     * leaving it in would make every regular's handle the day's top topic.
+     * Bounded at 32 characters so a colon in an ordinary sentence — "left at
+     * 10: nobody there" — does not eat the first half of the message.
+     */
+    private fun body(text: String): String {
+        val sep = text.indexOf(": ")
+        return if (sep in 1..32) text.substring(sep + 2) else text
+    }
+
+    private fun tokens(s: String): List<String> {
+        val out = mutableListOf<String>()
+        val cur = StringBuilder()
+        // QUOTED LINES ARE SKIPPED. A reply that quotes the message it answers
+        // would otherwise count every term in that message a second time, and
+        // the loudest topic of the day becomes whatever got quoted most.
+        s.lineSequence().filterNot { it.trimStart().startsWith(">") }.forEach { line ->
+            line.lowercase().forEach { c ->
+                if (c.isLetterOrDigit()) cur.append(c) else {
+                    if (cur.isNotEmpty()) { out += cur.toString(); cur.clear() }
+                }
+            }
+            if (cur.isNotEmpty()) { out += cur.toString(); cur.clear() }
+        }
+        return out
+    }
+
+    /** A term must carry this many MESSAGES before it is a topic rather than a remark. */
+    const val TOPIC_MIN = 2
+
+    /** How many a bay can show before the list stops being a summary. */
+    const val TOP_TOPICS = 6
+
+    const val LATIN_MIN = 3
+    const val CJK_MIN = 2
+    const val CJK_MAX = 6
+
+    /**
+     * Words that carry no subject.
+     *
+     * Taken from SNS so the two apps agree about what is not a topic, plus the
+     * mesh's own furniture — a network where people say "mesh", "node" and
+     * "test" constantly would otherwise report those as the news every day.
+     */
+    private val STOPWORDS = setOf(
+        "the", "and", "for", "are", "was", "were", "been", "being", "this",
+        "that", "these", "those", "with", "from", "have", "has", "had", "not",
+        "you", "your", "youre", "yours", "they", "them", "their", "theyre",
+        "she", "him", "her", "his", "hers", "our", "ours", "its", "who", "whom",
+        "what", "when", "where", "which", "how", "why", "all", "any", "some",
+        "can", "cant", "cannot", "will", "wont", "would", "could", "should",
+        "shouldnt", "does", "doesnt", "did", "didnt", "dont", "get", "got",
+        "getting", "going", "gonna", "wanna", "like", "just", "now", "here",
+        "there", "then", "than", "too", "very", "about", "out", "over", "into",
+        "onto", "off", "down", "back", "still", "also", "much", "many", "more",
+        "most", "lot", "lots", "yeah", "yep", "nope", "okay", "lol", "haha",
+        "hey", "hello", "thanks", "thx", "please", "pls", "http", "https",
+        "www", "com", "one", "two", "see", "good", "well", "sure",
+        "know", "think", "need", "want", "make", "made", "time", "today",
+        "tonight", "morning", "afternoon", "evening", "guys", "everyone",
+        // The mesh's own furniture.
+        "mesh", "node", "nodes", "test", "testing", "hop", "hops", "ack",
+        "msg", "message", "radio", "signal", "copy", "roger",
+        // ORDINARY ENGLISH, added after the first run on a real day.
+        //
+        // SNS's list was written against a quiet channel and it shows: on 380
+        // messages the operator's own mesh reported DOING, ANYONE and BUT as
+        // the topics of the day. A term list can only ever be as good as the
+        // traffic it was tested on, and this is the traffic.
+        //
+        // The rule for adding one: strike it if a wearer reading it as "the
+        // day was about X" would learn nothing. REPEATER stays — that is a
+        // real subject on this mesh. BUT never is.
+        "but", "doing", "does", "done", "anyone", "anybody", "someone",
+        "somebody", "something", "anything", "nothing", "everything",
+        "come", "comes", "coming", "went", "goes", "gone",
+        "look", "looks", "looking", "seen", "saw", "say", "says", "tell",
+        "told", "asking", "asks", "work", "works", "working",
+        "run", "runs", "running", "try", "tries", "trying",
+        "use", "used", "using", "way", "ways", "day", "days", "night",
+        "week", "weeks", "year", "years", "people", "thing", "things",
+        "little", "big", "long", "short", "new", "old", "next", "last",
+        "first", "again", "away", "around", "though", "because", "before",
+        "after", "while", "since", "until", "yet", "ever", "even", "own",
+        "same", "other", "another", "each", "every", "both", "few", "less",
+        "least", "best", "better", "worse", "worst", "right", "left",
+        "under", "through", "between", "against", "during", "within",
+        "along", "across", "behind", "beyond", "near", "far",
+        "hear", "heard", "hearing", "seeing", "great", "nice", "cool",
+        "fine", "true", "yes", "maybe", "probably", "actually", "really",
+        "pretty", "quite", "always", "often", "sometimes", "usually",
+        "anyway", "anyways", "welcome", "later", "soon", "ago",
+    )
 
     /** How the app marks its own messages, everywhere. */
     const val ME = "ME"

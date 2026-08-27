@@ -255,14 +255,63 @@ object Settings {
         context.getSharedPreferences(FILE, Context.MODE_PRIVATE)
             .getBoolean(KEY_ALERTS, false)
 
+    /**
+     * THE TWO PANEL SWITCHES, AS STATE RATHER THAN AS A STORED VALUE.
+     *
+     * Every other setting in this object is read at the moment something needs
+     * it, which is right for a value consulted by ordinary code. These two are
+     * different: they decide whether a Compose `SpatialPanel` exists, and
+     * Compose can only re-run a composition when it is watching something that
+     * CHANGED. A `getSharedPreferences` call inside a composable is an ordinary
+     * function call — nothing observes it — so the panel was composed once with
+     * whatever the flag said at the time and then stayed exactly as it was.
+     *
+     * That is why the alerts panel would not go away. Turning it off wrote the
+     * preference correctly, and the app agreed it was off everywhere the value
+     * is read as a value; the panel itself was never told, because nothing had
+     * subscribed to anything. It survived until the next recomposition happened
+     * to be triggered by something else entirely.
+     *
+     * So the two that gate a surface get a flow, and the preference remains the
+     * durable copy. [prime] seeds them at startup from what was stored.
+     */
+    private val _alertsOn = MutableStateFlow(false)
+    val alertsOn: StateFlow<Boolean> = _alertsOn.asStateFlow()
+
+    private val _diagOn = MutableStateFlow(false)
+    val diagOn: StateFlow<Boolean> = _diagOn.asStateFlow()
+
+    /**
+     * THE MANUAL, open or not.
+     *
+     * Session-only on purpose, unlike the other two. Alerts and diagnostics are
+     * instruments a wearer leaves running; documentation is something you open,
+     * read, and close — and a manual that was still standing in the room three
+     * launches later would be a surface nobody asked for, in front of the
+     * horizon, every time.
+     */
+    private val _docsOn = MutableStateFlow(false)
+    val docsOn: StateFlow<Boolean> = _docsOn.asStateFlow()
+
+    fun setDocs(on: Boolean) { _docsOn.value = on }
+    fun docs(): Boolean = _docsOn.value
+
+    /** Seed the panel flows from storage. Call once, at startup. */
+    fun prime(context: Context) {
+        _alertsOn.value = alerts(context)
+        _diagOn.value = diagnostics(context)
+    }
+
     fun setAlerts(context: Context, on: Boolean) {
         context.getSharedPreferences(FILE, Context.MODE_PRIVATE)
             .edit().putBoolean(KEY_ALERTS, on).apply()
+        _alertsOn.value = on
     }
 
     fun setDiagnostics(context: Context, on: Boolean) {
         context.getSharedPreferences(FILE, Context.MODE_PRIVATE)
             .edit().putBoolean(KEY_DIAGNOSTICS, on).apply()
+        _diagOn.value = on
     }
 
     /**

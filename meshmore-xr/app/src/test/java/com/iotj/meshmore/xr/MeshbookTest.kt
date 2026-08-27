@@ -202,4 +202,137 @@ class MeshbookTest {
         assertEquals("one bucket, not three voices", 2, b.speakers)
         assertTrue("no blank names anywhere", b.voices.none { it.name.isBlank() })
     }
+
+    // ---- WHAT THE DAY WAS ABOUT ------------------------------------------
+
+    @Test fun aTermCarriedByTwoMessagesIsATopic() {
+        val b = book(listOf(
+            msg("Ann", 1, "the ferry is late again"),
+            msg("Bob", 2, "any word on the ferry"),
+        ))
+        assertEquals(listOf("ferry"), b.topics.map { it.term })
+        assertEquals(2, b.topics.first().said)
+    }
+
+    /** One mention is a remark. Two is a topic. */
+    @Test fun aSingleMentionIsNotATopic() {
+        val b = book(listOf(
+            msg("Ann", 1, "saw an eagle by the bridge"),
+            msg("Bob", 2, "nothing much happening"),
+        ))
+        assertTrue(b.topics.isEmpty())
+    }
+
+    /**
+     * ONE PER MESSAGE. Otherwise a single excited sender saying the same word
+     * eight times owns the day's topic list on their own.
+     */
+    @Test fun repeatingAWordInOneMessageCountsOnce() {
+        val b = book(listOf(
+            msg("Ann", 1, "ferry ferry ferry ferry ferry"),
+            msg("Bob", 2, "quiet out here"),
+        ))
+        assertTrue("one message cannot make a topic alone", b.topics.isEmpty())
+    }
+
+    /** People are not topics — the row above already lists them. */
+    @Test fun aVoiceHandleIsNeverATopic() {
+        val b = book(listOf(
+            msg("Chuck", 1, "Chuck: heading out now"),
+            msg("Ann", 2, "Chuck said he is heading out"),
+            msg("Bob", 3, "ok"),
+        ))
+        assertTrue("'chuck' is a person", b.topics.none { it.term == "chuck" })
+    }
+
+    @Test fun stopwordsAndBareNumbersAreNotTopics() {
+        val b = book(listOf(
+            msg("Ann", 1, "this is about the thing 1234"),
+            msg("Bob", 2, "this is about the thing 1234"),
+        ))
+        assertTrue(b.topics.none { it.term in setOf("this", "about", "the", "1234") })
+    }
+
+    /** The mesh's own furniture is not the news. */
+    @Test fun theMeshsOwnVocabularyIsStruckOut() {
+        val b = book(listOf(
+            msg("Ann", 1, "test message 3 hops"),
+            msg("Bob", 2, "test message 5 hops"),
+        ))
+        assertTrue(b.topics.none { it.term in setOf("test", "message", "hops", "node") })
+    }
+
+    /**
+     * A quoted reply must not count the quoted message's words again, or the
+     * loudest topic of the day is whatever got quoted most.
+     */
+    @Test fun quotedLinesAreNotCounted() {
+        val b = book(listOf(
+            msg("Ann", 1, "the ferry is late"),
+            msg("Bob", 2, "> the ferry is late\nagreed"),
+        ))
+        assertTrue("only one message actually said it", b.topics.isEmpty())
+    }
+
+    @Test fun theSenderPrefixIsStrippedBeforeCounting() {
+        // 'harbour' is in the body of both; the handle must not be.
+        val b = book(listOf(
+            msg("x", 1, "Skipper: harbour is fogged in"),
+            msg("y", 2, "Deckhand: harbour looks clear now"),
+        ))
+        assertEquals(listOf("harbour"), b.topics.map { it.term })
+    }
+
+    @Test fun topicsAreRankedAndCapped() {
+        val many = (1..10).flatMap { i ->
+            listOf(msg("A", 1, "word$i alpha"), msg("B", 2, "word$i alpha"))
+        }
+        val b = book(many)
+        assertEquals(Meshbook.TOP_TOPICS, b.topics.size)
+        assertEquals("the term in every message leads", "alpha", b.topics.first().term)
+        // Ranked by count, descending.
+        b.topics.zipWithNext { a, c -> assertTrue(a.said >= c.said) }
+    }
+
+    /**
+     * JAPANESE, WHERE THE PHONE APP GETS THIS WRONG.
+     *
+     * SNS splits on character class, and Japanese has no spaces — so a whole
+     * clause survives as one "token" and is offered as a topic. A short run is
+     * plausibly a word and is kept; a long one is dropped rather than shown,
+     * because an invented topic is worse than a missing one.
+     */
+    @Test fun aShortJapaneseRunIsAWordAndALongOneIsDropped() {
+        val short = Meshbook.termsOf("今日は雨")
+        assertTrue("a compound noun survives", short.any { it.length in Meshbook.CJK_MIN..Meshbook.CJK_MAX })
+        val clause = "今日はとても寒くて風が強いので気をつけてください"
+        assertTrue(
+            "a whole clause is not a topic",
+            Meshbook.termsOf(clause).none { it.length > Meshbook.CJK_MAX },
+        )
+    }
+
+    /**
+     * The words a real day actually threw up. Every one of these was reported
+     * as a topic on the operator's 380-message mesh before the list was widened.
+     */
+    @Test fun ordinaryEnglishIsNotATopic() {
+        val junk = listOf("doing", "anyone", "but", "messages", "looking", "really")
+        val b = book(junk.flatMap {
+            listOf(msg("A", 1, "what are you $it"), msg("B", 2, "yes $it"))
+        })
+        assertTrue(
+            "these are not subjects: ${b.topics.map { it.term }}",
+            b.topics.none { it.term in junk },
+        )
+    }
+
+    /** But a real subject on this mesh survives. */
+    @Test fun aRealSubjectSurvivesTheStopwords() {
+        val b = book(listOf(
+            msg("A", 1, "the repeater is down again"),
+            msg("B", 2, "anyone else lost the repeater"),
+        ))
+        assertEquals(listOf("repeater"), b.topics.map { it.term })
+    }
 }

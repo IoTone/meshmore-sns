@@ -39,9 +39,15 @@ val keystoreProps: Properties? =
 // codes drift out of order exactly when several builds are being flashed in a
 // hurry.
 val verMajor = 0
-val verMinor = 3
-val verPatch = 0
-val verBuild = 135
+val verMinor = 4
+// ⚠️ PATCH, not MINOR. 121 strings came back from the native reviewer on
+// 2026-08-27 — 108 rewritten, 13 approved — which is a correction to text
+// already installed rather than "a real step in what the app is". Bump the
+// minor instead if you read a shippable Japanese UI as a step; the rule above
+// is the one to argue with, not this line.
+val verPatch = 1
+// Moves because this build goes onto a device for the manual pass.
+val verBuild = 1
 
 android {
     namespace = "com.iotj.meshmore.xr"
@@ -62,7 +68,7 @@ android {
 
         applicationId = "com.iotj.meshmore.xr"
         minSdk = 34          // Android XR baseline
-        targetSdk = 35
+        targetSdk = 36     // Play's floor for new submissions; compileSdk already 36
         // 0.3.0 build 1 -> 3001. The name's own digits, shifted up two places,
         // with the build in the last two: readable back to the version it came
         // from, and it still climbs when only the build moves. 100 builds under
@@ -106,6 +112,15 @@ android {
                 storePassword = keystoreProps.getProperty("storePassword")
                 keyAlias = keystoreProps.getProperty("keyAlias")
                 keyPassword = keystoreProps.getProperty("keyPassword")
+                // V2 AND V3. The build signed with v2 alone, which Play accepts
+                // and which cannot ever be rotated: v3 is the scheme that
+                // carries a proof-of-rotation record, so enabling it now is
+                // what keeps the option of replacing this key later without
+                // starting a new listing. v1 stays off — it is JAR signing for
+                // API < 24 and minSdk here is 34.
+                enableV1Signing = false
+                enableV2Signing = true
+                enableV3Signing = true
             }
         }
     }

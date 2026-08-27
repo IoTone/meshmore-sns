@@ -77,6 +77,28 @@
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
     <uses-feature android:name="android.hardware.bluetooth_le" android:required="false" />
 
+    <!--
+        DECLARED SO PLAY DOES NOT INFER THEM AS REQUIRED.
+
+        aapt2 reports these three as `uses-implied-feature` on a build that
+        never mentions them: RECORD_AUDIO implies a microphone, ACCESS_*_
+        LOCATION implies location hardware, and an implied feature is REQUIRED.
+        Play filters the device catalogue on required features, so a permission
+        the app asks for politely turns into a hardware demand that can quietly
+        remove devices from the listing — the "incompatible with all devices"
+        failure, arrived at one implication at a time.
+
+        None of the three is actually required. Dictation is one input path of
+        several and the app has a keyboard and a gaze dwell; without a position
+        the horizon says NO FIX and still draws every node it has heard by hop
+        count. The radio itself is a different case and `android.hardware.
+        bluetooth` stays required: this is a client for a Bluetooth radio, and
+        an XR device without Bluetooth cannot do the one thing the app is for.
+    -->
+    <uses-feature android:name="android.hardware.microphone" android:required="false" />
+    <uses-feature android:name="android.hardware.location" android:required="false" />
+    <uses-feature android:name="android.hardware.location.gps" android:required="false" />
+
     <!-- Headset GPS, used ONLY as a fallback when the companion radio has no
          fix of its own, and only when the user has switched it on (Settings.
          useDeviceLocation, off by default). Declared here so the capability is

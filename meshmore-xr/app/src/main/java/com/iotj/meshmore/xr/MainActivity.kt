@@ -81,6 +81,8 @@ import com.iotj.meshmore.xr.spatial.Stage
 import com.iotj.meshmore.xr.spatial.Theme
 import com.iotj.meshmore.xr.spatial.Unfold
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clipToBounds
@@ -473,6 +475,9 @@ class MainActivity : ComponentActivity() {
         // frame loop began, which on the glasses is twelve seconds after
         // somebody asked for the app.
         launchedAtMs = android.os.SystemClock.uptimeMillis()
+        // The two switches that gate a panel become observable state here; the
+        // preference stays the durable copy. See Settings.prime.
+        Settings.prime(this)
         // FIRST, before anything lazily touches a context: `--es lang ja`
         // forces the locale for a device test without changing the glasses'
         // system language. The link and every surface build from L10n.wrap.
@@ -858,7 +863,12 @@ private fun Root(facts: List<Pair<String, String>>, link: MeshLink, pinOverride:
         //
         // On the LEFT, mirroring the radio log on the right, so neither ever
         // sits in front of the horizon.
-        if (Settings.alerts(LocalContext.current)) {
+        // COLLECTED, NOT READ. See Settings.alertsOn: a preference read inside a
+        // composable is invisible to Compose, so the panel outlived its own
+        // switch being turned off.
+        val alertsOn by Settings.alertsOn.collectAsState()
+        val diagOn by Settings.diagOn.collectAsState()
+        if (alertsOn) {
             Subspace {
                 SpatialPanel(
                     SubspaceModifier
@@ -870,7 +880,22 @@ private fun Root(facts: List<Pair<String, String>>, link: MeshLink, pinOverride:
                 }
             }
         }
-        if (Settings.diagnostics(LocalContext.current)) {
+        // THE MANUAL. Centre-left, further out than the alerts list so the two
+        // never overlap, and only while asked for.
+        val docsOn by Settings.docsOn.collectAsState()
+        if (docsOn) {
+            Subspace {
+                SpatialPanel(
+                    SubspaceModifier
+                        .width(560.dp).height(620.dp)
+                        .offset(x = (-300).dp, y = 120.dp, z = (-260).dp)
+                        .rotate(androidx.xr.runtime.math.Vector3(0f, 1f, 0f), 18f),
+                ) {
+                    DocsPanel()
+                }
+            }
+        }
+        if (diagOn) {
             Subspace {
                 SpatialPanel(
                     SubspaceModifier
@@ -1155,6 +1180,39 @@ private fun txName(ctx: android.content.Context, n: TxLog.Name): String = when (
  * footer says so, because a wearer looking at a page of numbers about their
  * mesh may reasonably wonder what it just spent to make them.
  */
+/** How many topic rows a bay shows before the summary becomes a list. */
+private const val MB_TOPIC_ROWS = 4
+
+/**
+ * THE MAP BAY — everything the mesh knows about WHERE it is.
+ *
+ * S6 TERRAIN is parked: two of the platform's three geospatial modes segfault
+ * this hardware, so there is no earth-fixed frame to hang a map on. What
+ * exists in the meantime is the map's DATA without its substrate — what the
+ * weather is where people are standing, and what kind of day this mesh had —
+ * and those were filed under SETUP, which is the menu people open least.
+ *
+ * The parked row is listed rather than hidden. A MAP surface with no mention
+ * of terrain reads as a surface that forgot; one that says terrain is not on
+ * this hardware yet reads as a decision, which is what it is.
+ */
+/** Where the manual is reached from. See [Docs] and aboutRows. */
+private const val DOCS_ROW = "DOCS"
+
+private fun mapRows(
+    ctx: android.content.Context,
+): List<com.iotj.meshmore.xr.spatial.Stack.Row> = listOf(
+    com.iotj.meshmore.xr.spatial.Stack.Row(
+        id = "WX", label = ctx.getString(R.string.r_wx), lit = false,
+    ),
+    com.iotj.meshmore.xr.spatial.Stack.Row(
+        id = "MESHBOOK", label = ctx.getString(R.string.r_meshbook), lit = false,
+    ),
+    com.iotj.meshmore.xr.spatial.Stack.Row(
+        id = "map", label = ctx.getString(R.string.r_terrain), lit = false,
+    ),
+)
+
 private fun meshbookRows(
     ctx: android.content.Context,
     link: MeshLink,
@@ -1200,6 +1258,32 @@ private fun meshbookRows(
     // than a flat line. It is the only row here that is a picture, and it is
     // the one worth looking at.
     rows += plain(Meshbook.sparkline(book.hourly))
+    // WHAT IT WAS ABOUT, before who said it. The voices row answers "who
+    // carried the day"; this answers "what was the day", which is the question
+    // a log genuinely cannot be read for. Absent on a day with nothing
+    // recurring, rather than shown empty — a heading over nothing reads as a
+    // broken feature.
+    if (book.topics.isNotEmpty()) {
+        // ONE ROW EACH, not one row of everything. Joined into a single line
+        // the list read 'TALKED ABOUT  MESSAGES · RE…' on the operator's mesh:
+        // the label ate twelve of the row's twenty-six cells and the second
+        // topic was cut mid-word. A term with its own count is the same shape
+        // the voices below already use, and it says how MUCH each was talked
+        // about rather than only that it was.
+        //
+        // Marked with a leading # so a topic can never be mistaken for one of
+        // the voices it sits above.
+        rows += plain(ctx.getString(R.string.mb_topics))
+        book.topics.take(MB_TOPIC_ROWS).forEach { t ->
+            rows += plain(
+                com.iotj.meshmore.xr.spatial.radioRow(
+                    "#" + com.iotj.meshmore.xr.spatial.TypeTier.clip(t.term.uppercase(), 13),
+                    "${t.said}",
+                    null,
+                ),
+            )
+        }
+    }
     // Then who carried it, most first.
     book.voices.forEach { v ->
         rows += plain(
@@ -1278,6 +1362,12 @@ private fun aboutRows(ctx: android.content.Context, link: MeshLink): List<com.io
         )),
         // THE THREE THAT MATTER, in the order they matter. Driving first: it is
         // the only one where the consequence is not recoverable.
+        // THE MANUAL, from the surface that already carries version, licences
+        // and safe use. SNS puts Docs at the top level; here it is one row from
+        // ABOUT, which is the same distance and the same neighbourhood.
+        com.iotj.meshmore.xr.spatial.Stack.Row(
+            id = DOCS_ROW, label = ctx.getString(R.string.r_docs), lit = false,
+        ),
         row(ctx.getString(R.string.s_driving)),
         row(ctx.getString(R.string.s_room)),
         row(ctx.getString(R.string.s_mic)),
@@ -1407,6 +1497,52 @@ private fun wxRows(
                 else ctx.getString(R.string.r_wxnone),
         lit = n > 0,
     )
+
+    // WHAT PEOPLE SAID, BEFORE WHAT THE SENSORS SAID.
+    //
+    // It goes first because it is the half that actually has data. The measured
+    // half below is correct and returns nothing on this mesh — every radio
+    // ships with telemetry DENY — so a bay that led with sensors was a bay that
+    // led with an empty list. See Wx: this costs no airtime and needs no
+    // permission, because the messages are already on the device.
+    val wx = Wx.summarise(link.msgs.value, nowEpochSec) { key ->
+        link.mesh.value.firstOrNull { it.key == key || it.fullKey == key }
+            ?.let { p -> p.lat?.let { la -> p.lon?.let { lo -> la to lo } } }
+    }
+    if (wx.cells.isEmpty()) {
+        rows += plain(ctx.getString(R.string.wx_said_none))
+        // AND WHETHER THERE WAS ANY EARLIER. Six hours of silence on a mesh
+        // that talked about the weather this morning is a quiet afternoon; six
+        // hours of silence on a mesh that never mentions it at all is a
+        // different fact, and the wearer cannot tell them apart from one row.
+        // No positions wanted here — this row is a COUNT, not a map.
+        val today = Wx.summarise(link.msgs.value, nowEpochSec, windowS = 24 * 3600L) { null }
+        if (today.heard > 0) rows += plain(ctx.getString(R.string.wx_earlier, today.heard))
+    } else {
+        rows += plain(
+            com.iotj.meshmore.xr.spatial.radioRow(
+                ctx.getString(R.string.wx_said), "${wx.heard}", null,
+            ),
+        )
+        // ONE ROW PER REGION: the glyph, who is under it, and how long ago.
+        // The age is not decoration — weather without a time is a claim about
+        // now, and this one is a claim about when somebody last said so.
+        wx.cells.forEach { c ->
+            rows += plain(
+                com.iotj.meshmore.xr.spatial.radioRow(
+                    "${c.condition.glyph} " +
+                        com.iotj.meshmore.xr.spatial.TypeTier.clip(c.label.uppercase(), 12),
+                    "${c.mentions}  ${Wx.ago(c.agoS(nowEpochSec))}",
+                    null,
+                ),
+            )
+        }
+    }
+    // SAID, BUT NOT PLACEABLE. Counted rather than hidden: it is the difference
+    // between a quiet mesh and a mesh whose radios do not share a position.
+    if (wx.unplaced > 0) {
+        rows += plain(ctx.getString(R.string.wx_unplaced, wx.unplaced))
+    }
 
     val temps = readings.mapNotNull { it.second.tempC }
     if (temps.isNotEmpty()) {
@@ -1987,7 +2123,10 @@ private suspend fun runSoakAt(
             link.slotOf(peerKey)?.let { link.sendToChannel(it, text) }
                 ?: MeshLink.Sent.Refused("NO SUCH CHANNEL")
         } else {
-            link.sendTo(peerKey, text)
+            // AUTOMATED. Ten full-length packets nobody asked for one at a
+            // time is exactly the traffic the old allow-list existed to stop,
+            // so it stays restricted to nodes the wearer has claimed.
+            link.sendTo(peerKey, text, automated = true)
         }
         attempted++
         link.noteAttempt(res is MeshLink.Sent.Ok)
@@ -2176,17 +2315,21 @@ private fun appRows(
         com.iotj.meshmore.xr.spatial.Stack.Row(
             id = "TELEM", label = ctx.getString(R.string.r_telem), lit = false,
         ),
-        // AND THE OTHER END OF THE SAME SUBJECT: what this radio can learn by
-        // asking. Next to the permissions row on purpose — a wearer deciding
-        // what to share should see, in the same list, what sharing is for.
+        // A SIGNPOST, NOT A HOME. One row that opens MAP, because HALO's wrist
+        // dock carries only four pips — a cap the operator set after wearing
+        // five — and without this there is no route to MAP on that theme at
+        // all. Pointing at a surface is not the same as filing it here.
         com.iotj.meshmore.xr.spatial.Stack.Row(
-            id = "WX", label = ctx.getString(R.string.r_wx), lit = false,
+            id = "MAP", label = ctx.getString(R.string.r_map), lit = false,
         ),
-        // AND WHAT THE MESH HAS BEEN DOING, which costs nothing to ask because
-        // it asks nobody — see meshbookRows.
-        com.iotj.meshmore.xr.spatial.Stack.Row(
-            id = "MESHBOOK", label = ctx.getString(R.string.r_meshbook), lit = false,
-        ),
+        // WX AND MESHBOOK USED TO SIT HERE and no longer do.
+        //
+        // They are not settings. Neither one changes how the app behaves —
+        // they are places you go to READ something the mesh has told you, and
+        // filing them under SETUP put two of the app's best surfaces behind
+        // the menu people open least. They live under MAP now, which is where
+        // the operator put them: "Meshbook and Wx are the candidates for what
+        // lives in a Map button".
         row("CHANSEND", ctx.getString(R.string.r_chansend), Settings.channelSend(ctx), ctx.getString(R.string.w_allowed), "OFF"),
         // GARBAGE COLLECTION, because a full contact store locks you out of
         // your own radio. See MeshLink.farContacts for what it will never
@@ -2261,6 +2404,7 @@ private fun dockLabel(ctx: android.content.Context, id: String): String = when (
     "LIST" -> ctx.getString(R.string.d_list)
     "NORTH" -> ctx.getString(R.string.d_north)
     "FIND" -> ctx.getString(R.string.d_find)
+    "MAP" -> ctx.getString(R.string.d_map)
     else -> id
 }
 
@@ -2487,6 +2631,33 @@ private fun HorizonScene(link: MeshLink) {
     val aboutOpen = remember { mutableStateOf(false) }
     /** Which bay the shared APP stack is currently serving. */
     val bayMode = remember { mutableStateOf("APP") }
+
+    /**
+     * HOW YOU GOT TO THE BAY YOU ARE LOOKING AT.
+     *
+     * B is "back", not "home" — the gesture handler has said so in a comment
+     * since it was written, and for the bays it was not true: every level of
+     * the settings tree hid the whole surface, so a wearer three deep in
+     * SETUP > DEVICE > WHO MAY ASK was thrown all the way out to the horizon by
+     * the gesture that is supposed to move them up ONE step.
+     *
+     * A stack rather than a parent table, because the same bay is reachable
+     * from more than one place: WHO MAY ASK opens from the console AND from the
+     * app bay, and a static "the parent of TELEM is X" would send half the
+     * wearers somewhere they had never been.
+     */
+    val bayStack = remember { mutableListOf<String>() }
+
+    /**
+     * How the DOCK reaches the bays.
+     *
+     * The pad is built early in the scene — before `showBay` exists, because
+     * that needs the contact-store helpers which need the link. A pip's action
+     * is a lambda captured at build time, so it cannot name a function declared
+     * later in the same block. This holder is the seam: the dock captures the
+     * holder, and `showBay` fills it in once it exists.
+     */
+    val bayOpener = remember { mutableStateOf<((String) -> Unit)?>(null) }
     /**
      * The last link step announced, so each one is said once and not per frame.
      *
@@ -2521,6 +2692,49 @@ private fun HorizonScene(link: MeshLink) {
     /** Messages arrived and not yet looked at. Shown in the microhud band. */
     val unread = remember { mutableStateOf(0) }
     val helpRef = remember { mutableStateOf<HelpCard?>(null) }
+
+    /**
+     * EVERY OTHER SURFACE YOU OPEN THINGS OUT OF, CLOSED.
+     *
+     * The operator's report was "opening a new menu should close other menus",
+     * and it was accurate: the roster, the inbox, the channel stack, the rack
+     * and the help card were each opened without asking what else was already
+     * standing, so two and three of them piled up in the same arc, overlapping,
+     * with no way to tell which one a pinch would reach.
+     *
+     * The theme switch has done exactly this for a while — it closes the same
+     * list, because a surface built in the old palette is a window into a room
+     * that no longer exists. Opening a menu wants the identical sweep for a
+     * plainer reason: there should be one menu.
+     */
+    fun closeOtherMenus() {
+        rosterRef.value?.hide()
+        inboxRef.value?.hide()
+        threadRef.value?.hide()
+        focusRef.value?.hide()
+        nodeMenuRef.value?.hide()
+        consoleRef.value?.hide()
+        channelsRef.value?.hide()
+        themePickerRef.value?.hide()
+        bandsRef.value?.hide()
+        helpRef.value?.setVisible(false)
+        rackRef.value?.setVisible(false)
+    }
+
+    /**
+     * The same sweep, plus the settings bay and the path that led to it.
+     *
+     * Used when opening something that is NOT a bay — the inbox, the roster,
+     * the channel stack. Backing out of one of those should not land the wearer
+     * three levels deep in a settings tree they walked away from, so the trail
+     * is dropped along with the surface.
+     */
+    fun closeAllMenus() {
+        closeOtherMenus()
+        appRef.value?.hide()
+        bayStack.clear()
+    }
+
     val cue = remember { Cue() }
     // The touch channel rides the same Cue events as the tones — the puck's
     // actuator was measured real (COMPOSE_EFFECTS) after the spec assumed none.
@@ -3581,6 +3795,14 @@ private fun HorizonScene(link: MeshLink) {
             // sweep solves in bulk, for when you can see the offender and do
             // not want to describe it with a filter.
             RadialMenu.Item("forget", ctx.getString(R.string.na_forget)),
+            // THE SIXTH SPOKE — "this radio is mine".
+            //
+            // It is what replaced the hardcoded allow-list: claiming a node is
+            // the wearer saying which hardware the app may transmit to
+            // UNATTENDED, for a soak or a path probe. Messaging never needed a
+            // claim and does not have one; this is only about traffic nobody
+            // asked for each time.
+            RadialMenu.Item("mine", ctx.getString(R.string.na_mine)),
         ))
         nodeMenuRef.value = nodeMenu
         val focus = com.iotj.meshmore.xr.spatial.Focus(session, palette, ctx)
@@ -3817,6 +4039,7 @@ private fun HorizonScene(link: MeshLink) {
                     b.hide(); dockRef.value?.setLit("INBOX", false); cue.closed()
                 } else {
                     val now = System.currentTimeMillis() / 1000
+                    closeAllMenus()
                     b.showAt(h.translation, yawOf(h), link.threads().map { t ->
                         val last = t.newest
                         com.iotj.meshmore.xr.spatial.Inbox.Entry(
@@ -3846,6 +4069,11 @@ private fun HorizonScene(link: MeshLink) {
             // is in, and a wearer looking at nine motes needs to know whether
             // that is the mesh or their own last search. This is the same fault
             // the HERE pip had, caught before it shipped twice.
+            // MAP — where the mesh's place-shaped knowledge lives. See mapRows
+            // for why WX and MESHBOOK moved off the settings list to get here.
+            "MAP" to {
+                bayOpener.value?.invoke("MAP")
+            },
             "FIND" to {
                 searchOpen.value = !searchOpen.value
                 dockRef.value?.setLit("FIND", searchOpen.value || query.value.active)
@@ -3892,6 +4120,7 @@ private fun HorizonScene(link: MeshLink) {
                     val q = h.rotation
                     val fx = 2f * (q.x * q.z + q.w * q.y)
                     val fz = 1f - 2f * (q.x * q.x + q.y * q.y)
+                    closeAllMenus()
                     r.showAt(h.translation, kotlin.math.atan2(-fx, fz), entries)
                     dockRef.value?.setLit("LIST", true)
                     cue.opened()
@@ -4450,28 +4679,126 @@ private fun HorizonScene(link: MeshLink) {
             // MESH WEATHER, opened in ONE place for the same reason the region
             // list is: two routes to a surface means the launch flag verifies
             // its own route rather than the one a hand takes.
-            val openWx = {
-                val nowS = System.currentTimeMillis() / 1000
-                bayMode.value = "WX"
+            fun appGcCount(): Int = gcCount(
+                link,
+                hereSource.resolve(link.here.value, MainActivity.homeOverride),
+            ) { tagsRef.isFavourite(it) }
+
+            /**
+             * THE ONE PLACE A BAY IS OPENED.
+             *
+             * Every bay used to be shown inline at its own call site — nine of
+             * them, each repeating the same four lines with its own rows — and
+             * the cost was not the duplication. It was that nothing knew what
+             * was open, so nothing could put it back: [bayStack] had no way to
+             * re-show a parent, and B could only ever hide.
+             *
+             * [push] is false when returning to a parent, which is what stops
+             * back-back-back from walking in a circle.
+             */
+            fun showBay(mode: String, push: Boolean = true) {
+                if (push && appRef.value?.open == true && bayMode.value != mode) {
+                    bayStack += bayMode.value
+                }
+                closeOtherMenus()
                 armed.value = null
-                aboutOpen.value = false
-                consoleRef.value?.hide()
-                appRef.value?.show(
-                    wxRows(
-                        ctx, link,
-                        TelemetryAsk.plan(
-                            link.mesh.value, hereSource.here.value, nowS, telAsked.toMap(),
+                aboutOpen.value = mode == "ABOUT"
+                bayMode.value = mode
+                val nowS = System.currentTimeMillis() / 1000
+                when (mode) {
+                    "WX" -> appRef.value?.show(
+                        wxRows(
+                            ctx, link,
+                            TelemetryAsk.plan(
+                                link.mesh.value, hereSource.here.value, nowS, telAsked.toMap(),
+                            ),
+                            nowS,
                         ),
-                        nowS,
-                    ),
-                    title = ctx.getString(R.string.t_wx),
-                    footer = ctx.getString(R.string.f_wx),
-                    // A SET, NOT A SEQUENCE — see Stack.show.
-                    form = true,
-                )
+                        title = ctx.getString(R.string.t_wx),
+                        footer = ctx.getString(R.string.f_wx),
+                        form = true,
+                    )
+                    "MESHBOOK" -> appRef.value?.show(
+                        meshbookRows(ctx, link, nowS),
+                        title = ctx.getString(R.string.t_meshbook),
+                        footer = ctx.getString(R.string.f_meshbook),
+                        form = true,
+                    )
+                    "REGION" -> appRef.value?.show(
+                        regionRows(ctx, hereSource.here.value, link.radio.live),
+                        title = ctx.getString(
+                            R.string.t_region, Regions.labelFor(link.radio.live),
+                        ),
+                        footer = ctx.getString(R.string.f_region),
+                        form = true,
+                    )
+                    "RADIO" -> appRef.value?.show(
+                        radioRows(ctx, link.radio, link.clockSkewSec),
+                        title = com.iotj.meshmore.xr.spatial.radioTitle(
+                            link.radio.live?.freqMhz, link.radio.live?.txDbm,
+                        ),
+                        footer = if (link.radio.dirty()) ctx.getString(R.string.f_pending)
+                        else ctx.getString(R.string.f_radio_idle),
+                        form = true,
+                    )
+                    "TELEM" -> appRef.value?.show(
+                        telemetryRows(ctx, link),
+                        title = ctx.getString(R.string.t_telem),
+                        footer = ctx.getString(R.string.f_telem),
+                        form = true,
+                    )
+                    "LANG" -> appRef.value?.show(
+                        langRows(ctx),
+                        title = ctx.getString(R.string.t_lang),
+                        footer = ctx.getString(R.string.f_lang),
+                        form = true,
+                    )
+                    "TX" -> appRef.value?.show(
+                        txRows(ctx, link),
+                        title = ctx.getString(R.string.t_tx),
+                        footer = ctx.getString(R.string.f_tx),
+                        form = true,
+                    )
+                    "MAP" -> appRef.value?.show(
+                        mapRows(ctx),
+                        title = ctx.getString(R.string.t_map),
+                        footer = ctx.getString(R.string.f_map),
+                        form = true,
+                    )
+                    "ABOUT" -> appRef.value?.show(
+                        aboutRows(ctx, link),
+                        title = ctx.getString(R.string.t_about),
+                        footer = ctx.getString(R.string.f_about),
+                    )
+                    else -> appRef.value?.show(
+                        appRows(ctx, link, null, appGcCount()),
+                        title = ctx.getString(R.string.t_app, linkWord(ctx, link)),
+                        footer = ctx.getString(R.string.f_app),
+                        form = true,
+                    )
+                }
                 dockRef.value?.setLit("SETUP", false)
                 cue.opened()
             }
+
+            /**
+             * UP ONE LEVEL, or out if this is the top.
+             *
+             * Returns true when it moved rather than closed, so the gesture
+             * handler can tell the difference — one plays the "opened" cue and
+             * the other plays "closed", and a wearer navigating by ear should
+             * not hear a door shut when they went up a floor.
+             */
+            // The dock was built before showBay existed; hand it the opener now.
+            bayOpener.value = { mode -> showBay(mode) }
+
+            fun backOneBay(): Boolean {
+                val parent = bayStack.removeLastOrNull() ?: return false
+                showBay(parent, push = false)
+                return true
+            }
+
+            val openWx = { showBay("WX") }
 
             if (MainActivity.chanClear >= 0) launch {
                 kotlinx.coroutines.delay(20_000)
@@ -4561,21 +4888,7 @@ private fun HorizonScene(link: MeshLink) {
             // MESHBOOK, opened in one place — same rule as the region list and
             // the weather bay: two routes to a surface means the launch flag
             // verifies its own route rather than the one a hand takes.
-            val openMeshbook = {
-                bayMode.value = "MESHBOOK"
-                armed.value = null
-                aboutOpen.value = false
-                consoleRef.value?.hide()
-                appRef.value?.show(
-                    meshbookRows(ctx, link, System.currentTimeMillis() / 1000),
-                    title = ctx.getString(R.string.t_meshbook),
-                    footer = ctx.getString(R.string.f_meshbook),
-                    // A SET, NOT A SEQUENCE — see Stack.show.
-                    form = true,
-                )
-                dockRef.value?.setLit("SETUP", false)
-                cue.opened()
-            }
+            val openMeshbook = { showBay("MESHBOOK") }
 
             MainActivity.openBay?.let { bay ->
                 launch {
@@ -4588,6 +4901,7 @@ private fun HorizonScene(link: MeshLink) {
                     when (bay) {
                         "WX" -> openWx()
                         "MESHBOOK" -> openMeshbook()
+                        "MAP" -> showBay("MAP")
                         else -> consoleRef.value?.fire(bay)
                     }
                 }
@@ -4650,21 +4964,7 @@ private fun HorizonScene(link: MeshLink) {
             // the REGION row and `--es bay REGION` — and a launch flag that
             // opened the surface by its own slightly different route would
             // be verifying its own route rather than the one a hand takes.
-            val openRegions = {
-                bayMode.value = "REGION"
-                armed.value = null
-                aboutOpen.value = false
-                consoleRef.value?.hide()
-                appRef.value?.show(
-                    regionRows(ctx, hereSource.here.value, link.radio.live),
-                    title = ctx.getString(R.string.t_region, Regions.labelFor(link.radio.live)),
-                    footer = ctx.getString(R.string.f_region),
-                    // A SET, NOT A SEQUENCE — see Stack.show.
-                    form = true,
-                )
-                dockRef.value?.setLit("SETUP", false)
-                cue.opened()
-            }
+            val openRegions = { showBay("REGION") }
 
             // THE FRAME LOOP'S BODY, AS NAMED PARTS — see the JIT note.
             //
@@ -5093,10 +5393,6 @@ private fun HorizonScene(link: MeshLink) {
                 }
                 // THE APP BAY. Two of its rows are GUARDED: the first pick
             }
-            fun appGcCount(): Int = gcCount(
-                link,
-                hereSource.resolve(link.here.value, MainActivity.homeOverride),
-            ) { tagsRef.isFavourite(it) }
             suspend fun drainAppBay(nowMs: Long) {
                 // arms and re-labels, the second within ARM_MS commits. One
                 // widens what the radio transmits and the other erases history
@@ -5392,20 +5688,34 @@ private fun HorizonScene(link: MeshLink) {
                         // MESH WEATHER sits beside the permissions row because
                         // the two are the same subject seen from either end:
                         // who may ask about me, and what I may learn by asking.
-                        "WX" -> { openWx(); continue }
-                        "MESHBOOK" -> { openMeshbook(); continue }
-                        "TELEM" -> {
-                            bayMode.value = "TELEM"
-                            appRef.value?.show(
-                                telemetryRows(ctx, link),
-                                title = ctx.getString(R.string.t_telem),
-                                footer = ctx.getString(R.string.f_telem),
-                                // A SET, NOT A SEQUENCE — see Stack.show.
-                                form = true,
-                            )
-                            cue.opened()
+                        // THE PARKED ROW. Listed so MAP does not look like it
+                        // forgot terrain; it answers rather than sitting dead,
+                        // because a row that does nothing when pinched is
+                        // indistinguishable from a row that is broken.
+                        "map" -> {
+                            noticeRef.value?.say(ctx.getString(R.string.n_terrain_parked))
+                            cue.denied()
                             continue
                         }
+                        // THE MANUAL. A panel rather than a bay, so it does
+                        // not push the surface the wearer is reading it about
+                        // off the screen — you can hold the docs open beside
+                        // whatever confused you.
+                        DOCS_ROW -> {
+                            val on = !Settings.docs()
+                            Settings.setDocs(on)
+                            noticeRef.value?.say(
+                                ctx.getString(
+                                    if (on) R.string.n_docs_on else R.string.n_docs_off,
+                                ),
+                            )
+                            cue.recognised()
+                            continue
+                        }
+                        "MAP" -> { showBay("MAP"); continue }
+                        "WX" -> { openWx(); continue }
+                        "MESHBOOK" -> { openMeshbook(); continue }
+                        "TELEM" -> { showBay("TELEM"); continue }
                         "MOTION" -> {
                             val on = !Settings.reduceMotion(ctx)
                             Settings.setReduceMotion(ctx, on)
@@ -5428,18 +5738,7 @@ private fun HorizonScene(link: MeshLink) {
                         // be redrawn afterwards, so switching language means
                         // building the scene again. The theme, the anchor and
                         // the radio link all survive it.
-                        "LANG" -> {
-                            bayMode.value = "LANG"
-                            appRef.value?.show(
-                                langRows(ctx),
-                                title = ctx.getString(R.string.t_lang),
-                                footer = ctx.getString(R.string.f_lang),
-                                // A SET, NOT A SEQUENCE — see Stack.show.
-                                form = true,
-                            )
-                            cue.opened()
-                            continue
-                        }
+                        "LANG" -> { showBay("LANG"); continue }
                         // THE ONE THAT WIDENS WHAT THE RADIO SAYS. MeshLink
                         // stays the single gate; this only sets the flag it
                         // reads, and the refusal path is untouched.
@@ -5520,8 +5819,16 @@ private fun HorizonScene(link: MeshLink) {
                     // ARMED SURVIVES THE REFRESH. Passing null here rebuilt the
                     // row unarmed the instant it was armed, so the confirm the
                     // sweep asks for could never be given.
+                    //
+                    // AND IT REDRAWS THE BAY THE WEARER IS IN, not always the
+                    // settings one. This dispatch is shared by every bay whose
+                    // rows are not intercepted above, so a hardcoded appRows
+                    // here would quietly replace MAP's contents with SETUP's
+                    // the first time somebody pinched a row that did not
+                    // `continue`.
                     appRef.value?.update(
-                        appRows(ctx, link, armed.value?.first, appGcCount()),
+                        if (bayMode.value == "MAP") mapRows(ctx)
+                        else appRows(ctx, link, armed.value?.first, appGcCount()),
                         "LIT = ON    B TO CLOSE",
                     )
                     cue.recognised()
@@ -5674,24 +5981,7 @@ private fun HorizonScene(link: MeshLink) {
                         // that photographs well. But the default path to
                         // changing a radio parameter is now a surface whose
                         // targets you can hit.
-                        "DEVICE" -> {
-                            consoleRef.value?.hide()
-                            armed.value = null
-                            aboutOpen.value = false
-                            bayMode.value = "RADIO"
-                            appRef.value?.show(
-                                radioRows(ctx, link.radio, link.clockSkewSec),
-                                title = com.iotj.meshmore.xr.spatial.radioTitle(
-                                    link.radio.live?.freqMhz, link.radio.live?.txDbm,
-                                ),
-                                footer = if (link.radio.dirty()) ctx.getString(R.string.f_pending)
-                                else ctx.getString(R.string.f_radio_idle),
-                                // A SET, NOT A SEQUENCE — see Stack.show.
-                                form = true,
-                            )
-                            dockRef.value?.setLit("SETUP", false)
-                            cue.opened()
-                        }
+                        "DEVICE" -> showBay("RADIO")
                         // Not a console tile — there is no REGION pip. It is
                         // here so `--es bay REGION` can reach the list the same
                         // way a hand does, since the surface it lives behind is
@@ -5704,30 +5994,8 @@ private fun HorizonScene(link: MeshLink) {
                         // Japanese build is switched with — being unable to
                         // look at it from a bench is the worst possible place
                         // for that gap.
-                        "TELEM" -> {
-                            consoleRef.value?.hide()
-                            bayMode.value = "TELEM"
-                            appRef.value?.show(
-                                telemetryRows(ctx, link),
-                                title = ctx.getString(R.string.t_telem),
-                                footer = ctx.getString(R.string.f_telem),
-                                // A SET, NOT A SEQUENCE — see Stack.show.
-                                form = true,
-                            )
-                            cue.opened()
-                        }
-                        "LANG" -> {
-                            consoleRef.value?.hide()
-                            bayMode.value = "LANG"
-                            appRef.value?.show(
-                                langRows(ctx),
-                                title = ctx.getString(R.string.t_lang),
-                                footer = ctx.getString(R.string.f_lang),
-                                // A SET, NOT A SEQUENCE — see Stack.show.
-                                form = true,
-                            )
-                            cue.opened()
-                        }
+                        "TELEM" -> showBay("TELEM")
+                        "LANG" -> showBay("LANG")
                         // DIAGNOSTICS. The plate promised "connect a radio,
                         // frame log" and delivered a silent settings toggle —
                         // one spoken notice and nothing to look at. It now
@@ -5735,21 +6003,7 @@ private fun HorizonScene(link: MeshLink) {
                         // whether the things they sent arrived. The frame-log
                         // toggle keeps its home in the APP bay, where every
                         // other app setting is.
-                        "DIAG" -> {
-                            consoleRef.value?.hide()
-                            bayMode.value = "TX"
-                            armed.value = null
-                            aboutOpen.value = false
-                            appRef.value?.show(
-                                txRows(ctx, link),
-                                title = ctx.getString(R.string.t_tx),
-                                footer = ctx.getString(R.string.f_tx),
-                                // A SET, NOT A SEQUENCE — see Stack.show.
-                                form = true,
-                            )
-                            dockRef.value?.setLit("SETUP", false)
-                            cue.opened()
-                        }
+                        "DIAG" -> showBay("TX")
                         // S5 — CHANNELS. Which bands the radio carries, and
                         // which of them read themselves aloud. This is the only
                         // place the TTS toggle can be REACHED for a channel that
@@ -5761,6 +6015,7 @@ private fun HorizonScene(link: MeshLink) {
                             // survived a trip out of the bay would be sitting
                             // one pinch from a write next time it opened.
                             chanArmed.value = null
+                            closeAllMenus()
                             channelsRef.value?.show(
                                 channelRows(ctx, link, voice, null),
                                 title = ctx.getString(R.string.t_channels),
@@ -5776,47 +6031,13 @@ private fun HorizonScene(link: MeshLink) {
                         // connection state as a LAMP rather than a row, so it
                         // lives in the title: it is something you read, not
                         // something you can change from here.
-                        "APP" -> {
-                            consoleRef.value?.hide()
-                            armed.value = null
-                            aboutOpen.value = false
-                            bayMode.value = "APP"
-                            appRef.value?.show(
-                                appRows(ctx, link, armed.value?.first, appGcCount()),
-                                // THE STATE AS A WORD, NOT AN ENUM NAME. This
-                                // title interpolated SessionState.name, so a
-                                // Japanese wearer read "アプリ — 接続:
-                                // DISCONNECTED" — a localised sentence with an
-                                // untranslated identifier inside it. Nothing
-                                // measures that: the string fits its plate and
-                                // the parity test compares resources, and the
-                                // gap is in the value the app supplies at
-                                // runtime rather than in either file.
-                                title = ctx.getString(R.string.t_app, linkWord(ctx, link)),
-                                footer = ctx.getString(R.string.f_app),
-                                // A SET, NOT A SEQUENCE — see Stack.show.
-                                form = true,
-                            )
-                            dockRef.value?.setLit("SETUP", false)
-                            cue.opened()
-                        }
+                        "APP" -> showBay("APP")
                         // S12 · ABOUT · TERMS · SAFETY. Read-only, and the
                         // safety copy is the reason it exists rather than the
                         // version number: "do not use while driving" has to BE
                         // somewhere a wearer can find, and a line in a store
                         // listing is not somewhere a wearer can find.
-                        "ABOUT" -> {
-                            consoleRef.value?.hide()
-                            bayMode.value = "ABOUT"
-                            appRef.value?.show(
-                                aboutRows(ctx, link),
-                                title = ctx.getString(R.string.t_about),
-                                footer = ctx.getString(R.string.f_about),
-                            )
-                            aboutOpen.value = true
-                            dockRef.value?.setLit("SETUP", false)
-                            cue.opened()
-                        }
+                        "ABOUT" -> showBay("ABOUT")
                         // S11 — THEME & VOICE. The picker previews by retinting
                         // the real scene, so it opens in front of the wearer
                         // with the HORIZON still behind it: that IS the preview
@@ -5952,6 +6173,16 @@ private fun HorizonScene(link: MeshLink) {
                             lastBackAt = nowMs
                             armed.value = null
                             aboutOpen.value = false
+                            // UP ONE LEVEL FIRST. B has always claimed to be
+                            // "back, not home" and for the bays it was not:
+                            // three deep in SETUP > DEVICE > WHO MAY ASK, the
+                            // gesture threw the wearer all the way out to the
+                            // horizon. showBay records the path; this walks it.
+                            if (backOneBay()) {
+                                Log.i(TAG_UI, "[hand] $hand:B — up to ${bayMode.value}")
+                                return
+                            }
+                            bayStack.clear()
                             a.hide(); cue.closed()
                             Log.i(TAG_UI, "[hand] $hand:B — app bay closed")
                             return
@@ -6406,6 +6637,31 @@ private fun HorizonScene(link: MeshLink) {
                         // pinch names the node and waits, the second within
                         // ARM_MS forgets it. A radial spoke is easy to catch
                         // with a stray hand and this one talks to the radio.
+                        // CLAIM OR RELEASE. No arm/confirm: it transmits
+                        // nothing and is reversible by picking it again, which
+                        // is the test FORGET fails and this passes.
+                        "mine" -> {
+                            val peer = link.mesh.value.firstOrNull {
+                                (it.fullKey ?: it.key).equals(id, ignoreCase = true) ||
+                                    it.key.equals(n.key, ignoreCase = true)
+                            }
+                            val was = peer?.let { link.isOwnNode(it) } == true
+                            if (peer == null || !link.claimOwnNode(peer, !was)) {
+                                // The only way to fail is having no full key,
+                                // and a claim on a prefix would be a claim on
+                                // whatever else shares it.
+                                noticeRef.value?.say(ctx.getString(R.string.n_mine_nokey))
+                                cue.denied()
+                            } else {
+                                noticeRef.value?.say(
+                                    ctx.getString(
+                                        if (was) R.string.n_mine_off else R.string.n_mine_on,
+                                        peer.name.take(16),
+                                    ),
+                                )
+                                cue.recognised()
+                            }
+                        }
                         "forget" -> {
                             val peer = link.mesh.value.firstOrNull {
                                 (it.fullKey ?: it.key).equals(id, ignoreCase = true) ||
@@ -6984,7 +7240,13 @@ private fun HorizonScene(link: MeshLink) {
                 // decisions in a row and a surface that closes after each one
                 // makes you walk back in five times.
                 firstRef.value?.let { f ->
-                    if (f.open) f.tick(stage.headNow()?.translation, nowMs)
+                    // THE LEFT HAND GOES IN, so S0 can draw the way from it to
+                    // the mote rather than relying on words under the mote that
+                    // the operator reports never having seen.
+                    if (f.open) f.tick(
+                        stage.headNow()?.translation, nowMs,
+                        handL?.state?.value?.handJoints,
+                    )
                 }
                 stage.headNow()?.let { hp ->
                     emberRef.value?.tick(hp.translation, yawOf(hp), nowMs)
@@ -7649,6 +7911,102 @@ private fun AlertsPanel() {
                 fontSize = 13.sp,
             )
         }
+    }
+}
+
+/**
+ * THE DOCS PANEL — the manual, offline, in the app.
+ *
+ * Three sections across the top, the chosen one scrolling below. Same shape as
+ * the phone app's Docs tab, and the same three documents, so somebody who knows
+ * Meshmore SNS finds what they expect.
+ *
+ * A PANEL RATHER THAN A SPATIAL SURFACE, deliberately — see [Docs] for the
+ * reasoning. Long-form reading is the one job a scrolling rectangle does better
+ * than the room does.
+ */
+@Composable
+private fun DocsPanel() {
+    val ctx = LocalContext.current
+    var section by remember { mutableStateOf(Docs.Section.APP) }
+    // PARSED ONCE PER SECTION, not per frame. protocol.md is 724 lines and the
+    // regexes run over every one of them.
+    val lines = remember(section) { Docs.load(ctx, section) }
+    val listState = androidx.compose.foundation.lazy.rememberLazyListState()
+    // BACK TO THE TOP ON A SECTION CHANGE. Without it, switching from a long
+    // document to a short one lands mid-way through nothing.
+    LaunchedEffect(section) { listState.scrollToItem(0) }
+
+    Column(
+        Modifier.fillMaxSize().background(Color(0xF00A0E12)).padding(12.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            Docs.Section.entries.forEach { sec ->
+                val on = sec == section
+                TextButton(onClick = { section = sec }) {
+                    Text(
+                        androidx.compose.ui.res.stringResource(
+                            when (sec) {
+                                Docs.Section.APP -> R.string.doc_app
+                                Docs.Section.PROTOCOL -> R.string.doc_protocol
+                                Docs.Section.FIRMWARE -> R.string.doc_firmware
+                            },
+                        ),
+                        color = if (on) Color(0xFF66E8D0) else Color(0xFF6E7C88),
+                        fontFamily = meshMono(ctx),
+                        fontSize = 13.sp,
+                    )
+                }
+            }
+        }
+        androidx.compose.foundation.lazy.LazyColumn(
+            state = listState,
+            modifier = Modifier.weight(1f).fillMaxWidth(),
+        ) {
+            items(lines.size) { i ->
+                val l = lines[i]
+                if (l.kind == Docs.Kind.BLANK) {
+                    Spacer(Modifier.height(6.dp))
+                } else if (l.kind == Docs.Kind.RULE) {
+                    Box(
+                        Modifier.fillMaxWidth().height(1.dp)
+                            .background(Color(0xFF243634)),
+                    )
+                } else {
+                    Text(
+                        if (l.kind == Docs.Kind.BULLET) "· ${l.text}" else l.text,
+                        color = when (l.kind) {
+                            Docs.Kind.H1, Docs.Kind.H2 -> Color(0xFF66E8D0)
+                            Docs.Kind.H3 -> Color(0xFF9FB3B0)
+                            Docs.Kind.QUOTE -> Color(0xFF8FA3AE)
+                            Docs.Kind.CODE -> Color(0xFFFFB86B)
+                            else -> Color(0xFFCBD6DC)
+                        },
+                        fontFamily = meshMono(ctx),
+                        fontSize = when (l.kind) {
+                            Docs.Kind.H1 -> 17.sp
+                            Docs.Kind.H2 -> 14.sp
+                            Docs.Kind.H3 -> 12.5.sp
+                            else -> 11.5.sp
+                        },
+                        // CODE AND TABLES MUST NOT WRAP. Their columns only line
+                        // up in a monospace face and re-flowed they are noise.
+                        softWrap = l.kind != Docs.Kind.CODE,
+                        modifier = Modifier.padding(
+                            top = if (l.kind == Docs.Kind.H2) 6.dp else 0.dp,
+                            start = if (l.kind == Docs.Kind.QUOTE) 8.dp else 0.dp,
+                        ),
+                    )
+                }
+            }
+        }
+        Text(
+            androidx.compose.ui.res.stringResource(R.string.doc_offline),
+            color = Color(0xFF6E7C88),
+            fontFamily = meshMono(ctx),
+            fontSize = 10.sp,
+        )
     }
 }
 

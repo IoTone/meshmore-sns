@@ -1,7 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  日本語 — NEEDS NATIVE REVIEW before release (i18n spec §9: plausible and
-  consistent is not the same as idiomatic). Conventions held throughout:
+  日本語 — PARTIALLY REVIEWED. 2026-08-27: a native speaker returned 121 of 339
+  strings — 108 rewritten, 13 approved as they stood. Those are in. The
+  remaining 214 are still the unreviewed first pass and are NOT idiomatic by
+  default (i18n spec §9: plausible and consistent is not the same as
+  idiomatic). Status per key lives in docs/l10n-review-ja.csv.
+
+  ⚠️ FOUR REVIEWED STRINGS WERE HELD BACK, and each was a defect rather than a
+  preference — see the 2026-08-27 commit:
+    ago_day/ago_hr/ago_min  a stray full-width 1 ("%1$d１日前" renders "3 1日前")
+    al_lookalike            no such key in values/strings.xml
+  and one was corrected on the way in:
+    f_erase_arm             洗濯 (laundry) -> 選択 (select). Same reading,
+                            せんたく; the English is "PICK AGAIN TO ERASE".
+
+  Conventions held throughout:
 
   - Protocol tokens stay Latin: B, COMMIT, HERE, GPS, ON — they name gestures,
     controls and pips whose marks are Latin, and a control's spoken name must
@@ -19,22 +32,22 @@
     <string name="n_loc_placed">位置を取得 — メッシュ配置</string>
     <string name="n_loc_denied">位置情報が拒否 — 未配置</string>
     <string name="n_mic_denied">マイク不許可</string>
-    <string name="n_hands_busy">手を認識中</string>
-    <string name="n_says">%1$s: %2$s</string>
-    <string name="n_chan_made">%1$s 作成 — 口頭共有</string>
+    <string name="n_hands_busy">手は作動中</string>
+    <string name="n_says">%1$sは %2$s</string>
+    <string name="n_chan_made">%1$s 作成 — 口頭で共有</string>
     <string name="n_refused">不可 — %1$s</string>
-    <string name="n_joined_public">公開chに参加</string>
-    <string name="n_public_warn">公開は全員が読める</string>
-    <string name="n_erased">%1$d件消去</string>
-    <string name="n_not_tracking">未トラッキング</string>
-    <string name="n_not_built">%1$s — 未実装</string>
+    <string name="n_joined_public">パブリックチャンネルに参加</string>
+    <string name="n_public_warn">誰でも閲覧可能</string>
+    <string name="n_erased">%1$dメッセージ消去</string>
+    <string name="n_not_tracking">トラッキングなし</string>
+    <string name="n_not_built">%1$s — 未構築</string>
     <string name="n_chan_quiet">まだ受信なし</string>
     <string name="n_reads_aloud">%1$s を読み上げ</string>
     <string name="n_silent">%1$s は無音</string>
-    <string name="n_no_fix_pinch">位置なし — ドックのHERE</string>
+    <string name="n_no_fix_pinch">位置なし — ここをつまむ</string>
     <string name="n_no_fix_wait">位置待ち — %1$dノード保留</string>
     <string name="n_linked">接続 — %1$s</string>
-    <string name="n_linked_anon">無線機 接続</string>
+    <string name="n_linked_anon">無線 接続</string>
 
     <!-- crown / reel -->
     <string name="n_nothing_to_read">読む物なし</string>
@@ -48,43 +61,43 @@
 
     <!-- link ladder -->
     <string name="link_step">"手順 %1$d/4  %2$s"</string>
-    <string name="link_scan">無線機を探索中</string>
+    <string name="link_scan">無線を探索中</string>
     <string name="link_connecting">%1$s へ接続中</string>
     <string name="link_handshake">ハンドシェイク中</string>
-    <string name="link_reading">無線機を読込中</string>
+    <string name="link_reading">無線を読込中</string>
     <string name="link_failed">接続失敗 — %1$s</string>
-    <string name="link_lost">リンク断 — 再接続中</string>
+    <string name="link_lost">リンクなし— 再接続中</string>
 
     <!-- bay titles -->
     <string name="t_region">地域 — %1$s</string>
-    <string name="t_telem">データ照会の許可</string>
-    <string name="t_channels">チャンネル — 選択で送信</string>
+    <string name="t_telem">誰が私に訊ねられるか</string>
+    <string name="t_channels">チャンネル — 選択してボイスコマンド</string>
     <string name="t_app">アプリ — 接続: %1$s</string>
     <string name="t_about">MESHMORE XR について</string>
 
     <!-- footers -->
-    <string name="f_pending">未確定 — COMMITで適用</string>
-    <string name="f_radio_idle">"選択で変更  Bで閉じる"</string>
-    <string name="f_commit_arm">もう一度で無線機に書込</string>
+    <string name="f_pending">保留中 — COMMITで適用</string>
+    <string name="f_radio_idle">ステップ Bを選択で閉じる</string>
+    <string name="f_commit_arm">再度つまんで無線機に書込</string>
     <string name="f_app">"点灯=ON  Bで閉じる"</string>
     <string name="f_about">閲覧のみ — Bで閉じる</string>
     <string name="f_chan_no_radio">無線機を接続してください</string>
     <string name="f_chan">"点灯=読み上げ  選択=送信"</string>
-    <string name="f_chan_new">タグ推測で参加可。共有は一度</string>
-    <string name="f_chan_public">公開=全員。秘密なし</string>
-    <string name="f_telem">"選択で切替  Bで閉じる"</string>
-    <string name="f_chansend_arm">もう一度でch送信を許可</string>
-    <string name="f_erase_arm">もう一度で消去 — 取消不可</string>
+    <string name="f_chan_new">推測されたタグで結合。一度言う</string>
+    <string name="f_chan_public">パブリックとは全面であり隠し事なし</string>
+    <string name="f_telem">サークルBを選んで閉じる</string>
+    <string name="f_chansend_arm">再度つまんでチャンネル送信を許可</string>
+    <string name="f_erase_arm">もう一度選択して消去 — 取消不可</string>
 
     <!-- APP bay rows -->
-    <string name="r_location">本体GPS</string>
+    <string name="r_location">ヘッドセットのロケーション</string>
     <string name="r_share">位置を共有</string>
     <string name="r_diag">診断パネル</string>
     <string name="r_autopen">返信を提案</string>
     <string name="r_motion">動きを減らす</string>
-    <string name="r_chansend">チャンネル送信</string>
-    <string name="r_telem">データ照会の許可</string>
-    <string name="r_erase">%1$d件を消去</string>
+    <string name="r_chansend">チャンネルに送信</string>
+    <string name="r_telem">誰から照会があるか</string>
+    <string name="r_erase">%1$dメッセージを消去</string>
 
     <!-- telemetry classes and levels -->
     <string name="telem_battery">電池</string>
@@ -99,10 +112,10 @@
     <string name="c_make">"作成  %1$s"</string>
     <string name="c_reroll">別の名を振る</string>
     <string name="c_join_public">+ 公開chに参加</string>
-    <string name="c_join_arm">公開参加 — もう一度</string>
+    <string name="c_join_arm">一般に参加ー再度つまむ</string>
 
     <!-- FIND panel -->
-    <string name="find_hint">名前かキー</string>
+    <string name="find_hint">コールサインかキー</string>
     <string name="find_favs">★ お気に入り</string>
     <string name="find_clear">クリア</string>
     <string name="find_done">完了</string>
@@ -119,14 +132,14 @@
     <string name="s_mic">マイクは発話時のみON</string>
     <!-- radio bay notices -->
     <string name="n_freq_preset">周波数はプリセット連動</string>
-    <string name="n_nothing_commit">変更なし</string>
-    <string name="n_commit_arm">もう一度で書込</string>
+    <string name="n_nothing_commit">コメントなし</string>
+    <string name="n_commit_arm">再度選択して書き込み</string>
     <string name="n_written">書込済 — %1$s</string>
     <string name="n_commit_failed">書込失敗</string>
     <string name="n_discarded">変更を破棄</string>
     <!-- first light / crown / inbox / thread / picker -->
     <string name="fl_touch">これに触れる</string>
-    <string name="fl_hint">見つめて保持でも可</string>
+    <string name="fl_hint">見てホールドする</string>
     <string name="q_roger">了解</string>
     <string name="q_omw">向かっています</string>
     <string name="q_standby">待機</string>
@@ -135,21 +148,21 @@
     <string name="a_thread">スレッド</string>
     <string name="a_close">閉じる</string>
     <string name="a_speak">話す</string>
-    <string name="a_listening">認識中</string>
+    <string name="a_listening">聞き取り中</string>
     <string name="a_back">戻る</string>
     <string name="a_send">送信</string>
     <string name="a_cancel">取消</string>
-    <string name="inbox_empty_head">メッセージなし</string>
-    <string name="inbox_empty_body">受信するとここに表示</string>
+    <string name="inbox_empty_head">メッセージはまだありません</string>
+    <string name="inbox_empty_body">受信したらここに表示</string>
     <string name="th_older">"過去へ  %1$d-%2$d / %3$d"</string>
-    <string name="pk_field">空間</string>
+    <string name="pk_field">フィールド</string>
     <string name="pk_tabletop">卓上</string>
     <string name="pk_transit">移動</string>
     <string name="pk_panel">パネル</string>
     <string name="pk_additive">加算</string>
-    <string name="pk_hybrid">混成</string>
+    <string name="pk_hybrid">ハイブリッド</string>
     <string name="w_allowed">許可</string>
-    <string name="w_confirm">確認?</string>
+    <string name="w_confirm">確定?</string>
     <string name="w_unnamed">無名</string>
     <string name="w_public">"公開  "</string>
     <string name="w_setting">設定</string>
@@ -159,33 +172,33 @@
     <string name="ago_day">%1$d日前</string>
     <string name="f_region">共同体設定 — 法的助言ではない</string>
     <string-array name="region_disclaimer">
-        <item>プリセットは共同体の設定で</item>
-        <item>法的助言ではない。現地で</item>
-        <item>合法なものを選び、全ノード</item>
-        <item>で同じ設定を使うこと。</item>
-        <item>日本: 設定だけでは不十分。</item>
-        <item>ハードに技適マークが必要 —</item>
-        <item>輸入ボードの多くは未取得。</item>
+        <item>法的助言ではない。選択して</item>
+        <item>合法なものを選び</item>
+        <item>全てのノードでこれを使用する</item>
+        <item>日本: 設定だけでは</item>
+        <item>ハードウェアが充分でない</item>
+        <item>最もGITEKIは必携。</item>
+        <item>輸入品ボードはダメ</item>
     </string-array>
     <!-- help card -->
     <string name="h_gestures">ジェスチャー</string>
     <string name="h_messages">メッセージ</string>
     <string name="h_right">右</string>
     <string name="h_left">左</string>
-    <string name="h_either">両方</string>
-    <string name="hp_compass">方位バンド ON/OFF</string>
+    <string name="h_either">どちらも</string>
+    <string name="hp_compass">コンパスバンド ON/OFF</string>
     <string name="hp_link">リンクバンド ON/OFF</string>
-    <string name="hp_back">一段戻る</string>
+    <string name="hp_back">一つ前のレベルに戻る</string>
     <string name="hp_magnified">拡大中のみ</string>
     <string name="hp_recentre">現在地へシーン移動</string>
-    <string name="hp_same_r">Rでも同じ</string>
-    <string name="hp_hold">半秒静止</string>
-    <string name="hp_palm_away">掌は外向きに</string>
-    <string name="hp_dock_ring">ドックのピンチでも可</string>
-    <string name="hp_reel">掌を上でリール表示</string>
-    <string name="hp_scrub">親指で人差し指をなぞる</string>
-    <string name="hp_wraps">どちら向きでも循環</string>
-    <string name="hp_point">ボタンを指してピンチ</string>
+    <string name="hp_same_r">同じーRでも可</string>
+    <string name="hp_hold">半秒ホールド</string>
+    <string name="hp_palm_away">手のひらは顔から反対向き</string>
+    <string name="hp_dock_ring">ドックリングをつまんでも良い</string>
+    <string name="hp_reel">手のひらを上むきでリール表示</string>
+    <string name="hp_scrub">人差し指を親指でこする</string>
+    <string name="hp_wraps">どちら向きでも循環可</string>
+    <string name="hp_point">ボタンを指してつまむ</string>
     <string name="hp_voice">VOICE ONで読み上げ</string>
     <!-- per-node actions -->
     <string name="rr_commit">適用</string>
@@ -193,13 +206,13 @@
     <string name="rr_commit_none">なし</string>
     <string name="rr_revert">変更を取消</string>
     <string name="rr_revert_pending">保留中</string>
-    <string name="rr_revert_clean">変更なし</string>
+    <string name="rr_revert_clean">クリーン</string>
     <string name="rr_advert">自己通知</string>
     <string name="rr_advert_sub">ゼロホップ</string>
     <string name="rr_flood">全体通知</string>
-    <string name="rr_flood_sub">全中継局</string>
+    <string name="rr_flood_sub">全ての通信</string>
     <string name="rr_rescan">無線機を再検索</string>
-    <string name="rr_rescan_sub">Bluetooth</string>
+    <string name="rr_rescan_sub">ブルートゥース</string>
     <string name="rr_unread">無線機を未読取</string>
     <string name="n_urgent">緊急 — %1$s</string>
     <string name="n_unknown_sender">不明</string>
@@ -209,34 +222,34 @@
     <string name="n_diag_off">診断 オフ</string>
     <string name="n_scene_moved">シーンを現在地へ移動</string>
     <string name="n_scene_moved_nonorth">"現在地へ移動 — 北は未設定"</string>
-    <string name="n_nothing_there">解決できるノードなし</string>
-    <string name="ab_version">版</string>
+    <string name="n_nothing_there">解決方法なし</string>
+    <string name="ab_version">バージョン</string>
     <string name="ab_radio">無線機</string>
     <string name="ab_firmware">FW</string>
-    <string name="ab_no_radio">無線機なし</string>
-    <string name="pg_more">"%1$d-%2$d / %3$d   次へ"</string>
-    <string name="pg_msgs_one">1 件</string>
-    <string name="pg_msgs_many">%1$d 件</string>
+    <string name="ab_no_radio">無線未リンク</string>
+    <string name="pg_more">%1$d-%2$d / %3$d   さらに</string>
+    <string name="pg_msgs_one">1 メッセージ</string>
+    <string name="pg_msgs_many">%1$d メッセージ</string>
     <string name="reel_scrub">"◀  %1$d / %2$d  ▶"</string>
     <string name="reel_to_you">%1$s → 自分</string>
     <string name="reel_from">%1$s · %2$s</string>
     <string name="reel_channel">チャンネル</string>
-    <string name="reel_hint">親指を人差し指で回す</string>
-    <string name="chan_public">公開</string>
+    <string name="reel_hint">親指と人差し指で回す</string>
+    <string name="chan_public">パブリック</string>
     <string name="chan_numbered">チャンネル %1$d</string>
     <string name="chan_generic">チャンネル</string>
     <string name="rr_clock">時計</string>
-    <string name="rr_clock_ok">一致</string>
+    <string name="rr_clock_ok">処理中</string>
     <string name="rr_clock_off">%1$s 遅れ</string>
     <string name="rr_clock_ahead">%1$s 進み</string>
-    <string name="n_clock_arm">もう一度で時計を設定</string>
+    <string name="n_clock_arm">もう一度つまんで時計を設定</string>
     <string name="n_clock_set">無線機の時計を設定</string>
     <string name="w_this">これ</string>
-    <string name="a_soak">連続10通</string>
+    <string name="a_soak">ソークx１０</string>
     <string name="n_soak_start">%1$d通を送信中 — 相手機を確認</string>
     <string name="n_soak_done">%2$d通中 %1$d通が応答</string>
     <string name="cm_magnify">拡大</string>
-    <string name="cm_bearing">方位</string>
+    <string name="cm_bearing">影響</string>
     <string name="cm_nearest">最寄り</string>
     <string name="na_fav">お気に入り</string>
     <string name="na_msg">メッセージ</string>
@@ -246,10 +259,10 @@
     <string name="n_unstarred">"☆ %1$s"</string>
     <string name="n_send_locked">自ノード以外へ送信不可</string>
     <string name="n_asked_telem">%1$s に照会</string>
-    <string name="n_table_reset">卓上リセット — 再探索</string>
-    <string name="n_region_mismatch">地域設定が現在地と不一致</string>
+    <string name="n_table_reset">テーブルリセット — 探索</string>
+    <string name="n_region_mismatch">現在地と地域設定が一致しない</string>
     <!-- no-radio card + pairing hint -->
-    <string name="link_pair_code">無線機の画面のコードを入力</string>
+    <string name="link_pair_code">無線の画面からコードを入力</string>
     <string name="n_dm_to">%1$s へ</string>
     <string name="r_lang">言語</string>
     <string name="n_lang_failed">言語を切り替えられません</string>
@@ -261,36 +274,39 @@
     <string name="p_unknown">経路不明</string>
     <string name="p_direct">直接</string>
     <string name="p_hops">%1$d ホップ</string>
-    <string name="p_live">最近受信</string>
-    <string name="p_stale">古い</string>
+    <string name="p_live">ライブ</string>
+    <string name="p_stale">未効力</string>
     <string name="p_est">推定</string>
-    <string name="r_gc">"%1$dkm 超を削除  (%2$d)"</string>
+    <string name="r_gc">%1$dkm はなし  (%2$d)</string>
     <string name="n_gc_none">%1$dkm 超の相手はいません</string>
     <string name="n_gc_nofix">位置不明で距離を判定不可</string>
-    <string name="n_gc_done">%1$d 件を削除しました</string>
-    <string name="n_advert_sent">アドバート送信 — 隣接のみ</string>
+    <string name="n_gc_done">%1$d コンタクトを削除しました</string>
+    <string name="n_advert_sent">自己広告を送信ー親近者のみ</string>
     <string name="n_flood_arm">フラッドは全体配信 — 再度</string>
-    <string name="n_flood_sent">フラッドを送信しました</string>
+    <string name="n_flood_sent">フラッド広告を送信しました</string>
     <string name="n_rescan">無線機を検索中</string>
-    <string name="f_flood_arm">もう一度でフラッド送信</string>
+    <string name="f_flood_arm">もう一度選択してフラッド送信</string>
     <string name="f_gc_arm">もう一度で削除します</string>
     <string name="th_reply">返信</string>
     <string name="find_far">遠い</string>
     <string name="find_stale">古い</string>
     <string name="find_forget">%1$d 件を削除</string>
-    <string name="find_forget_arm">もう一度で削除</string>
+    <string name="find_forget_arm">もう一度タップして削除</string>
+    <string name="na_mine">自ノード</string>
+    <string name="n_mine_on">%1$s を自ノード登録</string>
+    <string name="n_mine_off">%1$s の設定を解除</string>
+    <string name="n_mine_nokey">完全な鍵がありません</string>
     <string name="na_forget">削除</string>
-    <string name="n_forget_arm">%1$s を削除?もう一度</string>
+    <string name="n_forget_arm">%1$s を削除？再度つまんで下さい</string>
     <string name="n_forget_done">%1$s を削除しました</string>
     <string name="n_forget_failed">%1$s 削除失敗</string>
-    <string name="n_forget_kept">保持: 自ノード/お気に入り</string>
+    <string name="n_forget_kept">自ノードかお気に入りにキープ</string>
     <string name="n_forget_unknown">無線機の連絡先にありません</string>
-    <string name="al_full">連絡先が満杯 — %1$d/%2$d。新規ノードを取り込めません</string>
-    <string name="r_alerts">アラート表示</string>
+    <string name="al_full">コンタクトが上限に達している — %1$d/%2$d。新規ノードを取り込めません</string>
+    <string name="r_alerts">アラートパネル</string>
     <string name="al_title">"アラート  (%1$d)"</string>
     <string name="al_none">報告事項はありません</string>
-    <string name="al_swept">%1$d 件を削除しました</string>
-    <string name="al_lookalike">「%1$s」は鍵の末尾のみ一致 — 自ノード扱いにしません</string>
+    <string name="al_swept">%1$d のコンタクトを削除しました</string>
     <string name="dm_sent">・送信中</string>
     <string name="dm_lost">・応答なし</string>
     <string name="a_resend">再送</string>
@@ -305,37 +321,54 @@
     <string name="d_list">一覧</string>
     <string name="d_north">北</string>
     <string name="d_find">検索</string>
-    <string name="a_words">語</string>
+    <string name="d_map">マップ</string>
+    <string name="a_words">言葉</string>
     <string name="a_full">上限</string>
-    <string name="nf_title">位置がありません</string>
+    <string name="nf_title">ポジションがありません</string>
     <string name="nf_board_nogps">%1$s にGPSがありません</string>
-    <string name="nf_nofix">無線機が位置を送りません</string>
+    <string name="nf_nofix">無線では位置を送らない</string>
     <string name="nf_stuck">メッシュを配置できません</string>
-    <string name="nf_act">ピンチで本体GPSを使う</string>
-    <string name="nr_title">無線機なし</string>
+    <string name="nf_act">つまんで本体GPSを使う</string>
+    <string name="nr_title">無線なし</string>
     <string name="nr_check">電源と距離を確認</string>
-    <string name="nr_phone">スマホが接続中かも</string>
-    <string name="nr_retry">ピンチで再検索</string>
+    <string name="nr_phone">スマホが保留中</string>
+    <string name="nr_retry">つまんで再検索</string>
     <!-- S · DELIVERY. What became of the messages this app sent, from TxLog. -->
-    <string name="t_tx">送信の到達</string>
-    <string name="f_tx">"消去で最初から"</string>
-    <string name="tx_none">送信履歴なし</string>
+    <string name="t_tx">メッセージ送信済み</string>
+    <string name="f_tx">クリアを選んでやり直し</string>
+    <string name="tx_none">送信はまだ</string>
     <string name="r_txclear">記録を消去</string>
-    <string name="n_txcleared">到達記録を消去した</string>
+    <string name="n_txcleared">到達記録を消去</string>
     <!-- S · MESH WEATHER. Telemetry gathered from other people's radios. -->
     <string name="t_wx">メッシュ気象</string>
     <string name="f_wx">"照会で一括取得  Bで閉じる"</string>
+    <string name="t_map">マップ</string>
+    <string name="f_map">メッシュが知る周辺の情報</string>
+    <string name="n_terrain_parked">本機は地球固定座標に未対応</string>
+    <string name="r_map">マップ — 天候とメッシュブック</string>
+    <string name="doc_app">ガイド</string>
+    <string name="doc_protocol">プロトコル</string>
+    <string name="doc_firmware">ファームウェア</string>
+    <string name="doc_offline">同梱スナップショット — 通信不要</string>
+    <string name="r_docs">ドキュメント</string>
+    <string name="n_docs_on">ドキュメントを開きました</string>
+    <string name="n_docs_off">ドキュメントを閉じました</string>
+    <string name="r_terrain">地形 — 本機では未対応</string>
     <string name="r_wx">メッシュ気象</string>
     <string name="r_wxask">%1$d局に照会</string>
     <string name="r_wxnone">今は照会先なし</string>
-    <string name="wx_empty">データなし</string>
+    <string name="wx_said">パブリックの発言</string>
+    <string name="wx_earlier">本日それ以前 %1$d 件</string>
+    <string name="wx_said_none">天候の発言なし</string>
+    <string name="wx_unplaced">位置不明 %1$d 件</string>
+    <string name="wx_empty">読むものなし</string>
     <string name="wx_summary">%1$d局</string>
     <string name="n_wx_start">%1$d局に照会中</string>
-    <string name="n_wx_done">%2$d局中 %1$d局が応答</string>
-    <string name="n_wx_share">自分も共有する? 許可設定へ</string>
+    <string name="n_wx_done">%2$d中 %1$dが回答</string>
+    <string name="n_wx_share">あなたの分を共有する? 誰が聞いているのか見る</string>
     <string name="ago_min_short">%1$d分</string>
     <string name="ago_hr_short">%1$d時間</string>
-    <string name="wx_all">登録 %1$d局</string>
+    <string name="wx_all">登録 %1$d</string>
     <string name="wx_no_key">-%1$d 鍵が不完全</string>
     <string name="wx_hops">-%1$d %2$dホップ超</string>
     <string name="wx_km">-%1$d %2$dkm超</string>
@@ -350,39 +383,39 @@
     <string name="c_join_tag">タグで参加</string>
     <string name="c_join_tag_arm">%1$s に参加</string>
     <string name="c_say_again">言い直す</string>
-    <string name="n_say_tag">タグを言って</string>
+    <string name="n_say_tag">タグと言って</string>
     <string name="n_tag_heard">%1$s と認識</string>
-    <string name="n_tag_none">聞き取れず</string>
+    <string name="n_tag_none">聞き取れません</string>
     <string name="f_chan_join">一字ずつ確認すること</string>
-    <string name="n_tag_long">タグが長すぎて確認できない</string>
+    <string name="n_tag_long">タグが長い為目視不可</string>
     <string name="c_type_tag">タグを入力</string>
     <string name="c_delete">%1$s を削除</string>
-    <string name="c_delete_arm">もう一度で削除</string>
+    <string name="c_delete_arm">再度ピックで削除</string>
     <string name="n_chan_gone">%1$s を削除した</string>
-    <string name="f_chan_del">"鍵は完全に失われる"</string>
+    <string name="f_chan_del">鍵は取り戻せません</string>
     <!-- The radio link's state, as a word rather than an enum name. -->
     <string name="ls_off">未接続</string>
-    <string name="ls_scan">探索中</string>
+    <string name="ls_scan">スキャン中</string>
     <string name="ls_shake">接続中</string>
     <string name="ls_ready">接続済み</string>
     <!-- Words that were Kotlin literals and so never reached the Japanese build. -->
     <string name="a_voice_on">読上: オン</string>
-    <string name="a_voice_off">読上: オフ</string>
-    <string name="w_listening">認識中</string>
+    <string name="a_voice_off">ボイス: オフ</string>
+    <string name="w_listening">聞き取り中</string>
     <string name="w_on_chan">%1$s で</string>
     <string name="w_to_who">%1$s へ</string>
     <!-- MESSAGE DELIVERY row names. Were Kotlin literals; see TxLog.rows. -->
-    <string name="tx_sent">送信</string>
+    <string name="tx_sent">送信済み</string>
     <string name="tx_refused">拒否</string>
-    <string name="tx_acked">応答あり</string>
+    <string name="tx_acked">応答確認</string>
     <string name="tx_inflight">送信中</string>
-    <string name="tx_rtt">往復時間</string>
+    <string name="tx_rtt">データの往復</string>
     <string name="tx_worst">最遅</string>
     <string name="tx_direct">直接</string>
     <string name="tx_flood">フラッド</string>
     <string name="tx_hops">%1$dホップ</string>
-    <string name="tx_size">%1$d-%2$dバイト</string>
-    <string name="tx_size_over">%1$dバイト超</string>
+    <string name="tx_size">%1$d-%2$d B</string>
+    <string name="tx_size_over">%1$d B超</string>
     <string name="tx_ms">%1$d ms</string>
     <!-- A bot told us how well it heard this radio. -->
     <string name="n_heard_us">受信報告: %1$s</string>
@@ -399,6 +432,7 @@
     <string name="mb_busiest">最多時間</string>
     <string name="mb_hour">%1$02d時</string>
     <string name="mb_pct">%2$d中 %1$d  %3$d%%</string>
+    <string name="mb_topics">話題</string>
     <string name="n_compass_ribbon">方位帯</string>
     <string name="n_heading_true">方位: 真北基準</string>
     <string name="n_heading_rel">方位: 相対 — 先に北を設定</string>

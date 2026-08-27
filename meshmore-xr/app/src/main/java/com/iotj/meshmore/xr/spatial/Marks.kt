@@ -41,6 +41,14 @@ object Marks {
         // is a circle. The long north spike is the whole read.
         "COMPASS" to "M50 6 L58 42 L94 50 L58 58 L50 94 L42 58 L6 50 L42 42 Z",
 
+        // MAP — a folded paper map: two creases, alternating panel heights.
+        //
+        // Deliberately NOT a pin and NOT a globe. A pin already means HERE in
+        // this app and a circle at 3 degrees is a circle; the fold is the one
+        // silhouette that reads as "a map" without reading as "a place".
+        "MAP" to "M12 26 L38 16 L62 30 L88 20 L88 74 L62 84 L38 70 L12 80 Z " +
+            "M38 16 L38 70 M62 30 L62 84",
+
         // LINK — emission arcs off a point. The radio link, and deliberately
         // NOT the same idea as RADIO: this is the connection, that is the box.
         "LINK" to "M50 82 L50 76 M30 66 A28 28 0 0 1 70 66 M16 50 A48 48 0 0 1 84 50",

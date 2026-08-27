@@ -4,6 +4,7 @@ package com.iotj.meshmore.xr.spatial
 
 import android.content.Context
 import android.util.Log
+import androidx.xr.arcore.HandJointType
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
@@ -64,6 +65,15 @@ class FirstLight(
     private var shownAt = 0L
     private var touched = false
 
+    /** The reach trail, hand to mote. Built once, posed per frame. */
+    private val beads = mutableListOf<MeshEntity>()
+
+    /** The yaw the mote was placed at, kept so the ghost trail knows which way is left. */
+    private var yaw = 0f
+
+    /** Whether the trail last ran from a tracked hand or from the ghost origin. */
+    private var lastTrail = ""
+
     var open: Boolean = false
         private set
 
@@ -92,6 +102,17 @@ class FirstLight(
             proxy?.addComponent(InteractableComponent.create(session) { ev -> onInput(ev) })
         }.onFailure { Log.w(TAG, "[first] no input on the mote: $it") }
 
+        // THE REACH TRAIL. See [Beckon]: the operator has never once seen the
+        // words under this mote, so the instruction is drawn instead of
+        // written. Built here with everything else, because an entity created
+        // after the scene is up does not attach.
+        repeat(Beckon.BEADS) {
+            beads += MeshEntity.create(
+                session, Prims.build(session, Prims.mote(BEAD_R, 4, 6)),
+                listOf(Prims.material(session, theme.accent, 0.85f)),
+            ).also { b -> b.parent = root; b.setEnabled(false); entities += b }
+        }
+
         line = run(root, com.iotj.meshmore.xr.L10n.tpl(WIDEST, "これに触れる"), "first-line", theme.text)
         hint = run(root, com.iotj.meshmore.xr.L10n.tpl(HINT_WIDEST, "見つめて保持でも可"), "first-hint", theme.alt)
         Log.i(TAG, "[first] built")
@@ -103,11 +124,36 @@ class FirstLight(
             com.iotj.meshmore.xr.L10n.cap(CAP), argb(rgb, 0.95f), name,
         )
             ?.also { it.entity.parent = root; it.entity.setEnabled(false); entities += it.entity }
+            // LOUDLY, WHEN IT DOES NOT EXIST. These two runs carry S0's only
+            // words and the operator reports never having seen either of them
+            // in months of wearing this. A null here was silent, so the one
+            // fact that would separate "the panel was never built" from "it was
+            // built and is drawn somewhere I never look" was not being
+            // recorded. The size is logged for the same reason: a run scaled to
+            // nothing and a run correctly placed are indistinguishable from a
+            // report, and distinguishable from one line.
+            .also {
+                if (it == null) {
+                    Log.w(TAG, "[first] run '$name' FAILED TO BUILD — no text will show")
+                } else {
+                    Log.i(TAG, "[first] run '$name' %.3f x %.3f m".format(it.widthM, it.heightM))
+                }
+            }
 
     fun showAt(head: Vector3, yawRad: Float, nowMs: Long) {
+        yaw = yawRad
         val fx = kotlin.math.sin(yawRad)
         val fz = -kotlin.math.cos(yawRad)
-        at = Vector3(head.x + fx * DIST, head.y + DROP, head.z + fz * DIST)
+        // A NUDGE TO THE LEFT, so the left hand is the one that comes up.
+        // The mote still takes a touch from either hand and from the gaze
+        // dwell — this biases the reach, it does not require it.
+        val lx = -kotlin.math.cos(yawRad)
+        val lz = -kotlin.math.sin(yawRad)
+        at = Vector3(
+            head.x + fx * DIST + lx * LEFT_BIAS,
+            head.y + DROP,
+            head.z + fz * DIST + lz * LEFT_BIAS,
+        )
         open = true
         touched = false
         shownAt = nowMs
@@ -118,12 +164,21 @@ class FirstLight(
     fun hide() {
         if (!open) return
         open = false
-        listOfNotNull<Entity>(mote, ring, proxy, line?.entity, hint?.entity)
+        (listOfNotNull<Entity>(mote, ring, proxy, line?.entity, hint?.entity) + beads)
             .forEach { runCatching { it.setEnabled(false) } }
         Log.i(TAG, "[first] closed")
     }
 
-    fun tick(head: Vector3?, nowMs: Long) {
+    fun tick(
+        head: Vector3?,
+        nowMs: Long,
+        /**
+         * The wearer's LEFT hand, in ARCore's perception frame. Null when the
+         * tracker has not seen it, which is the case S0 exists to detect and
+         * also the case a first-time wearer starts in.
+         */
+        leftJoints: Map<HandJointType, Pose>? = null,
+    ) {
         if (!open) return
         val p = at ?: return
         if (head == null) return
@@ -156,6 +211,83 @@ class FirstLight(
                 hint?.entity?.setPose(Pose(hp, facing(hp, head)), Space.ACTIVITY)
             }
         }
+        beckon(p, nowMs, leftJoints)
+    }
+
+    /**
+     * DRAW THE WAY IN.
+     *
+     * From the wearer's own left hand when the tracker can see it, and from a
+     * ghost origin down and to their left when it cannot. See [Beckon] for why
+     * this is a drawing rather than a sentence.
+     *
+     * BRIGHTNESS IS SCALE, not alpha. The Cuff established that alpha does
+     * nothing on this material path, and a bead that swells as the highlight
+     * passes reads at least as clearly on additive optics as one that
+     * brightens — arguably better, since a swell survives a bright room.
+     */
+    private fun beckon(p: Vector3, nowMs: Long, leftJoints: Map<HandJointType, Pose>?) {
+        val hand = palm(leftJoints)
+        val from = hand ?: run {
+            val (gx, gy, gz) = Beckon.ghost(
+                p.x, p.y, p.z,
+                leftX = -kotlin.math.cos(yaw), leftZ = -kotlin.math.sin(yaw),
+            )
+            Vector3(gx, gy, gz)
+        }
+        // A TRACKED HAND FADES THE TRAIL AS IT ARRIVES; a ghost origin is a
+        // fixed distance and always draws at full strength, because there is
+        // no hand approaching for it to get out of the way of.
+        val strength =
+            if (hand == null) 1f
+            else Beckon.strength(Beckon.distance(hand.x, hand.y, hand.z, p.x, p.y, p.z))
+        val path = Beckon.trail(
+            from.x, from.y, from.z, p.x, p.y, p.z,
+            Beckon.phase(nowMs), strength,
+        )
+        // ONCE PER STATE CHANGE, not per frame. Whether the trail is anchored
+        // to a real hand or running from the ghost origin is the one thing a
+        // wearer cannot report reliably — both look like a trail — and it is
+        // exactly what says whether the tracker saw the left hand.
+        val state = if (hand == null) "ghost" else "hand"
+        if (state != lastTrail) {
+            lastTrail = state
+            Log.i(TAG, "[first] trail $state — ${path.size} beads, strength %.2f".format(strength))
+        }
+        beads.forEachIndexed { i, b ->
+            val bead = path.getOrNull(i)
+            runCatching {
+                if (bead == null) {
+                    b.setEnabled(false)
+                } else {
+                    b.setEnabled(true)
+                    b.setPose(Pose(Vector3(bead.x, bead.y, bead.z)), Space.ACTIVITY)
+                    b.setScale(bead.alpha)
+                }
+            }
+        }
+    }
+
+    /**
+     * The centre of the palm, in the frame everything else here is posed in.
+     *
+     * MIDDLE_METACARPAL rather than a fingertip: the trail is aiming the HAND,
+     * and a fingertip wanders with every curl of a finger, which would make the
+     * trail's anchor jitter while the hand itself was still.
+     *
+     * The conversion is the one that has now bitten this codebase twice — hand
+     * joints arrive in PERCEPTION space and posing them straight into ACTIVITY
+     * puts them wherever the two origins happen to differ.
+     */
+    private fun palm(joints: Map<HandJointType, Pose>?): Vector3? {
+        if (joints.isNullOrEmpty()) return null
+        val j = joints[HandJointType.MIDDLE_METACARPAL]
+            ?: joints[HandJointType.WRIST]
+            ?: return null
+        return runCatching {
+            session.scene.perceptionSpace
+                .getScenePoseFromPerceptionPose(j).poseInActivitySpace.translation
+        }.getOrNull()
     }
 
     /** The dwell path, so a wearer with no hand tracking is not stranded. */
@@ -191,7 +323,11 @@ class FirstLight(
 
     fun clear() {
         mote = null; ring = null; proxy = null; line = null; hint = null
-        open = false; at = null; touched = false
+        // THE BEAD LIST EMPTIES HERE TOO. A list left holding disposed handles
+        // is a native crash the next time anything poses them — which is
+        // exactly how HALO died once.
+        beads.clear()
+        open = false; at = null; touched = false; yaw = 0f; lastTrail = ""
         val doomed = entities.toList()
         entities.clear()
         doomed.forEach { runCatching { it.parent = null } }
@@ -212,6 +348,24 @@ class FirstLight(
 
         /** 4.1° at DIST. Above the 3.0° icon floor, and deliberately inviting. */
         const val R = 0.016f
+
+        /**
+         * A bead of the reach trail, at full swell.
+         *
+         * Deliberately under a third of the mote and well under the mesh's own
+         * 1.6° node: the trail is a route, and a route drawn in objects the
+         * same size as destinations reads as a row of destinations.
+         */
+        const val BEAD_R = R * 0.28f
+
+        /**
+         * How far left of straight ahead the mote sits.
+         *
+         * About 13° at [DIST] — enough that the left hand is the one that comes
+         * up without thinking, small enough that it is still plainly in front of
+         * the wearer rather than off to one side.
+         */
+        const val LEFT_BIAS = 0.10f
 
         /** 1.30° at DIST, the house standard. */
         const val CAP = 0.0102f

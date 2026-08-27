@@ -185,113 +185,83 @@ class MeshLink(
      * else on the mesh belongs to somebody else and is never addressed —
      * receiving is passive, sending is not.
      */
-    private val ALLOWED_SUFFIXES = listOf("ab60", "d563")
-
     /**
-     * Matched against the NAME first, which is how these nodes are actually
-     * identified — and not against the key, which is what the first attempt
-     * did and why it refused both.
+     * IS THIS THE WEARER'S OWN HARDWARE?
      *
-     * MeshCore's default advert name is NOT derived from the public key.
-     * D38F07AED563 has key prefix 1a17e848dbc2; the two share nothing. The
-     * operator quotes their hardware by the name, the name is what appears in
-     * every other app, and the key is an implementation detail nobody reads.
+     * ## What this used to be, and why it changed
      *
-     * Still an allow-list, and still explicit: a name is weaker evidence than
-     * a key, so the match is logged with both before anything is transmitted.
+     * Until 2026-08-25 this was `ALLOWED_SUFFIXES = ["ab60", "d563"]`: a
+     * hardcoded allow-list, given in one sentence by the operator, that gated
+     * every outbound direct message. It existed for a specific and good reason
+     * — an assistant with a live radio and a 350-node contact store should not
+     * be able to transmit at strangers — and for a build that only ever ran on
+     * one head it was exactly right.
+     *
+     * It is wrong for a build other people run. Their nodes do not end in the
+     * operator's suffixes, so a beta tester could not message their own
+     * hardware, and the whole messaging half of the app was dead on arrival.
+     *
+     * ## What replaced it, and what did NOT
+     *
+     * The protection was never really about which peers exist. It was about
+     * **who is asking** — a person deliberately sending a message, versus the
+     * app deciding on its own to transmit. Those are now separated:
+     *
+     *  - **A person may message anyone.** [sendDirect] no longer consults an
+     *    allow-list. The wearer picked a node and typed a message; that is the
+     *    authorisation, and the arm/confirm step in the crown is the guard.
+     *  - **The app may only transmit unattended to nodes the wearer has
+     *    claimed.** Soak, the path probe and anything else the wearer did not
+     *    ask for one at a time pass `automated = true` and are refused for any
+     *    peer that is not pinned here. This is the part that stops a bot
+     *    spraying a mesh, and it is stricter than the suffix list was: a
+     *    suffix is four characters that a stranger's key can collide with,
+     *    while a pin is a full 32-byte key the wearer chose.
+     *
+     * A name is not evidence and never was — MeshCore's advert name is not
+     * derived from the key, names are unauthenticated, and two radios can
+     * share one. Only a pinned full key counts.
      */
-    /**
-     * FOUR HEX CHARACTERS IS NOT AN IDENTITY, and a 350-node mesh proved it.
-     *
-     * A contact called '7182', 12,486 km away, was being treated as the
-     * operator's own hardware — protected from the sweep and, far more
-     * seriously, MESSAGEABLE — because its public key happens to end in the
-     * same four characters as one of the allowed suffixes. Across 350 contacts
-     * and two suffixes that is about a one-in-a-hundred event, so it was due.
-     *
-     * The suffixes are the operator's stated authorisation and stay exactly as
-     * given. What changes is how a peer is matched against them:
-     *
-     *  1. A PINNED FULL KEY always wins. Once a node has identified itself by
-     *     NAME, its whole 32-byte key is remembered and only that key is that
-     *     node from then on.
-     *  2. A NAME ending in the suffix is how these radios are actually
-     *     identified — MeshCore's advert name is not derived from the key, the
-     *     operator quotes their hardware by name, and it is what every other
-     *     app shows. This match also PINS, so it happens once.
-     *  3. A KEY ending in the suffix and nothing else is no longer enough. It
-     *     is logged, once per peer, saying precisely that it was ignored — so
-     *     if a genuine node of the operator's is ever identified only that way,
-     *     the log says so instead of the app silently refusing to talk to it.
-     *
-     * This can only ever NARROW what the app will transmit to, which is the
-     * right direction for a rule the operator gave in one sentence.
-     */
-    private fun isAllowed(p: MeshNodes.Peer): Boolean {
-        val full = p.fullKey?.lowercase()
-        if (full != null && OwnNodes.isPinned(context, full)) return true
-        val byName = ALLOWED_SUFFIXES.firstOrNull { p.name.endsWith(it, ignoreCase = true) }
-        if (byName != null) {
-            if (full != null && full.length >= 64) OwnNodes.pin(context, byName, full, p.name)
-            return true
-        }
-        val byKey = ALLOWED_SUFFIXES.firstOrNull {
-            (p.fullKey ?: p.key).endsWith(it, ignoreCase = true)
-        }
-        if (byKey != null && warnedKeyOnly.add(p.key)) {
-            Log.w(
-                TAG,
-                "[allow] '${p.name}' key=${p.key} ends in '$byKey' but its NAME does not — " +
-                    "not treated as your node. If this IS yours, say so and it will be pinned.",
-            )
-            // Worth a line in the alerts panel too: this is the app declining
-            // to treat something as the operator's hardware, and a refusal
-            // nobody can see is indistinguishable from a bug.
-            Alerts.warn(
-                "ALLOW",
-                context.getString(com.iotj.meshmore.xr.R.string.al_lookalike, p.name.take(18)),
-            )
-        }
-        return false
+    fun isOwnNode(p: MeshNodes.Peer): Boolean {
+        val full = p.fullKey?.lowercase() ?: return false
+        return full.length >= 64 && OwnNodes.isPinned(context, full)
     }
 
     /**
-     * Settle WHICH radios are the operator's, once the store is fully read.
+     * Claim a node as the wearer's own, or release it.
      *
-     * isAllowed pins as a side effect, but it is only called when something
-     * asks — a transmit, a sweep, a menu — so on a session where nobody
-     * messaged anyone the app never wrote down whose hardware was in the room.
-     * Doing it at sync means the identity is settled before the first send can
-     * happen, and the log carries the answer whether or not anyone asks.
+     * Claiming is what makes a node a legal target for the app's own
+     * unattended traffic — a soak, a path probe — so it is a deliberate act
+     * with a full key behind it, never inferred from a name.
+     */
+    fun claimOwnNode(p: MeshNodes.Peer, mine: Boolean): Boolean {
+        val full = p.fullKey?.lowercase()?.takeIf { it.length >= 64 } ?: return false
+        val label = p.name.ifBlank { p.key.takeLast(4) }
+        if (mine) OwnNodes.pin(context, label, full, p.name)
+        else OwnNodes.clear(context, label)
+        Log.i(TAG, "[own] '${p.name}' key=${p.key} ${if (mine) "claimed" else "released"}")
+        return true
+    }
+
+    /**
+     * Say which radios the wearer has claimed, once the store is fully read.
+     *
+     * This used to INFER ownership from a name suffix and pin it as a side
+     * effect. It no longer infers anything — a claim is an explicit act now —
+     * so all that is left is to put the answer in the log, where it was the
+     * useful half all along.
      */
     private fun resolveOwnNodes() {
-        val all = peers.values.toList()
-        val mine = all.filter { p ->
-            ALLOWED_SUFFIXES.any { p.name.endsWith(it, ignoreCase = true) }
-        }
-        mine.forEach { p ->
-            val sfx = ALLOWED_SUFFIXES.first { p.name.endsWith(it, ignoreCase = true) }
-            p.fullKey?.takeIf { it.length >= 64 }
-                ?.let { OwnNodes.pin(context, sfx, it.lowercase(), p.name) }
-        }
-        val collisions = all.filter { p ->
-            !mine.contains(p) &&
-                ALLOWED_SUFFIXES.any { (p.fullKey ?: p.key).endsWith(it, ignoreCase = true) }
-        }
+        val pins = OwnNodes.pinned(context)
+        val mine = peers.values.filter { isOwnNode(it) }
         Log.i(
             TAG,
-            "[allow] your nodes: " +
+            "[own] claimed nodes: " +
                 (mine.joinToString { "'${it.name}'" }.ifBlank { "none in this store" }) +
-                "; pinned=" + OwnNodes.pinned(context).size +
-                "; key-only lookalikes ignored=" + collisions.size,
+                "; pinned=" + pins.size,
         )
-        collisions.take(4).forEach {
-            Log.i(TAG, "[allow] lookalike '${it.name}' key=${it.key} — not yours")
-        }
     }
 
-    /** Peers already reported as key-only matches, so the log says it once. */
-    private val warnedKeyOnly = java.util.concurrent.ConcurrentHashMap.newKeySet<String>()
     private val _mesh = MutableStateFlow<List<MeshNodes.Peer>>(emptyList())
     val mesh: StateFlow<List<MeshNodes.Peer>> = _mesh.asStateFlow()
 
@@ -1357,12 +1327,12 @@ class MeshLink(
      * the topology census measured on 2026-08-03 — 350 contacts, 350 flood,
      * zero resolvable. Sending is the only thing that moves that number.
      *
-     * STRICTLY ALLOW-LISTED, and this is the whole reason the method exists in
-     * this shape. Sending puts a packet on a shared radio band addressed to
-     * somebody else's hardware, so it is not something to sweep a contact list
-     * with. [ALLOWED_SUFFIXES] holds the ONLY keys this app will message —
-     * nodes the operator owns and explicitly authorised on 2026-08-03. A key
-     * that is not in that list is refused and logged, not sent.
+     * NEVER SWEPT ACROSS A CONTACT LIST, and this is the whole reason the
+     * method exists in this shape. Sending puts a packet on a shared radio
+     * band addressed to somebody else's hardware. A probe is the app
+     * transmitting on its own initiative, so it aims only at nodes the wearer
+     * has CLAIMED — see [isOwnNode]. It is not gated on who may be messaged:
+     * a person may message anyone, and this is not a person.
      */
     /**
      * WHAT HAPPENED TO A REPLY. Not a boolean: "it did not send" and "it is not
@@ -1484,7 +1454,7 @@ class MeshLink(
      *
      * Same transmitter, same allow-list, same one place that refuses.
      */
-    fun sendTo(peerKey: String?, text: String): Sent {
+    fun sendTo(peerKey: String?, text: String, automated: Boolean = false): Sent {
         if (session == null || _status.value.state != SessionState.READY) return Sent.NotReady
         if (text.isBlank()) return Sent.Refused("NOTHING TO SEND")
         val want = peerKey?.trim().orEmpty()
@@ -1493,16 +1463,27 @@ class MeshLink(
             (it.fullKey ?: it.key).startsWith(want, ignoreCase = true) ||
                 want.startsWith(it.key, ignoreCase = true)
         } ?: return Sent.Refused("NOT IN CONTACTS")
-        return sendDirect(peer, text)
+        return sendDirect(peer, text, automated)
     }
 
-    /** The one path to the transmitter for a direct message. */
-    private fun sendDirect(peer: MeshNodes.Peer, text: String): Sent {
+    /**
+     * The one path to the transmitter for a direct message.
+     *
+     * [automated] is the whole safety rule now. False means a person chose
+     * this node and typed this message, and the app does not second-guess
+     * them. True means the app is transmitting on its own initiative — a
+     * soak, a probe — and then the peer must be one the wearer has claimed.
+     * See [isOwnNode] for what replaced the old suffix allow-list.
+     */
+    private fun sendDirect(peer: MeshNodes.Peer, text: String, automated: Boolean = false): Sent {
         val s = session ?: return Sent.NotReady
-        if (!isAllowed(peer)) {
+        if (automated && !isOwnNode(peer)) {
             // Named, so the refusal is checkable rather than mysterious.
-            Log.w(TAG, "[tx] refused — '${peer.name}' key=${peer.key} not in $ALLOWED_SUFFIXES")
-            return Sent.Refused("NOT AN AUTHORISED NODE")
+            Log.w(
+                TAG,
+                "[tx] automated send refused — '${peer.name}' key=${peer.key} is not a claimed node",
+            )
+            return Sent.Refused("NOT YOUR NODE")
         }
         val full = unhex(peer.fullKey ?: peer.key)
         if (full == null || full.size < 6) return Sent.Refused("UNUSABLE KEY")
@@ -1618,7 +1599,7 @@ class MeshLink(
         isFavourite: (String) -> Boolean = { false },
     ): List<MeshNodes.Peer> = candidates.filter { p ->
         when {
-            isAllowed(p) -> false
+            isOwnNode(p) -> false
             // BOTH KINDS OF STAR. A favourite set on the RADIO arrives on the
             // peer's own flag and a favourite set in this app lives in
             // NodeTags; the ring and the search list draw them identically, so
@@ -1664,7 +1645,7 @@ class MeshLink(
     fun forgetContact(peer: MeshNodes.Peer): Boolean {
         val s = session
         if (s == null || _status.value.state != SessionState.READY) return false
-        if (isAllowed(peer)) {
+        if (isOwnNode(peer)) {
             // The one refusal that is not about safety of the air but about
             // the operator's own kit. Loud, because a silent no here would
             // look like a bug in the sweep.
@@ -1701,17 +1682,16 @@ class MeshLink(
             Log.w(TAG, "[probe] skipped — link not ready")
             return
         }
-        val targets = peers.values.filter { isAllowed(it) }
+        val targets = peers.values.filter { isOwnNode(it) }
         if (targets.isEmpty()) {
-            // WHERE ELSE THE STRING MIGHT LIVE. A MeshCore node is quoted by
-            // people in several ways — the head of the key, the tail, or just
-            // its name — so say which of those matched anything before
-            // concluding the node is absent.
-            ALLOWED_SUFFIXES.forEach { sfx ->
-                val named = peers.values.filter { it.name.contains(sfx, ignoreCase = true) }
-                Log.w(TAG, "[probe] '$sfx': nameMatches=${named.size}" +
-                    (named.firstOrNull()?.let { " e.g. '${it.name}' key=${it.key}" } ?: ""))
-            }
+            // WHY THERE IS NOTHING TO PROBE, in the terms that can now be
+            // wrong. A probe transmits without anybody asking each time, so it
+            // only ever aims at claimed nodes — and "no claimed node is in the
+            // store" is a different fact from "the radio is not connected" or
+            // "we have no full key for it". Say which.
+            val pins = OwnNodes.pinned(context)
+            Log.w(TAG, "[probe] no claimed node in contacts. pinned=${pins.size}" +
+                (pins.keys.take(4).joinToString().ifBlank { " (none claimed yet)" }))
             Log.w(TAG, "[probe] full keys are " +
                 (peers.values.firstOrNull { it.fullKey != null }?.fullKey?.length ?: 0) +
                 " hex; with full=" + peers.values.count { it.fullKey != null } +
@@ -1719,7 +1699,6 @@ class MeshLink(
             peers.values.filter { it.fullKey != null }.take(3).forEach {
                 Log.w(TAG, "[probe] e.g. ${it.name.take(16)} = ${it.fullKey}")
             }
-            Log.w(TAG, "[probe] none of the allowed nodes are in contacts: $ALLOWED_SUFFIXES")
             return
         }
         targets.forEach { p ->
@@ -1763,11 +1742,31 @@ class MeshLink(
         Log.i(TAG, "[telemetry] permissions -> $p (packed=0x%02x)".format(p.packed()))
         diag(">>TELPERM $p")
         s.setTelemetryPermissions(p.packed())
+        // AND REMEMBER WHAT WE ASKED FOR.
+        //
+        // This is why the rows would not move. SELF_INFO arrives exactly once,
+        // at connect, and [telemetryPermissions] read the permission byte out
+        // of that frame — so the write went to the radio, the radio accepted
+        // it, and the surface then re-read a snapshot taken before the write
+        // and drew the old value back. Three rows that could be pinched all
+        // day without a single one of them ever changing.
+        //
+        // The radio stays authoritative: [noteSelfInfo] drops this the moment a
+        // fresh SELF_INFO lands, so a value the radio disagreed with cannot
+        // survive as a comfortable local fiction.
+        telemOverride = p
     }
 
-    /** What the radio currently allows, straight from the last SELF_INFO. */
+    /**
+     * What we last asked the radio to allow, until the radio says otherwise.
+     * Null means nothing has been set this session and SELF_INFO is the truth.
+     */
+    @Volatile
+    private var telemOverride: com.iotj.meshmore.xr.spatial.TelemetryPerms.Perms? = null
+
+    /** What the radio currently allows: what we set, else the last SELF_INFO. */
     fun telemetryPermissions(): com.iotj.meshmore.xr.spatial.TelemetryPerms.Perms =
-        com.iotj.meshmore.xr.spatial.TelemetryPerms.unpack(
+        telemOverride ?: com.iotj.meshmore.xr.spatial.TelemetryPerms.unpack(
             _status.value.selfInfo?.telemetryModeRaw() ?: 0,
         )
 
@@ -1786,11 +1785,13 @@ class MeshLink(
      * appears for a node the transmitter will refuse is a trap, and one that
      * refuses a node the transmitter would accept is a bug nobody can see.
      */
-    fun mayMessage(name: String, fullKey: String?): Boolean {
-        val full = fullKey?.lowercase()
-        if (full != null && OwnNodes.isPinned(context, full)) return true
-        return ALLOWED_SUFFIXES.any { name.endsWith(it, ignoreCase = true) }
-    }
+    fun mayMessage(name: String, fullKey: String?): Boolean =
+        // ANYONE THE RADIO CAN ACTUALLY ADDRESS. The question this answers is
+        // "would a send succeed", so it asks the only thing that can still
+        // make one fail: MeshCore addresses a direct message by the full
+        // 32-byte key, and a peer we have only ever heard an advert prefix
+        // from cannot be reached however willing everybody is.
+        (fullKey?.length ?: 0) >= 64 || name.isNotBlank()
 
     /**
      * Ask one peer for its telemetry, by full 32-byte key.
@@ -2218,6 +2219,10 @@ class MeshLink(
                         txDbm = selfInfo.txPowerDbm(),
                     )
                 )
+                // THE RADIO IS AUTHORITATIVE AGAIN. Anything we set locally is
+                // now either confirmed by this frame or was never accepted;
+                // either way the frame wins. See telemOverride.
+                telemOverride = null
                 _status.value = _status.value.copy(selfInfo = selfInfo, lastEvent = "READY")
                 _here.value = MeshNodes.Here(selfInfo.latitude(), selfInfo.longitude())
                 Log.i(TAG, "[link] here = ${selfInfo.latitude()}, ${selfInfo.longitude()} " +

@@ -291,6 +291,10 @@
     <string name="find_stale">STALE</string>
     <string name="find_forget">FORGET %1$d</string>
     <string name="find_forget_arm">TAP AGAIN TO FORGET</string>
+    <string name="na_mine">MINE</string>
+    <string name="n_mine_on">%1$s CLAIMED AS YOURS</string>
+    <string name="n_mine_off">%1$s RELEASED</string>
+    <string name="n_mine_nokey">NO FULL KEY YET — CANNOT CLAIM</string>
     <string name="na_forget">FORGET</string>
     <string name="n_forget_arm">FORGET %1$s? PINCH AGAIN</string>
     <string name="n_forget_done">FORGOT %1$s</string>
@@ -302,7 +306,6 @@
     <string name="al_title">"ALERTS  (%1$d)"</string>
     <string name="al_none">NOTHING TO REPORT</string>
     <string name="al_swept">FORGOT %1$d CONTACT(S)</string>
-    <string name="al_lookalike">\'%1$s\' LOOKS LIKE YOURS BY KEY ONLY — IGNORED</string>
     <string name="dm_sent">· SENDING</string>
     <string name="dm_lost">· NO ANSWER</string>
     <string name="a_resend">RESEND</string>
@@ -317,6 +320,7 @@
     <string name="d_list">LIST</string>
     <string name="d_north">NORTH</string>
     <string name="d_find">FIND</string>
+    <string name="d_map">MAP</string>
     <string name="a_words">WORDS</string>
     <string name="a_full">FULL</string>
     <string name="nf_title">NO POSITION</string>
@@ -337,9 +341,25 @@
     <!-- S · MESH WEATHER. Telemetry gathered from other people's radios. -->
     <string name="t_wx">MESH WEATHER</string>
     <string name="f_wx">"PICK ASK TO SWEEP     B TO CLOSE"</string>
+    <string name="t_map">MAP</string>
+    <string name="f_map">WHAT THE MESH KNOWS ABOUT PLACE</string>
+    <string name="n_terrain_parked">NO EARTH-FIXED FRAME ON THIS HARDWARE</string>
+    <string name="r_map">MAP — WEATHER, MESHBOOK</string>
+    <string name="doc_app">GUIDE</string>
+    <string name="doc_protocol">PROTOCOL</string>
+    <string name="doc_firmware">FIRMWARE</string>
+    <string name="doc_offline">BUNDLED SNAPSHOT — NO NETWORK NEEDED</string>
+    <string name="r_docs">DOCS</string>
+    <string name="n_docs_on">DOCS OPEN</string>
+    <string name="n_docs_off">DOCS CLOSED</string>
+    <string name="r_terrain">TERRAIN — NOT ON THIS DEVICE</string>
     <string name="r_wx">MESH WEATHER</string>
     <string name="r_wxask">ASK %1$d NODES</string>
     <string name="r_wxnone">NOBODY TO ASK RIGHT NOW</string>
+    <string name="wx_said">SAID ON PUBLIC</string>
+    <string name="wx_earlier">%1$d EARLIER TODAY</string>
+    <string name="wx_said_none">NO WEATHER MENTIONED YET</string>
+    <string name="wx_unplaced">%1$d WITH NO POSITION</string>
     <string name="wx_empty">NO READINGS YET</string>
     <string name="wx_summary">%1$d NODES</string>
     <string name="n_wx_start">ASKING %1$d NODES</string>
@@ -411,6 +431,7 @@
     <string name="mb_busiest">BUSIEST</string>
     <string name="mb_hour">%1$02d:00</string>
     <string name="mb_pct">%1$d OF %2$d  %3$d%%</string>
+    <string name="mb_topics">TALKED ABOUT</string>
     <string name="n_compass_ribbon">COMPASS: BEARINGS</string>
     <string name="n_heading_true">HEADING: TRUE</string>
     <string name="n_heading_rel">HEADING: RELATIVE — SET NORTH FIRST</string>

@@ -5,10 +5,24 @@
 A native Android XR client for the MeshCore LoRa mesh, built for optical
 see-through glasses (Xreal Aura class). Package root `com.iotj.meshmore.xr.*`.
 
-> Status: **proposal for review.** No production Android code exists yet. A
-> working Three.js prototype of the spatial widget layer, the symbology, the
-> HUD and the nine themes lives in `airspace-ui/` — it exists to test this
-> document, and has already falsified several parts of it.
+> Status: **largely BUILT. See `MeshmoreXR-FSD-STATUS.md` for what is and is
+> not**, refreshed 2026-08-25 against 0.3.0-debug.142.
+>
+> Ten of the thirteen surfaces in §5 are in the app and running on an Aura.
+> S6 TERRAIN, S7 WAYFIND and S8 PINS are parked on one shared blocker — there is
+> no earth-fixed frame on this hardware — and S10 UPLINK is out of scope for an
+> offline-first beta. Several things the app now depends on are not in this
+> document at all (the delivery ledger, Meshbook, chat-mined weather, the
+> generated audio); the status file lists them.
+>
+> The paragraph this replaced said "no production Android code exists yet",
+> which was true when it was written on 2 August and had been wrong for three
+> weeks by the time anybody re-read it. A status line inside a design document
+> ages badly on purpose: keep the status in the status file.
+>
+> The original Three.js prototype of the spatial widget layer, the symbology,
+> the HUD and the nine themes lives in `airspace-ui/`. It existed to test this
+> document and falsified several parts of it.
 >
 > The purpose of this brief is to fix the paradigm, the surface set, and the
 > nine themes so a default can be chosen and one theme driven top-to-bottom.
