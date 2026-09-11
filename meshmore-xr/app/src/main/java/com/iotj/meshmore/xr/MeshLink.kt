@@ -927,7 +927,19 @@ class MeshLink(
                 }
             }
         }
-        context.registerReceiver(receiver, filter)
+        // EXPORT INTENT SPELLED OUT. Since targetSdk 34 a dynamically
+        // registered receiver must say whether other apps may reach it.
+        // Receivers listening only to protected system broadcasts are exempt,
+        // and both actions here are protected — which is why this has never
+        // thrown. But the exemption is the kind of thing that is true until a
+        // platform release decides otherwise, and THIS path is the one every
+        // new tester walks and we never do: it runs only when the radio is not
+        // already bonded, and ours has been bonded since August. A silent
+        // SecurityException here would look exactly like "pairing is broken"
+        // to the one person who cannot tell us why.
+        ContextCompat.registerReceiver(
+            context, receiver, filter, ContextCompat.RECEIVER_NOT_EXPORTED,
+        )
         if (!device.createBond()) {
             Log.w(TAG, "[link] createBond() refused")
             runCatching { context.unregisterReceiver(receiver) }

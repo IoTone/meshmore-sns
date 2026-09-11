@@ -154,11 +154,20 @@ Both cost an hour on 2026-08-21, and neither has anything to do with the APK.
 
 ### Still owed before a store submission
 
-- **v3 signing is off.** The APK verifies under v2 only, which Play accepts at
-  minSdk 34, but v3 is what allows the signing key to be ROTATED later. Worth
-  turning on deliberately rather than discovering the limitation the day a key
-  needs replacing — it changes the signed artefact, so it is a decision rather
-  than a tidy-up.
+- ~~**v3 signing is off.**~~ **Done.** v2 and v3 are both on, v1 off (minSdk 34
+  is far above v1's API-24 ceiling). Verified on build 4102.
+
+  ⚠️ **`apksigner verify` prints `v2 scheme: false` and that is not a fault.**
+  At the APK's own minSdk of 34, apksigner does not exercise v2 at all, because
+  v3 supersedes it from API 28. Force the older range to see both:
+
+  ```bash
+  apksigner verify --verbose --min-sdk-version 24 app-release.apk
+  # → v2: true, v3: true
+  ```
+
+  Anyone reading the default output as "v2 signing broke" will go looking for a
+  bug that is not there.
 - The release build has not been run on the Aura. Doing so means uninstalling
   the debug build, which erases the wearer's theme, favourites, tags and home
   radio, so it should be done when losing those is acceptable.

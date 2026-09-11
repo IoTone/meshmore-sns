@@ -154,7 +154,7 @@ Radio rows,rr_commit,COMMIT,適用,4,26,,,,not yet reviewed
 Radio rows,rr_commit_none,NOTHING,なし,4,26,,,,not yet reviewed
 Radio rows,rr_commit_ready,READY,準備完了,8,26,,,,not yet reviewed
 Radio rows,rr_flood,FLOOD ADVERT,全体通知,8,26,,,,not yet reviewed
-Radio rows,rr_flood_sub,ALL REPEATERS,全中継局,8,26,,,,rewritten 2026-08-27
+Radio rows,rr_flood_sub,ALL REPEATERS,全中継局,8,26,,,,signed off 2026-08-28
 Radio rows,rr_rescan,RESCAN FOR RADIO,無線機を再検索,14,26,,,,not yet reviewed
 Radio rows,rr_rescan_sub,BLUETOOTH,Bluetooth,9,26,,,,rewritten 2026-08-27
 Radio rows,rr_revert,UNDO CHANGES,変更を取消,10,26,,,,not yet reviewed
@@ -247,10 +247,10 @@ Node facts,p_direct,DIRECT,直接,4,26,,,,not yet reviewed
 Node facts,p_est,EST,推定,4,26,,,,not yet reviewed
 Node facts,p_hops,%1$d HOPS,%1$d ホップ,9,26,,,,not yet reviewed
 Node facts,p_live,LIVE,最近受信,8,26,,,,rewritten 2026-08-27
-Node facts,p_stale,STALE,古い,4,26,,,,rewritten 2026-08-27
+Node facts,p_stale,STALE,古い,4,26,,,,signed off 2026-08-28
 Node facts,p_unknown,PATH UNKNOWN,経路不明,8,26,,,,not yet reviewed
 Theme picker,pk_additive,ADDITIVE,加算,4,26,,,,not yet reviewed
-Theme picker,pk_field,FIELD,空間,4,26,,,,rewritten 2026-08-27
+Theme picker,pk_field,FIELD,空間,4,26,,,,signed off 2026-08-28
 Theme picker,pk_hybrid,HYBRID,混成,4,26,,,,rewritten 2026-08-27
 Theme picker,pk_panel,PANEL,パネル,6,26,,,,not yet reviewed
 Theme picker,pk_tabletop,TABLETOP,卓上,4,26,,,,not yet reviewed
@@ -281,7 +281,7 @@ Pager,pg_more,"""%1$d-%2$d OF %3$d   MORE""","""%1$d-%2$d / %3$d   次へ""",19,
 Pager,pg_msgs_many,%1$d MESSAGES,%1$d 件,5,,,,,rewritten 2026-08-27
 Pager,pg_msgs_one,1 MESSAGE,1 件,4,,,,,rewritten 2026-08-27
 Everything else,app_name,Meshmore XR,Meshmore XR,11,,,,,not yet reviewed
-Everything else,cm_bearing,BEARING,方位,4,,,,,rewritten 2026-08-27
+Everything else,cm_bearing,BEARING,方位,4,,,,方位 is already the app term for COMPASS/HEADING/BEARING (7 strings); loanword would read as a ball bearing,signed off 2026-08-28
 Everything else,cm_magnify,MAGNIFY,拡大,4,,,,,not yet reviewed
 Everything else,cm_nearest,NEAREST,最寄り,6,,,,,not yet reviewed
 Everything else,fl_hint,OR LOOK AT IT AND HOLD,見つめて保持でも可,18,,,,,rewritten 2026-08-27

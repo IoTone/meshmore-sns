@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Copyright (c) 2026 IoTone, Inc. / SPDX-License-Identifier: MIT -->
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <!-- REQUIRE THE FEATURE THE HARDWARE ACTUALLY REPORTS.
          The app is entirely spatial — horizon, palm reel, crown, console — so
@@ -17,7 +18,31 @@
          filtered MeshmoreXR off the Aura on Play while installing perfectly
          over adb — a store-only failure, invisible to every test we run here,
          and discovered only because the boot log prints the feature table. -->
-    <uses-feature android:name="android.software.xr.api.spatial" android:required="true" />
+    <!--
+      ⚠️ NOT REQUIRED — AND THIS WAS NOT A CHOICE.
+
+      It was `required="true"` for exactly the reason the comment above gives:
+      the app is entirely spatial, and requiring the feature keeps it off phones
+      where there is nothing to draw and nothing to touch.
+
+      **Play rejects that.** Uploading versionCode 4102 returned:
+
+        APKs and bundles must not require following features:
+        android.software.xr.api.spatial
+
+      So the device catalogue is not the manifest's to decide here. Distribution
+      to XR is controlled in the Play Console's form-factor settings, and a
+      `required` spatial feature is treated as an error rather than as targeting.
+
+      CONSEQUENCE, AND IT IS REAL: with `required="false"` the app becomes
+      installable on a phone. The fail-safe that already exists for a headset
+      without hand tracking is the same one that catches this — no spatial
+      runtime means `isSpatialUiEnabled=false`, and the app opens as a flat
+      window rather than crashing. That is a degraded experience, not a broken
+      one, and it is now a shipped path rather than a theoretical one. Excluding
+      phones belongs in the Console's device catalogue, not here.
+    -->
+    <uses-feature android:name="android.software.xr.api.spatial" android:required="false" />
 
     <!-- NOT required. §S0's fail-safe is explicit that a denial or an absence
          must degrade to gaze plus head-dwell rather than lock the wearer out,
@@ -116,6 +141,48 @@
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 
+    <!--
+      PACKAGE VISIBILITY FOR THE SPEECH RECOGNISER.
+
+      `SpeechRecognizer.isRecognitionAvailable()` asks the package manager which
+      packages publish a RecognitionService. From targetSdk 30 that query is
+      filtered, so an app with no <queries> can be told the answer is "none" and
+      report NO SPEECH ENGINE on a device that has one installed.
+
+      MEASURED, NOT ASSUMED: on the Aura this already works without the
+      declaration — the voice probe ran a dictation and the recogniser timed out
+      on a silent room rather than failing to start. So this is not a fix for a
+      live bug. It is here because "works on the one device we own" is exactly
+      how the xr.immersive feature nearly shipped a store-only failure, and the
+      next Android XR device may ship a recogniser in a package we cannot see.
+    -->
+    <queries>
+        <intent>
+            <action android:name="android.speech.RecognitionService" />
+        </intent>
+    </queries>
+
+    <!--
+      REMOVED, NOT NEVER-ADDED. Both arrive through androidx.xr.scenecore, which
+      depends on androidx.media3:media3-exoplayer for a spatial media player this
+      app does not use — audio here is platform AudioTrack and MediaPlayer, and
+      media3 appears in no source file and no build file of ours.
+
+      They matter because Play shows them to the shopper. An app whose listing
+      says "No accounts. No servers. No internet." should not ask to view network
+      connections or to keep the device awake, and a reviewer reading the
+      permission list is entitled to ask why it does. There is no INTERNET
+      permission and there never was; removing these two makes the manifest agree
+      with the listing rather than merely not contradict it.
+
+      If a future version genuinely uses SceneCore's media player, delete these
+      two lines first — ExoPlayer takes the wake lock only when setWakeMode is
+      called, and reads network state only when streaming, so nothing we do today
+      touches either.
+    -->
+    <uses-permission android:name="android.permission.WAKE_LOCK" tools:node="remove" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" tools:node="remove" />
+
     <!-- localeConfig puts Meshmore XR in Settings > Apps > Language. Per-app
          locales are opt-in and the opt-in is that attribute; without it a
          tester can only reach Japanese by changing the whole headset's
@@ -127,6 +194,21 @@
         android:supportsRtl="true"
         android:localeConfig="@xml/locales_config"
         android:theme="@style/Theme.MeshmoreXR">
+
+        <!--
+          ARCORE DEPENDENCY TYPE. Not ours by choice — androidx.xr.arcore merges
+          Google Play Services for AR into the manifest, and the badging dump
+          proves it: `com.google.ar.core.min_apk_version` = 253130000 and an
+          InstallActivity are both in the release APK. What was NOT there is the
+          one line that says whether that dependency is required or optional.
+
+          OPTIONAL, not required. On Android XR the arcore artifact talks to the
+          platform's own XR runtime rather than to the Play Services for AR APK,
+          so demanding that APK would add a device filter we do not want on top
+          of the spatial feature we already require. `optional` states the
+          dependency without narrowing the catalogue.
+        -->
+        <meta-data android:name="com.google.ar.core" android:value="optional" />
 
         <activity
             android:name=".MainActivity"

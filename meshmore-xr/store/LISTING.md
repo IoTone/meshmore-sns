@@ -20,7 +20,7 @@ Your LoRa mesh, standing around you. Offline-first MeshCore client for XR.
 ### Short description — Japanese  *(limit 80)*
 
 ```
-あなたのLoRaメッシュを空間に。オフライン優先のMeshCoreクライアント。
+あなたのLoRaメッシュを空間に。XR向けオフライン優先MeshCoreクライアント。
 ```
 
 ---
@@ -84,6 +84,11 @@ affiliated with it.
 
 ## Full description — Japanese  *(limit 4000)*
 
+> Parity with the English copy is deliberate — see the table in
+> "Locales, and what each one owes" below. Any edit here must keep both in step.
+> **Not yet native-reviewed.** The sections marked new on 08-27 have not been
+> through the reviewer who has the string form.
+
 ```
 Meshmore XR は、MeshCore の LoRa メッシュを空間に描き出すクライアントです。
 
@@ -91,23 +96,36 @@ Meshmore XR は、MeshCore の LoRa メッシュを空間に描き出すクラ�
 近くに、遠い局は遠くに、コールサイン・距離・ホップ数とともに水平線のリングまで
 広がります。一覧をスクロールするのではなく、頭を向けて自分のメッシュを見ます。
 
-オフライン優先
+オフライン優先、徹底して
 アカウント不要、サーバー不要、インターネット不要。表示されるものはすべて、
-Bluetooth で接続した MeshCore 対応無線機から直接読み取っています。
+Bluetooth で接続した MeshCore 対応無線機から直接読み取っています。ネットワークが
+止まっていても動作します。もともと必要としていないからです。
 
 主な機能
 • メッシュの可視化 — 距離リング、コールサイン、方位、ホップ数、信号
-• メッセージ送信 — 音声入力で下書きが一語ずつ表示されます
-• 到達確認 — 直接メッセージには実際の到達状態が付きます
-• チャンネル参加 — #タグを入力すると鍵が導出されます
-• メッシュ天候 — 公開チャンネルの発言から天候を読み取り、発言者の位置ごとに
-  まとめ、どれくらい前の情報かを表示します
-• Meshbook — その日のメッシュの様子を、端末内のメッセージだけから集計します
+• メッセージ送信 — 音声入力で下書きが一語ずつ表示され、そのまま送信できます
+• 到達確認 — 直接メッセージには実際の到達状態が付きます。「送信しました」では
+  なく、確認応答が届けば配達済み、届かなければ NO ANSWER と表示されます
+• チャンネル参加 — #タグを入力すると、その文字列そのものから鍵が導出されます
+• メッシュ天候 — 多くの無線機はテレメトリが無効のまま出荷されるため、本アプリは
+  公開チャンネルで実際に語られた天候を読み取り、発言者の位置ごとにまとめ、
+  どれくらい前の情報かを表示します
+• Meshbook — その日のメッシュの様子（通信量、中心となった局、話題、電波が活発な
+  時間帯）を、端末内のメッセージだけから集計します。電波を消費せず、無線機の
+  電源が入っていなくても動作します
 • 9 種類のテーマ（配色・記号・生成音）
 
+光学シースルーのための設計
+表示面は光で描かれます。この方式では黒は「何も出さない」ことを意味します。
+文字の大きさはピクセルではなく視野角で決まるため、どの距離でも読めます。
+すべての操作には視線と長押しによる代替手段があり、ハンドトラッキングが
+動作しなくても使えます。
+
 プライバシー
-本アプリは情報を収集せず、当社へ送信しません。位置情報は方位計算のために端末内
-で使われます。メッシュへの位置共有は、利用者が自分で有効にした場合のみ行われます。
+本アプリは情報を収集せず、当社へ送信しません。アナリティクス、アカウント、
+サーバーのいずれもありません。位置情報は方位計算のために端末内で使われます。
+メッシュへの位置共有は、利用者が自分で有効にした場合のみ行われ、これは意図的に
+別の設定になっています。
 
 必要なもの
 • Android XR 端末
@@ -118,8 +136,57 @@ Bluetooth で接続した MeshCore 対応無線機から直接読み取ってい
 ため、誤り・欠落・古い情報の可能性があります。ナビゲーションには使用しないで
 ください。
 
-本アプリは MeshCore プロジェクトの非公式クライアントです。
+本アプリは MeshCore プロジェクトの非公式クライアントであり、同プロジェクトとは
+関係ありません。
 ```
+
+---
+
+## Locales, and what each one owes
+
+**Default language: `en-US`.** Everything else is a translation of it, and Play
+falls back to it for any field a translation leaves empty.
+
+| Field | en-US | ja-JP | Falls back? |
+|---|---|---|---|
+| App name (30) | `Meshmore XR` | `Meshmore XR` — **same on purpose**, it is a product name, not a phrase | yes |
+| Short description (80) | ✅ | ✅ | yes |
+| Full description (4000) | ✅ | ✅ | yes |
+| App icon | ✅ | — | **yes**, one icon serves every locale |
+| Feature graphic | ✅ | — | **yes** |
+| Screenshots | ✅ ×8 | — | **yes** — and two of the eight are already Japanese UI, so the default set reads honestly in both stores |
+| Promo video | one YouTube URL | — | **yes**, and Play takes one video per listing regardless of locale |
+
+So adding Japanese costs exactly **three text fields** and no new artwork. That
+is worth knowing before §2.3 is decided: the argument against shipping Japanese
+at beta is review quality, never effort.
+
+### Parity, section by section
+
+The Japanese copy was abridged when first written — it was missing a section and
+had four bullets flattened to one clause each. Corrected 2026-08-27.
+
+| Section | en-US | ja-JP |
+|---|---|---|
+| Opening | ✅ | ✅ |
+| No home screen | ✅ | ✅ |
+| Offline first | ✅ | ✅ *(was missing "works with the network down")* |
+| See the mesh | ✅ | ✅ |
+| Message anyone | ✅ | ✅ |
+| Know it arrived | ✅ | ✅ *(was missing DELIVERED vs NO ANSWER)* |
+| Join channels | ✅ | ✅ *(was missing "the exact characters")* |
+| Mesh weather | ✅ | ✅ *(was missing "telemetry ships off")* |
+| Meshbook | ✅ | ✅ *(was missing costs-no-airtime, works-radio-off)* |
+| Nine themes | ✅ | ✅ |
+| Built for optical see-through | ✅ | ✅ **— was absent entirely** |
+| Privacy | ✅ | ✅ *(was missing "no analytics, no account, no server")* |
+| Requirements | ✅ | ✅ |
+| Safety | ✅ | ✅ |
+| Not affiliated | ✅ | ✅ |
+
+**The see-through section was the one that mattered.** It is the paragraph that
+explains why the app looks the way it does, and a Japanese shopper was getting a
+listing that described a 3D app with no reason for any of its choices.
 
 ---
 

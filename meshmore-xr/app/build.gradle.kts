@@ -46,8 +46,16 @@ val verMinor = 4
 // minor instead if you read a shippable Japanese UI as a step; the rule above
 // is the one to argue with, not this line.
 val verPatch = 1
-// Moves because this build goes onto a device for the manual pass.
-val verBuild = 1
+// Moves because the source changed after build 1 was flashed: the 108 reviewed
+// Japanese strings were finally applied, three manifest declarations changed
+// (<queries> for the recogniser, WAKE_LOCK and ACCESS_NETWORK_STATE removed,
+// the ARCore dependency type declared), and debugSymbolLevel was set. This is
+// the build that goes to Play, so it is not the one that was worn — see the
+// playbook's ship-blocker list.
+// 3, not 2. versionCode 4102 was uploaded and REJECTED by Play for requiring
+// android.software.xr.api.spatial, and a rejected upload consumes its
+// versionCode permanently — Play will not accept 4102 again under any content.
+val verBuild = 3
 
 android {
     namespace = "com.iotj.meshmore.xr"
@@ -76,7 +84,16 @@ android {
         versionCode =
             (verMajor * 1000 + verMinor * 10 + verPatch) * 100 + verBuild
         versionName = "$verMajor.$verMinor.$verPatch"
-        ndk { abiFilters += "arm64-v8a" }   // XR devices are arm64
+        // XR devices are arm64. Also collect a symbol table: we ship no native
+        // code of our own (no CMakeLists.txt, no .c/.cpp), so the .so files in
+        // the bundle arrive prebuilt and stripped inside Google's AARs and this
+        // gathers nothing today. It is set so that symbols travel with the FIRST
+        // build that does contain native code, rather than being remembered
+        // after the first unreadable crash.
+        ndk {
+            abiFilters += "arm64-v8a"
+            debugSymbolLevel = "SYMBOL_TABLE"
+        }
     }
 
     compileOptions {

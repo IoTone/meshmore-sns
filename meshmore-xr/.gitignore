@@ -8,3 +8,9 @@ local.properties
 # Release signing — NEVER commit (see RELEASE-SIGNING.md)
 keys/
 app/keystore.properties
+
+# Submission artefacts, copied out of app/build/ so the exact bytes that went to
+# Play survive the next `gradlew clean`. Never committed: they are 18-46 MB
+# each, they are reproducible from the tagged source, and an .aab in git history
+# is 18 MB that every future clone pays for forever.
+dist/
