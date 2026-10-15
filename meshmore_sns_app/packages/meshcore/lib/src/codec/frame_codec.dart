@@ -9,6 +9,7 @@ import '../model/channel_message.dart';
 import '../model/contact.dart';
 import '../model/contact_message.dart';
 import '../model/device_config.dart';
+import '../model/diagnostics.dart';
 import '../model/rf_log.dart';
 import '../model/self_info.dart';
 import 'byte_cursor.dart';
@@ -307,6 +308,78 @@ abstract final class MeshcoreFrameCodec {
         .build();
   }
 
+  // --- R60 Tools ---------------------------------------------------------
+
+  /// `CMD_GET_STATS` (0x38): `38 [sub_type]` — one of [kStatsTypeCore],
+  /// [kStatsTypeRadio], [kStatsTypePackets].
+  static Uint8List getStats(int subType) {
+    return (FrameBuilder()
+          ..u8(MeshcoreCommand.getStats.code)
+          ..u8(subType))
+        .build();
+  }
+
+  /// `CMD_SEND_STATUS_REQ` (0x1B): `1B [pub_key 32]`.
+  static Uint8List sendStatusReq(List<int> pubKey) {
+    assert(pubKey.length == kPubKeySize);
+    return (FrameBuilder()
+          ..u8(MeshcoreCommand.sendStatusReq.code)
+          ..fixed(pubKey, kPubKeySize))
+        .build();
+  }
+
+  /// `CMD_RESET_PATH` (0x0D): `0D [pub_key 32]`.
+  static Uint8List resetPath(List<int> pubKey) {
+    assert(pubKey.length == kPubKeySize);
+    return (FrameBuilder()
+          ..u8(MeshcoreCommand.resetPath.code)
+          ..fixed(pubKey, kPubKeySize))
+        .build();
+  }
+
+  /// `CMD_SEND_TRACE_PATH` (0x24):
+  /// `24 [tag u32] [auth u32] [flags] [path hashes…]`.
+  ///
+  /// The low two bits of `flags` give the hash size (0 = 1 byte, 1 = 2,
+  /// 2 = 4, 3 = 8); [path] must be a whole number of hashes. Firmware
+  /// rejects an empty path (`len > 10`), so callers must pass at least
+  /// one hop.
+  static Uint8List sendTracePath({
+    required int tag,
+    required List<int> path,
+    int authCode = 0,
+    int hashSizeCode = 0,
+  }) {
+    assert(path.isNotEmpty, 'a trace needs at least one hop');
+    assert(path.length % (1 << hashSizeCode) == 0);
+    return (FrameBuilder()
+          ..u8(MeshcoreCommand.sendTracePath.code)
+          ..u32(tag)
+          ..u32(authCode)
+          ..u8(hashSizeCode & 0x03)
+          ..raw(path))
+        .build();
+  }
+
+  /// `CMD_SEND_CONTROL_DATA` (0x37) carrying a `NODE_DISCOVER_REQ`:
+  /// `37 [0x80 | prefix_only] [type filter bitmask] [tag u32] [since u32]?`.
+  /// Sent zero-hop; repeaters matching [typeFilter] answer with a
+  /// [ControlDataFrame] after a random delay.
+  static Uint8List sendDiscoverReq({
+    required int tag,
+    int typeFilter = 1 << kAdvTypeRepeater,
+    bool prefixOnly = false,
+    int? since,
+  }) {
+    final FrameBuilder b = FrameBuilder()
+      ..u8(MeshcoreCommand.sendControlData.code)
+      ..u8(kCtlTypeNodeDiscoverReq | (prefixOnly ? 1 : 0))
+      ..u8(typeFilter)
+      ..u32(tag);
+    if (since != null) b.u32(since);
+    return b.build();
+  }
+
   // ---------------------------------------------------------------------
   // Decoder (Device → App) — total, never throws.
   // ---------------------------------------------------------------------
@@ -407,7 +480,8 @@ abstract final class MeshcoreFrameCodec {
           // leading tag. Guard for a short/empty payload.
           final int ack =
               c.remaining >= 4 ? c.u32('ack.crc') : 0;
-          return AckFrame(ack);
+          final int? rtt = c.remaining >= 4 ? c.u32('ack.rtt') : null;
+          return AckFrame(ack, roundTripMs: rtt);
 
         case 0x83: // PUSH_CODE_MSGS_WAITING
           final int? n = c.remaining >= 1 ? c.u8('msgsWaiting.count') : null;
@@ -433,6 +507,35 @@ abstract final class MeshcoreFrameCodec {
           return TelemetryResponseFrame(
               pubKeyPrefix: pub6, lppPayload: lpp);
 
+        case 0x18: // RESP_CODE_STATS
+          return _decodeStats(c, frame);
+
+        case 0x87: // PUSH_CODE_STATUS_RESPONSE
+          c.u8('status.reserved');
+          final Uint8List pub6 = c.bytes(kPubKeyPrefixSize, 'status.pubKey6');
+          return StatusResponseFrame(
+              pubKeyPrefix: pub6, status: _decodeRepeaterStatus(c));
+
+        case 0x89: // PUSH_CODE_TRACE_DATA
+          return TraceDataFrame(_decodeTrace(c));
+
+        case 0x8E: // PUSH_CODE_CONTROL_DATA
+          final double snr = c.i8('control.snr') / 4.0;
+          final int rssi = c.i8('control.rssi');
+          final int pathLen = c.u8('control.pathLen');
+          // The firmware copies the payload straight after path_len —
+          // no path bytes, whatever path_len says.
+          final Uint8List payload = c.atEnd
+              ? Uint8List(0)
+              : c.bytes(c.remaining, 'control.payload');
+          return ControlDataFrame(
+            snrDb: snr,
+            rssi: rssi,
+            pathLen: pathLen,
+            payload: payload,
+            discover: _decodeDiscover(payload, snr, rssi),
+          );
+
         default:
           return UnsupportedFrame(op, Uint8List.fromList(frame));
       }
@@ -442,6 +545,140 @@ abstract final class MeshcoreFrameCodec {
             opcode: op),
       );
     }
+  }
+
+  static MeshcoreInbound _decodeStats(ByteCursor c, Uint8List frame) {
+    final int sub = c.u8('stats.subType');
+    switch (sub) {
+      case kStatsTypeCore:
+        return StatsFrame(
+          core: CoreStats(
+            batteryMilliVolts: c.u16('stats.core.batt'),
+            uptimeSecs: c.u32('stats.core.uptime'),
+            errFlags: c.u16('stats.core.errFlags'),
+            queueLen: c.u8('stats.core.queue'),
+          ),
+        );
+      case kStatsTypeRadio:
+        return StatsFrame(
+          radio: RadioStats(
+            noiseFloorDbm: c.i16('stats.radio.noise'),
+            lastRssi: c.i8('stats.radio.rssi'),
+            lastSnrDb: c.i8('stats.radio.snr') / 4.0,
+            txAirSecs: c.u32('stats.radio.txAir'),
+            rxAirSecs: c.u32('stats.radio.rxAir'),
+          ),
+        );
+      case kStatsTypePackets:
+        return StatsFrame(
+          packets: PacketStats(
+            received: c.u32('stats.pkts.recv'),
+            sent: c.u32('stats.pkts.sent'),
+            sentFlood: c.u32('stats.pkts.sentFlood'),
+            sentDirect: c.u32('stats.pkts.sentDirect'),
+            receivedFlood: c.u32('stats.pkts.recvFlood'),
+            receivedDirect: c.u32('stats.pkts.recvDirect'),
+            receiveErrors:
+                c.remaining >= 4 ? c.u32('stats.pkts.recvErrors') : null,
+          ),
+        );
+      default:
+        // A sub-type newer than us: keep the bytes, don't guess.
+        return UnsupportedFrame(0x18, Uint8List.fromList(frame));
+    }
+  }
+
+  /// The `RepeaterStats` struct. The first 24 bytes are required; each
+  /// later field is read only when the firmware sent it.
+  static RepeaterStatus? _decodeRepeaterStatus(ByteCursor c) {
+    if (c.remaining < 24) return null;
+    final int batt = c.u16('rs.batt');
+    final int queue = c.u16('rs.queue');
+    final int noise = c.i16('rs.noise');
+    final int rssi = c.i16('rs.rssi');
+    final int recv = c.u32('rs.recv');
+    final int sent = c.u32('rs.sent');
+    final int air = c.u32('rs.air');
+    final int up = c.u32('rs.uptime');
+    int? u32OrNull(String ctx) => c.remaining >= 4 ? c.u32(ctx) : null;
+    int? u16OrNull(String ctx) => c.remaining >= 2 ? c.u16(ctx) : null;
+    final int? sentFlood = u32OrNull('rs.sentFlood');
+    final int? sentDirect = u32OrNull('rs.sentDirect');
+    final int? recvFlood = u32OrNull('rs.recvFlood');
+    final int? recvDirect = u32OrNull('rs.recvDirect');
+    final int? errEvents = u16OrNull('rs.errEvents');
+    final int? snr4 = c.remaining >= 2 ? c.i16('rs.snr') : null;
+    final int? directDups = u16OrNull('rs.directDups');
+    final int? floodDups = u16OrNull('rs.floodDups');
+    final int? rxAir = u32OrNull('rs.rxAir');
+    final int? recvErrors = u32OrNull('rs.recvErrors');
+    return RepeaterStatus(
+      batteryMilliVolts: batt,
+      txQueueLen: queue,
+      noiseFloorDbm: noise,
+      lastRssi: rssi,
+      packetsReceived: recv,
+      packetsSent: sent,
+      airTimeSecs: air,
+      uptimeSecs: up,
+      sentFlood: sentFlood,
+      sentDirect: sentDirect,
+      receivedFlood: recvFlood,
+      receivedDirect: recvDirect,
+      errEvents: errEvents,
+      lastSnrDb: snr4 == null ? null : snr4 / 4.0,
+      directDups: directDups,
+      floodDups: floodDups,
+      rxAirTimeSecs: rxAir,
+      receiveErrors: recvErrors,
+    );
+  }
+
+  /// `[reserved][path_len][flags][tag u32][auth u32][hashes path_len]
+  /// [snr i8 × hops][final snr i8]`, hops = path_len >> (flags & 3).
+  static TraceResult _decodeTrace(ByteCursor c) {
+    c.u8('trace.reserved');
+    final int pathLen = c.u8('trace.pathLen');
+    final int flags = c.u8('trace.flags');
+    final int tag = c.u32('trace.tag');
+    final int auth = c.u32('trace.auth');
+    final Uint8List hashes = c.bytes(pathLen, 'trace.hashes');
+    final int hops = pathLen >> (flags & 0x03);
+    final List<double> snrs = <double>[
+      for (int i = 0; i < hops; i++) c.i8('trace.snr[$i]') / 4.0,
+    ];
+    final double last = c.i8('trace.finalSnr') / 4.0;
+    return TraceResult(
+      tag: tag,
+      authCode: auth,
+      flags: flags,
+      pathHashes: hashes,
+      hopSnrsDb: List<double>.unmodifiable(snrs),
+      finalSnrDb: last,
+    );
+  }
+
+  /// `[0x90 | node_type][their snr ×4][tag u32][pub_key 32 or 8]`, or
+  /// null when [payload] is some other control packet.
+  static DiscoverResponse? _decodeDiscover(
+      Uint8List payload, double ourSnr, int ourRssi) {
+    if (payload.length < 6 + 8 ||
+        (payload[0] & 0xF0) != kCtlTypeNodeDiscoverResp) {
+      return null;
+    }
+    final ByteCursor p = ByteCursor(payload);
+    final int type = p.u8('discover.type') & 0x0F;
+    final double theirs = p.i8('discover.snr') / 4.0;
+    final int tag = p.u32('discover.tag');
+    final int keyLen = p.remaining >= kPubKeySize ? kPubKeySize : 8;
+    return DiscoverResponse(
+      nodeType: type,
+      tag: tag,
+      publicKey: p.bytes(keyLen, 'discover.key'),
+      theirSnrDb: theirs,
+      ourSnrDb: ourSnr,
+      ourRssi: ourRssi,
+    );
   }
 
   /// `RESP_CODE_CUSTOM_VARS` payload: comma-separated `name:value`

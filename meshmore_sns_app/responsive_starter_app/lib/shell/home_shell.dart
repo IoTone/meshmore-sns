@@ -279,6 +279,8 @@ class _SettingsView extends StatelessWidget {
           '/settings/channels'),
       (Icons.bluetooth_searching, l.settingsHubDiagnostics,
           l.settingsHubDiagnosticsSub, '/settings/diagnostics'),
+      (Icons.handyman_outlined, l.settingsHubTools, l.settingsHubToolsSub,
+          '/settings/tools'),
     ];
     return MmScaffold(
       child: ListView.separated(

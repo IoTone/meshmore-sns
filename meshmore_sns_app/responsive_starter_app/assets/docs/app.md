@@ -30,6 +30,10 @@ network you can actually see and feel:
   view of environment telemetry.
 - **Battery** — a real state-of-charge estimate from the radio's
   voltage, with a time-to-empty projection.
+- **Tools** (Settings → Tools) — radio stats (noise floor, airtime),
+  ping, per-hop trace, nearby-repeater discovery, soak test and range
+  test, each with an exportable result. One runs at a time, and the
+  ones that send text never use Public.
 
 ## How it works
 

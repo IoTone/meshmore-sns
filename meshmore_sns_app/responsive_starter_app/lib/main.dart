@@ -28,6 +28,7 @@ import 'package:meshmore_sns_app/perms/permissions_service.dart';
 import 'package:meshmore_sns_app/screens/first_run_intro_screen.dart';
 import 'package:meshmore_sns_app/splash/branded_splash_screen.dart';
 import 'package:meshmore_sns_app/theme/theme_controller.dart';
+import 'package:meshmore_sns_app/tools/tools_controller.dart';
 import 'package:meshmore_sns_app/tts/tts_controller.dart';
 
 void main() {
@@ -97,6 +98,12 @@ void main() {
             create: (BuildContext ctx) => BotController(
               pskFor: ctx.read<MeshcoreController>().channelPsk,
             )..load(),
+          ),
+          // R60 — Settings → Tools. App-scoped so a soak or range test
+          // keeps running while you look at something else.
+          ChangeNotifierProvider<ToolsController>(
+            create: (BuildContext ctx) =>
+                ToolsController(ctx.read<MeshcoreController>()),
           ),
           Provider<PermissionsService>(
             create: (_) => const PlatformPermissionsService(),

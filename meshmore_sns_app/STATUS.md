@@ -86,6 +86,18 @@ codebase.
   permissions** (writes `contact.flags` via ADD_UPDATE_CONTACT) — the
   only lever the app has on the responder side.
 
+**Tools (R60) — Settings → Tools (issue #7)**
+- Radio stats, Ping, Trace path, Discover nearby, Soak test, Range
+  test; spec in `meshmore-sns-tools-spec.md`.
+- One tool holds the radio at a time and the background telemetry
+  poller is held meanwhile (the firmware keeps one pending request).
+  Tool requests don't disturb chat SENT/ACK correlation.
+- Soak pairs with the R59 echo bot; Soak and Range refuse Public.
+  Ping/Soak export JSON, Range exports CSV.
+- **Unverified on hardware.** Frame layouts are from current MeshCore
+  firmware source (newer than the codec pin); GET_STATS and discover
+  need recent firmware and say so when missing.
+
 **Battery (R16)**
 - Voltage → SoC via per-device OCV curve; observed-drain regression +
   rated-capacity cross-check; time-to-empty + confidence; persisted

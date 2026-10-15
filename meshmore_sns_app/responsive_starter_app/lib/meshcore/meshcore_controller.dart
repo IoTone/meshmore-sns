@@ -832,6 +832,49 @@ class MeshcoreController extends ChangeNotifier {
   /// Send a raw command frame (e.g. from [MeshcoreFrameCodec]).
   Future<void> send(Uint8List frame) => _connection.sendCommand(frame);
 
+  // --- R60 Tools seams ---
+
+  /// Every decoded inbound frame (broadcast). Tools match their own
+  /// replies here; the controller keeps processing them as usual.
+  Stream<MeshcoreInbound> get inboundFrames => _connection.inbound;
+
+  /// Marker in [_pendingSendIds] for a tool request that will be
+  /// answered by RESP_CODE_SENT. Without it, that SENT would be taken
+  /// as the confirmation of whichever chat message is oldest in flight.
+  static const String _toolSendMarker = '\u0000tool';
+
+  /// Send a tool's remote request (status / trace / telemetry) — one
+  /// the radio answers with RESP_CODE_SENT — without disturbing chat
+  /// delivery tracking. If the radio answers ERR instead, call
+  /// [abandonToolRequest].
+  Future<void> sendToolRequest(Uint8List frame) async {
+    _pendingSendIds.add(_toolSendMarker);
+    try {
+      await send(frame);
+    } catch (_) {
+      abandonToolRequest();
+      rethrow;
+    }
+  }
+
+  /// The radio refused a [sendToolRequest] (ERR) or never answered:
+  /// drop its marker so the next SENT goes to the right message.
+  void abandonToolRequest() => _pendingSendIds.remove(_toolSendMarker);
+
+  int _backgroundHolds = 0;
+
+  /// The firmware keeps ONE pending remote request; each new one
+  /// clears the last. While a tool measures, hold the background
+  /// telemetry poller so it cannot steal the slot. Nested holds count;
+  /// pair every `true` with a `false`.
+  void holdBackgroundRequests(bool hold) {
+    _backgroundHolds = hold
+        ? _backgroundHolds + 1
+        : (_backgroundHolds - 1).clamp(0, 1 << 20);
+  }
+
+  bool get backgroundRequestsHeld => _backgroundHolds > 0;
+
   // --- Discovery: nodes "in the area" (contacts + adverts) ---
 
   final Map<String, DiscoveredNode> _nodes = <String, DiscoveredNode>{};
@@ -1317,6 +1360,7 @@ class MeshcoreController extends ChangeNotifier {
     if (f is MsgSentFrame) {
       if (_pendingSendIds.isEmpty) return;
       final String id = _pendingSendIds.removeAt(0);
+      if (id == _toolSendMarker) return; // a tool's request, not a message
       final ChatMessage? m = _messageById(id);
       if (m == null) return;
       m
@@ -1635,10 +1679,12 @@ class MeshcoreController extends ChangeNotifier {
   /// Send a DM (`CMD_SEND_TXT_MSG` 0x02, addressed by 6-byte pubkey
   /// prefix). Optimistically appends an outgoing line. No-op if not
   /// ready, text is blank, or the peer hex is shorter than 12 chars.
-  Future<void> sendDirectText(
+  /// Returns the outgoing row (so a caller can follow its delivery),
+  /// or null when nothing was sent.
+  Future<ChatMessage?> sendDirectText(
       String peerPubKeyHex, String text) async {
     final String t = text.trim();
-    if (t.isEmpty || !isReady || peerPubKeyHex.length < 12) return;
+    if (t.isEmpty || !isReady || peerPubKeyHex.length < 12) return null;
     final List<int> prefix = <int>[
       for (int i = 0; i < 12; i += 2)
         int.parse(peerPubKeyHex.substring(i, i + 2), radix: 16),
@@ -1668,6 +1714,7 @@ class MeshcoreController extends ChangeNotifier {
       _markOutgoingFailed(m.id);
       notifyListeners();
     }
+    return m;
   }
 
   /// Ingest an inbound DM into the message store + emit on the
@@ -2776,7 +2823,7 @@ class MeshcoreController extends ChangeNotifier {
   }
 
   void _stepTelemetryPoll() {
-    if (!isReady || !_telemPollEnabled) return;
+    if (!isReady || !_telemPollEnabled || backgroundRequestsHeld) return;
     final String? own = ownPubKeyHex;
     final int nowMs = DateTime.now().millisecondsSinceEpoch;
     DiscoveredNode? target;
@@ -2890,9 +2937,10 @@ class MeshcoreController extends ChangeNotifier {
   /// the user is looking at another channel entirely, and routing its
   /// reply to whatever happens to be on screen would put private
   /// traffic somewhere it was never meant to go.
-  Future<void> sendChannelTextTo(int channelIdx, String text) async {
+  /// Returns the outgoing row, or null when nothing was sent.
+  Future<ChatMessage?> sendChannelTextTo(int channelIdx, String text) async {
     final String t = text.trim();
-    if (t.isEmpty || !isReady) return;
+    if (t.isEmpty || !isReady) return null;
     final int ts = DateTime.now().millisecondsSinceEpoch ~/ 1000;
     final ChatMessage m = ChatMessage(
       channelIdx: channelIdx,
@@ -2914,6 +2962,7 @@ class MeshcoreController extends ChangeNotifier {
       _markOutgoingFailed(m.id);
       notifyListeners();
     }
+    return m;
   }
 
   // --- Inbound queue drain (CMD_SYNC_NEXT_MESSAGE) ---

@@ -2911,4 +2911,371 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get deliveryFailed =>
       'Not delivered — no acknowledgement or send failed';
+
+  @override
+  String get settingsHubTools => 'Tools';
+
+  @override
+  String get settingsHubToolsSub => 'Ping, trace, discover, soak, range test';
+
+  @override
+  String get toolsTitle => 'Tools';
+
+  @override
+  String get toolsOffline => 'Not connected — the tools need the radio.';
+
+  @override
+  String get toolsRunning => 'RUNNING';
+
+  @override
+  String get toolsStart => 'Start';
+
+  @override
+  String get toolsStop => 'Stop';
+
+  @override
+  String get toolsCopyReport => 'Copy report';
+
+  @override
+  String get toolsCopied => 'Copied to the clipboard';
+
+  @override
+  String get toolsCount => 'COUNT';
+
+  @override
+  String get toolsInterval => 'INTERVAL';
+
+  @override
+  String toolsSeconds(int n) {
+    return '$n s';
+  }
+
+  @override
+  String toolsMinutes(int n) {
+    return '$n min';
+  }
+
+  @override
+  String toolsMs(int n) {
+    return '$n ms';
+  }
+
+  @override
+  String toolsDb(String v) {
+    return '$v dB';
+  }
+
+  @override
+  String get toolsChoose => 'Choose…';
+
+  @override
+  String get toolStatsName => 'Radio stats';
+
+  @override
+  String get toolStatsSub => 'Noise floor, airtime, packet counters';
+
+  @override
+  String get toolPingName => 'Ping';
+
+  @override
+  String get toolPingSub => 'Round-trip to a contact: loss and RTT';
+
+  @override
+  String get toolTraceName => 'Trace path';
+
+  @override
+  String get toolTraceSub => 'Per-hop SNR along a repeater chain';
+
+  @override
+  String get toolDiscoverName => 'Discover nearby';
+
+  @override
+  String get toolDiscoverSub => 'Repeaters that hear us, SNR both ways';
+
+  @override
+  String get toolSoakName => 'Soak test';
+
+  @override
+  String get toolSoakSub => 'Sequenced messages, counted — pairs with the bot';
+
+  @override
+  String get toolRangeName => 'Range test';
+
+  @override
+  String get toolRangeSub => 'Beacon or log, with SNR and distance';
+
+  @override
+  String get toolFailNotConnected => 'Not connected to a radio.';
+
+  @override
+  String get toolFailBusy => 'Another tool is using the radio. Stop it first.';
+
+  @override
+  String get toolFailUnsupported =>
+      'Your radio\'s firmware doesn\'t support this.';
+
+  @override
+  String get toolFailNotFound => 'The radio doesn\'t have this contact.';
+
+  @override
+  String get toolFailTableFull =>
+      'The radio is busy (send table full). Try again shortly.';
+
+  @override
+  String get toolFailRejected => 'The radio refused the request.';
+
+  @override
+  String get toolFailNoConfirm => 'The radio didn\'t confirm the send.';
+
+  @override
+  String get toolFailPublic =>
+      'Public is refused: everything sent there reaches every radio. Use a private channel or a DM.';
+
+  @override
+  String get toolFailUnknownChannel =>
+      'This channel\'s key hasn\'t been read from the radio yet.';
+
+  @override
+  String get toolFailNoTarget => 'Choose a target first.';
+
+  @override
+  String get statsRefresh => 'Refresh';
+
+  @override
+  String get statsAuto => 'Auto (every 5 s)';
+
+  @override
+  String get statsSectionRadio => 'RADIO';
+
+  @override
+  String get statsSectionPackets => 'PACKETS';
+
+  @override
+  String get statsSectionCore => 'CORE';
+
+  @override
+  String get statsNoise => 'Noise floor';
+
+  @override
+  String get statsLastRssi => 'Last RSSI';
+
+  @override
+  String get statsLastSnr => 'Last SNR';
+
+  @override
+  String get statsTxAir => 'TX airtime';
+
+  @override
+  String get statsRxAir => 'RX airtime';
+
+  @override
+  String get statsDuty => 'Duty cycle (TX)';
+
+  @override
+  String get statsReceived => 'Received';
+
+  @override
+  String get statsSent => 'Sent';
+
+  @override
+  String statsSplit(int flood, int direct) {
+    return 'flood $flood · direct $direct';
+  }
+
+  @override
+  String get statsRxErrors => 'Receive errors';
+
+  @override
+  String get statsUptime => 'Uptime';
+
+  @override
+  String get statsQueue => 'Send queue';
+
+  @override
+  String get statsErrFlags => 'Error flags';
+
+  @override
+  String get statsBattery => 'Battery';
+
+  @override
+  String get statsNotFetched => 'Not fetched yet.';
+
+  @override
+  String get pingTarget => 'TARGET';
+
+  @override
+  String get pingMethodStatus =>
+      'Status request — repeaters, rooms and sensors answer this.';
+
+  @override
+  String get pingMethodTelemetry =>
+      'Telemetry request — silent for the peer; it answers only if it shares telemetry with us.';
+
+  @override
+  String pingSummary(int sent, int replied, int lost) {
+    return '$sent sent · $replied replied · $lost lost';
+  }
+
+  @override
+  String pingRtt(int min, int avg, int max) {
+    return 'RTT min $min · avg $avg · max $max ms';
+  }
+
+  @override
+  String get pingLost => 'lost';
+
+  @override
+  String get pingWaiting => 'waiting…';
+
+  @override
+  String get pingNoContacts =>
+      'No synced contacts yet — only contacts can be pinged.';
+
+  @override
+  String get pingLastStatus => 'LAST STATUS';
+
+  @override
+  String get traceToNode => 'To a node';
+
+  @override
+  String get traceManual => 'Manual';
+
+  @override
+  String get traceRoundTrip => 'Round trip (come back to us)';
+
+  @override
+  String get traceNoRoute => 'no route — send it a message first';
+
+  @override
+  String tracePath(String path) {
+    return 'path $path';
+  }
+
+  @override
+  String get traceManualHint => 'hashes, e.g. a1,7f,a1';
+
+  @override
+  String get traceInvalid => 'Enter one or more hex bytes.';
+
+  @override
+  String get traceRun => 'Trace';
+
+  @override
+  String get traceNoAnswer => 'no answer';
+
+  @override
+  String get traceToUs => '→ us';
+
+  @override
+  String traceWeakest(String hop, String snr) {
+    return 'weakest: $hop, $snr dB';
+  }
+
+  @override
+  String get traceReset => 'Reset route';
+
+  @override
+  String get traceResetDone => 'Route reset — the next message floods.';
+
+  @override
+  String get traceNoRepeaters =>
+      'Trace needs a repeater on the way: pick a repeater, or a contact reached through one.';
+
+  @override
+  String get discoverStart => 'Discover';
+
+  @override
+  String discoverListening(int s) {
+    return 'Listening… $s s';
+  }
+
+  @override
+  String get discoverNone => 'No repeater answered.';
+
+  @override
+  String discoverTheyHearUs(String snr) {
+    return 'they hear us $snr dB';
+  }
+
+  @override
+  String discoverWeHearThem(String snr, int rssi) {
+    return 'we hear them $snr dB / $rssi dBm';
+  }
+
+  @override
+  String get discoverAsymmetric => 'asymmetric link';
+
+  @override
+  String get soakScope => 'CONVERSATION';
+
+  @override
+  String get soakPairHint =>
+      'Pairs with an R59 bot answering on the other radio: echoes show drops, duplicates and reordering.';
+
+  @override
+  String soakSummary(int sent, int delivered, int failed) {
+    return '$sent sent · $delivered delivered · $failed failed';
+  }
+
+  @override
+  String soakEchoes(int echoed, int dup, int reordered) {
+    return '$echoed echoed · $dup duplicate · $reordered reordered';
+  }
+
+  @override
+  String get soakListening => 'Sends done — listening for late echoes…';
+
+  @override
+  String soakRun(String id) {
+    return 'run $id';
+  }
+
+  @override
+  String soakEcho(int ms) {
+    return 'echo $ms ms';
+  }
+
+  @override
+  String soakDm(String name) {
+    return 'DM · $name';
+  }
+
+  @override
+  String get rangeSender => 'Sender';
+
+  @override
+  String get rangeReceiver => 'Receiver';
+
+  @override
+  String get rangeChannel => 'CHANNEL';
+
+  @override
+  String get rangeHint =>
+      'Both radios on the same private channel. The sender beacons; the receiver walks and logs.';
+
+  @override
+  String rangeBeacons(int n) {
+    return '$n beacons sent';
+  }
+
+  @override
+  String rangeSummary(int heard, int missing) {
+    return '$heard heard · $missing missing';
+  }
+
+  @override
+  String rangeBest(String snr) {
+    return 'best SNR $snr dB';
+  }
+
+  @override
+  String rangeFarthest(String d) {
+    return 'farthest $d';
+  }
+
+  @override
+  String get rangeCopyCsv => 'Copy CSV';
+
+  @override
+  String get rangeFlood => 'flood';
 }

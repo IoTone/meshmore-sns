@@ -56,6 +56,14 @@ class ByteCursor {
     return v;
   }
 
+  /// Signed 16-bit (noise floor, RSSI and scaled SNR in stats frames).
+  int i16(String ctx) {
+    _need(2, ctx);
+    final int v = _data.getInt16(_pos, Endian.little);
+    _pos += 2;
+    return v;
+  }
+
   int u32(String ctx) {
     _need(4, ctx);
     final int v = _data.getUint32(_pos, Endian.little);

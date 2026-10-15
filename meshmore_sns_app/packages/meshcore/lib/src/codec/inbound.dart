@@ -8,6 +8,7 @@ import '../model/channel_message.dart';
 import '../model/contact.dart';
 import '../model/contact_message.dart';
 import '../model/device_config.dart';
+import '../model/diagnostics.dart';
 import '../model/rf_log.dart';
 import '../model/self_info.dart';
 import 'decode_error.dart';
@@ -79,11 +80,15 @@ class MsgSentFrame extends MeshcoreInbound {
 /// originating message and mark it delivered. Broadcast/channel
 /// messages are flood-routed and never produce an ACK.
 class AckFrame extends MeshcoreInbound {
-  const AckFrame(this.ackCrc);
+  const AckFrame(this.ackCrc, {this.roundTripMs});
 
   /// The acknowledged message's CRC tag (u32 LE), equal to the
   /// [MsgSent.expectedAck] returned when the message was submitted.
   final int ackCrc;
+
+  /// The radio's own send→ACK time (`PUSH_CODE_SEND_CONFIRMED` carries
+  /// it after the tag). Null when the firmware omits it.
+  final int? roundTripMs;
 
   @override
   String toString() =>
@@ -209,6 +214,56 @@ class TelemetryResponseFrame extends MeshcoreInbound {
   String toString() =>
       'TelemetryResponseFrame(pub6=${pubKeyPrefix.length}B, '
       'lpp=${lppPayload.length}B)';
+}
+
+/// `RESP_CODE_STATS` (0x18). Exactly one of the three is set, per the
+/// sub-type the radio answered.
+class StatsFrame extends MeshcoreInbound {
+  const StatsFrame({this.core, this.radio, this.packets});
+  final CoreStats? core;
+  final RadioStats? radio;
+  final PacketStats? packets;
+  @override
+  String toString() => 'StatsFrame(${core ?? radio ?? packets})';
+}
+
+/// `PUSH_CODE_STATUS_RESPONSE` (0x87) — a repeater/sensor status reply.
+/// The firmware matches it to our request by pubkey; so do we.
+class StatusResponseFrame extends MeshcoreInbound {
+  const StatusResponseFrame({required this.pubKeyPrefix, this.status});
+  final Uint8List pubKeyPrefix;
+
+  /// Null when the payload is too short to be a `RepeaterStats`.
+  final RepeaterStatus? status;
+  @override
+  String toString() => 'StatusResponseFrame($status)';
+}
+
+/// `PUSH_CODE_TRACE_DATA` (0x89).
+class TraceDataFrame extends MeshcoreInbound {
+  const TraceDataFrame(this.trace);
+  final TraceResult trace;
+  @override
+  String toString() => 'TraceDataFrame($trace)';
+}
+
+/// `PUSH_CODE_CONTROL_DATA` (0x8E). [discover] is decoded when the
+/// payload is a node-discover response; [payload] is always kept.
+class ControlDataFrame extends MeshcoreInbound {
+  const ControlDataFrame({
+    required this.snrDb,
+    required this.rssi,
+    required this.pathLen,
+    required this.payload,
+    this.discover,
+  });
+  final double snrDb;
+  final int rssi;
+  final int pathLen;
+  final Uint8List payload;
+  final DiscoverResponse? discover;
+  @override
+  String toString() => 'ControlDataFrame(${discover ?? '${payload.length}B'})';
 }
 
 /// A well-formed frame whose opcode this milestone does not decode yet.

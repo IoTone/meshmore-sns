@@ -1019,6 +1019,27 @@ While Meshcore protocol is open source, the client is not open source.  We want 
   and exportable, so a soak run produces evidence rather than a
   vibe.
 
+- R60: **built-in tester tools (Settings → Tools)** — issue #7. The
+  active side of mesh testing, paired with R59's passive side: a
+  client that asks, measures and writes the result down. Six tools:
+  **Radio stats** (`CMD_GET_STATS`: noise floor, airtime, duty cycle,
+  packet counters), **Ping** (status request to repeaters / telemetry
+  request to chat nodes; loss + RTT), **Trace path** (per-hop SNR,
+  round trip by mirrored path, reset route), **Discover nearby**
+  (zero-hop repeater discovery, SNR both ways), **Soak test**
+  (sequenced `echo soak` messages to a DM or private channel; counts
+  delivery, and — against an R59 echo bot — drops, duplicates and
+  reordering), **Range test** (Meshtastic-style beacon / receiver log
+  with SNR and distance, CSV).
+
+  Binding rules: polite airtime (interval floors and count caps,
+  shown); **never on Public** (the R59 structural refusal); **one
+  tool at a time**, with the background telemetry poller held while a
+  tool runs, because the firmware keeps a single pending remote
+  request; timeouts from the radio's own estimate; firmware that lacks
+  a command says so in words; every series exportable. Full UI spec:
+  [`meshmore-sns-tools-spec.md`](./meshmore-sns-tools-spec.md).
+
 ### Terminology — Fabric vs Contact
 
 - **Fabric** = the set of nodes we have *seen* on the mesh (any

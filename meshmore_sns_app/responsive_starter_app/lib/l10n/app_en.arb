@@ -1264,5 +1264,174 @@
   "deliverySending": "Sending…",
   "deliverySent": "Sent into the mesh",
   "deliveryDelivered": "Delivered (recipient acknowledged)",
-  "deliveryFailed": "Not delivered — no acknowledgement or send failed"
+  "deliveryFailed": "Not delivered — no acknowledgement or send failed",
+
+  "settingsHubTools": "Tools",
+  "settingsHubToolsSub": "Ping, trace, discover, soak, range test",
+  "toolsTitle": "Tools",
+  "toolsOffline": "Not connected — the tools need the radio.",
+  "toolsRunning": "RUNNING",
+  "toolsStart": "Start",
+  "toolsStop": "Stop",
+  "toolsCopyReport": "Copy report",
+  "toolsCopied": "Copied to the clipboard",
+  "toolsCount": "COUNT",
+  "toolsInterval": "INTERVAL",
+  "toolsSeconds": "{n} s",
+  "@toolsSeconds": {
+    "placeholders": {"n": {"type": "int"}}
+  },
+  "toolsMinutes": "{n} min",
+  "@toolsMinutes": {
+    "placeholders": {"n": {"type": "int"}}
+  },
+  "toolsMs": "{n} ms",
+  "@toolsMs": {
+    "placeholders": {"n": {"type": "int"}}
+  },
+  "toolsDb": "{v} dB",
+  "@toolsDb": {
+    "placeholders": {"v": {"type": "String"}}
+  },
+  "toolsChoose": "Choose…",
+  "toolStatsName": "Radio stats",
+  "toolStatsSub": "Noise floor, airtime, packet counters",
+  "toolPingName": "Ping",
+  "toolPingSub": "Round-trip to a contact: loss and RTT",
+  "toolTraceName": "Trace path",
+  "toolTraceSub": "Per-hop SNR along a repeater chain",
+  "toolDiscoverName": "Discover nearby",
+  "toolDiscoverSub": "Repeaters that hear us, SNR both ways",
+  "toolSoakName": "Soak test",
+  "toolSoakSub": "Sequenced messages, counted — pairs with the bot",
+  "toolRangeName": "Range test",
+  "toolRangeSub": "Beacon or log, with SNR and distance",
+  "toolFailNotConnected": "Not connected to a radio.",
+  "toolFailBusy": "Another tool is using the radio. Stop it first.",
+  "toolFailUnsupported": "Your radio's firmware doesn't support this.",
+  "toolFailNotFound": "The radio doesn't have this contact.",
+  "toolFailTableFull": "The radio is busy (send table full). Try again shortly.",
+  "toolFailRejected": "The radio refused the request.",
+  "toolFailNoConfirm": "The radio didn't confirm the send.",
+  "toolFailPublic": "Public is refused: everything sent there reaches every radio. Use a private channel or a DM.",
+  "toolFailUnknownChannel": "This channel's key hasn't been read from the radio yet.",
+  "toolFailNoTarget": "Choose a target first.",
+  "statsRefresh": "Refresh",
+  "statsAuto": "Auto (every 5 s)",
+  "statsSectionRadio": "RADIO",
+  "statsSectionPackets": "PACKETS",
+  "statsSectionCore": "CORE",
+  "statsNoise": "Noise floor",
+  "statsLastRssi": "Last RSSI",
+  "statsLastSnr": "Last SNR",
+  "statsTxAir": "TX airtime",
+  "statsRxAir": "RX airtime",
+  "statsDuty": "Duty cycle (TX)",
+  "statsReceived": "Received",
+  "statsSent": "Sent",
+  "statsSplit": "flood {flood} · direct {direct}",
+  "@statsSplit": {
+    "placeholders": {"flood": {"type": "int"}, "direct": {"type": "int"}}
+  },
+  "statsRxErrors": "Receive errors",
+  "statsUptime": "Uptime",
+  "statsQueue": "Send queue",
+  "statsErrFlags": "Error flags",
+  "statsBattery": "Battery",
+  "statsNotFetched": "Not fetched yet.",
+  "pingTarget": "TARGET",
+  "pingMethodStatus": "Status request — repeaters, rooms and sensors answer this.",
+  "pingMethodTelemetry": "Telemetry request — silent for the peer; it answers only if it shares telemetry with us.",
+  "pingSummary": "{sent} sent · {replied} replied · {lost} lost",
+  "@pingSummary": {
+    "placeholders": {"sent": {"type": "int"}, "replied": {"type": "int"}, "lost": {"type": "int"}}
+  },
+  "pingRtt": "RTT min {min} · avg {avg} · max {max} ms",
+  "@pingRtt": {
+    "placeholders": {"min": {"type": "int"}, "avg": {"type": "int"}, "max": {"type": "int"}}
+  },
+  "pingLost": "lost",
+  "pingWaiting": "waiting…",
+  "pingNoContacts": "No synced contacts yet — only contacts can be pinged.",
+  "pingLastStatus": "LAST STATUS",
+  "traceToNode": "To a node",
+  "traceManual": "Manual",
+  "traceRoundTrip": "Round trip (come back to us)",
+  "traceNoRoute": "no route — send it a message first",
+  "tracePath": "path {path}",
+  "@tracePath": {
+    "placeholders": {"path": {"type": "String"}}
+  },
+  "traceManualHint": "hashes, e.g. a1,7f,a1",
+  "traceInvalid": "Enter one or more hex bytes.",
+  "traceRun": "Trace",
+  "traceNoAnswer": "no answer",
+  "traceToUs": "→ us",
+  "traceWeakest": "weakest: {hop}, {snr} dB",
+  "@traceWeakest": {
+    "placeholders": {"hop": {"type": "String"}, "snr": {"type": "String"}}
+  },
+  "traceReset": "Reset route",
+  "traceResetDone": "Route reset — the next message floods.",
+  "traceNoRepeaters": "Trace needs a repeater on the way: pick a repeater, or a contact reached through one.",
+  "discoverStart": "Discover",
+  "discoverListening": "Listening… {s} s",
+  "@discoverListening": {
+    "placeholders": {"s": {"type": "int"}}
+  },
+  "discoverNone": "No repeater answered.",
+  "discoverTheyHearUs": "they hear us {snr} dB",
+  "@discoverTheyHearUs": {
+    "placeholders": {"snr": {"type": "String"}}
+  },
+  "discoverWeHearThem": "we hear them {snr} dB / {rssi} dBm",
+  "@discoverWeHearThem": {
+    "placeholders": {"snr": {"type": "String"}, "rssi": {"type": "int"}}
+  },
+  "discoverAsymmetric": "asymmetric link",
+  "soakScope": "CONVERSATION",
+  "soakPairHint": "Pairs with an R59 bot answering on the other radio: echoes show drops, duplicates and reordering.",
+  "soakSummary": "{sent} sent · {delivered} delivered · {failed} failed",
+  "@soakSummary": {
+    "placeholders": {"sent": {"type": "int"}, "delivered": {"type": "int"}, "failed": {"type": "int"}}
+  },
+  "soakEchoes": "{echoed} echoed · {dup} duplicate · {reordered} reordered",
+  "@soakEchoes": {
+    "placeholders": {"echoed": {"type": "int"}, "dup": {"type": "int"}, "reordered": {"type": "int"}}
+  },
+  "soakListening": "Sends done — listening for late echoes…",
+  "soakRun": "run {id}",
+  "@soakRun": {
+    "placeholders": {"id": {"type": "String"}}
+  },
+  "soakEcho": "echo {ms} ms",
+  "@soakEcho": {
+    "placeholders": {"ms": {"type": "int"}}
+  },
+  "soakDm": "DM · {name}",
+  "@soakDm": {
+    "placeholders": {"name": {"type": "String"}}
+  },
+  "rangeSender": "Sender",
+  "rangeReceiver": "Receiver",
+  "rangeChannel": "CHANNEL",
+  "rangeHint": "Both radios on the same private channel. The sender beacons; the receiver walks and logs.",
+  "rangeBeacons": "{n} beacons sent",
+  "@rangeBeacons": {
+    "placeholders": {"n": {"type": "int"}}
+  },
+  "rangeSummary": "{heard} heard · {missing} missing",
+  "@rangeSummary": {
+    "placeholders": {"heard": {"type": "int"}, "missing": {"type": "int"}}
+  },
+  "rangeBest": "best SNR {snr} dB",
+  "@rangeBest": {
+    "placeholders": {"snr": {"type": "String"}}
+  },
+  "rangeFarthest": "farthest {d}",
+  "@rangeFarthest": {
+    "placeholders": {"d": {"type": "String"}}
+  },
+  "rangeCopyCsv": "Copy CSV",
+  "rangeFlood": "flood"
 }

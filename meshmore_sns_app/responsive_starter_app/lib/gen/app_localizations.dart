@@ -5035,6 +5035,636 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Not delivered — no acknowledgement or send failed'**
   String get deliveryFailed;
+
+  /// No description provided for @settingsHubTools.
+  ///
+  /// In en, this message translates to:
+  /// **'Tools'**
+  String get settingsHubTools;
+
+  /// No description provided for @settingsHubToolsSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Ping, trace, discover, soak, range test'**
+  String get settingsHubToolsSub;
+
+  /// No description provided for @toolsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Tools'**
+  String get toolsTitle;
+
+  /// No description provided for @toolsOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'Not connected — the tools need the radio.'**
+  String get toolsOffline;
+
+  /// No description provided for @toolsRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'RUNNING'**
+  String get toolsRunning;
+
+  /// No description provided for @toolsStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Start'**
+  String get toolsStart;
+
+  /// No description provided for @toolsStop.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop'**
+  String get toolsStop;
+
+  /// No description provided for @toolsCopyReport.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy report'**
+  String get toolsCopyReport;
+
+  /// No description provided for @toolsCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Copied to the clipboard'**
+  String get toolsCopied;
+
+  /// No description provided for @toolsCount.
+  ///
+  /// In en, this message translates to:
+  /// **'COUNT'**
+  String get toolsCount;
+
+  /// No description provided for @toolsInterval.
+  ///
+  /// In en, this message translates to:
+  /// **'INTERVAL'**
+  String get toolsInterval;
+
+  /// No description provided for @toolsSeconds.
+  ///
+  /// In en, this message translates to:
+  /// **'{n} s'**
+  String toolsSeconds(int n);
+
+  /// No description provided for @toolsMinutes.
+  ///
+  /// In en, this message translates to:
+  /// **'{n} min'**
+  String toolsMinutes(int n);
+
+  /// No description provided for @toolsMs.
+  ///
+  /// In en, this message translates to:
+  /// **'{n} ms'**
+  String toolsMs(int n);
+
+  /// No description provided for @toolsDb.
+  ///
+  /// In en, this message translates to:
+  /// **'{v} dB'**
+  String toolsDb(String v);
+
+  /// No description provided for @toolsChoose.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose…'**
+  String get toolsChoose;
+
+  /// No description provided for @toolStatsName.
+  ///
+  /// In en, this message translates to:
+  /// **'Radio stats'**
+  String get toolStatsName;
+
+  /// No description provided for @toolStatsSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Noise floor, airtime, packet counters'**
+  String get toolStatsSub;
+
+  /// No description provided for @toolPingName.
+  ///
+  /// In en, this message translates to:
+  /// **'Ping'**
+  String get toolPingName;
+
+  /// No description provided for @toolPingSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Round-trip to a contact: loss and RTT'**
+  String get toolPingSub;
+
+  /// No description provided for @toolTraceName.
+  ///
+  /// In en, this message translates to:
+  /// **'Trace path'**
+  String get toolTraceName;
+
+  /// No description provided for @toolTraceSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Per-hop SNR along a repeater chain'**
+  String get toolTraceSub;
+
+  /// No description provided for @toolDiscoverName.
+  ///
+  /// In en, this message translates to:
+  /// **'Discover nearby'**
+  String get toolDiscoverName;
+
+  /// No description provided for @toolDiscoverSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Repeaters that hear us, SNR both ways'**
+  String get toolDiscoverSub;
+
+  /// No description provided for @toolSoakName.
+  ///
+  /// In en, this message translates to:
+  /// **'Soak test'**
+  String get toolSoakName;
+
+  /// No description provided for @toolSoakSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Sequenced messages, counted — pairs with the bot'**
+  String get toolSoakSub;
+
+  /// No description provided for @toolRangeName.
+  ///
+  /// In en, this message translates to:
+  /// **'Range test'**
+  String get toolRangeName;
+
+  /// No description provided for @toolRangeSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Beacon or log, with SNR and distance'**
+  String get toolRangeSub;
+
+  /// No description provided for @toolFailNotConnected.
+  ///
+  /// In en, this message translates to:
+  /// **'Not connected to a radio.'**
+  String get toolFailNotConnected;
+
+  /// No description provided for @toolFailBusy.
+  ///
+  /// In en, this message translates to:
+  /// **'Another tool is using the radio. Stop it first.'**
+  String get toolFailBusy;
+
+  /// No description provided for @toolFailUnsupported.
+  ///
+  /// In en, this message translates to:
+  /// **'Your radio\'s firmware doesn\'t support this.'**
+  String get toolFailUnsupported;
+
+  /// No description provided for @toolFailNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'The radio doesn\'t have this contact.'**
+  String get toolFailNotFound;
+
+  /// No description provided for @toolFailTableFull.
+  ///
+  /// In en, this message translates to:
+  /// **'The radio is busy (send table full). Try again shortly.'**
+  String get toolFailTableFull;
+
+  /// No description provided for @toolFailRejected.
+  ///
+  /// In en, this message translates to:
+  /// **'The radio refused the request.'**
+  String get toolFailRejected;
+
+  /// No description provided for @toolFailNoConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'The radio didn\'t confirm the send.'**
+  String get toolFailNoConfirm;
+
+  /// No description provided for @toolFailPublic.
+  ///
+  /// In en, this message translates to:
+  /// **'Public is refused: everything sent there reaches every radio. Use a private channel or a DM.'**
+  String get toolFailPublic;
+
+  /// No description provided for @toolFailUnknownChannel.
+  ///
+  /// In en, this message translates to:
+  /// **'This channel\'s key hasn\'t been read from the radio yet.'**
+  String get toolFailUnknownChannel;
+
+  /// No description provided for @toolFailNoTarget.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a target first.'**
+  String get toolFailNoTarget;
+
+  /// No description provided for @statsRefresh.
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh'**
+  String get statsRefresh;
+
+  /// No description provided for @statsAuto.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto (every 5 s)'**
+  String get statsAuto;
+
+  /// No description provided for @statsSectionRadio.
+  ///
+  /// In en, this message translates to:
+  /// **'RADIO'**
+  String get statsSectionRadio;
+
+  /// No description provided for @statsSectionPackets.
+  ///
+  /// In en, this message translates to:
+  /// **'PACKETS'**
+  String get statsSectionPackets;
+
+  /// No description provided for @statsSectionCore.
+  ///
+  /// In en, this message translates to:
+  /// **'CORE'**
+  String get statsSectionCore;
+
+  /// No description provided for @statsNoise.
+  ///
+  /// In en, this message translates to:
+  /// **'Noise floor'**
+  String get statsNoise;
+
+  /// No description provided for @statsLastRssi.
+  ///
+  /// In en, this message translates to:
+  /// **'Last RSSI'**
+  String get statsLastRssi;
+
+  /// No description provided for @statsLastSnr.
+  ///
+  /// In en, this message translates to:
+  /// **'Last SNR'**
+  String get statsLastSnr;
+
+  /// No description provided for @statsTxAir.
+  ///
+  /// In en, this message translates to:
+  /// **'TX airtime'**
+  String get statsTxAir;
+
+  /// No description provided for @statsRxAir.
+  ///
+  /// In en, this message translates to:
+  /// **'RX airtime'**
+  String get statsRxAir;
+
+  /// No description provided for @statsDuty.
+  ///
+  /// In en, this message translates to:
+  /// **'Duty cycle (TX)'**
+  String get statsDuty;
+
+  /// No description provided for @statsReceived.
+  ///
+  /// In en, this message translates to:
+  /// **'Received'**
+  String get statsReceived;
+
+  /// No description provided for @statsSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Sent'**
+  String get statsSent;
+
+  /// No description provided for @statsSplit.
+  ///
+  /// In en, this message translates to:
+  /// **'flood {flood} · direct {direct}'**
+  String statsSplit(int flood, int direct);
+
+  /// No description provided for @statsRxErrors.
+  ///
+  /// In en, this message translates to:
+  /// **'Receive errors'**
+  String get statsRxErrors;
+
+  /// No description provided for @statsUptime.
+  ///
+  /// In en, this message translates to:
+  /// **'Uptime'**
+  String get statsUptime;
+
+  /// No description provided for @statsQueue.
+  ///
+  /// In en, this message translates to:
+  /// **'Send queue'**
+  String get statsQueue;
+
+  /// No description provided for @statsErrFlags.
+  ///
+  /// In en, this message translates to:
+  /// **'Error flags'**
+  String get statsErrFlags;
+
+  /// No description provided for @statsBattery.
+  ///
+  /// In en, this message translates to:
+  /// **'Battery'**
+  String get statsBattery;
+
+  /// No description provided for @statsNotFetched.
+  ///
+  /// In en, this message translates to:
+  /// **'Not fetched yet.'**
+  String get statsNotFetched;
+
+  /// No description provided for @pingTarget.
+  ///
+  /// In en, this message translates to:
+  /// **'TARGET'**
+  String get pingTarget;
+
+  /// No description provided for @pingMethodStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Status request — repeaters, rooms and sensors answer this.'**
+  String get pingMethodStatus;
+
+  /// No description provided for @pingMethodTelemetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Telemetry request — silent for the peer; it answers only if it shares telemetry with us.'**
+  String get pingMethodTelemetry;
+
+  /// No description provided for @pingSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'{sent} sent · {replied} replied · {lost} lost'**
+  String pingSummary(int sent, int replied, int lost);
+
+  /// No description provided for @pingRtt.
+  ///
+  /// In en, this message translates to:
+  /// **'RTT min {min} · avg {avg} · max {max} ms'**
+  String pingRtt(int min, int avg, int max);
+
+  /// No description provided for @pingLost.
+  ///
+  /// In en, this message translates to:
+  /// **'lost'**
+  String get pingLost;
+
+  /// No description provided for @pingWaiting.
+  ///
+  /// In en, this message translates to:
+  /// **'waiting…'**
+  String get pingWaiting;
+
+  /// No description provided for @pingNoContacts.
+  ///
+  /// In en, this message translates to:
+  /// **'No synced contacts yet — only contacts can be pinged.'**
+  String get pingNoContacts;
+
+  /// No description provided for @pingLastStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'LAST STATUS'**
+  String get pingLastStatus;
+
+  /// No description provided for @traceToNode.
+  ///
+  /// In en, this message translates to:
+  /// **'To a node'**
+  String get traceToNode;
+
+  /// No description provided for @traceManual.
+  ///
+  /// In en, this message translates to:
+  /// **'Manual'**
+  String get traceManual;
+
+  /// No description provided for @traceRoundTrip.
+  ///
+  /// In en, this message translates to:
+  /// **'Round trip (come back to us)'**
+  String get traceRoundTrip;
+
+  /// No description provided for @traceNoRoute.
+  ///
+  /// In en, this message translates to:
+  /// **'no route — send it a message first'**
+  String get traceNoRoute;
+
+  /// No description provided for @tracePath.
+  ///
+  /// In en, this message translates to:
+  /// **'path {path}'**
+  String tracePath(String path);
+
+  /// No description provided for @traceManualHint.
+  ///
+  /// In en, this message translates to:
+  /// **'hashes, e.g. a1,7f,a1'**
+  String get traceManualHint;
+
+  /// No description provided for @traceInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter one or more hex bytes.'**
+  String get traceInvalid;
+
+  /// No description provided for @traceRun.
+  ///
+  /// In en, this message translates to:
+  /// **'Trace'**
+  String get traceRun;
+
+  /// No description provided for @traceNoAnswer.
+  ///
+  /// In en, this message translates to:
+  /// **'no answer'**
+  String get traceNoAnswer;
+
+  /// No description provided for @traceToUs.
+  ///
+  /// In en, this message translates to:
+  /// **'→ us'**
+  String get traceToUs;
+
+  /// No description provided for @traceWeakest.
+  ///
+  /// In en, this message translates to:
+  /// **'weakest: {hop}, {snr} dB'**
+  String traceWeakest(String hop, String snr);
+
+  /// No description provided for @traceReset.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset route'**
+  String get traceReset;
+
+  /// No description provided for @traceResetDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Route reset — the next message floods.'**
+  String get traceResetDone;
+
+  /// No description provided for @traceNoRepeaters.
+  ///
+  /// In en, this message translates to:
+  /// **'Trace needs a repeater on the way: pick a repeater, or a contact reached through one.'**
+  String get traceNoRepeaters;
+
+  /// No description provided for @discoverStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Discover'**
+  String get discoverStart;
+
+  /// No description provided for @discoverListening.
+  ///
+  /// In en, this message translates to:
+  /// **'Listening… {s} s'**
+  String discoverListening(int s);
+
+  /// No description provided for @discoverNone.
+  ///
+  /// In en, this message translates to:
+  /// **'No repeater answered.'**
+  String get discoverNone;
+
+  /// No description provided for @discoverTheyHearUs.
+  ///
+  /// In en, this message translates to:
+  /// **'they hear us {snr} dB'**
+  String discoverTheyHearUs(String snr);
+
+  /// No description provided for @discoverWeHearThem.
+  ///
+  /// In en, this message translates to:
+  /// **'we hear them {snr} dB / {rssi} dBm'**
+  String discoverWeHearThem(String snr, int rssi);
+
+  /// No description provided for @discoverAsymmetric.
+  ///
+  /// In en, this message translates to:
+  /// **'asymmetric link'**
+  String get discoverAsymmetric;
+
+  /// No description provided for @soakScope.
+  ///
+  /// In en, this message translates to:
+  /// **'CONVERSATION'**
+  String get soakScope;
+
+  /// No description provided for @soakPairHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Pairs with an R59 bot answering on the other radio: echoes show drops, duplicates and reordering.'**
+  String get soakPairHint;
+
+  /// No description provided for @soakSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'{sent} sent · {delivered} delivered · {failed} failed'**
+  String soakSummary(int sent, int delivered, int failed);
+
+  /// No description provided for @soakEchoes.
+  ///
+  /// In en, this message translates to:
+  /// **'{echoed} echoed · {dup} duplicate · {reordered} reordered'**
+  String soakEchoes(int echoed, int dup, int reordered);
+
+  /// No description provided for @soakListening.
+  ///
+  /// In en, this message translates to:
+  /// **'Sends done — listening for late echoes…'**
+  String get soakListening;
+
+  /// No description provided for @soakRun.
+  ///
+  /// In en, this message translates to:
+  /// **'run {id}'**
+  String soakRun(String id);
+
+  /// No description provided for @soakEcho.
+  ///
+  /// In en, this message translates to:
+  /// **'echo {ms} ms'**
+  String soakEcho(int ms);
+
+  /// No description provided for @soakDm.
+  ///
+  /// In en, this message translates to:
+  /// **'DM · {name}'**
+  String soakDm(String name);
+
+  /// No description provided for @rangeSender.
+  ///
+  /// In en, this message translates to:
+  /// **'Sender'**
+  String get rangeSender;
+
+  /// No description provided for @rangeReceiver.
+  ///
+  /// In en, this message translates to:
+  /// **'Receiver'**
+  String get rangeReceiver;
+
+  /// No description provided for @rangeChannel.
+  ///
+  /// In en, this message translates to:
+  /// **'CHANNEL'**
+  String get rangeChannel;
+
+  /// No description provided for @rangeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Both radios on the same private channel. The sender beacons; the receiver walks and logs.'**
+  String get rangeHint;
+
+  /// No description provided for @rangeBeacons.
+  ///
+  /// In en, this message translates to:
+  /// **'{n} beacons sent'**
+  String rangeBeacons(int n);
+
+  /// No description provided for @rangeSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'{heard} heard · {missing} missing'**
+  String rangeSummary(int heard, int missing);
+
+  /// No description provided for @rangeBest.
+  ///
+  /// In en, this message translates to:
+  /// **'best SNR {snr} dB'**
+  String rangeBest(String snr);
+
+  /// No description provided for @rangeFarthest.
+  ///
+  /// In en, this message translates to:
+  /// **'farthest {d}'**
+  String rangeFarthest(String d);
+
+  /// No description provided for @rangeCopyCsv.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy CSV'**
+  String get rangeCopyCsv;
+
+  /// No description provided for @rangeFlood.
+  ///
+  /// In en, this message translates to:
+  /// **'flood'**
+  String get rangeFlood;
 }
 
 class _AppLocalizationsDelegate

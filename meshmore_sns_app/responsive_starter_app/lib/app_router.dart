@@ -12,7 +12,15 @@ import 'screens/dm_screen.dart';
 import 'screens/diagnostics_screen.dart';
 import 'screens/location_settings_screen.dart';
 import 'screens/personalization_screen.dart';
+import 'screens/tools/discover_screen.dart';
+import 'screens/tools/ping_screen.dart';
+import 'screens/tools/radio_stats_screen.dart';
+import 'screens/tools/range_test_screen.dart';
+import 'screens/tools/soak_screen.dart';
+import 'screens/tools/tools_hub_screen.dart';
+import 'screens/tools/trace_screen.dart';
 import 'screens/voice_settings_screen.dart';
+import 'tools/mesh_tool.dart';
 import 'shell/home_shell.dart';
 
 /// App routes (R11). `/` hosts the swipe shell (the hyperlocal grid is
@@ -55,6 +63,25 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: '/settings/location',
       builder: (_, __) => const LocationSettingsScreen(),
+    ),
+    // R60 — Settings → Tools (issue #7). Unknown tool names fall back
+    // to the hub.
+    GoRoute(
+      path: '/settings/tools',
+      builder: (_, __) => const ToolsHubScreen(),
+    ),
+    GoRoute(
+      path: '/settings/tools/:tool',
+      builder: (_, GoRouterState state) =>
+          switch (ToolKind.values.asNameMap()[state.pathParameters['tool']]) {
+        ToolKind.stats => const RadioStatsScreen(),
+        ToolKind.ping => const PingScreen(),
+        ToolKind.trace => const TraceScreen(),
+        ToolKind.discover => const DiscoverScreen(),
+        ToolKind.soak => const SoakScreen(),
+        ToolKind.range => const RangeTestScreen(),
+        null => const ToolsHubScreen(),
+      },
     ),
     GoRoute(
       path: '/settings/battery',

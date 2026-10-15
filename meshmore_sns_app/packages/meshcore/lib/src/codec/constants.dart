@@ -242,6 +242,29 @@ extension type const MeshcoreCommand(int code) {
   static const MeshcoreCommand setCustomVar = MeshcoreCommand(0x29);
 
   static const MeshcoreCommand sendChannelDatagram = MeshcoreCommand(0x3E);
+
+  /// --- R60 Tools. From `MyMesh.cpp` on meshcore-dev/MeshCore main
+  /// (checked 2026-10-14), newer than the pin above; older firmware
+  /// answers ERR_CODE_UNSUPPORTED_CMD. ---
+
+  /// `CMD_RESET_PATH` (13): `0D [pub_key 32]` — forget the contact's
+  /// route; the next send floods.
+  static const MeshcoreCommand resetPath = MeshcoreCommand(0x0D);
+
+  /// `CMD_SEND_STATUS_REQ` (27): `1B [pub_key 32]` → SENT, then
+  /// `PUSH_CODE_STATUS_RESPONSE` (0x87).
+  static const MeshcoreCommand sendStatusReq = MeshcoreCommand(0x1B);
+
+  /// `CMD_SEND_TRACE_PATH` (36) → SENT (tag echoed), then
+  /// `PUSH_CODE_TRACE_DATA` (0x89).
+  static const MeshcoreCommand sendTracePath = MeshcoreCommand(0x24);
+
+  /// `CMD_SEND_CONTROL_DATA` (55): the payload is the control packet
+  /// itself, sent zero-hop. Replies OK.
+  static const MeshcoreCommand sendControlData = MeshcoreCommand(0x37);
+
+  /// `CMD_GET_STATS` (56): `38 [sub_type]` → `RESP_CODE_STATS` (0x18).
+  static const MeshcoreCommand getStats = MeshcoreCommand(0x38);
 }
 
 /// Response / push opcodes (Device → App). First byte of an inbound frame.
@@ -270,6 +293,9 @@ extension type const MeshcoreResponse(int code) {
   /// Payload: comma-separated `name:value` pairs (ASCII, no NUL).
   static const MeshcoreResponse customVars = MeshcoreResponse(0x15);
 
+  /// `RESP_CODE_STATS` (24 = 0x18) — reply to CMD_GET_STATS.
+  static const MeshcoreResponse stats = MeshcoreResponse(0x18);
+
   /// --- Asynchronous push codes (>= 0x80) ---
   static const MeshcoreResponse advertisement = MeshcoreResponse(0x80);
   static const MeshcoreResponse ack = MeshcoreResponse(0x82);
@@ -286,8 +312,33 @@ extension type const MeshcoreResponse(int code) {
   static const MeshcoreResponse telemetryResponse =
       MeshcoreResponse(0x8B);
 
+  /// `PUSH_CODE_STATUS_RESPONSE` (0x87) — a repeater's status reply.
+  static const MeshcoreResponse statusResponse = MeshcoreResponse(0x87);
+
+  /// `PUSH_CODE_TRACE_DATA` (0x89) — a TRACE reached the end of its path.
+  static const MeshcoreResponse traceData = MeshcoreResponse(0x89);
+
+  /// `PUSH_CODE_CONTROL_DATA` (0x8E) — a control packet (e.g. a
+  /// discover response) was heard.
+  static const MeshcoreResponse controlData = MeshcoreResponse(0x8E);
+
   bool get isPush => code >= 0x80;
 }
+
+/// `CMD_GET_STATS` sub-types.
+const int kStatsTypeCore = 0;
+const int kStatsTypeRadio = 1;
+const int kStatsTypePackets = 2;
+
+/// Control-packet types (upper nibble of the first payload byte).
+const int kCtlTypeNodeDiscoverReq = 0x80;
+const int kCtlTypeNodeDiscoverResp = 0x90;
+
+/// `ERR_CODE_*` values carried by RESP_CODE_ERR.
+const int kErrUnsupportedCmd = 1;
+const int kErrNotFound = 2;
+const int kErrTableFull = 3;
+const int kErrIllegalArg = 6;
 
 /// SNR byte → dB conversion used by the V3 receive frames.
 ///

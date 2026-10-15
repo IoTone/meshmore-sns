@@ -2802,4 +2802,364 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get deliveryFailed => '未配信 — 確認応答なし、または送信失敗';
+
+  @override
+  String get settingsHubTools => 'ツール';
+
+  @override
+  String get settingsHubToolsSub => 'Ping・トレース・探索・ソーク・レンジテスト';
+
+  @override
+  String get toolsTitle => 'ツール';
+
+  @override
+  String get toolsOffline => '未接続 — ツールには無線機が必要です。';
+
+  @override
+  String get toolsRunning => '実行中';
+
+  @override
+  String get toolsStart => '開始';
+
+  @override
+  String get toolsStop => '停止';
+
+  @override
+  String get toolsCopyReport => 'レポートをコピー';
+
+  @override
+  String get toolsCopied => 'クリップボードにコピーしました';
+
+  @override
+  String get toolsCount => '回数';
+
+  @override
+  String get toolsInterval => '間隔';
+
+  @override
+  String toolsSeconds(int n) {
+    return '$n 秒';
+  }
+
+  @override
+  String toolsMinutes(int n) {
+    return '$n 分';
+  }
+
+  @override
+  String toolsMs(int n) {
+    return '$n ms';
+  }
+
+  @override
+  String toolsDb(String v) {
+    return '$v dB';
+  }
+
+  @override
+  String get toolsChoose => '選択…';
+
+  @override
+  String get toolStatsName => '無線統計';
+
+  @override
+  String get toolStatsSub => 'ノイズフロア・エアタイム・パケット数';
+
+  @override
+  String get toolPingName => 'Ping';
+
+  @override
+  String get toolPingSub => 'コンタクトへの往復: 損失と RTT';
+
+  @override
+  String get toolTraceName => 'パストレース';
+
+  @override
+  String get toolTraceSub => 'リピーター経路のホップごとの SNR';
+
+  @override
+  String get toolDiscoverName => '近隣探索';
+
+  @override
+  String get toolDiscoverSub => 'こちらが聞こえるリピーターと双方向の SNR';
+
+  @override
+  String get toolSoakName => 'ソークテスト';
+
+  @override
+  String get toolSoakSub => '連番メッセージを計数 — ボットと組み合わせ';
+
+  @override
+  String get toolRangeName => 'レンジテスト';
+
+  @override
+  String get toolRangeSub => 'ビーコン送信または受信記録 (SNR・距離付き)';
+
+  @override
+  String get toolFailNotConnected => '無線機に接続されていません。';
+
+  @override
+  String get toolFailBusy => '別のツールが無線機を使用中です。先に停止してください。';
+
+  @override
+  String get toolFailUnsupported => 'この無線機のファームウェアは未対応です。';
+
+  @override
+  String get toolFailNotFound => '無線機にこのコンタクトがありません。';
+
+  @override
+  String get toolFailTableFull => '無線機がビジーです (送信テーブル満杯)。少し待って再試行してください。';
+
+  @override
+  String get toolFailRejected => '無線機が要求を拒否しました。';
+
+  @override
+  String get toolFailNoConfirm => '無線機が送信を確認しませんでした。';
+
+  @override
+  String get toolFailPublic =>
+      'Public は使用できません: 全ての無線機に届きます。プライベートチャンネルか DM を使ってください。';
+
+  @override
+  String get toolFailUnknownChannel => 'このチャンネルの鍵をまだ無線機から読み込んでいません。';
+
+  @override
+  String get toolFailNoTarget => '先に対象を選んでください。';
+
+  @override
+  String get statsRefresh => '更新';
+
+  @override
+  String get statsAuto => '自動 (5 秒ごと)';
+
+  @override
+  String get statsSectionRadio => '無線';
+
+  @override
+  String get statsSectionPackets => 'パケット';
+
+  @override
+  String get statsSectionCore => 'コア';
+
+  @override
+  String get statsNoise => 'ノイズフロア';
+
+  @override
+  String get statsLastRssi => '直近 RSSI';
+
+  @override
+  String get statsLastSnr => '直近 SNR';
+
+  @override
+  String get statsTxAir => '送信エアタイム';
+
+  @override
+  String get statsRxAir => '受信エアタイム';
+
+  @override
+  String get statsDuty => 'デューティ比 (送信)';
+
+  @override
+  String get statsReceived => '受信';
+
+  @override
+  String get statsSent => '送信';
+
+  @override
+  String statsSplit(int flood, int direct) {
+    return 'フラッド $flood · 直接 $direct';
+  }
+
+  @override
+  String get statsRxErrors => '受信エラー';
+
+  @override
+  String get statsUptime => '稼働時間';
+
+  @override
+  String get statsQueue => '送信キュー';
+
+  @override
+  String get statsErrFlags => 'エラーフラグ';
+
+  @override
+  String get statsBattery => 'バッテリー';
+
+  @override
+  String get statsNotFetched => 'まだ取得していません。';
+
+  @override
+  String get pingTarget => '対象';
+
+  @override
+  String get pingMethodStatus => 'ステータス要求 — リピーター・ルーム・センサーが応答します。';
+
+  @override
+  String get pingMethodTelemetry =>
+      'テレメトリ要求 — 相手には通知されず、テレメトリを共有している場合のみ応答します。';
+
+  @override
+  String pingSummary(int sent, int replied, int lost) {
+    return '送信 $sent · 応答 $replied · 損失 $lost';
+  }
+
+  @override
+  String pingRtt(int min, int avg, int max) {
+    return 'RTT 最小 $min · 平均 $avg · 最大 $max ms';
+  }
+
+  @override
+  String get pingLost => '損失';
+
+  @override
+  String get pingWaiting => '待機中…';
+
+  @override
+  String get pingNoContacts => '同期済みコンタクトがありません — Ping できるのはコンタクトのみです。';
+
+  @override
+  String get pingLastStatus => '直近のステータス';
+
+  @override
+  String get traceToNode => 'ノードへ';
+
+  @override
+  String get traceManual => '手動';
+
+  @override
+  String get traceRoundTrip => '往復 (こちらに戻す)';
+
+  @override
+  String get traceNoRoute => '経路なし — 先にメッセージを送ってください';
+
+  @override
+  String tracePath(String path) {
+    return '経路 $path';
+  }
+
+  @override
+  String get traceManualHint => 'ハッシュ (例: a1,7f,a1)';
+
+  @override
+  String get traceInvalid => '16 進バイトを 1 つ以上入力してください。';
+
+  @override
+  String get traceRun => 'トレース';
+
+  @override
+  String get traceNoAnswer => '応答なし';
+
+  @override
+  String get traceToUs => '→ 自分';
+
+  @override
+  String traceWeakest(String hop, String snr) {
+    return '最弱: $hop, $snr dB';
+  }
+
+  @override
+  String get traceReset => '経路をリセット';
+
+  @override
+  String get traceResetDone => '経路をリセットしました — 次のメッセージはフラッドします。';
+
+  @override
+  String get traceNoRepeaters =>
+      'トレースには経路上のリピーターが必要です: リピーターか、リピーター経由のコンタクトを選んでください。';
+
+  @override
+  String get discoverStart => '探索';
+
+  @override
+  String discoverListening(int s) {
+    return '受信待ち… $s 秒';
+  }
+
+  @override
+  String get discoverNone => '応答したリピーターはありません。';
+
+  @override
+  String discoverTheyHearUs(String snr) {
+    return '相手→自分 $snr dB';
+  }
+
+  @override
+  String discoverWeHearThem(String snr, int rssi) {
+    return '自分→相手 $snr dB / $rssi dBm';
+  }
+
+  @override
+  String get discoverAsymmetric => '非対称リンク';
+
+  @override
+  String get soakScope => '会話';
+
+  @override
+  String get soakPairHint => '相手側の R59 ボットと組み合わせると、エコーで欠落・重複・順序入れ替わりがわかります。';
+
+  @override
+  String soakSummary(int sent, int delivered, int failed) {
+    return '送信 $sent · 配達 $delivered · 失敗 $failed';
+  }
+
+  @override
+  String soakEchoes(int echoed, int dup, int reordered) {
+    return 'エコー $echoed · 重複 $dup · 順序違い $reordered';
+  }
+
+  @override
+  String get soakListening => '送信完了 — 遅れたエコーを待っています…';
+
+  @override
+  String soakRun(String id) {
+    return '実行 $id';
+  }
+
+  @override
+  String soakEcho(int ms) {
+    return 'エコー $ms ms';
+  }
+
+  @override
+  String soakDm(String name) {
+    return 'DM · $name';
+  }
+
+  @override
+  String get rangeSender => '送信側';
+
+  @override
+  String get rangeReceiver => '受信側';
+
+  @override
+  String get rangeChannel => 'チャンネル';
+
+  @override
+  String get rangeHint => '両方の無線機を同じプライベートチャンネルに。送信側がビーコン、受信側が移動しながら記録します。';
+
+  @override
+  String rangeBeacons(int n) {
+    return 'ビーコン $n 件送信';
+  }
+
+  @override
+  String rangeSummary(int heard, int missing) {
+    return '受信 $heard · 欠落 $missing';
+  }
+
+  @override
+  String rangeBest(String snr) {
+    return '最良 SNR $snr dB';
+  }
+
+  @override
+  String rangeFarthest(String d) {
+    return '最遠 $d';
+  }
+
+  @override
+  String get rangeCopyCsv => 'CSV をコピー';
+
+  @override
+  String get rangeFlood => 'フラッド';
 }
