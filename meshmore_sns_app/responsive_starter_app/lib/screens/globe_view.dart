@@ -12,6 +12,7 @@ import 'package:provider/provider.dart';
 import '../gen/app_localizations.dart';
 import '../meshcore/discovered_node.dart';
 import '../meshcore/meshcore_controller.dart';
+import '../meshcore/own_location.dart';
 import 'node_detail_sheet.dart';
 
 /// R27 — macro globe view. Renders the mesh fabric on a 3D earth
@@ -250,14 +251,14 @@ class _GlobeViewState extends State<GlobeView> {
     final ColorScheme cs = Theme.of(context).colorScheme;
     final AppLocalizations l = AppLocalizations.of(context);
 
-    final double? selfLat = mc.phoneLocationFix?.latitude ??
-        ((mc.selfInfo?.latitude ?? 0) == 0
-            ? null
-            : mc.selfInfo!.latitude);
-    final double? selfLon = mc.phoneLocationFix?.longitude ??
-        ((mc.selfInfo?.longitude ?? 0) == 0
-            ? null
-            : mc.selfInfo!.longitude);
+    // R22 — one source of truth. This previously preferred
+    // `phoneLocationFix` over the device fix, the exact inverse of
+    // `MeshcoreController.ownLocation`, so a cached phone fix made the
+    // globe centre on a different place than the dashboard, the Nodes
+    // distances and the radar.
+    final OwnLocation? self = mc.ownLocation;
+    final double? selfLat = self?.latitude;
+    final double? selfLon = self?.longitude;
     _ensureCenteredOn(selfLat, selfLon);
 
     // R40 — when the grid hands us a pre-filtered list (its own

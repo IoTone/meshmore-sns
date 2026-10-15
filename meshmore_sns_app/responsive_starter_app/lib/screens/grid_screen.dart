@@ -13,6 +13,7 @@ import '../meshcore/chat_message.dart';
 import '../meshcore/discovered_node.dart';
 import '../meshcore/meshcore_connection.dart';
 import '../meshcore/meshcore_controller.dart';
+import '../meshcore/own_location.dart';
 import '../theme/theme_controller.dart';
 import '../ui/mm_scaffold.dart';
 import '../util/geo.dart' as geo;
@@ -530,8 +531,15 @@ class _GridScreenState extends State<GridScreen>
             n
     ];
 
-    final double scaleKm = _effectiveScaleKm(
-        mc.selfInfo?.latitude, mc.selfInfo?.longitude, visible);
+    // R22 — own location must be a single source of truth. Reading
+    // `selfInfo` directly skipped the device-first / phone-fallback rule in
+    // `MeshcoreController.ownLocation`, so whenever the radio reported
+    // (0,0) — GPS off, no lock, or a hidden position — every node fell
+    // through to the arbitrary RSSI-ring / hash-bearing placement even
+    // though a good phone fix was cached.
+    final OwnLocation? self = mc.ownLocation;
+    final double scaleKm =
+        _effectiveScaleKm(self?.latitude, self?.longitude, visible);
     final AppLocalizations l = AppLocalizations.of(context);
     final String scaleLabel = _rangeLabel(l, _scaleIndex);
     final String scaleValue = _rangeValue(scaleKm);
@@ -831,8 +839,8 @@ class _GridScreenState extends State<GridScreen>
                             tap: d.localPosition,
                             area: area,
                             visible: visible,
-                            selfLat: mc.selfInfo?.latitude,
-                            selfLon: mc.selfInfo?.longitude,
+                            selfLat: self?.latitude,
+                            selfLon: self?.longitude,
                             rotationRad: headingRot,
                           );
                           if (hit != null) {
@@ -848,8 +856,8 @@ class _GridScreenState extends State<GridScreen>
                               nodes: visible,
                               favorites: mc.favorites,
                               known: mc.known,
-                              selfLat: mc.selfInfo?.latitude,
-                              selfLon: mc.selfInfo?.longitude,
+                              selfLat: self?.latitude,
+                              selfLon: self?.longitude,
                               nowUnix: nowUnix,
                               windowSec: windowSec,
                               tick: _tick.value,
