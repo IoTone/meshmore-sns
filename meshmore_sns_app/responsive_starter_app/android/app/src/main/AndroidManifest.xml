@@ -1,5 +1,13 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <!-- R25/R27 — the equal-grid, street-map and fabric-survey views load
+         OpenStreetMap/OpenTopoMap tiles over the network. This is declared
+         in the MAIN source set on purpose: the Flutter template puts
+         INTERNET only in the debug/profile manifests, which means a release
+         build silently shows a blank basemap in all three map views while
+         debug builds look fine. -->
+    <uses-permission android:name="android.permission.INTERNET" />
+
     <!-- Bluetooth permissions for Meshcore device link (R3).
          BLUETOOTH / BLUETOOTH_ADMIN are kept for pre-Android 12 devices.
          On Android 12+ (API 31+), BLUETOOTH_SCAN/CONNECT are required instead. -->
