@@ -3088,6 +3088,14 @@ class MeshcoreController extends ChangeNotifier {
       // per-contact telemetry permissions (R54 follow-on).
       _contacts[_hex(c.publicKey)] = c;
       final int adv = c.lastAdvertTimestamp;
+      // A contact sync REBUILDS the node entry, so anything the contact
+      // record does not carry must be preserved from the previous entry.
+      // The record has no RSSI/SNR/altitude, and it reports (0,0) for a
+      // node that hides its position. Before this, every sync wiped the
+      // signal data that the radar's RSSI-ring placement and the per-peer
+      // reach estimate (`estimatedPeerReachMeters`) depend on, and a
+      // position learned from an advert was replaced by null.
+      final DiscoveredNode? prev = _nodes[_hex(c.publicKey)];
       // `adv` is in the device clock; translate via the learned
       // offset (0 until CURR_TIME, re-derived in _trackDeviceClock).
       _nodes[_hex(c.publicKey)] = DiscoveredNode(
@@ -3096,8 +3104,15 @@ class MeshcoreController extends ChangeNotifier {
         type: c.type,
         lastHeardUnix: adv == 0 ? now : adv + _deviceClockOffsetSec,
         deviceAdvertUnix: adv == 0 ? null : adv,
-        latitude: c.latitudeMicros == 0 ? null : c.latitudeMicros / 1e6,
-        longitude: c.longitudeMicros == 0 ? null : c.longitudeMicros / 1e6,
+        latitude: c.latitudeMicros == 0
+            ? prev?.latitude
+            : c.latitudeMicros / 1e6,
+        longitude: c.longitudeMicros == 0
+            ? prev?.longitude
+            : c.longitudeMicros / 1e6,
+        snrDb: prev?.snrDb,
+        rssi: prev?.rssi,
+        altitudeMeters: prev?.altitudeMeters,
         viaAdvert: false,
         // R49 — preserve the outbound repeater chain for topology
         // drawing. activePath gives the prefix of valid bytes; the
