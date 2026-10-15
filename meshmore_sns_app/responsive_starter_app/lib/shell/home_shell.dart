@@ -18,15 +18,17 @@ import '../screens/chat_screen.dart';
 import 'boot_overlay.dart';
 import '../screens/dashboards/dashboard_host.dart';
 import '../screens/docs_hub_screen.dart';
+import '../screens/grid_screen.dart';
 import '../screens/nodes_screen.dart';
 import '../theme/mm_skin.dart';
 import '../theme/theme_controller.dart';
 import '../ui/mm_components.dart';
 import '../ui/mm_scaffold.dart';
 
-/// The six primary views (R8 dashboard is the home / first page;
-/// R53 adds the Docs tab, sitting after Settings).
-enum MmView { dashboard, chat, nodes, settings, docs, about }
+/// The primary views (R8 dashboard is the home / first page; the
+/// hyperlocal grid follows Nodes — issue #4; R53 adds the Docs tab,
+/// sitting after Settings).
+enum MmView { dashboard, chat, nodes, grid, settings, docs, about }
 
 extension on MmView {
   /// Localised tab label. Pass `AppLocalizations.of(context)` from the
@@ -36,6 +38,7 @@ extension on MmView {
         MmView.dashboard => l.tabDashboard,
         MmView.chat => l.tabChat,
         MmView.nodes => l.tabNodes,
+        MmView.grid => l.gridTitle,
         MmView.docs => l.tabDocs,
         MmView.settings => l.tabSettings,
         MmView.about => l.tabAbout,
@@ -44,6 +47,7 @@ extension on MmView {
         MmView.dashboard => Icons.dashboard_outlined,
         MmView.chat => Icons.chat_bubble_outline,
         MmView.nodes => Icons.hub_outlined,
+        MmView.grid => Icons.radar,
         MmView.docs => Icons.menu_book_outlined,
         MmView.settings => Icons.settings_outlined,
         MmView.about => Icons.info_outline,
@@ -214,8 +218,17 @@ class _HomeShellState extends State<HomeShell>
           ),
         ),
       ),
-      body: PageView(
+      // A grid view that pans (street map, globe, …) owns horizontal
+      // drags, so the shell stops swiping while it shows; Back, the
+      // dots and quick-nav still leave the tab.
+      body: ValueListenableBuilder<bool>(
+        valueListenable: GridScreen.capturesHorizontalDrag,
+        builder: (BuildContext context, bool gridPans, Widget? _) =>
+            PageView(
         controller: _pc,
+        physics: gridPans && current == MmView.grid
+            ? const NeverScrollableScrollPhysics()
+            : null,
         onPageChanged: (int i) {
           // Leaving a view with a focused text field (e.g. Chat) — drop
           // the keyboard so it doesn't linger and shrink the next view.
@@ -232,10 +245,12 @@ class _HomeShellState extends State<HomeShell>
           DashboardHost(),
           ChatScreen(),
           NodesScreen(),
+          GridScreen(),
           _SettingsView(),
           DocsHubScreen(),
           _AboutView(),
         ],
+      ),
       ),
       ),
       ),

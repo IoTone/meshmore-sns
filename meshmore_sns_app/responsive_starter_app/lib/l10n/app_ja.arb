@@ -228,7 +228,6 @@
   "nodesScanning": "スキャン中…",
   "nodesAdvertise": "アドバート送信",
   "nodesSyncContacts": "コンタクト同期",
-  "nodesHyperlocalGridTooltip": "ハイパーローカルグリッド (R18)",
   "nodesFloodAdvert": "フラッドアドバート",
   "nodesFloodAdvertBody": "メッシュ全体 — 隣接 + リピーター。発見に最適。",
   "nodesZeroHopAdvert": "ゼロホップアドバート",
@@ -463,6 +462,7 @@
     }
   },
   "gridStatusOffline": "未接続 — 設定 → 診断で接続",
+  "gridNotConnected": "メッシュに未接続",
   "gridPlayStatePaused": "一時停止中",
   "gridPlayStateLive": "ライブ ({interval})",
   "@gridPlayStateLive": {

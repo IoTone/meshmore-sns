@@ -14,6 +14,7 @@ import '../meshcore/discovered_node.dart';
 import '../meshcore/meshcore_connection.dart';
 import '../meshcore/meshcore_controller.dart';
 import '../theme/theme_controller.dart';
+import '../ui/mm_scaffold.dart';
 import '../util/geo.dart' as geo;
 import 'elevation_profile_view.dart';
 import 'equal_grid_view.dart';
@@ -27,13 +28,13 @@ import 'grid_prefs_store.dart';
 import 'meshbook_view.dart';
 import 'weather_view.dart';
 
-/// R27 — three map views in the /grid picker:
-/// `radial` (R18, default) + `globe` (R27) + `equalGrid` (R25) +
-/// `streetMap` (R25+2). Selected via a [PopupMenuButton] in the
-/// AppBar — swipe nav was tried in R25+2 but conflicted with the
-/// outer HomeShell PageView (left-swipe-from-radial would leave the
-/// grid tab instead of staying inside it). The dropdown is
-/// unambiguous and matches Material conventions.
+/// R27 — the map views in the grid's picker: `radial` (R18, default)
+/// + `globe` (R27) + `equalGrid` (R25) + `streetMap` (R25+2) + the
+/// rest. Selected via a [PopupMenuButton] in the grid's toolbar —
+/// swipe nav was tried in R25+2 but conflicted with the outer
+/// HomeShell PageView (left-swipe-from-radial would leave the grid
+/// tab instead of staying inside it). The dropdown is unambiguous
+/// and matches Material conventions.
 enum _GridViewMode {
   radial,
   globe,
@@ -45,6 +46,22 @@ enum _GridViewMode {
   snsCells,
   weather,
   meshbook,
+}
+
+extension on _GridViewMode {
+  /// Views that pan/zoom with a drag. While one of these is showing,
+  /// a horizontal drag must move the map, not page the HomeShell — so
+  /// the shell stops swiping (Back, the dots and quick-nav still leave).
+  bool get pansHorizontally => switch (this) {
+        _GridViewMode.globe ||
+        _GridViewMode.equalGrid ||
+        _GridViewMode.streetMap ||
+        _GridViewMode.fabric ||
+        _GridViewMode.tree ||
+        _GridViewMode.snsCells =>
+          true,
+        _ => false,
+      };
 }
 
 /// R18 / U9 — the hyperlocal grid: a radial range-ring view of the
@@ -62,8 +79,30 @@ enum _GridViewMode {
 ///
 /// Audio/haptic parity (R12) is left for the R12 CueService (U6);
 /// the grid currently carries the visual+positional cue only.
+///
+/// Lives in the HomeShell as the tab after Nodes (issue #4). The shell
+/// supplies the title; this widget brings its own toolbar.
 class GridScreen extends StatefulWidget {
   const GridScreen({super.key});
+
+  /// The selected view, held for the life of the process: it survives
+  /// leaving and re-entering the tab (the PageView disposes the state),
+  /// but every app launch starts back on the radar (issue #4). Kept
+  /// out of [GridPrefsStore] deliberately for that reason.
+  static _GridViewMode _sessionMode = _GridViewMode.radial;
+
+  /// True while the showing view owns horizontal drags (see
+  /// [_GridViewMode.pansHorizontally]); the HomeShell listens and
+  /// locks its swipe while the grid tab is current.
+  static final ValueNotifier<bool> capturesHorizontalDrag =
+      ValueNotifier<bool>(false);
+
+  /// Test seam: back to the launch state (radar, shell swipe free).
+  @visibleForTesting
+  static void resetSession() {
+    _sessionMode = _GridViewMode.radial;
+    capturesHorizontalDrag.value = false;
+  }
 
   /// Default outer-range scale (km) when the user hasn't moved the
   /// **Range** slider yet. Beyond this distance a GPS-positioned
@@ -120,8 +159,9 @@ class _GridScreenState extends State<GridScreen>
   /// Whether the inline legend overlay is shown (info button in app bar).
   bool _legendVisible = false;
 
-  /// R27 — which of the available map views is showing.
-  _GridViewMode _viewMode = _GridViewMode.radial;
+  /// R27 — which of the available map views is showing. Seeded from,
+  /// and written back to, [GridScreen._sessionMode].
+  _GridViewMode _viewMode = GridScreen._sessionMode;
 
   /// Maximum hit-test radius (logical px) for tap-to-select on the grid.
   static const double _tapRadius = 28.0;
@@ -191,14 +231,13 @@ class _GridScreenState extends State<GridScreen>
         });
       }, onError: (_) {});
     }
-    // Restore last-used grid preferences (view / scale / orientation /
-    // refresh) so they don't reset when re-opening the grid.
+    _publishCapture(_viewMode.pansHorizontally);
+    // Restore last-used grid preferences (scale / orientation / refresh)
+    // so they don't reset when re-opening the grid. The view itself is
+    // session state — see [GridScreen._sessionMode].
     GridPrefsStore.load().then((GridPrefs? p) {
       if (p == null || !mounted) return;
       setState(() {
-        if (p.modeIndex >= 0 && p.modeIndex < _GridViewMode.values.length) {
-          _viewMode = _GridViewMode.values[p.modeIndex];
-        }
         if (p.scaleIndex >= 0 &&
             p.scaleIndex < GridScreen.rangeStops.length) {
           _scaleIndex = p.scaleIndex;
@@ -214,7 +253,6 @@ class _GridScreenState extends State<GridScreen>
 
   void _savePrefs() {
     GridPrefsStore.save(GridPrefs(
-      modeIndex: _viewMode.index,
       scaleIndex: _scaleIndex,
       northUp: _northUp,
       live: _live,
@@ -222,8 +260,24 @@ class _GridScreenState extends State<GridScreen>
     ));
   }
 
+  /// Mount and unmount happen while the shell is building / finalizing
+  /// its tree, where notifying its listener would assert — so publish
+  /// after the frame.
+  static void _publishCapture(bool v) {
+    WidgetsBinding.instance.addPostFrameCallback(
+        (_) => GridScreen.capturesHorizontalDrag.value = v);
+  }
+
+  void _selectMode(_GridViewMode m) {
+    setState(() => _viewMode = m);
+    GridScreen._sessionMode = m;
+    GridScreen.capturesHorizontalDrag.value = m.pansHorizontally;
+  }
+
   @override
   void dispose() {
+    // Off the tab, nothing of ours is under the finger — free the swipe.
+    _publishCapture(false);
     _refreshTimer?.cancel();
     _msgSub?.cancel();
     _compassSub?.cancel();
@@ -466,11 +520,14 @@ class _GridScreenState extends State<GridScreen>
     final int nowUnix = DateTime.now().millisecondsSinceEpoch ~/ 1000;
     final int windowSec = GridScreen.recencyWindow.inSeconds;
     final String? selfPk = mc.ownPubKeyHex;
+    // Not connected → no nodes at all (issue #4): whatever the cache
+    // holds is not what the mesh around us is doing right now.
     final List<DiscoveredNode> visible = <DiscoveredNode>[
-      for (final DiscoveredNode n in source)
-        if (nowUnix - n.lastHeardUnix < windowSec &&
-            n.pubKeyHex != selfPk)
-          n
+      if (ready)
+        for (final DiscoveredNode n in source)
+          if (nowUnix - n.lastHeardUnix < windowSec &&
+              n.pubKeyHex != selfPk)
+            n
     ];
 
     final double scaleKm = _effectiveScaleKm(
@@ -479,10 +536,24 @@ class _GridScreenState extends State<GridScreen>
     final String scaleLabel = _rangeLabel(l, _scaleIndex);
     final String scaleValue = _rangeValue(scaleKm);
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(l.gridTitle),
-        actions: <Widget>[
+    return MmScaffold(
+      child: Column(
+        children: <Widget>[
+      Padding(
+        padding: const EdgeInsets.fromLTRB(16, 4, 4, 0),
+        child: Row(
+        children: <Widget>[
+          // The shell's AppBar carries the tab title; name the view here.
+          Expanded(
+            child: Text(
+              _longLabel(_viewMode, l),
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                  color: cs.onSurfaceVariant,
+                  fontSize: 12,
+                  letterSpacing: 1),
+            ),
+          ),
           // R27 + R25 + R25+4 — view-mode picker. PopupMenuButton
           // shows icon + short label per mode. Swipe nav was tried
           // in R25+2 but conflicted with the outer HomeShell
@@ -493,14 +564,9 @@ class _GridScreenState extends State<GridScreen>
           PopupMenuButton<_GridViewMode>(
             tooltip: l.gridViewPicker,
             initialValue: _viewMode,
-            onSelected: (_GridViewMode m) {
-              setState(() => _viewMode = m);
-              _savePrefs();
-            },
-            // Icon + dropdown arrow only — the inline 5-char label
-            // was pushing the AppBar title ("Hyperlocal grid") into
-            // ellipsis. Long label still shows on each row inside
-            // the menu, so users still see what they're picking.
+            onSelected: _selectMode,
+            // Icon + dropdown arrow only; the view's long label sits
+            // at the left of this toolbar and on each menu row.
             icon: Row(
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
@@ -525,10 +591,13 @@ class _GridScreenState extends State<GridScreen>
                               fontWeight: FontWeight.w600,
                               letterSpacing: 1)),
                       const SizedBox(width: 8),
-                      Text(_longLabel(m, l),
-                          style: TextStyle(
-                              color: cs.onSurfaceVariant,
-                              fontSize: 11)),
+                      Flexible(
+                        child: Text(_longLabel(m, l),
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                                color: cs.onSurfaceVariant,
+                                fontSize: 11)),
+                      ),
                     ],
                   ),
                 ),
@@ -578,10 +647,16 @@ class _GridScreenState extends State<GridScreen>
           ),
         ],
       ),
+      ),
+      // The radar says it in its own centre; every other view gets
+      // the strip.
+      if (!ready && _viewMode != _GridViewMode.radial)
+        _NotConnectedStrip(cs: cs, label: l.gridNotConnected),
       // R25+4 — dropdown picker drives mode (was PageView in R25+2;
       // swiping conflicted with the outer HomeShell tab swipe). The
       // body just renders the chosen mode's widget.
-      body: switch (_viewMode) {
+      Expanded(
+        child: switch (_viewMode) {
         _GridViewMode.globe => GlobeView(
             filteredNodes: visible,
             frozen: !_live && _userInteracted,
@@ -725,7 +800,9 @@ class _GridScreenState extends State<GridScreen>
             child: Stack(
               children: <Widget>[
                 Positioned.fill(
-                  child: visible.isEmpty
+                  // Offline still paints the rings — an empty radar with
+                  // the message over it, not a blank page (issue #4).
+                  child: visible.isEmpty && ready
                 ? Center(
                     child: Padding(
                       padding: const EdgeInsets.all(28),
@@ -794,6 +871,15 @@ class _GridScreenState extends State<GridScreen>
                     },
                   ),
                 ),
+                if (!ready)
+                  Positioned.fill(
+                    child: IgnorePointer(
+                      child: Center(
+                        child: _NotConnectedStrip(
+                            cs: cs, label: l.gridNotConnected),
+                      ),
+                    ),
+                  ),
                 if (_headingDeg != null && visible.isNotEmpty)
                   Positioned(
                     top: 10,
@@ -821,6 +907,9 @@ class _GridScreenState extends State<GridScreen>
         ],
       ),
       },
+      ),
+        ],
+      ),
     );
   }
 
@@ -997,6 +1086,45 @@ class _GridLegend extends StatelessWidget {
           // to fix it when it points the wrong way.
           row(Icons.explore, l.gridLegendHeading),
           row(Icons.threesixty, l.gridLegendCalibration),
+        ],
+      ),
+    );
+  }
+}
+
+/// "Not Connected to Mesh" — centred on the empty radar, a strip atop
+/// every other view. Text + icon, never colour alone (R13).
+class _NotConnectedStrip extends StatelessWidget {
+  const _NotConnectedStrip({required this.cs, required this.label});
+
+  final ColorScheme cs;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      decoration: BoxDecoration(
+        color: cs.surface.withValues(alpha: .85),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: cs.error.withValues(alpha: .6)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          Icon(Icons.link_off, size: 18, color: cs.error),
+          const SizedBox(width: 8),
+          Flexible(
+            child: Text(
+              label,
+              style: TextStyle(
+                  color: cs.onSurface,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 1),
+            ),
+          ),
         ],
       ),
     );

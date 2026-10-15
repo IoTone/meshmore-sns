@@ -1112,12 +1112,6 @@ abstract class AppLocalizations {
   /// **'Sync contacts'**
   String get nodesSyncContacts;
 
-  /// No description provided for @nodesHyperlocalGridTooltip.
-  ///
-  /// In en, this message translates to:
-  /// **'Hyperlocal grid (R18)'**
-  String get nodesHyperlocalGridTooltip;
-
   /// No description provided for @nodesFloodAdvert.
   ///
   /// In en, this message translates to:
@@ -2017,6 +2011,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Not connected — Settings → Diagnostics & connect'**
   String get gridStatusOffline;
+
+  /// No description provided for @gridNotConnected.
+  ///
+  /// In en, this message translates to:
+  /// **'Not Connected to Mesh'**
+  String get gridNotConnected;
 
   /// No description provided for @gridPlayStatePaused.
   ///

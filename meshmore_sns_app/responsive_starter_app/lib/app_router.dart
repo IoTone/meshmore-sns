@@ -9,15 +9,15 @@ import 'docs/doc_section.dart';
 import 'screens/device_config_screen.dart';
 import 'screens/doc_reader_screen.dart';
 import 'screens/dm_screen.dart';
-import 'screens/grid_screen.dart';
 import 'screens/diagnostics_screen.dart';
 import 'screens/location_settings_screen.dart';
 import 'screens/personalization_screen.dart';
 import 'screens/voice_settings_screen.dart';
 import 'shell/home_shell.dart';
 
-/// App routes (R11). `/` hosts the 5-view swipe shell; the Settings
-/// hub pushes its three sub-screens.
+/// App routes (R11). `/` hosts the swipe shell (the hyperlocal grid is
+/// one of its tabs, not a route); the Settings hub pushes its
+/// sub-screens.
 final GoRouter appRouter = GoRouter(
   initialLocation: '/',
   routes: <RouteBase>[
@@ -38,7 +38,6 @@ final GoRouter appRouter = GoRouter(
       path: '/settings/channels',
       builder: (_, __) => const ChannelsScreen(),
     ),
-    GoRoute(path: '/grid', builder: (_, __) => const GridScreen()),
     GoRoute(
       path: '/dm/:pubkey',
       builder: (_, GoRouterState state) => DmScreen(

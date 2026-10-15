@@ -15,14 +15,12 @@ void main() {
 
   test('round-trips the grid preferences', () async {
     await GridPrefsStore.save(const GridPrefs(
-      modeIndex: 9,
       scaleIndex: 3,
       northUp: false,
       live: true,
       intervalSec: 30,
     ));
     final GridPrefs p = (await GridPrefsStore.load())!;
-    expect(p.modeIndex, 9);
     expect(p.scaleIndex, 3);
     expect(p.northUp, isFalse);
     expect(p.live, isTrue);

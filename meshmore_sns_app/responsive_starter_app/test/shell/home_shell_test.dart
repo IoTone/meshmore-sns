@@ -12,6 +12,7 @@ import 'package:meshmore_sns_app/bot/bot_controller.dart';
 import 'package:meshmore_sns_app/meshcore/meshcore_controller.dart';
 import 'package:meshmore_sns_app/perms/first_run_controller.dart';
 import 'package:meshmore_sns_app/perms/permissions_service.dart';
+import 'package:meshmore_sns_app/screens/grid_screen.dart';
 import 'package:meshmore_sns_app/theme/theme_controller.dart';
 import 'package:meshmore_sns_app/tts/tts_controller.dart';
 
@@ -130,5 +131,58 @@ void main() {
     await t.pumpAndSettle();
     expect(t.takeException(), isNull);
     expect(find.widgetWithText(AppBar, 'Dashboard'), findsOneWidget);
+  });
+
+  // The grid tab runs a repeating animation, so once it is on screen
+  // these use timed pumps — pumpAndSettle would never settle.
+  Future<void> settle(WidgetTester t) async {
+    for (int i = 0; i < 10; i++) {
+      await t.pump(const Duration(milliseconds: 100));
+    }
+  }
+
+  testWidgets('the hyperlocal grid is the tab after Nodes, and shows '
+      'offline as an empty radar (issue #4)', (WidgetTester t) async {
+    GridScreen.resetSession();
+    await _pumpApp(t);
+    await t.tap(find.byIcon(Icons.menu_open));
+    await t.pumpAndSettle();
+    await t.tap(find.text('Nodes').last);
+    await t.pumpAndSettle();
+    expect(find.widgetWithText(AppBar, 'Nodes'), findsOneWidget);
+    // The old entry point is gone from Nodes.
+    expect(find.widgetWithIcon(IconButton, Icons.radar), findsNothing);
+
+    await t.fling(find.byType(PageView), const Offset(-400, 0), 1000);
+    await settle(t);
+    expect(find.widgetWithText(AppBar, 'Hyperlocal grid'), findsOneWidget);
+    expect(find.text('Not Connected to Mesh'), findsOneWidget);
+    expect(t.takeException(), isNull);
+  });
+
+  testWidgets('a panning grid view locks the shell swipe; the radar '
+      'does not', (WidgetTester t) async {
+    GridScreen.resetSession();
+    await _pumpApp(t);
+    await t.tap(find.byIcon(Icons.menu_open));
+    await t.pumpAndSettle();
+    await t.tap(find.text('Hyperlocal grid').last);
+    await settle(t);
+    expect(find.widgetWithText(AppBar, 'Hyperlocal grid'), findsOneWidget);
+
+    // Stand in for picking a pannable view (street map, globe, …).
+    GridScreen.capturesHorizontalDrag.value = true;
+    await t.pump();
+    await t.fling(find.byType(PageView), const Offset(-400, 0), 1000);
+    await settle(t);
+    expect(find.widgetWithText(AppBar, 'Hyperlocal grid'), findsOneWidget);
+
+    GridScreen.capturesHorizontalDrag.value = false;
+    await t.pump();
+    await t.fling(find.byType(PageView), const Offset(-400, 0), 1000);
+    await settle(t);
+    expect(find.widgetWithText(AppBar, 'Settings'), findsOneWidget);
+    // Leaving the tab frees the swipe for everyone else.
+    expect(GridScreen.capturesHorizontalDrag.value, isFalse);
   });
 }

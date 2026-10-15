@@ -587,9 +587,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get nodesSyncContacts => 'Sync contacts';
 
   @override
-  String get nodesHyperlocalGridTooltip => 'Hyperlocal grid (R18)';
-
-  @override
   String get nodesFloodAdvert => 'Flood advert';
 
   @override
@@ -1125,6 +1122,9 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get gridStatusOffline =>
       'Not connected — Settings → Diagnostics & connect';
+
+  @override
+  String get gridNotConnected => 'Not Connected to Mesh';
 
   @override
   String get gridPlayStatePaused => 'paused';

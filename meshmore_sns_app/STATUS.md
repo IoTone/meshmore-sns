@@ -43,6 +43,11 @@ codebase.
   on-tap telemetry query (contacts only).
 
 **Hyperlocal grid (R18/R25/R27) — 9 view modes**
+- Its own primary tab, right after Nodes (issue #4). Disconnected, it
+  shows the radar with no nodes and "Not Connected to Mesh". The chosen
+  view is remembered for the session; every launch opens on the radar.
+  While a panning view (street map, globe, …) shows, the shell's swipe
+  is locked so drags move the map — leave via Back, dots or quick-nav.
 - **Radial "radar"** — range rings (Room…Wide…**City…Region**, Region
   auto-frames the known extent), signal/bearing placement, compass rose
   + heading needle, **north-up/heading-up toggle**, prominent top

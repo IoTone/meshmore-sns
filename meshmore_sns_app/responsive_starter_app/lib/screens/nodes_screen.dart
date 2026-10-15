@@ -1,7 +1,6 @@
 // Copyright (c) 2026 IoTone, Inc.
 // SPDX-License-Identifier: MIT
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../gen/app_localizations.dart';
@@ -315,11 +314,6 @@ class _NodesScreenState extends State<NodesScreen> {
                 tooltip: l.nodesSyncContacts,
                 icon: const Icon(Icons.sync),
                 onPressed: ready ? () => mc.requestContacts() : null,
-              ),
-              IconButton(
-                tooltip: l.nodesHyperlocalGridTooltip,
-                icon: const Icon(Icons.radar),
-                onPressed: () => context.push('/grid'),
               ),
             ],
           ),

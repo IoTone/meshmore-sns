@@ -228,7 +228,6 @@
   "nodesScanning": "Scanning…",
   "nodesAdvertise": "Advertise",
   "nodesSyncContacts": "Sync contacts",
-  "nodesHyperlocalGridTooltip": "Hyperlocal grid (R18)",
   "nodesFloodAdvert": "Flood advert",
   "nodesFloodAdvertBody": "Whole mesh — neighbours + repeaters. Best for discovery.",
   "nodesZeroHopAdvert": "Zero-hop advert",
@@ -463,6 +462,7 @@
     }
   },
   "gridStatusOffline": "Not connected — Settings → Diagnostics & connect",
+  "gridNotConnected": "Not Connected to Mesh",
   "gridPlayStatePaused": "paused",
   "gridPlayStateLive": "live ({interval})",
   "@gridPlayStateLive": {

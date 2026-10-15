@@ -558,9 +558,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get nodesSyncContacts => 'コンタクト同期';
 
   @override
-  String get nodesHyperlocalGridTooltip => 'ハイパーローカルグリッド (R18)';
-
-  @override
   String get nodesFloodAdvert => 'フラッドアドバート';
 
   @override
@@ -1067,6 +1064,9 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get gridStatusOffline => '未接続 — 設定 → 診断で接続';
+
+  @override
+  String get gridNotConnected => 'メッシュに未接続';
 
   @override
   String get gridPlayStatePaused => '一時停止中';
