@@ -34,6 +34,13 @@ network you can actually see and feel:
   ping, per-hop trace, nearby-repeater discovery, soak test and range
   test, each with an exportable result. One runs at a time, and the
   ones that send text never use Public.
+- **Offline maps** (Settings → Offline maps) — map tiles you view are
+  cached on the phone; regions can be downloaded from servers that
+  allow it (USGS in the US, or your own tile server); GeoJSON event
+  maps (a festival's street plan) draw over the map. One storage
+  budget, and anything can be set to delete itself after a while.
+  OpenStreetMap's own servers don't allow offline downloads, so OSM is
+  cached only as you look at it.
 
 ## How it works
 

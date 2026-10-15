@@ -98,6 +98,24 @@ codebase.
   firmware source (newer than the codec pin); GET_STATS and discover
   need recent firmware and say so when missing.
 
+**Offline maps (R61) — Settings → Offline maps (issue #5)**
+- Disk tile cache behind every map view (street map, equal grid, fabric
+  survey); region packs; GeoJSON event-map overlays; one storage
+  budget; per-pack/layer expiry; setup online-only; downloads park
+  while offline and resume on their own. Spec in
+  `meshmore-sns-maps-spec.md`.
+- **OSM and OpenTopoMap are view-cache only**: their tile policies
+  forbid prefetch/offline. Packs come from USGS (US only) or a custom
+  tile server the user marks as allowing offline download. Offline OSM
+  in bulk is phase 2 (vector extracts).
+- Street map's street/topo toggle is now a basemap picker; attribution
+  shown on the map.
+- **Self-test** (Offline maps → check icon): 11 end-to-end checks
+  against the real servers, in a sandbox. All pass on the SH-53D
+  (2026-10-15). Headless runner: `tool/maps_selftest_device.dart`.
+  Not yet exercised by hand: map pan performance from disk, multi-MB
+  packs, behaviour across days.
+
 **Battery (R16)**
 - Voltage → SoC via per-device OCV curve; observed-drain regression +
   rated-capacity cross-check; time-to-empty + confidence; persisted

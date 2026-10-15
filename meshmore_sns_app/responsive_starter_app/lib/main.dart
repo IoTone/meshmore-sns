@@ -16,6 +16,7 @@ import 'package:meshmore_sns_app/docs/docs_repository.dart';
 import 'package:meshmore_sns_app/gen/app_localizations.dart';
 import 'package:meshmore_sns_app/l10n/locale_controller.dart';
 import 'package:meshmore_sns_app/licenses/asset_licenses.dart';
+import 'package:meshmore_sns_app/maps/maps_controller.dart';
 import 'package:meshmore_sns_app/meshcore/auto_publish_controller.dart';
 import 'package:meshmore_sns_app/meshcore/background_keepalive.dart';
 import 'package:meshmore_sns_app/meshcore/city_lookup.dart';
@@ -104,6 +105,13 @@ void main() {
           ChangeNotifierProvider<ToolsController>(
             create: (BuildContext ctx) =>
                 ToolsController(ctx.read<MeshcoreController>()),
+          ),
+          // R61 — offline maps (issue #5): tile cache, region packs,
+          // event layers. App-scoped so downloads run in the background.
+          ChangeNotifierProvider<MapsController>(
+            create: (_) => MapsController(
+              appVersion: () => AppState.packageInfo?.version ?? '',
+            )..load(),
           ),
           Provider<PermissionsService>(
             create: (_) => const PlatformPermissionsService(),

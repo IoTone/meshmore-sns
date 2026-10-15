@@ -10,6 +10,9 @@ import 'package:meshcore/meshcore.dart' show SelfInfo;
 import 'package:provider/provider.dart';
 
 import '../gen/app_localizations.dart';
+import '../maps/basemap.dart';
+import '../maps/map_source.dart';
+import '../maps/maps_controller.dart';
 import '../meshcore/discovered_node.dart';
 import '../meshcore/meshcore_controller.dart';
 import '../util/lora_range.dart';
@@ -57,11 +60,10 @@ class _StreetMapViewState extends State<StreetMapView> {
   double? _headingDeg;
   StreamSubscription<CompassEvent>? _compassSub;
 
-  /// R25+3 — tile source toggle. `standard` is the colorful OSM
-  /// raster everyone recognises; `topo` is OpenTopoMap with contour
-  /// lines, shaded relief and trail/POI overlays — useful when the
-  /// street layer adds noise (off-grid use, hiking).
-  _TileSource _tileSource = _TileSource.standard;
+  /// R25+3 / R61 — basemap source. Starts on OSM; the picker offers
+  /// every source in the maps catalogue (built-ins + custom servers).
+  /// Session-scoped like the grid's view mode.
+  static String _sourceId = kOsmStandard.id;
 
   /// R25+5 — show / hide the basemap tiles entirely. Default on;
   /// flipping off renders peers, trail, and range circles on a
@@ -134,6 +136,12 @@ class _StreetMapViewState extends State<StreetMapView> {
     final AppLocalizations l = AppLocalizations.of(context);
     final ColorScheme cs = Theme.of(context).colorScheme;
 
+    final MapsController? maps = Provider.of<MapsController?>(context);
+    final List<MapSource> sources = maps?.sources ?? kBuiltInSources;
+    final MapSource tileSource = sources.firstWhere(
+        (MapSource s) => s.id == _sourceId,
+        orElse: () => kOsmStandard);
+
     final double? selfLat = mc.ownLocation?.latitude;
     final double? selfLon = mc.ownLocation?.longitude;
     if (selfLat == null || selfLon == null) {
@@ -196,17 +204,11 @@ class _StreetMapViewState extends State<StreetMapView> {
               backgroundColor: cs.surfaceContainerHighest,
             ),
             children: <Widget>[
-              if (_showTiles)
-                TileLayer(
-                  // R25+3 — swappable basemap. Topo subdomain set
-                  // (a/b/c) is required by OpenTopoMap's policy to
-                  // spread load; standard OSM doesn't use one.
-                  urlTemplate: _tileSource.urlTemplate,
-                  subdomains: _tileSource.subdomains,
-                  maxNativeZoom: _tileSource.maxNativeZoom,
-                  userAgentPackageName:
-                      'com.iotone.meshmore_sns_app',
-                ),
+              // R25+3 / R61 — swappable basemap, served from the
+              // offline map cache when one is in the tree.
+              if (_showTiles) basemapLayer(context, tileSource),
+              // R61 — event maps (festival streets, courses, camps).
+              const EventLayersOverlay(),
               // R25+1 — range circle for self. Uses our radio-tuple
               // anchor (we know TX power + modulation).
               // R48 — per-peer reach circles. Sized via
@@ -303,6 +305,7 @@ class _StreetMapViewState extends State<StreetMapView> {
             ],
           ),
         ),
+        if (_showTiles) MapAttribution(tileSource.attribution),
         if (widget.frozen)
           Positioned(
             left: 12,
@@ -372,24 +375,21 @@ class _StreetMapViewState extends State<StreetMapView> {
                   onPressed: () =>
                       _recenterOnSelf(selfLat, selfLon),
                 ),
-                // R25+3 — basemap toggle: street ↔ topo.
-                IconButton(
-                  tooltip: _tileSource == _TileSource.standard
-                      ? l.streetMapTopoLayer
-                      : l.streetMapStandardLayer,
+                // R25+3 / R61 — basemap picker.
+                PopupMenuButton<String>(
+                  tooltip: l.mapsSourcePick,
                   iconSize: 18,
-                  visualDensity: VisualDensity.compact,
-                  constraints: const BoxConstraints(
-                      minWidth: 36, minHeight: 36),
-                  icon: Icon(_tileSource == _TileSource.standard
-                      ? Icons.terrain
-                      : Icons.map),
-                  onPressed: () => setState(() {
-                    _tileSource =
-                        _tileSource == _TileSource.standard
-                            ? _TileSource.topo
-                            : _TileSource.standard;
-                  }),
+                  icon: const Icon(Icons.map),
+                  initialValue: tileSource.id,
+                  onSelected: (String id) =>
+                      setState(() => _sourceId = id),
+                  itemBuilder: (BuildContext _) => <PopupMenuEntry<String>>[
+                    for (final MapSource s in sources)
+                      PopupMenuItem<String>(
+                        value: s.id,
+                        child: Text(s.name),
+                      ),
+                  ],
                 ),
                 // R25+5 — hide the basemap entirely. Useful when
                 // street colours clash with the theme accent or
@@ -416,33 +416,6 @@ class _StreetMapViewState extends State<StreetMapView> {
       ],
     );
   }
-}
-
-/// R25+3 — basemap tile-set picker. Layered behind the markers /
-/// trail / range circles. Standard is recognisable street view;
-/// topo is contour + shaded relief from OpenTopoMap (CC-BY-SA;
-/// attribution belongs in the About screen).
-enum _TileSource {
-  standard(
-    urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-    subdomains: <String>[],
-    maxNativeZoom: 19,
-  ),
-  topo(
-    urlTemplate: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
-    subdomains: <String>['a', 'b', 'c'],
-    maxNativeZoom: 17,
-  );
-
-  const _TileSource({
-    required this.urlTemplate,
-    required this.subdomains,
-    required this.maxNativeZoom,
-  });
-
-  final String urlTemplate;
-  final List<String> subdomains;
-  final int maxNativeZoom;
 }
 
 class _PeerGlyph extends StatelessWidget {

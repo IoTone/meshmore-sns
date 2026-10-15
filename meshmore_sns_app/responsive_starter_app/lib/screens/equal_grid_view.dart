@@ -11,6 +11,8 @@ import 'package:latlong2/latlong.dart' hide Path; // collides with ui.Path
 import 'package:provider/provider.dart';
 
 import '../gen/app_localizations.dart';
+import '../maps/basemap.dart';
+import '../maps/map_source.dart';
 import '../meshcore/city_lookup.dart';
 import '../meshcore/discovered_node.dart';
 import '../meshcore/meshcore_controller.dart';
@@ -292,14 +294,9 @@ class _EqualGridViewState extends State<EqualGridView> {
                 ),
                 children: <Widget>[
                   if (_showTiles)
-                    TileLayer(
-                      urlTemplate:
-                          'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                      // OSM tile policy requires a non-default
-                      // User-Agent that identifies the app.
-                      userAgentPackageName:
-                          'com.iotone.meshmore_sns_app',
-                    ),
+                    // R61 — cached OSM (view cache; see maps spec).
+                    basemapLayer(context, kOsmStandard),
+                  if (_showTiles) MapAttribution(kOsmStandard.attribution),
                 ],
               ),
             ),

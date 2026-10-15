@@ -296,7 +296,9 @@ While Meshcore protocol is open source, the client is not open source.  We want 
     public data sources (Natural Earth, GeoNames) for towns/POI
     + coastline/admin boundaries. (a) is cheapest to ship; (b)
     is the most ideologically aligned and avoids the live OSM
-    dependency. Decision deferred.
+    dependency. Decision deferred. **Resolved by R61:** a disk tile
+    cache. OSM is cached only as viewed, because its policy forbids
+    prefetch. Pre-pulled regions come from sources that allow them.
   - **Online detection** drives prefetch — when connected to
     Wi-Fi/cellular we pre-pull tiles for the area surrounding
     our last-known own location and a ring of N km out. Offline
@@ -1039,6 +1041,32 @@ While Meshcore protocol is open source, the client is not open source.  We want 
   request; timeouts from the radio's own estimate; firmware that lacks
   a command says so in words; every series exportable. Full UI spec:
   [`meshmore-sns-tools-spec.md`](./meshmore-sns-tools-spec.md).
+
+- R61: **offline maps (Settings → Offline maps)** — issue #5. Every map
+  view's tiles go through a disk cache.
+  - **Region packs**: choose a source, an area and a zoom range; see
+    the tile count and size before downloading.
+  - **Event maps**: GeoJSON by URL, drawn over the basemap.
+  - **One storage budget** across packs, event maps and viewed tiles.
+    Viewed tiles are evicted least-recently-used first, and packs stop
+    rather than overrun.
+  - **Delete-after** periods for packs and layers, and an idle limit
+    for viewed tiles.
+  - **Updates** by conditional request.
+  - **Setup is online-only.** Downloads are opportunistic: they park
+    while offline and resume by themselves.
+
+  Binding rule: **a server's tile policy is not a preference.**
+  - OpenStreetMap forbids prefetch and offline use, and OpenTopoMap
+    asks not to be mass-downloaded, so both are view-cache only.
+  - USGS National Map basemaps (public domain) allow packs inside the
+    US.
+  - A user-added tile server allows packs only when the user says it
+    does.
+  - No licensed or keyed maps are built in, and no event data ships.
+    The user brings the URL and the publisher's terms.
+
+  Full spec: [`meshmore-sns-maps-spec.md`](./meshmore-sns-maps-spec.md).
 
 ### Terminology — Fabric vs Contact
 

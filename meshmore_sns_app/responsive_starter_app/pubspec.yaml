@@ -16,7 +16,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 1.0.191+7
+version: 1.0.193+9
 
 environment:
   sdk: ^3.5.0
@@ -110,6 +110,10 @@ dependencies:
   #     caching is deferred to a later iteration.
   flutter_map: ^7.0.2
   latlong2: ^0.9.1
+
+  # --- R61 offline maps (issue #5) — on-disk tile cache, region packs
+  #     and event layers live under the app-support directory.
+  path_provider: ^2.1.5
 
   # --- R53 Docs reader — pure-Dart Markdown → AST parser. We render
   #     the AST to widgets ourselves (futuristic monospace styling),

@@ -1676,18 +1676,6 @@ abstract class AppLocalizations {
   /// **'Re-centre on me'**
   String get streetMapRecenter;
 
-  /// No description provided for @streetMapTopoLayer.
-  ///
-  /// In en, this message translates to:
-  /// **'Switch to topographical map'**
-  String get streetMapTopoLayer;
-
-  /// No description provided for @streetMapStandardLayer.
-  ///
-  /// In en, this message translates to:
-  /// **'Switch to street map'**
-  String get streetMapStandardLayer;
-
   /// No description provided for @mapHideTiles.
   ///
   /// In en, this message translates to:
@@ -5665,6 +5653,570 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'flood'**
   String get rangeFlood;
+
+  /// No description provided for @settingsHubMaps.
+  ///
+  /// In en, this message translates to:
+  /// **'Offline maps'**
+  String get settingsHubMaps;
+
+  /// No description provided for @settingsHubMapsSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Region downloads, event maps, storage budget'**
+  String get settingsHubMapsSub;
+
+  /// No description provided for @mapsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Offline maps'**
+  String get mapsTitle;
+
+  /// No description provided for @mapsOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'No network. New maps can be set up only while online; downloads resume on their own.'**
+  String get mapsOffline;
+
+  /// No description provided for @mapsStorage.
+  ///
+  /// In en, this message translates to:
+  /// **'Storage'**
+  String get mapsStorage;
+
+  /// No description provided for @mapsUsed.
+  ///
+  /// In en, this message translates to:
+  /// **'{used} of {budget} used'**
+  String mapsUsed(String used, String budget);
+
+  /// No description provided for @mapsBreakdown.
+  ///
+  /// In en, this message translates to:
+  /// **'Regions {packs} · Event maps {layers} · Viewed tiles {view}'**
+  String mapsBreakdown(String packs, String layers, String view);
+
+  /// No description provided for @mapsBudget.
+  ///
+  /// In en, this message translates to:
+  /// **'Budget'**
+  String get mapsBudget;
+
+  /// No description provided for @mapsViewKeep.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep viewed'**
+  String get mapsViewKeep;
+
+  /// No description provided for @mapsClearView.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear viewed tiles'**
+  String get mapsClearView;
+
+  /// No description provided for @mapsPacks.
+  ///
+  /// In en, this message translates to:
+  /// **'Region downloads'**
+  String get mapsPacks;
+
+  /// No description provided for @mapsAddPack.
+  ///
+  /// In en, this message translates to:
+  /// **'Download a region'**
+  String get mapsAddPack;
+
+  /// No description provided for @mapsNoPacks.
+  ///
+  /// In en, this message translates to:
+  /// **'No regions yet. Regions come from servers that allow offline use: USGS inside the US, or a tile server you add.'**
+  String get mapsNoPacks;
+
+  /// No description provided for @mapsLayers.
+  ///
+  /// In en, this message translates to:
+  /// **'Event maps'**
+  String get mapsLayers;
+
+  /// No description provided for @mapsAddLayer.
+  ///
+  /// In en, this message translates to:
+  /// **'Add event map'**
+  String get mapsAddLayer;
+
+  /// No description provided for @mapsNoLayers.
+  ///
+  /// In en, this message translates to:
+  /// **'No event maps. Add a GeoJSON URL: a festival\'s street plan, a race course, a camp layout.'**
+  String get mapsNoLayers;
+
+  /// No description provided for @mapsSources.
+  ///
+  /// In en, this message translates to:
+  /// **'Map sources'**
+  String get mapsSources;
+
+  /// No description provided for @mapsAddSource.
+  ///
+  /// In en, this message translates to:
+  /// **'Add tile server'**
+  String get mapsAddSource;
+
+  /// No description provided for @mapsSourcePacks.
+  ///
+  /// In en, this message translates to:
+  /// **'Offline download allowed'**
+  String get mapsSourcePacks;
+
+  /// No description provided for @mapsSourcePacksUs.
+  ///
+  /// In en, this message translates to:
+  /// **'Offline download allowed (US only)'**
+  String get mapsSourcePacksUs;
+
+  /// No description provided for @mapsSourceViewOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Viewed tiles only: the server forbids bulk download'**
+  String get mapsSourceViewOnly;
+
+  /// No description provided for @mapsSourcePick.
+  ///
+  /// In en, this message translates to:
+  /// **'Basemap'**
+  String get mapsSourcePick;
+
+  /// No description provided for @packStateDownloading.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloading'**
+  String get packStateDownloading;
+
+  /// No description provided for @packStateUpdating.
+  ///
+  /// In en, this message translates to:
+  /// **'Updating'**
+  String get packStateUpdating;
+
+  /// No description provided for @packStateWaiting.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for network'**
+  String get packStateWaiting;
+
+  /// No description provided for @packStateOverBudget.
+  ///
+  /// In en, this message translates to:
+  /// **'Stopped: over budget'**
+  String get packStateOverBudget;
+
+  /// No description provided for @packStatePaused.
+  ///
+  /// In en, this message translates to:
+  /// **'Paused'**
+  String get packStatePaused;
+
+  /// No description provided for @packStateComplete.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete'**
+  String get packStateComplete;
+
+  /// No description provided for @mapsPackLine.
+  ///
+  /// In en, this message translates to:
+  /// **'{source} · zoom {minZ}–{maxZ}'**
+  String mapsPackLine(String source, int minZ, int maxZ);
+
+  /// No description provided for @mapsProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'{done} / {total} tiles'**
+  String mapsProgress(int done, int total);
+
+  /// No description provided for @mapsMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'{n} not on server'**
+  String mapsMissing(int n);
+
+  /// No description provided for @mapsExpiresIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Deletes in {days} d'**
+  String mapsExpiresIn(int days);
+
+  /// No description provided for @mapsKeepForever.
+  ///
+  /// In en, this message translates to:
+  /// **'Kept until deleted'**
+  String get mapsKeepForever;
+
+  /// No description provided for @mapsPause.
+  ///
+  /// In en, this message translates to:
+  /// **'Pause'**
+  String get mapsPause;
+
+  /// No description provided for @mapsResume.
+  ///
+  /// In en, this message translates to:
+  /// **'Resume'**
+  String get mapsResume;
+
+  /// No description provided for @mapsUpdate.
+  ///
+  /// In en, this message translates to:
+  /// **'Update'**
+  String get mapsUpdate;
+
+  /// No description provided for @mapsRedownload.
+  ///
+  /// In en, this message translates to:
+  /// **'Download again'**
+  String get mapsRedownload;
+
+  /// No description provided for @mapsKeepFor.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete after…'**
+  String get mapsKeepFor;
+
+  /// No description provided for @mapsDelete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get mapsDelete;
+
+  /// No description provided for @mapsDeleteConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete {name}?'**
+  String mapsDeleteConfirm(String name);
+
+  /// No description provided for @mapsKeepNever.
+  ///
+  /// In en, this message translates to:
+  /// **'Never'**
+  String get mapsKeepNever;
+
+  /// No description provided for @mapsKeepDays.
+  ///
+  /// In en, this message translates to:
+  /// **'{days} days'**
+  String mapsKeepDays(int days);
+
+  /// No description provided for @mapsLayerFeatures.
+  ///
+  /// In en, this message translates to:
+  /// **'{n} features'**
+  String mapsLayerFeatures(int n);
+
+  /// No description provided for @mapsLayerName.
+  ///
+  /// In en, this message translates to:
+  /// **'Name'**
+  String get mapsLayerName;
+
+  /// No description provided for @mapsLayerUrl.
+  ///
+  /// In en, this message translates to:
+  /// **'GeoJSON URL (https)'**
+  String get mapsLayerUrl;
+
+  /// No description provided for @mapsLayerTerms.
+  ///
+  /// In en, this message translates to:
+  /// **'The publisher\'s terms apply to their data.'**
+  String get mapsLayerTerms;
+
+  /// No description provided for @mapsSourceName.
+  ///
+  /// In en, this message translates to:
+  /// **'Name'**
+  String get mapsSourceName;
+
+  /// No description provided for @mapsSourceUrl.
+  ///
+  /// In en, this message translates to:
+  /// **'Tile URL template'**
+  String get mapsSourceUrl;
+
+  /// No description provided for @mapsSourceAttr.
+  ///
+  /// In en, this message translates to:
+  /// **'Attribution'**
+  String get mapsSourceAttr;
+
+  /// No description provided for @mapsSourceAllowsPacks.
+  ///
+  /// In en, this message translates to:
+  /// **'This server allows offline download'**
+  String get mapsSourceAllowsPacks;
+
+  /// No description provided for @mapsSourceBad.
+  ///
+  /// In en, this message translates to:
+  /// **'Needs a name and an https template with z, x and y placeholders.'**
+  String get mapsSourceBad;
+
+  /// No description provided for @mapsAdd.
+  ///
+  /// In en, this message translates to:
+  /// **'Add'**
+  String get mapsAdd;
+
+  /// No description provided for @mapsWorking.
+  ///
+  /// In en, this message translates to:
+  /// **'Working…'**
+  String get mapsWorking;
+
+  /// No description provided for @newPackName.
+  ///
+  /// In en, this message translates to:
+  /// **'Name'**
+  String get newPackName;
+
+  /// No description provided for @newPackSource.
+  ///
+  /// In en, this message translates to:
+  /// **'Source'**
+  String get newPackSource;
+
+  /// No description provided for @newPackCenter.
+  ///
+  /// In en, this message translates to:
+  /// **'Centre'**
+  String get newPackCenter;
+
+  /// No description provided for @newPackMyLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'My location'**
+  String get newPackMyLocation;
+
+  /// No description provided for @newPackNoLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'No location yet: enter lat, lon'**
+  String get newPackNoLocation;
+
+  /// No description provided for @newPackLatLon.
+  ///
+  /// In en, this message translates to:
+  /// **'lat, lon'**
+  String get newPackLatLon;
+
+  /// No description provided for @newPackRadius.
+  ///
+  /// In en, this message translates to:
+  /// **'Radius'**
+  String get newPackRadius;
+
+  /// No description provided for @newPackZoomFrom.
+  ///
+  /// In en, this message translates to:
+  /// **'Zoom from'**
+  String get newPackZoomFrom;
+
+  /// No description provided for @newPackZoomTo.
+  ///
+  /// In en, this message translates to:
+  /// **'Zoom to'**
+  String get newPackZoomTo;
+
+  /// No description provided for @newPackKeep.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete after'**
+  String get newPackKeep;
+
+  /// No description provided for @newPackEstimate.
+  ///
+  /// In en, this message translates to:
+  /// **'{tiles} tiles · about {size}'**
+  String newPackEstimate(int tiles, String size);
+
+  /// No description provided for @newPackCreate.
+  ///
+  /// In en, this message translates to:
+  /// **'Download'**
+  String get newPackCreate;
+
+  /// No description provided for @newPackNoSource.
+  ///
+  /// In en, this message translates to:
+  /// **'No source here allows offline download. Add a tile server that does, under Map sources.'**
+  String get newPackNoSource;
+
+  /// No description provided for @packRefusalNoName.
+  ///
+  /// In en, this message translates to:
+  /// **'Give it a name.'**
+  String get packRefusalNoName;
+
+  /// No description provided for @packRefusalOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'Can\'t reach the server. Set up maps while online.'**
+  String get packRefusalOffline;
+
+  /// No description provided for @packRefusalViewOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'This server doesn\'t allow offline download.'**
+  String get packRefusalViewOnly;
+
+  /// No description provided for @packRefusalCoverage.
+  ///
+  /// In en, this message translates to:
+  /// **'This source has no data there.'**
+  String get packRefusalCoverage;
+
+  /// No description provided for @packRefusalTooMany.
+  ///
+  /// In en, this message translates to:
+  /// **'Too many tiles. Shrink the area or lower the top zoom.'**
+  String get packRefusalTooMany;
+
+  /// No description provided for @packRefusalBudget.
+  ///
+  /// In en, this message translates to:
+  /// **'Won\'t fit in the storage budget.'**
+  String get packRefusalBudget;
+
+  /// No description provided for @layerRefusalBadUrl.
+  ///
+  /// In en, this message translates to:
+  /// **'Needs an https URL.'**
+  String get layerRefusalBadUrl;
+
+  /// No description provided for @layerRefusalNotGeoJson.
+  ///
+  /// In en, this message translates to:
+  /// **'That URL didn\'t return GeoJSON.'**
+  String get layerRefusalNotGeoJson;
+
+  /// No description provided for @layerRefusalTooLarge.
+  ///
+  /// In en, this message translates to:
+  /// **'Over 10 MB: too big for an overlay.'**
+  String get layerRefusalTooLarge;
+
+  /// No description provided for @mapsSelfTest.
+  ///
+  /// In en, this message translates to:
+  /// **'Self-test'**
+  String get mapsSelfTest;
+
+  /// No description provided for @selfTestIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'Checks offline maps end to end on this phone: the real map servers, storage, downloads, pause and resume, expiry. Runs in a sandbox and deletes it afterwards; your maps are not touched. Takes about a minute and under 1 MB of data.'**
+  String get selfTestIntro;
+
+  /// No description provided for @selfTestRun.
+  ///
+  /// In en, this message translates to:
+  /// **'Run self-test'**
+  String get selfTestRun;
+
+  /// No description provided for @selfTestRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'Running…'**
+  String get selfTestRunning;
+
+  /// No description provided for @selfTestPass.
+  ///
+  /// In en, this message translates to:
+  /// **'All checks passed'**
+  String get selfTestPass;
+
+  /// No description provided for @selfTestFail.
+  ///
+  /// In en, this message translates to:
+  /// **'{n} checks failed'**
+  String selfTestFail(int n);
+
+  /// No description provided for @selfTestCopy.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy report'**
+  String get selfTestCopy;
+
+  /// No description provided for @selfTestCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Report copied'**
+  String get selfTestCopied;
+
+  /// No description provided for @selfCheckReach.
+  ///
+  /// In en, this message translates to:
+  /// **'Map servers reachable'**
+  String get selfCheckReach;
+
+  /// No description provided for @selfCheckViewCache.
+  ///
+  /// In en, this message translates to:
+  /// **'Viewed tiles are kept'**
+  String get selfCheckViewCache;
+
+  /// No description provided for @selfCheckRevalidate.
+  ///
+  /// In en, this message translates to:
+  /// **'Stale tiles re-checked politely'**
+  String get selfCheckRevalidate;
+
+  /// No description provided for @selfCheckPack.
+  ///
+  /// In en, this message translates to:
+  /// **'Region download'**
+  String get selfCheckPack;
+
+  /// No description provided for @selfCheckUpdate.
+  ///
+  /// In en, this message translates to:
+  /// **'Region update'**
+  String get selfCheckUpdate;
+
+  /// No description provided for @selfCheckEventLayer.
+  ///
+  /// In en, this message translates to:
+  /// **'Event map (GeoJSON)'**
+  String get selfCheckEventLayer;
+
+  /// No description provided for @selfCheckOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'Offline behaviour'**
+  String get selfCheckOffline;
+
+  /// No description provided for @selfCheckResume.
+  ///
+  /// In en, this message translates to:
+  /// **'Pause and resume on network loss'**
+  String get selfCheckResume;
+
+  /// No description provided for @selfCheckGuards.
+  ///
+  /// In en, this message translates to:
+  /// **'Refusals (size, budget, policy, coverage)'**
+  String get selfCheckGuards;
+
+  /// No description provided for @selfCheckExpiry.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete-after expiry'**
+  String get selfCheckExpiry;
+
+  /// No description provided for @selfCheckDisk.
+  ///
+  /// In en, this message translates to:
+  /// **'Storage matches the books'**
+  String get selfCheckDisk;
 }
 
 class _AppLocalizationsDelegate

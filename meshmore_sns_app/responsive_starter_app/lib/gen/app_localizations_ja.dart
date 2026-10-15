@@ -863,12 +863,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get streetMapRecenter => '現在地に戻す';
 
   @override
-  String get streetMapTopoLayer => '地形図に切り替え';
-
-  @override
-  String get streetMapStandardLayer => '標準地図に切り替え';
-
-  @override
   String get mapHideTiles => '地図タイルを非表示';
 
   @override
@@ -3162,4 +3156,313 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get rangeFlood => 'フラッド';
+
+  @override
+  String get settingsHubMaps => 'オフライン地図';
+
+  @override
+  String get settingsHubMapsSub => '地域ダウンロード・イベント地図・容量上限';
+
+  @override
+  String get mapsTitle => 'オフライン地図';
+
+  @override
+  String get mapsOffline =>
+      'ネットワークがありません。新しい地図の設定はオンライン時のみ可能です。ダウンロードは自動で再開します。';
+
+  @override
+  String get mapsStorage => 'ストレージ';
+
+  @override
+  String mapsUsed(String used, String budget) {
+    return '$budget 中 $used 使用';
+  }
+
+  @override
+  String mapsBreakdown(String packs, String layers, String view) {
+    return '地域 $packs・イベント地図 $layers・閲覧済みタイル $view';
+  }
+
+  @override
+  String get mapsBudget => '上限';
+
+  @override
+  String get mapsViewKeep => '閲覧分の保持';
+
+  @override
+  String get mapsClearView => '閲覧済みタイルを消去';
+
+  @override
+  String get mapsPacks => '地域ダウンロード';
+
+  @override
+  String get mapsAddPack => '地域をダウンロード';
+
+  @override
+  String get mapsNoPacks =>
+      'まだ地域がありません。オフライン利用を許可するサーバー(米国内の USGS、または追加したタイルサーバー)から取得します。';
+
+  @override
+  String get mapsLayers => 'イベント地図';
+
+  @override
+  String get mapsAddLayer => 'イベント地図を追加';
+
+  @override
+  String get mapsNoLayers =>
+      'イベント地図はありません。GeoJSON の URL(祭りの街区図、レースのコース、キャンプ配置など)を追加してください。';
+
+  @override
+  String get mapsSources => '地図ソース';
+
+  @override
+  String get mapsAddSource => 'タイルサーバーを追加';
+
+  @override
+  String get mapsSourcePacks => 'オフラインダウンロード可';
+
+  @override
+  String get mapsSourcePacksUs => 'オフラインダウンロード可(米国のみ)';
+
+  @override
+  String get mapsSourceViewOnly => '閲覧したタイルのみ保存(サーバーが一括取得を禁止)';
+
+  @override
+  String get mapsSourcePick => 'ベースマップ';
+
+  @override
+  String get packStateDownloading => 'ダウンロード中';
+
+  @override
+  String get packStateUpdating => '更新中';
+
+  @override
+  String get packStateWaiting => 'ネットワーク待ち';
+
+  @override
+  String get packStateOverBudget => '停止:容量上限超過';
+
+  @override
+  String get packStatePaused => '一時停止';
+
+  @override
+  String get packStateComplete => '完了';
+
+  @override
+  String mapsPackLine(String source, int minZ, int maxZ) {
+    return '$source・ズーム $minZ–$maxZ';
+  }
+
+  @override
+  String mapsProgress(int done, int total) {
+    return '$done / $total タイル';
+  }
+
+  @override
+  String mapsMissing(int n) {
+    return 'サーバーに無し $n';
+  }
+
+  @override
+  String mapsExpiresIn(int days) {
+    return '$days 日後に削除';
+  }
+
+  @override
+  String get mapsKeepForever => '削除するまで保持';
+
+  @override
+  String get mapsPause => '一時停止';
+
+  @override
+  String get mapsResume => '再開';
+
+  @override
+  String get mapsUpdate => '更新';
+
+  @override
+  String get mapsRedownload => '再ダウンロード';
+
+  @override
+  String get mapsKeepFor => '自動削除…';
+
+  @override
+  String get mapsDelete => '削除';
+
+  @override
+  String mapsDeleteConfirm(String name) {
+    return '$name を削除しますか?';
+  }
+
+  @override
+  String get mapsKeepNever => 'しない';
+
+  @override
+  String mapsKeepDays(int days) {
+    return '$days 日';
+  }
+
+  @override
+  String mapsLayerFeatures(int n) {
+    return '$n 件';
+  }
+
+  @override
+  String get mapsLayerName => '名前';
+
+  @override
+  String get mapsLayerUrl => 'GeoJSON の URL(https)';
+
+  @override
+  String get mapsLayerTerms => 'データの利用条件は提供元に従います。';
+
+  @override
+  String get mapsSourceName => '名前';
+
+  @override
+  String get mapsSourceUrl => 'タイル URL テンプレート';
+
+  @override
+  String get mapsSourceAttr => 'クレジット表記';
+
+  @override
+  String get mapsSourceAllowsPacks => 'このサーバーはオフラインダウンロードを許可している';
+
+  @override
+  String get mapsSourceBad => '名前と、z・x・y を含む https テンプレートが必要です。';
+
+  @override
+  String get mapsAdd => '追加';
+
+  @override
+  String get mapsWorking => '処理中…';
+
+  @override
+  String get newPackName => '名前';
+
+  @override
+  String get newPackSource => 'ソース';
+
+  @override
+  String get newPackCenter => '中心';
+
+  @override
+  String get newPackMyLocation => '現在地';
+
+  @override
+  String get newPackNoLocation => '位置が未取得です。緯度, 経度を入力';
+
+  @override
+  String get newPackLatLon => '緯度, 経度';
+
+  @override
+  String get newPackRadius => '半径';
+
+  @override
+  String get newPackZoomFrom => '最小ズーム';
+
+  @override
+  String get newPackZoomTo => '最大ズーム';
+
+  @override
+  String get newPackKeep => '自動削除';
+
+  @override
+  String newPackEstimate(int tiles, String size) {
+    return '$tiles タイル・約 $size';
+  }
+
+  @override
+  String get newPackCreate => 'ダウンロード';
+
+  @override
+  String get newPackNoSource =>
+      'オフラインダウンロード可能なソースがありません。「地図ソース」で許可されたタイルサーバーを追加してください。';
+
+  @override
+  String get packRefusalNoName => '名前を付けてください。';
+
+  @override
+  String get packRefusalOffline => 'サーバーに接続できません。オンライン時に設定してください。';
+
+  @override
+  String get packRefusalViewOnly => 'このサーバーはオフラインダウンロードを許可していません。';
+
+  @override
+  String get packRefusalCoverage => 'このソースはその地域のデータを持っていません。';
+
+  @override
+  String get packRefusalTooMany => 'タイルが多すぎます。範囲を狭めるか最大ズームを下げてください。';
+
+  @override
+  String get packRefusalBudget => '容量上限に収まりません。';
+
+  @override
+  String get layerRefusalBadUrl => 'https の URL が必要です。';
+
+  @override
+  String get layerRefusalNotGeoJson => 'その URL は GeoJSON を返しませんでした。';
+
+  @override
+  String get layerRefusalTooLarge => '10 MB を超えています。重ね表示には大きすぎます。';
+
+  @override
+  String get mapsSelfTest => 'セルフテスト';
+
+  @override
+  String get selfTestIntro =>
+      'この端末でオフライン地図を一通り検証します(実際の地図サーバー、保存、ダウンロード、中断と再開、期限切れ削除)。サンドボックスで実行し終了後に削除するため、あなたの地図には影響しません。所要約1分、通信量は1 MB未満です。';
+
+  @override
+  String get selfTestRun => 'セルフテストを実行';
+
+  @override
+  String get selfTestRunning => '実行中…';
+
+  @override
+  String get selfTestPass => 'すべて合格';
+
+  @override
+  String selfTestFail(int n) {
+    return '$n 件不合格';
+  }
+
+  @override
+  String get selfTestCopy => 'レポートをコピー';
+
+  @override
+  String get selfTestCopied => 'レポートをコピーしました';
+
+  @override
+  String get selfCheckReach => '地図サーバーに接続';
+
+  @override
+  String get selfCheckViewCache => '閲覧タイルの保存';
+
+  @override
+  String get selfCheckRevalidate => '古いタイルの条件付き再確認';
+
+  @override
+  String get selfCheckPack => '地域ダウンロード';
+
+  @override
+  String get selfCheckUpdate => '地域の更新';
+
+  @override
+  String get selfCheckEventLayer => 'イベント地図(GeoJSON)';
+
+  @override
+  String get selfCheckOffline => 'オフライン時の動作';
+
+  @override
+  String get selfCheckResume => '通信断での中断と再開';
+
+  @override
+  String get selfCheckGuards => '拒否条件(サイズ・容量・規約・範囲)';
+
+  @override
+  String get selfCheckExpiry => '期限切れ自動削除';
+
+  @override
+  String get selfCheckDisk => '保存量と記録の一致';
 }

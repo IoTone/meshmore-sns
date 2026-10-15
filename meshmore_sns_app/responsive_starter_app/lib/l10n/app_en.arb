@@ -349,8 +349,6 @@
   "fabricResetBody": "Drops every recorded cell. New observations will start filling the map again as you move and the mesh reports nearby nodes.",
   "fabricResetApply": "Reset",
   "streetMapRecenter": "Re-centre on me",
-  "streetMapTopoLayer": "Switch to topographical map",
-  "streetMapStandardLayer": "Switch to street map",
   "mapHideTiles": "Hide map tiles",
   "mapShowTiles": "Show map tiles",
   "deviceRegionLoadedOffline": "{label} loaded — Apply when a device is connected.",
@@ -1433,5 +1431,132 @@
     "placeholders": {"d": {"type": "String"}}
   },
   "rangeCopyCsv": "Copy CSV",
-  "rangeFlood": "flood"
+  "rangeFlood": "flood",
+  "settingsHubMaps": "Offline maps",
+  "settingsHubMapsSub": "Region downloads, event maps, storage budget",
+  "mapsTitle": "Offline maps",
+  "mapsOffline": "No network. New maps can be set up only while online; downloads resume on their own.",
+  "mapsStorage": "Storage",
+  "mapsUsed": "{used} of {budget} used",
+  "@mapsUsed": {
+    "placeholders": {"used": {"type": "String"}, "budget": {"type": "String"}}
+  },
+  "mapsBreakdown": "Regions {packs} · Event maps {layers} · Viewed tiles {view}",
+  "@mapsBreakdown": {
+    "placeholders": {"packs": {"type": "String"}, "layers": {"type": "String"}, "view": {"type": "String"}}
+  },
+  "mapsBudget": "Budget",
+  "mapsViewKeep": "Keep viewed",
+  "mapsClearView": "Clear viewed tiles",
+  "mapsPacks": "Region downloads",
+  "mapsAddPack": "Download a region",
+  "mapsNoPacks": "No regions yet. Regions come from servers that allow offline use: USGS inside the US, or a tile server you add.",
+  "mapsLayers": "Event maps",
+  "mapsAddLayer": "Add event map",
+  "mapsNoLayers": "No event maps. Add a GeoJSON URL: a festival's street plan, a race course, a camp layout.",
+  "mapsSources": "Map sources",
+  "mapsAddSource": "Add tile server",
+  "mapsSourcePacks": "Offline download allowed",
+  "mapsSourcePacksUs": "Offline download allowed (US only)",
+  "mapsSourceViewOnly": "Viewed tiles only: the server forbids bulk download",
+  "mapsSourcePick": "Basemap",
+  "packStateDownloading": "Downloading",
+  "packStateUpdating": "Updating",
+  "packStateWaiting": "Waiting for network",
+  "packStateOverBudget": "Stopped: over budget",
+  "packStatePaused": "Paused",
+  "packStateComplete": "Complete",
+  "mapsPackLine": "{source} · zoom {minZ}–{maxZ}",
+  "@mapsPackLine": {
+    "placeholders": {"source": {"type": "String"}, "minZ": {"type": "int"}, "maxZ": {"type": "int"}}
+  },
+  "mapsProgress": "{done} / {total} tiles",
+  "@mapsProgress": {
+    "placeholders": {"done": {"type": "int"}, "total": {"type": "int"}}
+  },
+  "mapsMissing": "{n} not on server",
+  "@mapsMissing": {
+    "placeholders": {"n": {"type": "int"}}
+  },
+  "mapsExpiresIn": "Deletes in {days} d",
+  "@mapsExpiresIn": {
+    "placeholders": {"days": {"type": "int"}}
+  },
+  "mapsKeepForever": "Kept until deleted",
+  "mapsPause": "Pause",
+  "mapsResume": "Resume",
+  "mapsUpdate": "Update",
+  "mapsRedownload": "Download again",
+  "mapsKeepFor": "Delete after…",
+  "mapsDelete": "Delete",
+  "mapsDeleteConfirm": "Delete {name}?",
+  "@mapsDeleteConfirm": {
+    "placeholders": {"name": {"type": "String"}}
+  },
+  "mapsKeepNever": "Never",
+  "mapsKeepDays": "{days} days",
+  "@mapsKeepDays": {
+    "placeholders": {"days": {"type": "int"}}
+  },
+  "mapsLayerFeatures": "{n} features",
+  "@mapsLayerFeatures": {
+    "placeholders": {"n": {"type": "int"}}
+  },
+  "mapsLayerName": "Name",
+  "mapsLayerUrl": "GeoJSON URL (https)",
+  "mapsLayerTerms": "The publisher's terms apply to their data.",
+  "mapsSourceName": "Name",
+  "mapsSourceUrl": "Tile URL template",
+  "mapsSourceAttr": "Attribution",
+  "mapsSourceAllowsPacks": "This server allows offline download",
+  "mapsSourceBad": "Needs a name and an https template with z, x and y placeholders.",
+  "mapsAdd": "Add",
+  "mapsWorking": "Working…",
+  "newPackName": "Name",
+  "newPackSource": "Source",
+  "newPackCenter": "Centre",
+  "newPackMyLocation": "My location",
+  "newPackNoLocation": "No location yet: enter lat, lon",
+  "newPackLatLon": "lat, lon",
+  "newPackRadius": "Radius",
+  "newPackZoomFrom": "Zoom from",
+  "newPackZoomTo": "Zoom to",
+  "newPackKeep": "Delete after",
+  "newPackEstimate": "{tiles} tiles · about {size}",
+  "@newPackEstimate": {
+    "placeholders": {"tiles": {"type": "int"}, "size": {"type": "String"}}
+  },
+  "newPackCreate": "Download",
+  "newPackNoSource": "No source here allows offline download. Add a tile server that does, under Map sources.",
+  "packRefusalNoName": "Give it a name.",
+  "packRefusalOffline": "Can't reach the server. Set up maps while online.",
+  "packRefusalViewOnly": "This server doesn't allow offline download.",
+  "packRefusalCoverage": "This source has no data there.",
+  "packRefusalTooMany": "Too many tiles. Shrink the area or lower the top zoom.",
+  "packRefusalBudget": "Won't fit in the storage budget.",
+  "layerRefusalBadUrl": "Needs an https URL.",
+  "layerRefusalNotGeoJson": "That URL didn't return GeoJSON.",
+  "layerRefusalTooLarge": "Over 10 MB: too big for an overlay.",
+  "mapsSelfTest": "Self-test",
+  "selfTestIntro": "Checks offline maps end to end on this phone: the real map servers, storage, downloads, pause and resume, expiry. Runs in a sandbox and deletes it afterwards; your maps are not touched. Takes about a minute and under 1 MB of data.",
+  "selfTestRun": "Run self-test",
+  "selfTestRunning": "Running…",
+  "selfTestPass": "All checks passed",
+  "selfTestFail": "{n} checks failed",
+  "@selfTestFail": {
+    "placeholders": {"n": {"type": "int"}}
+  },
+  "selfTestCopy": "Copy report",
+  "selfTestCopied": "Report copied",
+  "selfCheckReach": "Map servers reachable",
+  "selfCheckViewCache": "Viewed tiles are kept",
+  "selfCheckRevalidate": "Stale tiles re-checked politely",
+  "selfCheckPack": "Region download",
+  "selfCheckUpdate": "Region update",
+  "selfCheckEventLayer": "Event map (GeoJSON)",
+  "selfCheckOffline": "Offline behaviour",
+  "selfCheckResume": "Pause and resume on network loss",
+  "selfCheckGuards": "Refusals (size, budget, policy, coverage)",
+  "selfCheckExpiry": "Delete-after expiry",
+  "selfCheckDisk": "Storage matches the books"
 }

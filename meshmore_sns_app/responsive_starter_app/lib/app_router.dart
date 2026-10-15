@@ -12,6 +12,9 @@ import 'screens/dm_screen.dart';
 import 'screens/diagnostics_screen.dart';
 import 'screens/location_settings_screen.dart';
 import 'screens/personalization_screen.dart';
+import 'screens/maps/maps_screen.dart';
+import 'screens/maps/maps_self_test_screen.dart';
+import 'screens/maps/new_pack_screen.dart';
 import 'screens/tools/discover_screen.dart';
 import 'screens/tools/ping_screen.dart';
 import 'screens/tools/radio_stats_screen.dart';
@@ -82,6 +85,19 @@ final GoRouter appRouter = GoRouter(
         ToolKind.range => const RangeTestScreen(),
         null => const ToolsHubScreen(),
       },
+    ),
+    // R61 — Settings → Offline maps (issue #5).
+    GoRoute(
+      path: '/settings/maps',
+      builder: (_, __) => const MapsScreen(),
+    ),
+    GoRoute(
+      path: '/settings/maps/new',
+      builder: (_, __) => const NewPackScreen(),
+    ),
+    GoRoute(
+      path: '/settings/maps/selftest',
+      builder: (_, __) => const MapsSelfTestScreen(),
     ),
     GoRoute(
       path: '/settings/battery',

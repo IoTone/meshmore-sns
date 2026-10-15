@@ -8,6 +8,8 @@ import 'package:latlong2/latlong.dart' hide Path;
 import 'package:provider/provider.dart';
 
 import '../gen/app_localizations.dart';
+import '../maps/basemap.dart';
+import '../maps/map_source.dart';
 import '../meshcore/coverage_store.dart';
 import '../meshcore/discovered_node.dart';
 import '../meshcore/meshcore_controller.dart';
@@ -192,12 +194,9 @@ class _FabricSurveyViewState extends State<FabricSurveyView> {
             ),
             children: <Widget>[
               if (_showTiles)
-                TileLayer(
-                  urlTemplate:
-                      'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                  userAgentPackageName:
-                      'com.iotone.meshmore_sns_app',
-                ),
+                // R61 — cached OSM (view cache; see maps spec).
+                basemapLayer(context, kOsmStandard),
+              if (_showTiles) MapAttribution(kOsmStandard.attribution),
               // Theme-tinted overlay so cells stay readable on busy
               // street tiles.
               if (cells.isNotEmpty)

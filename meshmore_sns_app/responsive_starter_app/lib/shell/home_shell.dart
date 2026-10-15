@@ -281,6 +281,8 @@ class _SettingsView extends StatelessWidget {
           l.settingsHubDiagnosticsSub, '/settings/diagnostics'),
       (Icons.handyman_outlined, l.settingsHubTools, l.settingsHubToolsSub,
           '/settings/tools'),
+      (Icons.map_outlined, l.settingsHubMaps, l.settingsHubMapsSub,
+          '/settings/maps'),
     ];
     return MmScaffold(
       child: ListView.separated(

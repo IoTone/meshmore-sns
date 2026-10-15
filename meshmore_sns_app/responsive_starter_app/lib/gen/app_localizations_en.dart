@@ -912,12 +912,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get streetMapRecenter => 'Re-centre on me';
 
   @override
-  String get streetMapTopoLayer => 'Switch to topographical map';
-
-  @override
-  String get streetMapStandardLayer => 'Switch to street map';
-
-  @override
   String get mapHideTiles => 'Hide map tiles';
 
   @override
@@ -3278,4 +3272,319 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get rangeFlood => 'flood';
+
+  @override
+  String get settingsHubMaps => 'Offline maps';
+
+  @override
+  String get settingsHubMapsSub =>
+      'Region downloads, event maps, storage budget';
+
+  @override
+  String get mapsTitle => 'Offline maps';
+
+  @override
+  String get mapsOffline =>
+      'No network. New maps can be set up only while online; downloads resume on their own.';
+
+  @override
+  String get mapsStorage => 'Storage';
+
+  @override
+  String mapsUsed(String used, String budget) {
+    return '$used of $budget used';
+  }
+
+  @override
+  String mapsBreakdown(String packs, String layers, String view) {
+    return 'Regions $packs · Event maps $layers · Viewed tiles $view';
+  }
+
+  @override
+  String get mapsBudget => 'Budget';
+
+  @override
+  String get mapsViewKeep => 'Keep viewed';
+
+  @override
+  String get mapsClearView => 'Clear viewed tiles';
+
+  @override
+  String get mapsPacks => 'Region downloads';
+
+  @override
+  String get mapsAddPack => 'Download a region';
+
+  @override
+  String get mapsNoPacks =>
+      'No regions yet. Regions come from servers that allow offline use: USGS inside the US, or a tile server you add.';
+
+  @override
+  String get mapsLayers => 'Event maps';
+
+  @override
+  String get mapsAddLayer => 'Add event map';
+
+  @override
+  String get mapsNoLayers =>
+      'No event maps. Add a GeoJSON URL: a festival\'s street plan, a race course, a camp layout.';
+
+  @override
+  String get mapsSources => 'Map sources';
+
+  @override
+  String get mapsAddSource => 'Add tile server';
+
+  @override
+  String get mapsSourcePacks => 'Offline download allowed';
+
+  @override
+  String get mapsSourcePacksUs => 'Offline download allowed (US only)';
+
+  @override
+  String get mapsSourceViewOnly =>
+      'Viewed tiles only: the server forbids bulk download';
+
+  @override
+  String get mapsSourcePick => 'Basemap';
+
+  @override
+  String get packStateDownloading => 'Downloading';
+
+  @override
+  String get packStateUpdating => 'Updating';
+
+  @override
+  String get packStateWaiting => 'Waiting for network';
+
+  @override
+  String get packStateOverBudget => 'Stopped: over budget';
+
+  @override
+  String get packStatePaused => 'Paused';
+
+  @override
+  String get packStateComplete => 'Complete';
+
+  @override
+  String mapsPackLine(String source, int minZ, int maxZ) {
+    return '$source · zoom $minZ–$maxZ';
+  }
+
+  @override
+  String mapsProgress(int done, int total) {
+    return '$done / $total tiles';
+  }
+
+  @override
+  String mapsMissing(int n) {
+    return '$n not on server';
+  }
+
+  @override
+  String mapsExpiresIn(int days) {
+    return 'Deletes in $days d';
+  }
+
+  @override
+  String get mapsKeepForever => 'Kept until deleted';
+
+  @override
+  String get mapsPause => 'Pause';
+
+  @override
+  String get mapsResume => 'Resume';
+
+  @override
+  String get mapsUpdate => 'Update';
+
+  @override
+  String get mapsRedownload => 'Download again';
+
+  @override
+  String get mapsKeepFor => 'Delete after…';
+
+  @override
+  String get mapsDelete => 'Delete';
+
+  @override
+  String mapsDeleteConfirm(String name) {
+    return 'Delete $name?';
+  }
+
+  @override
+  String get mapsKeepNever => 'Never';
+
+  @override
+  String mapsKeepDays(int days) {
+    return '$days days';
+  }
+
+  @override
+  String mapsLayerFeatures(int n) {
+    return '$n features';
+  }
+
+  @override
+  String get mapsLayerName => 'Name';
+
+  @override
+  String get mapsLayerUrl => 'GeoJSON URL (https)';
+
+  @override
+  String get mapsLayerTerms => 'The publisher\'s terms apply to their data.';
+
+  @override
+  String get mapsSourceName => 'Name';
+
+  @override
+  String get mapsSourceUrl => 'Tile URL template';
+
+  @override
+  String get mapsSourceAttr => 'Attribution';
+
+  @override
+  String get mapsSourceAllowsPacks => 'This server allows offline download';
+
+  @override
+  String get mapsSourceBad =>
+      'Needs a name and an https template with z, x and y placeholders.';
+
+  @override
+  String get mapsAdd => 'Add';
+
+  @override
+  String get mapsWorking => 'Working…';
+
+  @override
+  String get newPackName => 'Name';
+
+  @override
+  String get newPackSource => 'Source';
+
+  @override
+  String get newPackCenter => 'Centre';
+
+  @override
+  String get newPackMyLocation => 'My location';
+
+  @override
+  String get newPackNoLocation => 'No location yet: enter lat, lon';
+
+  @override
+  String get newPackLatLon => 'lat, lon';
+
+  @override
+  String get newPackRadius => 'Radius';
+
+  @override
+  String get newPackZoomFrom => 'Zoom from';
+
+  @override
+  String get newPackZoomTo => 'Zoom to';
+
+  @override
+  String get newPackKeep => 'Delete after';
+
+  @override
+  String newPackEstimate(int tiles, String size) {
+    return '$tiles tiles · about $size';
+  }
+
+  @override
+  String get newPackCreate => 'Download';
+
+  @override
+  String get newPackNoSource =>
+      'No source here allows offline download. Add a tile server that does, under Map sources.';
+
+  @override
+  String get packRefusalNoName => 'Give it a name.';
+
+  @override
+  String get packRefusalOffline =>
+      'Can\'t reach the server. Set up maps while online.';
+
+  @override
+  String get packRefusalViewOnly =>
+      'This server doesn\'t allow offline download.';
+
+  @override
+  String get packRefusalCoverage => 'This source has no data there.';
+
+  @override
+  String get packRefusalTooMany =>
+      'Too many tiles. Shrink the area or lower the top zoom.';
+
+  @override
+  String get packRefusalBudget => 'Won\'t fit in the storage budget.';
+
+  @override
+  String get layerRefusalBadUrl => 'Needs an https URL.';
+
+  @override
+  String get layerRefusalNotGeoJson => 'That URL didn\'t return GeoJSON.';
+
+  @override
+  String get layerRefusalTooLarge => 'Over 10 MB: too big for an overlay.';
+
+  @override
+  String get mapsSelfTest => 'Self-test';
+
+  @override
+  String get selfTestIntro =>
+      'Checks offline maps end to end on this phone: the real map servers, storage, downloads, pause and resume, expiry. Runs in a sandbox and deletes it afterwards; your maps are not touched. Takes about a minute and under 1 MB of data.';
+
+  @override
+  String get selfTestRun => 'Run self-test';
+
+  @override
+  String get selfTestRunning => 'Running…';
+
+  @override
+  String get selfTestPass => 'All checks passed';
+
+  @override
+  String selfTestFail(int n) {
+    return '$n checks failed';
+  }
+
+  @override
+  String get selfTestCopy => 'Copy report';
+
+  @override
+  String get selfTestCopied => 'Report copied';
+
+  @override
+  String get selfCheckReach => 'Map servers reachable';
+
+  @override
+  String get selfCheckViewCache => 'Viewed tiles are kept';
+
+  @override
+  String get selfCheckRevalidate => 'Stale tiles re-checked politely';
+
+  @override
+  String get selfCheckPack => 'Region download';
+
+  @override
+  String get selfCheckUpdate => 'Region update';
+
+  @override
+  String get selfCheckEventLayer => 'Event map (GeoJSON)';
+
+  @override
+  String get selfCheckOffline => 'Offline behaviour';
+
+  @override
+  String get selfCheckResume => 'Pause and resume on network loss';
+
+  @override
+  String get selfCheckGuards => 'Refusals (size, budget, policy, coverage)';
+
+  @override
+  String get selfCheckExpiry => 'Delete-after expiry';
+
+  @override
+  String get selfCheckDisk => 'Storage matches the books';
 }
