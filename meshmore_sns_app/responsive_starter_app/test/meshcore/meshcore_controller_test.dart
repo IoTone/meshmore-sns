@@ -1712,7 +1712,8 @@ void main() {
       ctrl.dispose();
     });
 
-    test('advertLocPolicy=2 + gps=0 → auto-enable gps only (no '
+    test('advertLocPolicy=1 (firmware ADVERT_LOC_SHARE — the live fix) + '
+        'gps=0 → auto-enable gps only (no '
         'gps_interval write — that errs on hardware that does not '
         'expose it)', () async {
       final FakeMeshcoreTransport fake =
@@ -1723,9 +1724,14 @@ void main() {
             handshakeTimeout: const Duration(seconds: 5)),
       );
       await ctrl.connect();
-      // SelfInfo carrying advertLocPolicy=2 (GPS).
+      // SelfInfo carrying advertLocPolicy=1. MeshCore's
+      // `src/helpers/CommonCLI.h` defines
+      //   ADVERT_LOC_NONE 0 / ADVERT_LOC_SHARE 1 / ADVERT_LOC_PREFS 2
+      // and SHARE is the mode that advertises the live sensor/GPS fix,
+      // so it is the mode whose GPS must be running. This test
+      // previously used 2, encoding the app's reversed label.
       final Uint8List si = Uint8List(58)..[0] = 0x05;
-      si[45] = 2; // advertLocPolicy byte
+      si[45] = 1; // advertLocPolicy byte
       fake.emit(si);
       await Future<void>.delayed(Duration.zero);
       // Device reports GPS disabled — and only exposes `gps`, not
@@ -1746,6 +1752,35 @@ void main() {
           isFalse,
           reason: 'auto-heal must NOT write gps_interval — hardware '
               "that doesn't expose it returns ILLEGAL_ARG");
+      ctrl.dispose();
+    });
+
+    test('advertLocPolicy=2 (firmware ADVERT_LOC_PREFS — the stored pair) '
+        '+ gps=0 → auto-heal does NOT run: stored coordinates need no GPS',
+        () async {
+      final FakeMeshcoreTransport fake =
+          FakeMeshcoreTransport(connected: true);
+      final MeshcoreController ctrl = MeshcoreController(
+        transportFactory: () async => fake,
+        connection: MeshcoreConnection(
+            handshakeTimeout: const Duration(seconds: 5)),
+      );
+      await ctrl.connect();
+      final Uint8List si = Uint8List(58)..[0] = 0x05;
+      si[45] = 2; // advertLocPolicy = PREFS (stored lat/lon)
+      fake.emit(si);
+      await Future<void>.delayed(Duration.zero);
+      fake.emit(customVarsFrame(<String, String>{'gps': '0'}));
+      await Future<void>.delayed(Duration.zero);
+      await Future<void>.delayed(Duration.zero);
+
+      final List<String> bodies = fake.sent
+          .where((f) => f.isNotEmpty && f[0] == 0x29)
+          .map((List<int> f) => String.fromCharCodes(f.skip(1).toList()))
+          .toList();
+      expect(bodies.contains('gps:1'), isFalse,
+          reason: 'PREFS advertises the stored pair — powering the GPS '
+              'would be a side effect the user did not ask for');
       ctrl.dispose();
     });
 

@@ -2457,23 +2457,31 @@ class MeshcoreController extends ChangeNotifier {
 
   bool _autoEnabledGpsOnce = false;
 
-  /// One-shot auto-heal: if the user has `advertLocPolicy=2` (GPS)
-  /// but the firmware reports `gps=0`, push `gps=1` + a sane
-  /// `gps_interval=30` so the GPS module actually starts updating
-  /// `sensors.node_lat/lon`. Without this, picking "Device GPS" in
-  /// our Device Config screen has no effect — the firmware just
-  /// keeps broadcasting whatever cached lat/lon it last had.
+  /// One-shot auto-heal: if the user has chosen the **live/GPS** advert
+  /// policy but the firmware reports `gps=0`, push `gps=1` so the GPS
+  /// module actually starts updating `sensors.node_lat/lon`. Without
+  /// this, picking the live-position option in our Device Config screen
+  /// has no effect — the firmware just keeps broadcasting whatever
+  /// cached lat/lon it last had.
+  ///
+  /// The policy integer here is the FIRMWARE's, not our label's:
+  /// MeshCore `src/helpers/CommonCLI.h` defines
+  /// `ADVERT_LOC_NONE 0 / ADVERT_LOC_SHARE 1 / ADVERT_LOC_PREFS 2`.
+  /// SHARE (1) is the mode that advertises the live sensor/GPS fix, so
+  /// that is the mode which needs the GPS powered. This previously tested
+  /// for 2 (PREFS = the *stored* pair), i.e. it turned the GPS on for the
+  /// stored-coordinates mode and left the live mode without a fix.
   Future<void> _maybeAutoEnableGps() async {
     if (_autoEnabledGpsOnce) return;
     final SelfInfo? si = selfInfo;
     if (si == null) return;
-    if (si.advertLocPolicy != 2) return; // user hasn't asked for GPS
+    if (si.advertLocPolicy != 1) return; // user hasn't asked for live GPS
     final bool? on = deviceGpsEnabled;
     if (on != false) return; // already on, or unknown — leave alone
     _autoEnabledGpsOnce = true;
     // ignore: avoid_print
     print('[meshcore.loc] auto-enabling on-board GPS '
-        '(advertLocPolicy=2 but gps=0)');
+        '(advertLocPolicy=1/SHARE but gps=0)');
     await setCustomVar(name: 'gps', value: '1');
     // We intentionally don't write `gps_interval` here. On at least
     // the T1000-E v1.15.0 build the sensors module only exposes

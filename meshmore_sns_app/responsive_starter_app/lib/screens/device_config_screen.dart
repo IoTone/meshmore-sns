@@ -28,6 +28,24 @@ import '../perms/permissions_service.dart';
 /// can't hear each other**, so match your mesh, and confirm the
 /// settings are legal in your jurisdiction (Japan additionally
 /// requires firmware-side listen-before-talk).
+/// The FIRMWARE's advert-location policy integers → a UI label.
+///
+/// These integers come from MeshCore `src/helpers/CommonCLI.h`:
+///   0 = ADVERT_LOC_NONE  — advertise no position at all
+///   1 = ADVERT_LOC_SHARE — advertise the LIVE sensor/GPS fix
+///   2 = ADVERT_LOC_PREFS — advertise the STORED (pinned) pair
+///
+/// One mapping shared by both the picker and the confirmation toast, so
+/// the two can never drift apart again. They used to be two separately
+/// hand-maintained lists, and the labels sat on 1 and 2 in the reverse
+/// order from the firmware — so picking "Pinned" actually selected
+/// SHARE (live), and typed coordinates got overwritten by the GPS.
+String advertPolicyLabel(AppLocalizations l, int policy) => switch (policy) {
+      1 => l.deviceAdvertSourceGps,
+      2 => l.deviceAdvertSourcePinned,
+      _ => l.deviceAdvertSourceNone,
+    };
+
 class DeviceConfigScreen extends StatefulWidget {
   const DeviceConfigScreen({super.key});
 
@@ -468,10 +486,16 @@ class _DeviceConfigScreenState extends State<DeviceConfigScreen> {
               onPressed: ready ? () => _applyName(mc) : null,
             ),
           ),
-          // Advert location SOURCE — None / Pinned / GPS. Drives what
-          // the device broadcasts: 0 = nothing, 1 = the pinned lat/lon
-          // below, 2 = the on-board GPS reading. Sent via
-          // CMD_SET_OTHER_PARAMS (0x26).
+          // Advert location SOURCE — the segment values are the FIRMWARE's
+          // policy integers, they are NOT the visual order of our labels.
+          // MeshCore `src/helpers/CommonCLI.h` defines:
+          //   0 = ADVERT_LOC_NONE  — advertise no position at all
+          //   1 = ADVERT_LOC_SHARE — advertise the LIVE sensor/GPS fix
+          //   2 = ADVERT_LOC_PREFS — advertise the STORED (pinned) pair
+          // Labels used to be attached to 1=Pinned / 2=GPS, i.e. reversed
+          // against the firmware: picking "Pinned" selected SHARE (live),
+          // so typed coordinates were overwritten by the GPS reading.
+          // Sent via CMD_SET_OTHER_PARAMS (0x26).
           const SizedBox(height: 6),
           Text(l.deviceAdvertSource,
               style: TextStyle(
@@ -486,16 +510,16 @@ class _DeviceConfigScreenState extends State<DeviceConfigScreen> {
               segments: <ButtonSegment<int>>[
                 ButtonSegment<int>(
                     value: 0,
-                    label: Text(l.deviceAdvertSourceNone),
+                    label: Text(advertPolicyLabel(l, 0)),
                     icon: const Icon(Icons.do_not_disturb, size: 16)),
                 ButtonSegment<int>(
                     value: 1,
-                    label: Text(l.deviceAdvertSourcePinned),
-                    icon: const Icon(Icons.push_pin_outlined, size: 16)),
+                    label: Text(advertPolicyLabel(l, 1)),
+                    icon: const Icon(Icons.satellite_alt, size: 16)),
                 ButtonSegment<int>(
                     value: 2,
-                    label: Text(l.deviceAdvertSourceGps),
-                    icon: const Icon(Icons.satellite_alt, size: 16)),
+                    label: Text(advertPolicyLabel(l, 2)),
+                    icon: const Icon(Icons.push_pin_outlined, size: 16)),
               ],
               selected: <int>{current},
               showSelectedIcon: false,
@@ -505,12 +529,7 @@ class _DeviceConfigScreenState extends State<DeviceConfigScreen> {
                       if (v == current) return;
                       try {
                         await mc.setAdvertLocPolicy(v);
-                        final List<String> labels = <String>[
-                          l.deviceAdvertSourceNone,
-                          l.deviceAdvertSourcePinned,
-                          l.deviceAdvertSourceGps,
-                        ];
-                        _toast(labels[v]);
+                        _toast(advertPolicyLabel(l, v));
                       } catch (e) {
                         _toast(l.deviceToastSendFailed('$e'));
                       }
