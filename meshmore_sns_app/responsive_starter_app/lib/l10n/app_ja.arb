@@ -1465,5 +1465,8 @@
   "selfCheckResume": "通信断での中断と再開",
   "selfCheckGuards": "拒否条件(サイズ・容量・規約・範囲)",
   "selfCheckExpiry": "期限切れ自動削除",
-  "selfCheckDisk": "保存量と記録の一致"
+  "selfCheckDisk": "保存量と記録の一致",
+  "locGroupAutoPublish": "自動送信",
+  "locGroupBeacon": "ビーコン",
+  "locGroupManual": "手動"
 }

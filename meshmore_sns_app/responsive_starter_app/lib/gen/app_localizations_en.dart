@@ -3597,4 +3597,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get selfCheckDisk => 'Storage matches the books';
+
+  @override
+  String get locGroupAutoPublish => 'Auto-publish';
+
+  @override
+  String get locGroupBeacon => 'Beacon';
+
+  @override
+  String get locGroupManual => 'Manual';
 }

@@ -39,6 +39,16 @@ class MmPanel extends StatelessWidget {
   }
 }
 
+/// The label style shared by [MmSectionHeader] and
+/// `MmCollapsibleSection`, so there is exactly one section-label idiom.
+TextStyle mmSectionLabelStyle(MmSkin skin) => TextStyle(
+      fontFamily: skin.type.headingFamily ?? skin.type.monoFamily,
+      color: skin.color.fgMuted,
+      fontSize: 11,
+      letterSpacing: skin.type.headingTracking,
+      fontWeight: FontWeight.w700,
+    );
+
 /// A section header — a tracked, optionally uppercase label. Loud
 /// concepts (NERV) extend it with a diagonal **hazard-stripe** bar;
 /// calm ones (SEELE) render just the label.
@@ -53,13 +63,7 @@ class MmSectionHeader extends StatelessWidget {
     final MmSkin skin = context.skin;
     final Widget labelWidget = Text(
       skin.type.upperHeadings ? label.toUpperCase() : label,
-      style: TextStyle(
-        fontFamily: skin.type.headingFamily ?? skin.type.monoFamily,
-        color: skin.color.fgMuted,
-        fontSize: 11,
-        letterSpacing: skin.type.headingTracking,
-        fontWeight: FontWeight.w700,
-      ),
+      style: mmSectionLabelStyle(skin),
     );
     return Row(
       children: <Widget>[

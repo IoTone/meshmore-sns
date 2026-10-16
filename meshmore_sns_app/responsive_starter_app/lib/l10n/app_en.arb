@@ -1561,5 +1561,8 @@
   "selfCheckResume": "Pause and resume on network loss",
   "selfCheckGuards": "Refusals (size, budget, policy, coverage)",
   "selfCheckExpiry": "Delete-after expiry",
-  "selfCheckDisk": "Storage matches the books"
+  "selfCheckDisk": "Storage matches the books",
+  "locGroupAutoPublish": "Auto-publish",
+  "locGroupBeacon": "Beacon",
+  "locGroupManual": "Manual"
 }

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../gen/app_localizations.dart';
+import '../ui/mm_collapsible.dart';
 import '../ui/mm_scaffold.dart';
 import '../meshcore/auto_publish_controller.dart';
 import '../meshcore/meshcore_controller.dart';
@@ -48,8 +49,7 @@ class LocationSettingsScreen extends StatelessWidget {
     final PermissionsService perms = context.read<PermissionsService>();
     final PermissionResult r = await perms.requestLocation();
     if (!context.mounted) return;
-    if (r != PermissionResult.granted &&
-        r != PermissionResult.notApplicable) {
+    if (r != PermissionResult.granted && r != PermissionResult.notApplicable) {
       ScaffoldMessenger.maybeOf(context)?.showSnackBar(
         SnackBar(
           content: Text(r == PermissionResult.permanentlyDenied
@@ -82,8 +82,7 @@ class LocationSettingsScreen extends StatelessWidget {
     ScaffoldMessenger.maybeOf(context)?.showSnackBar(
       SnackBar(
         content: Text(switch (failure) {
-          LocationFailure.permissionDeniedForever =>
-            l.deviceLocPermDeniedPerm,
+          LocationFailure.permissionDeniedForever => l.deviceLocPermDeniedPerm,
           LocationFailure.permissionDenied => l.deviceLocPermDenied,
           _ => l.deviceRegionSuggestNoFix,
         }),
@@ -94,8 +93,7 @@ class LocationSettingsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final AutoPublishController ap =
-        context.watch<AutoPublishController>();
+    final AutoPublishController ap = context.watch<AutoPublishController>();
     final AppLocalizations l = AppLocalizations.of(context);
     final ColorScheme cs = Theme.of(context).colorScheme;
     final MeshcoreController mc = context.read<MeshcoreController>();
@@ -104,124 +102,130 @@ class LocationSettingsScreen extends StatelessWidget {
       appBar: AppBar(title: Text(l.locTitle)),
       body: MmScaffold(
         child: ListView(
-        children: <Widget>[
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 14, 16, 4),
-            child: Text(
-              l.locHelp,
-              style: TextStyle(
-                  color: cs.onSurfaceVariant, fontSize: 12),
-            ),
-          ),
-          // Master toggle.
-          SwitchListTile(
-            title: Text(l.locMaster),
-            subtitle: Text(
-              ap.enabled ? l.locMasterOn : l.locMasterOff,
-              style: TextStyle(
-                  color: cs.onSurface.withValues(alpha: .6)),
-            ),
-            secondary: Icon(
-                ap.enabled ? Icons.satellite_alt : Icons.satellite,
-                color: ap.enabled ? cs.primary : cs.onSurfaceVariant),
-            value: ap.enabled,
-            onChanged: (bool v) => _toggleEnabled(context, ap, l, v),
-          ),
-          const Divider(height: 1),
-          // Periodic interval.
-          ListTile(
-            enabled: ap.enabled,
-            leading: const Icon(Icons.timer_outlined),
-            title: Text(l.locInterval),
-            subtitle: Text(
-              _intervalLabel(l, ap.intervalSec),
-              style: TextStyle(
-                  color: cs.onSurface.withValues(alpha: .6)),
-            ),
-            onTap: !ap.enabled
-                ? null
-                : () => _pickInterval(context, ap, l),
-          ),
-          // Smart-broadcast distance.
-          ListTile(
-            enabled: ap.enabled,
-            leading: const Icon(Icons.straighten),
-            title: Text(l.locMovement),
-            subtitle: Text(
-              _movementLabel(l, ap.minMovementMeters),
-              style: TextStyle(
-                  color: cs.onSurface.withValues(alpha: .6)),
-            ),
-            onTap: !ap.enabled
-                ? null
-                : () => _pickMovement(context, ap, l),
-          ),
-          const Divider(height: 1),
-          // R62 — the 60 s self-advert beacon is a separate, opt-in
-          // choice from auto-publish: it needs no GPS permission and
-          // works with the master toggle off.
-          Consumer<MeshcoreController>(
-            builder: (BuildContext context, MeshcoreController m, _) =>
-                SwitchListTile(
-              secondary: const Icon(Icons.cell_tower),
-              title: Text(l.locBeacon),
-              subtitle: Text(
-                l.locBeaconSub,
-                style: TextStyle(
-                    color: cs.onSurface.withValues(alpha: .6)),
-              ),
-              value: m.periodicAdvertEnabled,
-              onChanged: (bool v) => m.setPeriodicAdvertEnabled(v),
-            ),
-          ),
-          const Divider(height: 1),
-          // "Publish now" — manual trigger so the user can verify.
-          ListTile(
-            leading: const Icon(Icons.upload),
-            title: Text(l.locPublishNow),
-            subtitle: Text(l.locPublishNowSub),
-            enabled: ap.enabled && mc.isReady,
-            onTap: !(ap.enabled && mc.isReady)
-                ? null
-                : () => _publishNow(context, ap, l),
-          ),
-          // Last-published readout.
-          if (ap.lastPublishedAt != null)
+          children: <Widget>[
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-              child: Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: cs.surfaceContainerHighest,
-                  borderRadius: BorderRadius.circular(6),
-                  border: Border.all(
-                      color: cs.outline.withValues(alpha: .35)),
-                ),
-                child: Text(
-                  l.locLastPublished(
-                    ap.lastLat!.toStringAsFixed(5),
-                    ap.lastLon!.toStringAsFixed(5),
-                    _hms(ap.lastPublishedAt!),
-                    ap.lastTrigger,
-                  ),
-                  style: TextStyle(
-                      color: cs.onSurface,
-                      fontFamily: 'JetBrains Mono',
-                      fontSize: 12),
-                ),
+              padding: const EdgeInsets.fromLTRB(16, 14, 16, 4),
+              child: Text(
+                l.locHelp,
+                style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12),
               ),
             ),
-          // Battery transparency footer.
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
-            child: Text(
-              l.locBatteryHint,
-              style: TextStyle(
-                  color: cs.onSurfaceVariant, fontSize: 11),
+            MmCollapsibleSection(
+              title: l.locGroupAutoPublish,
+              children: <Widget>[
+                // Master toggle.
+                SwitchListTile(
+                  title: Text(l.locMaster),
+                  subtitle: Text(
+                    ap.enabled ? l.locMasterOn : l.locMasterOff,
+                    style: TextStyle(color: cs.onSurface.withValues(alpha: .6)),
+                  ),
+                  secondary: Icon(
+                      ap.enabled ? Icons.satellite_alt : Icons.satellite,
+                      color: ap.enabled ? cs.primary : cs.onSurfaceVariant),
+                  value: ap.enabled,
+                  onChanged: (bool v) => _toggleEnabled(context, ap, l, v),
+                ),
+                const Divider(height: 1),
+                // Periodic interval.
+                ListTile(
+                  enabled: ap.enabled,
+                  leading: const Icon(Icons.timer_outlined),
+                  title: Text(l.locInterval),
+                  subtitle: Text(
+                    _intervalLabel(l, ap.intervalSec),
+                    style: TextStyle(color: cs.onSurface.withValues(alpha: .6)),
+                  ),
+                  onTap:
+                      !ap.enabled ? null : () => _pickInterval(context, ap, l),
+                ),
+                // Smart-broadcast distance.
+                ListTile(
+                  enabled: ap.enabled,
+                  leading: const Icon(Icons.straighten),
+                  title: Text(l.locMovement),
+                  subtitle: Text(
+                    _movementLabel(l, ap.minMovementMeters),
+                    style: TextStyle(color: cs.onSurface.withValues(alpha: .6)),
+                  ),
+                  onTap:
+                      !ap.enabled ? null : () => _pickMovement(context, ap, l),
+                ),
+              ],
             ),
-          ),
-        ],
-      ),
+            // R62 — the 60 s self-advert beacon is a separate, opt-in
+            // choice from auto-publish: it needs no GPS permission and
+            // works with the master toggle off.
+            MmCollapsibleSection(
+              title: l.locGroupBeacon,
+              children: <Widget>[
+                Consumer<MeshcoreController>(
+                  builder: (BuildContext context, MeshcoreController m, _) =>
+                      SwitchListTile(
+                    secondary: const Icon(Icons.cell_tower),
+                    title: Text(l.locBeacon),
+                    subtitle: Text(
+                      l.locBeaconSub,
+                      style:
+                          TextStyle(color: cs.onSurface.withValues(alpha: .6)),
+                    ),
+                    value: m.periodicAdvertEnabled,
+                    onChanged: (bool v) => m.setPeriodicAdvertEnabled(v),
+                  ),
+                ),
+              ],
+            ),
+            MmCollapsibleSection(
+              title: l.locGroupManual,
+              children: <Widget>[
+                // "Publish now" — manual trigger so the user can verify.
+                ListTile(
+                  leading: const Icon(Icons.upload),
+                  title: Text(l.locPublishNow),
+                  subtitle: Text(l.locPublishNowSub),
+                  enabled: ap.enabled && mc.isReady,
+                  onTap: !(ap.enabled && mc.isReady)
+                      ? null
+                      : () => _publishNow(context, ap, l),
+                ),
+                // Last-published readout.
+                if (ap.lastPublishedAt != null)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+                    child: Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: cs.surfaceContainerHighest,
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(
+                            color: cs.outline.withValues(alpha: .35)),
+                      ),
+                      child: Text(
+                        l.locLastPublished(
+                          ap.lastLat!.toStringAsFixed(5),
+                          ap.lastLon!.toStringAsFixed(5),
+                          _hms(ap.lastPublishedAt!),
+                          ap.lastTrigger,
+                        ),
+                        style: TextStyle(
+                            color: cs.onSurface,
+                            fontFamily: 'JetBrains Mono',
+                            fontSize: 12),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            // Battery transparency footer.
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+              child: Text(
+                l.locBatteryHint,
+                style: TextStyle(color: cs.onSurfaceVariant, fontSize: 11),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -231,8 +235,8 @@ class LocationSettingsScreen extends StatelessWidget {
     return '${two(t.hour)}:${two(t.minute)}:${two(t.second)}';
   }
 
-  Future<void> _pickInterval(BuildContext ctx,
-      AutoPublishController ap, AppLocalizations l) async {
+  Future<void> _pickInterval(
+      BuildContext ctx, AutoPublishController ap, AppLocalizations l) async {
     final int? picked = await showModalBottomSheet<int>(
       context: ctx,
       builder: (BuildContext _) => SafeArea(
@@ -258,8 +262,8 @@ class LocationSettingsScreen extends StatelessWidget {
     if (picked != null) await ap.setIntervalSec(picked);
   }
 
-  Future<void> _pickMovement(BuildContext ctx,
-      AutoPublishController ap, AppLocalizations l) async {
+  Future<void> _pickMovement(
+      BuildContext ctx, AutoPublishController ap, AppLocalizations l) async {
     final int? picked = await showModalBottomSheet<int>(
       context: ctx,
       builder: (BuildContext _) => SafeArea(
@@ -267,8 +271,7 @@ class LocationSettingsScreen extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
-            for (final int m
-                in AutoPublishController.movementOptions)
+            for (final int m in AutoPublishController.movementOptions)
               ListTile(
                 dense: true,
                 leading: Icon(

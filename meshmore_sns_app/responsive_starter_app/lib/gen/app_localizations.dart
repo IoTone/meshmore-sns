@@ -6235,6 +6235,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Storage matches the books'**
   String get selfCheckDisk;
+
+  /// No description provided for @locGroupAutoPublish.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto-publish'**
+  String get locGroupAutoPublish;
+
+  /// No description provided for @locGroupBeacon.
+  ///
+  /// In en, this message translates to:
+  /// **'Beacon'**
+  String get locGroupBeacon;
+
+  /// No description provided for @locGroupManual.
+  ///
+  /// In en, this message translates to:
+  /// **'Manual'**
+  String get locGroupManual;
 }
 
 class _AppLocalizationsDelegate

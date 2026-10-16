@@ -3475,4 +3475,13 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get selfCheckDisk => '保存量と記録の一致';
+
+  @override
+  String get locGroupAutoPublish => '自動送信';
+
+  @override
+  String get locGroupBeacon => 'ビーコン';
+
+  @override
+  String get locGroupManual => '手動';
 }
