@@ -511,8 +511,10 @@ class _DeviceConfigScreenState extends State<DeviceConfigScreen> {
           //   1 = ADVERT_LOC_SHARE — advertise the LIVE sensor/GPS fix
           //   2 = ADVERT_LOC_PREFS — advertise the STORED (pinned) pair
           // Labels used to be attached to 1=Pinned / 2=GPS, i.e. reversed
-          // against the firmware: picking "Pinned" selected SHARE (live),
-          // so typed coordinates were overwritten by the GPS reading.
+          // against the firmware's shared definition. NOTE: companion
+          // firmware (`companion-v1.17.1`) tests only `== ADVERT_LOC_NONE`
+          // (`MyMesh.cpp:1252,1336,2251`), so there 1 and 2 behave
+          // identically and neither pins; see [advertPolicyLabel].
           // Sent via CMD_SET_OTHER_PARAMS (0x26).
           const SizedBox(height: 6),
           Text(l.deviceAdvertSource,

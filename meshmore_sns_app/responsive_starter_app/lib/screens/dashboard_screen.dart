@@ -477,7 +477,7 @@ class _LocationTile extends StatelessWidget {
 ///   the device. (Companion firmware only distinguishes 0 from
 ///   non-zero — `examples/companion_radio/NodePrefs.h:9-10` — so 2
 ///   behaves like 1 there. This comment previously read
-///   "1=Pinned, 2=Device GPS", the reversal fixed in 04811b2.)
+///   "1=Pinned, 2=Device GPS", the label reversal fixed on this branch (cc5acb2).)
 /// - `phone: lat, lon` — the one-shot phone fix `mc.phoneLocationFix`.
 ///   Only present if the user has tapped "Use phone location" or
 ///   the dashboard requested a fix. `ownLocation` falls back to
