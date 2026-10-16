@@ -7,6 +7,7 @@ import '../gen/app_localizations.dart';
 import '../ui/mm_scaffold.dart';
 import '../meshcore/auto_publish_controller.dart';
 import '../meshcore/meshcore_controller.dart';
+import '../perms/permissions_service.dart';
 
 /// R36 — App settings → Auto-publish location.
 ///
@@ -26,6 +27,43 @@ class LocationSettingsScreen extends StatelessWidget {
     if (m == 0) return l.locOff;
     if (m < 1000) return l.locMovementM(m);
     return l.locMovementKm(m ~/ 1000);
+  }
+
+  /// R36 — auto-publish is a GPS feature: every publish needs a fix, and
+  /// the periodic path runs from a timer with no UI, so it cannot ask
+  /// for the permission itself (it reports a denial instead). Ask here,
+  /// at the moment the user turns the feature on, so that enabling it
+  /// cannot silently produce nothing. Declining leaves the switch off.
+  Future<void> _toggleEnabled(
+    BuildContext context,
+    AutoPublishController ap,
+    AppLocalizations l,
+    bool value,
+  ) async {
+    if (!value) {
+      await ap.setEnabled(false);
+      return;
+    }
+    final PermissionsService perms = context.read<PermissionsService>();
+    final PermissionResult r = await perms.requestLocation();
+    if (!context.mounted) return;
+    if (r != PermissionResult.granted &&
+        r != PermissionResult.notApplicable) {
+      ScaffoldMessenger.maybeOf(context)?.showSnackBar(
+        SnackBar(
+          content: Text(r == PermissionResult.permanentlyDenied
+              ? l.deviceLocPermDeniedPerm
+              : l.deviceLocPermDenied),
+          action: SnackBarAction(
+            label: l.deviceOpenSettings,
+            onPressed: () => perms.openAppSettingsPage(),
+          ),
+          duration: const Duration(seconds: 5),
+        ),
+      );
+      return;
+    }
+    await ap.setEnabled(true);
   }
 
   @override
@@ -61,7 +99,7 @@ class LocationSettingsScreen extends StatelessWidget {
                 ap.enabled ? Icons.satellite_alt : Icons.satellite,
                 color: ap.enabled ? cs.primary : cs.onSurfaceVariant),
             value: ap.enabled,
-            onChanged: (bool v) => ap.setEnabled(v),
+            onChanged: (bool v) => _toggleEnabled(context, ap, l, v),
           ),
           const Divider(height: 1),
           // Periodic interval.

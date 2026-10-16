@@ -138,4 +138,31 @@ void main() {
     b.dispose();
     r.mc.dispose();
   });
+
+  test('the publish path never asks for the location permission itself',
+      () async {
+    // Both triggers (the periodic Timer and the position stream) run
+    // with no UI. If the fix request prompted, the OS dialog would
+    // appear unattended — Android suppresses it, or shows it again on
+    // every tick. The permission is asked for at the settings toggle
+    // (`LocationSettingsScreen._toggleEnabled`) instead, so this path
+    // must report the denial and carry on.
+    final r = await bringControllerReady();
+    final NoopLocationService loc =
+        NoopLocationService(failure: LocationFailure.permissionDenied);
+    final AutoPublishController ap =
+        AutoPublishController(mc: r.mc, location: loc);
+    await ap.load();
+    await ap.setEnabled(true);
+    await ap.publishNow();
+
+    expect(loc.callCount, greaterThan(0),
+        reason: 'the publish must have tried to get a fix');
+    expect(loc.promptCount, 0,
+        reason: 'a timer-driven publish must never prompt');
+    expect(has0E(r.fake), isFalse,
+        reason: 'with no fix there is no position to advertise');
+    ap.dispose();
+    r.mc.dispose();
+  });
 }

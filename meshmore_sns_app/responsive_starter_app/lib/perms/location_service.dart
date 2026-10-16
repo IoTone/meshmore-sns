@@ -69,20 +69,24 @@ abstract class LocationService {
   /// Returns a single fix, or `null` if the device says it can't
   /// produce one. Convenience over [requestFix] for callers that
   /// cannot explain the failure anyway; prefer [requestFix] when they
-  /// can.
+  /// can. Never prompts — this is the background/periodic entry point.
   Future<PhoneFix?> currentFix({Duration timeLimit});
 
-  /// R22 / U13 — a single fix, requesting the runtime location
-  /// permission just-in-time when the user has not decided yet.
+  /// R22 / U13 — a single fix, reporting *why* it produced none.
   ///
-  /// The request lives here rather than at the call sites: a one-shot
-  /// fix that cannot ask is not usable, every caller would have to
-  /// remember to ask first, and most did not (`AutoPublishController`,
-  /// the region suggester and the elevation profile all just called
-  /// `currentFix` and treated the resulting null as "no GPS").
-  /// Callers that show UI should prefer this so they can tell a denial
-  /// from a cold fix.
-  Future<LocationOutcome> requestFix({Duration timeLimit});
+  /// With [prompt] (the default) the runtime location permission is
+  /// requested just-in-time when the user has not decided yet. The
+  /// request lives here rather than at the call sites: a one-shot fix
+  /// that cannot ask is not usable, every caller would have to
+  /// remember to ask first, and most did not (the region suggester and
+  /// the elevation profile just called `currentFix` and treated the
+  /// resulting null as "no GPS").
+  ///
+  /// Pass `prompt: false` from paths with no UI. A periodic timer
+  /// cannot show a dialog, and an unattended request on Android is
+  /// suppressed or re-shown on every tick. Those callers get
+  /// [LocationFailure.permissionDenied] instead of a prompt.
+  Future<LocationOutcome> requestFix({Duration timeLimit, bool prompt});
 
   /// A long-running stream of fixes that emits only when the user
   /// has moved more than [distanceFilterMeters] from the last
@@ -101,11 +105,13 @@ class GeolocatorLocationService implements LocationService {
   @override
   Future<PhoneFix?> currentFix(
           {Duration timeLimit = const Duration(seconds: 15)}) async =>
-      (await requestFix(timeLimit: timeLimit)).fix;
+      (await requestFix(timeLimit: timeLimit, prompt: false)).fix;
 
   @override
-  Future<LocationOutcome> requestFix(
-      {Duration timeLimit = const Duration(seconds: 15)}) async {
+  Future<LocationOutcome> requestFix({
+    Duration timeLimit = const Duration(seconds: 15),
+    bool prompt = true,
+  }) async {
     try {
       // Service-enabled check (location off in OS settings → no fix
       // is possible no matter how many perms we have).
@@ -118,8 +124,10 @@ class GeolocatorLocationService implements LocationService {
       // the user has not been asked yet, so this is the one place the
       // prompt appears; `deniedForever` is only returned once they
       // have said no permanently, and we must not re-prompt then.
+      // `prompt: false` (background callers) skips the ask and reports
+      // the denial instead.
       LocationPermission perm = await Geolocator.checkPermission();
-      if (perm == LocationPermission.denied) {
+      if (perm == LocationPermission.denied && prompt) {
         perm = await Geolocator.requestPermission();
       }
       if (perm == LocationPermission.deniedForever) {
@@ -193,16 +201,23 @@ class NoopLocationService implements LocationService {
   int callCount = 0;
   int? lastDistanceFilter;
 
+  /// How many of the [callCount] requests would have shown the OS
+  /// permission prompt. Lets a test assert that a background path
+  /// (`currentFix`) never asks while an interactive one does.
+  int promptCount = 0;
+
   final StreamController<PhoneFix> _streamCtrl =
       StreamController<PhoneFix>.broadcast();
 
   @override
   Future<PhoneFix?> currentFix({Duration? timeLimit}) async =>
-      (await requestFix(timeLimit: timeLimit)).fix;
+      (await requestFix(timeLimit: timeLimit, prompt: false)).fix;
 
   @override
-  Future<LocationOutcome> requestFix({Duration? timeLimit}) async {
+  Future<LocationOutcome> requestFix(
+      {Duration? timeLimit, bool prompt = true}) async {
     callCount++;
+    if (prompt) promptCount++;
     final PhoneFix? f = next;
     if (f != null) return LocationOutcome.ok(f);
     return LocationOutcome.error(failure);

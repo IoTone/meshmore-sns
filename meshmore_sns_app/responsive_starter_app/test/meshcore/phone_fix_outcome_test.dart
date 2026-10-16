@@ -75,19 +75,38 @@ void main() {
     ctrl.dispose();
   });
 
-  test('currentFix and requestFix agree (one platform round-trip each)',
+  test('the interactive path prompts, the background path never does',
       () async {
-    // `currentFix` is the compatibility shim the background paths still
-    // use; it must be the same request, not a second platform call.
+    // `currentFix` is the timer/stream entry point used by auto-publish.
+    // It must not prompt: the periodic publish runs with no UI, and an
+    // unattended Android request is either suppressed or re-shown on
+    // every tick. `requestFix` is the interactive path and must prompt.
     final NoopLocationService loc = NoopLocationService(
       next: const PhoneFix(latitude: 1, longitude: 2),
     );
     expect(await loc.currentFix(), isNotNull);
     expect(loc.callCount, 1);
+    expect(loc.promptCount, 0,
+        reason: 'currentFix must never ask for the permission');
 
-    final NoopLocationService denied =
-        NoopLocationService(failure: LocationFailure.timeout);
-    expect(await denied.currentFix(), isNull);
-    expect(denied.callCount, 1);
+    expect((await loc.requestFix()).isOk, isTrue);
+    expect(loc.callCount, 2);
+    expect(loc.promptCount, 1, reason: 'requestFix is the one that prompts');
+
+    // Explicit opt-out also works, and is what a timer path can use to
+    // get the reason without a dialog.
+    expect((await loc.requestFix(prompt: false)).isOk, isTrue);
+    expect(loc.promptCount, 1);
+  });
+
+  test('a background request reports the denial instead of prompting',
+      () async {
+    final NoopLocationService loc =
+        NoopLocationService(failure: LocationFailure.permissionDenied);
+    expect(await loc.currentFix(), isNull);
+    expect(loc.promptCount, 0);
+    final LocationOutcome o = await loc.requestFix(prompt: false);
+    expect(o.failure, LocationFailure.permissionDenied);
+    expect(loc.promptCount, 0);
   });
 }
