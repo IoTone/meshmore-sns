@@ -186,4 +186,46 @@ void main() {
     expect(find.textContaining('CONTACTS'), findsOneWidget);
     expect(find.text('MESHMORE™'), findsNothing);
   });
+
+  // R64 — the new UX must have location. Studio has no dashboard of its
+  // own; DashboardHost's `_ =>` hands it the SEELE monolith, which owns
+  // the only LOCATION tile. This proves that by rendering it rather than
+  // by reading the fallback, and records which presets lack the tile.
+  testWidgets('Studio (and SEELE) show the LOCATION tile; the others are '
+      'recorded', (WidgetTester t) async {
+    await t.binding.setSurfaceSize(const Size(1100, 2600));
+    addTearDown(() => t.binding.setSurfaceSize(null));
+    final FakeMeshcoreTransport fake =
+        FakeMeshcoreTransport(connected: true);
+    final MeshcoreController mc = MeshcoreController(
+      transportFactory: () async => fake,
+      connection:
+          MeshcoreConnection(handshakeTimeout: const Duration(seconds: 5)),
+    );
+    final ThemeController tc = await _pump(t, mc);
+    await tc.setReduceMotion(true);
+    await mc.connect();
+    fake.emit(selfInfoFrameAt(lat: 38.920045, lon: -104.772826));
+    await t.pump();
+
+    final Map<MmThemePreset, bool> hasTile = <MmThemePreset, bool>{};
+    for (final MmThemePreset p in MmThemePreset.values) {
+      await tc.setPreset(p);
+      await t.pump();
+      await t.pump(const Duration(milliseconds: 50));
+      hasTile[p] = find.text('LOCATION').evaluate().isNotEmpty;
+    }
+    // Observed when written: only seele and studio render the tile;
+    // nerv, agHud, hyperlocal, drPop and recon do not (finding 12, left
+    // as-is for the old skins by the owner).
+    expect(hasTile[MmThemePreset.studio], isTrue,
+        reason: 'the new skin must show location');
+    expect(hasTile[MmThemePreset.seele], isTrue);
+    expect(find.textContaining('38.92'), findsWidgets,
+        reason: 'under Studio the tile carries the fix, not a placeholder');
+    mc.dispose();
+    await t.pumpWidget(const SizedBox());
+    // Drain one-shot timers the dashboards and controller leave behind.
+    await t.pump(const Duration(seconds: 30));
+  });
 }

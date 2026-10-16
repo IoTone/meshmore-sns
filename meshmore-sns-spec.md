@@ -1094,7 +1094,7 @@ While Meshcore protocol is open source, the client is not open source.  We want 
     fix is a different, user-initiated publish).
 
 - R63: **Studio skin, layer-stack tokens, collapsible groups** (a seventh
-  preset, `MmThemePreset.studio`, "Studio Dark — clean · compact").
+  preset, `MmThemePreset.studio`, "Studio Dark — clean · square").
   - Language: professional creative tools (Blender / GIMP / Photoshop):
     a four-step grey layer stack (base `#141414`, panel `#202020`, raised
     `#2B2B2B`, selected `#363636`), a 1px hairline (`#3A3A3A`), square

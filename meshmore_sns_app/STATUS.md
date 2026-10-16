@@ -51,7 +51,7 @@ codebase.
   groups) fold with `MmCollapsibleSection`, open by default.
 
 **Studio skin (R63)**
-- Seventh preset `studio` ("Studio Dark — clean · compact"): grey layer
+- Seventh preset `studio` ("Studio Dark — clean · square"): grey layer
   stack + 1px hairline + square controls + one blue accent. `MmTokens`
   gained derived `raised/selected/hairline/onAccent/fgDisabled`; `MmShape`
   gained `hairlineWidth`/`squareControls`; the six older skins are

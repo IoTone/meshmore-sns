@@ -24,7 +24,7 @@ extension MmThemePresetX on MmThemePreset {
         MmThemePreset.seele => 'SEELE Monolith — default · high-contrast',
         MmThemePreset.drPop => 'DR Pop',
         MmThemePreset.recon => 'Recon Night',
-        MmThemePreset.studio => 'Studio Dark — clean · compact',
+        MmThemePreset.studio => 'Studio Dark — clean · square',
       };
 
   /// Asset-folder slug for the R12 per-theme audio pack. Used by

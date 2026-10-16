@@ -117,6 +117,10 @@ void main() {
     test('persists by name and is selectable', () {
       expect(presetFromId('studio'), MmThemePreset.studio);
       expect(MmThemePreset.studio.label, contains('Studio'));
+      // R64: the label used to promise "compact", but no density token
+      // exists, so nothing about Studio is denser than the other skins.
+      expect(MmThemePreset.studio.label.toLowerCase(),
+          isNot(contains('compact')));
     });
   });
 }
