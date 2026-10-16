@@ -26,12 +26,63 @@ class PhoneFix {
   final double? altitudeMeters;
 }
 
+/// Why a one-shot fix request produced no position.
+///
+/// `GeolocatorLocationService` used to collapse every one of these into
+/// a bare `null` from `catch (_)`, so a caller could not tell "the user
+/// never granted location" from "cold GPS indoors" — and the call sites
+/// that never asked for the permission themselves got nothing, with no
+/// prompt and no explanation.
+enum LocationFailure {
+  /// Location is switched off in the OS settings. No permission level
+  /// can produce a fix until the user turns it back on.
+  servicesDisabled,
+
+  /// The user declined the runtime permission (the OS may still prompt
+  /// again later).
+  permissionDenied,
+
+  /// The user declined and chose "don't ask again" — only the OS
+  /// settings page can change this.
+  permissionDeniedForever,
+
+  /// No fix inside `timeLimit` (indoors, cold start).
+  timeout,
+
+  /// The platform threw something else.
+  failed,
+}
+
+/// A one-shot fix request that reports *why* it failed. Exactly one of
+/// [fix] / [failure] is non-null.
+class LocationOutcome {
+  const LocationOutcome.ok(PhoneFix this.fix) : failure = null;
+  const LocationOutcome.error(LocationFailure this.failure) : fix = null;
+
+  final PhoneFix? fix;
+  final LocationFailure? failure;
+
+  bool get isOk => fix != null;
+}
+
 abstract class LocationService {
   /// Returns a single fix, or `null` if the device says it can't
-  /// produce one (services disabled, denied, timeout). Implementations
-  /// must catch their own platform exceptions — callers never see
-  /// raw plugin errors.
+  /// produce one. Convenience over [requestFix] for callers that
+  /// cannot explain the failure anyway; prefer [requestFix] when they
+  /// can.
   Future<PhoneFix?> currentFix({Duration timeLimit});
+
+  /// R22 / U13 — a single fix, requesting the runtime location
+  /// permission just-in-time when the user has not decided yet.
+  ///
+  /// The request lives here rather than at the call sites: a one-shot
+  /// fix that cannot ask is not usable, every caller would have to
+  /// remember to ask first, and most did not (`AutoPublishController`,
+  /// the region suggester and the elevation profile all just called
+  /// `currentFix` and treated the resulting null as "no GPS").
+  /// Callers that show UI should prefer this so they can tell a denial
+  /// from a cold fix.
+  Future<LocationOutcome> requestFix({Duration timeLimit});
 
   /// A long-running stream of fixes that emits only when the user
   /// has moved more than [distanceFilterMeters] from the last
@@ -49,12 +100,36 @@ class GeolocatorLocationService implements LocationService {
 
   @override
   Future<PhoneFix?> currentFix(
+          {Duration timeLimit = const Duration(seconds: 15)}) async =>
+      (await requestFix(timeLimit: timeLimit)).fix;
+
+  @override
+  Future<LocationOutcome> requestFix(
       {Duration timeLimit = const Duration(seconds: 15)}) async {
     try {
       // Service-enabled check (location off in OS settings → no fix
       // is possible no matter how many perms we have).
       final bool enabled = await Geolocator.isLocationServiceEnabled();
-      if (!enabled) return null;
+      if (!enabled) {
+        return const LocationOutcome.error(
+            LocationFailure.servicesDisabled);
+      }
+      // Just-in-time permission. Android reports plain `denied` while
+      // the user has not been asked yet, so this is the one place the
+      // prompt appears; `deniedForever` is only returned once they
+      // have said no permanently, and we must not re-prompt then.
+      LocationPermission perm = await Geolocator.checkPermission();
+      if (perm == LocationPermission.denied) {
+        perm = await Geolocator.requestPermission();
+      }
+      if (perm == LocationPermission.deniedForever) {
+        return const LocationOutcome.error(
+            LocationFailure.permissionDeniedForever);
+      }
+      if (perm == LocationPermission.denied) {
+        return const LocationOutcome.error(
+            LocationFailure.permissionDenied);
+      }
       final Position p = await Geolocator.getCurrentPosition(
         locationSettings: LocationSettings(
           accuracy: LocationAccuracy.high,
@@ -66,13 +141,16 @@ class GeolocatorLocationService implements LocationService {
       // for users whose GPS chips don't supply altitude data.
       final double? alt =
           p.altitudeAccuracy > 0 ? p.altitude : null;
-      return PhoneFix(
+      return LocationOutcome.ok(PhoneFix(
         latitude: p.latitude,
         longitude: p.longitude,
         altitudeMeters: alt,
-      );
+      ));
+    } on TimeoutException {
+      // Geolocator throws TimeoutException when `timeLimit` elapses.
+      return const LocationOutcome.error(LocationFailure.timeout);
     } catch (_) {
-      return null;
+      return const LocationOutcome.error(LocationFailure.failed);
     }
   }
 
@@ -101,8 +179,17 @@ class GeolocatorLocationService implements LocationService {
 /// [next] to control what the next call returns. Tests can also
 /// emit synthetic stream events via [emit].
 class NoopLocationService implements LocationService {
-  NoopLocationService({this.next});
+  NoopLocationService({
+    this.next,
+    this.failure = LocationFailure.servicesDisabled,
+  });
+
+  /// The fix the next call returns. When null, [failure] is returned.
   PhoneFix? next;
+
+  /// Why the next call has no fix. Ignored while [next] is set.
+  LocationFailure failure;
+
   int callCount = 0;
   int? lastDistanceFilter;
 
@@ -110,9 +197,15 @@ class NoopLocationService implements LocationService {
       StreamController<PhoneFix>.broadcast();
 
   @override
-  Future<PhoneFix?> currentFix({Duration? timeLimit}) async {
+  Future<PhoneFix?> currentFix({Duration? timeLimit}) async =>
+      (await requestFix(timeLimit: timeLimit)).fix;
+
+  @override
+  Future<LocationOutcome> requestFix({Duration? timeLimit}) async {
     callCount++;
-    return next;
+    final PhoneFix? f = next;
+    if (f != null) return LocationOutcome.ok(f);
+    return LocationOutcome.error(failure);
   }
 
   @override

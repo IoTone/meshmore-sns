@@ -259,10 +259,21 @@ class _DeviceConfigScreenState extends State<DeviceConfigScreen> {
   /// national border can override.
   Future<void> _suggestFromMyLocation(MeshcoreController mc) async {
     final AppLocalizations l = AppLocalizations.of(context);
-    final PhoneFix? fix = await const GeolocatorLocationService()
-        .currentFix(timeLimit: const Duration(seconds: 15));
+    // `requestFix` (not `currentFix`) so the runtime permission is
+    // asked for here. `currentFix` used to return a bare null and this
+    // path reported "no fix" whether the user had never granted
+    // location or was simply standing indoors.
+    final LocationOutcome outcome = await const GeolocatorLocationService()
+        .requestFix(timeLimit: const Duration(seconds: 15));
+    final PhoneFix? fix = outcome.fix;
     if (fix == null) {
-      _toast(l.deviceRegionSuggestNoFix);
+      final LocationFailure failure = outcome.failure!;
+      _toast(switch (failure) {
+        LocationFailure.permissionDeniedForever =>
+          l.deviceLocPermDeniedPerm,
+        LocationFailure.permissionDenied => l.deviceLocPermDenied,
+        _ => l.deviceRegionSuggestNoFix,
+      });
       return;
     }
     final RegionPreset? p =

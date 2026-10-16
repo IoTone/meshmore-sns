@@ -534,15 +534,26 @@ class MeshcoreController extends ChangeNotifier {
   OwnLocation? get phoneLocationFix => _phoneFix;
 
   /// R22 / U13 — capture a single phone-GPS fix and cache it as
-  /// our fallback own-location. The caller is expected to have
-  /// already obtained the location permission (typically via
-  /// `PermissionsService.requestLocation`); this method just talks
-  /// to the [LocationService]. Returns true on success.
+  /// our fallback own-location. The runtime permission is requested
+  /// just-in-time by the [LocationService] when the user has not
+  /// decided yet, so any caller works without asking first.
+  /// Returns true on success; see [requestPhoneLocationFixOutcome]
+  /// when the caller can explain a failure.
   Future<bool> requestPhoneLocationFix({
     Duration timeLimit = const Duration(seconds: 15),
+  }) async =>
+      (await requestPhoneLocationFixOutcome(timeLimit: timeLimit)).isOk;
+
+  /// The same request, reporting *why* it produced no fix, so a screen
+  /// can say "location permission needed" instead of "no GPS fix" when
+  /// the two are completely different problems.
+  Future<LocationOutcome> requestPhoneLocationFixOutcome({
+    Duration timeLimit = const Duration(seconds: 15),
   }) async {
-    final PhoneFix? fix = await _location.currentFix(timeLimit: timeLimit);
-    if (fix == null) return false;
+    final LocationOutcome outcome =
+        await _location.requestFix(timeLimit: timeLimit);
+    final PhoneFix? fix = outcome.fix;
+    if (fix == null) return outcome;
     _phoneFix = OwnLocation(
       latitude: fix.latitude,
       longitude: fix.longitude,
@@ -553,7 +564,7 @@ class MeshcoreController extends ChangeNotifier {
     // source of ownLocation when the device GPS is off or stale.
     _trackOwnLocationForTrail();
     notifyListeners();
-    return true;
+    return outcome;
   }
 
   /// Wipes the cached phone fix (so [ownLocation] reverts to
