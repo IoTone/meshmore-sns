@@ -57,11 +57,11 @@ extension on MmView {
       };
 }
 
-/// Primary navigation shell (R11): horizontal swipe between the
-/// primary views; the app-bar leading control opens a quick-nav sheet on
-/// **tap or long-press** (long-press = the spec gesture; tap = the
-/// accessible, non-gesture-only equivalent — R13). No hamburger
-/// drawer by design.
+/// Primary navigation shell (R11, R64): horizontal swipe between the
+/// primary views. There is no menu, sheet or drawer that switches
+/// views; the strip under the app bar ([_ViewStrip]) only shows where
+/// you are and is the tappable, labelled, 48dp-minimum path for anyone
+/// who cannot swipe (screen readers, switch access, a locked map).
 class HomeShell extends StatefulWidget {
   const HomeShell({super.key});
 
@@ -132,37 +132,8 @@ class _HomeShellState extends State<HomeShell>
     }
   }
 
-  Future<void> _openQuickNav() async {
-    final bool reduceMotion = context.read<ThemeController>().reduceMotion;
-    final AppLocalizations l = AppLocalizations.of(context);
-    await showModalBottomSheet<void>(
-      context: context,
-      showDragHandle: true,
-      builder: (BuildContext ctx) => SafeArea(
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              for (final MmView v in MmView.values)
-                ListTile(
-                  leading: Icon(v.icon),
-                  title: Text(v.title(l)),
-                  selected: v.index == _index,
-                  onTap: () {
-                    Navigator.of(ctx).pop();
-                    _goTo(v.index, reduceMotion: reduceMotion);
-                  },
-                ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
-    final ColorScheme cs = Theme.of(context).colorScheme;
     final AppLocalizations l = AppLocalizations.of(context);
     final MmView current = MmView.values[_index];
     // Root back handling (R11): from a non-Dashboard tab, Back returns
@@ -180,45 +151,12 @@ class _HomeShellState extends State<HomeShell>
       },
       child: BootOverlay(child: Scaffold(
       appBar: AppBar(
-        leading: Semantics(
-          button: true,
-          label: 'Quick navigation',
-          child: InkWell(
-            onTap: _openQuickNav,
-            onLongPress: _openQuickNav,
-            customBorder: const CircleBorder(),
-            child: const Icon(Icons.menu_open),
-          ),
-        ),
         title: Text(current.title(l)),
         actions: const <Widget>[RadioLinkIndicator()],
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(6),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              for (final MmView v in MmView.values)
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 3, vertical: 4),
-                  child: GestureDetector(
-                    onTap: () => _goTo(v.index,
-                        reduceMotion:
-                            context.read<ThemeController>().reduceMotion),
-                    child: Container(
-                      width: v.index == _index ? 18 : 6,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: v.index == _index
-                            ? cs.primary
-                            : cs.onSurface.withValues(alpha: .3),
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                    ),
-                  ),
-                ),
-            ],
-          ),
+        bottom: _ViewStrip(
+          index: _index,
+          onSelect: (int i) => _goTo(i,
+              reduceMotion: context.read<ThemeController>().reduceMotion),
         ),
       ),
       // A grid view that pans (street map, globe, …) owns horizontal
@@ -264,6 +202,106 @@ class _HomeShellState extends State<HomeShell>
   }
 }
 
+
+/// R64 — the non-gesture way to reach any view. It replaces the
+/// quick-nav sheet and the old 6 px dots (which were a 4 px-tall tap
+/// target with no semantics, so the sheet was the only accessible path).
+///
+/// One icon per [MmView], each a 48x48 button with the view's title as
+/// its semantic label and tooltip and `selected` on the current one. It
+/// scrolls sideways if the screen is narrower than 8 x 48dp and scrolls
+/// the current view into sight, so it never clips on a small phone.
+class _ViewStrip extends StatefulWidget implements PreferredSizeWidget {
+  const _ViewStrip({required this.index, required this.onSelect});
+
+  final int index;
+  final ValueChanged<int> onSelect;
+
+  static const double cell = 48;
+
+  @override
+  Size get preferredSize => const Size.fromHeight(cell);
+
+  @override
+  State<_ViewStrip> createState() => _ViewStripState();
+}
+
+class _ViewStripState extends State<_ViewStrip> {
+  final List<GlobalKey> _keys =
+      List<GlobalKey>.generate(MmView.values.length, (_) => GlobalKey());
+
+  @override
+  void didUpdateWidget(_ViewStrip old) {
+    super.didUpdateWidget(old);
+    if (old.index != widget.index) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final BuildContext? c = _keys[widget.index].currentContext;
+        if (c != null && c.mounted) {
+          Scrollable.ensureVisible(c,
+              duration: const Duration(milliseconds: 150));
+        }
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final ColorScheme cs = Theme.of(context).colorScheme;
+    final AppLocalizations l = AppLocalizations.of(context);
+    return LayoutBuilder(
+      builder: (BuildContext context, BoxConstraints box) =>
+          SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(minWidth: box.maxWidth),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              for (final MmView v in MmView.values)
+                Semantics(
+                  key: _keys[v.index],
+                  button: true,
+                  selected: v.index == widget.index,
+                  label: v.title(l),
+                  excludeSemantics: true,
+                  onTap: () => widget.onSelect(v.index),
+                  child: Tooltip(
+                    message: v.title(l),
+                    excludeFromSemantics: true,
+                    child: InkWell(
+                      onTap: () => widget.onSelect(v.index),
+                      child: SizedBox(
+                        width: _ViewStrip.cell,
+                        height: _ViewStrip.cell,
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: <Widget>[
+                            Icon(v.icon,
+                                size: 20,
+                                color: v.index == widget.index
+                                    ? cs.primary
+                                    : cs.onSurface.withValues(alpha: .6)),
+                            const SizedBox(height: 4),
+                            Container(
+                              width: 18,
+                              height: 2,
+                              color: v.index == widget.index
+                                  ? cs.primary
+                                  : Colors.transparent,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
 
 class _SettingsView extends StatelessWidget {
   const _SettingsView();

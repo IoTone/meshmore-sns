@@ -42,6 +42,12 @@ codebase.
   / unknown), per-node telemetry (altitude + **temp/humidity/pressure**),
   on-tap telemetry query (contacts only).
 
+**Navigation (R64)**
+- Swipe between the eight views; no menu/sheet/drawer switches views.
+  A **view strip** under the app bar (48x48 labelled icon buttons,
+  `selected` on the current one, scrolls under 384dp) is the
+  non-gesture path.
+
 **Studio skin (R63)**
 - Seventh preset `studio` ("Studio Dark — clean · compact"): grey layer
   stack + 1px hairline + square controls + one blue accent. `MmTokens`
@@ -63,7 +69,7 @@ codebase.
   shows the radar with no nodes and "Not Connected to Mesh". The chosen
   view is remembered for the session; every launch opens on the radar.
   While a panning view (street map, globe, …) shows, the shell's swipe
-  is locked so drags move the map — leave via Back, dots or quick-nav.
+  is locked so drags move the map — leave via Back or the view strip.
 - **Map tab (R61)** — the street map viewer as its own page right after
   the grid, in every skin; swipe is always locked there. A corner button
   opens Settings → Offline maps. Eight views in all.

@@ -38,7 +38,7 @@ pushed via `go_router`.
 | 2 | **Chat** | Full chat for the active channel, with channel-selector chip strip on top. Per-channel TTS toggle in the header. | R6, R5 |
 | 3 | **Nodes** | Discovered peers with signal strength, distance estimate, last-heard, and a hook for the future live map (F1). | R6 |
 | 3a | **Hyperlocal grid** | The radar and the other map views, as the tab after Nodes (issue #4). Offline = empty radar + "Not Connected to Mesh"; the view choice lasts the session, launch resets to radar. | R18, R25, R27 |
-| 3b | **Map** | The street map as its own page after the grid (R61). Pan/zoom owns every horizontal drag, so the shell's swipe is **locked on this tab** (leave via Back, dots or quick-nav). A corner button opens Settings → Offline maps. Same in every skin: `HomeShell` does not read the skin to build pages. | R25, R61 |
+| 3b | **Map** | The street map as its own page after the grid (R61). Pan/zoom owns every horizontal drag, so the shell's swipe is **locked on this tab** (leave via Back or the view strip). A corner button opens Settings → Offline maps. Same in every skin: `HomeShell` does not read the skin to build pages. | R25, R61 |
 | 4 | **Settings** (hub) | Entry point to the three sub-screens below. | R3,R4,R5,R7,R12,R13,R14 |
 | 5 | **About / Terms** | App info + legal. | R9, R10 |
 
@@ -55,10 +55,14 @@ swipe pages):
 ### Navigation gestures (R11)
 
 - Horizontal swipe between the primary views (locked while a pan/zoom map is showing: the Map tab, and the grid's street-map/globe views).
-- **Long-press on the leading app-bar icon** opens a bottom-sheet quick-nav
-  with every destination. (We are deliberately *not* using a hamburger
-  drawer — the long-press interaction matches the spec better and frees the
-  top-left area for status indicators.)
+- **Swipe is the way.** There is no menu, sheet or drawer that switches
+  views (R64; the long-press quick-nav sheet and the hamburger were
+  removed). Under the app bar a **view strip** shows one icon per view with
+  the current one in the accent. Each icon is a 48x48 button with the
+  view's title as its semantic label and tooltip and `selected` on the
+  current one, so it is the non-gesture path for screen readers, switch
+  access and the locked Map tab. It scrolls sideways below 8x48dp
+  (320dp phones) and keeps the current view in sight.
 - App-bar trailing area shows live status pills: BLE link state, channel,
   TTS on/off.
 
@@ -153,8 +157,8 @@ sound-dependence.
   dark grounds); interactive targets ≥ 48 dp; one-handed reach;
   usable with gloves.
 - **Semantics.** All actionable widgets carry `Semantics` labels;
-  swipe navigation (R11) has an accessible equivalent (the long-press
-  quick-nav) so it is not gesture-only.
+  swipe navigation (R11) has an accessible equivalent (the R64 view strip:
+  labelled 48dp buttons) so it is not gesture-only.
 - **Settings.** Independent toggles for audio pack, haptics, TTS,
   reduce-motion override, and high-contrast; a one-switch
   "visual + haptic only" mode.
@@ -262,7 +266,7 @@ committed to the `meshmore-sns` submodule branch).
 | ID | Deliverable | Status |
 |----|-------------|--------|
 | U0 | Theme foundation: `MmTokens` + all 6 presets (D default), `ThemeController` (Provider, persisted via `shared_preferences`), wired into `MaterialApp`; a Personalization screen with the live preset/font/accessibility picker | ✅ done (submodule `cbb80b9`; 24 app tests) |
-| U1 | Nav shell: 5-view `PageView` swipe + long-press quick-nav (R11); Settings hub → 3 sub-screen routes (go_router) | ✅ done (submodule `1ef39df`; 27 app tests) |
+| U1 | Nav shell: `PageView` swipe + labelled view strip (R11, R64); Settings hub → 3 sub-screen routes (go_router) | ✅ done (submodule `1ef39df`; 27 app tests) |
 | UD | **Diagnostics & connect** screen (parallel, unblocks hardware): real Connect/disconnect, live state, raw frame log, test sends, in-app M6 channel-tail oracle + fixture export | ✅ done (submodule `pending`; 30 app tests) |
 | U2 | Dashboard (D "monolith" layout) wired to `MeshcoreController` (link/peers/channel/events) | ✅ done — submodule `259a8cb`; 40 app tests |
 | U3 | Chat (collapsible, channel switch, R6) + TTS toggle wiring (R5) | ✅ done — ChatScreen wired to `MeshcoreController`: collapsible channel chip strip, per-channel scrollable message list, composer → `SEND_CHANNEL_TXT_MSG` (0x03) + optimistic outgoing, channels probed via `GET_CHANNEL`/named from `CHANNEL_INFO`. `TtsController` (pluggable speaker seam, OFF by default, persisted global + per-channel mute) — functional SPEECH switch in App settings + per-channel toggle in the Chat header; inbound messages spoken through the gate (`ec6e1c6`; 54 app tests) |

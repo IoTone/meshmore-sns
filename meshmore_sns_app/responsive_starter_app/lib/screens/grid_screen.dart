@@ -52,7 +52,7 @@ enum _GridViewMode {
 extension on _GridViewMode {
   /// Views that pan/zoom with a drag. While one of these is showing,
   /// a horizontal drag must move the map, not page the HomeShell — so
-  /// the shell stops swiping (Back, the dots and quick-nav still leave).
+  /// the shell stops swiping (Back and the view strip still leave).
   bool get pansHorizontally => switch (this) {
         _GridViewMode.globe ||
         _GridViewMode.equalGrid ||

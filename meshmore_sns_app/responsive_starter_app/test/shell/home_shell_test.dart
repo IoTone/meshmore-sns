@@ -1,6 +1,7 @@
 // Copyright (c) 2026 IoTone, Inc.
 // SPDX-License-Identifier: MIT
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 
@@ -99,24 +100,76 @@ void main() {
     expect(find.widgetWithText(AppBar, 'Dashboard'), findsOneWidget);
   });
 
-  testWidgets('quick-nav opens on tap and jumps views (R11)',
+  testWidgets('the view strip jumps views (R11, R64)',
       (WidgetTester t) async {
     await _pumpApp(t);
-    // Tap the leading quick-nav control.
-    await t.tap(find.byIcon(Icons.menu_open));
-    await t.pumpAndSettle();
-    // Sheet lists every destination.
-    expect(find.text('Nodes'), findsWidgets);
-    // With Map (R61) the sheet is taller than the 600 px test surface
-    // and scrolls, so bring the row into view before tapping it.
-    await t.ensureVisible(find.text('Settings').last);
-    await t.tap(find.text('Settings').last);
+    await t.tap(find.byTooltip('Settings'));
     await t.pumpAndSettle();
     expect(find.widgetWithText(AppBar, 'Settings'), findsOneWidget);
     // Settings hub shows the three sub-screen entries.
     expect(find.text('Device configuration'), findsOneWidget);
     expect(find.text('App settings'), findsOneWidget);
     expect(find.text('Profile & personalization'), findsOneWidget);
+  });
+
+  testWidgets('there is no switcher menu, only the strip (R64)',
+      (WidgetTester t) async {
+    await _pumpApp(t);
+    expect(find.byIcon(Icons.menu_open), findsNothing);
+    expect(find.bySemanticsLabel('Quick navigation'), findsNothing);
+    expect(find.byType(BottomSheet), findsNothing);
+    final AppBar bar = t.widget<AppBar>(find.byType(AppBar));
+    expect(bar.leading, isNull);
+  });
+
+  testWidgets('the strip is the accessible path: one labelled 48dp button '
+      'per view, current one selected (R64)', (WidgetTester t) async {
+    final SemanticsHandle h = t.ensureSemantics();
+    await _pumpApp(t);
+    for (final MmView v in MmView.values) {
+      final String label = const <MmView, String>{
+        MmView.dashboard: 'Dashboard',
+        MmView.chat: 'Chat',
+        MmView.nodes: 'Nodes',
+        MmView.grid: 'Hyperlocal grid',
+        MmView.map: 'Map',
+        MmView.settings: 'Settings',
+        MmView.docs: 'Docs',
+        MmView.about: 'About',
+      }[v]!;
+      final Finder tip = find.byTooltip(label);
+      expect(tip, findsOneWidget, reason: '$label has a strip button');
+      final Size size = t.getSize(tip);
+      expect(size.width, greaterThanOrEqualTo(48), reason: label);
+      expect(size.height, greaterThanOrEqualTo(48), reason: label);
+    }
+    SemanticsNode node(String tip) => t.getSemantics(find.byTooltip(tip));
+    expect(node('Dashboard').label, 'Dashboard');
+    // ignore: deprecated_member_use
+    expect(node('Dashboard').hasFlag(SemanticsFlag.isButton), isTrue);
+    // ignore: deprecated_member_use
+    expect(node('Dashboard').hasFlag(SemanticsFlag.isSelected), isTrue);
+    // ignore: deprecated_member_use
+    expect(node('Chat').hasFlag(SemanticsFlag.isSelected), isFalse);
+    h.dispose();
+  });
+
+  testWidgets('the strip fits a 320dp-wide phone by scrolling, and keeps '
+      'the current view in sight (R64)', (WidgetTester t) async {
+    t.view.physicalSize = const Size(320, 640);
+    t.view.devicePixelRatio = 1.0;
+    addTearDown(t.view.resetPhysicalSize);
+    addTearDown(t.view.resetDevicePixelRatio);
+    await _pumpApp(t);
+    expect(t.takeException(), isNull, reason: 'no overflow at 320dp');
+    await t.fling(find.byType(PageView), const Offset(-400, 0), 1000);
+    await t.pumpAndSettle();
+    await t.fling(find.byType(PageView), const Offset(-400, 0), 1000);
+    await t.pumpAndSettle();
+    expect(find.widgetWithText(AppBar, 'Nodes'), findsOneWidget);
+    final Rect r = t.getRect(find.byTooltip('Nodes'));
+    expect(r.left, greaterThanOrEqualTo(0));
+    expect(r.right, lessThanOrEqualTo(320));
   });
 
   testWidgets('horizontal swipe pages between views (R11)',
@@ -166,9 +219,7 @@ void main() {
       'offline as an empty radar (issue #4)', (WidgetTester t) async {
     GridScreen.resetSession();
     await _pumpApp(t);
-    await t.tap(find.byIcon(Icons.menu_open));
-    await t.pumpAndSettle();
-    await t.tap(find.text('Nodes').last);
+    await t.tap(find.byTooltip('Nodes'));
     await t.pumpAndSettle();
     expect(find.widgetWithText(AppBar, 'Nodes'), findsOneWidget);
     // The old entry point is gone from Nodes.
@@ -185,9 +236,7 @@ void main() {
       'does not', (WidgetTester t) async {
     GridScreen.resetSession();
     await _pumpApp(t);
-    await t.tap(find.byIcon(Icons.menu_open));
-    await t.pumpAndSettle();
-    await t.tap(find.text('Hyperlocal grid').last);
+    await t.tap(find.byTooltip('Hyperlocal grid'));
     await settle(t);
     expect(find.widgetWithText(AppBar, 'Hyperlocal grid'), findsOneWidget);
 
@@ -208,11 +257,8 @@ void main() {
     expect(GridScreen.capturesHorizontalDrag.value, isFalse);
   });
 
-  Future<void> openFromQuickNav(WidgetTester t, String label) async {
-    await t.tap(find.byIcon(Icons.menu_open));
-    await settle(t);
-    await t.ensureVisible(find.text(label).last);
-    await t.tap(find.text(label).last);
+  Future<void> openFromStrip(WidgetTester t, String label) async {
+    await t.tap(find.byTooltip(label));
     await settle(t);
   }
 
@@ -240,7 +286,7 @@ void main() {
       expect(t.element(find.byType(HomeShell)).read<ThemeController>().preset,
           preset,
           reason: 'the skin under test is actually applied');
-      await openFromQuickNav(t, 'Hyperlocal grid');
+      await openFromStrip(t, 'Hyperlocal grid');
       await t.fling(find.byType(PageView), const Offset(-400, 0), 1000);
       await settle(t);
       expect(find.widgetWithText(AppBar, 'Map'), findsOneWidget,
@@ -252,11 +298,11 @@ void main() {
     }
   });
 
-  testWidgets('the Map tab owns horizontal drags; Back, the dots and '
-      'quick-nav still leave it (R61)', (WidgetTester t) async {
+  testWidgets('the Map tab owns horizontal drags; Back and the '
+      'view strip still leave it (R61)', (WidgetTester t) async {
     GridScreen.resetSession();
     await _pumpApp(t);
-    await openFromQuickNav(t, 'Map');
+    await openFromStrip(t, 'Map');
     expect(find.widgetWithText(AppBar, 'Map'), findsOneWidget);
 
     // The lock is unconditional: no notifier needs to be flipped.
@@ -270,8 +316,8 @@ void main() {
     expect(find.widgetWithText(AppBar, 'Map'), findsOneWidget,
         reason: 'nor a right swipe');
 
-    // Quick-nav leaves.
-    await openFromQuickNav(t, 'Settings');
+    // The strip leaves.
+    await openFromStrip(t, 'Settings');
     expect(find.widgetWithText(AppBar, 'Settings'), findsOneWidget);
 
     // The swipe is free again off the map.

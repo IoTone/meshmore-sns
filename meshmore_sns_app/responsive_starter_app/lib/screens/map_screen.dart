@@ -19,8 +19,8 @@ import 'street_map_view.dart';
 /// button here.
 ///
 /// A pan/zoom map owns every horizontal drag, so the shell locks its
-/// swipe while this tab is current (see `HomeShell`); leave via Back,
-/// the dots or quick-nav. There is no flag to publish, unlike
+/// swipe while this tab is current (see `HomeShell`); leave via Back or
+/// the view strip. There is no flag to publish, unlike
 /// `GridScreen.capturesHorizontalDrag`: the lock is unconditional.
 class MapScreen extends StatelessWidget {
   const MapScreen({super.key});

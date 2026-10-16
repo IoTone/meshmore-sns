@@ -1119,6 +1119,16 @@ While Meshcore protocol is open source, the client is not open source.  We want 
   - Not expressible yet: density/row-height per skin, persisted
     collapse state, per-skin control height. Unverified on a device.
 
+- R64: **swipe-only navigation; the view strip replaces the quick-nav
+  sheet.** `HomeShell` no longer has a leading app-bar control or a
+  bottom sheet that switches views. The 6px dots (a ~4px-tall tap target
+  with no semantics, so the sheet had been the only accessible path) are
+  replaced by `_ViewStrip`: one icon per `MmView`, each a 48x48 button
+  labelled with the view's title, `selected` on the current one, scrolls
+  sideways on screens narrower than 8x48dp. Back still returns to the
+  Dashboard. Accessible alternative to swipe survives: the strip.
+  Tests: `test/shell/home_shell_test.dart`.
+
 ### Terminology — Fabric vs Contact
 
 - **Fabric** = the set of nodes we have *seen* on the mesh (any
