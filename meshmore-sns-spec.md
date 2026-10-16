@@ -1128,6 +1128,13 @@ While Meshcore protocol is open source, the client is not open source.  We want 
   sideways on screens narrower than 8x48dp. Back still returns to the
   Dashboard. Accessible alternative to swipe survives: the strip.
   Tests: `test/shell/home_shell_test.dart`.
+  - Grouping: Device configuration (Region/band, Radio params,
+    Identity/advert, Other params, Device) and Profile & personalization
+    (Theme preset, Accessibility) use `MmCollapsibleSection`, all open
+    by default. Channels, Type and Audio alerts are single rows and stay
+    plain. The Settings hub stays a list: its seven rows are pushed
+    destinations, not content to fold. Test:
+    `test/screens/collapsible_screens_test.dart`.
 
 ### Terminology — Fabric vs Contact
 

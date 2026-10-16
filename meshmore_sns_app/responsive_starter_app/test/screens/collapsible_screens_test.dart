@@ -1,0 +1,97 @@
+// Copyright (c) 2026 IoTone, Inc.
+// SPDX-License-Identifier: MIT
+import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import 'package:meshmore_sns_app/gen/app_localizations.dart';
+import 'package:meshmore_sns_app/l10n/locale_controller.dart';
+import 'package:meshmore_sns_app/meshcore/meshcore_controller.dart';
+import 'package:meshmore_sns_app/screens/device_config_screen.dart';
+import 'package:meshmore_sns_app/screens/personalization_screen.dart';
+import 'package:meshmore_sns_app/theme/mm_tokens.dart';
+import 'package:meshmore_sns_app/theme/theme_controller.dart';
+import 'package:meshmore_sns_app/ui/mm_collapsible.dart';
+
+/// R64 — the long settings screens are grouped into collapsible
+/// sections. Every group starts open (nothing hidden by default), the
+/// header folds only its own group, and Channels (a single row) is
+/// deliberately not wrapped.
+Widget _host(Widget screen) => MultiProvider(
+      providers: <ChangeNotifierProvider<ChangeNotifier>>[
+        ChangeNotifierProvider<ThemeController>(
+            create: (_) => ThemeController()),
+        ChangeNotifierProvider<MeshcoreController>(
+            create: (_) => MeshcoreController()),
+      ],
+      child: MaterialApp(
+        locale: const Locale('en'),
+        supportedLocales: LocaleController.supported,
+        localizationsDelegates: const <LocalizationsDelegate<Object>>[
+          AppLocalizations.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        home: screen,
+      ),
+    );
+
+void main() {
+  setUp(() => SharedPreferences.setMockInitialValues(<String, Object>{}));
+
+  testWidgets('Device configuration: five groups, all open, each folds '
+      'alone, Channels stays a plain row', (WidgetTester t) async {
+    await t.binding.setSurfaceSize(const Size(900, 3200));
+    addTearDown(() => t.binding.setSurfaceSize(null));
+    await t.pumpWidget(_host(const DeviceConfigScreen()));
+    await t.pumpAndSettle();
+    final AppLocalizations l =
+        AppLocalizations.of(t.element(find.byType(DeviceConfigScreen)));
+
+    expect(find.byType(MmCollapsibleSection), findsNWidgets(5));
+    expect(find.text('Frequency (MHz)'), findsOneWidget, reason: 'open');
+    expect(find.text('USA / Canada'), findsOneWidget, reason: 'open');
+    expect(find.text('Manage channels'), findsOneWidget);
+
+    await t.tap(find.text(l.deviceRadioParams.toUpperCase()));
+    await t.pumpAndSettle();
+    expect(find.text('Frequency (MHz)'), findsNothing,
+        reason: 'the radio group folded');
+    expect(find.text('USA / Canada'), findsOneWidget,
+        reason: 'the region group did not');
+    expect(find.text('Advert name'), findsOneWidget,
+        reason: 'the identity group did not');
+    expect(find.text('Manage channels'), findsOneWidget);
+  });
+
+  testWidgets('Personalization: preset and accessibility fold, the '
+      'single-row groups stay plain', (WidgetTester t) async {
+    await t.binding.setSurfaceSize(const Size(900, 2600));
+    addTearDown(() => t.binding.setSurfaceSize(null));
+    await t.pumpWidget(_host(const PersonalizationScreen()));
+    await t.pumpAndSettle();
+    final AppLocalizations l =
+        AppLocalizations.of(t.element(find.byType(PersonalizationScreen)));
+
+    expect(find.byType(MmCollapsibleSection), findsNWidgets(2));
+    for (final MmThemePreset p in MmThemePreset.values) {
+      expect(find.text(p.label), findsOneWidget, reason: '${p.name} open');
+    }
+    expect(find.text(l.personalizationReduceMotion), findsOneWidget);
+
+    await t.tap(find.text(l.personalizationThemePreset));
+    await t.pumpAndSettle();
+    expect(find.text(MmThemePreset.studio.label), findsNothing);
+    expect(find.text(l.personalizationReduceMotion), findsOneWidget,
+        reason: 'folding presets leaves accessibility alone');
+
+    await t.tap(find.text(l.personalizationAccessibility));
+    await t.pumpAndSettle();
+    expect(find.text(l.personalizationReduceMotion), findsNothing);
+    expect(find.text(l.personalizationAudioMaster), findsOneWidget,
+        reason: 'a one-row group is not wrapped');
+  });
+}

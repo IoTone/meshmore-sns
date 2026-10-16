@@ -7,6 +7,7 @@ import 'package:meshcore/meshcore.dart';
 import 'package:provider/provider.dart';
 
 import '../gen/app_localizations.dart';
+import '../ui/mm_collapsible.dart';
 import '../ui/mm_scaffold.dart';
 import '../meshcore/meshcore_connection.dart';
 import '../meshcore/meshcore_controller.dart';
@@ -74,7 +75,14 @@ class _DeviceConfigScreenState extends State<DeviceConfigScreen> {
   @override
   void dispose() {
     for (final TextEditingController c in <TextEditingController>[
-      _freq, _bw, _sf, _cr, _tx, _name, _lat, _lon
+      _freq,
+      _bw,
+      _sf,
+      _cr,
+      _tx,
+      _name,
+      _lat,
+      _lon
     ]) {
       c.dispose();
     }
@@ -174,8 +182,7 @@ class _DeviceConfigScreenState extends State<DeviceConfigScreen> {
     final PermissionsService perms = context.read<PermissionsService>();
     final PermissionResult r = await perms.requestLocation();
     if (!mounted) return;
-    if (r != PermissionResult.granted &&
-        r != PermissionResult.notApplicable) {
+    if (r != PermissionResult.granted && r != PermissionResult.notApplicable) {
       ScaffoldMessenger.maybeOf(context)?.showSnackBar(
         SnackBar(
           content: Text(r == PermissionResult.permanentlyDenied
@@ -276,15 +283,13 @@ class _DeviceConfigScreenState extends State<DeviceConfigScreen> {
     if (fix == null) {
       final LocationFailure failure = outcome.failure!;
       _toast(switch (failure) {
-        LocationFailure.permissionDeniedForever =>
-          l.deviceLocPermDeniedPerm,
+        LocationFailure.permissionDeniedForever => l.deviceLocPermDeniedPerm,
         LocationFailure.permissionDenied => l.deviceLocPermDenied,
         _ => l.deviceRegionSuggestNoFix,
       });
       return;
     }
-    final RegionPreset? p =
-        suggestPresetForLatLon(fix.latitude, fix.longitude);
+    final RegionPreset? p = suggestPresetForLatLon(fix.latitude, fix.longitude);
     if (p == null) {
       _toast(l.deviceRegionSuggestNoMatch);
       return;
@@ -294,10 +299,8 @@ class _DeviceConfigScreenState extends State<DeviceConfigScreen> {
       context: context,
       builder: (BuildContext ctx) => AlertDialog(
         title: Text(l.deviceRegionSuggestTitle),
-        content: Text(l.deviceRegionSuggestBody(
-            localizedPresetLabel(l, p.id),
-            fix.latitude.toStringAsFixed(3),
-            fix.longitude.toStringAsFixed(3))),
+        content: Text(l.deviceRegionSuggestBody(localizedPresetLabel(l, p.id),
+            fix.latitude.toStringAsFixed(3), fix.longitude.toStringAsFixed(3))),
         actions: <Widget>[
           TextButton(
               onPressed: () => Navigator.pop(ctx, false),
@@ -371,8 +374,7 @@ class _DeviceConfigScreenState extends State<DeviceConfigScreen> {
       });
     }
 
-    Widget num(String label, TextEditingController c, String hint) =>
-        Padding(
+    Widget num(String label, TextEditingController c, String hint) => Padding(
           padding: const EdgeInsets.symmetric(vertical: 6),
           child: TextField(
             controller: c,
@@ -390,333 +392,342 @@ class _DeviceConfigScreenState extends State<DeviceConfigScreen> {
       appBar: AppBar(title: Text(l.deviceConfigTitle)),
       body: MmScaffold(
         child: ListView(
-        padding: const EdgeInsets.all(16),
-        children: <Widget>[
-          Text(l.deviceRegionBand,
-              style: TextStyle(
-                  color: cs.primary, fontSize: 12, letterSpacing: 3)),
-          const SizedBox(height: 8),
-          _CurrentRegionBanner(si: si, cs: cs, l: l),
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: <Widget>[
-              for (final RegionPreset p in kRegionPresets)
-                _RegionChip(
-                  label: localizedPresetLabel(l, p.id),
-                  note: p.note,
-                  selected: si != null &&
-                      matchPresetByRadioParams(
-                            frequencyMhz: si.frequencyMhz,
-                            bandwidthKhz: si.bandwidthKhz,
-                            spreadingFactor: si.spreadingFactor,
-                            codingRate: si.codingRate,
-                          )?.id ==
-                          p.id,
-                  onTap: () => _applyPreset(mc, p),
-                ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: OutlinedButton.icon(
-              icon: const Icon(Icons.my_location, size: 16),
-              label: Text(l.deviceRegionSuggestFromLocation),
-              onPressed: () => _suggestFromMyLocation(mc),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.only(top: 6),
-            child: Text(
-              l.deviceRegionDisclaimer,
-              style:
-                  TextStyle(color: cs.onSurfaceVariant, fontSize: 12),
-            ),
-          ),
-          const Divider(height: 28),
-          Text(l.deviceRadioParams,
-              style: TextStyle(
-                  color: cs.primary, fontSize: 12, letterSpacing: 3)),
-          if (si != null)
-            Padding(
-              padding: const EdgeInsets.only(top: 4),
-              child: Text(
-                  'device now: ${si.frequencyMhz}MHz '
-                  '${si.bandwidthKhz}kHz SF${si.spreadingFactor} '
-                  'CR${si.codingRate} ${si.txPowerDbm}dBm',
-                  style: TextStyle(
-                      color: cs.onSurfaceVariant,
-                      fontFamily: 'JetBrains Mono',
-                      fontSize: 12)),
-            ),
-          num(l.deviceFrequency, _freq, 'e.g. 915.0'),
-          num(l.deviceBandwidth, _bw, 'e.g. 250'),
-          num(l.deviceSpreadingFactor, _sf, 'e.g. 7'),
-          num(l.deviceCodingRate, _cr, 'e.g. 5'),
-          num(l.deviceTxPower, _tx, 'within regional limit'),
-          const SizedBox(height: 12),
-          Row(
-            children: <Widget>[
-              if (si != null)
-                TextButton(
-                  onPressed: () => _loadFrom(si),
-                  child: Text(l.deviceLoadFromDevice),
-                ),
-              const Spacer(),
-              FilledButton.icon(
-                icon: const Icon(Icons.send),
-                label: Text(l.deviceApplyRadio),
-                // R25+3 — always tappable. _applyRadio handles the
-                // not-ready case explicitly so a user with the form
-                // already populated (e.g. via Suggest-from-location
-                // while offline) gets actionable feedback instead
-                // of a dead button.
-                onPressed: () => _applyRadio(mc),
-              ),
-            ],
-          ),
-          if (!ready)
-            Padding(
-              padding: const EdgeInsets.only(top: 8),
-              child: Text(l.deviceConnectFirst,
-                  style: TextStyle(color: cs.onSurfaceVariant)),
-            ),
-          const Divider(height: 28),
-
-          // IDENTITY / ADVERT (R7)
-          Text(l.deviceIdentityAdvert,
-              style: TextStyle(
-                  color: cs.primary, fontSize: 12, letterSpacing: 3)),
-          const SizedBox(height: 6),
-          TextField(
-            controller: _name,
-            maxLength: 31,
-            decoration: InputDecoration(
-                labelText: l.deviceAdvertName, isDense: true),
-          ),
-          Align(
-            alignment: Alignment.centerRight,
-            child: TextButton.icon(
-              icon: const Icon(Icons.badge_outlined, size: 18),
-              label: Text(l.deviceSetName),
-              onPressed: ready ? () => _applyName(mc) : null,
-            ),
-          ),
-          // Advert location SOURCE — the segment values are the FIRMWARE's
-          // policy integers, they are NOT the visual order of our labels.
-          // MeshCore `src/helpers/CommonCLI.h` defines:
-          //   0 = ADVERT_LOC_NONE  — advertise no position at all
-          //   1 = ADVERT_LOC_SHARE — advertise the LIVE sensor/GPS fix
-          //   2 = ADVERT_LOC_PREFS — advertise the STORED (pinned) pair
-          // Labels used to be attached to 1=Pinned / 2=GPS, i.e. reversed
-          // against the firmware's shared definition. NOTE: companion
-          // firmware (`companion-v1.17.1`) tests only `== ADVERT_LOC_NONE`
-          // (`MyMesh.cpp:1252,1336,2251`), so there 1 and 2 behave
-          // identically and neither pins; see [advertPolicyLabel].
-          // Sent via CMD_SET_OTHER_PARAMS (0x26).
-          const SizedBox(height: 6),
-          Text(l.deviceAdvertSource,
-              style: TextStyle(
-                  color: cs.onSurfaceVariant,
-                  fontSize: 12,
-                  letterSpacing: 1)),
-          const SizedBox(height: 4),
-          Builder(builder: (BuildContext _) {
-            final SelfInfo? si = mc.selfInfo;
-            final int current = si?.advertLocPolicy ?? 0;
-            return SegmentedButton<int>(
-              segments: <ButtonSegment<int>>[
-                ButtonSegment<int>(
-                    value: 0,
-                    label: Text(advertPolicyLabel(l, 0)),
-                    icon: const Icon(Icons.do_not_disturb, size: 16)),
-                ButtonSegment<int>(
-                    value: 1,
-                    label: Text(advertPolicyLabel(l, 1)),
-                    icon: const Icon(Icons.satellite_alt, size: 16)),
-                ButtonSegment<int>(
-                    value: 2,
-                    label: Text(advertPolicyLabel(l, 2)),
-                    icon: const Icon(Icons.push_pin_outlined, size: 16)),
-              ],
-              selected: <int>{current},
-              showSelectedIcon: false,
-              onSelectionChanged: ready && si != null
-                  ? (Set<int> next) async {
-                      final int v = next.first;
-                      if (v == current) return;
-                      try {
-                        await mc.setAdvertLocPolicy(v);
-                        _toast(advertPolicyLabel(l, v));
-                      } catch (e) {
-                        _toast(l.deviceToastSendFailed('$e'));
-                      }
-                    }
-                  : null,
-            );
-          }),
-          // R38 — on-board GPS module (separate from advert policy
-          // above). Without this, picking "Device GPS" above only
-          // controls whether GPS coords get *included in adverts* —
-          // the firmware never reads its GPS chip into
-          // sensors.node_lat/lon. Defaults gps=0, gps_interval=0;
-          // we surface the live values + a switch + interval picker.
-          _GpsModuleControls(mc: mc, ready: ready, cs: cs, l: l),
-          const SizedBox(height: 8),
-          // What the device currently reports — read-only "ground
-          // truth" line. The editable text fields below are
-          // **staging**; this line is the wire-side value. Always
-          // shown so divergence is visible at a glance.
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 4),
-            child: Row(
+          padding: const EdgeInsets.all(16),
+          children: <Widget>[
+            MmCollapsibleSection(
+              title: l.deviceRegionBand,
               children: <Widget>[
-                Icon(Icons.developer_board,
-                    size: 14, color: cs.onSurfaceVariant),
-                const SizedBox(width: 6),
-                Expanded(
+                const SizedBox(height: 8),
+                _CurrentRegionBanner(si: si, cs: cs, l: l),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: <Widget>[
+                    for (final RegionPreset p in kRegionPresets)
+                      _RegionChip(
+                        label: localizedPresetLabel(l, p.id),
+                        note: p.note,
+                        selected: si != null &&
+                            matchPresetByRadioParams(
+                                  frequencyMhz: si.frequencyMhz,
+                                  bandwidthKhz: si.bandwidthKhz,
+                                  spreadingFactor: si.spreadingFactor,
+                                  codingRate: si.codingRate,
+                                )?.id ==
+                                p.id,
+                        onTap: () => _applyPreset(mc, p),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: OutlinedButton.icon(
+                    icon: const Icon(Icons.my_location, size: 16),
+                    label: Text(l.deviceRegionSuggestFromLocation),
+                    onPressed: () => _suggestFromMyLocation(mc),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(top: 6),
                   child: Text(
-                    () {
-                      if (si == null) return l.deviceLocReportsAwaiting;
-                      if (si.latitude.abs() < 1e-9 &&
-                          si.longitude.abs() < 1e-9) {
-                        return l.deviceLocReportsNone;
-                      }
-                      return l.deviceLocReportsValue(
-                          si.latitude.toStringAsFixed(5),
-                          si.longitude.toStringAsFixed(5));
-                    }(),
-                    style: TextStyle(
-                        color: cs.onSurfaceVariant,
-                        fontSize: 11,
-                        fontFamily: 'JetBrains Mono'),
+                    l.deviceRegionDisclaimer,
+                    style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12),
                   ),
                 ),
               ],
             ),
-          ),
-          _LatLonField(
-            label: l.deviceAdvertLatitude,
-            hint: 'e.g. 35.681',
-            controller: _lat,
-            deviceValue: si?.latitude,
-            unsavedLabel: l.deviceLocUnsaved,
-          ),
-          _LatLonField(
-            label: l.deviceAdvertLongitude,
-            hint: 'e.g. 139.767',
-            controller: _lon,
-            deviceValue: si?.longitude,
-            unsavedLabel: l.deviceLocUnsaved,
-          ),
-          // R22 / U13 — populate-the-field actions (no broadcast).
-          Row(
-            children: <Widget>[
-              Expanded(
-                child: OutlinedButton.icon(
-                  icon: const Icon(Icons.smartphone, size: 16),
-                  label: Text(l.deviceUsePhoneLocation),
-                  onPressed: () => _usePhoneLocation(mc),
+            const Divider(height: 28),
+            MmCollapsibleSection(
+              title: l.deviceRadioParams,
+              children: <Widget>[
+                if (si != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Text(
+                        'device now: ${si.frequencyMhz}MHz '
+                        '${si.bandwidthKhz}kHz SF${si.spreadingFactor} '
+                        'CR${si.codingRate} ${si.txPowerDbm}dBm',
+                        style: TextStyle(
+                            color: cs.onSurfaceVariant,
+                            fontFamily: 'JetBrains Mono',
+                            fontSize: 12)),
+                  ),
+                num(l.deviceFrequency, _freq, 'e.g. 915.0'),
+                num(l.deviceBandwidth, _bw, 'e.g. 250'),
+                num(l.deviceSpreadingFactor, _sf, 'e.g. 7'),
+                num(l.deviceCodingRate, _cr, 'e.g. 5'),
+                num(l.deviceTxPower, _tx, 'within regional limit'),
+                const SizedBox(height: 12),
+                Row(
+                  children: <Widget>[
+                    if (si != null)
+                      TextButton(
+                        onPressed: () => _loadFrom(si),
+                        child: Text(l.deviceLoadFromDevice),
+                      ),
+                    const Spacer(),
+                    FilledButton.icon(
+                      icon: const Icon(Icons.send),
+                      label: Text(l.deviceApplyRadio),
+                      // R25+3 — always tappable. _applyRadio handles the
+                      // not-ready case explicitly so a user with the form
+                      // already populated (e.g. via Suggest-from-location
+                      // while offline) gets actionable feedback instead
+                      // of a dead button.
+                      onPressed: () => _applyRadio(mc),
+                    ),
+                  ],
                 ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: OutlinedButton.icon(
-                  icon: const Icon(Icons.developer_board, size: 16),
-                  label: Text(l.deviceReadDeviceLocation),
-                  onPressed: () => _readDeviceLocation(mc),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 4),
-          Align(
-            alignment: Alignment.centerRight,
-            child: TextButton.icon(
-              icon: const Icon(Icons.my_location, size: 18),
-              label: Text(l.deviceSetAdvertLocation),
-              onPressed: ready ? () => _applyLocation(mc) : null,
+                if (!ready)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: Text(l.deviceConnectFirst,
+                        style: TextStyle(color: cs.onSurfaceVariant)),
+                  ),
+              ],
             ),
-          ),
-          Text(
-            'Name/location change propagates on the next advert '
-            '(Nodes → Advertise).',
-            style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12),
-          ),
-          const Divider(height: 28),
+            const Divider(height: 28),
 
-          // CHANNELS → dedicated screen
-          Text(l.deviceChannelsSection,
-              style: TextStyle(
-                  color: cs.primary, fontSize: 12, letterSpacing: 3)),
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            leading: const Icon(Icons.tag),
-            title: const Text('Manage channels'),
-            subtitle: Text('Active: ${mc.activeChannelName} · '
-                'slots · name + PSK · #hashtag'),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => context.push('/settings/channels'),
-          ),
-          const Divider(height: 28),
+            // IDENTITY / ADVERT (R7)
+            MmCollapsibleSection(
+              title: l.deviceIdentityAdvert,
+              children: <Widget>[
+                const SizedBox(height: 6),
+                TextField(
+                  controller: _name,
+                  maxLength: 31,
+                  decoration: InputDecoration(
+                      labelText: l.deviceAdvertName, isDense: true),
+                ),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton.icon(
+                    icon: const Icon(Icons.badge_outlined, size: 18),
+                    label: Text(l.deviceSetName),
+                    onPressed: ready ? () => _applyName(mc) : null,
+                  ),
+                ),
+                // Advert location SOURCE — the segment values are the FIRMWARE's
+                // policy integers, they are NOT the visual order of our labels.
+                // MeshCore `src/helpers/CommonCLI.h` defines:
+                //   0 = ADVERT_LOC_NONE  — advertise no position at all
+                //   1 = ADVERT_LOC_SHARE — advertise the LIVE sensor/GPS fix
+                //   2 = ADVERT_LOC_PREFS — advertise the STORED (pinned) pair
+                // Labels used to be attached to 1=Pinned / 2=GPS, i.e. reversed
+                // against the firmware's shared definition. NOTE: companion
+                // firmware (`companion-v1.17.1`) tests only `== ADVERT_LOC_NONE`
+                // (`MyMesh.cpp:1252,1336,2251`), so there 1 and 2 behave
+                // identically and neither pins; see [advertPolicyLabel].
+                // Sent via CMD_SET_OTHER_PARAMS (0x26).
+                const SizedBox(height: 6),
+                Text(l.deviceAdvertSource,
+                    style: TextStyle(
+                        color: cs.onSurfaceVariant,
+                        fontSize: 12,
+                        letterSpacing: 1)),
+                const SizedBox(height: 4),
+                Builder(builder: (BuildContext _) {
+                  final SelfInfo? si = mc.selfInfo;
+                  final int current = si?.advertLocPolicy ?? 0;
+                  return SegmentedButton<int>(
+                    segments: <ButtonSegment<int>>[
+                      ButtonSegment<int>(
+                          value: 0,
+                          label: Text(advertPolicyLabel(l, 0)),
+                          icon: const Icon(Icons.do_not_disturb, size: 16)),
+                      ButtonSegment<int>(
+                          value: 1,
+                          label: Text(advertPolicyLabel(l, 1)),
+                          icon: const Icon(Icons.satellite_alt, size: 16)),
+                      ButtonSegment<int>(
+                          value: 2,
+                          label: Text(advertPolicyLabel(l, 2)),
+                          icon: const Icon(Icons.push_pin_outlined, size: 16)),
+                    ],
+                    selected: <int>{current},
+                    showSelectedIcon: false,
+                    onSelectionChanged: ready && si != null
+                        ? (Set<int> next) async {
+                            final int v = next.first;
+                            if (v == current) return;
+                            try {
+                              await mc.setAdvertLocPolicy(v);
+                              _toast(advertPolicyLabel(l, v));
+                            } catch (e) {
+                              _toast(l.deviceToastSendFailed('$e'));
+                            }
+                          }
+                        : null,
+                  );
+                }),
+                // R38 — on-board GPS module (separate from advert policy
+                // above). Without this, picking "Device GPS" above only
+                // controls whether GPS coords get *included in adverts* —
+                // the firmware never reads its GPS chip into
+                // sensors.node_lat/lon. Defaults gps=0, gps_interval=0;
+                // we surface the live values + a switch + interval picker.
+                _GpsModuleControls(mc: mc, ready: ready, cs: cs, l: l),
+                const SizedBox(height: 8),
+                // What the device currently reports — read-only "ground
+                // truth" line. The editable text fields below are
+                // **staging**; this line is the wire-side value. Always
+                // shown so divergence is visible at a glance.
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  child: Row(
+                    children: <Widget>[
+                      Icon(Icons.developer_board,
+                          size: 14, color: cs.onSurfaceVariant),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          () {
+                            if (si == null) return l.deviceLocReportsAwaiting;
+                            if (si.latitude.abs() < 1e-9 &&
+                                si.longitude.abs() < 1e-9) {
+                              return l.deviceLocReportsNone;
+                            }
+                            return l.deviceLocReportsValue(
+                                si.latitude.toStringAsFixed(5),
+                                si.longitude.toStringAsFixed(5));
+                          }(),
+                          style: TextStyle(
+                              color: cs.onSurfaceVariant,
+                              fontSize: 11,
+                              fontFamily: 'JetBrains Mono'),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                _LatLonField(
+                  label: l.deviceAdvertLatitude,
+                  hint: 'e.g. 35.681',
+                  controller: _lat,
+                  deviceValue: si?.latitude,
+                  unsavedLabel: l.deviceLocUnsaved,
+                ),
+                _LatLonField(
+                  label: l.deviceAdvertLongitude,
+                  hint: 'e.g. 139.767',
+                  controller: _lon,
+                  deviceValue: si?.longitude,
+                  unsavedLabel: l.deviceLocUnsaved,
+                ),
+                // R22 / U13 — populate-the-field actions (no broadcast).
+                Row(
+                  children: <Widget>[
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        icon: const Icon(Icons.smartphone, size: 16),
+                        label: Text(l.deviceUsePhoneLocation),
+                        onPressed: () => _usePhoneLocation(mc),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        icon: const Icon(Icons.developer_board, size: 16),
+                        label: Text(l.deviceReadDeviceLocation),
+                        onPressed: () => _readDeviceLocation(mc),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton.icon(
+                    icon: const Icon(Icons.my_location, size: 18),
+                    label: Text(l.deviceSetAdvertLocation),
+                    onPressed: ready ? () => _applyLocation(mc) : null,
+                  ),
+                ),
+                Text(
+                  'Name/location change propagates on the next advert '
+                  '(Nodes → Advertise).',
+                  style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12),
+                ),
+              ],
+            ),
+            const Divider(height: 28),
 
-          // OTHER PARAMS — editable. Each setter wraps
-          // CMD_SET_OTHER_PARAMS (0x26) and preserves the other
-          // three fields by reading them off SelfInfo.
-          Text(l.deviceOtherParamsSection,
-              style: TextStyle(
-                  color: cs.primary, fontSize: 12, letterSpacing: 3)),
-          const SizedBox(height: 4),
-          if (si == null)
-            Text(l.otherAwaitingDevice,
+            // CHANNELS → dedicated screen
+            Text(l.deviceChannelsSection,
                 style: TextStyle(
-                    color: cs.onSurface,
-                    fontFamily: 'JetBrains Mono',
-                    height: 1.5))
-          else
-            _OtherParamsEditor(mc: mc, si: si, enabled: ready),
-          const Divider(height: 28),
+                    color: cs.primary, fontSize: 12, letterSpacing: 3)),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const Icon(Icons.tag),
+              title: const Text('Manage channels'),
+              subtitle: Text('Active: ${mc.activeChannelName} · '
+                  'slots · name + PSK · #hashtag'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => context.push('/settings/channels'),
+            ),
+            const Divider(height: 28),
 
-          // DEVICE (read-only)
-          Text(l.deviceDeviceSection,
-              style: TextStyle(
-                  color: cs.primary, fontSize: 12, letterSpacing: 3)),
-          const SizedBox(height: 4),
-          Builder(builder: (BuildContext _) {
-            final DeviceInfo? d = mc.deviceInfo;
-            final String batt = mc.batteryMillivolts == null
-                ? '—'
-                : '${mc.batteryVolts!.toStringAsFixed(2)}V '
-                    '(~${mc.batteryPercent}%)'
-                    '${mc.charging == true ? ' ⚡' : ''}';
-            return Text(
-              d == null
-                  ? 'querying device…\nbattery: $batt'
-                  : 'firmware: ${d.firmwareVersion}\n'
-                      'build: ${d.firmwareBuildDate}\n'
-                      'mfr: ${d.manufacturer}\n'
-                      'max contacts: ${d.maxContacts} · '
-                      'channels: ${d.maxGroupChannels}\n'
-                      'BLE pin: ${d.blePin}\n'
-                      'battery: $batt',
-              style: TextStyle(
-                  color: cs.onSurface,
-                  fontFamily: 'JetBrains Mono',
-                  height: 1.5),
-            );
-          }),
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            leading: const Icon(Icons.battery_charging_full),
-            title: Text(l.batteryTitle),
-            subtitle: Text(l.batteryConfigSubtitle),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => context.push('/settings/battery'),
-          ),
-        ],
-      ),
+            // OTHER PARAMS — editable. Each setter wraps
+            // CMD_SET_OTHER_PARAMS (0x26) and preserves the other
+            // three fields by reading them off SelfInfo.
+            MmCollapsibleSection(
+              title: l.deviceOtherParamsSection,
+              children: <Widget>[
+                const SizedBox(height: 4),
+                if (si == null)
+                  Text(l.otherAwaitingDevice,
+                      style: TextStyle(
+                          color: cs.onSurface,
+                          fontFamily: 'JetBrains Mono',
+                          height: 1.5))
+                else
+                  _OtherParamsEditor(mc: mc, si: si, enabled: ready),
+              ],
+            ),
+            const Divider(height: 28),
+
+            // DEVICE (read-only)
+            MmCollapsibleSection(
+              title: l.deviceDeviceSection,
+              children: <Widget>[
+                const SizedBox(height: 4),
+                Builder(builder: (BuildContext _) {
+                  final DeviceInfo? d = mc.deviceInfo;
+                  final String batt = mc.batteryMillivolts == null
+                      ? '—'
+                      : '${mc.batteryVolts!.toStringAsFixed(2)}V '
+                          '(~${mc.batteryPercent}%)'
+                          '${mc.charging == true ? ' ⚡' : ''}';
+                  return Text(
+                    d == null
+                        ? 'querying device…\nbattery: $batt'
+                        : 'firmware: ${d.firmwareVersion}\n'
+                            'build: ${d.firmwareBuildDate}\n'
+                            'mfr: ${d.manufacturer}\n'
+                            'max contacts: ${d.maxContacts} · '
+                            'channels: ${d.maxGroupChannels}\n'
+                            'BLE pin: ${d.blePin}\n'
+                            'battery: $batt',
+                    style: TextStyle(
+                        color: cs.onSurface,
+                        fontFamily: 'JetBrains Mono',
+                        height: 1.5),
+                  );
+                }),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.battery_charging_full),
+                  title: Text(l.batteryTitle),
+                  subtitle: Text(l.batteryConfigSubtitle),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => context.push('/settings/battery'),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -818,8 +829,7 @@ class _OtherParamsEditorState extends State<_OtherParamsEditor> {
                 ? l.otherManualAddSubOn
                 : l.otherManualAddSubOff,
             style: TextStyle(
-                color: cs.onSurface.withValues(alpha: .6),
-                fontSize: 12),
+                color: cs.onSurface.withValues(alpha: .6), fontSize: 12),
           ),
           value: widget.si.manualAddContacts,
           onChanged: widget.enabled
@@ -833,9 +843,7 @@ class _OtherParamsEditorState extends State<_OtherParamsEditor> {
         // multi-acks — 0..3 segmented.
         Text(l.otherMultiAcksLabel,
             style: TextStyle(
-                color: cs.onSurfaceVariant,
-                fontSize: 12,
-                letterSpacing: 1)),
+                color: cs.onSurfaceVariant, fontSize: 12, letterSpacing: 1)),
         const SizedBox(height: 4),
         SegmentedButton<int>(
           segments: const <ButtonSegment<int>>[
@@ -852,32 +860,41 @@ class _OtherParamsEditorState extends State<_OtherParamsEditor> {
         ),
         const SizedBox(height: 4),
         Text(l.otherMultiAcksHelper,
-            style:
-                TextStyle(color: cs.onSurfaceVariant, fontSize: 11)),
+            style: TextStyle(color: cs.onSurfaceVariant, fontSize: 11)),
         const SizedBox(height: 10),
         // Telemetry sharing — base / location / environment. Each is a
         // permission level (Off / Contacts / Anyone) packed into one
         // byte; applied to the device on each change.
         Text(l.otherTelemetryModeTitle,
             style: TextStyle(
-                color: cs.onSurfaceVariant,
-                fontSize: 12,
-                letterSpacing: 1)),
+                color: cs.onSurfaceVariant, fontSize: 12, letterSpacing: 1)),
         const SizedBox(height: 4),
         for (final (String, int, void Function(int)) row
             in <(String, int, void Function(int))>[
-          (l.otherTelemetryBase, _telBase, (int v) {
-            setState(() => _telBase = v);
-            _applyTelemetryMode();
-          }),
-          (l.otherTelemetryLoc, _telLoc, (int v) {
-            setState(() => _telLoc = v);
-            _applyTelemetryMode();
-          }),
-          (l.otherTelemetryEnv, _telEnv, (int v) {
-            setState(() => _telEnv = v);
-            _applyTelemetryMode();
-          }),
+          (
+            l.otherTelemetryBase,
+            _telBase,
+            (int v) {
+              setState(() => _telBase = v);
+              _applyTelemetryMode();
+            }
+          ),
+          (
+            l.otherTelemetryLoc,
+            _telLoc,
+            (int v) {
+              setState(() => _telLoc = v);
+              _applyTelemetryMode();
+            }
+          ),
+          (
+            l.otherTelemetryEnv,
+            _telEnv,
+            (int v) {
+              setState(() => _telEnv = v);
+              _applyTelemetryMode();
+            }
+          ),
         ])
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 2),
@@ -886,29 +903,25 @@ class _OtherParamsEditorState extends State<_OtherParamsEditor> {
                 SizedBox(
                     width: 88,
                     child: Text(row.$1,
-                        style:
-                            TextStyle(color: cs.onSurface, fontSize: 13))),
+                        style: TextStyle(color: cs.onSurface, fontSize: 13))),
                 const SizedBox(width: 8),
                 Expanded(
                   child: SegmentedButton<int>(
                     segments: <ButtonSegment<int>>[
                       ButtonSegment<int>(
-                          value: telemDeny,
-                          label: Text(l.otherTelemetryDeny)),
+                          value: telemDeny, label: Text(l.otherTelemetryDeny)),
                       ButtonSegment<int>(
                           value: telemFlags,
                           label: Text(l.otherTelemetryFlags)),
                       ButtonSegment<int>(
-                          value: telemAll,
-                          label: Text(l.otherTelemetryAll)),
+                          value: telemAll, label: Text(l.otherTelemetryAll)),
                     ],
                     selected: <int>{row.$2},
                     showSelectedIcon: false,
-                    style: const ButtonStyle(
-                        visualDensity: VisualDensity.compact),
-                    onSelectionChanged: widget.enabled
-                        ? (Set<int> s) => row.$3(s.first)
-                        : null,
+                    style:
+                        const ButtonStyle(visualDensity: VisualDensity.compact),
+                    onSelectionChanged:
+                        widget.enabled ? (Set<int> s) => row.$3(s.first) : null,
                   ),
                 ),
               ],
@@ -977,8 +990,7 @@ class _LatLonFieldState extends State<_LatLonField> {
   bool get _unsaved {
     final double? dev = widget.deviceValue;
     if (dev == null) return false;
-    final double? typed =
-        double.tryParse(widget.controller.text.trim());
+    final double? typed = double.tryParse(widget.controller.text.trim());
     if (typed == null) {
       // Empty / unparseable text: treat as unsaved iff the device
       // has a non-zero value.
@@ -994,8 +1006,8 @@ class _LatLonFieldState extends State<_LatLonField> {
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: TextField(
         controller: widget.controller,
-        keyboardType: const TextInputType.numberWithOptions(
-            decimal: true, signed: true),
+        keyboardType:
+            const TextInputType.numberWithOptions(decimal: true, signed: true),
         inputFormatters: <TextInputFormatter>[
           FilteringTextInputFormatter.allow(RegExp(r'[0-9.\-]')),
         ],
@@ -1058,10 +1070,7 @@ class _CurrentRegionBanner extends StatelessWidget {
       ),
       child: Row(
         children: <Widget>[
-          Icon(
-              isCustom ? Icons.tune : Icons.public,
-              size: 18,
-              color: fg),
+          Icon(isCustom ? Icons.tune : Icons.public, size: 18, color: fg),
           const SizedBox(width: 8),
           Expanded(
             child: Column(
@@ -1075,9 +1084,7 @@ class _CurrentRegionBanner extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(label,
                     style: TextStyle(
-                        color: fg,
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600)),
+                        color: fg, fontSize: 15, fontWeight: FontWeight.w600)),
                 if (si != null)
                   Text(
                     '${si!.frequencyMhz} MHz · ${si!.bandwidthKhz} kHz · '
@@ -1117,9 +1124,8 @@ class _RegionChip extends StatelessWidget {
     return InputChip(
       selected: selected,
       onPressed: onTap,
-      avatar: selected
-          ? Icon(Icons.check, size: 16, color: cs.onPrimary)
-          : null,
+      avatar:
+          selected ? Icon(Icons.check, size: 16, color: cs.onPrimary) : null,
       label: Text(label),
       tooltip: note,
       selectedColor: cs.primary,
@@ -1174,9 +1180,7 @@ class _GpsModuleControls extends StatelessWidget {
         children: <Widget>[
           Text(l.deviceGpsModule,
               style: TextStyle(
-                  color: cs.onSurfaceVariant,
-                  fontSize: 12,
-                  letterSpacing: 1)),
+                  color: cs.onSurfaceVariant, fontSize: 12, letterSpacing: 1)),
           const SizedBox(height: 4),
           // gps switch
           SwitchListTile(
@@ -1189,16 +1193,14 @@ class _GpsModuleControls extends StatelessWidget {
                   : enabled
                       ? l.deviceGpsEnabledHint
                       : l.deviceGpsDisabledHint,
-              style:
-                  TextStyle(color: cs.onSurface.withValues(alpha: .6)),
+              style: TextStyle(color: cs.onSurface.withValues(alpha: .6)),
             ),
             value: enabled ?? false,
             onChanged: !ready || unknown
                 ? null
                 : (bool v) async {
                     try {
-                      await mc.setCustomVar(
-                          name: 'gps', value: v ? '1' : '0');
+                      await mc.setCustomVar(name: 'gps', value: v ? '1' : '0');
                     } catch (_) {/* silent — toast is overkill */}
                   },
           ),
@@ -1216,8 +1218,7 @@ class _GpsModuleControls extends StatelessWidget {
                 interval == null
                     ? l.deviceGpsUnknown
                     : _intervalLabel(l, interval),
-                style:
-                    TextStyle(color: cs.onSurface.withValues(alpha: .6)),
+                style: TextStyle(color: cs.onSurface.withValues(alpha: .6)),
               ),
               enabled: ready && enabled == true,
               trailing: const Icon(Icons.chevron_right),
@@ -1229,8 +1230,7 @@ class _GpsModuleControls extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.only(top: 4, bottom: 4),
               child: Text(l.deviceGpsIntervalFixedByFirmware,
-                  style: TextStyle(
-                      color: cs.onSurfaceVariant, fontSize: 11)),
+                  style: TextStyle(color: cs.onSurfaceVariant, fontSize: 11)),
             ),
         ],
       ),

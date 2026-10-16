@@ -47,6 +47,8 @@ codebase.
   A **view strip** under the app bar (48x48 labelled icon buttons,
   `selected` on the current one, scrolls under 384dp) is the
   non-gesture path.
+- Device configuration (5 groups) and Profile & personalization (2
+  groups) fold with `MmCollapsibleSection`, open by default.
 
 **Studio skin (R63)**
 - Seventh preset `studio` ("Studio Dark — clean · compact"): grey layer
