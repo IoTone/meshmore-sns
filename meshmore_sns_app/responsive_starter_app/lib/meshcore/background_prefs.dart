@@ -42,6 +42,27 @@ abstract final class TelemetryPollPrefs {
   }
 }
 
+/// R62 — opt-in for the **periodic position-bearing self-advert**.
+///
+/// While connected the controller used to send a zero-hop self-advert
+/// every 60 s (to coax a fresh GPS read into SelfInfo). That is real
+/// over-the-air traffic that stock companion firmware never emits, and
+/// it publishes the node's position on a schedule the user never chose.
+/// Default **off**; see `MeshcoreController.periodicAdvertEnabled`.
+abstract final class PeriodicAdvertPrefs {
+  static const String _kEnabled = 'mm.advert.periodicBeacon';
+
+  static Future<bool> enabled() async {
+    final SharedPreferences p = await SharedPreferences.getInstance();
+    return p.getBool(_kEnabled) ?? false;
+  }
+
+  static Future<void> setEnabled(bool v) async {
+    final SharedPreferences p = await SharedPreferences.getInstance();
+    await p.setBool(_kEnabled, v);
+  }
+}
+
 /// R54 — per-channel opt-in for **message-derived place inference**
 /// ("place echoes"): when on for a channel, incoming messages on it are
 /// scanned for place references and plotted on the SNS grid. Stored as a

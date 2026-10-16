@@ -157,6 +157,24 @@ class LocationSettingsScreen extends StatelessWidget {
                 : () => _pickMovement(context, ap, l),
           ),
           const Divider(height: 1),
+          // R62 — the 60 s self-advert beacon is a separate, opt-in
+          // choice from auto-publish: it needs no GPS permission and
+          // works with the master toggle off.
+          Consumer<MeshcoreController>(
+            builder: (BuildContext context, MeshcoreController m, _) =>
+                SwitchListTile(
+              secondary: const Icon(Icons.cell_tower),
+              title: Text(l.locBeacon),
+              subtitle: Text(
+                l.locBeaconSub,
+                style: TextStyle(
+                    color: cs.onSurface.withValues(alpha: .6)),
+              ),
+              value: m.periodicAdvertEnabled,
+              onChanged: (bool v) => m.setPeriodicAdvertEnabled(v),
+            ),
+          ),
+          const Divider(height: 1),
           // "Publish now" — manual trigger so the user can verify.
           ListTile(
             leading: const Icon(Icons.upload),

@@ -70,8 +70,11 @@ class MeshcoreController extends ChangeNotifier {
     LocationService? locationService,
     Duration? deliveryTimeoutOverride,
     Duration? telemetryPollInterval,
+    Duration? selfInfoPollInterval,
     PlaceInferenceEngine? placeInferenceEngine,
   })  : _deliveryTimeoutOverride = deliveryTimeoutOverride,
+        _selfInfoPollInterval =
+            selfInfoPollInterval ?? const Duration(seconds: 60),
         _telemPollIntervalOverride = telemetryPollInterval,
         _placeEngine = placeInferenceEngine ??
             PlaceInferenceEngine(gazetteer: const CityGazetteer()),
@@ -196,6 +199,7 @@ class MeshcoreController extends ChangeNotifier {
     _loadBatteryHistory();
     _loadPowerSpecs();
     _loadTelemetryPollPref();
+    _loadPeriodicAdvertPref();
     _loadPlaceInferPrefs();
     unawaited(_dmReadStore.load().then((_) {
       // Notify so any UI watching unread counts (Nodes badge, etc.)
@@ -2321,13 +2325,59 @@ class MeshcoreController extends ChangeNotifier {
   /// is 60 s — bigger than the old 30 s because the advert is
   /// actual OTA traffic (single zero-hop frame, no flood, low
   /// impact but real).
+  ///
+  /// R62 — that advert is the periodic *beacon*, and it is now opt-in
+  /// ([periodicAdvertEnabled], default off). The poll itself keeps
+  /// running, because the dashboard's device-GPS readout needs it, but
+  /// with the beacon off a tick sends only `appStart`: one BLE request
+  /// to the paired radio, nothing over the air. Companion firmware
+  /// builds SELF_INFO from the live `sensors.node_lat/lon`
+  /// (`MyMesh.cpp:1059-1063`, tag companion-v1.17.1), so that is enough
+  /// to see a moving GPS. Whether real GPS hardware refreshes without
+  /// an advert has NOT been verified on a device; the manual refresh
+  /// button on the dashboard still does the full advert + appStart.
+  /// `appStart` on connect is a separate, wanted exchange and is
+  /// untouched.
   Timer? _selfInfoTimer;
+  final Duration _selfInfoPollInterval;
+
+  bool _periodicAdvert = false;
+
+  /// R62 — whether the 60 s poll also sends a position-bearing
+  /// zero-hop self-advert. Persisted; default off.
+  bool get periodicAdvertEnabled => _periodicAdvert;
+
+  Future<void> _loadPeriodicAdvertPref() async {
+    _periodicAdvert = await PeriodicAdvertPrefs.enabled();
+    notifyListeners();
+  }
+
+  Future<void> setPeriodicAdvertEnabled(bool v) async {
+    if (v == _periodicAdvert) return;
+    _periodicAdvert = v;
+    notifyListeners();
+    await PeriodicAdvertPrefs.setEnabled(v);
+  }
 
   void _startSelfInfoPolling() {
     _selfInfoTimer?.cancel();
-    _selfInfoTimer = Timer.periodic(const Duration(seconds: 60), (_) {
-      if (isReady) unawaited(refreshSelfInfo());
+    _selfInfoTimer = Timer.periodic(_selfInfoPollInterval, (_) {
+      if (!isReady) return;
+      if (_periodicAdvert) {
+        unawaited(refreshSelfInfo());
+      } else {
+        unawaited(_pollSelfInfoQuietly());
+      }
     });
+  }
+
+  /// `appStart` only: pull SelfInfo from the radio, transmit nothing.
+  Future<void> _pollSelfInfoQuietly() async {
+    try {
+      await send(MeshcoreFrameCodec.appStart(appName: _connection.appName));
+    } catch (_) {
+      // link dropped mid-poll — best-effort, like refreshSelfInfo.
+    }
   }
 
   /// Public API for forcing a SelfInfo refresh from the device.

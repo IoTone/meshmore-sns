@@ -42,6 +42,12 @@ codebase.
   / unknown), per-node telemetry (altitude + **temp/humidity/pressure**),
   on-tap telemetry query (contacts only).
 
+**Privacy (R62)**
+- The periodic 60 s position-bearing self-advert is **opt-in** (App
+  settings → Auto-publish location → *Periodic position beacon*, default
+  off). With it off the SelfInfo poll sends `appStart` only — nothing over
+  the air.
+
 **Hyperlocal grid (R18/R25/R27) — 9 view modes**
 - Its own primary tab, right after Nodes (issue #4). Disconnected, it
   shows the radar with no nodes and "Not Connected to Mesh". The chosen

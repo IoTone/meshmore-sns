@@ -1976,6 +1976,18 @@ abstract class AppLocalizations {
   /// **'Last: {lat}, {lon}  ·  {time}  ·  {trigger}'**
   String locLastPublished(String lat, String lon, String time, String trigger);
 
+  /// No description provided for @locBeacon.
+  ///
+  /// In en, this message translates to:
+  /// **'Periodic position beacon'**
+  String get locBeacon;
+
+  /// No description provided for @locBeaconSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Every 60 s while connected, send a zero-hop advert carrying your position over the air. Off by default: your radio does not do this by itself, and it costs airtime and battery.'**
+  String get locBeaconSub;
+
   /// No description provided for @locBatteryHint.
   ///
   /// In en, this message translates to:

@@ -1068,6 +1068,27 @@ While Meshcore protocol is open source, the client is not open source.  We want 
 
   Full spec: [`meshmore-sns-maps-spec.md`](./meshmore-sns-maps-spec.md).
 
+- R62: **periodic position beacon is opt-in** (App settings → Auto-publish
+  location → "Periodic position beacon"). Findings audit, location, item 7.
+  - While connected, the app polled SelfInfo every 60 s by first sending a
+    **zero-hop self-advert carrying the node's position** (to coax a fresh GPS
+    read), then `appStart`. Stock companion firmware never advertises on its
+    own (`advert_interval` is commented out, `NodePrefs.h:127-128`, tag
+    `companion-v1.17.1`), so this was OTA traffic and a position broadcast on a
+    schedule the user never chose.
+  - It is now a persisted switch (`mm.advert.periodicBeacon`), **default
+    off**. **Upgraders stop beaconing**: the old behaviour was never a setting,
+    so there is no choice to preserve, and a privacy default must not depend on
+    the user finding the switch.
+  - The 60 s poll itself stays (the dashboard's device-GPS readout needs it).
+    With the beacon off a tick sends `appStart` only, a BLE-local request that
+    transmits nothing. Companion firmware answers it from the live
+    `sensors.node_lat/lon` (`MyMesh.cpp:1059-1063`). **Not yet verified on GPS
+    hardware**; the dashboard refresh button still does advert + appStart.
+  - Not touched: the `appStart` on connect, `refreshSelfInfo` triggered by a
+    settings write, and R36 auto-publish (its own zero-hop advert after a phone
+    fix is a different, user-initiated publish).
+
 ### Terminology — Fabric vs Contact
 
 - **Fabric** = the set of nodes we have *seen* on the mesh (any

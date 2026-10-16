@@ -1094,6 +1094,13 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get locBeacon => 'Periodic position beacon';
+
+  @override
+  String get locBeaconSub =>
+      'Every 60 s while connected, send a zero-hop advert carrying your position over the air. Off by default: your radio does not do this by itself, and it costs airtime and battery.';
+
+  @override
   String get locBatteryHint =>
       'Smart-broadcast streams GPS (~10 mA continuous). Periodic-only is cheaper. Combine both for responsiveness; pick smart-broadcast alone if battery matters.';
 

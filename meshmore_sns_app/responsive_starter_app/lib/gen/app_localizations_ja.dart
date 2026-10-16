@@ -1044,6 +1044,13 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
+  String get locBeacon => '定期位置ビーコン';
+
+  @override
+  String get locBeaconSub =>
+      '接続中、60 秒ごとに現在位置を含むゼロホップ アドバートを送信します。デフォルトはオフ：無線機は単独ではこれを行わず、通信時間とバッテリーを消費します。';
+
+  @override
   String get locBatteryHint =>
       'スマートブロードキャストは GPS を継続使用 (約 10 mA)。定期のみは省電力。両方有効で応答性最大、バッテリー優先ならスマートブロードキャストのみ推奨。';
 
