@@ -142,11 +142,24 @@ class AutoPublishController extends ChangeNotifier {
 
   /// Take a fix → push to device → re-advert. The stream path
   /// already has a fix in hand; the timer path runs a one-shot
-  /// `currentFix`.
-  Future<void> _publish(String trigger, [PhoneFix? cached]) async {
-    if (!mc.isReady) return;
-    final PhoneFix? fix = cached ?? await _location.currentFix();
-    if (fix == null) return;
+  /// request. Returns the [LocationFailure] when there was no fix to
+  /// publish, so an interactive caller ("Publish now") can say why
+  /// instead of appearing to do nothing. The timer and stream callers
+  /// ignore it and retry on the next tick.
+  Future<LocationFailure?> _publish(String trigger,
+      [PhoneFix? cached]) async {
+    if (!mc.isReady) return null;
+    PhoneFix? fix = cached;
+    if (fix == null) {
+      // `prompt: false` — this runs from a timer and from a position
+      // stream, both with no UI. The permission is asked for at the
+      // settings toggle instead, and a denial comes back as a
+      // `LocationFailure` rather than an unattended dialog.
+      final LocationOutcome outcome =
+          await _location.requestFix(prompt: false);
+      fix = outcome.fix;
+      if (fix == null) return outcome.failure;
+    }
     // R44 follow-up — keep the controller's ownLocation altitude
     // fresh. AutoPublishController is already paying the GPS-read
     // cost; pumping the result back into the controller means the
@@ -168,21 +181,27 @@ class AutoPublishController extends ChangeNotifier {
     } catch (_) {
       // Transport hiccup or device-not-ready race — silent. Next
       // tick will retry.
-      return;
+      return null;
     }
     _lastLat = fix.latitude;
     _lastLon = fix.longitude;
     _lastPublishedAt = DateTime.now();
     _lastTrigger = trigger;
     notifyListeners();
+    return null;
   }
 
   /// Force a one-shot publish right now (used by the "Publish now"
   /// button in settings). Honours the master toggle: no-op when
-  /// off.
-  Future<void> publishNow() async {
-    if (!_enabled) return;
-    await _publish('manual');
+  /// off, and returns null when nothing was wrong to report.
+  ///
+  /// The returned failure is what lets the button explain itself: this
+  /// path used to call `currentFix` with no permission request and
+  /// return silently, so a user who had never granted location pressed
+  /// "Publish now" and saw absolutely nothing happen.
+  Future<LocationFailure?> publishNow() async {
+    if (!_enabled) return null;
+    return _publish('manual');
   }
 
   @override

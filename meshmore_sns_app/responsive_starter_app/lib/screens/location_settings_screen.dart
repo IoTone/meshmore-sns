@@ -7,6 +7,7 @@ import '../gen/app_localizations.dart';
 import '../ui/mm_scaffold.dart';
 import '../meshcore/auto_publish_controller.dart';
 import '../meshcore/meshcore_controller.dart';
+import '../perms/location_service.dart';
 import '../perms/permissions_service.dart';
 
 /// R36 — App settings → Auto-publish location.
@@ -64,6 +65,31 @@ class LocationSettingsScreen extends StatelessWidget {
       return;
     }
     await ap.setEnabled(true);
+  }
+
+  /// R36 — "Publish now": explain a failure instead of doing nothing.
+  ///
+  /// `publishNow` never prompts (the loop behind it is a timer), so with
+  /// the permission denied it simply has no fix. Silently returning left
+  /// the button looking broken, so report the reason it hands back.
+  Future<void> _publishNow(
+    BuildContext context,
+    AutoPublishController ap,
+    AppLocalizations l,
+  ) async {
+    final LocationFailure? failure = await ap.publishNow();
+    if (failure == null || !context.mounted) return;
+    ScaffoldMessenger.maybeOf(context)?.showSnackBar(
+      SnackBar(
+        content: Text(switch (failure) {
+          LocationFailure.permissionDeniedForever =>
+            l.deviceLocPermDeniedPerm,
+          LocationFailure.permissionDenied => l.deviceLocPermDenied,
+          _ => l.deviceRegionSuggestNoFix,
+        }),
+        duration: const Duration(seconds: 5),
+      ),
+    );
   }
 
   @override
@@ -139,7 +165,7 @@ class LocationSettingsScreen extends StatelessWidget {
             enabled: ap.enabled && mc.isReady,
             onTap: !(ap.enabled && mc.isReady)
                 ? null
-                : () => ap.publishNow(),
+                : () => _publishNow(context, ap, l),
           ),
           // Last-published readout.
           if (ap.lastPublishedAt != null)

@@ -165,4 +165,39 @@ void main() {
     ap.dispose();
     r.mc.dispose();
   });
+
+  test('publishNow hands the failure back so the button is not dead',
+      () async {
+    final r = await bringControllerReady();
+    final NoopLocationService loc =
+        NoopLocationService(failure: LocationFailure.permissionDenied);
+    final AutoPublishController ap =
+        AutoPublishController(mc: r.mc, location: loc);
+    await ap.load();
+    await ap.setEnabled(true);
+
+    expect(await ap.publishNow(), LocationFailure.permissionDenied,
+        reason: 'the manual button must be able to say why it did nothing');
+    expect(loc.promptCount, 0,
+        reason: 'the background path still must not prompt');
+    expect(has0E(r.fake), isFalse);
+    ap.dispose();
+    r.mc.dispose();
+  });
+
+  test('publishNow reports no failure when it published', () async {
+    final r = await bringControllerReady();
+    final NoopLocationService loc = NoopLocationService(
+        next: const PhoneFix(latitude: 35.681, longitude: 139.767));
+    final AutoPublishController ap =
+        AutoPublishController(mc: r.mc, location: loc);
+    await ap.load();
+    await ap.setEnabled(true);
+
+    expect(await ap.publishNow(), isNull);
+    expect(has0E(r.fake), isTrue);
+    expect(has07Flood0(r.fake), isTrue);
+    ap.dispose();
+    r.mc.dispose();
+  });
 }
