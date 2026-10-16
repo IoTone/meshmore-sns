@@ -3665,8 +3665,25 @@ class MeshcoreController extends ChangeNotifier {
     await connect();
   }
 
+  /// True once [dispose] has run. Late notifications are dropped rather
+  /// than thrown: several paths can land after disposal — the
+  /// constructor's unawaited `_meshbook.load()` / `_dmReadStore.load()`
+  /// chains, and any `await` still in flight when the screen goes away.
+  /// `ChangeNotifier` asserts in debug on that, so "construct a
+  /// controller, dispose it, keep going" (what a widget test does, and
+  /// what any future re-create-the-controller flow does) used to throw
+  /// out of the framework rather than being a no-op.
+  bool _disposed = false;
+
+  @override
+  void notifyListeners() {
+    if (_disposed) return;
+    super.notifyListeners();
+  }
+
   @override
   void dispose() {
+    _disposed = true;
     _manualDisconnect = true;
     _reconnectGen++; // invalidate any pending scheduled retry
     _scanTimer?.cancel();
