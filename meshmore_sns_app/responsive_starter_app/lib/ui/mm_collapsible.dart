@@ -54,8 +54,8 @@ class _MmCollapsibleSectionState extends State<MmCollapsibleSection> {
   Widget build(BuildContext context) {
     final MmSkin skin = context.skin;
     final Widget rule = Container(
-      height: skin.shape.borderWidth,
-      color: skin.color.line,
+      height: skin.shape.hairlineWidth,
+      color: skin.color.hairline,
     );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,

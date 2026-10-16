@@ -50,7 +50,7 @@ swipe pages):
 |---|---|---|
 | **Device configuration** | Meshcore radio (freq/BW/SF/CR/TX power), identity/advert (name, lat/lon, self-advert), channels + PSK / QR import, other params + tuning, device info/battery/time. Drives the M4 protocol surface. | R7 |
 | **App settings** | BLE auto-reconnect (M7 backoff), language EN/JA, TTS global (off by default), notification/critical parity, diagnostics export (M6), About/Terms links. | R3,R4,R5 |
-| **Profile & personalization** | Theme preset (the six concepts incl. D high-contrast & F night) + custom palette, font family & **size scale**, density, **audio alerts master + per-event**, haptics + pattern preview, **accessibility switches incl. one-tap "visual + haptic only"**, identity/advert name. Persisted via `shared_preferences`. | R12,R13,R14 |
+| **Profile & personalization** | Theme preset (the six concepts incl. D high-contrast & F night, plus the R63 **Studio** clean-dark skin) + custom palette, font family & **size scale**, density, **audio alerts master + per-event**, haptics + pattern preview, **accessibility switches incl. one-tap "visual + haptic only"**, identity/advert name. Persisted via `shared_preferences`. | R12,R13,R14 |
 
 ### Navigation gestures (R11)
 
@@ -170,7 +170,7 @@ near-zero chrome, status as a full-width slab that colour-inverts to
 red on alert. D is *also* the high-contrast / sunlight accessibility
 benchmark, so the default is the most legible option.
 
-All **six concepts ship as selectable theme presets** via the R14
+All **six concepts ship as selectable theme presets** (a seventh, **Studio**, was added by R63, see below) via the R14
 theme system (see *Personalization & theme system*): a single
 `ThemeController` swaps a token set + type + motion flags at runtime;
 D is just the default token set. The other presets — A NERV, B
@@ -178,6 +178,18 @@ AG-HUD, C Hyperlocal, E DR Pop, F Recon Night — are defined token
 sets, not separate code paths. (Per-preset palettes are catalogued in
 `meshmore-sns-UX-brief.md`; screens are built against the *token
 names* below, never hard-coded colours, so every preset works.)
+
+#### Studio (R63) — clean-dark professional-tool skin
+A seventh preset in the language of Blender / GIMP / Photoshop. It is the
+only skin that supplies a real **layer stack** (`MmTokens.raised`,
+`selected`; base < panel < raised < selected, each step >= 1.08:1
+luminance), a `hairline` (1px, `MmShape.hairlineWidth`) and
+`onAccent`/`fgDisabled`; the six older presets *derive* these from their
+nine colours and look exactly as before. `MmShape.squareControls` makes
+Material's own controls square for Studio only. Grouped surfaces use
+`MmCollapsibleSection` (label + chevron + hairline, 48dp row, content not
+built when closed), first applied to Location settings. Studio reuses the
+Hyperlocal audio pack and the neutral haptic profile.
 
 #### Palette — token contract (preset-independent)
 

@@ -43,7 +43,8 @@ class ThemeController extends ChangeNotifier {
   ThemeData get theme {
     final MmSkin skin =
         mmSkinFor(_highContrast ? MmThemePreset.seele : _preset);
-    return buildMmTheme(skin.color, fontFamily: skin.type.displayFamily);
+    return buildMmTheme(skin.color,
+        fontFamily: skin.type.displayFamily, shape: skin.shape);
   }
 
   /// Load persisted preferences. Safe to call once at startup.

@@ -11,9 +11,9 @@ void main() {
 
   setUp(() => SharedPreferences.setMockInitialValues(<String, Object>{}));
 
-  test('all six presets defined, distinct, non-degenerate', () {
-    expect(MmThemePreset.values, hasLength(6));
-    expect(kMmPresets.length, 6);
+  test('all seven presets defined, distinct, non-degenerate', () {
+    expect(MmThemePreset.values, hasLength(7));
+    expect(kMmPresets.length, 7);
     final Set<int> bases = <int>{
       for (final MmThemePreset p in MmThemePreset.values)
         // ignore: deprecated_member_use

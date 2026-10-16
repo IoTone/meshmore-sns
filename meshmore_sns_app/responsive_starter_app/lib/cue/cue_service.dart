@@ -259,6 +259,8 @@ const Map<MmThemePreset, Map<_HTier, List<HapticHit>>> _hapticProfiles =
   MmThemePreset.hyperlocal: _hyperHaptics,
   MmThemePreset.drPop: _drPopHaptics,
   MmThemePreset.recon: _reconHaptics,
+  // R63 — Studio uses the neutral profile: no loud rhythm in a calm tool.
+  MmThemePreset.studio: _defaultHaptics,
 };
 
 // ---- R58 signature rhythms ------------------------------------
@@ -313,6 +315,7 @@ const Map<MmThemePreset, (HapticHit, HapticHit)> _sigIntensities =
   MmThemePreset.hyperlocal: (HapticHit.medium, HapticHit.light),
   MmThemePreset.drPop: (HapticHit.heavy, HapticHit.selection),
   MmThemePreset.recon: (HapticHit.medium, HapticHit.light),
+  MmThemePreset.studio: _defaultSigIntensity,
 };
 const (HapticHit, HapticHit) _defaultSigIntensity =
     (HapticHit.medium, HapticHit.light);

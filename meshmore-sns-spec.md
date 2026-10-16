@@ -1093,6 +1093,32 @@ While Meshcore protocol is open source, the client is not open source.  We want 
     settings write, and R36 auto-publish (its own zero-hop advert after a phone
     fix is a different, user-initiated publish).
 
+- R63: **Studio skin, layer-stack tokens, collapsible groups** (a seventh
+  preset, `MmThemePreset.studio`, "Studio Dark — clean · compact").
+  - Language: professional creative tools (Blender / GIMP / Photoshop):
+    a four-step grey layer stack (base `#141414`, panel `#202020`, raised
+    `#2B2B2B`, selected `#363636`), a 1px hairline (`#3A3A3A`), square
+    controls, ONE desaturated blue accent (`#5B94CC`) used only for the
+    active/primary state, no ornament, no new font. Echoes the ldmux
+    mobile client's palette without sharing its code.
+  - `MmTokens` gains `raised`, `selected`, `hairline`, `onAccent`,
+    `fgDisabled`. They are optional and **derived** when a preset omits
+    them (`raised`/`selected` = `surfaceAlt`, `hairline` = `line`,
+    `onAccent` = `base`), which is exactly what `buildMmTheme` already
+    drew, so the six older presets are appearance-neutral (pinned by
+    `test/theme/mm_layers_test.dart`). `MmShape` gains `hairlineWidth`
+    (default 1) and `squareControls` (default false; true squares chips,
+    cards, segmented buttons, dialogs and sheets).
+  - `MmCollapsibleSection` (`lib/ui/mm_collapsible.dart`): a section
+    label (same style as `MmSectionHeader`), chevron whose shape is the
+    state, hairline rule, 48dp whole-row button with `expanded`
+    semantics, content not built while closed. State is per visit. Used
+    by Location settings (Auto-publish / Beacon / Manual) under every skin.
+  - Audio: Studio **aliases** the Hyperlocal pack (`audioPackKey`), no
+    audio was synthesised. Haptics: the neutral profile.
+  - Not expressible yet: density/row-height per skin, persisted
+    collapse state, per-skin control height. Unverified on a device.
+
 ### Terminology — Fabric vs Contact
 
 - **Fabric** = the set of nodes we have *seen* on the mesh (any

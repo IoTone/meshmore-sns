@@ -31,12 +31,23 @@ void main() {
       for (final MmThemePreset p in MmThemePreset.values) {
         for (final CueKind k in CueKind.values) {
           final String s = AssetAudioPack.assetPathFor(p, k);
+          if (p == MmThemePreset.studio) continue; // aliased, see below
           expect(seen.add(s), isTrue,
               reason: 'duplicate asset path for $p/$k: $s');
         }
       }
-      expect(seen.length, MmThemePreset.values.length * CueKind.values.length,
-          reason: '6 presets × 7 cues = 42 unique paths');
+      // R63 — Studio deliberately ALIASES the Hyperlocal pack (no studio
+      // audio exists), so uniqueness is per distinct audioPackKey, not
+      // per preset. Any other duplicate is still a bug.
+      final Set<String> keys = <String>{
+        for (final MmThemePreset p in MmThemePreset.values) p.audioPackKey,
+      };
+      expect(keys.length, MmThemePreset.values.length - 1,
+          reason: 'exactly one alias (studio -> hyperlocal)');
+      expect(MmThemePreset.studio.audioPackKey,
+          MmThemePreset.hyperlocal.audioPackKey);
+      expect(seen.length, 6 * CueKind.values.length,
+          reason: '6 distinct packs × 7 cues = 42 unique paths');
     });
   });
 

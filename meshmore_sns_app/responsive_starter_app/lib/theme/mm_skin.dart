@@ -61,6 +61,8 @@ class MmShape {
     required this.corner,
     required this.cornerSize,
     required this.borderWidth,
+    this.hairlineWidth = 1.0,
+    this.squareControls = false,
   });
 
   final MmCorner corner;
@@ -68,6 +70,18 @@ class MmShape {
   /// Radius (rounded) or cut depth (chamfer), in logical px.
   final double cornerSize;
   final double borderWidth;
+
+  /// R63 — width of the region-separating rule (`MmTokens.hairline`)
+  /// drawn by [MmCollapsibleSection] and friends. 1.0 matches the
+  /// Material `Divider` the app already used, so it is neutral.
+  final double hairlineWidth;
+
+  /// R63 — make Material's own controls (chips, cards, segmented
+  /// buttons, dialogs, sheets) square. Off for the six older presets,
+  /// which keep Material's rounding; [corner] only governs `MmPanel`.
+  /// Explicit rather than inferred from `cornerSize == 0`, because
+  /// SEELE/DR Pop/Recon are sharp *panels* yet were never square chips.
+  final bool squareControls;
 }
 
 /// Retro-futuristic chrome. All default to "off" so a calm concept
@@ -218,6 +232,30 @@ MmSkin mmSkinFor(MmThemePreset preset) {
         ),
         shape: const MmShape(
             corner: MmCorner.sharp, cornerSize: 0, borderWidth: 1),
+        ornament: _calmOrnament,
+      );
+    // G — Studio (R63): clean dark professional tool. Square everything,
+    // a 1px hairline between regions, mixed-case body with small dim
+    // upper-case section labels, platform sans (NO new font — the app
+    // bundles Saira/JetBrains Mono and Studio uses neither for body, so
+    // it reads as the platform UI face, like the tools it echoes),
+    // mono only for telemetry. No ornament.
+    case MmThemePreset.studio:
+      return MmSkin(
+        preset: preset,
+        color: color,
+        type: const MmType(
+          monoFamily: 'JetBrains Mono',
+          upperHeadings: true,
+          headingTracking: 1.2,
+        ),
+        shape: const MmShape(
+          corner: MmCorner.sharp,
+          cornerSize: 0,
+          borderWidth: 1,
+          hairlineWidth: 1,
+          squareControls: true,
+        ),
         ornament: _calmOrnament,
       );
     // F — Tactical Recon: night-ops codec. OLED-black, single amber

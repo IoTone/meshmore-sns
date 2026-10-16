@@ -76,12 +76,16 @@ void main() {
 
     test('each slot resolves to its own asset in every pack', () {
       final Set<String> seen = <String>{};
+      // R63 — Studio aliases the Hyperlocal pack, so check the six
+      // distinct packs; the alias itself is pinned in
+      // asset_audio_pack_test.dart.
       for (final MmThemePreset p in MmThemePreset.values) {
+        if (p == MmThemePreset.studio) continue;
         for (final CueKind s in kSignatureSlots) {
           expect(seen.add(AssetAudioPack.assetPathFor(p, s)), isTrue);
         }
       }
-      expect(seen.length, MmThemePreset.values.length * 5);
+      expect(seen.length, 6 * 5);
       expect(
         AssetAudioPack.assetPathFor(MmThemePreset.seele, CueKind.sig3),
         'audio/seele/sig3.wav',

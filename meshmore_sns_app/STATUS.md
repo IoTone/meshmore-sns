@@ -42,6 +42,16 @@ codebase.
   / unknown), per-node telemetry (altitude + **temp/humidity/pressure**),
   on-tap telemetry query (contacts only).
 
+**Studio skin (R63)**
+- Seventh preset `studio` ("Studio Dark — clean · compact"): grey layer
+  stack + 1px hairline + square controls + one blue accent. `MmTokens`
+  gained derived `raised/selected/hairline/onAccent/fgDisabled`; `MmShape`
+  gained `hairlineWidth`/`squareControls`; the six older skins are
+  unchanged by construction (`test/theme/mm_layers_test.dart`).
+- `MmCollapsibleSection` groups Location settings (Auto-publish / Beacon
+  / Manual). Collapse state is per visit, not persisted.
+- Audio aliases the Hyperlocal pack; **unverified on a device**.
+
 **Privacy (R62)**
 - The periodic 60 s position-bearing self-advert is **opt-in** (App
   settings → Auto-publish location → *Periodic position beacon*, default

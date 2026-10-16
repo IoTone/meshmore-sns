@@ -2,12 +2,19 @@
 // SPDX-License-Identifier: MIT
 import 'package:flutter/material.dart';
 
+import 'mm_skin.dart' show MmShape;
+
 /// The six design-concept themes (UX brief A–F). **D "SEELE Monolith"
 /// = [MmThemePreset.seele] is the default** (also the high-contrast /
 /// sunlight accessibility benchmark). Screens are built against the
 /// semantic [MmTokens] names only — never hard-coded colours — so
 /// every preset works (R14).
-enum MmThemePreset { nerv, agHud, hyperlocal, seele, drPop, recon }
+///
+/// R63 adds a seventh, [MmThemePreset.studio]: a clean-dark,
+/// professional-tool skin (layered greys, hairlines, square corners,
+/// one restrained accent). It is the only preset that *uses* the layered
+/// surface stack added in R63; the other six derive it (see [MmTokens]).
+enum MmThemePreset { nerv, agHud, hyperlocal, seele, drPop, recon, studio }
 
 extension MmThemePresetX on MmThemePreset {
   String get label => switch (this) {
@@ -17,6 +24,7 @@ extension MmThemePresetX on MmThemePreset {
         MmThemePreset.seele => 'SEELE Monolith — default · high-contrast',
         MmThemePreset.drPop => 'DR Pop',
         MmThemePreset.recon => 'Recon Night',
+        MmThemePreset.studio => 'Studio Dark — clean · compact',
       };
 
   /// Asset-folder slug for the R12 per-theme audio pack. Used by
@@ -30,11 +38,33 @@ extension MmThemePresetX on MmThemePreset {
         MmThemePreset.seele => 'seele',
         MmThemePreset.drPop => 'drpop',
         MmThemePreset.recon => 'recon',
+        // R63 — deliberately ALIASES the Hyperlocal pack (the calmest
+        // existing one). No studio audio exists and synthesising it is
+        // out of scope; see `assets/audio/` and the R63 spec entry.
+        MmThemePreset.studio => 'hyperlocal',
       };
 }
 
 /// Preset-independent semantic colour contract. Every preset supplies
-/// all nine; screens reference only these.
+/// the nine core colours; screens reference only these names.
+///
+/// R63 — the **layer stack** (a window base, a panel, a raised control,
+/// a selected/hover state), a **hairline**, a **disabled** text tier and
+/// the label colour **on the accent**. These are *optional* at
+/// construction and **derived** when omitted, from the nine core colours,
+/// to exactly what the app already drew:
+///
+/// | getter          | derived (omitted) as | why that is neutral |
+/// |-----------------|----------------------|---------------------|
+/// | [raised]        | [surfaceAlt]         | the theme already used `surfaceAlt` for `surfaceContainerHigh` |
+/// | [selected]      | [surfaceAlt]         | and for `surfaceContainerHighest` |
+/// | [hairline]      | [line]               | every divider/border already used `line` |
+/// | [onAccent]      | [base]               | the theme already put `base` on `accent` |
+/// | [fgDisabled]    | [fgMuted] at 50 %    | new; nothing reads it for the six old presets |
+///
+/// So a preset that supplies none of them is *by construction* the
+/// colour it always was (pinned by `test/theme/mm_layers_test.dart`);
+/// only a preset that wants a real stack (Studio) supplies them.
 @immutable
 class MmTokens {
   const MmTokens({
@@ -47,7 +77,16 @@ class MmTokens {
     required this.accent,
     required this.alert,
     required this.ok,
-  });
+    Color? raised,
+    Color? selected,
+    Color? hairline,
+    Color? onAccent,
+    Color? fgDisabled,
+  })  : _raised = raised,
+        _selected = selected,
+        _hairline = hairline,
+        _onAccent = onAccent,
+        _fgDisabled = fgDisabled;
 
   final Color base;
   final Color surface;
@@ -58,10 +97,63 @@ class MmTokens {
   final Color accent;
   final Color alert;
   final Color ok;
+
+  final Color? _raised;
+  final Color? _selected;
+  final Color? _hairline;
+  final Color? _onAccent;
+  final Color? _fgDisabled;
+
+  /// Controls (buttons, keys, inputs) sitting on a [surface] panel.
+  Color get raised => _raised ?? surfaceAlt;
+
+  /// Hover / pressed / selected row. One step above [raised].
+  Color get selected => _selected ?? surfaceAlt;
+
+  /// The 1px region separator (see `MmShape.hairlineWidth`).
+  Color get hairline => _hairline ?? line;
+
+  /// Label drawn on a filled [accent].
+  Color get onAccent => _onAccent ?? base;
+
+  /// Disabled text/icons, below [fgMuted].
+  Color get fgDisabled => _fgDisabled ?? fgMuted.withValues(alpha: .5);
+
+  /// True when this preset supplies a real layer stack of its own
+  /// (rather than the derived single `surfaceAlt` step).
+  bool get hasLayerStack => _raised != null && _selected != null;
+
+  /// The stack, lowest to highest: base, surface, raised, selected.
+  List<Color> get layers => <Color>[base, surface, raised, selected];
 }
 
 /// Catalogued from `meshmore-sns-UX-brief.md` (per-concept palettes).
 const Map<MmThemePreset, MmTokens> kMmPresets = <MmThemePreset, MmTokens>{
+  // G (R63) — Studio: the professional-tool language of Blender /
+  // GIMP / Photoshop. A real four-step grey stack (each step >= ~1.1:1
+  // luminance over the one below), a hairline one step lighter again,
+  // and ONE desaturated blue accent used for the active/primary state.
+  // Adapted from the ldmux palette (#141414 / #202020 / #2B2B2B /
+  // #363636, hairline #3A3A3A, accent #5B94CC) to this nine-colour
+  // model: `surfaceAlt` is the raised step so Material's own container
+  // roles land on the stack; `alert`/`ok` keep the app's meaning but
+  // are desaturated to sit in a grey UI.
+  MmThemePreset.studio: MmTokens(
+    base: Color(0xFF141414),
+    surface: Color(0xFF202020),
+    surfaceAlt: Color(0xFF2B2B2B),
+    line: Color(0xFF3A3A3A),
+    fg: Color(0xFFE2E2E2),
+    fgMuted: Color(0xFFA0A0A0),
+    accent: Color(0xFF5B94CC),
+    alert: Color(0xFFE07A70),
+    ok: Color(0xFF8DB38B),
+    raised: Color(0xFF2B2B2B),
+    selected: Color(0xFF363636),
+    hairline: Color(0xFF3A3A3A),
+    onAccent: Color(0xFF141414),
+    fgDisabled: Color(0xFF6A6A6A),
+  ),
   // D — default.
   MmThemePreset.seele: MmTokens(
     base: Color(0xFF000000),
@@ -143,7 +235,14 @@ MmThemePreset presetFromId(String? id) => MmThemePreset.values.firstWhere(
 /// `ColorScheme.dark(...)` would otherwise leave at fixed defaults.
 /// Without this, switching presets only nudged a couple of accents
 /// (the "themes don't change" bug); now the whole UI re-skins.
-ThemeData buildMmTheme(MmTokens t, {String? fontFamily}) {
+///
+/// [shape] (R63) only matters for [MmShape.squareControls]: when true,
+/// chips/cards/segmented buttons/dialogs/sheets are square. When null or
+/// false the output is byte-for-byte what it was before R63.
+ThemeData buildMmTheme(MmTokens t, {String? fontFamily, MmShape? shape}) {
+  final bool square = shape?.squareControls ?? false;
+  final RoundedRectangleBorder? squareBorder =
+      square ? const RoundedRectangleBorder() : null;
   final ColorScheme scheme = ColorScheme(
     brightness: Brightness.dark,
     surface: t.base,
@@ -151,17 +250,17 @@ ThemeData buildMmTheme(MmTokens t, {String? fontFamily}) {
     surfaceContainerLowest: t.base,
     surfaceContainerLow: t.surface,
     surfaceContainer: t.surface,
-    surfaceContainerHigh: t.surfaceAlt,
-    surfaceContainerHighest: t.surfaceAlt,
+    surfaceContainerHigh: t.raised,
+    surfaceContainerHighest: t.selected,
     surfaceDim: t.base,
     surfaceBright: t.surfaceAlt,
     onSurfaceVariant: t.fgMuted,
     primary: t.accent,
-    onPrimary: t.base,
+    onPrimary: t.onAccent,
     primaryContainer: t.surfaceAlt,
     onPrimaryContainer: t.accent,
     secondary: t.accent,
-    onSecondary: t.base,
+    onSecondary: t.onAccent,
     secondaryContainer: t.surfaceAlt,
     onSecondaryContainer: t.fg,
     tertiary: t.ok,
@@ -218,7 +317,11 @@ ThemeData buildMmTheme(MmTokens t, {String? fontFamily}) {
     cardTheme: CardThemeData(
       color: t.surface,
       surfaceTintColor: Colors.transparent,
+      shape: squareBorder,
     ),
+    dialogTheme: square ? DialogThemeData(shape: squareBorder) : null,
+    bottomSheetTheme:
+        square ? BottomSheetThemeData(shape: squareBorder) : null,
     appBarTheme: AppBarTheme(
       backgroundColor: t.base,
       foregroundColor: t.fg,
@@ -257,7 +360,10 @@ ThemeData buildMmTheme(MmTokens t, {String? fontFamily}) {
         iconColor: WidgetStateProperty.resolveWith((Set<WidgetState> s) =>
             s.contains(WidgetState.selected) ? t.base : t.fgMuted),
         overlayColor: WidgetStateProperty.all(t.accent.withValues(alpha: .12)),
-        side: WidgetStateProperty.all(BorderSide(color: t.line)),
+        side: WidgetStateProperty.all(BorderSide(color: t.hairline)),
+        shape: square
+            ? WidgetStateProperty.all<OutlinedBorder?>(squareBorder)
+            : null,
         textStyle: WidgetStateProperty.all(
             const TextStyle(fontWeight: FontWeight.w600)),
       ),
@@ -272,7 +378,8 @@ ThemeData buildMmTheme(MmTokens t, {String? fontFamily}) {
       side: BorderSide(color: t.line),
       labelStyle: TextStyle(color: t.fg),
       secondaryLabelStyle: TextStyle(color: t.base),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      shape: squareBorder ??
+          RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
     ),
   );
 }
