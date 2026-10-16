@@ -470,10 +470,14 @@ class _LocationTile extends StatelessWidget {
 ///   off the wire. Frozen at (0, 0) → the firmware reports "no
 ///   GPS." Frozen at a non-zero pair across multiple refreshes →
 ///   the firmware is caching and not re-reading GPS.
-/// - `pol: N` — `mc.selfInfo.advertLocPolicy` (0=None, 1=Pinned,
-///   2=Device GPS). If the user thinks they set "Device GPS" but
-///   this isn't 2, the policy didn't actually stick on the
-///   device.
+/// - `pol: N` — `mc.selfInfo.advertLocPolicy`, using MeshCore's
+///   integers from `src/helpers/CommonCLI.h`: 0=None, 1=Device GPS
+///   (`ADVERT_LOC_SHARE`), 2=Pinned (`ADVERT_LOC_PREFS`). If the user
+///   picked "Device GPS" but this is not 1, the policy didn't stick on
+///   the device. (Companion firmware only distinguishes 0 from
+///   non-zero — `examples/companion_radio/NodePrefs.h:9-10` — so 2
+///   behaves like 1 there. This comment previously read
+///   "1=Pinned, 2=Device GPS", the reversal fixed in 04811b2.)
 /// - `phone: lat, lon` — the one-shot phone fix `mc.phoneLocationFix`.
 ///   Only present if the user has tapped "Use phone location" or
 ///   the dashboard requested a fix. `ownLocation` falls back to

@@ -1724,12 +1724,18 @@ void main() {
             handshakeTimeout: const Duration(seconds: 5)),
       );
       await ctrl.connect();
-      // SelfInfo carrying advertLocPolicy=1. MeshCore's
-      // `src/helpers/CommonCLI.h` defines
+      // SelfInfo carrying advertLocPolicy=1 — the app's "Device GPS"
+      // option. MeshCore's `src/helpers/CommonCLI.h` defines
       //   ADVERT_LOC_NONE 0 / ADVERT_LOC_SHARE 1 / ADVERT_LOC_PREFS 2
-      // and SHARE is the mode that advertises the live sensor/GPS fix,
-      // so it is the mode whose GPS must be running. This test
-      // previously used 2, encoding the app's reversed label.
+      // and our label mapping follows it, so 1 is the mode whose GPS
+      // must be running for the choice to mean anything. This test used
+      // to pass 2, matching the app's reversed labels.
+      //
+      // The companion firmware itself only tests `== ADVERT_LOC_NONE`
+      // (`MyMesh.cpp:1252,1336,2251` at `companion-v1.17.1`), so 2 also
+      // advertises the live `sensors.node_lat/lon` — but powering the
+      // GPS for a choice labelled "Pinned" would overwrite the pinned
+      // pair, so the auto-heal deliberately keys off 1 only.
       final Uint8List si = Uint8List(58)..[0] = 0x05;
       si[45] = 1; // advertLocPolicy byte
       fake.emit(si);

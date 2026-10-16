@@ -13,8 +13,17 @@ void main() {
   //   2 = ADVERT_LOC_PREFS — advertise the STORED (pinned) pair
   //
   // The labels used to be attached to 1 and 2 in the reverse order, so
-  // selecting "Pinned" actually put the radio in SHARE (live) mode and a
-  // typed coordinate pair was overwritten by the GPS reading.
+  // the picker's "Pinned" sent 1 and its "Device GPS" sent 2 — the
+  // opposite of the shared definition above, with no way for a user to
+  // tell which one they had actually chosen.
+  //
+  // CAVEAT: the app talks to companion firmware, which distinguishes
+  // only NONE from "advertise sensors.node_lat/lon"
+  // (`examples/companion_radio/NodePrefs.h:9-10` and `MyMesh.cpp:1252,
+  // 1336,2251` at `companion-v1.17.1`). On a companion, 1 and 2 behave
+  // identically and neither pins anything. These labels follow the
+  // SHARED definition, which is what the firmware documents and what
+  // the repeater / room / sensor builds implement.
   test('advert policy labels match the firmware integers: '
       '1 = Device GPS (SHARE, live fix), 2 = Pinned (PREFS, stored pair)',
       () async {
