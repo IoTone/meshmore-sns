@@ -15,18 +15,25 @@ import '../meshcore/region_presets.dart';
 import '../perms/location_service.dart';
 import '../perms/permissions_service.dart';
 
-/// The FIRMWARE's advert-location policy integers → a UI label.
+/// The advert-location policy integers → a UI label.
 ///
-/// These integers come from MeshCore `src/helpers/CommonCLI.h`:
+/// The integers are MeshCore's (`src/helpers/CommonCLI.h`, shared by
+/// repeater / room / sensor firmware):
 ///   0 = ADVERT_LOC_NONE  — advertise no position at all
 ///   1 = ADVERT_LOC_SHARE — advertise the LIVE sensor/GPS fix
 ///   2 = ADVERT_LOC_PREFS — advertise the STORED (pinned) pair
 ///
-/// One mapping shared by both the picker and the confirmation toast, so
-/// the two can never drift apart again. They used to be two separately
-/// hand-maintained lists, and the labels sat on 1 and 2 in the reverse
-/// order from the firmware — so picking "Pinned" actually selected
-/// SHARE (live), and typed coordinates got overwritten by the GPS.
+/// CAVEAT — the companion firmware this app talks to does NOT implement
+/// that distinction. At `companion-v1.17.1`, `examples/companion_radio/
+/// NodePrefs.h:9-10` defines only NONE and SHARE, and `MyMesh.cpp:1252,
+/// 1336,2251` test only `== ADVERT_LOC_NONE`; any other value advertises
+/// `sensors.node_lat/lon`, the same single store `CMD_SET_ADVERT_LATLON`
+/// writes and the GPS overwrites. On a companion, 1 and 2 behave
+/// identically and "Pinned" does not pin. The labels follow the shared
+/// definition so they are right for any firmware that does honour it.
+///
+/// One mapping shared by the picker and the confirmation toast, so the
+/// two cannot drift apart.
 String advertPolicyLabel(AppLocalizations l, int policy) => switch (policy) {
       1 => l.deviceAdvertSourceGps,
       2 => l.deviceAdvertSourcePinned,

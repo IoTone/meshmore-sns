@@ -2475,13 +2475,13 @@ class MeshcoreController extends ChangeNotifier {
   /// has no effect — the firmware just keeps broadcasting whatever
   /// cached lat/lon it last had.
   ///
-  /// The policy integer here is the FIRMWARE's, not our label's:
-  /// MeshCore `src/helpers/CommonCLI.h` defines
-  /// `ADVERT_LOC_NONE 0 / ADVERT_LOC_SHARE 1 / ADVERT_LOC_PREFS 2`.
-  /// SHARE (1) is the mode that advertises the live sensor/GPS fix, so
-  /// that is the mode which needs the GPS powered. This previously tested
-  /// for 2 (PREFS = the *stored* pair), i.e. it turned the GPS on for the
-  /// stored-coordinates mode and left the live mode without a fix.
+  /// The policy integer follows MeshCore's shared definition
+  /// (`src/helpers/CommonCLI.h`: NONE 0 / SHARE 1 / PREFS 2) and our
+  /// "Device GPS" label is 1. The companion firmware itself only tests
+  /// `== ADVERT_LOC_NONE` (`MyMesh.cpp:1252,1336,2251` at
+  /// `companion-v1.17.1`), so policy 2 also advertises the live
+  /// `sensors.node_lat/lon`; this auto-heal deliberately keys off the
+  /// user's explicit "Device GPS" choice only.
   Future<void> _maybeAutoEnableGps() async {
     if (_autoEnabledGpsOnce) return;
     final SelfInfo? si = selfInfo;
