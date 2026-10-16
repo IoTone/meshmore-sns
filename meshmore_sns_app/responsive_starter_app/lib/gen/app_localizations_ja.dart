@@ -24,6 +24,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get tabNodes => 'ノード';
 
   @override
+  String get tabMap => '地図';
+
+  @override
   String get tabDocs => 'ドキュメント';
 
   @override

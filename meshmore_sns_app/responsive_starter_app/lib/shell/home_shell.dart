@@ -19,6 +19,7 @@ import 'boot_overlay.dart';
 import '../screens/dashboards/dashboard_host.dart';
 import '../screens/docs_hub_screen.dart';
 import '../screens/grid_screen.dart';
+import '../screens/map_screen.dart';
 import '../screens/nodes_screen.dart';
 import '../theme/mm_skin.dart';
 import '../theme/theme_controller.dart';
@@ -27,8 +28,8 @@ import '../ui/mm_scaffold.dart';
 
 /// The primary views (R8 dashboard is the home / first page; the
 /// hyperlocal grid follows Nodes — issue #4; R53 adds the Docs tab,
-/// sitting after Settings).
-enum MmView { dashboard, chat, nodes, grid, settings, docs, about }
+/// sitting after Settings; R61 adds the Map tab right after the grid).
+enum MmView { dashboard, chat, nodes, grid, map, settings, docs, about }
 
 extension on MmView {
   /// Localised tab label. Pass `AppLocalizations.of(context)` from the
@@ -39,6 +40,7 @@ extension on MmView {
         MmView.chat => l.tabChat,
         MmView.nodes => l.tabNodes,
         MmView.grid => l.gridTitle,
+        MmView.map => l.tabMap,
         MmView.docs => l.tabDocs,
         MmView.settings => l.tabSettings,
         MmView.about => l.tabAbout,
@@ -48,14 +50,15 @@ extension on MmView {
         MmView.chat => Icons.chat_bubble_outline,
         MmView.nodes => Icons.hub_outlined,
         MmView.grid => Icons.radar,
+        MmView.map => Icons.map_outlined,
         MmView.docs => Icons.menu_book_outlined,
         MmView.settings => Icons.settings_outlined,
         MmView.about => Icons.info_outline,
       };
 }
 
-/// Primary navigation shell (R11): horizontal swipe between the five
-/// views; the app-bar leading control opens a quick-nav sheet on
+/// Primary navigation shell (R11): horizontal swipe between the
+/// primary views; the app-bar leading control opens a quick-nav sheet on
 /// **tap or long-press** (long-press = the spec gesture; tap = the
 /// accessible, non-gesture-only equivalent — R13). No hamburger
 /// drawer by design.
@@ -220,13 +223,15 @@ class _HomeShellState extends State<HomeShell>
       ),
       // A grid view that pans (street map, globe, …) owns horizontal
       // drags, so the shell stops swiping while it shows; Back, the
-      // dots and quick-nav still leave the tab.
+      // dots and quick-nav still leave the tab. The Map tab is a
+      // pan/zoom map all the time, so it is locked unconditionally.
       body: ValueListenableBuilder<bool>(
         valueListenable: GridScreen.capturesHorizontalDrag,
         builder: (BuildContext context, bool gridPans, Widget? _) =>
             PageView(
         controller: _pc,
-        physics: gridPans && current == MmView.grid
+        physics: (gridPans && current == MmView.grid) ||
+                current == MmView.map
             ? const NeverScrollableScrollPhysics()
             : null,
         onPageChanged: (int i) {
@@ -246,6 +251,7 @@ class _HomeShellState extends State<HomeShell>
           ChatScreen(),
           NodesScreen(),
           GridScreen(),
+          MapScreen(),
           _SettingsView(),
           DocsHubScreen(),
           _AboutView(),

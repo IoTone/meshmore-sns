@@ -109,6 +109,16 @@ disclaimer.
 
 ## UI
 
+**Map tab** (the viewer): the street map is a primary swipe page, right
+after the Hyperlocal grid, in every skin. It is the same `StreetMapView`
+that the grid offers as a view mode, promoted so it is one swipe away
+rather than three picks deep. It is the *viewer*; pack and source
+management stay in Settings → Offline maps, one tap from a corner button
+on the map. Because a pan/zoom map owns horizontal drags, the shell's
+swipe is locked on this tab (Back, the dots and quick-nav leave it), the
+same rule the grid applies to its panning views. With no position yet the
+map shows "awaiting fix" instead of tiles.
+
 **Settings → Offline maps** (new hub row, after Tools):
 
 - **Storage**: "X of Y used" bar, then the breakdown (regions · event

@@ -28,7 +28,7 @@ OSS/Flutter typography plan live in `meshmore-sns-UX-brief.md`.
 
 ### Information architecture
 
-Five primary views, navigated via horizontal swipe (R11). Each is a top-level
+Eight primary views (Dashboard, Chat, Nodes, Hyperlocal grid, Map, Settings, Docs, About), navigated via horizontal swipe (R11). Each is a top-level
 page in a `PageView`; secondary screens (pair device, edit channel, etc.) are
 pushed via `go_router`.
 
@@ -38,6 +38,7 @@ pushed via `go_router`.
 | 2 | **Chat** | Full chat for the active channel, with channel-selector chip strip on top. Per-channel TTS toggle in the header. | R6, R5 |
 | 3 | **Nodes** | Discovered peers with signal strength, distance estimate, last-heard, and a hook for the future live map (F1). | R6 |
 | 3a | **Hyperlocal grid** | The radar and the other map views, as the tab after Nodes (issue #4). Offline = empty radar + "Not Connected to Mesh"; the view choice lasts the session, launch resets to radar. | R18, R25, R27 |
+| 3b | **Map** | The street map as its own page after the grid (R61). Pan/zoom owns every horizontal drag, so the shell's swipe is **locked on this tab** (leave via Back, dots or quick-nav). A corner button opens Settings → Offline maps. Same in every skin: `HomeShell` does not read the skin to build pages. | R25, R61 |
 | 4 | **Settings** (hub) | Entry point to the three sub-screens below. | R3,R4,R5,R7,R12,R13,R14 |
 | 5 | **About / Terms** | App info + legal. | R9, R10 |
 
@@ -53,9 +54,9 @@ swipe pages):
 
 ### Navigation gestures (R11)
 
-- Horizontal swipe between the five primary views.
+- Horizontal swipe between the primary views (locked while a pan/zoom map is showing: the Map tab, and the grid's street-map/globe views).
 - **Long-press on the leading app-bar icon** opens a bottom-sheet quick-nav
-  with the five destinations. (We are deliberately *not* using a hamburger
+  with every destination. (We are deliberately *not* using a hamburger
   drawer — the long-press interaction matches the spec better and frees the
   top-left area for status indicators.)
 - App-bar trailing area shows live status pills: BLE link state, channel,

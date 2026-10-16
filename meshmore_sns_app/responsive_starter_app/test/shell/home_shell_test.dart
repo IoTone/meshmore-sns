@@ -8,11 +8,15 @@ import 'package:meshmore_sns_app/app_state_model.dart';
 import 'package:meshmore_sns_app/cue/cue_service.dart';
 import 'package:meshmore_sns_app/l10n/locale_controller.dart';
 import 'package:meshmore_sns_app/main.dart';
+import 'package:meshmore_sns_app/screens/map_screen.dart';
+import 'package:meshmore_sns_app/shell/home_shell.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:meshmore_sns_app/bot/bot_controller.dart';
 import 'package:meshmore_sns_app/meshcore/meshcore_controller.dart';
 import 'package:meshmore_sns_app/perms/first_run_controller.dart';
 import 'package:meshmore_sns_app/perms/permissions_service.dart';
 import 'package:meshmore_sns_app/screens/grid_screen.dart';
+import 'package:meshmore_sns_app/theme/mm_tokens.dart';
 import 'package:meshmore_sns_app/theme/theme_controller.dart';
 import 'package:meshmore_sns_app/tts/tts_controller.dart';
 
@@ -35,13 +39,18 @@ class _SilentSpeaker implements TtsSpeaker {
   Future<bool> isLanguageAvailable(String locale) async => true;
 }
 
-Future<void> _pumpApp(WidgetTester tester) async {
+Future<void> _pumpApp(WidgetTester tester,
+    {MmThemePreset? preset}) async {
   await tester.pumpWidget(
     MultiProvider(
       providers: [
         ChangeNotifierProvider<AppState>(create: (_) => AppState()),
         ChangeNotifierProvider<ThemeController>(
-          create: (_) => ThemeController(),
+          create: (_) {
+            final ThemeController tc = ThemeController();
+            if (preset != null) tc.setPreset(preset);
+            return tc;
+          },
         ),
         ChangeNotifierProvider<TtsController>(
           create: (_) => TtsController(speaker: _SilentSpeaker()),
@@ -72,7 +81,16 @@ Future<void> _pumpApp(WidgetTester tester) async {
       child: const MyApp(),
     ),
   );
-  await tester.pumpAndSettle();
+  if (preset == null) {
+    await tester.pumpAndSettle();
+  } else {
+    // Some skins animate on the dashboard forever (scanlines etc.), so
+    // pumpAndSettle would never return; timed pumps instead, long enough
+    // to clear the 2.2 s branded splash.
+    for (int i = 0; i < 35; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+  }
 }
 
 void main() {
@@ -87,8 +105,11 @@ void main() {
     // Tap the leading quick-nav control.
     await t.tap(find.byIcon(Icons.menu_open));
     await t.pumpAndSettle();
-    // Sheet lists all five destinations.
+    // Sheet lists every destination.
     expect(find.text('Nodes'), findsWidgets);
+    // With Map (R61) the sheet is taller than the 600 px test surface
+    // and scrolls, so bring the row into view before tapping it.
+    await t.ensureVisible(find.text('Settings').last);
     await t.tap(find.text('Settings').last);
     await t.pumpAndSettle();
     expect(find.widgetWithText(AppBar, 'Settings'), findsOneWidget);
@@ -181,8 +202,88 @@ void main() {
     await t.pump();
     await t.fling(find.byType(PageView), const Offset(-400, 0), 1000);
     await settle(t);
-    expect(find.widgetWithText(AppBar, 'Settings'), findsOneWidget);
+    // The tab after the grid is Map (R61), then Settings.
+    expect(find.widgetWithText(AppBar, 'Map'), findsOneWidget);
     // Leaving the tab frees the swipe for everyone else.
     expect(GridScreen.capturesHorizontalDrag.value, isFalse);
+  });
+
+  Future<void> openFromQuickNav(WidgetTester t, String label) async {
+    await t.tap(find.byIcon(Icons.menu_open));
+    await settle(t);
+    await t.ensureVisible(find.text(label).last);
+    await t.tap(find.text(label).last);
+    await settle(t);
+  }
+
+  testWidgets('Map is a swipe page right after the grid, in every skin '
+      '(R61)', (WidgetTester t) async {
+    // The shell never reads the skin to build its pages, so each preset
+    // gets the same seven-plus-one views; prove it per preset rather
+    // than assume it.
+    expect(MmView.values, <MmView>[
+      MmView.dashboard,
+      MmView.chat,
+      MmView.nodes,
+      MmView.grid,
+      MmView.map,
+      MmView.settings,
+      MmView.docs,
+      MmView.about,
+    ]);
+    for (final MmThemePreset preset in MmThemePreset.values) {
+      SharedPreferences.setMockInitialValues(<String, Object>{});
+      GridScreen.resetSession();
+      // Unmount the previous skin's tree, or Provider keeps its controller.
+      await t.pumpWidget(const SizedBox());
+      await _pumpApp(t, preset: preset);
+      expect(t.element(find.byType(HomeShell)).read<ThemeController>().preset,
+          preset,
+          reason: 'the skin under test is actually applied');
+      await openFromQuickNav(t, 'Hyperlocal grid');
+      await t.fling(find.byType(PageView), const Offset(-400, 0), 1000);
+      await settle(t);
+      expect(find.widgetWithText(AppBar, 'Map'), findsOneWidget,
+          reason: '${preset.name}: swipe from the grid lands on Map');
+      expect(find.byType(MapScreen), findsOneWidget);
+      expect(find.byTooltip('Offline maps'), findsOneWidget,
+          reason: 'the pack manager is one tap from the map');
+      expect(t.takeException(), isNull);
+    }
+  });
+
+  testWidgets('the Map tab owns horizontal drags; Back, the dots and '
+      'quick-nav still leave it (R61)', (WidgetTester t) async {
+    GridScreen.resetSession();
+    await _pumpApp(t);
+    await openFromQuickNav(t, 'Map');
+    expect(find.widgetWithText(AppBar, 'Map'), findsOneWidget);
+
+    // The lock is unconditional: no notifier needs to be flipped.
+    expect(GridScreen.capturesHorizontalDrag.value, isFalse);
+    await t.fling(find.byType(PageView), const Offset(-400, 0), 1000);
+    await settle(t);
+    expect(find.widgetWithText(AppBar, 'Map'), findsOneWidget,
+        reason: 'a left swipe must not leave the map');
+    await t.fling(find.byType(PageView), const Offset(400, 0), 1000);
+    await settle(t);
+    expect(find.widgetWithText(AppBar, 'Map'), findsOneWidget,
+        reason: 'nor a right swipe');
+
+    // Quick-nav leaves.
+    await openFromQuickNav(t, 'Settings');
+    expect(find.widgetWithText(AppBar, 'Settings'), findsOneWidget);
+
+    // The swipe is free again off the map.
+    await t.fling(find.byType(PageView), const Offset(400, 0), 1000);
+    await settle(t);
+    expect(find.widgetWithText(AppBar, 'Map'), findsOneWidget);
+
+    // Back from the map returns to the Dashboard.
+    final bool handled = await t.binding.handlePopRoute();
+    await settle(t);
+    expect(handled, isTrue);
+    expect(find.widgetWithText(AppBar, 'Dashboard'), findsOneWidget);
+    expect(t.takeException(), isNull);
   });
 }

@@ -24,6 +24,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tabNodes => 'Nodes';
 
   @override
+  String get tabMap => 'Map';
+
+  @override
   String get tabDocs => 'Docs';
 
   @override

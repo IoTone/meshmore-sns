@@ -1066,6 +1066,10 @@ While Meshcore protocol is open source, the client is not open source.  We want 
   - No licensed or keyed maps are built in, and no event data ships.
     The user brings the URL and the publisher's terms.
 
+  - **Map tab**: the street map viewer is a primary swipe page after the
+    Hyperlocal grid, in every skin; swipe locked on it (pan/zoom owns
+    horizontal drags). Pack management stays under Settings.
+
   Full spec: [`meshmore-sns-maps-spec.md`](./meshmore-sns-maps-spec.md).
 
 - R62: **periodic position beacon is opt-in** (App settings → Auto-publish

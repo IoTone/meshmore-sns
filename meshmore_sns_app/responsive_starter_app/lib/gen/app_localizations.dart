@@ -128,6 +128,12 @@ abstract class AppLocalizations {
   /// **'Nodes'**
   String get tabNodes;
 
+  /// No description provided for @tabMap.
+  ///
+  /// In en, this message translates to:
+  /// **'Map'**
+  String get tabMap;
+
   /// No description provided for @tabDocs.
   ///
   /// In en, this message translates to:
