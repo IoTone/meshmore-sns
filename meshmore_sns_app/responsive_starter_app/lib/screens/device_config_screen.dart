@@ -15,19 +15,6 @@ import '../meshcore/region_presets.dart';
 import '../perms/location_service.dart';
 import '../perms/permissions_service.dart';
 
-/// Device configuration (R7) + LoRa region selection (R15). The
-/// **Radio / Region** section is wired to the M4 protocol surface
-/// (`setRadioParams` / `setRadioTxPower`). Other sections remain
-/// scaffolds (later U-steps).
-///
-/// "Region" is an app convenience — the companion protocol only
-/// carries raw frequency/BW/SF/CR, with no per-region opcode. We
-/// ship a small list of community/regulatory presets (US, EU 868,
-/// Japan/ARIB STD-T108) and a Custom entry; only cited values are
-/// pre-filled. **All nodes must use identical radio params or they
-/// can't hear each other**, so match your mesh, and confirm the
-/// settings are legal in your jurisdiction (Japan additionally
-/// requires firmware-side listen-before-talk).
 /// The FIRMWARE's advert-location policy integers → a UI label.
 ///
 /// These integers come from MeshCore `src/helpers/CommonCLI.h`:
@@ -46,6 +33,19 @@ String advertPolicyLabel(AppLocalizations l, int policy) => switch (policy) {
       _ => l.deviceAdvertSourceNone,
     };
 
+/// Device configuration (R7) + LoRa region selection (R15). The
+/// **Radio / Region** section is wired to the M4 protocol surface
+/// (`setRadioParams` / `setRadioTxPower`). Other sections remain
+/// scaffolds (later U-steps).
+///
+/// "Region" is an app convenience — the companion protocol only
+/// carries raw frequency/BW/SF/CR, with no per-region opcode. We
+/// ship a small list of community/regulatory presets (US, EU 868,
+/// Japan/ARIB STD-T108) and a Custom entry; only cited values are
+/// pre-filled. **All nodes must use identical radio params or they
+/// can't hear each other**, so match your mesh, and confirm the
+/// settings are legal in your jurisdiction (Japan additionally
+/// requires firmware-side listen-before-talk).
 class DeviceConfigScreen extends StatefulWidget {
   const DeviceConfigScreen({super.key});
 
