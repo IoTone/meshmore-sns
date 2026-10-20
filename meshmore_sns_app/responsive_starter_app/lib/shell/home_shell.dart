@@ -147,6 +147,8 @@ class _HomeShellState extends State<HomeShell>
   Widget build(BuildContext context) {
     final AppLocalizations l = AppLocalizations.of(context);
     final MmView current = MmView.values[_index];
+    // R78: Studio has no swipe navigation, only the view strip.
+    final bool swipe = context.skin.shape.swipeNavigation;
     // Root back handling (R11): from a non-Dashboard tab, Back returns
     // to the Dashboard instead of trying to pop the root route (which
     // is what crashed on Android). On the Dashboard, Back is allowed
@@ -174,13 +176,17 @@ class _HomeShellState extends State<HomeShell>
       // drags, so the shell stops swiping while it shows; Back, the
       // view strip and Back still leave the tab. The Map tab is a
       // pan/zoom map all the time, so it is locked unconditionally;
-      // its edge bands (R67, MmEdgeSwipe) change view instead.
+      // its edge bands (R67, MmEdgeSwipe) change view instead. Under a
+      // skin with `swipeNavigation` off (Studio, R78) the PageView never
+      // scrolls by touch and the edge bands are inert: the view strip is
+      // the only switcher.
       body: ValueListenableBuilder<bool>(
         valueListenable: GridScreen.capturesHorizontalDrag,
         builder: (BuildContext context, bool gridPans, Widget? _) =>
             PageView(
         controller: _pc,
-        physics: (gridPans && current == MmView.grid) ||
+        physics: !swipe ||
+                (gridPans && current == MmView.grid) ||
                 current == MmView.map
             ? const NeverScrollableScrollPhysics()
             : null,
@@ -201,7 +207,7 @@ class _HomeShellState extends State<HomeShell>
           const ChatScreen(),
           const NodesScreen(),
           const GridScreen(),
-          MapScreen(onEdgeSwipe: _edgeSwipe),
+          MapScreen(onEdgeSwipe: swipe ? _edgeSwipe : null),
           const _SettingsView(),
           const DocsHubScreen(),
           const _AboutView(),

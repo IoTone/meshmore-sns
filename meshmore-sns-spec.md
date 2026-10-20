@@ -1192,6 +1192,20 @@ While Meshcore protocol is open source, the client is not open source.  We want 
   views with their own edge controls would each need auditing.
   Tests: `test/shell/home_shell_test.dart` (group "Map edge swipe (R67)").
 
+- R78: **Studio has no swipe navigation.** The owner's skin changes the
+  primary view only from the strip under the app bar. New
+  `MmShape.swipeNavigation` (true for the six older presets, false for
+  Studio) drives two things in `lib/shell/home_shell.dart`: the `PageView`
+  gets `NeverScrollableScrollPhysics`, and `MapScreen(onEdgeSwipe:)` is
+  given `null`, so R67's edge bands are not wired at all. The 48dp
+  `_ViewStrip` remains the only switcher, including its selected
+  underline, semantics and scroll-into-view. Back, `PopScope`, the nav
+  cues on a strip tap and map pan/zoom are unaffected (pan/zoom live
+  inside `StreetMapView`, not the shell). Tests:
+  `test/shell/home_shell_test.dart` ("only Studio turns swipe navigation
+  off (R78)", and the mapping test now asserts a fling does nothing under
+  Studio while every other preset still lands on Map).
+
 - R69: **The three defects R68 recorded.** (1) **Map with no fix.** The
   Map tab was a blank "awaiting fix" screen without a position.
   `StreetMapView(browseWithoutFix: true)` (only `MapScreen` passes it)

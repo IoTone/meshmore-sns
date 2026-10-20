@@ -19,6 +19,7 @@ import 'package:meshmore_sns_app/meshcore/meshcore_controller.dart';
 import 'package:meshmore_sns_app/perms/first_run_controller.dart';
 import 'package:meshmore_sns_app/perms/permissions_service.dart';
 import 'package:meshmore_sns_app/screens/grid_screen.dart';
+import 'package:meshmore_sns_app/theme/mm_skin.dart';
 import 'package:meshmore_sns_app/theme/mm_tokens.dart';
 import 'package:meshmore_sns_app/theme/theme_controller.dart';
 import 'package:meshmore_sns_app/tts/tts_controller.dart';
@@ -293,15 +294,61 @@ void main() {
           preset,
           reason: 'the skin under test is actually applied');
       await openFromStrip(t, 'Hyperlocal grid');
+      // R78: Studio is the one skin that does not swipe between views.
+      // Its PageView is NeverScrollable, so the strip is the only way
+      // across; every other preset still lands on Map by flinging.
+      final bool swipes = mmSkinFor(preset).shape.swipeNavigation;
       await t.fling(find.byType(PageView), const Offset(-400, 0), 1000);
       await settle(t);
+      if (!swipes) {
+        expect(find.widgetWithText(AppBar, 'Hyperlocal grid'), findsOneWidget,
+            reason: '${preset.name}: the shell does not swipe');
+        await openFromStrip(t, 'Map');
+      }
       expect(find.widgetWithText(AppBar, 'Map'), findsOneWidget,
-          reason: '${preset.name}: swipe from the grid lands on Map');
+          reason: '${preset.name}: Map is reachable from the grid');
       expect(find.byType(MapScreen), findsOneWidget);
       expect(find.byTooltip('Offline maps'), findsOneWidget,
           reason: 'the pack manager is one tap from the map');
       expect(t.takeException(), isNull);
     }
+  });
+
+  test('only Studio turns swipe navigation off (R78)', () {
+    for (final MmThemePreset p in MmThemePreset.values) {
+      expect(mmSkinFor(p).shape.swipeNavigation, p != MmThemePreset.studio,
+          reason: '${p.name}: swipeNavigation');
+    }
+  });
+
+  testWidgets(
+      'Studio changes view only from the strip, and the map edges are '
+      'inert (R78)', (WidgetTester t) async {
+    SharedPreferences.setMockInitialValues(<String, Object>{});
+    GridScreen.resetSession();
+    await _pumpApp(t, preset: MmThemePreset.studio);
+    await settle(t);
+    await openFromStrip(t, 'Hyperlocal grid');
+
+    // NeverScrollableScrollPhysics: neither direction moves the page.
+    await t.fling(find.byType(PageView), const Offset(-600, 0), 2000);
+    await settle(t);
+    await t.fling(find.byType(PageView), const Offset(600, 0), 2000);
+    await settle(t);
+    expect(find.widgetWithText(AppBar, 'Hyperlocal grid'), findsOneWidget,
+        reason: 'a fling must not change the view');
+
+    // The strip is the whole navigation story, Map included.
+    await openFromStrip(t, 'Map');
+    expect(find.byType(MapScreen), findsOneWidget);
+
+    // R67's edge bands are not wired under Studio, so a left-edge drag
+    // is not a view change. The map keeps the gesture for panning.
+    await t.dragFrom(const Offset(2, 300), const Offset(300, 0));
+    await settle(t);
+    expect(find.byType(MapScreen), findsOneWidget,
+        reason: 'an edge drag must not leave the map');
+    expect(t.takeException(), isNull);
   });
 
   testWidgets(
