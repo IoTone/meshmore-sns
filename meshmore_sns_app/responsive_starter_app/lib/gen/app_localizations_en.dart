@@ -3404,7 +3404,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get archiveFailSchema =>
-      'Wrong map layout. It needs the OpenMapTiles layers.';
+      'Wrong map layout. This file is not a compatible basemap.';
 
   @override
   String get archiveFailNotFound => 'Link not found.';

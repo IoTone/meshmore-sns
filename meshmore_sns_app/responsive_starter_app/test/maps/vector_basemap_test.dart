@@ -32,25 +32,43 @@ class _FakeFetch {
   }
 }
 
+/// The raster picker; the vector source is implicit on Studio.
+bool isNotInRasterPicker(MapSource s) => !kBuiltInSources.contains(s);
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   group('R80 vector basemap style', () {
-    test('the bundled asset is a vector style for openmaptiles', () async {
+    test('the bundled asset is a vector style for Shortbread', () async {
       final String json = await rootBundle.loadString(kVectorBasemapAsset);
       final Map<String, dynamic> style = jsonDecode(json) as Map<String, dynamic>;
       final Map<String, dynamic> sources =
           style['sources'] as Map<String, dynamic>;
       expect(sources.keys, <String>[kVectorBasemapSourceId],
-          reason: 'one vector source; the unused raster relief source is gone');
+          reason: 'one vector source, the OSM vector service');
       expect((sources[kVectorBasemapSourceId] as Map)['type'], 'vector');
+      expect((sources[kVectorBasemapSourceId] as Map)['maxzoom'], 14,
+          reason: 'Shortbread tops out at z14; deeper zooms overzoom it');
       expect(style.containsKey('glyphs'), isFalse,
           reason: 'labels render through Flutter text, not a glyph server');
       expect(style.containsKey('sprite'), isFalse,
           reason: 'no remote sprite atlas is fetched');
       final List<dynamic> layers = style['layers'] as List<dynamic>;
-      expect(layers.length, greaterThan(40));
+      expect(layers.length, greaterThan(20),
+          reason: 'a lean Shortbread style, not a 47-layer port');
       expect((layers.first as Map)['type'], 'background');
+      // Every source-layer must be one the schema actually publishes.
+      const Set<String> shortbread = <String>{
+        'ocean', 'water_polygons', 'water_polygons_labels', 'water_lines',
+        'water_lines_labels', 'boundaries', 'place_labels', 'land', 'sites',
+        'buildings', 'streets', 'street_polygons', 'street_labels',
+      };
+      for (final dynamic l in layers) {
+        final String? sl = (l as Map<String, dynamic>)['source-layer'] as String?;
+        if (sl != null) {
+          expect(shortbread, contains(sl), reason: '${l['id']} uses $sl');
+        }
+      }
     });
 
     test('it parses into a renderable theme', () async {
@@ -87,7 +105,7 @@ void main() {
 
     test('serves bytes from the same store the raster layer used', () async {
       final MmVectorTileProvider provider =
-          MmVectorTileProvider(maps, kOpenFreeMapVector);
+          MmVectorTileProvider(maps, kOsmVector);
       final Uint8List first =
           await provider.provide(vmt.TileIdentity(3, 2, 1));
       expect(first, <int>[0x1a, 0x02, 0x03, 0x04]);
@@ -102,7 +120,7 @@ void main() {
         () async {
       net.offline = true;
       final MmVectorTileProvider provider =
-          MmVectorTileProvider(maps, kOpenFreeMapVector);
+          MmVectorTileProvider(maps, kOsmVector);
       await expectLater(
         provider.provide(vmt.TileIdentity(4, 1, 1)),
         throwsA(isA<vmt.ProviderException>()
@@ -121,7 +139,7 @@ void main() {
       );
       await m.load();
       await expectLater(
-        MmVectorTileProvider(m, kOpenFreeMapVector)
+        MmVectorTileProvider(m, kOsmVector)
             .provide(vmt.TileIdentity(2, 0, 0)),
         throwsA(isA<vmt.ProviderException>()
             .having((vmt.ProviderException e) => e.statusCode, 'status', 404)),
@@ -138,7 +156,7 @@ void main() {
       );
       await m.load();
       await expectLater(
-        MmVectorTileProvider(m, kOpenFreeMapVector)
+        MmVectorTileProvider(m, kOsmVector)
             .provide(vmt.TileIdentity(2, 0, 0)),
         throwsA(isA<vmt.ProviderException>()),
         reason: 'the renderer pool must never see a raw exception',
@@ -148,9 +166,9 @@ void main() {
 
     test('zoom bounds follow the source', () {
       final MmVectorTileProvider provider =
-          MmVectorTileProvider(maps, kOpenFreeMapVector);
+          MmVectorTileProvider(maps, kOsmVector);
       expect(provider.minimumZoom, 0);
-      expect(provider.maximumZoom, kOpenFreeMapVector.maxNativeZoom);
+      expect(provider.maximumZoom, kOsmVector.maxNativeZoom);
     });
   });
 
@@ -205,38 +223,38 @@ void main() {
               reason: '${l['id']} needs a real halo');
         }
       }
-      expect(labels, 13, reason: '10 places, 2 road names, 1 water name');
+      expect(labels, 6, reason: '3 place ranks, 1 road name, 2 water names');
     });
 
     test('roads separate from the land, and rank by importance', () {
-      final double minor = contrast(paint('highway_minor', 'line-color'), land);
-      final double major =
-          contrast(paint('highway_major_inner', 'line-color'), land);
+      final double minor = contrast(paint('street_minor', 'line-color'), land);
+      final double secondary =
+          contrast(paint('street_secondary', 'line-color'), land);
       final double motorway =
-          contrast(paint('highway_motorway_subtle', 'line-color'), land);
+          contrast(paint('street_motorway', 'line-color'), land);
       expect(minor, greaterThanOrEqualTo(1.8));
-      expect(major, greaterThan(minor));
-      expect(major, greaterThanOrEqualTo(3.0));
-      expect(motorway, greaterThanOrEqualTo(1.8));
+      expect(secondary, greaterThan(minor));
+      expect(motorway, greaterThanOrEqualTo(3.0));
+      expect(motorway, greaterThan(secondary));
     });
 
     test('water is blue, parks are green, both visible against land', () {
       final List<int> w = rgb(paint('water', 'fill-color'));
-      final List<int> g = rgb(paint('landuse_park', 'fill-color'));
+      final List<int> g = rgb(paint('land_grass', 'fill-color'));
       expect(w[2], greaterThan(w[0] + 12), reason: 'blue');
       expect(g[1], greaterThan(g[0] + 8), reason: 'green');
       expect(contrast(paint('water', 'fill-color'), land), greaterThan(1.1));
-      expect(contrast(paint('landuse_park', 'fill-color'), land),
+      expect(contrast(paint('land_grass', 'fill-color'), land),
           greaterThan(1.1));
       // Water is distinguishable from a park, not just from land.
       expect(paint('water', 'fill-color'),
-          isNot(paint('landuse_park', 'fill-color')));
+          isNot(paint('land_grass', 'fill-color')));
     });
 
-    test('the style stays small: 47 layers, one source, under 40 KB', () async {
-      expect(byId, hasLength(47));
+    test('the style stays lean: 28 layers, one source, under 20 KB', () async {
+      expect(byId, hasLength(28));
       expect((await rootBundle.loadString(kVectorBasemapAsset)).length,
-          lessThan(40 * 1000));
+          lessThan(20 * 1000));
     });
   });
 
@@ -261,13 +279,13 @@ void main() {
     }
   });
 
-  test('R80 the vector source carries the credit its licence requires', () {
-    expect(kOpenFreeMapVector.attribution, contains('OpenFreeMap'));
-    expect(kOpenFreeMapVector.attribution, contains('OpenMapTiles'));
-    expect(kOpenFreeMapVector.attribution, contains('OpenStreetMap'));
-    expect(kOpenFreeMapVector.allowsPacks, isFalse,
-        reason: 'OpenFreeMap caps offline use at 3,000 tiles / 50 MB per '
-            'download; a region pack must not come from it (R81)');
+  test('R82 the vector source is OSM itself, credited, and view-only', () {
+    expect(kOsmVector.urlTemplate, contains('vector.openstreetmap.org'));
+    expect(kOsmVector.attribution, contains('OpenStreetMap'));
+    expect(kOsmVector.allowsPacks, isFalse,
+        reason: 'the OSM vector policy forbids bulk download; regions are '
+            'PMTiles archives (R81), never a crawl of this service');
+    expect(isNotInRasterPicker(kOsmVector), isTrue);
   });
 
   testWidgets('R80 the layer draws nothing without a MapsController',

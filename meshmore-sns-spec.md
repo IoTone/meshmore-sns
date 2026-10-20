@@ -1192,6 +1192,25 @@ While Meshcore protocol is open source, the client is not open source.  We want 
   views with their own edge controls would each need auditing.
   Tests: `test/shell/home_shell_test.dart` (group "Map edge swipe (R67)").
 
+- R82: **the basemap is OSM's own vector service, not a third party.** The
+  OSMF has served Shortbread v1 vector tiles at
+  `vector.openstreetmap.org/shortbread_v1/{z}/{x}/{y}.mvt` since 2025-07-22,
+  and its vector policy permits interactive app use with a unique User-Agent,
+  7-day caching, a corner credit and no bulk download. `tile.openstreetmap.org`
+  is raster-only, which is why a service like OpenFreeMap had a role at all.
+  `kOsmVector` (`lib/maps/map_source.dart`, id `osm-vec`, `.mvt`, maxzoom 14,
+  view-only) replaces `kOpenFreeMapVector`. `assets/maps/studio_dark.json` is
+  rewritten against Shortbread: 28 layers, 14.9 KB (was 47 layers, 36 KB),
+  asserted against the schema's published layer names. `kArchiveRequiredLayers`
+  becomes `{water_polygons, streets}`, so a region file must also be
+  Shortbread. Rendering, the tile store, view cache, ETag revalidation,
+  budget, expiry, per-source backoff and the request gate are unchanged.
+  **Also fixed:** Android Auto Backup would have uploaded region archives
+  (`files/maps`, 25 MB quota) - `backup_rules.xml` and
+  `data_extraction_rules.xml` now exclude `maps/` from cloud backup and
+  device transfer, guarded by `test/maps/map_backup_exclusion_test.dart`.
+  iOS `isExcludedFromBackup` is **not** done (needs a platform channel).
+  Tests: `test/maps/vector_basemap_test.dart` (15), plus the new backup guard.
 - R81: **the map subsystem: bounded requests, per-source backoff, region
   files, a legible style.** Defects found and fixed, each with a test:
   (1) `kOpenFreeMapVector` was `allowsPacks: true`, but OpenFreeMap caps

@@ -1409,7 +1409,7 @@
   "archiveFailBadHash": "チェックサムが一致しません。",
   "archiveFailBadSize": "サイズが一致しません。",
   "archiveFailNotPm": "PMTiles ファイルではありません。",
-  "archiveFailSchema": "地図のレイヤー構成が違います。OpenMapTiles のレイヤーが必要です。",
+  "archiveFailSchema": "地図のレイヤー構成が違います。このファイルは互換性のない地図です。",
   "archiveFailNotFound": "リンクが見つかりません。",
   "archiveRefusalDuplicate": "追加済みです。",
   "mapsLayers": "イベント地図",

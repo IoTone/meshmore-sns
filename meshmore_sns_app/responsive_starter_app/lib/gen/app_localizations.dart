@@ -5891,7 +5891,7 @@ abstract class AppLocalizations {
   /// No description provided for @archiveFailSchema.
   ///
   /// In en, this message translates to:
-  /// **'Wrong map layout. It needs the OpenMapTiles layers.'**
+  /// **'Wrong map layout. This file is not a compatible basemap.'**
   String get archiveFailSchema;
 
   /// No description provided for @archiveFailNotFound.

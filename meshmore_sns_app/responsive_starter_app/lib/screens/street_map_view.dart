@@ -378,12 +378,12 @@ class _StreetMapViewState extends State<StreetMapView> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
-              // The credit line follows what is actually drawn: the
-              // vector style carries OpenFreeMap and OpenMapTiles on top
-              // of OSM, and both sets of terms require naming them.
+              // The credit line follows what is actually drawn. R82 draws
+              // OSM's own vector service, so one credit covers the tiles and
+              // the data; a raster source keeps its own credit.
               if (_showTiles)
                 MapAttribution(context.skin.shape.vectorBasemap
-                    ? kOpenFreeMapVector.attribution
+                    ? kOsmVector.attribution
                     : tileSource.attribution),
               if (!hasFix)
                 Container(

@@ -1486,7 +1486,7 @@
   "archiveFailBadHash": "Checksum does not match.",
   "archiveFailBadSize": "Size does not match.",
   "archiveFailNotPm": "Not a PMTiles file.",
-  "archiveFailSchema": "Wrong map layout. It needs the OpenMapTiles layers.",
+  "archiveFailSchema": "Wrong map layout. This file is not a compatible basemap.",
   "archiveFailNotFound": "Link not found.",
   "archiveRefusalDuplicate": "Already added.",
   "mapsLayers": "Event maps",

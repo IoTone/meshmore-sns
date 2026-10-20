@@ -31,9 +31,9 @@ import 'maps_controller.dart';
 
 
 
-/// The style asset. Apache-2.0, derived from OpenFreeMap's `dark` style
-/// (OpenMapTiles schema, OSM data); trimmed to the one vector source and
-/// with the unused raster relief source, `glyphs` and `sprite` removed.
+/// The style asset. Written for this app (R82) against the Shortbread v1
+/// schema that OSM's own vector service publishes: one vector source, no
+/// glyphs, no sprite, no third-party style licence to track.
 ///
 /// Labels need no glyph server: `vector_tile_renderer` renders `text-font`
 /// with Flutter's own text engine, so a missing font family falls back to
@@ -41,7 +41,8 @@ import 'maps_controller.dart';
 const String kVectorBasemapAsset = 'assets/maps/studio_dark.json';
 
 /// The source id inside the style that [MmVectorTileProvider] serves.
-const String kVectorBasemapSourceId = 'openmaptiles';
+/// Must match the source name inside the style asset.
+const String kVectorBasemapSourceId = 'openstreetmap';
 
 /// What shows through wherever a tile has not arrived yet (R81). It is the
 /// style's own `background` layer colour, so an unloaded tile reads as
@@ -136,7 +137,7 @@ class MmVectorTileProvider implements VectorTileProvider {
 /// While the style loads (one asset read, once) nothing is drawn; the map
 /// still shows its markers and event layers, so this never blocks the view.
 class VectorBasemapLayer extends StatelessWidget {
-  const VectorBasemapLayer({super.key, this.source = kOpenFreeMapVector});
+  const VectorBasemapLayer({super.key, this.source = kOsmVector});
 
   final MapSource source;
 

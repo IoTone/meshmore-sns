@@ -186,15 +186,15 @@ void main() {
       expect(host.bytesSent, host.file.length);
 
       final TileLoad hit = await m.loadTileDetailed(
-          kOpenFreeMapVector, kZ, inside.$2, inside.$3);
+          kOsmVector, kZ, inside.$2, inside.$3);
       expect(hit.bytes, cellBytes(inside));
       final TileLoad empty = await m.loadTileDetailed(
-          kOpenFreeMapVector, kZ, emptyCell.$2, emptyCell.$3);
+          kOsmVector, kZ, emptyCell.$2, emptyCell.$3);
       expect(empty.missing, isTrue, reason: 'in the extent but empty: final');
       expect(tileCalls, isEmpty, reason: 'both answered from the file');
 
       // Outside the extent (Tokyo-ish cell) is still the network's job.
-      await m.loadTileDetailed(kOpenFreeMapVector, kZ, 3, 3);
+      await m.loadTileDetailed(kOsmVector, kZ, 3, 3);
       expect(tileCalls, hasLength(1));
       m.dispose();
     });
@@ -399,7 +399,7 @@ void main() {
       expect(m2.archives.single.state, ArchiveState.complete);
       expect(m2.archiveBytes, host.file.length);
       final TileLoad t =
-          await m2.loadTileDetailed(kOpenFreeMapVector, kZ, inside.$2, inside.$3);
+          await m2.loadTileDetailed(kOsmVector, kZ, inside.$2, inside.$3);
       expect(t.bytes, isNotNull);
       m2.dispose();
     });
@@ -427,7 +427,7 @@ void main() {
       final MapArchive a = m.archives.single;
       File('${dir.path}/archives/${a.id}.pmtiles').writeAsBytesSync(<int>[1, 2]);
       final TileLoad t =
-          await m.loadTileDetailed(kOpenFreeMapVector, kZ, inside.$2, inside.$3);
+          await m.loadTileDetailed(kOsmVector, kZ, inside.$2, inside.$3);
       expect(t.bytes, isNotNull, reason: 'network answered');
       expect(tileCalls, hasLength(1));
       m.dispose();

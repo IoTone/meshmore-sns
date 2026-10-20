@@ -63,7 +63,7 @@ Duration? parseMaxAge(String? cacheControl, String? expires, DateTime now) {
 ///
 /// `HttpHeaders.value(name)` throws `HttpException: More than one value for
 /// header [name]` when a response repeats a header, which kills the whole
-/// fetch. OpenFreeMap sends two `cache-control` headers, so every vector
+/// fetch. One tile server sent two `cache-control` headers, so every vector
 /// tile failed with a blank map and no other symptom (R80 device run).
 /// List-valued headers are joined per RFC 9110; single-valued ones take the
 /// first, which is what a proxy chain means to convey.

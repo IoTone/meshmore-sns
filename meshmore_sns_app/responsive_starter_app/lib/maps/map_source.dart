@@ -139,34 +139,38 @@ const MapSource kUsgsImagery = MapSource(
   bytesPerTile: 40000,
 );
 
-/// R80 — the Studio basemap: OpenFreeMap vector tiles (OpenMapTiles
-/// schema, OSM data), rendered by `vector_map_tiles` rather than shown as
-/// pictures. Deliberately NOT in [kBuiltInSources]: that list is the
-/// raster basemap picker, and this source is the Studio skin's implicit
-/// basemap. It shares the tile store with the raster sources, so packs,
-/// the view cache, ETag revalidation, budget and expiry apply to it too.
+/// The Studio basemap since R82, rendered by `vector_map_tiles` rather than
+/// shown as pictures. Deliberately NOT in [kBuiltInSources]: that list is
+/// the raster basemap picker, and this source is the Studio skin's implicit
+/// basemap. It shares the tile store with the raster sources, so the view
+/// cache, ETag revalidation, budget and expiry apply to it too.
 ///
-/// The path carries OpenFreeMap's snapshot id. Their style resolves the
-/// same date; when it changes, this template and the asset both do.
-const MapSource kOpenFreeMapVector = MapSource(
-  id: 'ofm',
-  name: 'OpenFreeMap',
-  urlTemplate: 'https://tiles.openfreemap.org/planet/20261018_080001_pt/'
-      '{z}/{x}/{y}.pbf',
-  attribution: '\u00a9 OpenFreeMap \u00b7 \u00a9 OpenMapTiles \u00b7 '
-      '\u00a9 OpenStreetMap contributors',
+/// The OpenStreetMap Foundation's own vector tile service, live since July
+/// 2025. This is the whole point of R82: OSM publishes vector tiles itself,
+/// so the basemap needs no third-party tile company in the middle.
+///
+/// Policy (`operations.osmfoundation.org/policies/vector`): interactive use
+/// by applications is permitted, a unique User-Agent is required, tiles must
+/// be cached at least 7 days, attribution goes in the corner, and bulk
+/// downloading is forbidden. `httpMapFetcher` sends `MeshmoreSNS/<version>`,
+/// the store honours the server's max-age, `kBuiltInSources` keeps it out of
+/// the pack picker, and `allowsPacks` is false, so all four hold.
+///
+/// Schema is Shortbread v1, not OpenMapTiles: different layer names and a
+/// flatter model. The bundled style (`assets/maps/studio_dark.json`) is
+/// written against that schema, and an archive must carry it too.
+const MapSource kOsmVector = MapSource(
+  id: 'osm-vec',
+  name: 'OpenStreetMap vector',
+  urlTemplate: 'https://vector.openstreetmap.org/shortbread_v1/'
+      '{z}/{x}/{y}.mvt',
+  attribution: '\u00a9 OpenStreetMap contributors',
   maxNativeZoom: 14,
-  // View-cache only. OpenFreeMap's terms cap offline use at 3,000 tiles or
-  // 50 MB per download, 4 parallel requests; a region pack is larger than
-  // that by design. Regions come from PMTiles archives (R81) instead.
   allowsPacks: false,
-  bytesPerTile: 12000,
+  // 84 KB measured for a dense z13 Denver tile; 40 KB is the planning figure.
+  bytesPerTile: 40000,
 );
 
-/// R81 — an archive is accepted for the vector basemap only if its tiles
-/// carry these OpenMapTiles layers. A Protomaps-schema file (`earth`,
-/// `roads`, ...) would render as nothing under the bundled style, so it is
-/// refused on arrival with a reason instead of installed and invisible.
 const Set<String> kArchiveRequiredLayers = <String>{'water', 'transportation'};
 
 const List<MapSource> kBuiltInSources = <MapSource>[

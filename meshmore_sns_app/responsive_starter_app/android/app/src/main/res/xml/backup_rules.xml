@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android 11 and below. Map tiles and region archives are cache, not user
+     data: they are large (a region file is tens to hundreds of MB) and the
+     Auto Backup quota is 25 MB, so backing them up would either fail or
+     push hundreds of megabytes to the user's drive for nothing. -->
+<full-backup-content>
+    <exclude domain="file" path="maps/" />
+</full-backup-content>

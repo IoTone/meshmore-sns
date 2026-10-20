@@ -3285,7 +3285,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get archiveFailNotPm => 'PMTiles ファイルではありません。';
 
   @override
-  String get archiveFailSchema => '地図のレイヤー構成が違います。OpenMapTiles のレイヤーが必要です。';
+  String get archiveFailSchema => '地図のレイヤー構成が違います。このファイルは互換性のない地図です。';
 
   @override
   String get archiveFailNotFound => 'リンクが見つかりません。';

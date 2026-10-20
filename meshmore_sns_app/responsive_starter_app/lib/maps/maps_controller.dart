@@ -380,7 +380,7 @@ class MapsController extends ChangeNotifier {
   /// it" (leave the tile to be asked for again).
   Future<TileLoad> loadTileDetailed(MapSource src, int z, int x, int y) async {
     await ready;
-    if (src.id == kOpenFreeMapVector.id && archives.isNotEmpty) {
+    if (src.id == kOsmVector.id && archives.isNotEmpty) {
       final TileLoad? a = await _fromArchives(z, x, y);
       if (a != null) return a;
     }

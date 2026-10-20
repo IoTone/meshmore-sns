@@ -132,19 +132,20 @@ is never covered; the five map controls are 48dp and the right edge band
 starts below the column (derived from it). The edge bands start just
 inside the Android system-gesture zone (`systemGestureInsets`): a swipe
 from the very edge is the OS's Back. Under the Studio skin the basemap is
-**rendered from a vector style** (R80), not shown as pictures and not
-filtered: `assets/maps/studio_dark.json` (Apache-2.0, derived from
-OpenFreeMap's `dark` style, OpenMapTiles schema over OSM data, trimmed to
-one vector source and with `glyphs`/`sprite` removed) is drawn by
-`vector_map_tiles` onto Flutter's canvas, so land, water, roads and parks
-carry their own colour and the result is sharp at every zoom instead of
-an upscaled PNG. Tiles come from `kOpenFreeMapVector` through
-`MmVectorTileProvider`, which calls the same `MapsController.loadTile`
-bytes path the raster layer used, so the R61 view cache, packs, ETag
-revalidation, budget and expiry all still apply. Labels need no glyph
-server: the renderer draws `text-font` with Flutter's text engine. The
-credit line follows what is drawn (`kOpenFreeMapVector.attribution`:
-OpenFreeMap, OpenMapTiles, OpenStreetMap).
+**rendered from a vector style** (R80, resourced in R82), not shown as
+pictures and not filtered: `assets/maps/studio_dark.json` (written for
+this app, 28 layers, Shortbread v1 schema) is drawn by `vector_map_tiles`
+onto Flutter's canvas, so land, water, roads and parks carry their own
+colour and the result is sharp at every zoom instead of an upscaled PNG.
+Tiles come from `kOsmVector` - the OpenStreetMap Foundation's own vector
+service, `vector.openstreetmap.org/shortbread_v1/{z}/{x}/{y}.mvt`, live
+since July 2025 - through `MmVectorTileProvider`, which calls the same
+`MapsController.loadTile` bytes path the raster layer used, so the R61
+view cache, ETag revalidation, budget and expiry all still apply. No
+third-party tile company sits in the middle: one credit,
+`(c) OpenStreetMap contributors`, covers the data and the tiles. Labels
+need no glyph server: the renderer draws `text-font` with Flutter's text
+engine.
 
 The dimmed raster path remains as the fallback for a skin that has not
 opted in, and for a build where the style asset fails to load (R79:
@@ -233,6 +234,63 @@ First device run (SH-53D, 2026-10-15): **all 11 pass**, 38 s.
 - **Bundled starter basemap**: a world overview at z0–5 from public-domain
   data, so a fresh install has something under the pins.
 
+## R82: the basemap is OSM's own vector service
+
+### Why this replaced OpenFreeMap
+The owner's question was why a third party was needed at all. It was not.
+The OSMF has run a public vector tile service since 2025-07-22
+(`blog.openstreetmap.org/2025/07/22/vector-tiles-are-deployed-on-openstreetmap-org`),
+serving the Shortbread v1 schema at
+`https://vector.openstreetmap.org/shortbread_v1/{z}/{x}/{y}.mvt`
+(TileJSON confirms `maxzoom` 14, 26 layers, `application/vnd.mapbox-vector-tile`).
+Apps may use it interactively: the vector policy permits third-party
+applications, requires a unique User-Agent, 7-day-minimum tile caching, a
+corner credit, and forbids bulk download. All four hold here -
+`MeshmoreSNS/<version>` is sent, the store honours server expiry, the
+credit is drawn, and `kOsmVector` is view-only and kept out of the raster
+picker's pack sources.
+
+`tile.openstreetmap.org` remains raster-only, so "just use OSM" was never
+possible before vector tiles existed. That is the whole reason a service
+like OpenFreeMap had a role.
+
+### What changed
+- `kOsmVector` (`lib/maps/map_source.dart`) replaces `kOpenFreeMapVector`:
+  id `osm-vec`, `.mvt`, `maxNativeZoom` 14, `bytesPerTile` 40000 (a dense
+  z13 Denver tile measured 84 KB), `allowsPacks: false`.
+- `assets/maps/studio_dark.json` was rewritten against Shortbread. 28
+  layers, 14.9 KB, down from 47 layers and 36 KB. Shortbread layer names
+  (`ocean`, `water_polygons`, `land`, `streets`, `street_labels`,
+  `place_labels`, ...) replace the OpenMapTiles ones; a test asserts every
+  `source-layer` in the style is one the schema publishes.
+- `kArchiveRequiredLayers` is now `{water_polygons, streets}`: a region
+  archive must carry Shortbread, and anything else is refused on arrival
+  with a reason.
+- The credit line is `(c) OpenStreetMap contributors` on both the tiles and
+  the data, so nothing but OSM needs naming.
+
+### What did not change
+Rendering (`vector_map_tiles`), the tile store, the view cache, packs,
+ETag revalidation, budget, expiry, the per-source backoff and the request
+gate all stay. The archive reader and pack-by-file path are untouched.
+
+### Legibility
+Land `#141414`, water `#1b2a36` (blue), parks `#202e21` and woods `#1d291e`
+(green), minor roads `#474747`, motorway `#6a6a6a` (3.5:1 on land), labels
+`#e2e2e2` / `#c0c0c0` with a 1.2 px `#141414` halo, water names `#7fa3bd`.
+Colour stays in the content, the chrome stays monochrome.
+
+### Backup exclusion (found while doing this)
+Android Auto Backup includes `files/` by default with a 25 MB quota, and
+`getApplicationSupportDirectory()` is `files/` - a region archive lives
+there. Without rules, an archive would either fail the backup or upload
+hundreds of megabytes to the user's drive. `backup_rules.xml` (Android 11
+and below) and `data_extraction_rules.xml` (12+, where the old attribute is
+ignored) exclude `maps/` from cloud backup and device transfer, and the
+manifest points at both. Guarded by `test/maps/map_backup_exclusion_test.dart`.
+iOS needs `isExcludedFromBackup` on the archive URL; that needs a platform
+channel and is **not done**.
+
 ## R81: region files (PMTiles) and the map network path
 
 ### Why one file per region
@@ -285,12 +343,17 @@ outside every archive the view cache and network answer. A damaged file
 falls through to the network instead of blanking the map.
 
 ### How the owner makes a region file
-The accepted schema is OpenMapTiles (the bundled style and OpenFreeMap use
-it), so the file must carry that schema. Planetiler (Apache-2.0) builds it
-by default from an OSM extract, for example
+The accepted schema is Shortbread v1 (R82), the schema the bundled style
+and the online service both use, so the file must carry that schema. A
+Planetiler build with the Shortbread profile, or a Shortbread PMTiles file
+built by the community, both qualify, for example
 `java -jar planetiler.jar --download --area=colorado --maxzoom=14
 --output=colorado.pmtiles`, then `sha256sum` it and host it on any static
-HTTPS host that serves byte ranges. **Unverified**: this recipe was not run
+HTTPS host that serves byte ranges. Planetiler can also emit PMTiles
+directly, and `pmtiles extract --bbox ... --maxzoom 14` then carves one
+region file out of a larger archive without regenerating (Planetiler
+`--output=x.pmtiles` is a supported output, and extract reads any PMTiles
+v3 archive). **Unverified**: this recipe was not run
 here (it needs a multi-GB download and Java). `pmtiles extract` on a
 Protomaps build is simpler but yields the Protomaps schema (`earth`,
 `roads`, ...), which the app refuses on arrival.

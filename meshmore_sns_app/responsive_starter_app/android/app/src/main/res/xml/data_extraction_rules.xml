@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android 12+. Same reasoning as backup_rules.xml: map data is
+     re-downloadable cache and must never leave the device in a backup. -->
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="file" path="maps/" />
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="file" path="maps/" />
+    </device-transfer>
+</data-extraction-rules>

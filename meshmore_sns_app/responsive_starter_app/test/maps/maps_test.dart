@@ -281,14 +281,14 @@ void main() {
       expect(<String>[
         for (final MapSource s in <MapSource>[
           ...kBuiltInSources,
-          kOpenFreeMapVector,
+          kOsmVector,
         ])
           if (s.allowsPacks) s.id
       ], <String>['usgs-topo', 'usgs-imagery']);
       final MapsController m = make();
       await m.load();
       expect(await m.createPack(
-              name: 'x', source: kOpenFreeMapVector, box: sf,
+              name: 'x', source: kOsmVector, box: sf,
               minZoom: 10, maxZoom: 12),
           PackRefusal.sourceViewOnly);
       expect(net.calls, isEmpty, reason: 'refused before any request');

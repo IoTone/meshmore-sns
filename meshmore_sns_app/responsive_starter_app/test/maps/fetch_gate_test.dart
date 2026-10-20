@@ -108,7 +108,7 @@ void main() {
       await m.load();
       // 40 tiles asked for in one burst: 4 run, 32 queue, 4 are pushed out.
       final List<Future<Uint8List?>> loads = <Future<Uint8List?>>[
-        for (int i = 0; i < 40; i++) m.loadTile(kOpenFreeMapVector, 14, 100, i),
+        for (int i = 0; i < 40; i++) m.loadTile(kOsmVector, 14, 100, i),
       ];
       await pumpEventQueue();
       expect(m.viewGate.running, 4);
@@ -147,8 +147,8 @@ void main() {
         pace: Duration.zero,
       );
       await m.load();
-      final TileLoad a = await m.loadTileDetailed(kOpenFreeMapVector, 5, 1, 1);
-      final TileLoad b = await m.loadTileDetailed(kOpenFreeMapVector, 5, 1, 1);
+      final TileLoad a = await m.loadTileDetailed(kOsmVector, 5, 1, 1);
+      final TileLoad b = await m.loadTileDetailed(kOsmVector, 5, 1, 1);
       expect(a.missing, isTrue);
       expect(a.bytes, isNull);
       expect(b.missing, isTrue);
@@ -164,7 +164,7 @@ void main() {
         pace: Duration.zero,
       );
       await m.load();
-      final TileLoad a = await m.loadTileDetailed(kOpenFreeMapVector, 5, 1, 1);
+      final TileLoad a = await m.loadTileDetailed(kOsmVector, 5, 1, 1);
       expect(a.missing, isFalse);
       expect(a.bytes, isNull);
       m.dispose();
