@@ -37,7 +37,8 @@ class MapTileImage extends ImageProvider<MapTileImage> {
       SynchronousFuture<MapTileImage>(this);
 
   @override
-  ImageStreamCompleter loadImage(MapTileImage key, ImageDecoderCallback decode) =>
+  ImageStreamCompleter loadImage(
+          MapTileImage key, ImageDecoderCallback decode) =>
       MultiFrameImageStreamCompleter(codec: _load(decode), scale: 1);
 
   Future<ui.Codec> _load(ImageDecoderCallback decode) async {
@@ -64,7 +65,10 @@ class MapTileImage extends ImageProvider<MapTileImage> {
 
 /// The basemap layer for [source]. With a [MapsController] in the tree
 /// it is cached; without one (tests, previews) it is plain network.
-TileLayer basemapLayer(BuildContext context, MapSource source) {
+///
+/// [dark] (R70) draws each tile through [mmDarkTileFilter].
+TileLayer basemapLayer(BuildContext context, MapSource source,
+    {bool dark = false}) {
   final MapsController? maps =
       Provider.of<MapsController?>(context, listen: false);
   return TileLayer(
@@ -73,8 +77,51 @@ TileLayer basemapLayer(BuildContext context, MapSource source) {
     maxNativeZoom: source.maxNativeZoom,
     userAgentPackageName: 'com.iotone.meshmore_sns_app',
     tileProvider: maps == null ? null : CachedTileProvider(maps, source),
+    tileBuilder: dark ? mmDarkTileBuilder : null,
   );
 }
+
+/// R70 — a colour-matrix filter that turns a light raster basemap dark
+/// without washing it out: it **inverts luminance** (so land, water and
+/// road casings go dark and labels/road fills go light, keeping the
+/// contrast that makes text readable) and then **desaturates** to
+/// [saturation] so the inverted hues (OSM's blue water becomes orange)
+/// do not read as colour. Unlike a semi-transparent scrim, contrast is
+/// preserved, not reduced. Trade-off: it is a global per-tile transform,
+/// so coloured features (a red road, green park) lose their hue
+/// distinction; shape and label contrast stay.
+ColorFilter mmDarkTileFilter({double saturation = 0.15}) =>
+    ColorFilter.matrix(mmDarkTileMatrix(saturation: saturation));
+
+/// The 4x5 matrix behind [mmDarkTileFilter] (exposed so it can be tested).
+List<double> mmDarkTileMatrix({double saturation = 0.15}) {
+  // out = s*inv + (1-s)*lum(inv),  inv = 255 - in
+  const double r = 0.2126, g = 0.7152, b = 0.0722;
+  final double s = saturation;
+  final double k = 1 - s;
+  List<double> row(int ch) {
+    final List<double> w = <double>[r * k, g * k, b * k];
+    w[ch] += s;
+    // out = -(w . in) + 255 * (sum of w)
+    final double sum = w[0] + w[1] + w[2];
+    return <double>[-w[0], -w[1], -w[2], 0, 255 * sum];
+  }
+
+  return <double>[
+    ...row(0),
+    ...row(1),
+    ...row(2),
+    0,
+    0,
+    0,
+    1,
+    0,
+  ];
+}
+
+/// [TileLayer.tileBuilder] applying [mmDarkTileFilter].
+Widget mmDarkTileBuilder(BuildContext context, Widget tile, TileImage image) =>
+    ColorFiltered(colorFilter: mmDarkTileFilter(), child: tile);
 
 /// Credit line for the visible basemap — OSM and CC-BY-SA require it.
 class MapAttribution extends StatelessWidget {
@@ -111,8 +158,10 @@ class EventLayersOverlay extends StatelessWidget {
     if (shown.isEmpty) return const SizedBox.shrink();
     return Stack(children: <Widget>[
       for (final EventLayer l in shown)
-        _OneEventLayer(key: ValueKey<String>('${l.id}@${l.updatedMs}'),
-            maps: maps, layer: l),
+        _OneEventLayer(
+            key: ValueKey<String>('${l.id}@${l.updatedMs}'),
+            maps: maps,
+            layer: l),
     ]);
   }
 }

@@ -1223,6 +1223,25 @@ While Meshcore protocol is open source, the client is not open source.  We want 
   and `MmAudioToggle(dense: true)` (glyph unchanged, 48x48 box; its NERV
   sibling bluetooth button too). Tests: `test/ui/touch_targets_test.dart`.
 
+- R70: **Map tab defects found on the device.** (1) **Edge swipe.** A
+  swipe from the physical screen edge landed on the Dashboard from both
+  edges. `MmEdgeSwipe` was *not* repeating or inverted (tests pin one
+  call and the sign per band); the cause is Android gesture navigation,
+  which owns the outer edge zone as system Back and which the shell
+  turns into "go to Dashboard" (`PopScope`). Bands now start just inside
+  `MediaQuery.systemGestureInsets`; a swipe must begin inside that zone,
+  one from the very edge is the OS's. Not device-verified.
+  (2) **Attribution.** The credit line was hidden under the no-fix
+  banner (R69); it now shares one bottom column with the banner.
+  (3) **Controls.** The Map tab's five-button column is 48dp per control
+  and the right band's inset is derived from it
+  (`StreetMapView.controlsBottom`), not a constant. (4) **Dark basemap.**
+  `MmShape.darkBasemap` (Studio only) draws raster tiles through an
+  invert-luminance + desaturate colour matrix (`mmDarkTileFilter`), which
+  keeps label/road contrast, unlike a scrim; coloured features lose hue.
+  Tests: `test/ui/mm_edge_swipe_test.dart`, `test/maps/dark_basemap_test.dart`,
+  `test/screens/map_no_fix_test.dart`.
+
 - R68: **Studio is monochrome.** Owner direction: "gray accent, light
   gray, no saturation for any accents". `studio` tokens
   (`lib/theme/mm_tokens.dart`): accent `#D0D0D0` (HSV saturation 0, so no

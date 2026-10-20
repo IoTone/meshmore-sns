@@ -15,6 +15,7 @@ import '../maps/map_source.dart';
 import '../maps/maps_controller.dart';
 import '../meshcore/discovered_node.dart';
 import '../meshcore/meshcore_controller.dart';
+import '../theme/mm_skin.dart';
 import '../util/lora_range.dart';
 import 'node_detail_sheet.dart';
 
@@ -251,7 +252,9 @@ class _StreetMapViewState extends State<StreetMapView> {
             children: <Widget>[
               // R25+3 / R61 — swappable basemap, served from the
               // offline map cache when one is in the tree.
-              if (_showTiles) basemapLayer(context, tileSource),
+              if (_showTiles)
+                basemapLayer(context, tileSource,
+                    dark: context.skin.shape.darkBasemap),
               // R61 — event maps (festival streets, courses, camps).
               const EventLayersOverlay(),
               // R25+1 — range circle for self. Uses our radio-tuple

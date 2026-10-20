@@ -126,7 +126,13 @@ a deliberate non-guess at the user's region) with a quiet, non-modal,
 non-dismissable hairline row at the bottom: "No position fix yet. This is
 a world view, not centred on you." The re-centre button is disabled and
 self/range markers are omitted until a fix arrives, at which point the
-map recentres on self at zoom 14. The grid's street-map mode keeps its
+map recentres on self at zoom 14.
+(R70) The OSM credit line sits in the same bottom column as that row so it
+is never covered; the five map controls are 48dp and the right edge band
+starts below the column (derived from it). The edge bands start just
+inside the Android system-gesture zone (`systemGestureInsets`): a swipe
+from the very edge is the OS's Back. Under the Studio skin raster tiles
+are drawn dark (invert luminance, desaturate; labels stay legible). The grid's street-map mode keeps its
 "awaiting fix" text (`StreetMapView.browseWithoutFix`, default off; only
 `MapScreen` opts in).
 

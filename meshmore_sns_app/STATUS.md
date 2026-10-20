@@ -111,11 +111,11 @@ codebase.
   in English on purpose). Other screens were not swept literal by literal;
   a grep for `Text('Latin...')` finds only brand marks, "BLE", hint URLs
   and the unused `about.dart`.
-- Touch targets still under 48dp: the `street_map_view.dart` control
-  column (zoom in/out, recentre, tiles are 36dp; the basemap picker is a
-  default PopupMenuButton), found by grepping `minWidth: <48` after R69. It
-  is the Map tab's own control column and sits under the R67 right edge
-  band inset (208dp), so raising it means re-checking that inset.
+- R70 (device findings): edge swipe from the physical edge was Android
+  system Back (bands now sit inside `systemGestureInsets`, not
+  device-verified); the OSM credit line was covered by the no-fix banner
+  (fixed); the map control column is 48dp and the band inset is derived;
+  Studio draws the basemap dark (`MmShape.darkBasemap`).
 - The six older dashboards still show two status displays (the dashboard's
   own slab and the app-bar chip) for one link state.
 - `JetBrains Mono` is hard-coded in about 90 places outside the theme
