@@ -219,6 +219,20 @@ type unchanged (mono is their identity), so the rule is a Studio rule.
 | SNR / RSSI, hop counts and paths, `flood`, packet or JSON hex | docs hub titles and card text |
 | timestamps | boot overlay lines, readout labels, status pills |
 
+R75 adds two rules the device pass forced:
+
+- **A mono column is self-aligning, so it needs no fixed width.** A
+  fixed-width stamp box (`SizedBox(width: 64/70)`) is narrower than its
+  own 8-character `HH:MM:SS` stamp at 12pt, leaving ~3dp of gap and no
+  headroom for text scaling. Recent rows are now `Text(stamp)` +
+  `SizedBox(width: 10)` + `Expanded(body)`.
+- **Brand copy comes from the arb, never a literal.** The splash
+  subtitle was a hardcoded Japanese string, so an English device showed
+  Japanese while `appSubtitle` already had `Socialrobot Network
+  Service`. The splash is the `home:` of a `MaterialApp` that installs
+  the locale delegates, so `AppLocalizations.of(context)` resolves
+  there.
+
 Mechanism: prose that older skins set in mono uses `skin.type.wordsMono`
 (null under Studio, `monoFamily` otherwise); data keeps `monoFamily` or a
 literal `'JetBrains Mono'`. Chat rows: `StudioMessageRow` (sender above

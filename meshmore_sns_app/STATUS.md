@@ -106,6 +106,8 @@ codebase.
   column is 240dp tall.
 
 - R74: prose that older skins set in mono is sans under Studio (`MmType.wordsMono`): docs hub, grid HUD heading, readout labels, status pill, voice/battery sentences, boot overlay. `PEERS IN RANGE / 0 known` counts `mc.nodes` (contacts + adverts); channel chatter makes no node, so the label stands (a 'heard on channel' line is proposed, not done).
+- R75 (device pass): the RECENT rows of both dashboards used a fixed-width stamp column (70dp Studio / 64dp SEELE) narrower than their own 12pt `HH:MM:SS` mono stamp, so the stamp ran into the event text with no headroom for text scaling. Now `Text(stamp)` + 10dp gap + `Expanded`, which mono keeps aligned without a width.
+- R75 (device pass): the splash subtitle was a hardcoded Japanese literal (`branded_splash_screen.dart:75`) while `appSubtitle` already had an English value, so an en-US device showed Japanese. Now `l.appSubtitle`, which resolves because the splash is the `home:` of a `MaterialApp` that installs the locale delegates.
 - R73: Studio's dark basemap retuned (`0.8*inv+48`: land 61, sea 90, labels 220, 8.0:1) after R70's was too dark. **Needs a device look.**
 - R72: Studio chat/DM rows follow words-sans / data-mono (`StudioMessageRow`):
   sender above body, timestamp + SNR/flood mono, `«`/`»` dropped for an accent
