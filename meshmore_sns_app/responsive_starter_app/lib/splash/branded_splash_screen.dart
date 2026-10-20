@@ -5,6 +5,8 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
+import '../gen/app_localizations.dart';
+
 /// Branded Flutter-side splash. The native splash (`flutter_native_splash`)
 /// shows for the few hundred ms between OS app-start and the first
 /// Flutter frame; this widget then takes over with theme-aware copy
@@ -39,6 +41,12 @@ class _BrandedSplashScreenState extends State<BrandedSplashScreen>
   @override
   Widget build(BuildContext context) {
     final ThemeData t = Theme.of(context);
+    // R75: this line was a hardcoded Japanese literal, so an English
+    // device showed Japanese copy even though `appSubtitle` already has
+    // an English value (`Socialrobot Network Service`). The splash is
+    // the `home:` of a MaterialApp that installs the locale delegates,
+    // so the lookup is always resolvable here.
+    final AppLocalizations l = AppLocalizations.of(context);
     final ColorScheme cs = t.colorScheme;
     return Scaffold(
       backgroundColor: cs.surface,
@@ -72,7 +80,7 @@ class _BrandedSplashScreenState extends State<BrandedSplashScreen>
               ),
               const SizedBox(height: 6),
               Text(
-                'ソーシャルロボット・ネットワークサービス',
+                l.appSubtitle,
                 style: t.textTheme.labelMedium?.copyWith(
                   color: cs.onSurfaceVariant,
                   letterSpacing: 1,
