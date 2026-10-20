@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../gen/app_localizations.dart';
+import '../ui/mm_edge_swipe.dart';
 import 'street_map_view.dart';
 
 /// R61 — the **Map** primary view: the street map as its own swipe page.
@@ -18,12 +19,25 @@ import 'street_map_view.dart';
 /// ([MapsScreen]) is unchanged and is one tap away from the corner
 /// button here.
 ///
-/// A pan/zoom map owns every horizontal drag, so the shell locks its
-/// swipe while this tab is current (see `HomeShell`); leave via Back or
-/// the view strip. There is no flag to publish, unlike
-/// `GridScreen.capturesHorizontalDrag`: the lock is unconditional.
+/// A pan/zoom map owns every horizontal drag in the middle of the
+/// screen, so the shell locks its `PageView` swipe while this tab is
+/// current (see `HomeShell`; the lock is unconditional, there is no flag
+/// like `GridScreen.capturesHorizontalDrag`). **Edge swipe** is how you
+/// leave by gesture: a 24 dp band on each screen edge ([MmEdgeSwipe])
+/// is hit-tested before the map, and an inward fling there calls
+/// [onEdgeSwipe] (`-1` previous, `+1` next). Back and the view strip
+/// also leave.
 class MapScreen extends StatelessWidget {
-  const MapScreen({super.key});
+  const MapScreen({super.key, this.onEdgeSwipe});
+
+  /// Called with -1 (previous view) or +1 (next view) by an edge swipe.
+  /// Null (a bare `MapScreen` in a test) means the bands do nothing.
+  final ValueChanged<int>? onEdgeSwipe;
+
+  /// StreetMapView's zoom/recentre column: right 12 + 36 wide, top 12 +
+  /// 3 x 36 tall. The right band starts below it so it cannot shadow a
+  /// button.
+  static const double _rightControlsBottom = 128;
 
   @override
   Widget build(BuildContext context) {
@@ -31,7 +45,13 @@ class MapScreen extends StatelessWidget {
     final ColorScheme cs = Theme.of(context).colorScheme;
     return Stack(
       children: <Widget>[
-        const Positioned.fill(child: StreetMapView()),
+        Positioned.fill(
+          child: MmEdgeSwipe(
+            onSwipe: (int d) => onEdgeSwipe?.call(d),
+            rightInsets: const EdgeInsets.only(top: _rightControlsBottom),
+            child: const StreetMapView(),
+          ),
+        ),
         // Top-left is free in StreetMapView (its controls are top-right
         // and its "paused" chip never shows here: `frozen` is false).
         Positioned(

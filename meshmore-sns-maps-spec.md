@@ -115,8 +115,12 @@ that the grid offers as a view mode, promoted so it is one swipe away
 rather than three picks deep. It is the *viewer*; pack and source
 management stay in Settings → Offline maps, one tap from a corner button
 on the map. Because a pan/zoom map owns horizontal drags, the shell's
-swipe is locked on this tab (Back and the view strip leave it), the
-same rule the grid applies to its panning views. With no position yet the
+swipe is locked on this tab, the same rule the grid applies to its
+panning views. Unlike the grid, the Map tab keeps a way out by gesture:
+a 24dp band at each screen edge (R67, `MmEdgeSwipe`) is hit-tested
+before the map, so an inward fling there goes to the previous (left) or
+next (right) view and the map never sees those touches; the middle
+pans and zooms. Back and the view strip also leave. With no position yet the
 map shows "awaiting fix" instead of tiles.
 
 **Settings → Offline maps** (new hub row, after Tools):

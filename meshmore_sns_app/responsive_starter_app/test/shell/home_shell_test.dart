@@ -1,6 +1,7 @@
 // Copyright (c) 2026 IoTone, Inc.
 // SPDX-License-Identifier: MIT
 import 'package:flutter/material.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
@@ -10,6 +11,7 @@ import 'package:meshmore_sns_app/cue/cue_service.dart';
 import 'package:meshmore_sns_app/l10n/locale_controller.dart';
 import 'package:meshmore_sns_app/main.dart';
 import 'package:meshmore_sns_app/screens/map_screen.dart';
+import 'package:meshmore_sns_app/screens/street_map_view.dart';
 import 'package:meshmore_sns_app/shell/home_shell.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:meshmore_sns_app/bot/bot_controller.dart';
@@ -40,8 +42,7 @@ class _SilentSpeaker implements TtsSpeaker {
   Future<bool> isLanguageAvailable(String locale) async => true;
 }
 
-Future<void> _pumpApp(WidgetTester tester,
-    {MmThemePreset? preset}) async {
+Future<void> _pumpApp(WidgetTester tester, {MmThemePreset? preset}) async {
   await tester.pumpWidget(
     MultiProvider(
       providers: [
@@ -75,8 +76,7 @@ Future<void> _pumpApp(WidgetTester tester,
           create: (_) => FirstRunController.preloaded(done: true),
         ),
         ChangeNotifierProvider<LocaleController>(
-          create: (_) =>
-              LocaleController(initial: const Locale('en'))..load(),
+          create: (_) => LocaleController(initial: const Locale('en'))..load(),
         ),
       ],
       child: const MyApp(),
@@ -100,8 +100,7 @@ void main() {
     expect(find.widgetWithText(AppBar, 'Dashboard'), findsOneWidget);
   });
 
-  testWidgets('the view strip jumps views (R11, R64)',
-      (WidgetTester t) async {
+  testWidgets('the view strip jumps views (R11, R64)', (WidgetTester t) async {
     await _pumpApp(t);
     await t.tap(find.byTooltip('Settings'));
     await t.pumpAndSettle();
@@ -122,7 +121,8 @@ void main() {
     expect(bar.leading, isNull);
   });
 
-  testWidgets('the strip is the accessible path: one labelled 48dp button '
+  testWidgets(
+      'the strip is the accessible path: one labelled 48dp button '
       'per view, current one selected (R64)', (WidgetTester t) async {
     final SemanticsHandle h = t.ensureSemantics();
     await _pumpApp(t);
@@ -154,7 +154,8 @@ void main() {
     h.dispose();
   });
 
-  testWidgets('the strip fits a 320dp-wide phone by scrolling, and keeps '
+  testWidgets(
+      'the strip fits a 320dp-wide phone by scrolling, and keeps '
       'the current view in sight (R64)', (WidgetTester t) async {
     t.view.physicalSize = const Size(320, 640);
     t.view.devicePixelRatio = 1.0;
@@ -181,7 +182,8 @@ void main() {
     expect(find.widgetWithText(AppBar, 'Chat'), findsOneWidget);
   });
 
-  testWidgets('Back from a non-Dashboard tab returns to Dashboard '
+  testWidgets(
+      'Back from a non-Dashboard tab returns to Dashboard '
       '(no root-pop crash)', (WidgetTester t) async {
     await _pumpApp(t);
     await t.fling(find.byType(PageView), const Offset(-400, 0), 1000);
@@ -197,7 +199,8 @@ void main() {
     expect(t.takeException(), isNull); // no root-pop exception
   });
 
-  testWidgets('app resume drives the lifecycle hook without crashing '
+  testWidgets(
+      'app resume drives the lifecycle hook without crashing '
       '(R17)', (WidgetTester t) async {
     await _pumpApp(t);
     t.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
@@ -215,7 +218,8 @@ void main() {
     }
   }
 
-  testWidgets('the hyperlocal grid is the tab after Nodes, and shows '
+  testWidgets(
+      'the hyperlocal grid is the tab after Nodes, and shows '
       'offline as an empty radar (issue #4)', (WidgetTester t) async {
     GridScreen.resetSession();
     await _pumpApp(t);
@@ -232,7 +236,8 @@ void main() {
     expect(t.takeException(), isNull);
   });
 
-  testWidgets('a panning grid view locks the shell swipe; the radar '
+  testWidgets(
+      'a panning grid view locks the shell swipe; the radar '
       'does not', (WidgetTester t) async {
     GridScreen.resetSession();
     await _pumpApp(t);
@@ -262,7 +267,8 @@ void main() {
     await settle(t);
   }
 
-  testWidgets('Map is a swipe page right after the grid, in every skin '
+  testWidgets(
+      'Map is a swipe page right after the grid, in every skin '
       '(R61)', (WidgetTester t) async {
     // The shell never reads the skin to build its pages, so each preset
     // gets the same seven-plus-one views; prove it per preset rather
@@ -298,20 +304,23 @@ void main() {
     }
   });
 
-  testWidgets('the Map tab owns horizontal drags; Back and the '
-      'view strip still leave it (R61)', (WidgetTester t) async {
+  testWidgets(
+      'the Map tab owns the middle; Back and the view strip '
+      'still leave it (R61)', (WidgetTester t) async {
     GridScreen.resetSession();
     await _pumpApp(t);
     await openFromStrip(t, 'Map');
     expect(find.widgetWithText(AppBar, 'Map'), findsOneWidget);
 
-    // The lock is unconditional: no notifier needs to be flipped.
+    // The lock is unconditional: no notifier needs to be flipped, and a
+    // fling in the middle of the page (the map's) must not change view.
     expect(GridScreen.capturesHorizontalDrag.value, isFalse);
-    await t.fling(find.byType(PageView), const Offset(-400, 0), 1000);
+    final Offset mid = t.getCenter(find.byType(PageView));
+    await t.flingFrom(mid, const Offset(-400, 0), 1000);
     await settle(t);
     expect(find.widgetWithText(AppBar, 'Map'), findsOneWidget,
-        reason: 'a left swipe must not leave the map');
-    await t.fling(find.byType(PageView), const Offset(400, 0), 1000);
+        reason: 'a left swipe in the middle must not leave the map');
+    await t.flingFrom(mid, const Offset(400, 0), 1000);
     await settle(t);
     expect(find.widgetWithText(AppBar, 'Map'), findsOneWidget,
         reason: 'nor a right swipe');
@@ -331,5 +340,117 @@ void main() {
     expect(handled, isTrue);
     expect(find.widgetWithText(AppBar, 'Dashboard'), findsOneWidget);
     expect(t.takeException(), isNull);
+  });
+
+  group('Map edge swipe (R67)', () {
+    Future<Rect> openMap(WidgetTester t) async {
+      GridScreen.resetSession();
+      await _pumpApp(t);
+      await openFromStrip(t, 'Map');
+      expect(find.widgetWithText(AppBar, 'Map'), findsOneWidget);
+      return t.getRect(find.byType(PageView));
+    }
+
+    testWidgets('a fling from the left edge goes to the previous view',
+        (WidgetTester t) async {
+      final Rect r = await openMap(t);
+      await t.flingFrom(
+          Offset(r.left + 10, r.center.dy), const Offset(300, 0), 1000);
+      await settle(t);
+      expect(find.widgetWithText(AppBar, 'Hyperlocal grid'), findsOneWidget);
+      expect(t.takeException(), isNull);
+    });
+
+    testWidgets('a fling from the right edge goes to the next view',
+        (WidgetTester t) async {
+      final Rect r = await openMap(t);
+      await t.flingFrom(
+          Offset(r.right - 10, r.center.dy), const Offset(-300, 0), 1000);
+      await settle(t);
+      expect(find.widgetWithText(AppBar, 'Settings'), findsOneWidget);
+      expect(t.takeException(), isNull);
+    });
+
+    testWidgets('a slow short drag from the edge does not change view',
+        (WidgetTester t) async {
+      final Rect r = await openMap(t);
+      final TestGesture g =
+          await t.startGesture(Offset(r.left + 10, r.center.dy));
+      await g.moveBy(const Offset(20, 0));
+      await t.pump(const Duration(milliseconds: 600));
+      await g.up();
+      await settle(t);
+      expect(find.widgetWithText(AppBar, 'Map'), findsOneWidget);
+    });
+
+    testWidgets('an outward drag from the edge does nothing',
+        (WidgetTester t) async {
+      final Rect r = await openMap(t);
+      await t.flingFrom(
+          Offset(r.left + 10, r.center.dy), const Offset(-300, 0), 1000);
+      await settle(t);
+      expect(find.widgetWithText(AppBar, 'Map'), findsOneWidget);
+    });
+
+    testWidgets(
+        'a fling just inside the band is the map\'s, not the '
+        'shell\'s', (WidgetTester t) async {
+      final Rect r = await openMap(t);
+      // Band is 24 dp; 40 dp in is the map's.
+      await t.flingFrom(
+          Offset(r.left + 40, r.center.dy), const Offset(300, 0), 1000);
+      await settle(t);
+      expect(find.widgetWithText(AppBar, 'Map'), findsOneWidget);
+    });
+
+    testWidgets('the map receives no touch inside a band',
+        (WidgetTester t) async {
+      final Rect r = await openMap(t);
+      // The topmost hit-test target at an edge point is the band.
+      final HitTestResult hit = HitTestResult();
+      t.binding
+          .hitTestInView(hit, Offset(r.left + 10, r.center.dy), t.view.viewId);
+      final Iterable<String> targets =
+          hit.path.map((HitTestEntry e) => e.target.runtimeType.toString());
+      expect(t.widgetList(find.byKey(const ValueKey<String>('mm-edge-left'))),
+          isNotEmpty);
+      final RenderObject band =
+          t.renderObject(find.byKey(const ValueKey<String>('mm-edge-left')));
+      expect(hit.path.any((HitTestEntry e) => e.target == band), isTrue,
+          reason: 'band is in the path: $targets');
+      final RenderObject map = t.renderObject(find.byType(StreetMapView));
+      expect(hit.path.any((HitTestEntry e) => e.target == map), isFalse,
+          reason: 'the map must not be hit in the band');
+      // And in the middle the map is hit, the band is not.
+      final HitTestResult mid = HitTestResult();
+      t.binding.hitTestInView(mid, r.center, t.view.viewId);
+      expect(mid.path.any((HitTestEntry e) => e.target == band), isFalse);
+    });
+
+    testWidgets(
+        'the bands do not shadow the Offline maps button or the '
+        'zoom controls', (WidgetTester t) async {
+      final Rect r = await openMap(t);
+      final Finder btn = find.byTooltip('Offline maps');
+      expect(btn, findsOneWidget);
+      // Left edge, inside the band's 24 dp, over the button.
+      final Offset p = Offset(r.left + 20, t.getCenter(btn).dy);
+      expect(t.getRect(btn).contains(p), isTrue,
+          reason:
+              'button spans the band column: ${t.getRect(btn)} p=$p page=$r');
+      final HitTestResult hit = HitTestResult();
+      t.binding.hitTestInView(hit, p, t.view.viewId);
+      expect(hit.path.any((HitTestEntry e) => e.target == t.renderObject(btn)),
+          isTrue,
+          reason: 'the button wins over the band');
+      // StreetMapView's zoom column (right 12, 36 wide, top 12 + 3 x
+      // 36) only renders once there is a position fix, which this
+      // harness has none of, so assert the geometry instead: the right
+      // band starts below where that column ends.
+      final Rect rightBand =
+          t.getRect(find.byKey(const ValueKey<String>('mm-edge-right')));
+      expect(rightBand.top - r.top, greaterThanOrEqualTo(12 + 3 * 36));
+      expect(rightBand.width, 24);
+    });
   });
 }

@@ -38,7 +38,7 @@ pushed via `go_router`.
 | 2 | **Chat** | Full chat for the active channel, with channel-selector chip strip on top. Per-channel TTS toggle in the header. | R6, R5 |
 | 3 | **Nodes** | Discovered peers with signal strength, distance estimate, last-heard, and a hook for the future live map (F1). | R6 |
 | 3a | **Hyperlocal grid** | The radar and the other map views, as the tab after Nodes (issue #4). Offline = empty radar + "Not Connected to Mesh"; the view choice lasts the session, launch resets to radar. | R18, R25, R27 |
-| 3b | **Map** | The street map as its own page after the grid (R61). Pan/zoom owns every horizontal drag, so the shell's swipe is **locked on this tab** (leave via Back or the view strip). A corner button opens Settings → Offline maps. Same in every skin: `HomeShell` does not read the skin to build pages. | R25, R61 |
+| 3b | **Map** | The street map as its own page after the grid (R61). Pan/zoom owns every horizontal drag, so the shell's `PageView` swipe is **locked on this tab** and the map owns the middle of the screen. A 24dp **edge band** on each side (R67) changes view by an inward fling: left edge to the previous view, right edge to the next. Back and the view strip also leave. A corner button opens Settings → Offline maps. Same in every skin: `HomeShell` does not read the skin to build pages. | R25, R61 |
 | 4 | **Settings** (hub) | Entry point to the three sub-screens below. | R3,R4,R5,R7,R12,R13,R14 |
 | 5 | **About / Terms** | App info + legal. | R9, R10 |
 
@@ -54,7 +54,7 @@ swipe pages):
 
 ### Navigation gestures (R11)
 
-- Horizontal swipe between the primary views (locked while a pan/zoom map is showing: the Map tab, and the grid's street-map/globe views).
+- Horizontal swipe between the primary views (locked while a pan/zoom map is showing: the Map tab, and the grid's street-map/globe views). On the Map tab an inward fling from a 24dp screen-edge band still changes view (R67); the grid's panning views have no edge band yet and are left by Back or the view strip.
 - **Swipe is the way.** There is no menu, sheet or drawer that switches
   views (R64; the long-press quick-nav sheet and the hamburger were
   removed). Under the app bar a **view strip** shows one icon per view with

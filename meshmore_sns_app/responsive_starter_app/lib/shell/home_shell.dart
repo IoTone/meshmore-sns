@@ -132,6 +132,16 @@ class _HomeShellState extends State<HomeShell>
     }
   }
 
+  /// R67 — an edge swipe on a surface that locks the PageView: one view
+  /// back (-1) or forward (+1), clamped to the ends.
+  void _edgeSwipe(int delta) {
+    final int to = (_index + delta).clamp(0, MmView.values.length - 1);
+    if (to != _index) {
+      _goTo(to,
+          reduceMotion: context.read<ThemeController>().reduceMotion);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final AppLocalizations l = AppLocalizations.of(context);
@@ -161,8 +171,9 @@ class _HomeShellState extends State<HomeShell>
       ),
       // A grid view that pans (street map, globe, …) owns horizontal
       // drags, so the shell stops swiping while it shows; Back, the
-      // dots and quick-nav still leave the tab. The Map tab is a
-      // pan/zoom map all the time, so it is locked unconditionally.
+      // view strip and Back still leave the tab. The Map tab is a
+      // pan/zoom map all the time, so it is locked unconditionally;
+      // its edge bands (R67, MmEdgeSwipe) change view instead.
       body: ValueListenableBuilder<bool>(
         valueListenable: GridScreen.capturesHorizontalDrag,
         builder: (BuildContext context, bool gridPans, Widget? _) =>
@@ -184,15 +195,15 @@ class _HomeShellState extends State<HomeShell>
           }
           setState(() => _index = i);
         },
-        children: const <Widget>[
-          DashboardHost(),
-          ChatScreen(),
-          NodesScreen(),
-          GridScreen(),
-          MapScreen(),
-          _SettingsView(),
-          DocsHubScreen(),
-          _AboutView(),
+        children: <Widget>[
+          const DashboardHost(),
+          const ChatScreen(),
+          const NodesScreen(),
+          const GridScreen(),
+          MapScreen(onEdgeSwipe: _edgeSwipe),
+          const _SettingsView(),
+          const DocsHubScreen(),
+          const _AboutView(),
         ],
       ),
       ),

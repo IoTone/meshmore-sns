@@ -1067,8 +1067,8 @@ While Meshcore protocol is open source, the client is not open source.  We want 
     The user brings the URL and the publisher's terms.
 
   - **Map tab**: the street map viewer is a primary swipe page after the
-    Hyperlocal grid, in every skin; swipe locked on it (pan/zoom owns
-    horizontal drags). Pack management stays under Settings.
+    Hyperlocal grid, in every skin; `PageView` swipe locked on it
+    (pan/zoom owns horizontal drags; edge bands change view, R67). Pack management stays under Settings.
 
   Full spec: [`meshmore-sns-maps-spec.md`](./meshmore-sns-maps-spec.md).
 
@@ -1176,6 +1176,20 @@ While Meshcore protocol is open source, the client is not open source.  We want 
     `debugPrint` naming the group id and that the state is session-only.
     Once per widget instance (no static state), only on a toggle, never an
     assert. Test: `test/ui/mm_collapsible_test.dart`.
+
+- R67: **Map edge swipe.** The Map tab (R61) locked the shell swipe
+  unconditionally, so a map user could leave only via Back or the view
+  strip. `lib/ui/mm_edge_swipe.dart` (`MmEdgeSwipe`) puts a 24dp band on
+  each screen edge, stacked above the map as an opaque hit-test target,
+  so touches in a band never reach the map (no gesture-arena race). An
+  inward drag starting in a band commits at >= 56dp travel or >= 500dp/s
+  and calls `HomeShell._edgeSwipe` (previous for the left band, next for
+  the right), clamped to the ends. Outward drags do nothing. The right
+  band starts 128dp down to clear StreetMapView's zoom column; the
+  Offline-maps button is a later Stack sibling so it stays tappable.
+  LTR only (EN/JA). The grid's panning views are not given bands: six
+  views with their own edge controls would each need auditing.
+  Tests: `test/shell/home_shell_test.dart` (group "Map edge swipe (R67)").
 
 ### Terminology — Fabric vs Contact
 

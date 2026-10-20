@@ -84,8 +84,9 @@ codebase.
   While a panning view (street map, globe, …) shows, the shell's swipe
   is locked so drags move the map — leave via Back or the view strip.
 - **Map tab (R61)** — the street map viewer as its own page right after
-  the grid, in every skin; swipe is always locked there. A corner button
-  opens Settings → Offline maps. Eight views in all.
+  the grid, in every skin; the middle pans/zooms and the `PageView` swipe is locked, but a 24dp
+  edge band on each side (R67) changes view by an inward fling. A corner
+  button opens Settings → Offline maps. Eight views in all.
 - **Radial "radar"** — range rings (Room…Wide…**City…Region**, Region
   auto-frames the known extent), signal/bearing placement, compass rose
   + heading needle, **north-up/heading-up toggle**, prominent top
