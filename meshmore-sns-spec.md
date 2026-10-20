@@ -1198,7 +1198,22 @@ While Meshcore protocol is open source, the client is not open source.  We want 
   renders a world view (20N 0E, zoom 2, min zoom lowered to 2 while
   browsing) with a quiet hairline banner (`mapNoFixBanner`, EN/JA); the
   grid's street-map mode is unchanged. Tests:
-  `test/screens/map_no_fix_test.dart`.
+  `test/screens/map_no_fix_test.dart`. (2) **English in the Japanese
+  locale.** Localised (EN/JA, `lib/l10n/*.arb`): Device configuration
+  "Manage channels" / "Active: ..." / "device now: ..."
+  (`deviceManageChannels`, `deviceActiveChannelSub`, `deviceNowParams`);
+  the location source label (`OwnLocation.localizedSourceLabel`;
+  `sourceLabel` stays English for logs); the battery line's "CHG"
+  (`batteryChargingShort`); the Elevation self-telemetry chip
+  (`elevationSelf*`); the Nodes "Clear search" tooltip; and the
+  Diagnostics connection block (`diagnostics*Line`, `diagnosticsState*`,
+  `diagnosticsScanConnect`). Deliberately **not** localised: the
+  Diagnostics SEND / M6 interop / fixture-export / bot-soak panels
+  (developer tooling, English by design), brand marks ("MESHMORE"),
+  the "BLE" tooltip, URL/coordinate hint text, and the unused
+  boilerplate `about.dart` drawer. Test: `test/l10n/ja_literals_test.dart`
+  (each key's JA differs from EN and has no Latin word apart from
+  MHz/kHz/dBm/PSK/GPS/SF/CR; Diagnostics renders Japanese).
 
 - R68: **Studio is monochrome.** Owner direction: "gray accent, light
   gray, no saturation for any accents". `studio` tokens

@@ -1,5 +1,7 @@
 // Copyright (c) 2026 IoTone, Inc.
 // SPDX-License-Identifier: MIT
+import '../gen/app_localizations.dart';
+
 /// Where our own latitude/longitude came from for distance/bearing
 /// math (Nodes screen distances, R18 grid GPS positioning, R22
 /// "Set advert location" workflow).
@@ -42,6 +44,14 @@ class OwnLocation {
         OwnLocationSource.deviceReported => 'device',
         OwnLocationSource.phoneFix => 'phone GPS',
         OwnLocationSource.none => 'none',
+      };
+
+  /// R69 — the same label in the app's language. [sourceLabel] stays
+  /// English for logs and `toString`; UI must use this.
+  String localizedSourceLabel(AppLocalizations l) => switch (source) {
+        OwnLocationSource.deviceReported => l.locationSourceDevice,
+        OwnLocationSource.phoneFix => l.locationSourcePhone,
+        OwnLocationSource.none => l.locationSourceNone,
       };
 
   @override

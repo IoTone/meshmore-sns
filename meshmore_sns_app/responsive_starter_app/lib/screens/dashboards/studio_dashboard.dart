@@ -247,7 +247,7 @@ class StudioDashboard extends StatelessWidget {
             style: _data(skin, 13),
           ),
           const SizedBox(height: 2),
-          Text(l.dashboardLocationSourceLabel(loc.sourceLabel),
+          Text(l.dashboardLocationSourceLabel(loc.localizedSourceLabel(l)),
               style: TextStyle(color: muted, fontSize: 12)),
         ],
       );

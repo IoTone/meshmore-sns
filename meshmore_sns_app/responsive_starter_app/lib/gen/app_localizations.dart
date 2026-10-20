@@ -6325,6 +6325,193 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Manual'**
   String get locGroupManual;
+
+  /// No description provided for @deviceManageChannels.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage channels'**
+  String get deviceManageChannels;
+
+  /// No description provided for @deviceActiveChannelSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Active: {name} · slots · name + PSK · #hashtag'**
+  String deviceActiveChannelSub(String name);
+
+  /// No description provided for @deviceNowParams.
+  ///
+  /// In en, this message translates to:
+  /// **'device now: {freq}MHz {bw}kHz SF{sf} CR{cr} {tx}dBm'**
+  String deviceNowParams(
+      String freq, String bw, String sf, String cr, String tx);
+
+  /// No description provided for @locationSourceDevice.
+  ///
+  /// In en, this message translates to:
+  /// **'device'**
+  String get locationSourceDevice;
+
+  /// No description provided for @locationSourcePhone.
+  ///
+  /// In en, this message translates to:
+  /// **'phone GPS'**
+  String get locationSourcePhone;
+
+  /// No description provided for @locationSourceNone.
+  ///
+  /// In en, this message translates to:
+  /// **'none'**
+  String get locationSourceNone;
+
+  /// No description provided for @batteryChargingShort.
+  ///
+  /// In en, this message translates to:
+  /// **'CHG'**
+  String get batteryChargingShort;
+
+  /// No description provided for @elevationSelfTelemetry.
+  ///
+  /// In en, this message translates to:
+  /// **'SELF TELEMETRY'**
+  String get elevationSelfTelemetry;
+
+  /// No description provided for @elevationSelfAlt.
+  ///
+  /// In en, this message translates to:
+  /// **'alt: {m} m'**
+  String elevationSelfAlt(String m);
+
+  /// No description provided for @elevationSelfAltUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'alt: —'**
+  String get elevationSelfAltUnknown;
+
+  /// No description provided for @elevationSelfTemp.
+  ///
+  /// In en, this message translates to:
+  /// **'temp: {c} °C'**
+  String elevationSelfTemp(String c);
+
+  /// No description provided for @elevationPolling.
+  ///
+  /// In en, this message translates to:
+  /// **'polling…'**
+  String get elevationPolling;
+
+  /// No description provided for @elevationTapToUpdate.
+  ///
+  /// In en, this message translates to:
+  /// **'tap to update'**
+  String get elevationTapToUpdate;
+
+  /// No description provided for @diagnosticsSectionConnection.
+  ///
+  /// In en, this message translates to:
+  /// **'CONNECTION'**
+  String get diagnosticsSectionConnection;
+
+  /// No description provided for @diagnosticsStateLine.
+  ///
+  /// In en, this message translates to:
+  /// **'State: {state}'**
+  String diagnosticsStateLine(String state);
+
+  /// No description provided for @diagnosticsStateDisconnected.
+  ///
+  /// In en, this message translates to:
+  /// **'disconnected'**
+  String get diagnosticsStateDisconnected;
+
+  /// No description provided for @diagnosticsStateHandshaking.
+  ///
+  /// In en, this message translates to:
+  /// **'handshaking'**
+  String get diagnosticsStateHandshaking;
+
+  /// No description provided for @diagnosticsStateReady.
+  ///
+  /// In en, this message translates to:
+  /// **'ready'**
+  String get diagnosticsStateReady;
+
+  /// No description provided for @diagnosticsStateReconnecting.
+  ///
+  /// In en, this message translates to:
+  /// **'reconnecting'**
+  String get diagnosticsStateReconnecting;
+
+  /// No description provided for @diagnosticsStateFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'failed'**
+  String get diagnosticsStateFailed;
+
+  /// No description provided for @diagnosticsConnectingSuffix.
+  ///
+  /// In en, this message translates to:
+  /// **' · connecting…'**
+  String get diagnosticsConnectingSuffix;
+
+  /// No description provided for @diagnosticsDeviceLine.
+  ///
+  /// In en, this message translates to:
+  /// **'device: {name} · {freq}MHz SF{sf}'**
+  String diagnosticsDeviceLine(String name, String freq, String sf);
+
+  /// No description provided for @diagnosticsBatteryLine.
+  ///
+  /// In en, this message translates to:
+  /// **'battery: {volts}V (~{pct}%)'**
+  String diagnosticsBatteryLine(String volts, String pct);
+
+  /// No description provided for @diagnosticsChargingSuffix.
+  ///
+  /// In en, this message translates to:
+  /// **' ⚡ charging'**
+  String get diagnosticsChargingSuffix;
+
+  /// No description provided for @diagnosticsReconnectLine.
+  ///
+  /// In en, this message translates to:
+  /// **'reconnect attempt {n}'**
+  String diagnosticsReconnectLine(String n);
+
+  /// No description provided for @diagnosticsGaveUpSuffix.
+  ///
+  /// In en, this message translates to:
+  /// **' (gave up)'**
+  String get diagnosticsGaveUpSuffix;
+
+  /// No description provided for @diagnosticsErrorLine.
+  ///
+  /// In en, this message translates to:
+  /// **'error: {error}'**
+  String diagnosticsErrorLine(String error);
+
+  /// No description provided for @diagnosticsScanConnect.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan & connect'**
+  String get diagnosticsScanConnect;
+
+  /// No description provided for @diagnosticsForgetShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Forget'**
+  String get diagnosticsForgetShort;
+
+  /// No description provided for @diagnosticsPairedLine.
+  ///
+  /// In en, this message translates to:
+  /// **'Paired: {name} — auto-reconnects on startup'**
+  String diagnosticsPairedLine(String name);
+
+  /// No description provided for @nodesClearSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear search'**
+  String get nodesClearSearch;
 }
 
 class _AppLocalizationsDelegate

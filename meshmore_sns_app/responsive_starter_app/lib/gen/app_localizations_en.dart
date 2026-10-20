@@ -3645,4 +3645,118 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get locGroupManual => 'Manual';
+
+  @override
+  String get deviceManageChannels => 'Manage channels';
+
+  @override
+  String deviceActiveChannelSub(String name) {
+    return 'Active: $name · slots · name + PSK · #hashtag';
+  }
+
+  @override
+  String deviceNowParams(
+      String freq, String bw, String sf, String cr, String tx) {
+    return 'device now: ${freq}MHz ${bw}kHz SF$sf CR$cr ${tx}dBm';
+  }
+
+  @override
+  String get locationSourceDevice => 'device';
+
+  @override
+  String get locationSourcePhone => 'phone GPS';
+
+  @override
+  String get locationSourceNone => 'none';
+
+  @override
+  String get batteryChargingShort => 'CHG';
+
+  @override
+  String get elevationSelfTelemetry => 'SELF TELEMETRY';
+
+  @override
+  String elevationSelfAlt(String m) {
+    return 'alt: $m m';
+  }
+
+  @override
+  String get elevationSelfAltUnknown => 'alt: —';
+
+  @override
+  String elevationSelfTemp(String c) {
+    return 'temp: $c °C';
+  }
+
+  @override
+  String get elevationPolling => 'polling…';
+
+  @override
+  String get elevationTapToUpdate => 'tap to update';
+
+  @override
+  String get diagnosticsSectionConnection => 'CONNECTION';
+
+  @override
+  String diagnosticsStateLine(String state) {
+    return 'State: $state';
+  }
+
+  @override
+  String get diagnosticsStateDisconnected => 'disconnected';
+
+  @override
+  String get diagnosticsStateHandshaking => 'handshaking';
+
+  @override
+  String get diagnosticsStateReady => 'ready';
+
+  @override
+  String get diagnosticsStateReconnecting => 'reconnecting';
+
+  @override
+  String get diagnosticsStateFailed => 'failed';
+
+  @override
+  String get diagnosticsConnectingSuffix => ' · connecting…';
+
+  @override
+  String diagnosticsDeviceLine(String name, String freq, String sf) {
+    return 'device: $name · ${freq}MHz SF$sf';
+  }
+
+  @override
+  String diagnosticsBatteryLine(String volts, String pct) {
+    return 'battery: ${volts}V (~$pct%)';
+  }
+
+  @override
+  String get diagnosticsChargingSuffix => ' ⚡ charging';
+
+  @override
+  String diagnosticsReconnectLine(String n) {
+    return 'reconnect attempt $n';
+  }
+
+  @override
+  String get diagnosticsGaveUpSuffix => ' (gave up)';
+
+  @override
+  String diagnosticsErrorLine(String error) {
+    return 'error: $error';
+  }
+
+  @override
+  String get diagnosticsScanConnect => 'Scan & connect';
+
+  @override
+  String get diagnosticsForgetShort => 'Forget';
+
+  @override
+  String diagnosticsPairedLine(String name) {
+    return 'Paired: $name — auto-reconnects on startup';
+  }
+
+  @override
+  String get nodesClearSearch => 'Clear search';
 }

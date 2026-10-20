@@ -113,6 +113,7 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
   Widget build(BuildContext context) {
     final MeshcoreController mc = context.watch<MeshcoreController>();
     final ColorScheme cs = Theme.of(context).colorScheme;
+    final AppLocalizations l = AppLocalizations.of(context);
     final bool live = mc.state == MeshcoreConnectionState.ready ||
         mc.state == MeshcoreConnectionState.handshaking ||
         mc.state == MeshcoreConnectionState.reconnecting;
@@ -134,22 +135,34 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
       body: MmScaffold(
         child: ListView(
         children: <Widget>[
-          section('CONNECTION'),
+          section(l.diagnosticsSectionConnection),
           ListTile(
-            title: Text('State: ${mc.state.name}'
-                '${mc.isConnecting ? ' · connecting…' : ''}'),
+            title: Text(l.diagnosticsStateLine(switch (mc.state) {
+                  MeshcoreConnectionState.disconnected =>
+                    l.diagnosticsStateDisconnected,
+                  MeshcoreConnectionState.handshaking =>
+                    l.diagnosticsStateHandshaking,
+                  MeshcoreConnectionState.ready => l.diagnosticsStateReady,
+                  MeshcoreConnectionState.reconnecting =>
+                    l.diagnosticsStateReconnecting,
+                  MeshcoreConnectionState.failed => l.diagnosticsStateFailed,
+                }) +
+                (mc.isConnecting ? l.diagnosticsConnectingSuffix : '')),
             subtitle: Text(<String>[
               if (mc.selfInfo != null)
-                'device: ${mc.selfInfo!.name} · '
-                    '${mc.selfInfo!.frequencyMhz}MHz SF${mc.selfInfo!.spreadingFactor}',
+                l.diagnosticsDeviceLine(
+                    mc.selfInfo!.name,
+                    '${mc.selfInfo!.frequencyMhz}',
+                    '${mc.selfInfo!.spreadingFactor}'),
               if (mc.batteryMillivolts != null)
-                'battery: ${mc.batteryVolts!.toStringAsFixed(2)}V '
-                    '(~${mc.batteryPercent}%)'
-                    '${mc.charging == true ? ' ⚡ charging' : ''}',
+                l.diagnosticsBatteryLine(
+                        mc.batteryVolts!.toStringAsFixed(2),
+                        '${mc.batteryPercent}') +
+                    (mc.charging == true ? l.diagnosticsChargingSuffix : ''),
               if (mc.reconnectAttempt > 0)
-                'reconnect attempt ${mc.reconnectAttempt}'
-                    '${mc.gaveUp ? ' (gave up)' : ''}',
-              if (mc.error != null) 'error: ${mc.error}',
+                l.diagnosticsReconnectLine('${mc.reconnectAttempt}') +
+                    (mc.gaveUp ? l.diagnosticsGaveUpSuffix : ''),
+              if (mc.error != null) l.diagnosticsErrorLine('${mc.error}'),
             ].join('\n')),
             isThreeLine: mc.selfInfo != null || mc.error != null,
           ),
@@ -161,7 +174,9 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
                   child: FilledButton.icon(
                     icon: Icon(
                         live ? Icons.link_off : Icons.bluetooth_searching),
-                    label: Text(live ? 'Disconnect' : 'Scan & connect'),
+                    label: Text(live
+                        ? l.diagnosticsDisconnect
+                        : l.diagnosticsScanConnect),
                     onPressed: () =>
                         live ? mc.disconnect() : mc.connect(),
                   ),
@@ -170,7 +185,7 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
                   const SizedBox(width: 8),
                   OutlinedButton(
                     onPressed: () => mc.forgetDevice(),
-                    child: const Text('Forget'),
+                    child: Text(l.diagnosticsForgetShort),
                   ),
                 ],
               ],
@@ -179,8 +194,7 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
           if (mc.hasPairedDevice)
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 6, 16, 0),
-              child: Text('Paired: ${mc.pairedName} — auto-reconnects '
-                  'on startup',
+              child: Text(l.diagnosticsPairedLine('${mc.pairedName}'),
                   style: TextStyle(
                       color: cs.onSurface.withValues(alpha: .6),
                       fontSize: 12)),

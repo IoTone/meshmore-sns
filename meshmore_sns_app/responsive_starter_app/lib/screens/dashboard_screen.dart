@@ -424,7 +424,7 @@ class _LocationTile extends StatelessWidget {
             '${loc.altitudeMeters == null ? '' : '  '
                 '· ${l.dashboardLocationAltitude(loc.altitudeMeters!.round())}'}'
             '\n'
-            '${l.dashboardLocationSourceLabel(loc.sourceLabel)}',
+            '${l.dashboardLocationSourceLabel(loc.localizedSourceLabel(l))}',
             style: TextStyle(
                 color: cs.onSurface,
                 fontFamily: 'JetBrains Mono',

@@ -97,7 +97,7 @@ class DashboardModel {
           ? (mc.batteryPercent ?? 0)
           : mc.batteryEstimate.socPercent.round();
       battery = '${mc.batteryVolts!.toStringAsFixed(2)}V  $pct%'
-          '${mc.charging == true ? '  CHG' : ''}';
+          '${mc.charging == true ? '  ${l.batteryChargingShort}' : ''}';
     }
 
     return DashboardModel(

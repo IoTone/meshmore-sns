@@ -333,7 +333,7 @@ class _NodesScreenState extends State<NodesScreen> {
               suffixIcon: _query.isEmpty
                   ? null
                   : IconButton(
-                      tooltip: 'Clear search',
+                      tooltip: l.nodesClearSearch,
                       icon: const Icon(Icons.close, size: 18),
                       onPressed: () {
                         _searchCtrl.clear();

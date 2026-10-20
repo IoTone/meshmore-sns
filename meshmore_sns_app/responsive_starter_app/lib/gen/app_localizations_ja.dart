@@ -3522,4 +3522,118 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get locGroupManual => '手動';
+
+  @override
+  String get deviceManageChannels => 'チャンネルを管理';
+
+  @override
+  String deviceActiveChannelSub(String name) {
+    return '有効: $name · スロット · 名前 + PSK · #ハッシュタグ';
+  }
+
+  @override
+  String deviceNowParams(
+      String freq, String bw, String sf, String cr, String tx) {
+    return 'デバイスの現在値: ${freq}MHz ${bw}kHz SF$sf CR$cr ${tx}dBm';
+  }
+
+  @override
+  String get locationSourceDevice => 'デバイス';
+
+  @override
+  String get locationSourcePhone => 'スマートフォン GPS';
+
+  @override
+  String get locationSourceNone => 'なし';
+
+  @override
+  String get batteryChargingShort => '充電中';
+
+  @override
+  String get elevationSelfTelemetry => '自機テレメトリ';
+
+  @override
+  String elevationSelfAlt(String m) {
+    return '高度: $m m';
+  }
+
+  @override
+  String get elevationSelfAltUnknown => '高度: —';
+
+  @override
+  String elevationSelfTemp(String c) {
+    return '気温: $c °C';
+  }
+
+  @override
+  String get elevationPolling => '取得中…';
+
+  @override
+  String get elevationTapToUpdate => 'タップで更新';
+
+  @override
+  String get diagnosticsSectionConnection => '接続';
+
+  @override
+  String diagnosticsStateLine(String state) {
+    return '状態: $state';
+  }
+
+  @override
+  String get diagnosticsStateDisconnected => '切断';
+
+  @override
+  String get diagnosticsStateHandshaking => 'ハンドシェイク中';
+
+  @override
+  String get diagnosticsStateReady => '接続済み';
+
+  @override
+  String get diagnosticsStateReconnecting => '再接続中';
+
+  @override
+  String get diagnosticsStateFailed => '失敗';
+
+  @override
+  String get diagnosticsConnectingSuffix => ' · 接続中…';
+
+  @override
+  String diagnosticsDeviceLine(String name, String freq, String sf) {
+    return 'デバイス: $name · ${freq}MHz SF$sf';
+  }
+
+  @override
+  String diagnosticsBatteryLine(String volts, String pct) {
+    return 'バッテリー: ${volts}V (約 $pct%)';
+  }
+
+  @override
+  String get diagnosticsChargingSuffix => ' ⚡ 充電中';
+
+  @override
+  String diagnosticsReconnectLine(String n) {
+    return '再接続の試行 $n 回目';
+  }
+
+  @override
+  String get diagnosticsGaveUpSuffix => '(断念)';
+
+  @override
+  String diagnosticsErrorLine(String error) {
+    return 'エラー: $error';
+  }
+
+  @override
+  String get diagnosticsScanConnect => 'スキャンして接続';
+
+  @override
+  String get diagnosticsForgetShort => '解除';
+
+  @override
+  String diagnosticsPairedLine(String name) {
+    return 'ペアリング済み: $name — 起動時に自動再接続します';
+  }
+
+  @override
+  String get nodesClearSearch => '検索をクリア';
 }

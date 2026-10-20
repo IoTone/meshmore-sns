@@ -94,13 +94,17 @@ codebase.
   quiet "no fix" row instead of a blank screen; the grid's street-map mode
   keeps its empty state. **Unverified on a device.**
 
+- R69: the named raw-English strings (Device configuration channel row and
+  live-params line, location source label, battery "CHG", Elevation chip,
+  Nodes clear-search tooltip, Diagnostics connection block) now follow the
+  locale. **Unverified on a device.**
+
 **Known issues from the R68 critical pass (not fixed; read from code and phone screenshots)**
-- Still English in the Japanese locale: Device configuration "Manage
-  channels" / "Active:" / "device now:" (`device_config_screen.dart`),
-  the dashboard location source label (`OwnLocation.sourceLabel`:
-  'device' / 'phone GPS'), `elevation_profile_view.dart` ("SELF
-  TELEMETRY", "temp:"), the battery line's "CHG", and the whole
-  Diagnostics screen (a developer screen).
+- Still English in the Japanese locale (after R69): the Diagnostics SEND /
+  M6 interop / fixture-export / bot-soak panels (developer tooling, left
+  in English on purpose). Other screens were not swept literal by literal;
+  a grep for `Text('Latin...')` finds only brand marks, "BLE", hint URLs
+  and the unused `about.dart`.
 - Touch targets under 48dp: icon buttons constrained to 28-36dp in
   `dm_screen.dart:336`, `dashboard_screen.dart:414`, `chat_screen.dart:473`,
   `equal_grid_view.dart:402/429/453`, `fabric_survey_view.dart:366-418`,

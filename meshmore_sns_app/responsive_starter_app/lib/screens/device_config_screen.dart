@@ -465,9 +465,12 @@ class _DeviceConfigScreenState extends State<DeviceConfigScreen> {
                   Padding(
                     padding: const EdgeInsets.only(top: 4),
                     child: Text(
-                        'device now: ${si.frequencyMhz}MHz '
-                        '${si.bandwidthKhz}kHz SF${si.spreadingFactor} '
-                        'CR${si.codingRate} ${si.txPowerDbm}dBm',
+                        l.deviceNowParams(
+                            '${si.frequencyMhz}',
+                            '${si.bandwidthKhz}',
+                            '${si.spreadingFactor}',
+                            '${si.codingRate}',
+                            '${si.txPowerDbm}'),
                         style: TextStyle(
                             color: cs.onSurfaceVariant,
                             fontFamily: 'JetBrains Mono',
@@ -681,9 +684,8 @@ class _DeviceConfigScreenState extends State<DeviceConfigScreen> {
             ListTile(
               contentPadding: EdgeInsets.zero,
               leading: const Icon(Icons.tag),
-              title: const Text('Manage channels'),
-              subtitle: Text('Active: ${mc.activeChannelName} · '
-                  'slots · name + PSK · #hashtag'),
+              title: Text(l.deviceManageChannels),
+              subtitle: Text(l.deviceActiveChannelSub(mc.activeChannelName)),
               trailing: const Icon(Icons.chevron_right),
               onTap: () => context.push('/settings/channels'),
             ),

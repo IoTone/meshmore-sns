@@ -196,7 +196,7 @@ class _ElevationProfileViewState extends State<ElevationProfileView>
                       Row(
                         mainAxisSize: MainAxisSize.min,
                         children: <Widget>[
-                          const Text('SELF TELEMETRY'),
+                          Text(l.elevationSelfTelemetry),
                           const SizedBox(width: 4),
                           if (_polling)
                             SizedBox(
@@ -212,11 +212,13 @@ class _ElevationProfileViewState extends State<ElevationProfileView>
                       ),
                       const SizedBox(height: 2),
                       Text(selfAlt != null
-                          ? 'alt: ${selfAlt.toStringAsFixed(0)} m'
-                          : 'alt: —'),
+                          ? l.elevationSelfAlt(selfAlt.toStringAsFixed(0))
+                          : l.elevationSelfAltUnknown),
                       if (selfTemp != null)
-                        Text('temp: ${selfTemp.toStringAsFixed(1)} °C'),
-                      Text(_polling ? 'polling…' : 'tap to update'),
+                        Text(l.elevationSelfTemp(selfTemp.toStringAsFixed(1))),
+                      Text(_polling
+                          ? l.elevationPolling
+                          : l.elevationTapToUpdate),
                     ],
                   ),
                 ),
