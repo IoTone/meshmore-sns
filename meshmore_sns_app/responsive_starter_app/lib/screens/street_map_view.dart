@@ -37,10 +37,23 @@ class StreetMapView extends StatefulWidget {
     super.key,
     this.filteredNodes,
     this.frozen = false,
+    this.browseWithoutFix = false,
   });
 
   final List<DiscoveredNode>? filteredNodes;
   final bool frozen;
+
+  /// R69 — with no position fix, render the map at a world view (and a
+  /// quiet "no fix" row) instead of the empty "awaiting fix" text.
+  /// Default **off**: the Hyperlocal grid's street-map mode keeps its
+  /// original empty state; only the first-class Map tab opts in.
+  final bool browseWithoutFix;
+
+  /// R69 — the honest default centre when there is no fix: a world view
+  /// (the middle of the Atlantic/Africa band), not a guess at the user's
+  /// region. [browseZoom] shows the whole globe's land masses.
+  static const LatLng browseCentre = LatLng(20.0, 0.0);
+  static const double browseZoom = 2.0;
 
   @override
   State<StreetMapView> createState() => _StreetMapViewState();
@@ -56,6 +69,10 @@ class _StreetMapViewState extends State<StreetMapView> {
   late final MapController _map = MapController();
   double _zoom = 14.0; // metro default; pinned to self on first build
   bool _centered = false;
+
+  /// R69 — true while this view is showing the no-fix world view, so the
+  /// first real fix can reset the zoom from world to metro.
+  bool _browsing = false;
 
   double? _headingDeg;
   StreamSubscription<CompassEvent>? _compassSub;
@@ -74,6 +91,13 @@ class _StreetMapViewState extends State<StreetMapView> {
   @override
   void initState() {
     super.initState();
+    if (widget.browseWithoutFix) {
+      // The context-free read of the fix happens in build; here we only
+      // pre-seed the world zoom so the first frame is not zoom 14 over
+      // (0,0) while the controller is still resolving.
+      _zoom = StreetMapView.browseZoom;
+      _browsing = true;
+    }
     _compassSub = FlutterCompass.events?.listen((CompassEvent e) {
       final double? h = e.heading;
       if (h == null || !mounted) return;
@@ -89,18 +113,21 @@ class _StreetMapViewState extends State<StreetMapView> {
   }
 
   void _zoomIn() {
-    final double next = (_zoom + _zoomStep).clamp(_zoomMin, _zoomMax);
+    final double next = (_zoom + _zoomStep).clamp(_minZoom, _zoomMax);
     if (next == _zoom) return;
     setState(() => _zoom = next);
     _map.move(_map.camera.center, _zoom);
   }
 
   void _zoomOut() {
-    final double next = (_zoom - _zoomStep).clamp(_zoomMin, _zoomMax);
+    final double next = (_zoom - _zoomStep).clamp(_minZoom, _zoomMax);
     if (next == _zoom) return;
     setState(() => _zoom = next);
     _map.move(_map.camera.center, _zoom);
   }
+
+  /// R69 — the world view needs a lower floor than the metro default.
+  double get _minZoom => _browsing ? StreetMapView.browseZoom : _zoomMin;
 
   void _recenterOnSelf(double lat, double lon) {
     _map.move(LatLng(lat, lon), _zoom);
@@ -144,7 +171,8 @@ class _StreetMapViewState extends State<StreetMapView> {
 
     final double? selfLat = mc.ownLocation?.latitude;
     final double? selfLon = mc.ownLocation?.longitude;
-    if (selfLat == null || selfLon == null) {
+    final bool hasFix = selfLat != null && selfLon != null;
+    if (!hasFix && !widget.browseWithoutFix) {
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(24),
@@ -156,8 +184,13 @@ class _StreetMapViewState extends State<StreetMapView> {
         ),
       );
     }
+    // R69 — a fix arrived after browsing: leave the world view.
+    if (hasFix && _browsing) {
+      _browsing = false;
+      _zoom = 14.0;
+    }
     // First build after the controller has a location: centre on self.
-    if (!_centered) {
+    if (hasFix && !_centered) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
         try {
@@ -189,9 +222,11 @@ class _StreetMapViewState extends State<StreetMapView> {
           child: FlutterMap(
             mapController: _map,
             options: MapOptions(
-              initialCenter: LatLng(selfLat, selfLon),
+              initialCenter: hasFix
+                  ? LatLng(selfLat, selfLon)
+                  : StreetMapView.browseCentre,
               initialZoom: _zoom,
-              minZoom: _zoomMin,
+              minZoom: _minZoom,
               maxZoom: _zoomMax,
               interactionOptions: const InteractionOptions(
                 // Pan + pinch + scroll-wheel zoom; no rotation
@@ -217,6 +252,7 @@ class _StreetMapViewState extends State<StreetMapView> {
               // marker icons so the pins stay on top.
               CircleLayer(
                 circles: <CircleMarker>[
+                  if (hasFix)
                   CircleMarker(
                     point: LatLng(selfLat, selfLon),
                     radius: rangeM,
@@ -290,6 +326,7 @@ class _StreetMapViewState extends State<StreetMapView> {
                       ),
                     ),
                   // Self marker last so it sits on top.
+                  if (hasFix)
                   Marker(
                     point: LatLng(selfLat, selfLon),
                     width: 56,
@@ -306,6 +343,37 @@ class _StreetMapViewState extends State<StreetMapView> {
           ),
         ),
         if (_showTiles) MapAttribution(tileSource.attribution),
+        // R69 — quiet, non-modal, not dismissable, no fill: a hairline
+        // row that says why the map is not on you. Gone once a fix lands.
+        if (!hasFix)
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: Container(
+              key: const ValueKey<String>('map-no-fix-banner'),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              decoration: BoxDecoration(
+                color: cs.surface,
+                border: Border(top: BorderSide(color: cs.outlineVariant)),
+              ),
+              child: Row(
+                children: <Widget>[
+                  Icon(Icons.location_disabled,
+                      size: 16, color: cs.onSurfaceVariant),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      l.mapNoFixBanner,
+                      style: TextStyle(
+                          color: cs.onSurfaceVariant, fontSize: 12),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
         if (widget.frozen)
           Positioned(
             left: 12,
@@ -363,7 +431,7 @@ class _StreetMapViewState extends State<StreetMapView> {
                   constraints: const BoxConstraints(
                       minWidth: 36, minHeight: 36),
                   icon: const Icon(Icons.remove),
-                  onPressed: _zoom > _zoomMin ? _zoomOut : null,
+                  onPressed: _zoom > _minZoom ? _zoomOut : null,
                 ),
                 IconButton(
                   tooltip: l.streetMapRecenter,
@@ -372,8 +440,9 @@ class _StreetMapViewState extends State<StreetMapView> {
                   constraints: const BoxConstraints(
                       minWidth: 36, minHeight: 36),
                   icon: const Icon(Icons.my_location),
-                  onPressed: () =>
-                      _recenterOnSelf(selfLat, selfLon),
+                  onPressed: hasFix
+                      ? () => _recenterOnSelf(selfLat, selfLon)
+                      : null,
                 ),
                 // R25+3 / R61 — basemap picker.
                 PopupMenuButton<String>(

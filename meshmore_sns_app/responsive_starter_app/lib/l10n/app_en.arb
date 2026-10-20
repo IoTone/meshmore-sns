@@ -364,6 +364,8 @@
   "fabricResetBody": "Drops every recorded cell. New observations will start filling the map again as you move and the mesh reports nearby nodes.",
   "fabricResetApply": "Reset",
   "streetMapRecenter": "Re-centre on me",
+  "mapNoFixBanner": "No position fix yet. This is a world view, not centred on you.",
+  "@mapNoFixBanner": { "description": "R69: quiet banner on the Map tab when there is no position fix." },
   "mapHideTiles": "Hide map tiles",
   "mapShowTiles": "Show map tiles",
   "deviceRegionLoadedOffline": "{label} loaded — Apply when a device is connected.",

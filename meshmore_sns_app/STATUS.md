@@ -90,11 +90,11 @@ codebase.
   **Unverified on a device.**
 - Audio aliases the Hyperlocal pack; **unverified on a device**.
 
+- R69: the Map tab with no fix shows a world view (20N 0E, zoom 2) plus a
+  quiet "no fix" row instead of a blank screen; the grid's street-map mode
+  keeps its empty state. **Unverified on a device.**
+
 **Known issues from the R68 critical pass (not fixed; read from code and phone screenshots)**
-- Map tab with no position fix is a dead screen: `StreetMapView` returns
-  only the "awaiting fix" text (`street_map_view.dart:147`), with no map,
-  no way to browse a region. The Offline-maps button and the edge bands
-  still work. Fix needs a default centre or a browse-without-fix mode.
 - Still English in the Japanese locale: Device configuration "Manage
   channels" / "Active:" / "device now:" (`device_config_screen.dart`),
   the dashboard location source label (`OwnLocation.sourceLabel`:

@@ -35,9 +35,9 @@ class MapScreen extends StatelessWidget {
   final ValueChanged<int>? onEdgeSwipe;
 
   /// StreetMapView's zoom/recentre column: right 12 + 36 wide, top 12 +
-  /// 3 x 36 tall. The right band starts below it so it cannot shadow a
+  /// 4 x 36 + the 34 picker, tall. The right band starts below it so it cannot shadow a
   /// button.
-  static const double _rightControlsBottom = 128;
+  static const double _rightControlsBottom = 208;
 
   @override
   Widget build(BuildContext context) {
@@ -49,7 +49,7 @@ class MapScreen extends StatelessWidget {
           child: MmEdgeSwipe(
             onSwipe: (int d) => onEdgeSwipe?.call(d),
             rightInsets: const EdgeInsets.only(top: _rightControlsBottom),
-            child: const StreetMapView(),
+            child: const StreetMapView(browseWithoutFix: true),
           ),
         ),
         // Top-left is free in StreetMapView (its controls are top-right

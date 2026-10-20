@@ -1185,11 +1185,20 @@ While Meshcore protocol is open source, the client is not open source.  We want 
   inward drag starting in a band commits at >= 56dp travel or >= 500dp/s
   and calls `HomeShell._edgeSwipe` (previous for the left band, next for
   the right), clamped to the ends. Outward drags do nothing. The right
-  band starts 128dp down to clear StreetMapView's zoom column; the
+  band starts 208dp down (R69: was 128, which left the basemap picker and
+  tile toggle half under the band) to clear StreetMapView's controls; the
   Offline-maps button is a later Stack sibling so it stays tappable.
   LTR only (EN/JA). The grid's panning views are not given bands: six
   views with their own edge controls would each need auditing.
   Tests: `test/shell/home_shell_test.dart` (group "Map edge swipe (R67)").
+
+- R69: **The three defects R68 recorded.** (1) **Map with no fix.** The
+  Map tab was a blank "awaiting fix" screen without a position.
+  `StreetMapView(browseWithoutFix: true)` (only `MapScreen` passes it)
+  renders a world view (20N 0E, zoom 2, min zoom lowered to 2 while
+  browsing) with a quiet hairline banner (`mapNoFixBanner`, EN/JA); the
+  grid's street-map mode is unchanged. Tests:
+  `test/screens/map_no_fix_test.dart`.
 
 - R68: **Studio is monochrome.** Owner direction: "gray accent, light
   gray, no saturation for any accents". `studio` tokens

@@ -1724,6 +1724,12 @@ abstract class AppLocalizations {
   /// **'Re-centre on me'**
   String get streetMapRecenter;
 
+  /// R69: quiet banner on the Map tab when there is no position fix.
+  ///
+  /// In en, this message translates to:
+  /// **'No position fix yet. This is a world view, not centred on you.'**
+  String get mapNoFixBanner;
+
   /// No description provided for @mapHideTiles.
   ///
   /// In en, this message translates to:

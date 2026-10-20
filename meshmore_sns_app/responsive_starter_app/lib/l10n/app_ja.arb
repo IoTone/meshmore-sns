@@ -357,6 +357,7 @@
   "fabricResetBody": "記録済みのセルをすべて削除します。移動と近隣ノードの観測に応じて新しい記録が再び埋まっていきます。",
   "fabricResetApply": "リセット",
   "streetMapRecenter": "現在地に戻す",
+  "mapNoFixBanner": "位置情報がまだ取得できていません。表示は世界地図で、現在地には合わせていません。",
   "mapHideTiles": "地図タイルを非表示",
   "mapShowTiles": "地図タイルを表示",
   "deviceRegionLoadedOffline": "{label} を読み込みました — デバイス接続時に「適用」してください。",

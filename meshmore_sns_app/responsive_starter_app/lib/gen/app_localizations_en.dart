@@ -938,6 +938,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get streetMapRecenter => 'Re-centre on me';
 
   @override
+  String get mapNoFixBanner =>
+      'No position fix yet. This is a world view, not centred on you.';
+
+  @override
   String get mapHideTiles => 'Hide map tiles';
 
   @override

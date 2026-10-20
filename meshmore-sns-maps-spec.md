@@ -120,8 +120,15 @@ panning views. Unlike the grid, the Map tab keeps a way out by gesture:
 a 24dp band at each screen edge (R67, `MmEdgeSwipe`) is hit-tested
 before the map, so an inward fling there goes to the previous (left) or
 next (right) view and the map never sees those touches; the middle
-pans and zooms. Back and the view strip also leave. With no position yet the
-map shows "awaiting fix" instead of tiles.
+pans and zooms. Back and the view strip also leave. With no position yet
+(R69) the Map tab is still a map: a **world view** (centre 20N 0E, zoom 2,
+a deliberate non-guess at the user's region) with a quiet, non-modal,
+non-dismissable hairline row at the bottom: "No position fix yet. This is
+a world view, not centred on you." The re-centre button is disabled and
+self/range markers are omitted until a fix arrives, at which point the
+map recentres on self at zoom 14. The grid's street-map mode keeps its
+"awaiting fix" text (`StreetMapView.browseWithoutFix`, default off; only
+`MapScreen` opts in).
 
 **Settings → Offline maps** (new hub row, after Tools):
 
