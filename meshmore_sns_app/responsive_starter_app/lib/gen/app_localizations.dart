@@ -530,6 +530,48 @@ abstract class AppLocalizations {
   /// **'CONNECTING…'**
   String get statusConnecting;
 
+  /// No description provided for @linkChipLinked.
+  ///
+  /// In en, this message translates to:
+  /// **'LINKED'**
+  String get linkChipLinked;
+
+  /// No description provided for @linkChipSync.
+  ///
+  /// In en, this message translates to:
+  /// **'SYNC'**
+  String get linkChipSync;
+
+  /// No description provided for @linkChipRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'RETRY'**
+  String get linkChipRetry;
+
+  /// No description provided for @linkChipFail.
+  ///
+  /// In en, this message translates to:
+  /// **'FAIL'**
+  String get linkChipFail;
+
+  /// No description provided for @linkChipScan.
+  ///
+  /// In en, this message translates to:
+  /// **'SCAN'**
+  String get linkChipScan;
+
+  /// No description provided for @linkChipOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'OFFLINE'**
+  String get linkChipOffline;
+
+  /// No description provided for @linkChipSemantics.
+  ///
+  /// In en, this message translates to:
+  /// **'Radio {state}'**
+  String linkChipSemantics(String state);
+
   /// No description provided for @actionConnect.
   ///
   /// In en, this message translates to:

@@ -1232,6 +1232,13 @@ While Meshcore protocol is open source, the client is not open source.  We want 
     for no hue anywhere; the other presets keep the NERV palette.
     Tests: `test/shell/boot_overlay_test.dart` (Studio gradient is
     surface -> base, others stay NERV; fail-before for Studio).
+  - **The app-bar link chip is localised.** `RadioLinkIndicator`
+    (`lib/shell/home_shell.dart`, on every primary view) hard-coded
+    'LINKED' / 'SYNC' / 'RETRY' / 'FAIL' / 'SCAN' / 'OFFLINE' and the
+    semantics label 'Radio ...', so a Japanese user saw English on every
+    screen. Now `linkChip*` strings (EN and JA) and `linkChipSemantics`.
+    Test: `test/shell/radio_link_indicator_test.dart` (JA chip and
+    semantics; fail-before).
   - **Studio dashboard** (`lib/screens/dashboards/studio_dashboard.dart`,
     registered in `DashboardHost`): Studio used to inherit the SEELE
     monolith (an 88sp numeral, a full-bleed colour-inverting status slab,

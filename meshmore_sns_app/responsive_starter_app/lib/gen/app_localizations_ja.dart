@@ -240,6 +240,29 @@ class AppLocalizationsJa extends AppLocalizations {
   String get statusConnecting => '接続中…';
 
   @override
+  String get linkChipLinked => '接続';
+
+  @override
+  String get linkChipSync => '同期';
+
+  @override
+  String get linkChipRetry => '再試行';
+
+  @override
+  String get linkChipFail => '失敗';
+
+  @override
+  String get linkChipScan => '検索';
+
+  @override
+  String get linkChipOffline => 'オフライン';
+
+  @override
+  String linkChipSemantics(String state) {
+    return 'ラジオ: $state';
+  }
+
+  @override
   String get actionConnect => '接続';
 
   @override

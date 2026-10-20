@@ -466,31 +466,32 @@ class RadioLinkIndicator extends StatelessWidget {
   Widget build(BuildContext context) {
     final MeshcoreController mc = context.watch<MeshcoreController>();
     final ColorScheme cs = Theme.of(context).colorScheme;
+    final AppLocalizations l = AppLocalizations.of(context);
 
     final ({String label, Color color, IconData icon}) v =
         switch (mc.state) {
       MeshcoreConnectionState.ready => (
-          label: 'LINKED',
+          label: l.linkChipLinked,
           color: cs.tertiary,
           icon: Icons.bluetooth_connected,
         ),
       MeshcoreConnectionState.handshaking => (
-          label: 'SYNC',
+          label: l.linkChipSync,
           color: cs.secondary,
           icon: Icons.bluetooth_searching,
         ),
       MeshcoreConnectionState.reconnecting => (
-          label: 'RETRY',
+          label: l.linkChipRetry,
           color: cs.secondary,
           icon: Icons.bluetooth_searching,
         ),
       MeshcoreConnectionState.failed => (
-          label: 'FAIL',
+          label: l.linkChipFail,
           color: cs.error,
           icon: Icons.bluetooth_disabled,
         ),
       MeshcoreConnectionState.disconnected => (
-          label: mc.isConnecting ? 'SCAN' : 'OFFLINE',
+          label: mc.isConnecting ? l.linkChipScan : l.linkChipOffline,
           color: cs.onSurfaceVariant,
           icon: Icons.bluetooth_disabled,
         ),
@@ -498,7 +499,7 @@ class RadioLinkIndicator extends StatelessWidget {
 
     return Semantics(
       button: true,
-      label: 'Radio ${v.label}',
+      label: l.linkChipSemantics(v.label),
       child: InkWell(
         onTap: () => context.push('/settings/diagnostics'),
         borderRadius: BorderRadius.circular(20),

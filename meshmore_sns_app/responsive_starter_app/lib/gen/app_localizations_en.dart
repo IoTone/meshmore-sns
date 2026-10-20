@@ -255,6 +255,29 @@ class AppLocalizationsEn extends AppLocalizations {
   String get statusConnecting => 'CONNECTING…';
 
   @override
+  String get linkChipLinked => 'LINKED';
+
+  @override
+  String get linkChipSync => 'SYNC';
+
+  @override
+  String get linkChipRetry => 'RETRY';
+
+  @override
+  String get linkChipFail => 'FAIL';
+
+  @override
+  String get linkChipScan => 'SCAN';
+
+  @override
+  String get linkChipOffline => 'OFFLINE';
+
+  @override
+  String linkChipSemantics(String state) {
+    return 'Radio $state';
+  }
+
+  @override
   String get actionConnect => 'CONNECT';
 
   @override

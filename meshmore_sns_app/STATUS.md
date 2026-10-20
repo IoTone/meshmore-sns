@@ -81,6 +81,7 @@ codebase.
 - R68: Device configuration groups region presets under Americas /
   Europe / Asia-Pacific headings (was one wall of 15 chips).
 - R68: the boot overlay is grey under Studio (still NERV for the rest).
+- R68: the app-bar link chip is localised (was hard-coded English).
 - R68: Studio has its own dashboard (`StudioDashboard`): quiet status row
   (text + dot shape, no colour fill), collapsible Radio / Location /
   Recent. Type rule: words sans, machine data mono (`MmType.sansLabels`).

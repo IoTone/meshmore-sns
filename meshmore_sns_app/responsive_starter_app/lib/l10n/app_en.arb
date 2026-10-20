@@ -96,6 +96,20 @@
   "statusLinkLost": "LINK LOST",
   "statusOffline": "OFFLINE",
   "statusConnecting": "CONNECTING…",
+  "linkChipLinked": "LINKED",
+  "linkChipSync": "SYNC",
+  "linkChipRetry": "RETRY",
+  "linkChipFail": "FAIL",
+  "linkChipScan": "SCAN",
+  "linkChipOffline": "OFFLINE",
+  "linkChipSemantics": "Radio {state}",
+  "@linkChipSemantics": {
+    "placeholders": {
+      "state": {
+        "type": "String"
+      }
+    }
+  },
   "actionConnect": "CONNECT",
   "actionRetry": "RETRY",
   "dashboardDevice": "Device",
