@@ -173,7 +173,7 @@ class DashboardScreen extends StatelessWidget {
           // config.
           InkWell(
             onTap: mc.isReady
-                ? () => _showRenameDialog(context, mc, selfInfo.name)
+                ? () => showDashboardRenameDialog(context, mc, selfInfo.name)
                 : null,
             borderRadius: BorderRadius.circular(6),
             child: Padding(
@@ -544,10 +544,12 @@ String _fmtBatteryDur(Duration d, AppLocalizations l) {
   return l.batteryDurM(d.inMinutes);
 }
 
-/// R52 — quick device rename from the dashboard. Opens a small dialog,
+/// R52 — quick device rename from the dashboard. Public since R68 so the
+/// Studio dashboard can reuse it rather than fork the dialog.
+/// Opens a small dialog,
 /// then writes the new advert name (which re-advertises + refreshes
 /// SelfInfo via [MeshcoreController.setAdvertName]).
-Future<void> _showRenameDialog(
+Future<void> showDashboardRenameDialog(
     BuildContext context, MeshcoreController mc, String current) async {
   final AppLocalizations l = AppLocalizations.of(context);
   final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);

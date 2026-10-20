@@ -10,6 +10,7 @@ import 'drpop_dashboard.dart';
 import 'hyperlocal_dashboard.dart';
 import 'nerv_dashboard.dart';
 import 'recon_dashboard.dart';
+import 'studio_dashboard.dart';
 
 /// R8 dashboard host — selects the **per-skin dashboard layout**. Most
 /// skins use the SEELE monolith ([DashboardScreen]); NERV gets its own
@@ -27,6 +28,7 @@ class DashboardHost extends StatelessWidget {
       MmThemePreset.agHud => const AgHudDashboard(),
       MmThemePreset.drPop => const DrPopDashboard(),
       MmThemePreset.recon => const ReconDashboard(),
+      MmThemePreset.studio => const StudioDashboard(),
       _ => const DashboardScreen(),
     };
   }

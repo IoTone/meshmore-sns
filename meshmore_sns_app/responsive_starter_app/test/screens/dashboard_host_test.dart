@@ -187,10 +187,10 @@ void main() {
     expect(find.text('MESHMORE™'), findsNothing);
   });
 
-  // R64 — the new UX must have location. Studio has no dashboard of its
-  // own; DashboardHost's `_ =>` hands it the SEELE monolith, which owns
-  // the only LOCATION tile. This proves that by rendering it rather than
-  // by reading the fallback, and records which presets lack the tile.
+  // R64 — the new UX must have location. (R68: Studio now has its own
+  // StudioDashboard, which carries a LOCATION section; before R68 it fell
+  // through to the SEELE monolith.) This proves it by rendering, and
+  // records which presets lack the tile.
   testWidgets('Studio (and SEELE) show the LOCATION tile; the others are '
       'recorded', (WidgetTester t) async {
     await t.binding.setSurfaceSize(const Size(1100, 2600));

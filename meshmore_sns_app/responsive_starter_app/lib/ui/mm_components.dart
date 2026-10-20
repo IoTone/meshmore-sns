@@ -42,7 +42,11 @@ class MmPanel extends StatelessWidget {
 /// The label style shared by [MmSectionHeader] and
 /// `MmCollapsibleSection`, so there is exactly one section-label idiom.
 TextStyle mmSectionLabelStyle(MmSkin skin) => TextStyle(
-      fontFamily: skin.type.headingFamily ?? skin.type.monoFamily,
+      // R68: Studio's labels are words, so they use the UI face (null =
+      // the theme default); the other skins keep their heading/mono face.
+      fontFamily: skin.type.sansLabels
+          ? null
+          : (skin.type.headingFamily ?? skin.type.monoFamily),
       color: skin.color.fgMuted,
       fontSize: 11,
       letterSpacing: skin.type.headingTracking,

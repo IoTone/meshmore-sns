@@ -1,0 +1,355 @@
+// Copyright (c) 2026 IoTone, Inc.
+// SPDX-License-Identifier: MIT
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:meshcore/meshcore.dart';
+import 'package:provider/provider.dart';
+
+import '../../gen/app_localizations.dart';
+import '../../meshcore/meshcore_connection.dart';
+import '../../meshcore/meshcore_controller.dart';
+import '../../meshcore/own_location.dart';
+import '../../theme/mm_skin.dart';
+import '../../ui/mm_audio_toggle.dart';
+import '../../ui/mm_collapse_controller.dart';
+import '../../ui/mm_collapsible.dart';
+import '../../ui/mm_components.dart';
+import '../dashboard_screen.dart' show showDashboardRenameDialog;
+import '../device_manager_sheet.dart';
+import 'dashboard_model.dart';
+import 'my_pubkey_line.dart';
+
+/// R68 — the **Studio** dashboard: the clean, professional, readable
+/// dark layout. It exists because the SEELE monolith (what Studio used to
+/// inherit) is the opposite register: a 88sp numeral, a full-bleed
+/// colour-inverting status slab and tracked all-caps labels.
+///
+/// Type roles (the one rule this screen follows, pinned by
+/// `test/screens/studio_dashboard_test.dart`):
+///   * **sans** (the platform UI face) for everything a person reads:
+///     labels, names, prose, status, region;
+///   * **mono** (`MmType.monoFamily`) only for machine data: counts,
+///     coordinates, radio parameters, the public key, battery volts,
+///     timestamps.
+/// A row may hold both (a number beside its caption) but never a word in
+/// the data face.
+///
+/// Reads the same [DashboardModel] / controller as every skin, and the
+/// position only through `MeshcoreController.ownLocation` (the
+/// location-source-of-truth guard). The status is text plus a dot whose
+/// *shape* (filled / ring / spinner) differs, never a colour fill.
+class StudioDashboard extends StatelessWidget {
+  const StudioDashboard({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final MeshcoreController mc = context.watch<MeshcoreController>();
+    final AppLocalizations l = AppLocalizations.of(context);
+    final MmSkin skin = context.skin;
+    final DashboardModel m = DashboardModel.gather(mc, l);
+    final TextStyle label = mmSectionLabelStyle(skin);
+    final TextStyle data = _data(skin, 13);
+    final Color muted = skin.color.fgMuted;
+    final SelfInfo? si = mc.selfInfo;
+    final OwnLocation? loc = mc.ownLocation;
+
+    String cap(String s) => skin.type.upperHeadings ? s.toUpperCase() : s;
+
+    return ListView(
+      padding: const EdgeInsets.only(bottom: 28),
+      children: <Widget>[
+        _StatusRow(mc: mc, m: m),
+        _hairline(skin),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Text(cap(l.dashboardPeersInRange), style: label),
+              const SizedBox(height: 6),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.baseline,
+                textBaseline: TextBaseline.alphabetic,
+                children: <Widget>[
+                  Text('${m.peersInRange}', style: _data(skin, 22)),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      m.contactsLabel == null
+                          ? l.dashboardKnownCount(m.knownCount)
+                          : '${l.dashboardKnownCount(m.knownCount)}'
+                              ' · ${l.dashContacts.toLowerCase()} '
+                              '${m.contactsLabel}',
+                      style: TextStyle(color: muted),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+        MmCollapsibleSection(
+          id: MmGroupIds.dashRadio,
+          title: l.dashboardRadio,
+          children: <Widget>[
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 10, 16, 14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  if (si == null)
+                    Text(l.dashboardAwaitingDevice,
+                        style: TextStyle(color: muted))
+                  else ...<Widget>[
+                    InkWell(
+                      onTap: mc.isReady
+                          ? () =>
+                              showDashboardRenameDialog(context, mc, si.name)
+                          : null,
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(
+                            minHeight: kMinInteractiveDimension),
+                        child: Row(
+                          children: <Widget>[
+                            Flexible(
+                              child: Text(m.nodeName ?? '',
+                                  style: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600)),
+                            ),
+                            if (mc.isReady) ...<Widget>[
+                              const SizedBox(width: 8),
+                              Icon(Icons.edit_outlined, size: 16, color: muted),
+                            ],
+                          ],
+                        ),
+                      ),
+                    ),
+                    MyPubkeyLine(
+                      pubKeyHex: m.pubKeyHex,
+                      style: _data(skin, 12).copyWith(color: muted),
+                      iconColor: muted,
+                    ),
+                    const SizedBox(height: 6),
+                    Text(m.radioLine ?? '', style: data),
+                    InkWell(
+                      onTap: () => context.push('/settings/device'),
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(
+                            minHeight: kMinInteractiveDimension),
+                        child: Row(
+                          children: <Widget>[
+                            Icon(Icons.public, size: 16, color: muted),
+                            const SizedBox(width: 8),
+                            Flexible(
+                              child: Text(m.region,
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.w600)),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                  if (mc.pairedName != null)
+                    Text(l.dashboardPaired(mc.pairedName!),
+                        style: TextStyle(color: muted, fontSize: 12)),
+                  if (m.batteryLine != null)
+                    InkWell(
+                      onTap: () => context.push('/settings/battery'),
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(
+                            minHeight: kMinInteractiveDimension),
+                        child: Row(
+                          children: <Widget>[
+                            Icon(Icons.battery_std, size: 16, color: muted),
+                            const SizedBox(width: 8),
+                            Text(m.batteryLine!, style: data),
+                            const Spacer(),
+                            Icon(Icons.chevron_right, size: 18, color: muted),
+                          ],
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        MmCollapsibleSection(
+          id: MmGroupIds.dashLocation,
+          title: l.dashboardLocation,
+          children: <Widget>[
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 4, 4, 10),
+              child: Row(
+                children: <Widget>[
+                  Expanded(child: _locationBody(context, mc, loc, si, skin)),
+                  IconButton(
+                    icon: const Icon(Icons.refresh, size: 20),
+                    tooltip: l.dashboardLocationRefresh,
+                    color: muted,
+                    onPressed: mc.isReady ? () => mc.refreshSelfInfo() : null,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        MmCollapsibleSection(
+          id: MmGroupIds.dashRecent,
+          title: l.dashboardRecent,
+          children: <Widget>[
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+              child: m.events.isEmpty
+                  ? Text(l.dashboardNoActivity, style: TextStyle(color: muted))
+                  : Column(
+                      children: <Widget>[
+                        for (final ({String text, String time}) e in m.events)
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 3),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: <Widget>[
+                                SizedBox(
+                                  width: 70,
+                                  child: Text(e.time,
+                                      style: _data(skin, 12)
+                                          .copyWith(color: muted)),
+                                ),
+                                Expanded(child: Text(e.text)),
+                              ],
+                            ),
+                          ),
+                      ],
+                    ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _locationBody(BuildContext context, MeshcoreController mc,
+      OwnLocation? loc, SelfInfo? si, MmSkin skin) {
+    final AppLocalizations l = AppLocalizations.of(context);
+    final Color muted = skin.color.fgMuted;
+    if (loc != null) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Text(
+            '${loc.latitude.toStringAsFixed(5)}, '
+            '${loc.longitude.toStringAsFixed(5)}'
+            '${loc.altitudeMeters == null ? '' : '  · '
+                '${l.dashboardLocationAltitude(loc.altitudeMeters!.round())}'}',
+            style: _data(skin, 13),
+          ),
+          const SizedBox(height: 2),
+          Text(l.dashboardLocationSourceLabel(loc.sourceLabel),
+              style: TextStyle(color: muted, fontSize: 12)),
+        ],
+      );
+    }
+    if (si == null) {
+      return Text(l.dashboardAwaitingDeviceLocation,
+          style: TextStyle(color: muted));
+    }
+    return Row(
+      children: <Widget>[
+        Icon(Icons.location_off_outlined, size: 18, color: muted),
+        const SizedBox(width: 8),
+        Expanded(child: Text(l.dashboardLocationNotSet)),
+        TextButton(
+          style: TextButton.styleFrom(minimumSize: const Size(64, 48)),
+          onPressed: () => context.push('/settings/device'),
+          child: Text(l.dashboardLocationConfigure),
+        ),
+      ],
+    );
+  }
+}
+
+/// A data-face style: mono, machine values only.
+TextStyle _data(MmSkin skin, double size) => TextStyle(
+      fontFamily: skin.type.monoFamily,
+      fontSize: size,
+      height: 1.4,
+    );
+
+Widget _hairline(MmSkin skin) =>
+    Container(height: skin.shape.hairlineWidth, color: skin.color.hairline);
+
+/// Link state as a quiet row: a dot whose shape (filled / ring /
+/// spinner) and the label say the state; there is no colour fill and no
+/// colour-only meaning. Connect/Retry, the device sheet and the audio
+/// toggle are 48dp targets.
+class _StatusRow extends StatelessWidget {
+  const _StatusRow({required this.mc, required this.m});
+  final MeshcoreController mc;
+  final DashboardModel m;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations l = AppLocalizations.of(context);
+    final MmSkin skin = context.skin;
+    final Color muted = skin.color.fgMuted;
+    final bool linked = mc.state == MeshcoreConnectionState.ready;
+    final Color dotColor = m.alert ? skin.color.alert : skin.color.accent;
+    final Widget dot = m.busy
+        ? SizedBox(
+            width: 14,
+            height: 14,
+            child: CircularProgressIndicator(strokeWidth: 2, color: dotColor),
+          )
+        : Container(
+            width: 12,
+            height: 12,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: linked ? dotColor : null,
+              border: linked ? null : Border.all(color: dotColor, width: 2),
+            ),
+          );
+    final bool canConnect =
+        mc.state == MeshcoreConnectionState.disconnected && !mc.isConnecting;
+    final bool canRetry = mc.state == MeshcoreConnectionState.failed;
+    return Padding(
+      padding: const EdgeInsets.only(left: 16, right: 4),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: 56),
+        child: Row(
+          children: <Widget>[
+            SizedBox(width: 14, child: Center(child: dot)),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                m.statusLabel,
+                style: const TextStyle(fontWeight: FontWeight.w600),
+              ),
+            ),
+            if (linked && mc.isDraining)
+              Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: Text(l.statusSyncing,
+                    style: TextStyle(color: muted, fontSize: 12)),
+              ),
+            if (canConnect || canRetry)
+              TextButton(
+                style: TextButton.styleFrom(minimumSize: const Size(64, 48)),
+                onPressed: () => mc.connect(),
+                child: Text(canRetry ? l.actionRetry : l.actionConnect),
+              ),
+            IconButton(
+              tooltip: l.dashboardDevice,
+              icon: Icon(Icons.bluetooth, size: 20, color: muted),
+              onPressed: () => DeviceManagerSheet.show(context),
+            ),
+            MmAudioToggle(color: muted),
+          ],
+        ),
+      ),
+    );
+  }
+}

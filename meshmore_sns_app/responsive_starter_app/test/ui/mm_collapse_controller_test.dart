@@ -183,6 +183,9 @@ void main() {
       'devDevice': MmGroupIds.devDevice,
       'persPreset': MmGroupIds.persPreset,
       'persAccessibility': MmGroupIds.persAccessibility,
+      'dashRadio': MmGroupIds.dashRadio,
+      'dashLocation': MmGroupIds.dashLocation,
+      'dashRecent': MmGroupIds.dashRecent,
     };
     expect(used, byName.keys.toSet(), reason: 'screens vs the id list');
     expect(byName.values.toSet(), MmGroupIds.all);

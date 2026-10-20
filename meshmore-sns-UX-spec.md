@@ -199,6 +199,9 @@ app bar (with its view strip) end in a 1px hairline (R66). Studio reuses the
 Hyperlocal audio pack and the neutral haptic profile.
 From R68 Studio has **no hue at all**: the accent is a light grey (`#D0D0D0`),
 alert and ok are low-saturation tints, and selection is shown by lightness.
+Studio has its own dashboard (R68): a quiet status row, peers in range, then
+collapsible Radio / Location / Recent sections, with the type rule *words are
+sans, only machine data is mono*.
 
 #### Palette — token contract (preset-independent)
 

@@ -76,6 +76,12 @@ codebase.
   `test/theme/mm_layers_test.dart`. **Unverified on a device.**
 - R68: fixed the shell being mounted twice at launch (BootOverlay swapped
   Stack for a bare child on dismissal); `test/shell/boot_overlay_test.dart`.
+- R68: Studio has its own dashboard (`StudioDashboard`): quiet status row
+  (text + dot shape, no colour fill), collapsible Radio / Location /
+  Recent. Type rule: words sans, machine data mono (`MmType.sansLabels`).
+  The old SEELE "double CONNECT" was one TextButton drawn in the accent on
+  the error fill (1.5:1) beside a second OFFLINE in the app bar.
+  **Unverified on a device.**
 - Audio aliases the Hyperlocal pack; **unverified on a device**.
 
 **Privacy (R62)**

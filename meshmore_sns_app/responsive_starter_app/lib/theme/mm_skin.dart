@@ -35,6 +35,7 @@ class MmType {
     this.upperHeadings = false,
     this.headingTracking = 1.0,
     this.slashedZero = false,
+    this.sansLabels = false,
   });
 
   final String? displayFamily;
@@ -52,6 +53,12 @@ class MmType {
   /// Evangelion "SOUND ONLY" motif). Applied by components via
   /// `FontFeature.slashedZero()` when the face supports it.
   final bool slashedZero;
+
+  /// R68 — draw section labels in the platform UI face instead of the
+  /// mono/heading face. Off for the six older presets (their labels are
+  /// mono or Saira by design); Studio turns it on so **words are always
+  /// sans and only machine data is mono** (the Studio type-role rule).
+  final bool sansLabels;
 }
 
 /// Panel/edge treatment.
@@ -248,6 +255,7 @@ MmSkin mmSkinFor(MmThemePreset preset) {
           monoFamily: 'JetBrains Mono',
           upperHeadings: true,
           headingTracking: 1.2,
+          sansLabels: true,
         ),
         shape: const MmShape(
           corner: MmCorner.sharp,

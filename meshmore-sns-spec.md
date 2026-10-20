@@ -1210,6 +1210,25 @@ While Meshcore protocol is open source, the client is not open source.  We want 
     State was created twice at launch. It now keeps a one-child `Stack`.
     Test: `test/shell/boot_overlay_test.dart` (init count 1; the old code
     gave `[init, init, dispose]`).
+  - **Studio dashboard** (`lib/screens/dashboards/studio_dashboard.dart`,
+    registered in `DashboardHost`): Studio used to inherit the SEELE
+    monolith (an 88sp numeral, a full-bleed colour-inverting status slab,
+    tracked caps). Now: a quiet status row (text plus a dot whose *shape*
+    says the state: filled / ring / spinner; Connect/Retry, device sheet
+    and audio toggle are 48dp), peers in range, then collapsible RADIO,
+    LOCATION and RECENT sections (ids `dashboard.radio`, `dashboard.location`,
+    `dashboard.recent`, persisted per R65, open by default). LOCATION reads
+    `MeshcoreController.ownLocation` only. The raw `dev:`/`pol:`/`phone:`
+    debug readout is not shown.
+  - **Type roles** (Studio): *words are sans, only machine data is mono.*
+    Sans (platform UI face) for labels, names, prose, status, region; mono
+    (`JetBrains Mono`) for counts, coordinates, radio parameters, the
+    public key, battery volts and timestamps. `MmType.sansLabels` (new,
+    default false) makes `mmSectionLabelStyle` use the UI face for Studio,
+    so section and collapsible headers are no longer mono caps beside sans
+    body text. Pinned by `test/screens/studio_dashboard_test.dart` (every
+    mono string on the dashboard contains a digit). Not bundled: a serif
+    (see STATUS). Other screens still hard-code mono in places.
 
 ### Terminology — Fabric vs Contact
 

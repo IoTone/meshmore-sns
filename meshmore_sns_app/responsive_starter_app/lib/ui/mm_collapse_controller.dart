@@ -29,6 +29,10 @@ abstract final class MmGroupIds {
   // personalization_screen.dart
   static const String persPreset = 'personalization.preset';
   static const String persAccessibility = 'personalization.accessibility';
+  // studio_dashboard.dart (R68)
+  static const String dashRadio = 'dashboard.radio';
+  static const String dashLocation = 'dashboard.location';
+  static const String dashRecent = 'dashboard.recent';
 
   static const Set<String> all = <String>{
     locAutoPublish,
@@ -41,6 +45,9 @@ abstract final class MmGroupIds {
     devDevice,
     persPreset,
     persAccessibility,
+    dashRadio,
+    dashLocation,
+    dashRecent,
   };
 }
 
