@@ -249,7 +249,9 @@ class _StreetMapViewState extends State<StreetMapView> {
                     InteractiveFlag.scrollWheelZoom |
                     InteractiveFlag.doubleTapZoom,
               ),
-              backgroundColor: cs.surfaceContainerHighest,
+              backgroundColor: context.skin.shape.vectorBasemap
+                  ? kVectorBasemapBackground
+                  : cs.surfaceContainerHighest,
             ),
             children: <Widget>[
               // R25+3 / R61 — swappable basemap, served from the

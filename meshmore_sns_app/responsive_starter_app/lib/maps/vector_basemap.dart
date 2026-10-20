@@ -19,6 +19,7 @@ library;
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart' show debugPrint, kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:provider/provider.dart';
@@ -41,6 +42,12 @@ const String kVectorBasemapAsset = 'assets/maps/studio_dark.json';
 
 /// The source id inside the style that [MmVectorTileProvider] serves.
 const String kVectorBasemapSourceId = 'openmaptiles';
+
+/// What shows through wherever a tile has not arrived yet (R81). It is the
+/// style's own `background` layer colour, so an unloaded tile reads as
+/// "land, not yet drawn" and not as a grey fault. A guard test keeps the
+/// two equal. Zero network cost, unlike a second basemap underneath.
+const Color kVectorBasemapBackground = Color(0xFF141414);
 
 /// Parsed once per process: the JSON is ~35 KB and parsing it per rebuild
 /// would be wasteful. A failed load is not cached, so a fix is retried.
@@ -85,18 +92,33 @@ class MmVectorTileProvider implements VectorTileProvider {
 
   @override
   Future<Uint8List> provide(TileIdentity tile) async {
-    final Uint8List? bytes =
-        await maps.loadTile(source, tile.z, tile.x, tile.y);
-    if (bytes == null) {
-      // Offline and never seen. Not retryable inside this frame; the view
-      // cache is tried again when the map moves.
+    final String name = '${source.id}/${tile.z}/${tile.x}/${tile.y}';
+    final TileLoad load;
+    try {
+      load = await maps.loadTileDetailed(source, tile.z, tile.x, tile.y);
+    } catch (e) {
+      // Nothing thrown here may reach the renderer's isolate pool: a bad
+      // tile is a hole, never a crashed map.
+      if (kDebugMode) debugPrint('vector tile $name failed: $e');
       throw ProviderException(
-        message: 'vector tile ${source.id}/${tile.z}/${tile.x}/${tile.y} '
-            'unavailable',
-        retryable: Retryable.none,
-      );
+          message: 'vector tile $name failed',
+          retryable: Retryable.none);
     }
-    return bytes;
+    if (load.bytes != null) return load.bytes!;
+    if (load.missing) {
+      // The server's answer is "nothing here" (open ocean, empty area).
+      // 404 makes the renderer draw an empty tile, so only the background
+      // shows, instead of treating a real answer as a failure.
+      throw ProviderException(
+          message: 'vector tile $name: no data',
+          statusCode: 404,
+          retryable: Retryable.none);
+    }
+    // Offline and never seen, gated, or superseded in the fetch queue. The
+    // view cache is tried again when the map moves.
+    if (kDebugMode) debugPrint('vector tile $name unavailable');
+    throw ProviderException(
+        message: 'vector tile $name unavailable', retryable: Retryable.none);
   }
 
   @override
@@ -134,8 +156,22 @@ class VectorBasemapLayer extends StatelessWidget {
           tileProviders: TileProviders(<String, VectorTileProvider>{
             kVectorBasemapSourceId: MmVectorTileProvider(maps, source),
           }),
-          // Parsing happens off the UI thread when the platform allows it.
-          concurrency: 2,
+          // Isolates for parsing/rendering (NOT network parallelism: that is
+          // MapsController.viewGate). The library default is 4; R80 had
+          // set 2. Ignored in debug builds, where the library runs one
+          // queue on the UI isolate.
+          concurrency: 4,
+          // Our TileStore is the cache of record (budget, expiry, ETag,
+          // packs). The library keeps its own second copy of every tile in
+          // the temp directory with a 30-day TTL and no revalidation; keep
+          // that to a token size so it cannot hold stale bytes or a
+          // hidden gigabyte beside the budgeted store.
+          fileCacheMaximumSizeInBytes: 1024 * 1024,
+          fileCacheTtl: const Duration(hours: 1),
+          // Draw a lower/higher-zoom tile in place of one still loading
+          // (library default 2; stated so a library change cannot silently
+          // bring holes back).
+          maximumTileSubstitutionDifference: 2,
         );
       },
     );

@@ -10,11 +10,24 @@ import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'event_layer.dart';
+import 'fetch_gate.dart';
 import 'map_fetch.dart';
 import 'map_pack.dart';
 import 'map_source.dart';
 import 'tile_math.dart';
 import 'tile_store.dart';
+
+/// What [MapsController.loadTileDetailed] found.
+class TileLoad {
+  const TileLoad(this.bytes, {this.missing = false});
+
+  /// null when the tile could not be had right now.
+  final Uint8List? bytes;
+
+  /// True when the server answered "no such tile" (404/410/204): a real,
+  /// final answer (ocean, empty area), not an outage.
+  final bool missing;
+}
 
 /// Why a pack was not created — one sentence each in the UI.
 enum PackRefusal {
@@ -66,6 +79,15 @@ class MapsController extends ChangeNotifier {
   final Duration retryFloor;
 
   final math.Random _random;
+
+  /// R81 — viewing fetches go through this: 4 at a time, newest first,
+  /// stale requests dropped. See [TileFetchGate].
+  final TileFetchGate viewGate = TileFetchGate();
+
+  /// Keys the server said do not exist, remembered for this run so a pan
+  /// back over open ocean does not ask again. Bounded; cleared when full.
+  final Set<String> _absent = <String>{};
+  static const int _absentCap = 2048;
 
   /// R81 — consecutive failed *viewing* fetches on one source before that
   /// source (only) stops being asked. One lost tile on a cell link is
@@ -315,7 +337,13 @@ class MapsController extends ChangeNotifier {
   /// Bytes for one tile: the store first, the network if we must.
   /// Stale view tiles are revalidated (If-None-Match) when online and
   /// shown as-is when not; pack tiles are never refetched by viewing.
-  Future<Uint8List?> loadTile(MapSource src, int z, int x, int y) async {
+  Future<Uint8List?> loadTile(MapSource src, int z, int x, int y) async =>
+      (await loadTileDetailed(src, z, x, y)).bytes;
+
+  /// [loadTile] plus the one distinction the vector layer needs: "the
+  /// server has nothing here" (draw an empty tile) versus "could not reach
+  /// it" (leave the tile to be asked for again).
+  Future<TileLoad> loadTileDetailed(MapSource src, int z, int x, int y) async {
     await ready;
     final TileStore store = _store!;
     final String key = TileStore.keyOf(src.id, z, x, y);
@@ -324,30 +352,54 @@ class MapsController extends ChangeNotifier {
       final Uint8List? held = await store.read(key);
       if (held != null) {
         if (meta.expiresMs > _now || !meta.viewOnly || _gated(src.id)) {
-          return held;
+          return TileLoad(held);
         }
-        final FetchResult r = await _fetch(src.tileUri(z, x, y),
+        final FetchResult? r = await _viewFetch(src, z, x, y,
             etag: meta.etag, ifModifiedSinceMs: meta.fetchedMs);
-        _noteView(src, r.status);
+        if (r == null) return TileLoad(held);
         if (r.status == FetchStatus.notModified) {
           store.revalidated(key, r.maxAge ?? viewMaxAgeDefault);
         } else if (r.status == FetchStatus.ok && r.bytes != null) {
           await store.write(key, r.bytes!,
               maxAge: r.maxAge ?? viewMaxAgeDefault, etag: r.etag);
           _scheduleTrim();
-          return r.bytes;
+          return TileLoad(r.bytes);
         }
-        return held;
+        return TileLoad(held);
       }
     }
-    if (_gated(src.id)) return null;
-    final FetchResult r = await _fetch(src.tileUri(z, x, y));
-    _noteView(src, r.status);
-    if (r.status != FetchStatus.ok || r.bytes == null) return null;
+    if (_absent.contains(key)) return const TileLoad(null, missing: true);
+    if (_gated(src.id)) return const TileLoad(null);
+    final FetchResult? r = await _viewFetch(src, z, x, y);
+    if (r == null) return const TileLoad(null);
+    if (r.status == FetchStatus.missing) {
+      if (_absent.length >= _absentCap) _absent.clear();
+      _absent.add(key);
+      return const TileLoad(null, missing: true);
+    }
+    if (r.status != FetchStatus.ok || r.bytes == null) {
+      return const TileLoad(null);
+    }
     await store.write(key, r.bytes!,
         maxAge: r.maxAge ?? viewMaxAgeDefault, etag: r.etag);
     _scheduleTrim();
-    return r.bytes;
+    return TileLoad(r.bytes);
+  }
+
+  /// One viewing fetch through [viewGate]. null = superseded in the queue
+  /// before it started (never asked, never counted as a failure).
+  Future<FetchResult?> _viewFetch(MapSource src, int z, int x, int y,
+      {String? etag, int? ifModifiedSinceMs}) async {
+    try {
+      final FetchResult r = await viewGate.run(() => _fetch(
+          src.tileUri(z, x, y),
+          etag: etag,
+          ifModifiedSinceMs: ifModifiedSinceMs));
+      _noteView(src, r.status);
+      return r;
+    } on TileDropped {
+      return null;
+    }
   }
 
   void _scheduleTrim() {

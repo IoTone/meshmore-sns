@@ -110,12 +110,61 @@ void main() {
       );
     });
 
+    test('R81 a server "no such tile" becomes a 404 the renderer draws empty',
+        () async {
+      final MapsController m = MapsController(
+        rootDir: () async => dir,
+        fetcher: (Uri u, {String? etag, int? ifModifiedSinceMs}) async =>
+            const FetchResult(FetchStatus.missing),
+        pace: Duration.zero,
+      );
+      await m.load();
+      await expectLater(
+        MmVectorTileProvider(m, kOpenFreeMapVector)
+            .provide(vmt.TileIdentity(2, 0, 0)),
+        throwsA(isA<vmt.ProviderException>()
+            .having((vmt.ProviderException e) => e.statusCode, 'status', 404)),
+      );
+      m.dispose();
+    });
+
+    test('R81 even an unexpected error stays a ProviderException', () async {
+      final MapsController m = MapsController(
+        rootDir: () async => dir,
+        fetcher: (Uri u, {String? etag, int? ifModifiedSinceMs}) async =>
+            throw StateError('boom'),
+        pace: Duration.zero,
+      );
+      await m.load();
+      await expectLater(
+        MmVectorTileProvider(m, kOpenFreeMapVector)
+            .provide(vmt.TileIdentity(2, 0, 0)),
+        throwsA(isA<vmt.ProviderException>()),
+        reason: 'the renderer pool must never see a raw exception',
+      );
+      m.dispose();
+    });
+
     test('zoom bounds follow the source', () {
       final MmVectorTileProvider provider =
           MmVectorTileProvider(maps, kOpenFreeMapVector);
       expect(provider.minimumZoom, 0);
       expect(provider.maximumZoom, kOpenFreeMapVector.maxNativeZoom);
     });
+  });
+
+  test('R81 the underlay colour is the style\'s own background', () async {
+    final Map<String, dynamic> style = jsonDecode(
+        await rootBundle.loadString(kVectorBasemapAsset)) as Map<String, dynamic>;
+    final Map<String, dynamic> bg = (style['layers'] as List<dynamic>)
+        .cast<Map<String, dynamic>>()
+        .firstWhere((Map<String, dynamic> l) => l['type'] == 'background');
+    final RegExpMatch m = RegExp(r'rgb\((\d+),\s*(\d+),\s*(\d+)\)').firstMatch(
+        (bg['paint'] as Map<String, dynamic>)['background-color'] as String)!;
+    expect(
+        Color.fromARGB(255, int.parse(m[1]!), int.parse(m[2]!), int.parse(m[3]!)),
+        kVectorBasemapBackground,
+        reason: 'unloaded tiles must look like the map, not like a fault');
   });
 
   test('R80 only Studio renders the vector basemap', () {
