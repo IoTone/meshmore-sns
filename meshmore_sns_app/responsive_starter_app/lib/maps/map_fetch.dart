@@ -59,6 +59,20 @@ Duration? parseMaxAge(String? cacheControl, String? expires, DateTime now) {
   return null;
 }
 
+/// Read a header that may legitimately appear more than once.
+///
+/// `HttpHeaders.value(name)` throws `HttpException: More than one value for
+/// header [name]` when a response repeats a header, which kills the whole
+/// fetch. OpenFreeMap sends two `cache-control` headers, so every vector
+/// tile failed with a blank map and no other symptom (R80 device run).
+/// List-valued headers are joined per RFC 9110; single-valued ones take the
+/// first, which is what a proxy chain means to convey.
+String? headerValue(HttpHeaders headers, String name, {bool join = false}) {
+  final List<String>? values = headers[name];
+  if (values == null || values.isEmpty) return null;
+  return join ? values.join(', ') : values.first;
+}
+
 /// Default fetcher over dart:io. Never sends no-cache headers; sends
 /// If-None-Match / If-Modified-Since when it has them.
 MapFetcher httpMapFetcher(String Function() userAgent) {
@@ -76,10 +90,10 @@ MapFetcher httpMapFetcher(String Function() userAgent) {
       final HttpClientResponse resp =
           await req.close().timeout(const Duration(seconds: 30));
       final Duration? maxAge = parseMaxAge(
-          resp.headers.value(HttpHeaders.cacheControlHeader),
-          resp.headers.value(HttpHeaders.expiresHeader),
+          headerValue(resp.headers, HttpHeaders.cacheControlHeader, join: true),
+          headerValue(resp.headers, HttpHeaders.expiresHeader),
           DateTime.now());
-      final String? newTag = resp.headers.value(HttpHeaders.etagHeader);
+      final String? newTag = headerValue(resp.headers, HttpHeaders.etagHeader);
       final int code = resp.statusCode;
       if (code == 304) {
         await resp.drain<void>();
@@ -103,7 +117,8 @@ MapFetcher httpMapFetcher(String Function() userAgent) {
           bytes: bb.takeBytes(),
           maxAge: maxAge,
           etag: newTag,
-          lastModified: resp.headers.value(HttpHeaders.lastModifiedHeader));
+          lastModified:
+              headerValue(resp.headers, HttpHeaders.lastModifiedHeader));
     } catch (e) {
       // R80 — a silent catch turned a real, repeatable failure into an
       // invisible one: every tile came back null and the map was blank
