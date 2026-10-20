@@ -89,4 +89,35 @@ void main() {
     await t.pumpWidget(const SizedBox());
     await t.pump(const Duration(seconds: 30));
   });
+
+  testWidgets('R70: the credit line is not covered by the no-fix banner',
+      (WidgetTester t) async {
+    final MeshcoreController c = await _pump(t, const MapScreen());
+    final Finder credit = find.text('© OpenStreetMap contributors');
+    expect(credit, findsOneWidget);
+    final Rect banner = t.getRect(
+        find.byKey(const ValueKey<String>('map-no-fix-banner')));
+    expect(t.getRect(credit).bottom, lessThanOrEqualTo(banner.top),
+        reason: 'attribution sits above the banner, not under it');
+    c.dispose();
+    await t.pumpWidget(const SizedBox());
+    await t.pump(const Duration(seconds: 30));
+  });
+
+  testWidgets('R70: controls are 48dp and the right band starts below them',
+      (WidgetTester t) async {
+    final MeshcoreController c = await _pump(t, const MapScreen());
+    final Rect col =
+        t.getRect(find.byKey(const ValueKey<String>('map-controls')));
+    expect(col.width, greaterThanOrEqualTo(48));
+    expect(col.height, greaterThanOrEqualTo(5 * 48),
+        reason: 'five controls, 48dp each');
+    final Rect band =
+        t.getRect(find.byKey(const ValueKey<String>('mm-edge-right')));
+    expect(band.top, greaterThanOrEqualTo(col.bottom),
+        reason: 'the band must not overlap any control');
+    c.dispose();
+    await t.pumpWidget(const SizedBox());
+    await t.pump(const Duration(seconds: 30));
+  });
 }

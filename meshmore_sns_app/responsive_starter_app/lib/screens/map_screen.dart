@@ -34,10 +34,10 @@ class MapScreen extends StatelessWidget {
   /// Null (a bare `MapScreen` in a test) means the bands do nothing.
   final ValueChanged<int>? onEdgeSwipe;
 
-  /// StreetMapView's zoom/recentre column: right 12 + 36 wide, top 12 +
-  /// 4 x 36 + the 34 picker, tall. The right band starts below it so it cannot shadow a
-  /// button.
-  static const double _rightControlsBottom = 208;
+  /// R70 — derived from [StreetMapView]'s own control geometry (five
+  /// 48 dp controls from the top), so the right band always starts below
+  /// the column and cannot shadow a button.
+  static const double rightControlsBottom = StreetMapView.controlsBottom;
 
   @override
   Widget build(BuildContext context) {
@@ -48,7 +48,7 @@ class MapScreen extends StatelessWidget {
         Positioned.fill(
           child: MmEdgeSwipe(
             onSwipe: (int d) => onEdgeSwipe?.call(d),
-            rightInsets: const EdgeInsets.only(top: _rightControlsBottom),
+            rightInsets: const EdgeInsets.only(top: rightControlsBottom),
             child: const StreetMapView(browseWithoutFix: true),
           ),
         ),

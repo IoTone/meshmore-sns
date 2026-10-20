@@ -365,7 +365,7 @@ void main() {
         (WidgetTester t) async {
       final Rect r = await openMap(t);
       await t.flingFrom(
-          Offset(r.right - 10, r.center.dy), const Offset(-300, 0), 1000);
+          Offset(r.right - 10, r.bottom - 60), const Offset(-300, 0), 1000);
       await settle(t);
       expect(find.widgetWithText(AppBar, 'Settings'), findsOneWidget);
       expect(t.takeException(), isNull);
@@ -443,13 +443,13 @@ void main() {
       expect(hit.path.any((HitTestEntry e) => e.target == t.renderObject(btn)),
           isTrue,
           reason: 'the button wins over the band');
-      // StreetMapView's zoom column (right 12, 36 wide, top 12 + 3 x
-      // 36) only renders once there is a position fix, which this
-      // harness has none of, so assert the geometry instead: the right
-      // band starts below where that column ends.
+      // R70: the real control column renders (R69 made the map
+      // browsable with no fix); the right band starts at or below it.
+      final Rect col =
+          t.getRect(find.byKey(const ValueKey<String>('map-controls')));
       final Rect rightBand =
           t.getRect(find.byKey(const ValueKey<String>('mm-edge-right')));
-      expect(rightBand.top - r.top, greaterThanOrEqualTo(12 + 3 * 36));
+      expect(rightBand.top, greaterThanOrEqualTo(col.bottom));
       expect(rightBand.width, 24);
     });
   });

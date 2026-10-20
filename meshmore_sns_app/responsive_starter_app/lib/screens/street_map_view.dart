@@ -55,6 +55,16 @@ class StreetMapView extends StatefulWidget {
   static const LatLng browseCentre = LatLng(20.0, 0.0);
   static const double browseZoom = 2.0;
 
+  /// R70 — the control column's geometry, shared with the Map tab's
+  /// edge band so the band's inset is derived, not a magic number: five
+  /// controls (zoom in, zoom out, recentre, basemap picker, tile
+  /// toggle), each 48 dp, `controlsInset` from the top-right corner.
+  static const double controlCell = 48;
+  static const int controlCount = 5;
+  static const double controlsInset = 12;
+  static const double controlsBottom =
+      controlsInset + controlCount * controlCell;
+
   @override
   State<StreetMapView> createState() => _StreetMapViewState();
 }
@@ -342,15 +352,22 @@ class _StreetMapViewState extends State<StreetMapView> {
             ],
           ),
         ),
-        if (_showTiles) MapAttribution(tileSource.attribution),
         // R69 — quiet, non-modal, not dismissable, no fill: a hairline
         // row that says why the map is not on you. Gone once a fix lands.
-        if (!hasFix)
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: 0,
-            child: Container(
+        // R70 — the credit line shares this bottom column with the banner
+        // so the banner can never cover it (it did: R69 stacked the
+        // banner over the bottom-left attribution).
+        Positioned(
+          left: 0,
+          right: 0,
+          bottom: 0,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              if (_showTiles) MapAttribution(tileSource.attribution),
+              if (!hasFix)
+                Container(
               key: const ValueKey<String>('map-no-fix-banner'),
               padding:
                   const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
@@ -372,8 +389,10 @@ class _StreetMapViewState extends State<StreetMapView> {
                   ),
                 ],
               ),
-            ),
+                ),
+            ],
           ),
+        ),
         if (widget.frozen)
           Positioned(
             left: 12,
@@ -402,9 +421,10 @@ class _StreetMapViewState extends State<StreetMapView> {
           ),
         // Zoom +/- + re-centre. Stacked vertically, top-right.
         Positioned(
-          right: 12,
-          top: 12,
+          right: StreetMapView.controlsInset,
+          top: StreetMapView.controlsInset,
           child: Material(
+            key: const ValueKey<String>('map-controls'),
             color: cs.surface.withValues(alpha: .9),
             elevation: 1,
             shape: RoundedRectangleBorder(
@@ -418,27 +438,27 @@ class _StreetMapViewState extends State<StreetMapView> {
                 IconButton(
                   tooltip: l.equalGridZoomIn,
                   iconSize: 18,
-                  visualDensity: VisualDensity.compact,
                   constraints: const BoxConstraints(
-                      minWidth: 36, minHeight: 36),
+                      minWidth: StreetMapView.controlCell,
+                      minHeight: StreetMapView.controlCell),
                   icon: const Icon(Icons.add),
                   onPressed: _zoom < _zoomMax ? _zoomIn : null,
                 ),
                 IconButton(
                   tooltip: l.equalGridZoomOut,
                   iconSize: 18,
-                  visualDensity: VisualDensity.compact,
                   constraints: const BoxConstraints(
-                      minWidth: 36, minHeight: 36),
+                      minWidth: StreetMapView.controlCell,
+                      minHeight: StreetMapView.controlCell),
                   icon: const Icon(Icons.remove),
                   onPressed: _zoom > _minZoom ? _zoomOut : null,
                 ),
                 IconButton(
                   tooltip: l.streetMapRecenter,
                   iconSize: 18,
-                  visualDensity: VisualDensity.compact,
                   constraints: const BoxConstraints(
-                      minWidth: 36, minHeight: 36),
+                      minWidth: StreetMapView.controlCell,
+                      minHeight: StreetMapView.controlCell),
                   icon: const Icon(Icons.my_location),
                   onPressed: hasFix
                       ? () => _recenterOnSelf(selfLat, selfLon)
@@ -448,6 +468,9 @@ class _StreetMapViewState extends State<StreetMapView> {
                 PopupMenuButton<String>(
                   tooltip: l.mapsSourcePick,
                   iconSize: 18,
+                  constraints: const BoxConstraints(
+                      minWidth: StreetMapView.controlCell,
+                      minHeight: StreetMapView.controlCell),
                   icon: const Icon(Icons.map),
                   initialValue: tileSource.id,
                   onSelected: (String id) =>
@@ -469,9 +492,9 @@ class _StreetMapViewState extends State<StreetMapView> {
                       ? l.mapHideTiles
                       : l.mapShowTiles,
                   iconSize: 18,
-                  visualDensity: VisualDensity.compact,
                   constraints: const BoxConstraints(
-                      minWidth: 36, minHeight: 36),
+                      minWidth: StreetMapView.controlCell,
+                      minHeight: StreetMapView.controlCell),
                   icon: Icon(_showTiles
                       ? Icons.layers
                       : Icons.layers_clear),
