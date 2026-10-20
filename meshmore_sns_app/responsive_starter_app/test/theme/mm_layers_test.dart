@@ -23,6 +23,7 @@ void main() {
         expect(t.selected, t.surfaceAlt, reason: '$p');
         expect(t.hairline, t.line, reason: '$p');
         expect(t.onAccent, t.base, reason: '$p');
+        expect(t.onAlert, t.fg, reason: '$p');
       }
     });
 
@@ -35,6 +36,8 @@ void main() {
         expect(c.onPrimary, t.base, reason: '$p');
         expect(c.onSecondary, t.base, reason: '$p');
         expect(c.outline, t.line, reason: '$p');
+        expect(c.onError, t.fg, reason: '$p');
+        expect(c.onErrorContainer, t.fg, reason: '$p');
       }
     });
 
@@ -143,27 +146,48 @@ void main() {
       expect(lum(t.fgDisabled), lessThan(lum(t.fgMuted)));
     });
 
-    test('one accent: greyscale chrome, only the accent has a hue', () {
-      double sat(Color c) {
-        final HSVColor h = HSVColor.fromColor(c);
-        return h.saturation;
-      }
+    double sat(Color c) => HSVColor.fromColor(c).saturation;
 
+    test('R68: NO hue in chrome or accent — the accent is a light grey', () {
       for (final Color c in <Color>[
         ...t.layers,
         t.line,
         t.hairline,
         t.fg,
         t.fgMuted,
-        t.fgDisabled
+        t.fgDisabled,
+        t.accent,
+        t.onAccent,
+        t.onAlert,
       ]) {
         expect(sat(c), lessThan(0.02), reason: '$c should be grey');
       }
-      expect(sat(t.accent), greaterThan(0.3));
-      expect(
-          ratio(t.onAccent, t.accent) > 4.5 ||
-              ratio(t.accent, t.onAccent) > 4.5,
-          isTrue);
+      expect(sat(t.accent), 0.0, reason: 'zero saturation, so zero hue');
+      // Light, not mid: selection is carried by lightness.
+      expect(lum(t.accent), greaterThan(0.55));
+      expect(lum(t.accent), lessThan(lum(t.fg)));
+      expect(ratio(t.accent, t.base), greaterThanOrEqualTo(7));
+      expect(ratio(t.accent, t.onAccent), greaterThanOrEqualTo(7));
+    });
+
+    test('R68: alert and ok are tints, never the loudest thing', () {
+      for (final Color c in <Color>[t.alert, t.ok]) {
+        expect(sat(c), lessThanOrEqualTo(0.30), reason: '$c');
+      }
+      // Still distinguishable from neutral text: a visible tint.
+      expect(sat(t.alert), greaterThan(0.10));
+      expect(sat(t.ok), greaterThan(0.10));
+      // A filled alert carries dark text (light text was 1.5:1).
+      expect(ratio(t.alert, t.onAlert), greaterThanOrEqualTo(7));
+      final ColorScheme c = buildMmTheme(t).colorScheme;
+      expect(c.onError, t.onAlert);
+    });
+
+    test('R68: accent text is legible on every layer', () {
+      for (final Color layer in t.layers) {
+        expect(ratio(t.accent, layer), greaterThanOrEqualTo(7),
+            reason: 'accent on $layer');
+      }
     });
 
     test('square controls, 1px hairline, no ornament', () {

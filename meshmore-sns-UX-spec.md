@@ -197,6 +197,8 @@ and Personalization. Which groups are folded is persisted per stable id
 (R65, `MmCollapseController`, default open). Studio cards and the
 app bar (with its view strip) end in a 1px hairline (R66). Studio reuses the
 Hyperlocal audio pack and the neutral haptic profile.
+From R68 Studio has **no hue at all**: the accent is a light grey (`#D0D0D0`),
+alert and ok are low-saturation tints, and selection is shown by lightness.
 
 #### Palette — token contract (preset-independent)
 

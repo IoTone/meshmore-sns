@@ -52,7 +52,8 @@ codebase.
 
 **Studio skin (R63)**
 - Seventh preset `studio` ("Studio Dark — clean · square"): grey layer
-  stack + 1px hairline + square controls + one blue accent. `MmTokens`
+  stack + 1px hairline + square controls + one light-grey accent (R68;
+  blue in R63-R65). `MmTokens`
   gained derived `raised/selected/hairline/onAccent/fgDisabled`; `MmShape`
   gained `hairlineWidth`/`squareControls`; the six older skins are
   unchanged by construction (`test/theme/mm_layers_test.dart`).
@@ -69,6 +70,10 @@ codebase.
   presets. **Unverified on a device** (theme-level tests only).
 - R66: a collapsible group with no `MmCollapseController` provider still
   works per session but logs a one-time `debugPrint` on its first toggle.
+- R68: Studio is **monochrome**: accent `#D0D0D0` (saturation 0), alert
+  `#D6A7A1`, ok `#A9C4A7` (both <= 0.30 saturation), new `onAlert` token
+  (dark on the alert fill). The R63/R65 blue is gone. Pinned in
+  `test/theme/mm_layers_test.dart`. **Unverified on a device.**
 - Audio aliases the Hyperlocal pack; **unverified on a device**.
 
 **Privacy (R62)**

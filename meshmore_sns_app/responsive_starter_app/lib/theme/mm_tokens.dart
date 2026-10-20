@@ -82,7 +82,9 @@ class MmTokens {
     Color? hairline,
     Color? onAccent,
     Color? fgDisabled,
-  })  : _raised = raised,
+    Color? onAlert,
+  })  : _onAlert = onAlert,
+        _raised = raised,
         _selected = selected,
         _hairline = hairline,
         _onAccent = onAccent,
@@ -103,6 +105,13 @@ class MmTokens {
   final Color? _hairline;
   final Color? _onAccent;
   final Color? _fgDisabled;
+  final Color? _onAlert;
+
+  /// R68 — label drawn on a filled [alert]. Derived as [fg] (what
+  /// `ColorScheme.onError` always was), so the six older presets are
+  /// unchanged. Studio's alert is a pale tint, so light text on it was
+  /// 1.5:1; Studio supplies a dark one.
+  Color get onAlert => _onAlert ?? fg;
 
   /// Controls (buttons, keys, inputs) sitting on a [surface] panel.
   Color get raised => _raised ?? surfaceAlt;
@@ -129,18 +138,17 @@ class MmTokens {
 
 /// Catalogued from `meshmore-sns-UX-brief.md` (per-concept palettes).
 const Map<MmThemePreset, MmTokens> kMmPresets = <MmThemePreset, MmTokens>{
-  // G (R63) — Studio: the professional-tool language of Blender /
-  // GIMP / Photoshop. A real four-step grey stack (each step >= ~1.1:1
-  // luminance over the one below), a hairline one step lighter again,
-  // and ONE desaturated blue accent used for the active/primary state.
-  // Adapted from the ldmux palette (#141414 / #202020 / #2B2B2B /
-  // #363636, hairline #3A3A3A, accent #5B94CC) to this nine-colour
-  // model. R65 then raised the hairline/line to #4A4A4A (the #3A3A3A
-  // rule was 1.06:1 on `selected`), the accent to #70A5DA and alert to
-  // #E8887E (both were under 4.5:1 as text on `selected`).
-  // `surfaceAlt` is the raised step so Material's own container
-  // roles land on the stack; `alert`/`ok` keep the app's meaning but
-  // are desaturated to sit in a grey UI.
+  // G (R63) — Studio: a clean, professional, readable dark skin: a
+  // real four-step grey stack (each step >= ~1.1:1 luminance over the
+  // one below), a hairline rule visible on every layer, and NO hue at
+  // all. R68 (owner direction): the accent is a light grey (#D0D0D0,
+  // saturation 0) so active/selected/primary is carried by LIGHTNESS,
+  // never by colour; alert and ok are low-saturation tints (HSV
+  // saturation <= 0.30) that still read as warning/success without being
+  // the loudest thing on a grey screen. R65 raised the rule to #4A4A4A.
+  // `onAlert` is dark because a pale alert fill needs dark text.
+  // `surfaceAlt` is the raised step so Material's own container roles
+  // land on the stack.
   MmThemePreset.studio: MmTokens(
     base: Color(0xFF141414),
     surface: Color(0xFF202020),
@@ -148,14 +156,15 @@ const Map<MmThemePreset, MmTokens> kMmPresets = <MmThemePreset, MmTokens>{
     line: Color(0xFF4A4A4A),
     fg: Color(0xFFE2E2E2),
     fgMuted: Color(0xFFA0A0A0),
-    accent: Color(0xFF70A5DA),
-    alert: Color(0xFFE8887E),
-    ok: Color(0xFF8DB38B),
+    accent: Color(0xFFD0D0D0),
+    alert: Color(0xFFD6A7A1),
+    ok: Color(0xFFA9C4A7),
     raised: Color(0xFF2B2B2B),
     selected: Color(0xFF363636),
     hairline: Color(0xFF4A4A4A),
     onAccent: Color(0xFF141414),
     fgDisabled: Color(0xFF6A6A6A),
+    onAlert: Color(0xFF141414),
   ),
   // D — default.
   MmThemePreset.seele: MmTokens(
@@ -269,9 +278,9 @@ ThemeData buildMmTheme(MmTokens t, {String? fontFamily, MmShape? shape}) {
     tertiary: t.ok,
     onTertiary: t.base,
     error: t.alert,
-    onError: t.fg,
+    onError: t.onAlert,
     errorContainer: t.alert,
-    onErrorContainer: t.fg,
+    onErrorContainer: t.onAlert,
     outline: t.line,
     outlineVariant: t.line,
     shadow: const Color(0xFF000000),

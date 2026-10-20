@@ -1098,7 +1098,7 @@ While Meshcore protocol is open source, the client is not open source.  We want 
   - Language: professional creative tools (Blender / GIMP / Photoshop):
     a four-step grey layer stack (base `#141414`, panel `#202020`, raised
     `#2B2B2B`, selected `#363636`), a 1px hairline (`#3A3A3A` in R63, `#4A4A4A` from R65), square
-    controls, ONE desaturated blue accent (`#5B94CC` in R63, `#70A5DA` from R65) used only for the
+    controls, ONE accent (blue `#5B94CC` in R63, `#70A5DA` from R65, a light grey `#D0D0D0` from R68) used only for the
     active/primary state, no ornament, no new font. Echoes the ldmux
     mobile client's palette without sharing its code.
   - `MmTokens` gains `raised`, `selected`, `hairline`, `onAccent`,
@@ -1190,6 +1190,19 @@ While Meshcore protocol is open source, the client is not open source.  We want 
   LTR only (EN/JA). The grid's panning views are not given bands: six
   views with their own edge controls would each need auditing.
   Tests: `test/shell/home_shell_test.dart` (group "Map edge swipe (R67)").
+
+- R68: **Studio is monochrome.** Owner direction: "gray accent, light
+  gray, no saturation for any accents". `studio` tokens
+  (`lib/theme/mm_tokens.dart`): accent `#D0D0D0` (HSV saturation 0, so no
+  hue), `onAccent` `#141414`; alert `#D6A7A1` (saturation 0.25) and ok
+  `#A9C4A7` (0.15) are low-saturation tints, bound at <= 0.30 by test.
+  Active/selected/primary is carried by lightness. New optional token
+  `MmTokens.onAlert` (derived as `fg` for the six older presets, so
+  `ColorScheme.onError` is unchanged for them; Studio supplies `#141414`,
+  because light text on a pale alert fill was 1.5:1). Contrast of accent
+  on base/panel/raised/selected is 11.9/10.6/9.2/7.8, alert 8.7/7.7/6.7/5.7,
+  ok 9.8/8.6/7.5/6.4. This supersedes the "one blue accent" wording in R63
+  and R65. Tests: `test/theme/mm_layers_test.dart` (R68 groups).
 
 ### Terminology — Fabric vs Contact
 
