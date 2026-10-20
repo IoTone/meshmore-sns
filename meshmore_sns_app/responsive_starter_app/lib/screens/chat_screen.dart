@@ -136,6 +136,9 @@ class _ChatScreenState extends State<ChatScreen>
       case ChatAction.copy:
         await copyMessageToClipboard(context, m);
         break;
+      case ChatAction.retry:
+        await mc.retryMessage(m.id);
+        break;
       case ChatAction.delete:
         if (!mounted) return;
         final bool ok = await confirmDeleteMessage(context, m);
@@ -189,6 +192,11 @@ class _ChatScreenState extends State<ChatScreen>
     final List<ChatMessage> msgs =
         context.select<MeshcoreController, List<ChatMessage>>(
             (MeshcoreController mc) => mc.messagesFor(active));
+    // Delivery glyphs change inside the same message objects, which the
+    // list selector above cannot see (it deep-compares identical
+    // elements); this counter is what repaints them.
+    context.select<MeshcoreController, int>(
+        (MeshcoreController mc) => mc.deliveryRevision);
     final bool ttsEnabled = context.select<TtsController, bool>(
         (TtsController t) => t.enabled);
     final bool muted = context.select<TtsController, bool>(

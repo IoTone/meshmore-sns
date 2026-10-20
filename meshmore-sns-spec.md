@@ -2008,6 +2008,33 @@ Pure Phase / Codec. Audible cues default ON with a dashboard quick-mute.
 - **Meshbook / MBk:** the channel's day — top voices, hourly histogram,
   reply rate, topics. Per-channel **persisted**, daily-reset, clearable.
 
+### Send confirmation and delivery state (R76)
+- **Channel text is confirmed by `RESP_CODE_OK` (0x00), not
+  `RESP_CODE_SENT` (0x06).** Firmware `examples/companion_radio/MyMesh.cpp`
+  `CMD_SEND_CHANNEL_TXT_MSG` calls `writeOKFrame()` (and
+  `writeErrFrame(ERR_CODE_NOT_FOUND)` for a bad channel slot); it never
+  writes SENT (line 1131 in tag `companion-v1.17.1`). The official
+  `meshcore.js` (`sendChannelTextMessage`) and `meshcore_py`
+  (`send_chan_msg`) wait for OK / ERR too. The upstream
+  `docs/companion_protocol.md` line "Response: `PACKET_MSG_SENT` (0x06)"
+  for *Send Channel Message* is **wrong for the firmware we target**.
+- Reply map (verified in `MyMesh.cpp`): channel text and self-advert →
+  `OK`; DM, status request, telemetry request, trace → `SENT`
+  (expectedAck tag + `estTimeoutMs`).
+- The controller keeps a pending record per send (id + expected reply)
+  and matches **by expected kind, oldest first**. OK and ERR carry no
+  tag, so within a kind this is strictly FIFO; BLE serialises commands.
+  A self-advert and tool requests register markers so their replies are
+  not credited to a message. ERR fails the oldest in-flight send at once
+  with `deviceErrorReason(code)`, stored as `ChatMessage.failReason`.
+- Transitions are monotonic: a watchdog (15 s; DM ack timeout = the
+  device's `estTimeoutMs`) only moves a message still in the state it
+  armed for, and a late reply never revives a failed row or lands on
+  another message.
+- A failed outgoing row offers **Retry** in the message action sheet; it
+  re-sends the same text to the same channel/peer on the same row.
+  Retry can duplicate a message the radio did transmit.
+
 ### Terminology (do not conflate)
 **Favourite** = an app star · **Known** = you've DM'd them · **Radio /
 device contact** = the firmware's routable list. "Contact" alone always

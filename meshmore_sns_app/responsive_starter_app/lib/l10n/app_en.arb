@@ -672,6 +672,8 @@
   },
   "dmSend": "Send DM",
 
+  "actionRetry": "Retry",
+  "actionRetrySub": "Send this message again",
   "actionReply": "Reply",
   "actionReplySub": "Quote this message in your reply",
   "actionCopy": "Copy",

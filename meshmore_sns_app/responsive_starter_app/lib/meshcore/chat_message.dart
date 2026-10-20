@@ -31,6 +31,7 @@ class ChatMessage {
     this.peerPubKeyHex,
     this.delivery,
     this.expectedAck,
+    this.failReason,
   })  : id = id ?? _genId(),
         at = at ?? DateTime.now();
 
@@ -79,6 +80,11 @@ class ChatMessage {
   /// until the device confirms the send (or for incoming messages).
   int? expectedAck;
 
+  /// Why an outgoing message ended `failed` (the device's ERR reason, or
+  /// that no confirmation arrived). Null otherwise, and absent from rows
+  /// persisted before this field existed.
+  String? failReason;
+
   /// Compact JSON for local persistence (history survives restarts —
   /// the companion protocol has no history-fetch; the device queue is
   /// drained destructively).
@@ -93,21 +99,23 @@ class ChatMessage {
         if (peerPubKeyHex != null) 'p': peerPubKeyHex,
         if (delivery != null) 'd': delivery!.index,
         if (expectedAck != null) 'k': expectedAck,
+        if (failReason != null) 'r': failReason,
       };
 
   static ChatMessage fromJson(Map<String, Object?> j) {
     final int? dIdx = (j['d'] as num?)?.toInt();
-    MessageDelivery? delivery = dIdx != null &&
-            dIdx >= 0 &&
-            dIdx < MessageDelivery.values.length
-        ? MessageDelivery.values[dIdx]
-        : null;
+    MessageDelivery? delivery =
+        dIdx != null && dIdx >= 0 && dIdx < MessageDelivery.values.length
+            ? MessageDelivery.values[dIdx]
+            : null;
     // In-flight tracking (pending FIFO + ack timers) does not survive
     // a restart, so a persisted `sending` row would otherwise show a
     // permanent clock. Resolve it to `failed` — we never saw the
     // device confirm it before the app went away.
+    String? reason = j['r'] as String?;
     if (delivery == MessageDelivery.sending) {
       delivery = MessageDelivery.failed;
+      reason ??= 'app closed before the radio confirmed';
     }
     return ChatMessage(
       id: j['i'] as String?,
@@ -115,13 +123,13 @@ class ChatMessage {
       text: j['t'] as String? ?? '',
       outgoing: j['o'] as bool? ?? false,
       at: DateTime.fromMillisecondsSinceEpoch(
-          (j['a'] as num?)?.toInt() ??
-              DateTime.now().millisecondsSinceEpoch),
+          (j['a'] as num?)?.toInt() ?? DateTime.now().millisecondsSinceEpoch),
       snrDb: (j['s'] as num?)?.toDouble(),
       isFlood: j['f'] as bool? ?? false,
       peerPubKeyHex: j['p'] as String?,
       delivery: delivery,
       expectedAck: (j['k'] as num?)?.toInt(),
+      failReason: reason,
     );
   }
 }

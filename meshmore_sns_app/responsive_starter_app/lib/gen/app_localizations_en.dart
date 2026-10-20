@@ -281,7 +281,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get actionConnect => 'CONNECT';
 
   @override
-  String get actionRetry => 'RETRY';
+  String get actionRetry => 'Retry';
 
   @override
   String get dashboardDevice => 'Device';
@@ -1493,6 +1493,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get dmSend => 'Send DM';
+
+  @override
+  String get actionRetrySub => 'Send this message again';
 
   @override
   String get actionReply => 'Reply';

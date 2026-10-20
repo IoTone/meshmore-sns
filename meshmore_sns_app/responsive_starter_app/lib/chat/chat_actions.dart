@@ -6,10 +6,11 @@ import 'package:flutter/services.dart';
 import '../gen/app_localizations.dart';
 import '../meshcore/chat_message.dart';
 
-/// R20 / U11 — per-message Reply / Copy / Delete actions for chat
+/// R20 / U11 — per-message Reply / Copy / Delete actions (+ R76 Retry
+/// on a failed outgoing row) for chat
 /// rows (channel chat **and** DM thread). Long-press a row OR tap
 /// the trailing affordance to open this sheet.
-enum ChatAction { reply, copy, delete }
+enum ChatAction { reply, copy, delete, retry }
 
 /// Modal bottom sheet listing the three actions. Returns the chosen
 /// action (or null on dismiss). The caller wires the consequences:
@@ -27,6 +28,15 @@ Future<ChatAction?> showChatActions(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
+          if (m.outgoing && m.delivery == MessageDelivery.failed)
+            ListTile(
+              leading: const Icon(Icons.refresh),
+              title: Text(l.actionRetry),
+              subtitle: Text(m.failReason == null
+                  ? l.actionRetrySub
+                  : '${l.actionRetrySub} (${m.failReason})'),
+              onTap: () => Navigator.pop(ctx, ChatAction.retry),
+            ),
           ListTile(
             leading: const Icon(Icons.reply),
             title: Text(l.actionReply),

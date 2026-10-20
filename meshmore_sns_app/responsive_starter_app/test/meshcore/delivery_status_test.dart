@@ -152,7 +152,8 @@ void main() {
           deliveryTimeoutOverride: const Duration(milliseconds: 30));
 
       await ctrl.sendChannelText('hello');
-      fake.emit(msgSentFrame(ack: 0x1, flood: true));
+      // Firmware replies RESP_CODE_OK (not SENT) to a channel send.
+      fake.emit(Uint8List.fromList(<int>[0x00]));
       await Future<void>.delayed(Duration.zero);
       expect(ctrl.messagesFor(0).single.delivery, MessageDelivery.sent);
 

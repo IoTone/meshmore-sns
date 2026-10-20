@@ -60,6 +60,17 @@ String deviceErrorReason(int? code) => switch (code) {
 /// The transport is obtained through [transportFactory]; the default
 /// scans/connects over BLE, but tests inject a fake transport so the
 /// whole controller path is `flutter test`-covered without hardware.
+/// Which reply the firmware gives for a send (verified against
+/// `MyMesh.cpp`): channel text and self-advert → `ok`; DM, status and
+/// telemetry requests, trace → `sent`.
+enum _Expect { ok, sent }
+
+class _PendingSend {
+  const _PendingSend(this.id, this.expect);
+  final String id;
+  final _Expect expect;
+}
+
 class MeshcoreController extends ChangeNotifier {
   MeshcoreController({
     Future<MeshcoreTransport> Function()? transportFactory,
@@ -853,17 +864,23 @@ class MeshcoreController extends ChangeNotifier {
   /// replies here; the controller keeps processing them as usual.
   Stream<MeshcoreInbound> get inboundFrames => _connection.inbound;
 
-  /// Marker in [_pendingSendIds] for a tool request that will be
-  /// answered by RESP_CODE_SENT. Without it, that SENT would be taken
-  /// as the confirmation of whichever chat message is oldest in flight.
+  /// Marker id in [_pending] for a tool request that will be answered
+  /// by RESP_CODE_SENT. Without it, that SENT would be taken as the
+  /// confirmation of whichever chat message is oldest in flight.
   static const String _toolSendMarker = '\u0000tool';
+
+  /// Marker id in [_pending] for a self-advert, which the firmware
+  /// answers with RESP_CODE_OK (`MyMesh.cpp` CMD_SEND_SELF_ADVERT).
+  /// Without it that OK would confirm a channel message that is still
+  /// waiting for its own OK.
+  static const String _advertSendMarker = '\u0000advert';
 
   /// Send a tool's remote request (status / trace / telemetry) — one
   /// the radio answers with RESP_CODE_SENT — without disturbing chat
   /// delivery tracking. If the radio answers ERR instead, call
   /// [abandonToolRequest].
   Future<void> sendToolRequest(Uint8List frame) async {
-    _pendingSendIds.add(_toolSendMarker);
+    _pending.add(const _PendingSend(_toolSendMarker, _Expect.sent));
     try {
       await send(frame);
     } catch (_) {
@@ -874,7 +891,7 @@ class MeshcoreController extends ChangeNotifier {
 
   /// The radio refused a [sendToolRequest] (ERR) or never answered:
   /// drop its marker so the next SENT goes to the right message.
-  void abandonToolRequest() => _pendingSendIds.remove(_toolSendMarker);
+  void abandonToolRequest() => _dropPending(_toolSendMarker);
 
   int _backgroundHolds = 0;
 
@@ -1277,11 +1294,16 @@ class MeshcoreController extends ChangeNotifier {
   // Lifecycle: sending → sent → (DM only) delivered, or → failed.
   // - sending: we issued the BLE send command; a watchdog catches a
   //   device that never confirms.
-  // - sent: RESP_CODE_SENT (MsgSentFrame) arrived. We correlate it to
-  //   the oldest message still awaiting confirmation (sends are
-  //   serialised over BLE, so FIFO order holds) and record its
-  //   expectedAck tag. Channel/broadcast messages stop here — flood
-  //   routing yields no recipient receipt.
+  // - sent: the device confirmed. Channel text is confirmed by a bare
+  //   RESP_CODE_OK (firmware `MyMesh.cpp` CMD_SEND_CHANNEL_TXT_MSG; the
+  //   official meshcore.js / meshcore_py clients wait for OK too) and
+  //   stops here — flood routing yields no recipient receipt. A DM is
+  //   confirmed by RESP_CODE_SENT (MsgSentFrame), which carries the
+  //   expectedAck tag and the device's timeout estimate. Each pending
+  //   send records which reply it expects and is matched oldest-first
+  //   within that kind (sends are serialised over BLE).
+  // - ERR: RESP_CODE_ERR fails the oldest in-flight send at once, with
+  //   the device's reason (`deviceErrorReason`).
   // - delivered: a DM's PUSH_CODE_ACK arrived carrying the same
   //   expectedAck tag.
   // - failed: the BLE send threw, the confirm watchdog fired, or a
@@ -1294,8 +1316,42 @@ class MeshcoreController extends ChangeNotifier {
   // frame lands; otherwise the message would (wrongly) time out as
   // failed despite having been delivered.
 
-  /// Outgoing message ids awaiting a RESP_CODE_SENT, oldest first.
-  final List<String> _pendingSendIds = <String>[];
+  /// Bumped on every delivery-state change of an outgoing message.
+  /// `context.select<..., List<ChatMessage>>(messagesFor)` cannot see
+  /// those changes: provider compares selected lists with
+  /// `DeepCollectionEquality`, and the elements are the same mutable
+  /// [ChatMessage] objects, so a state flip inside one is "equal". A
+  /// screen that selects this counter as well repaints the row glyph.
+  int get deliveryRevision => _deliveryRevision;
+  int _deliveryRevision = 0;
+
+  /// Sends awaiting the device's reply, oldest first. Each entry says
+  /// which reply it expects, because the firmware does not answer every
+  /// send the same way (see [_Expect]).
+  final List<_PendingSend> _pending = <_PendingSend>[];
+
+  void _dropPending(String id) {
+    final int i = _pending.indexWhere((_PendingSend p) => p.id == id);
+    if (i >= 0) _pending.removeAt(i);
+  }
+
+  /// Fail a message that is still in flight, with a reason. Monotonic:
+  /// only a `sending` / `sent` row can move to `failed`, so a late
+  /// watchdog or ERR never overwrites `sent`-terminal or `delivered`.
+  void _failOutgoing(String id, String reason,
+      {Set<MessageDelivery> from = const <MessageDelivery>{
+        MessageDelivery.sending
+      }}) {
+    _dropPending(id);
+    _deliveryTimers.remove(id)?.cancel();
+    final ChatMessage? m = _messageById(id);
+    if (m == null || m.delivery == null || !from.contains(m.delivery)) return;
+    m
+      ..delivery = MessageDelivery.failed
+      ..failReason = reason;
+    _deliveryRevision++;
+    _persistChat();
+  }
 
   /// Per-message lifecycle timers (confirm watchdog, then DM ack
   /// timeout), keyed by message id.
@@ -1323,29 +1379,22 @@ class MeshcoreController extends ChangeNotifier {
     return null;
   }
 
-  void _registerOutgoing(ChatMessage m) {
-    _pendingSendIds.add(m.id);
+  void _registerOutgoing(ChatMessage m, _Expect expect) {
+    _pending.add(_PendingSend(m.id, expect));
     _deliveryTimers[m.id]?.cancel();
     _deliveryTimers[m.id] =
         Timer(_deliveryTimeoutOverride ?? _confirmWatchdog, () {
-      final ChatMessage? msg = _messageById(m.id);
-      if (msg != null && msg.delivery == MessageDelivery.sending) {
-        msg.delivery = MessageDelivery.failed;
-        _pendingSendIds.remove(m.id);
-        _deliveryTimers.remove(m.id);
-        _persistChat();
-        notifyListeners();
-      }
+      _failOutgoing(m.id, 'no confirmation from the radio');
+      notifyListeners();
     });
   }
 
-  void _markOutgoingFailed(String id) {
-    final ChatMessage? m = _messageById(id);
-    if (m != null) m.delivery = MessageDelivery.failed;
-    _pendingSendIds.remove(id);
-    _deliveryTimers.remove(id)?.cancel();
-    _persistChat();
-  }
+  void _markOutgoingFailed(String id, [String reason = 'send failed']) =>
+      _failOutgoing(id, reason,
+          from: const <MessageDelivery>{
+            MessageDelivery.sending,
+            MessageDelivery.sent
+          });
 
   /// DM ack-timeout = the device's estimate, padded 50 % for OTA
   /// jitter, clamped so a tiny or absurd estimate can't make the glyph
@@ -1371,13 +1420,44 @@ class MeshcoreController extends ChangeNotifier {
     return DateTime.now().millisecondsSinceEpoch - ts <= _recentAckTtlMs;
   }
 
+  /// Consume the oldest pending send that expects [kind]. The wire
+  /// carries no correlation tag for OK or ERR, so within one kind this
+  /// is strictly oldest-first; sends are serialised over BLE, so the
+  /// device answers in the order we sent. Entries of the other kind are
+  /// never touched.
+  _PendingSend? _takePending(_Expect kind) {
+    final int i = _pending.indexWhere((_PendingSend p) => p.expect == kind);
+    return i < 0 ? null : _pending.removeAt(i);
+  }
+
   void _trackDelivery(MeshcoreInbound f) {
-    if (f is MsgSentFrame) {
-      if (_pendingSendIds.isEmpty) return;
-      final String id = _pendingSendIds.removeAt(0);
+    if (f is OkFrame) {
+      // Channel text (and self-advert) are acknowledged with a bare OK.
+      final _PendingSend? p = _takePending(_Expect.ok);
+      if (p == null || p.id == _advertSendMarker) return;
+      final ChatMessage? m = _messageById(p.id);
+      _deliveryTimers.remove(p.id)?.cancel();
+      if (m == null || m.delivery != MessageDelivery.sending) return;
+      // Flood channel text has no recipient receipt: sent is terminal.
+      m.delivery = MessageDelivery.sent;
+      _deliveryRevision++;
+      _persistChat();
+    } else if (f is ErrorFrame) {
+      // ERR answers the oldest command still in flight. A probe whose
+      // ERR is expected (see [_squelchNextDeviceError]) is not a send.
+      if (_squelchNextDeviceError > 0 || _pending.isEmpty) return;
+      final _PendingSend p = _pending.first;
+      _pending.removeAt(0);
+      if (p.id == _toolSendMarker || p.id == _advertSendMarker) return;
+      _failOutgoing(p.id, deviceErrorReason(f.code),
+          from: const <MessageDelivery>{MessageDelivery.sending});
+    } else if (f is MsgSentFrame) {
+      final _PendingSend? p = _takePending(_Expect.sent);
+      if (p == null) return;
+      final String id = p.id;
       if (id == _toolSendMarker) return; // a tool's request, not a message
       final ChatMessage? m = _messageById(id);
-      if (m == null) return;
+      if (m == null || m.delivery != MessageDelivery.sending) return;
       m
         ..delivery = MessageDelivery.sent
         ..expectedAck = f.sent.expectedAck;
@@ -1387,18 +1467,15 @@ class MeshcoreController extends ChangeNotifier {
         // ordering). Reconcile now — delivered, no timeout.
         m.delivery = MessageDelivery.delivered;
       } else if (!f.sent.isFlood) {
-        // Direct message: wait for the recipient ACK. Channel/
-        // broadcast (flood) has no receipt → terminal at sent.
+        // Direct message: wait for the recipient ACK, bounded by the
+        // device's own estimate (`estTimeoutMs`).
         _deliveryTimers[id] = Timer(_ackTimeoutFor(f.sent.estTimeoutMs), () {
-          final ChatMessage? msg = _messageById(id);
-          if (msg != null && msg.delivery == MessageDelivery.sent) {
-            msg.delivery = MessageDelivery.failed;
-            _deliveryTimers.remove(id);
-            _persistChat();
-            notifyListeners();
-          }
+          _failOutgoing(id, 'no acknowledgement from the recipient',
+              from: const <MessageDelivery>{MessageDelivery.sent});
+          notifyListeners();
         });
       }
+      _deliveryRevision++;
       _persistChat();
     } else if (f is AckFrame) {
       // Match the ack tag to the most recent still-sent message. Tags
@@ -1412,6 +1489,7 @@ class MeshcoreController extends ChangeNotifier {
             m.expectedAck == f.ackCrc) {
           m.delivery = MessageDelivery.delivered;
           _deliveryTimers.remove(m.id)?.cancel();
+          _deliveryRevision++;
           _persistChat();
           return;
         }
@@ -1716,7 +1794,7 @@ class MeshcoreController extends ChangeNotifier {
       delivery: MessageDelivery.sending,
     );
     _addMessage(m);
-    _registerOutgoing(m);
+    _registerOutgoing(m, _Expect.sent);
     notifyListeners();
     try {
       await send(MeshcoreFrameCodec.sendTextMessage(
@@ -1730,6 +1808,55 @@ class MeshcoreController extends ChangeNotifier {
       notifyListeners();
     }
     return m;
+  }
+
+  /// Re-send a `failed` outgoing message (same text, same channel or
+  /// peer), reusing its row so the history does not fill with copies.
+  /// Re-arms the same delivery tracking as a first send. Returns false
+  /// when the row is not a failed outgoing message or the radio is not
+  /// ready. The failure may have been a false negative, so the text can
+  /// reach the mesh twice; the user chose that by tapping Retry.
+  Future<bool> retryMessage(String id) async {
+    final ChatMessage? m = _messageById(id);
+    if (m == null ||
+        !m.outgoing ||
+        m.delivery != MessageDelivery.failed ||
+        !isReady) {
+      return false;
+    }
+    final int ts = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+    final bool dm = m.peerPubKeyHex != null;
+    final String? peer = m.peerPubKeyHex;
+    if (dm && peer!.length < 12) return false;
+    m
+      ..delivery = MessageDelivery.sending
+      ..failReason = null
+      ..expectedAck = null;
+    _registerOutgoing(m, dm ? _Expect.sent : _Expect.ok);
+    _deliveryRevision++;
+    _persistChat();
+    notifyListeners();
+    try {
+      await send(dm
+          ? MeshcoreFrameCodec.sendTextMessage(
+              pubKeyPrefix: <int>[
+                for (int i = 0; i < 12; i += 2)
+                  int.parse(peer!.substring(i, i + 2), radix: 16),
+              ],
+              timestamp: ts,
+              text: m.text,
+            )
+          : MeshcoreFrameCodec.sendChannelTextMessage(
+              channelIdx: m.channelIdx,
+              timestamp: ts,
+              text: m.text,
+            ));
+    } catch (_) {
+      _emitTaskError(dm ? 'sendDm' : 'sendChannel');
+      _markOutgoingFailed(m.id);
+      notifyListeners();
+    }
+    return true;
   }
 
   /// Ingest an inbound DM into the message store + emit on the
@@ -3018,7 +3145,7 @@ class MeshcoreController extends ChangeNotifier {
       delivery: MessageDelivery.sending,
     );
     _addMessage(m);
-    _registerOutgoing(m);
+    _registerOutgoing(m, _Expect.ok);
     notifyListeners();
     try {
       await send(MeshcoreFrameCodec.sendChannelTextMessage(
@@ -3514,8 +3641,17 @@ class MeshcoreController extends ChangeNotifier {
   }
 
   /// Broadcast our own advert so neighbours discover us.
-  Future<void> sendSelfAdvert({bool flood = true}) =>
-      send(MeshcoreFrameCodec.sendSelfAdvert(flood: flood));
+  Future<void> sendSelfAdvert({bool flood = true}) async {
+    // The firmware answers with OK; register it so that OK is not
+    // credited to a channel message waiting for its own.
+    _pending.add(const _PendingSend(_advertSendMarker, _Expect.ok));
+    try {
+      await send(MeshcoreFrameCodec.sendSelfAdvert(flood: flood));
+    } catch (_) {
+      _dropPending(_advertSendMarker);
+      rethrow;
+    }
+  }
 
   bool _scanning = false;
   Timer? _scanTimer;

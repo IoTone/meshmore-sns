@@ -581,7 +581,7 @@ abstract class AppLocalizations {
   /// No description provided for @actionRetry.
   ///
   /// In en, this message translates to:
-  /// **'RETRY'**
+  /// **'Retry'**
   String get actionRetry;
 
   /// No description provided for @dashboardDevice.
@@ -2605,6 +2605,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Send DM'**
   String get dmSend;
+
+  /// No description provided for @actionRetrySub.
+  ///
+  /// In en, this message translates to:
+  /// **'Send this message again'**
+  String get actionRetrySub;
 
   /// No description provided for @actionReply.
   ///

@@ -157,6 +157,9 @@ class _DmScreenState extends State<DmScreen> {
       case ChatAction.copy:
         await copyMessageToClipboard(context, m);
         break;
+      case ChatAction.retry:
+        await mc.retryMessage(m.id);
+        break;
       case ChatAction.delete:
         if (!mounted) return;
         final bool ok = await confirmDeleteMessage(context, m);

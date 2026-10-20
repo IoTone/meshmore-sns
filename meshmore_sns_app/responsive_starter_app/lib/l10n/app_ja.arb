@@ -664,6 +664,8 @@
   },
   "dmSend": "DM 送信",
 
+  "actionRetry": "再送",
+  "actionRetrySub": "このメッセージをもう一度送信",
   "actionReply": "返信",
   "actionReplySub": "このメッセージを引用して返信",
   "actionCopy": "コピー",

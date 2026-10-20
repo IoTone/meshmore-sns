@@ -266,7 +266,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get actionConnect => '接続';
 
   @override
-  String get actionRetry => '再試行';
+  String get actionRetry => '再送';
 
   @override
   String get dashboardDevice => 'デバイス';
@@ -1424,6 +1424,9 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get dmSend => 'DM 送信';
+
+  @override
+  String get actionRetrySub => 'このメッセージをもう一度送信';
 
   @override
   String get actionReply => '返信';
