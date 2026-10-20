@@ -8,6 +8,8 @@ import 'package:provider/provider.dart';
 import '../gen/app_localizations.dart';
 import '../meshcore/meshcore_connection.dart';
 import '../meshcore/meshcore_controller.dart';
+import '../theme/mm_skin.dart';
+import '../theme/mm_tokens.dart';
 
 /// Boot-time busy overlay (R8 polish). On a cold launch the
 /// BLE auto-connect → APP_START → SELF_INFO → drain chain typically
@@ -21,8 +23,9 @@ import '../meshcore/meshcore_controller.dart';
 ///   slab, not the overlay.
 /// - Stops its own animations during the fade so widget-test
 ///   `pumpAndSettle` actually settles.
-/// - **Always** uses the NERV palette regardless of the user's
-///   chosen preset; this is a brand moment.
+/// - Uses the NERV palette regardless of the user's chosen preset (a
+///   brand moment) -- except **Studio** (R68), whose owner asked for no
+///   hue anywhere: it boots in Studio's own greys.
 /// - Honours `Skip` so anyone in an offline session isn't blocked.
 class BootOverlay extends StatefulWidget {
   const BootOverlay({super.key, required this.child});
@@ -123,6 +126,10 @@ class _BootOverlayState extends State<BootOverlay>
           : l.bootOffline,
     };
 
+    // R68: Studio is monochrome, so its boot surface must not flash the
+    // NERV orange/lime. Every other preset keeps the brand palette.
+    final MmSkin skin = context.skin;
+    final bool studio = skin.preset == MmThemePreset.studio;
     return Stack(
       children: <Widget>[
         widget.child,
@@ -135,11 +142,11 @@ class _BootOverlayState extends State<BootOverlay>
             ),
             child: _BootSurface(
               spin: _spin,
-              accent: _accent,
-              alt: _alt,
-              fg: _fg,
-              bg: _bg,
-              bgDeep: _bgDeep,
+              accent: studio ? skin.color.accent : _accent,
+              alt: studio ? skin.color.fgMuted : _alt,
+              fg: studio ? skin.color.fg : _fg,
+              bg: studio ? skin.color.surface : _bg,
+              bgDeep: studio ? skin.color.base : _bgDeep,
               header: l.bootHeader,
               subtitle: l.bootSubtitle,
               status: status,

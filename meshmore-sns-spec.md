@@ -1226,6 +1226,12 @@ While Meshcore protocol is open source, the client is not open source.  We want 
     under "Other" so it is never hidden. Same chips, same tap-to-apply.
     Tests: `test/meshcore/region_presets_test.dart` and
     `test/screens/collapsible_screens_test.dart`.
+  - **Studio boots grey.** `BootOverlay` always used the NERV orange /
+    lime on every preset ("a brand moment"). Studio now uses its own
+    tokens (surface / base / accent / muted / fg), since its owner asked
+    for no hue anywhere; the other presets keep the NERV palette.
+    Tests: `test/shell/boot_overlay_test.dart` (Studio gradient is
+    surface -> base, others stay NERV; fail-before for Studio).
   - **Studio dashboard** (`lib/screens/dashboards/studio_dashboard.dart`,
     registered in `DashboardHost`): Studio used to inherit the SEELE
     monolith (an 88sp numeral, a full-bleed colour-inverting status slab,
