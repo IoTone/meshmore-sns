@@ -105,6 +105,11 @@ codebase.
   device**: the equal-grid bar is wider now (about 280dp), fabric-survey's
   column is 240dp tall.
 
+- R71: Studio is uniformly square: Material buttons, FAB, menus and text
+  fields (theme) plus 49 screen-drawn radii via `mmRadius` and the chat
+  jump pill. Older presets unchanged. Guard: `test/ui/square_controls_guard_test.dart`.
+  **Unverified on a device.**
+
 **Known issues from the R68 critical pass (not fixed; read from code and phone screenshots)**
 - Still English in the Japanese locale (after R69): the Diagnostics SEND /
   M6 interop / fixture-export / bot-soak panels (developer tooling, left

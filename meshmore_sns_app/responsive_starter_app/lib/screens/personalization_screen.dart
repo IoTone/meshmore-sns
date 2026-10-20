@@ -9,6 +9,7 @@ import '../theme/theme_controller.dart';
 import '../ui/mm_collapse_controller.dart';
 import '../ui/mm_collapsible.dart';
 import '../ui/mm_scaffold.dart';
+import '../ui/mm_shape.dart';
 
 /// Profile & personalization (R14): live preset / font / accessibility
 /// picker. The chosen design concept is the default theme; all six
@@ -41,7 +42,7 @@ class PersonalizationScreen extends StatelessWidget {
                         color: Theme.of(context)
                             .colorScheme
                             .surfaceContainerHighest,
-                        borderRadius: BorderRadius.circular(6),
+                        borderRadius: mmRadius(context, 6),
                       ),
                       child: Row(
                         children: <Widget>[

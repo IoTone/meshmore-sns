@@ -12,6 +12,7 @@ import '../meshcore/meshcore_connection.dart';
 import '../meshcore/meshcore_controller.dart';
 import '../meshcore/paired_device_history.dart';
 import 'device_contacts_screen.dart';
+import '../ui/mm_shape.dart';
 
 /// R41 — Device management sheet. Single place to:
 ///   - see what we're currently paired to and the live connection state,
@@ -423,7 +424,7 @@ class _StatusRow extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
       decoration: BoxDecoration(
         color: cs.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: mmRadius(context, 8),
         border: Border.all(color: accent.withValues(alpha: .5)),
       ),
       child: Row(

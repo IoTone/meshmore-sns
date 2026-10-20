@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../gen/app_localizations.dart';
+import '../../ui/mm_shape.dart';
 
 /// Your own public key, rendered the same way on every skin.
 ///
@@ -58,7 +59,7 @@ class MyPubkeyLine extends StatelessWidget {
     return Tooltip(
       message: l.dashboardPubkeyHint,
       child: InkWell(
-        borderRadius: BorderRadius.circular(6),
+        borderRadius: mmRadius(context, 6),
         onTap: () async {
           // The FULL key, never `shown`.
           await Clipboard.setData(ClipboardData(text: hex));

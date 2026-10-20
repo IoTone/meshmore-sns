@@ -17,6 +17,7 @@ import '../meshcore/meshcore_connection.dart';
 import '../meshcore/meshcore_controller.dart';
 import '../ui/mm_scaffold.dart';
 import '../theme/theme_controller.dart';
+import '../ui/mm_shape.dart';
 
 /// Channel management (R6): list the device's channel slots, set the
 /// active one, and create/overwrite a slot's name + PSK. A channel is
@@ -117,7 +118,7 @@ class ChannelsScreen extends StatelessWidget {
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
                 color: cs.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(6),
+                borderRadius: mmRadius(context, 6),
                 border: Border.all(color: cs.outline.withValues(alpha: .35)),
               ),
               child: Row(
@@ -768,7 +769,7 @@ void _showQrShare(BuildContext outer, int idx, String name,
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
                       color: Colors.white,
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: mmRadius(ctx, 8),
                     ),
                     child: QrImageView(
                       data: payload,

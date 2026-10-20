@@ -255,6 +255,19 @@ ThemeData buildMmTheme(MmTokens t, {String? fontFamily, MmShape? shape}) {
   final bool square = shape?.squareControls ?? false;
   final RoundedRectangleBorder? squareBorder =
       square ? const RoundedRectangleBorder() : null;
+  // R71 -- Material 3 gives Filled/Outlined/Text/Elevated buttons, FABs,
+  // popup menus and text fields their own rounded default (a stadium
+  // pill for buttons), independent of the chip/card/dialog shapes set
+  // below. Left alone, a square skin showed two control families side
+  // by side (pill "Scan area" over square "Starred" chips). When
+  // [MmShape.squareControls] is on, every one of them is square too.
+  final ButtonStyle? squareButton = square
+      ? ButtonStyle(
+          shape: WidgetStateProperty.all<OutlinedBorder>(
+              const RoundedRectangleBorder()))
+      : null;
+  OutlineInputBorder squareField(Color c, [double w = 1]) => OutlineInputBorder(
+      borderRadius: BorderRadius.zero, borderSide: BorderSide(color: c, width: w));
   final ColorScheme scheme = ColorScheme(
     brightness: Brightness.dark,
     surface: t.base,
@@ -335,6 +348,27 @@ ThemeData buildMmTheme(MmTokens t, {String? fontFamily, MmShape? shape}) {
               side: BorderSide(color: t.hairline, width: shape!.hairlineWidth))
           : null,
     ),
+    filledButtonTheme:
+        square ? FilledButtonThemeData(style: squareButton) : null,
+    outlinedButtonTheme:
+        square ? OutlinedButtonThemeData(style: squareButton) : null,
+    textButtonTheme: square ? TextButtonThemeData(style: squareButton) : null,
+    elevatedButtonTheme:
+        square ? ElevatedButtonThemeData(style: squareButton) : null,
+    floatingActionButtonTheme: square
+        ? const FloatingActionButtonThemeData(shape: RoundedRectangleBorder())
+        : null,
+    popupMenuTheme: square ? PopupMenuThemeData(shape: squareBorder) : null,
+    inputDecorationTheme: square
+        ? InputDecorationTheme(
+            border: squareField(t.line),
+            enabledBorder: squareField(t.line),
+            disabledBorder: squareField(t.line),
+            focusedBorder: squareField(t.accent, 2),
+            errorBorder: squareField(t.alert),
+            focusedErrorBorder: squareField(t.alert, 2),
+          )
+        : null,
     dialogTheme: square ? DialogThemeData(shape: squareBorder) : null,
     bottomSheetTheme: square ? BottomSheetThemeData(shape: squareBorder) : null,
     appBarTheme: AppBarTheme(

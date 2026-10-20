@@ -64,3 +64,15 @@ OutlinedBorder mmShapeBorder(MmShape shape, {required BorderSide side}) =>
       MmCorner.chamfer =>
         MmChamferBorder(side: side, cut: shape.cornerSize),
     };
+
+/// R71 — the corner radius for a *control or card surface* that a screen
+/// draws itself (a `Material`/`Container` with a hard-coded
+/// `BorderRadius.circular`). Square (`BorderRadius.zero`) when the active
+/// skin sets [MmShape.squareControls] (Studio), [radius] otherwise, so the
+/// six older presets keep their exact rounding. Screens must use this
+/// instead of a literal radius; `test/ui/square_controls_guard_test.dart`
+/// fails the build when one reappears.
+BorderRadius mmRadius(BuildContext context, double radius) =>
+    context.skin.shape.squareControls
+        ? BorderRadius.zero
+        : BorderRadius.circular(radius);

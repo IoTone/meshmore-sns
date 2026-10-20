@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 
 import '../gen/app_localizations.dart';
 import '../meshcore/meshcore_controller.dart';
+import '../ui/mm_shape.dart';
 
 /// R53 — the Docs tab: a menu into the offline-readable docs (companion
 /// protocol, device firmware, this app, and our per-device field notes).
@@ -102,11 +103,11 @@ class _DocCard extends StatelessWidget {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: mmRadius(context, 12),
         side: BorderSide(color: cs.outline.withValues(alpha: .4)),
       ),
       child: InkWell(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: mmRadius(context, 12),
         onTap: onTap,
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
@@ -118,7 +119,7 @@ class _DocCard extends StatelessWidget {
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
                   color: cs.primary.withValues(alpha: .14),
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: mmRadius(context, 10),
                 ),
                 child: Icon(icon, color: cs.primary, size: 22),
               ),

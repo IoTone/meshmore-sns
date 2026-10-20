@@ -16,6 +16,7 @@ import '../meshcore/own_location.dart';
 import '../meshcore/region_presets.dart';
 import '../perms/location_service.dart';
 import '../perms/permissions_service.dart';
+import '../ui/mm_shape.dart';
 
 /// The advert-location policy integers → a UI label.
 ///
@@ -1089,7 +1090,7 @@ class _CurrentRegionBanner extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(12, 8, 12, 10),
       decoration: BoxDecoration(
         color: cs.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: mmRadius(context, 8),
         border: Border.all(color: border.withValues(alpha: .5)),
       ),
       child: Row(

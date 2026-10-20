@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../gen/app_localizations.dart';
 import '../perms/first_run_controller.dart';
 import '../perms/permissions_service.dart';
+import '../ui/mm_shape.dart';
 
 /// R21 / U12 — first-run permissions intro. Explains *why* the app
 /// asks for Bluetooth and notifications, sets the offline-first
@@ -120,7 +121,7 @@ class _FirstRunIntroScreenState extends State<FirstRunIntroScreen> {
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
                     color: cs.errorContainer,
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: mmRadius(context, 8),
                   ),
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -194,7 +195,7 @@ class _PermBlock extends StatelessWidget {
           height: 38,
           decoration: BoxDecoration(
             color: cs.surfaceContainerHighest,
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: mmRadius(context, 8),
           ),
           alignment: Alignment.center,
           child: Icon(icon, color: cs.primary, size: 20),

@@ -18,6 +18,7 @@ import '../meshcore/discovered_node.dart';
 import '../meshcore/meshcore_controller.dart';
 import '../util/lora_range.dart';
 import 'node_detail_sheet.dart';
+import '../ui/mm_shape.dart';
 
 /// R25 Stage 1 — **equal-grid view**. Third view in the hyperlocal
 /// grid mode toggle (after radial + globe). The viewport is a
@@ -384,7 +385,7 @@ class _EqualGridViewState extends State<EqualGridView> {
               color: cs.surface.withValues(alpha: .85),
               elevation: 1,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(6),
+                borderRadius: mmRadius(context, 6),
                 side: BorderSide(
                     color: cs.outline.withValues(alpha: .4)),
               ),

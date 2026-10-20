@@ -28,6 +28,7 @@ import 'street_map_view.dart';
 import 'grid_prefs_store.dart';
 import 'meshbook_view.dart';
 import 'weather_view.dart';
+import '../ui/mm_shape.dart';
 
 /// R27 — the map views in the grid's picker: `radial` (R18, default)
 /// + `globe` (R27) + `equalGrid` (R25) + `streetMap` (R25+2) + the
@@ -947,7 +948,7 @@ class _GridScreenState extends State<GridScreen>
       padding: const EdgeInsets.fromLTRB(16, 6, 8, 8),
       decoration: BoxDecoration(
         color: cs.surface.withValues(alpha: .55),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: mmRadius(context, 12),
         border: Border.all(color: cs.primary.withValues(alpha: .35)),
       ),
       child: Row(
@@ -1070,7 +1071,7 @@ class _GridLegend extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
       decoration: BoxDecoration(
         color: cs.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: mmRadius(context, 8),
         border: Border.all(color: cs.outline.withValues(alpha: .35)),
       ),
       child: Column(
@@ -1115,7 +1116,7 @@ class _NotConnectedStrip extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
       decoration: BoxDecoration(
         color: cs.surface.withValues(alpha: .85),
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: mmRadius(context, 8),
         border: Border.all(color: cs.error.withValues(alpha: .6)),
       ),
       child: Row(
@@ -1509,7 +1510,7 @@ class _TreeLegend extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
       decoration: BoxDecoration(
         color: cs.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: mmRadius(context, 8),
         border: Border.all(color: cs.outline.withValues(alpha: .35)),
       ),
       child: Column(
@@ -1582,7 +1583,7 @@ class _FabricLegend extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
       decoration: BoxDecoration(
         color: cs.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: mmRadius(context, 8),
         border: Border.all(color: cs.outline.withValues(alpha: .35)),
       ),
       child: Column(
@@ -1644,7 +1645,7 @@ class _FujiLegend extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
       decoration: BoxDecoration(
         color: cs.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: mmRadius(context, 8),
         border: Border.all(color: cs.outline.withValues(alpha: .35)),
       ),
       child: Column(
@@ -1706,7 +1707,7 @@ class _SnsCellsLegend extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
       decoration: BoxDecoration(
         color: cs.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: mmRadius(context, 8),
         border: Border.all(color: cs.outline.withValues(alpha: .35)),
       ),
       child: Column(

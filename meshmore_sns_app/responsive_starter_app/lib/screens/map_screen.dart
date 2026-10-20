@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../gen/app_localizations.dart';
 import '../ui/mm_edge_swipe.dart';
 import 'street_map_view.dart';
+import '../ui/mm_shape.dart';
 
 /// R61 — the **Map** primary view: the street map as its own swipe page.
 ///
@@ -61,7 +62,7 @@ class MapScreen extends StatelessWidget {
             color: cs.surface.withValues(alpha: .9),
             elevation: 1,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(6),
+              borderRadius: mmRadius(context, 6),
               side: BorderSide(color: cs.outline.withValues(alpha: .4)),
             ),
             child: IconButton(

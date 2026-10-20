@@ -1242,6 +1242,24 @@ While Meshcore protocol is open source, the client is not open source.  We want 
   Tests: `test/ui/mm_edge_swipe_test.dart`, `test/maps/dark_basemap_test.dart`,
   `test/screens/map_no_fix_test.dart`.
 
+- R71: **Studio controls are uniformly square.** The device pass showed
+  "Scan area" / "Advertise" / "Apply radio params" as stadium pills
+  beside square chips: M3's Filled/Outlined/Text/Elevated buttons, FAB,
+  popup menus and text fields carry their own rounded default, which the
+  R63 chip/card/dialog/sheet shapes never touched. `buildMmTheme` now
+  squares all of them when `MmShape.squareControls` is on
+  (`lib/theme/mm_tokens.dart`, one theme change covers ~60 button call
+  sites). Screens that draw their own corner (49 `BorderRadius.circular`
+  of 6px or more, plus the chat jump-to-latest `StadiumBorder`) go through
+  `mmRadius(context, r)` (`lib/ui/mm_shape.dart`): zero under Studio, `r`
+  otherwise, so the six older presets are unchanged. Left on purpose:
+  radii under 6px (progress bars, swatches), `BoxShape.circle` dots, and
+  the AG-HUD / Hyperlocal dashboards (Studio never shows them). Enforced
+  by `test/ui/square_controls_guard_test.dart` (theme resolves square,
+  older presets' theme untouched, and a source scan that fails on a new
+  literal radius of 6px+ or pill). Not enforceable by test: a radius
+  below 6px, or a painter that draws its own rounded rect.
+
 - R68: **Studio is monochrome.** Owner direction: "gray accent, light
   gray, no saturation for any accents". `studio` tokens
   (`lib/theme/mm_tokens.dart`): accent `#D0D0D0` (HSV saturation 0, so no

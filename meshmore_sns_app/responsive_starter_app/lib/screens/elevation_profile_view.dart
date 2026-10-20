@@ -9,6 +9,7 @@ import 'package:provider/provider.dart';
 import '../gen/app_localizations.dart';
 import '../meshcore/discovered_node.dart';
 import '../meshcore/meshcore_controller.dart';
+import '../ui/mm_shape.dart';
 
 /// R45 — exploratory altitude-profile view. **Not** meant to be
 /// useful (most peers plot in the "?" band until each one's
@@ -172,13 +173,13 @@ class _ElevationProfileViewState extends State<ElevationProfileView>
             color: Colors.transparent,
             child: InkWell(
               onTap: _refreshSelfTelemetry,
-              borderRadius: BorderRadius.circular(6),
+              borderRadius: mmRadius(context, 6),
               child: Container(
                 padding: const EdgeInsets.symmetric(
                     horizontal: 10, vertical: 6),
                 decoration: BoxDecoration(
                   color: cs.surface.withValues(alpha: .85),
-                  borderRadius: BorderRadius.circular(6),
+                  borderRadius: mmRadius(context, 6),
                   border: Border.all(
                       color: cs.outline.withValues(alpha: .55)),
                 ),

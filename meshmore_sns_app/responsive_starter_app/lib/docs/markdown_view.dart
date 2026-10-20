@@ -6,6 +6,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:markdown/markdown.dart' as md;
 import 'package:url_launcher/url_launcher.dart';
+import '../ui/mm_shape.dart';
 
 /// R53 — renders a Markdown string to widgets with the app's
 /// "futuristic" treatment: a monospace family throughout, tracked
@@ -189,7 +190,7 @@ class _MarkdownViewState extends State<MarkdownView> {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: cs.surfaceContainerHighest.withValues(alpha: .5),
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: mmRadius(context, 8),
         border: Border.all(color: cs.outline.withValues(alpha: .4)),
       ),
       child: SingleChildScrollView(
@@ -338,7 +339,7 @@ class _MarkdownViewState extends State<MarkdownView> {
         child: Container(
           decoration: BoxDecoration(
             border: Border.all(color: cs.outline.withValues(alpha: .4)),
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: mmRadius(context, 8),
           ),
           child: Table(
             defaultColumnWidth: const IntrinsicColumnWidth(),

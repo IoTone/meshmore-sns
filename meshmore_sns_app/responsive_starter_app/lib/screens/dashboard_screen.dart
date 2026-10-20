@@ -15,6 +15,7 @@ import 'dashboards/my_pubkey_line.dart';
 import '../meshcore/region_presets.dart';
 import '../ui/mm_audio_toggle.dart';
 import 'device_manager_sheet.dart';
+import '../ui/mm_shape.dart';
 
 /// R8 home — "SEELE Monolith" dashboard: one dominant numeral
 /// (peers in range), a full-width status slab that colour-inverts on
@@ -175,7 +176,7 @@ class DashboardScreen extends StatelessWidget {
             onTap: mc.isReady
                 ? () => showDashboardRenameDialog(context, mc, selfInfo.name)
                 : null,
-            borderRadius: BorderRadius.circular(6),
+            borderRadius: mmRadius(context, 6),
             child: Padding(
               padding: const EdgeInsets.symmetric(vertical: 2),
               child: Row(
@@ -272,7 +273,7 @@ class DashboardScreen extends StatelessWidget {
           const SizedBox(height: 18),
           InkWell(
             onTap: () => context.push('/settings/battery'),
-            borderRadius: BorderRadius.circular(6),
+            borderRadius: mmRadius(context, 6),
             child: Padding(
               padding: const EdgeInsets.symmetric(vertical: 2),
               child: Column(

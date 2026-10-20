@@ -12,6 +12,7 @@ import '../ui/mm_components.dart';
 import '../ui/mm_scaffold.dart';
 import '../util/geo.dart' as geo;
 import 'node_detail_sheet.dart';
+import '../ui/mm_shape.dart';
 
 /// Nodes "in the area" — the hyperlocal-discovery view (R6/R8).
 ///
@@ -628,7 +629,7 @@ class _NodesScreenState extends State<NodesScreen> {
                                     horizontal: 6, vertical: 1),
                                 decoration: BoxDecoration(
                                   color: cs.tertiaryContainer,
-                                  borderRadius: BorderRadius.circular(8),
+                                  borderRadius: mmRadius(context, 8),
                                 ),
                                 child: Row(
                                   mainAxisSize: MainAxisSize.min,
@@ -665,7 +666,7 @@ class _NodesScreenState extends State<NodesScreen> {
                                       decoration: BoxDecoration(
                                         color: cs.secondaryContainer,
                                         borderRadius:
-                                            BorderRadius.circular(8),
+                                            mmRadius(context, 8),
                                       ),
                                       child: Text(t,
                                           style: TextStyle(

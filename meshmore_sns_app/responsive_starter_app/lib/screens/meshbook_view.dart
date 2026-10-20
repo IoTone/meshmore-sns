@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../gen/app_localizations.dart';
 import '../meshcore/meshcore_controller.dart';
 import '../sns/meshbook.dart';
+import '../ui/mm_shape.dart';
 
 /// Meshbook (MBk) — a rolling last-24h readout of the current channel's
 /// social shape: how many messages, the reply rate, the top voices, topics,
@@ -125,7 +126,7 @@ class MeshbookView extends StatelessWidget {
                         horizontal: 10, vertical: 5),
                     decoration: BoxDecoration(
                       color: cs.surfaceContainerHighest.withValues(alpha: .5),
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: mmRadius(context, 16),
                     ),
                     child: Text('${t.term} ·${t.count}',
                         style: TextStyle(

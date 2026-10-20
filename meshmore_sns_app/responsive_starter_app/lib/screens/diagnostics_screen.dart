@@ -14,6 +14,7 @@ import '../gen/app_localizations.dart';
 import '../ui/mm_scaffold.dart';
 import '../meshcore/meshcore_connection.dart';
 import '../meshcore/meshcore_controller.dart';
+import '../ui/mm_shape.dart';
 
 /// Field/dev tool: connect to a real Meshcore radio, watch live state
 /// and the raw frame log, send test commands, and run the M6
@@ -339,7 +340,7 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
             decoration: BoxDecoration(
               border: Border.all(
                   color: cs.outline.withValues(alpha: .35)),
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: mmRadius(context, 8),
             ),
             child: log.isEmpty
                 ? const Center(child: Text('— no frames yet —'))

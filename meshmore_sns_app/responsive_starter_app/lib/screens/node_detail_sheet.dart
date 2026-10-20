@@ -22,6 +22,7 @@ import '../meshcore/node_telemetry.dart';
 import '../peer/peer_profiles.dart';
 import '../theme/theme_controller.dart';
 import '../util/geo.dart' as geo;
+import '../ui/mm_shape.dart';
 
 /// R18 polish — modal bottom sheet shown when the user taps a node
 /// on the /grid view. Shows summary stats (signal, last heard,
@@ -307,7 +308,7 @@ class _NodeDetailSheetState extends State<NodeDetailSheet> {
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
           decoration: BoxDecoration(
             color: colour.withValues(alpha: .12),
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: mmRadius(context, 12),
             border: Border.all(color: colour.withValues(alpha: .45)),
           ),
           child: Row(
@@ -574,7 +575,7 @@ class _NodeDetailSheetState extends State<NodeDetailSheet> {
                 padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
                 decoration: BoxDecoration(
                   color: cs.tertiary.withValues(alpha: .10),
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: mmRadius(context, 10),
                   border: Border.all(color: cs.tertiary.withValues(alpha: .4)),
                 ),
                 child: Column(
@@ -984,7 +985,7 @@ class _ReconcileCard extends StatelessWidget {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: cs.tertiary.withValues(alpha: .10),
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: mmRadius(context, 10),
         border: Border.all(color: cs.tertiary.withValues(alpha: .45)),
       ),
       child: Column(

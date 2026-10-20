@@ -12,6 +12,7 @@ import '../sns/weather_inference.dart';
 import '../sns/weather_lexicon.dart';
 import '../util/geo.dart' as geo;
 import 'node_detail_sheet.dart';
+import '../ui/mm_shape.dart';
 
 /// Mesh weather — a glanceable view of the environment telemetry
 /// reported across the fabric: a summary band (how many nodes are
@@ -125,7 +126,7 @@ class _WeatherViewState extends State<WeatherView> {
                   const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
               decoration: BoxDecoration(
                 color: cs.surfaceContainerHighest.withValues(alpha: .35),
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: mmRadius(context, 12),
                 border: Border.all(color: cs.outline.withValues(alpha: .3)),
               ),
               child: Text(selfDiag,
@@ -272,7 +273,7 @@ class _SummaryCard extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
         color: cs.surfaceContainerHighest.withValues(alpha: .4),
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: mmRadius(context, 14),
         border: Border.all(color: cs.outline.withValues(alpha: .3)),
       ),
       child: Column(
@@ -322,7 +323,7 @@ class _ReadingTile extends StatelessWidget {
         decoration: BoxDecoration(
           color: (c != null ? temperatureColor(c) : cs.onSurfaceVariant)
               .withValues(alpha: .18),
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: mmRadius(context, 10),
         ),
         child: Text(
           c != null ? '${c.toStringAsFixed(1)}°' : '—',
@@ -435,7 +436,7 @@ class _MicroclimateStrip extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
       decoration: BoxDecoration(
         color: cs.surfaceContainerHighest.withValues(alpha: .35),
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: mmRadius(context, 14),
         border: Border.all(color: cs.outline.withValues(alpha: .3)),
       ),
       child: Column(
@@ -507,7 +508,7 @@ class _WindowRow extends StatelessWidget {
       alignment: Alignment.center,
       decoration: BoxDecoration(
         color: cs.primary.withValues(alpha: a == null ? .08 : .16),
-        borderRadius: BorderRadius.circular(6),
+        borderRadius: mmRadius(context, 6),
       ),
       child: Text(label,
           style: TextStyle(
@@ -617,7 +618,7 @@ class _MicroclimateBubble extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(10, 7, 12, 7),
       decoration: BoxDecoration(
         color: cs.surfaceContainerHighest.withValues(alpha: .4),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: mmRadius(context, 20),
         border: Border.all(color: cs.outline.withValues(alpha: .35)),
       ),
       child: Row(

@@ -18,6 +18,7 @@ import '../meshcore/meshcore_controller.dart';
 import '../theme/mm_skin.dart';
 import '../util/lora_range.dart';
 import 'node_detail_sheet.dart';
+import '../ui/mm_shape.dart';
 
 /// R25+2 — fourth view in the hyperlocal-grid sub-mode swipe stack.
 ///
@@ -431,7 +432,7 @@ class _StreetMapViewState extends State<StreetMapView> {
             color: cs.surface.withValues(alpha: .9),
             elevation: 1,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(6),
+              borderRadius: mmRadius(context, 6),
               side: BorderSide(
                   color: cs.outline.withValues(alpha: .4)),
             ),

@@ -13,6 +13,7 @@ import '../meshcore/mesh_graph.dart';
 import '../meshcore/meshcore_controller.dart';
 import '../util/force_layout.dart';
 import 'node_detail_sheet.dart';
+import '../ui/mm_shape.dart';
 
 /// R50 — directed mesh topology tree, force-directed layout. The
 /// data comes straight from `Contact.outPath` (the route the device
@@ -346,7 +347,7 @@ class _MeshTreeViewState extends State<MeshTreeView>
                     horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
                   color: cs.surface.withValues(alpha: .82),
-                  borderRadius: BorderRadius.circular(6),
+                  borderRadius: mmRadius(context, 6),
                   border: Border.all(
                       color: cs.outline.withValues(alpha: .5)),
                 ),
@@ -412,7 +413,7 @@ class _HopSlider extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       decoration: BoxDecoration(
         color: cs.surface.withValues(alpha: .88),
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: mmRadius(context, 8),
         border: Border.all(color: cs.outline.withValues(alpha: .55)),
       ),
       child: Row(

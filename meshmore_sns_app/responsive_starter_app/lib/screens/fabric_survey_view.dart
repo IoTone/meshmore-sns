@@ -15,6 +15,7 @@ import '../meshcore/discovered_node.dart';
 import '../meshcore/meshcore_controller.dart';
 import '../util/lora_range.dart';
 import 'node_detail_sheet.dart';
+import '../ui/mm_shape.dart';
 
 /// F8 — Fabric survey view. Paints **mesh coverage** as a quilt of
 /// shaded cells over an OSM basemap. Distinct from the equal-grid
@@ -351,7 +352,7 @@ class _FabricSurveyViewState extends State<FabricSurveyView> {
             color: cs.surface.withValues(alpha: .9),
             elevation: 1,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(6),
+              borderRadius: mmRadius(context, 6),
               side: BorderSide(
                   color: cs.outline.withValues(alpha: .4)),
             ),

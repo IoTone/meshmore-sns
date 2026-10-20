@@ -11,6 +11,7 @@ import '../meshcore/auto_publish_controller.dart';
 import '../meshcore/meshcore_controller.dart';
 import '../perms/location_service.dart';
 import '../perms/permissions_service.dart';
+import '../ui/mm_shape.dart';
 
 /// R36 — App settings → Auto-publish location.
 ///
@@ -200,7 +201,7 @@ class LocationSettingsScreen extends StatelessWidget {
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
                         color: cs.surfaceContainerHighest,
-                        borderRadius: BorderRadius.circular(6),
+                        borderRadius: mmRadius(context, 6),
                         border: Border.all(
                             color: cs.outline.withValues(alpha: .35)),
                       ),

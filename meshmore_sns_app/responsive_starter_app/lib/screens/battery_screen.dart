@@ -10,6 +10,7 @@ import '../ui/mm_scaffold.dart';
 import '../meshcore/battery_model.dart';
 import '../meshcore/device_power_specs.dart';
 import '../meshcore/meshcore_controller.dart';
+import '../ui/mm_shape.dart';
 
 /// Battery-life analysis for the connected device.
 ///
@@ -195,7 +196,7 @@ class _EstimateCard extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: cs.surfaceContainerHighest.withValues(alpha: .4),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: mmRadius(context, 12),
         border: Border.all(color: cs.outline.withValues(alpha: .35)),
       ),
       child: Column(
@@ -282,7 +283,7 @@ class _ConfidenceBadge extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
         color: v.$2.withValues(alpha: .15),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: mmRadius(context, 20),
         border: Border.all(color: v.$2.withValues(alpha: .5)),
       ),
       child: Text(
@@ -312,7 +313,7 @@ class _SpecCard extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: cs.surfaceContainerHighest.withValues(alpha: .4),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: mmRadius(context, 12),
         border: Border.all(color: cs.outline.withValues(alpha: .35)),
       ),
       child: Column(

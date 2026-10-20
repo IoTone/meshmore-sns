@@ -14,6 +14,7 @@ import '../meshcore/discovered_node.dart';
 import '../meshcore/meshcore_controller.dart';
 import '../meshcore/own_location.dart';
 import 'node_detail_sheet.dart';
+import '../ui/mm_shape.dart';
 
 /// R27 — macro globe view. Renders the mesh fabric on a 3D earth
 /// using **real Natural Earth 110m land polygons** (asset
@@ -400,7 +401,7 @@ class _GlobeViewState extends State<GlobeView> {
                   horizontal: 6, vertical: 4),
               decoration: BoxDecoration(
                 color: cs.surface.withValues(alpha: .75),
-                borderRadius: BorderRadius.circular(6),
+                borderRadius: mmRadius(context, 6),
                 border: Border.all(
                     color: cs.outline.withValues(alpha: .5)),
               ),

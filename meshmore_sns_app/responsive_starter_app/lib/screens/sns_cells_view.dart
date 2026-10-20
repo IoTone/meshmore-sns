@@ -17,6 +17,7 @@ import '../sns/inferred_place_store.dart';
 import '../sns/sns_frame.dart';
 import '../theme/mm_skin.dart';
 import '../theme/viz_palette.dart';
+import '../ui/mm_shape.dart';
 
 /// R51 — sns-cells: a social-activity heat map. Built on the same
 /// geographic-cell idea as the hyperlocal grid, but instead of
@@ -266,7 +267,7 @@ class _SnsCellsViewState extends State<SnsCellsView>
                 const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
             decoration: BoxDecoration(
               color: cs.surface.withValues(alpha: .85),
-              borderRadius: BorderRadius.circular(6),
+              borderRadius: mmRadius(context, 6),
               border:
                   Border.all(color: cs.outline.withValues(alpha: .55)),
             ),

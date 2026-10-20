@@ -25,6 +25,7 @@ import '../theme/mm_skin.dart';
 import '../theme/theme_controller.dart';
 import '../ui/mm_components.dart';
 import '../ui/mm_scaffold.dart';
+import '../ui/mm_shape.dart';
 
 /// The primary views (R8 dashboard is the home / first page; the
 /// hyperlocal grid follows Nodes — issue #4; R53 adds the Docs tab,
@@ -502,7 +503,7 @@ class RadioLinkIndicator extends StatelessWidget {
       label: l.linkChipSemantics(v.label),
       child: InkWell(
         onTap: () => context.push('/settings/diagnostics'),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: mmRadius(context, 20),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12),
           child: Row(
