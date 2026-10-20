@@ -1097,8 +1097,8 @@ While Meshcore protocol is open source, the client is not open source.  We want 
   preset, `MmThemePreset.studio`, "Studio Dark — clean · square").
   - Language: professional creative tools (Blender / GIMP / Photoshop):
     a four-step grey layer stack (base `#141414`, panel `#202020`, raised
-    `#2B2B2B`, selected `#363636`), a 1px hairline (`#3A3A3A`), square
-    controls, ONE desaturated blue accent (`#5B94CC`) used only for the
+    `#2B2B2B`, selected `#363636`), a 1px hairline (`#3A3A3A` in R63, `#4A4A4A` from R65), square
+    controls, ONE desaturated blue accent (`#5B94CC` in R63, `#70A5DA` from R65) used only for the
     active/primary state, no ornament, no new font. Echoes the ldmux
     mobile client's palette without sharing its code.
   - `MmTokens` gains `raised`, `selected`, `hairline`, `onAccent`,
@@ -1153,6 +1153,14 @@ While Meshcore protocol is open source, the client is not open source.  We want 
   provider the widget falls back to per-session state. Tests:
   `test/ui/mm_collapse_controller_test.dart` (includes a check that
   screens and `MmGroupIds` agree), `test/screens/collapsible_screens_test.dart`.
+
+  - R65 palette fix: the Studio hairline/`line` is `#4A4A4A`, accent
+    `#70A5DA`, alert `#E8887E`. Measured luminance ratios (base / panel /
+    raised / selected): hairline 2.08 / 1.84 / 1.60 / 1.36 (was 1.62 /
+    1.43 / 1.24 / **1.06**); accent 7.09 / 6.27 / 5.45 / 4.65 (was 5.75 /
+    5.08 / 4.42 / **3.77**); alert 7.24 / 6.40 / 5.57 / 4.75. R63 had
+    checked these only over the panel. `test/theme/mm_layers_test.dart`
+    now asserts them on every layer.
 
 ### Terminology — Fabric vs Contact
 

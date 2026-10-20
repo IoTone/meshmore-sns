@@ -60,6 +60,10 @@ codebase.
   / Manual). Collapse state is **persisted** per stable group id (R65:
   `MmCollapseController`, `mm.collapse.v1`, default open, loaded before
   `runApp`).
+- R65: Studio hairline/line `#4A4A4A`, accent `#70A5DA`, alert `#E8887E`
+  so the rule and the coloured text are legible on all four layers (the
+  old hairline was 1.06:1 on `selected`). Pinned per layer in
+  `test/theme/mm_layers_test.dart`.
 - Audio aliases the Hyperlocal pack; **unverified on a device**.
 
 **Privacy (R62)**

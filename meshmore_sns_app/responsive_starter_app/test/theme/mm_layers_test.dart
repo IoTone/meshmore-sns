@@ -43,9 +43,8 @@ void main() {
         final MmSkin s = mmSkinFor(p);
         expect(s.shape.squareControls, isFalse, reason: '$p');
         expect(s.shape.hairlineWidth, 1.0, reason: '$p');
-        final ThemeData td =
-            buildMmTheme(s.color, fontFamily: s.type.displayFamily,
-                shape: s.shape);
+        final ThemeData td = buildMmTheme(s.color,
+            fontFamily: s.type.displayFamily, shape: s.shape);
         final RoundedRectangleBorder chip =
             td.chipTheme.shape! as RoundedRectangleBorder;
         expect(chip.borderRadius, BorderRadius.circular(20), reason: '$p');
@@ -58,8 +57,7 @@ void main() {
   group('Studio is a real layer stack', () {
     final MmTokens t = kMmPresets[MmThemePreset.studio]!;
     double lum(Color c) => c.computeLuminance();
-    double ratio(Color hi, Color lo) =>
-        (lum(hi) + 0.05) / (lum(lo) + 0.05);
+    double ratio(Color hi, Color lo) => (lum(hi) + 0.05) / (lum(lo) + 0.05);
 
     test('supplies its own stack', () => expect(t.hasLayerStack, isTrue));
 
@@ -71,7 +69,30 @@ void main() {
         expect(ratio(l[i], l[i - 1]), greaterThanOrEqualTo(1.08),
             reason: 'step $i must be visible');
       }
-      expect(ratio(t.hairline, t.surface), greaterThanOrEqualTo(1.1));
+    });
+
+    test('R65: the rule is visible on EVERY layer it separates', () {
+      // R63 only checked the hairline over the panel; on `selected` the
+      // old #3A3A3A was 1.06:1, i.e. invisible.
+      for (final Color layer in t.layers) {
+        expect(ratio(t.hairline, layer), greaterThanOrEqualTo(1.3),
+            reason: 'hairline on $layer');
+        expect(ratio(t.line, layer), greaterThanOrEqualTo(1.3),
+            reason: 'line (dividers, outlines) on $layer');
+        // ...but it stays a rule, well below text.
+        expect(ratio(t.hairline, layer), lessThan(2.5),
+            reason: 'hairline on $layer must stay subordinate');
+      }
+      expect(t.hairline, t.line, reason: 'one rule colour for Studio');
+    });
+
+    test('R65: accent, alert and ok are legible text on every layer', () {
+      for (final Color layer in t.layers) {
+        for (final Color c in <Color>[t.accent, t.alert, t.ok]) {
+          expect(ratio(c, layer), greaterThanOrEqualTo(4.5),
+              reason: '$c on $layer');
+        }
+      }
     });
 
     test('text tiers are ordered and legible on every layer', () {
@@ -87,15 +108,22 @@ void main() {
         final HSVColor h = HSVColor.fromColor(c);
         return h.saturation;
       }
+
       for (final Color c in <Color>[
-        ...t.layers, t.line, t.hairline, t.fg, t.fgMuted, t.fgDisabled
+        ...t.layers,
+        t.line,
+        t.hairline,
+        t.fg,
+        t.fgMuted,
+        t.fgDisabled
       ]) {
         expect(sat(c), lessThan(0.02), reason: '$c should be grey');
       }
       expect(sat(t.accent), greaterThan(0.3));
-      expect(ratio(t.accent, t.surface), greaterThanOrEqualTo(4.5));
-      expect(ratio(t.onAccent, t.accent) > 4.5 ||
-          ratio(t.accent, t.onAccent) > 4.5, isTrue);
+      expect(
+          ratio(t.onAccent, t.accent) > 4.5 ||
+              ratio(t.accent, t.onAccent) > 4.5,
+          isTrue);
     });
 
     test('square controls, 1px hairline, no ornament', () {
@@ -104,9 +132,8 @@ void main() {
       expect(s.shape.squareControls, isTrue);
       expect(s.shape.hairlineWidth, 1.0);
       expect(s.ornament.any, isFalse);
-      final ThemeData td =
-          buildMmTheme(s.color, fontFamily: s.type.displayFamily,
-              shape: s.shape);
+      final ThemeData td = buildMmTheme(s.color,
+          fontFamily: s.type.displayFamily, shape: s.shape);
       expect(td.chipTheme.shape, const RoundedRectangleBorder());
       expect(td.cardTheme.shape, const RoundedRectangleBorder());
       expect(td.dialogTheme.shape, const RoundedRectangleBorder());
@@ -119,8 +146,8 @@ void main() {
       expect(MmThemePreset.studio.label, contains('Studio'));
       // R64: the label used to promise "compact", but no density token
       // exists, so nothing about Studio is denser than the other skins.
-      expect(MmThemePreset.studio.label.toLowerCase(),
-          isNot(contains('compact')));
+      expect(
+          MmThemePreset.studio.label.toLowerCase(), isNot(contains('compact')));
     });
   });
 }

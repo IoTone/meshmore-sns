@@ -135,22 +135,25 @@ const Map<MmThemePreset, MmTokens> kMmPresets = <MmThemePreset, MmTokens>{
   // and ONE desaturated blue accent used for the active/primary state.
   // Adapted from the ldmux palette (#141414 / #202020 / #2B2B2B /
   // #363636, hairline #3A3A3A, accent #5B94CC) to this nine-colour
-  // model: `surfaceAlt` is the raised step so Material's own container
+  // model. R65 then raised the hairline/line to #4A4A4A (the #3A3A3A
+  // rule was 1.06:1 on `selected`), the accent to #70A5DA and alert to
+  // #E8887E (both were under 4.5:1 as text on `selected`).
+  // `surfaceAlt` is the raised step so Material's own container
   // roles land on the stack; `alert`/`ok` keep the app's meaning but
   // are desaturated to sit in a grey UI.
   MmThemePreset.studio: MmTokens(
     base: Color(0xFF141414),
     surface: Color(0xFF202020),
     surfaceAlt: Color(0xFF2B2B2B),
-    line: Color(0xFF3A3A3A),
+    line: Color(0xFF4A4A4A),
     fg: Color(0xFFE2E2E2),
     fgMuted: Color(0xFFA0A0A0),
-    accent: Color(0xFF5B94CC),
-    alert: Color(0xFFE07A70),
+    accent: Color(0xFF70A5DA),
+    alert: Color(0xFFE8887E),
     ok: Color(0xFF8DB38B),
     raised: Color(0xFF2B2B2B),
     selected: Color(0xFF363636),
-    hairline: Color(0xFF3A3A3A),
+    hairline: Color(0xFF4A4A4A),
     onAccent: Color(0xFF141414),
     fgDisabled: Color(0xFF6A6A6A),
   ),
@@ -281,13 +284,11 @@ ThemeData buildMmTheme(MmTokens t, {String? fontFamily, MmShape? shape}) {
   // R55 — the active skin's display face becomes the app-wide default,
   // so every screen (not just the migrated components) reads in the
   // brand type. Telemetry/mono text sets its own family explicitly.
-  final TextTheme base = ThemeData(brightness: Brightness.dark)
-      .textTheme
-      .apply(
-          bodyColor: t.fg,
-          displayColor: t.fg,
-          decorationColor: t.fg,
-          fontFamily: fontFamily);
+  final TextTheme base = ThemeData(brightness: Brightness.dark).textTheme.apply(
+      bodyColor: t.fg,
+      displayColor: t.fg,
+      decorationColor: t.fg,
+      fontFamily: fontFamily);
   // The bundled display face (Saira) renders *light* at the regular
   // weight, so non-bold body/label text read dim and thin on the dark
   // grounds. Nudge the base weight up to medium for legibility (paired
@@ -320,8 +321,7 @@ ThemeData buildMmTheme(MmTokens t, {String? fontFamily, MmShape? shape}) {
       shape: squareBorder,
     ),
     dialogTheme: square ? DialogThemeData(shape: squareBorder) : null,
-    bottomSheetTheme:
-        square ? BottomSheetThemeData(shape: squareBorder) : null,
+    bottomSheetTheme: square ? BottomSheetThemeData(shape: squareBorder) : null,
     appBarTheme: AppBarTheme(
       backgroundColor: t.base,
       foregroundColor: t.fg,
@@ -336,7 +336,8 @@ ThemeData buildMmTheme(MmTokens t, {String? fontFamily, MmShape? shape}) {
       thumbColor: WidgetStateProperty.resolveWith((Set<WidgetState> s) =>
           s.contains(WidgetState.selected) ? t.accent : t.fgMuted),
       trackColor: WidgetStateProperty.resolveWith((Set<WidgetState> s) =>
-          s.contains(WidgetState.selected) ? t.accent.withValues(alpha: .4)
+          s.contains(WidgetState.selected)
+              ? t.accent.withValues(alpha: .4)
               : t.surfaceAlt),
     ),
     radioTheme: RadioThemeData(
