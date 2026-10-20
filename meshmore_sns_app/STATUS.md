@@ -57,7 +57,9 @@ codebase.
   gained `hairlineWidth`/`squareControls`; the six older skins are
   unchanged by construction (`test/theme/mm_layers_test.dart`).
 - `MmCollapsibleSection` groups Location settings (Auto-publish / Beacon
-  / Manual). Collapse state is per visit, not persisted.
+  / Manual). Collapse state is **persisted** per stable group id (R65:
+  `MmCollapseController`, `mm.collapse.v1`, default open, loaded before
+  `runApp`).
 - Audio aliases the Hyperlocal pack; **unverified on a device**.
 
 **Privacy (R62)**

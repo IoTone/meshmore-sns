@@ -7,6 +7,7 @@ import 'package:meshcore/meshcore.dart';
 import 'package:provider/provider.dart';
 
 import '../gen/app_localizations.dart';
+import '../ui/mm_collapse_controller.dart';
 import '../ui/mm_collapsible.dart';
 import '../ui/mm_scaffold.dart';
 import '../meshcore/meshcore_connection.dart';
@@ -395,6 +396,7 @@ class _DeviceConfigScreenState extends State<DeviceConfigScreen> {
           padding: const EdgeInsets.all(16),
           children: <Widget>[
             MmCollapsibleSection(
+              id: MmGroupIds.devRegion,
               title: l.deviceRegionBand,
               children: <Widget>[
                 const SizedBox(height: 8),
@@ -440,6 +442,7 @@ class _DeviceConfigScreenState extends State<DeviceConfigScreen> {
             ),
             const Divider(height: 28),
             MmCollapsibleSection(
+              id: MmGroupIds.devRadio,
               title: l.deviceRadioParams,
               children: <Widget>[
                 if (si != null)
@@ -492,6 +495,7 @@ class _DeviceConfigScreenState extends State<DeviceConfigScreen> {
 
             // IDENTITY / ADVERT (R7)
             MmCollapsibleSection(
+              id: MmGroupIds.devIdentity,
               title: l.deviceIdentityAdvert,
               children: <Widget>[
                 const SizedBox(height: 6),
@@ -673,6 +677,7 @@ class _DeviceConfigScreenState extends State<DeviceConfigScreen> {
             // CMD_SET_OTHER_PARAMS (0x26) and preserves the other
             // three fields by reading them off SelfInfo.
             MmCollapsibleSection(
+              id: MmGroupIds.devOther,
               title: l.deviceOtherParamsSection,
               children: <Widget>[
                 const SizedBox(height: 4),
@@ -690,6 +695,7 @@ class _DeviceConfigScreenState extends State<DeviceConfigScreen> {
 
             // DEVICE (read-only)
             MmCollapsibleSection(
+              id: MmGroupIds.devDevice,
               title: l.deviceDeviceSection,
               children: <Widget>[
                 const SizedBox(height: 4),

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../gen/app_localizations.dart';
+import '../ui/mm_collapse_controller.dart';
 import '../ui/mm_collapsible.dart';
 import '../ui/mm_scaffold.dart';
 import '../meshcore/auto_publish_controller.dart';
@@ -111,6 +112,7 @@ class LocationSettingsScreen extends StatelessWidget {
               ),
             ),
             MmCollapsibleSection(
+              id: MmGroupIds.locAutoPublish,
               title: l.locGroupAutoPublish,
               children: <Widget>[
                 // Master toggle.
@@ -157,6 +159,7 @@ class LocationSettingsScreen extends StatelessWidget {
             // choice from auto-publish: it needs no GPS permission and
             // works with the master toggle off.
             MmCollapsibleSection(
+              id: MmGroupIds.locBeacon,
               title: l.locGroupBeacon,
               children: <Widget>[
                 Consumer<MeshcoreController>(
@@ -176,6 +179,7 @@ class LocationSettingsScreen extends StatelessWidget {
               ],
             ),
             MmCollapsibleSection(
+              id: MmGroupIds.locManual,
               title: l.locGroupManual,
               children: <Widget>[
                 // "Publish now" — manual trigger so the user can verify.

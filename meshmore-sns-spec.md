@@ -1112,12 +1112,13 @@ While Meshcore protocol is open source, the client is not open source.  We want 
   - `MmCollapsibleSection` (`lib/ui/mm_collapsible.dart`): a section
     label (same style as `MmSectionHeader`), chevron whose shape is the
     state, hairline rule, 48dp whole-row button with `expanded`
-    semantics, content not built while closed. State is per visit. Used
+    semantics, content not built while closed. State was per visit in R63;
+    R65 persists it. Used
     by Location settings (Auto-publish / Beacon / Manual) under every skin.
   - Audio: Studio **aliases** the Hyperlocal pack (`audioPackKey`), no
     audio was synthesised. Haptics: the neutral profile.
-  - Not expressible yet: density/row-height per skin, persisted
-    collapse state, per-skin control height. Unverified on a device.
+  - Not expressible yet: density/row-height per skin, per-skin control
+    height. Unverified on a device.
 
 - R64: **swipe-only navigation; the view strip replaces the quick-nav
   sheet.** `HomeShell` no longer has a leading app-bar control or a
@@ -1135,6 +1136,23 @@ While Meshcore protocol is open source, the client is not open source.  We want 
     plain. The Settings hub stays a list: its seven rows are pushed
     destinations, not content to fold. Test:
     `test/screens/collapsible_screens_test.dart`.
+
+- R65: **collapsed state is persisted.** `MmCollapseController`
+  (`lib/ui/mm_collapse_controller.dart`) is a `ChangeNotifier` provided at
+  the root like `ThemeController`/`LocaleController`, backed by
+  `shared_preferences` key `mm.collapse.v1` (one JSON object
+  `{"<id>": bool}` holding only explicit user choices). `main()` awaits its
+  `load()` before `runApp`, so a folded group never paints open and snaps
+  shut. Every `MmCollapsibleSection` takes a required, non-localised `id`
+  from the closed set `MmGroupIds` (`location.*`, `device.*`,
+  `personalization.*`): a localised title or a list index would make the
+  state language- or order-dependent. Default is open (nothing hidden on a
+  fresh install, nothing stored). Unknown ids and non-bool or corrupt
+  values are ignored on load, and only registered ids are written back, so
+  the map cannot grow. A duplicate id on screen asserts in debug. Without a
+  provider the widget falls back to per-session state. Tests:
+  `test/ui/mm_collapse_controller_test.dart` (includes a check that
+  screens and `MmGroupIds` agree), `test/screens/collapsible_screens_test.dart`.
 
 ### Terminology — Fabric vs Contact
 

@@ -8,6 +8,7 @@ import 'package:meshmore_sns_app/ui/mm_collapsible.dart';
 Widget _host({bool open = true, ValueChanged<bool>? onChanged}) => MaterialApp(
       home: Scaffold(
         body: MmCollapsibleSection(
+          id: 'g',
           title: 'Group',
           initiallyExpanded: open,
           onChanged: onChanged,

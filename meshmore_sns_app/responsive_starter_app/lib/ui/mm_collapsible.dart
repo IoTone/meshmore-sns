@@ -1,8 +1,10 @@
 // Copyright (c) 2026 IoTone, Inc.
 // SPDX-License-Identifier: MIT
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../theme/mm_skin.dart';
+import 'mm_collapse_controller.dart';
 import 'mm_components.dart';
 
 /// R63 — a collapsible group: a dim section label with a chevron, a
@@ -21,18 +23,24 @@ import 'mm_components.dart';
 /// *shape* (down vs. right) is the visual state, not colour alone. No
 /// animation, so reduce-motion needs no special case.
 ///
-/// State is held in the widget (session only): groups reopen to
-/// [initiallyExpanded] on the next visit. Persisting it is a product
-/// decision (see the R63 spec entry).
+/// R65 — open/closed is persisted per [id] by [MmCollapseController]
+/// (found through `provider`), so a folded group stays folded on the next
+/// visit and after a restart. [initiallyExpanded] is only the default for
+/// a group the user has never toggled. Without a provider above it (a
+/// bare widget test) the state is held in the widget for the session.
 class MmCollapsibleSection extends StatefulWidget {
   const MmCollapsibleSection({
     super.key,
+    required this.id,
     required this.title,
     required this.children,
     this.initiallyExpanded = true,
     this.onChanged,
   });
 
+  /// Stable, non-localised id (see [MmGroupIds]). Must be unique among
+  /// the groups on screen at once.
+  final String id;
   final String title;
   final List<Widget> children;
   final bool initiallyExpanded;
@@ -43,16 +51,50 @@ class MmCollapsibleSection extends StatefulWidget {
 }
 
 class _MmCollapsibleSectionState extends State<MmCollapsibleSection> {
-  late bool _open = widget.initiallyExpanded;
+  /// Ids currently mounted, to catch a duplicate id while developing.
+  static final Set<String> _live = <String>{};
+
+  bool _registered = false;
+  late bool _local = widget.initiallyExpanded;
+  MmCollapseController? _store;
+
+  bool get _open =>
+      _store?.isOpen(widget.id, fallback: widget.initiallyExpanded) ?? _local;
+
+  @override
+  void initState() {
+    super.initState();
+    assert(() {
+      _registered = _live.add(widget.id);
+      if (!_registered) {
+        throw FlutterError(
+            'duplicate MmCollapsibleSection id "${widget.id}" on screen');
+      }
+      return true;
+    }());
+  }
+
+  @override
+  void dispose() {
+    assert(!_registered || _live.remove(widget.id));
+    super.dispose();
+  }
 
   void _toggle() {
-    setState(() => _open = !_open);
-    widget.onChanged?.call(_open);
+    final bool next = !_open;
+    final MmCollapseController? s = _store;
+    if (s != null) {
+      s.setOpen(widget.id, next); // notifies; rebuilds this widget
+    } else {
+      setState(() => _local = next);
+    }
+    widget.onChanged?.call(next);
   }
 
   @override
   Widget build(BuildContext context) {
     final MmSkin skin = context.skin;
+    _store = context.watch<MmCollapseController?>();
     final Widget rule = Container(
       height: skin.shape.hairlineWidth,
       color: skin.color.hairline,

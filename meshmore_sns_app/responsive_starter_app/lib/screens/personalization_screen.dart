@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../gen/app_localizations.dart';
 import '../theme/mm_tokens.dart';
 import '../theme/theme_controller.dart';
+import '../ui/mm_collapse_controller.dart';
 import '../ui/mm_collapsible.dart';
 import '../ui/mm_components.dart';
 import '../ui/mm_scaffold.dart';
@@ -26,6 +27,7 @@ class PersonalizationScreen extends StatelessWidget {
         child: ListView(
           children: <Widget>[
             MmCollapsibleSection(
+              id: MmGroupIds.persPreset,
               title: l.personalizationThemePreset,
               children: <Widget>[
                 // When High contrast is ON, the rendered theme is forced
@@ -103,6 +105,7 @@ class PersonalizationScreen extends StatelessWidget {
             ),
             const Divider(),
             MmCollapsibleSection(
+              id: MmGroupIds.persAccessibility,
               title: l.personalizationAccessibility,
               children: <Widget>[
                 SwitchListTile(

@@ -192,7 +192,9 @@ luminance), a `hairline` (1px, `MmShape.hairlineWidth`) and
 nine colours and look exactly as before. `MmShape.squareControls` makes
 Material's own controls square for Studio only. Grouped surfaces use
 `MmCollapsibleSection` (label + chevron + hairline, 48dp row, content not
-built when closed), first applied to Location settings. Studio reuses the
+built when closed), applied to Location settings, Device configuration
+and Personalization. Which groups are folded is persisted per stable id
+(R65, `MmCollapseController`, default open). Studio reuses the
 Hyperlocal audio pack and the neutral haptic profile.
 
 #### Palette — token contract (preset-independent)

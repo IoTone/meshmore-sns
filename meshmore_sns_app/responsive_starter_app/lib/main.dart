@@ -31,6 +31,7 @@ import 'package:meshmore_sns_app/splash/branded_splash_screen.dart';
 import 'package:meshmore_sns_app/theme/theme_controller.dart';
 import 'package:meshmore_sns_app/tools/tools_controller.dart';
 import 'package:meshmore_sns_app/tts/tts_controller.dart';
+import 'package:meshmore_sns_app/ui/mm_collapse_controller.dart';
 
 void main() {
   final WidgetsBinding widgetsBinding =
@@ -49,10 +50,15 @@ void main() {
   SystemChrome.setPreferredOrientations(<DeviceOrientation>[
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
-  ]).then((_) {
+  ]).then((_) async {
+    // R65 — read the folded-group state before the first frame, so a
+    // group the user folded never paints open and then snaps shut.
+    final MmCollapseController collapse = MmCollapseController();
+    await collapse.load();
     runApp(
       MultiProvider(
         providers: [
+          ChangeNotifierProvider<MmCollapseController>.value(value: collapse),
           ChangeNotifierProvider<AppState>(create: (_) => AppState()),
           ChangeNotifierProvider<ThemeController>(
             create: (_) => ThemeController()..load(),
