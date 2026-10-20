@@ -3,7 +3,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:meshmore_sns_app/ui/mm_collapse_controller.dart';
 import 'package:meshmore_sns_app/ui/mm_collapsible.dart';
+import 'package:provider/provider.dart';
 
 Widget _host({bool open = true, ValueChanged<bool>? onChanged}) => MaterialApp(
       home: Scaffold(
@@ -63,5 +65,48 @@ void main() {
     // ignore: deprecated_member_use
     expect(n().hasFlag(SemanticsFlag.hasExpandedState), isTrue);
     h.dispose();
+  });
+
+  group('R66 missing provider', () {
+    Future<List<String>> run(WidgetTester tester, Widget w, int taps) async {
+      final List<String> logs = <String>[];
+      final old = debugPrint;
+      debugPrint = (String? m, {int? wrapWidth}) => logs.add(m ?? '');
+      try {
+        await tester.pumpWidget(w);
+        expect(logs, isEmpty, reason: 'no warning on build');
+        for (int i = 0; i < taps; i++) {
+          await tester.tap(find.byType(InkWell));
+          await tester.pump();
+        }
+      } finally {
+        // Restore inside the body: flutter_test checks debug vars
+        // before addTearDown callbacks run.
+        debugPrint = old;
+      }
+      return logs;
+    }
+
+    testWidgets('warns once, on toggle only, and still toggles',
+        (WidgetTester tester) async {
+      final List<String> logs = await run(tester, _host(), 3);
+      expect(logs, hasLength(1));
+      expect(logs.single, contains('"g"'));
+      expect(logs.single, contains('session-only'));
+      expect(find.text('inside'), findsNothing,
+          reason: 'three toggles from open leave it closed');
+    });
+
+    testWidgets('no warning when a controller is provided',
+        (WidgetTester tester) async {
+      final MmCollapseController c =
+          MmCollapseController(known: const <String>{'g'});
+      final List<String> logs = await run(
+          tester,
+          ChangeNotifierProvider<MmCollapseController>.value(
+              value: c, child: _host()),
+          2);
+      expect(logs, isEmpty);
+    });
   });
 }

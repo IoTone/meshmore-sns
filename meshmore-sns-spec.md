@@ -1170,6 +1170,13 @@ While Meshcore protocol is open source, the client is not open source.  We want 
   are null for the six older presets, so their `ThemeData` is unchanged.
   Tests: `test/theme/mm_layers_test.dart` (group "R66 Studio edges").
 
+  - R66 missing provider: `MmCollapsibleSection` still falls back to
+    per-session state with no `MmCollapseController` above it (so bare
+    widget tests work), but its first toggle now logs a one-time
+    `debugPrint` naming the group id and that the state is session-only.
+    Once per widget instance (no static state), only on a toggle, never an
+    assert. Test: `test/ui/mm_collapsible_test.dart`.
+
 ### Terminology — Fabric vs Contact
 
 - **Fabric** = the set of nodes we have *seen* on the mesh (any

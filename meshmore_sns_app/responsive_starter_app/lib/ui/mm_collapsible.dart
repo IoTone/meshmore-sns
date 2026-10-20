@@ -55,6 +55,7 @@ class _MmCollapsibleSectionState extends State<MmCollapsibleSection> {
   static final Set<String> _live = <String>{};
 
   bool _registered = false;
+  bool _warned = false;
   late bool _local = widget.initiallyExpanded;
   MmCollapseController? _store;
 
@@ -86,6 +87,15 @@ class _MmCollapsibleSectionState extends State<MmCollapsibleSection> {
     if (s != null) {
       s.setOpen(widget.id, next); // notifies; rebuilds this widget
     } else {
+      // R66: no MmCollapseController above us, so this choice is lost
+      // when the screen closes. Say so, once per widget instance and
+      // only on a toggle (no static state to leak between tests).
+      if (!_warned) {
+        _warned = true;
+        debugPrint('MmCollapsibleSection "${widget.id}": no '
+            'MmCollapseController provided, collapse state is '
+            'session-only (not persisted)');
+      }
       setState(() => _local = next);
     }
     widget.onChanged?.call(next);

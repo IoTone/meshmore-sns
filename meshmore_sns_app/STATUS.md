@@ -67,6 +67,8 @@ codebase.
 - R66: Studio cards get a 1px hairline edge and the app bar (with the
   view strip) ends in a 1px hairline; both null for the six older
   presets. **Unverified on a device** (theme-level tests only).
+- R66: a collapsible group with no `MmCollapseController` provider still
+  works per session but logs a one-time `debugPrint` on its first toggle.
 - Audio aliases the Hyperlocal pack; **unverified on a device**.
 
 **Privacy (R62)**
