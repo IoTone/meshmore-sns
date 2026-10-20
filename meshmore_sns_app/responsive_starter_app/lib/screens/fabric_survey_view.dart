@@ -361,9 +361,7 @@ class _FabricSurveyViewState extends State<FabricSurveyView> {
                 IconButton(
                   tooltip: l.equalGridZoomIn,
                   iconSize: 18,
-                  visualDensity: VisualDensity.compact,
-                  constraints: const BoxConstraints(
-                      minWidth: 36, minHeight: 36),
+                  constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
                   icon: const Icon(Icons.add),
                   onPressed: _zoom < _zoomMax
                       ? () {
@@ -375,9 +373,7 @@ class _FabricSurveyViewState extends State<FabricSurveyView> {
                 IconButton(
                   tooltip: l.equalGridZoomOut,
                   iconSize: 18,
-                  visualDensity: VisualDensity.compact,
-                  constraints: const BoxConstraints(
-                      minWidth: 36, minHeight: 36),
+                  constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
                   icon: const Icon(Icons.remove),
                   onPressed: _zoom > _zoomMin
                       ? () {
@@ -389,9 +385,7 @@ class _FabricSurveyViewState extends State<FabricSurveyView> {
                 IconButton(
                   tooltip: l.streetMapRecenter,
                   iconSize: 18,
-                  visualDensity: VisualDensity.compact,
-                  constraints: const BoxConstraints(
-                      minWidth: 36, minHeight: 36),
+                  constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
                   icon: const Icon(Icons.my_location),
                   onPressed: () =>
                       _map.move(LatLng(selfLat, selfLon), _zoom),
@@ -401,9 +395,7 @@ class _FabricSurveyViewState extends State<FabricSurveyView> {
                       ? l.mapHideTiles
                       : l.mapShowTiles,
                   iconSize: 18,
-                  visualDensity: VisualDensity.compact,
-                  constraints: const BoxConstraints(
-                      minWidth: 36, minHeight: 36),
+                  constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
                   icon: Icon(_showTiles
                       ? Icons.layers
                       : Icons.layers_clear),
@@ -413,9 +405,7 @@ class _FabricSurveyViewState extends State<FabricSurveyView> {
                 IconButton(
                   tooltip: l.fabricResetTooltip,
                   iconSize: 18,
-                  visualDensity: VisualDensity.compact,
-                  constraints: const BoxConstraints(
-                      minWidth: 36, minHeight: 36),
+                  constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
                   icon: const Icon(Icons.delete_outline),
                   onPressed: cells.isEmpty
                       ? null

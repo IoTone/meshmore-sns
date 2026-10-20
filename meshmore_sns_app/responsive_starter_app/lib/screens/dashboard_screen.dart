@@ -408,10 +408,8 @@ class _LocationTile extends StatelessWidget {
             IconButton(
               icon: const Icon(Icons.refresh, size: 18),
               tooltip: l.dashboardLocationRefresh,
-              visualDensity: VisualDensity.compact,
               padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(
-                  minWidth: 32, minHeight: 32),
+              constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
               onPressed: mc.isReady ? () => mc.refreshSelfInfo() : null,
             ),
           ],

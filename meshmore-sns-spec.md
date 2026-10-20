@@ -1214,6 +1214,14 @@ While Meshcore protocol is open source, the client is not open source.  We want 
   boilerplate `about.dart` drawer. Test: `test/l10n/ja_literals_test.dart`
   (each key's JA differs from EN and has no Latin word apart from
   MHz/kHz/dBm/PSK/GPS/SF/CR; Diagnostics renders Japanese).
+  (3) **48dp touch targets.** Icon
+  buttons constrained to 28-36dp with `VisualDensity.compact` are now
+  48x48 with the compact density removed (density subtracts from the
+  constraint): message-actions in `chat_screen.dart` / `dm_screen.dart`,
+  the dashboard location refresh, `equal_grid_view.dart` (zoom out/in,
+  stats, tiles), `fabric_survey_view.dart` (zoom, recentre, tiles, reset),
+  and `MmAudioToggle(dense: true)` (glyph unchanged, 48x48 box; its NERV
+  sibling bluetooth button too). Tests: `test/ui/touch_targets_test.dart`.
 
 - R68: **Studio is monochrome.** Owner direction: "gray accent, light
   gray, no saturation for any accents". `studio` tokens

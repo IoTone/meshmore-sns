@@ -99,16 +99,23 @@ codebase.
   Nodes clear-search tooltip, Diagnostics connection block) now follow the
   locale. **Unverified on a device.**
 
+- R69: the 28-36dp icon buttons the R68 pass listed (chat/DM message
+  actions, dashboard refresh, equal-grid and fabric-survey controls, dense
+  audio toggle + NERV bluetooth sibling) are 48x48. **Unverified on a
+  device**: the equal-grid bar is wider now (about 280dp), fabric-survey's
+  column is 240dp tall.
+
 **Known issues from the R68 critical pass (not fixed; read from code and phone screenshots)**
 - Still English in the Japanese locale (after R69): the Diagnostics SEND /
   M6 interop / fixture-export / bot-soak panels (developer tooling, left
   in English on purpose). Other screens were not swept literal by literal;
   a grep for `Text('Latin...')` finds only brand marks, "BLE", hint URLs
   and the unused `about.dart`.
-- Touch targets under 48dp: icon buttons constrained to 28-36dp in
-  `dm_screen.dart:336`, `dashboard_screen.dart:414`, `chat_screen.dart:473`,
-  `equal_grid_view.dart:402/429/453`, `fabric_survey_view.dart:366-418`,
-  `mm_audio_toggle.dart` (dense form).
+- Touch targets still under 48dp: the `street_map_view.dart` control
+  column (zoom in/out, recentre, tiles are 36dp; the basemap picker is a
+  default PopupMenuButton), found by grepping `minWidth: <48` after R69. It
+  is the Map tab's own control column and sits under the R67 right edge
+  band inset (208dp), so raising it means re-checking that inset.
 - The six older dashboards still show two status displays (the dashboard's
   own slab and the app-bar chip) for one link state.
 - `JetBrains Mono` is hard-coded in about 90 places outside the theme

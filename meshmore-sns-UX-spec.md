@@ -155,7 +155,9 @@ sound-dependence.
   sound for the audio pack.
 - **Contrast & targets.** AA+ (target ≥7:1 for primary text on the
   dark grounds); interactive targets ≥ 48 dp; one-handed reach;
-  usable with gloves.
+  usable with gloves. (R69: the last 28-36dp icon buttons, in chat/DM message actions,
+  the dashboard refresh, the equal-grid and fabric-survey controls and the
+  dense audio toggle, are 48x48; the glyphs are unchanged.)
 - **Semantics.** All actionable widgets carry `Semantics` labels;
   swipe navigation (R11) has an accessible equivalent (the R64 view strip:
   labelled 48dp buttons) so it is not gesture-only.

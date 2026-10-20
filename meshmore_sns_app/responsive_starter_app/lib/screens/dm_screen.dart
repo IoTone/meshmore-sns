@@ -332,9 +332,7 @@ class _DmRow extends StatelessWidget {
               tooltip: AppLocalizations.of(context).chatMessageActions,
               iconSize: 18,
               padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(
-                  minWidth: 32, minHeight: 32),
-              visualDensity: VisualDensity.compact,
+              constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
               onPressed: onAction,
               icon: Icon(Icons.more_vert,
                   color: cs.onSurfaceVariant),

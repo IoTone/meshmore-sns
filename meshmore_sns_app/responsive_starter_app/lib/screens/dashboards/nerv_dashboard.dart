@@ -75,10 +75,9 @@ class NervDashboard extends StatelessWidget {
                       MmAudioToggle(
                           dense: true, size: 18, color: skin.color.accent),
                       IconButton(
-                        visualDensity: VisualDensity.compact,
                         padding: EdgeInsets.zero,
                         constraints: const BoxConstraints(
-                            minWidth: 28, minHeight: 28),
+                            minWidth: 48, minHeight: 48),
                         icon: Icon(Icons.bluetooth,
                             size: 18, color: skin.color.accent),
                         onPressed: () => DeviceManagerSheet.show(context),

@@ -17,8 +17,10 @@ class MmAudioToggle extends StatelessWidget {
 
   final double size;
 
-  /// Compact form (zero padding, 28×28 hit box) for dense headers like
-  /// the NERV LINK panel; matches the sibling device button there.
+  /// Compact *visual* (zero padding, [size] glyph, no extra density
+  /// shrink) for dense headers like the NERV LINK panel. R69: the hit box
+  /// is still 48x48 ([kMinInteractiveDimension]); the glyph is unchanged,
+  /// only the empty space around it is tappable and the header is taller.
   final bool dense;
 
   /// Overrides the "audible" tint (defaults to the colour scheme primary);
@@ -40,10 +42,11 @@ class MmAudioToggle extends StatelessWidget {
     final bool audible = theme.audioMaster && !theme.visualHapticOnly;
     return IconButton(
       tooltip: audible ? l.dashboardAudioMute : l.dashboardAudioUnmute,
-      visualDensity: dense ? VisualDensity.compact : null,
       padding: dense ? EdgeInsets.zero : null,
       constraints: dense
-          ? const BoxConstraints(minWidth: 28, minHeight: 28)
+          ? const BoxConstraints(
+              minWidth: kMinInteractiveDimension,
+              minHeight: kMinInteractiveDimension)
           : null,
       icon: Icon(
         audible ? Icons.volume_up : Icons.volume_off,

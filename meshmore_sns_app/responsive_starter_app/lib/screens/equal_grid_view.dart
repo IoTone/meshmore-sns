@@ -397,9 +397,7 @@ class _EqualGridViewState extends State<EqualGridView> {
                     IconButton(
                       tooltip: l.equalGridZoomOut,
                       iconSize: 18,
-                      visualDensity: VisualDensity.compact,
-                      constraints: const BoxConstraints(
-                          minWidth: 32, minHeight: 32),
+                      constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
                       icon: const Icon(Icons.remove),
                       onPressed: _zoomSteps > _zoomStepMin
                           ? _zoomOut
@@ -424,9 +422,7 @@ class _EqualGridViewState extends State<EqualGridView> {
                     IconButton(
                       tooltip: l.equalGridZoomIn,
                       iconSize: 18,
-                      visualDensity: VisualDensity.compact,
-                      constraints: const BoxConstraints(
-                          minWidth: 32, minHeight: 32),
+                      constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
                       icon: const Icon(Icons.add),
                       onPressed: _zoomSteps < _zoomStepMax
                           ? _zoomIn
@@ -448,9 +444,7 @@ class _EqualGridViewState extends State<EqualGridView> {
                           ? l.equalGridHideStats
                           : l.equalGridShowStats,
                       iconSize: 18,
-                      visualDensity: VisualDensity.compact,
-                      constraints: const BoxConstraints(
-                          minWidth: 32, minHeight: 32),
+                      constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
                       icon: Icon(_showStats
                           ? Icons.dashboard
                           : Icons.dashboard_outlined),
@@ -463,9 +457,7 @@ class _EqualGridViewState extends State<EqualGridView> {
                           ? l.mapHideTiles
                           : l.mapShowTiles,
                       iconSize: 18,
-                      visualDensity: VisualDensity.compact,
-                      constraints: const BoxConstraints(
-                          minWidth: 32, minHeight: 32),
+                      constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
                       icon: Icon(_showTiles
                           ? Icons.layers
                           : Icons.layers_clear),
