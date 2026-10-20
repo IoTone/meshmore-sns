@@ -29,6 +29,11 @@ import 'package:flutter/material.dart';
 /// [minTravel] **or** the inward fling velocity is at least
 /// [minVelocity]; a short, slow edge touch does nothing.
 ///
+/// **System Back gesture (R70).** On Android with gesture navigation
+/// the OS takes the outer edge zone for Back, so the bands are offset
+/// inward by `MediaQuery.systemGestureInsets`; a swipe must begin just
+/// inside the OS zone. A swipe from the very edge is the OS's, not ours.
+///
 /// Assumption: left-to-right layout. The app ships EN and JA only, both
 /// LTR; "left band = previous" is not mirrored for RTL.
 class MmEdgeSwipe extends StatefulWidget {
@@ -81,11 +86,11 @@ class _MmEdgeSwipeState extends State<MmEdgeSwipe> {
 
   /// [side] is -1 for the left band, +1 for the right band. Inward is
   /// +x on the left band and -x on the right band, so `inward = dx * -side`.
-  Widget _band(int side, EdgeInsets insets) {
+  Widget _band(int side, EdgeInsets insets, double gestureInset) {
     final double sign = -side.toDouble();
     return Positioned(
-      left: side < 0 ? 0 : null,
-      right: side > 0 ? 0 : null,
+      left: side < 0 ? gestureInset : null,
+      right: side > 0 ? gestureInset : null,
       top: insets.top,
       bottom: insets.bottom,
       width: widget.bandWidth,
@@ -110,12 +115,19 @@ class _MmEdgeSwipeState extends State<MmEdgeSwipe> {
 
   @override
   Widget build(BuildContext context) {
+    // R70 — under Android gesture navigation the OS claims the outer
+    // ~20-30 dp of each edge for system Back and never delivers those
+    // touches to the app (a swipe from x = 3 dp is *Back*, which the
+    // shell turns into "go to Dashboard"). Start each band just inside
+    // that zone; 0 where there is no system gesture zone.
+    final EdgeInsets sys =
+        MediaQuery.maybeOf(context)?.systemGestureInsets ?? EdgeInsets.zero;
     return Stack(
       fit: StackFit.expand,
       children: <Widget>[
         widget.child,
-        _band(-1, widget.leftInsets),
-        _band(1, widget.rightInsets),
+        _band(-1, widget.leftInsets, sys.left),
+        _band(1, widget.rightInsets, sys.right),
       ],
     );
   }
