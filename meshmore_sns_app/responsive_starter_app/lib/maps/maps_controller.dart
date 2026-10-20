@@ -11,9 +11,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'event_layer.dart';
 import 'fetch_gate.dart';
+import 'map_archive.dart';
 import 'map_fetch.dart';
 import 'map_pack.dart';
 import 'map_source.dart';
+import 'pmtiles.dart';
 import 'tile_math.dart';
 import 'tile_store.dart';
 
@@ -61,11 +63,14 @@ class MapsController extends ChangeNotifier {
     this.prefsKey = 'maps.state.v1',
     this.retryFloor = const Duration(seconds: 30),
     math.Random? random,
+    ArchiveFetcher? archiveFetcher,
   })  : _random = random ?? math.Random(),
         _rootDir = rootDir ?? _defaultRoot,
         _clock = clock ?? DateTime.now {
     _fetch = fetcher ??
         httpMapFetcher(() => mapUserAgent(appVersion?.call() ?? ''));
+    _archiveFetch = archiveFetcher ??
+        httpArchiveFetcher(() => mapUserAgent(appVersion?.call() ?? ''));
   }
 
   static Future<Directory> _defaultRoot() async =>
@@ -111,6 +116,7 @@ class MapsController extends ChangeNotifier {
   final Future<Directory> Function() _rootDir;
   final DateTime Function() _clock;
   late final MapFetcher _fetch;
+  late final ArchiveFetcher _archiveFetch;
   final Duration pace;
 
   TileStore? _store;
@@ -119,6 +125,11 @@ class MapsController extends ChangeNotifier {
 
   final List<MapSource> _custom = <MapSource>[];
   final List<MapPack> packs = <MapPack>[];
+
+  /// R81 — region archives (one PMTiles file each). See [addArchive].
+  final List<MapArchive> archives = <MapArchive>[];
+  final Map<String, int> _archiveSize = <String, int>{};
+  final Map<String, PmTilesArchive> _openArchives = <String, PmTilesArchive>{};
   final List<EventLayer> layers = <EventLayer>[];
   final Map<String, GeoShapes> _shapes = <String, GeoShapes>{};
 
@@ -166,7 +177,8 @@ class MapsController extends ChangeNotifier {
   int get layerBytes => layers.fold(0, (int a, EventLayer l) => a + l.bytes);
   int get tileBytes => _store?.totalBytes ?? 0;
   int get viewBytes => _store?.viewBytes ?? 0;
-  int get usedBytes => tileBytes + layerBytes;
+  int get archiveBytes => _archiveSize.values.fold(0, (int a, int b) => a + b);
+  int get usedBytes => tileBytes + layerBytes + archiveBytes;
 
   /// Bytes nothing will evict on its own: pack tiles and layers.
   int get pinnedBytes => usedBytes - viewBytes;
@@ -191,6 +203,7 @@ class MapsController extends ChangeNotifier {
       final SharedPreferences prefs = await SharedPreferences.getInstance();
       final String? raw = prefs.getString(prefsKey);
       if (raw != null) _decode(raw);
+      await _measureArchives();
     } catch (_) {
       _store ??= TileStore(Directory.systemTemp, clock: _clock);
     }
@@ -215,6 +228,9 @@ class MapsController extends ChangeNotifier {
       for (final Object? l in (j['layers'] as List<Object?>?) ?? <Object?>[]) {
         layers.add(EventLayer.fromJson(l! as Map<String, Object?>));
       }
+      for (final Object? a in (j['archives'] as List<Object?>?) ?? <Object?>[]) {
+        archives.add(MapArchive.fromJson(a! as Map<String, Object?>));
+      }
     } catch (_) {}
   }
 
@@ -228,6 +244,7 @@ class MapsController extends ChangeNotifier {
           'sources': <Object>[for (final MapSource s in _custom) s.toJson()],
           'packs': <Object>[for (final MapPack p in packs) p.toJson()],
           'layers': <Object>[for (final EventLayer l in layers) l.toJson()],
+          'archives': <Object>[for (final MapArchive a in archives) a.toJson()],
         }));
   }
 
@@ -243,6 +260,10 @@ class MapsController extends ChangeNotifier {
     _retry?.cancel();
     _sweep?.cancel();
     _trim?.cancel();
+    for (final PmTilesArchive a in _openArchives.values) {
+      unawaited(a.close());
+    }
+    _openArchives.clear();
     unawaited(_store?.flush());
     _store?.dispose();
     super.dispose();
@@ -307,6 +328,12 @@ class MapsController extends ChangeNotifier {
         any = true;
       }
     }
+    for (final MapArchive a in archives) {
+      if (a.state == ArchiveState.waitingForNetwork) {
+        a.state = ArchiveState.downloading;
+        any = true;
+      }
+    }
     if (any) {
       _changed();
       unawaited(_pump());
@@ -328,6 +355,11 @@ class MapsController extends ChangeNotifier {
               : PackState.downloading;
         }
       }
+      for (final MapArchive a in archives) {
+        if (a.state == ArchiveState.waitingForNetwork) {
+          a.state = ArchiveState.downloading;
+        }
+      }
       unawaited(_pump());
     });
   }
@@ -345,6 +377,10 @@ class MapsController extends ChangeNotifier {
   /// it" (leave the tile to be asked for again).
   Future<TileLoad> loadTileDetailed(MapSource src, int z, int x, int y) async {
     await ready;
+    if (src.id == kOpenFreeMapVector.id && archives.isNotEmpty) {
+      final TileLoad? a = await _fromArchives(z, x, y);
+      if (a != null) return a;
+    }
     final TileStore store = _store!;
     final String key = TileStore.keyOf(src.id, z, x, y);
     final TileMeta? meta = store.meta(key);
@@ -577,8 +613,19 @@ class MapsController extends ChangeNotifier {
             break;
           }
         }
-        if (next == null) break;
-        if (!await _runPack(next)) break;
+        if (next != null) {
+          if (!await _runPack(next)) break;
+          continue;
+        }
+        MapArchive? arch;
+        for (final MapArchive a in archives) {
+          if (a.state == ArchiveState.downloading) {
+            arch = a;
+            break;
+          }
+        }
+        if (arch == null) break;
+        if (!await _runArchive(arch)) break;
       }
     } finally {
       _pumping = false;
@@ -723,7 +770,256 @@ class MapsController extends ChangeNotifier {
       final int? at = l.expiresAtMs;
       if (at != null && at <= now) await deleteLayer(l);
     }
+    for (final MapArchive a in List<MapArchive>.of(archives)) {
+      final int? at = a.expiresAtMs;
+      if (a.complete && at != null && at <= now) await deleteArchive(a);
+    }
     await _trimView();
+  }
+
+  // ---- region archives (R81) ---------------------------------------
+
+  /// The root of archives on disk (null until [load]).
+  Directory? get _archiveDir =>
+      _root == null ? null : Directory('${_root!.path}/archives');
+
+  File _partFile(MapArchive a) => File('${_archiveDir!.path}/${a.id}.part');
+  File _archiveFile(MapArchive a) => File('${_archiveDir!.path}/${a.id}.pmtiles');
+
+  /// Sizes on disk, so the budget counts a half-downloaded archive.
+  Future<void> _measureArchives() async {
+    _archiveSize.clear();
+    for (final MapArchive a in archives) {
+      final File f = a.complete ? _archiveFile(a) : _partFile(a);
+      if (await f.exists()) {
+        _archiveSize[a.id] = await f.length();
+      } else if (a.complete) {
+        // The file went away behind our back: do not claim a region.
+        a.state = ArchiveState.failed;
+        a.failure = ArchiveFailure.notPmTiles;
+      }
+    }
+  }
+
+  /// Download one region as a single resumable PMTiles file.
+  ///
+  /// Setup is offline-safe (nothing is fetched here): the pump downloads,
+  /// resuming by byte range after a lost connection or a restart.
+  /// [expectedBytes] and [sha256] are the host's published size and
+  /// SHA-256; with them the file is verified before it is used. Without
+  /// them the server's length is trusted and only the PMTiles structure is
+  /// checked. The budget check uses [expectedBytes] and, whatever it says,
+  /// the download stops if the real bytes would break the budget.
+  Future<ArchiveRefusal?> addArchive({
+    required String name,
+    required String url,
+    int? expectedBytes,
+    String? sha256,
+    int keepDays = 0,
+  }) async {
+    await ready;
+    if (name.trim().isEmpty) return ArchiveRefusal.noName;
+    final Uri? u = Uri.tryParse(url.trim());
+    if (u == null || u.scheme != 'https' || u.host.isEmpty) {
+      return ArchiveRefusal.badUrl;
+    }
+    if (archives.any((MapArchive a) => a.url == u.toString())) {
+      return ArchiveRefusal.duplicate;
+    }
+    if (expectedBytes != null && pinnedBytes + expectedBytes > budgetBytes) {
+      return ArchiveRefusal.overBudget;
+    }
+    final MapArchive a = MapArchive(
+      id: 'a${_now.toRadixString(36)}',
+      name: name.trim(),
+      url: u.toString(),
+      createdMs: _now,
+      expectedBytes: expectedBytes,
+      sha256: sha256?.trim().toLowerCase(),
+      keepDays: keepDays,
+    );
+    archives.add(a);
+    _changed();
+    unawaited(_pump());
+    return null;
+  }
+
+  void pauseArchive(MapArchive a) {
+    if (a.state == ArchiveState.downloading ||
+        a.state == ArchiveState.waitingForNetwork) {
+      a.state = ArchiveState.paused;
+      _changed();
+    }
+  }
+
+  void resumeArchive(MapArchive a) {
+    if (a.state == ArchiveState.paused || a.state == ArchiveState.overBudget) {
+      a.state = ArchiveState.downloading;
+      _changed();
+      unawaited(_pump());
+    }
+  }
+
+  void setArchiveKeep(MapArchive a, int days) {
+    a.keepDays = days;
+    _changed();
+  }
+
+  Future<void> deleteArchive(MapArchive a) async {
+    archives.remove(a);
+    if (a.state == ArchiveState.downloading) a.state = ArchiveState.paused;
+    final PmTilesArchive? open = _openArchives.remove(a.id);
+    if (open != null) await open.close();
+    for (final File f in <File>[_partFile(a), _archiveFile(a)]) {
+      try {
+        if (await f.exists()) await f.delete();
+      } catch (_) {}
+    }
+    _archiveSize.remove(a.id);
+    _changed();
+  }
+
+  /// One download attempt. False when the network went away.
+  Future<bool> _runArchive(MapArchive a) async {
+    await _archiveDir!.create(recursive: true);
+    final File part = _partFile(a);
+    final int own = _archiveSize[a.id] ?? 0;
+    int lastNotify = 0;
+    final DownloadResult r = await downloadResumable(
+      fetch: _archiveFetch,
+      url: Uri.parse(a.url),
+      part: part,
+      etag: a.etag,
+      shouldStop: () =>
+          _disposed || !archives.contains(a) || a.state != ArchiveState.downloading,
+      // Room for THIS file: the budget less everything else pinned.
+      allowedBytes: () => budgetBytes - (pinnedBytes - (_archiveSize[a.id] ?? own)),
+      onProgress: (int bytes, int? total) {
+        _archiveSize[a.id] = bytes;
+        if (_now - lastNotify > 500 && !_disposed) {
+          lastNotify = _now;
+          notifyListeners();
+        }
+      },
+    );
+    _archiveSize[a.id] = r.bytes;
+    a.etag = r.etag ?? a.etag;
+    if (_disposed || !archives.contains(a)) return true;
+    switch (r.end) {
+      case DownloadEnd.stopped:
+        _changed();
+        return true;
+      case DownloadEnd.overBudget:
+        a.state = ArchiveState.overBudget;
+        _changed();
+        return true;
+      case DownloadEnd.notFound:
+        await _rejectArchive(a, ArchiveFailure.notFound);
+        return true;
+      case DownloadEnd.networkLost:
+        a.state = ArchiveState.waitingForNetwork;
+        _noteFetch(FetchStatus.failed);
+        _changed();
+        _scheduleRetry();
+        return false;
+      case DownloadEnd.complete:
+        _noteFetch(FetchStatus.ok);
+        await _acceptArchive(a, r);
+        return true;
+    }
+  }
+
+  /// A finished file is only trusted after size, hash and structure pass.
+  Future<void> _acceptArchive(MapArchive a, DownloadResult r) async {
+    final File part = _partFile(a);
+    final int? want = a.expectedBytes ?? r.total;
+    if (want != null && r.bytes != want) {
+      return _rejectArchive(a, ArchiveFailure.badSize);
+    }
+    if (a.sha256 != null && await sha256OfFile(part) != a.sha256) {
+      return _rejectArchive(a, ArchiveFailure.badHash);
+    }
+    PmTilesArchive? opened;
+    try {
+      opened = await PmTilesArchive.open(await PmFileSource.open(part.path));
+      if (opened.header.tileType != PmTileType.mvt) {
+        await opened.close();
+        return _rejectArchive(a, ArchiveFailure.notPmTiles);
+      }
+      final Set<String> layers = await opened.vectorLayerIds();
+      if (!layers.containsAll(kArchiveRequiredLayers)) {
+        await opened.close();
+        return _rejectArchive(a, ArchiveFailure.wrongSchema);
+      }
+      final PmHeader h = opened.header;
+      a
+        ..minZoom = h.minZoom
+        ..maxZoom = h.maxZoom
+        ..west = h.minLon
+        ..south = h.minLat
+        ..east = h.maxLon
+        ..north = h.maxLat;
+      await opened.close();
+    } catch (_) {
+      await opened?.close();
+      return _rejectArchive(a, ArchiveFailure.notPmTiles);
+    }
+    final File dest = _archiveFile(a);
+    final PmTilesArchive? old = _openArchives.remove(a.id);
+    if (old != null) await old.close();
+    if (await dest.exists()) await dest.delete();
+    await part.rename(dest.path);
+    a
+      ..state = ArchiveState.complete
+      ..failure = null
+      ..updatedMs = _now;
+    _archiveSize[a.id] = r.bytes;
+    _changed();
+  }
+
+  Future<void> _rejectArchive(MapArchive a, ArchiveFailure why) async {
+    try {
+      final File f = _partFile(a);
+      if (await f.exists()) await f.delete();
+    } catch (_) {}
+    _archiveSize[a.id] = 0;
+    a
+      ..state = ArchiveState.failed
+      ..failure = why
+      ..etag = null;
+    _changed();
+  }
+
+  /// Archive-first read for the vector basemap: a tile inside a complete
+  /// archive's extent and zoom range is answered from the file (a seek,
+  /// no network) and an empty cell there is final ("missing"). Anything
+  /// outside every archive returns null and falls through to the view
+  /// cache and network.
+  Future<TileLoad?> _fromArchives(int z, int x, int y) async {
+    for (final MapArchive a in archives) {
+      if (!a.complete || a.minZoom == null || z < a.minZoom! || z > a.maxZoom!) {
+        continue;
+      }
+      final TileRange r = tileRange(
+          GeoBox(south: a.south!, west: a.west!, north: a.north!, east: a.east!),
+          z);
+      if (x < r.minX || x > r.maxX || y < r.minY || y > r.maxY) continue;
+      try {
+        PmTilesArchive? open = _openArchives[a.id];
+        open ??= _openArchives[a.id] =
+            await PmTilesArchive.open(await PmFileSource.open(_archiveFile(a).path));
+        final Uint8List? bytes = await open.tile(z, x, y);
+        return bytes == null
+            ? const TileLoad(null, missing: true)
+            : TileLoad(bytes);
+      } catch (e) {
+        // A damaged or vanished file must not blank the map: forget the
+        // handle and let the network path answer.
+        _openArchives.remove(a.id);
+        if (kDebugMode) debugPrint('archive ${a.id} unreadable: $e');
+      }
+    }
+    return null;
   }
 
   // ---- custom sources ----------------------------------------------

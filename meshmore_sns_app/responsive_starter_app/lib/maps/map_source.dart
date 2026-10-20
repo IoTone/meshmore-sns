@@ -163,6 +163,12 @@ const MapSource kOpenFreeMapVector = MapSource(
   bytesPerTile: 12000,
 );
 
+/// R81 — an archive is accepted for the vector basemap only if its tiles
+/// carry these OpenMapTiles layers. A Protomaps-schema file (`earth`,
+/// `roads`, ...) would render as nothing under the bundled style, so it is
+/// refused on arrival with a reason instead of installed and invisible.
+const Set<String> kArchiveRequiredLayers = <String>{'water', 'transportation'};
+
 const List<MapSource> kBuiltInSources = <MapSource>[
   kOsmStandard,
   kOpenTopo,
