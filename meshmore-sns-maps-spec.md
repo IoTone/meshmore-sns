@@ -221,8 +221,9 @@ First device run (SH-53D, 2026-10-15): **all 11 pass**, 38 s.
 
 ## Phase 2 (not built)
 
-- **Vector OSM offline**: PMTiles regional extracts and a vector renderer.
-  This is the route to policy-clean offline OSM.
+- **Vector OSM offline**: built in R81 (region files, below). Still open:
+  a hosted list of regions, range reads of a remote archive for online
+  use, and the Protomaps schema.
 - **Wi-Fi-only / charging-only** download conditions (connectivity
   plugin).
 - **Pick the area on a map** (drag a box) instead of centre + radius.
@@ -231,3 +232,88 @@ First device run (SH-53D, 2026-10-15): **all 11 pass**, 38 s.
 - **Auto-update** packs every N days.
 - **Bundled starter basemap**: a world overview at z0–5 from public-domain
   data, so a fresh install has something under the pins.
+
+## R81: region files (PMTiles) and the map network path
+
+### Why one file per region
+A `MapPack` fetches a box tile by tile. That is the wrong primitive for
+vector OSM: OpenFreeMap's terms allow an app's offline download only if it
+is "at most 3,000 tiles or 50 MB, made with at most 4 parallel requests,
+sent with a unique User-Agent" (openfreemap.org/tos, checked 2026-10-20),
+and OSM's own tile servers forbid bulk download. Tile counts for a modest
+region (computed with the app's tile maths, exact):
+
+| Region (bbox) | z0-12 | z0-14 | z14 only |
+|---|---|---|---|
+| Front Range, 38.2,-105.4 to 40.8,-104.5 | 657 | 8,883 | 6,510 |
+| Cascadia, 42.0,-125.0 to 50.0,-117.0 | 16,423 | 257,090 | 192,355 |
+
+Front Range at z14 is three times the cap, Cascadia is 86 times it (and
+over `MapsController.maxPackTiles`, 50,000). So a region must come as a
+file from a host that permits it. Size in bytes is an **estimate from
+published ranges, not measured here**: Colorado at z0-14 is 50-150 MB, so
+a Front Range corridor is roughly 30-80 MB; Cascadia 150-450 MB at z14
+and about 50 MB at z12. The app's planning figure of 12 kB a tile would
+say 107 MB and 3.1 GB, which shows how much dedupe and empty ocean tiles
+matter; that figure has never been measured against real tiles.
+
+### Model
+`MapArchive` (`lib/maps/map_archive.dart`): id, name, https url, optional
+declared size and SHA-256, keep-for days, state (downloading, waiting for
+network, over budget, paused, complete, failed) and, once accepted, the
+file's zoom range and extent from its header. Files live in
+`<maps root>/archives/<id>.pmtiles` (`.part` while downloading). They count
+in `usedBytes`/`pinnedBytes`, so the view-tile cache gives way to them.
+
+### Download, resume, accept
+Streamed to disk, never buffered. Resume sends `Range: bytes=N-` with
+`If-Range: <etag>`: a 206 whose `Content-Range` starts at N continues; a
+200 restarts at zero (range ignored, or the file was replaced, so a file is
+never stitched from two versions); a 416 whose total equals N means the
+part is already the file. A lost connection parks the archive as waiting
+and the existing retry and wake-on-success machinery resumes it, as does
+an app restart. A file is only used after: size (declared, else the
+server's), SHA-256 when given, `PmTilesArchive.open`, tile type MVT, and
+the layers `water` and `transportation` (OpenMapTiles). Anything else is
+deleted and the row says why. The budget stops the download at the real
+byte that would break it; raising the budget and resuming finishes it.
+
+### Reading
+For the vector basemap, a tile inside a complete archive's extent and zoom
+range is read by seek with no network; an empty cell inside it is final;
+outside every archive the view cache and network answer. A damaged file
+falls through to the network instead of blanking the map.
+
+### How the owner makes a region file
+The accepted schema is OpenMapTiles (the bundled style and OpenFreeMap use
+it), so the file must carry that schema. Planetiler (Apache-2.0) builds it
+by default from an OSM extract, for example
+`java -jar planetiler.jar --download --area=colorado --maxzoom=14
+--output=colorado.pmtiles`, then `sha256sum` it and host it on any static
+HTTPS host that serves byte ranges. **Unverified**: this recipe was not run
+here (it needs a multi-GB download and Java). `pmtiles extract` on a
+Protomaps build is simpler but yields the Protomaps schema (`earth`,
+`roads`, ...), which the app refuses on arrival.
+
+### R81 decisions (why Protomaps was not adopted)
+- Protomaps public builds are dated (`maps.protomaps.com/builds`), kept
+  for about a week, and their docs say "hotlinking to these downloads are
+  discouraged ... copy the tileset to your own Cloud Storage"
+  (docs.protomaps.com/basemaps/downloads). They are an input to extract
+  from, not a runtime URL.
+- The only stable public vector endpoint is OpenFreeMap (OpenMapTiles).
+  Keeping one schema end to end means one style, and an archive is a
+  drop-in for the same tiles. Switching schema means a second style plus
+  schema detection, or dropping online vector. That is the owner's call.
+- The data is ODbL: a produced work (tiles) may be distributed with
+  attribution (docs.protomaps.com: "Open Database License Produced Work,
+  OpenStreetMap attribution required"), so self-hosting a region file is
+  permitted. Attribution on the map names OpenStreetMap.
+
+### Network path (R81)
+Viewing fetches go through `TileFetchGate` (4 concurrent, newest first,
+queue 32, oldest dropped). Backoff is per source after three consecutive
+failures. A server "no such tile" is remembered for the run. The vector
+layer's own tile file cache is capped to 1 MB / 1 h because `TileStore` is
+the cache of record. The library cannot cancel a provider call and has no
+prefetch ring, so neither is implemented.

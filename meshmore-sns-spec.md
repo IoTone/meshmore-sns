@@ -1192,10 +1192,47 @@ While Meshcore protocol is open source, the client is not open source.  We want 
   views with their own edge controls would each need auditing.
   Tests: `test/shell/home_shell_test.dart` (group "Map edge swipe (R67)").
 
+- R81: **the map subsystem: bounded requests, per-source backoff, region
+  files, a legible style.** Defects found and fixed, each with a test:
+  (1) `kOpenFreeMapVector` was `allowsPacks: true`, but OpenFreeMap caps
+  offline use at 3,000 tiles / 50 MB per download with 4 parallel requests
+  (openfreemap.org/tos, "Offline Downloads"): now view-only; the pack-
+  capable sources are exactly USGS Topo and USGS Imagery. (2) one failed
+  fetch set a single global backoff (30 s doubling to 900 s) that blanked
+  every tile of every source: view backoff is now per source, after three
+  consecutive failures, jittered +-20% (`MapsController._noteView`).
+  (3) `VectorTileLayer.concurrency` is the parse-isolate pool, not network
+  parallelism, and was set below the library default (4); the library keeps
+  a second 30-day uncounted copy of every tile in the temp dir (capped to
+  1 MB / 1 h); `provide` cannot be cancelled. New `TileFetchGate`
+  (`lib/maps/fetch_gate.dart`, `MapsController.viewGate`): 4 at a time,
+  newest first, queue bounded at 32, the oldest dropped unrequested.
+  (4) a server "no such tile" is now a 404 the renderer draws empty,
+  distinct from an outage (`TileLoad.missing`). (5) The grey holes were the
+  FlutterMap background: Studio now uses the style's own background colour
+  (`kVectorBasemapBackground`, guard-tested); zoom-substitution of
+  neighbouring tiles is the library's, set explicitly to 2.
+  **Region files:** `lib/maps/pmtiles.dart` is a PMTiles v3 reader written
+  in-house (the `pmtiles` pub package is BSD-2-Clause; the unused
+  `vector_map_tiles_pmtiles` dependency was removed). `lib/maps/
+  map_archive.dart` downloads one file with `Range`/`If-Range` resume,
+  verifies size + SHA-256 + PMTiles structure + OpenMapTiles layers
+  (`kArchiveRequiredLayers`), keeps it in the byte budget, expires it, and
+  `MapsController._fromArchives` reads tiles from it by seek with no
+  network. Settings > Maps has a "Region files" section. **Style:** same 47
+  layers retuned to the Studio tokens, labels >= 4.5:1, water blue and
+  parks green (hue in content only). **Not done, and why:** the Protomaps
+  schema switch (see maps spec "R81 decisions"), a tile prefetch ring
+  (VectorTileLayer has no hook), HTTP range reads of a remote archive for
+  online use, sprite icons, a hosted catalog of regions (nothing is hosted
+  yet). **Not device-verified.** Tests: `fetch_gate_test`, `pmtiles_test`,
+  `map_archive_test`, `maps_test` (R81), `vector_basemap_test` (R81),
+  `maps_screens_test` (R81).
+
 - R80: **the Studio basemap is vector-rendered.** New
   `lib/maps/vector_basemap.dart` (style loader, `MmVectorTileProvider`,
   `VectorBasemapLayer`) draws the bundled style asset through
-  `vector_map_tiles`/`vector_tile_renderer` (MIT) under
+  `vector_map_tiles`/`vector_tile_renderer` (**BSD-3-Clause**, not MIT as this entry first said; corrected in R81) under
   `MmShape.vectorBasemap` (Studio only). Tiles are fetched as `.pbf`
   through `MapsController.loadTile`, so offline packs, the view cache,
   ETag revalidation, budget and expiry are unchanged; a vector tile is
