@@ -1210,6 +1210,14 @@ While Meshcore protocol is open source, the client is not open source.  We want 
     State was created twice at launch. It now keeps a one-child `Stack`.
     Test: `test/shell/boot_overlay_test.dart` (init count 1; the old code
     gave `[init, init, dispose]`).
+  - **Personalization is uniformly collapsible.** R64 left TYPE and Audio
+    alerts as plain headers because each held one row, which put a header
+    with no chevron between two folding groups (seen on the phone: TYPE
+    looked tappable and did nothing). Both are now `MmCollapsibleSection`s
+    (ids `personalization.type`, `personalization.audio`, persisted per
+    R65), so the screen has one idiom. Test:
+    `test/screens/collapsible_screens_test.dart` (4 groups, TYPE and audio
+    fold; fail-before with the old screen).
   - **Studio dashboard** (`lib/screens/dashboards/studio_dashboard.dart`,
     registered in `DashboardHost`): Studio used to inherit the SEELE
     monolith (an 88sp numeral, a full-bleed colour-inverting status slab,

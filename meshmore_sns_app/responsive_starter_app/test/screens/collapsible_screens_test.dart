@@ -72,8 +72,8 @@ void main() {
   });
 
   testWidgets(
-      'Personalization: preset and accessibility fold, the '
-      'single-row groups stay plain', (WidgetTester t) async {
+      'Personalization: every group folds, with no plain header between '
+      'two folding ones (R68)', (WidgetTester t) async {
     await t.binding.setSurfaceSize(const Size(900, 2600));
     addTearDown(() => t.binding.setSurfaceSize(null));
     await t.pumpWidget(_host(const PersonalizationScreen()));
@@ -81,7 +81,8 @@ void main() {
     final AppLocalizations l =
         AppLocalizations.of(t.element(find.byType(PersonalizationScreen)));
 
-    expect(find.byType(MmCollapsibleSection), findsNWidgets(2));
+    expect(find.byType(MmCollapsibleSection), findsNWidgets(4),
+        reason: 'preset, type, accessibility, audio: one idiom throughout');
     for (final MmThemePreset p in MmThemePreset.values) {
       expect(find.text(p.label), findsOneWidget, reason: '${p.name} open');
     }
@@ -96,8 +97,18 @@ void main() {
     await t.tap(find.text(l.personalizationAccessibility));
     await t.pumpAndSettle();
     expect(find.text(l.personalizationReduceMotion), findsNothing);
-    expect(find.text(l.personalizationAudioMaster), findsOneWidget,
-        reason: 'a one-row group is not wrapped');
+    expect(find.text(l.personalizationAudioMaster), findsOneWidget);
+
+    // TYPE used to sit between two folding groups with no chevron.
+    expect(find.text(l.personalizationFontSize), findsOneWidget);
+    await t.tap(find.text(l.personalizationType));
+    await t.pumpAndSettle();
+    expect(find.text(l.personalizationFontSize), findsNothing,
+        reason: 'the TYPE group folds');
+    await t.tap(find.text(l.personalizationAudioAlerts));
+    await t.pumpAndSettle();
+    expect(find.text(l.personalizationAudioMaster), findsNothing,
+        reason: 'the audio group folds');
   });
 
   testWidgets(

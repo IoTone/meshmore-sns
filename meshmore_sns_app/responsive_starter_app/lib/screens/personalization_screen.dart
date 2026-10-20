@@ -8,7 +8,6 @@ import '../theme/mm_tokens.dart';
 import '../theme/theme_controller.dart';
 import '../ui/mm_collapse_controller.dart';
 import '../ui/mm_collapsible.dart';
-import '../ui/mm_components.dart';
 import '../ui/mm_scaffold.dart';
 
 /// Profile & personalization (R14): live preset / font / accessibility
@@ -90,18 +89,23 @@ class PersonalizationScreen extends StatelessWidget {
               ],
             ),
             const Divider(),
-            _Section(l.personalizationType),
-            ListTile(
-              dense: true,
-              title: Text(l.personalizationFontSize),
-              subtitle: Slider(
-                min: 0.8,
-                max: 1.6,
-                divisions: 8,
-                value: tc.fontScale,
-                label: '${(tc.fontScale * 100).round()}%',
-                onChanged: tc.setFontScale,
-              ),
+            MmCollapsibleSection(
+              id: MmGroupIds.persType,
+              title: l.personalizationType,
+              children: <Widget>[
+                ListTile(
+                  dense: true,
+                  title: Text(l.personalizationFontSize),
+                  subtitle: Slider(
+                    min: 0.8,
+                    max: 1.6,
+                    divisions: 8,
+                    value: tc.fontScale,
+                    label: '${(tc.fontScale * 100).round()}%',
+                    onChanged: tc.setFontScale,
+                  ),
+                ),
+              ],
             ),
             const Divider(),
             MmCollapsibleSection(
@@ -131,33 +135,26 @@ class PersonalizationScreen extends StatelessWidget {
               ],
             ),
             const Divider(),
-            _Section(l.personalizationAudioAlerts),
-            SwitchListTile(
-              dense: true,
-              title: Text(l.personalizationAudioMaster),
-              subtitle: Text(tc.visualHapticOnly
-                  ? l.personalizationAudioMasterDisabled
-                  : l.personalizationAudioMasterEnabled),
-              value: tc.audioMaster,
-              onChanged: tc.visualHapticOnly ? null : tc.setAudioMaster,
+            MmCollapsibleSection(
+              id: MmGroupIds.persAudio,
+              title: l.personalizationAudioAlerts,
+              children: <Widget>[
+                SwitchListTile(
+                  dense: true,
+                  title: Text(l.personalizationAudioMaster),
+                  subtitle: Text(tc.visualHapticOnly
+                      ? l.personalizationAudioMasterDisabled
+                      : l.personalizationAudioMasterEnabled),
+                  value: tc.audioMaster,
+                  onChanged: tc.visualHapticOnly ? null : tc.setAudioMaster,
+                ),
+              ],
             ),
           ],
         ),
       ),
     );
   }
-}
-
-class _Section extends StatelessWidget {
-  const _Section(this.text);
-  final String text;
-  @override
-  Widget build(BuildContext context) => Padding(
-        // Skin-driven section header — tracked caps, and hazard stripes /
-        // chamfer brackets on the loud themes (NERV), calm on SEELE.
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
-        child: MmSectionHeader(text),
-      );
 }
 
 class _Swatches extends StatelessWidget {

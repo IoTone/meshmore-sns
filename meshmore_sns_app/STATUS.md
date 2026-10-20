@@ -76,6 +76,8 @@ codebase.
   `test/theme/mm_layers_test.dart`. **Unverified on a device.**
 - R68: fixed the shell being mounted twice at launch (BootOverlay swapped
   Stack for a bare child on dismissal); `test/shell/boot_overlay_test.dart`.
+- R68: Personalization is uniformly collapsible (4 groups; TYPE and
+  Audio alerts fold too).
 - R68: Studio has its own dashboard (`StudioDashboard`): quiet status row
   (text + dot shape, no colour fill), collapsible Radio / Location /
   Recent. Type rule: words sans, machine data mono (`MmType.sansLabels`).

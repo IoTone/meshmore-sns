@@ -183,6 +183,8 @@ void main() {
       'devDevice': MmGroupIds.devDevice,
       'persPreset': MmGroupIds.persPreset,
       'persAccessibility': MmGroupIds.persAccessibility,
+      'persType': MmGroupIds.persType,
+      'persAudio': MmGroupIds.persAudio,
       'dashRadio': MmGroupIds.dashRadio,
       'dashLocation': MmGroupIds.dashLocation,
       'dashRecent': MmGroupIds.dashRecent,
