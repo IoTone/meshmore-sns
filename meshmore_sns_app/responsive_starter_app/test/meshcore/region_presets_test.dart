@@ -138,4 +138,29 @@ void main() {
       expect(suggestPresetForLatLon(30.0, -40.0), isNull);
     });
   });
+
+  // R68 — Device configuration groups the presets by family.
+  group('region families (R68)', () {
+    test('every shipped preset has an explicit family', () {
+      for (final RegionPreset p in kRegionPresets) {
+        expect(regionFamilyOf(p.id), isNot(RegionFamily.other),
+            reason: '${p.id} has no family; it would land under "Other"');
+      }
+    });
+
+    test('the split is the expected one', () {
+      List<String> ids(RegionFamily f) => <String>[
+            for (final RegionPreset p in kRegionPresets)
+              if (regionFamilyOf(p.id) == f) p.id,
+          ];
+      expect(ids(RegionFamily.americas), <String>['us_canada', 'us_arizona']);
+      expect(ids(RegionFamily.europe), hasLength(6));
+      expect(ids(RegionFamily.asiaPacific), hasLength(7));
+      expect(ids(RegionFamily.other), isEmpty);
+    });
+
+    test('an unknown id is never hidden: it falls under Other', () {
+      expect(regionFamilyOf('brand_new'), RegionFamily.other);
+    });
+  });
 }

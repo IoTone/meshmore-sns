@@ -4280,6 +4280,30 @@ abstract class AppLocalizations {
   /// **'Suggest from my location'**
   String get deviceRegionSuggestFromLocation;
 
+  /// No description provided for @deviceRegionFamilyAmericas.
+  ///
+  /// In en, this message translates to:
+  /// **'Americas'**
+  String get deviceRegionFamilyAmericas;
+
+  /// No description provided for @deviceRegionFamilyEurope.
+  ///
+  /// In en, this message translates to:
+  /// **'Europe'**
+  String get deviceRegionFamilyEurope;
+
+  /// No description provided for @deviceRegionFamilyAsiaPacific.
+  ///
+  /// In en, this message translates to:
+  /// **'Asia-Pacific'**
+  String get deviceRegionFamilyAsiaPacific;
+
+  /// No description provided for @deviceRegionFamilyOther.
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get deviceRegionFamilyOther;
+
   /// No description provided for @deviceRegionSuggestTitle.
   ///
   /// In en, this message translates to:

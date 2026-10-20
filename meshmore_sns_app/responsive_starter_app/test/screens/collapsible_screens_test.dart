@@ -72,6 +72,34 @@ void main() {
   });
 
   testWidgets(
+      'Device configuration: region presets sit under three labelled '
+      'families, not one wall of chips (R68)', (WidgetTester t) async {
+    await t.binding.setSurfaceSize(const Size(900, 3200));
+    addTearDown(() => t.binding.setSurfaceSize(null));
+    await t.pumpWidget(_host(const DeviceConfigScreen()));
+    await t.pumpAndSettle();
+    final AppLocalizations l =
+        AppLocalizations.of(t.element(find.byType(DeviceConfigScreen)));
+    final Finder americas = find.text(l.deviceRegionFamilyAmericas);
+    final Finder europe = find.text(l.deviceRegionFamilyEurope);
+    final Finder apac = find.text(l.deviceRegionFamilyAsiaPacific);
+    expect(americas, findsOneWidget);
+    expect(europe, findsOneWidget);
+    expect(apac, findsOneWidget);
+    expect(find.text(l.deviceRegionFamilyOther), findsNothing,
+        reason: 'no preset is ungrouped, so no empty/other heading');
+    double y(Finder f) => t.getTopLeft(f).dy;
+    // Order: Americas, Europe, Asia-Pacific; each chip under its heading.
+    expect(y(americas), lessThan(y(europe)));
+    expect(y(europe), lessThan(y(apac)));
+    expect(y(find.text('USA / Canada')), greaterThan(y(americas)));
+    expect(y(find.text('USA / Canada')), lessThan(y(europe)));
+    expect(y(find.text('EU / UK (Long Range)')), greaterThan(y(europe)));
+    expect(y(find.text('EU / UK (Long Range)')), lessThan(y(apac)));
+    expect(y(find.text('Vietnam')), greaterThan(y(apac)));
+  });
+
+  testWidgets(
       'Personalization: every group folds, with no plain header between '
       'two folding ones (R68)', (WidgetTester t) async {
     await t.binding.setSurfaceSize(const Size(900, 2600));

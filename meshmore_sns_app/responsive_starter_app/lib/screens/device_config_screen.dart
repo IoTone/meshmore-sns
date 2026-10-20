@@ -402,26 +402,42 @@ class _DeviceConfigScreenState extends State<DeviceConfigScreen> {
                 const SizedBox(height: 8),
                 _CurrentRegionBanner(si: si, cs: cs, l: l),
                 const SizedBox(height: 8),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: <Widget>[
-                    for (final RegionPreset p in kRegionPresets)
-                      _RegionChip(
-                        label: localizedPresetLabel(l, p.id),
-                        note: p.note,
-                        selected: si != null &&
-                            matchPresetByRadioParams(
-                                  frequencyMhz: si.frequencyMhz,
-                                  bandwidthKhz: si.bandwidthKhz,
-                                  spreadingFactor: si.spreadingFactor,
-                                  codingRate: si.codingRate,
-                                )?.id ==
-                                p.id,
-                        onTap: () => _applyPreset(mc, p),
+                // R68: grouped by family so the list is scannable.
+                for (final RegionFamily fam in RegionFamily.values)
+                  if (kRegionPresets.any((RegionPreset p) =>
+                      regionFamilyOf(p.id) == fam)) ...<Widget>[
+                    Padding(
+                      padding: const EdgeInsets.only(top: 10, bottom: 6),
+                      child: Text(
+                        _familyLabel(l, fam),
+                        style: TextStyle(
+                            color: cs.onSurfaceVariant,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600),
                       ),
+                    ),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: <Widget>[
+                        for (final RegionPreset p in kRegionPresets)
+                          if (regionFamilyOf(p.id) == fam)
+                            _RegionChip(
+                              label: localizedPresetLabel(l, p.id),
+                              note: p.note,
+                              selected: si != null &&
+                                  matchPresetByRadioParams(
+                                        frequencyMhz: si.frequencyMhz,
+                                        bandwidthKhz: si.bandwidthKhz,
+                                        spreadingFactor: si.spreadingFactor,
+                                        codingRate: si.codingRate,
+                                      )?.id ==
+                                      p.id,
+                              onTap: () => _applyPreset(mc, p),
+                            ),
+                      ],
+                    ),
                   ],
-                ),
                 const SizedBox(height: 10),
                 Align(
                   alignment: Alignment.centerLeft,
@@ -1109,6 +1125,13 @@ class _CurrentRegionBanner extends StatelessWidget {
     );
   }
 }
+
+String _familyLabel(AppLocalizations l, RegionFamily f) => switch (f) {
+      RegionFamily.americas => l.deviceRegionFamilyAmericas,
+      RegionFamily.europe => l.deviceRegionFamilyEurope,
+      RegionFamily.asiaPacific => l.deviceRegionFamilyAsiaPacific,
+      RegionFamily.other => l.deviceRegionFamilyOther,
+    };
 
 /// R39 — selectable region preset chip. Highlights when the
 /// preset's tuple matches the device's live radio params.

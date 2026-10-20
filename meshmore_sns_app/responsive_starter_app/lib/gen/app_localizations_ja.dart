@@ -2399,6 +2399,18 @@ class AppLocalizationsJa extends AppLocalizations {
   String get deviceRegionSuggestFromLocation => '現在地から自動選択';
 
   @override
+  String get deviceRegionFamilyAmericas => 'アメリカ';
+
+  @override
+  String get deviceRegionFamilyEurope => 'ヨーロッパ';
+
+  @override
+  String get deviceRegionFamilyAsiaPacific => 'アジア太平洋';
+
+  @override
+  String get deviceRegionFamilyOther => 'その他';
+
+  @override
   String get deviceRegionSuggestTitle => '推奨リージョンを適用しますか？';
 
   @override

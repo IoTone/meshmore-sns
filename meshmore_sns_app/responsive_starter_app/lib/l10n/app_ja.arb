@@ -1099,6 +1099,10 @@
   "deviceRegionUnknown": "デバイス応答待ち…",
   "deviceRegionCustom": "カスタム（プリセット非該当）",
   "deviceRegionSuggestFromLocation": "現在地から自動選択",
+  "deviceRegionFamilyAmericas": "アメリカ",
+  "deviceRegionFamilyEurope": "ヨーロッパ",
+  "deviceRegionFamilyAsiaPacific": "アジア太平洋",
+  "deviceRegionFamilyOther": "その他",
   "deviceRegionSuggestTitle": "推奨リージョンを適用しますか？",
   "deviceRegionSuggestBody": "スマートフォンの GPS（{lat}, {lon}）に基づくと、該当するプリセットは「{label}」です。国境付近では誤判定する可能性があるため、適用前に現地の法令に適合するか必ず確認してください。",
   "@deviceRegionSuggestBody": {

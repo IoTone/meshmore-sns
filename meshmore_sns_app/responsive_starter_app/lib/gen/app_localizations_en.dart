@@ -2491,6 +2491,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get deviceRegionSuggestFromLocation => 'Suggest from my location';
 
   @override
+  String get deviceRegionFamilyAmericas => 'Americas';
+
+  @override
+  String get deviceRegionFamilyEurope => 'Europe';
+
+  @override
+  String get deviceRegionFamilyAsiaPacific => 'Asia-Pacific';
+
+  @override
+  String get deviceRegionFamilyOther => 'Other';
+
+  @override
   String get deviceRegionSuggestTitle => 'Apply suggested region?';
 
   @override

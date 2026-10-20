@@ -232,6 +232,33 @@ const List<RegionPreset> kRegionPresets = <RegionPreset>[
   ),
 ];
 
+/// R68 — the family a preset is grouped under on Device configuration, so
+/// fifteen presets read as three short labelled lists rather than one wall
+/// of chips. A preset with no entry falls under [RegionFamily.other] (shown
+/// last, and only when non-empty), so adding a preset never hides it.
+enum RegionFamily { americas, europe, asiaPacific, other }
+
+const Map<String, RegionFamily> _kFamilyById = <String, RegionFamily>{
+  'us_canada': RegionFamily.americas,
+  'us_arizona': RegionFamily.americas,
+  'eu_uk_long': RegionFamily.europe,
+  'eu_uk_medium': RegionFamily.europe,
+  'eu_uk_narrow': RegionFamily.europe,
+  'ch': RegionFamily.europe,
+  'cz': RegionFamily.europe,
+  'pt_869': RegionFamily.europe,
+  'jp_arib_t108': RegionFamily.asiaPacific,
+  'jp_meshcore': RegionFamily.asiaPacific,
+  'au_default': RegionFamily.asiaPacific,
+  'au_narrow': RegionFamily.asiaPacific,
+  'au_sa_wa_qld': RegionFamily.asiaPacific,
+  'nz_default': RegionFamily.asiaPacific,
+  'vn': RegionFamily.asiaPacific,
+};
+
+RegionFamily regionFamilyOf(String presetId) =>
+    _kFamilyById[presetId] ?? RegionFamily.other;
+
 /// Returns the preset whose four LoRa params match the live device
 /// values. Bandwidth uses a 0.5 kHz tolerance and frequency uses a
 /// 1 kHz tolerance to absorb float rounding from the wire format

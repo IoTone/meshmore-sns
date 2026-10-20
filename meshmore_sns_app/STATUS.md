@@ -78,6 +78,8 @@ codebase.
   Stack for a bare child on dismissal); `test/shell/boot_overlay_test.dart`.
 - R68: Personalization is uniformly collapsible (4 groups; TYPE and
   Audio alerts fold too).
+- R68: Device configuration groups region presets under Americas /
+  Europe / Asia-Pacific headings (was one wall of 15 chips).
 - R68: Studio has its own dashboard (`StudioDashboard`): quiet status row
   (text + dot shape, no colour fill), collapsible Radio / Location /
   Recent. Type rule: words sans, machine data mono (`MmType.sansLabels`).

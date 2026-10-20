@@ -1218,6 +1218,14 @@ While Meshcore protocol is open source, the client is not open source.  We want 
     R65), so the screen has one idiom. Test:
     `test/screens/collapsible_screens_test.dart` (4 groups, TYPE and audio
     fold; fail-before with the old screen).
+  - **Region presets are grouped.** Device configuration showed fifteen
+    outlined chips as one wall (the dominant mass of the screen).
+    `RegionFamily` / `regionFamilyOf` (`lib/meshcore/region_presets.dart`)
+    group them under Americas / Europe / Asia-Pacific headings
+    (`deviceRegionFamily*` strings, EN and JA); an unmapped preset falls
+    under "Other" so it is never hidden. Same chips, same tap-to-apply.
+    Tests: `test/meshcore/region_presets_test.dart` and
+    `test/screens/collapsible_screens_test.dart`.
   - **Studio dashboard** (`lib/screens/dashboards/studio_dashboard.dart`,
     registered in `DashboardHost`): Studio used to inherit the SEELE
     monolith (an 88sp numeral, a full-bleed colour-inverting status slab,

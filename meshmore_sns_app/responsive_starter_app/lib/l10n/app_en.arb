@@ -1099,6 +1099,10 @@
   "deviceRegionUnknown": "Waiting for device…",
   "deviceRegionCustom": "Custom (no preset match)",
   "deviceRegionSuggestFromLocation": "Suggest from my location",
+  "deviceRegionFamilyAmericas": "Americas",
+  "deviceRegionFamilyEurope": "Europe",
+  "deviceRegionFamilyAsiaPacific": "Asia-Pacific",
+  "deviceRegionFamilyOther": "Other",
   "deviceRegionSuggestTitle": "Apply suggested region?",
   "deviceRegionSuggestBody": "Based on your phone GPS ({lat}, {lon}), the matching preset is {label}. Verify this is legal where you are before applying — particularly outside the country you set up in.",
   "@deviceRegionSuggestBody": {
