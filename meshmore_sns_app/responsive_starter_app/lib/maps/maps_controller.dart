@@ -47,7 +47,9 @@ class MapsController extends ChangeNotifier {
     String Function()? appVersion,
     this.prefsKey = 'maps.state.v1',
     this.retryFloor = const Duration(seconds: 30),
-  })  : _rootDir = rootDir ?? _defaultRoot,
+    math.Random? random,
+  })  : _random = random ?? math.Random(),
+        _rootDir = rootDir ?? _defaultRoot,
         _clock = clock ?? DateTime.now {
     _fetch = fetcher ??
         httpMapFetcher(() => mapUserAgent(appVersion?.call() ?? ''));
@@ -62,6 +64,13 @@ class MapsController extends ChangeNotifier {
 
   /// Shortest wait before a parked download tries again.
   final Duration retryFloor;
+
+  final math.Random _random;
+
+  /// R81 — consecutive failed *viewing* fetches on one source before that
+  /// source (only) stops being asked. One lost tile on a cell link is
+  /// normal; three in a row is an outage.
+  static const int viewFailuresBeforeBackoff = 3;
 
   static const List<int> budgetChoicesMb = <int>[100, 250, 500, 1000, 2000, 5000];
   static const List<int> keepChoicesDays = <int>[0, 7, 30, 90, 365];
@@ -101,6 +110,12 @@ class MapsController extends ChangeNotifier {
   Timer? _trim;
   int _backoffS = 0;
   int _offlineUntilMs = 0;
+
+  /// R81 — view-path health, per tile source. Before this, one failed
+  /// fetch set the single global [_offlineUntilMs] and every tile of every
+  /// source returned null for 30 s (doubling to 900 s): a hiccup on one
+  /// tile blanked the whole map.
+  final Map<String, _SourceHealth> _health = <String, _SourceHealth>{};
 
   /// null = no fetch yet this run.
   bool? lastFetchOk;
@@ -229,6 +244,36 @@ class MapsController extends ChangeNotifier {
     if (wasOff) _wakeWaiting();
   }
 
+  bool _gated(String sourceId) {
+    final _SourceHealth? h = _health[sourceId];
+    return h != null && _now < h.untilMs;
+  }
+
+  /// Outcome of a viewing fetch for [src]. Failures only gate that source,
+  /// and only after [viewFailuresBeforeBackoff] in a row; the wait doubles
+  /// to 900 s and is jittered +-20% so many phones (or many sources) do
+  /// not retry in lockstep. Any success clears the source and, through
+  /// [_noteFetch], wakes parked packs exactly as before.
+  void _noteView(MapSource src, FetchStatus s) {
+    final _SourceHealth h = _health.putIfAbsent(src.id, _SourceHealth.new);
+    if (s == FetchStatus.failed) {
+      h.fails++;
+      if (h.fails >= viewFailuresBeforeBackoff) {
+        h.step = h.step == 0
+            ? math.max(1, retryFloor.inSeconds)
+            : math.min(h.step * 2, 900);
+        final double jitter = 0.8 + 0.4 * _random.nextDouble();
+        h.untilMs = _now + (h.step * 1000 * jitter).round();
+        lastFetchOk = false;
+      }
+      return;
+    }
+    h.fails = 0;
+    h.step = 0;
+    h.untilMs = 0;
+    _noteFetch(s);
+  }
+
   /// Back online: every pack that was waiting picks up where it was.
   void _wakeWaiting() {
     bool any = false;
@@ -278,12 +323,12 @@ class MapsController extends ChangeNotifier {
     if (meta != null) {
       final Uint8List? held = await store.read(key);
       if (held != null) {
-        if (meta.expiresMs > _now || !meta.viewOnly || _inBackoff) {
+        if (meta.expiresMs > _now || !meta.viewOnly || _gated(src.id)) {
           return held;
         }
         final FetchResult r = await _fetch(src.tileUri(z, x, y),
             etag: meta.etag, ifModifiedSinceMs: meta.fetchedMs);
-        _noteFetch(r.status);
+        _noteView(src, r.status);
         if (r.status == FetchStatus.notModified) {
           store.revalidated(key, r.maxAge ?? viewMaxAgeDefault);
         } else if (r.status == FetchStatus.ok && r.bytes != null) {
@@ -295,9 +340,9 @@ class MapsController extends ChangeNotifier {
         return held;
       }
     }
-    if (_inBackoff) return null;
+    if (_gated(src.id)) return null;
     final FetchResult r = await _fetch(src.tileUri(z, x, y));
-    _noteFetch(r.status);
+    _noteView(src, r.status);
     if (r.status != FetchStatus.ok || r.bytes == null) return null;
     await store.write(key, r.bytes!,
         maxAge: r.maxAge ?? viewMaxAgeDefault, etag: r.etag);
@@ -763,4 +808,11 @@ class MapsController extends ChangeNotifier {
       return null;
     }
   }
+}
+
+/// Consecutive-failure state for one tile source's viewing fetches.
+class _SourceHealth {
+  int fails = 0;
+  int step = 0; // seconds, doubles per gate opening
+  int untilMs = 0;
 }

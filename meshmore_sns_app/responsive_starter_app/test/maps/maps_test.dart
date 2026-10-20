@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: MIT
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math' show Random;
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -20,6 +21,9 @@ import 'package:meshmore_sns_app/maps/tile_store.dart';
 class FakeFetch {
   bool offline = false;
   final List<String> missing = <String>[];
+
+  /// URL fragments that fail (connection error) while the rest succeed.
+  final List<String> failing = <String>[];
   final Map<String, String> bodies = <String, String>{};
   final List<(Uri, String?)> calls = <(Uri, String?)>[];
   Duration? maxAge;
@@ -27,7 +31,9 @@ class FakeFetch {
 
   Future<FetchResult> call(Uri url, {String? etag, int? ifModifiedSinceMs}) async {
     calls.add((url, etag));
-    if (offline) return const FetchResult(FetchStatus.failed);
+    if (offline || failing.any(url.toString().contains)) {
+      return const FetchResult(FetchStatus.failed);
+    }
     if (missing.any(url.toString().contains)) {
       return const FetchResult(FetchStatus.missing);
     }
@@ -176,6 +182,11 @@ void main() {
       now = now.add(const Duration(days: 8));
       net.offline = true;
       expect(await m.loadTile(kOsmStandard, 10, 1, 2), isNotNull);
+      // R81: one failed revalidation is a lost packet, not "offline". The
+      // banner flips once the source has failed three times in a row.
+      expect(m.online, isTrue);
+      expect(await m.loadTile(kOsmStandard, 10, 1, 2), isNotNull);
+      expect(await m.loadTile(kOsmStandard, 10, 1, 2), isNotNull);
       expect(m.online, isFalse);
       m.dispose();
     });
@@ -185,9 +196,78 @@ void main() {
       final MapsController m = make();
       await m.load();
       net.offline = true;
+      // R81: three failures in a row open the gate (was: one). Tiles 1-3
+      // are asked about; the fourth and fifth are not.
+      for (int i = 0; i < 3; i++) {
+        expect(await m.loadTile(kOsmStandard, 10, 5, 5 + i), isNull);
+      }
+      expect(net.calls, hasLength(3));
+      expect(await m.loadTile(kOsmStandard, 10, 5, 9), isNull);
+      expect(await m.loadTile(kOsmStandard, 10, 5, 10), isNull);
+      expect(net.calls, hasLength(3), reason: 'gated: no more requests');
+      m.dispose();
+    });
+
+    test('R81 one failed tile does not blank the map', () async {
+      final MapsController m = make();
+      await m.load();
+      net.failing.add('/10/5/5');
       expect(await m.loadTile(kOsmStandard, 10, 5, 5), isNull);
-      expect(await m.loadTile(kOsmStandard, 10, 5, 6), isNull);
-      expect(net.calls, hasLength(1));
+      // Used to return null for the next 30 s without asking.
+      expect(await m.loadTile(kOsmStandard, 10, 5, 6), isNotNull);
+      expect(await m.loadTile(kOsmStandard, 10, 5, 7), isNotNull);
+      expect(m.online, isTrue);
+      m.dispose();
+    });
+
+    test('R81 a success resets the failure count', () async {
+      final MapsController m = make();
+      await m.load();
+      net.failing.add('/10/5/');
+      await m.loadTile(kOsmStandard, 10, 5, 1);
+      await m.loadTile(kOsmStandard, 10, 5, 2);
+      net.failing.clear();
+      expect(await m.loadTile(kOsmStandard, 10, 5, 3), isNotNull);
+      net.failing.add('/10/5/');
+      await m.loadTile(kOsmStandard, 10, 5, 4);
+      await m.loadTile(kOsmStandard, 10, 5, 5);
+      final int before = net.calls.length;
+      await m.loadTile(kOsmStandard, 10, 5, 6); // third since the success
+      expect(net.calls.length, before + 1, reason: 'still asked: 2 < 3');
+      m.dispose();
+    });
+
+    test('R81 a dead source is gated alone, with jitter, and retried', () async {
+      final MapsController m = MapsController(
+        rootDir: () async => dir,
+        fetcher: net.call,
+        clock: () => now,
+        pace: Duration.zero,
+        random: _FixedRandom(0.0), // jitter factor 0.8 -> 24 s of 30 s
+      );
+      await m.load();
+      net.failing.add('tile.openstreetmap.org');
+      for (int i = 0; i < 3; i++) {
+        await m.loadTile(kOsmStandard, 10, 5, i);
+      }
+      // Another source is unaffected by OSM's outage.
+      expect(await m.loadTile(kUsgsTopo, 10, 5, 5), isNotNull);
+      final int gated = net.calls.length;
+      expect(await m.loadTile(kOsmStandard, 10, 5, 20), isNull);
+      expect(net.calls.length, gated);
+      now = now.add(const Duration(seconds: 23));
+      await m.loadTile(kOsmStandard, 10, 5, 21);
+      expect(net.calls.length, gated, reason: 'jittered wait is 24 s');
+      now = now.add(const Duration(seconds: 2));
+      await m.loadTile(kOsmStandard, 10, 5, 22);
+      expect(net.calls.length, gated + 1, reason: 'retried after the wait');
+      // Retry failed again: the next wait doubles (60 s * 0.8).
+      now = now.add(const Duration(seconds: 47));
+      await m.loadTile(kOsmStandard, 10, 5, 23);
+      expect(net.calls.length, gated + 1);
+      now = now.add(const Duration(seconds: 2));
+      await m.loadTile(kOsmStandard, 10, 5, 24);
+      expect(net.calls.length, gated + 2);
       m.dispose();
     });
   });
@@ -457,4 +537,15 @@ void main() {
       again.dispose();
     });
   });
+}
+
+class _FixedRandom implements Random {
+  _FixedRandom(this.v);
+  final double v;
+  @override
+  double nextDouble() => v;
+  @override
+  bool nextBool() => v >= 0.5;
+  @override
+  int nextInt(int max) => (v * max).floor();
 }
