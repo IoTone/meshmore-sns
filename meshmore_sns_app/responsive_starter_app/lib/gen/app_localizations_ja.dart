@@ -3254,6 +3254,46 @@ class AppLocalizationsJa extends AppLocalizations {
       'まだ地域がありません。オフライン利用を許可するサーバー(米国内の USGS、または追加したタイルサーバー)から取得します。';
 
   @override
+  String get mapsArchives => '地域ファイル';
+
+  @override
+  String get mapsNoArchives =>
+      '地域ファイルがありません。地域ファイルは、信頼できる配信元の .pmtiles ファイルで、一つの地域をまとめてダウンロードします。リンクを追加してください。';
+
+  @override
+  String get mapsAddArchive => '地域ファイルを追加';
+
+  @override
+  String get archiveUrl => 'リンク (https)';
+
+  @override
+  String get archiveSize => 'サイズ (MB・任意)';
+
+  @override
+  String get archiveSha => 'SHA-256 (任意)';
+
+  @override
+  String get archiveStateFailed => '拒否';
+
+  @override
+  String get archiveFailBadHash => 'チェックサムが一致しません。';
+
+  @override
+  String get archiveFailBadSize => 'サイズが一致しません。';
+
+  @override
+  String get archiveFailNotPm => 'PMTiles ファイルではありません。';
+
+  @override
+  String get archiveFailSchema => '地図のレイヤー構成が違います。OpenMapTiles のレイヤーが必要です。';
+
+  @override
+  String get archiveFailNotFound => 'リンクが見つかりません。';
+
+  @override
+  String get archiveRefusalDuplicate => '追加済みです。';
+
+  @override
   String get mapsLayers => 'イベント地図';
 
   @override

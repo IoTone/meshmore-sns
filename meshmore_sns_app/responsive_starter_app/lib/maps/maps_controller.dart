@@ -177,6 +177,7 @@ class MapsController extends ChangeNotifier {
   int get layerBytes => layers.fold(0, (int a, EventLayer l) => a + l.bytes);
   int get tileBytes => _store?.totalBytes ?? 0;
   int get viewBytes => _store?.viewBytes ?? 0;
+  int archiveBytesOf(MapArchive a) => _archiveSize[a.id] ?? 0;
   int get archiveBytes => _archiveSize.values.fold(0, (int a, int b) => a + b);
   int get usedBytes => tileBytes + layerBytes + archiveBytes;
 

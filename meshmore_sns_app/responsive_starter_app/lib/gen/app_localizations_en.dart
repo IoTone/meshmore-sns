@@ -3372,6 +3372,47 @@ class AppLocalizationsEn extends AppLocalizations {
       'No regions yet. Regions come from servers that allow offline use: USGS inside the US, or a tile server you add.';
 
   @override
+  String get mapsArchives => 'Region files';
+
+  @override
+  String get mapsNoArchives =>
+      'No region files. A region file is one download for a whole area: a .pmtiles file from a host you trust. Add its link.';
+
+  @override
+  String get mapsAddArchive => 'Add region file';
+
+  @override
+  String get archiveUrl => 'Link (https)';
+
+  @override
+  String get archiveSize => 'Size in MB (optional)';
+
+  @override
+  String get archiveSha => 'SHA-256 (optional)';
+
+  @override
+  String get archiveStateFailed => 'Rejected';
+
+  @override
+  String get archiveFailBadHash => 'Checksum does not match.';
+
+  @override
+  String get archiveFailBadSize => 'Size does not match.';
+
+  @override
+  String get archiveFailNotPm => 'Not a PMTiles file.';
+
+  @override
+  String get archiveFailSchema =>
+      'Wrong map layout. It needs the OpenMapTiles layers.';
+
+  @override
+  String get archiveFailNotFound => 'Link not found.';
+
+  @override
+  String get archiveRefusalDuplicate => 'Already added.';
+
+  @override
   String get mapsLayers => 'Event maps';
 
   @override

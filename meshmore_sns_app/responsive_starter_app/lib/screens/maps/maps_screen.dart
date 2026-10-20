@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 
 import '../../gen/app_localizations.dart';
 import '../../maps/event_layer.dart';
+import '../../maps/map_archive.dart';
 import '../../maps/map_pack.dart';
 import '../../maps/map_source.dart';
 import '../../maps/maps_controller.dart';
@@ -44,6 +45,30 @@ String packRefusalText(AppLocalizations l, PackRefusal r) => switch (r) {
       PackRefusal.outsideCoverage => l.packRefusalCoverage,
       PackRefusal.tooManyTiles => l.packRefusalTooMany,
       PackRefusal.overBudget => l.packRefusalBudget,
+    };
+
+String archiveStateLabel(AppLocalizations l, ArchiveState s) => switch (s) {
+      ArchiveState.downloading => l.packStateDownloading,
+      ArchiveState.waitingForNetwork => l.packStateWaiting,
+      ArchiveState.overBudget => l.packStateOverBudget,
+      ArchiveState.paused => l.packStatePaused,
+      ArchiveState.complete => l.packStateComplete,
+      ArchiveState.failed => l.archiveStateFailed,
+    };
+
+String archiveFailureText(AppLocalizations l, ArchiveFailure f) => switch (f) {
+      ArchiveFailure.badHash => l.archiveFailBadHash,
+      ArchiveFailure.badSize => l.archiveFailBadSize,
+      ArchiveFailure.notPmTiles => l.archiveFailNotPm,
+      ArchiveFailure.wrongSchema => l.archiveFailSchema,
+      ArchiveFailure.notFound => l.archiveFailNotFound,
+    };
+
+String archiveRefusalText(AppLocalizations l, ArchiveRefusal r) => switch (r) {
+      ArchiveRefusal.noName => l.packRefusalNoName,
+      ArchiveRefusal.badUrl => l.layerRefusalBadUrl,
+      ArchiveRefusal.duplicate => l.archiveRefusalDuplicate,
+      ArchiveRefusal.overBudget => l.packRefusalBudget,
     };
 
 String layerRefusalText(AppLocalizations l, LayerRefusal r) => switch (r) {
@@ -143,6 +168,22 @@ class MapsScreen extends StatelessWidget {
                 icon: const Icon(Icons.download_for_offline_outlined),
                 label: Text(l.mapsAddPack),
                 onPressed: () => context.push('/settings/maps/new'),
+              ),
+            ),
+            const SizedBox(height: 16),
+            MmSectionHeader(l.mapsArchives),
+            const SizedBox(height: 6),
+            if (maps.archives.isEmpty) ToolLine(l.mapsNoArchives, muted: true),
+            for (final MapArchive a in maps.archives) _ArchiveRow(archive: a),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: FilledButton.tonalIcon(
+                icon: const Icon(Icons.folder_zip_outlined),
+                label: Text(l.mapsAddArchive),
+                onPressed: () => showDialog<void>(
+                  context: context,
+                  builder: (BuildContext ctx) => _AddArchiveDialog(maps: maps),
+                ),
               ),
             ),
             const SizedBox(height: 16),
@@ -576,6 +617,176 @@ class _AddSourceDialogState extends State<_AddSourceDialog> {
           },
           child: Text(l.mapsAdd),
         ),
+      ],
+    );
+  }
+}
+
+enum _ArchiveAction { pause, resume, keep, delete }
+
+class _ArchiveRow extends StatelessWidget {
+  const _ArchiveRow({required this.archive});
+  final MapArchive archive;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations l = AppLocalizations.of(context);
+    final MapsController maps = context.read<MapsController>();
+    final MmSkin skin = context.skin;
+    final MapArchive a = archive;
+    final TextStyle sub = TextStyle(color: skin.color.fgMuted, fontSize: 12);
+    final int have = maps.archiveBytesOf(a);
+    final bool active = a.state == ArchiveState.downloading ||
+        a.state == ArchiveState.waitingForNetwork;
+    final double? progress = a.expectedBytes == null || a.expectedBytes == 0
+        ? null
+        : (have / a.expectedBytes!).clamp(0.0, 1.0);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: MmListRow(
+        leading: Icon(
+            a.complete ? Icons.download_done : Icons.downloading,
+            color: a.state == ArchiveState.failed ||
+                    a.state == ArchiveState.overBudget
+                ? skin.color.alert
+                : skin.color.accent),
+        title: Text(a.name),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            Text(
+              '${archiveStateLabel(l, a.state)} · '
+              '${fmtBytes(have)}'
+              '${a.expectedBytes != null && !a.complete ? ' / ${fmtBytes(a.expectedBytes!)}' : ''}',
+              style: sub,
+            ),
+            if (a.failure != null)
+              Text(archiveFailureText(l, a.failure!), style: sub),
+            if (a.complete) Text(expiryText(l, a.expiresAtMs), style: sub),
+            if (active)
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: LinearProgressIndicator(value: progress),
+              ),
+          ],
+        ),
+        trailing: PopupMenuButton<_ArchiveAction>(
+          onSelected: (_ArchiveAction act) async {
+            switch (act) {
+              case _ArchiveAction.pause:
+                maps.pauseArchive(a);
+              case _ArchiveAction.resume:
+                maps.resumeArchive(a);
+              case _ArchiveAction.keep:
+                final int? d = await pickKeepDays(context, a.keepDays);
+                if (d != null) maps.setArchiveKeep(a, d);
+              case _ArchiveAction.delete:
+                if (await confirmDelete(context, a.name)) {
+                  await maps.deleteArchive(a);
+                }
+            }
+          },
+          itemBuilder: (_) => <PopupMenuEntry<_ArchiveAction>>[
+            if (active)
+              PopupMenuItem<_ArchiveAction>(
+                  value: _ArchiveAction.pause, child: Text(l.mapsPause))
+            else if (a.state == ArchiveState.paused ||
+                a.state == ArchiveState.overBudget)
+              PopupMenuItem<_ArchiveAction>(
+                  value: _ArchiveAction.resume, child: Text(l.mapsResume)),
+            if (a.complete)
+              PopupMenuItem<_ArchiveAction>(
+                  value: _ArchiveAction.keep, child: Text(l.mapsKeepFor)),
+            PopupMenuItem<_ArchiveAction>(
+                value: _ArchiveAction.delete, child: Text(l.mapsDelete)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _AddArchiveDialog extends StatefulWidget {
+  const _AddArchiveDialog({required this.maps});
+  final MapsController maps;
+
+  @override
+  State<_AddArchiveDialog> createState() => _AddArchiveDialogState();
+}
+
+class _AddArchiveDialogState extends State<_AddArchiveDialog> {
+  final TextEditingController _name = TextEditingController();
+  final TextEditingController _url = TextEditingController();
+  final TextEditingController _mb = TextEditingController();
+  final TextEditingController _sha = TextEditingController();
+  String? _error;
+
+  @override
+  void dispose() {
+    _name.dispose();
+    _url.dispose();
+    _mb.dispose();
+    _sha.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    final AppLocalizations l = AppLocalizations.of(context);
+    final double? mb = double.tryParse(_mb.text.trim());
+    final String sha = _sha.text.trim();
+    final ArchiveRefusal? why = await widget.maps.addArchive(
+      name: _name.text,
+      url: _url.text,
+      expectedBytes: mb == null ? null : (mb * 1000 * 1000).round(),
+      sha256: sha.isEmpty ? null : sha,
+    );
+    if (!mounted) return;
+    if (why == null) {
+      Navigator.pop(context);
+    } else {
+      setState(() => _error = archiveRefusalText(l, why));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations l = AppLocalizations.of(context);
+    return AlertDialog(
+      title: Text(l.mapsAddArchive),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            TextField(
+                controller: _name,
+                decoration: InputDecoration(labelText: l.mapsLayerName)),
+            TextField(
+              controller: _url,
+              keyboardType: TextInputType.url,
+              decoration: InputDecoration(
+                  labelText: l.archiveUrl, hintText: 'https://…/region.pmtiles'),
+            ),
+            TextField(
+              controller: _mb,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              decoration: InputDecoration(labelText: l.archiveSize),
+            ),
+            TextField(
+              controller: _sha,
+              decoration: InputDecoration(labelText: l.archiveSha),
+            ),
+            if (_error != null) ...<Widget>[
+              const SizedBox(height: 8),
+              ToolNotice(text: _error!, icon: Icons.error_outline),
+            ],
+          ],
+        ),
+      ),
+      actions: <Widget>[
+        TextButton(
+            onPressed: () => Navigator.pop(context), child: Text(l.cancel)),
+        FilledButton(onPressed: _submit, child: Text(l.mapsAdd)),
       ],
     );
   }

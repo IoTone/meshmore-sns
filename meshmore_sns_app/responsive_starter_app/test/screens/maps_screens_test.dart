@@ -12,6 +12,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:meshmore_sns_app/gen/app_localizations.dart';
 import 'package:meshmore_sns_app/l10n/locale_controller.dart';
+import 'package:meshmore_sns_app/maps/map_archive.dart';
 import 'package:meshmore_sns_app/maps/map_fetch.dart';
 import 'package:meshmore_sns_app/maps/map_source.dart';
 import 'package:meshmore_sns_app/maps/maps_controller.dart';
@@ -21,6 +22,7 @@ import 'package:meshmore_sns_app/screens/maps/maps_screen.dart';
 import 'package:meshmore_sns_app/screens/maps/new_pack_screen.dart';
 import 'package:meshmore_sns_app/theme/theme_controller.dart';
 
+import '../maps/pmtiles_fixture.dart';
 import '../meshcore/fake_transport.dart';
 
 const String _geo = '{"type":"FeatureCollection","features":[{"type":"Feature",'
@@ -112,6 +114,66 @@ void main() {
         expect(find.text('Offline download allowed (US only)'),
             findsNWidgets(2));
       }
+      expect(t.takeException(), isNull);
+      await t.runAsync(() async {
+        maps.dispose();
+      });
+      mc.dispose();
+    });
+  }
+
+  for (final Locale loc in const <Locale>[Locale('en'), Locale('ja')]) {
+    testWidgets('R81 region files list: done, rejected, add dialog '
+        '(${loc.languageCode})', (WidgetTester t) async {
+      await t.binding.setSurfaceSize(const Size(360, 800));
+      addTearDown(() => t.binding.setSurfaceSize(null));
+      final MeshcoreController mc = MeshcoreController(
+          transportFactory: () async => FakeMeshcoreTransport());
+      final Uint8List file = PmBuild(<(int, int, int), List<int>>{
+        (3, 1, 2): <int>[1, 2, 3],
+      }).build();
+      late final MapsController maps;
+      await t.runAsync(() async {
+        maps = MapsController(
+          rootDir: () async => dir,
+          fetcher: fetch,
+          pace: Duration.zero,
+          archiveFetcher: (Uri u, {int? rangeStart, String? ifRange}) async =>
+              ArchiveResponse(
+                  status: 200,
+                  body: Stream<List<int>>.value(file),
+                  contentLength: file.length),
+        );
+        await maps.load();
+        await maps.addArchive(
+            name: 'Front Range', url: 'https://h.example/fr.pmtiles');
+        await maps.idle();
+        await maps.addArchive(
+            name: 'Bad one',
+            url: 'https://h.example/bad.pmtiles',
+            sha256: 'ab' * 32);
+        await maps.idle();
+      });
+      await t.pumpWidget(_host(mc, maps, const MapsScreen(), locale: loc));
+      await t.pump();
+      expect(t.takeException(), isNull);
+      await t.scrollUntilVisible(find.text('Front Range'), 200);
+      expect(find.text('Front Range'), findsOneWidget);
+      expect(find.text('Bad one'), findsOneWidget);
+      if (loc.languageCode == 'en') {
+        expect(find.textContaining('Checksum does not match'), findsOneWidget);
+      }
+      await t.scrollUntilVisible(
+          find.text(loc.languageCode == 'en' ? 'Add region file' : '地域ファイルを追加'),
+          200);
+      await t.tap(find
+          .text(loc.languageCode == 'en' ? 'Add region file' : '地域ファイルを追加'));
+      await t.pumpAndSettle();
+      // Name, link, size, checksum. (Refusals are covered in the
+      // controller tests: submitting here would await a controller built in
+      // another zone.)
+      expect(find.byType(AlertDialog), findsOneWidget);
+      expect(find.byType(TextField), findsNWidgets(4));
       expect(t.takeException(), isNull);
       await t.runAsync(() async {
         maps.dispose();

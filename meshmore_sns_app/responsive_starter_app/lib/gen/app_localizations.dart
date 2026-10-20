@@ -5828,6 +5828,84 @@ abstract class AppLocalizations {
   /// **'No regions yet. Regions come from servers that allow offline use: USGS inside the US, or a tile server you add.'**
   String get mapsNoPacks;
 
+  /// No description provided for @mapsArchives.
+  ///
+  /// In en, this message translates to:
+  /// **'Region files'**
+  String get mapsArchives;
+
+  /// No description provided for @mapsNoArchives.
+  ///
+  /// In en, this message translates to:
+  /// **'No region files. A region file is one download for a whole area: a .pmtiles file from a host you trust. Add its link.'**
+  String get mapsNoArchives;
+
+  /// No description provided for @mapsAddArchive.
+  ///
+  /// In en, this message translates to:
+  /// **'Add region file'**
+  String get mapsAddArchive;
+
+  /// No description provided for @archiveUrl.
+  ///
+  /// In en, this message translates to:
+  /// **'Link (https)'**
+  String get archiveUrl;
+
+  /// No description provided for @archiveSize.
+  ///
+  /// In en, this message translates to:
+  /// **'Size in MB (optional)'**
+  String get archiveSize;
+
+  /// No description provided for @archiveSha.
+  ///
+  /// In en, this message translates to:
+  /// **'SHA-256 (optional)'**
+  String get archiveSha;
+
+  /// No description provided for @archiveStateFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Rejected'**
+  String get archiveStateFailed;
+
+  /// No description provided for @archiveFailBadHash.
+  ///
+  /// In en, this message translates to:
+  /// **'Checksum does not match.'**
+  String get archiveFailBadHash;
+
+  /// No description provided for @archiveFailBadSize.
+  ///
+  /// In en, this message translates to:
+  /// **'Size does not match.'**
+  String get archiveFailBadSize;
+
+  /// No description provided for @archiveFailNotPm.
+  ///
+  /// In en, this message translates to:
+  /// **'Not a PMTiles file.'**
+  String get archiveFailNotPm;
+
+  /// No description provided for @archiveFailSchema.
+  ///
+  /// In en, this message translates to:
+  /// **'Wrong map layout. It needs the OpenMapTiles layers.'**
+  String get archiveFailSchema;
+
+  /// No description provided for @archiveFailNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'Link not found.'**
+  String get archiveFailNotFound;
+
+  /// No description provided for @archiveRefusalDuplicate.
+  ///
+  /// In en, this message translates to:
+  /// **'Already added.'**
+  String get archiveRefusalDuplicate;
+
   /// No description provided for @mapsLayers.
   ///
   /// In en, this message translates to:
