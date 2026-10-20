@@ -50,6 +50,46 @@ void main() {
         expect(chip.borderRadius, BorderRadius.circular(20), reason: '$p');
         expect(td.dialogTheme.shape, isNull, reason: '$p');
         expect(td.cardTheme.shape, isNull, reason: '$p');
+        expect(td.appBarTheme.shape, isNull, reason: '$p');
+      }
+    });
+  });
+
+  group('R66 Studio edges', () {
+    ThemeData studio() {
+      final MmSkin s = mmSkinFor(MmThemePreset.studio);
+      return buildMmTheme(s.color,
+          fontFamily: s.type.displayFamily, shape: s.shape);
+    }
+
+    test('card has a 1px hairline side, square corners, no elevation', () {
+      final MmTokens t = kMmPresets[MmThemePreset.studio]!;
+      final RoundedRectangleBorder c =
+          studio().cardTheme.shape! as RoundedRectangleBorder;
+      expect(c.side.color, t.hairline);
+      expect(c.side.width, 1.0);
+      expect(c.borderRadius, BorderRadius.zero);
+      expect(studio().cardTheme.elevation, isNull);
+    });
+
+    test('app bar ends in a 1px hairline (and only on the bottom)', () {
+      final MmTokens t = kMmPresets[MmThemePreset.studio]!;
+      final Border b = studio().appBarTheme.shape! as Border;
+      expect(b.bottom.color, t.hairline);
+      expect(b.bottom.width, 1.0);
+      expect(b.top, BorderSide.none);
+      expect(b.left, BorderSide.none);
+      expect(b.right, BorderSide.none);
+    });
+
+    test('older presets: card and app-bar shape stay null', () {
+      for (final MmThemePreset p in MmThemePreset.values) {
+        if (p == MmThemePreset.studio) continue;
+        final MmSkin s = mmSkinFor(p);
+        final ThemeData td = buildMmTheme(s.color,
+            fontFamily: s.type.displayFamily, shape: s.shape);
+        expect(td.cardTheme.shape, isNull, reason: '$p');
+        expect(td.appBarTheme.shape, isNull, reason: '$p');
       }
     });
   });
@@ -135,7 +175,8 @@ void main() {
       final ThemeData td = buildMmTheme(s.color,
           fontFamily: s.type.displayFamily, shape: s.shape);
       expect(td.chipTheme.shape, const RoundedRectangleBorder());
-      expect(td.cardTheme.shape, const RoundedRectangleBorder());
+      expect(td.cardTheme.shape,
+          RoundedRectangleBorder(side: BorderSide(color: t.hairline)));
       expect(td.dialogTheme.shape, const RoundedRectangleBorder());
       expect(td.colorScheme.surfaceContainerHighest, t.selected);
       expect(td.colorScheme.onPrimary, t.onAccent);

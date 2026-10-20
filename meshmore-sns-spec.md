@@ -1162,6 +1162,14 @@ While Meshcore protocol is open source, the client is not open source.  We want 
     checked these only over the panel. `test/theme/mm_layers_test.dart`
     now asserts them on every layer.
 
+- R66: **Studio edges.** `buildMmTheme` (`lib/theme/mm_tokens.dart`) gives
+  a `squareControls` skin a 1px `hairline` border on `Card`s (surface on
+  base is only ~1.13:1, so cards had no visible boundary; no elevation or
+  shadow) and a bottom-only 1px `hairline` `AppBarTheme.shape`, so the app
+  bar and the R64 view strip in its `bottom` separate from the body. Both
+  are null for the six older presets, so their `ThemeData` is unchanged.
+  Tests: `test/theme/mm_layers_test.dart` (group "R66 Studio edges").
+
 ### Terminology — Fabric vs Contact
 
 - **Fabric** = the set of nodes we have *seen* on the mesh (any

@@ -318,7 +318,13 @@ ThemeData buildMmTheme(MmTokens t, {String? fontFamily, MmShape? shape}) {
     cardTheme: CardThemeData(
       color: t.surface,
       surfaceTintColor: Colors.transparent,
-      shape: squareBorder,
+      // R66: a square (Studio) card gets a hairline edge, since
+      // surface on base is only ~1.13:1 and has no visible boundary.
+      // Null side / unchanged shape for every other preset.
+      shape: square
+          ? RoundedRectangleBorder(
+              side: BorderSide(color: t.hairline, width: shape!.hairlineWidth))
+          : null,
     ),
     dialogTheme: square ? DialogThemeData(shape: squareBorder) : null,
     bottomSheetTheme: square ? BottomSheetThemeData(shape: squareBorder) : null,
@@ -329,6 +335,14 @@ ThemeData buildMmTheme(MmTokens t, {String? fontFamily, MmShape? shape}) {
       iconTheme: IconThemeData(color: t.fg),
       titleTextStyle: text.titleLarge,
       elevation: 0,
+      // R66: a square (Studio) app bar, and the view strip in its
+      // `bottom`, end in a hairline so they do not blend into the body
+      // (both are `base`). Null for every other preset: unchanged.
+      shape: square
+          ? Border(
+              bottom:
+                  BorderSide(color: t.hairline, width: shape!.hairlineWidth))
+          : null,
     ),
     listTileTheme: ListTileThemeData(iconColor: t.fgMuted, textColor: t.fg),
     dividerTheme: DividerThemeData(color: t.line, space: 1),

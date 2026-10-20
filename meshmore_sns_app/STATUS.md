@@ -64,6 +64,9 @@ codebase.
   so the rule and the coloured text are legible on all four layers (the
   old hairline was 1.06:1 on `selected`). Pinned per layer in
   `test/theme/mm_layers_test.dart`.
+- R66: Studio cards get a 1px hairline edge and the app bar (with the
+  view strip) ends in a 1px hairline; both null for the six older
+  presets. **Unverified on a device** (theme-level tests only).
 - Audio aliases the Hyperlocal pack; **unverified on a device**.
 
 **Privacy (R62)**

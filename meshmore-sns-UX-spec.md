@@ -194,7 +194,8 @@ Material's own controls square for Studio only. Grouped surfaces use
 `MmCollapsibleSection` (label + chevron + hairline, 48dp row, content not
 built when closed), applied to Location settings, Device configuration
 and Personalization. Which groups are folded is persisted per stable id
-(R65, `MmCollapseController`, default open). Studio reuses the
+(R65, `MmCollapseController`, default open). Studio cards and the
+app bar (with its view strip) end in a 1px hairline (R66). Studio reuses the
 Hyperlocal audio pack and the neutral haptic profile.
 
 #### Palette — token contract (preset-independent)
