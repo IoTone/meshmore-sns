@@ -129,8 +129,9 @@ void main() {
     expect(kOpenFreeMapVector.attribution, contains('OpenFreeMap'));
     expect(kOpenFreeMapVector.attribution, contains('OpenMapTiles'));
     expect(kOpenFreeMapVector.attribution, contains('OpenStreetMap'));
-    expect(kOpenFreeMapVector.allowsPacks, isTrue,
-        reason: 'offline packs are the point for an off-grid app');
+    expect(kOpenFreeMapVector.allowsPacks, isFalse,
+        reason: 'OpenFreeMap caps offline use at 3,000 tiles / 50 MB per '
+            'download; a region pack must not come from it (R81)');
   });
 
   testWidgets('R80 the layer draws nothing without a MapsController',

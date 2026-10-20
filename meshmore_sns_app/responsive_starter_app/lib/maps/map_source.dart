@@ -156,7 +156,10 @@ const MapSource kOpenFreeMapVector = MapSource(
   attribution: '\u00a9 OpenFreeMap \u00b7 \u00a9 OpenMapTiles \u00b7 '
       '\u00a9 OpenStreetMap contributors',
   maxNativeZoom: 14,
-  allowsPacks: true,
+  // View-cache only. OpenFreeMap's terms cap offline use at 3,000 tiles or
+  // 50 MB per download, 4 parallel requests; a region pack is larger than
+  // that by design. Regions come from PMTiles archives (R81) instead.
+  allowsPacks: false,
   bytesPerTile: 12000,
 );
 

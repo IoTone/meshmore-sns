@@ -193,6 +193,28 @@ void main() {
   });
 
   group('packs', () {
+    test('R81 only sources that permit bulk download can start a pack',
+        () async {
+      // OSM's tile policy forbids scraping; OpenTopoMap is a shared
+      // volunteer server; OpenFreeMap caps offline use at 3,000 tiles /
+      // 50 MB per download. Only the USGS public-domain sources stay legal.
+      expect(<String>[
+        for (final MapSource s in <MapSource>[
+          ...kBuiltInSources,
+          kOpenFreeMapVector,
+        ])
+          if (s.allowsPacks) s.id
+      ], <String>['usgs-topo', 'usgs-imagery']);
+      final MapsController m = make();
+      await m.load();
+      expect(await m.createPack(
+              name: 'x', source: kOpenFreeMapVector, box: sf,
+              minZoom: 10, maxZoom: 12),
+          PackRefusal.sourceViewOnly);
+      expect(net.calls, isEmpty, reason: 'refused before any request');
+      m.dispose();
+    });
+
     test('refusals: view-only source, coverage, size, budget, offline',
         () async {
       final MapsController m = make();

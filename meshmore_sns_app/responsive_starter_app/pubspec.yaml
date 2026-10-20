@@ -123,7 +123,6 @@ dependencies:
   #     dart:io behind an injectable seam; cache is SharedPreferences.
   markdown: ^7.2.2
   vector_map_tiles: ^8.0.0
-  vector_map_tiles_pmtiles: ^1.5.0
   vector_tile_renderer: ^5.2.1
 
 dev_dependencies:
