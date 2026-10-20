@@ -132,7 +132,15 @@ is never covered; the five map controls are 48dp and the right edge band
 starts below the column (derived from it). The edge bands start just
 inside the Android system-gesture zone (`systemGestureInsets`): a swipe
 from the very edge is the OS's Back. Under the Studio skin raster tiles
-are drawn dark (invert luminance, compress it to `0.8*inv + 48`, desaturate to 0.15 (R73); land lands near luma 61, sea 90, a road casing 102, label text 220; label-on-land contrast 8.0:1; on the device the R70 pure invert left land below 40 and roads/labels unreadable). The grid's street-map mode keeps its
+are dimmed, not recoloured (R79): `out = 0.70 * in`, a pure RGB scale, so
+hue survives (land 169, sea 119/148/156, label text 36, label-on-land
+6.7:1). R70-R73 inverted luminance and desaturated to 0.15, which flipped
+hue (OSM's blue water read orange), threw hue away, and - because the
+filter is per-tile and global - also destroyed the USGS **aerial-imagery**
+source, which has no luminance structure to invert. Map imagery is
+content, not theme accent, so colour stays. A true vector basemap is the
+open question recorded in the spec ("Basemap rendering"); until then this
+is the interim treatment. The grid's street-map mode keeps its
 "awaiting fix" text (`StreetMapView.browseWithoutFix`, default off; only
 `MapScreen` opts in).
 

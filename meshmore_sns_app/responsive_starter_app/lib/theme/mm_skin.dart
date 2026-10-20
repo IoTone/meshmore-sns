@@ -76,7 +76,7 @@ class MmShape {
     required this.borderWidth,
     this.hairlineWidth = 1.0,
     this.squareControls = false,
-    this.darkBasemap = false,
+    this.dimmedBasemap = false,
     this.tintedHeaders = false,
     this.swipeNavigation = true,
   });
@@ -99,10 +99,12 @@ class MmShape {
   /// SEELE/DR Pop/Recon are sharp *panels* yet were never square chips.
   final bool squareControls;
 
-  /// R70 — draw map raster tiles through a dark, desaturating filter
-  /// (see `mmDarkTileFilter`) so a pale basemap does not become the
-  /// brightest surface of a dark skin. Off for the six older presets.
-  final bool darkBasemap;
+  /// R70/R79 — draw map raster tiles through a hue-preserving dim (see
+  /// `mmDimTileFilter`) so a pale basemap sits under a dark chrome. It
+  /// dims, it does not de-colour: map imagery is content, and the theme's
+  /// no-accent rule is about chrome, not about the map. Off for the six
+  /// older presets.
+  final bool dimmedBasemap;
 
   /// R77 — a collapsible group's header row sits on `MmTokens.raised`, one
   /// tonal step above the page, so the header (not a rule) says where a
@@ -288,7 +290,7 @@ MmSkin mmSkinFor(MmThemePreset preset) {
           borderWidth: 1,
           hairlineWidth: 1,
           squareControls: true,
-          darkBasemap: true,
+          dimmedBasemap: true,
           tintedHeaders: true,
           swipeNavigation: false,
         ),

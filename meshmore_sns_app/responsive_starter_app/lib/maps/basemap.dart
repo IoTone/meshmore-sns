@@ -66,9 +66,9 @@ class MapTileImage extends ImageProvider<MapTileImage> {
 /// The basemap layer for [source]. With a [MapsController] in the tree
 /// it is cached; without one (tests, previews) it is plain network.
 ///
-/// [dark] (R70) draws each tile through [mmDarkTileFilter].
+/// [dim] draws each tile through [mmDimTileFilter] (R79).
 TileLayer basemapLayer(BuildContext context, MapSource source,
-    {bool dark = false}) {
+    {bool dim = false}) {
   final MapsController? maps =
       Provider.of<MapsController?>(context, listen: false);
   return TileLayer(
@@ -77,72 +77,47 @@ TileLayer basemapLayer(BuildContext context, MapSource source,
     maxNativeZoom: source.maxNativeZoom,
     userAgentPackageName: 'com.iotone.meshmore_sns_app',
     tileProvider: maps == null ? null : CachedTileProvider(maps, source),
-    tileBuilder: dark ? mmDarkTileBuilder : null,
+    tileBuilder: dim ? mmDimTileBuilder : null,
   );
 }
 
-/// R70 — a colour-matrix filter that turns a light raster basemap dark
-/// without washing it out: it **inverts luminance** (so land, water and
-/// road casings go dark and labels/road fills go light, keeping the
-/// contrast that makes text readable) and then **desaturates** to
-/// [saturation] so the inverted hues (OSM's blue water becomes orange)
-/// do not read as colour. Unlike a semi-transparent scrim, contrast is
-/// preserved, not reduced. Trade-off: it is a global per-tile transform,
-/// so coloured features (a red road, green park) lose their hue
-/// distinction; shape and label contrast stay.
-ColorFilter mmDarkTileFilter(
-        {double saturation = kMmDarkTileSaturation,
-        double gain = kMmDarkTileGain,
-        double lift = kMmDarkTileLift}) =>
-    ColorFilter.matrix(
-        mmDarkTileMatrix(saturation: saturation, gain: gain, lift: lift));
+/// R79 — dim a raster basemap for a dark chrome **without touching hue**:
+/// `out = gain * in`, a pure RGB scale. Water stays blue, parks stay
+/// green, and the aerial-imagery source stays recognisable.
+///
+/// R70-R73 inverted luminance and desaturated to 0.15 so a pale basemap
+/// would not be the brightest surface. Honest about what that cost: the
+/// invert flips hue (OSM's blue water read orange), the desaturation then
+/// threw the hue away, and because the filter is per-tile and global it
+/// also destroyed the *satellite* basemap, which has no luminance
+/// structure to invert. Colour in map imagery is content, not theme
+/// accent, so the correct treatment is a dim, not a de-colouring.
+///
+/// Measured on the OSM palette (0-255): land 169, sea 119/148/156, label
+/// text 36 (6.7:1 on land). See [kMmDimTileGain] to retune.
+ColorFilter mmDimTileFilter({double gain = kMmDimTileGain}) =>
+    ColorFilter.matrix(mmDimTileMatrix(gain: gain));
 
-/// R73 retune. R70 inverted luminance outright, which put pale land at
-/// luminance ~15-40 (device screenshot: continents read, roads and
-/// labels did not). The invert is now compressed: `out = gain * inv + lift`.
-/// On the OSM palette (luma, 0-255): land 61, sea 90, a white road fill 48,
-/// a road casing ~102, label text ~220 (WCAG contrast: text on land 8.0:1, sea/land 1.6:1, casing/land 1.9:1).
-const double kMmDarkTileSaturation = 0.15;
-const double kMmDarkTileGain = 0.8;
-const double kMmDarkTileLift = 48;
+/// How much of the tile's own luminance survives (R79). Low enough that a
+/// pale basemap sits under the chrome, high enough to keep label contrast
+/// (6.7:1 at 0.70); the map is deliberately a *content* surface, so it is
+/// allowed to be brighter than the page around it.
+const double kMmDimTileGain = 0.70;
 
-/// The 4x5 matrix behind [mmDarkTileFilter] (exposed so it can be tested).
-List<double> mmDarkTileMatrix({
-  double saturation = kMmDarkTileSaturation,
-  double gain = kMmDarkTileGain,
-  double lift = kMmDarkTileLift,
-}) {
-  // inv = 255 - in;  out = gain * (s*inv + (1-s)*lum(inv)) + lift
-  const double r = 0.2126, g = 0.7152, b = 0.0722;
-  final double s = saturation;
-  final double k = 1 - s;
-  List<double> row(int ch) {
-    final List<double> w = <double>[r * k, g * k, b * k];
-    w[ch] += s; // weights sum to 1
-    return <double>[
-      -gain * w[0],
-      -gain * w[1],
-      -gain * w[2],
-      0,
-      255 * gain + lift
-    ];
-  }
-
+/// The 4x5 matrix behind [mmDimTileFilter] (exposed so it can be tested).
+List<double> mmDimTileMatrix({double gain = kMmDimTileGain}) {
+  final double g = gain;
   return <double>[
-    ...row(0),
-    ...row(1),
-    ...row(2),
-    0,
-    0,
-    0,
-    1,
-    0,
+    g, 0, 0, 0, 0, //
+    0, g, 0, 0, 0, //
+    0, 0, g, 0, 0, //
+    0, 0, 0, 1, 0, //
   ];
 }
 
-/// [TileLayer.tileBuilder] applying [mmDarkTileFilter].
-Widget mmDarkTileBuilder(BuildContext context, Widget tile, TileImage image) =>
-    ColorFiltered(colorFilter: mmDarkTileFilter(), child: tile);
+/// [TileLayer.tileBuilder] applying [mmDimTileFilter].
+Widget mmDimTileBuilder(BuildContext context, Widget tile, TileImage image) =>
+    ColorFiltered(colorFilter: mmDimTileFilter(), child: tile);
 
 /// Credit line for the visible basemap — OSM and CC-BY-SA require it.
 class MapAttribution extends StatelessWidget {

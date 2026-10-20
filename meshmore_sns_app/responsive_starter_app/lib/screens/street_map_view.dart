@@ -255,7 +255,7 @@ class _StreetMapViewState extends State<StreetMapView> {
               // offline map cache when one is in the tree.
               if (_showTiles)
                 basemapLayer(context, tileSource,
-                    dark: context.skin.shape.darkBasemap),
+                    dim: context.skin.shape.dimmedBasemap),
               // R61 — event maps (festival streets, courses, camps).
               const EventLayersOverlay(),
               // R25+1 — range circle for self. Uses our radio-tuple
