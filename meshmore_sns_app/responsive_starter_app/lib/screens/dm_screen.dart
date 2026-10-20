@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../chat/chat_actions.dart';
+import '../chat/studio_message_row.dart';
 import '../gen/app_localizations.dart';
 import '../bot/bot_guards.dart';
 import '../bot/bot_tag.dart';
@@ -285,6 +286,11 @@ class _DmRow extends StatelessWidget {
       if (m.snrDb != null) 'SNR ${m.snrDb!.toStringAsFixed(1)}',
       if (m.isFlood) 'flood',
     ];
+    // R71: Studio = words sans, machine data mono (StudioMessageRow).
+    if (skin.type.sansLabels) {
+      return StudioMessageRow(
+          message: m, body: m.text, extraMeta: meta, onAction: onAction);
+    }
     return InkWell(
       onLongPress: onAction,
       child: Padding(

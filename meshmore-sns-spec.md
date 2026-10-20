@@ -1242,6 +1242,21 @@ While Meshcore protocol is open source, the client is not open source.  We want 
   Tests: `test/ui/mm_edge_swipe_test.dart`, `test/maps/dark_basemap_test.dart`,
   `test/screens/map_no_fix_test.dart`.
 
+- R72: **Chat reads as words over data under Studio.** The device pass
+  showed every chat part (sender, timestamp, body) in mono, one size and
+  weight. `StudioMessageRow` (`lib/chat/studio_message_row.dart`) now
+  renders channel and DM rows when `MmType.sansLabels` is on: **body**
+  sans 15/1.35 in `fg`; **sender** sans 12 w600 in `fgMuted`, above the
+  body; **timestamp** and the **meta line** (`flood`, `SNR 6.5`) mono 12 /
+  11 (machine data, column-aligned). The `«` / `»` glyph is the log
+  rows' direction mark (incoming / outgoing; `chat_screen.dart` `_log`,
+  `dm_screen.dart` `_DmRow`, `node_detail_sheet.dart`): it was never
+  explained on screen, so Studio drops it and marks outgoing rows with a
+  2dp accent rule plus an accent timestamp. SEELE / NERV / Recon keep
+  the all-mono terminal log and the glyph (mono is their identity).
+  Composer and channel header were already sans. Tests:
+  `test/screens/chat_type_hierarchy_test.dart`.
+
 - R71: **Studio controls are uniformly square.** The device pass showed
   "Scan area" / "Advertise" / "Apply radio params" as stadium pills
   beside square chips: M3's Filled/Outlined/Text/Elevated buttons, FAB,

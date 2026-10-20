@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../chat/chat_actions.dart';
+import '../chat/studio_message_row.dart';
 import '../gen/app_localizations.dart';
 import '../meshcore/chat_message.dart';
 import 'delivery_status_icon.dart';
@@ -430,6 +431,17 @@ class _MessageRow extends StatelessWidget {
 
   // --- terminal log (SEELE / NERV / Recon) ---------------------------
   Widget _log(BuildContext context, MmSkin skin) {
+    // R71: Studio sets words sans, machine data mono (see
+    // StudioMessageRow); the terminal presets keep the all-mono log.
+    if (skin.type.sansLabels) {
+      final ({String? sender, String body}) s = _split();
+      return StudioMessageRow(
+          message: m,
+          body: s.body,
+          sender: s.sender,
+          extraMeta: _meta,
+          onAction: onAction);
+    }
     final String mono = skin.type.monoFamily;
     final List<String> meta = _meta;
     return InkWell(
