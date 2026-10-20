@@ -2,6 +2,8 @@
 // SPDX-License-Identifier: MIT
 import 'dart:async';
 import 'dart:io';
+
+import 'package:flutter/foundation.dart' show kDebugMode, debugPrint;
 import 'dart:typed_data';
 
 /// R61 — outcome of one HTTP fetch.
@@ -102,7 +104,11 @@ MapFetcher httpMapFetcher(String Function() userAgent) {
           maxAge: maxAge,
           etag: newTag,
           lastModified: resp.headers.value(HttpHeaders.lastModifiedHeader));
-    } catch (_) {
+    } catch (e) {
+      // R80 — a silent catch turned a real, repeatable failure into an
+      // invisible one: every tile came back null and the map was blank
+      // with nothing in the log. Debug builds now say what went wrong.
+      if (kDebugMode) debugPrint('map fetch failed: $url ($e)');
       return const FetchResult(FetchStatus.failed);
     } finally {
       client.close(force: true);
