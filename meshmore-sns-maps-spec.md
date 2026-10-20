@@ -132,7 +132,7 @@ is never covered; the five map controls are 48dp and the right edge band
 starts below the column (derived from it). The edge bands start just
 inside the Android system-gesture zone (`systemGestureInsets`): a swipe
 from the very edge is the OS's Back. Under the Studio skin raster tiles
-are drawn dark (invert luminance, desaturate; labels stay legible). The grid's street-map mode keeps its
+are drawn dark (invert luminance, compress it to `0.8*inv + 48`, desaturate to 0.15 (R73); land lands near luma 61, sea 90, a road casing 102, label text 220; label-on-land contrast 8.0:1; on the device the R70 pure invert left land below 40 and roads/labels unreadable). The grid's street-map mode keeps its
 "awaiting fix" text (`StreetMapView.browseWithoutFix`, default off; only
 `MapScreen` opts in).
 

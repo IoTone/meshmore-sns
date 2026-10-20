@@ -105,6 +105,7 @@ codebase.
   device**: the equal-grid bar is wider now (about 280dp), fabric-survey's
   column is 240dp tall.
 
+- R73: Studio's dark basemap retuned (`0.8*inv+48`: land 61, sea 90, labels 220, 8.0:1) after R70's was too dark. **Needs a device look.**
 - R72: Studio chat/DM rows follow words-sans / data-mono (`StudioMessageRow`):
   sender above body, timestamp + SNR/flood mono, `«`/`»` dropped for an accent
   rule on outgoing rows. Other presets unchanged. **Unverified on a device.**

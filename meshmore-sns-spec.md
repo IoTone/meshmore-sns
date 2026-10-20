@@ -1242,6 +1242,17 @@ While Meshcore protocol is open source, the client is not open source.  We want 
   Tests: `test/ui/mm_edge_swipe_test.dart`, `test/maps/dark_basemap_test.dart`,
   `test/screens/map_no_fix_test.dart`.
 
+- R73: **Studio's dark basemap was too dark.** The R70 filter inverted
+  luminance outright (pale land to luma ~15-40), so on the phone the
+  continents read but roads and labels did not. `mmDarkTileMatrix`
+  (`lib/maps/basemap.dart`) now computes `gain * inv + lift` with gain
+  0.8 and lift 48 (saturation 0.15 unchanged): OSM land 61, sea 90, road
+  casing 102, white road fill 48, label text 220 (WCAG label-on-land
+  8.0:1, sea-on-land 1.6:1, casing-on-land 1.9:1). Still Studio-only.
+  The white road *fill* is only 1.2:1 against land; roads read by their
+  casing. Needs a device look at real tiles. Test:
+  `test/maps/dark_basemap_test.dart`.
+
 - R72: **Chat reads as words over data under Studio.** The device pass
   showed every chat part (sender, timestamp, body) in mono, one size and
   weight. `StudioMessageRow` (`lib/chat/studio_message_row.dart`) now

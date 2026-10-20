@@ -90,21 +90,42 @@ TileLayer basemapLayer(BuildContext context, MapSource source,
 /// preserved, not reduced. Trade-off: it is a global per-tile transform,
 /// so coloured features (a red road, green park) lose their hue
 /// distinction; shape and label contrast stay.
-ColorFilter mmDarkTileFilter({double saturation = 0.15}) =>
-    ColorFilter.matrix(mmDarkTileMatrix(saturation: saturation));
+ColorFilter mmDarkTileFilter(
+        {double saturation = kMmDarkTileSaturation,
+        double gain = kMmDarkTileGain,
+        double lift = kMmDarkTileLift}) =>
+    ColorFilter.matrix(
+        mmDarkTileMatrix(saturation: saturation, gain: gain, lift: lift));
+
+/// R73 retune. R70 inverted luminance outright, which put pale land at
+/// luminance ~15-40 (device screenshot: continents read, roads and
+/// labels did not). The invert is now compressed: `out = gain * inv + lift`.
+/// On the OSM palette (luma, 0-255): land 61, sea 90, a white road fill 48,
+/// a road casing ~102, label text ~220 (WCAG contrast: text on land 8.0:1, sea/land 1.6:1, casing/land 1.9:1).
+const double kMmDarkTileSaturation = 0.15;
+const double kMmDarkTileGain = 0.8;
+const double kMmDarkTileLift = 48;
 
 /// The 4x5 matrix behind [mmDarkTileFilter] (exposed so it can be tested).
-List<double> mmDarkTileMatrix({double saturation = 0.15}) {
-  // out = s*inv + (1-s)*lum(inv),  inv = 255 - in
+List<double> mmDarkTileMatrix({
+  double saturation = kMmDarkTileSaturation,
+  double gain = kMmDarkTileGain,
+  double lift = kMmDarkTileLift,
+}) {
+  // inv = 255 - in;  out = gain * (s*inv + (1-s)*lum(inv)) + lift
   const double r = 0.2126, g = 0.7152, b = 0.0722;
   final double s = saturation;
   final double k = 1 - s;
   List<double> row(int ch) {
     final List<double> w = <double>[r * k, g * k, b * k];
-    w[ch] += s;
-    // out = -(w . in) + 255 * (sum of w)
-    final double sum = w[0] + w[1] + w[2];
-    return <double>[-w[0], -w[1], -w[2], 0, 255 * sum];
+    w[ch] += s; // weights sum to 1
+    return <double>[
+      -gain * w[0],
+      -gain * w[1],
+      -gain * w[2],
+      0,
+      255 * gain + lift
+    ];
   }
 
   return <double>[
