@@ -1203,6 +1203,13 @@ While Meshcore protocol is open source, the client is not open source.  We want 
   on base/panel/raised/selected is 11.9/10.6/9.2/7.8, alert 8.7/7.7/6.7/5.7,
   ok 9.8/8.6/7.5/6.4. This supersedes the "one blue accent" wording in R63
   and R65. Tests: `test/theme/mm_layers_test.dart` (R68 groups).
+  - **Boot overlay no longer remounts the shell.** `BootOverlay`
+    (`lib/shell/boot_overlay.dart`) returned its child bare once
+    dismissed, changing the parent from `Stack` to the child, so Flutter
+    unmounted the whole shell and built a second one: every screen's
+    State was created twice at launch. It now keeps a one-child `Stack`.
+    Test: `test/shell/boot_overlay_test.dart` (init count 1; the old code
+    gave `[init, init, dispose]`).
 
 ### Terminology — Fabric vs Contact
 

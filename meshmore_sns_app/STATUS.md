@@ -74,6 +74,8 @@ codebase.
   `#D6A7A1`, ok `#A9C4A7` (both <= 0.30 saturation), new `onAlert` token
   (dark on the alert fill). The R63/R65 blue is gone. Pinned in
   `test/theme/mm_layers_test.dart`. **Unverified on a device.**
+- R68: fixed the shell being mounted twice at launch (BootOverlay swapped
+  Stack for a bare child on dismissal); `test/shell/boot_overlay_test.dart`.
 - Audio aliases the Hyperlocal pack; **unverified on a device**.
 
 **Privacy (R62)**

@@ -84,7 +84,13 @@ class _BootOverlayState extends State<BootOverlay>
 
   @override
   Widget build(BuildContext context) {
-    if (_dismissed) return widget.child;
+    // R68: the child must stay at Stack index 0 before AND after the
+    // overlay is dismissed. It used to be returned bare once dismissed,
+    // which changed the parent's shape (Stack -> child), so Flutter
+    // unmounted the whole shell and built a second one: every screen's
+    // State was created twice at launch, once under the overlay and once
+    // after it. Keeping a one-child Stack reuses the element.
+    if (_dismissed) return Stack(children: <Widget>[widget.child]);
 
     final MeshcoreController mc = context.watch<MeshcoreController>();
     final bool ready = mc.state == MeshcoreConnectionState.ready;
