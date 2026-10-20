@@ -1242,6 +1242,22 @@ While Meshcore protocol is open source, the client is not open source.  We want 
   Tests: `test/ui/mm_edge_swipe_test.dart`, `test/maps/dark_basemap_test.dart`,
   `test/screens/map_no_fix_test.dart`.
 
+- R74: **Words sans, data mono, swept.** The device pass showed prose in
+  mono beyond chat. `MmType.wordsMono` (`lib/theme/mm_skin.dart`) is the
+  face for words the older skins set in mono: null under Studio,
+  `monoFamily` otherwise. Applied to the docs hub (title, subtitle,
+  footer, card titles and text), the grid HUD heading, the readout label
+  and status pill (`lib/ui/mm_components.dart`), the voice-picker count
+  sentence, the battery draw sentence, the device-config "awaiting
+  device" line, and the four boot-overlay lines. The rule and the
+  data/prose table are in `meshmore-sns-UX-spec.md` ("Type rule").
+  `PEERS IN RANGE / 0 known` was investigated, not changed: both numbers
+  come from `MeshcoreController.nodes` (contact sync + heard adverts + DM
+  stubs); channel messages carry a sender *name* only, never a key, so
+  chatter on Public does not create a node (the Nodes empty state says
+  so). The label is accurate; proposed, not done: a separate "heard on
+  channel" line. Test: `test/ui/type_rule_guard_test.dart`.
+
 - R73: **Studio's dark basemap was too dark.** The R70 filter inverted
   luminance outright (pale land to luma ~15-40), so on the phone the
   continents read but roads and labels did not. `mmDarkTileMatrix`

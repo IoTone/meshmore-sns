@@ -105,6 +105,7 @@ codebase.
   device**: the equal-grid bar is wider now (about 280dp), fabric-survey's
   column is 240dp tall.
 
+- R74: prose that older skins set in mono is sans under Studio (`MmType.wordsMono`): docs hub, grid HUD heading, readout labels, status pill, voice/battery sentences, boot overlay. `PEERS IN RANGE / 0 known` counts `mc.nodes` (contacts + adverts); channel chatter makes no node, so the label stands (a 'heard on channel' line is proposed, not done).
 - R73: Studio's dark basemap retuned (`0.8*inv+48`: land 61, sea 90, labels 220, 8.0:1) after R70's was too dark. **Needs a device look.**
 - R72: Studio chat/DM rows follow words-sans / data-mono (`StudioMessageRow`):
   sender above body, timestamp + SNR/flood mono, `«`/`»` dropped for an accent
@@ -127,11 +128,16 @@ codebase.
   Studio draws the basemap dark (`MmShape.darkBasemap`).
 - The six older dashboards still show two status displays (the dashboard's
   own slab and the app-bar chip) for one link state.
-- `JetBrains Mono` is hard-coded in about 90 places outside the theme
-  (largest: `elevation_profile_view.dart`, `dashboard_screen.dart`,
-  `grid_screen.dart`, `node_detail_sheet.dart`, `device_config_screen.dart`),
-  so Studio's "words sans, data mono" rule holds on the Studio dashboard,
-  section headers and collapsibles but not on every screen.
+- `JetBrains Mono` is still hard-coded in about 85 places (ratcheted per
+  file by `test/ui/type_rule_guard_test.dart`). R74 fixed the prose ones
+  reachable under Studio. Left in mono on purpose (data, or HUD
+  decoration of the older presets): dashboard_screen (older dashboards,
+  Studio has its own), hex / PSK / JSON in channels and diagnostics,
+  elevation and weather figures, mesh-tree and globe node labels,
+  meshbook counts. Left although mixed: the DM header "Peer: <key>"
+  (`dm_screen.dart`), node-detail "old key" line, the device-config block
+  `mfr: / max contacts:` and the equal-grid "[ MESHMORE :: HYPERLOCAL ]"
+  banner. **Unverified on a device.**
 - Studio still uses the accent decoratively in places (about 35
   `color.accent`, 121 `cs.primary` uses); with the grey accent that is
   now a style question only, not a colour or contrast one.

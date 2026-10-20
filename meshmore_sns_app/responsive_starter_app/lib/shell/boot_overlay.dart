@@ -227,7 +227,7 @@ class _BootSurface extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                             color: accent,
-                            fontFamily: 'JetBrains Mono',
+                            fontFamily: context.skin.type.wordsMono,
                             fontSize: 11,
                             letterSpacing: 4),
                       ),
@@ -240,7 +240,7 @@ class _BootSurface extends StatelessWidget {
                         textAlign: TextAlign.end,
                         style: TextStyle(
                             color: alt,
-                            fontFamily: 'JetBrains Mono',
+                            fontFamily: context.skin.type.wordsMono,
                             fontSize: 11,
                             letterSpacing: 4),
                       ),
@@ -274,7 +274,7 @@ class _BootSurface extends StatelessWidget {
                     status,
                     style: TextStyle(
                         color: fg,
-                        fontFamily: 'JetBrains Mono',
+                        fontFamily: context.skin.type.wordsMono,
                         fontSize: 14,
                         letterSpacing: 3),
                     textAlign: TextAlign.center,
@@ -290,7 +290,7 @@ class _BootSurface extends StatelessWidget {
                   child: Text(skipLabel,
                       style: TextStyle(
                           color: alt,
-                          fontFamily: 'JetBrains Mono',
+                          fontFamily: context.skin.type.wordsMono,
                           fontSize: 12,
                           letterSpacing: 3)),
                 ),

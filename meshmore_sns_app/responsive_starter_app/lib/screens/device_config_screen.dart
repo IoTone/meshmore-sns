@@ -7,6 +7,7 @@ import 'package:meshcore/meshcore.dart';
 import 'package:provider/provider.dart';
 
 import '../gen/app_localizations.dart';
+import '../theme/mm_skin.dart';
 import '../ui/mm_collapse_controller.dart';
 import '../ui/mm_collapsible.dart';
 import '../ui/mm_scaffold.dart';
@@ -704,7 +705,7 @@ class _DeviceConfigScreenState extends State<DeviceConfigScreen> {
                   Text(l.otherAwaitingDevice,
                       style: TextStyle(
                           color: cs.onSurface,
-                          fontFamily: 'JetBrains Mono',
+                          fontFamily: context.skin.type.wordsMono,
                           height: 1.5))
                 else
                   _OtherParamsEditor(mc: mc, si: si, enabled: ready),

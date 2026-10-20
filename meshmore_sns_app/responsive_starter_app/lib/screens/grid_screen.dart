@@ -9,6 +9,7 @@ import 'package:flutter_compass/flutter_compass.dart';
 import 'package:provider/provider.dart';
 
 import '../gen/app_localizations.dart';
+import '../theme/mm_skin.dart';
 import '../meshcore/chat_message.dart';
 import '../meshcore/discovered_node.dart';
 import '../meshcore/meshcore_connection.dart';
@@ -964,7 +965,7 @@ class _GridScreenState extends State<GridScreen>
                     color: cs.primary.withValues(alpha: .7),
                     fontSize: 9,
                     letterSpacing: 5,
-                    fontFamily: 'JetBrains Mono'),
+                    fontFamily: context.skin.type.wordsMono),
               ),
               const SizedBox(height: 1),
               Row(

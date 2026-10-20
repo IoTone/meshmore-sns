@@ -146,7 +146,7 @@ class MmReadout extends StatelessWidget {
         Text(
           skin.type.upperHeadings ? label.toUpperCase() : label,
           style: TextStyle(
-            fontFamily: skin.type.monoFamily,
+            fontFamily: skin.type.wordsMono,
             color: skin.color.fgMuted,
             fontSize: 12,
             letterSpacing: 1,
@@ -278,7 +278,7 @@ class MmStatusPill extends StatelessWidget {
       child: Text(
         skin.type.upperHeadings ? label.toUpperCase() : label,
         style: TextStyle(
-          fontFamily: skin.type.monoFamily,
+          fontFamily: skin.type.wordsMono,
           color: fg,
           fontSize: 10,
           letterSpacing: 1.5,

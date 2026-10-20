@@ -59,6 +59,12 @@ class MmType {
   /// mono or Saira by design); Studio turns it on so **words are always
   /// sans and only machine data is mono** (the Studio type-role rule).
   final bool sansLabels;
+
+  /// R74 -- the face for *words* that older skins deliberately set in
+  /// mono (docs titles, HUD headings, readout labels, boot lines): null
+  /// (the theme's UI face) when [sansLabels] is on, [monoFamily] otherwise.
+  /// Use it for prose; keep `monoFamily` for machine data.
+  String? get wordsMono => sansLabels ? null : monoFamily;
 }
 
 /// Panel/edge treatment.

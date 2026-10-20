@@ -205,6 +205,28 @@ Studio has its own dashboard (R68): a quiet status row, peers in range, then
 collapsible Radio / Location / Recent sections, with the type rule *words are
 sans, only machine data is mono*.
 
+#### Type rule (Studio, R71-R74): words sans, machine data mono
+
+Studio (`MmType.sansLabels`) draws **words in the UI sans face** and
+**machine data in JetBrains Mono**. The older six skins keep their own
+type unchanged (mono is their identity), so the rule is a Studio rule.
+
+| Mono (machine data) | Sans (words) |
+|---|---|
+| pubkeys, short ids, hashes, channel keys and PSK hex, share URIs | message bodies, sender and channel names |
+| frequency, bandwidth, SF, CR, TX power, voltage, battery % | button, tab, section and chip labels |
+| latitude / longitude, altitude, distances | descriptions, help text, empty states, dialogs |
+| SNR / RSSI, hop counts and paths, `flood`, packet or JSON hex | docs hub titles and card text |
+| timestamps | boot overlay lines, readout labels, status pills |
+
+Mechanism: prose that older skins set in mono uses `skin.type.wordsMono`
+(null under Studio, `monoFamily` otherwise); data keeps `monoFamily` or a
+literal `'JetBrains Mono'`. Chat rows: `StudioMessageRow` (sender above
+body, time and meta mono). Enforced by `test/ui/type_rule_guard_test.dart`
+(which skins turn words sans, a docs-hub probe, and a per-file ratchet on
+literal `'JetBrains Mono'`). Judging whether a literal is data or prose
+is not testable; sites left in mono on purpose are listed in STATUS.
+
 #### Palette — token contract (preset-independent)
 
 Screens reference only these semantic tokens; each preset supplies

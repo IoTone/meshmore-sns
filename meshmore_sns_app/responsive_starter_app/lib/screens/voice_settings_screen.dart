@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../gen/app_localizations.dart';
+import '../theme/mm_skin.dart';
 import '../ui/mm_scaffold.dart';
 import '../tts/tts_controller.dart';
 
@@ -209,7 +210,7 @@ class _VoiceSettingsScreenState extends State<VoiceSettingsScreen> {
                     style: TextStyle(
                         color: cs.onSurfaceVariant,
                         fontSize: 11,
-                        fontFamily: 'JetBrains Mono'),
+                        fontFamily: context.skin.type.wordsMono),
                   ),
               ],
             ),

@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../gen/app_localizations.dart';
+import '../theme/mm_skin.dart';
 import '../ui/mm_scaffold.dart';
 import '../meshcore/battery_model.dart';
 import '../meshcore/device_power_specs.dart';
@@ -351,7 +352,7 @@ class _SpecCard extends StatelessWidget {
                     l.batterySpecDraw(rx.round()),
                     style: TextStyle(
                         color: cs.onSurfaceVariant,
-                        fontFamily: 'JetBrains Mono')),
+                        fontFamily: context.skin.type.wordsMono)),
               ),
             if (spec.notes != null)
               Padding(
