@@ -212,12 +212,16 @@ class StudioDashboard extends StatelessWidget {
                             child: Row(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: <Widget>[
-                                SizedBox(
-                                  width: 70,
-                                  child: Text(e.time,
-                                      style: _data(skin, 12)
-                                          .copyWith(color: muted)),
-                                ),
+                                // R75: was a fixed 70dp column. The mono
+                                // stamp is ~67dp at 12pt, leaving ~3dp of
+                                // gap and no headroom for text scaling, so
+                                // it collided with the event text at larger
+                                // font sizes. Mono makes the column
+                                // self-aligning, so the width is not needed.
+                                Text(e.time,
+                                    style: _data(skin, 12)
+                                        .copyWith(color: muted)),
+                                const SizedBox(width: 10),
                                 Expanded(child: Text(e.text)),
                               ],
                             ),

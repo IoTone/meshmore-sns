@@ -209,6 +209,52 @@ void main() {
     await _drain(t, mc);
   });
 
+  testWidgets(
+      'R75: the RECENT mono stamp keeps clear of the event text, also at '
+      '1.3x text scale', (WidgetTester t) async {
+    await t.binding.setSurfaceSize(const Size(1100, 2600));
+    addTearDown(() => t.binding.setSurfaceSize(null));
+    // The defect only showed up as a collision: the 70dp column was
+    // ~3dp narrower than its own 8-character stamp, so at a larger
+    // text scale the stamp ran under the event text.
+    t.platformDispatcher.textScaleFactorTestValue = 1.3;
+    addTearDown(t.platformDispatcher.clearAllTestValues);
+
+    final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
+    final MeshcoreController mc = _mc(fake);
+    await _pump(t, mc);
+    await mc.connect();
+    fake.emit(batteryFrame(4380));
+    await t.pump();
+    await t.pump(const Duration(milliseconds: 50));
+
+    final Finder stamp =
+        find.textContaining(RegExp(r'^\d{2}:\d{2}:\d{2}$'));
+    expect(stamp, findsWidgets, reason: 'a battery event should be listed');
+
+    // No fixed-width box around the stamp: mono self-aligns the column.
+    expect(
+        find.ancestor(
+            of: stamp.first,
+            matching: find.byWidgetPredicate((Widget w) =>
+                w is SizedBox && w.width != null && w.width! >= 60)),
+        findsNothing,
+        reason: 'a fixed stamp column is narrower than its own text');
+
+    // The stamp must end at least 8dp before the event text starts.
+    // With the old fixed column the stamp filled its 70dp box, so it
+    // ended exactly where the event text began and this fails.
+    final Row row = t.widget<Row>(find
+        .ancestor(of: stamp.first, matching: find.byType(Row))
+        .first);
+    expect(row.children.length, greaterThanOrEqualTo(3));
+    final Rect stampRect = t.getRect(stamp.first);
+    final Rect eventRect = t.getRect(find.byWidget(row.children.last));
+    expect(stampRect.right, lessThanOrEqualTo(eventRect.left - 8),
+        reason: 'the stamp must not run into the event text');
+    await _drain(t, mc);
+  });
+
   test('every preset except studio still renders the old dashboards', () {
     // DashboardHost only adds a Studio arm; the other presets' arms are
     // covered by dashboard_host_test.dart, which runs unchanged.

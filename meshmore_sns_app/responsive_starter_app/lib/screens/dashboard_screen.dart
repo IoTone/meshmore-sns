@@ -321,18 +321,20 @@ class DashboardScreen extends StatelessWidget {
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
-                    SizedBox(
-                      width: 64,
-                      child: Text(
-                        '${e.at.hour.toString().padLeft(2, '0')}:'
-                        '${e.at.minute.toString().padLeft(2, '0')}:'
-                        '${e.at.second.toString().padLeft(2, '0')}',
-                        style: TextStyle(
-                            color: cs.onSurfaceVariant,
-                            fontFamily: 'JetBrains Mono',
-                            fontSize: 12),
-                      ),
+                    // R75: was a fixed 64dp column, narrower than the
+                    // 8-character mono stamp at 12pt, so the stamp ran
+                    // into the event text. Mono keeps the column aligned
+                    // without a hardcoded width.
+                    Text(
+                      '${e.at.hour.toString().padLeft(2, '0')}:'
+                      '${e.at.minute.toString().padLeft(2, '0')}:'
+                      '${e.at.second.toString().padLeft(2, '0')}',
+                      style: TextStyle(
+                          color: cs.onSurfaceVariant,
+                          fontFamily: 'JetBrains Mono',
+                          fontSize: 12),
                     ),
+                    const SizedBox(width: 10),
                     Expanded(
                       child: Text(_eventLine(l, e),
                           style: TextStyle(color: cs.onSurface)),
