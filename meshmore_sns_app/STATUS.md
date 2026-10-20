@@ -90,6 +90,35 @@ codebase.
   **Unverified on a device.**
 - Audio aliases the Hyperlocal pack; **unverified on a device**.
 
+**Known issues from the R68 critical pass (not fixed; read from code and phone screenshots)**
+- Map tab with no position fix is a dead screen: `StreetMapView` returns
+  only the "awaiting fix" text (`street_map_view.dart:147`), with no map,
+  no way to browse a region. The Offline-maps button and the edge bands
+  still work. Fix needs a default centre or a browse-without-fix mode.
+- Still English in the Japanese locale: Device configuration "Manage
+  channels" / "Active:" / "device now:" (`device_config_screen.dart`),
+  the dashboard location source label (`OwnLocation.sourceLabel`:
+  'device' / 'phone GPS'), `elevation_profile_view.dart` ("SELF
+  TELEMETRY", "temp:"), the battery line's "CHG", and the whole
+  Diagnostics screen (a developer screen).
+- Touch targets under 48dp: icon buttons constrained to 28-36dp in
+  `dm_screen.dart:336`, `dashboard_screen.dart:414`, `chat_screen.dart:473`,
+  `equal_grid_view.dart:402/429/453`, `fabric_survey_view.dart:366-418`,
+  `mm_audio_toggle.dart` (dense form).
+- The six older dashboards still show two status displays (the dashboard's
+  own slab and the app-bar chip) for one link state.
+- `JetBrains Mono` is hard-coded in about 90 places outside the theme
+  (largest: `elevation_profile_view.dart`, `dashboard_screen.dart`,
+  `grid_screen.dart`, `node_detail_sheet.dart`, `device_config_screen.dart`),
+  so Studio's "words sans, data mono" rule holds on the Studio dashboard,
+  section headers and collapsibles but not on every screen.
+- Studio still uses the accent decoratively in places (about 35
+  `color.accent`, 121 `cs.primary` uses); with the grey accent that is
+  now a style question only, not a colour or contrast one.
+- No serif face is bundled (only Saira and JetBrains Mono). Not added:
+  a new font is a new asset with licence and size cost, and a serif at
+  11-13 sp on a dark UI reads worse than the platform sans.
+
 **Privacy (R62)**
 - The periodic 60 s position-bearing self-advert is **opt-in** (App
   settings → Auto-publish location → *Periodic position beacon*, default
