@@ -77,6 +77,7 @@ class MmShape {
     this.hairlineWidth = 1.0,
     this.squareControls = false,
     this.darkBasemap = false,
+    this.tintedHeaders = false,
   });
 
   final MmCorner corner;
@@ -101,6 +102,11 @@ class MmShape {
   /// (see `mmDarkTileFilter`) so a pale basemap does not become the
   /// brightest surface of a dark skin. Off for the six older presets.
   final bool darkBasemap;
+
+  /// R77 — a collapsible group's header row sits on `MmTokens.raised`, one
+  /// tonal step above the page, so the header (not a rule) says where a
+  /// group starts. Studio only; the six older presets keep a flat header.
+  final bool tintedHeaders;
 }
 
 /// Retro-futuristic chrome. All default to "off" so a calm concept
@@ -276,6 +282,7 @@ MmSkin mmSkinFor(MmThemePreset preset) {
           hairlineWidth: 1,
           squareControls: true,
           darkBasemap: true,
+          tintedHeaders: true,
         ),
         ornament: _calmOrnament,
       );

@@ -193,8 +193,10 @@ luminance), a `hairline` (1px, `MmShape.hairlineWidth`) and
 `onAccent`/`fgDisabled`; the six older presets *derive* these from their
 nine colours and look exactly as before. `MmShape.squareControls` makes
 Material's own controls square for Studio only. Grouped surfaces use
-`MmCollapsibleSection` (label + chevron + hairline, 48dp row, content not
-built when closed), applied to Location settings, Device configuration
+`MmCollapsibleSection` (label + chevron, 48dp row, content not built when
+closed, then ONE hairline at the END of the group (R77): a divider never
+sits between a header and its own content; Studio also tints the header
+row with `raised`, one tonal step, via `MmShape.tintedHeaders`), applied to Location settings, Device configuration
 and Personalization. Which groups are folded is persisted per stable id
 (R65, `MmCollapseController`, default open). Studio cards and the
 app bar (with its view strip) end in a 1px hairline (R66). Studio reuses the

@@ -7,9 +7,9 @@ import '../theme/mm_skin.dart';
 import 'mm_collapse_controller.dart';
 import 'mm_components.dart';
 
-/// R63 — a collapsible group: a dim section label with a chevron, a
-/// hairline rule under it, and content that is **not built** while the
-/// group is closed.
+/// R63 — a collapsible group: a dim section label with a chevron, content
+/// that is **not built** while the group is closed, and (R77) one hairline
+/// rule at the END that closes the group.
 ///
 /// Reuses the app's one section-label idiom ([mmSectionLabelStyle], the
 /// same style as `MmSectionHeader`) rather than inventing a second.
@@ -118,37 +118,46 @@ class _MmCollapsibleSectionState extends State<MmCollapsibleSection> {
           label: widget.title,
           excludeSemantics: true,
           onTap: _toggle,
-          child: InkWell(
-            onTap: _toggle,
-            child: ConstrainedBox(
-              constraints:
-                  const BoxConstraints(minHeight: kMinInteractiveDimension),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Row(
-                  children: <Widget>[
-                    Icon(
-                      _open ? Icons.expand_more : Icons.chevron_right,
-                      size: 18,
-                      color: skin.color.fgMuted,
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        skin.type.upperHeadings
-                            ? widget.title.toUpperCase()
-                            : widget.title,
-                        style: mmSectionLabelStyle(skin),
+          child: Material(
+            // R77: Studio tints the header one tonal step (raised) so the
+            // header, not a divider, marks where a group starts.
+            color: skin.shape.tintedHeaders
+                ? skin.color.raised
+                : Colors.transparent,
+            child: InkWell(
+              onTap: _toggle,
+              child: ConstrainedBox(
+                constraints:
+                    const BoxConstraints(minHeight: kMinInteractiveDimension),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Row(
+                    children: <Widget>[
+                      Icon(
+                        _open ? Icons.expand_more : Icons.chevron_right,
+                        size: 18,
+                        color: skin.color.fgMuted,
                       ),
-                    ),
-                  ],
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          skin.type.upperHeadings
+                              ? widget.title.toUpperCase()
+                              : widget.title,
+                          style: mmSectionLabelStyle(skin),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
           ),
         ),
-        rule,
+        // R77: children first, then ONE rule that closes the group, so a
+        // divider never sits between a header and its own content.
         if (_open) ...widget.children,
+        rule,
       ],
     );
   }

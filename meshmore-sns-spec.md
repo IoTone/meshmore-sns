@@ -1258,6 +1258,17 @@ While Meshcore protocol is open source, the client is not open source.  We want 
   so). The label is accurate; proposed, not done: a separate "heard on
   channel" line. Test: `test/ui/type_rule_guard_test.dart`.
 
+- R77: **The collapse rule split its own group.** `MmCollapsibleSection`
+  built `header, rule, content`, so an expanded group drew a divider
+  between its header and its own content and the header read as belonging
+  to the block above. It now builds `header, content, rule`: collapsed =
+  header + rule, expanded = header + content + rule
+  (`lib/ui/mm_collapsible.dart`). The grouping cue is a header tint:
+  `MmShape.tintedHeaders` (Studio true, the six older presets false) fills
+  the header with `MmTokens.raised`. Header stays 48dp, `expanded`
+  semantics and chevron shape unchanged. Tests:
+  `test/ui/mm_collapsible_test.dart` (group "R77").
+
 - R73: **Studio's dark basemap was too dark.** The R70 filter inverted
   luminance outright (pale land to luma ~15-40), so on the phone the
   continents read but roads and labels did not. `mmDarkTileMatrix`

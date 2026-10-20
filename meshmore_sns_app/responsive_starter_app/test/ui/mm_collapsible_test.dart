@@ -3,6 +3,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:meshmore_sns_app/theme/mm_tokens.dart';
+import 'package:meshmore_sns_app/theme/theme_controller.dart';
 import 'package:meshmore_sns_app/ui/mm_collapse_controller.dart';
 import 'package:meshmore_sns_app/ui/mm_collapsible.dart';
 import 'package:provider/provider.dart';
@@ -107,6 +109,53 @@ void main() {
               value: c, child: _host()),
           2);
       expect(logs, isEmpty);
+    });
+  });
+
+  group('R77 rule placement and header tint', () {
+    Future<Widget> hostFor(MmThemePreset p, {bool open = true}) async {
+      final ThemeController tc = ThemeController();
+      await tc.setPreset(p);
+      return ChangeNotifierProvider<ThemeController>.value(
+          value: tc, child: _host(open: open));
+    }
+
+    // y of the vertical extent helpers
+    double top(WidgetTester t, Finder f) => t.getTopLeft(f).dy;
+    double bottom(WidgetTester t, Finder f) => t.getBottomLeft(f).dy;
+    Finder rules() => find.byWidgetPredicate((Widget w) =>
+        w is Container && w.constraints?.maxHeight == 1.0 && w.color != null);
+
+    testWidgets('expanded: exactly one rule, after the content', (t) async {
+      await t.pumpWidget(await hostFor(MmThemePreset.studio));
+      expect(rules(), findsOneWidget);
+      expect(
+          top(t, rules()), greaterThanOrEqualTo(bottom(t, find.text('inside'))),
+          reason: 'the rule closes the group; it is not under the header');
+    });
+
+    testWidgets('collapsed: header then its rule', (t) async {
+      await t.pumpWidget(await hostFor(MmThemePreset.studio, open: false));
+      expect(rules(), findsOneWidget);
+      expect(find.text('inside'), findsNothing);
+      expect(top(t, rules()),
+          greaterThanOrEqualTo(bottom(t, find.byType(InkWell))));
+    });
+
+    Color? headerFill(WidgetTester t) {
+      final Material m = t.widget<Material>(find
+          .ancestor(of: find.byType(InkWell), matching: find.byType(Material))
+          .first);
+      return m.color;
+    }
+
+    testWidgets('Studio tints the header with raised; SEELE does not',
+        (t) async {
+      await t.pumpWidget(await hostFor(MmThemePreset.studio));
+      expect(headerFill(t), kMmPresets[MmThemePreset.studio]!.raised);
+      await t.pumpWidget(await hostFor(MmThemePreset.seele));
+      await t.pumpAndSettle();
+      expect(headerFill(t), Colors.transparent);
     });
   });
 }
