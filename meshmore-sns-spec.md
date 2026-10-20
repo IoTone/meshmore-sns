@@ -1192,6 +1192,21 @@ While Meshcore protocol is open source, the client is not open source.  We want 
   views with their own edge controls would each need auditing.
   Tests: `test/shell/home_shell_test.dart` (group "Map edge swipe (R67)").
 
+- R80: **the Studio basemap is vector-rendered.** New
+  `lib/maps/vector_basemap.dart` (style loader, `MmVectorTileProvider`,
+  `VectorBasemapLayer`) draws the bundled style asset through
+  `vector_map_tiles`/`vector_tile_renderer` (MIT) under
+  `MmShape.vectorBasemap` (Studio only). Tiles are fetched as `.pbf`
+  through `MapsController.loadTile`, so offline packs, the view cache,
+  ETag revalidation, budget and expiry are unchanged; a vector tile is
+  simply fewer bytes for the same (z, x, y). `kOpenFreeMapVector` is the
+  source and carries the attribution the licence requires. No
+  `flutter_map` upgrade: `vector_map_tiles` 8.0.0 depends on
+  `flutter_map ^7.0.2`, the version this app already pins. Not done:
+  sprite icons (no atlas bundled - icon layers draw nothing), a pack
+  picker entry for the vector source (it is view-cached today), and a
+  per-preset style. Tests: `test/maps/vector_basemap_test.dart`.
+
 - R78: **Studio has no swipe navigation.** The owner's skin changes the
   primary view only from the strip under the app bar. New
   `MmShape.swipeNavigation` (true for the six older presets, false for

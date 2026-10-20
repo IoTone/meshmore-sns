@@ -122,6 +122,9 @@ dependencies:
   #     snapshots and refreshed opportunistically over HTTP. Fetch uses
   #     dart:io behind an injectable seam; cache is SharedPreferences.
   markdown: ^7.2.2
+  vector_map_tiles: ^8.0.0
+  vector_map_tiles_pmtiles: ^1.5.0
+  vector_tile_renderer: ^5.2.1
 
 dev_dependencies:
   flutter_test:
@@ -157,6 +160,8 @@ flutter:
       - assets/images/icon-192.png
       # R12 per-theme audio cue packs — 7 WAVs per theme, synth'd
       # offline by brand/_audio_pack.py.
+      # R80 Studio vector basemap style (Apache-2.0, OpenFreeMap dark).
+      - assets/maps/studio_dark.json
       - assets/audio/seele/
       - assets/audio/nerv/
       - assets/audio/aghud/

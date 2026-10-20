@@ -139,6 +139,27 @@ const MapSource kUsgsImagery = MapSource(
   bytesPerTile: 40000,
 );
 
+/// R80 — the Studio basemap: OpenFreeMap vector tiles (OpenMapTiles
+/// schema, OSM data), rendered by `vector_map_tiles` rather than shown as
+/// pictures. Deliberately NOT in [kBuiltInSources]: that list is the
+/// raster basemap picker, and this source is the Studio skin's implicit
+/// basemap. It shares the tile store with the raster sources, so packs,
+/// the view cache, ETag revalidation, budget and expiry apply to it too.
+///
+/// The path carries OpenFreeMap's snapshot id. Their style resolves the
+/// same date; when it changes, this template and the asset both do.
+const MapSource kOpenFreeMapVector = MapSource(
+  id: 'ofm',
+  name: 'OpenFreeMap',
+  urlTemplate: 'https://tiles.openfreemap.org/planet/20261018_080001_pt/'
+      '{z}/{x}/{y}.pbf',
+  attribution: '\u00a9 OpenFreeMap \u00b7 \u00a9 OpenMapTiles \u00b7 '
+      '\u00a9 OpenStreetMap contributors',
+  maxNativeZoom: 14,
+  allowsPacks: true,
+  bytesPerTile: 12000,
+);
+
 const List<MapSource> kBuiltInSources = <MapSource>[
   kOsmStandard,
   kOpenTopo,

@@ -77,6 +77,7 @@ class MmShape {
     this.hairlineWidth = 1.0,
     this.squareControls = false,
     this.dimmedBasemap = false,
+    this.vectorBasemap = false,
     this.tintedHeaders = false,
     this.swipeNavigation = true,
   });
@@ -105,6 +106,13 @@ class MmShape {
   /// no-accent rule is about chrome, not about the map. Off for the six
   /// older presets.
   final bool dimmedBasemap;
+
+  /// R80 — render the basemap from a vector style instead of drawing raster
+  /// tiles (and instead of [dimmedBasemap], which becomes the fallback if
+  /// the bundled style cannot be loaded). Studio only: it is what makes the
+  /// map sharp at every zoom, keeps content colour without a filter, and
+  /// stores far fewer bytes offline.
+  final bool vectorBasemap;
 
   /// R77 — a collapsible group's header row sits on `MmTokens.raised`, one
   /// tonal step above the page, so the header (not a rule) says where a
@@ -291,6 +299,7 @@ MmSkin mmSkinFor(MmThemePreset preset) {
           hairlineWidth: 1,
           squareControls: true,
           dimmedBasemap: true,
+          vectorBasemap: true,
           tintedHeaders: true,
           swipeNavigation: false,
         ),

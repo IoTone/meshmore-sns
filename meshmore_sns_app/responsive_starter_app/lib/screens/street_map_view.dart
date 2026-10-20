@@ -13,6 +13,7 @@ import '../gen/app_localizations.dart';
 import '../maps/basemap.dart';
 import '../maps/map_source.dart';
 import '../maps/maps_controller.dart';
+import '../maps/vector_basemap.dart';
 import '../meshcore/discovered_node.dart';
 import '../meshcore/meshcore_controller.dart';
 import '../theme/mm_skin.dart';
@@ -253,9 +254,15 @@ class _StreetMapViewState extends State<StreetMapView> {
             children: <Widget>[
               // R25+3 / R61 — swappable basemap, served from the
               // offline map cache when one is in the tree.
+              // R80 — Studio renders from a vector style: no raster
+              // filter, sharp at every zoom, and the same tile store
+              // behind it. The dimmed raster layer stays as the fallback
+              // for a skin that has not opted in.
               if (_showTiles)
-                basemapLayer(context, tileSource,
-                    dim: context.skin.shape.dimmedBasemap),
+                context.skin.shape.vectorBasemap
+                    ? const VectorBasemapLayer()
+                    : basemapLayer(context, tileSource,
+                        dim: context.skin.shape.dimmedBasemap),
               // R61 — event maps (festival streets, courses, camps).
               const EventLayersOverlay(),
               // R25+1 — range circle for self. Uses our radio-tuple
@@ -369,7 +376,13 @@ class _StreetMapViewState extends State<StreetMapView> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
-              if (_showTiles) MapAttribution(tileSource.attribution),
+              // The credit line follows what is actually drawn: the
+              // vector style carries OpenFreeMap and OpenMapTiles on top
+              // of OSM, and both sets of terms require naming them.
+              if (_showTiles)
+                MapAttribution(context.skin.shape.vectorBasemap
+                    ? kOpenFreeMapVector.attribution
+                    : tileSource.attribution),
               if (!hasFix)
                 Container(
               key: const ValueKey<String>('map-no-fix-banner'),

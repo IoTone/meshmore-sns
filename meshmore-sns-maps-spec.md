@@ -131,16 +131,28 @@ map recentres on self at zoom 14.
 is never covered; the five map controls are 48dp and the right edge band
 starts below the column (derived from it). The edge bands start just
 inside the Android system-gesture zone (`systemGestureInsets`): a swipe
-from the very edge is the OS's Back. Under the Studio skin raster tiles
-are dimmed, not recoloured (R79): `out = 0.70 * in`, a pure RGB scale, so
-hue survives (land 169, sea 119/148/156, label text 36, label-on-land
-6.7:1). R70-R73 inverted luminance and desaturated to 0.15, which flipped
-hue (OSM's blue water read orange), threw hue away, and - because the
-filter is per-tile and global - also destroyed the USGS **aerial-imagery**
-source, which has no luminance structure to invert. Map imagery is
-content, not theme accent, so colour stays. A true vector basemap is the
-open question recorded in the spec ("Basemap rendering"); until then this
-is the interim treatment. The grid's street-map mode keeps its
+from the very edge is the OS's Back. Under the Studio skin the basemap is
+**rendered from a vector style** (R80), not shown as pictures and not
+filtered: `assets/maps/studio_dark.json` (Apache-2.0, derived from
+OpenFreeMap's `dark` style, OpenMapTiles schema over OSM data, trimmed to
+one vector source and with `glyphs`/`sprite` removed) is drawn by
+`vector_map_tiles` onto Flutter's canvas, so land, water, roads and parks
+carry their own colour and the result is sharp at every zoom instead of
+an upscaled PNG. Tiles come from `kOpenFreeMapVector` through
+`MmVectorTileProvider`, which calls the same `MapsController.loadTile`
+bytes path the raster layer used, so the R61 view cache, packs, ETag
+revalidation, budget and expiry all still apply. Labels need no glyph
+server: the renderer draws `text-font` with Flutter's text engine. The
+credit line follows what is drawn (`kOpenFreeMapVector.attribution`:
+OpenFreeMap, OpenMapTiles, OpenStreetMap).
+
+The dimmed raster path remains as the fallback for a skin that has not
+opted in, and for a build where the style asset fails to load (R79:
+`out = 0.70 * in`, a pure RGB scale, so hue survives - land 169, sea
+119/148/156, label 36, 6.7:1). R70-R73's luminance invert plus 0.15
+desaturation is gone: it flipped hue (OSM water read orange) and, being
+per-tile and global, destroyed the USGS aerial-imagery source, which has
+no luminance structure to invert. The grid's street-map mode keeps its
 "awaiting fix" text (`StreetMapView.browseWithoutFix`, default off; only
 `MapScreen` opts in).
 
