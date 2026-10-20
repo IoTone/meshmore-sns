@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: MIT
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math' show max, min, pow;
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
@@ -153,16 +154,102 @@ void main() {
     });
   });
 
+  group('R81 the Studio style is legible, with colour in the content', () {
+    late Map<String, Map<String, dynamic>> byId;
+    setUpAll(() async {
+      final Map<String, dynamic> style = jsonDecode(
+              await rootBundle.loadString(kVectorBasemapAsset))
+          as Map<String, dynamic>;
+      byId = <String, Map<String, dynamic>>{
+        for (final Map<String, dynamic> l
+            in (style['layers'] as List<dynamic>).cast<Map<String, dynamic>>())
+          l['id'] as String: l
+      };
+    });
+
+    List<int> rgb(String hex) => <int>[
+          int.parse(hex.substring(1, 3), radix: 16),
+          int.parse(hex.substring(3, 5), radix: 16),
+          int.parse(hex.substring(5, 7), radix: 16),
+        ];
+    double lum(String hex) {
+      double c(int v) {
+        final double x = v / 255;
+        return x <= 0.03928 ? x / 12.92 : pow((x + 0.055) / 1.055, 2.4).toDouble();
+      }
+
+      final List<int> v = rgb(hex);
+      return 0.2126 * c(v[0]) + 0.7152 * c(v[1]) + 0.0722 * c(v[2]);
+    }
+
+    double contrast(String a, String b) {
+      final double la = lum(a), lb = lum(b);
+      return (max(la, lb) + 0.05) / (min(la, lb) + 0.05);
+    }
+
+    String paint(String id, String key) =>
+        (byId[id]!['paint'] as Map<String, dynamic>)[key] as String;
+
+    const String land = '#141414';
+
+    test('every label is WCAG AA (4.5:1) against the land it sits on', () {
+      int labels = 0;
+      for (final Map<String, dynamic> l in byId.values) {
+        final Map<String, dynamic>? p = l['paint'] as Map<String, dynamic>?;
+        final Object? c = p?['text-color'];
+        if (l['type'] == 'symbol' && c is String) {
+          labels++;
+          expect(contrast(c, land), greaterThanOrEqualTo(4.5),
+              reason: '${l['id']} $c');
+          expect((p!['text-halo-width'] as num), greaterThanOrEqualTo(1.2),
+              reason: '${l['id']} needs a real halo');
+        }
+      }
+      expect(labels, 13, reason: '10 places, 2 road names, 1 water name');
+    });
+
+    test('roads separate from the land, and rank by importance', () {
+      final double minor = contrast(paint('highway_minor', 'line-color'), land);
+      final double major =
+          contrast(paint('highway_major_inner', 'line-color'), land);
+      final double motorway =
+          contrast(paint('highway_motorway_subtle', 'line-color'), land);
+      expect(minor, greaterThanOrEqualTo(1.8));
+      expect(major, greaterThan(minor));
+      expect(major, greaterThanOrEqualTo(3.0));
+      expect(motorway, greaterThanOrEqualTo(1.8));
+    });
+
+    test('water is blue, parks are green, both visible against land', () {
+      final List<int> w = rgb(paint('water', 'fill-color'));
+      final List<int> g = rgb(paint('landuse_park', 'fill-color'));
+      expect(w[2], greaterThan(w[0] + 12), reason: 'blue');
+      expect(g[1], greaterThan(g[0] + 8), reason: 'green');
+      expect(contrast(paint('water', 'fill-color'), land), greaterThan(1.1));
+      expect(contrast(paint('landuse_park', 'fill-color'), land),
+          greaterThan(1.1));
+      // Water is distinguishable from a park, not just from land.
+      expect(paint('water', 'fill-color'),
+          isNot(paint('landuse_park', 'fill-color')));
+    });
+
+    test('the style stays small: 47 layers, one source, under 40 KB', () async {
+      expect(byId, hasLength(47));
+      expect((await rootBundle.loadString(kVectorBasemapAsset)).length,
+          lessThan(40 * 1000));
+    });
+  });
+
   test('R81 the underlay colour is the style\'s own background', () async {
     final Map<String, dynamic> style = jsonDecode(
         await rootBundle.loadString(kVectorBasemapAsset)) as Map<String, dynamic>;
     final Map<String, dynamic> bg = (style['layers'] as List<dynamic>)
         .cast<Map<String, dynamic>>()
         .firstWhere((Map<String, dynamic> l) => l['type'] == 'background');
-    final RegExpMatch m = RegExp(r'rgb\((\d+),\s*(\d+),\s*(\d+)\)').firstMatch(
-        (bg['paint'] as Map<String, dynamic>)['background-color'] as String)!;
+    final String hex =
+        (bg['paint'] as Map<String, dynamic>)['background-color'] as String;
     expect(
-        Color.fromARGB(255, int.parse(m[1]!), int.parse(m[2]!), int.parse(m[3]!)),
+        Color(0xFF000000 | int.parse(hex.substring(1), radix: 16)),
         kVectorBasemapBackground,
         reason: 'unloaded tiles must look like the map, not like a fault');
   });
