@@ -1,6 +1,7 @@
 // Copyright (c) 2026 IoTone, Inc.
 // SPDX-License-Identifier: MIT
 import 'dart:io';
+import 'dart:math' show Random;
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -144,6 +145,30 @@ void main() {
       final PmTilesArchive a =
           await PmTilesArchive.open(await PmFileSource.open(f.path));
       expect(await a.tile(3, 2, 5), <int>[3, 2, 5, 0x1a, 0x02]);
+      await a.close();
+      await d.delete(recursive: true);
+    });
+
+    test('concurrent reads of one file never swap bytes', () async {
+      // Many different tiles asked for at once, as a panning map does.
+      final Map<(int, int, int), List<int>> t = <(int, int, int), List<int>>{};
+      for (int x = 0; x < 16; x++) {
+        for (int y = 0; y < 16; y++) {
+          t[(4, x, y)] = List<int>.generate(900, (int i) => (x * 16 + y + i) & 255);
+        }
+      }
+      final Directory d = await Directory.systemTemp.createTemp('pmt');
+      final File f = File('${d.path}/c.pmtiles')
+        ..writeAsBytesSync(PmBuild(t, leafSize: 20, tileComp: 1).build());
+      final PmTilesArchive a =
+          await PmTilesArchive.open(await PmFileSource.open(f.path));
+      final List<(int, int, int)> keys = t.keys.toList()..shuffle(Random(3));
+      final List<Uint8List?> got = await Future.wait(<Future<Uint8List?>>[
+        for (final (int, int, int) k in keys) a.tile(k.$1, k.$2, k.$3)
+      ]);
+      for (int i = 0; i < keys.length; i++) {
+        expect(got[i], t[keys[i]], reason: '${keys[i]}');
+      }
       await a.close();
       await d.delete(recursive: true);
     });

@@ -129,7 +129,9 @@ class MapsController extends ChangeNotifier {
   /// R81 — region archives (one PMTiles file each). See [addArchive].
   final List<MapArchive> archives = <MapArchive>[];
   final Map<String, int> _archiveSize = <String, int>{};
-  final Map<String, PmTilesArchive> _openArchives = <String, PmTilesArchive>{};
+  // Futures, so a burst of first reads opens the file once, not once each.
+  final Map<String, Future<PmTilesArchive>> _openArchives =
+      <String, Future<PmTilesArchive>>{};
   final List<EventLayer> layers = <EventLayer>[];
   final Map<String, GeoShapes> _shapes = <String, GeoShapes>{};
 
@@ -261,8 +263,8 @@ class MapsController extends ChangeNotifier {
     _retry?.cancel();
     _sweep?.cancel();
     _trim?.cancel();
-    for (final PmTilesArchive a in _openArchives.values) {
-      unawaited(a.close());
+    for (final Future<PmTilesArchive> a in _openArchives.values) {
+      unawaited(a.then((PmTilesArchive x) => x.close(), onError: (Object _) {}));
     }
     _openArchives.clear();
     unawaited(_store?.flush());
@@ -869,8 +871,7 @@ class MapsController extends ChangeNotifier {
   Future<void> deleteArchive(MapArchive a) async {
     archives.remove(a);
     if (a.state == ArchiveState.downloading) a.state = ArchiveState.paused;
-    final PmTilesArchive? open = _openArchives.remove(a.id);
-    if (open != null) await open.close();
+    await _closeArchive(a.id);
     for (final File f in <File>[_partFile(a), _archiveFile(a)]) {
       try {
         if (await f.exists()) await f.delete();
@@ -966,8 +967,7 @@ class MapsController extends ChangeNotifier {
       return _rejectArchive(a, ArchiveFailure.notPmTiles);
     }
     final File dest = _archiveFile(a);
-    final PmTilesArchive? old = _openArchives.remove(a.id);
-    if (old != null) await old.close();
+    await _closeArchive(a.id);
     if (await dest.exists()) await dest.delete();
     await part.rename(dest.path);
     a
@@ -976,6 +976,14 @@ class MapsController extends ChangeNotifier {
       ..updatedMs = _now;
     _archiveSize[a.id] = r.bytes;
     _changed();
+  }
+
+  Future<void> _closeArchive(String id) async {
+    final Future<PmTilesArchive>? f = _openArchives.remove(id);
+    if (f == null) return;
+    try {
+      await (await f).close();
+    } catch (_) {}
   }
 
   Future<void> _rejectArchive(MapArchive a, ArchiveFailure why) async {
@@ -1006,9 +1014,8 @@ class MapsController extends ChangeNotifier {
           z);
       if (x < r.minX || x > r.maxX || y < r.minY || y > r.maxY) continue;
       try {
-        PmTilesArchive? open = _openArchives[a.id];
-        open ??= _openArchives[a.id] =
-            await PmTilesArchive.open(await PmFileSource.open(_archiveFile(a).path));
+        final PmTilesArchive open = await (_openArchives[a.id] ??=
+            PmFileSource.open(_archiveFile(a).path).then(PmTilesArchive.open));
         final Uint8List? bytes = await open.tile(z, x, y);
         return bytes == null
             ? const TileLoad(null, missing: true)

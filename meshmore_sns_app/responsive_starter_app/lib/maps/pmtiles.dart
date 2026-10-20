@@ -40,14 +40,23 @@ class PmFileSource implements PmSource {
     return PmFileSource._(f, await f.length());
   }
 
+  // `setPosition` then `read` are two awaits on ONE shared file position.
+  // Without this chain, two tile reads in flight (the map asks for several
+  // at once) interleave and each can return the other's bytes, silently.
+  Future<void> _last = Future<void>.value();
+
   @override
-  Future<Uint8List> read(int offset, int len) async {
-    await _file.setPosition(offset);
-    final Uint8List b = await _file.read(len);
-    if (b.length != len) {
-      throw const PmFormatException('short read: archive is truncated');
-    }
-    return b;
+  Future<Uint8List> read(int offset, int len) {
+    final Future<Uint8List> r = _last.then((_) async {
+      await _file.setPosition(offset);
+      final Uint8List b = await _file.read(len);
+      if (b.length != len) {
+        throw const PmFormatException('short read: archive is truncated');
+      }
+      return b;
+    });
+    _last = r.then<void>((_) {}, onError: (Object _) {});
+    return r;
   }
 
   @override
