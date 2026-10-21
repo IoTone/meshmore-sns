@@ -123,7 +123,7 @@ void main() {
   }
 
   for (final Locale loc in const <Locale>[Locale('en'), Locale('ja')]) {
-    testWidgets('R81 region files list: done, rejected, add dialog '
+    testWidgets('R83 region files are deferred: the section is hidden '
         '(${loc.languageCode})', (WidgetTester t) async {
       await t.binding.setSurfaceSize(const Size(360, 800));
       addTearDown(() => t.binding.setSurfaceSize(null));
@@ -157,23 +157,21 @@ void main() {
       await t.pumpWidget(_host(mc, maps, const MapsScreen(), locale: loc));
       await t.pump();
       expect(t.takeException(), isNull);
-      await t.scrollUntilVisible(find.text('Front Range'), 200);
-      expect(find.text('Front Range'), findsOneWidget);
-      expect(find.text('Bad one'), findsOneWidget);
-      if (loc.languageCode == 'en') {
-        expect(find.textContaining('Checksum does not match'), findsOneWidget);
-      }
-      await t.scrollUntilVisible(
-          find.text(loc.languageCode == 'en' ? 'Add region file' : '地域ファイルを追加'),
-          200);
-      await t.tap(find
-          .text(loc.languageCode == 'en' ? 'Add region file' : '地域ファイルを追加'));
-      await t.pumpAndSettle();
-      // Name, link, size, checksum. (Refusals are covered in the
-      // controller tests: submitting here would await a controller built in
-      // another zone.)
-      expect(find.byType(AlertDialog), findsOneWidget);
-      expect(find.byType(TextField), findsNWidgets(4));
+      // R83: the machinery works and the archives exist in the controller,
+      // but the feature is deferred until a region file is published, so
+      // the section must not appear at all. The archive mechanics stay
+      // covered by test/maps/map_archive_test.dart.
+      final AppLocalizations l = lookupAppLocalizations(loc);
+      expect(kRegionFilesEnabled, isFalse);
+      expect(maps.archives, hasLength(2));
+      expect(find.text(l.mapsArchives), findsNothing);
+      expect(find.text('Front Range'), findsNothing);
+      expect(find.text('Bad one'), findsNothing);
+      expect(
+          find.text(loc.languageCode == 'en'
+              ? 'Add region file'
+              : '地域ファイルを追加'),
+          findsNothing);
       expect(t.takeException(), isNull);
       await t.runAsync(() async {
         maps.dispose();

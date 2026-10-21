@@ -162,6 +162,11 @@ class VectorBasemapLayer extends StatelessWidget {
           // set 2. Ignored in debug builds, where the library runs one
           // queue on the UI isolate.
           concurrency: 4,
+          // Parsed tiles held for pan-back. The 10 MB default keeps about a
+          // screen; a pan actually revisits a ring around it, so hold more.
+          // This is RenderingLayers' memory only - bytes on disk are still
+          // owned and budgeted by TileStore below.
+          memoryTileCacheMaxSize: 24 * 1024 * 1024,
           // Our TileStore is the cache of record (budget, expiry, ETag,
           // packs). The library keeps its own second copy of every tile in
           // the temp directory with a 30-day TTL and no revalidation; keep

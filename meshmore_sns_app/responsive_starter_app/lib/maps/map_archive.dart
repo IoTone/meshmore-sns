@@ -12,6 +12,12 @@ import 'package:crypto/crypto.dart' as crypto;
 /// `pmtiles extract --bbox ... --maxzoom 14` and put on a static URL: it
 /// downloads as one resumable file, is verified by size and SHA-256, and is
 /// read in place with seeks. Updating it is replacing the file.
+/// R83 — region files are deferred as a *feature*. The machinery works and
+/// is tested, but a region file is useless until one is published, and
+/// publishing one needs a host the project does not have. Until then the
+/// Settings entry is hidden rather than shown as an empty, inert section.
+const bool kRegionFilesEnabled = false;
+
 enum ArchiveState {
   downloading,
   waitingForNetwork,

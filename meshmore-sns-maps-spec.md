@@ -234,6 +234,45 @@ First device run (SH-53D, 2026-10-15): **all 11 pass**, 38 s.
 - **Bundled starter basemap**: a world overview at z0–5 from public-domain
   data, so a fresh install has something under the pins.
 
+## R83: region files deferred; the live map made responsive
+
+### Region files are deferred, not removed
+The owner deferred "download a region". The machinery works and is tested
+(`MapArchive`, `MapsController.addArchive`, the PMTiles reader, resume,
+hashing, read-in-place), but a region file is useless until one is
+published, and publishing needs a host the project does not have. So the
+Settings entry is hidden behind `kRegionFilesEnabled = false`
+(`lib/maps/map_archive.dart`) rather than shown as an empty, inert
+section. The UI test now asserts the section is absent while the archives
+still exist in the controller; the mechanics stay covered by
+`map_archive_test.dart`. Turning it on is one constant.
+
+### The live map
+- **One request per tile at a time.** `MapsController._inflight` keys
+  in-flight network fetches by tile; a pan that returns before the first
+  response lands reuses that future instead of opening a second request.
+  Measured: two concurrent reads of one tile produce exactly one fetch.
+- **Warm ring.** After the camera settles for 500 ms,
+  `StreetMapView._warmAround` computes the visible tile range, expands it
+  by one tile, caps it at 24, and calls `MapsController.prefetch`. Prefetch
+  runs **only when the gate is idle** (`viewIdle`), sequentially, through
+  `loadTileDetailed`, so it obeys the same gate, backoff, budget and expiry
+  as a visible tile and stops the moment a real request arrives. It skips
+  tiles already held, tiles already known missing, offline, over-budget and
+  gated states. Result: the next pan paints from storage.
+  The warmed tiles are ordinary tiles - the map reads them with no extra
+  code path.
+- **More parsed tiles in memory.** `memoryTileCacheMaxSize` is 24 MB, not
+  the library's 10 MB default, so a pan back revisits parsed layers instead
+  of re-parsing. Disk remains owned by `TileStore`.
+- **Honest zoom ceiling.** Shortbread stops at z14, so the Studio map caps
+  at z17 (8x linear upscale) instead of 18.5 (24x); the raster presets keep
+  18.5 because they have native detail there.
+- The skin is read during `build` and cached in `_vectorSkin`; the warm-up
+  timer must never touch `context.skin`, which watches a provider
+  ("Tried to listen to a value exposed with provider, from outside of the
+  widget tree" - proven by `home_shell_test`).
+
 ## R82: the basemap is OSM's own vector service
 
 ### Why this replaced OpenFreeMap

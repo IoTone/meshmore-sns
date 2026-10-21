@@ -478,6 +478,60 @@ void main() {
       store.dispose();
     });
 
+    test('prefetch warms the ring once, then spends nothing (R83)', () async {
+      int calls = 0;
+      final MapsController m = MapsController(
+        rootDir: () async => dir,
+        fetcher: (Uri u, {String? etag, int? ifModifiedSinceMs}) async {
+          calls++;
+          return FetchResult(FetchStatus.ok, bytes: Uint8List(1000),
+              maxAge: const Duration(days: 1));
+        },
+        clock: () => now,
+        pace: Duration.zero,
+      );
+      await m.load();
+      const List<(int, int, int)> ring = <(int, int, int)>[
+        (10, 1, 1), (10, 1, 2), (10, 2, 1),
+      ];
+      expect(await m.prefetch(kOsmVector, ring), 3);
+      expect(calls, 3);
+      expect(m.hasTile(kOsmVector, 10, 1, 1), isTrue);
+      // Already held: a warm-up must not spend a request on it.
+      expect(await m.prefetch(kOsmVector, ring), 0);
+      expect(calls, 3);
+      // Warmed tiles are ordinary tiles: the map reads them from the store.
+      expect((await m.loadTile(kOsmVector, 10, 1, 2))?.length, 1000);
+      expect(calls, 3);
+      m.dispose();
+    });
+
+    test('a tile already in flight is asked for once (R83)', () async {
+      int calls = 0;
+      final MapsController m = MapsController(
+        rootDir: () async => dir,
+        fetcher: (Uri u, {String? etag, int? ifModifiedSinceMs}) async {
+          calls++;
+          await Future<void>.delayed(const Duration(milliseconds: 20));
+          return FetchResult(FetchStatus.ok, bytes: Uint8List(1000),
+              maxAge: const Duration(days: 1));
+        },
+        clock: () => now,
+        pace: Duration.zero,
+      );
+      await m.load();
+      // The library asks for a tile as soon as it is visible; a pan that
+      // returns before the first response lands must not double the fetch.
+      final List<TileLoad> both = await Future.wait<TileLoad>(<Future<TileLoad>>[
+        m.loadTileDetailed(kOsmVector, 12, 853, 1560),
+        m.loadTileDetailed(kOsmVector, 12, 853, 1560),
+      ]);
+      expect(calls, 1);
+      expect(both.first.bytes, isNotNull);
+      expect(both.last.bytes, both.first.bytes);
+      m.dispose();
+    });
+
     test('a source floor outlives a shorter server max-age (R82)', () async {
       // The OSM vector service advertises max-age=300; its policy wants tiles
       // kept at least seven days, so the store must floor it, not follow it.

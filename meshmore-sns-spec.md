@@ -1192,6 +1192,16 @@ While Meshcore protocol is open source, the client is not open source.  We want 
   views with their own edge controls would each need auditing.
   Tests: `test/shell/home_shell_test.dart` (group "Map edge swipe (R67)").
 
+- R83: **region files deferred; the live map made responsive.** The archive
+  machinery (R81) stays but is hidden behind `kRegionFilesEnabled = false`
+  until a region file is published; the UI test asserts the section is
+  absent, the mechanics stay covered. Map work: in-flight dedupe
+  (`MapsController._inflight`, one fetch per tile), a 24-tile prefetch ring
+  after the camera settles 500 ms, run only when the gate is idle and
+  sequentially through `loadTileDetailed`, so it never delays a visible
+  tile; `memoryTileCacheMaxSize` 24 MB; Studio zoom capped at z17 because
+  Shortbread stops at z14. Tests: `maps_test` (dedupe, prefetch),
+  `maps_screens_test` (deferred section), `home_shell_test`.
 - R82: **the basemap is OSM's own vector service, not a third party.** The
   OSMF has served Shortbread v1 vector tiles at
   `vector.openstreetmap.org/shortbread_v1/{z}/{x}/{y}.mvt` since 2025-07-22,

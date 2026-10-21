@@ -378,6 +378,58 @@ class MapsController extends ChangeNotifier {
   /// [loadTile] plus the one distinction the vector layer needs: "the
   /// server has nothing here" (draw an empty tile) versus "could not reach
   /// it" (leave the tile to be asked for again).
+  /// Network fetches in flight, keyed by tile. A pan that returns to a tile
+  /// before its first request lands must not open a second one: the library
+  /// asks for the same coordinate again as soon as it is visible, and the
+  /// gate would happily run both.
+  final Map<String, Future<FetchResult?>> _inflight =
+      <String, Future<FetchResult?>>{};
+
+  /// [_viewFetch], but one request per tile at a time.
+  Future<FetchResult?> _viewFetchOnce(MapSource src, int z, int x, int y,
+      {String? etag, int? ifModifiedSinceMs}) {
+    final String key = TileStore.keyOf(src.id, z, x, y);
+    final Future<FetchResult?>? running = _inflight[key];
+    if (running != null) return running;
+    final Future<FetchResult?> f = _viewFetch(src, z, x, y,
+        etag: etag, ifModifiedSinceMs: ifModifiedSinceMs);
+    _inflight[key] = f;
+    return f.whenComplete(() {
+      if (identical(_inflight[key], f)) _inflight.remove(key);
+    });
+  }
+
+  /// True when nothing is fetching: no request running and none queued.
+  /// Warm-up work only runs here, so it can never delay a visible tile.
+  bool get viewIdle => viewGate.running == 0 && viewGate.queued == 0;
+
+  /// Whether the store already holds this tile (from any pack or view).
+  bool hasTile(MapSource src, int z, int x, int y) =>
+      _store?.has(TileStore.keyOf(src.id, z, x, y)) ?? false;
+
+  /// Fetch tiles the user is about to need, one at a time, and only while
+  /// the map is idle. A pan that settles leaves its surrounding ring on
+  /// disk, so the next pan paints from storage instead of the network.
+  ///
+  /// Deliberately not a priority queue: it runs sequentially through
+  /// [loadTileDetailed], which means it obeys the same gate, backoff,
+  /// budget and expiry rules as a visible tile, and it stops the moment a
+  /// real request arrives.
+  Future<int> prefetch(MapSource src, Iterable<(int, int, int)> coords,
+      {int limit = 24}) async {
+    if (!online || _gated(src.id) || usedBytes >= budgetBytes) return 0;
+    int got = 0;
+    for (final (int z, int x, int y) in coords) {
+      if (got >= limit || _disposed || !viewIdle || !online) break;
+      if (hasTile(src, z, x, y) || _absent.contains(TileStore.keyOf(src.id, z, x, y))) {
+        continue;
+      }
+      final TileLoad t = await loadTileDetailed(src, z, x, y);
+      if (t.bytes != null) got++;
+    }
+    return got;
+  }
+
   /// A source may require a longer life than the server advertises.
   @visibleForTesting
   Duration tileTtl(Duration? server, MapSource src) {
@@ -400,7 +452,7 @@ class MapsController extends ChangeNotifier {
         if (meta.expiresMs > _now || !meta.viewOnly || _gated(src.id)) {
           return TileLoad(held);
         }
-        final FetchResult? r = await _viewFetch(src, z, x, y,
+        final FetchResult? r = await _viewFetchOnce(src, z, x, y,
             etag: meta.etag, ifModifiedSinceMs: meta.fetchedMs);
         if (r == null) return TileLoad(held);
         if (r.status == FetchStatus.notModified) {
@@ -416,7 +468,7 @@ class MapsController extends ChangeNotifier {
     }
     if (_absent.contains(key)) return const TileLoad(null, missing: true);
     if (_gated(src.id)) return const TileLoad(null);
-    final FetchResult? r = await _viewFetch(src, z, x, y);
+    final FetchResult? r = await _viewFetchOnce(src, z, x, y);
     if (r == null) return const TileLoad(null);
     if (r.status == FetchStatus.missing) {
       if (_absent.length >= _absentCap) _absent.clear();

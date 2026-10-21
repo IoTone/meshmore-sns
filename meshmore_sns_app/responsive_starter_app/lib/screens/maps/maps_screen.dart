@@ -170,22 +170,28 @@ class MapsScreen extends StatelessWidget {
                 onPressed: () => context.push('/settings/maps/new'),
               ),
             ),
-            const SizedBox(height: 16),
-            MmSectionHeader(l.mapsArchives),
-            const SizedBox(height: 6),
-            if (maps.archives.isEmpty) ToolLine(l.mapsNoArchives, muted: true),
-            for (final MapArchive a in maps.archives) _ArchiveRow(archive: a),
-            Align(
-              alignment: Alignment.centerLeft,
-              child: FilledButton.tonalIcon(
-                icon: const Icon(Icons.folder_zip_outlined),
-                label: Text(l.mapsAddArchive),
-                onPressed: () => showDialog<void>(
-                  context: context,
-                  builder: (BuildContext ctx) => _AddArchiveDialog(maps: maps),
+            // R83 — deferred feature (kRegionFilesEnabled). The code and its
+            // tests stay; the entry point appears when a region file exists
+            // to download.
+            if (kRegionFilesEnabled) ...<Widget>[
+              const SizedBox(height: 16),
+              MmSectionHeader(l.mapsArchives),
+              const SizedBox(height: 6),
+              if (maps.archives.isEmpty)
+                ToolLine(l.mapsNoArchives, muted: true),
+              for (final MapArchive a in maps.archives) _ArchiveRow(archive: a),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: FilledButton.tonalIcon(
+                  icon: const Icon(Icons.folder_zip_outlined),
+                  label: Text(l.mapsAddArchive),
+                  onPressed: () => showDialog<void>(
+                    context: context,
+                    builder: (BuildContext ctx) => _AddArchiveDialog(maps: maps),
+                  ),
                 ),
               ),
-            ),
+            ],
             const SizedBox(height: 16),
             MmSectionHeader(l.mapsLayers),
             const SizedBox(height: 6),

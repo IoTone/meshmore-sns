@@ -13,6 +13,7 @@ import '../gen/app_localizations.dart';
 import '../maps/basemap.dart';
 import '../maps/map_source.dart';
 import '../maps/maps_controller.dart';
+import '../maps/tile_math.dart';
 import '../maps/vector_basemap.dart';
 import '../meshcore/discovered_node.dart';
 import '../meshcore/meshcore_controller.dart';
@@ -77,7 +78,12 @@ class _StreetMapViewState extends State<StreetMapView> {
   /// buttons are an explicit affordance for users on devices
   /// without multi-touch or who prefer one-handed operation.
   static const double _zoomMin = 6.0;
-  static const double _zoomMax = 18.5;
+
+  /// R83 — the Studio basemap is Shortbread, whose tiles stop at z14, so
+  /// every level past it is an upscale. Past z17 the upscale is 8x linear
+  /// and the map stops carrying information; the raster presets keep the
+  /// deeper native range.
+  double get _zoomMax => context.skin.shape.vectorBasemap ? 17.0 : 18.5;
   static const double _zoomStep = 1.0;
   late final MapController _map = MapController();
   double _zoom = 14.0; // metro default; pinned to self on first build
@@ -86,6 +92,38 @@ class _StreetMapViewState extends State<StreetMapView> {
   /// R69 — true while this view is showing the no-fix world view, so the
   /// first real fix can reset the zoom from world to metro.
   bool _browsing = false;
+
+  /// R83 - warms the ring around a settled viewport so the next pan paints
+  /// from storage. Debounced, and only when nothing else is fetching.
+  Timer? _warm;
+
+  /// Read during build; `context.skin` watches a provider and must not be
+  /// touched from a timer or an async callback.
+  bool _vectorSkin = false;
+
+  void _scheduleWarm() {
+    _warm?.cancel();
+    _warm = Timer(const Duration(milliseconds: 500), _warmAround);
+  }
+
+  Future<void> _warmAround() async {
+    if (!mounted || !_showTiles || !_vectorSkin) return;
+    final MapsController? maps =
+        Provider.of<MapsController?>(context, listen: false);
+    if (maps == null || !maps.online || !maps.viewIdle) return;
+    final MapCamera cam = _map.camera;
+    final int z = cam.zoom.round().clamp(0, kOsmVector.maxNativeZoom);
+    final LatLngBounds b = cam.visibleBounds;
+    final TileRange r = tileRange(
+        GeoBox(south: b.south, west: b.west, north: b.north, east: b.east), z);
+    final List<(int, int, int)> ring = <(int, int, int)>[];
+    for (int x = r.minX - 1; x <= r.maxX + 1 && ring.length < 24; x++) {
+      for (int y = r.minY - 1; y <= r.maxY + 1 && ring.length < 24; y++) {
+        ring.add((z, x, y));
+      }
+    }
+    await maps.prefetch(kOsmVector, ring);
+  }
 
   double? _headingDeg;
   StreamSubscription<CompassEvent>? _compassSub;
@@ -121,6 +159,7 @@ class _StreetMapViewState extends State<StreetMapView> {
 
   @override
   void dispose() {
+    _warm?.cancel();
     _compassSub?.cancel();
     super.dispose();
   }
@@ -175,6 +214,9 @@ class _StreetMapViewState extends State<StreetMapView> {
     final MeshcoreController mc = context.watch<MeshcoreController>();
     final AppLocalizations l = AppLocalizations.of(context);
     final ColorScheme cs = Theme.of(context).colorScheme;
+    // Kept for the warm-up timer, which runs outside a build and so must
+    // not read a watching provider.
+    _vectorSkin = context.skin.shape.vectorBasemap;
 
     final MapsController? maps = Provider.of<MapsController?>(context);
     final List<MapSource> sources = maps?.sources ?? kBuiltInSources;
@@ -249,6 +291,8 @@ class _StreetMapViewState extends State<StreetMapView> {
                     InteractiveFlag.scrollWheelZoom |
                     InteractiveFlag.doubleTapZoom,
               ),
+              onPositionChanged: (MapCamera cam, bool hasGesture) =>
+                  _scheduleWarm(),
               backgroundColor: context.skin.shape.vectorBasemap
                   ? kVectorBasemapBackground
                   : cs.surfaceContainerHighest,
