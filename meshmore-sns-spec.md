@@ -1229,6 +1229,29 @@ While Meshcore protocol is open source, the client is not open source.  We want 
   ("Protocol, firmware, app, field notes") instead of the ~150-character
   hub subtitle, which wrapped to four lines in a settings row (EN + JA). Tests: `home_shell_test` (R86 peers, Back returns to
   the Settings hub; strip rects at 320/360/393/412/600/1024dp).
+- R87: **clean-up and consistency pass after R86.** (1) `MmScaffold` now
+  puts a transparent `Material` under its `ColoredBox`: the ground was
+  painted without an ink surface, so every `ListTile`/`InkWell` on Device
+  configuration, Channels and Personalization had no tap ripple (Flutter's
+  debug assertion, which had failed 11 tests, was right). The `Material`
+  paints nothing and sets the same `bodyMedium` text style `Scaffold`'s own
+  `Material` already sets, so no text changes; the ripple draws under the
+  ornament `CustomPaint`. (2) Deleted dead code: `lib/about.dart` and
+  `lib/boilerplate_main.dart` (no reader on this or any other local branch)
+  and 24 ARB keys nothing reads. `docsHubTitle` stays: every other branch
+  still reads it. (3) `DocsHubScreen` is wrapped in `MmScaffold` like every
+  other routed page. (4) The NERV dashboard's device button and the
+  node-identity search's clear button get tooltips (`dashboardDevice`,
+  `nodesClearSearch`). (5) Three missing strings localised
+  (`settingsNotifDeniedPermanent`, `settingsNotifDeniedTransient`,
+  `deviceAdvertPropagatesHint`; the snackbar action reuses
+  `deviceOpenSettings`). The Diagnostics SEND / M6 / fixture / bot-soak
+  panels stay English by design (R69). (6) Tests: strip re-selection at
+  400dp (no `Scrollable`; `ensureVisible` is a no-op via
+  `Scrollable.maybeOf`) and below 288dp (scrolls into sight). **Found, not
+  changed (needs a layout decision):** at 320dp with 2.0x text the
+  Dashboard status row overflows by ~7 px and `/settings/maps/new`'s
+  `ToolChoice` dropdown by ~57 px.
 - R83: **region files deferred; the live map made responsive.** The archive
   machinery (R81) stays but is hidden behind `kRegionFilesEnabled = false`
   until a region file is published; the UI test asserts the section is
