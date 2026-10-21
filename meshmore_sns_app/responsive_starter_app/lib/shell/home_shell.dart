@@ -339,21 +339,27 @@ class _SettingsView extends StatelessWidget {
     final MmSkin skin = context.skin;
     final bool cardRows =
         skin.shape.corner != MmCorner.sharp || skin.ornament.any;
-    final List<(IconData, String, String, String)> items =
-        <(IconData, String, String, String)>[
+    // A group label is a row with a null icon and title.
+    final List<(IconData?, String?, String, String)> items =
+        <(IconData?, String?, String, String)>[
+      // R92 — grouped by what the row is for, not one flat list of nine.
+      (null, null, '', ''),
       (Icons.router_outlined, l.settingsHubDevice, l.settingsHubDeviceSub,
           '/settings/device'),
+      (Icons.tag, l.settingsHubChannels, l.settingsHubChannelsSub,
+          '/settings/channels'),
+      (null, null, '', ''),
       (Icons.tune, l.settingsHubApp, l.settingsHubAppSub, '/settings/app'),
       (Icons.palette_outlined, l.settingsHubProfile, l.settingsHubProfileSub,
           '/settings/profile'),
-      (Icons.tag, l.settingsHubChannels, l.settingsHubChannelsSub,
-          '/settings/channels'),
+      (Icons.map_outlined, l.settingsHubMaps, l.settingsHubMapsSub,
+          '/settings/maps'),
+      (null, null, '', ''),
       (Icons.bluetooth_searching, l.settingsHubDiagnostics,
           l.settingsHubDiagnosticsSub, '/settings/diagnostics'),
       (Icons.handyman_outlined, l.settingsHubTools, l.settingsHubToolsSub,
           '/settings/tools'),
-      (Icons.map_outlined, l.settingsHubMaps, l.settingsHubMapsSub,
-          '/settings/maps'),
+      (null, null, '', ''),
       (Icons.menu_book_outlined, l.tabDocs, l.settingsHubDocsSub,
           '/settings/docs'),
       (Icons.info_outline, l.settingsHubInfo, l.settingsHubInfoSub,
@@ -367,10 +373,32 @@ class _SettingsView extends StatelessWidget {
         itemCount: items.length,
         separatorBuilder: (_, __) => SizedBox(height: cardRows ? 8 : 0),
         itemBuilder: (BuildContext context, int i) {
-          final (IconData, String, String, String) it = items[i];
+          final (IconData?, String?, String, String) it = items[i];
+          if (it.$2 == null) {
+            // A group label, not a row. R92 — nine flat rows with subtitles
+            // gave no clue which of them configure the radio, which the app,
+            // which are about the build.
+            return Padding(
+              padding: EdgeInsets.fromLTRB(
+                  cardRows ? 8 : 16, i == 0 ? 8 : 18, 16, 6),
+              child: Text(
+                switch (i) {
+                  0 => l.settingsGroupRadio,
+                  4 => l.settingsGroupApp,
+                  8 => l.settingsGroupConnect,
+                  _ => l.settingsGroupAbout,
+                },
+                style: TextStyle(
+                    color: skin.color.fgMuted,
+                    fontSize: 11,
+                    letterSpacing: 1.5,
+                    fontWeight: FontWeight.w600),
+              ),
+            );
+          }
           return MmListRow(
-            leading: Icon(it.$1, color: skin.color.accent),
-            title: Text(it.$2),
+            leading: Icon(it.$1!, color: skin.color.accent),
+            title: Text(it.$2!),
             subtitle: Text(it.$3,
                 style:
                     TextStyle(color: skin.color.fgMuted, fontSize: 12)),

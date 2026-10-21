@@ -335,12 +335,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get settingsHeading => 'アプリ設定';
 
   @override
-  String get settingsConnection => '接続';
-
-  @override
-  String get settingsConnectionSubtitle => '自動再接続 (M7 バックオフ) · デバイス解除';
-
-  @override
   String get settingsBackgroundTitle => 'バックグラウンドで接続を維持';
 
   @override
@@ -383,18 +377,6 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get settingsSpeechMuted => '読み上げは ON ですが、オーディオミュートにより消音されています';
-
-  @override
-  String get settingsNotifications => '通知';
-
-  @override
-  String get settingsNotificationsSubtitle => '重要 → システム通知 + バイブレーション';
-
-  @override
-  String get settingsData => 'データ / アプリ情報';
-
-  @override
-  String get settingsDataSubtitle => '診断エクスポート · ログ · アプリ情報 · 利用規約';
 
   @override
   String get settingsPermissions => '権限';
@@ -677,7 +659,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get nodesEmptyReady =>
-      'ノードがまだありません。\n\n発見はアドバート駆動で、アドバートを受信したノードのみここに表示されます。Public でのチャットは発見につながりません。\n\n相手にも Advertise を実行してもらう (またはこちらで「Advertise」をタップ) 後、「Scan area」を実行してください。\n\nこの画面はメッシュの「ファブリック」(これまでに見たもの) を示します。スターをタップするとコンタクトに登録できます。';
+      'ノードはまだありません。検出はアドバート駆動です。アドバートを受信したときだけ表示されます。相手側でアドバートを送るか、「エリアをスキャン」を押してください。';
 
   @override
   String get nodesEmptyOffline => 'ラジオを接続して周辺ノードを発見してください。';
@@ -1179,6 +1161,18 @@ class AppLocalizationsJa extends AppLocalizations {
   String get settingsHubDevice => 'デバイス設定';
 
   @override
+  String get settingsGroupRadio => '無線';
+
+  @override
+  String get settingsGroupApp => 'アプリ';
+
+  @override
+  String get settingsGroupConnect => '接続';
+
+  @override
+  String get settingsGroupAbout => 'このアプリについて';
+
+  @override
   String get settingsHubDeviceSub => 'MeshCore ラジオ & デバイス';
 
   @override
@@ -1203,7 +1197,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get settingsHubDiagnostics => '診断 & 接続';
 
   @override
-  String get settingsHubDiagnosticsSub => 'ラジオ接続 · フレームログ · M6 キャプチャ';
+  String get settingsHubDiagnosticsSub => '無線接続・フレームログ・キャプチャ';
 
   @override
   String get bootHeader => 'MESHMORE  /  同期中';
@@ -1819,8 +1813,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get docsHubTitle => 'ドキュメント';
 
   @override
-  String get docsHubSubtitle =>
-      'MeshCore プロトコル、デバイスのファームウェア、本アプリの解説、機種別の実地メモをオフラインで読めます。オンライン時に GitHub から最新版を取得します。';
+  String get docsHubSubtitle => 'プロトコル・ファームウェア・アプリ・実地メモをオフラインで。';
 
   @override
   String get docsHubFooter =>
@@ -2411,6 +2404,12 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
+  String get deviceRegionDisclaimerShort => 'コミュニティによる値であり、規制上の保証ではありません。';
+
+  @override
+  String get deviceRegionDisclaimerMore => '詳細';
+
+  @override
   String get deviceRegionDisclaimer =>
       'プリセット値はコミュニティで合意された運用例であり、法令適合を保証するものではありません。利用地で合法なプリセットを選び、メッシュ内の全ノードで同じ値を使用してください。日本では設定値が合法でも不十分です。無線機本体が技適（技術基準適合証明）を取得している必要があり、海外から個人輸入したLoRaボードの多くは未取得です。未取得機の運用は設定内容にかかわらず電波法違反となります。日本（ARIB STD-T108）のプリセットはコミュニティ提案で、広範な実機検証は完了していません。実運用前に、法令適合性と動作をご自身のハードウェアで必ず確認してください。';
 
@@ -2632,8 +2631,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get otherTelemetryAll => '全員';
 
   @override
-  String get otherTelemetryModeHelp =>
-      'このデバイスの各種テレメトリを誰が要求できるかを設定します — 基本=バッテリー、位置=GPS、環境=温度/湿度/気圧。オフ=すべて拒否、連絡先=連絡先のみ（フラグに従う）、全員=任意のノード。これは共有の許可設定であり、センサーの有無とは無関係です（環境センサーがなければ「全員」でも何も送信しません）。';
+  String get otherTelemetryModeHelp => 'この端末からバッテリー・GPS・環境データを要求できる相手を設定します。';
 
   @override
   String get otherMultiAcksLabel => 'マルチ ACK (0–3)';
@@ -3154,7 +3152,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get settingsHubMaps => 'オフライン地図';
 
   @override
-  String get settingsHubMapsSub => '地域ダウンロード・イベント地図・容量上限';
+  String get settingsHubMapsSub => 'ベースマップ・イベント地図・容量';
 
   @override
   String get mapsTitle => 'オフライン地図';

@@ -77,7 +77,8 @@ void main() {
     await t.pump();
     // R85: the page heading is the app bar now, so the page's own prose
     // (the subtitle) carries the skin's type system.
-    final Finder f = find.textContaining('Read the MeshCore protocol');
+    // R92 shortened the subtitle; it still has to carry the skin's type.
+    final Finder f = find.textContaining('Protocol, firmware, app');
     final Text w = t.widget<Text>(f);
     final String? fam = DefaultTextStyle.of(t.element(f))
         .style

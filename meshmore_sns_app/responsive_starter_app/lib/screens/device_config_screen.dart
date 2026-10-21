@@ -454,11 +454,39 @@ class _DeviceConfigScreenState extends State<DeviceConfigScreen> {
                     onPressed: () => _suggestFromMyLocation(mc),
                   ),
                 ),
+                // R92 — 620 characters of legal caveat used to sit open
+                // under the preset picker. One line now; the full text is
+                // one tap away.
                 Padding(
-                  padding: const EdgeInsets.only(top: 6),
-                  child: Text(
-                    l.deviceRegionDisclaimer,
-                    style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12),
+                  padding: const EdgeInsets.only(top: 4),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Icon(Icons.info_outline,
+                          size: 14, color: cs.onSurfaceVariant),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(l.deviceRegionDisclaimerShort,
+                            style: TextStyle(
+                                color: cs.onSurfaceVariant, fontSize: 11)),
+                      ),
+                      TextButton(
+                        onPressed: () => showDialog<void>(
+                          context: context,
+                          builder: (BuildContext _) => AlertDialog(
+                            content: SingleChildScrollView(
+                                child: Text(l.deviceRegionDisclaimer)),
+                            actions: <Widget>[
+                              TextButton(
+                                onPressed: () => Navigator.pop(context),
+                                child: Text(l.deviceRegionDisclaimerMore),
+                              ),
+                            ],
+                          ),
+                        ),
+                        child: Text(l.deviceRegionDisclaimerMore),
+                      ),
+                    ],
                   ),
                 ),
               ],

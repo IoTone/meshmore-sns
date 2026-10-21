@@ -1252,6 +1252,23 @@ While Meshcore protocol is open source, the client is not open source.  We want 
   changed (needs a layout decision):** at 320dp with 2.0x text the
   Dashboard status row overflows by ~7 px and `/settings/maps/new`'s
   `ToolChoice` dropdown by ~57 px.
+- R92: **Settings says what it is for, and the walls of text come down.**
+  The hub was nine flat rows with subtitles: nothing said which rows
+  configure the radio, which the app, which are about the build. It is now
+  four labelled groups (RADIO, APP, CONNECTION, ABOUT) with the same nine
+  destinations in the same order. Three App settings rows were dead —
+  Connection, Notifications and Data/About, each with a chevron and
+  `onTap: () {}` — and every one of those jobs already lives somewhere that
+  works (Diagnostics, Information), so the rows and their six strings are
+  gone rather than faked. Two subtitles promised things the build does not
+  do: Offline maps said "Region downloads" (behind `kRegionFilesEnabled =
+  false`) and Diagnostics said "M6 capture" (an internal spec id). Text
+  cuts, each measured: the region disclaimer was 620 characters open under
+  the preset picker and is now one line with a Details dialog; the telemetry
+  mode help was 470 characters restating the three row labels and is one
+  sentence; the Nodes empty state was four paragraphs and is one; the Docs
+  hub subtitle was 150 characters in front of four cards that says the same
+  and is one line.
 - R91: **the three crowded headers get one job each.** Chat, Nodes and the
   grid's transport were the examples the owner named; each had a header
   doing several unrelated things. Chat: the caption "CHANNEL · PUBLIC"

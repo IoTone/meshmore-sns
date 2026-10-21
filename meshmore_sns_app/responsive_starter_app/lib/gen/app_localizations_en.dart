@@ -350,13 +350,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsHeading => 'App settings';
 
   @override
-  String get settingsConnection => 'CONNECTION';
-
-  @override
-  String get settingsConnectionSubtitle =>
-      'Auto-reconnect (M7 backoff) · forget device';
-
-  @override
   String get settingsBackgroundTitle => 'Stay connected in background';
 
   @override
@@ -404,20 +397,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get settingsSpeechMuted =>
       'Text-to-speech ON, but the audio mute is silencing it';
-
-  @override
-  String get settingsNotifications => 'NOTIFICATIONS';
-
-  @override
-  String get settingsNotificationsSubtitle =>
-      'Critical → system notification + vibrate';
-
-  @override
-  String get settingsData => 'DATA / ABOUT';
-
-  @override
-  String get settingsDataSubtitle =>
-      'Export diagnostics · logs · About · Terms';
 
   @override
   String get settingsPermissions => 'Permissions';
@@ -716,7 +695,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get nodesEmptyReady =>
-      'No nodes yet.\n\nDiscovery is advert-driven: a node shows up only when its advert is heard. Chatting on Public does NOT make a node appear.\n\nAsk the other node to Advertise / Share (or tap \"Advertise\" here so it can find you), then \"Scan area\".\n\nThis view shows the mesh \"fabric\" (what you\'ve seen). Star a node to mark it as a contact.';
+      'No nodes yet. Discovery is advert-driven: a node appears only when its advert is heard. Ask the other node to Advertise, or tap Scan area.';
 
   @override
   String get nodesEmptyOffline => 'Connect a radio to discover nearby nodes.';
@@ -1233,6 +1212,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsHubDevice => 'Device configuration';
 
   @override
+  String get settingsGroupRadio => 'RADIO';
+
+  @override
+  String get settingsGroupApp => 'APP';
+
+  @override
+  String get settingsGroupConnect => 'CONNECTION';
+
+  @override
+  String get settingsGroupAbout => 'ABOUT';
+
+  @override
   String get settingsHubDeviceSub => 'MeshCore radio & device';
 
   @override
@@ -1257,8 +1248,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsHubDiagnostics => 'Diagnostics & connect';
 
   @override
-  String get settingsHubDiagnosticsSub =>
-      'Connect a radio · frame log · M6 capture';
+  String get settingsHubDiagnosticsSub => 'Connect a radio, frame log, capture';
 
   @override
   String get bootHeader => 'MESHMORE  /  SYNCHRONIZING';
@@ -1888,7 +1878,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get docsHubSubtitle =>
-      'Read the MeshCore protocol, your device firmware, this app, and our per-device field notes — offline. Snapshots refresh from GitHub when you\'re online.';
+      'Protocol, firmware, app and field notes, offline.';
 
   @override
   String get docsHubFooter =>
@@ -2497,6 +2487,13 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get deviceRegionDisclaimerShort =>
+      'Community-curated values, not regulatory guarantees.';
+
+  @override
+  String get deviceRegionDisclaimerMore => 'Details';
+
+  @override
   String get deviceRegionDisclaimer =>
       'Operating points are community-curated, not regulatory guarantees. Pick the preset legal where you are and use the SAME tuple on every node. In Japan, legal parameters are not enough — the radio hardware itself must carry 技適 (giteki) certification; most grey-import LoRa boards do not, and operating one is an offence under the Radio Act regardless of settings. The Japan (ARIB STD-T108) preset is a community proposal that hasn\'t been broadly field-validated — please confirm it is legal and works on your hardware before relying on it.';
 
@@ -2729,7 +2726,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get otherTelemetryModeHelp =>
-      'Controls who may request each kind of telemetry from this device — Base = battery, Location = GPS, Environment = temp/humidity/pressure. Off = deny all; Contacts = only your contacts (per their flags); Anyone = any node. This is a sharing permission, not whether the device has the sensor — a node with no environment sensor sends nothing even on \"Anyone\".';
+      'Who may request battery, GPS and environment data from this device.';
 
   @override
   String get otherMultiAcksLabel => 'Multi-acks (0–3)';
@@ -3262,8 +3259,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsHubMaps => 'Offline maps';
 
   @override
-  String get settingsHubMapsSub =>
-      'Region downloads, event maps, storage budget';
+  String get settingsHubMapsSub => 'Basemap, event maps, storage';
 
   @override
   String get mapsTitle => 'Offline maps';

@@ -128,13 +128,6 @@ class AppSettingsScreen extends StatelessWidget {
       body: MmScaffold(
         child: ListView(
         children: <Widget>[
-          ListTile(
-            title: Text(l.settingsConnection),
-            subtitle: Text(l.settingsConnectionSubtitle,
-                style: TextStyle(color: cs.onSurface.withValues(alpha: .6))),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () {},
-          ),
           // R17/U8 — Android background keep-alive (foreground service
           // + persistent notification). No-op on iOS.
           SwitchListTile(
@@ -230,13 +223,6 @@ class AppSettingsScreen extends StatelessWidget {
             trailing: const Icon(Icons.chevron_right),
             onTap: () => context.push('/settings/location'),
           ),
-          ListTile(
-            title: Text(l.settingsNotifications),
-            subtitle: Text(l.settingsNotificationsSubtitle,
-                style: TextStyle(color: cs.onSurface.withValues(alpha: .6))),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () {},
-          ),
           // R21 / U12 — Permissions row: jumps to the OS app-settings
           // page where the user can flip BLE / Notifications etc.
           // back on after a permanent denial.
@@ -262,13 +248,6 @@ class AppSettingsScreen extends StatelessWidget {
             ),
             enabled: fr.done,
             onTap: () => fr.reset(),
-          ),
-          ListTile(
-            title: Text(l.settingsData),
-            subtitle: Text(l.settingsDataSubtitle,
-                style: TextStyle(color: cs.onSurface.withValues(alpha: .6))),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () {},
           ),
         ],
       ),

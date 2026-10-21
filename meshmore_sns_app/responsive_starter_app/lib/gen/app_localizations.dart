@@ -698,18 +698,6 @@ abstract class AppLocalizations {
   /// **'App settings'**
   String get settingsHeading;
 
-  /// No description provided for @settingsConnection.
-  ///
-  /// In en, this message translates to:
-  /// **'CONNECTION'**
-  String get settingsConnection;
-
-  /// No description provided for @settingsConnectionSubtitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Auto-reconnect (M7 backoff) · forget device'**
-  String get settingsConnectionSubtitle;
-
   /// No description provided for @settingsBackgroundTitle.
   ///
   /// In en, this message translates to:
@@ -793,30 +781,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Text-to-speech ON, but the audio mute is silencing it'**
   String get settingsSpeechMuted;
-
-  /// No description provided for @settingsNotifications.
-  ///
-  /// In en, this message translates to:
-  /// **'NOTIFICATIONS'**
-  String get settingsNotifications;
-
-  /// No description provided for @settingsNotificationsSubtitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Critical → system notification + vibrate'**
-  String get settingsNotificationsSubtitle;
-
-  /// No description provided for @settingsData.
-  ///
-  /// In en, this message translates to:
-  /// **'DATA / ABOUT'**
-  String get settingsData;
-
-  /// No description provided for @settingsDataSubtitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Export diagnostics · logs · About · Terms'**
-  String get settingsDataSubtitle;
 
   /// No description provided for @settingsPermissions.
   ///
@@ -1325,7 +1289,7 @@ abstract class AppLocalizations {
   /// No description provided for @nodesEmptyReady.
   ///
   /// In en, this message translates to:
-  /// **'No nodes yet.\n\nDiscovery is advert-driven: a node shows up only when its advert is heard. Chatting on Public does NOT make a node appear.\n\nAsk the other node to Advertise / Share (or tap \"Advertise\" here so it can find you), then \"Scan area\".\n\nThis view shows the mesh \"fabric\" (what you\'ve seen). Star a node to mark it as a contact.'**
+  /// **'No nodes yet. Discovery is advert-driven: a node appears only when its advert is heard. Ask the other node to Advertise, or tap Scan area.'**
   String get nodesEmptyReady;
 
   /// No description provided for @nodesEmptyOffline.
@@ -2198,6 +2162,30 @@ abstract class AppLocalizations {
   /// **'Device configuration'**
   String get settingsHubDevice;
 
+  /// No description provided for @settingsGroupRadio.
+  ///
+  /// In en, this message translates to:
+  /// **'RADIO'**
+  String get settingsGroupRadio;
+
+  /// No description provided for @settingsGroupApp.
+  ///
+  /// In en, this message translates to:
+  /// **'APP'**
+  String get settingsGroupApp;
+
+  /// No description provided for @settingsGroupConnect.
+  ///
+  /// In en, this message translates to:
+  /// **'CONNECTION'**
+  String get settingsGroupConnect;
+
+  /// No description provided for @settingsGroupAbout.
+  ///
+  /// In en, this message translates to:
+  /// **'ABOUT'**
+  String get settingsGroupAbout;
+
   /// No description provided for @settingsHubDeviceSub.
   ///
   /// In en, this message translates to:
@@ -2249,7 +2237,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsHubDiagnosticsSub.
   ///
   /// In en, this message translates to:
-  /// **'Connect a radio · frame log · M6 capture'**
+  /// **'Connect a radio, frame log, capture'**
   String get settingsHubDiagnosticsSub;
 
   /// No description provided for @bootHeader.
@@ -3293,7 +3281,7 @@ abstract class AppLocalizations {
   /// No description provided for @docsHubSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Read the MeshCore protocol, your device firmware, this app, and our per-device field notes — offline. Snapshots refresh from GitHub when you\'re online.'**
+  /// **'Protocol, firmware, app and field notes, offline.'**
   String get docsHubSubtitle;
 
   /// No description provided for @docsHubFooter.
@@ -4298,6 +4286,18 @@ abstract class AppLocalizations {
   /// **'{label} applied — make sure every node in your mesh uses the same preset.'**
   String deviceRegionAppliedToast(String label);
 
+  /// No description provided for @deviceRegionDisclaimerShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Community-curated values, not regulatory guarantees.'**
+  String get deviceRegionDisclaimerShort;
+
+  /// No description provided for @deviceRegionDisclaimerMore.
+  ///
+  /// In en, this message translates to:
+  /// **'Details'**
+  String get deviceRegionDisclaimerMore;
+
   /// No description provided for @deviceRegionDisclaimer.
   ///
   /// In en, this message translates to:
@@ -4733,7 +4733,7 @@ abstract class AppLocalizations {
   /// No description provided for @otherTelemetryModeHelp.
   ///
   /// In en, this message translates to:
-  /// **'Controls who may request each kind of telemetry from this device — Base = battery, Location = GPS, Environment = temp/humidity/pressure. Off = deny all; Contacts = only your contacts (per their flags); Anyone = any node. This is a sharing permission, not whether the device has the sensor — a node with no environment sensor sends nothing even on \"Anyone\".'**
+  /// **'Who may request battery, GPS and environment data from this device.'**
   String get otherTelemetryModeHelp;
 
   /// No description provided for @otherMultiAcksLabel.
@@ -5645,7 +5645,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsHubMapsSub.
   ///
   /// In en, this message translates to:
-  /// **'Region downloads, event maps, storage budget'**
+  /// **'Basemap, event maps, storage'**
   String get settingsHubMapsSub;
 
   /// No description provided for @mapsTitle.
