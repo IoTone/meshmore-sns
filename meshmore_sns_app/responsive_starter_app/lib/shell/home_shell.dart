@@ -339,27 +339,31 @@ class _SettingsView extends StatelessWidget {
     final MmSkin skin = context.skin;
     final bool cardRows =
         skin.shape.corner != MmCorner.sharp || skin.ornament.any;
-    // A group label is a row with a null icon and title.
+    // A group label is a row with a null icon; its text sits in the
+    // subtitle slot. The label travels with its group rather than being
+    // derived from the row index: R92 shipped a switch on `i` that only
+    // matched three of the four separators, so APP, CONNECTION and ABOUT
+    // all rendered as "ABOUT" on the device (found on the phone 2026-10-21).
     final List<(IconData?, String?, String, String)> items =
         <(IconData?, String?, String, String)>[
       // R92 — grouped by what the row is for, not one flat list of nine.
-      (null, null, '', ''),
+      (null, null, l.settingsGroupRadio, ''),
       (Icons.router_outlined, l.settingsHubDevice, l.settingsHubDeviceSub,
           '/settings/device'),
       (Icons.tag, l.settingsHubChannels, l.settingsHubChannelsSub,
           '/settings/channels'),
-      (null, null, '', ''),
+      (null, null, l.settingsGroupApp, ''),
       (Icons.tune, l.settingsHubApp, l.settingsHubAppSub, '/settings/app'),
       (Icons.palette_outlined, l.settingsHubProfile, l.settingsHubProfileSub,
           '/settings/profile'),
       (Icons.map_outlined, l.settingsHubMaps, l.settingsHubMapsSub,
           '/settings/maps'),
-      (null, null, '', ''),
+      (null, null, l.settingsGroupConnect, ''),
       (Icons.bluetooth_searching, l.settingsHubDiagnostics,
           l.settingsHubDiagnosticsSub, '/settings/diagnostics'),
       (Icons.handyman_outlined, l.settingsHubTools, l.settingsHubToolsSub,
           '/settings/tools'),
-      (null, null, '', ''),
+      (null, null, l.settingsGroupAbout, ''),
       (Icons.menu_book_outlined, l.tabDocs, l.settingsHubDocsSub,
           '/settings/docs'),
       (Icons.info_outline, l.settingsHubInfo, l.settingsHubInfoSub,
@@ -382,12 +386,7 @@ class _SettingsView extends StatelessWidget {
               padding: EdgeInsets.fromLTRB(
                   cardRows ? 8 : 16, i == 0 ? 8 : 18, 16, 6),
               child: Text(
-                switch (i) {
-                  0 => l.settingsGroupRadio,
-                  4 => l.settingsGroupApp,
-                  8 => l.settingsGroupConnect,
-                  _ => l.settingsGroupAbout,
-                },
+                it.$3,
                 style: TextStyle(
                     color: skin.color.fgMuted,
                     fontSize: 11,

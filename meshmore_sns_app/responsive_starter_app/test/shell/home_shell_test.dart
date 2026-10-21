@@ -159,6 +159,34 @@ void main() {
     expect(find.widgetWithText(AppBar, 'Settings'), findsOneWidget);
   });
 
+  testWidgets('R94 the Settings hub labels each group once',
+      (WidgetTester t) async {
+    // Found on the phone 2026-10-21: RADIO / ABOUT / ABOUT / ABOUT. The
+    // group label was picked by list index (0 / 4 / 8) while the separator
+    // rows sit at 0 / 3 / 7 / 10, so three groups fell through to the
+    // default. Labels now travel with their group; this pins the render.
+    addTearDown(() => appRouter.go('/'));
+    t.view.physicalSize = const Size(400, 1600);
+    t.view.devicePixelRatio = 1.0;
+    addTearDown(t.view.resetPhysicalSize);
+    addTearDown(t.view.resetDevicePixelRatio);
+    await _pumpApp(t);
+    await t.tap(find.byTooltip('Settings'));
+    await t.pumpAndSettle();
+    for (final String g in <String>[
+      'RADIO',
+      'APP',
+      'CONNECTION',
+      'ABOUT',
+    ]) {
+      expect(find.text(g), findsOneWidget, reason: 'group label $g');
+    }
+    double y(String s) => t.getTopLeft(find.text(s)).dy;
+    expect(y('RADIO'), lessThan(y('APP')));
+    expect(y('APP'), lessThan(y('CONNECTION')));
+    expect(y('CONNECTION'), lessThan(y('ABOUT')));
+  });
+
   testWidgets('the view strip jumps views (R11, R64)', (WidgetTester t) async {
     await _pumpApp(t);
     await t.tap(find.byTooltip('Settings'));

@@ -1252,6 +1252,18 @@ While Meshcore protocol is open source, the client is not open source.  We want 
   changed (needs a layout decision):** at 320dp with 2.0x text the
   Dashboard status row overflows by ~7 px and `/settings/maps/new`'s
   `ToolChoice` dropdown by ~57 px.
+- R94: **the Settings hub's group labels were wrong on the device.**
+  R92 chose each label by list index in a `switch` (`0 / 4 / 8`) while the
+  four separator rows sit at `0 / 3 / 7 / 10`, so APP, CONNECTION and
+  ABOUT all fell through to the default and the phone rendered
+  RADIO / ABOUT / ABOUT / ABOUT. The label now travels with its own group
+  row instead of being derived from the index, which removes the whole
+  class of off-by-one. Test: `home_shell_test` renders the hub in a tall
+  viewport so every row is built, asserts each of the four labels appears
+  exactly once, and asserts their vertical order. Found on the phone
+  while recording the radio's identity (Heltec V4.3 OLED, firmware
+  `v1.17.1-d929643`); the suite had no test for the groups at all, which
+  is why R92 shipped it.
 - R92: **Settings says what it is for, and the walls of text come down.**
   The hub was nine flat rows with subtitles: nothing said which rows
   configure the radio, which the app, which are about the build. It is now
