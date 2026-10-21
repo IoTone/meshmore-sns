@@ -219,10 +219,10 @@ class _HomeShellState extends State<HomeShell>
 /// quick-nav sheet and the old 6 px dots (which were a 4 px-tall tap
 /// target with no semantics, so the sheet was the only accessible path).
 ///
-/// One icon per [MmView], each a 48x48 button with the view's title as
+/// One icon per [MmView], each a button at least 48x48 with the view's title as
 /// its semantic label and tooltip and `selected` on the current one. It
-/// scrolls sideways if the screen is narrower than 8 x 48dp and scrolls
-/// the current view into sight, so it never clips on a small phone.
+/// fills the full width in equal cells, and scrolls sideways (keeping the
+/// current view in sight) only if the screen is narrower than 6 x 48dp.
 class _ViewStrip extends StatefulWidget implements PreferredSizeWidget {
   const _ViewStrip({required this.index, required this.onSelect});
 
@@ -256,61 +256,76 @@ class _ViewStripState extends State<_ViewStrip> {
     }
   }
 
+  /// One view button. [width] null means "fill the Expanded slot the caller
+  /// gave me"; a number pins it (the scrolling fallback).
+  Widget _cell(MmView v, AppLocalizations l, ColorScheme cs, {double? width}) {
+    return Semantics(
+      key: _keys[v.index],
+      button: true,
+      selected: v.index == widget.index,
+      label: v.title(l),
+      excludeSemantics: true,
+      onTap: () => widget.onSelect(v.index),
+      child: Tooltip(
+        message: v.title(l),
+        excludeFromSemantics: true,
+        child: InkWell(
+          onTap: () => widget.onSelect(v.index),
+          child: SizedBox(
+            width: width,
+            height: _ViewStrip.cell,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[
+                Icon(v.icon,
+                    size: 20,
+                    color: v.index == widget.index
+                        ? cs.primary
+                        : cs.onSurface.withValues(alpha: .6)),
+                const SizedBox(height: 4),
+                Container(
+                  width: 18,
+                  height: 2,
+                  color: v.index == widget.index
+                      ? cs.primary
+                      : Colors.transparent,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final ColorScheme cs = Theme.of(context).colorScheme;
     final AppLocalizations l = AppLocalizations.of(context);
     return LayoutBuilder(
-      builder: (BuildContext context, BoxConstraints box) =>
-          SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: ConstrainedBox(
-          constraints: BoxConstraints(minWidth: box.maxWidth),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+      builder: (BuildContext context, BoxConstraints box) {
+        // Wide enough for every cell at its minimum: the cells share the
+        // whole width equally, so no dead space at either edge (an
+        // Expanded needs a bounded main axis, hence no scroll view here).
+        if (box.maxWidth >= _ViewStrip.cell * MmView.values.length) {
+          return Row(
             children: <Widget>[
               for (final MmView v in MmView.values)
-                Semantics(
-                  key: _keys[v.index],
-                  button: true,
-                  selected: v.index == widget.index,
-                  label: v.title(l),
-                  excludeSemantics: true,
-                  onTap: () => widget.onSelect(v.index),
-                  child: Tooltip(
-                    message: v.title(l),
-                    excludeFromSemantics: true,
-                    child: InkWell(
-                      onTap: () => widget.onSelect(v.index),
-                      child: SizedBox(
-                        width: _ViewStrip.cell,
-                        height: _ViewStrip.cell,
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: <Widget>[
-                            Icon(v.icon,
-                                size: 20,
-                                color: v.index == widget.index
-                                    ? cs.primary
-                                    : cs.onSurface.withValues(alpha: .6)),
-                            const SizedBox(height: 4),
-                            Container(
-                              width: 18,
-                              height: 2,
-                              color: v.index == widget.index
-                                  ? cs.primary
-                                  : Colors.transparent,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
+                Expanded(child: _cell(v, l, cs)),
+            ],
+          );
+        }
+        // Narrower than 6 x 48dp: fixed 48dp cells that scroll sideways.
+        return SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: <Widget>[
+              for (final MmView v in MmView.values)
+                _cell(v, l, cs, width: _ViewStrip.cell),
             ],
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }

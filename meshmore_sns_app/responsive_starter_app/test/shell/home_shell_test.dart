@@ -529,4 +529,44 @@ void main() {
       expect(rightBand.width, 24);
     });
   });
+
+  group('the view strip fills the width', () {
+    const List<String> labels = <String>[
+      'Dashboard',
+      'Chat',
+      'Nodes',
+      'Hyperlocal grid',
+      'Map',
+      'Settings',
+    ];
+    for (final double w in <double>[320, 360, 393, 412, 600, 1024]) {
+      testWidgets('at ${w.toInt()}dp: equal cells edge to edge, >= 48dp',
+          (WidgetTester t) async {
+        t.view.physicalSize = Size(w, 800);
+        t.view.devicePixelRatio = 1.0;
+        addTearDown(t.view.resetPhysicalSize);
+        addTearDown(t.view.resetDevicePixelRatio);
+        await _pumpApp(t);
+        final List<Rect> cells = <Rect>[
+          for (final String s in labels) t.getRect(find.byTooltip(s)),
+        ];
+        // ignore: avoid_print
+        print('strip cells @${w.toInt()}dp: $cells');
+        expect(cells.first.left, 0, reason: 'no dead space on the left');
+        expect(cells.last.right, closeTo(w, 0.01),
+            reason: 'no dead space on the right');
+        for (int i = 0; i < cells.length; i++) {
+          expect(cells[i].width, closeTo(cells.first.width, 0.01),
+              reason: 'cell $i is the same width as cell 0');
+          expect(cells[i].width, greaterThanOrEqualTo(48));
+          expect(cells[i].height, greaterThanOrEqualTo(48));
+          if (i > 0) {
+            expect(cells[i].left, closeTo(cells[i - 1].right, 0.01),
+                reason: 'cells abut, no gap');
+          }
+        }
+        expect(t.takeException(), isNull);
+      });
+    }
+  });
 }
