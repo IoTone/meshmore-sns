@@ -455,33 +455,16 @@
     "placeholders": {"n": {"type": "int"}}
   },
   "gridEmpty": "まだ範囲内にファブリックがありません。\n\nアドバートを受信するとここに表示されます。Nodes 画面でスターをタップしてコンタクト登録 (速い点滅)。DM 交換したノードは既知になります (パルス)。",
-  "gridStatusReady": "{visible}件 ファブリック · {known}件 既知 · {favs}件 コンタクト · {playState}",
-  "@gridStatusReady": {
-    "placeholders": {
-      "visible": {"type": "int"},
-      "known": {"type": "int"},
-      "favs": {"type": "int"},
-      "playState": {"type": "String"}
-    }
-  },
   "gridStatusOffline": "未接続 — 設定 → 診断で接続",
+  "gridStatusCounts": "{visible}件 ファブリック · {known}件 既知 · {favs, plural, =0{0件 コンタクト} other{{favs}件 コンタクト}}",
+  "gridGroupPeers": "ピア",
+  "gridGroupSurvey": "調査",
+  "gridGroupReports": "レポート",
   "gridNotConnected": "メッシュに未接続",
-  "gridPlayStatePaused": "一時停止中",
-  "gridPlayStateLive": "ライブ ({interval})",
-  "@gridPlayStateLive": {
-    "placeholders": {"interval": {"type": "String"}}
-  },
-  "gridFooter": "外側リング ≈ {label} ({value}) · ノードをタップで詳細 · ⓘ で凡例",
   "gridHeadingCalibrate": "コンパス要校正 — スマートフォンを 8 の字に振ってください。",
   "gridOrientNorthUp": "北を上",
   "gridOrientHeadingUp": "進行方向を上",
   "gridHeadingHud": "方位",
-  "@gridFooter": {
-    "placeholders": {
-      "label": {"type": "String"},
-      "value": {"type": "String"}
-    }
-  },
 
   "voiceSettingsTitle": "音声 (TTS 品質)",
   "voiceSettingsHint": "「アプリ設定」で SPEECH を ON にするまで無効。レート / ピッチ / 音声は次の発話から適用されます。",

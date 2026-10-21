@@ -1252,6 +1252,29 @@ While Meshcore protocol is open source, the client is not open source.  We want 
   changed (needs a layout decision):** at 320dp with 2.0x text the
   Dashboard status row overflows by ~7 px and `/settings/maps/new`'s
   `ToolChoice` dropdown by ~57 px.
+- R89: **the grid's chrome stops lying.** The hyperlocal grid had ten
+  views as flat peers in one menu and five header controls, four of which
+  did nothing in some views: play/interval were inert in the three report
+  views (altitude, weather, activity), the legend button was a no-op in
+  five of ten, and the range scale was editable only inside the radar
+  branch even though the equal grid consumes it. The status line printed
+  "paused" while the view was live (the snapshot followed `mc.nodes` until
+  the first interaction, and `frozen` stayed false). Now: (1) the header is
+  one control, the current view's icon + long name + chevron, and the menu
+  groups the ten views as PEERS / SURVEY / REPORTS, which is what they
+  actually are (node projections, accumulated surveys, reports);
+  (2) transport (play/pause + interval) and the range scale moved to a
+  bottom bar, shown only in the seven views that read a time-ordered
+  snapshot, with the range control present in radar and equal grid;
+  (3) the legend button exists only in the five views that draw a legend;
+  (4) `_live` starts true so the transport says live when it is live;
+  (5) the footer that restated the range slider and described the UI
+  ("info icon for the legend") is gone, as are `gridStatusReady`,
+  `gridPlayStateLive/Paused` and `gridFooter`; the counts line is now
+  `gridStatusCounts` and is shown in every view. Not changed: the
+  ten-view set itself (moving ROADS into the Map tab and the reports into
+  their own homes is a bigger change), the per-view toolbars, and the
+  ephemeral per-view toggles.
 - R88: **first device pass against a live radio, and what it found.**
   Verified on a motorola edge 2024 (Android 16, 387dp) with the
   `MeshCore-HELTEC-BASE` companion (`F8:5B:1B:BE:C5:3D`, firmware

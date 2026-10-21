@@ -169,16 +169,12 @@ class _GridScreenState extends State<GridScreen>
   /// Maximum hit-test radius (logical px) for tap-to-select on the grid.
   static const double _tapRadius = 28.0;
 
-  /// Pause / play state. Default is **paused** — the painter renders
-  /// from a snapshot captured at screen-open / pause-tap rather than
-  /// from `mc.nodes` live. Tapping play starts a periodic refresh of
-  /// the snapshot at `_interval`. **Until the user touches any of
-  /// the controls** (`_userInteracted`), the snapshot follows
-  /// `mc.nodes` automatically so a freshly-connected user sees
-  /// arriving adverts populate the view. As soon as they tap Pause,
-  /// Play, or move the scale slider, the snapshot freezes per the
-  /// pause semantics.
-  bool _live = false;
+  /// Pause / play state. Starts **live**: the view follows `mc.nodes`
+  /// and the transport button says so, which is what the screen was
+  /// already doing (`_userInteracted` was false) while the old status
+  /// line printed "paused". Tapping pause freezes the snapshot; play
+  /// restarts the periodic refresh at `_interval`.
+  bool _live = true;
   bool _userInteracted = false;
   Duration _interval = const Duration(seconds: 15);
   List<DiscoveredNode>? _snapshot;
@@ -297,6 +293,171 @@ class _GridScreenState extends State<GridScreen>
   /// Icon for the AppBar picker entry / button. Each mode has a
   /// distinctive Material symbol so the dropdown reads as glanceable
   /// regardless of language.
+  /// Views that read a time-ordered snapshot, so the transport bar means
+  /// something. The three report views (altitude, weather, activity) are
+  /// always current and have no transport.
+  bool get _hasTransport => switch (_viewMode) {
+        _GridViewMode.elevation ||
+        _GridViewMode.weather ||
+        _GridViewMode.meshbook =>
+          false,
+        _ => true,
+      };
+
+  /// Views that render a legend, so the info button exists only there.
+  bool get _hasLegend => switch (_viewMode) {
+        _GridViewMode.radial ||
+        _GridViewMode.fabric ||
+        _GridViewMode.elevation ||
+        _GridViewMode.tree ||
+        _GridViewMode.snsCells =>
+          true,
+        _ => false,
+      };
+
+  /// The range scale is the radar's ring scale and the cell grid's cell
+  /// size. It used to be editable only inside the radar branch, so CELLS
+  /// inherited a value it could not change.
+  bool get _hasRange =>
+      _viewMode == _GridViewMode.radial ||
+      _viewMode == _GridViewMode.equalGrid;
+
+  /// The view menu, grouped by what the views actually are: node
+  /// projections, accumulated surveys, and non-geographic reports. One
+  /// flat list of ten peers hid that split entirely.
+  List<PopupMenuEntry<_GridViewMode>> _viewMenuEntries(
+      AppLocalizations l, ColorScheme cs) {
+    PopupMenuEntry<_GridViewMode> group(String label) => PopupMenuItem<_GridViewMode>(
+          enabled: false,
+          height: 30,
+          child: Text(label,
+              style: TextStyle(
+                  color: cs.onSurfaceVariant,
+                  fontSize: 11,
+                  letterSpacing: 1,
+                  fontWeight: FontWeight.w600)),
+        );
+    PopupMenuEntry<_GridViewMode> item(_GridViewMode m) =>
+        CheckedPopupMenuItem<_GridViewMode>(
+          value: m,
+          checked: _viewMode == m,
+          child: Row(
+            children: <Widget>[
+              Icon(_iconForMode(m), size: 18, color: cs.onSurfaceVariant),
+              const SizedBox(width: 10),
+              Text(_shortLabel(m, l),
+                  style: const TextStyle(
+                      fontSize: 12, fontWeight: FontWeight.w600, letterSpacing: 1)),
+              const SizedBox(width: 8),
+              Flexible(
+                child: Text(_longLabel(m, l),
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                        color: cs.onSurfaceVariant, fontSize: 11)),
+              ),
+            ],
+          ),
+        );
+    return <PopupMenuEntry<_GridViewMode>>[
+      group(l.gridGroupPeers),
+      item(_GridViewMode.radial),
+      item(_GridViewMode.globe),
+      item(_GridViewMode.equalGrid),
+      item(_GridViewMode.streetMap),
+      const PopupMenuDivider(),
+      group(l.gridGroupSurvey),
+      item(_GridViewMode.fabric),
+      item(_GridViewMode.tree),
+      item(_GridViewMode.snsCells),
+      const PopupMenuDivider(),
+      group(l.gridGroupReports),
+      item(_GridViewMode.elevation),
+      item(_GridViewMode.weather),
+      item(_GridViewMode.meshbook),
+    ];
+  }
+
+  /// Bottom bar: transport (play/pause + interval) and, in the two views
+  /// that consume it, the range scale. Kept off the header so switching
+  /// views is one control, and so play/pause is not a per-view toggle
+  /// sitting next to the view's own name.
+  Widget _transportBar(
+      AppLocalizations l, ColorScheme cs, String scaleLabel, String scaleValue) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        border: Border(top: BorderSide(color: cs.outline.withValues(alpha: .2))),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(8, 0, 8, 0),
+        child: Row(
+          children: <Widget>[
+            IconButton(
+              tooltip: _live ? l.gridPauseTooltip : l.gridPlayTooltip,
+              icon: Icon(_live ? Icons.pause : Icons.play_arrow),
+              onPressed: _togglePlay,
+            ),
+            PopupMenuButton<Duration>(
+              tooltip: l.gridIntervalTooltip,
+              initialValue: _interval,
+              onSelected: _changeInterval,
+              itemBuilder: (BuildContext _) => <PopupMenuEntry<Duration>>[
+                for (final Duration d in GridScreen.playIntervals)
+                  CheckedPopupMenuItem<Duration>(
+                    value: d,
+                    checked: _interval == d,
+                    child: Text(_intervalLabel(d)),
+                  ),
+              ],
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    Text(_intervalLabel(_interval),
+                        style: TextStyle(color: cs.onSurfaceVariant)),
+                    const Icon(Icons.arrow_drop_down, size: 18),
+                  ],
+                ),
+              ),
+            ),
+            const Spacer(),
+            if (_hasRange)
+              PopupMenuButton<int>(
+                tooltip: l.gridRange,
+                initialValue: _scaleIndex,
+                onSelected: (int i) {
+                  setState(() {
+                    _userInteracted = true;
+                    _scaleIndex = i;
+                  });
+                  _savePrefs();
+                },
+                itemBuilder: (BuildContext _) => <PopupMenuEntry<int>>[
+                  for (int i = 0; i < GridScreen.rangeStops.length; i++)
+                    CheckedPopupMenuItem<int>(
+                      value: i,
+                      checked: _scaleIndex == i,
+                      child: Text(_rangeLabel(l, i)),
+                    ),
+                ],
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      Text('${l.gridRange} · $scaleLabel',
+                          style: TextStyle(color: cs.onSurfaceVariant)),
+                      const Icon(Icons.arrow_drop_down, size: 18),
+                    ],
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
   static IconData _iconForMode(_GridViewMode m) => switch (m) {
         _GridViewMode.radial => Icons.radar,
         _GridViewMode.globe => Icons.public,
@@ -553,110 +714,64 @@ class _GridScreenState extends State<GridScreen>
         padding: const EdgeInsets.fromLTRB(16, 4, 4, 0),
         child: Row(
         children: <Widget>[
-          // The shell's AppBar carries the tab title; name the view here.
-          Expanded(
-            child: Text(
-              _longLabel(_viewMode, l),
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                  color: cs.onSurfaceVariant,
-                  fontSize: 12,
-                  letterSpacing: 1),
-            ),
-          ),
-          // R27 + R25 + R25+4 — view-mode picker. PopupMenuButton
-          // shows icon + short label per mode. Swipe nav was tried
-          // in R25+2 but conflicted with the outer HomeShell
-          // PageView at the boundary (left-swipe-from-radial would
-          // leave the grid tab instead of staying inside it). The
-          // dropdown is unambiguous and one tap shorter than a
-          // cycle for mid-list modes.
+          // R88 — one control on the left: the current view's own icon,
+          // short name and a chevron. The separate caption that used to
+          // sit above it said the same thing in the same toolbar. The
+          // menu groups the ten views by what they show (peers, surveys,
+          // reports) instead of listing them as ten peers.
           PopupMenuButton<_GridViewMode>(
             tooltip: l.gridViewPicker,
             initialValue: _viewMode,
             onSelected: _selectMode,
-            // Icon + dropdown arrow only; the view's long label sits
-            // at the left of this toolbar and on each menu row.
-            icon: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                Icon(_iconForMode(_viewMode)),
-                const Icon(Icons.arrow_drop_down, size: 18),
-              ],
-            ),
-            itemBuilder: (BuildContext _) =>
-                <PopupMenuEntry<_GridViewMode>>[
-              for (final _GridViewMode m in _GridViewMode.values)
-                CheckedPopupMenuItem<_GridViewMode>(
-                  value: m,
-                  checked: _viewMode == m,
-                  child: Row(
-                    children: <Widget>[
-                      Icon(_iconForMode(m),
-                          size: 18, color: cs.onSurfaceVariant),
-                      const SizedBox(width: 10),
-                      Text(_shortLabel(m, l),
-                          style: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              letterSpacing: 1)),
-                      const SizedBox(width: 8),
-                      Flexible(
-                        child: Text(_longLabel(m, l),
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                                color: cs.onSurfaceVariant,
-                                fontSize: 11)),
-                      ),
-                    ],
-                  ),
-                ),
-            ],
-          ),
-          IconButton(
-            tooltip: _live ? l.gridPauseTooltip : l.gridPlayTooltip,
-            icon: Icon(_live ? Icons.pause : Icons.play_arrow),
-            onPressed: _togglePlay,
-          ),
-          PopupMenuButton<Duration>(
-            tooltip: l.gridIntervalTooltip,
-            initialValue: _interval,
-            onSelected: _changeInterval,
-            itemBuilder: (BuildContext _) => <PopupMenuEntry<Duration>>[
-              for (final Duration d in GridScreen.playIntervals)
-                CheckedPopupMenuItem<Duration>(
-                  value: d,
-                  checked: _interval == d,
-                  child: Text(_intervalLabel(d)),
-                ),
-            ],
+            itemBuilder: (BuildContext _) => _viewMenuEntries(l, cs),
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 12),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
-                  Text(_intervalLabel(_interval),
-                      style: TextStyle(
-                          color: _live
-                              ? cs.onPrimary
-                              : cs.onSurfaceVariant)),
+                  Icon(_iconForMode(_viewMode), size: 20),
+                  const SizedBox(width: 8),
+                  // The long name, not the four-letter code: "Weather
+                  // (environment)" tells you where you are, "WX" does not.
+                  Flexible(
+                    child: Text(_longLabel(_viewMode, l),
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                            fontSize: 13, fontWeight: FontWeight.w600)),
+                  ),
                   const Icon(Icons.arrow_drop_down, size: 18),
                 ],
               ),
             ),
           ),
-          IconButton(
-            tooltip: _legendVisible
-                ? l.gridHideLegend
-                : l.gridShowLegend,
-            icon: Icon(_legendVisible
-                ? Icons.info
-                : Icons.info_outline),
-            onPressed: () =>
-                setState(() => _legendVisible = !_legendVisible),
-          ),
+          const Spacer(),
+          // Only the five views that draw a legend get the button, so it
+          // can no longer be a silent no-op in the other five.
+          if (_hasLegend)
+            IconButton(
+              tooltip: _legendVisible ? l.gridHideLegend : l.gridShowLegend,
+              icon: Icon(_legendVisible ? Icons.info : Icons.info_outline),
+              onPressed: () =>
+                  setState(() => _legendVisible = !_legendVisible),
+            ),
         ],
       ),
+      ),
+      // Counts for every view. They used to be printed inside the radar
+      // branch only, and the play state rode along in the same sentence
+      // even though the transport now says it.
+      Padding(
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 6),
+        child: Align(
+          alignment: Alignment.centerLeft,
+          child: Text(
+            ready
+                ? l.gridStatusCounts(visible.length, mc.known.length,
+                    mc.favorites.length)
+                : l.gridStatusOffline,
+            style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12),
+          ),
+        ),
       ),
       // The radar says it in its own centre; every other view gets
       // the strip.
@@ -746,63 +861,8 @@ class _GridScreenState extends State<GridScreen>
         _GridViewMode.meshbook => const MeshbookView(),
         _GridViewMode.radial => Column(
         children: <Widget>[
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 10, 16, 4),
-            child: Text(
-              ready
-                  ? l.gridStatusReady(
-                      visible.length,
-                      mc.known.length,
-                      mc.favorites.length,
-                      _live
-                          ? l.gridPlayStateLive(_intervalLabel(_interval))
-                          : l.gridPlayStatePaused,
-                    )
-                  : l.gridStatusOffline,
-              style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12),
-            ),
-          ),
-          // Range scale slider — six discrete stops from Room (25 m)
-          // out to Wide (5 km, default). Affects how the GPS-distance
-          // branch projects onto the outer ring (RSSI-only nodes still
-          // use their fractional rings as before, but the legend label
-          // tracks the selected scale so the user knows what the rings
-          // mean at a glance).
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
-            child: Row(
-              children: <Widget>[
-                Text(l.gridRange,
-                    style: TextStyle(
-                        color: cs.onSurfaceVariant,
-                        fontSize: 11,
-                        letterSpacing: 1)),
-                Expanded(
-                  child: Slider(
-                    value: _scaleIndex.toDouble(),
-                    min: 0,
-                    max: (GridScreen.rangeStops.length - 1).toDouble(),
-                    divisions: GridScreen.rangeStops.length - 1,
-                    label: scaleLabel,
-                    onChanged: (double v) => setState(() {
-                      _userInteracted = true;
-                      _scaleIndex = v.round();
-                    }),
-                    onChangeEnd: (_) => _savePrefs(),
-                  ),
-                ),
-                SizedBox(
-                  width: 96,
-                  child: Text(
-                    '$scaleLabel · $scaleValue',
-                    textAlign: TextAlign.end,
-                    style: TextStyle(
-                        color: cs.onSurface, fontSize: 11),
-                  ),
-                ),
-              ],
-            ),
-          ),
+          // The range control lives in the bottom bar now, where the
+          // cells view can reach it too.
           if (_legendVisible)
             _GridLegend(cs: cs, scaleKm: scaleKm, l: l),
           const Divider(height: 1),
@@ -900,24 +960,11 @@ class _GridScreenState extends State<GridScreen>
               ],
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 6, 16, 14),
-            child: Row(
-              children: <Widget>[
-                Expanded(
-                  child: Text(
-                    l.gridFooter(scaleLabel.toLowerCase(), scaleValue),
-                    style: TextStyle(
-                        color: cs.onSurfaceVariant, fontSize: 11),
-                  ),
-                ),
-              ],
-            ),
-          ),
         ],
       ),
       },
       ),
+      if (_hasTransport) _transportBar(l, cs, scaleLabel, scaleValue),
         ],
       ),
     );

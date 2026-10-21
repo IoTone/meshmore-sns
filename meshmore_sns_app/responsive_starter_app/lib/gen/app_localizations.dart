@@ -2018,41 +2018,41 @@ abstract class AppLocalizations {
   /// **'No fabric in range yet.\n\nNodes appear here as their adverts are heard. Star a node in Nodes to mark it as a contact (rapid blink). Nodes we DM with become known (pulse).'**
   String get gridEmpty;
 
-  /// No description provided for @gridStatusReady.
-  ///
-  /// In en, this message translates to:
-  /// **'{visible} in fabric · {known} known · {favs, plural, =0{0 contacts} =1{1 contact} other{{favs} contacts}} · {playState}'**
-  String gridStatusReady(int visible, int known, int favs, String playState);
-
   /// No description provided for @gridStatusOffline.
   ///
   /// In en, this message translates to:
   /// **'Not connected — Settings → Diagnostics & connect'**
   String get gridStatusOffline;
 
+  /// No description provided for @gridStatusCounts.
+  ///
+  /// In en, this message translates to:
+  /// **'{visible} in fabric · {known} known · {favs, plural, =0{0 contacts} =1{1 contact} other{{favs} contacts}}'**
+  String gridStatusCounts(int visible, int known, int favs);
+
+  /// No description provided for @gridGroupPeers.
+  ///
+  /// In en, this message translates to:
+  /// **'PEERS'**
+  String get gridGroupPeers;
+
+  /// No description provided for @gridGroupSurvey.
+  ///
+  /// In en, this message translates to:
+  /// **'SURVEY'**
+  String get gridGroupSurvey;
+
+  /// No description provided for @gridGroupReports.
+  ///
+  /// In en, this message translates to:
+  /// **'REPORTS'**
+  String get gridGroupReports;
+
   /// No description provided for @gridNotConnected.
   ///
   /// In en, this message translates to:
   /// **'Not Connected to Mesh'**
   String get gridNotConnected;
-
-  /// No description provided for @gridPlayStatePaused.
-  ///
-  /// In en, this message translates to:
-  /// **'paused'**
-  String get gridPlayStatePaused;
-
-  /// No description provided for @gridPlayStateLive.
-  ///
-  /// In en, this message translates to:
-  /// **'live ({interval})'**
-  String gridPlayStateLive(String interval);
-
-  /// No description provided for @gridFooter.
-  ///
-  /// In en, this message translates to:
-  /// **'Outer ring ≈ {label} ({value}) · tap a node for details · info icon for the legend'**
-  String gridFooter(String label, String value);
 
   /// No description provided for @gridHeadingCalibrate.
   ///

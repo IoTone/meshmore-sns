@@ -1070,28 +1070,30 @@ class AppLocalizationsJa extends AppLocalizations {
       'まだ範囲内にファブリックがありません。\n\nアドバートを受信するとここに表示されます。Nodes 画面でスターをタップしてコンタクト登録 (速い点滅)。DM 交換したノードは既知になります (パルス)。';
 
   @override
-  String gridStatusReady(int visible, int known, int favs, String playState) {
-    return '$visible件 ファブリック · $known件 既知 · $favs件 コンタクト · $playState';
-  }
-
-  @override
   String get gridStatusOffline => '未接続 — 設定 → 診断で接続';
 
   @override
+  String gridStatusCounts(int visible, int known, int favs) {
+    String _temp0 = intl.Intl.pluralLogic(
+      favs,
+      locale: localeName,
+      other: '$favs件 コンタクト',
+      zero: '0件 コンタクト',
+    );
+    return '$visible件 ファブリック · $known件 既知 · $_temp0';
+  }
+
+  @override
+  String get gridGroupPeers => 'ピア';
+
+  @override
+  String get gridGroupSurvey => '調査';
+
+  @override
+  String get gridGroupReports => 'レポート';
+
+  @override
   String get gridNotConnected => 'メッシュに未接続';
-
-  @override
-  String get gridPlayStatePaused => '一時停止中';
-
-  @override
-  String gridPlayStateLive(String interval) {
-    return 'ライブ ($interval)';
-  }
-
-  @override
-  String gridFooter(String label, String value) {
-    return '外側リング ≈ $label ($value) · ノードをタップで詳細 · ⓘ で凡例';
-  }
 
   @override
   String get gridHeadingCalibrate => 'コンパス要校正 — スマートフォンを 8 の字に振ってください。';

@@ -1121,7 +1121,11 @@ class AppLocalizationsEn extends AppLocalizations {
       'No fabric in range yet.\n\nNodes appear here as their adverts are heard. Star a node in Nodes to mark it as a contact (rapid blink). Nodes we DM with become known (pulse).';
 
   @override
-  String gridStatusReady(int visible, int known, int favs, String playState) {
+  String get gridStatusOffline =>
+      'Not connected — Settings → Diagnostics & connect';
+
+  @override
+  String gridStatusCounts(int visible, int known, int favs) {
     String _temp0 = intl.Intl.pluralLogic(
       favs,
       locale: localeName,
@@ -1129,28 +1133,20 @@ class AppLocalizationsEn extends AppLocalizations {
       one: '1 contact',
       zero: '0 contacts',
     );
-    return '$visible in fabric · $known known · $_temp0 · $playState';
+    return '$visible in fabric · $known known · $_temp0';
   }
 
   @override
-  String get gridStatusOffline =>
-      'Not connected — Settings → Diagnostics & connect';
+  String get gridGroupPeers => 'PEERS';
+
+  @override
+  String get gridGroupSurvey => 'SURVEY';
+
+  @override
+  String get gridGroupReports => 'REPORTS';
 
   @override
   String get gridNotConnected => 'Not Connected to Mesh';
-
-  @override
-  String get gridPlayStatePaused => 'paused';
-
-  @override
-  String gridPlayStateLive(String interval) {
-    return 'live ($interval)';
-  }
-
-  @override
-  String gridFooter(String label, String value) {
-    return 'Outer ring ≈ $label ($value) · tap a node for details · info icon for the legend';
-  }
 
   @override
   String get gridHeadingCalibrate =>
