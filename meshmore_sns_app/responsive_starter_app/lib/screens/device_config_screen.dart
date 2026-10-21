@@ -317,9 +317,14 @@ class _DeviceConfigScreenState extends State<DeviceConfigScreen> {
     if (ok == true) await _applyPreset(mc, p);
   }
 
-  void _toast(String m) => ScaffoldMessenger.of(context)
-    ..clearSnackBars()
-    ..showSnackBar(SnackBar(content: Text(m)));
+  void _toast(String m) {
+    // Most callers run after a BLE write; the user may have left the
+    // screen by then (same guard as Diagnostics' _toast).
+    if (!mounted) return;
+    ScaffoldMessenger.of(context)
+      ..clearSnackBars()
+      ..showSnackBar(SnackBar(content: Text(m)));
+  }
 
   Future<void> _applyRadio(MeshcoreController mc) async {
     final AppLocalizations l = AppLocalizations.of(context);

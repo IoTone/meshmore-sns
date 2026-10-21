@@ -88,7 +88,7 @@ class _TraceScreenState extends State<TraceScreen> {
                         enabled: (DiscoveredNode n) => tracePathFor(n) != null,
                         reason: l.traceNoRoute,
                       );
-                      if (n != null) setState(() => _node = n);
+                      if (n != null && mounted) setState(() => _node = n);
                     },
             ),
           ),
