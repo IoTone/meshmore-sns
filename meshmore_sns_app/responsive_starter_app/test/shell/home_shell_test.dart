@@ -591,5 +591,49 @@ void main() {
         expect(t.takeException(), isNull);
       });
     }
+
+    // _ViewStripState.didUpdateWidget calls Scrollable.ensureVisible after
+    // every index change. In the fill branch there is no Scrollable above
+    // the cells; ensureVisible walks Scrollable.maybeOf (Flutter 3.47.4,
+    // scrollable.dart:509), so it is a no-op there. These two prove it for
+    // both layouts rather than trusting the source reading.
+    testWidgets('changing view at 400dp (fill branch, no Scrollable) is safe',
+        (WidgetTester t) async {
+      t.view.physicalSize = const Size(400, 800);
+      t.view.devicePixelRatio = 1.0;
+      addTearDown(t.view.resetPhysicalSize);
+      addTearDown(t.view.resetDevicePixelRatio);
+      await _pumpApp(t);
+      expect(
+          find.descendant(
+              of: find.byTooltip('Map'), matching: find.byType(Scrollable)),
+          findsNothing);
+      await t.tap(find.byTooltip('Map'));
+      await t.pumpAndSettle();
+      await t.tap(find.byTooltip('Chat'));
+      await t.pumpAndSettle();
+      expect(find.widgetWithText(AppBar, 'Chat'), findsOneWidget);
+      expect(t.takeException(), isNull);
+    });
+
+    testWidgets('changing view below 288dp (scrolling branch) still scrolls '
+        'the selected cell into sight', (WidgetTester t) async {
+      t.view.physicalSize = const Size(270, 800);
+      t.view.devicePixelRatio = 1.0;
+      addTearDown(t.view.resetPhysicalSize);
+      addTearDown(t.view.resetDevicePixelRatio);
+      await _pumpApp(t);
+      // Six 48dp cells need 288dp: the last one is only partly on screen.
+      expect(t.getRect(find.byTooltip('Settings')).right, 288);
+      // Tap its visible sliver (x 240..270).
+      await t.tapAt(const Offset(255, 80));
+      await t.pumpAndSettle();
+      expect(t.getRect(find.byTooltip('Settings')).right,
+          lessThanOrEqualTo(270.01),
+          reason: 'ensureVisible scrolled the selected cell into sight');
+      // 270dp is far below any real phone: the Dashboard body overflows
+      // there, which is not what this test is about, so drain it.
+      while (t.takeException() != null) {}
+    });
   });
 }
