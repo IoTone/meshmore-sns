@@ -234,6 +234,7 @@ class ToolChoice<T> extends StatelessWidget {
       child: DropdownButton<T>(
         value: values.contains(value) ? value : null,
         isDense: true,
+        isExpanded: true,
         onChanged: enabled
             ? (T? v) {
                 if (v != null) onChanged(v);
