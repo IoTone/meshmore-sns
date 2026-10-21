@@ -373,7 +373,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get settingsLanguageJapanese => '日本語';
 
   @override
-  String get settingsSpeech => '音声読み上げ (R5)';
+  String get settingsSpeech => '音声読み上げ';
 
   @override
   String get settingsSpeechOn => '音声読み上げ ON · チャネル別切替はチャット内';
@@ -458,7 +458,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get personalizationFontSize => 'フォントサイズ';
 
   @override
-  String get personalizationAccessibility => 'アクセシビリティ (R13)';
+  String get personalizationAccessibility => 'アクセシビリティ';
 
   @override
   String get personalizationHighContrast => 'ハイコントラスト';
@@ -480,7 +480,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get personalizationVisualHapticOnlySubtitle => '音による情報提示なし; 音声をオフ';
 
   @override
-  String get personalizationAudioAlerts => '音声アラート (R12)';
+  String get personalizationAudioAlerts => '音声アラート';
 
   @override
   String get personalizationAudioMaster => '音声アラート';
@@ -1168,7 +1168,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get settingsHubDevice => 'デバイス設定';
 
   @override
-  String get settingsHubDeviceSub => 'MeshCore ラジオ & デバイス (R7)';
+  String get settingsHubDeviceSub => 'MeshCore ラジオ & デバイス';
 
   @override
   String get settingsHubApp => 'アプリ設定';

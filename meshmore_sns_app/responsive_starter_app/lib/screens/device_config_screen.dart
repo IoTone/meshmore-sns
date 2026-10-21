@@ -489,14 +489,19 @@ class _DeviceConfigScreenState extends State<DeviceConfigScreen> {
                 num(l.deviceCodingRate, _cr, 'e.g. 5'),
                 num(l.deviceTxPower, _tx, 'within regional limit'),
                 const SizedBox(height: 12),
-                Row(
+                // Wrap, not Row+Spacer: two buttons on one line while they
+                // fit (same left/right placement), stacking instead of
+                // overflowing by 8.5 px at 320dp with 2.0x text.
+                Wrap(
+                  alignment: WrapAlignment.spaceBetween,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  runSpacing: 8,
                   children: <Widget>[
                     if (si != null)
                       TextButton(
                         onPressed: () => _loadFrom(si),
                         child: Text(l.deviceLoadFromDevice),
                       ),
-                    const Spacer(),
                     FilledButton.icon(
                       icon: const Icon(Icons.send),
                       label: Text(l.deviceApplyRadio),
@@ -763,6 +768,31 @@ class _DeviceConfigScreenState extends State<DeviceConfigScreen> {
   }
 }
 
+/// Width of the "Base / Location / Environment" label column: 88dp at
+/// normal text size, growing with the system text scale up to 120dp.
+/// Fixed at 88 it broke "Environment" as "Environme / nt" on a phone set
+/// to 1.3x. The cap keeps room for the three segments on a small screen.
+@visibleForTesting
+double telemLabelWidth(TextScaler scaler) =>
+    (88 * scaler.scale(1)).clamp(88.0, 120.0);
+
+/// Narrowest the three-segment control gets at 1.0x text (Off / Contacts /
+/// Anyone, compact density, measured on the device). It scales with the text
+/// like the labels do, so it is the other half of the fit question below.
+const double _telemetrySegmentsAt1x = 208;
+
+/// True when a label column and the segmented control can share one line.
+/// Below this the row stacks: a stretched label column plus a squeezed
+/// SegmentedButton overflowed by 37 px on a 387dp phone at 1.3x, and by
+/// more at 2.0x.
+@visibleForTesting
+bool telemetryRowFits({
+  required double available,
+  required TextScaler scaler,
+}) =>
+    telemLabelWidth(scaler) + 8 + _telemetrySegmentsAt1x * scaler.scale(1) <=
+    available;
+
 /// Editable OTHER PARAMS block. The three settings (manual-add,
 /// telemetry mode, multi-acks) all share the same `CMD_SET_OTHER_PARAMS`
 /// (0x26) wire surface; each setter on `MeshcoreController` preserves
@@ -797,6 +827,7 @@ class _OtherParamsEditorState extends State<_OtherParamsEditor> {
   static const int telemDeny = 0;
   static const int telemFlags = 1;
   static const int telemAll = 2;
+
 
   /// Mask to the 2-bit field and clamp the undefined value 3 down to the
   /// highest defined level (ALLOW_ALL).
@@ -928,33 +959,50 @@ class _OtherParamsEditorState extends State<_OtherParamsEditor> {
         ])
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 2),
-            child: Row(
-              children: <Widget>[
-                SizedBox(
-                    width: 88,
-                    child: Text(row.$1,
-                        style: TextStyle(color: cs.onSurface, fontSize: 13))),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: SegmentedButton<int>(
-                    segments: <ButtonSegment<int>>[
-                      ButtonSegment<int>(
-                          value: telemDeny, label: Text(l.otherTelemetryDeny)),
-                      ButtonSegment<int>(
-                          value: telemFlags,
-                          label: Text(l.otherTelemetryFlags)),
-                      ButtonSegment<int>(
-                          value: telemAll, label: Text(l.otherTelemetryAll)),
+            child: LayoutBuilder(
+              builder: (BuildContext c, BoxConstraints box) {
+                final TextScaler scaler = MediaQuery.textScalerOf(context);
+                final Widget label = Text(row.$1,
+                    style: TextStyle(color: cs.onSurface, fontSize: 13));
+                final Widget segments = SegmentedButton<int>(
+                  segments: <ButtonSegment<int>>[
+                    ButtonSegment<int>(
+                        value: telemDeny, label: Text(l.otherTelemetryDeny)),
+                    ButtonSegment<int>(
+                        value: telemFlags, label: Text(l.otherTelemetryFlags)),
+                    ButtonSegment<int>(
+                        value: telemAll, label: Text(l.otherTelemetryAll)),
+                  ],
+                  selected: <int>{row.$2},
+                  showSelectedIcon: false,
+                  style: const ButtonStyle(
+                      visualDensity: VisualDensity.compact),
+                  onSelectionChanged:
+                      widget.enabled ? (Set<int> s) => row.$3(s.first) : null,
+                );
+                // Label and control side by side while both fit (the 1.0x
+                // layout, unchanged); stacked once the text scale leaves no
+                // room, so neither side is squeezed into a break or an
+                // overflow.
+                if (telemetryRowFits(
+                    available: box.maxWidth, scaler: scaler)) {
+                  return Row(
+                    children: <Widget>[
+                      SizedBox(width: telemLabelWidth(scaler), child: label),
+                      const SizedBox(width: 8),
+                      Expanded(child: segments),
                     ],
-                    selected: <int>{row.$2},
-                    showSelectedIcon: false,
-                    style:
-                        const ButtonStyle(visualDensity: VisualDensity.compact),
-                    onSelectionChanged:
-                        widget.enabled ? (Set<int> s) => row.$3(s.first) : null,
-                  ),
-                ),
-              ],
+                  );
+                }
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    label,
+                    const SizedBox(height: 4),
+                    segments,
+                  ],
+                );
+              },
             ),
           ),
         const SizedBox(height: 4),

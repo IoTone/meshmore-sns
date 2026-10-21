@@ -238,13 +238,9 @@ class _EstimateCard extends StatelessWidget {
                 cs),
           if (est.method == BatteryMethod.rated)
             _kv(l.batteryBasis, l.batteryBasisRated, cs),
-          if (est.method == BatteryMethod.none && est.charging != true)
-            Padding(
-              padding: const EdgeInsets.only(top: 4),
-              child: Text(l.batteryEstimating,
-                  style: TextStyle(
-                      color: cs.onSurfaceVariant, fontSize: 12)),
-            ),
+          // No second "gathering" caption here: with no estimate and no
+          // method the headline branch above already says it (the card
+          // used to print the same sentence twice).
         ],
       ),
     );

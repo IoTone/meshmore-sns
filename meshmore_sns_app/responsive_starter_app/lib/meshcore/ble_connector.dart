@@ -3,7 +3,7 @@
 import 'dart:async';
 import 'dart:io' show Platform;
 
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart' show kIsWeb, visibleForTesting;
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:meshcore/meshcore.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -197,6 +197,31 @@ abstract final class BleConnector {
     return false;
   }
 
+  /// The name to remember for a radio we just connected to.
+  ///
+  /// A direct reconnect ([connectToRemoteId], used on every app start) has
+  /// no scan result behind it, so `platformName` and `advName` are both
+  /// empty and the only name left is the MAC. Saving that overwrote the real
+  /// one ("MeshCore-HELTEC-BASE") with "F8:5B:..." in the pairing and in the
+  /// recently-paired list. When nothing better is known for THIS radio, keep
+  /// the name already stored for it.
+  @visibleForTesting
+  static String pairedNameFor({
+    required String platformName,
+    required String advName,
+    required String remoteId,
+    PairedDevice? stored,
+  }) {
+    if (platformName.isNotEmpty) return platformName;
+    if (advName.isNotEmpty) return advName;
+    if (stored != null &&
+        stored.remoteId == remoteId &&
+        stored.name.isNotEmpty) {
+      return stored.name;
+    }
+    return remoteId;
+  }
+
   /// Discover services/characteristics, enable notifications, persist
   /// the device as paired, and wrap it as a transport.
   static Future<BleMeshcoreTransport> _finish(
@@ -219,11 +244,12 @@ abstract final class BleConnector {
         orElse: () => throw BleConnectException('TX characteristic missing'),
       );
       await tx.setNotifyValue(true);
-      final String name = device.platformName.isNotEmpty
-          ? device.platformName
-          : (device.advName.isNotEmpty
-              ? device.advName
-              : device.remoteId.str);
+      final String name = pairedNameFor(
+        platformName: device.platformName,
+        advName: device.advName,
+        remoteId: device.remoteId.str,
+        stored: await PairedDeviceStore.read(),
+      );
       await PairedDeviceStore.save(device.remoteId.str, name);
       // R41+1 — every successful pair also lands in the rolling
       // history (capped at 5, most-recent-first). Same wire layer

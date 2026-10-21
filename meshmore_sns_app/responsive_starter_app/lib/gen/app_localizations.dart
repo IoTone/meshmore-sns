@@ -773,7 +773,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsSpeech.
   ///
   /// In en, this message translates to:
-  /// **'SPEECH (R5)'**
+  /// **'SPEECH'**
   String get settingsSpeech;
 
   /// No description provided for @settingsSpeechOn.
@@ -935,7 +935,7 @@ abstract class AppLocalizations {
   /// No description provided for @personalizationAccessibility.
   ///
   /// In en, this message translates to:
-  /// **'ACCESSIBILITY (R13)'**
+  /// **'ACCESSIBILITY'**
   String get personalizationAccessibility;
 
   /// No description provided for @personalizationHighContrast.
@@ -977,7 +977,7 @@ abstract class AppLocalizations {
   /// No description provided for @personalizationAudioAlerts.
   ///
   /// In en, this message translates to:
-  /// **'AUDIO ALERTS (R12)'**
+  /// **'AUDIO ALERTS'**
   String get personalizationAudioAlerts;
 
   /// No description provided for @personalizationAudioMaster.
@@ -2183,7 +2183,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsHubDeviceSub.
   ///
   /// In en, this message translates to:
-  /// **'Meshcore radio & device (R7)'**
+  /// **'MeshCore radio & device'**
   String get settingsHubDeviceSub;
 
   /// No description provided for @settingsHubApp.

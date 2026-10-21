@@ -391,7 +391,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsLanguageJapanese => '日本語';
 
   @override
-  String get settingsSpeech => 'SPEECH (R5)';
+  String get settingsSpeech => 'SPEECH';
 
   @override
   String get settingsSpeechOn =>
@@ -483,7 +483,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get personalizationFontSize => 'Font size';
 
   @override
-  String get personalizationAccessibility => 'ACCESSIBILITY (R13)';
+  String get personalizationAccessibility => 'ACCESSIBILITY';
 
   @override
   String get personalizationHighContrast => 'High contrast';
@@ -507,7 +507,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'No information by sound; turns audio off';
 
   @override
-  String get personalizationAudioAlerts => 'AUDIO ALERTS (R12)';
+  String get personalizationAudioAlerts => 'AUDIO ALERTS';
 
   @override
   String get personalizationAudioMaster => 'Audio alerts';
@@ -1228,7 +1228,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsHubDevice => 'Device configuration';
 
   @override
-  String get settingsHubDeviceSub => 'Meshcore radio & device (R7)';
+  String get settingsHubDeviceSub => 'MeshCore radio & device';
 
   @override
   String get settingsHubApp => 'App settings';
