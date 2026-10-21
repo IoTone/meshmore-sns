@@ -632,6 +632,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get nodesFilterClear => 'Clear';
 
   @override
+  String get nodesFiltersTitle => 'Filters';
+
+  @override
+  String get nodesFilterLastSeenTitle => 'Last seen';
+
+  @override
+  String get nodesFilterWithinTitle => 'Within';
+
+  @override
+  String get nodesFiltersDone => 'Done';
+
+  @override
   String get nodesTagFilter => 'Tags';
 
   @override
@@ -1331,27 +1343,13 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String chatChannelHeader(String name) {
-    return 'CHANNEL · $name';
-  }
-
-  @override
   String get chatManageChannels => 'Manage channels';
-
-  @override
-  String get chatTtsDisabledHint => 'Enable TTS in App settings';
 
   @override
   String get chatTtsMuted => 'TTS muted for this channel';
 
   @override
   String get chatTtsActive => 'TTS reading this channel';
-
-  @override
-  String get chatHideChannels => 'Hide channels';
-
-  @override
-  String get chatShowChannels => 'Show channels';
 
   @override
   String get chatEmpty => '— no messages on this channel —';

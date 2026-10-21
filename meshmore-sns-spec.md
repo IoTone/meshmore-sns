@@ -1252,6 +1252,30 @@ While Meshcore protocol is open source, the client is not open source.  We want 
   changed (needs a layout decision):** at 320dp with 2.0x text the
   Dashboard status row overflows by ~7 px and `/settings/maps/new`'s
   `ToolChoice` dropdown by ~57 px.
+- R91: **the three crowded headers get one job each.** Chat, Nodes and the
+  grid's transport were the examples the owner named; each had a header
+  doing several unrelated things. Chat: the caption "CHANNEL · PUBLIC"
+  repeated the selected chip two lines below it, the collapse chevron
+  existed only to hide the strip under it, and a "#" icon next to the
+  channel chips meant "manage channels" — 108 dp for one job. It is now a
+  single 48 dp strip: the chips switch channel, a "+ Manage channels" chip
+  opens the editor, and the per-channel speech toggle sits at the end of
+  the strip it applies to. Nodes: seven filter chips lived in a 44 dp
+  horizontal scroller, two of them opening menus positioned by a
+  hard-coded `RelativeRect.fromLTRB(16, 200, 16, 100)` that ignored where
+  the chip was, and the Clear action sat past the right edge. Search stays
+  on its own row with a Filters button that carries a count badge; every
+  filter (starred, in range, last seen, within, tags) lives in one sheet
+  that stays open while several are set, and Clear/Done are inside it.
+  The three radio actions are a Wrap now, so they drop to a second line
+  instead of squeezing. Grid: the transport bar added in R89 was a Row and
+  overflowed by 26 px at 320 dp (65 px more at 2.0x text, because
+  "Range · Wide" was too wide). It is a Wrap, and the range control is an
+  icon plus the stop name with the word "Range" in its tooltip. Dashboard:
+  Connect/Retry moved out of the status slab into its own row, shown only
+  when disconnected or failed — inside the slab it was one of five fixed
+  items and overflowed by 51 px at 256 dp, starving the very label it
+  explained.
 - R90: **the basemap is not optional, and event maps live on the map.**
   Streets is now OpenStreetMap's vector service on every skin, not only the
   one whose shape opted in: the bundled style is a neutral dark cartographic

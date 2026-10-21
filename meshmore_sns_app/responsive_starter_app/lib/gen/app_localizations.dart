@@ -1190,6 +1190,30 @@ abstract class AppLocalizations {
   /// **'Clear'**
   String get nodesFilterClear;
 
+  /// No description provided for @nodesFiltersTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Filters'**
+  String get nodesFiltersTitle;
+
+  /// No description provided for @nodesFilterLastSeenTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Last seen'**
+  String get nodesFilterLastSeenTitle;
+
+  /// No description provided for @nodesFilterWithinTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Within'**
+  String get nodesFilterWithinTitle;
+
+  /// No description provided for @nodesFiltersDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get nodesFiltersDone;
+
   /// No description provided for @nodesTagFilter.
   ///
   /// In en, this message translates to:
@@ -2348,23 +2372,11 @@ abstract class AppLocalizations {
   /// **'queued items waiting ({count})'**
   String eventQueuedWaitingN(String count);
 
-  /// No description provided for @chatChannelHeader.
-  ///
-  /// In en, this message translates to:
-  /// **'CHANNEL · {name}'**
-  String chatChannelHeader(String name);
-
   /// No description provided for @chatManageChannels.
   ///
   /// In en, this message translates to:
   /// **'Manage channels'**
   String get chatManageChannels;
-
-  /// No description provided for @chatTtsDisabledHint.
-  ///
-  /// In en, this message translates to:
-  /// **'Enable TTS in App settings'**
-  String get chatTtsDisabledHint;
 
   /// No description provided for @chatTtsMuted.
   ///
@@ -2377,18 +2389,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'TTS reading this channel'**
   String get chatTtsActive;
-
-  /// No description provided for @chatHideChannels.
-  ///
-  /// In en, this message translates to:
-  /// **'Hide channels'**
-  String get chatHideChannels;
-
-  /// No description provided for @chatShowChannels.
-  ///
-  /// In en, this message translates to:
-  /// **'Show channels'**
-  String get chatShowChannels;
 
   /// No description provided for @chatEmpty.
   ///

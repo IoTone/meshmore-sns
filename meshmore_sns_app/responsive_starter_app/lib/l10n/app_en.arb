@@ -248,6 +248,10 @@
   "nodesFilterStarred": "Starred",
   "nodesFilterInRange": "In range",
   "nodesFilterClear": "Clear",
+  "nodesFiltersTitle": "Filters",
+  "nodesFilterLastSeenTitle": "Last seen",
+  "nodesFilterWithinTitle": "Within",
+  "nodesFiltersDone": "Done",
   "nodesTagFilter": "Tags",
   "nodesTagFilterN": "Tags ({count})",
   "@nodesTagFilterN": {
@@ -581,16 +585,9 @@
     "placeholders": {"count": {"type": "String"}}
   },
 
-  "chatChannelHeader": "CHANNEL · {name}",
-  "@chatChannelHeader": {
-    "placeholders": {"name": {"type": "String"}}
-  },
   "chatManageChannels": "Manage channels",
-  "chatTtsDisabledHint": "Enable TTS in App settings",
   "chatTtsMuted": "TTS muted for this channel",
   "chatTtsActive": "TTS reading this channel",
-  "chatHideChannels": "Hide channels",
-  "chatShowChannels": "Show channels",
   "chatEmpty": "— no messages on this channel —",
   "chatJumpToNewest": "{count, plural, =1{1 new} other{{count} new}}",
   "@chatJumpToNewest": {

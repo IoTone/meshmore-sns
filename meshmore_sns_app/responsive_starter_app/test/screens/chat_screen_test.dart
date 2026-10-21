@@ -105,10 +105,16 @@ void main() {
     fake.emit(channelInfoFrame(idx: 1, name: 'Ops'));
     await t.pump();
 
-    expect(find.text('CHANNEL · PUBLIC'), findsOneWidget);
+    // R91 — the selected chip is the header. There is no separate
+    // "CHANNEL · NAME" caption repeating it.
+    expect(find.text('CHANNEL · PUBLIC'), findsNothing);
+    ChoiceChip selected() =>
+        t.widget<ChoiceChip>(find.widgetWithText(ChoiceChip, 'Public'));
+    expect(selected().selected, isTrue);
     await t.tap(find.text('Ops'));
     await t.pump();
-    expect(find.text('CHANNEL · OPS'), findsOneWidget);
+    expect(t.widget<ChoiceChip>(find.widgetWithText(ChoiceChip, 'Ops')).selected,
+        isTrue);
     expect(mc.activeChannel, 1);
     mc.dispose();
   });

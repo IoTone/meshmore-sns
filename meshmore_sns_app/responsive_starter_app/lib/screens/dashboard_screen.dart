@@ -127,17 +127,6 @@ class DashboardScreen extends StatelessWidget {
                         letterSpacing: 2)),
                 const SizedBox(width: 4),
               ],
-              if (mc.state == MeshcoreConnectionState.disconnected &&
-                  !mc.isConnecting)
-                TextButton(
-                  onPressed: () => mc.connect(),
-                  child: Text(l.actionConnect),
-                )
-              else if (mc.state == MeshcoreConnectionState.failed)
-                TextButton(
-                  onPressed: () => mc.connect(),
-                  child: Text(l.actionRetry),
-                ),
               // R41 — Device chip. Single tap target for disconnect /
               // reconnect / forget / pick-a-different-radio. The
               // existing inline Connect/Retry stays for one-tap
@@ -154,6 +143,30 @@ class DashboardScreen extends StatelessWidget {
             ],
           ),
         ),
+        // R91 — Connect / Retry used to sit in the status slab between the
+        // label and two 48 dp icon buttons. At 256-320 dp with large text
+        // that row overflowed (51 px at 256), and it starved the label it
+        // was supposed to explain. It gets its own row, shown only in the
+        // states that need it.
+        if (mc.state == MeshcoreConnectionState.disconnected &&
+            !mc.isConnecting)
+          Align(
+            alignment: Alignment.centerLeft,
+            child: TextButton.icon(
+              icon: const Icon(Icons.link, size: 18),
+              onPressed: () => mc.connect(),
+              label: Text(l.actionConnect),
+            ),
+          )
+        else if (mc.state == MeshcoreConnectionState.failed)
+          Align(
+            alignment: Alignment.centerLeft,
+            child: TextButton.icon(
+              icon: const Icon(Icons.refresh, size: 18),
+              onPressed: () => mc.connect(),
+              label: Text(l.actionRetry),
+            ),
+          ),
         const SizedBox(height: 22),
 
         // Terse radio readout.

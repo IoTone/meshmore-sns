@@ -212,22 +212,66 @@ void main() {
   });
 
   testWidgets(
-      'the strip fits a 320dp-wide phone by scrolling, and keeps '
-      'the current view in sight (R64)', (WidgetTester t) async {
+      'the strip fills a 320dp phone with equal cells, and the selected '
+      'cell stays in sight (R64, R86)', (WidgetTester t) async {
+    // R86 made 288 dp the threshold: at 320 the six cells share the width
+    // (they scroll only below 288). Navigating by fling was velocity
+    // dependent and could overshoot to the Map tab; tapping the cell is
+    // what a user does and it exercises the same "selected cell in sight"
+    // guarantee.
     t.view.physicalSize = const Size(320, 640);
     t.view.devicePixelRatio = 1.0;
     addTearDown(t.view.resetPhysicalSize);
     addTearDown(t.view.resetDevicePixelRatio);
     await _pumpApp(t);
     expect(t.takeException(), isNull, reason: 'no overflow at 320dp');
-    await t.fling(find.byType(PageView), const Offset(-400, 0), 1000);
-    await t.pumpAndSettle();
-    await t.fling(find.byType(PageView), const Offset(-400, 0), 1000);
+    expect(find.byType(SingleChildScrollView), findsNothing,
+        reason: '320 dp is wide enough to fill, so nothing scrolls');
+    for (final String tip in <String>[
+      'Dashboard',
+      'Chat',
+      'Nodes',
+      'Hyperlocal grid',
+      'Map',
+      'Settings',
+    ]) {
+      expect(t.getSize(find.byTooltip(tip)).width, greaterThanOrEqualTo(48),
+          reason: tip);
+    }
+
+    await t.tap(find.byTooltip('Nodes'));
     await t.pumpAndSettle();
     expect(find.widgetWithText(AppBar, 'Nodes'), findsOneWidget);
     final Rect r = t.getRect(find.byTooltip('Nodes'));
     expect(r.left, greaterThanOrEqualTo(0));
     expect(r.right, lessThanOrEqualTo(320));
+    // And the strip really is the switcher: the Map cell still works.
+    await t.tap(find.byTooltip('Map'));
+    await t.pump();
+    await t.pump(const Duration(milliseconds: 400));
+    expect(find.widgetWithText(AppBar, 'Map'), findsOneWidget);
+  });
+
+  testWidgets(
+      'below 288dp the strip scrolls sideways instead of squeezing (R86)',
+      (WidgetTester t) async {
+    t.view.physicalSize = const Size(256, 640);
+    t.view.devicePixelRatio = 1.0;
+    addTearDown(t.view.resetPhysicalSize);
+    addTearDown(t.view.resetDevicePixelRatio);
+    await _pumpApp(t);
+    expect(t.takeException(), isNull, reason: 'no overflow at 256dp');
+    expect(find.byType(SingleChildScrollView), findsWidgets,
+        reason: 'narrow enough to need the scrolling fallback');
+    // Scroll the strip to the end, then select the last cell.
+    await t.drag(find.byType(SingleChildScrollView).first, const Offset(-260, 0));
+    await t.pumpAndSettle();
+    await t.tap(find.byTooltip('Settings'));
+    await t.pumpAndSettle();
+    final Rect r = t.getRect(find.byTooltip('Settings'));
+    expect(r.right, lessThanOrEqualTo(256),
+        reason: 'the selected cell stays in sight');
+    expect(find.widgetWithText(AppBar, 'Settings'), findsOneWidget);
   });
 
   testWidgets('horizontal swipe pages between views (R11)',

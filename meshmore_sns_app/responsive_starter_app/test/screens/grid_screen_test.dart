@@ -35,6 +35,28 @@ Widget _host(MeshcoreController mc) => MaterialApp(
       ),
     );
 
+
+Widget _hostWithScale(MeshcoreController mc, double scale) => MaterialApp(
+      locale: const Locale('en'),
+      supportedLocales: LocaleController.supported,
+      localizationsDelegates: const <LocalizationsDelegate<Object>>[
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      builder: (BuildContext c, Widget? child) => MediaQuery(
+          data: MediaQuery.of(c).copyWith(textScaler: TextScaler.linear(scale)),
+          child: child!),
+      home: MultiProvider(
+        providers: <ChangeNotifierProvider<ChangeNotifier>>[
+          ChangeNotifierProvider<MeshcoreController>.value(value: mc),
+          ChangeNotifierProvider<ThemeController>(create: (_) => ThemeController()),
+        ],
+        child: const Scaffold(body: GridScreen()),
+      ),
+    );
+
 void main() {
   setUp(GridScreen.resetSession);
 
@@ -163,4 +185,29 @@ void main() {
     await t.pumpWidget(const SizedBox());
     mc.dispose();
   });
+  testWidgets('R91 the transport bar fits a 320dp phone at 2.0x text',
+      (WidgetTester t) async {
+    // The bar's Row overflowed by 26 px at 320 dp with normal text: play,
+    // the interval menu and the range chip together want more than the
+    // page. It is a Wrap now, so the range chip can take a second line.
+    t.view.physicalSize = const Size(320, 640);
+    t.view.devicePixelRatio = 1.0;
+    addTearDown(t.view.resetPhysicalSize);
+    addTearDown(t.view.resetDevicePixelRatio);
+    final MeshcoreController mc = MeshcoreController(
+        transportFactory: () async => FakeMeshcoreTransport(connected: true));
+    await t.pumpWidget(_hostWithScale(mc, 2.0));
+    await mc.connect();
+    await t.pump();
+    await t.pump(const Duration(milliseconds: 300));
+    expect(t.takeException(), isNull, reason: 'no overflow at 320dp/2.0x');
+    // The transport is present and says live, because that is what the
+    // view is doing.
+    expect(find.byTooltip('Pause updates'), findsOneWidget);
+    expect(find.text('Wide'), findsWidgets);
+    mc.dispose();
+    await t.pumpWidget(const SizedBox());
+    await t.pump(const Duration(seconds: 5));
+  });
+
 }

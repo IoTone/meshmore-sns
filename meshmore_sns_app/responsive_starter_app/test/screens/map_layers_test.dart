@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: MIT
 import 'dart:convert';
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -15,7 +14,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:meshmore_sns_app/gen/app_localizations.dart';
 import 'package:meshmore_sns_app/l10n/locale_controller.dart';
-import 'package:meshmore_sns_app/maps/basemap.dart';
 import 'package:meshmore_sns_app/maps/event_layer.dart';
 import 'package:meshmore_sns_app/maps/map_fetch.dart';
 import 'package:meshmore_sns_app/maps/maps_controller.dart';

@@ -217,4 +217,50 @@ void main() {
     expect(ctrl.favorites, isEmpty);
     ctrl.dispose();
   });
+  testWidgets('R91 filters live in one sheet with a count badge',
+      (WidgetTester t) async {
+    final FakeMeshcoreTransport fake =
+        FakeMeshcoreTransport(connected: true);
+    final MeshcoreController ctrl = MeshcoreController(
+      transportFactory: () async => fake,
+      connection:
+          MeshcoreConnection(handshakeTimeout: const Duration(seconds: 5)),
+    );
+    await t.pumpWidget(
+      MaterialApp(
+        locale: const Locale('en'),
+        supportedLocales: LocaleController.supported,
+        localizationsDelegates: _kLocaleDelegates,
+        home: ChangeNotifierProvider<MeshcoreController>.value(
+          value: ctrl,
+          child: const Scaffold(body: NodesScreen()),
+        ),
+      ),
+    );
+    await ctrl.connect();
+    fake.emit(selfInfoFrame());
+    await t.pumpAndSettle();
+
+    // One button, no 44 dp scroller of seven chips.
+    expect(find.text('Last seen'), findsNothing,
+        reason: 'the filters are not a chip scroller any more');
+    await t.tap(find.byTooltip('Filters'));
+    await t.pumpAndSettle();
+    expect(find.text('Starred'), findsOneWidget);
+    expect(find.text('In range'), findsOneWidget);
+    expect(find.text('Last seen'), findsOneWidget);
+    expect(find.text('Within'), findsOneWidget);
+
+    await t.tap(find.text('Starred'));
+    await t.pumpAndSettle();
+    // The sheet stays open so several filters can be set in one go.
+    expect(find.text('Within'), findsOneWidget);
+    await t.tap(find.text('Done'));
+    await t.pumpAndSettle();
+    expect(find.byTooltip('Filters'), findsOneWidget);
+    expect(find.text('1'), findsWidgets,
+        reason: 'the badge counts the active filters');
+    ctrl.dispose();
+  });
+
 }

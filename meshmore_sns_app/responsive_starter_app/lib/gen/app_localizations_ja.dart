@@ -601,6 +601,18 @@ class AppLocalizationsJa extends AppLocalizations {
   String get nodesFilterClear => 'クリア';
 
   @override
+  String get nodesFiltersTitle => 'フィルター';
+
+  @override
+  String get nodesFilterLastSeenTitle => '最終受信';
+
+  @override
+  String get nodesFilterWithinTitle => '距離';
+
+  @override
+  String get nodesFiltersDone => '完了';
+
+  @override
   String get nodesTagFilter => 'タグ';
 
   @override
@@ -1276,27 +1288,13 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String chatChannelHeader(String name) {
-    return 'チャンネル · $name';
-  }
-
-  @override
   String get chatManageChannels => 'チャンネル管理';
-
-  @override
-  String get chatTtsDisabledHint => 'アプリ設定で TTS を有効化';
 
   @override
   String get chatTtsMuted => 'このチャンネルの TTS をミュート中';
 
   @override
   String get chatTtsActive => 'このチャンネルを TTS で読み上げ中';
-
-  @override
-  String get chatHideChannels => 'チャンネルを隠す';
-
-  @override
-  String get chatShowChannels => 'チャンネルを表示';
 
   @override
   String get chatEmpty => '— このチャンネルにメッセージはありません —';

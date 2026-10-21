@@ -387,9 +387,14 @@ class _GridScreenState extends State<GridScreen>
       decoration: BoxDecoration(
         border: Border(top: BorderSide(color: cs.outline.withValues(alpha: .2))),
       ),
+      // Wrap, not Row: on a 320 dp phone the transport and the range chip
+      // together overflowed the bar by 26 px. Wrap lays them out at their
+      // own width and drops the range chip to a second line when it must.
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(8, 0, 8, 0),
-        child: Row(
+        padding: const EdgeInsets.fromLTRB(4, 0, 8, 0),
+        child: Wrap(
+          alignment: WrapAlignment.spaceBetween,
+          crossAxisAlignment: WrapCrossAlignment.center,
           children: <Widget>[
             IconButton(
               tooltip: _live ? l.gridPauseTooltip : l.gridPlayTooltip,
@@ -409,7 +414,7 @@ class _GridScreenState extends State<GridScreen>
                   ),
               ],
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 4),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: <Widget>[
@@ -420,7 +425,6 @@ class _GridScreenState extends State<GridScreen>
                 ),
               ),
             ),
-            const Spacer(),
             if (_hasRange)
               PopupMenuButton<int>(
                 tooltip: l.gridRange,
@@ -445,7 +449,13 @@ class _GridScreenState extends State<GridScreen>
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: <Widget>[
-                      Text('${l.gridRange} · $scaleLabel',
+                      // Icon + value, not "Range · value": at 2.0x text the
+                      // prefix alone was 65 px wider than the bar. The
+                      // tooltip carries the word.
+                      Icon(Icons.straighten,
+                          size: 16, color: cs.onSurfaceVariant),
+                      const SizedBox(width: 4),
+                      Text(scaleLabel,
                           style: TextStyle(color: cs.onSurfaceVariant)),
                       const Icon(Icons.arrow_drop_down, size: 18),
                     ],

@@ -45,7 +45,6 @@ class _ChatScreenState extends State<ChatScreen>
 
   final TextEditingController _input = TextEditingController();
   final ScrollController _scroll = ScrollController();
-  bool _stripCollapsed = false;
   int _lastCount = 0;
 
   /// R29 — number of new messages that have arrived while the user
@@ -215,92 +214,62 @@ class _ChatScreenState extends State<ChatScreen>
     return MmScaffold(
       child: Column(
       children: <Widget>[
-        // Header: active channel + per-channel TTS toggle + collapse.
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 8, 4),
-          child: Row(
+        // R91 — one row, one job: switch channel. The caption above it
+        // said "CHANNEL · PUBLIC" while the selected chip two lines below
+        // already said "Public", and the collapse chevron existed only to
+        // hide the strip under it. Header + strip was 108 dp for that.
+        SizedBox(
+          height: 48,
+          child: ListView(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
             children: <Widget>[
-              Expanded(
-                child: Text(
-                  l.chatChannelHeader(activeName.toUpperCase()),
-                  style: TextStyle(
-                      color: cs.onSurfaceVariant,
-                      fontSize: 12,
-                      letterSpacing: 3),
-                  overflow: TextOverflow.ellipsis,
+              for (final MapEntry<int, String> ch in channels)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  child: ChoiceChip(
+                    label: Text(ch.value),
+                    selected: ch.key == active,
+                    labelStyle: TextStyle(
+                      color: ch.key == active
+                          ? Theme.of(context).colorScheme.onPrimary
+                          : Theme.of(context).colorScheme.onSurface,
+                      fontWeight:
+                          ch.key == active ? FontWeight.w600 : FontWeight.w400,
+                    ),
+                    onSelected: (_) => mc.setActiveChannel(ch.key),
+                  ),
+                ),
+              // Manage channels: a chip, not a "#" icon next to the
+              // channel chips, where two different meanings of "channel"
+              // sat side by side.
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                child: ActionChip(
+                  avatar: const Icon(Icons.add, size: 16),
+                  label: Text(l.chatManageChannels),
+                  onPressed: () => context.push('/settings/channels'),
                 ),
               ),
-              IconButton(
-                tooltip: l.chatManageChannels,
-                onPressed: () => context.push('/settings/channels'),
-                icon: const Icon(Icons.tag),
-              ),
-              IconButton(
-                tooltip: !ttsEnabled
-                    ? l.chatTtsDisabledHint
-                    : muted
-                        ? l.chatTtsMuted
-                        : l.chatTtsActive,
-                onPressed: ttsEnabled
-                    ? () => context
+              // Per-channel speech, at the end of the strip because it is
+              // a property of the channel that is selected there.
+              if (ttsEnabled)
+                Padding(
+                  padding: const EdgeInsets.only(left: 4),
+                  child: IconButton(
+                    tooltip: muted ? l.chatTtsMuted : l.chatTtsActive,
+                    onPressed: () => context
                         .read<TtsController>()
-                        .toggleChannelMute(active)
-                    : null,
-                icon: Icon(
-                  !ttsEnabled
-                      ? Icons.volume_off_outlined
-                      : speaks
-                          ? Icons.volume_up
-                          : Icons.volume_off,
-                  color: speaks ? cs.primary : cs.onSurfaceVariant,
+                        .toggleChannelMute(active),
+                    icon: Icon(
+                      speaks ? Icons.volume_up : Icons.volume_off,
+                      color: speaks ? cs.primary : cs.onSurfaceVariant,
+                    ),
+                  ),
                 ),
-              ),
-              IconButton(
-                tooltip: _stripCollapsed
-                    ? l.chatShowChannels
-                    : l.chatHideChannels,
-                onPressed: () => setState(
-                    () => _stripCollapsed = !_stripCollapsed),
-                // R29 — Icons.unfold_more/less reads as
-                // "expand/collapse a list" generically; on a chip
-                // strip it was confusing. Up/down arrows directly
-                // depict "this horizontal row is hidden/showing".
-                icon: Icon(_stripCollapsed
-                    ? Icons.keyboard_arrow_down
-                    : Icons.keyboard_arrow_up),
-              ),
             ],
           ),
         ),
-
-        // Channel selector chip strip (collapsible).
-        if (!_stripCollapsed)
-          SizedBox(
-            height: 44,
-            child: ListView(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              children: <Widget>[
-                for (final MapEntry<int, String> ch in channels)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 4),
-                    child: ChoiceChip(
-                      label: Text(ch.value),
-                      selected: ch.key == active,
-                      labelStyle: TextStyle(
-                        color: ch.key == active
-                            ? Theme.of(context).colorScheme.onPrimary
-                            : Theme.of(context).colorScheme.onSurface,
-                        fontWeight: ch.key == active
-                            ? FontWeight.w600
-                            : FontWeight.w400,
-                      ),
-                      onSelected: (_) => mc.setActiveChannel(ch.key),
-                    ),
-                  ),
-              ],
-            ),
-          ),
         const Divider(height: 1),
 
         // Message list (active channel) + R29 jump-to-newest pill.

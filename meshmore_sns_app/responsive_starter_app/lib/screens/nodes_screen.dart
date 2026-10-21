@@ -102,18 +102,13 @@ class _NodesScreenState extends State<NodesScreen> {
     return true;
   }
 
-  String _ageLabel(AppLocalizations l) {
-    if (_maxAge == null) return l.nodesAgeAny;
-    if (_maxAge!.inHours < 24) return '${_maxAge!.inHours}h';
-    return '${_maxAge!.inDays}d';
-  }
-
-  String _distLabel(AppLocalizations l) {
-    if (_maxDistanceMeters == null) return l.nodesDistAny;
-    final double m = _maxDistanceMeters!;
-    if (m < 1000) return '${m.round()}m';
-    return '${(m / 1000).toStringAsFixed(0)}km';
-  }
+  /// How many filters are on, for the badge on the Filters button.
+  int get _activeFilterCount =>
+      (_starredOnly ? 1 : 0) +
+      (_inRangeOnly ? 1 : 0) +
+      _selectedTags.length +
+      (_maxAge != null ? 1 : 0) +
+      (_maxDistanceMeters != null ? 1 : 0);
 
   bool get _anyFilterActive =>
       _query.isNotEmpty ||
@@ -123,45 +118,129 @@ class _NodesScreenState extends State<NodesScreen> {
       _maxAge != null ||
       _maxDistanceMeters != null;
 
-  /// A bottom sheet of every tag in use; tap to toggle it in the filter.
-  Future<void> _pickTags(MeshcoreController mc, AppLocalizations l) async {
-    final List<String> all = mc.allTags;
+  /// Every list filter in one sheet: starred, in range, last seen, within a
+  /// distance, and the tags in use (AND). Changes apply live; the sheet
+  /// stays open so several can be set in one go.
+  Future<void> _openFilters(MeshcoreController mc, AppLocalizations l) async {
+    final ColorScheme cs = Theme.of(context).colorScheme;
     await showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
+      isScrollControlled: true,
       builder: (BuildContext _) => StatefulBuilder(
         builder: (BuildContext _, void Function(void Function()) setSheet) {
+          void both(VoidCallback f) {
+            setSheet(f);
+            setState(f);
+          }
+
+          Widget label(String t) => Padding(
+                padding: const EdgeInsets.only(top: 14, bottom: 6),
+                child: Text(t,
+                    style: TextStyle(
+                        color: cs.onSurfaceVariant,
+                        fontSize: 11,
+                        letterSpacing: 1,
+                        fontWeight: FontWeight.w600)),
+              );
+
           return SafeArea(
             top: false,
-            child: Padding(
+            child: SingleChildScrollView(
               padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
               child: Column(
-                mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
-                  Text(l.nodesTagFilter,
-                      style: Theme.of(context).textTheme.titleMedium),
-                  const SizedBox(height: 12),
                   Wrap(
                     spacing: 8,
                     runSpacing: 8,
                     children: <Widget>[
-                      for (final String t in all)
-                        FilterChip(
-                          avatar: const Icon(Icons.label_outline, size: 16),
-                          label: Text(t),
-                          selected: _selectedTags.contains(t),
-                          onSelected: (bool sel) {
-                            setSheet(() {});
-                            setState(() {
-                              if (sel) {
+                      FilterChip(
+                        label: Text(l.nodesFilterStarred),
+                        selected: _starredOnly,
+                        onSelected: (bool v) => both(() => _starredOnly = v),
+                      ),
+                      FilterChip(
+                        label: Text(l.nodesFilterInRange),
+                        selected: _inRangeOnly,
+                        onSelected: (bool v) => both(() => _inRangeOnly = v),
+                      ),
+                    ],
+                  ),
+                  label(l.nodesFilterLastSeenTitle),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: <Widget>[
+                      for (final (Duration?, String) opt in <(Duration?, String)>[
+                        (null, l.nodesAgeAny),
+                        (const Duration(hours: 1), l.nodesAgeHour),
+                        (const Duration(hours: 24), l.nodesAge24h),
+                        (const Duration(days: 7), l.nodesAge7d),
+                      ])
+                        ChoiceChip(
+                          label: Text(opt.$2),
+                          selected: _maxAge == opt.$1,
+                          onSelected: (_) => both(() => _maxAge = opt.$1),
+                        ),
+                    ],
+                  ),
+                  label(l.nodesFilterWithinTitle),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: <Widget>[
+                      for (final (double?, String) opt in <(double?, String)>[
+                        (null, l.nodesDistAny),
+                        (100, l.nodesDist100m),
+                        (500, l.nodesDist500m),
+                        (5000, l.nodesDist5km),
+                        (25000, l.nodesDist25km),
+                      ])
+                        ChoiceChip(
+                          label: Text(opt.$2),
+                          selected: _maxDistanceMeters == opt.$1,
+                          onSelected: (_) =>
+                              both(() => _maxDistanceMeters = opt.$1),
+                        ),
+                    ],
+                  ),
+                  if (mc.allTags.isNotEmpty) ...<Widget>[
+                    label(l.nodesTagFilter),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: <Widget>[
+                        for (final String t in mc.allTags)
+                          FilterChip(
+                            label: Text(t),
+                            selected: _selectedTags.contains(t),
+                            onSelected: (bool v) => both(() {
+                              if (v) {
                                 _selectedTags.add(t);
                               } else {
                                 _selectedTags.remove(t);
                               }
-                            });
-                          },
-                        ),
+                            }),
+                          ),
+                      ],
+                    ),
+                  ],
+                  const SizedBox(height: 16),
+                  Row(
+                    children: <Widget>[
+                      TextButton(
+                        onPressed: _anyFilterActive
+                            ? () => both(_clearFilters)
+                            : null,
+                        child: Text(l.nodesFilterClear),
+                      ),
+                      const Spacer(),
+                      FilledButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: Text(l.nodesFiltersDone),
+                      ),
                     ],
                   ),
                 ],
@@ -257,11 +336,19 @@ class _NodesScreenState extends State<NodesScreen> {
     return MmScaffold(
       child: Column(
       children: <Widget>[
+        // R91 — three radio actions that used to sit in a Row with one
+        // Expanded child, so at 320 dp the other two squeezed it until the
+        // row overflowed. A Wrap lays them out at their natural width and
+        // drops to a second line when the row is too narrow.
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-          child: Row(
+          child: Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 8,
+            runSpacing: 8,
             children: <Widget>[
-              Expanded(
+              SizedBox(
                 child: FilledButton.icon(
                   icon: mc.isScanning
                       ? const SizedBox(
@@ -274,7 +361,6 @@ class _NodesScreenState extends State<NodesScreen> {
                   onPressed: ready && !mc.isScanning ? mc.scan : null,
                 ),
               ),
-              const SizedBox(width: 8),
               OutlinedButton.icon(
                 icon: const Icon(Icons.podcasts),
                 label: Text(l.nodesAdvertise),
@@ -319,153 +405,48 @@ class _NodesScreenState extends State<NodesScreen> {
             ],
           ),
         ),
-        // Filter bar — search by name / shortId / pubkey prefix +
-        // chip toggles for Starred / In range + popup menus for
-        // last-seen and max-distance cutoffs. Compose with the
-        // sort-favourites-to-top behaviour below.
+        // R91 — one row of chrome: search plus a Filters button. The
+        // seven-chip horizontal scroller that used to sit here (with two
+        // menus positioned by a hard-coded RelativeRect) needed 44 dp and
+        // hid both the active filters and the Clear action past the right
+        // edge. Same controls, one sheet, laid out where they can breathe.
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
-          child: TextField(
-            controller: _searchCtrl,
-            onChanged: (String v) => setState(() => _query = v),
-            decoration: InputDecoration(
-              isDense: true,
-              prefixIcon: const Icon(Icons.search, size: 18),
-              suffixIcon: _query.isEmpty
-                  ? null
-                  : IconButton(
-                      tooltip: l.nodesClearSearch,
-                      icon: const Icon(Icons.close, size: 18),
-                      onPressed: () {
-                        _searchCtrl.clear();
-                        setState(() => _query = '');
-                      },
-                    ),
-              hintText: l.nodesSearchHint,
-              border: const OutlineInputBorder(),
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Row(
+          children: <Widget>[
+            Expanded(
+              child: TextField(
+                controller: _searchCtrl,
+                onChanged: (String v) => setState(() => _query = v),
+                decoration: InputDecoration(
+                  isDense: true,
+                  prefixIcon: const Icon(Icons.search, size: 18),
+                  suffixIcon: _query.isEmpty
+                      ? null
+                      : IconButton(
+                          tooltip: l.nodesClearSearch,
+                          icon: const Icon(Icons.close, size: 18),
+                          onPressed: () {
+                            _searchCtrl.clear();
+                            setState(() => _query = '');
+                          },
+                        ),
+                  hintText: l.nodesSearchHint,
+                  border: const OutlineInputBorder(),
+                ),
+              ),
             ),
-          ),
-        ),
-        SizedBox(
-          height: 44,
-          child: ListView(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            children: <Widget>[
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4),
-                // No avatar icon: the chip's selected/unselected state
-                // colours the label clearly enough, and skipping the
-                // star/sensors avatars keeps the row's icon lookup
-                // unambiguous (the per-row trailing star icon stays
-                // the only star_border / star instance on screen).
-                child: FilterChip(
-                  label: Text(l.nodesFilterStarred),
-                  selected: _starredOnly,
-                  onSelected: (bool v) =>
-                      setState(() => _starredOnly = v),
-                ),
+            const SizedBox(width: 8),
+            Badge(
+              isLabelVisible: _activeFilterCount > 0,
+              label: Text('$_activeFilterCount'),
+              child: IconButton.filledTonal(
+                tooltip: l.nodesFiltersTitle,
+                icon: const Icon(Icons.tune),
+                onPressed: () => _openFilters(mc, l),
               ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4),
-                child: FilterChip(
-                  label: Text(l.nodesFilterInRange),
-                  selected: _inRangeOnly,
-                  onSelected: (bool v) =>
-                      setState(() => _inRangeOnly = v),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4),
-                child: ActionChip(
-                  avatar: const Icon(Icons.schedule, size: 16),
-                  label: Text(l.nodesFilterLastSeen(_ageLabel(l))),
-                  onPressed: () async {
-                    final Duration? picked = await showMenu<Duration?>(
-                      context: context,
-                      position: const RelativeRect.fromLTRB(
-                          16, 200, 16, 100),
-                      items: <PopupMenuEntry<Duration?>>[
-                        PopupMenuItem<Duration?>(
-                            value: null, child: Text(l.nodesAgeAny)),
-                        PopupMenuItem<Duration?>(
-                            value: const Duration(hours: 1),
-                            child: Text(l.nodesAgeHour)),
-                        PopupMenuItem<Duration?>(
-                            value: const Duration(hours: 24),
-                            child: Text(l.nodesAge24h)),
-                        PopupMenuItem<Duration?>(
-                            value: const Duration(days: 7),
-                            child: Text(l.nodesAge7d)),
-                      ],
-                    );
-                    if (!mounted) return;
-                    setState(() => _maxAge = picked);
-                  },
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4),
-                child: ActionChip(
-                  avatar: const Icon(Icons.straighten, size: 16),
-                  label: Text(l.nodesFilterWithin(_distLabel(l))),
-                  onPressed: () async {
-                    final double? picked = await showMenu<double?>(
-                      context: context,
-                      position: const RelativeRect.fromLTRB(
-                          16, 200, 16, 100),
-                      items: <PopupMenuEntry<double?>>[
-                        PopupMenuItem<double?>(
-                            value: null, child: Text(l.nodesDistAny)),
-                        PopupMenuItem<double?>(
-                            value: 100, child: Text(l.nodesDist100m)),
-                        PopupMenuItem<double?>(
-                            value: 500, child: Text(l.nodesDist500m)),
-                        PopupMenuItem<double?>(
-                            value: 5000, child: Text(l.nodesDist5km)),
-                        PopupMenuItem<double?>(
-                            value: 25000, child: Text(l.nodesDist25km)),
-                      ],
-                    );
-                    if (!mounted) return;
-                    setState(() => _maxDistanceMeters = picked);
-                  },
-                ),
-              ),
-              // Tag filter — pick from the tags in use; a node must carry
-              // every selected tag (AND).
-              if (mc.allTags.isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 4),
-                  child: ActionChip(
-                    avatar: Icon(Icons.label_outline,
-                        size: 16,
-                        color: _selectedTags.isNotEmpty ? cs.primary : null),
-                    label: Text(_selectedTags.isEmpty
-                        ? l.nodesTagFilter
-                        : l.nodesTagFilterN(_selectedTags.length)),
-                    onPressed: () => _pickTags(mc, l),
-                  ),
-                ),
-              for (final String t in _selectedTags)
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 4),
-                  child: InputChip(
-                    avatar: const Icon(Icons.label, size: 16),
-                    label: Text(t),
-                    onDeleted: () => setState(() => _selectedTags.remove(t)),
-                  ),
-                ),
-              if (_anyFilterActive)
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 4),
-                  child: ActionChip(
-                    avatar: const Icon(Icons.clear_all, size: 16),
-                    label: Text(l.nodesFilterClear),
-                    onPressed: _clearFilters,
-                  ),
-                ),
-            ],
+            ),
+          ],
           ),
         ),
         Padding(
