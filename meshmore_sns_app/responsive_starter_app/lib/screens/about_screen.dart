@@ -62,10 +62,9 @@ class AboutScreen extends StatelessWidget {
                 style: TextStyle(
                     color: skin.color.fgMuted,
                     fontStyle: FontStyle.italic)),
-            const SizedBox(height: 14),
-            Text(l.aboutTerms,
-                textAlign: TextAlign.center,
-                style: TextStyle(color: skin.color.fgMuted, fontSize: 11)),
+            // No "Terms & Conditions" line until U5 actually builds a terms
+            // page: the string said "wired in U5" and was visibly a note to
+            // self on a shipped About page (seen on the device).
             const SizedBox(height: 18),
             OutlinedButton.icon(
               onPressed: () => showLicensePage(

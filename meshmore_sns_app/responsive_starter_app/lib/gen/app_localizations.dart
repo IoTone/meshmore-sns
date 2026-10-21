@@ -884,12 +884,6 @@ abstract class AppLocalizations {
   /// **'Made with ♥ in Fukuoka, Japan'**
   String get aboutMadeWith;
 
-  /// No description provided for @aboutTerms.
-  ///
-  /// In en, this message translates to:
-  /// **'Terms & Conditions — wired in U5.'**
-  String get aboutTerms;
-
   /// No description provided for @aboutVersion.
   ///
   /// In en, this message translates to:

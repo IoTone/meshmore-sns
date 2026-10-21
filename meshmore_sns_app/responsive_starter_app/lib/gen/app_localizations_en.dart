@@ -456,9 +456,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get aboutMadeWith => 'Made with ♥ in Fukuoka, Japan';
 
   @override
-  String get aboutTerms => 'Terms & Conditions — wired in U5.';
-
-  @override
   String aboutVersion(String version) {
     return 'v$version';
   }

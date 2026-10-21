@@ -431,9 +431,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get aboutMadeWith => '福岡から ♥ をこめて';
 
   @override
-  String get aboutTerms => '利用規約 — U5 で配線予定。';
-
-  @override
   String aboutVersion(String version) {
     return 'v$version';
   }

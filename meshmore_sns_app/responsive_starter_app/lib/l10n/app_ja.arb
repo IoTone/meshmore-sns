@@ -169,7 +169,6 @@
   "aboutDescription": "MeshCore コンパニオンクライアント。",
   "aboutLicense": "MIT (X11) ライセンスで提供。",
   "aboutMadeWith": "福岡から ♥ をこめて",
-  "aboutTerms": "利用規約 — U5 で配線予定。",
   "aboutVersion": "v{version}",
   "aboutLicensesButton": "オープンソースライセンスと権利表示",
   "aboutAttributions": "MeshCore ドキュメント（MIT）、GeoNames 都市データ（CC-BY 4.0）、Natural Earth（パブリックドメイン）、OpenStreetMap 地図データ（ODbL）、Saira・JetBrains Mono フォント（OFL）を含みます。",

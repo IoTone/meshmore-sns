@@ -1252,6 +1252,29 @@ While Meshcore protocol is open source, the client is not open source.  We want 
   changed (needs a layout decision):** at 320dp with 2.0x text the
   Dashboard status row overflows by ~7 px and `/settings/maps/new`'s
   `ToolChoice` dropdown by ~57 px.
+- R88: **first device pass against a live radio, and what it found.**
+  Verified on a motorola edge 2024 (Android 16, 387dp) with the
+  `MeshCore-HELTEC-BASE` companion (`F8:5B:1B:BE:C5:3D`, firmware
+  `v1.17.1-d929643`) attached: connect and handshake reach LINKED, self
+  info/radio params/battery `4.37V`/device-sourced location
+  `38.92005, -104.77283` all populate, nodes arrive (`2 known`), the Docs
+  hub's FIRMWARE card shows the connected firmware version, and logcat
+  stayed free of Flutter assertions (no ink, overflow or dispose
+  complaints) across the tabs, every `/settings/*` route, 320dp, 256dp
+  and 2.0x text. The strip fills edge to edge at 387dp and 320dp and
+  scrolls at 256dp; Settings lists **Docs** (short subtitle, one row
+  tall) immediately above **Information**; Docs → Back returns to the hub;
+  Information → About carries no Docs row and renders its description.
+  **Fixed here:** the About page printed a note to self, "Terms &
+  Conditions — wired in U5." (JA "利用規約 — U5 で配線予定。"), because
+  `aboutTerms` was a placeholder and U5, the terms page, is still
+  unbuilt (UX spec U5 ☐). The line and both ARB keys are gone; a test
+  asserts no "wired in"/"配線予定" on About, so the placeholder cannot
+  return before the terms page exists. **Corrected from R87:** the
+  Dashboard status row is only squeezed in the DISCONNECTED state, where
+  the fixed CONNECT button starves the label; with a radio LINKED the
+  label wraps to two lines at 320dp/2.0x with no overflow. The remaining
+  layout question is therefore the disconnected row's button policy.
 - R83: **region files deferred; the live map made responsive.** The archive
   machinery (R81) stays but is hidden behind `kRegionFilesEnabled = false`
   until a region file is published; the UI test asserts the section is

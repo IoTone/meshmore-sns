@@ -176,7 +176,6 @@
   "aboutDescription": "A MeshCore companion client.",
   "aboutLicense": "Licensed under the MIT (X11) License.",
   "aboutMadeWith": "Made with ♥ in Fukuoka, Japan",
-  "aboutTerms": "Terms & Conditions — wired in U5.",
   "aboutVersion": "v{version}",
   "aboutLicensesButton": "Open-source licenses & attributions",
   "aboutAttributions": "Includes MeshCore documentation (MIT), GeoNames cities (CC-BY 4.0), Natural Earth (public domain), OpenStreetMap map data (ODbL), and the Saira & JetBrains Mono fonts (OFL).",

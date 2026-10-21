@@ -149,6 +149,10 @@ void main() {
     // Interpolation must be evaluated, not printed: a stray \$ renders
     // "${l.aboutDescription}" on screen (paid for once already).
     expect(find.textContaining(r'${'), findsNothing);
+    // No note-to-self on a shipped page: the terms line read "Terms &
+    // Conditions — wired in U5." on the device (R88).
+    expect(find.textContaining('wired in'), findsNothing);
+    expect(find.textContaining('配線予定'), findsNothing);
 
     await t.pageBack();
     await t.pumpAndSettle();
