@@ -7,10 +7,12 @@ import 'package:provider/provider.dart';
 import '../gen/app_localizations.dart';
 import '../theme/mm_skin.dart';
 import '../meshcore/meshcore_controller.dart';
+import '../ui/mm_scaffold.dart';
 import '../ui/mm_shape.dart';
 
-/// R53 — the Docs hub (a Settings row since R86, `/settings/docs`): a menu into the offline-readable docs (companion
-/// protocol, device firmware, this app, and our per-device field notes).
+/// R53 — the Docs hub (a Settings row since R86, `/settings/docs`): a menu
+/// into the offline-readable docs (companion protocol, device firmware, this
+/// app, and our per-device field notes).
 /// Rendered in the futuristic monospace style; each row opens a
 /// [DocReaderScreen].
 class DocsHubScreen extends StatelessWidget {
@@ -25,54 +27,56 @@ class DocsHubScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(title: Text(l.tabDocs)),
-      body: ListView(
-      padding: const EdgeInsets.fromLTRB(16, 18, 16, 28),
-      children: <Widget>[
-        Text(
-          l.docsHubSubtitle,
-          style: TextStyle(
-              fontFamily: context.skin.type.wordsMono,
-              fontSize: 12,
-              height: 1.4,
-              color: cs.onSurfaceVariant),
+      body: MmScaffold(
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(16, 18, 16, 28),
+          children: <Widget>[
+            Text(
+              l.docsHubSubtitle,
+              style: TextStyle(
+                  fontFamily: context.skin.type.wordsMono,
+                  fontSize: 12,
+                  height: 1.4,
+                  color: cs.onSurfaceVariant),
+            ),
+            const SizedBox(height: 18),
+            _DocCard(
+              icon: Icons.terminal,
+              title: l.docsProtocolTitle,
+              subtitle: l.docsProtocolSub,
+              onTap: () => context.push('/docs/protocol'),
+            ),
+            _DocCard(
+              icon: Icons.memory,
+              title: l.docsFirmwareTitle,
+              subtitle: (fw == null || fw.isEmpty)
+                  ? l.docsFirmwareSub
+                  : l.docsFirmwareSubVersion(fw),
+              onTap: () => context.push('/docs/firmware'),
+            ),
+            _DocCard(
+              icon: Icons.smartphone,
+              title: l.docsAppTitle,
+              subtitle: l.docsAppSub,
+              onTap: () => context.push('/docs/app'),
+            ),
+            _DocCard(
+              icon: Icons.settings_input_antenna,
+              title: l.docsDevicesTitle,
+              subtitle: l.docsDevicesSub,
+              onTap: () => context.push('/docs/devices'),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              l.docsHubFooter,
+              style: TextStyle(
+                  fontFamily: context.skin.type.wordsMono,
+                  fontSize: 10.5,
+                  height: 1.5,
+                  color: cs.onSurfaceVariant.withValues(alpha: .8)),
+            ),
+          ],
         ),
-        const SizedBox(height: 18),
-        _DocCard(
-          icon: Icons.terminal,
-          title: l.docsProtocolTitle,
-          subtitle: l.docsProtocolSub,
-          onTap: () => context.push('/docs/protocol'),
-        ),
-        _DocCard(
-          icon: Icons.memory,
-          title: l.docsFirmwareTitle,
-          subtitle: (fw == null || fw.isEmpty)
-              ? l.docsFirmwareSub
-              : l.docsFirmwareSubVersion(fw),
-          onTap: () => context.push('/docs/firmware'),
-        ),
-        _DocCard(
-          icon: Icons.smartphone,
-          title: l.docsAppTitle,
-          subtitle: l.docsAppSub,
-          onTap: () => context.push('/docs/app'),
-        ),
-        _DocCard(
-          icon: Icons.settings_input_antenna,
-          title: l.docsDevicesTitle,
-          subtitle: l.docsDevicesSub,
-          onTap: () => context.push('/docs/devices'),
-        ),
-        const SizedBox(height: 16),
-        Text(
-          l.docsHubFooter,
-          style: TextStyle(
-              fontFamily: context.skin.type.wordsMono,
-              fontSize: 10.5,
-              height: 1.5,
-              color: cs.onSurfaceVariant.withValues(alpha: .8)),
-        ),
-      ],
       ),
     );
   }
