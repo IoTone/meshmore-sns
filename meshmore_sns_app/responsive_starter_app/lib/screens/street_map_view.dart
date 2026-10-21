@@ -83,7 +83,7 @@ class _StreetMapViewState extends State<StreetMapView> {
   /// every level past it is an upscale. Past z17 the upscale is 8x linear
   /// and the map stops carrying information; the raster presets keep the
   /// deeper native range.
-  double get _zoomMax => context.skin.shape.vectorBasemap ? 17.0 : 18.5;
+  double get _zoomMax => _vectorSkin ? 17.0 : 18.5;
   static const double _zoomStep = 1.0;
   late final MapController _map = MapController();
   double _zoom = 14.0; // metro default; pinned to self on first build
@@ -138,6 +138,12 @@ class _StreetMapViewState extends State<StreetMapView> {
   /// plain themed background, which can read better against accent
   /// colours on dark themes where street colours clash.
   bool _showTiles = true;
+
+  /// R84 - a raster basemap chosen from the picker while the skin renders
+  /// vector by default. Null means "the skin's own basemap". Without this
+  /// the Studio picker was a dead control: it changed [_sourceId] and the
+  /// vector layer ignored it, so choosing USGS Imagery did nothing.
+  String? _rasterOverride;
 
   @override
   void initState() {
@@ -214,15 +220,23 @@ class _StreetMapViewState extends State<StreetMapView> {
     final MeshcoreController mc = context.watch<MeshcoreController>();
     final AppLocalizations l = AppLocalizations.of(context);
     final ColorScheme cs = Theme.of(context).colorScheme;
-    // Kept for the warm-up timer, which runs outside a build and so must
-    // not read a watching provider.
-    _vectorSkin = context.skin.shape.vectorBasemap;
+    // Kept for the warm-up timer and the zoom ceiling, which run outside a
+    // build and so must not read a watching provider.
 
     final MapsController? maps = Provider.of<MapsController?>(context);
     final List<MapSource> sources = maps?.sources ?? kBuiltInSources;
     final MapSource tileSource = sources.firstWhere(
         (MapSource s) => s.id == _sourceId,
         orElse: () => kOsmStandard);
+    // R84 - what is actually drawn: the skin's vector style, or a raster
+    // source the user picked over it.
+    final MapSource shownSource = _rasterOverride == null
+        ? tileSource
+        : sources.firstWhere((MapSource s) => s.id == _rasterOverride,
+            orElse: () => tileSource);
+    final bool vectorSkin = context.skin.shape.vectorBasemap;
+    final bool vectorDrawn = vectorSkin && _rasterOverride == null;
+    _vectorSkin = vectorDrawn;
 
     final double? selfLat = mc.ownLocation?.latitude;
     final double? selfLon = mc.ownLocation?.longitude;
@@ -305,9 +319,9 @@ class _StreetMapViewState extends State<StreetMapView> {
               // behind it. The dimmed raster layer stays as the fallback
               // for a skin that has not opted in.
               if (_showTiles)
-                context.skin.shape.vectorBasemap
+                vectorDrawn
                     ? const VectorBasemapLayer()
-                    : basemapLayer(context, tileSource,
+                    : basemapLayer(context, shownSource,
                         dim: context.skin.shape.dimmedBasemap),
               // R61 — event maps (festival streets, courses, camps).
               const EventLayersOverlay(),
@@ -426,9 +440,8 @@ class _StreetMapViewState extends State<StreetMapView> {
               // OSM's own vector service, so one credit covers the tiles and
               // the data; a raster source keeps its own credit.
               if (_showTiles)
-                MapAttribution(context.skin.shape.vectorBasemap
-                    ? kOsmVector.attribution
-                    : tileSource.attribution),
+                MapAttribution(
+                    vectorDrawn ? kOsmVector.attribution : shownSource.attribution),
               if (!hasFix)
                 Container(
               key: const ValueKey<String>('map-no-fix-banner'),
@@ -535,10 +548,23 @@ class _StreetMapViewState extends State<StreetMapView> {
                       minWidth: StreetMapView.controlCell,
                       minHeight: StreetMapView.controlCell),
                   icon: const Icon(Icons.map),
-                  initialValue: tileSource.id,
-                  onSelected: (String id) =>
-                      setState(() => _sourceId = id),
+                  initialValue: vectorDrawn ? kOsmVector.id : shownSource.id,
+                  onSelected: (String id) => setState(() {
+                    if (id == kOsmVector.id) {
+                      _rasterOverride = null;
+                      return;
+                    }
+                    _sourceId = id;
+                    // On a vector skin a raster source is an override; on a
+                    // raster skin it is simply the basemap.
+                    _rasterOverride = vectorSkin ? id : null;
+                  }),
                   itemBuilder: (BuildContext _) => <PopupMenuEntry<String>>[
+                    if (vectorSkin)
+                      PopupMenuItem<String>(
+                        value: kOsmVector.id,
+                        child: Text(kOsmVector.name),
+                      ),
                     for (final MapSource s in sources)
                       PopupMenuItem<String>(
                         value: s.id,
