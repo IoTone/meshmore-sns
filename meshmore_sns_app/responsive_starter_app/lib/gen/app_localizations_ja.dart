@@ -3209,6 +3209,12 @@ class AppLocalizationsJa extends AppLocalizations {
   String get rangeFlood => 'フラッド';
 
   @override
+  String get settingsHubInfo => '情報';
+
+  @override
+  String get settingsHubInfoSub => 'このアプリ・ドキュメント・ライセンス';
+
+  @override
   String get settingsHubMaps => 'オフライン地図';
 
   @override

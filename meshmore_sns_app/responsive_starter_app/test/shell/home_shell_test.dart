@@ -6,6 +6,7 @@ import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 
+import 'package:meshmore_sns_app/app_router.dart';
 import 'package:meshmore_sns_app/app_state_model.dart';
 import 'package:meshmore_sns_app/cue/cue_service.dart';
 import 'package:meshmore_sns_app/l10n/locale_controller.dart';
@@ -101,6 +102,33 @@ void main() {
     expect(find.widgetWithText(AppBar, 'Dashboard'), findsOneWidget);
   });
 
+  testWidgets('R85 Settings > Information owns About and Docs',
+      (WidgetTester t) async {
+    // appRouter is a global instance: a route left pushed would put every
+    // later test on that page instead of the shell.
+    addTearDown(() => appRouter.go('/'));
+    await _pumpApp(t);
+    await t.tap(find.byTooltip('Settings'));
+    await t.pumpAndSettle();
+    // The two static views are rows here, not tabs.
+    expect(find.byTooltip('Docs'), findsNothing);
+    expect(find.byTooltip('About'), findsNothing);
+    await t.ensureVisible(find.text('Information'));
+    await t.tap(find.text('Information'));
+    await t.pumpAndSettle();
+    expect(find.widgetWithText(AppBar, 'About'), findsOneWidget);
+    expect(find.text('MESHMORE SNS'), findsOneWidget);
+
+    await t.tap(find.text('Docs'));
+    await t.pumpAndSettle();
+    expect(find.widgetWithText(AppBar, 'Docs'), findsOneWidget);
+
+    await t.pageBack();
+    await t.pumpAndSettle();
+    expect(find.text('MESHMORE SNS'), findsOneWidget,
+        reason: 'Back returns to Information, not to the shell');
+  });
+
   testWidgets('the view strip jumps views (R11, R64)', (WidgetTester t) async {
     await _pumpApp(t);
     await t.tap(find.byTooltip('Settings'));
@@ -135,8 +163,6 @@ void main() {
         MmView.grid: 'Hyperlocal grid',
         MmView.map: 'Map',
         MmView.settings: 'Settings',
-        MmView.docs: 'Docs',
-        MmView.about: 'About',
       }[v]!;
       final Finder tip = find.byTooltip(label);
       expect(tip, findsOneWidget, reason: '$label has a strip button');
@@ -274,6 +300,8 @@ void main() {
     // The shell never reads the skin to build its pages, so each preset
     // gets the same seven-plus-one views; prove it per preset rather
     // than assume it.
+    // R85 - six views. Docs and the information page are rows under
+    // Settings now, not tabs.
     expect(MmView.values, <MmView>[
       MmView.dashboard,
       MmView.chat,
@@ -281,8 +309,6 @@ void main() {
       MmView.grid,
       MmView.map,
       MmView.settings,
-      MmView.docs,
-      MmView.about,
     ]);
     for (final MmThemePreset preset in MmThemePreset.values) {
       SharedPreferences.setMockInitialValues(<String, Object>{});

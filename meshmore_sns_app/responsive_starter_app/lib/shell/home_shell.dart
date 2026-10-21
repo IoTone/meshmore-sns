@@ -5,7 +5,6 @@ import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
-import '../app_state_model.dart';
 import '../bot/bot_bridge.dart';
 import '../bot/bot_controller.dart';
 import '../cue/cue_bridge.dart';
@@ -17,7 +16,6 @@ import '../meshcore/meshcore_controller.dart';
 import '../screens/chat_screen.dart';
 import 'boot_overlay.dart';
 import '../screens/dashboards/dashboard_host.dart';
-import '../screens/docs_hub_screen.dart';
 import '../screens/grid_screen.dart';
 import '../screens/map_screen.dart';
 import '../screens/nodes_screen.dart';
@@ -30,7 +28,10 @@ import '../ui/mm_shape.dart';
 /// The primary views (R8 dashboard is the home / first page; the
 /// hyperlocal grid follows Nodes — issue #4; R53 adds the Docs tab,
 /// sitting after Settings; R61 adds the Map tab right after the grid).
-enum MmView { dashboard, chat, nodes, grid, map, settings, docs, about }
+/// R85 - six views, the ones a person switches between. Docs and the
+/// information page were top-level views; they are static content, so they
+/// live under Settings > Information instead.
+enum MmView { dashboard, chat, nodes, grid, map, settings }
 
 extension on MmView {
   /// Localised tab label. Pass `AppLocalizations.of(context)` from the
@@ -42,9 +43,7 @@ extension on MmView {
         MmView.nodes => l.tabNodes,
         MmView.grid => l.gridTitle,
         MmView.map => l.tabMap,
-        MmView.docs => l.tabDocs,
         MmView.settings => l.tabSettings,
-        MmView.about => l.tabAbout,
       };
   IconData get icon => switch (this) {
         MmView.dashboard => Icons.dashboard_outlined,
@@ -52,9 +51,7 @@ extension on MmView {
         MmView.nodes => Icons.hub_outlined,
         MmView.grid => Icons.radar,
         MmView.map => Icons.map_outlined,
-        MmView.docs => Icons.menu_book_outlined,
         MmView.settings => Icons.settings_outlined,
-        MmView.about => Icons.info_outline,
       };
 }
 
@@ -209,8 +206,6 @@ class _HomeShellState extends State<HomeShell>
           const GridScreen(),
           MapScreen(onEdgeSwipe: swipe ? _edgeSwipe : null),
           const _SettingsView(),
-          const DocsHubScreen(),
-          const _AboutView(),
         ],
       ),
       ),
@@ -219,7 +214,6 @@ class _HomeShellState extends State<HomeShell>
     );
   }
 }
-
 
 /// R64 — the non-gesture way to reach any view. It replaces the
 /// quick-nav sheet and the old 6 px dots (which were a 4 px-tall tap
@@ -345,6 +339,8 @@ class _SettingsView extends StatelessWidget {
           '/settings/tools'),
       (Icons.map_outlined, l.settingsHubMaps, l.settingsHubMapsSub,
           '/settings/maps'),
+      (Icons.info_outline, l.settingsHubInfo, l.settingsHubInfoSub,
+          '/settings/about'),
     ];
     return MmScaffold(
       child: ListView.separated(
@@ -370,99 +366,6 @@ class _SettingsView extends StatelessWidget {
   }
 }
 
-class _AboutView extends StatelessWidget {
-  const _AboutView();
-
-  @override
-  Widget build(BuildContext context) {
-    final ColorScheme cs = Theme.of(context).colorScheme;
-    final AppState app = context.watch<AppState>();
-    final AppLocalizations l = AppLocalizations.of(context);
-    return MmScaffold(
-      // Centered when it fits; scrolls when the viewport is short (small
-      // screens, or a keyboard left open while swiping over from chat —
-      // otherwise the fixed-height Column overflows into warning stripes).
-      child: LayoutBuilder(
-        builder: (BuildContext context, BoxConstraints constraints) {
-          return SingleChildScrollView(
-            child: ConstrainedBox(
-              constraints:
-                  BoxConstraints(minHeight: constraints.maxHeight),
-              child: IntrinsicHeight(
-                child: Center(
-      child: Padding(
-        padding: const EdgeInsets.all(28),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            Text('MESHMORE SNS',
-                style: TextStyle(
-                    fontSize: 22, letterSpacing: 4, color: cs.onSurface)),
-            const SizedBox(height: 4),
-            // The EN + JP subtitles are intentionally rendered as a
-            // *pair* regardless of the active locale — the brand name
-            // is bilingual.
-            Text(l.aboutSubtitleEn,
-                style: TextStyle(
-                    fontSize: 13,
-                    color: cs.onSurface.withValues(alpha: .8))),
-            const SizedBox(height: 2),
-            Text(l.aboutSubtitleJa,
-                style: TextStyle(
-                    fontSize: 13,
-                    color: cs.onSurface.withValues(alpha: .65))),
-            const SizedBox(height: 14),
-            Text(l.aboutVersion(app.getAppVersion()),
-                style:
-                    TextStyle(color: cs.onSurface.withValues(alpha: .6))),
-            const SizedBox(height: 16),
-            Text(
-              '${l.aboutDescription}\n'
-              '${l.aboutCopyright}\n'
-              '${l.aboutLicense}',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: cs.onSurface.withValues(alpha: .65)),
-            ),
-            const SizedBox(height: 18),
-            Text(l.aboutMadeWith,
-                style: TextStyle(
-                    color: cs.onSurface.withValues(alpha: .55),
-                    fontStyle: FontStyle.italic)),
-            const SizedBox(height: 14),
-            Text(l.aboutTerms,
-                style: TextStyle(
-                    color: cs.onSurface.withValues(alpha: .4),
-                    fontSize: 11)),
-            const SizedBox(height: 18),
-            OutlinedButton.icon(
-              onPressed: () => showLicensePage(
-                context: context,
-                applicationName: l.appName,
-                applicationVersion: l.aboutVersion(app.getAppVersion()),
-                applicationLegalese: l.aboutCopyright,
-              ),
-              icon: const Icon(Icons.description_outlined, size: 18),
-              label: Text(l.aboutLicensesButton),
-            ),
-            const SizedBox(height: 10),
-            Text(l.aboutAttributions,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                    color: cs.onSurface.withValues(alpha: .45),
-                    fontSize: 10.5,
-                    height: 1.4)),
-          ],
-        ),
-      ),
-                ),
-              ),
-            ),
-          );
-        },
-      ),
-    );
-  }
-}
 
 /// Always-visible radio link state (every primary view). Tap → the
 /// Diagnostics & connect screen.

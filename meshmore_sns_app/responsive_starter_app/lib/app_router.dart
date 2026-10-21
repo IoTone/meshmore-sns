@@ -3,6 +3,8 @@
 import 'package:go_router/go_router.dart';
 
 import 'screens/app_settings_screen.dart';
+import 'screens/about_screen.dart';
+import 'screens/docs_hub_screen.dart';
 import 'screens/battery_screen.dart';
 import 'screens/channels_screen.dart';
 import 'docs/doc_section.dart';
@@ -102,6 +104,16 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: '/settings/battery',
       builder: (_, __) => const BatteryScreen(),
+    ),
+    // R85 - the information page and the docs hub are static content, so
+    // they live under Settings instead of owning two of the six views.
+    GoRoute(
+      path: '/settings/about',
+      builder: (_, __) => const AboutScreen(),
+    ),
+    GoRoute(
+      path: '/settings/about/docs',
+      builder: (_, __) => const DocsHubScreen(),
     ),
     // R53 — docs reader. `:section` is one of protocol / firmware / app;
     // unknown values fall back to the app self-docs.

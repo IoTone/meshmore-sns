@@ -23,7 +23,9 @@ class DocsHubScreen extends StatelessWidget {
     final MeshcoreController mc = context.watch<MeshcoreController>();
     final String? fw = mc.deviceInfo?.firmwareVersion;
 
-    return ListView(
+    return Scaffold(
+      appBar: AppBar(title: Text(l.tabDocs)),
+      body: ListView(
       padding: const EdgeInsets.fromLTRB(16, 18, 16, 28),
       children: <Widget>[
         Text(
@@ -81,6 +83,7 @@ class DocsHubScreen extends StatelessWidget {
               color: cs.onSurfaceVariant.withValues(alpha: .8)),
         ),
       ],
+      ),
     );
   }
 }

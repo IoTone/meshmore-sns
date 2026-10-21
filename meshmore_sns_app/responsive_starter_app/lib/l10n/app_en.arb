@@ -1457,6 +1457,8 @@
   },
   "rangeCopyCsv": "Copy CSV",
   "rangeFlood": "flood",
+  "settingsHubInfo": "Information",
+  "settingsHubInfoSub": "About, documentation, licences",
   "settingsHubMaps": "Offline maps",
   "settingsHubMapsSub": "Region downloads, event maps, storage budget",
   "mapsTitle": "Offline maps",

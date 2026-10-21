@@ -3326,6 +3326,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get rangeFlood => 'flood';
 
   @override
+  String get settingsHubInfo => 'Information';
+
+  @override
+  String get settingsHubInfoSub => 'About, documentation, licences';
+
+  @override
   String get settingsHubMaps => 'Offline maps';
 
   @override

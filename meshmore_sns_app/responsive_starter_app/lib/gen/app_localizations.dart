@@ -5750,6 +5750,18 @@ abstract class AppLocalizations {
   /// **'flood'**
   String get rangeFlood;
 
+  /// No description provided for @settingsHubInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'Information'**
+  String get settingsHubInfo;
+
+  /// No description provided for @settingsHubInfoSub.
+  ///
+  /// In en, this message translates to:
+  /// **'About, documentation, licences'**
+  String get settingsHubInfoSub;
+
   /// No description provided for @settingsHubMaps.
   ///
   /// In en, this message translates to:

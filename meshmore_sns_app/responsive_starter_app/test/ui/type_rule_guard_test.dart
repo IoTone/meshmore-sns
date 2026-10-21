@@ -70,7 +70,7 @@ void main() {
             GlobalWidgetsLocalizations.delegate,
             GlobalCupertinoLocalizations.delegate,
           ],
-          home: const Scaffold(body: DocsHubScreen()),
+          home: const DocsHubScreen(),
         ),
       ),
     ));

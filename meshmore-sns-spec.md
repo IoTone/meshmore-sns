@@ -1192,6 +1192,26 @@ While Meshcore protocol is open source, the client is not open source.  We want 
   views with their own edge controls would each need auditing.
   Tests: `test/shell/home_shell_test.dart` (group "Map edge swipe (R67)").
 
+- R84: **the basemap picker works on a vector skin.** In Studio the picker
+  changed the selected raster source and the vector layer ignored it, so
+  choosing USGS Imagery did nothing. The picker now lists the skin's own
+  vector basemap as a real entry, and a raster choice sets
+  `_rasterOverride` so that source is drawn (dimmed) instead; picking the
+  vector entry clears it. Credit and zoom ceiling follow what is drawn
+  (vector caps at z17, raster at 18.5). The skin flag is captured in
+  `build` and used in the menu callback, because `context.skin` watches a
+  provider and throws from a gesture handler. Tests:
+  `test/screens/map_basemap_picker_test.dart` (3).
+- R85: **six views; Docs and About live under Settings.** `MmView` is
+  `{dashboard, chat, nodes, grid, map, settings}`; the shell's PageView
+  drops the two static pages. The Settings hub gains an **Information** row
+  (`/settings/about`) and `AboutScreen` (`lib/screens/about_screen.dart`,
+  the old `_AboutView` promoted to a route) holds the brand/version block,
+  the licences page and a **Docs** row to `/settings/about/docs`.
+  `DocsHubScreen` becomes a routed sub-page with its own app bar. New l10n:
+  `settingsHubInfo`, `settingsHubInfoSub` (EN + JA). Tests:
+  `home_shell_test` (R85: no Docs/About tooltips, Information opens About,
+  Docs pushes from there, Back returns to Information).
 - R83: **region files deferred; the live map made responsive.** The archive
   machinery (R81) stays but is hidden behind `kRegionFilesEnabled = false`
   until a region file is published; the UI test asserts the section is
