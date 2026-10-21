@@ -1208,7 +1208,10 @@ While Meshcore protocol is open source, the client is not open source.  We want 
   (`/settings/about`) and `AboutScreen` (`lib/screens/about_screen.dart`,
   the old `_AboutView` promoted to a route) holds the brand/version block,
   the licences page and a **Docs** row to `/settings/about/docs`.
-  `DocsHubScreen` becomes a routed sub-page with its own app bar. New l10n:
+  `DocsHubScreen` becomes a routed sub-page with its own app bar; its
+  duplicate in-body heading is gone (the app bar names the page) and its
+  prose subtitle keeps `MmType.wordsMono`, which is sans under Studio and
+  mono under the older presets, so the R74 type rule still holds. New l10n:
   `settingsHubInfo`, `settingsHubInfoSub` (EN + JA). Tests:
   `home_shell_test` (R85: no Docs/About tooltips, Information opens About,
   Docs pushes from there, Back returns to Information).

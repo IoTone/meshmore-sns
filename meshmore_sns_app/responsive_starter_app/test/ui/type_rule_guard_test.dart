@@ -75,9 +75,9 @@ void main() {
       ),
     ));
     await t.pump();
-    final Finder f = find.text('DOCS').evaluate().isNotEmpty
-        ? find.text('DOCS')
-        : find.byType(Text).first;
+    // R85: the page heading is the app bar now, so the page's own prose
+    // (the subtitle) carries the skin's type system.
+    final Finder f = find.textContaining('Read the MeshCore protocol');
     final Text w = t.widget<Text>(f);
     final String? fam = DefaultTextStyle.of(t.element(f))
         .style

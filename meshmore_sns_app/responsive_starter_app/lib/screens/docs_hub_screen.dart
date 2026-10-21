@@ -29,16 +29,6 @@ class DocsHubScreen extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 18, 16, 28),
       children: <Widget>[
         Text(
-          l.docsHubTitle.toUpperCase(),
-          style: TextStyle(
-              fontFamily: context.skin.type.wordsMono,
-              fontSize: 20,
-              letterSpacing: 4,
-              fontWeight: FontWeight.w700,
-              color: cs.primary),
-        ),
-        const SizedBox(height: 4),
-        Text(
           l.docsHubSubtitle,
           style: TextStyle(
               fontFamily: context.skin.type.wordsMono,
