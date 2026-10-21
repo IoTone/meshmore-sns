@@ -348,19 +348,23 @@ falls through to the network instead of blanking the map.
 
 ### How the owner makes a region file
 The accepted schema is Shortbread v1 (R82), the schema the bundled style
-and the online service both use, so the file must carry that schema. A
-Planetiler build with the Shortbread profile, or a Shortbread PMTiles file
-built by the community, both qualify, for example
-`java -jar planetiler.jar --download --area=colorado --maxzoom=14
---output=colorado.pmtiles`, then `sha256sum` it and host it on any static
-HTTPS host that serves byte ranges. Planetiler can also emit PMTiles
-directly, and `pmtiles extract --bbox ... --maxzoom 14` then carves one
-region file out of a larger archive without regenerating (Planetiler
-`--output=x.pmtiles` is a supported output, and extract reads any PMTiles
-v3 archive). **Unverified**: this recipe was not run
-here (it needs a multi-GB download and Java). `pmtiles extract` on a
-Protomaps build is simpler but yields the Protomaps schema (`earth`,
-`roads`, ...), which the app refuses on arrival.
+and the online service both use, so the file must carry that schema.
+Shortbread publishes a Planetiler recipe (`shortbread-tiles.org/make-vectortiles/planetiler`),
+and Planetiler writes PMTiles directly, so one command produces a region
+file from an OSM extract:
+
+```
+docker run --rm --user=$UID -v $PWD/data:/data \
+  ghcr.io/onthegomap/planetiler shortbread.yml \
+  --download --area=colorado --output=/data/shortbread.pmtiles
+```
+
+Then `sha256sum` it and host it on any static HTTPS host that serves byte
+ranges (Cloudflare Pages was the owner's pick; R2 and nginx also work).
+`pmtiles extract --bbox ... --maxzoom 14` carves a region out of a larger
+Shortbread PMTiles archive without regenerating, because extract reads any
+PMTiles v3 archive. **Unverified**: the exact command is taken from the
+Shortbread documentation, and neither it nor extract was run here.
 
 ### R81 decisions (why Protomaps was not adopted)
 - Protomaps public builds are dated (`maps.protomaps.com/builds`), kept
