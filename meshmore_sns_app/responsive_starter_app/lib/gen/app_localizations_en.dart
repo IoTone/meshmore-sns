@@ -3256,6 +3256,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsHubDocsSub => 'Protocol, firmware, app, field notes';
 
   @override
+  String get settingsNotifDeniedPermanent =>
+      'Notifications were permanently denied. The background service needs a persistent notification.';
+
+  @override
+  String get settingsNotifDeniedTransient =>
+      'Notifications are required for the background service. Tap Open settings to grant them.';
+
+  @override
+  String get deviceAdvertPropagatesHint =>
+      'Name/location change propagates on the next advert (Nodes → Advertise).';
+
+  @override
   String get settingsHubMaps => 'Offline maps';
 
   @override

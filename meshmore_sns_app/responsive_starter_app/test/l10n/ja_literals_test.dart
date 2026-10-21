@@ -70,6 +70,18 @@ void main() {
     'elevationPolling': (en.elevationPolling, ja.elevationPolling),
     'elevationTapToUpdate': (en.elevationTapToUpdate, ja.elevationTapToUpdate),
     'nodesClearSearch': (en.nodesClearSearch, ja.nodesClearSearch),
+    'settingsNotifDeniedPermanent': (
+      en.settingsNotifDeniedPermanent,
+      ja.settingsNotifDeniedPermanent
+    ),
+    'settingsNotifDeniedTransient': (
+      en.settingsNotifDeniedTransient,
+      ja.settingsNotifDeniedTransient
+    ),
+    'deviceAdvertPropagatesHint': (
+      en.deviceAdvertPropagatesHint,
+      ja.deviceAdvertPropagatesHint
+    ),
     'diagnosticsSectionConnection': (
       en.diagnosticsSectionConnection,
       ja.diagnosticsSectionConnection

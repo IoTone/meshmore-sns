@@ -5624,6 +5624,24 @@ abstract class AppLocalizations {
   /// **'Protocol, firmware, app, field notes'**
   String get settingsHubDocsSub;
 
+  /// No description provided for @settingsNotifDeniedPermanent.
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications were permanently denied. The background service needs a persistent notification.'**
+  String get settingsNotifDeniedPermanent;
+
+  /// No description provided for @settingsNotifDeniedTransient.
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications are required for the background service. Tap Open settings to grant them.'**
+  String get settingsNotifDeniedTransient;
+
+  /// No description provided for @deviceAdvertPropagatesHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Name/location change propagates on the next advert (Nodes → Advertise).'**
+  String get deviceAdvertPropagatesHint;
+
   /// No description provided for @settingsHubMaps.
   ///
   /// In en, this message translates to:

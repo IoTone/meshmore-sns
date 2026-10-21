@@ -671,8 +671,7 @@ class _DeviceConfigScreenState extends State<DeviceConfigScreen> {
                   ),
                 ),
                 Text(
-                  'Name/location change propagates on the next advert '
-                  '(Nodes → Advertise).',
+                  l.deviceAdvertPropagatesHint,
                   style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12),
                 ),
               ],

@@ -3142,6 +3142,18 @@ class AppLocalizationsJa extends AppLocalizations {
   String get settingsHubDocsSub => 'プロトコル・ファームウェア・アプリ・実地メモ';
 
   @override
+  String get settingsNotifDeniedPermanent =>
+      '通知が永続的に拒否されました。バックグラウンドサービスには常駐通知が必要です。';
+
+  @override
+  String get settingsNotifDeniedTransient =>
+      'バックグラウンドサービスには通知の許可が必要です。「設定を開く」から許可してください。';
+
+  @override
+  String get deviceAdvertPropagatesHint =>
+      '名前・位置の変更は次のアドバートで反映されます (ノード → アドバート送信)。';
+
+  @override
   String get settingsHubMaps => 'オフライン地図';
 
   @override

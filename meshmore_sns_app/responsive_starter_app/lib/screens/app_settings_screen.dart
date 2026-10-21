@@ -43,15 +43,14 @@ class AppSettingsScreen extends StatelessWidget {
       return;
     }
     // Denied — keep the toggle off and explain.
+    final AppLocalizations l = AppLocalizations.of(ctx);
     ScaffoldMessenger.maybeOf(ctx)?.showSnackBar(
       SnackBar(
         content: Text(r == PermissionResult.permanentlyDenied
-            ? 'Notifications were permanently denied. '
-                'The background service needs a persistent notification.'
-            : 'Notifications are required for the background service. '
-                'Tap Open settings to grant them.'),
+            ? l.settingsNotifDeniedPermanent
+            : l.settingsNotifDeniedTransient),
         action: SnackBarAction(
-          label: 'Open settings',
+          label: l.deviceOpenSettings,
           onPressed: () =>
               ctx.read<PermissionsService>().openAppSettingsPage(),
         ),
