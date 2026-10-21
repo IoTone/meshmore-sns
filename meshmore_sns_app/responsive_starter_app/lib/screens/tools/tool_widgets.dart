@@ -182,10 +182,22 @@ class ToolActionRow extends StatelessWidget {
 }
 
 /// A labelled setup row: `LABEL   [ control ]`.
+///
+/// The label column is [defaultLabelWidth] wide so the controls of a page
+/// line up. A page whose longest label does not fit (Soak's "CONVERSATION"
+/// broke as "CONVERSATIO / N" on a 387dp phone) gives all of its rows one
+/// wider [labelWidth], so they still line up with each other.
 class ToolField extends StatelessWidget {
-  const ToolField({super.key, required this.label, required this.child});
+  const ToolField({
+    super.key,
+    required this.label,
+    required this.child,
+    this.labelWidth = defaultLabelWidth,
+  });
+  static const double defaultLabelWidth = 104;
   final String label;
   final Widget child;
+  final double labelWidth;
 
   @override
   Widget build(BuildContext context) {
@@ -195,7 +207,7 @@ class ToolField extends StatelessWidget {
       child: Row(
         children: <Widget>[
           SizedBox(
-            width: 104,
+            width: labelWidth,
             child: Text(label,
                 style: TextStyle(
                     color: skin.color.fgMuted,

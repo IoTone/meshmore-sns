@@ -17,6 +17,13 @@ import 'tool_widgets.dart';
 class SoakScreen extends StatelessWidget {
   const SoakScreen({super.key});
 
+  /// "CONVERSATION" does not fit the default 104dp label column at the
+  /// system's usual 1.15 text scale, so every row of this page uses a wider
+  /// one (see [ToolField]).
+  static const double _labelWidth = 128;
+  @visibleForTesting
+  static const double labelWidth = _labelWidth;
+
   static const List<int> counts = <int>[10, 25, 50, 100, 250, 500];
   static const List<Duration> intervals = <Duration>[
     Duration(seconds: 5),
@@ -39,6 +46,7 @@ class SoakScreen extends StatelessWidget {
         ToolLine(l.soakPairHint, muted: true),
         const SizedBox(height: 8),
         ToolField(
+          labelWidth: _labelWidth,
           label: l.soakScope,
           child: ToolPickerButton(
             text: t.scope == null ? l.toolsChoose : t.scopeLabel,
@@ -54,6 +62,7 @@ class SoakScreen extends StatelessWidget {
           ),
         ),
         ToolField(
+          labelWidth: _labelWidth,
           label: l.toolsCount,
           child: ToolChoice<int>(
             value: t.count,
@@ -64,6 +73,7 @@ class SoakScreen extends StatelessWidget {
           ),
         ),
         ToolField(
+          labelWidth: _labelWidth,
           label: l.toolsInterval,
           child: ToolChoice<Duration>(
             value: t.interval,
