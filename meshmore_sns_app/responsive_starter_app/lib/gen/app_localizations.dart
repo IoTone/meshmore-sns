@@ -5798,6 +5798,18 @@ abstract class AppLocalizations {
   /// **'Event maps'**
   String get mapsLayers;
 
+  /// No description provided for @mapsNoLayersShort.
+  ///
+  /// In en, this message translates to:
+  /// **'No event maps added'**
+  String get mapsNoLayersShort;
+
+  /// No description provided for @mapsManageLayers.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage event maps…'**
+  String get mapsManageLayers;
+
   /// No description provided for @mapsAddLayer.
   ///
   /// In en, this message translates to:

@@ -5,12 +5,15 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_compass/flutter_compass.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart' hide Path;
 import 'package:meshcore/meshcore.dart' show SelfInfo;
 import 'package:provider/provider.dart';
 
 import '../gen/app_localizations.dart';
 import '../maps/basemap.dart';
+import '../maps/basemap_prefs.dart';
+import '../maps/event_layer.dart';
 import '../maps/map_source.dart';
 import '../maps/maps_controller.dart';
 import '../maps/tile_math.dart';
@@ -107,7 +110,7 @@ class _StreetMapViewState extends State<StreetMapView> {
   }
 
   Future<void> _warmAround() async {
-    if (!mounted || !_showTiles || !_vectorSkin) return;
+    if (!mounted || !_vectorSkin) return;
     final MapsController? maps =
         Provider.of<MapsController?>(context, listen: false);
     if (maps == null || !maps.online || !maps.viewIdle) return;
@@ -133,12 +136,6 @@ class _StreetMapViewState extends State<StreetMapView> {
   /// Session-scoped like the grid's view mode.
   static String _sourceId = kOsmStandard.id;
 
-  /// R25+5 — show / hide the basemap tiles entirely. Default on;
-  /// flipping off renders peers, trail, and range circles on a
-  /// plain themed background, which can read better against accent
-  /// colours on dark themes where street colours clash.
-  bool _showTiles = true;
-
   /// R84 - a raster basemap chosen from the picker while the skin renders
   /// vector by default. Null means "the skin's own basemap". Without this
   /// the Studio picker was a dead control: it changed [_sourceId] and the
@@ -148,6 +145,15 @@ class _StreetMapViewState extends State<StreetMapView> {
   @override
   void initState() {
     super.initState();
+    // R90 — the basemap is remembered across launches. It was session-only,
+    // which meant every restart quietly reverted a deliberate choice.
+    BasemapPrefs.load().then((String? id) {
+      if (!mounted || id == null) return;
+      setState(() {
+        _sourceId = id;
+        _rasterOverride = id;
+      });
+    });
     if (widget.browseWithoutFix) {
       // The context-free read of the fix happens in build; here we only
       // pre-seed the world zoom so the first frame is not zoom 14 over
@@ -234,8 +240,10 @@ class _StreetMapViewState extends State<StreetMapView> {
         ? tileSource
         : sources.firstWhere((MapSource s) => s.id == _rasterOverride,
             orElse: () => tileSource);
-    final bool vectorSkin = context.skin.shape.vectorBasemap;
-    final bool vectorDrawn = vectorSkin && _rasterOverride == null;
+    // R90 — the vector basemap is available on every skin, not only the one
+    // whose shape opted in: the style asset is a neutral dark palette, and
+    // gating it made "switch the basemap" a dead control on six presets.
+    final bool vectorDrawn = _rasterOverride == null;
     _vectorSkin = vectorDrawn;
 
     final double? selfLat = mc.ownLocation?.latitude;
@@ -307,7 +315,7 @@ class _StreetMapViewState extends State<StreetMapView> {
               ),
               onPositionChanged: (MapCamera cam, bool hasGesture) =>
                   _scheduleWarm(),
-              backgroundColor: context.skin.shape.vectorBasemap
+              backgroundColor: vectorDrawn
                   ? kVectorBasemapBackground
                   : cs.surfaceContainerHighest,
             ),
@@ -318,11 +326,15 @@ class _StreetMapViewState extends State<StreetMapView> {
               // filter, sharp at every zoom, and the same tile store
               // behind it. The dimmed raster layer stays as the fallback
               // for a skin that has not opted in.
-              if (_showTiles)
-                vectorDrawn
-                    ? const VectorBasemapLayer()
-                    : basemapLayer(context, shownSource,
-                        dim: context.skin.shape.dimmedBasemap),
+              // R90 — the basemap is not optional. The old layers button
+              // could remove it entirely, leaving pins and range rings on
+              // the bare skin; a map with no map underneath is not a state
+              // worth offering.
+              if (vectorDrawn)
+                const VectorBasemapLayer()
+              else
+                basemapLayer(context, shownSource,
+                    dim: context.skin.shape.dimmedBasemap),
               // R61 — event maps (festival streets, courses, camps).
               const EventLayersOverlay(),
               // R25+1 — range circle for self. Uses our radio-tuple
@@ -439,9 +451,9 @@ class _StreetMapViewState extends State<StreetMapView> {
               // The credit line follows what is actually drawn. R82 draws
               // OSM's own vector service, so one credit covers the tiles and
               // the data; a raster source keeps its own credit.
-              if (_showTiles)
-                MapAttribution(
-                    vectorDrawn ? kOsmVector.attribution : shownSource.attribution),
+              MapAttribution(vectorDrawn
+                  ? kOsmVector.attribution
+                  : shownSource.attribution),
               if (!hasFix)
                 Container(
               key: const ValueKey<String>('map-no-fix-banner'),
@@ -542,6 +554,7 @@ class _StreetMapViewState extends State<StreetMapView> {
                 ),
                 // R25+3 / R61 — basemap picker.
                 PopupMenuButton<String>(
+                  key: const ValueKey<String>('map-basemap-picker'),
                   tooltip: l.mapsSourcePick,
                   iconSize: 18,
                   constraints: const BoxConstraints(
@@ -549,22 +562,20 @@ class _StreetMapViewState extends State<StreetMapView> {
                       minHeight: StreetMapView.controlCell),
                   icon: const Icon(Icons.map),
                   initialValue: vectorDrawn ? kOsmVector.id : shownSource.id,
-                  onSelected: (String id) => setState(() {
-                    if (id == kOsmVector.id) {
-                      _rasterOverride = null;
-                      return;
-                    }
-                    _sourceId = id;
-                    // On a vector skin a raster source is an override; on a
-                    // raster skin it is simply the basemap.
-                    _rasterOverride = vectorSkin ? id : null;
-                  }),
+                  onSelected: (String id) {
+                    setState(() {
+                      if (id == kOsmVector.id) {
+                        _rasterOverride = null;
+                      } else {
+                        _sourceId = id;
+                        // Vector is the default, so any raster pick is an
+                        // override of it.
+                        _rasterOverride = id;
+                      }
+                    });
+                    BasemapPrefs.save(_rasterOverride);
+                  },
                   itemBuilder: (BuildContext _) => <PopupMenuEntry<String>>[
-                    if (vectorSkin)
-                      PopupMenuItem<String>(
-                        value: kOsmVector.id,
-                        child: Text(kOsmVector.name),
-                      ),
                     for (final MapSource s in sources)
                       PopupMenuItem<String>(
                         value: s.id,
@@ -572,23 +583,85 @@ class _StreetMapViewState extends State<StreetMapView> {
                       ),
                   ],
                 ),
-                // R25+5 — hide the basemap entirely. Useful when
-                // street colours clash with the theme accent or
-                // when the user just wants to focus on the pin
-                // pattern without distraction.
-                IconButton(
-                  tooltip: _showTiles
-                      ? l.mapHideTiles
-                      : l.mapShowTiles,
-                  iconSize: 18,
-                  constraints: const BoxConstraints(
-                      minWidth: StreetMapView.controlCell,
-                      minHeight: StreetMapView.controlCell),
-                  icon: Icon(_showTiles
-                      ? Icons.layers
-                      : Icons.layers_clear),
-                  onPressed: () =>
-                      setState(() => _showTiles = !_showTiles),
+                // R90 — event maps belong on the map. They used to be a
+                // switch buried in Settings > Offline maps, which is where
+                // you manage a layer, not where you look at one. Visibility
+                // toggles here; add / refresh / delete stays in Settings.
+                Builder(
+                  builder: (BuildContext ctx) {
+                    final MapsController? maps =
+                        Provider.of<MapsController?>(ctx);
+                    final List<EventLayer> layers =
+                        maps?.layers ?? const <EventLayer>[];
+                    final bool anyShown = layers.any((EventLayer e) => e.visible);
+                    return PopupMenuButton<String>(
+                      key: const ValueKey<String>('map-layers-menu'),
+                      tooltip: l.mapsLayers,
+                      iconSize: 18,
+                      constraints: const BoxConstraints(
+                          minWidth: StreetMapView.controlCell,
+                          minHeight: StreetMapView.controlCell),
+                      icon: Icon(
+                          anyShown ? Icons.layers : Icons.layers_outlined),
+                      itemBuilder: (BuildContext _) {
+                        if (layers.isEmpty) {
+                          return <PopupMenuEntry<String>>[
+                            PopupMenuItem<String>(
+                              enabled: false,
+                              child: Text(l.mapsNoLayersShort),
+                            ),
+                            const PopupMenuDivider(),
+                            PopupMenuItem<String>(
+                              value: '__manage',
+                              child: Text(l.mapsManageLayers),
+                            ),
+                          ];
+                        }
+                        return <PopupMenuEntry<String>>[
+                          for (final EventLayer e in layers)
+                            CheckedPopupMenuItem<String>(
+                              value: e.id,
+                              checked: e.visible,
+                              child: Row(
+                                children: <Widget>[
+                                  Flexible(
+                                    child: Text(e.name,
+                                        overflow: TextOverflow.ellipsis),
+                                  ),
+                                  // A layer that is on but has nothing to
+                                  // draw says so, instead of looking like an
+                                  // empty map.
+                                  if (e.visible &&
+                                      !(maps?.isLayerLoaded(e) ?? false))
+                                    const Padding(
+                                      padding: EdgeInsets.only(left: 6),
+                                      child: Icon(Icons.error_outline,
+                                          size: 14),
+                                    ),
+                                ],
+                              ),
+                            ),
+                          const PopupMenuDivider(),
+                          PopupMenuItem<String>(
+                            value: '__manage',
+                            child: Text(l.mapsManageLayers),
+                          ),
+                        ];
+                      },
+                      onSelected: (String id) {
+                        if (id == '__manage') {
+                          ctx.push('/settings/maps');
+                          return;
+                        }
+                        for (final EventLayer e in layers) {
+                          if (e.id == id) {
+                            maps?.setLayerVisible(e, !e.visible);
+                            break;
+                          }
+                        }
+                      },
+                    );
+                  },
                 ),
               ],
             ),

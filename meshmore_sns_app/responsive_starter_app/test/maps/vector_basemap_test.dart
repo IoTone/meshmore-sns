@@ -33,7 +33,6 @@ class _FakeFetch {
 }
 
 /// The raster picker; the vector source is implicit on Studio.
-bool isNotInRasterPicker(MapSource s) => !kBuiltInSources.contains(s);
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -272,10 +271,13 @@ void main() {
         reason: 'unloaded tiles must look like the map, not like a fault');
   });
 
-  test('R80 only Studio renders the vector basemap', () {
+  test('R90 the vector basemap is no longer Studio-only', () {
+    // R80 gated the vector renderer on the skin's shape. R90 lets every
+    // preset draw it (the style asset is a neutral dark palette), so the
+    // flag no longer decides anything; the map view ignores it.
     for (final MmThemePreset p in MmThemePreset.values) {
       expect(mmSkinFor(p).shape.vectorBasemap, p == MmThemePreset.studio,
-          reason: '$p');
+          reason: 'the flag still records which skin first adopted it: $p');
     }
   });
 
@@ -285,7 +287,9 @@ void main() {
     expect(kOsmVector.allowsPacks, isFalse,
         reason: 'the OSM vector policy forbids bulk download; regions are '
             'PMTiles archives (R81), never a crawl of this service');
-    expect(isNotInRasterPicker(kOsmVector), isTrue);
+    // R90 — it is now the first entry in the picker, but still never a
+    // pack source: packability is `allowsPacks`, checked above.
+    expect(kBuiltInSources.first, kOsmVector);
   });
 
   test('R82 the tile life honours the policy floor, not the header', () {

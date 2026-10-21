@@ -3351,6 +3351,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mapsLayers => 'Event maps';
 
   @override
+  String get mapsNoLayersShort => 'No event maps added';
+
+  @override
+  String get mapsManageLayers => 'Manage event maps…';
+
+  @override
   String get mapsAddLayer => 'Add event map';
 
   @override

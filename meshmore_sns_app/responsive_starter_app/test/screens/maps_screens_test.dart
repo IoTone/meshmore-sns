@@ -108,7 +108,10 @@ void main() {
       expect(find.text('BRC streets'), findsOneWidget);
       // Sources say which ones may be downloaded, and why not.
       await t.scrollUntilVisible(find.text('USGS Imagery'), 200);
-      expect(find.text('OpenStreetMap'), findsOneWidget);
+      // R90 — the raster OSM entry is gone; the vector entry is the one
+      // that ships.
+      expect(find.text('OpenStreetMap (vector)'), findsOneWidget);
+      expect(find.text('OpenStreetMap (raster)'), findsNothing);
       if (loc.languageCode == 'en') {
         expect(find.textContaining('forbids bulk download'), findsNWidgets(2));
         expect(find.text('Offline download allowed (US only)'),

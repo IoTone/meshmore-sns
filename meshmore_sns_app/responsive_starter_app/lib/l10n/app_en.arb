@@ -1449,6 +1449,8 @@
   "archiveFailNotFound": "Link not found.",
   "archiveRefusalDuplicate": "Already added.",
   "mapsLayers": "Event maps",
+  "mapsNoLayersShort": "No event maps added",
+  "mapsManageLayers": "Manage event maps…",
   "mapsAddLayer": "Add event map",
   "mapsNoLayers": "No event maps. Add a GeoJSON URL: a festival's street plan, a race course, a camp layout.",
   "mapsSources": "Map sources",

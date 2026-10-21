@@ -152,12 +152,20 @@ class EventLayersOverlay extends StatelessWidget {
     final List<EventLayer> shown =
         maps.layers.where((EventLayer l) => l.visible).toList();
     if (shown.isEmpty) return const SizedBox.shrink();
+    // One colour per layer, cycling through the scheme's data colours, so
+    // two event maps can be told apart and a single layer stays legible
+    // over both the dark vector basemap and a pale USGS raster. Every
+    // layer used to be `tertiary`, which made overlapping layers and pale
+    // imagery unreadable.
+    final ColorScheme cs = Theme.of(context).colorScheme;
+    final List<Color> palette = <Color>[cs.tertiary, cs.primary, cs.secondary];
     return Stack(children: <Widget>[
-      for (final EventLayer l in shown)
+      for (final (int i, EventLayer l) in shown.indexed)
         _OneEventLayer(
             key: ValueKey<String>('${l.id}@${l.updatedMs}'),
             maps: maps,
-            layer: l),
+            layer: l,
+            color: palette[i % palette.length]),
     ]);
   }
 }
@@ -174,9 +182,14 @@ Widget _dot(Color c, String? label) {
 }
 
 class _OneEventLayer extends StatefulWidget {
-  const _OneEventLayer({super.key, required this.maps, required this.layer});
+  const _OneEventLayer(
+      {super.key,
+      required this.maps,
+      required this.layer,
+      required this.color});
   final MapsController maps;
   final EventLayer layer;
+  final Color color;
 
   @override
   State<_OneEventLayer> createState() => _OneEventLayerState();
@@ -187,7 +200,7 @@ class _OneEventLayerState extends State<_OneEventLayer> {
 
   @override
   Widget build(BuildContext context) {
-    final Color c = Theme.of(context).colorScheme.tertiary;
+    final Color c = widget.color;
     return FutureBuilder<GeoShapes?>(
       future: _shapes,
       builder: (BuildContext context, AsyncSnapshot<GeoShapes?> snap) {
@@ -211,12 +224,15 @@ class _OneEventLayerState extends State<_OneEventLayer> {
             ]),
           if (s.points.isNotEmpty)
             MarkerLayer(markers: <Marker>[
+              // 24 dp box around a 10 dp dot: the marker is where the
+              // label's tooltip is reachable from, and 10 dp is below the
+              // project's own 48 dp floor by a wide margin.
               for (final GeoPoint p in s.points.take(2000))
                 Marker(
                   point: p.at,
-                  width: 10,
-                  height: 10,
-                  child: _dot(c, p.label),
+                  width: 24,
+                  height: 24,
+                  child: Center(child: SizedBox(width: 10, height: 10, child: _dot(c, p.label))),
                 ),
             ]),
         ]);

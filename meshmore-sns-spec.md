@@ -1252,6 +1252,28 @@ While Meshcore protocol is open source, the client is not open source.  We want 
   changed (needs a layout decision):** at 320dp with 2.0x text the
   Dashboard status row overflows by ~7 px and `/settings/maps/new`'s
   `ToolChoice` dropdown by ~57 px.
+- R90: **the basemap is not optional, and event maps live on the map.**
+  Streets is now OpenStreetMap's vector service on every skin, not only the
+  one whose shape opted in: the bundled style is a neutral dark cartographic
+  palette (greys, one desaturated blue, one muted green), so it reads the
+  same under any preset, and gating it made the picker's first entry a dead
+  control on six presets. The raster OSM entry is gone from the picker (same
+  data, 4-10x the bytes, no seven-day cache floor); it stays in code as the
+  fallback the cell and fabric grid views hardcode. The map's layers button
+  no longer removes the basemap, which could leave pins and range rings on
+  the bare skin; that cell is now the event-maps control. Event layers had
+  no on-map control at all (visibility lived as a switch in Settings >
+  Offline maps), which is the wrong home for an overlay: the popup now
+  lists every layer with a checkbox, marks a visible layer whose GeoJSON is
+  missing, and points at Settings for add/refresh/delete. Every layer also
+  gets its own colour from the scheme's data colours instead of all being
+  `tertiary`, and the 10 dp point marker gets a 24 dp hit box so its label
+  is reachable. The basemap choice persists (`mm.basemap.v1`). The maps
+  self-test's reach check now treats the vector endpoint as reachable when
+  bytes arrive (it returns MVT, not an image) — it had silently gone to FAIL
+  the moment the vector source joined `kBuiltInSources`. OpenTopoMap remains
+  raster only: no MVT endpoint exists in 2026 (checked), and its style is
+  Mapnik-rendered PNG at z0-17.
 - R89: **the grid's chrome stops lying.** The hyperlocal grid had ten
   views as flat peers in one menu and five header controls, four of which
   did nothing in some views: play/interval were inert in the three report

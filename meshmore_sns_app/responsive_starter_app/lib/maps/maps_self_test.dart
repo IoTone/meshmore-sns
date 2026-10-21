@@ -177,10 +177,15 @@ class MapsSelfTest extends ChangeNotifier {
           final Stopwatch w = Stopwatch()..start();
           final FetchResult r = await _net.call(s.tileUri(12,
               lonToTileX(tLon, 12), latToTileY(tLat, 12)));
-          final bool img = r.status == FetchStatus.ok && _isImage(r.bytes);
-          if (s == kOsmStandard) osmOk = img;
-          if (s == kUsgsTopo) usgsOk = img;
-          parts.add('${s.id} ${img ? 'ok' : r.status.name} '
+          // The vector source returns MVT, not an image, so "reachable"
+          // means bytes arrived. Checking _isImage here would have marked
+          // the default basemap unreachable on a healthy network.
+          final bool vec = s.id == kOsmVector.id;
+          final bool got = r.status == FetchStatus.ok &&
+              (vec ? (r.bytes?.isNotEmpty ?? false) : _isImage(r.bytes));
+          if (s == kOsmVector) osmOk = got;
+          if (s == kUsgsTopo) usgsOk = got;
+          parts.add('${s.id} ${got ? 'ok' : r.status.name} '
               '${_kb(r.bytes?.length ?? 0)} ${w.elapsedMilliseconds} ms'
               '${r.maxAge == null ? '' : ' max-age ${_dur(r.maxAge!)}'}');
         }

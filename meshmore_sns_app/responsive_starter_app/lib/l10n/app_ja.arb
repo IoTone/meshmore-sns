@@ -1365,6 +1365,8 @@
   "archiveFailNotFound": "リンクが見つかりません。",
   "archiveRefusalDuplicate": "追加済みです。",
   "mapsLayers": "イベント地図",
+  "mapsNoLayersShort": "イベントマップ未登録",
+  "mapsManageLayers": "イベントマップを管理…",
   "mapsAddLayer": "イベント地図を追加",
   "mapsNoLayers": "イベント地図はありません。GeoJSON の URL(祭りの街区図、レースのコース、キャンプ配置など)を追加してください。",
   "mapsSources": "地図ソース",

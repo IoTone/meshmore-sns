@@ -106,9 +106,14 @@ const List<GeoBox> _usCoverage = <GeoBox>[
   GeoBox(south: 17.5, west: -67.4, north: 18.7, east: -64.4), // PR / USVI
 ];
 
+/// Raster OSM. No longer a picker entry (R90): the same data is served as
+/// vector with a seven-day cache floor and fewer bytes, so offering both only
+/// invited "why are these two different". Kept as the raster fallback the
+/// cell and fabric grid views hardcode, and as the shape a custom source
+/// takes.
 const MapSource kOsmStandard = MapSource(
   id: 'osm',
-  name: 'OpenStreetMap',
+  name: 'OpenStreetMap (raster)',
   urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
   attribution: '© OpenStreetMap contributors',
   maxNativeZoom: 19,
@@ -147,11 +152,13 @@ const MapSource kUsgsImagery = MapSource(
   bytesPerTile: 40000,
 );
 
-/// The Studio basemap since R82, rendered by `vector_map_tiles` rather than
-/// shown as pictures. Deliberately NOT in [kBuiltInSources]: that list is
-/// the raster basemap picker, and this source is the Studio skin's implicit
-/// basemap. It shares the tile store with the raster sources, so the view
-/// cache, ETag revalidation, budget and expiry apply to it too.
+/// The basemap since R82, rendered by `vector_map_tiles` rather than shown
+/// as pictures. Since R90 it is in [kBuiltInSources] on every skin: the
+/// bundled style is a neutral dark cartographic palette (greys, one
+/// desaturated blue, one muted green), not a Studio accent, so it reads the
+/// same under any preset, and it is the default the picker opens on. It
+/// shares the tile store with the raster sources, so the view cache, ETag
+/// revalidation, budget and expiry apply to it too.
 ///
 /// The OpenStreetMap Foundation's own vector tile service, live since July
 /// 2025. This is the whole point of R82: OSM publishes vector tiles itself,
@@ -161,15 +168,16 @@ const MapSource kUsgsImagery = MapSource(
 /// by applications is permitted, a unique User-Agent is required, tiles must
 /// be cached at least 7 days, attribution goes in the corner, and bulk
 /// downloading is forbidden. `httpMapFetcher` sends `MeshmoreSNS/<version>`,
-/// the store honours the server's max-age, `kBuiltInSources` keeps it out of
-/// the pack picker, and `allowsPacks` is false, so all four hold.
+/// the store honours the server's max-age, the pack picker filters on
+/// `allowsPacks` (false here, and `checkPack` refuses it again), so all four
+/// hold.
 ///
 /// Schema is Shortbread v1, not OpenMapTiles: different layer names and a
 /// flatter model. The bundled style (`assets/maps/studio_dark.json`) is
 /// written against that schema, and an archive must carry it too.
 const MapSource kOsmVector = MapSource(
   id: 'osm-vec',
-  name: 'OpenStreetMap vector',
+  name: 'OpenStreetMap (vector)',
   urlTemplate: 'https://vector.openstreetmap.org/shortbread_v1/'
       '{z}/{x}/{y}.mvt',
   attribution: '\u00a9 OpenStreetMap contributors',
@@ -183,8 +191,11 @@ const MapSource kOsmVector = MapSource(
 
 const Set<String> kArchiveRequiredLayers = <String>{'water', 'transportation'};
 
+/// Basemaps offered in the picker, in the order they are worth trying: the
+/// vector streets, then the topographic raster (world), then the two US
+/// public-domain sources that are also the only ones that permit packs.
 const List<MapSource> kBuiltInSources = <MapSource>[
-  kOsmStandard,
+  kOsmVector,
   kOpenTopo,
   kUsgsTopo,
   kUsgsImagery,

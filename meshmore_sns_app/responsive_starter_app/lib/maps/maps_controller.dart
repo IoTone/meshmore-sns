@@ -1210,6 +1210,12 @@ class MapsController extends ChangeNotifier {
     _changed();
   }
 
+  /// Whether this layer's GeoJSON has already been parsed. A visible layer
+  /// that is not loaded yet draws nothing (missing file, expired, or still
+  /// reading), which the map's layer menu now shows instead of leaving the
+  /// user with an empty map and a switch that claims to be on.
+  bool isLayerLoaded(EventLayer l) => _shapes.containsKey(l.id);
+
   /// Parsed shapes for a layer, read from disk once.
   Future<GeoShapes?> shapesFor(EventLayer l) async {
     final GeoShapes? hit = _shapes[l.id];

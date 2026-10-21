@@ -3241,6 +3241,12 @@ class AppLocalizationsJa extends AppLocalizations {
   String get mapsLayers => 'イベント地図';
 
   @override
+  String get mapsNoLayersShort => 'イベントマップ未登録';
+
+  @override
+  String get mapsManageLayers => 'イベントマップを管理…';
+
+  @override
   String get mapsAddLayer => 'イベント地図を追加';
 
   @override
