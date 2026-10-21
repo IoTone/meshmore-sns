@@ -234,6 +234,50 @@ First device run (SH-53D, 2026-10-15): **all 11 pass**, 38 s.
 - **Bundled starter basemap**: a world overview at z0–5 from public-domain
   data, so a fresh install has something under the pins.
 
+## R93: what "download a region" should be (decision)
+
+Asked directly: should offline regions be USGS topo packs, should OSM vector
+be downloaded, and does this need a server with a queue that tells the user
+to keep the app open?
+
+**The queue is the wrong place to look.** It already exists, client side:
+one download at a time, 150 ms pacing (~6.7 tiles/s), pause/resume/update,
+over-budget parking, waiting-for-network backoff that resumes on any
+successful fetch and on launch, one shared budget, and an expiry sweep
+(`maps_controller.dart`). Nothing in the design needs a broker, an auth
+service or a "keep the app open" push: the foreground task keeps working and
+the next launch resumes. A remote server would only ever have to *produce or
+host the artifact*, never to serve tiles to the app.
+
+**What may be downloaded at all is a server rule, not a preference**
+(`map_source.dart`): OSM raster forbids prefetch, OpenTopoMap forbids mass
+download, OSM vector forbids bulk download (7-day cache floor, interactive
+use only), and only the USGS National Map (public domain, CONUS/AK/HI/PR)
+permits packs. So:
+
+1. **Automatic packs stay USGS Topo / USGS Imagery.** They are the only
+   built-ins that are both permitted and public domain, and they cover the
+   task (topo + imagery) without a hosting requirement.
+2. **OSM vector is never crawled.** No client-side "download the vector
+   region" is legitimate against `vector.openstreetmap.org`, and the app has
+   no PMTiles writer, so on-device assembly is out too.
+3. **A vector region is a PMTiles file produced off-device** (Planetiler
+   Shortbread build + `pmtiles extract`) and either hosted on a static
+   byte-range host or handed to the app. The reader (resume, hash verify,
+   range reads) is already shipped behind `kRegionFilesEnabled = false`; it
+   is hidden because no file is published, not because the code is missing.
+4. **Outside the US the honest default is empty.** The pack picker must say
+   so rather than refusing at the end (`PackRefusal.outsideCoverage` today).
+   The two honest routes for a non-US user are a tile server they have the
+   right to download from (custom source, `allowsPacks` is their assertion)
+   or an imported/hosted region file.
+
+**Open, needs the owner:** the URL route for region files already works
+behind the flag; a *file import* needs a picker dependency the project has
+not allowed (no `file_picker` in `pubspec.yaml`). Until that is decided, the
+honest state is: USGS packs for the US, region files by URL when hosted, and
+no pretence of vector downloads.
+
 ## R83: region files deferred; the live map made responsive
 
 ### Region files are deferred, not removed
