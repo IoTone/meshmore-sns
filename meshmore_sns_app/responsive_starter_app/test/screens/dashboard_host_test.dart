@@ -101,6 +101,8 @@ void main() {
     await tc.setPreset(MmThemePreset.nerv);
     await t.pumpAndSettle();
     expect(find.text('MESHMORE // NERV'), findsOneWidget);
+    // The icon-only Bluetooth button is named for screen readers.
+    expect(find.byTooltip('Device'), findsOneWidget);
 
     // Back to SEELE → brand bar gone again.
     await tc.setPreset(MmThemePreset.seele);

@@ -75,6 +75,7 @@ class NervDashboard extends StatelessWidget {
                       MmAudioToggle(
                           dense: true, size: 18, color: skin.color.accent),
                       IconButton(
+                        tooltip: l.dashboardDevice,
                         padding: EdgeInsets.zero,
                         constraints: const BoxConstraints(
                             minWidth: 48, minHeight: 48),

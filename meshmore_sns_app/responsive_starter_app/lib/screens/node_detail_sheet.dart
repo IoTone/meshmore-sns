@@ -1105,6 +1105,7 @@ class _LinkPickerState extends State<_LinkPicker> {
                 suffixIcon: _q.text.isEmpty
                     ? null
                     : IconButton(
+                        tooltip: l.nodesClearSearch,
                         icon: const Icon(Icons.clear, size: 18),
                         onPressed: () => setState(() => _q.clear()),
                       ),
