@@ -149,19 +149,10 @@ class AppLocalizationsJa extends AppLocalizations {
   String get dashNervEvents => 'イベント';
 
   @override
-  String get dashHyperRadar => 'ノードレーダー';
-
-  @override
   String get dashHyperEmpty => 'ノードを探索中…';
 
   @override
   String get dashHyperPeers => 'ピア';
-
-  @override
-  String get dashHyperNear => '近';
-
-  @override
-  String get dashHyperFar => '遠';
 
   @override
   String get dashAgHudSignal => 'シグナル';
@@ -220,9 +211,6 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get statusSyncing => '同期中…';
-
-  @override
-  String get statusSyncingLong => '同期中…';
 
   @override
   String get statusHandshaking => '同期中…';
@@ -938,9 +926,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get globeOverlayLabels => 'ラベル';
 
   @override
-  String get globeZoom => 'ズーム';
-
-  @override
   String get globeAltitude => '高度';
 
   @override
@@ -1112,11 +1097,6 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String gridHeading(int deg, String cardinal) {
-    return '方位 $deg° $cardinal';
-  }
-
-  @override
   String get gridHeadingCalibrate => 'コンパス要校正 — スマートフォンを 8 の字に振ってください。';
 
   @override
@@ -1224,9 +1204,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get bootHandshaking => 'ハンドシェイク中…';
 
   @override
-  String get bootSyncing => 'デバイス状態を同期中…';
-
-  @override
   String get bootReady => 'メッシュ オンライン';
 
   @override
@@ -1234,9 +1211,6 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get bootSkip => 'スキップ';
-
-  @override
-  String get bootRetry => '再試行';
 
   @override
   String get bootSubtitle => '待機  /  WAIT';
@@ -1659,9 +1633,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get nodeDetailShowOnMap => '地図上に表示';
 
   @override
-  String get nodeDetailShowOnMapSnack => 'リバースジオコード地図 (R25) は今後対応予定です。';
-
-  @override
   String get nodeDetailShowOnMapFailed => 'マップアプリを開けませんでした。';
 
   @override
@@ -1743,9 +1714,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get meshbookTitle => 'メッシュブック';
 
   @override
-  String get meshbookToday => '今日';
-
-  @override
   String get meshbookLast24h => '直近24時間';
 
   @override
@@ -1793,11 +1761,6 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get wxAmbientEmpty => 'このチャンネルにはまだ天気の話題がありません。';
-
-  @override
-  String wxMentions(int count, int hours) {
-    return '$count 件の言及 · 直近 $hours 時間';
-  }
 
   @override
   String wxMentionsShort(int count) {
@@ -2031,9 +1994,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get meshTreeHopsDirect => '直接';
 
   @override
-  String get meshTreeHopsAll => '≤6 / 全て';
-
-  @override
   String get meshTreeHopsFlood => 'フラッド / 全て';
 
   @override
@@ -2128,9 +2088,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String nodeDetailAltitudeMeters(String m) {
     return '$m m';
   }
-
-  @override
-  String get nodeDetailAltitudeUnknown => '不明';
 
   @override
   String get nodeDetailTempKv => '温度';
@@ -2327,9 +2284,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get channelsHideKey => '隠す';
 
   @override
-  String get channelsCurrentKeyUnknown => '未取得 — デバイス同期後にダイアログを開き直してください。';
-
-  @override
   String get channelsClear => 'スロットをクリア';
 
   @override
@@ -2383,9 +2337,6 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get channelsShakeReroll => '再ロール';
-
-  @override
-  String get channelsShakeUse => 'この鍵を使用';
 
   @override
   String get channelsShakeTapFallback =>
@@ -2645,28 +2596,10 @@ class AppLocalizationsJa extends AppLocalizations {
   String get diagnosticsTitle => '診断 & 接続';
 
   @override
-  String get diagnosticsState => '状態';
-
-  @override
-  String get diagnosticsSends => '送信';
-
-  @override
-  String get diagnosticsChannelTail => 'チャンネルテール オラクル';
-
-  @override
-  String get diagnosticsCapture => 'キャプチャ / エクスポート';
-
-  @override
   String get diagnosticsRawFrameLog => 'RAW フレームログ (新しい順)';
 
   @override
-  String get diagnosticsConnect => '接続';
-
-  @override
   String get diagnosticsDisconnect => '切断';
-
-  @override
-  String get diagnosticsForget => 'デバイスを解除';
 
   @override
   String get diagnosticsCopyLog => 'ログをコピー';
@@ -2679,12 +2612,6 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get otherManualAddSubOff => '受信したノードは自動でコンタクトに昇格します。';
-
-  @override
-  String get otherTelemetryLabel => 'テレメトリモード (生バイト)';
-
-  @override
-  String get otherTelemetryHelper => '0 = オフ · 意味はファームウェアに依存します。';
 
   @override
   String get otherTelemetryModeTitle => 'テレメトリ共有 — 各種類を誰が要求できるか';
@@ -2717,9 +2644,6 @@ class AppLocalizationsJa extends AppLocalizations {
   @override
   String get otherMultiAcksHelper =>
       '0 = シングル ACK (既定)。値が大きいほど送信確定までに待つ追加 ACK 数。';
-
-  @override
-  String get otherApply => '適用';
 
   @override
   String get otherSentSnack => 'OTHER PARAMS を送信 — デバイス側の書込に時間がかかる場合があります。';

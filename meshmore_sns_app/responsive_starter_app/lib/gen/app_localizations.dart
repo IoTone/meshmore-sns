@@ -356,12 +356,6 @@ abstract class AppLocalizations {
   /// **'Events'**
   String get dashNervEvents;
 
-  /// No description provided for @dashHyperRadar.
-  ///
-  /// In en, this message translates to:
-  /// **'NODE RADAR'**
-  String get dashHyperRadar;
-
   /// No description provided for @dashHyperEmpty.
   ///
   /// In en, this message translates to:
@@ -373,18 +367,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'PEERS'**
   String get dashHyperPeers;
-
-  /// No description provided for @dashHyperNear.
-  ///
-  /// In en, this message translates to:
-  /// **'NEAR'**
-  String get dashHyperNear;
-
-  /// No description provided for @dashHyperFar.
-  ///
-  /// In en, this message translates to:
-  /// **'FAR'**
-  String get dashHyperFar;
 
   /// No description provided for @dashAgHudSignal.
   ///
@@ -493,12 +475,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'SYNCING…'**
   String get statusSyncing;
-
-  /// No description provided for @statusSyncingLong.
-  ///
-  /// In en, this message translates to:
-  /// **'SYNCING…'**
-  String get statusSyncingLong;
 
   /// No description provided for @statusHandshaking.
   ///
@@ -1808,12 +1784,6 @@ abstract class AppLocalizations {
   /// **'labels'**
   String get globeOverlayLabels;
 
-  /// No description provided for @globeZoom.
-  ///
-  /// In en, this message translates to:
-  /// **'ZOOM'**
-  String get globeZoom;
-
   /// No description provided for @globeAltitude.
   ///
   /// In en, this message translates to:
@@ -2090,12 +2060,6 @@ abstract class AppLocalizations {
   /// **'Outer ring ≈ {label} ({value}) · tap a node for details · info icon for the legend'**
   String gridFooter(String label, String value);
 
-  /// No description provided for @gridHeading.
-  ///
-  /// In en, this message translates to:
-  /// **'HDG {deg}° {cardinal}'**
-  String gridHeading(int deg, String cardinal);
-
   /// No description provided for @gridHeadingCalibrate.
   ///
   /// In en, this message translates to:
@@ -2288,12 +2252,6 @@ abstract class AppLocalizations {
   /// **'HANDSHAKING…'**
   String get bootHandshaking;
 
-  /// No description provided for @bootSyncing.
-  ///
-  /// In en, this message translates to:
-  /// **'SYNCING DEVICE STATE…'**
-  String get bootSyncing;
-
   /// No description provided for @bootReady.
   ///
   /// In en, this message translates to:
@@ -2311,12 +2269,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'SKIP'**
   String get bootSkip;
-
-  /// No description provided for @bootRetry.
-  ///
-  /// In en, this message translates to:
-  /// **'RETRY'**
-  String get bootRetry;
 
   /// No description provided for @bootSubtitle.
   ///
@@ -2990,12 +2942,6 @@ abstract class AppLocalizations {
   /// **'Show on geocoded map'**
   String get nodeDetailShowOnMap;
 
-  /// No description provided for @nodeDetailShowOnMapSnack.
-  ///
-  /// In en, this message translates to:
-  /// **'Reverse-geocoded map (R25) is on the roadmap.'**
-  String get nodeDetailShowOnMapSnack;
-
   /// No description provided for @nodeDetailShowOnMapFailed.
   ///
   /// In en, this message translates to:
@@ -3158,12 +3104,6 @@ abstract class AppLocalizations {
   /// **'MESHBOOK'**
   String get meshbookTitle;
 
-  /// No description provided for @meshbookToday.
-  ///
-  /// In en, this message translates to:
-  /// **'today'**
-  String get meshbookToday;
-
   /// No description provided for @meshbookLast24h.
   ///
   /// In en, this message translates to:
@@ -3253,12 +3193,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No weather chatter on this channel yet.'**
   String get wxAmbientEmpty;
-
-  /// No description provided for @wxMentions.
-  ///
-  /// In en, this message translates to:
-  /// **'{count} mentions · last {hours}h'**
-  String wxMentions(int count, int hours);
 
   /// No description provided for @wxMentionsShort.
   ///
@@ -3650,12 +3584,6 @@ abstract class AppLocalizations {
   /// **'Direct'**
   String get meshTreeHopsDirect;
 
-  /// No description provided for @meshTreeHopsAll.
-  ///
-  /// In en, this message translates to:
-  /// **'≤6 / All'**
-  String get meshTreeHopsAll;
-
   /// No description provided for @meshTreeHopsFlood.
   ///
   /// In en, this message translates to:
@@ -3823,12 +3751,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{m} m'**
   String nodeDetailAltitudeMeters(String m);
-
-  /// No description provided for @nodeDetailAltitudeUnknown.
-  ///
-  /// In en, this message translates to:
-  /// **'unknown'**
-  String get nodeDetailAltitudeUnknown;
 
   /// No description provided for @nodeDetailTempKv.
   ///
@@ -4160,12 +4082,6 @@ abstract class AppLocalizations {
   /// **'Hide'**
   String get channelsHideKey;
 
-  /// No description provided for @channelsCurrentKeyUnknown.
-  ///
-  /// In en, this message translates to:
-  /// **'Not loaded yet — open then close this dialog after the device has synced.'**
-  String get channelsCurrentKeyUnknown;
-
   /// No description provided for @channelsClear.
   ///
   /// In en, this message translates to:
@@ -4255,12 +4171,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Reroll'**
   String get channelsShakeReroll;
-
-  /// No description provided for @channelsShakeUse.
-  ///
-  /// In en, this message translates to:
-  /// **'Use this key'**
-  String get channelsShakeUse;
 
   /// No description provided for @channelsShakeTapFallback.
   ///
@@ -4748,53 +4658,17 @@ abstract class AppLocalizations {
   /// **'Diagnostics & connect'**
   String get diagnosticsTitle;
 
-  /// No description provided for @diagnosticsState.
-  ///
-  /// In en, this message translates to:
-  /// **'STATE'**
-  String get diagnosticsState;
-
-  /// No description provided for @diagnosticsSends.
-  ///
-  /// In en, this message translates to:
-  /// **'SENDS'**
-  String get diagnosticsSends;
-
-  /// No description provided for @diagnosticsChannelTail.
-  ///
-  /// In en, this message translates to:
-  /// **'CHANNEL-TAIL ORACLE'**
-  String get diagnosticsChannelTail;
-
-  /// No description provided for @diagnosticsCapture.
-  ///
-  /// In en, this message translates to:
-  /// **'CAPTURE / EXPORT'**
-  String get diagnosticsCapture;
-
   /// No description provided for @diagnosticsRawFrameLog.
   ///
   /// In en, this message translates to:
   /// **'RAW FRAME LOG (newest first)'**
   String get diagnosticsRawFrameLog;
 
-  /// No description provided for @diagnosticsConnect.
-  ///
-  /// In en, this message translates to:
-  /// **'Connect'**
-  String get diagnosticsConnect;
-
   /// No description provided for @diagnosticsDisconnect.
   ///
   /// In en, this message translates to:
   /// **'Disconnect'**
   String get diagnosticsDisconnect;
-
-  /// No description provided for @diagnosticsForget.
-  ///
-  /// In en, this message translates to:
-  /// **'Forget device'**
-  String get diagnosticsForget;
 
   /// No description provided for @diagnosticsCopyLog.
   ///
@@ -4819,18 +4693,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Heard nodes auto-promote to contacts.'**
   String get otherManualAddSubOff;
-
-  /// No description provided for @otherTelemetryLabel.
-  ///
-  /// In en, this message translates to:
-  /// **'Telemetry mode (raw byte)'**
-  String get otherTelemetryLabel;
-
-  /// No description provided for @otherTelemetryHelper.
-  ///
-  /// In en, this message translates to:
-  /// **'0 = off · semantics are firmware-defined.'**
-  String get otherTelemetryHelper;
 
   /// No description provided for @otherTelemetryModeTitle.
   ///
@@ -4891,12 +4753,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'0 = single ack (default). Higher = wait for N extra acks before considering a send confirmed.'**
   String get otherMultiAcksHelper;
-
-  /// No description provided for @otherApply.
-  ///
-  /// In en, this message translates to:
-  /// **'Apply'**
-  String get otherApply;
 
   /// No description provided for @otherSentSnack.
   ///

@@ -163,19 +163,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get dashNervEvents => 'Events';
 
   @override
-  String get dashHyperRadar => 'NODE RADAR';
-
-  @override
   String get dashHyperEmpty => 'Listening for nodes…';
 
   @override
   String get dashHyperPeers => 'PEERS';
-
-  @override
-  String get dashHyperNear => 'NEAR';
-
-  @override
-  String get dashHyperFar => 'FAR';
 
   @override
   String get dashAgHudSignal => 'SIGNAL';
@@ -235,9 +226,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get statusSyncing => 'SYNCING…';
-
-  @override
-  String get statusSyncingLong => 'SYNCING…';
 
   @override
   String get statusHandshaking => 'SYNCING…';
@@ -988,9 +976,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get globeOverlayLabels => 'labels';
 
   @override
-  String get globeZoom => 'ZOOM';
-
-  @override
   String get globeAltitude => 'ALT';
 
   @override
@@ -1171,11 +1156,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String gridHeading(int deg, String cardinal) {
-    return 'HDG $deg° $cardinal';
-  }
-
-  @override
   String get gridHeadingCalibrate =>
       'Compass needs calibration — wave the phone in a figure 8.';
 
@@ -1285,9 +1265,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get bootHandshaking => 'HANDSHAKING…';
 
   @override
-  String get bootSyncing => 'SYNCING DEVICE STATE…';
-
-  @override
   String get bootReady => 'MESH ONLINE';
 
   @override
@@ -1295,9 +1272,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get bootSkip => 'SKIP';
-
-  @override
-  String get bootRetry => 'RETRY';
 
   @override
   String get bootSubtitle => 'WAIT  /  進行中';
@@ -1733,10 +1707,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get nodeDetailShowOnMap => 'Show on geocoded map';
 
   @override
-  String get nodeDetailShowOnMapSnack =>
-      'Reverse-geocoded map (R25) is on the roadmap.';
-
-  @override
   String get nodeDetailShowOnMapFailed => 'Couldn\'t open the maps app.';
 
   @override
@@ -1818,9 +1788,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get meshbookTitle => 'MESHBOOK';
 
   @override
-  String get meshbookToday => 'today';
-
-  @override
   String get meshbookLast24h => 'last 24h';
 
   @override
@@ -1868,11 +1835,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get wxAmbientEmpty => 'No weather chatter on this channel yet.';
-
-  @override
-  String wxMentions(int count, int hours) {
-    return '$count mentions · last ${hours}h';
-  }
 
   @override
   String wxMentionsShort(int count) {
@@ -2113,9 +2075,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get meshTreeHopsDirect => 'Direct';
 
   @override
-  String get meshTreeHopsAll => '≤6 / All';
-
-  @override
   String get meshTreeHopsFlood => 'Flood / All';
 
   @override
@@ -2217,9 +2176,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String nodeDetailAltitudeMeters(String m) {
     return '$m m';
   }
-
-  @override
-  String get nodeDetailAltitudeUnknown => 'unknown';
 
   @override
   String get nodeDetailTempKv => 'temperature';
@@ -2419,10 +2375,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get channelsHideKey => 'Hide';
 
   @override
-  String get channelsCurrentKeyUnknown =>
-      'Not loaded yet — open then close this dialog after the device has synced.';
-
-  @override
   String get channelsClear => 'Clear slot';
 
   @override
@@ -2476,9 +2428,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get channelsShakeReroll => 'Reroll';
-
-  @override
-  String get channelsShakeUse => 'Use this key';
 
   @override
   String get channelsShakeTapFallback =>
@@ -2747,28 +2696,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get diagnosticsTitle => 'Diagnostics & connect';
 
   @override
-  String get diagnosticsState => 'STATE';
-
-  @override
-  String get diagnosticsSends => 'SENDS';
-
-  @override
-  String get diagnosticsChannelTail => 'CHANNEL-TAIL ORACLE';
-
-  @override
-  String get diagnosticsCapture => 'CAPTURE / EXPORT';
-
-  @override
   String get diagnosticsRawFrameLog => 'RAW FRAME LOG (newest first)';
 
   @override
-  String get diagnosticsConnect => 'Connect';
-
-  @override
   String get diagnosticsDisconnect => 'Disconnect';
-
-  @override
-  String get diagnosticsForget => 'Forget device';
 
   @override
   String get diagnosticsCopyLog => 'Copy log';
@@ -2782,13 +2713,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get otherManualAddSubOff => 'Heard nodes auto-promote to contacts.';
-
-  @override
-  String get otherTelemetryLabel => 'Telemetry mode (raw byte)';
-
-  @override
-  String get otherTelemetryHelper =>
-      '0 = off · semantics are firmware-defined.';
 
   @override
   String get otherTelemetryModeTitle =>
@@ -2822,9 +2746,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get otherMultiAcksHelper =>
       '0 = single ack (default). Higher = wait for N extra acks before considering a send confirmed.';
-
-  @override
-  String get otherApply => 'Apply';
 
   @override
   String get otherSentSnack =>

@@ -61,11 +61,8 @@
   "dashNervMesh": "メッシュ",
   "dashNervKnown": "既知",
   "dashNervEvents": "イベント",
-  "dashHyperRadar": "ノードレーダー",
   "dashHyperEmpty": "ノードを探索中…",
   "dashHyperPeers": "ピア",
-  "dashHyperNear": "近",
-  "dashHyperFar": "遠",
   "dashAgHudSignal": "シグナル",
   "dashAgHudTraffic": "ch トラフィック",
   "dashDrPopLink": "リンク",
@@ -90,7 +87,6 @@
   },
   "statusLinked": "接続中 · 通常",
   "statusSyncing": "同期中…",
-  "statusSyncingLong": "同期中…",
   "statusHandshaking": "同期中…",
   "statusReconnecting": "再接続中…",
   "statusLinkLost": "接続切断",
@@ -377,7 +373,6 @@
   "globeOverlayArcs": "アーク",
   "globeOverlayRegion": "地域",
   "globeOverlayLabels": "ラベル",
-  "globeZoom": "ズーム",
   "globeAltitude": "高度",
   "globePaused": "一時停止",
   "voiceOfflineBadge": "オフライン",
@@ -478,13 +473,6 @@
     "placeholders": {"interval": {"type": "String"}}
   },
   "gridFooter": "外側リング ≈ {label} ({value}) · ノードをタップで詳細 · ⓘ で凡例",
-  "gridHeading": "方位 {deg}° {cardinal}",
-  "@gridHeading": {
-    "placeholders": {
-      "deg": {"type": "int"},
-      "cardinal": {"type": "String"}
-    }
-  },
   "gridHeadingCalibrate": "コンパス要校正 — スマートフォンを 8 の字に振ってください。",
   "gridOrientNorthUp": "北を上",
   "gridOrientHeadingUp": "進行方向を上",
@@ -541,11 +529,9 @@
   "bootHeader": "MESHMORE  /  同期中",
   "bootConnecting": "ラジオに接続中…",
   "bootHandshaking": "ハンドシェイク中…",
-  "bootSyncing": "デバイス状態を同期中…",
   "bootReady": "メッシュ オンライン",
   "bootOffline": "オフライン — 設定 → 診断 & 接続",
   "bootSkip": "スキップ",
-  "bootRetry": "再試行",
   "bootSubtitle": "待機  /  WAIT",
 
   "eventAdvert": "アドバート · {name}",
@@ -778,7 +764,6 @@
   "nodeDetailFavourite": "お気に入り",
   "nodeDetailContact": "お気に入り済み",
   "nodeDetailShowOnMap": "地図上に表示",
-  "nodeDetailShowOnMapSnack": "リバースジオコード地図 (R25) は今後対応予定です。",
   "nodeDetailShowOnMapFailed": "マップアプリを開けませんでした。",
   "nodeDetailCopyPubkey": "公開鍵をコピー",
   "nodeDetailPubkeyCopied": "公開鍵をコピーしました",
@@ -806,7 +791,6 @@
   "gridViewMeshbook": "メッシュブック（チャンネル活動）",
   "gridViewMeshbookShort": "MBk",
   "meshbookTitle": "メッシュブック",
-  "meshbookToday": "今日",
   "meshbookLast24h": "直近24時間",
   "meshbookEmpty": "このチャンネルには直近24時間のメッセージがありません。",
   "meshbookByHour": "時間帯別",
@@ -833,13 +817,6 @@
   "wxMicroclimateNearby": "近く",
   "wxMeasured": "実測",
   "wxAmbientEmpty": "このチャンネルにはまだ天気の話題がありません。",
-  "wxMentions": "{count} 件の言及 · 直近 {hours} 時間",
-  "@wxMentions": {
-    "placeholders": {
-      "count": { "type": "int" },
-      "hours": { "type": "int" }
-    }
-  },
   "wxMentionsShort": "{count} 件の言及",
   "@wxMentionsShort": {
     "placeholders": {
@@ -926,7 +903,6 @@
   "snsCellsLegendDecay": "直近1時間のみ追跡。保存はされません。",
   "meshTreeEmpty": "コンタクト同期を待機中 — ツリーは各コンタクトの outPath から構築されます。",
   "meshTreeHopsDirect": "直接",
-  "meshTreeHopsAll": "≤6 / 全て",
   "meshTreeHopsFlood": "フラッド / 全て",
   "meshTreeHopsN": "≤{n} ホップ",
   "@meshTreeHopsN": {
@@ -964,7 +940,6 @@
   "@nodeDetailAltitudeMeters": {
     "placeholders": {"m": {"type": "String"}}
   },
-  "nodeDetailAltitudeUnknown": "不明",
   "nodeDetailTempKv": "温度",
   "nodeDetailTempValue": "{c} °C",
   "@nodeDetailTempValue": {
@@ -1060,7 +1035,6 @@
   "channelsCurrentKey": "現在の鍵",
   "channelsRevealKey": "表示",
   "channelsHideKey": "隠す",
-  "channelsCurrentKeyUnknown": "未取得 — デバイス同期後にダイアログを開き直してください。",
   "channelsClear": "スロットをクリア",
   "channelsClearConfirmTitle": "スロット {idx} をクリアしますか?",
   "@channelsClearConfirmTitle": {
@@ -1092,7 +1066,6 @@
     }
   },
   "channelsShakeReroll": "再ロール",
-  "channelsShakeUse": "この鍵を使用",
   "channelsShakeTapFallback": "タップでロール (reduceMotion 有効 — Random.secure を使用)",
   "channelsShareQr": "QR で共有",
   "channelsQrTitle": "チャンネル {idx} を共有",
@@ -1194,21 +1167,13 @@
   "deviceOpenSettings": "設定を開く",
 
   "diagnosticsTitle": "診断 & 接続",
-  "diagnosticsState": "状態",
-  "diagnosticsSends": "送信",
-  "diagnosticsChannelTail": "チャンネルテール オラクル",
-  "diagnosticsCapture": "キャプチャ / エクスポート",
   "diagnosticsRawFrameLog": "RAW フレームログ (新しい順)",
-  "diagnosticsConnect": "接続",
   "diagnosticsDisconnect": "切断",
-  "diagnosticsForget": "デバイスを解除",
   "diagnosticsCopyLog": "ログをコピー",
 
   "otherManualAddTitle": "コンタクトを手動追加",
   "otherManualAddSubOn": "受信したノードは必要時に手動でコンタクトに追加します。",
   "otherManualAddSubOff": "受信したノードは自動でコンタクトに昇格します。",
-  "otherTelemetryLabel": "テレメトリモード (生バイト)",
-  "otherTelemetryHelper": "0 = オフ · 意味はファームウェアに依存します。",
   "otherTelemetryModeTitle": "テレメトリ共有 — 各種類を誰が要求できるか",
   "otherTelemetryBase": "基本",
   "otherTelemetryLoc": "位置",
@@ -1219,7 +1184,6 @@
   "otherTelemetryModeHelp": "このデバイスの各種テレメトリを誰が要求できるかを設定します — 基本=バッテリー、位置=GPS、環境=温度/湿度/気圧。オフ=すべて拒否、連絡先=連絡先のみ（フラグに従う）、全員=任意のノード。これは共有の許可設定であり、センサーの有無とは無関係です（環境センサーがなければ「全員」でも何も送信しません）。",
   "otherMultiAcksLabel": "マルチ ACK (0–3)",
   "otherMultiAcksHelper": "0 = シングル ACK (既定)。値が大きいほど送信確定までに待つ追加 ACK 数。",
-  "otherApply": "適用",
   "otherSentSnack": "OTHER PARAMS を送信 — デバイス側の書込に時間がかかる場合があります。",
   "otherAwaitingDevice": "— デバイス待機中 —",
 

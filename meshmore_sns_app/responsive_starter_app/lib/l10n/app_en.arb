@@ -61,11 +61,8 @@
   "dashNervMesh": "Mesh",
   "dashNervKnown": "Known",
   "dashNervEvents": "Events",
-  "dashHyperRadar": "NODE RADAR",
   "dashHyperEmpty": "Listening for nodes…",
   "dashHyperPeers": "PEERS",
-  "dashHyperNear": "NEAR",
-  "dashHyperFar": "FAR",
   "dashAgHudSignal": "SIGNAL",
   "dashAgHudTraffic": "ch traffic",
   "dashDrPopLink": "LINK",
@@ -90,7 +87,6 @@
   },
   "statusLinked": "LINKED · NO ALERTS",
   "statusSyncing": "SYNCING…",
-  "statusSyncingLong": "SYNCING…",
   "statusHandshaking": "SYNCING…",
   "statusReconnecting": "RECONNECTING…",
   "statusLinkLost": "LINK LOST",
@@ -385,7 +381,6 @@
   "globeOverlayArcs": "arcs",
   "globeOverlayRegion": "region",
   "globeOverlayLabels": "labels",
-  "globeZoom": "ZOOM",
   "globeAltitude": "ALT",
   "globePaused": "PAUSED",
   "voiceOfflineBadge": "OFFLINE",
@@ -486,13 +481,6 @@
     "placeholders": {"interval": {"type": "String"}}
   },
   "gridFooter": "Outer ring ≈ {label} ({value}) · tap a node for details · info icon for the legend",
-  "gridHeading": "HDG {deg}° {cardinal}",
-  "@gridHeading": {
-    "placeholders": {
-      "deg": {"type": "int"},
-      "cardinal": {"type": "String"}
-    }
-  },
   "gridHeadingCalibrate": "Compass needs calibration — wave the phone in a figure 8.",
   "gridOrientNorthUp": "North-up",
   "gridOrientHeadingUp": "Heading-up",
@@ -549,11 +537,9 @@
   "bootHeader": "MESHMORE  /  SYNCHRONIZING",
   "bootConnecting": "CONNECTING TO RADIO…",
   "bootHandshaking": "HANDSHAKING…",
-  "bootSyncing": "SYNCING DEVICE STATE…",
   "bootReady": "MESH ONLINE",
   "bootOffline": "OFFLINE — Settings → Diagnostics & connect",
   "bootSkip": "SKIP",
-  "bootRetry": "RETRY",
   "bootSubtitle": "WAIT  /  進行中",
 
   "eventAdvert": "advert · {name}",
@@ -786,7 +772,6 @@
   "nodeDetailFavourite": "Favourite",
   "nodeDetailContact": "Favourited",
   "nodeDetailShowOnMap": "Show on geocoded map",
-  "nodeDetailShowOnMapSnack": "Reverse-geocoded map (R25) is on the roadmap.",
   "nodeDetailShowOnMapFailed": "Couldn't open the maps app.",
   "nodeDetailCopyPubkey": "Copy full pubkey",
   "nodeDetailPubkeyCopied": "Pubkey copied",
@@ -814,7 +799,6 @@
   "gridViewMeshbook": "Meshbook (channel activity)",
   "gridViewMeshbookShort": "MBk",
   "meshbookTitle": "MESHBOOK",
-  "meshbookToday": "today",
   "meshbookLast24h": "last 24h",
   "meshbookEmpty": "No messages on this channel in the last 24h.",
   "meshbookByHour": "BY HOUR",
@@ -841,13 +825,6 @@
   "wxMicroclimateNearby": "nearby",
   "wxMeasured": "measured",
   "wxAmbientEmpty": "No weather chatter on this channel yet.",
-  "wxMentions": "{count} mentions · last {hours}h",
-  "@wxMentions": {
-    "placeholders": {
-      "count": { "type": "int" },
-      "hours": { "type": "int" }
-    }
-  },
   "wxMentionsShort": "{count} mentions",
   "@wxMentionsShort": {
     "placeholders": {
@@ -934,7 +911,6 @@
   "snsCellsLegendDecay": "Only the last hour is tracked; nothing is stored.",
   "meshTreeEmpty": "Waiting for contact sync — the tree is built from each contact's outPath.",
   "meshTreeHopsDirect": "Direct",
-  "meshTreeHopsAll": "≤6 / All",
   "meshTreeHopsFlood": "Flood / All",
   "meshTreeHopsN": "≤{n} hops",
   "@meshTreeHopsN": {
@@ -972,7 +948,6 @@
   "@nodeDetailAltitudeMeters": {
     "placeholders": {"m": {"type": "String"}}
   },
-  "nodeDetailAltitudeUnknown": "unknown",
   "nodeDetailTempKv": "temperature",
   "nodeDetailTempValue": "{c} °C",
   "@nodeDetailTempValue": {
@@ -1068,7 +1043,6 @@
   "channelsCurrentKey": "Current key",
   "channelsRevealKey": "Reveal",
   "channelsHideKey": "Hide",
-  "channelsCurrentKeyUnknown": "Not loaded yet — open then close this dialog after the device has synced.",
   "channelsClear": "Clear slot",
   "channelsClearConfirmTitle": "Clear slot {idx}?",
   "@channelsClearConfirmTitle": {
@@ -1100,7 +1074,6 @@
     }
   },
   "channelsShakeReroll": "Reroll",
-  "channelsShakeUse": "Use this key",
   "channelsShakeTapFallback": "Tap to roll (reduceMotion is on — uses Random.secure instead)",
   "channelsShareQr": "Share via QR",
   "channelsQrTitle": "Share channel {idx}",
@@ -1202,21 +1175,13 @@
   "deviceOpenSettings": "Open settings",
 
   "diagnosticsTitle": "Diagnostics & connect",
-  "diagnosticsState": "STATE",
-  "diagnosticsSends": "SENDS",
-  "diagnosticsChannelTail": "CHANNEL-TAIL ORACLE",
-  "diagnosticsCapture": "CAPTURE / EXPORT",
   "diagnosticsRawFrameLog": "RAW FRAME LOG (newest first)",
-  "diagnosticsConnect": "Connect",
   "diagnosticsDisconnect": "Disconnect",
-  "diagnosticsForget": "Forget device",
   "diagnosticsCopyLog": "Copy log",
 
   "otherManualAddTitle": "Manual-add contacts",
   "otherManualAddSubOn": "You add heard nodes as contacts on demand.",
   "otherManualAddSubOff": "Heard nodes auto-promote to contacts.",
-  "otherTelemetryLabel": "Telemetry mode (raw byte)",
-  "otherTelemetryHelper": "0 = off · semantics are firmware-defined.",
   "otherTelemetryModeTitle": "Telemetry sharing — who may request each kind",
   "otherTelemetryBase": "Base",
   "otherTelemetryLoc": "Location",
@@ -1227,7 +1192,6 @@
   "otherTelemetryModeHelp": "Controls who may request each kind of telemetry from this device — Base = battery, Location = GPS, Environment = temp/humidity/pressure. Off = deny all; Contacts = only your contacts (per their flags); Anyone = any node. This is a sharing permission, not whether the device has the sensor — a node with no environment sensor sends nothing even on \"Anyone\".",
   "otherMultiAcksLabel": "Multi-acks (0–3)",
   "otherMultiAcksHelper": "0 = single ack (default). Higher = wait for N extra acks before considering a send confirmed.",
-  "otherApply": "Apply",
   "otherSentSnack": "OTHER PARAMS sent — device-side write may take a moment.",
   "otherAwaitingDevice": "— awaiting device —",
 
