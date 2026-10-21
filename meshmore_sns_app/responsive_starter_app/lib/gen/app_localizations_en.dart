@@ -3332,6 +3332,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsHubInfoSub => 'About, licences, version';
 
   @override
+  String get settingsHubDocsSub => 'Protocol, firmware, app, field notes';
+
+  @override
   String get settingsHubMaps => 'Offline maps';
 
   @override

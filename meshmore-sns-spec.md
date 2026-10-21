@@ -1225,7 +1225,9 @@ While Meshcore protocol is open source, the client is not open source.  We want 
   so six views leave no dead space at either edge at any width; narrower it
   is the fixed-cell scrolling row as before (an `Expanded` is invalid in an
   unbounded scroll view). `settingsHubInfoSub` now reads "About, licences,
-  version" (EN + JA). Tests: `home_shell_test` (R86 peers, Back returns to
+  version" and the Docs row gets its own short `settingsHubDocsSub`
+  ("Protocol, firmware, app, field notes") instead of the ~150-character
+  hub subtitle, which wrapped to four lines in a settings row (EN + JA). Tests: `home_shell_test` (R86 peers, Back returns to
   the Settings hub; strip rects at 320/360/393/412/600/1024dp).
 - R83: **region files deferred; the live map made responsive.** The archive
   machinery (R81) stays but is hidden behind `kRegionFilesEnabled = false`

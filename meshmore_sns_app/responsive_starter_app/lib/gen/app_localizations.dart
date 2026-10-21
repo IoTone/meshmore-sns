@@ -5762,6 +5762,12 @@ abstract class AppLocalizations {
   /// **'About, licences, version'**
   String get settingsHubInfoSub;
 
+  /// No description provided for @settingsHubDocsSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Protocol, firmware, app, field notes'**
+  String get settingsHubDocsSub;
+
   /// No description provided for @settingsHubMaps.
   ///
   /// In en, this message translates to:

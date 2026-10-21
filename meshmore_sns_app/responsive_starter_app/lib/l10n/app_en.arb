@@ -1459,6 +1459,7 @@
   "rangeFlood": "flood",
   "settingsHubInfo": "Information",
   "settingsHubInfoSub": "About, licences, version",
+  "settingsHubDocsSub": "Protocol, firmware, app, field notes",
   "settingsHubMaps": "Offline maps",
   "settingsHubMapsSub": "Region downloads, event maps, storage budget",
   "mapsTitle": "Offline maps",

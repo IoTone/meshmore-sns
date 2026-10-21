@@ -354,7 +354,7 @@ class _SettingsView extends StatelessWidget {
           '/settings/tools'),
       (Icons.map_outlined, l.settingsHubMaps, l.settingsHubMapsSub,
           '/settings/maps'),
-      (Icons.menu_book_outlined, l.tabDocs, l.docsHubSubtitle,
+      (Icons.menu_book_outlined, l.tabDocs, l.settingsHubDocsSub,
           '/settings/docs'),
       (Icons.info_outline, l.settingsHubInfo, l.settingsHubInfoSub,
           '/settings/about'),

@@ -3215,6 +3215,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get settingsHubInfoSub => 'このアプリ・ライセンス・バージョン';
 
   @override
+  String get settingsHubDocsSub => 'プロトコル・ファームウェア・アプリ・実地メモ';
+
+  @override
   String get settingsHubMaps => 'オフライン地図';
 
   @override
