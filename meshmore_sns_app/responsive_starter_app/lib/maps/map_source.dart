@@ -22,6 +22,7 @@ class MapSource {
     this.allowsPacks = false,
     this.coverage = const <GeoBox>[],
     this.bytesPerTile = 20000,
+    this.minCacheAge = Duration.zero,
     this.custom = false,
   });
 
@@ -40,6 +41,13 @@ class MapSource {
 
   /// Planning estimate before a pack has real numbers.
   final int bytesPerTile;
+
+  /// Floor for how long a tile is kept, regardless of the server's own
+  /// `max-age`. The OSM vector policy requires tiles be cached "at least
+  /// seven days" even though the service itself advertises five minutes,
+  /// so honouring only the header would re-fetch constantly and break the
+  /// policy it is trying to follow.
+  final Duration minCacheAge;
   final bool custom;
 
   bool covers(GeoBox box) =>
@@ -169,6 +177,8 @@ const MapSource kOsmVector = MapSource(
   allowsPacks: false,
   // 84 KB measured for a dense z13 Denver tile; 40 KB is the planning figure.
   bytesPerTile: 40000,
+  // The service sends `max-age=300`; the policy asks for seven days.
+  minCacheAge: Duration(days: 7),
 );
 
 const Set<String> kArchiveRequiredLayers = <String>{'water', 'transportation'};

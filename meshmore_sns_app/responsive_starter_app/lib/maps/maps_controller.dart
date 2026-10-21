@@ -378,6 +378,13 @@ class MapsController extends ChangeNotifier {
   /// [loadTile] plus the one distinction the vector layer needs: "the
   /// server has nothing here" (draw an empty tile) versus "could not reach
   /// it" (leave the tile to be asked for again).
+  /// A source may require a longer life than the server advertises.
+  @visibleForTesting
+  Duration tileTtl(Duration? server, MapSource src) {
+    final Duration d = server ?? viewMaxAgeDefault;
+    return d < src.minCacheAge ? src.minCacheAge : d;
+  }
+
   Future<TileLoad> loadTileDetailed(MapSource src, int z, int x, int y) async {
     await ready;
     if (src.id == kOsmVector.id && archives.isNotEmpty) {
@@ -397,10 +404,10 @@ class MapsController extends ChangeNotifier {
             etag: meta.etag, ifModifiedSinceMs: meta.fetchedMs);
         if (r == null) return TileLoad(held);
         if (r.status == FetchStatus.notModified) {
-          store.revalidated(key, r.maxAge ?? viewMaxAgeDefault);
+          store.revalidated(key, tileTtl(r.maxAge, src));
         } else if (r.status == FetchStatus.ok && r.bytes != null) {
           await store.write(key, r.bytes!,
-              maxAge: r.maxAge ?? viewMaxAgeDefault, etag: r.etag);
+              maxAge: tileTtl(r.maxAge, src), etag: r.etag);
           _scheduleTrim();
           return TileLoad(r.bytes);
         }
@@ -420,7 +427,7 @@ class MapsController extends ChangeNotifier {
       return const TileLoad(null);
     }
     await store.write(key, r.bytes!,
-        maxAge: r.maxAge ?? viewMaxAgeDefault, etag: r.etag);
+        maxAge: tileTtl(r.maxAge, src), etag: r.etag);
     _scheduleTrim();
     return TileLoad(r.bytes);
   }

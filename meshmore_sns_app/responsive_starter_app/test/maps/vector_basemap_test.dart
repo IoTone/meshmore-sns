@@ -288,6 +288,13 @@ void main() {
     expect(isNotInRasterPicker(kOsmVector), isTrue);
   });
 
+  test('R82 the tile life honours the policy floor, not the header', () {
+    expect(kOsmVector.minCacheAge, const Duration(days: 7),
+        reason: 'the policy says seven days; the service says 300 s');
+    expect(kOsmStandard.minCacheAge, Duration.zero,
+        reason: 'raster sources keep the server\'s own expiry');
+  });
+
   testWidgets('R80 the layer draws nothing without a MapsController',
       (WidgetTester t) async {
     await t.pumpWidget(MaterialApp(

@@ -1199,7 +1199,9 @@ While Meshcore protocol is open source, the client is not open source.  We want 
   7-day caching, a corner credit and no bulk download. `tile.openstreetmap.org`
   is raster-only, which is why a service like OpenFreeMap had a role at all.
   `kOsmVector` (`lib/maps/map_source.dart`, id `osm-vec`, `.mvt`, maxzoom 14,
-  view-only) replaces `kOpenFreeMapVector`. `assets/maps/studio_dark.json` is
+  view-only, `minCacheAge` 7 days because the service advertises only
+  `max-age=300` while its policy requires a week) replaces
+  `kOpenFreeMapVector`. `assets/maps/studio_dark.json` is
   rewritten against Shortbread: 28 layers, 14.9 KB (was 47 layers, 36 KB),
   asserted against the schema's published layer names. `kArchiveRequiredLayers`
   becomes `{water_polygons, streets}`, so a region file must also be

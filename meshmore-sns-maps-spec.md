@@ -246,9 +246,12 @@ serving the Shortbread v1 schema at
 Apps may use it interactively: the vector policy permits third-party
 applications, requires a unique User-Agent, 7-day-minimum tile caching, a
 corner credit, and forbids bulk download. All four hold here -
-`MeshmoreSNS/<version>` is sent, the store honours server expiry, the
-credit is drawn, and `kOsmVector` is view-only and kept out of the raster
-picker's pack sources.
+`MeshmoreSNS/<version>` is sent, the store honours server expiry **with a
+seven-day floor** (`MapSource.minCacheAge`; the service itself advertises
+`max-age=300`, so following the header alone would re-fetch every five
+minutes and break the very policy it is trying to follow), the credit is
+drawn, and `kOsmVector` is view-only and kept out of the raster picker's
+pack sources.
 
 `tile.openstreetmap.org` remains raster-only, so "just use OSM" was never
 possible before vector tiles existed. That is the whole reason a service
@@ -257,7 +260,8 @@ like OpenFreeMap had a role.
 ### What changed
 - `kOsmVector` (`lib/maps/map_source.dart`) replaces `kOpenFreeMapVector`:
   id `osm-vec`, `.mvt`, `maxNativeZoom` 14, `bytesPerTile` 40000 (a dense
-  z13 Denver tile measured 84 KB), `allowsPacks: false`.
+  z13 Denver tile measured 84 KB), `allowsPacks: false`,
+  `minCacheAge: 7 days`.
 - `assets/maps/studio_dark.json` was rewritten against Shortbread. 28
   layers, 14.9 KB, down from 47 layers and 36 KB. Shortbread layer names
   (`ocean`, `water_polygons`, `land`, `streets`, `street_labels`,

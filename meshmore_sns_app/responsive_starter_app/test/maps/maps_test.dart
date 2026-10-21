@@ -478,6 +478,26 @@ void main() {
       store.dispose();
     });
 
+    test('a source floor outlives a shorter server max-age (R82)', () async {
+      // The OSM vector service advertises max-age=300; its policy wants tiles
+      // kept at least seven days, so the store must floor it, not follow it.
+      final MapsController m = MapsController(
+        rootDir: () async => dir,
+        fetcher: (Uri u, {String? etag, int? ifModifiedSinceMs}) async =>
+            const FetchResult(FetchStatus.failed),
+        clock: () => now,
+      );
+      const Duration fiveMin = Duration(minutes: 5);
+      expect(m.tileTtl(fiveMin, kOsmVector), const Duration(days: 7));
+      expect(m.tileTtl(fiveMin, kOsmStandard), fiveMin,
+          reason: 'a raster source keeps the server\'s own expiry');
+      expect(m.tileTtl(const Duration(days: 30), kOsmVector),
+          const Duration(days: 30),
+          reason: 'a longer server life is never shortened');
+      expect(m.tileTtl(null, kOsmVector), const Duration(days: 7));
+      m.dispose();
+    });
+
     test('a pack that outgrows the budget stops and says so', () async {
       // Estimate fits (25 kB/tile planned) but the server sends 20 MB
       // tiles; the pack stops at the budget, not past it.
