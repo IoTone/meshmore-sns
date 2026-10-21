@@ -118,6 +118,9 @@ void main() {
     await t.pumpAndSettle();
     expect(find.widgetWithText(AppBar, 'About'), findsOneWidget);
     expect(find.text('MESHMORE SNS'), findsOneWidget);
+    // Interpolation must be evaluated, not printed: a stray \$ renders
+    // "${l.aboutDescription}" on screen (paid for once already).
+    expect(find.textContaining(r'${'), findsNothing);
 
     await t.tap(find.text('Docs'));
     await t.pumpAndSettle();

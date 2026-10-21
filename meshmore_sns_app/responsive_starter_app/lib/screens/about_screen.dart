@@ -58,9 +58,9 @@ class AboutScreen extends StatelessWidget {
             ),
             const SizedBox(height: 20),
             Text(
-              '\${l.aboutDescription}\n'
-              '\${l.aboutCopyright}\n'
-              '\${l.aboutLicense}',
+              '${l.aboutDescription}\n'
+              '${l.aboutCopyright}\n'
+              '${l.aboutLicense}',
               textAlign: TextAlign.center,
               style: TextStyle(color: skin.color.fgMuted, height: 1.5),
             ),
