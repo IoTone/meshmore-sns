@@ -31,22 +31,31 @@ class MmScaffold extends StatelessWidget {
     final bool ornament = skin.ornament.any && !reduceMotion;
     return ColoredBox(
       color: skin.color.base,
-      child: Stack(
-        children: <Widget>[
-          Positioned.fill(child: body),
-          if (ornament)
-            Positioned.fill(
-              child: IgnorePointer(
-                child: CustomPaint(
-                  painter: SkinChromePainter(
-                    scanlineOpacity: skin.ornament.scanlineOpacity,
-                    brackets: skin.ornament.cornerBrackets,
-                    accent: skin.color.accent,
+      // The ground is painted by ColoredBox, not by a Material. Any
+      // ListTile or InkWell below us then has no ink surface: the tap
+      // ripple is invisible and debug builds report ("ListTile background
+      // color or ink splashes may be invisible"). A transparent Material
+      // supplies the surface without painting a second ground or
+      // overriding the skin's text styles.
+      child: Material(
+        type: MaterialType.transparency,
+        child: Stack(
+          children: <Widget>[
+            Positioned.fill(child: body),
+            if (ornament)
+              Positioned.fill(
+                child: IgnorePointer(
+                  child: CustomPaint(
+                    painter: SkinChromePainter(
+                      scanlineOpacity: skin.ornament.scanlineOpacity,
+                      brackets: skin.ornament.cornerBrackets,
+                      accent: skin.color.accent,
+                    ),
                   ),
                 ),
               ),
-            ),
-        ],
+          ],
+        ),
       ),
     );
   }
