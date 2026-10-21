@@ -3212,7 +3212,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get settingsHubInfo => '情報';
 
   @override
-  String get settingsHubInfoSub => 'このアプリ・ドキュメント・ライセンス';
+  String get settingsHubInfoSub => 'このアプリ・ライセンス・バージョン';
 
   @override
   String get settingsHubMaps => 'オフライン地図';

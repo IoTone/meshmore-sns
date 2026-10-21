@@ -1,7 +1,6 @@
 // Copyright (c) 2026 IoTone, Inc.
 // SPDX-License-Identifier: MIT
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../app_state_model.dart';
@@ -10,9 +9,9 @@ import '../theme/mm_skin.dart';
 import '../ui/mm_scaffold.dart';
 
 /// R85 - the information page. It used to be its own top-level view; the
-/// shell is now the six things a person actually switches between, and
-/// everything static lives one level down from Settings: Settings >
-/// Information > (About, Licences, Docs).
+/// shell is now the six things a person actually switches between, and the
+/// static pages are rows in the Settings hub: Settings > Information (this
+/// page, with Licences) and, beside it, Settings > Docs (R86).
 class AboutScreen extends StatelessWidget {
   const AboutScreen({super.key});
 
@@ -50,13 +49,6 @@ class AboutScreen extends StatelessWidget {
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 12, color: skin.color.fgMuted)),
             const SizedBox(height: 20),
-            _Row(
-              icon: Icons.menu_book_outlined,
-              title: l.tabDocs,
-              subtitle: l.docsHubSubtitle,
-              onTap: () => context.push('/settings/about/docs'),
-            ),
-            const SizedBox(height: 20),
             Text(
               '${l.aboutDescription}\n'
               '${l.aboutCopyright}\n'
@@ -90,54 +82,6 @@ class AboutScreen extends StatelessWidget {
                 textAlign: TextAlign.center,
                 style: TextStyle(
                     color: skin.color.fgMuted, fontSize: 10.5, height: 1.4)),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _Row extends StatelessWidget {
-  const _Row({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final MmSkin skin = context.skin;
-    return InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        child: Row(
-          children: <Widget>[
-            Icon(icon, color: skin.color.accent, size: 22),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Text(title,
-                      style: TextStyle(
-                          fontFamily: skin.type.bodyFamily,
-                          fontSize: 15,
-                          color: skin.color.fg)),
-                  const SizedBox(height: 2),
-                  Text(subtitle,
-                      style: TextStyle(
-                          fontSize: 12, color: skin.color.fgMuted)),
-                ],
-              ),
-            ),
-            Icon(Icons.chevron_right, color: skin.color.fgMuted),
           ],
         ),
       ),

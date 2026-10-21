@@ -105,14 +105,15 @@ final GoRouter appRouter = GoRouter(
       path: '/settings/battery',
       builder: (_, __) => const BatteryScreen(),
     ),
-    // R85 - the information page and the docs hub are static content, so
-    // they live under Settings instead of owning two of the six views.
+    // R85/R86 - the information page and the docs hub are static content,
+    // so they live under Settings as peers instead of owning two of the
+    // six views.
     GoRoute(
       path: '/settings/about',
       builder: (_, __) => const AboutScreen(),
     ),
     GoRoute(
-      path: '/settings/about/docs',
+      path: '/settings/docs',
       builder: (_, __) => const DocsHubScreen(),
     ),
     // R53 — docs reader. `:section` is one of protocol / firmware / app;

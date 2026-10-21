@@ -61,14 +61,15 @@ swipe pages):
   the current one in the accent. Each icon is a 48x48 button with the
   view's title as its semantic label and tooltip and `selected` on the
   current one, so it is the non-gesture path for screen readers, switch
-  access and the locked Map tab. It scrolls sideways below 6x48dp
-  (320dp phones) and keeps the current view in sight.
+  access and the locked Map tab. The six cells share the full
+  width equally (R86), with no dead space at either edge; it scrolls
+  sideways only below 6x48dp (288dp) and keeps the current view in sight.
 - **Six views (R85).** Dashboard, Chat, Nodes, Grid, Map, Settings. Docs and
   the information page used to be the seventh and eighth tabs, which put
   static content on the same footing as the things a person switches
-  between mid-conversation. They are now one level down: Settings >
-  **Information** (`/settings/about`), which contains the brand/version
-  block, the licences page and a **Docs** row (`/settings/about/docs`).
+  between mid-conversation. They are now rows in the Settings hub, as
+  peers (R86): **Docs** (`/settings/docs`) and **Information**
+  (`/settings/about`, the brand/version block and the licences page).
   Nothing was deleted, it moved.
 - App-bar trailing area shows live status pills: BLE link state, channel,
   TTS on/off.

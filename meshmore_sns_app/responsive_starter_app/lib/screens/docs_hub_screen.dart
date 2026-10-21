@@ -9,7 +9,7 @@ import '../theme/mm_skin.dart';
 import '../meshcore/meshcore_controller.dart';
 import '../ui/mm_shape.dart';
 
-/// R53 — the Docs tab: a menu into the offline-readable docs (companion
+/// R53 — the Docs hub (a Settings row since R86, `/settings/docs`): a menu into the offline-readable docs (companion
 /// protocol, device firmware, this app, and our per-device field notes).
 /// Rendered in the futuristic monospace style; each row opens a
 /// [DocReaderScreen].

@@ -5759,7 +5759,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsHubInfoSub.
   ///
   /// In en, this message translates to:
-  /// **'About, documentation, licences'**
+  /// **'About, licences, version'**
   String get settingsHubInfoSub;
 
   /// No description provided for @settingsHubMaps.

@@ -1207,14 +1207,26 @@ While Meshcore protocol is open source, the client is not open source.  We want 
   drops the two static pages. The Settings hub gains an **Information** row
   (`/settings/about`) and `AboutScreen` (`lib/screens/about_screen.dart`,
   the old `_AboutView` promoted to a route) holds the brand/version block,
-  the licences page and a **Docs** row to `/settings/about/docs`.
+  the licences page and (R85 only, moved out by R86) a **Docs** row.
   `DocsHubScreen` becomes a routed sub-page with its own app bar; its
   duplicate in-body heading is gone (the app bar names the page) and its
   prose subtitle keeps `MmType.wordsMono`, which is sans under Studio and
   mono under the older presets, so the R74 type rule still holds. New l10n:
   `settingsHubInfo`, `settingsHubInfoSub` (EN + JA). Tests:
   `home_shell_test` (R85: no Docs/About tooltips, Information opens About,
-  Docs pushes from there, Back returns to Information).
+  Docs pushes from there, Back returns to Information). **Superseded in
+  part by R86:** the Docs row no longer sits inside Information.
+- R86: **Docs is a Settings row beside Information; the view strip fills
+  the width.** `/settings/about/docs` becomes `/settings/docs` and the
+  Settings hub lists **Docs** immediately before **Information** (both are
+  static content, so they sit together at the end). `AboutScreen` loses its
+  Docs row and the private `_Row` it used. The strip (`_ViewStrip`) is a
+  full-width Row of `Expanded` cells when the window is at least 6 x 48dp,
+  so six views leave no dead space at either edge at any width; narrower it
+  is the fixed-cell scrolling row as before (an `Expanded` is invalid in an
+  unbounded scroll view). `settingsHubInfoSub` now reads "About, licences,
+  version" (EN + JA). Tests: `home_shell_test` (R86 peers, Back returns to
+  the Settings hub; strip rects at 320/360/393/412/600/1024dp).
 - R83: **region files deferred; the live map made responsive.** The archive
   machinery (R81) stays but is hidden behind `kRegionFilesEnabled = false`
   until a region file is published; the UI test asserts the section is

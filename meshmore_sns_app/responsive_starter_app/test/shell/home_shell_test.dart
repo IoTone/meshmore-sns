@@ -102,7 +102,7 @@ void main() {
     expect(find.widgetWithText(AppBar, 'Dashboard'), findsOneWidget);
   });
 
-  testWidgets('R85 Settings > Information owns About and Docs',
+  testWidgets('R86 Settings lists Docs and Information as peers',
       (WidgetTester t) async {
     // appRouter is a global instance: a route left pushed would put every
     // later test on that page instead of the shell.
@@ -113,23 +113,46 @@ void main() {
     // The two static views are rows here, not tabs.
     expect(find.byTooltip('Docs'), findsNothing);
     expect(find.byTooltip('About'), findsNothing);
-    await t.ensureVisible(find.text('Information'));
-    await t.tap(find.text('Information'));
+    final Finder docsRow = find.text('Docs');
+    final Finder infoRow = find.text('Information');
+    // The hub is a lazy list; scroll down to the end where the static rows sit.
+    final Finder hub = find
+        .descendant(
+            of: find.byType(ListView), matching: find.byType(Scrollable))
+        .last;
+    await t.scrollUntilVisible(infoRow, 100, scrollable: hub);
+    expect(docsRow, findsOneWidget);
+    expect(infoRow, findsOneWidget);
+    expect(t.getTopLeft(docsRow).dx, t.getTopLeft(infoRow).dx,
+        reason: 'same level: both are rows of the one hub list');
+    expect(t.getTopLeft(docsRow).dy, lessThan(t.getTopLeft(infoRow).dy),
+        reason: 'Docs sits immediately before Information');
+
+    // Docs opens the hub, and Back returns to the Settings hub.
+    await t.tap(docsRow);
+    await t.pumpAndSettle();
+    expect(find.widgetWithText(AppBar, 'Docs'), findsOneWidget);
+    await t.pageBack();
+    await t.pumpAndSettle();
+    expect(find.widgetWithText(AppBar, 'Settings'), findsOneWidget,
+        reason: 'Back returns to the Settings hub');
+
+    // Information opens About, which no longer carries a Docs row.
+    await t.scrollUntilVisible(infoRow, 100, scrollable: hub);
+    await t.tap(infoRow);
     await t.pumpAndSettle();
     expect(find.widgetWithText(AppBar, 'About'), findsOneWidget);
     expect(find.text('MESHMORE SNS'), findsOneWidget);
+    expect(find.text('Docs'), findsNothing,
+        reason: 'Docs is a sibling of About now, not a child');
+    expect(find.byIcon(Icons.menu_book_outlined), findsNothing);
     // Interpolation must be evaluated, not printed: a stray \$ renders
     // "${l.aboutDescription}" on screen (paid for once already).
     expect(find.textContaining(r'${'), findsNothing);
 
-    await t.tap(find.text('Docs'));
-    await t.pumpAndSettle();
-    expect(find.widgetWithText(AppBar, 'Docs'), findsOneWidget);
-
     await t.pageBack();
     await t.pumpAndSettle();
-    expect(find.text('MESHMORE SNS'), findsOneWidget,
-        reason: 'Back returns to Information, not to the shell');
+    expect(find.widgetWithText(AppBar, 'Settings'), findsOneWidget);
   });
 
   testWidgets('the view strip jumps views (R11, R64)', (WidgetTester t) async {

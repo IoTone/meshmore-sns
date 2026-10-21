@@ -30,7 +30,7 @@ import '../ui/mm_shape.dart';
 /// sitting after Settings; R61 adds the Map tab right after the grid).
 /// R85 - six views, the ones a person switches between. Docs and the
 /// information page were top-level views; they are static content, so they
-/// live under Settings > Information instead.
+/// are rows in the Settings hub instead (R86: peers, Docs then Information).
 enum MmView { dashboard, chat, nodes, grid, map, settings }
 
 extension on MmView {
@@ -354,6 +354,8 @@ class _SettingsView extends StatelessWidget {
           '/settings/tools'),
       (Icons.map_outlined, l.settingsHubMaps, l.settingsHubMapsSub,
           '/settings/maps'),
+      (Icons.menu_book_outlined, l.tabDocs, l.docsHubSubtitle,
+          '/settings/docs'),
       (Icons.info_outline, l.settingsHubInfo, l.settingsHubInfoSub,
           '/settings/about'),
     ];

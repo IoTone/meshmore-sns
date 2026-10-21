@@ -3329,7 +3329,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsHubInfo => 'Information';
 
   @override
-  String get settingsHubInfoSub => 'About, documentation, licences';
+  String get settingsHubInfoSub => 'About, licences, version';
 
   @override
   String get settingsHubMaps => 'Offline maps';
