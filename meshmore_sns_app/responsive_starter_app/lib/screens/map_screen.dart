@@ -21,9 +21,8 @@ import '../ui/mm_shape.dart';
 /// button here.
 ///
 /// A pan/zoom map owns every horizontal drag in the middle of the
-/// screen, so the shell locks its `PageView` swipe while this tab is
-/// current (see `HomeShell`; the lock is unconditional, there is no flag
-/// like `GridScreen.capturesHorizontalDrag`). **Edge swipe** is how you
+/// screen, and R95 made the shell's `PageView` unscrollable in every skin,
+/// so the drag is always the map's. **Edge swipe** is how you
 /// leave by gesture: a 24 dp band on each screen edge ([MmEdgeSwipe])
 /// is hit-tested before the map, and an inward fling there calls
 /// [onEdgeSwipe] (`-1` previous, `+1` next). Back and the view strip

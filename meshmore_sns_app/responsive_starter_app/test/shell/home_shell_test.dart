@@ -20,7 +20,6 @@ import 'package:meshmore_sns_app/meshcore/meshcore_controller.dart';
 import 'package:meshmore_sns_app/perms/first_run_controller.dart';
 import 'package:meshmore_sns_app/perms/permissions_service.dart';
 import 'package:meshmore_sns_app/screens/grid_screen.dart';
-import 'package:meshmore_sns_app/theme/mm_skin.dart';
 import 'package:meshmore_sns_app/theme/mm_tokens.dart';
 import 'package:meshmore_sns_app/theme/theme_controller.dart';
 import 'package:meshmore_sns_app/tts/tts_controller.dart';
@@ -302,20 +301,31 @@ void main() {
     expect(find.widgetWithText(AppBar, 'Settings'), findsOneWidget);
   });
 
-  testWidgets('horizontal swipe pages between views (R11)',
+  testWidgets('the body never pages by swipe; the strip snaps (R95)',
       (WidgetTester t) async {
     await _pumpApp(t);
     expect(find.widgetWithText(AppBar, 'Dashboard'), findsOneWidget);
     await t.fling(find.byType(PageView), const Offset(-400, 0), 1000);
     await t.pumpAndSettle();
-    expect(find.widgetWithText(AppBar, 'Chat'), findsOneWidget);
+    await t.fling(find.byType(PageView), const Offset(400, 0), 1000);
+    await t.pumpAndSettle();
+    expect(find.widgetWithText(AppBar, 'Dashboard'), findsOneWidget,
+        reason: 'a fling in the body must not change the view');
+
+    // A tap is one jump: no travel through the pages in between. R95's
+    // defect was Dashboard -> Settings scrolling five pages and firing a
+    // nav cue on each one.
+    await t.tap(find.byTooltip('Settings'));
+    await t.pump();
+    expect(find.widgetWithText(AppBar, 'Settings'), findsOneWidget,
+        reason: 'the target view is live on the next frame');
   });
 
   testWidgets(
       'Back from a non-Dashboard tab returns to Dashboard '
       '(no root-pop crash)', (WidgetTester t) async {
     await _pumpApp(t);
-    await t.fling(find.byType(PageView), const Offset(-400, 0), 1000);
+    await t.tap(find.byTooltip('Chat'));
     await t.pumpAndSettle();
     expect(find.widgetWithText(AppBar, 'Chat'), findsOneWidget);
 
@@ -358,37 +368,37 @@ void main() {
     // The old entry point is gone from Nodes.
     expect(find.widgetWithIcon(IconButton, Icons.radar), findsNothing);
 
-    await t.fling(find.byType(PageView), const Offset(-400, 0), 1000);
+    await t.tap(find.byTooltip('Hyperlocal grid'));
     await settle(t);
     expect(find.widgetWithText(AppBar, 'Hyperlocal grid'), findsOneWidget);
     expect(find.text('Not Connected to Mesh'), findsOneWidget);
     expect(t.takeException(), isNull);
   });
 
-  testWidgets(
-      'a panning grid view locks the shell swipe; the radar '
-      'does not', (WidgetTester t) async {
-    GridScreen.resetSession();
+  testWidgets('a vertical drag on the strip steps one view (R95)',
+      (WidgetTester t) async {
     await _pumpApp(t);
-    await t.tap(find.byTooltip('Hyperlocal grid'));
-    await settle(t);
-    expect(find.widgetWithText(AppBar, 'Hyperlocal grid'), findsOneWidget);
+    expect(find.widgetWithText(AppBar, 'Dashboard'), findsOneWidget);
+    final Offset strip = t.getCenter(find.byTooltip('Chat'));
 
-    // Stand in for picking a pannable view (street map, globe, …).
-    GridScreen.capturesHorizontalDrag.value = true;
-    await t.pump();
-    await t.fling(find.byType(PageView), const Offset(-400, 0), 1000);
+    // Up -> the next view, the same result as tapping the next cell.
+    await t.flingFrom(strip, const Offset(0, -60), 800);
     await settle(t);
-    expect(find.widgetWithText(AppBar, 'Hyperlocal grid'), findsOneWidget);
+    expect(find.widgetWithText(AppBar, 'Chat'), findsOneWidget);
 
-    GridScreen.capturesHorizontalDrag.value = false;
-    await t.pump();
-    await t.fling(find.byType(PageView), const Offset(-400, 0), 1000);
+    // Down -> the previous view.
+    await t.flingFrom(strip, const Offset(0, 60), 800);
     await settle(t);
-    // The tab after the grid is Map (R61), then Settings.
-    expect(find.widgetWithText(AppBar, 'Map'), findsOneWidget);
-    // Leaving the tab frees the swipe for everyone else.
-    expect(GridScreen.capturesHorizontalDrag.value, isFalse);
+    expect(find.widgetWithText(AppBar, 'Dashboard'), findsOneWidget);
+
+    // A short drag is not a step. It is started on the current cell, so if
+    // the arena resolves it as a tap it lands on the view already shown.
+    await t.dragFrom(t.getCenter(find.byTooltip('Dashboard')),
+        const Offset(0, -12), touchSlopY: 0);
+    await settle(t);
+    expect(find.widgetWithText(AppBar, 'Dashboard'), findsOneWidget,
+        reason: '12 dp is below the step threshold');
+    expect(t.takeException(), isNull);
   });
 
   Future<void> openFromStrip(WidgetTester t, String label) async {
@@ -422,17 +432,13 @@ void main() {
           preset,
           reason: 'the skin under test is actually applied');
       await openFromStrip(t, 'Hyperlocal grid');
-      // R78: Studio is the one skin that does not swipe between views.
-      // Its PageView is NeverScrollable, so the strip is the only way
-      // across; every other preset still lands on Map by flinging.
-      final bool swipes = mmSkinFor(preset).shape.swipeNavigation;
+      // R95: no skin pages by touch. A fling is inert everywhere and the
+      // strip is the only way across.
       await t.fling(find.byType(PageView), const Offset(-400, 0), 1000);
       await settle(t);
-      if (!swipes) {
-        expect(find.widgetWithText(AppBar, 'Hyperlocal grid'), findsOneWidget,
-            reason: '${preset.name}: the shell does not swipe');
-        await openFromStrip(t, 'Map');
-      }
+      expect(find.widgetWithText(AppBar, 'Hyperlocal grid'), findsOneWidget,
+          reason: '${preset.name}: the shell does not swipe');
+      await openFromStrip(t, 'Map');
       expect(find.widgetWithText(AppBar, 'Map'), findsOneWidget,
           reason: '${preset.name}: Map is reachable from the grid');
       expect(find.byType(MapScreen), findsOneWidget);
@@ -442,40 +448,36 @@ void main() {
     }
   });
 
-  test('only Studio turns swipe navigation off (R78)', () {
-    for (final MmThemePreset p in MmThemePreset.values) {
-      expect(mmSkinFor(p).shape.swipeNavigation, p != MmThemePreset.studio,
-          reason: '${p.name}: swipeNavigation');
+  testWidgets('every skin locks the body PageView (R95)',
+      (WidgetTester t) async {
+    for (final MmThemePreset preset in MmThemePreset.values) {
+      SharedPreferences.setMockInitialValues(<String, Object>{});
+      GridScreen.resetSession();
+      await t.pumpWidget(const SizedBox());
+      await _pumpApp(t, preset: preset);
+      final PageView pv = t.widget<PageView>(find.byType(PageView));
+      expect(pv.physics, isA<NeverScrollableScrollPhysics>(),
+          reason: '${preset.name}: the body never pages by touch');
     }
   });
 
   testWidgets(
-      'Studio changes view only from the strip, and the map edges are '
-      'inert (R78)', (WidgetTester t) async {
+      'the map edge bands step one view in every skin (R95)',
+      (WidgetTester t) async {
     SharedPreferences.setMockInitialValues(<String, Object>{});
     GridScreen.resetSession();
     await _pumpApp(t, preset: MmThemePreset.studio);
     await settle(t);
     await openFromStrip(t, 'Hyperlocal grid');
-
-    // NeverScrollableScrollPhysics: neither direction moves the page.
-    await t.fling(find.byType(PageView), const Offset(-600, 0), 2000);
-    await settle(t);
-    await t.fling(find.byType(PageView), const Offset(600, 0), 2000);
-    await settle(t);
-    expect(find.widgetWithText(AppBar, 'Hyperlocal grid'), findsOneWidget,
-        reason: 'a fling must not change the view');
-
-    // The strip is the whole navigation story, Map included.
     await openFromStrip(t, 'Map');
     expect(find.byType(MapScreen), findsOneWidget);
 
-    // R67's edge bands are not wired under Studio, so a left-edge drag
-    // is not a view change. The map keeps the gesture for panning.
-    await t.dragFrom(const Offset(2, 300), const Offset(300, 0));
+    // R67's bands are the map's only gesture exit now that the body
+    // never pages: an inward fling from the left edge goes back one view.
+    await t.flingFrom(const Offset(2, 300), const Offset(300, 0), 1200);
     await settle(t);
-    expect(find.byType(MapScreen), findsOneWidget,
-        reason: 'an edge drag must not leave the map');
+    expect(find.widgetWithText(AppBar, 'Hyperlocal grid'), findsOneWidget,
+        reason: 'the left band leaves the map');
     expect(t.takeException(), isNull);
   });
 
@@ -489,7 +491,6 @@ void main() {
 
     // The lock is unconditional: no notifier needs to be flipped, and a
     // fling in the middle of the page (the map's) must not change view.
-    expect(GridScreen.capturesHorizontalDrag.value, isFalse);
     final Offset mid = t.getCenter(find.byType(PageView));
     await t.flingFrom(mid, const Offset(-400, 0), 1000);
     await settle(t);
@@ -504,10 +505,10 @@ void main() {
     await openFromStrip(t, 'Settings');
     expect(find.widgetWithText(AppBar, 'Settings'), findsOneWidget);
 
-    // The swipe is free again off the map.
+    // R95: still inert off the map.
     await t.fling(find.byType(PageView), const Offset(400, 0), 1000);
     await settle(t);
-    expect(find.widgetWithText(AppBar, 'Map'), findsOneWidget);
+    expect(find.widgetWithText(AppBar, 'Settings'), findsOneWidget);
 
     // Back from the map returns to the Dashboard.
     final bool handled = await t.binding.handlePopRoute();

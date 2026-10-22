@@ -1252,6 +1252,31 @@ While Meshcore protocol is open source, the client is not open source.  We want 
   changed (needs a layout decision):** at 320dp with 2.0x text the
   Dashboard status row overflows by ~7 px and `/settings/maps/new`'s
   `ToolChoice` dropdown by ~57 px.
+- R95: **one navigation model, and the strip stops lying about how it
+  works.** A strip tap called `PageController.animateToPage` (250 ms), so
+  Dashboard -> Settings scrolled through four intermediate views, built all
+  of them, and `onPageChanged` played a nav cue on every crossing: one tap
+  gave five vibrations and five sounds, which is what the owner reported as
+  "it scrolls through all the options and vibrates a couple times". Taps now
+  `jumpToPage`, one cue, played at the tap. Swiping between views is gone in
+  every skin: the body `PageView` is `NeverScrollableScrollPhysics` always.
+  It fought every panning surface in the app (map, globe, street map, radar,
+  all special-cased), the Map tab had to be locked unconditionally, and
+  `MmShape.swipeNavigation` existed only to switch the special case off for
+  Studio. The flag, Studio's `false`, and `GridScreen.capturesHorizontalDrag`
+  (whose only reader was the shell) are deleted. A vertical drag on the strip
+  now steps one view (28 dp of travel or 220 dp/s), which is the gesture the
+  owner asked for in place of paging: the strip moves, the page does not.
+  The map keeps its edge bands (R67) because it is a pan surface and the band
+  is its only gesture exit. Definition: the strip is 56 dp tall (was 48) with
+  a 22 px icon and a 3 px selected rule, and the app bar ends in a 2 px
+  `fg`@22% rule in every preset, bottom edge only. Before, only Studio drew a
+  rule, at 1 px of `t.hairline`, which is near-black on the calm presets, so
+  the chrome floated over the page. Tests: the fling-to-navigate tests became
+  "the body never pages by swipe" plus "every skin locks the PageView", the
+  pan-lock test became the strip drag test, the Studio edge test became
+  "the map edge bands step one view in every skin", and the app-bar shape
+  tests in `mm_layers_test` now assert the shared 2 px rule. Suite 931.
 - R94: **the Settings hub's group labels were wrong on the device.**
   R92 chose each label by list index in a `switch` (`0 / 4 / 8`) while the
   four separator rows sit at `0 / 3 / 7 / 10`, so APP, CONNECTION and

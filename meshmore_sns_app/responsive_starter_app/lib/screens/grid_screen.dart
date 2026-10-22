@@ -51,22 +51,6 @@ enum _GridViewMode {
   meshbook,
 }
 
-extension on _GridViewMode {
-  /// Views that pan/zoom with a drag. While one of these is showing,
-  /// a horizontal drag must move the map, not page the HomeShell — so
-  /// the shell stops swiping (Back and the view strip still leave).
-  bool get pansHorizontally => switch (this) {
-        _GridViewMode.globe ||
-        _GridViewMode.equalGrid ||
-        _GridViewMode.streetMap ||
-        _GridViewMode.fabric ||
-        _GridViewMode.tree ||
-        _GridViewMode.snsCells =>
-          true,
-        _ => false,
-      };
-}
-
 /// R18 / U9 — the hyperlocal grid: a radial range-ring view of the
 /// mesh **fabric** relative to us. Brightness = recency (100 % at
 /// register, 0 % at >24 h → removed). Animation semantics: a *known*
@@ -94,17 +78,10 @@ class GridScreen extends StatefulWidget {
   /// out of [GridPrefsStore] deliberately for that reason.
   static _GridViewMode _sessionMode = _GridViewMode.radial;
 
-  /// True while the showing view owns horizontal drags (see
-  /// [_GridViewMode.pansHorizontally]); the HomeShell listens and
-  /// locks its swipe while the grid tab is current.
-  static final ValueNotifier<bool> capturesHorizontalDrag =
-      ValueNotifier<bool>(false);
-
-  /// Test seam: back to the launch state (radar, shell swipe free).
+  /// Test seam: back to the launch state (radar).
   @visibleForTesting
   static void resetSession() {
     _sessionMode = _GridViewMode.radial;
-    capturesHorizontalDrag.value = false;
   }
 
   /// Default outer-range scale (km) when the user hasn't moved the
@@ -230,7 +207,6 @@ class _GridScreenState extends State<GridScreen>
         });
       }, onError: (_) {});
     }
-    _publishCapture(_viewMode.pansHorizontally);
     // Restore last-used grid preferences (scale / orientation / refresh)
     // so they don't reset when re-opening the grid. The view itself is
     // session state — see [GridScreen._sessionMode].
@@ -259,24 +235,13 @@ class _GridScreenState extends State<GridScreen>
     ));
   }
 
-  /// Mount and unmount happen while the shell is building / finalizing
-  /// its tree, where notifying its listener would assert — so publish
-  /// after the frame.
-  static void _publishCapture(bool v) {
-    WidgetsBinding.instance.addPostFrameCallback(
-        (_) => GridScreen.capturesHorizontalDrag.value = v);
-  }
-
   void _selectMode(_GridViewMode m) {
     setState(() => _viewMode = m);
     GridScreen._sessionMode = m;
-    GridScreen.capturesHorizontalDrag.value = m.pansHorizontally;
   }
 
   @override
   void dispose() {
-    // Off the tab, nothing of ours is under the finger — free the swipe.
-    _publishCapture(false);
     _refreshTimer?.cancel();
     _msgSub?.cancel();
     _compassSub?.cancel();

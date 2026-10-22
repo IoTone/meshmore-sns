@@ -378,14 +378,15 @@ ThemeData buildMmTheme(MmTokens t, {String? fontFamily, MmShape? shape}) {
       iconTheme: IconThemeData(color: t.fg),
       titleTextStyle: text.titleLarge,
       elevation: 0,
-      // R66: a square (Studio) app bar, and the view strip in its
-      // `bottom`, end in a hairline so they do not blend into the body
-      // (both are `base`). Null for every other preset: unchanged.
-      shape: square
-          ? Border(
-              bottom:
-                  BorderSide(color: t.hairline, width: shape!.hairlineWidth))
-          : null,
+      // R95 — every preset ends the app bar, and the view strip inside it,
+      // with the same rule. R66 did this for Studio only, at 1 px of
+      // `t.hairline`, which is near-black on the calm presets and invisible.
+      // 2 logical px of `fg` at low alpha reads as a chrome bar over the page
+      // without becoming a decoration in its own right.
+      shape: Border(
+        bottom: BorderSide(
+            color: t.fg.withValues(alpha: .22), width: 2),
+      ),
     ),
     listTileTheme: ListTileThemeData(iconColor: t.fgMuted, textColor: t.fg),
     dividerTheme: DividerThemeData(color: t.line, space: 1),

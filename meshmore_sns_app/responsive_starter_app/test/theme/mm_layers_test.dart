@@ -53,7 +53,9 @@ void main() {
         expect(chip.borderRadius, BorderRadius.circular(20), reason: '$p');
         expect(td.dialogTheme.shape, isNull, reason: '$p');
         expect(td.cardTheme.shape, isNull, reason: '$p');
-        expect(td.appBarTheme.shape, isNull, reason: '$p');
+        // R95: the app-bar rule is shared by every preset now; only the
+        // card and dialog shapes still vary.
+        expect(td.appBarTheme.shape, isA<Border>(), reason: '$p');
       }
     });
   });
@@ -75,24 +77,32 @@ void main() {
       expect(studio().cardTheme.elevation, isNull);
     });
 
-    test('app bar ends in a 1px hairline (and only on the bottom)', () {
-      final MmTokens t = kMmPresets[MmThemePreset.studio]!;
-      final Border b = studio().appBarTheme.shape! as Border;
-      expect(b.bottom.color, t.hairline);
-      expect(b.bottom.width, 1.0);
-      expect(b.top, BorderSide.none);
-      expect(b.left, BorderSide.none);
-      expect(b.right, BorderSide.none);
+    test('every preset ends the app bar with the same 2px rule', () {
+      // R95: R66 drew a 1px `hairline` under Studio's app bar only, and
+      // that colour is near-black on the calm presets. One rule for all
+      // presets, 2px of `fg` at 22%, bottom edge only.
+      for (final MmThemePreset p in MmThemePreset.values) {
+        final MmSkin s = mmSkinFor(p);
+        final ThemeData td = buildMmTheme(s.color,
+            fontFamily: s.type.displayFamily, shape: s.shape);
+        final Border b = td.appBarTheme.shape! as Border;
+        expect(b.bottom.width, 2.0, reason: '$p');
+        expect(b.bottom.color, s.color.fg.withValues(alpha: .22),
+            reason: '$p');
+        expect(b.top, BorderSide.none, reason: '$p');
+        expect(b.left, BorderSide.none, reason: '$p');
+        expect(b.right, BorderSide.none, reason: '$p');
+      }
     });
 
-    test('older presets: card and app-bar shape stay null', () {
+    test('the calm presets keep their card and dialog shapes', () {
       for (final MmThemePreset p in MmThemePreset.values) {
         if (p == MmThemePreset.studio) continue;
         final MmSkin s = mmSkinFor(p);
         final ThemeData td = buildMmTheme(s.color,
             fontFamily: s.type.displayFamily, shape: s.shape);
         expect(td.cardTheme.shape, isNull, reason: '$p');
-        expect(td.appBarTheme.shape, isNull, reason: '$p');
+        expect(td.dialogTheme.shape, isNull, reason: '$p');
       }
     });
   });

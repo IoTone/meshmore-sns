@@ -79,7 +79,6 @@ class MmShape {
     this.dimmedBasemap = false,
     this.vectorBasemap = false,
     this.tintedHeaders = false,
-    this.swipeNavigation = true,
   });
 
   final MmCorner corner;
@@ -119,11 +118,6 @@ class MmShape {
   /// group starts. Studio only; the six older presets keep a flat header.
   final bool tintedHeaders;
 
-  /// R78 — the primary views can be changed by swiping (the shell
-  /// `PageView`, and the Map tab's edge bands). Studio turns it off: its
-  /// only view switcher is the 48dp strip under the app bar. Back and the
-  /// strip are unaffected. True for the six older presets.
-  final bool swipeNavigation;
 }
 
 /// Retro-futuristic chrome. All default to "off" so a calm concept
@@ -301,7 +295,6 @@ MmSkin mmSkinFor(MmThemePreset preset) {
           dimmedBasemap: true,
           vectorBasemap: true,
           tintedHeaders: true,
-          swipeNavigation: false,
         ),
         ornament: _calmOrnament,
       );

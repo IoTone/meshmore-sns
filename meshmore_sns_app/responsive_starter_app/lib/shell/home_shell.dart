@@ -20,7 +20,6 @@ import '../screens/grid_screen.dart';
 import '../screens/map_screen.dart';
 import '../screens/nodes_screen.dart';
 import '../theme/mm_skin.dart';
-import '../theme/theme_controller.dart';
 import '../ui/mm_components.dart';
 import '../ui/mm_scaffold.dart';
 import '../ui/mm_shape.dart';
@@ -120,32 +119,31 @@ class _HomeShellState extends State<HomeShell>
     }
   }
 
-  void _goTo(int i, {required bool reduceMotion}) {
-    if (reduceMotion) {
-      _pc.jumpToPage(i);
-    } else {
-      _pc.animateToPage(i,
-          duration: const Duration(milliseconds: 250),
-          curve: Curves.easeOut);
-    }
+  /// R95 — one view change, one cue. A strip tap used to call
+  /// `animateToPage`, so Dashboard -> Settings scrolled through five pages and
+  /// `onPageChanged` fired a nav cue on each one: five builds, five vibrations.
+  /// The jump is instant and the cue is played once here, at the tap.
+  void _select(int i) {
+    if (i == _index) return;
+    final int from = _index;
+    _pc.jumpToPage(i);
+    setState(() => _index = i);
+    context
+        .read<CueService>()
+        .play(i > from ? CueKind.navNext : CueKind.navPrev);
   }
 
-  /// R67 — an edge swipe on a surface that locks the PageView: one view
-  /// back (-1) or forward (+1), clamped to the ends.
+  /// R67 — an edge swipe on the map: one view back (-1) or forward (+1),
+  /// clamped to the ends. R95 keeps it for every skin: the map owns horizontal
+  /// drags, so the band is its only gesture exit.
   void _edgeSwipe(int delta) {
-    final int to = (_index + delta).clamp(0, MmView.values.length - 1);
-    if (to != _index) {
-      _goTo(to,
-          reduceMotion: context.read<ThemeController>().reduceMotion);
-    }
+    _select((_index + delta).clamp(0, MmView.values.length - 1));
   }
 
   @override
   Widget build(BuildContext context) {
     final AppLocalizations l = AppLocalizations.of(context);
     final MmView current = MmView.values[_index];
-    // R78: Studio has no swipe navigation, only the view strip.
-    final bool swipe = context.skin.shape.swipeNavigation;
     // Root back handling (R11): from a non-Dashboard tab, Back returns
     // to the Dashboard instead of trying to pop the root route (which
     // is what crashed on Android). On the Dashboard, Back is allowed
@@ -154,9 +152,7 @@ class _HomeShellState extends State<HomeShell>
       canPop: _index == 0,
       onPopInvokedWithResult: (bool didPop, Object? result) {
         if (!didPop) {
-          _goTo(0,
-              reduceMotion:
-                  context.read<ThemeController>().reduceMotion);
+          _select(0);
         }
       },
       child: BootOverlay(child: Scaffold(
@@ -165,38 +161,21 @@ class _HomeShellState extends State<HomeShell>
         actions: const <Widget>[RadioLinkIndicator()],
         bottom: _ViewStrip(
           index: _index,
-          onSelect: (int i) => _goTo(i,
-              reduceMotion: context.read<ThemeController>().reduceMotion),
+          onSelect: _select,
         ),
       ),
-      // A grid view that pans (street map, globe, …) owns horizontal
-      // drags, so the shell stops swiping while it shows; Back, the
-      // view strip and Back still leave the tab. The Map tab is a
-      // pan/zoom map all the time, so it is locked unconditionally;
-      // its edge bands (R67, MmEdgeSwipe) change view instead. Under a
-      // skin with `swipeNavigation` off (Studio, R78) the PageView never
-      // scrolls by touch and the edge bands are inert: the view strip is
-      // the only switcher.
-      body: ValueListenableBuilder<bool>(
-        valueListenable: GridScreen.capturesHorizontalDrag,
-        builder: (BuildContext context, bool gridPans, Widget? _) =>
-            PageView(
+      // R95 — the body never scrolls by touch, in any skin. Swiping
+      // between views fought every panning surface in the app (map, globe,
+      // street map, radar) and each gesture had to be special-cased. The strip
+      // is the switcher: tap snaps, a vertical drag on the strip steps one
+      // view. The map keeps its edge bands (R67) because it is a pan surface.
+      body: PageView(
         controller: _pc,
-        physics: !swipe ||
-                (gridPans && current == MmView.grid) ||
-                current == MmView.map
-            ? const NeverScrollableScrollPhysics()
-            : null,
+        physics: const NeverScrollableScrollPhysics(),
         onPageChanged: (int i) {
           // Leaving a view with a focused text field (e.g. Chat) — drop
           // the keyboard so it doesn't linger and shrink the next view.
           FocusManager.instance.primaryFocus?.unfocus();
-          // Swipe/nav cue — direction tells navNext (→) from navPrev (←).
-          if (i != _index) {
-            context
-                .read<CueService>()
-                .play(i > _index ? CueKind.navNext : CueKind.navPrev);
-          }
           setState(() => _index = i);
         },
         children: <Widget>[
@@ -204,10 +183,9 @@ class _HomeShellState extends State<HomeShell>
           const ChatScreen(),
           const NodesScreen(),
           const GridScreen(),
-          MapScreen(onEdgeSwipe: swipe ? _edgeSwipe : null),
+          MapScreen(onEdgeSwipe: _edgeSwipe),
           const _SettingsView(),
         ],
-      ),
       ),
       ),
       ),
@@ -229,10 +207,14 @@ class _ViewStrip extends StatefulWidget implements PreferredSizeWidget {
   final int index;
   final ValueChanged<int> onSelect;
 
+  /// Minimum cell width; the fill branch shares the width equally.
   static const double cell = 48;
 
+  /// Cell height (R95: 48 -> 56, so the icon and its rule have room).
+  static const double height = 56;
+
   @override
-  Size get preferredSize => const Size.fromHeight(cell);
+  Size get preferredSize => const Size.fromHeight(height);
 
   @override
   State<_ViewStrip> createState() => _ViewStripState();
@@ -241,6 +223,29 @@ class _ViewStrip extends StatefulWidget implements PreferredSizeWidget {
 class _ViewStripState extends State<_ViewStrip> {
   final List<GlobalKey> _keys =
       List<GlobalKey>.generate(MmView.values.length, (_) => GlobalKey());
+
+  /// R95 — a vertical drag on the strip steps one view, the same result as
+  /// tapping the next or previous cell. A drag is deliberate, so it needs
+  /// either a visible travel or a real fling to fire.
+  double _dragDy = 0;
+
+  void _onDragStart(DragStartDetails _) => _dragDy = 0;
+  void _onDragUpdate(DragUpdateDetails d) => _dragDy += d.delta.dy;
+
+  void _onDragEnd(DragEndDetails d) {
+    final double v = d.primaryVelocity ?? 0;
+    final double dy = _dragDy;
+    _dragDy = 0;
+    final bool? up = (v < -220 || dy < -28)
+        ? true
+        : (v > 220 || dy > 28)
+            ? false
+            : null;
+    if (up == null) return;
+    final int to =
+        (widget.index + (up ? 1 : -1)).clamp(0, MmView.values.length - 1);
+    if (to != widget.index) widget.onSelect(to);
+  }
 
   @override
   void didUpdateWidget(_ViewStrip old) {
@@ -273,19 +278,19 @@ class _ViewStripState extends State<_ViewStrip> {
           onTap: () => widget.onSelect(v.index),
           child: SizedBox(
             width: width,
-            height: _ViewStrip.cell,
+            height: _ViewStrip.height,
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: <Widget>[
                 Icon(v.icon,
-                    size: 20,
+                    size: 22,
                     color: v.index == widget.index
                         ? cs.primary
-                        : cs.onSurface.withValues(alpha: .6)),
-                const SizedBox(height: 4),
+                        : cs.onSurface.withValues(alpha: .55)),
+                const SizedBox(height: 6),
                 Container(
-                  width: 18,
-                  height: 2,
+                  width: 22,
+                  height: 3,
                   color: v.index == widget.index
                       ? cs.primary
                       : Colors.transparent,
@@ -307,23 +312,30 @@ class _ViewStripState extends State<_ViewStrip> {
         // Wide enough for every cell at its minimum: the cells share the
         // whole width equally, so no dead space at either edge (an
         // Expanded needs a bounded main axis, hence no scroll view here).
-        if (box.maxWidth >= _ViewStrip.cell * MmView.values.length) {
-          return Row(
-            children: <Widget>[
-              for (final MmView v in MmView.values)
-                Expanded(child: _cell(v, l, cs)),
-            ],
-          );
-        }
-        // Narrower than 6 x 48dp: fixed 48dp cells that scroll sideways.
-        return SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            children: <Widget>[
-              for (final MmView v in MmView.values)
-                _cell(v, l, cs, width: _ViewStrip.cell),
-            ],
-          ),
+        final Widget strip =
+            box.maxWidth >= _ViewStrip.cell * MmView.values.length
+                ? Row(
+                    children: <Widget>[
+                      for (final MmView v in MmView.values)
+                        Expanded(child: _cell(v, l, cs)),
+                    ],
+                  )
+                // Narrower than 6 x 48dp: fixed cells that scroll sideways.
+                : SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: <Widget>[
+                        for (final MmView v in MmView.values)
+                          _cell(v, l, cs, width: _ViewStrip.cell),
+                      ],
+                    ),
+                  );
+        return GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onVerticalDragStart: _onDragStart,
+          onVerticalDragUpdate: _onDragUpdate,
+          onVerticalDragEnd: _onDragEnd,
+          child: strip,
         );
       },
     );
