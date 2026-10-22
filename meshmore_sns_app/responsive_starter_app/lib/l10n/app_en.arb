@@ -280,7 +280,7 @@
   "nodesInRangeBadge": "IN RANGE",
   "nodesFarBadge": "FAR",
   "nodesEmptyFiltered": "No nodes match this filter.\n\nTap Clear to widen, or change the chip cutoffs above.",
-  "nodesEmptyReady": "No nodes yet. Discovery is advert-driven: a node appears only when its advert is heard. Ask the other node to Advertise, or tap Scan area.",
+  "nodesEmptyReady": "No nodes yet. Discovery is advert-driven: a node appears when its advert is heard.",
   "nodesEmptyOffline": "Connect a radio to discover nearby nodes.",
   "nodesFavTooltip": "Add to favourites",
   "nodesUnfavTooltip": "Remove from favourites",
@@ -419,7 +419,7 @@
 
   "locTitle": "Auto-publish location",
   "locTileSubtitle": "Periodic + on-movement phone-GPS push to the device",
-  "locHelp": "Phone-side workaround for stale device GPS. When enabled, the app periodically (and/or on movement) reads phone GPS and writes it to the device via SET_ADVERT_LATLON + a zero-hop self-advert.",
+  "locHelp": "When the radio's GPS fix is stale, write the phone's position to it.",
   "locMaster": "Auto-publish",
   "locMasterOn": "On — using phone GPS",
   "locMasterOff": "Off",
@@ -454,7 +454,7 @@
     }
   },
   "locBeacon": "Periodic position beacon",
-  "locBeaconSub": "Every 60 s while connected, send a zero-hop advert carrying your position over the air. Off by default: your radio does not do this by itself, and it costs airtime and battery.",
+  "locBeaconSub": "Every 60 s, advertise your position (zero-hop). Uses airtime and battery.",
   "locBatteryHint": "Smart-broadcast streams GPS (~10 mA continuous). Periodic-only is cheaper. Combine both for responsiveness; pick smart-broadcast alone if battery matters.",
   "@globeFooter": {
     "placeholders": {"n": {"type": "int"}}
@@ -620,7 +620,7 @@
     "placeholders": {"hex": {"type": "String"}}
   },
   "nodeDetailSignature": "Arrival signature",
-  "nodeDetailSignatureHint": "A sound and a vibration just for this peer, in place of the usual DM cue. Tap to try one.",
+  "nodeDetailSignatureHint": "A cue just for this peer, instead of the DM cue.",
   "nodeDetailSignatureNone": "Default",
   "nodeDetailSignatureSlot": "Signature {n}",
   "@nodeDetailSignatureSlot": {
@@ -679,12 +679,12 @@
   },
   "nodeIdentityLinkAction": "Key changed? Link to another node",
   "nodeIdentityLinkTitle": "Link a changed key",
-  "nodeIdentityLinkHelp": "Pick the node that is this same contact under a new key — or paste the new public key (you can read it off the other device). Your star, tags, and messages move to it; the old key is retired.",
+  "nodeIdentityLinkHelp": "Same contact, new key. Pick the node or paste the key; your star, tags and messages move over.",
   "nodeIdentityLinkEmpty": "No other nodes to link yet — scan, wait for the new key to advertise, or paste the key above.",
   "nodeIdentityLinkSearchHint": "Filter by name, or paste a public key",
   "nodeIdentityLinkNoMatch": "No nodes match — clear the search, or paste the full key to link directly.",
   "nodeIdentityLinkUseKey": "Link to this key",
-  "nodeDetailNotDeviceContact": "Your radio doesn't have this node as a contact, so direct messages may not reach it (channel messages still work). Add it to route DMs.",
+  "nodeDetailNotDeviceContact": "Not in your radio's contact list, so DMs may not route. Channels still work.",
   "nodeDetailAddDeviceContact": "Add to device contacts",
   "nodeDetailAddDeviceContactDone": "Added to your radio's contacts — DMs will route now. If they still don't, your contact list may be full; remove an old contact and try again.",
   "nodeDetailAddDeviceContactFailed": "Couldn't add the contact — check the link and try again.",
@@ -706,7 +706,7 @@
   "@deviceContactsCountOnly": {
     "placeholders": { "count": { "type": "int" } }
   },
-  "deviceContactsFullHelp": "The contact list is full. Adding a new contact (e.g. a re-homed key) fails until you remove some — DMs to a non-contact won't route. Delete entries you don't need below.",
+  "deviceContactsFullHelp": "Contact list is full. Remove entries below to add new ones.",
   "deviceContactsChannelsNote": "You only need a contact to send a direct message. Channel messages work without contacts — you'll still see everyone on channels.",
   "deviceContactsScrub": "Scrub contacts",
   "deviceContactsRemoveOutOfRange": "Remove out of range",
@@ -950,7 +950,7 @@
   "nodeDetailQueryTelemetry": "Query telemetry",
   "nodeDetailRefreshTelemetry": "Refresh telemetry",
   "nodeDetailTelemetryQuerying": "querying peer over the air…",
-  "nodeDetailTelemetryNotContact": "Not a synced contact — telemetry can't be requested. Add this node as a contact on the device first.",
+  "nodeDetailTelemetryNotContact": "Not a device contact, so telemetry is unavailable.",
   "nodeDetailTelemetryAge": "telemetry from {age}",
   "@nodeDetailTelemetryAge": {
     "placeholders": {"age": {"type": "String"}}
@@ -973,7 +973,7 @@
   },
 
   "channelsTitle": "Channels",
-  "channelsHelp": "A channel = slot + name + 16-byte key. Public (slot 0) is the shared default. For a private group, set the SAME name & PSK in the same slot on every node.",
+  "channelsHelp": "Slot 0 is the shared public channel. A private group needs the same slot, name and PSK on every node.",
   "channelsOfflineHint": "Connect a radio (Diagnostics) to edit channels.",
   "channelsEmpty": "— empty —",
   "channelsSlotLabel": "slot {idx}",
@@ -1013,7 +1013,7 @@
   "channelsErrorName": "Enter a channel name",
   "channelsCancel": "Cancel",
   "channelsSave": "Save",
-  "channelsHelpEncryption": "Slot 0 (Public) uses a well-known key — everyone with the firmware can read it. Other slots are AES-128 encrypted with the 16-byte PSK you set; only nodes with the same PSK can decrypt.",
+  "channelsHelpEncryption": "Slot 0's key is public. Other slots use AES-128 with the PSK you set.",
   "channelsHexGenerate": "Generate random PSK",
   "channelsHexCopy": "Copy",
   "channelsHexCopied": "PSK copied to clipboard",

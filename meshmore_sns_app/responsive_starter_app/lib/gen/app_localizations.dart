@@ -1283,7 +1283,7 @@ abstract class AppLocalizations {
   /// No description provided for @nodesEmptyReady.
   ///
   /// In en, this message translates to:
-  /// **'No nodes yet. Discovery is advert-driven: a node appears only when its advert is heard. Ask the other node to Advertise, or tap Scan area.'**
+  /// **'No nodes yet. Discovery is advert-driven: a node appears when its advert is heard.'**
   String get nodesEmptyReady;
 
   /// No description provided for @nodesEmptyOffline.
@@ -1895,7 +1895,7 @@ abstract class AppLocalizations {
   /// No description provided for @locHelp.
   ///
   /// In en, this message translates to:
-  /// **'Phone-side workaround for stale device GPS. When enabled, the app periodically (and/or on movement) reads phone GPS and writes it to the device via SET_ADVERT_LATLON + a zero-hop self-advert.'**
+  /// **'When the radio\'s GPS fix is stale, write the phone\'s position to it.'**
   String get locHelp;
 
   /// No description provided for @locMaster.
@@ -1985,7 +1985,7 @@ abstract class AppLocalizations {
   /// No description provided for @locBeaconSub.
   ///
   /// In en, this message translates to:
-  /// **'Every 60 s while connected, send a zero-hop advert carrying your position over the air. Off by default: your radio does not do this by itself, and it costs airtime and battery.'**
+  /// **'Every 60 s, advertise your position (zero-hop). Uses airtime and battery.'**
   String get locBeaconSub;
 
   /// No description provided for @locBatteryHint.
@@ -2453,7 +2453,7 @@ abstract class AppLocalizations {
   /// No description provided for @nodeDetailSignatureHint.
   ///
   /// In en, this message translates to:
-  /// **'A sound and a vibration just for this peer, in place of the usual DM cue. Tap to try one.'**
+  /// **'A cue just for this peer, instead of the DM cue.'**
   String get nodeDetailSignatureHint;
 
   /// No description provided for @nodeDetailSignatureNone.
@@ -2681,7 +2681,7 @@ abstract class AppLocalizations {
   /// No description provided for @nodeIdentityLinkHelp.
   ///
   /// In en, this message translates to:
-  /// **'Pick the node that is this same contact under a new key — or paste the new public key (you can read it off the other device). Your star, tags, and messages move to it; the old key is retired.'**
+  /// **'Same contact, new key. Pick the node or paste the key; your star, tags and messages move over.'**
   String get nodeIdentityLinkHelp;
 
   /// No description provided for @nodeIdentityLinkEmpty.
@@ -2711,7 +2711,7 @@ abstract class AppLocalizations {
   /// No description provided for @nodeDetailNotDeviceContact.
   ///
   /// In en, this message translates to:
-  /// **'Your radio doesn\'t have this node as a contact, so direct messages may not reach it (channel messages still work). Add it to route DMs.'**
+  /// **'Not in your radio\'s contact list, so DMs may not route. Channels still work.'**
   String get nodeDetailNotDeviceContact;
 
   /// No description provided for @nodeDetailAddDeviceContact.
@@ -2789,7 +2789,7 @@ abstract class AppLocalizations {
   /// No description provided for @deviceContactsFullHelp.
   ///
   /// In en, this message translates to:
-  /// **'The contact list is full. Adding a new contact (e.g. a re-homed key) fails until you remove some — DMs to a non-contact won\'t route. Delete entries you don\'t need below.'**
+  /// **'Contact list is full. Remove entries below to add new ones.'**
   String get deviceContactsFullHelp;
 
   /// No description provided for @deviceContactsChannelsNote.
@@ -3791,7 +3791,7 @@ abstract class AppLocalizations {
   /// No description provided for @nodeDetailTelemetryNotContact.
   ///
   /// In en, this message translates to:
-  /// **'Not a synced contact — telemetry can\'t be requested. Add this node as a contact on the device first.'**
+  /// **'Not a device contact, so telemetry is unavailable.'**
   String get nodeDetailTelemetryNotContact;
 
   /// No description provided for @nodeDetailTelemetryAge.
@@ -3833,7 +3833,7 @@ abstract class AppLocalizations {
   /// No description provided for @channelsHelp.
   ///
   /// In en, this message translates to:
-  /// **'A channel = slot + name + 16-byte key. Public (slot 0) is the shared default. For a private group, set the SAME name & PSK in the same slot on every node.'**
+  /// **'Slot 0 is the shared public channel. A private group needs the same slot, name and PSK on every node.'**
   String get channelsHelp;
 
   /// No description provided for @channelsOfflineHint.
@@ -3983,7 +3983,7 @@ abstract class AppLocalizations {
   /// No description provided for @channelsHelpEncryption.
   ///
   /// In en, this message translates to:
-  /// **'Slot 0 (Public) uses a well-known key — everyone with the firmware can read it. Other slots are AES-128 encrypted with the 16-byte PSK you set; only nodes with the same PSK can decrypt.'**
+  /// **'Slot 0\'s key is public. Other slots use AES-128 with the PSK you set.'**
   String get channelsHelpEncryption;
 
   /// No description provided for @channelsHexGenerate.

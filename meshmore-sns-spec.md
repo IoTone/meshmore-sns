@@ -1252,6 +1252,23 @@ While Meshcore protocol is open source, the client is not open source.  We want 
   changed (needs a layout decision):** at 320dp with 2.0x text the
   Dashboard status row overflows by ~7 px and `/settings/maps/new`'s
   `ToolChoice` dropdown by ~57 px.
+- R105: **first prose pass: say it once.** Ten explanation strings in the
+  node, channels, location and device-contact surfaces were restating what
+  the control next to them already said, or explaining the firmware instead
+  of the choice. Measured, EN: "Your radio doesn't have this node as a
+  contact, so direct messages may not reach it (channel messages still
+  work). Add it to route DMs." (135) is now "Not in your radio's contact
+  list, so DMs may not route. Channels still work." (74), and the add
+  action is the button beside it. `nodesEmptyReady` (138) loses its last
+  sentence because both actions are on the same screen. `locHelp` (191)
+  drops the register-level detail and says what the switch does.
+  `channelsHelp`/`channelsHelpEncryption` (154/185) stop teaching the wire
+  format. The test that asserted the old empty-state wording still passes:
+  the phrase it looks for ("Discovery is advert-driven") is the one fact
+  worth keeping. JA updated in lock-step. Not yet touched: the region
+  disclaimer (it is legal text, and it is already behind a dialog), the two
+  identity dialogs (they are the question, not prose), and the node sheet's
+  bot/telemetry sections.
 - R104: **the grid's three pickers are sheets.** View, interval and range
   were `PopupMenuButton`s. A menu cannot scroll (the view list is ten
   entries in three groups), it does not announce its group labels to a

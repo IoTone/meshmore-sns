@@ -273,7 +273,7 @@
   "nodesInRangeBadge": "範囲内",
   "nodesFarBadge": "遠距離",
   "nodesEmptyFiltered": "条件に一致するノードがありません。\n\n上の「クリア」で絞り込みを解除するか、各チップで条件を変更してください。",
-  "nodesEmptyReady": "ノードはまだありません。検出はアドバート駆動です。アドバートを受信したときだけ表示されます。相手側でアドバートを送るか、「エリアをスキャン」を押してください。",
+  "nodesEmptyReady": "ノードはまだありません。アドバートを受信すると表示されます。",
   "nodesEmptyOffline": "ラジオを接続して周辺ノードを発見してください。",
   "nodesFavTooltip": "お気に入りに追加",
   "nodesUnfavTooltip": "お気に入りから削除",
@@ -411,7 +411,7 @@
 
   "locTitle": "位置の自動公開",
   "locTileSubtitle": "定期 + 移動検知でスマートフォン GPS をデバイスに反映",
-  "locHelp": "デバイス GPS が古いままの場合のスマートフォン側ワークアラウンド。有効時、定期・移動検知のいずれかで取得した GPS を SET_ADVERT_LATLON + ゼロホップ アドバートでデバイスに書き込みます。",
+  "locHelp": "無線機の GPS が古いとき、スマートフォンの位置を書き込みます。",
   "locMaster": "自動公開",
   "locMasterOn": "オン — スマートフォン GPS 使用中",
   "locMasterOff": "オフ",
@@ -446,7 +446,7 @@
     }
   },
   "locBeacon": "定期位置ビーコン",
-  "locBeaconSub": "接続中、60 秒ごとに現在位置を含むゼロホップ アドバートを送信します。デフォルトはオフ：無線機は単独ではこれを行わず、通信時間とバッテリーを消費します。",
+  "locBeaconSub": "60 秒ごとに位置をアドバートします（ゼロホップ）。通信時間と電池を使います。",
   "locBatteryHint": "スマートブロードキャストは GPS を継続使用 (約 10 mA)。定期のみは省電力。両方有効で応答性最大、バッテリー優先ならスマートブロードキャストのみ推奨。",
   "@globeFooter": {
     "placeholders": {"n": {"type": "int"}}
@@ -605,7 +605,7 @@
     "placeholders": {"hex": {"type": "String"}}
   },
   "nodeDetailSignature": "着信シグネチャ",
-  "nodeDetailSignatureHint": "この相手専用の音と振動を、通常のDM通知の代わりに使います。タップで試聴できます。",
+  "nodeDetailSignatureHint": "この相手専用の通知音（DM の通知の代わり）。",
   "nodeDetailSignatureNone": "デフォルト",
   "nodeDetailSignatureSlot": "シグネチャ {n}",
   "@nodeDetailSignatureSlot": {
@@ -664,12 +664,12 @@
   },
   "nodeIdentityLinkAction": "キーが変わった？ 別のノードにリンク",
   "nodeIdentityLinkTitle": "変更されたキーをリンク",
-  "nodeIdentityLinkHelp": "新しいキーで稼働している同じ連絡先のノードを選ぶか、新しい公開鍵を貼り付けてください（相手の端末で確認できます）。お気に入り・タグ・メッセージが移動し、古いキーは廃止されます。",
+  "nodeIdentityLinkHelp": "同じ相手の新しい鍵です。ノードを選ぶか鍵を貼り付けると、お気に入り・タグ・メッセージが移ります。",
   "nodeIdentityLinkEmpty": "リンクできる他のノードがありません — スキャンするか、新しいキーのアドバートを待つか、上にキーを貼り付けてください。",
   "nodeIdentityLinkSearchHint": "名前で絞り込み、または公開鍵を貼り付け",
   "nodeIdentityLinkNoMatch": "一致するノードがありません — 検索をクリアするか、完全なキーを貼り付けて直接リンクしてください。",
   "nodeIdentityLinkUseKey": "このキーにリンク",
-  "nodeDetailNotDeviceContact": "無線機の連絡先にこのノードがないため、ダイレクトメッセージが届かない場合があります（チャンネルメッセージは引き続き機能します）。DM を届けるには追加してください。",
+  "nodeDetailNotDeviceContact": "無線機の連絡先にないため、DM が届かない場合があります。チャンネルは利用できます。",
   "nodeDetailAddDeviceContact": "デバイスの連絡先に追加",
   "nodeDetailAddDeviceContactDone": "無線機の連絡先に追加しました — DM が届くようになります。届かない場合は連絡先がいっぱいの可能性があります。古い連絡先を削除して再試行してください。",
   "nodeDetailAddDeviceContactFailed": "連絡先を追加できませんでした — リンクを確認して再試行してください。",
@@ -691,7 +691,7 @@
   "@deviceContactsCountOnly": {
     "placeholders": { "count": { "type": "int" } }
   },
-  "deviceContactsFullHelp": "連絡先がいっぱいです。新しい連絡先（再ホームしたキーなど）を追加できず、連絡先でない相手への DM は届きません。不要な項目を下で削除してください。",
+  "deviceContactsFullHelp": "連絡先がいっぱいです。下で削除すると追加できます。",
   "deviceContactsChannelsNote": "連絡先が必要なのはダイレクトメッセージを送るときだけです。チャンネルのメッセージは連絡先がなくても機能し、全員がチャンネルに表示されます。",
   "deviceContactsScrub": "連絡先を整理",
   "deviceContactsRemoveOutOfRange": "圏外を削除",
@@ -935,7 +935,7 @@
   "nodeDetailQueryTelemetry": "テレメトリを取得",
   "nodeDetailRefreshTelemetry": "テレメトリを更新",
   "nodeDetailTelemetryQuerying": "電波経由でピアに問い合わせ中…",
-  "nodeDetailTelemetryNotContact": "同期済みコンタクトではありません — テレメトリは要求できません。まずデバイスにこのノードをコンタクトとして追加してください。",
+  "nodeDetailTelemetryNotContact": "デバイスの連絡先ではないため、テレメトリは取得できません。",
   "nodeDetailTelemetryAge": "{age}前のテレメトリ",
   "@nodeDetailTelemetryAge": {
     "placeholders": {"age": {"type": "String"}}
@@ -958,7 +958,7 @@
   },
 
   "channelsTitle": "チャンネル",
-  "channelsHelp": "チャンネル = スロット + 名前 + 16 バイト鍵。Public (スロット 0) は共有の既定。プライベートグループは全ノードで同じスロットに同じ名前 & PSK を設定してください。",
+  "channelsHelp": "スロット 0 は共有のパブリック。プライベートは全ノードで同じスロット・名前・PSK にします。",
   "channelsOfflineHint": "チャンネルを編集するにはラジオを接続 (診断)。",
   "channelsEmpty": "— 未設定 —",
   "channelsSlotLabel": "スロット {idx}",
@@ -998,7 +998,7 @@
   "channelsErrorName": "チャンネル名を入力してください",
   "channelsCancel": "キャンセル",
   "channelsSave": "保存",
-  "channelsHelpEncryption": "スロット 0 (Public) は既知の鍵を使用 — ファームウェアを持つ全員が読めます。他のスロットは設定した 16 バイト PSK で AES-128 暗号化。同じ PSK を持つノードのみ復号できます。",
+  "channelsHelpEncryption": "スロット 0 の鍵は公開。他のスロットは設定した PSK による AES-128 です。",
   "channelsHexGenerate": "PSK をランダム生成",
   "channelsHexCopy": "コピー",
   "channelsHexCopied": "PSK をクリップボードにコピー",

@@ -655,8 +655,7 @@ class AppLocalizationsJa extends AppLocalizations {
       '条件に一致するノードがありません。\n\n上の「クリア」で絞り込みを解除するか、各チップで条件を変更してください。';
 
   @override
-  String get nodesEmptyReady =>
-      'ノードはまだありません。検出はアドバート駆動です。アドバートを受信したときだけ表示されます。相手側でアドバートを送るか、「エリアをスキャン」を押してください。';
+  String get nodesEmptyReady => 'ノードはまだありません。アドバートを受信すると表示されます。';
 
   @override
   String get nodesEmptyOffline => 'ラジオを接続して周辺ノードを発見してください。';
@@ -993,8 +992,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get locTileSubtitle => '定期 + 移動検知でスマートフォン GPS をデバイスに反映';
 
   @override
-  String get locHelp =>
-      'デバイス GPS が古いままの場合のスマートフォン側ワークアラウンド。有効時、定期・移動検知のいずれかで取得した GPS を SET_ADVERT_LATLON + ゼロホップ アドバートでデバイスに書き込みます。';
+  String get locHelp => '無線機の GPS が古いとき、スマートフォンの位置を書き込みます。';
 
   @override
   String get locMaster => '自動公開';
@@ -1049,8 +1047,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get locBeacon => '定期位置ビーコン';
 
   @override
-  String get locBeaconSub =>
-      '接続中、60 秒ごとに現在位置を含むゼロホップ アドバートを送信します。デフォルトはオフ：無線機は単独ではこれを行わず、通信時間とバッテリーを消費します。';
+  String get locBeaconSub => '60 秒ごとに位置をアドバートします（ゼロホップ）。通信時間と電池を使います。';
 
   @override
   String get locBatteryHint =>
@@ -1341,8 +1338,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get nodeDetailSignature => '着信シグネチャ';
 
   @override
-  String get nodeDetailSignatureHint =>
-      'この相手専用の音と振動を、通常のDM通知の代わりに使います。タップで試聴できます。';
+  String get nodeDetailSignatureHint => 'この相手専用の通知音（DM の通知の代わり）。';
 
   @override
   String get nodeDetailSignatureNone => 'デフォルト';
@@ -1469,7 +1465,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get nodeIdentityLinkHelp =>
-      '新しいキーで稼働している同じ連絡先のノードを選ぶか、新しい公開鍵を貼り付けてください（相手の端末で確認できます）。お気に入り・タグ・メッセージが移動し、古いキーは廃止されます。';
+      '同じ相手の新しい鍵です。ノードを選ぶか鍵を貼り付けると、お気に入り・タグ・メッセージが移ります。';
 
   @override
   String get nodeIdentityLinkEmpty =>
@@ -1487,7 +1483,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get nodeDetailNotDeviceContact =>
-      '無線機の連絡先にこのノードがないため、ダイレクトメッセージが届かない場合があります（チャンネルメッセージは引き続き機能します）。DM を届けるには追加してください。';
+      '無線機の連絡先にないため、DM が届かない場合があります。チャンネルは利用できます。';
 
   @override
   String get nodeDetailAddDeviceContact => 'デバイスの連絡先に追加';
@@ -1534,8 +1530,7 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get deviceContactsFullHelp =>
-      '連絡先がいっぱいです。新しい連絡先（再ホームしたキーなど）を追加できず、連絡先でない相手への DM は届きません。不要な項目を下で削除してください。';
+  String get deviceContactsFullHelp => '連絡先がいっぱいです。下で削除すると追加できます。';
 
   @override
   String get deviceContactsChannelsNote =>
@@ -2113,8 +2108,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get nodeDetailTelemetryQuerying => '電波経由でピアに問い合わせ中…';
 
   @override
-  String get nodeDetailTelemetryNotContact =>
-      '同期済みコンタクトではありません — テレメトリは要求できません。まずデバイスにこのノードをコンタクトとして追加してください。';
+  String get nodeDetailTelemetryNotContact => 'デバイスの連絡先ではないため、テレメトリは取得できません。';
 
   @override
   String nodeDetailTelemetryAge(String age) {
@@ -2145,8 +2139,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get channelsTitle => 'チャンネル';
 
   @override
-  String get channelsHelp =>
-      'チャンネル = スロット + 名前 + 16 バイト鍵。Public (スロット 0) は共有の既定。プライベートグループは全ノードで同じスロットに同じ名前 & PSK を設定してください。';
+  String get channelsHelp => 'スロット 0 は共有のパブリック。プライベートは全ノードで同じスロット・名前・PSK にします。';
 
   @override
   String get channelsOfflineHint => 'チャンネルを編集するにはラジオを接続 (診断)。';
@@ -2230,7 +2223,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get channelsHelpEncryption =>
-      'スロット 0 (Public) は既知の鍵を使用 — ファームウェアを持つ全員が読めます。他のスロットは設定した 16 バイト PSK で AES-128 暗号化。同じ PSK を持つノードのみ復号できます。';
+      'スロット 0 の鍵は公開。他のスロットは設定した PSK による AES-128 です。';
 
   @override
   String get channelsHexGenerate => 'PSK をランダム生成';
