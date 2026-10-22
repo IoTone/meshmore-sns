@@ -78,7 +78,6 @@
   "dashboardAwaitingDevice": "— デバイス待機中 —",
   "dashboardAwaitingDeviceLocation": "— デバイス位置情報を待機中 —",
   "dashboardUnnamed": "(名前なし)",
-  "dashboardRenameTitle": "デバイス名",
   "dashboardLocationNotSet": "未設定 — デバイス・スマートフォンともに位置情報未取得",
   "dashboardLocationConfigure": "設定",
   "dashboardLocationSourceLabel": "ソース · {source}",

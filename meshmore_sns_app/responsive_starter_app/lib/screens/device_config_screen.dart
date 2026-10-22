@@ -17,6 +17,7 @@ import '../meshcore/own_location.dart';
 import '../meshcore/region_presets.dart';
 import '../perms/location_service.dart';
 import '../perms/permissions_service.dart';
+import '../ui/mm_components.dart';
 import '../ui/mm_shape.dart';
 
 /// The advert-location policy integers → a UI label.
@@ -470,7 +471,9 @@ class _DeviceConfigScreenState extends State<DeviceConfigScreen> {
                             style: TextStyle(
                                 color: cs.onSurfaceVariant, fontSize: 11)),
                       ),
-                      TextButton(
+                      MmAction(
+                        dense: true,
+                        label: l.deviceRegionDisclaimerMore,
                         onPressed: () => showDialog<void>(
                           context: context,
                           builder: (BuildContext _) => AlertDialog(
@@ -484,7 +487,6 @@ class _DeviceConfigScreenState extends State<DeviceConfigScreen> {
                             ],
                           ),
                         ),
-                        child: Text(l.deviceRegionDisclaimerMore),
                       ),
                     ],
                   ),
@@ -526,9 +528,9 @@ class _DeviceConfigScreenState extends State<DeviceConfigScreen> {
                   runSpacing: 8,
                   children: <Widget>[
                     if (si != null)
-                      TextButton(
+                      MmAction(
+                        label: l.deviceLoadFromDevice,
                         onPressed: () => _loadFrom(si),
-                        child: Text(l.deviceLoadFromDevice),
                       ),
                     FilledButton.icon(
                       icon: const Icon(Icons.send),
@@ -566,9 +568,10 @@ class _DeviceConfigScreenState extends State<DeviceConfigScreen> {
                 ),
                 Align(
                   alignment: Alignment.centerRight,
-                  child: TextButton.icon(
-                    icon: const Icon(Icons.badge_outlined, size: 18),
-                    label: Text(l.deviceSetName),
+                  child: MmAction(
+                    dense: true,
+                    icon: Icons.badge_outlined,
+                    label: l.deviceSetName,
                     onPressed: ready ? () => _applyName(mc) : null,
                   ),
                 ),
@@ -702,9 +705,10 @@ class _DeviceConfigScreenState extends State<DeviceConfigScreen> {
                 const SizedBox(height: 4),
                 Align(
                   alignment: Alignment.centerRight,
-                  child: TextButton.icon(
-                    icon: const Icon(Icons.my_location, size: 18),
-                    label: Text(l.deviceSetAdvertLocation),
+                  child: MmAction(
+                    dense: true,
+                    icon: Icons.my_location,
+                    label: l.deviceSetAdvertLocation,
                     onPressed: ready ? () => _applyLocation(mc) : null,
                   ),
                 ),

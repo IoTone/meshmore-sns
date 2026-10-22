@@ -1252,6 +1252,32 @@ While Meshcore protocol is open source, the client is not open source.  We want 
   changed (needs a layout decision):** at 320dp with 2.0x text the
   Dashboard status row overflows by ~7 px and `/settings/maps/new`'s
   `ToolChoice` dropdown by ~57 px.
+- R100: **settings live in Settings, and a readout stops being a form.**
+  R52 made the dashboard's device name tappable-to-rename, with a 14 px
+  pencil as the only tell: one row was both a status readout and an editor,
+  and it was the only mutating control on the dashboard that did not look
+  like one. Renaming now happens where the field, the 31-character limit and
+  an Apply button already live (Device configuration); the dashboard name is a
+  readout that walks there, with the same chevron the region and battery rows
+  carry. `showDashboardRenameDialog` and its dialog class are deleted, and so
+  is the `dashboardRenameTitle` string (EN + JA) that only they read. Studio
+  gets the same row behaviour, and its region row gains the chevron its
+  siblings already had. What stays on the dashboard: the link action
+  (Connect / Retry), the device picker, the audio mute and the refresh — each
+  is about *this* screen's subject, and none of them is a setting.
+- R99: **an action looks pressable.** Nine controls with real consequences
+  were bare `TextButton`s on the app's own ground: Connect / Retry (both
+  dashboards), Configure, the region disclaimer's Details, Load from device,
+  Set name, Set advert location, Copy key, and the sheet's bottom actions.
+  A `TextButton` here has no fill, no border and no elevation, so it reads as
+  a label until you happen to touch it. `MmAction` (in `mm_components.dart`)
+  keeps the text-sized footprint and puts the label on `surfaceAlt`, one tonal
+  step above the page, inside a hairline in the skin's own corner shape: 44 dp
+  minimum height, 12/8 padding, optional leading icon, disabled state dimmed.
+  Applied to the six highest-traffic sites; dialog Cancel/OK keep Material's
+  own `TextButton`, because a dialog's actions are already grouped by the
+  dialog. `MmAction` reads `MmSkin`, so it generalises to all seven presets
+  without a per-theme branch.
 - R98: **"square" is a 1 px corner, not 0.** Studio pinned every radius to
   `BorderRadius.zero` in ten places plus `kSquareRadius`-less helpers. At 2.6x
   density a 0 px corner cuts the border's own pixel, so a panel's corner read

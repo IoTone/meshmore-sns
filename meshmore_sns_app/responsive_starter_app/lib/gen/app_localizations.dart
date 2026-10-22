@@ -440,12 +440,6 @@ abstract class AppLocalizations {
   /// **'(unnamed)'**
   String get dashboardUnnamed;
 
-  /// No description provided for @dashboardRenameTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Device name'**
-  String get dashboardRenameTitle;
-
   /// No description provided for @dashboardLocationNotSet.
   ///
   /// In en, this message translates to:

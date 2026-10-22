@@ -193,9 +193,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get dashboardUnnamed => '(名前なし)';
 
   @override
-  String get dashboardRenameTitle => 'デバイス名';
-
-  @override
   String get dashboardLocationNotSet => '未設定 — デバイス・スマートフォンともに位置情報未取得';
 
   @override

@@ -288,3 +288,78 @@ class MmStatusPill extends StatelessWidget {
     );
   }
 }
+
+/// R99 — a text-shaped action that still reads as a control. Material's
+/// `TextButton` on this app's ground is indistinguishable from a label
+/// (Connect, Retry, Configure, Details, Load from device, Set name), which is
+/// how the owner ended up pressing text that did not look pressable. An
+/// [MmAction] keeps the text-sized footprint but puts the label on
+/// `surfaceAlt`, one tonal step above the page, inside a hairline border in
+/// the skin's own corner shape — so it generalises to every preset without a
+/// per-theme fork. Minimum height 44 dp, 12/8 padding, optional leading icon.
+class MmAction extends StatelessWidget {
+  const MmAction({
+    super.key,
+    required this.label,
+    required this.onPressed,
+    this.icon,
+    this.dense = false,
+  });
+
+  final String label;
+  final VoidCallback? onPressed;
+  final IconData? icon;
+
+  /// Compact vertical padding for a control that sits inside a dense row.
+  final bool dense;
+
+  @override
+  Widget build(BuildContext context) {
+    final MmSkin skin = context.skin;
+    final bool on = onPressed != null;
+    final Color fg = on ? skin.color.fg : skin.color.fgMuted;
+    final OutlinedBorder border = mmShapeBorder(
+      skin.shape,
+      side: BorderSide(
+          color: on ? skin.color.line : skin.color.line.withValues(alpha: .5),
+          width: skin.shape.borderWidth),
+    );
+    return Semantics(
+      button: true,
+      enabled: on,
+      child: Material(
+        type: MaterialType.transparency,
+        child: InkWell(
+          onTap: onPressed,
+          customBorder: border,
+          child: Container(
+            constraints: const BoxConstraints(minHeight: 44),
+            padding: EdgeInsets.symmetric(
+                horizontal: 12, vertical: dense ? 6 : 9),
+            decoration: ShapeDecoration(
+              color: on
+                  ? skin.color.surfaceAlt
+                  : skin.color.surfaceAlt.withValues(alpha: .4),
+              shape: border,
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                if (icon != null) ...<Widget>[
+                  Icon(icon, size: 16, color: fg),
+                  const SizedBox(width: 6),
+                ],
+                Text(label,
+                    style: TextStyle(
+                        color: fg,
+                        fontSize: 13,
+                        letterSpacing: .4,
+                        fontWeight: FontWeight.w600)),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}

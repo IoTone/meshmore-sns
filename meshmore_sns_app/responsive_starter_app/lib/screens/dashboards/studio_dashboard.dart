@@ -14,7 +14,6 @@ import '../../ui/mm_audio_toggle.dart';
 import '../../ui/mm_collapse_controller.dart';
 import '../../ui/mm_collapsible.dart';
 import '../../ui/mm_components.dart';
-import '../dashboard_screen.dart' show showDashboardRenameDialog;
 import '../device_manager_sheet.dart';
 import 'dashboard_model.dart';
 import 'my_pubkey_line.dart';
@@ -101,11 +100,11 @@ class StudioDashboard extends StatelessWidget {
                     Text(l.dashboardAwaitingDevice,
                         style: TextStyle(color: muted))
                   else ...<Widget>[
+                    // R100 — renaming moved to Device configuration; this
+                    // is a readout that walks there, with the same chevron
+                    // the battery and region rows carry.
                     InkWell(
-                      onTap: mc.isReady
-                          ? () =>
-                              showDashboardRenameDialog(context, mc, si.name)
-                          : null,
+                      onTap: () => context.push('/settings/device'),
                       child: ConstrainedBox(
                         constraints: const BoxConstraints(
                             minHeight: kMinInteractiveDimension),
@@ -117,10 +116,8 @@ class StudioDashboard extends StatelessWidget {
                                       fontSize: 16,
                                       fontWeight: FontWeight.w600)),
                             ),
-                            if (mc.isReady) ...<Widget>[
-                              const SizedBox(width: 8),
-                              Icon(Icons.edit_outlined, size: 16, color: muted),
-                            ],
+                            const SizedBox(width: 8),
+                            Icon(Icons.chevron_right, size: 16, color: muted),
                           ],
                         ),
                       ),
@@ -343,10 +340,13 @@ class _StatusRow extends StatelessWidget {
                     style: TextStyle(color: muted, fontSize: 12)),
               ),
             if (canConnect || canRetry)
-              TextButton(
-                style: TextButton.styleFrom(minimumSize: const Size(64, 48)),
-                onPressed: () => mc.connect(),
-                child: Text(canRetry ? l.actionRetry : l.actionConnect),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                child: MmAction(
+                  dense: true,
+                  label: canRetry ? l.actionRetry : l.actionConnect,
+                  onPressed: () => mc.connect(),
+                ),
               ),
             IconButton(
               tooltip: l.dashboardDevice,

@@ -207,9 +207,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get dashboardUnnamed => '(unnamed)';
 
   @override
-  String get dashboardRenameTitle => 'Device name';
-
-  @override
   String get dashboardLocationNotSet =>
       'Not set — neither device nor phone fix yet';
 

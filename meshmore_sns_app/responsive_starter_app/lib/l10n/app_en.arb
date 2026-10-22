@@ -78,7 +78,6 @@
   "dashboardAwaitingDevice": "— awaiting device —",
   "dashboardAwaitingDeviceLocation": "— awaiting device location —",
   "dashboardUnnamed": "(unnamed)",
-  "dashboardRenameTitle": "Device name",
   "dashboardLocationNotSet": "Not set — neither device nor phone fix yet",
   "dashboardLocationConfigure": "CONFIGURE",
   "dashboardLocationSourceLabel": "source · {source}",
