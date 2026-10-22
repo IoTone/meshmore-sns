@@ -71,11 +71,16 @@ class StudioMessageRow extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
+            // R102 — the gutter follows the text scale. At 1.3x a 56 dp
+            // box was too narrow for "16:07" in mono and the time wrapped
+            // one character per line ("16:0" / "7") beside the sender.
             SizedBox(
-              width: 56,
+              width: 56 * MediaQuery.textScalerOf(context).scale(1),
               child: Padding(
                 padding: const EdgeInsets.only(left: 6),
                 child: Text(_time,
+                    maxLines: 1,
+                    softWrap: false,
                     style: TextStyle(
                         color: out ? skin.color.accent : skin.color.fgMuted,
                         fontFamily: mono,

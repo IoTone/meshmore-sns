@@ -428,9 +428,12 @@ class _MessageRow extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
+            // R102 — scale the gutter with the text (see StudioMessageRow).
             SizedBox(
-              width: 56,
+              width: 56 * MediaQuery.textScalerOf(context).scale(1),
               child: Text('$_time ${m.outgoing ? '»' : '«'}',
+                  maxLines: 1,
+                  softWrap: false,
                   style: TextStyle(
                       color: m.outgoing
                           ? skin.color.accent

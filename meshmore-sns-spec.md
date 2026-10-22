@@ -1252,6 +1252,30 @@ While Meshcore protocol is open source, the client is not open source.  We want 
   changed (needs a layout decision):** at 320dp with 2.0x text the
   Dashboard status row overflows by ~7 px and `/settings/maps/new`'s
   `ToolChoice` dropdown by ~57 px.
+- R103: **the band picker folds; the applied band does not.** Region /
+  band was the first group on Device configuration and opened expanded, so
+  ~15 chips (three family headings plus Suggest-from-location and the
+  disclaimer) pushed RADIO PARAMS, IDENTITY and the rest off the first
+  screen on a 387 dp phone at 1.3x text. The applied-band banner moved
+  above the section and stays visible; the picker is `initiallyExpanded:
+  false`. The family headings were 12 px semibold, which read louder than
+  the 11 px tracked section header above them, so they now use the same
+  quiet label treatment. Tests: the collapsible test now expects four open
+  groups and a folded picker, and the two region-apply tests open the
+  section first.
+- R102: **two device-pass defects.** (1) Chat timestamps wrapped one
+  character per line at 1.3x text: the time gutter was a fixed 56 dp box
+  and "16:07" in mono no longer fit, so the row read "16:0" / "7" beside
+  the sender. The gutter is now `56 * textScaler.scale(1)` with
+  `maxLines: 1, softWrap: false`, in both the Studio row and the terminal
+  log row. (2) A node row joined six facts with `·` — type, signal,
+  distance, a 4-decimal coordinate pair and a bare 12-hex pubkey prefix —
+  which wrapped to three dense lines with the age and star floating in the
+  middle of the block. It is now `type · distance` on one line and the
+  signal on a second, in the skin's mono; coordinates and the full id stay
+  in the detail sheet, which is where a user goes to copy them. `MmListRow`
+  gained `alignTop` so the leading icon, age and star sit on the first line
+  of a multi-line row.
 - R101: **when a flow gets a page, and when it gets a panel.** The audit
   found no routed screen without a back control (every route is reached with
   `context.push` and every one has an `AppBar`, so the arrow is automatic);

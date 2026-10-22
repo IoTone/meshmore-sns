@@ -188,6 +188,7 @@ class MmListRow extends StatelessWidget {
     this.subtitle,
     this.trailing,
     this.onTap,
+    this.alignTop = false,
   });
 
   final Widget? leading;
@@ -196,11 +197,18 @@ class MmListRow extends StatelessWidget {
   final Widget? trailing;
   final VoidCallback? onTap;
 
+  /// R102 — align the leading icon and the trailing column with the first
+  /// line instead of the middle of the row. A node row is two or three lines
+  /// tall; centring the icon and the age made both float halfway down the
+  /// text block.
+  final bool alignTop;
+
   @override
   Widget build(BuildContext context) {
     final MmSkin skin = context.skin;
     final Widget content = Row(
-      crossAxisAlignment: CrossAxisAlignment.center,
+      crossAxisAlignment:
+          alignTop ? CrossAxisAlignment.start : CrossAxisAlignment.center,
       children: <Widget>[
         if (leading != null)
           Padding(padding: const EdgeInsets.only(right: 12), child: leading!),

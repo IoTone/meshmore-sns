@@ -46,7 +46,7 @@ void main() {
   setUp(() => SharedPreferences.setMockInitialValues(<String, Object>{}));
 
   testWidgets(
-      'Device configuration: five groups, all open, each folds '
+      'Device configuration: five groups, four open, each folds '
       'alone, Channels stays a plain row', (WidgetTester t) async {
     await t.binding.setSurfaceSize(const Size(900, 3200));
     addTearDown(() => t.binding.setSurfaceSize(null));
@@ -57,15 +57,17 @@ void main() {
 
     expect(find.byType(MmCollapsibleSection), findsNWidgets(5));
     expect(find.text('Frequency (MHz)'), findsOneWidget, reason: 'open');
-    expect(find.text('USA / Canada'), findsOneWidget, reason: 'open');
     expect(find.text('Manage channels'), findsOneWidget);
+    // R103: the band picker starts folded; its applied value is the banner
+    // above the section, which is always visible.
+    expect(find.text('USA / Canada'), findsNothing, reason: 'folded');
 
     await t.tap(find.text(l.deviceRadioParams.toUpperCase()));
     await t.pumpAndSettle();
     expect(find.text('Frequency (MHz)'), findsNothing,
         reason: 'the radio group folded');
-    expect(find.text('USA / Canada'), findsOneWidget,
-        reason: 'the region group did not');
+    expect(find.text('USA / Canada'), findsNothing,
+        reason: 'the region group stayed folded');
     expect(find.text('Advert name'), findsOneWidget,
         reason: 'the identity group did not');
     expect(find.text('Manage channels'), findsOneWidget);
@@ -80,6 +82,9 @@ void main() {
     await t.pumpAndSettle();
     final AppLocalizations l =
         AppLocalizations.of(t.element(find.byType(DeviceConfigScreen)));
+    // R103: the picker is folded until asked for.
+    await t.tap(find.text(l.deviceRegionBand.toUpperCase()));
+    await t.pumpAndSettle();
     final Finder americas = find.text(l.deviceRegionFamilyAmericas);
     final Finder europe = find.text(l.deviceRegionFamilyEurope);
     final Finder apac = find.text(l.deviceRegionFamilyAsiaPacific);

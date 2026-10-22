@@ -55,6 +55,9 @@ void main() {
     final int before0C =
         fake.sent.where((f) => f.isNotEmpty && f[0] == 0x0C).length;
 
+    // R103: the band picker is folded until asked for.
+    await t.tap(find.text('REGION / BAND'));
+    await t.pumpAndSettle();
     await t.tap(find.text('USA / Canada'));
     await t.pumpAndSettle();
 
@@ -107,6 +110,8 @@ void main() {
     fake.emit(selfInfoFrame());
     await t.pumpAndSettle();
 
+    await t.tap(find.text('REGION / BAND'));
+    await t.pumpAndSettle();
     await t.tap(find.text('Japan (ARIB STD-T108)'));
     await t.pumpAndSettle();
 

@@ -485,6 +485,7 @@ class _NodesScreenState extends State<NodesScreen> {
                   itemBuilder: (BuildContext c, int i) {
                     final DiscoveredNode n = nodes[i];
                     return MmListRow(
+                      alignTop: true,
                       onTap: () => _showDetail(mc, n),
                       leading: Builder(builder: (BuildContext _) {
                         final NodeProximity p = mc.proximityFor(n);
@@ -589,20 +590,29 @@ class _NodesScreenState extends State<NodesScreen> {
                         final List<String> tags =
                             mc.tagsFor(n.pubKeyHex);
                         final telem = mc.telemetryFor(n.pubKeyHex);
+                        // R102 — what the row is for: who, what kind, how
+                        // far, how strong. The old line joined six facts with
+                        // `·` (including a bare 12-hex pubkey prefix and a
+                        // 4-decimal coordinate pair) and wrapped to three
+                        // lines on a 387 dp phone at 1.3x text. Coordinates
+                        // and the full id live in the detail sheet; the list
+                        // keeps the two facts that change a decision.
                         return Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: <Widget>[
                             Text(<String>[
                               n.typeLabel,
-                              if (n.signalLabel.isNotEmpty) n.signalLabel,
                               if (distance != null) distance,
-                              if (n.hasLocation)
-                                '${n.latitude!.toStringAsFixed(4)},'
-                                    '${n.longitude!.toStringAsFixed(4)}',
-                              n.shortId,
                             ].join(' · '),
                                 style: TextStyle(
                                     color: cs.onSurfaceVariant)),
+                            if (n.signalLabel.isNotEmpty)
+                              Text(n.signalLabel,
+                                  style: TextStyle(
+                                      color: cs.onSurfaceVariant,
+                                      fontFamily: context.skin.type.monoFamily,
+                                      fontSize: 11,
+                                      height: 1.4)),
                             if (telem?.temperatureC != null) ...<Widget>[
                               const SizedBox(height: 4),
                               Container(

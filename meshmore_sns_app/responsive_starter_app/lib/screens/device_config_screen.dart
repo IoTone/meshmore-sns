@@ -403,13 +403,18 @@ class _DeviceConfigScreenState extends State<DeviceConfigScreen> {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: <Widget>[
+            // R103 — the applied band is a fact, the picker is an action.
+            // The banner used to live inside the section, so the only way to
+            // keep it visible was to keep ~15 region chips expanded on open:
+            // on a 387 dp phone at 1.3x text that pushed every other group
+            // off the first screen. The banner stays; the picker folds.
+            _CurrentRegionBanner(si: si, cs: cs, l: l),
+            const SizedBox(height: 8),
             MmCollapsibleSection(
               id: MmGroupIds.devRegion,
               title: l.deviceRegionBand,
+              initiallyExpanded: false,
               children: <Widget>[
-                const SizedBox(height: 8),
-                _CurrentRegionBanner(si: si, cs: cs, l: l),
-                const SizedBox(height: 8),
                 // R68: grouped by family so the list is scannable.
                 for (final RegionFamily fam in RegionFamily.values)
                   if (kRegionPresets.any((RegionPreset p) =>
@@ -418,9 +423,13 @@ class _DeviceConfigScreenState extends State<DeviceConfigScreen> {
                       padding: const EdgeInsets.only(top: 10, bottom: 6),
                       child: Text(
                         _familyLabel(l, fam),
+                        // R103 — a family heading is a quiet label, not a
+                        // sentence. At 12 px semibold, at 1.3x text, it read
+                        // louder than the section header above it.
                         style: TextStyle(
                             color: cs.onSurfaceVariant,
-                            fontSize: 12,
+                            fontSize: 11,
+                            letterSpacing: 1.2,
                             fontWeight: FontWeight.w600),
                       ),
                     ),
