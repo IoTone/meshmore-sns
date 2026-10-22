@@ -139,3 +139,28 @@ without the destructive `erase`.
 - Whether to also add the CLI command (layer 4) so the setting is scriptable
   from a serial console, and later from the app on 1.18.0.
 - Whether `vibe_quiet` should also default to silent for a pager-style fleet.
+
+## Flashed to the owner's Wio Tracker L1 Pro (2026-10-21)
+
+- The unit arrived running **Meshtastic**, not MeshCore (USB CDC debug:
+  `[RadioIf] Started Tx ...`, `SX126x AGC reset`).
+- Bootloader: `UF2 Bootloader 0.9.2`, `Model: Seeed TRACKER L1`,
+  `SoftDevice: S140 7.3.0` — the softdevice MeshCore's `nrf52840_s140_v7`
+  link script expects.
+- Entered DFU with a 1200-baud touch on its CDC port (no button press
+  needed). The UF2 volume mounts as `/media/ldeen/TRACKER L1` (FAT16,
+  32.1 MB) once, and the Adafruit bootloader has MSC, so the volume
+  disappearing while the device stays enumerated means the app started.
+- Backed up the previous image first:
+  `cp "/media/ldeen/TRACKER L1/CURRENT.UF2" /tmp/mmdev/wio_before_meshtastic.uf2`
+  (1,908,736 bytes, md5 `f455563769971cd2ff07c4613f23a0d1`). Copy it back to a
+  UF2 volume to return to Meshtastic. Meshtastic's own settings may not
+  survive MeshCore's use of the flash.
+- Flashed `firmware.uf2` (866,304 bytes, md5 `f35549dd35feb1f4c768002ea8471220`).
+  Afterwards the device enumerates as `2886:1667 Seeed Wio Tracker L1` with CDC
+  only, product string from the board package, and it exposes `/dev/ttyACM1`.
+- The build's `ADVERT_NAME='"@@MAC"'` and default radio `869.618 MHz` mean it
+  must be re-regioned (USA/Canada) before it can hear a 910.525 node, and it
+  must be Bluetooth-disconnected for the chime test to mean anything: the
+  firmware only calls `notify()` when `!hasConnection()`
+  (`ui-new/UITask.cpp:814`).
