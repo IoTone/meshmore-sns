@@ -202,3 +202,45 @@ ones where "the radio is beeping" is true and fixable.
   radio never chimes.
 - No further action until he answers. The firmware patch and the built images
   stay local.
+
+## "The Heltec also has a beep" — checked, 2026-10-22
+
+David answered that the Heltec beeps. The owner has never heard it. Both are
+true, and they are about different things.
+
+What the owner's radio actually is: `mfr: Heltec V4.3 OLED`, firmware
+`v1.17.1-d929643`, which is `heltec_v4_companion_radio_ble` (the TFT build
+would report "Heltec V4.3 TFT").
+
+Evidence that this build cannot make a sound:
+
+- `variants/heltec_v4/platformio.ini` defines no `PIN_BUZZER` in any env, and
+  no env links `helpers/ui/buzzer.cpp` or `NonBlockingRTTTL`.
+- `ui-new/UITask.h:16` only includes `buzzer.h`, and `:29` only declares the
+  `genericBuzzer` member, under `#ifdef PIN_BUZZER`. `UITask.cpp:955`
+  `toggleBuzzer()` therefore compiles to an empty function, and the
+  "muted" icon (`:145`) is never drawn.
+- The melodies live in the binaries only when that code is compiled. Heltec's
+  own official MeshCore builds for this board
+  (`resource.heltec.cn/download/WiFi_LoRa_32_V4/firmware/meshcore/`,
+  `heltec_v4_companion_radio_ble.bin` and `heltec_v4_tft_companion_radio_ble.bin`,
+  both `v1.13.0`) contain **none** of the `genericBuzzer` strings
+  (`Startup:d=4…`, `MsgRcv3:d=4…`, `kerplop:d=16…`). So Heltec's own V4
+  firmware does not drive a buzzer either, on OLED or TFT.
+- The V4.3.1 datasheet and the V4.3 schematic (`HTIT-WB32LAF_V4.3.pdf`) contain
+  no buzzer, beep or piezo text (`pdftotext | grep -i`), and neither does the
+  V4.2.0 datasheet.
+- The only Heltec V4-family env in MeshCore that beeps is
+  `heltec_v4_r8_tft`: `-D PIN_BUZZER=4` plus `+<helpers/ui/buzzer.cpp>`
+  (`variants/heltec_v4_r8/platformio.ini:77,80`). Its model string is
+  "Heltec V4 R8 TFT" (`HeltecV4R8Board.cpp:82`), not "V4.3 OLED".
+- Heltec's buzzer documentation sits under the **WiFi LoRa 32 Expansion Kit**
+  ("Buzzer and Sensor Configuration Guide"), i.e. an add-on board, not the V4
+  main board.
+- Meshtastic splits the same way: `heltec-v4-tft` sets `PIN_BUZZER=6` and
+  `heltec-v4` (OLED) sets neither, so Meshtastic on a V4 OLED is silent too.
+
+So on this unit the beep is not muted, it is absent. Anyone who hears one is on
+a board whose firmware compiled it: a Heltec V3 or T114 with a build that
+defines the pin, a V4 R8 TFT, an expansion-kit buzzer, or a Meshtastic TFT
+build. Their model string in the app's Device screen names which.
