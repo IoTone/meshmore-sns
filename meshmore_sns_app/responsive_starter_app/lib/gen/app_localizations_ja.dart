@@ -1054,8 +1054,7 @@ class AppLocalizationsJa extends AppLocalizations {
       'スマートブロードキャストは GPS を継続使用 (約 10 mA)。定期のみは省電力。両方有効で応答性最大、バッテリー優先ならスマートブロードキャストのみ推奨。';
 
   @override
-  String get gridEmpty =>
-      'まだ範囲内にファブリックがありません。\n\nアドバートを受信するとここに表示されます。Nodes 画面でスターをタップしてコンタクト登録 (速い点滅)。DM 交換したノードは既知になります (パルス)。';
+  String get gridEmpty => 'まだ範囲内にノードがありません。\n\nアドバートを受信すると表示されます。';
 
   @override
   String get gridStatusOffline => '未接続 — 設定 → 診断で接続';
