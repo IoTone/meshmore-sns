@@ -340,4 +340,18 @@ extension MmSkinContext on BuildContext {
     }
     return mmSkinFor(preset);
   }
+
+  /// R104 — the skin for code that runs OUTSIDE a build (an `onTap`, a
+  /// `showDialog` builder before it mounts). Reads the controller without
+  /// subscribing, which [skin] cannot do: `watch` asserts outside build.
+  MmSkin get skinRead {
+    MmThemePreset preset = MmThemePreset.seele;
+    try {
+      final ThemeController tc = Provider.of<ThemeController>(this, listen: false);
+      preset = tc.highContrast ? MmThemePreset.seele : tc.preset;
+    } on ProviderNotFoundException {
+      // No ThemeController above us — default skin.
+    }
+    return mmSkinFor(preset);
+  }
 }

@@ -16,6 +16,7 @@ import '../meshcore/meshcore_connection.dart';
 import '../meshcore/meshcore_controller.dart';
 import '../meshcore/own_location.dart';
 import '../theme/theme_controller.dart';
+import '../ui/mm_components.dart';
 import '../ui/mm_scaffold.dart';
 import '../util/geo.dart' as geo;
 import 'elevation_profile_view.dart';
@@ -287,60 +288,6 @@ class _GridScreenState extends State<GridScreen>
       _viewMode == _GridViewMode.radial ||
       _viewMode == _GridViewMode.equalGrid;
 
-  /// The view menu, grouped by what the views actually are: node
-  /// projections, accumulated surveys, and non-geographic reports. One
-  /// flat list of ten peers hid that split entirely.
-  List<PopupMenuEntry<_GridViewMode>> _viewMenuEntries(
-      AppLocalizations l, ColorScheme cs) {
-    PopupMenuEntry<_GridViewMode> group(String label) => PopupMenuItem<_GridViewMode>(
-          enabled: false,
-          height: 30,
-          child: Text(label,
-              style: TextStyle(
-                  color: cs.onSurfaceVariant,
-                  fontSize: 11,
-                  letterSpacing: 1,
-                  fontWeight: FontWeight.w600)),
-        );
-    PopupMenuEntry<_GridViewMode> item(_GridViewMode m) =>
-        CheckedPopupMenuItem<_GridViewMode>(
-          value: m,
-          checked: _viewMode == m,
-          child: Row(
-            children: <Widget>[
-              Icon(_iconForMode(m), size: 18, color: cs.onSurfaceVariant),
-              const SizedBox(width: 10),
-              Text(_shortLabel(m, l),
-                  style: const TextStyle(
-                      fontSize: 12, fontWeight: FontWeight.w600, letterSpacing: 1)),
-              const SizedBox(width: 8),
-              Flexible(
-                child: Text(_longLabel(m, l),
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                        color: cs.onSurfaceVariant, fontSize: 11)),
-              ),
-            ],
-          ),
-        );
-    return <PopupMenuEntry<_GridViewMode>>[
-      group(l.gridGroupPeers),
-      item(_GridViewMode.radial),
-      item(_GridViewMode.globe),
-      item(_GridViewMode.equalGrid),
-      item(_GridViewMode.streetMap),
-      const PopupMenuDivider(),
-      group(l.gridGroupSurvey),
-      item(_GridViewMode.fabric),
-      item(_GridViewMode.tree),
-      item(_GridViewMode.snsCells),
-      const PopupMenuDivider(),
-      group(l.gridGroupReports),
-      item(_GridViewMode.elevation),
-      item(_GridViewMode.weather),
-      item(_GridViewMode.meshbook),
-    ];
-  }
 
   /// Bottom bar: transport (play/pause + interval) and, in the two views
   /// that consume it, the range scale. Kept off the header so switching
@@ -366,19 +313,22 @@ class _GridScreenState extends State<GridScreen>
               icon: Icon(_live ? Icons.pause : Icons.play_arrow),
               onPressed: _togglePlay,
             ),
-            PopupMenuButton<Duration>(
-              tooltip: l.gridIntervalTooltip,
-              initialValue: _interval,
-              onSelected: _changeInterval,
-              itemBuilder: (BuildContext _) => <PopupMenuEntry<Duration>>[
-                for (final Duration d in GridScreen.playIntervals)
-                  CheckedPopupMenuItem<Duration>(
-                    value: d,
-                    checked: _interval == d,
-                    child: Text(_intervalLabel(d)),
-                  ),
-              ],
-              child: Padding(
+            Tooltip(
+              message: l.gridIntervalTooltip,
+              child: InkWell(
+                onTap: () async {
+                  final Duration? d = await showMmPicker<Duration>(
+                    context: context,
+                    title: l.gridIntervalTooltip,
+                    current: _interval,
+                    items: <MmPickerItem<Duration>>[
+                      for (final Duration d in GridScreen.playIntervals)
+                        MmPickerItem<Duration>.option(d, _intervalLabel(d)),
+                    ],
+                  );
+                  if (d != null) _changeInterval(d);
+                },
+                child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 4),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -388,27 +338,31 @@ class _GridScreenState extends State<GridScreen>
                     const Icon(Icons.arrow_drop_down, size: 18),
                   ],
                 ),
+                ),
               ),
             ),
             if (_hasRange)
-              PopupMenuButton<int>(
-                tooltip: l.gridRange,
-                initialValue: _scaleIndex,
-                onSelected: (int i) {
-                  setState(() {
-                    _userInteracted = true;
-                    _scaleIndex = i;
-                  });
-                  _savePrefs();
+              Tooltip(
+                message: l.gridRange,
+                child: InkWell(
+                onTap: () async {
+                  final int? i = await showMmPicker<int>(
+                    context: context,
+                    title: l.gridRange,
+                    current: _scaleIndex,
+                    items: <MmPickerItem<int>>[
+                      for (int k = 0; k < GridScreen.rangeStops.length; k++)
+                        MmPickerItem<int>.option(k, _rangeLabel(l, k)),
+                    ],
+                  );
+                  if (i != null) {
+                    setState(() {
+                      _userInteracted = true;
+                      _scaleIndex = i;
+                    });
+                    _savePrefs();
+                  }
                 },
-                itemBuilder: (BuildContext _) => <PopupMenuEntry<int>>[
-                  for (int i = 0; i < GridScreen.rangeStops.length; i++)
-                    CheckedPopupMenuItem<int>(
-                      value: i,
-                      checked: _scaleIndex == i,
-                      child: Text(_rangeLabel(l, i)),
-                    ),
-                ],
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 8),
                   child: Row(
@@ -425,6 +379,7 @@ class _GridScreenState extends State<GridScreen>
                       const Icon(Icons.arrow_drop_down, size: 18),
                     ],
                   ),
+                ),
                 ),
               ),
           ],
@@ -446,22 +401,6 @@ class _GridScreenState extends State<GridScreen>
         _GridViewMode.meshbook => Icons.menu_book_outlined,
       };
 
-  /// 4–5 character all-caps label for the picker button + menu. Keep
-  /// short so the AppBar isn't dominated. Long names live in the
-  /// row's trailing subtitle.
-  static String _shortLabel(_GridViewMode m, AppLocalizations l) =>
-      switch (m) {
-        _GridViewMode.radial => l.gridViewRadialShort,
-        _GridViewMode.globe => l.gridViewGlobeShort,
-        _GridViewMode.equalGrid => l.gridViewEqualGridShort,
-        _GridViewMode.streetMap => l.gridViewStreetMapShort,
-        _GridViewMode.fabric => l.gridViewFabricShort,
-        _GridViewMode.elevation => l.gridViewElevationShort,
-        _GridViewMode.tree => l.gridViewTreeShort,
-        _GridViewMode.snsCells => l.gridViewSnsCellsShort,
-        _GridViewMode.weather => l.gridViewWeatherShort,
-        _GridViewMode.meshbook => l.gridViewMeshbookShort,
-      };
 
   static String _longLabel(_GridViewMode m, AppLocalizations l) =>
       switch (m) {
@@ -694,12 +633,48 @@ class _GridScreenState extends State<GridScreen>
           // sit above it said the same thing in the same toolbar. The
           // menu groups the ten views by what they show (peers, surveys,
           // reports) instead of listing them as ten peers.
-          PopupMenuButton<_GridViewMode>(
-            tooltip: l.gridViewPicker,
-            initialValue: _viewMode,
-            onSelected: _selectMode,
-            itemBuilder: (BuildContext _) => _viewMenuEntries(l, cs),
-            child: Padding(
+          // R104 — a labelled sheet, not a menu: ten views in three groups
+          // with a check state is a list, and a menu cannot scroll, cannot
+          // say "Peers" as a group, and opens away from its own button.
+          Tooltip(
+            message: l.gridViewPicker,
+            child: InkWell(
+              onTap: () async {
+                final _GridViewMode? m = await showMmPicker<_GridViewMode>(
+                  context: context,
+                  title: l.gridViewPicker,
+                  current: _viewMode,
+                  items: <MmPickerItem<_GridViewMode>>[
+                    MmPickerItem<_GridViewMode>.header(l.gridGroupPeers),
+                    for (final _GridViewMode v in <_GridViewMode>[
+                      _GridViewMode.radial,
+                      _GridViewMode.globe,
+                      _GridViewMode.equalGrid,
+                      _GridViewMode.streetMap,
+                    ])
+                      MmPickerItem<_GridViewMode>.option(
+                          v, _longLabel(v, l), icon: _iconForMode(v)),
+                    MmPickerItem<_GridViewMode>.header(l.gridGroupSurvey),
+                    for (final _GridViewMode v in <_GridViewMode>[
+                      _GridViewMode.fabric,
+                      _GridViewMode.tree,
+                      _GridViewMode.snsCells,
+                    ])
+                      MmPickerItem<_GridViewMode>.option(
+                          v, _longLabel(v, l), icon: _iconForMode(v)),
+                    MmPickerItem<_GridViewMode>.header(l.gridGroupReports),
+                    for (final _GridViewMode v in <_GridViewMode>[
+                      _GridViewMode.elevation,
+                      _GridViewMode.weather,
+                      _GridViewMode.meshbook,
+                    ])
+                      MmPickerItem<_GridViewMode>.option(
+                          v, _longLabel(v, l), icon: _iconForMode(v)),
+                  ],
+                );
+                if (m != null) _selectMode(m);
+              },
+              child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 12),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -717,6 +692,7 @@ class _GridScreenState extends State<GridScreen>
                   const Icon(Icons.arrow_drop_down, size: 18),
                 ],
               ),
+            ),
             ),
           ),
           const Spacer(),

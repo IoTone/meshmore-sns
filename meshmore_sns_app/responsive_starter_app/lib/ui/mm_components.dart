@@ -371,3 +371,105 @@ class MmAction extends StatelessWidget {
     );
   }
 }
+
+/// One entry in [showMmPicker]: a group label or a choice.
+class MmPickerItem<T> {
+  const MmPickerItem.header(this.label)
+      : value = null,
+        icon = null,
+        isHeader = true;
+  const MmPickerItem.option(this.value, this.label, {this.icon})
+      : isHeader = false;
+
+  final T? value;
+  final String label;
+  final IconData? icon;
+  final bool isHeader;
+}
+
+/// R104 — the one pick-one-of-N surface. `PopupMenuButton` is not scrollable,
+/// does not announce its group labels to a screen reader, and its checkmarks
+/// sit in a menu that the framework positions away from the control. This is
+/// a labelled sheet with 48 dp rows and the current value ticked, used by the
+/// grid's view, interval and range pickers.
+Future<T?> showMmPicker<T>({
+  required BuildContext context,
+  required String title,
+  required List<MmPickerItem<T>> items,
+  required T? current,
+}) {
+  final MmSkin skin = context.skinRead;
+  return showModalBottomSheet<T>(
+    context: context,
+    showDragHandle: true,
+    isScrollControlled: true,
+    builder: (BuildContext c) => SafeArea(
+      top: false,
+      // A shrink-wrapped list, not a Column with a Flexible body: inside the
+      // sheet the Column's `mainAxisSize.min` gave the flexible child a
+      // zero-height viewport, so the rows were built but painted outside the
+      // sheet and could not be tapped. This sizes to the content and scrolls
+      // only when the content is taller than the screen.
+      child: ListView(
+        shrinkWrap: true,
+        padding: const EdgeInsets.only(bottom: 12),
+        children: <Widget>[
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 4, 20, 6),
+            child: Text(title,
+                style: TextStyle(
+                    color: skin.color.fgMuted,
+                    fontSize: 11,
+                    letterSpacing: 1.4,
+                    fontWeight: FontWeight.w600)),
+          ),
+          for (final MmPickerItem<T> it in items)
+            if (it.isHeader)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 14, 20, 4),
+                child: Text(it.label,
+                    style: TextStyle(
+                        color: skin.color.fgMuted,
+                        fontSize: 11,
+                        letterSpacing: 1.2,
+                        fontWeight: FontWeight.w600)),
+              )
+            else
+              InkWell(
+                onTap: () => Navigator.pop<T>(c, it.value),
+                child: SizedBox(
+                  height: 48,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Row(
+                      children: <Widget>[
+                        SizedBox(
+                          width: 28,
+                          child: it.value == current
+                              ? Icon(Icons.check,
+                                  size: 18, color: skin.color.accent)
+                              : null,
+                        ),
+                        if (it.icon != null) ...<Widget>[
+                          Icon(it.icon, size: 18, color: skin.color.fgMuted),
+                          const SizedBox(width: 10),
+                        ],
+                        Expanded(
+                          child: Text(it.label,
+                              style: TextStyle(
+                                  color: skin.color.fg,
+                                  fontSize: 15,
+                                  fontWeight: it.value == current
+                                      ? FontWeight.w600
+                                      : FontWeight.w400)),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+        ],
+      ),
+    ),
+  );
+}

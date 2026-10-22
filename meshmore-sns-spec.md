@@ -1252,6 +1252,23 @@ While Meshcore protocol is open source, the client is not open source.  We want 
   changed (needs a layout decision):** at 320dp with 2.0x text the
   Dashboard status row overflows by ~7 px and `/settings/maps/new`'s
   `ToolChoice` dropdown by ~57 px.
+- R104: **the grid's three pickers are sheets.** View, interval and range
+  were `PopupMenuButton`s. A menu cannot scroll (the view list is ten
+  entries in three groups), it does not announce its group labels to a
+  screen reader, and it opens anchored away from the control that owns it.
+  `showMmPicker<T>` in `mm_components.dart` is the one pick-one-of-N
+  surface: a named sheet of 48 dp rows with the current value ticked, group
+  headers as quiet labels, and an optional leading icon. The grid's trigger
+  rows keep their tooltip and their icon+value, so nothing about the
+  transport bar changes visually; only the list does. Two bugs found while
+  building it: the sheet's first layout used `Column(mainAxisSize: min)` with
+  a `Flexible` body, which gave the list a zero-height viewport, so later
+  rows were built but painted outside the sheet and a tap on them hit the
+  scrim (the new `mm_picker_test` asserts the last row's rect is inside the
+  sheet, not merely present); and reading the skin through `context.skin`
+  inside an `onTap` asserted, because that getter watches — `context.skinRead`
+  is the non-subscribing form for event handlers and route builders.
+  `_viewMenuEntries` and `_shortLabel` are deleted with the menu.
 - R103: **the band picker folds; the applied band does not.** Region /
   band was the first group on Device configuration and opened expanded, so
   ~15 chips (three family headings plus Suggest-from-location and the

@@ -162,6 +162,7 @@ void main() {
     await t.pumpWidget(_host(mc));
     await t.pump();
     await t.tap(find.byTooltip('Switch map view'));
+    // The grid runs a ticker, so pumpAndSettle cannot settle here.
     await t.pump();
     await t.pump(const Duration(milliseconds: 400));
     await t.tap(find.text('Weather (environment)').last);
