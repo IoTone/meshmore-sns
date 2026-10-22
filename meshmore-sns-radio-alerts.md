@@ -164,3 +164,41 @@ without the destructive `erase`.
   must be Bluetooth-disconnected for the chime test to mean anything: the
   firmware only calls `notify()` when `!hasConnection()`
   (`ui-new/UITask.cpp:814`).
+
+## The possibilities, board by board
+
+Each physical unit falls into exactly one of these, and only two of them can
+ever beep:
+
+| # | Unit | Boot melody | Message chime | Remote control (1.17.1) |
+|---|---|---|---|---|
+| 1 | No `PIN_BUZZER` (Heltec V3, plain V4 incl. V4.3 OLED) | no | no | nothing to control |
+| 2 | Pin defined, player not linked (M5 C6L, headless) | no | no | nothing to control |
+| 3 | Buzzer + companion app attached | no | **no** (`!hasConnection()`) | n/a |
+| 4 | Buzzer, no app, default prefs | **yes** | **yes** | triple-click only |
+| 5 | Buzzer, no app, this patched build | no | no, until re-enabled | triple-click only |
+| 6 | Repeater / room server | no | no | n/a |
+| 7 | Third-party fork with its own Sound menu (e.g. the L1 Pro build that ships `v1.17.104`) | fork-specific | fork-specific | fork-specific menu |
+
+So a fleet whose radios are always paired to a phone never hears a chime
+(row 3), and a Heltec V3/V4 fleet never can (row 1). Rows 4 and 5 are the only
+ones where "the radio is beeping" is true and fixable.
+
+## What the owner confirmed on hardware (2026-10-21)
+
+- Seeed Wio Tracker L1 Pro: triple-clicking the second (Menu) button toggles
+  the buzzer from any screen, which matches the code path (the handler runs in
+  the UI loop, not per screen). Heltec V4.3 has no speaker, so the same press
+  does nothing there.
+- Both statements are consistent with §"The off switch that already exists";
+  neither needs a code change.
+
+## Asked of David, awaiting his reply (2026-10-21)
+
+- Which exact board model(s) the field radios are. The answer decides whether
+  the complaint is row 1/3 (nothing to fix on the radio) or rows 4/5 (flash
+  the patched build).
+- Whether those radios are used with the companion app attached, since a paired
+  radio never chimes.
+- No further action until he answers. The firmware patch and the built images
+  stay local.
