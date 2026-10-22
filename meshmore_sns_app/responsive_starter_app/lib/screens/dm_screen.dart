@@ -129,6 +129,7 @@ class _DmScreenState extends State<DmScreen> {
         isKnown: mc.known.contains(n.pubKeyHex),
         onToggleFavourite: () => mc.toggleFavorite(n.pubKeyHex),
         proximity: mc.proximityFor(n),
+        cameFromDm: true,
         recentDms: mc.dmHistoryFor(n.pubKeyHex),
         tags: mc.tagsFor(n.pubKeyHex),
         tagSuggestions: mc.allTags,

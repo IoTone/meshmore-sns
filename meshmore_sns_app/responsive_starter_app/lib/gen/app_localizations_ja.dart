@@ -2462,6 +2462,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get cancel => 'キャンセル';
 
   @override
+  String get closeSheet => '閉じる';
+
+  @override
   String get deviceRadioParams => 'ラジオパラメータ';
 
   @override

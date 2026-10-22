@@ -2546,6 +2546,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cancel => 'Cancel';
 
   @override
+  String get closeSheet => 'Close';
+
+  @override
   String get deviceRadioParams => 'RADIO PARAMS';
 
   @override

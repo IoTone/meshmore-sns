@@ -1115,6 +1115,7 @@
   "presetVn": "Vietnam",
 
   "cancel": "Cancel",
+  "closeSheet": "Close",
   "deviceRadioParams": "RADIO PARAMS",
   "deviceIdentityAdvert": "IDENTITY / ADVERT",
   "deviceChannelsSection": "CHANNELS",

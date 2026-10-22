@@ -4400,6 +4400,12 @@ abstract class AppLocalizations {
   /// **'Cancel'**
   String get cancel;
 
+  /// No description provided for @closeSheet.
+  ///
+  /// In en, this message translates to:
+  /// **'Close'**
+  String get closeSheet;
+
   /// No description provided for @deviceRadioParams.
   ///
   /// In en, this message translates to:

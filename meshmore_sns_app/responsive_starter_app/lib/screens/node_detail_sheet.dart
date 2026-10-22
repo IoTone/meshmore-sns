@@ -43,6 +43,7 @@ class NodeDetailSheet extends StatefulWidget {
     this.onAddTag,
     this.onRemoveTag,
     this.isSelf = false,
+    this.cameFromDm = false,
     this.recentDms = const <ChatMessage>[],
   });
 
@@ -84,6 +85,12 @@ class NodeDetailSheet extends StatefulWidget {
   /// own pubkey out of the visible fleet, but this guards against
   /// future code paths that might land here directly.
   final bool isSelf;
+
+  /// R96 — the sheet was opened from that peer's DM thread. Its "Message"
+  /// action would push a second copy of the same conversation onto the stack
+  /// (DM -> info -> Message -> DM -> ...), so it is hidden when true. The
+  /// action stays for every other entry point (Nodes, grid, globe, map).
+  final bool cameFromDm;
 
   @override
   State<NodeDetailSheet> createState() => _NodeDetailSheetState();
@@ -378,6 +385,17 @@ class _NodeDetailSheetState extends State<NodeDetailSheet> {
                 if (widget.proximity == NodeProximity.far)
                   chip(Icons.travel_explore, l.nodesFarBadge,
                       cs.onSurfaceVariant),
+                // R96 — an explicit exit. Until now the sheet could only be
+                // dismissed by the scrim, the drag handle, or the OS back
+                // gesture, which is why a long sheet (a repeater with
+                // telemetry, tags and actions) read as a page you were stuck
+                // on once it was scrolled.
+                IconButton(
+                  icon: const Icon(Icons.close, size: 20),
+                  tooltip: l.closeSheet,
+                  visualDensity: VisualDensity.compact,
+                  onPressed: () => Navigator.pop(context),
+                ),
               ],
             ),
             const SizedBox(height: 4),
@@ -532,17 +550,19 @@ class _NodeDetailSheetState extends State<NodeDetailSheet> {
             if (!widget.isSelf)
               Row(
               children: <Widget>[
-                Expanded(
-                  child: FilledButton.icon(
-                    icon: const Icon(Icons.send),
-                    label: Text(l.nodeDetailMessage),
-                    onPressed: () {
-                      Navigator.pop(context);
-                      context.push('/dm/${n.pubKeyHex}');
-                    },
+                if (!widget.cameFromDm) ...<Widget>[
+                  Expanded(
+                    child: FilledButton.icon(
+                      icon: const Icon(Icons.send),
+                      label: Text(l.nodeDetailMessage),
+                      onPressed: () {
+                        Navigator.pop(context);
+                        context.push('/dm/${n.pubKeyHex}');
+                      },
+                    ),
                   ),
-                ),
-                const SizedBox(width: 8),
+                  const SizedBox(width: 8),
+                ],
                 Expanded(
                   child: OutlinedButton.icon(
                     icon: Icon(_fav ? Icons.star : Icons.star_border),
