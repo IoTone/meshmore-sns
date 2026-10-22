@@ -1252,6 +1252,37 @@ While Meshcore protocol is open source, the client is not open source.  We want 
   changed (needs a layout decision):** at 320dp with 2.0x text the
   Dashboard status row overflows by ~7 px and `/settings/maps/new`'s
   `ToolChoice` dropdown by ~57 px.
+- R98: **"square" is a 1 px corner, not 0.** Studio pinned every radius to
+  `BorderRadius.zero` in ten places plus `kSquareRadius`-less helpers. At 2.6x
+  density a 0 px corner cuts the border's own pixel, so a panel's corner read
+  as damaged rather than crisp. `kSquareRadius = 1` now backs `mmRadius`,
+  `mmShapeBorder` (sharp + `squareControls` only), `squareBorder`,
+  `squareButton`, `squareField`, the card and FAB shapes and the chat pill's
+  square branch. The three sharp-but-not-square presets (SEELE, DR Pop,
+  Recon) keep `BorderRadius.zero`, and the guard test still forbids any
+  screen-level radius of 6 px or more.
+- R97: **a live link is green, in every skin.** The "Linked" chip used
+  `colorScheme.tertiary`, which is `MmTokens.ok`: `#BCB6A8` (grey-beige) in
+  SEELE, `#22D3EE` (cyan) in AG-HUD, `#FFB000` (amber) in Recon. So the one
+  state that should read as "connected" was not green in any of them, and
+  Studio's dashboard drew a grey accent dot while its own app-bar chip drew
+  sage. `MmTokens.link` is a new token, one green (`#3DDC84`) for every
+  preset because a connection state is a state, not decoration. The app-bar
+  chip, the shared dashboard status slab, Studio's dot, and the AG-HUD,
+  NERV and Hyperlocal status pills all use it; proximity and success keep
+  using `ok`. `DashboardModel` gained `linked`, because "not alert" was
+  doing two jobs (a handshake is neither). Tests: hue/saturation/value of
+  every preset's `link` is green, the chip paints it in SEELE, Studio and
+  NERV, and Studio's dot test now expects it.
+- R96: **the node sheet has an exit.** The sheet used for repeaters,
+  contacts and self (Nodes, grid, globe, street map, weather, fabric survey,
+  DM) had no close control: the scrim, the drag handle or the OS back
+  gesture were the only ways out, and once it was scrolled the scrim could
+  be off-screen. It now has a close button in its header (EN "Close", JA
+  "閉じる"). Opening the sheet from a DM and pressing **Message** also
+  pushed a second copy of the same conversation onto the stack, and each
+  repeat added another; the action is hidden when the sheet came from that
+  peer's DM and stays everywhere else.
 - R95: **one navigation model, and the strip stops lying about how it
   works.** A strip tap called `PageController.animateToPage` (250 ms), so
   Dashboard -> Settings scrolled through four intermediate views, built all

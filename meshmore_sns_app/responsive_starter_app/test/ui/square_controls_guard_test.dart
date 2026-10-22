@@ -6,11 +6,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:meshmore_sns_app/theme/mm_skin.dart';
 import 'package:meshmore_sns_app/theme/mm_tokens.dart';
+import 'package:meshmore_sns_app/ui/mm_shape.dart';
 
 /// R71 — Studio is square everywhere. Two halves: the theme (Material's
 /// own buttons/FAB/menus/fields) and a source scan (screens that draw
 /// their own corner). What is NOT enforceable: a radius below 6px
 /// (progress bars, swatches), `BoxShape.circle` dots, and painter code.
+///
+/// R98 — "square" is `kSquareRadius` (1 px), not zero.
 void main() {
   ThemeData themeFor(MmThemePreset p) {
     final MmSkin s = mmSkinFor(p);
@@ -19,6 +22,9 @@ void main() {
   }
 
   OutlinedBorder? shapeOf(ButtonStyle? s) => s?.shape?.resolve(<WidgetState>{});
+
+  // R98: the corner a square skin draws.
+  final BorderRadius squareRadius = BorderRadius.circular(kSquareRadius);
 
   test('Studio: every Material button family resolves square', () {
     final ThemeData t = themeFor(MmThemePreset.studio);
@@ -30,15 +36,15 @@ void main() {
     ]) {
       final OutlinedBorder? b = shapeOf(s);
       expect(b, isA<RoundedRectangleBorder>());
-      expect((b! as RoundedRectangleBorder).borderRadius, BorderRadius.zero);
+      expect((b! as RoundedRectangleBorder).borderRadius, squareRadius);
     }
     expect((t.floatingActionButtonTheme.shape! as RoundedRectangleBorder)
-        .borderRadius, BorderRadius.zero);
+        .borderRadius, squareRadius);
     expect((t.popupMenuTheme.shape! as RoundedRectangleBorder).borderRadius,
-        BorderRadius.zero);
+        squareRadius);
     final OutlineInputBorder f =
         t.inputDecorationTheme.focusedBorder! as OutlineInputBorder;
-    expect(f.borderRadius, BorderRadius.zero);
+    expect(f.borderRadius, squareRadius);
     expect(f.borderSide.color, kMmPresets[MmThemePreset.studio]!.accent);
   });
 
@@ -99,7 +105,10 @@ void main() {
         }
         // The one guarded pill (chat "jump to latest") branches on the skin.
         if (l.contains('StadiumBorder') &&
-            !(i > 1 && lines.sublist(i - 2, i).any((String x) => x.contains('squareControls')))) {
+            !(i > 3 &&
+                lines
+                    .sublist(i - 4, i)
+                    .any((String x) => x.contains('squareControls')))) {
           bad.add('$path:${i + 1} $l');
         }
       }

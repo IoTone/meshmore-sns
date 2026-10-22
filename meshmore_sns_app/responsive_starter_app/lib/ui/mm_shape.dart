@@ -53,11 +53,21 @@ class MmChamferBorder extends OutlinedBorder {
   EdgeInsetsGeometry get dimensions => EdgeInsets.all(side.width);
 }
 
+/// R98 — the corner a "square" skin actually draws. A hard 0 cuts the
+/// border's own pixel at the corner, which at 2.6x density reads as a
+/// damaged corner rather than a crisp one. 1 logical px keeps the edge
+/// flat to the eye and gives the stroke somewhere to turn.
+const double kSquareRadius = 1;
+
 /// The [OutlinedBorder] for a skin's [MmShape] — sharp, rounded, or
 /// chamfered — carrying the given [side].
 OutlinedBorder mmShapeBorder(MmShape shape, {required BorderSide side}) =>
     switch (shape.corner) {
-      MmCorner.sharp => RoundedRectangleBorder(side: side),
+      MmCorner.sharp => RoundedRectangleBorder(
+          side: side,
+          borderRadius: shape.squareControls
+              ? BorderRadius.circular(kSquareRadius)
+              : BorderRadius.zero),
       MmCorner.rounded => RoundedRectangleBorder(
           side: side,
           borderRadius: BorderRadius.circular(shape.cornerSize)),
@@ -67,12 +77,12 @@ OutlinedBorder mmShapeBorder(MmShape shape, {required BorderSide side}) =>
 
 /// R71 — the corner radius for a *control or card surface* that a screen
 /// draws itself (a `Material`/`Container` with a hard-coded
-/// `BorderRadius.circular`). Square (`BorderRadius.zero`) when the active
-/// skin sets [MmShape.squareControls] (Studio), [radius] otherwise, so the
-/// six older presets keep their exact rounding. Screens must use this
-/// instead of a literal radius; `test/ui/square_controls_guard_test.dart`
-/// fails the build when one reappears.
+/// `BorderRadius.circular`). [kSquareRadius] when the active skin sets
+/// [MmShape.squareControls] (Studio, R98), [radius] otherwise, so the six
+/// older presets keep their exact rounding. Screens must use this instead of
+/// a literal radius; `test/ui/square_controls_guard_test.dart` fails the
+/// build when one reappears.
 BorderRadius mmRadius(BuildContext context, double radius) =>
     context.skin.shape.squareControls
-        ? BorderRadius.zero
+        ? BorderRadius.circular(kSquareRadius)
         : BorderRadius.circular(radius);

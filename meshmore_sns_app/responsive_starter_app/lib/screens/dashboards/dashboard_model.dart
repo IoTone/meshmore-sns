@@ -18,6 +18,7 @@ class DashboardModel {
     required this.statusLabel,
     required this.alert,
     required this.busy,
+    required this.linked,
     required this.peersInRange,
     required this.knownCount,
     required this.nodeName,
@@ -32,6 +33,10 @@ class DashboardModel {
 
   final String statusLabel;
   final bool alert;
+
+  /// R97 — the link is up. Distinct from "not alert": a handshake is
+  /// neither. Skins that tint the status use [MmTokens.link] for it.
+  final bool linked;
   final bool busy;
   final int peersInRange;
   final int knownCount;
@@ -103,6 +108,7 @@ class DashboardModel {
     return DashboardModel(
       statusLabel: st.label,
       alert: st.alert,
+      linked: mc.state == MeshcoreConnectionState.ready,
       busy: st.busy,
       peersInRange: inRange,
       knownCount: mc.nodes.length,

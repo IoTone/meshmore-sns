@@ -861,7 +861,8 @@ class _JumpToNewestPill extends StatelessWidget {
       color: cs.primary,
       elevation: 4,
       shape: context.skin.shape.squareControls
-          ? const RoundedRectangleBorder()
+          ? RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(kSquareRadius))
           : const StadiumBorder(),
       clipBehavior: Clip.antiAlias,
       child: InkWell(

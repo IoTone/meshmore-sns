@@ -90,7 +90,9 @@ class NervDashboard extends StatelessWidget {
                 MmReadout(
                   label: 'BLE',
                   value: m.statusLabel,
-                  valueColor: m.alert ? skin.color.alert : skin.color.ok,
+                  valueColor: m.alert
+                      ? skin.color.alert
+                      : (m.linked ? skin.color.link : skin.color.ok),
                 ),
                 const SizedBox(height: 4),
                 MmReadout(label: l.dashNervNode, value: m.nodeName ?? '—'),

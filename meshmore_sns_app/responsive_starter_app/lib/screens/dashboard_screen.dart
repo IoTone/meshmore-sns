@@ -11,6 +11,7 @@ import '../meshcore/mesh_event.dart';
 import '../meshcore/meshcore_connection.dart';
 import '../meshcore/meshcore_controller.dart';
 import '../meshcore/own_location.dart';
+import '../theme/mm_skin.dart';
 import 'dashboards/my_pubkey_line.dart';
 import '../meshcore/region_presets.dart';
 import '../ui/mm_audio_toggle.dart';
@@ -55,6 +56,13 @@ class DashboardScreen extends StatelessWidget {
     }).length;
     final ({String label, bool alert, bool busy}) st = _status(mc, l);
     final SelfInfo? selfInfo = mc.selfInfo;
+    // R97 — a live link is green in every skin. `ok` is per-preset and not
+    // green in most of them; the accent here was not a link signal at all.
+    final Color statusColor = st.alert
+        ? cs.onError
+        : (mc.state == MeshcoreConnectionState.ready
+            ? context.skin.color.link
+            : cs.primary);
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 28),
@@ -93,7 +101,7 @@ class DashboardScreen extends StatelessWidget {
                   height: 14,
                   child: CircularProgressIndicator(
                       strokeWidth: 2,
-                      color: st.alert ? cs.onError : cs.primary),
+                      color: statusColor),
                 )
               else
                 Container(
@@ -101,13 +109,13 @@ class DashboardScreen extends StatelessWidget {
                   height: 10,
                   decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: st.alert ? cs.onError : cs.primary),
+                      color: statusColor),
                 ),
               const SizedBox(width: 10),
               Expanded(
                 child: Text('▌ ${st.label}',
                     style: TextStyle(
-                        color: st.alert ? cs.onError : cs.primary,
+                        color: statusColor,
                         letterSpacing: 2,
                         fontWeight: FontWeight.w600)),
               ),
@@ -133,9 +141,7 @@ class DashboardScreen extends StatelessWidget {
               // recovery; this sits next to it for everything else.
               IconButton(
                 tooltip: l.dashboardDevice,
-                icon: Icon(Icons.bluetooth,
-                    color: st.alert ? cs.onError : cs.primary,
-                    size: 20),
+                icon: Icon(Icons.bluetooth, color: statusColor, size: 20),
                 onPressed: () => DeviceManagerSheet.show(context),
               ),
               // Quick mute/unmute for alert sounds (default on).

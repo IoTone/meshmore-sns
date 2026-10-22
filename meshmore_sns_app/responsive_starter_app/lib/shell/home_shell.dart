@@ -438,7 +438,9 @@ class RadioLinkIndicator extends StatelessWidget {
         switch (mc.state) {
       MeshcoreConnectionState.ready => (
           label: l.linkChipLinked,
-          color: cs.tertiary,
+          // R97 — green in every skin, not `ok`, which is beige in SEELE,
+          // cyan in AG-HUD and amber in Recon.
+          color: context.skin.color.link,
           icon: Icons.bluetooth_connected,
         ),
       MeshcoreConnectionState.handshaking => (

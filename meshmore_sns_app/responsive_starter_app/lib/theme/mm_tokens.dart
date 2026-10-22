@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 
 import 'mm_skin.dart' show MmShape;
+import '../ui/mm_shape.dart' show kSquareRadius;
 
 /// The six design-concept themes (UX brief A–F). **D "SEELE Monolith"
 /// = [MmThemePreset.seele] is the default** (also the high-contrast /
@@ -83,7 +84,9 @@ class MmTokens {
     Color? onAccent,
     Color? fgDisabled,
     Color? onAlert,
-  })  : _onAlert = onAlert,
+    Color? link,
+  })  : _link = link,
+        _onAlert = onAlert,
         _raised = raised,
         _selected = selected,
         _hairline = hairline,
@@ -99,6 +102,15 @@ class MmTokens {
   final Color accent;
   final Color alert;
   final Color ok;
+
+  /// R97 — the colour of a live radio link. Deliberately NOT [ok]:
+  /// `ok` is a per-preset success token that is grey-beige in SEELE, cyan in
+  /// AG-HUD and amber in Recon, so a "Linked" chip was not green in most
+  /// skins and disagreed with Studio's own dashboard dot. A connection state
+  /// is a state, not decoration, so it keeps one hue everywhere: green.
+  final Color? _link;
+
+  Color get link => _link ?? const Color(0xFF3DDC84);
 
   final Color? _raised;
   final Color? _selected;
@@ -252,9 +264,11 @@ MmThemePreset presetFromId(String? id) => MmThemePreset.values.firstWhere(
 /// chips/cards/segmented buttons/dialogs/sheets are square. When null or
 /// false the output is byte-for-byte what it was before R63.
 ThemeData buildMmTheme(MmTokens t, {String? fontFamily, MmShape? shape}) {
+  // R98 — "square" is a 1 px corner, not 0 (see `kSquareRadius`).
   final bool square = shape?.squareControls ?? false;
+  final BorderRadius squareRadius = BorderRadius.circular(kSquareRadius);
   final RoundedRectangleBorder? squareBorder =
-      square ? const RoundedRectangleBorder() : null;
+      square ? RoundedRectangleBorder(borderRadius: squareRadius) : null;
   // R71 -- Material 3 gives Filled/Outlined/Text/Elevated buttons, FABs,
   // popup menus and text fields their own rounded default (a stadium
   // pill for buttons), independent of the chip/card/dialog shapes set
@@ -264,10 +278,11 @@ ThemeData buildMmTheme(MmTokens t, {String? fontFamily, MmShape? shape}) {
   final ButtonStyle? squareButton = square
       ? ButtonStyle(
           shape: WidgetStateProperty.all<OutlinedBorder>(
-              const RoundedRectangleBorder()))
+              RoundedRectangleBorder(borderRadius: squareRadius)))
       : null;
   OutlineInputBorder squareField(Color c, [double w = 1]) => OutlineInputBorder(
-      borderRadius: BorderRadius.zero, borderSide: BorderSide(color: c, width: w));
+      borderRadius: squareRadius,
+      borderSide: BorderSide(color: c, width: w));
   final ColorScheme scheme = ColorScheme(
     brightness: Brightness.dark,
     surface: t.base,
@@ -345,7 +360,8 @@ ThemeData buildMmTheme(MmTokens t, {String? fontFamily, MmShape? shape}) {
       // Null side / unchanged shape for every other preset.
       shape: square
           ? RoundedRectangleBorder(
-              side: BorderSide(color: t.hairline, width: shape!.hairlineWidth))
+              side: BorderSide(color: t.hairline, width: shape!.hairlineWidth),
+              borderRadius: squareRadius)
           : null,
     ),
     filledButtonTheme:
@@ -356,7 +372,8 @@ ThemeData buildMmTheme(MmTokens t, {String? fontFamily, MmShape? shape}) {
     elevatedButtonTheme:
         square ? ElevatedButtonThemeData(style: squareButton) : null,
     floatingActionButtonTheme: square
-        ? const FloatingActionButtonThemeData(shape: RoundedRectangleBorder())
+        ? FloatingActionButtonThemeData(
+            shape: RoundedRectangleBorder(borderRadius: squareRadius))
         : null,
     popupMenuTheme: square ? PopupMenuThemeData(shape: squareBorder) : null,
     inputDecorationTheme: square

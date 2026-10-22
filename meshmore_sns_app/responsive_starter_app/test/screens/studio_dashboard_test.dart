@@ -140,11 +140,13 @@ void main() {
         .where((Container c) =>
             c.decoration is BoxDecoration &&
             (c.decoration! as BoxDecoration).shape == BoxShape.circle);
+    // R97: the dot is the link green, the same hue as the app-bar chip,
+    // not the accent grey it used while the chip above it was sage.
     expect(
         dots.any((Container c) =>
-            (c.decoration! as BoxDecoration).color == tok.accent),
+            (c.decoration! as BoxDecoration).color == tok.link),
         isTrue,
-        reason: 'linked = filled accent (grey) dot');
+        reason: 'linked = filled link-green dot');
     await _drain(t, mc);
   });
 

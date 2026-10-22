@@ -73,7 +73,7 @@ void main() {
           studio().cardTheme.shape! as RoundedRectangleBorder;
       expect(c.side.color, t.hairline);
       expect(c.side.width, 1.0);
-      expect(c.borderRadius, BorderRadius.zero);
+      expect(c.borderRadius, BorderRadius.circular(1));
       expect(studio().cardTheme.elevation, isNull);
     });
 
@@ -208,10 +208,16 @@ void main() {
       expect(s.ornament.any, isFalse);
       final ThemeData td = buildMmTheme(s.color,
           fontFamily: s.type.displayFamily, shape: s.shape);
-      expect(td.chipTheme.shape, const RoundedRectangleBorder());
-      expect(td.cardTheme.shape,
-          RoundedRectangleBorder(side: BorderSide(color: t.hairline)));
-      expect(td.dialogTheme.shape, const RoundedRectangleBorder());
+      // R98: square is a 1 px corner, not 0.
+      const BorderRadius r1 = BorderRadius.all(Radius.circular(1));
+      expect(td.chipTheme.shape,
+          const RoundedRectangleBorder(borderRadius: r1));
+      expect(
+          td.cardTheme.shape,
+          RoundedRectangleBorder(
+              side: BorderSide(color: t.hairline), borderRadius: r1));
+      expect(td.dialogTheme.shape,
+          const RoundedRectangleBorder(borderRadius: r1));
       expect(td.colorScheme.surfaceContainerHighest, t.selected);
       expect(td.colorScheme.onPrimary, t.onAccent);
     });

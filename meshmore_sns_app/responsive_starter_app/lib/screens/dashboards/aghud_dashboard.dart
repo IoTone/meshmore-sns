@@ -217,7 +217,10 @@ class _BrandBar extends StatelessWidget {
               )),
         ),
         _pill(
-            model.statusLabel, model.alert ? skin.color.alert : skin.color.ok),
+            model.statusLabel,
+            model.alert
+                ? skin.color.alert
+                : (model.linked ? skin.color.link : skin.color.ok)),
         const MmAudioToggle(),
         IconButton(
           tooltip: 'BLE',

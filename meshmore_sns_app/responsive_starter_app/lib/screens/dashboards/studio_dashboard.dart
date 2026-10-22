@@ -300,7 +300,10 @@ class _StatusRow extends StatelessWidget {
     final MmSkin skin = context.skin;
     final Color muted = skin.color.fgMuted;
     final bool linked = mc.state == MeshcoreConnectionState.ready;
-    final Color dotColor = m.alert ? skin.color.alert : skin.color.accent;
+    // R97 — linked is green (the same hue as the app-bar chip), not the
+    // accent grey the dot used while the chip above it was sage.
+    final Color dotColor =
+        m.alert ? skin.color.alert : (linked ? skin.color.link : skin.color.accent);
     final Widget dot = m.busy
         ? SizedBox(
             width: 14,

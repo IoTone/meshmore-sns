@@ -553,14 +553,18 @@ class _TopBar extends StatelessWidget {
             padding:
                 const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
             decoration: BoxDecoration(
-              color: (model.alert ? skin.color.alert : skin.color.ok)
+              color: (model.alert
+                      ? skin.color.alert
+                      : (model.linked ? skin.color.link : skin.color.ok))
                   .withValues(alpha: 0.16),
               borderRadius: BorderRadius.circular(6),
             ),
             child: Text(model.statusLabel,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
-                    color: model.alert ? skin.color.alert : skin.color.ok,
+                    color: model.alert
+                        ? skin.color.alert
+                        : (model.linked ? skin.color.link : skin.color.ok),
                     fontFamily: skin.type.monoFamily,
                     fontSize: 10,
                     letterSpacing: 1)),
