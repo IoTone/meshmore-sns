@@ -1252,6 +1252,27 @@ While Meshcore protocol is open source, the client is not open source.  We want 
   changed (needs a layout decision):** at 320dp with 2.0x text the
   Dashboard status row overflows by ~7 px and `/settings/maps/new`'s
   `ToolChoice` dropdown by ~57 px.
+- R101: **when a flow gets a page, and when it gets a panel.** The audit
+  found no routed screen without a back control (every route is reached with
+  `context.push` and every one has an `AppBar`, so the arrow is automatic);
+  the only surface with no exit was `NodeDetailSheet` (R96). What the audit
+  did find is the same task solved three ways: pick-one-of-N is a bottom
+  sheet for language and locations, a `PopupMenuButton` for grid view,
+  interval and range, and an inline dropdown for tool choice; a short form
+  (battery, About, voice, location, map self-test) takes a whole route while
+  a similar short form (region preset) expands inline. The rule from here:
+  **a panel (sheet or dialog) when the task is a choice or a confirmation
+  that ends where it started; a page when the task is a place you come back
+  to, with its own state and its own rows.** By that rule the sheet-based
+  pickers are right, the three grid `PopupMenuButton`s should become sheets
+  (they carry six items and a check state, and a menu is not scrollable or
+  labelled for a screen reader), and the five short routes may become sheets
+  only if they stop being destinations — they are not converted now, because
+  each is linked from Settings and a link that opens a sheet loses Back.
+  Full-screen is also the right answer wherever the content is a *surface*
+  (map, globe, grid, doc reader, DM thread): replacing the screen is the
+  point. The failure mode to avoid is the sheet that behaves like a page,
+  which is what R96 fixed: a long scrolling sheet with no close control.
 - R100: **settings live in Settings, and a readout stops being a form.**
   R52 made the dashboard's device name tappable-to-rename, with a 14 px
   pencil as the only tell: one row was both a status readout and an editor,
