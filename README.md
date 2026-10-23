@@ -16,8 +16,11 @@ Offline-first, theme-driven, with a hyperlocal radar grid, per-channel chat,
 
 ## Screens at this stage
 
-Honest UI mockups in the **SEELE Monolith** default theme. Real builds
-will look the same modulo platform fonts.
+Honest UI mockups in the **SEELE Monolith** default theme (still the default
+preset). The drawings predate R89–R108, so the chrome in a current build
+differs: the grid's transport and range are controls in a bottom bar (the
+range is picked, not slid), the node row no longer carries an IN RANGE chip,
+and the app-bar strip uses 22 px icon cells.
 
 | Dashboard | Hyperlocal grid | Chat |
 |:--:|:--:|:--:|
@@ -27,7 +30,7 @@ will look the same modulo platform fonts.
 | Nodes | Device config (Identity / Advert) | First-run permissions |
 |:--:|:--:|:--:|
 | ![Nodes](screens/nodes.svg) | ![Device config](screens/device-config.svg) | ![First-run intro](screens/first-run.svg) |
-| Fabric list with per-node distance estimate, IN RANGE chip, favourite star, tap to DM | **Advert location source** (None / Device GPS / Pinned) + Use phone location / Read device location buttons | Proactive Bluetooth ask + first-class Offline path |
+| Fabric list with per-node type + distance + signal line, favourite star, tap to detail | **Advert location source** (None / Device GPS / Pinned) + Use phone location / Read device location buttons | Proactive Bluetooth ask + first-class Offline path |
 
 The UX design brief covers the six concept themes (NERV, AG-HUD, Hyperlocal,
 SEELE, DR Pop, Recon) with palette anchors and per-theme rendering plans.
