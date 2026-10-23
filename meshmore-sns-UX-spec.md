@@ -1,6 +1,14 @@
 # Overview
 
-This is the Meshmore SNS UX
+This is the Meshmore SNS UX.
+
+> **Plan of record, not current behaviour (2026-10-23).** This file is the
+> U0–U15 implementation plan as written. Three parts of it were overtaken by
+> later work, and `meshmore-sns-spec.md` is the authority where they differ:
+> the shell has **six** views with Docs and About moved under Settings (R85,
+> R86), body **swipe paging is gone** in every skin and the strip is the only
+> switcher (R95), and the grid's chrome was regrouped (R89). Sections below
+> still describe the eight-view swipe shell on purpose, as history.
 
 ## Design Intent
 
