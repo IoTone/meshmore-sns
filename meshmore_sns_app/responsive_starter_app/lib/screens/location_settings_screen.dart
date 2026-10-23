@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../gen/app_localizations.dart';
 import '../ui/mm_collapse_controller.dart';
 import '../ui/mm_collapsible.dart';
+import '../ui/mm_components.dart';
 import '../ui/mm_scaffold.dart';
 import '../meshcore/auto_publish_controller.dart';
 import '../meshcore/meshcore_controller.dart';
@@ -242,54 +243,30 @@ class LocationSettingsScreen extends StatelessWidget {
 
   Future<void> _pickInterval(
       BuildContext ctx, AutoPublishController ap, AppLocalizations l) async {
-    final int? picked = await showModalBottomSheet<int>(
+    // R106 — the same pick-one-of-N sheet as the grid: drag handle, tick on
+    // the current value, and a name for the list being chosen from.
+    final int? picked = await showMmPicker<int>(
       context: ctx,
-      builder: (BuildContext _) => SafeArea(
-        top: false,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            for (final int s in AutoPublishController.intervalOptions)
-              ListTile(
-                dense: true,
-                leading: Icon(
-                  ap.intervalSec == s
-                      ? Icons.radio_button_checked
-                      : Icons.radio_button_unchecked,
-                ),
-                title: Text(_intervalLabel(l, s)),
-                onTap: () => Navigator.pop(ctx, s),
-              ),
-          ],
-        ),
-      ),
+      title: l.locInterval,
+      current: ap.intervalSec,
+      items: <MmPickerItem<int>>[
+        for (final int s in AutoPublishController.intervalOptions)
+          MmPickerItem<int>.option(s, _intervalLabel(l, s)),
+      ],
     );
     if (picked != null) await ap.setIntervalSec(picked);
   }
 
   Future<void> _pickMovement(
       BuildContext ctx, AutoPublishController ap, AppLocalizations l) async {
-    final int? picked = await showModalBottomSheet<int>(
+    final int? picked = await showMmPicker<int>(
       context: ctx,
-      builder: (BuildContext _) => SafeArea(
-        top: false,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            for (final int m in AutoPublishController.movementOptions)
-              ListTile(
-                dense: true,
-                leading: Icon(
-                  ap.minMovementMeters == m
-                      ? Icons.radio_button_checked
-                      : Icons.radio_button_unchecked,
-                ),
-                title: Text(_movementLabel(l, m)),
-                onTap: () => Navigator.pop(ctx, m),
-              ),
-          ],
-        ),
-      ),
+      title: l.locMovement,
+      current: ap.minMovementMeters,
+      items: <MmPickerItem<int>>[
+        for (final int m in AutoPublishController.movementOptions)
+          MmPickerItem<int>.option(m, _movementLabel(l, m)),
+      ],
     );
     if (picked != null) await ap.setMinMovementMeters(picked);
   }

@@ -1252,6 +1252,15 @@ While Meshcore protocol is open source, the client is not open source.  We want 
   changed (needs a layout decision):** at 320dp with 2.0x text the
   Dashboard status row overflows by ~7 px and `/settings/maps/new`'s
   `ToolChoice` dropdown by ~57 px.
+- R106: **three hand-rolled radio lists become the one picker.** The
+  location screen's interval and movement sheets and the device
+  configuration GPS-interval sheet were the last `showModalBottomSheet`
+  calls without a drag handle (25 call sites, 22 had one). They were the
+  same shape as R104's picker — a `Column` of `ListTile`s with a
+  `radio_button_checked` leading icon — so they now call `showMmPicker`
+  with the current value ticked and the row that opened them as the
+  sheet's name. Nothing else changed: the same options, the same
+  labels, the same setters.
 - R105: **first prose pass: say it once.** Ten explanation strings in the
   node, channels, location and device-contact surfaces were restating what
   the control next to them already said, or explaining the firmware instead

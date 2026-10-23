@@ -1364,27 +1364,14 @@ class _GpsModuleControls extends StatelessWidget {
   }
 
   Future<void> _pickInterval(BuildContext ctx, int current) async {
-    final int? picked = await showModalBottomSheet<int>(
+    final int? picked = await showMmPicker<int>(
       context: ctx,
-      builder: (BuildContext _) => SafeArea(
-        top: false,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            for (final int s in _intervalOptions)
-              ListTile(
-                dense: true,
-                leading: Icon(
-                  current == s
-                      ? Icons.radio_button_checked
-                      : Icons.radio_button_unchecked,
-                ),
-                title: Text(_intervalLabel(l, s)),
-                onTap: () => Navigator.pop(ctx, s),
-              ),
-          ],
-        ),
-      ),
+      title: l.deviceGpsInterval,
+      current: current,
+      items: <MmPickerItem<int>>[
+        for (final int s in _intervalOptions)
+          MmPickerItem<int>.option(s, _intervalLabel(l, s)),
+      ],
     );
     if (picked != null && picked != current) {
       try {
