@@ -511,44 +511,15 @@ class _NodesScreenState extends State<NodesScreen> {
                         // have new traffic since they last opened them.
                         final Color badgeFg =
                             unread > 0 ? cs.tertiary : cs.primary;
+                        // R108 — start-aligned: on a two-line name the
+                        // badge used to float against the middle of the
+                        // wrapped title, reading as a separate column.
                         return Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: <Widget>[
                             Flexible(
                                 child: Text(
                                     n.name.isEmpty ? n.shortId : n.name)),
-                            Builder(builder: (BuildContext _) {
-                              // Spatial-aware badge: IN RANGE for
-                              // <10 km / recently heard; FAR for
-                              // >50 km. Middle ground (10-50 km) has
-                              // no badge — distance text already
-                              // communicates it.
-                              final NodeProximity p =
-                                  mc.proximityFor(n);
-                              if (p == NodeProximity.near ||
-                                  p == NodeProximity.recent) {
-                                return Padding(
-                                  padding:
-                                      const EdgeInsets.only(left: 8),
-                                  child: Text(l.nodesInRangeBadge,
-                                      style: TextStyle(
-                                          fontSize: 10,
-                                          letterSpacing: 1,
-                                          color: cs.primary)),
-                                );
-                              }
-                              if (p == NodeProximity.far) {
-                                return Padding(
-                                  padding:
-                                      const EdgeInsets.only(left: 8),
-                                  child: Text(l.nodesFarBadge,
-                                      style: TextStyle(
-                                          fontSize: 10,
-                                          letterSpacing: 1,
-                                          color: cs.onSurfaceVariant)),
-                                );
-                              }
-                              return const SizedBox.shrink();
-                            }),
                             if (dmN > 0)
                               Padding(
                                 padding: const EdgeInsets.only(left: 8),
@@ -671,17 +642,26 @@ class _NodesScreenState extends State<NodesScreen> {
                           ],
                         );
                       }),
+                      // R108 — the 48 dp star button centred the age
+                      // against itself, so "8m" sat on the second line of
+                      // the name instead of the first.
                       trailing: Row(
                         mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: <Widget>[
-                          Text(_ago(n.lastHeardUnix),
-                              style:
-                                  TextStyle(color: cs.onSurfaceVariant)),
+                          Padding(
+                            padding: const EdgeInsets.only(top: 2),
+                            child: Text(_ago(n.lastHeardUnix),
+                                style: TextStyle(
+                                    color: cs.onSurfaceVariant)),
+                          ),
                           IconButton(
                             tooltip: mc.isFavorite(n.pubKeyHex)
                                 ? l.nodesUnfavTooltip
                                 : l.nodesFavTooltip,
                             iconSize: 20,
+                            visualDensity: VisualDensity.compact,
+                            padding: const EdgeInsets.symmetric(horizontal: 4),
                             icon: Icon(
                               mc.isFavorite(n.pubKeyHex)
                                   ? Icons.star

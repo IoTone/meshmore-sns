@@ -1252,6 +1252,19 @@ While Meshcore protocol is open source, the client is not open source.  We want 
   changed (needs a layout decision):** at 320dp with 2.0x text the
   Dashboard status row overflows by ~7 px and `/settings/maps/new`'s
   `ToolChoice` dropdown by ~57 px.
+- R108: **the node row's right column was centre-aligned, and the
+  proximity badge was lying.** Measured on the phone at 1.3x: on a two-line
+  name the age sat on the second line and the FAR / IN RANGE badge floated
+  between the two lines, because the trailing `Row` carried the 48 dp star
+  `IconButton` and centred its children against it, and the badge lived in
+  the title `Row`, which centres its children against a wrapped title.
+  Both rows are start-aligned now and the star is compact. The badge is
+  gone from the row: the same screen showed `CO-AURORA-HORSSHO-1  FAR  0s`
+  (heard this second, yet labelled far) next to `≈ 85 km`, so the badge
+  contradicted both the age and the distance, and the code's own comment
+  already said the distance text communicates it. `nodesFarBadge` /
+  `nodesInRangeBadge` stay alive for the sheet's chip, where there is room
+  to say what proximity means.
 - R107: **prose pass 2: the node sheet's conditions, not its mechanics.**
   `nodeDetailShareTelemetryHelp` (139) explained the firmware's flag model
   above four switches that already say Base / Location / Environment; it
