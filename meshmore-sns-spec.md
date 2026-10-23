@@ -13,6 +13,23 @@ Meshmore SNS is a mobile client built in Flutter, and used to communicate on the
 - Seeed SenseCAP T1000-E + MeshCore setup (flash, "Companion Bluetooth" variant, BLE pair PIN 123456, LoRa region) : https://wiki.seeedstudio.com/sensecap_t1000_e_meshcore/
 - MeshCore v1.15.0 release notes (the pinned firmware; flash via flasher.meshcore.io) : https://blog.meshcore.io/2026/04/19/release-1-15-0
 
+### Documents
+
+This file holds the requirements and the change record. Specs that outgrew
+it live beside it:
+
+- `meshmore-sns-UX-spec.md` — implementation plan (U0–U15) and the six skins.
+- `meshmore-sns-maps-spec.md` — basemaps, offline region files (R61, R93).
+- `meshmore-sns-tools-spec.md` — the Tools surface (R60).
+- `meshmore-sns-radio-alerts.md` — where the radio's chime lives in firmware
+  and how to silence it, including the per-board matrix.
+- `meshmore-sns-telemetry-research.md`, `meshmore-sns-microclimate-wx.md` —
+  telemetry sources and the weather view.
+- `meshmore-sns-geofence-tracking.md`, `meshmore-sns-meshbook-mbk.md` —
+  tracking and Meshbook earmarks.
+- `meshmore-sns-UX-brief.md` and `.html` — visual brief with theme mockups.
+- `meshmore_sns_app/STATUS.md` — what is built, what is open, test counts.
+
 ## Problem
 
 While Meshcore protocol is open source, the client is not open source.  We want ta general purpose Meshcore compatible client available under a friendly academic open source license.
@@ -1252,6 +1269,15 @@ While Meshcore protocol is open source, the client is not open source.  We want 
   changed (needs a layout decision):** at 320dp with 2.0x text the
   Dashboard status row overflows by ~7 px and `/settings/maps/new`'s
   `ToolChoice` dropdown by ~57 px.
+
+### Revision log
+
+Entries from here down are change records, not requirements. The block
+R88–R108 is newest first. Older entries below it were appended where they
+were written, so their numbering is not monotonic. A few records live in
+the sibling specs: R93 in `meshmore-sns-maps-spec.md`, R60 in
+`meshmore-sns-tools-spec.md`, R79 in `meshmore_sns_app/STATUS.md`.
+
 - R108: **the node row's right column was centre-aligned, and the
   proximity badge was lying.** Measured on the phone at 1.3x: on a two-line
   name the age sat on the second line and the FAR / IN RANGE badge floated
@@ -1566,6 +1592,9 @@ While Meshcore protocol is open source, the client is not open source.  We want 
   the fixed CONNECT button starves the label; with a radio LINKED the
   label wraps to two lines at 320dp/2.0x with no overflow. The remaining
   layout question is therefore the disconnected row's button policy.
+
+### Earlier revisions
+
 - R83: **region files deferred; the live map made responsive.** The archive
   machinery (R81) stays but is hidden behind `kRegionFilesEnabled = false`
   until a region file is published; the UI test asserts the section is

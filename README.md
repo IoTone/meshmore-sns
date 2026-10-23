@@ -7,8 +7,9 @@ Offline-first, theme-driven, with a hyperlocal radar grid, per-channel chat,
 1:1 DMs, and a device-first → phone-fallback location model.
 
 > **Status — in development.** Source is here for review and contribution;
-> there's no public release channel yet. 125 widget/unit tests passing,
-> `flutter analyze` clean on Android + iOS Dart paths. Android FGS path
+> there's no public release channel yet. 940 widget/unit tests passing,
+> `flutter analyze` reports no errors (two pre-existing
+> `unawaited_return_in_try_block` warnings in `lib/maps/maps_controller.dart`). Android FGS path
 > for R17 is implemented but **unverified on-device** in our sandbox
 
 ---
@@ -38,10 +39,16 @@ SEELE, DR Pop, Recon) with palette anchors and per-theme rendering plans.
 
 ## What's built
 
-The full requirements list (R1–R27) and UX plan (U0–U15) live in:
+The requirements, the change record and the sibling specs:
 
-- **Requirements spec:** [`meshmore-sns-spec.md`](./meshmore-sns-spec.md)
-- **UX implementation spec:** [`meshmore-sns-UX-spec.md`](./meshmore-sns-UX-spec.md)
+- **Requirements + change record (R1–R108):** [`meshmore-sns-spec.md`](./meshmore-sns-spec.md)
+- **UX implementation spec (U0–U15, six skins):** [`meshmore-sns-UX-spec.md`](./meshmore-sns-UX-spec.md)
+- **Offline maps (R61, R93):** [`meshmore-sns-maps-spec.md`](./meshmore-sns-maps-spec.md)
+- **Tools surface (R60):** [`meshmore-sns-tools-spec.md`](./meshmore-sns-tools-spec.md)
+- **Radio chime and firmware alerts:** [`meshmore-sns-radio-alerts.md`](./meshmore-sns-radio-alerts.md)
+- **Telemetry and weather:** [`meshmore-sns-telemetry-research.md`](./meshmore-sns-telemetry-research.md), [`meshmore-sns-microclimate-wx.md`](./meshmore-sns-microclimate-wx.md)
+- **Tracking and Meshbook earmarks:** [`meshmore-sns-geofence-tracking.md`](./meshmore-sns-geofence-tracking.md), [`meshmore-sns-meshbook-mbk.md`](./meshmore-sns-meshbook-mbk.md)
+- **Status — what is built, what is open:** [`meshmore_sns_app/STATUS.md`](./meshmore_sns_app/STATUS.md)
 
 Highlights of what's already shipping:
 
@@ -99,8 +106,11 @@ codec directly.
 ```
 meshmore-sns/
 ├── README.md                       ← this file
-├── meshmore-sns-spec.md            ← R1–R27 requirements
+├── meshmore-sns-spec.md            ← requirements + change record (R1–R108)
 ├── meshmore-sns-UX-spec.md         ← U0–U15 implementation plan
+├── meshmore-sns-maps-spec.md       ← offline maps (R61, R93)
+├── meshmore-sns-tools-spec.md      ← Tools surface (R60)
+├── meshmore-sns-radio-alerts.md    ← radio chime in firmware, per-board matrix
 ├── meshmore-sns-UX-brief.md/.html  ← visual design brief
 ├── brand/                          ← logo work + mockup generators
 │   ├── _app_screens.py             ← regenerates screens/*.svg
@@ -108,11 +118,12 @@ meshmore-sns/
 │   ├── _render_plan.py             ← per-theme rendering plan in the brief
 │   └── _apply_headers.py           ← MIT/SPDX header sweep
 ├── screens/                        ← README screen mockups
-└── meshmore_sns_app/               ← the Flutter project (git submodule)
+└── meshmore_sns_app/               ← the Flutter project (tracked in this repo)
+    ├── STATUS.md                   ← what is built, what is open
     ├── packages/meshcore/          ← pure-Dart protocol codec
     └── responsive_starter_app/     ← Flutter app
         ├── lib/                    ← all controllers, screens, theme, perms…
-        ├── test/                   ← 125 widget/unit tests
+        ├── test/                   ← 940 widget/unit tests
         ├── android/                ← FGS manifest, BLE perms
         └── ios/                    ← Info.plist usage strings
 ```

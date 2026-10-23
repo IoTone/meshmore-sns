@@ -1,6 +1,8 @@
 # Meshmore SNS — project status
 
-_Snapshot as of v1.0.146+1 (branch `meshmore-sns`)._
+_Snapshot as of 2026-10-23. App `1.0.193+9`, branch `feat/vector-basemap`.
+Change records below are newest first from R108; older entries are kept in
+the order they were written._
 
 An offline-first Flutter companion app for MeshCore LoRa mesh radios
 over BLE. Mesh-first, no backend. Sibling branch `responsive-iot-2026`
@@ -13,7 +15,7 @@ codebase.
   facade over the BLE link + MeshCore companion protocol. Owns nodes,
   chat/DM, channels, telemetry, battery, location, delivery tracking.
   Transport is injectable, so the whole controller is `flutter test`-
-  covered with a fake (~296 app-wide tests).
+  covered with a fake (940 app-wide tests).
 - **`packages/meshcore`** — pure-Dart protocol codec (frames/opcodes,
   CayenneLPP, channel/identity crypto). No Flutter deps.
 - UI: `provider` + `go_router`; token-based themes; ARB + `gen-l10n`
@@ -25,8 +27,9 @@ codebase.
 - BLE scan / pair / connect, auto-reconnect (backoff), background
   keep-alive (Android FGS), reconnect on resume.
 - Dashboard (R8): peers-in-range, radio/location readouts, battery
-  readout (taps → Battery screen), recent activity, **tappable device
-  rename** (R52) with re-advertise + SelfInfo refresh.
+  readout (taps → Battery screen), recent activity, and the device name
+  as a **readout that opens Device configuration** (R100). Rename with
+  re-advertise + SelfInfo refresh (R52) lives there.
 
 **Chat (R6/R20)**
 - Channel + DM chat; per-message **delivery status** (sending → sent →
@@ -36,18 +39,21 @@ codebase.
   hex PSK, shake-to-derive; QR share.
 
 **Nodes / fabric**
-- Nodes list with proximity badges, DM counts, tags (R28), favorites,
-  per-row **temperature chip** when telemetry is present.
+- Nodes list with DM counts, tags (R28), favorites, and a per-row
+  **temperature chip** when telemetry is present. The proximity badge
+  lives in the node sheet, not the row (R108).
 - Node detail sheet: identity, signal, hops (Direct / N-via / **Flood**
   / unknown), per-node telemetry (altitude + **temp/humidity/pressure**),
   on-tap telemetry query (contacts only).
 
-**Navigation (R64)**
-- Swipe between the eight views; no menu/sheet/drawer switches views.
-  A **view strip** under the app bar (48x48 labelled icon buttons,
-  `selected` on the current one, scrolls under 384dp) is the
-  non-gesture path.
-- Device configuration (5 groups) and Profile & personalization (2
+**Navigation (R64/R85/R95)**
+- Six views (`dashboard, chat, nodes, grid, map, settings`; R85). The
+  **view strip** is the only switcher: a tap jumps in one frame, a
+  vertical drag on the strip steps one view, and body swipe paging is off
+  in every skin (R95). Strip is 56 dp tall, 48 dp cells with 22 px
+  icon-only glyphs, 3 px selected rule, and the app bar ends in a 2 px
+  `fg`@22% rule.
+- Device configuration (5 groups) and Profile & personalization (4
   groups) fold with `MmCollapsibleSection`, open by default.
 
 **Studio skin (R63)**
@@ -117,6 +123,12 @@ codebase.
 - R104: **grid pickers are sheets.** New `showMmPicker<T>` (48 dp rows, ticked current value, group headers) replaces the view, interval and range `PopupMenuButton`s. Adds `context.skinRead` for event handlers.
 - R103: **band picker folds.** Applied-band banner above the section, chip list collapsed by default, family headings quiet labels.
 - R102: **device pass.** Chat time gutter scales with text (was wrapping "16:0" / "7"); node row is `type · distance` + mono signal, no bare hex or coordinates; `MmListRow.alignTop`.
+- R101: **page vs panel.** Audit result: no routed screen lacked a back
+  control (every route pushes an `AppBar`); the only exit-less surface was
+  the node sheet (R96). Rule recorded: a panel is for a choice that ends
+  where it started, a page is a place you return to with its own state.
+  Same task was solved three ways (sheet, popup menu, inline dropdown);
+  the three grid menus became sheets in R104.
 - R100: **settings in Settings.** Dashboard device name is a readout that opens Device configuration (rename stays there); `showDashboardRenameDialog` + its string deleted; Studio's region row gets a chevron.
 - R99: **actions look pressable.** New `MmAction` (tonal fill + hairline, skin shape, 44 dp) replaces bare TextButtons for Connect/Retry, Details, Load from device, Set name, Set advert location.
 - R98: **square = 1 px corner.** `kSquareRadius` backs mmRadius, squareBorder, squareField, cards, FAB and the chat pill's square branch. Sharp non-square presets keep 0; the >=6 px guard still runs.
@@ -391,7 +403,7 @@ codebase.
   single **summary** doc. Replace it with proper per-feature help —
   a new `online-help-md` doc set **with screenshots** — documenting each
   feature, not one overview page. Leave `app.md` in place for now; build
-  the real docs as a follow-up. (Docs tab now sits **after** Settings.)
+  the real docs as a follow-up. Docs is a Settings row (R86), not a tab.
 
 
 - **R54 — message-derived place inference ("place echoes")** — follow-

@@ -27,8 +27,10 @@ nothing pushed)._
 
 ## Which builds can beep
 
-- 36 of the ~200 companion-radio envs in `companion-v1.17.1` both define
-  `PIN_BUZZER` and link `helpers/ui/buzzer.cpp`. Board families: Heltec V4 R8
+- 43 companion-radio envs of the 586 in `companion-v1.17.1` both define
+  `PIN_BUZZER` and link `helpers/ui/buzzer.cpp` (measured 2026-10-23; method
+  and the corrected earlier figure are under "How many builds can beep"
+  below). Board families: Heltec V4 R8
   TFT, Heltec RC32, Seeed Wio Tracker L1 family, ThinkNode M1/M2/M5/M8/M9,
   RAK WisMesh Tag, Muzi Base / R1 Neo, Meshtiny, Meshtracker X1, T1000-E,
   T-Echo Card, Nano G2 Ultra, GAT562 30S Kit.
@@ -303,26 +305,73 @@ here so they are not reused:
 - Cost and risk: a part, a solder joint inside a closed case, and a firmware
   fork per pin. It does not make the fleet quieter, which is the actual goal.
 
-## The M5Stack Unit C6L companion env does not link, 2026-10-22
+## How many builds can beep, measured, 2026-10-23
 
-Evidence, not inference. `variants/m5stack_unit_c6l/platformio.ini:18` sets
-`-D PIN_BUZZER=11`, and its two companion envs add `NonBlockingRTTTL` to
-`lib_deps` (`:91`, `:109`), but no env in that file adds
-`+<helpers/ui/buzzer.cpp>`. The shared filter is `+<helpers/*.cpp>`
-(`platformio.ini:49-55`), which is not recursive, so `helpers/ui/buzzer.cpp`
-is never compiled.
+`pio project config --json-output` resolves every env's inherited flags and
+source filter, so this is the real count, not a grep:
 
-Proved by building an env shaped exactly the same way: `-D PIN_BUZZER=99`
-added to `heltec_v4_companion_radio_ble` (no buzzer source in its filter)
-failed first on `NonBlockingRtttl.h`, then, once the RTTTL lib was added,
-failed at link with `undefined reference to genericBuzzer::isQuiet()`,
-`quiet(bool)`, `isPlaying()`, `loop()`. Probe reverted.
+- **586 envs** in the tree.
+- **48** resolve both a `-D PIN_BUZZER=<pin>` and
+  `+<helpers/ui/buzzer.cpp>`.
+- **43 of those are companion builds**, which is the set that can actually
+  chime (repeater and room-server UIs never reference the buzzer).
 
-`main` as fetched 2026-10-22 has the same file with the same three lines, so
-the bug is not yet fixed upstream. It is the only variant with a buzzer pin
-and no buzzer source. The clone is shallow (`rev-list --count HEAD` = 1), so
-this cannot say whether the line ever existed or when it was lost.
+The earlier "36 of the ~200 companion envs" figure in this document was a
+partial grep. It is corrected here.
 
-What this does NOT license: any claim about which firmware a given device
-runs. A C6L that beeps could be running Meshtastic, an older MeshCore, or a
-local build. Ask, do not infer.
+## The M5Stack Unit C6L: pin yes, player no, and no link error
+
+CORRECTION, 2026-10-23. An earlier revision of this document said the
+`M5Stack_Unit_C6L_companion_radio_ble` / `_usb` envs fail to link. That is
+**wrong**, and so was the probe behind it.
+
+- `variants/m5stack_unit_c6l/platformio.ini:18` does set `-D PIN_BUZZER=11`
+  and the companion envs pull in `NonBlockingRTTTL` (`:91`, `:109`) without
+  adding `+<helpers/ui/buzzer.cpp>`.
+- But that variant never links `examples/companion_radio/ui-new/` and never
+  defines `DISPLAY_CLASS`: it has no on-device UI at all. Nothing in the
+  build references `genericBuzzer`, so the missing source costs nothing and
+  the firmware links and runs silent. It is a no-display companion build,
+  not a broken one.
+- The probe that misled me was adding `-D PIN_BUZZER=99` to a **UI** env
+  (`heltec_v4_companion_radio_ble`, which links `ui-new`), where it failed
+  with `undefined reference to genericBuzzer::*`. That proves only what
+  happens to a UI env with a pin and no source. Resolving every env shows
+  **zero** envs in that combination: `[envs with pin + ui-new + no source]`
+  is empty, so there is no latent link bug anywhere in the tree.
+- Consequence: the C6L is silent by construction, and its flag is inert.
+  It says nothing either way about what firmware any particular C6L runs.
+
+## Draft issue for David, written 2026-10-23, NOT posted
+
+Held locally on the owner's instruction. Post only on their word.
+
+**Title:** Radio buzzer behaviour across the fleet
+
+**Body:**
+
+We want to stop the radios beeping at home. Before changing anything I need
+to know what is actually beeping.
+
+What we know for certain:
+
+- Chimes are firmware. MeshCore plays a boot melody, a chime on direct and
+  channel messages, and a click on some keypresses.
+- A build either compiles the buzzer code in or it does not. Without it, the
+  board cannot make a sound regardless of what any app does.
+- On a build that has it, a triple-click toggles it and the setting survives
+  a reboot.
+- The app cannot change it today. The protocol has no command for it, and
+  neither does the CLI.
+
+What we do not know:
+
+- Which of your devices beep, exactly.
+- What firmware and version each one is running.
+- Whether they beep with a phone connected, or only standalone.
+- Whether what you hear is the chime melodies or something else.
+
+Our side: we have a local firmware change that makes buzzer boards silent by
+default and lets a triple-click turn it back on. It is running on a Wio
+Tracker L1 Pro. Nothing is published. We can build it for any board once we
+know which boards matter.
