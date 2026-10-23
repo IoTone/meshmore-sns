@@ -147,7 +147,7 @@ codebase.
 - R80: **the Studio map is rendered from vector tiles**, not recoloured raster: `vector_map_tiles` + a bundled Apache-2.0 OpenFreeMap dark style, tiles served through the existing offline tile store (`.pbf`, same cache/packs/ETag/budget, 2062 tiles cached on the device pass), labels drawn by Flutter text (no glyph server), attribution now names OpenFreeMap and OpenMapTiles. No `flutter_map` upgrade needed (8.0.0 wants `^7.0.2`). Raster remains as the fallback. **Device-verified 2026-10-20:** renders, tiles fill in, zero fetch failures. Style is untouched OpenFreeMap dark, so it is near-greyscale and low-contrast; a palette pass to the Studio tokens is the next step, as is sprite icons.
 - FIX: **two fetch defects that had hidden each other.** `httpMapFetcher` swallowed every exception (`catch (_)`), so a real failure looked like a missing tile. Adding a debug log exposed the cause: `HttpHeaders.value()` throws when a response repeats a header, and OpenFreeMap sends two `cache-control` headers, so every vector tile died in the header read. Now `headerValue()` joins list-valued headers and takes the first of single-valued ones. Tests: `test/maps/duplicate_headers_test.dart` (real loopback server).
 - R79: **the map is dimmed, not recoloured.** `out = 0.70 * in` (a pure RGB scale) replaces R70-R73's luminance invert + 0.15 desaturation, which flipped hue (OSM water read orange) and, because the filter was applied to every basemap, destroyed the USGS **aerial-imagery** source. Hue now survives (land 169, sea 119/148/156, label 36, 6.7:1). `darkBasemap`/`mmDarkTile*` renamed `dimmedBasemap`/`mmDimTile*`. **Unverified on a device.**
-- R78: **Studio has no swipe navigation** (`MmShape.swipeNavigation`, false for Studio only): the `PageView` is `NeverScrollableScrollPhysics` and the Map tab's R67 edge bands are not wired. The 48dp strip is the only view switcher; the six older presets still swipe. **Unverified on a device.**
+- R78: **Studio has no swipe navigation** (`MmShape.swipeNavigation`, false for Studio only): the `PageView` is `NeverScrollableScrollPhysics` and the Map tab's R67 edge bands are not wired. The 48dp strip is the only view switcher; the six older presets still swipe. **Unverified on a device.** **Superseded by R95**, which removes body paging in every skin.
 - R77: collapse groups now draw header, content, then one closing rule (the rule used to sit between a header and its own content). Studio tints the header row with `raised` (`MmShape.tintedHeaders`); the six older presets are unchanged. **Unverified on a device.**
 - R76: **every channel send was marked failed.** The firmware answers a channel text with `OK`, the app waited for `SENT`, so the 15 s watchdog failed 4 of 4 sends (also on pristine `origin/dev`). Pending sends now record the reply they expect and match by kind, oldest first. ERR fails the send at once with the device reason. Failed rows offer Retry. The chat row glyph repaints (selector deep-compared identical objects: `deliveryRevision`). **Unverified on a device.** Known limit: OK/ERR carry no tag, and commands that are not registered (setAdvertName, tools' OK commands) can still have their OK credited to a pending channel send.
 - R75 (device pass): the RECENT rows of both dashboards used a fixed-width stamp column (70dp Studio / 64dp SEELE) narrower than their own 12pt `HH:MM:SS` mono stamp, so the stamp ran into the event text with no headroom for text scaling. Now `Text(stamp)` + 10dp gap + `Expanded`, which mono keeps aligned without a width.
@@ -197,16 +197,17 @@ codebase.
   off). With it off the SelfInfo poll sends `appStart` only — nothing over
   the air.
 
-**Hyperlocal grid (R18/R25/R27) — 9 view modes**
+**Hyperlocal grid (R18/R25/R27) — 10 view modes**
 - Its own primary tab, right after Nodes (issue #4). Disconnected, it
   shows the radar with no nodes and "Not Connected to Mesh". The chosen
   view is remembered for the session; every launch opens on the radar.
-  While a panning view (street map, globe, …) shows, the shell's swipe
-  is locked so drags move the map — leave via Back or the view strip.
+  Body swipe paging is off in every skin (R95), so a panning view (street
+  map, globe, …) keeps every drag; the view strip is the switcher.
 - **Map tab (R61)** — the street map viewer as its own page right after
-  the grid, in every skin; the middle pans/zooms and the `PageView` swipe is locked, but a 24dp
-  edge band on each side (R67) changes view by an inward fling. A corner
-  button opens Settings → Offline maps. Eight views in all.
+  the grid, in every skin; the middle pans and zooms, and a 24 dp edge
+  band on each side (R67) steps one view by an inward fling, because a pan
+  surface is the one place a horizontal gesture cannot be free. A corner
+  button opens Settings → Offline maps. Six views in all (R85).
 - **Radial "radar"** — range rings (Room…Wide…**City…Region**, Region
   auto-frames the known extent), signal/bearing placement, compass rose
   + heading needle, **north-up/heading-up toggle**, prominent top
@@ -280,7 +281,7 @@ codebase.
   rated-capacity cross-check; time-to-empty + confidence; persisted
   voltage history; dedicated Battery screen + dashboard summary.
 
-**Docs (R53) — Docs tab (6th primary view)**
+**Docs (R53) — Settings row (R85/R86)**
 - Offline reader for three sections: **Protocol** (MeshCore companion
   radio protocol), **Firmware** (MeshCore README, matched to the
   connected device's fw version), and **App** (self-authored).

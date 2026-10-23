@@ -15,19 +15,21 @@ Meshmore SNS turns a MeshCore companion radio into a social, glanceable
 network you can actually see and feel:
 
 - **Dashboard** — peers in range, radio + location readouts, a battery
-  estimate, and recent mesh activity at a glance. Tap your name to
-  rename the device (it re-advertises on the mesh).
+  estimate, and recent mesh activity at a glance. The device name is a
+  readout: tapping it opens Device configuration, where renaming and
+  re-advertising live.
 - **Chat** — channel chat and direct messages, each with a delivery
   status (sending → sent → delivered / failed). Channels can be plain
   name+PSK, `#hashtag`-derived public channels, hex-PSK, or shake-to-
   derive, and shared by QR.
-- **Nodes** — every node you've heard, with proximity badges, message
-  counts, tags, and favourites. Tap any node for identity, signal, hop
-  path, and telemetry.
-- **Hyperlocal grid** — nine ways to see the fabric around you,
-  including a radial "radar" with range rings and a heading HUD, a
-  globe, OSM map tiles, a force-directed mesh tree, and a weather (WX)
-  view of environment telemetry.
+- **Nodes** — every node you've heard, with message counts, tags, and
+  favourites. Tap any node for identity, proximity, signal, hop path,
+  and telemetry.
+- **Hyperlocal grid** — ten ways to see the fabric around you: radial
+  radar with range rings and a heading HUD, globe, equal grid, street
+  map on the vector basemap, fabric survey, elevated terrain view,
+  force-directed mesh tree, SNS cell heat map, weather, and channel
+  activity.
 - **Battery** — a real state-of-charge estimate from the radio's
   voltage, with a time-to-empty projection.
 - **Tools** (Settings → Tools) — radio stats (noise floor, airtime),
@@ -51,7 +53,8 @@ network you can actually see and feel:
 - The protocol codec is a **pure-Dart package** with no Flutter
   dependencies, so the whole stack is unit-tested against a fake
   transport.
-- The UI is Flutter, with a swipe-between-views shell, a light/dark
+- The UI is Flutter, with a six-view shell switched by the strip under
+  the app bar (no swipe paging), a light/dark
   set of "futuristic" themes, and full English + Japanese localisation.
 
 ## Offline-first by design
