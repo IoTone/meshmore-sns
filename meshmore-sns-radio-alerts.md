@@ -302,3 +302,27 @@ here so they are not reused:
   `NodePrefs::buzzer_quiet = 1` now boots silent by design.
 - Cost and risk: a part, a solder joint inside a closed case, and a firmware
   fork per pin. It does not make the fleet quieter, which is the actual goal.
+
+## The M5Stack Unit C6L companion env does not link, 2026-10-22
+
+Evidence, not inference. `variants/m5stack_unit_c6l/platformio.ini:18` sets
+`-D PIN_BUZZER=11`, and its two companion envs add `NonBlockingRTTTL` to
+`lib_deps` (`:91`, `:109`), but no env in that file adds
+`+<helpers/ui/buzzer.cpp>`. The shared filter is `+<helpers/*.cpp>`
+(`platformio.ini:49-55`), which is not recursive, so `helpers/ui/buzzer.cpp`
+is never compiled.
+
+Proved by building an env shaped exactly the same way: `-D PIN_BUZZER=99`
+added to `heltec_v4_companion_radio_ble` (no buzzer source in its filter)
+failed first on `NonBlockingRtttl.h`, then, once the RTTTL lib was added,
+failed at link with `undefined reference to genericBuzzer::isQuiet()`,
+`quiet(bool)`, `isPlaying()`, `loop()`. Probe reverted.
+
+`main` as fetched 2026-10-22 has the same file with the same three lines, so
+the bug is not yet fixed upstream. It is the only variant with a buzzer pin
+and no buzzer source. The clone is shallow (`rev-list --count HEAD` = 1), so
+this cannot say whether the line ever existed or when it was lost.
+
+What this does NOT license: any claim about which firmware a given device
+runs. A C6L that beeps could be running Meshtastic, an older MeshCore, or a
+local build. Ask, do not infer.
