@@ -136,9 +136,11 @@ without the destructive `erase`.
 
 ## Open
 
-- Which board the boss's radios are. If they are Heltec V3/V4, there is no
-  chime to disable; the request would be a misunderstanding of what is beeping
-  (the phone app is the other candidate).
+- **Partly answered (2026-10-23):** the owner's V4.3 OLED does not beep, so
+  the noise is a different unit. Still open: which one, and what firmware it
+  runs. The app's own cues (`lib/cue/cue_bridge.dart`, `lib/tts/`) are a
+  separate phone-side system and are already user-configurable, so they are
+  not the cause of a radio in another room beeping.
 - Whether to also add the CLI command (layer 4) so the setting is scriptable
   from a serial console, and later from the app on 1.18.0.
 - Whether `vibe_quiet` should also default to silent for a pager-style fleet.
