@@ -225,11 +225,19 @@ Evidence that this build cannot make a sound:
   (`resource.heltec.cn/download/WiFi_LoRa_32_V4/firmware/meshcore/`,
   `heltec_v4_companion_radio_ble.bin` and `heltec_v4_tft_companion_radio_ble.bin`,
   both `v1.13.0`) contain **none** of the `genericBuzzer` strings
-  (`Startup:d=4…`, `MsgRcv3:d=4…`, `kerplop:d=16…`). So Heltec's own V4
-  firmware does not drive a buzzer either, on OLED or TFT.
-- The V4.3.1 datasheet and the V4.3 schematic (`HTIT-WB32LAF_V4.3.pdf`) contain
-  no buzzer, beep or piezo text (`pdftotext | grep -i`), and neither does the
-  V4.2.0 datasheet.
+  (`Startup:d=4…`, `MsgRcv3:d=4…`, `kerplop:d=16…`). This is the weakest of
+  the arguments: it proves those two published builds are silent, not that
+  the hardware is. It is consistent with the rest, nothing more.
+- The V4.3.1 datasheet (16 pages, rev 1.1.0, Sep 2025) contains no buzzer,
+  beep, piezo or speaker text at all (`pdftotext -layout | grep -inE
+  'buzzer|piezo|speaker|beep|audio|tone'` → 0 hits), and neither does the
+  V4.2.0 datasheet. Its "1.4 Components" diagram (page 7) labels every
+  component on both board faces: buttons, USB-C, white and orange LEDs,
+  both IPEX antenna connectors, the OLED, the pin headers, the ESP32-S3R2,
+  the solar, battery and GNSS interfaces, and the power-management IC. A
+  buzzer is not among them. The back-board photograph on the same page,
+  rendered at 500 dpi, shows no buzzer can or piezo disc anywhere on the
+  PCB. The pin tables (J2, J3, "Additional Pins") break out no buzzer pin.
 - The only Heltec V4-family env in MeshCore that beeps is
   `heltec_v4_r8_tft`: `-D PIN_BUZZER=4` plus `+<helpers/ui/buzzer.cpp>`
   (`variants/heltec_v4_r8/platformio.ini:77,80`). Its model string is
@@ -237,10 +245,60 @@ Evidence that this build cannot make a sound:
 - Heltec's buzzer documentation sits under the **WiFi LoRa 32 Expansion Kit**
   ("Buzzer and Sensor Configuration Guide"), i.e. an add-on board, not the V4
   main board.
-- Meshtastic splits the same way: `heltec-v4-tft` sets `PIN_BUZZER=6` and
-  `heltec-v4` (OLED) sets neither, so Meshtastic on a V4 OLED is silent too.
+- Meshtastic splits the same way. In `develop`
+  (`variants/esp32s3/heltec_v4/platformio.ini`), `heltec-v4` (OLED) defines
+  neither `PIN_BUZZER` nor `USE_PIN_BUZZER`, while `heltec-v4-tft` sets
+  `PIN_BUZZER=6` and `USE_PIN_BUZZER=PIN_BUZZER` (`:60-61`).
+- MeshCore `main` as fetched 2026-10-22 is identical to 1.17.1 here: of the
+  19 `heltec_v4*` envs on `main`, **none** defines `PIN_BUZZER`. The only
+  Heltec V4-family env with a buzzer anywhere in the tree is
+  `heltec_v4_r8` (`PIN_BUZZER=4`). Two independent projects, same split.
+- The V4 OLED board cannot be made to beep by a preference. `toggleBuzzer()`
+  (`UITask.cpp:955-968`) is entirely inside `#ifdef PIN_BUZZER`, so on this
+  board a triple-click does nothing and shows no alert. There is no fake
+  affordance to hide, and nothing for the app to switch off.
 
 So on this unit the beep is not muted, it is absent. Anyone who hears one is on
 a board whose firmware compiled it: a Heltec V3 or T114 with a build that
 defines the pin, a V4 R8 TFT, an expansion-kit buzzer, or a Meshtastic TFT
 build. Their model string in the app's Device screen names which.
+
+### Hardware absent vs code absent, kept separate
+
+Two different claims were being run together, and they are not the same:
+
+- **The board has no transducer.** Proven above from Heltec's own components
+  diagram and pin tables, corroborated by two firmware projects that do wire
+  buzzers everywhere they exist.
+- **The build has no buzzer code.** Also true here, but it is a consequence,
+  not the cause. A build can drop the code and a board can still be silent.
+- **A GPIO can always be driven.** True and irrelevant: an ESP32-S3 pin with
+  nothing attached to it makes no sound.
+
+Two arguments used on 2026-10-21 do not support either claim and are recorded
+here so they are not reused:
+
+- The microphone recording beside the radio was structurally incapable of
+  finding a beep. Melodies are gated on `!hasConnection()`
+  (`UITask.cpp:814,834`), and the radio was connected to the phone the whole
+  time.
+- The official-binary string check proves one published build is silent. It
+  says nothing about the board.
+
+### If a buzzer were wanted on a V4.3 OLED
+
+- `genericBuzzer::play()` calls `rtttl::begin(PIN_BUZZER, melody)`
+  (`buzzer.cpp:24`), and NonBlockingRTTTL drives the pin with `tone()`, i.e.
+  LEDC PWM. That wants a **passive** buzzer or piezo. An active buzzer with
+  its own oscillator will click, not play the melody.
+- Wiring: signal to one free header GPIO, ground to J3 pin 1, 3.3 V to J3
+  pins 2 or 3. The V4.3 pin tables expose 15, 16, 19, 20, 26, 33, 40 and 41
+  free of the MeshCore variant's own assignments. The pins the TFT and R8
+  builds use (6 and 4) are **not** broken out on the OLED board, so copying
+  their number does nothing.
+- Firmware: `-D PIN_BUZZER=<pin>` plus `+<helpers/ui/buzzer.cpp>`, compiled
+  per pin, so a DIY buzzer means a local build, not a setting. On the owner's
+  fork the default would also have to flip, since
+  `NodePrefs::buzzer_quiet = 1` now boots silent by design.
+- Cost and risk: a part, a solder joint inside a closed case, and a firmware
+  fork per pin. It does not make the fleet quieter, which is the actual goal.
