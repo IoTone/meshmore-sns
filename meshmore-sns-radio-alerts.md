@@ -17,10 +17,11 @@ nothing pushed)._
 - Tones: contact message, channel message and UI ack, in
   `examples/companion_radio/ui-new/UITask.cpp:767-785` (same in `ui-tiny`,
   `ui-orig`). Startup sound on boot, shutdown sound on power-off.
-- **It only sounds when no phone is connected.**
-  `ui-new/UITask.cpp:814` and `:834` call `notify(...)` inside
-  `if (!hasConnection())`. With a companion app attached the radio is already
-  silent; the chime is an untethered-node behaviour.
+- **It sounds whether or not a phone is connected.** CORRECTED 2026-10-23.
+  `UITask::notify()` (`ui-new/UITask.cpp:622-649`) has no `hasConnection()`
+  check. The earlier claim that a paired radio is already silent was wrong:
+  `:814`/`:834` gate the **display wake** in `msgRead`/`newMsg`, not the
+  buzzer. A buzzer board chimes with MeshMore attached.
 - Repeaters and room servers have no notification path at all
   (`examples/simple_repeater/UITask.cpp` has no `notify`/buzzer call), so only
   companion-radio builds beep.
@@ -162,10 +163,11 @@ without the destructive `erase`.
   Afterwards the device enumerates as `2886:1667 Seeed Wio Tracker L1` with CDC
   only, product string from the board package, and it exposes `/dev/ttyACM1`.
 - The build's `ADVERT_NAME='"@@MAC"'` and default radio `869.618 MHz` mean it
-  must be re-regioned (USA/Canada) before it can hear a 910.525 node, and it
-  must be Bluetooth-disconnected for the chime test to mean anything: the
-  firmware only calls `notify()` when `!hasConnection()`
-  (`ui-new/UITask.cpp:814`).
+  must be re-regioned (USA/Canada) before it can hear a 910.525 node. The app
+  connection does **not** mute the chime (corrected 2026-10-23: `notify()` has
+  no connection gate), so disconnecting is not required for the test. This
+  patched build boots silent anyway, so hearing anything at all requires the
+  first triple-click.
 
 ## The possibilities, board by board
 
@@ -176,15 +178,14 @@ ever beep:
 |---|---|---|---|---|
 | 1 | No `PIN_BUZZER` (Heltec V3, plain V4 incl. V4.3 OLED) | no | no | nothing to control |
 | 2 | Pin defined, player not linked (M5 C6L, headless) | no | no | nothing to control |
-| 3 | Buzzer + companion app attached | no | **no** (`!hasConnection()`) | n/a |
-| 4 | Buzzer, no app, default prefs | **yes** | **yes** | triple-click only |
-| 5 | Buzzer, no app, this patched build | no | no, until re-enabled | triple-click only |
-| 6 | Repeater / room server | no | no | n/a |
-| 7 | Third-party fork with its own Sound menu (e.g. the L1 Pro build that ships `v1.17.104`) | fork-specific | fork-specific | fork-specific menu |
+| 3 | Buzzer, stock prefs (app attached or not) | **yes** | **yes** | triple-click only |
+| 4 | Buzzer, this patched build | no | no, until re-enabled | triple-click only |
+| 5 | Repeater / room server | no | no | n/a |
+| 6 | Third-party fork with its own Sound menu (e.g. the L1 Pro build that ships `v1.17.104`) | fork-specific | fork-specific | fork-specific menu |
 
-So a fleet whose radios are always paired to a phone never hears a chime
-(row 3), and a Heltec V3/V4 fleet never can (row 1). Rows 4 and 5 are the only
-ones where "the radio is beeping" is true and fixable.
+So a Heltec V3/V4 fleet never beeps (row 1). Rows 3 and 4 are the only ones
+where "the radio is beeping" is true and fixable. Attaching a phone does not
+silence row 3: `notify()` has no connection gate (corrected 2026-10-23).
 
 ## What the owner confirmed on hardware (2026-10-21)
 
@@ -195,7 +196,27 @@ ones where "the radio is beeping" is true and fixable.
 - Both statements are consistent with §"The off switch that already exists";
   neither needs a code change.
 
-## Asked of David, awaiting his reply (2026-10-21)
+## David's reply (2026-10-22/23) and what is still open
+
+He answered in chat:
+
+- "my heltek V4.3 oled no beep" — matches this document and the hardware
+  evidence. That unit is row 1.
+- "heltec has a beep" — some other Heltec in his fleet, unnamed. Candidates are
+  a V4 TFT (Meshtastic `PIN_BUZZER=6`) or a V4 R8 TFT (MeshCore
+  `PIN_BUZZER=4`). No Heltec V4.3 OLED build in this tree defines the pin.
+- "the tags from seeed have a chime" — consistent with the Wio Tracker L1
+  family (`PIN_BUZZER=12`, source linked). Row 3.
+- "the m5unit stuff" — a category, not a verified claim about one unit. The
+  only M5Stack variant here sets an inert pin on a headless build (row 2).
+  What firmware those units run is still unknown.
+- He also asked whether radios with speakers have a button: the Wio Tracker L1
+  family does, triple-click on Menu, persisted.
+
+Still open: exact model of the beeping Heltec, whether the Seeed tags run our
+firmware or stock, and whether he wants per-board silent builds.
+
+## Superseded: asked of David, awaiting his reply (2026-10-21)
 
 - Which exact board model(s) the field radios are. The answer decides whether
   the complaint is row 1/3 (nothing to fix on the radio) or rows 4/5 (flash
@@ -280,10 +301,11 @@ Two different claims were being run together, and they are not the same:
 Two arguments used on 2026-10-21 do not support either claim and are recorded
 here so they are not reused:
 
-- The microphone recording beside the radio was structurally incapable of
-  finding a beep. Melodies are gated on `!hasConnection()`
-  (`UITask.cpp:814,834`), and the radio was connected to the phone the whole
-  time.
+- The microphone recording beside the radio proves only that the radio was
+  quiet for those 12 seconds. The board has no transducer at all, so a silent
+  recording is the expected result on any board and distinguishes nothing.
+  (The reason first given, a `!hasConnection()` gate, was also wrong:
+  `notify()` has no such gate.)
 - The official-binary string check proves one published build is silent. It
   says nothing about the board.
 
