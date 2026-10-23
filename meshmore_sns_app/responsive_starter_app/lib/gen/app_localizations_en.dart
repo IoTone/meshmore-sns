@@ -1494,7 +1494,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get nodeDetailShareTelemetryHelp =>
-      'Lets this contact scan the chosen telemetry from your device when your telemetry mode is \"Contacts\". Base must be on for any of it to work.';
+      'Only applies when your telemetry mode is Contacts and Base is on.';
 
   @override
   String get nodeDetailRecentDms => 'RECENT DMS';
@@ -1535,7 +1535,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get nodeIdentityLinkEmpty =>
-      'No other nodes to link yet — scan, wait for the new key to advertise, or paste the key above.';
+      'No other nodes yet. Wait for the new key to advertise, or paste it.';
 
   @override
   String get nodeIdentityLinkSearchHint =>
@@ -1557,7 +1557,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get nodeDetailAddDeviceContactDone =>
-      'Added to your radio\'s contacts — DMs will route now. If they still don\'t, your contact list may be full; remove an old contact and try again.';
+      'Added. DMs will route now. If they don\'t, your contact list may be full.';
 
   @override
   String get nodeDetailAddDeviceContactFailed =>
@@ -1568,7 +1568,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String nodeDetailRemoveDeviceContactConfirm(String name) {
-    return 'Remove “$name” from your radio\'s contact list? This frees a slot (the list is finite). You can re-add it later.';
+    return 'Remove “$name” from your radio\'s contacts? Frees a slot. You can re-add it later.';
   }
 
   @override

@@ -1426,8 +1426,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get nodeDetailShareTelemetryTitle => 'この連絡先と自分のテレメトリを共有';
 
   @override
-  String get nodeDetailShareTelemetryHelp =>
-      'テレメトリモードが「連絡先」のとき、この連絡先が選択したテレメトリを取得できるようにします。基本がオフだと何も共有されません。';
+  String get nodeDetailShareTelemetryHelp => 'テレメトリモードが「連絡先」で、基本がオンのときのみ有効です。';
 
   @override
   String get nodeDetailRecentDms => '最近の DM';
@@ -1468,7 +1467,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get nodeIdentityLinkEmpty =>
-      'リンクできる他のノードがありません — スキャンするか、新しいキーのアドバートを待つか、上にキーを貼り付けてください。';
+      'まだ他のノードがありません。新しい鍵のアドバートを待つか、鍵を貼り付けてください。';
 
   @override
   String get nodeIdentityLinkSearchHint => '名前で絞り込み、または公開鍵を貼り付け';
@@ -1489,7 +1488,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get nodeDetailAddDeviceContactDone =>
-      '無線機の連絡先に追加しました — DM が届くようになります。届かない場合は連絡先がいっぱいの可能性があります。古い連絡先を削除して再試行してください。';
+      '追加しました。DM が届くようになります。届かない場合、連絡先がいっぱいかもしれません。';
 
   @override
   String get nodeDetailAddDeviceContactFailed =>
@@ -1500,7 +1499,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String nodeDetailRemoveDeviceContactConfirm(String name) {
-    return '「$name」を無線機の連絡先から削除しますか？スロットが空きます（連絡先数には上限があります）。後で再追加できます。';
+    return '「$name」を無線機の連絡先から削除しますか？空きができます。後で再追加できます。';
   }
 
   @override

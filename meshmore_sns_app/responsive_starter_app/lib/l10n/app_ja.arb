@@ -642,7 +642,7 @@
 
   "nodeDetailSelf": "これはあなた自身のノードです — メッセージ / お気に入りは利用不可。",
   "nodeDetailShareTelemetryTitle": "この連絡先と自分のテレメトリを共有",
-  "nodeDetailShareTelemetryHelp": "テレメトリモードが「連絡先」のとき、この連絡先が選択したテレメトリを取得できるようにします。基本がオフだと何も共有されません。",
+  "nodeDetailShareTelemetryHelp": "テレメトリモードが「連絡先」で、基本がオンのときのみ有効です。",
   "nodeDetailRecentDms": "最近の DM",
   "nodeDetailMessage": "メッセージ",
   "nodeIdentityTitle": "連絡先のキーが変更されました",
@@ -665,16 +665,16 @@
   "nodeIdentityLinkAction": "キーが変わった？ 別のノードにリンク",
   "nodeIdentityLinkTitle": "変更されたキーをリンク",
   "nodeIdentityLinkHelp": "同じ相手の新しい鍵です。ノードを選ぶか鍵を貼り付けると、お気に入り・タグ・メッセージが移ります。",
-  "nodeIdentityLinkEmpty": "リンクできる他のノードがありません — スキャンするか、新しいキーのアドバートを待つか、上にキーを貼り付けてください。",
+  "nodeIdentityLinkEmpty": "まだ他のノードがありません。新しい鍵のアドバートを待つか、鍵を貼り付けてください。",
   "nodeIdentityLinkSearchHint": "名前で絞り込み、または公開鍵を貼り付け",
   "nodeIdentityLinkNoMatch": "一致するノードがありません — 検索をクリアするか、完全なキーを貼り付けて直接リンクしてください。",
   "nodeIdentityLinkUseKey": "このキーにリンク",
   "nodeDetailNotDeviceContact": "無線機の連絡先にないため、DM が届かない場合があります。チャンネルは利用できます。",
   "nodeDetailAddDeviceContact": "デバイスの連絡先に追加",
-  "nodeDetailAddDeviceContactDone": "無線機の連絡先に追加しました — DM が届くようになります。届かない場合は連絡先がいっぱいの可能性があります。古い連絡先を削除して再試行してください。",
+  "nodeDetailAddDeviceContactDone": "追加しました。DM が届くようになります。届かない場合、連絡先がいっぱいかもしれません。",
   "nodeDetailAddDeviceContactFailed": "連絡先を追加できませんでした — リンクを確認して再試行してください。",
   "nodeDetailRemoveDeviceContact": "デバイスの連絡先から削除",
-  "nodeDetailRemoveDeviceContactConfirm": "「{name}」を無線機の連絡先から削除しますか？スロットが空きます（連絡先数には上限があります）。後で再追加できます。",
+  "nodeDetailRemoveDeviceContactConfirm": "「{name}」を無線機の連絡先から削除しますか？空きができます。後で再追加できます。",
   "@nodeDetailRemoveDeviceContactConfirm": {
     "placeholders": { "name": { "type": "String" } }
   },

@@ -1252,6 +1252,16 @@ While Meshcore protocol is open source, the client is not open source.  We want 
   changed (needs a layout decision):** at 320dp with 2.0x text the
   Dashboard status row overflows by ~7 px and `/settings/maps/new`'s
   `ToolChoice` dropdown by ~57 px.
+- R107: **prose pass 2: the node sheet's conditions, not its mechanics.**
+  `nodeDetailShareTelemetryHelp` (139) explained the firmware's flag model
+  above four switches that already say Base / Location / Environment; it
+  now states the two preconditions ("Only applies when your telemetry mode
+  is Contacts and Base is on.", 68) and stops. The add-contact
+  confirmation (141 -> 76) and the remove-contact question (112 -> 87) lose
+  their second thoughts. `nodeIdentityLinkEmpty` (93 -> 66) no longer lists
+  three alternatives for one empty list. JA in lock-step. Not touched: the
+  two identity dialogs — they ask the question, and the answer changes data
+  that is not recoverable, so their wording stays.
 - R106: **three hand-rolled radio lists become the one picker.** The
   location screen's interval and movement sheets and the device
   configuration GPS-interval sheet were the last `showModalBottomSheet`

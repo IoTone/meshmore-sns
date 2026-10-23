@@ -2621,7 +2621,7 @@ abstract class AppLocalizations {
   /// No description provided for @nodeDetailShareTelemetryHelp.
   ///
   /// In en, this message translates to:
-  /// **'Lets this contact scan the chosen telemetry from your device when your telemetry mode is \"Contacts\". Base must be on for any of it to work.'**
+  /// **'Only applies when your telemetry mode is Contacts and Base is on.'**
   String get nodeDetailShareTelemetryHelp;
 
   /// No description provided for @nodeDetailRecentDms.
@@ -2687,7 +2687,7 @@ abstract class AppLocalizations {
   /// No description provided for @nodeIdentityLinkEmpty.
   ///
   /// In en, this message translates to:
-  /// **'No other nodes to link yet — scan, wait for the new key to advertise, or paste the key above.'**
+  /// **'No other nodes yet. Wait for the new key to advertise, or paste it.'**
   String get nodeIdentityLinkEmpty;
 
   /// No description provided for @nodeIdentityLinkSearchHint.
@@ -2723,7 +2723,7 @@ abstract class AppLocalizations {
   /// No description provided for @nodeDetailAddDeviceContactDone.
   ///
   /// In en, this message translates to:
-  /// **'Added to your radio\'s contacts — DMs will route now. If they still don\'t, your contact list may be full; remove an old contact and try again.'**
+  /// **'Added. DMs will route now. If they don\'t, your contact list may be full.'**
   String get nodeDetailAddDeviceContactDone;
 
   /// No description provided for @nodeDetailAddDeviceContactFailed.
@@ -2741,7 +2741,7 @@ abstract class AppLocalizations {
   /// No description provided for @nodeDetailRemoveDeviceContactConfirm.
   ///
   /// In en, this message translates to:
-  /// **'Remove “{name}” from your radio\'s contact list? This frees a slot (the list is finite). You can re-add it later.'**
+  /// **'Remove “{name}” from your radio\'s contacts? Frees a slot. You can re-add it later.'**
   String nodeDetailRemoveDeviceContactConfirm(String name);
 
   /// No description provided for @nodeDetailRemoveDeviceContactDone.
