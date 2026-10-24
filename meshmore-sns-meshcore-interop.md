@@ -37,6 +37,13 @@ This matters for the plan: the spec is a design document with no reference
 implementation, so its two protocol assumptions (§2.2 and §2.3) have never
 been exercised against a radio.
 
+**Also checked against upstream `main` (1.18-era), 2026-10-24.** The three
+findings that matter are unchanged there: `onContactRequest` still returns 0
+for anything but telemetry (`main:687`), `pending_req` is still a single
+slot (7 `clearPendingReqs` calls), and `MAX_FRAME_SIZE` is still 176
+(`main src/helpers/BaseSerialInterface.h:5`). Nothing is coming from
+upstream that fixes lobospeak's inbound path.
+
 ---
 
 ## 2. What the companion protocol actually exposes
