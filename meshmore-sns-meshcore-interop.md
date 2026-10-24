@@ -117,6 +117,29 @@ pubkey, no MAC, and no encryption — all of lobospeak's trust argument
 ("by the time lobospeak sees a request, the sender's pubkey identity is
 cryptographically established") is untrue on this path.
 
+### 2.4a Routing behaviour: raw custom is direct-only, multipart is ACK-only
+
+Two routing facts change the carriage choice.
+
+- **Raw custom is not flood-routed by this firmware.** `Mesh::onRecvPacket`
+  only delivers `PAYLOAD_TYPE_RAW_CUSTOM` when the packet is direct-route,
+  and the repeater-side forwarding is commented out with "don't flood route
+  these (yet)" (`src/Mesh.cpp:292-296`). A raw-custom packet therefore
+  travels only along a **known path**; first contact with an unknown robot
+  needs path discovery or a flooded request. `CMD_SEND_RAW_DATA` matches
+  this: its handler rejects a flood path outright with "flood, not
+  supported (yet)" (`MyMesh.cpp:1532-1533`).
+- **`PAYLOAD_TYPE_MULTIPART` is not fragmentation.** In 1.17.1 it exists to
+  shotgun an ACK burst, and `Mesh::onRecvPacket` only reassembles it when
+  the embedded type is `PAYLOAD_TYPE_ACK` (`src/Mesh.cpp:300-320`). There is
+  no general reassembly layer to exploit for larger payloads, so chunking
+  stays an application concern.
+
+The practical consequence: a flooded request (`CMD_SEND_BINARY_REQ` to a
+contact with `out_path_len == OUT_PATH_UNKNOWN` calls `sendFloodScoped`,
+`BaseChatMesh.cpp:646-648`) is the thing that reaches an unknown node, and
+raw custom is the thing that is cheap once a path is known.
+
 ### 2.5 Channel datagrams (the broadcast path lobospeak's open question 3 asks for)
 
 | Fact | Value | Evidence |
@@ -173,9 +196,10 @@ sends it with `CMD_SEND_RAW_PACKET`; the robot's app receives it as 0x84 and
 verifies the signature itself. Works on every stock companion build, keeps
 lobospeak's owners model because the pubkey is inside the signed body, and
 restores "never on Public" by using the private channel PSK *inside* the
-payload or a dedicated packet route. Cost: lobospeak owns its crypto (~one
-AEAD + one signature verification on each side) and loses MeshCore's per-DM
-encryption for free.
+payload. Cost: lobospeak owns its crypto (~one AEAD + one signature
+verification on each side), it loses MeshCore's per-DM encryption, and §2.4a
+means it needs a known out-path — so it is a *second* message, not the way
+to find a robot for the first time.
 
 **B. lobospeak-over-binary-req with a firmware patch.** Add one push code
 ("unknown request" with sender pubkey + tag + body) and a hook in
@@ -186,7 +210,9 @@ firmware fork on every robot radio — which is already the model for the Wio
 
 Recommendation: **B for robots (they are ours to flash), A as the
 interoperability path for third-party hardware.** Both share the same
-payload codec, so the codec is written once.
+payload codec, so the codec is written once. In practice a hybrid is
+forced by §2.4a anyway: flooded binary request to discover/verify, then
+raw custom for the steady state if the crypto cost is acceptable.
 
 ---
 
