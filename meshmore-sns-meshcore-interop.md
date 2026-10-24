@@ -319,10 +319,25 @@ that is safe to ship.
 | Unix domain socket in app-private dir | Fast, no port, filesystem permissions | Not reachable cross-app on modern Android (per-app SELinux domains) |
 | ContentProvider | URI grants, simple | Wrong shape for a stream |
 
-Recommendation: **one wire protocol, two carriers.** AIDL for first-party
-apps signed by us (LDMUX), loopback framed socket for third-party or
-cross-language clients, both behind the same capability model. The codec is
-shared; the carrier is a 200-line adapter.
+**This codebase changes the weighting.** MeshMore is Flutter, and its BLE
+link, reconnect logic and SYNC drain live in the **main isolate**; the
+foreground service exists only to keep that process alive
+(`lib/meshcore/background_keepalive.dart:9-15,38-42`). Therefore:
+
+- A **loopback framed socket written in Dart** is one file in the same
+  isolate that already owns the radio. No plugin, no binder marshalling, no
+  second language, no `<queries>`, and it works while the app is
+  backgrounded because the service keeps the process alive.
+- An **AIDL service** means a Kotlin service, a `MethodChannel` or
+  `EventChannel` bridge in both directions, lifecycle duplication between
+  Kotlin and Dart, and a second place where radio state can be wrong. It
+  buys signature-level caller verification, which is only needed if
+  untrusted apps are a real threat.
+
+Recommendation, revised for this codebase: **loopback framed socket as the
+primary carrier**, with the capability grants and a per-install token shown
+as a QR. Add AIDL later only if a signature-gated client is required. Keep
+the wire protocol identical so the carrier stays a swap.
 
 Note the open risk: Android 17 (API 37) makes `ACCESS_LOCAL_NETWORK`
 mandatory and the official page could not be read in this session, so whether
@@ -353,6 +368,11 @@ Costs:
 4. A stable API contract — the moment a second app ships, the frame format
    is frozen. That is the real long-term cost, and the reason to design it
    once rather than bolt it on per feature.
+5. One Android unknown: the loopback carrier depends on `ACCESS_LOCAL_NETWORK`
+   behaviour, which becomes mandatory for apps targeting API 37 and whose
+   loopback exemption is disputed in secondary sources (the official page
+   could not be read in this session). Test it on the Android 16 device
+   before freezing the carrier.
 
 ---
 
