@@ -361,8 +361,10 @@ pins and rules never touch the Public channel (lobospeak's hard rule).
   real-time. Robot-side rules (later) are the only firmware-grade path.
 - **Hiding location = unlocated (0/0).** A node with no fix never satisfies a
   geofence condition; it reads "position unknown", not "at 0,0".
-- **Payload budget ~180 B.** Routes/shares chunk; degE7 keeps coordinates at
-  4 B each.
+- **Payload budget 143 B, not ~180 B.** Companion frame is 176 B and a
+  binary request spends 33 on opcode + pubkey, so 143 B of app data is the
+  ceiling (measured 2026-10-24, `meshmore-sns-meshcore-interop.md` §2.2).
+  Routes/shares chunk; degE7 keeps coordinates at 4 B each.
 - **Closed-network only.** Pins, routes, rules, shares — never Public.
 - **Local-first.** Pins/rules live on-device; sharing is opt-in and explicit.
 

@@ -49,6 +49,7 @@ The requirements, the change record and the sibling specs:
 - **Offline maps (R61, R93):** [`meshmore-sns-maps-spec.md`](./meshmore-sns-maps-spec.md)
 - **Tools surface (R60):** [`meshmore-sns-tools-spec.md`](./meshmore-sns-tools-spec.md)
 - **Radio chime and firmware alerts:** [`meshmore-sns-radio-alerts.md`](./meshmore-sns-radio-alerts.md)
+- **MeshCore as a shared transport (lobospeak, ldmux, app-to-app):** [`meshmore-sns-meshcore-interop.md`](./meshmore-sns-meshcore-interop.md)
 - **Telemetry and weather:** [`meshmore-sns-telemetry-research.md`](./meshmore-sns-telemetry-research.md), [`meshmore-sns-microclimate-wx.md`](./meshmore-sns-microclimate-wx.md)
 - **Tracking and Meshbook earmarks:** [`meshmore-sns-geofence-tracking.md`](./meshmore-sns-geofence-tracking.md), [`meshmore-sns-meshbook-mbk.md`](./meshmore-sns-meshbook-mbk.md)
 - **Status — what is built, what is open:** [`meshmore_sns_app/STATUS.md`](./meshmore_sns_app/STATUS.md)
