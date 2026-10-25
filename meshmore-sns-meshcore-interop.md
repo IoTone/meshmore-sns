@@ -112,7 +112,7 @@ This is the path the firmware does expose opaquely.
 
 | Fact | Value | Evidence |
 |---|---|---|
-| Inbound push | `[0x84][snr×4][rssi][0xFF][payload…]` | `:801-815` |
+| Inbound push | `[0x84][snr][rssi][0xFF][payload…]` | `:801-815` |
 | Sender identity in that frame | **none** | same |
 | `CMD_SEND_RAW_PACKET` | 65, injects a whole serialised packet + priority | `:64`, `:2003-2008` |
 | `CMD_SEND_RAW_DATA` | 25, direct path only, flood "not supported (yet)", min 4 B | `:1519-1534` |
@@ -191,7 +191,7 @@ transport assumption and the size arithmetic.
 | 2 | Sender identity is established by the OTA layer | 0x84 carries no pubkey | Carry pubkey + app-level signature in the payload |
 | 3 | ~180 B payload | 143 B (binary), 165 B (channel), 174 B (raw packet) | Re-derive every budget |
 | 4 | Parallel fan-out with independent tags | one `pending_req` slot | Serialise, or broadcast via 0x3E |
-| 5 | Response correlated by tag | true, but no source check | Also verify the responder pubkey at app level |
+| 5 | Response correlated by tag | true, but no source check | Cannot be fixed at this layer: `PUSH_CODE_BINARY_RESPONSE` (0x8C) carries no sender pubkey, so responder identity is only provable end-to-end (corrected 2026-10-24) |
 | 6 | Broadcast commands are v2 | already possible: `CMD_SEND_CHANNEL_DATA` + `DATA_TYPE_DEV` | make it v1 for "all robots" |
 | 7 | Payloads are as long as they are | zero-padded to 16 B | self-delimiting framing |
 
@@ -322,7 +322,7 @@ that is safe to ship.
 | Carrier | Good | Bad |
 |---|---|---|
 | **AIDL bound service**, `signature` permission | Strongest auth (same signing key), no network permission, death recipients, no port | Kotlin-only, deprecated by the closest precedent, needs `<queries>` |
-| **Loopback TCP/WebSocket** + bearer token | Language-agnostic, debuggable, versionable, works from a WebView | Needs `ACCESS_LOCAL_NETWORK` attention (mandatory at targetSdk 37; loopback exemption disputed in secondary sources), token handling, port conflicts |
+| **Loopback TCP/WebSocket** + bearer token | Language-agnostic, debuggable, versionable, works from a WebView | loopback needs no local-network permission (Apple TN3179 and the Android API 37 permission are interface-scoped; see architecture §1.5). Real costs: token handling, port conflicts |
 | Unix domain socket in app-private dir | Fast, no port, filesystem permissions | Not reachable cross-app on modern Android (per-app SELinux domains) |
 | ContentProvider | URI grants, simple | Wrong shape for a stream |
 

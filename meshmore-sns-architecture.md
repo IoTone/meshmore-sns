@@ -101,7 +101,7 @@ of the client apps.
   interface-based definition. **Verify once on a real device** with the
   privacy toggle off.
 
-### 1.6 iOS: no loopback gate; the real constraint is keeping the BLE owner alive
+### 1.6 iOS: no loopback gate, but a suspended app cannot serve the socket
 
 - iOS has no `ACCESS_LOCAL_NETWORK`-style gate that reaches loopback. Apple's
   TN3179 defines local network as broadcast-capable interfaces (Wi-Fi,
@@ -132,6 +132,16 @@ of the client apps.
     restore full foreground-equivalent BLE privileges in the background.
   - Force-quit is never restored. Memory pressure kills the app
     regardless.
+- **CORRECTION (2026-10-24, audit E1): this section previously concluded
+  that the iOS constraint was only BLE liveness. It is not.** A suspended
+  iOS app's process is frozen, so `ServerSocket.accept()` does not run and
+  a connecting LDMUX times out. `bluetooth-central` wakes the app for BLE
+  events only, for about 10 s, which cannot serve an interactive terminal
+  client. The consequence is that **the two-app gateway is Android-only as
+  designed**; on iOS either the gateway runs only while MeshMore is in the
+  foreground, or LDMUX reaches the host directly. See O1 in §11. The
+  AccessorySetupKit and Live Activity findings below remain correct and
+  independent of this problem.
 
 ### 1.7 Precedent: "one app is the node, other apps are clients" is the established pattern
 
@@ -195,17 +205,22 @@ Four layers, each with a single owner and a versioned contract:
    transport-agnostic: one 8-byte header, `crates/protocol/src/frames.rs`)
    over the tunnel. Roughly a few hundred lines. **No BLE, no companion
    protocol, no radio knowledge.**
-2. A settings screen: gateway address (port from a QR shown by MeshMore),
-   connect/disconnect, link status.
+2. A settings screen: gateway address (fixed `127.0.0.1:41731`, §5.5),
+   pair/re-pair by scanning MeshMore's QR, connect/disconnect, link status.
 
 ### 2.3 What is shared, precisely
 
 - The **L2 specification document** (opcodes, framing, pairing, error
   codes, capability bits) — written once, with **shared test vectors**
   (hex) that both the Dart and Kotlin implementations run in CI.
-- The **L3 protocol** is already shared by construction: LDMUX's KMP client
-  and the Rust daemon both implement `crates/protocol`; the gateway just
-  carries those frames.
+- The **L3 protocol** is shared by construction between LDMUX's KMP client
+  and the Rust daemon, but it is **not** what crosses the mesh. `crates/protocol`
+  encodes control frames as JSON (`crates/protocol/src/frames.rs:95-105`)
+  with a 16 MiB payload ceiling (`:45`), which cannot survive a 142 B
+  record. The mesh profile needs its own compact encoding of the subset it
+  actually uses, defined end-to-end inside the Noise session. An earlier
+  draft said the gateway "just carries those frames", which was wrong
+  (audit G1).
 - The **L4 lobospeak codec** is shared the same way: spec + vectors,
   implemented in Dart (MeshMore/robots) and Kotlin (LDMUX pin UI).
 
@@ -335,161 +350,240 @@ transport**: it is a **blind carrier**.
 
 - The end-to-end session is **Noise IKpsk2** between the LDMUX app and the
   host, per ADR-0020. The gateway is not an endpoint of it.
-- The session's **record layer** (ADR-0020 §3: 24 B fixed overhead,
-  one record per packet, counter in the clear) is produced by the
-  endpoints, not the gateway.
+- The session's **record layer** (ADR-0020 §3: 24 B fixed overhead, one
+  record per packet, counter in the clear) is produced by the endpoints,
+  not the gateway.
 - The gateway ships **one record per packet** and never parses, chunks,
-  or decrypts session content. Large items (e.g. the optional ML-KEM
-  stage, 1,184 B / 1,088 B) are fragmented **end-to-end by the session
-  layer**, above the record layer. The gateway's only job over the mesh:
-  deliver whole records, in order, with retransmission.
+  decrypts, or rewraps session content.
+- **The gateway does not retransmit.** ADR-0020 §3 is explicit: "a
+  retransmission is a *new* record with a new counter; duplicates are
+  removed by the application sequence number, not by resending
+  ciphertext." A blind relay that resent identical ciphertext would reuse
+  the counter and the receiver's 64-record replay window would drop it as
+  a duplicate. ARQ therefore lives **end-to-end**, and the gateway's only
+  mesh-side job is to serialise whole records onto a radio that permits
+  one outstanding request.
+- Large items (the optional ML-KEM stage, 1,184 B / 1,088 B) are
+  fragmented **end-to-end**, above the record layer, by the session.
+
+This is the correction of an earlier draft that gave the gateway an
+outgoing ARQ and a per-record ACK. See `meshmore-sns-architecture-audit.md`
+findings A2 and B1.
 
 ### 5.2 The budgets (per direction, per endpoint)
 
-| Direction | Carriage | App-payload ceiling | Record ceiling (24 B overhead included) |
-|---|---|---|---|
-| phone → host | companion binary request | **143 B** | **143 B** (119 B application) |
-| host → phone | raw/custom packet | **184 B** | **160 B** (136 B application) |
+Three caps stack on the phone's uplink, and the binding one is the
+smallest:
 
-The phone is companion-constrained (176 B frame − opcode − 32 B pubkey);
-the host is a full MeshCore node using raw/custom at the 184 B packet
-ceiling. The endpoints size records to the destination's carriage; the
-gateway only checks "does this record fit" and queues.
+| Cap | Bytes | Source |
+|---|---|---|
+| Companion frame | 176 | `src/helpers/BaseSerialInterface.h:5` |
+| → app data after opcode + pubkey | 143 | `MyMesh.cpp:1678-1684` |
+| `sendRequest` guard | 163 | `src/helpers/BaseChatMesh.cpp:633` |
+| `createDatagram` guard | 163 | `src/Mesh.cpp:487-489` |
+
+143 binds only because the companion frame is the smallest of the three.
+
+**Delimitation.** Binary payloads are AES-ECB encrypted and zero-padded to
+16 B, and the decryptor does **not** strip the padding
+(`src/Utils.cpp:62-90`; `src/Utils.h:41` warns "dest may contain trailing
+zero bytes in final block"). A record can therefore not be recovered by
+length alone, and "the 16 B tag guarantees a non-zero tail" is false one
+time in 256 (a tag ending in `0x00`). The gateway therefore carries an
+**explicit one-byte record length** as the first byte of the datagram.
+
+| Direction | Carriage | Datagram budget | Record ceiling | Application bytes |
+|---|---|---|---|---|
+| phone → host | companion binary request | 143 B | **142 B** (1 B length + 142) | **118 B** |
+| host → phone | raw/custom packet | 172 B received | **160 B** | **136 B** |
+
+Raw custom carries bytes verbatim with no cipher and no padding
+(`src/Mesh.cpp:589-603`), so the host's direction needs no length
+prefix; 160 sits inside the 172 B receive cap (`MyMesh.cpp:802`,
+`MyMesh.h:236`).
+
+**A fifth option, not taken in v0.** The phone can also emit a complete
+serialised packet with `CMD_SEND_RAW_PACKET` (65), which bypasses the
+cipher and the padding and reaches ~172 B in both directions. It is the
+cleaner long-term shape, but it requires MeshMore to build the MeshCore
+packet header and path itself, and repeaters do not forward `RAW_CUSTOM`
+floods (`src/Mesh.cpp:296`), so discovery would still need the binary
+request path. Recorded as a P3+ optimisation, not a v0 dependency.
+
+The endpoints size records to the destination's carriage; the gateway
+only checks "does this record fit" and queues.
 
 ### 5.3 The gateway's mesh-side mechanics
 
 - **Serialisation**: one outstanding `pending_req` (firmware,
-  `MyMesh.cpp:1688-1689`); the gateway queues records per session.
-- **ARQ**: sequence numbers per (session, direction); retransmit on
-  timeout; the deadline comes from `est_timeout` (`RESP_CODE_SENT`),
-  which the firmware computes from airtime + hops.
-- **De-duplication and ordering**: the record counter is in the clear
-  (authenticated by the tag), so the gateway can de-dup and order
-  without decrypting.
-- **Discovery first, then raw custom**: a flooded binary request reaches
-  an unknown peer; raw custom is the cheap steady state once a path is
-  known (interop doc §2.4a).
-- **Self-delimiting**: binary payloads are zero-padded to 16 B, so the
-  record format must not end in `0x00` ambiguity; the 24 B record
-  overhead already guarantees a non-zero tail (16 B tag), so no extra
-  delimiter is needed.
+  `MyMesh.cpp:1688-1689`); the gateway queues records per session, one
+  in flight at a time.
+- **No ARQ, no delivery ACK.** The gateway reports only what the firmware
+  reports: `RESP_CODE_SENT` (with its route flag), `est_timeout`, or an
+  `ERR_CODE_*`. Whether a record arrived is a question only the
+  end-to-end session can answer.
+- **Discovery is bidirectional.** A flooded `PAYLOAD_TYPE_REQ` makes the
+  responder build a `PATH + RESPONSE` return and flood it back
+  (`src/helpers/BaseChatMesh.cpp:286-306`), which simultaneously
+  delivers the answer and teaches the requester the return path. So the
+  first exchange is flooded **both** ways, and raw custom becomes
+  available once a path is known.
+- **Delimitation**: the one-byte length prefix in §5.2, not a zero-byte
+  convention.
+- **Backpressure**: the gateway applies a credit window of 8 unacked
+  `RECORD` frames; a client that exceeds it is stalled, not buffered
+  without bound (audit C2).
 
 ### 5.4 Timers (aligned to ldmux's mesh profile)
 
 ldmux's mesh-profile timers (MESH-TRANSPORT.md "Review", item 7):
-client ping ≥60 s, idle sweep ≥5 min, claim grace ≈60 s. The gateway's
-L2 heartbeat is local (loopback, free) and does not consume airtime; the
-mesh-side idle detection uses the ARQ deadlines, not a ping.
+client ping ≥60 s, idle sweep ≥5 min, claim grace ≈60 s.
+
+- L2 carries **no** heartbeat of its own. TCP keepalive plus `STATUS` is
+  enough, and L3 already has `PING`/`PONG` (audit B7).
+- The mesh-side idle question is answered by the end-to-end session's own
+  timers, not by the gateway.
+- `est_timeout` is an **estimate** from `calcFloodTimeoutMillisFor` /
+  `calcDirectTimeoutMillisFor` (`src/helpers/BaseChatMesh.cpp:645-653`),
+  not a measurement, and the gateway cannot see repeater retransmissions
+  or collisions. It is labelled an estimate wherever it is surfaced.
 
 This work is independent of the phone apps. It is the largest single
 piece and is where most of the schedule risk lives.
 
 ---
 
-## 5.5 L2 gateway protocol - draft v0 (the P1 contract)
+### 5.5 L2 gateway protocol - draft v0 (the contract P1 freezes)
 
-Draft, for review. Freezes when P1 lands. Written to be implementable in
-Dart (server) and Kotlin (client) with no further discussion.
+Draft, for review. Freezes when P3 lands (see §9 for why the order
+changed). Written to be implementable in Dart (server) and Kotlin
+(client) with no further discussion.
+
+Revised 2026-10-24 against `meshmore-sns-architecture-audit.md`: no
+gateway ARQ, no delivery ACK, no ML-KEM capability bits, a version byte,
+`HELLO` before `PAIR`, little-endian lengths, and flow control.
 
 ### Framing
 
-One frame per message:
+One frame per message. Magic first so a wrong-version peer is
+identifiable before any field is interpreted:
 
 ```text
   offset  size  field
-  0       1     type
-  1       1     flags    (must be 0 in v0)
-  2       2     length     (u16 big-endian, payload byte count, max 512)
-  4       N     payload
+  0       2     magic    0x4D 0x47  ("MG")
+  2       1     version  (1 in v0)
+  3       1     type
+  4       1     flags    (must be 0 in v0)
+  5       2     length   (u16 little-endian, payload byte count, max 512)
+  7       N     payload
 ```
 
-Max frame 516 B. The socket is a plain TCP connection on 127.0.0.1; the
-port is fixed and documented (v0: **41731**), chosen to avoid well-known
-local services. No TLS: the socket is loopback-only and the pairing
-message authenticates the caller.
+Max frame 519 B. Little-endian matches the rest of the MeshCore
+ecosystem, so there is one byte-order convention in the codebase
+(audit B8).
+
+The socket is plain TCP on `127.0.0.1`, port **41731**. One mechanism,
+not three: the port is fixed and documented, and if it cannot be bound
+MeshMore reports the failure in Settings rather than silently moving.
+No TLS: the socket is loopback-only and the pairing frame authenticates
+the caller, with the limits in §7.
 
 ### Types
 
 | type | name | direction | payload |
 |---|---|---|---|
-| 0x01 | PAIR | client→gw | 16-byte pairing token |
-| 0x02 | PAIR_OK | gw→client | none |
-| 0x03 | PAIR_ERR | gw→client | 1-byte reason |
-| 0x10 | HELLO | client→gw | version (1), capability bits (1) |
-| 0x11 | HELLO_OK | gw→gw | version (1), capability bits (1), radio status (1) |
+| 0x01 | HELLO | client→gw | version (1), capability bits (1) |
+| 0x02 | HELLO_OK | gw→client | version (1), capability bits (1), radio state (1) |
+| 0x03 | HELLO_ERR | gw→client | 1-byte reason |
+| 0x10 | PAIR | client→gw | 16-byte pairing token |
+| 0x11 | PAIR_OK | gw→client | none |
+| 0x12 | PAIR_ERR | gw→client | 1-byte reason |
 | 0x20 | BIND | client→gw | 32-byte peer pubkey (the host node) |
 | 0x21 | BIND_OK | gw→client | none |
-| 0x30 | RECORD | client→gw | one record, ≤143 B (see §5.2) |
-| 0x31 | RECV | gw→client | seq (4), one record, ≤160 B |
-| 0x32 | ACK | gw→client | seq (4), status (1): delivered / timeout / dup |
-| 0x40 | STATUS | gw→client | radio state (1), rssi (1), battery (1), airtime budget remaining (2, minutes x 0.1) |
+| 0x30 | RECORD | client→gw | one record, ≤142 B |
+| 0x31 | RECV | gw→client | one record, ≤160 B |
+| 0x32 | SEND_RESULT | gw→client | result (1): sent_direct / sent_flood / err_not_found / err_busy / err_too_long / local_timeout |
+| 0x40 | STATUS | gw→client | radio state (1), rssi (1), battery (1), airtime remaining (2, minutes x 0.1), throttled (1) |
 | 0x41 | BUDGET | client→gw | 2-byte airtime budget (minutes x 0.1), or 0xFFFF for default |
-| 0x50 | PING | client→gw | none |
-| 0x51 | PONG | gw→client | none |
 | 0x60 | CLOSE | either | 1-byte reason |
 
 Rules:
 
-- PAIR is the first frame on a new connection. The token is checked
+- `HELLO` is the first frame on every connection. A version mismatch gets
+  `HELLO_ERR(version)` before any other field is interpreted (audit B6).
+- `PAIR` follows `HELLO_OK`. The token is compared in constant time
   against the persisted, revocable grant. No other frame is processed
-  before PAIR_OK.
-- BIND selects the mesh peer for the session's records. One BIND per
-  connection in v0 (one client, one peer).
-- RECORD/RECV/ACK are the data plane: the gateway ships whole records,
-  never parsed (§5.3).
-- STATUS is pushed by the gateway on change and answered by PING.
-- Unknown type with flags=0: the gateway drops the frame and sends
-  CLOSE(reason=protocol). Version mismatches close with
-  CLOSE(reason=version).
+  before `PAIR_OK`.
+- `BIND` selects the mesh peer for the session's records. One `BIND` per
+  connection in v0 (one client, one peer). BIND fails with
+  `BIND_ERR(not_a_contact)` when the peer is not already a MeshCore
+  contact; adding a contact is **not** something the gateway does (§2.4).
+- `SEND_RESULT` describes the radio's own send outcome, nothing about
+  delivery. The gateway never reports `delivered` or `dup` because it
+  cannot know either (audit B1).
+- `RECV` carries records the radio heard; ordering and de-duplication are
+  the session's problem (ADR-0020's counter window), not L2's.
+- Unknown type: the gateway ignores the frame and does not close. A
+  malformed length or a bad magic closes with `CLOSE(reason=protocol)`
+  (audit decision D6/unknown-frame policy).
+- One connection at a time. A second connection attempt is accepted and
+  immediately sent `CLOSE(reason=busy)`. A connection that has not
+  authenticated within 5 s of opening is closed, so an idle local socket
+  cannot deny the legitimate client (audit C2).
 
 ### Pairing token
 
 - 128 bits, generated by MeshMore at pairing time, shown as a QR in
   Settings → Connected apps.
-- Stored by MeshMore (not logged, not in prefs dumps), revocable.
-- Per-pairing (a re-pairing issues a new token; the old one dies).
+- Stored in platform secure storage (Android Keystore-backed, iOS
+  Keychain), never in `SharedPreferences`. Android backup rules must
+  exclude it regardless of where it lands — today both rule files exclude
+  only `maps/` (audit D1).
+- Revocable from Settings, per-pairing. A re-pairing issues a new token
+  and kills the old one.
+- Compared in constant time.
 
 ### Capability bits (v0)
 
 | bit | name | meaning |
 |---|---|---|
-| 0 | e2e-noise | client speaks the ADR-0020 record layer |
-| 1 | ml-kem | client offers the optional ML-KEM stage |
-| 2 | ml-kem-ack | gateway/host offers the ML-KEM stage |
+| 0 | recv-credit | gateway enforces the 8-record credit window (§5.3) |
+| 1 | status-push | gateway pushes `STATUS` on change |
 
-Reserve the rest. Capabilities are negotiated in HELLO/HELLO_OK and are
-the only additive extension point in v0.
+Reserve the rest. **Only gateway capabilities appear here.** The ML-KEM
+bits an earlier draft put in L2 are gone: a blind gateway cannot know or
+attest the host's crypto capabilities, and those belong inside the
+end-to-end session (audit B3).
 
 ### The duty-cycle governor
 
-The gateway meters its own transmit airtime (from the firmware's
-`est_timeout` per send, accumulated per hour) and enforces the
-configured budget:
+The gateway meters its own transmit airtime **estimate** and enforces the
+configured budget for the active LDMUX session only:
 
 - Default: **36 s/hour** (EU868 1% duty cycle equivalent).
-- When the budget is exhausted, the gateway stops sending non-essential
-  records, marks the session "throttled" in STATUS, and resumes when the
-  hour window rolls.
-- The client can lower the budget (BUDGET) but not raise it above the
-  default without an explicit capability bit (v0: no raising).
-- Retransmissions count against the budget; the ARQ deadline logic
-  prefers dropping a throttled record over burning budget on a
-  retransmit of a stale one.
-
-This is the concrete implementation of the conservative-airtime
-decision: the phone cannot be a mesh hog by construction, and the
-limit is visible to the user.
+- The meter accumulates the firmware's `est_timeout` per send. That is an
+  estimate, not measurement, and it cannot see repeater retransmissions
+  or collisions; it is labelled an estimate in the UI and in `STATUS`.
+- When the budget is exhausted the gateway stops sending `RECORD` frames,
+  sets the `throttled` flag in `STATUS`, and resumes when the hour window
+  rolls.
+- The client can lower the budget with `BUDGET`. Raising it is an owner
+  action in MeshMore's own UI, never an L2 frame (audit decision, §10).
+- There are no gateway retransmissions to charge, since the gateway does
+  not retransmit.
+- MeshMore's own companion traffic (chat, telemetry, sync) never crosses
+  L2 and is outside the governor by construction. So is lobospeak.
 
 ### Failure behaviour
 
-- Client disconnect: the gateway closes the mesh-side session (sends
-  session-layer close records), releases the `pending_req` queue.
-- Radio drops: the gateway queues records up to a bounded buffer
-  (v0: 64 records), drops oldest on overflow, and sends
-  CLOSE(reason=radio-lost) to the client on reconnect of the radio.
+- Client disconnect: the gateway releases the single `pending_req` slot
+  and clears the queue.
+- Radio drops: the gateway holds up to 8 records (the credit window), and
+  reports `STATUS(radio_lost)` when the link returns. It does not drop or
+  pretend delivery.
 - MeshMore process death: the socket dies with it; LDMUX reconnects with
-  backoff and re-pairs from its stored token. Pairing survives app
-  updates (persisted by MeshMore).
+  backoff and re-authenticates with its stored token. Pairing survives app
+  updates.
 
 ## 6. Per-platform manifest/entitlement surface
 
@@ -498,10 +592,11 @@ limit is visible to the user.
 | Android today | FGS `connectedDevice` already declared (`AndroidManifest.xml:36-37,76-79`) | `INTERNET` (install-time, for the loopback connect) |
 | Android 37+ | Nothing for loopback (§1.5) | Nothing for loopback (§1.5) |
 | iOS today | **`UIBackgroundModes: bluetooth-central` — new**; `NSBluetoothAlwaysUsageDescription` | Nothing (loopback is ungated, §1.6) |
-| iOS 26 | Radio must be set up via **AccessorySetupKit** (non-MFi-capable, §10.1) for state-restoration relaunch; `bluetooth-central`; restore identifier + `willRestoreState`; force-quit never restored; ~10 s per wake; Live Activity optional best-effort | Nothing |
+| iOS 26 | Radio must be set up via **AccessorySetupKit** (non-MFi-capable, §10.1) for state-restoration relaunch; `bluetooth-central`; restore identifier + `willRestoreState`; force-quit never restored; ~10 s per wake; Live Activity optional best-effort. **Note:** a suspended iOS app cannot serve the loopback listener, so the gateway itself is Android-only until O1 is decided | Nothing (loopback ungated) |
 
 The iOS line is the biggest new work in the whole plan and it is all on the
-MeshMore side.
+MeshMore side. It also carries the one blocker the plan does not yet
+answer: see O1 in §11.
 
 ---
 
@@ -510,8 +605,16 @@ MeshMore side.
 Because any app with `INTERNET` can reach a loopback port, the tunnel
 authenticates at the first frame:
 
-- **Pairing:** per-install token, generated by MeshMore, shown as a QR;
-  LDMUX enters/scans it. Token is not logged.
+- **Pairing:** per-pairing token, generated by MeshMore, shown as a QR;
+  LDMUX enters/scans it. Not logged, and **not stored in
+  `SharedPreferences`**: both Android backup rule files currently exclude
+  only `maps/`, so a prefs-stored token would be cloud-backed and
+  restorable onto another device (audit D1). It goes to platform secure
+  storage, and the backup rules get an explicit exclusion regardless.
+  Compared in constant time.
+- **Denial of service:** one connection at a time; a second attempt gets
+  `CLOSE(busy)`. An unauthenticated connection is closed after 5 s, so a
+  local app cannot hold the single slot forever (audit C2).
 - **Capability scoping:** a client can (a) send a payload to a named peer,
   (b) receive responses tagged to its own requests, (c) subscribe to raw
   pushes it requested. It **cannot** send companion commands, read
@@ -534,6 +637,20 @@ Three security layers, each against a different threat:
 
 The gateway sees only the record layer's 6 clear bytes (type/version,
 session index, counter). It never sees application bytes.
+
+**What the loopback token does not protect.** It is a bearer token on a
+local socket, so it does not survive a compromised device: any process
+that can read MeshMore's secure storage or attach to the socket already
+has the phone. It also does not authenticate the *client* beyond "knows
+the token". Both limits are acceptable because the content is separately
+end-to-end encrypted and the gateway grants no companion-level authority.
+A client that steals the token can waste airtime, not read the mesh.
+
+**Confused deputy.** The gateway accepts `BIND` for any peer pubkey but
+performs **no** companion writes (no contact add, no chat send, no
+settings change), so a malicious local client cannot turn MeshMore into a
+proxy for radio authority. `BIND` on a non-contact fails with
+`BIND_ERR(not_a_contact)` (audit B2).
 
 ---
 
@@ -607,78 +724,115 @@ MeshMore's loopback socket. Nothing else.
   alert work: the owner's own Heltec V4.3 OLED is the phone-side unit,
   and a second Heltec exists in the fleet.)
 
-## 9. Phased plan (in scope per the scope cut)
+## 9. Phased plan
+
+Ordered by dependency, not by enthusiasm. The order changed on
+2026-10-24 after the audit: an earlier draft froze the L2 contract at P1
+and only discovered the transport shape at P3, which is backwards (audit
+H1). The contract is now frozen against a transport that is known to work.
 
 | Phase | Content | Deps | Notes |
 |---|---|---|---|
-| **P0** | L1 encoders: `CMD_SEND_BINARY_REQ`/`PUSH_CODE_BINARY_RESPONSE`, tag map, `est_timeout` deadlines, serialised sends - in `packages/meshcore` with hex vectors | none | General; unblocks everything |
-| **P1** | L2 spec + `packages/meshcore-gateway` + pairing + grants + in-app debug client | P0 | Contract freezes here |
+| **P0** | L1 encoders in `packages/meshcore`: `CMD_SEND_BINARY_REQ` (0x32), `PUSH_CODE_BINARY_RESPONSE` (0x8C — *not* 0x85), `CMD_SEND_RAW_DATA`/`CMD_SEND_RAW_PACKET`, `RESP_CODE_SENT` decode, length-prefix helper, hex vectors | none | Unblocks everything; no contract dependency |
+| **P3** | Mesh-side carry proven end to end: one-byte delimitation, serialisation, discovery (flooded both ways), the reply-size-shrinks-with-hops rule, the estimate-based governor | P0 | **Moved before P2.** The transport shape must be known before the contract freezes |
+| **P1** | L2 contract v1 + `packages/meshcore-gateway` + pairing + grants + in-app debug client | P0, P3 | **Contract freezes here** |
 | **P2** | LDMUX KMP `MeshMoreGatewayClient` + settings screen | P1 | ~500 lines Kotlin; no BLE |
-| **P3** | Mesh-side carry: chunking, serialisation, padding-safe framing, deadlines, discovery then raw-custom | P0 | Largest piece; independent of the phone apps |
+| **P6 (near-term)** | MeshMore iOS: AccessorySetupKit pairing flow, `bluetooth-central`, restore identifier + `willRestoreState`, force-quit tolerance, optional Live Activity | iOS target accepted 2026-10-24; **blocked on decision O1** | Findings in §10.1 |
 | **DEFERRED** | lobospeak v0: L4 codec, robot handler, GOTO/HALT in MeshMore | P0, P3 | **Spec-only; no robot functionality built now** |
-| **P6 (near-term)** | MeshMore iOS: AccessorySetupKit pairing flow, `bluetooth-central`, restore identifier + `willRestoreState`, force-quit tolerance, optional Live Activity | iOS target accepted 2026-10-24 | Findings in §10.1 |
-| **OPTIONAL** | Firmware forwarding patch upstream; channel-broadcast commands; AIDL if signature-gated callers ever needed | various | |
+| **OPTIONAL** | Firmware forwarding patch upstream (including the `out_frame` overflow guard, audit N3); channel-broadcast commands; `CMD_SEND_RAW_PACKET` uplink so both directions reach ~172 B; AIDL if signature-gated callers ever needed | various | |
 
-Each phase is usable alone. P0 unblocks everything.
+P0 is usable alone and unblocks every other phase. P3 and P1 are the
+schedule risk.
 
-## 10. Open questions
+## 10. Resolved questions
 
-1. **iOS AccessorySetupKit (investigated 2026-10-24, resolved):**
-   - **No MFi gate.** AccessorySetupKit works with third-party BLE-only
-     peripherals whose advertisements match the app's Info.plist
-     declarations (`NSAccessorySetupKitSupports` +
-     `NSAccessorySetupBluetoothCompanyIdentifiers/Names/Services`).
-     Every documented filter operates on unprivileged BLE advertising
-     fields; Apple's own sample, and three independent practitioner
-     builds (Punch Through, Uy Nguyen, Per Friis), all use plain custom
-     service UUIDs, no certification, no entitlement
-     (`developer.apple.com/documentation/accessorysetupkit`,
-     `.../discovering-and-configuring-accessories`,
-     `punchthrough.com/ios18-accessorysetupkit-everything-ble-developers-need-to-know`).
-   - **The gate is declaration-and-match, enforced by crash:** a
-     discovery filter that does not match the Info.plist terminates the
-     app (Apple, stated twice).
-   - **The iOS 26 relaunch gate (TN3115 note 5, 2025-09-15):** "starting
-     in iOS 26 and iPadOS 26, only apps that use AccessorySetupKit to
-     setup Bluetooth accessories will be relaunched." Relaunch happens
-     "if and only if" the app was waiting on a specific Bluetooth event
-     that has now occurred. **Force-quit is never restored** (the No row
-     is not converted by note 5).
-   - **The Live Activity lever is documented but narrow and
-     orthogonal:** iOS 26, an instantiated CBManager + a Live Activity
-     started before backgrounding grants foreground-equivalent
-     *scanning privileges* in the background. It is a privilege, not a
-     lifecycle: it does not make the app relaunch-eligible, and field
-     evidence (m-Path, 2026-08-03) shows it is a best-effort trick -
-     system-killable at low battery, killed by camera activation, a
-     ~5-minute confirmation dialog, extra battery drain.
-   - **Consequences for MeshMore's iOS plan:**
-     - The radio qualifies: it advertises the standard Nordic UART
-       service UUID and a name; MeshMore declares those in the Info.plist.
-     - The pairing UX becomes the system ASK picker (replacing
-       scan-based pairing; also removes the TCC prompt on the setup path).
-     - Required: `bluetooth-central`, stable
-       `CBCentralManagerOptionRestoreIdentifierKey`, `willRestoreState`
-       reconciling restored peripherals against MeshMore's paired-device
-       registry.
-     - **Force-quit must be tolerable by design:** the link dies, the
-       radio keeps its state, MeshMore re-establishes on next launch.
-       Acceptable for a companion radio.
-     - Live Activity is optional best-effort, never a dependency.
-   - **Lead to verify on the 26.5 SDK:** a framework named
-     `AccessoryLiveActivities` exists in the iOS 26.5 SDK
-     (`dotnet/macios` wiki, 2026-03-31) - an accessory-specific Live
-     Activities surface, contents unconfirmed.
-2. **Pairing token lifetime:** recommend per-pairing, revocable
-   (recorded recommendation, not yet a decision).
-3. **LDMUX iOS:** not started (`ldmux/docs/STATE.md`). The KMP client is
-   shared code, so iOS work is the entitlement-free socket client + UI; the
-   hard iOS work is MeshMore's, not LDMUX's.
+### 10.1 iOS AccessorySetupKit (investigated 2026-10-24)
+
+- **No MFi gate.** AccessorySetupKit works with third-party BLE-only
+  peripherals whose advertisements match the app's Info.plist
+  declarations (`NSAccessorySetupKitSupports` +
+  `NSAccessorySetupBluetoothCompanyIdentifiers/Names/Services`). Every
+  documented filter operates on unprivileged BLE advertising fields;
+  Apple's own sample and three independent practitioner builds (Punch
+  Through, Uy Nguyen, Per Friis) all use plain custom service UUIDs, with
+  no certification and no entitlement.
+- **The gate is declaration-and-match, enforced by crash:** a discovery
+  filter that does not match the Info.plist terminates the app (Apple,
+  stated twice).
+- **The iOS 26 relaunch gate (TN3115 note 5, 2025-09-15):** "starting in
+  iOS 26 and iPadOS 26, only apps that use AccessorySetupKit to setup
+  Bluetooth accessories will be relaunched." Relaunch happens "if and only
+  if" the app was waiting on a specific Bluetooth event that has now
+  occurred. **Force-quit is never restored.**
+- **The Live Activity lever is documented but narrow:** iOS 26, an
+  instantiated CBManager plus a Live Activity started before
+  backgrounding grants foreground-equivalent *scanning privileges*. It is
+  a privilege, not a lifecycle, so it does not make the app
+  relaunch-eligible. Field evidence (m-Path, 2026-08-03) shows it is
+  best-effort: system-killable at low battery, killed by camera
+  activation, a ~5-minute confirmation dialog, extra battery drain.
+- **MeshMore's iOS requirements:** `bluetooth-central`, a stable
+  `CBCentralManagerOptionRestoreIdentifierKey`, a `willRestoreState`
+  implementation that reconciles restored peripherals against MeshMore's
+  paired-device registry, and tolerance of force-quit (the link dies, the
+  radio keeps its state, MeshMore re-establishes on next launch).
+- **Descriptor caution:** the radio advertises the generic Nordic-UART
+  service UUID, which thousands of unrelated devices share, and on nRF52
+  the device name lives in the scan response. A descriptor keyed on the
+  service UUID alone will produce a very noisy picker.
+- **Lead to verify on the 26.5 SDK:** a framework named
+  `AccessoryLiveActivities` exists in the iOS 26.5 SDK (`dotnet/macios`
+  wiki, 2026-03-31), contents unconfirmed.
+
+## 11. Open questions
+
+**O1 — iOS and the gateway (blocker).** Now that the iOS background
+model is understood, a suspended iOS app cannot serve a loopback
+listener: the process is frozen, `ServerSocket.accept()` does not run, and
+a connecting LDMUX times out. `bluetooth-central` wakes the app for BLE
+events only, about 10 s, which cannot serve an interactive terminal. So
+the two-app gateway works on Android and **does not work on iOS as
+designed**. Options:
+
+- (a) iOS supports the gateway only while MeshMore is in the foreground.
+  Cheap, honest, useless for a terminal.
+- (b) LDMUX owns the BLE radio on iOS, with a foreground handover. This
+  re-opens §3.2, which was rejected.
+- (c) iOS has no gateway: LDMUX reaches the host over the tailnet
+  directly, and the mesh path is Android-only.
+- (d) Accept Android-first and demote P6 until a real answer exists.
+
+**O2 — contact provisioning.** `BIND` fails unless the host is already a
+MeshCore contact on the phone's radio, and adding one is a companion
+write the gateway refuses. Options:
+
+- (a) MeshMore's UI gains an explicit "add host node as contact" step at
+  bind time.
+- (b) `BIND` is granted exactly one named, auditable companion write as
+  an exception to §2.4.
+- (c) The user adds the contact by hand, out of band.
+
+**O3 — governor authority.** Confirm the governor enforces a labelled
+*estimate* rather than claiming measured airtime, and whether the owner
+may raise the budget from MeshMore's UI (outside L2).
+
+**O4 — unknown-frame policy.** Strict close is fail-closed but freezes the
+frame set; ignore-unknown is additive but fail-open. The draft in §5.5
+ignores unknown types and closes only on malformed framing, which is the
+additive choice; confirm it.
+
+**O5 — pairing token lifetime.** Per-pairing, revocable, is the
+recommendation. Not yet a user decision.
+
+**O6 — LDMUX iOS.** Not started (`ldmux/docs/STATE.md`). The KMP client is
+shared code, so the iOS work there is an entitlement-free socket client
+plus UI; the hard iOS work is MeshMore's, not LDMUX's. Depends on O1.
 
 Decided and closed: GOTO scale (degE7), halt policy (deny by default,
 revocable), client policy (one at a time), architecture (two-app
 gateway).
-## 11. Fresh-eyes corrections to earlier assumptions
+
+## 12. Fresh-eyes corrections to earlier assumptions
 
 | Earlier assumption | Correction | Evidence |
 |---|---|---|
