@@ -422,7 +422,8 @@ message authenticates the caller.
 | 0x30 | RECORD | client→gw | one record, ≤143 B (see §5.2) |
 | 0x31 | RECV | gw→client | seq (4), one record, ≤160 B |
 | 0x32 | ACK | gw→client | seq (4), status (1): delivered / timeout / dup |
-| 0x40 | STATUS | gw→client | radio state (1), rssi (1), battery (1) |
+| 0x40 | STATUS | gw→client | radio state (1), rssi (1), battery (1), airtime budget remaining (2, minutes x 0.1) |
+| 0x41 | BUDGET | client→gw | 2-byte airtime budget (minutes x 0.1), or 0xFFFF for default |
 | 0x50 | PING | client→gw | none |
 | 0x51 | PONG | gw→client | none |
 | 0x60 | CLOSE | either | 1-byte reason |
@@ -458,6 +459,26 @@ Rules:
 
 Reserve the rest. Capabilities are negotiated in HELLO/HELLO_OK and are
 the only additive extension point in v0.
+
+### The duty-cycle governor
+
+The gateway meters its own transmit airtime (from the firmware's
+`est_timeout` per send, accumulated per hour) and enforces the
+configured budget:
+
+- Default: **36 s/hour** (EU868 1% duty cycle equivalent).
+- When the budget is exhausted, the gateway stops sending non-essential
+  records, marks the session "throttled" in STATUS, and resumes when the
+  hour window rolls.
+- The client can lower the budget (BUDGET) but not raise it above the
+  default without an explicit capability bit (v0: no raising).
+- Retransmissions count against the budget; the ARQ deadline logic
+  prefers dropping a throttled record over burning budget on a
+  retransmit of a stale one.
+
+This is the concrete implementation of the conservative-airtime
+decision: the phone cannot be a mesh hog by construction, and the
+limit is visible to the user.
 
 ### Failure behaviour
 
@@ -529,6 +550,19 @@ session index, counter). It never sees application bytes.
   LDMUX client, the mesh-side carry - is in scope. lobospeak v0 (GOTO/HALT/
   telemetry, the L4 codec) is **spec-only, deferred**; the decisions above
   are recorded for when it starts.
+- **iOS is a near-term target** (user, 2026-10-24). The iOS line moves from
+  OPTIONAL into the plan: `bluetooth-central` background mode,
+  `NSBluetoothAlwaysUsageDescription`, the ~10 s wake budget, and the iOS 26
+  AccessorySetupKit question (see §10.1).
+- **Phone-as-bridge is primary daily use** (user, 2026-10-24). LDMUX's mesh
+  mode gets full UX weight, not fallback treatment.
+- **Conservative airtime budget (user, 2026-10-24):** the mesh profile is
+  designed **as if EU868's 1% duty cycle applied, even on US915**. The
+  gateway enforces a per-hour transmit-airtime budget, default
+  EU868-equivalent (**36 s of airtime per hour**, ~101 packets/hour at
+  354 ms each, per ldmux `docs/MESH-TRANSPORT.md`), visible in L2 STATUS
+  and revocable. Being a good mesh citizen is a hard requirement, not a
+  tuning option.
 
 ### 8.1 What "client" means (topology, stated plainly)
 
@@ -546,6 +580,24 @@ MeshMore's loopback socket. Nothing else.
 - So "one client at a time" means: one local app (LDMUX today) per phone,
   matching the firmware's single outstanding `pending_req`. Multi-client
   (two apps on one phone) is an additive change later.
+
+### 8.2 The mesh topology, who is what
+
+- **The host** is the desktop/server running `ldmuxd` (the terminal
+  daemon + keeper). It has **its own MeshCore radio**, a full node: the
+  firmware runs on the board, the host machine talks to it over
+  serial/USB/WiFi, and the ldmux gateway process sits next to the daemon
+  (MESH-TRANSPORT.md "Review" item 2).
+- **The phone** has its **companion radio** (the Heltec/Seeed board
+  paired with MeshMore over BLE). MeshMore is its node's owner.
+- **Both ends are mesh peers.** "Companion" vs "full node" is not a mesh
+  role - it is only how the local machine attaches to its own radio:
+  the phone over the BLE companion protocol; the host over serial/USB
+  (the companion protocol is transport-agnostic and also works over
+  serial, so a companion board on the host would work too, but a full
+  node is the natural host choice).
+- The mesh is a line (host node - phone node), extendable to more nodes
+  later. One line, two radios, each owned by its machine.
 
 ## 9. Phased plan (in scope per the scope cut)
 
