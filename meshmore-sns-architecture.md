@@ -381,41 +381,67 @@ authenticates at the first frame:
 
 ---
 
-## 8. Phased plan (updated)
+## 8. Decisions taken (2026-10-24, user)
+
+- **Architecture accepted:** the two-app gateway design stands. MeshMore
+  Flutter + radio owner; LDMUX KMP client; shared wire contract + test
+  vectors, no shared code.
+- **Gateway clients, v1:** one at a time.
+- **GOTO coordinate scale:** integer degrees x1e-7 (degE7).
+- **Halt policy:** `allowAnonymousHalt` **deny by default**, revocable.
+- **Scope cut (user):** **no robot/lobospeak functionality is built now.**
+  Only the general infrastructure - the L1 encoders, the L2 gateway, the
+  LDMUX client, the mesh-side carry - is in scope. lobospeak v0 (GOTO/HALT/
+  telemetry, the L4 codec) is **spec-only, deferred**; the decisions above
+  are recorded for when it starts.
+
+### 8.1 What "client" means (topology, stated plainly)
+
+A gateway **client** is an **app on the same phone** connecting to
+MeshMore's loopback socket. Nothing else.
+
+- LDMUX on phone A is a client of phone A's MeshMore.
+- A **second phone** is not a client of phone A: it runs its own MeshMore
+  and its own radio, and joins as a **mesh peer** (L1), not a gateway
+  client.
+- A **computer/host** is not a client of the phone's gateway: it reaches
+  the mesh through its own radio (or the phone's radio as a bridge node),
+  speaking the L3 ldmux protocol over the mesh, not over the phone's
+  loopback socket.
+- So "one client at a time" means: one local app (LDMUX today) per phone,
+  matching the firmware's single outstanding `pending_req`. Multi-client
+  (two apps on one phone) is an additive change later.
+
+## 9. Phased plan (in scope per the scope cut)
 
 | Phase | Content | Deps | Notes |
 |---|---|---|---|
-| **P0** | L1 encoders: `CMD_SEND_BINARY_REQ`/`PUSH_CODE_BINARY_RESPONSE`, tag map, `est_timeout` deadlines, serialised sends — in `packages/meshcore` with hex vectors | none | Worth doing alone (telemetry, robots) |
+| **P0** | L1 encoders: `CMD_SEND_BINARY_REQ`/`PUSH_CODE_BINARY_RESPONSE`, tag map, `est_timeout` deadlines, serialised sends - in `packages/meshcore` with hex vectors | none | General; unblocks everything |
 | **P1** | L2 spec + `packages/meshcore-gateway` + pairing + grants + in-app debug client | P0 | Contract freezes here |
 | **P2** | LDMUX KMP `MeshMoreGatewayClient` + settings screen | P1 | ~500 lines Kotlin; no BLE |
-| **P3** | Mesh-side carry: chunking, serialisation, padding-safe framing, deadlines, discovery→raw-custom | P0 | Largest piece; independent of the phone apps |
-| **P4** | lobospeak v0: shared L4 codec; raw-custom carriage for stock radios; robot handler; pin → `GOTO` in MeshMore | P0, P3 | |
-| **P5** | Optional: firmware forwarding patch upstream; channel-broadcast commands; AIDL if signature-gated callers ever needed; iOS AccessorySetupKit + Live Activity work for MeshMore | various | |
+| **P3** | Mesh-side carry: chunking, serialisation, padding-safe framing, deadlines, discovery then raw-custom | P0 | Largest piece; independent of the phone apps |
+| **DEFERRED** | lobospeak v0: L4 codec, robot handler, GOTO/HALT in MeshMore | P0, P3 | **Spec-only; no robot functionality built now** |
+| **OPTIONAL** | Firmware forwarding patch upstream; channel-broadcast commands; AIDL if signature-gated callers ever needed; iOS AccessorySetupKit + Live Activity work for MeshMore | various | |
 
 Each phase is usable alone. P0 unblocks everything.
 
----
-
-## 9. Open questions
+## 10. Open questions
 
 1. **iOS AccessorySetupKit:** is the radio an "accessory" in Apple's sense
    (MFi/protocol declaration), and is the pairing UX acceptable to the
    user? This decides whether MeshMore can be killed and relaunched on
    iOS 26 with the link intact. (Live Activity is the fallback lever.)
-2. **L2 one-client vs multi-client:** one client at a time matches the mesh
-   side's `pending_req` and is strictly simpler; multi-client adds a queue
-   per client. Recommend one for v1.
-3. **Pairing token lifetime:** per-install (revive on update) vs
-   per-pairing. Recommend per-pairing, revocable.
-4. **LDMUX iOS:** not started (`STATE.md`). The KMP client is shared code,
-   so iOS work is the entitlement-free socket client + UI; the hard iOS work
-   is MeshMore's, not LDMUX's.
-5. **GOTO coordinate scale** (degE7 vs microdegrees) — David's decision.
-6. **`allowAnonymousHalt` default** for closed fleets — David's decision.
+   Investigation item, not a user decision.
+2. **Pairing token lifetime:** recommend per-pairing, revocable
+   (recorded recommendation, not yet a decision).
+3. **LDMUX iOS:** not started (`ldmux/docs/STATE.md`). The KMP client is
+   shared code, so iOS work is the entitlement-free socket client + UI; the
+   hard iOS work is MeshMore's, not LDMUX's.
 
----
-
-## 10. Fresh-eyes corrections to earlier assumptions
+Decided and closed: GOTO scale (degE7), halt policy (deny by default,
+revocable), client policy (one at a time), architecture (two-app
+gateway).
+## 11. Fresh-eyes corrections to earlier assumptions
 
 | Earlier assumption | Correction | Evidence |
 |---|---|---|
