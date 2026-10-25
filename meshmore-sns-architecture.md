@@ -498,7 +498,7 @@ limit is visible to the user.
 | Android today | FGS `connectedDevice` already declared (`AndroidManifest.xml:36-37,76-79`) | `INTERNET` (install-time, for the loopback connect) |
 | Android 37+ | Nothing for loopback (§1.5) | Nothing for loopback (§1.5) |
 | iOS today | **`UIBackgroundModes: bluetooth-central` — new**; `NSBluetoothAlwaysUsageDescription` | Nothing (loopback is ungated, §1.6) |
-| iOS 26 | Radio must be set up via **AccessorySetupKit** for state-restoration relaunch, or use the **Live Activity** lever to keep full background BLE privileges; force-quit is never restored; ~10 s per wake | Nothing |
+| iOS 26 | Radio must be set up via **AccessorySetupKit** (non-MFi-capable, §10.1) for state-restoration relaunch; `bluetooth-central`; restore identifier + `willRestoreState`; force-quit never restored; ~10 s per wake; Live Activity optional best-effort | Nothing |
 
 The iOS line is the biggest new work in the whole plan and it is all on the
 MeshMore side.
@@ -616,17 +616,59 @@ MeshMore's loopback socket. Nothing else.
 | **P2** | LDMUX KMP `MeshMoreGatewayClient` + settings screen | P1 | ~500 lines Kotlin; no BLE |
 | **P3** | Mesh-side carry: chunking, serialisation, padding-safe framing, deadlines, discovery then raw-custom | P0 | Largest piece; independent of the phone apps |
 | **DEFERRED** | lobospeak v0: L4 codec, robot handler, GOTO/HALT in MeshMore | P0, P3 | **Spec-only; no robot functionality built now** |
-| **OPTIONAL** | Firmware forwarding patch upstream; channel-broadcast commands; AIDL if signature-gated callers ever needed; iOS AccessorySetupKit + Live Activity work for MeshMore | various | |
+| **P6 (near-term)** | MeshMore iOS: AccessorySetupKit pairing flow, `bluetooth-central`, restore identifier + `willRestoreState`, force-quit tolerance, optional Live Activity | iOS target accepted 2026-10-24 | Findings in §10.1 |
+| **OPTIONAL** | Firmware forwarding patch upstream; channel-broadcast commands; AIDL if signature-gated callers ever needed | various | |
 
 Each phase is usable alone. P0 unblocks everything.
 
 ## 10. Open questions
 
-1. **iOS AccessorySetupKit:** is the radio an "accessory" in Apple's sense
-   (MFi/protocol declaration), and is the pairing UX acceptable to the
-   user? This decides whether MeshMore can be killed and relaunched on
-   iOS 26 with the link intact. (Live Activity is the fallback lever.)
-   Investigation item, not a user decision.
+1. **iOS AccessorySetupKit (investigated 2026-10-24, resolved):**
+   - **No MFi gate.** AccessorySetupKit works with third-party BLE-only
+     peripherals whose advertisements match the app's Info.plist
+     declarations (`NSAccessorySetupKitSupports` +
+     `NSAccessorySetupBluetoothCompanyIdentifiers/Names/Services`).
+     Every documented filter operates on unprivileged BLE advertising
+     fields; Apple's own sample, and three independent practitioner
+     builds (Punch Through, Uy Nguyen, Per Friis), all use plain custom
+     service UUIDs, no certification, no entitlement
+     (`developer.apple.com/documentation/accessorysetupkit`,
+     `.../discovering-and-configuring-accessories`,
+     `punchthrough.com/ios18-accessorysetupkit-everything-ble-developers-need-to-know`).
+   - **The gate is declaration-and-match, enforced by crash:** a
+     discovery filter that does not match the Info.plist terminates the
+     app (Apple, stated twice).
+   - **The iOS 26 relaunch gate (TN3115 note 5, 2025-09-15):** "starting
+     in iOS 26 and iPadOS 26, only apps that use AccessorySetupKit to
+     setup Bluetooth accessories will be relaunched." Relaunch happens
+     "if and only if" the app was waiting on a specific Bluetooth event
+     that has now occurred. **Force-quit is never restored** (the No row
+     is not converted by note 5).
+   - **The Live Activity lever is documented but narrow and
+     orthogonal:** iOS 26, an instantiated CBManager + a Live Activity
+     started before backgrounding grants foreground-equivalent
+     *scanning privileges* in the background. It is a privilege, not a
+     lifecycle: it does not make the app relaunch-eligible, and field
+     evidence (m-Path, 2026-08-03) shows it is a best-effort trick -
+     system-killable at low battery, killed by camera activation, a
+     ~5-minute confirmation dialog, extra battery drain.
+   - **Consequences for MeshMore's iOS plan:**
+     - The radio qualifies: it advertises the standard Nordic UART
+       service UUID and a name; MeshMore declares those in the Info.plist.
+     - The pairing UX becomes the system ASK picker (replacing
+       scan-based pairing; also removes the TCC prompt on the setup path).
+     - Required: `bluetooth-central`, stable
+       `CBCentralManagerOptionRestoreIdentifierKey`, `willRestoreState`
+       reconciling restored peripherals against MeshMore's paired-device
+       registry.
+     - **Force-quit must be tolerable by design:** the link dies, the
+       radio keeps its state, MeshMore re-establishes on next launch.
+       Acceptable for a companion radio.
+     - Live Activity is optional best-effort, never a dependency.
+   - **Lead to verify on the 26.5 SDK:** a framework named
+     `AccessoryLiveActivities` exists in the iOS 26.5 SDK
+     (`dotnet/macios` wiki, 2026-03-31) - an accessory-specific Live
+     Activities surface, contents unconfirmed.
 2. **Pairing token lifetime:** recommend per-pairing, revocable
    (recorded recommendation, not yet a decision).
 3. **LDMUX iOS:** not started (`ldmux/docs/STATE.md`). The KMP client is
