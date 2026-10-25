@@ -1,0 +1,120 @@
+{
+  "_comment": "L1 carry vectors (mesh_carry.dart). Cross-language contract: the Kotlin MeshMoreGatewayClient must produce and accept these exact bytes. Firmware source: examples/companion_radio/MyMesh.cpp at companion-v1.17.1 (d929643).",
+  "encode": [
+    {
+      "name": "binary request, minimal 2-byte app data",
+      "encoder": "sendBinaryReq",
+      "args": {
+        "pubKey": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+        "appData": "6869"
+      },
+      "hex": "32000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f6869"
+    },
+    {
+      "name": "binary request, 143-byte app data is the maximum",
+      "encoder": "sendBinaryReq",
+      "args": {
+        "pubKey": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+        "appData": "ababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababab"
+      },
+      "hex": "32000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1fababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababab"
+    },
+    {
+      "name": "length-prefixed record, 24 bytes",
+      "encoder": "lengthPrefixedRecord",
+      "args": {
+        "record": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "hex": "18aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    {
+      "name": "length-prefixed record, 142 bytes is the maximum",
+      "encoder": "lengthPrefixedRecord",
+      "args": {
+        "record": "cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd"
+      },
+      "hex": "8ecdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd"
+    },
+    {
+      "name": "raw data, empty path",
+      "encoder": "sendRawData",
+      "args": {
+        "path": "",
+        "payload": "61626364"
+      },
+      "hex": "190061626364"
+    },
+    {
+      "name": "raw data, 2-hop path",
+      "encoder": "sendRawData",
+      "args": {
+        "path": "1122",
+        "payload": "01020304"
+      },
+      "hex": "1902112201020304"
+    },
+    {
+      "name": "raw packet, priority 1",
+      "encoder": "sendRawPacket",
+      "args": {
+        "priority": 1,
+        "packet": "0102030405"
+      },
+      "hex": "41010102030405"
+    }
+  ],
+  "decode": [
+    {
+      "name": "send result, flooded",
+      "decoder": "decodeSendResult",
+      "hex": "06014433221188130000",
+      "expect": {
+        "kind": "sendResult",
+        "flood": true,
+        "tag": 287454020,
+        "estTimeoutMs": 5000
+      }
+    },
+    {
+      "name": "send result, direct route",
+      "decoder": "decodeSendResult",
+      "hex": "0600efcdab89e8030000",
+      "expect": {
+        "kind": "sendResult",
+        "flood": false,
+        "tag": 2309737967,
+        "estTimeoutMs": 1000
+      }
+    },
+    {
+      "name": "binary response with 4-byte payload",
+      "decoder": "decodeBinaryResponse",
+      "hex": "8c000a0b0c0d01020304",
+      "expect": {
+        "kind": "binaryResponse",
+        "tag": 218893066,
+        "data": "01020304"
+      }
+    },
+    {
+      "name": "error, contact not found",
+      "decoder": "decodeError",
+      "hex": "0102",
+      "expect": {
+        "kind": "error",
+        "code": 2,
+        "name": "not_found"
+      }
+    },
+    {
+      "name": "error, table full",
+      "decoder": "decodeError",
+      "hex": "0103",
+      "expect": {
+        "kind": "error",
+        "code": 3,
+        "name": "table_full"
+      }
+    }
+  ]
+}

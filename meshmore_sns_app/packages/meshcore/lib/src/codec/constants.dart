@@ -243,6 +243,29 @@ extension type const MeshcoreCommand(int code) {
 
   static const MeshcoreCommand sendChannelDatagram = MeshcoreCommand(0x3E);
 
+  /// --- Binary / raw carriage (L1 for the LDMUX mesh profile).
+  /// Transcribed from `examples/companion_radio/MyMesh.cpp` at the same
+  /// pinned commit; layouts in `mesh_carry.dart`. ---
+
+  /// `CMD_SEND_BINARY_REQ` (50 = 0x32): `32 [pub_key 32] [app data]`.
+  /// The radio looks the peer up as a contact, encrypts the app data,
+  /// and replies `RESP_CODE_SENT` (0x06) with a firmware-chosen tag and
+  /// an estimated timeout, or `RESP_CODE_ERR` (0x01). The response
+  /// arrives later as `PUSH_CODE_BINARY_RESPONSE` (0x8C).
+  static const MeshcoreCommand sendBinaryReq = MeshcoreCommand(0x32);
+
+  /// `CMD_SEND_RAW_DATA` (25 = 0x19): `19 [path_len] [path] [payload]`.
+  /// Direct-route only: the firmware rejects a negative `path_len` with
+  /// `ERR_CODE_UNSUPPORTED_CMD` and the comment "flood, not supported
+  /// (yet)". No cipher and no padding are applied.
+  static const MeshcoreCommand sendRawData = MeshcoreCommand(0x19);
+
+  /// `CMD_SEND_RAW_PACKET` (65 = 0x41): `41 [priority] [packet]`.
+  /// The whole serialised MeshCore packet is supplied by the caller, so
+  /// no cipher and no padding are applied. Repeaters still will not
+  /// forward a `PAYLOAD_TYPE_RAW_CUSTOM` flood.
+  static const MeshcoreCommand sendRawPacket = MeshcoreCommand(0x41);
+
   /// --- R60 Tools. From `MyMesh.cpp` on meshcore-dev/MeshCore main
   /// (checked 2026-10-14), newer than the pin above; older firmware
   /// answers ERR_CODE_UNSUPPORTED_CMD. ---
@@ -322,7 +345,38 @@ extension type const MeshcoreResponse(int code) {
   /// discover response) was heard.
   static const MeshcoreResponse controlData = MeshcoreResponse(0x8E);
 
+  /// `PUSH_CODE_BINARY_RESPONSE` (0x8C). Async push delivering a peer's
+  /// reply to a `CMD_SEND_BINARY_REQ`. Wire format:
+  /// `[0x8C][reserved 1B = 0][tag 4B LE][payload]`.
+  ///
+  /// The tag echoes the one `RESP_CODE_SENT` reported. Note what the
+  /// frame does _not_ carry: any sender public key. Responder identity is
+  /// only provable by an end-to-end layer above this one.
+  static const MeshcoreResponse binaryResponse = MeshcoreResponse(0x8C);
+
   bool get isPush => code >= 0x80;
+}
+
+/// `RESP_CODE_ERR` (0x01) error codes. Second byte of a 2-byte frame
+/// `[0x01][code]` (firmware: `MyMesh::writeErrFrame`).
+extension type const MeshcoreErrorCode(int code) {
+  static const MeshcoreErrorCode unsupportedCmd = MeshcoreErrorCode(1);
+  static const MeshcoreErrorCode notFound = MeshcoreErrorCode(2);
+  static const MeshcoreErrorCode tableFull = MeshcoreErrorCode(3);
+  static const MeshcoreErrorCode badState = MeshcoreErrorCode(4);
+  static const MeshcoreErrorCode fileIoError = MeshcoreErrorCode(5);
+  static const MeshcoreErrorCode illegalArg = MeshcoreErrorCode(6);
+
+  /// A short stable name for diagnostics and test vectors.
+  String get name => switch (code) {
+        1 => 'unsupported_cmd',
+        2 => 'not_found',
+        3 => 'table_full',
+        4 => 'bad_state',
+        5 => 'file_io_error',
+        6 => 'illegal_arg',
+        _ => 'unknown_$code',
+      };
 }
 
 /// `CMD_GET_STATS` sub-types.
