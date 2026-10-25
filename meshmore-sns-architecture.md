@@ -556,13 +556,17 @@ session index, counter). It never sees application bytes.
   AccessorySetupKit question (see §10.1).
 - **Phone-as-bridge is primary daily use** (user, 2026-10-24). LDMUX's mesh
   mode gets full UX weight, not fallback treatment.
-- **Conservative airtime budget (user, 2026-10-24):** the mesh profile is
-  designed **as if EU868's 1% duty cycle applied, even on US915**. The
-  gateway enforces a per-hour transmit-airtime budget, default
-  EU868-equivalent (**36 s of airtime per hour**, ~101 packets/hour at
-  354 ms each, per ldmux `docs/MESH-TRANSPORT.md`), visible in L2 STATUS
-  and revocable. Being a good mesh citizen is a hard requirement, not a
-  tuning option.
+- **Conservative airtime budget, scoped to LDMUX (user, 2026-10-24):**
+  the strict budget applies **specifically to LDMUX mesh traffic**,
+  because a terminal stream is the one traffic class that could become a
+  mesh hog if unmanaged. It does **not** apply to MeshMore's own
+  companion traffic (chat, telemetry, sync) or to lobospeak/robot
+  traffic. The gateway meters per bound L2 session, and since L2 is one
+  client at a time, the budget is simply "the active session's budget":
+  default EU868-equivalent (**36 s of airtime per hour**, ~101
+  packets/hour at 354 ms each, per ldmux `docs/MESH-TRANSPORT.md`),
+  visible in L2 STATUS, revocable. MeshMore's own traffic never crosses
+  the L2 data plane, so it is outside the governor by construction.
 
 ### 8.1 What "client" means (topology, stated plainly)
 
@@ -598,6 +602,10 @@ MeshMore's loopback socket. Nothing else.
   node is the natural host choice).
 - The mesh is a line (host node - phone node), extendable to more nodes
   later. One line, two radios, each owned by its machine.
+- **Fleet fact (user, 2026-10-24):** there are **two radios** in the
+  deployment - the host's and the phone's. (Consistent with the radio
+  alert work: the owner's own Heltec V4.3 OLED is the phone-side unit,
+  and a second Heltec exists in the fleet.)
 
 ## 9. Phased plan (in scope per the scope cut)
 
