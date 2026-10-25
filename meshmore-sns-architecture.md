@@ -326,25 +326,149 @@ Plan:
 
 ## 5. The gateway's job on the mesh side (the hard part)
 
-The tunnel is only half the system. The other half is carrying L3/L4 frames
-over a 143-byte, single-request, zero-padded, direct-only mesh:
+Cross-checked against ldmux's own mesh design
+(`ldmux/docs/MESH-TRANSPORT.md`, `ldmux/docs/adr/0020-mesh-link-security.md`,
+both 2026-10-06, design-only), the gateway is **simpler than a general
+transport**: it is a **blind carrier**.
 
-- **Chunking** with sequence numbers and resync (ldmux's own
-  `docs/MESH-TRANSPORT.md` already concluded line-mode + chunking is the
-  only viable shape; the firmware numbers in the interop doc fill in the
-  arithmetic).
-- **Serialisation**: one outstanding `pending_req`; the gateway queues.
-- **Self-delimiting framing** because of 16-byte zero padding.
-- **Deadlines** from `est_timeout` (`RESP_CODE_SENT`), which the firmware
-  computes from airtime + hops.
-- **Discovery first, then raw custom**: a flooded binary request reaches an
-  unknown peer; raw custom is the cheap steady state once a path is known
-  (interop doc §2.4a).
+### 5.1 What the gateway carries
 
-This work is independent of the phone apps. It is the largest single piece
-and is where most of the schedule risk lives.
+- The end-to-end session is **Noise IKpsk2** between the LDMUX app and the
+  host, per ADR-0020. The gateway is not an endpoint of it.
+- The session's **record layer** (ADR-0020 §3: 24 B fixed overhead,
+  one record per packet, counter in the clear) is produced by the
+  endpoints, not the gateway.
+- The gateway ships **one record per packet** and never parses, chunks,
+  or decrypts session content. Large items (e.g. the optional ML-KEM
+  stage, 1,184 B / 1,088 B) are fragmented **end-to-end by the session
+  layer**, above the record layer. The gateway's only job over the mesh:
+  deliver whole records, in order, with retransmission.
+
+### 5.2 The budgets (per direction, per endpoint)
+
+| Direction | Carriage | App-payload ceiling | Record ceiling (24 B overhead included) |
+|---|---|---|---|
+| phone → host | companion binary request | **143 B** | **143 B** (119 B application) |
+| host → phone | raw/custom packet | **184 B** | **160 B** (136 B application) |
+
+The phone is companion-constrained (176 B frame − opcode − 32 B pubkey);
+the host is a full MeshCore node using raw/custom at the 184 B packet
+ceiling. The endpoints size records to the destination's carriage; the
+gateway only checks "does this record fit" and queues.
+
+### 5.3 The gateway's mesh-side mechanics
+
+- **Serialisation**: one outstanding `pending_req` (firmware,
+  `MyMesh.cpp:1688-1689`); the gateway queues records per session.
+- **ARQ**: sequence numbers per (session, direction); retransmit on
+  timeout; the deadline comes from `est_timeout` (`RESP_CODE_SENT`),
+  which the firmware computes from airtime + hops.
+- **De-duplication and ordering**: the record counter is in the clear
+  (authenticated by the tag), so the gateway can de-dup and order
+  without decrypting.
+- **Discovery first, then raw custom**: a flooded binary request reaches
+  an unknown peer; raw custom is the cheap steady state once a path is
+  known (interop doc §2.4a).
+- **Self-delimiting**: binary payloads are zero-padded to 16 B, so the
+  record format must not end in `0x00` ambiguity; the 24 B record
+  overhead already guarantees a non-zero tail (16 B tag), so no extra
+  delimiter is needed.
+
+### 5.4 Timers (aligned to ldmux's mesh profile)
+
+ldmux's mesh-profile timers (MESH-TRANSPORT.md "Review", item 7):
+client ping ≥60 s, idle sweep ≥5 min, claim grace ≈60 s. The gateway's
+L2 heartbeat is local (loopback, free) and does not consume airtime; the
+mesh-side idle detection uses the ARQ deadlines, not a ping.
+
+This work is independent of the phone apps. It is the largest single
+piece and is where most of the schedule risk lives.
 
 ---
+
+## 5.5 L2 gateway protocol - draft v0 (the P1 contract)
+
+Draft, for review. Freezes when P1 lands. Written to be implementable in
+Dart (server) and Kotlin (client) with no further discussion.
+
+### Framing
+
+One frame per message:
+
+```text
+  offset  size  field
+  0       1     type
+  1       1     flags    (must be 0 in v0)
+  2       2     length     (u16 big-endian, payload byte count, max 512)
+  4       N     payload
+```
+
+Max frame 516 B. The socket is a plain TCP connection on 127.0.0.1; the
+port is fixed and documented (v0: **41731**), chosen to avoid well-known
+local services. No TLS: the socket is loopback-only and the pairing
+message authenticates the caller.
+
+### Types
+
+| type | name | direction | payload |
+|---|---|---|---|
+| 0x01 | PAIR | client→gw | 16-byte pairing token |
+| 0x02 | PAIR_OK | gw→client | none |
+| 0x03 | PAIR_ERR | gw→client | 1-byte reason |
+| 0x10 | HELLO | client→gw | version (1), capability bits (1) |
+| 0x11 | HELLO_OK | gw→gw | version (1), capability bits (1), radio status (1) |
+| 0x20 | BIND | client→gw | 32-byte peer pubkey (the host node) |
+| 0x21 | BIND_OK | gw→client | none |
+| 0x30 | RECORD | client→gw | one record, ≤143 B (see §5.2) |
+| 0x31 | RECV | gw→client | seq (4), one record, ≤160 B |
+| 0x32 | ACK | gw→client | seq (4), status (1): delivered / timeout / dup |
+| 0x40 | STATUS | gw→client | radio state (1), rssi (1), battery (1) |
+| 0x50 | PING | client→gw | none |
+| 0x51 | PONG | gw→client | none |
+| 0x60 | CLOSE | either | 1-byte reason |
+
+Rules:
+
+- PAIR is the first frame on a new connection. The token is checked
+  against the persisted, revocable grant. No other frame is processed
+  before PAIR_OK.
+- BIND selects the mesh peer for the session's records. One BIND per
+  connection in v0 (one client, one peer).
+- RECORD/RECV/ACK are the data plane: the gateway ships whole records,
+  never parsed (§5.3).
+- STATUS is pushed by the gateway on change and answered by PING.
+- Unknown type with flags=0: the gateway drops the frame and sends
+  CLOSE(reason=protocol). Version mismatches close with
+  CLOSE(reason=version).
+
+### Pairing token
+
+- 128 bits, generated by MeshMore at pairing time, shown as a QR in
+  Settings → Connected apps.
+- Stored by MeshMore (not logged, not in prefs dumps), revocable.
+- Per-pairing (a re-pairing issues a new token; the old one dies).
+
+### Capability bits (v0)
+
+| bit | name | meaning |
+|---|---|---|
+| 0 | e2e-noise | client speaks the ADR-0020 record layer |
+| 1 | ml-kem | client offers the optional ML-KEM stage |
+| 2 | ml-kem-ack | gateway/host offers the ML-KEM stage |
+
+Reserve the rest. Capabilities are negotiated in HELLO/HELLO_OK and are
+the only additive extension point in v0.
+
+### Failure behaviour
+
+- Client disconnect: the gateway closes the mesh-side session (sends
+  session-layer close records), releases the `pending_req` queue.
+- Radio drops: the gateway queues records up to a bounded buffer
+  (v0: 64 records), drops oldest on overflow, and sends
+  CLOSE(reason=radio-lost) to the client on reconnect of the radio.
+- MeshMore process death: the socket dies with it; LDMUX reconnects with
+  backoff and re-pairs from its stored token. Pairing survives app
+  updates (persisted by MeshMore).
 
 ## 6. Per-platform manifest/entitlement surface
 
@@ -378,6 +502,17 @@ authenticates at the first frame:
 - **One client at a time** on v1 (matches the single `pending_req` on the
   mesh side; multi-client is additive later).
 - The radio-side crypto (companion protocol, MeshMore↔radio) is unchanged.
+
+Three security layers, each against a different threat:
+
+| Layer | Protects | Against | Owner |
+|---|---|---|---|
+| L2 pairing token | the local socket | other apps on the phone | MeshMore gateway |
+| E2E Noise IKpsk2 (ADR-0020) | the session content | the mesh, repeaters, RF observers | LDMUX app + host; **gateway is blind** |
+| Companion protocol crypto | MeshMore↔radio | BLE observers | firmware |
+
+The gateway sees only the record layer's 6 clear bytes (type/version,
+session index, counter). It never sees application bytes.
 
 ---
 
