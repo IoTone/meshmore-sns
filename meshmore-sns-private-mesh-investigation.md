@@ -429,3 +429,67 @@ Recommendation (extends, does not invent):
 4. Real spectrum occupancy around 913-916 MHz at the user's location (no RF survey).
 5. Whether the `STATS_TYPE_RADIO` response exposes airtime/utilisation counters (not
    read in this pass); needed for the numeric split trigger.
+
+## 6. Verification of the load-bearing claims (main assistant, 2026-10-24)
+
+Spot-checked in the firmware because the recommendation rests on them.
+
+### 6.1 Private repeaters on the US band ARE possible — the whitelist is a companion-build default
+
+`examples/companion_radio/MyMesh.cpp:1005-1021` defines the repeat-mode
+frequency gate:
+
+```cpp
+static FreqRange repeat_freq_ranges[] = {
+  #ifdef ALLOWED_REPEAT_FREQ_RANGE
+  ALLOWED_REPEAT_FREQ_RANGE
+  #else
+  { 433000, 433000 }, { 869495, 869495 }, { 918000, 918000 }
+  #endif
+};
+```
+
+Two things follow, and the second matters more than the first:
+
+- `ALLOWED_REPEAT_FREQ_RANGE` **is never defined anywhere in the repo**
+  (`grep` over `*.ini`, `*.h`, `*.cpp` finds only the `#ifdef` and its use),
+  so a stock companion build is restricted to those three frequencies. That
+  means a companion node at 910.525 cannot be told to repeat.
+- That gate lives **only in the companion firmware**. The dedicated
+  `examples/simple_repeater/` build has no frequency gate at all: its
+  `allowPacketForward` (`MyMesh.cpp:434-459`) checks `disable_fwd`, flood
+  hop limits, unknown transport codes and loop detection — nothing about
+  frequency.
+
+**So a private repeater at 910.525 MHz is a supported configuration.** It
+needs a radio flashed with the `simple_repeater` firmware, not a companion
+build with repeat mode switched on. This is the correct answer to "can we
+have private repeaters", and it was almost lost behind the companion's
+build-time default.
+
+### 6.2 Private (`$`) region keys are still non-functional
+
+`RegionMap.cpp:175` recognises `src.name[0] == '$'` as a private region, but
+`TransportKeyStore::saveKeysFor` (`:70-77`) is:
+
+```cpp
+  // TODO: update hardware keystore
+  return false;  // failed
+```
+
+So only publicly derivable `#name` regions work, keyed
+`SHA256("#name")` (`TransportKeyStore.cpp:44-49`). A private region name is
+obscurity, not a secret: anyone who guesses the name derives the same key.
+
+### 6.3 A repeater relays our direct raw custom, and it relays everyone's traffic
+
+`simple_repeater::allowPacketForward` has **no payload-type test**, so a
+repeater does forward direct `RAW_CUSTOM` packets. That contradicts the
+community report that repeaters drop them, and it means the two-phase
+carriage survives a multi-hop private link.
+
+The same function has **no per-key access control** — `ClientACL` gates
+management logins only (`src/helpers/ClientACL.h`). Therefore a repeater on
+a shared frequency relays every node it hears, not just our two. A genuinely
+private repeater network is only private if it is on its own frequency,
+because "relay only my traffic" is not expressible in this firmware.
