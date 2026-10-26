@@ -451,3 +451,43 @@ robot work reach the app at all.
 | Raw packet sender identity | none | `MyMesh.cpp:801-815` |
 | Padding | 16 B zero | `Utils.cpp:85-101` |
 | `est_timeout` | from airtime + hops | `BaseChatMesh.cpp:645-653` |
+
+## 11. Corrections this pass adds for David's docs (2026-10-24)
+
+Three firmware facts that change advice about turning radios into part of a
+network. All verified against `companion-v1.17.1` (`d929643`).
+
+### 11.1 "Make this node a repeater" is not available on a companion build at these frequencies
+
+`companion_radio/MyMesh.cpp:1005-1021` gates companion repeat mode to
+433.000, 869.495 or 918.000 MHz, and `ALLOWED_REPEAT_FREQ_RANGE` is never
+defined anywhere in the repository, so that default is what ships. A
+companion at 910.525 MHz cannot be switched into repeat mode.
+
+Repeating on an arbitrary frequency is done by flashing the
+`simple_repeater` firmware, which has **no frequency gate at all**
+(`simple_repeater/MyMesh.cpp:434-459`). Any guide that says "enable repeat
+on your companion node" is wrong for US 902-928 deployments.
+
+### 11.2 Private (`$`) region keys do not work yet
+
+`RegionMap.cpp:175` recognises a `$` private region, but
+`TransportKeyStore::saveKeysFor` is a TODO that returns `false`
+(`:70-77`). Only `#name` regions resolve, keyed `SHA256("#name")`
+(`:44-49`). A private region name is a shared convention, not a secret:
+anyone who knows the name derives the same key. Do not describe region
+scopes as privacy.
+
+### 11.3 A repeater relays direct raw custom, and relays everyone
+
+`simple_repeater::allowPacketForward` has no payload-type test, so it
+forwards `RAW_CUSTOM` like any other direct packet. This contradicts the
+community report that repeaters drop it, and it is good news for a
+multi-hop link. The same function has no per-key forwarding ACL —
+`ClientACL` gates management logins only — so a repeater on a shared
+frequency relays every node it hears. There is no way to express "relay
+only my traffic", which is why genuine separation needs its own frequency
+rather than its own key.
+
+See `meshmore-sns-protocol-coverage.md` for the full command-coverage audit
+behind these.
