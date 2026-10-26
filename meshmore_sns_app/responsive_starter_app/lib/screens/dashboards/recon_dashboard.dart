@@ -105,7 +105,7 @@ class _ReconDashboardState extends State<ReconDashboard>
             child: Row(
               children: <Widget>[
                 Expanded(
-                  child: Text('MESHMORE · RECON',
+                  child: Text('RECON',
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                           fontFamily: skin.type.headingFamily,

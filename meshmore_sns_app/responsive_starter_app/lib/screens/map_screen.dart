@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 
 import '../gen/app_localizations.dart';
 import '../ui/mm_edge_swipe.dart';
+import '../ui/mm_page_header.dart';
 import 'street_map_view.dart';
 import '../ui/mm_shape.dart';
 
@@ -43,7 +44,14 @@ class MapScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final AppLocalizations l = AppLocalizations.of(context);
     final ColorScheme cs = Theme.of(context).colorScheme;
-    return Stack(
+    return Column(
+      children: <Widget>[
+        // The map is the one view whose content is full-bleed, so its header
+        // sits above the canvas rather than floating over it: a floating box
+        // would cover the thing you are trying to read.
+        MmPageHeader(title: l.tabMap),
+        Expanded(
+          child: Stack(
       children: <Widget>[
         Positioned.fill(
           child: MmEdgeSwipe(
@@ -69,6 +77,9 @@ class MapScreen extends StatelessWidget {
               icon: const Icon(Icons.download_for_offline_outlined),
               onPressed: () => context.push('/settings/maps'),
             ),
+          ),
+        ),
+      ],
           ),
         ),
       ],

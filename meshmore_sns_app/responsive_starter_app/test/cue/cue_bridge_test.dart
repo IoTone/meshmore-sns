@@ -356,4 +356,89 @@ void main() {
     bridge.dispose();
     ctrl.dispose();
   });
+
+  // Regression: opening the app after being away replayed every queued
+  // message through the SYNC drain, and each one cued — dozens of
+  // overlapping haptic patterns for history that was already old.
+  group('backlog replay is not a burst of arrivals', () {
+    testWidgets('queued messages do not cue one-by-one, the drain end cues once',
+        (WidgetTester t) async {
+      final FakeMeshcoreTransport fake =
+          FakeMeshcoreTransport(connected: true);
+      final MeshcoreController ctrl =
+          MeshcoreController(transportFactory: () async => fake);
+      final _RecordingCue cue = _RecordingCue(ThemeController());
+      final CueBridge bridge = CueBridge(ctrl, cue);
+
+      await ctrl.connect();
+      fake.emit(selfInfoFrame()); // ready → the BACKLOG drain begins
+      await t.pump();
+      expect(ctrl.isBacklogDrain, isTrue);
+
+      cue.calls.clear();
+      for (int i = 0; i < 6; i++) {
+        fake.emit(channelMsgFrame(idx: 1, text: 'old $i'));
+        await t.pump();
+      }
+      expect(cue.calls.where((CueKind k) => k == CueKind.messageIn), isEmpty,
+          reason: 'replayed history must not fire a cue per message');
+
+      fake.emit(noMoreMessagesFrame());
+      await t.pump();
+      expect(cue.calls.where((CueKind k) => k == CueKind.messageIn).length, 1,
+          reason: 'one summary cue marks the end of the backlog');
+
+      bridge.dispose();
+      ctrl.dispose();
+    });
+
+    testWidgets('a DM in the backlog is silent too', (WidgetTester t) async {
+      final FakeMeshcoreTransport fake =
+          FakeMeshcoreTransport(connected: true);
+      final MeshcoreController ctrl =
+          MeshcoreController(transportFactory: () async => fake);
+      final _RecordingCue cue = _RecordingCue(ThemeController());
+      final CueBridge bridge = CueBridge(ctrl, cue);
+
+      await ctrl.connect();
+      fake.emit(selfInfoFrame());
+      await t.pump();
+      cue.calls.clear();
+
+      fake.emit(contactMessageFrame(
+          prefix: <int>[1, 2, 3, 4, 5, 6], text: 'queued dm'));
+      await t.pump();
+      expect(cue.calls, isEmpty, reason: 'backlogged DMs are history');
+
+      fake.emit(noMoreMessagesFrame());
+      await t.pump();
+      expect(cue.calls, <CueKind>[CueKind.messageIn]);
+      bridge.dispose();
+      ctrl.dispose();
+    });
+
+    testWidgets('live traffic after the backlog still cues', (WidgetTester t) async {
+      final FakeMeshcoreTransport fake =
+          FakeMeshcoreTransport(connected: true);
+      final MeshcoreController ctrl =
+          MeshcoreController(transportFactory: () async => fake);
+      final _RecordingCue cue = _RecordingCue(ThemeController());
+      final CueBridge bridge = CueBridge(ctrl, cue);
+
+      await ctrl.connect();
+      fake.emit(selfInfoFrame());
+      await t.pump();
+      fake.emit(noMoreMessagesFrame());
+      await t.pump();
+      cue.calls.clear();
+
+      // A new message arrives while connected: live, not backlog.
+      fake.emit(channelMsgFrame(idx: 1, text: 'live now'));
+      await t.pump();
+      expect(cue.calls, contains(CueKind.messageIn),
+          reason: 'real arrivals must still cue');
+      bridge.dispose();
+      ctrl.dispose();
+    });
+  });
 }

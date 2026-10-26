@@ -21,6 +21,7 @@ import '../screens/map_screen.dart';
 import '../screens/nodes_screen.dart';
 import '../theme/mm_skin.dart';
 import '../ui/mm_components.dart';
+import '../ui/mm_page_header.dart';
 import '../ui/mm_scaffold.dart';
 import '../ui/mm_shape.dart';
 
@@ -143,7 +144,6 @@ class _HomeShellState extends State<HomeShell>
   @override
   Widget build(BuildContext context) {
     final AppLocalizations l = AppLocalizations.of(context);
-    final MmView current = MmView.values[_index];
     // Root back handling (R11): from a non-Dashboard tab, Back returns
     // to the Dashboard instead of trying to pop the root route (which
     // is what crashed on Android). On the Dashboard, Back is allowed
@@ -157,7 +157,10 @@ class _HomeShellState extends State<HomeShell>
       },
       child: BootOverlay(child: Scaffold(
       appBar: AppBar(
-        title: Text(current.title(l)),
+        // The app bar says who this is, always. The *view* name lives in
+        // MmPageHeader below the tab strip, in the same place on every
+        // view, so the top of the screen stopped changing on every swipe.
+        title: Text(l.appName),
         actions: const <Widget>[RadioLinkIndicator()],
         bottom: _ViewStrip(
           index: _index,
@@ -382,7 +385,11 @@ class _SettingsView extends StatelessWidget {
           '/settings/about'),
     ];
     return MmScaffold(
-      child: ListView.separated(
+      child: Column(
+        children: <Widget>[
+          MmPageHeader(title: l.tabSettings),
+          Expanded(
+            child: ListView.separated(
         padding: cardRows
             ? const EdgeInsets.fromLTRB(12, 8, 12, 12)
             : EdgeInsets.zero,
@@ -417,6 +424,9 @@ class _SettingsView extends StatelessWidget {
             onTap: () => context.push(it.$4),
           );
         },
+            ),
+          ),
+        ],
       ),
     );
   }

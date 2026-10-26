@@ -526,7 +526,7 @@ class _TopBar extends StatelessWidget {
             child: Row(
               children: <Widget>[
                 Flexible(
-                  child: Text('MESHMORE',
+                  child: Text('HYPERLOCAL',
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         fontFamily: skin.type.headingFamily,

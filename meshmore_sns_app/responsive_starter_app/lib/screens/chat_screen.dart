@@ -19,6 +19,7 @@ import '../bot/bot_tag.dart';
 import '../theme/mm_skin.dart';
 import '../theme/mm_tokens.dart';
 import '../tts/tts_controller.dart';
+import '../ui/mm_page_header.dart';
 import '../ui/mm_scaffold.dart';
 import '../ui/mm_shape.dart';
 
@@ -214,6 +215,7 @@ class _ChatScreenState extends State<ChatScreen>
     return MmScaffold(
       child: Column(
       children: <Widget>[
+        MmPageHeader(title: l.tabChat),
         // R91 — one row, one job: switch channel. The caption above it
         // said "CHANNEL · PUBLIC" while the selected chip two lines below
         // already said "Public", and the collapse chevron existed only to

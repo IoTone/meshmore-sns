@@ -14,6 +14,7 @@ import 'package:meshmore_sns_app/main.dart';
 import 'package:meshmore_sns_app/screens/map_screen.dart';
 import 'package:meshmore_sns_app/screens/street_map_view.dart';
 import 'package:meshmore_sns_app/shell/home_shell.dart';
+import 'package:meshmore_sns_app/ui/mm_page_header.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:meshmore_sns_app/bot/bot_controller.dart';
 import 'package:meshmore_sns_app/meshcore/meshcore_controller.dart';
@@ -98,7 +99,7 @@ Future<void> _pumpApp(WidgetTester tester, {MmThemePreset? preset}) async {
 void main() {
   testWidgets('shell starts on Dashboard (R8 home)', (WidgetTester t) async {
     await _pumpApp(t);
-    expect(find.widgetWithText(AppBar, 'Dashboard'), findsOneWidget);
+    expect(find.widgetWithText(MmPageHeader, 'Dashboard'), findsOneWidget);
   });
 
   testWidgets('R86 Settings lists Docs and Information as peers',
@@ -133,7 +134,7 @@ void main() {
     expect(find.widgetWithText(AppBar, 'Docs'), findsOneWidget);
     await t.pageBack();
     await t.pumpAndSettle();
-    expect(find.widgetWithText(AppBar, 'Settings'), findsOneWidget,
+    expect(find.widgetWithText(MmPageHeader, 'Settings'), findsOneWidget,
         reason: 'Back returns to the Settings hub');
 
     // Information opens About, which no longer carries a Docs row.
@@ -155,7 +156,7 @@ void main() {
 
     await t.pageBack();
     await t.pumpAndSettle();
-    expect(find.widgetWithText(AppBar, 'Settings'), findsOneWidget);
+    expect(find.widgetWithText(MmPageHeader, 'Settings'), findsOneWidget);
   });
 
   testWidgets('R94 the Settings hub labels each group once',
@@ -190,7 +191,7 @@ void main() {
     await _pumpApp(t);
     await t.tap(find.byTooltip('Settings'));
     await t.pumpAndSettle();
-    expect(find.widgetWithText(AppBar, 'Settings'), findsOneWidget);
+    expect(find.widgetWithText(MmPageHeader, 'Settings'), findsOneWidget);
     // Settings hub shows the three sub-screen entries.
     expect(find.text('Device configuration'), findsOneWidget);
     expect(find.text('App settings'), findsOneWidget);
@@ -268,7 +269,7 @@ void main() {
 
     await t.tap(find.byTooltip('Nodes'));
     await t.pumpAndSettle();
-    expect(find.widgetWithText(AppBar, 'Nodes'), findsOneWidget);
+    expect(find.widgetWithText(MmPageHeader, 'Nodes'), findsOneWidget);
     final Rect r = t.getRect(find.byTooltip('Nodes'));
     expect(r.left, greaterThanOrEqualTo(0));
     expect(r.right, lessThanOrEqualTo(320));
@@ -276,7 +277,7 @@ void main() {
     await t.tap(find.byTooltip('Map'));
     await t.pump();
     await t.pump(const Duration(milliseconds: 400));
-    expect(find.widgetWithText(AppBar, 'Map'), findsOneWidget);
+    expect(find.widgetWithText(MmPageHeader, 'Map'), findsOneWidget);
   });
 
   testWidgets(
@@ -298,18 +299,18 @@ void main() {
     final Rect r = t.getRect(find.byTooltip('Settings'));
     expect(r.right, lessThanOrEqualTo(256),
         reason: 'the selected cell stays in sight');
-    expect(find.widgetWithText(AppBar, 'Settings'), findsOneWidget);
+    expect(find.widgetWithText(MmPageHeader, 'Settings'), findsOneWidget);
   });
 
   testWidgets('the body never pages by swipe; the strip snaps (R95)',
       (WidgetTester t) async {
     await _pumpApp(t);
-    expect(find.widgetWithText(AppBar, 'Dashboard'), findsOneWidget);
+    expect(find.widgetWithText(MmPageHeader, 'Dashboard'), findsOneWidget);
     await t.fling(find.byType(PageView), const Offset(-400, 0), 1000);
     await t.pumpAndSettle();
     await t.fling(find.byType(PageView), const Offset(400, 0), 1000);
     await t.pumpAndSettle();
-    expect(find.widgetWithText(AppBar, 'Dashboard'), findsOneWidget,
+    expect(find.widgetWithText(MmPageHeader, 'Dashboard'), findsOneWidget,
         reason: 'a fling in the body must not change the view');
 
     // A tap is one jump: no travel through the pages in between. R95's
@@ -317,7 +318,7 @@ void main() {
     // nav cue on each one.
     await t.tap(find.byTooltip('Settings'));
     await t.pump();
-    expect(find.widgetWithText(AppBar, 'Settings'), findsOneWidget,
+    expect(find.widgetWithText(MmPageHeader, 'Settings'), findsOneWidget,
         reason: 'the target view is live on the next frame');
   });
 
@@ -327,14 +328,14 @@ void main() {
     await _pumpApp(t);
     await t.tap(find.byTooltip('Chat'));
     await t.pumpAndSettle();
-    expect(find.widgetWithText(AppBar, 'Chat'), findsOneWidget);
+    expect(find.widgetWithText(MmPageHeader, 'Chat'), findsOneWidget);
 
     // System Back: PopScope must consume it (not pop the root) and
     // route us back to the Dashboard.
     final bool handled = await t.binding.handlePopRoute();
     await t.pumpAndSettle();
     expect(handled, isTrue);
-    expect(find.widgetWithText(AppBar, 'Dashboard'), findsOneWidget);
+    expect(find.widgetWithText(MmPageHeader, 'Dashboard'), findsOneWidget);
     expect(t.takeException(), isNull); // no root-pop exception
   });
 
@@ -346,7 +347,7 @@ void main() {
     t.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
     await t.pumpAndSettle();
     expect(t.takeException(), isNull);
-    expect(find.widgetWithText(AppBar, 'Dashboard'), findsOneWidget);
+    expect(find.widgetWithText(MmPageHeader, 'Dashboard'), findsOneWidget);
   });
 
   // The grid tab runs a repeating animation, so once it is on screen
@@ -364,13 +365,13 @@ void main() {
     await _pumpApp(t);
     await t.tap(find.byTooltip('Nodes'));
     await t.pumpAndSettle();
-    expect(find.widgetWithText(AppBar, 'Nodes'), findsOneWidget);
+    expect(find.widgetWithText(MmPageHeader, 'Nodes'), findsOneWidget);
     // The old entry point is gone from Nodes.
     expect(find.widgetWithIcon(IconButton, Icons.radar), findsNothing);
 
     await t.tap(find.byTooltip('Hyperlocal grid'));
     await settle(t);
-    expect(find.widgetWithText(AppBar, 'Hyperlocal grid'), findsOneWidget);
+    expect(find.widgetWithText(MmPageHeader, 'Hyperlocal grid'), findsOneWidget);
     expect(find.text('Not Connected to Mesh'), findsOneWidget);
     expect(t.takeException(), isNull);
   });
@@ -378,25 +379,25 @@ void main() {
   testWidgets('a vertical drag on the strip steps one view (R95)',
       (WidgetTester t) async {
     await _pumpApp(t);
-    expect(find.widgetWithText(AppBar, 'Dashboard'), findsOneWidget);
+    expect(find.widgetWithText(MmPageHeader, 'Dashboard'), findsOneWidget);
     final Offset strip = t.getCenter(find.byTooltip('Chat'));
 
     // Up -> the next view, the same result as tapping the next cell.
     await t.flingFrom(strip, const Offset(0, -60), 800);
     await settle(t);
-    expect(find.widgetWithText(AppBar, 'Chat'), findsOneWidget);
+    expect(find.widgetWithText(MmPageHeader, 'Chat'), findsOneWidget);
 
     // Down -> the previous view.
     await t.flingFrom(strip, const Offset(0, 60), 800);
     await settle(t);
-    expect(find.widgetWithText(AppBar, 'Dashboard'), findsOneWidget);
+    expect(find.widgetWithText(MmPageHeader, 'Dashboard'), findsOneWidget);
 
     // A short drag is not a step. It is started on the current cell, so if
     // the arena resolves it as a tap it lands on the view already shown.
     await t.dragFrom(t.getCenter(find.byTooltip('Dashboard')),
         const Offset(0, -12), touchSlopY: 0);
     await settle(t);
-    expect(find.widgetWithText(AppBar, 'Dashboard'), findsOneWidget,
+    expect(find.widgetWithText(MmPageHeader, 'Dashboard'), findsOneWidget,
         reason: '12 dp is below the step threshold');
     expect(t.takeException(), isNull);
   });
@@ -436,10 +437,10 @@ void main() {
       // strip is the only way across.
       await t.fling(find.byType(PageView), const Offset(-400, 0), 1000);
       await settle(t);
-      expect(find.widgetWithText(AppBar, 'Hyperlocal grid'), findsOneWidget,
+      expect(find.widgetWithText(MmPageHeader, 'Hyperlocal grid'), findsOneWidget,
           reason: '${preset.name}: the shell does not swipe');
       await openFromStrip(t, 'Map');
-      expect(find.widgetWithText(AppBar, 'Map'), findsOneWidget,
+      expect(find.widgetWithText(MmPageHeader, 'Map'), findsOneWidget,
           reason: '${preset.name}: Map is reachable from the grid');
       expect(find.byType(MapScreen), findsOneWidget);
       expect(find.byTooltip('Offline maps'), findsOneWidget,
@@ -476,7 +477,7 @@ void main() {
     // never pages: an inward fling from the left edge goes back one view.
     await t.flingFrom(const Offset(2, 300), const Offset(300, 0), 1200);
     await settle(t);
-    expect(find.widgetWithText(AppBar, 'Hyperlocal grid'), findsOneWidget,
+    expect(find.widgetWithText(MmPageHeader, 'Hyperlocal grid'), findsOneWidget,
         reason: 'the left band leaves the map');
     expect(t.takeException(), isNull);
   });
@@ -487,34 +488,34 @@ void main() {
     GridScreen.resetSession();
     await _pumpApp(t);
     await openFromStrip(t, 'Map');
-    expect(find.widgetWithText(AppBar, 'Map'), findsOneWidget);
+    expect(find.widgetWithText(MmPageHeader, 'Map'), findsOneWidget);
 
     // The lock is unconditional: no notifier needs to be flipped, and a
     // fling in the middle of the page (the map's) must not change view.
     final Offset mid = t.getCenter(find.byType(PageView));
     await t.flingFrom(mid, const Offset(-400, 0), 1000);
     await settle(t);
-    expect(find.widgetWithText(AppBar, 'Map'), findsOneWidget,
+    expect(find.widgetWithText(MmPageHeader, 'Map'), findsOneWidget,
         reason: 'a left swipe in the middle must not leave the map');
     await t.flingFrom(mid, const Offset(400, 0), 1000);
     await settle(t);
-    expect(find.widgetWithText(AppBar, 'Map'), findsOneWidget,
+    expect(find.widgetWithText(MmPageHeader, 'Map'), findsOneWidget,
         reason: 'nor a right swipe');
 
     // The strip leaves.
     await openFromStrip(t, 'Settings');
-    expect(find.widgetWithText(AppBar, 'Settings'), findsOneWidget);
+    expect(find.widgetWithText(MmPageHeader, 'Settings'), findsOneWidget);
 
     // R95: still inert off the map.
     await t.fling(find.byType(PageView), const Offset(400, 0), 1000);
     await settle(t);
-    expect(find.widgetWithText(AppBar, 'Settings'), findsOneWidget);
+    expect(find.widgetWithText(MmPageHeader, 'Settings'), findsOneWidget);
 
     // Back from the map returns to the Dashboard.
     final bool handled = await t.binding.handlePopRoute();
     await settle(t);
     expect(handled, isTrue);
-    expect(find.widgetWithText(AppBar, 'Dashboard'), findsOneWidget);
+    expect(find.widgetWithText(MmPageHeader, 'Dashboard'), findsOneWidget);
     expect(t.takeException(), isNull);
   });
 
@@ -523,7 +524,7 @@ void main() {
       GridScreen.resetSession();
       await _pumpApp(t);
       await openFromStrip(t, 'Map');
-      expect(find.widgetWithText(AppBar, 'Map'), findsOneWidget);
+      expect(find.widgetWithText(MmPageHeader, 'Map'), findsOneWidget);
       return t.getRect(find.byType(PageView));
     }
 
@@ -533,7 +534,7 @@ void main() {
       await t.flingFrom(
           Offset(r.left + 10, r.center.dy), const Offset(300, 0), 1000);
       await settle(t);
-      expect(find.widgetWithText(AppBar, 'Hyperlocal grid'), findsOneWidget);
+      expect(find.widgetWithText(MmPageHeader, 'Hyperlocal grid'), findsOneWidget);
       expect(t.takeException(), isNull);
     });
 
@@ -543,7 +544,7 @@ void main() {
       await t.flingFrom(
           Offset(r.right - 10, r.bottom - 60), const Offset(-300, 0), 1000);
       await settle(t);
-      expect(find.widgetWithText(AppBar, 'Settings'), findsOneWidget);
+      expect(find.widgetWithText(MmPageHeader, 'Settings'), findsOneWidget);
       expect(t.takeException(), isNull);
     });
 
@@ -556,7 +557,7 @@ void main() {
       await t.pump(const Duration(milliseconds: 600));
       await g.up();
       await settle(t);
-      expect(find.widgetWithText(AppBar, 'Map'), findsOneWidget);
+      expect(find.widgetWithText(MmPageHeader, 'Map'), findsOneWidget);
     });
 
     testWidgets('an outward drag from the edge does nothing',
@@ -565,7 +566,7 @@ void main() {
       await t.flingFrom(
           Offset(r.left + 10, r.center.dy), const Offset(-300, 0), 1000);
       await settle(t);
-      expect(find.widgetWithText(AppBar, 'Map'), findsOneWidget);
+      expect(find.widgetWithText(MmPageHeader, 'Map'), findsOneWidget);
     });
 
     testWidgets(
@@ -576,7 +577,7 @@ void main() {
       await t.flingFrom(
           Offset(r.left + 40, r.center.dy), const Offset(300, 0), 1000);
       await settle(t);
-      expect(find.widgetWithText(AppBar, 'Map'), findsOneWidget);
+      expect(find.widgetWithText(MmPageHeader, 'Map'), findsOneWidget);
     });
 
     testWidgets('the map receives no touch inside a band',
@@ -689,7 +690,7 @@ void main() {
       await t.pumpAndSettle();
       await t.tap(find.byTooltip('Chat'));
       await t.pumpAndSettle();
-      expect(find.widgetWithText(AppBar, 'Chat'), findsOneWidget);
+      expect(find.widgetWithText(MmPageHeader, 'Chat'), findsOneWidget);
       expect(t.takeException(), isNull);
     });
 

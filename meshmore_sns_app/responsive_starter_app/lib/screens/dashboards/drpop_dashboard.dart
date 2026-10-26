@@ -58,7 +58,7 @@ class DrPopDashboard extends StatelessWidget {
           Row(
             children: <Widget>[
               Expanded(
-                child: Text('MESHMORE',
+                child: Text('DR POP',
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                         fontFamily: skin.type.headingFamily,

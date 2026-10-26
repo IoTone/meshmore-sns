@@ -17,6 +17,7 @@ class CueBridge {
   CueBridge(this._mc, this._cue, [this._tts]) {
     _prev = _mc.state;
     _wasScanning = _mc.isScanning;
+    _wasBacklogDrain = _mc.isBacklogDrain;
     _mc.addListener(_onChange);
     _msgSub =
         _mc.incomingChannelMessages.listen(_onIncomingChannelMessage);
@@ -55,6 +56,23 @@ class CueBridge {
   DateTime _lastAdvertCue = DateTime.fromMillisecondsSinceEpoch(0);
   static const Duration _advertThrottle = Duration(milliseconds: 1500);
 
+  /// Messages delivered while a connect/resume **backlog** is replaying.
+  ///
+  /// The firmware does not push text in real time: every inbound message
+  /// arrives through a SYNC drain. A radio that has been away for a while
+  /// returns that history in one burst, and cuing each message produced a
+  /// haptic and speech storm on launch — dozens of overlapping patterns for
+  /// messages that were already minutes or hours old. Backlogged messages
+  /// are counted here and answered with a single cue when the drain ends.
+  ///
+  /// Deliberately gated on [MeshcoreController.isBacklogDrain] and not
+  /// [MeshcoreController.isDraining]: a drain kicked off by a live
+  /// `MSGS_WAITING` push while already connected is fresh traffic and must
+  /// still cue. See the comment on `isBacklogDrain` for the same trap in the
+  /// bot bridge, where gating on `isDraining` made the feature inert.
+  int _backlogMessages = 0;
+  bool _wasBacklogDrain = false;
+
   void _onChange() {
     final MeshcoreConnectionState s = _mc.state;
     if (s != _prev) {
@@ -71,6 +89,17 @@ class CueBridge {
       }
       _prev = s;
     }
+    // Backlog falling edge → one summary cue. Detected here because the
+    // per-message handlers cannot know that a burst has finished.
+    final bool nowBacklog = _mc.isBacklogDrain;
+    if (_wasBacklogDrain && !nowBacklog) {
+      if (_backlogMessages > 0) {
+        _backlogMessages = 0;
+        _cue.play(CueKind.messageIn);
+      }
+    }
+    _wasBacklogDrain = nowBacklog;
+
     // Scan rising/falling edge → scanStart / taskOk. Detected on any
     // controller notify since isScanning is set & notifyListeners'd by
     // mc.scan() + the scan-window timer.
@@ -106,6 +135,11 @@ class CueBridge {
   }
 
   void _onIncomingChannelMessage(ChatMessage m) {
+    // History, not an arrival: count it and let the drain-end summary speak.
+    if (_mc.isBacklogDrain) {
+      _backlogMessages++;
+      return;
+    }
     _cue.play(CueKind.messageIn);
     final TtsController? tts = _tts;
     if (tts == null) return;
@@ -116,6 +150,11 @@ class CueBridge {
   }
 
   void _onIncomingDm(ChatMessage m) {
+    // See _onIncomingChannelMessage: replayed history never cues or speaks.
+    if (_mc.isBacklogDrain) {
+      _backlogMessages++;
+      return;
+    }
     final String? peer = m.peerPubKeyHex;
     final TtsController? tts = _tts;
 

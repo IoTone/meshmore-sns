@@ -40,7 +40,7 @@ class NervDashboard extends StatelessWidget {
             children: <Widget>[
               Expanded(
                 child: Text(
-                  'MESHMORE // NERV',
+                  'NERV',
                   style: TextStyle(
                     fontFamily:
                         skin.type.headingFamily ?? skin.type.monoFamily,

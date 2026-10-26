@@ -206,7 +206,7 @@ class _BrandBar extends StatelessWidget {
     return Row(
       children: <Widget>[
         Expanded(
-          child: Text('MESHMORE // AG',
+          child: Text('AG-HUD',
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 fontFamily: skin.type.headingFamily,

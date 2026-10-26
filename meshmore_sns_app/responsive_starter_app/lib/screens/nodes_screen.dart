@@ -9,6 +9,7 @@ import '../meshcore/meshcore_connection.dart';
 import '../meshcore/meshcore_controller.dart';
 import '../theme/mm_skin.dart';
 import '../ui/mm_components.dart';
+import '../ui/mm_page_header.dart';
 import '../ui/mm_scaffold.dart';
 import '../util/geo.dart' as geo;
 import 'node_detail_sheet.dart';
@@ -336,6 +337,7 @@ class _NodesScreenState extends State<NodesScreen> {
     return MmScaffold(
       child: Column(
       children: <Widget>[
+        MmPageHeader(title: l.tabNodes),
         // R91 — three radio actions that used to sit in a Row with one
         // Expanded child, so at 320 dp the other two squeezed it until the
         // row overflowed. A Wrap lays them out at their natural width and

@@ -2,6 +2,9 @@
 // SPDX-License-Identifier: MIT
 import 'package:flutter/widgets.dart';
 
+import '../../gen/app_localizations.dart';
+import '../../ui/mm_page_header.dart';
+
 import '../../theme/mm_skin.dart';
 import '../../theme/mm_tokens.dart';
 import '../dashboard_screen.dart';
@@ -22,14 +25,25 @@ class DashboardHost extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return switch (context.skin.preset) {
+    // The view name lives here, once, above whichever skin is drawing the
+    // dashboard. Each skin keeps its own badge inside its own layout, but
+    // the tab name is no longer the skin's job — otherwise six skins meant
+    // six independently maintained titles and the app bar had to carry it.
+    return Column(
+      children: <Widget>[
+        MmPageHeader(title: AppLocalizations.of(context).tabDashboard),
+        Expanded(
+          child: switch (context.skin.preset) {
       MmThemePreset.nerv => const NervDashboard(),
       MmThemePreset.hyperlocal => const HyperlocalDashboard(),
       MmThemePreset.agHud => const AgHudDashboard(),
       MmThemePreset.drPop => const DrPopDashboard(),
       MmThemePreset.recon => const ReconDashboard(),
       MmThemePreset.studio => const StudioDashboard(),
-      _ => const DashboardScreen(),
-    };
+            _ => const DashboardScreen(),
+          },
+        ),
+      ],
+    );
   }
 }

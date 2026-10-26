@@ -94,20 +94,20 @@ void main() {
 
     // Default preset (SEELE) → the monolith dashboard (no NERV brand bar).
     expect(find.text('PEERS IN RANGE'), findsOneWidget);
-    expect(find.text('MESHMORE // NERV'), findsNothing);
+    expect(find.text('NERV'), findsNothing);
 
     // Switch to NERV → the telemetry-grid re-imagining (brand bar +
     // chamfered panels appear).
     await tc.setPreset(MmThemePreset.nerv);
     await t.pumpAndSettle();
-    expect(find.text('MESHMORE // NERV'), findsOneWidget);
+    expect(find.text('NERV'), findsOneWidget);
     // The icon-only Bluetooth button is named for screen readers.
     expect(find.byTooltip('Device'), findsOneWidget);
 
     // Back to SEELE → brand bar gone again.
     await tc.setPreset(MmThemePreset.seele);
     await t.pumpAndSettle();
-    expect(find.text('MESHMORE // NERV'), findsNothing);
+    expect(find.text('NERV'), findsNothing);
     expect(find.text('PEERS IN RANGE'), findsOneWidget);
   });
 
@@ -130,7 +130,7 @@ void main() {
     expect(find.text('Listening for nodes…'), findsOneWidget);
     expect(find.textContaining('PEERS', findRichText: true),
         findsOneWidget); // status rail
-    expect(find.text('MESHMORE // NERV'), findsNothing);
+    expect(find.text('NERV'), findsNothing);
     expect(find.text('PEERS IN RANGE'), findsNothing);
   });
 
@@ -148,9 +148,9 @@ void main() {
     await t.pumpAndSettle();
 
     // AG-HUD signature: the brand bar + the SIGNAL gauge label.
-    expect(find.text('MESHMORE // AG'), findsOneWidget);
+    expect(find.text('AG-HUD'), findsOneWidget);
     expect(find.text('SIGNAL'), findsOneWidget);
-    expect(find.text('MESHMORE // NERV'), findsNothing);
+    expect(find.text('NERV'), findsNothing);
   });
 
   testWidgets('host shows the DR Pop colour blocks when selected',
@@ -165,9 +165,9 @@ void main() {
     await t.pumpAndSettle();
 
     // DR Pop signature: the MESHMORE brand bar + a PHASE code.
-    expect(find.text('MESHMORE'), findsOneWidget);
+    expect(find.text('DR POP'), findsOneWidget);
     expect(find.textContaining('PHASE_'), findsOneWidget);
-    expect(find.text('MESHMORE // AG'), findsNothing);
+    expect(find.text('AG-HUD'), findsNothing);
   });
 
   testWidgets('host shows the Recon codec readout when selected',
@@ -184,7 +184,7 @@ void main() {
     await t.pumpAndSettle();
 
     // Recon signature: the codec header + the contacts band.
-    expect(find.text('MESHMORE · RECON'), findsOneWidget);
+    expect(find.text('RECON'), findsOneWidget);
     expect(find.textContaining('CONTACTS'), findsOneWidget);
     expect(find.text('MESHMORE™'), findsNothing);
   });

@@ -17,6 +17,7 @@ import '../meshcore/meshcore_controller.dart';
 import '../meshcore/own_location.dart';
 import '../theme/theme_controller.dart';
 import '../ui/mm_components.dart';
+import '../ui/mm_page_header.dart';
 import '../ui/mm_scaffold.dart';
 import '../util/geo.dart' as geo;
 import 'elevation_profile_view.dart';
@@ -624,6 +625,7 @@ class _GridScreenState extends State<GridScreen>
     return MmScaffold(
       child: Column(
         children: <Widget>[
+      MmPageHeader(title: l.gridTitle),
       Padding(
         padding: const EdgeInsets.fromLTRB(16, 4, 4, 0),
         child: Row(
