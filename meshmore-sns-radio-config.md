@@ -280,3 +280,24 @@ app, or a serial-capable build.
   community documentation and operator guides summarised in the research
   pass, with the frequency/bandwidth/SF rule corroborated by the firmware's
   own demodulation path and the coding-rate exception by the packet header.
+
+## 10. Private channels, and the "hog the air" question
+
+Answered in full in `meshmore-sns-architecture.md` §5.7. Summary of the
+finding, because it is a natural assumption to make:
+
+- A MeshCore "channel" is a PSK group identified by a one-byte
+  `channel_hash` inside `GRP_TXT`/`GRP_DATA` payloads
+  (`src/Mesh.cpp:226-245`), **not** a separate radio channel. Every channel
+  shares one frequency, bandwidth and spreading factor.
+- A private channel therefore gives privacy, **not** airtime. It does not
+  avoid a single collision with the public mesh.
+- Channel traffic is **flooded** to every repeater, so a private channel is
+  the *more* antisocial option: it broadcasts across the mesh while nobody
+  can read it. It also costs 19 bytes of framing per packet against raw
+  custom's zero.
+- LDMUX uses direct raw custom: path-routed, unencrypted by the mesh, but
+  wrapped in LDMUX's own ADR-0020 encryption. Invisible and quiet to
+  neighbours.
+- Genuine isolation needs **different radio parameters**, which takes both
+  nodes off the public mesh — a hardware fact, not a protocol choice.

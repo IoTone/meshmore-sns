@@ -692,9 +692,10 @@ The bound is therefore applied where the output is produced, on the host:
 - further cap it to what the remaining budget actually affords:
   `floor(budgetRemaining / airtimePerPacket) * 148` bytes.
 
-On SF7/125 kHz that is the 1,500 B cap (about 10 records, 3 s). On
-SF11/62.5 kHz it is roughly 550 B (4 records, 30 s), which a screenful of
-last-lines still fits inside.
+On the deployed USA/Canada preset (SF7/62.5 kHz, 613 ms per packet) that
+is the 1,500 B cap, about 10 records and 6 s of airtime. On the slowest
+deployed preset (SF11/62.5 kHz, ~7 s per packet) it is roughly 740 B, five
+records, 35 s: still a screenful of last-lines.
 
 Consequence for the plan: the governor needs **no raise path in v1**,
 because the output profile guarantees every operation is small. The user's
@@ -703,3 +704,95 @@ own framing — "a reasonably small amount of history, up from the bottom"
 larger transfer ever appears, an owner-only raise in MeshMore's settings is
 an additive change.
 
+
+### 5.7 Why LDMUX must not use a private channel, and what would actually isolate it
+
+The obvious idea is to give LDMUX its own private channel so it stays out of
+the public mesh's way and can then be used freely. Investigated against the
+firmware, the idea does not survive contact with what a channel is.
+
+**A MeshCore channel is not a radio channel.** It is an application-layer
+group key, defined by two things:
+
+- a one-byte `channel_hash` carried inside `GRP_TXT` and `GRP_DATA` payloads
+  (`src/Mesh.cpp:226-245`), and
+- a shared secret, used as `MACThenDecrypt(channel.secret, …)`.
+
+Every channel on a node rides **the same frequency, the same bandwidth and
+the same spreading factor**. There is no per-channel radio configuration
+anywhere in `CommonRadioPrefs`, because the firmware holds four numbers for
+the whole radio. So a private channel changes **who can read the traffic**.
+It changes nothing about who competes for airtime: choosing one does not
+avoid a single collision with the public mesh, because both are the same
+radio channel.
+
+Worse for this use case, a channel is the wrong carriage on four counts:
+
+| | Private channel (`GRP_TXT`/`GRP_DATA`) | Direct raw custom (`RAW_CUSTOM`) |
+|---|---|---|
+| Routing | **flooded**: every repeater retransmits it | **direct only**: path-routed to the destination |
+| Who carries it | the whole mesh, for a conversation it cannot read | only the hops between the two nodes |
+| Framing cost | `channel_hash` 1 B + MAC 2 B + 16-byte block padding | none, copied verbatim |
+| Visible to others | yes, as channel traffic they cannot read | no, not a channel message |
+| Addressing | 1-byte hash, 256 possible values | public key |
+
+The flooding point is decisive. A private channel's traffic is **broadcast
+across the mesh while being readable by nobody on it** — the most wasteful
+thing available, and the opposite of being a good mesh citizen. Direct raw
+custom spends airtime only along the path between the two nodes, and our own
+nodes do not relay at all unless repeat mode is enabled
+(`MyMesh::allowPacketForward` returns `_prefs.isRepeatEn()`,
+`MyMesh.cpp:485-487`).
+
+**Privacy was never the channel's job anyway.** `RAW_CUSTOM` is defined as
+"custom packet as raw bytes, for applications with custom encryption,
+payloads, etc" (`src/Packet.h:32`) — the mesh does not encrypt it. LDMUX
+already brings its own transport security (ADR-0020 Noise IKpsk2), and the
+record envelope was sized around exactly that: 172-byte record = 24 bytes of
+ADR-0020 overhead + 148 bytes of application data.
+
+**Decision: direct raw custom, on the mesh's own radio parameters, with
+LDMUX's own encryption.** No channel, public or private. The traffic is
+unreadable to others, invisible in their apps, and confined to the hops it
+needs.
+
+#### What would actually "hog the air"
+
+If the goal is more throughput rather than more politeness, the only lever
+that works is **different radio parameters**, not a different channel:
+
+- same frequency / SF / bandwidth → shared medium, we are a guest on it
+- different frequency → genuinely separated. At 62.5 kHz bandwidth, 17 MHz of
+  separation (910.525 against 927.875, both inside the US 902–928 ISM band)
+  is effectively no mutual interference.
+
+The cost is absolute: **a radio has one set of parameters at a time.** Moving
+the pair to a private frequency removes both nodes from the public mesh, and
+the phone's node is currently part of a live local mesh. Applying parameters
+is also a companion command that tears down the mesh link while it takes
+effect.
+
+So the honest options are:
+
+| Option | Throughput | Keeps public mesh | Cost |
+|---|---|---|---|
+| Raw custom on mesh params (chosen) | governed, ~10 ops/hour at 1 % | yes | shares air |
+| Private frequency, same two radios | unconstrained | **no** | both nodes leave the mesh |
+| Private frequency, second radio pair | unconstrained | yes | two more radios |
+
+No option gives both isolation and mesh membership from the same two radios,
+because that is a hardware fact rather than a protocol choice. If throughput
+ever becomes the bottleneck, the answer is a dedicated radio pair, decided on
+measured need.
+
+#### Why this is also the better UX
+
+A private channel would look private while behaving worse: it floods the
+mesh, so it is more antisocial than the direct link it replaces. It adds 19
+bytes of framing per packet against raw custom's zero, which at 613 ms per
+packet is real airtime. And it appears in other users' channel lists as
+traffic they cannot read.
+
+Direct raw custom is simultaneously the most private, the quietest and the
+most efficient option. The instinct — keep LDMUX out of the public mesh's way
+— is right. The mechanism is not the channel.
