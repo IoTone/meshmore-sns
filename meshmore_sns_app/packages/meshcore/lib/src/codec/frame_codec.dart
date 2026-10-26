@@ -170,6 +170,124 @@ abstract final class MeshcoreFrameCodec {
     return b.build();
   }
 
+  /// `CMD_SET_PATH_HASH_MODE` (0x3D): `3D 00 mode`, mode 0..2.
+  ///
+  /// The firmware rejects mode >= 3 with `ERR_CODE_ILLEGAL_ARG`
+  /// (`MyMesh.cpp:1466-1473`), so an out-of-range value is refused here
+  /// rather than sent to be rejected on the air.
+  ///
+  /// [hashSize] is the size in **bytes** (1, 2 or 3) because that is how
+  /// MeshCore's own preset API expresses it (`path_hash_size`); the wire
+  /// field is `hashSize - 1`.
+  static Uint8List setPathHashMode(int hashSize) {
+    if (hashSize < 1 || hashSize > 3) {
+      throw ArgumentError.value(
+          hashSize, 'hashSize', 'MeshCore supports 1, 2 or 3-byte path hashes');
+    }
+    return (FrameBuilder()
+          ..u8(MeshcoreCommand.setPathHashMode.code)
+          ..u8(0)
+          ..u8(hashSize - 1))
+        .build();
+  }
+
+  /// `CMD_SET_FLOOD_SCOPE_KEY` (0x36): `36 00 [key 16B]`, or `36 00` alone
+  /// to clear the override (`MyMesh.cpp:1936-1941`).
+  static Uint8List setFloodScopeKey(List<int>? key) {
+    final FrameBuilder b = FrameBuilder()
+      ..u8(MeshcoreCommand.setFloodScopeKey.code)
+      ..u8(0);
+    if (key != null && key.isNotEmpty) {
+      if (key.length != 16) {
+        throw ArgumentError.value(
+            key.length, 'key', 'flood scope key must be exactly 16 bytes');
+      }
+      b.raw(key);
+    }
+    return b.build();
+  }
+
+  /// `36 01` — send floods **unscoped** (firmware ver 12+, `MyMesh.cpp:1942`).
+  static Uint8List sendUnscopedFlood() {
+    return (FrameBuilder()
+          ..u8(MeshcoreCommand.setFloodScopeKey.code)
+          ..u8(1))
+        .build();
+  }
+
+  /// `CMD_SET_DEFAULT_FLOOD_SCOPE` (0x3F).
+  ///
+  /// An empty frame clears the stored default (`MyMesh.cpp:1959-1963`).
+  /// Otherwise the firmware needs the full 31-byte name field plus a
+  /// 16-byte key, and rejects a name whose length is 0 or >= 31.
+  static Uint8List setDefaultFloodScope(String? name, List<int>? key) {
+    final FrameBuilder b =
+        FrameBuilder()..u8(MeshcoreCommand.setDefaultFloodScope.code);
+    if (name == null || name.isEmpty) return b.build();
+    if (name.length >= 31) {
+      throw ArgumentError.value(
+          name.length, 'name', 'flood scope name must be 1..30 UTF-16 chars');
+    }
+    if (key == null || key.length != 16) {
+      throw ArgumentError.value(
+          key?.length, 'key', 'flood scope key must be exactly 16 bytes');
+    }
+    b
+      ..fixed(utf8.encode(name), 31)
+      ..raw(key);
+    return b.build();
+  }
+
+  /// `CMD_GET_DEFAULT_FLOOD_SCOPE` (0x40).
+  static Uint8List getDefaultFloodScope() {
+    return (FrameBuilder()..u8(MeshcoreCommand.getDefaultFloodScope.code))
+        .build();
+  }
+
+  /// `CMD_GET_ALLOWED_REPEAT_FREQ` (0x3C).
+  static Uint8List getAllowedRepeatFreq() {
+    return (FrameBuilder()..u8(MeshcoreCommand.getAllowedRepeatFreq.code))
+        .build();
+  }
+
+  /// Decode the reply to [getDefaultFloodScope].
+  ///
+  /// Returns null when the frame is the bare response code (scope unset).
+  static ({String name, Uint8List key})? decodeDefaultFloodScope(
+      Uint8List frame) {
+    if (frame.isEmpty || frame[0] != MeshcoreResponse.defaultFloodScope.code) {
+      return null;
+    }
+    if (frame.length < 1 + 31 + 16) return null;
+    final ByteCursor c = ByteCursor(frame)..u8('floodScope.code');
+    final Uint8List rawName = c.bytes(31, 'floodScope.name');
+    final int nul = rawName.indexOf(0);
+    final List<int> nameBytes =
+        nul == -1 ? rawName.toList() : rawName.sublist(0, nul);
+    final String name = String.fromCharCodes(nameBytes);
+    final Uint8List key = c.bytes(16, 'floodScope.key');
+    return (name: name, key: key);
+  }
+
+  /// Decode the reply to [getAllowedRepeatFreq] into (lower, upper) ranges in
+  /// kHz. The firmware packs as many 8-byte pairs as fit in one frame
+  /// (`MyMesh.cpp:1994-2002`).
+  static List<({int lowerKhz, int upperKhz})> decodeAllowedRepeatFreq(
+      Uint8List frame) {
+    final List<({int lowerKhz, int upperKhz})> out =
+        <({int lowerKhz, int upperKhz})>[];
+    if (frame.isEmpty || frame[0] != MeshcoreResponse.allowedRepeatFreq.code) {
+      return out;
+    }
+    final ByteCursor c = ByteCursor(frame)..u8('allowedRepeat.code');
+    while (c.remaining >= 8) {
+      final int lo = c.u32('allowedRepeat.lower');
+      final int hi = c.u32('allowedRepeat.upper');
+      out.add((lowerKhz: lo, upperKhz: hi));
+    }
+    return out;
+  }
+
   /// `CMD_SET_RADIO_TX_POWER` (0x0C): `0C [power int8 dBm]`.
   static Uint8List setRadioTxPower(int dbm) {
     return (FrameBuilder()

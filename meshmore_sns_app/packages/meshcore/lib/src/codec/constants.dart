@@ -221,6 +221,35 @@ extension type const MeshcoreCommand(int code) {
   /// `CMD_SET_OTHER_PARAMS` — manual-add / telemetry / loc policy.
   static const MeshcoreCommand setOtherParams = MeshcoreCommand(0x26);
 
+  // --- Network shaping. These are MeshCore's *own* mechanisms for making a
+  // network separate from the public mesh; none of them is a custom layer.
+  // All five exist at the pinned commit AND on 1.17.1 (the only commands
+  // added between them were CMD_DEVICE_QUERY and CMD_SEND_RAW_PACKET), so
+  // using them does not require a pin bump.
+
+  /// `CMD_SET_FLOOD_SCOPE_KEY` (54) — override the flood transport key, or
+  /// switch floods to unscoped (`[54][1]`, firmware ver 12+).
+  static const MeshcoreCommand setFloodScopeKey = MeshcoreCommand(0x36);
+
+  /// `CMD_GET_ALLOWED_REPEAT_FREQ` (60) — the frequencies this *companion*
+  /// build may repeat on. Not the same thing as what a `simple_repeater`
+  /// build may relay (that has no frequency gate at all).
+  static const MeshcoreCommand getAllowedRepeatFreq = MeshcoreCommand(0x3C);
+
+  /// `CMD_SET_PATH_HASH_MODE` (61) — `[61][0][mode]`, mode 0..2 meaning
+  /// 1/2/3-byte path hashes. Every node on a network must agree, and it
+  /// changes the raw-data payload budget (`174 − hops × size`).
+  static const MeshcoreCommand setPathHashMode = MeshcoreCommand(0x3D);
+
+  /// `CMD_SET_DEFAULT_FLOOD_SCOPE` (63) — empty frame clears it, otherwise
+  /// `[63][name 31][key 16]`.
+  static const MeshcoreCommand setDefaultFloodScope = MeshcoreCommand(0x3F);
+
+  /// `CMD_GET_DEFAULT_FLOOD_SCOPE` (64) — reply is
+  /// `RESP_CODE_DEFAULT_FLOOD_SCOPE` + 31-byte name + 16-byte key, or that
+  /// code alone when unset.
+  static const MeshcoreCommand getDefaultFloodScope = MeshcoreCommand(0x40);
+
   /// `CMD_SEND_TELEMETRY_REQ` (39 = 0x27). Frame is either
   /// `27 [0 0 0]` (self-telemetry, len == 4) or
   /// `27 [0 0 0] [pub_key 32B]` (peer-telemetry, len == 36).
@@ -318,6 +347,13 @@ extension type const MeshcoreResponse(int code) {
 
   /// `RESP_CODE_STATS` (24 = 0x18) — reply to CMD_GET_STATS.
   static const MeshcoreResponse stats = MeshcoreResponse(0x18);
+
+  /// `RESP_ALLOWED_REPEAT_FREQ` (26) — one or more (lower u32, upper u32)
+  /// frequency ranges, in kHz.
+  static const MeshcoreResponse allowedRepeatFreq = MeshcoreResponse(0x1A);
+
+  /// `RESP_CODE_DEFAULT_FLOOD_SCOPE` (28).
+  static const MeshcoreResponse defaultFloodScope = MeshcoreResponse(0x1C);
 
   /// --- Asynchronous push codes (>= 0x80) ---
   static const MeshcoreResponse advertisement = MeshcoreResponse(0x80);
