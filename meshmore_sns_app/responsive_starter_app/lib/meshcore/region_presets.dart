@@ -153,7 +153,7 @@ const List<RegionPreset> kRegionPresets = <RegionPreset>[
     frequencyMhz: 869.618,
     bandwidthKhz: 62.5,
     spreadingFactor: 8,
-    codingRate: 5,
+    codingRate: 8,
     txPowerDbm: 14,
   ),
   RegionPreset(
@@ -162,7 +162,8 @@ const List<RegionPreset> kRegionPresets = <RegionPreset>[
     frequencyMhz: 869.618,
     bandwidthKhz: 62.5,
     spreadingFactor: 8,
-    codingRate: 5,
+    codingRate: 8,
+    note: 'SR 869.618 MHz · CR4-8 in the community preset',
     txPowerDbm: 14,
   ),
   RegionPreset(
@@ -180,7 +181,7 @@ const List<RegionPreset> kRegionPresets = <RegionPreset>[
     frequencyMhz: 869.618,
     bandwidthKhz: 62.5,
     spreadingFactor: 7,
-    codingRate: 5,
+    codingRate: 6,
     txPowerDbm: 14,
   ),
   // --- Australia / NZ ---
@@ -199,7 +200,7 @@ const List<RegionPreset> kRegionPresets = <RegionPreset>[
     frequencyMhz: 916.575,
     bandwidthKhz: 62.5,
     spreadingFactor: 7,
-    codingRate: 5,
+    codingRate: 7,
     txPowerDbm: 20,
   ),
   RegionPreset(
@@ -209,6 +210,7 @@ const List<RegionPreset> kRegionPresets = <RegionPreset>[
     bandwidthKhz: 62.5,
     spreadingFactor: 8,
     codingRate: 5,
+    note: 'QLD is CR4-5; SA and WA are CR4-8',
     txPowerDbm: 20,
   ),
   RegionPreset(
