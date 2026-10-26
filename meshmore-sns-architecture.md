@@ -370,10 +370,46 @@ This is the correction of an earlier draft that gave the gateway an
 outgoing ARQ and a per-record ACK. See `meshmore-sns-architecture-audit.md`
 findings A2 and B1.
 
-### 5.2 The budgets (per direction, per endpoint)
+### 5.2 The carriage: two phases, because one of them is much cheaper
 
-Three caps stack on the phone's uplink, and the binding one is the
-smallest:
+**Corrected 2026-10-24 after reading `src/Mesh.cpp:589-603` and
+`MyMesh.cpp:801-824`:** raw custom is not the host's private option. Both
+ends can use it, and on **stock companion firmware** — `onRawDataRecv`
+is wired for `PAYLOAD_TYPE_RAW_CUSTOM` and pushes it to the app as
+`PUSH_CODE_RAW_DATA` (0x84). No firmware fork is needed on either end for
+this.
+
+Raw custom is also **exact-length**: `createRawData` copies bytes verbatim,
+with no cipher and no padding. That removes the delimiter problem
+entirely, and it carries more: a `CMD_SEND_RAW_DATA` frame is
+`[25][path_len][path][payload]` inside 176 bytes, so the datagram is
+`174 − path_len` and a 3-hop path still allows 171.
+
+The catch is routing: `RAW_CUSTOM` is direct-only, in both directions
+(`src/Mesh.cpp:292-297` delivers it only when `isRouteDirect()`, and the
+flood forward is commented out). So there must be a path before it can be
+used, and a path is learned by a flooded exchange.
+
+| | **Phase A — discovery** | **Phase B — established** |
+|---|---|---|
+| When | no path known, or the path went stale | a path is known |
+| Uplink | `CMD_SEND_BINARY_REQ` (0x32), **flooded** | `CMD_SEND_RAW_DATA` (0x19), direct |
+| Downlink | the firmware's flooded `PATH + RESPONSE` return | `PAYLOAD_TYPE_RAW_CUSTOM`, direct |
+| Cipher / padding | AES-ECB, zero-padded to 16 B | **none, exact length** |
+| Datagram | 143 B app data | 174 − path_len (171 at 3 hops) |
+| Record | 142 B (1 B length + record) | **172 B** |
+| Application bytes | 118 B | **148 B** |
+
+Phase A exists to teach both ends a path, and it does so in one exchange:
+a flooded request makes the responder build a `PATH + RESPONSE` return and
+flood it back, which delivers the answer and the reverse path at the same
+time (`src/helpers/BaseChatMesh.cpp:286-306`). The Noise handshake
+(121 B then 50 B, ADR-0020 §2) fits in Phase A's 118 B.
+
+Phase B is where the throughput lives: **148 B of application per record
+against 118**, and no delimiter at all.
+
+Three caps stack on the uplink and the smallest binds:
 
 | Cap | Bytes | Source |
 |---|---|---|
@@ -384,34 +420,27 @@ smallest:
 
 143 binds only because the companion frame is the smallest of the three.
 
-**Delimitation.** Binary payloads are AES-ECB encrypted and zero-padded to
-16 B, and the decryptor does **not** strip the padding
-(`src/Utils.cpp:62-90`; `src/Utils.h:41` warns "dest may contain trailing
-zero bytes in final block"). A record can therefore not be recovered by
-length alone, and "the 16 B tag guarantees a non-zero tail" is false one
-time in 256 (a tag ending in `0x00`). The gateway therefore carries an
+**Delimitation, and why it is only a Phase A problem.** Binary payloads
+are AES-ECB encrypted and zero-padded to 16 B, and the decryptor does
+**not** strip the padding (`src/Utils.cpp:62-90`; `src/Utils.h:41` warns
+"dest may contain trailing zero bytes in final block"). So a Phase A
+record cannot be recovered by length, and "the 16 B tag guarantees a
+non-zero tail" is false one time in 256. Phase A therefore carries an
 **explicit one-byte record length** as the first byte of the datagram.
+Phase B needs nothing: raw custom is exact.
 
-| Direction | Carriage | Datagram budget | Record ceiling | Application bytes |
-|---|---|---|---|---|
-| phone → host | companion binary request | 143 B | **142 B** (1 B length + 142) | **118 B** |
-| host → phone | raw/custom packet | 172 B received | **160 B** | **136 B** |
+**Path refresh.** The radio learns better paths as traffic flows and
+signals it with `PUSH_CODE_PATH_UPDATED` (0x81), which carries **only the
+peer's public key** (`MyMesh.cpp:404-410`) — the app must re-read the
+contact to get the new `out_path`. The firmware's own comment warns the
+app may not be connected when the push happens, so MeshMore also
+re-reads contacts on reconnect. A stale path does not error: the radio
+sends into the void. The gateway therefore treats "no response within the
+session's timeout" as a path failure, issues `CMD_RESET_PATH` (0x0D) to
+force the next send to flood, and returns to Phase A.
 
-Raw custom carries bytes verbatim with no cipher and no padding
-(`src/Mesh.cpp:589-603`), so the host's direction needs no length
-prefix; 160 sits inside the 172 B receive cap (`MyMesh.cpp:802`,
-`MyMesh.h:236`).
-
-**A fifth option, not taken in v0.** The phone can also emit a complete
-serialised packet with `CMD_SEND_RAW_PACKET` (65), which bypasses the
-cipher and the padding and reaches ~172 B in both directions. It is the
-cleaner long-term shape, but it requires MeshMore to build the MeshCore
-packet header and path itself, and repeaters do not forward `RAW_CUSTOM`
-floods (`src/Mesh.cpp:296`), so discovery would still need the binary
-request path. Recorded as a P3+ optimisation, not a v0 dependency.
-
-The endpoints size records to the destination's carriage; the gateway
-only checks "does this record fit" and queues.
+The endpoints size records to the carriage; the gateway checks "does this
+record fit" and queues.
 
 ### 5.3 The gateway's mesh-side mechanics
 
@@ -422,17 +451,15 @@ only checks "does this record fit" and queues.
   reports: `RESP_CODE_SENT` (with its route flag), `est_timeout`, or an
   `ERR_CODE_*`. Whether a record arrived is a question only the
   end-to-end session can answer.
-- **Discovery is bidirectional.** A flooded `PAYLOAD_TYPE_REQ` makes the
-  responder build a `PATH + RESPONSE` return and flood it back
-  (`src/helpers/BaseChatMesh.cpp:286-306`), which simultaneously
-  delivers the answer and teaches the requester the return path. So the
-  first exchange is flooded **both** ways, and raw custom becomes
-  available once a path is known.
-- **Delimitation**: the one-byte length prefix in §5.2, not a zero-byte
-  convention.
-- **Backpressure**: the gateway applies a credit window of 8 unacked
-  `RECORD` frames; a client that exceeds it is stalled, not buffered
-  without bound (audit C2).
+- **Phase switching** is the gateway's main piece of state: it holds the
+  peer's `out_path` from MeshMore's contact store, uses Phase A until a
+  path exists, then Phase B, and drops back to Phase A on
+  `CMD_RESET_PATH` or on a session timeout.
+- **Delimitation**: a one-byte length prefix in Phase A only (§5.2).
+  Phase B is exact-length and needs no delimiter.
+- **Backpressure**: the gateway applies a credit window of 8
+  records; a client that exceeds it is
+  stalled, not buffered without bound (audit C2).
 
 ### 5.4 Timers (aligned to ldmux's mesh profile)
 
@@ -592,10 +619,13 @@ application payload from §5.2:
 
 | Preset | s/packet | Records per hour | KB per hour | A 2 KB snapshot needs |
 |---|---|---|---|---|
-| SF7/500 kHz | 0.08 | 450 | 61.2 | 1 s |
-| SF7/125 kHz | 0.30 | 120 | 16.3 | 4 s |
-| SF10/250 kHz | 0.90 | 40 | 5.4 | 13 s |
+| SF7/500 kHz | 0.08 | 450 | 66.6 | 1 s |
+| SF7/125 kHz | 0.30 | 120 | 17.8 | 4 s |
+| SF10/250 kHz | 0.90 | 40 | 5.9 | 13 s |
 | **SF11/62.5 kHz** | **7.50** | **4.8** | **0.7** | **110 s** |
+
+148 B is the Phase B application payload (§5.2); the discovery phase is
+smaller and only used for the handshake.
 
 The last row is the whole argument. On the longest-range preset, 36 s of
 airtime per hour buys **under five packets**. A single terminal snapshot
@@ -614,9 +644,9 @@ The bound is therefore applied where the output is produced, on the host:
 
 - cap a mesh reply at **1,500 B**, and
 - further cap it to what the remaining budget actually affords:
-  `floor(budgetRemaining / airtimePerPacket) * 136` bytes.
+  `floor(budgetRemaining / airtimePerPacket) * 148` bytes.
 
-On SF7/125 kHz that is the 1,500 B cap (about 11 records, 3.3 s). On
+On SF7/125 kHz that is the 1,500 B cap (about 10 records, 3 s). On
 SF11/62.5 kHz it is roughly 550 B (4 records, 30 s), which a screenful of
 last-lines still fits inside.
 
