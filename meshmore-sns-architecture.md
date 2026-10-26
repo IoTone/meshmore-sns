@@ -526,10 +526,10 @@ the caller, with the limits in §7.
 | 0x11 | PAIR_OK | gw→client | none |
 | 0x12 | PAIR_ERR | gw→client | 1-byte reason |
 | 0x20 | BIND | client→gw | 32-byte peer pubkey (the host node) |
-| 0x21 | BIND_OK | gw→client | none |
-| 0x30 | RECORD | client→gw | one record, ≤142 B |
-| 0x31 | RECV | gw→client | one record, ≤160 B |
-| 0x32 | SEND_RESULT | gw→client | result (1): sent_direct / sent_flood / err_not_found / err_busy / err_too_long / local_timeout |
+| 0x21 | BIND_OK | gw→client | capabilities (1), largest uplink record the path allows (1) |
+| 0x30 | RECORD | client→gw | seq (1), one record |
+| 0x31 | RECV | gw→client | one record |
+| 0x32 | SEND_RESULT | gw→client | seq (1), result (1): sent_direct / sent_flood / err_not_found / err_busy / err_too_long / local_timeout |
 | 0x40 | STATUS | gw→client | radio state (1), rssi (1), battery (1), gateway TX airtime used this hour (2, 0.1 s units) |
 | 0x60 | CLOSE | either | 1-byte reason |
 
@@ -549,6 +549,16 @@ Rules:
   cannot know either (audit B1).
 - `RECV` carries records the radio heard; ordering and de-duplication are
   the session's problem (ADR-0020's counter window), not L2's.
+- **`RECORD` carries a one-byte sequence number and `SEND_RESULT` echoes
+  it.** Added after audit: a queue can hold several records while one is in
+  flight, and a refused record must be attributable. Without the echo a
+  client cannot tell which of its records failed, and would retry the wrong
+  one.
+- **`BIND_OK` advertises the real uplink capacity.** Raw data accepts
+  `174 − path_len`, so a long path silently shrinks what fits. A session
+  that sized to the absolute ceiling would spend airtime on sends the radio
+  refuses. The receiver sizes to the advertised number, with a floor of
+  160 B that still fits a 14-hop path.
 - Unknown type: the gateway ignores the frame and does not close. A
   malformed length or a bad magic closes with `CLOSE(reason=protocol)`
   (audit decision D6/unknown-frame policy).
@@ -609,6 +619,37 @@ retransmissions or collisions. It is labelled an estimate wherever shown.
 
 MeshMore's own companion traffic (chat, telemetry, sync) never crosses L2
 and is outside this policy. So is lobospeak.
+
+### 5.5a What this link is, stated honestly
+
+The numbers decide the UX, and the honest description is **not** "a terminal".
+
+| Preset | Records/hour | A command with a 5-record reply | So |
+|---|---|---|---|
+| SF7/500 kHz | 450 | 6 records | about 75/hour |
+| SF7/125 kHz | 120 | 6 records | about 20/hour |
+| SF10/250 kHz | 40 | 6 records | about 6/hour |
+| SF11/62.5 kHz | 4.8 | 6 records | **cannot complete one** |
+
+At the longest-range preset the budget does not even afford one
+command-and-reply per hour. So the mesh profile is a **low-rate command
+channel**: send a command, receive the last lines of its output, minutes
+later. It is not an interactive shell, and presenting it as one would be a
+lie the transport tells every keystroke.
+
+This is not a defect to design around. ldmux already reached the same
+conclusion from its own measurements: the `mesh` profile is "plain lines",
+"one uplink per command", "backlog never replayed", and the client's
+terminal engine is **unused** (`ldmux/docs/MESH-TRANSPORT.md`). The plan
+here agrees with it.
+
+What follows for the UI:
+
+- No live cursor, no per-keystroke echo, no spinner that implies a second.
+- Show the budget in **operations left this hour**, not seconds, because
+  that is the number the user can act on.
+- Show a timestamp on every reply, because "minutes later" is normal.
+- Never imply delivery.
 
 ### 5.6 Why the budget needs no raise mechanism: the output is bounded at the source
 

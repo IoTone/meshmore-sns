@@ -71,7 +71,29 @@ abstract final class GatewayMessages {
     return Frame(type: FrameType.bind, payload: peerPubKey);
   }
 
-  static Frame bindOk() => Frame(type: FrameType.bindOk);
+  /// `BIND_OK`: capability bits (1) + the largest uplink record this peer's
+  /// path actually allows (1, bytes).
+  ///
+  /// The capacity has to be advertised rather than assumed. Raw data accepts
+  /// `174 - path_len`, so a long path silently shrinks the record, and a
+  /// session that sized to the absolute ceiling would burn airtime on sends
+  /// the radio refuses. The receiver sizes to this number.
+  static Frame bindOk({
+    int capabilities = 0,
+    int uplinkRecordMax = GatewayLimits.recordFloor,
+  }) {
+    if (uplinkRecordMax < 1 || uplinkRecordMax > GatewayLimits.recordMax) {
+      throw ArgumentError.value(
+        uplinkRecordMax,
+        'uplinkRecordMax',
+        'must be in 1..${GatewayLimits.recordMax}',
+      );
+    }
+    return Frame(
+      type: FrameType.bindOk,
+      payload: <int>[capabilities & 0xFF, uplinkRecordMax],
+    );
+  }
 
   static Frame bindErr(BindError reason) =>
       Frame(type: FrameType.bindErr, payload: <int>[reason.code]);
@@ -88,7 +110,13 @@ abstract final class GatewayMessages {
   /// prefixes a one-byte length instead, because the binary carrier
   /// zero-pads a datagram to 16 bytes and the receiver does not strip the
   /// padding.
-  static Frame record(List<int> opaqueRecord) {
+  static Frame record({
+    required int seq,
+    required List<int> opaqueRecord,
+  }) {
+    if (seq < 0 || seq > 0xFF) {
+      throw ArgumentError.value(seq, 'seq', 'must fit in one byte');
+    }
     if (opaqueRecord.length > GatewayLimits.recordMax) {
       throw FrameLengthError(
         'record',
@@ -96,7 +124,10 @@ abstract final class GatewayMessages {
         GatewayLimits.recordMax,
       );
     }
-    return Frame(type: FrameType.record, payload: opaqueRecord);
+    return Frame(
+      type: FrameType.record,
+      payload: <int>[seq, ...opaqueRecord],
+    );
   }
 
   /// `RECV`: one downlink record, at most [GatewayLimits.recordMax].
@@ -111,9 +142,24 @@ abstract final class GatewayMessages {
     return Frame(type: FrameType.recv, payload: opaqueRecord);
   }
 
-  /// `SEND_RESULT`: what the radio did with the most recent record.
-  static Frame sendResult(SendOutcome outcome) =>
-      Frame(type: FrameType.sendResult, payload: <int>[outcome.code]);
+  /// `SEND_RESULT`: what the radio did with the record carrying [seq].
+  ///
+  /// The sequence number is carried back because a gateway queue can hold
+  /// several records while one is in flight, and a refused record must be
+  /// attributable. Without it a client cannot tell which of its records
+  /// failed, and would either retry the wrong one or drop the right one.
+  static Frame sendResult({
+    required int seq,
+    required SendOutcome outcome,
+  }) {
+    if (seq < 0 || seq > 0xFF) {
+      throw ArgumentError.value(seq, 'seq', 'must fit in one byte');
+    }
+    return Frame(
+      type: FrameType.sendResult,
+      payload: <int>[seq, outcome.code],
+    );
+  }
 
   /// `STATUS`: radio state, rssi, battery, and the gateway's own transmit
   /// airtime used this hour in 0.1 s units (little-endian).
@@ -207,10 +253,28 @@ abstract final class GatewayMessages {
     return BindError(f.payload[0]);
   }
 
-  /// Reads `SEND_RESULT`.
-  static SendOutcome? readSendResult(Frame f) {
-    if (f.type != FrameType.sendResult || f.payload.isEmpty) return null;
-    return SendOutcome(f.payload[0]);
+  /// Reads `BIND_OK`.
+  static ({int capabilities, int uplinkRecordMax})? readBindOk(Frame f) {
+    if (f.type != FrameType.bindOk || f.payload.length < 2) return null;
+    return (
+      capabilities: f.payload[0],
+      uplinkRecordMax: f.payload[1],
+    );
+  }
+
+  /// Reads `RECORD`: the sequence number and the opaque record.
+  static ({int seq, Uint8List record})? readRecord(Frame f) {
+    if (f.type != FrameType.record || f.payload.length < 2) return null;
+    return (
+      seq: f.payload[0],
+      record: Uint8List.fromList(f.payload.sublist(1)),
+    );
+  }
+
+  /// Reads `SEND_RESULT`: the sequence number and the outcome.
+  static ({int seq, SendOutcome outcome})? readSendResult(Frame f) {
+    if (f.type != FrameType.sendResult || f.payload.length < 2) return null;
+    return (seq: f.payload[0], outcome: SendOutcome(f.payload[1]));
   }
 
   /// Reads `STATUS`.

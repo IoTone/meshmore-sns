@@ -65,7 +65,7 @@ void main() {
       final FrameDecoder d = FrameDecoder();
       final List<Frame> out = d.add(<int>[
         ...GatewayMessages.pairOk().encode(),
-        ...GatewayMessages.sendResult(SendOutcome.sentDirect).encode(),
+        ...GatewayMessages.sendResult(seq: 3, outcome: SendOutcome.sentDirect).encode(),
       ]);
       expect(out.map((Frame f) => f.type),
           <FrameType>[FrameType.pairOk, FrameType.sendResult]);
@@ -115,7 +115,8 @@ void main() {
     test('a record above the carrier ceiling is refused', () {
       expect(
         () => GatewayMessages.record(
-          List<int>.filled(GatewayLimits.recordMax + 1, 0),
+          seq: 0,
+          opaqueRecord: List<int>.filled(GatewayLimits.recordMax + 1, 0),
         ),
         throwsA(isA<FrameLengthError>()),
       );
@@ -149,6 +150,57 @@ void main() {
         _toHex(GatewayMessages.pair(List<int>.filled(16, 0xAB)).payload),
         'ab' * 16,
       );
+    });
+  });
+
+  group('the sequence number makes a refusal attributable', () {
+    test('RECORD carries seq then the opaque record', () {
+      final Frame f = GatewayMessages.record(seq: 9, opaqueRecord: _hex('aabb'));
+      expect(_toHex(f.payload), '09aabb');
+      final ({int seq, Uint8List record})? r = GatewayMessages.readRecord(f);
+      expect(r, isNotNull);
+      expect(r!.seq, 9);
+      expect(_toHex(r.record), 'aabb');
+    });
+
+    test('SEND_RESULT echoes the same seq', () {
+      final Frame f =
+          GatewayMessages.sendResult(seq: 9, outcome: SendOutcome.errTooLong);
+      expect(_toHex(f.payload), '0905');
+      final ({int seq, SendOutcome outcome})? r =
+          GatewayMessages.readSendResult(f);
+      expect(r!.seq, 9);
+      expect(r.outcome, SendOutcome.errTooLong);
+      expect(r.outcome.name, 'err_too_long');
+    });
+
+    test('a RECORD with no payload byte is refused as malformed', () {
+      expect(
+        GatewayMessages.readRecord(Frame(type: FrameType.record, payload: <int>[1])),
+        isNull,
+      );
+    });
+  });
+
+  group('capacity is advertised, not assumed', () {
+    test('BIND_OK reports the real uplink limit', () {
+      final Frame f = GatewayMessages.bindOk(uplinkRecordMax: 168);
+      expect(_toHex(f.payload), '00a8');
+      final ({int capabilities, int uplinkRecordMax})? r =
+          GatewayMessages.readBindOk(f);
+      expect(r!.uplinkRecordMax, 168);
+    });
+
+    test('a capacity above the absolute ceiling is refused', () {
+      expect(
+        () => GatewayMessages.bindOk(uplinkRecordMax: GatewayLimits.recordMax + 1),
+        throwsA(isA<ArgumentError>()),
+      );
+    });
+
+    test('the floor still fits a 14-hop path', () {
+      // 174 - path_len >= recordFloor  =>  path_len <= 14
+      expect(174 - GatewayLimits.recordFloor, 14);
     });
   });
 

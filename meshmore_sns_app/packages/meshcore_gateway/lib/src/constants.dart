@@ -35,16 +35,21 @@ abstract final class GatewayLimits {
   /// credit window: a client may have this many unacked records in flight.
   static const int creditWindow = 8;
 
-  /// Largest opaque record the L2 data plane will carry. This is the
-  /// established-state ceiling: `cmd_send_raw_data` is
-  /// `[25][path_len][path][payload]` inside a 176-byte companion frame, so
-  /// the radio accepts `174 - path_len`. Three path hashes are assumed
-  /// here; a longer path is refused at send time with [SendOutcome.errTooLong]
-  /// rather than silently truncated.
+  /// Largest opaque record the L2 data plane will carry, as an absolute
+  /// ceiling. The *actual* limit is advertised by the gateway in
+  /// [FrameType.bindOk] as [GatewayLimits.uplinkRecordMax], because
+  /// `cmd_send_raw_data` is `[25][path_len][path][payload]` inside a
+  /// 176-byte companion frame and therefore accepts only `174 - path_len`.
+  /// A session must size records to the advertised number, not to this
+  /// one, or it spends airtime on a send the radio refuses.
   ///
   /// Raw custom carries bytes verbatim: no cipher, no padding, exact
   /// length. That is why the established state needs no delimiter.
   static const int recordMax = 172;
+
+  /// The conservative floor: a 14-hop path still fits a record this size.
+  /// A gateway whose path is longer than that cannot carry the profile.
+  static const int recordFloor = 160;
 
   /// Application bytes left in a [recordMax] record after the ADR-0020
   /// transport record overhead (6 clear + 2 inner + 16 tag).
