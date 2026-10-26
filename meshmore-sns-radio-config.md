@@ -168,25 +168,79 @@ Verified against the live API on 2026-10-24.
   the setter nor the field, and `RegionPreset` has no field for it. A
   Canadian or SoCal peer cannot be joined correctly without this.
 
-## 7. What to configure on the two radios
+## 7. Your two radios, in plain terms
 
-1. **Do not invent a preset.** If either radio is meant to join a local
-   MeshCore mesh, match that mesh. In North America the de facto standard is
-   910.525 MHz / 62.5 kHz / SF7 / CR5, and mismatches fail silently.
-2. For a private two-radio link with no community obligation, the same tuple
-   is still the right default: it is what the firmware ships as the US
-   suggestion, it is the most sensitive narrowband option that still keeps
-   the payload moving, and 613 ms per record is workable.
-3. **Coding rate is the only safe local deviation.** A private pair can run
-   CR4-8 for margin without partitioning from CR4-5 neighbours.
-4. **Path hash mode must match** whatever mesh is joined; for a private pair,
-   1 byte is fine and costs less per packet.
-5. **Set the radio's own duty cycle once**, over serial:
-   `set dutycycle 1` for an EU-equivalent hard bound, or a looser value if
-   chat/telemetry should keep its headroom.
-6. **Transmit power**: 22 dBm is the community norm; the firmware caps at
-   `MAX_LORA_TX_POWER`. More power mostly buys interference at close range,
-   not range.
+Two radios are involved, and they play different roles.
+
+**Radio A — the one plugged into your phone.** Confirmed on the device,
+2026-10-24, by reading MeshMore's Device configuration screen:
+
+| | |
+|---|---|
+| Node name | `HELTEC-BASE` |
+| Public key | `615f431f51c96375…` |
+| Radio | **910.525 MHz / 62.5 kHz / SF7 / CR5 / 22 dBm** |
+| Preset | USA / Canada (matches exactly) |
+| Firmware | `v1.17.1-d929643`, build 14-Aug-2026 |
+| Hardware | Heltec V4.3 OLED |
+| BLE peer | `F8:5B:1B:BE:C5:3D` |
+| Battery | 4.37 V, 100 % |
+
+**Nothing on Radio A needs changing.** It is already at the North American
+community standard, and it is hearing a live local mesh (channel 0 traffic
+from several other nodes was arriving while this was checked). That last
+point matters: the preset cannot be changed casually, because changing it
+would disconnect this node from the mesh it is currently part of.
+
+**Radio B — the one that would sit on your desktop.** The LDMUX daemon end
+needs its own radio, and it must be configured to the **same four numbers**:
+910.525 MHz, 62.5 kHz, SF7, CR5. A mismatch is not slow or degraded — the
+two radios cannot hear each other at all, and nothing reports an error. If
+Radio B is ever pointed at a different preset, the link silently does
+nothing.
+
+A useful way to hold this: the four numbers are the *channel the radios
+speak on*, not a preference. Frequency and bandwidth and spreading factor
+must be identical. Coding rate is the one exception, because it travels in
+each packet's header, so CR5 and CR8 interoperate.
+
+## 7.1 Why the old preset values were wrong
+
+Confirmed wrong, and confirmed why.
+
+**The evidence.** Fetched `https://api.meshcore.nz/api/v1/config` directly
+(not through a summariser) on 2026-10-24. It serves 26 presets, and the
+MeshCore project's own documentation says presets live on that API so they
+can change without shipping firmware. Comparing entry by entry against
+MeshMore's table found five discrepancies.
+
+**Where MeshMore's numbers came from.** The file's own header says the
+values are "mirrored from `github.com/zjs81/meshcore-open` and
+`gotnull/socialmesh`". Fetching `meshcore-open`'s
+`lib/models/radio_settings.dart` shows why that produced bad numbers: its
+baked list assigns **`cr4_5` to almost every preset**, and it contains no
+API fetch at all. So:
+
+- `meshcore-open` hardcodes CR 4/5 nearly everywhere.
+- The API specifies CR4-7, CR4-8, CR4-8, CR4-6 for four of those entries.
+- MeshMore faithfully copied the hardcoded list, inheriting the error.
+- `meshcore-open` also lacks `network_settings.path_hash_size`, so MeshMore
+  never learned it exists.
+
+And the copy was not even complete: `meshcore-open` has a "New Zealand
+(Narrow)" entry that MeshMore did not take.
+
+**What that means in practice.** Every entry MeshMore shipped with CR4-5 was
+potentially wrong, because the source it copied had CR4-5 everywhere. The
+five verified wrong ones are corrected. The USA / Canada entry happened to be
+right, which is why your own deployment was never affected — the error only
+shows up in other regions.
+
+**The lesson for the design.** Mirroring a third-party client is a bad
+provenance. The API is authoritative, the app is offline-first, so the
+correct shape is a **generated** table: fetch the API, emit the Dart list,
+commit the result with the fetch date. That keeps it offline-safe without
+inheriting somebody else's stale snapshot.
 
 ## 8. Reading the current setting
 
