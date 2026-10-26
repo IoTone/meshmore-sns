@@ -1,0 +1,185 @@
+// Copyright (c) 2026 IoTone, Inc.
+// SPDX-License-Identifier: MIT
+import 'dart:typed_data';
+
+import 'package:meshcore_gateway/meshcore_gateway.dart';
+import 'package:test/test.dart';
+
+Uint8List _hex(String s) {
+  if (s.isEmpty) return Uint8List(0);
+  final Uint8List out = Uint8List(s.length ~/ 2);
+  for (int i = 0; i < out.length; i++) {
+    out[i] = int.parse(s.substring(i * 2, i * 2 + 2), radix: 16);
+  }
+  return out;
+}
+
+String _toHex(List<int> b) =>
+    b.map((int x) => x.toRadixString(16).padLeft(2, '0')).join();
+
+void main() {
+  group('framing', () {
+    test('a HELLO encodes to the documented bytes', () {
+      // MG | version 01 | type 01 | flags 00 | length 0200 (LE) | 01 00
+      final Frame f = GatewayMessages.hello(capabilities: 0);
+      expect(_toHex(f.encode()), '4d47010100020001 00'.replaceAll(' ', ''));
+    });
+
+    test('round-trips through the stream decoder', () {
+      final Frame original = GatewayMessages.hello(capabilities: 0x03);
+      final FrameDecoder d = FrameDecoder();
+      final List<Frame> out = d.add(original.encode());
+      expect(out, hasLength(1));
+      expect(out.single.type, FrameType.hello);
+      expect(_toHex(out.single.payload), '0103');
+    });
+
+    test('a frame split across chunk boundaries decodes once', () {
+      final Uint8List bytes =
+          GatewayMessages.status(
+            radioState: RadioState.connected,
+            rssi: -71,
+            batteryPercent: 88,
+            txAirtimeTenthsThisHour: 360,
+          ).encode();
+      final FrameDecoder d = FrameDecoder();
+      final List<Frame> got = <Frame>[];
+      for (final int b in bytes) {
+        got.addAll(d.add(<int>[b]));
+      }
+      expect(got, hasLength(1));
+      final ({
+        RadioState radioState,
+        int rssi,
+        int batteryPercent,
+        int txAirtimeTenthsThisHour,
+      })? st = GatewayMessages.readStatus(got.single);
+      expect(st, isNotNull);
+      expect(st!.radioState, RadioState.connected);
+      expect(st.rssi, -71);
+      expect(st.batteryPercent, 88);
+      expect(st.txAirtimeTenthsThisHour, 360);
+    });
+
+    test('two frames in one chunk decode in order', () {
+      final FrameDecoder d = FrameDecoder();
+      final List<Frame> out = d.add(<int>[
+        ...GatewayMessages.pairOk().encode(),
+        ...GatewayMessages.sendResult(SendOutcome.sentDirect).encode(),
+      ]);
+      expect(out.map((Frame f) => f.type),
+          <FrameType>[FrameType.pairOk, FrameType.sendResult]);
+    });
+
+    test('a bad magic is fatal, not skipped', () {
+      final FrameDecoder d = FrameDecoder();
+      d.add(_hex('4d47010100020001 00'.replaceAll(' ', '')));
+      expect(d.error, isNull);
+      d.reset();
+      d.add(_hex('4d58'));
+      // Still short: nothing decoded, no error yet.
+      expect(d.error, isNull);
+      d.add(_hex('0100010000'));
+      expect(d.error, FrameDecodeError.badMagic);
+    });
+
+    test('a future version is reported before the length is trusted', () {
+      final FrameDecoder d = FrameDecoder();
+      d.add(_hex('4d47020100020001 00'.replaceAll(' ', '')));
+      expect(d.error, FrameDecodeError.badVersion);
+    });
+
+    test('an oversized length is refused without allocating', () {
+      final FrameDecoder d = FrameDecoder();
+      d.add(_hex('4d47010100ffff'));
+      expect(d.error, FrameDecodeError.lengthTooLarge);
+    });
+
+    test('non-zero flags are refused', () {
+      final FrameDecoder d = FrameDecoder();
+      d.add(_hex('4d4701010102000100'));
+      expect(d.error, FrameDecodeError.badFlags);
+    });
+
+    test('an unknown frame type is delivered, not fatal', () {
+      final FrameDecoder d = FrameDecoder();
+      final List<Frame> out = d.add(_hex('4d47017f00010000'));
+      expect(d.error, isNull);
+      expect(out, hasLength(1));
+      expect(out.single.type.code, 0x7F);
+      expect(out.single.type.name, 'unknown_0x7f');
+    });
+  });
+
+  group('payload limits', () {
+    test('a record above the carrier ceiling is refused', () {
+      expect(
+        () => GatewayMessages.record(
+          List<int>.filled(GatewayLimits.recordMax + 1, 0),
+        ),
+        throwsA(isA<FrameLengthError>()),
+      );
+    });
+
+    test('the carrier ceiling leaves 148 application bytes', () {
+      expect(GatewayLimits.recordMax, 172);
+      expect(GatewayLimits.applicationBytesPerRecord, 148);
+    });
+
+    test('the discovery ceiling leaves room for the length prefix', () {
+      expect(GatewayLimits.discoveryRecordMax, 142);
+      expect(GatewayLimits.discoveryRecordMax + 1,
+          lessThanOrEqualTo(143));
+    });
+
+    test('a frame payload above the contract maximum is refused', () {
+      expect(
+        () => Frame(type: FrameType.record,
+            payload: List<int>.filled(GatewayLimits.maxPayload + 1, 0)),
+        throwsA(isA<FrameLengthError>()),
+      );
+    });
+
+    test('a pairing token of the wrong size is refused', () {
+      expect(
+        () => GatewayMessages.pair(List<int>.filled(15, 0)),
+        throwsA(isA<FrameLengthError>()),
+      );
+      expect(
+        _toHex(GatewayMessages.pair(List<int>.filled(16, 0xAB)).payload),
+        'ab' * 16,
+      );
+    });
+  });
+
+  group('pairing token comparison is constant time in shape', () {
+    test('equal tokens match', () {
+      expect(
+        pairingTokenMatches(
+          presented: List<int>.filled(16, 7),
+          stored: List<int>.filled(16, 7),
+        ),
+        isTrue,
+      );
+    });
+
+    test('a single-byte difference fails, at any position', () {
+      for (int pos = 0; pos < 16; pos++) {
+        final List<int> presented = List<int>.filled(16, 7);
+        presented[pos] = 8;
+        expect(
+          pairingTokenMatches(presented: presented, stored: List<int>.filled(16, 7)),
+          isFalse,
+          reason: 'difference at $pos should fail',
+        );
+      }
+    });
+
+    test('a short token fails without a content short-circuit', () {
+      expect(
+        pairingTokenMatches(presented: const <int>[], stored: List<int>.filled(16, 0)),
+        isFalse,
+      );
+    });
+  });
+}

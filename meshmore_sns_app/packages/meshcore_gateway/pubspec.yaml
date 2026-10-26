@@ -1,0 +1,14 @@
+name: meshcore_gateway
+description: >-
+  Pure-Dart codec for the MeshMore gateway wire contract (L2): framing,
+  the typed frame set, and the pairing handshake. No Flutter dependencies.
+  No transport: this is the bytes, not the socket.
+version: 0.1.0
+publish_to: 'none'
+
+environment:
+  sdk: ^3.5.0
+
+dev_dependencies:
+  lints: ^5.0.0
+  test: ^1.25.0
