@@ -503,8 +503,7 @@ the caller, with the limits in §7.
 | 0x30 | RECORD | client→gw | one record, ≤142 B |
 | 0x31 | RECV | gw→client | one record, ≤160 B |
 | 0x32 | SEND_RESULT | gw→client | result (1): sent_direct / sent_flood / err_not_found / err_busy / err_too_long / local_timeout |
-| 0x40 | STATUS | gw→client | radio state (1), rssi (1), battery (1), airtime remaining (2, minutes x 0.1), throttled (1) |
-| 0x41 | BUDGET | client→gw | 2-byte airtime budget (minutes x 0.1), or 0xFFFF for default |
+| 0x40 | STATUS | gw→client | radio state (1), rssi (1), battery (1), gateway TX airtime used this hour (2, 0.1 s units) |
 | 0x60 | CLOSE | either | 1-byte reason |
 
 Rules:
@@ -557,22 +556,76 @@ end-to-end session (audit B3).
 
 ### The duty-cycle governor
 
-The gateway meters its own transmit airtime **estimate** and enforces the
-configured budget for the active LDMUX session only:
+**Corrected 2026-10-24: an airtime budget is per-transmitter and local.
+The carrier never throttles somebody else's transmissions.**
 
-- Default: **36 s/hour** (EU868 1% duty cycle equivalent).
-- The meter accumulates the firmware's `est_timeout` per send. That is an
-  estimate, not measurement, and it cannot see repeater retransmissions
-  or collisions; it is labelled an estimate in the UI and in `STATUS`.
-- When the budget is exhausted the gateway stops sending `RECORD` frames,
-  sets the `throttled` flag in `STATUS`, and resumes when the hour window
-  rolls.
-- The client can lower the budget with `BUDGET`. Raising it is an owner
-  action in MeshMore's own UI, never an L2 frame (audit decision, §10).
-- There are no gateway retransmissions to charge, since the gateway does
-  not retransmit.
-- MeshMore's own companion traffic (chat, telemetry, sync) never crosses
-  L2 and is outside the governor by construction. So is lobospeak.
+An earlier draft gave the gateway a budget frame and a `throttled` flag,
+which implies the phone decides how much the host may transmit. It cannot:
+the host's transmissions are the host's airtime, counted against the host's
+own duty cycle. So each end enforces the same policy on itself:
+
+| | Phone side | Host side |
+|---|---|---|
+| Metered | the gateway's own uplink records | the host gateway's own downlink records |
+| Default | 36 s of airtime per hour | 36 s of airtime per hour |
+| Enforced by | MeshMore's gateway | ldmux's mesh gateway process |
+| Reported | `STATUS` (informational) | ldmux's own diagnostics |
+
+`STATUS` therefore reports what the phone's gateway has spent, for the UI.
+There is no `BUDGET` frame and no `throttled` flag: a client cannot grant
+itself airtime, and the gateway has no authority over the peer's.
+
+The meter accumulates the firmware's `est_timeout`, which is an **estimate**
+from `calcFloodTimeoutMillisFor` / `calcDirectTimeoutMillisFor`
+(`src/helpers/BaseChatMesh.cpp:645-653`), and cannot see repeater
+retransmissions or collisions. It is labelled an estimate wherever shown.
+
+MeshMore's own companion traffic (chat, telemetry, sync) never crosses L2
+and is outside this policy. So is lobospeak.
+
+### 5.6 Why the budget needs no raise mechanism: the output is bounded at the source
+
+36 s per hour sounds generous until it is converted into packets, and the
+conversion is preset-dependent. Airtime per packet below is ADR-0020's
+estimate (Semtech formula, **not measured**), and 136 B is the downlink
+application payload from §5.2:
+
+| Preset | s/packet | Records per hour | KB per hour | A 2 KB snapshot needs |
+|---|---|---|---|---|
+| SF7/500 kHz | 0.08 | 450 | 61.2 | 1 s |
+| SF7/125 kHz | 0.30 | 120 | 16.3 | 4 s |
+| SF10/250 kHz | 0.90 | 40 | 5.4 | 13 s |
+| **SF11/62.5 kHz** | **7.50** | **4.8** | **0.7** | **110 s** |
+
+The last row is the whole argument. On the longest-range preset, 36 s of
+airtime per hour buys **under five packets**. A single terminal snapshot
+would consume three hours of budget. So no raise mechanism can rescue a
+profile that sends history, and a "long transfer" scenario must not exist
+by design.
+
+It does not need to. ldmux's own measurement said it already: `ls -laR` is
+514,758 bytes but the user sees 24 lines, and substituting state for
+history turns that into one ~2,000 B snapshot (`docs/WIRE-COST.md` §1).
+The mesh profile goes further and sends **the state of now only, never
+replayed history** (`docs/MESH-TRANSPORT.md`, the `mesh` column of the
+two-profile table).
+
+The bound is therefore applied where the output is produced, on the host:
+
+- cap a mesh reply at **1,500 B**, and
+- further cap it to what the remaining budget actually affords:
+  `floor(budgetRemaining / airtimePerPacket) * 136` bytes.
+
+On SF7/125 kHz that is the 1,500 B cap (about 11 records, 3.3 s). On
+SF11/62.5 kHz it is roughly 550 B (4 records, 30 s), which a screenful of
+last-lines still fits inside.
+
+Consequence for the plan: the governor needs **no raise path in v1**,
+because the output profile guarantees every operation is small. The user's
+own framing — "a reasonably small amount of history, up from the bottom"
+— is the design, not a limitation to be escaped. If a genuine need for a
+larger transfer ever appears, an owner-only raise in MeshMore's settings is
+an additive change.
 
 ### Failure behaviour
 
@@ -592,7 +645,7 @@ configured budget for the active LDMUX session only:
 | Android today | FGS `connectedDevice` already declared (`AndroidManifest.xml:36-37,76-79`) | `INTERNET` (install-time, for the loopback connect) |
 | Android 37+ | Nothing for loopback (§1.5) | Nothing for loopback (§1.5) |
 | iOS today | **`UIBackgroundModes: bluetooth-central` — new**; `NSBluetoothAlwaysUsageDescription` | Nothing (loopback is ungated, §1.6) |
-| iOS 26 | Radio must be set up via **AccessorySetupKit** (non-MFi-capable, §10.1) for state-restoration relaunch; `bluetooth-central`; restore identifier + `willRestoreState`; force-quit never restored; ~10 s per wake; Live Activity optional best-effort. **Note:** a suspended iOS app cannot serve the loopback listener, so the gateway itself is Android-only until O1 is decided | Nothing (loopback ungated) |
+| iOS 26 | Radio must be set up via **AccessorySetupKit** (non-MFi-capable, §10) for state-restoration relaunch; `bluetooth-central`; restore identifier + `willRestoreState`; force-quit never restored; ~10 s per wake; Live Activity optional best-effort. **No gateway listener** — LDMUX on iOS is tailnet only (O1) | Nothing (loopback ungated) |
 
 The iOS line is the biggest new work in the whole plan and it is all on the
 MeshMore side. It also carries the one blocker the plan does not yet
@@ -737,14 +790,14 @@ H1). The contract is now frozen against a transport that is known to work.
 | **P3** | Mesh-side carry proven end to end: one-byte delimitation, serialisation, discovery (flooded both ways), the reply-size-shrinks-with-hops rule, the estimate-based governor | P0 | **Moved before P2.** The transport shape must be known before the contract freezes |
 | **P1** | L2 contract v1 + `packages/meshcore-gateway` + pairing + grants + in-app debug client | P0, P3 | **Contract freezes here** |
 | **P2** | LDMUX KMP `MeshMoreGatewayClient` + settings screen | P1 | ~500 lines Kotlin; no BLE |
-| **P6 (near-term)** | MeshMore iOS: AccessorySetupKit pairing flow, `bluetooth-central`, restore identifier + `willRestoreState`, force-quit tolerance, optional Live Activity | iOS target accepted 2026-10-24; **blocked on decision O1** | Findings in §10.1 |
+| **P6 (near-term)** | MeshMore iOS as a standalone radio app: AccessorySetupKit pairing flow, `bluetooth-central`, restore identifier + `willRestoreState`, force-quit tolerance, optional Live Activity. **No gateway listener on iOS.** | iOS target accepted 2026-10-24; unblocked by O1 | Findings in §10 |
 | **DEFERRED** | lobospeak v0: L4 codec, robot handler, GOTO/HALT in MeshMore | P0, P3 | **Spec-only; no robot functionality built now** |
 | **OPTIONAL** | Firmware forwarding patch upstream (including the `out_frame` overflow guard, audit N3); channel-broadcast commands; `CMD_SEND_RAW_PACKET` uplink so both directions reach ~172 B; AIDL if signature-gated callers ever needed | various | |
 
 P0 is usable alone and unblocks every other phase. P3 and P1 are the
 schedule risk.
 
-## 10. Resolved questions
+## 10. Platform research: the iOS background model
 
 ### 10.1 iOS AccessorySetupKit (investigated 2026-10-24)
 
@@ -784,53 +837,54 @@ schedule risk.
   `AccessoryLiveActivities` exists in the iOS 26.5 SDK (`dotnet/macios`
   wiki, 2026-03-31), contents unconfirmed.
 
-## 11. Open questions
+## 11. Resolved decisions (2026-10-24, user)
 
-**O1 — iOS and the gateway (blocker).** Now that the iOS background
-model is understood, a suspended iOS app cannot serve a loopback
-listener: the process is frozen, `ServerSocket.accept()` does not run, and
-a connecting LDMUX times out. `bluetooth-central` wakes the app for BLE
-events only, about 10 s, which cannot serve an interactive terminal. So
-the two-app gateway works on Android and **does not work on iOS as
-designed**. Options:
+**O1 — iOS and the gateway: RESOLVED.** LDMUX on iOS is **tailnet only**
+and gets **no MeshCore support**. The two-app gateway is Android-only.
+Consequences:
 
-- (a) iOS supports the gateway only while MeshMore is in the foreground.
-  Cheap, honest, useless for a terminal.
-- (b) LDMUX owns the BLE radio on iOS, with a foreground handover. This
-  re-opens §3.2, which was rejected.
-- (c) iOS has no gateway: LDMUX reaches the host over the tailnet
-  directly, and the mesh path is Android-only.
-- (d) Accept Android-first and demote P6 until a real answer exists.
+- LDMUX iOS work is the existing KMP socket client against the tailnet
+  session, with no radio, no L2, and no pairing. It does not depend on any
+  of this plan.
+- MeshMore on iOS stays a standalone radio app: AccessorySetupKit
+  pairing, `bluetooth-central`, restore identifier + `willRestoreState`,
+  force-quit tolerance. It runs **no gateway listener at all**, which
+  removes the loopback-server problem from the iOS side entirely.
+- P6 shrinks to "MeshMore is a first-class iOS radio app". The gateway
+  piece leaves P6.
+- The single-radio-owner rule still holds on every platform, which is why
+  this costs nothing in design terms.
 
-**O2 — contact provisioning.** `BIND` fails unless the host is already a
-MeshCore contact on the phone's radio, and adding one is a companion
-write the gateway refuses. Options:
+**O2 — contact provisioning: RESOLVED.** MeshMore's UI gains an explicit
+"add host node as contact" step at bind time. The gateway still performs
+**no** companion writes, so §2.4 and the security model are untouched.
+`BIND` fails with `BIND_ERR(not_a_contact)`, and the Settings UI offers
+the add-contact action next to that error rather than the gateway doing
+it silently.
 
-- (a) MeshMore's UI gains an explicit "add host node as contact" step at
-  bind time.
-- (b) `BIND` is granted exactly one named, auditable companion write as
-  an exception to §2.4.
-- (c) The user adds the contact by hand, out of band.
+**O3 — governor authority: RESOLVED, and the question was asking the
+wrong thing.** Airtime is per-transmitter (§5.5): each end meters its own
+transmissions, and the carrier has no authority over the peer's. There is
+no `BUDGET` frame and no raise path, because the output is bounded at the
+source instead (§5.6). On the longest-range preset 36 s/hour buys under
+five packets, so no raise can rescue a profile that sends history, and the
+profile does not send history. An owner-only raise is deferred as additive.
 
-**O3 — governor authority.** Confirm the governor enforces a labelled
-*estimate* rather than claiming measured airtime, and whether the owner
-may raise the budget from MeshMore's UI (outside L2).
+**O4 — unknown-frame policy: RESOLVED.** Ignore unknown types, close only
+on malformed framing or a bad version. Both sides ship together, and the
+frame set must be able to grow without a flag day.
 
-**O4 — unknown-frame policy.** Strict close is fail-closed but freezes the
-frame set; ignore-unknown is additive but fail-open. The draft in §5.5
-ignores unknown types and closes only on malformed framing, which is the
-additive choice; confirm it.
+**O5 — pairing token lifetime: RESOLVED.** Per-pairing, revocable, in
+platform secure storage, constant-time compare, with an Android backup
+rule exclusion regardless of where it lands.
 
-**O5 — pairing token lifetime.** Per-pairing, revocable, is the
-recommendation. Not yet a user decision.
+**O6 — LDMUX iOS: CLOSED** by O1. Tailnet only; no mesh work there.
 
-**O6 — LDMUX iOS.** Not started (`ldmux/docs/STATE.md`). The KMP client is
-shared code, so the iOS work there is an entitlement-free socket client
-plus UI; the hard iOS work is MeshMore's, not LDMUX's. Depends on O1.
-
-Decided and closed: GOTO scale (degE7), halt policy (deny by default,
-revocable), client policy (one at a time), architecture (two-app
+Decided earlier and closed: GOTO scale (degE7), halt policy (deny by
+default, revocable), client policy (one at a time), architecture (two-app
 gateway).
+
+**Nothing in this section waits on the user. The plan is unblocked.**
 
 ## 12. Fresh-eyes corrections to earlier assumptions
 
