@@ -1,13 +1,13 @@
 // Copyright (c) 2026 IoTone, Inc.
 // SPDX-License-Identifier: MIT
 import 'package:flutter_test/flutter_test.dart';
-import 'package:meshmore_sns_app/meshcore/meshcore_connection.dart';
 import 'package:meshmore_sns_app/meshcore/meshcore_controller.dart';
 import 'package:meshmore_sns_app/sns/inferred_place_store.dart';
 import 'package:meshmore_sns_app/sns/place_inference.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../meshcore/fake_transport.dart';
+import 'package:meshcore/meshcore.dart';
 
 /// Gazetteer with one in-region city near the test's self location.
 class _Gaz implements PlaceGazetteer {

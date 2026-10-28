@@ -11,7 +11,6 @@ import '../cue/cue_bridge.dart';
 import '../tts/tts_controller.dart';
 import '../cue/cue_service.dart';
 import '../gen/app_localizations.dart';
-import '../meshcore/meshcore_connection.dart';
 import '../meshcore/meshcore_controller.dart';
 import '../screens/chat_screen.dart';
 import 'boot_overlay.dart';
@@ -24,6 +23,7 @@ import '../ui/mm_components.dart';
 import '../ui/mm_page_header.dart';
 import '../ui/mm_scaffold.dart';
 import '../ui/mm_shape.dart';
+import 'package:meshcore/meshcore.dart';
 
 /// The primary views (R8 dashboard is the home / first page; the
 /// hyperlocal grid follows Nodes — issue #4; R53 adds the Docs tab,

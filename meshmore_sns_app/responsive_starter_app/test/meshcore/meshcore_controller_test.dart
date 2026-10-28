@@ -9,7 +9,6 @@ import 'package:meshmore_sns_app/meshcore/discovered_node.dart';
 import 'package:meshmore_sns_app/meshcore/favorite_store.dart';
 import 'package:meshmore_sns_app/meshcore/known_store.dart';
 import 'package:meshmore_sns_app/meshcore/mesh_event.dart';
-import 'package:meshmore_sns_app/meshcore/meshcore_connection.dart';
 import 'package:meshmore_sns_app/meshcore/mesh_graph.dart';
 import 'package:meshmore_sns_app/meshcore/meshcore_controller.dart';
 import 'package:meshmore_sns_app/meshcore/node_telemetry.dart';

@@ -12,12 +12,12 @@ import 'package:meshmore_sns_app/gen/app_localizations.dart';
 import 'package:meshmore_sns_app/l10n/locale_controller.dart';
 import 'package:meshmore_sns_app/meshcore/mesh_network.dart';
 import 'package:meshmore_sns_app/meshcore/mesh_network_store.dart';
-import 'package:meshmore_sns_app/meshcore/meshcore_connection.dart';
 import 'package:meshmore_sns_app/meshcore/meshcore_controller.dart';
 import 'package:meshmore_sns_app/screens/network_detail_screen.dart';
 import 'package:meshmore_sns_app/screens/networks_screen.dart';
 
 import '../meshcore/fake_transport.dart';
+import 'package:meshcore/meshcore.dart';
 
 const List<LocalizationsDelegate<Object>> _delegates =
     <LocalizationsDelegate<Object>>[

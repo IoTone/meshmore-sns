@@ -5,7 +5,6 @@ import 'package:meshcore/meshcore.dart';
 import '../../gen/app_localizations.dart';
 import '../../meshcore/discovered_node.dart';
 import '../../meshcore/mesh_event.dart';
-import '../../meshcore/meshcore_connection.dart';
 import '../../meshcore/meshcore_controller.dart';
 import '../../meshcore/region_presets.dart';
 

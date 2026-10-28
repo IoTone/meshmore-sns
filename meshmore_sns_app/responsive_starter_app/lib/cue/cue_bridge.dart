@@ -3,11 +3,11 @@
 import 'dart:async';
 
 import '../meshcore/chat_message.dart';
-import '../meshcore/meshcore_connection.dart';
 import '../meshcore/meshcore_controller.dart';
 import '../peer/peer_profiles.dart';
 import '../tts/tts_controller.dart';
 import 'cue_service.dart';
+import 'package:meshcore/meshcore.dart';
 
 /// Wires [MeshcoreController] events to [CueService] (R12). Lives
 /// app-scoped so cues fire wherever — independent of which screen is

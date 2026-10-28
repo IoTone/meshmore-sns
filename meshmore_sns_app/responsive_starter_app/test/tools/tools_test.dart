@@ -12,7 +12,6 @@ import 'package:meshcore/meshcore.dart';
 import 'package:meshmore_sns_app/bot/bot_scope.dart';
 import 'package:meshmore_sns_app/meshcore/chat_message.dart';
 import 'package:meshmore_sns_app/meshcore/discovered_node.dart';
-import 'package:meshmore_sns_app/meshcore/meshcore_connection.dart';
 import 'package:meshmore_sns_app/meshcore/meshcore_controller.dart';
 import 'package:meshmore_sns_app/tools/mesh_tool.dart';
 import 'package:meshmore_sns_app/tools/ping_tool.dart';

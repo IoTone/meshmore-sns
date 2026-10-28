@@ -1,13 +1,13 @@
 // Copyright (c) 2026 IoTone, Inc.
 // SPDX-License-Identifier: MIT
 import 'package:flutter_test/flutter_test.dart';
-import 'package:meshmore_sns_app/meshcore/meshcore_connection.dart';
 import 'package:meshmore_sns_app/meshcore/meshcore_controller.dart';
 import 'package:meshmore_sns_app/meshcore/own_location.dart';
 import 'package:meshmore_sns_app/perms/location_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'fake_transport.dart';
+import 'package:meshcore/meshcore.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();

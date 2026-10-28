@@ -8,11 +8,11 @@ import 'package:provider/provider.dart';
 
 import '../gen/app_localizations.dart';
 import '../meshcore/ble_connector.dart';
-import '../meshcore/meshcore_connection.dart';
 import '../meshcore/meshcore_controller.dart';
 import '../meshcore/paired_device_history.dart';
 import 'device_contacts_screen.dart';
 import '../ui/mm_shape.dart';
+import 'package:meshcore/meshcore.dart';
 
 /// R41 — Device management sheet. Single place to:
 ///   - see what we're currently paired to and the live connection state,

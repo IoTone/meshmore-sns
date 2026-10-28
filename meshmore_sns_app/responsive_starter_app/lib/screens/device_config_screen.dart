@@ -11,7 +11,6 @@ import '../theme/mm_skin.dart';
 import '../ui/mm_collapse_controller.dart';
 import '../ui/mm_collapsible.dart';
 import '../ui/mm_scaffold.dart';
-import '../meshcore/meshcore_connection.dart';
 import '../meshcore/meshcore_controller.dart';
 import '../meshcore/own_location.dart';
 import '../meshcore/region_presets.dart';

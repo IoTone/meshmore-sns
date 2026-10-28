@@ -5,10 +5,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:meshmore_sns_app/meshcore/chat_message.dart';
 import 'package:meshmore_sns_app/meshcore/chat_store.dart';
-import 'package:meshmore_sns_app/meshcore/meshcore_connection.dart';
 import 'package:meshmore_sns_app/meshcore/meshcore_controller.dart';
 
 import 'fake_transport.dart';
+import 'package:meshcore/meshcore.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();

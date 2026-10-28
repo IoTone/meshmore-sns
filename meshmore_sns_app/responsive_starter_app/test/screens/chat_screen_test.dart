@@ -7,13 +7,13 @@ import 'package:provider/provider.dart';
 
 import 'package:meshmore_sns_app/gen/app_localizations.dart';
 import 'package:meshmore_sns_app/l10n/locale_controller.dart';
-import 'package:meshmore_sns_app/meshcore/meshcore_connection.dart';
 import 'package:meshmore_sns_app/meshcore/meshcore_controller.dart';
 import 'package:meshmore_sns_app/screens/chat_screen.dart';
 import 'package:meshmore_sns_app/tts/tts_controller.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../meshcore/fake_transport.dart';
+import 'package:meshcore/meshcore.dart';
 
 class FakeTtsSpeaker implements TtsSpeaker {
   final List<String> spoken = <String>[];

@@ -2,12 +2,12 @@
 // SPDX-License-Identifier: MIT
 import 'package:flutter_test/flutter_test.dart';
 import 'package:meshmore_sns_app/meshcore/auto_publish_controller.dart';
-import 'package:meshmore_sns_app/meshcore/meshcore_connection.dart';
 import 'package:meshmore_sns_app/meshcore/meshcore_controller.dart';
 import 'package:meshmore_sns_app/perms/location_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'fake_transport.dart';
+import 'package:meshcore/meshcore.dart';
 
 /// R36 — AutoPublishController.
 ///

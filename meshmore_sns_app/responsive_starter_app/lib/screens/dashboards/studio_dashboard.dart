@@ -6,7 +6,6 @@ import 'package:meshcore/meshcore.dart';
 import 'package:provider/provider.dart';
 
 import '../../gen/app_localizations.dart';
-import '../../meshcore/meshcore_connection.dart';
 import '../../meshcore/meshcore_controller.dart';
 import '../../meshcore/own_location.dart';
 import '../../theme/mm_skin.dart';

@@ -14,11 +14,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:meshmore_sns_app/gen/app_localizations.dart';
 import 'package:meshmore_sns_app/l10n/locale_controller.dart';
 import 'package:meshmore_sns_app/meshcore/gateway/gateway_service.dart';
-import 'package:meshmore_sns_app/meshcore/meshcore_connection.dart';
 import 'package:meshmore_sns_app/meshcore/meshcore_controller.dart';
 import 'package:meshmore_sns_app/screens/connected_apps_screen.dart';
 
 import '../meshcore/fake_transport.dart';
+import 'package:meshcore/meshcore.dart';
 
 const List<LocalizationsDelegate<Object>> _delegates =
     <LocalizationsDelegate<Object>>[

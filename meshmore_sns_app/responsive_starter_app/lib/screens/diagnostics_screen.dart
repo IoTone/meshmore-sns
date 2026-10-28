@@ -12,7 +12,6 @@ import '../bot/bot_guards.dart';
 import '../bot/responder.dart';
 import '../gen/app_localizations.dart';
 import '../ui/mm_scaffold.dart';
-import '../meshcore/meshcore_connection.dart';
 import '../meshcore/meshcore_controller.dart';
 import '../ui/mm_shape.dart';
 

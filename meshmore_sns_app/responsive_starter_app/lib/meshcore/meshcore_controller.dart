@@ -24,7 +24,6 @@ import 'known_store.dart';
 import 'superseded_store.dart';
 import 'node_tags_store.dart';
 import 'mesh_event.dart';
-import 'meshcore_connection.dart';
 import 'message_heat.dart';
 import 'node_telemetry.dart';
 import 'own_location.dart';

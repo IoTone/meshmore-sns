@@ -10,7 +10,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:meshmore_sns_app/gen/app_localizations.dart';
 import 'package:meshmore_sns_app/l10n/locale_controller.dart';
-import 'package:meshmore_sns_app/meshcore/meshcore_connection.dart';
 import 'package:meshmore_sns_app/meshcore/meshcore_controller.dart';
 import 'package:meshmore_sns_app/screens/docs_hub_screen.dart';
 import 'package:meshmore_sns_app/theme/mm_skin.dart';
@@ -18,6 +17,7 @@ import 'package:meshmore_sns_app/theme/mm_tokens.dart';
 import 'package:meshmore_sns_app/theme/theme_controller.dart';
 
 import '../meshcore/fake_transport.dart';
+import 'package:meshcore/meshcore.dart';
 
 const String _mono = 'JetBrains Mono';
 

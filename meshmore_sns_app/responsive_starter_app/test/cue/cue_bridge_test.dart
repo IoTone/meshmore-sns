@@ -3,13 +3,13 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:meshmore_sns_app/cue/cue_bridge.dart';
 import 'package:meshmore_sns_app/cue/cue_service.dart';
-import 'package:meshmore_sns_app/meshcore/meshcore_connection.dart';
 import 'package:meshmore_sns_app/meshcore/meshcore_controller.dart';
 import 'package:meshmore_sns_app/theme/theme_controller.dart';
 import 'package:meshmore_sns_app/tts/tts_controller.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../meshcore/fake_transport.dart';
+import 'package:meshcore/meshcore.dart';
 
 /// Records dispatched cues without touching platform channels.
 class _RecordingCue extends CueService {

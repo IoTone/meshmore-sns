@@ -6,10 +6,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../gen/app_localizations.dart';
-import '../meshcore/meshcore_connection.dart';
 import '../meshcore/meshcore_controller.dart';
 import '../theme/mm_skin.dart';
 import '../theme/mm_tokens.dart';
+import 'package:meshcore/meshcore.dart';
 
 /// Boot-time busy overlay (R8 polish). On a cold launch the
 /// BLE auto-connect → APP_START → SELF_INFO → drain chain typically

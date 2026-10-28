@@ -4,11 +4,11 @@ import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:meshmore_sns_app/meshcore/chat_message.dart';
-import 'package:meshmore_sns_app/meshcore/meshcore_connection.dart';
 import 'package:meshmore_sns_app/meshcore/meshcore_controller.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'fake_transport.dart';
+import 'package:meshcore/meshcore.dart';
 
 /// RESP_CODE_SENT (0x06): [06][flood][ack u32 LE][timeout u32 LE].
 Uint8List msgSentFrame({

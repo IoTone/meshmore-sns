@@ -8,7 +8,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:meshmore_sns_app/gen/app_localizations.dart';
 import 'package:meshmore_sns_app/l10n/locale_controller.dart';
-import 'package:meshmore_sns_app/meshcore/meshcore_connection.dart';
 import 'package:meshmore_sns_app/meshcore/meshcore_controller.dart';
 import 'package:meshmore_sns_app/screens/dashboards/dashboard_host.dart';
 import 'package:meshmore_sns_app/screens/dashboards/my_pubkey_line.dart';
@@ -16,6 +15,7 @@ import 'package:meshmore_sns_app/theme/mm_tokens.dart';
 import 'package:meshmore_sns_app/theme/theme_controller.dart';
 
 import '../meshcore/fake_transport.dart';
+import 'package:meshcore/meshcore.dart';
 
 Future<ThemeController> _pump(WidgetTester t, MeshcoreController mc) async {
   final ThemeController tc = ThemeController();

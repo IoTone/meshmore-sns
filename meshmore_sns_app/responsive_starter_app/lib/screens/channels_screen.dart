@@ -13,7 +13,6 @@ import 'package:qr_flutter/qr_flutter.dart';
 
 import '../cryptokit/dice_roll_entropy.dart';
 import '../gen/app_localizations.dart';
-import '../meshcore/meshcore_connection.dart';
 import '../meshcore/meshcore_controller.dart';
 import '../ui/mm_scaffold.dart';
 import '../theme/theme_controller.dart';

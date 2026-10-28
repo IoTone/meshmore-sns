@@ -11,7 +11,6 @@ import '../chat/studio_message_row.dart';
 import '../gen/app_localizations.dart';
 import '../meshcore/chat_message.dart';
 import 'delivery_status_icon.dart';
-import '../meshcore/meshcore_connection.dart';
 import '../meshcore/meshcore_controller.dart';
 import '../meshcore/message_heat.dart' show parseChannelSenderName;
 import '../bot/bot_guards.dart';
@@ -22,6 +21,7 @@ import '../tts/tts_controller.dart';
 import '../ui/mm_page_header.dart';
 import '../ui/mm_scaffold.dart';
 import '../ui/mm_shape.dart';
+import 'package:meshcore/meshcore.dart';
 
 /// R6 — the channel chat. A channel-selector chip strip on top
 /// (collapsible to reclaim vertical space), a scrollable message list

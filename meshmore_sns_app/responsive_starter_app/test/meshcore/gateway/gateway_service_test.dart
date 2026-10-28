@@ -6,11 +6,11 @@ import 'dart:typed_data';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:meshcore_gateway/meshcore_gateway.dart';
 import 'package:meshmore_sns_app/meshcore/gateway/gateway_service.dart';
-import 'package:meshmore_sns_app/meshcore/meshcore_connection.dart';
 import 'package:meshmore_sns_app/meshcore/meshcore_controller.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../fake_transport.dart';
+import 'package:meshcore/meshcore.dart';
 
 class _ThrowingPersistence implements PairingPersistence {
   int loads = 0;

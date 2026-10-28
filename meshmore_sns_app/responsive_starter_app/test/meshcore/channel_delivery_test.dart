@@ -11,13 +11,13 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:meshmore_sns_app/gen/app_localizations.dart';
 import 'package:meshmore_sns_app/l10n/locale_controller.dart';
 import 'package:meshmore_sns_app/meshcore/chat_message.dart';
-import 'package:meshmore_sns_app/meshcore/meshcore_connection.dart';
 import 'package:meshmore_sns_app/meshcore/meshcore_controller.dart';
 import 'package:meshmore_sns_app/screens/chat_screen.dart';
 import 'package:meshmore_sns_app/tts/tts_controller.dart';
 
 import 'delivery_status_test.dart' show ackFrame, msgSentFrame;
 import 'fake_transport.dart';
+import 'package:meshcore/meshcore.dart';
 
 /// R76: the firmware answers a channel text with RESP_CODE_OK (0x00),
 /// not RESP_CODE_SENT. Spec: companion `MyMesh.cpp` handler

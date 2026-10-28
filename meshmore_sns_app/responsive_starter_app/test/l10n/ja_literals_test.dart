@@ -10,12 +10,12 @@ import 'package:meshmore_sns_app/gen/app_localizations.dart';
 import 'package:meshmore_sns_app/gen/app_localizations_en.dart';
 import 'package:meshmore_sns_app/gen/app_localizations_ja.dart';
 import 'package:meshmore_sns_app/l10n/locale_controller.dart';
-import 'package:meshmore_sns_app/meshcore/meshcore_connection.dart';
 import 'package:meshmore_sns_app/meshcore/meshcore_controller.dart';
 import 'package:meshmore_sns_app/meshcore/own_location.dart';
 import 'package:meshmore_sns_app/screens/diagnostics_screen.dart';
 
 import '../meshcore/fake_transport.dart';
+import 'package:meshcore/meshcore.dart';
 
 /// R69 — strings that used to be hard-coded English must resolve to
 /// Japanese. Units and acronyms that are the same in every language.

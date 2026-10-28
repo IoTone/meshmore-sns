@@ -13,12 +13,12 @@ import '../bot/bot_tag.dart';
 import '../meshcore/chat_message.dart';
 import 'delivery_status_icon.dart';
 import '../meshcore/discovered_node.dart';
-import '../meshcore/meshcore_connection.dart';
 import '../meshcore/meshcore_controller.dart';
 import '../theme/mm_skin.dart';
 import '../tts/tts_controller.dart';
 import '../ui/mm_scaffold.dart';
 import 'node_detail_sheet.dart';
+import 'package:meshcore/meshcore.dart';
 
 /// 1:1 direct-message thread with a peer (P2P). The MeshCore
 /// companion protocol carries DMs over `CMD_SEND_TXT_MSG` (0x02)

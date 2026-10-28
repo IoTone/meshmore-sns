@@ -9,7 +9,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:meshmore_sns_app/gen/app_localizations.dart';
 import 'package:meshmore_sns_app/gen/app_localizations_en.dart';
 import 'package:meshmore_sns_app/l10n/locale_controller.dart';
-import 'package:meshmore_sns_app/meshcore/meshcore_connection.dart';
 import 'package:meshmore_sns_app/meshcore/meshcore_controller.dart';
 import 'package:meshmore_sns_app/screens/chat_screen.dart';
 import 'package:meshmore_sns_app/screens/dashboard_screen.dart';
@@ -22,6 +21,7 @@ import 'package:meshmore_sns_app/ui/mm_audio_toggle.dart';
 import 'package:meshmore_sns_app/ui/mm_collapse_controller.dart';
 
 import '../meshcore/fake_transport.dart';
+import 'package:meshcore/meshcore.dart';
 
 /// R69 — every icon target the R68 pass found under 48dp is now at least
 /// 48x48 in the laid-out tree.

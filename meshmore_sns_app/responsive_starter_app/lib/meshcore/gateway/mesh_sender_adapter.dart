@@ -6,7 +6,6 @@ import 'dart:typed_data';
 import 'package:meshcore/meshcore.dart';
 import 'package:meshcore_gateway/meshcore_gateway.dart';
 
-import '../meshcore_connection.dart';
 import '../meshcore_controller.dart';
 import '../region_presets.dart';
 

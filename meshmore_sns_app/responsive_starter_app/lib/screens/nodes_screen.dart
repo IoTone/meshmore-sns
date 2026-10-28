@@ -5,7 +5,6 @@ import 'package:provider/provider.dart';
 
 import '../gen/app_localizations.dart';
 import '../meshcore/discovered_node.dart';
-import '../meshcore/meshcore_connection.dart';
 import '../meshcore/meshcore_controller.dart';
 import '../theme/mm_skin.dart';
 import '../ui/mm_components.dart';
@@ -14,6 +13,7 @@ import '../ui/mm_scaffold.dart';
 import '../util/geo.dart' as geo;
 import 'node_detail_sheet.dart';
 import '../ui/mm_shape.dart';
+import 'package:meshcore/meshcore.dart';
 
 /// Nodes "in the area" — the hyperlocal-discovery view (R6/R8).
 ///

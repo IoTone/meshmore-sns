@@ -7,7 +7,6 @@ import 'package:meshcore/meshcore.dart';
 import 'package:meshcore_gateway/meshcore_gateway.dart';
 import 'package:meshmore_sns_app/meshcore/gateway/mesh_sender_adapter.dart';
 import 'package:meshmore_sns_app/meshcore/chat_message.dart';
-import 'package:meshmore_sns_app/meshcore/meshcore_connection.dart';
 import 'package:meshmore_sns_app/meshcore/meshcore_controller.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 

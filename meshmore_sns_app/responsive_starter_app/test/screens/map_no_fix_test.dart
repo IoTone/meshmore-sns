@@ -8,12 +8,12 @@ import 'package:provider/provider.dart';
 
 import 'package:meshmore_sns_app/gen/app_localizations.dart';
 import 'package:meshmore_sns_app/l10n/locale_controller.dart';
-import 'package:meshmore_sns_app/meshcore/meshcore_connection.dart';
 import 'package:meshmore_sns_app/meshcore/meshcore_controller.dart';
 import 'package:meshmore_sns_app/screens/map_screen.dart';
 import 'package:meshmore_sns_app/screens/street_map_view.dart';
 
 import '../meshcore/fake_transport.dart';
+import 'package:meshcore/meshcore.dart';
 
 /// R69 — the Map tab is browsable with no position fix; the grid's
 /// street-map mode keeps its empty state.

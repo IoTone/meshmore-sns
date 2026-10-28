@@ -12,7 +12,6 @@ import '../gen/app_localizations.dart';
 import '../theme/mm_skin.dart';
 import '../meshcore/chat_message.dart';
 import '../meshcore/discovered_node.dart';
-import '../meshcore/meshcore_connection.dart';
 import '../meshcore/meshcore_controller.dart';
 import '../meshcore/own_location.dart';
 import '../theme/theme_controller.dart';
@@ -32,6 +31,7 @@ import 'grid_prefs_store.dart';
 import 'meshbook_view.dart';
 import 'weather_view.dart';
 import '../ui/mm_shape.dart';
+import 'package:meshcore/meshcore.dart';
 
 /// R27 — the map views in the grid's picker: `radial` (R18, default)
 /// + `globe` (R27) + `equalGrid` (R25) + `streetMap` (R25+2) + the

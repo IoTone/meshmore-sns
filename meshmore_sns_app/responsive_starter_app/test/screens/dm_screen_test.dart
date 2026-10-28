@@ -8,12 +8,12 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:meshmore_sns_app/gen/app_localizations.dart';
 import 'package:meshmore_sns_app/l10n/locale_controller.dart';
-import 'package:meshmore_sns_app/meshcore/meshcore_connection.dart';
 import 'package:meshmore_sns_app/meshcore/meshcore_controller.dart';
 import 'package:meshmore_sns_app/screens/dm_screen.dart';
 import 'package:meshmore_sns_app/tts/tts_controller.dart';
 
 import '../meshcore/fake_transport.dart';
+import 'package:meshcore/meshcore.dart';
 
 Widget _host(MeshcoreController mc, String peer, [TtsController? tts]) =>
     MaterialApp(
