@@ -89,6 +89,9 @@ class SerialMeshSender implements MeshSender {
   int get uplinkRecordMax => _uplinkMax;
 
   @override
+  int get airtimeOverheadBytes => 2 + (_boundPath?.length ?? 0);
+
+  @override
   Future<bool> isContact(List<int> pubKey) {
     return _serialise(() async {
       final String key = meshKeyHex(pubKey);

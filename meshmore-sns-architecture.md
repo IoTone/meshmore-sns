@@ -1022,6 +1022,11 @@ Every row is a rule that can be checked with `rg`. A violation is a bug.
 |---|---|---|---|
 | `packages/meshcore` (Dart, L1) | The companion protocol: opcodes, frames, models | Nothing about LDMUX, UI, or the L2 tunnel | no `ldmux` import; no `meshcore_gateway` import |
 | `packages/meshcore_gateway` (Dart, L2) | Framing, handshake, pairing, governor, one-client server | Contacts, chat, radio parameters, MeshCore opcodes, Flutter | `dart pub deps` shows no Flutter, no `meshcore` |
+
+The governor meters `record + MeshSender.airtimeOverheadBytes`, where the bridge
+reports the MeshCore packet header and path the radio adds on air. Without it
+every transmission is under-counted, and 36 s/hour is a safety bound, not a
+target.
 | MeshMore app (Flutter) | The radio (L1), app state, the `MeshSender` adapter, Settings | Nothing of LDMUX's session or L3 semantics | the adapter carries opaque records only |
 | LDMUX mobile (KMP, L2 client + L3 origin) | L2 client, L3 framing, terminal UI | **Any** radio parameter, preset, path hash, contact, channel, companion opcode, or airtime arithmetic | `rg -i 'bandwidth\|spreading\|pathHash\|preset\|CMD_|PUSH_CODE|RESP_CODE' packages/mobile` |
 | `packages/meshcore_host` (Dart, host composition) | Serial framing, the host `MeshSender`, governor built from the radio's real `SELF_INFO`, the `bin/` process | Anything L3/L4, any app state | `rg -i 'ldmux' packages/meshcore_host/lib` |

@@ -21,14 +21,18 @@ Future<Harness> startGateway({
   Governor? governor,
   int uplinkRecordMax = 160,
   Duration preAuthTimeout = const Duration(milliseconds: 300),
+  int airtimeOverheadBytes = 0,
+  AirtimeEstimator estimator = const AirtimeEstimator(),
 }) async {
   final NoopMeshSender mesh = NoopMeshSender(
     uplinkRecordMax: uplinkRecordMax,
+    airtimeOverheadBytes: airtimeOverheadBytes,
     contacts: <String>{meshKeyHex(peerKey)},
   );
   final Gateway gateway = Gateway(
     mesh: mesh,
     governor: governor,
+    estimator: estimator,
     port: 0,
     preAuthTimeout: preAuthTimeout,
   );
@@ -392,6 +396,35 @@ void main() {
   });
 
   group('governor and pairing units', () {
+    test('the governor meters on-air overhead, not just payload bytes',
+        () async {
+      // 40 payload + 100 framing = 1400 ms at 10 ms/byte, over a 500 ms
+      // budget. Without the overhead the same record is 400 ms and fits.
+      final Harness withOverhead = await startGateway(
+        governor: Governor(budget: const Duration(milliseconds: 500)),
+        airtimeOverheadBytes: 100,
+        estimator: const AirtimeEstimator(millisPerByte: 10),
+      );
+      addTearDown(() => stopHarness(withOverhead));
+      await handshake(withOverhead);
+      withOverhead.client
+          .sendRecord(seq: 1, record: List<int>.filled(40, 0));
+      expect((await withOverhead.client.nextSendResult()).outcome,
+          SendOutcome.errBusy);
+
+      final Harness withoutOverhead = await startGateway(
+        governor: Governor(budget: const Duration(milliseconds: 500)),
+        airtimeOverheadBytes: 0,
+        estimator: const AirtimeEstimator(millisPerByte: 10),
+      );
+      addTearDown(() => stopHarness(withoutOverhead));
+      await handshake(withoutOverhead);
+      withoutOverhead.client
+          .sendRecord(seq: 1, record: List<int>.filled(40, 0));
+      expect((await withoutOverhead.client.nextSendResult()).outcome,
+          SendOutcome.sentDirect);
+    });
+
     test('the governor is a rolling window', () async {
       DateTime now = DateTime(2026);
       final Governor gov = Governor(

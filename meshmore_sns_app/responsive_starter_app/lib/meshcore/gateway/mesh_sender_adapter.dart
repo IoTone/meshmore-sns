@@ -90,6 +90,16 @@ class MeshcoreMeshSender implements MeshSender {
   }
 
   @override
+  int get airtimeOverheadBytes {
+    // MeshCore packet header (1) + the path length byte (1) + the path
+    // itself. The record the client sent does not include any of it, but the
+    // radio transmits it, so the governor must meter it.
+    final Contact? c = _peer;
+    final Uint8List? path = c == null ? null : pathOf(c);
+    return 2 + (path?.length ?? 0);
+  }
+
+  @override
   Future<bool> isContact(List<int> pubKey) async =>
       _mc.contactRecordFor(_hex(pubKey)) != null;
 

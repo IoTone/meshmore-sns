@@ -21,6 +21,15 @@ abstract interface class MeshSender {
   /// a session sizes to real capacity instead of the absolute ceiling.
   int get uplinkRecordMax;
 
+  /// Bytes the radio puts on air around the record: the MeshCore packet
+  /// header and the path, which are not part of the record the client sent.
+  ///
+  /// The governor meters real airtime, not payload bytes. Leaving this at 0
+  /// under-counts every transmission, and the 36 s/hour ceiling is a safety
+  /// bound, so the bridge states the overhead rather than the session
+  /// guessing it.
+  int get airtimeOverheadBytes;
+
   /// Whether [pubKey] (32 bytes) is an existing MeshCore contact.
   ///
   /// `BIND` to a non-contact is refused. Adding a contact is a user-visible
@@ -74,9 +83,13 @@ class NoopMeshSender implements MeshSender {
     this.bindError,
     this.rssiDbm = -60,
     this.batteryPercent = 100,
+    this.airtimeOverheadBytes = 0,
   })  : _uplinkRecordMax = uplinkRecordMax,
         _radioState = radioState,
         contacts = contacts ?? <String>{};
+
+  @override
+  final int airtimeOverheadBytes;
 
   /// Public keys, hex-encoded. Seed with [meshKeyHex].
   final Set<String> contacts;

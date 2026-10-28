@@ -210,7 +210,7 @@ class GatewaySession {
       ));
       return;
     }
-    final Duration estimate = _estimator.forBytes(r.record.length);
+    final Duration estimate = _estimator.forBytes(r.record.length + _mesh.airtimeOverheadBytes);
     if (!_governor.canSend(estimate)) {
       _sendSafe(GatewayMessages.sendResult(
         seq: r.seq,
@@ -275,7 +275,7 @@ class GatewaySession {
       batteryPercent: _mesh.batteryPercent,
       txAirtimeTenthsThisHour: airtime,
       opsLeftThisHour: _governor.opsLeft(
-        _estimator.forBytes(_advertisedCapacity()),
+        _estimator.forBytes(_advertisedCapacity() + _mesh.airtimeOverheadBytes),
       ),
     ));
   }
