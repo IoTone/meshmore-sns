@@ -1,0 +1,32 @@
+# MeshMore host gateway, as a systemd USER unit.
+#
+#   install:  mkdir -p ~/.config/systemd/user
+#             cp deploy/meshmore-gateway.service ~/.config/systemd/user/
+#             systemctl --user daemon-reload
+#             systemctl --user enable --now meshmore-gateway
+#   logs:     journalctl --user -u meshmore-gateway -f
+#   survive logout:  loginctl enable-linger "$USER"
+#
+# Edit WorkingDirectory (the checkout), the dart path, and --port first. The radio
+# must run a USB companion build (heltec_v4_companion_radio_usb): the BLE build
+# defines no ENABLE_USB_INTERFACE and will never answer on serial.
+[Unit]
+Description=MeshMore host gateway (LDMUX L2 tunnel to a USB companion radio)
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=%h/meshmore-sns/meshmore_sns_app/packages/meshcore_host
+ExecStart=/usr/bin/env dart run bin/meshmore_gateway.dart --port /dev/ttyACM0 --listen 41731
+# The pairing token lives in the 0600 state file (default under $HOME); set it once
+# with --token <32 hex chars> on a manual run, then it is kept.
+Restart=on-failure
+RestartSec=5
+# The process exits 69 if the radio never answers APP_START: that is a wrong
+# firmware or a port held by another process, and restarting every 5 s is the
+# honest signal rather than a silent hang.
+StartLimitIntervalSec=300
+StartLimitBurst=10
+
+[Install]
+WantedBy=default.target

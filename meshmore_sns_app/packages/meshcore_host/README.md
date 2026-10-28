@@ -1,0 +1,39 @@
+# meshcore_host
+
+The MeshMore gateway for a machine with a **USB-serial** companion radio: the same
+L2 tunnel the phone serves (`packages/meshcore_gateway`), over the same L1 link
+(`packages/meshcore`), with a serial transport instead of BLE. It carries opaque
+records and knows nothing about what is in them.
+
+## Firmware prerequisite
+
+The radio must run a companion build that defines `ENABLE_USB_INTERFACE`. For the
+Heltec V4 that is **`heltec_v4_companion_radio_usb`**. The `heltec_v4_companion_radio_ble`
+build does not define it, so it has no USB companion interface and the gateway
+times out with exit code 69 ("did not answer APP_START"). Evidence:
+`variants/heltec_v4/platformio.ini` in the firmware tree: the flag is in the
+`_usb` env (line 190) and absent from the `_ble` env (the block after it).
+
+Flashing a Heltec V4 over USB needs an explicit `esptool.py --after hard_reset`
+afterwards; see `meshmore-sns-meshcore-interop.md` §12.7.
+
+## Run
+
+```
+dart run bin/meshmore_gateway.dart --port /dev/ttyACM0 [--listen 41731] [--token <hex>] [--state <path>]
+```
+
+The pairing token is kept in a 0600 file (the host has no Keystore). It listens on
+loopback only. Install as a service with `deploy/meshmore-gateway.service`; the
+instructions are at the top of that file.
+
+## Version
+
+`0.1.0` (not published). It follows the repo, not a release train: update by
+`git pull` and restart the unit. The gateway wire version is
+`GatewayLimits`/`VERSION` in `meshcore_gateway`.
+
+## Tests
+
+`dart test` (30 tests, including a fake radio speaking the real firmware framing).
+Against hardware: `dart run tool/hardware_smoke.dart --port /dev/ttyACM0`.
