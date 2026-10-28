@@ -9,12 +9,15 @@ import 'region_presets.dart';
 /// A MeshCore network: the radio parameters every member must share, and
 /// who the members are.
 ///
-/// MeshCore has no network object of its own. A "network" is exactly the set
-/// of radios that agree on frequency, bandwidth, spreading factor and path
-/// hash size (`meshmore-sns-radio-config.md` section 3). Coding rate is
-/// carried in the packet header and need not match. This class is that
-/// agreement, written down once, so N radios can be configured identically
-/// instead of by retyping four numbers N times.
+/// MeshCore has no network object of its own. A "network" is the set of
+/// radios that agree on frequency, bandwidth and spreading factor
+/// (`meshmore-sns-radio-config.md` section 3). Coding rate is carried in the
+/// packet header and need not match. Path hash size is the length a node
+/// stamps on what it sends; forwarders follow each packet's own length
+/// (`Mesh.cpp:89`), so it is a convention kept here for consistency and for
+/// the directed payload budget, not a compatibility requirement. This class
+/// is that agreement, written down once, so N radios can be configured
+/// identically instead of by retyping numbers N times.
 ///
 /// It holds NO secrets: no channel key, no private key, no pairing token.
 /// Members are identified by public key only (`meshmore-sns-ux-coverage.md`
@@ -135,9 +138,10 @@ class MeshNetwork {
         MeshcoreFrameCodec.setPathHashMode(pathHashSize),
       ];
 
-  /// Whether a radio's reported state is already on this network: the four
-  /// things that must match (frequency, bandwidth, SF, path hash). Coding
-  /// rate and TX power are deliberately not compared.
+  /// Whether a radio's reported state is already on this network: the three
+  /// things that must match (frequency, bandwidth, SF) plus the path hash
+  /// size, which this network wants its members to share. Coding rate and TX
+  /// power are deliberately not compared.
   bool matches({
     required double frequencyMhz,
     required double bandwidthKhz,

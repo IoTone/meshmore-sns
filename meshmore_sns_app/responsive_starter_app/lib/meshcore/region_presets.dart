@@ -50,8 +50,10 @@ class RegionPreset {
   final PresetSource source;
 
   /// Path-hash size in bytes (1..3) the feed lists for this preset, or null
-  /// when the feed says nothing. Nodes that disagree on it silently fail to
-  /// forward directed traffic, so a preset that carries it should apply it.
+  /// when the feed says nothing. It is the length a node stamps on the
+  /// packets it sends, a regional convention rather than something firmware
+  /// requires every node to share (`Mesh.cpp:89` reads each packet's own
+  /// size). A preset that carries one applies it.
   final int? pathHashSize;
 
   /// Stable identifier used for shared_preferences persistence.

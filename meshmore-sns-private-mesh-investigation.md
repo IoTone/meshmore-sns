@@ -32,8 +32,9 @@ repeater firmware has no such whitelist (`src/helpers/CommonCLI.cpp:532-534`).
 
 What must match between two nodes: frequency, bandwidth, SF (demodulation). CR is in
 the packet header so it need not match (LoRa PHY header; **[unverified in this repo]**,
-stated in `meshmore-sns-radio-config.md` §2). Path hash mode must match across a mesh
-(`CommonCLI.cpp:119` clamps 0..2, "mode 3 reserved").
+stated in `meshmore-sns-radio-config.md` §2). Path hash mode does NOT need to match (corrected 2026-10-28):
+it is the length a node stamps on packets it sends and forwarders follow each packet's own length
+(`NodePrefs.h:40`, `Mesh.cpp:89`, `:347-349`; `CommonCLI.cpp:119` clamps 0..2, "mode 3 reserved").
 
 Spacing between two private/public tuples **[unverified, general LoRa/SX126x knowledge,
 not measured here]**: at 62.5 kHz BW, a 1 MHz or larger carrier offset is far outside

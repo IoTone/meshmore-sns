@@ -49,8 +49,9 @@ void main() {
       final Iterable<RegionPreset> hits =
           kRegionPresets.where((RegionPreset p) => sameTuple(p, e));
       if (e['title'] == 'Canada') {
-        // Same radio tuple as "USA", which lists no hash size. Applying 3 to
-        // a US user on hash size 1 would partition them from their mesh.
+        // Same radio tuple as "USA", which lists no hash size. Applying 3
+        // would change a US user's setting (and shrink their directed
+        // payload budget) on the strength of a Canada-only entry.
         expect(presetById('us_canada')!.pathHashSize, isNull);
         continue;
       }

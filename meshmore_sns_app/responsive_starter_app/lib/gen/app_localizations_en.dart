@@ -2580,7 +2580,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get devicePathHashSizeHelp =>
-      'Must match every node on the network. Larger hashes mean longer paths and a smaller payload budget. Changing it breaks known routes until nodes rediscover.';
+      'The hash length this radio stamps on the packets it sends. Repeaters follow each packet\'s own length, so nodes need not agree. Longer hashes tell repeaters apart better but shrink the directed payload budget.';
 
   @override
   String get devicePathHashUnread =>
@@ -2588,7 +2588,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String devicePathHashMismatch(String device, String form) {
-    return 'Path hash mismatch: this radio uses $device byte(s), the form is set to $form. Nodes with different sizes cannot forward each other\'s directed traffic.';
+    return 'Not applied yet: this radio uses $device byte(s), the form is set to $form.';
   }
 
   @override

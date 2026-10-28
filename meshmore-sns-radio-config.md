@@ -29,7 +29,7 @@ in MeshMore's case it had (§6).
 | Bandwidth | **yes** | the chirp spans a different width |
 | Spreading factor | **yes** | the chirp rate differs |
 | Coding rate | **no** | it is carried in the packet header, so a CR4-8 node and a CR4-5 node interoperate |
-| Path hash mode | **yes** | 1/2/3-byte hashes; a node on an older mode silently drops the others |
+| Path hash mode | **no** (corrected 2026-10-28) | the length a node stamps on packets it SENDS (`NodePrefs.h:40` "which path mode to use when sending"); forwarders read each packet's own size (`Mesh.cpp:89`, `:347-349`). It sets the directed payload budget `174 - hops*size`. Old firmware that predates multi-byte hashes is unverified here |
 
 There is **no degraded mode**. A mismatch does not degrade, it goes silent:
 the radio still transmits, the app shows no error, and the node is simply

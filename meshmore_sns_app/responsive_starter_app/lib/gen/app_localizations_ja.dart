@@ -2487,14 +2487,14 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get devicePathHashSizeHelp =>
-      'ネットワーク上の全ノードで一致させる必要があります。長いほどパスが長くなり、ペイロード容量が減ります。変更すると再探索まで既知の経路が使えません。';
+      'このラジオが送信するパケットに付けるハッシュ長です。中継は各パケット自身の長さに従うため、ノード間で揃える必要はありません。長いほど中継を区別しやすい一方、直接送信のペイロード容量が減ります。';
 
   @override
   String get devicePathHashUnread => 'パスハッシュ: 不明 (デバイス未問い合わせ)';
 
   @override
   String devicePathHashMismatch(String device, String form) {
-    return 'パスハッシュ不一致: ラジオは $device バイト、フォームは $form です。サイズが異なるノード間では直接通信を転送できません。';
+    return '未適用: ラジオは $device バイト、フォームは $form です。';
   }
 
   @override

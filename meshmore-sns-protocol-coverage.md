@@ -47,7 +47,7 @@ Added in this pass, all MeshCore's own network mechanics:
 |---|---|---|
 | 54 | `CMD_SET_FLOOD_SCOPE_KEY` | override the flood transport key, or send floods unscoped |
 | 60 | `CMD_GET_ALLOWED_REPEAT_FREQ` | the frequencies this **companion build** may repeat on |
-| 61 | `CMD_SET_PATH_HASH_MODE` | 1/2/3-byte path hashes, network-wide |
+| 61 | `CMD_SET_PATH_HASH_MODE` | 1/2/3-byte path hashes this node stamps on packets it sends |
 | 63 | `CMD_SET_DEFAULT_FLOOD_SCOPE` | name + key that scopes floods |
 | 64 | `CMD_GET_DEFAULT_FLOOD_SCOPE` | read it back |
 

@@ -24,7 +24,7 @@ a radio link the cost of a wrong tap is minutes of airtime or a dead node.
 |---|---|---|
 | Radio params (freq/bw/SF/CR) | Device → Radio | Defines the network. |
 | TX power | Device → Radio | Regulatory limit, battery. |
-| **Path hash size (1–3 bytes)** | Device → Radio | New. Every node must match, and it silently shrinks the directed-payload budget to `174 − hops × size`. Invisible before, so a network could disagree without anyone noticing. |
+| **Path hash size (1–3 bytes)** | Device → Radio | New. The length this radio stamps on packets it sends; nodes need not agree (corrected 2026-10-28, `Mesh.cpp:89`). It shrinks the directed-payload budget to `174 − hops × size`, which is why it is visible. |
 | Preset band table | Device → Region | Fills the four numbers correctly. |
 | Advert name / location / policy | Device → Identity | What other nodes see. |
 | Channels | Device → Channels | Group chat. |

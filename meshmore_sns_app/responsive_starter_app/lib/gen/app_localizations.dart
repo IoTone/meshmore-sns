@@ -4469,7 +4469,7 @@ abstract class AppLocalizations {
   /// No description provided for @devicePathHashSizeHelp.
   ///
   /// In en, this message translates to:
-  /// **'Must match every node on the network. Larger hashes mean longer paths and a smaller payload budget. Changing it breaks known routes until nodes rediscover.'**
+  /// **'The hash length this radio stamps on the packets it sends. Repeaters follow each packet\'s own length, so nodes need not agree. Longer hashes tell repeaters apart better but shrink the directed payload budget.'**
   String get devicePathHashSizeHelp;
 
   /// No description provided for @devicePathHashUnread.
@@ -4481,7 +4481,7 @@ abstract class AppLocalizations {
   /// No description provided for @devicePathHashMismatch.
   ///
   /// In en, this message translates to:
-  /// **'Path hash mismatch: this radio uses {device} byte(s), the form is set to {form}. Nodes with different sizes cannot forward each other\'s directed traffic.'**
+  /// **'Not applied yet: this radio uses {device} byte(s), the form is set to {form}.'**
   String devicePathHashMismatch(String device, String form);
 
   /// No description provided for @deviceLoadFromDevice.

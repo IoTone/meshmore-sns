@@ -369,9 +369,10 @@ class _DeviceConfigScreenState extends State<DeviceConfigScreen> {
       if (tx != null) {
         await mc.send(MeshcoreFrameCodec.setRadioTxPower(tx));
       }
-      // Part of the same operating point: a network whose nodes disagree
-      // here cannot forward each other's directed traffic, and the payload
-      // budget is 174 - hops * size bytes.
+      // Part of the same operating point. This is the hash length the radio
+      // STAMPS on packets it sends (`NodePrefs.h:40`); forwarders honour each
+      // packet's own length (`Mesh.cpp:89`), so nodes need not agree. It sets
+      // the directed payload budget: 174 - hops * size bytes.
       await mc.send(MeshcoreFrameCodec.setPathHashMode(_pathHashSize));
       _toast(l.deviceToastRadioSent);
     } catch (e) {

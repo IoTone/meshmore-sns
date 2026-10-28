@@ -279,7 +279,7 @@ void main() {
     await t.pumpAndSettle();
     expect(fake.sent.any((List<int> f) => f.isNotEmpty && f[0] == 0x0B), isTrue);
     expect(fake.sent.any((List<int> f) => f.isNotEmpty && f[0] == 0x3D), isFalse,
-        reason: 'applying 3 here would partition a US user from a live mesh');
+        reason: 'the feed lists a hash size for Canada only; a US user keeps theirs');
     ctrl.dispose();
   });
 }
