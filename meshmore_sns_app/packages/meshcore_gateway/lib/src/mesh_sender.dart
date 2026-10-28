@@ -25,7 +25,18 @@ abstract interface class MeshSender {
   /// action, never a gateway write.
   Future<bool> isContact(List<int> pubKey);
 
-  /// Send one record as a direct raw-data packet.
+  /// Select the peer subsequent [sendRecord] calls address, after
+  /// [isContact] has succeeded and before `BIND_OK` is sent.
+  ///
+  /// A direct raw-data packet needs the peer's path, which the radio holds in
+  /// its contact record, so the bridge must know who it is sending to.
+  /// Returns null on success, or the reason the bind must be refused
+  /// ([BindError.noPath] when the contact has no usable direct path yet).
+  /// [uplinkRecordMax] is read after this returns, so it may depend on the
+  /// peer's path length.
+  Future<BindError?> bindPeer(Uint8List pubKey);
+
+  /// Send one record as a direct raw-data packet to the bound peer.
   ///
   /// [seq] is the caller's sequence number: echoed in `SEND_RESULT`, not used
   /// by the radio. The return is the radio's own send outcome and is **never**
@@ -58,6 +69,7 @@ class NoopMeshSender implements MeshSender {
     this.sendOutcome = SendOutcome.sentDirect,
     RadioState radioState = RadioState.connected,
     Set<String>? contacts,
+    this.bindError,
     this.rssiDbm = -60,
     this.batteryPercent = 100,
   })  : _uplinkRecordMax = uplinkRecordMax,
@@ -66,6 +78,12 @@ class NoopMeshSender implements MeshSender {
 
   /// Public keys, hex-encoded. Seed with [meshKeyHex].
   final Set<String> contacts;
+
+  /// When non-null, [bindPeer] refuses with this.
+  BindError? bindError;
+
+  /// The peer last accepted by [bindPeer].
+  Uint8List? boundPeer;
 
   /// Every record handed to [sendRecord], in order.
   final List<({int seq, Uint8List record})> sent =
@@ -110,6 +128,13 @@ class NoopMeshSender implements MeshSender {
   @override
   Future<bool> isContact(List<int> pubKey) async =>
       contacts.contains(meshKeyHex(pubKey));
+
+  @override
+  Future<BindError?> bindPeer(Uint8List pubKey) async {
+    if (bindError != null) return bindError;
+    boundPeer = Uint8List.fromList(pubKey);
+    return null;
+  }
 
   @override
   Future<SendOutcome> sendRecord(Uint8List record, {required int seq}) async {

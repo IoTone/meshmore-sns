@@ -174,6 +174,18 @@ class GatewaySession {
       _terminate(CloseReason.protocol);
       return;
     }
+    BindError? refused;
+    try {
+      refused = await _mesh.bindPeer(key);
+    } catch (_) {
+      refused = BindError.noPath;
+    }
+    if (!_open) return;
+    if (refused != null) {
+      _sendSafe(GatewayMessages.bindErr(refused));
+      _terminate(CloseReason.protocol);
+      return;
+    }
     _peer = key;
     _state = GatewaySessionState.bound;
     _onBound?.call(key);

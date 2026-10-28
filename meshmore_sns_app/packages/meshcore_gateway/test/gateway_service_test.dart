@@ -109,6 +109,31 @@ void main() {
     });
   });
 
+  group('peer binding', () {
+    test('BIND tells the radio bridge which peer to address', () async {
+      final Harness h = await startGateway();
+      addTearDown(() => stopHarness(h));
+
+      await handshake(h);
+      expect(h.mesh.boundPeer, peerKey);
+    });
+
+    test('a peer with no usable path is refused with no_path', () async {
+      final Harness h = await startGateway();
+      addTearDown(() => stopHarness(h));
+      h.mesh.bindError = BindError.noPath;
+
+      await h.client.hello();
+      await h.client.pair(h.gateway.pairingToken);
+      await expectLater(
+        h.client.bind(peerKey),
+        throwsA(isA<GatewayClientException>()
+            .having((e) => e.message, 'message', contains('no_path'))),
+      );
+      expect(h.mesh.boundPeer, isNull);
+    });
+  });
+
   group('data plane', () {
     test('a record reaches the radio and the result echoes its seq', () async {
       final Harness h = await startGateway();
