@@ -36,4 +36,4 @@ instructions are at the top of that file.
 ## Tests
 
 `dart test` (30 tests, including a fake radio speaking the real firmware framing).
-Against hardware: `dart run tool/hardware_smoke.dart --port /dev/ttyACM0`.
+Against hardware: `dart run tool/hardware_smoke.dart /dev/ttyACM0`.
