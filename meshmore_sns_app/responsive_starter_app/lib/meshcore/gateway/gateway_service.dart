@@ -1,0 +1,251 @@
+// Copyright (c) 2026 IoTone, Inc.
+// SPDX-License-Identifier: MIT
+import 'dart:async';
+
+import 'package:flutter/foundation.dart';
+import 'package:meshcore/meshcore.dart';
+import 'package:meshcore_gateway/meshcore_gateway.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import '../meshcore_controller.dart';
+import 'mesh_sender_adapter.dart';
+import 'secure_pairing_persistence.dart';
+
+/// Why the gateway is not serving.
+enum GatewayStatus {
+  /// The user has not turned it on (the default).
+  off,
+
+  /// On, but no radio link yet.
+  waitingForRadio,
+
+  /// Listening on loopback.
+  running,
+
+  /// Could not start. See [GatewayService.error].
+  failed,
+}
+
+/// Owns the loopback [Gateway]: starts it when the user has enabled it and the
+/// radio is connected, stops it when either stops being true, and reports
+/// failures instead of throwing them.
+///
+/// It never crashes the app: a taken port, a secure-storage failure or a
+/// radio error ends in [GatewayStatus.failed] with a message.
+class GatewayService extends ChangeNotifier {
+  GatewayService(
+    this._mc, {
+    PairingPersistence? persistence,
+    int port = GatewayServer.defaultPort,
+    Future<SharedPreferences> Function()? prefs,
+  })  : _persistence = persistence ?? SecurePairingPersistence(),
+        _port = port,
+        _prefs = prefs ?? SharedPreferences.getInstance {
+    _mc.addListener(_reconcile);
+  }
+
+  /// Not a secret: just whether the user turned the feature on.
+  static const String enabledKey = 'mm.gateway.enabled.v1';
+
+  final MeshcoreController _mc;
+  final PairingPersistence _persistence;
+  final int _port;
+  final Future<SharedPreferences> Function() _prefs;
+
+  bool _enabled = false;
+  bool _disposed = false;
+  bool _busy = false;
+  bool _again = false;
+  GatewayStatus _status = GatewayStatus.off;
+  String? _error;
+  Gateway? _gateway;
+  MeshcoreMeshSender? _sender;
+  Uint8List? _token;
+  String? _radioTuple;
+
+  /// The radio tuple a failed start was attempted on. The controller
+  /// notifies constantly, so without this a taken port would be retried (and
+  /// the failure re-announced) on every notification. A new tuple or toggling
+  /// the switch clears it.
+  String? _failedTuple;
+  bool _hasFailed = false;
+
+  bool get enabled => _enabled;
+  GatewayStatus get status => _status;
+
+  /// A human-readable reason when [status] is [GatewayStatus.failed].
+  String? get error => _error;
+
+  /// The token to hand to the other app. Null until the gateway has started.
+  Uint8List? get pairingToken => _token == null
+      ? null
+      : Uint8List.fromList(_token!);
+
+  /// The port the listener is bound to, or the configured one when stopped.
+  int get port => _gateway?.port ?? _port;
+
+  /// Public key of the peer the connected app is bound to, if any.
+  Uint8List? get boundPeer => _gateway?.boundPeer;
+
+  /// The bound peer's contact name, if known.
+  String? get boundPeerName {
+    final Uint8List? k = boundPeer;
+    if (k == null) return null;
+    final String hex =
+        k.map((int b) => b.toRadixString(16).padLeft(2, '0')).join();
+    return _mc.contactRecordFor(hex)?.name;
+  }
+
+  /// Airtime this gateway has spent in the last hour, and its budget.
+  Duration get airtimeUsed => _gateway?.governor.used ?? Duration.zero;
+  Duration get airtimeBudget =>
+      _gateway?.governor.budget ?? const Duration(seconds: 36);
+
+  /// Read the persisted switch. Call once at startup.
+  Future<void> load() async {
+    try {
+      final SharedPreferences p = await _prefs();
+      _enabled = p.getBool(enabledKey) ?? false;
+    } catch (_) {
+      _enabled = false;
+    }
+    await _reconcile();
+  }
+
+  Future<void> setEnabled(bool value) async {
+    if (value == _enabled) return;
+    _enabled = value;
+    _hasFailed = false;
+    try {
+      final SharedPreferences p = await _prefs();
+      await p.setBool(enabledKey, value);
+    } catch (_) {
+      // The switch still applies this run; it just won't persist.
+    }
+    await _reconcile();
+  }
+
+  /// Revoke the current pairing and issue a new token.
+  Future<void> revokePairing() async {
+    final Gateway? g = _gateway;
+    if (g == null) return;
+    try {
+      await g.reissuePairing();
+      _token = g.pairingToken;
+    } catch (e) {
+      _fail('could not store the new pairing token: $e');
+    }
+    notifyListeners();
+  }
+
+  /// Bring the running state in line with (enabled, radio ready, radio tuple).
+  /// Serialised: a change arriving mid-start runs once more afterwards.
+  Future<void> _reconcile() async {
+    if (_disposed) return;
+    if (_busy) {
+      _again = true;
+      return;
+    }
+    _busy = true;
+    try {
+      do {
+        _again = false;
+        await _step();
+      } while (_again && !_disposed);
+    } finally {
+      _busy = false;
+    }
+  }
+
+  Future<void> _step() async {
+    final SelfInfo? radio = _mc.selfInfo;
+    final bool ready = _mc.isReady && radio != null;
+    // The governor's estimate is built for one radio tuple. If the user
+    // applies other parameters, restart so the estimate follows.
+    final String? tuple = radio == null
+        ? null
+        : '${radio.frequencyMhz}/${radio.bandwidthKhz}/'
+            '${radio.spreadingFactor}/${radio.codingRate}';
+    final bool shouldRun = _enabled && ready;
+
+    if (!shouldRun) {
+      await _stop();
+      _set(!_enabled ? GatewayStatus.off : GatewayStatus.waitingForRadio);
+      return;
+    }
+    if (_gateway != null && tuple == _radioTuple) return;
+    if (_hasFailed && tuple == _failedTuple) return;
+    await _stop();
+    await _start(radio, tuple);
+  }
+
+  Future<void> _start(SelfInfo radio, String? tuple) async {
+    final MeshcoreMeshSender sender = MeshcoreMeshSender(_mc);
+    final Gateway gateway = Gateway(
+      mesh: sender,
+      persistence: _persistence,
+      port: _port,
+      estimator: estimatorFor(radio),
+    );
+    try {
+      await gateway.start();
+    } catch (e) {
+      // `start` loads the token before binding, so a secure-storage failure
+      // means nothing is listening.
+      await sender.dispose();
+      _hasFailed = true;
+      _failedTuple = tuple;
+      _fail(e.toString());
+      return;
+    }
+    if (_disposed || !_enabled) {
+      await gateway.stop();
+      await sender.dispose();
+      return;
+    }
+    _gateway = gateway;
+    _sender = sender;
+    _radioTuple = tuple;
+    _token = gateway.pairingToken; // after start(): load() may replace it
+    _error = null;
+    _hasFailed = false;
+    _set(GatewayStatus.running);
+  }
+
+  Future<void> _stop() async {
+    final Gateway? g = _gateway;
+    final MeshcoreMeshSender? s = _sender;
+    _gateway = null;
+    _sender = null;
+    _token = null;
+    _radioTuple = null;
+    try {
+      await g?.stop();
+    } catch (_) {
+      // Already closed.
+    }
+    await s?.dispose();
+  }
+
+  void _fail(String message) {
+    _error = message;
+    _set(GatewayStatus.failed);
+  }
+
+  void _set(GatewayStatus s) {
+    final bool changed = _status != s;
+    _status = s;
+    if (changed || s == GatewayStatus.failed) notifyListeners();
+    if (s != GatewayStatus.failed) _error = null;
+  }
+
+  /// Idempotent.
+  @override
+  void dispose() {
+    if (_disposed) return;
+    _disposed = true;
+    _mc.removeListener(_reconcile);
+    unawaited(_stop());
+    super.dispose();
+  }
+}

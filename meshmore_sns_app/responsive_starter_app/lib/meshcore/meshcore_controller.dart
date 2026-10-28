@@ -893,6 +893,30 @@ class MeshcoreController extends ChangeNotifier {
   /// drop its marker so the next SENT goes to the right message.
   void abandonToolRequest() => _dropPending(_toolSendMarker);
 
+  /// Marker id in [_pending] for a raw-data send (`CMD_SEND_RAW_DATA`),
+  /// which the firmware answers with a bare OK or ERR, never SENT
+  /// (`MyMesh.cpp` CMD_SEND_RAW_DATA: `writeOKFrame()` / `writeErrFrame()`).
+  /// Without it that OK would confirm a channel message still waiting for
+  /// its own.
+  static const String _rawSendMarker = '\u0000raw';
+
+  /// Send one raw-data command and register its OK/ERR so neither is
+  /// credited to a chat message. The caller reads the answer from
+  /// [inboundFrames]; if none arrives, call [abandonRawSend].
+  Future<void> sendRawCommand(Uint8List frame) async {
+    _pending.add(const _PendingSend(_rawSendMarker, _Expect.ok));
+    try {
+      await send(frame);
+    } catch (_) {
+      abandonRawSend();
+      rethrow;
+    }
+  }
+
+  /// No answer came for a [sendRawCommand]: drop its marker so the next OK
+  /// goes to the right message.
+  void abandonRawSend() => _dropPending(_rawSendMarker);
+
   int _backgroundHolds = 0;
 
   /// The firmware keeps ONE pending remote request; each new one
@@ -1434,7 +1458,11 @@ class MeshcoreController extends ChangeNotifier {
     if (f is OkFrame) {
       // Channel text (and self-advert) are acknowledged with a bare OK.
       final _PendingSend? p = _takePending(_Expect.ok);
-      if (p == null || p.id == _advertSendMarker) return;
+      if (p == null ||
+          p.id == _advertSendMarker ||
+          p.id == _rawSendMarker) {
+        return;
+      }
       final ChatMessage? m = _messageById(p.id);
       _deliveryTimers.remove(p.id)?.cancel();
       if (m == null || m.delivery != MessageDelivery.sending) return;
@@ -1448,7 +1476,11 @@ class MeshcoreController extends ChangeNotifier {
       if (_squelchNextDeviceError > 0 || _pending.isEmpty) return;
       final _PendingSend p = _pending.first;
       _pending.removeAt(0);
-      if (p.id == _toolSendMarker || p.id == _advertSendMarker) return;
+      if (p.id == _toolSendMarker ||
+          p.id == _advertSendMarker ||
+          p.id == _rawSendMarker) {
+        return;
+      }
       _failOutgoing(p.id, deviceErrorReason(f.code),
           from: const <MessageDelivery>{MessageDelivery.sending});
     } else if (f is MsgSentFrame) {

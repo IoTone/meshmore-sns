@@ -138,14 +138,17 @@ Uint8List contactFrame({
   int firstPubByte = 70,
   int lastAdvertTs = 1700000000,
   int flags = 0,
+  int outPathLen = 0,
+  List<int> path = const <int>[],
 }) {
+  final Uint8List outPath = Uint8List(64)..setRange(0, path.length, path);
   final Contact c = Contact(
     publicKey: Uint8List.fromList(
         List<int>.generate(32, (int i) => (firstPubByte + i) & 0xFF)),
     type: 1,
     flags: flags,
-    outPathLen: 0,
-    outPath: Uint8List(64),
+    outPathLen: outPathLen,
+    outPath: outPath,
     name: name,
     lastAdvertTimestamp: lastAdvertTs,
     latitudeMicros: 0,
