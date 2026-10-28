@@ -370,3 +370,51 @@ Scope: the long `lora` pi thread (`~/.pi/agent/sessions/--home-ldeen-Documents-l
 | S4 | SHA-256 chosen because snow's ring resolver lacks BLAKE2 | ADR-0020 section 2 | snow's default resolver offers SHA256 (`src/resolvers/default.rs`, `HashChoice::SHA256`); ring is not needed (`cargo tree` of `ldmux-session` has no `ring`) | ADR-0021; suite unchanged |
 
 **Blind spots.** Messages that stated a wrong fact once and were never revisited. The other pi sessions (1,240 files) were not read. Tool results were not audited, only assistant prose.
+
+
+## Phone-side session binding, 2026-10-28 (LDMUX)
+
+Scope: how the phone runs the Rust L3 session, and whether wiring it moved any boundary.
+
+### Checked, and what the check proves
+
+| Claim | Command | Result |
+|---|---|---|
+| The gateway still knows nothing of the session | `rg -i 'noise\|arq\|ldmux' meshcore_gateway/lib` | only L2 "session slot" wording; no L3 term |
+| No radio knowledge in the Rust L3 side, now including the FFI crate | `rg -i 'meshcore\|lora\|spreading' crates/daemon crates/keeper crates/session crates/session-ffi` | 0 hits |
+| The phone's mesh package carries comments only | `rg -i 'bandwidth\|spreading\|pathHash\|preset' packages/mobile/.../mesh` | 3 hits, all comments (was 2: one more comment in `MeshSession.kt`) |
+
+§13 changed in two cells only: the L3 row now names `crates/session-ffi`, and the mobile hit count
+is 3.
+
+### Findings
+
+- **F1 (earlier claim contradicted): "the phone cannot run the session until a product decision is
+  made".** ADR-0023 and `STATE.md` said the phone side was blocked on choosing between a Kotlin
+  Noise, JNI over the Rust crate, or a different suite. The architecture had already decided
+  (one implementation, no hand-rolled crypto, nothing duplicated), so the decision was JNI over
+  the Rust crate and nothing was blocked. Corrected in place in ADR-0023 (dated update, original
+  text kept) and `STATE.md`.
+- **F2 (honesty): flipping `MESH_SESSION_BUILT` alone would have made the route say it works.**
+  The session carries bytes for a shell number; the compact terminal encoding and the daemon's
+  shell bridge do not exist. A route that resolved to "bound" over a link that cannot show a
+  shell is the same dishonest state the old flag existed to prevent. So the flag was split:
+  `MESH_SESSION_BUILT = true` (and checked against whether the library loaded on the device),
+  `MESH_TERMINAL_BUILT = false`, giving a new problem `TerminalNotBuilt` that is reported before
+  `NeedsToken`.
+- **F3 (single choke point found, then used): every socket the app opens is built from
+  `LdmuxConfig.endpoint`** (`LdmuxClient.kt` and `AttachClient.kt` both do `config.endpoint ?:
+  return`). Gating the transport there is one line and covers both clients, instead of an `if` in
+  each. A blocked mesh route therefore cannot fall back to the tailnet by any path.
+- **F4 (ABI choice, recorded because it is easy to get wrong): double free is made harmless, not
+  merely forbidden.** Free functions take a pointer to the caller's handle variable and null it,
+  so a second free is a no-op and a use after free is `LDMUX_ERR_NULL`. The test
+  `freeing_twice_is_a_no_op_and_a_nulled_handle_is_an_error_not_ub` pins it. This does not defend
+  against a copied handle value held elsewhere; the Kotlin class owns its handle and zeroes it.
+
+### Not verified
+
+- The Android `.so` has been built and packaged (`assembleDebug` lists it for arm64-v8a and
+  x86_64) and never executed on a phone. The JVM tests load the host build of the same C and Rust
+  code, which proves the ABI and the binding, not the Android linker, the 16 KB page alignment
+  flag, or the device's ABI.

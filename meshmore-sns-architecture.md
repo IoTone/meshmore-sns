@@ -1023,10 +1023,10 @@ Every row is a rule that can be checked with `rg`. A violation is a bug.
 | `packages/meshcore` (Dart, L1) | The companion protocol: opcodes, frames, models | Nothing about LDMUX, UI, or the L2 tunnel | no `ldmux` import; no `meshcore_gateway` import |
 | `packages/meshcore_gateway` (Dart, L2) | Framing, handshake, pairing, governor, one-client server | Contacts, chat, radio parameters, MeshCore opcodes, Flutter | `dart pub deps` shows no Flutter, no `meshcore` |
 | MeshMore app (Flutter) | The radio (L1), app state, the `MeshSender` adapter, Settings | Nothing of LDMUX's session or L3 semantics | the adapter carries opaque records only |
-| LDMUX mobile (KMP, L2 client + L3 origin) | L2 client, L3 framing, terminal UI | **Any** radio parameter, preset, path hash, contact, channel, companion opcode, or airtime arithmetic | `rg -i 'bandwidth\|spreading\|pathHash\|preset' packages/mobile/.../mesh` returns comments only (2 hits, 2026-10-28), never code |
+| LDMUX mobile (KMP, L2 client + L3 origin) | L2 client, L3 framing, terminal UI | **Any** radio parameter, preset, path hash, contact, channel, companion opcode, or airtime arithmetic | `rg -i 'bandwidth\|spreading\|pathHash\|preset' packages/mobile/.../mesh` returns comments only (3 hits, 2026-10-28), never code |
 | `packages/meshcore_host` (Dart, host composition) | Serial framing, the host `MeshSender`, governor built from the radio's real `SELF_INFO`, the `bin/` process | Anything L3/L4, any app state | `rg -i 'ldmux' packages/meshcore_host/lib` |
 | `crates/mesh` (Rust, L2 client) | The frame codec, the decoder, a loopback client | Anything L3/L4, any radio knowledge | `rg -i 'lora\|spreading\|preset\|bandwidth' crates/mesh` |
-| `ldmuxd` / keeper / `crates/session` (Rust, L3) | Sessions, keeper, VT emulation, the Noise session and its ARQ, the host gateway process's lifecycle | Same as LDMUX mobile: no radio knowledge | `rg -i 'meshcore\|lora\|spreading' crates/daemon crates/keeper crates/session` (0 hits, 2026-10-28) |
+| `ldmuxd` / keeper / `crates/session` / `crates/session-ffi` (Rust, L3) | Sessions, keeper, VT emulation, the Noise session and its ARQ, the host gateway process's lifecycle | Same as LDMUX mobile: no radio knowledge | `rg -i 'meshcore\|lora\|spreading' crates/daemon crates/keeper crates/session crates/session-ffi` (0 hits, 2026-10-28) |
 | lobospeak (L4, deferred) | Payload codec, GOTO/HALT semantics | Radio and transport | spec only today |
 
 The boundary in one sentence: **MeshMore turns records into radio
