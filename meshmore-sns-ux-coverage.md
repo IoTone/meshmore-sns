@@ -26,6 +26,8 @@ a radio link the cost of a wrong tap is minutes of airtime or a dead node.
 | TX power | Device → Radio | Regulatory limit, battery. |
 | **Path hash size (1–3 bytes)** | Device → Radio | New. The length this radio stamps on packets it sends; nodes need not agree (corrected 2026-10-28, `Mesh.cpp:89`). It shrinks the directed-payload budget to `174 − hops × size`, which is why it is visible. |
 | Preset band table | Device → Region | Fills the four numbers correctly. |
+| **Networks** (name, preset, hash size, optional private frequency, members, apply) | Settings → Networks | A group of radios agreeing on the four numbers, written down once. Apply asks first and warns when it takes the radio off the public mesh. A network on a public preset's tuple is labelled as sharing the air, never "private" (a key or name does not separate radios). Holds public keys only. |
+| **Connected apps** (switch, pairing token QR + text, bound peer, airtime used, revoke) | Settings → Connected apps | Lets another app on this phone use the radio over `127.0.0.1`. Off by default. The token is the one secret the user must carry, kept in platform secure storage and never in SharedPreferences. Revoke asks first and issues a new token. A bind or storage failure is shown, not swallowed. |
 | Advert name / location / policy | Device → Identity | What other nodes see. |
 | Channels | Device → Channels | Group chat. |
 | Manual-add, telemetry policy, multi-ack | Device → Other params | Contact and reply behaviour. |

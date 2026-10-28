@@ -220,3 +220,23 @@ New facts that change the design:
 Not validated on hardware: every opcode layout added in the last two days (no radio could be driven: Flutter Linux builds fail on missing gstreamer headers, no ADB device). `0x3D` path hash, `CMD_SET_TUNING_PARAMS` and the new inbound frames are unit-tested against transcribed firmware layouts only.
 
 **R11 (found late, 2026-10-28): "path hash mode must match across a mesh" was false for current firmware.** `path_hash_mode` is "which path mode to use when sending" (`examples/companion_radio/NodePrefs.h:40`); it is passed to `sendFlood(..., mode+1)` (`MyMesh.cpp:491-515`) and stamped into the packet. A forwarder compares and appends hashes using the **packet's** size (`src/Mesh.cpp:89` `isHashMatch(pkt->path, pkt->getPathHashSize())`, `:347-349`), so nodes on different modes interoperate. It had been stated in radio-config §2, the private-mesh investigation, ux-coverage, the app's l10n help/mismatch strings (en + ja) and a code comment, and it justified a "do not apply the hash for USA" test reason. All corrected. What remains true: it sets the originator's directed payload budget `174 - hops*size`. Whether *old firmware* that predates multi-byte hashes mis-parses larger sizes is unverified (no such firmware in the tree). The mismatch line in the UI now only says "not applied yet".
+
+## P1 integration pass, 2026-10-28 (gateway wired into the app)
+
+| # | Claim checked | Result | Evidence |
+|---|---|---|---|
+| R12 | "A Phase B send is answered by `RESP_CODE_SENT`; `est_timeout` is the deadline" (architecture §5.3, interop §Timers, `MeshSendResult` framing) | **False for `CMD_SEND_RAW_DATA`.** The handler replies `writeOKFrame()` or `writeErrFrame(...)`, never `RESP_CODE_SENT`. `decodeSendResult` is correct for `CMD_SEND_BINARY_REQ` only. The app adapter reads OK/ERR, and a no-answer deadline of 5 s is the sender's own. Docs corrected | `examples/companion_radio/MyMesh.cpp:1519-1534`; `mesh_sender_adapter_test.dart` |
+| R13 | `Contact.activePath` "the hops actually in use" | **Wrong.** It used the raw `out_path_len` byte as a byte count. `0xFF` (no path) clamped to a bogus 64-byte chain and any hash size above 1 read the wrong span. Now decoded with `PathLen` (`hops * size`), `0xFF` is empty | `src/Packet.cpp:20-30`; `contact_path_test.dart` (6 tests) |
+| R14 | `MeshNetwork.isolatedFromPublicMesh` | **Too narrow.** It compared frequency within 1 kHz, but a receiver decodes a carrier a fraction of the bandwidth off, so 910.526 MHz was called "isolated" from 910.525. Overlap now means within half the bandwidth (a judgement, generous on purpose, not checked against a datasheet) | `mesh_network_test.dart` "a frequency a hair off..." |
+| R15 | `bindPeer` / capacity | A contact path longer than 14 bytes leaves under the 160 B floor (`174 - path_len`). The adapter refuses the bind with `BIND_ERR(no_path)` rather than advertise a size the radio would reject (brief said clamp to [160,172]; clamping up would advertise an impossible size) | `MeshCarryLimits.rawDataPayloadMax`; adapter tests |
+| R16 | Raw-data OK would be credited to a chat message | **True before a marker was added.** The controller credits the oldest pending OK-expecting send, so a raw OK could confirm a channel message. `sendRawCommand` registers a marker | `mesh_sender_adapter_test.dart` "the OK for a raw send is not credited" |
+
+Open ambiguities and limits (not resolved here):
+
+- STATUS has no "unknown" value in v1. The adapter reports an unread battery as `0xFF` and an unheard RSSI as `-128`. Neither is in the contract.
+- `errBusy` stands in for every ERR other than `not_found` (the closest v1 outcome).
+- The firmware's OK/ERR carries no correlation tag, so an unrelated OK arriving while a raw send waits can be mistaken for its answer. Sends are serialised, which narrows but does not remove this.
+- `ENABLE_PRIVATE_KEY_EXPORT` etc. unchanged: still unverified for the flashed binary.
+- `flutter_secure_storage` with `encryptedSharedPreferences` keeps the encrypted token in `shared_prefs/`, which `res/xml/backup_rules.xml` does not exclude (it excludes only `maps/`). The ciphertext is bound to the device Keystore so a restore cannot read it (and the plugin resets on a decrypt error), but audit D5 asked for an explicit exclusion. That is a platform file and was not edited. Suggested lines: `<exclude domain="sharedpref" path="FlutterSecureStorage.xml"/>` in both `backup_rules.xml` and `data_extraction_rules.xml`.
+- Hardware: nothing in this pass was run against a radio.
+

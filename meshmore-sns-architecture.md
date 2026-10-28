@@ -448,8 +448,15 @@ record fit" and queues.
   `MyMesh.cpp:1688-1689`); the gateway queues records per session, one
   in flight at a time.
 - **No ARQ, no delivery ACK.** The gateway reports only what the firmware
-  reports: `RESP_CODE_SENT` (with its route flag), `est_timeout`, or an
-  `ERR_CODE_*`. Whether a record arrived is a question only the
+  reports. Phase A (`CMD_SEND_BINARY_REQ`) is answered by `RESP_CODE_SENT`
+  (route flag, `est_timeout`) or an `ERR_CODE_*`. **Phase B
+  (`CMD_SEND_RAW_DATA`) is answered by a bare `RESP_CODE_OK` or an
+  `ERR_CODE_*` and nothing else** (`MyMesh.cpp` `CMD_SEND_RAW_DATA` handler:
+  `writeOKFrame()` / `writeErrFrame(ERR_CODE_TABLE_FULL)`, and
+  `ERR_CODE_UNSUPPORTED_CMD` for a negative `path_len`). There is no
+  `est_timeout` and no route flag in Phase B: OK means `sent_direct`, and
+  `local_timeout` means no OK/ERR arrived within the gateway's own deadline
+  (the app uses 5 s). `sent_flood` can only come from Phase A. Whether a record arrived is a question only the
   end-to-end session can answer.
 - **Phase switching** is the gateway's main piece of state: it holds the
   peer's `out_path` from MeshMore's contact store, uses Phase A until a

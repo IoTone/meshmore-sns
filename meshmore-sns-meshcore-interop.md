@@ -247,7 +247,10 @@ What the host side needs, beyond what ldmux has:
 3. **No per-keystroke uplink.** One uplink per command, client-side line
    assembly.
 4. **Timers.** `est_timeout` from `RESP_CODE_SENT` is the correct deadline
-   source (it is computed from airtime and hop count). Idle sweeps and claim
+   source for a Phase A binary request (it is computed from airtime and hop
+   count). A Phase B raw-data send gets only OK/ERR, with no estimate, so
+   its deadline has to come from the sender (`MyMesh.cpp`
+   `CMD_SEND_RAW_DATA` handler). Idle sweeps and claim
    grace must scale to tens of seconds.
 5. **ARQ and de-duplication above the record layer.** MeshCore floods
    duplicate and reorder. ldmux's ADR-0020 says this is unspecified; it
