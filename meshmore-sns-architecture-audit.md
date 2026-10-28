@@ -193,3 +193,28 @@ Do not change these.
 4. **Unknown-frame policy.** Strict close is fail-closed but freezes the frame
    set; ignore-unknown is additive but fail-open. Strict is defensible while
    both sides ship together.
+
+## Re-audit, 2026-10-28 (verified against firmware `companion-v1.17.1` @ d929643 and the live feed)
+
+Nothing from the previous day was trusted. Mechanical and primary-source checks:
+
+| # | Claim checked | Result | Evidence |
+|---|---|---|---|
+| R1 | "58/58 opcodes" | **True for commands.** All 58 `CMD_*` values, all 6 `ERR_CODE_*` values match `MyMesh.cpp` exactly | script compared every `#define CMD_/ERR_CODE_` against `constants.dart` |
+| R2 | "the protocol surface is complete" | **False for inbound.** `PUSH_CODE_RAW_DATA 0x84`, `PUSH_CODE_PATH_UPDATED 0x81`, `PUSH_CODE_NEW_ADVERT 0x8A`, `RESP_CODE_CHANNEL_DATA_RECV 0x1B` had no constant and decoded as `UnsupportedFrame`. Raw data is the only way a Phase B record reaches the app. Fixed (commit `16a3a38`), 7 tests. An orphaned doc comment for `PUSH_CODE_CONTACTS_FULL` had no constant either | `MyMesh.cpp:404-410, 588-618, 801-818, 346-350` |
+| R3 | "no companion path to `airtime_factor`" (radio-config §4, private-mesh table) | **False.** `CMD_SET_TUNING_PARAMS` writes `_prefs.airtime_factor = af/1000.0f`, `CMD_GET_TUNING_PARAMS` reads it. The earlier check looked only at `CMD_SET_CUSTOM_VAR`. Corrected in both docs | `MyMesh.cpp`, `grep -n CMD_SET_TUNING_PARAMS` |
+| R4 | Governor estimate "conservative at 4 ms/byte" | **False off the USA preset.** 4 ms/B is right only for 62.5 kHz/SF7 (613 ms per 176 B = 3.48 ms/B, recomputed). EU/UK Narrow (62.5/SF8/CR8) is 1656 ms = 9.4 ms/B, EU/UK Deprecated 1673 ms, AU Mid 1000 ms. A gateway on those presets under-counts airtime by 2.4x. Added `AirtimeEstimator.lora` (exact AN1200.13 formula, preamble 32 for SF<=8 else 16 per `RadioLibWrappers.h:56`) | python recompute; `gateway_hardening_test.dart` |
+| R5 | 613 ms, 3.48 ms/B, 58.7 records/h at 1 % | **Confirmed** (SF7/500 kHz 77 ms also confirmed) | same recompute |
+| R6 | Governor "cannot be bypassed" | **False before the fix.** `session.dart` returned on `!_open` *before* charging, so a record transmitted while the client disconnected was never metered. Charge now precedes the open check | `gateway_hardening_test.dart` "airtime is charged even if the client left" |
+| R7 | Bridge failures | A throwing `MeshSender` ended the socket with no frame (exception escaped to the read loop). Now `SEND_RESULT(errBusy)` for a send, `CLOSE(shutdown)` for the contact lookup. `errBusy` is the closest v1 outcome and is an ambiguity, recorded here | tests |
+| R8 | Gateway session test "the governor refuses without touching the radio" | **Vacuous**: it paired against a different `PairingStore` and asserted only "not bound". Replaced by real tests that reach `bound` through a shared store | `gateway_hardening_test.dart` |
+| R9 | Preset table "mirrored from the canonical table" | Source was a third-party client (see radio-config §7). Table now carries per-preset provenance and `pathHashSize`, 14 missing presets added, compared to a checked-in snapshot of the feed (26 entries) by a test | `region_presets_feed_test.dart` |
+| R10 | Private-key export "enabled by default" | **Supported with a limit.** `platformio.ini:34-35` sets both in the shared base flags and the handler is `#if ENABLE_PRIVATE_KEY_EXPORT` (`MyMesh.cpp:1491`). Whether the user's flashed `HELTEC-BASE` binary has it on is **not verified** (verifying means exporting the key) | |
+
+New facts that change the design:
+
+- **Downlink raw data is never queued.** `onRawDataRecv` writes the frame only `if (_serial->isConnected())` and otherwise logs and drops (`MyMesh.cpp:811-816`). A Phase B record arriving while the phone's BLE link is down is lost, with no `MSG_WAITING` and no offline queue (contrast `onChannelDataRecv`, which calls `addToOfflineQueue`). The gateway cannot recover it. Session-layer retransmission is the only remedy, and it was the design already.
+- **Pairing-slot denial of service.** Any local app can connect to `127.0.0.1:41731` and hold the single session slot for the 5 s pre-auth window, repeatedly. A legitimate client then gets `CLOSE(busy)`. The token blocks use, not denial. Not fixed (the one-client rule is a decision); mitigation would be to let an unauthenticated socket be displaced by a new connection. Open.
+- **`PairingStore` generates a token in its constructor**, so `Gateway.pairingToken` read before `start()` shows a token that `load()` may then replace with the persisted one. Callers must read it after `start()`.
+
+Not validated on hardware: every opcode layout added in the last two days (no radio could be driven: Flutter Linux builds fail on missing gstreamer headers, no ADB device). `0x3D` path hash, `CMD_SET_TUNING_PARAMS` and the new inbound frames are unit-tested against transcribed firmware layouts only.
