@@ -955,7 +955,7 @@ is backwards (audit H1). Status as of 2026-10-28 is in the last column.
 | **P1** | L2 contract v1 + `packages/meshcore_gateway` + pairing + grants + debug client + app wiring | P0, P3 | **Done** (`4a2de64`, `fb13e63`, `49a5053`, `ade9935`) |
 | **P2** | LDMUX KMP `MeshGatewayClient` + settings screen | P1 | **Client + route model done** (`54373fc`); route not wired into the UI |
 | **P6** | MeshMore iOS as a standalone radio app: AccessorySetupKit, `bluetooth-central`, restore identifier + `willRestoreState`, force-quit tolerance. **No gateway listener.** | iOS accepted | Not started |
-| **HOST** | Headless gateway beside `ldmuxd` (§8.2), so the host radio is owned by the same L1 implementation | P1 | **Done** (`packages/meshcore_host`, 29 tests, native binary compiles). The host radio must be flashed `heltec_v4_companion_radio_usb`; the BLE env has no USB companion (`variants/heltec_v4/platformio.ini:182-190,202-225`). LDMUX's Rust L2 client is still owed. |
+| **HOST** | Headless gateway beside `ldmuxd` (§8.2), so the host radio is owned by the same L1 implementation | P1 | **Done and run against a real radio** (`packages/meshcore_host`, 30 tests, native binary compiles). The host radio must be flashed `heltec_v4_companion_radio_usb`; the BLE env has no USB companion (`variants/heltec_v4/platformio.ini:182-190,202-225`). LDMUX side done too: `crates/mesh` plus `ldmux mesh status`, live on 2026-10-28. |
 | **DEFERRED** | lobospeak v0: L4 codec, robot handler, GOTO/HALT | P0, P3 | Spec only |
 | **OPTIONAL** | Firmware forwarding patch upstream; `CMD_SEND_RAW_PACKET` uplink; AIDL if ever needed | various | — |
 
@@ -1022,21 +1022,21 @@ Every row is a rule that can be checked with `rg`. A violation is a bug.
 |---|---|---|---|
 | `packages/meshcore` (Dart, L1) | The companion protocol: opcodes, frames, models | Nothing about LDMUX, UI, or the L2 tunnel | no `ldmux` import; no `meshcore_gateway` import |
 | `packages/meshcore_gateway` (Dart, L2) | Framing, handshake, pairing, governor, one-client server | Contacts, chat, radio parameters, MeshCore opcodes, Flutter | `dart pub deps` shows no Flutter, no `meshcore` |
-
-The governor meters `record + MeshSender.airtimeOverheadBytes`, where the bridge
-reports the MeshCore packet header and path the radio adds on air. Without it
-every transmission is under-counted, and 36 s/hour is a safety bound, not a
-target.
 | MeshMore app (Flutter) | The radio (L1), app state, the `MeshSender` adapter, Settings | Nothing of LDMUX's session or L3 semantics | the adapter carries opaque records only |
-| LDMUX mobile (KMP, L2 client + L3 origin) | L2 client, L3 framing, terminal UI | **Any** radio parameter, preset, path hash, contact, channel, companion opcode, or airtime arithmetic | `rg -i 'bandwidth\|spreading\|pathHash\|preset\|CMD_|PUSH_CODE|RESP_CODE' packages/mobile` |
+| LDMUX mobile (KMP, L2 client + L3 origin) | L2 client, L3 framing, terminal UI | **Any** radio parameter, preset, path hash, contact, channel, companion opcode, or airtime arithmetic | `rg -i 'bandwidth\|spreading\|pathHash\|preset' packages/mobile/.../mesh` returns comments only (2 hits, 2026-10-28), never code |
 | `packages/meshcore_host` (Dart, host composition) | Serial framing, the host `MeshSender`, governor built from the radio's real `SELF_INFO`, the `bin/` process | Anything L3/L4, any app state | `rg -i 'ldmux' packages/meshcore_host/lib` |
 | `crates/mesh` (Rust, L2 client) | The frame codec, the decoder, a loopback client | Anything L3/L4, any radio knowledge | `rg -i 'lora\|spreading\|preset\|bandwidth' crates/mesh` |
-| `ldmuxd` / keeper (Rust, L3) | Sessions, keeper, VT emulation, the host gateway process's lifecycle | Same as LDMUX mobile: no radio knowledge | `rg -i 'meshcore\|lora\|spreading' crates/` |
+| `ldmuxd` / keeper (Rust, L3) | Sessions, keeper, VT emulation, the host gateway process's lifecycle | Same as LDMUX mobile: no radio knowledge | `rg -i 'meshcore\|lora\|spreading' crates/daemon crates/keeper` |
 | lobospeak (L4, deferred) | Payload codec, GOTO/HALT semantics | Radio and transport | spec only today |
 
 The boundary in one sentence: **MeshMore turns records into radio
 packets and back. LDMUX turns keystrokes into records and back. Neither
 knows the other's job.**
+
+One rule inside the boundary worth naming: the governor meters
+`record + MeshSender.airtimeOverheadBytes`, where the bridge reports the
+MeshCore packet header and path the radio adds on air. Without it every
+transmission is under-counted, and 36 s/hour is a safety bound, not a target.
 
 Known violations and their state:
 
@@ -1044,4 +1044,5 @@ Known violations and their state:
 |---|---|---|
 | LDMUX computed airtime per record from the radio preset to show "operations left" | `packages/mobile/.../mesh/MeshRoute.kt` `operationsLeft(airtimePerRecordMs)` | **Fixed**: `STATUS` now carries `opsLeftThisHour` (one byte, governor-computed); LDMUX reads the number, it does not derive it |
 | Documentation cited `ldmux status` / `mesh.status` / `mesh.enable` commands that do not exist | `ldmux/docs/MESH-GATEWAY.md` §11 | **Corrected**: the daemon-side listener is stated as unimplemented with real plug-in points |
-| The far end had no owner (the mesh terminated at an unnamed "ldmuxd") | this document, §2 diagram | **Corrected**: §8.2 names the headless gateway process beside `ldmuxd`, running the same Dart package |
+| The far end had no owner (the mesh terminated at an unnamed "ldmuxd") | this document, §2 diagram | **Fixed in code, not just named**: `packages/meshcore_host` runs it, and on 2026-10-28 the daemon → CLI → gateway → radio chain answered `ready` with 172 B capacity and 58 records left |
+| A zero-hop contact path was read as "no path" | `packages/meshcore_host` `bindPeer` | **Fixed**: `Contact.directPath` is the single rule both bridges use |

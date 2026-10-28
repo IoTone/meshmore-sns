@@ -276,3 +276,35 @@ Leads were mined from the 46 MB pi thread (`--home-ldeen-Documents-lora--/2026-1
 Found while building the LDMUX client: `close()` during the handshake left `connect()` waiting out its whole timeout, because the handshake deferred was a local the teardown could not reach. Caught only by the real-socket test (the in-memory fake hid it). Fixed before commit.
 
 Not done: the other ~1,240 pi sessions and the Claude history were not mined. Claims about hardware behaviour (BLE, Keystore, Android loopback with the app backgrounded) remain unverified.
+
+## Resolutions and new findings, 2026-10-28 (hardware pass)
+
+Append-only, as the earlier rows are. This section closes two and adds five.
+
+### Closed
+
+| Row | What was wrong | Now |
+|---|---|---|
+| J1 | interop §loopback told the reader `ACCESS_LOCAL_NETWORK` was mandatory from API 37 and the exemption "unverified", contradicting architecture §1.5 | Both interop passages now point at §1.5 and state the permission's own scope (broadcast-capable interfaces, which excludes loopback). What remains is a device check, not an unknown. |
+| J2 | a section titled "Open questions" mixed resolved and open items | No such heading survives in the restored document; §10 is "Platform research: the iOS background model" and §11 is "Resolved decisions". Nothing to split. |
+
+### New
+
+| Row | Severity | Finding | Evidence |
+|---|---|---|---|
+| H1 | **blocker (wire)** | The serial framing had the two header bytes inverted. The firmware accepts `'<'` FROM the app and writes `'>'` TO it. Every unit test passed because the fake radio used the same inversion. | `ArduinoSerialInterface.cpp:31,46`; `SerialWifiInterface.cpp:143`; live: the first byte on a real port produced silence until fixed |
+| H2 | **major (correctness)** | `out_path_len == 0` is a direct route with zero repeater hops, not "no path". The host bridge refused it, so a directly reachable neighbour could not be bound. | live: `BIND` answered `no_path` for a contact with `outPathLen 0`; fixed as `Contact.directPath` |
+| H3 | major (safety bound) | The governor charged the payload length only. The radio also transmits a MeshCore packet header and path, so every charge was under-counted. | `session.dart` charge site; now `MeshSender.airtimeOverheadBytes` (2 + path), with a test that fails without it |
+| H4 | minor (host portability) | `FileMode.writeOnlyAppend` cannot open a TTY (the VM seeks to end of file, the kernel answers `ESPIPE`), `flush()` maps to `fsync` which a TTY rejects with `EINVAL`, and two overlapping writes throw "An async operation is currently pending". | all three observed on `/dev/ttyACM0`; the port class now uses `writeOnly`, no flush, and a write queue |
+| H5 | note (firmware) | One radio can register BLE and USB together (`MultiSerialInterface`), but `writeFrame` broadcasts to every enabled interface and there is no client identity, so two attached apps receive each other's replies. | `MultiSerialInterface.h:163-194`; the two-radio fleet is a correctness requirement, not a convenience |
+
+### Measured, not inferred
+
+- HELTEC-BASE, USB companion build: 910.525 MHz / 62.5 kHz / SF7 / CR5,
+  `pathHashMode` 0, 350/350 contacts (1 direct, 349 flood), 4366 mV,
+  225/3169 kB, 64-byte zero-hop raw frame answered `OK`.
+- Airtime estimator for that preset: 612 ms for 176 B. The 613 ms figure the
+  documents use is the same number rounded, not a second model.
+- End to end, 2026-10-28: `ldmux mesh status` → `ready`, 172 B capacity,
+  58 records left this hour, radio connected. The 58 is 36 s ÷ (612 ms + 2 B of
+  framing overhead), which is the governor's own arithmetic.

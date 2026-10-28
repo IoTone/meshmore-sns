@@ -19,6 +19,27 @@ Contact _c(int outPathLen, List<int> path) => Contact(
     );
 
 void main() {
+  group('Contact.directPath is the routing answer, not the drawing one', () {
+    test('a zero-hop path is a neighbour: empty, but present', () {
+      final Uint8List? path = _c(0, <int>[]).directPath;
+      expect(path, isNotNull);
+      expect(path, isEmpty);
+    });
+
+    test('flood has no direct route', () {
+      expect(_c(0xFF, List<int>.filled(64, 7)).directPath, isNull);
+    });
+
+    test('a path that cannot fit the buffer is refused', () {
+      // 63 hops of 4-byte hashes needs 252 bytes; the buffer holds 64.
+      expect(_c(0x80 | 63, List<int>.filled(64, 1)).directPath, isNull);
+    });
+
+    test('the normal case returns exactly the hops', () {
+      expect(_c(3, <int>[1, 2, 3, 9]).directPath, <int>[1, 2, 3]);
+    });
+  });
+
   group('Contact.activePath decodes out_path_len (Packet.cpp:20-30)', () {
     test('one-byte hashes: hop count is the byte count', () {
       expect(_c(3, <int>[1, 2, 3, 9]).activePath, <int>[1, 2, 3]);

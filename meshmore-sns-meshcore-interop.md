@@ -349,10 +349,11 @@ primary carrier**, with the capability grants and a per-install token shown
 as a QR. Add AIDL later only if a signature-gated client is required. Keep
 the wire protocol identical so the carrier stays a swap.
 
-Note the open risk: Android 17 (API 37) makes `ACCESS_LOCAL_NETWORK`
-mandatory and the official page could not be read in this session, so whether
-loopback is exempt is **unverified**. Test it on the Android 16 device before
-committing to the loopback carrier; AIDL has no such risk.
+Android note, corrected: `ACCESS_LOCAL_NETWORK` is API 37 and its scope is
+"an IP network that utilizes a broadcast-capable network interface". Loopback is
+not one, so the permission does not reach it. The analysis and its sources are
+in `meshmore-sns-architecture.md` §1.5; the one thing still worth doing is
+confirming it once on a real device.
 
 ---
 
@@ -378,10 +379,10 @@ Costs:
 4. A stable API contract — the moment a second app ships, the frame format
    is frozen. That is the real long-term cost, and the reason to design it
    once rather than bolt it on per feature.
-5. One Android unknown: the loopback carrier depends on `ACCESS_LOCAL_NETWORK`
-   behaviour, which becomes mandatory for apps targeting API 37 and whose
-   loopback exemption is disputed in secondary sources (the official page
-   could not be read in this session). Test it on the Android 16 device
+5. One Android check, not unknown: the loopback carrier depends on
+   `ACCESS_LOCAL_NETWORK` behaviour on API 37. The permission's own definition
+   scopes it to broadcast-capable interfaces, so loopback is outside it
+   (`meshmore-sns-architecture.md` §1.5). Confirm on the Android 16 device
    before freezing the carrier.
 
 ---

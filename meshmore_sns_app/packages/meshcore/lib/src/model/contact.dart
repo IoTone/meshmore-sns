@@ -63,7 +63,11 @@ class Contact {
   /// Server-side modification counter used for incremental contact sync.
   final int lastMod;
 
-  /// The path bytes actually in use.
+  /// The path bytes to draw: the valid prefix of [outPath].
+  ///
+  /// For a *send decision* use [directPath], which also distinguishes "flood,
+  /// no route" from "direct, zero hops". This getter returns an empty list for
+  /// both, which is right for a map line and wrong for a bind.
   ///
   /// `out_path_len` is not a byte count: the top two bits are the hash size
   /// minus one and the low six the hop count (`Packet.cpp:20-30`), so the
