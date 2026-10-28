@@ -353,3 +353,20 @@ derivation, pinned by a MeshMore test. The carrier now exports only `recordMax`.
   change at all, and the gateway stays blind.
 - **The session layer stays LDMUX-private.** Nothing in it may move into
   MeshMore, and it must not be factored for reuse until a second consumer exists.
+
+## Session-history audit, 2026-10-28 (bounded)
+
+Scope: the long `lora` pi thread (`~/.pi/agent/sessions/--home-ldeen-Documents-lora--/2026-10-21T16-54-13-984Z_01a15f62-82df-7406-82fc-01363057b9f4.jsonl`: 441 assistant messages) and the five Claude Code sessions for `ldmux` (`~/.claude/projects/-home-ldeen-Documents-ldmux`, 28 MB; the `lora` project directory has no sessions). Method: extract assistant text with `python3 -I`, search for correction-shaped language (`correction`, `was wrong`, `contradict`, `stale`, `turns out`, ...) and for specific claims about snow, payload sizes and implementation status, then compare against code or firmware. This is a keyword audit, not a read of every message: a false claim that was never corrected and never phrased like a correction is not found by it.
+
+**Result.** 20 of the 441 lora-thread messages carry correction language. Every one was a correction made in that same thread, and each has a landing in a committed document already (the buzzer claims in `meshmore-sns-radio-alerts.md`, the six LoboSpeak payload/pubkey figures, the 125 kHz vs 62.5 kHz preset figure in architecture section 5.6, the truncated architecture file restored in `df698a5`, the ADR-0020 constants in the carrier). No correction was found that has no record. The five Claude sessions yielded no correction-shaped assistant message about mesh or ldmux.
+
+**New findings (not previously recorded).**
+
+| ID | Claim | Source | Evidence against | Fix |
+|---|---|---|---|---|
+| S1 | `snow` "audited" | An external research summary dispatched 2026-10-28 (flagged untrusted at the time) | `snow-0.10.0/README.md:13`: "This library has not received any formal audit." The Claude `ldmux` session (c05fb9db, message 510) and ADR-0020 section 7 say the same | ADR-0021 states the README line and notes the contradiction. **CORRECTION** to the research summary, which remains wrong |
+| S2 | ADR-0020 section 3: raw/custom gives 184-byte packets and 160 application bytes | ADR-0020 `A. raw/custom \| 184 \| 160` | Raw send is `174 - path_len` in a 176-byte frame (`MyMesh.cpp:1515-1530`); carrier ceiling 172, 148 application bytes | Dated correction appended to ADR-0020, original table left visible |
+| S3 | "Whether a failed open leaves the counter untouched is unverified" | ADR-0020 section 7 | `StatelessTransportState::read_message(&self, nonce, ...)` holds no counter | Answered in ADR-0020 update and ADR-0021 |
+| S4 | SHA-256 chosen because snow's ring resolver lacks BLAKE2 | ADR-0020 section 2 | snow's default resolver offers SHA256 (`src/resolvers/default.rs`, `HashChoice::SHA256`); ring is not needed (`cargo tree` of `ldmux-session` has no `ring`) | ADR-0021; suite unchanged |
+
+**Blind spots.** Messages that stated a wrong fact once and were never revisited. The other pi sessions (1,240 files) were not read. Tool results were not audited, only assistant prose.
