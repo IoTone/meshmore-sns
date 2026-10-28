@@ -492,6 +492,25 @@ extension type const MeshcoreResponse(int code) {
   static const MeshcoreResponse contactDeleted = MeshcoreResponse(0x8F);
 
   /// `PUSH_CODE_CONTACTS_FULL` (0x90) — bare code. `MyMesh.cpp:348`.
+  static const MeshcoreResponse contactsFull = MeshcoreResponse(0x90);
+
+  /// `PUSH_CODE_PATH_UPDATED` (0x81) — `[81][pub_key 32]`. Carries ONLY the
+  /// key: the app must re-read the contact to learn the new path
+  /// (`MyMesh.cpp:404-410`). Not queued; lost if no app is connected.
+  static const MeshcoreResponse pathUpdated = MeshcoreResponse(0x81);
+
+  /// `PUSH_CODE_RAW_DATA` (0x84) — `[84][snr*4 i8][rssi i8][0xFF][payload]`.
+  /// Pushed only while an app is connected and NEVER queued
+  /// (`MyMesh.cpp:811-816`). Carries no sender identity.
+  static const MeshcoreResponse rawData = MeshcoreResponse(0x84);
+
+  /// `PUSH_CODE_NEW_ADVERT` (0x8A) — a full contact frame for a node heard
+  /// for the first time (`MyMesh.cpp:356`).
+  static const MeshcoreResponse newAdvert = MeshcoreResponse(0x8A);
+
+  /// `RESP_CODE_CHANNEL_DATA_RECV` (0x1B) — queued channel data message
+  /// (`MyMesh.cpp:601`).
+  static const MeshcoreResponse channelDataRecv = MeshcoreResponse(0x1B);
 
   /// RF log data — safely ignorable by the codec.
   static const MeshcoreResponse logData = MeshcoreResponse(0x88);

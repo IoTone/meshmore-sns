@@ -366,6 +366,60 @@ class ContactsFullFrame extends MeshcoreInbound {
   String toString() => 'ContactsFullFrame()';
 }
 
+/// `PUSH_CODE_PATH_UPDATED` (0x81). Only the key: re-read the contact.
+class PathUpdatedFrame extends MeshcoreInbound {
+  const PathUpdatedFrame(this.publicKey);
+  final Uint8List publicKey;
+  @override
+  String toString() => 'PathUpdatedFrame()';
+}
+
+/// `PUSH_CODE_RAW_DATA` (0x84): a raw-custom packet heard by the radio.
+///
+/// Carries no sender identity and is never queued by the firmware, so a
+/// disconnected app loses it (`MyMesh.cpp:801-818`).
+class RawDataFrame extends MeshcoreInbound {
+  const RawDataFrame({
+    required this.snrDb,
+    required this.rssi,
+    required this.payload,
+  });
+  final double snrDb;
+  final int rssi;
+  final Uint8List payload;
+  @override
+  String toString() => 'RawDataFrame(${payload.length}B, rssi $rssi)';
+}
+
+/// `PUSH_CODE_NEW_ADVERT` (0x8A): a contact frame for a first-heard node.
+class NewAdvertFrame extends MeshcoreInbound {
+  const NewAdvertFrame(this.contact);
+  final Contact contact;
+  @override
+  String toString() => 'NewAdvertFrame($contact)';
+}
+
+/// `RESP_CODE_CHANNEL_DATA_RECV` (0x1B): `data_type` is the 16-bit
+/// application tag (`docs/number_allocations.md`); [pathLen] is 0xFF when
+/// the packet was not flooded.
+class ChannelDataFrame extends MeshcoreInbound {
+  const ChannelDataFrame({
+    required this.snrDb,
+    required this.channelIndex,
+    required this.pathLen,
+    required this.dataType,
+    required this.data,
+  });
+  final double snrDb;
+  final int channelIndex;
+  final int pathLen;
+  final int dataType;
+  final Uint8List data;
+  @override
+  String toString() =>
+      'ChannelDataFrame(ch $channelIndex, type 0x${dataType.toRadixString(16)}, ${data.length}B)';
+}
+
 /// A well-formed frame whose opcode this milestone does not decode yet.
 /// Carries the raw bytes so higher layers can log/skip without data loss.
 class UnsupportedFrame extends MeshcoreInbound {

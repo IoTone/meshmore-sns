@@ -1009,6 +1009,38 @@ abstract final class MeshcoreFrameCodec {
         case 0x8F: // PUSH_CODE_CONTACT_DELETED
           return ContactDeletedFrame(c.bytes(kPubKeySize, 'deleted.pubKey'));
 
+        case 0x81: // PUSH_CODE_PATH_UPDATED
+          return PathUpdatedFrame(c.bytes(kPubKeySize, 'pathUpdated.pubKey'));
+
+        case 0x84: // PUSH_CODE_RAW_DATA
+          final int rawSnr = c.u8('raw.snr');
+          final int rawRssi = c.u8('raw.rssi');
+          c.u8('raw.reserved'); // 0xFF, "possibly path_len in future"
+          return RawDataFrame(
+            snrDb: (rawSnr < 128 ? rawSnr : rawSnr - 256) / 4.0,
+            rssi: rawRssi < 128 ? rawRssi : rawRssi - 256,
+            payload: Uint8List.fromList(c.bytes(c.remaining, 'raw.payload')),
+          );
+
+        case 0x8A: // PUSH_CODE_NEW_ADVERT
+          return NewAdvertFrame(_decodeContact(c));
+
+        case 0x1B: // RESP_CODE_CHANNEL_DATA_RECV
+          final int cdSnr = c.u8('chdata.snr');
+          c.u8('chdata.reserved1');
+          c.u8('chdata.reserved2');
+          final int cdIdx = c.u8('chdata.channel');
+          final int cdPath = c.u8('chdata.pathLen');
+          final int cdType = c.u16('chdata.dataType');
+          final int cdLen = c.u8('chdata.len');
+          return ChannelDataFrame(
+            snrDb: (cdSnr < 128 ? cdSnr : cdSnr - 256) / 4.0,
+            channelIndex: cdIdx,
+            pathLen: cdPath,
+            dataType: cdType,
+            data: Uint8List.fromList(c.bytes(cdLen, 'chdata.data')),
+          );
+
         case 0x90: // PUSH_CODE_CONTACTS_FULL
           return const ContactsFullFrame();
 
