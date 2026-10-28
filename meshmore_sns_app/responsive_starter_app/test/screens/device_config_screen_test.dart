@@ -177,4 +177,49 @@ void main() {
     expect(fake.sent.any((f) => f.isNotEmpty && f[0] == 0x0E), isTrue);
     ctrl.dispose();
   });
+
+  testWidgets('path hash size loads from DeviceInfo and is applied with '
+      'the radio params (0x3D)', (WidgetTester t) async {
+    await t.binding.setSurfaceSize(const Size(900, 2600));
+    addTearDown(() => t.binding.setSurfaceSize(null));
+    final FakeMeshcoreTransport fake =
+        FakeMeshcoreTransport(connected: true);
+    final MeshcoreController ctrl = MeshcoreController(
+      transportFactory: () async => fake,
+      connection:
+          MeshcoreConnection(handshakeTimeout: const Duration(seconds: 5)),
+    );
+    await t.pumpWidget(
+      MaterialApp(
+        locale: const Locale('en'),
+        supportedLocales: LocaleController.supported,
+        localizationsDelegates: _kLocaleDelegates,
+        home: ChangeNotifierProvider<MeshcoreController>.value(
+          value: ctrl,
+          child: const DeviceConfigScreen(),
+        ),
+      ),
+    );
+    await ctrl.connect();
+    fake.emit(selfInfoFrame());
+    // Wire field is mode (0..2); the UI shows bytes (1..3).
+    fake.emit(deviceInfoFrame(pathHashMode: 2));
+    await t.pumpAndSettle();
+
+    final Iterable<SegmentedButton<int>> segs = t
+        .widgetList<SegmentedButton<int>>(find.byType(SegmentedButton<int>));
+    expect(segs.any((SegmentedButton<int> s) => s.selected.contains(3)), isTrue,
+        reason: 'device path_hash_mode 2 means a 3-byte hash is in force');
+
+    await t.tap(find.text('Apply radio params'));
+    await t.pumpAndSettle();
+
+    final List<List<int>> hashes = fake.sent
+        .where((List<int> f) => f.isNotEmpty && f[0] == 0x3D)
+        .toList();
+    expect(hashes, isNotEmpty,
+        reason: 'applying radio params must also send CMD_SET_PATH_HASH_MODE');
+    expect(hashes.last, <int>[0x3D, 0, 2]);
+    ctrl.dispose();
+  });
 }

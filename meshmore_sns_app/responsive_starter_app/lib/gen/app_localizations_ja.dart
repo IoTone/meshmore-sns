@@ -2483,6 +2483,21 @@ class AppLocalizationsJa extends AppLocalizations {
   String get deviceTxPower => '送信電力 (dBm)';
 
   @override
+  String get devicePathHashSize => 'パスハッシュ長';
+
+  @override
+  String get devicePathHashSizeHelp =>
+      'ネットワーク上の全ノードで一致させる必要があります。長いほどパスが長くなり、ペイロード容量が減ります。変更すると再探索まで既知の経路が使えません。';
+
+  @override
+  String get devicePathHashUnread => 'パスハッシュ: 不明 (デバイス未問い合わせ)';
+
+  @override
+  String devicePathHashMismatch(String device, String form) {
+    return 'パスハッシュ不一致: ラジオは $device バイト、フォームは $form です。サイズが異なるノード間では直接通信を転送できません。';
+  }
+
+  @override
   String get deviceLoadFromDevice => 'デバイスから読込';
 
   @override

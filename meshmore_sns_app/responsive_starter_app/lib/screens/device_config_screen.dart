@@ -76,6 +76,12 @@ class _DeviceConfigScreenState extends State<DeviceConfigScreen> {
   final TextEditingController _lon = TextEditingController();
   bool _loaded = false;
 
+  // Path hash length in bytes (1..3). Not on SelfInfo: it arrives with
+  // DeviceInfo, which can land after the self-info snapshot, so it loads
+  // through its own guard.
+  int _pathHashSize = 1;
+  bool _pathHashLoaded = false;
+
   @override
   void dispose() {
     for (final TextEditingController c in <TextEditingController>[
@@ -357,6 +363,10 @@ class _DeviceConfigScreenState extends State<DeviceConfigScreen> {
       if (tx != null) {
         await mc.send(MeshcoreFrameCodec.setRadioTxPower(tx));
       }
+      // Part of the same operating point: a network whose nodes disagree
+      // here cannot forward each other's directed traffic, and the payload
+      // budget is 174 - hops * size bytes.
+      await mc.send(MeshcoreFrameCodec.setPathHashMode(_pathHashSize));
       _toast(l.deviceToastRadioSent);
     } catch (e) {
       _toast(l.deviceToastSendFailed('$e'));
@@ -380,6 +390,20 @@ class _DeviceConfigScreenState extends State<DeviceConfigScreen> {
       // form unless the user has edited them since the last load.
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) _maybeReloadFromSelfInfo(si);
+      });
+    }
+    // DeviceInfo arrives on its own schedule, after the self-info snapshot,
+    // so path hash cannot ride along with _loadFrom. Load it once and never
+    // overwrite what the user then chose.
+    final DeviceInfo? di = mc.deviceInfo;
+    if (!_pathHashLoaded && di != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && !_pathHashLoaded) {
+          setState(() {
+            _pathHashSize = di.pathHashMode + 1;
+            _pathHashLoaded = true;
+          });
+        }
       });
     }
 
@@ -527,6 +551,50 @@ class _DeviceConfigScreenState extends State<DeviceConfigScreen> {
                 num(l.deviceSpreadingFactor, _sf, 'e.g. 7'),
                 num(l.deviceCodingRate, _cr, 'e.g. 5'),
                 num(l.deviceTxPower, _tx, 'within regional limit'),
+                const SizedBox(height: 14),
+                // Path hash length. Kept as a bare 1/2/3 segmented control
+                // rather than a numeric field: it is a three-value choice,
+                // and words would overflow the segment row at 1.3x text.
+                Builder(builder: (BuildContext _) {
+                  final DeviceInfo? d = mc.deviceInfo;
+                  final String help = d == null
+                      ? l.devicePathHashUnread
+                      : _pathHashSize != d.pathHashMode + 1
+                          ? l.devicePathHashMismatch(
+                              '${d.pathHashMode + 1}', '$_pathHashSize')
+                          : l.devicePathHashSizeHelp;
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Text(l.devicePathHashSize,
+                          style: TextStyle(
+                              color: cs.onSurfaceVariant,
+                              fontSize: 12,
+                              letterSpacing: 1)),
+                      const SizedBox(height: 6),
+                      SegmentedButton<int>(
+                        segments: const <ButtonSegment<int>>[
+                          ButtonSegment<int>(value: 1, label: Text('1')),
+                          ButtonSegment<int>(value: 2, label: Text('2')),
+                          ButtonSegment<int>(value: 3, label: Text('3')),
+                        ],
+                        selected: <int>{_pathHashSize},
+                        showSelectedIcon: false,
+                        onSelectionChanged: (Set<int> next) =>
+                            setState(() => _pathHashSize = next.first),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(help,
+                          style: TextStyle(
+                              color: d != null &&
+                                      _pathHashSize != d.pathHashMode + 1
+                                  ? cs.error
+                                  : cs.onSurfaceVariant,
+                              fontSize: 12,
+                              height: 1.4)),
+                    ],
+                  );
+                }),
                 const SizedBox(height: 12),
                 // Wrap, not Row+Spacer: two buttons on one line while they
                 // fit (same left/right placement), stacking instead of
@@ -785,6 +853,7 @@ class _DeviceConfigScreenState extends State<DeviceConfigScreen> {
                             'max contacts: ${d.maxContacts} · '
                             'channels: ${d.maxGroupChannels}\n'
                             'BLE pin: ${d.blePin}\n'
+                            'path hash: ${d.pathHashMode + 1} byte(s)\n'
                             'battery: $batt',
                     style: TextStyle(
                         color: cs.onSurface,

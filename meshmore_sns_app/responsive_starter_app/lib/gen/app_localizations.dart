@@ -4460,6 +4460,30 @@ abstract class AppLocalizations {
   /// **'TX power (dBm)'**
   String get deviceTxPower;
 
+  /// Radio/network setting. MeshCore path hash length.
+  ///
+  /// In en, this message translates to:
+  /// **'Path hash size'**
+  String get devicePathHashSize;
+
+  /// No description provided for @devicePathHashSizeHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Must match every node on the network. Larger hashes mean longer paths and a smaller payload budget. Changing it breaks known routes until nodes rediscover.'**
+  String get devicePathHashSizeHelp;
+
+  /// No description provided for @devicePathHashUnread.
+  ///
+  /// In en, this message translates to:
+  /// **'path hash: unknown (device not queried yet)'**
+  String get devicePathHashUnread;
+
+  /// No description provided for @devicePathHashMismatch.
+  ///
+  /// In en, this message translates to:
+  /// **'Path hash mismatch: this radio uses {device} byte(s), the form is set to {form}. Nodes with different sizes cannot forward each other\'s directed traffic.'**
+  String devicePathHashMismatch(String device, String form);
+
   /// No description provided for @deviceLoadFromDevice.
   ///
   /// In en, this message translates to:

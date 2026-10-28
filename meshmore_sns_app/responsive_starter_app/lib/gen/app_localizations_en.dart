@@ -2576,6 +2576,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get deviceTxPower => 'TX power (dBm)';
 
   @override
+  String get devicePathHashSize => 'Path hash size';
+
+  @override
+  String get devicePathHashSizeHelp =>
+      'Must match every node on the network. Larger hashes mean longer paths and a smaller payload budget. Changing it breaks known routes until nodes rediscover.';
+
+  @override
+  String get devicePathHashUnread =>
+      'path hash: unknown (device not queried yet)';
+
+  @override
+  String devicePathHashMismatch(String device, String form) {
+    return 'Path hash mismatch: this radio uses $device byte(s), the form is set to $form. Nodes with different sizes cannot forward each other\'s directed traffic.';
+  }
+
+  @override
   String get deviceLoadFromDevice => 'Load from device';
 
   @override

@@ -168,6 +168,8 @@ Uint8List deviceInfoFrame({
   String build = '2026-05-01',
   String mfr = 'Seeed',
   String fw = 'v1.15.0',
+  int clientRepeat = 0,
+  int pathHashMode = 0,
 }) {
   List<int> cstr(String s, int n) {
     final List<int> b = List<int>.filled(n, 0);
@@ -186,8 +188,8 @@ Uint8List deviceInfoFrame({
     ...cstr(build, 12),
     ...cstr(mfr, 40),
     ...cstr(fw, 20),
-    0, // client_repeat
-    0, // path_hash_mode
+    clientRepeat & 0xFF,
+    pathHashMode & 0xFF,
   ]);
 }
 
