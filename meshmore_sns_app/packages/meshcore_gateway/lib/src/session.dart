@@ -243,6 +243,9 @@ class GatewaySession {
     }
     if (!_open) return;
     _sendSafe(GatewayMessages.sendResult(seq: r.seq, outcome: outcome));
+    // The budget just changed, and a client showing "operations left" has no
+    // other way to learn it. No-op unless STATUS push was negotiated.
+    _maybePushStatus();
   }
 
   // ---------------------------------------------------------------------
@@ -271,6 +274,9 @@ class GatewaySession {
       rssi: _mesh.rssiDbm,
       batteryPercent: _mesh.batteryPercent,
       txAirtimeTenthsThisHour: airtime,
+      opsLeftThisHour: _governor.opsLeft(
+        _estimator.forBytes(_advertisedCapacity()),
+      ),
     ));
   }
 

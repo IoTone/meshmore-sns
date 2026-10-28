@@ -177,7 +177,15 @@ abstract final class GatewayMessages {
     required int rssi,
     required int batteryPercent,
     required int txAirtimeTenthsThisHour,
+    int? opsLeftThisHour,
   }) {
+    if (opsLeftThisHour != null && (opsLeftThisHour < 0 || opsLeftThisHour > 255)) {
+      throw ArgumentError.value(
+        opsLeftThisHour,
+        'opsLeftThisHour',
+        'must fit in one byte',
+      );
+    }
     if (txAirtimeTenthsThisHour < 0 || txAirtimeTenthsThisHour > 0xFFFF) {
       throw ArgumentError.value(
         txAirtimeTenthsThisHour,
@@ -193,6 +201,8 @@ abstract final class GatewayMessages {
         batteryPercent & 0xFF,
         txAirtimeTenthsThisHour & 0xFF,
         (txAirtimeTenthsThisHour >> 8) & 0xFF,
+        // Appended in v1.1: readers that stop at five bytes still work.
+        if (opsLeftThisHour != null) opsLeftThisHour,
       ]),
     );
   }
@@ -295,6 +305,20 @@ abstract final class GatewayMessages {
       batteryPercent: f.payload[2],
       txAirtimeTenthsThisHour: f.payload[3] | (f.payload[4] << 8),
     );
+  }
+
+  /// Reads the optional sixth `STATUS` byte: records of the current uplink
+  /// size that still fit this hour's airtime budget (0..255, 255 = "255 or
+  /// more"). Null when the gateway did not send it (older gateway) or the
+  /// frame is not a well-formed `STATUS`.
+  ///
+  /// The gateway computes it from its own preset-derived airtime estimate, so
+  /// a client never needs radio parameters to show "records left". It counts
+  /// only records this end may still transmit: a reply is the peer's airtime,
+  /// not ours, so it is not an "operation" count.
+  static int? readOpsLeft(Frame f) {
+    if (f.type != FrameType.status || f.payload.length < 6) return null;
+    return f.payload[5];
   }
 
   /// Reads `CLOSE`.

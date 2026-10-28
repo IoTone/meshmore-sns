@@ -18,6 +18,7 @@ String _toHex(List<int> b) =>
     b.map((int x) => x.toRadixString(16).padLeft(2, '0')).join();
 
 void main() {
+  opsLeftTests();
   group('framing', () {
     test('a HELLO encodes to the documented bytes', () {
       // MG | version 01 | type 01 | flags 00 | length 0200 (LE) | 01 00
@@ -232,6 +233,59 @@ void main() {
         pairingTokenMatches(presented: const <int>[], stored: List<int>.filled(16, 0)),
         isFalse,
       );
+    });
+  });
+}
+
+void opsLeftTests() {
+  group('STATUS opsLeftThisHour (additive sixth byte)', () {
+    test('is carried, and a five-byte reader still decodes the rest', () {
+      final Frame f = GatewayMessages.status(
+        radioState: RadioState.connected,
+        rssi: -71,
+        batteryPercent: 88,
+        txAirtimeTenthsThisHour: 360,
+        opsLeftThisHour: 42,
+      );
+      expect(f.payload, hasLength(6));
+      expect(f.payload[5], 42);
+      expect(GatewayMessages.readOpsLeft(f), 42);
+      expect(GatewayMessages.readStatus(f)!.txAirtimeTenthsThisHour, 360);
+    });
+
+    test('an older five-byte STATUS reads as unknown, not zero', () {
+      final Frame f = GatewayMessages.status(
+        radioState: RadioState.connected,
+        rssi: -71,
+        batteryPercent: 88,
+        txAirtimeTenthsThisHour: 360,
+      );
+      expect(f.payload, hasLength(5));
+      expect(GatewayMessages.readOpsLeft(f), isNull);
+    });
+
+    test('out of range is refused locally', () {
+      expect(
+        () => GatewayMessages.status(
+          radioState: RadioState.connected,
+          rssi: 0,
+          batteryPercent: 0,
+          txAirtimeTenthsThisHour: 0,
+          opsLeftThisHour: 256,
+        ),
+        throwsArgumentError,
+      );
+    });
+
+    test('the governor derives it from remaining budget and clamps', () {
+      final Governor g = Governor(budget: const Duration(seconds: 36));
+      expect(g.opsLeft(const Duration(milliseconds: 613)), 58);
+      expect(g.opsLeft(const Duration(milliseconds: 10)), 255);
+      g.charge(const Duration(seconds: 10));
+      expect(g.opsLeft(const Duration(milliseconds: 613)), 42);
+      g.charge(const Duration(seconds: 30));
+      expect(g.opsLeft(const Duration(milliseconds: 613)), 0);
+      expect(g.opsLeft(Duration.zero), 0);
     });
   });
 }

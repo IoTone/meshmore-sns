@@ -55,6 +55,11 @@ class GatewayClient {
   /// The reason the gateway closed the connection, once it has.
   CloseReason? get closeReason => _closeReason;
 
+  /// The sixth `STATUS` byte from the most recent push, or null if none has
+  /// carried it. Records of the current size left in this hour's budget.
+  int? get lastOpsLeft => _lastOpsLeft;
+  int? _lastOpsLeft;
+
   bool get isOpen => _open;
 
   Future<void> connect({
@@ -205,6 +210,7 @@ class GatewayClient {
       }
       if (frame.type == FrameType.status) {
         final GatewayStatus? status = GatewayMessages.readStatus(frame);
+        _lastOpsLeft = GatewayMessages.readOpsLeft(frame);
         if (status != null && !_statuses.isClosed) _statuses.add(status);
         continue;
       }

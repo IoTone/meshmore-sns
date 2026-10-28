@@ -52,6 +52,19 @@ class Governor {
   /// Airtime used this hour in 0.1 s units, the unit `STATUS` carries.
   int get usedTenthsThisHour => used.inMilliseconds ~/ 100;
 
+  /// How many records costing [perRecord] each still fit this hour, clamped
+  /// to 0..255 (the one byte `STATUS` carries; 255 means "255 or more").
+  ///
+  /// The gateway owns this figure because it alone knows the radio's preset:
+  /// a client that had to compute it would need radio parameters, which the
+  /// architecture keeps out of LDMUX. Zero when [perRecord] is not positive,
+  /// so an unusable estimator never reads as unlimited.
+  int opsLeft(Duration perRecord) {
+    if (perRecord <= Duration.zero) return 0;
+    final int n = remaining.inMicroseconds ~/ perRecord.inMicroseconds;
+    return n > 255 ? 255 : n;
+  }
+
   /// Whether [estimate] still fits. There is no raise path in v1.
   bool canSend(Duration estimate) {
     if (estimate <= Duration.zero) return true;

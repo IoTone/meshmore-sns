@@ -328,6 +328,25 @@ void main() {
       expect(status.radioState, RadioState.radioLost);
     });
 
+    test('STATUS carries opsLeft from the preset estimate and follows sends',
+        () async {
+      final Harness h = await startGateway();
+      addTearDown(() => stopHarness(h));
+      await handshake(h, capabilities: GatewayCapability.statusPush.mask);
+      final List<GatewayStatus> seen = <GatewayStatus>[];
+      final StreamSubscription<GatewayStatus> sub =
+          h.client.statuses.listen(seen.add);
+      addTearDown(sub.cancel);
+      h.client.sendRecord(seq: 1, record: List<int>.filled(100, 0));
+      await h.client.nextSendResult();
+      await h.client.waitFor(() => seen.isNotEmpty);
+      // The charge happened, so the pushed airtime is non-zero.
+      expect(seen.last.txAirtimeTenthsThisHour, greaterThan(0));
+      // Default estimator: 4 ms/B, advertised capacity 160 B = 640 ms/record.
+      // 36 s budget, 400 ms spent => (36000-400)/640 = 55 records.
+      expect(h.client.lastOpsLeft, 55);
+    });
+
     test('STATUS is not pushed when the client did not negotiate it',
         () async {
       final Harness h = await startGateway();
