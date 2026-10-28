@@ -308,3 +308,48 @@ Append-only, as the earlier rows are. This section closes two and adds five.
 - End to end, 2026-10-28: `ldmux mesh status` → `ready`, 172 B capacity,
   58 records left this hour, radio connected. The 58 is 36 s ÷ (612 ms + 2 B of
   framing overhead), which is the governor's own arithmetic.
+
+## Separation-of-concerns audit, 2026-10-28 (two-sided)
+
+Read-only inventory of both repositories, then classification of every capability
+as radio/mesh-specific (MeshMore), terminal-specific (LDMUX), or generic client
+infrastructure. The purpose was the standing question: **is anything being
+carried by the wrong product?**
+
+### Verdict
+
+| Capability | Owner | Why (evidence) |
+|---|---|---|
+| Companion protocol, radio, presets, path hashes, contacts, channels | MeshMore | `packages/meshcore`; §13 matrix |
+| Airtime policy and the 36 s/hour bound | MeshMore | `governor.dart:59-61` states that a client computing it would need radio parameters |
+| Pairing-grant issuance and the token at rest on the host | MeshMore | it holds the radio, so it is the only party that can issue a mesh grant |
+| The L2 tunnel, framing, single-session policy | MeshMore | `meshcore_gateway` (zero runtime deps, no `ldmux` in code) |
+| Terminal semantics: PTY, keeper, VT, scrollback, predictive echo | LDMUX | `crates/{keeper,vt-sys,protocol}`, `docs/PREDICTIVE-ECHO.md` |
+| Session ownership, claims, takeover, presence | LDMUX | `crates/daemon/src/ownership.rs`; keyed by a device identity that arrives in `hello` |
+| Tailnet grant issuance and the client half of any pairing | LDMUX | `crates/protocol/src/pairing.rs`; works with MeshMore absent |
+| The end-to-end session (Noise, record layout, ARQ) | LDMUX | ADR-0020; generic in principle, single consumer today |
+
+Nothing that needs radio state lives in LDMUX, and nothing that needs terminal
+state lives in MeshMore. The one exception was mechanical and is now removed:
+`meshcore_gateway` exported `applicationBytesPerRecord = 148`, an ADR-0020
+derivation, pinned by a MeshMore test. The carrier now exports only `recordMax`.
+
+### Decisions taken
+
+- **Two pairing ceremonies are correct, and must be documented as a decision.**
+  A tailnet grant belongs to LDMUX because LDMUX must work with no MeshMore
+  installed. A mesh grant must be issued by whoever owns the radio. Two grants
+  are therefore structural, not an accident. The asymmetry is also visible in
+  protection: the mesh token is in Android Keystore, while the daemon token
+  (which grants shell control) is still in plain preferences. That is a defect on
+  the LDMUX side, recorded there rather than here.
+- **Client identity belongs in the session layer, not in L2.** The proposal was to
+  add a device identity to the gateway contract so claims survive the mesh route.
+  That would be the wrong layer: L2 is two independent hops, each terminated by a
+  blind carrier (phone gateway, host gateway), so an identity placed there is
+  seen by MeshMore and still does not reach the daemon that keys ownership. The
+  identity belongs in the end-to-end session handshake, which LDMUX owns and
+  which no other component can read. Consequence: the MeshMore contract does not
+  change at all, and the gateway stays blind.
+- **The session layer stays LDMUX-private.** Nothing in it may move into
+  MeshMore, and it must not be factored for reuse until a second consumer exists.
