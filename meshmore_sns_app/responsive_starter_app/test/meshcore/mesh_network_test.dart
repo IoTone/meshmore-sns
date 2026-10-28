@@ -116,6 +116,16 @@ void main() {
       expect(n.isolatedFromPublicMesh, isFalse);
     });
 
+    test('a frequency a hair off a public preset is still the same channel',
+        () {
+      // 1 kHz and 10 kHz off the 62.5 kHz USA preset: a receiver decodes
+      // both, so neither is a separate network.
+      expect(privateNet(freq: 910.526).isolatedFromPublicMesh, isFalse);
+      expect(privateNet(freq: 910.535).isolatedFromPublicMesh, isFalse);
+      // A whole bandwidth away is separate.
+      expect(privateNet(freq: 910.600).isolatedFromPublicMesh, isTrue);
+    });
+
     test('a different frequency, SF or bandwidth is isolated', () {
       expect(privateNet(freq: 912.5).isolatedFromPublicMesh, isTrue);
       final MeshNetwork sf = MeshNetwork(

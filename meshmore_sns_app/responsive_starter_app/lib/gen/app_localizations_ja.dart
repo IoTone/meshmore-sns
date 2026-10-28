@@ -3690,4 +3690,132 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get connectedAppsCancel => 'キャンセル';
+
+  @override
+  String get networksTitle => 'ネットワーク';
+
+  @override
+  String get networksTileSubtitle => '複数の無線機で共有する無線設定';
+
+  @override
+  String get networksEmpty => 'ネットワークはまだありません。ネットワークとは、無線機同士で合わせる無線設定のことです。';
+
+  @override
+  String get networksNew => '新しいネットワーク';
+
+  @override
+  String get networksName => '名前';
+
+  @override
+  String get networksNameRequired => 'ネットワーク名を入力してください。';
+
+  @override
+  String get networksPreset => '無線設定の元';
+
+  @override
+  String get networksPathHash => 'パスハッシュ長';
+
+  @override
+  String get networksPrivateSwitch => '専用周波数';
+
+  @override
+  String get networksPrivateHelp =>
+      '公開プリセットが使わない周波数を使います。この周波数の無線機は公開メッシュを聞けず、公開メッシュからも聞こえません。';
+
+  @override
+  String get networksFrequency => '周波数 (MHz)';
+
+  @override
+  String get networksFrequencyInvalid => '150〜2500 MHz の周波数を入力してください。';
+
+  @override
+  String networksFrequencyPublic(String preset) {
+    return 'この周波数・帯域幅・拡散率は公開プリセット $preset のものです。別の周波数を選んでください。';
+  }
+
+  @override
+  String get networksSave => '保存';
+
+  @override
+  String get networksCancel => 'キャンセル';
+
+  @override
+  String networksShared(String preset) {
+    return '公開 $preset メッシュと同じ電波を使います。周波数・帯域幅・拡散率が同じなら、鍵や名前では無線機を分けられません。';
+  }
+
+  @override
+  String get networksIsolated => '公開メッシュとは別です。この周波数に設定していない無線機には聞こえません。';
+
+  @override
+  String networksSummary(
+      String freq, String bw, String sf, String cr, String ph) {
+    return '$freq MHz · $bw kHz · SF$sf · CR$cr · パスハッシュ $ph';
+  }
+
+  @override
+  String networksMembers(int count) {
+    return 'メンバー ($count)';
+  }
+
+  @override
+  String get networksNoMembers => 'メンバーはまだいません。';
+
+  @override
+  String get networksAddMember => 'メンバーを追加';
+
+  @override
+  String get networksNoContacts => '追加できる既知のコンタクトがありません。';
+
+  @override
+  String get networksRemoveMember => '外す';
+
+  @override
+  String get networksApply => 'この無線機に適用';
+
+  @override
+  String get networksApplyNeedsRadio => '適用するには無線機を接続してください。';
+
+  @override
+  String networksApplyTitle(String name) {
+    return '$name を適用しますか?';
+  }
+
+  @override
+  String networksApplyBodyShared(String summary) {
+    return 'この無線機を $summary に切り替えます。';
+  }
+
+  @override
+  String networksApplyBodyIsolated(String summary) {
+    return 'この無線機を $summary に切り替えます。元に戻すまで公開メッシュは聞こえなくなります。';
+  }
+
+  @override
+  String get networksApplyConfirm => '適用';
+
+  @override
+  String get networksApplied => '適用しました。';
+
+  @override
+  String networksApplyFailed(String error) {
+    return '適用できません: $error';
+  }
+
+  @override
+  String get networksCurrent => 'この無線機はこのネットワークです';
+
+  @override
+  String get networksDelete => 'ネットワークを削除';
+
+  @override
+  String networksDeleteTitle(String name) {
+    return '$name を削除しますか?';
+  }
+
+  @override
+  String get networksDeleteBody => '保存した設定だけが消えます。無線機の設定はそのままです。';
+
+  @override
+  String get networksDeleteConfirm => '削除';
 }

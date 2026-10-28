@@ -3477,6 +3477,11 @@ class MeshcoreController extends ChangeNotifier {
   /// only advert-heard (not a synced contact on the device).
   Contact? contactRecordFor(String pubKeyHex) => _contacts[pubKeyHex];
 
+  /// Every contact the radio has synced, as the app sees them (superseded
+  /// keys hidden). A snapshot, not a live view.
+  List<Contact> get syncedContacts =>
+      List<Contact>.unmodifiable(_contacts.values);
+
   /// True when the node is a synced contact — a prerequisite for any
   /// telemetry exchange (telemetry is contact-only).
   bool isSyncedContact(String pubKeyHex) => _contacts.containsKey(pubKeyHex);

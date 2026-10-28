@@ -3815,4 +3815,137 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get connectedAppsCancel => 'Cancel';
+
+  @override
+  String get networksTitle => 'Networks';
+
+  @override
+  String get networksTileSubtitle =>
+      'Radio settings shared by a group of radios';
+
+  @override
+  String get networksEmpty =>
+      'No networks yet. A network is the radio settings your radios agree on.';
+
+  @override
+  String get networksNew => 'New network';
+
+  @override
+  String get networksName => 'Name';
+
+  @override
+  String get networksNameRequired => 'Give the network a name.';
+
+  @override
+  String get networksPreset => 'Radio settings from';
+
+  @override
+  String get networksPathHash => 'Path hash size';
+
+  @override
+  String get networksPrivateSwitch => 'Private frequency';
+
+  @override
+  String get networksPrivateHelp =>
+      'Use a frequency no public preset uses. Radios on it do not hear the public mesh, and the public mesh does not hear them.';
+
+  @override
+  String get networksFrequency => 'Frequency (MHz)';
+
+  @override
+  String get networksFrequencyInvalid =>
+      'Enter a frequency from 150 to 2500 MHz.';
+
+  @override
+  String networksFrequencyPublic(String preset) {
+    return 'That frequency, bandwidth and spreading factor belong to the public preset $preset. Pick a different frequency.';
+  }
+
+  @override
+  String get networksSave => 'Save';
+
+  @override
+  String get networksCancel => 'Cancel';
+
+  @override
+  String networksShared(String preset) {
+    return 'Shares the air with the public $preset mesh. A key or a name does not separate radios on the same frequency, bandwidth and spreading factor.';
+  }
+
+  @override
+  String get networksIsolated =>
+      'Separate from the public mesh. Radios not set to this frequency cannot hear it.';
+
+  @override
+  String networksSummary(
+      String freq, String bw, String sf, String cr, String ph) {
+    return '$freq MHz · $bw kHz · SF$sf · CR$cr · path hash $ph';
+  }
+
+  @override
+  String networksMembers(int count) {
+    return 'Members ($count)';
+  }
+
+  @override
+  String get networksNoMembers => 'No members yet.';
+
+  @override
+  String get networksAddMember => 'Add member';
+
+  @override
+  String get networksNoContacts => 'No known contacts to add.';
+
+  @override
+  String get networksRemoveMember => 'Remove';
+
+  @override
+  String get networksApply => 'Apply to this radio';
+
+  @override
+  String get networksApplyNeedsRadio => 'Connect a radio to apply.';
+
+  @override
+  String networksApplyTitle(String name) {
+    return 'Apply $name?';
+  }
+
+  @override
+  String networksApplyBodyShared(String summary) {
+    return 'This radio will switch to $summary.';
+  }
+
+  @override
+  String networksApplyBodyIsolated(String summary) {
+    return 'This radio will switch to $summary. It will stop hearing the public mesh until you switch it back.';
+  }
+
+  @override
+  String get networksApplyConfirm => 'Apply';
+
+  @override
+  String get networksApplied => 'Applied.';
+
+  @override
+  String networksApplyFailed(String error) {
+    return 'Could not apply: $error';
+  }
+
+  @override
+  String get networksCurrent => 'This radio is on this network';
+
+  @override
+  String get networksDelete => 'Delete network';
+
+  @override
+  String networksDeleteTitle(String name) {
+    return 'Delete $name?';
+  }
+
+  @override
+  String get networksDeleteBody =>
+      'Only the saved settings are removed. Radios keep what they are set to.';
+
+  @override
+  String get networksDeleteConfirm => 'Delete';
 }

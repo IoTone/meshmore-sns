@@ -1,0 +1,278 @@
+// Copyright (c) 2026 IoTone, Inc.
+// SPDX-License-Identifier: MIT
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+import '../gen/app_localizations.dart';
+import '../meshcore/mesh_network.dart';
+import '../meshcore/mesh_network_store.dart';
+import '../meshcore/meshcore_controller.dart';
+import '../meshcore/region_presets.dart';
+import '../ui/mm_scaffold.dart';
+import 'network_detail_screen.dart';
+
+/// One-line radio summary, shared by the list, the detail and the confirm.
+String networkSummary(AppLocalizations l, MeshNetwork n) => l.networksSummary(
+      '${n.frequencyMhz}',
+      '${n.bandwidthKhz}',
+      '${n.spreadingFactor}',
+      '${n.codingRate}',
+      '${n.pathHashSize}',
+    );
+
+/// What the network shares the air with, in words. A key or a name never
+/// separates radios on one frequency/bandwidth/SF, so a network on a public
+/// tuple is NOT called private.
+String networkReach(AppLocalizations l, MeshNetwork n) {
+  final RegionPreset? p = n.overlappingPublicPreset;
+  return p == null
+      ? l.networksIsolated
+      : l.networksShared(localizedPresetLabel(l, p.id));
+}
+
+/// Settings -> Networks: the radio settings a group of radios agree on.
+class NetworksScreen extends StatefulWidget {
+  const NetworksScreen({super.key});
+
+  @override
+  State<NetworksScreen> createState() => _NetworksScreenState();
+}
+
+class _NetworksScreenState extends State<NetworksScreen> {
+  List<MeshNetwork>? _networks;
+
+  @override
+  void initState() {
+    super.initState();
+    _reload();
+  }
+
+  Future<void> _reload() async {
+    final List<MeshNetwork> n = await MeshNetworkStore.load();
+    if (mounted) setState(() => _networks = n);
+  }
+
+  Future<void> _open(Widget page) async {
+    await Navigator.of(context)
+        .push<void>(MaterialPageRoute<void>(builder: (_) => page));
+    await _reload();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations l = AppLocalizations.of(context);
+    final ColorScheme cs = Theme.of(context).colorScheme;
+    final List<MeshNetwork>? networks = _networks;
+    final MeshcoreController mc = context.watch<MeshcoreController>();
+    return Scaffold(
+      appBar: AppBar(title: Text(l.networksTitle)),
+      floatingActionButton: FloatingActionButton.extended(
+        key: const Key('network-new'),
+        onPressed: () => _open(const NetworkEditScreen()),
+        icon: const Icon(Icons.add),
+        label: Text(l.networksNew),
+      ),
+      body: MmScaffold(
+        child: networks == null
+            ? const SizedBox()
+            : networks.isEmpty
+                ? Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Text(l.networksEmpty,
+                        style: TextStyle(
+                            color: cs.onSurface.withValues(alpha: .6))),
+                  )
+                : ListView(
+                    children: <Widget>[
+                      for (final MeshNetwork n in networks)
+                        ListTile(
+                          key: Key('network-${n.id}'),
+                          title: Text(n.name),
+                          subtitle: Text(
+                              '${networkSummary(l, n)}\n${networkReach(l, n)}'),
+                          isThreeLine: true,
+                          trailing: networkIsCurrent(mc, n)
+                              ? Icon(Icons.radio_button_checked,
+                                  color: cs.primary)
+                              : const Icon(Icons.chevron_right),
+                          onTap: () => _open(NetworkDetailScreen(id: n.id)),
+                        ),
+                    ],
+                  ),
+      ),
+    );
+  }
+}
+
+/// Whether the connected radio is already on [n].
+bool networkIsCurrent(MeshcoreController mc, MeshNetwork n) {
+  final si = mc.selfInfo;
+  final di = mc.deviceInfo;
+  if (si == null || di == null) return false;
+  return n.matches(
+    frequencyMhz: si.frequencyMhz,
+    bandwidthKhz: si.bandwidthKhz,
+    spreadingFactor: si.spreadingFactor,
+    pathHashSize: di.pathHashMode + 1,
+  );
+}
+
+/// Create a network: a name, radio settings copied from a preset, a path hash
+/// size, and optionally a private frequency.
+class NetworkEditScreen extends StatefulWidget {
+  const NetworkEditScreen({super.key});
+
+  @override
+  State<NetworkEditScreen> createState() => _NetworkEditScreenState();
+}
+
+class _NetworkEditScreenState extends State<NetworkEditScreen> {
+  final TextEditingController _name = TextEditingController();
+  final TextEditingController _freq = TextEditingController();
+  late RegionPreset _preset = presetById('us_canada') ?? kRegionPresets.first;
+  late int _hash = _preset.pathHashSize ?? 1;
+  bool _private = false;
+  String? _nameError;
+  String? _freqError;
+
+  @override
+  void dispose() {
+    _name.dispose();
+    _freq.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    final AppLocalizations l = AppLocalizations.of(context);
+    final String name = _name.text.trim();
+    String? nameError;
+    String? freqError;
+    if (name.isEmpty) nameError = l.networksNameRequired;
+
+    double freq = _preset.frequencyMhz;
+    if (_private) {
+      final double? f = double.tryParse(_freq.text.trim());
+      if (f == null || f < 150 || f > 2500) {
+        freqError = l.networksFrequencyInvalid;
+      } else {
+        freq = f;
+      }
+    }
+    MeshNetwork? net;
+    if (nameError == null && freqError == null) {
+      net = MeshNetwork(
+        id: 'n${DateTime.now().microsecondsSinceEpoch}',
+        name: name,
+        frequencyMhz: freq,
+        bandwidthKhz: _preset.bandwidthKhz,
+        spreadingFactor: _preset.spreadingFactor,
+        codingRate: _preset.codingRate,
+        txPowerDbm: _preset.txPowerDbm,
+        pathHashSize: _hash,
+      );
+      final RegionPreset? clash = net.overlappingPublicPreset;
+      if (_private && clash != null) {
+        freqError =
+            l.networksFrequencyPublic(localizedPresetLabel(l, clash.id));
+      }
+    }
+    if (nameError != null || freqError != null || net == null) {
+      setState(() {
+        _nameError = nameError;
+        _freqError = freqError;
+      });
+      return;
+    }
+    final List<MeshNetwork> all = await MeshNetworkStore.load();
+    await MeshNetworkStore.save(<MeshNetwork>[...all, net]);
+    if (mounted) Navigator.of(context).pop();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations l = AppLocalizations.of(context);
+    final ColorScheme cs = Theme.of(context).colorScheme;
+    final TextStyle muted =
+        TextStyle(color: cs.onSurface.withValues(alpha: .6));
+    return Scaffold(
+      appBar: AppBar(title: Text(l.networksNew)),
+      body: MmScaffold(
+        child: ListView(
+          padding: const EdgeInsets.all(16),
+          children: <Widget>[
+            TextField(
+              key: const Key('network-name'),
+              controller: _name,
+              decoration: InputDecoration(
+                  labelText: l.networksName, errorText: _nameError),
+            ),
+            const SizedBox(height: 16),
+            DropdownButtonFormField<String>(
+              key: const Key('network-preset'),
+              isExpanded: true,
+              initialValue: _preset.id,
+              decoration: InputDecoration(labelText: l.networksPreset),
+              items: <DropdownMenuItem<String>>[
+                for (final RegionPreset p in kRegionPresets)
+                  DropdownMenuItem<String>(
+                    value: p.id,
+                    child: Text(localizedPresetLabel(l, p.id),
+                        overflow: TextOverflow.ellipsis),
+                  ),
+              ],
+              onChanged: (String? id) {
+                final RegionPreset? p = id == null ? null : presetById(id);
+                if (p == null) return;
+                setState(() {
+                  _preset = p;
+                  _hash = p.pathHashSize ?? _hash;
+                });
+              },
+            ),
+            const SizedBox(height: 16),
+            Text(l.networksPathHash,
+                style: Theme.of(context).textTheme.titleSmall),
+            const SizedBox(height: 8),
+            SegmentedButton<int>(
+              key: const Key('network-hash'),
+              segments: const <ButtonSegment<int>>[
+                ButtonSegment<int>(value: 1, label: Text('1')),
+                ButtonSegment<int>(value: 2, label: Text('2')),
+                ButtonSegment<int>(value: 3, label: Text('3')),
+              ],
+              selected: <int>{_hash},
+              onSelectionChanged: (Set<int> s) =>
+                  setState(() => _hash = s.first),
+            ),
+            SwitchListTile(
+              key: const Key('network-private'),
+              contentPadding: EdgeInsets.zero,
+              title: Text(l.networksPrivateSwitch),
+              subtitle: Text(l.networksPrivateHelp, style: muted),
+              value: _private,
+              onChanged: (bool v) => setState(() {
+                _private = v;
+                _freqError = null;
+              }),
+            ),
+            if (_private)
+              TextField(
+                key: const Key('network-frequency'),
+                controller: _freq,
+                keyboardType:
+                    const TextInputType.numberWithOptions(decimal: true),
+                decoration: InputDecoration(
+                    labelText: l.networksFrequency, errorText: _freqError),
+              ),
+            const SizedBox(height: 24),
+            FilledButton(
+              key: const Key('network-save'),
+              onPressed: _save,
+              child: Text(l.networksSave),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

@@ -6620,6 +6620,223 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Cancel'**
   String get connectedAppsCancel;
+
+  /// No description provided for @networksTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Networks'**
+  String get networksTitle;
+
+  /// No description provided for @networksTileSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Radio settings shared by a group of radios'**
+  String get networksTileSubtitle;
+
+  /// No description provided for @networksEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No networks yet. A network is the radio settings your radios agree on.'**
+  String get networksEmpty;
+
+  /// No description provided for @networksNew.
+  ///
+  /// In en, this message translates to:
+  /// **'New network'**
+  String get networksNew;
+
+  /// No description provided for @networksName.
+  ///
+  /// In en, this message translates to:
+  /// **'Name'**
+  String get networksName;
+
+  /// No description provided for @networksNameRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Give the network a name.'**
+  String get networksNameRequired;
+
+  /// No description provided for @networksPreset.
+  ///
+  /// In en, this message translates to:
+  /// **'Radio settings from'**
+  String get networksPreset;
+
+  /// No description provided for @networksPathHash.
+  ///
+  /// In en, this message translates to:
+  /// **'Path hash size'**
+  String get networksPathHash;
+
+  /// No description provided for @networksPrivateSwitch.
+  ///
+  /// In en, this message translates to:
+  /// **'Private frequency'**
+  String get networksPrivateSwitch;
+
+  /// No description provided for @networksPrivateHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Use a frequency no public preset uses. Radios on it do not hear the public mesh, and the public mesh does not hear them.'**
+  String get networksPrivateHelp;
+
+  /// No description provided for @networksFrequency.
+  ///
+  /// In en, this message translates to:
+  /// **'Frequency (MHz)'**
+  String get networksFrequency;
+
+  /// No description provided for @networksFrequencyInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a frequency from 150 to 2500 MHz.'**
+  String get networksFrequencyInvalid;
+
+  /// No description provided for @networksFrequencyPublic.
+  ///
+  /// In en, this message translates to:
+  /// **'That frequency, bandwidth and spreading factor belong to the public preset {preset}. Pick a different frequency.'**
+  String networksFrequencyPublic(String preset);
+
+  /// No description provided for @networksSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get networksSave;
+
+  /// No description provided for @networksCancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get networksCancel;
+
+  /// No description provided for @networksShared.
+  ///
+  /// In en, this message translates to:
+  /// **'Shares the air with the public {preset} mesh. A key or a name does not separate radios on the same frequency, bandwidth and spreading factor.'**
+  String networksShared(String preset);
+
+  /// No description provided for @networksIsolated.
+  ///
+  /// In en, this message translates to:
+  /// **'Separate from the public mesh. Radios not set to this frequency cannot hear it.'**
+  String get networksIsolated;
+
+  /// No description provided for @networksSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'{freq} MHz · {bw} kHz · SF{sf} · CR{cr} · path hash {ph}'**
+  String networksSummary(
+      String freq, String bw, String sf, String cr, String ph);
+
+  /// No description provided for @networksMembers.
+  ///
+  /// In en, this message translates to:
+  /// **'Members ({count})'**
+  String networksMembers(int count);
+
+  /// No description provided for @networksNoMembers.
+  ///
+  /// In en, this message translates to:
+  /// **'No members yet.'**
+  String get networksNoMembers;
+
+  /// No description provided for @networksAddMember.
+  ///
+  /// In en, this message translates to:
+  /// **'Add member'**
+  String get networksAddMember;
+
+  /// No description provided for @networksNoContacts.
+  ///
+  /// In en, this message translates to:
+  /// **'No known contacts to add.'**
+  String get networksNoContacts;
+
+  /// No description provided for @networksRemoveMember.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove'**
+  String get networksRemoveMember;
+
+  /// No description provided for @networksApply.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply to this radio'**
+  String get networksApply;
+
+  /// No description provided for @networksApplyNeedsRadio.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect a radio to apply.'**
+  String get networksApplyNeedsRadio;
+
+  /// No description provided for @networksApplyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply {name}?'**
+  String networksApplyTitle(String name);
+
+  /// No description provided for @networksApplyBodyShared.
+  ///
+  /// In en, this message translates to:
+  /// **'This radio will switch to {summary}.'**
+  String networksApplyBodyShared(String summary);
+
+  /// No description provided for @networksApplyBodyIsolated.
+  ///
+  /// In en, this message translates to:
+  /// **'This radio will switch to {summary}. It will stop hearing the public mesh until you switch it back.'**
+  String networksApplyBodyIsolated(String summary);
+
+  /// No description provided for @networksApplyConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply'**
+  String get networksApplyConfirm;
+
+  /// No description provided for @networksApplied.
+  ///
+  /// In en, this message translates to:
+  /// **'Applied.'**
+  String get networksApplied;
+
+  /// No description provided for @networksApplyFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not apply: {error}'**
+  String networksApplyFailed(String error);
+
+  /// No description provided for @networksCurrent.
+  ///
+  /// In en, this message translates to:
+  /// **'This radio is on this network'**
+  String get networksCurrent;
+
+  /// No description provided for @networksDelete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete network'**
+  String get networksDelete;
+
+  /// No description provided for @networksDeleteTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete {name}?'**
+  String networksDeleteTitle(String name);
+
+  /// No description provided for @networksDeleteBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Only the saved settings are removed. Radios keep what they are set to.'**
+  String get networksDeleteBody;
+
+  /// No description provided for @networksDeleteConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get networksDeleteConfirm;
 }
 
 class _AppLocalizationsDelegate

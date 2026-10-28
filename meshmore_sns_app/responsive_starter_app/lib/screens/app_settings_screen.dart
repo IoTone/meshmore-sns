@@ -223,6 +223,15 @@ class AppSettingsScreen extends StatelessWidget {
             trailing: const Icon(Icons.chevron_right),
             onTap: () => context.push('/settings/location'),
           ),
+          // The radio settings a group of radios agree on (private mesh).
+          ListTile(
+            leading: const Icon(Icons.hub_outlined),
+            title: Text(l.networksTitle),
+            subtitle: Text(l.networksTileSubtitle,
+                style: TextStyle(color: cs.onSurface.withValues(alpha: .6))),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => context.push('/settings/networks'),
+          ),
           // Let another app on this phone (LDMUX) use the radio over the
           // loopback gateway. Off until the user turns it on.
           ListTile(

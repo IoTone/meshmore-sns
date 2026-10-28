@@ -113,7 +113,7 @@ class MeshNetwork {
   /// The UI should say so rather than call such a network "private".
   RegionPreset? get overlappingPublicPreset {
     for (final RegionPreset p in kRegionPresets) {
-      if ((p.frequencyMhz - frequencyMhz).abs() <= 0.001 &&
+      if ((p.frequencyMhz - frequencyMhz).abs() <= _hearingOffsetMhz &&
           (p.bandwidthKhz - bandwidthKhz).abs() <= 0.5 &&
           p.spreadingFactor == spreadingFactor) {
         return p;
@@ -121,6 +121,15 @@ class MeshNetwork {
     }
     return null;
   }
+
+  /// How far off a public preset's frequency a radio can sit and still
+  /// decode it: half the bandwidth. A LoRa receiver tolerates a carrier
+  /// offset that is a fraction of the bandwidth, so "910.526" is not a
+  /// separate channel from "910.525". Half is deliberately generous (it
+  /// errs toward calling a network shared); the receiver's real tolerance
+  /// is smaller, but this figure is a judgement, not a measured value, and
+  /// is NOT checked against a datasheet here.
+  double get _hearingOffsetMhz => bandwidthKhz / 2000;
 
   /// True when the radio tuple is on no public preset.
   bool get isolatedFromPublicMesh => overlappingPublicPreset == null;
