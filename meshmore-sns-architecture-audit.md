@@ -256,3 +256,23 @@ Still open, unchanged by this pass:
 - No hardware validation of any Phase B wire path (`0x19` answer handling, `0x3D`, `PUSH_CODE_RAW_DATA`) - unit-tested against transcribed firmware layouts only.
 - Android loopback with the app backgrounded, and `ACCESS_LOCAL_NETWORK` on Android 16/17, untested (no device attached).
 - The gateway lives only as long as the Flutter process, with the existing keepalive foreground service. Not a boot service.
+
+## LDMUX client and session-claim audit, 2026-10-28
+
+Leads were mined from the 46 MB pi thread (`--home-ldeen-Documents-lora--/2026-10-21T16-54-13-984Z_...jsonl`, 21 claim-shaped assistant lines about this project). Code and firmware are the authority.
+
+| # | Claim | Verdict | Evidence |
+|---|---|---|---|
+| S1 | "Stock MeshCore cannot deliver a lobospeak request to the peer app: `onContactRequest()` handles exactly one type" | **Confirmed** | `examples/companion_radio/MyMesh.cpp:627-629` `if (data[0] == REQ_TYPE_GET_TELEMETRY_DATA)` |
+| S2 | "Firmware only calls `notify()` when no companion is connected (`UITask.cpp:814`)" | **Contradicted.** `notify()` has no connection gate, and `:814` is the input-handling loop. The corrected radio-alerts doc is right | `UITask.cpp:622-640`; callers `:460,940,944,960` ungated |
+| S3 | "SF11/62.5 kHz cannot complete one operation" (ldmux `MESH-GATEWAY.md` §6.1/6.3) | **Wrong for deployed radios.** The row is a proposal, not in the 26-entry feed. Fixed in ldmux commit `8f7687d` | USA/Canada 613 ms, about 10 ops/hour; EU/UK Narrow 1656 ms, about 3.6 ops/hour (formula recomputed, CR 4/8 uses cr index 4) |
+| S4 | 613 ms, 3.48 ms/B, 58.7 records/hour, SF7/500 77 ms | **Confirmed** by recomputation | LoRa ToA formula, 176 B, preamble 32 symbols at SF8 and below |
+| S5 | "`ldmux status` surfaces `mesh.status`/`mesh.enable`" (investigation doc line 403) | **No such command or RPC exists** | `crates/daemon/src/bin/ldmux.rs:159`, `daemon.rs:1664`; `grep -rni mesh crates/*/src` empty. Recorded in ldmux `MESH-GATEWAY.md` §11 |
+| S6 | "Android `allowBackup` is false so the daemon token is not backed up" (`AppPrefs.android.kt` comment) | **Confirmed** | `AndroidManifest.xml:41` `android:allowBackup="false"` |
+| S7 | "Path hash mode must match across nodes" | Already corrected as R11 | `NodePrefs.h:40`, `Mesh.cpp:89`. No remaining occurrence in `*.md`/`*.arb` |
+| S8 | "Proven on the built binary: `strings firmware.elf` ... 0" (silent buzzer) | **Not re-checked**, needs a build | out of scope |
+| S9 | "Gateway enforces the 8-record credit window" (ldmux §8 item 1) | **Not implemented by the reference server.** It advertises `statusPush` only | `session.dart` capabilities; noted in ldmux §11 |
+
+Found while building the LDMUX client: `close()` during the handshake left `connect()` waiting out its whole timeout, because the handshake deferred was a local the teardown could not reach. Caught only by the real-socket test (the in-memory fake hid it). Fixed before commit.
+
+Not done: the other ~1,240 pi sessions and the Claude history were not mined. Claims about hardware behaviour (BLE, Keystore, Android loopback with the app backgrounded) remain unverified.
