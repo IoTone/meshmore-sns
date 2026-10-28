@@ -240,3 +240,19 @@ Open ambiguities and limits (not resolved here):
 - `flutter_secure_storage` with `encryptedSharedPreferences` keeps the encrypted token in `shared_prefs/`, which `res/xml/backup_rules.xml` does not exclude (it excludes only `maps/`). The ciphertext is bound to the device Keystore so a restore cannot read it (and the plugin resets on a decrypt error), but audit D5 asked for an explicit exclusion. That is a platform file and was not edited. Suggested lines: `<exclude domain="sharedpref" path="FlutterSecureStorage.xml"/>` in both `backup_rules.xml` and `data_extraction_rules.xml`.
 - Hardware: nothing in this pass was run against a radio.
 
+
+## Closing pass, 2026-10-28 (the three open items from the integration pass)
+
+| # | Item | Resolution | Evidence |
+|---|---|---|---|
+| R17 | **Pairing-slot denial of service.** Any local socket could hold the single session slot for one pre-auth window after another, and a legitimate client got `CLOSE(busy)`. | **Fixed.** A connection that arrives while the active session is *unauthenticated* now evicts it and takes the slot. An authenticated session is still refused `busy` and never displaced. `_run`'s `identical(_active, session)` guard already stopped the evicted loop from clearing its replacement, so no new synchronisation was needed. Exposed as `hasAuthenticatedSession` for the Settings screen and for tests. | `server.dart` `_onSocket`; `gateway_service_test.dart` "an unauthenticated squatter is evicted" and "a paired connection is never evicted" |
+| R18 | **`STATUS` had no "unknown" value**; the adapter invented `0xFF` and `-128`. | **Resolved as a contract fact, not a convention.** `GatewayLimits.unknownRssi = -128` and `GatewayLimits.unknownBattery = 0xFF` are now the documented sentinels, with the round-trip property stated in `status()` and `readStatus` (rssi is written and read as a signed byte, so -128 survives). The adapter references these constants instead of local literals. No wire change. | `constants.dart`; `messages.dart`; `mesh_sender_adapter.dart` |
+| D5 | **Backup exclusion for the pairing token.** `backup_rules.xml` excluded only `maps/`. | **Fixed.** Both `backup_rules.xml` (Android 11-) and `data_extraction_rules.xml` (Android 12+, cloud-backup and device-transfer) now exclude the plugin's ciphertext (`FlutterSecureStorage.xml`) and its Keystore-wrapped key (`FlutterSecureKeyStorage.xml`). Excluded explicitly rather than relying on the wrapped key being un-restorable. | `flutter_secure_storage-9.2.4/.../FlutterSecureStorage.java:32` (`SHARED_PREFERENCES_NAME`) and `ciphers/StorageCipher18Implementation.java:19` (`FlutterSecureKeyStorage`); `android/app/src/main/res/xml/{backup_rules,data_extraction_rules}.xml` |
+
+Still open, unchanged by this pass:
+
+- The firmware's OK/ERR carries no correlation tag, so a stray OK can be mistaken for a raw send's answer. Serialising narrows it; only a tagged reply in firmware removes it.
+- `errBusy` remains the stand-in for every ERR other than `not_found`.
+- No hardware validation of any Phase B wire path (`0x19` answer handling, `0x3D`, `PUSH_CODE_RAW_DATA`) - unit-tested against transcribed firmware layouts only.
+- Android loopback with the app backgrounded, and `ACCESS_LOCAL_NETWORK` on Android 16/17, untested (no device attached).
+- The gateway lives only as long as the Flutter process, with the existing keepalive foreground service. Not a boot service.

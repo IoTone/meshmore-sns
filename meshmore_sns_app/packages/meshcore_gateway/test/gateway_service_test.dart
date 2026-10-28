@@ -220,6 +220,44 @@ void main() {
       expect(second.closeReason, CloseReason.busy);
     });
 
+    test('an unauthenticated squatter is evicted, not allowed to deny the slot',
+        () async {
+      final Harness h = await startGateway();
+      addTearDown(() => stopHarness(h));
+      final GatewayClient squatter = GatewayClient();
+      addTearDown(squatter.close);
+
+      // Connected and past HELLO, but never PAIRed: holds no state.
+      await squatter.connect(port: h.gateway.port);
+      await squatter.hello();
+      await squatter.waitFor(() => h.gateway.hasSession);
+      expect(h.gateway.hasAuthenticatedSession, isFalse);
+
+      // A second connection must get the slot rather than `busy`.
+      await h.client.connect(port: h.gateway.port);
+      await squatter.waitFor(() => squatter.closeReason != null);
+      expect(squatter.closeReason, CloseReason.shutdown);
+
+      await h.client.hello();
+      await h.client.pair(h.gateway.pairingToken);
+      final ({int capabilities, int uplinkRecordMax}) bind =
+          await h.client.bind(peerKey);
+      expect(bind.uplinkRecordMax, 160);
+    });
+
+    test('a paired connection is never evicted, only refused busy', () async {
+      final Harness h = await startGateway();
+      addTearDown(() => stopHarness(h));
+      final GatewayClient second = GatewayClient();
+      addTearDown(second.close);
+
+      await handshake(h);
+      expect(h.gateway.hasAuthenticatedSession, isTrue);
+      await second.connect(port: h.gateway.port);
+      await second.waitFor(() => second.closeReason != null);
+      expect(second.closeReason, CloseReason.busy);
+    });
+
     test('an unauthenticated connection times out', () async {
       final Harness h =
           await startGateway(preAuthTimeout: const Duration(milliseconds: 80));

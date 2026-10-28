@@ -63,6 +63,12 @@ abstract final class GatewayLimits {
 
   /// Pairing token size in bytes.
   static const int pairingTokenBytes = 16;
+
+  /// `rssi` value meaning "no signal reading available". Signed byte.
+  static const int unknownRssi = -128;
+
+  /// `batteryPercent` value meaning "battery level not reported".
+  static const int unknownBattery = 0xFF;
 }
 
 /// L2 frame types. Values are frozen once shipped; new types are additive
@@ -196,6 +202,13 @@ extension type const SendOutcome(int code) {
 }
 
 /// Radio state reported in STATUS.
+///
+/// A `STATUS` frame cannot omit a field, so a value the gateway cannot read
+/// yet is sent as an explicit sentinel rather than a plausible-looking zero:
+/// `rssi == -128` (the wire byte `0x80`) means "no reading", and
+/// `batteryPercent == 0xFF` means "unknown". A client must not render either
+/// as a measurement. Both round-trip through [GatewayMessages.status] and
+/// [GatewayMessages.readStatus], which treat rssi as a signed byte.
 extension type const RadioState(int code) {
   static const RadioState connected = RadioState(0);
   static const RadioState disconnected = RadioState(1);

@@ -59,9 +59,10 @@ class MeshcoreMeshSender implements MeshSender {
   Completer<MeshcoreInbound>? _awaiting;
   bool _disposed = false;
 
-  /// STATUS has no "unknown" value in the v1 contract. -128 is the lowest
-  /// int8, i.e. "no signal heard yet".
-  static const int _unknownRssi = -128;
+  /// "No signal reading yet", from the gateway contract rather than a local
+  /// magic number: STATUS must always carry a byte, so the contract reserves
+  /// one.
+  static const int _unknownRssi = GatewayLimits.unknownRssi;
 
   static String _hex(List<int> b) =>
       b.map((int x) => x.toRadixString(16).padLeft(2, '0')).join();
@@ -189,10 +190,11 @@ class MeshcoreMeshSender implements MeshSender {
   @override
   int get rssiDbm => _rssi;
 
-  /// STATUS has no "unknown" value in the v1 contract, so an unread battery
-  /// is reported as 0xFF (not a valid percentage).
+  /// An unread battery is the contract's explicit "unknown" byte, not a
+  /// plausible-looking 0.
   @override
-  int get batteryPercent => _mc.batteryPercent ?? 0xFF;
+  int get batteryPercent =>
+      _mc.batteryPercent ?? GatewayLimits.unknownBattery;
 
   /// Idempotent.
   Future<void> dispose() async {

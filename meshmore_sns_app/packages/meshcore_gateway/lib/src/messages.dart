@@ -164,6 +164,10 @@ abstract final class GatewayMessages {
   /// `STATUS`: radio state, rssi, battery, and the gateway's own transmit
   /// airtime used this hour in 0.1 s units (little-endian).
   ///
+  /// [rssi] is written as a signed byte, so [GatewayLimits.unknownRssi]
+  /// (-128) round-trips. [batteryPercent] uses
+  /// [GatewayLimits.unknownBattery] when the radio reports nothing.
+  ///
   /// The airtime figure is an **estimate** the gateway accumulates from the
   /// firmware's timeout estimate; it cannot see repeater retransmissions or
   /// collisions. It is reported for display, not enforced on the peer: an

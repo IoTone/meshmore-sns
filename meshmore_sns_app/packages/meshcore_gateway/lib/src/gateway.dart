@@ -63,4 +63,7 @@ class Gateway {
 
   /// Whether a client currently holds the single session slot.
   bool get hasSession => _server.hasSession;
+
+  /// Whether the current session has authenticated (PAIRed).
+  bool get hasAuthenticatedSession => _server.hasAuthenticatedSession;
 }
