@@ -448,3 +448,61 @@ the phone's session-key store. MeshMore code was not touched and `meshcore_gatew
   spent on the handshake reply), so it proves "never past the budget", not an exact schedule.
 - **T6 (numbering): ldmux ADR numbers 0021/0022 were taken** twice in the previous pass and were
   renumbered to 0023/0024 by the parent. This pass used 0025 and checked the directory first.
+
+## Phone-side mesh terminal, key delivery and the attach path, 2026-10-28
+
+Evidence is in the ldmux repository (`feat/meshmore-gateway`); nothing here changes a MeshMore
+package. The §13 checks were re-run and still hold: `rg -i 'meshcore|lora|spreading' crates/daemon
+crates/keeper crates/session crates/session-ffi crates/protocol` returns 0 hits (two hits this pass
+introduced in new comments were reworded), and the mobile `bandwidth|spreading|pathHash|preset`
+grep still returns the same 3 comment-only hits. The new phone UI strings say "send budget" in
+records and never "airtime" or seconds.
+
+### Findings
+
+- **K1. ADR-0020 §6 promised a "version 2 of the link"; it was built as `v=1` plus optional
+  parameters.** CLAIM (ADR-0020, QR additions): a `v=2` link. EVIDENCE: `Pairing.kt parsePairingLink`
+  returns null unless `v` is `1` ("a link with a version the app does not know is refused rather than
+  guessed at", `crates/protocol/src/pairing.rs` header), so a `v=2` code would have been refused by
+  every installed app, including for the tailnet pairing it also carries. The v1 contract already says
+  unknown parameters are ignored (the `future=ignored` case in `pairing-links.json`), so `mv=1&mk=&psk=`
+  appended to the same `v=1` link gives an older scanner the tailnet pairing unchanged. Dated
+  CORRECTION added to ADR-0020 with the original left visible. Also hex, not base64url.
+- **K2. A mesh pairing still needs a tailnet host and token.** CLAIM (ADR-0020): "the tailnet host
+  restriction in ADR-0017 does not apply to mesh pairing." EVIDENCE: the mesh keys ride on the same
+  link, `pairing_problem` still requires a tailnet or loopback `host` and a 64-hex `token`, and
+  `LdmuxConfig.isPaired` is defined on them. So a phone with **no tailnet at all** cannot be paired for
+  mesh by this ceremony. Not fixed: it is a product question (does a mesh-only phone exist?) and the
+  answer changes `isPaired`, which every screen reads. Recorded here as open.
+- **K3. The host's radio key had no way to reach the phone.** The phone's gateway `BIND` needs it
+  (`MeshGatewayClient(peerPubKey)`), the daemon does not own the radio and cannot learn it, and no
+  earlier document named a source. Built: an optional `mr=` parameter, fed by the optional
+  `LDMUX_MESH_SELF` environment variable. Without it `hasPeer` is false and the route reports
+  `NeedsPeer`. This is operator-supplied, not discovered, and is the weakest link in the ceremony.
+- **K4. "hasPeer" meant two things.** `MeshSessionKeyStore.hasPeer` (the phone holds session keys)
+  and `resolveRoute(hasPeer)` (the host radio key to bind) shared a name. Split: `resolveRoute`
+  gained `hasSessionKeys` and a `NeedsSessionKeys` problem, and `hasPeer` there now means only the
+  radio key.
+- **K5. The Kotlin port was pinned to the Rust vectors by a comment, not by a test.** CLAIM (ADR-0025
+  Consequences): "checked against the same pinned byte vectors (`exact_bytes_are_pinned`)". EVIDENCE:
+  that Rust test pins five messages inside Rust only; nothing the Kotlin side could read existed.
+  Fixed with `crates/protocol/test/fixtures/mesh-term-vectors.json`, written by the Rust encoder and
+  failing the Rust suite when stale; `MeshTermCodecTest` reads it. Swapping the byte order of the
+  `u16` fields in the Kotlin encoder fails the suite.
+- **K6. Flipping `MESH_TERMINAL_BUILT` makes `resolveRoute` honest, not the route usable.** There is
+  no route picker, so nothing can save `route = Mesh`, and there is no scanner for MeshMore's gateway
+  token (MeshMore's QR is the bare 32-hex token, `connected_apps_screen.dart:84-130`), so a saved
+  mesh route would stop at `NeedsToken`. Both are in `docs/STATE.md`. The mesh screen has been
+  compiled and exercised only through the driver tests and one run over the real Rust session in a
+  JVM; the Compose screen itself and the Keystore are untested on a device.
+- **K7. The shell selector is empty.** ADR-0025 left "which shell the phone attaches" undecided.
+  The phone sends an empty selector, which the host answers with `Closed(AMBIGUOUS)` when more than
+  one shell runs, and the screen says "more than one shell on the host".
+
+### Verification this pass
+
+`cargo test -p ldmux-protocol` 81, daemon `--lib mesh` 25, `--test mesh_terminal` 3, `--test
+mesh_session` 4, `--test mesh_link` 4, session + ffi 49; clippy `-D warnings` clean on protocol,
+daemon, session, session-ffi. `./gradlew --offline :composeApp:testDebugUnitTest --rerun-tasks`: 509
+pass (441 before); `assembleDebug` succeeds. The 2 `qr::` tests that need `zbarimg` still fail in the
+environment, unchanged.
