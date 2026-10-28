@@ -418,3 +418,33 @@ is 3.
   x86_64) and never executed on a phone. The JVM tests load the host build of the same C and Rust
   code, which proves the ABI and the binding, not the Android linker, the 16 KB page alignment
   flag, or the device's ABI.
+
+## Terminal profile pass, 2026-10-28 (host side of the shell over the session)
+
+Scope: ldmux ADR-0025, `crates/protocol/src/mesh_term.rs`, `crates/daemon/src/mesh_bridge.rs`,
+the phone's session-key store. MeshMore code was not touched and `meshcore_gateway` /
+`meshcore_host` still contain no `mesh_term` and no `ldmux` in code.
+
+- **T1 (claim corrected): "the existing host already knows how to hash/compare rows for the
+  client."** It does not. The daemon sends bytes and the keeper's `snapshot` text; a search of
+  `crates/daemon` finds no per-row hash or changed-rows computation. The row diff is new
+  (`Differ`, plain string equality against the last sent screen). The vocabulary reused is the
+  real one: `snapshot`, `cols/rows`, cursor, `alternate_on`, "resync from a snapshot when output
+  was lost".
+- **T2 (figure restated, not changed): 8.5 KB an hour.** That was 58 x 148. The ARQ header takes
+  4 bytes, so the stream carries **144** bytes a record, **8,352** bytes an hour in one direction
+  (ADR-0025 table). A complete 200x100 screen is about 20,600 bytes, about 150 records: it cannot
+  fit an hour and the profile says so instead of hiding it.
+- **T3 (design choice, recorded because the brief left it open): no resize over mesh.** The
+  keeper's geometry is canonical (ADR-0018). A phone that resized the pane would resize it for
+  every other client, so `Profile` reports the host's geometry and marks resize unsupported.
+- **T4 (flag not flipped, and why): `MESH_TERMINAL_BUILT` stays false.** The host half is built
+  and tested over the real session. The phone has no port of the encoding and no attach driver,
+  and no ceremony that delivers the keys, so no device can hold a mesh pairing. Flipping it
+  would change which error is shown, not make anything work.
+- **T5 (tests are not proof, checked):** the three integration tests passed on first run. The
+  corruption test asserts both that no input reached a shell and that the session counted a
+  drop; the budget test is deliberately loose (`<= 1` record on air for a budget of two with one
+  spent on the handshake reply), so it proves "never past the budget", not an exact schedule.
+- **T6 (numbering): ldmux ADR numbers 0021/0022 were taken** twice in the previous pass and were
+  renumbered to 0023/0024 by the parent. This pass used 0025 and checked the directory first.
