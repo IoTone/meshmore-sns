@@ -178,7 +178,9 @@ extension type const SendOutcome(int code) {
   /// The record exceeded the carrier's budget (refused before sending).
   static const SendOutcome errTooLong = SendOutcome(5);
 
-  /// The firmware's estimate elapsed with no response. Not proof of loss:
+  /// No answer arrived in time. For a raw-data send the firmware replies
+  /// only OK or ERR (no `est_timeout`), so the deadline is the sender's own.
+  /// The firmware's estimate elapsed with no response (binary request). Not proof of loss:
   /// the estimate is airtime plus hops, and cannot see collisions.
   static const SendOutcome localTimeout = SendOutcome(6);
 

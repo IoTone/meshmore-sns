@@ -14,8 +14,10 @@ import 'constants.dart';
 /// Everything here carries bytes. Nothing parses a record: the gateway is a
 /// blind carrier (`meshmore-sns-architecture.md` §2.4).
 abstract interface class MeshSender {
-  /// Largest uplink record the current path allows: `174 - path_len`, floored
-  /// at [GatewayLimits.recordFloor]. Advertised to the client in `BIND_OK` so
+  /// Largest uplink record the bound peer's path allows: `174 - path_len`,
+  /// capped at [GatewayLimits.recordMax]. A path that leaves less than
+  /// [GatewayLimits.recordFloor] is refused by [bindPeer] rather than
+  /// advertised. Before a bind it is the floor. Advertised to the client in `BIND_OK` so
   /// a session sizes to real capacity instead of the absolute ceiling.
   int get uplinkRecordMax;
 
