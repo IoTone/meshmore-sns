@@ -107,11 +107,19 @@ Implications:
   hard outer bound covering all traffic, and the **gateway's** LDMUX-scoped
   budget inside it (§5).
 
-There is no companion command to set `dutycycle` on `companion-v1.17.1`:
-`CMD_SET_CUSTOM_VAR` (41) reaches sensor settings only, and
-`CMD_RUN_CLI_COMMAND` (66) is a later firmware (`FIRMWARE_VER_CODE` is 13
-here, and the CLI passthrough needs 14). So it is a **serial provisioning
-step**, once per radio.
+**CORRECTION (2026-10-28).** An earlier version of this section said there
+is no companion command to set the duty cycle. That was wrong. `CMD_SET_TUNING_PARAMS`
+writes `_prefs.airtime_factor = af / 1000.0f` and `CMD_GET_TUNING_PARAMS` reads it
+back (`examples/companion_radio/MyMesh.cpp`, handlers adjacent to each other,
+`grep -n CMD_SET_TUNING_PARAMS`). The frame is `[set_tuning][rx_delay_base*1000
+u32 LE][airtime_factor*1000 u32 LE]` and the same command also sets
+`rx_delay_base`, so a client must GET first and write both back. `dutycycle 1`
+(1 %) is `airtime_factor = 99`, i.e. `af = 99000` on the wire. The MeshMore
+codec already encodes both (`MeshcoreFrameCodec.setTuningParams` /
+`getTuningParams`); the app has **no control** for it by design
+(`meshmore-sns-ux-coverage.md`). The wrong claim came from only looking at
+`CMD_SET_CUSTOM_VAR` (41), which does reach sensor settings only.
+Not yet verified on hardware.
 
 ## 5. Where the gateway's estimate is fine, and where it is not
 

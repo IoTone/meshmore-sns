@@ -183,7 +183,7 @@ node count; 256 hash values).
 | Keeps public-mesh membership | **No** (one param set per radio, `MyMesh.cpp:1405-1412`) unless extra radios | Yes | Yes |
 | Radios needed | endpoints (2) + repeaters (≥ 0). Pair with public membership: +2 | 2 endpoints (+ dedicated repeaters need region support) | 2 |
 | Relays possible | Yes, dedicated repeater firmware, any freq | Dedicated repeaters only, with region set | Only via public repeaters relaying direct paths (no scoping, no ACL) |
-| What breaks | leaves the live local mesh the phone radio is in; both ends must reprovision together; no companion `set dutycycle` | `$private` unsupported (§1.2); 16-bit code is a filter not auth; unknown legacy repeaters | uses other users' repeaters for traffic they cannot read (direct: they relay per path, `Mesh.cpp:89`) |
+| What breaks | leaves the live local mesh the phone radio is in; both ends must reprovision together; duty cycle is reachable via `CMD_SET_TUNING_PARAMS` (corrected 2026-10-28, see radio-config §4) | `$private` unsupported (§1.2); 16-bit code is a filter not auth; unknown legacy repeaters | uses other users' repeaters for traffic they cannot read (direct: they relay per path, `Mesh.cpp:89`) |
 | Privacy | by obscurity of freq + ADR-0020 | obscurity of name + ADR-0020 | ADR-0020 only |
 
 **Recommendation:** (c) now (no change), with (a) as the target when a dedicated pair
