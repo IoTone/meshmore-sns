@@ -51,10 +51,10 @@ abstract final class GatewayLimits {
   /// A gateway whose path is longer than that cannot carry the profile.
   static const int recordFloor = 160;
 
-  /// Application bytes left in a [recordMax] record after the ADR-0020
-  /// transport record overhead (6 clear + 2 inner + 16 tag).
-  static const int recordOverheadBytes = 24;
-  static const int applicationBytesPerRecord = recordMax - recordOverheadBytes;
+  // What a record *contains* is not the carrier's business. A client session
+  // layer may reserve a header and a tag inside a record; that arithmetic
+  // belongs to that layer, and to no other package. The carrier's only promise
+  // is that a record of `recordMax` bytes arrives intact.
 
   /// Largest opaque record on the flooded discovery path, which uses a
   /// companion binary request (`[0x32][pub_key 32][1 B length][record]`).

@@ -7,7 +7,7 @@ Offline-first, theme-driven, with a hyperlocal radar grid, per-channel chat,
 1:1 DMs, and a device-first → phone-fallback location model.
 
 > **Status — in development.** Source is here for review and contribution;
-> there's no public release channel yet. 940 widget/unit tests passing,
+> there's no public release channel yet. 1014 widget/unit tests passing,
 > `flutter analyze` reports no errors (two pre-existing
 > `unawaited_return_in_try_block` warnings in `lib/maps/maps_controller.dart`). Android FGS path
 > for R17 is implemented but **unverified on-device** in our sandbox

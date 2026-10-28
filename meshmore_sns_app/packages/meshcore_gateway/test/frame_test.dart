@@ -123,9 +123,12 @@ void main() {
       );
     });
 
-    test('the carrier ceiling leaves 148 application bytes', () {
+    test('the carrier promises a record, not what a record is made of', () {
+      // 172 is the only number the carrier owes. A session layer may reserve
+      // bytes inside it; if this package ever learns that layout, the carrier
+      // is no longer blind and the two products are coupled again.
       expect(GatewayLimits.recordMax, 172);
-      expect(GatewayLimits.applicationBytesPerRecord, 148);
+      expect(GatewayLimits.recordFloor, 160);
     });
 
     test('the discovery ceiling leaves room for the length prefix', () {

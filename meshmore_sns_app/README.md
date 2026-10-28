@@ -15,6 +15,8 @@ This directory is tracked in the parent repository, not a submodule.
 | [`../meshmore-sns-maps-spec.md`](../meshmore-sns-maps-spec.md) | Basemaps and offline region files (R61, R93) |
 | [`../meshmore-sns-tools-spec.md`](../meshmore-sns-tools-spec.md) | Tools surface (R60) |
 | [`../meshmore-sns-radio-alerts.md`](../meshmore-sns-radio-alerts.md) | Radio chime in firmware, per-board matrix, silence patch |
+| [`../meshmore-sns-architecture.md`](../meshmore-sns-architecture.md) | The design of record, including the responsibility matrix (§13) |
+| [`../meshmore-sns-architecture-audit.md`](../meshmore-sns-architecture-audit.md) | The audit trail, append-only |
 | [`STATUS.md`](STATUS.md) | What is built, what is open, test counts |
 | [`responsive_starter_app/assets/docs/`](responsive_starter_app/assets/docs/) | In-app offline docs (Protocol, Firmware, App) |
 
@@ -24,6 +26,8 @@ This directory is tracked in the parent repository, not a submodule.
 meshmore_sns_app/
 ├── STATUS.md                  ← status and change log
 ├── packages/meshcore/         ← pure-Dart protocol codec (no Flutter deps)
+├── packages/meshcore_gateway/ ← pure-Dart L2 tunnel contract (no Flutter, no socket)
+├── packages/meshcore_host/    ← host process: the same gateway over USB serial
 └── responsive_starter_app/    ← the Flutter app
     ├── lib/
     │   ├── meshcore/          ← controller facade over BLE + protocol
@@ -33,7 +37,7 @@ meshmore_sns_app/
     │   ├── maps/              ← tiles, style, offline packs, region files
     │   ├── ui/                ← shared components (MmListRow, MmAction, showMmPicker…)
     │   └── l10n/              ← ARB files (app_en.arb, app_ja.arb)
-    ├── test/                  ← 940 widget/unit tests
+    ├── test/                  ← 1014 widget/unit tests
     └── android/, ios/         ← platform shells
 ```
 
