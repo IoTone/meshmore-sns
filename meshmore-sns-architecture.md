@@ -931,9 +931,11 @@ knowledge", and section 13 makes it checkable.
 ```
 
 - **The host** runs `ldmuxd` and has **its own MeshCore radio**, a full
-  node. The gateway process beside the daemon is the *same* pure-Dart
-  `packages/meshcore_gateway`, run headless (`dart run`), with a
-  `MeshSender` over the host radio's serial/USB attachment.
+  node. The gateway process beside the daemon is `packages/meshcore_host`: the
+  same `packages/meshcore_gateway` plus a `MeshSender` over the host radio's USB
+  serial attachment, started by `bin/meshmore_gateway.dart`. The host radio must
+  be flashed `heltec_v4_companion_radio_usb`, because the BLE build defines no
+  `ENABLE_USB_INTERFACE` (`variants/heltec_v4/platformio.ini:182-190,202-225`).
 - **The phone** has its **companion radio**, owned by MeshMore over BLE.
 - **Both ends are mesh peers.** "Companion" vs "full node" is not a mesh
   role: it is only how the local machine attaches to its own radio.
@@ -953,7 +955,7 @@ is backwards (audit H1). Status as of 2026-10-28 is in the last column.
 | **P1** | L2 contract v1 + `packages/meshcore_gateway` + pairing + grants + debug client + app wiring | P0, P3 | **Done** (`4a2de64`, `fb13e63`, `49a5053`, `ade9935`) |
 | **P2** | LDMUX KMP `MeshGatewayClient` + settings screen | P1 | **Client + route model done** (`54373fc`); route not wired into the UI |
 | **P6** | MeshMore iOS as a standalone radio app: AccessorySetupKit, `bluetooth-central`, restore identifier + `willRestoreState`, force-quit tolerance. **No gateway listener.** | iOS accepted | Not started |
-| **HOST** | Headless gateway beside `ldmuxd` (§8.2), so the host radio is owned by the same L1 implementation | P1 | **Not started** |
+| **HOST** | Headless gateway beside `ldmuxd` (§8.2), so the host radio is owned by the same L1 implementation | P1 | **Done** (`packages/meshcore_host`, 29 tests, native binary compiles). The host radio must be flashed `heltec_v4_companion_radio_usb`; the BLE env has no USB companion (`variants/heltec_v4/platformio.ini:182-190,202-225`). LDMUX's Rust L2 client is still owed. |
 | **DEFERRED** | lobospeak v0: L4 codec, robot handler, GOTO/HALT | P0, P3 | Spec only |
 | **OPTIONAL** | Firmware forwarding patch upstream; `CMD_SEND_RAW_PACKET` uplink; AIDL if ever needed | various | — |
 
@@ -1022,6 +1024,7 @@ Every row is a rule that can be checked with `rg`. A violation is a bug.
 | `packages/meshcore_gateway` (Dart, L2) | Framing, handshake, pairing, governor, one-client server | Contacts, chat, radio parameters, MeshCore opcodes, Flutter | `dart pub deps` shows no Flutter, no `meshcore` |
 | MeshMore app (Flutter) | The radio (L1), app state, the `MeshSender` adapter, Settings | Nothing of LDMUX's session or L3 semantics | the adapter carries opaque records only |
 | LDMUX mobile (KMP, L2 client + L3 origin) | L2 client, L3 framing, terminal UI | **Any** radio parameter, preset, path hash, contact, channel, companion opcode, or airtime arithmetic | `rg -i 'bandwidth\|spreading\|pathHash\|preset\|CMD_|PUSH_CODE|RESP_CODE' packages/mobile` |
+| `packages/meshcore_host` (Dart, host composition) | Serial framing, the host `MeshSender`, governor built from the radio's real `SELF_INFO`, the `bin/` process | Anything L3/L4, any app state | `rg -i 'ldmux' packages/meshcore_host/lib` |
 | `ldmuxd` / keeper (Rust, L3) | Sessions, keeper, VT emulation, the host gateway process's lifecycle | Same as LDMUX mobile: no radio knowledge | `rg -i 'meshcore\|lora\|spreading' crates/` |
 | lobospeak (L4, deferred) | Payload codec, GOTO/HALT semantics | Radio and transport | spec only today |
 

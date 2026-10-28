@@ -1,0 +1,20 @@
+name: meshcore_host
+description: >-
+  The MeshMore host-side process: the same L2 gateway the phone runs, with a
+  MeshSender over a USB-serial companion radio. This is how a machine without
+  MeshMore's Flutter UI still owns its radio through the one L1 implementation.
+version: 0.1.0
+publish_to: 'none'
+
+environment:
+  sdk: ^3.5.0
+
+dependencies:
+  meshcore:
+    path: ../meshcore
+  meshcore_gateway:
+    path: ../meshcore_gateway
+
+dev_dependencies:
+  lints: ^5.0.0
+  test: ^1.25.0
