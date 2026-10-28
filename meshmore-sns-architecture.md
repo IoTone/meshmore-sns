@@ -1030,6 +1030,7 @@ target.
 | MeshMore app (Flutter) | The radio (L1), app state, the `MeshSender` adapter, Settings | Nothing of LDMUX's session or L3 semantics | the adapter carries opaque records only |
 | LDMUX mobile (KMP, L2 client + L3 origin) | L2 client, L3 framing, terminal UI | **Any** radio parameter, preset, path hash, contact, channel, companion opcode, or airtime arithmetic | `rg -i 'bandwidth\|spreading\|pathHash\|preset\|CMD_|PUSH_CODE|RESP_CODE' packages/mobile` |
 | `packages/meshcore_host` (Dart, host composition) | Serial framing, the host `MeshSender`, governor built from the radio's real `SELF_INFO`, the `bin/` process | Anything L3/L4, any app state | `rg -i 'ldmux' packages/meshcore_host/lib` |
+| `crates/mesh` (Rust, L2 client) | The frame codec, the decoder, a loopback client | Anything L3/L4, any radio knowledge | `rg -i 'lora\|spreading\|preset\|bandwidth' crates/mesh` |
 | `ldmuxd` / keeper (Rust, L3) | Sessions, keeper, VT emulation, the host gateway process's lifecycle | Same as LDMUX mobile: no radio knowledge | `rg -i 'meshcore\|lora\|spreading' crates/` |
 | lobospeak (L4, deferred) | Payload codec, GOTO/HALT semantics | Radio and transport | spec only today |
 

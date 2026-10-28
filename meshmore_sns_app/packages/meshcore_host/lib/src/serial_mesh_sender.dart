@@ -112,8 +112,10 @@ class SerialMeshSender implements MeshSender {
       }
       if (contact == null) return BindError.notAContact;
 
-      final Uint8List path = contact.activePath;
-      if (path.isEmpty) return BindError.noPath;
+      // A zero-hop path is a neighbour, not a missing route; `directPath`
+      // keeps that distinction (and is the same rule the app binds with).
+      final Uint8List? path = contact.directPath;
+      if (path == null) return BindError.noPath;
 
       final int capacity = MeshCarryLimits.rawDataPayloadMax(path.length);
       if (capacity < GatewayLimits.recordFloor) return BindError.noPath;

@@ -144,6 +144,24 @@ void main() {
       expect(await bind, BindError.notAContact);
     });
 
+    test('accepts a zero-hop path: a neighbour in range is not a missing route',
+        () async {
+      final Future<BindError?> bind = sender.bindPeer(peerKey);
+      await Future<void>.delayed(Duration.zero);
+      link
+        ..push(ContactFrame(_contact(
+          publicKey: peerKey,
+          outPathLen: 0,
+          path: const <int>[],
+        )))
+        ..push(const EndOfContactsFrame(0));
+      expect(await bind, isNull);
+      // 176 - 2 - 0 = 174, capped at the contract's 172.
+      expect(sender.uplinkRecordMax, GatewayLimits.recordMax);
+      expect(sender.airtimeOverheadBytes, 2,
+          reason: 'header and path length byte, no path bytes');
+    });
+
     test('refuses a contact with no direct path', () async {
       final Future<BindError?> bind = sender.bindPeer(peerKey);
       await Future<void>.delayed(Duration.zero);

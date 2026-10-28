@@ -551,3 +551,33 @@ contract matches the firmware rather than approximating it.
   string is baked at build time (`examples/companion_radio/MyMesh.h:15`), so a
   locally modified tree produces a locally modified identity. Restore the
   original image after testing.
+
+### 12.6 A zero-hop path is a neighbour, not a missing route
+
+`out_path_len` has three meanings that are easy to conflate:
+
+| Value | Meaning | Direct send |
+|---|---|---|
+| `0xFF` | flood only, no route known | no |
+| `0` | direct, **zero** repeater hops (a neighbour in range) | yes, `path_len = 0` |
+| other | `hops << 0` packed with the hash size | yes |
+
+The host bridge originally refused an empty path as `no_path`, which made every
+directly reachable neighbour unbindable. Seen live: a 350-contact radio where
+the only contact with a direct route had `out_path_len = 0`, and `BIND`
+answered `no_path`. The rule now lives in one place, `Contact.directPath`
+(`packages/meshcore/lib/src/model/contact.dart`), and both bridges use it, so
+the phone and the host cannot disagree again.
+
+### 12.7 Flashing a Heltec V4 over USB can leave it in the stub
+
+The ESP32-S3's native USB does not reliably reset from RTS alone. After an
+upload the board advertised nothing until an explicit reset:
+
+```text
+esptool.py --chip esp32s3 --port /dev/ttyACM0 --after hard_reset chip_id
+```
+
+The upload itself had already printed "Hard resetting via RTS pin", so that
+message is not proof that the application is running. Confirm by behaviour: a
+BLE build advertises, a USB build answers `APP_START`.

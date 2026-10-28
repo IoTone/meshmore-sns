@@ -73,12 +73,7 @@ class MeshcoreMeshSender implements MeshSender {
 
   /// The contact's path as raw bytes, or null when it has none the radio can
   /// route on.
-  static Uint8List? pathOf(Contact c) {
-    if (c.outPathLen == 0xFF) return null; // OUT_PATH_UNKNOWN
-    final PathLen p = PathLen(c.outPathLen);
-    if (!p.isValid) return null;
-    return Uint8List.fromList(c.outPath.sublist(0, p.byteLength));
-  }
+  static Uint8List? pathOf(Contact c) => c.directPath;
 
   @override
   int get uplinkRecordMax {

@@ -76,6 +76,26 @@ class Contact {
     return Uint8List.sublistView(outPath, 0, bytes.clamp(0, outPath.length));
   }
 
+  /// The path a direct send would use, or null when there is no direct route.
+  ///
+  /// This is the rule both bridges bind with, kept here so the phone and the
+  /// host cannot disagree about it:
+  ///
+  ///   * `out_path_len == 0xFF` (`OUT_PATH_UNKNOWN`) means the contact is known
+  ///     only by flood, so there is no route to address directly: null.
+  ///   * `out_path_len == 0` is a *valid* direct route with zero repeater hops,
+  ///     i.e. a neighbour in radio range. It yields an EMPTY path, which
+  ///     `CMD_SEND_RAW_DATA` accepts (`path_len = 0`).
+  ///   * anything else must decode to a hash count and size that fit the
+  ///     buffer, or it is a path we cannot trust: null.
+  Uint8List? get directPath {
+    if (outPathLen == kPathLenFlood) return null;
+    final PathLen packed = PathLen(outPathLen);
+    if (!packed.isValid) return null;
+    if (packed.byteLength > outPath.length) return null;
+    return Uint8List.fromList(outPath.sublist(0, packed.byteLength));
+  }
+
   // --- `flags` bit layout (MeshCore companion firmware) ---------------
   // The firmware reads telemetry permission as `cp = flags >> 1`, then
   // `cp & TELEM_PERM_{BASE=0x01,LOCATION=0x02,ENVIRONMENT=0x04}` — so the

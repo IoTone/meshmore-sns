@@ -90,6 +90,10 @@ Future<void> main(List<String> argv) async {
           contacts.where((Contact c) => c.outPathLen != 0xFF).length;
       stdout.writeln('contacts ${contacts.length} '
           '($direct with a direct path, ${contacts.length - direct} flood)');
+      for (final Contact c in contacts.where((Contact c) => c.outPathLen != 0xFF)) {
+        stdout.writeln('direct   ${_hex(c.publicKey)} '
+            '${c.name} pathLen ${c.outPathLen}');
+      }
 
       // Never overwrite a real contact. If the table has room, add a
       // synthetic one; if it is full (observed: 350/350), report it and use an
