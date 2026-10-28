@@ -153,9 +153,15 @@ void main() {
             for (final RegionPreset p in kRegionPresets)
               if (regionFamilyOf(p.id) == f) p.id,
           ];
-      expect(ids(RegionFamily.americas), <String>['us_canada', 'us_arizona']);
-      expect(ids(RegionFamily.europe), hasLength(6));
-      expect(ids(RegionFamily.asiaPacific), hasLength(7));
+      expect(ids(RegionFamily.americas),
+          <String>['us_canada', 'us_arizona', 'us_socal', 'br', 'cr']);
+      expect(ids(RegionFamily.europe), hasLength(13));
+      expect(ids(RegionFamily.asiaPacific), hasLength(11));
+      expect(
+          ids(RegionFamily.americas).length +
+              ids(RegionFamily.europe).length +
+              ids(RegionFamily.asiaPacific).length,
+          kRegionPresets.length);
       expect(ids(RegionFamily.other), isEmpty);
     });
 

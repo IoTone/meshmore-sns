@@ -4,11 +4,17 @@ import '../gen/app_localizations.dart';
 
 /// R39 — LoRa region presets + geofence resolver.
 ///
-/// Values are community-curated, mirrored from the canonical
-/// MeshCore-companion preset table maintained at
-/// github.com/zjs81/meshcore-open and gotnull/socialmesh (which both
-/// import the same set the reference Liam Cottle / MeshCore-Web
-/// companion uses). They are **not** regulatory guarantees — they
+/// Provenance (corrected 2026-10-28). The authority is the MeshCore project's
+/// own feed, `https://api.meshcore.nz/api/v1/config`
+/// (`config.suggested_radio_settings.entries`). An earlier version of this
+/// header said the values were mirrored from github.com/zjs81/meshcore-open;
+/// that client hard-codes `cr4_5` for nearly every preset and has no
+/// `path_hash_size`, which is how four coding rates here came to be wrong.
+/// Each preset says where it came from ([PresetSource]); a checked-in
+/// snapshot of the feed (`test/meshcore/fixtures/meshcore_api_presets.json`)
+/// is compared with this table by `region_presets_test.dart`, so drift is a
+/// test failure. TX power is NOT in the feed: it is this app's own default
+/// per band. The values are **not** regulatory guarantees — they
 /// are the operating points the community has converged on within
 /// each country's ISM band. The user remains responsible for
 /// confirming legality where they are.
@@ -17,6 +23,15 @@ import '../gen/app_localizations.dart';
 /// (mesh radio first, network second), so the presets are baked
 /// into the binary. They evolve maybe once a year; bumping the app
 /// is the right cadence.
+/// Where a preset's radio numbers come from.
+enum PresetSource {
+  /// Listed by the MeshCore project's own feed (api.meshcore.nz).
+  meshcoreApi,
+
+  /// Not in that feed: a community or regulatory value this app carries.
+  thirdParty,
+}
+
 class RegionPreset {
   const RegionPreset({
     required this.id,
@@ -27,7 +42,17 @@ class RegionPreset {
     required this.codingRate,
     required this.txPowerDbm,
     this.note,
+    this.source = PresetSource.thirdParty,
+    this.pathHashSize,
   });
+
+  /// See [PresetSource].
+  final PresetSource source;
+
+  /// Path-hash size in bytes (1..3) the feed lists for this preset, or null
+  /// when the feed says nothing. Nodes that disagree on it silently fail to
+  /// forward directed traffic, so a preset that carries it should apply it.
+  final int? pathHashSize;
 
   /// Stable identifier used for shared_preferences persistence.
   /// Snake_case, never translated.
@@ -60,13 +85,14 @@ const List<RegionPreset> kRegionPresets = <RegionPreset>[
   // --- North America ---
   RegionPreset(
     id: 'us_canada',
+    source: PresetSource.meshcoreApi,
     label: 'USA / Canada',
     frequencyMhz: 910.525,
     bandwidthKhz: 62.5,
     spreadingFactor: 7,
     codingRate: 5,
     txPowerDbm: 22,
-    note: 'FCC 902–928 MHz ISM · ≤30 dBm',
+    note: 'FCC 902–928 MHz ISM · ≤30 dBm · feed lists path hash 3 for Canada only, so it is not applied',
   ),
   RegionPreset(
     id: 'us_arizona',
@@ -130,13 +156,14 @@ const List<RegionPreset> kRegionPresets = <RegionPreset>[
   // --- EU / UK ---
   RegionPreset(
     id: 'eu_uk_long',
+    source: PresetSource.meshcoreApi,
     label: 'EU / UK (Long Range)',
     frequencyMhz: 869.525,
     bandwidthKhz: 250,
     spreadingFactor: 11,
     codingRate: 5,
     txPowerDbm: 14,
-    note: 'ERC 869.4–869.65 · ≤27 dBm',
+    note: 'ERC 869.4–869.65 · ≤27 dBm · the feed marks this one Deprecated',
   ),
   RegionPreset(
     id: 'eu_uk_medium',
@@ -149,6 +176,7 @@ const List<RegionPreset> kRegionPresets = <RegionPreset>[
   ),
   RegionPreset(
     id: 'eu_uk_narrow',
+    source: PresetSource.meshcoreApi,
     label: 'EU / UK (Narrow)',
     frequencyMhz: 869.618,
     bandwidthKhz: 62.5,
@@ -158,6 +186,7 @@ const List<RegionPreset> kRegionPresets = <RegionPreset>[
   ),
   RegionPreset(
     id: 'ch',
+    source: PresetSource.meshcoreApi,
     label: 'Switzerland',
     frequencyMhz: 869.618,
     bandwidthKhz: 62.5,
@@ -168,6 +197,8 @@ const List<RegionPreset> kRegionPresets = <RegionPreset>[
   ),
   RegionPreset(
     id: 'cz',
+    source: PresetSource.meshcoreApi,
+    pathHashSize: 2,
     label: 'Czech Republic',
     frequencyMhz: 869.432,
     bandwidthKhz: 62.5,
@@ -177,6 +208,7 @@ const List<RegionPreset> kRegionPresets = <RegionPreset>[
   ),
   RegionPreset(
     id: 'pt_869',
+    source: PresetSource.meshcoreApi,
     label: 'Portugal (869 MHz)',
     frequencyMhz: 869.618,
     bandwidthKhz: 62.5,
@@ -187,6 +219,7 @@ const List<RegionPreset> kRegionPresets = <RegionPreset>[
   // --- Australia / NZ ---
   RegionPreset(
     id: 'au_default',
+    source: PresetSource.meshcoreApi,
     label: 'Australia',
     frequencyMhz: 915.8,
     bandwidthKhz: 250,
@@ -196,6 +229,7 @@ const List<RegionPreset> kRegionPresets = <RegionPreset>[
   ),
   RegionPreset(
     id: 'au_narrow',
+    source: PresetSource.meshcoreApi,
     label: 'Australia (Narrow)',
     frequencyMhz: 916.575,
     bandwidthKhz: 62.5,
@@ -205,16 +239,19 @@ const List<RegionPreset> kRegionPresets = <RegionPreset>[
   ),
   RegionPreset(
     id: 'au_sa_wa_qld',
+    source: PresetSource.meshcoreApi,
     label: 'Australia (SA / WA / QLD)',
     frequencyMhz: 923.125,
     bandwidthKhz: 62.5,
     spreadingFactor: 8,
     codingRate: 5,
-    note: 'QLD is CR4-5; SA and WA are CR4-8',
+    note: 'This is the QLD tuple (CR4-5); SA and WA use CR4-8, see the next entry',
     txPowerDbm: 20,
   ),
   RegionPreset(
     id: 'nz_default',
+    source: PresetSource.meshcoreApi,
+    pathHashSize: 1,
     label: 'New Zealand',
     frequencyMhz: 917.375,
     bandwidthKhz: 250,
@@ -225,6 +262,7 @@ const List<RegionPreset> kRegionPresets = <RegionPreset>[
   // --- SE Asia ---
   RegionPreset(
     id: 'vn',
+    source: PresetSource.meshcoreApi,
     label: 'Vietnam',
     frequencyMhz: 920.250,
     bandwidthKhz: 250,
@@ -232,10 +270,155 @@ const List<RegionPreset> kRegionPresets = <RegionPreset>[
     codingRate: 5,
     txPowerDbm: 20,
   ),
+  RegionPreset(
+    id: 'us_socal',
+    source: PresetSource.meshcoreApi,
+    label: 'USA — Southern California',
+    frequencyMhz: 927.875,
+    bandwidthKhz: 62.5,
+    spreadingFactor: 7,
+    codingRate: 5,
+    txPowerDbm: 22,
+    pathHashSize: 3,
+  ),
+  RegionPreset(
+    id: 'au_mid',
+    source: PresetSource.meshcoreApi,
+    label: 'Australia (Mid)',
+    frequencyMhz: 915.075,
+    bandwidthKhz: 125,
+    spreadingFactor: 9,
+    codingRate: 5,
+    txPowerDbm: 20,
+  ),
+  RegionPreset(
+    id: 'au_sa_wa',
+    source: PresetSource.meshcoreApi,
+    label: 'Australia (SA / WA)',
+    frequencyMhz: 923.125,
+    bandwidthKhz: 62.5,
+    spreadingFactor: 8,
+    codingRate: 8,
+    txPowerDbm: 20,
+  ),
+  RegionPreset(
+    id: 'br',
+    source: PresetSource.meshcoreApi,
+    label: 'Brazil',
+    frequencyMhz: 923.125,
+    bandwidthKhz: 62.5,
+    spreadingFactor: 8,
+    codingRate: 8,
+    txPowerDbm: 20,
+  ),
+  RegionPreset(
+    id: 'cr',
+    source: PresetSource.meshcoreApi,
+    label: 'Costa Rica',
+    frequencyMhz: 910.525,
+    bandwidthKhz: 125,
+    spreadingFactor: 11,
+    codingRate: 5,
+    txPowerDbm: 20,
+  ),
+  RegionPreset(
+    id: 'eu433_long',
+    source: PresetSource.meshcoreApi,
+    label: 'EU 433 MHz (Long Range)',
+    frequencyMhz: 433.65,
+    bandwidthKhz: 250,
+    spreadingFactor: 11,
+    codingRate: 5,
+    txPowerDbm: 10,
+  ),
+  RegionPreset(
+    id: 'eu433_narrow',
+    source: PresetSource.meshcoreApi,
+    label: 'EU 433 MHz (Narrow)',
+    frequencyMhz: 433.65,
+    bandwidthKhz: 62.5,
+    spreadingFactor: 8,
+    codingRate: 8,
+    txPowerDbm: 10,
+  ),
+  RegionPreset(
+    id: 'hu',
+    source: PresetSource.meshcoreApi,
+    label: 'Hungary',
+    frequencyMhz: 869.618,
+    bandwidthKhz: 62.5,
+    spreadingFactor: 7,
+    codingRate: 5,
+    txPowerDbm: 14,
+    pathHashSize: 2,
+  ),
+  RegionPreset(
+    id: 'nl',
+    source: PresetSource.meshcoreApi,
+    label: 'Netherlands',
+    frequencyMhz: 869.618,
+    bandwidthKhz: 62.5,
+    spreadingFactor: 7,
+    codingRate: 5,
+    txPowerDbm: 14,
+  ),
+  RegionPreset(
+    id: 'nl_limburg',
+    source: PresetSource.meshcoreApi,
+    label: 'Netherlands (Limburg)',
+    frequencyMhz: 869.618,
+    bandwidthKhz: 62.5,
+    spreadingFactor: 8,
+    codingRate: 8,
+    txPowerDbm: 14,
+    pathHashSize: 2,
+  ),
+  RegionPreset(
+    id: 'nz_narrow',
+    source: PresetSource.meshcoreApi,
+    label: 'New Zealand (Narrow)',
+    frequencyMhz: 917.375,
+    bandwidthKhz: 62.5,
+    spreadingFactor: 7,
+    codingRate: 5,
+    txPowerDbm: 20,
+    pathHashSize: 2,
+  ),
+  RegionPreset(
+    id: 'pt_433',
+    source: PresetSource.meshcoreApi,
+    label: 'Portugal (433 MHz)',
+    frequencyMhz: 433.375,
+    bandwidthKhz: 62.5,
+    spreadingFactor: 9,
+    codingRate: 6,
+    txPowerDbm: 10,
+  ),
+  RegionPreset(
+    id: 'sk',
+    source: PresetSource.meshcoreApi,
+    label: 'Slovakia',
+    frequencyMhz: 869.618,
+    bandwidthKhz: 62.5,
+    spreadingFactor: 7,
+    codingRate: 5,
+    txPowerDbm: 14,
+    pathHashSize: 2,
+  ),
+  RegionPreset(
+    id: 'vn_narrow',
+    source: PresetSource.meshcoreApi,
+    label: 'Vietnam (Narrow)',
+    frequencyMhz: 920.25,
+    bandwidthKhz: 62.5,
+    spreadingFactor: 8,
+    codingRate: 5,
+    txPowerDbm: 20,
+  ),
 ];
 
 /// R68 — the family a preset is grouped under on Device configuration, so
-/// fifteen presets read as three short labelled lists rather than one wall
+/// the presets read as three short labelled lists rather than one wall
 /// of chips. A preset with no entry falls under [RegionFamily.other] (shown
 /// last, and only when non-empty), so adding a preset never hides it.
 enum RegionFamily { americas, europe, asiaPacific, other }
@@ -256,6 +439,20 @@ const Map<String, RegionFamily> _kFamilyById = <String, RegionFamily>{
   'au_sa_wa_qld': RegionFamily.asiaPacific,
   'nz_default': RegionFamily.asiaPacific,
   'vn': RegionFamily.asiaPacific,
+  'us_socal': RegionFamily.americas,
+  'br': RegionFamily.americas,
+  'cr': RegionFamily.americas,
+  'eu433_long': RegionFamily.europe,
+  'eu433_narrow': RegionFamily.europe,
+  'hu': RegionFamily.europe,
+  'nl': RegionFamily.europe,
+  'nl_limburg': RegionFamily.europe,
+  'pt_433': RegionFamily.europe,
+  'sk': RegionFamily.europe,
+  'au_mid': RegionFamily.asiaPacific,
+  'au_sa_wa': RegionFamily.asiaPacific,
+  'nz_narrow': RegionFamily.asiaPacific,
+  'vn_narrow': RegionFamily.asiaPacific,
 };
 
 RegionFamily regionFamilyOf(String presetId) =>

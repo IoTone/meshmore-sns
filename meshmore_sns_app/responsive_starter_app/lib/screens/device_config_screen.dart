@@ -253,6 +253,9 @@ class _DeviceConfigScreenState extends State<DeviceConfigScreen> {
       _sf.text = p.spreadingFactor.toString();
       _cr.text = p.codingRate.toString();
       _tx.text = p.txPowerDbm.toString();
+      // A preset that carries a path hash size applies it too: nodes that
+      // disagree on it cannot forward directed traffic for each other.
+      if (p.pathHashSize != null) _pathHashSize = p.pathHashSize!;
     });
     final String localized = localizedPresetLabel(l, p.id);
     if (!mc.isReady) {
@@ -271,6 +274,9 @@ class _DeviceConfigScreenState extends State<DeviceConfigScreen> {
         codingRate: p.codingRate,
       )));
       await mc.send(MeshcoreFrameCodec.setRadioTxPower(p.txPowerDbm));
+      if (p.pathHashSize != null) {
+        await mc.send(MeshcoreFrameCodec.setPathHashMode(p.pathHashSize!));
+      }
       _toast(l.deviceRegionAppliedToast(localized));
     } catch (e) {
       _toast(l.deviceToastSendFailed('$e'));

@@ -1,0 +1,215 @@
+{
+ "source": "https://api.meshcore.nz/api/v1/config",
+ "path": "config.suggested_radio_settings.entries",
+ "fetched": "2026-10-28",
+ "entries": [
+  {
+   "title": "Australia",
+   "frequency": "915.800",
+   "bandwidth": "250",
+   "spreading_factor": "10",
+   "coding_rate": "5",
+   "path_hash_size": null
+  },
+  {
+   "title": "Australia (Narrow)",
+   "frequency": "916.575",
+   "bandwidth": "62.5",
+   "spreading_factor": "7",
+   "coding_rate": "7",
+   "path_hash_size": null
+  },
+  {
+   "title": "Australia (Mid)",
+   "frequency": "915.075",
+   "bandwidth": "125",
+   "spreading_factor": "9",
+   "coding_rate": "5",
+   "path_hash_size": null
+  },
+  {
+   "title": "Australia: SA, WA",
+   "frequency": "923.125",
+   "bandwidth": "62.5",
+   "spreading_factor": "8",
+   "coding_rate": "8",
+   "path_hash_size": null
+  },
+  {
+   "title": "Australia: QLD",
+   "frequency": "923.125",
+   "bandwidth": "62.5",
+   "spreading_factor": "8",
+   "coding_rate": "5",
+   "path_hash_size": null
+  },
+  {
+   "title": "Brazil",
+   "frequency": "923.125",
+   "bandwidth": "62.5",
+   "spreading_factor": "8",
+   "coding_rate": "8",
+   "path_hash_size": null
+  },
+  {
+   "title": "Canada",
+   "frequency": "910.525",
+   "bandwidth": "62.5",
+   "spreading_factor": "7",
+   "coding_rate": "5",
+   "path_hash_size": 3
+  },
+  {
+   "title": "Costa Rica",
+   "frequency": "910.525",
+   "bandwidth": "125",
+   "spreading_factor": "11",
+   "coding_rate": "5",
+   "path_hash_size": null
+  },
+  {
+   "title": "EU/UK (Narrow)",
+   "frequency": "869.618",
+   "bandwidth": "62.5",
+   "spreading_factor": "8",
+   "coding_rate": "8",
+   "path_hash_size": null
+  },
+  {
+   "title": "EU/UK (Deprecated)",
+   "frequency": "869.525",
+   "bandwidth": "250",
+   "spreading_factor": "11",
+   "coding_rate": "5",
+   "path_hash_size": null
+  },
+  {
+   "title": "Czech Republic (Narrow)",
+   "frequency": "869.432",
+   "bandwidth": "62.5",
+   "spreading_factor": "7",
+   "coding_rate": "5",
+   "path_hash_size": 2
+  },
+  {
+   "title": "EU 433MHz (Long Range)",
+   "frequency": "433.650",
+   "bandwidth": "250",
+   "spreading_factor": "11",
+   "coding_rate": "5",
+   "path_hash_size": null
+  },
+  {
+   "title": "EU 433MHz (Narrow)",
+   "frequency": "433.650",
+   "bandwidth": "62.5",
+   "spreading_factor": "8",
+   "coding_rate": "8",
+   "path_hash_size": null
+  },
+  {
+   "title": "Hungary",
+   "frequency": "869.618",
+   "bandwidth": "62.5",
+   "spreading_factor": "7",
+   "coding_rate": "5",
+   "path_hash_size": 2
+  },
+  {
+   "title": "Netherlands",
+   "frequency": "869.618",
+   "bandwidth": "62.5",
+   "spreading_factor": "7",
+   "coding_rate": "5",
+   "path_hash_size": null
+  },
+  {
+   "title": "Netherlands (Limburg)",
+   "frequency": "869.618",
+   "bandwidth": "62.5",
+   "spreading_factor": "8",
+   "coding_rate": "8",
+   "path_hash_size": 2
+  },
+  {
+   "title": "New Zealand (Narrow)",
+   "frequency": "917.375",
+   "bandwidth": "62.5",
+   "spreading_factor": "7",
+   "coding_rate": "5",
+   "path_hash_size": 2
+  },
+  {
+   "title": "New Zealand (Gisborne)",
+   "frequency": "917.375",
+   "bandwidth": "250",
+   "spreading_factor": "11",
+   "coding_rate": "5",
+   "path_hash_size": 1
+  },
+  {
+   "title": "Portugal 433",
+   "frequency": "433.375",
+   "bandwidth": "62.5",
+   "spreading_factor": "9",
+   "coding_rate": "6",
+   "path_hash_size": null
+  },
+  {
+   "title": "Portugal 868",
+   "frequency": "869.618",
+   "bandwidth": "62.5",
+   "spreading_factor": "7",
+   "coding_rate": "6",
+   "path_hash_size": null
+  },
+  {
+   "title": "Slovakia",
+   "frequency": "869.618",
+   "bandwidth": "62.5",
+   "spreading_factor": "7",
+   "coding_rate": "5",
+   "path_hash_size": 2
+  },
+  {
+   "title": "Switzerland",
+   "frequency": "869.618",
+   "bandwidth": "62.5",
+   "spreading_factor": "8",
+   "coding_rate": "8",
+   "path_hash_size": null
+  },
+  {
+   "title": "USA",
+   "frequency": "910.525",
+   "bandwidth": "62.5",
+   "spreading_factor": "7",
+   "coding_rate": "5",
+   "path_hash_size": null
+  },
+  {
+   "title": "USA - Southern California",
+   "frequency": "927.875",
+   "bandwidth": "62.5",
+   "spreading_factor": "7",
+   "coding_rate": "5",
+   "path_hash_size": 3
+  },
+  {
+   "title": "Vietnam (Narrow)",
+   "frequency": "920.250",
+   "bandwidth": "62.5",
+   "spreading_factor": "8",
+   "coding_rate": "5",
+   "path_hash_size": null
+  },
+  {
+   "title": "Vietnam (Deprecated)",
+   "frequency": "920.250",
+   "bandwidth": "250",
+   "spreading_factor": "11",
+   "coding_rate": "5",
+   "path_hash_size": null
+  }
+ ]
+}

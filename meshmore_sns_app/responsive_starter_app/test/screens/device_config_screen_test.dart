@@ -222,4 +222,64 @@ void main() {
     expect(hashes.last, <int>[0x3D, 0, 2]);
     ctrl.dispose();
   });
+
+  Future<(FakeMeshcoreTransport, MeshcoreController)> openScreen(
+      WidgetTester t) async {
+    await t.binding.setSurfaceSize(const Size(900, 2600));
+    addTearDown(() => t.binding.setSurfaceSize(null));
+    final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
+    final MeshcoreController ctrl = MeshcoreController(
+      transportFactory: () async => fake,
+      connection:
+          MeshcoreConnection(handshakeTimeout: const Duration(seconds: 5)),
+    );
+    await t.pumpWidget(
+      MaterialApp(
+        locale: const Locale('en'),
+        supportedLocales: LocaleController.supported,
+        localizationsDelegates: _kLocaleDelegates,
+        home: ChangeNotifierProvider<MeshcoreController>.value(
+          value: ctrl,
+          child: const DeviceConfigScreen(),
+        ),
+      ),
+    );
+    await ctrl.connect();
+    fake.emit(selfInfoFrame());
+    fake.emit(deviceInfoFrame());
+    await t.pumpAndSettle();
+    return (fake, ctrl);
+  }
+
+  testWidgets('a preset that carries a path hash size applies it (Hungary: '
+      '2 bytes -> mode 1)', (WidgetTester t) async {
+    final (FakeMeshcoreTransport fake, MeshcoreController ctrl) =
+        await openScreen(t);
+    await t.tap(find.text('REGION / BAND'));
+    await t.pumpAndSettle();
+    await t.tap(find.text('Hungary'));
+    await t.pumpAndSettle();
+    expect(
+        fake.sent
+            .where((List<int> f) => f.isNotEmpty && f[0] == 0x3D)
+            .toList(),
+        <List<int>>[
+          <int>[0x3D, 0, 1]
+        ]);
+    ctrl.dispose();
+  });
+
+  testWidgets('USA / Canada applies the radio tuple but NEVER a path hash '
+      'size (the feed lists one for Canada only)', (WidgetTester t) async {
+    final (FakeMeshcoreTransport fake, MeshcoreController ctrl) =
+        await openScreen(t);
+    await t.tap(find.text('REGION / BAND'));
+    await t.pumpAndSettle();
+    await t.tap(find.text('USA / Canada'));
+    await t.pumpAndSettle();
+    expect(fake.sent.any((List<int> f) => f.isNotEmpty && f[0] == 0x0B), isTrue);
+    expect(fake.sent.any((List<int> f) => f.isNotEmpty && f[0] == 0x3D), isFalse,
+        reason: 'applying 3 here would partition a US user from a live mesh');
+    ctrl.dispose();
+  });
 }
