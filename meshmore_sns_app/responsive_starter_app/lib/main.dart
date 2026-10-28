@@ -20,6 +20,7 @@ import 'package:meshmore_sns_app/maps/maps_controller.dart';
 import 'package:meshmore_sns_app/meshcore/auto_publish_controller.dart';
 import 'package:meshmore_sns_app/meshcore/background_keepalive.dart';
 import 'package:meshmore_sns_app/meshcore/city_lookup.dart';
+import 'package:meshmore_sns_app/meshcore/gateway/gateway_service.dart';
 import 'package:meshmore_sns_app/meshcore/meshcore_controller.dart';
 import 'package:meshmore_sns_app/bot/bot_controller.dart';
 import 'package:meshmore_sns_app/peer/peer_profiles.dart';
@@ -97,6 +98,12 @@ void main() {
               backgroundKeepalive: createBackgroundKeepalive(),
               locationService: const GeolocatorLocationService(),
             )..autoConnectIfPaired(),
+          ),
+          // Loopback gateway for other apps on this phone. Off until the
+          // user enables it; starts and stops with the radio link.
+          ChangeNotifierProvider<GatewayService>(
+            create: (BuildContext ctx) =>
+                GatewayService(ctx.read<MeshcoreController>())..load(),
           ),
           // R59 — the bot. `pskFor` is what makes the "never on Public"
           // refusal real: it reads the slot's live key off the radio,

@@ -12,7 +12,7 @@ import 'mesh_sender_adapter.dart';
 import 'secure_pairing_persistence.dart';
 
 /// Why the gateway is not serving.
-enum GatewayStatus {
+enum GatewayRunState {
   /// The user has not turned it on (the default).
   off,
 
@@ -31,7 +31,7 @@ enum GatewayStatus {
 /// failures instead of throwing them.
 ///
 /// It never crashes the app: a taken port, a secure-storage failure or a
-/// radio error ends in [GatewayStatus.failed] with a message.
+/// radio error ends in [GatewayRunState.failed] with a message.
 class GatewayService extends ChangeNotifier {
   GatewayService(
     this._mc, {
@@ -56,7 +56,7 @@ class GatewayService extends ChangeNotifier {
   bool _disposed = false;
   bool _busy = false;
   bool _again = false;
-  GatewayStatus _status = GatewayStatus.off;
+  GatewayRunState _status = GatewayRunState.off;
   String? _error;
   Gateway? _gateway;
   MeshcoreMeshSender? _sender;
@@ -71,9 +71,9 @@ class GatewayService extends ChangeNotifier {
   bool _hasFailed = false;
 
   bool get enabled => _enabled;
-  GatewayStatus get status => _status;
+  GatewayRunState get status => _status;
 
-  /// A human-readable reason when [status] is [GatewayStatus.failed].
+  /// A human-readable reason when [status] is [GatewayRunState.failed].
   String? get error => _error;
 
   /// The token to hand to the other app. Null until the gateway has started.
@@ -170,7 +170,7 @@ class GatewayService extends ChangeNotifier {
 
     if (!shouldRun) {
       await _stop();
-      _set(!_enabled ? GatewayStatus.off : GatewayStatus.waitingForRadio);
+      _set(!_enabled ? GatewayRunState.off : GatewayRunState.waitingForRadio);
       return;
     }
     if (_gateway != null && tuple == _radioTuple) return;
@@ -209,7 +209,7 @@ class GatewayService extends ChangeNotifier {
     _token = gateway.pairingToken; // after start(): load() may replace it
     _error = null;
     _hasFailed = false;
-    _set(GatewayStatus.running);
+    _set(GatewayRunState.running);
   }
 
   Future<void> _stop() async {
@@ -229,14 +229,14 @@ class GatewayService extends ChangeNotifier {
 
   void _fail(String message) {
     _error = message;
-    _set(GatewayStatus.failed);
+    _set(GatewayRunState.failed);
   }
 
-  void _set(GatewayStatus s) {
+  void _set(GatewayRunState s) {
     final bool changed = _status != s;
     _status = s;
-    if (changed || s == GatewayStatus.failed) notifyListeners();
-    if (s != GatewayStatus.failed) _error = null;
+    if (changed || s == GatewayRunState.failed) notifyListeners();
+    if (s != GatewayRunState.failed) _error = null;
   }
 
   /// Idempotent.

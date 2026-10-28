@@ -1481,5 +1481,22 @@
   "diagnosticsScanConnect": "スキャンして接続",
   "diagnosticsForgetShort": "解除",
   "diagnosticsPairedLine": "ペアリング済み: {name} — 起動時に自動再接続します",
-  "nodesClearSearch": "検索をクリア"
+  "nodesClearSearch": "検索をクリア",
+  "connectedAppsTitle": "連携アプリ",
+  "connectedAppsTileSubtitle": "この端末の別アプリがこの無線機を使えるようにします",
+  "connectedAppsSwitch": "この端末の他のアプリを許可",
+  "connectedAppsStateOff": "オフ",
+  "connectedAppsStateWaiting": "オン。無線機の接続を待っています。",
+  "connectedAppsStateRunning": "127.0.0.1:{port} で待ち受け中",
+  "connectedAppsStateFailed": "開始できません: {error}",
+  "connectedAppsToken": "ペアリングトークン",
+  "connectedAppsTokenHelp": "このトークンを相手のアプリに入力してください。トークンを持つ人は、そのアプリとしてあなたの無線機から送信できます。取り消すとアクセスを止められます。",
+  "connectedAppsPeer": "通信相手",
+  "connectedAppsNoPeer": "接続中のアプリはありません",
+  "connectedAppsAirtime": "この1時間の送信時間: {used} 秒 / {budget} 秒",
+  "connectedAppsRevoke": "ペアリングを取り消す",
+  "connectedAppsRevokeTitle": "ペアリングを取り消しますか?",
+  "connectedAppsRevokeBody": "相手のアプリは切断され、トークンは使えなくなります。新しいトークンを渡す必要があります。",
+  "connectedAppsRevokeConfirm": "取り消す",
+  "connectedAppsCancel": "キャンセル"
 }

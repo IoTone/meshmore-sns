@@ -8,6 +8,7 @@ import 'screens/docs_hub_screen.dart';
 import 'screens/battery_screen.dart';
 import 'screens/channels_screen.dart';
 import 'docs/doc_section.dart';
+import 'screens/connected_apps_screen.dart';
 import 'screens/device_config_screen.dart';
 import 'screens/doc_reader_screen.dart';
 import 'screens/dm_screen.dart';
@@ -38,6 +39,10 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: '/settings/device',
       builder: (_, __) => const DeviceConfigScreen(),
+    ),
+    GoRoute(
+      path: '/settings/connected-apps',
+      builder: (_, __) => const ConnectedAppsScreen(),
     ),
     GoRoute(
       path: '/settings/app',

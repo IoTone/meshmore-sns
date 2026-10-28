@@ -3754,4 +3754,65 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get nodesClearSearch => 'Clear search';
+
+  @override
+  String get connectedAppsTitle => 'Connected apps';
+
+  @override
+  String get connectedAppsTileSubtitle =>
+      'Let another app on this phone use your radio';
+
+  @override
+  String get connectedAppsSwitch => 'Allow other apps on this phone';
+
+  @override
+  String get connectedAppsStateOff => 'Off';
+
+  @override
+  String get connectedAppsStateWaiting =>
+      'On. Waiting for the radio to connect.';
+
+  @override
+  String connectedAppsStateRunning(int port) {
+    return 'Listening on 127.0.0.1:$port';
+  }
+
+  @override
+  String connectedAppsStateFailed(String error) {
+    return 'Could not start: $error';
+  }
+
+  @override
+  String get connectedAppsToken => 'Pairing token';
+
+  @override
+  String get connectedAppsTokenHelp =>
+      'Enter this token in the other app. Anyone who has it can send through your radio as that app. Revoke it to cut access.';
+
+  @override
+  String get connectedAppsPeer => 'Talking to';
+
+  @override
+  String get connectedAppsNoPeer => 'No app connected';
+
+  @override
+  String connectedAppsAirtime(String used, String budget) {
+    return 'Airtime used this hour: $used s of $budget s';
+  }
+
+  @override
+  String get connectedAppsRevoke => 'Revoke pairing';
+
+  @override
+  String get connectedAppsRevokeTitle => 'Revoke pairing?';
+
+  @override
+  String get connectedAppsRevokeBody =>
+      'The other app is disconnected and its token stops working. It must be given the new token.';
+
+  @override
+  String get connectedAppsRevokeConfirm => 'Revoke';
+
+  @override
+  String get connectedAppsCancel => 'Cancel';
 }
