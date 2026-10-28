@@ -309,3 +309,22 @@ finding, because it is a natural assumption to make:
   neighbours.
 - Genuine isolation needs **different radio parameters**, which takes both
   nodes off the public mesh — a hardware fact, not a protocol choice.
+
+## 11. Hardware session, 2026-10-28
+
+Read from a HELTEC-BASE over USB, after flashing the USB companion env.
+
+- Preset confirmed from the radio itself: 910.525 MHz / 62.5 kHz / SF7 / CR5.
+  The app's table and the API agree with the device.
+- `pathHashMode` 0, i.e. one-byte path hashes.
+- 350 contacts of 350, so the table is full. Adding a contact answers
+  `ERR_CODE_TABLE_FULL` (3). One contact has a direct path, 349 are flood.
+- Battery 4366 mV, storage 225/3169 kB.
+- The lora airtime estimator, built from this preset, gives 612 ms for a
+  176-byte frame. The figure the documents use is 613 ms; the difference is
+  rounding, not a second model.
+- The radio was restored to its original BLE image (`v1.17.1-d929643`)
+  afterwards and advertises `MeshCore-HELTEC-BASE` again.
+
+The framing and interface facts from the same session are in
+`meshmore-sns-meshcore-interop.md` section 12.

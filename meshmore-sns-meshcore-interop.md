@@ -494,3 +494,60 @@ rather than its own key.
 
 See `meshmore-sns-protocol-coverage.md` for the full command-coverage audit
 behind these.
+
+## 12. Hardware session, 2026-10-28: what only a real radio could say
+
+Everything below was read off a HELTEC-BASE (ESP32-S3) over USB and BLE, not
+inferred from source.
+
+### 12.1 The serial header direction is the opposite of the obvious
+
+- App to radio: `'<' len_lo len_hi payload`.
+- Radio to app: `'>' len_lo len_hi payload`.
+
+`ArduinoSerialInterface::writeFrame` writes `'>'` (`:31`) and
+`checkRecvFrame` accepts only `'<'` (`:46`). `SerialWifiInterface.cpp:143` says
+it in words: "`'<'` is 0x3c which indicates a frame sent from app to radio".
+The same split appears in `SerialEthernetInterface.cpp:67,104`.
+
+Our first implementation had it inverted and every unit test passed, because
+the fake radio used the same inverted constants. Hardware disagreed on the
+first byte. This is the argument for keeping a hardware smoke test.
+
+### 12.2 One radio can register both BLE and USB at once, and that is not usable
+
+`MultiSerialInterface::writeFrame` broadcasts every reply to **all** enabled
+interfaces (`src/helpers/MultiSerialInterface.h:163-179`) and
+`checkRecvFrame` takes the first frame any interface has (`:182-194`). There is
+no client identity anywhere in the firmware.
+
+So a build with both `BLE_PIN_CODE` and `ENABLE_USB_INTERFACE` compiles and
+runs (`main.cpp:16-30,206-210`), but two attached apps would each receive the
+other's replies. With raw-data OK/ERR carrying no correlation tag
+(`MyMesh.cpp:1515-1530`), that makes send accounting ambiguous at the exact
+place it matters. The two-radio fleet is a correctness requirement, not a
+convenience.
+
+### 12.3 A companion radio is not a spare contact slot
+
+- 350 contacts of 350 reported by `GET_CONTACTS`, 1 with a direct path and 349
+  flood, so `CMD_ADD_UPDATE_CONTACT` answers `ERR_CODE_TABLE_FULL` (3).
+- `pathHashMode` was 0 on this unit, i.e. one-byte hashes.
+- `GET_BATT_AND_STORAGE` reported 4366 mV and 225/3169 kB.
+- A 64-byte raw frame with a zero-length path is accepted and answered `OK`.
+
+### 12.4 The unknown sentinels are the firmware's own
+
+`STATUS` uses `rssi = -128` and `battery = 0xFF` as "unknown"
+(`packages/meshcore_gateway/lib/src/constants.dart`). A real `GET_STATS` on
+this radio returned exactly those values when it had nothing better, so the
+contract matches the firmware rather than approximating it.
+
+### 12.5 Flashing notes
+
+- The USB companion env is required for a serial client: the BLE env defines no
+  `ENABLE_USB_INTERFACE` (`variants/heltec_v4/platformio.ini:202-225`).
+- The BLE and USB images are not interchangeable at runtime, and the version
+  string is baked at build time (`examples/companion_radio/MyMesh.h:15`), so a
+  locally modified tree produces a locally modified identity. Restore the
+  original image after testing.
