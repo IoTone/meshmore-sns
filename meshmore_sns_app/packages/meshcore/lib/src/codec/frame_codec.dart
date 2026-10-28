@@ -3,6 +3,7 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
+import '../model/admin.dart';
 import '../model/advert.dart';
 import '../model/channel_info.dart';
 import '../model/channel_message.dart';
@@ -499,6 +500,276 @@ abstract final class MeshcoreFrameCodec {
   }
 
   // ---------------------------------------------------------------------
+  // Contact lifecycle, identity and admin (companion-v1.17.1, d929643).
+  //
+  // Every encoder refuses an argument the firmware would silently
+  // truncate, ignore or reject, with an [ArgumentError], rather than
+  // spending airtime (or, for the destructive ones, an irreversible
+  // action) to find out.
+  // ---------------------------------------------------------------------
+
+  static void _requireKey(List<int> key, String name) {
+    if (key.length != kPubKeySize) {
+      throw ArgumentError.value(
+          key.length, name, 'must be exactly $kPubKeySize bytes');
+    }
+  }
+
+  static Uint8List _keyed(MeshcoreCommand cmd, List<int> pubKey) {
+    _requireKey(pubKey, 'pubKey');
+    return (FrameBuilder()
+          ..u8(cmd.code)
+          ..raw(pubKey))
+        .build();
+  }
+
+  /// `CMD_SHARE_CONTACT` (0x10): `10 [pub_key 32]` (`MyMesh.cpp:1319`).
+  ///
+  /// The firmware has no length guard here, so a short frame would read
+  /// stale bytes as the key; exactly 32 bytes are required.
+  static Uint8List shareContact(List<int> pubKey) =>
+      _keyed(MeshcoreCommand.shareContact, pubKey);
+
+  /// `CMD_EXPORT_CONTACT` (0x11): `11` exports **self**, `11 [pub_key 32]`
+  /// exports that contact (`MyMesh.cpp:1339-1367`). Any frame shorter than
+  /// 33 bytes means self, so a partial key is refused.
+  static Uint8List exportContact({List<int>? pubKey}) {
+    if (pubKey == null) {
+      return Uint8List.fromList(<int>[MeshcoreCommand.exportContact.code]);
+    }
+    return _keyed(MeshcoreCommand.exportContact, pubKey);
+  }
+
+  /// `CMD_IMPORT_CONTACT` (0x12): `12 [advert packet]` (`MyMesh.cpp:1369`).
+  ///
+  /// The firmware requires `len > 98` including the opcode and, when the
+  /// guard fails, falls through to `ERR_CODE_UNSUPPORTED_CMD`. Whether the
+  /// packet is a valid advert is only known to the firmware, which answers
+  /// `ERR_CODE_ILLEGAL_ARG`.
+  static Uint8List importContact(List<int> advertPacket) {
+    if (advertPacket.length < kImportContactMin ||
+        advertPacket.length > kImportContactMax) {
+      throw ArgumentError.value(advertPacket.length, 'advertPacket',
+          'must be $kImportContactMin..$kImportContactMax bytes');
+    }
+    return (FrameBuilder()
+          ..u8(MeshcoreCommand.importContact.code)
+          ..raw(advertPacket))
+        .build();
+  }
+
+  /// `CMD_REBOOT` (0x13): `13 "reboot"`. There is no reply; the link drops
+  /// (`MyMesh.cpp:1474-1479`).
+  static Uint8List reboot() => (FrameBuilder()
+        ..u8(MeshcoreCommand.reboot.code)
+        ..utf8String('reboot'))
+      .build();
+
+  /// `CMD_FACTORY_RESET` (0x33): `33 "reset"` (`MyMesh.cpp:1923`).
+  ///
+  /// **Irreversible**: formats the filesystem (identity, contacts,
+  /// channels, prefs). The firmware disables the link before replying, so
+  /// the OK frame may never arrive. [confirmed] must be `true`.
+  static Uint8List factoryReset({required bool confirmed}) {
+    if (!confirmed) {
+      throw ArgumentError.value(
+          confirmed, 'confirmed', 'factory reset needs explicit confirmation');
+    }
+    return (FrameBuilder()
+          ..u8(MeshcoreCommand.factoryReset.code)
+          ..utf8String('reset'))
+        .build();
+  }
+
+  /// `CMD_EXPORT_PRIVATE_KEY` (0x17): `17`. The reply is
+  /// `RESP_CODE_PRIVATE_KEY` or `RESP_CODE_DISABLED`; there is no
+  /// authentication beyond the BLE link itself (`MyMesh.cpp:1490-1498`).
+  static Uint8List exportPrivateKey() =>
+      Uint8List.fromList(<int>[MeshcoreCommand.exportPrivateKey.code]);
+
+  /// `CMD_IMPORT_PRIVATE_KEY` (0x18): `18 [key 64]` (`MyMesh.cpp:1499`).
+  ///
+  /// **Replaces the node's identity**: the public key changes, every
+  /// stored shared secret is invalidated and peers see a new node.
+  /// [confirmed] must be `true`.
+  static Uint8List importPrivateKey(List<int> privateKey,
+      {required bool confirmed}) {
+    if (!confirmed) {
+      throw ArgumentError.value(confirmed, 'confirmed',
+          'replacing the identity needs explicit confirmation');
+    }
+    if (privateKey.length != kPrivKeySize) {
+      throw ArgumentError.value(
+          privateKey.length, 'privateKey', 'must be exactly $kPrivKeySize bytes');
+    }
+    return (FrameBuilder()
+          ..u8(MeshcoreCommand.importPrivateKey.code)
+          ..raw(privateKey))
+        .build();
+  }
+
+  /// `CMD_SEND_LOGIN` (0x1A): `1A [pub_key 32] [password]`
+  /// (`MyMesh.cpp:1535`).
+  ///
+  /// The firmware treats the frame end as a NUL and then silently cuts the
+  /// password to 15 bytes (`BaseChatMesh.cpp:581,585`). A longer password,
+  /// or one with an embedded NUL, is refused here so it cannot be
+  /// truncated into a different password. The reply is
+  /// `RESP_CODE_SENT`; the verdict arrives as 0x85 or 0x86.
+  static Uint8List sendLogin(List<int> pubKey, String password) {
+    _requireKey(pubKey, 'pubKey');
+    final List<int> pw = utf8.encode(password);
+    if (pw.length > kLoginPasswordMax) {
+      throw ArgumentError.value(pw.length, 'password',
+          'at most $kLoginPasswordMax bytes (firmware truncates silently)');
+    }
+    if (pw.contains(0)) {
+      throw ArgumentError.value(password, 'password', 'must not contain NUL');
+    }
+    return (FrameBuilder()
+          ..u8(MeshcoreCommand.sendLogin.code)
+          ..raw(pubKey)
+          ..raw(pw))
+        .build();
+  }
+
+  /// `CMD_HAS_CONNECTION` (0x1C): OK = a keep-alive session exists,
+  /// ERR(not_found) = none (`MyMesh.cpp:1699`).
+  static Uint8List hasConnection(List<int> pubKey) =>
+      _keyed(MeshcoreCommand.hasConnection, pubKey);
+
+  /// `CMD_LOGOUT` (0x1D): always answers OK, even for an unknown key
+  /// (`MyMesh.cpp:1706`).
+  static Uint8List logout(List<int> pubKey) =>
+      _keyed(MeshcoreCommand.logout, pubKey);
+
+  /// `CMD_GET_CONTACT_BY_KEY` (0x1E): reply is `RESP_CODE_CONTACT` or
+  /// ERR(not_found). No length guard in firmware (`MyMesh.cpp:1331`).
+  static Uint8List getContactByKey(List<int> pubKey) =>
+      _keyed(MeshcoreCommand.getContactByKey, pubKey);
+
+  /// `CMD_SIGN_START` (0x21): reply is `RESP_CODE_SIGN_START`. Discards any
+  /// signing buffer in progress (`MyMesh.cpp:1739`).
+  static Uint8List signStart() =>
+      Uint8List.fromList(<int>[MeshcoreCommand.signStart.code]);
+
+  /// `CMD_SIGN_DATA` (0x22): one chunk of 1..175 bytes (`MyMesh.cpp:1751`).
+  static Uint8List signData(List<int> chunk) {
+    if (chunk.isEmpty || chunk.length > kSignChunkMax) {
+      throw ArgumentError.value(
+          chunk.length, 'chunk', 'must be 1..$kSignChunkMax bytes');
+    }
+    return (FrameBuilder()
+          ..u8(MeshcoreCommand.signData.code)
+          ..raw(chunk))
+        .build();
+  }
+
+  /// Split [data] into `CMD_SIGN_DATA` frames. Refuses data over the
+  /// device's 8 KiB buffer ([kMaxSignDataLen]) or empty data.
+  static List<Uint8List> signDataFrames(List<int> data) {
+    if (data.isEmpty || data.length > kMaxSignDataLen) {
+      throw ArgumentError.value(
+          data.length, 'data', 'must be 1..$kMaxSignDataLen bytes');
+    }
+    final List<Uint8List> out = <Uint8List>[];
+    for (int i = 0; i < data.length; i += kSignChunkMax) {
+      final int end =
+          i + kSignChunkMax < data.length ? i + kSignChunkMax : data.length;
+      out.add(signData(data.sublist(i, end)));
+    }
+    return out;
+  }
+
+  /// `CMD_SIGN_FINISH` (0x23): reply is `RESP_CODE_SIGNATURE` or
+  /// ERR(bad_state) when no signing is in progress (`MyMesh.cpp:1759`).
+  static Uint8List signFinish() =>
+      Uint8List.fromList(<int>[MeshcoreCommand.signFinish.code]);
+
+  /// `CMD_SET_DEVICE_PIN` (0x25): `25 [pin u32 LE]`. 0 clears the PIN,
+  /// otherwise exactly six digits, 100000..999999 (`MyMesh.cpp:1797-1812`).
+  static Uint8List setDevicePin(int pin) {
+    if (pin != 0 && (pin < 100000 || pin > 999999)) {
+      throw ArgumentError.value(
+          pin, 'pin', 'must be 0 (none) or a 6-digit number');
+    }
+    return (FrameBuilder()
+          ..u8(MeshcoreCommand.setDevicePin.code)
+          ..u32(pin))
+        .build();
+  }
+
+  /// `CMD_GET_ADVERT_PATH` (0x2A): `2A 00 [pub_key 32]`. The firmware
+  /// matches only the first 7 bytes (`MyMesh.cpp:1851-1862`).
+  static Uint8List getAdvertPath(List<int> pubKey) {
+    _requireKey(pubKey, 'pubKey');
+    return (FrameBuilder()
+          ..u8(MeshcoreCommand.getAdvertPath.code)
+          ..u8(0)
+          ..raw(pubKey))
+        .build();
+  }
+
+  /// `CMD_GET_TUNING_PARAMS` (0x2B): reply `RESP_CODE_TUNING_PARAMS`.
+  static Uint8List getTuningParams() =>
+      Uint8List.fromList(<int>[MeshcoreCommand.getTuningParams.code]);
+
+  /// `CMD_SEND_PATH_DISCOVERY_REQ` (0x34): `34 00 [pub_key 32]`
+  /// (`MyMesh.cpp:1609`). Always floods. Reply `RESP_CODE_SENT` (tag),
+  /// result arrives later as `PUSH_CODE_PATH_DISCOVERY_RESPONSE`.
+  static Uint8List sendPathDiscoveryReq(List<int> pubKey) {
+    _requireKey(pubKey, 'pubKey');
+    return (FrameBuilder()
+          ..u8(MeshcoreCommand.sendPathDiscoveryReq.code)
+          ..u8(0)
+          ..raw(pubKey))
+        .build();
+  }
+
+  /// `CMD_SEND_ANON_REQ` (0x39): `39 [pub_key 32] [data]`
+  /// (`MyMesh.cpp:1557`).
+  ///
+  /// [data] is 1..[kAnonReqDataMax] bytes: more than that makes
+  /// `Mesh::createAnonDatagram` fail (`Mesh.cpp:514`) and the firmware
+  /// answers ERR(table_full). **Side effect**: an unknown key is added as
+  /// a transient contact (`MyMesh.cpp:1561-1570`).
+  static Uint8List sendAnonReq(List<int> pubKey, List<int> data) {
+    _requireKey(pubKey, 'pubKey');
+    if (data.isEmpty || data.length > kAnonReqDataMax) {
+      throw ArgumentError.value(
+          data.length, 'data', 'must be 1..$kAnonReqDataMax bytes');
+    }
+    return (FrameBuilder()
+          ..u8(MeshcoreCommand.sendAnonReq.code)
+          ..raw(pubKey)
+          ..raw(data))
+        .build();
+  }
+
+  /// `CMD_SET_AUTOADD_CONFIG` (0x3A): `3A [flags] [max_hops]`
+  /// (`MyMesh.cpp:1981-1987`). [maxHops] is optional on the wire; when
+  /// omitted the stored value is left alone. The firmware clamps it to 64
+  /// silently, so a larger value is refused.
+  static Uint8List setAutoAddConfig(int flags, {int? maxHops}) {
+    if (flags < 0 || flags > 0xFF) {
+      throw ArgumentError.value(flags, 'flags', 'must fit in one byte');
+    }
+    if (maxHops != null && (maxHops < 0 || maxHops > kAutoAddMaxHops)) {
+      throw ArgumentError.value(
+          maxHops, 'maxHops', 'must be 0..$kAutoAddMaxHops');
+    }
+    final FrameBuilder b = FrameBuilder()
+      ..u8(MeshcoreCommand.setAutoAddConfig.code)
+      ..u8(flags);
+    if (maxHops != null) b.u8(maxHops);
+    return b.build();
+  }
+
+  /// `CMD_GET_AUTOADD_CONFIG` (0x3B): reply `RESP_CODE_AUTOADD_CONFIG`.
+  static Uint8List getAutoAddConfig() =>
+      Uint8List.fromList(<int>[MeshcoreCommand.getAutoAddConfig.code]);
+
+  // ---------------------------------------------------------------------
   // Decoder (Device → App) — total, never throws.
   // ---------------------------------------------------------------------
 
@@ -654,6 +925,93 @@ abstract final class MeshcoreFrameCodec {
             discover: _decodeDiscover(payload, snr, rssi),
           );
 
+        case 0x0B: // RESP_CODE_EXPORT_CONTACT
+          return ExportedContactFrame(c.atEnd
+              ? Uint8List(0)
+              : Uint8List.fromList(c.bytes(c.remaining, 'export.packet')));
+
+        case 0x0E: // RESP_CODE_PRIVATE_KEY
+          return PrivateKeyFrame(c.bytes(kPrivKeySize, 'privateKey.key'));
+
+        case 0x0F: // RESP_CODE_DISABLED
+          return const DisabledFrame();
+
+        case 0x13: // RESP_CODE_SIGN_START
+          c.u8('signStart.reserved');
+          return SignStartFrame(c.u32('signStart.maxLen'));
+
+        case 0x14: // RESP_CODE_SIGNATURE
+          return SignatureFrame(c.bytes(kSignatureSize, 'signature'));
+
+        case 0x16: // RESP_CODE_ADVERT_PATH
+          final int at = c.u32('advertPath.ts');
+          final PathLen apl = PathLen(c.u8('advertPath.pathLen'));
+          return AdvertPathFrame(AdvertPath(
+            receivedAt: at,
+            pathLen: apl,
+            path: _readPath(c, apl, 'advertPath.path'),
+          ));
+
+        case 0x17: // RESP_CODE_TUNING_PARAMS
+          return TuningParamsFrame(TuningParams(
+            rxDelayBaseSeconds: c.u32('tuning.rx') / kRadioScale,
+            airtimeFactor: c.u32('tuning.af') / kRadioScale,
+          ));
+
+        case 0x19: // RESP_CODE_AUTOADD_CONFIG
+          return AutoAddConfigFrame(AutoAddConfig(
+            flags: c.u8('autoAdd.flags'),
+            maxHops: c.u8('autoAdd.maxHops'),
+          ));
+
+        case 0x85: // PUSH_CODE_LOGIN_SUCCESS
+          final int perm = c.u8('login.permissions');
+          final Uint8List lp = c.bytes(kPubKeyPrefixSize, 'login.pubKey6');
+          int? ts, acl, lvl;
+          // The new-format frame appends 4+1+1 bytes; the legacy one stops.
+          if (c.remaining >= 6) {
+            ts = c.u32('login.serverTs');
+            acl = c.u8('login.acl');
+            lvl = c.u8('login.fwLevel');
+          }
+          return LoginResultFrame(LoginResult(
+            success: true,
+            permissions: perm,
+            pubKeyPrefix: lp,
+            serverTimestamp: ts,
+            aclPermissions: acl,
+            firmwareLevel: lvl,
+          ));
+
+        case 0x86: // PUSH_CODE_LOGIN_FAIL
+          c.u8('login.reserved');
+          return LoginResultFrame(LoginResult(
+            success: false,
+            permissions: 0,
+            pubKeyPrefix: c.bytes(kPubKeyPrefixSize, 'login.pubKey6'),
+          ));
+
+        case 0x8D: // PUSH_CODE_PATH_DISCOVERY_RESPONSE
+          c.u8('discovery.reserved');
+          final Uint8List dp = c.bytes(kPubKeyPrefixSize, 'discovery.pubKey6');
+          final PathLen outL = PathLen(c.u8('discovery.outPathLen'));
+          final Uint8List outP = _readPath(c, outL, 'discovery.outPath');
+          final PathLen inL = PathLen(c.u8('discovery.inPathLen'));
+          final Uint8List inP = _readPath(c, inL, 'discovery.inPath');
+          return PathDiscoveryFrame(PathDiscoveryResult(
+            pubKeyPrefix: dp,
+            outPathLen: outL,
+            outPath: outP,
+            inPathLen: inL,
+            inPath: inP,
+          ));
+
+        case 0x8F: // PUSH_CODE_CONTACT_DELETED
+          return ContactDeletedFrame(c.bytes(kPubKeySize, 'deleted.pubKey'));
+
+        case 0x90: // PUSH_CODE_CONTACTS_FULL
+          return const ContactsFullFrame();
+
         default:
           return UnsupportedFrame(op, Uint8List.fromList(frame));
       }
@@ -663,6 +1021,15 @@ abstract final class MeshcoreFrameCodec {
             opcode: op),
       );
     }
+  }
+
+  /// Read the path bytes a `path_len` byte announces. An invalid length
+  /// (over `MAX_PATH_SIZE`) yields an empty path because that is exactly
+  /// what the firmware writes (`Packet.cpp:24-27`); the caller can see it
+  /// through [PathLen.isValid].
+  static Uint8List _readPath(ByteCursor c, PathLen len, String ctx) {
+    if (!len.isValid || len.byteLength == 0) return Uint8List(0);
+    return Uint8List.fromList(c.bytes(len.byteLength, ctx));
   }
 
   static MeshcoreInbound _decodeStats(ByteCursor c, Uint8List frame) {

@@ -317,6 +317,94 @@ extension type const MeshcoreCommand(int code) {
 
   /// `CMD_GET_STATS` (56): `38 [sub_type]` → `RESP_CODE_STATS` (0x18).
   static const MeshcoreCommand getStats = MeshcoreCommand(0x38);
+
+  // --- Contact lifecycle, identity, admin. Firmware companion-v1.17.1
+  // (d929643) `examples/companion_radio/MyMesh.cpp`; every opcode below
+  // is also present at the pin with the same number. ---
+
+  /// `CMD_SHARE_CONTACT` (16): `10 [pub_key 32]` → OK / ERR(not_found,
+  /// table_full). Re-broadcasts the stored advert zero-hop. `MyMesh.cpp:1319`.
+  static const MeshcoreCommand shareContact = MeshcoreCommand(0x10);
+
+  /// `CMD_EXPORT_CONTACT` (17): `11` (self) or `11 [pub_key 32]` →
+  /// `RESP_CODE_EXPORT_CONTACT` (0x0B). `MyMesh.cpp:1339`.
+  static const MeshcoreCommand exportContact = MeshcoreCommand(0x11);
+
+  /// `CMD_IMPORT_CONTACT` (18): `12 [advert packet]` → OK / ERR(illegal_arg).
+  /// `MyMesh.cpp:1369`.
+  static const MeshcoreCommand importContact = MeshcoreCommand(0x12);
+
+  /// `CMD_REBOOT` (19): `13 "reboot"`. No reply: the device resets.
+  /// `MyMesh.cpp:1474`.
+  static const MeshcoreCommand reboot = MeshcoreCommand(0x13);
+
+  /// `CMD_EXPORT_PRIVATE_KEY` (23): `17` → `RESP_CODE_PRIVATE_KEY` (0x0E)
+  /// or `RESP_CODE_DISABLED` (0x0F). `MyMesh.cpp:1490`.
+  static const MeshcoreCommand exportPrivateKey = MeshcoreCommand(0x17);
+
+  /// `CMD_IMPORT_PRIVATE_KEY` (24): `18 [key 64]` → OK / ERR / DISABLED.
+  /// Replaces the node's identity. `MyMesh.cpp:1499`.
+  static const MeshcoreCommand importPrivateKey = MeshcoreCommand(0x18);
+
+  /// `CMD_SEND_LOGIN` (26): `1A [pub_key 32] [password]` → SENT, then
+  /// `PUSH_CODE_LOGIN_SUCCESS` (0x85) / `PUSH_CODE_LOGIN_FAIL` (0x86).
+  /// `MyMesh.cpp:1535`.
+  static const MeshcoreCommand sendLogin = MeshcoreCommand(0x1A);
+
+  /// `CMD_HAS_CONNECTION` (28): `1C [pub_key 32]` → OK / ERR(not_found).
+  /// `MyMesh.cpp:1699`.
+  static const MeshcoreCommand hasConnection = MeshcoreCommand(0x1C);
+
+  /// `CMD_LOGOUT` (29): `1D [pub_key 32]` → OK (always). `MyMesh.cpp:1706`.
+  static const MeshcoreCommand logout = MeshcoreCommand(0x1D);
+
+  /// `CMD_GET_CONTACT_BY_KEY` (30): `1E [pub_key 32]` → `RESP_CODE_CONTACT`
+  /// (0x03) / ERR(not_found). `MyMesh.cpp:1331`.
+  static const MeshcoreCommand getContactByKey = MeshcoreCommand(0x1E);
+
+  /// `CMD_SIGN_START` (33): `21` → `RESP_CODE_SIGN_START` (0x13).
+  /// `MyMesh.cpp:1739`.
+  static const MeshcoreCommand signStart = MeshcoreCommand(0x21);
+
+  /// `CMD_SIGN_DATA` (34): `22 [chunk 1..175]` → OK / ERR(bad_state,
+  /// table_full). `MyMesh.cpp:1751`.
+  static const MeshcoreCommand signData = MeshcoreCommand(0x22);
+
+  /// `CMD_SIGN_FINISH` (35): `23` → `RESP_CODE_SIGNATURE` (0x14) /
+  /// ERR(bad_state). `MyMesh.cpp:1759`.
+  static const MeshcoreCommand signFinish = MeshcoreCommand(0x23);
+
+  /// `CMD_SET_DEVICE_PIN` (37): `25 [pin u32 LE]` → OK / ERR(illegal_arg).
+  /// `MyMesh.cpp:1797`.
+  static const MeshcoreCommand setDevicePin = MeshcoreCommand(0x25);
+
+  /// `CMD_GET_ADVERT_PATH` (42): `2A 00 [pub_key 32]` →
+  /// `RESP_CODE_ADVERT_PATH` (0x16) / ERR(not_found). `MyMesh.cpp:1851`.
+  static const MeshcoreCommand getAdvertPath = MeshcoreCommand(0x2A);
+
+  /// `CMD_GET_TUNING_PARAMS` (43): `2B` → `RESP_CODE_TUNING_PARAMS` (0x17).
+  /// `MyMesh.cpp:1443`.
+  static const MeshcoreCommand getTuningParams = MeshcoreCommand(0x2B);
+
+  /// `CMD_FACTORY_RESET` (51): `33 "reset"` → OK then reboot after 1 s.
+  /// Formats the filesystem. `MyMesh.cpp:1923`.
+  static const MeshcoreCommand factoryReset = MeshcoreCommand(0x33);
+
+  /// `CMD_SEND_PATH_DISCOVERY_REQ` (52): `34 00 [pub_key 32]` → SENT, then
+  /// `PUSH_CODE_PATH_DISCOVERY_RESPONSE` (0x8D). `MyMesh.cpp:1609`.
+  static const MeshcoreCommand sendPathDiscoveryReq = MeshcoreCommand(0x34);
+
+  /// `CMD_SEND_ANON_REQ` (57): `39 [pub_key 32] [data 1..132]` → SENT, then
+  /// `PUSH_CODE_BINARY_RESPONSE` (0x8C). `MyMesh.cpp:1557`.
+  static const MeshcoreCommand sendAnonReq = MeshcoreCommand(0x39);
+
+  /// `CMD_SET_AUTOADD_CONFIG` (58): `3A [flags] [max_hops]?` → OK.
+  /// `MyMesh.cpp:1981`.
+  static const MeshcoreCommand setAutoAddConfig = MeshcoreCommand(0x3A);
+
+  /// `CMD_GET_AUTOADD_CONFIG` (59): `3B` → `RESP_CODE_AUTOADD_CONFIG`
+  /// (0x19). `MyMesh.cpp:1988`.
+  static const MeshcoreCommand getAutoAddConfig = MeshcoreCommand(0x3B);
 }
 
 /// Response / push opcodes (Device → App). First byte of an inbound frame.
@@ -355,10 +443,55 @@ extension type const MeshcoreResponse(int code) {
   /// `RESP_CODE_DEFAULT_FLOOD_SCOPE` (28).
   static const MeshcoreResponse defaultFloodScope = MeshcoreResponse(0x1C);
 
+  /// `RESP_CODE_EXPORT_CONTACT` (11) — `[0B][raw advert packet]`.
+  /// `MyMesh.cpp:82`, written at `:1351` and `:1363`.
+  static const MeshcoreResponse exportContact = MeshcoreResponse(0x0B);
+
+  /// `RESP_CODE_PRIVATE_KEY` (14) — `[0E][key 64]`. `MyMesh.cpp:85,1492`.
+  static const MeshcoreResponse privateKey = MeshcoreResponse(0x0E);
+
+  /// `RESP_CODE_DISABLED` (15) — the command is compiled out
+  /// (`ENABLE_PRIVATE_KEY_EXPORT/IMPORT`). `MyMesh.cpp:86,160-163`.
+  static const MeshcoreResponse disabled = MeshcoreResponse(0x0F);
+
+  /// `RESP_CODE_SIGN_START` (19) — `[13][0][max_len u32]`. `MyMesh.cpp:1740`.
+  static const MeshcoreResponse signStart = MeshcoreResponse(0x13);
+
+  /// `RESP_CODE_SIGNATURE` (20) — `[14][signature 64]`. `MyMesh.cpp:1766`.
+  static const MeshcoreResponse signature = MeshcoreResponse(0x14);
+
+  /// `RESP_CODE_ADVERT_PATH` (22) — `[16][ts u32][path_len][path]`.
+  /// `MyMesh.cpp:1864`.
+  static const MeshcoreResponse advertPath = MeshcoreResponse(0x16);
+
+  /// `RESP_CODE_TUNING_PARAMS` (23) — `[17][rx u32][af u32]`.
+  /// `MyMesh.cpp:1446`.
+  static const MeshcoreResponse tuningParams = MeshcoreResponse(0x17);
+
+  /// `RESP_CODE_AUTOADD_CONFIG` (25) — `[19][flags][max_hops]`.
+  /// `MyMesh.cpp:1990`.
+  static const MeshcoreResponse autoAddConfig = MeshcoreResponse(0x19);
+
   /// --- Asynchronous push codes (>= 0x80) ---
   static const MeshcoreResponse advertisement = MeshcoreResponse(0x80);
   static const MeshcoreResponse ack = MeshcoreResponse(0x82);
   static const MeshcoreResponse messagesWaiting = MeshcoreResponse(0x83);
+
+  /// `PUSH_CODE_LOGIN_SUCCESS` (0x85). `MyMesh.cpp:686,695`.
+  static const MeshcoreResponse loginSuccess = MeshcoreResponse(0x85);
+
+  /// `PUSH_CODE_LOGIN_FAIL` (0x86). `MyMesh.cpp:704`.
+  static const MeshcoreResponse loginFail = MeshcoreResponse(0x86);
+
+  /// `PUSH_CODE_PATH_DISCOVERY_RESPONSE` (0x8D). `MyMesh.cpp:762`.
+  static const MeshcoreResponse pathDiscoveryResponse =
+      MeshcoreResponse(0x8D);
+
+  /// `PUSH_CODE_CONTACT_DELETED` (0x8F) — `[8F][pub_key 32]`, sent when a
+  /// contact is overwritten. `MyMesh.cpp:340`.
+  static const MeshcoreResponse contactDeleted = MeshcoreResponse(0x8F);
+
+  /// `PUSH_CODE_CONTACTS_FULL` (0x90) — bare code. `MyMesh.cpp:348`.
 
   /// RF log data — safely ignorable by the codec.
   static const MeshcoreResponse logData = MeshcoreResponse(0x88);
@@ -438,3 +571,40 @@ double snrByteToDb(int rawByte) {
   final int signed = rawByte < 128 ? rawByte : rawByte - 256;
   return signed / 4.0;
 }
+
+/// Limits and bit assignments for the contact/identity/admin commands.
+/// Each is the firmware's own constant or guard, not a recommendation.
+
+/// `MAX_SIGN_DATA_LEN` (8 KiB) — `MyMesh.cpp:137`. The reply to
+/// `CMD_SIGN_START` carries this same number.
+const int kMaxSignDataLen = 8 * 1024;
+
+/// A single `CMD_SIGN_DATA` frame carries at most `176 - 1` bytes.
+const int kSignChunkMax = 175;
+
+/// `BaseChatMesh::sendLogin` silently truncates a password to 15 bytes
+/// (`src/helpers/BaseChatMesh.cpp:581,585`); the encoder refuses instead.
+const int kLoginPasswordMax = 15;
+
+/// Longest `CMD_SEND_ANON_REQ` payload that `Mesh::createAnonDatagram`
+/// accepts: `(4 tag + n) + 1 + 32 + 15 <= MAX_PACKET_PAYLOAD (184)`
+/// (`src/Mesh.cpp:514`). A longer one comes back ERR(table_full).
+const int kAnonReqDataMax = 132;
+
+/// `CMD_IMPORT_CONTACT` guard is `len > 2 + 32 + 64` including the
+/// opcode, so the packet must be at least 98 bytes (`MyMesh.cpp:1369`).
+const int kImportContactMin = 2 + 32 + 64;
+
+/// Largest advert packet one frame can carry: `176 - 1`.
+const int kImportContactMax = 175;
+
+/// `AUTO_ADD_*` bits, `MyMesh.cpp:140-146`.
+const int kAutoAddOverwriteOldest = 0x01;
+const int kAutoAddChat = 0x02;
+const int kAutoAddRepeater = 0x04;
+const int kAutoAddRoomServer = 0x08;
+const int kAutoAddSensor = 0x10;
+
+/// `autoadd_max_hops` is clamped to 64 by the firmware
+/// (`MyMesh.cpp:1981-1987`); the encoder refuses a larger value.
+const int kAutoAddMaxHops = 64;

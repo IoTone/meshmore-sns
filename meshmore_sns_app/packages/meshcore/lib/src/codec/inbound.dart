@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: MIT
 import 'dart:typed_data';
 
+import '../model/admin.dart';
 import '../model/advert.dart';
 import '../model/channel_info.dart';
 import '../model/channel_message.dart';
@@ -264,6 +265,105 @@ class ControlDataFrame extends MeshcoreInbound {
   final DiscoverResponse? discover;
   @override
   String toString() => 'ControlDataFrame(${discover ?? '${payload.length}B'})';
+}
+
+/// `RESP_CODE_EXPORT_CONTACT` (0x0B) — a raw advert packet, ready for
+/// `CMD_IMPORT_CONTACT` on another node.
+class ExportedContactFrame extends MeshcoreInbound {
+  const ExportedContactFrame(this.advertPacket);
+  final Uint8List advertPacket;
+  @override
+  String toString() => 'ExportedContactFrame(${advertPacket.length}B)';
+}
+
+/// `RESP_CODE_PRIVATE_KEY` (0x0E). The key is a secret: [toString]
+/// redacts it so it cannot leak through logging.
+class PrivateKeyFrame extends MeshcoreInbound {
+  const PrivateKeyFrame(this.privateKey);
+  final Uint8List privateKey;
+  @override
+  String toString() => 'PrivateKeyFrame(<redacted ${privateKey.length}B>)';
+}
+
+/// `RESP_CODE_DISABLED` (0x0F) — the firmware was built without this
+/// command (`ENABLE_PRIVATE_KEY_EXPORT` / `_IMPORT`).
+class DisabledFrame extends MeshcoreInbound {
+  const DisabledFrame();
+  @override
+  String toString() => 'DisabledFrame()';
+}
+
+/// `RESP_CODE_SIGN_START` (0x13) — [maxLength] is the signing buffer size.
+class SignStartFrame extends MeshcoreInbound {
+  const SignStartFrame(this.maxLength);
+  final int maxLength;
+  @override
+  String toString() => 'SignStartFrame($maxLength)';
+}
+
+/// `RESP_CODE_SIGNATURE` (0x14) — a 64-byte Ed25519 signature.
+class SignatureFrame extends MeshcoreInbound {
+  const SignatureFrame(this.signature);
+  final Uint8List signature;
+  @override
+  String toString() => 'SignatureFrame(${signature.length}B)';
+}
+
+/// `RESP_CODE_ADVERT_PATH` (0x16).
+class AdvertPathFrame extends MeshcoreInbound {
+  const AdvertPathFrame(this.advertPath);
+  final AdvertPath advertPath;
+  @override
+  String toString() => 'AdvertPathFrame(${advertPath.pathLen})';
+}
+
+/// `RESP_CODE_TUNING_PARAMS` (0x17).
+class TuningParamsFrame extends MeshcoreInbound {
+  const TuningParamsFrame(this.params);
+  final TuningParams params;
+  @override
+  String toString() => 'TuningParamsFrame($params)';
+}
+
+/// `RESP_CODE_AUTOADD_CONFIG` (0x19).
+class AutoAddConfigFrame extends MeshcoreInbound {
+  const AutoAddConfigFrame(this.config);
+  final AutoAddConfig config;
+  @override
+  String toString() => 'AutoAddConfigFrame($config)';
+}
+
+/// `PUSH_CODE_LOGIN_SUCCESS` (0x85) / `PUSH_CODE_LOGIN_FAIL` (0x86).
+class LoginResultFrame extends MeshcoreInbound {
+  const LoginResultFrame(this.result);
+  final LoginResult result;
+  @override
+  String toString() => 'LoginResultFrame(success=${result.success})';
+}
+
+/// `PUSH_CODE_PATH_DISCOVERY_RESPONSE` (0x8D).
+class PathDiscoveryFrame extends MeshcoreInbound {
+  const PathDiscoveryFrame(this.result);
+  final PathDiscoveryResult result;
+  @override
+  String toString() => 'PathDiscoveryFrame(out=${result.outPathLen}, '
+      'in=${result.inPathLen})';
+}
+
+/// `PUSH_CODE_CONTACT_DELETED` (0x8F) — a contact was overwritten to make
+/// room; the app must drop its copy.
+class ContactDeletedFrame extends MeshcoreInbound {
+  const ContactDeletedFrame(this.publicKey);
+  final Uint8List publicKey;
+  @override
+  String toString() => 'ContactDeletedFrame()';
+}
+
+/// `PUSH_CODE_CONTACTS_FULL` (0x90).
+class ContactsFullFrame extends MeshcoreInbound {
+  const ContactsFullFrame();
+  @override
+  String toString() => 'ContactsFullFrame()';
 }
 
 /// A well-formed frame whose opcode this milestone does not decode yet.

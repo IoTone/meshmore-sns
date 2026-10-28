@@ -16,6 +16,7 @@ export 'src/crypto/channel_crypto.dart';
 export 'src/crypto/dm_crypto.dart';
 export 'src/crypto/identity_crypto.dart';
 export 'src/diagnostics/channel_tail_oracle.dart';
+export 'src/model/admin.dart';
 export 'src/model/advert.dart';
 export 'src/model/channel_info.dart';
 export 'src/model/channel_message.dart';
