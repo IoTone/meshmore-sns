@@ -1026,7 +1026,7 @@ Every row is a rule that can be checked with `rg`. A violation is a bug.
 | LDMUX mobile (KMP, L2 client + L3 origin) | L2 client, L3 framing, terminal UI | **Any** radio parameter, preset, path hash, contact, channel, companion opcode, or airtime arithmetic | `rg -i 'bandwidth\|spreading\|pathHash\|preset' packages/mobile/.../mesh` returns comments only (2 hits, 2026-10-28), never code |
 | `packages/meshcore_host` (Dart, host composition) | Serial framing, the host `MeshSender`, governor built from the radio's real `SELF_INFO`, the `bin/` process | Anything L3/L4, any app state | `rg -i 'ldmux' packages/meshcore_host/lib` |
 | `crates/mesh` (Rust, L2 client) | The frame codec, the decoder, a loopback client | Anything L3/L4, any radio knowledge | `rg -i 'lora\|spreading\|preset\|bandwidth' crates/mesh` |
-| `ldmuxd` / keeper (Rust, L3) | Sessions, keeper, VT emulation, the host gateway process's lifecycle | Same as LDMUX mobile: no radio knowledge | `rg -i 'meshcore\|lora\|spreading' crates/daemon crates/keeper` |
+| `ldmuxd` / keeper / `crates/session` (Rust, L3) | Sessions, keeper, VT emulation, the Noise session and its ARQ, the host gateway process's lifecycle | Same as LDMUX mobile: no radio knowledge | `rg -i 'meshcore\|lora\|spreading' crates/daemon crates/keeper crates/session` (0 hits, 2026-10-28) |
 | lobospeak (L4, deferred) | Payload codec, GOTO/HALT semantics | Radio and transport | spec only today |
 
 The boundary in one sentence: **MeshMore turns records into radio
