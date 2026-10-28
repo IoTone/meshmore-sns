@@ -112,7 +112,7 @@ List<int> _u32(int v) => <int>[
 
 Uint8List encodeRadioFrame(List<int> payload) {
   final Uint8List out = Uint8List(3 + payload.length);
-  out[0] = 0x3C; // '<'
+  out[0] = SerialFraming.radioHeader; // '>' : radio to host
   out[1] = payload.length & 0xFF;
   out[2] = (payload.length >> 8) & 0xFF;
   out.setRange(3, out.length, payload);

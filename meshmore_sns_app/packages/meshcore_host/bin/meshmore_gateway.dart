@@ -33,7 +33,7 @@ Future<void> main(List<String> argv) async {
     return;
   }
 
-  final _SerialPort serial = await _SerialPort.open(o.port!, o.baud);
+  final SerialPort serial = await SerialPort.open(o.port!, o.baud);
   final StreamController<List<int>> rx = StreamController<List<int>>();
   unawaited(serial.pump(rx));
 
@@ -60,9 +60,11 @@ Future<void> main(List<String> argv) async {
       '    heltec_v4_companion_radio_usb).\n'
       '  - is another process holding the port?',
     );
+    serial.stop();
     await serial.close();
-    exitCode = 69;
-    return;
+    // A pending blocking read keeps the isolate alive, so returning from main
+    // would hang the process. Exit explicitly.
+    exit(69);
   }
 
   final SelfInfo info = link.selfInfo!;
@@ -123,8 +125,10 @@ Future<void> main(List<String> argv) async {
   await sender.dispose();
   await link.dispose();
   await transport.close();
+  serial.stop();
   await serial.close();
   stdout.writeln('stopped.');
+  exit(0);
 }
 
 // ---------------------------------------------------------------------------
@@ -171,72 +175,6 @@ class _FilePairingPersistence implements PairingPersistence {
   @override
   Future<void> clear() async {
     await file.writeAsString('{}');
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Serial port. No FFI dependency: `stty` configures the TTY, dart:io moves
-// the bytes. Two handles (read + write) because dart:io has no single
-// read-write RandomAccessFile on a character device.
-// ---------------------------------------------------------------------------
-
-class _SerialPort {
-  _SerialPort(this._read, this._writeHandle);
-
-  final RandomAccessFile _read;
-  final RandomAccessFile _writeHandle;
-
-  static Future<_SerialPort> open(String path, int baud) async {
-    if (!Platform.isLinux && !Platform.isMacOS) {
-      throw UnsupportedError(
-        'this launcher supports Linux and macOS; use a serial library on '
-        'other hosts',
-      );
-    }
-    final String flag = Platform.isMacOS ? '-f' : '-F';
-    final ProcessResult result = await Process.run('stty', <String>[
-      flag,
-      path,
-      '$baud',
-      'raw',
-      '-echo',
-      '-hupcl',
-      // No hardware flow control: the firmware does not drive RTS/CTS.
-      '-crtscts',
-    ]);
-    if (result.exitCode != 0) {
-      throw StateError('stty failed on $path: ${result.stderr}');
-    }
-    final RandomAccessFile read = await File(path).open(mode: FileMode.read);
-    final RandomAccessFile write =
-        await File(path).open(mode: FileMode.writeOnlyAppend);
-    return _SerialPort(read, write);
-  }
-
-  Future<void> write(List<int> bytes) async {
-    await _writeHandle.writeFrom(bytes);
-    await _writeHandle.flush();
-  }
-
-  /// Reads until the controller closes or the port errors.
-  Future<void> pump(StreamController<List<int>> out) async {
-    try {
-      while (!out.isClosed) {
-        final Uint8List chunk = await _read.read(4096);
-        if (chunk.isEmpty) {
-          await Future<void>.delayed(const Duration(milliseconds: 50));
-          continue;
-        }
-        out.add(chunk);
-      }
-    } catch (e) {
-      if (!out.isClosed) out.addError(e);
-    }
-  }
-
-  Future<void> close() async {
-    await _read.close();
-    await _writeHandle.close();
   }
 }
 

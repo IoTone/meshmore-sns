@@ -11,5 +11,6 @@ library;
 
 export 'src/companion_link.dart';
 export 'src/serial_framing.dart';
+export 'src/serial_port.dart';
 export 'src/serial_mesh_sender.dart';
 export 'src/serial_transport.dart';

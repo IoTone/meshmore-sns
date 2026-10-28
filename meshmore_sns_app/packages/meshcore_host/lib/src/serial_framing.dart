@@ -5,8 +5,14 @@ import 'dart:typed_data';
 /// The USB-serial companion framing from the firmware's
 /// `ArduinoSerialInterface` (`src/helpers/ArduinoSerialInterface.cpp`):
 ///
-///  * host -> radio: `'>' len_lo len_hi payload`
-///  * radio -> host: `'<' len_lo len_hi payload`
+///  * host -> radio: `'<' len_lo len_hi payload`
+///  * radio -> host: `'>' len_lo len_hi payload`
+///
+/// The direction of the two header bytes is counter-intuitive and is stated by
+/// the firmware both ways: `writeFrame` writes `'>'` for frames leaving the
+/// radio, and `checkRecvFrame` accepts only `'<'` from the app
+/// (`ArduinoSerialInterface.cpp:31,46`). `SerialWifiInterface.cpp:143` spells it
+/// out: "'<' is 0x3c which indicates a frame sent from app to radio".
 ///
 /// The length is little-endian and excludes the three header bytes. The
 /// firmware's `MAX_FRAME_SIZE` is 176 (`src/helpers/BaseSerialInterface.h`).
@@ -15,11 +21,11 @@ import 'dart:typed_data';
 /// frame, serial can split a frame across reads and coalesce several frames
 /// into one read. The decoder is therefore incremental and keeps its state.
 abstract final class SerialFraming {
-  /// Host-to-radio header.
-  static const int hostHeader = 0x3E; // '>'
+  /// Host-to-radio header: what the firmware's receive path accepts.
+  static const int hostHeader = 0x3C; // '<'
 
-  /// Radio-to-host header.
-  static const int radioHeader = 0x3C; // '<'
+  /// Radio-to-host header: what the firmware's write path emits.
+  static const int radioHeader = 0x3E; // '>'
 
   /// Firmware ceiling per frame.
   static const int maxFrame = 176;
@@ -56,7 +62,7 @@ Uint8List encodeSerialFrame(List<int> payload) {
   return out;
 }
 
-/// Incremental decoder for `'<' len_lo len_hi payload` frames.
+/// Incremental decoder for `'>' len_lo len_hi payload` frames.
 ///
 /// Error policy: a length above [SerialFraming.maxFrame] is fatal and sticky.
 /// Bytes before a header are discarded (a device that was already running
