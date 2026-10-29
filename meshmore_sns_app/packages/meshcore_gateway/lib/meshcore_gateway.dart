@@ -15,6 +15,7 @@ export 'src/gateway.dart';
 export 'src/governor.dart';
 export 'src/mesh_sender.dart';
 export 'src/messages.dart';
+export 'src/pairing_payload.dart';
 export 'src/pairing_store.dart';
 export 'src/server.dart';
 export 'src/session.dart';

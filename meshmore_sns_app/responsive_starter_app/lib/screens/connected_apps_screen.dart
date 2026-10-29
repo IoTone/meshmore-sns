@@ -1,9 +1,10 @@
 // Copyright (c) 2026 IoTone, Inc.
 // SPDX-License-Identifier: MIT
 import 'dart:async';
-import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:meshcore_gateway/meshcore_gateway.dart';
 import 'package:provider/provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
@@ -11,11 +12,29 @@ import '../gen/app_localizations.dart';
 import '../meshcore/gateway/gateway_service.dart';
 import '../ui/mm_scaffold.dart';
 
+/// The text the QR encodes: the structured payload (endpoint, version, token)
+/// when [port] is a real listening port, and otherwise the bare token, which
+/// the phone reads as the default endpoint. Never throws: the screen must
+/// render while the gateway is still coming up.
+@visibleForTesting
+String gatewayQrData(int port, Uint8List token) {
+  if (port < 1 || port > 65535) {
+    return token.map((int b) => b.toRadixString(16).padLeft(2, '0')).join();
+  }
+  return GatewayPairingPayload(port: port, token: token).encode();
+}
+
 /// Settings -> Connected apps: lets another app on this phone (LDMUX) use
 /// the radio over the loopback gateway.
 ///
 /// Shows the one secret the user must carry to the other app (the pairing
-/// token) and nothing else sensitive: no key material, no radio secrets.
+/// token) and nothing else sensitive: **no key material, no radio secrets**.
+///
+/// The QR carries a [GatewayPairingPayload]: the loopback endpoint, the
+/// protocol version and the token. That is the L2 grant only. The other app's
+/// end-to-end session keys come from its own pairing code and never pass
+/// through MeshMore. The bare token stays selectable underneath for typing by
+/// hand, and a bare-token code from an earlier build still parses.
 class ConnectedAppsScreen extends StatefulWidget {
   const ConnectedAppsScreen({super.key});
 
@@ -72,8 +91,7 @@ class _ConnectedAppsScreenState extends State<ConnectedAppsScreen> {
         GatewayRunState.off => l.connectedAppsStateOff,
         GatewayRunState.waitingForRadio => l.connectedAppsStateWaiting,
         GatewayRunState.running => l.connectedAppsStateRunning(svc.port),
-        GatewayRunState.failed =>
-          l.connectedAppsStateFailed(svc.error ?? ''),
+        GatewayRunState.failed => l.connectedAppsStateFailed(svc.error ?? ''),
       };
 
   @override
@@ -117,7 +135,7 @@ class _ConnectedAppsScreenState extends State<ConnectedAppsScreen> {
                   color: Colors.white,
                   child: QrImageView(
                     key: const Key('gateway-token-qr'),
-                    data: tokenHex,
+                    data: gatewayQrData(svc.port, token!),
                     version: QrVersions.auto,
                     size: 200,
                     backgroundColor: Colors.white,

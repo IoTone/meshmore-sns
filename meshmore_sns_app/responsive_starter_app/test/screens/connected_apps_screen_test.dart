@@ -88,6 +88,34 @@ void main() {
     await t.pump();
   }
 
+  test('the QR carries the structured L2 grant, with the real port and no keys',
+      () {
+    final Uint8List token =
+        Uint8List.fromList(List<int>.generate(16, (int i) => i * 17 % 256));
+    final String data = gatewayQrData(41999, token);
+    expect(data,
+        'meshmore://gateway?v=1&host=127.0.0.1:41999&token=${_hex(token)}');
+    final GatewayPairingPayload? back = GatewayPairingPayload.parse(data);
+    expect(back, isNotNull);
+    expect(back!.port, 41999);
+    expect(back.token, token);
+    // Nothing but the grant: version, endpoint, token.
+    expect(Uri.parse(data).queryParameters.keys.toSet(),
+        <String>{'v', 'host', 'token'});
+  });
+
+  test(
+      'before the gateway has a port the QR falls back to the bare token, which still parses',
+      () {
+    final Uint8List token = Uint8List.fromList(List<int>.filled(16, 0xab));
+    for (final int port in <int>[0, -1, 70000]) {
+      final String data = gatewayQrData(port, token);
+      expect(data, _hex(token));
+      expect(
+          GatewayPairingPayload.parse(data)!.port, GatewayServer.defaultPort);
+    }
+  });
+
   testWidgets('off: no token is shown', (WidgetTester t) async {
     final (MeshcoreController mc, GatewayService svc) = await boot(t);
     await show(t, svc);
@@ -103,13 +131,14 @@ void main() {
     await show(t, svc);
 
     await t.tap(find.byType(Switch));
-    await t.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 200)));
+    await t.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 200)));
     await t.pump();
 
     expect(svc.status, GatewayRunState.running);
-    final String shown =
-        t.widget<SelectableText>(find.byKey(const Key('gateway-token-text')))
-            .data!;
+    final String shown = t
+        .widget<SelectableText>(find.byKey(const Key('gateway-token-text')))
+        .data!;
     expect(shown, _hex(svc.pairingToken!),
         reason: 'the text must be the live token, not a placeholder');
     expect(shown, hasLength(32));
@@ -121,7 +150,8 @@ void main() {
     await finish(t, mc, svc);
   });
 
-  testWidgets('Revoke asks first; confirming issues a new token, cancel keeps it',
+  testWidgets(
+      'Revoke asks first; confirming issues a new token, cancel keeps it',
       (WidgetTester t) async {
     final (MeshcoreController mc, GatewayService svc) = await boot(t);
     await t.runAsync(() => svc.setEnabled(true));
@@ -145,7 +175,8 @@ void main() {
     final String after = _hex(svc.pairingToken!);
     expect(after, isNot(before));
     expect(
-        t.widget<SelectableText>(find.byKey(const Key('gateway-token-text')))
+        t
+            .widget<SelectableText>(find.byKey(const Key('gateway-token-text')))
             .data,
         after,
         reason: 'the screen must show the NEW token');
