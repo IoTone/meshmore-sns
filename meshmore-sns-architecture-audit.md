@@ -506,3 +506,22 @@ mesh_session` 4, `--test mesh_link` 4, session + ffi 49; clippy `-D warnings` cl
 daemon, session, session-ffi. `./gradlew --offline :composeApp:testDebugUnitTest --rerun-tasks`: 509
 pass (441 before); `assembleDebug` succeeds. The 2 `qr::` tests that need `zbarimg` still fail in the
 environment, unchanged.
+
+## Reachability pass, 2026-10-29: the mesh route made reachable, and what that found
+
+Scope: split the pairing, give MeshMore's code a structured payload, let the phone choose a shell, and add the entry points. Each finding names the claim, where it was made and the evidence.
+
+| # | Earlier claim or state | Where | What the code showed | Resolution |
+|---|---|---|---|---|
+| R1 | "The tailnet restriction does not apply to mesh pairing." | ADR-0020 §6 | Every link carried `host` and the daemon's bearer token and a link without them was refused, so a phone that never reaches the tailnet was handed a credential that grants full shell control and cannot use it; and `LdmuxConfig.isPaired` (tailnet only) gated `meshScreenFor`, `routeProblem` and `initialLink` | `ldmux code\|pair --mesh-only`, a parser that takes neither-host-nor-token only with a full key set, and mesh checks that no longer read `isPaired`. ADR-0020 has a dated note, original kept |
+| R2 | A mesh-route device with no daemon "reads as Unpaired" | `MeshRouteWiringTest` "the route is a choice beside the pairing..." | That assertion was the contradiction pinned as a requirement | Now `RouteUnavailable`, with a comment saying why |
+| R3 | "Unpairing forgets the mesh keys" (so nothing is left behind) | `MeshEnrollment.onUnpaired`, ADR-0020 Revocation | It cleared the session keys and left the MeshMore **gateway token** in the Keystore | Clears both; `unpairing the machine also forgets the gateway token` |
+| R4 | MeshMore's QR is "the pairing token" | `connected_apps_screen.dart` | A bare 32-hex token cannot say which port or version, and the phone had nowhere to put an endpoint | `GatewayPairingPayload` (`meshmore://gateway?v=1&host=127.0.0.1:<port>&token=...`), bare token still read, non-loopback refused |
+| R5 | The brief asked the driver to "request the list on attach when the selector is empty" | task text | A list costs a round trip of minutes on a link that allows about 58 records an hour, and the host already attaches the one shell when there is exactly one | The driver attaches with an empty selector first and lists only on `Closed(AMBIGUOUS)`. Same user-visible result, fewer records. ADR-0025 states the deviation |
+| R6 | "ADR-0025: selecting a shell ... not decided" | ADR-0025 "Not decided" | Decided here | Struck through in place with a pointer |
+
+Evidence and limits.
+- Rust: `cargo test -p ldmux-protocol` 87, daemon `--lib mesh` 27, `--lib pairing` 13 passing plus the one `qr::` test that needs `zbarimg` (environmental, unchanged). Kotlin: `./gradlew --offline :composeApp:testDebugUnitTest --rerun-tasks` 542, 0 failed; `:composeApp:assembleDebug` succeeds. Dart: `meshcore_gateway` 68, `meshcore` 291 (+1 skip), `meshcore_host` 30, app `flutter test` 1016.
+- §13 re-run: `rg -i 'meshcore|lora|spreading' crates/daemon crates/keeper crates/session crates/session-ffi crates/protocol` 0 hits; the mobile `mesh` package still has only the 3 comment-only radio-word hits; `meshcore_host/lib` 0 `ldmux` hits; `meshcore_gateway/lib` has no `ldmux` import (new `pairing_payload.dart` names LDMUX in doc comments only, and says it carries no key material).
+- **Not verified:** nothing here ran on a phone or a radio. The Keystore, the code scanner and the Compose Settings section were compiled and unit-tested through their pure parts only. The claim "the route works only while MeshMore is running on the same phone" is a consequence of the loopback listener and MeshMore's foreground service (`gateway_service.dart`), not something observed on a device.
+- The two repositories pin the gateway-code vectors separately (`pairing_payload_test.dart`, `MeshReachabilityTest`). There is no shared fixture, so drift is possible and the test comments say so.
