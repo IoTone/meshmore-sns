@@ -14,6 +14,11 @@ typedef GatewayStatus = ({
   int rssi,
   int batteryPercent,
   int txAirtimeTenthsThisHour,
+
+  /// Records of the current size the gateway says still fit this hour, or null
+  /// when it did not send the byte. 255 means "255 or more", which is what the
+  /// uncapped airtime policy reports.
+  int? opsLeftThisHour,
 });
 
 /// A client error, carrying the close reason when the gateway sent one.

@@ -796,3 +796,22 @@ persists and the governor's budget changes.
 
 The gap that remains is recorded in `architecture.md` §5.5b: the daemon has no
 host-side governor, so the mode has no counterpart there yet.
+
+## Airtime modes measured on the device (2026-10-29)
+
+The policy is not a label. Same app, same radio, same client, only the switch
+changed:
+
+| Mode | Screen | `STATUS` seen by the client |
+|---|---|---|
+| `onePercentDutyCycle` | `Airtime used this hour: 0.0 s of 36 s` | `opsLeft=55` (58/hour less usage) |
+| `ownedChannel` | `Airtime used this hour: 0.0 s of 3600 s` | `opsLeft=255` (the byte's ceiling) |
+
+Client probe also confirms `BIND OK caps=2 max=172` in both modes, so the
+switch changes the budget and nothing else about the link. The default was
+restored on the device afterwards.
+
+`GatewayStatus` now carries `opsLeftThisHour`; the debug client had been dropping
+the byte that `readOpsLeft` already parsed. Note for anyone writing a probe:
+`GatewayClient.hello()` sends capabilities 0, so it receives no `STATUS` at all;
+pass `capabilities: 2` for the status push.

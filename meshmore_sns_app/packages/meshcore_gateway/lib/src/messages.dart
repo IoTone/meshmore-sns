@@ -297,6 +297,7 @@ abstract final class GatewayMessages {
     int rssi,
     int batteryPercent,
     int txAirtimeTenthsThisHour,
+    int? opsLeftThisHour,
   })? readStatus(Frame f) {
     if (f.type != FrameType.status || f.payload.length < 5) return null;
     return (
@@ -304,6 +305,7 @@ abstract final class GatewayMessages {
       rssi: f.payload[1] < 128 ? f.payload[1] : f.payload[1] - 256,
       batteryPercent: f.payload[2],
       txAirtimeTenthsThisHour: f.payload[3] | (f.payload[4] << 8),
+      opsLeftThisHour: f.payload.length >= 6 ? f.payload[5] : null,
     );
   }
 

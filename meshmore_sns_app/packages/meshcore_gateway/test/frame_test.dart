@@ -54,6 +54,7 @@ void main() {
         int rssi,
         int batteryPercent,
         int txAirtimeTenthsThisHour,
+        int? opsLeftThisHour,
       })? st = GatewayMessages.readStatus(got.single);
       expect(st, isNotNull);
       expect(st!.radioState, RadioState.connected);
