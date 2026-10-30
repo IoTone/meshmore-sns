@@ -776,11 +776,14 @@ Answer as found, before any change:
   `GatewayService._start` passed only `estimator:`. Grep for `budget:` in both
   `packages/` and `lib/` found one unrelated comment in
   `device_config_screen.dart`. No preference, no UI, no test.
-- **The host end has no meter at all.** `crates/mesh` reads
-  `txAirtimeTenthsThisHour` for display; `crates/daemon/src/mesh.rs` decrements a
-  local `records_left` after a send but refuses nothing on airtime grounds. So
-  "each end enforces the same policy on itself" (`architecture.md` §5.5) is
-  implemented on the phone side only.
+- **The host end has no meter, by design.** `crates/mesh` reads
+  `txAirtimeTenthsThisHour` for display, and `crates/daemon/src/mesh.rs:537-541`
+  refuses to send when the gateway's `opsLeftThisHour` is zero or unknown. It
+  cannot compute airtime itself without the radio's preset, which §13 forbids, so
+  the gateway's number is the only correct authority. An earlier draft of this
+  entry called that a gap; it is not. `ownedChannel` reaches the host through the
+  same field, because the gateway re-pushes `STATUS` after every send result and
+  the uncapped figure saturates at 255 each time.
 
 What was built: `AirtimePolicy` in `meshcore_gateway` (`onePercentDutyCycle`,
 `ownedChannel`), `Governor.forPolicy`, an uncapped governor that still meters,

@@ -706,14 +706,21 @@ What changes is only the cap. What does **not** change:
   sized for. A genuinely responsive private mesh needs a profile change with its
   own arithmetic, and that is not this switch.
 
-**Known gap, stated rather than implied.** Each end meters itself, and the host
-end has no meter: `crates/mesh` in ldmux reads `txAirtimeTenthsThisHour` out of
-`STATUS` for display and the daemon decrements a local `records_left`, but
-nothing refuses a downlink record on airtime grounds. So under
-`onePercentDutyCycle` the phone side can be throttled by policy while the host
-side is not, and the mode switch on the phone has no counterpart in the daemon
-yet. Fixing it means a host-side governor with the same two policies, configured
-where the daemon's mesh endpoint is configured.
+**How the policy reaches the host, without the host learning radio
+parameters.** The daemon has no airtime meter of its own, and must not get one:
+computing an estimate needs the preset, which §13 keeps out of LDMUX. What it has
+instead is the gateway's own number. `STATUS` carries `opsLeftThisHour`, the
+daemon refuses to send at zero (unknown also means zero, fail-closed,
+`crates/daemon/src/mesh.rs:537-541`), and the gateway re-pushes `STATUS` after
+every send result, so the figure chases the truth rather than decaying to a hard
+stop. `ownedChannel` therefore reaches the host through the same field: the
+uncapped governor's `opsLeft` saturates the byte at 255, the daemon spends it
+down, and the next `STATUS` restores it. One account, one authority, no second
+policy to fall out of step.
+
+This was checked after writing the first version of this section, which claimed a
+gap that does not exist. The lesson is worth keeping: an end that cannot know a
+radio parameter should not be given a private copy of the arithmetic.
 
 ### 5.6 Why the budget needs no raise mechanism: the output is bounded at the source
 
