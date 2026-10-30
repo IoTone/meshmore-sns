@@ -94,13 +94,63 @@ class MeshcoreMeshSender implements MeshSender {
     return 2 + (path?.length ?? 0);
   }
 
+  /// Contacts the radio returned recently enough that another lookup is not
+  /// worth a round trip.
+  static const Duration _contactRefreshWindow = Duration(seconds: 5);
+
+  DateTime? _lastContactRefresh;
+  Future<void>? _refreshing;
+
+  /// The contact record for [hex], syncing the radio's table when the app's
+  /// copy does not have it yet.
+  ///
+  /// The app's contact cache is filled by whatever sync last ran, so a key the
+  /// radio definitely holds can be missing from it -- after a reinstall, after
+  /// the table was edited elsewhere, or simply before the first sync finishes.
+  /// BIND used to answer `not_a_contact` in that state even though the radio
+  /// had the entry and had already put it on the first record's path. The radio
+  /// is the authority, so ask it once, at most every few seconds, and give the
+  /// frames a bounded window to arrive.
+  Future<Contact?> _contactFor(String hex) async {
+    final Contact? cached = _mc.contactRecordFor(hex);
+    if (cached != null) return cached;
+    final DateTime now = DateTime.now();
+    final DateTime? last = _lastContactRefresh;
+    if (last != null && now.difference(last) < _contactRefreshWindow) {
+      return null;
+    }
+    _lastContactRefresh = now;
+    _refreshing ??= _refresh();
+    try {
+      await _refreshing;
+    } catch (_) {
+      // The pending frames may still land; the poll below decides.
+    }
+    for (int i = 0; i < 40; i++) {
+      final Contact? c = _mc.contactRecordFor(hex);
+      if (c != null) return c;
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+    }
+    return null;
+  }
+
+  Future<void> _refresh() async {
+    try {
+      await _mc.refreshDeviceContacts();
+    } catch (_) {
+      // A radio that refuses the request leaves the cache as it was.
+    } finally {
+      _refreshing = null;
+    }
+  }
+
   @override
   Future<bool> isContact(List<int> pubKey) async =>
-      _mc.contactRecordFor(_hex(pubKey)) != null;
+      await _contactFor(_hex(pubKey)) != null;
 
   @override
   Future<BindError?> bindPeer(Uint8List pubKey) async {
-    final Contact? c = _mc.contactRecordFor(_hex(pubKey));
+    final Contact? c = await _contactFor(_hex(pubKey));
     if (c == null) return BindError.notAContact;
     final Uint8List? path = pathOf(c);
     // A path longer than 14 bytes leaves less than the 160 B floor the

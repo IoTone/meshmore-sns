@@ -278,4 +278,34 @@ void main() {
       expect(unknown, greaterThan(const Duration(milliseconds: 1500)));
     });
   });
+
+  test('bind syncs the radio when the app has not cached the contact yet',
+      () async {
+    // The radio is the authority for contact records. BIND answered
+    // `not_a_contact` after a reinstall while the radio still held the entry,
+    // because the app's cache only fills from whatever sync ran last. Observed
+    // on the phone: `Radio contacts` showed the node at 350/350 and a later
+    // probe bound fine.
+    (mc, fake) = await _ready();
+    up = true;
+    sender = MeshcoreMeshSender(mc, answerTimeout: const Duration(seconds: 2));
+    final Uint8List key = _key(70);
+    expect(mc.contactRecordFor(
+            key.map((int b) => b.toRadixString(16).padLeft(2, '0')).join()),
+        isNull);
+
+    final Future<BindError?> binding = sender.bindPeer(key);
+    // The adapter must ask the radio rather than answer from an empty cache.
+    for (int i = 0; i < 20 && fake.sent.isEmpty; i++) {
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+    }
+    expect(fake.sent, isNotEmpty,
+        reason: 'a cache miss must trigger CMD_GET_CONTACTS');
+
+    fake.emit(Uint8List.fromList(<int>[0x02, 1, 0, 0, 0]));
+    fake.emit(contactFrame(name: 'peer', firstPubByte: 70, path: <int>[1, 2]));
+    fake.emit(Uint8List.fromList(<int>[0x04, 0, 0, 0, 0]));
+
+    expect(await binding, isNull, reason: 'the radio had the contact');
+  });
 }

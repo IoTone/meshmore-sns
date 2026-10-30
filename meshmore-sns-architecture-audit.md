@@ -713,3 +713,30 @@ rather than edited away, because the correction is the useful part.
   Fresh fact from the same screen: every row carries `Remove from device
   contacts`, so a full table is recoverable, and the banner states the condition
   plainly ("Contact list is full. Remove entries below to add new ones.").
+
+## D1 root-caused and fixed (same day)
+
+The window between the two contact views was the symptom. The cause is that
+`BIND` consulted the app's contact cache, and that cache is only as fresh as the
+last sync:
+
+- After a MeshMore reinstall the app reported `2 known` peers while the radio
+  still held all 350 contacts, including the peer being bound.
+- `isContact` (`mesh_sender_adapter.dart`) answered from `_mc.contactRecordFor`,
+  so `GatewaySession._onBind` (`session.dart:164`) sent `BIND_ERR not_a_contact`
+  and closed the connection. Reproduced twice, before and after the reinstall.
+- The radio is the authority for contact records. `MeshcoreMeshSender` now
+  syncs on demand on a cache miss (`_contactFor`), at most once every 5 seconds,
+  and polls for up to 4 seconds while the frames arrive. `bindPeer` uses the
+  same path, so a later `isContact` and a `bindPeer` cannot disagree.
+
+Proof on the phone, cold cache, after reinstall:
+`hello ok caps=2 state=0`, `pair ok`, `BIND OK caps=2 max=172`.
+Test: `mesh_sender_adapter_test.dart`, "bind syncs the radio when the app has not
+cached the contact yet" — asserts `CMD_GET_CONTACTS` goes out on a cache miss and
+that the bind resolves once the frames land.
+
+Separately verified the D3 fix on the device: with `mm.bg.keepalive=false`,
+`dumpsys activity services` shows `ForegroundService ... isForeground=true
+foregroundId=4403` while the gateway is listening, i.e. the gateway holds the
+process alive for its client instead of relying on the user's own preference.
