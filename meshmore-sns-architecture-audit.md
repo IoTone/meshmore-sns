@@ -740,3 +740,23 @@ Separately verified the D3 fix on the device: with `mm.bg.keepalive=false`,
 `dumpsys activity services` shows `ForegroundService ... isForeground=true
 foregroundId=4403` while the gateway is listening, i.e. the gateway holds the
 process alive for its client instead of relying on the user's own preference.
+
+## Phone leg re-verified after the fixes, and a measurement trap
+
+Both defects are closed on the device, not just in tests, with the user's
+background preference **off** (`mm.bg.keepalive=false`):
+
+- `BIND OK caps=2 max=172` in 1.7 s from a cold contact cache, after a
+  force-stop and relaunch.
+- The app backgrounded for 90 s (home screen, no foreground UI): `hello_ok` in
+  0.02 s and `BIND OK` again, with
+  `dumpsys activity services` showing `isForeground=true foregroundId=4403`.
+
+Measurement trap, recorded because it cost two false conclusions: a stale
+`adb forward` continues to accept local connections after the remote port stops
+listening, and the client then waits out its full frame timeout instead of
+failing fast. Two probes "timed out" this way while the gateway was healthy.
+The check that removes the doubt is a raw HELLO straight over a freshly created
+forward, and reading the port the app actually advertises on screen rather than
+assuming the preferred one. `GatewayServer` binds an ephemeral port when the
+preferred one is unavailable, so the advertised port is the only truth.

@@ -3470,6 +3470,7 @@ class MeshcoreController extends ChangeNotifier {
   final List<Contact> _probedContacts = <Contact>[];
   bool _probing = false;
   int? _deviceContactCount;
+  Completer<void>? _contactSyncDone;
 
   /// The radio's reported total contact count (from `CONTACTS_START`).
   int? get deviceContactCount => _deviceContactCount;
@@ -3483,10 +3484,36 @@ class MeshcoreController extends ChangeNotifier {
 
   /// Trigger a fresh full contact sync (fills [probedContacts] +
   /// [deviceContactCount]); also refresh device info for [maxContacts].
+  /// How long a full contact sync may take before callers stop waiting. The
+  /// radio streams one frame per contact, so a full table is hundreds of
+  /// frames; the wait is a ceiling, not an expectation.
+  static const Duration contactSyncTimeout = Duration(seconds: 8);
+
+  /// Full contact sync, returning once the radio says the list ended.
+  ///
+  /// Callers that need a fresh table (BIND does) must not poll a fixed delay and
+  /// hope: the count is in `CONTACTS_START` and the end is in
+  /// `END_OF_CONTACTS`, so wait for that. A radio that never answers costs
+  /// [contactSyncTimeout] rather than hanging.
   Future<void> refreshDeviceContacts() async {
     if (!isReady) return;
-    await send(MeshcoreFrameCodec.deviceQuery());
-    await requestContacts();
+    if (_contactSyncDone != null) return _contactSyncDone!.future;
+    final Completer<void> done = Completer<void>();
+    _contactSyncDone = done;
+    try {
+      await send(MeshcoreFrameCodec.deviceQuery());
+      await requestContacts();
+      // A radio that honours the request answers CONTACTS_START at once. If it
+      // never starts, waiting the whole timeout only delays the caller's
+      // refusal, so give it a short window to begin and then wait for the end.
+      for (int i = 0; i < 30 && _probing == false && !done.isCompleted; i++) {
+        await Future<void>.delayed(const Duration(milliseconds: 50));
+      }
+      if (!_probing) return;
+      await done.future.timeout(contactSyncTimeout, onTimeout: () {});
+    } finally {
+      if (identical(_contactSyncDone, done)) _contactSyncDone = null;
+    }
   }
 
   void _trackContactProbe(MeshcoreInbound f) {
@@ -3498,6 +3525,8 @@ class MeshcoreController extends ChangeNotifier {
       _probedContacts.add(f.contact);
     } else if (f is EndOfContactsFrame) {
       _probing = false;
+      final Completer<void>? done = _contactSyncDone;
+      if (done != null && !done.isCompleted) done.complete();
     }
   }
 

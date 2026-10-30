@@ -120,18 +120,21 @@ class MeshcoreMeshSender implements MeshSender {
       return null;
     }
     _lastContactRefresh = now;
-    _refreshing ??= _refresh();
-    try {
-      await _refreshing;
-    } catch (_) {
-      // The pending frames may still land; the poll below decides.
-    }
+    // Ask the radio, then answer as soon as the requested key streams in.
+    // Waiting for END_OF_CONTACTS would be correct but useless here: the client
+    // gives a frame 5 s (`GatewayClient._next`), and a full table is hundreds of
+    // frames. A miss is refused, and the sync keeps running, so the next attempt
+    // finds it in the cache.
+    bool ended = false;
+    final Future<void> refresh = _refreshing ??= _refresh();
+    unawaited(refresh.whenComplete(() => ended = true));
     for (int i = 0; i < 40; i++) {
       final Contact? c = _mc.contactRecordFor(hex);
       if (c != null) return c;
+      if (ended) break;
       await Future<void>.delayed(const Duration(milliseconds: 100));
     }
-    return null;
+    return _mc.contactRecordFor(hex);
   }
 
   Future<void> _refresh() async {

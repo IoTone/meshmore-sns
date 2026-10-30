@@ -308,4 +308,21 @@ void main() {
 
     expect(await binding, isNull, reason: 'the radio had the contact');
   });
+
+  test('a second miss does not restart the contact sync', () async {
+    // A client that retries BIND in a loop must not be able to make the app
+    // re-read a 350-entry table on every attempt.
+    (mc, fake) = await _ready();
+    up = true;
+    sender = MeshcoreMeshSender(mc, answerTimeout: const Duration(seconds: 2));
+    final Uint8List key = _key(200);
+
+    expect(await sender.isContact(key), isFalse);
+    final int afterFirst = fake.sent.length;
+    expect(afterFirst, greaterThan(0));
+
+    expect(await sender.isContact(key), isFalse);
+    expect(fake.sent.length, afterFirst,
+        reason: 'the second lookup must use the recent-sync window');
+  });
 }
