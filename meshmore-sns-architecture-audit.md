@@ -549,3 +549,21 @@ Evidence and limits.
 - `./gradlew --offline :composeApp:testDebugUnitTest --rerun-tasks`: 589 pass, 0 fail (542 before); `:composeApp:assembleDebug` succeeds.
 - Mutation checks: timers stamped with 0 fails 2 tests; never stopping the barge-in capture fails 2. A third mutation (parsing OSC with no listener) survived: skipping the scan is a cost saving, not an observable rule, and the test was renamed to say only what it proves.
 - **Not verified:** nothing here ran on a phone. `AudioRecord` beside `SpeechRecognizer`, barge-in against the phone's own speaker, TTS audio focus and the Compose wiring are compiled and unit-tested through pure logic only. The pi harness uses a stub model that always complies with the prompt, so it proves the hooks, not model obedience.
+
+## Hardware pass, 2026-10-29 (phone only, Android 16)
+
+- **W1. The gateway could not bind its documented port.** `41731` is in the
+  device's `ip_local_reserved_ports`, so `bind()` returns EPERM, not EADDRINUSE.
+  The failure was invisible to every fake-transport test and fatal on the phone.
+  Fixed by treating the port as a preference with an ephemeral fallback; the
+  Connected apps payload already carried the real port.
+- **W2. Two apps on one phone cannot pair by scanning.** MeshMore's code is shown
+  on the same screen LDMUX would scan. A typed/pasted code path is required, not
+  optional, and is now the only path that works for the daily case.
+- **W3. Confirmed on-device, not just in tests:** loopback gateway on Android 16,
+  L2 `HELLO`, token `PAIR`, and the `not_a_contact` refusal at `BIND` for a key
+  that is not in the radio's table.
+- **W4. Signature continuity.** The installed builds were signed with the debug
+  keystore under `ANDROID_USER_HOME=~/.config/.android`; building with the default
+  `~/.android` keystore produces an APK that `adb install -r` rejects. Any device
+  build must set that variable, or the install destroys app data.
