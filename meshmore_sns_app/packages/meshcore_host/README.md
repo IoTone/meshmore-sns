@@ -51,3 +51,28 @@ The last five numbers are frequency MHz, bandwidth kHz, spreading factor, coding
 rate and TX power dBm. It prints the radio's own read-back and exits non-zero if
 the radio did not accept them. These four numbers must match the phone's radio
 exactly; only the coding rate is a safe local deviation.
+
+## Configuring a host without copying keys
+
+The firmware's raw-data push carries no sender key — `PUSH_CODE_RAW_DATA` is
+`[0x84][snr][rssi][0xFF][payload]` (`examples/companion_radio/MyMesh.cpp:800`) —
+so a host must be told which radio it is talking to exactly once. Typing a
+64-hex public key is the wrong way to say it, because the radio already knows the
+names of its contacts.
+
+```
+meshmore_gateway --port /dev/ttyACM1 --peer-name HELTEC-BASE --state ~/.local/state/meshmore/gateway.json
+```
+
+`--peer-name` resolves against the radio's own contact table (case-insensitive,
+first exact match) and writes what a client needs into the state file:
+
+```json
+{"pairingToken":"…","gatewayAddr":"127.0.0.1:41731",
+ "radioKey":"<this radio>","peerName":"HELTEC-BASE","peerKey":"<the peer radio>"}
+```
+
+A name that does not resolve is a startup error that lists the names the radio
+does hold, because guessing a peer would send records into the wrong path. The
+state file is written 0600 and merged, never clobbered: saving a rotated token
+keeps the identity fields.

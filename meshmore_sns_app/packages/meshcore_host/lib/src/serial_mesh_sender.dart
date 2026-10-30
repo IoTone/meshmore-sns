@@ -200,6 +200,45 @@ class SerialMeshSender implements MeshSender {
   /// How many contacts the cached table holds.
   int get contactCount => _contacts.length;
 
+  /// The contact named [name], syncing the table when it is not cached.
+  ///
+  /// Names are what a radio and its owner actually use, and a human typing one is
+  /// not making a cryptographic claim: this is a lookup, not a trust decision. The
+  /// key it returns is the key the radio itself holds, which is the only answer
+  /// that will route. Match is case-insensitive and trimmed; the first exact match
+  /// wins, and a duplicate name is not resolved by guessing.
+  Future<Contact?> contactByName(String name) {
+    return _serialise(() async {
+      final String want = name.trim().toLowerCase();
+      if (want.isEmpty) return null;
+      Contact? find() {
+        for (final Contact c in _contacts.values) {
+          if (c.name.trim().toLowerCase() == want) return c;
+        }
+        return null;
+      }
+
+      final Contact? cached = find();
+      if (cached != null) return cached;
+      await _syncContactsLocked();
+      return find();
+    });
+  }
+
+  /// Every contact name currently cached, for an error that can say what exists.
+  List<String> get contactNames => <String>[
+        for (final Contact c in _contacts.values)
+          if (c.name.trim().isNotEmpty) c.name,
+      ]..sort();
+
+  /// The cached contact table, keyed by public-key hex. Read-only: the radio is
+  /// the authority for what is in it (`isContact` re-syncs on a miss).
+  ///
+  /// Exists so an operator can answer "which key is this node?" without a second
+  /// tool or a phone in hand. The host gateway logs the peer's name from here
+  /// when it binds.
+  Map<String, Contact> get contacts => Map<String, Contact>.unmodifiable(_contacts);
+
   /// Ask the radio for its counters and cache its last RSSI.
   ///
   /// Called on bind, and by the host binary on a timer. Failures are

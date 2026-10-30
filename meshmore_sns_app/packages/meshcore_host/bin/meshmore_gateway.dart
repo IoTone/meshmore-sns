@@ -92,6 +92,38 @@ Future<void> main(List<String> argv) async {
   );
   await gateway.start();
 
+  // Resolve the peer by name, if asked. The radio's own contact table is the
+  // authority: the firmware's raw-data push carries no sender key
+  // (`MyPacket` -> `PUSH_CODE_RAW_DATA` is snr/rssi/payload only), so the host
+  // must be told who the far radio is exactly once, and a name it already holds
+  // is the least error-prone way to say it.
+  String? peerKey;
+  if (o.peerName != null) {
+    final Contact? peer = await sender.contactByName(o.peerName!);
+    if (peer == null) {
+      stderr.writeln(
+        'error: no contact named "${o.peerName}" on ${info.name}.\n'
+        '  the radio holds: ${sender.contactNames.join(', ')}',
+      );
+      await sender.dispose();
+      await link.dispose();
+      await transport.close();
+      serial.stop();
+      await serial.close();
+      exit(78);
+    }
+    peerKey = _hex(peer.publicKey);
+    stdout.writeln('peer    ${peer.name} $peerKey'
+        ' pathLen=${peer.outPathLen}');
+  }
+
+  await persistence.publishIdentity(
+    address: '127.0.0.1:${gateway.port}',
+    radioKey: _hex(info.publicKey),
+    peerName: o.peerName,
+    peerKey: peerKey,
+  );
+
   stdout
     ..writeln('radio   ${info.name}')
     ..writeln('key     ${_hex(info.publicKey)}')
@@ -149,13 +181,32 @@ class _FilePairingPersistence implements PairingPersistence {
     }
   }
 
+  /// The file's keys, or an empty map. A corrupt file is not silently kept: the
+  /// caller re-mints a token, and every value written back replaces it whole.
+  Future<Map<String, Object?>> _read() async {
+    try {
+      final Object? raw = jsonDecode(await file.readAsString());
+      if (raw is Map<String, dynamic>) return Map<String, Object?>.from(raw);
+    } catch (_) {
+      // Unreadable state is treated as absent; the token is re-minted.
+    }
+    return <String, Object?>{};
+  }
+
+  Future<void> _write(Map<String, Object?> values) async {
+    final Map<String, Object?> merged = await _read()..addAll(values);
+    await file.writeAsString(jsonEncode(merged));
+    if (!Platform.isWindows) {
+      await Process.run('chmod', <String>['600', file.path]);
+    }
+  }
+
   @override
   Future<Uint8List?> load() async {
+    final Map<String, Object?> m = await _read();
+    final Object? hex = m['pairingToken'];
+    if (hex is! String || hex.isEmpty) return null;
     try {
-      final Map<String, dynamic> json =
-          jsonDecode(await file.readAsString()) as Map<String, dynamic>;
-      final Object? hex = json['pairingToken'];
-      if (hex is! String || hex.isEmpty) return null;
       return _parseToken(hex);
     } catch (_) {
       return null;
@@ -163,19 +214,27 @@ class _FilePairingPersistence implements PairingPersistence {
   }
 
   @override
-  Future<void> save(Uint8List token) async {
-    await file.writeAsString(jsonEncode(<String, String>{
-      'pairingToken': _hex(token),
-    }));
-    if (!Platform.isWindows) {
-      await Process.run('chmod', <String>['600', file.path]);
-    }
-  }
+  Future<void> save(Uint8List token) =>
+      _write(<String, Object?>{'pairingToken': _hex(token)});
 
   @override
-  Future<void> clear() async {
-    await file.writeAsString('{}');
-  }
+  Future<void> clear() => _write(<String, Object?>{'pairingToken': null});
+
+  /// Publish what a daemon needs to reach this gateway, so nothing is copied by
+  /// hand: where it listens, this radio's public key, and the peer's when a name
+  /// was resolved. Additive; the token key is untouched.
+  Future<void> publishIdentity({
+    required String address,
+    required String radioKey,
+    String? peerName,
+    String? peerKey,
+  }) =>
+      _write(<String, Object?>{
+        'gatewayAddr': address,
+        'radioKey': radioKey,
+        'peerName': peerName,
+        'peerKey': peerKey,
+      });
 }
 
 // ---------------------------------------------------------------------------
@@ -184,13 +243,16 @@ class _FilePairingPersistence implements PairingPersistence {
 
 class _Options {
   _Options(this.port, this.baud, this.token, this.statePath, this.listenPort,
-      this.help);
+      this.peerName, this.help);
 
   final String? port;
   final int baud;
   final String? token;
   final String statePath;
   final int listenPort;
+
+  /// Contact name whose public key the daemon should send to, or null.
+  final String? peerName;
   final bool help;
 
   static const String usage = '''
@@ -199,9 +261,16 @@ meshmore gateway (host, USB-serial companion radio)
   --port <path>     serial device, e.g. /dev/ttyACM0        (required)
   --baud <n>        baud rate                               (default 115200)
   --token <hex>     set the pairing token instead of keeping the stored one
-  --state <path>    where the token is kept                 (default below)
+  --state <path>    identity + token file the daemon reads  (default below)
   --listen <port>   loopback port                           (default 41731)
+  --peer-name <n>   resolve the peer radio by contact name, and publish its key
   --help
+
+The state file is the one thing a host needs to hand to ldmuxd: it holds the
+loopback address, the pairing token, this radio's public key, and -- when
+--peer-name resolves -- the peer radio's public key. No key is ever copied by
+hand. A name that does not resolve is a startup error listing what the radio
+does hold, because guessing a peer would send records into the wrong path.
 
 The radio must run a companion build with ENABLE_USB_INTERFACE. A BLE-only
 build exposes no serial companion interface.''';
@@ -211,6 +280,7 @@ build exposes no serial companion interface.''';
     int baud = 115200;
     String? token;
     int listen = GatewayServer.defaultPort;
+    String? peerName;
     bool help = false;
     final String home = Platform.environment['HOME'] ?? '.';
     String state = '$home/.local/state/meshmore/gateway.json';
@@ -231,13 +301,15 @@ build exposes no serial companion interface.''';
           state = next() ?? state;
         case '--listen':
           listen = int.tryParse(next() ?? '') ?? listen;
+        case '--peer-name':
+          peerName = next();
         default:
           if (a.startsWith('--')) {
             stderr.writeln('warning: unknown option $a');
           }
       }
     }
-    return _Options(port, baud, token, state, listen, help);
+    return _Options(port, baud, token, state, listen, peerName, help);
   }
 }
 
