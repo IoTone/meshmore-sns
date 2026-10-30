@@ -9,6 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../airtime_prefs.dart';
 import '../meshcore_controller.dart';
+import 'gateway_handoff.dart';
 import 'mesh_sender_adapter.dart';
 import 'secure_pairing_persistence.dart';
 
@@ -39,7 +40,9 @@ class GatewayService extends ChangeNotifier {
     PairingPersistence? persistence,
     int port = GatewayServer.defaultPort,
     Future<SharedPreferences> Function()? prefs,
+    GatewayHandoffPublisher? handoff,
   })  : _persistence = persistence ?? SecurePairingPersistence(),
+        _handoff = handoff ?? const NoGatewayHandoff(),
         _port = port,
         _prefs = prefs ?? SharedPreferences.getInstance {
     _mc.addListener(_reconcile);
@@ -52,6 +55,8 @@ class GatewayService extends ChangeNotifier {
   final PairingPersistence _persistence;
   final int _port;
   final Future<SharedPreferences> Function() _prefs;
+  final GatewayHandoffPublisher _handoff;
+  GatewayOffer? _published;
 
   bool _enabled = false;
   AirtimePolicy _airtimePolicy = AirtimePolicyPrefs.fallback;
@@ -266,11 +271,48 @@ class GatewayService extends ChangeNotifier {
     if (s != GatewayRunState.failed) _error = null;
   }
 
+  /// What another app on this phone may be told right now. Built from the same fields the screen
+  /// reads, so the handoff can never disagree with what the user sees.
+  GatewayOffer get offer {
+    // Running with no token is not a thing to offer: it is "off" to a client.
+    final String state = switch (_status) {
+      GatewayRunState.running => _token == null ? 'off' : 'running',
+      GatewayRunState.waitingForRadio => 'waitingForRadio',
+      GatewayRunState.failed => 'failed',
+      GatewayRunState.off => 'off',
+    };
+    if (state != 'running') return GatewayOffer(state: state, port: 0);
+    final Uint8List? self = _mc.selfInfo?.publicKey;
+    return GatewayOffer(
+      state: 'running',
+      port: port,
+      token: Uint8List.fromList(_token!),
+      radioKey:
+          self?.map((int b) => b.toRadixString(16).padLeft(2, '0')).join(),
+      peerName: boundPeerName,
+    );
+  }
+
+  /// Every change a listener hears is a change the handoff must hear, so this rides on the one
+  /// notification rather than a second set of call sites that could miss one (state, port, token
+  /// rotation and stop all notify). Unchanged offers are not re-sent.
+  @override
+  void notifyListeners() {
+    super.notifyListeners();
+    if (_disposed) return;
+    final GatewayOffer next = offer;
+    if (next == _published) return;
+    _published = next;
+    unawaited(_handoff.publish(next));
+  }
+
   /// Idempotent.
   @override
   void dispose() {
     if (_disposed) return;
     _disposed = true;
+    _published = null;
+    unawaited(_handoff.clear());
     _mc.removeListener(_reconcile);
     unawaited(_stop());
     super.dispose();
