@@ -124,9 +124,9 @@ class MeshNetwork {
 
   /// How far off a public preset's frequency a radio can sit and still
   /// decode it: half the bandwidth. A LoRa receiver tolerates a carrier
-  /// offset that is a fraction of the bandwidth, so "910.526" is not a
-  /// separate channel from "910.525". Half is deliberately generous (it
-  /// errs toward calling a network shared); the receiver's real tolerance
+  /// offset that is a fraction of the bandwidth, so a channel one kHz off a
+  /// preset is not a separate channel from it. Half is deliberately generous
+  /// (it errs toward calling a network shared); the receiver's real tolerance
   /// is smaller, but this figure is a judgement, not a measured value, and
   /// is NOT checked against a datasheet here.
   double get _hearingOffsetMhz => bandwidthKhz / 2000;

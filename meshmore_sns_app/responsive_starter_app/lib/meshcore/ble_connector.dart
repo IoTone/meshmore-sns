@@ -202,7 +202,7 @@ abstract final class BleConnector {
   /// A direct reconnect ([connectToRemoteId], used on every app start) has
   /// no scan result behind it, so `platformName` and `advName` are both
   /// empty and the only name left is the MAC. Saving that overwrote the real
-  /// one ("MeshCore-HELTEC-BASE") with "F8:5B:..." in the pairing and in the
+  /// one ("MeshCore-ABCDEF") with "AA:BB:CC:..." in the pairing and in the
   /// recently-paired list. When nothing better is known for THIS radio, keep
   /// the name already stored for it.
   @visibleForTesting

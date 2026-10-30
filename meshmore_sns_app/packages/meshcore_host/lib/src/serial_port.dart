@@ -48,7 +48,7 @@ class SerialPort {
     // `writeOnlyAppend` makes the VM seek to end of file before opening, and a
     // TTY rejects that with ESPIPE ("Illegal seek"). Plain `writeOnly` opens
     // without seeking; O_TRUNC is ignored on a character device. Observed on
-    // /dev/ttyACM0 (ESP32-S3 USB CDC) on 2026-10-28.
+    // a USB CDC tty (ESP32-S3) on 2026-10-28.
     final RandomAccessFile write =
         await File(path).open(mode: FileMode.writeOnly);
     return SerialPort._(read, write);
@@ -58,7 +58,7 @@ class SerialPort {
     final Future<void> next = _writeTail.then((_) async {
       // No flush: it maps to fsync, and a TTY answers EINVAL ("Invalid
       // argument"). Character devices are unbuffered, so the write syscall is
-      // already the whole delivery. Observed on /dev/ttyACM0, 2026-10-28.
+      // already the whole delivery. Observed on a USB CDC tty, 2026-10-28.
       await _writeHandle.writeFrom(bytes);
     });
     // The tail must never carry an error, or one failed write would poison
