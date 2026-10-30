@@ -623,10 +623,13 @@ unknown. Stated as hypothesis, not fact.
   an acknowledgement, so a firmware refusal looks like a success until a later
   sync silently reverts it. The gateway then refuses BIND for a node the user
   just "added".
-- **D2. `Radio contacts` in the device sheet does not respond.** Three taps in
-  two positions, no navigation, no exception in logcat. That screen is the only
-  UI that can free table slots (`device_contacts_screen.dart:168`), so the
-  recovery path for a full table is unreachable.
+- **D2. `Radio contacts` in the device sheet does not respond.** Four taps across
+  three positions, sheet stays open, no navigation, no exception in logcat. The
+  control is hit-testable in principle: in the same sheet, `Scan` toggled to
+  `Stop` and `Disconnect`/`Forget` are tappable buttons, and `onTap` on that
+  `ListTile` (`device_manager_sheet.dart:245-251`) is set. That screen is the only
+  UI that can free contact-table slots (`device_contacts_screen.dart:168`), so
+  the recovery path for a full table is unreachable from the product.
 - **D3. The gateway stops serving when MeshMore is backgrounded.** LDMUX got
   `ConnectException` and `SocketTimeoutException` on the loopback while
   MeshMore's process was alive. `App settings` has "Stay connected in
