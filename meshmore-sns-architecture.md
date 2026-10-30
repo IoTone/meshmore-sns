@@ -706,6 +706,36 @@ What changes is only the cap. What does **not** change:
   sized for. A genuinely responsive private mesh needs a profile change with its
   own arithmetic, and that is not this switch.
 
+**Where the responsiveness actually comes from, with numbers.** The policy
+removes a throttle; it does not shorten a packet. Bandwidth does that, and the
+two effects are multiplicative:
+
+| | 176 B packet | 2 KB snapshot = 14 records |
+|---|---|---|
+| 62.5 kHz, SF7, CR5 (deployed preset) | 613 ms | 8.6 s |
+| 500 kHz, SF7, CR5 (US915 allows it) | 77 ms | 1.1 s |
+
+At a 1 % duty cycle on 62.5 kHz, an hour buys 58 records, about one snapshot
+every five minutes. At 10 % on 500 kHz it buys ~4,700 records, about 190 KB, which
+is a screenful a second with the airtime still mostly idle. At the same 10 % on
+62.5 kHz it buys 587 records (~87 KB), about one snapshot every six seconds.
+
+So "our own private network, no duty cycle, responsive" is really three
+independent decisions, and only the first one is this switch:
+
+1. **Airtime policy** — `ownedChannel`. Done, and it is per transmitter.
+2. **Radio parameters** — narrower channel and slower spreading factor cost range
+   and buy time; wider and faster does the opposite. On a private frequency this
+   is a free choice, on 62.5 kHz it is not. Set through `configure_radio`, and it
+   must match at both ends or nothing is heard.
+3. **Profile** — what a reply is allowed to contain. ldmux's mesh profile caps a
+   reply at 1,500 B and sends state, not history. That cap, not the budget, is
+   what decides whether a full repaint is one second or nine.
+
+A responsive mode is therefore a profile decision that needs the radio's
+parameters as input, which the gateway owns and LDMUX does not (§13): the honest
+shape is a gateway-advertised rate, not a second policy in the client.
+
 **How the policy reaches the host, without the host learning radio
 parameters.** The daemon has no airtime meter of its own, and must not get one:
 computing an estimate needs the preset, which §13 keeps out of LDMUX. What it has
