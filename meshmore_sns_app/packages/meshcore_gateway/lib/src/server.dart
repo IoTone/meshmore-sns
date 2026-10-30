@@ -17,6 +17,10 @@ import 'session.dart';
 /// One client at a time, loopback only. A second connection is accepted and
 /// immediately told `CLOSE(busy)` rather than left to time out, so the
 /// rejection is unambiguous.
+/// Binding is a seam so the fallback rule can be tested without needing a port
+/// the OS actually refuses. Production always uses [ServerSocket.bind].
+typedef BindSocket = Future<ServerSocket> Function(InternetAddress, int);
+
 class GatewayServer {
   GatewayServer({
     required PairingStore pairing,
@@ -26,7 +30,9 @@ class GatewayServer {
     InternetAddress? address,
     Duration preAuthTimeout = GatewayLimits.preAuthTimeout,
     AirtimeEstimator estimator = const AirtimeEstimator(),
-  })  : _pairing = pairing,
+    BindSocket? bind,
+  })  : _bindSocket = bind ?? _defaultBind,
+        _pairing = pairing,
         _mesh = mesh,
         _governor = governor,
         _port = port,
@@ -34,8 +40,15 @@ class GatewayServer {
         _preAuthTimeout = preAuthTimeout,
         _estimator = estimator;
 
-  /// Fixed and documented. If it cannot be bound, the app reports that in
-  /// Settings rather than silently moving.
+  /// Preferred, not required.
+  ///
+  /// A fixed port is convenient, but it cannot be assumed: Android keeps a
+  /// list of ports reserved for its own use (`/proc/sys/net/ipv4/
+  /// ip_local_reserved_ports`) and binding one of them returns EPERM, not
+  /// EADDRINUSE. 41731 is on the list of the Pixel-era Android 16 build this
+  /// was tested on, so a fixed bind failed with "Operation not permitted".
+  /// The gateway therefore treats this as a preference and falls back to an
+  /// ephemeral port, and every consumer must read [port] after [start].
   static const int defaultPort = 41731;
 
   final PairingStore _pairing;
@@ -45,6 +58,7 @@ class GatewayServer {
   final int _port;
   final Duration _preAuthTimeout;
   final AirtimeEstimator _estimator;
+  final BindSocket _bindSocket;
 
   ServerSocket? _server;
   GatewaySession? _active;
@@ -76,12 +90,28 @@ class GatewayServer {
 
   Future<void> start() async {
     if (_server != null) throw StateError('gateway server already started');
-    final ServerSocket server =
-        await ServerSocket.bind(_address, _port, shared: false);
+    final ServerSocket server = await _bind();
     _server = server;
     _boundPort = server.port;
     server.listen(_onSocket);
   }
+
+  /// The preferred port if the OS will give it to us, otherwise an ephemeral
+  /// one. A reserved port answers EPERM and a taken one EADDRINUSE; both mean
+  /// "not this one", and neither is a reason for the gateway to refuse to run.
+  /// Anything else is a real failure and is rethrown.
+  Future<ServerSocket> _bind() async {
+    if (_port == 0) return _bindSocket(_address, 0);
+    try {
+      return await _bindSocket(_address, _port);
+    } on SocketException catch (e) {
+      if (e.osError?.errorCode != 1 && e.osError?.errorCode != 98) rethrow;
+      return _bindSocket(_address, 0);
+    }
+  }
+
+  static Future<ServerSocket> _defaultBind(InternetAddress a, int p) =>
+      ServerSocket.bind(a, p, shared: false);
 
   Future<void> stop() async {
     final GatewaySession? session = _active;

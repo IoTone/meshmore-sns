@@ -18,6 +18,7 @@ class Gateway {
     int port = GatewayServer.defaultPort,
     Duration preAuthTimeout = GatewayLimits.preAuthTimeout,
     AirtimeEstimator estimator = const AirtimeEstimator(),
+    BindSocket? bind,
   })  : _mesh = mesh,
         _governor = governor ?? Governor(),
         _store = PairingStore(persistence: persistence) {
@@ -28,6 +29,7 @@ class Gateway {
       port: port,
       preAuthTimeout: preAuthTimeout,
       estimator: estimator,
+      bind: bind,
     );
   }
 

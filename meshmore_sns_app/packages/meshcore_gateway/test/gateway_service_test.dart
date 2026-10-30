@@ -1,6 +1,7 @@
 // Copyright (c) 2026 IoTone, Inc.
 // SPDX-License-Identifier: MIT
 import 'dart:async';
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:meshcore_gateway/meshcore_gateway.dart';
@@ -208,6 +209,49 @@ void main() {
       h.client.sendRecord(seq: 2, record: List<int>.filled(10, 0));
       await h.client.nextSendResult();
       expect(h.gateway.governor.used, isNot(Duration.zero));
+    });
+  });
+
+  group('the preferred port is a preference', () {
+    test('EPERM on the preferred port falls back to an ephemeral one', () async {
+      // Android reserves ports in /proc/sys/net/ipv4/ip_local_reserved_ports
+      // (41731 is on that list on the Pixel-era Android 16 build this was
+      // tested on) and answers EPERM, not EADDRINUSE. A fixed default must
+      // therefore never be assumed, and the real port must be readable.
+      final List<int> asked = <int>[];
+      final Gateway gw = Gateway(
+        mesh: NoopMeshSender(uplinkRecordMax: 160, contacts: <String>{}),
+        bind: (InternetAddress a, int p) async {
+          asked.add(p);
+          if (p != 0) {
+            throw const SocketException(
+              'Failed to create server socket',
+              osError: OSError('Operation not permitted', 1),
+            );
+          }
+          return ServerSocket.bind(a, 0, shared: false);
+        },
+      );
+      await gw.start();
+      addTearDown(gw.stop);
+
+      expect(asked, <int>[GatewayServer.defaultPort, 0]);
+      expect(gw.port, greaterThan(0));
+      expect(gw.isRunning, isTrue);
+    });
+
+    test('a real failure to bind is not hidden by the fallback', () async {
+      final Gateway gw = Gateway(
+        mesh: NoopMeshSender(uplinkRecordMax: 160, contacts: <String>{}),
+        bind: (InternetAddress a, int p) async {
+          throw const SocketException(
+            'Failed to create server socket',
+            osError: OSError('Cannot assign requested address', 99),
+          );
+        },
+      );
+      await expectLater(gw.start(), throwsA(isA<SocketException>()));
+      expect(gw.isRunning, isFalse);
     });
   });
 
