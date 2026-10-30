@@ -594,3 +594,75 @@ Findings from running the mesh route on the phone, with one radio and no peer.
   Airtime stayed 0.0 s of 36 s, so a session that never binds transmits nothing.
 - **Not proven:** a bound session, the terminal profile, and the over-the-air
   leg. They need a second companion radio or a real contact for the host key.
+
+## Two-radio leg, 2026-10-29 (phone + Heltec V4 BLE + Seeed Wio L1 Pro USB)
+
+Setup: phone radio `HELTEC-BASE` `615f431f…` on BLE; host radio `WIOld`
+`26f6071f…` flashed to `WioTrackerL1_companion_radio_usb` and set to
+910.525 MHz / 62.5 kHz / SF7 / CR5 / 22 dBm. Both heard each other directly:
+the Seeed listed the Heltec with `pathLen 0`, and the Heltec listed `WIOld`
+with SNR 11.0 / RSSI −12 after five forced flood adverts.
+
+**Where the chain stops.** The desktop half bound cleanly (`state ready`,
+capacity 172 B, budget 58 records) and the phone's gateway accepted HELLO and
+PAIR, but BIND returned `not_a_contact`. Verified twice through `adb forward`
+with a real `GatewayClient`, not by reading UI text. Cause: `bindPeer` consults
+MeshMore's contact store (`meshcore_controller.dart:3477`), and a *heard* node is
+not a contact. The Nodes sheet does offer `Add to device contacts`
+(`meshcore_controller.dart:3497`), but on this radio that add did not take —
+the node stayed out of the contact list and the sheet kept saying "Not a device
+contact" while showing the contact-only telemetry controls. The most likely
+reason is a full table (350/350 was measured on this radio earlier), but it is
+**not proven**: the app never surfaced the radio's reply, so the ERR code is
+unknown. Stated as hypothesis, not fact.
+
+### Defects observed on the device, in order of seriousness
+
+- **D1. A refused contact write is reported as success.** `addNodeAsDeviceContact`
+  caches the contact optimistically (`:3528`) and `send` (`:858`) is a write, not
+  an acknowledgement, so a firmware refusal looks like a success until a later
+  sync silently reverts it. The gateway then refuses BIND for a node the user
+  just "added".
+- **D2. `Radio contacts` in the device sheet does not respond.** Three taps in
+  two positions, no navigation, no exception in logcat. That screen is the only
+  UI that can free table slots (`device_contacts_screen.dart:168`), so the
+  recovery path for a full table is unreachable.
+- **D3. The gateway stops serving when MeshMore is backgrounded.** LDMUX got
+  `ConnectException` and `SocketTimeoutException` on the loopback while
+  MeshMore's process was alive. `App settings` has "Stay connected in
+  background", but its switch renders as off and its subtitle changes meaning
+  between modes, so the actual state cannot be read from the control.
+- **D4. The gateway switch disagrees with the server.** "Allow other apps on
+  this phone" is drawn off while the same screen states `Listening on
+  127.0.0.1:42989` — and it is listening.
+- **D5. The route preference does not survive a restart.** Mesh was selected,
+  the app force-stopped and relaunched, and it dialled `100.127.119.54:7625`
+  (tailnet). Selecting `mesh` navigates immediately, so there is no obvious
+  moment at which it is saved.
+- **D6. No retry after a refusal.** The mesh screen keeps showing
+  `mesh · refused` indefinitely; recovery required force-stopping the app.
+- **D7. Wrong numbers presented as facts.** A node with no GPS fix showed
+  `45.68345, -111.09405` (Montana) and `distance ≈ 914 km`, and a node heard
+  minutes earlier showed `last heard 47 min ago`. The distance is derived from
+  a coordinate the node never sent.
+- **D8. "0 in range" while the row shows RSSI −12 and SNR 11.0** on the same
+  node, in the same list.
+- **D9. Stale contact status.** After the add attempt the sheet still said
+  "Not a device contact" while rendering the contact-only telemetry controls.
+- **D10. Device model misread.** A Heltec V4.3 is reported as "Heltec WiFi LoRa
+  32 V3" on the battery screen.
+- **D11.** `WioTrackerL1_companion_radio_usb` answers `CMD_SEND_SELF_ADVERT` with
+  `OK`, but a tool that expects `OK` next can receive `RfLogFrame` or
+  `MessagesWaitingFrame` instead — reproduced on the second advert. The
+  firmware's OK carries no correlation tag, which is why the host gateway keeps
+  its explicit one-command-at-a-time queue.
+
+### What the two-radio leg did prove
+
+- A second companion radio flashed from this tree works over USB serial, and its
+  four radio numbers and TX power can be set and read back from the host
+  (`tool/configure_radio.dart`).
+- Two radios on the same preset discover each other with a direct path, and a
+  flood advert from a node with no prior presence lands as a direct neighbour.
+- The desktop gateway + daemon bind and report capacity and hourly budget
+  correctly against a real radio (`state ready`, 172 B, 58 records).
