@@ -30,6 +30,12 @@ abstract final class BleConnector {
   static final Guid _rxUuid = Guid(MeshcoreBle.rxCharacteristicUuid);
   static final Guid _txUuid = Guid(MeshcoreBle.txCharacteristicUuid);
 
+  /// The firmware names every radio `MeshCore-<node name>`
+  /// (`BLE_NAME_PREFIX`, `examples/companion_radio/MyMesh.h`). A bond the
+  /// phone took from its own Bluetooth menu carries that name, which is the
+  /// only thing that marks it as a radio rather than any other bonded gadget.
+  static const String _namePrefix = 'MeshCore-';
+
   /// Request the runtime BLE permissions. The permission model is
   /// platform-specific:
   ///
@@ -57,6 +63,15 @@ abstract final class BleConnector {
     final bool scan = r[Permission.bluetoothScan]?.isGranted ?? false;
     final bool conn = r[Permission.bluetoothConnect]?.isGranted ?? false;
     return scan && conn;
+  }
+
+  /// Whether the runtime BLE permissions are already held, without prompting.
+  static Future<bool> hasPermissions() async {
+    if (!kIsWeb && Platform.isIOS) {
+      return (await Permission.bluetooth.status).isGranted;
+    }
+    return (await Permission.bluetoothScan.status).isGranted &&
+        (await Permission.bluetoothConnect.status).isGranted;
   }
 
   static bool _sameUuid(Guid a, Guid b) =>
@@ -155,6 +170,67 @@ abstract final class BleConnector {
     } catch (_) {/* already stopped or unsupported */}
   }
 
+  /// Radios the operating system already holds a bond for, in the order the
+  /// OS lists them. Android-only: iOS has no bond list to read.
+  ///
+  /// This is the half of the pairing state the app cannot see for itself.
+  /// Pairing from the phone's own Bluetooth menu writes a bond and nothing
+  /// else, so without this the app reports "no device paired" for a radio the
+  /// phone is bonded to, and pairing it a second time from inside the app is
+  /// the only way forward.
+  ///
+  /// Never requests permission: this is called on the startup path, and a
+  /// permission dialog must be the answer to something the user did. Without
+  /// permission the list is simply empty, which is the pre-existing behaviour.
+  static Future<List<BluetoothDevice>> bondedMeshcoreDevices() async {
+    if (kIsWeb || !Platform.isAndroid) return const <BluetoothDevice>[];
+    if (!await hasPermissions()) return const <BluetoothDevice>[];
+    try {
+      final List<BluetoothDevice> bonded = await FlutterBluePlus.bondedDevices;
+      return bonded
+          .where((BluetoothDevice d) => d.platformName.startsWith(_namePrefix))
+          .toList();
+    } catch (_) {
+      return const <BluetoothDevice>[];
+    }
+  }
+
+  /// Which bonded radio to adopt when the app has no pairing of its own: the
+  /// most recent one it has used before, else whichever the OS lists first.
+  ///
+  /// The phone can hold more than one radio's bond at a time (an old radio
+  /// replaced by a new one both stay bonded). Preferring the history makes the
+  /// adopted bond the one the user last actually used instead of an arbitrary
+  /// entry from a set the OS does not order.
+  @visibleForTesting
+  static String? adoptBondId({
+    required List<String> bondedIds,
+    required List<String> historyIds,
+  }) {
+    for (final String id in historyIds) {
+      if (bondedIds.contains(id)) return id;
+    }
+    return bondedIds.isEmpty ? null : bondedIds.first;
+  }
+
+  /// The radio to adopt as this app's pairing when it has none of its own.
+  /// Null when the phone holds no MeshCore bond either.
+  static Future<PairedDevice?> adoptableBond({
+    List<String> historyIds = const <String>[],
+  }) async {
+    final List<BluetoothDevice> bonded = await bondedMeshcoreDevices();
+    final String? id = adoptBondId(
+      bondedIds: bonded.map((BluetoothDevice d) => d.remoteId.str).toList(),
+      historyIds: historyIds,
+    );
+    for (final BluetoothDevice d in bonded) {
+      if (d.remoteId.str == id) {
+        return PairedDevice(d.remoteId.str, d.platformName);
+      }
+    }
+    return null;
+  }
+
   /// Startup path: reconnect to the saved paired device if there is
   /// one; otherwise fall back to a scan. Always the default transport
   /// factory so the M7 reconnect policy keeps working too.
@@ -168,6 +244,19 @@ abstract final class BleConnector {
             writeWithoutResponse: writeWithoutResponse);
       } catch (_) {
         // Saved device unreachable — fall back to scanning.
+      }
+    }
+    // A bond made in the phone's Bluetooth menu is the same bond this app
+    // would have made, so connect to it rather than making the user pair a
+    // second time. `_finish` records it, which is what makes the two routes
+    // one state from here on.
+    for (final BluetoothDevice device in await bondedMeshcoreDevices()) {
+      if (device.remoteId.str == paired?.remoteId) continue;
+      try {
+        await device.connect(timeout: const Duration(seconds: 12));
+        return await _finish(device, writeWithoutResponse);
+      } catch (_) {
+        await _safeDisconnect(device);
       }
     }
     return scanAndConnect(writeWithoutResponse: writeWithoutResponse);
@@ -229,52 +318,106 @@ abstract final class BleConnector {
     bool hadBond = false;
     try {
       hadBond = await _ensureBonded(device);
-      final List<BluetoothService> services = await device.discoverServices();
-      final BluetoothService svc = services.firstWhere(
-        (BluetoothService s) => _sameUuid(s.uuid, _service),
-        orElse: () =>
-            throw BleConnectException('MeshCore service not present'),
-      );
-      final BluetoothCharacteristic rx = svc.characteristics.firstWhere(
-        (BluetoothCharacteristic c) => _sameUuid(c.uuid, _rxUuid),
-        orElse: () => throw BleConnectException('RX characteristic missing'),
-      );
-      final BluetoothCharacteristic tx = svc.characteristics.firstWhere(
-        (BluetoothCharacteristic c) => _sameUuid(c.uuid, _txUuid),
-        orElse: () => throw BleConnectException('TX characteristic missing'),
-      );
-      await tx.setNotifyValue(true);
-      final String name = pairedNameFor(
-        platformName: device.platformName,
-        advName: device.advName,
-        remoteId: device.remoteId.str,
-        stored: await PairedDeviceStore.read(),
-      );
-      await PairedDeviceStore.save(device.remoteId.str, name);
-      // R41+1 — every successful pair also lands in the rolling
-      // history (capped at 5, most-recent-first). Same wire layer
-      // so a manual scan-pick and an auto-reconnect both promote
-      // the entry uniformly.
-      await PairedDeviceHistoryStore.touch(
-          device.remoteId.str, name);
-      return BleMeshcoreTransport(
-        device: device,
-        rx: rx,
-        tx: tx,
-        writeWithoutResponse: writeWithoutResponse,
-      );
+      return await _open(device, writeWithoutResponse);
     } catch (e) {
-      await device.disconnect();
-      // A pre-existing bond whose keys the peripheral no longer holds
-      // (e.g. after a firmware re-flash) fails here with a GATT /
-      // encryption error, not a pairing dialog — Android 17 may also
-      // be mid autonomous re-pair. Tell the user the actual remedy.
-      if (hadBond && e is! BleConnectException) {
-        throw BleConnectException(
-            'Stale pairing — forget the radio in Android Bluetooth '
-            'settings, power-cycle it, then pair again');
-      }
+      final bool stillLinked = device.isConnected;
+      await _safeDisconnect(device);
+      if (!hadBond || e is BleConnectException) rethrow;
+      // **A bond Android reports is not a bond the radio can use.** The bond
+      // table can hold a record with `ble_enc_key_size:0` while the radio's
+      // characteristics are MITM-only, so service discovery succeeds and the
+      // first encrypted operation fails. Android exposes no way to ask "does
+      // this bond have keys", so that failure is the only signal.
+      //
+      // A radio that is still linked and refusing is the case to repair: the
+      // bond is wrong. A link that dropped mid-open is not a bond problem (the
+      // radio walked out of range, the user turned it off), and removing a good
+      // bond over it would cost the user a pairing.
+      if (!stillLinked) rethrow;
+      return _repairBond(device, writeWithoutResponse);
+    }
+  }
+
+  /// Forget a bond the radio cannot use and make a fresh one, then open.
+  static Future<BleMeshcoreTransport> _repairBond(
+      BluetoothDevice device, bool writeWithoutResponse) async {
+    try {
+      // Removing the bond tears the link down on Android, so the reconnect
+      // has to come before `createBond` (which requires a live connection).
+      await device.removeBond();
+      await device.connect(timeout: const Duration(seconds: 12));
+      await _ensureBonded(device);
+      return await _open(device, writeWithoutResponse);
+    } on BleConnectException {
+      // The fresh pairing failed the way a pairing fails (no PIN entered), and
+      // that message already tells the user what to do.
+      await _safeDisconnect(device);
       rethrow;
+    } catch (_) {
+      await _safeDisconnect(device);
+      throw BleConnectException(
+          'Stale pairing — the radio no longer holds this bond. Forget it in '
+          'Android Bluetooth settings, power-cycle the radio, then pair again');
+    }
+  }
+
+  /// Everything after the link is encrypted: find the MeshCore service and its
+  /// two characteristics, subscribe, and record the radio as paired.
+  static Future<BleMeshcoreTransport> _open(
+      BluetoothDevice device, bool writeWithoutResponse) async {
+    final List<BluetoothService> services = await device.discoverServices();
+    final BluetoothService svc = services.firstWhere(
+      (BluetoothService s) => _sameUuid(s.uuid, _service),
+      orElse: () => throw BleConnectException('MeshCore service not present'),
+    );
+    final BluetoothCharacteristic rx = svc.characteristics.firstWhere(
+      (BluetoothCharacteristic c) => _sameUuid(c.uuid, _rxUuid),
+      orElse: () => throw BleConnectException('RX characteristic missing'),
+    );
+    final BluetoothCharacteristic tx = svc.characteristics.firstWhere(
+      (BluetoothCharacteristic c) => _sameUuid(c.uuid, _txUuid),
+      orElse: () => throw BleConnectException('TX characteristic missing'),
+    );
+    await tx.setNotifyValue(true);
+    final String name = pairedNameFor(
+      platformName: device.platformName,
+      advName: device.advName,
+      remoteId: device.remoteId.str,
+      stored: await PairedDeviceStore.read(),
+    );
+    await PairedDeviceStore.save(device.remoteId.str, name);
+    // R41+1 — every successful pair also lands in the rolling
+    // history (capped at 5, most-recent-first). Same wire layer
+    // so a manual scan-pick and an auto-reconnect both promote
+    // the entry uniformly.
+    await PairedDeviceHistoryStore.touch(device.remoteId.str, name);
+    return BleMeshcoreTransport(
+      device: device,
+      rx: rx,
+      tx: tx,
+      writeWithoutResponse: writeWithoutResponse,
+    );
+  }
+
+  /// Disconnect without letting the teardown itself become the error.
+  static Future<void> _safeDisconnect(BluetoothDevice device) async {
+    try {
+      await device.disconnect();
+    } catch (_) {/* already gone */}
+  }
+
+  /// Drop the OS bond for a radio, if there is one.
+  ///
+  /// "Forget the radio" has to mean the same thing on both routes: the app's
+  /// saved pairing is cleared by the caller, and this clears Android's record,
+  /// otherwise the next start adopts the bond straight back.
+  static Future<void> forgetBond(String? remoteId) async {
+    if (remoteId == null || kIsWeb || !Platform.isAndroid) return;
+    try {
+      await BluetoothDevice.fromId(remoteId).removeBond();
+    } catch (_) {
+      // Not bonded, already removed, or the stack refused — either way there
+      // is nothing the caller can do with the failure.
     }
   }
 }

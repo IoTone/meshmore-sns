@@ -3878,11 +3878,24 @@ class MeshcoreController extends ChangeNotifier {
     // Eagerly hydrate the history alongside the active pair so the
     // device-manager sheet has its "Recently paired" list ready on
     // first open — no second roundtrip needed.
-    final PairedDevice? p = await PairedDeviceStore.read();
+    PairedDevice? p = await PairedDeviceStore.read();
     _pairedHistory = await PairedDeviceHistoryStore.load();
+    // **A bond is a pairing, whichever menu made it.** Pairing a radio from
+    // the phone's own Bluetooth settings writes the OS bond and nothing here,
+    // so the app used to start saying "no device paired" for a radio Android
+    // was already bonded to — two states for one pairing. Adopt the OS bond
+    // and persist it, so from now on both routes read the same.
+    p ??= await BleConnector.adoptableBond(
+      historyIds: _pairedHistory
+          .map((PairedDeviceHistoryEntry e) => e.remoteId)
+          .toList(),
+    );
     if (p == null) {
       notifyListeners();
       return;
+    }
+    if (p.remoteId != _pairedRemoteId) {
+      await PairedDeviceStore.save(p.remoteId, p.name);
     }
     _pairedName = p.name;
     _pairedRemoteId = p.remoteId;
@@ -3898,6 +3911,10 @@ class MeshcoreController extends ChangeNotifier {
   Future<void> forgetDevice() async {
     final String? rid = _pairedRemoteId;
     await PairedDeviceStore.clear();
+    // Forget the OS bond too, not just our record of it. Leaving it behind
+    // would let [autoConnectIfPaired] adopt the radio straight back on the
+    // next start — the user pressed Forget and would see it return.
+    await BleConnector.forgetBond(rid);
     if (rid != null) await PairedDeviceHistoryStore.remove(rid);
     _pairedName = null;
     _pairedRemoteId = null;
