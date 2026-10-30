@@ -37,3 +37,17 @@ instructions are at the top of that file.
 
 `dart test` (30 tests, including a fake radio speaking the real firmware framing).
 Against hardware: `dart run tool/hardware_smoke.dart /dev/ttyACM0`.
+
+## Provisioning a second radio
+
+A freshly flashed companion radio has **no radio settings**: `NodePrefs.freq`,
+`sf`, `cr` and `bw` default to zero and the firmware applies no region default,
+so it cannot transmit until an app sets them. The phone app does that for its own
+radio. A host driving a second radio over USB has no app, so use:
+
+    dart run tool/configure_radio.dart /dev/ttyACM0 910.525 62.5 7 5 22
+
+The last five numbers are frequency MHz, bandwidth kHz, spreading factor, coding
+rate and TX power dBm. It prints the radio's own read-back and exits non-zero if
+the radio did not accept them. These four numbers must match the phone's radio
+exactly; only the coding rate is a safe local deviation.
