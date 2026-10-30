@@ -12,6 +12,14 @@ import 'ble_meshcore_transport.dart';
 import 'paired_device_history.dart';
 import 'paired_device_store.dart';
 
+/// The MeshCore service's RX and TX characteristics, located on an unencrypted
+/// link but not yet subscribed.
+class _Link {
+  const _Link(this.rx, this.tx);
+  final BluetoothCharacteristic rx;
+  final BluetoothCharacteristic tx;
+}
+
 /// Thrown when scan/connect cannot complete.
 class BleConnectException implements Exception {
   BleConnectException(this.message);
@@ -109,32 +117,54 @@ abstract final class BleConnector {
       throw BleConnectException('No MeshCore device found');
     }
 
-    // Prefer a radio the phone is already bonded to. Two MeshCore radios in
-    // range (the one the user paired, and another one) are otherwise picked by
-    // whichever advert arrived first, and connecting to the wrong one costs a
-    // pairing dialog. Presence is still proven by the scan, so this never
-    // waits on a bond for a radio that is not here.
     final BluetoothDevice device =
-        await _preferBonded(hits.map((ScanResult r) => r.device));
+        await _pickHit(hits.map((ScanResult r) => r.device));
     await device.connect();
     return _finish(device, writeWithoutResponse);
   }
 
-  /// The first of [candidates] the phone already holds a bond for, else the
-  /// first candidate. Order is otherwise preserved.
-  static Future<BluetoothDevice> _preferBonded(
+  /// Which scan hit to connect to: a radio the phone is already bonded to, else
+  /// one that names itself `MeshCore-`, else the first hit.
+  ///
+  /// The scan filter is the Nordic UART service UUID, which unrelated gadgets
+  /// clone — the bond table on the test phone held an entry for "E2 Pro 1113"
+  /// because this connected to `hits.first` and called `createBond` on whatever
+  /// had matched. `_finish` discovers services before subscribing, so a stranger
+  /// fails there, but not before the user has been shown a pairing dialog for a
+  /// device that was never a radio.
+  ///
+  /// The firmware always advertises `MeshCore-<node name>`
+  /// (`sprintf(dev_name, "%s%s", prefix, name)`, `SerialBLEInterface.cpp`), so
+  /// the name is what separates a radio from everything else answering the same
+  /// UUID. If no hit carries any name at all the OS has not told us, and the
+  /// first hit is the only choice left.
+  static Future<BluetoothDevice> _pickHit(
       Iterable<BluetoothDevice> candidates) async {
     final List<BluetoothDevice> list = candidates.toList();
+
+    bool namesItselfRadio(BluetoothDevice d) =>
+        d.platformName.startsWith(_namePrefix) ||
+        d.advName.startsWith(_namePrefix);
+    final bool anyNamed = list.any((BluetoothDevice d) =>
+        d.platformName.isNotEmpty || d.advName.isNotEmpty);
+    final List<BluetoothDevice> radios =
+        anyNamed ? list.where(namesItselfRadio).toList() : list;
+    if (radios.isEmpty) {
+      // Everything in range answered the MeshCore service UUID without ever
+      // naming itself a radio. Say so instead of bonding a stranger.
+      throw BleConnectException('No MeshCore device found');
+    }
+
+    // Presence is proven by the scan, so preferring a bonded radio never waits
+    // on a bond for a device that is not here.
     final Set<String> bonded = <String>{
       for (final BluetoothDevice d in await bondedMeshcoreDevices())
         d.remoteId.str,
     };
-    if (bonded.isNotEmpty) {
-      for (final BluetoothDevice d in list) {
-        if (bonded.contains(d.remoteId.str)) return d;
-      }
+    for (final BluetoothDevice d in radios) {
+      if (bonded.contains(d.remoteId.str)) return d;
     }
-    return list.first;
+    return radios.first;
   }
 
   /// Connect directly to a previously-paired device by its BLE remote
@@ -332,8 +362,14 @@ abstract final class BleConnector {
       BluetoothDevice device, bool writeWithoutResponse) async {
     bool hadBond = false;
     try {
+      // **Look before bonding.** Service discovery needs no encryption, so the
+      // radio's identity can be established before anything asks the user for a
+      // key. Bonding first meant whatever had matched the scan was given a
+      // pairing dialog — the test phone's bond table held an "E2 Pro 1113"
+      // entry for exactly that reason, a device which is not a radio at all.
+      final _Link link = await _locate(device);
       hadBond = await _ensureBonded(device);
-      return await _open(device, writeWithoutResponse);
+      return await _subscribe(device, link, writeWithoutResponse);
     } catch (e) {
       final bool stillLinked = device.isConnected;
       await _safeDisconnect(device);
@@ -361,8 +397,9 @@ abstract final class BleConnector {
       // has to come before `createBond` (which requires a live connection).
       await device.removeBond();
       await device.connect(timeout: const Duration(seconds: 12));
+      final _Link link = await _locate(device);
       await _ensureBonded(device);
-      return await _open(device, writeWithoutResponse);
+      return await _subscribe(device, link, writeWithoutResponse);
     } on BleConnectException {
       // The fresh pairing failed the way a pairing fails (no PIN entered), and
       // that message already tells the user what to do.
@@ -376,10 +413,12 @@ abstract final class BleConnector {
     }
   }
 
-  /// Everything after the link is encrypted: find the MeshCore service and its
-  /// two characteristics, subscribe, and record the radio as paired.
-  static Future<BleMeshcoreTransport> _open(
-      BluetoothDevice device, bool writeWithoutResponse) async {
+  /// The MeshCore service's two characteristics, found but not yet usable.
+  ///
+  /// Discovery is unencrypted, so this runs before any pairing: a device that
+  /// does not carry this service is not a radio, and must never be offered a
+  /// pairing dialog.
+  static Future<_Link> _locate(BluetoothDevice device) async {
     final List<BluetoothService> services = await device.discoverServices();
     final BluetoothService svc = services.firstWhere(
       (BluetoothService s) => _sameUuid(s.uuid, _service),
@@ -393,6 +432,14 @@ abstract final class BleConnector {
       (BluetoothCharacteristic c) => _sameUuid(c.uuid, _txUuid),
       orElse: () => throw BleConnectException('TX characteristic missing'),
     );
+    return _Link(rx, tx);
+  }
+
+  /// Subscribe on the encrypted link, and record the radio as paired.
+  static Future<BleMeshcoreTransport> _subscribe(BluetoothDevice device,
+      _Link link, bool writeWithoutResponse) async {
+    final BluetoothCharacteristic rx = link.rx;
+    final BluetoothCharacteristic tx = link.tx;
     await tx.setNotifyValue(true);
     final String name = pairedNameFor(
       platformName: device.platformName,
