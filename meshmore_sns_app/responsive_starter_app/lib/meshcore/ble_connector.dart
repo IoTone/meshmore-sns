@@ -109,9 +109,32 @@ abstract final class BleConnector {
       throw BleConnectException('No MeshCore device found');
     }
 
-    final BluetoothDevice device = hits.first.device;
+    // Prefer a radio the phone is already bonded to. Two MeshCore radios in
+    // range (the one the user paired, and another one) are otherwise picked by
+    // whichever advert arrived first, and connecting to the wrong one costs a
+    // pairing dialog. Presence is still proven by the scan, so this never
+    // waits on a bond for a radio that is not here.
+    final BluetoothDevice device =
+        await _preferBonded(hits.map((ScanResult r) => r.device));
     await device.connect();
     return _finish(device, writeWithoutResponse);
+  }
+
+  /// The first of [candidates] the phone already holds a bond for, else the
+  /// first candidate. Order is otherwise preserved.
+  static Future<BluetoothDevice> _preferBonded(
+      Iterable<BluetoothDevice> candidates) async {
+    final List<BluetoothDevice> list = candidates.toList();
+    final Set<String> bonded = <String>{
+      for (final BluetoothDevice d in await bondedMeshcoreDevices())
+        d.remoteId.str,
+    };
+    if (bonded.isNotEmpty) {
+      for (final BluetoothDevice d in list) {
+        if (bonded.contains(d.remoteId.str)) return d;
+      }
+    }
+    return list.first;
   }
 
   /// Connect directly to a previously-paired device by its BLE remote
@@ -247,18 +270,10 @@ abstract final class BleConnector {
       }
     }
     // A bond made in the phone's Bluetooth menu is the same bond this app
-    // would have made, so connect to it rather than making the user pair a
-    // second time. `_finish` records it, which is what makes the two routes
-    // one state from here on.
-    for (final BluetoothDevice device in await bondedMeshcoreDevices()) {
-      if (device.remoteId.str == paired?.remoteId) continue;
-      try {
-        await device.connect(timeout: const Duration(seconds: 12));
-        return await _finish(device, writeWithoutResponse);
-      } catch (_) {
-        await _safeDisconnect(device);
-      }
-    }
+    // would have made, so the scan prefers it over any other radio in range.
+    // Connecting to a bonded-but-absent radio first would only wait out a
+    // connect timeout per stale bond, which is what a replaced radio leaves
+    // behind.
     return scanAndConnect(writeWithoutResponse: writeWithoutResponse);
   }
 
