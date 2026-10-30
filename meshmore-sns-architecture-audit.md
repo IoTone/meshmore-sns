@@ -760,3 +760,36 @@ The check that removes the doubt is a raw HELLO straight over a freshly created
 forward, and reading the port the app actually advertises on screen rather than
 assuming the preferred one. `GatewayServer` binds an ephemeral port when the
 preferred one is unavailable, so the advertised port is the only truth.
+
+## Airtime modes: specified in prose, absent from the code (2026-10-29)
+
+Question asked: was there a mode for observing a duty cycle and a mode for a
+private mesh where the channel is ours and the bandwidth is free?
+
+Answer as found, before any change:
+
+- **Prose existed.** `meshmore-sns-private-mesh-investigation.md` §2 recommends a
+  private tuple as the target and gives numeric triggers; `architecture.md` §5.5a
+  says US915 has no duty cycle and calls the budget "unlimited in practice" there.
+- **No switch existed.** `Governor({Duration budget = 36 s})` was the only source
+  of the figure, `Gateway()` constructed it with no argument, and
+  `GatewayService._start` passed only `estimator:`. Grep for `budget:` in both
+  `packages/` and `lib/` found one unrelated comment in
+  `device_config_screen.dart`. No preference, no UI, no test.
+- **The host end has no meter at all.** `crates/mesh` reads
+  `txAirtimeTenthsThisHour` for display; `crates/daemon/src/mesh.rs` decrements a
+  local `records_left` after a send but refuses nothing on airtime grounds. So
+  "each end enforces the same policy on itself" (`architecture.md` §5.5) is
+  implemented on the phone side only.
+
+What was built: `AirtimePolicy` in `meshcore_gateway` (`onePercentDutyCycle`,
+`ownedChannel`), `Governor.forPolicy`, an uncapped governor that still meters,
+`airtimePolicy:` on `Gateway`, `mm.airtime.policy` via `AirtimePolicyPrefs`,
+`GatewayService.setAirtimePolicy` (rebuilds the gateway so the running governor
+follows the choice), and a switch on the connected-apps screen with the
+consequence written underneath it. Tests: 3 in the gateway package, 1 service
+test that a saved policy is applied at load, 1 screen test that the choice
+persists and the governor's budget changes.
+
+The gap that remains is recorded in `architecture.md` §5.5b: the daemon has no
+host-side governor, so the mode has no counterpart there yet.

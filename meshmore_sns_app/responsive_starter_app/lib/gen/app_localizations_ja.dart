@@ -3818,4 +3818,14 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get networksDeleteConfirm => '削除';
+
+  @override
+  String get connectedAppsAirtimeTitle => 'チャネルは専有です（自主的な送信時間上限なし）';
+
+  @override
+  String get connectedAppsAirtimeOwned =>
+      '上限なし: 他の誰も使わない専用周波数向け。無線機自身の制限は残ります。';
+
+  @override
+  String get connectedAppsAirtimeDutyCycle => '自主的なデューティ比 1%: 1時間あたり送信時間 36 秒。';
 }

@@ -675,6 +675,46 @@ What follows for the UI:
 - Timestamp every reply, because "tens of seconds later" is normal.
 - Never imply delivery.
 
+### 5.5b Airtime is a policy, not a constant
+
+**Added 2026-10-29.** Until this section, the figure 36 s/hour was hardcoded on
+every path: `Governor()` defaulted to it, `Gateway()` used the default, and
+`GatewayService` passed no policy at all. A private-frequency deployment could
+not ask for more, and the documentation that described the option
+(`private-mesh-investigation` §2, "(a) private tuple") never became a switch.
+
+Two modes, chosen per transmitter, stored per device:
+
+| Mode | Cap | Intended for | Stored as |
+|---|---|---|---|
+| `onePercentDutyCycle` (default) | 36 s of transmitter airtime per rolling hour | every shared channel, and every region where a duty cycle exists | `mm.airtime.policy` absent or `onePercentDutyCycle` |
+| `ownedChannel` | none | a private frequency the operator controls | `mm.airtime.policy` = `ownedChannel` |
+
+What changes is only the cap. What does **not** change:
+
+- **The meter.** `ownedChannel` still charges every record, so `used`,
+  `txAirtimeTenthsThisHour` and `STATUS` keep telling the truth. An uncapped
+  governor reports one window (1 h) as its remaining airtime, which is as much as
+  time allows, and `opsLeft` saturates at the 255 the frame can carry.
+- **The legal position.** Neither mode is a permission. The radio keeps its own
+  regulatory limit; `ownedChannel` is a person asserting the channel is theirs.
+- **The link's shape.** This is the important one: lifting the cap does not make
+  the mesh route a terminal. Records are still 148 B of application payload at
+  most, the ARQ still runs on L2 credit, and the host's mesh profile still sends
+  state, not history, one operation per command. At 613 ms/record a full hour of
+  `ownedChannel` airtime is ~5,800 records, which the session layer was never
+  sized for. A genuinely responsive private mesh needs a profile change with its
+  own arithmetic, and that is not this switch.
+
+**Known gap, stated rather than implied.** Each end meters itself, and the host
+end has no meter: `crates/mesh` in ldmux reads `txAirtimeTenthsThisHour` out of
+`STATUS` for display and the daemon decrements a local `records_left`, but
+nothing refuses a downlink record on airtime grounds. So under
+`onePercentDutyCycle` the phone side can be throttled by policy while the host
+side is not, and the mode switch on the phone has no counterpart in the daemon
+yet. Fixing it means a host-side governor with the same two policies, configured
+where the daemon's mesh endpoint is configured.
+
 ### 5.6 Why the budget needs no raise mechanism: the output is bounded at the source
 
 36 s per hour sounds generous until it is converted into records, and the

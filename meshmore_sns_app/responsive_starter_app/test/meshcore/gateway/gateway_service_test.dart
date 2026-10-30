@@ -254,4 +254,17 @@ void main() {
 
     await svc.setEnabled(false);
   });
+
+  test('a saved owned-channel policy is applied at load, not just displayed',
+      () async {
+    SharedPreferences.setMockInitialValues(
+        <String, Object>{'mm.airtime.policy': 'ownedChannel'});
+    await make();
+    expect(svc.airtimePolicy, AirtimePolicy.ownedChannel);
+    await svc.setEnabled(true);
+    await _until(() => svc.status == GatewayRunState.running);
+    // The running governor must be the uncapped one: a policy that is stored but
+    // not applied would report a budget the gateway enforces anyway.
+    expect(svc.airtimeBudget, const Duration(hours: 1));
+  });
 }

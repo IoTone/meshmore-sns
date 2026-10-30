@@ -1,6 +1,36 @@
 // Copyright (c) 2026 IoTone, Inc.
 // SPDX-License-Identifier: MIT
 
+/// How much airtime this end allows itself to spend.
+///
+/// A budget is a policy, not a property of the link. `meshmore-sns-architecture.md`
+/// §5.5b: the default is a voluntary 1 % duty cycle, which is the legal limit in
+/// the EU and UK and a deliberate safety margin anywhere else. A private
+/// frequency nobody else uses does not need that margin, and a mode that pretends
+/// otherwise makes a link that could be responsive feel broken.
+///
+/// Neither mode is a regulatory permission. The radio enforces the radio's own
+/// limit; a person choosing [ownedChannel] is asserting that the channel is
+/// theirs to occupy.
+enum AirtimePolicy {
+  /// Voluntary 1 % duty cycle: 36 s of transmitter airtime per rolling hour.
+  onePercentDutyCycle,
+
+  /// No voluntary cap. Intended for a private frequency the operator controls,
+  /// where there is no other traffic to be fair to.
+  ownedChannel;
+
+  /// Airtime allowed per rolling hour, or null for no voluntary cap.
+  Duration? get hourlyBudget => switch (this) {
+        AirtimePolicy.onePercentDutyCycle => const Duration(seconds: 36),
+        AirtimePolicy.ownedChannel => null,
+      };
+
+  /// Whether this end meters itself. Always true; a policy with no cap still
+  /// charges what it spends, so the figure stays honest in `STATUS`.
+  bool get isUnlimited => hourlyBudget == null;
+}
+
 /// Airtime accounting for the gateway's **own** transmissions.
 ///
 /// An airtime budget belongs to the transmitter that spends it. This meters
@@ -12,14 +42,31 @@
 /// measurement, and cannot see repeater retransmissions or collisions.
 class Governor {
   Governor({
-    Duration budget = const Duration(seconds: 36),
+    Duration? budget = const Duration(seconds: 36),
     Duration window = const Duration(hours: 1),
     DateTime Function()? clock,
+    AirtimePolicy policy = AirtimePolicy.onePercentDutyCycle,
   })  : _budget = budget,
+        _policy = policy,
         _window = window,
         _clock = clock ?? DateTime.now;
 
-  final Duration _budget;
+  /// Built from a policy rather than a figure, so the two modes cannot drift
+  /// from what they claim.
+  Governor.forPolicy(
+    AirtimePolicy policy, {
+    Duration window = const Duration(hours: 1),
+    DateTime Function()? clock,
+  }) : this(
+          budget: policy.hourlyBudget,
+          window: window,
+          clock: clock,
+          policy: policy,
+        );
+
+  /// Null means no voluntary cap ([AirtimePolicy.ownedChannel]).
+  final Duration? _budget;
+  final AirtimePolicy _policy;
   final Duration _window;
   final DateTime Function() _clock;
 
@@ -27,7 +74,16 @@ class Governor {
   final List<({DateTime at, Duration amount})> _charges =
       <({DateTime at, Duration amount})>[];
 
-  Duration get budget => _budget;
+  /// The policy this governor meters under.
+  AirtimePolicy get policy => _policy;
+
+  /// True when there is no voluntary cap. The meter still charges, so `used`
+  /// and `STATUS` keep telling the truth.
+  bool get unlimited => _budget == null;
+
+  /// The cap, or one window when there is none. A caller that shows a number
+  /// must check [unlimited] first rather than present this as a limit.
+  Duration get budget => _budget ?? _window;
   Duration get window => _window;
 
   /// Airtime spent inside the current rolling window.
@@ -43,7 +99,9 @@ class Governor {
   }
 
   Duration get remaining {
-    final Duration left = _budget - used;
+    final Duration? cap = _budget;
+    if (cap == null) return _window; // one window is as much as time allows
+    final Duration left = cap - used;
     return left.isNegative ? Duration.zero : left;
   }
 

@@ -6837,6 +6837,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Delete'**
   String get networksDeleteConfirm;
+
+  /// No description provided for @connectedAppsAirtimeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'The channel is ours (no voluntary airtime cap)'**
+  String get connectedAppsAirtimeTitle;
+
+  /// No description provided for @connectedAppsAirtimeOwned.
+  ///
+  /// In en, this message translates to:
+  /// **'No cap: for a private frequency nobody else uses. The radio keeps its own limit.'**
+  String get connectedAppsAirtimeOwned;
+
+  /// No description provided for @connectedAppsAirtimeDutyCycle.
+  ///
+  /// In en, this message translates to:
+  /// **'Voluntary 1 % duty cycle: 36 s of airtime per hour.'**
+  String get connectedAppsAirtimeDutyCycle;
 }
 
 class _AppLocalizationsDelegate

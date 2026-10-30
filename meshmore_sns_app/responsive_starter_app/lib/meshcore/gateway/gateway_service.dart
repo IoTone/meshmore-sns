@@ -7,6 +7,7 @@ import 'package:meshcore/meshcore.dart';
 import 'package:meshcore_gateway/meshcore_gateway.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../airtime_prefs.dart';
 import '../meshcore_controller.dart';
 import 'mesh_sender_adapter.dart';
 import 'secure_pairing_persistence.dart';
@@ -53,6 +54,7 @@ class GatewayService extends ChangeNotifier {
   final Future<SharedPreferences> Function() _prefs;
 
   bool _enabled = false;
+  AirtimePolicy _airtimePolicy = AirtimePolicyPrefs.fallback;
   bool _disposed = false;
   bool _busy = false;
   bool _again = false;
@@ -71,6 +73,11 @@ class GatewayService extends ChangeNotifier {
   bool _hasFailed = false;
 
   bool get enabled => _enabled;
+
+  /// The airtime policy this gateway meters itself under. The policy is chosen by the
+  /// operator, not negotiated: both ends meter their own transmissions.
+  AirtimePolicy get airtimePolicy => _airtimePolicy;
+
   GatewayRunState get status => _status;
 
   /// A human-readable reason when [status] is [GatewayRunState.failed].
@@ -109,6 +116,7 @@ class GatewayService extends ChangeNotifier {
     } catch (_) {
       _enabled = false;
     }
+    _airtimePolicy = await AirtimePolicyPrefs.policy();
     await _reconcile();
   }
 
@@ -122,6 +130,18 @@ class GatewayService extends ChangeNotifier {
     } catch (_) {
       // The switch still applies this run; it just won't persist.
     }
+    await _reconcile();
+  }
+
+  /// Choose the policy and restart so the running governor follows it. A
+  /// governor is built with the gateway, so changing the figure without
+  /// rebuilding it would leave the old cap in force and the switch lying.
+  Future<void> setAirtimePolicy(AirtimePolicy value) async {
+    if (value == _airtimePolicy) return;
+    _airtimePolicy = value;
+    await AirtimePolicyPrefs.setPolicy(value);
+    notifyListeners();
+    await _stop();
     await _reconcile();
   }
 
@@ -186,6 +206,7 @@ class GatewayService extends ChangeNotifier {
       persistence: _persistence,
       port: _port,
       estimator: estimatorFor(radio),
+      airtimePolicy: _airtimePolicy,
     );
     try {
       await gateway.start();

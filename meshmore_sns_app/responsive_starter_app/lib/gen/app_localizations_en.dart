@@ -3948,4 +3948,16 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get networksDeleteConfirm => 'Delete';
+
+  @override
+  String get connectedAppsAirtimeTitle =>
+      'The channel is ours (no voluntary airtime cap)';
+
+  @override
+  String get connectedAppsAirtimeOwned =>
+      'No cap: for a private frequency nobody else uses. The radio keeps its own limit.';
+
+  @override
+  String get connectedAppsAirtimeDutyCycle =>
+      'Voluntary 1 % duty cycle: 36 s of airtime per hour.';
 }

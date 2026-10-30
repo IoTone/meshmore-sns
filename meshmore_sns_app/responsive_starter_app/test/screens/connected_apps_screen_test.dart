@@ -130,7 +130,7 @@ void main() {
     final (MeshcoreController mc, GatewayService svc) = await boot(t);
     await show(t, svc);
 
-    await t.tap(find.byType(Switch));
+    await t.tap(find.byKey(const Key('gateway-switch')));
     await t.runAsync(
         () => Future<void>.delayed(const Duration(milliseconds: 200)));
     await t.pump();
@@ -233,6 +233,44 @@ void main() {
     final SwitchListTile offTile = t.widget<SwitchListTile>(
         find.byType(SwitchListTile).first);
     expect(offTile.value, isFalse);
+
+    await finish(t, mc, svc);
+  });
+
+  testWidgets('the airtime policy is a choice, persisted and applied',
+      (WidgetTester t) async {
+    // §5.5b: the budget is a policy. The default keeps the voluntary 1 % duty
+    // cycle; choosing the other mode must rebuild the governor, not just flip a
+    // label, or the cap that is actually enforced would disagree with the screen.
+    final (MeshcoreController mc, GatewayService svc) = await boot(t);
+    await t.runAsync(() => svc.setEnabled(true));
+    for (int i = 0; i < 60 && svc.status != GatewayRunState.running; i++) {
+      await t.runAsync(
+          () => Future<void>.delayed(const Duration(milliseconds: 20)));
+    }
+    expect(svc.airtimePolicy, AirtimePolicy.onePercentDutyCycle);
+    expect(svc.airtimeBudget, const Duration(seconds: 36));
+
+    await show(t, svc);
+    await t.pump();
+    expect(t.widget<SwitchListTile>(find.byKey(const Key('airtime-policy'))).value,
+        isFalse);
+
+    await t.runAsync(() => svc.setAirtimePolicy(AirtimePolicy.ownedChannel));
+    for (int i = 0; i < 60 && svc.status != GatewayRunState.running; i++) {
+      await t.runAsync(
+          () => Future<void>.delayed(const Duration(milliseconds: 20)));
+    }
+    await t.pump();
+    expect(svc.airtimePolicy, AirtimePolicy.ownedChannel);
+    // One window is as much airtime as an hour contains; the governor reports
+    // that rather than a cap it does not enforce.
+    expect(svc.airtimeBudget, const Duration(hours: 1));
+    expect(t.widget<SwitchListTile>(find.byKey(const Key('airtime-policy'))).value,
+        isTrue);
+
+    final SharedPreferences p = await SharedPreferences.getInstance();
+    expect(p.getString('mm.airtime.policy'), 'ownedChannel');
 
     await finish(t, mc, svc);
   });

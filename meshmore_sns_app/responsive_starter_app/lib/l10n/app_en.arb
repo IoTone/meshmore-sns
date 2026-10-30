@@ -1669,5 +1669,8 @@
   "networksDeleteTitle": "Delete {name}?",
   "@networksDeleteTitle": {"placeholders": {"name": {"type": "String"}}},
   "networksDeleteBody": "Only the saved settings are removed. Radios keep what they are set to.",
-  "networksDeleteConfirm": "Delete"
+  "networksDeleteConfirm": "Delete",
+  "connectedAppsAirtimeTitle": "The channel is ours (no voluntary airtime cap)",
+  "connectedAppsAirtimeOwned": "No cap: for a private frequency nobody else uses. The radio keeps its own limit.",
+  "connectedAppsAirtimeDutyCycle": "Voluntary 1 % duty cycle: 36 s of airtime per hour."
 }

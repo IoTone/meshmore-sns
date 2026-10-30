@@ -19,8 +19,9 @@ class Gateway {
     Duration preAuthTimeout = GatewayLimits.preAuthTimeout,
     AirtimeEstimator estimator = const AirtimeEstimator(),
     BindSocket? bind,
+    AirtimePolicy airtimePolicy = AirtimePolicy.onePercentDutyCycle,
   })  : _mesh = mesh,
-        _governor = governor ?? Governor(),
+        _governor = governor ?? Governor.forPolicy(airtimePolicy),
         _store = PairingStore(persistence: persistence) {
     _server = GatewayServer(
       pairing: _store,

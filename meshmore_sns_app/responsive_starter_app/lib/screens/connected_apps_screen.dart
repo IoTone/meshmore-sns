@@ -110,6 +110,7 @@ class _ConnectedAppsScreenState extends State<ConnectedAppsScreen> {
           padding: const EdgeInsets.all(16),
           children: <Widget>[
             SwitchListTile(
+              key: const Key('gateway-switch'),
               contentPadding: EdgeInsets.zero,
               title: Text(l.connectedAppsSwitch),
               subtitle: Text(
@@ -121,6 +122,25 @@ class _ConnectedAppsScreenState extends State<ConnectedAppsScreen> {
               ),
               value: svc.enabled,
               onChanged: (bool v) => svc.setEnabled(v),
+            ),
+            // Airtime is a policy, not a property of the link (§5.5b). The
+            // default keeps the voluntary 1 % duty cycle; the other mode says
+            // the channel is ours. Stated as the consequence, not as a gadget.
+            SwitchListTile(
+              key: const Key('airtime-policy'),
+              contentPadding: EdgeInsets.zero,
+              title: Text(l.connectedAppsAirtimeTitle),
+              subtitle: Text(
+                svc.airtimePolicy == AirtimePolicy.ownedChannel
+                    ? l.connectedAppsAirtimeOwned
+                    : l.connectedAppsAirtimeDutyCycle,
+                key: const Key('airtime-policy-state'),
+                style: muted,
+              ),
+              value: svc.airtimePolicy == AirtimePolicy.ownedChannel,
+              onChanged: (bool v) => svc.setAirtimePolicy(v
+                  ? AirtimePolicy.ownedChannel
+                  : AirtimePolicy.onePercentDutyCycle),
             ),
             if (tokenHex != null) ...<Widget>[
               const SizedBox(height: 16),
