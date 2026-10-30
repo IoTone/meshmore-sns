@@ -50,6 +50,10 @@ flutter pub get
 flutter analyze                 # no errors; two known warnings, see below
 flutter test                    # 940 tests
 flutter build apk --debug       # Android debug APK
+
+# Toolchain floor with Flutter 3.47.4, enforced by dev.flutter.flutter-gradle-plugin:
+# Gradle 8.14+, AGP 8.11.1+, Kotlin 2.2.20+. Older pins are refused outright, not
+# warned about, so the build stops before any APK is produced.
 flutter run -d <device>         # install on a device
 ```
 
