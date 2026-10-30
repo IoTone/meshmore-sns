@@ -109,19 +109,39 @@ abstract final class BleConnector {
       withServices: <Guid>[_service],
       timeout: scanTimeout,
     );
-    final List<ScanResult> hits = await FlutterBluePlus.scanResults
-        .firstWhere((List<ScanResult> r) => r.isNotEmpty)
-        .timeout(scanTimeout, onTimeout: () => const <ScanResult>[]);
+    // **Wait for a radio's name, not just its address.** The firmware puts the
+    // name in the scan response, which arrives a sweep after the advertisement
+    // that carries the service UUID, so the first snapshot frequently has the
+    // device and not the name. Stopping there would either miss the radio or, a
+    // moment earlier, have fallen back to a stranger that cloned the UUID.
+    final Map<String, ScanResult> seen = <String, ScanResult>{};
+    final Completer<void> named = Completer<void>();
+    final StreamSubscription<List<ScanResult>> sub =
+        FlutterBluePlus.scanResults.listen((List<ScanResult> snapshot) {
+      for (final ScanResult r in snapshot) {
+        seen[r.device.remoteId.str] = r;
+      }
+      if (!named.isCompleted && snapshot.any(_namesItselfRadio)) {
+        named.complete();
+      }
+    });
+    await named.future.timeout(scanTimeout, onTimeout: () {});
+    await sub.cancel();
     await FlutterBluePlus.stopScan();
-    if (hits.isEmpty) {
+    if (seen.isEmpty) {
       throw BleConnectException('No MeshCore device found');
     }
 
     final BluetoothDevice device =
-        await _pickHit(hits.map((ScanResult r) => r.device));
+        await _pickHit(seen.values.map((ScanResult r) => r.device));
     await device.connect();
     return _finish(device, writeWithoutResponse);
   }
+
+  /// Whether this device says in its advertisement that it is a radio.
+  static bool _namesItselfRadio(ScanResult r) =>
+      r.device.platformName.startsWith(_namePrefix) ||
+      r.advertisementData.advName.startsWith(_namePrefix);
 
   /// Which scan hit to connect to: a radio the phone is already bonded to, else
   /// one that names itself `MeshCore-`, else the first hit.
@@ -136,8 +156,7 @@ abstract final class BleConnector {
   /// The firmware always advertises `MeshCore-<node name>`
   /// (`sprintf(dev_name, "%s%s", prefix, name)`, `SerialBLEInterface.cpp`), so
   /// the name is what separates a radio from everything else answering the same
-  /// UUID. If no hit carries any name at all the OS has not told us, and the
-  /// first hit is the only choice left.
+  /// UUID.
   static Future<BluetoothDevice> _pickHit(
       Iterable<BluetoothDevice> candidates) async {
     final List<BluetoothDevice> list = candidates.toList();
@@ -145,10 +164,8 @@ abstract final class BleConnector {
     bool namesItselfRadio(BluetoothDevice d) =>
         d.platformName.startsWith(_namePrefix) ||
         d.advName.startsWith(_namePrefix);
-    final bool anyNamed = list.any((BluetoothDevice d) =>
-        d.platformName.isNotEmpty || d.advName.isNotEmpty);
     final List<BluetoothDevice> radios =
-        anyNamed ? list.where(namesItselfRadio).toList() : list;
+        list.where(namesItselfRadio).toList();
     if (radios.isEmpty) {
       // Everything in range answered the MeshCore service UUID without ever
       // naming itself a radio. Say so instead of bonding a stranger.
