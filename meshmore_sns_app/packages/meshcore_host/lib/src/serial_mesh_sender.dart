@@ -20,7 +20,11 @@ import 'companion_link.dart';
 class SerialMeshSender implements MeshSender {
   SerialMeshSender({
     required CompanionLink link,
-    this.linkTimeout = const Duration(seconds: 20),
+    // A record that is never answered must not hold the queue for twenty seconds: the
+    // firmware answers a raw send as soon as `sendDirect` returns, so a reply that has not
+    // arrived in a few seconds is lost, not slow. Measured on the device: a five-record screen
+    // took six seconds to leave because each record waited out a long, silent timeout.
+    this.linkTimeout = const Duration(seconds: 3),
   }) : _link = link;
 
   final CompanionLink _link;
