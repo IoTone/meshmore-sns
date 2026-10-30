@@ -567,3 +567,30 @@ Evidence and limits.
   keystore under `ANDROID_USER_HOME=~/.config/.android`; building with the default
   `~/.android` keystore produces an APK that `adb install -r` rejects. Any device
   build must set that variable, or the install destroys app data.
+
+## Phone leg, 2026-10-29 (real Android 16 device)
+
+Findings from running the mesh route on the phone, with one radio and no peer.
+
+- **P1. A fixed gateway port is not safe on Android.** The phone's
+  `/proc/sys/net/ipv4/ip_local_reserved_ports` contains `41731`, so
+  `ServerSocket.bind` on it returned `EPERM` and the gateway could not start
+  (`Could not start: SocketException ... Operation not permitted, errno = 1`).
+  The default is now a preference with an ephemeral fallback, and the QR carries
+  the real port. No fake-transport test could have found this.
+- **P2. Same-phone pairing cannot be scanned.** MeshMore draws the QR and LDMUX
+  holds the camera, on one screen. The scan-only ceremony was therefore
+  impossible for the primary daily case. Both codes are now accepted as typed or
+  pasted text, routed by scheme.
+- **P3. The mesh screen ignored system insets** and drew its status line under
+  the clock; its header row also squeezed the leave control to one character
+  column. Fixed.
+- **P4. Debug signatures differ by keystore.** The builds installed earlier were
+  signed from `ANDROID_USER_HOME=~/.config/.android`; building from `~/.android`
+  refuses to upgrade them. Preserving app data requires the former.
+- **Proven on the device:** the loopback gateway runs and reports its port
+  (`127.0.0.1:42989`), and the L2 exchange completes over the real stack —
+  HELLO, PAIR ok, BIND refused `not_a_contact` for a key the radio does not know.
+  Airtime stayed 0.0 s of 36 s, so a session that never binds transmits nothing.
+- **Not proven:** a bound session, the terminal profile, and the over-the-air
+  leg. They need a second companion radio or a real contact for the host key.
