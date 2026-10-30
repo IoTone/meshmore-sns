@@ -1,6 +1,7 @@
 // Copyright (c) 2026 IoTone, Inc.
 // SPDX-License-Identifier: MIT
 import 'dart:async';
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:meshcore/meshcore.dart';
@@ -357,6 +358,19 @@ class SerialMeshSender implements MeshSender {
     final Future<void> previous = _tail;
     final Completer<void> done = Completer<void>();
     _tail = done.future;
-    return previous.then((_) => action()).whenComplete(done.complete);
+    // One queue for everything that talks to the radio, which is what makes the reply-to-command
+    // pairing safe on a firmware with no correlation tag. The cost is that a slow operation holds
+    // every later one, so the wait is worth being able to see: `MESHMORE_GATEWAY_DEBUG=1` prints
+    // how long each action spent waiting for the queue and how long it then took.
+    final bool trace = Platform.environment['MESHMORE_GATEWAY_DEBUG'] == '1';
+    final Stopwatch queued = Stopwatch()..start();
+    return previous.then((_) {
+      if (!trace) return action();
+      final int waited = queued.elapsedMilliseconds;
+      final Stopwatch ran = Stopwatch()..start();
+      return action().whenComplete(() {
+        stdout.writeln('gateway: serialised wait=${waited}ms ran=${ran.elapsedMilliseconds}ms');
+      });
+    }).whenComplete(done.complete);
   }
 }
