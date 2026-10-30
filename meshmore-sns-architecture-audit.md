@@ -669,3 +669,47 @@ unknown. Stated as hypothesis, not fact.
   flood advert from a node with no prior presence lands as a direct neighbour.
 - The desktop gateway + daemon bind and report capacity and hourly budget
   correctly against a real radio (`state ready`, 172 B, 58 records).
+
+## Corrections to the two-radio entry above (same day, later)
+
+Two of the eleven entries were wrong, and one had the wrong cause. Written out
+rather than edited away, because the correction is the useful part.
+
+- **D2 is RETRACTED. `Radio contacts` works.** The accessibility tree gives the
+  row's real bounds: `[40,1805][1040,1925]`. My taps were at y = 1510–1546,
+  which land on the non-clickable `MeshCore-HELTEC-BASE` text at
+  `[153,1495][732,1568]`. My screenshot-to-device coordinate reading was off by
+  about 320 px, and four "attempts" were four repetitions of the same mistake.
+  The row opens the screen; `test/screens/device_manager_sheet_test.dart` now
+  pins that at both normal and 1.3x text size.
+- **D4 is RETRACTED as unconfirmed.** The switch binds `svc.enabled`
+  (`connected_apps_screen.dart:112-122`) and the subtitle binds `svc.status`
+  (`:89-95`). A test now asserts an enabled, listening service renders ON and a
+  stopped one OFF, and it passes (`connected_apps_screen_test.dart`). The stored
+  preference was `mm.gateway.enabled.v1=true`, so the screen had every reason to
+  draw ON. Most likely I misread a dark-themed switch at screenshot scale. Not
+  proven either way, so it does not belong in a defect list.
+- **D3 stands, but the cause was the preference, not the product default.** The
+  keep-alive defaults **on** (`background_prefs.dart:16`), and the phone's stored
+  value is `mm.bg.keepalive=false` — turned off by a tap during this session.
+  With it off, Android killed MeshMore and the gateway with it, and LDMUX said
+  `mesh · MeshMore not running`, which was accurate. What was still wrong is
+  that the gateway never held the keep-alive itself, so a contract with another
+  app depended on a setting meant for the user's own foreground experience.
+  Fixed: `MeshcoreController.holdKeepaliveForGateway` /
+  `releaseKeepaliveForGateway`, reference-counted, best-effort, called by
+  `GatewayService` when a gateway starts and stops. Two tests: the gateway holds
+  it with the user preference off, and a refused notification permission leaves
+  the gateway serving.
+- **D1 is narrower than written, and its cause is still open.** The contact did
+  land: `Radio contacts` shows `350 of 350 contacts on the radio` with
+  `WIOld …26f6071f4650 · direct` in the list. A client `BIND` then succeeded with
+  `BIND OK caps=2 max=172`. So the sequence was: add → `BIND_ERR` immediately
+  after → later `BIND_OK`. The add is still optimistic (`send` at
+  `meshcore_controller.dart:858` is a write, not an acknowledgement), and the two
+  views (`_contacts` for the gateway, `_probedContacts` for that screen) can
+  disagree in the window between the two. Which exact path repaired `_contacts`
+  is not established, so it stays an open question rather than a claimed bug.
+  Fresh fact from the same screen: every row carries `Remove from device
+  contacts`, so a full table is recoverable, and the banner states the condition
+  plainly ("Contact list is full. Remove entries below to add new ones.").

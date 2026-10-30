@@ -206,6 +206,11 @@ class GatewayService extends ChangeNotifier {
     _gateway = gateway;
     _sender = sender;
     _radioTuple = tuple;
+    // Hold the process alive for as long as anything is listening: the client is
+    // another app and cannot keep this one from being killed. Assigned first so
+    // that _stop() -- which releases only when a gateway is present -- can never
+    // miss a hold taken during a dispose that lands inside this await.
+    await _mc.holdKeepaliveForGateway();
     _token = gateway.pairingToken; // after start(): load() may replace it
     _error = null;
     _hasFailed = false;
@@ -215,6 +220,7 @@ class GatewayService extends ChangeNotifier {
   Future<void> _stop() async {
     final Gateway? g = _gateway;
     final MeshcoreMeshSender? s = _sender;
+    if (g != null) await _mc.releaseKeepaliveForGateway();
     _gateway = null;
     _sender = null;
     _token = null;

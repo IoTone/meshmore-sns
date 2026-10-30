@@ -5,6 +5,7 @@ import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:meshcore_gateway/meshcore_gateway.dart';
+import 'package:meshmore_sns_app/meshcore/background_keepalive.dart';
 import 'package:meshmore_sns_app/meshcore/gateway/gateway_service.dart';
 import 'package:meshmore_sns_app/meshcore/meshcore_controller.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -28,12 +29,40 @@ class _ThrowingPersistence implements PairingPersistence {
   Future<void> clear() async {}
 }
 
-Future<(MeshcoreController, FakeMeshcoreTransport)> _connected() async {
+/// Records start/stop so the test can see whether the gateway asked for the
+/// process to be kept alive. Counting matters: the gateway restarts whenever the
+/// radio tuple changes, and a plain start/stop pair would flap the service.
+class _RecordingKeepalive implements BackgroundKeepalive {
+  int starts = 0;
+  int stops = 0;
+  bool running = false;
+  bool throwOnStart = false;
+
+  @override
+  Future<void> start() async {
+    starts++;
+    if (throwOnStart) throw StateError('notification permission refused');
+    running = true;
+  }
+
+  @override
+  Future<void> stop() async {
+    stops++;
+    running = false;
+  }
+
+  @override
+  Future<bool> get isRunning async => running;
+}
+
+Future<(MeshcoreController, FakeMeshcoreTransport)> _connected(
+    {BackgroundKeepalive? keepalive}) async {
   final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
   final MeshcoreController c = MeshcoreController(
     transportFactory: () async => fake,
     connection:
         MeshcoreConnection(handshakeTimeout: const Duration(seconds: 5)),
+    backgroundKeepalive: keepalive,
   );
   await c.connect();
   fake.emit(selfInfoFrame());
@@ -57,8 +86,12 @@ void main() {
   late FakeMeshcoreTransport fake;
   late GatewayService svc;
 
-  Future<void> make({PairingPersistence? persistence, int port = 0}) async {
-    (mc, fake) = await _connected();
+  Future<void> make({
+    PairingPersistence? persistence,
+    int port = 0,
+    BackgroundKeepalive? keepalive,
+  }) async {
+    (mc, fake) = await _connected(keepalive: keepalive);
     svc = GatewayService(
       mc,
       persistence: persistence ?? InMemoryPairingPersistence(),
@@ -177,5 +210,48 @@ void main() {
     await svc.setEnabled(true);
     svc.dispose();
     svc.dispose();
+  });
+
+  test('the gateway holds the keep-alive even with the user pref off', () async {
+    // D3: Android killed the gateway whenever MeshMore lost focus, and the other
+    // app could only say "MeshMore not running". The client cannot keep this
+    // process alive, so listening must.
+    // The preference defaults ON, so it must be off here for the assertion to
+    // be about the gateway's hold rather than about the user's setting.
+    SharedPreferences.setMockInitialValues(
+        <String, Object>{'mm.bg.keepalive': false});
+    final _RecordingKeepalive keep = _RecordingKeepalive();
+    await make(keepalive: keep);
+    expect(mc.backgroundKeepaliveEnabled, isFalse);
+
+    await svc.setEnabled(true);
+    await _until(() => svc.status == GatewayRunState.running);
+
+    expect(svc.status, GatewayRunState.running);
+    expect(keep.starts, 1, reason: 'listening must hold the process alive');
+    expect(keep.running, isTrue);
+    expect(mc.gatewayKeepaliveHeld, isTrue);
+
+    await svc.setEnabled(false);
+    await _until(() => svc.status == GatewayRunState.off);
+    expect(keep.stops, 1, reason: 'stopping the gateway must release the hold');
+    expect(keep.running, isFalse);
+    expect(mc.gatewayKeepaliveHeld, isFalse);
+  });
+
+  test('a refused keep-alive still leaves the gateway serving', () async {
+    SharedPreferences.setMockInitialValues(
+        <String, Object>{'mm.bg.keepalive': false});
+    final _RecordingKeepalive keep = _RecordingKeepalive()..throwOnStart = true;
+    await make(keepalive: keep);
+
+    await svc.setEnabled(true);
+    await _until(() => svc.status == GatewayRunState.running);
+
+    expect(svc.status, GatewayRunState.running,
+        reason: 'a permission failure must not take the gateway down with it');
+    expect(keep.starts, 1);
+
+    await svc.setEnabled(false);
   });
 }

@@ -389,6 +389,47 @@ class MeshcoreController extends ChangeNotifier {
     }
   }
 
+  /// Holds the process alive while something outside this app depends on it.
+  ///
+  /// The gateway lets another app on the phone send through this radio, and
+  /// that other app has no way to keep *this* process alive. Android therefore
+  /// killed the gateway within a minute of MeshMore losing focus, and the other
+  /// app could only report that MeshMore was not running
+  /// (`meshmore-sns-architecture-audit.md`, D3). The user's own keep-alive
+  /// preference is about their foreground experience, so it must not have to be
+  /// on for a contract with another app to hold. Reference-counted because the
+  /// gateway restarts on every radio tuple change.
+  int _gatewayKeepaliveHolds = 0;
+
+  /// Whether the keep-alive is running because of an outside holder rather
+  /// than the user's preference.
+  bool get gatewayKeepaliveHeld => _gatewayKeepaliveHolds > 0;
+
+  Future<void> holdKeepaliveForGateway() async {
+    _gatewayKeepaliveHolds++;
+    if (_gatewayKeepaliveHolds != 1 || _bgKeepaliveEnabled) return;
+    // Best effort: a refused notification permission or a missing plugin must
+    // not stop the gateway from serving. Losing the keep-alive degrades to the
+    // old behaviour (the process can be killed), which is still better than a
+    // gateway that refuses to start at all.
+    try {
+      await _keepalive.start();
+    } catch (_) {
+      // Reported by the platform, not actionable here.
+    }
+  }
+
+  Future<void> releaseKeepaliveForGateway() async {
+    if (_gatewayKeepaliveHolds == 0) return;
+    _gatewayKeepaliveHolds--;
+    if (_gatewayKeepaliveHolds != 0 || _bgKeepaliveEnabled) return;
+    try {
+      await _keepalive.stop();
+    } catch (_) {
+      // Same reasoning as holdKeepaliveForGateway.
+    }
+  }
+
   /// Restore persisted chat history (the protocol can't re-fetch it;
   /// the device queue is drained destructively). Loaded entries are
   /// older than anything received during the async gap, so they go

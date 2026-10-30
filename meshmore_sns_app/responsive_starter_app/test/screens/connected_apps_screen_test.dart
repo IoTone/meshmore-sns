@@ -203,4 +203,37 @@ void main() {
     expect(find.byKey(const Key('gateway-token-text')), findsNothing);
     await finish(t, mc, svc);
   });
+
+  testWidgets('the switch shows the server that is actually running',
+      (WidgetTester t) async {
+    // D4 in the audit: on the phone the switch looked off while the same screen
+    // printed "Listening on 127.0.0.1:42989" and the stored preference was true.
+    // Either the binding is wrong or the reading was. This settles it: an
+    // enabled service is an ON switch, and a stopped one is OFF.
+    final (MeshcoreController mc, GatewayService svc) = await boot(t);
+    await t.runAsync(() => svc.setEnabled(true));
+    for (int i = 0; i < 60 && svc.status != GatewayRunState.running; i++) {
+      await t.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 20)));
+    }
+    expect(svc.status, GatewayRunState.running);
+
+    await show(t, svc);
+    await t.pump();
+
+    final SwitchListTile tile = t.widget<SwitchListTile>(
+        find.byType(SwitchListTile).first);
+    expect(tile.value, isTrue,
+        reason: 'an enabled, listening gateway must read as ON');
+
+    await t.runAsync(() => svc.setEnabled(false));
+    for (int i = 0; i < 60 && svc.status != GatewayRunState.off; i++) {
+      await t.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 20)));
+    }
+    await t.pump(const Duration(seconds: 3));
+    final SwitchListTile offTile = t.widget<SwitchListTile>(
+        find.byType(SwitchListTile).first);
+    expect(offTile.value, isFalse);
+
+    await finish(t, mc, svc);
+  });
 }
