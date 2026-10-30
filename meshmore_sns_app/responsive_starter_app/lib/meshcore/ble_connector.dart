@@ -164,13 +164,12 @@ abstract final class BleConnector {
     bool namesItselfRadio(BluetoothDevice d) =>
         d.platformName.startsWith(_namePrefix) ||
         d.advName.startsWith(_namePrefix);
-    final List<BluetoothDevice> radios =
-        list.where(namesItselfRadio).toList();
-    if (radios.isEmpty) {
-      // Everything in range answered the MeshCore service UUID without ever
-      // naming itself a radio. Say so instead of bonding a stranger.
-      throw BleConnectException('No MeshCore device found');
-    }
+    // Named radios first, but an unnamed hit is still a candidate: a radio whose
+    // scan response was missed must not be reported as absent. It cannot do any
+    // harm to try one, because [_locate] proves the MeshCore service before
+    // anything bonds.
+    final List<BluetoothDevice> radios = list.where(namesItselfRadio).toList();
+    final List<BluetoothDevice> pool = radios.isEmpty ? list : radios;
 
     // Presence is proven by the scan, so preferring a bonded radio never waits
     // on a bond for a device that is not here.
@@ -178,10 +177,10 @@ abstract final class BleConnector {
       for (final BluetoothDevice d in await bondedMeshcoreDevices())
         d.remoteId.str,
     };
-    for (final BluetoothDevice d in radios) {
+    for (final BluetoothDevice d in pool) {
       if (bonded.contains(d.remoteId.str)) return d;
     }
-    return radios.first;
+    return pool.first;
   }
 
   /// Connect directly to a previously-paired device by its BLE remote
