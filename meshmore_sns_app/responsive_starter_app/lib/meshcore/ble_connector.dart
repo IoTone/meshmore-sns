@@ -51,6 +51,25 @@ abstract final class BleConnector {
   /// and no information for us.
   static bool _repairedThisRun = false;
 
+  /// Set when the one repair this run was given has itself failed.
+  ///
+  /// Without it, every reconnect attempt after a failed repair is another
+  /// pairing dialog — up to eight, one per retry, each waiting the full 60 s
+  /// for a PIN. That is what the radio's own log showed on 2026-10-31:
+  /// `connected → pairing passkey request → pairing complete status=1 →
+  /// disconnected reason=22`, repeating. A radio that cannot keep a bond is
+  /// not fixed by asking the user to type a PIN again, so the attempts stop and
+  /// the message says what to do.
+  ///
+  /// Cleared by any successful open, so a radio that recovers is not punished
+  /// for having failed once.
+  static bool _repairFailed = false;
+
+  static const String _notKeepingPairing =
+      'The radio is not keeping its pairing: it paired, then could not encrypt '
+      'on the next connection. Power-cycle the radio, then reopen the app and '
+      'pair again. If that repeats, the radio is losing its stored bond.';
+
   /// Request the runtime BLE permissions. The permission model is
   /// platform-specific:
   ///
@@ -361,8 +380,12 @@ abstract final class BleConnector {
   /// use 123456. Returns whether a bond already existed beforehand.
   static Future<bool> _ensureBonded(BluetoothDevice device) async {
     if (kIsWeb || !Platform.isAndroid) return false; // iOS: OS-managed.
-    final BluetoothBondState state = await device.bondState.first;
-    if (state == BluetoothBondState.bonded) return true;
+    // Ask the same question [_bondExists] asks, and for the same reason: a
+    // device built from a remote id has no cached bond state until a connection
+    // starts, so its first emission is not evidence of anything. The list is
+    // the authority. Two answers to one question meant a bonded radio could be
+    // sent through a fresh pairing ceremony.
+    if (await _bondExists(device)) return true;
     try {
       // 60s: enough time to read the PIN off the radio screen and
       // type it into the system dialog.
@@ -414,12 +437,18 @@ abstract final class BleConnector {
     bool writeWithoutResponse, {
     Duration timeout = const Duration(seconds: 12),
   }) async {
+    // Refuse before anything else once the repair has been spent and failed:
+    // connecting would kill the link on the radio's own key check and then ask
+    // for a PIN nobody can make stick.
+    if (_repairFailed) throw BleConnectException(_notKeepingPairing);
     // Read before connecting: the bond that has to be judged is the one that
     // existed before this attempt, and reading makes no bond and asks nothing.
     final bool hadBond = await _bondExists(device);
     try {
       await device.connect(timeout: timeout);
-      return await _establish(device, writeWithoutResponse);
+      final transport = await _establish(device, writeWithoutResponse);
+      _repairFailed = false;
+      return transport;
     } catch (e) {
       await _safeDisconnect(device);
       if (!shouldRepairBond(
@@ -451,10 +480,8 @@ abstract final class BleConnector {
       try {
         return await _repairBond(device, writeWithoutResponse);
       } catch (_) {
-        throw BleConnectException(
-            'The radio is not keeping its pairing: it paired, then could not '
-            'encrypt on the next connection. Power-cycle the radio and pair '
-            'again. If that repeats, the radio is losing its stored bond.');
+        _repairFailed = true;
+        throw BleConnectException(_notKeepingPairing);
       }
     }
   }
