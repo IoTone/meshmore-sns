@@ -82,5 +82,21 @@ void main() {
               hadBond: false, identityFailure: false),
           isFalse);
     });
+
+    test('one repair per run, because a radio that cannot hold a bond fails '
+        'the same way every time', () {
+      // A second repair would be another PIN prompt for the user and no new
+      // information: the failure that follows it is identical. Meshtastic's
+      // own connections guide draws the same line, telling the user to
+      // power-cycle the radio once retries stop being productive.
+      expect(
+          BleConnector.shouldRepairBond(
+              hadBond: true, identityFailure: false, alreadyRepaired: true),
+          isFalse);
+      expect(
+          BleConnector.shouldRepairBond(
+              hadBond: true, identityFailure: false, alreadyRepaired: false),
+          isTrue);
+    });
   });
 }

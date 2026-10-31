@@ -44,6 +44,13 @@ abstract final class BleConnector {
   /// only thing that marks it as a radio rather than any other bonded gadget.
   static const String _namePrefix = 'MeshCore-';
 
+  /// Whether a bond repair has already been attempted in this run.
+  ///
+  /// One attempt is the budget. A radio that cannot keep a bond fails the same
+  /// way every time, so a second repair is just another PIN prompt for the user
+  /// and no information for us.
+  static bool _repairedThisRun = false;
+
   /// Request the runtime BLE permissions. The permission model is
   /// platform-specific:
   ///
@@ -134,8 +141,7 @@ abstract final class BleConnector {
 
     final BluetoothDevice device =
         await _pickHit(seen.values.map((ScanResult r) => r.device));
-    await device.connect();
-    return _finish(device, writeWithoutResponse);
+    return _open(device, writeWithoutResponse);
   }
 
   /// Whether this device says in its advertisement that it is a radio.
@@ -194,8 +200,7 @@ abstract final class BleConnector {
       throw BleConnectException('BLE permissions denied');
     }
     final BluetoothDevice device = BluetoothDevice.fromId(remoteId);
-    await device.connect(timeout: timeout);
-    return _finish(device, writeWithoutResponse);
+    return _open(device, writeWithoutResponse, timeout: timeout);
   }
 
   /// R41 — start a BLE scan and stream the full list of MeshCore
@@ -271,15 +276,21 @@ abstract final class BleConnector {
   /// `identityFailure` means [_locate] decided the device carries no MeshCore
   /// service — something no amount of re-pairing changes.
   ///
+  /// `alreadyRepaired` is what keeps this from becoming a loop. A radio that
+  /// cannot hold a bond fails the same way every time, so repairing again only
+  /// asks the user for another PIN. One attempt per app run is the whole
+  /// budget: after that the honest report is that the radio is at fault.
+  ///
   /// Deliberately absent: whether the link survived. It does not, in the case
-  /// this exists for, because a keyless bond kills the link while Android is
-  /// still trying to encrypt it.
+  /// this exists for, because an unusable bond kills the link while the radio
+  /// stack is still trying to encrypt it.
   @visibleForTesting
   static bool shouldRepairBond({
     required bool hadBond,
     required bool identityFailure,
+    bool alreadyRepaired = false,
   }) =>
-      hadBond && !identityFailure;
+      hadBond && !identityFailure && !alreadyRepaired;
 
   /// Which bonded radio to adopt when the app has no pairing of its own: the
   /// most recent one it has used before, else whichever the OS lists first.
@@ -389,30 +400,32 @@ abstract final class BleConnector {
     return remoteId;
   }
 
-  /// Discover services/characteristics, enable notifications, persist
-  /// the device as paired, and wrap it as a transport.
-  static Future<BleMeshcoreTransport> _finish(
-      BluetoothDevice device, bool writeWithoutResponse) async {
-    bool hadBond = false;
+  /// Connect, then open the radio, repairing a bond the radio cannot use.
+  ///
+  /// **The whole open is the repair's scope, not just service discovery.** A
+  /// bond the radio cannot use kills the link while `device.connect()` is still
+  /// running — the plugin requests the MTU as part of connecting, and that
+  /// exchange never completes — so the failure arrives from `connect()` and an
+  /// earlier version, which guarded only the discovery step, never saw it. On
+  /// the test phone the sequence was: connect, `status: SUCCESS`, `requestMtu`,
+  /// five seconds, `LINK_SUPERVISION_TIMEOUT`, forever.
+  static Future<BleMeshcoreTransport> _open(
+    BluetoothDevice device,
+    bool writeWithoutResponse, {
+    Duration timeout = const Duration(seconds: 12),
+  }) async {
+    // Read before connecting: the bond that has to be judged is the one that
+    // existed before this attempt, and reading makes no bond and asks nothing.
+    final bool hadBond = await _bondExists(device);
     try {
-      // **Look before bonding.** Service discovery needs no encryption, so the
-      // radio's identity can be established before anything asks the user for a
-      // key. Bonding first meant whatever had matched the scan was given a
-      // pairing dialog — the test phone's bond table held an "E2 Pro 1113"
-      // entry for exactly that reason, a device which is not a radio at all.
-      //
-      // The bond is nevertheless *read* first, which makes no bond and asks
-      // nothing. Without that, a failure inside `_locate` arrived with `hadBond`
-      // still false, so the case where an unusable bond breaks discovery could
-      // never be repaired.
-      hadBond = await _bondExists(device);
-      final _Link link = await _locate(device);
-      await _ensureBonded(device);
-      return await _subscribe(device, link, writeWithoutResponse);
+      await device.connect(timeout: timeout);
+      return await _establish(device, writeWithoutResponse);
     } catch (e) {
       await _safeDisconnect(device);
       if (!shouldRepairBond(
-          hadBond: hadBond, identityFailure: e is BleConnectException)) {
+          hadBond: hadBond,
+          identityFailure: e is BleConnectException,
+          alreadyRepaired: _repairedThisRun)) {
         rethrow;
       }
       // **A bond Android reports is not a bond the radio can use.** Android
@@ -428,14 +441,36 @@ abstract final class BleConnector {
       // answer: it mirrors the live link and reads 0 whenever the link is
       // unencrypted or down, which is the normal disconnected state.
       //
-      // The link is already gone by the time the failure is seen, so deciding
-      // "not a bond problem" from `device.isConnected` refused the repair in
-      // exactly the case it was written for. The question that separates a bad
-      // bond from a radio that walked away is whether the radio is still here,
-      // not whether the link survived.
+      // A link that dropped is not on its own evidence of a bad bond, so the
+      // decision is "is the radio still here", not "did the link survive".
       if (!await _stillNearby(device.remoteId.str)) rethrow;
-      return _repairBond(device, writeWithoutResponse);
+      // The repair is spent even if it fails, so a radio that cannot keep a
+      // bond produces one PIN prompt and then a diagnosis, not a prompt per
+      // reconnect attempt.
+      _repairedThisRun = true;
+      try {
+        return await _repairBond(device, writeWithoutResponse);
+      } catch (_) {
+        throw BleConnectException(
+            'The radio is not keeping its pairing: it paired, then could not '
+            'encrypt on the next connection. Power-cycle the radio and pair '
+            'again. If that repeats, the radio is losing its stored bond.');
+      }
     }
+  }
+
+  /// Discover services/characteristics, enable notifications, persist
+  /// the device as paired, and wrap it as a transport.
+  static Future<BleMeshcoreTransport> _establish(
+      BluetoothDevice device, bool writeWithoutResponse) async {
+    // **Look before bonding.** Service discovery needs no encryption, so the
+    // radio's identity can be established before anything asks the user for a
+    // key. Bonding first meant whatever had matched the scan was given a
+    // pairing dialog — the test phone's bond table held an "E2 Pro 1113"
+    // entry for exactly that reason, a device which is not a radio at all.
+    final _Link link = await _locate(device);
+    await _ensureBonded(device);
+    return await _subscribe(device, link, writeWithoutResponse);
   }
 
   /// Forget a bond the radio cannot use and make a fresh one, then open.
@@ -466,10 +501,17 @@ abstract final class BleConnector {
   ///
   /// Reading is not pairing: it asks the user nothing, so it can run before
   /// [_locate] has proved the device is a radio.
+  ///
+  /// The bonded list is asked, not `device.bondState`. A device object built
+  /// from a remote id — which is what auto-reconnect uses — has no cached bond
+  /// state until a connection starts, so its first emission is not "bonded" and
+  /// a `bondState` read silently answered "no bond" for a radio the phone was
+  /// bonded to.
   static Future<bool> _bondExists(BluetoothDevice device) async {
     if (kIsWeb || !Platform.isAndroid) return false;
     try {
-      return await device.bondState.first == BluetoothBondState.bonded;
+      final List<BluetoothDevice> bonded = await FlutterBluePlus.bondedDevices;
+      return bonded.any((BluetoothDevice d) => d.remoteId == device.remoteId);
     } catch (_) {
       return false;
     }
@@ -479,35 +521,48 @@ abstract final class BleConnector {
   ///
   /// This exists only to tell "the bond is wrong" from "the radio left", and
   /// absence is ambiguous (out of range, flat, asleep), so a miss means the bond
-  /// is left alone. Three seconds is the Android scan window that still catches
-  /// an advertising radio, and a false negative only costs a retry.
+  /// is left alone. Three seconds is the scan window that still catches an
+  /// advertising radio, and a false negative only costs a retry.
+  ///
+  /// A failed open is normally reached with the app's own scan still running, so
+  /// starting a second one throws and would answer "not here" for a radio that
+  /// is right there. The accumulated results are read first, and a scan is only
+  /// started when none is running — and owned, so it is stopped again.
   static Future<bool> _stillNearby(String remoteId) async {
     if (kIsWeb || !Platform.isAndroid) return false;
+
+    bool seenIn(List<ScanResult> snapshot) =>
+        snapshot.any((ScanResult r) => r.device.remoteId.str == remoteId);
+
+    if (seenIn(FlutterBluePlus.lastScanResults)) return true;
+
     final Completer<bool> found = Completer<bool>();
     StreamSubscription<List<ScanResult>>? sub;
+    final bool ownScan = !FlutterBluePlus.isScanningNow;
     try {
       sub = FlutterBluePlus.scanResults.listen((List<ScanResult> snapshot) {
-        if (!found.isCompleted &&
-            snapshot.any((ScanResult r) => r.device.remoteId.str == remoteId)) {
-          found.complete(true);
-        }
+        if (!found.isCompleted && seenIn(snapshot)) found.complete(true);
       });
-      // The answer arrives on the results stream, so the scan itself is not
-      // awaited: waiting out its own timeout would turn a hit at 200 ms into a
-      // three-second pause.
-      unawaited(FlutterBluePlus.startScan(
-        withRemoteIds: <String>[remoteId],
-        timeout: const Duration(seconds: 3),
-      ));
+      if (ownScan) {
+        // The answer arrives on the results stream, so the scan itself is not
+        // awaited: waiting out its own timeout would turn a hit at 200 ms into a
+        // three-second pause.
+        unawaited(FlutterBluePlus.startScan(
+          withRemoteIds: <String>[remoteId],
+          timeout: const Duration(seconds: 3),
+        ));
+      }
       return await found.future
           .timeout(const Duration(seconds: 3), onTimeout: () => false);
     } catch (_) {
       return false;
     } finally {
       await sub?.cancel();
-      try {
-        await FlutterBluePlus.stopScan();
-      } catch (_) {/* already stopped */}
+      if (ownScan) {
+        try {
+          await FlutterBluePlus.stopScan();
+        } catch (_) {/* already stopped */}
+      }
     }
   }
 
