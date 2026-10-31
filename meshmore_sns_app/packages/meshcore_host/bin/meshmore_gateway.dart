@@ -83,6 +83,7 @@ Future<void> main(List<String> argv) async {
     mesh: sender,
     persistence: persistence,
     port: o.listenPort,
+    airtimePolicy: o.airtime,
     // The governor must meter the radio's REAL preset, not a default.
     estimator: AirtimeEstimator.lora(
       bandwidthHz: (info.bandwidthKhz * 1000).round(),
@@ -243,7 +244,7 @@ class _FilePairingPersistence implements PairingPersistence {
 
 class _Options {
   _Options(this.port, this.baud, this.token, this.statePath, this.listenPort,
-      this.peerName, this.help);
+      this.peerName, this.airtime, this.help);
 
   final String? port;
   final int baud;
@@ -253,6 +254,11 @@ class _Options {
 
   /// Contact name whose public key the daemon should send to, or null.
   final String? peerName;
+
+  /// How much airtime the gateway allows itself. `duty` is the voluntary 1 %
+  /// duty cycle (36 s/hour, the EU/UK limit and a safety margin elsewhere);
+  /// `owned` is no voluntary cap, for a private frequency the operator controls.
+  final AirtimePolicy airtime;
   final bool help;
 
   static const String usage = '''
@@ -264,6 +270,8 @@ meshmore gateway (host, USB-serial companion radio)
   --state <path>    identity + token file the daemon reads  (default below)
   --listen <port>   loopback port                           (default 41731)
   --peer-name <n>   resolve the peer radio by contact name, and publish its key
+  --airtime <mode>  duty (36 s/hour, the default) or owned (no voluntary cap,
+                    for a private frequency you control)
   --help
 
 The state file is the one thing a host needs to hand to ldmuxd: it holds the
@@ -281,6 +289,7 @@ build exposes no serial companion interface.''';
     String? token;
     int listen = GatewayServer.defaultPort;
     String? peerName;
+    AirtimePolicy airtime = AirtimePolicy.onePercentDutyCycle;
     bool help = false;
     final String home = Platform.environment['HOME'] ?? '.';
     String state = '$home/.local/state/meshmore/gateway.json';
@@ -303,13 +312,20 @@ build exposes no serial companion interface.''';
           listen = int.tryParse(next() ?? '') ?? listen;
         case '--peer-name':
           peerName = next();
+        case '--airtime':
+          airtime = switch (next()) {
+            'owned' => AirtimePolicy.ownedChannel,
+            'duty' || null => AirtimePolicy.onePercentDutyCycle,
+            final String other => (throw FormatException(
+                '--airtime takes "duty" or "owned", not "$other"')),
+          };
         default:
           if (a.startsWith('--')) {
             stderr.writeln('warning: unknown option $a');
           }
       }
     }
-    return _Options(port, baud, token, state, listen, peerName, help);
+    return _Options(port, baud, token, state, listen, peerName, airtime, help);
   }
 }
 
