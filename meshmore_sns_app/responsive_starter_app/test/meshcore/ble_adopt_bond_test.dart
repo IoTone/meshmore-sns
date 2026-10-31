@@ -52,4 +52,35 @@ void main() {
             historyIds: const <String>['gone', 'still-here']),
         'still-here');
   });
+
+  group('whether a failed open is a bond problem', () {
+    test('a bond that could not be used is repaired even though the link died',
+        () {
+      // The regression. A keyless bond makes Android start encryption at
+      // connect, SMP never leaves idle, and the link dies on the supervision
+      // timeout. The previous rule also demanded `device.isConnected`, which is
+      // already false by then, so the repair was unreachable for the one failure
+      // it was written for.
+      expect(
+          BleConnector.shouldRepairBond(
+              hadBond: true, identityFailure: false),
+          isTrue);
+    });
+
+    test('a stranger answering the scan is never re-paired', () {
+      // The Nordic UART UUID is cloned by unrelated gadgets. Re-pairing one of
+      // those would remove a working bond over a device that was never a radio.
+      expect(
+          BleConnector.shouldRepairBond(
+              hadBond: true, identityFailure: true),
+          isFalse);
+    });
+
+    test('no bond before the attempt means there is nothing to repair', () {
+      expect(
+          BleConnector.shouldRepairBond(
+              hadBond: false, identityFailure: false),
+          isFalse);
+    });
+  });
 }
