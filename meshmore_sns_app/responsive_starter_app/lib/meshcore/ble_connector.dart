@@ -65,6 +65,17 @@ abstract final class BleConnector {
   /// for having failed once.
   static bool _repairFailed = false;
 
+  /// Consecutive failed opens since the last success.
+  ///
+  /// The repair is a last resort, not a reflex. Re-pairing on this stack can
+  /// leave a second bond record on the radio, and the radio's lookup returns the
+  /// first record that resolves the phone — so a needless repair makes the next
+  /// connection more likely to fail, not less. One failure is not evidence of a
+  /// bond the phone cannot use: it can be an ordinary link loss, a radio that is
+  /// re-advertising, or a supervision timeout. Two in a row, with the radio still
+  /// in range, is.
+  static int _consecutiveFailures = 0;
+
   static const String _notKeepingPairing =
       'The radio is not keeping its pairing: it paired, then could not encrypt '
       'on the next connection. Power-cycle the radio, then reopen the app and '
@@ -300,6 +311,10 @@ abstract final class BleConnector {
   /// asks the user for another PIN. One attempt per app run is the whole
   /// budget: after that the honest report is that the radio is at fault.
   ///
+  /// `consecutiveFailures` is what keeps it from firing on a single bad
+  /// reconnect. Two is the threshold: the first failure is ambiguous, and a
+  /// repair that turns out to be unnecessary is not free — see [_repairFailed].
+  ///
   /// Deliberately absent: whether the link survived. It does not, in the case
   /// this exists for, because an unusable bond kills the link while the radio
   /// stack is still trying to encrypt it.
@@ -308,8 +323,12 @@ abstract final class BleConnector {
     required bool hadBond,
     required bool identityFailure,
     bool alreadyRepaired = false,
+    int consecutiveFailures = 2,
   }) =>
-      hadBond && !identityFailure && !alreadyRepaired;
+      hadBond &&
+      !identityFailure &&
+      !alreadyRepaired &&
+      consecutiveFailures >= 2;
 
   /// Which bonded radio to adopt when the app has no pairing of its own: the
   /// most recent one it has used before, else whichever the OS lists first.
@@ -448,13 +467,16 @@ abstract final class BleConnector {
       await device.connect(timeout: timeout);
       final transport = await _establish(device, writeWithoutResponse);
       _repairFailed = false;
+      _consecutiveFailures = 0;
       return transport;
     } catch (e) {
       await _safeDisconnect(device);
+      _consecutiveFailures++;
       if (!shouldRepairBond(
           hadBond: hadBond,
           identityFailure: e is BleConnectException,
-          alreadyRepaired: _repairedThisRun)) {
+          alreadyRepaired: _repairedThisRun,
+          consecutiveFailures: _consecutiveFailures)) {
         rethrow;
       }
       // **A bond Android reports is not a bond the radio can use.** Android

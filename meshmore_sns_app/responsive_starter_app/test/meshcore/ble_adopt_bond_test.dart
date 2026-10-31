@@ -98,5 +98,20 @@ void main() {
               hadBond: true, identityFailure: false, alreadyRepaired: false),
           isTrue);
     });
+
+    test('one failure is not evidence of a bad bond, two are', () {
+      // Re-pairing is not free on this stack: each ceremony can leave a second
+      // bond record on the radio, and the radio returns the first record that
+      // resolves the phone. A repair that turns out to be unnecessary therefore
+      // makes the next connection worse, so the first failure is left alone.
+      expect(
+          BleConnector.shouldRepairBond(
+              hadBond: true, identityFailure: false, consecutiveFailures: 1),
+          isFalse);
+      expect(
+          BleConnector.shouldRepairBond(
+              hadBond: true, identityFailure: false, consecutiveFailures: 2),
+          isTrue);
+    });
   });
 }
