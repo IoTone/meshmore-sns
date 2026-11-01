@@ -176,13 +176,20 @@ void main() {
           reason: 'header and path length byte, no path bytes');
     });
 
-    test('refuses a contact with no direct path', () async {
+    test('binds a contact with no known path, and floods until one is learned',
+        () async {
+      // This used to be a refusal, and it made a two-radio link permanently unbindable: a route is
+      // only learned from a packet that arrived along it, and a flooded packet has no route to
+      // learn, so two ends that both flood can never satisfy the old rule. Measured 2026-11-01 on
+      // the real pair: `pathLen=255`, every bind answered `NoPath`, uplink records arriving fine.
       final Future<BindError?> bind = sender.bindPeer(peerKey);
       await Future<void>.delayed(Duration.zero);
       link
         ..push(ContactFrame(_contact(publicKey: peerKey, outPathLen: 0xFF)))
         ..push(const EndOfContactsFrame(0));
-      expect(await bind, BindError.noPath);
+      expect(await bind, isNull);
+      // 176 - 2 - 0 = 174 for a flooded packet, capped at the contract's 172.
+      expect(sender.uplinkRecordMax, GatewayLimits.recordMax);
     });
 
     test('refuses a path that leaves less than the record floor', () async {
@@ -431,6 +438,25 @@ void main() {
     test('refuses before a bind', () async {
       expect(await sender.sendRecord(Uint8List(4), seq: 1),
           SendOutcome.errNotFound);
+    });
+
+    test('sends a bound peer with no route by flood, not by refusal', () async {
+      // The pair this was measured on has no route in either direction and never can: a route is
+      // learned only from a packet that arrived along one, and both ends flood. Refusing here made
+      // that pair permanently unusable - the bind succeeded, the handshake reply was refused
+      // silently, and the phone re-keyed for ever (2026-11-01: five accepts, zero bytes).
+      final Future<BindError?> b = sender.bindPeer(peerKey);
+      await Future<void>.delayed(Duration.zero);
+      link
+        ..push(ContactFrame(_contact(publicKey: peerKey, outPathLen: 0xFF)))
+        ..push(const EndOfContactsFrame(0));
+      expect(await b, isNull);
+
+      final Future<SendOutcome> out = sender.sendRecord(Uint8List(4), seq: 1);
+      await Future<void>.delayed(Duration.zero);
+      expect(_pathLen(link), 0, reason: 'a flood carries no path');
+      link.push(const OkFrame(null));
+      expect(await out, SendOutcome.sentDirect);
     });
 
     test('refuses a record above the advertised capacity', () async {

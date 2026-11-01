@@ -204,13 +204,20 @@ class SerialMeshSender implements MeshSender {
 
       // A zero-hop path is a neighbour, not a missing route; `directPath`
       // keeps that distinction (and is the same rule the app binds with).
+      //
+      // **No path is not a reason to refuse.** Flooding needs no route, and a route can only ever be
+      // learned from traffic that arrived along it: two ends that both flood teach each other
+      // nothing, so demanding a path before binding makes that pair permanently unbindable. Measured
+      // on 2026-11-01: the host's own banner read `pathLen=255`, every bind was answered
+      // `BindError::NoPath`, and the phone could do nothing but retry - while its uplink records
+      // were arriving at this radio as floods. Bind here, and send the first window flooded.
       final Uint8List? path = contact.directPath;
-      if (path == null) return BindError.noPath;
 
-      final int capacity = MeshCarryLimits.rawDataPayloadMax(path.length);
+      final int capacity =
+          MeshCarryLimits.rawDataPayloadMax(path?.length ?? 0);
       if (capacity < GatewayLimits.recordFloor) return BindError.noPath;
 
-      _boundPath = path;
+      _boundPath = path; // null: every send floods until the radio learns one.
       _boundKey = Uint8List.fromList(pubKey);
       _floodWarmup = WARMUP_SENDS;
       _uplinkMax = capacity > GatewayLimits.recordMax
@@ -228,7 +235,13 @@ class SerialMeshSender implements MeshSender {
   @override
   Future<SendOutcome> sendRecord(Uint8List record, {required int seq}) {
     return _serialise(() async {
-      if (_boundPath == null) return SendOutcome.errNotFound;
+      // **Only "nothing is bound" is a refusal.** A bound peer the radio has no route to sends by
+      // flood - `_pathForSend()` returns an empty path for exactly that case, and a route can only
+      // ever be learned from traffic that arrived along one. Refusing here turned the no-path bind
+      // into a livelock: the bind succeeded, the handshake reply was "sent", nothing went on the
+      // air, and the phone re-keyed for ever (measured 2026-11-01: `handshakes 5 accepted`, phone
+      // still on `handshaking`, no records sent).
+      if (_boundKey == null) return SendOutcome.errNotFound;
       // **Ask the radio to forget the route when the route has stopped answering.** Sends along a
       // learned chain are answered `OK` by the firmware whether or not the chain still exists, so
       // the radio itself never learns that a hop went away: it keeps using the dead path for ever.

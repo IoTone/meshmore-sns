@@ -175,9 +175,27 @@ Future<void> main(List<String> argv) async {
     if (!stop.isCompleted) stop.complete();
   });
 
+  // **A radio that vanishes is a failure to serve, not a clean stop.** Unplugging the board closes
+  // the serial port, and the process used to unwind and exit 0 - which every sane supervisor reads
+  // as "finished, do not restart" (observed 2026-11-01: the unit stayed dead for nine minutes after
+  // a replug). Three consecutive checks of a closed link means the device is really gone, so exit
+  // with a temporary failure and let the supervisor hand us a fresh handle.
+  int gone = 0;
+  final Timer presence = Timer.periodic(const Duration(seconds: 2), (_) {
+    if (link.state != MeshcoreConnectionState.disconnected) {
+      gone = 0;
+      return;
+    }
+    gone += 1;
+    if (gone < 3) return;
+    stderr.writeln("warning: the radio's port closed; exiting so it can be reopened");
+    exit(75);
+  });
+
   await stop.future;
   stats.cancel();
   deaf.cancel();
+  presence.cancel();
   await sigint.cancel();
   await sigterm.cancel();
   await gateway.stop();
