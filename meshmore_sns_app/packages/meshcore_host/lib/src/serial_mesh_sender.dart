@@ -18,6 +18,21 @@ import 'companion_link.dart';
 /// on a raw-data send (`MyMesh.cpp` writes a bare `writeOKFrame`), so two
 /// sends in flight cannot be told apart. Everything that expects a reply
 /// runs one at a time.
+/// How a record is addressed.
+enum PathMode {
+  /// Use the bound route while it keeps answering, and reset it when it does not.
+  auto,
+
+  /// Never use a route. Every record floods.
+  ///
+  /// This is not a throwback: MeshCore learns a route only from traffic that *arrived along it*,
+  /// so two ends that both flood never teach each other a route, and a route learned once can go
+  /// stale with nothing to correct it - the radio answers every send `OK` and delivers it nowhere.
+  /// On a private two-radio link flood is the honest setting; on a shared mesh it costs every
+  /// repeater a transmission, which is why `auto` is the default.
+  flood,
+}
+
 class SerialMeshSender implements MeshSender {
   SerialMeshSender({
     required CompanionLink link,
@@ -28,6 +43,7 @@ class SerialMeshSender implements MeshSender {
     this.linkTimeout = const Duration(seconds: 3),
     // How long a learned path stays worth trying. The radio's contact table holds the route a
     // peer *was* reachable by; nothing expires it, and nothing reports when it goes stale.
+    this.pathMode = PathMode.auto,
     this.pathTrust = const Duration(seconds: 10),
     DateTime Function()? clock,
   })  : _link = link,
@@ -35,6 +51,18 @@ class SerialMeshSender implements MeshSender {
 
   /// How long a path learned from the radio stays worth trying. See [_pathForSend].
   final Duration pathTrust;
+
+  /// How records are addressed. See [PathMode].
+  final PathMode pathMode;
+
+  /// How many records must go unanswered before the radio is told to forget the route. The
+  /// session's own window is eight, so three is well inside one window: a working chain answers
+  /// the first record, and nothing is reset on a link that is merely busy.
+  static const int SUSPECT_SENDS = 3;
+
+  /// How many records a fresh link sends by flood. One ARQ window: enough for `msg2`, `msg3` and
+  /// the attach reply, after which both radios have heard each other on a real path.
+  static const int WARMUP_SENDS = 8;
 
   /// See [pathTrust]. Injected so a test can age a path without sleeping.
   final DateTime Function() _clock;
@@ -63,6 +91,21 @@ class SerialMeshSender implements MeshSender {
   /// When this radio last heard *anything* from the peer. A path is a claim about the mesh at
   /// the moment it was learned, and only that moment.
   DateTime? _heardPeerAt;
+
+  /// Records sent since the peer was last heard. Their count is the evidence that a path has
+  /// stopped working: the peer acknowledges every record, so sending several without hearing a
+  /// thing back means the chain is not delivering.
+  int _sentSinceHeard = 0;
+
+  /// Records still to be sent by flood at the start of a link.
+  ///
+  /// Hearing the peer is not proof that the *reverse* chain works, and a flooded packet teaches
+  /// the radio no route at all: a peer whose traffic arrives with an empty path leaves the stored
+  /// path exactly as stale as it was. That is how a handshake could be accepted eight times while
+  /// the phone received none of the answers - the host heard every `msg1` and kept sending `msg2`
+  /// down the same dead chain. The first window of every bind therefore floods, which costs a few
+  /// records once and lets both ends learn a route from traffic that provably arrived.
+  int _floodWarmup = WARMUP_SENDS;
   int _uplinkMax = GatewayLimits.recordFloor;
   int _lastRssi = GatewayLimits.unknownRssi;
 
@@ -87,6 +130,7 @@ class SerialMeshSender implements MeshSender {
         // chain.
         _boundPath = null;
         _uplinkMax = GatewayLimits.recordFloor;
+        _floodWarmup = WARMUP_SENDS;
       }
     });
   }
@@ -142,6 +186,7 @@ class SerialMeshSender implements MeshSender {
 
       _boundPath = path;
       _boundKey = Uint8List.fromList(pubKey);
+      _floodWarmup = WARMUP_SENDS;
       _uplinkMax = capacity > GatewayLimits.recordMax
           ? GatewayLimits.recordMax
           : capacity;
@@ -157,8 +202,19 @@ class SerialMeshSender implements MeshSender {
   @override
   Future<SendOutcome> sendRecord(Uint8List record, {required int seq}) {
     return _serialise(() async {
-      final Uint8List path = _pathForSend();
       if (_boundPath == null) return SendOutcome.errNotFound;
+      // **Ask the radio to forget the route when the route has stopped answering.** Sends along a
+      // learned chain are answered `OK` by the firmware whether or not the chain still exists, so
+      // the radio itself never learns that a hop went away: it keeps using the dead path for ever.
+      // `CMD_RESET_PATH` is the documented cure - the next send floods, and the flood's own reply
+      // teaches the radio a fresh route. Done before the record is framed, because the point is
+      // for *this* record to go out over flood.
+      if (_pathIsSuspect()) {
+        await _link.sendCommand(MeshcoreFrameCodec.resetPath(_boundKey!));
+        _sentSinceHeard = 0;
+      }
+      final Uint8List path = _pathForSend();
+      _sentSinceHeard++;
       if (record.length > _uplinkMax) return SendOutcome.errTooLong;
 
       final Uint8List frame;
@@ -298,9 +354,29 @@ class SerialMeshSender implements MeshSender {
   /// choice when the path is unproven, and one flooded record buys back the proof. In the steady
   /// state the peer's own records arrive every few seconds, so [pathTrust] is satisfied and
   /// direct is used as before.
+  /// Has the bound chain gone quiet after we leaned on it?
+  ///
+  /// One silent send proves nothing (the radio may be busy), and the clock alone cannot decide:
+  /// a session that is idle sends nothing, so silence is harmless. What is not harmless is
+  /// sending again and again and hearing nothing back, which is what a dead hop chain looks like
+  /// from here.
+  bool _pathIsSuspect() {
+    if (pathMode == PathMode.flood) return false;
+    final DateTime? heard = _heardPeerAt;
+    // The warm-up is already flood, so there is nothing to reset on top of it.
+    if (_floodWarmup > 0) return false;
+    if (_boundPath == null || _sentSinceHeard < SUSPECT_SENDS) return false;
+    if (heard != null && _clock().difference(heard) <= pathTrust) return false;
+    return true;
+  }
+
   Uint8List _pathForSend() {
     final Uint8List? path = _boundPath;
-    if (path == null) return Uint8List(0);
+    if (path == null || pathMode == PathMode.flood) return Uint8List(0);
+    if (_floodWarmup > 0) {
+      _floodWarmup--;
+      return Uint8List(0);
+    }
     final DateTime? heard = _heardPeerAt;
     if (heard == null) return Uint8List(0);
     return _clock().difference(heard) > pathTrust ? Uint8List(0) : path;
@@ -310,8 +386,10 @@ class SerialMeshSender implements MeshSender {
     switch (frame) {
       case RawDataFrame():
         // Only a record from the peer proves the chain is real; an advert or a neighbour's
-        // traffic says nothing about these hops.
+        // traffic says nothing about these hops. Hearing it also clears the suspicion, whatever
+        // the radio is doing with its stored route.
         _heardPeerAt = _clock();
+        _sentSinceHeard = 0;
         if (!_inbound.isClosed) _inbound.add(frame.payload);
       case ContactFrame(contact: final Contact c):
         _contacts[meshKeyHex(c.publicKey)] = c;

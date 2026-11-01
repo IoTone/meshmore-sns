@@ -70,6 +70,7 @@ Future<void> main(List<String> argv) async {
   final SelfInfo info = link.selfInfo!;
   final SerialMeshSender sender = SerialMeshSender(
     link: MeshcoreConnectionLink(link),
+    pathMode: o.path,
   )..start();
 
   final _FilePairingPersistence persistence =
@@ -244,7 +245,7 @@ class _FilePairingPersistence implements PairingPersistence {
 
 class _Options {
   _Options(this.port, this.baud, this.token, this.statePath, this.listenPort,
-      this.peerName, this.airtime, this.help);
+      this.peerName, this.airtime, this.path, this.help);
 
   final String? port;
   final int baud;
@@ -259,6 +260,10 @@ class _Options {
   /// duty cycle (36 s/hour, the EU/UK limit and a safety margin elsewhere);
   /// `owned` is no voluntary cap, for a private frequency the operator controls.
   final AirtimePolicy airtime;
+
+  /// How records are addressed: `auto` trusts a learned route while it keeps answering, `flood`
+  /// never uses one.
+  final PathMode path;
   final bool help;
 
   static const String usage = '''
@@ -270,6 +275,13 @@ meshmore gateway (host, USB-serial companion radio)
   --state <path>    identity + token file the daemon reads  (default below)
   --listen <port>   loopback port                           (default 41731)
   --peer-name <n>   resolve the peer radio by contact name, and publish its key
+  --path <mode>     auto (use a learned route while it keeps answering, the default)
+                    or flood (never use one). Flood is right for a two-radio private
+                    link: MeshCore only learns a route from traffic that arrived, so
+                    two ends that both flood never teach each other one, and a stale
+                    route is never corrected - every record is answered OK and
+                    delivered nowhere. `auto` resets the route after three unanswered
+                    records and floods the first window of each bind.
   --airtime <mode>  duty (36 s/hour, the default) or owned (no voluntary cap,
                     for a private frequency you control)
   --help
@@ -290,6 +302,7 @@ build exposes no serial companion interface.''';
     int listen = GatewayServer.defaultPort;
     String? peerName;
     AirtimePolicy airtime = AirtimePolicy.onePercentDutyCycle;
+    PathMode path = PathMode.auto;
     bool help = false;
     final String home = Platform.environment['HOME'] ?? '.';
     String state = '$home/.local/state/meshmore/gateway.json';
@@ -312,6 +325,13 @@ build exposes no serial companion interface.''';
           listen = int.tryParse(next() ?? '') ?? listen;
         case '--peer-name':
           peerName = next();
+        case '--path':
+          path = switch (next()) {
+            'auto' || null => PathMode.auto,
+            'flood' => PathMode.flood,
+            final String other => throw FormatException(
+                '--path takes "auto" or "flood", not "$other"'),
+          };
         case '--airtime':
           airtime = switch (next()) {
             'owned' => AirtimePolicy.ownedChannel,
@@ -325,7 +345,7 @@ build exposes no serial companion interface.''';
           }
       }
     }
-    return _Options(port, baud, token, state, listen, peerName, airtime, help);
+    return _Options(port, baud, token, state, listen, peerName, airtime, path, help);
   }
 }
 

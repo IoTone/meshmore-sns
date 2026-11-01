@@ -76,6 +76,16 @@ Contact _contact({
   );
 }
 
+/// Spend the flood warm-up a fresh bind starts with, so a test can look at what comes after it.
+Future<void> drainWarmup(SerialMeshSender sender, FakeLink link, Uint8List key) async {
+  for (int i = 0; i < SerialMeshSender.WARMUP_SENDS; i++) {
+    final Future<SendOutcome> o = sender.sendRecord(Uint8List(4), seq: i);
+    await Future<void>.delayed(Duration.zero);
+    link.push(const OkFrame(null));
+    await o;
+  }
+}
+
 int _rawSends(FakeLink link) => link.sent
     .where((Uint8List f) => f.first == MeshcoreCommand.sendRawData.code)
     .length;
@@ -260,6 +270,13 @@ void main() {
 
     test('a chain proved by a record from the peer is used, and expires', () async {
       await bindHeard(heard: true);
+      await drainWarmup(aged, link, peerKey);
+      link.push(RawDataFrame(
+        snrDb: 7,
+        rssi: -60,
+        payload: Uint8List.fromList(<int>[9, 9]),
+      ));
+      await Future<void>.delayed(Duration.zero);
       final Future<SendOutcome> out = aged.sendRecord(Uint8List(4), seq: 2);
       await Future<void>.delayed(Duration.zero);
       expect(_pathLen(link), 1, reason: 'the peer was just heard on it');
@@ -272,6 +289,95 @@ void main() {
       expect(_pathLen(link), 0, reason: 'the proof has decayed');
       link.push(const OkFrame(null));
       await stale;
+    });
+  });
+
+  group('path reset', () {
+    // `CMD_RESET_PATH` is the documented cure for a chain that stopped delivering, and it is the
+    // only cure the companion API offers: a send along a dead chain is answered OK, so the radio
+    // never learns on its own.
+    late DateTime now;
+    late SerialMeshSender aged;
+
+    setUp(() => now = DateTime.utc(2026, 10, 31, 12));
+
+    Future<void> bound() async {
+      aged = SerialMeshSender(
+        link: link,
+        linkTimeout: const Duration(milliseconds: 50),
+        clock: () => now,
+      )..start();
+      final Future<BindError?> b = aged.bindPeer(peerKey);
+      await Future<void>.delayed(Duration.zero);
+      link
+        ..push(ContactFrame(_contact(publicKey: peerKey, outPathLen: 1)))
+        ..push(const EndOfContactsFrame(0));
+      await b;
+      now = now.add(const Duration(seconds: 30));
+    }
+
+    int resets() => link.sent
+        .where((Uint8List f) => f.first == MeshcoreCommand.resetPath.code)
+        .length;
+
+    Future<void> sendUnanswered(int seq) async {
+      final Future<SendOutcome> o = aged.sendRecord(Uint8List(4), seq: seq);
+      await Future<void>.delayed(Duration.zero);
+      // The radio answers; the peer does not.
+      link.push(ErrorFrame(MeshcoreErrorCode.tableFull.code));
+      await o;
+    }
+
+    test('a chain that stops answering is reset before the next record', () async {
+      await bound();
+      await drainWarmup(aged, link, peerKey);
+      link.push(RawDataFrame(
+        snrDb: 6,
+        rssi: -70,
+        payload: Uint8List.fromList(<int>[1, 2]),
+      ));
+      await Future<void>.delayed(Duration.zero);
+      expect(resets(), 0, reason: 'the chain just answered');
+
+      // A path is suspect on silence *and* unanswered sends: the peer's own acknowledgements keep
+      // arriving on a working chain, so ten seconds of nothing is the evidence.
+      now = now.add(const Duration(seconds: 11));
+      for (int i = 0; i < SerialMeshSender.SUSPECT_SENDS; i++) {
+        await sendUnanswered(i);
+      }
+      expect(resets(), 0, reason: 'the suspicion is not raised yet');
+
+      final Future<SendOutcome> o = aged.sendRecord(Uint8List(4), seq: 99);
+      await Future<void>.delayed(Duration.zero);
+      expect(resets(), 1, reason: 'three unanswered records is a dead chain');
+      expect(_pathLen(link), 0, reason: 'and this record floods');
+      link.push(const OkFrame(null));
+      await o;
+    });
+
+    test('hearing the peer again clears the suspicion', () async {
+      await bound();
+      await drainWarmup(aged, link, peerKey);
+      // It answered once during the warm-up, so the chain starts proven.
+      link.push(RawDataFrame(
+        snrDb: 6,
+        rssi: -70,
+        payload: Uint8List.fromList(<int>[1, 2]),
+      ));
+      await Future<void>.delayed(Duration.zero);
+      now = now.add(const Duration(seconds: 11));
+      for (int i = 0; i < SerialMeshSender.SUSPECT_SENDS - 1; i++) {
+        await sendUnanswered(i);
+      }
+      // A record from the peer lands between the second and third unanswered send.
+      link.push(RawDataFrame(
+        snrDb: 6,
+        rssi: -70,
+        payload: Uint8List.fromList(<int>[1, 2]),
+      ));
+      await Future<void>.delayed(Duration.zero);
+      await sendUnanswered(50);
+      expect(resets(), 0, reason: 'the chain answered, so it is not suspect');
     });
   });
 
@@ -302,8 +408,9 @@ void main() {
 
     test('maps OK to sentDirect and carries the path', () async {
       await bind();
-      // A path learned at bind time is a claim about the mesh then, not now: the rule is to
-      // flood until the peer has been heard on it. Dock the proof first, then the path rides.
+      // A fresh bind floods its first window, and a path learned at bind time is a claim about
+      // the mesh then, not now: the rule is to flood until the peer has been heard. Both first.
+      await drainWarmup(sender, link, peerKey);
       link.push(RawDataFrame(
         snrDb: 7,
         rssi: -60,
