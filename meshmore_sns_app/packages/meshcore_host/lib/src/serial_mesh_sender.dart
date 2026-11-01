@@ -55,6 +55,22 @@ class SerialMeshSender implements MeshSender {
   /// How records are addressed. See [PathMode].
   final PathMode pathMode;
 
+  /// Has this radio stopped hearing the air altogether?
+  ///
+  /// `true` when no packet of any kind has arrived since [since]. Only the USB side is known to
+  /// work then, and a reboot is the one cure that does not need someone to walk over and unplug
+  /// it.
+  bool radioLooksDeaf(DateTime since, {Duration deafAfter = const Duration(minutes: 2)}) {
+    final DateTime? heard = _heardAirAt;
+    if (heard != null && _clock().difference(heard) < deafAfter) return false;
+    // Give a freshly opened port its minute before judging it: the radio answers USB immediately
+    // and only then starts listening.
+    return _clock().difference(since) >= deafAfter;
+  }
+
+  /// Ask the radio to reboot. There is no reply: the link drops and the device re-enumerates.
+  Future<void> rebootRadio() => _link.sendCommand(MeshcoreFrameCodec.reboot());
+
   /// How many records must go unanswered before the radio is told to forget the route. The
   /// session's own window is eight, so three is well inside one window: a working chain answers
   /// the first record, and nothing is reset on a link that is merely busy.
@@ -96,6 +112,16 @@ class SerialMeshSender implements MeshSender {
   /// stopped working: the peer acknowledges every record, so sending several without hearing a
   /// thing back means the chain is not delivering.
   int _sentSinceHeard = 0;
+
+  /// When the radio last heard *any* frame off the air, as opposed to a USB reply.
+  ///
+  /// The distinction matters because the two failures look nothing alike from here and have
+  /// different cures: a radio whose USB side is fine but whose receiver has stopped (measured
+  /// 2026-10-31: 350 contact pushes over USB, one air packet in twenty-five minutes, `rssi -128`
+  /// throughout) needs a reboot, while a radio that hears other nodes but not the peer needs a
+  /// path reset. Nothing else in the daemon can tell those apart, and the symptom - "the host
+  /// stopped answering" - is identical.
+  DateTime? _heardAirAt;
 
   /// Records still to be sent by flood at the start of a link.
   ///
@@ -389,11 +415,14 @@ class SerialMeshSender implements MeshSender {
         // traffic says nothing about these hops. Hearing it also clears the suspicion, whatever
         // the radio is doing with its stored route.
         _heardPeerAt = _clock();
+        _heardAirAt = _clock();
         _sentSinceHeard = 0;
         if (!_inbound.isClosed) _inbound.add(frame.payload);
       case ContactFrame(contact: final Contact c):
         _contacts[meshKeyHex(c.publicKey)] = c;
       case NewAdvertFrame(contact: final Contact c):
+        // An advert means the receiver works, whoever it came from.
+        _heardAirAt = _clock();
         _contacts[meshKeyHex(c.publicKey)] = c;
       case ContactDeletedFrame(publicKey: final Uint8List key):
         _contacts.remove(meshKeyHex(key));

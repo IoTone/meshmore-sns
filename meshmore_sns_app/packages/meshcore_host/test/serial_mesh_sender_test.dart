@@ -292,6 +292,43 @@ void main() {
     });
   });
 
+  group('deaf radio', () {
+    // The two failures look identical from the daemon and have different cures: a radio that hears
+    // nothing at all needs a reboot, one that hears neighbours but not the peer needs a path reset.
+    late DateTime now;
+    setUp(() => now = DateTime.utc(2026, 10, 31, 12));
+
+    test('a radio that has heard nothing since it opened looks deaf after two minutes', () {
+      final SerialMeshSender s = SerialMeshSender(link: link, clock: () => now)..start();
+      final DateTime opened = now;
+      now = opened.add(const Duration(seconds: 30));
+      expect(s.radioLooksDeaf(opened), isFalse, reason: 'a fresh port gets its minute');
+      now = opened.add(const Duration(seconds: 121));
+      expect(s.radioLooksDeaf(opened), isTrue);
+    });
+
+    test('any packet off the air clears it, and a USB reply does not', () async {
+      final SerialMeshSender s = SerialMeshSender(link: link, clock: () => now)..start();
+      final DateTime opened = now;
+      // A contact push is the USB side talking, not the air.
+      link.push(ContactFrame(_contact(publicKey: peerKey, outPathLen: 1)));
+      await Future<void>.delayed(Duration.zero);
+      now = opened.add(const Duration(seconds: 121));
+      expect(s.radioLooksDeaf(opened), isTrue, reason: 'USB traffic proves nothing about the air');
+
+      link.push(NewAdvertFrame(_contact(publicKey: peerKey, outPathLen: 1)));
+      await Future<void>.delayed(Duration.zero);
+      now = opened.add(const Duration(seconds: 130));
+      expect(s.radioLooksDeaf(opened), isFalse, reason: 'an advert came off the air');
+    });
+
+    test('the reboot command is the documented one', () async {
+      final SerialMeshSender s = SerialMeshSender(link: link, clock: () => now)..start();
+      await s.rebootRadio();
+      expect(link.sent.last.first, MeshcoreCommand.reboot.code);
+    });
+  });
+
   group('path reset', () {
     // `CMD_RESET_PATH` is the documented cure for a chain that stopped delivering, and it is the
     // only cure the companion API offers: a send along a dead chain is answered OK, so the radio

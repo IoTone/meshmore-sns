@@ -141,6 +141,30 @@ Future<void> main(List<String> argv) async {
     (_) => unawaited(sender.pollStats()),
   );
 
+  // **A radio that has stopped hearing the air cannot be talked to, and nobody is going to walk
+  // over and unplug it.** The USB side keeps answering - contact pushes, stats - so every cheap
+  // check says the link is fine while nothing is received at all (measured 2026-10-31: 350 contact
+  // frames in seventy seconds, one air packet in twenty-five minutes, `rssi -128` throughout). The
+  // companion protocol has `CMD_REBOOT` for exactly this, so the gateway uses it.
+  final DateTime openedAt = DateTime.now();
+  final Timer deaf = Timer.periodic(const Duration(seconds: 30), (_) async {
+    if (!sender.radioLooksDeaf(openedAt)) return;
+    stderr.writeln(
+      'warning: nothing heard off the air for two minutes; rebooting the radio and exiting',
+    );
+    try {
+      await sender.rebootRadio();
+    } catch (e) {
+      stderr.writeln('warning: the reboot request failed: $e');
+    }
+    // **Exit rather than carry on.** Rebooting the radio re-enumerates it: the device node is
+    // recreated and this process is left holding a dead handle, so staying alive would mean a
+    // gateway that is up and cannot hear. A supervisor restarts us with a fresh handle on a stable
+    // path (`/dev/serial/by-id/...`), which is the only version of this that actually recovers.
+    // EX_TEMPFAIL: come back shortly, with a fresh handle.
+    exit(75);
+  });
+
   final Completer<void> stop = Completer<void>();
   final StreamSubscription<ProcessSignal> sigint =
       ProcessSignal.sigint.watch().listen((_) {
@@ -153,6 +177,7 @@ Future<void> main(List<String> argv) async {
 
   await stop.future;
   stats.cancel();
+  deaf.cancel();
   await sigint.cancel();
   await sigterm.cancel();
   await gateway.stop();
