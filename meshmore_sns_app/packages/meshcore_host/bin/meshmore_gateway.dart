@@ -336,7 +336,21 @@ hand. A name that does not resolve is a startup error listing what the radio
 does hold, because guessing a peer would send records into the wrong path.
 
 The radio must run a companion build with ENABLE_USB_INTERFACE. A BLE-only
-build exposes no serial companion interface.''';
+build exposes no serial companion interface.
+
+Two faults are left to a supervisor, and both exit 75 (EX_TEMPFAIL) rather than
+0, so "Run it again" is the correct response and a clean exit is not:
+
+  * nothing heard off the air for two minutes. The radio is asked to reboot, and
+    then this process quits: a reboot re-enumerates USB, and a process that
+    survives it holds a handle to a device that no longer exists.
+  * the radio's port vanishing. Three 2-second checks that see the link
+    disconnected end the process the same way; without this a replug left the
+    gateway dead, and with Restart=on-failure nothing brought it back.
+
+Neither is a user action, so neither is a reason to stay down: run this behind
+Restart=always, on a /dev/serial/by-id path, because the kernel renumbers
+/dev/ttyACM* across a replug.''';
 
   static _Options parse(List<String> argv) {
     String? port;
