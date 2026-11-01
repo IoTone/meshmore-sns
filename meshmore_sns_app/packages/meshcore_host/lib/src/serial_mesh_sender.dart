@@ -26,7 +26,18 @@ class SerialMeshSender implements MeshSender {
     // arrived in a few seconds is lost, not slow. Measured on the device: a five-record screen
     // took six seconds to leave because each record waited out a long, silent timeout.
     this.linkTimeout = const Duration(seconds: 3),
-  }) : _link = link;
+    // How long a learned path stays worth trying. The radio's contact table holds the route a
+    // peer *was* reachable by; nothing expires it, and nothing reports when it goes stale.
+    this.pathTrust = const Duration(seconds: 10),
+    DateTime Function()? clock,
+  })  : _link = link,
+        _clock = clock ?? DateTime.now;
+
+  /// How long a path learned from the radio stays worth trying. See [_pathForSend].
+  final Duration pathTrust;
+
+  /// See [pathTrust]. Injected so a test can age a path without sleeping.
+  final DateTime Function() _clock;
 
   final CompanionLink _link;
 
@@ -48,6 +59,10 @@ class SerialMeshSender implements MeshSender {
   Completer<bool>? _awaitingReply;
   Uint8List? _boundPath;
   Uint8List? _boundKey;
+
+  /// When this radio last heard *anything* from the peer. A path is a claim about the mesh at
+  /// the moment it was learned, and only that moment.
+  DateTime? _heardPeerAt;
   int _uplinkMax = GatewayLimits.recordFloor;
   int _lastRssi = GatewayLimits.unknownRssi;
 
@@ -142,8 +157,8 @@ class SerialMeshSender implements MeshSender {
   @override
   Future<SendOutcome> sendRecord(Uint8List record, {required int seq}) {
     return _serialise(() async {
-      final Uint8List? path = _boundPath;
-      if (path == null) return SendOutcome.errNotFound;
+      final Uint8List path = _pathForSend();
+      if (_boundPath == null) return SendOutcome.errNotFound;
       if (record.length > _uplinkMax) return SendOutcome.errTooLong;
 
       final Uint8List frame;
@@ -270,9 +285,33 @@ class SerialMeshSender implements MeshSender {
 
   SendOutcome _lastErrorOutcome = SendOutcome.errBusy;
 
+  /// The path to put on the next record: the bound hop chain when it is worth trusting, and an
+  /// empty one (flood) when it is not.
+  ///
+  /// **Direct is a promise the mesh has to keep, and the radio cannot tell us when it stops.**
+  /// A record sent along a stale chain is answered `OK` by the firmware the moment `sendDirect`
+  /// returns, so the gateway reports `sentDirect`, the airtime is spent, and nothing arrives.
+  /// The only evidence that a chain is still real is hearing the peer travel it, and that
+  /// evidence decays: a repeater moved, a node rebooted, a neighbour's table was rewritten.
+  ///
+  /// Flood costs every repeater a transmission, so it is not the default - but it is the honest
+  /// choice when the path is unproven, and one flooded record buys back the proof. In the steady
+  /// state the peer's own records arrive every few seconds, so [pathTrust] is satisfied and
+  /// direct is used as before.
+  Uint8List _pathForSend() {
+    final Uint8List? path = _boundPath;
+    if (path == null) return Uint8List(0);
+    final DateTime? heard = _heardPeerAt;
+    if (heard == null) return Uint8List(0);
+    return _clock().difference(heard) > pathTrust ? Uint8List(0) : path;
+  }
+
   void _onInbound(MeshcoreInbound frame) {
     switch (frame) {
       case RawDataFrame():
+        // Only a record from the peer proves the chain is real; an advert or a neighbour's
+        // traffic says nothing about these hops.
+        _heardPeerAt = _clock();
         if (!_inbound.isClosed) _inbound.add(frame.payload);
       case ContactFrame(contact: final Contact c):
         _contacts[meshKeyHex(c.publicKey)] = c;

@@ -80,6 +80,10 @@ int _rawSends(FakeLink link) => link.sent
     .where((Uint8List f) => f.first == MeshcoreCommand.sendRawData.code)
     .length;
 
+/// The hop count on the last raw send: byte 1 of `41 [pathLen] [path...]`.
+int _pathLen(FakeLink link) => link.sent
+    .lastWhere((Uint8List f) => f.first == MeshcoreCommand.sendRawData.code)[1];
+
 void main() {
   late FakeLink link;
   late SerialMeshSender sender;
@@ -214,6 +218,63 @@ void main() {
     });
   });
 
+  group('path trust', () {
+    // A chain the radio learned once is a claim about the mesh at that moment. A record sent
+    // down a dead chain is answered OK by the firmware and delivered nowhere, which looked
+    // exactly like "the host stopped answering" for a whole afternoon.
+    late DateTime now;
+    late SerialMeshSender aged;
+
+    Future<void> bindHeard({required bool heard}) async {
+      aged = SerialMeshSender(
+        link: link,
+        linkTimeout: const Duration(milliseconds: 100),
+        clock: () => now,
+      )..start();
+      final Future<BindError?> b = aged.bindPeer(peerKey);
+      await Future<void>.delayed(Duration.zero);
+      link
+        ..push(ContactFrame(_contact(publicKey: peerKey, outPathLen: 1)))
+        ..push(const EndOfContactsFrame(0));
+      await b;
+      if (heard) {
+        link.push(RawDataFrame(
+          snrDb: 7,
+          rssi: -60,
+          payload: Uint8List.fromList(<int>[9, 9]),
+        ));
+        await Future<void>.delayed(Duration.zero);
+      }
+    }
+
+    setUp(() => now = DateTime.utc(2026, 10, 31, 12));
+
+    test('an unproven chain floods instead of promising a route', () async {
+      await bindHeard(heard: false);
+      final Future<SendOutcome> out = aged.sendRecord(Uint8List(4), seq: 1);
+      await Future<void>.delayed(Duration.zero);
+      expect(_pathLen(link), 0, reason: 'nothing heard on this chain yet');
+      link.push(const OkFrame(null));
+      expect(await out, SendOutcome.sentDirect);
+    });
+
+    test('a chain proved by a record from the peer is used, and expires', () async {
+      await bindHeard(heard: true);
+      final Future<SendOutcome> out = aged.sendRecord(Uint8List(4), seq: 2);
+      await Future<void>.delayed(Duration.zero);
+      expect(_pathLen(link), 1, reason: 'the peer was just heard on it');
+      link.push(const OkFrame(null));
+      await out;
+
+      now = now.add(const Duration(seconds: 11));
+      final Future<SendOutcome> stale = aged.sendRecord(Uint8List(4), seq: 3);
+      await Future<void>.delayed(Duration.zero);
+      expect(_pathLen(link), 0, reason: 'the proof has decayed');
+      link.push(const OkFrame(null));
+      await stale;
+    });
+  });
+
   group('sendRecord', () {
     Future<void> bind() async {
       final Future<BindError?> b = sender.bindPeer(peerKey);
@@ -241,6 +302,14 @@ void main() {
 
     test('maps OK to sentDirect and carries the path', () async {
       await bind();
+      // A path learned at bind time is a claim about the mesh then, not now: the rule is to
+      // flood until the peer has been heard on it. Dock the proof first, then the path rides.
+      link.push(RawDataFrame(
+        snrDb: 7,
+        rssi: -60,
+        payload: Uint8List.fromList(<int>[9, 9]),
+      ));
+      await Future<void>.delayed(Duration.zero);
       final Future<SendOutcome> out =
           sender.sendRecord(Uint8List.fromList(<int>[1, 2, 3, 4]), seq: 3);
       await Future<void>.delayed(Duration.zero);
