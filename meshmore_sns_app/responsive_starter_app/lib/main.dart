@@ -102,7 +102,16 @@ void main() {
           ),
           // Loopback gateway for other apps on this phone. Off until the
           // user enables it; starts and stops with the radio link.
+          //
+          // **Eager on purpose.** It used to be lazy, so the gateway did not
+          // start until someone opened Settings -> Connected apps; another app
+          // asking over the handoff was told "not serving" while the switch was
+          // on and MeshMore was running (measured on the device, 2026-11-01).
+          // The foreground service already keeps this process alive for the
+          // radio, so creating the service with the app keeps the listener up
+          // for the same lifetime.
           ChangeNotifierProvider<GatewayService>(
+            lazy: false,
             create: (BuildContext ctx) =>
                 GatewayService(
               ctx.read<MeshcoreController>(),
