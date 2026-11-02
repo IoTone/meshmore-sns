@@ -37,7 +37,7 @@ pushed via `go_router`.
 | 1 | **Dashboard** (default home) | Network status, RSSI/SNR gauges, peer count, link state, recent events, active-channel summary. Also hosts the small collapsible chat overlay. | R6, R8 |
 | 2 | **Chat** | Full chat for the active channel, with channel-selector chip strip on top. Per-channel TTS toggle in the header. | R6, R5 |
 | 3 | **Nodes** | Discovered peers with signal strength, distance estimate, last-heard, and a hook for the future live map (F1). | R6 |
-| 3a | **Hyperlocal grid** | The radar and the other map views, as the tab after Nodes (issue #4). Offline = empty radar + "Not Connected to Mesh"; the view choice lasts the session, launch resets to radar. | R18, R25, R27 |
+| 3a | **Hyperlocal grid** | The radar and the other map views, as the tab after Nodes (issue #4). Offline = empty radar + "Not Connected to Mesh"; the view choice lasts the session, launch resets to radar. Swipe ← → steps between maps (past either end → neighbouring tab); pan/zoom maps carry a Swipe ⇄ Pan toggle, swipe mode on every visit. | R18, R25, R27 |
 | 4 | **Settings** (hub) | Entry point to the three sub-screens below. | R3,R4,R5,R7,R12,R13,R14 |
 | 5 | **About / Terms** | App info + legal. | R9, R10 |
 

@@ -14,7 +14,8 @@ import 'package:meshmore_sns_app/theme/theme_controller.dart';
 
 import '../meshcore/fake_transport.dart';
 
-Widget _host(MeshcoreController mc) => MaterialApp(
+Widget _host(MeshcoreController mc, {void Function(int)? onSwipePastEnd}) =>
+    MaterialApp(
       locale: const Locale('en'),
       supportedLocales: LocaleController.supported,
       localizationsDelegates: const <LocalizationsDelegate<Object>>[
@@ -31,7 +32,7 @@ Widget _host(MeshcoreController mc) => MaterialApp(
         ],
         // In the app the grid is a HomeShell tab; the Scaffold stands
         // in for the shell's.
-        child: const Scaffold(body: GridScreen()),
+        child: Scaffold(body: GridScreen(onSwipePastEnd: onSwipePastEnd)),
       ),
     );
 
@@ -162,5 +163,102 @@ void main() {
     expect(find.text('Radial'), findsOneWidget);
     await t.pumpWidget(const SizedBox());
     mc.dispose();
+  });
+
+  // Issue #4 follow-up: inside the shell the grid must still be able
+  // to reach every map by swiping, and a pan/zoom map must be able to
+  // take the drag back from the swipe — and give it back again.
+  group('swipe between maps, Swipe ⇄ Pan', () {
+    final Finder swipeArea = find.byKey(const ValueKey<String>('grid-swipe'));
+    final Finder toggle = find.byKey(const ValueKey<String>('grid-pan-toggle'));
+
+    Future<void> swipe(WidgetTester t, double dx) async {
+      await t.fling(swipeArea, Offset(dx, 0), 1000);
+      await t.pump();
+      await t.pump(const Duration(milliseconds: 300));
+    }
+
+    testWidgets('left steps forward through the maps, right steps back, '
+        'and past the first map the shell is handed the swipe',
+        (WidgetTester t) async {
+      final List<int> handedOff = <int>[];
+      final MeshcoreController mc = MeshcoreController(
+          transportFactory: () async => FakeMeshcoreTransport());
+      await t.pumpWidget(_host(mc, onSwipePastEnd: handedOff.add));
+      await t.pump();
+      expect(find.text('Radial'), findsOneWidget);
+      // The radar does not pan, so it has no toggle.
+      expect(toggle, findsNothing);
+
+      await swipe(t, -300);
+      expect(find.text('Globe'), findsOneWidget);
+      await swipe(t, -300);
+      expect(find.text('Equal grid'), findsOneWidget);
+      await swipe(t, 300);
+      expect(find.text('Globe'), findsOneWidget);
+      await swipe(t, 300);
+      expect(find.text('Radial'), findsOneWidget);
+      expect(handedOff, isEmpty);
+
+      // Past the first map: the grid stays put, the shell pages back.
+      await swipe(t, 300);
+      expect(find.text('Radial'), findsOneWidget);
+      expect(handedOff, <int>[-1]);
+      expect(t.takeException(), isNull);
+      await t.pumpWidget(const SizedBox());
+      mc.dispose();
+    });
+
+    testWidgets('a pan/zoom map toggles into pan mode (map owns the drag, '
+        'shell locked) and back into swipe mode', (WidgetTester t) async {
+      final MeshcoreController mc = MeshcoreController(
+          transportFactory: () async => FakeMeshcoreTransport());
+      await t.pumpWidget(_host(mc));
+      await t.pump();
+      await swipe(t, -300);
+      expect(find.text('Globe'), findsOneWidget);
+
+      // Arriving: swipe mode. The map is held still, the hint says how
+      // to pan, and the shell is not locked.
+      expect(toggle, findsOneWidget);
+      expect(find.text('Swipe ← → for other maps · tap ✋ to pan & zoom'),
+          findsOneWidget);
+      expect(GridScreen.capturesHorizontalDrag.value, isFalse);
+
+      // Into pan mode: the shell locks and a swipe no longer changes map.
+      await t.tap(toggle);
+      await t.pump();
+      expect(GridScreen.capturesHorizontalDrag.value, isTrue);
+      expect(find.text('Pan & zoom · tap ⇆ to swipe between maps'),
+          findsOneWidget);
+      await swipe(t, -300);
+      expect(find.text('Globe'), findsOneWidget);
+
+      // Back to swipe mode: the shell is free and swiping works again.
+      await t.tap(toggle);
+      await t.pump();
+      expect(GridScreen.capturesHorizontalDrag.value, isFalse);
+      await swipe(t, -300);
+      expect(find.text('Equal grid'), findsOneWidget);
+
+      // Pan mode does not outlive the visit: leaving and coming back
+      // lands in swipe mode, so arriving can never trap the swipe.
+      await t.tap(toggle);
+      await t.pump();
+      expect(GridScreen.capturesHorizontalDrag.value, isTrue);
+      await t.pumpWidget(const SizedBox());
+      await t.pump();
+      expect(GridScreen.capturesHorizontalDrag.value, isFalse);
+      await t.pumpWidget(_host(mc));
+      await t.pump();
+      expect(find.text('Equal grid'), findsOneWidget);
+      expect(find.text('Swipe ← → for other maps · tap ✋ to pan & zoom'),
+          findsOneWidget);
+      await swipe(t, 300);
+      expect(find.text('Globe'), findsOneWidget);
+      expect(t.takeException(), isNull);
+      await t.pumpWidget(const SizedBox());
+      mc.dispose();
+    });
   });
 }

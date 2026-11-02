@@ -46,8 +46,11 @@ codebase.
 - Its own primary tab, right after Nodes (issue #4). Disconnected, it
   shows the radar with no nodes and "Not Connected to Mesh". The chosen
   view is remembered for the session; every launch opens on the radar.
-  While a panning view (street map, globe, …) shows, the shell's swipe
-  is locked so drags move the map — leave via Back, dots or quick-nav.
+  Swiping left/right on the grid steps through its maps; past the first
+  or last map the swipe pages the shell to the next tab. A pan/zoom map
+  (street map, globe, …) carries a Swipe ⇄ Pan toggle: swipe mode (every
+  visit starts here) holds the map still so the swipe works; pan mode
+  gives the map every drag and locks the shell swipe until toggled back.
 - **Radial "radar"** — range rings (Room…Wide…**City…Region**, Region
   auto-frames the known extent), signal/bearing placement, compass rose
   + heading needle, **north-up/heading-up toggle**, prominent top

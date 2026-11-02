@@ -218,9 +218,10 @@ class _HomeShellState extends State<HomeShell>
           ),
         ),
       ),
-      // A grid view that pans (street map, globe, …) owns horizontal
-      // drags, so the shell stops swiping while it shows; Back, the
-      // dots and quick-nav still leave the tab.
+      // The grid swipes between its own maps and hands us the swipe
+      // only past its first / last map. A pannable map in pan mode
+      // owns horizontal drags, so the shell stops swiping then; Back,
+      // the dots and quick-nav still leave the tab.
       body: ValueListenableBuilder<bool>(
         valueListenable: GridScreen.capturesHorizontalDrag,
         builder: (BuildContext context, bool gridPans, Widget? _) =>
@@ -241,14 +242,19 @@ class _HomeShellState extends State<HomeShell>
           }
           setState(() => _index = i);
         },
-        children: const <Widget>[
-          DashboardHost(),
-          ChatScreen(),
-          NodesScreen(),
-          GridScreen(),
-          _SettingsView(),
-          DocsHubScreen(),
-          _AboutView(),
+        children: <Widget>[
+          const DashboardHost(),
+          const ChatScreen(),
+          const NodesScreen(),
+          GridScreen(
+            onSwipePastEnd: (int dir) => _goTo(
+                (_index + dir).clamp(0, MmView.values.length - 1),
+                reduceMotion:
+                    context.read<ThemeController>().reduceMotion),
+          ),
+          const _SettingsView(),
+          const DocsHubScreen(),
+          const _AboutView(),
         ],
       ),
       ),

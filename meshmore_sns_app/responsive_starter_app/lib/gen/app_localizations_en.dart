@@ -1118,6 +1118,20 @@ class AppLocalizationsEn extends AppLocalizations {
       'Not connected — Settings → Diagnostics & connect';
 
   @override
+  String get gridSwipeModeTooltip =>
+      'Swipe mode: swipe left/right for other maps. Tap to pan and zoom this map';
+
+  @override
+  String get gridPanModeTooltip =>
+      'Pan & zoom mode: drags move the map. Tap to swipe between maps';
+
+  @override
+  String get gridSwipeHint => 'Swipe ← → for other maps · tap ✋ to pan & zoom';
+
+  @override
+  String get gridPanHint => 'Pan & zoom · tap ⇆ to swipe between maps';
+
+  @override
   String get gridNotConnected => 'Not Connected to Mesh';
 
   @override

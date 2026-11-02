@@ -160,8 +160,9 @@ void main() {
     expect(t.takeException(), isNull);
   });
 
-  testWidgets('a panning grid view locks the shell swipe; the radar '
-      'does not', (WidgetTester t) async {
+  testWidgets('in the shell, a swipe on the grid changes map, not tab; '
+      'past the first map it returns to Nodes (issue #4)',
+      (WidgetTester t) async {
     GridScreen.resetSession();
     await _pumpApp(t);
     await t.tap(find.byIcon(Icons.menu_open));
@@ -169,20 +170,54 @@ void main() {
     await t.tap(find.text('Hyperlocal grid').last);
     await settle(t);
     expect(find.widgetWithText(AppBar, 'Hyperlocal grid'), findsOneWidget);
+    expect(find.text('Radial'), findsOneWidget);
 
-    // Stand in for picking a pannable view (street map, globe, …).
-    GridScreen.capturesHorizontalDrag.value = true;
-    await t.pump();
+    final Finder grid = find.byKey(const ValueKey<String>('grid-swipe'));
+    await t.fling(grid, const Offset(-400, 0), 1000);
+    await settle(t);
+    expect(find.widgetWithText(AppBar, 'Hyperlocal grid'), findsOneWidget,
+        reason: 'the grid, not the shell, takes the swipe');
+    expect(find.text('Globe'), findsOneWidget);
+
+    await t.fling(grid, const Offset(400, 0), 1000);
+    await settle(t);
+    expect(find.text('Radial'), findsOneWidget);
+    await t.fling(grid, const Offset(400, 0), 1000);
+    await settle(t);
+    expect(find.widgetWithText(AppBar, 'Nodes'), findsOneWidget);
+    expect(t.takeException(), isNull);
+  });
+
+  testWidgets('pan mode on a pannable map locks the shell; swipe mode '
+      'frees it again', (WidgetTester t) async {
+    GridScreen.resetSession();
+    await _pumpApp(t);
+    await t.tap(find.byIcon(Icons.menu_open));
+    await t.pumpAndSettle();
+    await t.tap(find.text('Hyperlocal grid').last);
+    await settle(t);
+    final Finder grid = find.byKey(const ValueKey<String>('grid-swipe'));
+    final Finder toggle =
+        find.byKey(const ValueKey<String>('grid-pan-toggle'));
+    await t.fling(grid, const Offset(-400, 0), 1000);
+    await settle(t);
+    expect(find.text('Globe'), findsOneWidget);
+
+    await t.tap(toggle);
+    await settle(t);
+    expect(GridScreen.capturesHorizontalDrag.value, isTrue);
     await t.fling(find.byType(PageView), const Offset(-400, 0), 1000);
     await settle(t);
     expect(find.widgetWithText(AppBar, 'Hyperlocal grid'), findsOneWidget);
+    expect(find.text('Globe'), findsOneWidget);
 
-    GridScreen.capturesHorizontalDrag.value = false;
-    await t.pump();
-    await t.fling(find.byType(PageView), const Offset(-400, 0), 1000);
+    await t.tap(toggle);
     await settle(t);
-    expect(find.widgetWithText(AppBar, 'Settings'), findsOneWidget);
-    // Leaving the tab frees the swipe for everyone else.
     expect(GridScreen.capturesHorizontalDrag.value, isFalse);
+    await t.fling(grid, const Offset(-400, 0), 1000);
+    await settle(t);
+    expect(find.text('Equal grid'), findsOneWidget);
+    expect(find.widgetWithText(AppBar, 'Hyperlocal grid'), findsOneWidget);
+    expect(t.takeException(), isNull);
   });
 }

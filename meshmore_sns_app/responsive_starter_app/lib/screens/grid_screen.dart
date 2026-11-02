@@ -30,11 +30,12 @@ import 'weather_view.dart';
 
 /// R27 — the map views in the grid's picker: `radial` (R18, default)
 /// + `globe` (R27) + `equalGrid` (R25) + `streetMap` (R25+2) + the
-/// rest. Selected via a [PopupMenuButton] in the grid's toolbar —
-/// swipe nav was tried in R25+2 but conflicted with the outer
-/// HomeShell PageView (left-swipe-from-radial would leave the grid
-/// tab instead of staying inside it). The dropdown is unambiguous
-/// and matches Material conventions.
+/// rest. Selected via a [PopupMenuButton] in the grid's toolbar, or
+/// by swiping left/right across the grid (issue #4 follow-up): the
+/// grid owns its horizontal swipe, steps through these in declaration
+/// order, and only past the first / last view hands the swipe to the
+/// HomeShell ([GridScreen.onSwipePastEnd]). A view that pans/zooms
+/// needs the same drag, so it offers a Swipe ⇄ Pan toggle.
 enum _GridViewMode {
   radial,
   globe,
@@ -49,9 +50,10 @@ enum _GridViewMode {
 }
 
 extension on _GridViewMode {
-  /// Views that pan/zoom with a drag. While one of these is showing,
-  /// a horizontal drag must move the map, not page the HomeShell — so
-  /// the shell stops swiping (Back, the dots and quick-nav still leave).
+  /// Views that pan/zoom with a drag. These show the Swipe ⇄ Pan
+  /// toggle: in swipe mode the map is a still picture and a drag steps
+  /// to another view; in pan mode the map has every drag and the shell
+  /// stops swiping (Back, the dots and quick-nav still leave).
   bool get pansHorizontally => switch (this) {
         _GridViewMode.globe ||
         _GridViewMode.equalGrid ||
@@ -83,7 +85,12 @@ extension on _GridViewMode {
 /// Lives in the HomeShell as the tab after Nodes (issue #4). The shell
 /// supplies the title; this widget brings its own toolbar.
 class GridScreen extends StatefulWidget {
-  const GridScreen({super.key});
+  const GridScreen({super.key, this.onSwipePastEnd});
+
+  /// A swipe past the first (`-1`) or last (`+1`) view — the HomeShell
+  /// pages to the neighbouring tab. Null outside the shell: the swipe
+  /// just stops at the end.
+  final void Function(int direction)? onSwipePastEnd;
 
   /// The selected view, held for the life of the process: it survives
   /// leaving and re-entering the tab (the PageView disposes the state),
@@ -91,9 +98,11 @@ class GridScreen extends StatefulWidget {
   /// out of [GridPrefsStore] deliberately for that reason.
   static _GridViewMode _sessionMode = _GridViewMode.radial;
 
-  /// True while the showing view owns horizontal drags (see
-  /// [_GridViewMode.pansHorizontally]); the HomeShell listens and
-  /// locks its swipe while the grid tab is current.
+  /// True while a pannable view is in pan mode and so owns horizontal
+  /// drags; the HomeShell listens and locks its swipe while the grid
+  /// tab is current. Never true on entering the tab — pan mode is
+  /// asked for by the toggle each visit, so arriving by a swipe can't
+  /// lock the shell under the finger mid-drag.
   static final ValueNotifier<bool> capturesHorizontalDrag =
       ValueNotifier<bool>(false);
 
@@ -163,6 +172,14 @@ class _GridScreenState extends State<GridScreen>
   /// and written back to, [GridScreen._sessionMode].
   _GridViewMode _viewMode = GridScreen._sessionMode;
 
+  /// Pan mode (the toggle on a pannable view): the map takes drags.
+  /// Off = swipe mode, where a horizontal drag changes view. Starts
+  /// off on every visit so the grid can always be swiped through.
+  bool _panMode = false;
+
+  /// Running horizontal travel of the current swipe-mode drag.
+  double _swipeDx = 0;
+
   /// Maximum hit-test radius (logical px) for tap-to-select on the grid.
   static const double _tapRadius = 28.0;
 
@@ -231,7 +248,6 @@ class _GridScreenState extends State<GridScreen>
         });
       }, onError: (_) {});
     }
-    _publishCapture(_viewMode.pansHorizontally);
     // Restore last-used grid preferences (scale / orientation / refresh)
     // so they don't reset when re-opening the grid. The view itself is
     // session state — see [GridScreen._sessionMode].
@@ -268,10 +284,40 @@ class _GridScreenState extends State<GridScreen>
         (_) => GridScreen.capturesHorizontalDrag.value = v);
   }
 
+  /// Whether the map currently owns drags (pannable view, pan mode).
+  bool get _mapOwnsDrags => _panMode && _viewMode.pansHorizontally;
+
   void _selectMode(_GridViewMode m) {
     setState(() => _viewMode = m);
     GridScreen._sessionMode = m;
-    GridScreen.capturesHorizontalDrag.value = m.pansHorizontally;
+    GridScreen.capturesHorizontalDrag.value = _mapOwnsDrags;
+  }
+
+  void _togglePanMode() {
+    setState(() => _panMode = !_panMode);
+    GridScreen.capturesHorizontalDrag.value = _mapOwnsDrags;
+  }
+
+  /// Swipe mode: a fling, or a drag across a fifth of the width, steps
+  /// one view (left = next). Past either end the shell takes it.
+  void _onSwipeEnd(DragEndDetails d, double width) {
+    final double v = d.primaryVelocity ?? 0;
+    final double dx = _swipeDx;
+    _swipeDx = 0;
+    final int dir;
+    if (v.abs() > 300) {
+      dir = v < 0 ? 1 : -1;
+    } else if (dx.abs() > width / 5) {
+      dir = dx < 0 ? 1 : -1;
+    } else {
+      return;
+    }
+    final int next = _viewMode.index + dir;
+    if (next < 0 || next >= _GridViewMode.values.length) {
+      widget.onSwipePastEnd?.call(dir);
+      return;
+    }
+    _selectMode(_GridViewMode.values[next]);
   }
 
   @override
@@ -536,7 +582,23 @@ class _GridScreenState extends State<GridScreen>
     final String scaleLabel = _rangeLabel(l, _scaleIndex);
     final String scaleValue = _rangeValue(scaleKm);
 
+    // The grid's own horizontal swipe. Sitting inside the shell's
+    // PageView it wins the gesture arena, so a swipe here changes map
+    // rather than tab; only past either end does the shell page. Gone
+    // in pan mode, where the map wants the drag.
     return MmScaffold(
+      child: LayoutBuilder(
+        builder: (BuildContext _, BoxConstraints box) => GestureDetector(
+      key: const ValueKey<String>('grid-swipe'),
+      behavior: HitTestBehavior.translucent,
+      onHorizontalDragStart:
+          _mapOwnsDrags ? null : (_) => _swipeDx = 0,
+      onHorizontalDragUpdate: _mapOwnsDrags
+          ? null
+          : (DragUpdateDetails d) => _swipeDx += d.delta.dx,
+      onHorizontalDragEnd: _mapOwnsDrags
+          ? null
+          : (DragEndDetails d) => _onSwipeEnd(d, box.maxWidth),
       child: Column(
         children: <Widget>[
       Padding(
@@ -555,12 +617,9 @@ class _GridScreenState extends State<GridScreen>
             ),
           ),
           // R27 + R25 + R25+4 — view-mode picker. PopupMenuButton
-          // shows icon + short label per mode. Swipe nav was tried
-          // in R25+2 but conflicted with the outer HomeShell
-          // PageView at the boundary (left-swipe-from-radial would
-          // leave the grid tab instead of staying inside it). The
-          // dropdown is unambiguous and one tap shorter than a
-          // cycle for mid-list modes.
+          // shows icon + short label per mode; one tap to any view,
+          // where the swipe (see the GestureDetector above) steps
+          // one at a time.
           PopupMenuButton<_GridViewMode>(
             tooltip: l.gridViewPicker,
             initialValue: _viewMode,
@@ -603,6 +662,18 @@ class _GridScreenState extends State<GridScreen>
                 ),
             ],
           ),
+          // Swipe ⇄ Pan — only where the map has a drag of its own.
+          if (_viewMode.pansHorizontally)
+            IconButton(
+              key: const ValueKey<String>('grid-pan-toggle'),
+              tooltip: _panMode
+                  ? l.gridPanModeTooltip
+                  : l.gridSwipeModeTooltip,
+              isSelected: _panMode,
+              icon: const Icon(Icons.swipe),
+              selectedIcon: const Icon(Icons.pan_tool),
+              onPressed: _togglePanMode,
+            ),
           IconButton(
             tooltip: _live ? l.gridPauseTooltip : l.gridPlayTooltip,
             icon: Icon(_live ? Icons.pause : Icons.play_arrow),
@@ -652,11 +723,10 @@ class _GridScreenState extends State<GridScreen>
       // the strip.
       if (!ready && _viewMode != _GridViewMode.radial)
         _NotConnectedStrip(cs: cs, label: l.gridNotConnected),
-      // R25+4 — dropdown picker drives mode (was PageView in R25+2;
-      // swiping conflicted with the outer HomeShell tab swipe). The
-      // body just renders the chosen mode's widget.
+      // The picker or the swipe drives mode; the body renders the
+      // chosen mode's widget, under its Swipe ⇄ Pan state.
       Expanded(
-        child: switch (_viewMode) {
+        child: _modeHint(cs, l, switch (_viewMode) {
         _GridViewMode.globe => GlobeView(
             filteredNodes: visible,
             frozen: !_live && _userInteracted,
@@ -906,10 +976,50 @@ class _GridScreenState extends State<GridScreen>
           ),
         ],
       ),
-      },
+      }),
       ),
         ],
       ),
+    ),
+      ),
+    );
+  }
+
+  /// A pannable view's body under its mode: in swipe mode the map is
+  /// held still (its own drags would win over the swipe) with a hint
+  /// saying how to get it back; in pan mode a quieter hint says how to
+  /// get the swipe back. Other views pass straight through.
+  Widget _modeHint(ColorScheme cs, AppLocalizations l, Widget body) {
+    if (!_viewMode.pansHorizontally) return body;
+    return Stack(
+      children: <Widget>[
+        Positioned.fill(
+            child: IgnorePointer(ignoring: !_panMode, child: body)),
+        Positioned(
+          left: 0,
+          right: 0,
+          bottom: 12,
+          child: IgnorePointer(
+            child: Center(
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: cs.surface.withValues(alpha: .8),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                      color: cs.outline.withValues(alpha: .4)),
+                ),
+                child: Text(
+                  _panMode ? l.gridPanHint : l.gridSwipeHint,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: cs.onSurface, fontSize: 12),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 

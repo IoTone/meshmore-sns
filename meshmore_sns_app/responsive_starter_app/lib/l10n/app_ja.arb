@@ -460,6 +460,10 @@
     }
   },
   "gridStatusOffline": "未接続 — 設定 → 診断で接続",
+  "gridSwipeModeTooltip": "スワイプモード:左右にスワイプで他のマップへ。タップでこのマップを移動・ズーム",
+  "gridPanModeTooltip": "移動・ズームモード:ドラッグでマップを移動。タップでマップ間スワイプへ",
+  "gridSwipeHint": "← → スワイプで他のマップ · ✋ をタップで移動・ズーム",
+  "gridPanHint": "移動・ズーム中 · ⇆ をタップでマップ切替スワイプ",
   "gridNotConnected": "メッシュに未接続",
   "gridPlayStatePaused": "一時停止中",
   "gridPlayStateLive": "ライブ ({interval})",
