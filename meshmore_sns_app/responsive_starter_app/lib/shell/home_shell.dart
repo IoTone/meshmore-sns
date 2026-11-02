@@ -1,6 +1,7 @@
 // Copyright (c) 2026 IoTone, Inc.
 // SPDX-License-Identifier: MIT
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -124,6 +125,20 @@ class _HomeShellState extends State<HomeShell>
   /// `animateToPage`, so Dashboard -> Settings scrolled through five pages and
   /// `onPageChanged` fired a nav cue on each one: five builds, five vibrations.
   /// The jump is instant and the cue is played once here, at the tap.
+  static const MethodChannel _lifecycle = MethodChannel('meshmore/app_lifecycle');
+
+  /// Back on the Dashboard: keep the engine (and the radio) alive, in the background.
+  /// Best effort: a test or a platform without the channel simply ignores the back.
+  Future<void> _moveToBackground() async {
+    try {
+      await _lifecycle.invokeMethod<bool>('moveTaskToBack');
+    } on MissingPluginException {
+      // No Android side here.
+    } on PlatformException {
+      // Same: nothing to background.
+    }
+  }
+
   void _select(int i) {
     if (i == _index) return;
     final int from = _index;
@@ -146,13 +161,24 @@ class _HomeShellState extends State<HomeShell>
     final AppLocalizations l = AppLocalizations.of(context);
     // Root back handling (R11): from a non-Dashboard tab, Back returns
     // to the Dashboard instead of trying to pop the root route (which
-    // is what crashed on Android). On the Dashboard, Back is allowed
-    // through so the OS gracefully backgrounds the app.
+    // is what crashed on Android). On the Dashboard, Back asks the platform
+    // to move the task to the back.
+    //
+    // **Not "allowed through": on Android that finishes the Activity and
+    // destroys the Flutter engine, and the engine is where the radio link and
+    // the loopback gateway live** (observed on the device, 2026-11-01: pressing
+    // Back on the Dashboard left the process and its foreground service alive
+    // but closed the gateway listener, so the paired app could no longer reach
+    // it). The foreground notification already says the app is running, so
+    // leaving the task in the background is the honest answer.
     return PopScope(
-      canPop: _index == 0,
+      canPop: false,
       onPopInvokedWithResult: (bool didPop, Object? result) {
-        if (!didPop) {
+        if (didPop) return;
+        if (_index != 0) {
           _select(0);
+        } else {
+          _moveToBackground();
         }
       },
       child: BootOverlay(child: Scaffold(

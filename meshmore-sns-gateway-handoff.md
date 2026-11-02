@@ -82,7 +82,11 @@ the separation the architecture is built on.
 - Permission: `com.iotone.meshmore_sns_app.permission.GATEWAY_HANDOFF` (package-prefixed, as Android's guidance names them).
 - Service: `com.iotone.meshmore_sns_app.GatewayHandoffService`, a hand-written `Binder` with one transaction that returns the `Bundle`. No AIDL, so no generated code to keep in step across two repositories. `checkCallingPermission` runs on every transaction.
 - Dart publishes through the `meshmore/gateway_handoff` channel (`publish` / `clear`) on every `GatewayService` notification; the Kotlin side holds it in memory only and clears it when the Flutter engine goes.
-- LDMUX asks automatically when it holds the session keys and no token, and on the `fetch token` button in Settings (which may replace a stored token, because pressing it says that one is not working). On a refused or unreachable link the mesh screen offers the same action.
+- LDMUX asks automatically when it holds the session keys and no token, when the link is refused or
+  unreachable (once per connection, and again on returning to the app), and on the `fetch token`
+  button in Settings (which may replace a stored token, because pressing it says that one is not
+  working). On a refused or unreachable link the mesh screen offers the same action. If MeshMore is
+  not serving, the button opens MeshMore (see below) and LDMUX retries on return.
 
 ## Contract
 
@@ -115,9 +119,26 @@ the reason, instead of a token field.
 | situation | what LDMUX shows |
 | --- | --- |
 | MeshMore not installed | "MeshMore is not installed" and the paste/scan path |
-| MeshMore installed, gateway off | "MeshMore is not serving" and a button that opens MeshMore's gateway screen |
+| MeshMore installed, gateway off | "MeshMore is not serving: open it, or turn on Connected apps there"; the button opens MeshMore, whose gateway starts with it |
 | bound, but token refused | "MeshMore refused that token" and one retry with a fresh handoff |
 | service missing on an old MeshMore | fall back to the paste/scan path, no error |
+
+## When the gateway is running (2026-11-01)
+
+- **The gateway service is created with the app.** `GatewayService` is a `lazy: false` provider, so
+  `load()` and the listener start when MeshMore's Flutter engine starts, not when someone opens
+  Settings -> Connected apps. The foreground service already keeps the process alive for the radio,
+  so the gateway now lives for the same span. Before this the switch could read ON and the screen
+  could say "Listening on 127.0.0.1:41731" while nothing was bound: that line is the configured port,
+  not the live one.
+- **Back on the Dashboard leaves the task in the background.** It used to finish the Activity, which
+  destroys the Flutter engine - and the engine is where the radio link and the gateway live. The
+  foreground service and its notification stay, so leaving the task running is the honest behaviour;
+  `MainActivity` handles `moveTaskToBack` for Dart's root `PopScope`.
+- **A cold process still reports `off`.** A Binder bind starts the process (`BIND_AUTO_CREATE`) but
+  not the Flutter engine, so a MeshMore that was killed cannot publish an offer until it is opened.
+  That is why the handoff's "not serving" has a button that opens the app rather than a sentence
+  about a switch that is already on.
 
 ## Build requirement
 

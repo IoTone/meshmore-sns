@@ -25,6 +25,18 @@ class MainActivity : FlutterActivity() {
                     else -> result.notImplemented()
                 }
             }
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "meshmore/app_lifecycle")
+            .setMethodCallHandler { call, result ->
+                when (call.method) {
+                    // **Back leaves the task running, it does not finish the engine.** The radio
+                    // link and the loopback gateway live in the main isolate, and finishing the
+                    // Activity destroys it: the radio disconnects and every app that was handed the
+                    // gateway endpoint finds nothing listening (measured on the device, 2026-11-01).
+                    // The foreground service and the notification already say the app is running.
+                    "moveTaskToBack" -> result.success(moveTaskToBack(true))
+                    else -> result.notImplemented()
+                }
+            }
     }
 
     // With the engine gone nothing is listening any more, so nothing may be offered: a stale

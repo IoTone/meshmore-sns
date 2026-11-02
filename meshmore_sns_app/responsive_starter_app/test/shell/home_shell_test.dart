@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/semantics.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 
@@ -337,6 +338,30 @@ void main() {
     expect(handled, isTrue);
     expect(find.widgetWithText(MmPageHeader, 'Dashboard'), findsOneWidget);
     expect(t.takeException(), isNull); // no root-pop exception
+  });
+
+  testWidgets(
+      'Back on the Dashboard asks the platform to background the task, not finish it',
+      (WidgetTester t) async {
+    // The engine is where the radio link and the loopback gateway live. Letting the root route pop
+    // finishes the Activity and destroys it, so another app that was handed the gateway endpoint
+    // finds nothing listening (measured on the device, 2026-11-01). The platform call is the fix.
+    final List<String> calls = <String>[];
+    const MethodChannel channel = MethodChannel('meshmore/app_lifecycle');
+    t.binding.defaultBinaryMessenger.setMockMethodCallHandler(channel, (MethodCall call) async {
+      calls.add(call.method);
+      return true;
+    });
+    addTearDown(() => t.binding.defaultBinaryMessenger
+        .setMockMethodCallHandler(channel, null));
+
+    await _pumpApp(t);
+    final bool handled = await t.binding.handlePopRoute();
+    await t.pumpAndSettle();
+    expect(handled, isTrue);
+    expect(calls, <String>['moveTaskToBack']);
+    expect(find.widgetWithText(MmPageHeader, 'Dashboard'), findsOneWidget);
+    expect(t.takeException(), isNull);
   });
 
   testWidgets(
