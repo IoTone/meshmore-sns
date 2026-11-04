@@ -2003,25 +2003,25 @@ abstract class AppLocalizations {
   /// No description provided for @gridSwipeModeTooltip.
   ///
   /// In en, this message translates to:
-  /// **'Swipe mode: swipe left/right for other maps. Tap to pan and zoom this map'**
+  /// **'Swipe mode: swipe left/right for other screens. Tap to pan and zoom this map'**
   String get gridSwipeModeTooltip;
 
   /// No description provided for @gridPanModeTooltip.
   ///
   /// In en, this message translates to:
-  /// **'Pan & zoom mode: drags move the map. Tap to swipe between maps'**
+  /// **'Pan & zoom mode: drags move the map. Tap to swipe between screens again'**
   String get gridPanModeTooltip;
 
   /// No description provided for @gridSwipeHint.
   ///
   /// In en, this message translates to:
-  /// **'Swipe ← → for other maps · tap ✋ to pan & zoom'**
+  /// **'Swipe ← → for other screens · tap ✋ to pan & zoom'**
   String get gridSwipeHint;
 
   /// No description provided for @gridPanHint.
   ///
   /// In en, this message translates to:
-  /// **'Pan & zoom · tap ⇆ to swipe between maps'**
+  /// **'Pan & zoom · tap ⇆ to swipe screens'**
   String get gridPanHint;
 
   /// No description provided for @gridNotConnected.

@@ -30,12 +30,11 @@ import 'weather_view.dart';
 
 /// R27 — the map views in the grid's picker: `radial` (R18, default)
 /// + `globe` (R27) + `equalGrid` (R25) + `streetMap` (R25+2) + the
-/// rest. Selected via a [PopupMenuButton] in the grid's toolbar, or
-/// by swiping left/right across the grid (issue #4 follow-up): the
-/// grid owns its horizontal swipe, steps through these in declaration
-/// order, and only past the first / last view hands the swipe to the
-/// HomeShell ([GridScreen.onSwipePastEnd]). A view that pans/zooms
-/// needs the same drag, so it offers a Swipe ⇄ Pan toggle.
+/// rest. Selected via a [PopupMenuButton] in the grid's toolbar; a
+/// left/right swipe always belongs to the HomeShell and changes tab
+/// (stepping maps by swipe made Settings too many swipes away). A view
+/// that pans/zooms needs the same drag, so it offers a Swipe ⇄ Pan
+/// toggle (issue #4 follow-up).
 enum _GridViewMode {
   radial,
   globe,
@@ -51,8 +50,8 @@ enum _GridViewMode {
 
 extension on _GridViewMode {
   /// Views that pan/zoom with a drag. These show the Swipe ⇄ Pan
-  /// toggle: in swipe mode the map is a still picture and a drag steps
-  /// to another view; in pan mode the map has every drag and the shell
+  /// toggle: in swipe mode the map is a still picture and a swipe
+  /// changes tab; in pan mode the map has every drag and the shell
   /// stops swiping (Back, the dots and quick-nav still leave).
   bool get pansHorizontally => switch (this) {
         _GridViewMode.globe ||
@@ -85,12 +84,7 @@ extension on _GridViewMode {
 /// Lives in the HomeShell as the tab after Nodes (issue #4). The shell
 /// supplies the title; this widget brings its own toolbar.
 class GridScreen extends StatefulWidget {
-  const GridScreen({super.key, this.onSwipePastEnd});
-
-  /// A swipe past the first (`-1`) or last (`+1`) view — the HomeShell
-  /// pages to the neighbouring tab. Null outside the shell: the swipe
-  /// just stops at the end.
-  final void Function(int direction)? onSwipePastEnd;
+  const GridScreen({super.key});
 
   /// The selected view, held for the life of the process: it survives
   /// leaving and re-entering the tab (the PageView disposes the state),
@@ -173,12 +167,9 @@ class _GridScreenState extends State<GridScreen>
   _GridViewMode _viewMode = GridScreen._sessionMode;
 
   /// Pan mode (the toggle on a pannable view): the map takes drags.
-  /// Off = swipe mode, where a horizontal drag changes view. Starts
-  /// off on every visit so the grid can always be swiped through.
+  /// Off = swipe mode, where a horizontal drag changes tab. Starts
+  /// off on every visit so the tab can always be swiped away from.
   bool _panMode = false;
-
-  /// Running horizontal travel of the current swipe-mode drag.
-  double _swipeDx = 0;
 
   /// Maximum hit-test radius (logical px) for tap-to-select on the grid.
   static const double _tapRadius = 28.0;
@@ -296,28 +287,6 @@ class _GridScreenState extends State<GridScreen>
   void _togglePanMode() {
     setState(() => _panMode = !_panMode);
     GridScreen.capturesHorizontalDrag.value = _mapOwnsDrags;
-  }
-
-  /// Swipe mode: a fling, or a drag across a fifth of the width, steps
-  /// one view (left = next). Past either end the shell takes it.
-  void _onSwipeEnd(DragEndDetails d, double width) {
-    final double v = d.primaryVelocity ?? 0;
-    final double dx = _swipeDx;
-    _swipeDx = 0;
-    final int dir;
-    if (v.abs() > 300) {
-      dir = v < 0 ? 1 : -1;
-    } else if (dx.abs() > width / 5) {
-      dir = dx < 0 ? 1 : -1;
-    } else {
-      return;
-    }
-    final int next = _viewMode.index + dir;
-    if (next < 0 || next >= _GridViewMode.values.length) {
-      widget.onSwipePastEnd?.call(dir);
-      return;
-    }
-    _selectMode(_GridViewMode.values[next]);
   }
 
   @override
@@ -582,23 +551,7 @@ class _GridScreenState extends State<GridScreen>
     final String scaleLabel = _rangeLabel(l, _scaleIndex);
     final String scaleValue = _rangeValue(scaleKm);
 
-    // The grid's own horizontal swipe. Sitting inside the shell's
-    // PageView it wins the gesture arena, so a swipe here changes map
-    // rather than tab; only past either end does the shell page. Gone
-    // in pan mode, where the map wants the drag.
     return MmScaffold(
-      child: LayoutBuilder(
-        builder: (BuildContext _, BoxConstraints box) => GestureDetector(
-      key: const ValueKey<String>('grid-swipe'),
-      behavior: HitTestBehavior.translucent,
-      onHorizontalDragStart:
-          _mapOwnsDrags ? null : (_) => _swipeDx = 0,
-      onHorizontalDragUpdate: _mapOwnsDrags
-          ? null
-          : (DragUpdateDetails d) => _swipeDx += d.delta.dx,
-      onHorizontalDragEnd: _mapOwnsDrags
-          ? null
-          : (DragEndDetails d) => _onSwipeEnd(d, box.maxWidth),
       child: Column(
         children: <Widget>[
       Padding(
@@ -617,9 +570,8 @@ class _GridScreenState extends State<GridScreen>
             ),
           ),
           // R27 + R25 + R25+4 — view-mode picker. PopupMenuButton
-          // shows icon + short label per mode; one tap to any view,
-          // where the swipe (see the GestureDetector above) steps
-          // one at a time.
+          // shows icon + short label per mode; the only way between
+          // views, since a swipe belongs to the shell's tabs.
           PopupMenuButton<_GridViewMode>(
             tooltip: l.gridViewPicker,
             initialValue: _viewMode,
@@ -723,8 +675,8 @@ class _GridScreenState extends State<GridScreen>
       // the strip.
       if (!ready && _viewMode != _GridViewMode.radial)
         _NotConnectedStrip(cs: cs, label: l.gridNotConnected),
-      // The picker or the swipe drives mode; the body renders the
-      // chosen mode's widget, under its Swipe ⇄ Pan state.
+      // The picker drives mode; the body renders the chosen mode's
+      // widget, under its Swipe ⇄ Pan state.
       Expanded(
         child: _modeHint(cs, l, switch (_viewMode) {
         _GridViewMode.globe => GlobeView(
@@ -979,8 +931,6 @@ class _GridScreenState extends State<GridScreen>
       }),
       ),
         ],
-      ),
-    ),
       ),
     );
   }

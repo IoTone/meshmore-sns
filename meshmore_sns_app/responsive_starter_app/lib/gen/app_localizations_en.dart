@@ -1119,17 +1119,18 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get gridSwipeModeTooltip =>
-      'Swipe mode: swipe left/right for other maps. Tap to pan and zoom this map';
+      'Swipe mode: swipe left/right for other screens. Tap to pan and zoom this map';
 
   @override
   String get gridPanModeTooltip =>
-      'Pan & zoom mode: drags move the map. Tap to swipe between maps';
+      'Pan & zoom mode: drags move the map. Tap to swipe between screens again';
 
   @override
-  String get gridSwipeHint => 'Swipe ← → for other maps · tap ✋ to pan & zoom';
+  String get gridSwipeHint =>
+      'Swipe ← → for other screens · tap ✋ to pan & zoom';
 
   @override
-  String get gridPanHint => 'Pan & zoom · tap ⇆ to swipe between maps';
+  String get gridPanHint => 'Pan & zoom · tap ⇆ to swipe screens';
 
   @override
   String get gridNotConnected => 'Not Connected to Mesh';
