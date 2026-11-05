@@ -19,5 +19,28 @@ class MainActivity : FlutterActivity() {
                     else -> result.notImplemented()
                 }
             }
+        // The history store's key lives in the Android Keystore and never
+        // leaves it, so sealing and opening happen here, not in Dart.
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "meshmore/secure_store")
+            .setMethodCallHandler { call, result ->
+                val data = call.argument<ByteArray>("data")
+                if (data == null) {
+                    result.error("bad_args", "data is required", null)
+                    return@setMethodCallHandler
+                }
+                try {
+                    when (call.method) {
+                        "seal" -> result.success(SecureStore.seal(data))
+                        "open" -> result.success(SecureStore.open(data))
+                        else -> result.notImplemented()
+                    }
+                } catch (e: javax.crypto.AEADBadTagException) {
+                    // Wrong key, or the file was altered: the Dart side reports
+                    // this as a corrupt store rather than as a write failure.
+                    result.error("corrupt", "tag mismatch", null)
+                } catch (e: Exception) {
+                    result.error("cipher", e.message ?: e.javaClass.simpleName, null)
+                }
+            }
     }
 }

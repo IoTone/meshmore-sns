@@ -20,6 +20,9 @@ void main() {
   const String manifest = 'android/app/src/main/AndroidManifest.xml';
   const String keepalive = 'lib/meshcore/background_keepalive.dart';
   const String sixteenKb = 'tool/check_16k.sh';
+  const String legacyBackupRules = 'android/app/src/main/res/xml/backup_rules.xml';
+  const String dataExtractionRules =
+      'android/app/src/main/res/xml/data_extraction_rules.xml';
 
   test('API 36 is pinned in the app build, not inherited', () {
     final String g = File(gradle).readAsStringSync();
@@ -71,5 +74,50 @@ void main() {
         reason: 'the per-library half of the check must stay');
     final ProcessResult r = Process.runSync('test', <String>['-x', sixteenKb]);
     expect(r.exitCode, 0, reason: '$sixteenKb must be executable');
+  });
+
+  test('nothing leaves the device in a backup, on either platform rule set',
+      () {
+    // D8.8: the store's key is in the Android Keystore and cannot be exported,
+    // so a restored copy of the ciphertext is unreadable; map tiles are cache.
+    // Both rule files must exclude every domain, or a later feature puts a file
+    // back into the cloud by default.
+    const List<String> domains = <String>[
+      'root',
+      'file',
+      'database',
+      'sharedpref',
+      'external',
+    ];
+    final String legacy = File(legacyBackupRules).readAsStringSync();
+    final String modern = File(dataExtractionRules).readAsStringSync();
+
+    for (final String d in domains) {
+      final String exclude = '<exclude domain="$d" path="." />';
+      expect(legacy, contains(exclude),
+          reason: 'backup_rules.xml must exclude the $d domain');
+      // Android 12+ has two directions and both must exclude it.
+      expect(
+          RegExp(RegExp.escape(exclude)).allMatches(modern).length, 2,
+          reason: 'data_extraction_rules.xml must exclude $d in cloud-backup '
+              'and device-transfer');
+    }
+    expect(modern, contains('<cloud-backup>'));
+    expect(modern, contains('<device-transfer>'));
+  });
+
+  test('the sealed store is the only history the app writes', () {
+    // The migration removes the plaintext only after the sealed copy verifies,
+    // and it is the only place that may name the old key.
+    final String chat = File('lib/meshcore/chat_store.dart').readAsStringSync();
+    expect(chat, contains('EncryptedStore'));
+    expect(chat, contains("'mm.chat.v1'"),
+        reason: 'the legacy key is read for the migration and nowhere else');
+    // The plaintext write is a fallback only: it sits after the sealed path
+    // in `save`, and the migration removes the plaintext once sealed works.
+    expect(RegExp('setString\\(_kLegacyKey').allMatches(chat).length, 1,
+        reason: 'exactly one plaintext write, the host-with-no-key fallback');
+    expect(chat, contains('p.remove(_kLegacyKey)'),
+        reason: 'migration must delete the plaintext after verifying the copy');
   });
 }

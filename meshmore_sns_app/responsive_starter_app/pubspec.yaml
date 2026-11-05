@@ -88,6 +88,11 @@ dependencies:
   sensors_plus: ^6.0.1
   crypto: ^3.0.6
 
+  # --- Encrypted history store (W4) — AES-256-GCM and PBKDF2 in pure Dart.
+  #     MIT. The device key itself lives in the Android Keystore; this only
+  #     carries the primitives the tests and the passphrase export need. ---
+  pointycastle: ^3.9.1
+
   # --- R6 follow-on: QR-share for channel PSK handoff. Generation
   #     only in this pass; scanning side is captured separately.
   qr_flutter: ^4.1.0
