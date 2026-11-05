@@ -45,7 +45,8 @@ The state column answers one question: can work start? `TODO` means yes, the des
 | `0x41` raw packet / `0x32` binary request | BUILT in the codec, no caller | `MeshCarryCodec.sendRawPacket` / `sendBinaryReq` encode and are vector-tested; nothing in the app calls them yet |
 | `0x91` one-key DM rejected | TODO | 1 + 32 bytes, keymind only; without it a refused stranger's message vanishes |
 | `0x4A`/`0x4B` firmware OTA control | TODO | A phone can drive a companion's own OTA; needs a row, a screen and the queue-drain handling |
-| Golden vectors | BUILT twice | Same `m1`–`m5` + `interop/SCHEMA.md` in the Dart package and `libmeshcore`. Open: ownership and which is the reference |
+| Golden vectors | BUILT twice | Same `m1`–`m6` + `interop/SCHEMA.md` in the Dart package and `libmeshcore`. Open: ownership and which is the reference |
+| Conformance ceilings | BUILT | `packages/meshcore/test/conformance_test.dart`: 160 B channel text (refused at the encoder, `ChannelTextLimits`), 162 B datagram blob, 176 B frame (refused at `MeshcoreConnection.sendCommand`), 177 B queue slot as the bound text must stay under; each with a boundary test and the firmware line. Also the packed `path_len` matrix, the airtime arithmetic, and an encoder-inventory ratchet (three encoders still unexercised: `getAllowedRepeatFreq`, `getDefaultFloodScope`, `removeContact`) |
 | Capability negotiation | TODO | Probe commands, never compare version strings; convention in the app-name tail |
 | Path-hash width from `path_len` | BUILT | Width in bits 7–6, hops 5–0 |
 
