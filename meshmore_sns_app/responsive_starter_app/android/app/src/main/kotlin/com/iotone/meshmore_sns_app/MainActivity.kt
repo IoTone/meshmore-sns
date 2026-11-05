@@ -1,5 +1,6 @@
 package com.iotone.meshmore_sns_app
 
+import android.content.ClipData
 import android.content.Intent
 import androidx.core.content.FileProvider
 import io.flutter.embedding.android.FlutterActivity
@@ -73,6 +74,7 @@ class MainActivity : FlutterActivity() {
                     val send = Intent(Intent.ACTION_SEND).apply {
                         type = mime
                         putExtra(Intent.EXTRA_STREAM, uri)
+                        clipData = ClipData.newRawUri(subject ?: "file", uri)
                         if (subject != null) putExtra(Intent.EXTRA_SUBJECT, subject)
                         addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                     }
