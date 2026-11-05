@@ -126,7 +126,7 @@ void main() {
   }
 
   for (final Locale loc in const <Locale>[Locale('en'), Locale('ja')]) {
-    testWidgets('R83 region files are deferred: the section is hidden '
+    testWidgets('R84 the offline list is shown, with what is installed '
         '(${loc.languageCode})', (WidgetTester t) async {
       await t.binding.setSurfaceSize(const Size(360, 800));
       addTearDown(() => t.binding.setSurfaceSize(null));
@@ -160,21 +160,15 @@ void main() {
       await t.pumpWidget(_host(mc, maps, const MapsScreen(), locale: loc));
       await t.pump();
       expect(t.takeException(), isNull);
-      // R83: the machinery works and the archives exist in the controller,
-      // but the feature is deferred until a region file is published, so
-      // the section must not appear at all. The archive mechanics stay
-      // covered by test/maps/map_archive_test.dart.
+      // R84: the entry is live, so the section appears with the shipped list
+      // (empty until a host publishes one) above the installed region files.
       final AppLocalizations l = lookupAppLocalizations(loc);
-      expect(kRegionFilesEnabled, isFalse);
       expect(maps.archives, hasLength(2));
-      expect(find.text(l.mapsArchives), findsNothing);
-      expect(find.text('Front Range'), findsNothing);
-      expect(find.text('Bad one'), findsNothing);
-      expect(
-          find.text(loc.languageCode == 'en'
-              ? 'Add region file'
-              : '地域ファイルを追加'),
-          findsNothing);
+      expect(find.text(l.mapsPacksPublished), findsOneWidget);
+      expect(find.text(l.mapsArchives), findsOneWidget);
+      expect(find.text(l.mapsPacksEmpty), findsOneWidget);
+      expect(find.text('Front Range'), findsOneWidget);
+      expect(find.text('Bad one'), findsOneWidget);
       expect(t.takeException(), isNull);
       await t.runAsync(() async {
         maps.dispose();

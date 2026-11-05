@@ -6296,6 +6296,78 @@ abstract class AppLocalizations {
   /// **'Already added.'**
   String get archiveRefusalDuplicate;
 
+  /// No description provided for @archiveStateWaitingWifi.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for Wi-Fi'**
+  String get archiveStateWaitingWifi;
+
+  /// No description provided for @archiveRefusalNoSpace.
+  ///
+  /// In en, this message translates to:
+  /// **'Not enough free space. Free up some and try again.'**
+  String get archiveRefusalNoSpace;
+
+  /// No description provided for @mapsPacksPublished.
+  ///
+  /// In en, this message translates to:
+  /// **'Offline maps'**
+  String get mapsPacksPublished;
+
+  /// No description provided for @mapsPacksEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No offline maps published yet. You can still install one from a link.'**
+  String get mapsPacksEmpty;
+
+  /// No description provided for @mapsPacksFrom.
+  ///
+  /// In en, this message translates to:
+  /// **'List from {source}'**
+  String mapsPacksFrom(String source);
+
+  /// No description provided for @mapsPacksBundle.
+  ///
+  /// In en, this message translates to:
+  /// **'Built-in list'**
+  String get mapsPacksBundle;
+
+  /// No description provided for @mapsPacksUnreadable.
+  ///
+  /// In en, this message translates to:
+  /// **'The published list could not be read. Showing the built-in one.'**
+  String get mapsPacksUnreadable;
+
+  /// No description provided for @mapsPackInstall.
+  ///
+  /// In en, this message translates to:
+  /// **'Download'**
+  String get mapsPackInstall;
+
+  /// No description provided for @mapsPackLicence.
+  ///
+  /// In en, this message translates to:
+  /// **'{licence} · {attribution}'**
+  String mapsPackLicence(String licence, String attribution);
+
+  /// No description provided for @mapsWifiOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Download over Wi-Fi only'**
+  String get mapsWifiOnly;
+
+  /// No description provided for @mapsWifiOnlyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'A pack can be hundreds of megabytes.'**
+  String get mapsWifiOnlyHint;
+
+  /// No description provided for @mapsOutsidePacks.
+  ///
+  /// In en, this message translates to:
+  /// **'Outside your offline maps, the map needs a connection.'**
+  String get mapsOutsidePacks;
+
   /// No description provided for @mapsLayers.
   ///
   /// In en, this message translates to:

@@ -1,5 +1,7 @@
 // Copyright (c) 2026 IoTone, Inc.
 // SPDX-License-Identifier: MIT
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -10,6 +12,7 @@ import '../../maps/map_archive.dart';
 import '../../maps/map_pack.dart';
 import '../../maps/map_source.dart';
 import '../../maps/maps_controller.dart';
+import '../../maps/pack_catalog.dart';
 import '../../theme/mm_skin.dart';
 import '../../ui/mm_components.dart';
 import '../../ui/mm_scaffold.dart';
@@ -49,6 +52,7 @@ String packRefusalText(AppLocalizations l, PackRefusal r) => switch (r) {
 
 String archiveStateLabel(AppLocalizations l, ArchiveState s) => switch (s) {
       ArchiveState.downloading => l.packStateDownloading,
+      ArchiveState.waitingForWifi => l.archiveStateWaitingWifi,
       ArchiveState.waitingForNetwork => l.packStateWaiting,
       ArchiveState.overBudget => l.packStateOverBudget,
       ArchiveState.paused => l.packStatePaused,
@@ -69,6 +73,7 @@ String archiveRefusalText(AppLocalizations l, ArchiveRefusal r) => switch (r) {
       ArchiveRefusal.badUrl => l.layerRefusalBadUrl,
       ArchiveRefusal.duplicate => l.archiveRefusalDuplicate,
       ArchiveRefusal.overBudget => l.packRefusalBudget,
+      ArchiveRefusal.notEnoughSpace => l.archiveRefusalNoSpace,
     };
 
 String layerRefusalText(AppLocalizations l, LayerRefusal r) => switch (r) {
@@ -170,28 +175,8 @@ class MapsScreen extends StatelessWidget {
                 onPressed: () => context.push('/settings/maps/new'),
               ),
             ),
-            // R83 — deferred feature (kRegionFilesEnabled). The code and its
-            // tests stay; the entry point appears when a region file exists
-            // to download.
-            if (kRegionFilesEnabled) ...<Widget>[
-              const SizedBox(height: 16),
-              MmSectionHeader(l.mapsArchives),
-              const SizedBox(height: 6),
-              if (maps.archives.isEmpty)
-                ToolLine(l.mapsNoArchives, muted: true),
-              for (final MapArchive a in maps.archives) _ArchiveRow(archive: a),
-              Align(
-                alignment: Alignment.centerLeft,
-                child: FilledButton.tonalIcon(
-                  icon: const Icon(Icons.folder_zip_outlined),
-                  label: Text(l.mapsAddArchive),
-                  onPressed: () => showDialog<void>(
-                    context: context,
-                    builder: (BuildContext ctx) => _AddArchiveDialog(maps: maps),
-                  ),
-                ),
-              ),
-            ],
+            const SizedBox(height: 16),
+            _PackCatalogueSection(maps: maps),
             const SizedBox(height: 16),
             MmSectionHeader(l.mapsLayers),
             const SizedBox(height: 6),
@@ -624,6 +609,153 @@ class _AddSourceDialogState extends State<_AddSourceDialog> {
           child: Text(l.mapsAdd),
         ),
       ],
+    );
+  }
+}
+
+/// R84 — the pack list plus what is already installed.
+///
+/// The list is read once per visit: the bundle always, and a published list
+/// when this build was pointed at one. A pack is one PMTiles file from a host
+/// that permits it, so the row shows the licence and the attribution the data
+/// requires before anyone taps Download.
+class _PackCatalogueSection extends StatefulWidget {
+  const _PackCatalogueSection({required this.maps});
+
+  final MapsController maps;
+
+  @override
+  State<_PackCatalogueSection> createState() => _PackCatalogueSectionState();
+}
+
+class _PackCatalogueSectionState extends State<_PackCatalogueSection> {
+  @override
+  void initState() {
+    super.initState();
+    if (widget.maps.catalog == null && !widget.maps.catalogLoading) {
+      unawaited(widget.maps.refreshCatalog());
+    }
+  }
+
+  Future<void> _install(CatalogPack pack) async {
+    final AppLocalizations l = AppLocalizations.of(context);
+    final ArchiveRefusal? why = await widget.maps.addArchive(
+      name: pack.name,
+      url: pack.url,
+      expectedBytes: pack.bytes <= 0 ? null : pack.bytes,
+      sha256: pack.sha256,
+    );
+    if (!mounted) return;
+    if (why != null) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(archiveRefusalText(l, why))));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations l = AppLocalizations.of(context);
+    final MapsController maps = widget.maps;
+    final PackCatalog? catalog = maps.catalog;
+    final String source = maps.catalogUrl.isEmpty
+        ? l.mapsPacksBundle
+        : Uri.tryParse(maps.catalogUrl)?.host ?? maps.catalogUrl;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        MmSectionHeader(l.mapsPacksPublished),
+        const SizedBox(height: 6),
+        if (catalog == null || maps.catalogLoading)
+          ToolLine(l.mapsPacksBundle, muted: true)
+        else ...<Widget>[
+          ToolLine(l.mapsPacksFrom(source), muted: true),
+          if (catalog.remoteProblem != null) ...<Widget>[
+            const SizedBox(height: 4),
+            ToolLine(l.mapsPacksUnreadable, muted: true),
+          ],
+          const SizedBox(height: 4),
+          if (catalog.isEmpty)
+            ToolLine(l.mapsPacksEmpty, muted: true)
+          else
+            for (final CatalogPack p in catalog.packs)
+              _CatalogRow(pack: p, onInstall: () => _install(p)),
+        ],
+        const SizedBox(height: 12),
+        MmSectionHeader(l.mapsArchives),
+        const SizedBox(height: 6),
+        if (maps.archives.isEmpty)
+          ToolLine(l.mapsNoArchives, muted: true),
+        for (final MapArchive a in maps.archives) _ArchiveRow(archive: a),
+        SwitchListTile(
+          contentPadding: EdgeInsets.zero,
+          title: Text(l.mapsWifiOnly),
+          subtitle: Text(l.mapsWifiOnlyHint),
+          value: maps.wifiOnlyArchives,
+          onChanged: maps.setWifiOnlyArchives,
+        ),
+        Align(
+          alignment: Alignment.centerLeft,
+          child: FilledButton.tonalIcon(
+            icon: const Icon(Icons.folder_zip_outlined),
+            label: Text(l.mapsAddArchive),
+            onPressed: () => showDialog<void>(
+              context: context,
+              builder: (BuildContext ctx) => _AddArchiveDialog(maps: maps),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// One pack a host has published, with the terms it carries.
+class _CatalogRow extends StatelessWidget {
+  const _CatalogRow({required this.pack, required this.onInstall});
+
+  final CatalogPack pack;
+  final VoidCallback onInstall;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations l = AppLocalizations.of(context);
+    final MmSkin skin = context.skin;
+    final ColorScheme cs = Theme.of(context).colorScheme;
+    return Padding(
+      padding: skin.space.pad(3),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(pack.summary, style: TextStyle(color: cs.onSurface)),
+                Text(
+                  l.mapsPackLicence(pack.licence, pack.attribution),
+                  style: TextStyle(
+                    color: cs.onSurface.withValues(alpha: .6),
+                    fontSize: skin.type.sizeSm,
+                  ),
+                ),
+                if (pack.description.isNotEmpty)
+                  Text(
+                    pack.description,
+                    style: TextStyle(
+                      color: cs.onSurface.withValues(alpha: .6),
+                      fontSize: skin.type.sizeSm,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          TextButton(
+            onPressed: onInstall,
+            child: Text(l.mapsPackInstall),
+          ),
+        ],
+      ),
     );
   }
 }

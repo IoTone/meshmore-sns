@@ -12,14 +12,18 @@ import 'package:crypto/crypto.dart' as crypto;
 /// `pmtiles extract --bbox ... --maxzoom 14` and put on a static URL: it
 /// downloads as one resumable file, is verified by size and SHA-256, and is
 /// read in place with seeks. Updating it is replacing the file.
-/// R83 — region files are deferred as a *feature*. The machinery works and
-/// is tested, but a region file is useless until one is published, and
-/// publishing one needs a host the project does not have. Until then the
-/// Settings entry is hidden rather than shown as an empty, inert section.
-const bool kRegionFilesEnabled = false;
+/// R84 — region files are a live feature. R83 hid the entry because a pack is
+/// useless until a host publishes one; the answer is a catalogue that can be
+/// empty and says so, not a hidden section. See `pack_catalog.dart`: the app
+/// ships a list, can be pointed at a published one at build time, and installs
+/// from a link in either case.
 
 enum ArchiveState {
   downloading,
+
+  /// Parked because the Wi-Fi-only preference is on and the link is metered.
+  /// Resumes by itself when the pump next runs on an unmetered link.
+  waitingForWifi,
   waitingForNetwork,
   overBudget,
   paused,
@@ -33,7 +37,15 @@ enum ArchiveState {
 enum ArchiveFailure { badHash, badSize, notPmTiles, wrongSchema, notFound }
 
 /// Why an archive was not added — one sentence each in the UI.
-enum ArchiveRefusal { noName, badUrl, duplicate, overBudget }
+enum ArchiveRefusal {
+  noName,
+  badUrl,
+  duplicate,
+  overBudget,
+
+  /// The platform says the download plus the reserve does not fit.
+  notEnoughSpace,
+}
 
 class MapArchive {
   MapArchive({

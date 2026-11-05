@@ -3533,6 +3533,46 @@ class AppLocalizationsJa extends AppLocalizations {
   String get archiveRefusalDuplicate => '追加済みです。';
 
   @override
+  String get archiveStateWaitingWifi => 'Wi-Fi 待ち';
+
+  @override
+  String get archiveRefusalNoSpace => '空き容量が足りません。空けてからやり直してください。';
+
+  @override
+  String get mapsPacksPublished => 'オフライン地図';
+
+  @override
+  String get mapsPacksEmpty => '公開されているオフライン地図はまだありません。リンクから追加できます。';
+
+  @override
+  String mapsPacksFrom(String source) {
+    return 'リスト提供: $source';
+  }
+
+  @override
+  String get mapsPacksBundle => '同梱リスト';
+
+  @override
+  String get mapsPacksUnreadable => '公開リストを読めなかったため、同梱リストを表示しています。';
+
+  @override
+  String get mapsPackInstall => 'ダウンロード';
+
+  @override
+  String mapsPackLicence(String licence, String attribution) {
+    return '$licence · $attribution';
+  }
+
+  @override
+  String get mapsWifiOnly => 'Wi-Fi のみでダウンロード';
+
+  @override
+  String get mapsWifiOnlyHint => 'パックは数百 MB になることがあります。';
+
+  @override
+  String get mapsOutsidePacks => 'オフライン地図の範囲外では、地図に接続が必要です。';
+
+  @override
   String get mapsLayers => 'イベント地図';
 
   @override
