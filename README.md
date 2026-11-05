@@ -7,25 +7,28 @@ Offline-first, theme-driven, with a hyperlocal radar grid, per-channel chat,
 1:1 DMs, and a device-first → phone-fallback location model.
 
 > **Status — in development.** Source is here for review and contribution;
-> there's no public release channel yet. 1645 widget/unit tests passing and
-> `flutter analyze` clean apart from two pre-existing
-> `unawaited_return_in_try_block` warnings in `lib/maps/maps_controller.dart`
-> (both measured 2026-11-05). A debug APK builds, installs and keeps the radio
-> link alive. **What is still owed is device verification**: every screen-level,
-> on-air and background path needs a run on an unlocked phone, and two gaps are
-> open in code: a received channel datagram has no consumer yet, and the bundled
-> image codec's native library fails the 16 KB page requirement (deadline
-> 1 Feb 2027).
+> there's no public release channel yet. Measured 2026-11-05: 1680 widget/unit
+> tests pass in 2 m 51 s, the protocol package's 368 pass with one skipped, the
+> pure-Java port's 143 pass, and `flutter analyze` is clean apart from two
+> pre-existing `unawaited_return_in_try_block` warnings in
+> `lib/maps/maps_controller.dart`. A debug APK builds in 64 s and installs.
+> **What is still owed is device verification**: every screen-level, on-air and
+> background path needs a run on an unlocked phone, and one dependency is not
+> store-ready: the bundled image codec's native library fails the 16 KB page
+> requirement (deadline 1 Feb 2027). What is not built at all is listed as
+> residue in the feature register.
 
 ---
 
 ## Screens at this stage
 
 Honest UI mockups in the **SEELE Monolith** default theme (still the default
-preset). The drawings predate R89–R108, so the chrome in a current build
+preset). The drawings predate R89–R113, so the chrome in a current build
 differs: the grid's transport and range are controls in a bottom bar (the
 range is picked, not slid), the node row no longer carries an IN RANGE chip,
-and the app-bar strip uses 22 px icon cells.
+the app-bar strip uses 22 px icon cells, and the phone build now also has an
+SOS and check-in surface, a pairing flow, a places layer over the map and a
+media composer that none of these drawings show.
 
 | Dashboard | Hyperlocal grid | Chat |
 |:--:|:--:|:--:|
@@ -54,7 +57,7 @@ The requirements, the change record and the sibling specs:
 - **Offline maps (R61, R93):** [`meshmore-sns-maps-spec.md`](./meshmore-sns-maps-spec.md)
 - **Tools surface (R60):** [`meshmore-sns-tools-spec.md`](./meshmore-sns-tools-spec.md)
 - **Radio chime and firmware alerts:** [`meshmore-sns-radio-alerts.md`](./meshmore-sns-radio-alerts.md)
-- **MeshCore as a shared transport (lobospeak, ldmux, app-to-app):** [`meshmore-sns-meshcore-interop.md`](./meshmore-sns-meshcore-interop.md) (protocol facts) and [`meshmore-sns-architecture.md`](./meshmore-sns-architecture.md) (architecture of record), with the adversarial review in [`meshmore-sns-architecture-audit.md`](./meshmore-sns-architecture-audit.md) and the radio settings in [`meshmore-sns-radio-config.md`](./meshmore-sns-radio-config.md)
+- **MeshCore as a shared transport (protocol facts and the architecture of record):** [`meshmore-sns-meshcore-interop.md`](./meshmore-sns-meshcore-interop.md) (protocol facts) and [`meshmore-sns-architecture.md`](./meshmore-sns-architecture.md) (architecture of record), with the adversarial review in [`meshmore-sns-architecture-audit.md`](./meshmore-sns-architecture-audit.md) and the radio settings in [`meshmore-sns-radio-config.md`](./meshmore-sns-radio-config.md)
 - **Telemetry and weather:** [`meshmore-sns-telemetry-research.md`](./meshmore-sns-telemetry-research.md), [`meshmore-sns-microclimate-wx.md`](./meshmore-sns-microclimate-wx.md)
 - **Tracking and Meshbook earmarks:** [`meshmore-sns-geofence-tracking.md`](./meshmore-sns-geofence-tracking.md), [`meshmore-sns-meshbook-mbk.md`](./meshmore-sns-meshbook-mbk.md)
 - **Status — what is built, what is open:** [`meshmore_sns_app/STATUS.md`](./meshmore_sns_app/STATUS.md)
