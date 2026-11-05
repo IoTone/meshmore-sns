@@ -77,6 +77,24 @@ void main() {
     expect(rows.length, rounds, reason: 'no round lost its block');
   });
 
+  test('a save that outlives its directory override still writes', () async {
+    // A debounced draft save is a write that can land after whatever set the
+    // override has torn down. It must write to the directory it was created
+    // for, not throw on a static that has since been cleared.
+    final Directory late = await Directory.systemTemp.createTemp('store_late');
+    DraftStore.directoryOverride = late;
+    final Future<void> pending = DraftStore.save('radio|ch:9', 'late');
+    DraftStore.directoryOverride = null;
+    await pending;
+    final Map<String, Uint8List> all = await EncryptedStore(
+      cipher: cipher,
+      directory: () async => late,
+    ).readAll();
+    expect(all.containsKey(DraftStore.recordName), isTrue,
+        reason: 'the record landed in the directory the save was made for');
+    await late.delete(recursive: true);
+  });
+
   test('two directories are two files, so neither waits on the other', () async {
     final Directory other =
         await Directory.systemTemp.createTemp('store_other');

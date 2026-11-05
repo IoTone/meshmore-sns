@@ -107,12 +107,16 @@ class BlockStore extends ChangeNotifier {
   bool _loaded = false;
   bool get loaded => _loaded;
 
-  EncryptedStore _store() => EncryptedStore(
-        cipher: cipherOverride,
-        directory: directoryOverride == null
-            ? null
-            : () async => directoryOverride!,
-      );
+  /// Read at call time, not in the callback: a write in flight must not
+  /// dereference an override that has since been cleared.
+  EncryptedStore _store() {
+    final RecordCipher? cipher = cipherOverride;
+    final Directory? dir = directoryOverride;
+    return EncryptedStore(
+      cipher: cipher,
+      directory: dir == null ? null : () async => dir,
+    );
+  }
 
   Iterable<BlockedKey> get all => _byKey.values;
   int get count => _byKey.length;

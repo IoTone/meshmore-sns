@@ -51,12 +51,18 @@ abstract final class DraftStore {
   @visibleForTesting
   static Directory? directoryOverride;
 
-  static EncryptedStore _store() => EncryptedStore(
-        cipher: cipherOverride,
-        directory: directoryOverride == null
-            ? null
-            : () async => directoryOverride!,
-      );
+  /// The overrides are read here, not in the directory callback: a debounced
+  /// save can complete after whatever set the override has torn down, and a
+  /// callback that dereferenced the static then would throw on null instead of
+  /// writing the record it was asked to write.
+  static EncryptedStore _store() {
+    final RecordCipher? cipher = cipherOverride;
+    final Directory? dir = directoryOverride;
+    return EncryptedStore(
+      cipher: cipher,
+      directory: dir == null ? null : () async => dir,
+    );
+  }
 
   /// The radio namespace: the first eight hex of its public key, which is how
   /// the rest of the app already names a radio (`_hex(pub).substring(0, 8)`).
@@ -76,9 +82,12 @@ abstract final class DraftStore {
     throw ArgumentError('a draft belongs to a channel or a peer');
   }
 
-  static Future<Map<String, String>> _read() async {
+  /// One store per operation: a save reads the record and then writes it, and
+  /// resolving the directory twice would let a teardown between the two send
+  /// the write somewhere else (or into a null seam).
+  static Future<Map<String, String>> _read([EncryptedStore? store]) async {
     try {
-      final Uint8List? raw = await _store().read(recordName);
+      final Uint8List? raw = await (store ?? _store()).read(recordName);
       if (raw == null) return <String, String>{};
       final Object? decoded = jsonDecode(utf8.decode(raw));
       if (decoded is! Map) return <String, String>{};
@@ -96,9 +105,11 @@ abstract final class DraftStore {
     }
   }
 
-  static Future<void> _write(Map<String, String> drafts) async {
+  static Future<void> _write(Map<String, String> drafts,
+      [EncryptedStore? store]) async {
     try {
-      await _store().write(recordName, utf8.encode(jsonEncode(drafts)));
+      await (store ?? _store())
+          .write(recordName, utf8.encode(jsonEncode(drafts)));
     } on EncryptedStoreUnavailable {
       // No key: the composer keeps working, the draft is simply not kept.
     } on EncryptedStoreCorrupt {
@@ -129,14 +140,15 @@ abstract final class DraftStore {
       await sink.save(key, text);
       return;
     }
-    final Map<String, String> all = await _read();
+    final EncryptedStore store = _store();
+    final Map<String, String> all = await _read(store);
     if (text.trim().isEmpty) {
       if (all.remove(key) == null) return;
     } else {
       if (all[key] == text) return;
       all[key] = text;
     }
-    await _write(all);
+    await _write(all, store);
   }
 
   /// Forget one draft (after a send, or when the user clears it).
@@ -153,11 +165,12 @@ abstract final class DraftStore {
   /// identity-replacement path (D8.7): a new radio key is a new radio and must
   /// not inherit the old one's drafts.
   static Future<void> clearRadio(String radioScope) async {
-    final Map<String, String> all = await _read();
+    final EncryptedStore store = _store();
+    final Map<String, String> all = await _read(store);
     final String prefix = '$radioScope|';
     final int before = all.length;
     all.removeWhere((String k, String _) => k.startsWith(prefix));
     if (all.length == before) return;
-    await _write(all);
+    await _write(all, store);
   }
 }
