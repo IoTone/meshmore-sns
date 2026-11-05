@@ -146,7 +146,7 @@ class _HyperlocalDashboardState extends State<HyperlocalDashboard>
                                   style: TextStyle(
                                       color: skin.color.fgMuted,
                                       fontFamily: skin.type.monoFamily,
-                                      fontSize: 12),
+                                      fontSize: skin.type.sizeBody),
                                 ),
                               ),
                           ],
@@ -550,7 +550,7 @@ class _TopBar extends StatelessWidget {
                         ? skin.color.alert
                         : (model.linked ? skin.color.link : skin.color.ok),
                     fontFamily: skin.type.monoFamily,
-                    fontSize: 10,
+                    fontSize: skin.type.sizeMicro,
                     letterSpacing: 1)),
           ),
           const MmAudioToggle(),
@@ -587,7 +587,7 @@ class _ActivityTicker extends StatelessWidget {
               style: TextStyle(
                   color: skin.color.fgMuted,
                   fontFamily: skin.type.monoFamily,
-                  fontSize: 11)),
+                  fontSize: skin.type.sizeSm)),
           const SizedBox(width: 8),
           Expanded(
             child: Text(e.text,
@@ -595,7 +595,7 @@ class _ActivityTicker extends StatelessWidget {
                 style: TextStyle(
                     color: skin.color.fg,
                     fontFamily: skin.type.monoFamily,
-                    fontSize: 11)),
+                    fontSize: skin.type.sizeSm)),
           ),
         ],
       ),
@@ -645,12 +645,12 @@ class _StatusRail extends StatelessWidget {
             RichText(
               text: TextSpan(
                 style: TextStyle(
-                    fontFamily: skin.type.monoFamily, fontSize: 12),
+                    fontFamily: skin.type.monoFamily, fontSize: skin.type.sizeBody),
                 children: <TextSpan>[
                   TextSpan(
                       text: '${c.k} ',
                       style: TextStyle(
-                          color: skin.color.fgMuted, fontSize: 10)),
+                          color: skin.color.fgMuted, fontSize: skin.type.sizeMicro)),
                   TextSpan(text: c.v, style: TextStyle(color: skin.color.fg)),
                 ],
               ),
@@ -661,7 +661,7 @@ class _StatusRail extends StatelessWidget {
             pubKeyHex: model.pubKeyHex,
             style: TextStyle(
                 fontFamily: skin.type.monoFamily,
-                fontSize: 12,
+                fontSize: skin.type.sizeBody,
                 color: skin.color.fg),
             shownChars: 12,
           ),

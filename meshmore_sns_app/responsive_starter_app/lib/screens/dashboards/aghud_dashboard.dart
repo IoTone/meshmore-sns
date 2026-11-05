@@ -148,7 +148,7 @@ class _FeedPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final TextStyle mono = TextStyle(
-        fontFamily: skin.type.monoFamily, color: skin.color.fg, fontSize: 12);
+        fontFamily: skin.type.monoFamily, color: skin.color.fg, fontSize: skin.type.sizeBody);
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
@@ -162,7 +162,7 @@ class _FeedPanel extends StatelessWidget {
           Text(l.dashNervEvents.toUpperCase(),
               style: TextStyle(
                   color: skin.color.accent,
-                  fontSize: 11,
+                  fontSize: skin.type.sizeSm,
                   letterSpacing: 2.5,
                   fontWeight: FontWeight.w700)),
           const SizedBox(height: 8),
@@ -185,7 +185,7 @@ class _FeedPanel extends StatelessWidget {
                     ),
                     Text(e.time,
                         style: mono.copyWith(
-                            color: skin.color.fgMuted, fontSize: 11)),
+                            color: skin.color.fgMuted, fontSize: skin.type.sizeSm)),
                     const SizedBox(width: 8),
                     Expanded(child: Text(e.text, style: mono)),
                   ],
@@ -212,7 +212,7 @@ class _BrandBar extends StatelessWidget {
               style: TextStyle(
                 fontFamily: skin.type.headingFamily,
                 color: skin.color.accent,
-                fontSize: 17,
+                fontSize: skin.type.size(17),
                 letterSpacing: 2.5,
                 fontWeight: FontWeight.w700,
               )),
@@ -244,7 +244,7 @@ class _BrandBar extends StatelessWidget {
             style: TextStyle(
                 color: c,
                 fontFamily: skin.type.monoFamily,
-                fontSize: 10,
+                fontSize: skin.type.sizeMicro,
                 letterSpacing: 1)),
       );
 }
@@ -307,7 +307,7 @@ class _RadialGauge extends StatelessWidget {
                       style: TextStyle(
                           color: text,
                           fontFamily: monoFamily,
-                          fontSize: 52,
+                          fontSize: context.skin.type.size(52),
                           height: 1.0,
                           fontWeight: FontWeight.w600)),
                   TextSpan(
@@ -315,13 +315,13 @@ class _RadialGauge extends StatelessWidget {
                       style: TextStyle(
                           color: textMuted,
                           fontFamily: monoFamily,
-                          fontSize: 18)),
+                          fontSize: context.skin.type.size(18))),
                 ]),
               ),
               const SizedBox(height: 2),
               Text(label,
                   style: TextStyle(
-                      color: textMuted, fontSize: 11, letterSpacing: 3)),
+                      color: textMuted, fontSize: context.skin.type.sizeSm, letterSpacing: 3)),
             ],
           ),
         ],
@@ -462,13 +462,13 @@ class _LiveryTile extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           Text(label,
-              style: TextStyle(color: livery, fontSize: 11, letterSpacing: 2)),
+              style: TextStyle(color: livery, fontSize: skin.type.sizeSm, letterSpacing: 2)),
           const SizedBox(height: 4),
           Text(value,
               style: TextStyle(
                   color: skin.color.fg,
                   fontFamily: skin.type.monoFamily,
-                  fontSize: 34,
+                  fontSize: skin.type.size(34),
                   height: 1.0,
                   fontWeight: FontWeight.w600)),
           const SizedBox(height: 8),
@@ -482,7 +482,7 @@ class _LiveryTile extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 6),
-          Text(sub, style: TextStyle(color: skin.color.fgMuted, fontSize: 11)),
+          Text(sub, style: TextStyle(color: skin.color.fgMuted, fontSize: skin.type.sizeSm)),
         ],
       ),
     );
@@ -499,7 +499,7 @@ class _RadioStrip extends StatelessWidget {
     final TextStyle mono = TextStyle(
         fontFamily: skin.type.monoFamily,
         color: skin.color.fgMuted,
-        fontSize: 12);
+        fontSize: skin.type.sizeBody);
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),

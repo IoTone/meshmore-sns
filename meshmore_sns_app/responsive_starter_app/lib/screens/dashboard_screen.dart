@@ -487,7 +487,7 @@ class _LocationTile extends StatelessWidget {
               child: Text(l.dashboardLocation,
                   style: TextStyle(
                       color: cs.onSurfaceVariant,
-                      fontSize: 12,
+                      fontSize: context.skin.type.sizeBody,
                       letterSpacing: 4)),
             ),
             // Manual refresh — the periodic 30 s SelfInfo poll

@@ -681,7 +681,7 @@ class RadioLinkIndicator extends StatelessWidget {
                 v.label,
                 style: TextStyle(
                   color: v.color,
-                  fontSize: 11,
+                  fontSize: context.skin.type.sizeSm,
                   letterSpacing: 1.5,
                   fontWeight: FontWeight.w600,
                 ),

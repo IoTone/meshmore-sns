@@ -110,8 +110,8 @@ class StudioDashboard extends StatelessWidget {
                           children: <Widget>[
                             Flexible(
                               child: Text(m.nodeName ?? '',
-                                  style: const TextStyle(
-                                      fontSize: 16,
+                                  style: TextStyle(
+                                      fontSize: skin.type.sizeLg,
                                       fontWeight: FontWeight.w600)),
                             ),
                             const SizedBox(width: 8),
@@ -148,7 +148,7 @@ class StudioDashboard extends StatelessWidget {
                   ],
                   if (mc.pairedName != null)
                     Text(l.dashboardPaired(mc.pairedName!),
-                        style: TextStyle(color: muted, fontSize: 12)),
+                        style: TextStyle(color: muted, fontSize: skin.type.sizeBody)),
                   if (m.batteryLine != null)
                     InkWell(
                       onTap: () => context.push('/settings/battery'),
@@ -330,7 +330,7 @@ class _StatusRow extends StatelessWidget {
               Padding(
                 padding: const EdgeInsets.only(right: 8),
                 child: Text(l.statusSyncing,
-                    style: TextStyle(color: muted, fontSize: 12)),
+                    style: TextStyle(color: muted, fontSize: skin.type.sizeBody)),
               ),
             if (canConnect || canRetry)
               Padding(

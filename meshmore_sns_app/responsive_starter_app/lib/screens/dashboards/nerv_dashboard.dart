@@ -29,7 +29,7 @@ class NervDashboard extends StatelessWidget {
     final MmSkin skin = context.skin;
     final DashboardModel m = DashboardModel.gather(mc, l);
     final TextStyle mono = TextStyle(
-        fontFamily: skin.type.monoFamily, color: skin.color.fg, fontSize: 12);
+        fontFamily: skin.type.monoFamily, color: skin.color.fg, fontSize: skin.type.sizeBody);
 
     return MmScaffold(
       child: ListView(
@@ -154,7 +154,7 @@ class NervDashboard extends StatelessWidget {
                         children: <Widget>[
                           Text(e.time,
                               style: mono.copyWith(
-                                  color: skin.color.fgMuted, fontSize: 11)),
+                                  color: skin.color.fgMuted, fontSize: skin.type.sizeSm)),
                           const SizedBox(width: 8),
                           Expanded(child: Text(e.text, style: mono)),
                         ],

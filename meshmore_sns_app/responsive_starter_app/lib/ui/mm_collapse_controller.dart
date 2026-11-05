@@ -53,6 +53,7 @@ abstract final class MmGroupIds {
     dashRadio,
     dashLocation,
     dashRecent,
+    dashBattery,
   };
 }
 
