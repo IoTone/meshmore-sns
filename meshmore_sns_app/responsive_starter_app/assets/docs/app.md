@@ -53,9 +53,10 @@ network you can actually see and feel:
 - The protocol codec is a **pure-Dart package** with no Flutter
   dependencies, so the whole stack is unit-tested against a fake
   transport.
-- The UI is Flutter, with a six-view shell switched by the strip under
-  the app bar (no swipe paging), a light/dark
-  set of "futuristic" themes, and full English + Japanese localisation.
+- The UI is Flutter, with a six-view shell: slide sideways to change
+  view, or use the strip under the app bar. A map that pans takes the
+  drag while you are moving it, and the strip is always one tap away.
+  Seven skins, and full English + Japanese localisation.
 
 ## Offline-first by design
 

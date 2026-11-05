@@ -275,8 +275,9 @@ over BLE. Mesh-first, no backend, no account, no server.
 - Its own primary tab, right after Nodes (issue #4). Disconnected, it
   shows the radar with no nodes and "Not Connected to Mesh". The chosen
   view is remembered for the session; every launch opens on the radar.
-  Body swipe paging is off in every skin (R95), so a panning view (street
-  map, globe, …) keeps every drag; the view strip is the switcher.
+  A sideways swipe changes view, and a pan/zoom view that is in pan mode
+  keeps every drag until you switch it back (R109); the view strip always
+  switches too.
 - **Map tab (R61)** — the street map viewer as its own page right after
   the grid, in every skin; the middle pans and zooms, and a 24 dp edge
   band on each side (R67) steps one view by an inward fling, because a pan

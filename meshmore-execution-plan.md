@@ -35,7 +35,7 @@ export ANDROID_USER_HOME=/home/ldeen/.config/.android   # build only
 ```
 
 - `flutter --version` → 3.47.4 / Dart 3.13.3 (re-verified this session). `dart` is beside it.
-- `flutter test` baseline at W0: **1044 tests, ~90 s**, now **1680 tests, 2 m 51 s** (measured 2026-11-05 at the review-fix tip). One file: ~6 s. Use `flutter test test/<dir>` while iterating. Current numbers and commands are in `meshmore_sns_app/TOOLING.md`.
+- `flutter test` baseline at W0: **1044 tests, ~90 s**, now **1690 tests, 3 m 7 s** (measured 2026-11-05 at `feat/app-completion` after the trail export landed). One file: ~6 s. Use `flutter test test/<dir>` while iterating. Current numbers and commands are in `meshmore_sns_app/TOOLING.md`.
 - Build: `flutter build apk --debug` then `adb -s ZD222W34LJ install -r build/app/outputs/flutter-apk/app-debug.apk`;
   `JAVA_HOME` is mandatory for gradle (Gradle 8.14.3 / AGP 8.11.1 / Kotlin 2.2.20 are the working pins).
 - Package `com.iotone.meshmore_sns_app`; permissions granted non-interactively with `adb shell pm grant …
