@@ -157,6 +157,16 @@ final class SosEngine {
   /// True while the schedule should keep emitting.
   bool get isRunning => _state == SosState.active;
 
+  /// The packets the schedule still owes, in order.
+  ///
+  /// The screen counts down to the first one and says how many are left; the
+  /// sender loop reports each as it goes. Read from the same plan the sender
+  /// emits from, so the countdown cannot disagree with what goes on air.
+  List<SosPacket> get remaining => <SosPacket>[
+        for (final SosPacket p in _plan)
+          if (!_issued.contains(_keyOf(p))) p,
+      ];
+
   SosSnapshot? snapshot() {
     final SosRaise? r = _raise;
     if (r == null) return null;
