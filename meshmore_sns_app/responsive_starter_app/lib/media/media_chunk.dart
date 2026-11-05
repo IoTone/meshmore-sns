@@ -42,6 +42,10 @@ abstract final class MediaChunkCodec {
   /// transfer as unreachable instead of looping identical packets.
   static const int maxAttempt = 15;
 
+  /// Chunks a request's 16-bit count may name; the bitmap a 162-byte datagram
+  /// can carry is the tighter bound in practice.
+  static const int maxChunks = 0xFFFF;
+
   /// Splits [payload] into chunk blobs, [dataBytes] each (default the
   /// datagram's own budget). The last chunk is short; nothing pads it,
   /// because the receiver already knows the count.
@@ -158,9 +162,16 @@ abstract final class MediaChunkCodec {
   }
 }
 
-/// What a media payload is. Two, because the app sends images and recorded
-/// voice and nothing else this phase.
+/// What a media datagram is. Three, because the app sends images, recorded
+/// voice, and the small control datagram a receiver uses to ask for the chunks
+/// that did not arrive.
 enum MediaKind {
+  /// A control datagram, never a payload chunk. It carries the payload id, the
+  /// chunk count and a bitmap of the indexes the receiver is missing
+  /// ([MediaRequestCodec]). Code 0 is chosen so that a build that predates it
+  /// refuses it by name (`unknownKind`) instead of treating a bitmap as image
+  /// bytes — and the code space above it did not move.
+  request(0),
   image(1),
   voice(2);
 
@@ -173,6 +184,75 @@ enum MediaKind {
       if (k.code == code) return k;
     }
     return null;
+  }
+}
+
+/// The receiver's ask: "I have these indexes, send me the others".
+///
+/// It rides the same 12-byte header as a chunk so there is one parser and one
+/// CRC rule, with `kind` set to [MediaKind.request], `index` 0, `count` the
+/// transfer's chunk count, and the bitmap as the data. The bitmap is why a
+/// request costs one datagram instead of one per missing chunk: a 162-byte
+/// blob holds 150 bitmap bytes, which covers 1,200 chunks — more than the
+/// transfer pool will ever hold.
+abstract final class MediaRequestCodec {
+  /// Bitmap bytes needed for a transfer of [count] chunks.
+  static int bitmapBytes(int count) => (count + 7) ~/ 8;
+
+  /// The datagram that asks for [missing] out of [count] chunks of
+  /// [payloadId]. Indexes outside the transfer are ignored rather than
+  /// trusted, because the count came from the same unauthenticated source.
+  static Uint8List encode({
+    required int payloadId,
+    required MediaKind kind,
+    required int count,
+    required Iterable<int> missing,
+  }) {
+    if (kind == MediaKind.request) {
+      throw ArgumentError.value(kind, 'kind', 'a request names a payload kind');
+    }
+    if (count < 1 || count > MediaChunkCodec.maxChunks) {
+      throw ArgumentError.value(count, 'count', 'must be 1..maxChunks');
+    }
+    final Uint8List bitmap = Uint8List(bitmapBytes(count));
+    int set = 0;
+    for (final int i in missing) {
+      if (i < 0 || i >= count) continue;
+      bitmap[i >> 3] |= 1 << (i & 7);
+      set++;
+    }
+    if (set == 0) {
+      throw ArgumentError.value(missing, 'missing', 'nothing is missing');
+    }
+    // The payload kind travels in the bitmap-free header byte that a chunk
+    // uses for its attempt nibble, so the sender knows which transfer is meant
+    // without a second field: attempt = kind.code + 1 (never 0, which would
+    // read as an original chunk).
+    return MediaChunkCodec.encode(
+      payloadId: payloadId,
+      kind: MediaKind.request,
+      index: 0,
+      count: count,
+      data: bitmap,
+      attempt: kind.code + 1,
+    );
+  }
+
+  /// The payload kind a request refers to, from the attempt nibble.
+  static MediaKind? kindOf(MediaChunk request) {
+    if (request.kind != MediaKind.request) return null;
+    return MediaKind.fromCode(request.attempt - 1);
+  }
+
+  /// The indexes a request asks for, in ascending order.
+  static List<int> missingOf(MediaChunk request) {
+    final List<int> out = <int>[];
+    for (int i = 0; i < request.count; i++) {
+      final int byte = i >> 3;
+      if (byte >= request.data.length) break;
+      if (request.data[byte] & (1 << (i & 7)) != 0) out.add(i);
+    }
+    return out;
   }
 }
 
