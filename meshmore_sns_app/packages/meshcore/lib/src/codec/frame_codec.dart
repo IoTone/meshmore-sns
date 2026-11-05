@@ -1255,9 +1255,10 @@ abstract final class MeshcoreFrameCodec {
 
   static MeshcoreInbound _decodeStats(ByteCursor c, Uint8List frame) {
     final int sub = c.u8('stats.subType');
+    final StatsFrame decoded;
     switch (sub) {
       case kStatsTypeCore:
-        return StatsFrame(
+        decoded = StatsFrame(
           core: CoreStats(
             batteryMilliVolts: c.u16('stats.core.batt'),
             uptimeSecs: c.u32('stats.core.uptime'),
@@ -1266,7 +1267,7 @@ abstract final class MeshcoreFrameCodec {
           ),
         );
       case kStatsTypeRadio:
-        return StatsFrame(
+        decoded = StatsFrame(
           radio: RadioStats(
             noiseFloorDbm: c.i16('stats.radio.noise'),
             lastRssi: c.i8('stats.radio.rssi'),
@@ -1276,7 +1277,7 @@ abstract final class MeshcoreFrameCodec {
           ),
         );
       case kStatsTypePackets:
-        return StatsFrame(
+        decoded = StatsFrame(
           packets: PacketStats(
             received: c.u32('stats.pkts.recv'),
             sent: c.u32('stats.pkts.sent'),
@@ -1292,6 +1293,12 @@ abstract final class MeshcoreFrameCodec {
         // A sub-type newer than us: keep the bytes, don't guess.
         return UnsupportedFrame(0x18, Uint8List.fromList(frame));
     }
+    // These structs have grown in place before — the packet counters gained
+    // `recvErrors` inside the same frame — so a tail this build does not
+    // model is a field added to the struct, not a second frame. Consuming it
+    // keeps one appended counter from costing the whole reading.
+    c.skipRemaining('stats struct grows in place');
+    return decoded;
   }
 
   /// The `RepeaterStats` struct. The first 24 bytes are required; each

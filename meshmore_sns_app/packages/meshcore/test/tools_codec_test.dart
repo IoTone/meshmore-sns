@@ -107,6 +107,22 @@ void main() {
           isA<UnsupportedFrame>());
     });
 
+    test('stats: a counter added to the struct does not cost the reading', () {
+      // The packet counters gained `recvErrors` inside the same frame, so a
+      // newer firmware may append more. A tail this build does not model is a
+      // field, not a second frame: the reading has to survive it.
+      final StatsFrame core = MeshcoreFrameCodec.decode(
+          _hex('18 00 6810 10270000 0300 02 0900')) as StatsFrame;
+      expect(core.core!.queueLen, 2);
+
+      final String six =
+          '0a000000 05000000 03000000 02000000 06000000 04000000';
+      final StatsFrame packets = MeshcoreFrameCodec.decode(
+          _hex('18 02 $six 07000000 0900')) as StatsFrame;
+      expect(packets.packets!.receiveErrors, 7);
+      expect(packets.packets!.received, 10);
+    });
+
     test('status response: the RepeaterStats struct', () {
       final String stats = '6810' // batt 4200
           '0100' // queue 1
