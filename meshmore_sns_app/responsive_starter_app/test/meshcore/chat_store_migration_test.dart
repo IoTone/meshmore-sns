@@ -138,12 +138,60 @@ void main() {
     expect((await prefs()).getString(legacyKey), isNotNull);
   });
 
+  test('a read-back that lost a field is refused, not accepted as a copy',
+      () async {
+    final List<ChatMessage> messages = seed(2);
+    SharedPreferences.setMockInitialValues(<String, Object>{
+      legacyKey: encode(messages),
+    });
+    // A store that seals honestly but hands back a row with its delivery state
+    // changed: the id and the text still match, so an id-and-text check would
+    // verify, set the marker and delete the plaintext.
+    ChatStore.cipherOverride = _TamperingCipher(cipher);
+
+    expect(await ChatStore.migrate(), isFalse);
+    final SharedPreferences p = await prefs();
+    expect(p.getString(legacyKey), isNotNull,
+        reason: 'the plaintext is the only copy that still has the field');
+    expect(p.getInt('mm.chat.storeV'), isNull);
+  });
+
   test('save caps to the newest messages and clear empties both', () async {
     await ChatStore.save(seed(ChatStore.cap + 5));
     expect((await ChatStore.load()).length, ChatStore.cap);
     await ChatStore.clear();
     expect(await ChatStore.load(), isEmpty);
   });
+}
+
+/// Seals honestly and opens to a row with one field changed, which is what a
+/// store that loses part of a record looks like from the outside.
+class _TamperingCipher implements RecordCipher {
+  _TamperingCipher(this.inner);
+
+  final RecordCipher inner;
+
+  @override
+  Future<Uint8List> seal(Uint8List plain) => inner.seal(plain);
+
+  @override
+  Future<Uint8List> open(Uint8List sealed) async {
+    final Map<String, dynamic> store =
+        jsonDecode(utf8.decode(await inner.open(sealed)))
+            as Map<String, dynamic>;
+    final Object? raw = store[ChatStore.recordName];
+    if (raw is String) {
+      final List<dynamic> rows =
+          jsonDecode(utf8.decode(base64Decode(raw))) as List<dynamic>;
+      if (rows.isNotEmpty) {
+        (rows.first as Map<String, dynamic>)['d'] =
+            MessageDelivery.failed.index;
+      }
+      store[ChatStore.recordName] =
+          base64Encode(utf8.encode(jsonEncode(rows)));
+    }
+    return Uint8List.fromList(utf8.encode(jsonEncode(store)));
+  }
 }
 
 class _NoCipher implements RecordCipher {

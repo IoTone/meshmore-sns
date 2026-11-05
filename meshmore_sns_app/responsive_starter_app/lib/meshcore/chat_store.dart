@@ -196,10 +196,14 @@ abstract final class ChatStore {
     }
   }
 
+  /// Compares each row the way it is written down, not by the two fields a
+  /// reader happens to notice. A migration that dropped a timestamp, a
+  /// delivery state or a fail reason would pass an id-and-text comparison and
+  /// then delete the only copy that still had them.
   static bool _sameMessages(List<ChatMessage> a, List<ChatMessage> b) {
     if (a.length != b.length) return false;
     for (int i = 0; i < a.length; i++) {
-      if (a[i].id != b[i].id || a[i].text != b[i].text) return false;
+      if (jsonEncode(a[i].toJson()) != jsonEncode(b[i].toJson())) return false;
     }
     return true;
   }
