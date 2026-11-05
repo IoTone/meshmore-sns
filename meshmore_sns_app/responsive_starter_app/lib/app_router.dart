@@ -13,6 +13,7 @@ import 'screens/networks_screen.dart';
 import 'screens/doc_reader_screen.dart';
 import 'screens/dm_screen.dart';
 import 'screens/diagnostics_screen.dart';
+import 'screens/terms_screen.dart';
 import 'screens/location_settings_screen.dart';
 import 'screens/personalization_screen.dart';
 import 'screens/maps/maps_screen.dart';
@@ -116,6 +117,12 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: '/settings/about',
       builder: (_, __) => const AboutScreen(),
+    ),
+    // The terms page is a gate at first use; this route is the read-only
+    // copy of the same text, so it can be checked at any time.
+    GoRoute(
+      path: '/settings/terms',
+      builder: (_, __) => const TermsScreen(gate: false),
     ),
     GoRoute(
       path: '/settings/docs',

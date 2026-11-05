@@ -7,6 +7,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 
+import 'package:meshmore_sns_app/legal/terms_controller.dart';
+import 'package:meshmore_sns_app/app/demo_mode.dart';
 import 'package:meshmore_sns_app/app_router.dart';
 import 'package:meshmore_sns_app/app_state_model.dart';
 import 'package:meshmore_sns_app/cue/cue_service.dart';
@@ -48,10 +50,17 @@ class _SilentSpeaker implements TtsSpeaker {
   Future<bool> isLanguageAvailable(String locale) async => true;
 }
 
-Future<void> _pumpApp(WidgetTester tester, {MmThemePreset? preset}) async {
+Future<void> _pumpApp(WidgetTester tester,
+    {MmThemePreset? preset, bool demo = false}) async {
   await tester.pumpWidget(
     MultiProvider(
       providers: [
+        ChangeNotifierProvider<TermsController>(
+          create: (_) => TermsController.accepted(),
+        ),
+        ChangeNotifierProvider<DemoMode>(
+          create: (_) => DemoMode.preloaded(enabled: demo),
+        ),
         ChangeNotifierProvider<AppState>(create: (_) => AppState()),
         ChangeNotifierProvider<ThemeController>(
           create: (_) {
@@ -816,6 +825,21 @@ void main() {
       // 270dp is far below any real phone: the Dashboard body overflows
       // there, which is not what this test is about, so drain it.
       while (t.takeException() != null) {}
+    });
+  });
+
+  group('radio-free mode (D8.21)', () {
+    testWidgets('the shell says DEMO when no radio is wanted',
+        (WidgetTester tester) async {
+      await _pumpApp(tester, demo: true);
+      expect(find.text('DEMO'), findsOneWidget,
+          reason: 'an empty fabric in demo mode and a dead radio look alike');
+    });
+
+    testWidgets('nothing is claimed when the radio is the normal path',
+        (WidgetTester tester) async {
+      await _pumpApp(tester);
+      expect(find.text('DEMO'), findsNothing);
     });
   });
 }

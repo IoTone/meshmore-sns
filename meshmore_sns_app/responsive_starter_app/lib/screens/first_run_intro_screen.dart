@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../app/demo_mode.dart';
 import '../gen/app_localizations.dart';
 import '../perms/first_run_controller.dart';
 import '../perms/permissions_service.dart';
@@ -57,10 +58,16 @@ class _FirstRunIntroScreenState extends State<FirstRunIntroScreen> {
     });
   }
 
+  /// The offline path is demo mode by name: it records the choice so the next
+  /// launch does not reach for a radio either, and so the shell can say why
+  /// the fabric is empty.
   Future<void> _continueOffline() async {
     if (_busy) return;
     setState(() => _busy = true);
-    await context.read<FirstRunController>().markDone();
+    final DemoMode demo = context.read<DemoMode>();
+    final FirstRunController fr = context.read<FirstRunController>();
+    await demo.setEnabled(true);
+    await fr.markDone();
   }
 
   Future<void> _openSettings() async {

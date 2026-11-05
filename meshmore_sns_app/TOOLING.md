@@ -102,6 +102,49 @@ keyguard, so logcat evidence is still valid while the screen is locked.
 
 ---
 
+## 3a. Store readiness (API level, 16 KB pages, foreground service)
+
+**API level 36 is pinned in `android/app/build.gradle`**, not inherited from `flutter.compileSdkVersion`. A store
+obligation must not move when the toolchain does. Verified from the built APK (2026-11-05, Gradle 8.14.3 / AGP 8.11.1
+/ Kotlin plugin 2.2.20, build 13.7 s warm):
+
+```bash
+$ANDROID_HOME/build-tools/36.1.0/aapt2 dump badging \
+  build/app/outputs/flutter-apk/app-debug.apk | grep -E 'targetSdkVersion|sdkVersion:'
+# targetSdkVersion:'36'
+```
+
+**16 KB page sizes** (Android requires them from 1 Feb 2027). `tool/check_16k.sh [apk]` unzips every `lib/**/*.so`,
+reads its program headers and checks two things per library — every `PT_LOAD` aligned to at least 16 KB, and the
+`GNU_RELRO` range ending at or before the next `PT_LOAD` once rounded up to 16 KB — then runs `zipalign -c -P 16` on
+the archive. Exit status is non-zero on any failure. Measured on the debug APK, all ten libraries pass:
+
+| library | LOAD align | RELRO end (rounded) | next LOAD |
+| --- | --- | --- | --- |
+| arm64-v8a/libflutter.so | 0x10000 | 0x2518000 | 0x2524408 |
+| arm64-v8a/libdartjni.so | 0x4000 | 0x1c000 | 0x1eb60 |
+| arm64-v8a/libdatastore_shared_counter.so | 0x4000 | 0x8000 | 0x9428 |
+| arm64-v8a/libVkLayer_khronos_validation.so (debug only) | 0x10000 | 0xe98000 | 0xea7e10 |
+| armeabi-v7a/libflutter.so | 0x10000 | 0x1fac000 | 0x1fbb7f8 |
+| armeabi-v7a/libdartjni.so | 0x4000 | 0x14000 | 0x1545c |
+| armeabi-v7a/libdatastore_shared_counter.so | 0x4000 | 0x8000 | — |
+| x86_64/libflutter.so | 0x10000 | 0x2648000 | 0x2656850 |
+| x86_64/libdartjni.so | 0x4000 | 0x1c000 | 0x1f340 |
+| x86_64/libdatastore_shared_counter.so | 0x4000 | 0x8000 | — |
+
+`zipalign -P 16`: ok. No plugin ships a prebuilt library that fails the check; re-run the script after any dependency
+bump, because that is the only thing that can change it.
+
+**Foreground service.** The manifest declares `com.pravera.flutter_foreground_task.service.ForegroundService` with
+`android:foregroundServiceType="connectedDevice"`, `android:exported="false"`, plus `FOREGROUND_SERVICE`,
+`FOREGROUND_SERVICE_CONNECTED_DEVICE` and `POST_NOTIFICATIONS`. That type matches what the service actually does —
+hold a BLE peripheral connection for polling and sync (`lib/meshcore/background_keepalive.dart`) — and avoids the
+Android-15 `dataSync` timeout. The notification's channel description states the reason ("Keeps the MeshCore radio
+connected so messages are received while the app is in the background"). `test/store/store_declarations_test.dart`
+keeps the declaration, the type and the copy from drifting.
+
+---
+
 ## 4. Bench radios
 
 Two MeshCore companions are bonded to this phone: `MeshCore-HELTEC-BASE` and `MeshCore-WIOld`. The bench repo is

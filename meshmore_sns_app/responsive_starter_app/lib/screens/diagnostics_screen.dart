@@ -12,6 +12,7 @@ import '../bot/bot_guards.dart';
 import '../bot/responder.dart';
 import '../gen/app_localizations.dart';
 import '../ui/mm_scaffold.dart';
+import 'diagnostics_redaction.dart';
 import '../meshcore/meshcore_controller.dart';
 import '../ui/mm_shape.dart';
 
@@ -20,6 +21,11 @@ import '../ui/mm_shape.dart';
 /// interop closure (export a `grp_txt_capture` fixture + the
 /// channel-secret-tail oracle) — all over the existing
 /// `MeshcoreController`. Reached from Settings.
+/// L1/L2 — one redactor for every path that leaves the screen. The
+/// encrypted frames stay (they are the evidence); a channel key, a node key
+/// and a position do not.
+const DiagnosticsRedaction _redaction = DiagnosticsRedaction();
+
 class DiagnosticsScreen extends StatefulWidget {
   const DiagnosticsScreen({super.key});
 
@@ -69,13 +75,13 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
 
   void _export(MeshcoreController mc) {
     try {
-      final String json = mc.exportGrpTxtFixture(
+      final String json = _redaction.json(mc.exportGrpTxtFixture(
         pskHex: _pubPskHex,
         knownPlaintextUtf8: _msg.text,
         channelName: kPublicChannelName,
         firmware: 'companion-v1.15.0 / dee3e26 (record exact T1000-E fw)',
         description: 'Public-channel msg captured via 0x88',
-      );
+      ));
       setState(() => _exportJson = json);
     } catch (e) {
       _toast('$e — need a captured 0x88 RF-log frame first');
@@ -485,7 +491,8 @@ class _BotSoakPanel extends StatelessWidget {
             icon: const Icon(Icons.copy, size: 16),
             label: const Text('Copy soak report'),
             onPressed: () {
-              Clipboard.setData(ClipboardData(text: bot.exportReport()));
+              Clipboard.setData(ClipboardData(
+                  text: _redaction.maskSecrets(bot.exportReport())));
               ScaffoldMessenger.maybeOf(context)
                 ?..hideCurrentSnackBar()
                 ..showSnackBar(const SnackBar(

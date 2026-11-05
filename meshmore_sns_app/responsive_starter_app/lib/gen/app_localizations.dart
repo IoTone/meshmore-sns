@@ -806,6 +806,132 @@ abstract class AppLocalizations {
   /// **'Intro is currently scheduled for next launch'**
   String get settingsShowIntroDisabled;
 
+  /// No description provided for @termsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Terms and privacy'**
+  String get termsTitle;
+
+  /// No description provided for @termsLead.
+  ///
+  /// In en, this message translates to:
+  /// **'This app talks to a mesh radio. There is no account, no cloud and no analytics.'**
+  String get termsLead;
+
+  /// No description provided for @termsSectionLocal.
+  ///
+  /// In en, this message translates to:
+  /// **'WHAT STAYS ON THIS DEVICE'**
+  String get termsSectionLocal;
+
+  /// No description provided for @termsLocalBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Messages, contacts, channels and settings are stored on this device. Cloud backup and device transfer are switched off for the app\'s own data, so a new phone does not silently inherit it. Deleting the app deletes that data.'**
+  String get termsLocalBody;
+
+  /// No description provided for @termsSectionLeaves.
+  ///
+  /// In en, this message translates to:
+  /// **'WHAT LEAVES THE DEVICE'**
+  String get termsSectionLeaves;
+
+  /// No description provided for @termsLeavesBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing leaves except what you send: messages and positions go out over the radio you are connected to. Online map packs are off by default and are fetched only after you turn them on, with the source named on screen. Files you export are yours to place.'**
+  String get termsLeavesBody;
+
+  /// No description provided for @termsSectionPermissions.
+  ///
+  /// In en, this message translates to:
+  /// **'PERMISSIONS AND WHY'**
+  String get termsSectionPermissions;
+
+  /// No description provided for @termsPermissionsBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Bluetooth connects to the radio. Location is used for your own position and, on older Android, to allow a Bluetooth scan. Notifications are used for messages that arrive while the app is in the background. Refusing any of them leaves the app usable without a radio.'**
+  String get termsPermissionsBody;
+
+  /// No description provided for @termsSectionRetention.
+  ///
+  /// In en, this message translates to:
+  /// **'HOW MUCH IS KEPT'**
+  String get termsSectionRetention;
+
+  /// No description provided for @termsRetentionBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Each conversation keeps its newest {cap} messages; older ones are dropped. A place expires when its own timer runs out, and is then gone.'**
+  String termsRetentionBody(int cap);
+
+  /// No description provided for @termsSectionChanges.
+  ///
+  /// In en, this message translates to:
+  /// **'CHANGES'**
+  String get termsSectionChanges;
+
+  /// No description provided for @termsChangesBody.
+  ///
+  /// In en, this message translates to:
+  /// **'If this text changes in a way that matters, the version below changes and this page is shown again before the app opens.'**
+  String get termsChangesBody;
+
+  /// No description provided for @termsVersion.
+  ///
+  /// In en, this message translates to:
+  /// **'Version {version}'**
+  String termsVersion(int version);
+
+  /// No description provided for @termsGateNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Agreeing is required to use the app.'**
+  String get termsGateNote;
+
+  /// No description provided for @termsExit.
+  ///
+  /// In en, this message translates to:
+  /// **'Exit'**
+  String get termsExit;
+
+  /// No description provided for @termsAccept.
+  ///
+  /// In en, this message translates to:
+  /// **'Agree and continue'**
+  String get termsAccept;
+
+  /// No description provided for @termsAcceptedVersion.
+  ///
+  /// In en, this message translates to:
+  /// **'You agreed to version {version}.'**
+  String termsAcceptedVersion(int version);
+
+  /// No description provided for @termsNotAccepted.
+  ///
+  /// In en, this message translates to:
+  /// **'Not agreed.'**
+  String get termsNotAccepted;
+
+  /// No description provided for @termsSettingsRow.
+  ///
+  /// In en, this message translates to:
+  /// **'Terms and privacy'**
+  String get termsSettingsRow;
+
+  /// No description provided for @termsSettingsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'What is stored, what leaves the device, and why each permission is asked for'**
+  String get termsSettingsSubtitle;
+
+  /// No description provided for @termsReadOnlySubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'The text you agreed to. Reached from Settings, it is read-only.'**
+  String get termsReadOnlySubtitle;
+
   /// No description provided for @aboutCopyright.
   ///
   /// In en, this message translates to:
@@ -962,6 +1088,36 @@ abstract class AppLocalizations {
   /// **'Unmute alert sounds'**
   String get dashboardAudioUnmute;
 
+  /// No description provided for @demoBanner.
+  ///
+  /// In en, this message translates to:
+  /// **'DEMO'**
+  String get demoBanner;
+
+  /// No description provided for @demoTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Demo mode — no radio. Explore channels, settings and docs without a companion.'**
+  String get demoTooltip;
+
+  /// No description provided for @demoModeRow.
+  ///
+  /// In en, this message translates to:
+  /// **'Demo mode (no radio)'**
+  String get demoModeRow;
+
+  /// No description provided for @demoModeOn.
+  ///
+  /// In en, this message translates to:
+  /// **'On — the app opens without connecting to a radio'**
+  String get demoModeOn;
+
+  /// No description provided for @demoModeOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Off — the app connects to a paired radio at launch'**
+  String get demoModeOff;
+
   /// No description provided for @firstRunHeader.
   ///
   /// In en, this message translates to:
@@ -1007,7 +1163,7 @@ abstract class AppLocalizations {
   /// No description provided for @firstRunOfflineBody.
   ///
   /// In en, this message translates to:
-  /// **'If you skip Bluetooth, the app still works — browse message history, configure channels, read diagnostics. Just no live mesh traffic until you grant Bluetooth.'**
+  /// **'If you skip Bluetooth the app opens in demo mode: browse message history, configure channels, read diagnostics and the docs. No live mesh traffic until you connect a radio.'**
   String get firstRunOfflineBody;
 
   /// No description provided for @firstRunGrant.
@@ -1019,7 +1175,7 @@ abstract class AppLocalizations {
   /// No description provided for @firstRunSkip.
   ///
   /// In en, this message translates to:
-  /// **'Continue offline (skip permissions)'**
+  /// **'Explore in demo mode (no radio)'**
   String get firstRunSkip;
 
   /// No description provided for @firstRunDeniedTransient.

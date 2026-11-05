@@ -6,6 +6,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 
+import 'package:meshmore_sns_app/legal/terms_controller.dart';
+import 'package:meshmore_sns_app/app/demo_mode.dart';
 import 'package:meshmore_sns_app/app_state_model.dart';
 import 'package:meshmore_sns_app/cue/cue_service.dart';
 import 'package:meshmore_sns_app/l10n/locale_controller.dart';
@@ -42,7 +44,13 @@ void main() {
     await tester.pumpWidget(
       MultiProvider(
         providers: [
-          ChangeNotifierProvider<AppState>(create: (_) => AppState()),
+          ChangeNotifierProvider<TermsController>(
+        create: (_) => TermsController.accepted(),
+      ),
+      ChangeNotifierProvider<DemoMode>(
+        create: (_) => DemoMode.preloaded(enabled: false),
+      ),
+      ChangeNotifierProvider<AppState>(create: (_) => AppState()),
           ChangeNotifierProvider<ThemeController>(
             create: (_) => ThemeController(),
           ),
