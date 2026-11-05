@@ -18,6 +18,11 @@ import '../theme/mm_skin.dart';
 /// does not make the content jump. A view may pass `actions` (a filter,
 /// a picker, a mode toggle) and, only where it genuinely differs, a
 /// `subtitle`. It may not move the title.
+/// The header's own padding, published so a screen can align its content to
+/// the header's left edge instead of guessing a number. The right inset is
+/// smaller than the left because actions carry their own visual margin.
+const EdgeInsets kHeaderPad = EdgeInsets.fromLTRB(16, 8, 8, 8);
+
 class MmPageHeader extends StatelessWidget {
   const MmPageHeader({
     super.key,
@@ -64,7 +69,7 @@ class MmPageHeader extends StatelessWidget {
           ),
         ),
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 8, 8),
+          padding: kHeaderPad,
           child: Row(
             children: <Widget>[
               Expanded(child: label),

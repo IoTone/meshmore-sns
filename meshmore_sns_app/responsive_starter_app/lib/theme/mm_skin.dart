@@ -109,6 +109,48 @@ class MmSpace {
   }
 
   EdgeInsets pad(int n) => EdgeInsets.all(step(n));
+
+  // The jobs. A screen asks for the job, never for a number, so the rhythm
+  // cannot drift screen by screen: before this existed, ten screens used eight
+  // different top insets and three of them were off the ladder.
+  //
+  // The rule that makes a group visible: the between-gap is always strictly
+  // larger than the within-gap it contains. Rows sit 8 apart, blocks 16,
+  // groups 24. When the between-gap equals the within-gap the eye cannot
+  // group anything, which reads as "thrown on the page".
+
+  /// Inside a text stack: label to value, title to subtitle.
+  double get insideText => step(1); // 2
+
+  /// A label and the control it names, or below a chip row.
+  double get labelToControl => step(2); // 4
+
+  /// Between the rows of one list.
+  double get rowGap => step(4); // 8
+
+  /// The inner padding of a row, and of a compact panel.
+  double get rowInset => step(5); // 12
+
+  /// A screen's one edge inset, and the inner padding of a full panel.
+  double get screenEdge => step(6); // 16
+
+  /// Before a new group: a section title, or a block that starts a subject.
+  double get sectionGap => step(8); // 24
+
+  /// Around an empty state.
+  double get emptyState => step(9); // 32
+
+  /// A row's own padding, horizontal and vertical. Card and flat modes differ
+  /// in paint, never in metrics.
+  EdgeInsets get padRow => EdgeInsets.symmetric(
+        horizontal: rowInset,
+        vertical: rowInset,
+      );
+
+  /// A scrolling screen's padding: the edge inset, and one group gap at the
+  /// bottom so the last row is not flush with the navigation bar.
+  EdgeInsets get padScreen =>
+      EdgeInsets.fromLTRB(screenEdge, screenEdge, screenEdge, sectionGap);
 }
 
 /// Panel/edge treatment.
