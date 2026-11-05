@@ -2315,5 +2315,6 @@
   "reportBundleWritten": "バンドルを書き出しました: {path}",
   "reportCopyBundle": "バンドルをコピー",
   "reportCopied": "バンドルをコピーしました。",
-  "blockedKeysNotPersisted": "この一覧を端末に保存できませんでした。今は機能しますが、再起動後は空になります。"
+  "blockedKeysNotPersisted": "この一覧を端末に保存できませんでした。今は機能しますが、再起動後は空になります。",
+  "reportActionSub": "送信先を選べるよう、端末にファイルを作成します。自動送信はしません。"
 }

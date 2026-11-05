@@ -3357,5 +3357,6 @@
   },
   "reportCopyBundle": "Copy the bundle",
   "reportCopied": "Bundle copied.",
-  "blockedKeysNotPersisted": "This list could not be saved on this device. It filters for now and will be empty after a restart."
+  "blockedKeysNotPersisted": "This list could not be saved on this device. It filters for now and will be empty after a restart.",
+  "reportActionSub": "Writes a file on this device for you to send. Nothing is transmitted."
 }

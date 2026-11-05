@@ -4783,4 +4783,7 @@ class AppLocalizationsJa extends AppLocalizations {
   @override
   String get blockedKeysNotPersisted =>
       'この一覧を端末に保存できませんでした。今は機能しますが、再起動後は空になります。';
+
+  @override
+  String get reportActionSub => '送信先を選べるよう、端末にファイルを作成します。自動送信はしません。';
 }

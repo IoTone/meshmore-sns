@@ -8391,6 +8391,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'This list could not be saved on this device. It filters for now and will be empty after a restart.'**
   String get blockedKeysNotPersisted;
+
+  /// No description provided for @reportActionSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Writes a file on this device for you to send. Nothing is transmitted.'**
+  String get reportActionSub;
 }
 
 class _AppLocalizationsDelegate

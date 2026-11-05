@@ -11,6 +11,7 @@ import '../chat/channel_read_store.dart';
 import '../chat/chat_actions.dart';
 import '../chat/composer_budget.dart';
 import '../chat/draft_store.dart';
+import '../chat/report_flow.dart';
 import '../chat/studio_message_row.dart';
 import '../gen/app_localizations.dart';
 import '../media/media_codec.dart';
@@ -408,6 +409,15 @@ class _ChatScreenState extends State<ChatScreen>
         break;
       case ChatAction.retry:
         await mc.retryMessage(m.id);
+        break;
+      case ChatAction.report:
+        if (!mounted) return;
+        await reportMessage(
+          context,
+          m,
+          threadName: mc.activeChannelName,
+          senderDisplayName: parseChannelSenderName(m.text),
+        );
         break;
       case ChatAction.delete:
         if (!mounted) return;

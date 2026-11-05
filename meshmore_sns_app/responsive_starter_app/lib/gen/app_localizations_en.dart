@@ -4952,4 +4952,8 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get blockedKeysNotPersisted =>
       'This list could not be saved on this device. It filters for now and will be empty after a restart.';
+
+  @override
+  String get reportActionSub =>
+      'Writes a file on this device for you to send. Nothing is transmitted.';
 }
