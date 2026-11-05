@@ -109,11 +109,11 @@ The state column answers one question: can work start? `TODO` means yes, the des
 | --- | --- | --- |
 | Position history | TODO | Only the current fix is plotted |
 | Trail and GPX export | TODO | In memory only; export through the app's own transport |
-| Geofences with hysteresis | SPECIFIED | ±5 % margin, once per continuous stay |
+| Geofences with hysteresis | SPECIFIED — engine built, screen owed | ±5 % margin, once per continuous stay. `lib/geofence/geofence_engine.dart`: enter at 95 % of the radius, leave at 105 %, sticky in between, so boundary chatter fires nothing; a sample with no fix changes nothing |
 | Inter-node relationship | SPECIFIED | "A is 400 m from B and closing" |
-| SOS | SPECIFIED — full spec | D8.4 timings made exact (12 sends at 0–660 s, 10 beacons at 720–3420 s, hard stop 3600 s); a channel ACK is "claimed" and does **not** stop the alarm, only a direct ACK from a target key does; `meshmore-sos-spec.md` §7, §9 |
-| Check-in | SPECIFIED — full spec | D8.5: one send, `[CHK:<id6>]`, deadline watched locally; `meshmore-sos-spec.md` §3, §5 |
-| Coverage ping | SPECIFIED — full spec | D8.17 pacing plus the cell model: geohash 6, time weights 1.0/0.8/0.5/0.2, contradiction demotion to 0.1, observed-only edges, session-only storage; `meshmore-telemetry-coverage-spec.md` §6–§9 |
+| SOS | SPECIFIED — engine built, screen owed | D8.4 timings made exact (12 sends at 0–660 s, 10 beacons at 720–3420 s, hard stop 3600 s); a channel ACK is "claimed" and does **not** stop the alarm, only a direct ACK from a target key does; `meshmore-sos-spec.md` §7, §9. Built: `lib/sos/sos_schedule.dart` (22 packets, ±3 s jitter), `lib/sos/sos_engine.dart` (state machine, attribution, restore without replay), `lib/sos/sos_message.dart` (grammar, 160-byte refusal, NOFIX, salt) |
+| Check-in | SPECIFIED — engine built, screen owed | D8.5: one send, `[CHK:<id6>]`, deadline watched locally; `meshmore-sos-spec.md` §3, §5. Built: `lib/sos/checkin.dart` (one send, overdue at the deadline, an answer after it does not un-pass it) |
+| Coverage ping | SPECIFIED — engine built, screen owed | D8.17 pacing plus the cell model: geohash 6, time weights 1.0/0.8/0.5/0.2, contradiction demotion to 0.1, observed-only edges, session-only storage; `meshmore-telemetry-coverage-spec.md` §6–§9. Built: `lib/telemetry/{geohash,coverage_pacing,coverage_model}.dart` |
 | Operational export | SPECIFIED | One bundle per time window |
 | Fun angle: treasure hunts, map weather, ghost-trail replay | OPEN, parked | Kept in the design space, no milestone slot, not promised this phase. **Nine of eleven candidates cost zero airtime** (scope of record §7's cost table); the real blockers are position history and the `0x3E` encoder, not budget |
 
