@@ -1712,6 +1712,12 @@ abstract class AppLocalizations {
   /// **'Dot = a fabric node we\'ve heard. Brightness = recency (full = just now, fades to 0 over 24 h then disappears).'**
   String get gridLegendDot;
 
+  /// No description provided for @gridLegendSignalOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Hollow ring = no position reported: it sits on its signal band, and the angle is not a direction.'**
+  String get gridLegendSignalOnly;
+
   /// No description provided for @gridLegendKnown.
   ///
   /// In en, this message translates to:
@@ -1736,18 +1742,6 @@ abstract class AppLocalizations {
   /// **'Tap a node to see details + Message / Favourite.'**
   String get gridLegendTap;
 
-  /// No description provided for @gridLegendHeading.
-  ///
-  /// In en, this message translates to:
-  /// **'Heading wedge / HDG line = the direction the phone\'s top edge is pointing relative to MAGNETIC north (not true north, not GPS travel direction). Comes from the phone\'s compass sensor.'**
-  String get gridLegendHeading;
-
-  /// No description provided for @gridLegendCalibration.
-  ///
-  /// In en, this message translates to:
-  /// **'Calibration: if the arrow seems wrong, hold the phone level and wave it in a figure-8 motion several times. The OS handles compass calibration; the app only displays sensor accuracy (a \'Calibrate\' hint appears when accuracy is poor).'**
-  String get gridLegendCalibration;
-
   /// No description provided for @gridViewRadial.
   ///
   /// In en, this message translates to:
@@ -1765,12 +1759,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Equal grid'**
   String get gridViewEqualGrid;
-
-  /// No description provided for @gridViewStreetMap.
-  ///
-  /// In en, this message translates to:
-  /// **'Street map'**
-  String get gridViewStreetMap;
 
   /// No description provided for @gridViewPicker.
   ///
@@ -2306,53 +2294,11 @@ abstract class AppLocalizations {
   /// **'{visible} in fabric · {known} known · {favs, plural, =0{0 contacts} =1{1 contact} other{{favs} contacts}}'**
   String gridStatusCounts(int visible, int known, int favs);
 
-  /// No description provided for @gridGroupPeers.
-  ///
-  /// In en, this message translates to:
-  /// **'PEERS'**
-  String get gridGroupPeers;
-
-  /// No description provided for @gridGroupSurvey.
-  ///
-  /// In en, this message translates to:
-  /// **'SURVEY'**
-  String get gridGroupSurvey;
-
-  /// No description provided for @gridGroupReports.
-  ///
-  /// In en, this message translates to:
-  /// **'REPORTS'**
-  String get gridGroupReports;
-
   /// No description provided for @gridNotConnected.
   ///
   /// In en, this message translates to:
   /// **'Not Connected to Mesh'**
   String get gridNotConnected;
-
-  /// No description provided for @gridHeadingCalibrate.
-  ///
-  /// In en, this message translates to:
-  /// **'Compass needs calibration — wave the phone in a figure 8.'**
-  String get gridHeadingCalibrate;
-
-  /// No description provided for @gridOrientNorthUp.
-  ///
-  /// In en, this message translates to:
-  /// **'North-up'**
-  String get gridOrientNorthUp;
-
-  /// No description provided for @gridOrientHeadingUp.
-  ///
-  /// In en, this message translates to:
-  /// **'Heading-up'**
-  String get gridOrientHeadingUp;
-
-  /// No description provided for @gridHeadingHud.
-  ///
-  /// In en, this message translates to:
-  /// **'HEADING'**
-  String get gridHeadingHud;
 
   /// No description provided for @voiceSettingsTitle.
   ///

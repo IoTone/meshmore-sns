@@ -893,6 +893,10 @@ class AppLocalizationsJa extends AppLocalizations {
       'ドット = 受信したファブリックノード。明るさ = 新しさ (受信直後 = 最大、24時間で 0 に減衰し消滅)。';
 
   @override
+  String get gridLegendSignalOnly =>
+      '中抜きの輪 = 位置情報なし。電波強度の帯に置いているだけで、角度は方角ではありません。';
+
+  @override
   String get gridLegendKnown => 'パルス (緩やかに広がる輪) = 既知ノード — 直接やり取り (DM) があったノード。';
 
   @override
@@ -905,14 +909,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get gridLegendTap => 'ノードをタップで詳細 + メッセージ / お気に入り。';
 
   @override
-  String get gridLegendHeading =>
-      '方位ウェッジ・HDG 表示 = スマートフォン上端が**磁北**を基準に向いている方向（真北でも GPS 進行方向でもなく、スマートフォンの方位センサーが示す方位）。';
-
-  @override
-  String get gridLegendCalibration =>
-      'キャリブレーション: 矢印がずれている場合、スマートフォンを水平に持って数回 8 の字に動かしてください。コンパスのキャリブレーションは OS が行い、アプリは精度のみ表示します（精度が悪いと「Calibrate」ヒントが出ます）。';
-
-  @override
   String get gridViewRadial => 'ラジアル';
 
   @override
@@ -920,9 +916,6 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get gridViewEqualGrid => '等分グリッド';
-
-  @override
-  String get gridViewStreetMap => 'ストリートマップ';
 
   @override
   String get gridViewPicker => '表示';
@@ -1237,28 +1230,7 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get gridGroupPeers => 'ピア';
-
-  @override
-  String get gridGroupSurvey => '調査';
-
-  @override
-  String get gridGroupReports => 'レポート';
-
-  @override
   String get gridNotConnected => 'メッシュに未接続';
-
-  @override
-  String get gridHeadingCalibrate => 'コンパス要校正 — スマートフォンを 8 の字に振ってください。';
-
-  @override
-  String get gridOrientNorthUp => '北を上';
-
-  @override
-  String get gridOrientHeadingUp => '進行方向を上';
-
-  @override
-  String get gridHeadingHud => '方位';
 
   @override
   String get voiceSettingsTitle => '音声 (TTS 品質)';

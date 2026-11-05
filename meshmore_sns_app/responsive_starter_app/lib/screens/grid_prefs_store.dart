@@ -5,7 +5,7 @@ import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Persisted last-used preferences for the hyperlocal grid screen, so the
-/// chosen scale, orientation, and refresh cadence survive leaving and
+/// chosen scale and refresh cadence survive leaving and
 /// re-opening the grid (the screen is recreated on each navigation) and
 /// app restarts. The chosen *view* is deliberately not here: it lasts
 /// only for the session, and every launch opens on the radar (issue #4).
@@ -13,26 +13,24 @@ import 'package:shared_preferences/shared_preferences.dart';
 class GridPrefs {
   const GridPrefs({
     this.scaleIndex = -1, // -1 = use the screen's default
-    this.northUp = true,
     this.live = false,
     this.intervalSec = 15,
   });
 
   final int scaleIndex;
-  final bool northUp;
+  // `north` is still written by older builds; the radar has no orientation
+  // any more, so it is ignored rather than migrated.
   final bool live;
   final int intervalSec;
 
   Map<String, Object?> toJson() => <String, Object?>{
         'scale': scaleIndex,
-        'north': northUp,
         'live': live,
         'iv': intervalSec,
       };
 
   static GridPrefs fromJson(Map<String, dynamic> j) => GridPrefs(
         scaleIndex: (j['scale'] as num?)?.toInt() ?? -1,
-        northUp: j['north'] as bool? ?? true,
         live: j['live'] as bool? ?? false,
         intervalSec: (j['iv'] as num?)?.toInt() ?? 15,
       );

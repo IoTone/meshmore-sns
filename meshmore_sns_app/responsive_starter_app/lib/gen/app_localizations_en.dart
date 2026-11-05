@@ -941,6 +941,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'Dot = a fabric node we\'ve heard. Brightness = recency (full = just now, fades to 0 over 24 h then disappears).';
 
   @override
+  String get gridLegendSignalOnly =>
+      'Hollow ring = no position reported: it sits on its signal band, and the angle is not a direction.';
+
+  @override
   String get gridLegendKnown =>
       'Pulse (slow growing halo) = a known node — we have had a direct attributable exchange (DM) with them.';
 
@@ -957,14 +961,6 @@ class AppLocalizationsEn extends AppLocalizations {
       'Tap a node to see details + Message / Favourite.';
 
   @override
-  String get gridLegendHeading =>
-      'Heading wedge / HDG line = the direction the phone\'s top edge is pointing relative to MAGNETIC north (not true north, not GPS travel direction). Comes from the phone\'s compass sensor.';
-
-  @override
-  String get gridLegendCalibration =>
-      'Calibration: if the arrow seems wrong, hold the phone level and wave it in a figure-8 motion several times. The OS handles compass calibration; the app only displays sensor accuracy (a \'Calibrate\' hint appears when accuracy is poor).';
-
-  @override
   String get gridViewRadial => 'Radial';
 
   @override
@@ -972,9 +968,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get gridViewEqualGrid => 'Equal grid';
-
-  @override
-  String get gridViewStreetMap => 'Street map';
 
   @override
   String get gridViewPicker => 'View';
@@ -1304,29 +1297,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get gridGroupPeers => 'PEERS';
-
-  @override
-  String get gridGroupSurvey => 'SURVEY';
-
-  @override
-  String get gridGroupReports => 'REPORTS';
-
-  @override
   String get gridNotConnected => 'Not Connected to Mesh';
-
-  @override
-  String get gridHeadingCalibrate =>
-      'Compass needs calibration — wave the phone in a figure 8.';
-
-  @override
-  String get gridOrientNorthUp => 'North-up';
-
-  @override
-  String get gridOrientHeadingUp => 'Heading-up';
-
-  @override
-  String get gridHeadingHud => 'HEADING';
 
   @override
   String get voiceSettingsTitle => 'Voice (TTS quality)';

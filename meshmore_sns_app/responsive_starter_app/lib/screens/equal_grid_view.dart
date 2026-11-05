@@ -4,7 +4,6 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'package:flutter_compass/flutter_compass.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:meshcore/meshcore.dart' show SelfInfo;
 import 'package:latlong2/latlong.dart' hide Path; // collides with ui.Path
@@ -119,12 +118,6 @@ class _EqualGridViewState extends State<EqualGridView> {
   bool _showStats = true;
   bool _showTiles = true;
 
-  /// R25+1 — magnetic-compass heading (degrees from N, clockwise).
-  /// Null until the first event arrives. Drives the heading arrow
-  /// on the self pin; matches the radial-grid view's semantics.
-  double? _headingDeg;
-  StreamSubscription<CompassEvent>? _compassSub;
-
   @override
   void initState() {
     super.initState();
@@ -137,26 +130,10 @@ class _EqualGridViewState extends State<EqualGridView> {
         if (mounted) setState(() {});
       }).catchError((Object _) {/* degrade to grid coords */});
     }
-    // R25+1 — subscribe to compass heading. Same sensor source as
-    // the radial grid; on platforms without a magnetometer
-    // flutter_compass returns null and we just don't draw the arrow.
-    _compassSub = FlutterCompass.events?.listen((CompassEvent e) {
-      if (!mounted) return;
-      final double? h = e.heading;
-      if (h == null) return;
-      // Throttle setState to whole-degree changes — the painter
-      // doesn't care about sub-degree precision and we'd otherwise
-      // repaint every sensor sample.
-      if (_headingDeg != null && (h - _headingDeg!).abs() < 1.0) {
-        return;
-      }
-      setState(() => _headingDeg = h);
-    });
   }
 
   @override
   void dispose() {
-    _compassSub?.cancel();
     super.dispose();
   }
 
@@ -339,7 +316,6 @@ class _EqualGridViewState extends State<EqualGridView> {
                   badgeText: cs.onTertiaryContainer,
                   trail: mc.ownTrail,
                   trailColor: cs.secondary,
-                  headingDeg: _headingDeg,
                   estimatedRangeMeters: estimatedRangeM,
                   rangeRing: cs.tertiary.withValues(alpha: .25),
                 ),
@@ -366,7 +342,6 @@ class _EqualGridViewState extends State<EqualGridView> {
                 nearestPeerName: _nearestPeerName(
                     withLoc, selfLat, selfLon),
                 estimatedRangeMeters: estimatedRangeM,
-                headingDeg: _headingDeg,
                 altitudeMeters: mc.ownLocation?.altitudeMeters,
                 accent: cs.primary,
                 bg: cs.surface.withValues(alpha: .80),
@@ -607,7 +582,6 @@ class _NervStatsPanel extends StatelessWidget {
     required this.nearestPeerMeters,
     required this.nearestPeerName,
     required this.estimatedRangeMeters,
-    required this.headingDeg,
     required this.altitudeMeters,
     required this.accent,
     required this.bg,
@@ -621,7 +595,6 @@ class _NervStatsPanel extends StatelessWidget {
   final double? nearestPeerMeters;
   final String? nearestPeerName;
   final double estimatedRangeMeters;
-  final double? headingDeg;
   final double? altitudeMeters;
   final Color accent;
   final Color bg;
@@ -635,19 +608,6 @@ class _NervStatsPanel extends StatelessWidget {
         : '${km.round()} km';
   }
 
-  String _cardinal(double deg) {
-    const List<String> dirs = <String>[
-      'N',
-      'NE',
-      'E',
-      'SE',
-      'S',
-      'SW',
-      'W',
-      'NW'
-    ];
-    return dirs[((deg + 22.5) ~/ 45) % 8];
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -674,9 +634,6 @@ class _NervStatsPanel extends StatelessWidget {
             '${_fmtMeters(nearestPeerMeters!)} '
                 '· ${(nearestPeerName ?? '').substring(0, math.min(8, (nearestPeerName ?? '').length))}'),
       entry('REACH', _fmtMeters(estimatedRangeMeters)),
-      if (headingDeg != null)
-        entry('HDG',
-            '${headingDeg!.toStringAsFixed(0)}° ${_cardinal(headingDeg!)}'),
       if (altitudeMeters != null)
         entry('ALT', '${altitudeMeters!.round()} m'),
     ];
@@ -752,7 +709,6 @@ class _EqualGridPainter extends CustomPainter {
     required this.badgeText,
     required this.trail,
     required this.trailColor,
-    required this.headingDeg,
     required this.estimatedRangeMeters,
     required this.rangeRing,
   });
@@ -777,11 +733,6 @@ class _EqualGridPainter extends CustomPainter {
   final List<({double latitude, double longitude, int unixSec})>
       trail;
   final Color trailColor;
-
-  /// R25+1 — current magnetic-compass heading in degrees from N
-  /// (clockwise). Null when the sensor isn't available; the arrow
-  /// just isn't drawn in that case.
-  final double? headingDeg;
 
   /// R25+1 — estimated LoRa reach for our radio tuple. Drawn as a
   /// faint ring around our own pin AND around each peer (mesh
@@ -1101,9 +1052,8 @@ class _EqualGridPainter extends CustomPainter {
   void _drawSelf(Canvas canvas, Offset at) {
     // R25+1 — distinctive self glyph. Three-ring bullseye + bright
     // centre dot + crosshair stroke so we never confuse our own pin
-    // with a peer's filled-circle glyph. Optional heading wedge
-    // points the direction the phone is facing (from the magnetic
-    // compass).
+    // with a peer's filled-circle glyph. No heading: a radio reports a
+    // position, and the phone's magnetometer is not the mesh's bearing.
     final Paint haloOuter = Paint()
       ..color = selfPin.withValues(alpha: .18);
     final Paint haloMid = Paint()
@@ -1127,39 +1077,6 @@ class _EqualGridPainter extends CustomPainter {
     canvas.drawCircle(at, 6.0, Paint()..color = selfPin);
     canvas.drawCircle(at, 2.5,
         Paint()..color = selfPin.withValues(alpha: 1.0));
-
-    // Heading arrow: small triangular wedge above the bullseye,
-    // rotated to the compass heading. Magnetic-north relative — the
-    // wedge points the way the phone's top edge is pointing. Hidden
-    // when the sensor isn't available.
-    if (headingDeg != null) {
-      final double hRad = headingDeg! * math.pi / 180.0;
-      // Forward unit vector at the heading (screen +y is down, so
-      // an "up" on screen is -y).
-      final double fx = math.sin(hRad);
-      final double fy = -math.cos(hRad);
-      // Perpendicular (right-hand) for the wedge's base width.
-      final double rx = math.cos(hRad);
-      final double ry = math.sin(hRad);
-      const double tipDist = 24.0;
-      const double baseDist = 14.0;
-      const double halfWidth = 6.0;
-      final Offset tip = at + Offset(fx * tipDist, fy * tipDist);
-      final Offset baseL = at +
-          Offset(
-              fx * baseDist + rx * halfWidth,
-              fy * baseDist + ry * halfWidth);
-      final Offset baseR = at +
-          Offset(
-              fx * baseDist - rx * halfWidth,
-              fy * baseDist - ry * halfWidth);
-      final Path p = Path()
-        ..moveTo(tip.dx, tip.dy)
-        ..lineTo(baseL.dx, baseL.dy)
-        ..lineTo(baseR.dx, baseR.dy)
-        ..close();
-      canvas.drawPath(p, Paint()..color = selfPin);
-    }
   }
 
   @override
@@ -1171,7 +1088,6 @@ class _EqualGridPainter extends CustomPainter {
         knownPubKeys != old.knownPubKeys ||
         favPubKeys != old.favPubKeys ||
         trail != old.trail ||
-        headingDeg != old.headingDeg ||
         estimatedRangeMeters != old.estimatedRangeMeters;
   }
 }

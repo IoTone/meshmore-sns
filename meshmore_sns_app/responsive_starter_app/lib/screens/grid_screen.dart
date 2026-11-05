@@ -5,7 +5,6 @@ import 'dart:math' as math;
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_compass/flutter_compass.dart';
 import 'package:provider/provider.dart';
 
 import '../gen/app_localizations.dart';
@@ -95,6 +94,23 @@ extension on _GridViewMode {
           false,
       };
 }
+
+/// What a radar marker can honestly be drawn from.
+///
+/// A node with a reported position is placed by bearing and distance. A node
+/// without one is placed on the ring its signal strength implies, at an angle
+/// that is a stable placeholder — the app does not know which way it lies. The
+/// marker says so: the glyph is hollow, and the legend states that the angle is
+/// not a direction. Drawing both as the same solid dot was the lie.
+enum GridMarkerSource { position, signal }
+
+GridMarkerSource gridMarkerSourceFor({
+  required bool nodeHasLocation,
+  required bool selfHasLocation,
+}) =>
+    nodeHasLocation && selfHasLocation
+        ? GridMarkerSource.position
+        : GridMarkerSource.signal;
 
 /// R18 / U9 — the hyperlocal grid: a radial range-ring view of the
 /// mesh **fabric** relative to us. Brightness = recency (100 % at
@@ -222,23 +238,6 @@ class _GridScreenState extends State<GridScreen>
   int _scaleIndex =
       GridScreen.rangeStops.indexWhere((s) => s.label == 'Wide');
 
-  /// Live phone compass heading in degrees from magnetic north
-  /// (0=N, 90=E, 180=S, 270=W). Null when no sensor data has
-  /// arrived yet. Drives the radar's heading needle + heading-up mode.
-  double? _headingDeg;
-
-  /// Radar orientation. True (default) = north-up: north is always at
-  /// the top, with a heading needle showing which way you face. False
-  /// = heading-up: the whole radar rotates so your facing direction is
-  /// at the top and the cardinal rose rotates to show where north is.
-  bool _northUp = true;
-
-  /// Reported accuracy (degrees, lower = better). When > 25 we
-  /// surface a small "calibrate phone (figure-8 wave)" hint.
-  double? _headingAccuracyDeg;
-
-  StreamSubscription<CompassEvent>? _compassSub;
-
   @override
   void initState() {
     super.initState();
@@ -252,20 +251,6 @@ class _GridScreenState extends State<GridScreen>
         mc.incomingChannelMessages.listen((_) {
       if (mounted) _rippleAt = DateTime.now();
     });
-    // Compass subscription — platform-fused heading. Stream may be
-    // null on devices without a magnetometer; in that case the
-    // overlay is just skipped. We subscribe at screen-mount time
-    // (cheap ~5-10 mA while open) and cancel on dispose.
-    final Stream<CompassEvent>? src = FlutterCompass.events;
-    if (src != null) {
-      _compassSub = src.listen((CompassEvent e) {
-        if (!mounted) return;
-        setState(() {
-          _headingDeg = e.heading;
-          _headingAccuracyDeg = e.accuracy;
-        });
-      }, onError: (_) {});
-    }
     // R109 — pan mode is per visit, not per session: the view mode is
     // remembered, the gesture lock is not.
     _panMode = false;
@@ -280,7 +265,6 @@ class _GridScreenState extends State<GridScreen>
             p.scaleIndex < GridScreen.rangeStops.length) {
           _scaleIndex = p.scaleIndex;
         }
-        _northUp = p.northUp;
         _interval = Duration(seconds: p.intervalSec.clamp(1, 600));
         // Don't auto-restore `live` — the screen intentionally opens paused
         // (a fresh snapshot), and live restore is handled by the existing
@@ -292,7 +276,6 @@ class _GridScreenState extends State<GridScreen>
   void _savePrefs() {
     GridPrefsStore.save(GridPrefs(
       scaleIndex: _scaleIndex,
-      northUp: _northUp,
       live: _live,
       intervalSec: _interval.inSeconds,
     ));
@@ -345,7 +328,6 @@ class _GridScreenState extends State<GridScreen>
     shellDragClaim.release(GridScreen.dragHolder);
     _refreshTimer?.cancel();
     _msgSub?.cancel();
-    _compassSub?.cancel();
     _tick.dispose();
     super.dispose();
   }
@@ -657,7 +639,6 @@ class _GridScreenState extends State<GridScreen>
     required List<DiscoveredNode> visible,
     required double? selfLat,
     required double? selfLon,
-    double rotationRad = 0,
   }) {
     final Offset center = Offset(area.width / 2, area.height / 2);
     final double maxR = math.min(area.width, area.height) / 2 - 24;
@@ -673,7 +654,6 @@ class _GridScreenState extends State<GridScreen>
         selfLat: selfLat,
         selfLon: selfLon,
         scaleKm: scaleKm,
-        rotationRad: rotationRad,
       );
       final double d = (p - tap).distance;
       if (d <= _tapRadius && d < bestDist) {
@@ -987,13 +967,6 @@ class _GridScreenState extends State<GridScreen>
                     builder: (BuildContext _, BoxConstraints c) {
                       final Size area =
                           Size(c.maxWidth, c.maxHeight);
-                      // Heading-up rotates the whole plot so the facing
-                      // direction is at the top. North-up (default) or
-                      // no compass data → no rotation.
-                      final double headingRot =
-                          (_northUp || _headingDeg == null)
-                              ? 0.0
-                              : -(_headingDeg! * math.pi / 180);
                       return GestureDetector(
                         behavior: HitTestBehavior.opaque,
                         onTapDown: (TapDownDetails d) {
@@ -1003,7 +976,6 @@ class _GridScreenState extends State<GridScreen>
                             visible: visible,
                             selfLat: self?.latitude,
                             selfLon: self?.longitude,
-                            rotationRad: headingRot,
                           );
                           if (hit != null) {
                             _showDetail(context, mc, hit);
@@ -1032,10 +1004,8 @@ class _GridScreenState extends State<GridScreen>
                               type: context.skin.type,
                               rippleAt: _rippleAt,
                               rippleDuration: _rippleDuration,
-                              headingDeg: _headingDeg,
                               scaleKm: scaleKm,
-                              rotationRad: headingRot,
-                            ),
+                              ),
                           ),
                         ),
                       );
@@ -1051,13 +1021,6 @@ class _GridScreenState extends State<GridScreen>
                       ),
                     ),
                   ),
-                if (_headingDeg != null && visible.isNotEmpty)
-                  Positioned(
-                    top: 10,
-                    left: 0,
-                    right: 0,
-                    child: Center(child: _headingHud(cs, l)),
-                  ),
               ],
             ),
           ),
@@ -1065,116 +1028,6 @@ class _GridScreenState extends State<GridScreen>
       ),
       })),
       if (_hasTransport) _transportBar(l, cs, scaleLabel, scaleValue),
-        ],
-      ),
-    );
-  }
-
-  /// Map a compass heading (degrees, 0 = N) to a one- or two-letter
-  /// cardinal direction. 16-wind compass.
-  String _cardinal(double headingDeg) {
-    final double n = ((headingDeg % 360) + 360) % 360;
-    const List<String> winds = <String>[
-      'N', 'NNE', 'NE', 'ENE',
-      'E', 'ESE', 'SE', 'SSE',
-      'S', 'SSW', 'SW', 'WSW',
-      'W', 'WNW', 'NW', 'NNW',
-    ];
-    final int idx = ((n + 11.25) ~/ 22.5) % 16;
-    return winds[idx];
-  }
-
-  /// Prominent heading HUD pinned to the top of the radar — a large,
-  /// monospace, HUD-style readout of the compass heading with the
-  /// north-up / heading-up toggle. Replaces the tiny footer text.
-  Widget _headingHud(ColorScheme cs, AppLocalizations l) {
-    final int deg = _headingDeg!.round();
-    final String card = _cardinal(_headingDeg!);
-    final bool poorAccuracy =
-        _headingAccuracyDeg != null && _headingAccuracyDeg! > 25;
-    return Container(
-      padding: const EdgeInsets.fromLTRB(16, 6, 8, 8),
-      decoration: BoxDecoration(
-        color: cs.surface.withValues(alpha: .55),
-        borderRadius: mmRadius(context, 12),
-        border: Border.all(color: cs.primary.withValues(alpha: .35)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: <Widget>[
-          Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              Text(
-                '◊ ${l.gridHeadingHud}',
-                style: TextStyle(
-                    color: cs.primary.withValues(alpha: .7),
-                    fontSize: context.skin.type.size(9),
-                    letterSpacing: 5,
-                    fontFamily: context.skin.type.wordsMono),
-              ),
-              const SizedBox(height: 1),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.baseline,
-                textBaseline: TextBaseline.alphabetic,
-                children: <Widget>[
-                  Text(
-                    deg.toString().padLeft(3, '0'),
-                    style: TextStyle(
-                        color: cs.primary,
-                        fontSize: context.skin.type.size(38),
-                        height: 1,
-                        fontWeight: FontWeight.w700,
-                        fontFamily: context.skin.type.monoFamily,
-                        letterSpacing: 2),
-                  ),
-                  Text('°',
-                      style: TextStyle(
-                          color: cs.primary.withValues(alpha: .7),
-                          fontSize: context.skin.type.size(22),
-                          fontFamily: context.skin.type.monoFamily)),
-                  const SizedBox(width: 10),
-                  Text(card,
-                      style: TextStyle(
-                          color: cs.tertiary,
-                          fontSize: context.skin.type.size(22),
-                          fontWeight: FontWeight.w600,
-                          fontFamily: context.skin.type.monoFamily,
-                          letterSpacing: 3)),
-                ],
-              ),
-              if (poorAccuracy)
-                Padding(
-                  padding: const EdgeInsets.only(top: 2),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: <Widget>[
-                      Icon(Icons.explore_off, size: 11, color: cs.tertiary),
-                      const SizedBox(width: 4),
-                      Text(l.gridHeadingCalibrate,
-                          style:
-                              TextStyle(color: cs.tertiary, fontSize: context.skin.type.size(9))),
-                    ],
-                  ),
-                ),
-            ],
-          ),
-          const SizedBox(width: 6),
-          IconButton(
-            visualDensity: VisualDensity.compact,
-            iconSize: 22,
-            tooltip:
-                _northUp ? l.gridOrientHeadingUp : l.gridOrientNorthUp,
-            icon: Icon(
-              _northUp ? Icons.explore_outlined : Icons.navigation,
-              color: cs.primary,
-            ),
-            onPressed: () {
-              setState(() => _northUp = !_northUp);
-              _savePrefs();
-            },
-          ),
         ],
       ),
     );
@@ -1234,15 +1087,12 @@ class _GridLegend extends StatelessWidget {
           row(Icons.adjust, l.gridLegendRings(scaleValueDisplay)),
           row(Icons.my_location, l.gridLegendSelf),
           row(Icons.circle, l.gridLegendDot),
+          row(Icons.blur_circular, l.gridLegendSignalOnly),
           row(Icons.radio_button_checked, l.gridLegendKnown),
           row(Icons.star, l.gridLegendFavourite),
           row(Icons.waves, l.gridLegendRipple),
           row(Icons.touch_app, l.gridLegendTap),
           const SizedBox(height: 6),
-          // Heading semantics — what the wedge actually means + how
-          // to fix it when it points the wrong way.
-          row(Icons.explore, l.gridLegendHeading),
-          row(Icons.threesixty, l.gridLegendCalibration),
         ],
       ),
     );
@@ -1307,8 +1157,6 @@ class _GridPainter extends CustomPainter {
     required this.rippleAt,
     required this.rippleDuration,
     required this.scaleKm,
-    this.headingDeg,
-    this.rotationRad = 0,
   });
 
   final List<DiscoveredNode> nodes;
@@ -1325,27 +1173,22 @@ class _GridPainter extends CustomPainter {
   final Color ringStroke;
   final Color base;
 
-  /// The active skin's type system: the ring labels and the compass rose are
-  /// painted, not built, so the ladder reaches them through this.
+  /// The active skin's type system: the ring labels are painted, not built,
+  /// so the ladder reaches them through this.
   final MmType type;
   final DateTime? rippleAt;
   final Duration rippleDuration;
   final double scaleKm;
 
-  /// Live phone compass heading (degrees from magnetic north,
-  /// 0=N / 90=E / 180=S / 270=W). When non-null, the painter draws a
-  /// heading needle from the centre showing which way the user is
-  /// facing, paired with the cardinal rose.
-  final double? headingDeg;
-
-  /// Plot rotation in radians. 0 = north-up (north at the top).
-  /// `-headingRad` rotates the whole scene so the facing direction is
-  /// at the top (heading-up mode). Applied to nodes, the cardinal
-  /// rose, and the heading needle so they stay mutually consistent.
-  final double rotationRad;
-
   static bool _selfHasGpsStatic(double? lat, double? lon) =>
       lat != null && lon != null && !(lat == 0 && lon == 0);
+
+  /// Whether this node is placed by a reported position or only by signal.
+  static GridMarkerSource _sourceFor(
+          DiscoveredNode node, double? selfLat, double? selfLon) =>
+      gridMarkerSourceFor(
+          nodeHasLocation: node.hasLocation,
+          selfHasLocation: _selfHasGpsStatic(selfLat, selfLon));
 
   /// Stable arbitrary angle from pubkey (so a node doesn't jump).
   static double _hashAngle(String pubKeyHex) {
@@ -1375,7 +1218,6 @@ class _GridPainter extends CustomPainter {
     required double? selfLat,
     required double? selfLon,
     required double scaleKm,
-    double rotationRad = 0,
   }) {
     final bool selfGps = _selfHasGpsStatic(selfLat, selfLon);
     final double angle;
@@ -1395,10 +1237,8 @@ class _GridPainter extends CustomPainter {
       radius = maxR;
       angle = _hashAngle(node.pubKeyHex);
     }
-    // rotationRad rotates the whole plot (heading-up mode); 0 = north-up.
-    final double a = angle + rotationRad;
     return center +
-        Offset(radius * math.sin(a), -radius * math.cos(a));
+        Offset(radius * math.sin(angle), -radius * math.cos(angle));
   }
 
   @override
@@ -1452,11 +1292,6 @@ class _GridPainter extends CustomPainter {
     canvas.drawLine(Offset(center.dx, center.dy - maxR),
         Offset(center.dx, center.dy + maxR), cross);
 
-    // Compass rose — north-up cardinal markers + a tick ring so the
-    // radar reads like a real compass. North is always up (the grid
-    // frame is north-up); the needle below shows which way you face.
-    _drawCompassRose(canvas, center, maxR);
-
     // Self marker.
     canvas.drawCircle(center, 5, Paint()..color = accent);
     canvas.drawCircle(center, 9,
@@ -1464,14 +1299,6 @@ class _GridPainter extends CustomPainter {
           ..style = PaintingStyle.stroke
           ..strokeWidth = 1.5
           ..color = accent.withValues(alpha: .6));
-
-    // Heading needle — points in the user's compass heading (the way
-    // they're facing). The north-up frame stays the stable reference;
-    // needle + rose together read as a real compass.
-    final double? hd = headingDeg;
-    if (hd != null) {
-      _drawHeadingNeedle(canvas, center, maxR, hd);
-    }
 
     // R18 anonymous-channel ripple: an incoming channel message is
     // not attributable to a node, so draw a transient centre-out
@@ -1505,7 +1332,6 @@ class _GridPainter extends CustomPainter {
         selfLat: selfLat,
         selfLon: selfLon,
         scaleKm: scaleKm,
-        rotationRad: rotationRad,
       );
 
       final bool isFav = favorites.contains(n.pubKeyHex);
@@ -1529,7 +1355,22 @@ class _GridPainter extends CustomPainter {
 
       final double r0 = (isFav || isKnown ? 6.0 : 4.0) * scale;
       final Color c = accent.withValues(alpha: bright * opacityMul);
-      canvas.drawCircle(p, r0, Paint()..color = c);
+      final GridMarkerSource source = _sourceFor(n, selfLat, selfLon);
+      if (source == GridMarkerSource.position) {
+        canvas.drawCircle(p, r0, Paint()..color = c);
+      } else {
+        // Hollow: a position we do not have is not a position. The ring sits
+        // on the band its signal implies; the angle is a placeholder.
+        canvas.drawCircle(p, r0 + 1, Paint()..color = c.withValues(alpha: .18));
+        canvas.drawCircle(
+          p,
+          r0 + 1,
+          Paint()
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 1.4
+            ..color = c,
+        );
+      }
 
       // Reduce-motion accessibility ring: known = thin ring; fav =
       // thicker ring (info preserved without animation).
@@ -1546,78 +1387,6 @@ class _GridPainter extends CustomPainter {
     }
   }
 
-  /// Screen direction unit vector for a compass bearing (radians,
-  /// 0 = N) under the current [rotationRad]. north-up → N points up.
-  Offset _bearingDir(double bearingRad) {
-    final double a = bearingRad + rotationRad;
-    return Offset(math.sin(a), -math.cos(a));
-  }
-
-  /// Compass rose: an 8-point tick ring + N/E/S/W letters just outside
-  /// the outer range ring. Rotates with [rotationRad] so in heading-up
-  /// mode the cardinals show where north actually is.
-  void _drawCompassRose(Canvas canvas, Offset center, double maxR) {
-    final Paint tick = Paint()
-      ..color = base.withValues(alpha: .6)
-      ..strokeWidth = 1.2;
-    for (int i = 0; i < 8; i++) {
-      final Offset dir = _bearingDir(i * math.pi / 4);
-      final double inner = maxR - (i.isEven ? 10 : 6);
-      canvas.drawLine(center + dir * inner, center + dir * maxR, tick);
-    }
-    final List<({String s, double bearing, bool n})> marks =
-        <({String s, double bearing, bool n})>[
-      (s: 'N', bearing: 0, n: true),
-      (s: 'E', bearing: math.pi / 2, n: false),
-      (s: 'S', bearing: math.pi, n: false),
-      (s: 'W', bearing: 3 * math.pi / 2, n: false),
-    ];
-    final double lr = maxR + 12;
-    for (final ({String s, double bearing, bool n}) m in marks) {
-      final TextPainter tp = TextPainter(
-        text: TextSpan(
-          text: m.s,
-          style: TextStyle(
-            color: m.n ? accent : base,
-            fontSize: m.n ? type.sizeBodyLg : type.sizeSm,
-            fontFamily: type.monoFamily,
-            fontWeight: m.n ? FontWeight.w700 : FontWeight.w500,
-          ),
-        ),
-        textDirection: TextDirection.ltr,
-      )..layout();
-      final Offset c = center + _bearingDir(m.bearing) * lr;
-      tp.paint(canvas, c - Offset(tp.width / 2, tp.height / 2));
-    }
-  }
-
-  /// Heading needle pointing in the user's facing direction. In
-  /// north-up it points toward the heading bearing; in heading-up it
-  /// points straight up (the facing direction is the top). A short
-  /// muted tail gives it a magnetic-needle feel.
-  void _drawHeadingNeedle(
-      Canvas canvas, Offset center, double maxR, double headingDeg) {
-    final Offset dir = _bearingDir(headingDeg * math.pi / 180);
-    final Offset perp = Offset(-dir.dy, dir.dx);
-    final double len = (maxR * 0.34).clamp(28.0, 80.0);
-    const double halfW = 6.0;
-    final Offset tip = center + dir * len;
-    final Offset baseC = center + dir * 12;
-    final Path needle = Path()
-      ..moveTo(tip.dx, tip.dy)
-      ..lineTo((baseC + perp * halfW).dx, (baseC + perp * halfW).dy)
-      ..lineTo((baseC - perp * halfW).dx, (baseC - perp * halfW).dy)
-      ..close();
-    canvas.drawPath(needle, Paint()..color = accent);
-    canvas.drawLine(
-      center,
-      center - dir * (len * 0.4),
-      Paint()
-        ..color = base.withValues(alpha: .5)
-        ..strokeWidth = 2,
-    );
-  }
-
   @override
   bool shouldRepaint(covariant _GridPainter old) =>
       old.nodes != nodes ||
@@ -1627,8 +1396,6 @@ class _GridPainter extends CustomPainter {
       old.reduceMotion != reduceMotion ||
       old.rippleAt != rippleAt ||
       old.scaleKm != scaleKm ||
-      old.headingDeg != headingDeg ||
-      old.rotationRad != rotationRad ||
       old.type != type;
 }
 
