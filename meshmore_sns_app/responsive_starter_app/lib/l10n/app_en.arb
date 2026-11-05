@@ -270,8 +270,9 @@
   "pairChooseAnother": "Choose another radio",
   "settingsHeading": "App settings",
   "settingsBackgroundTitle": "Stay connected in background",
-  "settingsBackgroundOn": "Messages arrive while the app is closed",
+  "settingsBackgroundOn": "Messages arrive while the app is closed. After a phone restart, open the app to reconnect.",
   "settingsBackgroundOff": "Messages arrive when you open the app",
+  "settingsBackgroundFailed": "Could not keep the app running in the background. Open the app to reconnect.",
   "settingsTelemetryPoll": "Gather node telemetry",
   "settingsTelemetryPollOn": "Politely polls contacts for temperature / altitude (a little OTA airtime)",
   "settingsTelemetryPollOff": "No telemetry requests sent; query a node manually from its detail",
@@ -621,7 +622,7 @@
   "locTileSubtitle": "Sends the phone's position to the radio",
   "deviceGpsIntervalWhy": "This firmware build decides how often the sensors are read, so the app cannot change it.",
   "locMaster": "Auto-publish",
-  "locMasterOn": "On — using phone GPS",
+  "locMasterOn": "On — while the app is open",
   "locMasterOff": "Off",
   "locInterval": "Periodic interval",
   "locMovement": "Smart broadcast (on movement)",
@@ -3369,6 +3370,8 @@
     }
   },
   "mediaOverBudget": "This photo will not fit the mesh budget even at the lowest quality. It can still be sent, but it will be cut off.",
+  "mediaInterruptedEarlier": "An earlier photo did not finish sending.",
+  "mediaInterruptedDismiss": "Dismiss",
   "@mediaOverBudget": {},
   "mediaSendingProgress": "{sent} of {total} packets sent",
   "@mediaSendingProgress": {

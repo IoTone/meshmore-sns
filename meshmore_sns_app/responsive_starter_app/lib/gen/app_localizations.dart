@@ -911,7 +911,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsBackgroundOn.
   ///
   /// In en, this message translates to:
-  /// **'Messages arrive while the app is closed'**
+  /// **'Messages arrive while the app is closed. After a phone restart, open the app to reconnect.'**
   String get settingsBackgroundOn;
 
   /// No description provided for @settingsBackgroundOff.
@@ -919,6 +919,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Messages arrive when you open the app'**
   String get settingsBackgroundOff;
+
+  /// No description provided for @settingsBackgroundFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not keep the app running in the background. Open the app to reconnect.'**
+  String get settingsBackgroundFailed;
 
   /// No description provided for @settingsTelemetryPoll.
   ///
@@ -2153,7 +2159,7 @@ abstract class AppLocalizations {
   /// No description provided for @locMasterOn.
   ///
   /// In en, this message translates to:
-  /// **'On — using phone GPS'**
+  /// **'On — while the app is open'**
   String get locMasterOn;
 
   /// No description provided for @locMasterOff.
@@ -8475,6 +8481,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'This photo will not fit the mesh budget even at the lowest quality. It can still be sent, but it will be cut off.'**
   String get mediaOverBudget;
+
+  /// No description provided for @mediaInterruptedEarlier.
+  ///
+  /// In en, this message translates to:
+  /// **'An earlier photo did not finish sending.'**
+  String get mediaInterruptedEarlier;
+
+  /// No description provided for @mediaInterruptedDismiss.
+  ///
+  /// In en, this message translates to:
+  /// **'Dismiss'**
+  String get mediaInterruptedDismiss;
 
   /// No description provided for @mediaSendingProgress.
   ///

@@ -33,8 +33,8 @@ void main() {
         isTrue,
         reason: 'targetSdkVersion must be the literal 36');
     // minSdk is pinned rather than inherited: `flutter.minSdkVersion` moves
-    // with the toolchain, so a Flutter bump would silently drop the devices
-    // the app claims to support. 24 is what this build installs on.
+    // Pinned, not inherited: `flutter.minSdkVersion` moves with the toolchain,
+    // so a bump would drop devices with no diff to review.
     expect(RegExp(r'^\s*minSdkVersion 24\s*$', multiLine: true).hasMatch(g),
         isTrue, reason: 'minSdkVersion must be the literal 24');
   });

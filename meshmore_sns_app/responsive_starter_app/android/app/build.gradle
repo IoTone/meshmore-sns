@@ -68,10 +68,10 @@ android {
     defaultConfig {
         applicationId "com.iotone.meshmore_sns_app"
         // Pinned rather than inherited: `flutter.minSdkVersion` moves with the
-        // Flutter release, so a toolchain bump would silently drop devices the
-        // app still supports. 24 is what this build installs on (Android 7 and
-        // up) because `flutter_local_notifications` needs java.time desugaring
-        // anyway; raising it costs devices, lowering it is untested.
+        // Flutter release, so a toolchain bump would silently drop devices with
+        // no diff to review. 24 is what ships (Android 7 and up). The permission
+        // model here would also run on 23, but that is untested, and
+        // `flutter_local_notifications` needs java.time desugaring regardless.
         minSdkVersion 24
         targetSdkVersion 36
         versionCode flutterVersionCode.toInteger()

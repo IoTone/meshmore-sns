@@ -4,6 +4,7 @@ import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:meshcore/meshcore.dart';
+import 'package:meshmore_sns_app/meshcore/background_keepalive.dart';
 import 'package:meshmore_sns_app/meshcore/background_prefs.dart';
 import 'package:meshmore_sns_app/meshcore/discovered_node.dart';
 import 'package:meshmore_sns_app/meshcore/favorite_store.dart';
@@ -2187,6 +2188,36 @@ void main() {
     });
   });
 
+  group('background service refusal (L4)', () {
+    test('a refused start is recorded and retried when the app is resumed',
+        () async {
+      final FakeMeshcoreTransport fake =
+          FakeMeshcoreTransport(connected: true);
+      final _RefusingKeepalive ka = _RefusingKeepalive();
+      final MeshcoreController ctrl = MeshcoreController(
+        transportFactory: () async => fake,
+        connection: MeshcoreConnection(
+            handshakeTimeout: const Duration(seconds: 5)),
+        backgroundKeepalive: ka,
+      );
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+      await ctrl.connect();
+      fake.emit(selfInfoFrame());
+      await Future<void>.delayed(Duration.zero);
+
+      expect(ka.starts, 1);
+      expect(ctrl.keepaliveFailure, isNotNull,
+          reason: 'a refusal must be visible, not an unhandled error');
+
+      ka.refuse = false;
+      await ctrl.onAppResumed();
+      await Future<void>.delayed(Duration.zero);
+      expect(ka.starts, 2, reason: 'the foreground is where a retry is legal');
+      expect(ctrl.keepaliveFailure, isNull);
+      ctrl.dispose();
+    });
+  });
+
   group('app lifecycle resume (R17)', () {
     int syncs(FakeMeshcoreTransport f) =>
         f.sent.where((s) => s.isNotEmpty && s[0] == 0x0A).length;
@@ -2242,4 +2273,26 @@ void main() {
       ctrl.dispose();
     });
   });
+}
+
+/// Refuses `start()` the way Android 12+ refuses a background
+/// `startService`, then lets a retry succeed.
+class _RefusingKeepalive implements BackgroundKeepalive {
+  int starts = 0;
+  int stops = 0;
+  bool refuse = true;
+
+  @override
+  Future<void> start() async {
+    starts++;
+    if (refuse) {
+      throw StateError('ForegroundServiceStartNotAllowedException');
+    }
+  }
+
+  @override
+  Future<void> stop() async => stops++;
+
+  @override
+  Future<bool> get isRunning async => starts > stops && !refuse;
 }

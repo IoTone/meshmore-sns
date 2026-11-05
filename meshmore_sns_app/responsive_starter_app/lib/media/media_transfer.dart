@@ -8,6 +8,7 @@ import 'package:meshcore/meshcore.dart';
 import '../meshcore/airtime.dart';
 import '../meshcore/channel_datagram.dart';
 import 'media_chunk.dart';
+import 'media_journal.dart';
 import 'media_codec.dart';
 import 'media_photo.dart';
 import 'media_reassembly.dart';
@@ -151,6 +152,21 @@ final class MediaUpload {
   /// place: a refusal salts the resend, capacity pauses without spending an
   /// attempt, and nothing is ever sent twice byte-identical.
   Future<MediaReceipt> run(
+    Future<ChannelDataSendResult> Function(Uint8List blob) send,
+  ) async {
+    // One record per payload in flight: a process kill loses the transfer, and
+    // the next launch reports it as interrupted instead of dropping it.
+    await MediaJournal.markStarted(plan.payloadId);
+    try {
+      return await _run(send);
+    } finally {
+      // A transfer that never reached its end keeps the record, which is what
+      // the next launch reads.
+      if (_sender.complete) await MediaJournal.markFinished(plan.payloadId);
+    }
+  }
+
+  Future<MediaReceipt> _run(
     Future<ChannelDataSendResult> Function(Uint8List blob) send,
   ) async {
     while (!_sender.complete && !_sender.failed) {

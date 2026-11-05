@@ -3,11 +3,14 @@
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../gen/app_localizations.dart';
 import '../meshcore/channel_datagram.dart';
 import '../theme/mm_skin.dart';
+import '../ui/mm_components.dart';
 import 'media_chunk.dart';
+import 'media_journal.dart';
 import 'media_photo.dart';
 import 'media_send_policy.dart';
 import 'media_sender.dart';
@@ -227,6 +230,9 @@ class _MediaComposerState extends State<MediaComposer> {
 
   @override
   Widget build(BuildContext context) {
+    final MediaInterruptions? interruptions =
+        context.watch<MediaInterruptions?>();
+    final bool interrupted = interruptions?.any ?? false;
     final AppLocalizations l = AppLocalizations.of(context);
     final MmSkin skin = context.skin;
     return SafeArea(
@@ -254,6 +260,7 @@ class _MediaComposerState extends State<MediaComposer> {
                 },
               ),
             if (_refusal != null) _refusalNote(skin, l),
+            if (interrupted) _interruptedNote(skin, l),
             if (_stage == _Stage.idle && _plan == null && _sourceProblem == null)
               Row(
                 children: <Widget>[
@@ -310,6 +317,31 @@ class _MediaComposerState extends State<MediaComposer> {
       ),
     );
   }
+
+  /// A transfer the last process left unfinished. Said once, on the surface
+  /// where the user would retry, rather than silently dropped.
+  Widget _interruptedNote(MmSkin skin, AppLocalizations l) => Padding(
+        padding: EdgeInsets.only(bottom: skin.space.step(3)),
+        child: Row(
+          children: <Widget>[
+            Icon(Icons.info_outline, size: 16, color: skin.color.fgMuted),
+            SizedBox(width: skin.space.step(2)),
+            Expanded(
+              child: Text(
+                l.mediaInterruptedEarlier,
+                style: TextStyle(
+                    color: skin.color.fgMuted, fontSize: skin.type.sizeSm),
+              ),
+            ),
+            MmAction(
+              dense: true,
+              label: l.mediaInterruptedDismiss,
+              onPressed: () =>
+                  context.read<MediaInterruptions?>()?.acknowledge(),
+            ),
+          ],
+        ),
+      );
 
   Widget _refusalNote(MmSkin skin, AppLocalizations l) => _Note(
         skin: skin,

@@ -476,10 +476,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsBackgroundTitle => 'Stay connected in background';
 
   @override
-  String get settingsBackgroundOn => 'Messages arrive while the app is closed';
+  String get settingsBackgroundOn =>
+      'Messages arrive while the app is closed. After a phone restart, open the app to reconnect.';
 
   @override
   String get settingsBackgroundOff => 'Messages arrive when you open the app';
+
+  @override
+  String get settingsBackgroundFailed =>
+      'Could not keep the app running in the background. Open the app to reconnect.';
 
   @override
   String get settingsTelemetryPoll => 'Gather node telemetry';
@@ -1189,7 +1194,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get locMaster => 'Auto-publish';
 
   @override
-  String get locMasterOn => 'On — using phone GPS';
+  String get locMasterOn => 'On — while the app is open';
 
   @override
   String get locMasterOff => 'Off';
@@ -4991,6 +4996,13 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get mediaOverBudget =>
       'This photo will not fit the mesh budget even at the lowest quality. It can still be sent, but it will be cut off.';
+
+  @override
+  String get mediaInterruptedEarlier =>
+      'An earlier photo did not finish sending.';
+
+  @override
+  String get mediaInterruptedDismiss => 'Dismiss';
 
   @override
   String mediaSendingProgress(int sent, int total) {

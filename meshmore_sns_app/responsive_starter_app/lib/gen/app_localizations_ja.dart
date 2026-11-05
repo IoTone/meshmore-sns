@@ -456,10 +456,15 @@ class AppLocalizationsJa extends AppLocalizations {
   String get settingsBackgroundTitle => 'バックグラウンドで接続を維持';
 
   @override
-  String get settingsBackgroundOn => 'アプリを閉じていてもメッセージが届きます';
+  String get settingsBackgroundOn =>
+      'アプリを閉じていてもメッセージが届きます。端末の再起動後はアプリを開いて再接続してください。';
 
   @override
   String get settingsBackgroundOff => 'アプリを開いたときにメッセージが届きます';
+
+  @override
+  String get settingsBackgroundFailed =>
+      'バックグラウンドでの接続を維持できませんでした。アプリを開いて再接続してください。';
 
   @override
   String get settingsTelemetryPoll => 'ノードのテレメトリを収集';
@@ -4798,6 +4803,12 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get mediaOverBudget => 'この写真は最低品質でもメッシュの上限に収まりません。送信はできますが途中で切れます。';
+
+  @override
+  String get mediaInterruptedEarlier => '前回の写真は送信が完了しませんでした。';
+
+  @override
+  String get mediaInterruptedDismiss => '閉じる';
 
   @override
   String mediaSendingProgress(int sent, int total) {
