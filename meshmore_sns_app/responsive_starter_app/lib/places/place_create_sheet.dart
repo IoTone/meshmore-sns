@@ -24,11 +24,16 @@ class PlaceCreateSheet extends StatefulWidget {
     required this.latitude,
     required this.longitude,
     required this.composer,
+    this.showPrecision = false,
   });
 
   final double latitude;
   final double longitude;
   final PlaceComposer composer;
+
+  /// Offers the precision choice. Off for a point the user aimed at on the
+  /// map, where "snap it" can only lose the spot they chose.
+  final bool showPrecision;
 
   /// Shows the sheet; resolves to the place when one went out.
   static Future<Place?> show(
@@ -36,6 +41,7 @@ class PlaceCreateSheet extends StatefulWidget {
     required double latitude,
     required double longitude,
     required PlaceComposer composer,
+    bool showPrecision = false,
   }) =>
       showModalBottomSheet<Place>(
         context: context,
@@ -44,6 +50,7 @@ class PlaceCreateSheet extends StatefulWidget {
           latitude: latitude,
           longitude: longitude,
           composer: composer,
+          showPrecision: showPrecision,
         ),
       );
 
@@ -173,42 +180,61 @@ class _PlaceCreateSheetState extends State<PlaceCreateSheet> {
             ],
           ),
           SizedBox(height: skin.space.step(2)),
-          Text(l.placeTtlTitle,
-              style: TextStyle(
-                  color: skin.color.fgMuted, fontSize: skin.type.sizeSm)),
-          Wrap(
-            spacing: skin.space.step(2),
-            runSpacing: skin.space.step(2),
+          // One picker instead of ten chips, labelled with what the choice
+          // means rather than its wire spelling (UX audit C5).
+          Row(
             children: <Widget>[
-              for (final PlaceTtl t in PlaceTtl.values)
-                ChoiceChip(
-                  key: ValueKey<String>('place-ttl-${t.token}'),
-                  label: Text(t.token),
-                  selected: _ttl == t,
-                  onSelected: (_) => setState(() => _ttl = t),
-                ),
+              Text(l.placeTtlTitle,
+                  style: TextStyle(
+                      color: skin.color.fgMuted, fontSize: skin.type.sizeSm)),
+              SizedBox(width: skin.space.step(3)),
+              DropdownButton<PlaceTtl>(
+                key: const ValueKey<String>('place-ttl-picker'),
+                value: _ttl,
+                isDense: true,
+                dropdownColor: skin.color.surface,
+                style: TextStyle(
+                    color: skin.color.fg, fontSize: skin.type.sizeBody),
+                underline: Container(height: 1, color: skin.color.line),
+                items: <DropdownMenuItem<PlaceTtl>>[
+                  for (final PlaceTtl t in PlaceTtl.values)
+                    DropdownMenuItem<PlaceTtl>(
+                      key: ValueKey<String>('place-ttl-${t.token}'),
+                      value: t,
+                      child: Text(_ttlLabel(l, t)),
+                    ),
+                ],
+                onChanged: (PlaceTtl? t) {
+                  if (t != null) setState(() => _ttl = t);
+                },
+              ),
             ],
           ),
-          SizedBox(height: skin.space.step(2)),
-          Text(l.placePrecisionTitle,
-              style: TextStyle(
-                  color: skin.color.fgMuted, fontSize: skin.type.sizeSm)),
-          Wrap(
-            spacing: skin.space.step(2),
-            children: <Widget>[
-              for (final PlacePrecision p in PlacePrecision.values)
-                ChoiceChip(
-                  key: ValueKey<String>('place-precision-${p.decimals}'),
-                  label: Text(switch (p) {
-                    PlacePrecision.exact => l.placePrecisionExact,
-                    PlacePrecision.snapped100m => l.placePrecision100,
-                    PlacePrecision.snapped1km => l.placePrecision1000,
-                  }),
-                  selected: _precision == p,
-                  onSelected: (_) => setState(() => _precision = p),
-                ),
-            ],
-          ),
+          // Precision is only a choice when the point is not the one the user
+          // aimed at; every caller today passes an aimed point, so the row is
+          // not shown and the report carries the exact spot (spec §9).
+          if (widget.showPrecision) ...<Widget>[
+            SizedBox(height: skin.space.step(2)),
+            Text(l.placePrecisionTitle,
+                style: TextStyle(
+                    color: skin.color.fgMuted, fontSize: skin.type.sizeSm)),
+            Wrap(
+              spacing: skin.space.step(2),
+              children: <Widget>[
+                for (final PlacePrecision p in PlacePrecision.values)
+                  ChoiceChip(
+                    key: ValueKey<String>('place-precision-${p.decimals}'),
+                    label: Text(switch (p) {
+                      PlacePrecision.exact => l.placePrecisionExact,
+                      PlacePrecision.snapped100m => l.placePrecision100,
+                      PlacePrecision.snapped1km => l.placePrecision1000,
+                    }),
+                    selected: _precision == p,
+                    onSelected: (_) => setState(() => _precision = p),
+                  ),
+              ],
+            ),
+          ],
           if (_refusedUntil != null)
             Padding(
               padding: EdgeInsets.only(top: skin.space.step(3)),
@@ -246,6 +272,15 @@ class _PlaceCreateSheetState extends State<PlaceCreateSheet> {
         ],
       ),
     );
+  }
+
+  /// What a TTL stop means, in words: the wire token is a spelling, not a
+  /// label (UX audit C5).
+  static String _ttlLabel(AppLocalizations l, PlaceTtl t) {
+    final Duration d = t.life;
+    if (d.inMinutes < 60) return l.placeTtlMinutes(d.inMinutes);
+    if (d.inHours < 24) return l.placeTtlHours(d.inHours);
+    return l.placeTtlDays(d.inDays);
   }
 
   /// The clock time the budget frees up, in the user's own locale.

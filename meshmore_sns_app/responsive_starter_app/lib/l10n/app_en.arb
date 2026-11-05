@@ -3042,7 +3042,6 @@
   "@degradedMapOffline": {},
   "sosTitle": "Emergency",
   "sosEntryTooltip": "Emergency alarm and check-in",
-  "sosRepeatsOneHour": "This repeats for up to one hour.",
   "sosGoesToChannel": "Channel {name}",
   "@sosGoesToChannel": {
     "placeholders": {
@@ -3484,5 +3483,26 @@
   "reportCopyBundle": "Copy the report",
   "reportCopied": "Report copied.",
   "blockedKeysNotPersisted": "This list could not be saved on this device. It filters for now and will be empty after a restart.",
-  "reportActionSub": "Writes a file on this device for you to send. Nothing is transmitted."
+  "reportActionSub": "Writes a file on this device for you to send. Nothing is transmitted.",
+  "sosDestinationContactsLimit": "Up to {count} contacts",
+  "sosDestinationChange": "Change",
+  "sosDestinationPickerTitle": "Where the alarm goes",
+  "sosDestinationChannelHeader": "Channel",
+  "sosDestinationContactsHeader": "Direct copies",
+  "sosDestinationContactsHelp": "A direct copy from one of these keys can stop the alarm. A channel reply cannot.",
+  "sosDestinationMissing": "The channel this alarm was set to is gone. Choose another.",
+  "sosDestinationNoContacts": "No contacts yet",
+  "sosDestinationNotAContact": "not in contacts",
+  "sosDestinationDone": "Done",
+  "sosEmergencyShort": "Public channel, one repeat if the app closes",
+  "sosAboutTitle": "About this destination",
+  "sosRepeatsShort": "repeats up to 1 h",
+  "placeTtlMinutes": "{count} min",
+  "placeTtlHours": "{count} h",
+  "placeTtlDays": "{count} d",
+  "mapReportPlace": "Report a place",
+  "@sosDestinationContactsLimit": {"placeholders": {"count": {"type": "int"}}},
+  "@placeTtlMinutes": {"placeholders": {"count": {"type": "int"}}},
+  "@placeTtlHours": {"placeholders": {"count": {"type": "int"}}},
+  "@placeTtlDays": {"placeholders": {"count": {"type": "int"}}}
 }

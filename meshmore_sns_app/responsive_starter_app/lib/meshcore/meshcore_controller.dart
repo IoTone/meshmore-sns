@@ -213,7 +213,7 @@ class MeshcoreController extends ChangeNotifier {
       _capture.add(hex);
       if (_capture.length > _captureCap) _capture.removeAt(0);
     });
-    _loadChatHistory();
+    _historyRestored = _loadChatHistory();
     unawaited(_loadDropped());
     unawaited(_meshbook.load().then((_) => notifyListeners()));
     _loadBackgroundPref();
@@ -405,6 +405,14 @@ class MeshcoreController extends ChangeNotifier {
       await _keepalive.stop();
     }
   }
+
+  /// Completes when the restored history has been merged.
+  ///
+  /// Restoring is asynchronous because the store is a sealed file, so anything
+  /// that needs the history to be there waits for this rather than for a
+  /// guessed delay.
+  Future<void> get historyRestored => _historyRestored;
+  late final Future<void> _historyRestored;
 
   /// Restore persisted chat history (the protocol can't re-fetch it;
   /// the device queue is drained destructively). Loaded entries are

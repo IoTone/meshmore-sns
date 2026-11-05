@@ -87,7 +87,9 @@ void main() {
           FakeMeshcoreTransport(connected: true);
       final MeshcoreController ctrl =
           MeshcoreController(transportFactory: () async => fake);
-      await Future<void>.delayed(const Duration(milliseconds: 20));
+      // The store is a sealed file, so the restore is asynchronous. Waiting a
+      // fixed 20 ms made this pass or fail on how loaded the machine was.
+      await ctrl.historyRestored;
       expect(ctrl.messagesFor(0).map((m) => m.text),
           contains('earlier public msg'));
       ctrl.dispose();

@@ -7,8 +7,10 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/scheduler.dart';
 
 import '../meshcore/chat_message.dart';
+import '../meshcore/discovered_node.dart';
 import '../meshcore/meshcore_controller.dart';
 import 'checkin.dart';
+import 'sos_prefs.dart';
 import 'sos_engine.dart';
 import 'sos_message.dart';
 import 'sos_schedule.dart';
@@ -86,6 +88,18 @@ final class SosController extends ChangeNotifier {
   /// which also means no ACK can ever stop the alarm — the screen says so.
   List<String> _contactKeysHex = const <String>[];
 
+  /// True when a remembered destination named a channel the radio no longer
+  /// lists. A named state, not a silent fallback: the alarm refuses to arm
+  /// until the user picks again, because sending an alarm to a channel nobody
+  /// chose is worse than asking.
+  bool _destinationMissing = false;
+  bool get destinationMissing => _destinationMissing;
+
+  /// True once the destination came from the user rather than from the radio's
+  /// own default, so the screen can say whose choice it is.
+  bool _destinationChosen = false;
+  bool get destinationChosen => _destinationChosen;
+
   SosState get state => _engine.state;
   SosRaise? get request => _engine.activeRequest;
   List<SosPacket> get plan => _engine.plan;
@@ -145,27 +159,81 @@ final class SosController extends ChangeNotifier {
   bool get canArm => _mc.isReady && _mc.selfInfo != null;
 
   void start() {
+    // The initial default is not a fallback: with nothing remembered, the
+    // emergency channel is the destination when the radio lists it, and the
+    // active channel otherwise (`meshmore-sos-spec.md` §6).
     _channelSlot = emergencyChannelSlot ?? _mc.activeChannel;
     _channelSub ??= _mc.incomingChannelMessages.listen(_onChannel);
     _dmSub ??= _mc.incomingDirectMessages.listen(_onDm);
+    unawaited(_restoreDestination());
+  }
+
+  /// Applies a remembered destination once preferences answer. A test that
+  /// never saved one keeps the radio's default, because the load is a no-op.
+  Future<void> _restoreDestination() async {
+    final int? slot = await SosPrefs.channelSlot();
+    if (slot == null) return;
+    final List<String> targets =
+        await SosPrefs.contactTargets() ?? const <String>[];
+    _channelSlot = slot;
+    _contactKeysHex = <String>[
+      for (final String k in targets)
+        if (k.length == 64) k.toLowerCase(),
+    ];
+    _destinationChosen = true;
+    _destinationMissing = !_hasChannel(slot);
+    _notify();
   }
 
   /// Picks the destination. The screen offers the radio's channels; this also
   /// drops any DM copy whose key would no longer be addressable.
   void setDestination({int? channelSlot, List<String>? contactKeysHex}) {
-    if (channelSlot != null) _channelSlot = channelSlot;
+    if (channelSlot != null) {
+      _channelSlot = channelSlot;
+      _destinationMissing = false;
+    }
     if (contactKeysHex != null) {
       _contactKeysHex = <String>[
         for (final String k in contactKeysHex.take(SosTargets.maxContactTargets))
           if (k.length == 64) k.toLowerCase(),
       ];
     }
+    _destinationChosen = true;
+    _destinationMissing = _destinationMissing || !_hasChannel(_channelSlot);
+    unawaited(SosPrefs.save(
+      channelSlot: _channelSlot,
+      contactTargets: _contactKeysHex,
+    ));
     _notify();
+  }
+
+  /// Whether the radio lists [slot]. `channels` is the sorted view, not the map.
+  bool _hasChannel(int slot) => _mc.channels.any((MapEntry<int, String> e) => e.key == slot);
+
+  /// The direct copies, each with the name the radio knows, or null when the
+  /// key is no longer in the contact list. The picker needs both halves: a
+  /// key with no name is a destination the user cannot recognise.
+  List<({String keyHex, String? name})> get contactTargets {
+    final Map<String, String> names = <String, String>{
+      for (final DiscoveredNode n in _mc.nodes) n.pubKeyHex.toLowerCase(): n.name,
+    };
+    return <({String keyHex, String? name})>[
+      for (final String hex in _contactKeysHex)
+        (keyHex: hex, name: names[hex]),
+    ];
   }
 
   /// Arms the alarm: `idle` → `arming`. Nothing is sent until [confirm].
   SosRefusal? arm({required String words}) {
     _lastRefusal = null;
+    if (_destinationMissing) {
+      // The remembered channel is gone. Refusing here is what makes the state
+      // visible: the screen names the channel and offers the picker instead of
+      // quietly sending the alarm somewhere else.
+      _lastRefusal = SosRefusal.noDestination;
+      _notify();
+      return _lastRefusal;
+    }
     final DateTime now = _clock();
     final List<int>? pubkey = _mc.selfInfo?.publicKey;
     final String callsign = _mc.selfInfo?.name.trim() ?? '';

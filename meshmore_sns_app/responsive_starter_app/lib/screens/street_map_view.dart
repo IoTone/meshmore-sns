@@ -562,6 +562,50 @@ class _StreetMapViewState extends State<StreetMapView> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
+              // Reporting a place is a labelled control, not only a
+              // long-press: a hidden gesture was the only way in and the
+              // empty state had to teach it in a sentence (UX audit C7). The
+              // long-press stays as the fast path, and the point reported is
+              // the one at the middle of the screen.
+              Padding(
+                padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Material(
+                    color: cs.surface.withValues(alpha: .92),
+                    elevation: 1,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: mmRadius(context, 6),
+                      side: BorderSide(color: cs.outline.withValues(alpha: .4)),
+                    ),
+                    child: InkWell(
+                      key: const ValueKey<String>('map-report-place'),
+                      onTap: () => _createPlace(context, _map.camera.center),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 6),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: <Widget>[
+                            Icon(Icons.add_location_alt_outlined,
+                                size: context.skin.type.sizeLg,
+                                color: cs.onSurface),
+                            Text(
+                              l.mapReportPlace,
+                              textAlign: TextAlign.center,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                  color: cs.onSurface,
+                                  fontSize: context.skin.type.sizeMicro),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
               // The credit line follows what is actually drawn. R82 draws
               // OSM's own vector service, so one credit covers the tiles and
               // the data; a raster source keeps its own credit.

@@ -97,7 +97,12 @@ void main() {
     // real IO on its own, so the tap and the wait both run in the real zone.
     await t.runAsync(() async {
       await t.tap(find.byKey(const ValueKey<String>('gpx-export')));
-      await Future<void>.delayed(const Duration(milliseconds: 200));
+      // Poll for the share call instead of sleeping a fixed 200 ms: the file
+      // write is real IO, and a loaded machine can outrun a guessed delay.
+      final Stopwatch sw = Stopwatch()..start();
+      while (calls.isEmpty && sw.elapsed < const Duration(seconds: 10)) {
+        await Future<void>.delayed(const Duration(milliseconds: 10));
+      }
     });
     await t.pumpAndSettle();
 

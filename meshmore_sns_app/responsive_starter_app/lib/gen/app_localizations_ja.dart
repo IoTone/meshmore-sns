@@ -4377,9 +4377,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get sosEntryTooltip => '緊急警報とチェックイン';
 
   @override
-  String get sosRepeatsOneHour => '最大1時間、繰り返し送信します。';
-
-  @override
   String sosGoesToChannel(String name) {
     return 'チャンネル $name';
   }
@@ -4973,4 +4970,64 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get reportActionSub => '送信先を選べるよう、端末にファイルを作成します。自動送信はしません。';
+
+  @override
+  String sosDestinationContactsLimit(int count) {
+    return '$count 件まで';
+  }
+
+  @override
+  String get sosDestinationChange => '変更';
+
+  @override
+  String get sosDestinationPickerTitle => '警報の送信先';
+
+  @override
+  String get sosDestinationChannelHeader => 'チャンネル';
+
+  @override
+  String get sosDestinationContactsHeader => '直接送信';
+
+  @override
+  String get sosDestinationContactsHelp =>
+      'これらの鍵への直接送信だけが警報を止められます。チャンネルの応答では止まりません。';
+
+  @override
+  String get sosDestinationMissing => 'この警報の送信先チャンネルはなくなりました。選び直してください。';
+
+  @override
+  String get sosDestinationNoContacts => '連絡先がまだありません';
+
+  @override
+  String get sosDestinationNotAContact => '連絡先にありません';
+
+  @override
+  String get sosDestinationDone => '完了';
+
+  @override
+  String get sosEmergencyShort => '公開チャンネル。アプリを閉じた場合も1回だけ再送されます';
+
+  @override
+  String get sosAboutTitle => 'この送信先について';
+
+  @override
+  String get sosRepeatsShort => '最大1時間くり返します';
+
+  @override
+  String placeTtlMinutes(int count) {
+    return '$count分';
+  }
+
+  @override
+  String placeTtlHours(int count) {
+    return '$count時間';
+  }
+
+  @override
+  String placeTtlDays(int count) {
+    return '$count日';
+  }
+
+  @override
+  String get mapReportPlace => '場所を報告';
 }
