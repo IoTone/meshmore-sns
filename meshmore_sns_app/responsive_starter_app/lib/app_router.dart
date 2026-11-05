@@ -15,7 +15,9 @@ import 'screens/dm_screen.dart';
 import 'screens/diagnostics_screen.dart';
 import 'screens/terms_screen.dart';
 import 'screens/location_settings_screen.dart';
+import 'screens/checkin_screen.dart';
 import 'screens/personalization_screen.dart';
+import 'screens/sos_screen.dart';
 import 'screens/maps/maps_screen.dart';
 import 'screens/maps/maps_self_test_screen.dart';
 import 'screens/maps/new_pack_screen.dart';
@@ -57,6 +59,11 @@ final GoRouter appRouter = GoRouter(
       path: '/settings/channels',
       builder: (_, __) => const ChannelsScreen(),
     ),
+    // SOS and check-in (`meshmore-sos-spec.md`). The alarm is one tap from
+    // every primary view via the shell's app-bar action; the check-in sits
+    // beside it on the alarm screen because it is the non-emergency sibling.
+    GoRoute(path: '/sos', builder: (_, __) => const SosScreen()),
+    GoRoute(path: '/checkin', builder: (_, __) => const CheckinScreen()),
     GoRoute(
       path: '/dm/:pubkey',
       builder: (_, GoRouterState state) => DmScreen(

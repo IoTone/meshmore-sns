@@ -4502,4 +4502,198 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get degradedMapOffline =>
       'Map tiles cannot be fetched. The bundled basemap and anything already on disk still draw; the rest of the app is unaffected.';
+
+  @override
+  String get sosTitle => 'Emergency';
+
+  @override
+  String get sosEntryTooltip => 'Emergency alarm and check-in';
+
+  @override
+  String get sosRepeatsOneHour => 'This repeats for up to one hour.';
+
+  @override
+  String sosGoesToChannel(String name) {
+    return 'Channel $name';
+  }
+
+  @override
+  String sosGoesToContacts(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count contact copies',
+      one: '1 contact copy',
+      zero: 'No direct copies',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get sosInRange => 'Nobody is notified unless they are in radio range.';
+
+  @override
+  String get sosHoldToArm => 'Hold to raise the alarm';
+
+  @override
+  String sosHoldRemaining(int seconds) {
+    return 'Keep holding · ${seconds}s';
+  }
+
+  @override
+  String get sosHoldReleased => 'Released too early — nothing was sent.';
+
+  @override
+  String get sosNoRadio => 'No radio is connected, so nothing can be sent.';
+
+  @override
+  String get sosNoIdentity =>
+      'The radio has not reported its name, so an alarm has no callsign to carry.';
+
+  @override
+  String get sosWords => 'What is happening';
+
+  @override
+  String get sosWordsHint => 'Carried by every repeat, up to 96 bytes';
+
+  @override
+  String get sosDestination => 'Goes to';
+
+  @override
+  String get sosEmergencyPublicKey =>
+      'The #emergency channel\'s key is derived from its name, so anyone who knows the name can compute it and read this.';
+
+  @override
+  String get sosEmergencyRepeat =>
+      'The radio repeats each packet once about two minutes later; the rest of the schedule does not outlive the app.';
+
+  @override
+  String get sosContactsNone =>
+      'With no contact copies, a channel acknowledgement can never stop this alarm.';
+
+  @override
+  String get sosActive => 'Alarm running';
+
+  @override
+  String sosNextSend(int seconds) {
+    return 'Next in ${seconds}s';
+  }
+
+  @override
+  String sosElapsed(int minutes) {
+    return 'Running $minutes min';
+  }
+
+  @override
+  String sosRemaining(int count, int total) {
+    return '$count of $total left';
+  }
+
+  @override
+  String get sosImSafe => 'I\'m safe';
+
+  @override
+  String get sosImSafeHint => 'Sends one [SAFE] and stops the repeats.';
+
+  @override
+  String get sosStopRepeats => 'Stop the repeats';
+
+  @override
+  String get sosStopHint =>
+      'Stops the repeats on this phone. Nothing is sent, so nobody is told.';
+
+  @override
+  String get sosDefaultWords => 'I need help';
+
+  @override
+  String sosClaimedBy(String name) {
+    return '$name claims to have seen this, on the channel. The alarm keeps going.';
+  }
+
+  @override
+  String sosSeenBy(String name) {
+    return '$name has seen this, by direct message.';
+  }
+
+  @override
+  String sosAckCounted(String name) {
+    return '$name answered, but this alarm was not addressed to them.';
+  }
+
+  @override
+  String get sosExpired =>
+      'The alarm has stopped repeating. It is not resolved.';
+
+  @override
+  String get sosCancelled => 'The alarm is stopped.';
+
+  @override
+  String get sosAcknowledgedHeading => 'Seen';
+
+  @override
+  String get sosDismiss => 'Close';
+
+  @override
+  String get sosRefusedAlreadyActive => 'An alarm is already running.';
+
+  @override
+  String get sosRefusedNoDestination => 'Choose where the alarm goes first.';
+
+  @override
+  String get sosRefusedNoWords => 'Say what is happening first.';
+
+  @override
+  String get sosRefusedTooLong =>
+      'That text is too long to carry the callsign and the position. Shorten it.';
+
+  @override
+  String get sosRefusedHold => 'The hold is not finished.';
+
+  @override
+  String get checkinTitle => 'Check-in';
+
+  @override
+  String get checkinEntryTooltip => 'Check-in';
+
+  @override
+  String get checkinIntro =>
+      'One message with a deadline. The app marks it overdue here; the radio keeps no timer.';
+
+  @override
+  String checkinInMinutes(int minutes) {
+    return 'Deadline in $minutes min';
+  }
+
+  @override
+  String get checkinSend => 'Send check-in';
+
+  @override
+  String get checkinOneMessage =>
+      'A check-in is one message and does not repeat.';
+
+  @override
+  String checkinUntil(String time) {
+    return 'Deadline $time';
+  }
+
+  @override
+  String get checkinWatching => 'Waiting for an answer';
+
+  @override
+  String get checkinOverdue =>
+      'Overdue — the deadline passed and no answer came back.';
+
+  @override
+  String get checkinAnsweredDirect => 'Answered, by direct message.';
+
+  @override
+  String get checkinAnsweredChannel =>
+      'Answered on the channel (claimed, not a key).';
+
+  @override
+  String get checkinSent => 'Check-in sent. Nothing repeats.';
+
+  @override
+  String get checkinNeedsRadio =>
+      'A check-in needs a connected radio and the radio\'s name.';
 }

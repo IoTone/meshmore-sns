@@ -25,6 +25,7 @@ import 'package:meshmore_sns_app/meshcore/block_store.dart';
 import 'package:meshmore_sns_app/meshcore/background_keepalive.dart';
 import 'package:meshmore_sns_app/meshcore/city_lookup.dart';
 import 'package:meshmore_sns_app/meshcore/meshcore_controller.dart';
+import 'package:meshmore_sns_app/sos/sos_controller.dart';
 import 'package:meshmore_sns_app/bot/bot_controller.dart';
 import 'package:meshmore_sns_app/peer/peer_profiles.dart';
 import 'package:meshmore_sns_app/meshcore/discovered_node.dart';
@@ -174,6 +175,14 @@ void main() {
           ChangeNotifierProvider<ToolsController>(
             create: (BuildContext ctx) =>
                 ToolsController(ctx.read<MeshcoreController>()),
+          ),
+          // SOS and check-in (`meshmore-sos-spec.md`). App-scoped because the
+          // alarm has to keep repeating while the screen is closed: the
+          // foreground service keeps the isolate alive, and this owns the
+          // one-second schedule tick.
+          ChangeNotifierProvider<SosController>(
+            create: (BuildContext ctx) =>
+                SosController(mc: ctx.read<MeshcoreController>())..start(),
           ),
           // R61 — offline maps (issue #5): tile cache, region packs,
           // event layers. App-scoped so downloads run in the background.

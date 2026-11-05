@@ -7713,6 +7713,312 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Map tiles cannot be fetched. The bundled basemap and anything already on disk still draw; the rest of the app is unaffected.'**
   String get degradedMapOffline;
+
+  /// No description provided for @sosTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Emergency'**
+  String get sosTitle;
+
+  /// No description provided for @sosEntryTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Emergency alarm and check-in'**
+  String get sosEntryTooltip;
+
+  /// No description provided for @sosRepeatsOneHour.
+  ///
+  /// In en, this message translates to:
+  /// **'This repeats for up to one hour.'**
+  String get sosRepeatsOneHour;
+
+  /// No description provided for @sosGoesToChannel.
+  ///
+  /// In en, this message translates to:
+  /// **'Channel {name}'**
+  String sosGoesToChannel(String name);
+
+  /// No description provided for @sosGoesToContacts.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{No direct copies} =1{1 contact copy} other{{count} contact copies}}'**
+  String sosGoesToContacts(int count);
+
+  /// No description provided for @sosInRange.
+  ///
+  /// In en, this message translates to:
+  /// **'Nobody is notified unless they are in radio range.'**
+  String get sosInRange;
+
+  /// No description provided for @sosHoldToArm.
+  ///
+  /// In en, this message translates to:
+  /// **'Hold to raise the alarm'**
+  String get sosHoldToArm;
+
+  /// No description provided for @sosHoldRemaining.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep holding · {seconds}s'**
+  String sosHoldRemaining(int seconds);
+
+  /// No description provided for @sosHoldReleased.
+  ///
+  /// In en, this message translates to:
+  /// **'Released too early — nothing was sent.'**
+  String get sosHoldReleased;
+
+  /// No description provided for @sosNoRadio.
+  ///
+  /// In en, this message translates to:
+  /// **'No radio is connected, so nothing can be sent.'**
+  String get sosNoRadio;
+
+  /// No description provided for @sosNoIdentity.
+  ///
+  /// In en, this message translates to:
+  /// **'The radio has not reported its name, so an alarm has no callsign to carry.'**
+  String get sosNoIdentity;
+
+  /// No description provided for @sosWords.
+  ///
+  /// In en, this message translates to:
+  /// **'What is happening'**
+  String get sosWords;
+
+  /// No description provided for @sosWordsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Carried by every repeat, up to 96 bytes'**
+  String get sosWordsHint;
+
+  /// No description provided for @sosDestination.
+  ///
+  /// In en, this message translates to:
+  /// **'Goes to'**
+  String get sosDestination;
+
+  /// No description provided for @sosEmergencyPublicKey.
+  ///
+  /// In en, this message translates to:
+  /// **'The #emergency channel\'s key is derived from its name, so anyone who knows the name can compute it and read this.'**
+  String get sosEmergencyPublicKey;
+
+  /// No description provided for @sosEmergencyRepeat.
+  ///
+  /// In en, this message translates to:
+  /// **'The radio repeats each packet once about two minutes later; the rest of the schedule does not outlive the app.'**
+  String get sosEmergencyRepeat;
+
+  /// No description provided for @sosContactsNone.
+  ///
+  /// In en, this message translates to:
+  /// **'With no contact copies, a channel acknowledgement can never stop this alarm.'**
+  String get sosContactsNone;
+
+  /// No description provided for @sosActive.
+  ///
+  /// In en, this message translates to:
+  /// **'Alarm running'**
+  String get sosActive;
+
+  /// No description provided for @sosNextSend.
+  ///
+  /// In en, this message translates to:
+  /// **'Next in {seconds}s'**
+  String sosNextSend(int seconds);
+
+  /// No description provided for @sosElapsed.
+  ///
+  /// In en, this message translates to:
+  /// **'Running {minutes} min'**
+  String sosElapsed(int minutes);
+
+  /// No description provided for @sosRemaining.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} of {total} left'**
+  String sosRemaining(int count, int total);
+
+  /// No description provided for @sosImSafe.
+  ///
+  /// In en, this message translates to:
+  /// **'I\'m safe'**
+  String get sosImSafe;
+
+  /// No description provided for @sosImSafeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Sends one [SAFE] and stops the repeats.'**
+  String get sosImSafeHint;
+
+  /// No description provided for @sosStopRepeats.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop the repeats'**
+  String get sosStopRepeats;
+
+  /// No description provided for @sosStopHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Stops the repeats on this phone. Nothing is sent, so nobody is told.'**
+  String get sosStopHint;
+
+  /// No description provided for @sosDefaultWords.
+  ///
+  /// In en, this message translates to:
+  /// **'I need help'**
+  String get sosDefaultWords;
+
+  /// No description provided for @sosClaimedBy.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} claims to have seen this, on the channel. The alarm keeps going.'**
+  String sosClaimedBy(String name);
+
+  /// No description provided for @sosSeenBy.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} has seen this, by direct message.'**
+  String sosSeenBy(String name);
+
+  /// No description provided for @sosAckCounted.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} answered, but this alarm was not addressed to them.'**
+  String sosAckCounted(String name);
+
+  /// No description provided for @sosExpired.
+  ///
+  /// In en, this message translates to:
+  /// **'The alarm has stopped repeating. It is not resolved.'**
+  String get sosExpired;
+
+  /// No description provided for @sosCancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'The alarm is stopped.'**
+  String get sosCancelled;
+
+  /// No description provided for @sosAcknowledgedHeading.
+  ///
+  /// In en, this message translates to:
+  /// **'Seen'**
+  String get sosAcknowledgedHeading;
+
+  /// No description provided for @sosDismiss.
+  ///
+  /// In en, this message translates to:
+  /// **'Close'**
+  String get sosDismiss;
+
+  /// No description provided for @sosRefusedAlreadyActive.
+  ///
+  /// In en, this message translates to:
+  /// **'An alarm is already running.'**
+  String get sosRefusedAlreadyActive;
+
+  /// No description provided for @sosRefusedNoDestination.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose where the alarm goes first.'**
+  String get sosRefusedNoDestination;
+
+  /// No description provided for @sosRefusedNoWords.
+  ///
+  /// In en, this message translates to:
+  /// **'Say what is happening first.'**
+  String get sosRefusedNoWords;
+
+  /// No description provided for @sosRefusedTooLong.
+  ///
+  /// In en, this message translates to:
+  /// **'That text is too long to carry the callsign and the position. Shorten it.'**
+  String get sosRefusedTooLong;
+
+  /// No description provided for @sosRefusedHold.
+  ///
+  /// In en, this message translates to:
+  /// **'The hold is not finished.'**
+  String get sosRefusedHold;
+
+  /// No description provided for @checkinTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Check-in'**
+  String get checkinTitle;
+
+  /// No description provided for @checkinEntryTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Check-in'**
+  String get checkinEntryTooltip;
+
+  /// No description provided for @checkinIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'One message with a deadline. The app marks it overdue here; the radio keeps no timer.'**
+  String get checkinIntro;
+
+  /// No description provided for @checkinInMinutes.
+  ///
+  /// In en, this message translates to:
+  /// **'Deadline in {minutes} min'**
+  String checkinInMinutes(int minutes);
+
+  /// No description provided for @checkinSend.
+  ///
+  /// In en, this message translates to:
+  /// **'Send check-in'**
+  String get checkinSend;
+
+  /// No description provided for @checkinOneMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'A check-in is one message and does not repeat.'**
+  String get checkinOneMessage;
+
+  /// No description provided for @checkinUntil.
+  ///
+  /// In en, this message translates to:
+  /// **'Deadline {time}'**
+  String checkinUntil(String time);
+
+  /// No description provided for @checkinWatching.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for an answer'**
+  String get checkinWatching;
+
+  /// No description provided for @checkinOverdue.
+  ///
+  /// In en, this message translates to:
+  /// **'Overdue — the deadline passed and no answer came back.'**
+  String get checkinOverdue;
+
+  /// No description provided for @checkinAnsweredDirect.
+  ///
+  /// In en, this message translates to:
+  /// **'Answered, by direct message.'**
+  String get checkinAnsweredDirect;
+
+  /// No description provided for @checkinAnsweredChannel.
+  ///
+  /// In en, this message translates to:
+  /// **'Answered on the channel (claimed, not a key).'**
+  String get checkinAnsweredChannel;
+
+  /// No description provided for @checkinSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Check-in sent. Nothing repeats.'**
+  String get checkinSent;
+
+  /// No description provided for @checkinNeedsRadio.
+  ///
+  /// In en, this message translates to:
+  /// **'A check-in needs a connected radio and the radio\'s name.'**
+  String get checkinNeedsRadio;
 }
 
 class _AppLocalizationsDelegate
