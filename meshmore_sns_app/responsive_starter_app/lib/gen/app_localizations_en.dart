@@ -1067,6 +1067,11 @@ class AppLocalizationsEn extends AppLocalizations {
       'No position fix yet. This is a world view, not centred on you.';
 
   @override
+  String mapPackZoomOutside(int min, int max) {
+    return 'This pack covers zoom $min to $max. Coarser tiles stand in outside that range.';
+  }
+
+  @override
   String get mapHideTiles => 'Hide map tiles';
 
   @override

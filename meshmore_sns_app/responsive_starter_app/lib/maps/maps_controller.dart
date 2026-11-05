@@ -16,8 +16,17 @@ import 'map_fetch.dart';
 import 'map_pack.dart';
 import 'map_source.dart';
 import 'pmtiles.dart';
+import 'tile_ancestor.dart';
 import 'tile_math.dart';
 import 'tile_store.dart';
+
+/// A coarser tile that can stand in for one that is not on disk (R114).
+class TileAncestor {
+  const TileAncestor({required this.bytes, required this.coord});
+
+  final Uint8List bytes;
+  final TileAncestorCoord coord;
+}
 
 /// What [MapsController.loadTileDetailed] found.
 class TileLoad {
@@ -498,6 +507,63 @@ class MapsController extends ChangeNotifier {
     } on TileDropped {
       return null;
     }
+  }
+
+  /// R114 — the coarsest useful stand-in for a tile that is not on disk.
+  ///
+  /// Looks in the store only, never at the network: a miss here is a
+  /// *drawing* problem, and asking the server for six ancestors per visible
+  /// tile would turn one slow pan into a flood. The nearest ancestor wins, so
+  /// a z12 miss with z10 held draws at 1/4 scale rather than jumping to the
+  /// world tile.
+  Future<TileAncestor?> ancestorTile(MapSource src, int z, int x, int y,
+      {int maxUp = 6}) async {
+    final TileStore? store = _store;
+    if (store == null) return null;
+    await ready;
+    final int depth = math.min(maxUp, z);
+    for (int up = 1; up <= depth; up++) {
+      final TileAncestorCoord? a = ancestorOf(z, x, y, up);
+      if (a == null) continue;
+      final String key = TileStore.keyOf(src.id, a.z, a.x, a.y);
+      if (!store.has(key)) continue;
+      final Uint8List? held = await store.read(key);
+      if (held == null) continue;
+      return TileAncestor(bytes: held, coord: a);
+    }
+    return null;
+  }
+
+  /// The zoom range the packs of [src] cover, if any pack holds this source.
+  /// Null means "no pack", which is not the same as "this zoom is missing":
+  /// the map only explains a gap when a pack exists and the zoom is outside
+  /// it.
+  ({int minZoom, int maxZoom})? packZoomSpan(MapSource src) {
+    int? lo;
+    int? hi;
+    for (final MapPack p in packs) {
+      if (p.sourceId != src.id) continue;
+      lo = lo == null ? p.minZoom : math.min(lo, p.minZoom);
+      hi = hi == null ? p.maxZoom : math.max(hi, p.maxZoom);
+    }
+    return lo == null || hi == null ? null : (minZoom: lo, maxZoom: hi);
+  }
+
+  /// Keep the parents of these tiles on disk so a zoom out has something to
+  /// draw. Bounded and deduplicated: a viewport of forty tiles is eight
+  /// ancestors at the first level up, and nothing runs while a real tile is
+  /// fetching.
+  Future<int> prefetchParents(MapSource src, Iterable<(int, int, int)> tiles,
+      {int maxUp = 2, int limit = 12}) async {
+    if (!online || _gated(src.id) || usedBytes >= budgetBytes) return 0;
+    final Set<(int, int, int)> parents = <(int, int, int)>{};
+    for (final (int z, int x, int y) in tiles) {
+      for (int up = 1; up <= math.min(maxUp, z); up++) {
+        final TileAncestorCoord? a = ancestorOf(z, x, y, up);
+        if (a != null) parents.add((a.z, a.x, a.y));
+      }
+    }
+    return prefetch(src, parents, limit: limit);
   }
 
   void _scheduleTrim() {
