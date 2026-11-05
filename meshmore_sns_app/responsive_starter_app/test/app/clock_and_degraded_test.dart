@@ -45,6 +45,14 @@ void main() {
       expect(clockText(l, ClockReading.message(now.subtract(const Duration(days: 2)), now: now), now: now), contains('2'));
     });
 
+    test('a chat stamp is HH:MM, and a sender clock ahead is named instead', () {
+      final DateTime normal = now.subtract(const Duration(minutes: 4));
+      expect(clockStamp(l, normal, now: now), '11:56');
+      expect(
+          clockStamp(l, now.add(const Duration(minutes: 12)), now: now),
+          l.clockAhead('12'));
+    });
+
     test('only a reading that agrees with the phone may be shown as absolute',
         () {
       expect(ClockReading.phone(now).allowsAbsolute, isTrue);
@@ -59,9 +67,11 @@ void main() {
   group('degraded states', () {
     test('a healthy app has no banner', () {
       final DegradedState s = DegradedState.observe(
-        connected: true,
+        radioPaired: true,
         radioAnswering: true,
         storageFull: false,
+        hasLocation: true,
+        mapReachable: true,
         clockUnset: false,
         batteryMilliVolts: 4100,
       );
@@ -79,41 +89,73 @@ void main() {
       }
       expect(copy.values.toSet().length, DegradedMode.values.length,
           reason: 'two states share one sentence');
-      expect(copy[DegradedMode.radioDown], contains('stays readable'));
+      expect(copy[DegradedMode.radioAbsent], contains('stays readable'));
       expect(copy[DegradedMode.storageFull], contains('Nothing was deleted'));
     });
 
     test('all four can be active at once, most consequential first', () {
       final DegradedState s = DegradedState.observe(
-        connected: false,
+        radioPaired: false,
         radioAnswering: false,
         storageFull: true,
+        hasLocation: false,
+        mapReachable: false,
         clockUnset: true,
         batteryMilliVolts: kCriticalBatteryMilliVolts,
       );
-      expect(s.modes.length, 4);
+      // radioAbsent and radioSilent are exclusive by construction, so an
+      // absent radio yields six of the seven states.
+      expect(s.modes.length, 6);
+      expect(s.modes.contains(DegradedMode.radioSilent), isFalse);
       final String text = s.text(l);
-      expect(text.indexOf(l.degradedRadioDown),
+      expect(text.indexOf(l.degradedRadioAbsent),
           lessThan(text.indexOf(l.degradedStorageFull)));
       expect(text.indexOf(l.degradedStorageFull),
           lessThan(text.indexOf(l.degradedClockUnset)));
     });
 
+    test('a paired radio that stopped answering is not an absent one', () {
+      final DegradedState silent = DegradedState.observe(
+        radioPaired: true,
+        radioAnswering: false,
+        storageFull: false,
+        hasLocation: true,
+        mapReachable: true,
+        clockUnset: false,
+        batteryMilliVolts: 4100,
+      );
+      expect(silent.modes, <DegradedMode>{DegradedMode.radioSilent});
+      final DegradedState absent = DegradedState.observe(
+        radioPaired: false,
+        radioAnswering: false,
+        storageFull: false,
+        hasLocation: true,
+        mapReachable: true,
+        clockUnset: false,
+        batteryMilliVolts: 4100,
+      );
+      expect(absent.modes, <DegradedMode>{DegradedMode.radioAbsent});
+    });
+
     test('an unreported battery is not a critical battery', () {
       expect(
           DegradedState.observe(
-            connected: true,
+            radioPaired: true,
             radioAnswering: true,
             storageFull: false,
+            hasLocation: true,
+            mapReachable: true,
             clockUnset: false,
             batteryMilliVolts: 0,
           ).modes,
           isEmpty);
       expect(
           DegradedState.observe(
-            connected: true,
+            radioPaired: true,
             radioAnswering: true,
             storageFull: false,
+            hasLocation: true,
+            mapReachable: true,
             clockUnset: false,
             batteryMilliVolts: null,
           ).modes,

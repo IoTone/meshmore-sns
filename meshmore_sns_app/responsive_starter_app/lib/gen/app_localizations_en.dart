@@ -4442,10 +4442,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get degradedRadioDown =>
-      'No radio is answering. Everything already received stays readable; sending, telemetry and places wait until a radio connects.';
-
-  @override
   String get degradedStorageFull =>
       'This phone refused a write because storage is full. Nothing was deleted to make room; free space and history continues.';
 
@@ -4456,4 +4452,20 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get degradedBatteryCritical =>
       'The radio\'s battery is low enough that its transmissions may be cut. Charge it before relying on a long send.';
+
+  @override
+  String get degradedRadioAbsent =>
+      'No radio is connected. Everything already received stays readable; sending, telemetry and places wait until a radio connects.';
+
+  @override
+  String get degradedRadioSilent =>
+      'The radio is paired but has not answered. It may still have carried out the last request; check the radio before retrying.';
+
+  @override
+  String get degradedNoLocation =>
+      'Location is off, so distances, bearings and place reports have no fix. Everything else works.';
+
+  @override
+  String get degradedMapOffline =>
+      'Map tiles cannot be fetched. The bundled basemap and anything already on disk still draw; the rest of the app is unaffected.';
 }

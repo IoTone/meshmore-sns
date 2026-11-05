@@ -8,6 +8,7 @@ import '../gen/app_localizations.dart';
 import '../meshcore/chat_message.dart';
 import '../screens/delivery_status_icon.dart';
 import '../theme/mm_skin.dart';
+import '../util/clock_model.dart';
 
 /// R71 — one chat / DM row under a skin whose [MmType.sansLabels] is on
 /// (Studio). The older terminal "log" rows set every part in mono, which
@@ -56,12 +57,14 @@ class StudioMessageRow extends StatelessWidget {
   final Widget? echo;
   final VoidCallback onAction;
 
-  String get _time => '${message.at.hour.toString().padLeft(2, '0')}:'
-      '${message.at.minute.toString().padLeft(2, '0')}';
+  /// APP-N3 — absolute only while the sender's clock agrees with this phone;
+  /// see `clockStamp`.
+  String _time(AppLocalizations l) => clockStamp(l, message.at);
 
   @override
   Widget build(BuildContext context) {
     final MmSkin skin = context.skin;
+    final AppLocalizations l = AppLocalizations.of(context);
     final String mono = skin.type.monoFamily;
     final bool out = message.outgoing;
     final bool delivery = out && message.delivery != null;
@@ -84,7 +87,7 @@ class StudioMessageRow extends StatelessWidget {
               width: 56 * MediaQuery.textScalerOf(context).scale(1),
               child: Padding(
                 padding: const EdgeInsets.only(left: 6),
-                child: Text(_time,
+                child: Text(_time(l),
                     maxLines: 1,
                     softWrap: false,
                     style: TextStyle(

@@ -78,6 +78,19 @@ class ClockReading {
       '${unset ? ' unset' : ' ${at!.toIso8601String()}'})';
 }
 
+/// The stamp a message row shows: the sender's own `HH:MM` when that clock
+/// agrees with the reader's, and an explicit marker when it does not.
+///
+/// Absolute is what a reader expects beside a message, so the common case
+/// keeps its shape; the case that used to lie — a sender whose clock runs
+/// ahead, which used to print a time in the future — is named instead.
+String clockStamp(AppLocalizations l, DateTime at, {DateTime? now}) {
+  final ClockReading r = ClockReading.message(at, now: now ?? DateTime.now());
+  if (!r.allowsAbsolute) return clockText(l, r, now: now);
+  return '${at.hour.toString().padLeft(2, '0')}:'
+      '${at.minute.toString().padLeft(2, '0')}';
+}
+
 /// Renders a reading: relative age when the clock can be trusted, the
 /// "unknown" sentence when it cannot, and a marker when two clocks disagree
 /// by more than a minute.

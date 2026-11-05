@@ -7636,12 +7636,6 @@ abstract class AppLocalizations {
   /// **'sender\'s clock is {count} min ahead'**
   String clockAhead(String count);
 
-  /// No description provided for @degradedRadioDown.
-  ///
-  /// In en, this message translates to:
-  /// **'No radio is answering. Everything already received stays readable; sending, telemetry and places wait until a radio connects.'**
-  String get degradedRadioDown;
-
   /// No description provided for @degradedStorageFull.
   ///
   /// In en, this message translates to:
@@ -7659,6 +7653,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'The radio\'s battery is low enough that its transmissions may be cut. Charge it before relying on a long send.'**
   String get degradedBatteryCritical;
+
+  /// No description provided for @degradedRadioAbsent.
+  ///
+  /// In en, this message translates to:
+  /// **'No radio is connected. Everything already received stays readable; sending, telemetry and places wait until a radio connects.'**
+  String get degradedRadioAbsent;
+
+  /// No description provided for @degradedRadioSilent.
+  ///
+  /// In en, this message translates to:
+  /// **'The radio is paired but has not answered. It may still have carried out the last request; check the radio before retrying.'**
+  String get degradedRadioSilent;
+
+  /// No description provided for @degradedNoLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Location is off, so distances, bearings and place reports have no fix. Everything else works.'**
+  String get degradedNoLocation;
+
+  /// No description provided for @degradedMapOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'Map tiles cannot be fetched. The bundled basemap and anything already on disk still draw; the rest of the app is unaffected.'**
+  String get degradedMapOffline;
 }
 
 class _AppLocalizationsDelegate

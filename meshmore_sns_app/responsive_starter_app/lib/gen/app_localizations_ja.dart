@@ -4295,10 +4295,6 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get degradedRadioDown =>
-      '応答しているラジオがありません。受信済みの内容は読めます。送信・テレメトリ・プレイスはラジオが接続するまで待機します。';
-
-  @override
   String get degradedStorageFull =>
       'ストレージが満杯のため、この端末は書き込みを拒否しました。容量を空けるために削除はしていません。空き容量を確保すれば履歴は継続します。';
 
@@ -4309,4 +4305,20 @@ class AppLocalizationsJa extends AppLocalizations {
   @override
   String get degradedBatteryCritical =>
       'ラジオの電池残量が少なく、送信が途中で切れる可能性があります。長い送信の前に充電してください。';
+
+  @override
+  String get degradedRadioAbsent =>
+      'ラジオが接続されていません。受信済みの内容は読めます。送信・テレメトリ・プレイスはラジオが接続するまで待機します。';
+
+  @override
+  String get degradedRadioSilent =>
+      'ラジオはペアリングされていますが応答しません。直前の要求は実行済みの可能性があります。再試行の前にラジオを確認してください。';
+
+  @override
+  String get degradedNoLocation =>
+      '位置情報が無効のため、距離・方位・プレイス報告の基準がありません。それ以外は動作します。';
+
+  @override
+  String get degradedMapOffline =>
+      '地図タイルを取得できません。同梱のベースマップと端末に保存済みの範囲は表示され、他の機能には影響しません。';
 }

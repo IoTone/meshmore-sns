@@ -1883,12 +1883,18 @@
   "@clockDaysAgo": {"placeholders": {"count": {"type": "String"}}},
   "clockAhead": "sender's clock is {count} min ahead",
   "@clockAhead": {"placeholders": {"count": {"type": "String"}}},
-  "degradedRadioDown": "No radio is answering. Everything already received stays readable; sending, telemetry and places wait until a radio connects.",
-  "@degradedRadioDown": {},
   "degradedStorageFull": "This phone refused a write because storage is full. Nothing was deleted to make room; free space and history continues.",
   "@degradedStorageFull": {},
   "degradedClockUnset": "The radio's clock has never been set, so times it reports are shown as time unknown until it is.",
   "@degradedClockUnset": {},
   "degradedBatteryCritical": "The radio's battery is low enough that its transmissions may be cut. Charge it before relying on a long send.",
-  "@degradedBatteryCritical": {}
+  "@degradedBatteryCritical": {},
+  "degradedRadioAbsent": "No radio is connected. Everything already received stays readable; sending, telemetry and places wait until a radio connects.",
+  "@degradedRadioAbsent": {},
+  "degradedRadioSilent": "The radio is paired but has not answered. It may still have carried out the last request; check the radio before retrying.",
+  "@degradedRadioSilent": {},
+  "degradedNoLocation": "Location is off, so distances, bearings and place reports have no fix. Everything else works.",
+  "@degradedNoLocation": {},
+  "degradedMapOffline": "Map tiles cannot be fetched. The bundled basemap and anything already on disk still draw; the rest of the app is unaffected.",
+  "@degradedMapOffline": {}
 }
