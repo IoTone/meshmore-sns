@@ -5482,4 +5482,9 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get gridPurposeMeshbook =>
       'What this channel did in the last day: messages, replies, top voices.';
+
+  @override
+  String meshTreeCounts(String shown, String input, String total) {
+    return '$shown shown · $input in · $total total';
+  }
 }

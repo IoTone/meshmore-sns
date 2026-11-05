@@ -3772,5 +3772,19 @@
   "gridPurposeTree": "How nodes reach each other, from the routes they advertise.",
   "gridPurposeSnsCells": "Where messages came from, cooling over the last hour.",
   "gridPurposeElevation": "How high each node is, against landmarks.",
-  "gridPurposeMeshbook": "What this channel did in the last day: messages, replies, top voices."
+  "gridPurposeMeshbook": "What this channel did in the last day: messages, replies, top voices.",
+  "meshTreeCounts": "{shown} shown · {input} in · {total} total",
+  "@meshTreeCounts": {
+    "placeholders": {
+      "shown": {
+        "type": "String"
+      },
+      "input": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  }
 }

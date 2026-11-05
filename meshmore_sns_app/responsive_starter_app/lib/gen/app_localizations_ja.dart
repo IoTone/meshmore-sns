@@ -5270,4 +5270,9 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get gridPurposeMeshbook => 'このチャンネルの直近1日: メッセージ・返信・主な発言者。';
+
+  @override
+  String meshTreeCounts(String shown, String input, String total) {
+    return '表示 $shown · 入力 $input · 合計 $total';
+  }
 }

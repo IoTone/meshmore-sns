@@ -352,8 +352,7 @@ class _MeshTreeViewState extends State<MeshTreeView>
                   border: Border.all(color: cs.outline.withValues(alpha: .5)),
                 ),
                 child: Text(
-                  'shown $shownPeers · in $inputNodes · '
-                  'total $totalNodes',
+                  l.meshTreeCounts('$shownPeers', '$inputNodes', '$totalNodes'),
                   style: TextStyle(
                     color: cs.onSurfaceVariant,
                     fontSize: 10,

@@ -9290,6 +9290,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'What this channel did in the last day: messages, replies, top voices.'**
   String get gridPurposeMeshbook;
+
+  /// No description provided for @meshTreeCounts.
+  ///
+  /// In en, this message translates to:
+  /// **'{shown} shown · {input} in · {total} total'**
+  String meshTreeCounts(String shown, String input, String total);
 }
 
 class _AppLocalizationsDelegate
