@@ -95,7 +95,6 @@ void main() {
       'lib/screens/tools/tools_hub_screen.dart': 1,
       'lib/screens/tools/trace_screen.dart': 2,
       'lib/screens/voice_settings_screen.dart': 9,
-      'lib/screens/weather_view.dart': 19,
       'lib/shell/home_shell.dart': 3,
     };
     final List<String> drifted = <String>[];

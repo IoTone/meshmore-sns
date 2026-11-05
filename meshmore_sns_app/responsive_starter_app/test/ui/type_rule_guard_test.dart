@@ -123,7 +123,6 @@ void main() {
       'lib/screens/mesh_tree_view.dart': 3,
       'lib/screens/sns_cells_view.dart': 2,
       'lib/screens/voice_settings_screen.dart': 2,
-      'lib/screens/weather_view.dart': 4,
       'lib/splash/branded_splash_screen.dart': 1,
     };
     const Set<String> exempt = <String>{
