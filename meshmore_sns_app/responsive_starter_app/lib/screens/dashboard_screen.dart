@@ -98,7 +98,7 @@ class DashboardScreen extends StatelessWidget {
       // A stable marker for tests: the dashboard no longer carries a title
       // row of its own (the strip says which view is showing), so the body
       // has to identify itself.
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
+      padding: context.skin.space.padScreen,
       children: <Widget>[
         // APP-N4 — the states this view can observe: the link and the radio's
         // own battery. Location and tiles are observed where they are known,
@@ -131,9 +131,9 @@ class DashboardScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
             Expanded(child: _statusSlab(context, mc, l, cs, st, statusColor)),
-            const Padding(
-              padding: EdgeInsets.only(left: 4),
-              child: MmAudioToggle(),
+            Padding(
+              padding: EdgeInsets.only(left: context.skin.space.labelToControl),
+              child: const MmAudioToggle(),
             ),
           ],
         ),
@@ -143,7 +143,7 @@ class DashboardScreen extends StatelessWidget {
         if (pinned != null) pinned!,
 
         if (hasPeers) ...<Widget>[
-          SizedBox(height: context.skin.space.step(5)),
+          SizedBox(height: context.skin.space.sectionGap),
           Text(l.dashboardPeersInRange,
               style: mmSectionLabelStyle(context.skin)),
           // The one dominant numeral on the screen. It scales with the skin
@@ -159,7 +159,7 @@ class DashboardScreen extends StatelessWidget {
                     height: 1.0,
                     fontWeight: FontWeight.w300)),
           ),
-          const SizedBox(height: 4),
+          SizedBox(height: context.skin.space.labelToControl),
           Text(
               mc.deviceContactCount == null
                   ? l.dashboardKnownCount(mc.nodes.length)
@@ -216,7 +216,7 @@ class DashboardScreen extends StatelessWidget {
                 // Your own public key: the one identifier another operator
                 // needs to add you as a contact and DM you.
                 MyPubkeyLine(pubKeyHex: mc.ownPubKeyHex),
-                const SizedBox(height: 2),
+                SizedBox(height: context.skin.space.insideText),
                 Text(
                   '${selfInfo.frequencyMhz}MHz  '
                   'SF${selfInfo.spreadingFactor}  '
@@ -229,11 +229,11 @@ class DashboardScreen extends StatelessWidget {
                 ),
                 // R39 — the region answer stays on the dashboard. Matched
                 // against the radio's live tuple; "Custom" when none fits.
-                const SizedBox(height: 4),
+                SizedBox(height: context.skin.space.labelToControl),
                 _RegionRow(selfInfo: selfInfo, l: l, cs: cs),
               ],
               if (mc.pairedName != null) ...<Widget>[
-                const SizedBox(height: 6),
+                SizedBox(height: context.skin.space.step(3)),
                 Text(l.dashboardPaired(mc.pairedName!),
                     style: TextStyle(color: cs.onSurfaceVariant)),
               ],
@@ -526,7 +526,7 @@ class _LocationTile extends StatelessWidget {
             ),
           ],
         ),
-        const SizedBox(height: 4),
+        SizedBox(height: context.skin.space.labelToControl),
         if (loc != null)
           // Coordinates, and where they came from, on one line. The raw
           // wire values and the radio's advert-location policy are a
