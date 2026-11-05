@@ -10,6 +10,8 @@ import 'package:meshmore_sns_app/gen/app_localizations.dart';
 import 'package:meshmore_sns_app/l10n/locale_controller.dart';
 import 'package:meshmore_sns_app/meshcore/meshcore_controller.dart';
 import 'package:meshmore_sns_app/screens/dashboard_screen.dart';
+import 'package:meshmore_sns_app/screens/dashboards/nerv_dashboard.dart';
+import 'package:meshmore_sns_app/screens/dashboards/studio_dashboard.dart';
 import 'package:meshmore_sns_app/screens/dashboards/dashboard_host.dart';
 import 'package:meshmore_sns_app/screens/dashboards/my_pubkey_line.dart';
 import 'package:meshmore_sns_app/theme/mm_tokens.dart';
@@ -93,8 +95,12 @@ void main() {
     );
     final ThemeController tc = await _pump(t, mc);
 
-    // Default preset (SEELE) → the monolith dashboard.
+    // Default preset (STUDIO since the light/dark default change) → the tool
+    // dashboard. The key is on the host, so it is present for every skin; the
+    // skin widget is the signal.
     expect(find.byKey(dashboardKey), findsOneWidget);
+    expect(find.byType(StudioDashboard), findsOneWidget);
+    expect(find.byType(DashboardScreen), findsNothing);
     expect(find.text('NERV'), findsNothing);
 
     // Switch to NERV → the telemetry-grid re-imagining. A skin names itself
@@ -102,14 +108,16 @@ void main() {
     // signal, not a text badge the page header used to duplicate.
     await tc.setPreset(MmThemePreset.nerv);
     await t.pumpAndSettle();
-    expect(find.byKey(dashboardKey), findsNothing);
+    expect(find.byType(NervDashboard), findsOneWidget);
+    expect(find.byType(StudioDashboard), findsNothing);
     // The icon-only Bluetooth button is named for screen readers.
     expect(find.byTooltip('Device'), findsOneWidget);
 
-    // Back to SEELE → the monolith again.
+    // Back to SEELE → the monolith, still under the host's key.
     await tc.setPreset(MmThemePreset.seele);
     await t.pumpAndSettle();
     expect(find.byKey(dashboardKey), findsOneWidget);
+    expect(find.byType(DashboardScreen), findsOneWidget);
   });
 
   testWidgets('host shows the Hyperlocal radar when selected',

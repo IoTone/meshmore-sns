@@ -26,14 +26,20 @@ class DashboardHost extends StatelessWidget {
     // the dashboard's own content says what it is, so a second title row was
     // 56 dp of nothing above the first thing worth reading. Every other view
     // keeps its header, which carries that view's filters and actions.
-    return switch (context.skin.preset) {
-      MmThemePreset.nerv => const NervDashboard(),
-      MmThemePreset.hyperlocal => const HyperlocalDashboard(),
-      MmThemePreset.agHud => const AgHudDashboard(),
-      MmThemePreset.drPop => const DrPopDashboard(),
-      MmThemePreset.recon => const ReconDashboard(),
-      MmThemePreset.studio => const StudioDashboard(),
-      _ => const DashboardScreen(),
-    };
+    // The marker belongs to the host, not to one skin: `dashboardKey` used to
+    // sit on SEELE's body only, so once STUDIO became the default every test
+    // that identifies the dashboard by key found nothing.
+    return KeyedSubtree(
+      key: dashboardKey,
+      child: switch (context.skin.preset) {
+        MmThemePreset.nerv => const NervDashboard(),
+        MmThemePreset.hyperlocal => const HyperlocalDashboard(),
+        MmThemePreset.agHud => const AgHudDashboard(),
+        MmThemePreset.drPop => const DrPopDashboard(),
+        MmThemePreset.recon => const ReconDashboard(),
+        MmThemePreset.studio => const StudioDashboard(),
+        _ => const DashboardScreen(),
+      },
+    );
   }
 }

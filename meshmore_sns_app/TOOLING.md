@@ -132,8 +132,12 @@ the archive. Exit status is non-zero on any failure. Measured on the debug APK, 
 | x86_64/libdartjni.so | 0x4000 | 0x1c000 | 0x1f340 |
 | x86_64/libdatastore_shared_counter.so | 0x4000 | 0x8000 | — |
 
-`zipalign -P 16`: ok. No plugin ships a prebuilt library that fails the check; re-run the script after any dependency
-bump, because that is the only thing that can change it.
+`zipalign -P 16`: ok. **One shipped library fails: `libavif_native.so`** (all three ABIs) — `PT_LOAD` alignment
+`0x1000` and a `GNU_RELRO` range that runs past the next `PT_LOAD` once rounded to 16 KB. That is the recorded D11.2
+item with the 1 Feb 2027 deadline, and it is not fixable from this repository: the archive is prebuilt by the package,
+so the remedy is a vendor rebuild with `-Wl,-z,max-page-size=16384`, a different build of the same library, or dropping
+AVIF from the wire. Re-run `tool/check_16k.sh` after any dependency bump and on the **release** artifact, not only the
+debug one, because R8 and the ABI split change what ships.
 
 **Foreground service.** The manifest declares `com.pravera.flutter_foreground_task.service.ForegroundService` with
 `android:foregroundServiceType="connectedDevice"`, `android:exported="false"`, plus `FOREGROUND_SERVICE`,
@@ -142,6 +146,38 @@ hold a BLE peripheral connection for polling and sync (`lib/meshcore/background_
 Android-15 `dataSync` timeout. The notification's channel description states the reason ("Keeps the MeshCore radio
 connected so messages are received while the app is in the background"). `test/store/store_declarations_test.dart`
 keeps the declaration, the type and the copy from drifting.
+
+---
+
+## 3b. Release build
+
+A release is signed from `android/key.properties`, which is git-ignored. Create the key once and keep it out of the
+tree:
+
+```bash
+export JAVA_HOME=/home/ldeen/.local/jdk/jdk-21.0.12+8
+keytool -genkeypair -v -keystore android/upload.jks -keyalg RSA -keysize 4096 \
+  -validity 10000 -alias upload
+cp android/key.properties.example android/key.properties   # then fill in the four values
+```
+
+`android/app/build.gradle` reads those four values into `signingConfigs.release` and points the release build type at
+it. Without the file, a release task stops with a message naming it — deliberately: the Flutter template signs release
+with the debug key, which installs fine and is rejected by Play on the first upload. A debug build, a test run and
+`flutter run` are unaffected because the check runs on the task graph.
+
+```bash
+flutter build appbundle --release    # build/app/outputs/bundle/release/app-release.aab
+flutter build apk --release --target-platform android-arm64
+$ANDROID_HOME/build-tools/37.0.0/apksigner verify --print-certs \
+  build/app/outputs/flutter-apk/app-release.apk | head -3
+tool/check_16k.sh build/app/outputs/flutter-apk/app-release.apk
+```
+
+Verify the signer before every upload: a release signed with the debug certificate prints `CN=Android Debug`, and that
+line is the difference between an upload that is accepted and one that is not. `minifyEnabled` is not set for release,
+so R8 is off; turning it on needs keep rules for the AVIF native bridge, the FileProvider and the notification plugin,
+and a linked release build to prove them.
 
 ---
 

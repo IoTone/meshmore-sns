@@ -80,10 +80,6 @@ class DashboardScreen extends StatelessWidget {
     final OwnLocation? loc = mc.ownLocation;
 
     return ListView(
-      // A stable marker for tests: the dashboard no longer carries a title
-      // row of its own (the strip says which view is showing), so the body
-      // has to identify itself.
-      key: dashboardKey,
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
       children: <Widget>[
         // APP-N4 — the states this view can observe: the link and the radio's
