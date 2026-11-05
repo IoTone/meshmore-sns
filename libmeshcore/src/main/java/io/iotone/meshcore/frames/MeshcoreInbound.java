@@ -35,6 +35,7 @@ public sealed interface MeshcoreInbound
                 MsgSentFrame,
                 AckFrame,
                 ChannelMessageFrame,
+                ChannelDataFrame,
                 ChannelInfoFrame,
                 ContactMessageFrame,
                 AdvertFrame,
@@ -45,6 +46,7 @@ public sealed interface MeshcoreInbound
                 NoMoreMessagesFrame,
                 CustomVarsFrame,
                 MessagesWaitingFrame,
+                CliReplyFrame,
                 TelemetryResponseFrame,
                 UnsupportedFrame,
                 DecodeFailure {

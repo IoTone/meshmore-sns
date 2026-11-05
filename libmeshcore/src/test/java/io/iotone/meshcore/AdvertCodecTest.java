@@ -86,13 +86,42 @@ class AdvertCodecTest {
     }
 
     @Test
-    void truncatedAdvertFailsControlled() {
-        // Signature should be 64 bytes; give 10.
-        byte[] frame = new FrameBuilder()
-                .u8(0x80).zeros(32).u32(0).zeros(10).build();
+    void advertPushWithOnlyAPublicKeyIsABareAdvert() {
+        // PUSH_CODE_ADVERT carries just the public key of a node that was
+        // already known: writeFrame(out_frame, 1 + PUB_KEY_SIZE)
+        // (MyMesh.cpp:357-360). Treating that as a signed record would drop
+        // every over-the-air advert, so it decodes to "this node was heard".
+        byte[] pk = new byte[32];
+        Arrays.fill(pk, (byte) 5);
+        Advert a = assertInstanceOf(AdvertFrame.class,
+                MeshcoreFrameCodec.decode(new FrameBuilder().u8(0x80).raw(pk)
+                        .build())).advert();
+        assertTrue(a.isBare());
+        assertArrayEquals(pk, a.publicKey());
+    }
+
+    @Test
+    void advertPushTooShortToNameANodeFailsControlled() {
+        // Under a public key the push cannot say which node was heard, so it
+        // is a structural failure rather than a bare advert for nobody.
+        byte[] frame = new FrameBuilder().u8(0x80).zeros(31).build();
         DecodeFailure df = assertInstanceOf(DecodeFailure.class,
                 MeshcoreFrameCodec.decode(frame));
         assertEquals(DecodeErrorKind.TRUNCATED, df.error().kind());
+        assertEquals(0x80, df.error().opcode().getAsInt());
+    }
+
+    @Test
+    void advertPushWithAPartialRecordStillNamesTheNode() {
+        // Between a bare key and a whole signed record the payload is a
+        // partial record: it cannot be parsed as one, and it does name a
+        // node, so it decodes to a bare advert for that node.
+        byte[] frame = new FrameBuilder()
+                .u8(0x80).zeros(32).u32(0).zeros(10).build();
+        Advert a = assertInstanceOf(AdvertFrame.class,
+                MeshcoreFrameCodec.decode(frame)).advert();
+        assertTrue(a.isBare());
+        assertEquals(32, a.publicKey().length);
     }
 
     @Test

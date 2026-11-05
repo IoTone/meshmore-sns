@@ -20,10 +20,10 @@ package io.iotone.meshcore.codec;
  *       failure path, with a kind from this enum.</li>
  * </ul>
  *
- * <p>Hence the only failure kinds are structural: {@link #EMPTY} and
- * {@link #TRUNCATED}. An unknown opcode is <em>not</em> an error (it
- * becomes an {@code UnsupportedFrame}), so there is deliberately no
- * {@code UNSUPPORTED_OPCODE} kind.</p>
+ * <p>Hence the failure kinds are structural: {@link #EMPTY},
+ * {@link #TRUNCATED} and {@link #TRAILING_BYTES}. An unknown opcode is
+ * <em>not</em> an error (it becomes an {@code UnsupportedFrame}), so there
+ * is deliberately no {@code UNSUPPORTED_OPCODE} kind.</p>
  */
 public enum DecodeErrorKind {
 
@@ -31,5 +31,17 @@ public enum DecodeErrorKind {
     EMPTY,
 
     /** Frame ended before a required field could be read. */
-    TRUNCATED
+    TRUNCATED,
+
+    /**
+     * The frame's own layout was fully parsed and bytes were left over.
+     *
+     * <p>Every layout this codec models consumes the whole frame; a
+     * leftover means either two frames arrived in one buffer (a transport
+     * boundary error) or the radio sent a longer layout than the one
+     * recorded here. Both are worth surfacing instead of silently dropping
+     * the bytes — that silence is how a coalesced pair loses its second
+     * frame.</p>
+     */
+    TRAILING_BYTES
 }

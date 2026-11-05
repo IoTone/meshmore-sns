@@ -8,6 +8,16 @@ package io.iotone.meshcore;
  *
  * <p>Opcodes &#8805; 0x80 are asynchronous push notifications (not
  * direct replies to a command); see {@link #isPush()}.</p>
+ *
+ * <p>The split is the firmware's own, not a guess: every {@code PUSH_CODE_*}
+ * sits at 0x80 and above under the block comment "these are _pushed_ to
+ * client app at any time" ({@code examples/companion_radio/MyMesh.cpp:111-128}),
+ * and every {@code RESP_CODE_*} below it — including the two that arrive
+ * without the client asking for them in the same breath,
+ * {@link #CHANNEL_DATA_RECV} (a queued item drained by
+ * {@code CMD_SYNC_NEXT_MESSAGE}) and {@link #CLI_REPLY} (the output stream of
+ * {@code CMD_RUN_CLI_COMMAND}) — because both answer a command the client
+ * sent.</p>
  */
 public enum MeshcoreResponse {
 
@@ -58,6 +68,19 @@ public enum MeshcoreResponse {
 
     /** {@code RESP_CODE_CHANNEL_INFO} — reply to GET_CHANNEL. */
     CHANNEL_INFO(0x12),
+
+    /**
+     * {@code RESP_CODE_CHANNEL_DATA_RECV} (27) — a channel datagram,
+     * drained by {@code CMD_SYNC_NEXT_MESSAGE}. A reply, not a push: it is
+     * only ever the radio handing over an item the client asked for.
+     */
+    CHANNEL_DATA_RECV(0x1B),
+
+    /**
+     * {@code RESP_CODE_CLI_REPLY} (29) — one line of a
+     * {@code CMD_RUN_CLI_COMMAND}'s output.
+     */
+    CLI_REPLY(0x1D),
 
     /**
      * {@code RESP_CODE_CUSTOM_VARS} (21 = 0x15) — reply to

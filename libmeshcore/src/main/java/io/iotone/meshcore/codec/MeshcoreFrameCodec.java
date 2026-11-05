@@ -7,8 +7,10 @@ import io.iotone.meshcore.MeshcoreConstants;
 import io.iotone.meshcore.frames.AckFrame;
 import io.iotone.meshcore.frames.AdvertFrame;
 import io.iotone.meshcore.frames.BatteryStorageFrame;
+import io.iotone.meshcore.frames.ChannelDataFrame;
 import io.iotone.meshcore.frames.ChannelInfoFrame;
 import io.iotone.meshcore.frames.ChannelMessageFrame;
+import io.iotone.meshcore.frames.CliReplyFrame;
 import io.iotone.meshcore.frames.ContactFrame;
 import io.iotone.meshcore.frames.ContactMessageFrame;
 import io.iotone.meshcore.frames.ContactsStartFrame;
@@ -29,6 +31,7 @@ import io.iotone.meshcore.frames.TelemetryResponseFrame;
 import io.iotone.meshcore.frames.UnsupportedFrame;
 import io.iotone.meshcore.model.Advert;
 import io.iotone.meshcore.model.BatteryStorage;
+import io.iotone.meshcore.model.ChannelData;
 import io.iotone.meshcore.model.ChannelInfo;
 import io.iotone.meshcore.model.ChannelMessage;
 import io.iotone.meshcore.model.Contact;
@@ -37,6 +40,7 @@ import io.iotone.meshcore.model.DeviceInfo;
 import io.iotone.meshcore.model.MsgSent;
 import io.iotone.meshcore.model.RadioParams;
 import io.iotone.meshcore.model.RfLog;
+import io.iotone.meshcore.model.RxVia;
 import io.iotone.meshcore.model.SelfInfo;
 
 import java.nio.charset.StandardCharsets;
@@ -515,9 +519,24 @@ public final class MeshcoreFrameCodec {
     }
 
     /**
-     * {@code CMD_DEVICE_QUERY} (0x16): {@code 16 [app_target_ver]}.
+     * {@code CMD_DEVICE_QUERY} (0x16): {@code 16 [app_target_ver]}, asking
+     * for {@link MeshcoreConstants#APP_TARGET_PROTOCOL_VERSION} (3) — the
+     * version whose receive frames carry per-message SNR.
      *
-     * @param appTargetVer protocol version the app targets (normally 1)
+     * @return the encoded frame
+     */
+    public static byte[] deviceQuery() {
+        return deviceQuery(MeshcoreConstants.APP_TARGET_PROTOCOL_VERSION);
+    }
+
+    /**
+     * {@code CMD_DEVICE_QUERY} (0x16) with an explicit protocol version.
+     *
+     * <p>The firmware stores the byte verbatim and only branches on it for
+     * the V3 receive frames, so an older version is expressible for a
+     * client that deliberately wants the legacy shapes.</p>
+     *
+     * @param appTargetVer protocol version the app targets
      * @return the encoded frame
      */
     public static byte[] deviceQuery(int appTargetVer) {
@@ -595,150 +614,237 @@ public final class MeshcoreFrameCodec {
         }
         int op = frame[0] & 0xFF;
         ByteCursor c = new ByteCursor(frame);
+        MeshcoreInbound out;
         try {
             c.u8("opcode"); // consume opcode
-            switch (op) {
-                case 0x00: { // RESP_CODE_OK
-                    OptionalLong v = c.remaining() >= 4
-                            ? OptionalLong.of(c.u32("ok.value"))
-                            : OptionalLong.empty();
-                    return new OkFrame(v);
-                }
-                case 0x01: { // RESP_CODE_ERR
-                    OptionalInt code = c.remaining() >= 1
-                            ? OptionalInt.of(c.u8("err.code"))
-                            : OptionalInt.empty();
-                    return new ErrorFrame(code);
-                }
-                case 0x02: // RESP_CODE_CONTACTS_START
-                    return new ContactsStartFrame(c.u32("contactsStart.count"));
-
-                case 0x03: // RESP_CODE_CONTACT
-                    return new ContactFrame(decodeContact(c));
-
-                case 0x04: // RESP_CODE_END_OF_CONTACTS
-                    return new EndOfContactsFrame(c.u32("endOfContacts.lastMod"));
-
-                case 0x05: // RESP_CODE_SELF_INFO
-                    return new SelfInfoFrame(decodeSelfInfo(c));
-
-                case 0x06: // RESP_CODE_SENT
-                    return new MsgSentFrame(new MsgSent(
-                            c.u8("msgSent.floodFlag") != 0,
-                            c.u32("msgSent.expectedAck"),
-                            c.u32("msgSent.estTimeoutMs")));
-
-                case 0x07: // RESP_CODE_CONTACT_MSG_RECV (legacy)
-                    return new ContactMessageFrame(decodeContactMsg(c, false));
-
-                case 0x08: // RESP_CODE_CHANNEL_MSG_RECV (legacy)
-                    return new ChannelMessageFrame(decodeChannelMsg(c, false));
-
-                case 0x09: // RESP_CODE_CURR_TIME
-                    return new CurrentTimeFrame(c.u32("currentTime.unix"));
-
-                case 0x0A: // RESP_CODE_NO_MORE_MESSAGES
-                    return new NoMoreMessagesFrame();
-
-                case 0x0C: // RESP_CODE_BATT_AND_STORAGE
-                    return new BatteryStorageFrame(new BatteryStorage(
-                            c.u16("battery.mv"),
-                            c.u32("battery.usedKb"),
-                            c.u32("battery.totalKb")));
-
-                case 0x0D: // RESP_CODE_DEVICE_INFO
-                    return new DeviceInfoFrame(new DeviceInfo(
-                            c.u8("deviceInfo.fwVer"),
-                            c.u8("deviceInfo.maxContactsHalf") * 2,
-                            c.u8("deviceInfo.maxGroupChannels"),
-                            c.u32("deviceInfo.blePin"),
-                            c.fixedCString(
-                                    MeshcoreConstants.DEVICE_BUILD_DATE_SIZE,
-                                    "deviceInfo.build"),
-                            c.fixedCString(
-                                    MeshcoreConstants.DEVICE_MANUFACTURER_SIZE,
-                                    "deviceInfo.manufacturer"),
-                            c.fixedCString(
-                                    MeshcoreConstants.DEVICE_FIRMWARE_VERSION_SIZE,
-                                    "deviceInfo.fwVersion"),
-                            c.u8("deviceInfo.clientRepeat"),
-                            c.u8("deviceInfo.pathHashMode")));
-
-                case 0x10: // RESP_CODE_CONTACT_MSG_RECV_V3
-                    return new ContactMessageFrame(decodeContactMsg(c, true));
-
-                case 0x11: // RESP_CODE_CHANNEL_MSG_RECV_V3
-                    return new ChannelMessageFrame(decodeChannelMsg(c, true));
-
-                case 0x12: // RESP_CODE_CHANNEL_INFO
-                    return new ChannelInfoFrame(new ChannelInfo(
-                            c.u8("channelInfo.idx"),
-                            c.fixedCString(MeshcoreConstants.CHANNEL_NAME_SIZE,
-                                    "channelInfo.name"),
-                            c.bytes(MeshcoreConstants.CHANNEL_PSK_SIZE,
-                                    "channelInfo.psk")));
-
-                case 0x15: // RESP_CODE_CUSTOM_VARS
-                    return new CustomVarsFrame(decodeCustomVars(c));
-
-                case 0x80: { // PUSH_CODE_ADVERTISEMENT
-                    byte[] payload = c.atEnd()
-                            ? new byte[0]
-                            : c.bytes(c.remaining(), "advert.payload");
-                    // Firmware in the field pushes only the 32-byte public key
-                    // here, not a signed advert record. Parsing that as a
-                    // record fails on the timestamp and drops the push, so
-                    // every over-the-air advert is lost. Short payloads decode
-                    // to a BARE advert instead: which node was heard, and
-                    // nothing it cannot honestly claim.
-                    if (payload.length >= Advert.MIN_FULL_SIZE) {
-                        return new AdvertFrame(Advert.parse(payload));
-                    }
-                    if (payload.length >= MeshcoreConstants.PUB_KEY_SIZE) {
-                        return new AdvertFrame(Advert.bare(
-                                java.util.Arrays.copyOf(
-                                        payload, MeshcoreConstants.PUB_KEY_SIZE)));
-                    }
-                    return new AdvertFrame(Advert.bare(payload));
-                }
-                case 0x82: { // PUSH_CODE_ACK
-                    // Delivery ACK for a direct message: a 4-byte CRC tag
-                    // matching the MsgSent.expectedAck recorded on send.
-                    // Some firmware appends round-trip info; we only need
-                    // the leading tag. Guard for a short/empty payload.
-                    long ack = c.remaining() >= 4 ? c.u32("ack.crc") : 0;
-                    return new AckFrame(ack);
-                }
-                case 0x83: { // PUSH_CODE_MSGS_WAITING
-                    OptionalInt n = c.remaining() >= 1
-                            ? OptionalInt.of(c.u8("msgsWaiting.count"))
-                            : OptionalInt.empty();
-                    return new MessagesWaitingFrame(n);
-                }
-                case 0x88: { // PUSH_CODE_LOG_RX_DATA
-                    double snr = c.i8("rfLog.snr") / 4.0;
-                    int rssi = c.i8("rfLog.rssi");
-                    byte[] raw = c.atEnd()
-                            ? new byte[0]
-                            : c.bytes(c.remaining(), "rfLog.raw");
-                    return new RfLogFrame(new RfLog(snr, rssi, raw));
-                }
-                case 0x8B: { // PUSH_CODE_TELEMETRY_RESPONSE
-                    c.u8("telemetry.reserved");
-                    byte[] pub6 = c.bytes(
-                            MeshcoreConstants.PUB_KEY_PREFIX_SIZE,
-                            "telemetry.pubKey6");
-                    byte[] lpp = c.atEnd()
-                            ? new byte[0]
-                            : c.bytes(c.remaining(), "telemetry.lpp");
-                    return new TelemetryResponseFrame(pub6, lpp);
-                }
-                default:
-                    return new UnsupportedFrame(op, frame.clone());
-            }
+            out = decodeBody(c, op, frame);
         } catch (FrameTruncatedException e) {
             return new DecodeFailure(MeshcoreDecodeError.of(
                     DecodeErrorKind.TRUNCATED, e.getMessage(), op));
+        }
+        // Every layout below describes one whole frame, so a parsed frame
+        // must end exactly at the frame's end. A leftover is either a
+        // second frame in the same buffer (a transport-boundary error) or
+        // a length the recorded layout does not explain; both are
+        // reported, never dropped.
+        if (out instanceof UnsupportedFrame || out instanceof DecodeFailure) {
+            return out;
+        }
+        if (c.remaining() != 0) {
+            return new DecodeFailure(MeshcoreDecodeError.of(
+                    DecodeErrorKind.TRAILING_BYTES,
+                    c.remaining() + " byte(s) left after a complete "
+                            + out.getClass().getSimpleName(),
+                    op));
+        }
+        return out;
+    }
+
+    /**
+     * Decodes one frame body. The opcode byte has already been consumed.
+     *
+     * @param c     cursor positioned after the opcode
+     * @param op    the opcode value
+     * @param frame the whole frame, preserved for {@link UnsupportedFrame}
+     * @return the decoded inbound value
+     */
+    private static MeshcoreInbound decodeBody(
+            ByteCursor c, int op, byte[] frame) {
+        switch (op) {
+            case 0x00: { // RESP_CODE_OK
+                OptionalLong v = c.remaining() >= 4
+                        ? OptionalLong.of(c.u32("ok.value"))
+                        : OptionalLong.empty();
+                return new OkFrame(v);
+            }
+            case 0x01: { // RESP_CODE_ERR
+                OptionalInt code = c.remaining() >= 1
+                        ? OptionalInt.of(c.u8("err.code"))
+                        : OptionalInt.empty();
+                return new ErrorFrame(code);
+            }
+            case 0x02: // RESP_CODE_CONTACTS_START
+                return new ContactsStartFrame(c.u32("contactsStart.count"));
+
+            case 0x03: // RESP_CODE_CONTACT
+                return new ContactFrame(decodeContact(c));
+
+            case 0x04: // RESP_CODE_END_OF_CONTACTS
+                return new EndOfContactsFrame(c.u32("endOfContacts.lastMod"));
+
+            case 0x05: // RESP_CODE_SELF_INFO
+                return new SelfInfoFrame(decodeSelfInfo(c));
+
+            case 0x06: // RESP_CODE_SENT
+                return new MsgSentFrame(new MsgSent(
+                        c.u8("msgSent.floodFlag") != 0,
+                        c.u32("msgSent.expectedAck"),
+                        c.u32("msgSent.estTimeoutMs")));
+
+            case 0x07: // RESP_CODE_CONTACT_MSG_RECV (legacy)
+                return new ContactMessageFrame(decodeContactMsg(c, false));
+
+            case 0x08: // RESP_CODE_CHANNEL_MSG_RECV (legacy)
+                return new ChannelMessageFrame(decodeChannelMsg(c, false));
+
+            case 0x09: // RESP_CODE_CURR_TIME
+                return new CurrentTimeFrame(c.u32("currentTime.unix"));
+
+            case 0x0A: // RESP_CODE_NO_MORE_MESSAGES
+                return new NoMoreMessagesFrame();
+
+            case 0x0C: // RESP_CODE_BATT_AND_STORAGE
+                return new BatteryStorageFrame(new BatteryStorage(
+                        c.u16("battery.mv"),
+                        c.u32("battery.usedKb"),
+                        c.u32("battery.totalKb")));
+
+            case 0x0D: // RESP_CODE_DEVICE_INFO
+                return new DeviceInfoFrame(new DeviceInfo(
+                        c.u8("deviceInfo.fwVer"),
+                        c.u8("deviceInfo.maxContactsHalf") * 2,
+                        c.u8("deviceInfo.maxGroupChannels"),
+                        c.u32("deviceInfo.blePin"),
+                        c.fixedCString(
+                                MeshcoreConstants.DEVICE_BUILD_DATE_SIZE,
+                                "deviceInfo.build"),
+                        c.fixedCString(
+                                MeshcoreConstants.DEVICE_MANUFACTURER_SIZE,
+                                "deviceInfo.manufacturer"),
+                        c.fixedCString(
+                                MeshcoreConstants.DEVICE_FIRMWARE_VERSION_SIZE,
+                                "deviceInfo.fwVersion"),
+                        c.u8("deviceInfo.clientRepeat"),
+                        c.u8("deviceInfo.pathHashMode")));
+
+            case 0x10: // RESP_CODE_CONTACT_MSG_RECV_V3
+                return new ContactMessageFrame(decodeContactMsg(c, true));
+
+            case 0x11: // RESP_CODE_CHANNEL_MSG_RECV_V3
+                return new ChannelMessageFrame(decodeChannelMsg(c, true));
+
+            case 0x12: { // RESP_CODE_CHANNEL_INFO
+                // The reply carries 16 bytes of secret for an ordinary
+                // request and 32 when the request asked for the full
+                // secret with a third byte of 32 (MyMesh.cpp:1715-1721
+                // writes 16). Only the frame length says which, so read
+                // whatever follows the name and reject a width the
+                // firmware does not send.
+                int infoIdx = c.u8("channelInfo.idx");
+                String infoName = c.fixedCString(
+                        MeshcoreConstants.CHANNEL_NAME_SIZE,
+                        "channelInfo.name");
+                byte[] infoPsk = c.atEnd()
+                        ? new byte[0]
+                        : c.bytes(c.remaining(), "channelInfo.psk");
+                if (infoPsk.length != MeshcoreConstants.CHANNEL_PSK_SIZE
+                        && infoPsk.length
+                                != MeshcoreConstants.CHANNEL_PSK_SIZE_FULL) {
+                    return new DecodeFailure(MeshcoreDecodeError.of(
+                            DecodeErrorKind.TRUNCATED,
+                            "CHANNEL_INFO secret is " + infoPsk.length
+                                    + " bytes; the radio sends "
+                                    + MeshcoreConstants.CHANNEL_PSK_SIZE
+                                    + " or "
+                                    + MeshcoreConstants.CHANNEL_PSK_SIZE_FULL,
+                            op));
+                }
+                return new ChannelInfoFrame(
+                        new ChannelInfo(infoIdx, infoName, infoPsk));
+            }
+
+            case 0x15: // RESP_CODE_CUSTOM_VARS
+                return new CustomVarsFrame(decodeCustomVars(c));
+
+            case 0x80: { // PUSH_CODE_ADVERTISEMENT
+                byte[] payload = c.atEnd()
+                        ? new byte[0]
+                        : c.bytes(c.remaining(), "advert.payload");
+                // Firmware in the field pushes only the 32-byte public key
+                // here, not a signed advert record
+                // (MyMesh.cpp:357-360 writes 1 + PUB_KEY_SIZE). Parsing
+                // that as a record fails on the timestamp and drops the
+                // push, so every over-the-air advert is lost. A payload
+                // that carries the key decodes to a BARE advert instead:
+                // which node was heard, and nothing it cannot honestly
+                // claim. One too short to name a node identifies nothing
+                // and is a controlled failure.
+                if (payload.length >= Advert.MIN_FULL_SIZE) {
+                    return new AdvertFrame(Advert.parse(payload));
+                }
+                if (payload.length < MeshcoreConstants.PUB_KEY_SIZE) {
+                    return new DecodeFailure(MeshcoreDecodeError.of(
+                            DecodeErrorKind.TRUNCATED,
+                            "advert push is " + payload.length
+                                    + " bytes; a node is named by its "
+                                    + MeshcoreConstants.PUB_KEY_SIZE
+                                    + "-byte public key",
+                            op));
+                }
+                return new AdvertFrame(Advert.bare(
+                        java.util.Arrays.copyOf(
+                                payload, MeshcoreConstants.PUB_KEY_SIZE)));
+            }
+            case 0x82: { // PUSH_CODE_SEND_CONFIRMED
+                // Delivery ACK for a direct message: a 4-byte CRC tag
+                // matching the MsgSent.expectedAck recorded on send,
+                // then the round-trip time the firmware measures
+                // (MyMesh.cpp:418-422 writes all 9 bytes). Guard for a
+                // short payload that carries only the tag.
+                long ack = c.remaining() >= 4 ? c.u32("ack.crc") : 0;
+                OptionalLong rtt = c.remaining() >= 4
+                        ? OptionalLong.of(c.u32("ack.rtt"))
+                        : OptionalLong.empty();
+                return new AckFrame(ack, rtt);
+            }
+            case 0x83: { // PUSH_CODE_MSGS_WAITING
+                OptionalInt n = c.remaining() >= 1
+                        ? OptionalInt.of(c.u8("msgsWaiting.count"))
+                        : OptionalInt.empty();
+                return new MessagesWaitingFrame(n);
+            }
+            case 0x88: { // PUSH_CODE_LOG_RX_DATA
+                double snr = c.i8("rfLog.snr") / 4.0;
+                int rssi = c.i8("rfLog.rssi");
+                byte[] raw = c.atEnd()
+                        ? new byte[0]
+                        : c.bytes(c.remaining(), "rfLog.raw");
+                return new RfLogFrame(new RfLog(snr, rssi, raw));
+            }
+            case 0x8B: { // PUSH_CODE_TELEMETRY_RESPONSE
+                c.u8("telemetry.reserved");
+                byte[] pub6 = c.bytes(
+                        MeshcoreConstants.PUB_KEY_PREFIX_SIZE,
+                        "telemetry.pubKey6");
+                byte[] lpp = c.atEnd()
+                        ? new byte[0]
+                        : c.bytes(c.remaining(), "telemetry.lpp");
+                return new TelemetryResponseFrame(pub6, lpp);
+            }
+            case 0x1B: { // RESP_CODE_CHANNEL_DATA_RECV
+                double cdSnr = MeshcoreConstants.snrByteToDb(c.u8("chdata.snr"));
+                // The firmware leaves this byte reserved on a
+                // single-profile radio and reports the receiving
+                // profile in it while a second profile is on: 0xA0
+                // primary, 0xA1 radio2 (onChannelDataRecv,
+                // MyMesh.cpp:2423).
+                RxVia cdVia = RxVia.fromWireByte(c.u8("chdata.via"));
+                c.u8("chdata.reserved2");
+                int cdIdx = c.u8("chdata.channel");
+                int cdPath = c.u8("chdata.pathLen");
+                int cdType = c.u16("chdata.dataType");
+                int cdLen = c.u8("chdata.len");
+                byte[] cdData = c.bytes(cdLen, "chdata.data");
+                return new ChannelDataFrame(new ChannelData(
+                        cdSnr, cdIdx, cdPath, cdType, cdData, cdVia));
+            }
+
+            case 0x1D: // RESP_CODE_CLI_REPLY
+                return new CliReplyFrame(
+                        c.atEnd() ? "" : c.utf8ToEnd("cliReply.text"));
+
+            default:
+                return new UnsupportedFrame(op, frame.clone());
         }
     }
 

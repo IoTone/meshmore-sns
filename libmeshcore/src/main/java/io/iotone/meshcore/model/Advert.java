@@ -100,6 +100,9 @@ public record Advert(
      * <p>A bare advert carries no timestamp, no signature and no app_data, so
      * it can be neither verified nor located. It says exactly one thing —
      * which node was heard, and by implication that it was heard now.</p>
+     *
+     * @param publicKey the heard node's 32-byte public key
+     * @return an advert carrying the key and nothing else
      */
     public static Advert bare(byte[] publicKey) {
         return new Advert(
@@ -107,11 +110,24 @@ public record Advert(
                 0, null, null, OptionalInt.empty(), OptionalInt.empty(), null);
     }
 
-    /** True when this came from a bare push and carries no signed record. */
+    /**
+     * True when this came from a bare push and carries no signed record.
+     *
+     * @return {@code true} when no signature was carried
+     */
     public boolean isBare() {
         return signature.length == 0;
     }
 
+    /**
+     * Parses a full advert record: {@code pub_key(32) ‖ ts(4 LE) ‖
+     * sig(64) ‖ app_data}.
+     *
+     * @param payload the advert record bytes
+     * @return the parsed advert
+     * @throws FrameTruncatedException when the payload is shorter than a
+     *                                 public key, timestamp and signature
+     */
     public static Advert parse(byte[] payload) {
         ByteCursor c = new ByteCursor(payload);
         byte[] pubKey = c.bytes(MeshcoreConstants.PUB_KEY_SIZE, "advert.pubKey");
