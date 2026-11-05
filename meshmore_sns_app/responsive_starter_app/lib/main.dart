@@ -26,6 +26,8 @@ import 'package:meshmore_sns_app/peer/peer_profiles.dart';
 import 'package:meshmore_sns_app/perms/first_run_controller.dart';
 import 'package:meshmore_sns_app/perms/location_service.dart';
 import 'package:meshmore_sns_app/perms/permissions_service.dart';
+import 'package:meshmore_sns_app/places/place_report_budget.dart';
+import 'package:meshmore_sns_app/places/place_store.dart';
 import 'package:meshmore_sns_app/screens/first_run_intro_screen.dart';
 import 'package:meshmore_sns_app/splash/branded_splash_screen.dart';
 import 'package:meshmore_sns_app/theme/theme_controller.dart';
@@ -130,6 +132,15 @@ void main() {
           ),
           ChangeNotifierProvider<LocaleController>(
             create: (_) => LocaleController()..load(),
+          ),
+          // Places (meshmore-places-spec.md): reports live in one app-scoped
+          // store, so the map layer, the history list, the chat echo and
+          // search cannot disagree about what exists. The budget is the
+          // send-side rate limit and is app-scoped for the same reason: it
+          // must survive leaving the sheet that charged it.
+          ChangeNotifierProvider<PlaceStore>(create: (_) => PlaceStore()..load()),
+          Provider<PlaceReportBudget>(
+            create: (_) => PlaceReportBudget(clock: DateTime.now),
           ),
           // R36 — auto-publish location. Owns its own
           // shared_preferences-backed settings + the periodic

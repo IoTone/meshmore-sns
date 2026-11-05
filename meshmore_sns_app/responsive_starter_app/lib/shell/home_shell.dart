@@ -17,6 +17,8 @@ import '../screens/chat_screen.dart';
 import 'boot_overlay.dart';
 import 'horizontal_drag_claim.dart';
 import '../screens/dashboards/dashboard_host.dart';
+import '../places/place_bridge.dart';
+import '../places/place_store.dart';
 import '../screens/grid_screen.dart';
 import '../screens/map_screen.dart';
 import '../screens/nodes_screen.dart';
@@ -79,6 +81,7 @@ class _HomeShellState extends State<HomeShell>
   int _index = 0;
   CueBridge? _cueBridge;
   BotBridge? _botBridge;
+  PlaceBridge? _placeBridge;
 
   @override
   void initState() {
@@ -100,6 +103,12 @@ class _HomeShellState extends State<HomeShell>
       context.read<MeshcoreController>(),
       context.read<BotController>(),
     );
+    // Places arrive on the same two streams as everything else and are stored
+    // wherever the user is, so the map has them when it is next opened.
+    _placeBridge = PlaceBridge(
+      context.read<MeshcoreController>(),
+      context.read<PlaceStore>(),
+    );
     // Owns splash teardown now (replaces the old demo home).
     WidgetsBinding.instance.addPostFrameCallback((_) {
       FlutterNativeSplash.remove();
@@ -113,6 +122,7 @@ class _HomeShellState extends State<HomeShell>
     WidgetsBinding.instance.removeObserver(this);
     _cueBridge?.dispose();
     _botBridge?.dispose();
+    _placeBridge?.dispose();
     _pc.dispose();
     super.dispose();
   }

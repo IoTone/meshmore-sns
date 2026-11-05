@@ -20,6 +20,12 @@ import '../maps/tile_math.dart';
 import '../maps/vector_basemap.dart';
 import '../meshcore/discovered_node.dart';
 import '../meshcore/meshcore_controller.dart';
+import '../places/place.dart';
+import '../places/place_create_sheet.dart';
+import '../places/place_detail_sheet.dart';
+import '../places/place_layer.dart';
+import '../places/place_store.dart';
+import '../places/place_wiring.dart';
 import '../theme/mm_skin.dart';
 import '../util/lora_range.dart';
 import 'node_detail_sheet.dart';
@@ -197,6 +203,24 @@ class _StreetMapViewState extends State<StreetMapView> {
     _map.move(LatLng(lat, lon), _zoom);
   }
 
+  /// Drops a pin where the long-press landed and reports it on the active
+  /// channel. The budget, the label check and the identity check all answer
+  /// inside the sheet, so a refusal is explained where the user typed.
+  Future<void> _createPlace(BuildContext ctx, LatLng point) async {
+    final PlaceStore store = ctx.read<PlaceStore>();
+    final Place? place = await PlaceCreateSheet.show(
+      ctx,
+      latitude: point.latitude,
+      longitude: point.longitude,
+      composer: placeComposerOf(ctx),
+    );
+    if (!mounted || place == null) return;
+    store.markSeen(place.id);
+    ScaffoldMessenger.maybeOf(context)?.showSnackBar(
+      SnackBar(content: Text(AppLocalizations.of(context).placeSent)),
+    );
+  }
+
   Future<void> _showDetail(
       BuildContext ctx, MeshcoreController mc, DiscoveredNode n) {
     return showModalBottomSheet<void>(
@@ -315,6 +339,12 @@ class _StreetMapViewState extends State<StreetMapView> {
               ),
               onPositionChanged: (MapCamera cam, bool hasGesture) =>
                   _scheduleWarm(),
+              // A long-press drops a place where the finger is: the map point
+              // is what the user aimed at, so the report travels at exact
+              // precision rather than the snapped default that belongs to
+              // "here" (meshmore-places-spec.md §9).
+              onLongPress: (TapPosition _, LatLng point) =>
+                  _createPlace(context, point),
               backgroundColor: vectorDrawn
                   ? kVectorBasemapBackground
                   : cs.surfaceContainerHighest,
@@ -398,6 +428,25 @@ class _StreetMapViewState extends State<StreetMapView> {
                     ),
                   ],
                 ),
+              // Places (meshmore-places-spec.md §10): live reports only, a
+              // countdown under each pin, neutral once opened, clustered
+              // where pins would overlap.
+              ListenableBuilder(
+                listenable: context.read<PlaceStore>(),
+                builder: (BuildContext c, Widget? _) => PlaceLayer(
+                  store: context.read<PlaceStore>(),
+                  onOpen: (Place place) => PlaceDetailSheet.show(
+                    c,
+                    place: place,
+                    store: context.read<PlaceStore>(),
+                    composer: placeComposerOf(c),
+                  ),
+                  onClusterTap: (LatLng centre) => _map.move(
+                    centre,
+                    (_zoom + 2).clamp(_minZoom, _zoomMax),
+                  ),
+                ),
+              ),
               // Peer markers.
               MarkerLayer(
                 markers: <Marker>[

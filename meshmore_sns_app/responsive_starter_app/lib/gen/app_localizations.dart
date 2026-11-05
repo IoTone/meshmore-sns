@@ -6801,6 +6801,360 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Delete'**
   String get networksDeleteConfirm;
+
+  /// No description provided for @placeCreateTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Drop a place'**
+  String get placeCreateTitle;
+
+  /// No description provided for @placeCreateAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Report'**
+  String get placeCreateAction;
+
+  /// No description provided for @placeLabelField.
+  ///
+  /// In en, this message translates to:
+  /// **'What is here?'**
+  String get placeLabelField;
+
+  /// No description provided for @placeLabelHint.
+  ///
+  /// In en, this message translates to:
+  /// **'A few words, 60 characters at most'**
+  String get placeLabelHint;
+
+  /// No description provided for @placeTypeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Type'**
+  String get placeTypeTitle;
+
+  /// No description provided for @placeTtlTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'How long does it last?'**
+  String get placeTtlTitle;
+
+  /// No description provided for @placePrecisionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Precision'**
+  String get placePrecisionTitle;
+
+  /// No description provided for @placePrecisionExact.
+  ///
+  /// In en, this message translates to:
+  /// **'Exact'**
+  String get placePrecisionExact;
+
+  /// No description provided for @placePrecision100.
+  ///
+  /// In en, this message translates to:
+  /// **'About 100 m'**
+  String get placePrecision100;
+
+  /// No description provided for @placePrecision1000.
+  ///
+  /// In en, this message translates to:
+  /// **'About 1 km'**
+  String get placePrecision1000;
+
+  /// No description provided for @placeSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Place reported. It expires on its own.'**
+  String get placeSent;
+
+  /// No description provided for @placeBudgetRefused.
+  ///
+  /// In en, this message translates to:
+  /// **'You have sent {n} in the last hour. The next one can go at {time}.'**
+  String placeBudgetRefused(int n, String time);
+
+  /// No description provided for @placeNoIdentity.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect a radio first: a place is reported as you.'**
+  String get placeNoIdentity;
+
+  /// No description provided for @placeLabelEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'A place needs a few words.'**
+  String get placeLabelEmpty;
+
+  /// No description provided for @placeLabelTooLong.
+  ///
+  /// In en, this message translates to:
+  /// **'A label is at most 60 characters.'**
+  String get placeLabelTooLong;
+
+  /// No description provided for @placeLabelCarriesTtl.
+  ///
+  /// In en, this message translates to:
+  /// **'A label cannot contain a TTL token.'**
+  String get placeLabelCarriesTtl;
+
+  /// No description provided for @placeDetailTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Place'**
+  String get placeDetailTitle;
+
+  /// No description provided for @placeExpiresIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Expires in {value}'**
+  String placeExpiresIn(String value);
+
+  /// No description provided for @placeExpired.
+  ///
+  /// In en, this message translates to:
+  /// **'Expired'**
+  String get placeExpired;
+
+  /// No description provided for @placeReportedBy.
+  ///
+  /// In en, this message translates to:
+  /// **'Reported by {name}, {time}'**
+  String placeReportedBy(String name, String time);
+
+  /// No description provided for @placeTimeUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'time unknown'**
+  String get placeTimeUnknown;
+
+  /// No description provided for @placeSourceGps.
+  ///
+  /// In en, this message translates to:
+  /// **'from the sender\'s GPS'**
+  String get placeSourceGps;
+
+  /// No description provided for @placeSourcePhone.
+  ///
+  /// In en, this message translates to:
+  /// **'from their phone'**
+  String get placeSourcePhone;
+
+  /// No description provided for @placeSourcePinned.
+  ///
+  /// In en, this message translates to:
+  /// **'placed by hand'**
+  String get placeSourcePinned;
+
+  /// No description provided for @placeSourceReceived.
+  ///
+  /// In en, this message translates to:
+  /// **'received over the mesh'**
+  String get placeSourceReceived;
+
+  /// No description provided for @placeSourceInferred.
+  ///
+  /// In en, this message translates to:
+  /// **'inferred'**
+  String get placeSourceInferred;
+
+  /// No description provided for @placeUnkeyedIdentity.
+  ///
+  /// In en, this message translates to:
+  /// **'Identity is a name on a channel, not a key.'**
+  String get placeUnkeyedIdentity;
+
+  /// No description provided for @placeUnknownType.
+  ///
+  /// In en, this message translates to:
+  /// **'Sent as {token}'**
+  String placeUnknownType(String token);
+
+  /// No description provided for @placeConfirmAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Still there'**
+  String get placeConfirmAction;
+
+  /// No description provided for @placeRefuteAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Gone'**
+  String get placeRefuteAction;
+
+  /// No description provided for @placeConfirmations.
+  ///
+  /// In en, this message translates to:
+  /// **'{n} confirmed'**
+  String placeConfirmations(int n);
+
+  /// No description provided for @placeConfirmationsMore.
+  ///
+  /// In en, this message translates to:
+  /// **'+{n} more'**
+  String placeConfirmationsMore(int n);
+
+  /// No description provided for @placeClaimedConfirmations.
+  ///
+  /// In en, this message translates to:
+  /// **'{n} claimed'**
+  String placeClaimedConfirmations(int n);
+
+  /// No description provided for @placeHiddenByRefutation.
+  ///
+  /// In en, this message translates to:
+  /// **'Hidden here after a refutation from a known key'**
+  String get placeHiddenByRefutation;
+
+  /// No description provided for @placeDirections.
+  ///
+  /// In en, this message translates to:
+  /// **'Directions'**
+  String get placeDirections;
+
+  /// No description provided for @placeDirectionsCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Coordinates copied'**
+  String get placeDirectionsCopied;
+
+  /// No description provided for @placePhotoPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Photo not fetched'**
+  String get placePhotoPending;
+
+  /// No description provided for @placeCountdown.
+  ///
+  /// In en, this message translates to:
+  /// **'{value} left'**
+  String placeCountdown(String value);
+
+  /// No description provided for @placeCluster.
+  ///
+  /// In en, this message translates to:
+  /// **'{n} places'**
+  String placeCluster(int n);
+
+  /// No description provided for @placeHistoryTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Places'**
+  String get placeHistoryTitle;
+
+  /// No description provided for @placeHistoryEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No places yet. Long-press the map to report one.'**
+  String get placeHistoryEmpty;
+
+  /// No description provided for @placeStateLive.
+  ///
+  /// In en, this message translates to:
+  /// **'live'**
+  String get placeStateLive;
+
+  /// No description provided for @placeStateExpired.
+  ///
+  /// In en, this message translates to:
+  /// **'expired'**
+  String get placeStateExpired;
+
+  /// No description provided for @placeSearchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search label or reporter'**
+  String get placeSearchHint;
+
+  /// No description provided for @placeKeyedOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Keyed places only'**
+  String get placeKeyedOnly;
+
+  /// No description provided for @placeExportLedger.
+  ///
+  /// In en, this message translates to:
+  /// **'Export ledger'**
+  String get placeExportLedger;
+
+  /// No description provided for @placeExportDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Ledger saved to {path}'**
+  String placeExportDone(String path);
+
+  /// No description provided for @placeExportFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not write the ledger.'**
+  String get placeExportFailed;
+
+  /// No description provided for @placeCoordinatesRefused.
+  ///
+  /// In en, this message translates to:
+  /// **'Those coordinates cannot be sent.'**
+  String get placeCoordinatesRefused;
+
+  /// No description provided for @placeEchoLine.
+  ///
+  /// In en, this message translates to:
+  /// **'{label} · {type} · {expiry}'**
+  String placeEchoLine(String label, String type, String expiry);
+
+  /// No description provided for @placeTypeHazard.
+  ///
+  /// In en, this message translates to:
+  /// **'Hazard'**
+  String get placeTypeHazard;
+
+  /// No description provided for @placeTypeWater.
+  ///
+  /// In en, this message translates to:
+  /// **'Water'**
+  String get placeTypeWater;
+
+  /// No description provided for @placeTypeFuel.
+  ///
+  /// In en, this message translates to:
+  /// **'Fuel'**
+  String get placeTypeFuel;
+
+  /// No description provided for @placeTypeMed.
+  ///
+  /// In en, this message translates to:
+  /// **'Medical'**
+  String get placeTypeMed;
+
+  /// No description provided for @placeTypeRally.
+  ///
+  /// In en, this message translates to:
+  /// **'Rally'**
+  String get placeTypeRally;
+
+  /// No description provided for @placeTypeView.
+  ///
+  /// In en, this message translates to:
+  /// **'View'**
+  String get placeTypeView;
+
+  /// No description provided for @placeTypeCamp.
+  ///
+  /// In en, this message translates to:
+  /// **'Camp'**
+  String get placeTypeCamp;
+
+  /// No description provided for @placeTypeLook.
+  ///
+  /// In en, this message translates to:
+  /// **'Look'**
+  String get placeTypeLook;
+
+  /// No description provided for @placeTypeOther.
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get placeTypeOther;
 }
 
 class _AppLocalizationsDelegate

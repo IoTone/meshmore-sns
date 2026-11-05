@@ -2,10 +2,14 @@
 // SPDX-License-Identifier: MIT
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 
 import '../gen/app_localizations.dart';
 import '../ui/mm_edge_swipe.dart';
 import '../ui/mm_page_header.dart';
+import '../places/place_history_sheet.dart';
+import '../places/place_store.dart';
+import '../places/place_wiring.dart';
 import 'street_map_view.dart';
 import '../ui/mm_shape.dart';
 
@@ -77,6 +81,31 @@ class MapScreen extends StatelessWidget {
               tooltip: l.mapsTitle,
               icon: const Icon(Icons.download_for_offline_outlined),
               onPressed: () => context.push('/settings/maps'),
+            ),
+          ),
+        ),
+        // Places history (meshmore-places-spec.md §10): every report this
+        // device saw, live and expired, with the ledger export. Below the
+        // offline-maps button so the two read as one column of map tools.
+        Positioned(
+          left: 12,
+          top: 12 + 48 + 8,
+          child: Material(
+            color: cs.surface.withValues(alpha: .9),
+            elevation: 1,
+            shape: RoundedRectangleBorder(
+              borderRadius: mmRadius(context, 6),
+              side: BorderSide(color: cs.outline.withValues(alpha: .4)),
+            ),
+            child: IconButton(
+              key: const ValueKey<String>('map-places-button'),
+              tooltip: l.placeHistoryTitle,
+              icon: const Icon(Icons.push_pin_outlined),
+              onPressed: () => PlaceHistorySheet.show(
+                context,
+                store: context.read<PlaceStore>(),
+                composer: placeComposerOf(context),
+              ),
             ),
           ),
         ),

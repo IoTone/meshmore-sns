@@ -36,6 +36,7 @@ class StudioMessageRow extends StatelessWidget {
     required this.onAction,
     this.sender,
     this.extraMeta = const <String>[],
+    this.echo,
   });
 
   final ChatMessage message;
@@ -48,6 +49,11 @@ class StudioMessageRow extends StatelessWidget {
 
   /// Machine-data fragments after the time (`flood`, `SNR 6.5`).
   final List<String> extraMeta;
+
+  /// An optional line rendered under the body. The place echo uses it, so a
+  /// report in the thread says what it means without the row growing a second
+  /// layout.
+  final Widget? echo;
   final VoidCallback onAction;
 
   String get _time => '${message.at.hour.toString().padLeft(2, '0')}:'
@@ -110,6 +116,7 @@ class StudioMessageRow extends StatelessWidget {
                       key: const ValueKey<String>('studio-msg-body'),
                       style: TextStyle(
                           color: skin.color.fg, fontSize: 15, height: 1.35)),
+                  if (echo != null) echo!,
                   if (extraMeta.isNotEmpty || delivery)
                     Padding(
                       padding: const EdgeInsets.only(top: 2),
