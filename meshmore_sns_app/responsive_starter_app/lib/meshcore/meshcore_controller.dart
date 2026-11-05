@@ -15,6 +15,7 @@ import 'city_lookup.dart';
 import 'default_channel_store.dart';
 import 'device_power_specs.dart';
 import 'ble_connector.dart';
+import 'channel_datagram.dart';
 import 'chat_message.dart';
 import 'chat_store.dart';
 import 'discovered_node.dart';
@@ -184,6 +185,7 @@ class MeshcoreController extends ChangeNotifier {
       _maybeDrain(f);
       _ingestNode(f);
       _ingestChat(f);
+      _ingestChannelData(f);
       _trackMessageHeat(f);
       _trackPlaceInference(f);
       _trackDelivery(f);
@@ -2217,6 +2219,54 @@ class MeshcoreController extends ChangeNotifier {
     return best;
   }
 
+  // --- Channel datagrams (`CMD_SEND_CHANNEL_DATA` / `0x1B`) ---
+  //
+  // The frame has decoded for a while; nothing consumed it. Every media and
+  // place payload will arrive this way, and the data type is the only thing
+  // that says which layer owns the bytes. The firmware forwards a type it
+  // does not know (`MyMesh.cpp:592-625`), so an unrecognised type is kept
+  // and counted rather than dropped: a dropped datagram looks exactly like
+  // one that never arrived.
+
+  static const int _channelDatagramCap = 32;
+  final List<ChannelDatagram> _channelDatagrams = <ChannelDatagram>[];
+  final StreamController<ChannelDatagram> _channelDatagramStream =
+      StreamController<ChannelDatagram>.broadcast();
+  int _channelDatagramsUnrecognised = 0;
+
+  /// Recent channel datagrams, oldest first, capped at
+  /// [_channelDatagramCap].
+  List<ChannelDatagram> get channelDatagrams =>
+      List<ChannelDatagram>.unmodifiable(_channelDatagrams);
+
+  /// Every channel datagram as it arrives, for the layers that own a type.
+  Stream<ChannelDatagram> get channelDatagramStream =>
+      _channelDatagramStream.stream;
+
+  /// Datagrams whose type this build does not interpret. They are still
+  /// delivered; the count exists so diagnostics can show that a payload
+  /// arrived and was not understood, instead of the two cases looking alike.
+  int get channelDatagramsUnrecognised => _channelDatagramsUnrecognised;
+
+  void _ingestChannelData(MeshcoreInbound f) {
+    if (f is! ChannelDataFrame) return;
+    final ChannelDatagram d = ChannelDatagram(
+      channelIndex: f.channelIndex,
+      dataType: f.dataType,
+      blob: f.data,
+      rxVia: f.via,
+      snrDb: f.snrDb,
+      pathLen: f.pathLen,
+      receivedAt: DateTime.now(),
+    );
+    if (d.dataType != kChannelDataTypeDev) _channelDatagramsUnrecognised++;
+    _channelDatagrams.add(d);
+    if (_channelDatagrams.length > _channelDatagramCap) {
+      _channelDatagrams.removeAt(0);
+    }
+    if (!_channelDatagramStream.isClosed) _channelDatagramStream.add(d);
+  }
+
   void _trackMessageHeat(MeshcoreInbound f) {
     if (f is ContactMessageFrame) {
       // DM: resolve sender by 6-byte prefix; place heat at the
@@ -4005,6 +4055,7 @@ class MeshcoreController extends ChangeNotifier {
     unawaited(_incomingDm.close());
     unawaited(_taskErrors.close());
     unawaited(_adverts.close());
+    unawaited(_channelDatagramStream.close());
     unawaited(_transport?.close());
     unawaited(_connection.dispose());
     super.dispose();
