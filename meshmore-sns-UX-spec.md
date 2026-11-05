@@ -145,6 +145,40 @@ customise appearance and behaviour; settings persist via
   high-contrast and low-power/night presets, so accessibility and
   field modes are *themes*, not separate code paths.
 
+### Spacing contract (binding, enforced by a test)
+
+Every gap in the app is a **job**, not a number. `MmSpace`
+(`lib/theme/mm_skin.dart`) names the jobs and resolves each to one step of the
+ladder (2, 4, 6, 8, 12, 16, 20, 24, 32):
+
+| Job | Step | Used for |
+| --- | --- | --- |
+| `insideText` | 2 | label to value, title to subtitle |
+| `labelToControl` | 4 | a label and the control it names, below a chip row |
+| `rowGap` | 8 | between the rows of one list |
+| `rowInset` | 12 | a row's own padding, a compact panel's inset |
+| `screenEdge` | 16 | a screen's one edge inset, a full panel's inset, a sheet's inset |
+| `sectionGap` | 24 | before a new group |
+| `emptyState` | 32 | around an empty state |
+
+The rule that makes a group visible: a between-gap is always strictly larger
+than the within-gap it contains (rows 8, blocks 16, groups 24).
+
+Companion rules:
+
+- One edge inset per screen (16). A sheet uses 16, never 8.
+- `MmListRow` is 12/12 in both paint modes: card and flat differ in paint, not
+  in metrics, so a list does not move when the skin changes.
+- A divider marks a group boundary, never a row boundary inside a list. A rule
+  inside a settings block whose rows carry their own labels is noise: use the
+  group gap and the section label instead. A card-mode row carries no
+  hairline, so a list never shows a row hairline under a list divider.
+- `test/ui/mm_spacing_test.dart` holds a lower-only, exact per-file count of
+  off-ladder numbers in `EdgeInsets` and in `SizedBox(height|width:)`, plus
+  assertions that the shared tokens and the job getters are ladder members and
+  that a row's leading gap is the same in all eight presets. A new literal has
+  to move its file's baseline in the same commit.
+
 ### Accessibility & sensory parity (hearing-impaired-first) — design guideline
 
 This is a binding design guideline for **every** screen and the audio
