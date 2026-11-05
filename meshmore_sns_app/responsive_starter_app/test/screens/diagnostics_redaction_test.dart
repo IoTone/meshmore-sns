@@ -75,4 +75,50 @@ void main() {
     final String out = redactor.json('psk: $psk');
     expect(out.contains(psk), isFalse);
   });
+
+  test('position aliases are coarsened, including an E6 pair and an altitude', () {
+    // The place and soak paths spell a fix latE6/lonE6 and alt, and a field
+    // called lat/lon is not the only way one arrives.
+    final String out = redactor.json('{"latE6":38924131,"lonE6":-104773220,'
+        '"alt":1652.4,"position":"38.924131,-104.77322","fix":"38.924131"}');
+    expect(out.contains('38924131'), isFalse);
+    expect(out.contains('104773220'), isFalse);
+    expect(out, contains('38.92'));
+    expect(out, contains('-104.77'));
+    expect(out, contains('1652'));
+    expect(out.contains('1652.4'), isFalse);
+    expect(out.contains('38.924131'), isFalse);
+  });
+
+  test('a coordinate inside a soak line is coarsened in place', () {
+    final String out = redactor.maskSecrets(
+        'soak tx 42 rx 7 lat=38.924131 lon=-104.77322 alt=1652');
+    expect(out.contains('38.924131'), isFalse);
+    expect(out.contains('-104.77322'), isFalse);
+    expect(out, contains('lat=38.92'));
+    expect(out, contains('lon=-104.77'));
+    // The counters that make the line evidence survive.
+    expect(out, contains('tx 42 rx 7'));
+  });
+
+  test('a copied frame log keeps every frame except the channel secret', () {
+    // A fixed 32-byte channel name, as the frame carries it.
+    final String name = '41' * 32;
+    final String info = '12' '02' '$name' '$psk';
+    const String advert = '8811a4f0ffee00112233445566778899';
+    final List<String> out = redactor.frames(<String>[info, advert]);
+
+    expect(out[0].contains(psk), isFalse,
+        reason: 'a pasted frame log must not hand out a channel PSK');
+    expect(out[0], contains('1202'));
+    expect(out[0], contains(name), reason: 'the slot is evidence');
+    expect(out[0], contains('16_bytes'));
+    expect(out[1], advert,
+        reason: 'every other frame stays byte-for-byte replayable');
+  });
+
+  test('a frame too short to carry a secret is left alone', () {
+    const String short = '12' '02' '41424344';
+    expect(redactor.frame(short), short);
+  });
 }
