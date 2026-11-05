@@ -527,6 +527,29 @@ class MeshcoreController extends ChangeNotifier {
   /// this instead of leaving the user to infer it from missing messages.
   String? _keepaliveFailure;
   String? get keepaliveFailure => _keepaliveFailure;
+
+  /// Whether the app is on screen. Timers that spend radio airtime check it.
+  ///
+  /// The battery, telemetry and self-info timers each cost a frame on the air,
+  /// and a frame a minute for a number nobody can see is the kind of cost this
+  /// product cannot carry on a shared band.
+  bool _visible = true;
+  bool get visible => _visible;
+
+  /// Called from the lifecycle observer. Polling resumes with the app.
+  void setVisible(bool v) {
+    if (_visible == v) return;
+    _visible = v;
+    if (v) {
+      if (isReady) {
+        _startBatteryPolling();
+        if (_telemPollEnabled) _startTelemetryPolling();
+      }
+    } else {
+      _battTimer?.cancel();
+      _telemPollTimer?.cancel();
+    }
+  }
   final MeshcoreConnection _connection;
 
   StreamSubscription<MeshcoreConnectionState>? _statesSub;
@@ -2824,7 +2847,7 @@ class MeshcoreController extends ChangeNotifier {
     _battTimer?.cancel();
     _requestBattery();
     _battTimer = Timer.periodic(const Duration(seconds: 60), (_) {
-      if (isReady) _requestBattery();
+      if (isReady && _visible) _requestBattery();
     });
   }
 
@@ -3547,7 +3570,8 @@ class MeshcoreController extends ChangeNotifier {
   }
 
   void _stepTelemetryPoll() {
-    if (!isReady || !_telemPollEnabled || backgroundRequestsHeld) return;
+    if (!isReady || !_telemPollEnabled || !_visible) return;
+    if (backgroundRequestsHeld) return;
     final String? own = ownPubKeyHex;
     final int nowMs = DateTime.now().millisecondsSinceEpoch;
     DiscoveredNode? target;

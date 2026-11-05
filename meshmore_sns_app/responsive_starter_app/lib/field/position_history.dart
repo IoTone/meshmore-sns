@@ -203,6 +203,12 @@ final class PositionRecorder extends ChangeNotifier {
 
   Timer? _ticker;
 
+  /// How many times the timer fired. A test with fake time reads it to prove
+  /// the cadence and the pause, which no assertion on the rows can show when
+  /// there is no radio to sample.
+  @visibleForTesting
+  int ticks = 0;
+
   List<PositionSample> _rows = <PositionSample>[];
   bool _loaded = false;
   DateTime? _lastPersist;
@@ -212,10 +218,30 @@ final class PositionRecorder extends ChangeNotifier {
 
   bool get isEmpty => _rows.isEmpty;
 
-  /// Samples the live fix once a second until disposed.
+  /// How often the live fix is sampled.
+  ///
+  /// One second was the original cadence, but the fix only moves at a ten-metre
+  /// granularity and the recorder persists at most every thirty seconds, so the
+  /// extra wake-ups bought nothing on a device whose job is to sit in a pocket.
+  static const Duration sampleEvery = Duration(seconds: 5);
+
+  /// Samples the live fix until disposed or paused.
   void start() {
     if (!autoTick || _mc == null || _ticker != null) return;
-    _ticker = Timer.periodic(const Duration(seconds: 1), (_) => tick());
+    _ticker = Timer.periodic(sampleEvery, (_) {
+      ticks++;
+      tick();
+    });
+  }
+
+  /// Stops sampling while the app is not on screen. A resumed app restarts it.
+  void setVisible(bool visible) {
+    if (visible) {
+      start();
+      return;
+    }
+    _ticker?.cancel();
+    _ticker = null;
   }
 
   @override

@@ -12,6 +12,7 @@ import '../cue/cue_bridge.dart';
 import '../tts/tts_controller.dart';
 import '../cue/cue_service.dart';
 import '../gen/app_localizations.dart';
+import '../field/position_history.dart';
 import '../meshcore/meshcore_controller.dart';
 import '../screens/chat_screen.dart';
 import '../notifications/notification_focus.dart';
@@ -161,11 +162,15 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    // R17: on return to foreground, re-ensure the link + drain the
-    // radio's queue (messages buffered while backgrounded).
-    if (state == AppLifecycleState.resumed) {
-      context.read<MeshcoreController>().onAppResumed();
-    }
+    final MeshcoreController mc = context.read<MeshcoreController>();
+    final bool visible = state == AppLifecycleState.resumed;
+    // R17: on return to foreground, re-ensure the link + drain the radio's
+    // queue (messages buffered while backgrounded). On the way out, every
+    // timer that spends airtime or wakes the CPU is stopped, because a frame a
+    // minute for a number nobody can see is a real cost on a shared band.
+    mc.setVisible(visible);
+    context.read<PositionRecorder?>()?.setVisible(visible);
+    if (visible) mc.onAppResumed();
   }
 
   /// R95 — one view change, one cue. A strip tap used to call
