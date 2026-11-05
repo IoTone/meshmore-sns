@@ -1030,8 +1030,11 @@ class _LegendMore extends StatelessWidget {
     final ColorScheme cs = Theme.of(context).colorScheme;
     return Align(
       alignment: Alignment.centerLeft,
-      child: TextButton(
-        onPressed: () => showDialog<void>(
+      child: Builder(
+        builder: (BuildContext context) => MmAction(
+          dense: true,
+          label: title,
+          onPressed: () => showDialog<void>(
           context: context,
           builder: (BuildContext c) => AlertDialog(
             title: Text(title),
@@ -1059,8 +1062,7 @@ class _LegendMore extends StatelessWidget {
             ],
           ),
         ),
-        child: Text(title,
-            style: TextStyle(color: cs.primary, fontSize: context.skin.type.sizeBody)),
+        ),
       ),
     );
   }

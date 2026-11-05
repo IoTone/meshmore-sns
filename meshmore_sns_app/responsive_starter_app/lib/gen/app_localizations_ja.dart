@@ -929,7 +929,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get gridViewFabric => 'メッシュ調査';
 
   @override
-  String get gridViewElevation => 'Fujiさん';
+  String get gridViewElevation => '高度';
 
   @override
   String get fujiLegendTitle => 'Fujiさん';

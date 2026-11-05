@@ -981,7 +981,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get gridViewFabric => 'Mesh survey';
 
   @override
-  String get gridViewElevation => 'Fujiさん';
+  String get gridViewElevation => 'Altitude';
 
   @override
   String get fujiLegendTitle => 'FUJIさん';

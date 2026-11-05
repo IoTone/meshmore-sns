@@ -454,7 +454,7 @@
   "gridViewEqualGrid": "等分グリッド",
   "gridViewPicker": "表示",
   "gridViewFabric": "メッシュ調査",
-  "gridViewElevation": "Fujiさん",
+  "gridViewElevation": "高度",
   "fujiLegendTitle": "Fujiさん",
   "fujiLegendDesc": "標高測量。√スケール軸で有名な建造物と高さを比較。自分の標高はデバイスGPSテレメトリまたは電話の位置情報から取得。",
   "fujiLegendMe": "破線 = あなた。標高が判明していればその位置に、未取得なら地面に「ALT?」表示。",

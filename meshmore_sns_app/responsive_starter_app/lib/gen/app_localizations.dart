@@ -1799,7 +1799,7 @@ abstract class AppLocalizations {
   /// No description provided for @gridViewElevation.
   ///
   /// In en, this message translates to:
-  /// **'Fujiさん'**
+  /// **'Altitude'**
   String get gridViewElevation;
 
   /// No description provided for @fujiLegendTitle.

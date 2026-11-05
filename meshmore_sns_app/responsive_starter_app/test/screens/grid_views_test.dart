@@ -81,7 +81,7 @@ void main() {
     // The three that suit a small mesh, in order. "Radial" appears twice: the
     // toolbar shows the current view's name and the sheet lists it.
     expect(find.text('Radial'), findsNWidgets(2));
-    expect(find.text('Fabric survey'), findsOneWidget);
+    expect(find.text('Mesh survey'), findsOneWidget);
     expect(find.text('Weather (environment)'), findsOneWidget);
     // The map is a hand-off, not a seventh view of the same widget.
     expect(find.text('Open the map'), findsOneWidget);
@@ -132,7 +132,7 @@ void main() {
     await t.pump();
 
     // Primary views.
-    await _openView(t, 'Fabric survey');
+    await _openView(t, 'Mesh survey');
     expect(find.byType(FabricSurveyView), findsOneWidget);
     await _openView(t, 'Weather (environment)');
     expect(find.byType(WeatherView), findsOneWidget);
@@ -181,7 +181,7 @@ void main() {
     await t.tap(find.text('Full legend'));
     await t.pump();
     await t.pump(const Duration(milliseconds: 200));
-    expect(find.textContaining('Three concentric rings'), findsOneWidget);
+    expect(find.textContaining('Rings are distance bands'), findsOneWidget);
     await t.pumpWidget(const SizedBox());
     mc.dispose();
   });

@@ -493,7 +493,7 @@
   "gridViewEqualGrid": "Equal grid",
   "gridViewPicker": "View",
   "gridViewFabric": "Mesh survey",
-  "gridViewElevation": "Fujiさん",
+  "gridViewElevation": "Altitude",
   "fujiLegendTitle": "FUJIさん",
   "fujiLegendDesc": "Altitude survey. Heights on a √-scaled axis against famous landmarks. Your device's altitude comes from device GPS telemetry or the phone fix.",
   "fujiLegendMe": "Dashed line = you. At your altitude, or pinned to the ground with ALT? until it resolves.",
