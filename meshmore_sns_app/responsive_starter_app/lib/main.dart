@@ -11,6 +11,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
+
+import 'app/boot_guard.dart';
 import 'package:provider/provider.dart';
 
 import 'package:meshmore_sns_app/app/demo_mode.dart';
@@ -64,7 +66,7 @@ import 'package:meshmore_sns_app/tts/tts_controller.dart';
 import 'package:meshmore_sns_app/ui/mm_collapse_controller.dart';
 import 'package:meshmore_sns_app/ui/dashboard_pins_controller.dart';
 
-void main() {
+Future<void> main() async {
   final WidgetsBinding widgetsBinding =
       WidgetsFlutterBinding.ensureInitialized();
   // Before anything can throw: a release build has no crash reporter by
@@ -81,275 +83,294 @@ void main() {
   // view shows real labels on first paint. Fire-and-forget; failures
   // degrade to grid-coord cell labels.
   unawaited(warmCityLookup());
+  await bootGuarded();
+}
 
-  SystemChrome.setPreferredOrientations(<DeviceOrientation>[
+/// The boot chain, guarded: whatever happens the splash comes down, and the
+/// user sees either the app or one line saying why it could not start.
+Future<void> bootGuarded() => runBoot(
+      boot: startApp,
+      onFailed: (Object error) {
+        AppErrors.record(error, StackTrace.current, where: 'boot');
+        runApp(
+          BootFailureApp(
+            message: AppErrors.firstLine(error),
+            onRetry: () => unawaited(bootGuarded()),
+          ),
+        );
+      },
+    );
+
+/// Everything between the splash and the first frame. Split out of [main] so
+/// that [runBoot] can guard it and a retry can run it again.
+Future<void> startApp() async {
+  await SystemChrome.setPreferredOrientations(<DeviceOrientation>[
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
-  ]).then((_) async {
-    // R65 — read the folded-group state before the first frame, so a
-    // group the user folded never paints open and then snaps shut.
-    final MmCollapseController collapse = MmCollapseController();
-    await collapse.load();
-    // The pinned dashboard cards are read before the first frame for the same
-    // reason: a pin that paints late would move the dashboard under the user.
-    final DashboardPinsController pins = DashboardPinsController();
-    await pins.load();
-    // Radio-free mode is read before the tree exists: it decides whether the
-    // launch reaches for a paired companion at all, and doing that after the
-    // first frame would make the decision twice.
-    final DemoMode demo = DemoMode();
-    await demo.load();
-    final MeshcoreController controller = MeshcoreController(
-      backgroundKeepalive: createBackgroundKeepalive(),
-      locationService: const GeolocatorLocationService(),
-    );
-    if (!demo.enabled) controller.autoConnectIfPaired();
-    // D8.20 — one notifier, one focus record, one service. Created before the
-    // tree so the notification permission is asked at first launch, not on
-    // the first message; the service starts after the first frame so its
-    // stream subscription never races the controller's own connect.
-    // The block list is read by every surface, so it is one app-scoped store:
-    // the timeline, the roster, the map, search, speech and notifications all
-    // ask the same object (block-spec §5).
-    final BlockStore blockStore = BlockStore();
-    unawaited(blockStore.load());
-    // Places share the block list: a blocked reporter's stored rows leave with
-    // the block rather than sitting on disk behind a read-time filter (places
-    // spec §10). Attached here, before the tree reads the store.
-    final PlaceStore placeStore = PlaceStore(isBlocked: blockStore.isBlocked)
-      ..load();
-    attachPlaceBlockDeletion(blockStore, placeStore);
-    final BlockFilter blockFilter = BlockFilter(blockStore);
-    // When each channel was last read, so a channel badge counts what the
-    // reader has not seen rather than the whole channel's traffic.
-    final ChannelReadStore channelReads = ChannelReadStore();
-    unawaited(channelReads.load());
-    // The inbound half of media: one consumer of the radio's channel
-    // datagrams, because two consumers would each hold half the chunks. It is
-    // app-scoped and started once, so a rebuild cannot subscribe twice.
-    final MediaInbox mediaInbox = MediaInbox(
-      datagrams: controller.channelDatagramStream,
-      codec: const AvifMediaCodec(),
-      clock: DateTime.now,
-    )..start();
-    final PlacePhotos placePhotos = PlacePhotos(clock: DateTime.now);
-    final LocalNotifier notifier = LocalNotifier();
-    final NotificationPrefs notificationPrefs = NotificationPrefs();
-    final NotificationFocus notificationFocus = NotificationFocus();
-    // A tap has to be able to change the shell's visible view, and the tap
-    // handler lives out here with no way to reach the page controller.
-    final ShellViewRequest shellViewRequest = ShellViewRequest();
-    unawaited(notificationPrefs.load());
-    // The notification text follows the app's own locale choice, and it is
-    // resolved per message rather than once, so switching language takes
-    // effect on the next message without a restart.
-    final LocaleController notificationLocale = LocaleController()..load();
-    final NotificationService notifications = NotificationService(
-      channelMessages: controller.incomingChannelMessages,
-      directMessages: controller.incomingDirectMessages,
-      notifier: notifier,
-      prefs: notificationPrefs,
-      focus: notificationFocus,
-      strings: () => LocalizedNotificationStrings(
-        lookupAppLocalizations(_notificationLocale(notificationLocale.locale)),
-      ),
-      selfDisplayName: () => controller.selfInfo?.name,
-      ownPubKeyHex: () => controller.ownPubKeyHex,
-      peerDisplayName: (String key) => _peerName(controller, key),
-      channelName: (int slot) => _channelName(controller, slot),
-      isBlocked: blockFilter.hidesMessage,
-    );
-    notifier.onTap = (String payload) {
-      if (payload.startsWith('dm:')) {
-        appRouter.push('/dm/${payload.substring(3)}');
-      } else if (payload.startsWith('ch:')) {
-        final int? slot = int.tryParse(payload.substring(3));
-        if (slot == null) return;
-        controller.setActiveChannel(slot);
-        // The shell is the only thing that knows which page is showing, so the
-        // tap asks it rather than going to the root route and stopping there.
-        appRouter.go('/');
-        shellViewRequest.openChat(slot);
-      }
-    };
-    runApp(
-      MultiProvider(
-        providers: [
-          ChangeNotifierProvider<MmCollapseController>.value(value: collapse),
-          ChangeNotifierProvider<DashboardPinsController?>.value(value: pins),
-          ChangeNotifierProvider<AppState>(create: (_) => AppState()),
-          ChangeNotifierProvider<ThemeController>(
-            create: (_) => ThemeController()..load(),
-          ),
-          // One owner for the per-peer record (R58). Speech reads it,
-          // the cue path reads it, the node sheet writes it — but only
-          // this instance touches the prefs key.
-          ChangeNotifierProvider<PeerProfiles>(create: (_) => PeerProfiles()),
-          ChangeNotifierProvider<TtsController>(
-            // Speech answers to the same audio master as the cues —
-            // without this the quick-mute silenced every chime and
-            // left inbound messages speaking aloud.
-            // `TtsController.load()` loads the shared per-peer records
-            // too, so `PeerProfiles` needs no separate load() here.
-            create: (BuildContext ctx) => TtsController(
-              theme: ctx.read<ThemeController>(),
-              peers: ctx.read<PeerProfiles>(),
-            )..load(),
-          ),
-          Provider<CueService>(
-            create: (BuildContext ctx) {
-              final ThemeController tc = ctx.read<ThemeController>();
-              return CueService(
-                theme: tc,
-                // R12 per-theme audio: pull WAV cues from
-                // assets/audio/<themeKey>/<cue>.wav at play time.
-                audio: AssetAudioPack(theme: tc),
-                // R12 per-theme haptics: the 'feel' follows the skin too —
-                // pattern resolved off the active preset at play time.
-                haptic: SystemHapticBackend(theme: tc),
-              );
-            },
-          ),
-          ChangeNotifierProvider<DemoMode>.value(value: demo),
-          ChangeNotifierProvider<MeshcoreController>.value(value: controller),
-          // R59 — the bot. `pskFor` is what makes the "never on Public"
-          // refusal real: it reads the slot's live key off the radio,
-          // so a slot reset to the stock key stops qualifying at once.
-          ChangeNotifierProvider<BotController>(
-            create: (BuildContext ctx) => BotController(
-              pskFor: ctx.read<MeshcoreController>().channelPsk,
-            )..load(),
-          ),
-          // R60 — Settings → Tools. App-scoped so a soak or range test
-          // keeps running while you look at something else.
-          ChangeNotifierProvider<ToolsController>(
-            create: (BuildContext ctx) =>
-                ToolsController(ctx.read<MeshcoreController>()),
-          ),
-          // SOS and check-in (`meshmore-sos-spec.md`). App-scoped because the
-          // alarm has to keep repeating while the screen is closed: the
-          // foreground service keeps the isolate alive, and this owns the
-          // one-second schedule tick.
-          ChangeNotifierProvider<SosController>(
-            create: (BuildContext ctx) =>
-                SosController(mc: ctx.read<MeshcoreController>())..start(),
-          ),
-          // Fences watch our own position against circles the user drew. The
-          // tick is app-scoped for the same reason the alarm's is: a fence
-          // crossed while the screen is off still happened.
-          ChangeNotifierProvider<GeofenceController>(
-            create: (BuildContext ctx) =>
-                GeofenceController(mc: ctx.read<MeshcoreController>())
-                  ..load()
-                  ..start(),
-          ),
-          // The recorded trail: our own fixes only, bounded (see
-          // `field/position_history.dart`). App-scoped so the map, the export
-          // and the coverage session read the same list.
-          // Which way each node's distance is going: two measurements, so it
-          // belongs to the session, not to a node.
-          Provider<RelationshipTracker>(create: (_) => RelationshipTracker()),
-          // Coverage: pings from where we are, session-only. The pinger is the
-          // app's own discover tool, because that is the one code path that
-          // knows how to ask the radio.
-          ChangeNotifierProvider<CoverageSession>(
-            create: (BuildContext ctx) {
-              final ToolsController tools = ctx.read<ToolsController>();
-              return CoverageSession(
-                mc: ctx.read<MeshcoreController>(),
-                pinger: () async {
-                  await tools.discover.start();
-                  return <CoverageResponder>[
-                    for (final DiscoveredRepeater r in tools.discover.found)
-                      CoverageResponder(
-                        key: r.response.publicKey,
-                        snr: r.weakerSnrDb.round(),
-                      ),
-                  ];
-                },
-              );
-            },
-          ),
-
-          ChangeNotifierProvider<PositionRecorder>(
-            create: (BuildContext ctx) =>
-                PositionRecorder(mc: ctx.read<MeshcoreController>())
-                  ..load()
-                  ..start(),
-          ),
-
-          // R61 — offline maps (issue #5): tile cache, region packs,
-          // event layers. App-scoped so downloads run in the background.
-          ChangeNotifierProvider<MapsController>(
-            create: (_) => MapsController(
-              appVersion: () => AppState.packageInfo?.version ?? '',
-            )..load(),
-          ),
-          Provider<PermissionsService>(
-            create: (_) => const PlatformPermissionsService(),
-          ),
-          // R53 — docs reader: loads bundled/cached markdown and
-          // refreshes from GitHub opportunistically. Stateless service.
-          Provider<DocsRepository>(create: (_) => DocsRepository()),
-          ChangeNotifierProvider<FirstRunController>(
-            create: (_) => FirstRunController()..load(),
-          ),
-          // The terms page is a gate, not a banner: it is read once at
-          // first use and again only when the wording changes (N-group:
-          // "terms acceptance at first use"). Version lives with the text.
-          ChangeNotifierProvider<TermsController>(
-            create: (_) => TermsController()..load(),
-          ),
-          ChangeNotifierProvider<LocaleController>.value(
-              value: notificationLocale),
-          // Registered nullable on purpose: the notification subsystem is
-          // app-scoped and optional, so a widget test that builds this tree
-          // without it runs with no notifications instead of failing a lookup
-          // it never needed (D8.21's rule, applied to the harness).
-          Provider<NotificationFocus?>.value(value: notificationFocus),
-          ChangeNotifierProvider<ShellViewRequest?>.value(
-              value: shellViewRequest),
-          // Places (meshmore-places-spec.md): reports live in one app-scoped
-          // store, so the map layer, the history list, the chat echo and
-          // search cannot disagree about what exists. The budget is the
-          // send-side rate limit and is app-scoped for the same reason: it
-          // must survive leaving the sheet that charged it.
-          ChangeNotifierProvider<BlockStore>.value(value: blockStore),
-          ChangeNotifierProvider<ChannelReadStore?>.value(value: channelReads),
-          // The one instance the block-deletion hook above is attached to; a
-          // second store built here would leave that hook pointing at nothing.
-          ChangeNotifierProvider<PlaceStore>.value(value: placeStore),
-          Provider<MediaInbox>.value(value: mediaInbox),
-          // The real photo source for the composer: the platform picker plus
-          // the engine's decoder. Nullable-safe for harnesses: the composer
-          // falls back to the named "cannot read a photo" state.
-          Provider<MediaPhotoSource>.value(
-              value: const PlatformMediaPhotoSource()),
-          Provider<PlacePhotos>.value(value: placePhotos),
-          Provider<PlaceReportBudget>(
-            create: (_) => PlaceReportBudget(clock: DateTime.now),
-          ),
-          Provider<Notifier?>.value(value: notifier),
-          ChangeNotifierProvider<NotificationPrefs?>.value(
-              value: notificationPrefs),
-          Provider<NotificationService?>.value(value: notifications),
-          // R36 — auto-publish location. Owns its own
-          // shared_preferences-backed settings + the periodic
-          // timer / position stream. Constructed lazily to read
-          // the already-built MeshcoreController; loads persisted
-          // state immediately so a previously-enabled loop
-          // resumes after a cold launch.
-          ChangeNotifierProvider<AutoPublishController>(
-            create: (BuildContext ctx) => AutoPublishController(
+  ]);
+  // R65 — read the folded-group state before the first frame, so a
+  // group the user folded never paints open and then snaps shut.
+  final MmCollapseController collapse = MmCollapseController();
+  await collapse.load();
+  // The pinned dashboard cards are read before the first frame for the same
+  // reason: a pin that paints late would move the dashboard under the user.
+  final DashboardPinsController pins = DashboardPinsController();
+  await pins.load();
+  // Radio-free mode is read before the tree exists: it decides whether the
+  // launch reaches for a paired companion at all, and doing that after the
+  // first frame would make the decision twice.
+  final DemoMode demo = DemoMode();
+  await demo.load();
+  final MeshcoreController controller = MeshcoreController(
+    backgroundKeepalive: createBackgroundKeepalive(),
+    locationService: const GeolocatorLocationService(),
+  );
+  if (!demo.enabled) controller.autoConnectIfPaired();
+  // D8.20 — one notifier, one focus record, one service. Created before the
+  // tree so the notification permission is asked at first launch, not on
+  // the first message; the service starts after the first frame so its
+  // stream subscription never races the controller's own connect.
+  // The block list is read by every surface, so it is one app-scoped store:
+  // the timeline, the roster, the map, search, speech and notifications all
+  // ask the same object (block-spec §5).
+  final BlockStore blockStore = BlockStore();
+  unawaited(blockStore.load());
+  // Places share the block list: a blocked reporter's stored rows leave with
+  // the block rather than sitting on disk behind a read-time filter (places
+  // spec §10). Attached here, before the tree reads the store.
+  final PlaceStore placeStore = PlaceStore(isBlocked: blockStore.isBlocked)
+    ..load();
+  attachPlaceBlockDeletion(blockStore, placeStore);
+  final BlockFilter blockFilter = BlockFilter(blockStore);
+  // When each channel was last read, so a channel badge counts what the
+  // reader has not seen rather than the whole channel's traffic.
+  final ChannelReadStore channelReads = ChannelReadStore();
+  unawaited(channelReads.load());
+  // The inbound half of media: one consumer of the radio's channel
+  // datagrams, because two consumers would each hold half the chunks. It is
+  // app-scoped and started once, so a rebuild cannot subscribe twice.
+  final MediaInbox mediaInbox = MediaInbox(
+    datagrams: controller.channelDatagramStream,
+    codec: const AvifMediaCodec(),
+    clock: DateTime.now,
+  )..start();
+  final PlacePhotos placePhotos = PlacePhotos(clock: DateTime.now);
+  final LocalNotifier notifier = LocalNotifier();
+  final NotificationPrefs notificationPrefs = NotificationPrefs();
+  final NotificationFocus notificationFocus = NotificationFocus();
+  // A tap has to be able to change the shell's visible view, and the tap
+  // handler lives out here with no way to reach the page controller.
+  final ShellViewRequest shellViewRequest = ShellViewRequest();
+  unawaited(notificationPrefs.load());
+  // The notification text follows the app's own locale choice, and it is
+  // resolved per message rather than once, so switching language takes
+  // effect on the next message without a restart.
+  final LocaleController notificationLocale = LocaleController()..load();
+  final NotificationService notifications = NotificationService(
+    channelMessages: controller.incomingChannelMessages,
+    directMessages: controller.incomingDirectMessages,
+    notifier: notifier,
+    prefs: notificationPrefs,
+    focus: notificationFocus,
+    strings: () => LocalizedNotificationStrings(
+      lookupAppLocalizations(_notificationLocale(notificationLocale.locale)),
+    ),
+    selfDisplayName: () => controller.selfInfo?.name,
+    ownPubKeyHex: () => controller.ownPubKeyHex,
+    peerDisplayName: (String key) => _peerName(controller, key),
+    channelName: (int slot) => _channelName(controller, slot),
+    isBlocked: blockFilter.hidesMessage,
+  );
+  notifier.onTap = (String payload) {
+    if (payload.startsWith('dm:')) {
+      appRouter.push('/dm/${payload.substring(3)}');
+    } else if (payload.startsWith('ch:')) {
+      final int? slot = int.tryParse(payload.substring(3));
+      if (slot == null) return;
+      controller.setActiveChannel(slot);
+      // The shell is the only thing that knows which page is showing, so the
+      // tap asks it rather than going to the root route and stopping there.
+      appRouter.go('/');
+      shellViewRequest.openChat(slot);
+    }
+  };
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider<MmCollapseController>.value(value: collapse),
+        ChangeNotifierProvider<DashboardPinsController?>.value(value: pins),
+        ChangeNotifierProvider<AppState>(create: (_) => AppState()),
+        ChangeNotifierProvider<ThemeController>(
+          create: (_) => ThemeController()..load(),
+        ),
+        // One owner for the per-peer record (R58). Speech reads it,
+        // the cue path reads it, the node sheet writes it — but only
+        // this instance touches the prefs key.
+        ChangeNotifierProvider<PeerProfiles>(create: (_) => PeerProfiles()),
+        ChangeNotifierProvider<TtsController>(
+          // Speech answers to the same audio master as the cues —
+          // without this the quick-mute silenced every chime and
+          // left inbound messages speaking aloud.
+          // `TtsController.load()` loads the shared per-peer records
+          // too, so `PeerProfiles` needs no separate load() here.
+          create: (BuildContext ctx) => TtsController(
+            theme: ctx.read<ThemeController>(),
+            peers: ctx.read<PeerProfiles>(),
+          )..load(),
+        ),
+        Provider<CueService>(
+          create: (BuildContext ctx) {
+            final ThemeController tc = ctx.read<ThemeController>();
+            return CueService(
+              theme: tc,
+              // R12 per-theme audio: pull WAV cues from
+              // assets/audio/<themeKey>/<cue>.wav at play time.
+              audio: AssetAudioPack(theme: tc),
+              // R12 per-theme haptics: the 'feel' follows the skin too —
+              // pattern resolved off the active preset at play time.
+              haptic: SystemHapticBackend(theme: tc),
+            );
+          },
+        ),
+        ChangeNotifierProvider<DemoMode>.value(value: demo),
+        ChangeNotifierProvider<MeshcoreController>.value(value: controller),
+        // R59 — the bot. `pskFor` is what makes the "never on Public"
+        // refusal real: it reads the slot's live key off the radio,
+        // so a slot reset to the stock key stops qualifying at once.
+        ChangeNotifierProvider<BotController>(
+          create: (BuildContext ctx) => BotController(
+            pskFor: ctx.read<MeshcoreController>().channelPsk,
+          )..load(),
+        ),
+        // R60 — Settings → Tools. App-scoped so a soak or range test
+        // keeps running while you look at something else.
+        ChangeNotifierProvider<ToolsController>(
+          create: (BuildContext ctx) =>
+              ToolsController(ctx.read<MeshcoreController>()),
+        ),
+        // SOS and check-in (`meshmore-sos-spec.md`). App-scoped because the
+        // alarm has to keep repeating while the screen is closed: the
+        // foreground service keeps the isolate alive, and this owns the
+        // one-second schedule tick.
+        ChangeNotifierProvider<SosController>(
+          create: (BuildContext ctx) =>
+              SosController(mc: ctx.read<MeshcoreController>())..start(),
+        ),
+        // Fences watch our own position against circles the user drew. The
+        // tick is app-scoped for the same reason the alarm's is: a fence
+        // crossed while the screen is off still happened.
+        ChangeNotifierProvider<GeofenceController>(
+          create: (BuildContext ctx) =>
+              GeofenceController(mc: ctx.read<MeshcoreController>())
+                ..load()
+                ..start(),
+        ),
+        // The recorded trail: our own fixes only, bounded (see
+        // `field/position_history.dart`). App-scoped so the map, the export
+        // and the coverage session read the same list.
+        // Which way each node's distance is going: two measurements, so it
+        // belongs to the session, not to a node.
+        Provider<RelationshipTracker>(create: (_) => RelationshipTracker()),
+        // Coverage: pings from where we are, session-only. The pinger is the
+        // app's own discover tool, because that is the one code path that
+        // knows how to ask the radio.
+        ChangeNotifierProvider<CoverageSession>(
+          create: (BuildContext ctx) {
+            final ToolsController tools = ctx.read<ToolsController>();
+            return CoverageSession(
               mc: ctx.read<MeshcoreController>(),
-              location: const GeolocatorLocationService(),
-            )..load(),
-          ),
-        ],
-        child: const MyApp(),
-      ),
-    );
-  });
+              pinger: () async {
+                await tools.discover.start();
+                return <CoverageResponder>[
+                  for (final DiscoveredRepeater r in tools.discover.found)
+                    CoverageResponder(
+                      key: r.response.publicKey,
+                      snr: r.weakerSnrDb.round(),
+                    ),
+                ];
+              },
+            );
+          },
+        ),
+
+        ChangeNotifierProvider<PositionRecorder>(
+          create: (BuildContext ctx) =>
+              PositionRecorder(mc: ctx.read<MeshcoreController>())
+                ..load()
+                ..start(),
+        ),
+
+        // R61 — offline maps (issue #5): tile cache, region packs,
+        // event layers. App-scoped so downloads run in the background.
+        ChangeNotifierProvider<MapsController>(
+          create: (_) => MapsController(
+            appVersion: () => AppState.packageInfo?.version ?? '',
+          )..load(),
+        ),
+        Provider<PermissionsService>(
+          create: (_) => const PlatformPermissionsService(),
+        ),
+        // R53 — docs reader: loads bundled/cached markdown and
+        // refreshes from GitHub opportunistically. Stateless service.
+        Provider<DocsRepository>(create: (_) => DocsRepository()),
+        ChangeNotifierProvider<FirstRunController>(
+          create: (_) => FirstRunController()..load(),
+        ),
+        // The terms page is a gate, not a banner: it is read once at
+        // first use and again only when the wording changes (N-group:
+        // "terms acceptance at first use"). Version lives with the text.
+        ChangeNotifierProvider<TermsController>(
+          create: (_) => TermsController()..load(),
+        ),
+        ChangeNotifierProvider<LocaleController>.value(
+            value: notificationLocale),
+        // Registered nullable on purpose: the notification subsystem is
+        // app-scoped and optional, so a widget test that builds this tree
+        // without it runs with no notifications instead of failing a lookup
+        // it never needed (D8.21's rule, applied to the harness).
+        Provider<NotificationFocus?>.value(value: notificationFocus),
+        ChangeNotifierProvider<ShellViewRequest?>.value(
+            value: shellViewRequest),
+        // Places (meshmore-places-spec.md): reports live in one app-scoped
+        // store, so the map layer, the history list, the chat echo and
+        // search cannot disagree about what exists. The budget is the
+        // send-side rate limit and is app-scoped for the same reason: it
+        // must survive leaving the sheet that charged it.
+        ChangeNotifierProvider<BlockStore>.value(value: blockStore),
+        ChangeNotifierProvider<ChannelReadStore?>.value(value: channelReads),
+        // The one instance the block-deletion hook above is attached to; a
+        // second store built here would leave that hook pointing at nothing.
+        ChangeNotifierProvider<PlaceStore>.value(value: placeStore),
+        Provider<MediaInbox>.value(value: mediaInbox),
+        // The real photo source for the composer: the platform picker plus
+        // the engine's decoder. Nullable-safe for harnesses: the composer
+        // falls back to the named "cannot read a photo" state.
+        Provider<MediaPhotoSource>.value(
+            value: const PlatformMediaPhotoSource()),
+        Provider<PlacePhotos>.value(value: placePhotos),
+        Provider<PlaceReportBudget>(
+          create: (_) => PlaceReportBudget(clock: DateTime.now),
+        ),
+        Provider<Notifier?>.value(value: notifier),
+        ChangeNotifierProvider<NotificationPrefs?>.value(
+            value: notificationPrefs),
+        Provider<NotificationService?>.value(value: notifications),
+        // R36 — auto-publish location. Owns its own
+        // shared_preferences-backed settings + the periodic
+        // timer / position stream. Constructed lazily to read
+        // the already-built MeshcoreController; loads persisted
+        // state immediately so a previously-enabled loop
+        // resumes after a cold launch.
+        ChangeNotifierProvider<AutoPublishController>(
+          create: (BuildContext ctx) => AutoPublishController(
+            mc: ctx.read<MeshcoreController>(),
+            location: const GeolocatorLocationService(),
+          )..load(),
+        ),
+      ],
+      child: const MyApp(),
+    ),
+  );
 }
 
 /// Root widget. Owns the single MaterialApp + the go_router config;
