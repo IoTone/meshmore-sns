@@ -253,7 +253,8 @@ void main() {
             'user sits on another view');
   });
 
-  testWidgets('a notification tap asks the shell for Chat, not for the root '
+  testWidgets(
+      'a notification tap asks the shell for Chat, not for the root '
       'route (D8.20)', (WidgetTester t) async {
     final ShellViewRequest request = ShellViewRequest();
     final MeshcoreController mc = MeshcoreController();
@@ -359,7 +360,8 @@ void main() {
     expect(find.byType(SingleChildScrollView), findsWidgets,
         reason: 'narrow enough to need the scrolling fallback');
     // Scroll the strip to the end, then select the last cell.
-    await t.drag(find.byType(SingleChildScrollView).first, const Offset(-260, 0));
+    await t.drag(
+        find.byType(SingleChildScrollView).first, const Offset(-260, 0));
     await t.pumpAndSettle();
     await t.tap(find.byTooltip('Settings'));
     await t.pumpAndSettle();
@@ -369,7 +371,8 @@ void main() {
     expect(find.widgetWithText(MmPageHeader, 'Settings'), findsOneWidget);
   });
 
-  testWidgets('a body fling changes one view; a strip tap jumps in one frame '
+  testWidgets(
+      'a body fling changes one view; a strip tap jumps in one frame '
       '(R109, R95)', (WidgetTester t) async {
     await _pumpApp(t);
     expect(find.widgetWithText(MmPageHeader, 'Dashboard'), findsOneWidget);
@@ -417,7 +420,8 @@ void main() {
     // 2026-11-01). The platform call is the fix.
     final List<String> calls = <String>[];
     const MethodChannel channel = MethodChannel('meshmore/app_lifecycle');
-    t.binding.defaultBinaryMessenger.setMockMethodCallHandler(channel, (MethodCall call) async {
+    t.binding.defaultBinaryMessenger.setMockMethodCallHandler(channel,
+        (MethodCall call) async {
       calls.add(call.method);
       return true;
     });
@@ -465,7 +469,8 @@ void main() {
 
     await t.tap(find.byTooltip('Hyperlocal grid'));
     await settle(t);
-    expect(find.widgetWithText(MmPageHeader, 'Hyperlocal grid'), findsOneWidget);
+    expect(
+        find.widgetWithText(MmPageHeader, 'Hyperlocal grid'), findsOneWidget);
     expect(find.text('Not Connected to Mesh'), findsOneWidget);
     expect(t.takeException(), isNull);
   });
@@ -488,8 +493,9 @@ void main() {
 
     // A short drag is not a step. It is started on the current cell, so if
     // the arena resolves it as a tap it lands on the view already shown.
-    await t.dragFrom(t.getCenter(find.byTooltip('Dashboard')),
-        const Offset(0, -12), touchSlopY: 0);
+    await t.dragFrom(
+        t.getCenter(find.byTooltip('Dashboard')), const Offset(0, -12),
+        touchSlopY: 0);
     await settle(t);
     expect(find.widgetWithText(MmPageHeader, 'Dashboard'), findsOneWidget,
         reason: '12 dp is below the step threshold');
@@ -568,8 +574,7 @@ void main() {
     }
   });
 
-  testWidgets(
-      'the map edge bands step exactly one view in every skin (R109)',
+  testWidgets('the map edge bands step exactly one view in every skin (R109)',
       (WidgetTester t) async {
     SharedPreferences.setMockInitialValues(<String, Object>{});
     GridScreen.resetSession();
@@ -591,7 +596,8 @@ void main() {
     expect(t.takeException(), isNull);
   });
 
-  testWidgets('the grid locks the body swipe in pan mode, and every visit '
+  testWidgets(
+      'the grid locks the body swipe in pan mode, and every visit '
       'starts in swipe mode (R109)', (WidgetTester t) async {
     await t.binding.setSurfaceSize(const Size(800, 1600));
     addTearDown(() => t.binding.setSurfaceSize(null));
@@ -601,8 +607,7 @@ void main() {
     await _pumpApp(t);
     await openFromStrip(t, 'Hyperlocal grid');
     // The radar has no drag of its own: no toggle and no claim.
-    expect(
-        find.byKey(const ValueKey<String>('grid-pan-toggle')), findsNothing);
+    expect(find.byKey(const ValueKey<String>('grid-pan-toggle')), findsNothing);
     expect(shellDragClaim.isClaimed, isFalse);
 
     // A pannable view offers the toggle, and starts in swipe mode with the
@@ -695,7 +700,8 @@ void main() {
       await t.flingFrom(
           Offset(r.left + 10, r.center.dy), const Offset(300, 0), 1000);
       await settle(t);
-      expect(find.widgetWithText(MmPageHeader, 'Hyperlocal grid'), findsOneWidget);
+      expect(
+          find.widgetWithText(MmPageHeader, 'Hyperlocal grid'), findsOneWidget);
       expect(t.takeException(), isNull);
     });
 
@@ -765,30 +771,50 @@ void main() {
       expect(mid.path.any((HitTestEntry e) => e.target == band), isFalse);
     });
 
-    testWidgets(
-        'the bands do not shadow the Offline maps button or the '
-        'zoom controls', (WidgetTester t) async {
+    testWidgets('the bands do not shadow the map tool column',
+        (WidgetTester t) async {
       final Rect r = await openMap(t);
-      final Finder btn = find.byTooltip('Offline maps');
-      expect(btn, findsOneWidget);
-      // Left edge, inside the band's 24 dp, over the button.
-      final Offset p = Offset(r.left + 20, t.getCenter(btn).dy);
-      expect(t.getRect(btn).contains(p), isTrue,
-          reason:
-              'button spans the band column: ${t.getRect(btn)} p=$p page=$r');
-      final HitTestResult hit = HitTestResult();
-      t.binding.hitTestInView(hit, p, t.view.viewId);
-      expect(hit.path.any((HitTestEntry e) => e.target == t.renderObject(btn)),
-          isTrue,
-          reason: 'the button wins over the band');
-      // R70: the real control column renders (R69 made the map
-      // browsable with no fix); the right band starts at or below it.
+      // Every map tool, including the two the tab contributes, is inside the
+      // one column on the right. R70: the column renders with no fix (R69
+      // made the map browsable), and the right band starts at or below it.
       final Rect col =
           t.getRect(find.byKey(const ValueKey<String>('map-controls')));
       final Rect rightBand =
           t.getRect(find.byKey(const ValueKey<String>('mm-edge-right')));
       expect(rightBand.top, greaterThanOrEqualTo(col.bottom));
       expect(rightBand.width, 24);
+
+      // A tap on the last tool in the column reaches the tool, not the band.
+      final Finder btn =
+          find.byKey(const ValueKey<String>('map-places-button'));
+      expect(
+          find.descendant(
+              of: find.byKey(const ValueKey<String>('map-controls')),
+              matching: btn),
+          findsOneWidget);
+      final Offset p = t.getCenter(btn);
+      final RenderObject band =
+          t.renderObject(find.byKey(const ValueKey<String>('mm-edge-right')));
+      final HitTestResult hit = HitTestResult();
+      t.binding.hitTestInView(hit, p, t.view.viewId);
+      expect(hit.path.any((HitTestEntry e) => e.target == t.renderObject(btn)),
+          isTrue,
+          reason: 'the button wins over the band');
+      expect(hit.path.any((HitTestEntry e) => e.target == band), isFalse,
+          reason: 'the right band must not cover the tool column');
+
+      // And the left edge is the band's alone now: no map tool sits there to
+      // be lost behind a thumb that uses the right-hand column.
+      expect(r.left + 20, lessThan(col.left));
+      expect(find.byKey(const ValueKey<String>('map-offline-maps-button')),
+          findsOneWidget);
+      expect(
+          t
+              .getRect(
+                  find.byKey(const ValueKey<String>('map-offline-maps-button')))
+              .left,
+          greaterThan(r.center.dx),
+          reason: 'the offline-maps tool belongs in the right-hand column');
     });
   });
 
@@ -855,7 +881,8 @@ void main() {
       expect(t.takeException(), isNull);
     });
 
-    testWidgets('changing view below 288dp (scrolling branch) still scrolls '
+    testWidgets(
+        'changing view below 288dp (scrolling branch) still scrolls '
         'the selected cell into sight', (WidgetTester t) async {
       t.view.physicalSize = const Size(270, 800);
       t.view.devicePixelRatio = 1.0;
@@ -879,8 +906,7 @@ void main() {
   group('channel unread on the strip (register 2)', () {
     testWidgets('the chat cell shows the count and a screen reader reads it',
         (WidgetTester tester) async {
-      final FakeMeshcoreTransport fake =
-          FakeMeshcoreTransport(connected: true);
+      final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
       final MeshcoreController mc = MeshcoreController(
         transportFactory: () async => fake,
         connection:

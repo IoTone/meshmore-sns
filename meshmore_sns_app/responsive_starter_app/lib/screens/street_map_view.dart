@@ -416,8 +416,7 @@ class _StreetMapViewState extends State<StreetMapView> {
       });
     }
 
-    final List<DiscoveredNode> source =
-        widget.filteredNodes ?? mc.nodes;
+    final List<DiscoveredNode> source = widget.filteredNodes ?? mc.nodes;
     final List<DiscoveredNode> withLoc = <DiscoveredNode>[
       for (final DiscoveredNode n in source)
         if (n.hasLocation) n
@@ -439,9 +438,8 @@ class _StreetMapViewState extends State<StreetMapView> {
     // of two fixes is one point of GPS jitter drawn as a segment beside the
     // marker. Both are now gated on being readable, and the trail is closed
     // onto the live fix so it ends on the marker.
-    final double viewportMeters =
-        MediaQuery.sizeOf(context).height *
-            StreetMapView.metersPerPixel(_zoom, selfLat ?? 0);
+    final double viewportMeters = MediaQuery.sizeOf(context).height *
+        StreetMapView.metersPerPixel(_zoom, selfLat ?? 0);
     final List<CircleMarker> peerReachRings = <CircleMarker>[
       for (final DiscoveredNode n in withLoc)
         if (StreetMapView.reachRingReadable(
@@ -456,10 +454,10 @@ class _StreetMapViewState extends State<StreetMapView> {
           ),
     ];
     final List<LatLng> trail = StreetMapView.trailPathFor(
-        mc.ownTrail,
-        selfLat: hasFix ? selfLat : null,
-        selfLon: hasFix ? selfLon : null,
-      );
+      mc.ownTrail,
+      selfLat: hasFix ? selfLat : null,
+      selfLon: hasFix ? selfLon : null,
+    );
 
     return Stack(
       children: <Widget>[
@@ -522,22 +520,22 @@ class _StreetMapViewState extends State<StreetMapView> {
               CircleLayer(
                 circles: <CircleMarker>[
                   if (hasFix)
-                  // The self range estimate, on the same readability rule:
-                  // at street zoom a multi-kilometre circle is an arc with
-                  // no centre in sight.
-                  if (StreetMapView.reachRingReadable(rangeM, viewportMeters))
-                  CircleMarker(
-                    point: LatLng(selfLat, selfLon),
-                    radius: rangeM,
-                    useRadiusInMeter: true,
-                    // Outline-only: even modest fill alpha accumulates
-                    // unreadably over OSM tiles when many circles
-                    // overlap. Border carries the signal; map stays
-                    // legible underneath.
-                    color: const Color(0x00000000),
-                    borderColor: cs.tertiary.withValues(alpha: .75),
-                    borderStrokeWidth: 1.4,
-                  ),
+                    // The self range estimate, on the same readability rule:
+                    // at street zoom a multi-kilometre circle is an arc with
+                    // no centre in sight.
+                    if (StreetMapView.reachRingReadable(rangeM, viewportMeters))
+                      CircleMarker(
+                        point: LatLng(selfLat, selfLon),
+                        radius: rangeM,
+                        useRadiusInMeter: true,
+                        // Outline-only: even modest fill alpha accumulates
+                        // unreadably over OSM tiles when many circles
+                        // overlap. Border carries the signal; map stays
+                        // legible underneath.
+                        color: const Color(0x00000000),
+                        borderColor: cs.tertiary.withValues(alpha: .75),
+                        borderStrokeWidth: 1.4,
+                      ),
                   // A fence is drawn as its radius plus the margin band the
                   // hysteresis actually uses: an entry is at 95 % of this
                   // circle, a leave at 105 %, so the pair of rings is the
@@ -625,16 +623,16 @@ class _StreetMapViewState extends State<StreetMapView> {
                     ),
                   // Self marker last so it sits on top.
                   if (hasFix)
-                  Marker(
-                    point: LatLng(selfLat, selfLon),
-                    width: 56,
-                    height: 56,
-                    alignment: Alignment.center,
-                    child: _SelfGlyph(
-                      colour: cs.primary,
-                      headingDeg: _headingDeg,
+                    Marker(
+                      point: LatLng(selfLat, selfLon),
+                      width: 56,
+                      height: 56,
+                      alignment: Alignment.center,
+                      child: _SelfGlyph(
+                        colour: cs.primary,
+                        headingDeg: _headingDeg,
+                      ),
                     ),
-                  ),
                 ],
               ),
             ],
@@ -661,27 +659,27 @@ class _StreetMapViewState extends State<StreetMapView> {
                   : shownSource.attribution),
               if (!hasFix)
                 Container(
-              key: const ValueKey<String>('map-no-fix-banner'),
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-              decoration: BoxDecoration(
-                color: cs.surface,
-                border: Border(top: BorderSide(color: cs.outlineVariant)),
-              ),
-              child: Row(
-                children: <Widget>[
-                  Icon(Icons.location_disabled,
-                      size: 16, color: cs.onSurfaceVariant),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      l.mapNoFixBanner,
-                      style: TextStyle(
-                          color: cs.onSurfaceVariant, fontSize: 12),
-                    ),
+                  key: const ValueKey<String>('map-no-fix-banner'),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: cs.surface,
+                    border: Border(top: BorderSide(color: cs.outlineVariant)),
                   ),
-                ],
-              ),
+                  child: Row(
+                    children: <Widget>[
+                      Icon(Icons.location_disabled,
+                          size: 16, color: cs.onSurfaceVariant),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          l.mapNoFixBanner,
+                          style: TextStyle(
+                              color: cs.onSurfaceVariant, fontSize: 12),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
             ],
           ),
@@ -691,8 +689,7 @@ class _StreetMapViewState extends State<StreetMapView> {
             left: 12,
             top: 12,
             child: Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
                 color: cs.tertiaryContainer.withValues(alpha: .85),
                 borderRadius: BorderRadius.circular(kRadiusMd),
@@ -700,8 +697,7 @@ class _StreetMapViewState extends State<StreetMapView> {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
-                  Icon(Icons.pause,
-                      size: 12, color: cs.onTertiaryContainer),
+                  Icon(Icons.pause, size: 12, color: cs.onTertiaryContainer),
                   const SizedBox(width: 4),
                   Text(l.globePaused,
                       style: TextStyle(
@@ -722,8 +718,7 @@ class _StreetMapViewState extends State<StreetMapView> {
             elevation: 1,
             shape: RoundedRectangleBorder(
               borderRadius: mmRadius(context, 6),
-              side: BorderSide(
-                  color: cs.outline.withValues(alpha: .4)),
+              side: BorderSide(color: cs.outline.withValues(alpha: .4)),
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -753,9 +748,8 @@ class _StreetMapViewState extends State<StreetMapView> {
                       minWidth: StreetMapView.controlCell,
                       minHeight: StreetMapView.controlCell),
                   icon: const Icon(Icons.my_location),
-                  onPressed: hasFix
-                      ? () => _recenterOnSelf(selfLat, selfLon)
-                      : null,
+                  onPressed:
+                      hasFix ? () => _recenterOnSelf(selfLat, selfLon) : null,
                 ),
                 // R25+3 / R61 — basemap picker.
                 PopupMenuButton<String>(
@@ -798,7 +792,8 @@ class _StreetMapViewState extends State<StreetMapView> {
                         Provider.of<MapsController?>(ctx);
                     final List<EventLayer> layers =
                         maps?.layers ?? const <EventLayer>[];
-                    final bool anyShown = layers.any((EventLayer e) => e.visible);
+                    final bool anyShown =
+                        layers.any((EventLayer e) => e.visible);
                     return PopupMenuButton<String>(
                       key: const ValueKey<String>('map-layers-menu'),
                       tooltip: l.mapsLayers,
@@ -806,8 +801,8 @@ class _StreetMapViewState extends State<StreetMapView> {
                       constraints: const BoxConstraints(
                           minWidth: StreetMapView.controlCell,
                           minHeight: StreetMapView.controlCell),
-                      icon: Icon(
-                          anyShown ? Icons.layers : Icons.layers_outlined),
+                      icon:
+                          Icon(anyShown ? Icons.layers : Icons.layers_outlined),
                       itemBuilder: (BuildContext _) {
                         if (layers.isEmpty) {
                           return <PopupMenuEntry<String>>[
@@ -840,8 +835,8 @@ class _StreetMapViewState extends State<StreetMapView> {
                                       !(maps?.isLayerLoaded(e) ?? false))
                                     const Padding(
                                       padding: EdgeInsets.only(left: 6),
-                                      child: Icon(Icons.error_outline,
-                                          size: 14),
+                                      child:
+                                          Icon(Icons.error_outline, size: 14),
                                     ),
                                 ],
                               ),
@@ -958,8 +953,7 @@ class _SquareGlyphPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant _SquareGlyphPainter old) =>
-      color != old.color;
+  bool shouldRepaint(covariant _SquareGlyphPainter old) => color != old.color;
 }
 
 class _SelfGlyph extends StatelessWidget {
@@ -1029,6 +1023,5 @@ class _HeadingWedgePainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant _HeadingWedgePainter old) =>
-      color != old.color;
+  bool shouldRepaint(covariant _HeadingWedgePainter old) => color != old.color;
 }

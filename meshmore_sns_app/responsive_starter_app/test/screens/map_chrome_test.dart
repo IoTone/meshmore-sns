@@ -35,7 +35,8 @@ import '../meshcore/fake_transport.dart';
 /// marker must never imply one, and an estimate too large to fit the screen
 /// must not be drawn as an arc through the middle of it.
 const ValueKey<String> _controlsKey = ValueKey<String>('map-controls');
-const ValueKey<String> _offlineKey = ValueKey<String>('map-offline-maps-button');
+const ValueKey<String> _offlineKey =
+    ValueKey<String>('map-offline-maps-button');
 const ValueKey<String> _placesKey = ValueKey<String>('map-places-button');
 const ValueKey<String> _layersKey = ValueKey<String>('map-layers-menu');
 
@@ -89,7 +90,8 @@ Future<(MapsController, MeshcoreController)> _pump(WidgetTester t) async {
   return (maps, mc);
 }
 
-Future<void> _drain(WidgetTester t, MeshcoreController mc, MapsController m) async {
+Future<void> _drain(
+    WidgetTester t, MeshcoreController mc, MapsController m) async {
   mc.dispose();
   m.dispose();
   await t.pumpWidget(const SizedBox());
@@ -169,7 +171,8 @@ void main() {
       expect(StreetMapView.reachRingReadable(2001, 4000), isFalse);
       expect(StreetMapView.reachRingReadable(20000, 4000), isFalse);
     });
-    test('metres per pixel halves per zoom level and shrinks with latitude', () {
+    test('metres per pixel halves per zoom level and shrinks with latitude',
+        () {
       final double z10 = StreetMapView.metersPerPixel(10, 39.0);
       final double z14 = StreetMapView.metersPerPixel(14, 39.0);
       expect(z10 / z14, closeTo(16.0, 0.001));
@@ -190,7 +193,11 @@ void main() {
     test('two fixes a few metres apart draw nothing', () {
       // One GPS sample plus jitter: the stray segment beside the marker.
       expect(
-          StreetMapView.trailPathFor(<({double latitude, double longitude, int unixSec})>[
+          StreetMapView.trailPathFor(<({
+            double latitude,
+            double longitude,
+            int unixSec
+          })>[
             pt(39.7000, -104.7000),
             pt(39.70005, -104.70005),
           ]),
@@ -198,8 +205,8 @@ void main() {
     });
 
     test('three fixes over more than twenty metres draw a path', () {
-      final List<LatLng> path =
-          StreetMapView.trailPathFor(<({double latitude, double longitude, int unixSec})>[
+      final List<LatLng> path = StreetMapView
+          .trailPathFor(<({double latitude, double longitude, int unixSec})>[
         pt(39.7000, -104.7000),
         pt(39.7010, -104.7000),
         pt(39.7020, -104.7000),
@@ -208,8 +215,11 @@ void main() {
     });
 
     test('the live fix closes the path so the line meets the marker', () {
-      final List<LatLng> path =
-          StreetMapView.trailPathFor(<({double latitude, double longitude, int unixSec})>[
+      final List<LatLng> path = StreetMapView.trailPathFor(<({
+        double latitude,
+        double longitude,
+        int unixSec
+      })>[
         pt(39.7000, -104.7000),
         pt(39.7010, -104.7000),
       ], selfLat: 39.7020, selfLon: -104.7000);
@@ -218,8 +228,11 @@ void main() {
     });
 
     test('a live fix already in the trail is not appended twice', () {
-      final List<LatLng> path =
-          StreetMapView.trailPathFor(<({double latitude, double longitude, int unixSec})>[
+      final List<LatLng> path = StreetMapView.trailPathFor(<({
+        double latitude,
+        double longitude,
+        int unixSec
+      })>[
         pt(39.7000, -104.7000),
         pt(39.7010, -104.7000),
         pt(39.7020, -104.7000),
