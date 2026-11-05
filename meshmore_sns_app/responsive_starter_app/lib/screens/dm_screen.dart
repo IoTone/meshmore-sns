@@ -57,6 +57,40 @@ class _DmScreenState extends State<DmScreen> {
   String? _sentId;
   String _sentText = '';
 
+  /// The route this thread is drawn in, so the focus follows the route stack:
+  /// a thread pushed over this one hides it, and popping back shows it again.
+  ModalRoute<void>? _route;
+  bool _syncScheduled = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final ModalRoute<void>? route = ModalRoute.of(context);
+    if (route == _route) return;
+    _route?.animation?.removeListener(_scheduleSync);
+    _route?.secondaryAnimation?.removeListener(_scheduleSync);
+    _route = route;
+    route?.animation?.addListener(_scheduleSync);
+    route?.secondaryAnimation?.addListener(_scheduleSync);
+    _scheduleSync();
+  }
+
+  /// Whether this thread is on screen is a fact about the route stack, and the
+  /// stack settles at the end of a transition rather than at the start: a
+  /// pushed route is built before it is current, and a covered one becomes
+  /// current only after the route above is gone. Both animations therefore end
+  /// with a re-read, once, on the next frame.
+  void _scheduleSync() {
+    if (_syncScheduled) return;
+    _syncScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _syncScheduled = false;
+      if (!mounted) return;
+      final bool current = ModalRoute.of(context)?.isCurrent ?? true;
+      _focus?.openPeer = current ? widget.peerPubKeyHex : null;
+    });
+  }
+
   @override
   void initState() {
     super.initState();
@@ -86,7 +120,11 @@ class _DmScreenState extends State<DmScreen> {
 
   @override
   void dispose() {
-    _focus?.openPeer = null;
+    _route?.animation?.removeListener(_scheduleSync);
+    _route?.secondaryAnimation?.removeListener(_scheduleSync);
+    // Only the visible thread clears the record: a covered one is disposed by
+    // a pop that already handed the focus back to the thread underneath.
+    if (_focus?.openPeer == widget.peerPubKeyHex) _focus?.openPeer = null;
     _sub?.cancel();
     _input.removeListener(_onComposerChanged);
     _draftTimer?.cancel();
@@ -301,6 +339,12 @@ class _DmScreenState extends State<DmScreen> {
   Widget build(BuildContext context) {
     final MeshcoreController mc = context.watch<MeshcoreController>();
     final TtsController tts = context.watch<TtsController>();
+    // Which thread is on screen follows the route stack, not this widget's
+    // lifetime: a second DM pushed over this one hides it, and popping back
+    // has to claim it again, or the visible thread is announced while it is
+    // being read and the hidden one is not.
+    _focus?.openPeer =
+        (ModalRoute.of(context)?.isCurrent ?? true) ? widget.peerPubKeyHex : null;
     final ColorScheme cs = Theme.of(context).colorScheme;
     final bool ready = mc.state == MeshcoreConnectionState.ready;
     final AppLocalizations l = AppLocalizations.of(context);

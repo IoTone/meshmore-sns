@@ -4,12 +4,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
+import 'package:provider/single_child_widget.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:meshmore_sns_app/chat/draft_store.dart';
 import 'package:meshmore_sns_app/gen/app_localizations.dart';
 import 'package:meshmore_sns_app/l10n/locale_controller.dart';
 import 'package:meshmore_sns_app/meshcore/meshcore_controller.dart';
+import 'package:meshmore_sns_app/notifications/notification_focus.dart';
 import 'package:meshmore_sns_app/screens/dm_screen.dart';
 import 'package:meshmore_sns_app/tts/tts_controller.dart';
 
@@ -168,6 +170,53 @@ void main() {
     expect(sink.text[key], 'still typing');
     mc.dispose();
   });
+  testWidgets('the claimed thread follows the route stack, not the widget',
+      (WidgetTester t) async {
+    const String a = 'aa11bb22cc33dd44ee55';
+    const String b = '11aa22bb33cc44dd55ee';
+    final MeshcoreController mc = MeshcoreController(
+      transportFactory: () async => FakeMeshcoreTransport(),
+      connection:
+          MeshcoreConnection(handshakeTimeout: const Duration(seconds: 5)),
+    );
+    final NotificationFocus focus = NotificationFocus();
+    final GlobalKey<NavigatorState> nav = GlobalKey<NavigatorState>();
+    await t.pumpWidget(MultiProvider(
+      providers: <SingleChildWidget>[
+        ChangeNotifierProvider<MeshcoreController>.value(value: mc),
+        ChangeNotifierProvider<TtsController>(
+            create: (_) => TtsController(speaker: _SilentSpeaker())),
+        Provider<NotificationFocus>.value(value: focus),
+      ],
+      child: MaterialApp(
+        navigatorKey: nav,
+        locale: const Locale('en'),
+        supportedLocales: LocaleController.supported,
+        localizationsDelegates: const <LocalizationsDelegate<Object>>[
+          AppLocalizations.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        home: const DmScreen(peerPubKeyHex: a),
+      ),
+    ));
+    await t.pump();
+    expect(focus.openPeer, a,
+        reason: 'the thread on screen is the one being read');
+
+    nav.currentState!.push(MaterialPageRoute<void>(
+        builder: (_) => const DmScreen(peerPubKeyHex: b)));
+    await t.pumpAndSettle();
+    expect(focus.openPeer, b,
+        reason: 'the second thread covers the first, so it is the visible one');
+
+    nav.currentState!.pop();
+    await t.pumpAndSettle();
+    expect(focus.openPeer, a,
+        reason: 'back on the first thread, its messages must not be announced');
+    mc.dispose();
+  });
 }
 
 /// In-memory stand-in for the sealed file, so the debounce runs in fake time.
@@ -192,4 +241,6 @@ class _MemoryDrafts implements DraftSink {
 
   @override
   Future<void> clear(String key) async => text.remove(key);
+
 }
+
