@@ -13,8 +13,9 @@ provable. The decode contract tightened, hence the minor bump.
 - **The receiving radio profile is surfaced.** `ChannelDataFrame.via` and
   `RawDataFrame.via` carry `RxVia` (`unknown` / `primary` / `secondary`)
   from the byte the firmware fills in while a second profile is on
-  (`MyMesh.cpp:2423`, `:2830-2840`). Previously the channel-datagram byte
-  was read and discarded and the raw-data byte was left in the payload.
+  (`MyMesh.cpp:2423`, `:2830-2840`). Both were read and discarded before,
+  the channel one as an unnamed reserved byte and the raw-data one under a
+  comment guessing it might become a path length.
 - **`decode` consumes the whole frame.** A parsed frame that leaves bytes
   is now `DecodeFailure(trailingBytes)` naming the opcode and the count,
   so two frames in one buffer cannot half-decode into a silent drop. Two
