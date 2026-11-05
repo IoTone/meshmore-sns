@@ -92,10 +92,14 @@ void main() {
       expect(find.text(l.termsSectionLocal), findsOneWidget);
       expect(find.text(l.termsSectionLeaves), findsOneWidget);
       expect(find.text(l.termsSectionPermissions), findsOneWidget);
-      expect(find.text(l.termsSectionRetention), findsOneWidget);
       expect(find.text(l.termsAccept), findsOneWidget);
 
-      // The list is lazy: the last sections build only when scrolled to.
+      // The list is lazy: a section builds only once it is scrolled into
+      // view, and how much fits above it depends on the copy's length, which
+      // changes with the wording. Scroll to each rather than assuming a
+      // viewport height.
+      await t.scrollUntilVisible(find.text(l.termsSectionRetention), 200);
+      expect(find.text(l.termsSectionRetention), findsOneWidget);
       await t.scrollUntilVisible(find.text(l.termsSectionChanges), 200);
       expect(find.text(l.termsSectionChanges), findsOneWidget);
       expect(find.text(l.termsChangesBody), findsOneWidget);

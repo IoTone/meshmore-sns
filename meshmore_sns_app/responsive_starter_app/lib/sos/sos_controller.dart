@@ -463,17 +463,25 @@ final class SosController extends ChangeNotifier {
   /// also not nothing: a radio that refused the packet means nobody heard that
   /// repeat, and the panel says so rather than reporting a clean run.
   Future<bool> _send(String text) async {
-    // The controller answers with the row it created and marks it failed when
-    // the write did not leave, so the refusal is read from the row rather than
-    // from a throw: the send path deliberately does not throw for a refused
-    // message (a refused send is not a crashed app).
+    // The controller answers with the row it created, so the outcome is read
+    // from the row rather than from a throw: the send path deliberately does
+    // not throw for a refused message (a refused send is not a crashed app).
+    //
+    // Both terminal-and-not-sent states count here. `failed` is the radio
+    // saying no. `unknown` is the write never leaving, or leaving with no
+    // answer, which from the alarm's point of view is the same thing: nobody
+    // is known to have heard this repeat, so it must not be reported as sent.
+    // A healthy send is `sending` at this point, which is why the ordinary
+    // path is unaffected.
     bool refused = false;
+    bool notSent(MessageDelivery? d) =>
+        d == MessageDelivery.failed || d == MessageDelivery.unknown;
     try {
       final ChatMessage? ch = await _mc.sendChannelTextTo(_channelSlot, text);
-      if (ch?.delivery == MessageDelivery.failed) refused = true;
+      if (ch == null || notSent(ch.delivery)) refused = true;
       for (final String hex in _contactKeysHex) {
         final ChatMessage? dm = await _mc.sendDirectText(hex, text);
-        if (dm?.delivery == MessageDelivery.failed) refused = true;
+        if (dm == null || notSent(dm.delivery)) refused = true;
       }
     } catch (_) {
       refused = true;
