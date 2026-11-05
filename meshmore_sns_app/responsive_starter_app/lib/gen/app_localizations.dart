@@ -63,7 +63,7 @@ import 'app_localizations_ja.dart';
 /// property.
 abstract class AppLocalizations {
   AppLocalizations(String locale)
-      : localeName = intl.Intl.canonicalizedLocale(locale.toString());
+    : localeName = intl.Intl.canonicalizedLocale(locale.toString());
 
   final String localeName;
 
@@ -86,16 +86,16 @@ abstract class AppLocalizations {
   /// of delegates is preferred or required.
   static const List<LocalizationsDelegate<dynamic>> localizationsDelegates =
       <LocalizationsDelegate<dynamic>>[
-    delegate,
-    GlobalMaterialLocalizations.delegate,
-    GlobalCupertinoLocalizations.delegate,
-    GlobalWidgetsLocalizations.delegate,
-  ];
+        delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+      ];
 
   /// A list of this localizations delegate's supported locales.
   static const List<Locale> supportedLocales = <Locale>[
     Locale('en'),
-    Locale('ja')
+    Locale('ja'),
   ];
 
   /// No description provided for @appName.
@@ -6829,7 +6829,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'device now: {freq}MHz {bw}kHz SF{sf} CR{cr} {tx}dBm'**
   String deviceNowParams(
-      String freq, String bw, String sf, String cr, String tx);
+    String freq,
+    String bw,
+    String sf,
+    String cr,
+    String tx,
+  );
 
   /// No description provided for @locationSourceDevice.
   ///
@@ -7035,6 +7040,168 @@ abstract class AppLocalizations {
   /// **'Paired: {name} — auto-reconnects on startup'**
   String diagnosticsPairedLine(String name);
 
+  /// No description provided for @diagnosticsSectionDeveloper.
+  ///
+  /// In en, this message translates to:
+  /// **'Developer'**
+  String get diagnosticsSectionDeveloper;
+
+  /// No description provided for @diagnosticsPairRadio.
+  ///
+  /// In en, this message translates to:
+  /// **'Pair a radio'**
+  String get diagnosticsPairRadio;
+
+  /// No description provided for @diagnosticsForgetConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Forget this radio?'**
+  String get diagnosticsForgetConfirmTitle;
+
+  /// No description provided for @diagnosticsForgetConfirmBody.
+  ///
+  /// In en, this message translates to:
+  /// **'You will need to pair it again, and this clears its bond. Do not do this while the radio is out of reach.'**
+  String get diagnosticsForgetConfirmBody;
+
+  /// No description provided for @diagnosticsSectionSend.
+  ///
+  /// In en, this message translates to:
+  /// **'Send'**
+  String get diagnosticsSectionSend;
+
+  /// No description provided for @diagnosticsSendSelfAdvert.
+  ///
+  /// In en, this message translates to:
+  /// **'Send self-advert'**
+  String get diagnosticsSendSelfAdvert;
+
+  /// No description provided for @diagnosticsReadClock.
+  ///
+  /// In en, this message translates to:
+  /// **'Read the radio\'s clock'**
+  String get diagnosticsReadClock;
+
+  /// No description provided for @diagnosticsPullMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Pull the next message'**
+  String get diagnosticsPullMessage;
+
+  /// No description provided for @diagnosticsTestMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Public-channel test message'**
+  String get diagnosticsTestMessage;
+
+  /// No description provided for @diagnosticsSend.
+  ///
+  /// In en, this message translates to:
+  /// **'Send'**
+  String get diagnosticsSend;
+
+  /// No description provided for @diagnosticsSentWhat.
+  ///
+  /// In en, this message translates to:
+  /// **'Sent {what}'**
+  String diagnosticsSentWhat(String what);
+
+  /// No description provided for @diagnosticsSendFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'The send failed: {error}'**
+  String diagnosticsSendFailed(String error);
+
+  /// No description provided for @diagnosticsSectionM6.
+  ///
+  /// In en, this message translates to:
+  /// **'Channel-tail evidence'**
+  String get diagnosticsSectionM6;
+
+  /// No description provided for @diagnosticsResolveTail.
+  ///
+  /// In en, this message translates to:
+  /// **'Resolve channel-tail'**
+  String get diagnosticsResolveTail;
+
+  /// No description provided for @diagnosticsExportFixture.
+  ///
+  /// In en, this message translates to:
+  /// **'Export fixture'**
+  String get diagnosticsExportFixture;
+
+  /// No description provided for @diagnosticsCopyFixture.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy fixture JSON'**
+  String get diagnosticsCopyFixture;
+
+  /// No description provided for @diagnosticsFixtureCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Copied. Save it under the protocol package\'s captured vectors.'**
+  String get diagnosticsFixtureCopied;
+
+  /// No description provided for @diagnosticsNoRfLog.
+  ///
+  /// In en, this message translates to:
+  /// **'No RF-log frame captured yet'**
+  String get diagnosticsNoRfLog;
+
+  /// No description provided for @diagnosticsNotRfLog.
+  ///
+  /// In en, this message translates to:
+  /// **'The last RF-log frame did not decode'**
+  String get diagnosticsNotRfLog;
+
+  /// No description provided for @diagnosticsNotGrpTxt.
+  ///
+  /// In en, this message translates to:
+  /// **'That packet is not a group text. Send on the Public channel and try again.'**
+  String get diagnosticsNotGrpTxt;
+
+  /// No description provided for @diagnosticsExportNeedsCapture.
+  ///
+  /// In en, this message translates to:
+  /// **'Needs a captured RF-log frame first'**
+  String get diagnosticsExportNeedsCapture;
+
+  /// No description provided for @diagnosticsNoFrames.
+  ///
+  /// In en, this message translates to:
+  /// **'No frames yet'**
+  String get diagnosticsNoFrames;
+
+  /// No description provided for @diagnosticsFramesCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Copied {count} frames'**
+  String diagnosticsFramesCopied(String count);
+
+  /// No description provided for @diagnosticsSectionSoak.
+  ///
+  /// In en, this message translates to:
+  /// **'Soak'**
+  String get diagnosticsSectionSoak;
+
+  /// No description provided for @diagnosticsSoakEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No scopes bound'**
+  String get diagnosticsSoakEmpty;
+
+  /// No description provided for @diagnosticsCopySoak.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy soak report'**
+  String get diagnosticsCopySoak;
+
+  /// No description provided for @diagnosticsSoakCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Soak report copied'**
+  String get diagnosticsSoakCopied;
+
   /// No description provided for @nodesClearSearch.
   ///
   /// In en, this message translates to:
@@ -7148,7 +7315,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{freq} MHz · {bw} kHz · SF{sf} · CR{cr} · path hash {ph}'**
   String networksSummary(
-      String freq, String bw, String sf, String cr, String ph);
+    String freq,
+    String bw,
+    String sf,
+    String cr,
+    String ph,
+  );
 
   /// No description provided for @networksMembers.
   ///
@@ -8792,8 +8964,9 @@ AppLocalizations lookupAppLocalizations(Locale locale) {
   }
 
   throw FlutterError(
-      'AppLocalizations.delegate failed to load unsupported locale "$locale". This is likely '
-      'an issue with the localizations generation tool. Please file an issue '
-      'on GitHub with a reproducible sample app and the gen-l10n configuration '
-      'that was used.');
+    'AppLocalizations.delegate failed to load unsupported locale "$locale". This is likely '
+    'an issue with the localizations generation tool. Please file an issue '
+    'on GitHub with a reproducible sample app and the gen-l10n configuration '
+    'that was used.',
+  );
 }

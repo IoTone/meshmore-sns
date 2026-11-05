@@ -4,6 +4,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:go_router/go_router.dart';
 import 'package:meshcore/meshcore.dart';
 import 'package:provider/provider.dart';
 
@@ -12,7 +13,11 @@ import '../bot/bot_guards.dart';
 import '../bot/responder.dart';
 import '../gen/app_localizations.dart';
 import '../meshcore/failure.dart';
+import '../ui/mm_components.dart';
+import '../ui/mm_collapse_controller.dart';
+import '../ui/mm_collapsible.dart';
 import '../ui/mm_scaffold.dart';
+import '../theme/mm_skin.dart';
 import '../ui/radio_health_block.dart';
 import 'diagnostics_redaction.dart';
 import '../meshcore/meshcore_controller.dart';
@@ -67,11 +72,14 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
   }
 
   Future<void> _send(MeshcoreController mc, Uint8List frame, String what) async {
+    // Read the strings before the await: the widget can be gone afterwards,
+    // and the toast already guards on mounted.
+    final AppLocalizations l = AppLocalizations.of(context);
     try {
       await mc.send(frame);
-      _toast('Sent $what');
+      _toast(l.diagnosticsSentWhat(what));
     } catch (e) {
-      _toast('Send failed: $e');
+      _toast(l.diagnosticsSendFailed('$e'));
     }
   }
 
@@ -86,24 +94,24 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
       ));
       setState(() => _exportJson = json);
     } catch (e) {
-      _toast('$e — need a captured 0x88 RF-log frame first');
+      _toast(AppLocalizations.of(context).diagnosticsExportNeedsCapture);
     }
   }
 
   void _resolveTail(MeshcoreController mc) {
     final String? hex = mc.lastRfLogHex;
     if (hex == null) {
-      _toast('No 0x88 RF-log frame captured yet');
+      _toast(AppLocalizations.of(context).diagnosticsNoRfLog);
       return;
     }
     final MeshcoreInbound f = MeshcoreFrameCodec.decode(_hex(hex));
     if (f is! RfLogFrame) {
-      _toast('Last RF-log frame did not decode as RfLogFrame');
+      _toast(AppLocalizations.of(context).diagnosticsNotRfLog);
       return;
     }
     final GrpTxtPayload? g = f.log.packet?.grpTxt;
     if (g == null) {
-      _toast('Captured packet is not a GRP_TXT — send on Public & retry');
+      _toast(AppLocalizations.of(context).diagnosticsNotGrpTxt);
       return;
     }
     final ChannelTailResult r = resolveChannelTail(
@@ -139,289 +147,340 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
           RxVia.unknown => l.rxViaUnknown,
         };
 
+    final MmSkin skin = context.skin;
+    // One fact per line. A joined subtitle could not be read at a glance and
+    // its line count changed with the link, which is why the connection block
+    // is a stack now: state, radio, battery, link, last datagram, paired.
+    Widget fact(String text) => Padding(
+          padding: const EdgeInsets.fromLTRB(16, 3, 16, 3),
+          child: Text(text,
+              style: TextStyle(
+                  color: cs.onSurface,
+                  fontSize: skin.type.sizeBody,
+                  fontFamily: skin.type.bodyFamily,
+                  height: 1.35)),
+        );
+    // A fault is the one thing here that gets a sentence, because it is the
+    // only line a reader can act on.
+    Widget fault(String text) => Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 3),
+          child: Text(text,
+              style: TextStyle(
+                  color: cs.error,
+                  fontSize: skin.type.sizeBody,
+                  fontFamily: skin.type.bodyFamily,
+                  height: 1.35)),
+        );
     Widget section(String t) => Padding(
           padding: const EdgeInsets.fromLTRB(16, 18, 16, 6),
-          child: Text(t,
-              style: TextStyle(
-                  fontSize: 11, letterSpacing: 2, color: cs.primary)),
+          child: Text(t, style: mmSectionLabelStyle(skin)),
         );
+
+    final String stateText = switch (mc.state) {
+          MeshcoreConnectionState.disconnected => l.diagnosticsStateDisconnected,
+          MeshcoreConnectionState.handshaking => l.diagnosticsStateHandshaking,
+          MeshcoreConnectionState.ready => l.diagnosticsStateReady,
+          MeshcoreConnectionState.reconnecting =>
+            l.diagnosticsStateReconnecting,
+          MeshcoreConnectionState.failed => l.diagnosticsStateFailed,
+        } +
+        (mc.isConnecting ? l.diagnosticsConnectingSuffix : '');
 
     return Scaffold(
       appBar: AppBar(title: Text(AppLocalizations.of(context).diagnosticsTitle)),
       body: MmScaffold(
         child: ListView(
         children: <Widget>[
-          section(l.diagnosticsSectionConnection),
-          ListTile(
-            title: Text(l.diagnosticsStateLine(switch (mc.state) {
-                  MeshcoreConnectionState.disconnected =>
-                    l.diagnosticsStateDisconnected,
-                  MeshcoreConnectionState.handshaking =>
-                    l.diagnosticsStateHandshaking,
-                  MeshcoreConnectionState.ready => l.diagnosticsStateReady,
-                  MeshcoreConnectionState.reconnecting =>
-                    l.diagnosticsStateReconnecting,
-                  MeshcoreConnectionState.failed => l.diagnosticsStateFailed,
-                }) +
-                (mc.isConnecting ? l.diagnosticsConnectingSuffix : '')),
-            subtitle: Text(<String>[
+          // The variable part of the page is ONE child of the list: a fact
+          // appears when the link reports it, and a shifting child list makes
+          // the list's keep-alive wrappers remount subtrees that own a
+          // collapsible group.
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              section(l.diagnosticsSectionConnection),
+              fact(l.diagnosticsStateLine(stateText)),
               if (mc.selfInfo != null)
-                l.diagnosticsDeviceLine(
-                    mc.selfInfo!.name,
+                fact(l.diagnosticsDeviceLine(mc.selfInfo!.name,
                     '${mc.selfInfo!.frequencyMhz}',
-                    '${mc.selfInfo!.spreadingFactor}'),
+                    '${mc.selfInfo!.spreadingFactor}')),
               if (mc.batteryMillivolts != null)
-                l.diagnosticsBatteryLine(
+                fact(l.diagnosticsBatteryLine(
                         mc.batteryVolts!.toStringAsFixed(2),
                         '${mc.batteryPercent}') +
-                    (mc.charging == true ? l.diagnosticsChargingSuffix : ''),
+                    (mc.charging == true ? l.diagnosticsChargingSuffix : '')),
               if (mc.mtu != null)
-                l.diagnosticsMtuLine(
-                    '${mc.mtu}', '${MeshcoreBle.requiredMtu}'),
+                fact(l.diagnosticsMtuLine(
+                    '${mc.mtu}', '${MeshcoreBle.requiredMtu}')),
               // Which radio carried the last channel datagram. The byte only
               // means something while a second profile is on, so "unreported"
               // is the normal reading on a single-profile radio.
               if (mc.lastFrame case final ChannelDataFrame d)
-                l.diagnosticsDatagramLine('${d.channelIndex}',
+                fact(l.diagnosticsDatagramLine(
+                    '${d.channelIndex}',
                     viaLabel(l, d.via),
-                    '0x${d.dataType.toRadixString(16).padLeft(4, '0')}'),
+                    '0x${d.dataType.toRadixString(16).padLeft(4, '0')}')),
               if (mc.reconnectAttempt > 0)
-                l.diagnosticsReconnectLine('${mc.reconnectAttempt}') +
-                    (mc.gaveUp ? l.diagnosticsGaveUpSuffix : ''),
-              // A refused MTU is a sentence, not an exception string: it is the
-              // only failure here a reader can act on.
+                fact(l.diagnosticsReconnectLine('${mc.reconnectAttempt}') +
+                    (mc.gaveUp ? l.diagnosticsGaveUpSuffix : '')),
               if (mc.mtuRefusal != null)
-                l.diagnosticsMtuRefusedLine('${mc.mtuRefusal!.mtu}',
-                    '${MeshcoreBle.requiredMtu}')
-              // The framing counters only speak when they have something to
-              // say; on a healthy link they are both zero and the line is
-              // noise.
+                fault(l.diagnosticsMtuRefusedLine(
+                    '${mc.mtuRefusal!.mtu}', '${MeshcoreBle.requiredMtu}'))
               else if (mc.truncatedFrames > 0 || mc.trailingBytesFrames > 0)
-                l.diagnosticsFramingLine(
-                    '${mc.truncatedFrames}', '${mc.trailingBytesFrames}')
+                fact(l.diagnosticsFramingLine(
+                    '${mc.truncatedFrames}', '${mc.trailingBytesFrames}'))
               else if (mc.failure != null)
-                l.diagnosticsErrorLine(failureText(l, mc.failure!))
+                fault(l.diagnosticsErrorLine(failureText(l, mc.failure!)))
               else if (mc.error != null)
-                l.diagnosticsErrorLine('${mc.error}'),
-            ].join('\n')),
-            isThreeLine: mc.selfInfo != null ||
-                mc.error != null ||
-                mc.mtuRefusal != null,
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
-            child: const RadioHealthBlock(),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Row(
-              children: <Widget>[
-                Expanded(
-                  child: FilledButton.icon(
-                    icon: Icon(
-                        live ? Icons.link_off : Icons.bluetooth_searching),
-                    label: Text(live
-                        ? l.diagnosticsDisconnect
-                        : l.diagnosticsScanConnect),
-                    onPressed: () =>
-                        live ? mc.disconnect() : mc.connect(),
-                  ),
+                fault(l.diagnosticsErrorLine('${mc.error}')),
+              const SizedBox(height: 10),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: <Widget>[
+                    FilledButton.icon(
+                      icon: Icon(
+                          live ? Icons.link_off : Icons.bluetooth_searching),
+                      label: Text(live
+                          ? l.diagnosticsDisconnect
+                          : l.diagnosticsScanConnect),
+                      onPressed: () => live ? mc.disconnect() : mc.connect(),
+                    ),
+                    OutlinedButton.icon(
+                      icon: const Icon(Icons.add_link),
+                      label: Text(l.diagnosticsPairRadio),
+                      onPressed: () => context.push('/pair'),
+                    ),
+                    if (mc.hasPairedDevice)
+                      OutlinedButton(
+                        onPressed: () => _confirmForget(mc),
+                        child: Text(l.diagnosticsForgetShort),
+                      ),
+                  ],
                 ),
-                if (mc.hasPairedDevice) ...<Widget>[
-                  const SizedBox(width: 8),
-                  OutlinedButton(
-                    onPressed: () => mc.forgetDevice(),
-                    child: Text(l.diagnosticsForgetShort),
-                  ),
-                ],
-              ],
-            ),
-          ),
-          if (mc.hasPairedDevice)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 6, 16, 0),
-              child: Text(l.diagnosticsPairedLine('${mc.pairedName}'),
-                  style: TextStyle(
-                      color: cs.onSurface.withValues(alpha: .6),
-                      fontSize: 12)),
-            ),
-          section('SEND (requires connection)'),
-          Wrap(
-            spacing: 8,
-            children: <Widget>[
-              const SizedBox(width: 8),
-              OutlinedButton(
-                onPressed: () => _send(
-                    mc, MeshcoreFrameCodec.sendSelfAdvert(), 'self-advert'),
-                child: const Text('Self-advert'),
               ),
-              OutlinedButton(
-                onPressed: () => _send(
-                    mc, MeshcoreFrameCodec.getDeviceTime(), 'get-time'),
-                child: const Text('Get time'),
-              ),
-              OutlinedButton(
-                onPressed: () => _send(mc,
-                    MeshcoreFrameCodec.syncNextMessage(), 'sync-msg'),
-                child: const Text('Sync msg'),
+              if (mc.hasPairedDevice)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: fact(l.diagnosticsPairedLine('${mc.pairedName}')),
+                ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+                child: const RadioHealthBlock(),
               ),
             ],
           ),
+          // Everything below is a developer surface: it is folded away by
+          // default so the connection facts and the one action stay the page.
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-            child: Row(
+            padding: const EdgeInsets.only(top: 6),
+            child: MmCollapsibleSection(
+              id: MmGroupIds.diagnosticsDeveloper,
+              title: l.diagnosticsSectionDeveloper,
+              initiallyExpanded: false,
               children: <Widget>[
-                Expanded(
-                  child: TextField(
-                    controller: _msg,
-                    decoration: const InputDecoration(
-                        labelText: 'Public-channel test message'),
+                section(l.diagnosticsSectionSend),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: <Widget>[
+                    const SizedBox(width: 8),
+                    OutlinedButton(
+                      onPressed: () => _send(mc,
+                          MeshcoreFrameCodec.sendSelfAdvert(), 'self-advert'),
+                      child: Text(l.diagnosticsSendSelfAdvert),
+                    ),
+                    OutlinedButton(
+                      onPressed: () => _send(
+                          mc, MeshcoreFrameCodec.getDeviceTime(), 'get-time'),
+                      child: Text(l.diagnosticsReadClock),
+                    ),
+                    OutlinedButton(
+                      onPressed: () => _send(mc,
+                          MeshcoreFrameCodec.syncNextMessage(), 'sync-msg'),
+                      child: Text(l.diagnosticsPullMessage),
+                    ),
+                  ],
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                  child: Row(
+                    children: <Widget>[
+                      Expanded(
+                        child: TextField(
+                          controller: _msg,
+                          decoration: InputDecoration(
+                              labelText: l.diagnosticsTestMessage),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      FilledButton(
+                        onPressed: () => _send(
+                          mc,
+                          MeshcoreFrameCodec.sendChannelTextMessage(
+                            channelIdx: 0,
+                            timestamp: nowUnix,
+                            text: _msg.text,
+                          ),
+                          'ch0 message',
+                        ),
+                        child: Text(l.diagnosticsSend),
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(width: 8),
-                FilledButton(
-                  onPressed: () => _send(
-                    mc,
-                    MeshcoreFrameCodec.sendChannelTextMessage(
-                      channelIdx: 0,
-                      timestamp: nowUnix,
-                      text: _msg.text,
+                section(l.diagnosticsSectionM6),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Wrap(spacing: 8, runSpacing: 8, children: <Widget>[
+                    OutlinedButton.icon(
+                      icon: const Icon(Icons.bug_report_outlined),
+                      label: Text(l.diagnosticsResolveTail),
+                      onPressed: () => _resolveTail(mc),
                     ),
-                    'ch0 message',
+                    OutlinedButton.icon(
+                      icon: const Icon(Icons.save_alt),
+                      label: Text(l.diagnosticsExportFixture),
+                      onPressed: () => _export(mc),
+                    ),
+                  ]),
+                ),
+                if (_oracleResult != null)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                    child: Text(_oracleResult!,
+                        style: TextStyle(color: cs.primary)),
                   ),
-                  child: const Text('Send'),
+                if (_exportJson != null)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        TextButton.icon(
+                          icon: const Icon(Icons.copy, size: 16),
+                          label: Text(l.diagnosticsCopyFixture),
+                          onPressed: () {
+                            Clipboard.setData(
+                                ClipboardData(text: _exportJson!));
+                            _toast(l.diagnosticsFixtureCopied);
+                          },
+                        ),
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(10),
+                          color: cs.surfaceContainerHighest,
+                          child: SelectableText(_exportJson!,
+                              style: TextStyle(
+                                  fontFamily: skin.type.monoFamily,
+                                  fontSize: skin.type.sizeSm)),
+                        ),
+                      ],
+                    ),
+                  ),
+                // R59 — soak evidence. Per-scope counters aggregated here so a
+                // run can be read and exported without opening each sheet.
+                const _BotSoakPanel(),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 18, 8, 6),
+                  child: Row(
+                    children: <Widget>[
+                      Expanded(
+                        child: Text(l.diagnosticsRawFrameLog,
+                            style: mmSectionLabelStyle(skin)),
+                      ),
+                      TextButton.icon(
+                        onPressed: mc.captureLog.isEmpty
+                            ? null
+                            : () {
+                                final String blob = mc.captureLog.reversed
+                                    .map((String h) => '${_label(h)}\t$h')
+                                    .join('\n');
+                                Clipboard.setData(ClipboardData(text: blob));
+                                _toast(
+                                    l.diagnosticsFramesCopied('${mc.captureLog.length}'));
+                              },
+                        icon: const Icon(Icons.copy, size: 16),
+                        label: Text(l.diagnosticsCopyLog),
+                      ),
+                    ],
+                  ),
+                ),
+                // R23 / U14: bounded inner scroll for the frame log so the user
+                // can scroll the capture without losing the connection facts
+                // above. Nested ListView is constrained by the SizedBox; the
+                // outer page-level ListView owns the rest.
+                Container(
+                  margin: const EdgeInsets.fromLTRB(16, 4, 16, 16),
+                  height: 360,
+                  decoration: BoxDecoration(
+                    border:
+                        Border.all(color: cs.outline.withValues(alpha: .35)),
+                    borderRadius: mmRadius(context, 8),
+                  ),
+                  child: log.isEmpty
+                      ? Center(child: Text(l.diagnosticsNoFrames))
+                      : Scrollbar(
+                          child: ListView.builder(
+                            padding: const EdgeInsets.symmetric(vertical: 4),
+                            itemCount: log.length,
+                            itemBuilder: (BuildContext _, int i) {
+                              final String hex = log[i];
+                              return ListTile(
+                                dense: true,
+                                title: Text(
+                                  _label(hex),
+                                  style: TextStyle(
+                                      color: hex.startsWith('88')
+                                          ? cs.primary
+                                          : cs.onSurface),
+                                ),
+                                subtitle: Text(
+                                  hex.length > 64
+                                      ? '${hex.substring(0, 64)}…'
+                                      : hex,
+                                  style: TextStyle(
+                                      fontFamily: skin.type.monoFamily,
+                                      fontSize: skin.type.sizeMicro),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
                 ),
               ],
             ),
-          ),
-          section('M6 INTEROP CLOSURE'),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Wrap(spacing: 8, children: <Widget>[
-              OutlinedButton.icon(
-                icon: const Icon(Icons.bug_report_outlined),
-                label: const Text('Resolve channel-tail'),
-                onPressed: () => _resolveTail(mc),
-              ),
-              OutlinedButton.icon(
-                icon: const Icon(Icons.save_alt),
-                label: const Text('Export fixture'),
-                onPressed: () => _export(mc),
-              ),
-            ]),
-          ),
-          if (_oracleResult != null)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-              child: Text(_oracleResult!,
-                  style: TextStyle(color: cs.primary)),
-            ),
-          if (_exportJson != null)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  TextButton.icon(
-                    icon: const Icon(Icons.copy, size: 16),
-                    label: const Text('Copy fixture JSON'),
-                    onPressed: () {
-                      Clipboard.setData(ClipboardData(text: _exportJson!));
-                      _toast('Copied — save to '
-                          'packages/meshcore/test/vectors/interop/');
-                    },
-                  ),
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(10),
-                    color: cs.surfaceContainerHighest,
-                    child: SelectableText(_exportJson!,
-                        style: const TextStyle(
-                            fontFamily: 'JetBrains Mono', fontSize: 11)),
-                  ),
-                ],
-              ),
-            ),
-          // R59 — soak evidence. Per-scope counters aggregated here so a
-          // run can be read and exported without opening each sheet.
-          const _BotSoakPanel(),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 18, 8, 6),
-            child: Row(
-              children: <Widget>[
-                Expanded(
-                  child: Text(AppLocalizations.of(context).diagnosticsRawFrameLog,
-                      style: TextStyle(
-                          fontSize: 11,
-                          letterSpacing: 2,
-                          color: cs.primary)),
-                ),
-                TextButton.icon(
-                  onPressed: mc.captureLog.isEmpty
-                      ? null
-                      : () {
-                          final String blob = mc.captureLog.reversed
-                              .map((String h) => '${_label(h)}\t$h')
-                              .join('\n');
-                          Clipboard.setData(ClipboardData(text: blob));
-                          _toast(
-                              'Copied ${mc.captureLog.length} frames — '
-                              'paste into the chat');
-                        },
-                  icon: const Icon(Icons.copy, size: 16),
-                  label: Text(AppLocalizations.of(context).diagnosticsCopyLog),
-                ),
-              ],
-            ),
-          ),
-          // R23 / U14: bounded inner scroll for the frame log so the
-          // user can scroll the capture without losing the State /
-          // Sends / Capture context above. Nested ListView is
-          // constrained by the SizedBox; outer page-level ListView
-          // still owns the rest of the column.
-          Container(
-            margin: const EdgeInsets.fromLTRB(16, 4, 16, 16),
-            height: 360,
-            decoration: BoxDecoration(
-              border: Border.all(
-                  color: cs.outline.withValues(alpha: .35)),
-              borderRadius: mmRadius(context, 8),
-            ),
-            child: log.isEmpty
-                ? const Center(child: Text('— no frames yet —'))
-                : Scrollbar(
-                    child: ListView.builder(
-                      padding:
-                          const EdgeInsets.symmetric(vertical: 4),
-                      itemCount: log.length,
-                      itemBuilder: (BuildContext _, int i) {
-                        final String hex = log[i];
-                        return ListTile(
-                          dense: true,
-                          title: Text(
-                            _label(hex),
-                            style: TextStyle(
-                                color: hex.startsWith('88')
-                                    ? cs.primary
-                                    : cs.onSurface),
-                          ),
-                          subtitle: Text(
-                            hex.length > 64
-                                ? '${hex.substring(0, 64)}…'
-                                : hex,
-                            style: const TextStyle(
-                                fontFamily: 'JetBrains Mono',
-                                fontSize: 10),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
           ),
         ],
       ),
       ),
     );
+  }
+
+  /// Forget is irreversible — it drops the paired record, the OS bond and the
+  /// history entry — so it asks first and names the consequence.
+  Future<void> _confirmForget(MeshcoreController mc) async {
+    final AppLocalizations l = AppLocalizations.of(context);
+    final bool? forget = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext ctx) => AlertDialog(
+        title: Text(l.diagnosticsForgetConfirmTitle),
+        content: Text(l.diagnosticsForgetConfirmBody),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(l.cancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(l.diagnosticsForgetShort),
+          ),
+        ],
+      ),
+    );
+    if (forget == true) await mc.forgetDevice();
   }
 
   String _label(String hex) {
@@ -446,6 +505,8 @@ class _BotSoakPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ColorScheme cs = Theme.of(context).colorScheme;
+    final AppLocalizations l = AppLocalizations.of(context);
+    final MmSkin skin = context.skin;
     final BotController bot = context.watch<BotController>();
     final List<MapEntry<String, BotBinding>> scopes =
         bot.bindings.entries.toList();
@@ -453,25 +514,22 @@ class _BotSoakPanel extends StatelessWidget {
     // Nothing has ever been bound — say so plainly rather than showing
     // an empty table that looks like a broken readout.
     if (scopes.isEmpty) {
-      return const Padding(
-        padding: EdgeInsets.fromLTRB(16, 18, 16, 0),
-        child: Text('BOT — no scopes bound',
-            style: TextStyle(fontSize: 11, letterSpacing: 2)),
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(16, 18, 16, 0),
+        child: Text(l.diagnosticsSoakEmpty, style: mmSectionLabelStyle(skin)),
       );
     }
 
     final BotCounters t = bot.totals();
-    const TextStyle mono =
-        TextStyle(fontFamily: 'JetBrains Mono', fontSize: 11);
+    final TextStyle mono = TextStyle(
+        fontFamily: skin.type.monoFamily, fontSize: skin.type.sizeSm);
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 18, 16, 0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          Text('BOT SOAK',
-              style: TextStyle(
-                  fontSize: 11, letterSpacing: 2, color: cs.primary)),
+          Text(l.diagnosticsSectionSoak, style: mmSectionLabelStyle(skin)),
           const SizedBox(height: 6),
           Text(
             'total  rx ${t.received}  tx ${t.replied}  '
@@ -497,15 +555,15 @@ class _BotSoakPanel extends StatelessWidget {
           const SizedBox(height: 4),
           TextButton.icon(
             icon: const Icon(Icons.copy, size: 16),
-            label: const Text('Copy soak report'),
+            label: Text(l.diagnosticsCopySoak),
             onPressed: () {
               Clipboard.setData(ClipboardData(
                   text: _redaction.maskSecrets(bot.exportReport())));
               ScaffoldMessenger.maybeOf(context)
                 ?..hideCurrentSnackBar()
-                ..showSnackBar(const SnackBar(
-                  content: Text('Soak report copied'),
-                  duration: Duration(seconds: 2),
+                ..showSnackBar(SnackBar(
+                  content: Text(l.diagnosticsSoakCopied),
+                  duration: const Duration(seconds: 2),
                 ));
             },
           ),

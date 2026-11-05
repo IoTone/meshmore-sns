@@ -73,7 +73,6 @@ void main() {
       'lib/screens/dashboards/studio_dashboard.dart': 4,
       'lib/screens/device_contacts_screen.dart': 6,
       'lib/screens/device_manager_sheet.dart': 10,
-      'lib/screens/diagnostics_screen.dart': 8,
       'lib/screens/dm_screen.dart': 3,
       'lib/screens/doc_reader_screen.dart': 1,
       'lib/screens/elevation_profile_view.dart': 8,

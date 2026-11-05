@@ -1,5 +1,6 @@
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
+
 import 'app_localizations.dart';
 
 // ignore_for_file: type=lint
@@ -3821,7 +3822,12 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String deviceNowParams(
-      String freq, String bw, String sf, String cr, String tx) {
+    String freq,
+    String bw,
+    String sf,
+    String cr,
+    String tx,
+  ) {
     return 'デバイスの現在値: ${freq}MHz ${bw}kHz SF$sf CR$cr ${tx}dBm';
   }
 
@@ -3952,6 +3958,95 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
+  String get diagnosticsSectionDeveloper => '開発者向け';
+
+  @override
+  String get diagnosticsPairRadio => '無線をペアリング';
+
+  @override
+  String get diagnosticsForgetConfirmTitle => 'この無線のペアリングを解除しますか？';
+
+  @override
+  String get diagnosticsForgetConfirmBody =>
+      '再度ペアリングが必要になり、ボンドも削除されます。無線が手の届かない場所にあるときは行わないでください。';
+
+  @override
+  String get diagnosticsSectionSend => '送信';
+
+  @override
+  String get diagnosticsSendSelfAdvert => '自己アドバートを送信';
+
+  @override
+  String get diagnosticsReadClock => '無線の時計を読む';
+
+  @override
+  String get diagnosticsPullMessage => '次のメッセージを取り込む';
+
+  @override
+  String get diagnosticsTestMessage => '公開チャンネルのテストメッセージ';
+
+  @override
+  String get diagnosticsSend => '送信';
+
+  @override
+  String diagnosticsSentWhat(String what) {
+    return '$what を送信しました';
+  }
+
+  @override
+  String diagnosticsSendFailed(String error) {
+    return '送信に失敗しました: $error';
+  }
+
+  @override
+  String get diagnosticsSectionM6 => 'チャンネル末尾の証跡';
+
+  @override
+  String get diagnosticsResolveTail => 'チャンネル末尾を解決';
+
+  @override
+  String get diagnosticsExportFixture => 'フィクスチャを書き出す';
+
+  @override
+  String get diagnosticsCopyFixture => 'フィクスチャ JSON をコピー';
+
+  @override
+  String get diagnosticsFixtureCopied => 'コピーしました。プロトコルパッケージの取得済みベクタに保存してください。';
+
+  @override
+  String get diagnosticsNoRfLog => 'RF ログのフレームがまだありません';
+
+  @override
+  String get diagnosticsNotRfLog => '最後の RF ログフレームをデコードできませんでした';
+
+  @override
+  String get diagnosticsNotGrpTxt =>
+      'このパケットはグループテキストではありません。公開チャンネルで送信して再試行してください。';
+
+  @override
+  String get diagnosticsExportNeedsCapture => '先に RF ログのフレームを取得してください';
+
+  @override
+  String get diagnosticsNoFrames => 'フレームはまだありません';
+
+  @override
+  String diagnosticsFramesCopied(String count) {
+    return '$count 件のフレームをコピーしました';
+  }
+
+  @override
+  String get diagnosticsSectionSoak => 'ソーク';
+
+  @override
+  String get diagnosticsSoakEmpty => 'スコープが未設定です';
+
+  @override
+  String get diagnosticsCopySoak => 'ソークレポートをコピー';
+
+  @override
+  String get diagnosticsSoakCopied => 'ソークレポートをコピーしました';
+
+  @override
   String get nodesClearSearch => '検索をクリア';
 
   @override
@@ -4012,7 +4107,12 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String networksSummary(
-      String freq, String bw, String sf, String cr, String ph) {
+    String freq,
+    String bw,
+    String sf,
+    String cr,
+    String ph,
+  ) {
     return '$freq MHz · $bw kHz · SF$sf · CR$cr · パスハッシュ $ph';
   }
 

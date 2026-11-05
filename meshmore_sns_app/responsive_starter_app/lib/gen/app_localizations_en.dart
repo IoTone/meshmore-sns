@@ -1,5 +1,6 @@
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
+
 import 'app_localizations.dart';
 
 // ignore_for_file: type=lint
@@ -3959,7 +3960,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String deviceNowParams(
-      String freq, String bw, String sf, String cr, String tx) {
+    String freq,
+    String bw,
+    String sf,
+    String cr,
+    String tx,
+  ) {
     return 'device now: ${freq}MHz ${bw}kHz SF$sf CR$cr ${tx}dBm';
   }
 
@@ -4090,6 +4096,97 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get diagnosticsSectionDeveloper => 'Developer';
+
+  @override
+  String get diagnosticsPairRadio => 'Pair a radio';
+
+  @override
+  String get diagnosticsForgetConfirmTitle => 'Forget this radio?';
+
+  @override
+  String get diagnosticsForgetConfirmBody =>
+      'You will need to pair it again, and this clears its bond. Do not do this while the radio is out of reach.';
+
+  @override
+  String get diagnosticsSectionSend => 'Send';
+
+  @override
+  String get diagnosticsSendSelfAdvert => 'Send self-advert';
+
+  @override
+  String get diagnosticsReadClock => 'Read the radio\'s clock';
+
+  @override
+  String get diagnosticsPullMessage => 'Pull the next message';
+
+  @override
+  String get diagnosticsTestMessage => 'Public-channel test message';
+
+  @override
+  String get diagnosticsSend => 'Send';
+
+  @override
+  String diagnosticsSentWhat(String what) {
+    return 'Sent $what';
+  }
+
+  @override
+  String diagnosticsSendFailed(String error) {
+    return 'The send failed: $error';
+  }
+
+  @override
+  String get diagnosticsSectionM6 => 'Channel-tail evidence';
+
+  @override
+  String get diagnosticsResolveTail => 'Resolve channel-tail';
+
+  @override
+  String get diagnosticsExportFixture => 'Export fixture';
+
+  @override
+  String get diagnosticsCopyFixture => 'Copy fixture JSON';
+
+  @override
+  String get diagnosticsFixtureCopied =>
+      'Copied. Save it under the protocol package\'s captured vectors.';
+
+  @override
+  String get diagnosticsNoRfLog => 'No RF-log frame captured yet';
+
+  @override
+  String get diagnosticsNotRfLog => 'The last RF-log frame did not decode';
+
+  @override
+  String get diagnosticsNotGrpTxt =>
+      'That packet is not a group text. Send on the Public channel and try again.';
+
+  @override
+  String get diagnosticsExportNeedsCapture =>
+      'Needs a captured RF-log frame first';
+
+  @override
+  String get diagnosticsNoFrames => 'No frames yet';
+
+  @override
+  String diagnosticsFramesCopied(String count) {
+    return 'Copied $count frames';
+  }
+
+  @override
+  String get diagnosticsSectionSoak => 'Soak';
+
+  @override
+  String get diagnosticsSoakEmpty => 'No scopes bound';
+
+  @override
+  String get diagnosticsCopySoak => 'Copy soak report';
+
+  @override
+  String get diagnosticsSoakCopied => 'Soak report copied';
+
+  @override
   String get nodesClearSearch => 'Clear search';
 
   @override
@@ -4154,7 +4251,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String networksSummary(
-      String freq, String bw, String sf, String cr, String ph) {
+    String freq,
+    String bw,
+    String sf,
+    String cr,
+    String ph,
+  ) {
     return '$freq MHz · $bw kHz · SF$sf · CR$cr · path hash $ph';
   }
 
