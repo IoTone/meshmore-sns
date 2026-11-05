@@ -15,6 +15,32 @@ import 'notifier.dart';
 /// calls and alarms, and a mesh message is neither. Do-not-disturb is left to
 /// the OS: the app never asks for policy access, so a user who silenced the
 /// device stays silent.
+/// The decision [LocalNotifier.refreshHealth] makes, kept pure so it can be
+/// tested without a platform channel.
+///
+/// `blocked` outranks the rest because a disabled app cannot show anything;
+/// a deleted channel outranks a quiet one because it fails rather than
+/// whispers.
+NotifierHealth healthFrom({
+  required bool? enabled,
+  required List<AndroidNotificationChannel>? channels,
+  required Iterable<String> ourIds,
+}) {
+  if (enabled == false) return NotifierHealth.blocked;
+  if (channels == null) return NotifierHealth.ok;
+  final Map<String, AndroidNotificationChannel> byId =
+      <String, AndroidNotificationChannel>{
+    for (final AndroidNotificationChannel c in channels) c.id: c,
+  };
+  bool quiet = false;
+  for (final String id in ourIds) {
+    final AndroidNotificationChannel? c = byId[id];
+    if (c == null) return NotifierHealth.missingChannel;
+    if (c.importance.index < Importance.high.index) quiet = true;
+  }
+  return quiet ? NotifierHealth.quiet : NotifierHealth.ok;
+}
+
 class LocalNotifier implements Notifier {
   LocalNotifier({FlutterLocalNotificationsPlugin? plugin})
       : _plugin = plugin ?? FlutterLocalNotificationsPlugin();
@@ -114,6 +140,7 @@ class LocalNotifier implements Notifier {
         ),
       );
     }
+    await refreshHealth();
     // Asked once, at the first message-capable start; a denial is not an
     // error (D8.21) — the in-app banner in Settings says what will not
     // appear and the app keeps working.
@@ -148,6 +175,60 @@ class LocalNotifier implements Notifier {
       ),
       payload: n.payload,
     );
+  }
+
+  /// The last state read from the OS, and the channels it reported.
+  NotifierHealth _health = NotifierHealth.ok;
+  @override
+  Future<NotifierHealth> health() async => _health;
+
+  /// Reads the OS back and recreates a channel the user deleted.
+  ///
+  /// Called from [init] and when the notification settings are opened, which
+  /// are the two moments the answer can have changed. A missing channel is
+  /// recreated silently: it is the app's own channel id, and a deleted one
+  /// means notifications would fail rather than arrive quiet.
+  Future<NotifierHealth> refreshHealth() async {
+    if (!Platform.isAndroid) return _health = NotifierHealth.ok;
+    final AndroidFlutterLocalNotificationsPlugin? android =
+        _plugin.resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>();
+    if (android == null) return _health = NotifierHealth.ok;
+    try {
+      final bool? enabled = await android.areNotificationsEnabled();
+      final List<AndroidNotificationChannel>? live =
+          enabled == false ? null : await android.getNotificationChannels();
+      final NotifierHealth read = healthFrom(
+        enabled: enabled,
+        channels: live,
+        ourIds: _channels.keys,
+      );
+      if (read == NotifierHealth.missingChannel) {
+        // Recreate what was deleted: the ids are ours, and a missing channel
+        // fails a notification instead of showing it quietly.
+        for (final MapEntry<String, ({String name, String description})> e
+            in _channels.entries) {
+          await android.createNotificationChannel(AndroidNotificationChannel(
+            e.key,
+            e.value.name,
+            description: e.value.description,
+            importance: Importance.high,
+            playSound: true,
+          ));
+        }
+      }
+      return _health = read;
+    } catch (_) {
+      return _health = NotifierHealth.ok;
+    }
+  }
+
+  @override
+  Future<void> cancel(int id) async {
+    for (final Set<int> ids in _live.values) {
+      ids.remove(id);
+    }
+    await _plugin.cancel(id: id);
   }
 
   @override

@@ -24,6 +24,9 @@ class _Strings implements NotificationStrings {
 
   @override
   String sosBody() => 'SOS body without coordinates';
+
+  @override
+  String alarmRunningBody() => 'alarm running body';
 }
 
 /// Records what the app asked the phone to do besides posting.
@@ -167,7 +170,9 @@ void main() {
     ));
     await service.dispose();
     service = build();
-    await channelMsg('[SOS:abc123] 38.9,-104.7 Sam fuel low');
+    // The real shape of channel text: the firmware prepends the sender's name,
+    // so the tag is after the prefix (safety audit SOS-1).
+    await channelMsg('Sam: [SOS:abc123] 38.9,-104.7 fuel low');
     expect(notifier.shown, hasLength(1));
     expect(notifier.shown.single.cls, NotificationClass.sos);
     expect(notifier.shown.single.title, 'SOS');
@@ -175,6 +180,32 @@ void main() {
     // they belong (the diagnostics redactor treats a position as opt-in).
     expect(notifier.shown.single.body, 'SOS body without coordinates');
     expect(notifier.shown.single.body, isNot(contains('38.9')));
+  });
+
+  test('a channel SOS is the SOS class, with the sender prefix in the line',
+      () async {
+    // The defect this pins: `startsWith('[SOS:')` never matched channel text,
+    // so a channel alarm arrived on the chatter channel, could be silenced by
+    // the channel's own bundle, and put the raw coordinates on the lock
+    // screen as an ordinary message body.
+    await prefs.setFor(0, const ChannelNotificationPrefs(
+      os: true,
+      audio: false,
+      haptic: false,
+      mentionsOnly: true,
+    ));
+    await service.dispose();
+    service = build();
+    await channelMsg('Sam: [SOS:abc123] 38.9,-104.7 fuel low',
+        id: 'sos-prefixed');
+    expect(notifier.shown.single.cls, NotificationClass.sos);
+    expect(notifier.shown.single.title, 'SOS');
+    expect(notifier.shown.single.body, 'SOS body without coordinates');
+  });
+
+  test('a prefixed line that is not an SOS stays a channel message', () async {
+    await channelMsg('Sam: hello there', id: 'plain-prefixed');
+    expect(notifier.shown.single.cls, NotificationClass.channel);
   });
 
   test('a direct SOS is redacted too, and keeps the DM route', () async {

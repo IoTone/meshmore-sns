@@ -24,6 +24,7 @@ import '../chat/unread_counts.dart';
 import '../places/place_bridge.dart';
 import '../places/place_store.dart';
 import '../screens/grid_screen.dart';
+import '../sos/sos_controller.dart';
 import '../ui/demo_chip.dart';
 import '../screens/map_screen.dart';
 import '../screens/nodes_screen.dart';
@@ -299,12 +300,22 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
             // only opens the alarm screen; raising still takes the three-second
             // hold, so a stray tap costs nothing (`meshmore-sos-spec.md` §8).
             actions: <Widget>[
-              IconButton(
-                key: const ValueKey<String>('sos-entry'),
-                tooltip: l.sosEntryTooltip,
-                icon: const Icon(Icons.sos),
-                onPressed: () => context.push('/sos'),
-              ),
+              // SOS-4: an alarm that is repeating is visible from every
+              // view, not only from the screen the user left. The tint and the
+              // semantics label are the two signals that survive a skin
+              // change and a screen reader; the ongoing notification carries
+              // the same fact outside the app.
+              Builder(builder: (BuildContext context) {
+                final bool alarm = context.watch<SosController?>()?.isRunning ?? false;
+                final MmSkin skin = context.skin;
+                return IconButton(
+                  key: const ValueKey<String>('sos-entry'),
+                  tooltip: alarm ? l.sosActive : l.sosEntryTooltip,
+                  icon: Icon(Icons.sos,
+                      color: alarm ? skin.color.alert : null),
+                  onPressed: () => context.push('/sos'),
+                );
+              }),
               const DemoChip(),
               const RadioLinkIndicator(),
             ],

@@ -2384,6 +2384,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get notifBodySos => '位置はアプリで確認してください。警報には座標が含まれますが、ロック画面には表示しません。';
 
   @override
+  String get notifAlarmRunningBody => '警報を繰り返し送信中です。アプリを開いて停止してください。';
+
+  @override
   String get notifSectionTitle => '通知';
 
   @override
@@ -2412,6 +2415,14 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get notifDeniedBanner => 'このアプリの通知がオフのため、メッセージはロック画面に表示されません。';
+
+  @override
+  String get notifQuietBanner =>
+      'このアプリの通知が Android 設定でサイレントになっているため、警告音は鳴りません。';
+
+  @override
+  String get notifMissingChannelBanner =>
+      'このアプリの通知チャンネルが削除されていたため、一部の通知を表示できませんでした。再作成しました。';
 
   @override
   String get channelsKeySource => '鍵ソース';
@@ -4674,6 +4685,21 @@ class AppLocalizationsJa extends AppLocalizations {
   String sosMissedSends(int count) {
     return 'アプリのスリープ中に送信できなかった回数: $count';
   }
+
+  @override
+  String get sosSafeSent => '安全メッセージを送信しました。';
+
+  @override
+  String get sosSafeNotSent =>
+      '安全メッセージはこの端末から送信されませんでした。繰り返しは停止しましたが、安全であることは誰にも伝わっていません。';
+
+  @override
+  String get sosResumed =>
+      'この警報は前回アプリを閉じたときに実行中でした。残り時間の分は継続します。アプリが閉じている間に逃した繰り返しは送信されていません。';
+
+  @override
+  String get sosBestEffort =>
+      '端末がスリープしている間の繰り返しはベストエフォートです。遅れた分は直近の1回だけを送り、まとめて送信はしません。';
 
   @override
   String get sosSendFailed => '無線が繰り返し送信を拒否しました。スケジュールは継続します。';

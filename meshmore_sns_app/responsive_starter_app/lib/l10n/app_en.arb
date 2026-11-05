@@ -1612,6 +1612,8 @@
     "description": "OS notification title for an SOS or its acknowledgement."
   },
   "notifBodySos": "Open the app for the position. The alert carries coordinates that this phone does not show on the lock screen.",
+  "notifAlarmRunningBody": "An alarm is repeating. Open the app to stop it.",
+  "@notifAlarmRunningBody": {"description": "Ongoing notification shown while an SOS is running."},
   "@notifBodySos": {
     "description": "OS notification body for an SOS. Deliberately omits the coordinates: the lock screen is not where a position should be published."
   },
@@ -1652,6 +1654,10 @@
     "description": "Warns about the key-suffix opt-in."
   },
   "notifDeniedBanner": "Notifications are turned off for this app, so messages will not appear on your lock screen.",
+  "notifQuietBanner": "Notifications for this app are set to silent in Android settings, so alerts will not make a sound.",
+  "@notifQuietBanner": {"description": "Shown when one of the app's notification channels is below high importance."},
+  "notifMissingChannelBanner": "One of this app's notification channels was deleted, so some alerts could not be shown. It has been recreated.",
+  "@notifMissingChannelBanner": {"description": "Shown when a notification channel was deleted by the user."},
   "@notifDeniedBanner": {
     "description": "Shown when the OS notification permission is denied."
   },
@@ -3235,6 +3241,14 @@
   "sosStopRepeats": "Stop the repeats",
   "sosStopHint": "Stops the repeats on this phone. Nothing is sent, so nobody is told.",
   "sosMissedSends": "Not sent while the app was asleep: {count}",
+  "sosSafeSent": "Your safe message was sent.",
+  "@sosSafeSent": {"description": "Ended panel after I'm safe, when the [SAFE] left the phone."},
+  "sosSafeNotSent": "Your safe message did not leave this phone. The repeats have stopped here, but nobody was told you are safe.",
+  "@sosSafeNotSent": {"description": "Ended panel after I'm safe, when the radio refused it or there was no link."},
+  "sosResumed": "This alarm was running when the app last closed. What is left of the hour continues; repeats missed while the app was closed were not sent.",
+  "@sosResumed": {"description": "Running panel, when the alarm was restored from disk after a restart."},
+  "sosBestEffort": "Repeats are best effort while the phone sleeps: a delayed tick sends the most recent one, not a burst.",
+  "@sosBestEffort": {"description": "Running panel, honest limit of a one-second timer under Doze."},
   "@sosMissedSends": {
     "description": "Active alarm: repeats that were due during a sleep window and were skipped rather than fired as a burst.",
     "placeholders": {

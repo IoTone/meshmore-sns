@@ -231,8 +231,20 @@ void main() {
           // foreground service keeps the isolate alive, and this owns the
           // one-second schedule tick.
           ChangeNotifierProvider<SosController>(
-            create: (BuildContext ctx) =>
-                SosController(mc: ctx.read<MeshcoreController>())..start(),
+            create: (BuildContext ctx) {
+              final SosController sos = SosController(
+                mc: ctx.read<MeshcoreController>(),
+                // A blocked key is hidden everywhere, the alarm's target list
+                // and its claims included (safety audit SOS-5).
+                isBlockedKey: blockStore.isBlocked,
+                // SOS-4: the alarm's own notification is the one sign of it
+                // that survives leaving the screen, and it is cleared when
+                // the alarm ends.
+                onRunningChanged: (bool running) =>
+                    unawaited(notifications.setAlarmRunning(running)),
+              )..start();
+              return sos;
+            },
           ),
           // Fences watch our own position against circles the user drew. The
           // tick is app-scoped for the same reason the alarm's is: a fence

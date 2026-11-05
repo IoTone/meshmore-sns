@@ -6,6 +6,7 @@ import '../gen/app_localizations.dart';
 import '../meshcore/chat_message.dart';
 import 'channel_notification_prefs.dart';
 import 'mention_matcher.dart';
+import '../sos/sos_message.dart';
 import 'message_notification.dart';
 import 'notification_focus.dart';
 import 'notifier.dart';
@@ -56,6 +57,11 @@ abstract interface class NotificationStrings {
   /// without the user opening the app must not publish them either. The full
   /// text stays in the thread.
   String sosBody();
+
+  /// The body of the ongoing notification shown while an alarm repeats.
+  /// Deliberately not the message text: this line is about the alarm, and it
+  /// stays on screen until the alarm ends.
+  String alarmRunningBody();
 }
 
 /// [NotificationStrings] over the generated ARB bundle.
@@ -76,6 +82,9 @@ class LocalizedNotificationStrings implements NotificationStrings {
 
   @override
   String sosBody() => l10n.notifBodySos;
+
+  @override
+  String alarmRunningBody() => l10n.notifAlarmRunningBody;
 }
 
 /// Decides which inbound messages become notifications, and which do not.
@@ -178,7 +187,7 @@ class NotificationService {
     if (m.outgoing) return;
     if (isBlocked?.call(m) ?? false) return;
     if (!_firstTime(m.id)) return;
-    final bool sos = m.text.toUpperCase().startsWith('[SOS:');
+    final bool sos = isSosLine(m.text);
     if (!sos) {
       if (focus.isChannelOpen(m.channelIdx)) return;
       final ChannelNotificationPrefs p = prefs.prefsFor(m.channelIdx);
@@ -221,7 +230,7 @@ class NotificationService {
     final String? name = peerDisplayName(key);
     _effects.cue(NotificationClass.direct);
     _effects.vibrate();
-    final bool sos = m.text.toUpperCase().startsWith('[SOS:');
+    final bool sos = isSosLine(m.text);
     notifier.show(MessageNotification(
       id: idFor(m.id),
       cls: sos ? NotificationClass.sos : NotificationClass.direct,
@@ -231,6 +240,34 @@ class NotificationService {
       payload: 'dm:$key',
     ));
   }
+
+  /// Whether an alarm is repeating, as the OS should show it.
+  ///
+  /// The alarm screen is not the only place a user can be: an armed alarm left
+  /// running while they read chat needs one ambient sign, or a backgrounded
+  /// alarm reads as stopped. A fixed id replaces the same notification rather
+  /// than stacking, and cancelling it is the end of the alarm.
+  Future<void> setAlarmRunning(bool running) async {
+    if (running == _alarmRunning) return;
+    _alarmRunning = running;
+    if (!running) {
+      await notifier.cancel(NotificationService.alarmNotificationId);
+      return;
+    }
+    await notifier.show(MessageNotification(
+      id: NotificationService.alarmNotificationId,
+      cls: NotificationClass.sos,
+      title: strings().title(NotificationClass.sos, null),
+      body: strings().alarmRunningBody(),
+      payload: 'sos:',
+    ));
+  }
+
+  bool _alarmRunning = false;
+
+  /// The alarm's own notification id: far from any message's digest range in
+  /// practice, and fixed so replacing it never stacks.
+  static const int alarmNotificationId = 0x5A5A5A;
 
   /// True the first time [id] is seen. A replayed frame, a re-subscribed
   /// stream or a reconnect must not announce the same message twice.

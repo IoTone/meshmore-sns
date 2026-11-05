@@ -670,6 +670,23 @@ class _Running extends StatelessWidget {
         // What the schedule did not manage, said plainly: a sleep window skips
         // repeats rather than firing a burst the radio would drop, and a
         // refused repeat is a repeat nobody heard.
+        // L3: a one-second timer is not an alarm clock. Under Doze the OS
+        // defers it, and the panel says what that costs rather than implying
+        // a punctual schedule the app cannot keep.
+        SizedBox(height: skin.space.step(2)),
+        Text(l.sosBestEffort,
+            key: const ValueKey<String>('sos-best-effort'),
+            style: TextStyle(
+                color: skin.color.fgMuted, fontSize: skin.type.sizeSm, height: 1.5)),
+        if (sos.resumedFromRestart) ...<Widget>[
+          SizedBox(height: skin.space.step(2)),
+          Text(l.sosResumed,
+              key: const ValueKey<String>('sos-resumed'),
+              style: TextStyle(
+                  color: skin.color.fgMuted,
+                  fontSize: skin.type.sizeSm,
+                  height: 1.5)),
+        ],
         if (sos.missedSends > 0) ...<Widget>[
           SizedBox(height: skin.space.step(2)),
           Text(l.sosMissedSends(sos.missedSends),
@@ -772,6 +789,20 @@ class _Ended extends StatelessWidget {
                 color: skin.color.fg,
                 fontSize: skin.type.sizeBodyLg,
                 height: 1.5)),
+        // SOS-3: a stop that never left the phone must not read like one that
+        // reached the mesh. Only the "I'm safe" path tells anyone, so only it
+        // carries this line; a silent stop says nothing was sent.
+        if (sos.safeSent != null) ...<Widget>[
+          SizedBox(height: skin.space.step(3)),
+          Text(
+            sos.safeSent! ? l.sosSafeSent : l.sosSafeNotSent,
+            key: const ValueKey<String>('sos-safe-outcome'),
+            style: TextStyle(
+                color: sos.safeSent! ? skin.color.fgMuted : skin.color.alert,
+                fontSize: skin.type.sizeBody,
+                height: 1.5),
+          ),
+        ],
         SizedBox(height: skin.space.step(4)),
         // The headline already names the acknowledgement that stopped the
         // alarm, so the list below carries the others only. Repeating the same

@@ -10,6 +10,7 @@ import '../meshcore/chat_message.dart';
 import '../meshcore/discovered_node.dart';
 import '../meshcore/meshcore_controller.dart';
 import 'checkin.dart';
+import 'sos_alarm_record.dart';
 import 'sos_prefs.dart';
 import 'sos_engine.dart';
 import 'sos_message.dart';
@@ -56,6 +57,8 @@ final class SosController extends ChangeNotifier {
     DateTime Function()? clock,
     Random? random,
     this.autoTick = true,
+    this.isBlockedKey,
+    this.onRunningChanged,
   })  : _mc = mc,
         _clock = clock ?? DateTime.now,
         _engine = SosEngine(clock: clock ?? DateTime.now, random: random);
@@ -80,6 +83,25 @@ final class SosController extends ChangeNotifier {
   /// sleep window swallowed. Both reset when a new alarm is raised.
   int _failedSends = 0;
   int _missedSends = 0;
+
+  /// True when this alarm came back from a snapshot rather than from a hold
+  /// in this session, so the screen can say the app was closed in between.
+  bool _resumed = false;
+  bool get resumedFromRestart => _resumed;
+
+  /// What became of the `[SAFE]` message: null when no stop was attempted,
+  /// true when it left, false when the radio refused it or there was none.
+  bool? _safeSent;
+  bool? get safeSent => _safeSent;
+
+  /// A blocked key's copy or claim must not appear here either: the block
+  /// spec's rule is that every surface hides it, and the alarm is one.
+  bool Function(String keyHex)? isBlockedKey;
+
+  /// Told when the schedule starts and stops, so the app can carry one sign of
+  /// a running alarm outside this screen.
+  void Function(bool running)? onRunningChanged;
+  bool _wasRunning = false;
 
   /// The channel slot the alarm goes out on, and the one the screen names.
   int _channelSlot = 0;
@@ -166,6 +188,47 @@ final class SosController extends ChangeNotifier {
     _channelSub ??= _mc.incomingChannelMessages.listen(_onChannel);
     _dmSub ??= _mc.incomingDirectMessages.listen(_onDm);
     unawaited(_restoreDestination());
+    unawaited(_restoreAlarm());
+  }
+
+  /// Rebuilds an alarm that was running when the process died.
+  ///
+  /// The engine's rule is the spec's (§13.10): packets already on air are not
+  /// replayed, what is left of the hour goes out with fresh sends, and an hour
+  /// that elapsed while the app was dead opens on `expired` rather than
+  /// pretending. A record that cannot be read is cleared, not retried.
+  Future<void> _restoreAlarm() async {
+    final Map<String, Object?>? json = await SosPrefs.alarm();
+    if (json == null) return;
+    final SosSnapshot? snap = alarmFromJson(json);
+    if (snap == null) {
+      await SosPrefs.saveAlarm(null);
+      return;
+    }
+    final SosRaise r = snap.raise;
+    final int? slot = int.tryParse(r.targets.channelId ?? '');
+    if (slot != null) _channelSlot = slot;
+    final List<String> keys = <String>[
+      for (final List<int> k in r.targets.contactKeys) hexOfKey(k),
+    ];
+    if (keys.isNotEmpty) {
+      _contactKeysHex = keys;
+      _destinationChosen = true;
+    }
+    _engine.restore(snap);
+    _resumed = _engine.state == SosState.active;
+    _notify();
+    if (_engine.isRunning) {
+      _ensureTicker();
+      // Reconciles with the wall clock immediately: if the hour has run out
+      // this moves the alarm to `expired` without sending anything.
+      pump();
+    }
+  }
+
+  /// Writes the current alarm, or clears the record once nothing is running.
+  void _persistAlarm() {
+    unawaited(SosPrefs.saveAlarm(alarmToJson(_engine.snapshot())));
   }
 
   /// Applies a remembered destination once preferences answer. A test that
@@ -217,9 +280,10 @@ final class SosController extends ChangeNotifier {
     final Map<String, String> names = <String, String>{
       for (final DiscoveredNode n in _mc.nodes) n.pubKeyHex.toLowerCase(): n.name,
     };
+    final bool Function(String keyHex)? blocked = isBlockedKey;
     return <({String keyHex, String? name})>[
       for (final String hex in _contactKeysHex)
-        (keyHex: hex, name: names[hex]),
+        if (blocked == null || !blocked(hex)) (keyHex: hex, name: names[hex]),
     ];
   }
 
@@ -269,7 +333,12 @@ final class SosController extends ChangeNotifier {
       fixAt: lat == null || lon == null ? null : now,
     );
     _lastRefusal = _engine.raise(raise);
-    if (_lastRefusal == null) _acks.clear();
+    if (_lastRefusal == null) {
+      _acks.clear();
+      _resumed = false;
+      _safeSent = null;
+    }
+    _persistAlarm();
     _notify();
     return _lastRefusal;
   }
@@ -283,6 +352,7 @@ final class SosController extends ChangeNotifier {
       _ensureTicker();
       pump();
     }
+    _persistAlarm();
     _notify();
     return _lastRefusal;
   }
@@ -290,6 +360,7 @@ final class SosController extends ChangeNotifier {
   void abort() {
     _engine.abort();
     _stopTicker();
+    _persistAlarm();
     _notify();
   }
 
@@ -297,6 +368,7 @@ final class SosController extends ChangeNotifier {
   void cancel() {
     _engine.cancel();
     _stopTicker();
+    _persistAlarm();
     _notify();
   }
 
@@ -306,13 +378,25 @@ final class SosController extends ChangeNotifier {
         _engine.iAmSafe();
     _stopTicker();
     _notify();
-    if (safe?.text == null) return;
-    await _send(safe!.text!);
+    if (safe?.text == null) {
+      // Nothing was built, so nothing left: the panel must not read as though
+      // the mesh was told (safety audit SOS-3).
+      _safeSent = false;
+      _persistAlarm();
+      _notify();
+      return;
+    }
+    _safeSent = await _send(safe!.text!);
+    _persistAlarm();
+    _notify();
   }
 
   void dismiss() {
     _engine.dismiss();
     _stopTicker();
+    // The alarm is over and the record goes with it: a dismissed alarm must
+    // not come back as a ghost on the next launch.
+    unawaited(SosPrefs.saveAlarm(null));
     _notify();
   }
 
@@ -369,6 +453,7 @@ final class SosController extends ChangeNotifier {
     // is still repeating, or a check-in whose deadline has not passed.
     final bool checkinWatching = _checkin?.state == CheckinState.watching;
     if (!_engine.isRunning && !checkinWatching) _stopTicker();
+    _persistAlarm();
     _notify();
   }
 
@@ -377,7 +462,7 @@ final class SosController extends ChangeNotifier {
   /// A failure is not a failed alarm (`meshmore-sos-spec.md` §10), but it is
   /// also not nothing: a radio that refused the packet means nobody heard that
   /// repeat, and the panel says so rather than reporting a clean run.
-  Future<void> _send(String text) async {
+  Future<bool> _send(String text) async {
     // The controller answers with the row it created and marks it failed when
     // the write did not leave, so the refusal is read from the row rather than
     // from a throw: the send path deliberately does not throw for a refused
@@ -399,6 +484,7 @@ final class SosController extends ChangeNotifier {
     } else {
       _failedSends = 0;
     }
+    return !refused;
   }
 
   /// Repeats the radio refused, since the alarm was raised.
@@ -443,6 +529,14 @@ final class SosController extends ChangeNotifier {
     if (parsed == null) return;
 
     if (parsed is SosAckMessage) {
+      // A blocked key's claim is not shown: the block spec's rule is that
+      // every surface hides it, and an acknowledgement on the alarm is a
+      // surface.
+      final bool Function(String keyHex)? blocked = isBlockedKey;
+      if (direct && blocked != null && fromKey != null) {
+        final String hex = hexOfKey(fromKey);
+        if (blocked(hex)) return;
+      }
       final SosAckOutcome outcome = _engine.recordAck(
         parsed,
         direct: direct,
@@ -476,12 +570,10 @@ final class SosController extends ChangeNotifier {
   }
 
   /// Channel text is `"name: body"` (the firmware prepends the sender's
-  /// name); the tag starts after that, not at the beginning of the line.
-  static String _afterSenderPrefix(String text) {
-    final int sep = text.indexOf(': ');
-    if (sep <= 0 || sep > 32) return text;
-    return text.substring(sep + 2).trim();
-  }
+  /// name); the tag starts after that, not at the beginning of the line. The
+  /// rule lives in `sos_message.dart` so the notification handler cannot
+  /// spell it differently.
+  static String _afterSenderPrefix(String text) => withoutSenderPrefix(text);
 
   /// A direct message carries the peer's key (full or a 12-hex prefix); the
   /// name behind it is the fabric's, not the message's, so it is looked up
@@ -527,6 +619,16 @@ final class SosController extends ChangeNotifier {
   /// notification waits for the frame to end, and one deferral is enough for
   /// however many transitions happen in that frame.
   void _notify() {
+    final bool running = _engine.isRunning;
+    if (running != _wasRunning) {
+      _wasRunning = running;
+      final void Function(bool running)? changed = onRunningChanged;
+      if (changed != null) {
+        // Deferred like the listener notification: a show/cancel is a platform
+        // call, and mid-frame is not the place for one.
+        scheduleMicrotask(() => changed(running));
+      }
+    }
     final SchedulerPhase phase = SchedulerBinding.instance.schedulerPhase;
     final bool locked = phase == SchedulerPhase.persistentCallbacks ||
         phase == SchedulerPhase.midFrameMicrotasks;

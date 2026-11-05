@@ -10,6 +10,7 @@ import '../l10n/locale_controller.dart';
 import '../meshcore/airtime.dart';
 import '../meshcore/block_store.dart';
 import '../meshcore/meshcore_controller.dart';
+import '../notifications/notifier.dart';
 import '../perms/permissions_service.dart';
 import '../ui/mm_components.dart';
 import '../ui/mm_scaffold.dart';
@@ -135,6 +136,7 @@ class AppSettingsScreen extends StatelessWidget {
           // otherwise ready. Say so once, in the place the toggle lives, so
           // a silent lock screen is not mistaken for a radio failure.
           const _NotificationsDeniedBanner(),
+          const _NotificationHealthRow(),
           MmSectionHeader(l.settingsAppGroupRadio),
           // Radio-free mode. Off is the normal state; turning it off asks an
           // already-paired companion to reconnect rather than waiting for the
@@ -361,6 +363,46 @@ class _NotificationsDeniedBanner extends StatelessWidget {
           trailing: TextButton(
             onPressed: () => ctx.read<PermissionsService>().openAppSettingsPage(),
             child: Text(l.deviceOpenSettings),
+          ),
+        );
+      },
+    );
+  }
+}
+
+/// L13 — the OS state the app cannot otherwise see: a channel the user
+/// deleted, or one they lowered to "silent". Without this row the app keeps
+/// promising alerts it can no longer make loud.
+class _NotificationHealthRow extends StatelessWidget {
+  const _NotificationHealthRow();
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations l = AppLocalizations.of(context);
+    final Notifier? notifier = context.watch<Notifier?>();
+    if (notifier == null) return const SizedBox.shrink();
+    return FutureBuilder<NotifierHealth>(
+      future: notifier.health(),
+      builder: (BuildContext ctx, AsyncSnapshot<NotifierHealth> snap) {
+        final NotifierHealth? state = snap.data;
+        if (state == null ||
+            state == NotifierHealth.ok ||
+            state == NotifierHealth.blocked) {
+          // Blocked is the permission banner's job, above.
+          return const SizedBox.shrink();
+        }
+        return ListTile(
+          key: const ValueKey<String>('notif-health'),
+          leading: const Icon(Icons.volume_mute_outlined),
+          title: Text(state == NotifierHealth.quiet
+              ? l.notifQuietBanner
+              : l.notifMissingChannelBanner),
+          // MmAction, not a TextButton: a page-level text button reads as a
+          // label in this app (affordance audit), and the guard says so.
+          trailing: MmAction(
+            dense: true,
+            label: l.deviceOpenSettings,
+            onPressed: () => ctx.read<PermissionsService>().openAppSettingsPage(),
           ),
         );
       },
