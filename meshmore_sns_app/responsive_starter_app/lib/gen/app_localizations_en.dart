@@ -668,10 +668,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get demoModeRow => 'No radio';
 
   @override
-  String get demoModeOn => 'Explore the app offline';
-
-  @override
-  String get demoModeOff => 'Explore the app offline';
+  String get demoModeSubtitle => 'Explore the app offline';
 
   @override
   String get firstRunHeader => 'MESHMORE · WELCOME';

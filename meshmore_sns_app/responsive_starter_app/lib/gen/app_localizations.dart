@@ -1250,17 +1250,11 @@ abstract class AppLocalizations {
   /// **'No radio'**
   String get demoModeRow;
 
-  /// No description provided for @demoModeOn.
+  /// No description provided for @demoModeSubtitle.
   ///
   /// In en, this message translates to:
   /// **'Explore the app offline'**
-  String get demoModeOn;
-
-  /// No description provided for @demoModeOff.
-  ///
-  /// In en, this message translates to:
-  /// **'Explore the app offline'**
-  String get demoModeOff;
+  String get demoModeSubtitle;
 
   /// No description provided for @firstRunHeader.
   ///

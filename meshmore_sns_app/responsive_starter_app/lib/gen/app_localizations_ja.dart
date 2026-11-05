@@ -640,10 +640,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get demoModeRow => '無線なし';
 
   @override
-  String get demoModeOn => 'オフラインでアプリを試せます';
-
-  @override
-  String get demoModeOff => 'オフラインでアプリを試せます';
+  String get demoModeSubtitle => 'オフラインでアプリを試せます';
 
   @override
   String get firstRunHeader => 'MESHMORE · ようこそ';

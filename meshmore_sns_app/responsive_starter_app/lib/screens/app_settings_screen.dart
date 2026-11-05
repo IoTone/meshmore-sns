@@ -141,7 +141,7 @@ class AppSettingsScreen extends StatelessWidget {
           SwitchListTile(
             title: Text(l.demoModeRow),
             subtitle: Text(
-              demo.enabled ? l.demoModeOn : l.demoModeOff,
+              l.demoModeSubtitle,
               style: TextStyle(color: cs.onSurface.withValues(alpha: .6)),
             ),
             secondary: Icon(demo.enabled ? Icons.science : Icons.podcasts),
