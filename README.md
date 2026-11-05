@@ -8,7 +8,7 @@ Offline-first, theme-driven, with a hyperlocal radar grid, per-channel chat,
 
 > **Status — in development.** Source is here for review and contribution;
 > there's no public release channel yet. Measured 2026-11-05 in a fresh checkout:
-> 1688 widget/unit tests pass in 2 m 40 s, the protocol package's 368 pass with
+> 1690 widget/unit tests pass in about 2 minutes, the protocol package's 368 pass with
 > one skipped, the pure-Java port's 143 pass with one skipped, and `flutter
 > analyze` is clean apart from two pre-existing `unawaited_return_in_try_block`
 > warnings in `lib/maps/maps_controller.dart`. A debug APK builds and installs.
@@ -110,7 +110,7 @@ cd meshmore_sns_app/responsive_starter_app
 flutter pub get
 flutter run            # debug on a connected device
 flutter analyze        # static analysis
-flutter test           # 1688 tests at time of writing
+flutter test           # 1690 tests at time of writing
 ```
 
 **Submodule note** — the `meshcore` codec lives at
@@ -142,7 +142,7 @@ meshmore-sns/
     ├── packages/meshcore/          ← pure-Dart protocol codec
     └── responsive_starter_app/     ← Flutter app
         ├── lib/                    ← all controllers, screens, theme, perms…
-        ├── test/                   ← 1688 widget/unit tests
+        ├── test/                   ← 1690 widget/unit tests
         ├── android/                ← FGS manifest, BLE perms
         └── ios/                    ← Info.plist usage strings
 ```

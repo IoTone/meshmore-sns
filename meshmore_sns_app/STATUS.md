@@ -4,8 +4,8 @@ _Snapshot as of 2026-11-05. App `1.0.197+13`, branch `feat/app-completion`.
 Change records below are newest first from R113; older entries are kept in
 the order they were written._
 
-**What is proven and what is not.** Measured on this tree, 2026-11-05, in a fresh checkout at `ef0a34e`: `flutter test`
-1688 passed in 2 m 40 s; `flutter analyze` reports only the two pre-existing `unawaited_return_in_try_block` warnings in
+**What is proven and what is not.** Measured on this tree, 2026-11-05, at `1d30b0d` on this tree: `flutter test`
+1690 passed in 2 m 0 s; `flutter analyze` reports only the two pre-existing `unawaited_return_in_try_block` warnings in
 `lib/maps/maps_controller.dart` (8 s); the protocol package `dart test` 368 passed with 1 skipped; the pure-Java port
 `./gradlew test` 143 passed with 1 skipped (7 s); `flutter build apk --debug` succeeds with the native AVIF library in
 the APK (1 m 23 s cold, far shorter on a warm tree). **Nothing below is device-verified.** The phone is behind a PIN keyguard, so every screen-level, on-air and Doze
