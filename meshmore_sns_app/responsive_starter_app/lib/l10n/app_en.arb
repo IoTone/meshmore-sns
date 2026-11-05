@@ -393,10 +393,10 @@
   "nodesSyncContacts": "Sync contacts",
   "nodesFloodAdvert": "Flood advert",
   "nodesFloodAdvertBody": "Whole mesh — neighbours + repeaters. Best for discovery.",
-  "nodesZeroHopAdvert": "Zero-hop advert",
+  "nodesZeroHopAdvert": "Direct advert",
   "nodesZeroHopAdvertBody": "Direct neighbours only — not rebroadcast. Quieter on a busy mesh.",
   "nodesFloodAdvertSent": "Flood advert sent — propagates across the whole mesh (neighbours + repeaters). The other node must Advertise too before it appears here.",
-  "nodesZeroHopAdvertSent": "Zero-hop advert sent — direct neighbours only, not rebroadcast by repeaters.",
+  "nodesZeroHopAdvertSent": "Sent to radios in direct range only.",
   "nodesSearchHint": "Search by name, shortId, or pubkey…",
   "nodesFilterStarred": "Starred",
   "nodesFilterInRange": "In range",
@@ -1056,7 +1056,7 @@
   "nodeDetailAddDeviceContactDone": "Added. DMs will route now. If they don't, your contact list may be full.",
   "nodeDetailAddDeviceContactFailed": "Couldn't add the contact — check the link and try again.",
   "nodeDetailRemoveDeviceContact": "Remove from device contacts",
-  "nodeDetailRemoveDeviceContactConfirm": "Remove “{name}” from your radio's contacts? Frees a slot. You can re-add it later.",
+  "nodeDetailRemoveDeviceContactConfirm": "Remove “{name}” from the radio's contacts? You can add them again later.",
   "@nodeDetailRemoveDeviceContactConfirm": {
     "placeholders": {
       "name": {
@@ -1288,7 +1288,7 @@
   "docsRefresh": "Refresh from GitHub",
   "docsUpdated": "Updated to the latest version",
   "docsUpToDate": "Already up to date",
-  "docsOriginBundled": "Bundled snapshot",
+  "docsOriginBundled": "Included copy",
   "docsOriginUpdated": "Updated {when}",
   "@docsOriginUpdated": {
     "placeholders": {
@@ -1674,7 +1674,7 @@
   "channelsDefaultBadge": "DEFAULT",
   "channelsSetDefaultTooltip": "Set as default channel on launch",
   "channelsClearDefaultTooltip": "Clear default channel preference",
-  "channelsSetDefaultSnack": "Slot {idx} is now the launch default",
+  "channelsSetDefaultSnack": "Channel {idx} is now the one the app opens on",
   "@channelsSetDefaultSnack": {
     "placeholders": {
       "idx": {

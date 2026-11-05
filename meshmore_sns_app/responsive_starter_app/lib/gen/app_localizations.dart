@@ -1421,7 +1421,7 @@ abstract class AppLocalizations {
   /// No description provided for @nodesZeroHopAdvert.
   ///
   /// In en, this message translates to:
-  /// **'Zero-hop advert'**
+  /// **'Direct advert'**
   String get nodesZeroHopAdvert;
 
   /// No description provided for @nodesZeroHopAdvertBody.
@@ -1439,7 +1439,7 @@ abstract class AppLocalizations {
   /// No description provided for @nodesZeroHopAdvertSent.
   ///
   /// In en, this message translates to:
-  /// **'Zero-hop advert sent — direct neighbours only, not rebroadcast by repeaters.'**
+  /// **'Sent to radios in direct range only.'**
   String get nodesZeroHopAdvertSent;
 
   /// No description provided for @nodesSearchHint.
@@ -3053,7 +3053,7 @@ abstract class AppLocalizations {
   /// No description provided for @nodeDetailRemoveDeviceContactConfirm.
   ///
   /// In en, this message translates to:
-  /// **'Remove “{name}” from your radio\'s contacts? Frees a slot. You can re-add it later.'**
+  /// **'Remove “{name}” from the radio\'s contacts? You can add them again later.'**
   String nodeDetailRemoveDeviceContactConfirm(String name);
 
   /// No description provided for @nodeDetailRemoveDeviceContactDone.
@@ -3641,7 +3641,7 @@ abstract class AppLocalizations {
   /// No description provided for @docsOriginBundled.
   ///
   /// In en, this message translates to:
-  /// **'Bundled snapshot'**
+  /// **'Included copy'**
   String get docsOriginBundled;
 
   /// No description provided for @docsOriginUpdated.
@@ -4475,7 +4475,7 @@ abstract class AppLocalizations {
   /// No description provided for @channelsSetDefaultSnack.
   ///
   /// In en, this message translates to:
-  /// **'Slot {idx} is now the launch default'**
+  /// **'Channel {idx} is now the one the app opens on'**
   String channelsSetDefaultSnack(int idx);
 
   /// No description provided for @channelsClearedDefaultSnack.

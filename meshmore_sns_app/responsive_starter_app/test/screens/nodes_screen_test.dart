@@ -149,7 +149,7 @@ void main() {
     await t.tap(find.text('Advertise'));
     await t.pumpAndSettle();
     expect(find.text('Flood advert'), findsOneWidget);
-    expect(find.text('Zero-hop advert'), findsOneWidget);
+    expect(find.text('Direct advert'), findsOneWidget);
 
     // Flood → SEND_SELF_ADVERT (0x07) with flood flag 1.
     await t.tap(find.text('Flood advert'));
@@ -163,13 +163,13 @@ void main() {
     // Zero-hop → flood flag 0.
     await t.tap(find.text('Advertise'));
     await t.pumpAndSettle();
-    await t.tap(find.text('Zero-hop advert'));
+    await t.tap(find.text('Direct advert'));
     await t.pumpAndSettle();
     expect(
       fake.sent.any((f) => f.length >= 2 && f[0] == 0x07 && f[1] == 0),
       isTrue,
     );
-    expect(find.textContaining('Zero-hop advert sent'), findsOneWidget);
+    expect(find.textContaining('Sent to radios in direct range only'), findsOneWidget);
     ctrl.dispose();
   });
 

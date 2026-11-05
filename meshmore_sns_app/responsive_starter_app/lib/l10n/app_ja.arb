@@ -365,10 +365,10 @@
   "nodesSyncContacts": "コンタクト同期",
   "nodesFloodAdvert": "フラッドアドバート",
   "nodesFloodAdvertBody": "メッシュ全体 — 隣接 + リピーター。発見に最適。",
-  "nodesZeroHopAdvert": "ゼロホップアドバート",
+  "nodesZeroHopAdvert": "直接アドバート",
   "nodesZeroHopAdvertBody": "隣接のみ — 再ブロードキャストなし。混雑したメッシュ向け。",
   "nodesFloodAdvertSent": "フラッドアドバートを送信 — メッシュ全体に伝播 (隣接 + リピーター)。相手側でも Advertise を実行するまで表示されません。",
-  "nodesZeroHopAdvertSent": "ゼロホップアドバートを送信 — 隣接のみ、リピーターは再ブロードキャストしません。",
+  "nodesZeroHopAdvertSent": "直接届く範囲のラジオにだけ送りました。",
   "nodesSearchHint": "名前 / shortId / 公開鍵で検索…",
   "nodesFilterStarred": "お気に入り",
   "nodesFilterInRange": "範囲内",
@@ -985,7 +985,7 @@
   "nodeDetailAddDeviceContactDone": "追加しました。DM が届くようになります。届かない場合、連絡先がいっぱいかもしれません。",
   "nodeDetailAddDeviceContactFailed": "連絡先を追加できませんでした — リンクを確認して再試行してください。",
   "nodeDetailRemoveDeviceContact": "デバイスの連絡先から削除",
-  "nodeDetailRemoveDeviceContactConfirm": "「{name}」を無線機の連絡先から削除しますか？空きができます。後で再追加できます。",
+  "nodeDetailRemoveDeviceContactConfirm": "「{name}」をラジオの連絡先から削除しますか？後から追加し直せます。",
   "@nodeDetailRemoveDeviceContactConfirm": {
     "placeholders": {
       "name": {
@@ -1217,7 +1217,7 @@
   "docsRefresh": "GitHub から更新",
   "docsUpdated": "最新版に更新しました",
   "docsUpToDate": "すでに最新です",
-  "docsOriginBundled": "同梱スナップショット",
+  "docsOriginBundled": "アプリに同梱",
   "docsOriginUpdated": "更新: {when}",
   "@docsOriginUpdated": {
     "placeholders": {
@@ -1551,7 +1551,7 @@
   "channelsDefaultBadge": "既定",
   "channelsSetDefaultTooltip": "起動時の既定チャンネルに設定",
   "channelsClearDefaultTooltip": "既定チャンネル設定を解除",
-  "channelsSetDefaultSnack": "スロット {idx} を起動時の既定に設定",
+  "channelsSetDefaultSnack": "チャンネル {idx} を起動時に開くよう設定しました",
   "@channelsSetDefaultSnack": {
     "placeholders": {
       "idx": {
