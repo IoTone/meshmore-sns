@@ -29,8 +29,11 @@ class RadioOperatingPoint {
   final int codingRate;
   final int txPowerDbm;
 
-  /// 0 = 1 byte, 1 = 2 bytes, 2 = 4 bytes. Reported by `RESP_CODE_DEVICE_INFO`
-  /// as its last byte (v10+, `MyMesh.cpp:1034-1050`).
+  /// 0 = 1 byte, 1 = 2 bytes, 2 = 4 bytes — the wire's own numbering, which
+  /// is what `RESP_CODE_DEVICE_INFO` reports as its last byte (v10+,
+  /// `MyMesh.cpp:1034-1050`). The setter takes the byte COUNT (1..3), so the
+  /// frame builder adds one; keeping one numbering in the model is what stops
+  /// the two from being confused.
   final int pathHashMode;
 
   /// What the radio is running now, or null when either half is unknown.
@@ -186,7 +189,7 @@ abstract final class RadioConfigTransaction {
         RadioConfigStep.txPower =>
           MeshcoreFrameCodec.setRadioTxPower(p.txPowerDbm),
         RadioConfigStep.pathHash =>
-          MeshcoreFrameCodec.setPathHashMode(p.pathHashMode),
+          MeshcoreFrameCodec.setPathHashMode(p.pathHashMode + 1),
       };
 
   static Future<RadioConfigOutcome> run(

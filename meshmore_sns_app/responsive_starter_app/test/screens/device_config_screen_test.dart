@@ -1,5 +1,7 @@
 // Copyright (c) 2026 IoTone, Inc.
 // SPDX-License-Identifier: MIT
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -22,6 +24,18 @@ const List<LocalizationsDelegate<Object>> _kLocaleDelegates =
   GlobalWidgetsLocalizations.delegate,
   GlobalCupertinoLocalizations.delegate,
 ];
+
+
+/// The radio-config transaction sends its three writes one at a time and
+/// waits for each answer, as the firmware requires: a bare OK per command
+/// (`MyMesh.cpp:1386-1478`). The fake radio answers in order.
+Future<void> answerRadioConfig(
+    WidgetTester t, FakeMeshcoreTransport fake) async {
+  for (int i = 0; i < 3; i++) {
+    fake.emit(Uint8List.fromList(<int>[0x00]));
+    await t.pump();
+  }
+}
 
 void main() {
   testWidgets('R39: tapping USA/Canada chip applies the canonical '
@@ -50,6 +64,7 @@ void main() {
 
     await ctrl.connect();
     fake.emit(selfInfoFrame());
+    fake.emit(deviceInfoFrame());
     await t.pumpAndSettle();
 
     final int before0B =
@@ -62,6 +77,7 @@ void main() {
     await t.pumpAndSettle();
     await t.tap(find.text('USA / Canada'));
     await t.pumpAndSettle();
+    await answerRadioConfig(t, fake);
 
     // Form fields were filled.
     String fieldText(String label) => t
@@ -110,12 +126,14 @@ void main() {
     );
     await ctrl.connect();
     fake.emit(selfInfoFrame());
+    fake.emit(deviceInfoFrame());
     await t.pumpAndSettle();
 
     await t.tap(find.text('REGION / BAND'));
     await t.pumpAndSettle();
     await t.tap(find.text('Japan (ARIB STD-T108)'));
     await t.pumpAndSettle();
+    await answerRadioConfig(t, fake);
 
     String fieldText(String label) => t
         .widget<TextField>(find.widgetWithText(TextField, label))
@@ -215,6 +233,7 @@ void main() {
 
     await t.tap(find.text('Apply radio params'));
     await t.pumpAndSettle();
+    await answerRadioConfig(t, fake);
 
     final List<List<int>> hashes = fake.sent
         .where((List<int> f) => f.isNotEmpty && f[0] == 0x3D)
@@ -261,6 +280,7 @@ void main() {
     await t.pumpAndSettle();
     await t.tap(find.text('Hungary'));
     await t.pumpAndSettle();
+    await answerRadioConfig(t, fake);
     expect(
         fake.sent
             .where((List<int> f) => f.isNotEmpty && f[0] == 0x3D)
@@ -271,17 +291,28 @@ void main() {
     ctrl.dispose();
   });
 
-  testWidgets('USA / Canada applies the radio tuple but NEVER a path hash '
-      'size (the feed lists one for Canada only)', (WidgetTester t) async {
+  testWidgets('USA / Canada applies the radio tuple and keeps the path hash '
+      'size in force (the feed lists one for Canada only)', (WidgetTester t) async {
     final (FakeMeshcoreTransport fake, MeshcoreController ctrl) =
         await openScreen(t);
     await t.tap(find.text('REGION / BAND'));
     await t.pumpAndSettle();
     await t.tap(find.text('USA / Canada'));
     await t.pumpAndSettle();
+    await answerRadioConfig(t, fake);
     expect(fake.sent.any((List<int> f) => f.isNotEmpty && f[0] == 0x0B), isTrue);
-    expect(fake.sent.any((List<int> f) => f.isNotEmpty && f[0] == 0x3D), isFalse,
-        reason: 'the feed lists a hash size for Canada only; a US user keeps theirs');
+    // The operating point is written whole, so the hash size is written too --
+    // with the value already in force (deviceInfoFrame's mode 0 = 1 byte), not
+    // with a value the feed invents for a country that has none.
+    expect(
+        fake.sent
+            .where((List<int> f) => f.isNotEmpty && f[0] == 0x3D)
+            .toList(),
+        <List<int>>[
+          <int>[0x3D, 0, 0]
+        ],
+        reason: 'a preset without a hash size must not change the one in force '
+            '(deviceInfoFrame mode 0, so the wire byte stays 0)');
     ctrl.dispose();
   });
 

@@ -4583,7 +4583,7 @@ abstract class AppLocalizations {
   /// No description provided for @deviceRadioParams.
   ///
   /// In en, this message translates to:
-  /// **'RADIO PARAMS'**
+  /// **'Frequency & bandwidth'**
   String get deviceRadioParams;
 
   /// No description provided for @deviceIdentityAdvert.
@@ -4663,6 +4663,60 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Not applied yet: this radio uses {device} byte(s), the form is set to {form}.'**
   String devicePathHashMismatch(String device, String form);
+
+  /// No description provided for @deviceRadioApplied.
+  ///
+  /// In en, this message translates to:
+  /// **'The radio confirmed the change.'**
+  String get deviceRadioApplied;
+
+  /// No description provided for @deviceRadioRefused.
+  ///
+  /// In en, this message translates to:
+  /// **'The radio refused {param} (error {code}). Later writes were not sent.'**
+  String deviceRadioRefused(String param, String code);
+
+  /// No description provided for @deviceRadioSilent.
+  ///
+  /// In en, this message translates to:
+  /// **'No answer for {param} within five seconds — the write may not have applied.'**
+  String deviceRadioSilent(String param);
+
+  /// No description provided for @deviceRadioUnsupported.
+  ///
+  /// In en, this message translates to:
+  /// **'{param} is not in this firmware build.'**
+  String deviceRadioUnsupported(String param);
+
+  /// No description provided for @deviceRadioUnknownState.
+  ///
+  /// In en, this message translates to:
+  /// **'Cannot change radio settings yet: this radio has not reported its path-hash size, so there is no value to undo back to.'**
+  String get deviceRadioUnknownState;
+
+  /// No description provided for @deviceRadioRevert.
+  ///
+  /// In en, this message translates to:
+  /// **'Undo radio change'**
+  String get deviceRadioRevert;
+
+  /// No description provided for @deviceRadioReverted.
+  ///
+  /// In en, this message translates to:
+  /// **'Previous operating point restored.'**
+  String get deviceRadioReverted;
+
+  /// No description provided for @deviceRadioRevertUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Undo is one use only.'**
+  String get deviceRadioRevertUnavailable;
+
+  /// No description provided for @deviceRadioRevertFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Undo did not apply — the radio kept its last values.'**
+  String get deviceRadioRevertFailed;
 
   /// No description provided for @deviceLoadFromDevice.
   ///
