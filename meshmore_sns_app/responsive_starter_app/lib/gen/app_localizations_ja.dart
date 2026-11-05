@@ -2211,7 +2211,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get channelsKeyHashtagHint => '例: #mygroup';
 
   @override
-  String get channelsKeyHashtagHelper => 'タグから鍵を導出 (sha256)';
+  String get channelsKeyHashtagHelper => 'sha256(\"#タグ\") から鍵を導出 — # も鍵の一部です';
 
   @override
   String get channelsKeyHexHint => '16 進 32 文字 (16 バイト)';

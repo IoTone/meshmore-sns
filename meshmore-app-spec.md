@@ -116,6 +116,12 @@ tag is. Two people who both type "emergency" land on a channel nobody else can j
 the canonical form; a unit test asserts `channelPskFromHashtag('#emergency')` equals keymind's
 `EMERGENCY_CHANNEL_SECRET` bytes and that the unprefixed input is normalized to the same value.
 
+*Built 2026-11-05 (R110):* normalised, not refused — `canonicalHashtag` trims and prefixes, and every derivation and
+the weak-tag warning go through it. Tests: `channel_crypto_test.dart` (both typed forms equal the `#test` KAT,
+canonical form trims, case preserved) and `channels_screen_test.dart` (a bare tag writes `#emergency` to the slot).
+The cross-check against a fork's hardcoded `#emergency` bytes is dropped: one product's constant is not the
+authority for the key, and the published derivation is.
+
 **APP-A6.** The protocol package is codec-complete for 21 commands with no UI. Nine MUST have one, because a
 codec-complete command with no surface is how a protocol rots: flood scope set/get and scope key (D8.1 needs
 them), auto-add configuration, advert path and path discovery ("show route"), contact share/export/import and

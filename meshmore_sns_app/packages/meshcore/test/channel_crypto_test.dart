@@ -148,13 +148,39 @@ void main() {
           MeshcoreChannelCrypto.sha256(psk)[0]);
     });
 
-    test('hashtag derivation KAT (#test → 9cd8fcf2…; docs + gist)', () {
+    test('hashtag derivation KAT (#test → 9cd8fcf2…; companion protocol)', () {
       final Uint8List k =
           MeshcoreChannelCrypto.channelPskFromHashtag('#test');
       expect(
         k.map((int b) => b.toRadixString(16).padLeft(2, '0')).join(),
         '9cd8fcf22a47333b591d96a2b848b73f',
       );
+    });
+
+    test('the # is part of the key: a bare tag derives the same PSK', () {
+      // The firmware defines a hashtag channel as sha256("#name"), so a tag
+      // typed without the prefix must canonicalise to the same key rather
+      // than to a second, private one.
+      final Uint8List bare =
+          MeshcoreChannelCrypto.channelPskFromHashtag('test');
+      final Uint8List prefixed =
+          MeshcoreChannelCrypto.channelPskFromHashtag('#test');
+      expect(bare, prefixed);
+      expect(
+        bare.map((int b) => b.toRadixString(16).padLeft(2, '0')).join(),
+        '9cd8fcf22a47333b591d96a2b848b73f',
+      );
+    });
+
+    test('canonicalHashtag trims and prefixes, and never changes case', () {
+      expect(MeshcoreChannelCrypto.canonicalHashtag('emergency'),
+          '#emergency');
+      expect(MeshcoreChannelCrypto.canonicalHashtag('  #emergency '),
+          '#emergency');
+      expect(MeshcoreChannelCrypto.canonicalHashtag('#Emergency'),
+          '#Emergency');
+      expect(MeshcoreChannelCrypto.channelHashFromHashtag('emergency'),
+          MeshcoreChannelCrypto.channelHashFromHashtag('#emergency'));
     });
 
     test('public PSK channel hash = 0x11 (docs cross-check)', () {

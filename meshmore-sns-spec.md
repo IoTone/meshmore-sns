@@ -1275,10 +1275,26 @@ While Meshcore protocol is open source, the client is not open source.  We want 
 ### Revision log
 
 Entries from here down are change records, not requirements. The block
-R88–R109 is newest first. Older entries below it were appended where they
+R88–R110 is newest first. Older entries below it were appended where they
 were written, so their numbering is not monotonic. A few records live in
 the sibling specs: R93 in `meshmore-sns-maps-spec.md`, R60 in
 `meshmore-sns-tools-spec.md`, R79 in `meshmore_sns_app/STATUS.md`.
+
+- R110: **a channel tag has one canonical form.** The key is a hash of the
+  literal name, so `emergency` and `#emergency` derived two different keys for
+  what a person means as one channel, and only the prefixed form matches the
+  key everyone else derives (`docs/companion_protocol.md`, Channel Management:
+  a hashtag channel is the first 16 bytes of `sha256("#test")`). The
+  weak-tag check stripped the `#` and the derivation did not, so the two
+  halves of one form disagreed. `MeshcoreChannelCrypto.canonicalHashtag`
+  trims and prefixes, both the hash and the PSK use it, the screen's warning
+  reads the same canonical string, and a tag typed without `#` saves the
+  canonical name to the slot. Case is untouched: the firmware hashes the bytes
+  it is given, so `#Emergency` really is a different channel. Consequence
+  recorded, not silently fixed: a slot written before this change holds a key
+  derived from the bare form, the tag was never stored, so nothing can
+  re-derive it — such a slot keeps working among the nodes that joined it and
+  is not the public `#name` channel.
 
 - R109: **the swipe between views is the shell's again, gated per pan
   surface.** R95 removed body paging in every skin; the app's owner then

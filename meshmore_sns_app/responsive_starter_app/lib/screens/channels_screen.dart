@@ -343,8 +343,12 @@ class _EditChannelDialogState extends State<_EditChannelDialog> {
   };
 
   String? _tagWeakHint(AppLocalizations l) {
-    final String raw =
-        _tag.text.trim().toLowerCase().replaceAll(RegExp(r'^#'), '');
+    // The denylist matches the bare word, but the form it is stripped from
+    // is the canonical one — the same normaliser the key derivation uses, so
+    // the warning and the key can never disagree about what the tag is.
+    final String canonical =
+        MeshcoreChannelCrypto.canonicalHashtag(_tag.text).toLowerCase();
+    final String raw = canonical.substring(1);
     if (raw.isEmpty) return null;
     if (raw.length < 8) return l.channelsTagWeakShort;
     if (_weakTagDeny.contains(raw)) return l.channelsTagWeakCommon;
@@ -411,7 +415,10 @@ class _EditChannelDialogState extends State<_EditChannelDialog> {
     String name = _name.text.trim();
     if (name.isEmpty && _src == _PskSource.public) name = 'Public';
     if (name.isEmpty && _src == _PskSource.hashtag) {
-      name = _tag.text.trim();
+      // Store the canonical name too: the radio echoes this string back as
+      // the channel's name, and a slot whose name reads `emergency` while
+      // its key is sha256("#emergency") is a channel nobody can find again.
+      name = MeshcoreChannelCrypto.canonicalHashtag(_tag.text);
     }
     if (name.isEmpty) {
       setState(() => _error = l.channelsErrorName);

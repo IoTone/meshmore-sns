@@ -1,5 +1,7 @@
 // Copyright (c) 2026 IoTone, Inc.
 // SPDX-License-Identifier: MIT
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -79,6 +81,37 @@ void main() {
     expect(fake.sent.any((f) => f.isNotEmpty && f[0] == 0x20), isTrue);
     // Name defaults to the hashtag itself; optimistic list update.
     expect(find.text('#ops'), findsOneWidget);
+    mc.dispose();
+  });
+
+  testWidgets('a tag typed without # saves the canonical name and key',
+      (WidgetTester t) async {
+    await t.binding.setSurfaceSize(const Size(900, 1600));
+    addTearDown(() => t.binding.setSurfaceSize(null));
+    final FakeMeshcoreTransport fake =
+        FakeMeshcoreTransport(connected: true);
+    final MeshcoreController mc = await _ready(fake);
+    await t.pumpWidget(_host(mc));
+    fake.emit(channelInfoFrame(idx: 0, name: 'Public'));
+    await t.pumpAndSettle();
+
+    await t.tap(find.text('Set').first);
+    await t.pumpAndSettle();
+    await t.tap(find.text('#tag'));
+    await t.pumpAndSettle();
+    // No leading #: the firmware's hashtag channel is sha256("#name"), so
+    // the screen must canonicalise rather than derive a second key.
+    await t.enterText(
+        find.widgetWithText(TextField, 'e.g. #mygroup'), 'emergency');
+    await t.tap(find.text('Save'));
+    await t.pumpAndSettle();
+
+    // The name the radio is given is the canonical one, so the slot reads
+    // back as the channel whose key it actually holds.
+    expect(find.text('#emergency'), findsOneWidget);
+    final Uint8List setChannel = fake.sent
+        .firstWhere((Uint8List f) => f.isNotEmpty && f[0] == 0x20);
+    expect(setChannel, containsAllInOrder('#emergency'.codeUnits));
     mc.dispose();
   });
 

@@ -3965,7 +3965,7 @@ abstract class AppLocalizations {
   /// No description provided for @channelsKeyHashtagHelper.
   ///
   /// In en, this message translates to:
-  /// **'Key derived from the tag (sha256)'**
+  /// **'Key derived from sha256(\"#tag\") — the # is part of the key'**
   String get channelsKeyHashtagHelper;
 
   /// No description provided for @channelsKeyHexHint.

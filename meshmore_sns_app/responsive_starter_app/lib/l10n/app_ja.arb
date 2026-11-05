@@ -995,7 +995,7 @@
   "channelsKeyHex": "Hex",
   "channelsKeyPublicBody": "公開チャンネル既定鍵を使用。",
   "channelsKeyHashtagHint": "例: #mygroup",
-  "channelsKeyHashtagHelper": "タグから鍵を導出 (sha256)",
+  "channelsKeyHashtagHelper": "sha256(\"#タグ\") から鍵を導出 — # も鍵の一部です",
   "channelsKeyHexHint": "16 進 32 文字 (16 バイト)",
   "channelsErrorTag": "#ハッシュタグを入力してください",
   "channelsErrorHex": "PSK は 16 進 32 文字 (16 バイト) で入力してください",

@@ -2304,7 +2304,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get channelsKeyHashtagHint => 'e.g. #mygroup';
 
   @override
-  String get channelsKeyHashtagHelper => 'Key derived from the tag (sha256)';
+  String get channelsKeyHashtagHelper =>
+      'Key derived from sha256(\"#tag\") — the # is part of the key';
 
   @override
   String get channelsKeyHexHint => '32 hex chars (16 bytes)';

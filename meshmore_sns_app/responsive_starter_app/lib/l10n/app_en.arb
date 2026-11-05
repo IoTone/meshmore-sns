@@ -1010,7 +1010,7 @@
   "channelsKeyHex": "Hex",
   "channelsKeyPublicBody": "Uses the well-known Public channel key.",
   "channelsKeyHashtagHint": "e.g. #mygroup",
-  "channelsKeyHashtagHelper": "Key derived from the tag (sha256)",
+  "channelsKeyHashtagHelper": "Key derived from sha256(\"#tag\") — the # is part of the key",
   "channelsKeyHexHint": "32 hex chars (16 bytes)",
   "channelsErrorTag": "Enter a #hashtag",
   "channelsErrorHex": "PSK must be 32 hex chars (16 bytes)",
