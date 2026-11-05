@@ -80,7 +80,8 @@ void main() {
       'lib/screens/nodes_screen.dart': 6,
       'lib/screens/personalization_screen.dart': 1,
       'lib/screens/sns_cells_view.dart': 3,
-      'lib/screens/street_map_view.dart': 2,
+      // R117 — the banner's font size now comes from the skin ladder.
+      'lib/screens/street_map_view.dart': 1,
       'lib/screens/tools/tool_widgets.dart': 3,
       'lib/screens/tools/trace_screen.dart': 2,
       'lib/screens/voice_settings_screen.dart': 9,

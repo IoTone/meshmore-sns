@@ -59,8 +59,8 @@ void main() {
       );
       await t.pump();
 
-      expect(find.textContaining('GPS'), findsOneWidget,
-          reason: 'no own location → placeholder copy mentions GPS');
+      expect(find.textContaining('needs your position'), findsOneWidget,
+          reason: 'no own location → the placeholder says what it needs');
       ctrl.dispose();
     });
 
