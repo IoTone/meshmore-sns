@@ -476,7 +476,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsBackgroundTitle => 'Stay connected in background';
 
   @override
-  String get settingsBackgroundOn => 'Messages arrive while the app is closed';
+  String get settingsBackgroundOn =>
+      'Messages arrive while the app is closed. After a phone restart, open the app to reconnect.';
 
   @override
   String get settingsBackgroundOff => 'Messages arrive when you open the app';
@@ -1211,7 +1212,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get locMaster => 'Auto-publish';
 
   @override
-  String get locMasterOn => 'On — using phone GPS';
+  String get locMasterOn => 'On — while the app is open';
 
   @override
   String get locMasterOff => 'Off';

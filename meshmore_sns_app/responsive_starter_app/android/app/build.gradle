@@ -67,8 +67,11 @@ android {
 
     defaultConfig {
         applicationId "com.iotone.meshmore_sns_app"
-        // Meshmore requires BLE + modern permissions; minSdk 23 per spec.
-        minSdkVersion flutter.minSdkVersion
+        // Pinned, not inherited: `flutter.minSdkVersion` moves with the
+        // Flutter release, so a toolchain bump would silently drop devices
+        // with no diff to review. Android 6 (23) is the floor the permission
+        // model here assumes; 24 is what the shipped APK has always declared.
+        minSdkVersion 24
         targetSdkVersion 36
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName

@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 import '../gen/app_localizations.dart';
 import '../meshcore/channel_datagram.dart';
 import '../theme/mm_skin.dart';
+import '../ui/mm_components.dart';
 import 'media_chunk.dart';
 import 'media_journal.dart';
 import 'media_photo.dart';
@@ -332,10 +333,11 @@ class _MediaComposerState extends State<MediaComposer> {
                     color: skin.color.fgMuted, fontSize: skin.type.sizeSm),
               ),
             ),
-            TextButton(
+            MmAction(
+              dense: true,
+              label: l.mediaInterruptedDismiss,
               onPressed: () =>
                   context.read<MediaInterruptions?>()?.acknowledge(),
-              child: Text(l.mediaInterruptedDismiss),
             ),
           ],
         ),

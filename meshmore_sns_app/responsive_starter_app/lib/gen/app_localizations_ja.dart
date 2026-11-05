@@ -456,7 +456,8 @@ class AppLocalizationsJa extends AppLocalizations {
   String get settingsBackgroundTitle => 'バックグラウンドで接続を維持';
 
   @override
-  String get settingsBackgroundOn => 'アプリを閉じていてもメッセージが届きます';
+  String get settingsBackgroundOn =>
+      'アプリを閉じていてもメッセージが届きます。端末の再起動後はアプリを開いて再接続してください。';
 
   @override
   String get settingsBackgroundOff => 'アプリを開いたときにメッセージが届きます';

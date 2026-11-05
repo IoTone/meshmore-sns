@@ -77,7 +77,7 @@ class BootFailureApp extends StatelessWidget {
                 const Text(
                   'Meshmore SNS could not start.',
                   textAlign: TextAlign.center,
-                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 18),
+                  style: TextStyle(fontWeight: FontWeight.w600),
                 ),
                 const SizedBox(height: 8),
                 Text(message, textAlign: TextAlign.center),

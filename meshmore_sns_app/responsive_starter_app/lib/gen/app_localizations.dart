@@ -911,7 +911,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsBackgroundOn.
   ///
   /// In en, this message translates to:
-  /// **'Messages arrive while the app is closed'**
+  /// **'Messages arrive while the app is closed. After a phone restart, open the app to reconnect.'**
   String get settingsBackgroundOn;
 
   /// No description provided for @settingsBackgroundOff.
@@ -2189,7 +2189,7 @@ abstract class AppLocalizations {
   /// No description provided for @locMasterOn.
   ///
   /// In en, this message translates to:
-  /// **'On — using phone GPS'**
+  /// **'On — while the app is open'**
   String get locMasterOn;
 
   /// No description provided for @locMasterOff.

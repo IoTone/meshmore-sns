@@ -252,7 +252,7 @@
   "pairChooseAnother": "別のラジオを選ぶ",
   "settingsHeading": "アプリ設定",
   "settingsBackgroundTitle": "バックグラウンドで接続を維持",
-  "settingsBackgroundOn": "アプリを閉じていてもメッセージが届きます",
+  "settingsBackgroundOn": "アプリを閉じていてもメッセージが届きます。端末の再起動後はアプリを開いて再接続してください。",
   "settingsBackgroundOff": "アプリを開いたときにメッセージが届きます",
   "settingsBackgroundFailed": "バックグラウンドでの接続を維持できませんでした。アプリを開いて再接続してください。",
   "settingsTelemetryPoll": "ノードのテレメトリを収集",

@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: MIT
 import 'dart:async';
 
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:meshmore_sns_app/app/boot_guard.dart';
 
