@@ -288,4 +288,37 @@ void main() {
       expect(fx.vibrations, 1);
     });
   });
+
+  test('a blocked key raises nothing: no post, no cue, no speech', () async {
+    // setUp already started an unfiltered service on the same broadcast
+    // streams; it would post for the same message and make this test lie.
+    await service.dispose();
+    final _Effects fx = _Effects();
+    final NotificationService s = NotificationService(
+      channelMessages: channel.stream,
+      directMessages: direct.stream,
+      notifier: notifier,
+      prefs: prefs,
+      focus: focus,
+      strings: _Strings.new,
+      selfDisplayName: () => 'Sam',
+      ownPubKeyHex: () => 'aabbccdd',
+      peerDisplayName: (String key) => 'Peer',
+      channelName: (int slot) => 'general',
+      isBlocked: (ChatMessage m) => m.peerPubKeyHex == 'b' * 64,
+    )..effects = fx;
+    s.start();
+    direct.add(ChatMessage(
+      channelIdx: 0,
+      text: 'you should not see this',
+      outgoing: false,
+      peerPubKeyHex: 'b' * 64,
+    ));
+    await Future<void>.delayed(Duration.zero);
+    expect(notifier.shown, isEmpty);
+    expect(fx.cues, isEmpty);
+    expect(fx.vibrations, 0);
+    expect(fx.spoken, isEmpty);
+    await s.dispose();
+  });
 }

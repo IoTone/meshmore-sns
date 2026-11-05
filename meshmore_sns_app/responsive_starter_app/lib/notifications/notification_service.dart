@@ -87,6 +87,7 @@ class NotificationService {
     required this.ownPubKeyHex,
     required this.peerDisplayName,
     required this.channelName,
+    this.isBlocked,
     NotificationEffects effects = const SilentNotificationEffects(),
   }) : _effects = effects;
 
@@ -110,6 +111,11 @@ class NotificationService {
 
   /// A channel slot's name, or its index when the radio has not listed it.
   final String Function(int slot) channelName;
+
+  /// The block filter, when the app has one. A blocked key raises no
+  /// notification, no cue, no vibration and no speech: the same rule the
+  /// timeline follows, applied before anything is shown (`block-spec` §5).
+  final bool Function(ChatMessage message)? isBlocked;
 
   NotificationEffects _effects;
 
@@ -148,6 +154,7 @@ class NotificationService {
 
   void _onChannel(ChatMessage m) {
     if (m.outgoing) return;
+    if (isBlocked?.call(m) ?? false) return;
     if (!_firstTime(m.id)) return;
     final bool sos = m.text.toUpperCase().startsWith('[SOS:');
     if (!sos) {
@@ -185,6 +192,7 @@ class NotificationService {
 
   void _onDirect(ChatMessage m) {
     if (m.outgoing) return;
+    if (isBlocked?.call(m) ?? false) return;
     if (!_firstTime(m.id)) return;
     final String key = m.peerPubKeyHex ?? '';
     if (focus.isPeerOpen(key)) return;

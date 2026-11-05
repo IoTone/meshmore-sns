@@ -20,6 +20,8 @@ import 'package:meshmore_sns_app/legal/terms_controller.dart';
 import 'package:meshmore_sns_app/licenses/asset_licenses.dart';
 import 'package:meshmore_sns_app/maps/maps_controller.dart';
 import 'package:meshmore_sns_app/meshcore/auto_publish_controller.dart';
+import 'package:meshmore_sns_app/meshcore/block_filter.dart';
+import 'package:meshmore_sns_app/meshcore/block_store.dart';
 import 'package:meshmore_sns_app/meshcore/background_keepalive.dart';
 import 'package:meshmore_sns_app/meshcore/city_lookup.dart';
 import 'package:meshmore_sns_app/meshcore/meshcore_controller.dart';
@@ -82,6 +84,12 @@ void main() {
     // tree so the notification permission is asked at first launch, not on
     // the first message; the service starts after the first frame so its
     // stream subscription never races the controller's own connect.
+    // The block list is read by every surface, so it is one app-scoped store:
+    // the timeline, the roster, the map, search, speech and notifications all
+    // ask the same object (block-spec §5).
+    final BlockStore blockStore = BlockStore();
+    unawaited(blockStore.load());
+    final BlockFilter blockFilter = BlockFilter(blockStore);
     final LocalNotifier notifier = LocalNotifier();
     final NotificationPrefs notificationPrefs = NotificationPrefs();
     final NotificationFocus notificationFocus = NotificationFocus();
@@ -103,6 +111,7 @@ void main() {
       ownPubKeyHex: () => controller.ownPubKeyHex,
       peerDisplayName: (String key) => _peerName(controller, key),
       channelName: (int slot) => _channelName(controller, slot),
+      isBlocked: blockFilter.hidesMessage,
     );
     notifier.onTap = (String payload) {
       if (payload.startsWith('dm:')) {
@@ -200,7 +209,9 @@ void main() {
           // search cannot disagree about what exists. The budget is the
           // send-side rate limit and is app-scoped for the same reason: it
           // must survive leaving the sheet that charged it.
-          ChangeNotifierProvider<PlaceStore>(create: (_) => PlaceStore()..load()),
+          ChangeNotifierProvider<BlockStore>.value(value: blockStore),
+          ChangeNotifierProvider<PlaceStore>(
+              create: (_) => PlaceStore(isBlocked: blockStore.isBlocked)..load()),
           Provider<PlaceReportBudget>(
             create: (_) => PlaceReportBudget(clock: DateTime.now),
           ),
