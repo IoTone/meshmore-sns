@@ -423,7 +423,7 @@ class _StreetMapViewState extends State<StreetMapView> {
         child: Padding(
           padding: const EdgeInsets.all(24),
           child: Text(
-            l.equalGridAwaitingFix,
+            l.gridNeedsFix,
             textAlign: TextAlign.center,
             style: TextStyle(color: cs.onSurfaceVariant),
           ),
@@ -827,7 +827,7 @@ class _StreetMapViewState extends State<StreetMapView> {
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
                 IconButton(
-                  tooltip: l.equalGridZoomIn,
+                  tooltip: l.gridZoomTighter,
                   iconSize: 18,
                   constraints: const BoxConstraints(
                       minWidth: StreetMapView.controlCell,
@@ -836,7 +836,7 @@ class _StreetMapViewState extends State<StreetMapView> {
                   onPressed: _zoom < _zoomMax ? _zoomIn : null,
                 ),
                 IconButton(
-                  tooltip: l.equalGridZoomOut,
+                  tooltip: l.gridZoomWider,
                   iconSize: 18,
                   constraints: const BoxConstraints(
                       minWidth: StreetMapView.controlCell,

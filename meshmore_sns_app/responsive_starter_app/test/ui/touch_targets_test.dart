@@ -13,7 +13,6 @@ import 'package:meshmore_sns_app/meshcore/meshcore_controller.dart';
 import 'package:meshmore_sns_app/screens/chat_screen.dart';
 import 'package:meshmore_sns_app/screens/dashboard_screen.dart';
 import 'package:meshmore_sns_app/screens/dm_screen.dart';
-import 'package:meshmore_sns_app/screens/equal_grid_view.dart';
 import 'package:meshmore_sns_app/screens/fabric_survey_view.dart';
 import 'package:meshmore_sns_app/theme/theme_controller.dart';
 import 'package:meshmore_sns_app/tts/tts_controller.dart';
@@ -187,29 +186,6 @@ void main() {
     await _drain(t, mc);
   });
 
-  testWidgets('equal-grid zoom / stats / tiles controls are >= 48x48',
-      (WidgetTester t) async {
-    await t.binding.setSurfaceSize(const Size(360, 780));
-    addTearDown(() => t.binding.setSurfaceSize(null));
-    final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
-    final MeshcoreController mc = _mc(fake);
-    await t.pumpWidget(_app(mc, const EqualGridView(cellSizeMeters: 200.0)));
-    await mc.connect();
-    fake.emit(selfInfoFrameAt(lat: 38.925, lon: -104.772826));
-    await t.pump();
-    await t.pump(const Duration(milliseconds: 50));
-    for (final String tip in <String>[
-      _en.equalGridZoomOut,
-      _en.equalGridZoomIn,
-      _en.equalGridHideStats,
-      _en.mapHideTiles,
-    ]) {
-      expectMin48(t, tip);
-    }
-    _noOverflow(t);
-    await _drain(t, mc);
-  });
-
   testWidgets('fabric-survey zoom / recentre / tiles / reset are >= 48x48',
       (WidgetTester t) async {
     await t.binding.setSurfaceSize(const Size(360, 780));
@@ -222,8 +198,8 @@ void main() {
     await t.pump();
     await t.pump(const Duration(milliseconds: 50));
     for (final String tip in <String>[
-      _en.equalGridZoomIn,
-      _en.equalGridZoomOut,
+      _en.gridZoomTighter,
+      _en.gridZoomWider,
       _en.streetMapRecenter,
       _en.mapHideTiles,
       _en.fabricResetTooltip,

@@ -290,7 +290,7 @@ void main() {
         MmView.dashboard: 'Dashboard',
         MmView.chat: 'Chat',
         MmView.nodes: 'Nodes',
-        MmView.grid: 'Hyperlocal grid',
+        MmView.grid: 'Survey',
         MmView.map: 'Map',
         MmView.settings: 'Settings',
       }[v]!;
@@ -331,7 +331,7 @@ void main() {
       'Dashboard',
       'Chat',
       'Nodes',
-      'Hyperlocal grid',
+      'Survey',
       'Map',
       'Settings',
     ]) {
@@ -471,10 +471,10 @@ void main() {
     // The old entry point is gone from Nodes.
     expect(find.widgetWithIcon(IconButton, Icons.radar), findsNothing);
 
-    await t.tap(find.byTooltip('Hyperlocal grid'));
+    await t.tap(find.byTooltip('Survey'));
     await settle(t);
     expect(
-        find.widgetWithText(MmPageHeader, 'Hyperlocal grid'), findsOneWidget);
+        find.widgetWithText(MmPageHeader, 'Survey'), findsOneWidget);
     expect(find.text('Not Connected to Mesh'), findsOneWidget);
     expect(t.takeException(), isNull);
   });
@@ -536,7 +536,7 @@ void main() {
       expect(t.element(find.byType(HomeShell)).read<ThemeController>().preset,
           preset,
           reason: 'the skin under test is actually applied');
-      await openFromStrip(t, 'Hyperlocal grid');
+      await openFromStrip(t, 'Survey');
       // R109 — the grid opens on the radar in swipe mode, so the shell,
       // not the view, takes the drag: one fling left is the next view.
       await t.fling(find.byType(PageView), const Offset(-600, 0), 2000);
@@ -584,7 +584,7 @@ void main() {
     GridScreen.resetSession();
     await _pumpApp(t, preset: MmThemePreset.studio);
     await settle(t);
-    await openFromStrip(t, 'Hyperlocal grid');
+    await openFromStrip(t, 'Survey');
     await openFromStrip(t, 'Map');
     expect(find.byType(MapScreen), findsOneWidget);
 
@@ -593,7 +593,7 @@ void main() {
     // drag also paged the body.
     await t.flingFrom(const Offset(2, 300), const Offset(300, 0), 1200);
     await settle(t);
-    expect(find.widgetWithText(MmPageHeader, 'Hyperlocal grid'), findsOneWidget,
+    expect(find.widgetWithText(MmPageHeader, 'Survey'), findsOneWidget,
         reason: 'the left band leaves the map by one view');
     expect(find.byType(MapScreen), findsNothing,
         reason: 'the map is gone, so its claim is too');
@@ -609,7 +609,7 @@ void main() {
     GridScreen.resetSession();
     shellDragClaim.reset();
     await _pumpApp(t);
-    await openFromStrip(t, 'Hyperlocal grid');
+    await openFromStrip(t, 'Survey');
     // The radar has no drag of its own: no toggle and no claim.
     expect(find.byKey(const ValueKey<String>('grid-pan-toggle')), findsNothing);
     expect(shellDragClaim.isClaimed, isFalse);
@@ -618,7 +618,7 @@ void main() {
     // drag is the shell's.
     await t.tap(find.byTooltip('View'));
     await settle(t);
-    await t.tap(find.text('Mesh survey').last);
+    await t.tap(find.text('Coverage').last);
     await settle(t);
     expect(find.byKey(const ValueKey<String>('grid-pan-toggle')),
         findsOneWidget);
@@ -631,7 +631,7 @@ void main() {
     expect(shellDragClaim.heldBy(GridScreen.dragHolder), isTrue);
     await t.fling(find.byType(PageView), const Offset(-400, 0), 1000);
     await settle(t);
-    expect(find.widgetWithText(MmPageHeader, 'Hyperlocal grid'), findsOneWidget,
+    expect(find.widgetWithText(MmPageHeader, 'Survey'), findsOneWidget,
         reason: 'pan mode owns the drag, so the fling moves the map');
 
     // The view is remembered for the session, the lock is not: a fresh visit
@@ -639,7 +639,7 @@ void main() {
     await openFromStrip(t, 'Settings');
     expect(shellDragClaim.isClaimed, isFalse,
         reason: 'leaving the tab releases the claim');
-    await openFromStrip(t, 'Hyperlocal grid');
+    await openFromStrip(t, 'Survey');
     expect(shellDragClaim.heldBy(GridScreen.dragHolder), isFalse,
         reason: 'pan mode is per visit, not per session');
     await t.fling(find.byType(PageView), const Offset(-600, 0), 2000);
@@ -704,7 +704,7 @@ void main() {
           Offset(r.left + 10, r.center.dy), const Offset(300, 0), 1000);
       await settle(t);
       expect(
-          find.widgetWithText(MmPageHeader, 'Hyperlocal grid'), findsOneWidget);
+          find.widgetWithText(MmPageHeader, 'Survey'), findsOneWidget);
       expect(t.takeException(), isNull);
     });
 
@@ -826,7 +826,7 @@ void main() {
       'Dashboard',
       'Chat',
       'Nodes',
-      'Hyperlocal grid',
+      'Survey',
       'Map',
       'Settings',
     ];

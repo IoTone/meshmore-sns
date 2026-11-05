@@ -419,7 +419,7 @@
   "nodesEmptyOffline": "ラジオを接続して周辺ノードを発見してください。",
   "nodesFavTooltip": "お気に入りに追加",
   "nodesUnfavTooltip": "お気に入りから削除",
-  "gridTitle": "ハイパーローカルグリッド",
+  "gridTitle": "調査",
   "gridShowLegend": "凡例を表示",
   "gridHideLegend": "凡例を非表示",
   "gridPlayTooltip": "再生 (一定間隔で更新)",
@@ -451,9 +451,11 @@
   "gridLegendTap": "ノードをタップで詳細 + メッセージ / お気に入り。",
   "gridViewRadial": "ラジアル",
   "gridViewGlobe": "グローブ",
-  "gridViewEqualGrid": "等分グリッド",
   "gridViewPicker": "表示",
-  "gridViewFabric": "メッシュ調査",
+  "gridZoomWider": "広く（ズームアウト）",
+  "gridZoomTighter": "狭く（ズームイン）",
+  "gridNeedsFix": "この表示には自分の位置が必要です。GPS 取得待ち（スマートフォンまたはデバイス）。",
+  "gridViewFabric": "カバレッジ",
   "gridViewElevation": "高度",
   "fujiLegendTitle": "Fujiさん",
   "fujiLegendDesc": "標高測量。√スケール軸で有名な建造物と高さを比較。自分の標高はデバイスGPSテレメトリまたは電話の位置情報から取得。",
@@ -505,19 +507,6 @@
       }
     }
   },
-  "equalGridAwaitingFix": "等分グリッド表示には自分の位置が必要です — GPS 取得待ち（スマートフォンまたはデバイス）。",
-  "equalGridCellSize": "セル {size}",
-  "@equalGridCellSize": {
-    "placeholders": {
-      "size": {
-        "type": "String"
-      }
-    }
-  },
-  "equalGridZoomIn": "ズームイン（セルを狭く）",
-  "equalGridZoomOut": "ズームアウト（セルを広く）",
-  "equalGridShowStats": "ターゲティングパネルを表示",
-  "equalGridHideStats": "ターゲティングパネルを非表示",
   "globeFooter": "位置が分かる {n} 件のノードを表示",
   "globeOverlayArcs": "アーク",
   "globeOverlayRegion": "地域",

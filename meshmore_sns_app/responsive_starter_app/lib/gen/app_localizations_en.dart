@@ -889,7 +889,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get nodesUnfavTooltip => 'Remove from favourites';
 
   @override
-  String get gridTitle => 'Hyperlocal grid';
+  String get gridTitle => 'Survey';
 
   @override
   String get gridShowLegend => 'Show legend';
@@ -972,13 +972,20 @@ class AppLocalizationsEn extends AppLocalizations {
   String get gridViewGlobe => 'Globe';
 
   @override
-  String get gridViewEqualGrid => 'Equal grid';
-
-  @override
   String get gridViewPicker => 'View';
 
   @override
-  String get gridViewFabric => 'Mesh survey';
+  String get gridZoomWider => 'Wider (zoom out)';
+
+  @override
+  String get gridZoomTighter => 'Tighter (zoom in)';
+
+  @override
+  String get gridNeedsFix =>
+      'This view needs your own position. Waiting for a GPS fix (phone or device).';
+
+  @override
+  String get gridViewFabric => 'Coverage';
 
   @override
   String get gridViewElevation => 'Altitude';
@@ -1085,27 +1092,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String deviceRegionLoadedOffline(String label) {
     return '$label loaded — Apply when a device is connected.';
   }
-
-  @override
-  String get equalGridAwaitingFix =>
-      'Equal-grid view needs your own location — waiting for a GPS fix (phone or device).';
-
-  @override
-  String equalGridCellSize(String size) {
-    return 'CELL $size';
-  }
-
-  @override
-  String get equalGridZoomIn => 'Zoom in (tighter cells)';
-
-  @override
-  String get equalGridZoomOut => 'Zoom out (wider cells)';
-
-  @override
-  String get equalGridShowStats => 'Show targeting panel';
-
-  @override
-  String get equalGridHideStats => 'Hide targeting panel';
 
   @override
   String globeFooter(int n) {

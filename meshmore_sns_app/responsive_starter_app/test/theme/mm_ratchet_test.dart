@@ -68,7 +68,6 @@ void main() {
       'lib/screens/dm_screen.dart': 3,
       'lib/screens/doc_reader_screen.dart': 1,
       'lib/screens/elevation_profile_view.dart': 8,
-      'lib/screens/equal_grid_view.dart': 5,
       'lib/screens/fabric_survey_view.dart': 2,
       'lib/screens/first_run_intro_screen.dart': 1,
       'lib/screens/globe_view.dart': 6,

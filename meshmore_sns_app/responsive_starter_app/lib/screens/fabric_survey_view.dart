@@ -113,7 +113,7 @@ class _FabricSurveyViewState extends State<FabricSurveyView> {
         child: Padding(
           padding: const EdgeInsets.all(24),
           child: Text(
-            l.equalGridAwaitingFix,
+            l.gridNeedsFix,
             textAlign: TextAlign.center,
             style: TextStyle(color: cs.onSurfaceVariant),
           ),
@@ -360,7 +360,7 @@ class _FabricSurveyViewState extends State<FabricSurveyView> {
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
                 IconButton(
-                  tooltip: l.equalGridZoomIn,
+                  tooltip: l.gridZoomTighter,
                   iconSize: 18,
                   constraints:
                       const BoxConstraints(minWidth: 48, minHeight: 48),
@@ -373,7 +373,7 @@ class _FabricSurveyViewState extends State<FabricSurveyView> {
                       : null,
                 ),
                 IconButton(
-                  tooltip: l.equalGridZoomOut,
+                  tooltip: l.gridZoomWider,
                   iconSize: 18,
                   constraints:
                       const BoxConstraints(minWidth: 48, minHeight: 48),

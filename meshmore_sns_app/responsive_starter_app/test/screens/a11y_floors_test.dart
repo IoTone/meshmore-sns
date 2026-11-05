@@ -140,7 +140,7 @@ void main() {
     'Dashboard',
     'Chat',
     'Nodes',
-    'Hyperlocal grid',
+    'Survey',
     'Map',
     'Settings',
   ];

@@ -1631,7 +1631,7 @@ abstract class AppLocalizations {
   /// No description provided for @gridTitle.
   ///
   /// In en, this message translates to:
-  /// **'Hyperlocal grid'**
+  /// **'Survey'**
   String get gridTitle;
 
   /// No description provided for @gridShowLegend.
@@ -1778,22 +1778,34 @@ abstract class AppLocalizations {
   /// **'Globe'**
   String get gridViewGlobe;
 
-  /// No description provided for @gridViewEqualGrid.
-  ///
-  /// In en, this message translates to:
-  /// **'Equal grid'**
-  String get gridViewEqualGrid;
-
   /// No description provided for @gridViewPicker.
   ///
   /// In en, this message translates to:
   /// **'View'**
   String get gridViewPicker;
 
+  /// No description provided for @gridZoomWider.
+  ///
+  /// In en, this message translates to:
+  /// **'Wider (zoom out)'**
+  String get gridZoomWider;
+
+  /// No description provided for @gridZoomTighter.
+  ///
+  /// In en, this message translates to:
+  /// **'Tighter (zoom in)'**
+  String get gridZoomTighter;
+
+  /// No description provided for @gridNeedsFix.
+  ///
+  /// In en, this message translates to:
+  /// **'This view needs your own position. Waiting for a GPS fix (phone or device).'**
+  String get gridNeedsFix;
+
   /// No description provided for @gridViewFabric.
   ///
   /// In en, this message translates to:
-  /// **'Mesh survey'**
+  /// **'Coverage'**
   String get gridViewFabric;
 
   /// No description provided for @gridViewElevation.
@@ -1975,42 +1987,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{label} loaded — Apply when a device is connected.'**
   String deviceRegionLoadedOffline(String label);
-
-  /// No description provided for @equalGridAwaitingFix.
-  ///
-  /// In en, this message translates to:
-  /// **'Equal-grid view needs your own location — waiting for a GPS fix (phone or device).'**
-  String get equalGridAwaitingFix;
-
-  /// No description provided for @equalGridCellSize.
-  ///
-  /// In en, this message translates to:
-  /// **'CELL {size}'**
-  String equalGridCellSize(String size);
-
-  /// No description provided for @equalGridZoomIn.
-  ///
-  /// In en, this message translates to:
-  /// **'Zoom in (tighter cells)'**
-  String get equalGridZoomIn;
-
-  /// No description provided for @equalGridZoomOut.
-  ///
-  /// In en, this message translates to:
-  /// **'Zoom out (wider cells)'**
-  String get equalGridZoomOut;
-
-  /// No description provided for @equalGridShowStats.
-  ///
-  /// In en, this message translates to:
-  /// **'Show targeting panel'**
-  String get equalGridShowStats;
-
-  /// No description provided for @equalGridHideStats.
-  ///
-  /// In en, this message translates to:
-  /// **'Hide targeting panel'**
-  String get equalGridHideStats;
 
   /// No description provided for @globeFooter.
   ///
