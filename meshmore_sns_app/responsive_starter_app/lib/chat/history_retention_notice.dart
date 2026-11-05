@@ -24,27 +24,27 @@ class HistoryRetentionNotice extends StatelessWidget {
     final ColorScheme cs = Theme.of(context).colorScheme;
     final AppLocalizations l = AppLocalizations.of(context);
     final MmSkin skin = context.skin;
-    return Container(
-      width: double.infinity,
-      color: cs.surfaceContainerHighest,
-      padding: EdgeInsets.symmetric(
-        horizontal: skin.space.step(5),
-        vertical: skin.space.step(2),
-      ),
-      child: Row(
-        children: <Widget>[
-          Icon(Icons.history, size: skin.type.sizeSm, color: cs.onSurfaceVariant),
-          SizedBox(width: skin.space.step(2)),
-          Expanded(
-            child: Text(
-              l.chatRetentionDropped(dropped, ChatStore.cap),
-              style: TextStyle(
-                fontSize: skin.type.sizeSm,
-                color: cs.onSurfaceVariant,
-              ),
+    // One line, no banner: the fact matters (APP-E2) and the rule does not
+    // need a paragraph to be believed, so this is the smallest thing that
+    // still cannot be mistaken for a thread that simply never had the rows.
+    return Semantics(
+      label: l.chatRetentionDropped(dropped, ChatStore.cap),
+      excludeSemantics: true,
+      child: Padding(
+        padding: EdgeInsets.symmetric(
+          horizontal: skin.space.step(5),
+          vertical: skin.space.step(1),
+        ),
+        child: Align(
+          alignment: Alignment.centerRight,
+          child: Text(
+            l.chatRetentionDropped(dropped, ChatStore.cap),
+            style: TextStyle(
+              fontSize: skin.type.sizeMicro,
+              color: cs.onSurfaceVariant,
             ),
           ),
-        ],
+        ),
       ),
     );
   }

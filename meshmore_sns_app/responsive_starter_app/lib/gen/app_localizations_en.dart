@@ -2404,7 +2404,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get channelsSet => 'Set';
 
   @override
-  String channelsSetSnack(int idx, String name) {
+  String channelsSetSnack(int idx) {
     return 'Slot $idx saved';
   }
 
@@ -2471,9 +2471,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get notifDeniedBanner =>
       'Notifications are turned off for this app, so messages will not appear on your lock screen.';
-
-  @override
-  String get channelsKeySource => 'Key source';
 
   @override
   String get channelsKeyPublic => 'Public';
@@ -5191,4 +5188,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get dmKeyCopied => 'Peer key copied';
+
+  @override
+  String get channelsInfoTooltip => 'How channels work';
+
+  @override
+  String get channelsOptionsTooltip => 'Channel settings';
 }

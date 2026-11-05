@@ -97,50 +97,51 @@ class ChannelsScreen extends StatelessWidget {
         ScaffoldMessenger.of(context)
           ..clearSnackBars()
           ..showSnackBar(SnackBar(
-              content: Text(l.channelsSetSnack(idx, r.name))));
+              content: Text(l.channelsSetSnack(idx))));
       }
     }
 
     return Scaffold(
-      appBar: AppBar(title: Text(l.channelsTitle)),
-      body: MmScaffold(
-        child: ListView(
-        children: <Widget>[
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 14, 16, 4),
-            child: Text(
-              l.channelsHelp,
-              style: TextStyle(color: cs.onSurfaceVariant, fontSize: context.skin.type.sizeBody),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-            child: Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: cs.surfaceContainerHighest,
-                borderRadius: mmRadius(context, 6),
-                border: Border.all(color: cs.outline.withValues(alpha: .35)),
-              ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Icon(Icons.lock_outline,
-                      size: 16, color: cs.primary),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      l.channelsHelpEncryption,
-                      style: TextStyle(
-                          color: cs.onSurface,
-                          fontSize: context.skin.type.sizeBody,
-                          height: 1.35),
-                    ),
+      appBar: AppBar(
+        title: Text(l.channelsTitle),
+        actions: <Widget>[
+          IconButton(
+            key: const ValueKey<String>('channels-info'),
+            tooltip: l.channelsInfoTooltip,
+            icon: const Icon(Icons.help_outline),
+            onPressed: () => showDialog<void>(
+              context: context,
+              builder: (BuildContext ctx) => AlertDialog(
+                title: Text(l.channelsTitle),
+                content: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(l.channelsHelp,
+                        style: TextStyle(
+                            fontSize: context.skin.type.sizeBody,
+                            height: 1.35)),
+                    const SizedBox(height: 8),
+                    Text(l.channelsHelpEncryption,
+                        style: TextStyle(
+                            fontSize: context.skin.type.sizeBody,
+                            height: 1.35)),
+                  ],
+                ),
+                actions: <Widget>[
+                  TextButton(
+                    onPressed: () => Navigator.pop(ctx),
+                    child: Text(l.actionCancel),
                   ),
                 ],
               ),
             ),
           ),
+        ],
+      ),
+      body: MmScaffold(
+        child: ListView(
+        children: <Widget>[
           if (!ready)
             Padding(
               padding: const EdgeInsets.symmetric(
@@ -227,6 +228,19 @@ class ChannelsScreen extends StatelessWidget {
                                     l.channelsSetDefaultSnack(idx))));
                         }
                       },
+                    ),
+                  if (known.containsKey(idx))
+                    IconButton(
+                      key: ValueKey<String>('channel-options-$idx'),
+                      tooltip: l.channelsOptionsTooltip,
+                      icon: const Icon(Icons.tune, size: 20),
+                      onPressed: () => showModalBottomSheet<void>(
+                        context: context,
+                        showDragHandle: true,
+                        isScrollControlled: true,
+                        builder: (BuildContext _) => _ChannelOptionsSheet(
+                            idx: idx, name: known[idx] ?? l.channelsEmpty),
+                      ),
                     ),
                   TextButton(
                     onPressed: ready ? () => edit(idx) : null,
@@ -445,7 +459,6 @@ class _EditChannelDialogState extends State<_EditChannelDialog> {
                   labelText: l.channelsName, isDense: true),
             ),
             const SizedBox(height: 14),
-            Text(l.channelsKeySource),
             SegmentedButton<_PskSource>(
               segments: <ButtonSegment<_PskSource>>[
                 ButtonSegment<_PskSource>(
@@ -486,7 +499,10 @@ class _EditChannelDialogState extends State<_EditChannelDialog> {
                 onChanged: (_) => setState(() {}),
                 decoration: InputDecoration(
                     labelText: l.channelsKeyHashtagHint,
-                    helperText: l.channelsKeyHashtagHelper,
+                    suffixIcon: Tooltip(
+                      message: l.channelsKeyHashtagHelper,
+                      child: const Icon(Icons.info_outline, size: 18),
+                    ),
                     isDense: true),
               ),
               if (_tagWeakHint(l) != null) ...<Widget>[
@@ -640,90 +656,6 @@ class _EditChannelDialogState extends State<_EditChannelDialog> {
                 ),
               ],
             ],
-            // R54 — per-channel place inference. Applied immediately
-            // (independent of the name/PSK save), default on for the
-            // public channel.
-            const Divider(height: 20),
-            Builder(builder: (BuildContext ctx) {
-              final MeshcoreController mc = ctx.watch<MeshcoreController>();
-              return SwitchListTile(
-                contentPadding: EdgeInsets.zero,
-                dense: true,
-                title: Text(l.channelsInferPlaces),
-                subtitle: Text(l.channelsInferPlacesSub),
-                value: mc.placeInferenceEnabled(widget.idx),
-                onChanged: (bool v) =>
-                    mc.setPlaceInferenceEnabled(widget.idx, v),
-              );
-            }),
-            // D8.13 — the per-channel notification bundle. Every toggle is
-            // per slot: silencing the busy channel must not silence the
-            // emergency one, and mentions-only is off unless asked for.
-            const Divider(height: 20),
-            Builder(builder: (BuildContext ctx) {
-              final NotificationPrefs? np = ctx.watch<NotificationPrefs?>();
-              if (np == null) return const SizedBox.shrink();
-              final ChannelNotificationPrefs p = np.prefsFor(widget.idx);
-              void save(ChannelNotificationPrefs next) =>
-                  np.setFor(widget.idx, next);
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Text(l.notifSectionTitle,
-                      style: Theme.of(ctx).textTheme.titleSmall),
-                  SwitchListTile(
-                    contentPadding: EdgeInsets.zero,
-                    dense: true,
-                    title: Text(l.notifOs),
-                    value: p.os,
-                    onChanged: (bool v) => save(p.copyWith(os: v)),
-                  ),
-                  SwitchListTile(
-                    contentPadding: EdgeInsets.zero,
-                    dense: true,
-                    title: Text(l.notifAudio),
-                    value: p.audio,
-                    onChanged: (bool v) => save(p.copyWith(audio: v)),
-                  ),
-                  SwitchListTile(
-                    contentPadding: EdgeInsets.zero,
-                    dense: true,
-                    title: Text(l.notifHaptic),
-                    value: p.haptic,
-                    onChanged: (bool v) => save(p.copyWith(haptic: v)),
-                  ),
-                  SwitchListTile(
-                    contentPadding: EdgeInsets.zero,
-                    dense: true,
-                    title: Text(l.notifTts),
-                    value: p.tts,
-                    onChanged: (bool v) => save(p.copyWith(tts: v)),
-                  ),
-                  SwitchListTile(
-                    contentPadding: EdgeInsets.zero,
-                    dense: true,
-                    title: Text(l.notifMentionsOnly),
-                    subtitle: Text(l.notifMentionsOnlySub),
-                    value: p.mentionsOnly,
-                    onChanged: (bool v) => save(p.copyWith(mentionsOnly: v)),
-                  ),
-                  SwitchListTile(
-                    contentPadding: EdgeInsets.zero,
-                    dense: true,
-                    title: Text(l.notifKeySuffix),
-                    subtitle: Text(l.notifKeySuffixSub),
-                    value: p.keySuffixMentions,
-                    onChanged: (bool v) =>
-                        save(p.copyWith(keySuffixMentions: v)),
-                  ),
-                ],
-              );
-            }),
-            // R59 — the bot binds per channel. The section renders on
-            // every slot, including Public, because a refusal that
-            // explains itself teaches more than a missing control.
-            const Divider(height: 20),
-            BotSection(scope: ChannelScope(widget.idx)),
             if (_error != null) ...<Widget>[
               const SizedBox(height: 8),
               Text(_error!,
@@ -956,6 +888,118 @@ class _DiceRollPanel extends StatelessWidget {
           ],
         );
       },
+    );
+  }
+}
+
+/// R54, D8.13, R59 — everything about a channel that is not its name or its
+/// key. These used to live inside the edit dialog, which then did six jobs at
+/// once: naming, key choice, key reveal, sharing, inference and the
+/// notification bundle. They apply immediately and independently of a save, so
+/// they belong to the channel, not to the act of editing it.
+class _ChannelOptionsSheet extends StatelessWidget {
+  const _ChannelOptionsSheet({required this.idx, required this.name});
+
+  final int idx;
+  final String name;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations l = AppLocalizations.of(context);
+    return SafeArea(
+      top: false,
+      child: ListView(
+        shrinkWrap: true,
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+        children: <Widget>[
+          Text(name, style: Theme.of(context).textTheme.titleMedium),
+            // R54 — per-channel place inference. Applied immediately
+            // (independent of the name/PSK save), default on for the
+            // public channel.
+            const Divider(height: 20),
+            Builder(builder: (BuildContext ctx) {
+              final MeshcoreController mc = ctx.watch<MeshcoreController>();
+              return SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                dense: true,
+                title: Text(l.channelsInferPlaces),
+                subtitle: Text(l.channelsInferPlacesSub),
+                value: mc.placeInferenceEnabled(idx),
+                onChanged: (bool v) =>
+                    mc.setPlaceInferenceEnabled(idx, v),
+              );
+            }),
+            // D8.13 — the per-channel notification bundle. Every toggle is
+            // per slot: silencing the busy channel must not silence the
+            // emergency one, and mentions-only is off unless asked for.
+            const Divider(height: 20),
+            Builder(builder: (BuildContext ctx) {
+              final NotificationPrefs? np = ctx.watch<NotificationPrefs?>();
+              if (np == null) return const SizedBox.shrink();
+              final ChannelNotificationPrefs p = np.prefsFor(idx);
+              void save(ChannelNotificationPrefs next) =>
+                  np.setFor(idx, next);
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text(l.notifSectionTitle,
+                      style: Theme.of(ctx).textTheme.titleSmall),
+                  SwitchListTile(
+                    contentPadding: EdgeInsets.zero,
+                    dense: true,
+                    title: Text(l.notifOs),
+                    value: p.os,
+                    onChanged: (bool v) => save(p.copyWith(os: v)),
+                  ),
+                  SwitchListTile(
+                    contentPadding: EdgeInsets.zero,
+                    dense: true,
+                    title: Text(l.notifAudio),
+                    value: p.audio,
+                    onChanged: (bool v) => save(p.copyWith(audio: v)),
+                  ),
+                  SwitchListTile(
+                    contentPadding: EdgeInsets.zero,
+                    dense: true,
+                    title: Text(l.notifHaptic),
+                    value: p.haptic,
+                    onChanged: (bool v) => save(p.copyWith(haptic: v)),
+                  ),
+                  SwitchListTile(
+                    contentPadding: EdgeInsets.zero,
+                    dense: true,
+                    title: Text(l.notifTts),
+                    value: p.tts,
+                    onChanged: (bool v) => save(p.copyWith(tts: v)),
+                  ),
+                  SwitchListTile(
+                    contentPadding: EdgeInsets.zero,
+                    dense: true,
+                    title: Text(l.notifMentionsOnly),
+                    subtitle: Text(l.notifMentionsOnlySub),
+                    value: p.mentionsOnly,
+                    onChanged: (bool v) => save(p.copyWith(mentionsOnly: v)),
+                  ),
+                  SwitchListTile(
+                    contentPadding: EdgeInsets.zero,
+                    dense: true,
+                    title: Text(l.notifKeySuffix),
+                    subtitle: Text(l.notifKeySuffixSub),
+                    value: p.keySuffixMentions,
+                    onChanged: (bool v) =>
+                        save(p.copyWith(keySuffixMentions: v)),
+                  ),
+                ],
+              );
+            }),
+            // R59 — the bot binds per channel. The section renders on
+            // every slot, including Public, because a refusal that
+            // explains itself teaches more than a missing control.
+            const Divider(height: 20),
+            BotSection(scope: ChannelScope(idx)),
+
+        ],
+      ),
     );
   }
 }

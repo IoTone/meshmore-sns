@@ -1510,9 +1510,6 @@
     "placeholders": {
       "idx": {
         "type": "int"
-      },
-      "name": {
-        "type": "String"
       }
     }
   },
@@ -1593,7 +1590,6 @@
   "@notifDeniedBanner": {
     "description": "Shown when the OS notification permission is denied."
   },
-  "channelsKeySource": "Key source",
   "channelsKeyPublic": "Public",
   "channelsKeyHashtag": "#tag",
   "channelsKeyHex": "Hex",
@@ -3462,5 +3458,7 @@
   "@chatMetaSnr": {"placeholders": {"snr": {"type": "String"}}},
   "chatActionsMeta": "Delivery, route and signal",
   "chatMoreActions": "More",
-  "dmKeyCopied": "Peer key copied"
+  "dmKeyCopied": "Peer key copied",
+  "channelsInfoTooltip": "How channels work",
+  "channelsOptionsTooltip": "Channel settings"
 }

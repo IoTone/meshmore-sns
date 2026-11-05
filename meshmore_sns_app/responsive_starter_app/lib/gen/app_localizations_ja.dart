@@ -2308,7 +2308,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get channelsSet => '設定';
 
   @override
-  String channelsSetSnack(int idx, String name) {
+  String channelsSetSnack(int idx) {
     return 'スロット $idx を保存しました';
   }
 
@@ -2371,9 +2371,6 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get notifDeniedBanner => 'このアプリの通知がオフのため、メッセージはロック画面に表示されません。';
-
-  @override
-  String get channelsKeySource => '鍵ソース';
 
   @override
   String get channelsKeyPublic => 'Public';
@@ -5006,4 +5003,10 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get dmKeyCopied => '相手の鍵をコピーしました';
+
+  @override
+  String get channelsInfoTooltip => 'チャンネルの仕組み';
+
+  @override
+  String get channelsOptionsTooltip => 'チャンネル設定';
 }

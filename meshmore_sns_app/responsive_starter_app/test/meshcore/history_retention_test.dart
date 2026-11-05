@@ -127,12 +127,11 @@ void main() {
     expect(find.textContaining('older message'), findsNothing);
 
     await show(3);
-    expect(find.textContaining('3 older messages are gone'), findsOneWidget);
-    expect(find.textContaining('newest 250'), findsOneWidget,
-        reason: 'the rule is named, not just the number');
+    // One line: what is kept and what went, in that order.
+    expect(find.text('250 kept · 3 older removed'), findsOneWidget);
 
     await show(1);
-    expect(find.textContaining('1 older message is gone'), findsOneWidget);
+    expect(find.text('250 kept · 1 older removed'), findsOneWidget);
   });
 
   testWidgets('the chat thread carries the notice from the controller',
@@ -167,13 +166,13 @@ void main() {
     fake.emit(selfInfoFrame());
     await t.pump();
     expect(find.byType(HistoryRetentionNotice), findsOneWidget);
-    expect(find.textContaining('older messages are gone'), findsNothing);
+    expect(find.textContaining('older removed'), findsNothing);
 
     for (int i = 0; i < ChatStore.cap + 1; i++) {
       await mc.sendChannelText('m$i');
     }
-    await t.pump();
-    expect(find.textContaining('1 older message is gone'), findsOneWidget);
+    await t.pumpAndSettle();
+    expect(find.text('250 kept · 1 older removed'), findsOneWidget);
 
     mc.dispose();
     await t.pumpWidget(const SizedBox());

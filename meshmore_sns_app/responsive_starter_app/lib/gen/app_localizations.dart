@@ -4122,7 +4122,7 @@ abstract class AppLocalizations {
   ///
   /// In en, this message translates to:
   /// **'Slot {idx} saved'**
-  String channelsSetSnack(int idx, String name);
+  String channelsSetSnack(int idx);
 
   /// No description provided for @channelsDialogTitle.
   ///
@@ -4231,12 +4231,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Notifications are turned off for this app, so messages will not appear on your lock screen.'**
   String get notifDeniedBanner;
-
-  /// No description provided for @channelsKeySource.
-  ///
-  /// In en, this message translates to:
-  /// **'Key source'**
-  String get channelsKeySource;
 
   /// No description provided for @channelsKeyPublic.
   ///
@@ -8781,6 +8775,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Peer key copied'**
   String get dmKeyCopied;
+
+  /// No description provided for @channelsInfoTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'How channels work'**
+  String get channelsInfoTooltip;
+
+  /// No description provided for @channelsOptionsTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Channel settings'**
+  String get channelsOptionsTooltip;
 }
 
 class _AppLocalizationsDelegate

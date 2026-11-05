@@ -1459,9 +1459,6 @@
     "placeholders": {
       "idx": {
         "type": "int"
-      },
-      "name": {
-        "type": "String"
       }
     }
   },
@@ -1490,7 +1487,6 @@
   "notifKeySuffix": "鍵の末尾にも一致させる",
   "notifKeySuffixSub": "16進4文字は識別子ではありません。送信者を確実に知っている場合のみ。",
   "notifDeniedBanner": "このアプリの通知がオフのため、メッセージはロック画面に表示されません。",
-  "channelsKeySource": "鍵ソース",
   "channelsKeyPublic": "Public",
   "channelsKeyHashtag": "#タグ",
   "channelsKeyHex": "Hex",
@@ -2374,5 +2370,7 @@
   "chatMetaSnr": "SNR {snr} dB",
   "chatActionsMeta": "配送・経路・信号",
   "chatMoreActions": "その他",
-  "dmKeyCopied": "相手の鍵をコピーしました"
+  "dmKeyCopied": "相手の鍵をコピーしました",
+  "channelsInfoTooltip": "チャンネルの仕組み",
+  "channelsOptionsTooltip": "チャンネル設定"
 }
