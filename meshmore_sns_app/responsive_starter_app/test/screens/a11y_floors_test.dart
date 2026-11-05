@@ -22,6 +22,8 @@ import 'package:meshmore_sns_app/main.dart';
 import 'package:meshmore_sns_app/meshcore/meshcore_controller.dart';
 import 'package:meshmore_sns_app/perms/first_run_controller.dart';
 import 'package:meshmore_sns_app/perms/permissions_service.dart';
+import 'package:meshmore_sns_app/places/place_report_budget.dart';
+import 'package:meshmore_sns_app/places/place_store.dart';
 import 'package:meshmore_sns_app/theme/theme_controller.dart';
 import 'package:meshmore_sns_app/tools/tools_controller.dart';
 import 'package:meshmore_sns_app/tts/tts_controller.dart';
@@ -84,6 +86,11 @@ List<SingleChildWidget> _providers() => <SingleChildWidget>[
             mc: ctx.read<MeshcoreController>(),
             location: const GeolocatorLocationService(),
           )),
+      // R109 places: the map tab and the chat echo read these, so every
+      // harness that builds the shell needs them (as `home_shell_test` does).
+      ChangeNotifierProvider<PlaceStore>(create: (_) => PlaceStore()),
+      Provider<PlaceReportBudget>(
+          create: (_) => PlaceReportBudget(clock: DateTime.now)),
     ];
 
 /// The street map's tile layer arms a three-second timer when it mounts.
