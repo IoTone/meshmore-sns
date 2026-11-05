@@ -50,6 +50,7 @@ void main() {
     // The peers numeral, the radio block, the location block, the battery
     // block and the feed each appear when they have a value, so a fresh
     // install shows a state and the way out of it.
+    expect(find.text('NODES IN RANGE'), findsNothing);
     expect(find.textContaining('OFFLINE'), findsOneWidget);
     expect(find.byTooltip('CONNECT'), findsOneWidget);
     expect(find.text('PEERS IN RANGE'), findsNothing);

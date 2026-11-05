@@ -67,7 +67,7 @@ void main() {
     shellDragClaim.reset();
   });
 
-  testWidgets('empty state when nothing is in fabric', (t) async {
+  testWidgets('empty state when nothing is shown', (t) async {
     final FakeMeshcoreTransport fake =
         FakeMeshcoreTransport(connected: true);
     final MeshcoreController mc = MeshcoreController(
@@ -81,7 +81,7 @@ void main() {
     await t.pump();
     expect(find.text('Radial'), findsOneWidget);
     expect(
-        find.textContaining('No fabric in range yet'), findsOneWidget);
+        find.textContaining('No nodes in range yet'), findsOneWidget);
     expect(t.takeException(), isNull);
     // Tear down — GridScreen owns a repeating AnimationController; the
     // explicit replacement triggers dispose so it's stopped cleanly.
@@ -89,7 +89,7 @@ void main() {
     mc.dispose();
   });
 
-  testWidgets('with one node visible, status reads "1 in fabric"',
+  testWidgets('with one node visible, status reads "1 shown"',
       (WidgetTester t) async {
     final FakeMeshcoreTransport fake =
         FakeMeshcoreTransport(connected: true);
@@ -107,21 +107,21 @@ void main() {
     await t.pump();
     await t.pump(const Duration(milliseconds: 16));
 
-    expect(find.textContaining('1 in fabric'), findsOneWidget);
+    expect(find.textContaining('1 shown'), findsOneWidget);
     expect(t.takeException(), isNull);
     await t.pumpWidget(const SizedBox());
     mc.dispose();
   });
 
   testWidgets('not connected: the radar still paints, empty, with the '
-      'message — not the empty-fabric text (issue #4)',
+      'message — not the empty text (issue #4)',
       (WidgetTester t) async {
     final MeshcoreController mc = MeshcoreController(
         transportFactory: () async => FakeMeshcoreTransport());
     await t.pumpWidget(_host(mc));
     await t.pump();
     expect(find.text('Not Connected to Mesh'), findsOneWidget);
-    expect(find.textContaining('No fabric in range yet'), findsNothing);
+    expect(find.textContaining('No nodes in range yet'), findsNothing);
     expect(
         find.descendant(
             of: find.byType(GridScreen), matching: find.byType(CustomPaint)),
@@ -146,13 +146,13 @@ void main() {
     fake.emit(advertFrame(name: 'AdvNode', firstPubByte: 70));
     await t.pump();
     await t.pump(const Duration(milliseconds: 16));
-    expect(find.textContaining('1 in fabric'), findsOneWidget);
+    expect(find.textContaining('1 shown'), findsOneWidget);
 
     await mc.disconnect();
     await t.pump();
     await t.pump(const Duration(milliseconds: 16));
     expect(mc.nodes, isNotEmpty, reason: 'the cache keeps the node…');
-    expect(find.textContaining('in fabric'), findsNothing,
+    expect(find.textContaining('shown'), findsNothing,
         reason: '…but the offline grid does not show it');
     expect(find.text('Not Connected to Mesh'), findsOneWidget);
     await t.pumpWidget(const SizedBox());
@@ -353,7 +353,7 @@ void main() {
     expect(picker().style?.fontWeight, FontWeight.w600);
 
     Text status() =>
-        t.widget<Text>(find.textContaining('1 in fabric'));
+        t.widget<Text>(find.textContaining('1 shown'));
     expect(status().style?.fontSize, type.sizeBody);
     expect(status().style?.fontSize, 12);
 

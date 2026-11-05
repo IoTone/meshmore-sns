@@ -84,7 +84,7 @@ void main() {
     await t.pump();
   });
 
-  testWidgets('host shows the SEELE monolith by default, NERV when selected',
+  testWidgets('host shows the SEELE monolith, NERV when selected',
       (WidgetTester t) async {
     final MeshcoreController mc = MeshcoreController(
       transportFactory: () async => FakeMeshcoreTransport(connected: true),
@@ -93,7 +93,10 @@ void main() {
     );
     final ThemeController tc = await _pump(t, mc);
 
-    // Default preset (SEELE) → the monolith dashboard.
+    // The preset picks the layout, and a fresh install opens on STUDIO, so
+    // the test names the skin it means rather than leaning on the default.
+    await tc.setPreset(MmThemePreset.seele);
+    await t.pump();
     expect(find.byKey(dashboardKey), findsOneWidget);
     expect(find.text('NERV'), findsNothing);
 
@@ -110,6 +113,7 @@ void main() {
     await tc.setPreset(MmThemePreset.seele);
     await t.pumpAndSettle();
     expect(find.byKey(dashboardKey), findsOneWidget);
+    expect(find.text('NERV'), findsNothing);
   });
 
   testWidgets('host shows the Hyperlocal radar when selected',
@@ -129,10 +133,10 @@ void main() {
     // Radar dashboard: the empty-field prompt + the PEERS status rail,
     // and none of the other skins' signatures.
     expect(find.text('Listening for nodes…'), findsOneWidget);
-    expect(find.textContaining('PEERS', findRichText: true),
+    expect(find.textContaining('NODES', findRichText: true),
         findsOneWidget); // status rail
     expect(find.text('NERV'), findsNothing);
-    expect(find.text('PEERS IN RANGE'), findsNothing);
+    expect(find.text('NODES IN RANGE'), findsNothing);
   });
 
   testWidgets('host shows the AG-HUD gauges when selected',

@@ -1,7 +1,7 @@
 {
   "@@locale": "en",
   "appName": "Meshmore SNS",
-  "appSubtitle": "Socialrobot Network Service",
+  "appSubtitle": "Mesh messaging over radio",
   "tabDashboard": "Dashboard",
   "tabChat": "Chat",
   "tabNodes": "Nodes",
@@ -9,7 +9,7 @@
   "tabDocs": "Docs",
   "tabSettings": "Settings",
   "tabAbout": "About",
-  "dashboardPeersInRange": "PEERS IN RANGE",
+  "dashboardPeersInRange": "NODES IN RANGE",
   "dashboardKnownCount": "{n, plural, =0{0 known} =1{1 known} other{{n} known}}",
   "@dashboardKnownCount": {
     "placeholders": {
@@ -43,13 +43,13 @@
   "botTitle": "Auto-reply bot",
   "botSubtitle": "Answers messages here automatically. Off by default.",
   "botOnWire": "Replies are sent with a [bot] prefix, so the person on the other end can tell a machine wrote them.",
-  "botRefusedPublicSlot": "Not available on Public. Slot 0 is the public channel.",
-  "botRefusedPublicPsk": "This slot still uses the well-known public key, so it is Public under another number. Give it a private key first.",
-  "botRefusedUnknownPsk": "Waiting for this slot's key from the radio.",
+  "botRefusedPublicSlot": "Not available on the public channel.",
+  "botRefusedPublicPsk": "This channel still uses the public key, so it is public whatever its number. Give it a private key first.",
+  "botRefusedUnknownPsk": "Waiting for the radio to send this channel's key.",
   "botMode": "Reply mode",
   "botModeDeterministic": "Deterministic",
   "botModeRandom": "Random",
-  "botModeDeterministicSub": "First matching rule always wins, so a soak trace is diffable.",
+  "botModeDeterministicSub": "The first matching rule always wins, so two runs can be compared.",
   "botModeRandomSub": "Picks among matching rules, replayable from the seed.",
   "botSeed": "Seed",
   "botBudget": "{n} replies left this window",
@@ -97,7 +97,7 @@
   "dashNervKnown": "Known",
   "dashNervEvents": "Events",
   "dashHyperEmpty": "Listening for nodes…",
-  "dashPeers": "PEERS",
+  "dashPeers": "NODES",
   "dashAgHudSignal": "SIGNAL",
   "dashAgHudTraffic": "ch traffic",
   "dashDrPopLink": "LINK",
@@ -194,7 +194,7 @@
   },
   "deviceMgrPairNew": "Pair a new radio",
   "pairTitle": "Pair a radio",
-  "pairStepOf": "STEP {step} OF {total}",
+  "pairStepOf": "Step {step} of {total}",
   "@pairStepOf": {
     "placeholders": {
       "step": {
@@ -251,8 +251,8 @@
   "pairChooseAnother": "Choose another radio",
   "settingsHeading": "App settings",
   "settingsBackgroundTitle": "Stay connected in background",
-  "settingsBackgroundOn": "Android: a persistent notification keeps the radio linked so messages arrive while backgrounded",
-  "settingsBackgroundOff": "Messages still arrive when you reopen the app (radio buffers them); no background notification",
+  "settingsBackgroundOn": "A notification stays visible so messages arrive while the app is closed.",
+  "settingsBackgroundOff": "Messages arrive when you reopen the app.",
   "settingsTelemetryPoll": "Gather node telemetry",
   "settingsTelemetryPollOn": "Politely polls contacts for temperature / altitude (a little OTA airtime)",
   "settingsTelemetryPollOff": "No telemetry requests sent; query a node manually from its detail",
@@ -263,9 +263,9 @@
   "settingsSpeech": "SPEECH",
   "settingsSpeechOn": "Text-to-speech ON · per-channel toggle in Chat",
   "settingsSpeechOff": "Text-to-speech OFF (default) · reads channel messages",
-  "settingsSpeechMuted": "Text-to-speech ON, but the audio mute is silencing it",
+  "settingsSpeechMuted": "Speech is on but muted with the alert sounds.",
   "settingsPermissions": "Permissions",
-  "settingsPermissionsSubtitle": "Open the OS settings page for this app — flip Bluetooth / Notifications on or off here.",
+  "settingsPermissionsSubtitle": "Turn this app's Bluetooth and notifications on or off.",
   "settingsShowIntro": "Show intro again on next launch",
   "settingsShowIntroEnabled": "Wipes the first-run flag so the permissions intro shows again — useful when you're testing the flow",
   "settingsShowIntroDisabled": "Intro is currently scheduled for next launch",
@@ -334,11 +334,11 @@
   "personalizationFontSize": "Font size",
   "personalizationAccessibility": "ACCESSIBILITY",
   "personalizationHighContrast": "High contrast",
-  "personalizationHighContrastSubtitle": "Force the SEELE high-contrast palette",
-  "personalizationHighContrastHint": "High contrast is on — the SEELE high-contrast palette is forced regardless of your preset pick. Turn off High contrast below to use another theme.",
+  "personalizationHighContrastSubtitle": "Use the high-contrast colours",
+  "personalizationHighContrastHint": "High contrast overrides the skin you pick.",
   "personalizationReduceMotion": "Reduce motion",
   "personalizationVisualHapticOnly": "Visual + haptic only",
-  "personalizationVisualHapticOnlySubtitle": "No information by sound; turns audio off",
+  "personalizationVisualHapticOnlySubtitle": "Alerts by vibration only",
   "personalizationAudioAlerts": "AUDIO ALERTS",
   "personalizationAudioMaster": "Audio alerts",
   "personalizationAudioMasterDisabled": "Disabled by \"visual + haptic only\"",
@@ -351,17 +351,17 @@
   "demoModeOn": "On — the app opens without connecting to a radio",
   "demoModeOff": "Off — the app connects to a paired radio at launch",
   "firstRunHeader": "MESHMORE · WELCOME",
-  "firstRunTitle": "Quick heads-up on what we'll ask for",
+  "firstRunTitle": "What this app will ask for",
   "firstRunBleTitle": "Bluetooth",
   "firstRunBleBody": "To pair with your MeshCore radio and exchange messages over the local mesh. Required to send / receive over the air.",
   "firstRunNotificationsTitle": "Notifications",
-  "firstRunNotificationsBody": "Asked only if you turn on \"Stay connected in background\" later in App settings. Skipped today so you're not interrupted twice.",
+  "firstRunNotificationsBody": "We ask later, only if you keep the app connected in the background.",
   "firstRunOfflineTitle": "Offline is fine",
-  "firstRunOfflineBody": "If you skip Bluetooth the app opens in demo mode: browse message history, configure channels, read diagnostics and the docs. No live mesh traffic until you connect a radio.",
-  "firstRunGrant": "Grant Bluetooth & continue",
+  "firstRunOfflineBody": "Without Bluetooth the app opens in demo mode: history, channels, settings and docs, with no radio traffic.",
+  "firstRunGrant": "Allow Bluetooth",
   "firstRunSkip": "Explore in demo mode (no radio)",
-  "firstRunDeniedTransient": "Bluetooth wasn't granted — you can continue offline or open OS settings to change your mind.",
-  "firstRunDeniedPermanent": "Bluetooth was permanently denied — open OS settings to grant it. You can still use the app offline.",
+  "firstRunDeniedTransient": "Bluetooth is off for this app. Continue offline, or allow it in Settings.",
+  "firstRunDeniedPermanent": "Bluetooth is blocked for this app. Allow it in Settings, or keep using the app offline.",
   "firstRunOpenSettings": "Open OS settings",
   "dashboardPaired": "paired: {name}",
   "@dashboardPaired": {
@@ -419,7 +419,7 @@
   "nodesDist500m": "≤ 500 m",
   "nodesDist5km": "≤ 5 km",
   "nodesDist25km": "≤ 25 km",
-  "nodesStatusReady": "{shown} of {total} in fabric · {inRange} in range · {favs, plural, =0{0 contacts} =1{1 contact} other{{favs} contacts}}",
+  "nodesStatusReady": "{shown} of {total} shown · {inRange} in range · {favs, plural, =0{0 contacts} =1{1 contact} other{{favs} contacts}}",
   "@nodesStatusReady": {
     "placeholders": {
       "shown": {
@@ -438,8 +438,8 @@
   },
   "nodesStatusOffline": "Not connected — Settings → Diagnostics & connect",
   "nodesFarBadge": "FAR",
-  "nodesEmptyFiltered": "No nodes match this filter.\n\nTap Clear to widen, or change the chip cutoffs above.",
-  "nodesEmptyReady": "No nodes yet. Discovery is advert-driven: a node appears when its advert is heard.",
+  "nodesEmptyFiltered": "No nodes match this filter.",
+  "nodesEmptyReady": "No nodes yet. A node appears once it announces itself.",
   "nodesEmptyOffline": "Connect a radio to discover nearby nodes.",
   "nodesFavTooltip": "Add to favourites",
   "nodesUnfavTooltip": "Remove from favourites",
@@ -459,7 +459,7 @@
   "gridRangeCity": "City",
   "gridRangeRegion": "Region",
   "gridLegend": "LEGEND",
-  "gridLegendRings": "Three concentric rings = distance bands. With GPS on both ends, the outer ring is the **Range** scale above (~{value} right now). Without GPS, rings are RSSI bands (near / mid / far).",
+  "gridLegendRings": "Rings are distance bands. With GPS at both ends the outer ring is the Range scale above (about {value} now). Without GPS they are signal bands: near, mid, far.",
   "@gridLegendRings": {
     "placeholders": {
       "value": {
@@ -468,32 +468,32 @@
     }
   },
   "gridLegendSelf": "Centre marker = you. Cross-hair = N-S / E-W guide.",
-  "gridLegendDot": "Dot = a fabric node we've heard. Brightness = recency (full = just now, fades to 0 over 24 h then disappears).",
-  "gridLegendKnown": "Pulse (slow growing halo) = a known node — we have had a direct attributable exchange (DM) with them.",
+  "gridLegendDot": "A dot is a node we have heard. Brighter means more recent; it fades out over a day.",
+  "gridLegendKnown": "A slow growing halo is a node we have messaged directly.",
   "gridLegendFavourite": "Rapid blink in alt-colour = a favourited node.",
-  "gridLegendRipple": "Centre-out ripple = an anonymous channel message (the protocol doesn't attribute channel msgs to a sender).",
+  "gridLegendRipple": "A ripple from the centre is a channel message from someone we cannot name.",
   "gridLegendTap": "Tap a node to see details + Message / Favourite.",
-  "gridLegendHeading": "Heading wedge / HDG line = the direction the phone's top edge is pointing relative to MAGNETIC north (not true north, not GPS travel direction). Comes from the phone's compass sensor.",
-  "gridLegendCalibration": "Calibration: if the arrow seems wrong, hold the phone level and wave it in a figure-8 motion several times. The OS handles compass calibration; the app only displays sensor accuracy (a 'Calibrate' hint appears when accuracy is poor).",
+  "gridLegendHeading": "The wedge is the direction the top of the phone points, measured from magnetic north.",
+  "gridLegendCalibration": "If the arrow seems wrong, hold the phone level and turn it in a figure-8 a few times. A Calibrate hint appears when the compass needs it.",
   "gridViewRadial": "Radial",
   "gridViewGlobe": "Globe",
   "gridViewEqualGrid": "Equal grid",
   "gridViewStreetMap": "Street map",
   "gridViewPicker": "Switch map view",
-  "gridViewFabric": "Fabric survey",
+  "gridViewFabric": "Mesh survey",
   "gridViewElevation": "Fujiさん",
   "fujiLegendTitle": "FUJIさん",
   "fujiLegendDesc": "Altitude survey. Heights on a √-scaled axis against famous landmarks. Your device's altitude comes from device GPS telemetry or the phone fix.",
   "fujiLegendMe": "Dashed line = you. At your altitude, or pinned to the ground with ALT? until it resolves.",
   "fujiLegendRefs": "Silhouettes = real-world references (person → Mt Fuji) for scale.",
-  "fujiLegendPeers": "Dots = peers, plotted at their telemetry altitude once queried.",
-  "fujiLegendUnknown": "Striped band along the ground = peers with no altitude yet.",
-  "fujiLegendAutoQuery": "The AUTO-QUERY box pulls peer altitudes slowly; tap it to restart.",
+  "fujiLegendPeers": "Dots are nodes, plotted at their altitude once asked.",
+  "fujiLegendUnknown": "A striped band along the ground is a node with no altitude yet.",
+  "fujiLegendAutoQuery": "The auto-query box asks for altitudes slowly. Tap it to start again.",
   "elevationProfileTitle": "MESHMORE :: FUJIさん",
   "elevationProfileAltLabel": "Altitude",
   "elevationProfileMeLabel": "Me",
   "elevationProfileUnknownLabel": "altitude unknown",
-  "elevationProfilePeers": "{n} peers tracked",
+  "elevationProfilePeers": "{n} nodes tracked",
   "@elevationProfilePeers": {
     "placeholders": {
       "n": {
@@ -547,7 +547,7 @@
   "equalGridZoomOut": "Zoom out (wider cells)",
   "equalGridShowStats": "Show targeting panel",
   "equalGridHideStats": "Hide targeting panel",
-  "globeFooter": "Showing {n} peers with known location",
+  "globeFooter": "Showing {n} nodes with a known location",
   "globeOverlayArcs": "arcs",
   "globeOverlayRegion": "region",
   "globeOverlayLabels": "labels",
@@ -580,7 +580,7 @@
   "deviceGpsModule": "ON-BOARD GPS MODULE",
   "deviceGpsEnable": "Enable on-board GPS",
   "deviceGpsEnabledHint": "Device firmware polls its GPS chip and updates location automatically.",
-  "deviceGpsDisabledHint": "Off — the device never reads its GPS chip; advertised location stays whatever was last written.",
+  "deviceGpsDisabledHint": "Off. The radio does not read its GPS, so it keeps announcing the last position set.",
   "deviceGpsUnknown": "Waiting for device…",
   "deviceGpsInterval": "GPS update interval",
   "deviceGpsIntervalOff": "Off",
@@ -608,9 +608,9 @@
       }
     }
   },
-  "deviceGpsIntervalFixedByFirmware": "Polling cadence is fixed by this firmware build (the sensors module doesn't expose `gps_interval`).",
+  "deviceGpsIntervalFixedByFirmware": "This radio sets its own GPS interval.",
   "locTitle": "Auto-publish location",
-  "locTileSubtitle": "Periodic + on-movement phone-GPS push to the device",
+  "locTileSubtitle": "Sends the phone's position to the radio",
   "locHelp": "When the radio's GPS fix is stale, write the phone's position to it.",
   "locMaster": "Auto-publish",
   "locMasterOn": "On — using phone GPS",
@@ -670,8 +670,8 @@
     }
   },
   "locBeacon": "Periodic position beacon",
-  "locBeaconSub": "Every 60 s, advertise your position (zero-hop). Uses airtime and battery.",
-  "locBatteryHint": "Smart-broadcast streams GPS (~10 mA continuous). Periodic-only is cheaper. Combine both for responsiveness; pick smart-broadcast alone if battery matters.",
+  "locBeaconSub": "Every 60 s, send your position. Uses airtime and battery.",
+  "locBatteryHint": "Streaming GPS reacts faster and uses more battery.",
   "@globeFooter": {
     "placeholders": {
       "n": {
@@ -679,13 +679,13 @@
       }
     }
   },
-  "gridEmpty": "No fabric in range yet.\n\nA node appears when its advert is heard.",
+  "gridEmpty": "No nodes in range yet.\n\nA node appears once it announces itself.",
   "gridStatusOffline": "Not connected — Settings → Diagnostics & connect",
   "gridSwipeModeTooltip": "Swipe mode: swipe left/right for other screens. Tap to pan and zoom this map",
   "gridPanModeTooltip": "Pan & zoom mode: drags move the map. Tap to swipe between screens again",
   "gridSwipeHint": "Swipe ← → for other screens · tap ✋ to pan & zoom",
   "gridPanHint": "Pan & zoom · tap ⇆ to swipe screens",
-  "gridStatusCounts": "{visible} in fabric · {known} known · {favs, plural, =0{0 contacts} =1{1 contact} other{{favs} contacts}}",
+  "gridStatusCounts": "{visible} shown · {known} known · {favs, plural, =0{0 contacts} =1{1 contact} other{{favs} contacts}}",
   "@gridStatusCounts": {
     "placeholders": {
       "visible": {
@@ -699,7 +699,7 @@
       }
     }
   },
-  "gridGroupPeers": "PEERS",
+  "gridGroupPeers": "NODES",
   "gridGroupSurvey": "SURVEY",
   "gridGroupReports": "REPORTS",
   "gridNotConnected": "Not Connected to Mesh",
@@ -829,7 +829,7 @@
       }
     }
   },
-  "eventMsgSent": "msg sent (ack {ack})",
+  "eventMsgSent": "sent (confirmed by {ack})",
   "@eventMsgSent": {
     "placeholders": {
       "ack": {
@@ -952,7 +952,7 @@
       }
     }
   },
-  "dmTitle": "DM · {peer}",
+  "dmTitle": "Direct · {peer}",
   "@dmTitle": {
     "placeholders": {
       "peer": {
@@ -968,10 +968,10 @@
       }
     }
   },
-  "nodeDetailSignature": "Arrival signature",
-  "nodeDetailSignatureHint": "A cue just for this peer, instead of the DM cue.",
+  "nodeDetailSignature": "Message sound",
+  "nodeDetailSignatureHint": "Plays for messages from this person instead of the usual sound.",
   "nodeDetailSignatureNone": "Default",
-  "nodeDetailSignatureSlot": "Signature {n}",
+  "nodeDetailSignatureSlot": "Sound {n}",
   "@nodeDetailSignatureSlot": {
     "placeholders": {
       "n": {
@@ -981,13 +981,13 @@
   },
   "nodeDetailSignatureMutedHint": "Audio is muted — you will feel the vibration but not hear it.",
   "dmEmpty": "— no messages yet —",
-  "dmOpenPeerDetail": "Peer details",
-  "dmSpeech": "Speak this peer",
+  "dmOpenPeerDetail": "Contact details",
+  "dmSpeech": "Read this conversation aloud",
   "dmSpeechInherit": "Follow global speech setting",
   "dmSpeechAlways": "Always speak",
   "dmSpeechNever": "Never speak",
   "dmSpeechMutedByMaster": "Silenced by the audio mute",
-  "dmPeerNotInFabric": "This peer hasn't shown up on the mesh yet (no advert heard).",
+  "dmPeerNotInFabric": "This person has not been heard on the mesh yet.",
   "dmComposerHint": "Message {peer}",
   "@dmComposerHint": {
     "placeholders": {
@@ -1043,7 +1043,7 @@
       }
     }
   },
-  "nodeIdentityLinkAction": "Key changed? Link to another node",
+  "nodeIdentityLinkAction": "New key: link this contact",
   "nodeIdentityLinkTitle": "Link a changed key",
   "nodeIdentityLinkHelp": "Same contact, new key. Pick the node or paste the key; your star, tags and messages move over.",
   "nodeIdentityLinkEmpty": "No other nodes yet. Wait for the new key to advertise, or paste it.",
@@ -1091,7 +1091,7 @@
   "deviceContactsChannelsNote": "You only need a contact to send a direct message. Channel messages work without contacts — you'll still see everyone on channels.",
   "deviceContactsScrub": "Scrub contacts",
   "deviceContactsRemoveOutOfRange": "Remove out of range",
-  "deviceContactsOutOfRangeIntro": "Removes contacts that are far from you — or that hide their location (no GPS), which we treat as out of range. Favourites and known contacts are kept.",
+  "deviceContactsOutOfRangeIntro": "Removes contacts far away, and those that do not share a position. Favourites and known contacts are kept.",
   "deviceContactsBeyondKm": "Beyond {km} km (+ location-hidden)",
   "@deviceContactsBeyondKm": {
     "placeholders": {
@@ -1128,7 +1128,7 @@
     }
   },
   "deviceContactsRemoveAll": "Remove all",
-  "deviceContactsRemoveAllConfirm": "Remove all {count} contacts from the radio? You don't need contacts for channels — only to DM someone. Re-add anyone you want to message later.",
+  "deviceContactsRemoveAllConfirm": "Remove all {count} contacts? You only need them to send direct messages, and you can add anyone back later.",
   "@deviceContactsRemoveAllConfirm": {
     "placeholders": {
       "count": {
@@ -1407,19 +1407,19 @@
   "meshTreeLegendTitle": "MESH TREE",
   "meshTreeLegendDesc": "A directed graph of how the radio reaches each contact. Edges come from Contact.outPath — the exact repeater chain the device uses to send.",
   "meshTreeLegendSelf": "You — pinned at the centre.",
-  "meshTreeLegendRepeater": "Square = repeater. Mast-mounted infra, hub colour. Peers fan out through these.",
-  "meshTreeLegendRoom": "Diamond = room server. Server-class node hosting named rooms.",
-  "meshTreeLegendChat": "Circle = chat node. Peer you can DM.",
-  "meshTreeLegendSensor": "Small circle (dim) = sensor. Narrow-purpose node.",
+  "meshTreeLegendRepeater": "A square is a repeater: a radio that passes other radios' messages.",
+  "meshTreeLegendRoom": "A diamond is a room server: a radio that hosts named rooms.",
+  "meshTreeLegendChat": "A circle is a node you can message directly.",
+  "meshTreeLegendSensor": "A small dim circle is a sensor: it only reports readings.",
   "meshTreeLegendFlood": "Dashed edge to you = flood-routed contact. Reachable, but with no fixed path.",
   "meshTreeLegendFloat": "Floating (no edges) — heard via advert only; route unknown.",
   "meshTreeLegendArrow": "Arrows point away from us, toward the destination peer.",
-  "meshTreeLegendInteract": "Pinch to zoom, drag to pan, tap a node for details. Use Recenter to reset.",
-  "fabricLegendTitle": "FABRIC SURVEY",
+  "meshTreeLegendInteract": "Tap a node for details, or Recenter to reset the view.",
+  "fabricLegendTitle": "MESH SURVEY",
   "fabricLegendDesc": "A persistent record of where the mesh has been observed. Each rectangle is a small geographic cell (~220 m × 220 m) the device logged on contact with this location.",
   "fabricLegendCell": "Filled cell — the mesh reached here at some point.",
-  "fabricLegendRecency": "Brighter fill = more recent. Tiers: < 1 h, < 24 h, < 7 d, older.",
-  "fabricLegendMarker": "Tertiary-coloured pins mark peers in the current set. Tap one for details.",
+  "fabricLegendRecency": "Brighter is more recent: under an hour, under a day, under a week, older.",
+  "fabricLegendMarker": "Filled pins are the nodes in range now. Tap one for details.",
   "fabricLegendSelf": "The primary-coloured pin is you.",
   "fabricLegendReset": "Reset the survey from the overflow menu when you move to a new area.",
   "nodeDetailHopsKv": "hops",
@@ -1473,7 +1473,7 @@
   "nodeDetailLuminosityKv": "luminosity",
   "nodeDetailQueryTelemetry": "Query telemetry",
   "nodeDetailRefreshTelemetry": "Refresh telemetry",
-  "nodeDetailTelemetryQuerying": "querying peer over the air…",
+  "nodeDetailTelemetryQuerying": "Asking the radio for readings…",
   "nodeDetailTelemetryNotContact": "Not a device contact, so telemetry is unavailable.",
   "nodeDetailTelemetryAge": "telemetry from {age}",
   "@nodeDetailTelemetryAge": {
@@ -1516,10 +1516,10 @@
     }
   },
   "channelsTitle": "Channels",
-  "channelsHelp": "Slot 0 is the shared public channel. A private group needs the same slot, name and PSK on every node.",
+  "channelsHelp": "Channel 0 is the shared public one. A private group needs the same channel number, name and key on every radio.",
   "channelsOfflineHint": "Connect a radio (Diagnostics) to edit channels.",
   "channelsEmpty": "— empty —",
-  "channelsSlotLabel": "slot {idx}",
+  "channelsSlotLabel": "channel {idx}",
   "@channelsSlotLabel": {
     "placeholders": {
       "idx": {
@@ -1527,7 +1527,7 @@
       }
     }
   },
-  "channelsSlotActive": "slot {idx} · ACTIVE",
+  "channelsSlotActive": "channel {idx} · ACTIVE",
   "@channelsSlotActive": {
     "placeholders": {
       "idx": {
@@ -1537,7 +1537,7 @@
   },
   "channelsEdit": "Edit",
   "channelsSet": "Set",
-  "channelsSetSnack": "Channel {idx} set to \"{name}\" — every node needs the same name & PSK here",
+  "channelsSetSnack": "Channel {idx} set to \"{name}\" — every radio needs the same name and key here",
   "@channelsSetSnack": {
     "placeholders": {
       "idx": {
@@ -1548,7 +1548,7 @@
       }
     }
   },
-  "channelsDialogTitle": "Channel slot {idx}",
+  "channelsDialogTitle": "Channel {idx}",
   "@channelsDialogTitle": {
     "placeholders": {
       "idx": {
@@ -1589,11 +1589,11 @@
   "@notifSectionTitle": {
     "description": "Section heading in the channel editor for the per-channel notification bundle."
   },
-  "notifOs": "Notify on the lock screen",
+  "notifOs": "Show a notification",
   "@notifOs": {
     "description": "Per-channel: post an OS notification."
   },
-  "notifAudio": "Play a cue",
+  "notifAudio": "Play a sound",
   "@notifAudio": {
     "description": "Per-channel: play the theme's audio cue."
   },
@@ -1605,7 +1605,7 @@
   "@notifTts": {
     "description": "Per-channel: read the message aloud."
   },
-  "notifMentionsOnly": "Only when named",
+  "notifMentionsOnly": "Only when someone names me",
   "@notifMentionsOnly": {
     "description": "Per-channel: alert only when the message names this device."
   },
@@ -1613,11 +1613,11 @@
   "@notifMentionsOnlySub": {
     "description": "Explains the mentions-only mode."
   },
-  "notifKeySuffix": "Also match the key suffix",
+  "notifKeySuffix": "Also match the last 4 characters of my ID",
   "@notifKeySuffix": {
     "description": "Per-channel opt-in: treat the public key's hex suffix as a mention."
   },
-  "notifKeySuffixSub": "Four hex characters are not an identity; leave this off unless you know the sender's.",
+  "notifKeySuffixSub": "Anyone can choose those four characters, so leave this off unless you know the sender.",
   "@notifKeySuffixSub": {
     "description": "Warns about the key-suffix opt-in."
   },
@@ -1634,25 +1634,25 @@
   "channelsKeyHashtagHelper": "Key derived from sha256(\"#tag\") — the # is part of the key",
   "channelsKeyHexHint": "32 hex chars (16 bytes)",
   "channelsErrorTag": "Enter a #hashtag",
-  "channelsErrorHex": "PSK must be 32 hex chars (16 bytes)",
+  "channelsErrorHex": "The key must be 32 characters, 0-9 or A-F",
   "channelsErrorName": "Enter a channel name",
   "channelsCancel": "Cancel",
   "channelsSave": "Save",
-  "channelsHelpEncryption": "Slot 0's key is public. Other slots use AES-128 with the PSK you set.",
-  "channelsHexGenerate": "Generate random PSK",
+  "channelsHelpEncryption": "Channel 0's key is public. Other channels use the key you set.",
+  "channelsHexGenerate": "Generate a random key",
   "channelsHexCopy": "Copy",
-  "channelsHexCopied": "PSK copied to clipboard",
+  "channelsHexCopied": "Key copied",
   "channelsTagWeakShort": "Short tags are guessable. Use 12+ chars or unusual phrasing.",
   "channelsTagWeakCommon": "Common words are guessable — an attacker can grind tags. Use unusual phrasing.",
   "channelsSlot0WarnTitle": "Overwriting the Public channel?",
-  "channelsSlot0WarnBody": "Slot 0 is the well-known Public channel. Writing a private PSK here means you'll only be able to talk to nodes that use this exact key in slot 0 — you'll lose the shared Public channel. Proceed?",
-  "channelsSlot0WarnContinue": "Overwrite slot 0",
+  "channelsSlot0WarnBody": "Channel 0 is the shared public channel. A private key here means you can only talk to radios using that same key, and you lose the public channel. Continue?",
+  "channelsSlot0WarnContinue": "Overwrite channel 0",
   "channelsSlot0WarnCancel": "Cancel",
   "channelsCurrentKey": "Current key",
   "channelsRevealKey": "Reveal",
   "channelsHideKey": "Hide",
-  "channelsClear": "Clear slot",
-  "channelsClearConfirmTitle": "Clear slot {idx}?",
+  "channelsClear": "Reset channel",
+  "channelsClearConfirmTitle": "Reset channel {idx}?",
   "@channelsClearConfirmTitle": {
     "placeholders": {
       "idx": {
@@ -1660,9 +1660,9 @@
       }
     }
   },
-  "channelsClearConfirmBody": "MeshCore has no protocol-level \"clear\" — this slot will be overwritten back to the well-known Public defaults (name + key). Other nodes will need to do the same to talk on it again.",
+  "channelsClearConfirmBody": "The radio has no empty channel, so this one goes back to the public name and key. Other radios need the same to talk here again.",
   "channelsClearConfirmAction": "Clear",
-  "channelsClearSnack": "Slot {idx} cleared (reset to Public defaults)",
+  "channelsClearSnack": "Channel {idx} reset to the public defaults",
   "@channelsClearSnack": {
     "placeholders": {
       "idx": {
@@ -1710,8 +1710,8 @@
       }
     }
   },
-  "channelsQrBody": "Scan with a Meshmore device or any QR reader. Anyone with this code can join the channel — share only with trusted peers.",
-  "channelsQrPayload": "Payload (also copy-friendly)",
+  "channelsQrBody": "Scan with a Meshmore device or any QR reader. Anyone with this code can join the channel, so share it only with people you trust.",
+  "channelsQrPayload": "Channel code (you can copy it)",
   "channelsQrClose": "Close",
   "deviceConfigTitle": "Device configuration",
   "deviceRegionBand": "REGION / BAND",
@@ -1723,7 +1723,7 @@
   "deviceRegionFamilyEurope": "Europe",
   "deviceRegionFamilyAsiaPacific": "Asia-Pacific",
   "deviceRegionFamilyOther": "Other",
-  "deviceRegionSuggestTitle": "Apply suggested region?",
+  "deviceRegionSuggestTitle": "Use the suggested region?",
   "deviceRegionSuggestBody": "Based on your phone GPS ({lat}, {lon}), the matching preset is {label}. Verify this is legal where you are before applying — particularly outside the country you set up in.",
   "@deviceRegionSuggestBody": {
     "placeholders": {
@@ -1739,7 +1739,7 @@
     }
   },
   "deviceRegionSuggestApply": "Apply",
-  "deviceRegionSuggestNoFix": "Couldn't get a GPS fix — try outdoors with location permission granted.",
+  "deviceRegionSuggestNoFix": "No GPS fix yet. Try outdoors with location on.",
   "deviceRegionSuggestNoMatch": "Your location doesn't match any shipped country preset — pick one manually.",
   "deviceRegionAppliedToast": "{label} applied — make sure every node in your mesh uses the same preset.",
   "@deviceRegionAppliedToast": {
@@ -1749,9 +1749,9 @@
       }
     }
   },
-  "deviceRegionDisclaimerShort": "Community-curated values, not regulatory guarantees.",
+  "deviceRegionDisclaimerShort": "Shared by users, not checked by a regulator.",
   "deviceRegionDisclaimerMore": "Details",
-  "deviceRegionDisclaimer": "Operating points are community-curated, not regulatory guarantees. Pick the preset legal where you are and use the SAME tuple on every node. In Japan, legal parameters are not enough — the radio hardware itself must carry 技適 (giteki) certification; most grey-import LoRa boards do not, and operating one is an offence under the Radio Act regardless of settings. The Japan (ARIB STD-T108) preset is a community proposal that hasn't been broadly field-validated — please confirm it is legal and works on your hardware before relying on it.",
+  "deviceRegionDisclaimer": "These presets are shared by users, not checked by a regulator. Pick one that is legal where you are and use the same settings on every radio. In Japan the radio itself must carry 技適 (giteki) certification; most imported boards do not, and using one is an offence under the Radio Act whatever the settings. The Japan (ARIB STD-T108) preset is a community proposal that has not been widely tested.",
   "presetUsCanada": "USA / Canada",
   "presetUsArizona": "USA — Arizona",
   "presetJpAribT108": "Japan (ARIB STD-T108)",
@@ -1783,7 +1783,7 @@
   "@devicePathHashSize": {
     "description": "Radio/network setting. MeshCore path hash length."
   },
-  "devicePathHashSizeHelp": "The hash length this radio stamps on the packets it sends. Repeaters follow each packet's own length, so nodes need not agree. Longer hashes tell repeaters apart better but shrink the directed payload budget.",
+  "devicePathHashSizeHelp": "How much of its key each message carries. Longer makes repeaters easier to tell apart and costs a few bytes per message.",
   "devicePathHashUnread": "path hash: unknown (device not queried yet)",
   "devicePathHashMismatch": "Not applied yet: this radio uses {device} byte(s), the form is set to {form}.",
   "@devicePathHashMismatch": {
@@ -1913,8 +1913,8 @@
   "diagnosticsCopyLog": "Copy log",
   "otherManualAddTitle": "Manual-add contacts",
   "otherManualAddSubOn": "You add heard nodes as contacts on demand.",
-  "otherManualAddSubOff": "Heard nodes auto-promote to contacts.",
-  "otherTelemetryModeTitle": "Telemetry sharing — who may request each kind",
+  "otherManualAddSubOff": "Nodes you hear are saved as contacts.",
+  "otherTelemetryModeTitle": "Who can read this radio's readings",
   "otherTelemetryBase": "Base",
   "otherTelemetryLoc": "Location",
   "otherTelemetryEnv": "Environment",
@@ -1922,8 +1922,8 @@
   "otherTelemetryFlags": "Contacts",
   "otherTelemetryAll": "Anyone",
   "otherTelemetryModeHelp": "Who may request battery, GPS and environment data from this device.",
-  "otherMultiAcksLabel": "Multi-acks (0–3)",
-  "otherMultiAcksHelper": "0 = single ack (default). Higher = wait for N extra acks before considering a send confirmed.",
+  "otherMultiAcksLabel": "Extra confirmations (0–3)",
+  "otherMultiAcksHelper": "0 is the default. Higher waits for that many more radios to confirm before calling a send confirmed.",
   "otherSentSnack": "OTHER PARAMS sent — device-side write may take a moment.",
   "otherAwaitingDevice": "— awaiting device —",
   "batteryTitle": "Battery",
@@ -2117,7 +2117,7 @@
   "statsNotFetched": "Not fetched yet.",
   "pingTarget": "TARGET",
   "pingMethodStatus": "Status request — repeaters, rooms and sensors answer this.",
-  "pingMethodTelemetry": "Telemetry request — silent for the peer; it answers only if it shares telemetry with us.",
+  "pingMethodTelemetry": "Asks for readings. The other radio answers only if it shares them with you.",
   "pingSummary": "{sent} sent · {replied} replied · {lost} lost",
   "@pingSummary": {
     "placeholders": {
@@ -2309,8 +2309,8 @@
   "rangeFlood": "flood",
   "settingsHubInfo": "Information",
   "settingsNotifDeniedPermanent": "Notifications were permanently denied. The background service needs a persistent notification.",
-  "settingsNotifDeniedTransient": "Notifications are required for the background service. Tap Open settings to grant them.",
-  "deviceAdvertPropagatesHint": "Name/location change propagates on the next advert (Nodes → Advertise).",
+  "settingsNotifDeniedTransient": "Keeping the app connected in the background needs notifications. Allow them in Settings.",
+  "deviceAdvertPropagatesHint": "Takes effect the next time the radio announces itself.",
   "settingsHubMaps": "Offline maps",
   "mapsTitle": "Offline maps",
   "mapsOffline": "No network. New maps can be set up only while online; downloads resume on their own.",
@@ -2326,7 +2326,7 @@
       }
     }
   },
-  "mapsBreakdown": "Regions {packs} · Event maps {layers} · Viewed tiles {view}",
+  "mapsBreakdown": "Regions {packs} · Event maps {layers} · Cached tiles {view}",
   "@mapsBreakdown": {
     "placeholders": {
       "packs": {
@@ -2493,7 +2493,7 @@
   "layerRefusalNotGeoJson": "That URL didn't return GeoJSON.",
   "layerRefusalTooLarge": "Over 10 MB: too big for an overlay.",
   "mapsSelfTest": "Self-test",
-  "selfTestIntro": "Checks offline maps end to end on this phone: the real map servers, storage, downloads, pause and resume, expiry. Runs in a sandbox and deletes it afterwards; your maps are not touched. Takes about a minute and under 1 MB of data.",
+  "selfTestIntro": "Checks map downloads end to end: the real servers, storage, downloads, pause and resume, expiry. It runs in a sandbox and deletes it afterwards, so your maps are not touched. Takes about a minute and under 1 MB of data.",
   "selfTestRun": "Run self-test",
   "selfTestRunning": "Running…",
   "selfTestPass": "All checks passed",
@@ -2522,7 +2522,7 @@
   "locGroupBeacon": "Beacon",
   "locGroupManual": "Manual",
   "deviceManageChannels": "Manage channels",
-  "deviceActiveChannelSub": "Active: {name} · slots · name + PSK · #hashtag",
+  "deviceActiveChannelSub": "Using: {name} · channels and keys",
   "@deviceActiveChannelSub": {
     "placeholders": {
       "name": {
@@ -2632,7 +2632,7 @@
       }
     }
   },
-  "diagnosticsMtuLine": "link MTU: {mtu} (needs {need} for a full frame)",
+  "diagnosticsMtuLine": "Link size {mtu} bytes, {need} needed for a full frame",
   "@diagnosticsMtuLine": {
     "placeholders": {
       "mtu": {
@@ -2643,7 +2643,7 @@
       }
     }
   },
-  "diagnosticsMtuRefusedLine": "this phone link negotiated {mtu} bytes and a full radio frame needs {need}. Reconnect to negotiate again; a radio whose stack caps the MTU smaller cannot carry every frame",
+  "diagnosticsMtuRefusedLine": "This phone link is {mtu} bytes and a full radio frame needs {need}. Reconnect to try again; a radio that caps the link smaller cannot carry every frame.",
   "@diagnosticsMtuRefusedLine": {
     "placeholders": {
       "mtu": {
@@ -2903,12 +2903,12 @@
   "placeWithinHour": "Expires within 1 h",
   "placeWithinDay": "Expires within 24 h",
   "placeKeyedOnly": "Keyed places only",
-  "placeExportLedger": "Export ledger",
-  "placeExportShared": "Ledger ready to share.",
+  "placeExportLedger": "Export places",
+  "placeExportShared": "Places ready to share.",
   "@placeExportShared": {
     "description": "Snackbar after the ledger was handed to the share sheet."
   },
-  "placeExportDone": "Ledger saved to {path}",
+  "placeExportDone": "Places saved to {path}",
   "@placeExportDone": {
     "placeholders": {
       "path": {
@@ -2916,7 +2916,7 @@
       }
     }
   },
-  "placeExportFailed": "Could not write the ledger.",
+  "placeExportFailed": "Could not save the list.",
   "placeCoordinatesRefused": "Those coordinates cannot be sent.",
   "placeEchoLine": "{label} · {type} · {expiry}",
   "@placeEchoLine": {
@@ -2965,13 +2965,13 @@
   "@failurePairingFailed": {},
   "failureStalePairing": "The radio no longer holds this pairing. Forget it in Android Bluetooth settings, power-cycle the radio, then pair again.",
   "@failureStalePairing": {},
-  "failurePairingNotKept": "The radio paired and then could not encrypt on the next connection, so it is losing its stored pairing. Power-cycle it, reopen the app and pair again; if it repeats, the radio's bond storage is the fault.",
+  "failurePairingNotKept": "The radio paired but then could not encrypt on the next connection, so the pairing is not being kept. Power-cycle it and pair again; if it repeats, the fault is in the radio.",
   "@failurePairingNotKept": {},
   "failureServiceMissing": "This device does not expose the MeshCore service, so it is probably not a MeshCore radio.",
   "@failureServiceMissing": {},
   "failureCharacteristicMissing": "The radio's link is missing a characteristic the app needs. Its firmware may be older than this app expects.",
   "@failureCharacteristicMissing": {},
-  "failureMtuTooSmall": "This phone link negotiated {mtu} bytes and one radio frame needs {need}. Reconnect to negotiate again; a radio that caps the link smaller cannot carry every frame.",
+  "failureMtuTooSmall": "This phone link is {mtu} bytes and one radio frame needs {need}. Reconnect to try again; a radio that caps the link smaller cannot carry every frame.",
   "@failureMtuTooSmall": {
     "placeholders": {
       "mtu": {
@@ -2982,9 +2982,9 @@
       }
     }
   },
-  "failureFrameTruncated": "A frame arrived cut short and was not decoded. The link cannot carry the radio's longest frames; the count is on the diagnostics page.",
+  "failureFrameTruncated": "Part of a message did not arrive. The count is in Diagnostics.",
   "@failureFrameTruncated": {},
-  "failureFrameTrailingBytes": "A frame carried bytes past its own end. The extra bytes were dropped rather than guessed at; the count is on the diagnostics page.",
+  "failureFrameTrailingBytes": "A message carried extra bytes at the end. They were dropped; the count is in Diagnostics.",
   "@failureFrameTrailingBytes": {},
   "failureStorageFull": "The phone refused a write because storage is full. Nothing is being deleted silently; free space and the history stays as it is.",
   "@failureStorageFull": {},
@@ -3070,12 +3070,12 @@
     }
   },
   "sosHoldReleased": "Released too early — nothing was sent.",
-  "sosNoIdentity": "The radio has not reported its name, so an alarm has no callsign to carry.",
+  "sosNoIdentity": "The radio has not reported a name yet, so the alarm has no name to send.",
   "sosWords": "What is happening",
   "sosWordsHint": "Carried by every repeat, up to 96 bytes",
   "sosDestination": "Goes to",
   "sosEmergencyPublicKey": "The #emergency channel's key is derived from its name, so anyone who knows the name can compute it and read this.",
-  "sosEmergencyRepeat": "The radio repeats each packet once about two minutes later; the rest of the schedule does not outlive the app.",
+  "sosEmergencyRepeat": "The radio repeats each message once, about two minutes later. If the app closes, the rest stops.",
   "sosContactsNone": "With no contact copies, a channel acknowledgement can never stop this alarm.",
   "sosActive": "Alarm running",
   "sosNextSend": "Next in {seconds}s",
@@ -3146,7 +3146,7 @@
   "sosRefusedAlreadyActive": "An alarm is already running.",
   "sosRefusedNoDestination": "Choose where the alarm goes first.",
   "sosRefusedNoWords": "Say what is happening first.",
-  "sosRefusedTooLong": "That text is too long to carry the callsign and the position. Shorten it.",
+  "sosRefusedTooLong": "Too long to carry a name and a position. Shorten it.",
   "sosRefusedHold": "The hold is not finished.",
   "checkinTitle": "Check-in",
   "checkinEntryTooltip": "Check-in",
@@ -3172,7 +3172,7 @@
   "checkinWatching": "Waiting for an answer",
   "checkinOverdue": "Overdue — the deadline passed and no answer came back.",
   "checkinAnsweredDirect": "Answered, by direct message.",
-  "checkinAnsweredChannel": "Answered on the channel (claimed, not a key).",
+  "checkinAnsweredChannel": "Answered on the channel by name only, not by their key.",
   "checkinSent": "Check-in sent. Nothing repeats.",
   "checkinNeedsRadio": "A check-in needs a connected radio and the radio's name.",
   "mediaComposerTitle": "Send a photo",
@@ -3467,7 +3467,7 @@
   "reportSheetTitle": "Report this message",
   "reportObservationLabel": "What did you see? (optional)",
   "reportNothingSent": "Nothing was sent. The app wrote a file on this device; you decide where it goes.",
-  "reportBundleWritten": "Bundle written: {path}",
+  "reportBundleWritten": "Report saved to {path}",
   "@reportBundleWritten": {
     "placeholders": {
       "path": {
@@ -3475,8 +3475,8 @@
       }
     }
   },
-  "reportCopyBundle": "Copy the bundle",
-  "reportCopied": "Bundle copied.",
+  "reportCopyBundle": "Copy the report",
+  "reportCopied": "Report copied.",
   "blockedKeysNotPersisted": "This list could not be saved on this device. It filters for now and will be empty after a restart.",
   "reportActionSub": "Writes a file on this device for you to send. Nothing is transmitted."
 }
