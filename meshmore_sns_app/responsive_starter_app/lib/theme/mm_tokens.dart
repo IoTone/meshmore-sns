@@ -6,16 +6,31 @@ import 'mm_skin.dart' show MmShape;
 import '../ui/mm_shape.dart' show kSquareRadius;
 
 /// The six design-concept themes (UX brief A–F). **D "SEELE Monolith"
-/// = [MmThemePreset.seele] is the default** (also the high-contrast /
-/// sunlight accessibility benchmark). Screens are built against the
-/// semantic [MmTokens] names only — never hard-coded colours — so
-/// every preset works (R14).
+/// = [MmThemePreset.seele]** is the high-contrast accessibility
+/// benchmark ([kDefaultPreset] is the quiet one, STUDIO). Screens are
+/// built against the semantic [MmTokens] names only — never hard-coded
+/// colours — so every preset works (R14).
 ///
 /// R63 adds a seventh, [MmThemePreset.studio]: a clean-dark,
 /// professional-tool skin (layered greys, hairlines, square corners,
 /// one restrained accent). It is the only preset that *uses* the layered
 /// surface stack added in R63; the other six derive it (see [MmTokens]).
-enum MmThemePreset { nerv, agHud, hyperlocal, seele, drPop, recon, studio }
+///
+/// R115 adds an eighth, [MmThemePreset.studioLight]: the same tool
+/// language on paper, because every other preset is dark and a phone in
+/// daylight needs a light one. Ink is near-black, the ground is warm
+/// paper, and the accent is a vermilion that carries selection and
+/// emphasis without relying on saturation alone.
+enum MmThemePreset {
+  nerv,
+  agHud,
+  hyperlocal,
+  seele,
+  drPop,
+  recon,
+  studio,
+  studioLight,
+}
 
 extension MmThemePresetX on MmThemePreset {
   String get label => switch (this) {
@@ -26,6 +41,7 @@ extension MmThemePresetX on MmThemePreset {
         MmThemePreset.drPop => 'DR Pop',
         MmThemePreset.recon => 'Recon Night',
         MmThemePreset.studio => 'Studio Dark — clean · square',
+        MmThemePreset.studioLight => 'Studio Light — paper · square',
       };
 
   /// Asset-folder slug for the R12 per-theme audio pack. Used by
@@ -43,6 +59,9 @@ extension MmThemePresetX on MmThemePreset {
         // existing one). No studio audio exists and synthesising it is
         // out of scope; see `assets/audio/` and the R63 spec entry.
         MmThemePreset.studio => 'hyperlocal',
+        // R115 — same reason: a light skin changes colour, not the cue
+        // set. The calm pack is the one that fits a paper ground.
+        MmThemePreset.studioLight => 'hyperlocal',
       };
 }
 
@@ -143,6 +162,12 @@ class MmTokens {
   /// True when this preset supplies a real layer stack of its own
   /// (rather than the derived single `surfaceAlt` step).
   bool get hasLayerStack => _raised != null && _selected != null;
+
+  /// R115 — a light ground needs a light Material scheme, not a dark one
+  /// with pale paint over it: `Brightness` decides dozens of framework
+  /// defaults (elevation tints, ink, splash alpha), so it is derived from
+  /// the ground the preset actually draws rather than passed in beside it.
+  bool get isLight => base.computeLuminance() > 0.5;
 
   /// The stack, lowest to highest: base, surface, raised, selected.
   List<Color> get layers => <Color>[base, surface, raised, selected];
@@ -245,6 +270,39 @@ const Map<MmThemePreset, MmTokens> kMmPresets = <MmThemePreset, MmTokens>{
     alert: Color(0xFFB3231F),
     ok: Color(0xFFFFB000),
   ),
+  // R115 — Studio Light: the tool language on paper. The stack runs from the
+  // brightest step (the page) down to the selected state, because on a light
+  // ground a container is *cut into* the page rather than raised out of it;
+  // that also keeps the four steps monotonic, which is what makes a panel
+  // read as a panel instead of a smudge.
+  //
+  // The ground is a warm paper rather than pure white: a white page at full
+  // brightness is the one surface a phone cannot dim, and every glyph on it
+  // sits in glare. The accent is a vermilion red that carries selection and
+  // emphasis and still reads as text on every layer (4.97:1 on the darkest).
+  //
+  // `link` is supplied because the shared live-link green (#3DDC84) is 1.7:1
+  // on paper: a link state is still green in this skin, just a green a light
+  // ground can carry. `alert` is a deeper red than the accent so the two are
+  // never mistaken for each other, and both carry an icon and a word.
+  MmThemePreset.studioLight: MmTokens(
+    base: Color(0xFFFBFAF6),
+    surface: Color(0xFFF2EFE8),
+    surfaceAlt: Color(0xFFE8E2D3),
+    line: Color(0xFF8A8474),
+    fg: Color(0xFF16181C),
+    fgMuted: Color(0xFF4E525A),
+    accent: Color(0xFFA81B0B),
+    alert: Color(0xFF8C1018),
+    ok: Color(0xFF175B33),
+    raised: Color(0xFFE8E2D3),
+    selected: Color(0xFFDAD3BF),
+    hairline: Color(0xFFA9A290),
+    onAccent: Color(0xFFFFFFFF),
+    fgDisabled: Color(0xFF8E9196),
+    onAlert: Color(0xFFFFFFFF),
+    link: Color(0xFF16603A),
+  ),
 };
 
 /// The skin a fresh install opens on. STUDIO: the quiet, sans-face,
@@ -257,7 +315,13 @@ MmThemePreset presetFromId(String? id) => MmThemePreset.values.firstWhere(
       orElse: () => kDefaultPreset,
     );
 
-/// Build a Material 3 dark [ThemeData] from a token set.
+/// Build a Material 3 [ThemeData] from a token set.
+///
+/// R115 — the scheme's [Brightness] is derived from the ground the preset
+/// draws ([MmTokens.isLight]) rather than fixed to dark: a light preset with
+/// a dark scheme gets dark-theme framework defaults (elevation tints, splash
+/// alpha, ink on disabled controls) over pale paint, which is the washed-out
+/// look a real light theme must avoid.
 ///
 /// Binds **every** commonly-used colour role + the text/icon themes to
 /// the tokens — including the M3 surface-container roles that
@@ -288,8 +352,9 @@ ThemeData buildMmTheme(MmTokens t, {String? fontFamily, MmShape? shape}) {
   OutlineInputBorder squareField(Color c, [double w = 1]) => OutlineInputBorder(
       borderRadius: squareRadius,
       borderSide: BorderSide(color: c, width: w));
+  final Brightness brightness = t.isLight ? Brightness.light : Brightness.dark;
   final ColorScheme scheme = ColorScheme(
-    brightness: Brightness.dark,
+    brightness: brightness,
     surface: t.base,
     onSurface: t.fg,
     surfaceContainerLowest: t.base,
@@ -326,7 +391,7 @@ ThemeData buildMmTheme(MmTokens t, {String? fontFamily, MmShape? shape}) {
   // R55 — the active skin's display face becomes the app-wide default,
   // so every screen (not just the migrated components) reads in the
   // brand type. Telemetry/mono text sets its own family explicitly.
-  final TextTheme base = ThemeData(brightness: Brightness.dark).textTheme.apply(
+  final TextTheme base = ThemeData(brightness: brightness).textTheme.apply(
       bodyColor: t.fg,
       displayColor: t.fg,
       decorationColor: t.fg,
@@ -346,7 +411,7 @@ ThemeData buildMmTheme(MmTokens t, {String? fontFamily, MmShape? shape}) {
   );
   return ThemeData(
     useMaterial3: true,
-    brightness: Brightness.dark,
+    brightness: brightness,
     fontFamily: fontFamily,
     colorScheme: scheme,
     scaffoldBackgroundColor: t.base,

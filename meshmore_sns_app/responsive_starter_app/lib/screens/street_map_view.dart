@@ -523,6 +523,7 @@ class _StreetMapViewState extends State<StreetMapView> {
                         onTap: () => _showDetail(context, mc, n),
                         child: _PeerGlyph(
                           node: n,
+                          ring: context.skin.color.fg,
                           companion: cs.tertiary,
                           repeater: cs.primary,
                           known: mc.known.contains(n.pubKeyHex),
@@ -539,6 +540,7 @@ class _StreetMapViewState extends State<StreetMapView> {
                     alignment: Alignment.center,
                     child: _SelfGlyph(
                       colour: cs.primary,
+                      ring: context.skin.color.fg,
                       headingDeg: _headingDeg,
                     ),
                   ),
@@ -787,12 +789,19 @@ class _StreetMapViewState extends State<StreetMapView> {
 class _PeerGlyph extends StatelessWidget {
   const _PeerGlyph({
     required this.node,
+    required this.ring,
     required this.companion,
     required this.repeater,
     required this.known,
     required this.favourite,
   });
   final DiscoveredNode node;
+
+  /// R115 — the outline that separates a coloured dot from the basemap. It
+  /// was white, which is invisible on a light basemap; the skin's foreground
+  /// is light on the dark presets and dark on the light one, so one rule
+  /// holds in every theme.
+  final Color ring;
   final Color companion;
   final Color repeater;
   final bool known;
@@ -809,7 +818,7 @@ class _PeerGlyph extends StatelessWidget {
           // Triangle.
           CustomPaint(
             size: const Size(16, 16),
-            painter: _TrianglePainter(color: base),
+            painter: _TrianglePainter(color: base, ring: ring),
           )
         else
           Container(
@@ -818,7 +827,7 @@ class _PeerGlyph extends StatelessWidget {
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: base,
-              border: Border.all(color: Colors.white, width: 1.0),
+              border: Border.all(color: ring, width: 1.0),
             ),
           ),
         if (favourite)
@@ -839,13 +848,14 @@ class _PeerGlyph extends StatelessWidget {
 }
 
 class _TrianglePainter extends CustomPainter {
-  _TrianglePainter({required this.color});
+  _TrianglePainter({required this.color, required this.ring});
   final Color color;
+  final Color ring;
   @override
   void paint(Canvas canvas, Size size) {
     final Paint fill = Paint()..color = color;
     final Paint stroke = Paint()
-      ..color = Colors.white
+      ..color = ring
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.0;
     final Path p = Path()
@@ -859,12 +869,14 @@ class _TrianglePainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _TrianglePainter old) =>
-      color != old.color;
+      color != old.color || ring != old.ring;
 }
 
 class _SelfGlyph extends StatelessWidget {
-  const _SelfGlyph({required this.colour, required this.headingDeg});
+  const _SelfGlyph(
+      {required this.colour, required this.ring, required this.headingDeg});
   final Color colour;
+  final Color ring;
   final double? headingDeg;
 
   @override
@@ -897,7 +909,7 @@ class _SelfGlyph extends StatelessWidget {
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             color: colour,
-            border: Border.all(color: Colors.white, width: 1.5),
+            border: Border.all(color: ring, width: 1.5),
           ),
         ),
         if (headingDeg != null)

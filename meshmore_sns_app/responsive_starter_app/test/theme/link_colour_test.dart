@@ -1,5 +1,7 @@
 // Copyright (c) 2026 IoTone, Inc.
 // SPDX-License-Identifier: MIT
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -24,7 +26,15 @@ void main() {
       expect(hsv.hue, inInclusiveRange(90, 165), reason: '${p.name}: hue');
       expect(hsv.saturation, greaterThan(0.30),
           reason: '${p.name}: saturation');
-      expect(hsv.value, greaterThan(0.50), reason: '${p.name}: value');
+      // R115 — a light ground carries a dark green, so the rule cannot be a
+      // brightness floor. What must hold everywhere is that the link reads as
+      // text on the preset's own ground.
+      final double linkLum = c.computeLuminance();
+      final double baseLum = kMmPresets[p]!.base.computeLuminance();
+      final double ratio = (math.max(linkLum, baseLum) + 0.05) /
+          (math.min(linkLum, baseLum) + 0.05);
+      expect(ratio, greaterThanOrEqualTo(4.5),
+          reason: '${p.name}: link on its own ground');
     }
   });
 

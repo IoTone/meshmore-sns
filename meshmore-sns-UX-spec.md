@@ -192,7 +192,8 @@ near-zero chrome, status as a full-width slab that colour-inverts to
 red on alert. D is *also* the high-contrast / sunlight accessibility
 benchmark, so the default is the most legible option.
 
-All **six concepts ship as selectable theme presets** (a seventh, **Studio**, was added by R63, see below) via the R14
+All **six concepts ship as selectable theme presets** (a seventh, **Studio**, was added by R63, and an eighth, **Studio
+Light**, by R115, both below) via the R14
 theme system (see *Personalization & theme system*): a single
 `ThemeController` swaps a token set + type + motion flags at runtime;
 D is just the default token set. The other presets — A NERV, B
@@ -200,6 +201,35 @@ AG-HUD, C Hyperlocal, E DR Pop, F Recon Night — are defined token
 sets, not separate code paths. (Per-preset palettes are catalogued in
 `meshmore-sns-UX-brief.md`; screens are built against the *token
 names* below, never hard-coded colours, so every preset works.)
+
+#### Studio Light (R115) — the same tool language on paper
+An eighth preset, and the app's only light ground. It exists because every
+other preset is dark and a phone in daylight needs the opposite. It is not a
+dark skin with pale paint:
+
+- **Ground and ink.** The page is warm paper, not pure white (a white page is
+  the one surface a phone cannot dim), and the ink is near-black. The stack
+  runs from the page down to the selected state, so a container reads as cut
+  into the page; each step is >= 1.08:1 and the four are monotonic.
+- **Brightness follows the ground.** `MmTokens.isLight` is derived from the
+  base colour's luminance, and `buildMmTheme` takes the scheme's `Brightness`
+  from it. A light palette over a dark scheme inherits dark-theme framework
+  defaults (elevation tints, splash alpha, disabled ink) and reads washed out.
+- **Contrast is recomputed, not inherited.** The shared live-link green is
+  1.7:1 on paper, so this preset supplies its own. Every pair the UI draws is
+  asserted at WCAG AA: ink >= 7:1 on every layer, muted ink >= 4.5:1, accent,
+  alert and ok >= 4.5:1 as text on every layer, label-on-fill >= 4.5:1, and the
+  rule colours visible (>= 2.4:1) but subordinate (< 2.6:1 for a hairline).
+  The accent is a vermilion that carries selection; the alert is a deeper red
+  so a warning never looks like a selection.
+- **The map inverts with the theme.** Peer and self markers outline in the
+  skin's foreground instead of white, which is invisible on a light basemap,
+  and the basemap is not dimmed (dimming pushes a bright map under dark chrome;
+  on paper the map belongs to the page). The bundled vector style is a dark
+  palette, so this skin keeps raster tiles.
+- **The tool rules still hold.** Square control family (1 px floor), words in
+  the UI face and monospace for machine data, a tinted group header instead of
+  a rule, no ornament.
 
 #### Studio (R63) — clean-dark professional-tool skin
 A seventh preset in the language of Blender / GIMP / Photoshop. It is the

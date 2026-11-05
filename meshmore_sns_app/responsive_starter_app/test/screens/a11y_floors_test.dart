@@ -28,6 +28,7 @@ import 'package:meshmore_sns_app/places/place_report_budget.dart';
 import 'package:meshmore_sns_app/places/place_store.dart';
 import 'package:meshmore_sns_app/meshcore/pair_scanner.dart';
 import 'package:meshmore_sns_app/sos/sos_controller.dart';
+import 'package:meshmore_sns_app/theme/mm_tokens.dart';
 import 'package:meshmore_sns_app/theme/theme_controller.dart';
 import 'package:meshmore_sns_app/tools/tools_controller.dart';
 import 'package:meshmore_sns_app/tts/tts_controller.dart';
@@ -158,6 +159,31 @@ void main() {
       await _drain(t);
     });
   }
+
+  // R115 — the floor is a property of the layout, not of one skin: every
+  // preset is built at the same width and scale. A light ground changes
+  // contrast and the Material brightness, so it is exactly the case that
+  // regresses spacing if a surface assumes dark paint.
+  testWidgets('every preset holds 320 dp at 200 % text', (WidgetTester t) async {
+    await _pumpShell(t);
+    final ThemeController tc =
+        Provider.of<ThemeController>(t.element(find.byType(MyApp)), listen: false);
+    for (final MmThemePreset preset in MmThemePreset.values) {
+      await tc.setPreset(preset);
+      await t.pump();
+      for (final String view in views) {
+        if (view != 'Dashboard') {
+          await t.tap(find.byTooltip(view));
+          for (int i = 0; i < 12; i++) {
+            await t.pump(const Duration(milliseconds: 100));
+          }
+        }
+        expect(t.takeException(), isNull,
+            reason: '${preset.name} $view overflowed at the floor');
+      }
+    }
+    await _drain(t);
+  });
 
   // APP-K1 — a control with no text needs a name. The shell's two icon-only
   // surfaces are the strip cells and the link chip; both carry one, and this

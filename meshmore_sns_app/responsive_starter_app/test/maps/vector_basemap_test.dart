@@ -279,6 +279,10 @@ void main() {
       expect(mmSkinFor(p).shape.vectorBasemap, p == MmThemePreset.studio,
           reason: 'the flag still records which skin first adopted it: $p');
     }
+    // R115 — the bundled vector style is a dark palette, so the light skin
+    // keeps raster tiles (whose own colours suit a paper ground) until the
+    // style set has a light counterpart.
+    expect(mmSkinFor(MmThemePreset.studioLight).shape.vectorBasemap, isFalse);
   });
 
   test('R82 the vector source is OSM itself, credited, and view-only', () {

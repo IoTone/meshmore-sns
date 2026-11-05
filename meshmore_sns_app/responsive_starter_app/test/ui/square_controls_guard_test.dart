@@ -50,7 +50,12 @@ void main() {
 
   test('older presets: button, FAB, menu and field themes are untouched', () {
     for (final MmThemePreset p in MmThemePreset.values) {
-      if (p == MmThemePreset.studio) continue;
+      if (<MmThemePreset>[
+        MmThemePreset.studio,
+        MmThemePreset.studioLight,
+      ].contains(p)) {
+        continue;
+      }
       final ThemeData t = themeFor(p);
       expect(t.filledButtonTheme.style, isNull, reason: '$p');
       expect(t.outlinedButtonTheme.style, isNull, reason: '$p');

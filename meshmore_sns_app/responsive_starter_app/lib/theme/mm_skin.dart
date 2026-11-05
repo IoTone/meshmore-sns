@@ -344,6 +344,35 @@ MmSkin mmSkinFor(MmThemePreset preset) {
         ),
         ornament: _calmOrnament,
       );
+    // H (R115) — Studio Light: the tool language on paper. Same square
+    // control family and the same type rule as Studio (words in the UI face,
+    // mono for machine data), but the opposite ground, so the ornament is
+    // still none and the map is NOT dimmed: dimming exists to push a bright
+    // basemap under dark chrome, and on a light page the basemap belongs to
+    // the page. `tintedHeaders` is on so a group header takes a tonal step
+    // rather than needing a rule, which on paper reads as a table line.
+    case MmThemePreset.studioLight:
+      return MmSkin(
+        preset: preset,
+        color: color,
+        type: const MmType(
+          monoFamily: 'JetBrains Mono',
+          upperHeadings: true,
+          headingTracking: 1.4,
+          sansLabels: true,
+        ),
+        shape: const MmShape(
+          corner: MmCorner.sharp,
+          cornerSize: 0,
+          borderWidth: 1,
+          hairlineWidth: 1,
+          squareControls: true,
+          dimmedBasemap: false,
+          vectorBasemap: false,
+          tintedHeaders: true,
+        ),
+        ornament: _calmOrnament,
+      );
     // F — Tactical Recon: night-ops codec. OLED-black, single amber
     // phosphor hue, all-mono (Departure-Mono-class) terminal type, sharp
     // edges, glare-/battery-aware (no scanline overdraw on the black).

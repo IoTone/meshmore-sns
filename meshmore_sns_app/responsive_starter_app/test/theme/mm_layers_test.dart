@@ -8,9 +8,16 @@ import 'package:meshmore_sns_app/theme/mm_tokens.dart';
 /// R63 — the layer-stack extension must be invisible to the six older
 /// presets, and Studio must actually be a stack.
 void main() {
+  /// R115 — the presets that supply their own layer stack. Everything else
+  /// derives the stack from `surfaceAlt`, which is what keeps the older
+  /// presets byte-identical to what they drew before R63.
+  final List<MmThemePreset> stacked = <MmThemePreset>[
+    MmThemePreset.studio,
+    MmThemePreset.studioLight,
+  ];
   final List<MmThemePreset> legacy = <MmThemePreset>[
     for (final MmThemePreset p in MmThemePreset.values)
-      if (p != MmThemePreset.studio) p,
+      if (!stacked.contains(p)) p,
   ];
 
   group('the six older presets are appearance-neutral', () {
@@ -96,8 +103,7 @@ void main() {
     });
 
     test('the calm presets keep their card and dialog shapes', () {
-      for (final MmThemePreset p in MmThemePreset.values) {
-        if (p == MmThemePreset.studio) continue;
+      for (final MmThemePreset p in legacy) {
         final MmSkin s = mmSkinFor(p);
         final ThemeData td = buildMmTheme(s.color,
             fontFamily: s.type.displayFamily, shape: s.shape);
