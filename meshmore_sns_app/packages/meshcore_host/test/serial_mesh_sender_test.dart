@@ -305,21 +305,54 @@ void main() {
     late DateTime now;
     setUp(() => now = DateTime.utc(2026, 10, 31, 12));
 
-    test('a radio that has heard nothing since it opened looks deaf after two minutes', () {
+    test('an idle link is not deaf: silence with nothing asked is not evidence', () {
       final SerialMeshSender s = SerialMeshSender(link: link, clock: () => now)..start();
       final DateTime opened = now;
       now = opened.add(const Duration(seconds: 30));
       expect(s.radioLooksDeaf(opened), isFalse, reason: 'a fresh port gets its minute');
       now = opened.add(const Duration(seconds: 121));
-      expect(s.radioLooksDeaf(opened), isTrue);
+      // **The bug this test now pins.** The daemon sends nothing while the phone sits at a
+      // prompt, so "opened two minutes ago and heard nothing" describes a healthy idle link as
+      // well as a deaf one. Judging it rebooted a working radio every two minutes on 2026-11-04,
+      // and every reboot dropped the phone's link.
+      expect(s.radioLooksDeaf(opened), isFalse,
+          reason: 'a radio nobody has asked anything of has answered everything asked');
+      now = opened.add(const Duration(hours: 1));
+      expect(s.radioLooksDeaf(opened), isFalse, reason: 'and it stays idle, not deaf');
+    });
+
+    /// A bound sender whose bind's contact frame arrived over USB only, so the air is quiet.
+    Future<SerialMeshSender> boundQuiet(DateTime opened) async {
+      final SerialMeshSender s = SerialMeshSender(link: link, clock: () => now)..start();
+      final Future<BindError?> b = s.bindPeer(peerKey);
+      await Future<void>.delayed(Duration.zero);
+      link
+        ..push(ContactFrame(_contact(publicKey: peerKey, outPathLen: 1)))
+        ..push(const EndOfContactsFrame(0));
+      await b;
+      return s;
+    }
+
+    test('a send that went unanswered for two minutes looks deaf', () async {
+      final DateTime opened = now;
+      final SerialMeshSender s = await boundQuiet(opened);
+      final Future<SendOutcome> out = s.sendRecord(Uint8List(4), seq: 1);
+      await Future<void>.delayed(Duration.zero);
+      link.push(const OkFrame(null));       // the USB side answered; the air said nothing
+      await out;
+      now = opened.add(const Duration(seconds: 121));
+      expect(s.radioLooksDeaf(opened), isTrue,
+          reason: 'a record went out and nothing came off the air since');
     });
 
     test('any packet off the air clears it, and a USB reply does not', () async {
-      final SerialMeshSender s = SerialMeshSender(link: link, clock: () => now)..start();
       final DateTime opened = now;
       // A contact push is the USB side talking, not the air.
-      link.push(ContactFrame(_contact(publicKey: peerKey, outPathLen: 1)));
+      final SerialMeshSender s = await boundQuiet(opened);
+      final Future<SendOutcome> out = s.sendRecord(Uint8List(4), seq: 1);
       await Future<void>.delayed(Duration.zero);
+      link.push(const OkFrame(null));
+      await out;
       now = opened.add(const Duration(seconds: 121));
       expect(s.radioLooksDeaf(opened), isTrue, reason: 'USB traffic proves nothing about the air');
 

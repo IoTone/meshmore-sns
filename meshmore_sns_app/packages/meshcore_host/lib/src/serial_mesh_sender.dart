@@ -57,15 +57,28 @@ class SerialMeshSender implements MeshSender {
 
   /// Has this radio stopped hearing the air altogether?
   ///
-  /// `true` when no packet of any kind has arrived since [since]. Only the USB side is known to
-  /// work then, and a reboot is the one cure that does not need someone to walk over and unplug
-  /// it.
+  /// `true` when a record went out and nothing at all came back for [deafAfter]. Only the USB
+  /// side is known to work then, and a reboot is the one cure that does not need someone to walk
+  /// over and unplug it.
+  ///
+  /// **Silence is only evidence when something was asked.** This used to judge the port by
+  /// [since] alone — "opened two minutes ago and heard nothing" — and that is also the description
+  /// of a healthy link with nothing to say. The daemon sends no records while the phone sits at a
+  /// prompt, so a quiet band rebooted a working radio every two minutes and dropped the phone's
+  /// link with it (measured 2026-11-04: the gateway exited 75 at 21:24:16, 2m04s after opening,
+  /// having heard nothing because nothing had been sent; the phone answered "the host did not
+  /// answer" every time). A send with no answer is the signal; idleness is not.
   bool radioLooksDeaf(DateTime since, {Duration deafAfter = const Duration(minutes: 2)}) {
     final DateTime? heard = _heardAirAt;
     if (heard != null && _clock().difference(heard) < deafAfter) return false;
-    // Give a freshly opened port its minute before judging it: the radio answers USB immediately
-    // and only then starts listening.
-    return _clock().difference(since) >= deafAfter;
+    final DateTime? sent = _lastSentAt;
+    // Nothing has been asked of the air yet: the USB side is answering and there is no evidence
+    // either way. A freshly opened port gets its minute this way, without a second clock.
+    if (sent == null) return false;
+    // A send older than the window that was never answered. [since] still bounds the wait so a
+    // port that opened long ago cannot be condemned by a send made a second before it opened.
+    final DateTime from = sent.isAfter(since) ? sent : since;
+    return _clock().difference(from) >= deafAfter;
   }
 
   /// Ask the radio to reboot. There is no reply: the link drops and the device re-enumerates.
@@ -112,6 +125,11 @@ class SerialMeshSender implements MeshSender {
   /// stopped working: the peer acknowledges every record, so sending several without hearing a
   /// thing back means the chain is not delivering.
   int _sentSinceHeard = 0;
+
+  /// When a record was last handed to the radio. Together with [_heardAirAt] this is the whole
+  /// deafness judgement: a send that went unanswered for two minutes is a radio whose receiver
+  /// has stopped, while a link that has sent nothing has simply been idle.
+  DateTime? _lastSentAt;
 
   /// When the radio last heard *any* frame off the air, as opposed to a USB reply.
   ///
@@ -254,6 +272,7 @@ class SerialMeshSender implements MeshSender {
       }
       final Uint8List path = _pathForSend();
       _sentSinceHeard++;
+      _lastSentAt = _clock();
       if (record.length > _uplinkMax) return SendOutcome.errTooLong;
 
       final Uint8List frame;
