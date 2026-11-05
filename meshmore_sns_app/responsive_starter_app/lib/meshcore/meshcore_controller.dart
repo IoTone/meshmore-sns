@@ -1,6 +1,8 @@
 // Copyright (c) 2026 IoTone, Inc.
 // SPDX-License-Identifier: MIT
 import 'dart:async';
+
+import '../util/mesh_log.dart';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
@@ -1281,9 +1283,8 @@ class MeshcoreController extends ChangeNotifier {
       // the raw inbound stream.
       if (_squelchNextDeviceError > 0) {
         _squelchNextDeviceError--;
-        // ignore: avoid_print
-        print(
-            '[meshcore] squelching expected device ERR code=${f.code}');
+        meshLog('meshcore',
+            'squelching expected device ERR code=${f.code}');
         return;
       }
       ev = MeshEvent(
@@ -1315,11 +1316,10 @@ class MeshcoreController extends ChangeNotifier {
           args: <String, String>{'version': f.info.firmwareVersion});
     } else if (f is SelfInfoFrame) {
       final SelfInfo si = f.selfInfo;
-      // print() so it routes to I/flutter on Android → captured by
-      // `flutter logs`. developer.log was silent in the previous
-      // field log capture.
-      // ignore: avoid_print
-      print('[meshcore.loc] SelfInfoFrame in: '
+      // Through `meshLog`, which prints so the line routes to I/flutter on
+      // Android and is captured by `flutter logs`, and is compiled out of a
+      // release build because it carries a position.
+      meshLog('meshcore.loc', 'SelfInfoFrame in: '
           'lat=${si.latitude} lon=${si.longitude} '
           'pol=${si.advertLocPolicy} name=${si.name}');
       ev = MeshEvent(kind: MeshEventKind.selfInfo, args: <String, String>{
@@ -3008,8 +3008,7 @@ class MeshcoreController extends ChangeNotifier {
   Future<void> refreshSelfInfo() async {
     if (!isReady) return;
     final SelfInfo? before = selfInfo;
-    // ignore: avoid_print
-    print('[meshcore.loc] refreshSelfInfo fired '
+    meshLog('meshcore.loc', 'refreshSelfInfo fired '
         '(before: ${before == null ? 'null' : 'lat=${before.latitude} '
             'lon=${before.longitude} pol=${before.advertLocPolicy}'})');
     // **Option B** — re-send the *existing* advertLocPolicy as a
@@ -3160,8 +3159,7 @@ class MeshcoreController extends ChangeNotifier {
     final bool? on = deviceGpsEnabled;
     if (on != false) return; // already on, or unknown — leave alone
     _autoEnabledGpsOnce = true;
-    // ignore: avoid_print
-    print('[meshcore.loc] auto-enabling on-board GPS '
+    meshLog('meshcore.loc', 'auto-enabling on-board GPS '
         '(advertLocPolicy=1/SHARE but gps=0)');
     await setCustomVar(name: 'gps', value: '1');
     // We intentionally don't write `gps_interval` here. On at least
@@ -3178,8 +3176,7 @@ class MeshcoreController extends ChangeNotifier {
   void _trackCustomVars(MeshcoreInbound f) {
     if (f is! CustomVarsFrame) return;
     _customVars = Map<String, String>.from(f.values);
-    // ignore: avoid_print
-    print('[meshcore.loc] CustomVarsFrame in: $_customVars');
+    meshLog('meshcore.loc', 'CustomVarsFrame in: $_customVars');
     // Defer auto-enable to the microtask queue so SelfInfo (which
     // tells us the policy) has likely landed already on a fresh
     // connect.
