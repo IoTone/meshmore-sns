@@ -122,6 +122,12 @@ class FrameBuilder {
     _b.addByte(v & 0xFF);
   }
 
+  void u16(int v) {
+    assert(v >= 0 && v <= 0xFFFF, 'u16 out of range: $v');
+    final ByteData d = ByteData(2)..setUint16(0, v, Endian.little);
+    _b.add(d.buffer.asUint8List());
+  }
+
   void u32(int v) {
     final ByteData d = ByteData(4)..setUint32(0, v, Endian.little);
     _b.add(d.buffer.asUint8List());

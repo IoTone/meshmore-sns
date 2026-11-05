@@ -17,9 +17,15 @@ class PathLen {
   /// Bytes of path data that follow the length byte.
   int get byteLength => hashSize * hopCount;
 
-  /// The firmware refuses to write a path longer than `MAX_PATH_SIZE`
-  /// (`Packet.cpp:24-27`) and emits zero bytes instead.
-  bool get isValid => byteLength <= kMaxPathSize;
+  /// True when the firmware would accept this byte as a path length.
+  ///
+  /// Two rules, both from `Packet::isValidPathLen` (`src/Packet.cpp:17-22`):
+  /// a hash size of 4 is reserved and refused outright, and the path must
+  /// fit `MAX_PATH_SIZE`. The byte is otherwise arbitrary, so a phone can
+  /// hold one the radio rejects.
+  bool get isValid =>
+      (raw >> kPathHashSizeShift) != kPathHashSizeReservedCode &&
+      byteLength <= kMaxPathSize;
 
   @override
   String toString() => 'PathLen($hopCount hop × $hashSize B)';

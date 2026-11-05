@@ -14,6 +14,7 @@ import '../model/diagnostics.dart';
 import '../model/rf_log.dart';
 import '../model/self_info.dart';
 import 'byte_cursor.dart';
+import 'channel_data.dart';
 import 'constants.dart';
 import 'decode_error.dart';
 import 'inbound.dart';
@@ -85,6 +86,110 @@ abstract final class MeshcoreFrameCodec {
           ..u32(timestamp)
           ..utf8String(text))
         .build();
+  }
+
+  /// `CMD_SEND_CHANNEL_DATA` (0x3E): `3E [channel_idx] [path_len] [path]
+  /// [data_type u16 LE] [blob]`.
+  ///
+  /// The channel's datagram carrier: the radio wraps [blob] in a group
+  /// datagram of its own (type and length are written by the firmware), so
+  /// the phone supplies no cipher and no length. This is the frame every
+  /// media and place payload travels in.
+  ///
+  /// [pathLen] is the packed path byte ([PathLen]): hops in the low six
+  /// bits, hash size − 1 in the top two. [kPathLenFlood] means flood, and
+  /// then [path] must be empty because the firmware reads no path bytes.
+  ///
+  /// Two budgets bind, and the smaller one wins: the datagram's
+  /// [ChannelDataLimits.maxBlob] and what this send's path leaves of the
+  /// 176-byte frame. Both are refused here rather than at the radio, which
+  /// answers an over-long blob with `ERR_CODE_TABLE_FULL` — the same code
+  /// it uses for a full packet table.
+  static Uint8List sendChannelData({
+    required int channelIdx,
+    required int dataType,
+    required List<int> blob,
+    int pathLen = kPathLenFlood,
+    List<int> path = const <int>[],
+  }) {
+    if (channelIdx < 0 || channelIdx > 0xFF) {
+      throw ChannelDataException(
+        ChannelDataRefusal.channelOutOfRange,
+        field: 'channelIdx',
+        actual: channelIdx,
+        maximum: 0xFF,
+      );
+    }
+    if (dataType < 0 || dataType > 0xFFFF) {
+      throw ChannelDataException(
+        ChannelDataRefusal.dataTypeOutOfRange,
+        field: 'dataType',
+        actual: dataType,
+        maximum: 0xFFFF,
+      );
+    }
+    if (dataType == kChannelDataTypeReserved) {
+      throw const ChannelDataException(
+        ChannelDataRefusal.reservedType,
+        field: 'dataType',
+        actual: kChannelDataTypeReserved,
+        maximum: 0xFFFF,
+      );
+    }
+    if (pathLen == kPathLenFlood) {
+      if (path.isNotEmpty) {
+        throw ChannelDataException(
+          ChannelDataRefusal.pathLengthMismatch,
+          field: 'path',
+          actual: path.length,
+          maximum: 0,
+        );
+      }
+    } else {
+      final PathLen packed = PathLen(pathLen);
+      if (!packed.isValid) {
+        throw ChannelDataException(
+          ChannelDataRefusal.invalidPathLen,
+          field: 'pathLen',
+          actual: pathLen,
+          maximum: kMaxPathSize,
+        );
+      }
+      if (path.length != packed.byteLength) {
+        throw ChannelDataException(
+          ChannelDataRefusal.pathLengthMismatch,
+          field: 'path',
+          actual: path.length,
+          maximum: packed.byteLength,
+        );
+      }
+    }
+    final int frameMax = ChannelDataLimits.blobMaxForPath(path.length);
+    if (blob.length > ChannelDataLimits.maxBlob) {
+      throw ChannelDataException(
+        ChannelDataRefusal.blobTooLongForDatagram,
+        field: 'blob',
+        actual: blob.length,
+        maximum: ChannelDataLimits.maxBlob,
+      );
+    }
+    if (blob.length > frameMax) {
+      throw ChannelDataException(
+        ChannelDataRefusal.blobTooLongForFrame,
+        field: 'blob',
+        actual: blob.length,
+        maximum: frameMax,
+      );
+    }
+    final FrameBuilder b = FrameBuilder()
+      ..u8(MeshcoreCommand.sendChannelDatagram.code)
+      ..u8(channelIdx)
+      ..u8(pathLen);
+    if (path.isNotEmpty) b.raw(path);
+    b
+      ..u16(dataType)
+      ..raw(blob);
+    return b.build();
   }
 
   /// `CMD_SEND_TXT_MSG` (0x02):

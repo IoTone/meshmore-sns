@@ -7,6 +7,7 @@
 library;
 
 export 'src/codec/cayenne_lpp.dart';
+export 'src/codec/channel_data.dart';
 export 'src/codec/constants.dart';
 export 'src/client/meshcore_connection.dart';
 export 'src/codec/decode_error.dart';

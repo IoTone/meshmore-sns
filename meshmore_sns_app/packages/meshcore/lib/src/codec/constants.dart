@@ -219,6 +219,75 @@ const int kPayloadTypeTrace = 0x09;
 const int kPathHopMask = 0x3F;
 const int kPathHashSizeShift = 6;
 
+/// Hash-size code that the firmware reserves and refuses
+/// (`Packet::isValidPathLen`: `if (hash_size == 4) return false`,
+/// `src/Packet.cpp:17-22`).
+const int kPathHashSizeReservedCode = 3;
+
+/// `DATA_TYPE_RESERVED` — the channel-datagram type the firmware refuses
+/// with `ERR_CODE_ILLEGAL_ARG` (`src/helpers/TxtDataHelpers.h:9`,
+/// `MyMesh.cpp:1180`).
+const int kChannelDataTypeReserved = 0x0000;
+
+/// `DATA_TYPE_DEV` — the one value the firmware names for apps building
+/// on channel datagrams (`src/helpers/TxtDataHelpers.h:10`).
+///
+/// The receive path does not filter by type: `onChannelDataRecv` copies
+/// whatever `data_type` arrived into the push
+/// (`MyMesh.cpp:592-625`), so an unlisted value is forwarded rather than
+/// dropped. Only two values carry firmware meaning — this one and
+/// [kChannelDataTypeReserved] — and the app builds on this one until a
+/// numeric allocation exists.
+const int kChannelDataTypeDev = 0xFFFF;
+
+/// Byte budgets for `CMD_SEND_CHANNEL_DATA` (0x3E), derived from the
+/// firmware's own stack of caps rather than from arithmetic on a version.
+///
+/// The phone's frame carries the datagram in its payload, and the radio
+/// re-wraps it: `MAX_FRAME_SIZE` (176) bounds the frame, and the group
+/// datagram inside it spends `CIPHER_BLOCK_SIZE` (16) on the cipher block
+/// plus 3 bytes on the type/length header the radio writes
+/// (`MAX_GROUP_DATA_LENGTH = MAX_PACKET_PAYLOAD - CIPHER_BLOCK_SIZE - 3`,
+/// `src/MeshCore.h:20-21`).
+abstract final class ChannelDataLimits {
+  /// Bytes before the blob: opcode, channel index, `path_len`, and the
+  /// 2-byte data type.
+  static const int headerBytes = 1 + 1 + 1 + 2;
+
+  /// `MAX_GROUP_DATA_LENGTH` — the radio's cap on type + length + blob,
+  /// `src/MeshCore.h:21`: `184 - 16 - 3 = 165`.
+  static const int groupDataLength = 165;
+
+  /// The 3 bytes the radio spends inside [groupDataLength] on the data
+  /// type and the blob length (`BaseChatMesh.cpp:518-522`).
+  static const int innerHeaderBytes = 3;
+
+  /// Largest blob a caller may hand over: `165 - 3 = 162`. Above this the
+  /// radio's `sendGroupData` refuses, and it reports the refusal as
+  /// `ERR_CODE_TABLE_FULL`, which is indistinguishable from a full packet
+  /// table. The client refuses first so the caller gets the true reason.
+  static const int maxBlob = groupDataLength - innerHeaderBytes;
+
+  /// `MAX_CHANNEL_DATA_LENGTH` — the firmware's own frame-payload cap,
+  /// `MAX_FRAME_SIZE - 9` (`MyMesh.cpp:101`). It admits 167 bytes of type
+  /// plus blob, five more than the datagram can actually carry, so the
+  /// radio's answer for that band is `TABLE_FULL` rather than
+  /// `ILLEGAL_ARG`.
+  static const int firmwareFramePayloadMax = 167;
+
+  /// Largest blob for a send whose frame also carries path bytes:
+  /// `176 - 5 - pathBytes`, capped by [maxBlob].
+  static int blobMaxForPath(int pathBytes) {
+    final int byFrame = MeshcoreBle.maxFrameSize - headerBytes - pathBytes;
+    return byFrame < maxBlob ? byFrame : maxBlob;
+  }
+
+  /// Bytes of on-air data one datagram costs, for an airtime estimate: the
+  /// frame without its opcode, because the radio re-wraps the payload in
+  /// its own packet header and path.
+  static int airtimeBytesFor(int blobBytes) => headerBytes - 1 + blobBytes;
+}
+
 /// --- Well-known PUBLIC channel (`docs/qr_codes.md`, pinned commit). ---
 /// `meshcore://channel/add?name=Public&secret=8b3387e9c5cdea6ac9e5edbaa115cd72`
 /// The shared secret is 16 bytes throughout the ecosystem; the firmware
