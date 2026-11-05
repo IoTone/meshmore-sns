@@ -18,6 +18,7 @@ import 'ble_connector.dart';
 import 'channel_datagram.dart';
 import 'command_ledger.dart';
 import 'chat_message.dart';
+import 'radio_config_transaction.dart';
 import 'chat_store.dart';
 import 'discovered_node.dart';
 import 'dm_read_store.dart';
@@ -76,11 +77,13 @@ class MeshcoreController extends ChangeNotifier {
     LocationService? locationService,
     Duration? deliveryTimeoutOverride,
     Duration? channelDataTimeout,
+    Duration? radioConfigTimeout,
     Duration? telemetryPollInterval,
     Duration? selfInfoPollInterval,
     PlaceInferenceEngine? placeInferenceEngine,
   })  : _deliveryTimeoutOverride = deliveryTimeoutOverride,
         _channelDataTimeoutOverride = channelDataTimeout,
+        _radioConfigTimeoutOverride = radioConfigTimeout,
         _selfInfoPollInterval =
             selfInfoPollInterval ?? const Duration(seconds: 60),
         _telemPollIntervalOverride = telemetryPollInterval,
@@ -168,6 +171,10 @@ class MeshcoreController extends ChangeNotifier {
         // their own watchdogs and the queue is cleared so the *next* OK is
         // not credited to a command that may never be answered.
         _ledger.reset();
+        // A radio-config write in flight on that link will never be answered
+        // now. Report it as silent rather than let the caller wait out the
+        // timeout for an answer that cannot come.
+        _completeRadioConfig(const RadioAnswer.silent());
         _maybeScheduleReconnect();
       }
     });
@@ -1045,6 +1052,95 @@ class MeshcoreController extends ChangeNotifier {
   /// goes to the right message.
   void abandonRawSend() => _dropPending(_rawSendMarker);
 
+  // --- Radio configuration: the radio's own answer, attributed ---
+
+  /// Marker id in [_ledger] for a radio-config command (frequency, bandwidth,
+  /// TX power, path-hash size) waiting for its bare `OK`/`ERR`.
+  static const String _configMarker = '\u0000cfg';
+
+  /// How long a config write waits for the radio's answer.
+  static const Duration _configAnswerTimeout = Duration(seconds: 5);
+  final Duration? _radioConfigTimeoutOverride;
+
+  Completer<RadioAnswer>? _configAnswer;
+
+  /// The command [_configAnswer] belongs to, so its reply can teach the
+  /// capability record which command the radio just accepted or refused.
+  MeshcoreCommand? _configCommand;
+
+  /// One config write at a time: the answer carries no tag, so two in flight
+  /// could not be told apart.
+  Future<void> _configTail = Future<void>.value();
+
+  /// What this connected radio has been shown to support. A capability is a
+  /// fact about the radio (D8.15), so it lives with the link.
+  final RadioCapabilities _capabilities = RadioCapabilities();
+  RadioCapabilities get capabilities => _capabilities;
+
+  /// Send one radio-config frame and return the radio's own answer.
+  ///
+  /// [send] returns when the bytes were accepted, which is how the app used
+  /// to report "sent" for a command the radio had refused. The three setters
+  /// answer with a bare `OK`/`ERR(ERR_CODE_ILLEGAL_ARG)`
+  /// (`MyMesh.cpp:1386-1478`), so the answer is attributed through the ledger
+  /// like any other untagged reply.
+  Future<RadioAnswer> sendRadioConfig(Uint8List frame) {
+    final Future<RadioAnswer> result =
+        _configTail.then((_) => _sendRadioConfigOnce(frame));
+    _configTail = result.then<void>((_) {}, onError: (Object _) {});
+    return result;
+  }
+
+  Future<RadioAnswer> _sendRadioConfigOnce(Uint8List frame) async {
+    if (!isReady || frame.isEmpty) return const RadioAnswer.silent();
+    final MeshcoreCommand command = MeshcoreCommand(frame[0]);
+    // Refuse locally what this radio already said it cannot do. Unknown is
+    // not refused: the command is sent and the reply teaches the state.
+    if (_capabilities.stateOf(command) == CapabilityState.absent) {
+      return RadioAnswer.refused(MeshcoreErrorCode.unsupportedCmd.code);
+    }
+    final Completer<RadioAnswer> answer = Completer<RadioAnswer>();
+    _configAnswer = answer;
+    _configCommand = command;
+    _registerMarker(_configMarker, CommandAnswer.ok);
+    try {
+      await send(frame);
+      return await answer.future
+          .timeout(_radioConfigTimeoutOverride ?? _configAnswerTimeout);
+    } on TimeoutException {
+      _dropPending(_configMarker);
+      return const RadioAnswer.silent();
+    } catch (_) {
+      _dropPending(_configMarker);
+      _emitTaskError('sendRadioConfig');
+      return const RadioAnswer.silent();
+    } finally {
+      if (identical(_configAnswer, answer)) {
+        _configAnswer = null;
+        _configCommand = null;
+      }
+    }
+  }
+
+  void _completeRadioConfig(RadioAnswer answer) {
+    final MeshcoreCommand? command = _configCommand;
+    if (command != null) {
+      if (answer.isAccepted) {
+        _capabilities.observeReply(command);
+      } else if (answer.status == RadioAnswerStatus.refused) {
+        final int? code = answer.errorCode;
+        if (code != null) _capabilities.observeError(command, code);
+      }
+    }
+    final Completer<RadioAnswer>? c = _configAnswer;
+    if (c != null && !c.isCompleted) c.complete(answer);
+  }
+
+  /// Ask the radio for its device info again (the path-hash size and the
+  /// firmware build live there). Used after applying radio parameters, where
+  /// the reply is also the evidence that the write took effect.
+  void refreshDeviceInfo() => _requestDeviceInfo();
+
   int _backgroundHolds = 0;
 
   /// The firmware keeps ONE pending remote request; each new one
@@ -1505,6 +1601,7 @@ class MeshcoreController extends ChangeNotifier {
       if (id == _toolSendMarker ||
           id == _advertSendMarker ||
           id == _rawSendMarker ||
+          id == _configMarker ||
           id == _channelDataMarker) {
         continue;
       }
@@ -1625,6 +1722,10 @@ class MeshcoreController extends ChangeNotifier {
       // acknowledged with a bare OK.
       final CommandEntry? p = _takePending(CommandAnswer.ok);
       if (p == null) return;
+      if (p.id == _configMarker) {
+        _completeRadioConfig(const RadioAnswer.accepted());
+        return;
+      }
       if (p.id == _channelDataMarker) {
         _completeChannelData(f);
         return;
@@ -1647,6 +1748,10 @@ class MeshcoreController extends ChangeNotifier {
       if (_squelchNextDeviceError > 0) return;
       final CommandEntry? p = _ledger.takeHead();
       if (p == null) return;
+      if (p.id == _configMarker) {
+        _completeRadioConfig(RadioAnswer.refused(f.code));
+        return;
+      }
       if (p.id == _channelDataMarker) {
         _completeChannelData(f);
         return;

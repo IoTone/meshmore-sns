@@ -4661,7 +4661,7 @@ abstract class AppLocalizations {
   /// No description provided for @deviceRadioParams.
   ///
   /// In en, this message translates to:
-  /// **'RADIO PARAMS'**
+  /// **'Frequency & bandwidth'**
   String get deviceRadioParams;
 
   /// No description provided for @deviceIdentityAdvert.
@@ -4741,6 +4741,120 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Not applied yet: this radio uses {device} byte(s), the form is set to {form}.'**
   String devicePathHashMismatch(String device, String form);
+
+  /// No description provided for @deviceRadioApplied.
+  ///
+  /// In en, this message translates to:
+  /// **'The radio confirmed the change.'**
+  String get deviceRadioApplied;
+
+  /// No description provided for @deviceRadioRefused.
+  ///
+  /// In en, this message translates to:
+  /// **'The radio refused {param} (error {code}). Later writes were not sent.'**
+  String deviceRadioRefused(String param, String code);
+
+  /// No description provided for @deviceRadioSilent.
+  ///
+  /// In en, this message translates to:
+  /// **'No answer for {param} within five seconds — the write may not have applied.'**
+  String deviceRadioSilent(String param);
+
+  /// No description provided for @deviceRadioUnsupported.
+  ///
+  /// In en, this message translates to:
+  /// **'{param} is not in this firmware build.'**
+  String deviceRadioUnsupported(String param);
+
+  /// No description provided for @deviceRadioUnknownState.
+  ///
+  /// In en, this message translates to:
+  /// **'Cannot change radio settings yet: this radio has not reported its path-hash size, so there is no value to undo back to.'**
+  String get deviceRadioUnknownState;
+
+  /// No description provided for @deviceRadioRevert.
+  ///
+  /// In en, this message translates to:
+  /// **'Undo radio change'**
+  String get deviceRadioRevert;
+
+  /// No description provided for @deviceRadioReverted.
+  ///
+  /// In en, this message translates to:
+  /// **'Previous operating point restored.'**
+  String get deviceRadioReverted;
+
+  /// No description provided for @deviceRadioRevertUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Undo is one use only.'**
+  String get deviceRadioRevertUnavailable;
+
+  /// No description provided for @deviceRadioRevertFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Undo did not apply — the radio kept its last values.'**
+  String get deviceRadioRevertFailed;
+
+  /// No description provided for @radioHealthTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'RADIO HEALTH'**
+  String get radioHealthTitle;
+
+  /// No description provided for @radioHealthRead.
+  ///
+  /// In en, this message translates to:
+  /// **'Read'**
+  String get radioHealthRead;
+
+  /// No description provided for @radioHealthReading.
+  ///
+  /// In en, this message translates to:
+  /// **'Reading…'**
+  String get radioHealthReading;
+
+  /// No description provided for @radioHealthUnread.
+  ///
+  /// In en, this message translates to:
+  /// **'Not read yet. Read asks the radio for its own stats (CMD_GET_STATS).'**
+  String get radioHealthUnread;
+
+  /// No description provided for @radioHealthNoise.
+  ///
+  /// In en, this message translates to:
+  /// **'noise floor {dbm} dBm — the radio\'s own measurement'**
+  String radioHealthNoise(String dbm);
+
+  /// No description provided for @radioHealthLast.
+  ///
+  /// In en, this message translates to:
+  /// **'last packet RSSI {rssi} dBm, SNR {snr} dB — from the radio\'s packet statistics'**
+  String radioHealthLast(String rssi, String snr);
+
+  /// No description provided for @radioHealthBattery.
+  ///
+  /// In en, this message translates to:
+  /// **'battery {volts} V — from the radio\'s core statistics, not a phone reading'**
+  String radioHealthBattery(String volts);
+
+  /// No description provided for @radioHealthNotReported.
+  ///
+  /// In en, this message translates to:
+  /// **'not reported by this firmware'**
+  String get radioHealthNotReported;
+
+  /// No description provided for @radioHealthUptime.
+  ///
+  /// In en, this message translates to:
+  /// **'up {uptime} — the radio\'s uptime counter, which resets when it power-cycles'**
+  String radioHealthUptime(String uptime);
+
+  /// No description provided for @radioHealthSource.
+  ///
+  /// In en, this message translates to:
+  /// **'All values are the radio\'s own counters; nothing here is measured by the phone.'**
+  String get radioHealthSource;
 
   /// No description provided for @deviceLoadFromDevice.
   ///

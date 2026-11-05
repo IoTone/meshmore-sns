@@ -2701,7 +2701,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get closeSheet => 'Close';
 
   @override
-  String get deviceRadioParams => 'RADIO PARAMS';
+  String get deviceRadioParams => 'Frequency & bandwidth';
 
   @override
   String get deviceIdentityAdvert => 'IDENTITY / ADVERT';
@@ -2745,6 +2745,81 @@ class AppLocalizationsEn extends AppLocalizations {
   String devicePathHashMismatch(String device, String form) {
     return 'Not applied yet: this radio uses $device byte(s), the form is set to $form.';
   }
+
+  @override
+  String get deviceRadioApplied => 'The radio confirmed the change.';
+
+  @override
+  String deviceRadioRefused(String param, String code) {
+    return 'The radio refused $param (error $code). Later writes were not sent.';
+  }
+
+  @override
+  String deviceRadioSilent(String param) {
+    return 'No answer for $param within five seconds — the write may not have applied.';
+  }
+
+  @override
+  String deviceRadioUnsupported(String param) {
+    return '$param is not in this firmware build.';
+  }
+
+  @override
+  String get deviceRadioUnknownState =>
+      'Cannot change radio settings yet: this radio has not reported its path-hash size, so there is no value to undo back to.';
+
+  @override
+  String get deviceRadioRevert => 'Undo radio change';
+
+  @override
+  String get deviceRadioReverted => 'Previous operating point restored.';
+
+  @override
+  String get deviceRadioRevertUnavailable => 'Undo is one use only.';
+
+  @override
+  String get deviceRadioRevertFailed =>
+      'Undo did not apply — the radio kept its last values.';
+
+  @override
+  String get radioHealthTitle => 'RADIO HEALTH';
+
+  @override
+  String get radioHealthRead => 'Read';
+
+  @override
+  String get radioHealthReading => 'Reading…';
+
+  @override
+  String get radioHealthUnread =>
+      'Not read yet. Read asks the radio for its own stats (CMD_GET_STATS).';
+
+  @override
+  String radioHealthNoise(String dbm) {
+    return 'noise floor $dbm dBm — the radio\'s own measurement';
+  }
+
+  @override
+  String radioHealthLast(String rssi, String snr) {
+    return 'last packet RSSI $rssi dBm, SNR $snr dB — from the radio\'s packet statistics';
+  }
+
+  @override
+  String radioHealthBattery(String volts) {
+    return 'battery $volts V — from the radio\'s core statistics, not a phone reading';
+  }
+
+  @override
+  String get radioHealthNotReported => 'not reported by this firmware';
+
+  @override
+  String radioHealthUptime(String uptime) {
+    return 'up $uptime — the radio\'s uptime counter, which resets when it power-cycles';
+  }
+
+  @override
+  String get radioHealthSource =>
+      'All values are the radio\'s own counters; nothing here is measured by the phone.';
 
   @override
   String get deviceLoadFromDevice => 'Load from device';

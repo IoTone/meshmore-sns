@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
+import 'package:provider/single_child_widget.dart';
 
 import 'package:meshmore_sns_app/bot/bot_controller.dart';
 import 'package:meshmore_sns_app/gen/app_localizations.dart';
@@ -13,6 +14,7 @@ import 'package:meshmore_sns_app/l10n/locale_controller.dart';
 import 'package:meshmore_sns_app/meshcore/meshcore_controller.dart';
 import 'package:meshmore_sns_app/meshcore/own_location.dart';
 import 'package:meshmore_sns_app/screens/diagnostics_screen.dart';
+import 'package:meshmore_sns_app/tools/tools_controller.dart';
 
 import '../meshcore/fake_transport.dart';
 import 'package:meshcore/meshcore.dart';
@@ -192,10 +194,14 @@ void main() {
           GlobalCupertinoLocalizations.delegate,
         ],
         home: MultiProvider(
-          providers: <ChangeNotifierProvider<ChangeNotifier>>[
+          providers: <SingleChildWidget>[
             ChangeNotifierProvider<MeshcoreController>.value(value: ctrl),
             ChangeNotifierProvider<BotController>(
                 create: (_) => BotController()),
+            // The radio-health block reads the stats tool, which the app
+            // always provides on this screen.
+            ChangeNotifierProvider<ToolsController>(
+                create: (_) => ToolsController(ctrl)),
           ],
           child: const DiagnosticsScreen(),
         ),

@@ -1,5 +1,7 @@
 // Copyright (c) 2026 IoTone, Inc.
 // SPDX-License-Identifier: MIT
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
@@ -13,6 +15,8 @@ import '../ui/mm_collapsible.dart';
 import '../ui/mm_scaffold.dart';
 import '../meshcore/meshcore_controller.dart';
 import '../meshcore/own_location.dart';
+import '../meshcore/radio_config_transaction.dart';
+import '../meshcore/radio_safety_store.dart';
 import '../meshcore/region_presets.dart';
 import '../perms/location_service.dart';
 import '../perms/permissions_service.dart';
@@ -79,6 +83,10 @@ class _DeviceConfigScreenState extends State<DeviceConfigScreen> {
   // DeviceInfo, which can land after the self-info snapshot, so it loads
   // through its own guard.
   int _pathHashSize = 1;
+
+  /// The point the last transaction replaced, if the store still has one.
+  /// Non-null means an undo is available and has not been used.
+  RadioOperatingPoint? _armed;
   bool _pathHashLoaded = false;
 
   @override
@@ -265,20 +273,29 @@ class _DeviceConfigScreenState extends State<DeviceConfigScreen> {
       _toast(l.deviceRegionLoadedOffline(localized));
       return;
     }
-    try {
-      await mc.send(MeshcoreFrameCodec.setRadioParams(RadioParams(
-        frequencyMhz: p.frequencyMhz,
-        bandwidthKhz: p.bandwidthKhz,
-        spreadingFactor: p.spreadingFactor,
-        codingRate: p.codingRate,
-      )));
-      await mc.send(MeshcoreFrameCodec.setRadioTxPower(p.txPowerDbm));
-      if (p.pathHashSize != null) {
-        await mc.send(MeshcoreFrameCodec.setPathHashMode(p.pathHashSize!));
-      }
+    final String? key = _radioKey(mc);
+    final RadioOperatingPoint? previous =
+        RadioOperatingPoint.known(mc.selfInfo, mc.deviceInfo);
+    if (key == null || previous == null) {
+      _toast(l.deviceRadioUnknownState);
+      return;
+    }
+    await RadioSafetyStore.arm(key, previous);
+    final RadioOperatingPoint target = RadioOperatingPoint(
+      frequencyMhz: p.frequencyMhz,
+      bandwidthKhz: p.bandwidthKhz,
+      spreadingFactor: p.spreadingFactor,
+      codingRate: p.codingRate,
+      txPowerDbm: p.txPowerDbm,
+      // The feed's path_hash_size is a BYTE COUNT (1..3); the model keeps
+      // the wire's mode numbering (0..2) so nothing has to remember which
+      // is which.
+      pathHashMode:
+          p.pathHashSize == null ? previous.pathHashMode : p.pathHashSize! - 1,
+    );
+    if (!mounted) return;
+    if (await _runTransaction(mc, target, radioKey: key) && mounted) {
       _toast(l.deviceRegionAppliedToast(localized));
-    } catch (e) {
-      _toast(l.deviceToastSendFailed('$e'));
     }
   }
 
@@ -338,6 +355,82 @@ class _DeviceConfigScreenState extends State<DeviceConfigScreen> {
       ..showSnackBar(SnackBar(content: Text(m)));
   }
 
+  /// A stable name for this radio in the safety record: its public key, so a
+  /// different radio never inherits another one's undo.
+  String? _radioKey(MeshcoreController mc) {
+    final SelfInfo? si = mc.selfInfo;
+    if (si == null) return null;
+    return si.publicKey.map((int b) => b.toRadixString(16).padLeft(2, '0')).join();
+  }
+
+  /// Run the operating-point transaction and say what the radio answered.
+  ///
+  /// Returns true when every write was confirmed. The caller shows the toast;
+  /// this method owns the side effects a transaction has to keep: the record
+  /// on disk before the first frame, and the refresh that proves the write
+  /// took effect.
+  Future<bool> _runTransaction(
+      MeshcoreController mc, RadioOperatingPoint target,
+      {required String radioKey}) async {
+    final AppLocalizations l = AppLocalizations.of(context);
+    final RadioConfigOutcome out =
+        await RadioConfigTransaction.run(target, mc.sendRadioConfig);
+    if (!out.isApplied) {
+      final RadioConfigStep step = out.failedStep!;
+      final RadioAnswer answer = out.answer!;
+      final String param = _stepLabel(l, step);
+      if (answer.isUnsupported) {
+        _toast(l.deviceRadioUnsupported(param));
+      } else if (answer.status == RadioAnswerStatus.noAnswer) {
+        _toast(l.deviceRadioSilent(param));
+      } else {
+        _toast(l.deviceRadioRefused(
+            param, answer.errorCode == null ? '?' : '${answer.errorCode}'));
+      }
+      return false;
+    }
+    mc.refreshDeviceInfo();
+    unawaited(_reloadArmed(mc));
+    return true;
+  }
+
+  String _stepLabel(AppLocalizations l, RadioConfigStep step) => switch (step) {
+        RadioConfigStep.params => l.deviceRadioParams,
+        RadioConfigStep.txPower => l.deviceTxPower,
+        RadioConfigStep.pathHash => l.devicePathHashSize,
+      };
+
+  Future<void> _reloadArmed(MeshcoreController mc) async {
+    final String? key = _radioKey(mc);
+    if (key == null) return;
+    final RadioOperatingPoint? armed = await RadioSafetyStore.armed(key);
+    if (!mounted) return;
+    if (armed != _armed) setState(() => _armed = armed);
+  }
+
+  /// Take back the last radio change. Single use: the record is consumed
+  /// before the write, so a failed undo cannot be retried into a second
+  /// rewrite of stale values.
+  Future<void> _revertRadio(MeshcoreController mc) async {
+    final AppLocalizations l = AppLocalizations.of(context);
+    final String? key = _radioKey(mc);
+    if (key == null || !mc.isReady) {
+      _toast(l.deviceConnectFirst);
+      return;
+    }
+    final RadioOperatingPoint? previous = await RadioSafetyStore.consume(key);
+    if (!mounted) return;
+    if (previous == null) {
+      setState(() => _armed = null);
+      _toast(l.deviceRadioRevertUnavailable);
+      return;
+    }
+    final bool ok = await _runTransaction(mc, previous, radioKey: key);
+    if (!mounted) return;
+    setState(() => _armed = null);
+    _toast(ok ? l.deviceRadioReverted : l.deviceRadioRevertFailed);
+  }
+
   Future<void> _applyRadio(MeshcoreController mc) async {
     final AppLocalizations l = AppLocalizations.of(context);
     // R25+3 — the user-reported bug: "Apply radio settings" was
@@ -357,25 +450,31 @@ class _DeviceConfigScreenState extends State<DeviceConfigScreen> {
       _toast(l.deviceToastInvalidRadio);
       return;
     }
-    try {
-      await mc.send(MeshcoreFrameCodec.setRadioParams(RadioParams(
-        frequencyMhz: f,
-        bandwidthKhz: b,
-        spreadingFactor: sf,
-        codingRate: cr,
-      )));
-      final int? tx = int.tryParse(_tx.text);
-      if (tx != null) {
-        await mc.send(MeshcoreFrameCodec.setRadioTxPower(tx));
-      }
-      // Part of the same operating point. This is the hash length the radio
-      // STAMPS on packets it sends (`NodePrefs.h:40`); forwarders honour each
-      // packet's own length (`Mesh.cpp:89`), so nodes need not agree. It sets
-      // the directed payload budget: 174 - hops * size bytes.
-      await mc.send(MeshcoreFrameCodec.setPathHashMode(_pathHashSize));
-      _toast(l.deviceToastRadioSent);
-    } catch (e) {
-      _toast(l.deviceToastSendFailed('$e'));
+    final String? key = _radioKey(mc);
+    final RadioOperatingPoint? previous =
+        RadioOperatingPoint.known(mc.selfInfo, mc.deviceInfo);
+    if (key == null || previous == null) {
+      // The path-hash size arrives in the device info, not in the self info,
+      // so a radio that has not answered a device query has no recorded value
+      // to come back to. Refusing here is the whole point: a one-way write to
+      // a radio whose old values are unknown cannot be undone.
+      _toast(l.deviceRadioUnknownState);
+      return;
+    }
+    final int tx = int.tryParse(_tx.text) ?? previous.txPowerDbm;
+    // The previous operating point goes to disk BEFORE the first frame: if
+    // the link dies mid-transaction, the way back is already recorded.
+    await RadioSafetyStore.arm(key, previous);
+    final RadioOperatingPoint target = RadioOperatingPoint(
+      frequencyMhz: f,
+      bandwidthKhz: b,
+      spreadingFactor: sf,
+      codingRate: cr,
+      txPowerDbm: tx,
+      pathHashMode: _pathHashSize - 1,
+    );
+    if (await _runTransaction(mc, target, radioKey: key) && mounted) {
+      _toast(l.deviceRadioApplied);
     }
   }
 
@@ -401,6 +500,11 @@ class _DeviceConfigScreenState extends State<DeviceConfigScreen> {
     // DeviceInfo arrives on its own schedule, after the self-info snapshot,
     // so path hash cannot ride along with _loadFrom. Load it once and never
     // overwrite what the user then chose.
+    if (_armed == null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _reloadArmed(mc);
+      });
+    }
     final DeviceInfo? di = mc.deviceInfo;
     if (!_pathHashLoaded && di != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -614,6 +718,11 @@ class _DeviceConfigScreenState extends State<DeviceConfigScreen> {
                       MmAction(
                         label: l.deviceLoadFromDevice,
                         onPressed: () => _loadFrom(si),
+                      ),
+                    if (_armed != null)
+                      MmAction(
+                        label: l.deviceRadioRevert,
+                        onPressed: () => _revertRadio(mc),
                       ),
                     FilledButton.icon(
                       icon: const Icon(Icons.send),

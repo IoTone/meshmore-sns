@@ -166,15 +166,20 @@ Verified against the live API on 2026-10-24.
   deprecated 250 kHz tuple, while the API carries narrow replacements as the
   current standard.
 
-**Not supported at all:**
+**Corrected 2026-11-05 — path hash mode is no longer missing:**
 
-- **Path hash mode.** Presets in the feed specify `path_hash_size` 1, 2 or 3,
-  and it must match across a mesh. The firmware exposes
-  `CMD_SET_PATH_HASH_MODE` (61, `MyMesh.cpp:1466-1474`,
-  `[61][0][mode]`, mode 0..2), and `RESP_CODE_DEVICE_INFO` reports the
-  current value as its last byte (v10+). `packages/meshcore` models neither
-  the setter nor the field, and `RegionPreset` has no field for it. A
-  Canadian or SoCal peer cannot be joined correctly without this.
+- **Path hash mode.** The firmware exposes `CMD_SET_PATH_HASH_MODE` (61,
+  `MyMesh.cpp:1466-1474`, `[61][0][mode]`, mode 0..2) and reports the current
+  value in `RESP_CODE_DEVICE_INFO`; `packages/meshcore` models the setter and
+  decodes the reported value, and `RegionPreset` carries the feed's
+  `path_hash_size`. It is applied as the last step of the radio transaction
+  (`lib/meshcore/radio_config_transaction.dart`) and a preset's byte count is
+  converted to the wire's mode number once, in that one place.
+- It is a **regional stamping convention**, not a mesh-wide setting: the
+  firmware reads each packet's own path length (`Mesh.cpp:89`), so a
+  forwarder honours what the sender stamped. A node that stamps three bytes
+  still routes through nodes that expect one; what breaks is a peer that
+  reassembles assuming a fixed width, which is why a region agrees on it.
 
 ## 7. Your two radios, in plain terms
 
