@@ -144,6 +144,12 @@ void main() {
     expect(node.getSemanticsData().hasAction(SemanticsAction.tap), isTrue,
         reason: 'the control advertises an action a screen reader can perform');
 
+    // The semantics tree this widget lives in is owned by the binding's view
+    // pipeline; `rootPipelineOwner` roots the tree but does not dispatch into
+    // it, so the deprecated accessor is the one that reaches this node. The
+    // alternative is driving the action through a `SemanticsOwner` handle the
+    // framework does not expose, which would test less.
+    // ignore: deprecated_member_use
     t.binding.pipelineOwner.semanticsOwner!
         .performAction(node.id, SemanticsAction.tap);
     await t.pump(const Duration(milliseconds: 150));
