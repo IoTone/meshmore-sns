@@ -3775,8 +3775,11 @@ class MeshcoreController extends ChangeNotifier {
           cause: FailureCause.airtimeBudget);
       notifyListeners();
     } catch (_) {
+      // APP-C2 rule 2: a channel send never reads `failed`. A write that
+      // threw may have reached the radio's buffer before the link went, so
+      // the honest state is "cannot vouch for this one", not "did not send".
       _emitTaskError('sendChannel');
-      _markOutgoingFailed(m.id);
+      _uncertainOutgoing(m.id, 'link dropped while sending');
       notifyListeners();
     }
     return m;
