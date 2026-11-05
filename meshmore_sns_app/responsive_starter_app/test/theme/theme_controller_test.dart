@@ -23,11 +23,11 @@ void main() {
         reason: 'preset backgrounds should not all be identical');
   });
 
-  test('default preset is D / SEELE with no stored prefs', () async {
+  test('default preset is STUDIO with no stored prefs', () async {
     final ThemeController c = ThemeController();
-    expect(c.preset, MmThemePreset.seele);
+    expect(c.preset, MmThemePreset.studio);
     await c.load();
-    expect(c.preset, MmThemePreset.seele);
+    expect(c.preset, MmThemePreset.studio);
     expect(c.audioMaster, isTrue,
         reason: 'audible alerts ON by default; dashboard offers quick-mute');
   });

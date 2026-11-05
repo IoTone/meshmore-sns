@@ -247,9 +247,14 @@ const Map<MmThemePreset, MmTokens> kMmPresets = <MmThemePreset, MmTokens>{
   ),
 };
 
+/// The skin a fresh install opens on. STUDIO: the quiet, sans-face,
+/// square-control preset. The technical presets are a deliberate choice in
+/// Personalisation, not the first thing a new user meets.
+const MmThemePreset kDefaultPreset = MmThemePreset.studio;
+
 MmThemePreset presetFromId(String? id) => MmThemePreset.values.firstWhere(
       (MmThemePreset p) => p.name == id,
-      orElse: () => MmThemePreset.seele,
+      orElse: () => kDefaultPreset,
     );
 
 /// Build a Material 3 dark [ThemeData] from a token set.

@@ -20,7 +20,10 @@ class ThemeController extends ChangeNotifier {
   static const String _kAudioMaster = 'mm.audioMaster';
   static const String _kVisualHapticOnly = 'mm.visualHapticOnly';
 
-  MmThemePreset _preset = MmThemePreset.seele; // D — default
+  // STUDIO is the default a fresh install opens on: the quiet, sans-face,
+  // square-control skin. The technical presets (SEELE, NERV, AG-HUD, RECON,
+  // Dr Pop, Hyperlocal) are a deliberate choice in Personalisation.
+  MmThemePreset _preset = MmThemePreset.studio;
   double _fontScale = 1.0;
   bool _highContrast = false;
   bool _reduceMotion = false;
