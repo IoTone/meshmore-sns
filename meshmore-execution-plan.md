@@ -119,18 +119,26 @@ point at the ldmux repo), and the master plan's gateway rows.
 
 ## 2b. Remote state (2026-11-05)
 
-`origin/dev` is 2 commits ahead of this branch's base and both are R4 follow-ups that the app must keep:
+`origin/dev` is 2 commits ahead of this branch's base and both are R4 follow-ups:
 
 - `10a8c14` swipe between grid maps + a Swipe ⇄ Pan toggle (`grid_screen.dart` `_panMode`, key `grid-pan-toggle`,
   two new ARB strings, shell capture lock).
 - `c81b051` left/right swipes change screens again; maps chosen by dropdown (`grid_screen.dart`, `home_shell.dart`,
   ARB, `pubspec.yaml` version).
 
-**It is a re-port, not a merge.** This branch rewrote `grid_screen.dart` (+494/−…) and `home_shell.dart`
-(+522/−…) after the merge base `e7691c8`, while dev's change is ~108 lines in the same regions. Resolve the 6 conflict
-hunks by keeping the local structure and porting dev's behaviour onto it: pan mode off on entering the tab, the
-toggle only on pannable views, swipe belongs to the shell, capture lock driven by `_panMode && pansHorizontally`.
-`app_en.arb`/`app_ja.arb` gain dev's two tooltip strings; regenerate `lib/gen/*` with `flutter gen-l10n`.
+**Resolved 2026-11-05: merged for history, not ported — R95 removed the mechanism dev's commits add.** The earlier
+plan said to re-port these two commits onto the local rewrite. Reading both sides overturns that: dev's base
+`e7691c8` is 2026-10-15, R95 (`693f395`, 2026-10-22; `meshmore-sns-spec.md` "one navigation model") landed on this
+line after that and made the body `PageView` `NeverScrollableScrollPhysics` in **every** skin, deleting
+`MmShape.swipeNavigation` and `GridScreen.capturesHorizontalDrag`. `capturesHorizontalDrag` is what dev's pan toggle
+exists to drive, so ported onto R95 the toggle would hold a pannable map still and hand the drag to a shell that never
+pages: a dead control, and a regression on every panning view. The map keeps its R67 edge bands because that gesture
+is its only exit; the grid changes maps by the R104 labelled picker sheet, so nothing dev added is lost. Therefore the
+12 conflicted files resolve to the local side (`git checkout HEAD --` all 12),
+dev's four ARB keys are dropped rather than shipped unused, `lib/gen/*` is unchanged by `flutter gen-l10n`, and the
+version moves to `1.0.196+12` — above both lines (`1.0.193+9` local, `1.0.195+11` dev) so the two version sequences
+cannot collide on a device. The supersession is recorded in `meshmore_sns_app/STATUS.md` under R95 and in
+`meshmore-sns-UX-spec.md` view 3b.
 
 ## 2c. Where the app's own structure sits (file ownership for briefs)
 
@@ -282,7 +290,7 @@ plugin set. Each is a child task with a written answer, not a guess.
 | --- | --- | --- | --- |
 | W0 toolchain | **done** | scout | SDK path verified; 1044 tests / 90 s; gradle pins known |
 | W0 docs commit | **done** | supervisor | `e86a712` on `feat/ldmux-gateway` |
-| W0 branch rename + dev re-port | not started | — | conflicts: grid_screen, home_shell, arb ×2, gen ×2, tests ×2, STATUS, UX spec |
+| W0 branch rename + dev re-port | **done** | worker | rename `feat/app-completion`; dev merged, resolved to R95 (see §2b): 12 files taken local, 4 dev ARB keys dropped, version `1.0.196+12` |
 | W0 gateway removal + doc correction | not started | — | 14 app files, 2 packages, 6 docs |
 | W1 defects | not started | — | — |
 | W2 skin tokens | not started | — | — |

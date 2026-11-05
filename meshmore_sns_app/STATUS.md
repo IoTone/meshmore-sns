@@ -1,6 +1,6 @@
 # Meshmore SNS — project status
 
-_Snapshot as of 2026-10-23. App `1.0.193+9`, branch `feat/vector-basemap`.
+_Snapshot as of 2026-11-05. App `1.0.196+12`, branch `feat/app-completion`.
 Change records below are newest first from R108; older entries are kept in
 the order they were written._
 
@@ -134,7 +134,7 @@ codebase.
 - R98: **square = 1 px corner.** `kSquareRadius` backs mmRadius, squareBorder, squareField, cards, FAB and the chat pill's square branch. Sharp non-square presets keep 0; the >=6 px guard still runs.
 - R97: **link green everywhere.** New `MmTokens.link` (#3DDC84) for the app-bar chip, dashboard status slab, Studio dot and AG-HUD/NERV/Hyperlocal pills. `DashboardModel.linked` separates "link up" from "not alert".
 - R96: **node sheet exit.** Close button in the header (EN/JA). A sheet opened from a DM no longer offers Message (it stacked duplicate DM routes).
-- R95: **one navigation model.** Strip taps jump (no 250 ms scroll across the views in between, one nav cue instead of one per page crossed). Body swipe paging removed in every skin; `swipeNavigation` and the grid pan flag deleted. Vertical drag on the strip steps one view. Strip 56 dp tall with a 3 px selected rule; every preset's app bar ends in a 2 px `fg`@22% rule.
+- R95: **one navigation model.** Strip taps jump (no 250 ms scroll across the views in between, one nav cue instead of one per page crossed). Body swipe paging removed in every skin; `swipeNavigation` and the grid pan flag deleted. Vertical drag on the strip steps one view. Strip 56 dp tall with a 3 px selected rule; every preset's app bar ends in a 2 px `fg`@22% rule. **Supersedes `origin/dev`'s #4-follow-up swipe model** (`10a8c14`, `c81b051`, both authored on a base from before R95): those commits give the grid tab a left/right swipe with a Swipe ⇄ Pan toggle whose only reader was `GridScreen.capturesHorizontalDrag`. That is the mechanism R95 deleted, so the two commits are merged for history and not ported; maps change by the grid's labelled picker sheet. The merged tree is `1.0.196+12`, above dev's `1.0.195+11`.
 - R94: **Settings hub labels fixed.** R92 picked the group label by list index (0/4/8) while the separators sit at 0/3/7/10, so the phone showed RADIO / ABOUT / ABOUT / ABOUT. The label now lives on its own group row; a test builds every row and asserts each label once, in order. Found on the phone while recording the radio model.
 - R92: **Settings grouping + text cuts.** Hub grouped RADIO / APP / CONNECTION / ABOUT. Three dead chevron rows removed from App settings (Connection, Notifications, Data/About). Region disclaimer 620 → one line + Details dialog; telemetry help 470 → one sentence; nodes empty state 4 paragraphs → one; docs subtitle 150 → one line. Two jargon subtitles rewritten.
 - R91: **crowded headers.** Chat is one 48 dp strip (chips + "+ Manage channels" + speech toggle); the "CHANNEL · NAME" caption and collapse chevron are gone. Nodes filters move into one sheet behind a counted Filters button (search stays). Grid transport bar is a Wrap with an icon+stop range control (no 320dp overflow). Dashboard Connect/Retry gets its own row instead of squatting in the status slab.
