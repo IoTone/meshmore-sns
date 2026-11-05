@@ -2,6 +2,25 @@
 // SPDX-License-Identifier: MIT
 import 'message_notification.dart';
 
+/// Whether the OS is still letting our notifications be loud.
+///
+/// Created at init and read when the user opens the notification settings:
+/// a channel the user deleted or lowered is invisible otherwise, and the app
+/// would keep promising alerts it can no longer deliver (lifecycle audit L13).
+enum NotifierHealth {
+  /// Channels exist and are at the importance the app asks for.
+  ok,
+
+  /// The user turned this app's notifications off at the OS level.
+  blocked,
+
+  /// A channel exists but at a lower importance: no heads-up, no sound.
+  quiet,
+
+  /// A channel the app needs was deleted.
+  missingChannel,
+}
+
 /// The one seam between the app's decision to notify and the platform.
 ///
 /// Tests use a fake so nothing in the suite touches a notification channel;
@@ -18,6 +37,10 @@ abstract interface class Notifier {
 
   /// Removes one notification by its OS id, used for the alarm's ongoing one.
   Future<void> cancel(int id);
+
+  /// Reads the OS state back. Never throws: an unreadable state is [ok], so a
+  /// platform that cannot answer does not paint a warning that may be false.
+  Future<NotifierHealth> health();
 }
 
 /// Records what the app asked the OS to show. Test-only.
@@ -37,6 +60,12 @@ class FakeNotifier implements Notifier {
 
   @override
   Future<void> cancel(int id) async => cancelled.add('id:$id');
+
+  /// Set by a test to simulate the OS state.
+  NotifierHealth healthValue = NotifierHealth.ok;
+
+  @override
+  Future<NotifierHealth> health() async => healthValue;
 
   void clear() {
     shown.clear();

@@ -1491,6 +1491,8 @@
   "notifKeySuffix": "ID の末尾 4 文字にも一致させる",
   "notifKeySuffixSub": "4 文字は誰でも選べるので、送信者が確かなとき以外はオフにしてください。",
   "notifDeniedBanner": "このアプリの通知がオフのため、メッセージはロック画面に表示されません。",
+  "notifQuietBanner": "このアプリの通知が Android 設定でサイレントになっているため、警告音は鳴りません。",
+  "notifMissingChannelBanner": "このアプリの通知チャンネルが削除されていたため、一部の通知を表示できませんでした。再作成しました。",
   "channelsKeySource": "鍵ソース",
   "channelsKeyPublic": "Public",
   "channelsKeyHashtag": "#タグ",

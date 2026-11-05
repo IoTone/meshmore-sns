@@ -2453,6 +2453,14 @@ class AppLocalizationsEn extends AppLocalizations {
       'Notifications are turned off for this app, so messages will not appear on your lock screen.';
 
   @override
+  String get notifQuietBanner =>
+      'Notifications for this app are set to silent in Android settings, so alerts will not make a sound.';
+
+  @override
+  String get notifMissingChannelBanner =>
+      'One of this app\'s notification channels was deleted, so some alerts could not be shown. It has been recreated.';
+
+  @override
   String get channelsKeySource => 'Key source';
 
   @override

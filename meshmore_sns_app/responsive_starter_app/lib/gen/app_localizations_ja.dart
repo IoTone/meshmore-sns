@@ -2343,6 +2343,14 @@ class AppLocalizationsJa extends AppLocalizations {
   String get notifDeniedBanner => 'このアプリの通知がオフのため、メッセージはロック画面に表示されません。';
 
   @override
+  String get notifQuietBanner =>
+      'このアプリの通知が Android 設定でサイレントになっているため、警告音は鳴りません。';
+
+  @override
+  String get notifMissingChannelBanner =>
+      'このアプリの通知チャンネルが削除されていたため、一部の通知を表示できませんでした。再作成しました。';
+
+  @override
   String get channelsKeySource => '鍵ソース';
 
   @override

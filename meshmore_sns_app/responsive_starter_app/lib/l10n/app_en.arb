@@ -1633,6 +1633,10 @@
     "description": "Warns about the key-suffix opt-in."
   },
   "notifDeniedBanner": "Notifications are turned off for this app, so messages will not appear on your lock screen.",
+  "notifQuietBanner": "Notifications for this app are set to silent in Android settings, so alerts will not make a sound.",
+  "@notifQuietBanner": {"description": "Shown when one of the app's notification channels is below high importance."},
+  "notifMissingChannelBanner": "One of this app's notification channels was deleted, so some alerts could not be shown. It has been recreated.",
+  "@notifMissingChannelBanner": {"description": "Shown when a notification channel was deleted by the user."},
   "@notifDeniedBanner": {
     "description": "Shown when the OS notification permission is denied."
   },

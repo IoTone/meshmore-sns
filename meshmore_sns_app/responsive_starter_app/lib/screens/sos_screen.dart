@@ -670,6 +670,14 @@ class _Running extends StatelessWidget {
         // What the schedule did not manage, said plainly: a sleep window skips
         // repeats rather than firing a burst the radio would drop, and a
         // refused repeat is a repeat nobody heard.
+        // L3: a one-second timer is not an alarm clock. Under Doze the OS
+        // defers it, and the panel says what that costs rather than implying
+        // a punctual schedule the app cannot keep.
+        SizedBox(height: skin.space.step(2)),
+        Text(l.sosBestEffort,
+            key: const ValueKey<String>('sos-best-effort'),
+            style: TextStyle(
+                color: skin.color.fgMuted, fontSize: skin.type.sizeSm, height: 1.5)),
         if (sos.resumedFromRestart) ...<Widget>[
           SizedBox(height: skin.space.step(2)),
           Text(l.sosResumed,

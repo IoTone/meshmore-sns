@@ -4178,6 +4178,18 @@ abstract class AppLocalizations {
   /// **'Notifications are turned off for this app, so messages will not appear on your lock screen.'**
   String get notifDeniedBanner;
 
+  /// Shown when one of the app's notification channels is below high importance.
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications for this app are set to silent in Android settings, so alerts will not make a sound.'**
+  String get notifQuietBanner;
+
+  /// Shown when a notification channel was deleted by the user.
+  ///
+  /// In en, this message translates to:
+  /// **'One of this app\'s notification channels was deleted, so some alerts could not be shown. It has been recreated.'**
+  String get notifMissingChannelBanner;
+
   /// No description provided for @channelsKeySource.
   ///
   /// In en, this message translates to:
