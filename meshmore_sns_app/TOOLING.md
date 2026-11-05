@@ -191,6 +191,13 @@ line is the difference between an upload that is accepted and one that is not. `
 so R8 is off; turning it on needs keep rules for the AVIF native bridge, the FileProvider and the notification plugin,
 and a linked release build to prove them.
 
+**A downgrade reads as data loss, and that is unavoidable.** The first launch of a build that carries the sealed
+history moves the plaintext `mm.chat.v1` into the sealed store and deletes the plaintext. An older build reads only
+`mm.chat.v1`, so installing one over the top shows an empty history, and sending from it starts a second, plaintext
+history beside the sealed one. Two consequences for release practice: never ship a downgrade as a fix (ship a forward
+build that repairs), and if a tester must run an older build, clear the app's data first so the two stores cannot
+diverge.
+
 ---
 
 ## 4. Bench radios
