@@ -7,11 +7,13 @@ Offline-first, theme-driven, with a hyperlocal radar grid, per-channel chat,
 1:1 DMs, and a device-first → phone-fallback location model.
 
 > **Status — in development.** Source is here for review and contribution;
-> there's no public release channel yet. Measured 2026-11-05: 1680 widget/unit
-> tests pass in 2 m 51 s, the protocol package's 368 pass with one skipped, the
-> pure-Java port's 143 pass, and `flutter analyze` is clean apart from two
-> pre-existing `unawaited_return_in_try_block` warnings in
-> `lib/maps/maps_controller.dart`. A debug APK builds in 64 s and installs.
+> there's no public release channel yet. Measured 2026-11-05 in a fresh checkout:
+> 1688 widget/unit tests pass in 2 m 40 s, the protocol package's 368 pass with
+> one skipped, the pure-Java port's 143 pass with one skipped, and `flutter
+> analyze` is clean apart from two pre-existing `unawaited_return_in_try_block`
+> warnings in `lib/maps/maps_controller.dart`. A debug APK builds and installs.
+> No screen-level, on-air or Doze behaviour has been checked on hardware yet: the
+> phone is behind a PIN keyguard.
 > **What is still owed is device verification**: every screen-level, on-air and
 > background path needs a run on an unlocked phone, and one dependency is not
 > store-ready: the bundled image codec's native library fails the 16 KB page
@@ -110,7 +112,7 @@ cd meshmore_sns_app/responsive_starter_app
 flutter pub get
 flutter run            # debug on a connected device
 flutter analyze        # static analysis
-flutter test           # 125 tests at time of writing
+flutter test           # 1688 tests at time of writing
 ```
 
 **Submodule note** — the `meshcore` codec lives at
@@ -142,7 +144,7 @@ meshmore-sns/
     ├── packages/meshcore/          ← pure-Dart protocol codec
     └── responsive_starter_app/     ← Flutter app
         ├── lib/                    ← all controllers, screens, theme, perms…
-        ├── test/                   ← 940 widget/unit tests
+        ├── test/                   ← 1688 widget/unit tests
         ├── android/                ← FGS manifest, BLE perms
         └── ios/                    ← Info.plist usage strings
 ```
