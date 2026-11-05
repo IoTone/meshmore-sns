@@ -121,7 +121,10 @@ void main() {
       'lib/screens/fabric_survey_view.dart': 4,
       'lib/screens/personalization_screen.dart': 1,
       'lib/screens/sns_cells_view.dart': 5,
-      'lib/screens/street_map_view.dart': 5,
+      // R115 — the peer and self markers lost their three `Colors.white`
+      // rings in favour of the skin's foreground, so the count is what the
+      // file actually carries.
+      'lib/screens/street_map_view.dart': 2,
       'lib/ui/mm_scaffold.dart': 1,
     };
     final List<String> drifted = <String>[];
