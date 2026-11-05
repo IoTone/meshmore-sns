@@ -134,7 +134,7 @@ two commits. That was overturned by reading who decided what: the merge base `e7
 model. So R95's two halves are separated: taps still jump with one cue and the vertical strip drag still steps a view,
 while body paging returns and every pan surface gates it — the Map while it is the current view, the grid while a
 pan/zoom view is in pan mode (`lib/shell/horizontal_drag_claim.dart`). Pan mode is off on every visit; the toggle is
-only on the five views that pan (the equal grid is pinned to us and is not one); in swipe mode a pannable view drops
+only on the five views that pan (the equal grid is pinned to us and is not one), and in swipe mode a pannable view drops
 its own drag and keeps its taps (`interactive: _panMode`), with a hint saying which mode is on. The four
 ARB keys are back in EN + JA and `lib/gen/*` is regenerated; the version moves to `1.0.197+13`, above both lines
 (`1.0.193+9` local, `1.0.195+11` dev), so the sequences cannot collide on a device. The merge commit `c393d26` itself
