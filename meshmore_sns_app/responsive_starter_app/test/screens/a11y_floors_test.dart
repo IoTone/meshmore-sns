@@ -1,7 +1,6 @@
 // Copyright (c) 2026 IoTone, Inc.
 // SPDX-License-Identifier: MIT
 import 'package:flutter/material.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:provider/single_child_widget.dart';
@@ -17,7 +16,6 @@ import 'package:meshmore_sns_app/ui/mm_collapse_controller.dart';
 import 'package:meshmore_sns_app/app_state_model.dart';
 import 'package:meshmore_sns_app/bot/bot_controller.dart';
 import 'package:meshmore_sns_app/cue/cue_service.dart';
-import 'package:meshmore_sns_app/gen/app_localizations.dart';
 import 'package:meshmore_sns_app/l10n/locale_controller.dart';
 import 'package:meshmore_sns_app/legal/terms_controller.dart';
 import 'package:meshmore_sns_app/main.dart';
