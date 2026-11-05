@@ -117,8 +117,13 @@ void main() {
 
   testWidgets('an unread pin is coloured by type, a read one is neutral',
       (WidgetTester t) async {
+    // Pinned to SEELE: the assertion below names that skin's link and muted
+    // tokens, so the host must render the skin the assertion is about rather
+    // than whichever preset happens to be the default.
+    final ThemeController tc = ThemeController();
+    await tc.setPreset(MmThemePreset.seele);
     store.upsert(_place());
-    await t.pumpWidget(_host(store));
+    await t.pumpWidget(_host(store, theme: tc));
     await t.pump();
     Icon icon = t.widget<Icon>(find.descendant(
       of: find.byKey(const ValueKey<String>('place-pin-abcd1234')),
@@ -127,7 +132,7 @@ void main() {
     expect(icon.color, mmSkinFor(MmThemePreset.seele).color.link);
 
     store.markSeen('abcd1234');
-    await t.pumpWidget(_host(store));
+    await t.pumpWidget(_host(store, theme: tc));
     await t.pump();
     icon = t.widget<Icon>(find.descendant(
       of: find.byKey(const ValueKey<String>('place-pin-abcd1234')),

@@ -123,10 +123,20 @@ void main() {
         <Color>[st.surface, st.base]);
   });
 
+  testWidgets('no stored choice boots in the skin it will show',
+      (WidgetTester t) async {
+    // The splash is what the user sees before the theme loads, so a fresh
+    // install must not flash a palette that is not the one it is about to
+    // render: it takes the default preset's greys, and every other preset
+    // keeps the brand palette below.
+    final MmTokens def = kMmPresets[kDefaultPreset]!;
+    expect(await bootGradient(t, null), <Color>[def.surface, def.base]);
+  });
+
   testWidgets('every other preset keeps the NERV boot palette',
       (WidgetTester t) async {
     const List<Color> nerv = <Color>[Color(0xFF0A0E1A), Color(0xFF000000)];
-    expect(await bootGradient(t, null), nerv);
     expect(await bootGradient(t, MmThemePreset.recon), nerv);
+    expect(await bootGradient(t, MmThemePreset.seele), nerv);
   });
 }
