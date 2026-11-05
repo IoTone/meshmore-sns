@@ -23,7 +23,6 @@ import 'package:meshmore_sns_app/shell/shell_view_request.dart';
 import 'package:meshmore_sns_app/theme/theme_controller.dart';
 
 import '../meshcore/fake_transport.dart';
-import 'package:meshcore/meshcore.dart';
 
 Widget _host(MeshcoreController mc, {ShellViewRequest? request}) => MaterialApp(
       locale: const Locale('en'),
