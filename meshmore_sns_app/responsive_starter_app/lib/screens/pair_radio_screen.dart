@@ -70,15 +70,21 @@ class _PairRadioScreenState extends State<PairRadioScreen> {
   @override
   void initState() {
     super.initState();
+    // A harness (and the accessibility floor) can register a scanner above the
+    // router, because the real one talks to the platform and cannot run in a
+    // widget test. Without a registration the screen keeps its own default.
+    _scanner = context.read<PairScanner?>() ?? widget.scanner;
     WidgetsBinding.instance.addPostFrameCallback((_) => _begin());
   }
+
+  late final PairScanner _scanner;
 
   @override
   void dispose() {
     // Leaving mid-scan must stop the radio's scanning: the platform keeps the
     // scan alive otherwise, and a background scan is the one thing this screen
     // promises it will not do.
-    unawaited(widget.scanner.stopScan());
+    unawaited(_scanner.stopScan());
     unawaited(_scanSub?.cancel());
     unawaited(_adapterSub?.cancel());
     super.dispose();
@@ -109,7 +115,7 @@ class _PairRadioScreenState extends State<PairRadioScreen> {
   }
 
   Future<void> _checkAdapter() async {
-    final AdapterState state = await widget.scanner.adapterNow();
+    final AdapterState state = await _scanner.adapterNow();
     if (!mounted) return;
     if (state == AdapterState.on) {
       setState(() {
@@ -122,7 +128,7 @@ class _PairRadioScreenState extends State<PairRadioScreen> {
     // Watch for the user switching Bluetooth on in the OS; the flow continues
     // by itself rather than making them come back and press a button.
     await _adapterSub?.cancel();
-    _adapterSub = widget.scanner.adapter.listen((AdapterState s) {
+    _adapterSub = _scanner.adapter.listen((AdapterState s) {
       if (!mounted || s != AdapterState.on || _step != _Step.adapter) return;
       unawaited(_adapterSub?.cancel());
       _adapterSub = null;
@@ -146,7 +152,7 @@ class _PairRadioScreenState extends State<PairRadioScreen> {
       _failure = null;
       _step = _Step.scan;
     });
-    _scanSub = widget.scanner.scan(timeout: widget.scanWindow).listen(
+    _scanSub = _scanner.scan(timeout: widget.scanWindow).listen(
       (List<PairHit> snapshot) {
         if (!mounted) return;
         setState(() {
@@ -172,7 +178,7 @@ class _PairRadioScreenState extends State<PairRadioScreen> {
   Future<void> _open(PairHit hit) async {
     // Stop at the platform first, then drop the listener without waiting on
     // it: a cancel that waits for a queued event must not hold the open.
-    await widget.scanner.stopScan();
+    await _scanner.stopScan();
     unawaited(_scanSub?.cancel());
     _scanSub = null;
     if (!mounted) return;
@@ -339,7 +345,7 @@ class _PairRadioScreenState extends State<PairRadioScreen> {
             const Spacer(),
             TextButton(
               onPressed: () async {
-                await widget.scanner.stopScan();
+                await _scanner.stopScan();
                 unawaited(_scanSub?.cancel());
                 _scanSub = null;
                 if (mounted) setState(() => _scanning = false);
