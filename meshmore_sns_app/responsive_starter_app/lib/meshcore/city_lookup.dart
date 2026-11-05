@@ -1,6 +1,8 @@
 // Copyright (c) 2026 IoTone, Inc.
 // SPDX-License-Identifier: MIT
 import 'dart:async';
+
+import '../util/mesh_log.dart';
 import 'dart:convert';
 import 'dart:math' as math;
 import 'dart:typed_data';
@@ -194,8 +196,7 @@ Future<void> warmCityLookup() async {
   } catch (e) {
     // Asset missing or corrupt — log and degrade. The grid view
     // will fall through to coord-based cell labels.
-    // ignore: avoid_print
-    print('[city_lookup] warm failed: $e');
+    meshLog('city_lookup', 'warm failed: $e');
   }
 }
 

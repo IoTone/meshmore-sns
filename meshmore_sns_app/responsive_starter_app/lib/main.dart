@@ -15,6 +15,7 @@ import 'package:provider/provider.dart';
 
 import 'package:meshmore_sns_app/app/demo_mode.dart';
 import 'package:meshmore_sns_app/app_router.dart';
+import 'package:meshmore_sns_app/app/app_errors.dart';
 import 'package:meshmore_sns_app/app_state_model.dart';
 import 'package:meshmore_sns_app/chat/channel_read_store.dart';
 import 'package:meshmore_sns_app/cue/asset_audio_pack.dart';
@@ -66,6 +67,10 @@ import 'package:meshmore_sns_app/ui/dashboard_pins_controller.dart';
 void main() {
   final WidgetsBinding widgetsBinding =
       WidgetsFlutterBinding.ensureInitialized();
+  // Before anything can throw: a release build has no crash reporter by
+  // decision, so the framework error sink, the async sink and the failed-build
+  // panel are the whole of the app's crash story.
+  AppErrors.install();
   FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
 
   // Attribute the bundled non-code assets (docs, GeoNames, Natural

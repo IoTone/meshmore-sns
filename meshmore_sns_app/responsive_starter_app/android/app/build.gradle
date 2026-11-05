@@ -22,6 +22,20 @@ if (flutterVersionName == null) {
     flutterVersionName = '1.0'
 }
 
+// A release build must be signed with a key the publisher holds. The Flutter
+// template signs release with `signingConfigs.debug`, which produces an APK
+// signed by the public debug key: structurally uploadable, and rejected by
+// Play on the first upload. The keystore and its passwords live outside the
+// repo in `android/key.properties` (git-ignored; see key.properties.example).
+def keystoreProperties = new Properties()
+def keystorePropertiesFile = rootProject.file('key.properties')
+def hasReleaseKeystore = keystorePropertiesFile.exists()
+if (hasReleaseKeystore) {
+    keystorePropertiesFile.withReader('UTF-8') { reader ->
+        keystoreProperties.load(reader)
+    }
+}
+
 android {
     namespace "com.iotone.meshmore_sns_app"
     // API 36 is a store obligation (Play requires it for new uploads), so it
@@ -60,17 +74,45 @@ android {
         versionName flutterVersionName
     }
 
+    signingConfigs {
+        if (hasReleaseKeystore) {
+            release {
+                keyAlias keystoreProperties['keyAlias']
+                keyPassword keystoreProperties['keyPassword']
+                storeFile file(keystoreProperties['storeFile'])
+                storePassword keystoreProperties['storePassword']
+            }
+        }
+    }
+
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig signingConfigs.debug
+            // Without a keystore the release variant is left unsigned rather
+            // than signed with the debug key: an unsigned artifact fails
+            // loudly at upload, a debug-signed one fails later and worse.
+            signingConfig hasReleaseKeystore ? signingConfigs.release : null
         }
     }
 }
 
 flutter {
     source '../..'
+}
+
+// Ask for a release artifact without a keystore and the build stops here,
+// naming the file it looked for. The check runs on the task graph, so a debug
+// build, a test run and `flutter run` are unaffected.
+gradle.taskGraph.whenReady { graph ->
+    def wantsRelease = graph.allTasks.any { task ->
+        task.name.toLowerCase().contains('release')
+    }
+    if (wantsRelease && !hasReleaseKeystore) {
+        throw new GradleException(
+            "Release signing needs android/key.properties with storeFile, " +
+            "storePassword, keyAlias and keyPassword; copy " +
+            "android/key.properties.example and fill it in. " +
+            "Refusing to build a release signed with the debug key.")
+    }
 }
 
 dependencies {

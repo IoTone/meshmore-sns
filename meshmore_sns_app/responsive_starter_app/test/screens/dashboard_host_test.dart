@@ -102,8 +102,10 @@ void main() {
     expect(find.byType(StudioDashboard), findsOneWidget,
         reason: 'kDefaultPreset is STUDIO');
     expect(find.byType(NervDashboard), findsNothing);
+    expect(find.byType(DashboardScreen), findsNothing);
+    expect(find.text('NERV'), findsNothing);
 
-    // Switch to NERV → the telemetry-grid re-imagining.
+    // Switch to NERV -> the telemetry-grid re-imagining.
     await tc.setPreset(MmThemePreset.nerv);
     await t.pumpAndSettle();
     expect(find.byKey(dashboardKey), findsOneWidget);
@@ -112,9 +114,10 @@ void main() {
     // The icon-only Bluetooth button is named for screen readers.
     expect(find.byTooltip('Device'), findsOneWidget);
 
-    // Back to SEELE → the monolith, still under the same view key.
+    // Back to SEELE -> the monolith, still under the host's key.
     await tc.setPreset(MmThemePreset.seele);
     await t.pumpAndSettle();
+    expect(find.byKey(dashboardKey), findsOneWidget);
     expect(find.byType(DashboardScreen), findsOneWidget);
   });
 
