@@ -254,6 +254,36 @@ changes, not by topic.
     complete with ≤3 repairs, and ≥80 % of one-packet texts still arrive with 10 concurrent senders. **Not yet run.**
     Remaining research: ITM/DEM never exercised; 40 of the 52 firmware forks unread; 13 telemetry sites unqueried.
 
+## 10. Residue
+
+What is not built or not verified, in the register's own states, with the reason and what would close it. A row here
+is a named gap, not a silent one.
+
+| Item | State | Why it is still open, and what closes it |
+| --- | --- | --- |
+| Photo reference on the wire | OPEN | Nothing writes a `PlacePhotoRef`, so no place names a payload id to claim and the photo section stays hidden even though the inbound consumer is built. Closes with a decision on where the reference travels (report text or a follow-up datagram), then one wire field and one test |
+| Key-bound confirm/refute over a DM | OPEN | The grammar and tally support a key-bound reply; no surface sends a place reply on a DM thread, so every reply the app emits reads *claimed*. Closes with a place opened from the thread plus a sender bound to that peer |
+| Report bundle has no share action | TODO | It writes and copies the JSON; the share channel exists (`lib/util/share.dart`) and this flow does not use it. Closes with one call beside the copy action |
+| Forwarding a message to another thread | TODO | Reply, copy and delete exist; no composer path takes an existing message into another thread |
+| Settings entry for the encrypted export | TODO | The export and its share path exist; the only entry is a thread action. Closes with one Settings row |
+| Storage total and a cleanup action | TODO | Every store states its own bound; no single place shows growth or offers a sweep |
+| Two-profile radio2 control | SPECIFIED | Measured contract exists (96–99 % primary, 96–100 % secondary); the app must say what it costs. Closes with a screen and the cost copy |
+| Identity replacement carry-over | SPECIFIED | D8.7: a changed radio key is a new radio with a one-tap carry-over of tags, favourites and blocks. Closes with the carry-over flow |
+| Multi-radio ownership | SPECIFIED | D8.9: one active session, explicit switch, an in-flight send reads unknown never failed |
+| Request-slot ordering | SPECIFIED | D8.26: one live peer request plus eight remembered guards, user-initiated waits visibly. Closes with the queue in the controller |
+| Firmware OTA screen from the app | SPECIFIED | Status only; no install start until the queue-drain handling exists (D8.19) |
+| Codec-complete commands with no UI | SPECIFIED | D8.15: nine scheduled, twelve refused |
+| `notify.<selector>` grammar | SPECIFIED | D8.24's selector grammar is not in the firmware docs, so the whitelist stops at buzzer and vibration. Closes by reading the grammar from firmware source |
+| Recorded voice messages | SPECIFIED | Codec2 1200 framing and limits are written; the codec dependency is not in the build |
+| Broadcast media scoping | SPECIFIED | D8.1: inherit and show the radio's default flood scope; the warning copy is owed |
+| Java port opcode coverage | BUILT for 24 of 45 | The 21 unmodelled opcodes degrade to `UnsupportedFrame`. Closes with one case and one vector each (`meshmore-sns-protocol-coverage.md` §7) |
+| M1 AVIF encode timing and peak RSS | BLOCKED on a low-end device | Protocol written in plan §9.14: median at most a third of transfer time, p95 RSS at most 64 MB. Host timings are smoke numbers, not the measurement |
+| M2 meshbench determinism | BLOCKED on a GPU path this box lacks | Protocol written; same seed twice must be byte-identical |
+| M3 bulk-transfer reliability | BLOCKED on the harness | Protocol written; 19 of 20 runs with three repairs |
+| 16 KB page support for `libavif_native.so` | BLOCKED on a native rebuild, deadline 1 Feb 2027 | D11.2: the library's load segments are 4 KB aligned. Closes with a libavif build using `-Wl,-z,max-page-size=16384`, a vendor rebuild, or dropping media before the date |
+| Device matrix, roughly forty behaviours | BLOCKED on the phone's PIN keyguard | Pairing, MTU, notification while backgrounded, tap-through after a cold start, reconnect after a power cycle, radio2 attribution, advert location, telemetry, channel send and receive, media pacing, SOS with the screen locked, places on air, geofence crossings, trail across a restart. Every one is proven by test or named as device-unverified in its row above; none is proven on hardware yet |
+| iOS | AGAINST this phase | Deprioritised by decision, not by omission |
+
 ---
 
 *This register is the list. If a feature is missing here, it is missing from the plan — say so rather than starting a
