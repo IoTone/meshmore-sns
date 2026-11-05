@@ -18,6 +18,7 @@ import 'channel_data.dart';
 import 'constants.dart';
 import 'decode_error.dart';
 import 'inbound.dart';
+import 'text_budget.dart';
 
 /// Encodes app→device command frames and decodes device→app frames.
 ///
@@ -79,6 +80,14 @@ abstract final class MeshcoreFrameCodec {
     required String text,
     int txtType = kTxtTypePlain,
   }) {
+    final int bytes = ChannelTextLimits.bytesOf(text);
+    if (bytes > ChannelTextLimits.maxTextBytes) {
+      throw ChannelTextException(
+        ChannelTextRefusal.textTooLong,
+        actual: bytes,
+        maximum: ChannelTextLimits.maxTextBytes,
+      );
+    }
     return (FrameBuilder()
           ..u8(MeshcoreCommand.sendChannelMessage.code)
           ..u8(txtType)

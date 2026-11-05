@@ -182,11 +182,23 @@ class MeshcoreConnection {
   }
 
   /// Send a raw command frame. Throws [StateError] if the link is not
-  /// connected.
+  /// connected, and [FrameLengthException] if the frame is larger than one
+  /// frame may be.
+  ///
+  /// The cap is the firmware's frame ceiling ([ChannelTextLimits.maxFrameBytes],
+  /// `MAX_FRAME_SIZE` 176). Writing one byte more does not fail here: it fails
+  /// inside the platform's GATT write, which surfaces as a generic send error
+  /// indistinguishable from a lost packet. Refusing first keeps the reason.
   Future<void> sendCommand(Uint8List frame) {
     final MeshcoreTransport? t = _transport;
     if (t == null || !t.isConnected) {
       throw StateError('Meshcore link is not connected');
+    }
+    if (frame.length > ChannelTextLimits.maxFrameBytes) {
+      throw FrameLengthException(
+        actual: frame.length,
+        maximum: ChannelTextLimits.maxFrameBytes,
+      );
     }
     return t.send(frame);
   }

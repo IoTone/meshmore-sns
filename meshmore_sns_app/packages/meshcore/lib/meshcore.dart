@@ -14,6 +14,7 @@ export 'src/codec/decode_error.dart';
 export 'src/codec/frame_codec.dart';
 export 'src/codec/inbound.dart';
 export 'src/codec/mesh_carry.dart';
+export 'src/codec/text_budget.dart';
 export 'src/crypto/channel_crypto.dart';
 export 'src/crypto/dm_crypto.dart';
 export 'src/crypto/identity_crypto.dart';
