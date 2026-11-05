@@ -578,10 +578,6 @@ class AppLocalizationsEn extends AppLocalizations {
       'What is stored, what leaves the device, and why each permission is asked for';
 
   @override
-  String get termsReadOnlySubtitle =>
-      'The text you agreed to. Reached from Settings, it is read-only.';
-
-  @override
   String get aboutCopyright => 'Copyright (c) 2026 IoTone, Inc.';
 
   @override
@@ -815,21 +811,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get nodesTagFilter => 'Tags';
 
   @override
-  String nodesTagFilterN(int count) {
-    return 'Tags ($count)';
-  }
-
-  @override
-  String nodesFilterLastSeen(String label) {
-    return 'Last seen · $label';
-  }
-
-  @override
-  String nodesFilterWithin(String label) {
-    return 'Within · $label';
-  }
-
-  @override
   String get nodesAgeAny => 'Any';
 
   @override
@@ -871,9 +852,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get nodesStatusOffline =>
       'Not connected — Settings → Diagnostics & connect';
-
-  @override
-  String get nodesInRangeBadge => 'IN RANGE';
 
   @override
   String get nodesFarBadge => 'FAR';
@@ -996,28 +974,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get gridViewPicker => 'Switch map view';
 
   @override
-  String get gridViewRadialShort => 'RADAR';
-
-  @override
-  String get gridViewGlobeShort => 'GLOBE';
-
-  @override
-  String get gridViewEqualGridShort => 'CELLS';
-
-  @override
-  String get gridViewStreetMapShort => 'ROADS';
-
-  @override
   String get gridViewFabric => 'Fabric survey';
 
   @override
-  String get gridViewFabricShort => 'MESH';
-
-  @override
   String get gridViewElevation => 'Fujiさん';
-
-  @override
-  String get gridViewElevationShort => 'FUJI';
 
   @override
   String get fujiLegendTitle => 'FUJIさん';
@@ -1968,25 +1928,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get gridViewTree => 'Mesh tree';
 
   @override
-  String get gridViewTreeShort => 'TREE';
-
-  @override
   String get gridViewSnsCells => 'SNS cells (heat)';
-
-  @override
-  String get gridViewSnsCellsShort => 'SNS';
 
   @override
   String get gridViewWeather => 'Weather (environment)';
 
   @override
-  String get gridViewWeatherShort => 'WX';
-
-  @override
   String get gridViewMeshbook => 'Meshbook (channel activity)';
-
-  @override
-  String get gridViewMeshbookShort => 'MBk';
 
   @override
   String get meshbookTitle => 'MESHBOOK';
@@ -2095,9 +2043,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String weatherReporting(int count) {
     return '$count reporting';
   }
-
-  @override
-  String get docsHubTitle => 'Docs';
 
   @override
   String get docsHubSubtitle =>
@@ -3028,10 +2973,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get deviceToastInvalidRadio => 'Enter valid numbers for freq/BW/SF/CR';
-
-  @override
-  String get deviceToastRadioSent =>
-      'Radio params sent — restart/observe the device to confirm';
 
   @override
   String get deviceLocPermDenied =>

@@ -554,9 +554,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get termsSettingsSubtitle => '保存されるもの、端末外に出るもの、各権限が必要な理由';
 
   @override
-  String get termsReadOnlySubtitle => '同意した文章です。設定から開いた場合は閲覧のみです。';
-
-  @override
   String get aboutCopyright => 'Copyright (c) 2026 IoTone, Inc.';
 
   @override
@@ -782,21 +779,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get nodesTagFilter => 'タグ';
 
   @override
-  String nodesTagFilterN(int count) {
-    return 'タグ ($count)';
-  }
-
-  @override
-  String nodesFilterLastSeen(String label) {
-    return '最終受信 · $label';
-  }
-
-  @override
-  String nodesFilterWithin(String label) {
-    return '距離 · $label';
-  }
-
-  @override
   String get nodesAgeAny => '指定なし';
 
   @override
@@ -830,9 +812,6 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get nodesStatusOffline => '未接続 — 設定 → 診断で接続';
-
-  @override
-  String get nodesInRangeBadge => '範囲内';
 
   @override
   String get nodesFarBadge => '遠距離';
@@ -949,28 +928,10 @@ class AppLocalizationsJa extends AppLocalizations {
   String get gridViewPicker => 'マップ表示を切替';
 
   @override
-  String get gridViewRadialShort => 'レーダー';
-
-  @override
-  String get gridViewGlobeShort => 'グローブ';
-
-  @override
-  String get gridViewEqualGridShort => 'セル';
-
-  @override
-  String get gridViewStreetMapShort => 'ロード';
-
-  @override
   String get gridViewFabric => 'ファブリック調査';
 
   @override
-  String get gridViewFabricShort => 'メッシュ';
-
-  @override
   String get gridViewElevation => 'Fujiさん';
-
-  @override
-  String get gridViewElevationShort => '富士';
 
   @override
   String get fujiLegendTitle => 'Fujiさん';
@@ -1888,25 +1849,13 @@ class AppLocalizationsJa extends AppLocalizations {
   String get gridViewTree => 'メッシュツリー';
 
   @override
-  String get gridViewTreeShort => 'ツリー';
-
-  @override
   String get gridViewSnsCells => 'SNS セル（ヒート）';
-
-  @override
-  String get gridViewSnsCellsShort => 'SNS';
 
   @override
   String get gridViewWeather => '気象（環境）';
 
   @override
-  String get gridViewWeatherShort => 'WX';
-
-  @override
   String get gridViewMeshbook => 'メッシュブック（チャンネル活動）';
-
-  @override
-  String get gridViewMeshbookShort => 'MBk';
 
   @override
   String get meshbookTitle => 'メッシュブック';
@@ -2015,9 +1964,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String weatherReporting(int count) {
     return '$count 件が報告中';
   }
-
-  @override
-  String get docsHubTitle => 'ドキュメント';
 
   @override
   String get docsHubSubtitle => 'プロトコル・ファームウェア・アプリ・実地メモをオフラインで。';
@@ -2914,9 +2860,6 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get deviceToastInvalidRadio => 'freq/BW/SF/CR に有効な数値を入力';
-
-  @override
-  String get deviceToastRadioSent => 'ラジオパラメータを送信 — デバイスを再起動 / 観測して確認';
 
   @override
   String get deviceLocPermDenied => 'スマートフォン GPS 取得には位置情報の許可が必要です。';

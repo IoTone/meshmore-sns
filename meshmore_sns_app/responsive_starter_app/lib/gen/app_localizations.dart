@@ -1082,12 +1082,6 @@ abstract class AppLocalizations {
   /// **'What is stored, what leaves the device, and why each permission is asked for'**
   String get termsSettingsSubtitle;
 
-  /// No description provided for @termsReadOnlySubtitle.
-  ///
-  /// In en, this message translates to:
-  /// **'The text you agreed to. Reached from Settings, it is read-only.'**
-  String get termsReadOnlySubtitle;
-
   /// No description provided for @aboutCopyright.
   ///
   /// In en, this message translates to:
@@ -1502,24 +1496,6 @@ abstract class AppLocalizations {
   /// **'Tags'**
   String get nodesTagFilter;
 
-  /// No description provided for @nodesTagFilterN.
-  ///
-  /// In en, this message translates to:
-  /// **'Tags ({count})'**
-  String nodesTagFilterN(int count);
-
-  /// No description provided for @nodesFilterLastSeen.
-  ///
-  /// In en, this message translates to:
-  /// **'Last seen · {label}'**
-  String nodesFilterLastSeen(String label);
-
-  /// No description provided for @nodesFilterWithin.
-  ///
-  /// In en, this message translates to:
-  /// **'Within · {label}'**
-  String nodesFilterWithin(String label);
-
   /// No description provided for @nodesAgeAny.
   ///
   /// In en, this message translates to:
@@ -1585,12 +1561,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Not connected — Settings → Diagnostics & connect'**
   String get nodesStatusOffline;
-
-  /// No description provided for @nodesInRangeBadge.
-  ///
-  /// In en, this message translates to:
-  /// **'IN RANGE'**
-  String get nodesInRangeBadge;
 
   /// No description provided for @nodesFarBadge.
   ///
@@ -1808,53 +1778,17 @@ abstract class AppLocalizations {
   /// **'Switch map view'**
   String get gridViewPicker;
 
-  /// No description provided for @gridViewRadialShort.
-  ///
-  /// In en, this message translates to:
-  /// **'RADAR'**
-  String get gridViewRadialShort;
-
-  /// No description provided for @gridViewGlobeShort.
-  ///
-  /// In en, this message translates to:
-  /// **'GLOBE'**
-  String get gridViewGlobeShort;
-
-  /// No description provided for @gridViewEqualGridShort.
-  ///
-  /// In en, this message translates to:
-  /// **'CELLS'**
-  String get gridViewEqualGridShort;
-
-  /// No description provided for @gridViewStreetMapShort.
-  ///
-  /// In en, this message translates to:
-  /// **'ROADS'**
-  String get gridViewStreetMapShort;
-
   /// No description provided for @gridViewFabric.
   ///
   /// In en, this message translates to:
   /// **'Fabric survey'**
   String get gridViewFabric;
 
-  /// No description provided for @gridViewFabricShort.
-  ///
-  /// In en, this message translates to:
-  /// **'MESH'**
-  String get gridViewFabricShort;
-
   /// No description provided for @gridViewElevation.
   ///
   /// In en, this message translates to:
   /// **'Fujiさん'**
   String get gridViewElevation;
-
-  /// No description provided for @gridViewElevationShort.
-  ///
-  /// In en, this message translates to:
-  /// **'FUJI'**
-  String get gridViewElevationShort;
 
   /// No description provided for @fujiLegendTitle.
   ///
@@ -3404,23 +3338,11 @@ abstract class AppLocalizations {
   /// **'Mesh tree'**
   String get gridViewTree;
 
-  /// No description provided for @gridViewTreeShort.
-  ///
-  /// In en, this message translates to:
-  /// **'TREE'**
-  String get gridViewTreeShort;
-
   /// No description provided for @gridViewSnsCells.
   ///
   /// In en, this message translates to:
   /// **'SNS cells (heat)'**
   String get gridViewSnsCells;
-
-  /// No description provided for @gridViewSnsCellsShort.
-  ///
-  /// In en, this message translates to:
-  /// **'SNS'**
-  String get gridViewSnsCellsShort;
 
   /// No description provided for @gridViewWeather.
   ///
@@ -3428,23 +3350,11 @@ abstract class AppLocalizations {
   /// **'Weather (environment)'**
   String get gridViewWeather;
 
-  /// No description provided for @gridViewWeatherShort.
-  ///
-  /// In en, this message translates to:
-  /// **'WX'**
-  String get gridViewWeatherShort;
-
   /// No description provided for @gridViewMeshbook.
   ///
   /// In en, this message translates to:
   /// **'Meshbook (channel activity)'**
   String get gridViewMeshbook;
-
-  /// No description provided for @gridViewMeshbookShort.
-  ///
-  /// In en, this message translates to:
-  /// **'MBk'**
-  String get gridViewMeshbookShort;
 
   /// No description provided for @meshbookTitle.
   ///
@@ -3637,12 +3547,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count} reporting'**
   String weatherReporting(int count);
-
-  /// No description provided for @docsHubTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Docs'**
-  String get docsHubTitle;
 
   /// No description provided for @docsHubSubtitle.
   ///
@@ -5209,12 +5113,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Enter valid numbers for freq/BW/SF/CR'**
   String get deviceToastInvalidRadio;
-
-  /// No description provided for @deviceToastRadioSent.
-  ///
-  /// In en, this message translates to:
-  /// **'Radio params sent — restart/observe the device to confirm'**
-  String get deviceToastRadioSent;
 
   /// No description provided for @deviceLocPermDenied.
   ///
