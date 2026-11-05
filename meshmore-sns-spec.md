@@ -1275,7 +1275,7 @@ While Meshcore protocol is open source, the client is not open source.  We want 
 ### Revision log
 
 Entries from here down are change records, not requirements. The block
-R88–R112 is newest first. Older entries below it were appended where they
+R88–R113 is newest first. Older entries below it were appended where they
 were written, so their numbering is not monotonic. A few records live in
 the sibling specs: R93 in `meshmore-sns-maps-spec.md`, R60 in
 `meshmore-sns-tools-spec.md`, R79 in `meshmore_sns_app/STATUS.md`.
@@ -1294,7 +1294,7 @@ the sibling specs: R93 in `meshmore-sns-maps-spec.md`, R60 in
   language, and two counters for frames the decoder could not finish — truncated, and trailing bytes —
   which used to be dropped in silence by a `DecodeFailure` nothing consumed.
 
-- R110: **a channel tag has one canonical form.** The key is a hash of the
+- R113: **a channel tag has one canonical form.** The key is a hash of the
   literal name, so `emergency` and `#emergency` derived two different keys for
   what a person means as one channel, and only the prefixed form matches the
   key everyone else derives (`docs/companion_protocol.md`, Channel Management:

@@ -139,6 +139,22 @@ emits `0x91`. Both are W10 measurements, and the matrix is where their result
 lands. Until then the app's behaviour is the capability probe's: refuse, with
 the reason, not attempt.
 
+### The Java port's opcode coverage, measured 2026-11-05
+
+`libmeshcore` is a host-side mirror of the wire contract, not shipped to the phone, and it decodes **24** of the
+**45** opcodes the Dart codec models. The 21 it does not model: `0x0b`, `0x0e`, `0x0f`, `0x13`, `0x14`, `0x16`,
+`0x17`, `0x18`, `0x19`, `0x81`, `0x84`, `0x85`, `0x86`, `0x87`, `0x89`, `0x8a`, `0x8d`, `0x8e`, `0x8f`, `0x90`,
+`0x91` (counted with `grep -oE "case 0x.."` on `frame_codec.dart` and `MeshcoreFrameCodec.java`).
+
+This is a named divergence, not a mis-decode: an unmodelled opcode becomes `UnsupportedFrame`, which the decode
+contract already treats as "not a failure, not a message", so a Java consumer of an unmodelled push sees nothing
+rather than something wrong. The golden vectors (`m1`–`m6`) still pass because they cover only the modelled set.
+
+What closes it: adding a case per missing opcode in `MeshcoreFrameCodec.decodeBody` with the same field layout and
+the same consumption rule as the Dart side, and extending the shared vector file with one frame per opcode so the
+two implementations cannot drift again. Until then, anything built on the Java port (a desktop or host tool) must
+treat those codes as unknown rather than assume it can read them.
+
 ## 8. Sources
 
 - `examples/companion_radio/MyMesh.cpp` @ `companion-v1.17.1` (`d929643`):

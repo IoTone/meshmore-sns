@@ -86,15 +86,18 @@ and an open set produces one icon per user.
 ## 5. The deterministic id
 
 ```
-id = hex(sha256(pubkey ‖ latE7 ‖ lonE7 ‖ type))[0:8]
+id = hex(sha256(pubkey ‖ latE6 ‖ lonE6 ‖ type))[0:8]
 ```
 
 - **`pubkey`** is the reporter's 32-byte key. Where the report arrived as channel text there is no key — the
   sender's name is all the text carries — so the id uses the name's bytes and is marked `unkeyed`. An
   unkeyed id is still deterministic, but two reporters who share a name collide. Copy says "from a channel,
   identity is a name".
-- **`latE7` / `lonE7`** are the truncated coordinate at six decimal places, as signed 32-bit integers. They
-  are the *truncated* values that travel, so every receiver computes from the same digits.
+- **`latE6` / `lonE6`** are the truncated coordinate at six decimal places, as signed 32-bit integers. The
+  name is the precision, not a habit: an earlier draft of this spec spelled the field `latE7` while its own
+  text and the implementation used six places, and a second implementation reading the name literally would
+  have derived a different id. They are the *truncated* values that travel, so every receiver computes from
+  the same digits.
 - **`type`** is the token's bytes. Two types at one coordinate are two places, which is correct: a hazard at
   a water point is not the water point.
 - **No time.** Decided D8.2. A renewal keeps the id and changes the timestamp; a time bucket would make

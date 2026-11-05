@@ -296,9 +296,13 @@ Report back
 
 ## 6. Open questions to close by investigation (register §9)
 
-Unkeyed-place "keyed only" filter · block-vs-queue interaction at send time · whether `dm.one_key` is discoverable
-before a send · the three measurement protocols (§9.14 M1-M3) · CDM vs permanent FGS · RELRO padding on the current
-plugin set. Each is a child task with a written answer, not a guess.
+Closed since this list was written: CDM (refused with reasons, so the permanent FGS stays), RELRO padding on the
+current plugin set (measured: every shipped `.so` passes 16 KB except the image codec's, D11.2), and the `0x3E` blob
+byte (D8.22).
+
+Still open, each a child task with a written answer rather than a guess: the unkeyed-place "keyed only" filter ·
+block-vs-queue interaction at send time · whether `dm.one_key` is discoverable before a send · the three measurement
+protocols (§9.14 M1-M3, all needing hardware) · which map-pack source is permitted for bulk fetch.
 
 ## 7. Tracker
 
@@ -308,24 +312,26 @@ plugin set. Each is a child task with a written answer, not a guess.
 | W0 docs commit | **done** | supervisor | `e86a712` on `feat/ldmux-gateway` |
 | W0 branch rename + dev re-port | **done** | worker | rename `feat/app-completion`; `origin/dev` merged (`c393d26`), then ported per R109 (§2b): shell paging + grid Swipe ⇄ Pan + shared claim, EN/JA strings, `test/shell/home_shell_test.dart` 34 pass / 12 s |
 | W0 gateway removal + doc correction | **done** | worker | `R110`: 8 app files removed or rewritten, 2 packages deleted, Binder service + permission + method channel gone, 6 docs corrected, D10.1 in the scope of record |
-| W1 defects | not started | — | — |
-| W2 skin tokens | **done** | worker | branch `w2-tokens`: roles + ladders + radius constants, `mm_ratchet_test.dart` (302 type sizes / 46 files, 32 colours / 11), shared widgets and two pattern-setters migrated, `mm_type_migration_test.dart`; full suite 1027 passed / 75 s, analyze 2 known |
-| W3 protocol | not started | — | — |
-| W4 messenger | not started | — | — |
-| W5 radio | not started | — | — |
-| W6 places | not started | — | — |
-| W7 media | not started | — | — |
-| W8 field ops | not started | — | — |
-| W9 store + breadth | not started | — | — |
-| W10 on-device matrix | not started | — | — |
-| W11 docs sync | continuous | — | — |
+| W1 defects | **done** | worker | D1 `appTargetVer` 3 and the V3 decode (`57bf62e`), D2 `RxVia`, D3 strict consumption + 16/32-byte PSK, D4 MTU read/refuse below 179 with typed copy (R111), D5 reply table, D6 real interop replay from bench captures; D2 `0x1B` now carries the profile byte (R112) |
+| W2 skin tokens | **done** | worker | branch `w2-tokens`: roles + ladders + radius constants, `mm_ratchet_test.dart` (302 type sizes / 46 files, 32 colours / 11), shared widgets and two pattern-setters migrated; then the five largest screens (`w2b-screens`, 318 -> 204 literals) |
+| W3 protocol | **done, one gap named** | worker | `0x3E` encoder + inbound dispatch (`channelDatagramStream`), command correlation, conformance suite (`conformance_test.dart`: four ceilings, `path_len` matrix, airtime, encoder ratchet), capability by probe, `0x91`/`0x42`/`0x4A`-`0x4B` gates. **Gap:** nothing subscribes to the datagram stream yet, so received media is not reassembled (register §1 row) |
+| W4 messenger | **done, three gaps named** | worker | notifications (three OS channels, dedupe, per-channel bundle, mentions-only), sealed store + one migration + backup exclusion + passphrase export, composer budget + drafts, search + unread + retention, block store + report bundle, per-thread history/export/truncation, the four delivery rules as four branches. **Gaps:** no share sheet, forwarding, storage total |
+| W5 radio | **done** | worker | four stranding params as one ordered transaction with a single-use revert, refusal copy naming the parameter, radio health readout with a source per line. **Open:** radio2 control and disclosure (register §3) |
+| W6 places | **done** | worker | codec + id + TTL ladder + budget, store, create/detail/history sheets, layer with clustering and countdown, directions ladder, echoes, ledger export, block deletion. **Gap:** key-bound confirm/refute reply path (register §4 row) |
+| W7 media | **done on the send side, inbound gap named** | worker | chunking + reassembly + salted resends + 350 ms pacing + table-full backpressure + erasure FEC, `avif_native` codec (D11.1), composer/receive surfaces, place photos, Public gate. **Gaps:** the inbound consumer, and D11.2's 16 KB page failure |
+| W8 field ops | **done, device-unverified** | worker | SOS + check-in engines and screens, position history, trail + GPX, geofence hysteresis with its band drawn, inter-node relationship, coverage pacing and screen, operational export. Every row needs the phone |
+| W9 store + breadth | **done in part** | worker | API 36 pinned, 16 KB check script, connectedDevice FGS guard, in-app pair flow, CDM refused with reasons, terms/privacy copy, demo mode, error catalogue, three clocks, degraded states, interop matrix, a11y floors, diagnostics redaction, EN+JA lockstep test. **Remaining:** the declaration video, the Play data-safety form, export classification by the publisher, icon-only semantics inside screens |
+| W10 on-device matrix | **blocked on the phone's PIN** | — | The build installs and the process survives the gateway removal, and the radio link keeps its link loop (`[meshcore.loc]` every 60 s), but the keyguard blocks every screen-level check. Every W8 row, tap-through, Doze SOS, MTU per radio, and the on-air paths wait for an unlocked phone |
+| W11 docs sync | **done 2026-11-05** | worker | register rows moved to BUILT with code evidence, R113 collision resolved, tracker and STATUS/README measured numbers, places id field renamed to its real precision, Java port divergence recorded |
+| W12 review and integration | **in progress** | reviewer | Two adversarial reviewers over `origin/dev...HEAD` returned BLOCK on four P1s each: media airtime arithmetic (~150x understated), no inbound media consumer, a per-call `EncryptedStore` losing records, notifications suppressed after one Chat visit, a place echo re-anchoring its TTL, an unpaced SOS catch-up burst, and no export leaving the app. The fixes are the wave in flight; the P2s are recorded in the register rows they touch |
 
 ## 8. Questions that stay with the owner (ask only when blocked)
 
-1. Branch: work continues on `feat/ldmux-gateway` renamed to `feat/app-completion`, or a fresh branch from `origin/dev`
-   with the local line merged in? (Current plan: rename in place, so no history is lost.)
-2. Is anything in the removal list above meant to survive for another client (a second app, a desktop tool) that is
-   not LDMUX? If yes, name it and the capability it needs; otherwise the removal is total.
-3. Push policy: is `feat/app-completion` allowed to be pushed to `origin`, or does it stay local until reviewed?
-4. On-device work that needs hands: nothing yet. Later, W10 will ask for a radio reflash or a PIN only after every
-   software-only route is exhausted.
+1. ~~Branch~~ **answered and applied:** `feat/ldmux-gateway` was renamed to `feat/app-completion` in place, and
+   `origin/dev` was merged into it, so no history was lost.
+2. ~~Anything meant to survive the gateway removal for another client~~ **answered by evidence:** nothing consumes
+   the handoff, so the removal was total and only the raw send stayed.
+3. **Push policy: still open.** Nothing has been pushed and the branch is local. Said once, here, and not asked again.
+4. On-device work that needs hands: **the phone's PIN.** Every W10 check needs the keyguard cleared. The software-only
+   routes are exhausted, so this is the one interruption the plan permits. A second node and a radio reflash may
+   follow once a screen-level check can run.

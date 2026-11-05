@@ -7,10 +7,15 @@ Offline-first, theme-driven, with a hyperlocal radar grid, per-channel chat,
 1:1 DMs, and a device-first → phone-fallback location model.
 
 > **Status — in development.** Source is here for review and contribution;
-> there's no public release channel yet. 1014 widget/unit tests passing,
-> `flutter analyze` reports no errors (two pre-existing
-> `unawaited_return_in_try_block` warnings in `lib/maps/maps_controller.dart`). Android FGS path
-> for R17 is implemented but **unverified on-device** in our sandbox
+> there's no public release channel yet. 1645 widget/unit tests passing and
+> `flutter analyze` clean apart from two pre-existing
+> `unawaited_return_in_try_block` warnings in `lib/maps/maps_controller.dart`
+> (both measured 2026-11-05). A debug APK builds, installs and keeps the radio
+> link alive. **What is still owed is device verification**: every screen-level,
+> on-air and background path needs a run on an unlocked phone, and two gaps are
+> open in code: a received channel datagram has no consumer yet, and the bundled
+> image codec's native library fails the 16 KB page requirement (deadline
+> 1 Feb 2027).
 
 ---
 
@@ -44,7 +49,7 @@ SEELE, DR Pop, Recon) with palette anchors and per-theme rendering plans.
 
 The requirements, the change record and the sibling specs:
 
-- **Requirements + change record (R1–R108):** [`meshmore-sns-spec.md`](./meshmore-sns-spec.md)
+- **Requirements + change record (R1–R113):** [`meshmore-sns-spec.md`](./meshmore-sns-spec.md)
 - **UX implementation spec (U0–U15, six skins):** [`meshmore-sns-UX-spec.md`](./meshmore-sns-UX-spec.md)
 - **Offline maps (R61, R93):** [`meshmore-sns-maps-spec.md`](./meshmore-sns-maps-spec.md)
 - **Tools surface (R60):** [`meshmore-sns-tools-spec.md`](./meshmore-sns-tools-spec.md)
@@ -117,7 +122,7 @@ codec directly.
 ```
 meshmore-sns/
 ├── README.md                       ← this file
-├── meshmore-sns-spec.md            ← requirements + change record (R1–R108)
+├── meshmore-sns-spec.md            ← requirements + change record (R1–R113)
 ├── meshmore-sns-UX-spec.md         ← U0–U15 implementation plan
 ├── meshmore-sns-maps-spec.md       ← offline maps (R61, R93)
 ├── meshmore-sns-tools-spec.md      ← Tools surface (R60)
