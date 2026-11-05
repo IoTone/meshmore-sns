@@ -4430,6 +4430,12 @@ class AppLocalizationsJa extends AppLocalizations {
   String get sosImSafeHint => '[SAFE] を1通送って繰り返しを止めます。';
 
   @override
+  String get sosStopRepeats => '繰り返しを停止';
+
+  @override
+  String get sosStopHint => 'この端末での繰り返しを止めます。送信しないため、誰にも伝わりません。';
+
+  @override
   String get sosDefaultWords => '助けが必要です';
 
   @override

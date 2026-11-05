@@ -1939,6 +1939,8 @@
   "@sosRemaining": {"placeholders": {"count": {"type": "int"}, "total": {"type": "int"}}},
   "sosImSafe": "I'm safe",
   "sosImSafeHint": "Sends one [SAFE] and stops the repeats.",
+  "sosStopRepeats": "Stop the repeats",
+  "sosStopHint": "Stops the repeats on this phone. Nothing is sent, so nobody is told.",
   "sosDefaultWords": "I need help",
   "sosClaimedBy": "{name} claims to have seen this, on the channel. The alarm keeps going.",
   "@sosClaimedBy": {"placeholders": {"name": {"type": "String"}}},

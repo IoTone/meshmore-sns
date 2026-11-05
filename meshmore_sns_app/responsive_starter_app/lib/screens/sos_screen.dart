@@ -414,6 +414,20 @@ class _Running extends StatelessWidget {
         Text(l.sosImSafeHint,
             style: TextStyle(
                 color: skin.color.fgMuted, fontSize: skin.type.sizeSm)),
+        SizedBox(height: skin.space.step(3)),
+        // §8's `--cancel-->`: stop the repeats here without telling the mesh.
+        // It is separate from "I'm safe" because the two say opposite things
+        // to everyone listening, and only the user knows which is true.
+        MmAction(
+          key: const ValueKey<String>('sos-cancel'),
+          icon: Icons.stop,
+          label: l.sosStopRepeats,
+          onPressed: () => sos.cancel(),
+        ),
+        SizedBox(height: skin.space.step(2)),
+        Text(l.sosStopHint,
+            style: TextStyle(
+                color: skin.color.fgMuted, fontSize: skin.type.sizeSm)),
       ],
     );
   }

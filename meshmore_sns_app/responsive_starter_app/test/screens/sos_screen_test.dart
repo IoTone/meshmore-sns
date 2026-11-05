@@ -157,6 +157,33 @@ void main() {
     await _settle(t);
   });
 
+  testWidgets('cancelling mid-run stops the next send, and says nothing was sent',
+      (WidgetTester t) async {
+    await t.binding.setSurfaceSize(const Size(400, 900));
+    addTearDown(() => t.binding.setSurfaceSize(null));
+    expect(sos.arm(words: 'trail washed out'), isNull);
+    clock.now = clock.now.add(SosEngine.hold);
+    expect(sos.confirm(), isNull);
+    expect(fake.sent.where((Uint8List f) => f.first == 0x03), hasLength(1));
+
+    await t.pumpWidget(_host(mc, sos, tc));
+    await t.pump();
+    await t.tap(find.byKey(const ValueKey<String>('sos-cancel')));
+    await t.pump();
+
+    expect(sos.state, SosState.cancelled);
+    expect(find.byKey(const ValueKey<String>('sos-ended-pill')), findsOneWidget);
+    // §8's `--cancel-->` says nothing on air: the second send at 60 s never
+    // happens, whatever the clock does afterwards.
+    final int sentBefore = fake.sent.where((Uint8List f) => f.first == 0x03).length;
+    clock.now = clock.now.add(const Duration(seconds: 600));
+    sos.pump();
+    await t.pump();
+    expect(fake.sent.where((Uint8List f) => f.first == 0x03),
+        hasLength(sentBefore));
+    await _settle(t);
+  });
+
   testWidgets('a channel ACK reads as claimed and the alarm keeps running',
       (WidgetTester t) async {
     await t.binding.setSurfaceSize(const Size(400, 900));

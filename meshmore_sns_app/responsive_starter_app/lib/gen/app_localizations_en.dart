@@ -4581,6 +4581,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sosImSafeHint => 'Sends one [SAFE] and stops the repeats.';
 
   @override
+  String get sosStopRepeats => 'Stop the repeats';
+
+  @override
+  String get sosStopHint =>
+      'Stops the repeats on this phone. Nothing is sent, so nobody is told.';
+
+  @override
   String get sosDefaultWords => 'I need help';
 
   @override

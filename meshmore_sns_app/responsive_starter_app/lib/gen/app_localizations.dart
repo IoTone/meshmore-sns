@@ -7840,6 +7840,18 @@ abstract class AppLocalizations {
   /// **'Sends one [SAFE] and stops the repeats.'**
   String get sosImSafeHint;
 
+  /// No description provided for @sosStopRepeats.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop the repeats'**
+  String get sosStopRepeats;
+
+  /// No description provided for @sosStopHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Stops the repeats on this phone. Nothing is sent, so nobody is told.'**
+  String get sosStopHint;
+
   /// No description provided for @sosDefaultWords.
   ///
   /// In en, this message translates to:
