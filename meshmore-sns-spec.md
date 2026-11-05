@@ -1797,7 +1797,7 @@ the sibling specs: R93 in `meshmore-sns-maps-spec.md`, R60 in
   `MmShape.darkBasemap` (Studio only) draws raster tiles through an
   invert-luminance + desaturate colour matrix (`mmDarkTileFilter`), which
   keeps label/road contrast, unlike a scrim; coloured features lose hue.
-  Tests: `test/ui/mm_edge_swipe_test.dart`, `test/maps/dark_basemap_test.dart`,
+  Tests: `test/ui/mm_edge_swipe_test.dart`, `test/maps/dim_basemap_test.dart`,
   `test/screens/map_no_fix_test.dart`.
 
 - R74: **Words sans, data mono, swept.** The device pass showed prose in
@@ -1836,7 +1836,7 @@ the sibling specs: R93 in `meshmore-sns-maps-spec.md`, R60 in
   8.0:1, sea-on-land 1.6:1, casing-on-land 1.9:1). Still Studio-only.
   The white road *fill* is only 1.2:1 against land; roads read by their
   casing. Needs a device look at real tiles. Test:
-  `test/maps/dark_basemap_test.dart`.
+  `test/maps/dim_basemap_test.dart`.
 
 - R72: **Chat reads as words over data under Studio.** The device pass
   showed every chat part (sender, timestamp, body) in mono, one size and
@@ -2011,7 +2011,7 @@ test cases).
   (`https://github.com/meshcore-dev/MeshCore`). We **pin a specific
   firmware commit** and transcribe all opcodes, frame layouts, struct
   field orders, and crypto parameters from that commit. The pinned commit
-  is recorded in the protocol package (`lib/src/codec/constants.dart`
+  is recorded in the protocol package (`packages/meshcore/lib/src/codec/constants.dart`
   header + README) and **asserted by a test**; it is bumped deliberately,
   never silently.
 - **Current pin:** tag `companion-v1.15.0`, commit
