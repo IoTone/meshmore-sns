@@ -59,6 +59,14 @@ class MmChamferBorder extends OutlinedBorder {
 /// flat to the eye and gives the stroke somewhere to turn.
 const double kSquareRadius = 1;
 
+/// W2 — the sub-6 px radii the chrome draws on tags, dots and badges. Named so
+/// the source scan can tell a deliberate small corner from a control radius
+/// (6 px and above, guarded by `test/ui/square_controls_guard_test.dart`) and
+/// so no screen spells a corner as a bare number.
+const double kRadiusXs = 2;
+const double kRadiusSm = 3;
+const double kRadiusMd = 4;
+
 /// The [OutlinedBorder] for a skin's [MmShape] — sharp, rounded, or
 /// chamfered — carrying the given [side].
 OutlinedBorder mmShapeBorder(MmShape shape, {required BorderSide side}) =>
