@@ -196,13 +196,21 @@ class _HomeShellState extends State<HomeShell>
     _playNavCue(from, i);
   }
 
-  /// A notification tap asked for Chat on a slot: change view, keep the slot.
+  /// Another surface asked for a view: a notification tap wants Chat on a
+  /// slot, the grid's picker wants the Map tab.
   void _onViewRequest() {
     final ShellViewRequest? request = _viewRequest;
-    if (request == null || request.chatSlot == null) return;
+    if (request == null) return;
     if (request.seq == _viewRequestSeq) return;
     _viewRequestSeq = request.seq;
-    _select(MmView.chat.index);
+    switch (request.view) {
+      case RequestedView.chat:
+        _select(MmView.chat.index);
+      case RequestedView.map:
+        _select(MmView.map.index);
+      case null:
+        break;
+    }
   }
 
   /// The channel on screen is not announced; nothing else is suppressed.

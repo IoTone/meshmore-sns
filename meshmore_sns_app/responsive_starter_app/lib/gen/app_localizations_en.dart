@@ -977,16 +977,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get gridViewStreetMap => 'Street map';
 
   @override
-  String get gridViewPicker => 'Switch map view';
+  String get gridViewPicker => 'View';
+
+  @override
+  String get gridOpenMap => 'Open the map';
+
+  @override
+  String get gridMoreViews => 'More views';
 
   @override
   String get gridViewFabric => 'Fabric survey';
 
   @override
-  String get gridViewElevation => 'Fujiさん';
+  String get gridViewElevation => 'Altitude';
 
   @override
-  String get fujiLegendTitle => 'FUJIさん';
+  String get fujiLegendTitle => 'ALTITUDE SURVEY';
 
   @override
   String get fujiLegendDesc =>
@@ -1013,7 +1019,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'The AUTO-QUERY box pulls peer altitudes slowly; tap it to restart.';
 
   @override
-  String get elevationProfileTitle => 'MESHMORE :: FUJIさん';
+  String get elevationProfileTitle => 'ALTITUDE';
 
   @override
   String get elevationProfileAltLabel => 'Altitude';

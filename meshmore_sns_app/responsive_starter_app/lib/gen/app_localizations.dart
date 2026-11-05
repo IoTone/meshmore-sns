@@ -1775,8 +1775,20 @@ abstract class AppLocalizations {
   /// No description provided for @gridViewPicker.
   ///
   /// In en, this message translates to:
-  /// **'Switch map view'**
+  /// **'View'**
   String get gridViewPicker;
+
+  /// No description provided for @gridOpenMap.
+  ///
+  /// In en, this message translates to:
+  /// **'Open the map'**
+  String get gridOpenMap;
+
+  /// No description provided for @gridMoreViews.
+  ///
+  /// In en, this message translates to:
+  /// **'More views'**
+  String get gridMoreViews;
 
   /// No description provided for @gridViewFabric.
   ///
@@ -1787,13 +1799,13 @@ abstract class AppLocalizations {
   /// No description provided for @gridViewElevation.
   ///
   /// In en, this message translates to:
-  /// **'Fujiさん'**
+  /// **'Altitude'**
   String get gridViewElevation;
 
   /// No description provided for @fujiLegendTitle.
   ///
   /// In en, this message translates to:
-  /// **'FUJIさん'**
+  /// **'ALTITUDE SURVEY'**
   String get fujiLegendTitle;
 
   /// No description provided for @fujiLegendDesc.
@@ -1835,7 +1847,7 @@ abstract class AppLocalizations {
   /// No description provided for @elevationProfileTitle.
   ///
   /// In en, this message translates to:
-  /// **'MESHMORE :: FUJIさん'**
+  /// **'ALTITUDE'**
   String get elevationProfileTitle;
 
   /// No description provided for @elevationProfileAltLabel.

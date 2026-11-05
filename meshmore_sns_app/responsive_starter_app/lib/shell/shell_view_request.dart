@@ -11,6 +11,10 @@ import 'package:flutter/foundation.dart';
 class ShellViewRequest extends ChangeNotifier {
   int _seq = 0;
   int? _chatSlot;
+  RequestedView? _view;
+
+  /// Which view was asked for, or null when nothing asked.
+  RequestedView? get view => _view;
 
   /// Increments on every request, so two taps on the same channel are still
   /// two requests and the shell cannot miss the second one.
@@ -22,7 +26,20 @@ class ShellViewRequest extends ChangeNotifier {
   /// Ask the shell to show Chat on [slot].
   void openChat(int slot) {
     _chatSlot = slot;
+    _view = RequestedView.chat;
+    _seq++;
+    notifyListeners();
+  }
+
+  /// Ask the shell to show the Map tab. The grid's picker has a row that
+  /// leaves for it, because the map is a tab and not a grid view.
+  void openMap() {
+    _chatSlot = null;
+    _view = RequestedView.map;
     _seq++;
     notifyListeners();
   }
 }
+
+/// The views another surface can ask the shell to show.
+enum RequestedView { chat, map }

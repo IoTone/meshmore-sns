@@ -16,6 +16,7 @@ import '../meshcore/meshcore_controller.dart';
 import '../meshcore/own_location.dart';
 import '../theme/theme_controller.dart';
 import '../shell/horizontal_drag_claim.dart';
+import '../shell/shell_view_request.dart';
 import '../ui/mm_components.dart';
 import '../ui/mm_page_header.dart';
 import '../ui/mm_scaffold.dart';
@@ -27,7 +28,6 @@ import 'globe_view.dart';
 import 'mesh_tree_view.dart';
 import 'node_detail_sheet.dart';
 import 'sns_cells_view.dart';
-import 'street_map_view.dart';
 import 'grid_prefs_store.dart';
 import 'meshbook_view.dart';
 import 'weather_view.dart';
@@ -41,16 +41,35 @@ import 'package:meshcore/meshcore.dart';
 /// (R109).
 enum _GridViewMode {
   radial,
+  fabric,
+  weather,
   globe,
   equalGrid,
-  streetMap,
-  fabric,
-  elevation,
   tree,
   snsCells,
-  weather,
+  elevation,
   meshbook,
 }
+
+/// The rows the view picker shows first: the views that answer a question a
+/// small mesh actually raises. Everything else is one level down, because ten
+/// options in one sheet buried the three that matter.
+const List<_GridViewMode> _primaryViews = <_GridViewMode>[
+  _GridViewMode.radial,
+  _GridViewMode.fabric,
+  _GridViewMode.weather,
+];
+
+/// The views behind "More views…": still available, deliberately not in the
+/// way. Globe and equal grid are two ways to look at the same positions, the
+/// tree is topology rather than geography, and the last two are reports.
+const List<_GridViewMode> _moreViews = <_GridViewMode>[
+  _GridViewMode.globe,
+  _GridViewMode.equalGrid,
+  _GridViewMode.tree,
+  _GridViewMode.snsCells,
+  _GridViewMode.elevation,
+];
 
 extension on _GridViewMode {
   /// Views whose body pans or zooms with a drag. These offer the Swipe ⇄ Pan
@@ -64,7 +83,6 @@ extension on _GridViewMode {
   /// to nothing. The views that draw to fit never need the toggle either.
   bool get pansHorizontally => switch (this) {
         _GridViewMode.globe ||
-        _GridViewMode.streetMap ||
         _GridViewMode.fabric ||
         _GridViewMode.tree ||
         _GridViewMode.snsCells =>
@@ -286,6 +304,26 @@ class _GridScreenState extends State<GridScreen>
     _publishDragClaim();
   }
 
+  /// The second level of the picker: the views that are worth keeping but
+  /// do not earn a primary slot.
+  void _showMoreViews(BuildContext context, AppLocalizations l) {
+    showMmPicker<_GridViewMode>(
+      context: context,
+      title: l.gridMoreViews,
+      current: _viewMode,
+      items: <MmPickerItem<_GridViewMode>>[
+        for (final _GridViewMode v in _moreViews)
+          MmPickerItem<_GridViewMode>.option(
+              v, _longLabel(v, l), icon: _iconForMode(v)),
+        MmPickerItem<_GridViewMode>.option(_GridViewMode.meshbook,
+            _longLabel(_GridViewMode.meshbook, l),
+            icon: _iconForMode(_GridViewMode.meshbook)),
+      ],
+    ).then((_GridViewMode? m) {
+      if (m != null && mounted) _selectMode(m);
+    });
+  }
+
   void _togglePanMode() {
     setState(() => _panMode = !_panMode);
     _publishDragClaim();
@@ -495,7 +533,6 @@ class _GridScreenState extends State<GridScreen>
         _GridViewMode.radial => Icons.radar,
         _GridViewMode.globe => Icons.public,
         _GridViewMode.equalGrid => Icons.grid_on,
-        _GridViewMode.streetMap => Icons.map_outlined,
         _GridViewMode.fabric => Icons.view_quilt,
         _GridViewMode.elevation => Icons.terrain,
         _GridViewMode.tree => Icons.account_tree,
@@ -510,7 +547,6 @@ class _GridScreenState extends State<GridScreen>
         _GridViewMode.radial => l.gridViewRadial,
         _GridViewMode.globe => l.gridViewGlobe,
         _GridViewMode.equalGrid => l.gridViewEqualGrid,
-        _GridViewMode.streetMap => l.gridViewStreetMap,
         _GridViewMode.fabric => l.gridViewFabric,
         _GridViewMode.elevation => l.gridViewElevation,
         _GridViewMode.tree => l.gridViewTree,
@@ -749,31 +785,27 @@ class _GridScreenState extends State<GridScreen>
                   title: l.gridViewPicker,
                   current: _viewMode,
                   items: <MmPickerItem<_GridViewMode>>[
-                    MmPickerItem<_GridViewMode>.header(l.gridGroupPeers),
-                    for (final _GridViewMode v in <_GridViewMode>[
-                      _GridViewMode.radial,
-                      _GridViewMode.globe,
-                      _GridViewMode.equalGrid,
-                      _GridViewMode.streetMap,
-                    ])
+                    for (final _GridViewMode v in _primaryViews)
                       MmPickerItem<_GridViewMode>.option(
                           v, _longLabel(v, l), icon: _iconForMode(v)),
-                    MmPickerItem<_GridViewMode>.header(l.gridGroupSurvey),
-                    for (final _GridViewMode v in <_GridViewMode>[
-                      _GridViewMode.fabric,
-                      _GridViewMode.tree,
-                      _GridViewMode.snsCells,
-                    ])
-                      MmPickerItem<_GridViewMode>.option(
-                          v, _longLabel(v, l), icon: _iconForMode(v)),
-                    MmPickerItem<_GridViewMode>.header(l.gridGroupReports),
-                    for (final _GridViewMode v in <_GridViewMode>[
-                      _GridViewMode.elevation,
-                      _GridViewMode.weather,
-                      _GridViewMode.meshbook,
-                    ])
-                      MmPickerItem<_GridViewMode>.option(
-                          v, _longLabel(v, l), icon: _iconForMode(v)),
+                    // The map is a tab, not a grid view: this row leaves for
+                    // it instead of showing a second copy of the same widget
+                    // inside the grid (the street map used to do exactly that).
+                    MmPickerItem<_GridViewMode>.action(
+                      l.gridOpenMap,
+                      icon: Icons.map_outlined,
+                      onAction: () {
+                        if (!mounted) return;
+                        context.read<ShellViewRequest?>()?.openMap();
+                      },
+                    ),
+                    MmPickerItem<_GridViewMode>.action(
+                      l.gridMoreViews,
+                      icon: Icons.more_horiz,
+                      onAction: () {
+                        if (mounted) _showMoreViews(context, l);
+                      },
+                    ),
                   ],
                 );
                 if (m != null) _selectMode(m);
@@ -859,11 +891,6 @@ class _GridScreenState extends State<GridScreen>
                 GridScreen.rangeStops[_scaleIndex].km),
             filteredNodes: visible,
             frozen: !_live && _userInteracted,
-          ),
-        _GridViewMode.streetMap => StreetMapView(
-            filteredNodes: visible,
-            frozen: !_live && _userInteracted,
-            interactive: _panMode,
           ),
         _GridViewMode.fabric => Stack(
             children: <Widget>[

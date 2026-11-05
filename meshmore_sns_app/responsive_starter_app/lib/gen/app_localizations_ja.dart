@@ -925,16 +925,22 @@ class AppLocalizationsJa extends AppLocalizations {
   String get gridViewStreetMap => 'ストリートマップ';
 
   @override
-  String get gridViewPicker => 'マップ表示を切替';
+  String get gridViewPicker => '表示';
+
+  @override
+  String get gridOpenMap => '地図を開く';
+
+  @override
+  String get gridMoreViews => 'その他の表示';
 
   @override
   String get gridViewFabric => 'ファブリック調査';
 
   @override
-  String get gridViewElevation => 'Fujiさん';
+  String get gridViewElevation => '標高';
 
   @override
-  String get fujiLegendTitle => 'Fujiさん';
+  String get fujiLegendTitle => '標高測量';
 
   @override
   String get fujiLegendDesc =>
@@ -956,7 +962,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get fujiLegendAutoQuery => 'AUTO-QUERY ボックスがピア標高を順次取得。タップで再起動。';
 
   @override
-  String get elevationProfileTitle => 'MESHMORE :: Fujiさん';
+  String get elevationProfileTitle => '標高';
 
   @override
   String get elevationProfileAltLabel => '高度';
