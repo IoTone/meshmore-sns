@@ -93,6 +93,14 @@ class ByteCursor {
     return utf8.decode(rest, allowMalformed: true);
   }
 
+  /// Consumes whatever is left, for a frame whose payload the firmware
+  /// forwards verbatim and whose length is therefore not fixed. The
+  /// [why] argument is required so every use names the layout that makes
+  /// the tail open-ended.
+  void skipRemaining(String why) {
+    _pos = _bytes.length;
+  }
+
   /// Fixed-width field decoded as UTF-8, trimmed at the first NUL.
   String fixedCString(int n, String ctx) {
     final Uint8List raw = bytes(n, ctx);

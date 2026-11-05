@@ -390,7 +390,11 @@ abstract final class MeshcoreFrameCodec {
   }
 
   /// `CMD_DEVICE_QUERY` (0x16): `16 [app_target_ver]`.
-  static Uint8List deviceQuery({int appTargetVer = 1}) {
+  ///
+  /// The default is [kAppTargetProtocolVersion] (3) because that is the
+  /// version whose receive frames carry per-message SNR; see the constant
+  /// for the firmware branches it selects.
+  static Uint8List deviceQuery({int appTargetVer = kAppTargetProtocolVersion}) {
     return (FrameBuilder()
           ..u8(MeshcoreCommand.deviceQuery.code)
           ..u8(appTargetVer))
@@ -781,9 +785,35 @@ abstract final class MeshcoreFrameCodec {
     }
     final int op = frame[0];
     final ByteCursor c = ByteCursor(frame);
+    final MeshcoreInbound out;
     try {
       c.u8('opcode'); // consume opcode
-      switch (op) {
+      out = _decodeBody(c, op, frame);
+    } on FrameTruncated catch (e) {
+      return DecodeFailure(
+        MeshcoreDecodeError(DecodeErrorKind.truncated, e.toString(),
+            opcode: op),
+      );
+    }
+    // Every layout below describes one whole frame, so a parsed frame must
+    // end exactly at the frame's end. A leftover is either a second frame
+    // in the same buffer (a transport-boundary error) or a length the
+    // recorded layout does not explain; both are reported, never dropped.
+    if (out is UnsupportedFrame || out is DecodeFailure) return out;
+    if (c.remaining != 0) {
+      return DecodeFailure(MeshcoreDecodeError(
+        DecodeErrorKind.trailingBytes,
+        '${c.remaining} byte(s) left after a complete ${out.runtimeType}',
+        opcode: op,
+      ));
+    }
+    return out;
+  }
+
+  /// Decodes one frame body. The opcode byte has already been consumed.
+  static MeshcoreInbound _decodeBody(
+      ByteCursor c, int op, Uint8List frame) {
+    switch (op) {
         case 0x00: // RESP_CODE_OK
           final int? v = c.remaining >= 4 ? c.u32('ok.value') : null;
           return OkFrame(v);
@@ -856,10 +886,30 @@ abstract final class MeshcoreFrameCodec {
           return ChannelMessageFrame(_decodeChannelMsg(c, v3: true));
 
         case 0x12: // RESP_CODE_CHANNEL_INFO
+          // The reply carries 16 bytes of secret for an ordinary request
+          // and 32 when the request asked for the full secret with a third
+          // byte of 32 (`MyMesh.cpp:1715-1721` mainline writes 16, the
+          // two-width path is the documented extension). Only the frame
+          // length says which, so read whatever follows the name and
+          // reject a width the firmware does not send.
+          final int infoIdx = c.u8('channelInfo.idx');
+          final String infoName =
+              c.fixedCString(kChannelNameSize, 'channelInfo.name');
+          final Uint8List infoPsk = Uint8List.fromList(
+              c.bytes(c.remaining, 'channelInfo.psk'));
+          if (infoPsk.length != kChannelPskSize &&
+              infoPsk.length != kChannelPskSizeFull) {
+            return DecodeFailure(MeshcoreDecodeError(
+              DecodeErrorKind.truncated,
+              'CHANNEL_INFO secret is ${infoPsk.length} bytes; the radio '
+              'sends $kChannelPskSize or $kChannelPskSizeFull',
+              opcode: 0x12,
+            ));
+          }
           return ChannelInfoFrame(ChannelInfo(
-            channelIdx: c.u8('channelInfo.idx'),
-            name: c.fixedCString(kChannelNameSize, 'channelInfo.name'),
-            psk: c.bytes(kChannelPskSize, 'channelInfo.psk'),
+            channelIdx: infoIdx,
+            name: infoName,
+            psk: infoPsk,
           ));
 
         case 0x82: // PUSH_CODE_ACK
@@ -902,8 +952,14 @@ abstract final class MeshcoreFrameCodec {
         case 0x87: // PUSH_CODE_STATUS_RESPONSE
           c.u8('status.reserved');
           final Uint8List pub6 = c.bytes(kPubKeyPrefixSize, 'status.pubKey6');
+          final RepeaterStatus? rs = _decodeRepeaterStatus(c);
+          // The firmware forwards the repeater's on-air status payload
+          // verbatim (`MyMesh.cpp:718-724` copies `data[4..len]`), so its
+          // length belongs to the repeater, not to this layout. Anything
+          // after the fields we model is that payload's tail.
+          c.skipRemaining('repeater status payload is forwarded verbatim');
           return StatusResponseFrame(
-              pubKeyPrefix: pub6, status: _decodeRepeaterStatus(c));
+              pubKeyPrefix: pub6, status: rs);
 
         case 0x89: // PUSH_CODE_TRACE_DATA
           return TraceDataFrame(_decodeTrace(c));
@@ -974,6 +1030,12 @@ abstract final class MeshcoreFrameCodec {
             acl = c.u8('login.acl');
             lvl = c.u8('login.fwLevel');
           }
+          // This frame has already grown once in place — the same writer
+          // added the timestamp, ACL and firmware level to the legacy
+          // 8-byte form (`MyMesh.cpp:684-702`) — so a tail shorter than a
+          // whole extension is a future field, not a second frame. It is
+          // consumed without being guessed at.
+          c.skipRemaining('login reply has grown in place before');
           return LoginResultFrame(LoginResult(
             success: true,
             permissions: perm,
@@ -1015,11 +1077,14 @@ abstract final class MeshcoreFrameCodec {
         case 0x84: // PUSH_CODE_RAW_DATA
           final int rawSnr = c.u8('raw.snr');
           final int rawRssi = c.u8('raw.rssi');
-          c.u8('raw.reserved'); // 0xFF, "possibly path_len in future"
+          // 0xFF on a single-profile radio; 0xA0/0xA1 when a second
+          // profile is on (`onRawDataRecv`, `MyMesh.cpp:2830-2840`).
+          final RxVia rawVia = RxVia.fromWireByte(c.u8('raw.via'));
           return RawDataFrame(
             snrDb: (rawSnr < 128 ? rawSnr : rawSnr - 256) / 4.0,
             rssi: rawRssi < 128 ? rawRssi : rawRssi - 256,
             payload: Uint8List.fromList(c.bytes(c.remaining, 'raw.payload')),
+            via: rawVia,
           );
 
         case 0x8A: // PUSH_CODE_NEW_ADVERT
@@ -1027,31 +1092,35 @@ abstract final class MeshcoreFrameCodec {
 
         case 0x1B: // RESP_CODE_CHANNEL_DATA_RECV
           final int cdSnr = c.u8('chdata.snr');
-          c.u8('chdata.reserved1');
+          // The firmware leaves this byte reserved on a single-profile
+          // radio (writes 0) and reports the receiving profile in it while
+          // a second profile is on: 0xA0 primary, 0xA1 radio2
+          // (`onChannelDataRecv`, `MyMesh.cpp:2423`).
+          final RxVia cdVia = RxVia.fromWireByte(c.u8('chdata.via'));
           c.u8('chdata.reserved2');
           final int cdIdx = c.u8('chdata.channel');
           final int cdPath = c.u8('chdata.pathLen');
           final int cdType = c.u16('chdata.dataType');
           final int cdLen = c.u8('chdata.len');
+          final Uint8List cdData =
+              Uint8List.fromList(c.bytes(cdLen, 'chdata.data'));
           return ChannelDataFrame(
             snrDb: (cdSnr < 128 ? cdSnr : cdSnr - 256) / 4.0,
             channelIndex: cdIdx,
             pathLen: cdPath,
             dataType: cdType,
-            data: Uint8List.fromList(c.bytes(cdLen, 'chdata.data')),
+            data: cdData,
+            via: cdVia,
           );
+
+        case 0x1D: // RESP_CODE_CLI_REPLY
+          return CliReplyFrame(c.utf8ToEnd('cliReply.text'));
 
         case 0x90: // PUSH_CODE_CONTACTS_FULL
           return const ContactsFullFrame();
 
         default:
           return UnsupportedFrame(op, Uint8List.fromList(frame));
-      }
-    } on FrameTruncated catch (e) {
-      return DecodeFailure(
-        MeshcoreDecodeError(DecodeErrorKind.truncated, e.toString(),
-            opcode: op),
-      );
     }
   }
 

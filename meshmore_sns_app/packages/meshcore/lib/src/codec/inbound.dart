@@ -12,6 +12,7 @@ import '../model/device_config.dart';
 import '../model/diagnostics.dart';
 import '../model/rf_log.dart';
 import '../model/self_info.dart';
+import 'constants.dart';
 import 'decode_error.dart';
 
 /// A decoded device→app frame. Sealed so callers exhaustively switch.
@@ -383,12 +384,20 @@ class RawDataFrame extends MeshcoreInbound {
     required this.snrDb,
     required this.rssi,
     required this.payload,
+    this.via = RxVia.unknown,
   });
   final double snrDb;
   final int rssi;
   final Uint8List payload;
+
+  /// Which radio profile delivered the packet, when the radio reports it
+  /// (the same byte `ChannelDataFrame.via` comes from, with 0xFF as its
+  /// "none" value).
+  final RxVia via;
+
   @override
-  String toString() => 'RawDataFrame(${payload.length}B, rssi $rssi)';
+  String toString() =>
+      'RawDataFrame(${payload.length}B, rssi $rssi, via ${via.name})';
 }
 
 /// `PUSH_CODE_NEW_ADVERT` (0x8A): a contact frame for a first-heard node.
@@ -409,15 +418,36 @@ class ChannelDataFrame extends MeshcoreInbound {
     required this.pathLen,
     required this.dataType,
     required this.data,
+    this.via = RxVia.unknown,
   });
   final double snrDb;
   final int channelIndex;
   final int pathLen;
   final int dataType;
   final Uint8List data;
+
+  /// Which radio profile delivered the datagram, when the radio reports it.
+  ///
+  /// Always [RxVia.unknown] on a single-profile radio and on mainline
+  /// firmware, which writes 0 in this byte.
+  final RxVia via;
+
   @override
   String toString() =>
-      'ChannelDataFrame(ch $channelIndex, type 0x${dataType.toRadixString(16)}, ${data.length}B)';
+      'ChannelDataFrame(ch $channelIndex, via ${via.name}, '
+      'type 0x${dataType.toRadixString(16)}, ${data.length}B)';
+}
+
+/// `RESP_CODE_CLI_REPLY` (0x1D): one line of a command's output.
+///
+/// A `CMD_RUN_CLI_COMMAND` produces zero or more of these, each its own
+/// frame, followed by `OK`. The line is [text] and carries no framing
+/// beyond the frame length.
+class CliReplyFrame extends MeshcoreInbound {
+  const CliReplyFrame(this.text);
+  final String text;
+  @override
+  String toString() => 'CliReplyFrame("$text")';
 }
 
 /// A well-formed frame whose opcode this milestone does not decode yet.

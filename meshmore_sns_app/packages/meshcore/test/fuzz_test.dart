@@ -42,7 +42,8 @@ void main() {
         // The only failure kinds are structural.
         expect(
           out.error.kind,
-          anyOf(DecodeErrorKind.empty, DecodeErrorKind.truncated),
+          anyOf(DecodeErrorKind.empty, DecodeErrorKind.truncated,
+              DecodeErrorKind.trailingBytes),
         );
       }
     }

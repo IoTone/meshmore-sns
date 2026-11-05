@@ -60,6 +60,32 @@ void main() {
         isA<DecodeFailure>());
   });
 
+  test('the receiving profile byte is surfaced, not discarded', () {
+    // `onChannelDataRecv` writes rxViaTag in the byte after SNR: 0xA0 the
+    // primary radio, 0xA1 the second one, 0 on a single-profile radio
+    // (MyMesh.cpp:2423).
+    ChannelDataFrame at(int via) => MeshcoreFrameCodec.decode(
+        Uint8List.fromList(<int>[0x1B, 8, via, 0, 2, 0xFF, 0x34, 0xFF, 3,
+          1, 2, 3])) as ChannelDataFrame;
+
+    expect(at(0).via, RxVia.unknown);
+    expect(at(kRxViaPrimaryTag).via, RxVia.primary);
+    expect(at(kRxViaSecondaryTag).via, RxVia.secondary);
+    // A tag from neither profile is not guessed at.
+    expect(at(0x7F).via, RxVia.unknown);
+  });
+
+  test('raw data carries the same profile byte with 0xFF as its none', () {
+    RawDataFrame raw(int via) => MeshcoreFrameCodec.decode(
+        Uint8List.fromList(<int>[0x84, 4, 0xB0, via, 9, 8])) as RawDataFrame;
+
+    expect(raw(0xFF).via, RxVia.unknown);
+    expect(raw(kRxViaPrimaryTag).via, RxVia.primary);
+    expect(raw(kRxViaSecondaryTag).via, RxVia.secondary);
+    // The byte is consumed, so it never leaks into the payload.
+    expect(raw(kRxViaSecondaryTag).payload, <int>[9, 8]);
+  });
+
   test('PUSH_CODE_CONTACTS_FULL 0x90 and its constant exist', () {
     expect(MeshcoreFrameCodec.decode(Uint8List.fromList(<int>[0x90])),
         isA<ContactsFullFrame>());

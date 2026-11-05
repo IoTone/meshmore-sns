@@ -2,7 +2,7 @@
   "_source": {
     "pin_tag": "companion-v1.15.0",
     "pin_commit": "dee3e26ac081a5c668c69b66c16a6544a44ddc5b",
-    "note": "Channel frame layouts from examples/companion_radio/MyMesh.cpp at the pin. SET_CHANNEL / CHANNEL_INFO (50-byte fixed) are exercised programmatically in channel_codec_test.dart to avoid hand-transcription error."
+    "note": "Channel frame layouts from examples/companion_radio/MyMesh.cpp at the pin. SET_CHANNEL / CHANNEL_INFO (50-byte fixed) are exercised programmatically in channel_codec_test.dart to avoid hand-transcription error. In the 0x1B vector the byte after SNR is the receive-profile tag (0xA0 primary radio, 0xA1 second radio, 0 on a single-profile radio), not a reserved byte."
   },
   "encode": [
     {
@@ -99,6 +99,20 @@
         "text": "ok",
         "isV3": true,
         "snrDb": -2.0
+      }
+    },
+    {
+      "name": "CHANNEL_DATA_RECV (0x1B) arrived on the second radio profile",
+      "hex": "1b08a10002ff34ff03010203",
+      "expect": {
+        "type": "ChannelDataFrame",
+        "snrDb": 2.0,
+        "channelIndex": 2,
+        "pathLen": 255,
+        "isFlood": true,
+        "dataType": 65332,
+        "data": [1, 2, 3],
+        "via": "secondary"
       }
     }
   ]

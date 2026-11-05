@@ -23,6 +23,18 @@ const String kMeshcoreFirmwarePinTag = 'companion-v1.15.0';
 const String kMeshcoreFirmwarePinCommit =
     'dee3e26ac081a5c668c69b66c16a6544a44ddc5b';
 
+/// The protocol version this client announces in `CMD_DEVICE_QUERY`.
+///
+/// The firmware stores the byte verbatim (`MyMesh.cpp:1029-1032`) and
+/// branches on it in exactly two places, both `>= 3`: the contact and
+/// channel receive frames that carry per-message SNR (V3, codes 0x10 and
+/// 0x11, `MyMesh.cpp:435-443` and `:548-556`). Nothing else reads it, so
+/// asking for 3 is safe on firmware that predates those frames — the
+/// byte is stored and never consulted. Asking for 1 (the previous
+/// default) made every modern companion answer with the legacy frames and
+/// silently dropped SNR on every message.
+const int kAppTargetProtocolVersion = 3;
+
 /// BLE transport (Nordic-UART-style service used by the companion link).
 ///
 /// Framing rule: each characteristic write / notification is exactly ONE
@@ -53,6 +65,38 @@ const int kSignatureSize = 64; // SIGNATURE_SIZE
 const int kMaxPathSize = 64; // MAX_PATH_SIZE
 const int kContactNameSize = 32;
 
+/// Which radio profile a received packet arrived on.
+///
+/// The receive frames carry a byte that the mainline firmware leaves
+/// reserved (writes 0) and that a two-profile radio fills in: `0xA0` the
+/// primary radio, `0xA1` the second one, the frame's own "none" value
+/// otherwise (0 for a channel datagram, 0xFF for raw data). The value is
+/// only meaningful when a second profile is on; everything else reports
+/// [unknown], which is also what the mainline firmware always sends.
+enum RxVia {
+  /// Not reported: single-profile radio, mainline firmware, or a packet
+  /// that arrived over a non-radio ingress (e.g. a bridge).
+  unknown,
+
+  /// The primary radio profile.
+  primary,
+
+  /// The second radio profile.
+  secondary;
+
+  /// Maps the wire byte to a profile. Any value outside the two tags the
+  /// firmware writes is [unknown], including the frame's "none" sentinel.
+  static RxVia fromWireByte(int byte) => switch (byte) {
+        kRxViaPrimaryTag => RxVia.primary,
+        kRxViaSecondaryTag => RxVia.secondary,
+        _ => RxVia.unknown,
+      };
+}
+
+/// Wire tags for [RxVia], as written by a two-profile radio.
+const int kRxViaPrimaryTag = 0xA0;
+const int kRxViaSecondaryTag = 0xA1;
+
 /// Channel + cipher sizes (from `src/MeshCore.h` / `src/Mesh.h`).
 ///
 /// `mesh::GroupChannel { uint8_t hash[PATH_HASH_SIZE];
@@ -67,7 +111,15 @@ const int kCipherKeySize = 16; // CIPHER_KEY_SIZE  (AES-128)
 const int kCipherBlockSize = 16; // CIPHER_BLOCK_SIZE
 const int kCipherMacSize = 2; // CIPHER_MAC_SIZE  (truncated HMAC)
 const int kChannelSecretSize = kPubKeySize; // GroupChannel.secret = 32
-const int kChannelPskSize = 16; // bytes carried by SET_CHANNEL
+/// Bytes carried by `SET_CHANNEL` and by the ordinary `CHANNEL_INFO`
+/// reply (`MyMesh.cpp:1715-1721`).
+const int kChannelPskSize = 16;
+
+/// The same field's other width: a `CHANNEL_INFO` reply carries the full
+/// 32-byte secret when the request asked for it with a third byte of 32
+/// (`1F <index> 20`) — the reply length is the only signal, so a decoder
+/// must accept both widths and read the rest of the frame.
+const int kChannelPskSizeFull = kChannelSecretSize;
 const int kChannelNameSize = 32;
 
 /// Channel/contact text `txt_type` values (companion protocol).
@@ -542,6 +594,23 @@ extension type const MeshcoreResponse(int code) {
   /// only provable by an end-to-end layer above this one.
   static const MeshcoreResponse binaryResponse = MeshcoreResponse(0x8C);
 
+  /// `RESP_CODE_CLI_REPLY` (0x1D) — one line of a command's output, sent
+  /// as its own frame and terminated by an `OK`. Numbered with the
+  /// replies, not the pushes, because it only ever follows
+  /// `CMD_RUN_CLI_COMMAND`; a CLI command can produce several of them.
+  static const MeshcoreResponse cliReply = MeshcoreResponse(0x1D);
+
+  /// True for an asynchronous push the radio may emit at any time.
+  ///
+  /// This is the firmware's own split, not a guess: every `PUSH_CODE_*`
+  /// sits at `0x80` and above under the block comment "these are _pushed_
+  /// to client app at any time" (`MyMesh.cpp:111-128`), and every
+  /// `RESP_CODE_*` below it, including the two that arrive without the app
+  /// asking for them in the same breath — `CHANNEL_DATA_RECV` (0x1B, a
+  /// queued item drained by `CMD_SYNC_NEXT_MESSAGE`) and `CLI_REPLY`
+  /// (0x1D, the output stream of `CMD_RUN_CLI_COMMAND`) — because both are
+  /// answers to a command the app sent. `constants_test.dart` pins every
+  /// code in both trees so a new one cannot land on the wrong side.
   bool get isPush => code >= 0x80;
 }
 

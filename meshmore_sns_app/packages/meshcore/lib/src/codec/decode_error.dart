@@ -11,16 +11,25 @@
 ///    codec does not model; raw bytes preserved. **Not a failure.**
 ///  * `DecodeFailure` — the only failure path, with a kind below.
 ///
-/// Hence the only failure kinds are structural: [empty] and
-/// [truncated]. An unknown opcode is *not* an error (it becomes an
-/// `UnsupportedFrame`), so there is deliberately no
-/// `unsupportedOpcode` kind.
+/// Hence the failure kinds are structural: [empty], [truncated] and
+/// [trailingBytes]. An unknown opcode is *not* an error (it becomes an
+/// `UnsupportedFrame`), so there is deliberately no `unsupportedOpcode`
+/// kind.
 enum DecodeErrorKind {
   /// Frame was empty (no opcode byte).
   empty,
 
   /// Frame ended before a required field could be read.
   truncated,
+
+  /// The frame's own layout was fully parsed and bytes were left over.
+  ///
+  /// Every layout this codec models consumes the whole frame; a leftover
+  /// means either two frames arrived in one buffer (a transport boundary
+  /// error) or the radio sent a longer layout than the one recorded here.
+  /// Both are worth surfacing instead of silently dropping the bytes —
+  /// that silence is how a coalesced pair loses its second frame.
+  trailingBytes,
 }
 
 class MeshcoreDecodeError {
