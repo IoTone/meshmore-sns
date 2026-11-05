@@ -539,6 +539,11 @@ refusals MUST all resolve through it. A raw code MUST NOT reach the user, and a 
 *Check:* a test that every `ERR_CODE_*` the codec can decode has a catalogue entry; a grep test that no screen
 interpolates a numeric code into user text.
 
+*Gap found 2026-11-05 (W1/D4):* `BleConnectException` messages are hardcoded English
+(`lib/meshcore/ble_connector.dart`, ten call sites) and are shown to the user through `mc.error`. The new MTU refusal
+is typed (`BleMtuTooSmall`) and localized, precisely so it does not add an eleventh. Converting the ten is this row's
+work, not W1's.
+
 **APP-N3.** One time model. The app MUST distinguish three clocks and never mix them: the phone's wall clock, the
 radio's clock (which can be unset or wrong), and a message's own timestamp. A radio clock that is unset MUST be
 flagged, not trusted. Every displayed time MUST say which clock it came from when the two disagree by more than a
