@@ -95,6 +95,14 @@ class _ChatScreenState extends State<ChatScreen>
   /// `position` (which throws when there are no clients).
   bool _atBottom = true;
 
+  /// APP-E6 — the row a search hit asked for. It is tinted until the reader
+  /// scrolls or switches channel, and the key is what lets the list find it
+  /// after the jump.
+  String? _highlightId;
+  final GlobalKey _highlightKey = GlobalKey();
+  int _revealTries = 0;
+  Timer? _highlightTimer;
+
   /// Vertical slack in pixels — within this we treat the user as
   /// "at the bottom" and keep auto-following. Generous enough to
   /// survive a single new-message row appending below them without
@@ -263,8 +271,76 @@ class _ChatScreenState extends State<ChatScreen>
     });
   }
 
+  /// APP-E6 — a hit opens the thread it came from.
+  ///
+  /// A direct message lives in its own route, so the hit pushes it; a channel
+  /// row switches to that channel and reveals the row in place.
+  Future<void> _openSearch(MeshcoreController mc) async {
+    final String? id = await context.push<String>('/chat/search');
+    if (id == null || !mounted) return;
+    ChatMessage? target;
+    for (final MapEntry<int, String> ch in mc.channels) {
+      for (final ChatMessage m in mc.messagesFor(ch.key)) {
+        if (m.id == id) {
+          target = m;
+          break;
+        }
+      }
+      if (target != null) break;
+    }
+    if (target == null) return;
+    final String? peer = target.peerPubKeyHex;
+    if (peer != null && peer.isNotEmpty) {
+      await context.push('/dm/$peer');
+      return;
+    }
+    mc.setActiveChannel(target.channelIdx);
+    _highlightTimer?.cancel();
+    setState(() {
+      _highlightId = id;
+      _revealTries = 0;
+    });
+    _scrollToHighlight(mc);
+    _highlightTimer = Timer(const Duration(seconds: 4), () {
+      if (!mounted) return;
+      setState(() => _highlightId = null);
+    });
+  }
+
+  /// Brings the highlighted row into view.
+  ///
+  /// A `ListView.builder` only builds what is near the viewport, so a row far
+  /// up the thread has no context to scroll to. The estimate jumps to where
+  /// the row should be; once it is built, `ensureVisible` finishes the job.
+  /// Bounded, because a row that was evicted by the cap has no position at all.
+  void _scrollToHighlight(MeshcoreController mc) {
+    if (!mounted) return;
+    final String? id = _highlightId;
+    if (id == null) return;
+    final List<ChatMessage> msgs = mc.messagesFor(mc.activeChannel);
+    final int idx = msgs.indexWhere((ChatMessage m) => m.id == id);
+    if (idx < 0) return;
+    final BuildContext? target = _highlightKey.currentContext;
+    if (target != null) {
+      Scrollable.ensureVisible(
+        target,
+        alignment: 0.4,
+        duration: const Duration(milliseconds: 220),
+      );
+      return;
+    }
+    if (_revealTries >= 4 || !_scroll.hasClients) return;
+    _revealTries++;
+    final double extent = _scroll.position.maxScrollExtent;
+    final double frac = msgs.length <= 1 ? 0 : idx / (msgs.length - 1);
+    _scroll.jumpTo((extent * frac).clamp(0.0, extent));
+    WidgetsBinding.instance
+        .addPostFrameCallback((_) => _scrollToHighlight(mc));
+  }
+
   @override
   void dispose() {
+    _highlightTimer?.cancel();
     if (_focusListener != null) _focusOwner?.removeListener(_focusListener!);
     _focus?.openChannel = null;
     _scroll.removeListener(_onScroll);
@@ -425,6 +501,18 @@ class _ChatScreenState extends State<ChatScreen>
                     onSelected: (_) => mc.setActiveChannel(ch.key),
                   ),
                 ),
+              // APP-E6 — search sits at the end of the strip, where the
+              // strip's own subject (which channel) is already decided.
+              if (msgs.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(left: 4),
+                  child: IconButton(
+                    key: const ValueKey<String>('chat-search'),
+                    tooltip: l.chatSearchAction,
+                    onPressed: () => _openSearch(mc),
+                    icon: const Icon(Icons.search),
+                  ),
+                ),
               // Manage channels: a chip, not a "#" icon next to the
               // channel chips, where two different meanings of "channel"
               // sat side by side.
@@ -474,18 +562,26 @@ class _ChatScreenState extends State<ChatScreen>
                         padding: const EdgeInsets.symmetric(
                             horizontal: 16, vertical: 8),
                         itemCount: msgs.length,
-                        itemBuilder: (BuildContext ctx, int i) =>
-                            _MessageRow(
-                          msgs[i],
-                          onAction: () => _onAction(mc, msgs[i]),
-                          // The DR Pop name tag shows the cadence since this
-                          // identity last spoke; only that mode reads it, so
-                          // only compute it there.
-                          sinceLast:
-                              _chatModeFor(ctx.skin.preset) == _ChatMode.block
-                                  ? _sinceLastFromSame(msgs, i)
-                                  : null,
-                        ),
+                        itemBuilder: (BuildContext ctx, int i) {
+                          final bool lit = msgs[i].id == _highlightId;
+                          final Widget row = _MessageRow(
+                            msgs[i],
+                            key: lit ? _highlightKey : null,
+                            onAction: () => _onAction(mc, msgs[i]),
+                            // The DR Pop name tag shows the cadence since
+                            // this identity last spoke; only that mode reads
+                            // it, so only compute it there.
+                            sinceLast: _chatModeFor(ctx.skin.preset) ==
+                                    _ChatMode.block
+                                ? _sinceLastFromSame(msgs, i)
+                                : null,
+                          );
+                          if (!lit) return row;
+                          return ColoredBox(
+                            color: cs.secondaryContainer,
+                            child: row,
+                          );
+                        },
                       ),
               ),
               // The pill only appears when the user is NOT at the
@@ -586,7 +682,8 @@ _ChatMode _chatModeFor(MmThemePreset p) => switch (p) {
     };
 
 class _MessageRow extends StatelessWidget {
-  const _MessageRow(this.m, {required this.onAction, this.sinceLast});
+  const _MessageRow(this.m,
+      {super.key, required this.onAction, this.sinceLast});
   final ChatMessage m;
   final VoidCallback onAction;
 

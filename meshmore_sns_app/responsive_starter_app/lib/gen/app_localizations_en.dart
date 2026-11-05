@@ -4826,4 +4826,126 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get placePhotoFetching => 'Asking the mesh for the photo…';
+
+  @override
+  String get chatSearchAction => 'Search messages';
+
+  @override
+  String get chatSearchHint => 'Search stored history';
+
+  @override
+  String get chatSearchPrompt =>
+      'Type to search the messages this device stored.';
+
+  @override
+  String chatSearchNoResults(String query) {
+    return 'No message matches “$query”.';
+  }
+
+  @override
+  String chatSearchHidden(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count matches hidden by a block',
+      one: '1 match hidden by a block',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String chatSearchTruncated(int count) {
+    return 'Showing the newest $count matches. Narrow the search to see the rest.';
+  }
+
+  @override
+  String chatSearchRetention(int cap) {
+    return 'This device keeps the newest $cap messages, so older ones are not searched.';
+  }
+
+  @override
+  String get chatSearchDm => 'Direct message';
+
+  @override
+  String chatUnread(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count unread',
+      one: '1 unread',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get blockedKeysTitle => 'Blocked keys';
+
+  @override
+  String blockedKeysSubtitle(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count keys blocked',
+      one: '1 key blocked',
+      zero: 'No key is blocked',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get blockedKeysEmpty =>
+      'No key is blocked. Blocking a key hides what it sends — messages, notifications, places — on this device.';
+
+  @override
+  String get blockedKeysCannotStop =>
+      'A block is local to this app. The radio still receives and relays the packet; what stops is what this app shows.';
+
+  @override
+  String get blockedKeysUnblock => 'Unblock';
+
+  @override
+  String blockedKeysSince(String when) {
+    return 'Blocked $when';
+  }
+
+  @override
+  String get blockedKeysUnknownName => 'No name known';
+
+  @override
+  String blockedKeysCapacity(int cap) {
+    return 'The list is full: $cap keys. Unblock one before adding another.';
+  }
+
+  @override
+  String blockedKeysUnblocked(String name) {
+    return '$name is unblocked. Their messages appear again.';
+  }
+
+  @override
+  String get blockedKeysUnblockedUnnamed =>
+      'The key is unblocked. Its messages appear again.';
+
+  @override
+  String get reportAction => 'Report…';
+
+  @override
+  String get reportSheetTitle => 'Report this message';
+
+  @override
+  String get reportObservationLabel => 'What did you see? (optional)';
+
+  @override
+  String get reportNothingSent =>
+      'Nothing was sent. The app wrote a file on this device; you decide where it goes.';
+
+  @override
+  String reportBundleWritten(String path) {
+    return 'Bundle written: $path';
+  }
+
+  @override
+  String get reportCopyBundle => 'Copy the bundle';
+
+  @override
+  String get reportCopied => 'Bundle copied.';
 }

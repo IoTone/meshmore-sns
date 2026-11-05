@@ -1,9 +1,7 @@
 {
   "@@locale": "en",
-
   "appName": "Meshmore SNS",
   "appSubtitle": "Socialrobot Network Service",
-
   "tabDashboard": "Dashboard",
   "tabChat": "Chat",
   "tabNodes": "Nodes",
@@ -11,15 +9,22 @@
   "tabDocs": "Docs",
   "tabSettings": "Settings",
   "tabAbout": "About",
-
   "dashboardPeersInRange": "PEERS IN RANGE",
   "dashboardKnownCount": "{n, plural, =0{0 known} =1{1 known} other{{n} known}}",
   "@dashboardKnownCount": {
-    "placeholders": {"n": {"type": "int"}}
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
   },
   "dashboardMyPubkey": "my pubkey · {hex}",
   "@dashboardMyPubkey": {
-    "placeholders": {"hex": {"type": "String"}}
+    "placeholders": {
+      "hex": {
+        "type": "String"
+      }
+    }
   },
   "dashboardPubkeyAwaiting": "my pubkey · awaiting device",
   "dashboardPubkeyHint": "Tap to copy. This is what someone else needs to add you as a contact.",
@@ -37,11 +42,25 @@
   "botSeed": "Seed",
   "botBudget": "{n} replies left this window",
   "@botBudget": {
-    "placeholders": {"n": {"type": "int"}}
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
   },
   "botCounters": "received {r} · replied {p} · held back {s}",
   "@botCounters": {
-    "placeholders": {"r": {"type": "int"}, "p": {"type": "int"}, "s": {"type": "int"}}
+    "placeholders": {
+      "r": {
+        "type": "int"
+      },
+      "p": {
+        "type": "int"
+      },
+      "s": {
+        "type": "int"
+      }
+    }
   },
   "botResetCounters": "Reset counters",
   "botEditRules": "Edit rules",
@@ -49,7 +68,11 @@
   "botRulesRestore": "Restore default",
   "botRulesErrors": "{n} line(s) could not be read and were skipped",
   "@botRulesErrors": {
-    "placeholders": {"n": {"type": "int"}}
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
   },
   "botRulesSave": "Save",
   "botFromBot": "bot",
@@ -69,7 +92,11 @@
   "dashReconNoContacts": "no contacts in range",
   "dashAgHudOfKnown": "of {count} known",
   "@dashAgHudOfKnown": {
-    "placeholders": { "count": { "type": "String" } }
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
   },
   "dashboardLocation": "LOCATION",
   "dashboardBattery": "BATTERY",
@@ -82,7 +109,11 @@
   "dashboardLocationConfigure": "CONFIGURE",
   "dashboardLocationSourceLabel": "source · {source}",
   "@dashboardLocationSourceLabel": {
-    "placeholders": {"source": {"type": "String"}}
+    "placeholders": {
+      "source": {
+        "type": "String"
+      }
+    }
   },
   "statusLinked": "LINKED · NO ALERTS",
   "statusSyncing": "SYNCING…",
@@ -106,7 +137,7 @@
     }
   },
   "actionConnect": "CONNECT",
-  "actionRetry": "RETRY",
+  "actionRetry": "Retry",
   "dashboardDevice": "Device",
   "deviceMgrTitle": "DEVICE",
   "deviceMgrNoPair": "No device paired",
@@ -124,29 +155,51 @@
   "deviceMgrScanHint": "Tap Scan to look for nearby MeshCore devices. When two are in range, pick the one you want.",
   "deviceMgrScanFailed": "Scan failed: {message}",
   "@deviceMgrScanFailed": {
-    "placeholders": {"message": {"type": "String"}}
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
   },
   "deviceMgrRecent": "RECENTLY PAIRED",
   "deviceMgrAgoNever": "never",
   "deviceMgrAgoNow": "just now",
   "deviceMgrAgoMinutes": "{n} min ago",
   "@deviceMgrAgoMinutes": {
-    "placeholders": {"n": {"type": "int"}}
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
   },
   "deviceMgrAgoHours": "{n} h ago",
   "@deviceMgrAgoHours": {
-    "placeholders": {"n": {"type": "int"}}
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
   },
   "deviceMgrAgoDays": "{n} d ago",
   "@deviceMgrAgoDays": {
-    "placeholders": {"n": {"type": "int"}}
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
   },
   "deviceMgrPairNew": "Pair a new radio",
-
   "pairTitle": "Pair a radio",
   "pairStepOf": "STEP {step} OF {total}",
   "@pairStepOf": {
-    "placeholders": {"step": {"type": "int"}, "total": {"type": "int"}}
+    "placeholders": {
+      "step": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
   },
   "pairPermissionTitle": "Bluetooth permission",
   "pairPermissionBody": "The app needs Nearby devices to find your radio and talk to it. Nothing is paired yet.",
@@ -164,23 +217,34 @@
   "pairNothingFound": "No radio answered. Check that it is switched on, in range, and not already connected to another phone, then scan again.",
   "pairRssi": "RSSI {rssi}",
   "@pairRssi": {
-    "placeholders": {"rssi": {"type": "int"}}
+    "placeholders": {
+      "rssi": {
+        "type": "int"
+      }
+    }
   },
   "pairConnecting": "Connecting to {name}…",
   "@pairConnecting": {
-    "placeholders": {"name": {"type": "String"}}
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
   },
   "pairConnectingBody": "If the radio shows a PIN, enter it on the phone when asked. Screenless radios use 123456.",
   "pairConfirmTitle": "Radio connected",
   "pairConfirmBody": "{name} answered, so the link and the protocol both work. This radio is now the one the app uses.",
   "@pairConfirmBody": {
-    "placeholders": {"name": {"type": "String"}}
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
   },
   "pairConfirmNode": "Node",
   "pairConfirmFirmware": "Firmware",
   "pairConfirmUse": "Use this radio",
   "pairChooseAnother": "Choose another radio",
-
   "settingsHeading": "App settings",
   "settingsBackgroundTitle": "Stay connected in background",
   "settingsBackgroundOn": "Android: a persistent notification keeps the radio linked so messages arrive while backgrounded",
@@ -201,7 +265,6 @@
   "settingsShowIntro": "Show intro again on next launch",
   "settingsShowIntroEnabled": "Wipes the first-run flag so the permissions intro shows again — useful when you're testing the flow",
   "settingsShowIntroDisabled": "Intro is currently scheduled for next launch",
-
   "termsTitle": "Terms and privacy",
   "termsLead": "This app talks to a mesh radio. There is no account, no cloud and no analytics.",
   "termsSectionLocal": "WHAT STAYS ON THIS DEVICE",
@@ -213,20 +276,32 @@
   "termsSectionRetention": "HOW MUCH IS KEPT",
   "termsRetentionBody": "Each conversation keeps its newest {cap} messages; older ones are dropped. A place expires when its own timer runs out, and is then gone.",
   "@termsRetentionBody": {
-    "placeholders": {"cap": {"type": "int"}}
+    "placeholders": {
+      "cap": {
+        "type": "int"
+      }
+    }
   },
   "termsSectionChanges": "CHANGES",
   "termsChangesBody": "If this text changes in a way that matters, the version below changes and this page is shown again before the app opens.",
   "termsVersion": "Version {version}",
   "@termsVersion": {
-    "placeholders": {"version": {"type": "int"}}
+    "placeholders": {
+      "version": {
+        "type": "int"
+      }
+    }
   },
   "termsGateNote": "Agreeing is required to use the app.",
   "termsExit": "Exit",
   "termsAccept": "Agree and continue",
   "termsAcceptedVersion": "You agreed to version {version}.",
   "@termsAcceptedVersion": {
-    "placeholders": {"version": {"type": "int"}}
+    "placeholders": {
+      "version": {
+        "type": "int"
+      }
+    }
   },
   "termsNotAccepted": "Not agreed.",
   "termsSettingsRow": "Terms and privacy",
@@ -243,9 +318,12 @@
   "aboutLicensesButton": "Open-source licenses & attributions",
   "aboutAttributions": "Includes MeshCore documentation (MIT), GeoNames cities (CC-BY 4.0), Natural Earth (public domain), OpenStreetMap map data (ODbL), and the Saira & JetBrains Mono fonts (OFL).",
   "@aboutVersion": {
-    "placeholders": {"version": {"type": "String"}}
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
   },
-
   "personalizationHeading": "Profile & personalization",
   "personalizationThemePreset": "THEME PRESET",
   "personalizationType": "TYPE",
@@ -263,7 +341,6 @@
   "personalizationAudioMasterEnabled": "On by default; augmentation only",
   "dashboardAudioMute": "Mute alert sounds",
   "dashboardAudioUnmute": "Unmute alert sounds",
-
   "demoBanner": "DEMO",
   "demoTooltip": "Demo mode — no radio. Explore channels, settings and docs without a companion.",
   "demoModeRow": "Demo mode (no radio)",
@@ -282,26 +359,34 @@
   "firstRunDeniedTransient": "Bluetooth wasn't granted — you can continue offline or open OS settings to change your mind.",
   "firstRunDeniedPermanent": "Bluetooth was permanently denied — open OS settings to grant it. You can still use the app offline.",
   "firstRunOpenSettings": "Open OS settings",
-
   "dashboardPaired": "paired: {name}",
   "@dashboardPaired": {
-    "placeholders": {"name": {"type": "String"}}
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
   },
   "dashboardCharging": "CHARGING",
   "dashboardBatteryReadout": "{volts}V · ~{percent}%",
   "@dashboardBatteryReadout": {
     "placeholders": {
-      "volts": {"type": "String"},
-      "percent": {"type": "int"}
+      "volts": {
+        "type": "String"
+      },
+      "percent": {
+        "type": "int"
+      }
     }
   },
   "dashboardBatteryLeft": "~{time} left",
   "@dashboardBatteryLeft": {
     "placeholders": {
-      "time": {"type": "String"}
+      "time": {
+        "type": "String"
+      }
     }
   },
-
   "nodesScanArea": "Scan area",
   "nodesScanning": "Scanning…",
   "nodesAdvertise": "Advertise",
@@ -333,10 +418,18 @@
   "nodesStatusReady": "{shown} of {total} in fabric · {inRange} in range · {favs, plural, =0{0 contacts} =1{1 contact} other{{favs} contacts}}",
   "@nodesStatusReady": {
     "placeholders": {
-      "shown": {"type": "int"},
-      "total": {"type": "int"},
-      "inRange": {"type": "int"},
-      "favs": {"type": "int"}
+      "shown": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      },
+      "inRange": {
+        "type": "int"
+      },
+      "favs": {
+        "type": "int"
+      }
     }
   },
   "nodesStatusOffline": "Not connected — Settings → Diagnostics & connect",
@@ -346,7 +439,6 @@
   "nodesEmptyOffline": "Connect a radio to discover nearby nodes.",
   "nodesFavTooltip": "Add to favourites",
   "nodesUnfavTooltip": "Remove from favourites",
-
   "gridTitle": "Hyperlocal grid",
   "gridShowLegend": "Show legend",
   "gridHideLegend": "Hide legend",
@@ -365,7 +457,11 @@
   "gridLegend": "LEGEND",
   "gridLegendRings": "Three concentric rings = distance bands. With GPS on both ends, the outer ring is the **Range** scale above (~{value} right now). Without GPS, rings are RSSI bands (near / mid / far).",
   "@gridLegendRings": {
-    "placeholders": {"value": {"type": "String"}}
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
   },
   "gridLegendSelf": "Centre marker = you. Cross-hair = N-S / E-W guide.",
   "gridLegendDot": "Dot = a fabric node we've heard. Brightness = recency (full = just now, fades to 0 over 24 h then disappears).",
@@ -395,7 +491,11 @@
   "elevationProfileUnknownLabel": "altitude unknown",
   "elevationProfilePeers": "{n} peers tracked",
   "@elevationProfilePeers": {
-    "placeholders": {"n": {"type": "int"}}
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
   },
   "elevationRefPerson": "Human",
   "elevationRefHouse": "House",
@@ -405,7 +505,11 @@
   "elevationRefMtFuji": "Mt Fuji",
   "fabricCoverageCount": "MESH SURVEY · {n} CELLS",
   "@fabricCoverageCount": {
-    "placeholders": {"n": {"type": "int"}}
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
   },
   "fabricResetTooltip": "Reset coverage",
   "fabricResetTitle": "Reset mesh-coverage survey?",
@@ -413,17 +517,27 @@
   "fabricResetApply": "Reset",
   "streetMapRecenter": "Re-centre on me",
   "mapNoFixBanner": "No position fix yet. This is a world view, not centred on you.",
-  "@mapNoFixBanner": { "description": "R69: quiet banner on the Map tab when there is no position fix." },
+  "@mapNoFixBanner": {
+    "description": "R69: quiet banner on the Map tab when there is no position fix."
+  },
   "mapHideTiles": "Hide map tiles",
   "mapShowTiles": "Show map tiles",
   "deviceRegionLoadedOffline": "{label} loaded — Apply when a device is connected.",
   "@deviceRegionLoadedOffline": {
-    "placeholders": {"label": {"type": "String"}}
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
   },
   "equalGridAwaitingFix": "Equal-grid view needs your own location — waiting for a GPS fix (phone or device).",
   "equalGridCellSize": "CELL {size}",
   "@equalGridCellSize": {
-    "placeholders": {"size": {"type": "String"}}
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
   },
   "equalGridZoomIn": "Zoom in (tighter cells)",
   "equalGridZoomOut": "Zoom out (wider cells)",
@@ -439,19 +553,26 @@
   "dashboardLocationRefresh": "Refresh location from device",
   "dashboardLocationAltitude": "alt {meters} m",
   "@dashboardLocationAltitude": {
-    "placeholders": {"meters": {"type": "int"}}
+    "placeholders": {
+      "meters": {
+        "type": "int"
+      }
+    }
   },
   "deviceLocReportsAwaiting": "Device reports: (awaiting)",
   "deviceLocReportsNone": "Device reports: no GPS fix (0, 0)",
   "deviceLocReportsValue": "Device reports: {lat}, {lon}",
   "@deviceLocReportsValue": {
     "placeholders": {
-      "lat": {"type": "String"},
-      "lon": {"type": "String"}
+      "lat": {
+        "type": "String"
+      },
+      "lon": {
+        "type": "String"
+      }
     }
   },
   "deviceLocUnsaved": "✱ unsaved",
-
   "deviceGpsModule": "ON-BOARD GPS MODULE",
   "deviceGpsEnable": "Enable on-board GPS",
   "deviceGpsEnabledHint": "Device firmware polls its GPS chip and updates location automatically.",
@@ -461,18 +582,29 @@
   "deviceGpsIntervalOff": "Off",
   "deviceGpsIntervalSec": "Every {n} s",
   "@deviceGpsIntervalSec": {
-    "placeholders": {"n": {"type": "int"}}
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
   },
   "deviceGpsIntervalMin": "Every {n} min",
   "@deviceGpsIntervalMin": {
-    "placeholders": {"n": {"type": "int"}}
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
   },
   "deviceGpsIntervalHour": "Every {n} h",
   "@deviceGpsIntervalHour": {
-    "placeholders": {"n": {"type": "int"}}
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
   },
   "deviceGpsIntervalFixedByFirmware": "Polling cadence is fixed by this firmware build (the sensors module doesn't expose `gps_interval`).",
-
   "locTitle": "Auto-publish location",
   "locTileSubtitle": "Periodic + on-movement phone-GPS push to the device",
   "locHelp": "When the radio's GPS fix is stale, write the phone's position to it.",
@@ -484,36 +616,64 @@
   "locOff": "Off",
   "locIntervalMin": "Every {n} min",
   "@locIntervalMin": {
-    "placeholders": {"n": {"type": "int"}}
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
   },
   "locIntervalHour": "Every {n} h",
   "@locIntervalHour": {
-    "placeholders": {"n": {"type": "int"}}
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
   },
   "locMovementM": "{m} m",
   "@locMovementM": {
-    "placeholders": {"m": {"type": "int"}}
+    "placeholders": {
+      "m": {
+        "type": "int"
+      }
+    }
   },
   "locMovementKm": "{km} km",
   "@locMovementKm": {
-    "placeholders": {"km": {"type": "int"}}
+    "placeholders": {
+      "km": {
+        "type": "int"
+      }
+    }
   },
   "locPublishNow": "Publish now",
   "locPublishNowSub": "One-shot manual push to verify the loop.",
   "locLastPublished": "Last: {lat}, {lon}  ·  {time}  ·  {trigger}",
   "@locLastPublished": {
     "placeholders": {
-      "lat": {"type": "String"},
-      "lon": {"type": "String"},
-      "time": {"type": "String"},
-      "trigger": {"type": "String"}
+      "lat": {
+        "type": "String"
+      },
+      "lon": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      },
+      "trigger": {
+        "type": "String"
+      }
     }
   },
   "locBeacon": "Periodic position beacon",
   "locBeaconSub": "Every 60 s, advertise your position (zero-hop). Uses airtime and battery.",
   "locBatteryHint": "Smart-broadcast streams GPS (~10 mA continuous). Periodic-only is cheaper. Combine both for responsiveness; pick smart-broadcast alone if battery matters.",
   "@globeFooter": {
-    "placeholders": {"n": {"type": "int"}}
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
   },
   "gridEmpty": "No fabric in range yet.\n\nA node appears when its advert is heard.",
   "gridStatusOffline": "Not connected — Settings → Diagnostics & connect",
@@ -524,9 +684,15 @@
   "gridStatusCounts": "{visible} in fabric · {known} known · {favs, plural, =0{0 contacts} =1{1 contact} other{{favs} contacts}}",
   "@gridStatusCounts": {
     "placeholders": {
-      "visible": {"type": "int"},
-      "known": {"type": "int"},
-      "favs": {"type": "int"}
+      "visible": {
+        "type": "int"
+      },
+      "known": {
+        "type": "int"
+      },
+      "favs": {
+        "type": "int"
+      }
     }
   },
   "gridGroupPeers": "PEERS",
@@ -537,7 +703,6 @@
   "gridOrientNorthUp": "North-up",
   "gridOrientHeadingUp": "Heading-up",
   "gridHeadingHud": "HEADING",
-
   "voiceSettingsTitle": "Voice (TTS quality)",
   "voiceSettingsHint": "Off until you turn on SPEECH in App settings. Rate / pitch / voice take effect on the next utterance.",
   "voiceRate": "Rate",
@@ -547,28 +712,43 @@
   "voicePickerOnlyMyLanguage": "Only show my language",
   "voicePickerOnlyMyLanguageHint": "Limits the list to voices matching the phone's current language ({lang}). Turn off to see every voice the OS reports.",
   "@voicePickerOnlyMyLanguageHint": {
-    "placeholders": {"lang": {"type": "String"}}
+    "placeholders": {
+      "lang": {
+        "type": "String"
+      }
+    }
   },
   "voicePickerFilteredCount": "{n} · {lang}",
   "@voicePickerFilteredCount": {
     "placeholders": {
-      "n": {"type": "int"},
-      "lang": {"type": "String"}
+      "n": {
+        "type": "int"
+      },
+      "lang": {
+        "type": "String"
+      }
     }
   },
   "voicePickerAllCount": "{n} · ALL",
   "@voicePickerAllCount": {
-    "placeholders": {"n": {"type": "int"}}
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
   },
   "voicePickerNoMatchForLanguage": "No voices installed for {lang}. Turn off the filter above to see other languages, or install a {lang} voice in your OS settings.",
   "@voicePickerNoMatchForLanguage": {
-    "placeholders": {"lang": {"type": "String"}}
+    "placeholders": {
+      "lang": {
+        "type": "String"
+      }
+    }
   },
   "voicePickerSystem": "System default",
   "voicePreview": "Try a phrase",
   "voicePreviewPhrase": "This is a Meshmore SNS voice preview.",
   "voicePreviewDisabledHint": "Turn on SPEECH in App settings to audition a phrase.",
-
   "settingsHubDevice": "Device configuration",
   "settingsGroupRadio": "RADIO",
   "settingsGroupApp": "APP",
@@ -583,7 +763,6 @@
   "settingsHubChannelsSub": "Slots · name + PSK · #hashtag · active",
   "settingsHubDiagnostics": "Diagnostics & connect",
   "settingsHubDiagnosticsSub": "Connect a radio, frame log, capture",
-
   "bootHeader": "MESHMORE  /  SYNCHRONIZING",
   "bootConnecting": "CONNECTING TO RADIO…",
   "bootHandshaking": "HANDSHAKING…",
@@ -591,120 +770,215 @@
   "bootOffline": "OFFLINE — Settings → Diagnostics & connect",
   "bootSkip": "SKIP",
   "bootSubtitle": "WAIT  /  進行中",
-
   "eventAdvert": "advert · {name}",
   "@eventAdvert": {
-    "placeholders": {"name": {"type": "String"}}
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
   },
   "eventChannelMsg": "ch{channel} · \"{text}\"",
   "@eventChannelMsg": {
     "placeholders": {
-      "channel": {"type": "String"},
-      "text": {"type": "String"}
+      "channel": {
+        "type": "String"
+      },
+      "text": {
+        "type": "String"
+      }
     }
   },
   "eventDm": "dm · \"{text}\"",
   "@eventDm": {
-    "placeholders": {"text": {"type": "String"}}
+    "placeholders": {
+      "text": {
+        "type": "String"
+      }
+    }
   },
   "eventContact": "contact · {name}",
   "@eventContact": {
-    "placeholders": {"name": {"type": "String"}}
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
   },
   "eventBattery": "battery {volts}V",
   "@eventBattery": {
-    "placeholders": {"volts": {"type": "String"}}
+    "placeholders": {
+      "volts": {
+        "type": "String"
+      }
+    }
   },
   "eventDeviceError": "device error (code {code})",
   "@eventDeviceError": {
-    "placeholders": {"code": {"type": "String"}}
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
   },
   "eventDeviceClockSynced": "device clock in sync",
   "eventDeviceClockSkew": "device clock read (offset {seconds}s)",
   "@eventDeviceClockSkew": {
-    "placeholders": {"seconds": {"type": "String"}}
+    "placeholders": {
+      "seconds": {
+        "type": "String"
+      }
+    }
   },
   "eventMsgSent": "msg sent (ack {ack})",
   "@eventMsgSent": {
-    "placeholders": {"ack": {"type": "String"}}
+    "placeholders": {
+      "ack": {
+        "type": "String"
+      }
+    }
   },
   "eventDeviceInfo": "device {version}",
   "@eventDeviceInfo": {
-    "placeholders": {"version": {"type": "String"}}
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
   },
   "eventSelfInfo": "self-info · {name}",
   "@eventSelfInfo": {
-    "placeholders": {"name": {"type": "String"}}
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
   },
   "eventQueuedWaiting": "queued items waiting",
   "eventQueuedWaitingN": "queued items waiting ({count})",
   "@eventQueuedWaitingN": {
-    "placeholders": {"count": {"type": "String"}}
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
   },
-
   "chatManageChannels": "Manage channels",
   "chatTtsMuted": "TTS muted for this channel",
   "chatTtsActive": "TTS reading this channel",
   "chatRetentionDropped": "{count, plural, =1{1 older message is gone} other{{count} older messages are gone}} — each conversation keeps its newest {cap}",
   "@chatRetentionDropped": {
     "placeholders": {
-      "count": {"type": "int"},
-      "cap": {"type": "int"}
+      "count": {
+        "type": "int"
+      },
+      "cap": {
+        "type": "int"
+      }
     }
   },
   "chatEmpty": "— no messages on this channel —",
   "chatJumpToNewest": "{count, plural, =1{1 new} other{{count} new}}",
   "@chatJumpToNewest": {
-    "placeholders": {"count": {"type": "int"}}
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
   "chatComposerHint": "Message {channel}",
   "@chatComposerHint": {
-    "placeholders": {"channel": {"type": "String"}}
+    "placeholders": {
+      "channel": {
+        "type": "String"
+      }
+    }
   },
   "chatComposerOffline": "Connect a radio to send",
   "chatSend": "Send",
   "chatBudgetRemaining": "{remaining} of {max} bytes left",
   "@chatBudgetRemaining": {
-    "placeholders": {"remaining": {"type": "int"}, "max": {"type": "int"}}
+    "placeholders": {
+      "remaining": {
+        "type": "int"
+      },
+      "max": {
+        "type": "int"
+      }
+    }
   },
   "chatBudgetEstimate": "about {remaining} of {max} bytes left — the radio's name is not known yet",
   "@chatBudgetEstimate": {
-    "placeholders": {"remaining": {"type": "int"}, "max": {"type": "int"}}
+    "placeholders": {
+      "remaining": {
+        "type": "int"
+      },
+      "max": {
+        "type": "int"
+      }
+    }
   },
   "chatBudgetNear": "Nearly at the limit: the radio counts its own name in these bytes",
   "chatBudgetTooLong": "Too long by {over} bytes — the radio would cut the rest without telling you",
   "@chatBudgetTooLong": {
-    "placeholders": {"over": {"type": "int"}}
+    "placeholders": {
+      "over": {
+        "type": "int"
+      }
+    }
   },
   "chatMessageActions": "Message actions",
   "chatSinceNow": "now",
   "chatSinceMinutes": "{m}m",
   "@chatSinceMinutes": {
-    "placeholders": { "m": { "type": "int" } }
+    "placeholders": {
+      "m": {
+        "type": "int"
+      }
+    }
   },
   "chatSinceHours": "{h}h",
   "@chatSinceHours": {
-    "placeholders": { "h": { "type": "int" } }
+    "placeholders": {
+      "h": {
+        "type": "int"
+      }
+    }
   },
   "chatSinceDays": "{d}d",
   "@chatSinceDays": {
-    "placeholders": { "d": { "type": "int" } }
+    "placeholders": {
+      "d": {
+        "type": "int"
+      }
+    }
   },
-
   "dmTitle": "DM · {peer}",
   "@dmTitle": {
-    "placeholders": {"peer": {"type": "String"}}
+    "placeholders": {
+      "peer": {
+        "type": "String"
+      }
+    }
   },
   "dmPubkeyLabel": "pubkey · {hex}",
   "@dmPubkeyLabel": {
-    "placeholders": {"hex": {"type": "String"}}
+    "placeholders": {
+      "hex": {
+        "type": "String"
+      }
+    }
   },
   "nodeDetailSignature": "Arrival signature",
   "nodeDetailSignatureHint": "A cue just for this peer, instead of the DM cue.",
   "nodeDetailSignatureNone": "Default",
   "nodeDetailSignatureSlot": "Signature {n}",
   "@nodeDetailSignatureSlot": {
-    "placeholders": {"n": {"type": "int"}}
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
   },
   "nodeDetailSignatureMutedHint": "Audio is muted — you will feel the vibration but not hear it.",
   "dmEmpty": "— no messages yet —",
@@ -717,11 +991,13 @@
   "dmPeerNotInFabric": "This peer hasn't shown up on the mesh yet (no advert heard).",
   "dmComposerHint": "Message {peer}",
   "@dmComposerHint": {
-    "placeholders": {"peer": {"type": "String"}}
+    "placeholders": {
+      "peer": {
+        "type": "String"
+      }
+    }
   },
   "dmSend": "Send DM",
-
-  "actionRetry": "Retry",
   "actionRetrySub": "Send this message again",
   "actionReply": "Reply",
   "actionReplySub": "Quote this message in your reply",
@@ -734,7 +1010,6 @@
   "actionDeleteConfirmBody": "This removes the row from your local history. MeshCore has no recall — the recipient still has it.",
   "actionCancel": "Cancel",
   "actionDelete": "Delete",
-
   "nodeDetailSelf": "This is your own node — no Message / Favourite.",
   "nodeDetailShareTelemetryTitle": "Share my telemetry with this contact",
   "nodeDetailShareTelemetryHelp": "Only applies when your telemetry mode is Contacts and Base is on.",
@@ -744,18 +1019,30 @@
   "nodeIdentityBody": "“{name}” is active under a new key — likely deleted and re-added on their device. Move your star, tags, and {count} saved messages to the current key?",
   "@nodeIdentityBody": {
     "placeholders": {
-      "name": { "type": "String" },
-      "count": { "type": "int" }
+      "name": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
     }
   },
   "nodeIdentityOldKey": "Old key …{shortId}",
   "@nodeIdentityOldKey": {
-    "placeholders": { "shortId": { "type": "String" } }
+    "placeholders": {
+      "shortId": {
+        "type": "String"
+      }
+    }
   },
   "nodeIdentityAction": "Move to current key",
   "nodeIdentityMoved": "Moved your data to “{name}”’s current key",
   "@nodeIdentityMoved": {
-    "placeholders": { "name": { "type": "String" } }
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
   },
   "nodeIdentityLinkAction": "Key changed? Link to another node",
   "nodeIdentityLinkTitle": "Link a changed key",
@@ -771,7 +1058,11 @@
   "nodeDetailRemoveDeviceContact": "Remove from device contacts",
   "nodeDetailRemoveDeviceContactConfirm": "Remove “{name}” from your radio's contacts? Frees a slot. You can re-add it later.",
   "@nodeDetailRemoveDeviceContactConfirm": {
-    "placeholders": { "name": { "type": "String" } }
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
   },
   "nodeDetailRemoveDeviceContactDone": "Removed from your radio's contacts.",
   "deviceContactsTitle": "Radio contacts",
@@ -780,11 +1071,22 @@
   "deviceContactsEmpty": "Your radio has no contacts.",
   "deviceContactsCount": "{count} of {max} contacts on the radio",
   "@deviceContactsCount": {
-    "placeholders": { "count": { "type": "int" }, "max": { "type": "int" } }
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "max": {
+        "type": "int"
+      }
+    }
   },
   "deviceContactsCountOnly": "{count} contacts on the radio",
   "@deviceContactsCountOnly": {
-    "placeholders": { "count": { "type": "int" } }
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
   "deviceContactsFullHelp": "Contact list is full. Remove entries below to add new ones.",
   "deviceContactsChannelsNote": "You only need a contact to send a direct message. Channel messages work without contacts — you'll still see everyone on channels.",
@@ -793,43 +1095,75 @@
   "deviceContactsOutOfRangeIntro": "Removes contacts that are far from you — or that hide their location (no GPS), which we treat as out of range. Favourites and known contacts are kept.",
   "deviceContactsBeyondKm": "Beyond {km} km (+ location-hidden)",
   "@deviceContactsBeyondKm": {
-    "placeholders": { "km": { "type": "int" } }
+    "placeholders": {
+      "km": {
+        "type": "int"
+      }
+    }
   },
   "deviceContactsNeedLocation": "No location set, so distance can't be measured — only location-hidden contacts are caught. Set your position (GPS or a manual pin) to also remove far-away GPS contacts.",
   "deviceContactsRemoveOutOfRangeDone": "Removed {count} out-of-range contacts.",
   "@deviceContactsRemoveOutOfRangeDone": {
-    "placeholders": { "count": { "type": "int" } }
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
   "deviceContactsRemoveStale": "Remove not heard recently",
   "deviceContactsStaleIntro": "Removes contacts you haven't heard from in a while. Favourites and known contacts are kept.",
   "deviceContactsNotHeardDays": "Not heard in {days} days",
   "@deviceContactsNotHeardDays": {
-    "placeholders": { "days": { "type": "int" } }
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
   },
   "deviceContactsRemoveStaleDone": "Removed {count} stale contacts.",
   "@deviceContactsRemoveStaleDone": {
-    "placeholders": { "count": { "type": "int" } }
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
   "deviceContactsRemoveAll": "Remove all",
   "deviceContactsRemoveAllConfirm": "Remove all {count} contacts from the radio? You don't need contacts for channels — only to DM someone. Re-add anyone you want to message later.",
   "@deviceContactsRemoveAllConfirm": {
-    "placeholders": { "count": { "type": "int" } }
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
   "deviceContactsRemoveAllDone": "Removed {count} contacts from the radio.",
   "@deviceContactsRemoveAllDone": {
-    "placeholders": { "count": { "type": "int" } }
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
   "deviceContactsFlood": "flood",
   "deviceContactsDirect": "direct",
   "deviceContactsHops": "{n} hops",
   "@deviceContactsHops": {
-    "placeholders": { "n": { "type": "int" } }
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
   },
   "nodeIdentityLinkConfirm": "Move star, tags, and messages from “{from}” to “{to}”, and retire the old key?",
   "@nodeIdentityLinkConfirm": {
     "placeholders": {
-      "from": { "type": "String" },
-      "to": { "type": "String" }
+      "from": {
+        "type": "String"
+      },
+      "to": {
+        "type": "String"
+      }
     }
   },
   "nodeDetailFavourite": "Favourite",
@@ -866,15 +1200,27 @@
   "meshbookClear": "Clear",
   "meshbookClearConfirm": "Clear the last 24h of Meshbook data for CH{channel}? It rebuilds as new channel messages arrive. (Each channel is stored separately.)",
   "@meshbookClearConfirm": {
-    "placeholders": { "channel": { "type": "String" } }
+    "placeholders": {
+      "channel": {
+        "type": "String"
+      }
+    }
   },
   "meshbookStats": "{total} msgs · {replies} replies ({pct}%) · {voices} voices",
   "@meshbookStats": {
     "placeholders": {
-      "total": { "type": "int" },
-      "replies": { "type": "int" },
-      "pct": { "type": "int" },
-      "voices": { "type": "int" }
+      "total": {
+        "type": "int"
+      },
+      "replies": {
+        "type": "int"
+      },
+      "pct": {
+        "type": "int"
+      },
+      "voices": {
+        "type": "int"
+      }
     }
   },
   "weatherSelf": "This device",
@@ -887,7 +1233,9 @@
   "wxMentionsShort": "{count} mentions",
   "@wxMentionsShort": {
     "placeholders": {
-      "count": { "type": "int" }
+      "count": {
+        "type": "int"
+      }
     }
   },
   "wxLastHour": "1H",
@@ -904,10 +1252,21 @@
   "weatherEmpty": "No nodes are reporting environment data yet.\nReadings appear as sensor-equipped nodes are polled — enable \"Gather node telemetry\" in App settings.",
   "weatherSelfNoTelemetry": "This device hasn't returned telemetry yet. Make sure you're connected, then reopen this view.",
   "weatherSelfNoEnv": "Environment telemetry isn't supported by this device's firmware.\nIt reported: {types}.\nThe sensor (e.g. the T1000-E's BME280) needs a MeshCore sensor firmware build — the standard build sends only battery/GPS, and the device clamps the environment mode back to off. This is a device limitation, not an app setting.",
-  "@weatherSelfNoEnv": { "placeholders": { "types": { "type": "String" } } },
+  "@weatherSelfNoEnv": {
+    "placeholders": {
+      "types": {
+        "type": "String"
+      }
+    }
+  },
   "weatherReporting": "{count} reporting",
-  "@weatherReporting": { "placeholders": { "count": { "type": "int" } } },
-
+  "@weatherReporting": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "docsHubSubtitle": "Protocol, firmware, app and field notes, offline.",
   "docsHubFooter": "Documentation is cached on-device for offline reading. Tap a doc, then ↻ to pull the latest. Upstream: meshcore-dev/MeshCore.",
   "docsProtocolTitle": "Protocol",
@@ -915,7 +1274,13 @@
   "docsFirmwareTitle": "Firmware",
   "docsFirmwareSub": "MeshCore firmware overview (README).",
   "docsFirmwareSubVersion": "MeshCore firmware — matched to {version}.",
-  "@docsFirmwareSubVersion": { "placeholders": { "version": { "type": "String" } } },
+  "@docsFirmwareSubVersion": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
   "docsAppTitle": "App",
   "docsAppSub": "How Meshmore SNS works, and how it uses the mesh.",
   "docsDevicesTitle": "Devices",
@@ -925,31 +1290,85 @@
   "docsUpToDate": "Already up to date",
   "docsOriginBundled": "Bundled snapshot",
   "docsOriginUpdated": "Updated {when}",
-  "@docsOriginUpdated": { "placeholders": { "when": { "type": "String" } } },
+  "@docsOriginUpdated": {
+    "placeholders": {
+      "when": {
+        "type": "String"
+      }
+    }
+  },
   "docsFirmwareForVersion": "device {version}",
-  "@docsFirmwareForVersion": { "placeholders": { "version": { "type": "String" } } },
+  "@docsFirmwareForVersion": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
   "docsFirmwareNoDevice": "no device connected",
   "docsAgoJustNow": "just now",
   "docsAgoMinutes": "{n}m ago",
-  "@docsAgoMinutes": { "placeholders": { "n": { "type": "int" } } },
+  "@docsAgoMinutes": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
   "docsAgoHours": "{n}h ago",
-  "@docsAgoHours": { "placeholders": { "n": { "type": "int" } } },
+  "@docsAgoHours": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
   "docsAgoDays": "{n}d ago",
-  "@docsAgoDays": { "placeholders": { "n": { "type": "int" } } },
+  "@docsAgoDays": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
   "weatherMin": "MIN",
   "weatherAvg": "AVG",
   "weatherMax": "MAX",
   "weatherAgoSeconds": "{s}s ago",
-  "@weatherAgoSeconds": { "placeholders": { "s": { "type": "int" } } },
+  "@weatherAgoSeconds": {
+    "placeholders": {
+      "s": {
+        "type": "int"
+      }
+    }
+  },
   "weatherAgoMinutes": "{m}m ago",
-  "@weatherAgoMinutes": { "placeholders": { "m": { "type": "int" } } },
+  "@weatherAgoMinutes": {
+    "placeholders": {
+      "m": {
+        "type": "int"
+      }
+    }
+  },
   "weatherAgoHours": "{h}h ago",
-  "@weatherAgoHours": { "placeholders": { "h": { "type": "int" } } },
+  "@weatherAgoHours": {
+    "placeholders": {
+      "h": {
+        "type": "int"
+      }
+    }
+  },
   "snsCellsAwaitingFix": "Waiting for a location fix — the heat map centres on you.",
   "snsCellsClear": "Clear",
   "snsCellsStatus": "{active} cells · {hot} hot",
   "snsPlacesButton": "Places ({count})",
-  "@snsPlacesButton": { "placeholders": { "count": { "type": "int" } } },
+  "@snsPlacesButton": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "snsPlacesTitle": "INFERRED PLACES (LAST HOUR)",
   "snsPlacesEmpty": "No inferred places right now.",
   "snsPlacesDismiss": "Not a place — dismiss",
@@ -957,7 +1376,14 @@
   "snsFrameRegion": "Region · ~300 km",
   "snsFrameMesh": "Mesh · fit all",
   "@snsCellsStatus": {
-    "placeholders": {"active": {"type": "int"}, "hot": {"type": "int"}}
+    "placeholders": {
+      "active": {
+        "type": "int"
+      },
+      "hot": {
+        "type": "int"
+      }
+    }
   },
   "snsCellsLegendTitle": "SNS CELLS",
   "snsCellsLegendDesc": "A live social-activity heat map. Each observed message warms its cell; cells cool over a one-hour horizon.",
@@ -972,7 +1398,11 @@
   "meshTreeHopsFlood": "Flood / All",
   "meshTreeHopsN": "≤{n} hops",
   "@meshTreeHopsN": {
-    "placeholders": {"n": {"type": "int"}}
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
   },
   "meshTreeRecenter": "Recenter",
   "meshTreeLegendTitle": "MESH TREE",
@@ -997,29 +1427,49 @@
   "nodeDetailHopsDirect": "direct (0 hops)",
   "nodeDetailHopsViaRepeaters": "{n} via repeater(s)",
   "@nodeDetailHopsViaRepeaters": {
-    "placeholders": {"n": {"type": "int"}}
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
   },
   "nodeDetailHopsUnknown": "unknown",
   "nodeDetailHopsFlood": "Flood",
   "nodeDetailAltitudeKv": "altitude",
   "nodeDetailAltitudeMeters": "{m} m",
   "@nodeDetailAltitudeMeters": {
-    "placeholders": {"m": {"type": "String"}}
+    "placeholders": {
+      "m": {
+        "type": "String"
+      }
+    }
   },
   "nodeDetailTempKv": "temperature",
   "nodeDetailTempValue": "{c} °C",
   "@nodeDetailTempValue": {
-    "placeholders": {"c": {"type": "String"}}
+    "placeholders": {
+      "c": {
+        "type": "String"
+      }
+    }
   },
   "nodeDetailHumidityKv": "humidity",
   "nodeDetailHumidityValue": "{p}%",
   "@nodeDetailHumidityValue": {
-    "placeholders": {"p": {"type": "String"}}
+    "placeholders": {
+      "p": {
+        "type": "String"
+      }
+    }
   },
   "nodeDetailPressureKv": "pressure",
   "nodeDetailPressureValue": "{hpa} hPa",
   "@nodeDetailPressureValue": {
-    "placeholders": {"hpa": {"type": "String"}}
+    "placeholders": {
+      "hpa": {
+        "type": "String"
+      }
+    }
   },
   "nodeDetailLuminosityKv": "luminosity",
   "nodeDetailQueryTelemetry": "Query telemetry",
@@ -1028,49 +1478,84 @@
   "nodeDetailTelemetryNotContact": "Not a device contact, so telemetry is unavailable.",
   "nodeDetailTelemetryAge": "telemetry from {age}",
   "@nodeDetailTelemetryAge": {
-    "placeholders": {"age": {"type": "String"}}
+    "placeholders": {
+      "age": {
+        "type": "String"
+      }
+    }
   },
   "nodeDetailAgoSeconds": "{n}s ago",
   "@nodeDetailAgoSeconds": {
-    "placeholders": {"n": {"type": "int"}}
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
   },
   "nodeDetailAgoMinutes": "{n} min ago",
   "@nodeDetailAgoMinutes": {
-    "placeholders": {"n": {"type": "int"}}
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
   },
   "nodeDetailAgoHours": "{n} h ago",
   "@nodeDetailAgoHours": {
-    "placeholders": {"n": {"type": "int"}}
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
   },
   "nodeDetailAgoDays": "{n} d ago",
   "@nodeDetailAgoDays": {
-    "placeholders": {"n": {"type": "int"}}
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
   },
-
   "channelsTitle": "Channels",
   "channelsHelp": "Slot 0 is the shared public channel. A private group needs the same slot, name and PSK on every node.",
   "channelsOfflineHint": "Connect a radio (Diagnostics) to edit channels.",
   "channelsEmpty": "— empty —",
   "channelsSlotLabel": "slot {idx}",
   "@channelsSlotLabel": {
-    "placeholders": {"idx": {"type": "int"}}
+    "placeholders": {
+      "idx": {
+        "type": "int"
+      }
+    }
   },
   "channelsSlotActive": "slot {idx} · ACTIVE",
   "@channelsSlotActive": {
-    "placeholders": {"idx": {"type": "int"}}
+    "placeholders": {
+      "idx": {
+        "type": "int"
+      }
+    }
   },
   "channelsEdit": "Edit",
   "channelsSet": "Set",
   "channelsSetSnack": "Channel {idx} set to \"{name}\" — every node needs the same name & PSK here",
   "@channelsSetSnack": {
     "placeholders": {
-      "idx": {"type": "int"},
-      "name": {"type": "String"}
+      "idx": {
+        "type": "int"
+      },
+      "name": {
+        "type": "String"
+      }
     }
   },
   "channelsDialogTitle": "Channel slot {idx}",
   "@channelsDialogTitle": {
-    "placeholders": {"idx": {"type": "int"}}
+    "placeholders": {
+      "idx": {
+        "type": "int"
+      }
+    }
   },
   "channelsName": "Channel name",
   "channelsInferPlaces": "Infer places from messages",
@@ -1078,12 +1563,20 @@
   "notifTitleChannel": "Message on {name}",
   "@notifTitleChannel": {
     "description": "OS notification title for a channel message.",
-    "placeholders": { "name": { "type": "String" } }
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
   },
   "notifTitleDirect": "Direct message from {name}",
   "@notifTitleDirect": {
     "description": "OS notification title for a direct message.",
-    "placeholders": { "name": { "type": "String" } }
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
   },
   "notifTitleSos": "Emergency alert",
   "@notifTitleSos": {
@@ -1094,27 +1587,41 @@
     "description": "Section heading in the channel editor for the per-channel notification bundle."
   },
   "notifOs": "Notify on the lock screen",
-  "@notifOs": { "description": "Per-channel: post an OS notification." },
+  "@notifOs": {
+    "description": "Per-channel: post an OS notification."
+  },
   "notifAudio": "Play a cue",
-  "@notifAudio": { "description": "Per-channel: play the theme's audio cue." },
+  "@notifAudio": {
+    "description": "Per-channel: play the theme's audio cue."
+  },
   "notifHaptic": "Vibrate",
-  "@notifHaptic": { "description": "Per-channel: vibrate." },
+  "@notifHaptic": {
+    "description": "Per-channel: vibrate."
+  },
   "notifTts": "Speak the message",
-  "@notifTts": { "description": "Per-channel: read the message aloud." },
+  "@notifTts": {
+    "description": "Per-channel: read the message aloud."
+  },
   "notifMentionsOnly": "Only when named",
   "@notifMentionsOnly": {
     "description": "Per-channel: alert only when the message names this device."
   },
   "notifMentionsOnlySub": "Whole word or @name. Off means every message alerts.",
-  "@notifMentionsOnlySub": { "description": "Explains the mentions-only mode." },
+  "@notifMentionsOnlySub": {
+    "description": "Explains the mentions-only mode."
+  },
   "notifKeySuffix": "Also match the key suffix",
   "@notifKeySuffix": {
     "description": "Per-channel opt-in: treat the public key's hex suffix as a mention."
   },
   "notifKeySuffixSub": "Four hex characters are not an identity; leave this off unless you know the sender's.",
-  "@notifKeySuffixSub": { "description": "Warns about the key-suffix opt-in." },
+  "@notifKeySuffixSub": {
+    "description": "Warns about the key-suffix opt-in."
+  },
   "notifDeniedBanner": "Notifications are turned off for this app, so messages will not appear on your lock screen.",
-  "@notifDeniedBanner": { "description": "Shown when the OS notification permission is denied." },
+  "@notifDeniedBanner": {
+    "description": "Shown when the OS notification permission is denied."
+  },
   "channelsKeySource": "Key source",
   "channelsKeyPublic": "Public",
   "channelsKeyHashtag": "#tag",
@@ -1144,20 +1651,32 @@
   "channelsClear": "Clear slot",
   "channelsClearConfirmTitle": "Clear slot {idx}?",
   "@channelsClearConfirmTitle": {
-    "placeholders": {"idx": {"type": "int"}}
+    "placeholders": {
+      "idx": {
+        "type": "int"
+      }
+    }
   },
   "channelsClearConfirmBody": "MeshCore has no protocol-level \"clear\" — this slot will be overwritten back to the well-known Public defaults (name + key). Other nodes will need to do the same to talk on it again.",
   "channelsClearConfirmAction": "Clear",
   "channelsClearSnack": "Slot {idx} cleared (reset to Public defaults)",
   "@channelsClearSnack": {
-    "placeholders": {"idx": {"type": "int"}}
+    "placeholders": {
+      "idx": {
+        "type": "int"
+      }
+    }
   },
   "channelsDefaultBadge": "DEFAULT",
   "channelsSetDefaultTooltip": "Set as default channel on launch",
   "channelsClearDefaultTooltip": "Clear default channel preference",
   "channelsSetDefaultSnack": "Slot {idx} is now the launch default",
   "@channelsSetDefaultSnack": {
-    "placeholders": {"idx": {"type": "int"}}
+    "placeholders": {
+      "idx": {
+        "type": "int"
+      }
+    }
   },
   "channelsClearedDefaultSnack": "Launch default cleared",
   "channelsKeyShake": "Shake",
@@ -1166,9 +1685,15 @@
   "channelsShakeProgress": "{accepted} of {target} samples · {pct}%",
   "@channelsShakeProgress": {
     "placeholders": {
-      "accepted": {"type": "int"},
-      "target": {"type": "int"},
-      "pct": {"type": "int"}
+      "accepted": {
+        "type": "int"
+      },
+      "target": {
+        "type": "int"
+      },
+      "pct": {
+        "type": "int"
+      }
     }
   },
   "channelsShakeReroll": "Reroll",
@@ -1176,12 +1701,15 @@
   "channelsShareQr": "Share via QR",
   "channelsQrTitle": "Share channel {idx}",
   "@channelsQrTitle": {
-    "placeholders": {"idx": {"type": "int"}}
+    "placeholders": {
+      "idx": {
+        "type": "int"
+      }
+    }
   },
   "channelsQrBody": "Scan with a Meshmore device or any QR reader. Anyone with this code can join the channel — share only with trusted peers.",
   "channelsQrPayload": "Payload (also copy-friendly)",
   "channelsQrClose": "Close",
-
   "deviceConfigTitle": "Device configuration",
   "deviceRegionBand": "REGION / BAND",
   "deviceRegionCurrent": "CURRENTLY APPLIED",
@@ -1196,9 +1724,15 @@
   "deviceRegionSuggestBody": "Based on your phone GPS ({lat}, {lon}), the matching preset is {label}. Verify this is legal where you are before applying — particularly outside the country you set up in.",
   "@deviceRegionSuggestBody": {
     "placeholders": {
-      "lat": {"type": "String"},
-      "lon": {"type": "String"},
-      "label": {"type": "String"}
+      "lat": {
+        "type": "String"
+      },
+      "lon": {
+        "type": "String"
+      },
+      "label": {
+        "type": "String"
+      }
     }
   },
   "deviceRegionSuggestApply": "Apply",
@@ -1206,12 +1740,15 @@
   "deviceRegionSuggestNoMatch": "Your location doesn't match any shipped country preset — pick one manually.",
   "deviceRegionAppliedToast": "{label} applied — make sure every node in your mesh uses the same preset.",
   "@deviceRegionAppliedToast": {
-    "placeholders": {"label": {"type": "String"}}
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
   },
-    "deviceRegionDisclaimerShort": "Community-curated values, not regulatory guarantees.",
+  "deviceRegionDisclaimerShort": "Community-curated values, not regulatory guarantees.",
   "deviceRegionDisclaimerMore": "Details",
-"deviceRegionDisclaimer": "Operating points are community-curated, not regulatory guarantees. Pick the preset legal where you are and use the SAME tuple on every node. In Japan, legal parameters are not enough — the radio hardware itself must carry 技適 (giteki) certification; most grey-import LoRa boards do not, and operating one is an offence under the Radio Act regardless of settings. The Japan (ARIB STD-T108) preset is a community proposal that hasn't been broadly field-validated — please confirm it is legal and works on your hardware before relying on it.",
-
+  "deviceRegionDisclaimer": "Operating points are community-curated, not regulatory guarantees. Pick the preset legal where you are and use the SAME tuple on every node. In Japan, legal parameters are not enough — the radio hardware itself must carry 技適 (giteki) certification; most grey-import LoRa boards do not, and operating one is an offence under the Radio Act regardless of settings. The Japan (ARIB STD-T108) preset is a community proposal that hasn't been broadly field-validated — please confirm it is legal and works on your hardware before relying on it.",
   "presetUsCanada": "USA / Canada",
   "presetUsArizona": "USA — Arizona",
   "presetJpAribT108": "Japan (ARIB STD-T108)",
@@ -1227,10 +1764,9 @@
   "presetAuSaWaQld": "Australia (SA / WA / QLD)",
   "presetNz": "New Zealand",
   "presetVn": "Vietnam",
-
   "cancel": "Cancel",
   "closeSheet": "Close",
-  "deviceRadioParams": "RADIO PARAMS",
+  "deviceRadioParams": "Frequency & bandwidth",
   "deviceIdentityAdvert": "IDENTITY / ADVERT",
   "deviceChannelsSection": "CHANNELS",
   "deviceOtherParamsSection": "OTHER PARAMS",
@@ -1241,19 +1777,50 @@
   "deviceCodingRate": "Coding rate (5–8)",
   "deviceTxPower": "TX power (dBm)",
   "devicePathHashSize": "Path hash size",
-  "@devicePathHashSize": {"description": "Radio/network setting. MeshCore path hash length."},
+  "@devicePathHashSize": {
+    "description": "Radio/network setting. MeshCore path hash length."
+  },
   "devicePathHashSizeHelp": "The hash length this radio stamps on the packets it sends. Repeaters follow each packet's own length, so nodes need not agree. Longer hashes tell repeaters apart better but shrink the directed payload budget.",
   "devicePathHashUnread": "path hash: unknown (device not queried yet)",
   "devicePathHashMismatch": "Not applied yet: this radio uses {device} byte(s), the form is set to {form}.",
-  "@devicePathHashMismatch": {"placeholders": {"device": {"type": "String"}, "form": {"type": "String"}}},
-  "deviceRadioParams": "Frequency & bandwidth",
+  "@devicePathHashMismatch": {
+    "placeholders": {
+      "device": {
+        "type": "String"
+      },
+      "form": {
+        "type": "String"
+      }
+    }
+  },
   "deviceRadioApplied": "The radio confirmed the change.",
   "deviceRadioRefused": "The radio refused {param} (error {code}). Later writes were not sent.",
-  "@deviceRadioRefused": {"placeholders": {"param": {"type": "String"}, "code": {"type": "String"}}},
+  "@deviceRadioRefused": {
+    "placeholders": {
+      "param": {
+        "type": "String"
+      },
+      "code": {
+        "type": "String"
+      }
+    }
+  },
   "deviceRadioSilent": "No answer for {param} within five seconds — the write may not have applied.",
-  "@deviceRadioSilent": {"placeholders": {"param": {"type": "String"}}},
+  "@deviceRadioSilent": {
+    "placeholders": {
+      "param": {
+        "type": "String"
+      }
+    }
+  },
   "deviceRadioUnsupported": "{param} is not in this firmware build.",
-  "@deviceRadioUnsupported": {"placeholders": {"param": {"type": "String"}}},
+  "@deviceRadioUnsupported": {
+    "placeholders": {
+      "param": {
+        "type": "String"
+      }
+    }
+  },
   "deviceRadioUnknownState": "Cannot change radio settings yet: this radio has not reported its path-hash size, so there is no value to undo back to.",
   "deviceRadioRevert": "Undo radio change",
   "deviceRadioReverted": "Previous operating point restored.",
@@ -1264,14 +1831,41 @@
   "radioHealthReading": "Reading…",
   "radioHealthUnread": "Not read yet. Read asks the radio for its own stats (CMD_GET_STATS).",
   "radioHealthNoise": "noise floor {dbm} dBm — the radio's own measurement",
-  "@radioHealthNoise": {"placeholders": {"dbm": {"type": "String"}}},
+  "@radioHealthNoise": {
+    "placeholders": {
+      "dbm": {
+        "type": "String"
+      }
+    }
+  },
   "radioHealthLast": "last packet RSSI {rssi} dBm, SNR {snr} dB — from the radio's packet statistics",
-  "@radioHealthLast": {"placeholders": {"rssi": {"type": "String"}, "snr": {"type": "String"}}},
+  "@radioHealthLast": {
+    "placeholders": {
+      "rssi": {
+        "type": "String"
+      },
+      "snr": {
+        "type": "String"
+      }
+    }
+  },
   "radioHealthBattery": "battery {volts} V — from the radio's core statistics, not a phone reading",
-  "@radioHealthBattery": {"placeholders": {"volts": {"type": "String"}}},
+  "@radioHealthBattery": {
+    "placeholders": {
+      "volts": {
+        "type": "String"
+      }
+    }
+  },
   "radioHealthNotReported": "not reported by this firmware",
   "radioHealthUptime": "up {uptime} — the radio's uptime counter, which resets when it power-cycles",
-  "@radioHealthUptime": {"placeholders": {"uptime": {"type": "String"}}},
+  "@radioHealthUptime": {
+    "placeholders": {
+      "uptime": {
+        "type": "String"
+      }
+    }
+  },
   "radioHealthSource": "All values are the radio's own counters; nothing here is measured by the phone.",
   "deviceLoadFromDevice": "Load from device",
   "deviceApplyRadio": "Apply radio params",
@@ -1291,7 +1885,11 @@
   "deviceToastNameSet": "Name updated — re-advertising to neighbours",
   "deviceToastSendFailed": "Send failed: {error}",
   "@deviceToastSendFailed": {
-    "placeholders": {"error": {"type": "String"}}
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
   },
   "deviceToastNoDeviceYet": "Device hasn't reported yet — try once linked",
   "deviceToastNoGpsYet": "Device has no location yet (no GPS fix)",
@@ -1306,12 +1904,10 @@
   "deviceLocPermDenied": "Location permission needed for a phone GPS fix.",
   "deviceLocPermDeniedPerm": "Location permission permanently denied — open OS settings to grant it.",
   "deviceOpenSettings": "Open settings",
-
   "diagnosticsTitle": "Diagnostics & connect",
   "diagnosticsRawFrameLog": "RAW FRAME LOG (newest first)",
   "diagnosticsDisconnect": "Disconnect",
   "diagnosticsCopyLog": "Copy log",
-
   "otherManualAddTitle": "Manual-add contacts",
   "otherManualAddSubOn": "You add heard nodes as contacts on demand.",
   "otherManualAddSubOff": "Heard nodes auto-promote to contacts.",
@@ -1327,7 +1923,6 @@
   "otherMultiAcksHelper": "0 = single ack (default). Higher = wait for N extra acks before considering a send confirmed.",
   "otherSentSnack": "OTHER PARAMS sent — device-side write may take a moment.",
   "otherAwaitingDevice": "— awaiting device —",
-
   "batteryTitle": "Battery",
   "batteryConfigSubtitle": "Charge, drain rate, and time-to-empty estimate",
   "batteryAwaiting": "Waiting for a battery reading from the device…",
@@ -1342,7 +1937,11 @@
   "batteryBasis": "Basis",
   "batteryBasisObserved": "measured over {span} of discharge",
   "@batteryBasisObserved": {
-    "placeholders": {"span": {"type": "String"}}
+    "placeholders": {
+      "span": {
+        "type": "String"
+      }
+    }
   },
   "batteryBasisRated": "nameplate (capacity ÷ typical draw)",
   "batteryConfidence": "confidence",
@@ -1356,37 +1955,68 @@
   "batterySpecGeneric": "Unknown hardware — using a generic single-cell Li-ion model. The estimate relies on observed drain (no nameplate capacity to cross-check).",
   "batterySpecCapacity": "Capacity: {mah} mAh",
   "@batterySpecCapacity": {
-    "placeholders": {"mah": {"type": "int"}}
+    "placeholders": {
+      "mah": {
+        "type": "int"
+      }
+    }
   },
   "batterySpecCapacityUnknown": "Capacity: user-supplied (unknown)",
   "batterySpecDraw": "Typical draw: ~{ma} mA (radio receiving)",
   "@batterySpecDraw": {
-    "placeholders": {"ma": {"type": "int"}}
+    "placeholders": {
+      "ma": {
+        "type": "int"
+      }
+    }
   },
   "batteryHistoryTitle": "VOLTAGE HISTORY",
   "batteryHistorySpan": "{span} · {count} samples",
   "@batteryHistorySpan": {
-    "placeholders": {"span": {"type": "String"}, "count": {"type": "int"}}
+    "placeholders": {
+      "span": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
   },
   "batteryDurDH": "{days}d {hours}h",
   "@batteryDurDH": {
-    "placeholders": {"days": {"type": "int"}, "hours": {"type": "int"}}
+    "placeholders": {
+      "days": {
+        "type": "int"
+      },
+      "hours": {
+        "type": "int"
+      }
+    }
   },
   "batteryDurHM": "{hours}h {mins}m",
   "@batteryDurHM": {
-    "placeholders": {"hours": {"type": "int"}, "mins": {"type": "int"}}
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      },
+      "mins": {
+        "type": "int"
+      }
+    }
   },
   "batteryDurM": "{mins}m",
   "@batteryDurM": {
-    "placeholders": {"mins": {"type": "int"}}
+    "placeholders": {
+      "mins": {
+        "type": "int"
+      }
+    }
   },
-
   "deliverySending": "Sending…",
   "deliverySent": "Sent into the mesh",
   "deliveryDelivered": "Delivered (recipient acknowledged)",
   "deliveryFailed": "Not delivered — no acknowledgement or send failed",
   "deliveryUnknown": "Sent while the app was closing — whether the radio transmitted it is not knowable",
-
   "settingsHubTools": "Tools",
   "settingsHubToolsSub": "Ping, trace, discover, soak, range test",
   "toolsTitle": "Tools",
@@ -1400,19 +2030,35 @@
   "toolsInterval": "INTERVAL",
   "toolsSeconds": "{n} s",
   "@toolsSeconds": {
-    "placeholders": {"n": {"type": "int"}}
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
   },
   "toolsMinutes": "{n} min",
   "@toolsMinutes": {
-    "placeholders": {"n": {"type": "int"}}
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
   },
   "toolsMs": "{n} ms",
   "@toolsMs": {
-    "placeholders": {"n": {"type": "int"}}
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
   },
   "toolsDb": "{v} dB",
   "@toolsDb": {
-    "placeholders": {"v": {"type": "String"}}
+    "placeholders": {
+      "v": {
+        "type": "String"
+      }
+    }
   },
   "toolsChoose": "Choose…",
   "toolStatsName": "Radio stats",
@@ -1452,7 +2098,14 @@
   "statsSent": "Sent",
   "statsSplit": "flood {flood} · direct {direct}",
   "@statsSplit": {
-    "placeholders": {"flood": {"type": "int"}, "direct": {"type": "int"}}
+    "placeholders": {
+      "flood": {
+        "type": "int"
+      },
+      "direct": {
+        "type": "int"
+      }
+    }
   },
   "statsRxErrors": "Receive errors",
   "statsUptime": "Uptime",
@@ -1465,11 +2118,31 @@
   "pingMethodTelemetry": "Telemetry request — silent for the peer; it answers only if it shares telemetry with us.",
   "pingSummary": "{sent} sent · {replied} replied · {lost} lost",
   "@pingSummary": {
-    "placeholders": {"sent": {"type": "int"}, "replied": {"type": "int"}, "lost": {"type": "int"}}
+    "placeholders": {
+      "sent": {
+        "type": "int"
+      },
+      "replied": {
+        "type": "int"
+      },
+      "lost": {
+        "type": "int"
+      }
+    }
   },
   "pingRtt": "RTT min {min} · avg {avg} · max {max} ms",
   "@pingRtt": {
-    "placeholders": {"min": {"type": "int"}, "avg": {"type": "int"}, "max": {"type": "int"}}
+    "placeholders": {
+      "min": {
+        "type": "int"
+      },
+      "avg": {
+        "type": "int"
+      },
+      "max": {
+        "type": "int"
+      }
+    }
   },
   "pingLost": "lost",
   "pingWaiting": "waiting…",
@@ -1481,7 +2154,11 @@
   "traceNoRoute": "no route — send it a message first",
   "tracePath": "path {path}",
   "@tracePath": {
-    "placeholders": {"path": {"type": "String"}}
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
   },
   "traceManualHint": "hashes, e.g. a1,7f,a1",
   "traceInvalid": "Enter one or more hex bytes.",
@@ -1490,7 +2167,14 @@
   "traceToUs": "→ us",
   "traceWeakest": "weakest: {hop}, {snr} dB",
   "@traceWeakest": {
-    "placeholders": {"hop": {"type": "String"}, "snr": {"type": "String"}}
+    "placeholders": {
+      "hop": {
+        "type": "String"
+      },
+      "snr": {
+        "type": "String"
+      }
+    }
   },
   "traceReset": "Reset route",
   "traceResetDone": "Route reset — the next message floods.",
@@ -1498,40 +2182,87 @@
   "discoverStart": "Discover",
   "discoverListening": "Listening… {s} s",
   "@discoverListening": {
-    "placeholders": {"s": {"type": "int"}}
+    "placeholders": {
+      "s": {
+        "type": "int"
+      }
+    }
   },
   "discoverNone": "No repeater answered.",
   "discoverTheyHearUs": "they hear us {snr} dB",
   "@discoverTheyHearUs": {
-    "placeholders": {"snr": {"type": "String"}}
+    "placeholders": {
+      "snr": {
+        "type": "String"
+      }
+    }
   },
   "discoverWeHearThem": "we hear them {snr} dB / {rssi} dBm",
   "@discoverWeHearThem": {
-    "placeholders": {"snr": {"type": "String"}, "rssi": {"type": "int"}}
+    "placeholders": {
+      "snr": {
+        "type": "String"
+      },
+      "rssi": {
+        "type": "int"
+      }
+    }
   },
   "discoverAsymmetric": "asymmetric link",
   "soakScope": "CONVERSATION",
   "soakPairHint": "Pairs with an R59 bot answering on the other radio: echoes show drops, duplicates and reordering.",
   "soakSummary": "{sent} sent · {delivered} delivered · {failed} failed",
   "@soakSummary": {
-    "placeholders": {"sent": {"type": "int"}, "delivered": {"type": "int"}, "failed": {"type": "int"}}
+    "placeholders": {
+      "sent": {
+        "type": "int"
+      },
+      "delivered": {
+        "type": "int"
+      },
+      "failed": {
+        "type": "int"
+      }
+    }
   },
   "soakEchoes": "{echoed} echoed · {dup} duplicate · {reordered} reordered",
   "@soakEchoes": {
-    "placeholders": {"echoed": {"type": "int"}, "dup": {"type": "int"}, "reordered": {"type": "int"}}
+    "placeholders": {
+      "echoed": {
+        "type": "int"
+      },
+      "dup": {
+        "type": "int"
+      },
+      "reordered": {
+        "type": "int"
+      }
+    }
   },
   "soakListening": "Sends done — listening for late echoes…",
   "soakRun": "run {id}",
   "@soakRun": {
-    "placeholders": {"id": {"type": "String"}}
+    "placeholders": {
+      "id": {
+        "type": "String"
+      }
+    }
   },
   "soakEcho": "echo {ms} ms",
   "@soakEcho": {
-    "placeholders": {"ms": {"type": "int"}}
+    "placeholders": {
+      "ms": {
+        "type": "int"
+      }
+    }
   },
   "soakDm": "DM · {name}",
   "@soakDm": {
-    "placeholders": {"name": {"type": "String"}}
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
   },
   "rangeSender": "Sender",
   "rangeReceiver": "Receiver",
@@ -1539,19 +2270,38 @@
   "rangeHint": "Both radios on the same private channel. The sender beacons; the receiver walks and logs.",
   "rangeBeacons": "{n} beacons sent",
   "@rangeBeacons": {
-    "placeholders": {"n": {"type": "int"}}
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
   },
   "rangeSummary": "{heard} heard · {missing} missing",
   "@rangeSummary": {
-    "placeholders": {"heard": {"type": "int"}, "missing": {"type": "int"}}
+    "placeholders": {
+      "heard": {
+        "type": "int"
+      },
+      "missing": {
+        "type": "int"
+      }
+    }
   },
   "rangeBest": "best SNR {snr} dB",
   "@rangeBest": {
-    "placeholders": {"snr": {"type": "String"}}
+    "placeholders": {
+      "snr": {
+        "type": "String"
+      }
+    }
   },
   "rangeFarthest": "farthest {d}",
   "@rangeFarthest": {
-    "placeholders": {"d": {"type": "String"}}
+    "placeholders": {
+      "d": {
+        "type": "String"
+      }
+    }
   },
   "rangeCopyCsv": "Copy CSV",
   "rangeFlood": "flood",
@@ -1568,11 +2318,28 @@
   "mapsStorage": "Storage",
   "mapsUsed": "{used} of {budget} used",
   "@mapsUsed": {
-    "placeholders": {"used": {"type": "String"}, "budget": {"type": "String"}}
+    "placeholders": {
+      "used": {
+        "type": "String"
+      },
+      "budget": {
+        "type": "String"
+      }
+    }
   },
   "mapsBreakdown": "Regions {packs} · Event maps {layers} · Viewed tiles {view}",
   "@mapsBreakdown": {
-    "placeholders": {"packs": {"type": "String"}, "layers": {"type": "String"}, "view": {"type": "String"}}
+    "placeholders": {
+      "packs": {
+        "type": "String"
+      },
+      "layers": {
+        "type": "String"
+      },
+      "view": {
+        "type": "String"
+      }
+    }
   },
   "mapsBudget": "Budget",
   "mapsViewKeep": "Keep viewed",
@@ -1612,19 +2379,44 @@
   "packStateComplete": "Complete",
   "mapsPackLine": "{source} · zoom {minZ}–{maxZ}",
   "@mapsPackLine": {
-    "placeholders": {"source": {"type": "String"}, "minZ": {"type": "int"}, "maxZ": {"type": "int"}}
+    "placeholders": {
+      "source": {
+        "type": "String"
+      },
+      "minZ": {
+        "type": "int"
+      },
+      "maxZ": {
+        "type": "int"
+      }
+    }
   },
   "mapsProgress": "{done} / {total} tiles",
   "@mapsProgress": {
-    "placeholders": {"done": {"type": "int"}, "total": {"type": "int"}}
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
   },
   "mapsMissing": "{n} not on server",
   "@mapsMissing": {
-    "placeholders": {"n": {"type": "int"}}
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
   },
   "mapsExpiresIn": "Deletes in {days} d",
   "@mapsExpiresIn": {
-    "placeholders": {"days": {"type": "int"}}
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
   },
   "mapsKeepForever": "Kept until deleted",
   "mapsPause": "Pause",
@@ -1635,16 +2427,28 @@
   "mapsDelete": "Delete",
   "mapsDeleteConfirm": "Delete {name}?",
   "@mapsDeleteConfirm": {
-    "placeholders": {"name": {"type": "String"}}
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
   },
   "mapsKeepNever": "Never",
   "mapsKeepDays": "{days} days",
   "@mapsKeepDays": {
-    "placeholders": {"days": {"type": "int"}}
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
   },
   "mapsLayerFeatures": "{n} features",
   "@mapsLayerFeatures": {
-    "placeholders": {"n": {"type": "int"}}
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
   },
   "mapsLayerName": "Name",
   "mapsLayerUrl": "GeoJSON URL (https)",
@@ -1668,7 +2472,14 @@
   "newPackKeep": "Delete after",
   "newPackEstimate": "{tiles} tiles · about {size}",
   "@newPackEstimate": {
-    "placeholders": {"tiles": {"type": "int"}, "size": {"type": "String"}}
+    "placeholders": {
+      "tiles": {
+        "type": "int"
+      },
+      "size": {
+        "type": "String"
+      }
+    }
   },
   "newPackCreate": "Download",
   "newPackNoSource": "No source here allows offline download. Add a tile server that does, under Map sources.",
@@ -1688,7 +2499,11 @@
   "selfTestPass": "All checks passed",
   "selfTestFail": "{n} checks failed",
   "@selfTestFail": {
-    "placeholders": {"n": {"type": "int"}}
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
   },
   "selfTestCopy": "Copy report",
   "selfTestCopied": "Report copied",
@@ -1708,24 +2523,66 @@
   "locGroupManual": "Manual",
   "deviceManageChannels": "Manage channels",
   "deviceActiveChannelSub": "Active: {name} · slots · name + PSK · #hashtag",
-  "@deviceActiveChannelSub": {"placeholders": {"name": {"type": "String"}}},
+  "@deviceActiveChannelSub": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "deviceNowParams": "device now: {freq}MHz {bw}kHz SF{sf} CR{cr} {tx}dBm",
-  "@deviceNowParams": {"placeholders": {"freq": {"type": "String"}, "bw": {"type": "String"}, "sf": {"type": "String"}, "cr": {"type": "String"}, "tx": {"type": "String"}}},
+  "@deviceNowParams": {
+    "placeholders": {
+      "freq": {
+        "type": "String"
+      },
+      "bw": {
+        "type": "String"
+      },
+      "sf": {
+        "type": "String"
+      },
+      "cr": {
+        "type": "String"
+      },
+      "tx": {
+        "type": "String"
+      }
+    }
+  },
   "locationSourceDevice": "device",
   "locationSourcePhone": "phone GPS",
   "locationSourceNone": "none",
   "batteryChargingShort": "CHG",
   "elevationSelfTelemetry": "SELF TELEMETRY",
   "elevationSelfAlt": "alt: {m} m",
-  "@elevationSelfAlt": {"placeholders": {"m": {"type": "String"}}},
+  "@elevationSelfAlt": {
+    "placeholders": {
+      "m": {
+        "type": "String"
+      }
+    }
+  },
   "elevationSelfAltUnknown": "alt: —",
   "elevationSelfTemp": "temp: {c} °C",
-  "@elevationSelfTemp": {"placeholders": {"c": {"type": "String"}}},
+  "@elevationSelfTemp": {
+    "placeholders": {
+      "c": {
+        "type": "String"
+      }
+    }
+  },
   "elevationPolling": "polling…",
   "elevationTapToUpdate": "tap to update",
   "diagnosticsSectionConnection": "CONNECTION",
   "diagnosticsStateLine": "State: {state}",
-  "@diagnosticsStateLine": {"placeholders": {"state": {"type": "String"}}},
+  "@diagnosticsStateLine": {
+    "placeholders": {
+      "state": {
+        "type": "String"
+      }
+    }
+  },
   "diagnosticsStateDisconnected": "disconnected",
   "diagnosticsStateHandshaking": "handshaking",
   "diagnosticsStateReady": "ready",
@@ -1733,30 +2590,108 @@
   "diagnosticsStateFailed": "failed",
   "diagnosticsConnectingSuffix": " · connecting…",
   "diagnosticsDeviceLine": "device: {name} · {freq}MHz SF{sf}",
-  "@diagnosticsDeviceLine": {"placeholders": {"name": {"type": "String"}, "freq": {"type": "String"}, "sf": {"type": "String"}}},
+  "@diagnosticsDeviceLine": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "freq": {
+        "type": "String"
+      },
+      "sf": {
+        "type": "String"
+      }
+    }
+  },
   "diagnosticsBatteryLine": "battery: {volts}V (~{pct}%)",
-  "@diagnosticsBatteryLine": {"placeholders": {"volts": {"type": "String"}, "pct": {"type": "String"}}},
+  "@diagnosticsBatteryLine": {
+    "placeholders": {
+      "volts": {
+        "type": "String"
+      },
+      "pct": {
+        "type": "String"
+      }
+    }
+  },
   "diagnosticsChargingSuffix": " ⚡ charging",
   "diagnosticsReconnectLine": "reconnect attempt {n}",
-  "@diagnosticsReconnectLine": {"placeholders": {"n": {"type": "String"}}},
+  "@diagnosticsReconnectLine": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
   "diagnosticsGaveUpSuffix": " (gave up)",
   "diagnosticsErrorLine": "error: {error}",
-  "@diagnosticsErrorLine": {"placeholders": {"error": {"type": "String"}}},
+  "@diagnosticsErrorLine": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
   "diagnosticsMtuLine": "link MTU: {mtu} (needs {need} for a full frame)",
-  "@diagnosticsMtuLine": {"placeholders": {"mtu": {"type": "String"}, "need": {"type": "String"}}},
+  "@diagnosticsMtuLine": {
+    "placeholders": {
+      "mtu": {
+        "type": "String"
+      },
+      "need": {
+        "type": "String"
+      }
+    }
+  },
   "diagnosticsMtuRefusedLine": "this phone link negotiated {mtu} bytes and a full radio frame needs {need}. Reconnect to negotiate again; a radio whose stack caps the MTU smaller cannot carry every frame",
-  "@diagnosticsMtuRefusedLine": {"placeholders": {"mtu": {"type": "String"}, "need": {"type": "String"}}},
+  "@diagnosticsMtuRefusedLine": {
+    "placeholders": {
+      "mtu": {
+        "type": "String"
+      },
+      "need": {
+        "type": "String"
+      }
+    }
+  },
   "diagnosticsDatagramLine": "datagram: channel {ch}, via {via}, type {type}",
-  "@diagnosticsDatagramLine": {"placeholders": {"ch": {"type": "String"}, "via": {"type": "String"}, "type": {"type": "String"}}},
+  "@diagnosticsDatagramLine": {
+    "placeholders": {
+      "ch": {
+        "type": "String"
+      },
+      "via": {
+        "type": "String"
+      },
+      "type": {
+        "type": "String"
+      }
+    }
+  },
   "rxViaPrimary": "the primary radio",
   "rxViaSecondary": "radio 2",
   "rxViaUnknown": "an unreported radio",
   "diagnosticsFramingLine": "incomplete frames: {truncated} cut short, {trailing} with bytes left over",
-  "@diagnosticsFramingLine": {"placeholders": {"truncated": {"type": "String"}, "trailing": {"type": "String"}}},
+  "@diagnosticsFramingLine": {
+    "placeholders": {
+      "truncated": {
+        "type": "String"
+      },
+      "trailing": {
+        "type": "String"
+      }
+    }
+  },
   "diagnosticsScanConnect": "Scan & connect",
   "diagnosticsForgetShort": "Forget",
   "diagnosticsPairedLine": "Paired: {name} — auto-reconnects on startup",
-  "@diagnosticsPairedLine": {"placeholders": {"name": {"type": "String"}}},
+  "@diagnosticsPairedLine": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "nodesClearSearch": "Clear search",
   "networksTitle": "Networks",
   "networksTileSubtitle": "Radio settings shared by a group of radios",
@@ -1771,16 +2706,52 @@
   "networksFrequency": "Frequency (MHz)",
   "networksFrequencyInvalid": "Enter a frequency from 150 to 2500 MHz.",
   "networksFrequencyPublic": "That frequency, bandwidth and spreading factor belong to the public preset {preset}. Pick a different frequency.",
-  "@networksFrequencyPublic": {"placeholders": {"preset": {"type": "String"}}},
+  "@networksFrequencyPublic": {
+    "placeholders": {
+      "preset": {
+        "type": "String"
+      }
+    }
+  },
   "networksSave": "Save",
   "networksCancel": "Cancel",
   "networksShared": "Shares the air with the public {preset} mesh. A key or a name does not separate radios on the same frequency, bandwidth and spreading factor.",
-  "@networksShared": {"placeholders": {"preset": {"type": "String"}}},
+  "@networksShared": {
+    "placeholders": {
+      "preset": {
+        "type": "String"
+      }
+    }
+  },
   "networksIsolated": "Separate from the public mesh. Radios not set to this frequency cannot hear it.",
   "networksSummary": "{freq} MHz · {bw} kHz · SF{sf} · CR{cr} · path hash {ph}",
-  "@networksSummary": {"placeholders": {"freq": {"type": "String"}, "bw": {"type": "String"}, "sf": {"type": "String"}, "cr": {"type": "String"}, "ph": {"type": "String"}}},
+  "@networksSummary": {
+    "placeholders": {
+      "freq": {
+        "type": "String"
+      },
+      "bw": {
+        "type": "String"
+      },
+      "sf": {
+        "type": "String"
+      },
+      "cr": {
+        "type": "String"
+      },
+      "ph": {
+        "type": "String"
+      }
+    }
+  },
   "networksMembers": "Members ({count})",
-  "@networksMembers": {"placeholders": {"count": {"type": "int"}}},
+  "@networksMembers": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "networksNoMembers": "No members yet.",
   "networksAddMember": "Add member",
   "networksNoContacts": "No known contacts to add.",
@@ -1788,19 +2759,49 @@
   "networksApply": "Apply to this radio",
   "networksApplyNeedsRadio": "Connect a radio to apply.",
   "networksApplyTitle": "Apply {name}?",
-  "@networksApplyTitle": {"placeholders": {"name": {"type": "String"}}},
+  "@networksApplyTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "networksApplyBodyShared": "This radio will switch to {summary}.",
-  "@networksApplyBodyShared": {"placeholders": {"summary": {"type": "String"}}},
+  "@networksApplyBodyShared": {
+    "placeholders": {
+      "summary": {
+        "type": "String"
+      }
+    }
+  },
   "networksApplyBodyIsolated": "This radio will switch to {summary}. It will stop hearing the public mesh until you switch it back.",
-  "@networksApplyBodyIsolated": {"placeholders": {"summary": {"type": "String"}}},
+  "@networksApplyBodyIsolated": {
+    "placeholders": {
+      "summary": {
+        "type": "String"
+      }
+    }
+  },
   "networksApplyConfirm": "Apply",
   "networksApplied": "Applied.",
   "networksApplyFailed": "Could not apply: {error}",
-  "@networksApplyFailed": {"placeholders": {"error": {"type": "String"}}},
+  "@networksApplyFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
   "networksCurrent": "This radio is on this network",
   "networksDelete": "Delete network",
   "networksDeleteTitle": "Delete {name}?",
-  "@networksDeleteTitle": {"placeholders": {"name": {"type": "String"}}},
+  "@networksDeleteTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "networksDeleteBody": "Only the saved settings are removed. Radios keep what they are set to.",
   "networksDeleteConfirm": "Delete",
   "placeCreateTitle": "Drop a place",
@@ -1815,16 +2816,40 @@
   "placePrecision1000": "About 1 km",
   "placeSent": "Place reported. It expires on its own.",
   "placeBudgetRefused": "You have sent {n} in the last hour. The next one can go at {time}.",
-  "@placeBudgetRefused": {"placeholders": {"n": {"type": "int"}, "time": {"type": "String"}}},
+  "@placeBudgetRefused": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
   "placeNoIdentity": "Connect a radio first: a place is reported as you.",
   "placeLabelEmpty": "A place needs a few words.",
   "placeLabelTooLong": "A label is at most 60 characters.",
   "placeLabelCarriesTtl": "A label cannot contain a TTL token.",
   "placeExpiresIn": "Expires in {value}",
-  "@placeExpiresIn": {"placeholders": {"value": {"type": "String"}}},
+  "@placeExpiresIn": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
   "placeExpired": "Expired",
   "placeReportedBy": "Reported by {name}, {time}",
-  "@placeReportedBy": {"placeholders": {"name": {"type": "String"}, "time": {"type": "String"}}},
+  "@placeReportedBy": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
   "placeTimeUnknown": "time unknown",
   "placeSourceGps": "from the sender's GPS",
   "placeSourcePhone": "from their phone",
@@ -1833,15 +2858,39 @@
   "placeSourceInferred": "inferred",
   "placeUnkeyedIdentity": "Identity is a name on a channel, not a key.",
   "placeUnknownType": "Sent as {token}",
-  "@placeUnknownType": {"placeholders": {"token": {"type": "String"}}},
+  "@placeUnknownType": {
+    "placeholders": {
+      "token": {
+        "type": "String"
+      }
+    }
+  },
   "placeConfirmAction": "Still there",
   "placeRefuteAction": "Gone",
   "placeConfirmations": "{n} confirmed",
-  "@placeConfirmations": {"placeholders": {"n": {"type": "int"}}},
+  "@placeConfirmations": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
   "placeConfirmationsMore": "+{n} more",
-  "@placeConfirmationsMore": {"placeholders": {"n": {"type": "int"}}},
+  "@placeConfirmationsMore": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
   "placeClaimedConfirmations": "{n} claimed",
-  "@placeClaimedConfirmations": {"placeholders": {"n": {"type": "int"}}},
+  "@placeClaimedConfirmations": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
   "placeHiddenByRefutation": "Hidden here after a refutation from a known key",
   "placeDirections": "Directions",
   "placeDirectionsCopied": "Coordinates copied",
@@ -1853,11 +2902,29 @@
   "placeKeyedOnly": "Keyed places only",
   "placeExportLedger": "Export ledger",
   "placeExportDone": "Ledger saved to {path}",
-  "@placeExportDone": {"placeholders": {"path": {"type": "String"}}},
+  "@placeExportDone": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
   "placeExportFailed": "Could not write the ledger.",
   "placeCoordinatesRefused": "Those coordinates cannot be sent.",
   "placeEchoLine": "{label} · {type} · {expiry}",
-  "@placeEchoLine": {"placeholders": {"label": {"type": "String"}, "type": {"type": "String"}, "expiry": {"type": "String"}}},
+  "@placeEchoLine": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      },
+      "type": {
+        "type": "String"
+      },
+      "expiry": {
+        "type": "String"
+      }
+    }
+  },
   "placeTypeHazard": "Hazard",
   "placeTypeWater": "Water",
   "placeTypeFuel": "Fuel",
@@ -1898,7 +2965,16 @@
   "failureCharacteristicMissing": "The radio's link is missing a characteristic the app needs. Its firmware may be older than this app expects.",
   "@failureCharacteristicMissing": {},
   "failureMtuTooSmall": "This phone link negotiated {mtu} bytes and one radio frame needs {need}. Reconnect to negotiate again; a radio that caps the link smaller cannot carry every frame.",
-  "@failureMtuTooSmall": {"placeholders": {"mtu": {"type": "String"}, "need": {"type": "String"}}},
+  "@failureMtuTooSmall": {
+    "placeholders": {
+      "mtu": {
+        "type": "String"
+      },
+      "need": {
+        "type": "String"
+      }
+    }
+  },
   "failureFrameTruncated": "A frame arrived cut short and was not decoded. The link cannot carry the radio's longest frames; the count is on the diagnostics page.",
   "@failureFrameTruncated": {},
   "failureFrameTrailingBytes": "A frame carried bytes past its own end. The extra bytes were dropped rather than guessed at; the count is on the diagnostics page.",
@@ -1912,13 +2988,37 @@
   "clockJustNow": "just now",
   "@clockJustNow": {},
   "clockMinutesAgo": "{count} min ago",
-  "@clockMinutesAgo": {"placeholders": {"count": {"type": "String"}}},
+  "@clockMinutesAgo": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
   "clockHoursAgo": "{count} h ago",
-  "@clockHoursAgo": {"placeholders": {"count": {"type": "String"}}},
+  "@clockHoursAgo": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
   "clockDaysAgo": "{count} d ago",
-  "@clockDaysAgo": {"placeholders": {"count": {"type": "String"}}},
+  "@clockDaysAgo": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
   "clockAhead": "sender's clock is {count} min ahead",
-  "@clockAhead": {"placeholders": {"count": {"type": "String"}}},
+  "@clockAhead": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
   "degradedStorageFull": "This phone refused a write because storage is full. Nothing was deleted to make room; free space and history continues.",
   "@degradedStorageFull": {},
   "degradedClockUnset": "The radio's clock has never been set, so times it reports are shown as time unknown until it is.",
@@ -1937,13 +3037,31 @@
   "sosEntryTooltip": "Emergency alarm and check-in",
   "sosRepeatsOneHour": "This repeats for up to one hour.",
   "sosGoesToChannel": "Channel {name}",
-  "@sosGoesToChannel": {"placeholders": {"name": {"type": "String"}}},
+  "@sosGoesToChannel": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "sosGoesToContacts": "{count, plural, =0{No direct copies} =1{1 contact copy} other{{count} contact copies}}",
-  "@sosGoesToContacts": {"placeholders": {"count": {"type": "int"}}},
+  "@sosGoesToContacts": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "sosInRange": "Nobody is notified unless they are in radio range.",
   "sosHoldToArm": "Hold to raise the alarm",
   "sosHoldRemaining": "Keep holding · {seconds}s",
-  "@sosHoldRemaining": {"placeholders": {"seconds": {"type": "int"}}},
+  "@sosHoldRemaining": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
   "sosHoldReleased": "Released too early — nothing was sent.",
   "sosNoIdentity": "The radio has not reported its name, so an alarm has no callsign to carry.",
   "sosWords": "What is happening",
@@ -1954,20 +3072,53 @@
   "sosContactsNone": "With no contact copies, a channel acknowledgement can never stop this alarm.",
   "sosActive": "Alarm running",
   "sosNextSend": "Next in {seconds}s",
-  "@sosNextSend": {"placeholders": {"seconds": {"type": "int"}}},
+  "@sosNextSend": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
   "sosElapsed": "Running {minutes} min",
-  "@sosElapsed": {"placeholders": {"minutes": {"type": "int"}}},
+  "@sosElapsed": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
   "sosRemaining": "{count} of {total} left",
-  "@sosRemaining": {"placeholders": {"count": {"type": "int"}, "total": {"type": "int"}}},
+  "@sosRemaining": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
   "sosImSafe": "I'm safe",
   "sosImSafeHint": "Sends one [SAFE] and stops the repeats.",
   "sosStopRepeats": "Stop the repeats",
   "sosStopHint": "Stops the repeats on this phone. Nothing is sent, so nobody is told.",
   "sosDefaultWords": "I need help",
   "sosClaimedBy": "{name} claims to have seen this, on the channel. The alarm keeps going.",
-  "@sosClaimedBy": {"placeholders": {"name": {"type": "String"}}},
+  "@sosClaimedBy": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "sosSeenBy": "{name} has seen this, by direct message.",
-  "@sosSeenBy": {"placeholders": {"name": {"type": "String"}}},
+  "@sosSeenBy": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "sosExpired": "The alarm has stopped repeating. It is not resolved.",
   "sosCancelled": "The alarm is stopped.",
   "sosAcknowledgedHeading": "Seen",
@@ -1981,11 +3132,23 @@
   "checkinEntryTooltip": "Check-in",
   "checkinIntro": "One message with a deadline. The app marks it overdue here; the radio keeps no timer.",
   "checkinInMinutes": "Deadline in {minutes} min",
-  "@checkinInMinutes": {"placeholders": {"minutes": {"type": "int"}}},
+  "@checkinInMinutes": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
   "checkinSend": "Send check-in",
   "checkinOneMessage": "A check-in is one message and does not repeat.",
   "checkinUntil": "Deadline {time}",
-  "@checkinUntil": {"placeholders": {"time": {"type": "String"}}},
+  "@checkinUntil": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
   "checkinWatching": "Waiting for an answer",
   "checkinOverdue": "Overdue — the deadline passed and no answer came back.",
   "checkinAnsweredDirect": "Answered, by direct message.",
@@ -2001,17 +3164,50 @@
   "mediaEncoding": "Fitting the photo to the mesh…",
   "@mediaEncoding": {},
   "mediaCostLine": "{chunks} packets · about {airtime} on air",
-  "@mediaCostLine": { "placeholders": { "chunks": { "type": "int" }, "airtime": { "type": "String" } } },
+  "@mediaCostLine": {
+    "placeholders": {
+      "chunks": {
+        "type": "int"
+      },
+      "airtime": {
+        "type": "String"
+      }
+    }
+  },
   "mediaOverBudget": "This photo will not fit the mesh budget even at the lowest quality. It can still be sent, but it will be cut off.",
   "@mediaOverBudget": {},
   "mediaSendingProgress": "{sent} of {total} packets sent",
-  "@mediaSendingProgress": { "placeholders": { "sent": { "type": "int" }, "total": { "type": "int" } } },
+  "@mediaSendingProgress": {
+    "placeholders": {
+      "sent": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
   "mediaReceiptLine": "{chunks} packets sent, {resends} of them resent",
-  "@mediaReceiptLine": { "placeholders": { "chunks": { "type": "int" }, "resends": { "type": "int" } } },
+  "@mediaReceiptLine": {
+    "placeholders": {
+      "chunks": {
+        "type": "int"
+      },
+      "resends": {
+        "type": "int"
+      }
+    }
+  },
   "mediaAcceptedNotDelivered": "The radio accepted these packets. A broadcast carries no delivery promise.",
   "@mediaAcceptedNotDelivered": {},
   "mediaSendFailed": "The radio refused {count} packet(s), so this photo did not finish.",
-  "@mediaSendFailed": { "placeholders": { "count": { "type": "int" } } },
+  "@mediaSendFailed": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "mediaSend": "Send",
   "@mediaSend": {},
   "mediaRetrySend": "Try again",
@@ -2025,11 +3221,29 @@
   "mediaChannelUnknown": "No channel is selected, so there is nobody to send to.",
   "@mediaChannelUnknown": {},
   "mediaReceiveWaiting": "{received} of {total} packets · waiting for {missing}",
-  "@mediaReceiveWaiting": { "placeholders": { "received": { "type": "int" }, "total": { "type": "int" }, "missing": { "type": "int" } } },
+  "@mediaReceiveWaiting": {
+    "placeholders": {
+      "received": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      },
+      "missing": {
+        "type": "int"
+      }
+    }
+  },
   "mediaReceiveAsk": "Ask for the missing packets",
   "@mediaReceiveAsk": {},
   "mediaReceiveRequested": "Asked the sender for {count} packet(s).",
-  "@mediaReceiveRequested": { "placeholders": { "count": { "type": "int" } } },
+  "@mediaReceiveRequested": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "mediaReceiveComplete": "Photo received.",
   "@mediaReceiveComplete": {},
   "mediaDecodeFailed": "This photo arrived but cannot be read.",
@@ -2042,5 +3256,105 @@
   "@placePhotoMayNotArrive": {},
   "placePhotoFetch": "Fetch photo",
   "@placePhotoFetch": {},
-  "placePhotoFetching": "Asking the mesh for the photo…"
+  "placePhotoFetching": "Asking the mesh for the photo…",
+  "chatSearchAction": "Search messages",
+  "@chatSearchAction": {
+    "description": "Icon tooltip in the chat channel strip: opens search over stored history."
+  },
+  "chatSearchHint": "Search stored history",
+  "chatSearchPrompt": "Type to search the messages this device stored.",
+  "chatSearchNoResults": "No message matches “{query}”.",
+  "@chatSearchNoResults": {
+    "placeholders": {
+      "query": {
+        "type": "String"
+      }
+    }
+  },
+  "chatSearchHidden": "{count, plural, =1{1 match hidden by a block} other{{count} matches hidden by a block}}",
+  "@chatSearchHidden": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "chatSearchTruncated": "Showing the newest {count} matches. Narrow the search to see the rest.",
+  "@chatSearchTruncated": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "chatSearchRetention": "This device keeps the newest {cap} messages, so older ones are not searched.",
+  "@chatSearchRetention": {
+    "placeholders": {
+      "cap": {
+        "type": "int"
+      }
+    }
+  },
+  "chatSearchDm": "Direct message",
+  "chatUnread": "{count, plural, =1{1 unread} other{{count} unread}}",
+  "@chatUnread": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    },
+    "description": "Screen-reader label on a channel's unread badge; the badge itself is a count."
+  },
+  "blockedKeysTitle": "Blocked keys",
+  "blockedKeysSubtitle": "{count, plural, =0{No key is blocked} =1{1 key blocked} other{{count} keys blocked}}",
+  "@blockedKeysSubtitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "blockedKeysEmpty": "No key is blocked. Blocking a key hides what it sends — messages, notifications, places — on this device.",
+  "blockedKeysCannotStop": "A block is local to this app. The radio still receives and relays the packet; what stops is what this app shows.",
+  "blockedKeysUnblock": "Unblock",
+  "blockedKeysSince": "Blocked {when}",
+  "@blockedKeysSince": {
+    "placeholders": {
+      "when": {
+        "type": "String"
+      }
+    }
+  },
+  "blockedKeysUnknownName": "No name known",
+  "blockedKeysCapacity": "The list is full: {cap} keys. Unblock one before adding another.",
+  "@blockedKeysCapacity": {
+    "placeholders": {
+      "cap": {
+        "type": "int"
+      }
+    }
+  },
+  "blockedKeysUnblocked": "{name} is unblocked. Their messages appear again.",
+  "@blockedKeysUnblocked": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "blockedKeysUnblockedUnnamed": "The key is unblocked. Its messages appear again.",
+  "reportAction": "Report…",
+  "reportSheetTitle": "Report this message",
+  "reportObservationLabel": "What did you see? (optional)",
+  "reportNothingSent": "Nothing was sent. The app wrote a file on this device; you decide where it goes.",
+  "reportBundleWritten": "Bundle written: {path}",
+  "@reportBundleWritten": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
+  "reportCopyBundle": "Copy the bundle",
+  "reportCopied": "Bundle copied."
 }

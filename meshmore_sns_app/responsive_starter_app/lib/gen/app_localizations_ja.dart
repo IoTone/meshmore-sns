@@ -4662,4 +4662,121 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get placePhotoFetching => 'メッシュに写真を問い合わせています…';
+
+  @override
+  String get chatSearchAction => 'メッセージを検索';
+
+  @override
+  String get chatSearchHint => '保存済みの履歴を検索';
+
+  @override
+  String get chatSearchPrompt => '入力すると、この端末に保存されたメッセージを検索します。';
+
+  @override
+  String chatSearchNoResults(String query) {
+    return '「$query」に一致するメッセージはありません。';
+  }
+
+  @override
+  String chatSearchHidden(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'ブロックにより$count件の一致を非表示',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String chatSearchTruncated(int count) {
+    return '最新の$count件を表示しています。絞り込むと残りを確認できます。';
+  }
+
+  @override
+  String chatSearchRetention(int cap) {
+    return 'この端末は最新の$cap件を保持するため、それより古いメッセージは検索されません。';
+  }
+
+  @override
+  String get chatSearchDm => 'ダイレクトメッセージ';
+
+  @override
+  String chatUnread(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '未読$count件',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get blockedKeysTitle => 'ブロックした鍵';
+
+  @override
+  String blockedKeysSubtitle(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count件の鍵をブロック中',
+      zero: 'ブロックした鍵はありません',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get blockedKeysEmpty =>
+      'ブロックした鍵はありません。鍵をブロックすると、その相手からのメッセージ・通知・プレイスがこの端末で非表示になります。';
+
+  @override
+  String get blockedKeysCannotStop =>
+      'ブロックはこのアプリ内だけの設定です。無線は今もパケットを受信・中継します。止まるのはこのアプリの表示だけです。';
+
+  @override
+  String get blockedKeysUnblock => 'ブロック解除';
+
+  @override
+  String blockedKeysSince(String when) {
+    return '$whenにブロック';
+  }
+
+  @override
+  String get blockedKeysUnknownName => '名前は不明';
+
+  @override
+  String blockedKeysCapacity(int cap) {
+    return 'リストが上限（$cap件）です。追加する前に1件解除してください。';
+  }
+
+  @override
+  String blockedKeysUnblocked(String name) {
+    return '$nameのブロックを解除しました。メッセージが再び表示されます。';
+  }
+
+  @override
+  String get blockedKeysUnblockedUnnamed => 'ブロックを解除しました。メッセージが再び表示されます。';
+
+  @override
+  String get reportAction => '報告…';
+
+  @override
+  String get reportSheetTitle => 'このメッセージを報告';
+
+  @override
+  String get reportObservationLabel => '何を見ましたか？（任意）';
+
+  @override
+  String get reportNothingSent =>
+      '何も送信していません。アプリはこの端末にファイルを作成しただけです。送り先はあなたが決めます。';
+
+  @override
+  String reportBundleWritten(String path) {
+    return 'バンドルを書き出しました: $path';
+  }
+
+  @override
+  String get reportCopyBundle => 'バンドルをコピー';
+
+  @override
+  String get reportCopied => 'バンドルをコピーしました。';
 }
