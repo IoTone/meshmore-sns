@@ -228,9 +228,11 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
               if (mc.mtuRefusal != null)
                 fault(l.diagnosticsMtuRefusedLine(
                     '${mc.mtuRefusal!.mtu}', '${MeshcoreBle.requiredMtu}'))
-              else if (mc.truncatedFrames > 0 || mc.trailingBytesFrames > 0)
-                fact(l.diagnosticsFramingLine(
-                    '${mc.truncatedFrames}', '${mc.trailingBytesFrames}'))
+              else if (mc.truncatedFrames > 0 ||
+                  mc.trailingBytesFrames > 0 ||
+                  mc.emptyFrames > 0)
+                fact(l.diagnosticsFramingLine('${mc.truncatedFrames}',
+                    '${mc.trailingBytesFrames}', '${mc.emptyFrames}'))
               else if (mc.failure != null)
                 fault(l.diagnosticsErrorLine(failureText(l, mc.failure!)))
               else if (mc.error != null)

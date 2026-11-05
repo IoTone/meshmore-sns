@@ -864,6 +864,9 @@ class MeshcoreController extends ChangeNotifier {
   /// .trailingBytesFrames]).
   int get trailingBytesFrames => _connection.trailingBytesFrames;
 
+  /// Notifications that arrived with no bytes in them.
+  int get emptyFrames => _connection.emptyFrames;
+
   /// Number of reconnect attempts since the last successful link.
   int get reconnectAttempt => _reconnectAttempt;
 

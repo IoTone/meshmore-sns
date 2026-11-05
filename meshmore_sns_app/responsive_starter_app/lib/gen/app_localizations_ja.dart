@@ -3897,8 +3897,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get rxViaUnknown => '無線の報告なし';
 
   @override
-  String diagnosticsFramingLine(String truncated, String trailing) {
-    return '不完全なフレーム: 途中で切れた $truncated 件、余りのバイトがある $trailing 件';
+  String diagnosticsFramingLine(
+      String truncated, String trailing, Object empty) {
+    return '不完全なフレーム: 途中で切れた $truncated 件、余りのバイトがある $trailing 件、空の $empty 件';
   }
 
   @override

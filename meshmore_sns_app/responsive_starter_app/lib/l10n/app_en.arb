@@ -2690,12 +2690,15 @@
   "rxViaPrimary": "the primary radio",
   "rxViaSecondary": "radio 2",
   "rxViaUnknown": "an unreported radio",
-  "diagnosticsFramingLine": "incomplete frames: {truncated} cut short, {trailing} with bytes left over",
+  "diagnosticsFramingLine": "incomplete frames: {truncated} cut short, {trailing} with bytes left over, {empty} empty",
   "@diagnosticsFramingLine": {
     "placeholders": {
       "truncated": {
         "type": "String"
-      },
+     ,
+      "empty": {
+        "type": "String"
+      } },
       "trailing": {
         "type": "String"
       }

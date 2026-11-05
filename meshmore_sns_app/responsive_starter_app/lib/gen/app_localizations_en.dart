@@ -4047,8 +4047,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get rxViaUnknown => 'an unreported radio';
 
   @override
-  String diagnosticsFramingLine(String truncated, String trailing) {
-    return 'incomplete frames: $truncated cut short, $trailing with bytes left over';
+  String diagnosticsFramingLine(
+      String truncated, String trailing, Object empty) {
+    return 'incomplete frames: $truncated cut short, $trailing with bytes left over, $empty empty';
   }
 
   @override

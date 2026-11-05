@@ -2082,7 +2082,7 @@
   "rxViaPrimary": "プライマリ無線",
   "rxViaSecondary": "無線 2",
   "rxViaUnknown": "無線の報告なし",
-  "diagnosticsFramingLine": "不完全なフレーム: 途中で切れた {truncated} 件、余りのバイトがある {trailing} 件",
+  "diagnosticsFramingLine": "不完全なフレーム: 途中で切れた {truncated} 件、余りのバイトがある {trailing} 件、空の {empty} 件",
   "diagnosticsScanConnect": "スキャンして接続",
   "diagnosticsForgetShort": "解除",
   "diagnosticsPairedLine": "ペアリング済み: {name} — 起動時に自動再接続します",

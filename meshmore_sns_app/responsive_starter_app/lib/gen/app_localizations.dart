@@ -6971,8 +6971,9 @@ abstract class AppLocalizations {
   /// No description provided for @diagnosticsFramingLine.
   ///
   /// In en, this message translates to:
-  /// **'incomplete frames: {truncated} cut short, {trailing} with bytes left over'**
-  String diagnosticsFramingLine(String truncated, String trailing);
+  /// **'incomplete frames: {truncated} cut short, {trailing} with bytes left over, {empty} empty'**
+  String diagnosticsFramingLine(
+      String truncated, String trailing, Object empty);
 
   /// No description provided for @diagnosticsScanConnect.
   ///
