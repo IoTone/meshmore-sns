@@ -375,7 +375,7 @@ class _GridScreenState extends State<GridScreen>
                 child: Text(
                   _panMode ? l.gridPanHint : l.gridSwipeHint,
                   textAlign: TextAlign.center,
-                  style: TextStyle(color: cs.onSurface, fontSize: 12),
+                  style: TextStyle(color: cs.onSurface, fontSize: context.skin.type.sizeBody),
                 ),
               ),
             ),
@@ -783,8 +783,8 @@ class _GridScreenState extends State<GridScreen>
                   Flexible(
                     child: Text(_longLabel(_viewMode, l),
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                            fontSize: 13, fontWeight: FontWeight.w600)),
+                        style: TextStyle(
+                            fontSize: context.skin.type.sizeBodyLg, fontWeight: FontWeight.w600)),
                   ),
                   const Icon(Icons.arrow_drop_down, size: 18),
                 ],
@@ -830,7 +830,7 @@ class _GridScreenState extends State<GridScreen>
                 ? l.gridStatusCounts(visible.length, mc.known.length,
                     mc.favorites.length)
                 : l.gridStatusOffline,
-            style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12),
+            style: TextStyle(color: cs.onSurfaceVariant, fontSize: context.skin.type.sizeBody),
           ),
         ),
       ),
@@ -991,6 +991,7 @@ class _GridScreenState extends State<GridScreen>
                               ringStroke:
                                   cs.outline.withValues(alpha: .35),
                               base: cs.onSurfaceVariant,
+                              type: context.skin.type,
                               rippleAt: _rippleAt,
                               rippleDuration: _rippleDuration,
                               headingDeg: _headingDeg,
@@ -1071,7 +1072,7 @@ class _GridScreenState extends State<GridScreen>
                 '◊ ${l.gridHeadingHud}',
                 style: TextStyle(
                     color: cs.primary.withValues(alpha: .7),
-                    fontSize: 9,
+                    fontSize: context.skin.type.size(9),
                     letterSpacing: 5,
                     fontFamily: context.skin.type.wordsMono),
               ),
@@ -1084,24 +1085,24 @@ class _GridScreenState extends State<GridScreen>
                     deg.toString().padLeft(3, '0'),
                     style: TextStyle(
                         color: cs.primary,
-                        fontSize: 38,
+                        fontSize: context.skin.type.size(38),
                         height: 1,
                         fontWeight: FontWeight.w700,
-                        fontFamily: 'JetBrains Mono',
+                        fontFamily: context.skin.type.monoFamily,
                         letterSpacing: 2),
                   ),
                   Text('°',
                       style: TextStyle(
                           color: cs.primary.withValues(alpha: .7),
-                          fontSize: 22,
-                          fontFamily: 'JetBrains Mono')),
+                          fontSize: context.skin.type.size(22),
+                          fontFamily: context.skin.type.monoFamily)),
                   const SizedBox(width: 10),
                   Text(card,
                       style: TextStyle(
                           color: cs.tertiary,
-                          fontSize: 22,
+                          fontSize: context.skin.type.size(22),
                           fontWeight: FontWeight.w600,
-                          fontFamily: 'JetBrains Mono',
+                          fontFamily: context.skin.type.monoFamily,
                           letterSpacing: 3)),
                 ],
               ),
@@ -1115,7 +1116,7 @@ class _GridScreenState extends State<GridScreen>
                       const SizedBox(width: 4),
                       Text(l.gridHeadingCalibrate,
                           style:
-                              TextStyle(color: cs.tertiary, fontSize: 9)),
+                              TextStyle(color: cs.tertiary, fontSize: context.skin.type.size(9))),
                     ],
                   ),
                 ),
@@ -1165,7 +1166,7 @@ class _GridLegend extends StatelessWidget {
                 child: Text(text,
                     style: TextStyle(
                         color: cs.onSurface,
-                        fontSize: 12,
+                        fontSize: context.skin.type.sizeBody,
                         height: 1.35)),
               ),
             ],
@@ -1189,7 +1190,7 @@ class _GridLegend extends StatelessWidget {
           Text(l.gridLegend,
               style: TextStyle(
                   color: cs.onSurfaceVariant,
-                  fontSize: 11,
+                  fontSize: context.skin.type.sizeSm,
                   letterSpacing: 3)),
           const SizedBox(height: 6),
           row(Icons.adjust, l.gridLegendRings(scaleValueDisplay)),
@@ -1238,7 +1239,7 @@ class _NotConnectedStrip extends StatelessWidget {
               label,
               style: TextStyle(
                   color: cs.onSurface,
-                  fontSize: 13,
+                  fontSize: context.skin.type.sizeBodyLg,
                   fontWeight: FontWeight.w600,
                   letterSpacing: 1),
             ),
@@ -1264,6 +1265,7 @@ class _GridPainter extends CustomPainter {
     required this.subtle,
     required this.ringStroke,
     required this.base,
+    required this.type,
     required this.rippleAt,
     required this.rippleDuration,
     required this.scaleKm,
@@ -1284,6 +1286,10 @@ class _GridPainter extends CustomPainter {
   final Color subtle;
   final Color ringStroke;
   final Color base;
+
+  /// The active skin's type system: the ring labels and the compass rose are
+  /// painted, not built, so the ladder reaches them through this.
+  final MmType type;
   final DateTime? rippleAt;
   final Duration rippleDuration;
   final double scaleKm;
@@ -1386,7 +1392,9 @@ class _GridPainter extends CustomPainter {
         text: TextSpan(
           text: label,
           style: TextStyle(
-              color: base, fontSize: 10, fontFamily: 'JetBrains Mono'),
+              color: base,
+              fontSize: type.sizeMicro,
+              fontFamily: type.monoFamily),
         ),
         textDirection: TextDirection.ltr,
       )..layout();
@@ -1533,8 +1541,8 @@ class _GridPainter extends CustomPainter {
           text: m.s,
           style: TextStyle(
             color: m.n ? accent : base,
-            fontSize: m.n ? 13 : 11,
-            fontFamily: 'JetBrains Mono',
+            fontSize: m.n ? type.sizeBodyLg : type.sizeSm,
+            fontFamily: type.monoFamily,
             fontWeight: m.n ? FontWeight.w700 : FontWeight.w500,
           ),
         ),
@@ -1582,7 +1590,8 @@ class _GridPainter extends CustomPainter {
       old.rippleAt != rippleAt ||
       old.scaleKm != scaleKm ||
       old.headingDeg != headingDeg ||
-      old.rotationRad != rotationRad;
+      old.rotationRad != rotationRad ||
+      old.type != type;
 }
 
 /// R50 — info-button legend specifically for the Mesh Tree view.
@@ -1607,7 +1616,7 @@ class _TreeLegend extends StatelessWidget {
                 child: Text(text,
                     style: TextStyle(
                         color: cs.onSurface,
-                        fontSize: 12,
+                        fontSize: context.skin.type.sizeBody,
                         height: 1.35)),
               ),
             ],
@@ -1628,7 +1637,7 @@ class _TreeLegend extends StatelessWidget {
           Text(l.meshTreeLegendTitle,
               style: TextStyle(
                   color: cs.onSurfaceVariant,
-                  fontSize: 11,
+                  fontSize: context.skin.type.sizeSm,
                   letterSpacing: 3)),
           const SizedBox(height: 6),
           Padding(
@@ -1636,7 +1645,7 @@ class _TreeLegend extends StatelessWidget {
             child: Text(l.meshTreeLegendDesc,
                 style: TextStyle(
                     color: cs.onSurface,
-                    fontSize: 12,
+                    fontSize: context.skin.type.sizeBody,
                     height: 1.35)),
           ),
           row(Icons.my_location, l.meshTreeLegendSelf, colour: cs.primary),
@@ -1680,7 +1689,7 @@ class _FabricLegend extends StatelessWidget {
                 child: Text(text,
                     style: TextStyle(
                         color: cs.onSurface,
-                        fontSize: 12,
+                        fontSize: context.skin.type.sizeBody,
                         height: 1.35)),
               ),
             ],
@@ -1701,7 +1710,7 @@ class _FabricLegend extends StatelessWidget {
           Text(l.fabricLegendTitle,
               style: TextStyle(
                   color: cs.onSurfaceVariant,
-                  fontSize: 11,
+                  fontSize: context.skin.type.sizeSm,
                   letterSpacing: 3)),
           const SizedBox(height: 6),
           Padding(
@@ -1709,7 +1718,7 @@ class _FabricLegend extends StatelessWidget {
             child: Text(l.fabricLegendDesc,
                 style: TextStyle(
                     color: cs.onSurface,
-                    fontSize: 12,
+                    fontSize: context.skin.type.sizeBody,
                     height: 1.35)),
           ),
           row(Icons.grid_view, l.fabricLegendCell, colour: cs.secondary),
@@ -1742,7 +1751,7 @@ class _FujiLegend extends StatelessWidget {
                 child: Text(text,
                     style: TextStyle(
                         color: cs.onSurface,
-                        fontSize: 12,
+                        fontSize: context.skin.type.sizeBody,
                         height: 1.35)),
               ),
             ],
@@ -1763,14 +1772,14 @@ class _FujiLegend extends StatelessWidget {
           Text(l.fujiLegendTitle,
               style: TextStyle(
                   color: cs.onSurfaceVariant,
-                  fontSize: 11,
+                  fontSize: context.skin.type.sizeSm,
                   letterSpacing: 3)),
           const SizedBox(height: 6),
           Padding(
             padding: const EdgeInsets.only(bottom: 6),
             child: Text(l.fujiLegendDesc,
                 style: TextStyle(
-                    color: cs.onSurface, fontSize: 12, height: 1.35)),
+                    color: cs.onSurface, fontSize: context.skin.type.sizeBody, height: 1.35)),
           ),
           row(Icons.my_location, l.fujiLegendMe, colour: cs.tertiary),
           row(Icons.terrain, l.fujiLegendRefs, colour: cs.primary),
@@ -1804,7 +1813,7 @@ class _SnsCellsLegend extends StatelessWidget {
                 child: Text(text,
                     style: TextStyle(
                         color: cs.onSurface,
-                        fontSize: 12,
+                        fontSize: context.skin.type.sizeBody,
                         height: 1.35)),
               ),
             ],
@@ -1825,14 +1834,14 @@ class _SnsCellsLegend extends StatelessWidget {
           Text(l.snsCellsLegendTitle,
               style: TextStyle(
                   color: cs.onSurfaceVariant,
-                  fontSize: 11,
+                  fontSize: context.skin.type.sizeSm,
                   letterSpacing: 3)),
           const SizedBox(height: 6),
           Padding(
             padding: const EdgeInsets.only(bottom: 6),
             child: Text(l.snsCellsLegendDesc,
                 style: TextStyle(
-                    color: cs.onSurface, fontSize: 12, height: 1.35)),
+                    color: cs.onSurface, fontSize: context.skin.type.sizeBody, height: 1.35)),
           ),
           row(Icons.local_fire_department, l.snsCellsLegendHot,
               colour: cs.error),

@@ -83,7 +83,6 @@ void main() {
       'lib/screens/fabric_survey_view.dart': 2,
       'lib/screens/first_run_intro_screen.dart': 1,
       'lib/screens/globe_view.dart': 6,
-      'lib/screens/grid_screen.dart': 24,
       'lib/screens/maps/maps_screen.dart': 6,
       'lib/screens/maps/maps_self_test_screen.dart': 1,
       'lib/screens/maps/new_pack_screen.dart': 1,
