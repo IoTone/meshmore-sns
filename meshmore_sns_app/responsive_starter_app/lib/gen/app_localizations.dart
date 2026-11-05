@@ -2624,6 +2624,12 @@ abstract class AppLocalizations {
   /// **'TTS reading this channel'**
   String get chatTtsActive;
 
+  /// No description provided for @chatSpeechOffAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Speech is off in App settings'**
+  String get chatSpeechOffAction;
+
   /// No description provided for @chatRetentionDropped.
   ///
   /// In en, this message translates to:
@@ -3979,6 +3985,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{m} m'**
   String nodeDetailAltitudeMeters(String m);
+
+  /// No description provided for @nodeDetailAltitudeNotReported.
+  ///
+  /// In en, this message translates to:
+  /// **'not reported'**
+  String get nodeDetailAltitudeNotReported;
 
   /// No description provided for @nodeDetailTempKv.
   ///

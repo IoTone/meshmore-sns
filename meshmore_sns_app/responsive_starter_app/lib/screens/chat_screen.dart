@@ -657,6 +657,12 @@ class _ChatScreenState extends State<ChatScreen>
               ),
               // Per-channel speech, at the end of the strip because it is
               // a property of the channel that is selected there.
+              //
+              // With speech switched off globally the per-channel toggle has
+              // nothing to toggle, so this slot carries the reason and the way
+              // out instead of disappearing: a control that silently vanishes
+              // reads as a bug to the user who turned speech off and cannot
+              // find it again.
               if (ttsEnabled)
                 Padding(
                   padding: const EdgeInsets.only(left: 4),
@@ -669,6 +675,16 @@ class _ChatScreenState extends State<ChatScreen>
                       speaks ? Icons.volume_up : Icons.volume_off,
                       color: speaks ? cs.primary : cs.onSurfaceVariant,
                     ),
+                  ),
+                )
+              else
+                Padding(
+                  padding: const EdgeInsets.only(left: 4),
+                  child: IconButton(
+                    key: const ValueKey<String>('chat-speech-off'),
+                    tooltip: l.chatSpeechOffAction,
+                    onPressed: () => context.push('/settings/app'),
+                    icon: Icon(Icons.volume_off, color: cs.onSurfaceVariant),
                   ),
                 ),
             ],

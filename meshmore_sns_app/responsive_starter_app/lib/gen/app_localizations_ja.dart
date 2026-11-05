@@ -1429,6 +1429,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get chatTtsActive => 'このチャンネルを TTS で読み上げ中';
 
   @override
+  String get chatSpeechOffAction => '読み上げはアプリ設定でオフです';
+
+  @override
   String chatRetentionDropped(int count, int cap) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
@@ -2227,6 +2230,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String nodeDetailAltitudeMeters(String m) {
     return '$m m';
   }
+
+  @override
+  String get nodeDetailAltitudeNotReported => '報告されません';
 
   @override
   String get nodeDetailTempKv => '温度';

@@ -820,6 +820,7 @@
   "chatManageChannels": "チャンネル管理",
   "chatTtsMuted": "このチャンネルの TTS をミュート中",
   "chatTtsActive": "このチャンネルを TTS で読み上げ中",
+  "chatSpeechOffAction": "読み上げはアプリ設定でオフです",
   "chatRetentionDropped": "{count, plural, =1{古いメッセージ1件が削除済み} other{古いメッセージ{count}件が削除済み}} — 各会話は最新の{cap}件を保持します",
   "@chatRetentionDropped": {
     "placeholders": {
@@ -1371,6 +1372,7 @@
       }
     }
   },
+  "nodeDetailAltitudeNotReported": "報告されません",
   "nodeDetailTempKv": "温度",
   "nodeDetailTempValue": "{c} °C",
   "@nodeDetailTempValue": {

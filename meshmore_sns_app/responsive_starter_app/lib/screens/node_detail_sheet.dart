@@ -816,7 +816,13 @@ class _TelemetrySection extends StatelessWidget {
 
     final List<Widget> children = <Widget>[];
 
-    if (t?.altitudeMeters != null) {
+    // A node that answered telemetry without an altitude has no GPS fix, which
+    // is a different fact from "not asked yet": the row stays and says it was
+    // not reported, so the absence is information rather than a gap.
+    if (t != null && t.altitudeMeters == null) {
+      children.add(kv(
+          l.nodeDetailAltitudeKv, l.nodeDetailAltitudeNotReported));
+    } else if (t?.altitudeMeters != null) {
       children.add(kv(
           l.nodeDetailAltitudeKv,
           l.nodeDetailAltitudeMeters(

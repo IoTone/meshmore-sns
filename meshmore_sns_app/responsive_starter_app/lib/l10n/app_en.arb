@@ -865,6 +865,7 @@
   "chatManageChannels": "Manage channels",
   "chatTtsMuted": "TTS muted for this channel",
   "chatTtsActive": "TTS reading this channel",
+  "chatSpeechOffAction": "Speech is off in App settings",
   "chatRetentionDropped": "{count, plural, =1{1 older message is gone} other{{count} older messages are gone}} — each conversation keeps its newest {cap}",
   "@chatRetentionDropped": {
     "placeholders": {
@@ -1443,6 +1444,7 @@
       }
     }
   },
+  "nodeDetailAltitudeNotReported": "not reported",
   "nodeDetailTempKv": "temperature",
   "nodeDetailTempValue": "{c} °C",
   "@nodeDetailTempValue": {
