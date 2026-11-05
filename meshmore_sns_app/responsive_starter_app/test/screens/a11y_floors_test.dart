@@ -136,6 +136,45 @@ void main() {
     });
   }
 
+  // APP-K1 — a control with no text needs a name. The shell's two icon-only
+  // surfaces are the strip cells and the link chip; both carry one, and this
+  // pins it so a restyle cannot drop it.
+  testWidgets('every strip cell is a named, selected-aware button',
+      (WidgetTester t) async {
+    final SemanticsHandle handle = t.ensureSemantics();
+    await _pumpShell(t);
+    for (final String view in views) {
+      expect(find.bySemanticsLabel(view), findsAtLeastNWidgets(1),
+          reason: '$view has no semantics label on the strip');
+    }
+    expect(
+        t.getSemantics(find.byTooltip('Dashboard')),
+        matchesSemantics(
+          label: 'Dashboard',
+          isButton: true,
+          isSelected: true,
+          hasTapAction: true,
+          hasSelectedState: true,
+        ));
+    await _drain(t);
+    handle.dispose();
+  });
+
+  testWidgets('the link chip names its state for a screen reader',
+      (WidgetTester t) async {
+    final SemanticsHandle handle = t.ensureSemantics();
+    await _pumpShell(t);
+    expect(
+        find.byWidgetPredicate((Widget w) =>
+            w is Semantics &&
+            (w.properties.label ?? '').isNotEmpty &&
+            w.properties.button == true),
+        findsAtLeastNWidgets(1),
+        reason: 'the app-bar link chip lost its semantics');
+    await _drain(t);
+    handle.dispose();
+  });
+
   // The Settings sub-screens are one tap away; a floor that only holds on the
   // six primary views is not a floor. Each is opened through the real router.
   const List<String> routes = <String>[
