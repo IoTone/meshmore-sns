@@ -839,6 +839,9 @@
   "chatRestoreConfirm": "復元",
   "chatRestoreDone": "{count, plural, =1{メッセージ1件を復元しました} other{メッセージ{count}件を復元しました}}",
   "chatRestoreFailed": "そのパスフレーズでは開けませんでした。書き出しファイルではない可能性があります。",
+  "diagnosticsPlaceStore": "プレイスストア",
+  "diagnosticsPlaceStoreWriteFailed": "最後の保存が届きませんでした — ピンは再起動後に残りません",
+  "diagnosticsPlaceStoreOk": "保存済み",
   "chatEmpty": "— このチャンネルにメッセージはありません —",
   "chatJumpToNewest": "新着 {count} 件",
   "@chatJumpToNewest": {

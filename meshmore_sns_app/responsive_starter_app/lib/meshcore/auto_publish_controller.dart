@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../perms/location_service.dart';
 import 'meshcore_controller.dart';
+import '../util/prefs.dart';
 
 /// R36 — auto-publish location while moving.
 ///
@@ -80,9 +81,9 @@ class AutoPublishController extends ChangeNotifier {
   /// Load persisted settings + start the loops if enabled.
   Future<void> load() async {
     final SharedPreferences p = await SharedPreferences.getInstance();
-    _enabled = p.getBool(_kEnabled) ?? false;
-    _intervalSec = p.getInt(_kIntervalSec) ?? 0;
-    _minMovementM = p.getInt(_kMinMovementM) ?? 0;
+    _enabled = Prefs.readBool(p, _kEnabled);
+    _intervalSec = Prefs.readInt(p, _kIntervalSec);
+    _minMovementM = Prefs.readInt(p, _kMinMovementM);
     _restart();
     notifyListeners();
   }

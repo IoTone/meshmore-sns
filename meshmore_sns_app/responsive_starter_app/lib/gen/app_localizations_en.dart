@@ -1537,6 +1537,16 @@ class AppLocalizationsEn extends AppLocalizations {
       'That file could not be opened with that passphrase, or it is not an export.';
 
   @override
+  String get diagnosticsPlaceStore => 'Places store';
+
+  @override
+  String get diagnosticsPlaceStoreWriteFailed =>
+      'the last save did not land — pins will not survive a restart';
+
+  @override
+  String get diagnosticsPlaceStoreOk => 'saved';
+
+  @override
   String get chatEmpty => '— no messages on this channel —';
 
   @override

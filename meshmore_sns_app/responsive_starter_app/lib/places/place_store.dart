@@ -10,6 +10,7 @@ import 'place.dart';
 import 'place_codec.dart';
 import 'place_confirmation.dart';
 import 'place_id.dart';
+import '../util/prefs.dart';
 
 /// What a report did to the store: a new row, a later report of the same row,
 /// or a second row that shares an id but not a point (spec §5).
@@ -59,6 +60,12 @@ final class PlaceStore extends ChangeNotifier {
 
   final DateTime Function() _clock;
 
+  /// Set when the last write to preferences did not land (a full disk, a
+  /// quota, a platform failure). The rows live in memory either way, so the
+  /// failure is about surviving a restart, and Diagnostics says so rather
+  /// than leaving "my pins vanished" unexplained.
+  static final ValueNotifier<bool> writeFailed = ValueNotifier<bool>(false);
+
   /// Injected by the block store when it arrives; a blocked reporter's places
   /// are absent everywhere and its stored rows are deleted (spec §10).
   bool Function(String reporterKeyHex)? _isBlocked;
@@ -92,7 +99,7 @@ final class PlaceStore extends ChangeNotifier {
 
   /// Rows whose life has not ended, newest report first: what the layer draws.
   List<Place> live([DateTime? now]) {
-    final DateTime at = now ?? _clock();
+    final DateTime at = now ?? this.now;
     return <Place>[
       for (final Place p in _rows)
         if (p.isLiveAt(at)) p,
@@ -249,7 +256,7 @@ final class PlaceStore extends ChangeNotifier {
     bool keyedOnly = false,
     DateTime? now,
   }) {
-    final DateTime at = now ?? _clock();
+    final DateTime at = now ?? this.now;
     final String needle = query.trim().toLowerCase();
     return <Place>[
       for (final Place p in liveOnly ? live(at) : history())
@@ -268,7 +275,7 @@ final class PlaceStore extends ChangeNotifier {
   /// (`meshmore-places-spec.md` §10). CSV because it opens everywhere and is
   /// the shape a spreadsheet or a report wants.
   String exportLedgerCsv({DateTime? now}) {
-    final DateTime at = now ?? _clock();
+    final DateTime at = now ?? this.now;
     final StringBuffer out = StringBuffer()
       ..writeln('id,state,type,label,latitude,longitude,precision_m,'
           'reporter,keyed,provenance,reports,sent_at,expires_at,'
@@ -313,8 +320,46 @@ final class PlaceStore extends ChangeNotifier {
     return out.toString();
   }
 
+  /// The latest wall time this store has seen, in a preference.
+  ///
+  /// A phone's clock can be wrong, set back by hand, or jump when the network
+  /// time arrives. Place expiry compares wall stamps, so a backwards jump would
+  /// resurrect a hazard that already expired. Remembering the highest time ever
+  /// observed and never comparing against anything below it makes expiry
+  /// monotonic: time can be wrong, but it cannot go backwards.
+  static const String _kWaterMark = 'mm.places.highWater';
+
+  DateTime _highWater = DateTime.fromMillisecondsSinceEpoch(0);
+
+  /// Now, never earlier than a time this store has already seen.
+  DateTime get now {
+    final DateTime wall = _clock();
+    return wall.isAfter(_highWater) ? wall : _highWater;
+  }
+
+  /// Called after a successful load: a document stamped in the future means
+  /// the clock moved back since it was written, so its stamp becomes the floor.
+  void _observeWallClock() {
+    final DateTime wall = _clock();
+    if (wall.isAfter(_highWater)) _highWater = wall;
+    _persistHighWater();
+  }
+
+  Future<void> _persistHighWater() async {
+    final SharedPreferences p = await SharedPreferences.getInstance();
+    final int stored = Prefs.readInt(p, _kWaterMark, fallback: 0);
+    final int mark = _highWater.millisecondsSinceEpoch;
+    if (mark > stored) await p.setInt(_kWaterMark, mark);
+  }
+
   Future<void> load() async {
     final SharedPreferences p = await SharedPreferences.getInstance();
+    final int storedMark = Prefs.readInt(p, _kWaterMark, fallback: 0);
+    if (storedMark > 0) {
+      _highWater =
+          DateTime.fromMillisecondsSinceEpoch(storedMark, isUtc: false);
+    }
+    _observeWallClock();
     final String? raw = p.getString(_kKey);
     _rows.clear();
     _seen.clear();
@@ -347,7 +392,11 @@ final class PlaceStore extends ChangeNotifier {
           }
         }
       } catch (_) {
-        // A corrupt document starts clean rather than losing the screen.
+        // A corrupt document starts clean rather than losing the screen, but
+        // the bytes are kept aside first: a parse failure is evidence, and
+        // overwriting it with an empty document destroys the only copy that
+        // could have been recovered by hand.
+        await p.setString('$_kKey.bad', raw);
         _rows.clear();
         _seen.clear();
         _votes.clear();
@@ -398,7 +447,7 @@ final class PlaceStore extends ChangeNotifier {
   /// is all-live and still over the limit.
   void _pruneAndSave() {
     if (_rows.length > capacity) {
-      final DateTime now = _clock();
+      final DateTime now = this.now;
       final List<Place> ordered = <Place>[..._rows];
       ordered.sort((Place a, Place b) {
         final bool aLive = a.isLiveAt(now);
@@ -431,7 +480,9 @@ final class PlaceStore extends ChangeNotifier {
       while (_dirty) {
         _dirty = false;
         final SharedPreferences p = await SharedPreferences.getInstance();
-        await p.setString(_kKey, _encode());
+        final bool ok = await p.setString(_kKey, _encode());
+        writeFailed.value = !ok;
+        await _persistHighWater();
       }
     } finally {
       _pending = null;

@@ -1,6 +1,7 @@
 // Copyright (c) 2026 IoTone, Inc.
 // SPDX-License-Identifier: MIT
 import 'package:shared_preferences/shared_preferences.dart';
+import '../util/prefs.dart';
 
 /// The alarm's destination, remembered between launches.
 ///
@@ -22,7 +23,9 @@ abstract final class SosPrefs {
   static Future<int?> channelSlot() async {
     try {
       final SharedPreferences p = await SharedPreferences.getInstance();
-      return p.getInt(_kChannel);
+      return Prefs.readInt(p, _kChannel, fallback: -1) < 0
+          ? null
+          : Prefs.readInt(p, _kChannel);
     } catch (_) {
       return null;
     }

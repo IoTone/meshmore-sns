@@ -906,6 +906,9 @@
   "chatRestoreDone": "{count, plural, =1{1 message restored} other{{count} messages restored}}",
   "chatRestoreFailed": "That file could not be opened with that passphrase, or it is not an export.",
   "@chatRestoreDone": {"placeholders": {"count": {"type": "int"}}},
+  "diagnosticsPlaceStore": "Places store",
+  "diagnosticsPlaceStoreWriteFailed": "the last save did not land — pins will not survive a restart",
+  "diagnosticsPlaceStoreOk": "saved",
   "chatEmpty": "— no messages on this channel —",
   "chatJumpToNewest": "{count, plural, =1{1 new} other{{count} new}}",
   "@chatJumpToNewest": {

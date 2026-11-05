@@ -22,6 +22,7 @@ import '../ui/radio_health_block.dart';
 import '../ui/pin_blocks.dart';
 import 'diagnostics_redaction.dart';
 import '../meshcore/chat_store.dart';
+import '../places/place_store.dart';
 import '../meshcore/meshcore_controller.dart';
 import '../ui/mm_shape.dart';
 
@@ -317,6 +318,14 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
                               : l.diagnosticsHistoryStoreWriteFailed(code));
                     },
                   ),
+                ),
+                section(l.diagnosticsPlaceStore),
+                ValueListenableBuilder<bool>(
+                  valueListenable: PlaceStore.writeFailed,
+                  builder: (BuildContext _, bool failed, Widget? __) => fact(
+                      failed
+                          ? l.diagnosticsPlaceStoreWriteFailed
+                          : l.diagnosticsPlaceStoreOk),
                 ),
                 section(l.diagnosticsSectionSend),
                 Wrap(

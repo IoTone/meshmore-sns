@@ -2678,6 +2678,24 @@ abstract class AppLocalizations {
   /// **'That file could not be opened with that passphrase, or it is not an export.'**
   String get chatRestoreFailed;
 
+  /// No description provided for @diagnosticsPlaceStore.
+  ///
+  /// In en, this message translates to:
+  /// **'Places store'**
+  String get diagnosticsPlaceStore;
+
+  /// No description provided for @diagnosticsPlaceStoreWriteFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'the last save did not land — pins will not survive a restart'**
+  String get diagnosticsPlaceStoreWriteFailed;
+
+  /// No description provided for @diagnosticsPlaceStoreOk.
+  ///
+  /// In en, this message translates to:
+  /// **'saved'**
+  String get diagnosticsPlaceStoreOk;
+
   /// No description provided for @chatEmpty.
   ///
   /// In en, this message translates to:

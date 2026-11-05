@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../peer/peer_profiles.dart';
 import '../theme/theme_controller.dart';
+import '../util/prefs.dart';
 
 export '../peer/peer_profiles.dart' show PeerSpeechMode;
 
@@ -242,11 +243,11 @@ class TtsController extends ChangeNotifier {
   /// once at startup. Applies the loaded values to the speaker.
   Future<void> load() async {
     final SharedPreferences p = await SharedPreferences.getInstance();
-    _enabled = p.getBool(_kEnabled) ?? false;
-    _rate = (p.getDouble(_kRate) ?? defaultRate).clamp(minRate, maxRate);
+    _enabled = Prefs.readBool(p, _kEnabled);
+    _rate = (Prefs.readDouble(p, _kRate, fallback: defaultRate)).clamp(minRate, maxRate);
     _pitch =
-        (p.getDouble(_kPitch) ?? defaultPitch).clamp(minPitch, maxPitch);
-    final String? vid = p.getString(_kVoiceId);
+        (Prefs.readDouble(p, _kPitch, fallback: defaultPitch)).clamp(minPitch, maxPitch);
+    final String? vid = Prefs.readString(p, _kVoiceId);
     _voice = vid == null ? null : TtsVoice.parseId(vid);
     await _peers.load();
     // Push to speaker so the very first speak() reflects loaded prefs.

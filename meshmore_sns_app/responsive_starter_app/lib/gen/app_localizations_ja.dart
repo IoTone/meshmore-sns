@@ -1467,6 +1467,16 @@ class AppLocalizationsJa extends AppLocalizations {
   String get chatRestoreFailed => 'そのパスフレーズでは開けませんでした。書き出しファイルではない可能性があります。';
 
   @override
+  String get diagnosticsPlaceStore => 'プレイスストア';
+
+  @override
+  String get diagnosticsPlaceStoreWriteFailed =>
+      '最後の保存が届きませんでした — ピンは再起動後に残りません';
+
+  @override
+  String get diagnosticsPlaceStoreOk => '保存済み';
+
+  @override
   String get chatEmpty => '— このチャンネルにメッセージはありません —';
 
   @override

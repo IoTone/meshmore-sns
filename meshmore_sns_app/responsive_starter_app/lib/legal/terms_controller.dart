@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: MIT
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../util/prefs.dart';
 
 /// The terms and privacy text the user is shown, and the version they agreed
 /// to.
@@ -39,7 +40,8 @@ class TermsController extends ChangeNotifier {
   Future<void> load() async {
     if (_loaded) return;
     final SharedPreferences p = await SharedPreferences.getInstance();
-    _acceptedVersion = p.getInt(_key);
+    _acceptedVersion =
+        p.get(_key) == null ? null : Prefs.readInt(p, _key);
     _loaded = true;
     notifyListeners();
   }

@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'mm_skin.dart';
 import 'mm_tokens.dart';
+import '../util/prefs.dart';
 
 /// User-customizable appearance & accessibility (R14 / R12 / R13).
 ///
@@ -54,11 +55,11 @@ class ThemeController extends ChangeNotifier {
   Future<void> load() async {
     final SharedPreferences p = await SharedPreferences.getInstance();
     _preset = presetFromId(p.getString(_kPreset));
-    _fontScale = (p.getDouble(_kFontScale) ?? 1.0).clamp(0.8, 1.6);
-    _highContrast = p.getBool(_kHighContrast) ?? false;
-    _reduceMotion = p.getBool(_kReduceMotion) ?? false;
-    _audioMaster = p.getBool(_kAudioMaster) ?? true;
-    _visualHapticOnly = p.getBool(_kVisualHapticOnly) ?? false;
+    _fontScale = Prefs.readDouble(p, _kFontScale, fallback: 1.0).clamp(0.8, 1.6);
+    _highContrast = Prefs.readBool(p, _kHighContrast);
+    _reduceMotion = Prefs.readBool(p, _kReduceMotion);
+    _audioMaster = Prefs.readBool(p, _kAudioMaster, fallback: true);
+    _visualHapticOnly = Prefs.readBool(p, _kVisualHapticOnly);
     notifyListeners();
   }
 
