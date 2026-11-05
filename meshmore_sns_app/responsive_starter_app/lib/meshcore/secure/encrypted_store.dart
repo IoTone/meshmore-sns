@@ -170,28 +170,16 @@ class EncryptedStore {
 
   Future<void> write(String name, Uint8List bytes) =>
       _serial(() async {
-        final Map<String, Uint8List> all = await _readForWrite();
+        final Map<String, Uint8List> all = await _readAll();
         all[name] = bytes;
         await _writeAll(all);
       });
 
   Future<void> remove(String name) => _serial(() async {
-        final Map<String, Uint8List> all = await _readForWrite();
+        final Map<String, Uint8List> all = await _readAll();
         if (all.remove(name) == null) return;
         await _writeAll(all);
       });
-
-  /// A write has to be able to proceed when the file it finds is damaged: the
-  /// read that detected the damage already copied the bytes aside, so refusing
-  /// here would leave the app unable to save anything ever again. A read keeps
-  /// throwing, because a caller that is only reading wants to know.
-  Future<Map<String, Uint8List>> _readForWrite() async {
-    try {
-      return await _readAll();
-    } on EncryptedStoreCorrupt {
-      return <String, Uint8List>{};
-    }
-  }
 
   Future<void> clear() => _serial(() async {
         final File f = await _file();

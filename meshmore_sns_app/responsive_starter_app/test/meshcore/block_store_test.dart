@@ -123,6 +123,8 @@ void main() {
         File('${dir.path}${Platform.pathSeparator}${EncryptedStore.fileName}');
     file.writeAsBytesSync(<int>[0, 1, 2, 3, 4, 5, 6, 7]);
 
+    final List<int> damaged = file.readAsBytesSync();
+
     final BlockStore store = BlockStore();
     await store.load();
 
@@ -132,12 +134,13 @@ void main() {
         reason: 'the list existed and could not be read, which is not the '
             'same as never having been saved');
 
-    // The damaged bytes survive the session: a later write must not be the
-    // moment the evidence disappears.
+    // The damaged bytes survive the session in a copy beside the store, and
+    // the unreadable original is gone so a later block can be saved at all.
     final File copy = File(
         '${dir.path}${Platform.pathSeparator}${EncryptedStore.corruptName}');
     expect(copy.existsSync(), isTrue);
-    expect(copy.readAsBytesSync(), file.readAsBytesSync());
+    expect(copy.readAsBytesSync(), damaged);
+    expect(file.existsSync(), isFalse);
 
     // And a new block still saves normally, because the copy kept the damage.
     expect(await store.block(BlockedKey(pubKeyHex: hex('a'), sinceMs: 1)),

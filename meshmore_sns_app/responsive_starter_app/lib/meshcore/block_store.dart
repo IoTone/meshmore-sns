@@ -179,15 +179,27 @@ class BlockStore extends ChangeNotifier {
     } on EncryptedStoreCorrupt {
       // A damaged list is not an empty list; keep it empty this session but
       // say the list could not be read rather than pretending it is clean.
-      // The store keeps a copy of the damaged file, so a later write cannot be
-      // the moment the evidence disappears.
       _persisted = false;
       _unreadable = true;
+      await _dropDamagedFile();
     } on FormatException {
       _persisted = false;
       _unreadable = true;
+      await _dropDamagedFile();
     }
     notifyListeners();
+  }
+
+  /// Removes a store file that cannot be opened, so the next block can be
+  /// saved. The store copied the damaged bytes aside while it detected them,
+  /// which is what makes deleting the original safe: the evidence survives the
+  /// session and the user can block again.
+  Future<void> _dropDamagedFile() async {
+    try {
+      await _store().clear();
+    } on EncryptedStoreCorrupt {
+      // Nothing more to do: the read already failed and the copy is made.
+    }
   }
 
   /// Blocks [key]. Refuses a key that is not the full 32 bytes and refuses a
