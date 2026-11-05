@@ -477,10 +477,10 @@ final class SosController extends ChangeNotifier {
     bool notSent(MessageDelivery? d) =>
         d == MessageDelivery.failed || d == MessageDelivery.unknown;
     try {
-      final ChatMessage? ch = await _mc.sendChannelTextTo(_channelSlot, text);
+      final ChatMessage? ch = await _mc.sendChannelTextTo(_channelSlot, text, urgent: true);
       if (ch == null || notSent(ch.delivery)) refused = true;
       for (final String hex in _contactKeysHex) {
-        final ChatMessage? dm = await _mc.sendDirectText(hex, text);
+        final ChatMessage? dm = await _mc.sendDirectText(hex, text, urgent: true);
         if (dm == null || notSent(dm.delivery)) refused = true;
       }
     } catch (_) {

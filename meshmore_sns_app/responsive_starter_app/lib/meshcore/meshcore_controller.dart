@@ -2465,8 +2465,13 @@ class MeshcoreController extends ChangeNotifier {
   /// ready, text is blank, or the peer hex is shorter than 12 chars.
   /// Returns the outgoing row (so a caller can follow its delivery),
   /// or null when nothing was sent.
+  /// [urgent] takes the frame out of the app's own duty-cycle refusal. An
+  /// alarm or a check-in must never be silenced by a budget this app invented
+  /// for itself, so those sends are always written; they are still charged, so
+  /// the meter keeps telling the truth. The same reasoning as link maintenance
+  /// in [send], for a stronger reason.
   Future<ChatMessage?> sendDirectText(
-      String peerPubKeyHex, String text) async {
+      String peerPubKeyHex, String text, {bool urgent = false}) async {
     final String t = text.trim();
     if (t.isEmpty || !isReady || peerPubKeyHex.length < 12) return null;
     final List<int> prefix = <int>[
@@ -2488,7 +2493,7 @@ class MeshcoreController extends ChangeNotifier {
     _registerOutgoing(m, CommandAnswer.sent);
     notifyListeners();
     try {
-      await send(gated: true, MeshcoreFrameCodec.sendTextMessage(
+      await send(gated: !urgent, MeshcoreFrameCodec.sendTextMessage(
         pubKeyPrefix: prefix,
         timestamp: ts,
         text: t,
@@ -3883,7 +3888,10 @@ class MeshcoreController extends ChangeNotifier {
   /// reply to whatever happens to be on screen would put private
   /// traffic somewhere it was never meant to go.
   /// Returns the outgoing row, or null when nothing was sent.
-  Future<ChatMessage?> sendChannelTextTo(int channelIdx, String text) async {
+  /// See [sendDirectText] for [urgent]: an alarm is written even when the
+  /// app's duty-cycle window is full, and is charged all the same.
+  Future<ChatMessage?> sendChannelTextTo(int channelIdx, String text,
+      {bool urgent = false}) async {
     final String t = text.trim();
     if (t.isEmpty || !isReady) return null;
     // A capability the radio has denied is a local refusal with its own
@@ -3914,7 +3922,7 @@ class MeshcoreController extends ChangeNotifier {
     _registerOutgoing(m, CommandAnswer.ok);
     notifyListeners();
     try {
-      await send(gated: true, MeshcoreFrameCodec.sendChannelTextMessage(
+      await send(gated: !urgent, MeshcoreFrameCodec.sendChannelTextMessage(
         channelIdx: channelIdx,
         timestamp: ts,
         text: t,
