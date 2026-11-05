@@ -1074,10 +1074,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get streetMapRecenter => 'Re-centre on me';
 
   @override
-  String get mapNoFixBanner =>
-      'No position fix yet. This is a world view, not centred on you.';
-
-  @override
   String mapPackZoomOutside(int min, int max) {
     return 'This pack covers zoom $min to $max. Coarser tiles stand in outside that range.';
   }
@@ -5657,4 +5653,28 @@ class AppLocalizationsEn extends AppLocalizations {
   String meshTreeCounts(String shown, String input, String total) {
     return '$shown shown · $input in · $total total';
   }
+
+  @override
+  String get mapNoPositionYet => 'Your position is not known yet.';
+
+  @override
+  String get mapNoPositionFind => 'Find me';
+
+  @override
+  String get mapNoPositionAsking => 'Finding you...';
+
+  @override
+  String get mapLocationOffApp => 'Location is off for this app.';
+
+  @override
+  String get mapLocationAllow => 'Allow location';
+
+  @override
+  String get mapLocationBlockedApp => 'Location is blocked for this app.';
+
+  @override
+  String get mapLocationOpenSettings => 'Open settings';
+
+  @override
+  String get mapLocationOffDevice => 'Location is off on this phone.';
 }

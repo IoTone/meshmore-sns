@@ -120,13 +120,26 @@ panning views. Unlike the grid, the Map tab keeps a way out by gesture:
 a 24dp band at each screen edge (R67, `MmEdgeSwipe`) is hit-tested
 before the map, so an inward fling there goes to the previous (left) or
 next (right) view and the map never sees those touches; the middle
-pans and zooms. Back and the view strip also leave. With no position yet
-(R69) the Map tab is still a map: a **world view** (centre 20N 0E, zoom 2,
-a deliberate non-guess at the user's region) with a quiet, non-modal,
-non-dismissable hairline row at the bottom: "No position fix yet. This is
-a world view, not centred on you." The re-centre button is disabled and
-self/range markers are omitted until a fix arrives, at which point the
-map recentres on self at zoom 14.
+pans and zooms. Back and the view strip also leave. **R117 — the camera
+follows one ladder, and the map is centred on the user wherever it can be.**
+In order: the phone's position, then the radio's own reported position,
+then the view the user left last time, then the area of the largest
+downloaded offline region on the device (zoomed to frame its box), and only
+then the world view (centre 20N 0E, zoom 2). The rung that decided the
+camera is carried in the resolved value, so a rebuild cannot silently swap
+one for another. A position that arrives after the user has panned or
+zoomed does not move the camera; only the locate control does, and it also
+asks for a position when there is none. The last view is persisted
+(`mm.mapview.v1`, written on a settled gesture) so reopening the map puts
+the user back where they were, which is the "centred on them" that matters
+most in practice. When no position is known the map still draws, and one
+hairline row at the bottom says which of the two situations it is and
+offers the one action that helps: location not allowed for the app
+("Allow location"), location blocked (opens the OS settings page),
+location off on the phone (opens the OS settings page), or no position yet
+(the "Find me" action). Self and range markers are omitted until a
+position arrives, at which point the map takes the personal rung at zoom
+14 unless the user has moved it. The copy says "position", never "fix".
 (R70) The OSM credit line sits in the same bottom column as that row so it
 is never covered; the five map controls are 48dp and the right edge band
 starts below the column (derived from it). The edge bands start just

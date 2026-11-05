@@ -534,7 +534,6 @@
   "fabricResetBody": "Drops every recorded cell. New observations will start filling the map again as you move and the mesh reports nearby nodes.",
   "fabricResetApply": "Reset",
   "streetMapRecenter": "Re-centre on me",
-  "mapNoFixBanner": "No position fix yet. This is a world view, not centred on you.",
   "mapPackZoomOutside": "This pack covers zoom {min} to {max}. Coarser tiles stand in outside that range.",
   "@mapPackZoomOutside": {
     "placeholders": {
@@ -545,9 +544,6 @@
         "type": "int"
       }
     }
-  },
-  "@mapNoFixBanner": {
-    "description": "R69: quiet banner on the Map tab when there is no position fix."
   },
   "mapHideTiles": "Hide map tiles",
   "mapShowTiles": "Show map tiles",
@@ -885,7 +881,13 @@
   "diagnosticsHistoryStoreOk": "sealed and readable",
   "diagnosticsHistoryStoreKeyLost": "sealed, but the key is gone from this device",
   "diagnosticsHistoryStoreWriteFailed": "last write did not reach the store ({code})",
-  "@diagnosticsHistoryStoreWriteFailed": {"placeholders": {"code": {"type": "String"}}},
+  "@diagnosticsHistoryStoreWriteFailed": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
   "chatHistoryRestoreAction": "Restore from an export",
   "chatRestoreMenu": "Restore from export…",
   "chatRestoreNothing": "Open the export file with this app, or share it here, and then run restore again.",
@@ -894,12 +896,24 @@
   "chatRestoreConfirm": "Restore",
   "chatRestoreDone": "{count, plural, =1{1 message restored} other{{count} messages restored}}",
   "chatRestoreFailed": "That file could not be opened with that passphrase, or it is not an export.",
-  "@chatRestoreDone": {"placeholders": {"count": {"type": "int"}}},
+  "@chatRestoreDone": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "diagnosticsPlaceStore": "Places store",
   "diagnosticsPlaceStoreWriteFailed": "the last save did not land — pins will not survive a restart",
   "diagnosticsPlaceStoreOk": "saved",
   "mediaReceiveDropped": "{count, plural, =1{One earlier transfer was dropped to make room, so that picture stopped} other{{count} earlier transfers were dropped to make room, so those pictures stopped}}",
-  "@mediaReceiveDropped": {"placeholders": {"count": {"type": "int"}}},
+  "@mediaReceiveDropped": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "chatEmpty": "— no messages on this channel —",
   "chatJumpToNewest": "{count, plural, =1{1 new} other{{count} new}}",
   "@chatJumpToNewest": {
@@ -1602,7 +1616,9 @@
   },
   "notifBodySos": "Open the app for the position. The alert carries coordinates that this phone does not show on the lock screen.",
   "notifAlarmRunningBody": "An alarm is repeating. Open the app to stop it.",
-  "@notifAlarmRunningBody": {"description": "Ongoing notification shown while an SOS is running."},
+  "@notifAlarmRunningBody": {
+    "description": "Ongoing notification shown while an SOS is running."
+  },
   "@notifBodySos": {
     "description": "OS notification body for an SOS. Deliberately omits the coordinates: the lock screen is not where a position should be published."
   },
@@ -1644,9 +1660,13 @@
   },
   "notifDeniedBanner": "Notifications are turned off for this app, so messages will not appear on your lock screen.",
   "notifQuietBanner": "Notifications for this app are set to silent in Android settings, so alerts will not make a sound.",
-  "@notifQuietBanner": {"description": "Shown when one of the app's notification channels is below high importance."},
+  "@notifQuietBanner": {
+    "description": "Shown when one of the app's notification channels is below high importance."
+  },
   "notifMissingChannelBanner": "One of this app's notification channels was deleted, so some alerts could not be shown. It has been recreated.",
-  "@notifMissingChannelBanner": {"description": "Shown when a notification channel was deleted by the user."},
+  "@notifMissingChannelBanner": {
+    "description": "Shown when a notification channel was deleted by the user."
+  },
   "@notifDeniedBanner": {
     "description": "Shown when the OS notification permission is denied."
   },
@@ -2710,11 +2730,11 @@
   "@diagnosticsFramingLine": {
     "placeholders": {
       "truncated": {
-        "type": "String"
-     ,
-      "empty": {
-        "type": "String"
-      } },
+        "type": "String",
+        "empty": {
+          "type": "String"
+        }
+      },
       "trailing": {
         "type": "String"
       }
@@ -3079,8 +3099,12 @@
   "diagnosticsRadioChangedLine": "This radio is not the one this app last used ({previous} then, {current} now). Its history is not carried over.",
   "@diagnosticsRadioChangedLine": {
     "placeholders": {
-      "previous": {"type": "String"},
-      "current": {"type": "String"}
+      "previous": {
+        "type": "String"
+      },
+      "current": {
+        "type": "String"
+      }
     }
   },
   "diagnosticsRadioChangedAccept": "This is my radio",
@@ -3089,20 +3113,28 @@
   "airtimeSpentLine": "Radio time this hour: {spent} of {budget}",
   "@airtimeSpentLine": {
     "placeholders": {
-      "spent": {"type": "String"},
-      "budget": {"type": "String"}
+      "spent": {
+        "type": "String"
+      },
+      "budget": {
+        "type": "String"
+      }
     }
   },
   "airtimeSpentLineUnlimited": "Radio time this hour: {spent}, with no limit set",
   "@airtimeSpentLineUnlimited": {
     "placeholders": {
-      "spent": {"type": "String"}
+      "spent": {
+        "type": "String"
+      }
     }
   },
   "airtimeRefusedCount": "{count, plural, =1{1 send refused by the limit} other{{count} sends refused by the limit}}",
   "@airtimeRefusedCount": {
     "placeholders": {
-      "count": {"type": "int"}
+      "count": {
+        "type": "int"
+      }
     }
   },
   "settingsAirtimeTitle": "Radio time limit",
@@ -3231,13 +3263,21 @@
   "sosStopHint": "Stops the repeats on this phone. Nothing is sent, so nobody is told.",
   "sosMissedSends": "Not sent while the app was asleep: {count}",
   "sosSafeSent": "Your safe message was sent.",
-  "@sosSafeSent": {"description": "Ended panel after I'm safe, when the [SAFE] left the phone."},
+  "@sosSafeSent": {
+    "description": "Ended panel after I'm safe, when the [SAFE] left the phone."
+  },
   "sosSafeNotSent": "Your safe message did not leave this phone. The repeats have stopped here, but nobody was told you are safe.",
-  "@sosSafeNotSent": {"description": "Ended panel after I'm safe, when the radio refused it or there was no link."},
+  "@sosSafeNotSent": {
+    "description": "Ended panel after I'm safe, when the radio refused it or there was no link."
+  },
   "sosResumed": "This alarm was running when the app last closed. What is left of the hour continues; repeats missed while the app was closed were not sent.",
-  "@sosResumed": {"description": "Running panel, when the alarm was restored from disk after a restart."},
+  "@sosResumed": {
+    "description": "Running panel, when the alarm was restored from disk after a restart."
+  },
   "sosBestEffort": "Repeats are best effort while the phone sleeps: a delayed tick sends the most recent one, not a burst.",
-  "@sosBestEffort": {"description": "Running panel, honest limit of a one-second timer under Doze."},
+  "@sosBestEffort": {
+    "description": "Running panel, honest limit of a one-second timer under Doze."
+  },
   "@sosMissedSends": {
     "description": "Active alarm: repeats that were due during a sleep window and were skipped rather than fired as a burst.",
     "placeholders": {
@@ -3780,7 +3820,16 @@
     }
   },
   "placePinSemanticsUnkeyed": "{label}, {expiry}. Sent from a channel name, so anyone with the channel could have written it.",
-  "@placePinSemanticsUnkeyed": {"placeholders": {"label": {"type": "String"}, "expiry": {"type": "String"}}},
+  "@placePinSemanticsUnkeyed": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      },
+      "expiry": {
+        "type": "String"
+      }
+    }
+  },
   "placeUnkeyedShort": "name only",
   "@placeUnkeyedShort": {},
   "placeClusterSemantics": "{count} places here",
@@ -3863,5 +3912,20 @@
         "type": "String"
       }
     }
-  }
+  },
+  "@equalGridCellSize": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "mapNoPositionYet": "Your position is not known yet.",
+  "mapNoPositionFind": "Find me",
+  "mapNoPositionAsking": "Finding you...",
+  "mapLocationOffApp": "Location is off for this app.",
+  "mapLocationAllow": "Allow location",
+  "mapLocationBlockedApp": "Location is blocked for this app.",
+  "mapLocationOpenSettings": "Open settings",
+  "mapLocationOffDevice": "Location is off on this phone."
 }

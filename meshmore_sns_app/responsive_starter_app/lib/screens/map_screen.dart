@@ -61,7 +61,6 @@ class MapScreen extends StatelessWidget {
             onSwipe: (int d) => onEdgeSwipe?.call(d),
             rightInsets: EdgeInsets.only(top: rightControlsBottom),
             child: StreetMapView(
-              browseWithoutFix: true,
               // Both map tools live in the map's own right-hand column, under
               // the built-in controls. They used to sit on the left edge, and
               // with the zoom column on the right the left ones were the

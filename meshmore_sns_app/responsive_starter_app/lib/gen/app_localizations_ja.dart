@@ -1016,9 +1016,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get streetMapRecenter => '現在地に戻す';
 
   @override
-  String get mapNoFixBanner => '位置情報がまだ取得できていません。表示は世界地図で、現在地には合わせていません。';
-
-  @override
   String mapPackZoomOutside(int min, int max) {
     return 'このパックの範囲はズーム $min〜$max です。範囲外は粗いタイルで表示します。';
   }
@@ -5430,4 +5427,28 @@ class AppLocalizationsJa extends AppLocalizations {
   String meshTreeCounts(String shown, String input, String total) {
     return '表示 $shown · 入力 $input · 合計 $total';
   }
+
+  @override
+  String get mapNoPositionYet => '現在地がまだ分かりません。';
+
+  @override
+  String get mapNoPositionFind => '現在地を取得';
+
+  @override
+  String get mapNoPositionAsking => '取得中...';
+
+  @override
+  String get mapLocationOffApp => 'このアプリの位置情報がオフです。';
+
+  @override
+  String get mapLocationAllow => '位置情報を許可';
+
+  @override
+  String get mapLocationBlockedApp => 'このアプリの位置情報がブロックされています。';
+
+  @override
+  String get mapLocationOpenSettings => '設定を開く';
+
+  @override
+  String get mapLocationOffDevice => 'この端末の位置情報がオフです。';
 }

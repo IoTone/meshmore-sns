@@ -1958,12 +1958,6 @@ abstract class AppLocalizations {
   /// **'Re-centre on me'**
   String get streetMapRecenter;
 
-  /// R69: quiet banner on the Map tab when there is no position fix.
-  ///
-  /// In en, this message translates to:
-  /// **'No position fix yet. This is a world view, not centred on you.'**
-  String get mapNoFixBanner;
-
   /// No description provided for @mapPackZoomOutside.
   ///
   /// In en, this message translates to:
@@ -9531,6 +9525,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{shown} shown · {input} in · {total} total'**
   String meshTreeCounts(String shown, String input, String total);
+
+  /// No description provided for @mapNoPositionYet.
+  ///
+  /// In en, this message translates to:
+  /// **'Your position is not known yet.'**
+  String get mapNoPositionYet;
+
+  /// No description provided for @mapNoPositionFind.
+  ///
+  /// In en, this message translates to:
+  /// **'Find me'**
+  String get mapNoPositionFind;
+
+  /// No description provided for @mapNoPositionAsking.
+  ///
+  /// In en, this message translates to:
+  /// **'Finding you...'**
+  String get mapNoPositionAsking;
+
+  /// No description provided for @mapLocationOffApp.
+  ///
+  /// In en, this message translates to:
+  /// **'Location is off for this app.'**
+  String get mapLocationOffApp;
+
+  /// No description provided for @mapLocationAllow.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow location'**
+  String get mapLocationAllow;
+
+  /// No description provided for @mapLocationBlockedApp.
+  ///
+  /// In en, this message translates to:
+  /// **'Location is blocked for this app.'**
+  String get mapLocationBlockedApp;
+
+  /// No description provided for @mapLocationOpenSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Open settings'**
+  String get mapLocationOpenSettings;
+
+  /// No description provided for @mapLocationOffDevice.
+  ///
+  /// In en, this message translates to:
+  /// **'Location is off on this phone.'**
+  String get mapLocationOffDevice;
 }
 
 class _AppLocalizationsDelegate
