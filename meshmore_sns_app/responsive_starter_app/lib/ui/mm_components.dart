@@ -313,7 +313,8 @@ class MmStatusPill extends StatelessWidget {
 /// [MmAction] keeps the text-sized footprint but puts the label on
 /// `surfaceAlt`, one tonal step above the page, inside a hairline border in
 /// the skin's own corner shape — so it generalises to every preset without a
-/// per-theme fork. Minimum height 44 dp, 12/8 padding, optional leading icon.
+/// per-theme fork. Minimum height 48 dp (the app's tap floor, not 44:
+/// the audit measured every screen against 48), 12/8 padding, optional icon.
 class MmAction extends StatelessWidget {
   const MmAction({
     super.key,
@@ -350,7 +351,7 @@ class MmAction extends StatelessWidget {
           onTap: onPressed,
           customBorder: border,
           child: Container(
-            constraints: const BoxConstraints(minHeight: 44),
+            constraints: const BoxConstraints(minHeight: 48),
             padding: EdgeInsets.symmetric(
                 horizontal: 12, vertical: dense ? 6 : 9),
             decoration: ShapeDecoration(

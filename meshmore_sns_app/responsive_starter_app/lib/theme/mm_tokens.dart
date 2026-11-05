@@ -285,6 +285,42 @@ ThemeData buildMmTheme(MmTokens t, {String? fontFamily, MmShape? shape}) {
           shape: WidgetStateProperty.all<OutlinedBorder>(
               RoundedRectangleBorder(borderRadius: squareRadius)))
       : null;
+  // R114 — a text button must look like a control in every preset, not only in
+  // the square one. A bare `TextButton` on these grounds is indistinguishable
+  // from a label (Connect, Retry, Configure, Details, Unblock, Edit), which is
+  // the defect `MmAction` was built to fix per site; giving the theme the shape
+  // fixes the class once. The label sits on `surfaceAlt`, one tonal step above
+  // the page, inside a hairline in the skin's own corner, at the app's 48 dp
+  // minimum. Dialog and sheet action rows keep TextButtons and now inherit the
+  // same boundary, which is the pairing convention rather than a change to it.
+  final double controlCorner =
+      square ? kSquareRadius : ((shape?.cornerSize ?? 8).clamp(2, 8)).toDouble();
+  final BorderRadius controlRadius = BorderRadius.circular(controlCorner);
+  final ButtonStyle affordanceTextButton = ButtonStyle(
+    minimumSize: WidgetStateProperty.all<Size>(const Size(0, 48)),
+    padding: WidgetStateProperty.all<EdgeInsetsGeometry>(
+        const EdgeInsets.symmetric(horizontal: 12)),
+    shape: WidgetStateProperty.all<OutlinedBorder>(
+        RoundedRectangleBorder(borderRadius: controlRadius)),
+    side: WidgetStateProperty.resolveWith<BorderSide>(
+      (Set<WidgetState> states) => BorderSide(
+        color: states.contains(WidgetState.disabled)
+            ? t.line.withValues(alpha: .5)
+            : t.line,
+        width: shape?.borderWidth ?? 1,
+      ),
+    ),
+    backgroundColor: WidgetStateProperty.resolveWith<Color>(
+      (Set<WidgetState> states) => states.contains(WidgetState.disabled)
+          ? t.surfaceAlt.withValues(alpha: .4)
+          : t.surfaceAlt,
+    ),
+    foregroundColor: WidgetStateProperty.resolveWith<Color>(
+      (Set<WidgetState> states) => states.contains(WidgetState.disabled)
+          ? t.fgMuted
+          : t.fg,
+    ),
+  );
   OutlineInputBorder squareField(Color c, [double w = 1]) => OutlineInputBorder(
       borderRadius: squareRadius,
       borderSide: BorderSide(color: c, width: w));
@@ -373,7 +409,7 @@ ThemeData buildMmTheme(MmTokens t, {String? fontFamily, MmShape? shape}) {
         square ? FilledButtonThemeData(style: squareButton) : null,
     outlinedButtonTheme:
         square ? OutlinedButtonThemeData(style: squareButton) : null,
-    textButtonTheme: square ? TextButtonThemeData(style: squareButton) : null,
+    textButtonTheme: TextButtonThemeData(style: affordanceTextButton),
     elevatedButtonTheme:
         square ? ElevatedButtonThemeData(style: squareButton) : null,
     floatingActionButtonTheme: square
