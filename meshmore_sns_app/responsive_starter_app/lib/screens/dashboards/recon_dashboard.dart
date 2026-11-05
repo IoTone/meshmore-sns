@@ -104,16 +104,9 @@ class _ReconDashboardState extends State<ReconDashboard>
             padding: const EdgeInsets.fromLTRB(14, 14, 6, 6),
             child: Row(
               children: <Widget>[
-                Expanded(
-                  child: Text('RECON',
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                          fontFamily: skin.type.headingFamily,
-                          color: amber,
-                          fontSize: 15,
-                          letterSpacing: 2,
-                          fontWeight: FontWeight.w700)),
-                ),
+                // The skin's identity is its own typography and colour, not
+                // a second name for a screen the strip already names.
+                const Spacer(),
                 Text(m.statusLabel,
                     style: TextStyle(
                         color: m.alert ? skin.color.alert : dim,

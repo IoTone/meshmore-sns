@@ -105,7 +105,7 @@ class _AgHudDashboardState extends State<AgHudDashboard>
               Expanded(
                 child: _LiveryTile(
                   skin: skin,
-                  label: l.dashHyperPeers,
+                  label: l.dashPeers,
                   value: '${m.peersInRange}',
                   sub: l.dashAgHudOfKnown('${m.knownCount}'),
                   meter: m.knownCount == 0

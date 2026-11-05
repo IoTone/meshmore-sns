@@ -522,31 +522,15 @@ class _TopBar extends StatelessWidget {
         children: <Widget>[
           // Title + channel take the remaining space and ellipsize, so
           // the fixed trailing controls never get squeezed into overflow.
+          // The channel is the one fact this bar carries; the skin name was
+          // a second title for a screen the strip already names.
           Expanded(
-            child: Row(
-              children: <Widget>[
-                Flexible(
-                  child: Text('HYPERLOCAL',
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontFamily: skin.type.headingFamily,
-                        color: skin.color.fg,
-                        fontSize: 16,
-                        letterSpacing: 2,
-                        fontWeight: FontWeight.w600,
-                      )),
-                ),
-                const SizedBox(width: 8),
-                Flexible(
-                  child: Text('◦ ${model.channelLabel}',
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                          color: skin.color.accent,
-                          fontFamily: skin.type.monoFamily,
-                          fontSize: 12)),
-                ),
-              ],
-            ),
+            child: Text('◦ ${model.channelLabel}',
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                    color: skin.color.accent,
+                    fontFamily: skin.type.monoFamily,
+                    fontSize: context.skin.type.sizeBody)),
           ),
           const SizedBox(width: 8),
           Container(
@@ -638,7 +622,7 @@ class _StatusRail extends StatelessWidget {
       if (s != null) bestSnr = (bestSnr == null) ? s : math.max(bestSnr, s);
     }
     final List<({String k, String v})> cells = <({String k, String v})>[
-      (k: l.dashHyperPeers, v: '${model.peersInRange}'),
+      (k: l.dashPeers, v: '${model.peersInRange}'),
       (k: model.channelLabel, v: '·'),
       if (model.contactsLabel != null)
         (k: l.dashContacts, v: model.contactsLabel!),

@@ -70,6 +70,14 @@ class DegradedState {
     });
   }
 
+  /// The same state with [drop] removed.
+  ///
+  /// A surface that already says one of these in its own words uses this so
+  /// the banner cannot repeat it: the dashboard's status slab carries the link
+  /// states, so its banner is built from the rest of the set.
+  DegradedState minus(Set<DegradedMode> drop) =>
+      DegradedState(modes.difference(drop));
+
   final Set<DegradedMode> modes;
 
   bool get isDegraded => modes.isNotEmpty;

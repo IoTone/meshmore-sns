@@ -46,21 +46,23 @@ void main() {
       ),
     );
 
-    // Disconnected state.
-    expect(find.text('PEERS IN RANGE'), findsOneWidget);
-    expect(find.text('0'), findsOneWidget);
+    // Nothing yet: one status slab and its action, not eight placeholders.
+    // The peers numeral, the radio block, the location block, the battery
+    // block and the feed each appear when they have a value, so a fresh
+    // install shows a state and the way out of it.
     expect(find.textContaining('OFFLINE'), findsOneWidget);
-    expect(find.text('CONNECT'), findsOneWidget);
-    expect(find.text('— awaiting device —'), findsOneWidget);
-    expect(find.text('— no activity —'), findsOneWidget);
+    expect(find.byTooltip('CONNECT'), findsOneWidget);
+    expect(find.text('PEERS IN RANGE'), findsNothing);
+    expect(find.text('Waiting for the radio…'), findsNothing);
+    expect(find.text('No activity yet'), findsNothing);
 
     // Connect + handshake.
     await ctrl.connect();
     fake.emit(selfInfoFrame());
     await t.pumpAndSettle();
 
-    expect(find.textContaining('LINKED · NO ALERTS'), findsOneWidget);
-    expect(find.text('CONNECT'), findsNothing);
+    expect(find.textContaining('LINKED'), findsOneWidget);
+    expect(find.byTooltip('CONNECT'), findsNothing);
     expect(find.textContaining('self-info'), findsOneWidget);
 
     // An inbound channel message lands in the recent feed.
@@ -70,6 +72,8 @@ void main() {
     ]);
     fake.emit(chMsg);
     await t.pumpAndSettle();
+    // The feed is a fold that only exists once it has something to show.
+    expect(find.textContaining('RECENT'), findsOneWidget);
     expect(find.textContaining('"hello mesh"'), findsOneWidget);
     ctrl.dispose();
   });

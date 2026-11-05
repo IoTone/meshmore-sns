@@ -91,7 +91,7 @@ class DrPopDashboard extends StatelessWidget {
                 child: _Block(
                   skin: skin,
                   color: acid,
-                  label: l.dashHyperPeers,
+                  label: l.dashPeers,
                   value: '${m.peersInRange}',
                   accent: 'ノード',
                 ),

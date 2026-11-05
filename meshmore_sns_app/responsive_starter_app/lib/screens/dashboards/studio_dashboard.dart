@@ -75,9 +75,8 @@ class StudioDashboard extends StatelessWidget {
                     child: Text(
                       m.contactsLabel == null
                           ? l.dashboardKnownCount(m.knownCount)
-                          : '${l.dashboardKnownCount(m.knownCount)}'
-                              ' · ${l.dashContacts.toLowerCase()} '
-                              '${m.contactsLabel}',
+                          : l.dashboardKnownAndContacts(
+                              m.knownCount, m.contactsLabel!),
                       style: TextStyle(color: muted),
                     ),
                   ),
@@ -236,20 +235,15 @@ class StudioDashboard extends StatelessWidget {
     final AppLocalizations l = AppLocalizations.of(context);
     final Color muted = skin.color.fgMuted;
     if (loc != null) {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Text(
-            '${loc.latitude.toStringAsFixed(5)}, '
-            '${loc.longitude.toStringAsFixed(5)}'
-            '${loc.altitudeMeters == null ? '' : '  · '
-                '${l.dashboardLocationAltitude(loc.altitudeMeters!.round())}'}',
-            style: _data(skin, 13),
-          ),
-          const SizedBox(height: 2),
-          Text(l.dashboardLocationSourceLabel(loc.localizedSourceLabel(l)),
-              style: TextStyle(color: muted, fontSize: 12)),
-        ],
+      // Coordinates and where they came from, on one line: the source is a
+      // fact about the reading, the rest of its provenance is Diagnostics.
+      return Text(
+        '${loc.latitude.toStringAsFixed(5)}, '
+        '${loc.longitude.toStringAsFixed(5)}'
+        '${loc.altitudeMeters == null ? '' : '  · '
+            '${l.dashboardLocationAltitude(loc.altitudeMeters!.round())}'}'
+        '  · ${loc.localizedSourceLabel(l)}',
+        style: _data(skin, 13),
       );
     }
     if (si == null) {

@@ -35,6 +35,7 @@ abstract final class MmGroupIds {
   static const String dashRadio = 'dashboard.radio';
   static const String dashLocation = 'dashboard.location';
   static const String dashRecent = 'dashboard.recent';
+  static const String dashBattery = 'dashboard.battery';
 
   static const Set<String> all = <String>{
     locAutoPublish,

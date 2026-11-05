@@ -18,6 +18,18 @@
       }
     }
   },
+  "dashboardKnownAndContacts": "{n, plural, =0{0 known} =1{1 known} other{{n} known}} · contacts {contacts}",
+  "@dashboardKnownAndContacts": {
+    "description": "One line on the dashboard: how many nodes the app knows, and the radio's own contact table. One localised sentence rather than fragments joined with literal separators.",
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "contacts": {
+        "type": "String"
+      }
+    }
+  },
   "dashboardMyPubkey": "my pubkey · {hex}",
   "@dashboardMyPubkey": {
     "placeholders": {
@@ -85,11 +97,11 @@
   "dashNervKnown": "Known",
   "dashNervEvents": "Events",
   "dashHyperEmpty": "Listening for nodes…",
-  "dashHyperPeers": "PEERS",
+  "dashPeers": "PEERS",
   "dashAgHudSignal": "SIGNAL",
   "dashAgHudTraffic": "ch traffic",
   "dashDrPopLink": "LINK",
-  "dashReconNoContacts": "no contacts in range",
+  "dashReconNoContacts": "No contacts in range",
   "dashAgHudOfKnown": "of {count} known",
   "@dashAgHudOfKnown": {
     "placeholders": {
@@ -101,21 +113,13 @@
   "dashboardLocation": "LOCATION",
   "dashboardBattery": "BATTERY",
   "dashboardRecent": "RECENT",
-  "dashboardNoActivity": "— no activity —",
-  "dashboardAwaitingDevice": "— awaiting device —",
-  "dashboardAwaitingDeviceLocation": "— awaiting device location —",
+  "dashboardNoActivity": "No activity yet",
+  "dashboardAwaitingDevice": "Waiting for the radio…",
+  "dashboardAwaitingDeviceLocation": "Waiting for a location…",
   "dashboardUnnamed": "(unnamed)",
-  "dashboardLocationNotSet": "Not set — neither device nor phone fix yet",
+  "dashboardLocationNotSet": "No location",
   "dashboardLocationConfigure": "CONFIGURE",
-  "dashboardLocationSourceLabel": "source · {source}",
-  "@dashboardLocationSourceLabel": {
-    "placeholders": {
-      "source": {
-        "type": "String"
-      }
-    }
-  },
-  "statusLinked": "LINKED · NO ALERTS",
+  "statusLinked": "LINKED",
   "statusSyncing": "SYNCING…",
   "statusHandshaking": "SYNCING…",
   "statusReconnecting": "RECONNECTING…",

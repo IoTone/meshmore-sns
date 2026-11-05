@@ -18,6 +18,17 @@
       }
     }
   },
+  "dashboardKnownAndContacts": "{n}件 既知 · 連絡先 {contacts}",
+  "@dashboardKnownAndContacts": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "contacts": {
+        "type": "String"
+      }
+    }
+  },
   "dashboardMyPubkey": "自分の公開鍵 · {hex}",
   "@dashboardMyPubkey": {
     "placeholders": {
@@ -85,7 +96,7 @@
   "dashNervKnown": "既知",
   "dashNervEvents": "イベント",
   "dashHyperEmpty": "ノードを探索中…",
-  "dashHyperPeers": "ピア",
+  "dashPeers": "ピア",
   "dashAgHudSignal": "シグナル",
   "dashAgHudTraffic": "ch トラフィック",
   "dashDrPopLink": "リンク",
@@ -101,21 +112,13 @@
   "dashboardLocation": "現在地",
   "dashboardBattery": "バッテリー",
   "dashboardRecent": "最近のアクティビティ",
-  "dashboardNoActivity": "— アクティビティなし —",
-  "dashboardAwaitingDevice": "— デバイス待機中 —",
-  "dashboardAwaitingDeviceLocation": "— デバイス位置情報を待機中 —",
+  "dashboardNoActivity": "まだ動きはありません",
+  "dashboardAwaitingDevice": "無線を待っています…",
+  "dashboardAwaitingDeviceLocation": "位置情報を待っています…",
   "dashboardUnnamed": "(名前なし)",
-  "dashboardLocationNotSet": "未設定 — デバイス・スマートフォンともに位置情報未取得",
+  "dashboardLocationNotSet": "位置情報なし",
   "dashboardLocationConfigure": "設定",
-  "dashboardLocationSourceLabel": "ソース · {source}",
-  "@dashboardLocationSourceLabel": {
-    "placeholders": {
-      "source": {
-        "type": "String"
-      }
-    }
-  },
-  "statusLinked": "接続中 · 通常",
+  "statusLinked": "接続中",
   "statusSyncing": "同期中…",
   "statusHandshaking": "同期中…",
   "statusReconnecting": "再接続中…",

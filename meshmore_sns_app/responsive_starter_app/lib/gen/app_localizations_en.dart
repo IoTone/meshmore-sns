@@ -51,6 +51,18 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String dashboardKnownAndContacts(int n, String contacts) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n known',
+      one: '1 known',
+      zero: '0 known',
+    );
+    return '$_temp0 · contacts $contacts';
+  }
+
+  @override
   String dashboardMyPubkey(String hex) {
     return 'my pubkey · $hex';
   }
@@ -166,7 +178,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get dashHyperEmpty => 'Listening for nodes…';
 
   @override
-  String get dashHyperPeers => 'PEERS';
+  String get dashPeers => 'PEERS';
 
   @override
   String get dashAgHudSignal => 'SIGNAL';
@@ -178,7 +190,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get dashDrPopLink => 'LINK';
 
   @override
-  String get dashReconNoContacts => 'no contacts in range';
+  String get dashReconNoContacts => 'No contacts in range';
 
   @override
   String dashAgHudOfKnown(String count) {
@@ -195,31 +207,25 @@ class AppLocalizationsEn extends AppLocalizations {
   String get dashboardRecent => 'RECENT';
 
   @override
-  String get dashboardNoActivity => '— no activity —';
+  String get dashboardNoActivity => 'No activity yet';
 
   @override
-  String get dashboardAwaitingDevice => '— awaiting device —';
+  String get dashboardAwaitingDevice => 'Waiting for the radio…';
 
   @override
-  String get dashboardAwaitingDeviceLocation => '— awaiting device location —';
+  String get dashboardAwaitingDeviceLocation => 'Waiting for a location…';
 
   @override
   String get dashboardUnnamed => '(unnamed)';
 
   @override
-  String get dashboardLocationNotSet =>
-      'Not set — neither device nor phone fix yet';
+  String get dashboardLocationNotSet => 'No location';
 
   @override
   String get dashboardLocationConfigure => 'CONFIGURE';
 
   @override
-  String dashboardLocationSourceLabel(String source) {
-    return 'source · $source';
-  }
-
-  @override
-  String get statusLinked => 'LINKED · NO ALERTS';
+  String get statusLinked => 'LINKED';
 
   @override
   String get statusSyncing => 'SYNCING…';

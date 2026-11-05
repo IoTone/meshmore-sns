@@ -44,6 +44,11 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
+  String dashboardKnownAndContacts(int n, String contacts) {
+    return '$n件 既知 · 連絡先 $contacts';
+  }
+
+  @override
   String dashboardMyPubkey(String hex) {
     return '自分の公開鍵 · $hex';
   }
@@ -152,7 +157,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get dashHyperEmpty => 'ノードを探索中…';
 
   @override
-  String get dashHyperPeers => 'ピア';
+  String get dashPeers => 'ピア';
 
   @override
   String get dashAgHudSignal => 'シグナル';
@@ -181,30 +186,25 @@ class AppLocalizationsJa extends AppLocalizations {
   String get dashboardRecent => '最近のアクティビティ';
 
   @override
-  String get dashboardNoActivity => '— アクティビティなし —';
+  String get dashboardNoActivity => 'まだ動きはありません';
 
   @override
-  String get dashboardAwaitingDevice => '— デバイス待機中 —';
+  String get dashboardAwaitingDevice => '無線を待っています…';
 
   @override
-  String get dashboardAwaitingDeviceLocation => '— デバイス位置情報を待機中 —';
+  String get dashboardAwaitingDeviceLocation => '位置情報を待っています…';
 
   @override
   String get dashboardUnnamed => '(名前なし)';
 
   @override
-  String get dashboardLocationNotSet => '未設定 — デバイス・スマートフォンともに位置情報未取得';
+  String get dashboardLocationNotSet => '位置情報なし';
 
   @override
   String get dashboardLocationConfigure => '設定';
 
   @override
-  String dashboardLocationSourceLabel(String source) {
-    return 'ソース · $source';
-  }
-
-  @override
-  String get statusLinked => '接続中 · 通常';
+  String get statusLinked => '接続中';
 
   @override
   String get statusSyncing => '同期中…';

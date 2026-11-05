@@ -38,19 +38,9 @@ class NervDashboard extends StatelessWidget {
           // Brand bar + status pills.
           Row(
             children: <Widget>[
-              Expanded(
-                child: Text(
-                  'NERV',
-                  style: TextStyle(
-                    fontFamily:
-                        skin.type.headingFamily ?? skin.type.monoFamily,
-                    color: skin.color.accent,
-                    fontSize: 15,
-                    letterSpacing: 3,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
+              // The skin's identity is its own typography and colour, not a
+              // second name for a screen the strip already names.
+              const Spacer(),
               MmStatusPill(m.channelLabel),
               const SizedBox(width: 6),
               MmStatusPill(
