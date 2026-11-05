@@ -96,7 +96,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get botModeDeterministicSub =>
-      'First matching rule always wins, so a soak trace is diffable.';
+      'The first matching rule always wins, so two runs can be compared.';
 
   @override
   String get botModeRandomSub =>
@@ -443,11 +443,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsBackgroundOn =>
-      'Android: a persistent notification keeps the radio linked so messages arrive while backgrounded';
+      'A notification stays visible so messages arrive while the app is closed.';
 
   @override
   String get settingsBackgroundOff =>
-      'Messages still arrive when you reopen the app (radio buffers them); no background notification';
+      'Messages arrive when you reopen the app.';
 
   @override
   String get settingsTelemetryPoll => 'Gather node telemetry';
@@ -485,14 +485,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsSpeechMuted =>
-      'Text-to-speech ON, but the audio mute is silencing it';
+      'Speech is on but muted with the alert sounds.';
 
   @override
   String get settingsPermissions => 'Permissions';
 
   @override
   String get settingsPermissionsSubtitle =>
-      'Open the OS settings page for this app — flip Bluetooth / Notifications on or off here.';
+      'Turn this app\'s Bluetooth and notifications on or off.';
 
   @override
   String get settingsShowIntro => 'Show intro again on next launch';
@@ -634,11 +634,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get personalizationHighContrastSubtitle =>
-      'Force the SEELE high-contrast palette';
+      'Use the high-contrast colours';
 
   @override
   String get personalizationHighContrastHint =>
-      'High contrast is on — the SEELE high-contrast palette is forced regardless of your preset pick. Turn off High contrast below to use another theme.';
+      'High contrast overrides the skin you pick.';
 
   @override
   String get personalizationReduceMotion => 'Reduce motion';
@@ -648,7 +648,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get personalizationVisualHapticOnlySubtitle =>
-      'No information by sound; turns audio off';
+      'Alerts by vibration only';
 
   @override
   String get personalizationAudioAlerts => 'AUDIO ALERTS';
@@ -1155,7 +1155,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get deviceGpsDisabledHint =>
-      'Off — the device never reads its GPS chip; advertised location stays whatever was last written.';
+      'Off. The radio does not read its GPS, so it keeps announcing the last position set.';
 
   @override
   String get deviceGpsUnknown => 'Waiting for device…';
@@ -1183,14 +1183,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get deviceGpsIntervalFixedByFirmware =>
-      'Polling cadence is fixed by this firmware build (the sensors module doesn\'t expose `gps_interval`).';
+      'This radio sets its own GPS interval.';
 
   @override
   String get locTitle => 'Auto-publish location';
 
   @override
-  String get locTileSubtitle =>
-      'Periodic + on-movement phone-GPS push to the device';
+  String get locTileSubtitle => 'Sends the phone\'s position to the radio';
 
   @override
   String get locHelp =>
@@ -1250,11 +1249,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get locBeaconSub =>
-      'Every 60 s, advertise your position (zero-hop). Uses airtime and battery.';
+      'Every 60 s, send your position. Uses airtime and battery.';
 
   @override
   String get locBatteryHint =>
-      'Smart-broadcast streams GPS (~10 mA continuous). Periodic-only is cheaper. Combine both for responsiveness; pick smart-broadcast alone if battery matters.';
+      'Streaming GPS reacts faster and uses more battery.';
 
   @override
   String get gridEmpty =>
@@ -1406,13 +1405,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsHubChannels => 'Channels';
 
   @override
-  String get settingsHubChannelsSub => 'Slots · name + PSK · #hashtag · active';
+  String get settingsHubChannelsSub => 'Channels, keys and hashtags';
 
   @override
   String get settingsHubDiagnostics => 'Diagnostics & connect';
 
   @override
-  String get settingsHubDiagnosticsSub => 'Connect a radio, frame log, capture';
+  String get settingsHubDiagnosticsSub => 'Connection, logs and reports';
 
   @override
   String get bootHeader => 'MESHMORE  /  SYNCHRONIZING';
@@ -1810,7 +1809,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get deviceContactsOutOfRangeIntro =>
-      'Removes contacts that are far from you — or that hide their location (no GPS), which we treat as out of range. Favourites and known contacts are kept.';
+      'Removes contacts far away, and those that do not share a position. Favourites and known contacts are kept.';
 
   @override
   String deviceContactsBeyondKm(int km) {
@@ -1848,7 +1847,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String deviceContactsRemoveAllConfirm(int count) {
-    return 'Remove all $count contacts from the radio? You don\'t need contacts for channels — only to DM someone. Re-add anyone you want to message later.';
+    return 'Remove all $count contacts? You only need them to send direct messages, and you can add anyone back later.';
   }
 
   @override
@@ -2693,7 +2692,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get deviceRegionFamilyOther => 'Other';
 
   @override
-  String get deviceRegionSuggestTitle => 'Apply suggested region?';
+  String get deviceRegionSuggestTitle => 'Use the suggested region?';
 
   @override
   String deviceRegionSuggestBody(String lat, String lon, String label) {
@@ -2705,7 +2704,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get deviceRegionSuggestNoFix =>
-      'Couldn\'t get a GPS fix — try outdoors with location permission granted.';
+      'No GPS fix yet. Try outdoors with location on.';
 
   @override
   String get deviceRegionSuggestNoMatch =>
@@ -2718,14 +2717,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get deviceRegionDisclaimerShort =>
-      'Community-curated values, not regulatory guarantees.';
+      'Shared by users, not checked by a regulator.';
 
   @override
   String get deviceRegionDisclaimerMore => 'Details';
 
   @override
   String get deviceRegionDisclaimer =>
-      'Operating points are community-curated, not regulatory guarantees. Pick the preset legal where you are and use the SAME tuple on every node. In Japan, legal parameters are not enough — the radio hardware itself must carry 技適 (giteki) certification; most grey-import LoRa boards do not, and operating one is an offence under the Radio Act regardless of settings. The Japan (ARIB STD-T108) preset is a community proposal that hasn\'t been broadly field-validated — please confirm it is legal and works on your hardware before relying on it.';
+      'These presets are shared by users, not checked by a regulator. Pick one that is legal where you are and use the same settings on every radio. In Japan the radio itself must carry 技適 (giteki) certification; most imported boards do not, and using one is an offence under the Radio Act whatever the settings. The Japan (ARIB STD-T108) preset is a community proposal that has not been widely tested.';
 
   @override
   String get presetUsCanada => 'USA / Canada';
@@ -2813,7 +2812,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get devicePathHashSizeHelp =>
-      'The hash length this radio stamps on the packets it sends. Repeaters follow each packet\'s own length, so nodes need not agree. Longer hashes tell repeaters apart better but shrink the directed payload budget.';
+      'How much of its key each message carries. Longer makes repeaters easier to tell apart and costs a few bytes per message.';
 
   @override
   String get devicePathHashUnread =>
@@ -3020,11 +3019,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'You add heard nodes as contacts on demand.';
 
   @override
-  String get otherManualAddSubOff => 'Heard nodes auto-promote to contacts.';
+  String get otherManualAddSubOff => 'Nodes you hear are saved as contacts.';
 
   @override
-  String get otherTelemetryModeTitle =>
-      'Telemetry sharing — who may request each kind';
+  String get otherTelemetryModeTitle => 'Who can read this radio\'s readings';
 
   @override
   String get otherTelemetryBase => 'Base';
@@ -3049,11 +3047,11 @@ class AppLocalizationsEn extends AppLocalizations {
       'Who may request battery, GPS and environment data from this device.';
 
   @override
-  String get otherMultiAcksLabel => 'Multi-acks (0–3)';
+  String get otherMultiAcksLabel => 'Extra confirmations (0–3)';
 
   @override
   String get otherMultiAcksHelper =>
-      '0 = single ack (default). Higher = wait for N extra acks before considering a send confirmed.';
+      '0 is the default. Higher waits for that many more radios to confirm before calling a send confirmed.';
 
   @override
   String get otherSentSnack =>
@@ -3388,7 +3386,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get pingMethodTelemetry =>
-      'Telemetry request — silent for the peer; it answers only if it shares telemetry with us.';
+      'Asks for readings. The other radio answers only if it shares them with you.';
 
   @override
   String pingSummary(int sent, int replied, int lost) {
@@ -3577,7 +3575,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get deviceAdvertPropagatesHint =>
-      'Name/location change propagates on the next advert (Nodes → Advertise).';
+      'Takes effect the next time the radio announces itself.';
 
   @override
   String get settingsHubMaps => 'Offline maps';
@@ -3602,7 +3600,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String mapsBreakdown(String packs, String layers, String view) {
-    return 'Regions $packs · Event maps $layers · Viewed tiles $view';
+    return 'Regions $packs · Event maps $layers · Cached tiles $view';
   }
 
   @override
@@ -3885,7 +3883,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get selfTestIntro =>
-      'Checks offline maps end to end on this phone: the real map servers, storage, downloads, pause and resume, expiry. Runs in a sandbox and deletes it afterwards; your maps are not touched. Takes about a minute and under 1 MB of data.';
+      'Checks map downloads end to end: the real servers, storage, downloads, pause and resume, expiry. It runs in a sandbox and deletes it afterwards, so your maps are not touched. Takes about a minute and under 1 MB of data.';
 
   @override
   String get selfTestRun => 'Run self-test';
@@ -3954,7 +3952,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String deviceActiveChannelSub(String name) {
-    return 'Active: $name · slots · name + PSK · #hashtag';
+    return 'Using: $name · channels and keys';
   }
 
   @override
@@ -4051,12 +4049,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String diagnosticsMtuLine(String mtu, String need) {
-    return 'link MTU: $mtu (needs $need for a full frame)';
+    return 'Link size $mtu bytes, $need needed for a full frame';
   }
 
   @override
   String diagnosticsMtuRefusedLine(String mtu, String need) {
-    return 'this phone link negotiated $mtu bytes and a full radio frame needs $need. Reconnect to negotiate again; a radio whose stack caps the MTU smaller cannot carry every frame';
+    return 'This phone link is $mtu bytes and a full radio frame needs $need. Reconnect to try again; a radio that caps the link smaller cannot carry every frame.';
   }
 
   @override
@@ -4474,7 +4472,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get failurePairingNotKept =>
-      'The radio paired and then could not encrypt on the next connection, so it is losing its stored pairing. Power-cycle it, reopen the app and pair again; if it repeats, the radio\'s bond storage is the fault.';
+      'The radio paired but then could not encrypt on the next connection, so the pairing is not being kept. Power-cycle it and pair again; if it repeats, the fault is in the radio.';
 
   @override
   String get failureServiceMissing =>
@@ -4486,16 +4484,16 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String failureMtuTooSmall(String mtu, String need) {
-    return 'This phone link negotiated $mtu bytes and one radio frame needs $need. Reconnect to negotiate again; a radio that caps the link smaller cannot carry every frame.';
+    return 'This phone link is $mtu bytes and one radio frame needs $need. Reconnect to try again; a radio that caps the link smaller cannot carry every frame.';
   }
 
   @override
   String get failureFrameTruncated =>
-      'A frame arrived cut short and was not decoded. The link cannot carry the radio\'s longest frames; the count is on the diagnostics page.';
+      'Part of a message did not arrive. The count is in Diagnostics.';
 
   @override
   String get failureFrameTrailingBytes =>
-      'A frame carried bytes past its own end. The extra bytes were dropped rather than guessed at; the count is on the diagnostics page.';
+      'A message carried extra bytes at the end. They were dropped; the count is in Diagnostics.';
 
   @override
   String get failureStorageFull =>

@@ -37,7 +37,7 @@
   "botMode": "Reply mode",
   "botModeDeterministic": "Deterministic",
   "botModeRandom": "Random",
-  "botModeDeterministicSub": "First matching rule always wins, so a soak trace is diffable.",
+  "botModeDeterministicSub": "The first matching rule always wins, so two runs can be compared.",
   "botModeRandomSub": "Picks among matching rules, replayable from the seed.",
   "botSeed": "Seed",
   "botBudget": "{n} replies left this window",
@@ -247,8 +247,8 @@
   "pairChooseAnother": "Choose another radio",
   "settingsHeading": "App settings",
   "settingsBackgroundTitle": "Stay connected in background",
-  "settingsBackgroundOn": "Android: a persistent notification keeps the radio linked so messages arrive while backgrounded",
-  "settingsBackgroundOff": "Messages still arrive when you reopen the app (radio buffers them); no background notification",
+  "settingsBackgroundOn": "A notification stays visible so messages arrive while the app is closed.",
+  "settingsBackgroundOff": "Messages arrive when you reopen the app.",
   "settingsTelemetryPoll": "Gather node telemetry",
   "settingsTelemetryPollOn": "Politely polls contacts for temperature / altitude (a little OTA airtime)",
   "settingsTelemetryPollOff": "No telemetry requests sent; query a node manually from its detail",
@@ -259,9 +259,9 @@
   "settingsSpeech": "SPEECH",
   "settingsSpeechOn": "Text-to-speech ON · per-channel toggle in Chat",
   "settingsSpeechOff": "Text-to-speech OFF (default) · reads channel messages",
-  "settingsSpeechMuted": "Text-to-speech ON, but the audio mute is silencing it",
+  "settingsSpeechMuted": "Speech is on but muted with the alert sounds.",
   "settingsPermissions": "Permissions",
-  "settingsPermissionsSubtitle": "Open the OS settings page for this app — flip Bluetooth / Notifications on or off here.",
+  "settingsPermissionsSubtitle": "Turn this app's Bluetooth and notifications on or off.",
   "settingsShowIntro": "Show intro again on next launch",
   "settingsShowIntroEnabled": "Wipes the first-run flag so the permissions intro shows again — useful when you're testing the flow",
   "settingsShowIntroDisabled": "Intro is currently scheduled for next launch",
@@ -330,11 +330,11 @@
   "personalizationFontSize": "Font size",
   "personalizationAccessibility": "ACCESSIBILITY",
   "personalizationHighContrast": "High contrast",
-  "personalizationHighContrastSubtitle": "Force the SEELE high-contrast palette",
-  "personalizationHighContrastHint": "High contrast is on — the SEELE high-contrast palette is forced regardless of your preset pick. Turn off High contrast below to use another theme.",
+  "personalizationHighContrastSubtitle": "Use the high-contrast colours",
+  "personalizationHighContrastHint": "High contrast overrides the skin you pick.",
   "personalizationReduceMotion": "Reduce motion",
   "personalizationVisualHapticOnly": "Visual + haptic only",
-  "personalizationVisualHapticOnlySubtitle": "No information by sound; turns audio off",
+  "personalizationVisualHapticOnlySubtitle": "Alerts by vibration only",
   "personalizationAudioAlerts": "AUDIO ALERTS",
   "personalizationAudioMaster": "Audio alerts",
   "personalizationAudioMasterDisabled": "Disabled by \"visual + haptic only\"",
@@ -576,7 +576,7 @@
   "deviceGpsModule": "ON-BOARD GPS MODULE",
   "deviceGpsEnable": "Enable on-board GPS",
   "deviceGpsEnabledHint": "Device firmware polls its GPS chip and updates location automatically.",
-  "deviceGpsDisabledHint": "Off — the device never reads its GPS chip; advertised location stays whatever was last written.",
+  "deviceGpsDisabledHint": "Off. The radio does not read its GPS, so it keeps announcing the last position set.",
   "deviceGpsUnknown": "Waiting for device…",
   "deviceGpsInterval": "GPS update interval",
   "deviceGpsIntervalOff": "Off",
@@ -604,9 +604,9 @@
       }
     }
   },
-  "deviceGpsIntervalFixedByFirmware": "Polling cadence is fixed by this firmware build (the sensors module doesn't expose `gps_interval`).",
+  "deviceGpsIntervalFixedByFirmware": "This radio sets its own GPS interval.",
   "locTitle": "Auto-publish location",
-  "locTileSubtitle": "Periodic + on-movement phone-GPS push to the device",
+  "locTileSubtitle": "Sends the phone's position to the radio",
   "locHelp": "When the radio's GPS fix is stale, write the phone's position to it.",
   "locMaster": "Auto-publish",
   "locMasterOn": "On — using phone GPS",
@@ -666,8 +666,8 @@
     }
   },
   "locBeacon": "Periodic position beacon",
-  "locBeaconSub": "Every 60 s, advertise your position (zero-hop). Uses airtime and battery.",
-  "locBatteryHint": "Smart-broadcast streams GPS (~10 mA continuous). Periodic-only is cheaper. Combine both for responsiveness; pick smart-broadcast alone if battery matters.",
+  "locBeaconSub": "Every 60 s, send your position. Uses airtime and battery.",
+  "locBatteryHint": "Streaming GPS reacts faster and uses more battery.",
   "@globeFooter": {
     "placeholders": {
       "n": {
@@ -760,9 +760,9 @@
   "settingsHubProfile": "Profile & personalization",
   "settingsHubProfileSub": "Theme, font size, audio, accessibility",
   "settingsHubChannels": "Channels",
-  "settingsHubChannelsSub": "Slots · name + PSK · #hashtag · active",
+  "settingsHubChannelsSub": "Channels, keys and hashtags",
   "settingsHubDiagnostics": "Diagnostics & connect",
-  "settingsHubDiagnosticsSub": "Connect a radio, frame log, capture",
+  "settingsHubDiagnosticsSub": "Connection, logs and reports",
   "bootHeader": "MESHMORE  /  SYNCHRONIZING",
   "bootConnecting": "CONNECTING TO RADIO…",
   "bootHandshaking": "HANDSHAKING…",
@@ -1092,7 +1092,7 @@
   "deviceContactsChannelsNote": "You only need a contact to send a direct message. Channel messages work without contacts — you'll still see everyone on channels.",
   "deviceContactsScrub": "Scrub contacts",
   "deviceContactsRemoveOutOfRange": "Remove out of range",
-  "deviceContactsOutOfRangeIntro": "Removes contacts that are far from you — or that hide their location (no GPS), which we treat as out of range. Favourites and known contacts are kept.",
+  "deviceContactsOutOfRangeIntro": "Removes contacts far away, and those that do not share a position. Favourites and known contacts are kept.",
   "deviceContactsBeyondKm": "Beyond {km} km (+ location-hidden)",
   "@deviceContactsBeyondKm": {
     "placeholders": {
@@ -1129,7 +1129,7 @@
     }
   },
   "deviceContactsRemoveAll": "Remove all",
-  "deviceContactsRemoveAllConfirm": "Remove all {count} contacts from the radio? You don't need contacts for channels — only to DM someone. Re-add anyone you want to message later.",
+  "deviceContactsRemoveAllConfirm": "Remove all {count} contacts? You only need them to send direct messages, and you can add anyone back later.",
   "@deviceContactsRemoveAllConfirm": {
     "placeholders": {
       "count": {
@@ -1724,7 +1724,7 @@
   "deviceRegionFamilyEurope": "Europe",
   "deviceRegionFamilyAsiaPacific": "Asia-Pacific",
   "deviceRegionFamilyOther": "Other",
-  "deviceRegionSuggestTitle": "Apply suggested region?",
+  "deviceRegionSuggestTitle": "Use the suggested region?",
   "deviceRegionSuggestBody": "Based on your phone GPS ({lat}, {lon}), the matching preset is {label}. Verify this is legal where you are before applying — particularly outside the country you set up in.",
   "@deviceRegionSuggestBody": {
     "placeholders": {
@@ -1740,7 +1740,7 @@
     }
   },
   "deviceRegionSuggestApply": "Apply",
-  "deviceRegionSuggestNoFix": "Couldn't get a GPS fix — try outdoors with location permission granted.",
+  "deviceRegionSuggestNoFix": "No GPS fix yet. Try outdoors with location on.",
   "deviceRegionSuggestNoMatch": "Your location doesn't match any shipped country preset — pick one manually.",
   "deviceRegionAppliedToast": "{label} applied — make sure every node in your mesh uses the same preset.",
   "@deviceRegionAppliedToast": {
@@ -1750,9 +1750,9 @@
       }
     }
   },
-  "deviceRegionDisclaimerShort": "Community-curated values, not regulatory guarantees.",
+  "deviceRegionDisclaimerShort": "Shared by users, not checked by a regulator.",
   "deviceRegionDisclaimerMore": "Details",
-  "deviceRegionDisclaimer": "Operating points are community-curated, not regulatory guarantees. Pick the preset legal where you are and use the SAME tuple on every node. In Japan, legal parameters are not enough — the radio hardware itself must carry 技適 (giteki) certification; most grey-import LoRa boards do not, and operating one is an offence under the Radio Act regardless of settings. The Japan (ARIB STD-T108) preset is a community proposal that hasn't been broadly field-validated — please confirm it is legal and works on your hardware before relying on it.",
+  "deviceRegionDisclaimer": "These presets are shared by users, not checked by a regulator. Pick one that is legal where you are and use the same settings on every radio. In Japan the radio itself must carry 技適 (giteki) certification; most imported boards do not, and using one is an offence under the Radio Act whatever the settings. The Japan (ARIB STD-T108) preset is a community proposal that has not been widely tested.",
   "presetUsCanada": "USA / Canada",
   "presetUsArizona": "USA — Arizona",
   "presetJpAribT108": "Japan (ARIB STD-T108)",
@@ -1784,7 +1784,7 @@
   "@devicePathHashSize": {
     "description": "Radio/network setting. MeshCore path hash length."
   },
-  "devicePathHashSizeHelp": "The hash length this radio stamps on the packets it sends. Repeaters follow each packet's own length, so nodes need not agree. Longer hashes tell repeaters apart better but shrink the directed payload budget.",
+  "devicePathHashSizeHelp": "How much of its key each message carries. Longer makes repeaters easier to tell apart and costs a few bytes per message.",
   "devicePathHashUnread": "path hash: unknown (device not queried yet)",
   "devicePathHashMismatch": "Not applied yet: this radio uses {device} byte(s), the form is set to {form}.",
   "@devicePathHashMismatch": {
@@ -1914,8 +1914,8 @@
   "diagnosticsCopyLog": "Copy log",
   "otherManualAddTitle": "Manual-add contacts",
   "otherManualAddSubOn": "You add heard nodes as contacts on demand.",
-  "otherManualAddSubOff": "Heard nodes auto-promote to contacts.",
-  "otherTelemetryModeTitle": "Telemetry sharing — who may request each kind",
+  "otherManualAddSubOff": "Nodes you hear are saved as contacts.",
+  "otherTelemetryModeTitle": "Who can read this radio's readings",
   "otherTelemetryBase": "Base",
   "otherTelemetryLoc": "Location",
   "otherTelemetryEnv": "Environment",
@@ -1923,8 +1923,8 @@
   "otherTelemetryFlags": "Contacts",
   "otherTelemetryAll": "Anyone",
   "otherTelemetryModeHelp": "Who may request battery, GPS and environment data from this device.",
-  "otherMultiAcksLabel": "Multi-acks (0–3)",
-  "otherMultiAcksHelper": "0 = single ack (default). Higher = wait for N extra acks before considering a send confirmed.",
+  "otherMultiAcksLabel": "Extra confirmations (0–3)",
+  "otherMultiAcksHelper": "0 is the default. Higher waits for that many more radios to confirm before calling a send confirmed.",
   "otherSentSnack": "OTHER PARAMS sent — device-side write may take a moment.",
   "otherAwaitingDevice": "— awaiting device —",
   "batteryTitle": "Battery",
@@ -2119,7 +2119,7 @@
   "statsNotFetched": "Not fetched yet.",
   "pingTarget": "TARGET",
   "pingMethodStatus": "Status request — repeaters, rooms and sensors answer this.",
-  "pingMethodTelemetry": "Telemetry request — silent for the peer; it answers only if it shares telemetry with us.",
+  "pingMethodTelemetry": "Asks for readings. The other radio answers only if it shares them with you.",
   "pingSummary": "{sent} sent · {replied} replied · {lost} lost",
   "@pingSummary": {
     "placeholders": {
@@ -2314,7 +2314,7 @@
   "settingsHubDocsSub": "Protocol, firmware, app, field notes",
   "settingsNotifDeniedPermanent": "Notifications were permanently denied. The background service needs a persistent notification.",
   "settingsNotifDeniedTransient": "Keeping the app connected in the background needs notifications. Allow them in Settings.",
-  "deviceAdvertPropagatesHint": "Name/location change propagates on the next advert (Nodes → Advertise).",
+  "deviceAdvertPropagatesHint": "Takes effect the next time the radio announces itself.",
   "settingsHubMaps": "Offline maps",
   "settingsHubMapsSub": "Basemap, event maps, storage",
   "mapsTitle": "Offline maps",
@@ -2331,7 +2331,7 @@
       }
     }
   },
-  "mapsBreakdown": "Regions {packs} · Event maps {layers} · Viewed tiles {view}",
+  "mapsBreakdown": "Regions {packs} · Event maps {layers} · Cached tiles {view}",
   "@mapsBreakdown": {
     "placeholders": {
       "packs": {
@@ -2497,7 +2497,7 @@
   "layerRefusalNotGeoJson": "That URL didn't return GeoJSON.",
   "layerRefusalTooLarge": "Over 10 MB: too big for an overlay.",
   "mapsSelfTest": "Self-test",
-  "selfTestIntro": "Checks offline maps end to end on this phone: the real map servers, storage, downloads, pause and resume, expiry. Runs in a sandbox and deletes it afterwards; your maps are not touched. Takes about a minute and under 1 MB of data.",
+  "selfTestIntro": "Checks map downloads end to end: the real servers, storage, downloads, pause and resume, expiry. It runs in a sandbox and deletes it afterwards, so your maps are not touched. Takes about a minute and under 1 MB of data.",
   "selfTestRun": "Run self-test",
   "selfTestRunning": "Running…",
   "selfTestPass": "All checks passed",
@@ -2526,7 +2526,7 @@
   "locGroupBeacon": "Beacon",
   "locGroupManual": "Manual",
   "deviceManageChannels": "Manage channels",
-  "deviceActiveChannelSub": "Active: {name} · slots · name + PSK · #hashtag",
+  "deviceActiveChannelSub": "Using: {name} · channels and keys",
   "@deviceActiveChannelSub": {
     "placeholders": {
       "name": {
@@ -2636,7 +2636,7 @@
       }
     }
   },
-  "diagnosticsMtuLine": "link MTU: {mtu} (needs {need} for a full frame)",
+  "diagnosticsMtuLine": "Link size {mtu} bytes, {need} needed for a full frame",
   "@diagnosticsMtuLine": {
     "placeholders": {
       "mtu": {
@@ -2647,7 +2647,7 @@
       }
     }
   },
-  "diagnosticsMtuRefusedLine": "this phone link negotiated {mtu} bytes and a full radio frame needs {need}. Reconnect to negotiate again; a radio whose stack caps the MTU smaller cannot carry every frame",
+  "diagnosticsMtuRefusedLine": "This phone link is {mtu} bytes and a full radio frame needs {need}. Reconnect to try again; a radio that caps the link smaller cannot carry every frame.",
   "@diagnosticsMtuRefusedLine": {
     "placeholders": {
       "mtu": {
@@ -2969,13 +2969,13 @@
   "@failurePairingFailed": {},
   "failureStalePairing": "The radio no longer holds this pairing. Forget it in Android Bluetooth settings, power-cycle the radio, then pair again.",
   "@failureStalePairing": {},
-  "failurePairingNotKept": "The radio paired and then could not encrypt on the next connection, so it is losing its stored pairing. Power-cycle it, reopen the app and pair again; if it repeats, the radio's bond storage is the fault.",
+  "failurePairingNotKept": "The radio paired but then could not encrypt on the next connection, so the pairing is not being kept. Power-cycle it and pair again; if it repeats, the fault is in the radio.",
   "@failurePairingNotKept": {},
   "failureServiceMissing": "This device does not expose the MeshCore service, so it is probably not a MeshCore radio.",
   "@failureServiceMissing": {},
   "failureCharacteristicMissing": "The radio's link is missing a characteristic the app needs. Its firmware may be older than this app expects.",
   "@failureCharacteristicMissing": {},
-  "failureMtuTooSmall": "This phone link negotiated {mtu} bytes and one radio frame needs {need}. Reconnect to negotiate again; a radio that caps the link smaller cannot carry every frame.",
+  "failureMtuTooSmall": "This phone link is {mtu} bytes and one radio frame needs {need}. Reconnect to try again; a radio that caps the link smaller cannot carry every frame.",
   "@failureMtuTooSmall": {
     "placeholders": {
       "mtu": {
@@ -2986,9 +2986,9 @@
       }
     }
   },
-  "failureFrameTruncated": "A frame arrived cut short and was not decoded. The link cannot carry the radio's longest frames; the count is on the diagnostics page.",
+  "failureFrameTruncated": "Part of a message did not arrive. The count is in Diagnostics.",
   "@failureFrameTruncated": {},
-  "failureFrameTrailingBytes": "A frame carried bytes past its own end. The extra bytes were dropped rather than guessed at; the count is on the diagnostics page.",
+  "failureFrameTrailingBytes": "A message carried extra bytes at the end. They were dropped; the count is in Diagnostics.",
   "@failureFrameTrailingBytes": {},
   "failureStorageFull": "The phone refused a write because storage is full. Nothing is being deleted silently; free space and the history stays as it is.",
   "@failureStorageFull": {},

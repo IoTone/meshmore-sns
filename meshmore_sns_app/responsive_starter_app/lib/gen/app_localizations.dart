@@ -239,7 +239,7 @@ abstract class AppLocalizations {
   /// No description provided for @botModeDeterministicSub.
   ///
   /// In en, this message translates to:
-  /// **'First matching rule always wins, so a soak trace is diffable.'**
+  /// **'The first matching rule always wins, so two runs can be compared.'**
   String get botModeDeterministicSub;
 
   /// No description provided for @botModeRandomSub.
@@ -857,13 +857,13 @@ abstract class AppLocalizations {
   /// No description provided for @settingsBackgroundOn.
   ///
   /// In en, this message translates to:
-  /// **'Android: a persistent notification keeps the radio linked so messages arrive while backgrounded'**
+  /// **'A notification stays visible so messages arrive while the app is closed.'**
   String get settingsBackgroundOn;
 
   /// No description provided for @settingsBackgroundOff.
   ///
   /// In en, this message translates to:
-  /// **'Messages still arrive when you reopen the app (radio buffers them); no background notification'**
+  /// **'Messages arrive when you reopen the app.'**
   String get settingsBackgroundOff;
 
   /// No description provided for @settingsTelemetryPoll.
@@ -929,7 +929,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsSpeechMuted.
   ///
   /// In en, this message translates to:
-  /// **'Text-to-speech ON, but the audio mute is silencing it'**
+  /// **'Speech is on but muted with the alert sounds.'**
   String get settingsSpeechMuted;
 
   /// No description provided for @settingsPermissions.
@@ -941,7 +941,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsPermissionsSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Open the OS settings page for this app — flip Bluetooth / Notifications on or off here.'**
+  /// **'Turn this app\'s Bluetooth and notifications on or off.'**
   String get settingsPermissionsSubtitle;
 
   /// No description provided for @settingsShowIntro.
@@ -1187,13 +1187,13 @@ abstract class AppLocalizations {
   /// No description provided for @personalizationHighContrastSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Force the SEELE high-contrast palette'**
+  /// **'Use the high-contrast colours'**
   String get personalizationHighContrastSubtitle;
 
   /// No description provided for @personalizationHighContrastHint.
   ///
   /// In en, this message translates to:
-  /// **'High contrast is on — the SEELE high-contrast palette is forced regardless of your preset pick. Turn off High contrast below to use another theme.'**
+  /// **'High contrast overrides the skin you pick.'**
   String get personalizationHighContrastHint;
 
   /// No description provided for @personalizationReduceMotion.
@@ -1211,7 +1211,7 @@ abstract class AppLocalizations {
   /// No description provided for @personalizationVisualHapticOnlySubtitle.
   ///
   /// In en, this message translates to:
-  /// **'No information by sound; turns audio off'**
+  /// **'Alerts by vibration only'**
   String get personalizationVisualHapticOnlySubtitle;
 
   /// No description provided for @personalizationAudioAlerts.
@@ -2093,7 +2093,7 @@ abstract class AppLocalizations {
   /// No description provided for @deviceGpsDisabledHint.
   ///
   /// In en, this message translates to:
-  /// **'Off — the device never reads its GPS chip; advertised location stays whatever was last written.'**
+  /// **'Off. The radio does not read its GPS, so it keeps announcing the last position set.'**
   String get deviceGpsDisabledHint;
 
   /// No description provided for @deviceGpsUnknown.
@@ -2135,7 +2135,7 @@ abstract class AppLocalizations {
   /// No description provided for @deviceGpsIntervalFixedByFirmware.
   ///
   /// In en, this message translates to:
-  /// **'Polling cadence is fixed by this firmware build (the sensors module doesn\'t expose `gps_interval`).'**
+  /// **'This radio sets its own GPS interval.'**
   String get deviceGpsIntervalFixedByFirmware;
 
   /// No description provided for @locTitle.
@@ -2147,7 +2147,7 @@ abstract class AppLocalizations {
   /// No description provided for @locTileSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Periodic + on-movement phone-GPS push to the device'**
+  /// **'Sends the phone\'s position to the radio'**
   String get locTileSubtitle;
 
   /// No description provided for @locHelp.
@@ -2243,13 +2243,13 @@ abstract class AppLocalizations {
   /// No description provided for @locBeaconSub.
   ///
   /// In en, this message translates to:
-  /// **'Every 60 s, advertise your position (zero-hop). Uses airtime and battery.'**
+  /// **'Every 60 s, send your position. Uses airtime and battery.'**
   String get locBeaconSub;
 
   /// No description provided for @locBatteryHint.
   ///
   /// In en, this message translates to:
-  /// **'Smart-broadcast streams GPS (~10 mA continuous). Periodic-only is cheaper. Combine both for responsiveness; pick smart-broadcast alone if battery matters.'**
+  /// **'Streaming GPS reacts faster and uses more battery.'**
   String get locBatteryHint;
 
   /// No description provided for @gridEmpty.
@@ -2501,7 +2501,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsHubChannelsSub.
   ///
   /// In en, this message translates to:
-  /// **'Slots · name + PSK · #hashtag · active'**
+  /// **'Channels, keys and hashtags'**
   String get settingsHubChannelsSub;
 
   /// No description provided for @settingsHubDiagnostics.
@@ -2513,7 +2513,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsHubDiagnosticsSub.
   ///
   /// In en, this message translates to:
-  /// **'Connect a radio, frame log, capture'**
+  /// **'Connection, logs and reports'**
   String get settingsHubDiagnosticsSub;
 
   /// No description provided for @bootHeader.
@@ -3125,7 +3125,7 @@ abstract class AppLocalizations {
   /// No description provided for @deviceContactsOutOfRangeIntro.
   ///
   /// In en, this message translates to:
-  /// **'Removes contacts that are far from you — or that hide their location (no GPS), which we treat as out of range. Favourites and known contacts are kept.'**
+  /// **'Removes contacts far away, and those that do not share a position. Favourites and known contacts are kept.'**
   String get deviceContactsOutOfRangeIntro;
 
   /// No description provided for @deviceContactsBeyondKm.
@@ -3179,7 +3179,7 @@ abstract class AppLocalizations {
   /// No description provided for @deviceContactsRemoveAllConfirm.
   ///
   /// In en, this message translates to:
-  /// **'Remove all {count} contacts from the radio? You don\'t need contacts for channels — only to DM someone. Re-add anyone you want to message later.'**
+  /// **'Remove all {count} contacts? You only need them to send direct messages, and you can add anyone back later.'**
   String deviceContactsRemoveAllConfirm(int count);
 
   /// No description provided for @deviceContactsRemoveAllDone.
@@ -4613,7 +4613,7 @@ abstract class AppLocalizations {
   /// No description provided for @deviceRegionSuggestTitle.
   ///
   /// In en, this message translates to:
-  /// **'Apply suggested region?'**
+  /// **'Use the suggested region?'**
   String get deviceRegionSuggestTitle;
 
   /// No description provided for @deviceRegionSuggestBody.
@@ -4631,7 +4631,7 @@ abstract class AppLocalizations {
   /// No description provided for @deviceRegionSuggestNoFix.
   ///
   /// In en, this message translates to:
-  /// **'Couldn\'t get a GPS fix — try outdoors with location permission granted.'**
+  /// **'No GPS fix yet. Try outdoors with location on.'**
   String get deviceRegionSuggestNoFix;
 
   /// No description provided for @deviceRegionSuggestNoMatch.
@@ -4649,7 +4649,7 @@ abstract class AppLocalizations {
   /// No description provided for @deviceRegionDisclaimerShort.
   ///
   /// In en, this message translates to:
-  /// **'Community-curated values, not regulatory guarantees.'**
+  /// **'Shared by users, not checked by a regulator.'**
   String get deviceRegionDisclaimerShort;
 
   /// No description provided for @deviceRegionDisclaimerMore.
@@ -4661,7 +4661,7 @@ abstract class AppLocalizations {
   /// No description provided for @deviceRegionDisclaimer.
   ///
   /// In en, this message translates to:
-  /// **'Operating points are community-curated, not regulatory guarantees. Pick the preset legal where you are and use the SAME tuple on every node. In Japan, legal parameters are not enough — the radio hardware itself must carry 技適 (giteki) certification; most grey-import LoRa boards do not, and operating one is an offence under the Radio Act regardless of settings. The Japan (ARIB STD-T108) preset is a community proposal that hasn\'t been broadly field-validated — please confirm it is legal and works on your hardware before relying on it.'**
+  /// **'These presets are shared by users, not checked by a regulator. Pick one that is legal where you are and use the same settings on every radio. In Japan the radio itself must carry 技適 (giteki) certification; most imported boards do not, and using one is an offence under the Radio Act whatever the settings. The Japan (ARIB STD-T108) preset is a community proposal that has not been widely tested.'**
   String get deviceRegionDisclaimer;
 
   /// No description provided for @presetUsCanada.
@@ -4835,7 +4835,7 @@ abstract class AppLocalizations {
   /// No description provided for @devicePathHashSizeHelp.
   ///
   /// In en, this message translates to:
-  /// **'The hash length this radio stamps on the packets it sends. Repeaters follow each packet\'s own length, so nodes need not agree. Longer hashes tell repeaters apart better but shrink the directed payload budget.'**
+  /// **'How much of its key each message carries. Longer makes repeaters easier to tell apart and costs a few bytes per message.'**
   String get devicePathHashSizeHelp;
 
   /// No description provided for @devicePathHashUnread.
@@ -5183,13 +5183,13 @@ abstract class AppLocalizations {
   /// No description provided for @otherManualAddSubOff.
   ///
   /// In en, this message translates to:
-  /// **'Heard nodes auto-promote to contacts.'**
+  /// **'Nodes you hear are saved as contacts.'**
   String get otherManualAddSubOff;
 
   /// No description provided for @otherTelemetryModeTitle.
   ///
   /// In en, this message translates to:
-  /// **'Telemetry sharing — who may request each kind'**
+  /// **'Who can read this radio\'s readings'**
   String get otherTelemetryModeTitle;
 
   /// No description provided for @otherTelemetryBase.
@@ -5237,13 +5237,13 @@ abstract class AppLocalizations {
   /// No description provided for @otherMultiAcksLabel.
   ///
   /// In en, this message translates to:
-  /// **'Multi-acks (0–3)'**
+  /// **'Extra confirmations (0–3)'**
   String get otherMultiAcksLabel;
 
   /// No description provided for @otherMultiAcksHelper.
   ///
   /// In en, this message translates to:
-  /// **'0 = single ack (default). Higher = wait for N extra acks before considering a send confirmed.'**
+  /// **'0 is the default. Higher waits for that many more radios to confirm before calling a send confirmed.'**
   String get otherMultiAcksHelper;
 
   /// No description provided for @otherSentSnack.
@@ -5837,7 +5837,7 @@ abstract class AppLocalizations {
   /// No description provided for @pingMethodTelemetry.
   ///
   /// In en, this message translates to:
-  /// **'Telemetry request — silent for the peer; it answers only if it shares telemetry with us.'**
+  /// **'Asks for readings. The other radio answers only if it shares them with you.'**
   String get pingMethodTelemetry;
 
   /// No description provided for @pingSummary.
@@ -6137,7 +6137,7 @@ abstract class AppLocalizations {
   /// No description provided for @deviceAdvertPropagatesHint.
   ///
   /// In en, this message translates to:
-  /// **'Name/location change propagates on the next advert (Nodes → Advertise).'**
+  /// **'Takes effect the next time the radio announces itself.'**
   String get deviceAdvertPropagatesHint;
 
   /// No description provided for @settingsHubMaps.
@@ -6179,7 +6179,7 @@ abstract class AppLocalizations {
   /// No description provided for @mapsBreakdown.
   ///
   /// In en, this message translates to:
-  /// **'Regions {packs} · Event maps {layers} · Viewed tiles {view}'**
+  /// **'Regions {packs} · Event maps {layers} · Cached tiles {view}'**
   String mapsBreakdown(String packs, String layers, String view);
 
   /// No description provided for @mapsBudget.
@@ -6689,7 +6689,7 @@ abstract class AppLocalizations {
   /// No description provided for @selfTestIntro.
   ///
   /// In en, this message translates to:
-  /// **'Checks offline maps end to end on this phone: the real map servers, storage, downloads, pause and resume, expiry. Runs in a sandbox and deletes it afterwards; your maps are not touched. Takes about a minute and under 1 MB of data.'**
+  /// **'Checks map downloads end to end: the real servers, storage, downloads, pause and resume, expiry. It runs in a sandbox and deletes it afterwards, so your maps are not touched. Takes about a minute and under 1 MB of data.'**
   String get selfTestIntro;
 
   /// No description provided for @selfTestRun.
@@ -6821,7 +6821,7 @@ abstract class AppLocalizations {
   /// No description provided for @deviceActiveChannelSub.
   ///
   /// In en, this message translates to:
-  /// **'Active: {name} · slots · name + PSK · #hashtag'**
+  /// **'Using: {name} · channels and keys'**
   String deviceActiveChannelSub(String name);
 
   /// No description provided for @deviceNowParams.
@@ -6978,13 +6978,13 @@ abstract class AppLocalizations {
   /// No description provided for @diagnosticsMtuLine.
   ///
   /// In en, this message translates to:
-  /// **'link MTU: {mtu} (needs {need} for a full frame)'**
+  /// **'Link size {mtu} bytes, {need} needed for a full frame'**
   String diagnosticsMtuLine(String mtu, String need);
 
   /// No description provided for @diagnosticsMtuRefusedLine.
   ///
   /// In en, this message translates to:
-  /// **'this phone link negotiated {mtu} bytes and a full radio frame needs {need}. Reconnect to negotiate again; a radio whose stack caps the MTU smaller cannot carry every frame'**
+  /// **'This phone link is {mtu} bytes and a full radio frame needs {need}. Reconnect to try again; a radio that caps the link smaller cannot carry every frame.'**
   String diagnosticsMtuRefusedLine(String mtu, String need);
 
   /// No description provided for @diagnosticsDatagramLine.
@@ -7687,7 +7687,7 @@ abstract class AppLocalizations {
   /// No description provided for @failurePairingNotKept.
   ///
   /// In en, this message translates to:
-  /// **'The radio paired and then could not encrypt on the next connection, so it is losing its stored pairing. Power-cycle it, reopen the app and pair again; if it repeats, the radio\'s bond storage is the fault.'**
+  /// **'The radio paired but then could not encrypt on the next connection, so the pairing is not being kept. Power-cycle it and pair again; if it repeats, the fault is in the radio.'**
   String get failurePairingNotKept;
 
   /// No description provided for @failureServiceMissing.
@@ -7705,19 +7705,19 @@ abstract class AppLocalizations {
   /// No description provided for @failureMtuTooSmall.
   ///
   /// In en, this message translates to:
-  /// **'This phone link negotiated {mtu} bytes and one radio frame needs {need}. Reconnect to negotiate again; a radio that caps the link smaller cannot carry every frame.'**
+  /// **'This phone link is {mtu} bytes and one radio frame needs {need}. Reconnect to try again; a radio that caps the link smaller cannot carry every frame.'**
   String failureMtuTooSmall(String mtu, String need);
 
   /// No description provided for @failureFrameTruncated.
   ///
   /// In en, this message translates to:
-  /// **'A frame arrived cut short and was not decoded. The link cannot carry the radio\'s longest frames; the count is on the diagnostics page.'**
+  /// **'Part of a message did not arrive. The count is in Diagnostics.'**
   String get failureFrameTruncated;
 
   /// No description provided for @failureFrameTrailingBytes.
   ///
   /// In en, this message translates to:
-  /// **'A frame carried bytes past its own end. The extra bytes were dropped rather than guessed at; the count is on the diagnostics page.'**
+  /// **'A message carried extra bytes at the end. They were dropped; the count is in Diagnostics.'**
   String get failureFrameTrailingBytes;
 
   /// No description provided for @failureStorageFull.

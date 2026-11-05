@@ -130,7 +130,7 @@ void main() {
     await t.pumpAndSettle();
 
     expect(ctrl.mtuRefusal?.mtu, 23);
-    expect(find.textContaining('negotiated 23 bytes'), findsOneWidget);
+    expect(find.textContaining('is 23 bytes'), findsOneWidget);
     expect(find.textContaining('needs 179'), findsOneWidget);
     // No backoff: the same radio negotiates the same MTU.
     expect(ctrl.reconnectAttempt, 0);
@@ -147,8 +147,8 @@ void main() {
     fake.emit(selfInfoFrame());
     await t.pumpAndSettle();
 
-    expect(find.textContaining('link MTU: 247'), findsOneWidget);
-    expect(find.textContaining('needs 179'), findsOneWidget);
+    expect(find.textContaining('Link size 247 bytes'), findsOneWidget);
+    expect(find.textContaining('179 needed'), findsOneWidget);
     ctrl.dispose();
   });
 
