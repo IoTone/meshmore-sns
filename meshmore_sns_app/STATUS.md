@@ -4,11 +4,11 @@ _Snapshot as of 2026-11-05. App `1.0.197+13`, branch `feat/app-completion`.
 Change records below are newest first from R113; older entries are kept in
 the order they were written._
 
-**What is proven and what is not.** Measured on this tree, 2026-11-05: `flutter test` 1680 passed in 2 m 51 s;
-`flutter analyze` no errors beyond two pre-existing `unawaited_return_in_try_block` warnings in
-`lib/maps/maps_controller.dart` (13 s); the protocol package `dart test` 368 passed with 1 skipped (13 s); the pure-Java
-port `./gradlew test` 143 passed (6 s); `flutter build apk --debug` succeeds (64 s) with the native AVIF library in the
-APK. **Nothing below is device-verified.** The phone is behind a PIN keyguard, so every screen-level, on-air and Doze
+**What is proven and what is not.** Measured on this tree, 2026-11-05, in a fresh checkout at `ef0a34e`: `flutter test`
+1688 passed in 2 m 40 s; `flutter analyze` reports only the two pre-existing `unawaited_return_in_try_block` warnings in
+`lib/maps/maps_controller.dart` (8 s); the protocol package `dart test` 368 passed with 1 skipped; the pure-Java port
+`./gradlew test` 143 passed with 1 skipped (7 s); `flutter build apk --debug` succeeds with the native AVIF library in
+the APK (1 m 23 s cold, far shorter on a warm tree). **Nothing below is device-verified.** The phone is behind a PIN keyguard, so every screen-level, on-air and Doze
 path is owed a run, and the rows that say device-unverified are the honest reading rather than a qualifier. What is
 not built at all is listed as residue in `meshmore-feature-register.md` §10.
 
