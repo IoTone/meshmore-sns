@@ -14,6 +14,7 @@ import 'package:qr_flutter/qr_flutter.dart';
 import '../cryptokit/dice_roll_entropy.dart';
 import '../gen/app_localizations.dart';
 import '../meshcore/meshcore_controller.dart';
+import '../notifications/channel_notification_prefs.dart';
 import '../ui/mm_scaffold.dart';
 import '../theme/mm_skin.dart';
 import '../theme/theme_controller.dart';
@@ -653,6 +654,69 @@ class _EditChannelDialogState extends State<_EditChannelDialog> {
                 value: mc.placeInferenceEnabled(widget.idx),
                 onChanged: (bool v) =>
                     mc.setPlaceInferenceEnabled(widget.idx, v),
+              );
+            }),
+            // D8.13 — the per-channel notification bundle. Every toggle is
+            // per slot: silencing the busy channel must not silence the
+            // emergency one, and mentions-only is off unless asked for.
+            const Divider(height: 20),
+            Builder(builder: (BuildContext ctx) {
+              final NotificationPrefs? np = ctx.watch<NotificationPrefs?>();
+              if (np == null) return const SizedBox.shrink();
+              final ChannelNotificationPrefs p = np.prefsFor(widget.idx);
+              void save(ChannelNotificationPrefs next) =>
+                  np.setFor(widget.idx, next);
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text(l.notifSectionTitle,
+                      style: Theme.of(ctx).textTheme.titleSmall),
+                  SwitchListTile(
+                    contentPadding: EdgeInsets.zero,
+                    dense: true,
+                    title: Text(l.notifOs),
+                    value: p.os,
+                    onChanged: (bool v) => save(p.copyWith(os: v)),
+                  ),
+                  SwitchListTile(
+                    contentPadding: EdgeInsets.zero,
+                    dense: true,
+                    title: Text(l.notifAudio),
+                    value: p.audio,
+                    onChanged: (bool v) => save(p.copyWith(audio: v)),
+                  ),
+                  SwitchListTile(
+                    contentPadding: EdgeInsets.zero,
+                    dense: true,
+                    title: Text(l.notifHaptic),
+                    value: p.haptic,
+                    onChanged: (bool v) => save(p.copyWith(haptic: v)),
+                  ),
+                  SwitchListTile(
+                    contentPadding: EdgeInsets.zero,
+                    dense: true,
+                    title: Text(l.notifTts),
+                    value: p.tts,
+                    onChanged: (bool v) => save(p.copyWith(tts: v)),
+                  ),
+                  SwitchListTile(
+                    contentPadding: EdgeInsets.zero,
+                    dense: true,
+                    title: Text(l.notifMentionsOnly),
+                    subtitle: Text(l.notifMentionsOnlySub),
+                    value: p.mentionsOnly,
+                    onChanged: (bool v) => save(p.copyWith(mentionsOnly: v)),
+                  ),
+                  SwitchListTile(
+                    contentPadding: EdgeInsets.zero,
+                    dense: true,
+                    title: Text(l.notifKeySuffix),
+                    subtitle: Text(l.notifKeySuffixSub),
+                    value: p.keySuffixMentions,
+                    onChanged: (bool v) =>
+                        save(p.copyWith(keySuffixMentions: v)),
+                  ),
+                ],
               );
             }),
             // R59 — the bot binds per channel. The section renders on

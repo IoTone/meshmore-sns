@@ -2379,6 +2379,52 @@ class AppLocalizationsEn extends AppLocalizations {
       'Scan this channel\'s banter for place names and plot them on the SNS grid.';
 
   @override
+  String notifTitleChannel(String name) {
+    return 'Message on $name';
+  }
+
+  @override
+  String notifTitleDirect(String name) {
+    return 'Direct message from $name';
+  }
+
+  @override
+  String get notifTitleSos => 'Emergency alert';
+
+  @override
+  String get notifSectionTitle => 'Notifications';
+
+  @override
+  String get notifOs => 'Notify on the lock screen';
+
+  @override
+  String get notifAudio => 'Play a cue';
+
+  @override
+  String get notifHaptic => 'Vibrate';
+
+  @override
+  String get notifTts => 'Speak the message';
+
+  @override
+  String get notifMentionsOnly => 'Only when named';
+
+  @override
+  String get notifMentionsOnlySub =>
+      'Whole word or @name. Off means every message alerts.';
+
+  @override
+  String get notifKeySuffix => 'Also match the key suffix';
+
+  @override
+  String get notifKeySuffixSub =>
+      'Four hex characters are not an identity; leave this off unless you know the sender\'s.';
+
+  @override
+  String get notifDeniedBanner =>
+      'Notifications are turned off for this app, so messages will not appear on your lock screen.';
+
+  @override
   String get channelsKeySource => 'Key source';
 
   @override

@@ -4082,6 +4082,84 @@ abstract class AppLocalizations {
   /// **'Scan this channel\'s banter for place names and plot them on the SNS grid.'**
   String get channelsInferPlacesSub;
 
+  /// OS notification title for a channel message.
+  ///
+  /// In en, this message translates to:
+  /// **'Message on {name}'**
+  String notifTitleChannel(String name);
+
+  /// OS notification title for a direct message.
+  ///
+  /// In en, this message translates to:
+  /// **'Direct message from {name}'**
+  String notifTitleDirect(String name);
+
+  /// OS notification title for an SOS or its acknowledgement.
+  ///
+  /// In en, this message translates to:
+  /// **'Emergency alert'**
+  String get notifTitleSos;
+
+  /// Section heading in the channel editor for the per-channel notification bundle.
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications'**
+  String get notifSectionTitle;
+
+  /// Per-channel: post an OS notification.
+  ///
+  /// In en, this message translates to:
+  /// **'Notify on the lock screen'**
+  String get notifOs;
+
+  /// Per-channel: play the theme's audio cue.
+  ///
+  /// In en, this message translates to:
+  /// **'Play a cue'**
+  String get notifAudio;
+
+  /// Per-channel: vibrate.
+  ///
+  /// In en, this message translates to:
+  /// **'Vibrate'**
+  String get notifHaptic;
+
+  /// Per-channel: read the message aloud.
+  ///
+  /// In en, this message translates to:
+  /// **'Speak the message'**
+  String get notifTts;
+
+  /// Per-channel: alert only when the message names this device.
+  ///
+  /// In en, this message translates to:
+  /// **'Only when named'**
+  String get notifMentionsOnly;
+
+  /// Explains the mentions-only mode.
+  ///
+  /// In en, this message translates to:
+  /// **'Whole word or @name. Off means every message alerts.'**
+  String get notifMentionsOnlySub;
+
+  /// Per-channel opt-in: treat the public key's hex suffix as a mention.
+  ///
+  /// In en, this message translates to:
+  /// **'Also match the key suffix'**
+  String get notifKeySuffix;
+
+  /// Warns about the key-suffix opt-in.
+  ///
+  /// In en, this message translates to:
+  /// **'Four hex characters are not an identity; leave this off unless you know the sender\'s.'**
+  String get notifKeySuffixSub;
+
+  /// Shown when the OS notification permission is denied.
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications are turned off for this app, so messages will not appear on your lock screen.'**
+  String get notifDeniedBanner;
+
   /// No description provided for @channelsKeySource.
   ///
   /// In en, this message translates to:
