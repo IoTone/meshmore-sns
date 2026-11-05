@@ -62,6 +62,9 @@ void main() {
     'lib/field/field_export_action.dart': <String>[
       'lib/field/operational_export.dart',
     ],
+    'lib/field/gpx_export_action.dart': <String>[
+      'lib/field/gpx.dart',
+    ],
   };
 
   test('every share site is declared, and declared writers use a served root',

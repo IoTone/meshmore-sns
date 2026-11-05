@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../field/field_export_action.dart';
+import '../field/gpx_export_action.dart';
 import '../gen/app_localizations.dart';
 import '../telemetry/coverage_model.dart';
 import '../telemetry/coverage_pacing.dart';
@@ -119,6 +120,15 @@ class CoverageScreen extends StatelessWidget {
                       height: 1.4)),
               SizedBox(height: skin.space.step(2)),
               const FieldExportAction(),
+              SizedBox(height: skin.space.step(3)),
+              Text(l.gpxExportExplainer,
+                  key: const ValueKey<String>('gpx-export-explainer'),
+                  style: TextStyle(
+                      color: skin.color.fgMuted,
+                      fontSize: skin.type.sizeSm,
+                      height: 1.4)),
+              SizedBox(height: skin.space.step(2)),
+              const TrailGpxAction(),
             ],
           ],
         ),

@@ -3337,6 +3337,17 @@
   },
   "fieldExportDone": "Field record written. The path is on the clipboard: {path}",
   "@fieldExportDone": {"placeholders": {"path": {"type": "String"}}},
+
+  "gpxExportExplainer": "The trail as a GPX track any mapping app can read. It is plain text, not encrypted, unlike your messages.",
+  "gpxExportAction": "Share trail as GPX",
+  "gpxExportTrackName": "MeshMore trail",
+  "gpxExportEmpty": "No trail yet. Positions are recorded while the app runs, so there is nothing to write.",
+  "gpxExportShared": "Trail ready to share.",
+  "@gpxExportShared": {
+    "description": "Snackbar after the trail file was handed to the share sheet."
+  },
+  "gpxExportDone": "Trail written. The path is on the clipboard: {path}",
+  "@gpxExportDone": {"placeholders": {"path": {"type": "String"}}},
   "chatSearchAction": "Search messages",
   "chatExportAction": "Export this conversation",
   "@chatExportAction": {

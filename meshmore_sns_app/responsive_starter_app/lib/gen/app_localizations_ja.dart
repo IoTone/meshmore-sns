@@ -4838,6 +4838,27 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
+  String get gpxExportExplainer =>
+      '軌跡を GPX として書き出します。地図アプリならどれでも読めます。メッセージと違い、暗号化されない平文です。';
+
+  @override
+  String get gpxExportAction => '軌跡を GPX で共有';
+
+  @override
+  String get gpxExportTrackName => 'MeshMore の軌跡';
+
+  @override
+  String get gpxExportEmpty => 'まだ軌跡がありません。位置はアプリの動作中に記録されるため、書き出せるものがありません。';
+
+  @override
+  String get gpxExportShared => '軌跡を共有できます。';
+
+  @override
+  String gpxExportDone(String path) {
+    return '軌跡を書き出しました。パスはクリップボードにあります: $path';
+  }
+
+  @override
   String get chatSearchAction => 'メッセージを検索';
 
   @override

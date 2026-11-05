@@ -5016,6 +5016,28 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get gpxExportExplainer =>
+      'The trail as a GPX track any mapping app can read. It is plain text, not encrypted, unlike your messages.';
+
+  @override
+  String get gpxExportAction => 'Share trail as GPX';
+
+  @override
+  String get gpxExportTrackName => 'MeshMore trail';
+
+  @override
+  String get gpxExportEmpty =>
+      'No trail yet. Positions are recorded while the app runs, so there is nothing to write.';
+
+  @override
+  String get gpxExportShared => 'Trail ready to share.';
+
+  @override
+  String gpxExportDone(String path) {
+    return 'Trail written. The path is on the clipboard: $path';
+  }
+
+  @override
   String get chatSearchAction => 'Search messages';
 
   @override

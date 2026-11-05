@@ -8518,6 +8518,42 @@ abstract class AppLocalizations {
   /// **'Field record written. The path is on the clipboard: {path}'**
   String fieldExportDone(String path);
 
+  /// No description provided for @gpxExportExplainer.
+  ///
+  /// In en, this message translates to:
+  /// **'The trail as a GPX track any mapping app can read. It is plain text, not encrypted, unlike your messages.'**
+  String get gpxExportExplainer;
+
+  /// No description provided for @gpxExportAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Share trail as GPX'**
+  String get gpxExportAction;
+
+  /// No description provided for @gpxExportTrackName.
+  ///
+  /// In en, this message translates to:
+  /// **'MeshMore trail'**
+  String get gpxExportTrackName;
+
+  /// No description provided for @gpxExportEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No trail yet. Positions are recorded while the app runs, so there is nothing to write.'**
+  String get gpxExportEmpty;
+
+  /// Snackbar after the trail file was handed to the share sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'Trail ready to share.'**
+  String get gpxExportShared;
+
+  /// No description provided for @gpxExportDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Trail written. The path is on the clipboard: {path}'**
+  String gpxExportDone(String path);
+
   /// Icon tooltip in the chat channel strip: opens search over stored history.
   ///
   /// In en, this message translates to:
