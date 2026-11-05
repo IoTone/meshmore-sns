@@ -5,6 +5,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 
+import 'package:meshmore_sns_app/app/demo_mode.dart';
 import 'package:meshmore_sns_app/gen/app_localizations.dart';
 import 'package:meshmore_sns_app/l10n/locale_controller.dart';
 import 'package:meshmore_sns_app/perms/first_run_controller.dart';
@@ -15,6 +16,9 @@ Widget _host(FirstRunController fr, PermissionsService perms) => MultiProvider(
       providers: [
         ChangeNotifierProvider<FirstRunController>.value(value: fr),
         Provider<PermissionsService>.value(value: perms),
+        // The offline path records itself as demo mode, so the screen reads it.
+        ChangeNotifierProvider<DemoMode>(
+            create: (_) => DemoMode.preloaded(enabled: false)),
       ],
       child: MaterialApp(
         locale: const Locale('en'),
@@ -54,7 +58,10 @@ void main() {
     final NoopPermissionsService perms = NoopPermissionsService(ble: false);
     await t.pumpWidget(_host(fr, perms));
 
-    await t.tap(find.text('Continue offline (skip permissions)'));
+    // The offline path is demo mode by name now, not a skip: the label the
+    // screen renders is `firstRunSkip`, and the state it records is what makes
+    // the launch stop reaching for a paired radio.
+    await t.tap(find.text('Explore in demo mode (no radio)'));
     await t.pumpAndSettle();
 
     expect(fr.done, isTrue);
