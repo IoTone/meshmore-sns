@@ -40,6 +40,18 @@ class SealedDataCorrupt implements Exception {
   String toString() => 'SealedDataCorrupt($reason)';
 }
 
+/// The platform holds no key under this store's alias, so the bytes were
+/// sealed somewhere else: a restore onto a new device, a credential reset, or
+/// a cleared Keystore. The data is intact and unreadable *here*. Kept apart
+/// from [SealedDataCorrupt] because the answers differ: corruption is a file
+/// that cannot be trusted, this is a file that can.
+class RecordCipherKeyLost implements Exception {
+  const RecordCipherKeyLost(this.reason);
+  final String reason;
+  @override
+  String toString() => 'RecordCipherKeyLost($reason)';
+}
+
 /// AES-256-GCM sealed by the Android Keystore.
 ///
 /// The Dart side only passes bytes over the channel; the key material is
@@ -84,6 +96,7 @@ class KeystoreRecordCipher implements RecordCipher {
       throw const RecordCipherUnavailable('no platform keystore channel');
     } on PlatformException catch (e) {
       if (e.code == 'corrupt') throw SealedDataCorrupt(e.message ?? 'open');
+      if (e.code == 'stale_key') throw RecordCipherKeyLost(e.message ?? 'open');
       throw RecordCipherUnavailable(e.code);
     }
   }

@@ -6,6 +6,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../app/app_errors.dart';
 import 'chat_message.dart';
 import 'secure/encrypted_store.dart';
 import 'secure/record_cipher.dart';
@@ -41,6 +42,27 @@ abstract final class ChatStore {
 
   /// Hard cap on persisted messages (oldest dropped first).
   static const int cap = 250;
+
+  /// True when the sealed history is on disk but this device can no longer
+  /// open it: the Keystore key that sealed it is gone (a restore onto a new
+  /// device, a credential reset, a cleared Keystore). The file is left
+  /// untouched, so the history is not lost — only unreadable here — and the
+  /// UI says so instead of showing an empty thread list.
+  static final ValueNotifier<bool> unreadable = ValueNotifier<bool>(false);
+
+  /// The last write that did not reach the sealed store, as one of
+  /// `keyLost`, `unavailable`, `corrupt`, `noSpace`. Null when the last write
+  /// succeeded. A message that is shown but not persisted is a lie the app
+  /// should not tell silently, and Diagnostics reads this.
+  static final ValueNotifier<String?> lastWriteFailure =
+      ValueNotifier<String?>(null);
+
+  /// Test seam: a notifier outlives a test, so the next one starts clean.
+  @visibleForTesting
+  static void resetStatus() {
+    unreadable.value = false;
+    lastWriteFailure.value = null;
+  }
 
   /// The key a dropped row is counted under: a channel slot, or a DM peer.
   static String threadKeyOf(ChatMessage m) => m.channelIdx >= 0
@@ -106,13 +128,15 @@ abstract final class ChatStore {
     if (await _ensureSealed()) {
       try {
         final Uint8List? raw = await _store().read(recordName);
+        unreadable.value = false;
         if (raw == null) return <ChatMessage>[];
         return _decode(utf8.decode(raw));
       } on EncryptedStoreUnavailable {
-        // The key went away under a store that was written with it (a wiped
-        // keystore, a restore from a backup). Nothing can be read; the history
-        // is not recoverable and must not be presented as empty silently, but
-        // a startup path cannot throw either. The caller sees no history.
+        // No platform key at all (a host without a Keystore). Nothing was ever
+        // sealed here, so there is nothing to report.
+        return <ChatMessage>[];
+      } on EncryptedStoreKeyLost {
+        unreadable.value = true;
         return <ChatMessage>[];
       } on EncryptedStoreCorrupt {
         return <ChatMessage>[];
@@ -128,25 +152,59 @@ abstract final class ChatStore {
     final List<ChatMessage> tail = messages.length > cap
         ? messages.sublist(messages.length - cap)
         : messages;
-    if (await _ensureSealed()) {
+    final SharedPreferences p = await SharedPreferences.getInstance();
+    final bool sealed = await _ensureSealed();
+    if (sealed) {
       try {
         await _store().write(
             recordName, Uint8List.fromList(utf8.encode(_encode(tail))));
+        lastWriteFailure.value = null;
+        return;
+      } on EncryptedStoreKeyLost {
+        // The key is gone: writing would mint a new one and seal the new rows
+        // under it while the old file stays unreadable. Keep the old copy, say
+        // so, and persist nothing.
+        unreadable.value = true;
+        lastWriteFailure.value = 'keyLost';
+        AppErrors.record('history store: key lost under a sealed file', null);
         return;
       } on EncryptedStoreUnavailable {
-        // Fall through to the plaintext path rather than dropping the message
-        // on the floor; the next launch retries the migration.
+        lastWriteFailure.value = 'unavailable';
+        AppErrors.record('history store: unavailable', null);
+        return;
+      } on EncryptedStoreCorrupt {
+        lastWriteFailure.value = 'corrupt';
+        AppErrors.record('history store: corrupt', null);
+        return;
+      } on FileSystemException catch (e) {
+        lastWriteFailure.value = 'noSpace';
+        AppErrors.record(e, null, where: 'history store');
+        return;
       }
     }
-    final SharedPreferences p = await SharedPreferences.getInstance();
+    // The sealed store is the truth once the marker is set. Writing plaintext
+    // behind it would create a second history nothing reads, and would put the
+    // rows in the clear while the app says they are sealed.
+    if (p.getInt(_kMigratedKey) == formatVersion) {
+      lastWriteFailure.value = 'unavailable';
+      return;
+    }
     await p.setString(_kLegacyKey, _encode(tail));
   }
 
   static Future<void> clear() async {
     try {
       await _store().clear();
+      unreadable.value = false;
+      lastWriteFailure.value = null;
     } on EncryptedStoreUnavailable {
       // Nothing sealed to clear; the legacy key below is the whole record.
+    } on EncryptedStoreKeyLost {
+      // The file is unreadable here; clearing it is the user's explicit
+      // choice to start over, so the bytes go.
+      final SharedPreferences p = await SharedPreferences.getInstance();
+      await p.remove(_kMigratedKey);
+      unreadable.value = false;
     }
     final SharedPreferences p = await SharedPreferences.getInstance();
     await p.remove(_kLegacyKey);
@@ -188,6 +246,12 @@ abstract final class ChatStore {
       if (legacy != null) await p.remove(_kLegacyKey);
       return true;
     } on EncryptedStoreUnavailable {
+      return false;
+    } on EncryptedStoreKeyLost {
+      // Nothing to migrate and nothing to write: the key that sealed the
+      // existing file is gone. The marker is left alone so a later launch
+      // says the same thing instead of starting a second history.
+      if (legacy == null) unreadable.value = true;
       return false;
     } on EncryptedStoreCorrupt {
       return false;

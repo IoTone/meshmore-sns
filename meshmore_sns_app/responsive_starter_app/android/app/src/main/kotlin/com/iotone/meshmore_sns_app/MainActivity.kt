@@ -42,6 +42,9 @@ class MainActivity : FlutterActivity() {
                         "open" -> result.success(SecureStore.open(data))
                         else -> result.notImplemented()
                     }
+                } catch (e: KeyNotOnDeviceException) {
+                    // The file is intact; the key that opened it is gone.
+                    result.error("stale_key", e.message ?: "key missing", null)
                 } catch (e: javax.crypto.AEADBadTagException) {
                     // Wrong key, or the file was altered: the Dart side reports
                     // this as a corrupt store rather than as a write failure.

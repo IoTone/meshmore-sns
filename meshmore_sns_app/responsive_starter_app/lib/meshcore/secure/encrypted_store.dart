@@ -18,6 +18,16 @@ class EncryptedStoreCorrupt implements Exception {
   String toString() => 'EncryptedStoreCorrupt($reason)';
 }
 
+/// The file was sealed by a key this device no longer holds. Distinct from
+/// [EncryptedStoreCorrupt]: the file must be kept, never overwritten, and the
+/// user is owed a sentence rather than an empty screen.
+class EncryptedStoreKeyLost implements Exception {
+  const EncryptedStoreKeyLost(this.reason);
+  final String reason;
+  @override
+  String toString() => 'EncryptedStoreKeyLost($reason)';
+}
+
 /// No key, so nothing can be written. The caller keeps its data where it was.
 class EncryptedStoreUnavailable implements Exception {
   const EncryptedStoreUnavailable(this.reason);
@@ -120,6 +130,8 @@ class EncryptedStore {
       plain = await _cipher.open(sealed);
     } on SealedDataCorrupt catch (e) {
       throw EncryptedStoreCorrupt(e.reason);
+    } on RecordCipherKeyLost catch (e) {
+      throw EncryptedStoreKeyLost(e.reason);
     } on RecordCipherUnavailable catch (e) {
       throw EncryptedStoreUnavailable(e.reason);
     }
