@@ -122,7 +122,7 @@ codec directly.
 ```
 meshmore-sns/
 ├── README.md                       ← this file
-├── meshmore-sns-spec.md            ← requirements + change record (R1–R108)
+├── meshmore-sns-spec.md            ← requirements + change record (R1–R113)
 ├── meshmore-sns-UX-spec.md         ← U0–U15 implementation plan
 ├── meshmore-sns-maps-spec.md       ← offline maps (R61, R93)
 ├── meshmore-sns-tools-spec.md      ← Tools surface (R60)

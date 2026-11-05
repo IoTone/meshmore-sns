@@ -14,7 +14,7 @@ page is the list; the other documents hold the reasoning.
 | 4 | `meshmore-sns-block-spec.md`, `meshmore-sos-spec.md`, `meshmore-places-spec.md`, `meshmore-telemetry-coverage-spec.md` | **Feature specs at implementation depth.** The block spec is the depth template; the other three follow its shape |
 | 4a | `meshmore-spec-breadth-review.md` | **Breadth.** What a complete specification needs beyond the feature list, what was missing, and what is deliberately out |
 | 5 | `meshmore-feature-audit.md` | **What exists.** Measured against source; a "SHIPPED" here beats a plan row's assumption |
-| 6 | `meshmore-sns-spec.md` | **History.** R1–R108 plus the change record. Not authoritative where 1–4 disagree, and it still carries stale requirements (see R2) |
+| 6 | `meshmore-sns-spec.md` | **History.** R1–R113 plus the change record. Not authoritative where 1–4 disagree, and it still carries stale requirements (see R2) |
 | 7 | `mesh-research/notes/topics/` | **Field evidence.** 53 notes; `INDEX.md` is the map |
 
 Two rules that were being violated: a claim of "shipped" needs the audit, and a claim of "decided" needs the scope of
