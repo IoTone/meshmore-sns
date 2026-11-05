@@ -1039,6 +1039,46 @@
   "channelsName": "Channel name",
   "channelsInferPlaces": "Infer places from messages",
   "channelsInferPlacesSub": "Scan this channel's banter for place names and plot them on the SNS grid.",
+  "notifTitleChannel": "Message on {name}",
+  "@notifTitleChannel": {
+    "description": "OS notification title for a channel message.",
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "notifTitleDirect": "Direct message from {name}",
+  "@notifTitleDirect": {
+    "description": "OS notification title for a direct message.",
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "notifTitleSos": "Emergency alert",
+  "@notifTitleSos": {
+    "description": "OS notification title for an SOS or its acknowledgement."
+  },
+  "notifSectionTitle": "Notifications",
+  "@notifSectionTitle": {
+    "description": "Section heading in the channel editor for the per-channel notification bundle."
+  },
+  "notifOs": "Notify on the lock screen",
+  "@notifOs": { "description": "Per-channel: post an OS notification." },
+  "notifAudio": "Play a cue",
+  "@notifAudio": { "description": "Per-channel: play the theme's audio cue." },
+  "notifHaptic": "Vibrate",
+  "@notifHaptic": { "description": "Per-channel: vibrate." },
+  "notifTts": "Speak the message",
+  "@notifTts": { "description": "Per-channel: read the message aloud." },
+  "notifMentionsOnly": "Only when named",
+  "@notifMentionsOnly": {
+    "description": "Per-channel: alert only when the message names this device."
+  },
+  "notifMentionsOnlySub": "Whole word or @name. Off means every message alerts.",
+  "@notifMentionsOnlySub": { "description": "Explains the mentions-only mode." },
+  "notifKeySuffix": "Also match the key suffix",
+  "@notifKeySuffix": {
+    "description": "Per-channel opt-in: treat the public key's hex suffix as a mention."
+  },
+  "notifKeySuffixSub": "Four hex characters are not an identity; leave this off unless you know the sender's.",
+  "@notifKeySuffixSub": { "description": "Warns about the key-suffix opt-in." },
+  "notifDeniedBanner": "Notifications are turned off for this app, so messages will not appear on your lock screen.",
+  "@notifDeniedBanner": { "description": "Shown when the OS notification permission is denied." },
   "channelsKeySource": "Key source",
   "channelsKeyPublic": "Public",
   "channelsKeyHashtag": "#tag",

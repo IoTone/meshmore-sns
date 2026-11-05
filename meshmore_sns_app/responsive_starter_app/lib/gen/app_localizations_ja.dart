@@ -2281,6 +2281,49 @@ class AppLocalizationsJa extends AppLocalizations {
   String get channelsInferPlacesSub => 'このチャンネルの会話から地名を抽出し、SNS グリッドに表示します。';
 
   @override
+  String notifTitleChannel(String name) {
+    return '$name のメッセージ';
+  }
+
+  @override
+  String notifTitleDirect(String name) {
+    return '$name からのダイレクトメッセージ';
+  }
+
+  @override
+  String get notifTitleSos => '緊急アラート';
+
+  @override
+  String get notifSectionTitle => '通知';
+
+  @override
+  String get notifOs => 'ロック画面に通知';
+
+  @override
+  String get notifAudio => '効果音を鳴らす';
+
+  @override
+  String get notifHaptic => '振動';
+
+  @override
+  String get notifTts => '読み上げ';
+
+  @override
+  String get notifMentionsOnly => '名前を呼ばれた時だけ';
+
+  @override
+  String get notifMentionsOnlySub => '単語全体か @名前。オフなら全メッセージで通知します。';
+
+  @override
+  String get notifKeySuffix => '鍵の末尾にも一致させる';
+
+  @override
+  String get notifKeySuffixSub => '16進4文字は識別子ではありません。送信者を確実に知っている場合のみ。';
+
+  @override
+  String get notifDeniedBanner => 'このアプリの通知がオフのため、メッセージはロック画面に表示されません。';
+
+  @override
   String get channelsKeySource => '鍵ソース';
 
   @override

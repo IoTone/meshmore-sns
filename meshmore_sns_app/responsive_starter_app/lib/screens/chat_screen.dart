@@ -15,6 +15,7 @@ import '../places/place_echo.dart';
 import '../places/place_store.dart';
 import 'delivery_status_icon.dart';
 import '../meshcore/meshcore_controller.dart';
+import '../notifications/notification_focus.dart';
 import '../meshcore/message_heat.dart' show parseChannelSenderName;
 import '../bot/bot_guards.dart';
 import '../bot/bot_tag.dart';
@@ -79,7 +80,30 @@ class _ChatScreenState extends State<ChatScreen>
     // R29 — track scroll position so we know whether to follow the
     // newest message automatically or surface a jump-to-newest pill.
     _scroll.addListener(_onScroll);
+
+    // D8.20 — the channel on screen is not announced. The active slot can
+    // change without this widget rebuilding into a new state, so follow the
+    // controller rather than reading the index once.
+    final MeshcoreController mc = context.read<MeshcoreController>();
+    _focusOwner = mc;
+    // Resolved once: `dispose` must not look up an ancestor, and the focus
+    // record outlives this screen's element by no more than this reference.
+    _focus = context.read<NotificationFocus?>();
+    void listener() {
+      if (!mounted) return;
+      context.read<NotificationFocus>().openChannel = mc.activeChannel;
+    }
+
+    _focusListener = listener;
+    // A harness that builds this screen without the app-scoped focus record
+    // simply has nothing to suppress.
+    _focus?.openChannel = mc.activeChannel;
+    mc.addListener(listener);
   }
+
+  MeshcoreController? _focusOwner;
+  VoidCallback? _focusListener;
+  NotificationFocus? _focus;
 
   void _onScroll() {
     if (!_scroll.hasClients) return;
@@ -114,6 +138,8 @@ class _ChatScreenState extends State<ChatScreen>
 
   @override
   void dispose() {
+    if (_focusListener != null) _focusOwner?.removeListener(_focusListener!);
+    _focus?.openChannel = null;
     _scroll.removeListener(_onScroll);
     _input.dispose();
     _scroll.dispose();

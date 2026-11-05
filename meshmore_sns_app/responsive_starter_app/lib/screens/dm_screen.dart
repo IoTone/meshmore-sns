@@ -14,6 +14,7 @@ import '../meshcore/chat_message.dart';
 import 'delivery_status_icon.dart';
 import '../meshcore/discovered_node.dart';
 import '../meshcore/meshcore_controller.dart';
+import '../notifications/notification_focus.dart';
 import '../theme/mm_skin.dart';
 import '../tts/tts_controller.dart';
 import '../ui/mm_scaffold.dart';
@@ -40,6 +41,7 @@ class _DmScreenState extends State<DmScreen> {
   final TextEditingController _input = TextEditingController();
   final ScrollController _scroll = ScrollController();
   StreamSubscription<ChatMessage>? _sub;
+  NotificationFocus? _focus;
   int _lastCount = 0;
 
   @override
@@ -60,10 +62,14 @@ class _DmScreenState extends State<DmScreen> {
     });
     // Opening the thread marks everything currently in it as read.
     mc.markDmRead(widget.peerPubKeyHex);
+    // D8.20 — a message on the thread already on screen is not announced.
+    _focus = context.read<NotificationFocus?>();
+    _focus?.openPeer = widget.peerPubKeyHex;
   }
 
   @override
   void dispose() {
+    _focus?.openPeer = null;
     _sub?.cancel();
     _input.dispose();
     _scroll.dispose();

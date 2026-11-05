@@ -25,6 +25,12 @@ import 'package:meshmore_sns_app/meshcore/city_lookup.dart';
 import 'package:meshmore_sns_app/meshcore/meshcore_controller.dart';
 import 'package:meshmore_sns_app/bot/bot_controller.dart';
 import 'package:meshmore_sns_app/peer/peer_profiles.dart';
+import 'package:meshmore_sns_app/meshcore/discovered_node.dart';
+import 'package:meshmore_sns_app/notifications/channel_notification_prefs.dart';
+import 'package:meshmore_sns_app/notifications/local_notifier.dart';
+import 'package:meshmore_sns_app/notifications/notification_focus.dart';
+import 'package:meshmore_sns_app/notifications/notification_service.dart';
+import 'package:meshmore_sns_app/notifications/notifier.dart';
 import 'package:meshmore_sns_app/perms/first_run_controller.dart';
 import 'package:meshmore_sns_app/perms/location_service.dart';
 import 'package:meshmore_sns_app/perms/permissions_service.dart';
@@ -70,6 +76,41 @@ void main() {
       locationService: const GeolocatorLocationService(),
     );
     if (!demo.enabled) controller.autoConnectIfPaired();
+    // D8.20 — one notifier, one focus record, one service. Created before the
+    // tree so the notification permission is asked at first launch, not on
+    // the first message; the service starts after the first frame so its
+    // stream subscription never races the controller's own connect.
+    final LocalNotifier notifier = LocalNotifier();
+    final NotificationPrefs notificationPrefs = NotificationPrefs();
+    final NotificationFocus notificationFocus = NotificationFocus();
+    unawaited(notificationPrefs.load());
+    // The notification text follows the app's own locale choice, and it is
+    // resolved per message rather than once, so switching language takes
+    // effect on the next message without a restart.
+    final LocaleController notificationLocale = LocaleController()..load();
+    final NotificationService notifications = NotificationService(
+      channelMessages: controller.incomingChannelMessages,
+      directMessages: controller.incomingDirectMessages,
+      notifier: notifier,
+      prefs: notificationPrefs,
+      focus: notificationFocus,
+      strings: () => LocalizedNotificationStrings(
+        lookupAppLocalizations(_notificationLocale(notificationLocale.locale)),
+      ),
+      selfDisplayName: () => controller.selfInfo?.name,
+      ownPubKeyHex: () => controller.ownPubKeyHex,
+      peerDisplayName: (String key) => _peerName(controller, key),
+      channelName: (int slot) => _channelName(controller, slot),
+    );
+    notifier.onTap = (String payload) {
+      if (payload.startsWith('dm:')) {
+        appRouter.push('/dm/${payload.substring(3)}');
+      } else if (payload.startsWith('ch:')) {
+        final int? slot = int.tryParse(payload.substring(3));
+        if (slot != null) controller.setActiveChannel(slot);
+        appRouter.go('/');
+      }
+    };
     runApp(
       MultiProvider(
         providers: [
@@ -145,9 +186,9 @@ void main() {
           ChangeNotifierProvider<TermsController>(
             create: (_) => TermsController()..load(),
           ),
-          ChangeNotifierProvider<LocaleController>(
-            create: (_) => LocaleController()..load(),
-          ),
+          ChangeNotifierProvider<LocaleController>.value(
+              value: notificationLocale),
+          Provider<NotificationFocus>.value(value: notificationFocus),
           // Places (meshmore-places-spec.md): reports live in one app-scoped
           // store, so the map layer, the history list, the chat echo and
           // search cannot disagree about what exists. The budget is the
@@ -157,6 +198,10 @@ void main() {
           Provider<PlaceReportBudget>(
             create: (_) => PlaceReportBudget(clock: DateTime.now),
           ),
+          Provider<Notifier>.value(value: notifier),
+          ChangeNotifierProvider<NotificationPrefs>.value(
+              value: notificationPrefs),
+          Provider<NotificationService>.value(value: notifications),
           // R36 — auto-publish location. Owns its own
           // shared_preferences-backed settings + the periodic
           // timer / position stream. Constructed lazily to read
@@ -190,7 +235,7 @@ class MyApp extends StatefulWidget {
   State<MyApp> createState() => _MyAppState();
 }
 
-class _MyAppState extends State<MyApp> {
+class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   /// Flutter-side splash min-display gate. Even when first-run prefs
   /// resolve in microseconds the user gets ~1.5 s of the branded
   /// splash with the rotating icon + version readout. Without this,
@@ -201,12 +246,40 @@ class _MyAppState extends State<MyApp> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       FlutterNativeSplash.remove();
+      // After the first frame: the OS channels exist before any message can
+      // arrive, and the tap handler is installed before the user can tap.
+      // A harness that builds this widget without the notification providers
+      // (every widget test) simply runs without notifications, rather than
+      // failing on a lookup it never needed.
+      final Notifier? notifier = context.read<Notifier?>();
+      final NotificationService? service =
+          context.read<NotificationService?>();
+      if (notifier != null && service != null) {
+        notifier.init().then((_) => service.start());
+      }
     });
     Future<void>.delayed(const Duration(milliseconds: 2200), () {
       if (mounted) setState(() => _minSplashElapsed = true);
     });
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  /// D8.20 — a message that arrives while the app is in front is already
+  /// visible, so it is not announced. Reading the lifecycle here keeps that
+  /// decision out of the notification service, which has no window.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (!mounted) return;
+    context.read<NotificationFocus>().foreground =
+        state == AppLifecycleState.resumed;
   }
 
   // R4 / U5 — l10n wiring shared between every MaterialApp branch:
@@ -301,3 +374,30 @@ class _MyAppState extends State<MyApp> {
     );
   }
 }
+
+/// The locale a notification is written in: the app's own choice when the
+/// user picked one, otherwise the one the device would resolve to. Only the
+/// two shipped bundles exist, so anything else falls back to English rather
+/// than throwing inside a notification handler.
+Locale _notificationLocale(Locale? chosen) {
+  final Locale effective =
+      chosen ?? WidgetsBinding.instance.platformDispatcher.locale;
+  return effective.languageCode == 'ja' ? const Locale('ja') : const Locale('en');
+}
+
+/// A peer's display name for a DM notification title, from the full key or
+/// the 12-hex prefix the legacy frame carries.
+String? _peerName(MeshcoreController controller, String key) {
+  if (key.isEmpty) return null;
+  for (final DiscoveredNode n in controller.nodes) {
+    if (n.pubKeyHex.startsWith(key)) return n.name;
+  }
+  return null;
+}
+
+/// A channel slot's name for a notification title. The controller names only
+/// the active slot; another slot shows its number until it is selected.
+String _channelName(MeshcoreController controller, int slot) =>
+    slot == controller.activeChannel
+        ? controller.activeChannelName
+        : 'CH $slot';
