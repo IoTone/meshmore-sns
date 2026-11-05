@@ -1,6 +1,7 @@
 // Copyright (c) 2026 IoTone, Inc.
 // SPDX-License-Identifier: MIT
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -304,6 +305,39 @@ void main() {
       await t.pumpAndSettle(DraftStore.debounce);
       await t.pump(DraftStore.debounce);
       expect(sink.values.values, contains('half a thought, finished'));
+      mc.dispose();
+    });
+
+    testWidgets('a refused send gives the text back, and keeps it as a draft',
+        (t) async {
+      final _MemoryDrafts sink = _MemoryDrafts();
+      DraftStore.sinkOverride = sink;
+      addTearDown(() => DraftStore.sinkOverride = null);
+      final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
+      final MeshcoreController mc = MeshcoreController(
+        transportFactory: () async => fake,
+        connection:
+            MeshcoreConnection(handshakeTimeout: const Duration(seconds: 5)),
+      );
+      await t.binding.setSurfaceSize(const Size(900, 1600));
+      addTearDown(() => t.binding.setSurfaceSize(null));
+      await t.pumpWidget(_host(mc, TtsController(speaker: FakeTtsSpeaker())));
+      await mc.connect();
+      fake.emit(selfInfoFrame());
+      await t.pumpAndSettle();
+
+      await t.enterText(find.byType(TextField), 'hello mesh');
+      await t.tap(find.byTooltip('Send'));
+      await t.pumpAndSettle();
+      // The radio refuses the channel send: ERR with a device reason code.
+      fake.emit(Uint8List.fromList(<int>[0x01, 3]));
+      await t.pumpAndSettle();
+
+      final TextField field = t.widget<TextField>(find.byType(TextField));
+      expect(field.controller?.text, 'hello mesh',
+          reason: 'a failure must not cost the user what they typed');
+      expect(sink.values.values, contains('hello mesh'),
+          reason: 'and the draft comes back with it');
       mc.dispose();
     });
   });
