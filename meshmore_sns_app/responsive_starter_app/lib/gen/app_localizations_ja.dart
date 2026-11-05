@@ -1,5 +1,6 @@
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
+
 import 'app_localizations.dart';
 
 // ignore_for_file: type=lint
@@ -3818,7 +3819,12 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String deviceNowParams(
-      String freq, String bw, String sf, String cr, String tx) {
+    String freq,
+    String bw,
+    String sf,
+    String cr,
+    String tx,
+  ) {
     return 'デバイスの現在値: ${freq}MHz ${bw}kHz SF$sf CR$cr ${tx}dBm';
   }
 
@@ -4009,7 +4015,12 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String networksSummary(
-      String freq, String bw, String sf, String cr, String ph) {
+    String freq,
+    String bw,
+    String sf,
+    String cr,
+    String ph,
+  ) {
     return '$freq MHz · $bw kHz · SF$sf · CR$cr · パスハッシュ $ph';
   }
 
@@ -4212,6 +4223,15 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get placeSearchHint => 'ラベルまたは報告者で検索';
+
+  @override
+  String get placeWithinAny => '残り時間の指定なし';
+
+  @override
+  String get placeWithinHour => '1時間以内に期限';
+
+  @override
+  String get placeWithinDay => '24時間以内に期限';
 
   @override
   String get placeKeyedOnly => '鍵のある場所のみ';

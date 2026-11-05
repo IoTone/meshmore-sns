@@ -42,6 +42,8 @@ Place _place({
   String label = 'Water at the ford',
   String reporter = 'Ana',
   PlaceType type = PlaceType.water,
+  PlaceTtl ttl = PlaceTtl.d2,
+  int latE6 = 51500741,
 }) =>
     Place(
       id: id,
@@ -49,13 +51,13 @@ Place _place({
       type: type,
       typeToken: type.token,
       label: label,
-      latE6: 51500741,
+      latE6: latE6,
       lonE6: -124596,
       decimals: 6,
       provenance: PlaceProvenance.received,
-      ttl: PlaceTtl.d2,
+      ttl: ttl,
       sentAt: _now,
-      expiresAt: _now.add(PlaceTtl.d2.life),
+      expiresAt: _now.add(ttl.life),
       lastSeen: _now,
     );
 
@@ -226,6 +228,38 @@ void main() {
       await t.pump();
       expect(find.byKey(const ValueKey<String>('place-row-aaaa0001')),
           findsNothing);
+      expect(find.byKey(const ValueKey<String>('place-row-bbbb0002')),
+          findsOneWidget);
+    });
+
+    testWidgets('the "expires within" chip narrows to the rows running out',
+        (WidgetTester t) async {
+      store
+        ..upsert(_place(id: 'aaaa0001', ttl: PlaceTtl.m15))
+        ..upsert(_place(
+            id: 'bbbb0002',
+            label: 'Bridge out',
+            type: PlaceType.hazard,
+            latE6: 51600000,
+            ttl: PlaceTtl.d7));
+      await t.pumpWidget(_host(PlaceHistorySheet(store: store)));
+      await t.pump();
+      expect(find.byKey(const ValueKey<String>('place-row-aaaa0001')),
+          findsOneWidget);
+      expect(find.byKey(const ValueKey<String>('place-row-bbbb0002')),
+          findsOneWidget);
+
+      await t.tap(
+          find.byKey(const ValueKey<String>('place-filter-within-1h')));
+      await t.pump();
+      expect(find.byKey(const ValueKey<String>('place-row-aaaa0001')),
+          findsOneWidget);
+      expect(find.byKey(const ValueKey<String>('place-row-bbbb0002')),
+          findsNothing);
+
+      await t.tap(
+          find.byKey(const ValueKey<String>('place-filter-within-any')));
+      await t.pump();
       expect(find.byKey(const ValueKey<String>('place-row-bbbb0002')),
           findsOneWidget);
     });

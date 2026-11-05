@@ -226,6 +226,11 @@ final class PlaceStore extends ChangeNotifier {
   /// Rows after the spec's filters (§10): type, "expires within", label or
   /// reporter search, and optionally keyed-only. A blocked reporter never
   /// appears; an unkeyed place never matches [keyedOnly].
+  ///
+  /// [expiresWithin] is the "expires within" filter: it asks for a place that
+  /// is still live and runs out inside the window. [Place.remainingAt] clamps
+  /// an expired row to zero, so without the liveness test the window would
+  /// match every row in the history instead of the ones running out soon.
   List<Place> filtered({
     required bool liveOnly,
     Set<PlaceType> types = const <PlaceType>{},
@@ -240,7 +245,8 @@ final class PlaceStore extends ChangeNotifier {
       for (final Place p in liveOnly ? live(at) : history())
         if (p.reporterKey != null || !keyedOnly)
           if (types.isEmpty || types.contains(p.type))
-          if (expiresWithin == null || p.remainingAt(at) <= expiresWithin)
+          if (expiresWithin == null ||
+              (p.isLiveAt(at) && p.remainingAt(at) <= expiresWithin))
             if (needle.isEmpty ||
                 p.label.toLowerCase().contains(needle) ||
                 p.reporterName.toLowerCase().contains(needle))

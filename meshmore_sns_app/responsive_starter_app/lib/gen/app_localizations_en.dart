@@ -1,5 +1,6 @@
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
+
 import 'app_localizations.dart';
 
 // ignore_for_file: type=lint
@@ -3955,7 +3956,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String deviceNowParams(
-      String freq, String bw, String sf, String cr, String tx) {
+    String freq,
+    String bw,
+    String sf,
+    String cr,
+    String tx,
+  ) {
     return 'device now: ${freq}MHz ${bw}kHz SF$sf CR$cr ${tx}dBm';
   }
 
@@ -4150,7 +4156,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String networksSummary(
-      String freq, String bw, String sf, String cr, String ph) {
+    String freq,
+    String bw,
+    String sf,
+    String cr,
+    String ph,
+  ) {
     return '$freq MHz · $bw kHz · SF$sf · CR$cr · path hash $ph';
   }
 
@@ -4358,6 +4369,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get placeSearchHint => 'Search label or reporter';
+
+  @override
+  String get placeWithinAny => 'Any time left';
+
+  @override
+  String get placeWithinHour => 'Expires within 1 h';
+
+  @override
+  String get placeWithinDay => 'Expires within 24 h';
 
   @override
   String get placeKeyedOnly => 'Keyed places only';
