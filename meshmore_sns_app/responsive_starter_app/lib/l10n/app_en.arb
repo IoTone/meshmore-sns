@@ -1363,6 +1363,7 @@
   "deliverySent": "Sent into the mesh",
   "deliveryDelivered": "Delivered (recipient acknowledged)",
   "deliveryFailed": "Not delivered — no acknowledgement or send failed",
+  "deliveryUnknown": "Sent while the app was closing — whether the radio transmitted it is not knowable",
 
   "settingsHubTools": "Tools",
   "settingsHubToolsSub": "Ping, trace, discover, soak, range test",

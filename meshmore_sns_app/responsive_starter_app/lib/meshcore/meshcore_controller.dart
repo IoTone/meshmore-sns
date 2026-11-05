@@ -1562,8 +1562,24 @@ class MeshcoreController extends ChangeNotifier {
   //   the device's reason (`deviceErrorReason`).
   // - delivered: a DM's PUSH_CODE_ACK arrived carrying the same
   //   expectedAck tag.
-  // - failed: the BLE send threw, the confirm watchdog fired, or a
-  //   DM's ack-timeout elapsed with no receipt.
+  // - unknown: a send the app cannot vouch for. A timer expired without
+  //   the radio's answer, or the link went away mid-send; nothing on the
+  //   phone can say whether the frame was transmitted. It is deliberately
+  //   not `failed` (APP-C3).
+  // - failed: the BLE send threw (the frame never left the app), the
+  //   radio answered `ERR` with a reason (an explicit rejection), or a
+  //   direct message passed its ack timeout *and* the 30 s grace with no
+  //   ACK.
+  //
+  // APP-C2's four rules bind the timeouts, and each one is a branch below:
+  //  1. a sync-poll timeout never fails a row — [_expireCommands] moves it
+  //     to `unknown`;
+  //  2. a channel send never fails from a timeout — channel data has no
+  //     ACK — the confirm watchdog moves it to `unknown`;
+  //  3. a DM fails only from an explicit `ERR`, or after the grace;
+  //  4. the 30 s grace lets a late ACK still resolve to delivered, so the
+  //     ack timeout moves the row to `unknown` first and only the grace
+  //     timer fails it.
   //
   // Ordering: some firmware pushes the PUSH_CODE_ACK *before* the
   // RESP_CODE_SENT confirmation (the ACK can't be matched yet — we
@@ -1600,10 +1616,14 @@ class MeshcoreController extends ChangeNotifier {
 
   void _dropPending(String id) => _ledger.drop(id);
 
-  /// Fail every command that has waited past the ledger's timeout, so a
+  /// Retire every command that has waited past the ledger's timeout, so a
   /// silent radio cannot hold the head of the queue and misroute the next
   /// reply. A marker (tool, raw, advert) has no message to fail; its
   /// removal is the whole effect.
+  ///
+  /// APP-C2 rule 1: a wait that ran out is not evidence the send failed —
+  /// the frame may still be queued on the radio — so the row becomes
+  /// `unknown`, never `failed`.
   void _expireCommands() {
     for (final String id in _ledger.expire()) {
       if (id == _toolSendMarker ||
@@ -1613,7 +1633,7 @@ class MeshcoreController extends ChangeNotifier {
           id == _channelDataMarker) {
         continue;
       }
-      _failOutgoing(id, 'no answer from the radio');
+      _uncertainOutgoing(id, 'the radio did not answer');
     }
   }
 
@@ -1642,6 +1662,26 @@ class MeshcoreController extends ChangeNotifier {
     _persistChat();
   }
 
+  /// Mark a send the app cannot vouch for: a timer expired with no answer,
+  /// or the link went away before the radio confirmed. Monotonic like
+  /// [_failOutgoing] — only an in-flight row moves — and it keeps the
+  /// reason so the row can say why it cannot be vouched for.
+  void _uncertainOutgoing(String id, String reason) {
+    _dropPending(id);
+    _deliveryTimers.remove(id)?.cancel();
+    final ChatMessage? m = _messageById(id);
+    if (m == null || m.delivery == null) return;
+    if (m.delivery != MessageDelivery.sending &&
+        m.delivery != MessageDelivery.sent) {
+      return;
+    }
+    m
+      ..delivery = MessageDelivery.unknown
+      ..failReason = reason;
+    _deliveryRevision++;
+    _persistChat();
+  }
+
   /// Per-message lifecycle timers (confirm watchdog, then DM ack
   /// timeout), keyed by message id.
   final Map<String, Timer> _deliveryTimers = <String, Timer>{};
@@ -1651,6 +1691,10 @@ class MeshcoreController extends ChangeNotifier {
   /// age so a never-matched ACK can't accumulate.
   final Map<int, int> _recentAcks = <int, int>{};
   static const int _recentAckTtlMs = 30000;
+
+  /// APP-C2 rule 4: how long an unanswered DM stays `unknown` before it is
+  /// failed. A late ACK anywhere in this window still resolves to delivered.
+  static const Duration _lateAckGrace = Duration(seconds: 30);
 
   /// How long to wait for the device's send confirmation before
   /// giving up on an outgoing message.
@@ -1683,7 +1727,11 @@ class MeshcoreController extends ChangeNotifier {
     _deliveryTimers[m.id]?.cancel();
     _deliveryTimers[m.id] =
         Timer(_deliveryTimeoutOverride ?? _confirmWatchdog, () {
-      _failOutgoing(m.id, 'no confirmation from the radio');
+      // APP-C2 rule 2: a channel send never fails from a timeout — the
+      // radio's `OK` is its only receipt and channel data has no ACK. A DM
+      // that never got its `RESP_CODE_SENT` is equally unprovable (rule 3
+      // allows failure only from an explicit rejection or past the grace).
+      _uncertainOutgoing(m.id, 'no confirmation from the radio');
       notifyListeners();
     });
   }
@@ -1793,9 +1841,18 @@ class MeshcoreController extends ChangeNotifier {
         // Direct message: wait for the recipient ACK, bounded by the
         // device's own estimate (`estTimeoutMs`).
         _deliveryTimers[id] = Timer(_ackTimeoutFor(f.sent.estTimeoutMs), () {
-          _failOutgoing(id, 'no acknowledgement from the recipient',
-              from: const <MessageDelivery>{MessageDelivery.sent});
+          // APP-C2 rule 4: the device's estimate running out is not the
+          // end of the story — a late ACK still resolves to delivered, so
+          // the row first becomes `unknown`, and only the grace timer below
+          // fails it.
+          _uncertainOutgoing(id, 'no acknowledgement yet from the recipient');
           notifyListeners();
+          _deliveryTimers[id] =
+              Timer(_deliveryTimeoutOverride ?? _lateAckGrace, () {
+            _failOutgoing(id, 'no acknowledgement from the recipient',
+                from: const <MessageDelivery>{MessageDelivery.unknown});
+            notifyListeners();
+          });
         });
       }
       _deliveryRevision++;
@@ -1807,8 +1864,11 @@ class MeshcoreController extends ChangeNotifier {
       // choice.
       for (int i = _messages.length - 1; i >= 0; i--) {
         final ChatMessage m = _messages[i];
+        // A row inside the grace window has already moved to `unknown`;
+        // a late ACK there is exactly what rule 4 exists for.
         if (m.outgoing &&
-            m.delivery == MessageDelivery.sent &&
+            (m.delivery == MessageDelivery.sent ||
+                m.delivery == MessageDelivery.unknown) &&
             m.expectedAck == f.ackCrc) {
           m.delivery = MessageDelivery.delivered;
           _deliveryTimers.remove(m.id)?.cancel();
@@ -2133,17 +2193,24 @@ class MeshcoreController extends ChangeNotifier {
     return m;
   }
 
-  /// Re-send a `failed` outgoing message (same text, same channel or
-  /// peer), reusing its row so the history does not fill with copies.
-  /// Re-arms the same delivery tracking as a first send. Returns false
-  /// when the row is not a failed outgoing message or the radio is not
-  /// ready. The failure may have been a false negative, so the text can
-  /// reach the mesh twice; the user chose that by tapping Retry.
+  /// Re-send an outgoing message whose delivery did not settle in its
+  /// favour (same text, same channel or peer), reusing its row so the
+  /// history does not fill with copies. Re-arms the same delivery tracking
+  /// as a first send. Returns false when the row is not a `failed` or
+  /// `unknown` outgoing message or the radio is not ready.
+  ///
+  /// `unknown` retries too, and that is the point of keeping it distinct
+  /// from `failed`: a send the app could not vouch for is exactly the row a
+  /// user wants to try again, and refusing to retry it would leave a
+  /// timed-out message with no action at all. The text may already have
+  /// reached the mesh, so it can arrive twice; the user chose that by
+  /// tapping Retry.
   Future<bool> retryMessage(String id) async {
     final ChatMessage? m = _messageById(id);
     if (m == null ||
         !m.outgoing ||
-        m.delivery != MessageDelivery.failed ||
+        (m.delivery != MessageDelivery.failed &&
+            m.delivery != MessageDelivery.unknown) ||
         !isReady) {
       return false;
     }

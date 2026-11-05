@@ -131,14 +131,20 @@ void main() {
     c.dispose();
   });
 
-  test('no reply at all -> failed after the watchdog', () async {
+  test('a channel send never becomes failed from a timeout (APP-C2 rule 2)',
+      () async {
+    // Channel data has no ACK at all, so a missing OK proves nothing. The
+    // honest state is "sent to the radio and not confirmed"; calling that
+    // failed would assert an outcome the app cannot know.
     final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
     final MeshcoreController c =
         await ready(fake, timeout: const Duration(milliseconds: 30));
     await c.sendChannelText('hi');
     await Future<void>.delayed(const Duration(milliseconds: 80));
     final ChatMessage m = c.messagesFor(0).single;
-    expect(m.delivery, MessageDelivery.failed);
+    expect(m.delivery, MessageDelivery.unknown);
+    expect(m.delivery, isNot(MessageDelivery.failed),
+        reason: 'a channel send has no ACK, so a timeout is not a failure');
     expect(m.failReason, isNotNull);
     c.dispose();
   });
@@ -153,7 +159,7 @@ void main() {
     fake.emit(okFrame()); // belongs to the second, first is gone
     await tick();
     final List<ChatMessage> l = c.messagesFor(0);
-    expect(l[0].delivery, MessageDelivery.failed);
+    expect(l[0].delivery, MessageDelivery.unknown);
     expect(l[1].delivery, MessageDelivery.sent);
     c.dispose();
   });
@@ -173,7 +179,8 @@ void main() {
     c.dispose();
   });
 
-  test('retry re-sends once, re-arms tracking, only for failed rows', () async {
+  test('retry re-sends once, re-arms tracking, for failed and unknown rows',
+      () async {
     final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
     final MeshcoreController c = await ready(fake);
     await c.sendChannelText('again');
@@ -195,7 +202,28 @@ void main() {
     c.dispose();
   });
 
-  testWidgets('the chat row repaints when the watchdog fails a send',
+  test('an unknown row is retryable too', () async {
+    // Keeping `unknown` distinct from `failed` must not strand the row: a
+    // send the app could not vouch for is exactly the one a user wants to
+    // try again, and refusing would leave a timed-out message with no
+    // action at all.
+    final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
+    final MeshcoreController c =
+        await ready(fake, timeout: const Duration(milliseconds: 30));
+    await c.sendChannelText('quiet');
+    final ChatMessage m = c.messagesFor(0).single;
+    await Future<void>.delayed(const Duration(milliseconds: 80));
+    expect(m.delivery, MessageDelivery.unknown);
+
+    final int before = fake.sent.where((f) => f[0] == 0x03).length;
+    expect(await c.retryMessage(m.id), isTrue);
+    expect(fake.sent.where((f) => f[0] == 0x03).length, before + 1);
+    expect(c.messagesFor(0), hasLength(1), reason: 'row is reused');
+    expect(m.delivery, MessageDelivery.sending);
+    c.dispose();
+  });
+
+  testWidgets('the chat row repaints when the watchdog retires a send',
       (WidgetTester t) async {
     await t.binding.setSurfaceSize(const Size(900, 1600));
     addTearDown(() => t.binding.setSurfaceSize(null));
@@ -231,9 +259,11 @@ void main() {
     expect(find.byIcon(Icons.schedule), findsOneWidget);
     await t.pump(const Duration(milliseconds: 300));
     await t.pump();
-    expect(find.byIcon(Icons.error_outline), findsOneWidget,
-        reason: 'context.select deep-compares the same message objects');
+    expect(find.byIcon(Icons.help_outline), findsOneWidget,
+        reason: 'context.select deep-compares the same message objects; an '
+            'unconfirmed channel send is unknown, not failed');
     expect(find.byIcon(Icons.schedule), findsNothing);
+    expect(find.byIcon(Icons.error_outline), findsNothing);
     mc.dispose();
     await t.pumpWidget(const SizedBox());
     await t.pump(const Duration(seconds: 30));

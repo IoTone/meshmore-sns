@@ -5390,6 +5390,12 @@ abstract class AppLocalizations {
   /// **'Not delivered — no acknowledgement or send failed'**
   String get deliveryFailed;
 
+  /// No description provided for @deliveryUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Sent while the app was closing — whether the radio transmitted it is not knowable'**
+  String get deliveryUnknown;
+
   /// No description provided for @settingsHubTools.
   ///
   /// In en, this message translates to:

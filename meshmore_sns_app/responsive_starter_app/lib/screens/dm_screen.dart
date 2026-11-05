@@ -150,7 +150,11 @@ class _DmScreenState extends State<DmScreen> {
         break;
       }
     }
-    if (found == null || found.delivery != MessageDelivery.failed) return;
+    if (found == null ||
+        (found.delivery != MessageDelivery.failed &&
+            found.delivery != MessageDelivery.unknown)) {
+      return;
+    }
     _sentId = null;
     final String text = _sentText;
     _sentText = '';

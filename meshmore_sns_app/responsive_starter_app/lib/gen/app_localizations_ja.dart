@@ -3008,6 +3008,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get deliveryFailed => '未配信 — 確認応答なし、または送信失敗';
 
   @override
+  String get deliveryUnknown => 'アプリ終了中に送信 — 無線機が送信したかは不明です';
+
+  @override
   String get settingsHubTools => 'ツール';
 
   @override

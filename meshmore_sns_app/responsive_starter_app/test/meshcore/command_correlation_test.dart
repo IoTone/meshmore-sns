@@ -77,13 +77,14 @@ void main() {
         await _ready(fake, watchdog: const Duration(milliseconds: 30));
     final ChatMessage m = (await c.sendChannelTextTo(0, 'hi'))!;
     await Future<void>.delayed(const Duration(milliseconds: 60));
-    expect(m.delivery, MessageDelivery.failed);
+    expect(m.delivery, MessageDelivery.unknown,
+        reason: 'a channel send has no ACK, so a timeout cannot fail it');
 
     final int before = c.unclaimedReplies;
     fake.emit(okFrame());
     await tick();
-    expect(m.delivery, MessageDelivery.failed,
-        reason: 'a late OK must not revive a failed row');
+    expect(m.delivery, MessageDelivery.unknown,
+        reason: 'a late OK must not revive a retired row');
     expect(c.unclaimedReplies, before + 1);
     c.dispose();
   });

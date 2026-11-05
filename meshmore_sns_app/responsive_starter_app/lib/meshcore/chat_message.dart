@@ -16,7 +16,14 @@ import 'failure.dart';
 /// - [failed]    — the BLE send threw, or a direct message saw no ACK
 ///                 within the device's estimated timeout (no path /
 ///                 recipient unreachable).
-enum MessageDelivery { sending, sent, delivered, failed }
+/// - [unknown]   — the app went away while the send was in flight. The
+///                 in-flight tracking (the pending queue and the ack
+///                 timers) does not survive a restart, so whether the
+///                 radio transmitted it is not knowable: this row was
+///                 `sending` when the process died. It is deliberately
+///                 not [failed] — claiming a send failed when the app
+///                 cannot know is worse than saying it does not know.
+enum MessageDelivery { sending, sent, delivered, failed, unknown }
 
 /// One line in the channel chat (R6). Incoming lines are decoded from
 /// `ChannelMessageFrame`; outgoing lines are appended optimistically
@@ -83,9 +90,9 @@ class ChatMessage {
   /// until the device confirms the send (or for incoming messages).
   int? expectedAck;
 
-  /// Why an outgoing message ended `failed` (the device's ERR reason, or
-  /// that no confirmation arrived). Null otherwise, and absent from rows
-  /// persisted before this field existed.
+  /// Why an outgoing message ended `failed` or `unknown` (the device's ERR
+  /// reason, or that no confirmation arrived). Null otherwise, and absent
+  /// from rows persisted before this field existed.
   String? failReason;
 
   /// Why the row failed, as a cause rather than a sentence (APP-N2). A row
@@ -127,14 +134,16 @@ class ChatMessage {
         dIdx != null && dIdx >= 0 && dIdx < MessageDelivery.values.length
             ? MessageDelivery.values[dIdx]
             : null;
-    // In-flight tracking (pending FIFO + ack timers) does not survive
-    // a restart, so a persisted `sending` row would otherwise show a
-    // permanent clock. Resolve it to `failed` — we never saw the
-    // device confirm it before the app went away.
+    // In-flight tracking (pending FIFO + ack timers) does not survive a
+    // restart, so a persisted `sending` row would otherwise show a
+    // permanent clock. It resolves to [MessageDelivery.unknown]: the
+    // process died mid-send and nothing on the phone can say whether the
+    // radio transmitted it. Calling that `failed` asserted an outcome the
+    // app had no evidence for.
     String? reason = j['r'] as String?;
     if (delivery == MessageDelivery.sending) {
-      delivery = MessageDelivery.failed;
-      reason ??= 'app closed before the radio confirmed';
+      delivery = MessageDelivery.unknown;
+      reason ??= 'sent while the app closed; the radio’s answer is unknown';
     }
     return ChatMessage(
       id: j['i'] as String?,

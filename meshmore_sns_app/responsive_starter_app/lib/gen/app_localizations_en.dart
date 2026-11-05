@@ -3133,6 +3133,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'Not delivered — no acknowledgement or send failed';
 
   @override
+  String get deliveryUnknown =>
+      'Sent while the app was closing — whether the radio transmitted it is not knowable';
+
+  @override
   String get settingsHubTools => 'Tools';
 
   @override

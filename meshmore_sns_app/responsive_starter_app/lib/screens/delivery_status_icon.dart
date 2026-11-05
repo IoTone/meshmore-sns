@@ -12,6 +12,8 @@ import '../meshcore/chat_message.dart';
 ///               terminal for channel/broadcast)
 /// - delivered → double check (DM recipient ack matched)
 /// - failed    → alert (send error, or DM with no ack / no path)
+/// - unknown   → question (the app stopped mid-send; nothing on the phone
+///               can say whether the radio transmitted it)
 class DeliveryStatusIcon extends StatelessWidget {
   const DeliveryStatusIcon(this.delivery, {super.key, this.size = 13});
 
@@ -42,6 +44,11 @@ class DeliveryStatusIcon extends StatelessWidget {
           Icons.error_outline,
           cs.error,
           l.deliveryFailed,
+        ),
+      MessageDelivery.unknown => (
+          Icons.help_outline,
+          cs.onSurfaceVariant,
+          l.deliveryUnknown,
         ),
     };
     return Tooltip(

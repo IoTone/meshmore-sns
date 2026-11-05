@@ -29,7 +29,11 @@ Future<ChatAction?> showChatActions(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
-          if (m.outgoing && m.delivery == MessageDelivery.failed)
+          // `unknown` is offered a retry as well: a send the app could not
+          // vouch for is the row a user most wants to try again.
+          if (m.outgoing &&
+              (m.delivery == MessageDelivery.failed ||
+                  m.delivery == MessageDelivery.unknown))
             ListTile(
               leading: const Icon(Icons.refresh),
               title: Text(l.actionRetry),
