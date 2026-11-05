@@ -893,8 +893,91 @@ class AppLocalizationsJa extends AppLocalizations {
       'ドット = 受信したファブリックノード。明るさ = 新しさ (受信直後 = 最大、24時間で 0 に減衰し消滅)。';
 
   @override
-  String get gridLegendSignalOnly =>
-      '中抜きの輪 = 位置情報なし。電波強度の帯に置いているだけで、角度は方角ではありません。';
+  String get gridLegendSignalOnly => '中抜き · 位置なし';
+
+  @override
+  String get gridOpenMap => '地図を開く';
+
+  @override
+  String get gridMoreViews => 'その他の表示';
+
+  @override
+  String get gridLegendMore => '凡例の全文';
+
+  @override
+  String get gridLegendRingsShort => '同心円 · 距離';
+
+  @override
+  String get gridLegendSelfShort => '中心 · 自分';
+
+  @override
+  String get gridLegendDotShort => '点 · 受信したノード';
+
+  @override
+  String get gridLegendKnownShort => '脈動 · 既知';
+
+  @override
+  String get gridLegendFavShort => '点滅 · お気に入り';
+
+  @override
+  String get gridLegendRippleShort => '波紋 · チャンネル受信';
+
+  @override
+  String get gridLegendTapShort => 'タップ · 詳細';
+
+  @override
+  String get treeSelfShort => '中心 · 自分';
+
+  @override
+  String get treeRepeaterShort => '四角 · リピーター';
+
+  @override
+  String get treeRoomShort => '菱形 · ルーム';
+
+  @override
+  String get treeChatShort => '円 · チャット';
+
+  @override
+  String get treeSensorShort => '波形 · センサー';
+
+  @override
+  String get treeFloodShort => '点 · フラッド経由';
+
+  @override
+  String get treeArrowShort => '矢印 · 経路';
+
+  @override
+  String get fabricCellShort => 'セル · 受信した場所';
+
+  @override
+  String get fabricRecencyShort => '明るいほど新しい';
+
+  @override
+  String get fabricMarkerShort => 'ピン · 現在のピア';
+
+  @override
+  String get snsHotShort => '赤 · 現在混雑';
+
+  @override
+  String get snsCoolShort => '色落ち · 沈静化';
+
+  @override
+  String get snsToastShort => '点滅 · 新着';
+
+  @override
+  String get snsDecayShort => '直近1時間のみ';
+
+  @override
+  String get fujiMeShort => '破線 · 自分';
+
+  @override
+  String get fujiRefsShort => 'シルエット · 縮尺';
+
+  @override
+  String get fujiPeersShort => '点 · ピア';
+
+  @override
+  String get fujiUnknownShort => '縞 · 標高なし';
 
   @override
   String get gridLegendKnown => 'パルス (緩やかに広がる輪) = 既知ノード — 直接やり取り (DM) があったノード。';
@@ -919,12 +1002,6 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get gridViewPicker => '表示';
-
-  @override
-  String get gridOpenMap => '地図を開く';
-
-  @override
-  String get gridMoreViews => 'その他の表示';
 
   @override
   String get gridViewFabric => 'ファブリック調査';
@@ -1211,12 +1288,6 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get gridPanModeTooltip => '移動・ズームモード:ドラッグでマップを移動。タップで画面スワイプに戻る';
-
-  @override
-  String get gridSwipeHint => '← → スワイプで他の画面 · ✋ をタップで移動・ズーム';
-
-  @override
-  String get gridPanHint => '移動・ズーム中 · ⇆ をタップで画面スワイプ';
 
   @override
   String gridStatusCounts(int visible, int known, int favs) {
@@ -2055,20 +2126,6 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String snsPlacesButton(int count) {
-    return '場所 ($count)';
-  }
-
-  @override
-  String get snsPlacesTitle => '推定された場所（過去1時間）';
-
-  @override
-  String get snsPlacesEmpty => '現在、推定された場所はありません。';
-
-  @override
-  String get snsPlacesDismiss => '場所ではない — 削除';
-
-  @override
   String get snsFrameMetro => 'メトロ · 約20 km';
 
   @override
@@ -2096,10 +2153,6 @@ class AppLocalizationsJa extends AppLocalizations {
   @override
   String get snsCellsLegendChannel =>
       'チャンネルメッセージは送信者名を含みます — 送信者の位置が分かればそのセルを、分からなければ自分のセル（受信地点）を温めます。';
-
-  @override
-  String get snsCellsLegendInferred =>
-      '破線の ◇ マーカーは会話（「〜から」など）から推定した場所で、おおよその位置に表示されます。チャンネルごとに設定で切替できます。';
 
   @override
   String get snsCellsLegendDecay => '直近1時間のみ追跡。保存はされません。';

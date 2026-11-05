@@ -941,8 +941,91 @@ class AppLocalizationsEn extends AppLocalizations {
       'Dot = a fabric node we\'ve heard. Brightness = recency (full = just now, fades to 0 over 24 h then disappears).';
 
   @override
-  String get gridLegendSignalOnly =>
-      'Hollow ring = no position reported: it sits on its signal band, and the angle is not a direction.';
+  String get gridLegendSignalOnly => 'Hollow · no position';
+
+  @override
+  String get gridOpenMap => 'Open the map';
+
+  @override
+  String get gridMoreViews => 'More views';
+
+  @override
+  String get gridLegendMore => 'Full legend';
+
+  @override
+  String get gridLegendRingsShort => 'Rings · distance';
+
+  @override
+  String get gridLegendSelfShort => 'Centre · you';
+
+  @override
+  String get gridLegendDotShort => 'Dot · heard here';
+
+  @override
+  String get gridLegendKnownShort => 'Pulse · known';
+
+  @override
+  String get gridLegendFavShort => 'Blink · favourite';
+
+  @override
+  String get gridLegendRippleShort => 'Ripple · channel message';
+
+  @override
+  String get gridLegendTapShort => 'Tap · details';
+
+  @override
+  String get treeSelfShort => 'Centre · you';
+
+  @override
+  String get treeRepeaterShort => 'Square · repeater';
+
+  @override
+  String get treeRoomShort => 'Diamond · room';
+
+  @override
+  String get treeChatShort => 'Circle · chat';
+
+  @override
+  String get treeSensorShort => 'Wave · sensor';
+
+  @override
+  String get treeFloodShort => 'Dots · flood hop';
+
+  @override
+  String get treeArrowShort => 'Arrow · route out';
+
+  @override
+  String get fabricCellShort => 'Cell · mesh heard here';
+
+  @override
+  String get fabricRecencyShort => 'Brighter · more recent';
+
+  @override
+  String get fabricMarkerShort => 'Pin · peer now';
+
+  @override
+  String get snsHotShort => 'Red · busy now';
+
+  @override
+  String get snsCoolShort => 'Fading · cooling';
+
+  @override
+  String get snsToastShort => 'Flash · new message';
+
+  @override
+  String get snsDecayShort => 'Last hour only';
+
+  @override
+  String get fujiMeShort => 'Dashed · you';
+
+  @override
+  String get fujiRefsShort => 'Silhouettes · scale';
+
+  @override
+  String get fujiPeersShort => 'Dots · peers';
+
+  @override
+  String get fujiUnknownShort => 'Striped · no altitude';
 
   @override
   String get gridLegendKnown =>
@@ -971,12 +1054,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get gridViewPicker => 'View';
-
-  @override
-  String get gridOpenMap => 'Open the map';
-
-  @override
-  String get gridMoreViews => 'More views';
 
   @override
   String get gridViewFabric => 'Fabric survey';
@@ -1276,13 +1353,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get gridPanModeTooltip =>
       'Pan & zoom mode: drags move the map. Tap to swipe between screens again';
-
-  @override
-  String get gridSwipeHint =>
-      'Swipe ← → for other screens · tap ✋ to pan & zoom';
-
-  @override
-  String get gridPanHint => 'Pan & zoom · tap ⇆ to swipe screens';
 
   @override
   String gridStatusCounts(int visible, int known, int favs) {
@@ -2142,20 +2212,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String snsPlacesButton(int count) {
-    return 'Places ($count)';
-  }
-
-  @override
-  String get snsPlacesTitle => 'INFERRED PLACES (LAST HOUR)';
-
-  @override
-  String get snsPlacesEmpty => 'No inferred places right now.';
-
-  @override
-  String get snsPlacesDismiss => 'Not a place — dismiss';
-
-  @override
   String get snsFrameMetro => 'Metro · ~20 km';
 
   @override
@@ -2186,10 +2242,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get snsCellsLegendChannel =>
       'Channel messages carry the sender\'s name — they warm the sender\'s cell when we know their location, otherwise your own cell (the receive point).';
-
-  @override
-  String get snsCellsLegendInferred =>
-      'Dashed ◇ markers are places inferred from message banter (\"hello from…\"), placed approximately. Toggle per channel in its settings.';
 
   @override
   String get snsCellsLegendDecay =>

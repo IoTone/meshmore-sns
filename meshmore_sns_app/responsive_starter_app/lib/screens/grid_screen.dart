@@ -344,12 +344,29 @@ class _GridScreenState extends State<GridScreen>
   /// Views that read a time-ordered snapshot, so the transport bar means
   /// something. The three report views (altitude, weather, activity) are
   /// always current and have no transport.
+  /// The bar carries a refresh cadence on the radar (the one view that shows a
+  /// snapshot in time) and the range scale on the two views that use it.
+  /// "Play" over a map meant "freeze the picture", which is not transport.
   bool get _hasTransport => switch (_viewMode) {
-        _GridViewMode.elevation ||
+        _GridViewMode.radial || _GridViewMode.equalGrid => true,
+        _ => false,
+      };
+
+  /// Whether the view plots nodes, and therefore whether a node count means
+  /// anything above it. A weather report over "3 in mesh · 2 known" was three
+  /// counts about something the view does not show.
+  bool get _plotsNodes => switch (_viewMode) {
+        _GridViewMode.radial ||
+        _GridViewMode.fabric ||
+        _GridViewMode.globe ||
+        _GridViewMode.equalGrid ||
+        _GridViewMode.tree ||
+        _GridViewMode.snsCells =>
+          true,
         _GridViewMode.weather ||
+        _GridViewMode.elevation ||
         _GridViewMode.meshbook =>
           false,
-        _ => true,
       };
 
   /// Views that render a legend, so the info button exists only there.
@@ -371,47 +388,6 @@ class _GridScreenState extends State<GridScreen>
       _viewMode == _GridViewMode.equalGrid;
 
 
-  /// A pannable view under its Swipe ⇄ Pan mode (R109). In swipe mode the
-  /// view is held still — its own drags would win the gesture and the tab
-  /// could never be swiped — with a hint saying how to get it back. In pan
-  /// mode a quieter hint says how to get the swipe back. Every other view
-  /// passes through untouched.
-  Widget _modeHint(ColorScheme cs, AppLocalizations l, Widget body) {
-    if (!_viewMode.pansHorizontally) return body;
-    return Stack(
-      children: <Widget>[
-        // Not an IgnorePointer: in swipe mode the pannable views drop their
-        // own drag (each one knows which gesture that is) and keep their taps,
-        // because a node you can see should be a node you can open.
-        Positioned.fill(child: body),
-        Positioned(
-          left: 0,
-          right: 0,
-          bottom: 12,
-          child: IgnorePointer(
-            child: Center(
-              child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: cs.surface.withValues(alpha: .8),
-                  borderRadius: mmRadius(context, 16),
-                  border:
-                      Border.all(color: cs.outline.withValues(alpha: .4)),
-                ),
-                child: Text(
-                  _panMode ? l.gridPanHint : l.gridSwipeHint,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: cs.onSurface, fontSize: context.skin.type.sizeBody),
-                ),
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
   /// Bottom bar: transport (play/pause + interval) and, in the two views
   /// that consume it, the range scale. Kept off the header so switching
   /// views is one control, and so play/pause is not a per-view toggle
@@ -431,11 +407,14 @@ class _GridScreenState extends State<GridScreen>
           alignment: WrapAlignment.spaceBetween,
           crossAxisAlignment: WrapCrossAlignment.center,
           children: <Widget>[
-            IconButton(
-              tooltip: _live ? l.gridPauseTooltip : l.gridPlayTooltip,
-              icon: Icon(_live ? Icons.pause : Icons.play_arrow),
-              onPressed: _togglePlay,
-            ),
+            if (_viewMode == _GridViewMode.radial)
+              IconButton(
+                tooltip: _live ? l.gridPauseTooltip : l.gridPlayTooltip,
+                icon: Icon(_live ? Icons.pause : Icons.play_arrow),
+                onPressed: _togglePlay,
+              ),
+            if (_viewMode != _GridViewMode.radial) const SizedBox.shrink(),
+            if (_viewMode == _GridViewMode.radial)
             Tooltip(
               message: l.gridIntervalTooltip,
               child: InkWell(
@@ -845,10 +824,12 @@ class _GridScreenState extends State<GridScreen>
         child: Align(
           alignment: Alignment.centerLeft,
           child: Text(
-            ready
+            ready && _plotsNodes
                 ? l.gridStatusCounts(visible.length, mc.known.length,
                     mc.favorites.length)
-                : l.gridStatusOffline,
+                : ready
+                    ? ''
+                    : l.gridStatusOffline,
             style: TextStyle(color: cs.onSurfaceVariant, fontSize: context.skin.type.sizeBody),
           ),
         ),
@@ -860,7 +841,7 @@ class _GridScreenState extends State<GridScreen>
       // The picker drives mode; the body renders the chosen mode's widget
       // under its Swipe ⇄ Pan state (R109).
       Expanded(
-        child: _modeHint(cs, l, switch (_viewMode) {
+        child: switch (_viewMode) {
         _GridViewMode.globe => GlobeView(
             filteredNodes: visible,
             frozen: !_live && _userInteracted,
@@ -1026,7 +1007,7 @@ class _GridScreenState extends State<GridScreen>
           ),
         ],
       ),
-      })),
+      }),
       if (_hasTransport) _transportBar(l, cs, scaleLabel, scaleValue),
         ],
       ),
@@ -1037,6 +1018,54 @@ class _GridScreenState extends State<GridScreen>
 /// Toggleable legend overlay strip. Explains what the rings, the
 /// node glyphs, the animations, and the ripple mean — every cue is
 /// in here so a new user can decode the grid at a glance.
+/// The rest of a legend, behind one tap. A legend explains glyphs; the
+/// sentences that explain the animations belong in a dialog, not on the canvas.
+class _LegendMore extends StatelessWidget {
+  const _LegendMore({required this.title, required this.lines});
+  final String title;
+  final List<String> lines;
+
+  @override
+  Widget build(BuildContext context) {
+    final ColorScheme cs = Theme.of(context).colorScheme;
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: TextButton(
+        onPressed: () => showDialog<void>(
+          context: context,
+          builder: (BuildContext c) => AlertDialog(
+            title: Text(title),
+            content: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  for (final String line in lines)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: Text(line,
+                          style: TextStyle(
+                              color: cs.onSurface,
+                              fontSize: context.skin.type.sizeBody)),
+                    ),
+                ],
+              ),
+            ),
+            actions: <Widget>[
+              TextButton(
+                onPressed: () => Navigator.pop(c),
+                child: Text(MaterialLocalizations.of(c).closeButtonLabel),
+              ),
+            ],
+          ),
+        ),
+        child: Text(title,
+            style: TextStyle(color: cs.primary, fontSize: context.skin.type.sizeBody)),
+      ),
+    );
+  }
+}
+
 class _GridLegend extends StatelessWidget {
   const _GridLegend(
       {required this.cs, required this.scaleKm, required this.l});
@@ -1084,14 +1113,23 @@ class _GridLegend extends StatelessWidget {
                   fontSize: context.skin.type.sizeSm,
                   letterSpacing: 3)),
           const SizedBox(height: 6),
-          row(Icons.adjust, l.gridLegendRings(scaleValueDisplay)),
-          row(Icons.my_location, l.gridLegendSelf),
-          row(Icons.circle, l.gridLegendDot),
+          row(Icons.adjust, l.gridLegendRingsShort),
+          row(Icons.my_location, l.gridLegendSelfShort),
+          row(Icons.circle, l.gridLegendDotShort),
           row(Icons.blur_circular, l.gridLegendSignalOnly),
-          row(Icons.radio_button_checked, l.gridLegendKnown),
-          row(Icons.star, l.gridLegendFavourite),
-          row(Icons.waves, l.gridLegendRipple),
-          row(Icons.touch_app, l.gridLegendTap),
+          row(Icons.radio_button_checked, l.gridLegendKnownShort),
+          row(Icons.star, l.gridLegendFavShort),
+          row(Icons.waves, l.gridLegendRippleShort),
+          row(Icons.touch_app, l.gridLegendTapShort),
+          _LegendMore(title: l.gridLegendMore, lines: <String>[
+            l.gridLegendRings(scaleValueDisplay),
+            l.gridLegendSelf,
+            l.gridLegendDot,
+            l.gridLegendKnown,
+            l.gridLegendFavourite,
+            l.gridLegendRipple,
+            l.gridLegendTap,
+          ]),
           const SizedBox(height: 6),
         ],
       ),
@@ -1453,19 +1491,27 @@ class _TreeLegend extends StatelessWidget {
                     fontSize: context.skin.type.sizeBody,
                     height: 1.35)),
           ),
-          row(Icons.my_location, l.meshTreeLegendSelf, colour: cs.primary),
-          row(Icons.crop_square, l.meshTreeLegendRepeater,
-              colour: cs.tertiary),
-          row(Icons.diamond, l.meshTreeLegendRoom, colour: cs.tertiary),
-          row(Icons.circle, l.meshTreeLegendChat, colour: cs.primary),
-          row(Icons.sensors, l.meshTreeLegendSensor,
+          row(Icons.my_location, l.treeSelfShort, colour: cs.primary),
+          row(Icons.crop_square, l.treeRepeaterShort, colour: cs.tertiary),
+          row(Icons.diamond, l.treeRoomShort, colour: cs.tertiary),
+          row(Icons.circle, l.treeChatShort, colour: cs.primary),
+          row(Icons.sensors, l.treeSensorShort,
               colour: cs.primary.withValues(alpha: .55)),
-          row(Icons.more_horiz, l.meshTreeLegendFlood,
+          row(Icons.more_horiz, l.treeFloodShort,
               colour: cs.onSurfaceVariant),
-          row(Icons.help_outline, l.meshTreeLegendFloat,
-              colour: cs.onSurfaceVariant),
-          row(Icons.arrow_forward, l.meshTreeLegendArrow),
-          row(Icons.touch_app, l.meshTreeLegendInteract),
+          row(Icons.arrow_forward, l.treeArrowShort),
+          _LegendMore(title: l.gridLegendMore, lines: <String>[
+            l.meshTreeLegendDesc,
+            l.meshTreeLegendSelf,
+            l.meshTreeLegendRepeater,
+            l.meshTreeLegendRoom,
+            l.meshTreeLegendChat,
+            l.meshTreeLegendSensor,
+            l.meshTreeLegendFlood,
+            l.meshTreeLegendFloat,
+            l.meshTreeLegendArrow,
+            l.meshTreeLegendInteract,
+          ]),
         ],
       ),
     );
@@ -1526,11 +1572,18 @@ class _FabricLegend extends StatelessWidget {
                     fontSize: context.skin.type.sizeBody,
                     height: 1.35)),
           ),
-          row(Icons.grid_view, l.fabricLegendCell, colour: cs.secondary),
-          row(Icons.gradient, l.fabricLegendRecency, colour: cs.secondary),
-          row(Icons.place, l.fabricLegendMarker, colour: cs.tertiary),
-          row(Icons.my_location, l.fabricLegendSelf, colour: cs.primary),
-          row(Icons.delete_sweep, l.fabricLegendReset),
+          row(Icons.grid_view, l.fabricCellShort, colour: cs.secondary),
+          row(Icons.gradient, l.fabricRecencyShort, colour: cs.secondary),
+          row(Icons.place, l.fabricMarkerShort, colour: cs.tertiary),
+          row(Icons.my_location, l.gridLegendSelfShort, colour: cs.primary),
+          _LegendMore(title: l.gridLegendMore, lines: <String>[
+            l.fabricLegendDesc,
+            l.fabricLegendCell,
+            l.fabricLegendRecency,
+            l.fabricLegendMarker,
+            l.fabricLegendSelf,
+            l.fabricLegendReset,
+          ]),
         ],
       ),
     );
@@ -1580,19 +1633,20 @@ class _FujiLegend extends StatelessWidget {
                   fontSize: context.skin.type.sizeSm,
                   letterSpacing: 3)),
           const SizedBox(height: 6),
-          Padding(
-            padding: const EdgeInsets.only(bottom: 6),
-            child: Text(l.fujiLegendDesc,
-                style: TextStyle(
-                    color: cs.onSurface, fontSize: context.skin.type.sizeBody, height: 1.35)),
-          ),
-          row(Icons.my_location, l.fujiLegendMe, colour: cs.tertiary),
-          row(Icons.terrain, l.fujiLegendRefs, colour: cs.primary),
-          row(Icons.circle, l.fujiLegendPeers,
+          row(Icons.my_location, l.fujiMeShort, colour: cs.tertiary),
+          row(Icons.terrain, l.fujiRefsShort, colour: cs.primary),
+          row(Icons.circle, l.fujiPeersShort,
               colour: cs.primary.withValues(alpha: .7)),
-          row(Icons.help_outline, l.fujiLegendUnknown,
+          row(Icons.help_outline, l.fujiUnknownShort,
               colour: cs.onSurfaceVariant),
-          row(Icons.touch_app, l.fujiLegendAutoQuery),
+          _LegendMore(title: l.gridLegendMore, lines: <String>[
+            l.fujiLegendDesc,
+            l.fujiLegendMe,
+            l.fujiLegendRefs,
+            l.fujiLegendPeers,
+            l.fujiLegendUnknown,
+            l.fujiLegendAutoQuery,
+          ]),
         ],
       ),
     );
@@ -1642,22 +1696,19 @@ class _SnsCellsLegend extends StatelessWidget {
                   fontSize: context.skin.type.sizeSm,
                   letterSpacing: 3)),
           const SizedBox(height: 6),
-          Padding(
-            padding: const EdgeInsets.only(bottom: 6),
-            child: Text(l.snsCellsLegendDesc,
-                style: TextStyle(
-                    color: cs.onSurface, fontSize: context.skin.type.sizeBody, height: 1.35)),
-          ),
-          row(Icons.local_fire_department, l.snsCellsLegendHot,
-              colour: cs.error),
-          row(Icons.ac_unit, l.snsCellsLegendCool),
-          row(Icons.chat_bubble_outline, l.snsCellsLegendToast,
+          row(Icons.local_fire_department, l.snsHotShort, colour: cs.error),
+          row(Icons.ac_unit, l.snsCoolShort),
+          row(Icons.chat_bubble_outline, l.snsToastShort,
               colour: cs.tertiary),
-          row(Icons.lock_outline, l.snsCellsLegendChannel,
-              colour: cs.primary),
-          row(Icons.place_outlined, l.snsCellsLegendInferred,
-              colour: cs.primary),
-          row(Icons.timelapse, l.snsCellsLegendDecay),
+          row(Icons.timelapse, l.snsDecayShort),
+          _LegendMore(title: l.gridLegendMore, lines: <String>[
+            l.snsCellsLegendDesc,
+            l.snsCellsLegendHot,
+            l.snsCellsLegendCool,
+            l.snsCellsLegendToast,
+            l.snsCellsLegendChannel,
+            l.snsCellsLegendDecay,
+          ]),
         ],
       ),
     );

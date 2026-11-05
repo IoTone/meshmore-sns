@@ -80,7 +80,7 @@ void main() {
       'lib/screens/meshbook_view.dart': 10,
       'lib/screens/nodes_screen.dart': 6,
       'lib/screens/personalization_screen.dart': 1,
-      'lib/screens/sns_cells_view.dart': 6,
+      'lib/screens/sns_cells_view.dart': 3,
       'lib/screens/street_map_view.dart': 2,
       'lib/screens/tools/tool_widgets.dart': 3,
       'lib/screens/tools/tools_hub_screen.dart': 1,

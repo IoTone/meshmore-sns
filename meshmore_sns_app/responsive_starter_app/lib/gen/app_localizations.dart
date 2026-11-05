@@ -1715,8 +1715,176 @@ abstract class AppLocalizations {
   /// No description provided for @gridLegendSignalOnly.
   ///
   /// In en, this message translates to:
-  /// **'Hollow ring = no position reported: it sits on its signal band, and the angle is not a direction.'**
+  /// **'Hollow · no position'**
   String get gridLegendSignalOnly;
+
+  /// No description provided for @gridOpenMap.
+  ///
+  /// In en, this message translates to:
+  /// **'Open the map'**
+  String get gridOpenMap;
+
+  /// No description provided for @gridMoreViews.
+  ///
+  /// In en, this message translates to:
+  /// **'More views'**
+  String get gridMoreViews;
+
+  /// No description provided for @gridLegendMore.
+  ///
+  /// In en, this message translates to:
+  /// **'Full legend'**
+  String get gridLegendMore;
+
+  /// No description provided for @gridLegendRingsShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Rings · distance'**
+  String get gridLegendRingsShort;
+
+  /// No description provided for @gridLegendSelfShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Centre · you'**
+  String get gridLegendSelfShort;
+
+  /// No description provided for @gridLegendDotShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Dot · heard here'**
+  String get gridLegendDotShort;
+
+  /// No description provided for @gridLegendKnownShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Pulse · known'**
+  String get gridLegendKnownShort;
+
+  /// No description provided for @gridLegendFavShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Blink · favourite'**
+  String get gridLegendFavShort;
+
+  /// No description provided for @gridLegendRippleShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Ripple · channel message'**
+  String get gridLegendRippleShort;
+
+  /// No description provided for @gridLegendTapShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap · details'**
+  String get gridLegendTapShort;
+
+  /// No description provided for @treeSelfShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Centre · you'**
+  String get treeSelfShort;
+
+  /// No description provided for @treeRepeaterShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Square · repeater'**
+  String get treeRepeaterShort;
+
+  /// No description provided for @treeRoomShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Diamond · room'**
+  String get treeRoomShort;
+
+  /// No description provided for @treeChatShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Circle · chat'**
+  String get treeChatShort;
+
+  /// No description provided for @treeSensorShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Wave · sensor'**
+  String get treeSensorShort;
+
+  /// No description provided for @treeFloodShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Dots · flood hop'**
+  String get treeFloodShort;
+
+  /// No description provided for @treeArrowShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Arrow · route out'**
+  String get treeArrowShort;
+
+  /// No description provided for @fabricCellShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Cell · mesh heard here'**
+  String get fabricCellShort;
+
+  /// No description provided for @fabricRecencyShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Brighter · more recent'**
+  String get fabricRecencyShort;
+
+  /// No description provided for @fabricMarkerShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Pin · peer now'**
+  String get fabricMarkerShort;
+
+  /// No description provided for @snsHotShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Red · busy now'**
+  String get snsHotShort;
+
+  /// No description provided for @snsCoolShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Fading · cooling'**
+  String get snsCoolShort;
+
+  /// No description provided for @snsToastShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Flash · new message'**
+  String get snsToastShort;
+
+  /// No description provided for @snsDecayShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Last hour only'**
+  String get snsDecayShort;
+
+  /// No description provided for @fujiMeShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Dashed · you'**
+  String get fujiMeShort;
+
+  /// No description provided for @fujiRefsShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Silhouettes · scale'**
+  String get fujiRefsShort;
+
+  /// No description provided for @fujiPeersShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Dots · peers'**
+  String get fujiPeersShort;
+
+  /// No description provided for @fujiUnknownShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Striped · no altitude'**
+  String get fujiUnknownShort;
 
   /// No description provided for @gridLegendKnown.
   ///
@@ -1765,18 +1933,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'View'**
   String get gridViewPicker;
-
-  /// No description provided for @gridOpenMap.
-  ///
-  /// In en, this message translates to:
-  /// **'Open the map'**
-  String get gridOpenMap;
-
-  /// No description provided for @gridMoreViews.
-  ///
-  /// In en, this message translates to:
-  /// **'More views'**
-  String get gridMoreViews;
 
   /// No description provided for @gridViewFabric.
   ///
@@ -2275,18 +2431,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Pan & zoom mode: drags move the map. Tap to swipe between screens again'**
   String get gridPanModeTooltip;
-
-  /// No description provided for @gridSwipeHint.
-  ///
-  /// In en, this message translates to:
-  /// **'Swipe ← → for other screens · tap ✋ to pan & zoom'**
-  String get gridSwipeHint;
-
-  /// No description provided for @gridPanHint.
-  ///
-  /// In en, this message translates to:
-  /// **'Pan & zoom · tap ⇆ to swipe screens'**
-  String get gridPanHint;
 
   /// No description provided for @gridStatusCounts.
   ///
@@ -3668,30 +3812,6 @@ abstract class AppLocalizations {
   /// **'{active} cells · {hot} hot'**
   String snsCellsStatus(int active, int hot);
 
-  /// No description provided for @snsPlacesButton.
-  ///
-  /// In en, this message translates to:
-  /// **'Places ({count})'**
-  String snsPlacesButton(int count);
-
-  /// No description provided for @snsPlacesTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'INFERRED PLACES (LAST HOUR)'**
-  String get snsPlacesTitle;
-
-  /// No description provided for @snsPlacesEmpty.
-  ///
-  /// In en, this message translates to:
-  /// **'No inferred places right now.'**
-  String get snsPlacesEmpty;
-
-  /// No description provided for @snsPlacesDismiss.
-  ///
-  /// In en, this message translates to:
-  /// **'Not a place — dismiss'**
-  String get snsPlacesDismiss;
-
   /// No description provided for @snsFrameMetro.
   ///
   /// In en, this message translates to:
@@ -3745,12 +3865,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Channel messages carry the sender\'s name — they warm the sender\'s cell when we know their location, otherwise your own cell (the receive point).'**
   String get snsCellsLegendChannel;
-
-  /// No description provided for @snsCellsLegendInferred.
-  ///
-  /// In en, this message translates to:
-  /// **'Dashed ◇ markers are places inferred from message banter (\"hello from…\"), placed approximately. Toggle per channel in its settings.'**
-  String get snsCellsLegendInferred;
 
   /// No description provided for @snsCellsLegendDecay.
   ///
