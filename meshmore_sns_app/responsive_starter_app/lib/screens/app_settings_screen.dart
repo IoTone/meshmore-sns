@@ -155,9 +155,11 @@ class AppSettingsScreen extends StatelessWidget {
           SwitchListTile(
             title: Text(l.settingsBackgroundTitle),
             subtitle: Text(
-              mc.backgroundKeepaliveEnabled
-                  ? l.settingsBackgroundOn
-                  : l.settingsBackgroundOff,
+              !mc.backgroundKeepaliveEnabled
+                  ? l.settingsBackgroundOff
+                  : mc.keepaliveFailure != null
+                      ? l.settingsBackgroundFailed
+                      : l.settingsBackgroundOn,
               style: TextStyle(color: cs.onSurface.withValues(alpha: .6)),
             ),
             secondary: Icon(mc.backgroundKeepaliveEnabled

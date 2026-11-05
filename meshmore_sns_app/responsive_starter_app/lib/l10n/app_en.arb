@@ -272,6 +272,7 @@
   "settingsBackgroundTitle": "Stay connected in background",
   "settingsBackgroundOn": "Messages arrive while the app is closed",
   "settingsBackgroundOff": "Messages arrive when you open the app",
+  "settingsBackgroundFailed": "Could not keep the app running in the background. Open the app to reconnect.",
   "settingsTelemetryPoll": "Gather node telemetry",
   "settingsTelemetryPollOn": "Politely polls contacts for temperature / altitude (a little OTA airtime)",
   "settingsTelemetryPollOff": "No telemetry requests sent; query a node manually from its detail",

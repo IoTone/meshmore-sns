@@ -920,6 +920,12 @@ abstract class AppLocalizations {
   /// **'Messages arrive when you open the app'**
   String get settingsBackgroundOff;
 
+  /// No description provided for @settingsBackgroundFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not keep the app running in the background. Open the app to reconnect.'**
+  String get settingsBackgroundFailed;
+
   /// No description provided for @settingsTelemetryPoll.
   ///
   /// In en, this message translates to:

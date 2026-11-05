@@ -254,6 +254,7 @@
   "settingsBackgroundTitle": "バックグラウンドで接続を維持",
   "settingsBackgroundOn": "アプリを閉じていてもメッセージが届きます",
   "settingsBackgroundOff": "アプリを開いたときにメッセージが届きます",
+  "settingsBackgroundFailed": "バックグラウンドでの接続を維持できませんでした。アプリを開いて再接続してください。",
   "settingsTelemetryPoll": "ノードのテレメトリを収集",
   "settingsTelemetryPollOn": "コンタクトに温度・標高を控えめに問い合わせ (少量の電波使用)",
   "settingsTelemetryPollOff": "テレメトリ要求は送信しません; 各ノードの詳細から手動で取得",

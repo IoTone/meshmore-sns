@@ -462,6 +462,10 @@ class AppLocalizationsJa extends AppLocalizations {
   String get settingsBackgroundOff => 'アプリを開いたときにメッセージが届きます';
 
   @override
+  String get settingsBackgroundFailed =>
+      'バックグラウンドでの接続を維持できませんでした。アプリを開いて再接続してください。';
+
+  @override
   String get settingsTelemetryPoll => 'ノードのテレメトリを収集';
 
   @override

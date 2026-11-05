@@ -10,6 +10,7 @@ import 'package:flutter/services.dart' show rootBundle;
 import 'package:meshcore/meshcore.dart';
 import 'failure.dart';
 
+import '../app/app_errors.dart';
 import 'background_keepalive.dart';
 import 'background_prefs.dart';
 import 'battery_history_store.dart';
@@ -154,7 +155,7 @@ class MeshcoreController extends ChangeNotifier {
         _drainStart(backlog: true);
         // Keep the process alive in the background so the link +
         // drain survive Doze (Android only; no-op elsewhere).
-        if (_bgKeepaliveEnabled) unawaited(_keepalive.start());
+        if (_bgKeepaliveEnabled) unawaited(_startKeepalive());
         // R33 — if the user has a saved default channel slot,
         // switch to it now. The device persists its own active
         // slot too; this preference wins on app launch so a
@@ -397,12 +398,31 @@ class MeshcoreController extends ChangeNotifier {
   /// enabled (R17 / U8). No-op on non-Android.
   bool get backgroundKeepaliveEnabled => _bgKeepaliveEnabled;
 
+  /// Starts the keep-alive service, recording a refusal instead of letting it
+  /// escape as an unhandled error.
+  Future<void> _startKeepalive() async {
+    try {
+      await _keepalive.start();
+      if (_keepaliveFailure != null) {
+        _keepaliveFailure = null;
+        notifyListeners();
+      }
+    } catch (error) {
+      final String message = AppErrors.firstLine(error);
+      AppErrors.record(error, StackTrace.current, where: 'keepalive');
+      if (_keepaliveFailure != message) {
+        _keepaliveFailure = message;
+        notifyListeners();
+      }
+    }
+  }
+
   Future<void> setBackgroundKeepaliveEnabled(bool v) async {
     _bgKeepaliveEnabled = v;
     notifyListeners();
     await BackgroundKeepalivePrefs.setEnabled(v);
     if (v && isReady) {
-      await _keepalive.start();
+      await _startKeepalive();
     } else if (!v) {
       await _keepalive.stop();
     }
@@ -497,6 +517,16 @@ class MeshcoreController extends ChangeNotifier {
   final Future<MeshcoreTransport> Function() _transportFactory;
   final BackgroundKeepalive _keepalive;
   bool _bgKeepaliveEnabled = true; // default on (user-accepted)
+
+  /// Why the keep-alive service could not start, or null while it is up.
+  ///
+  /// Android 12 and later refuse a background `startService`
+  /// (`ForegroundServiceStartNotAllowedException`), and the refusal is silent
+  /// unless it is caught: a process without the service is one Doze may kill,
+  /// so the link and every buffered message go with it. The settings row shows
+  /// this instead of leaving the user to infer it from missing messages.
+  String? _keepaliveFailure;
+  String? get keepaliveFailure => _keepaliveFailure;
   final MeshcoreConnection _connection;
 
   StreamSubscription<MeshcoreConnectionState>? _statesSub;
@@ -4225,6 +4255,11 @@ class MeshcoreController extends ChangeNotifier {
   /// auto-drains). Respects a user-initiated [disconnect].
   Future<void> onAppResumed() async {
     if (_manualDisconnect) return; // user chose to stay disconnected
+    // A refused service start is retryable once the app is in the foreground,
+    // which is the only place Android allows it.
+    if (_bgKeepaliveEnabled && _keepaliveFailure != null && isReady) {
+      unawaited(_startKeepalive());
+    }
     if (isReady) {
       _drainStart(backlog: true); // buffered while backgrounded
       return;

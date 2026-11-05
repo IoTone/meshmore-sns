@@ -482,6 +482,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsBackgroundOff => 'Messages arrive when you open the app';
 
   @override
+  String get settingsBackgroundFailed =>
+      'Could not keep the app running in the background. Open the app to reconnect.';
+
+  @override
   String get settingsTelemetryPoll => 'Gather node telemetry';
 
   @override
