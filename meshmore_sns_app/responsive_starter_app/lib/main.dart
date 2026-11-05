@@ -1,3 +1,6 @@
+import 'media/media_inbox.dart';
+import 'places/place_photo.dart';
+import 'media/media_codec.dart';
 // Copyright (c) 2026 IoTone, Inc.
 // SPDX-License-Identifier: MIT
 import 'dart:async';
@@ -109,6 +112,15 @@ void main() {
     // reader has not seen rather than the whole channel's traffic.
     final ChannelReadStore channelReads = ChannelReadStore();
     unawaited(channelReads.load());
+    // The inbound half of media: one consumer of the radio's channel
+    // datagrams, because two consumers would each hold half the chunks. It is
+    // app-scoped and started once, so a rebuild cannot subscribe twice.
+    final MediaInbox mediaInbox = MediaInbox(
+      datagrams: controller.channelDatagramStream,
+      codec: const AvifMediaCodec(),
+      clock: DateTime.now,
+    )..start();
+    final PlacePhotos placePhotos = PlacePhotos(clock: DateTime.now);
     final LocalNotifier notifier = LocalNotifier();
     final NotificationPrefs notificationPrefs = NotificationPrefs();
     final NotificationFocus notificationFocus = NotificationFocus();
@@ -293,6 +305,8 @@ void main() {
           // The one instance the block-deletion hook above is attached to; a
           // second store built here would leave that hook pointing at nothing.
           ChangeNotifierProvider<PlaceStore>.value(value: placeStore),
+          Provider<MediaInbox>.value(value: mediaInbox),
+          Provider<PlacePhotos>.value(value: placePhotos),
           Provider<PlaceReportBudget>(
             create: (_) => PlaceReportBudget(clock: DateTime.now),
           ),
