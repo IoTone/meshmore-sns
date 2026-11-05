@@ -1,4 +1,11 @@
-# Audit of the MeshMore × LDMUX × lobospeak architecture of record
+# Audit of the two-app architecture of record (2026-10-24) — gateway findings moot
+
+> **Status 2026-11-05:** the design this audits is withdrawn (D10.1,
+> `meshmore-scope-of-record.md` §12). Everything below is kept because three kinds of finding outlive the
+> design: the firmware and platform facts with `file:line` evidence, the defect list the code still carries,
+> and the reasoning about where a secret may be stored (D5, still cited from `mesh_network_store.dart`). The
+> findings that are about the gateway itself — the socket, the token, the Binder handoff, the L2 framing, the
+> client boundary — no longer have a subject.
 
 Audit performed 2026-10-24 against `meshmore-sns-architecture.md` (HEAD `c9f8dd1`),
 `meshmore-sns-meshcore-interop.md`, `ldmux/docs/MESH-TRANSPORT.md`,

@@ -1,5 +1,5 @@
 {
-  "_comment": "L1 carry vectors (mesh_carry.dart). Cross-language contract: the Kotlin MeshMoreGatewayClient must produce and accept these exact bytes. Firmware source: examples/companion_radio/MyMesh.cpp at companion-v1.17.1 (d929643).",
+  "_comment": "L1 carry vectors (mesh_carry.dart). Cross-language contract: every implementation of these carriers must produce and accept these exact bytes. Firmware source: examples/companion_radio/MyMesh.cpp at companion-v1.17.1 (d929643).",
   "encode": [
     {
       "name": "binary request, minimal 2-byte app data",

@@ -1,6 +1,6 @@
 // Copyright (c) 2026 IoTone, Inc.
 // SPDX-License-Identifier: MIT
-import 'package:meshcore_gateway/meshcore_gateway.dart';
+import 'airtime.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Which airtime policy this radio meters itself under

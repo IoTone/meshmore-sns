@@ -347,9 +347,9 @@ void main() {
   testWidgets(
       'Back on the Dashboard asks the platform to background the task, not finish it',
       (WidgetTester t) async {
-    // The engine is where the radio link and the loopback gateway live. Letting the root route pop
-    // finishes the Activity and destroys it, so another app that was handed the gateway endpoint
-    // finds nothing listening (measured on the device, 2026-11-01). The platform call is the fix.
+    // The engine is where the radio link and the keep-alive service live. Letting the root route pop
+    // finishes the Activity and destroys it, which drops the link (measured on the device,
+    // 2026-11-01). The platform call is the fix.
     final List<String> calls = <String>[];
     const MethodChannel channel = MethodChannel('meshmore/app_lifecycle');
     t.binding.defaultBinaryMessenger.setMockMethodCallHandler(channel, (MethodCall call) async {

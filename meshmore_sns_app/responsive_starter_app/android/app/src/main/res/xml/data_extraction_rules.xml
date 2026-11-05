@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Android 12+. Same reasoning as backup_rules.xml: map data is
      re-downloadable cache and must never leave the device in a backup, and
-     the gateway pairing token is a credential whose ciphertext and
-     Keystore-wrapped key must not be copied to the cloud or to another
-     device. -->
+     anything a future feature stores through flutter_secure_storage is a
+     credential whose ciphertext and Keystore-wrapped key must not be copied to
+     the cloud or to another device. -->
 <data-extraction-rules>
     <cloud-backup>
         <exclude domain="file" path="maps/" />

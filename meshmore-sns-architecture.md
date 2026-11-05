@@ -1,6 +1,25 @@
-# MeshMore × LDMUX × lobospeak: the architecture of record
+# The two-app architecture of record (2026-10-24) — superseded 2026-11-05
 
-**Status:** design, 2026-10-24. Nothing implemented, nothing published.
+> **Status: WITHDRAWN. Read the first box, then use §1, §5.1, §5.2, §5.5a and §5.5b as reference.**
+>
+> The design this document records — one app owns the radio and serves a loopback gateway to a second app on
+> the same phone — is no longer the product. It was withdrawn on 2026-11-05
+> (`meshmore-scope-of-record.md` §12, D10.1) because the second app now owns its own radio link: it vendors the
+> Android transport and speaks to the radio directly, so there is no client on this phone to serve. The
+> server, the pairing token, the Binder handoff, the Connected-apps screen and the airtime governor are
+> removed from this repository.
+>
+> What still holds, and why the document is kept: §1 states the platform and firmware constraints, which
+> did not change; §5.1 and §5.2 state what a record-carriage layer has to do; §5.5a and §5.5b state the
+> airtime reasoning the app's own meter will be built from. Everything else — §2.2/§2.3/§2.4 as a shared-code
+> split, §3's comparisons, §5.5's L2 framing, §7's loopback security model, §8's "the design stands",
+> §10's per-platform entitlement surface — is the record of a design that was decided, then withdrawn.
+> Do not implement from it.
+>
+> The surviving capability is specified in `meshmore-scope-of-record.md` §12 and
+> `meshmore-feature-register.md` §6a.
+
+**Status (as written):** design, 2026-10-24. Nothing implemented, nothing published.
 Supersedes the architecture sections of
 [`meshmore-sns-meshcore-interop.md`](./meshmore-sns-meshcore-interop.md),
 which remains the protocol-facts reference (every firmware claim there has
@@ -227,6 +246,8 @@ Four layers, each with a single owner and a versioned contract:
 Nothing else is shared. The two apps never exchange Dart/Kotlin code.
 
 ### 2.4 What is NOT shared (deliberately)
+
+> *Superseded 2026-11-05 (D10.1): there is no shared backend and no client, so there is nothing to split.*
 
 - UI: LDMUX keeps its native terminal (libghostty-vt via JNI — the whole
   point of its design, `ldmux/docs/NATIVE-TERMINAL.md`). MeshMore keeps its
@@ -488,6 +509,9 @@ piece and is where most of the schedule risk lives.
 ---
 
 ### 5.5 L2 gateway protocol - draft v0 (the contract P1 freezes)
+
+> *Superseded 2026-11-05 (D10.1): the L2 contract is withdrawn with the server. The wire encoders that
+> survive are the L1 carriers in `packages/meshcore/lib/src/codec/mesh_carry.dart`.*
 
 Draft, for review. Freezes when P3 lands (see §9 for why the order
 changed). Written to be implementable in Dart (server) and Kotlin
@@ -903,6 +927,9 @@ MeshMore side. O1 removed the one blocker it used to carry.
 
 ## 7. Security model (loopback has no caller identity)
 
+> *Superseded 2026-11-05 (D10.1): there is no loopback listener, no token and no grant, so this model has
+> no subject. The BLE link remains the app's alone because the transport is single-central (§1.1).*
+
 Because any app with `INTERNET` can reach a loopback port, the tunnel
 authenticates at the first frame:
 
@@ -946,6 +973,9 @@ gateway grants no companion-level authority. A client that steals the
 token can waste airtime, not read the mesh.
 
 ## 8. Decisions taken (2026-10-24, user)
+
+> *The first bullet is superseded 2026-11-05 (D10.1, `meshmore-scope-of-record.md` §12): the two-app
+> gateway does not stand. The other decisions in this list are unaffected.*
 
 - **Architecture accepted:** the two-app gateway design stands. MeshMore
   Flutter owns the radio; LDMUX KMP is a client; shared wire contract +

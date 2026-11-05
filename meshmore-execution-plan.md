@@ -112,10 +112,12 @@ meter stays, `airtime_prefs.dart`), the `meshcore_gateway` package, the `meshcor
 tests and the gateway rows in the specs. Nothing is lost: ldmux vendors the codecs it needs and keeps its own history
 of the branch.
 
-Documents to correct in the same commit: `meshmore-feature-register.md` §6a and the gateway rows, `meshmore-app-spec.md`
-APP-M1–M6 (to AGAINST with the decision date), `meshmore-scope-of-record.md` (new dated decision), the architecture
-§5.5 / §2.4 sections, `README.md`, `meshmore_sns_app/STATUS.md`, `meshmore-sns-gateway-handoff.md` (mark superseded and
-point at the ldmux repo), and the master plan's gateway rows.
+**Done 2026-11-05 (commit recorded as R110).** The decision is D10.1 in `meshmore-scope-of-record.md` §12; the
+register §6a, `meshmore-app-spec.md` §14 (APP-M1–M6 → AGAINST), the architecture document's banner and its §2.4/§5.5/§7/§8
+markers, `meshmore-sns-gateway-handoff.md` (superseded banner), `meshmore_sns_app/STATUS.md`, the master plan's gateway
+rows and `meshmore-feature-audit.md` §1/§5 are corrected. The separate application is not named in anything the app
+ships or serves, per the provenance rule; the handoff document says only that the consumer is outside this repository
+and now owns its own radio link.
 
 ## 2b. Remote state (2026-11-05)
 
@@ -297,7 +299,7 @@ plugin set. Each is a child task with a written answer, not a guess.
 | W0 toolchain | **done** | scout | SDK path verified; 1044 tests / 90 s; gradle pins known |
 | W0 docs commit | **done** | supervisor | `e86a712` on `feat/ldmux-gateway` |
 | W0 branch rename + dev re-port | **done** | worker | rename `feat/app-completion`; `origin/dev` merged (`c393d26`), then ported per R109 (§2b): shell paging + grid Swipe ⇄ Pan + shared claim, EN/JA strings, `test/shell/home_shell_test.dart` 34 pass / 12 s |
-| W0 gateway removal + doc correction | not started | — | 14 app files, 2 packages, 6 docs |
+| W0 gateway removal + doc correction | **done** | worker | `R110`: 8 app files removed or rewritten, 2 packages deleted, Binder service + permission + method channel gone, 6 docs corrected, D10.1 in the scope of record |
 | W1 defects | not started | — | — |
 | W2 skin tokens | not started | — | — |
 | W3 protocol | not started | — | — |

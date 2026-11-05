@@ -232,16 +232,6 @@ class AppSettingsScreen extends StatelessWidget {
             trailing: const Icon(Icons.chevron_right),
             onTap: () => context.push('/settings/networks'),
           ),
-          // Let another app on this phone (LDMUX) use the radio over the
-          // loopback gateway. Off until the user turns it on.
-          ListTile(
-            leading: const Icon(Icons.link),
-            title: Text(l.connectedAppsTitle),
-            subtitle: Text(l.connectedAppsTileSubtitle,
-                style: TextStyle(color: cs.onSurface.withValues(alpha: .6))),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => context.push('/settings/connected-apps'),
-          ),
           // R21 / U12 — Permissions row: jumps to the OS app-settings
           // page where the user can flip BLE / Notifications etc.
           // back on after a permanent denial.

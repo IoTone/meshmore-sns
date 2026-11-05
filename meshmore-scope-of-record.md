@@ -152,6 +152,7 @@ Each item is an amendment to shipped behaviour. Ordered by user impact.
 30. **Lift `MeshCarryCodec` out of the gateway path** so the app's own send path can send raw/binary/rawpacket.
 31. **Keep the gateway, finish it and freeze it.** Published L2 v1 with vectors, a release-signed Binder
     handoff test, a UI statement that it serves only while MeshMore runs, a watchdog exit, a bounded queue.
+    *(Superseded 2026-11-05 — §12 D10.1. Kept as the record of what was decided on 2026-11-04 and why.)*
 32. **Do not build a fourth protocol implementation by accident.** Dart, Java and Kotlin all carry frame logic;
     decide the shared-core policy before adding protocol surface.
 
@@ -689,3 +690,36 @@ answerable from firmware already in the tree. What remains open is three questio
 judgement calls rather than findings: whether the app creates `#emergency` itself, whether unkeyed places get a
 "keyed only" filter, and whether a key-bound refutation should shorten a TTL for everyone.
 
+
+---
+
+## §12 Round 10 — 2026-11-05: the inter-app gateway is removed
+
+**D10.1 The gateway leaves the product; the raw send stays.**
+
+Decided by the project owner on 2026-11-05, superseding item 31 of §5 and the architecture document's §8:
+"nothing else yet needs to connect to another app. Maybe in the future we'd have this functionality … right
+now it's not needed, so it could be toggled off and on in settings, or it could be removed completely."
+
+What made the decision safe is that the consumer stopped existing. The one application that used the handoff
+now owns the radio link itself, from its own vendored copy of the Android transport, and its own state
+document calls the phone-side handoff historical. Nothing in this repository has a client left to serve.
+
+Removed: the loopback L2 server and its session/grant machinery, the pairing token and its secure-storage
+record, the Binder handoff service with its signature permission and manifest entry, the Connected-apps screen
+and its settings row, the gateway's airtime governor, and the two packages that carried them
+(`meshcore_gateway`, `meshcore_host`).
+
+Kept, because it is the app's own capability and not the gateway's: sending one opaque record to a contact as
+a direct raw-data packet (`0x19`), with the radio's OK/ERR as the outcome and the radio's real parameters as
+the airtime estimate. It lives in `lib/meshcore/mesh_sender.dart` (the send, the record budget per contact
+path, the overhead a meter must count) and `lib/meshcore/airtime.dart` (the two policies, the LoRa estimator).
+
+What is *not* built now: a running airtime meter. The only implementation was the gateway's governor, which
+measured the records a client pushed through it. The app's own sends are not metered today; the estimator and
+the policy are the parts the meter will be built from, and the register carries the meter as an unbuilt row
+rather than as dead code in the tree.
+
+Reversal cost: high for the socket and its security model, low for the capability — the wire encoders were
+never gateway code, and a future client would be a new feature with a new decision, not a resurrection of this
+one.

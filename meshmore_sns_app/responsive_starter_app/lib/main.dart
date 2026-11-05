@@ -20,8 +20,6 @@ import 'package:meshmore_sns_app/maps/maps_controller.dart';
 import 'package:meshmore_sns_app/meshcore/auto_publish_controller.dart';
 import 'package:meshmore_sns_app/meshcore/background_keepalive.dart';
 import 'package:meshmore_sns_app/meshcore/city_lookup.dart';
-import 'package:meshmore_sns_app/meshcore/gateway/gateway_handoff.dart';
-import 'package:meshmore_sns_app/meshcore/gateway/gateway_service.dart';
 import 'package:meshmore_sns_app/meshcore/meshcore_controller.dart';
 import 'package:meshmore_sns_app/bot/bot_controller.dart';
 import 'package:meshmore_sns_app/peer/peer_profiles.dart';
@@ -99,24 +97,6 @@ void main() {
               backgroundKeepalive: createBackgroundKeepalive(),
               locationService: const GeolocatorLocationService(),
             )..autoConnectIfPaired(),
-          ),
-          // Loopback gateway for other apps on this phone. Off until the
-          // user enables it; starts and stops with the radio link.
-          //
-          // **Eager on purpose.** It used to be lazy, so the gateway did not
-          // start until someone opened Settings -> Connected apps; another app
-          // asking over the handoff was told "not serving" while the switch was
-          // on and MeshMore was running (measured on the device, 2026-11-01).
-          // The foreground service already keeps this process alive for the
-          // radio, so creating the service with the app keeps the listener up
-          // for the same lifetime.
-          ChangeNotifierProvider<GatewayService>(
-            lazy: false,
-            create: (BuildContext ctx) =>
-                GatewayService(
-              ctx.read<MeshcoreController>(),
-              handoff: ChannelGatewayHandoffPublisher(),
-            )..load(),
           ),
           // R59 — the bot. `pskFor` is what makes the "never on Public"
           // refusal real: it reads the slot's live key off the radio,

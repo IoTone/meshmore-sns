@@ -26,8 +26,6 @@ This directory is tracked in the parent repository, not a submodule.
 meshmore_sns_app/
 ├── STATUS.md                  ← status and change log
 ├── packages/meshcore/         ← pure-Dart protocol codec (no Flutter deps)
-├── packages/meshcore_gateway/ ← pure-Dart L2 tunnel contract (no Flutter, no socket)
-├── packages/meshcore_host/    ← host process: the same gateway over USB serial
 └── responsive_starter_app/    ← the Flutter app
     ├── lib/
     │   ├── meshcore/          ← controller facade over BLE + protocol
@@ -37,7 +35,7 @@ meshmore_sns_app/
     │   ├── maps/              ← tiles, style, offline packs, region files
     │   ├── ui/                ← shared components (MmListRow, MmAction, showMmPicker…)
     │   └── l10n/              ← ARB files (app_en.arb, app_ja.arb)
-    ├── test/                  ← 1014 widget/unit tests
+    ├── test/                  ← 1016 widget/unit tests
     └── android/, ios/         ← platform shells
 ```
 
@@ -48,7 +46,7 @@ cd responsive_starter_app
 
 flutter pub get
 flutter analyze                 # no errors; two known warnings, see below
-flutter test                    # 940 tests
+flutter test                    # 1016 tests, ~83 s
 flutter build apk --debug       # Android debug APK
 
 # Toolchain floor with Flutter 3.47.4, enforced by dev.flutter.flutter-gradle-plugin:

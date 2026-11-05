@@ -61,15 +61,6 @@ dependencies:
   meshcore:
     path: ../packages/meshcore
 
-  # --- Loopback gateway for other apps on this phone (LDMUX). Pure Dart;
-  #     the app supplies the MeshSender and the secure pairing store. ---
-  meshcore_gateway:
-    path: ../packages/meshcore_gateway
-
-  # --- Pairing token store. Android Keystore / iOS Keychain; never
-  #     SharedPreferences (audit decision D5). ---
-  flutter_secure_storage: ^9.2.4
-
   # --- Bluetooth to Meshcore device (R3) ---
   flutter_blue_plus: ^1.34.5
   permission_handler: ^11.3.1

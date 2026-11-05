@@ -59,7 +59,7 @@ change what other workstreams should build.
 | Command correlation | `OK`/`ERR` carry no tag; an unregistered command's OK can be credited to a pending channel send | — | Every reply is attributed to the command that caused it; a serialisation queue or equivalent guard |
 | "via" byte consumption on `0x84`/`0x1B` | radio2 traffic is currently invisible; two lines make it observable | — | The byte is read and surfaced; no longer treated as `reserved` |
 | Conformance suite | No test covers the four ceilings, `path_len` unpacking, or the airtime formula; all fail silently | — | Golden vectors for every emitted frame; ceilings and path decoding asserted |
-| `MeshCarryCodec` lifted into the app's send path | Raw/binary/rawpacket encoders exist only behind the gateway | correlation | The app can send raw, binary and rawpacket without the gateway |
+| `MeshCarryCodec` lifted into the app's send path | **Done 2026-11-05.** `0x19` is the app's own send path now (`lib/meshcore/mesh_sender.dart`); `0x41`/`0x32` encode and are vector-tested with no caller yet | correlation | The app can send raw without a gateway; binary/rawpacket have an encoder and a caller when a feature needs one |
 | `0x42 CMD_RUN_CLI_COMMAND` decision | Not declared at all. It gates MediaMesh control and the buzzer toggle — and the buzzer has no CLI verb, so the "unlocks the buzzer" claim is stale | — | A decision recorded: expose behind an expert gate, or leave absent. If exposed, version-gated |
 | Shared protocol core decision | Frame logic exists in Dart, Java and Kotlin | — | One reference implementation named; the other two either generated, hand-kept, or formally frozen |
 | Licence register | MIT project; the best reference code is GPL; Codec2, AV1 and models each have their own terms | — | A one-page register naming every third-party artefact, its licence and its obligation |
@@ -157,8 +157,8 @@ change what other workstreams should build.
 
 | Item | Why | Done when |
 | --- | --- | --- |
-| Gateway: finish and freeze | Already works, costs are sunk, client is real | Published L2 v1 with vectors, release-signed Binder handoff proven, watchdog exit, bounded queue, UI says "serves only while MeshMore runs" |
-| Host twin: product or developer tool | Unpublished `0.1.0`, runs headless, is the correct home for bridges | A recorded decision either way |
+| ~~Gateway: finish and freeze~~ | **AGAINST 2026-11-05** — the client owns its own radio link, so there is nothing to serve (`meshmore-scope-of-record.md` §12, D10.1) | Withdrawn with the server, the token and the Binder handoff |
+| ~~Host twin: product or developer tool~~ | **AGAINST 2026-11-05** — the host daemon was the gateway over USB serial and left with it | Withdrawn |
 | TAK/CoT and MQTT: host-side only, later | Both are credential and privacy liabilities in a phone app | A host-side publisher design, off by default, not started |
 
 ### W10 — Design system correctness
@@ -320,7 +320,7 @@ Every entry is a question with the decision it changes. Most have not been resea
 | `meshmore-sns-telemetry-research.md`, `meshmore-sns-microclimate-wx.md` | Telemetry and weather | current |
 | `meshmore-sns-meshcore-interop.md`, `meshmore-sns-architecture.md`, `-audit` | Shared-transport architecture and its adversarial review | current |
 | `meshmore-sns-geofence-tracking.md`, `meshmore-sns-meshbook-mbk.md` | Tracking and Meshbook earmarks | current |
-| `meshmore-sns-private-mesh-investigation.md`, `meshmore-sns-gateway-handoff.md` | Private mesh and gateway handoff | current |
+| `meshmore-sns-private-mesh-investigation.md`, `meshmore-sns-gateway-handoff.md` | Private mesh; the gateway handoff is **superseded 2026-11-05** | private mesh current, handoff history |
 | `M6-interop-runbook.md` | The interop runbook | current |
 | `AndroidXR_Glasses_Dev_StarterGuide.md`, `AndroidXR_Glasses_UX_Best_Practices.md`, `UX-XR-best-practices.md` | XR platform material, David's track | reference |
 | `meshmore-sns-block-spec.md`, `meshmore-feature-register.md` | Block spec and this register | current |
@@ -738,14 +738,15 @@ kind of error a document set makes when it describes itself instead of the softw
 
 **Two more findings from writing against the code, not the plan.**
 
-- **The gateway is a whole subsystem the register barely mentioned.** `lib/meshcore/gateway/` is 776 lines across
-  four files wrapping a third package, `package:meshcore_gateway`, and `meshmore-sns-architecture.md` is 1,126
+- **The gateway is a whole subsystem the register barely mentioned.** `lib/meshcore/gateway/` was 776 lines
+  across four files wrapping a third package, `package:meshcore_gateway`, and the architecture document is 1,126
   lines about the two-app pair. The register's 94 rows carried **one** gateway mention. A subsystem with its own
   security model — bearer token, one client at a time, no companion commands to clients — had no state rows. It
-  now has its own section (6a) and its own requirement group (M).
+  gained section 6a and requirement group M, and then both were withdrawn on 2026-11-05 (D10.1) when the client
+  stopped needing it.
 - **The backup exclusion exists and excludes the wrong things for chat.** `res/xml/backup_rules.xml` and
-  `data_extraction_rules.xml` (wired at `AndroidManifest.xml:51-52`) exclude `maps/` and the gateway pairing
-  token. They do not exclude `mm.chat.v1`, so **plaintext message history is currently backed up to the cloud**.
+  `data_extraction_rules.xml` (wired at `AndroidManifest.xml:51-52`) exclude `maps/` and the secure-store
+  ciphertext. They do not exclude `mm.chat.v1`, so **plaintext message history is currently backed up to the cloud**.
   That is worse than "backup exclusion is unbuilt": the mechanism is there and pointed at the wrong data.
 
 **And the send path's terminal states were weaker than the plan implied.** `_Expect.sent` is registered at

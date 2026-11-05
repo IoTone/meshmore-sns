@@ -41,7 +41,8 @@ The state column answers one question: can work start? `TODO` means yes, the des
 | `0x1B` inbound channel-datagram decode | BUILT | Frame decoded and tested, **no consumer** in the dispatch |
 | Channel tag → key normalization | **DEFECT** | APP-A8: `channelPskFromHashtag` hashes the string as typed, so `emergency` and `#emergency` derive different keys, and only the prefixed form matches the ecosystem convention. The weak-tag check on the same screen strips `#` while the derivation does not (`channels_screen.dart:345-352` vs `:378`) |
 | `0x42 CMD_RUN_CLI_COMMAND` | TODO | Dual-purpose: CLI when `len >= 2`, FEM-gain GET when `len == 1`. Product call whether to surface |
-| `0x19 CMD_SEND_RAW_DATA` / `0x41` raw packet | BUILT in `mesh_carry.dart`, gateway-only | Lift into the app send path |
+| `0x19 CMD_SEND_RAW_DATA` raw send | BUILT | `lib/meshcore/mesh_sender.dart` (send, OK/ERR outcome, per-contact record budget) over `MeshCarryCodec.sendRawData`; tests `test/meshcore/mesh_sender_test.dart` |
+| `0x41` raw packet / `0x32` binary request | BUILT in the codec, no caller | `MeshCarryCodec.sendRawPacket` / `sendBinaryReq` encode and are vector-tested; nothing in the app calls them yet |
 | `0x91` one-key DM rejected | TODO | 1 + 32 bytes, keymind only; without it a refused stranger's message vanishes |
 | `0x4A`/`0x4B` firmware OTA control | TODO | A phone can drive a companion's own OTA; needs a row, a screen and the queue-drain handling |
 | Golden vectors | BUILT twice | Same `m1`–`m5` + `interop/SCHEMA.md` in the Dart package and `libmeshcore`. Open: ownership and which is the reference |
@@ -127,16 +128,19 @@ The state column answers one question: can work start? `TODO` means yes, the des
 | Live PTT | AGAINST this phase | Needs 250 kHz, fork firmware, unlawful in the EU |
 | Bulk file transfer | AGAINST this phase | — |
 
-## 6a. The gateway coupling
+## 6a. The gateway coupling — removed 2026-11-05
+
+Decided: D10.1 in `meshmore-scope-of-record.md` §12. The consumer stopped existing, so the product carries no server.
 
 | Feature | State | Ruling or document |
 | --- | --- | --- |
-| L2 loopback server for the paired app | BUILT in part | `lib/meshcore/gateway/gateway_service.dart` (776 lines) wraps `package:meshcore_gateway`; L2 draft v0 in `meshmore-sns-architecture.md` §5.5 |
-| BLE link ownership is exclusive | SPECIFIED | The app owns the radio; clients tunnel records and get no companion commands (`architecture.md` §2.4) |
-| Pairing token in secure storage | BUILT | `secure_pairing_persistence.dart`; excluded from backup with the Keystore-wrapped key |
-| Grants and revocation | TODO | Settings → Connected apps; revocable without a restart (`architecture.md` §7) |
-| One client at a time, busy close | SPECIFIED | `CLOSE(busy)` on a second authenticated attempt; 5 s timeout on an unauthenticated one |
-| Gateway airtime metering | BUILT in part | Operator policy, both ends meter themselves (`gateway_service.dart:88`) |
+| L2 loopback server for another app | AGAINST (2026-11-05) | D10.1. Server, sessions, grants, one-client rule and busy close all left with it |
+| Pairing token in secure storage | DROPPED (2026-11-05) | No token exists to protect; `flutter_secure_storage` is no longer a dependency |
+| Binder handoff and its signature permission | DROPPED (2026-11-05) | Service, permission and the Dart method channel removed from the manifest and `MainActivity` |
+| Connected-apps screen and settings row | DROPPED (2026-11-05) | Screen, route and 20 EN/JA strings removed |
+| Gateway airtime governor | DROPPED (2026-11-05) | It metered a client's records; there is no client. The app-side estimator and policy stay (`lib/meshcore/airtime.dart`) |
+| Raw/binary send capability | BUILT | `lib/meshcore/mesh_sender.dart`; the codecs were never gateway code (`packages/meshcore/lib/src/codec/mesh_carry.dart`) |
+| Airtime meter for the app's own sends | TODO | Was the gateway governor, so nothing meters now. Build on `estimatorFor` + `AirtimePolicy`; not scheduled in a wave yet |
 
 ## 7. Store and shell
 

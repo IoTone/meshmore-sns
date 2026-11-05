@@ -187,10 +187,9 @@ class _HomeShellState extends State<HomeShell>
     //
     // **Not "allowed through": on Android that finishes the Activity and
     // destroys the Flutter engine, and the engine is where the radio link and
-    // the loopback gateway live** (observed on the device, 2026-11-01: pressing
-    // Back on the Dashboard left the process and its foreground service alive
-    // but closed the gateway listener, so the paired app could no longer reach
-    // it). The foreground notification already says the app is running, so
+    // the keep-alive service live** (observed on the device, 2026-11-01:
+    // pressing Back on the Dashboard left the process running but dropped the
+    // link). The foreground notification already says the app is running, so
     // leaving the task in the background is the honest answer.
     return PopScope(
       canPop: false,

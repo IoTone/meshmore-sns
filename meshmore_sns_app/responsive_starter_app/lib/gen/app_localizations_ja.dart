@@ -3645,65 +3645,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get nodesClearSearch => '検索をクリア';
 
   @override
-  String get connectedAppsTitle => '連携アプリ';
-
-  @override
-  String get connectedAppsTileSubtitle => 'この端末の別アプリがこの無線機を使えるようにします';
-
-  @override
-  String get connectedAppsSwitch => 'この端末の他のアプリを許可';
-
-  @override
-  String get connectedAppsStateOff => 'オフ';
-
-  @override
-  String get connectedAppsStateWaiting => 'オン。無線機の接続を待っています。';
-
-  @override
-  String connectedAppsStateRunning(int port) {
-    return '127.0.0.1:$port で待ち受け中';
-  }
-
-  @override
-  String connectedAppsStateFailed(String error) {
-    return '開始できません: $error';
-  }
-
-  @override
-  String get connectedAppsToken => 'ペアリングトークン';
-
-  @override
-  String get connectedAppsTokenHelp =>
-      'このトークンを相手のアプリに入力してください。トークンを持つ人は、そのアプリとしてあなたの無線機から送信できます。取り消すとアクセスを止められます。';
-
-  @override
-  String get connectedAppsPeer => '通信相手';
-
-  @override
-  String get connectedAppsNoPeer => '接続中のアプリはありません';
-
-  @override
-  String connectedAppsAirtime(String used, String budget) {
-    return 'この1時間の送信時間: $used 秒 / $budget 秒';
-  }
-
-  @override
-  String get connectedAppsRevoke => 'ペアリングを取り消す';
-
-  @override
-  String get connectedAppsRevokeTitle => 'ペアリングを取り消しますか?';
-
-  @override
-  String get connectedAppsRevokeBody =>
-      '相手のアプリは切断され、トークンは使えなくなります。新しいトークンを渡す必要があります。';
-
-  @override
-  String get connectedAppsRevokeConfirm => '取り消す';
-
-  @override
-  String get connectedAppsCancel => 'キャンセル';
-
-  @override
   String get networksTitle => 'ネットワーク';
 
   @override
@@ -3830,14 +3771,4 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get networksDeleteConfirm => '削除';
-
-  @override
-  String get connectedAppsAirtimeTitle => 'チャネルは専有です（自主的な送信時間上限なし）';
-
-  @override
-  String get connectedAppsAirtimeOwned =>
-      '上限なし: 他の誰も使わない専用周波数向け。無線機自身の制限は残ります。';
-
-  @override
-  String get connectedAppsAirtimeDutyCycle => '自主的なデューティ比 1%: 1時間あたり送信時間 36 秒。';
 }

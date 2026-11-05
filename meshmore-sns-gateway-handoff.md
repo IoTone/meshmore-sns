@@ -1,6 +1,26 @@
+# Gateway handoff — SUPERSEDED 2026-11-05
+
+> **This document is history. Do not build from it.**
+>
+> The inter-app gateway left the product on 2026-11-05 (`meshmore-scope-of-record.md` §12, D10.1). The
+> consumer this handoff existed for now owns the radio link itself, from its own copy of the Android
+> transport, so no application on this phone needs the endpoint, the Binder delivery or the token. The
+> loopback server, the token, the Binder service and its signature permission are removed from this
+> repository.
+>
+> What the app keeps is its own send capability, described in `meshmore-scope-of-record.md` §12 and
+> `meshmore-feature-register.md` §6a: one opaque record to a contact over `0x19`, with the radio's OK/ERR
+> as the outcome (`lib/meshcore/mesh_sender.dart`), and the two airtime policies with the LoRa estimator
+> (`lib/meshcore/airtime.dart`). A future client would be a new feature with a new decision.
+>
+> Everything below is kept unedited as the record of the design that was withdrawn, including its
+> reasoning about loopback exposure and Binder credentials.
+
+---
+
 # Gateway handoff: how MeshMore and LDMUX find each other
 
-Status: design of record, 2026-10-30.
+Status: design of record, 2026-10-30. **Superseded 2026-11-05 — see the banner above.**
 
 This replaces the clunky part of mesh pairing: typing or scanning a gateway token into LDMUX when
 both apps are installed on the same phone.

@@ -15,9 +15,8 @@ Two whole products were **not** audited line by line and are flagged in §7: `me
 
 - **The Flutter app** — `meshmore_sns_app/responsive_starter_app/lib`, ~172–188 Dart files, 65k–103k lines
   depending on how generated files are counted, ~128 test files. This is the product.
-- **Three pure-Dart packages** — `packages/meshcore` (protocol codec: frames, opcodes, CayenneLPP, crypto),
-  `packages/meshcore_gateway` (the L2 tunnel wire contract), `packages/meshcore_host` (the same gateway over
-  USB serial, with CLI tools and a systemd unit).
+- **One pure-Dart package** — `packages/meshcore` (protocol codec: frames, opcodes, CayenneLPP, crypto).
+  *(Measured 2026-11-04 with three; the two gateway packages were removed 2026-11-05, D10.1.)*
 - **`meshmore-xr/`** — a second client: Kotlin/Compose for Android XR glasses, 116 Kotlin files, 39k lines,
   plus 14 spec docs and a Hugo site in `meshmore-xr-www/`. Its own `MeshmoreXR-design-brief.md:8` still says
   "No production Android code exists yet" while `MeshLink.kt` alone is 2,216 lines.
@@ -138,18 +137,22 @@ code or STATUS).
 - Docs reader: four sections (protocol, firmware, app, devices) — SHIPPED, `docs_repository.dart:20`; the App
   section is one summary doc, not per-feature help.
 
-### Gateway / connected apps (the LDMUX subsystem)
+### Gateway / connected apps — REMOVED 2026-11-05
+
+Measured as it stood on 2026-11-04, then withdrawn by D10.1 (`meshmore-scope-of-record.md` §12) because the
+one client that used it now owns its radio link itself. Nothing below is in the tree any more; the section is
+kept so the audit's other counts stay readable against the date they were taken.
 
 - Loopback-only listener, one client at a time, 16-byte token in secure storage, constant-time compare,
-  pre-auth timeout — SHIPPED (`gateway_service.dart:14-110`).
-- Airtime governor at 1 % duty (two named policies `onePercentDutyCycle` / `ownedChannel`) — SHIPPED.
-- Android Binder handoff behind a `signature` permission, in-memory, token only while running — SHIPPED in code
-  (`GatewayHandoff.kt:1-70`, `AndroidManifest.xml:87-90`), **never exercised across two signed apps**.
-- USB-serial host twin with a serialisation queue + systemd unit — SHIPPED (unpublished, `0.1.0`).
-- **`MeshCarryCodec` (raw/binary/rawpacket encoders) is reachable only through this path** — the app's own send
-  path never touches it.
-- Declared but not enforced: `creditWindow = 8` / capability `recvCredit` claim "the gateway enforces" while
-  `session.dart:18,38` advertises only `statusPush`.
+  pre-auth timeout — was SHIPPED (`gateway_service.dart:14-110`, deleted).
+- Airtime governor at 1 % duty (two named policies) — was SHIPPED; the policies and the LoRa estimator survive
+  in `lib/meshcore/airtime.dart`, the governor did not.
+- Android Binder handoff behind a `signature` permission — was SHIPPED in code, **never exercised across two
+  signed apps**, deleted with its permission and manifest entry.
+- USB-serial host twin — was SHIPPED (unpublished), deleted with `packages/meshcore_host`.
+- **`MeshCarryCodec` (raw/binary/rawpacket encoders) was reachable only through this path.** Now `0x19` is the
+  app's own send path (`lib/meshcore/mesh_sender.dart`); `0x41`/`0x32` have encoders and vectors and no caller.
+- Declared but not enforced: `creditWindow = 8` / `recvCredit` — moot, the contract is withdrawn.
 
 ### Appearance, audio, accessibility, localisation
 
@@ -214,8 +217,8 @@ dump the whole history ring to the host; and the firmware routes raw-custom pack
    channel send. The host twin solves this with a serialisation queue; the app does not.
 7. **Environment telemetry is unreachable on the reference device**, so the weather chain is unverified and
    Phase 3 is shelved. Correct diagnosis, correct behaviour, dead feature until a sensor node exists.
-8. **iOS is structurally incomplete**: no background BLE, no bond list, keepalive is a no-op, gateway handoff is
-   a no-op, and `NSMotionUsageDescription` is missing so shake-to-derive cannot work.
+8. **iOS is structurally incomplete**: no background BLE, no bond list, keepalive is a no-op, and
+   `NSMotionUsageDescription` is missing so shake-to-derive cannot work.
 9. **Region files are built and hidden** behind `kRegionFilesEnabled = false`; the only route to real offline
    vector maps is switched off.
 10. **No composer length guard**, so an over-long message silently becomes an over-ceiling frame.
@@ -241,10 +244,11 @@ two-thirds and mis-date about a third of what remains.**
 - **"Future" is a label, not a state, and it is wrong in both directions.** Shipped while marked future:
   F1 live map, F4 battery analysis, F8 fabric survey, R25 equal-grid, R27 globe, R28 tags, R32 shake-to-derive,
   R36 movement publish, R59 bot. Not built and **not** marked future: R30 brightness cycle.
-- **Shipped and never named in the spec**: the loopback gateway, saved radio Networks (`mesh_network.dart`,
-  `networks_screen.dart`), the airtime policy meter (`airtime_prefs.dart`), connected-app pairing, the USB host
-  twin, ten grid views, six tools, the background telemetry poller, Meshbook, microclimate, place inference, the
-  bot, the Java protocol port, and the entire XR client.
+- **Shipped and never named in the spec**: saved radio Networks (`mesh_network.dart`, `networks_screen.dart`),
+  the airtime policy preference (`airtime_prefs.dart`), ten grid views, six tools, the background telemetry
+  poller, Meshbook, microclimate, place inference, the bot, the Java protocol port, and the entire XR client.
+  *(Three items leave this list on 2026-11-05 with D10.1: the loopback gateway, connected-app pairing and the USB
+  host twin.)*
 - **Two documents contradict each other on the same day.** `protocol-coverage.md:53-61` says "21 opcodes still
   missing"; `ux-coverage.md:2` says "speaks the whole firmware surface". The codec is complete and the UI
   refuses 21 by policy — both docs are describing different passes and neither says so.

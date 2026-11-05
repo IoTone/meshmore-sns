@@ -324,7 +324,7 @@ extension type const MeshcoreCommand(int code) {
 
   static const MeshcoreCommand sendChannelDatagram = MeshcoreCommand(0x3E);
 
-  /// --- Binary / raw carriage (L1 for the LDMUX mesh profile).
+  /// --- Binary / raw carriage: opaque records over the companion link.
   /// Transcribed from `examples/companion_radio/MyMesh.cpp` at the same
   /// pinned commit; layouts in `mesh_carry.dart`. ---
 

@@ -6543,108 +6543,6 @@ abstract class AppLocalizations {
   /// **'Clear search'**
   String get nodesClearSearch;
 
-  /// No description provided for @connectedAppsTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Connected apps'**
-  String get connectedAppsTitle;
-
-  /// No description provided for @connectedAppsTileSubtitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Let another app on this phone use your radio'**
-  String get connectedAppsTileSubtitle;
-
-  /// No description provided for @connectedAppsSwitch.
-  ///
-  /// In en, this message translates to:
-  /// **'Allow other apps on this phone'**
-  String get connectedAppsSwitch;
-
-  /// No description provided for @connectedAppsStateOff.
-  ///
-  /// In en, this message translates to:
-  /// **'Off'**
-  String get connectedAppsStateOff;
-
-  /// No description provided for @connectedAppsStateWaiting.
-  ///
-  /// In en, this message translates to:
-  /// **'On. Waiting for the radio to connect.'**
-  String get connectedAppsStateWaiting;
-
-  /// No description provided for @connectedAppsStateRunning.
-  ///
-  /// In en, this message translates to:
-  /// **'Listening on 127.0.0.1:{port}'**
-  String connectedAppsStateRunning(int port);
-
-  /// No description provided for @connectedAppsStateFailed.
-  ///
-  /// In en, this message translates to:
-  /// **'Could not start: {error}'**
-  String connectedAppsStateFailed(String error);
-
-  /// No description provided for @connectedAppsToken.
-  ///
-  /// In en, this message translates to:
-  /// **'Pairing token'**
-  String get connectedAppsToken;
-
-  /// No description provided for @connectedAppsTokenHelp.
-  ///
-  /// In en, this message translates to:
-  /// **'Enter this token in the other app. Anyone who has it can send through your radio as that app. Revoke it to cut access.'**
-  String get connectedAppsTokenHelp;
-
-  /// No description provided for @connectedAppsPeer.
-  ///
-  /// In en, this message translates to:
-  /// **'Talking to'**
-  String get connectedAppsPeer;
-
-  /// No description provided for @connectedAppsNoPeer.
-  ///
-  /// In en, this message translates to:
-  /// **'No app connected'**
-  String get connectedAppsNoPeer;
-
-  /// No description provided for @connectedAppsAirtime.
-  ///
-  /// In en, this message translates to:
-  /// **'Airtime used this hour: {used} s of {budget} s'**
-  String connectedAppsAirtime(String used, String budget);
-
-  /// No description provided for @connectedAppsRevoke.
-  ///
-  /// In en, this message translates to:
-  /// **'Revoke pairing'**
-  String get connectedAppsRevoke;
-
-  /// No description provided for @connectedAppsRevokeTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Revoke pairing?'**
-  String get connectedAppsRevokeTitle;
-
-  /// No description provided for @connectedAppsRevokeBody.
-  ///
-  /// In en, this message translates to:
-  /// **'The other app is disconnected and its token stops working. It must be given the new token.'**
-  String get connectedAppsRevokeBody;
-
-  /// No description provided for @connectedAppsRevokeConfirm.
-  ///
-  /// In en, this message translates to:
-  /// **'Revoke'**
-  String get connectedAppsRevokeConfirm;
-
-  /// No description provided for @connectedAppsCancel.
-  ///
-  /// In en, this message translates to:
-  /// **'Cancel'**
-  String get connectedAppsCancel;
-
   /// No description provided for @networksTitle.
   ///
   /// In en, this message translates to:
@@ -6861,24 +6759,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Delete'**
   String get networksDeleteConfirm;
-
-  /// No description provided for @connectedAppsAirtimeTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'The channel is ours (no voluntary airtime cap)'**
-  String get connectedAppsAirtimeTitle;
-
-  /// No description provided for @connectedAppsAirtimeOwned.
-  ///
-  /// In en, this message translates to:
-  /// **'No cap: for a private frequency nobody else uses. The radio keeps its own limit.'**
-  String get connectedAppsAirtimeOwned;
-
-  /// No description provided for @connectedAppsAirtimeDutyCycle.
-  ///
-  /// In en, this message translates to:
-  /// **'Voluntary 1 % duty cycle: 36 s of airtime per hour.'**
-  String get connectedAppsAirtimeDutyCycle;
 }
 
 class _AppLocalizationsDelegate

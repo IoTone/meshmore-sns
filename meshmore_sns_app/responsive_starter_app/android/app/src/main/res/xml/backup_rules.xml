@@ -4,12 +4,12 @@
      Auto Backup quota is 25 MB, so backing them up would either fail or
      push hundreds of megabytes to the user's drive for nothing.
 
-     The gateway pairing token is a credential. It lives in
-     flutter_secure_storage, whose ciphertext (FlutterSecureStorage.xml) is
-     wrapped by an Android Keystore key (FlutterSecureKeyStorage.xml). Neither
-     may leave the device: a backup of a credential is an exfiltration path
-     that bypasses the platform keystore. Excluded explicitly rather than
-     relying on the key being un-restorable. -->
+     Anything a future feature stores through flutter_secure_storage is a
+     credential: its ciphertext (FlutterSecureStorage.xml) is wrapped by an
+     Android Keystore key (FlutterSecureKeyStorage.xml), and neither may leave
+     the device, because a backup of a credential is an exfiltration path that
+     bypasses the platform keystore. Excluded explicitly rather than relying on
+     the key being un-restorable. -->
 <full-backup-content>
     <exclude domain="file" path="maps/" />
     <exclude domain="sharedpref" path="FlutterSecureStorage.xml" />

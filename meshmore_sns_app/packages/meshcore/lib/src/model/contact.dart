@@ -82,8 +82,8 @@ class Contact {
 
   /// The path a direct send would use, or null when there is no direct route.
   ///
-  /// This is the rule both bridges bind with, kept here so the phone and the
-  /// host cannot disagree about it:
+  /// This is the rule the send path addresses with, kept on the model so a
+  /// caller cannot invent its own:
   ///
   ///   * `out_path_len == 0xFF` (`OUT_PATH_UNKNOWN`) means the contact is known
   ///     only by flood, so there is no route to address directly: null.

@@ -133,8 +133,8 @@ class MeshBinaryResponse {
 
 /// Encoders and decoders for the binary-request and raw carriers.
 ///
-/// These are the L1 frames a gateway needs to move opaque records over
-/// MeshCore. Decoding is total in the same sense as
+/// These are the L1 frames that move an opaque record over MeshCore: one
+/// addressed packet, or a flooded binary request. Decoding is total in the same sense as
 /// [MeshcoreFrameCodec.decode]: malformed input yields null rather than
 /// throwing.
 abstract final class MeshCarryCodec {
