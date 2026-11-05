@@ -23,7 +23,11 @@ import '../../ui/mm_shape.dart';
 /// meters in the team colours. Bold, glanceable, motion-forward (the sweep
 /// is off under reduce-motion). Same DashboardModel as every other skin.
 class AgHudDashboard extends StatefulWidget {
-  const AgHudDashboard({super.key});
+
+  const AgHudDashboard({super.key, this.pinned});
+
+  /// Pinned summaries, drawn under the brand bar.
+  final Widget? pinned;
 
   @override
   State<AgHudDashboard> createState() => _AgHudDashboardState();
@@ -77,6 +81,7 @@ class _AgHudDashboardState extends State<AgHudDashboard>
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
         children: <Widget>[
           _BrandBar(model: m, skin: skin),
+          if (widget.pinned != null) widget.pinned!,
           const SizedBox(height: 14),
           Center(
             child: SizedBox(

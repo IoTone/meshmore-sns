@@ -74,8 +74,9 @@ class _PlaceHistorySheetState extends State<PlaceHistorySheet> {
       final bool shared = await Share.file(file.path,
           mime: 'text/csv', subject: l.placeExportLedger);
       if (!mounted) return;
-      ScaffoldMessenger.maybeOf(context)?.showSnackBar(
-          SnackBar(content: Text(shared ? l.placeExportShared : l.placeExportDone(file.path))));
+      ScaffoldMessenger.maybeOf(context)?.showSnackBar(SnackBar(
+          content: Text(
+              shared ? l.placeExportShared : l.placeExportDone(file.path))));
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.maybeOf(context)

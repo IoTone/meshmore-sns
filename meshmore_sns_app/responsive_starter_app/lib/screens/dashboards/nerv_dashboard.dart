@@ -20,7 +20,11 @@ import 'my_pubkey_line.dart';
 /// SEELE monolith shows, re-imagined as a telemetry grid — proving a
 /// skin can drive layout, not just colour.
 class NervDashboard extends StatelessWidget {
-  const NervDashboard({super.key});
+
+  const NervDashboard({super.key, this.pinned});
+
+  /// Pinned summaries, drawn above the HUD panels.
+  final Widget? pinned;
 
   @override
   Widget build(BuildContext context) {
@@ -35,6 +39,9 @@ class NervDashboard extends StatelessWidget {
       child: ListView(
         padding: const EdgeInsets.fromLTRB(14, 14, 14, 28),
         children: <Widget>[
+          // Pinned cards first: a pinned block lives here and nowhere else.
+          if (pinned != null) pinned!,
+          const SizedBox(height: 8),
           // Status pills, right-aligned. A Wrap rather than a Row: at the
           // accessibility floor the two labels together are wider than a
           // 320 dp screen, and a Row cannot give the width back.

@@ -116,6 +116,60 @@ abstract class AppLocalizations {
   /// **'Dashboard'**
   String get tabDashboard;
 
+  /// No description provided for @dashboardPinsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Pinned'**
+  String get dashboardPinsTitle;
+
+  /// No description provided for @dashboardPinsEdit.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit pins'**
+  String get dashboardPinsEdit;
+
+  /// No description provided for @dashboardPinsDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get dashboardPinsDone;
+
+  /// No description provided for @dashboardPinsMoveUp.
+  ///
+  /// In en, this message translates to:
+  /// **'Move up'**
+  String get dashboardPinsMoveUp;
+
+  /// No description provided for @dashboardPinsMoveDown.
+  ///
+  /// In en, this message translates to:
+  /// **'Move down'**
+  String get dashboardPinsMoveDown;
+
+  /// No description provided for @dashboardPinAdd.
+  ///
+  /// In en, this message translates to:
+  /// **'Pin to dashboard'**
+  String get dashboardPinAdd;
+
+  /// No description provided for @dashboardPinRemove.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove from dashboard'**
+  String get dashboardPinRemove;
+
+  /// No description provided for @pinCoverageNone.
+  ///
+  /// In en, this message translates to:
+  /// **'No pings yet'**
+  String get pinCoverageNone;
+
+  /// No description provided for @pinCoverageAnswered.
+  ///
+  /// In en, this message translates to:
+  /// **'{answered} of {tried} answered'**
+  String pinCoverageAnswered(int answered, int tried);
+
   /// No description provided for @tabChat.
   ///
   /// In en, this message translates to:
@@ -8492,6 +8546,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Coverage'**
   String get coverageTitle;
+
+  /// No description provided for @coverageCountsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Coverage'**
+  String get coverageCountsTitle;
+
+  /// No description provided for @fieldExportSummaryLine.
+  ///
+  /// In en, this message translates to:
+  /// **'Trail and field record'**
+  String get fieldExportSummaryLine;
+
+  /// No description provided for @diagnosticsRadioHealth.
+  ///
+  /// In en, this message translates to:
+  /// **'Radio health'**
+  String get diagnosticsRadioHealth;
+
+  /// No description provided for @radioHealthSummaryLine.
+  ///
+  /// In en, this message translates to:
+  /// **'Battery, noise floor, last packet'**
+  String get radioHealthSummaryLine;
 
   /// No description provided for @coverageBeforeStart.
   ///

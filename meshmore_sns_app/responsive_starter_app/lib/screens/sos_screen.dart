@@ -217,8 +217,7 @@ class _SosScreenState extends State<SosScreen> {
                   decoration: InputDecoration(
                     hintText: l.sosWordsHint,
                     hintStyle: TextStyle(
-                        color: skin.color.fgMuted,
-                        fontSize: skin.type.sizeSm),
+                        color: skin.color.fgMuted, fontSize: skin.type.sizeSm),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: mmRadius(context, kRadiusSm),
                       borderSide: BorderSide(color: skin.color.line),
@@ -654,16 +653,15 @@ class _Running extends StatelessWidget {
               Text(l.sosNextSend(next.inSeconds),
                   key: const ValueKey<String>('sos-next'),
                   style: TextStyle(
-                      color: skin.color.fg,
-                      fontSize: skin.type.sizeBody)),
+                      color: skin.color.fg, fontSize: skin.type.sizeBody)),
           ],
         ),
         SizedBox(height: skin.space.step(2)),
         Text(
             '${l.sosElapsed(sos.elapsed.inMinutes)}  ·  '
             '${l.sosRemaining(left, total)}',
-            style:
-                TextStyle(color: skin.color.fgMuted, fontSize: skin.type.sizeSm)),
+            style: TextStyle(
+                color: skin.color.fgMuted, fontSize: skin.type.sizeSm)),
         // What the schedule did not manage, said plainly: a sleep window skips
         // repeats rather than firing a burst the radio would drop, and a
         // refused repeat is a repeat nobody heard.
@@ -780,8 +778,7 @@ class _Ended extends StatelessWidget {
               child: Text(
                 a.claimed ? l.sosClaimedBy(a.name) : l.sosSeenBy(a.name),
                 style: TextStyle(
-                    color: skin.color.fgMuted,
-                    fontSize: skin.type.sizeBody),
+                    color: skin.color.fgMuted, fontSize: skin.type.sizeBody),
               ),
             ),
         if (other.isNotEmpty) SizedBox(height: skin.space.step(4)),

@@ -31,19 +31,34 @@ import '../ui/mm_shape.dart';
 const Key dashboardKey = ValueKey<String>('dashboard');
 
 class DashboardScreen extends StatelessWidget {
-  const DashboardScreen({super.key});
+  const DashboardScreen({super.key, this.pinned});
+
+  /// Pinned summaries, drawn under the headline.
+  final Widget? pinned;
 
   ({String label, bool alert, bool busy}) _status(
       MeshcoreController mc, AppLocalizations l) {
     return switch (mc.state) {
-      MeshcoreConnectionState.ready =>
-        (label: l.statusLinked, alert: false, busy: false),
-      MeshcoreConnectionState.handshaking =>
-        (label: l.statusHandshaking, alert: false, busy: true),
-      MeshcoreConnectionState.reconnecting =>
-        (label: l.statusReconnecting, alert: true, busy: true),
-      MeshcoreConnectionState.failed =>
-        (label: l.statusLinkLost, alert: true, busy: false),
+      MeshcoreConnectionState.ready => (
+          label: l.statusLinked,
+          alert: false,
+          busy: false
+        ),
+      MeshcoreConnectionState.handshaking => (
+          label: l.statusHandshaking,
+          alert: false,
+          busy: true
+        ),
+      MeshcoreConnectionState.reconnecting => (
+          label: l.statusReconnecting,
+          alert: true,
+          busy: true
+        ),
+      MeshcoreConnectionState.failed => (
+          label: l.statusLinkLost,
+          alert: true,
+          busy: false
+        ),
       MeshcoreConnectionState.disconnected => (
           label: mc.isConnecting ? l.statusConnecting : l.statusOffline,
           alert: !mc.isConnecting,
@@ -123,6 +138,10 @@ class DashboardScreen extends StatelessWidget {
             ),
           ],
         ),
+
+        // Pinned cards, in pin order. A block that is pinned lives here and
+        // not on the screen it came from, so nothing is drawn twice.
+        if (pinned != null) pinned!,
 
         if (hasPeers) ...<Widget>[
           SizedBox(height: context.skin.space.step(5)),
@@ -441,8 +460,8 @@ String _eventLine(AppLocalizations l, MeshEvent e) {
   final Map<String, String> a = e.args;
   return switch (e.kind) {
     MeshEventKind.advert => l.eventAdvert(a['name'] ?? '?'),
-    MeshEventKind.channelMsg => l.eventChannelMsg(
-        a['channel'] ?? '?', a['text'] ?? ''),
+    MeshEventKind.channelMsg =>
+      l.eventChannelMsg(a['channel'] ?? '?', a['text'] ?? ''),
     MeshEventKind.dm => l.eventDm(a['text'] ?? ''),
     MeshEventKind.contact => l.eventContact(a['name'] ?? '?'),
     MeshEventKind.battery => l.eventBattery(a['volts'] ?? '?'),
@@ -526,8 +545,7 @@ class _LocationTile extends StatelessWidget {
         else
           Row(
             children: <Widget>[
-              Icon(Icons.location_off,
-                  size: 18, color: cs.error),
+              Icon(Icons.location_off, size: 18, color: cs.error),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
@@ -570,7 +588,8 @@ String _batteryLine(MeshcoreController mc, AppLocalizations l) {
   if (mc.charging == true) {
     b.write('  ⚡ ${l.dashboardCharging}');
   } else if (est.timeToEmpty != null) {
-    b.write(' · ${l.dashboardBatteryLeft(_fmtBatteryDur(est.timeToEmpty!, l))}');
+    b.write(
+        ' · ${l.dashboardBatteryLeft(_fmtBatteryDur(est.timeToEmpty!, l))}');
   }
   return b.toString();
 }

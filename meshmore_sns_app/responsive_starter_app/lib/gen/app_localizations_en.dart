@@ -18,6 +18,35 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tabDashboard => 'Dashboard';
 
   @override
+  String get dashboardPinsTitle => 'Pinned';
+
+  @override
+  String get dashboardPinsEdit => 'Edit pins';
+
+  @override
+  String get dashboardPinsDone => 'Done';
+
+  @override
+  String get dashboardPinsMoveUp => 'Move up';
+
+  @override
+  String get dashboardPinsMoveDown => 'Move down';
+
+  @override
+  String get dashboardPinAdd => 'Pin to dashboard';
+
+  @override
+  String get dashboardPinRemove => 'Remove from dashboard';
+
+  @override
+  String get pinCoverageNone => 'No pings yet';
+
+  @override
+  String pinCoverageAnswered(int answered, int tried) {
+    return '$answered of $tried answered';
+  }
+
+  @override
   String get tabChat => 'Chat';
 
   @override
@@ -4979,6 +5008,18 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get coverageTitle => 'Coverage';
+
+  @override
+  String get coverageCountsTitle => 'Coverage';
+
+  @override
+  String get fieldExportSummaryLine => 'Trail and field record';
+
+  @override
+  String get diagnosticsRadioHealth => 'Radio health';
+
+  @override
+  String get radioHealthSummaryLine => 'Battery, noise floor, last packet';
 
   @override
   String get coverageBeforeStart =>
