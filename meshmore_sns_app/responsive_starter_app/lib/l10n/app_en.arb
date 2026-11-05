@@ -3060,6 +3060,14 @@
   "@failureStorageFull": {},
   "failureRadioSilent": "The radio accepted the request but did not answer in time. It may still have carried it out; check the radio before retrying.",
   "@failureRadioSilent": {},
+  "diagnosticsRadioChangedLine": "This radio is not the one this app last used ({previous} then, {current} now). Its history is not carried over.",
+  "@diagnosticsRadioChangedLine": {
+    "placeholders": {
+      "previous": {"type": "String"},
+      "current": {"type": "String"}
+    }
+  },
+  "diagnosticsRadioChangedAccept": "This is my radio",
   "failureAirtimeBudget": "This phone has used its own radio time limit for the last hour, so nothing was sent. It sends again as the hour rolls on.",
   "@failureAirtimeBudget": {},
   "airtimeSpentLine": "Radio time this hour: {spent} of {budget}",

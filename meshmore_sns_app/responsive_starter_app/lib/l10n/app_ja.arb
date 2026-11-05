@@ -2229,6 +2229,8 @@
   "failureFrameTrailingBytes": "メッセージの末尾に余分なバイトがあり、破棄しました。件数は診断ページにあります。",
   "failureStorageFull": "ストレージが満杯のため書き込みを拒否しました。無言で削除はしていません。空き容量を確保してください。履歴はそのまま残ります。",
   "failureRadioSilent": "ラジオは要求を受け取りましたが、時間内に応答しませんでした。実行済みの可能性があります。再試行の前にラジオを確認してください。",
+  "diagnosticsRadioChangedLine": "この無線機は前回まで使っていたものではありません(前回 {previous}、今回 {current})。履歴は引き継がれません。",
+  "diagnosticsRadioChangedAccept": "この無線機を使う",
   "failureAirtimeBudget": "この1時間でアプリの送信時間の上限に達したため、送信していません。時間の経過とともにまた送信できます。",
   "airtimeSpentLine": "この1時間の送信時間: {spent} / {budget}",
   "airtimeSpentLineUnlimited": "この1時間の送信時間: {spent}(上限なし)",

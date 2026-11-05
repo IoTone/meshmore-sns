@@ -4408,6 +4408,14 @@ class AppLocalizationsJa extends AppLocalizations {
       'ラジオは要求を受け取りましたが、時間内に応答しませんでした。実行済みの可能性があります。再試行の前にラジオを確認してください。';
 
   @override
+  String diagnosticsRadioChangedLine(String previous, String current) {
+    return 'この無線機は前回まで使っていたものではありません(前回 $previous、今回 $current)。履歴は引き継がれません。';
+  }
+
+  @override
+  String get diagnosticsRadioChangedAccept => 'この無線機を使う';
+
+  @override
   String get failureAirtimeBudget =>
       'この1時間でアプリの送信時間の上限に達したため、送信していません。時間の経過とともにまた送信できます。';
 

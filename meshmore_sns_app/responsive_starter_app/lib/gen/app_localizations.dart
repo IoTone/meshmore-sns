@@ -7852,6 +7852,18 @@ abstract class AppLocalizations {
   /// **'The radio accepted the request but did not answer in time. It may still have carried it out; check the radio before retrying.'**
   String get failureRadioSilent;
 
+  /// No description provided for @diagnosticsRadioChangedLine.
+  ///
+  /// In en, this message translates to:
+  /// **'This radio is not the one this app last used ({previous} then, {current} now). Its history is not carried over.'**
+  String diagnosticsRadioChangedLine(String previous, String current);
+
+  /// No description provided for @diagnosticsRadioChangedAccept.
+  ///
+  /// In en, this message translates to:
+  /// **'This is my radio'**
+  String get diagnosticsRadioChangedAccept;
+
   /// No description provided for @failureAirtimeBudget.
   ///
   /// In en, this message translates to:

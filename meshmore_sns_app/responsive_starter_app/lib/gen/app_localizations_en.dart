@@ -4571,6 +4571,14 @@ class AppLocalizationsEn extends AppLocalizations {
       'The radio accepted the request but did not answer in time. It may still have carried it out; check the radio before retrying.';
 
   @override
+  String diagnosticsRadioChangedLine(String previous, String current) {
+    return 'This radio is not the one this app last used ($previous then, $current now). Its history is not carried over.';
+  }
+
+  @override
+  String get diagnosticsRadioChangedAccept => 'This is my radio';
+
+  @override
   String get failureAirtimeBudget =>
       'This phone has used its own radio time limit for the last hour, so nothing was sent. It sends again as the hour rolls on.';
 

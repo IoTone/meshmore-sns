@@ -25,6 +25,7 @@ import 'channel_datagram.dart';
 import 'command_ledger.dart';
 import 'chat_message.dart';
 import 'radio_config_transaction.dart';
+import 'radio_identity_store.dart';
 import 'chat_store.dart';
 import 'discovered_node.dart';
 import 'dm_read_store.dart';
@@ -134,6 +135,8 @@ class MeshcoreController extends ChangeNotifier {
         // judge "in range" against the device's own clock.
         _requestDeviceTime();
         _requestDeviceInfo();
+        // Know whether this is still the radio the app has been talking to.
+        unawaited(_checkRadioIdentity());
         // R38 — read the device's custom-var map (gps, gps_interval,
         // …). Also: if the user already has advertLocPolicy=GPS but
         // the firmware's GPS module is disabled, auto-enable it so
@@ -873,6 +876,53 @@ class MeshcoreController extends ChangeNotifier {
   /// True once the reconnect policy has exhausted [ReconnectPolicy
   /// .maxAttempts] without recovering.
   bool get gaveUp => _gaveUp;
+
+  /// The radio's own key as it was the last time the app accepted it, and
+  /// whether the link now answers with a different one. A reflash or a
+  /// replacement changes the key while the BLE identity can survive, so this
+  /// is the only signal that the history on screen belongs to another node
+  /// (D8.7). Nothing is migrated automatically: the user says which it is.
+  String? get previousRadioKey => _previousRadioKey;
+  bool get radioChanged => _radioChanged;
+  String? _previousRadioKey;
+  bool _radioChanged = false;
+
+  /// The connected radio is the one the user means: record its key and stop
+  /// asking. The diagnostics line is what offers this.
+  Future<void> acceptRadioIdentity() async {
+    final String? own = ownPubKeyHex;
+    if (own == null) return;
+    await RadioIdentityStore.save(own);
+    _previousRadioKey = own;
+    _radioChanged = false;
+    notifyListeners();
+  }
+
+  /// Compares the connected radio's key with the one on record. Silent the
+  /// first time (a fresh install records what it sees), and silent when the
+  /// radio reports an all-zero key, which means it has not been provisioned.
+  Future<void> _checkRadioIdentity() async {
+    final String? own = ownPubKeyHex;
+    if (own == null || own == '') return;
+    if (RegExp(r'^0+$').hasMatch(own)) return;
+    final String? stored = await RadioIdentityStore.read();
+    if (stored == null) {
+      await RadioIdentityStore.save(own);
+      _previousRadioKey = own;
+      _radioChanged = false;
+      notifyListeners();
+      return;
+    }
+    if (stored == own) {
+      _previousRadioKey = stored;
+      _radioChanged = false;
+      notifyListeners();
+      return;
+    }
+    _previousRadioKey = stored;
+    _radioChanged = true;
+    notifyListeners();
+  }
 
   void _maybeScheduleReconnect() {
     if (_manualDisconnect || _connecting) return;
