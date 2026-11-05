@@ -443,7 +443,7 @@ class _GlobeViewState extends State<GlobeView> {
                   const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
                 color: cs.surface.withValues(alpha: .75),
-                borderRadius: BorderRadius.circular(4),
+                borderRadius: BorderRadius.circular(kRadiusMd),
                 border: Border.all(
                     color: cs.outline.withValues(alpha: .4)),
               ),
@@ -470,7 +470,7 @@ class _GlobeViewState extends State<GlobeView> {
                   horizontal: 8, vertical: 2),
               decoration: BoxDecoration(
                 color: cs.surface.withValues(alpha: .75),
-                borderRadius: BorderRadius.circular(4),
+                borderRadius: BorderRadius.circular(kRadiusMd),
                 border: Border.all(
                     color: cs.outline.withValues(alpha: .4)),
               ),
@@ -519,7 +519,7 @@ class _GlobeViewState extends State<GlobeView> {
                     horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
                   color: cs.tertiaryContainer.withValues(alpha: .85),
-                  borderRadius: BorderRadius.circular(4),
+                  borderRadius: BorderRadius.circular(kRadiusMd),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -559,11 +559,11 @@ class _OverlayChip extends StatelessWidget {
     final ColorScheme cs = Theme.of(context).colorScheme;
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(4),
+      borderRadius: BorderRadius.circular(kRadiusMd),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(4),
+          borderRadius: BorderRadius.circular(kRadiusMd),
           border: Border.all(
               color: on
                   ? cs.primary

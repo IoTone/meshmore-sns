@@ -156,7 +156,7 @@ Decided: D10.1 in `meshmore-scope-of-record.md` §12. The consumer stopped exist
 | Issues link instead of crash reporting | TODO | R10 unbuilt |
 | Radio-free demo mode | SPECIFIED | D8.21: every permission denial has a working fallback; the offline path is a first-class first-run choice, not an error. Needed for store review too |
 | Seven skins correctness audit | TODO | Every feature in all seven |
-| Type scale + colour ratchet | TODO | >250 `fontSize:` literals, 26 colour literals, 19 `Colors.*` |
+| Type scale + colour ratchet | BUILT 2026-11-05 | `MmType` size roles (10/11/12/13/16/20/24/34 over a per-skin `typeScale`) and `size(step)` for the off-ladder values; `MmSpace` ladder 1..9 = 2,4,6,8,12,16,20,24,32; `kRadiusXs/Sm/Md` replace the sub-6 px corner literals. `test/theme/mm_ratchet_test.dart` holds two **lower-only** baselines — 302 literal type sizes in 46 files, 32 colours in 11 — and forbids a bare `BorderRadius.circular` outside the token layer. Measured before this wave: 318 type sizes in 50 files and 42 colours in 12; the older "more than 250 / 26 / 19" was stale, and the shared widgets plus two pattern-setters are migrated, so the rest dwindle screen by screen |
 | Accessibility floors (angular, CJK tiers) | SPECIFIED | Latin 1.2°, kana 1.5°, kanji 1.8°; asserted both directions |
 
 ## 8. Out of scope, decided

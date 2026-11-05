@@ -130,7 +130,8 @@ class _MmCollapsibleSectionState extends State<MmCollapsibleSection> {
                 constraints:
                     const BoxConstraints(minHeight: kMinInteractiveDimension),
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  padding:
+                      EdgeInsets.symmetric(horizontal: skin.space.step(6)),
                   child: Row(
                     children: <Widget>[
                       Icon(

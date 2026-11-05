@@ -15,6 +15,7 @@ import '../../ui/mm_scaffold.dart';
 import '../device_manager_sheet.dart';
 import 'dashboard_model.dart';
 import 'my_pubkey_line.dart';
+import '../../ui/mm_shape.dart';
 
 /// Concept B — **AG Systems HUD** dashboard: a Wipeout anti-grav cockpit.
 /// One hero **radial gauge** (signal quality) with a rotating HUD sweep,
@@ -472,7 +473,7 @@ class _LiveryTile extends StatelessWidget {
                   fontWeight: FontWeight.w600)),
           const SizedBox(height: 8),
           ClipRRect(
-            borderRadius: BorderRadius.circular(3),
+            borderRadius: BorderRadius.circular(kRadiusSm),
             child: LinearProgressIndicator(
               value: meter,
               minHeight: 5,

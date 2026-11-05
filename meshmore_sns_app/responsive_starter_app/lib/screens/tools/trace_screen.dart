@@ -13,6 +13,7 @@ import '../../tools/trace_tool.dart';
 import '../../ui/mm_components.dart';
 import 'tool_pickers.dart';
 import 'tool_widgets.dart';
+import '../../ui/mm_shape.dart';
 
 /// R60 T3 — per-hop SNR along a repeater chain.
 class TraceScreen extends StatefulWidget {
@@ -241,7 +242,7 @@ class _HopRow extends StatelessWidget {
           ),
           Expanded(
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(2),
+              borderRadius: BorderRadius.circular(kRadiusXs),
               child: LinearProgressIndicator(
                 value: frac,
                 minHeight: 6,

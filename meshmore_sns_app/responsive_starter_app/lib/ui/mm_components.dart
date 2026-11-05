@@ -7,6 +7,11 @@ import 'package:flutter/material.dart';
 import '../theme/mm_skin.dart';
 import 'mm_shape.dart';
 
+/// The inner padding of a [MmPanel]. Its own token rather than a spacing step:
+/// 14 sits between the ladder's 12 and 16, and every panel in the app uses it,
+/// so rounding it to a step would move the whole layout by 2 px.
+const double kPadPanel = 14;
+
 /// A framed surface panel whose edge treatment (sharp / rounded /
 /// chamfered) comes from the active skin. The NERV concept renders this
 /// as a chamfered HUD panel; SEELE as a plain sharp slab.
@@ -14,7 +19,7 @@ class MmPanel extends StatelessWidget {
   const MmPanel({
     super.key,
     required this.child,
-    this.padding = const EdgeInsets.all(14),
+    this.padding = const EdgeInsets.all(kPadPanel),
     this.fill,
   });
 
@@ -48,7 +53,7 @@ TextStyle mmSectionLabelStyle(MmSkin skin) => TextStyle(
           ? null
           : (skin.type.headingFamily ?? skin.type.monoFamily),
       color: skin.color.fgMuted,
-      fontSize: 11,
+      fontSize: skin.type.sizeSm,
       letterSpacing: skin.type.headingTracking,
       fontWeight: FontWeight.w700,
     );
@@ -148,7 +153,7 @@ class MmReadout extends StatelessWidget {
           style: TextStyle(
             fontFamily: skin.type.wordsMono,
             color: skin.color.fgMuted,
-            fontSize: 12,
+            fontSize: skin.type.sizeBody,
             letterSpacing: 1,
           ),
         ),
@@ -161,7 +166,8 @@ class MmReadout extends StatelessWidget {
             style: TextStyle(
               fontFamily: skin.type.monoFamily,
               color: valueColor ?? skin.color.fg,
-              fontSize: emphasize ? 18 : 13,
+              fontSize:
+                  emphasize ? skin.type.size(18) : skin.type.sizeBodyLg,
               fontWeight: FontWeight.w700,
               letterSpacing: 0.5,
               fontFeatures: skin.type.slashedZero
@@ -288,7 +294,7 @@ class MmStatusPill extends StatelessWidget {
         style: TextStyle(
           fontFamily: skin.type.wordsMono,
           color: fg,
-          fontSize: 10,
+          fontSize: skin.type.sizeMicro,
           letterSpacing: 1.5,
           fontWeight: FontWeight.w700,
         ),
@@ -360,7 +366,7 @@ class MmAction extends StatelessWidget {
                 Text(label,
                     style: TextStyle(
                         color: fg,
-                        fontSize: 13,
+                        fontSize: skin.type.sizeBodyLg,
                         letterSpacing: .4,
                         fontWeight: FontWeight.w600)),
               ],
@@ -415,11 +421,13 @@ Future<T?> showMmPicker<T>({
         padding: const EdgeInsets.only(bottom: 12),
         children: <Widget>[
           Padding(
-            padding: const EdgeInsets.fromLTRB(20, 4, 20, 6),
+            padding: EdgeInsets.fromLTRB(
+                skin.space.step(7), skin.space.step(2), skin.space.step(7),
+                skin.space.step(3)),
             child: Text(title,
                 style: TextStyle(
                     color: skin.color.fgMuted,
-                    fontSize: 11,
+                    fontSize: skin.type.sizeSm,
                     letterSpacing: 1.4,
                     fontWeight: FontWeight.w600)),
           ),
@@ -430,7 +438,7 @@ Future<T?> showMmPicker<T>({
                 child: Text(it.label,
                     style: TextStyle(
                         color: skin.color.fgMuted,
-                        fontSize: 11,
+                        fontSize: skin.type.sizeSm,
                         letterSpacing: 1.2,
                         fontWeight: FontWeight.w600)),
               )
@@ -440,7 +448,7 @@ Future<T?> showMmPicker<T>({
                 child: SizedBox(
                   height: 48,
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    padding: EdgeInsets.symmetric(horizontal: skin.space.step(7)),
                     child: Row(
                       children: <Widget>[
                         SizedBox(
@@ -458,7 +466,7 @@ Future<T?> showMmPicker<T>({
                           child: Text(it.label,
                               style: TextStyle(
                                   color: skin.color.fg,
-                                  fontSize: 15,
+                                  fontSize: skin.type.size(15),
                                   fontWeight: it.value == current
                                       ? FontWeight.w600
                                       : FontWeight.w400)),

@@ -195,9 +195,17 @@ Ownership: `packages/meshcore/**` for D1-D3, D5-D6; `lib/meshcore/**` + `lib/scr
 Gate: package suite green and fast; a device build still connects.
 
 ### W2 — Skin tokens prerequisite (master plan §9.5)
-`MmType` gains size/spacing/radius scales; a colour ratchet test forbids new literals; the >250 `fontSize:` literals
-migrate screen by screen in later waves (only the ratchet + scale land here, plus the migration of shared widgets).
-Gate: eight-preset exhaustiveness still compiles; `test/theme/**` green.
+`MmType` gains size/spacing/radius scales; a colour ratchet test forbids new literals; the remaining `fontSize:`
+literals migrate screen by screen in later waves (only the ratchet + scale land here, plus the migration of shared
+widgets and two pattern-setters).
+Gate: seven-preset exhaustiveness still compiles (`MmThemePreset` has seven; the earlier "eight-preset" line here was
+wrong); `test/theme/**` green.
+Landed 2026-11-05: `MmType` roles + `typeScale` + `size(step)`, `MmSpace` 1..9 = 2,4,6,8,12,16,20,24,32, `kPadPanel`
+keeps a panel's 14 px, `kRadiusXs/Sm/Md` for the sub-6 px corners, and the thermal ramp and heat cue are declared once
+in `viz_palette.dart`. The ratchet (`test/theme/mm_ratchet_test.dart`) is two lower-only baselines — 302 type sizes
+in 46 files and 32 colours in 11 after the wave, from 318 in 50 files and 42 in 12 before it — plus a rule that no file outside the
+token layer spells a corner as a number. Neutrality is proved, not assumed: `test/ui/mm_type_migration_test.dart`
+asserts the resolved sizes in the two pattern-setters, and the section-label style is asserted per preset.
 
 ### W3 — Protocol foundations (register §1)
 - **P1** `0x3E CMD_SEND_CHANNEL_DATA` encoder + inbound `ChannelDataFrame` dispatch to a consumer, golden vectors both
@@ -301,7 +309,7 @@ plugin set. Each is a child task with a written answer, not a guess.
 | W0 branch rename + dev re-port | **done** | worker | rename `feat/app-completion`; `origin/dev` merged (`c393d26`), then ported per R109 (§2b): shell paging + grid Swipe ⇄ Pan + shared claim, EN/JA strings, `test/shell/home_shell_test.dart` 34 pass / 12 s |
 | W0 gateway removal + doc correction | **done** | worker | `R110`: 8 app files removed or rewritten, 2 packages deleted, Binder service + permission + method channel gone, 6 docs corrected, D10.1 in the scope of record |
 | W1 defects | not started | — | — |
-| W2 skin tokens | not started | — | — |
+| W2 skin tokens | **done** | worker | branch `w2-tokens`: roles + ladders + radius constants, `mm_ratchet_test.dart` (302 type sizes / 46 files, 32 colours / 11), shared widgets and two pattern-setters migrated, `mm_type_migration_test.dart`; full suite 1027 passed / 75 s, analyze 2 known |
 | W3 protocol | not started | — | — |
 | W4 messenger | not started | — | — |
 | W5 radio | not started | — | — |

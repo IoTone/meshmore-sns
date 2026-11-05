@@ -36,12 +36,34 @@ class MmType {
     this.headingTracking = 1.0,
     this.slashedZero = false,
     this.sansLabels = false,
+    this.typeScale = 1.0,
   });
 
   final String? displayFamily;
   final String? headingFamily;
   final String monoFamily;
   final String? bodyFamily;
+
+  /// Multiplier over every size below. 1.0 for all seven presets: a skin may
+  /// move the whole scale at once, and the accessibility pass multiplies this
+  /// rather than each call site. The steps are seeded from the sizes the app
+  /// already sets (11 and 12 carry 61 % of the literals they replace), so
+  /// moving a site onto a role does not move a pixel.
+  final double typeScale;
+
+  double get sizeMicro => 10 * typeScale;
+  double get sizeSm => 11 * typeScale;
+  double get sizeBody => 12 * typeScale;
+  double get sizeBodyLg => 13 * typeScale;
+  double get sizeLg => 16 * typeScale;
+  double get sizeXl => 20 * typeScale;
+  double get sizeTitle => 24 * typeScale;
+  double get sizeHero => 34 * typeScale;
+
+  /// A size with no role yet. It still rides [typeScale], so it moves with the
+  /// skin and the accessibility pass like the roles do; the screen waves
+  /// replace each one with a role as they revisit the file.
+  double size(double step) => step * typeScale;
 
   /// Render section labels in UPPER CASE (terminal/HUD concepts).
   final bool upperHeadings;
@@ -65,6 +87,28 @@ class MmType {
   /// (the theme's UI face) when [sansLabels] is on, [monoFamily] otherwise.
   /// Use it for prose; keep `monoFamily` for machine data.
   String? get wordsMono => sansLabels ? null : monoFamily;
+}
+
+/// The spacing ladder, in logical px. Seeded from the paddings the app already
+/// uses (12, 16 and 20 are the three most common), so a migrated padding does
+/// not move.
+@immutable
+class MmSpace {
+  const MmSpace({this.scale = 1.0});
+
+  /// Multiplier over every step, for the same reason [MmType.typeScale]
+  /// exists. 1.0 for all seven presets.
+  final double scale;
+
+  /// [step] 1..9 = 2, 4, 6, 8, 12, 16, 20, 24, 32.
+  static const List<double> steps = <double>[2, 4, 6, 8, 12, 16, 20, 24, 32];
+
+  double step(int n) {
+    assert(n >= 1 && n <= steps.length, 'spacing step $n is 1..9');
+    return steps[n - 1] * scale;
+  }
+
+  EdgeInsets pad(int n) => EdgeInsets.all(step(n));
 }
 
 /// Panel/edge treatment.
@@ -151,6 +195,7 @@ class MmSkin {
     required this.type,
     required this.shape,
     required this.ornament,
+    this.space = const MmSpace(),
   });
 
   final MmThemePreset preset;
@@ -158,6 +203,7 @@ class MmSkin {
   final MmType type;
   final MmShape shape;
   final MmOrnament ornament;
+  final MmSpace space;
 }
 
 // Shared calm chrome (no scanlines/brackets/stripes) — the loud concepts

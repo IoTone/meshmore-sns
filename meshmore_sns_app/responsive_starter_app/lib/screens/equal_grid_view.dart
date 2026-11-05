@@ -480,7 +480,7 @@ class _EqualGridViewState extends State<EqualGridView> {
                 decoration: BoxDecoration(
                   color:
                       cs.tertiaryContainer.withValues(alpha: .85),
-                  borderRadius: BorderRadius.circular(4),
+                  borderRadius: BorderRadius.circular(kRadiusMd),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -684,7 +684,7 @@ class _NervStatsPanel extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: bg,
-        borderRadius: BorderRadius.circular(2),
+        borderRadius: BorderRadius.circular(kRadiusXs),
         border: Border.all(color: border, width: 1.0),
       ),
       padding:

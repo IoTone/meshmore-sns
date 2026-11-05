@@ -12,6 +12,7 @@ import '../sns/weather_inference.dart';
 import '../sns/weather_lexicon.dart';
 import '../util/geo.dart' as geo;
 import 'node_detail_sheet.dart';
+import '../theme/viz_palette.dart';
 import '../ui/mm_shape.dart';
 
 /// Mesh weather — a glanceable view of the environment telemetry
@@ -230,13 +231,12 @@ class _Reading {
 Color temperatureColor(double c) {
   const double lo = -10, hi = 40;
   final double f = ((c - lo) / (hi - lo)).clamp(0.0, 1.0);
-  // Three-stop gradient: blue (cold) → amber (mild) → red (hot).
+  // Three-stop gradient: cold → mild → hot (the ramp lives in the palette so a
+  // screen holds no colour literal and the encoding is declared once).
   if (f < 0.5) {
-    return Color.lerp(
-        const Color(0xFF2E7DEF), const Color(0xFFE0A02E), f / 0.5)!;
+    return Color.lerp(kThermalCold, kThermalMild, f / 0.5)!;
   }
-  return Color.lerp(
-      const Color(0xFFE0A02E), const Color(0xFFE0402E), (f - 0.5) / 0.5)!;
+  return Color.lerp(kThermalMild, kThermalHot, (f - 0.5) / 0.5)!;
 }
 
 class _SummaryCard extends StatelessWidget {

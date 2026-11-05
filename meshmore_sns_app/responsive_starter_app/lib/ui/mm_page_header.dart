@@ -49,7 +49,8 @@ class MmPageHeader extends StatelessWidget {
       shown,
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
-      style: (tt.titleMedium ?? const TextStyle(fontSize: 18)).copyWith(
+      style: (tt.titleMedium ?? TextStyle(fontSize: skin.type.size(18)))
+          .copyWith(
         color: skin.color.accent,
         letterSpacing: 1.2,
         fontWeight: FontWeight.w600,
@@ -82,7 +83,7 @@ class MmPageHeader extends StatelessWidget {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: (tt.bodySmall ??
-                                    const TextStyle(fontSize: 12))
+                                    TextStyle(fontSize: skin.type.sizeBody))
                                 .copyWith(color: skin.color.fgMuted),
                           ),
                         ],

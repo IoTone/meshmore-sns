@@ -7,6 +7,7 @@ import '../gen/app_localizations.dart';
 import '../theme/mm_skin.dart';
 import '../ui/mm_scaffold.dart';
 import '../tts/tts_controller.dart';
+import '../ui/mm_shape.dart';
 
 /// R5 / U5 — TTS **quality** picker. Sits below the global SPEECH
 /// switch in App settings. Three knobs, all persisted by the
@@ -348,7 +349,7 @@ class _OfflineBadge extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
         color: color.withValues(alpha: .15),
-        borderRadius: BorderRadius.circular(3),
+        borderRadius: BorderRadius.circular(kRadiusSm),
         border: Border.all(color: color.withValues(alpha: .55)),
       ),
       child: Text(
