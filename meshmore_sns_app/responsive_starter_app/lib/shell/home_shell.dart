@@ -82,8 +82,7 @@ class HomeShell extends StatefulWidget {
   State<HomeShell> createState() => _HomeShellState();
 }
 
-class _HomeShellState extends State<HomeShell>
-    with WidgetsBindingObserver {
+class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
   final PageController _pc = PageController();
   int _index = 0;
   CueBridge? _cueBridge;
@@ -173,7 +172,8 @@ class _HomeShellState extends State<HomeShell>
   /// `animateToPage`, so Dashboard -> Settings scrolled through five pages and
   /// `onPageChanged` fired a nav cue on each one: five builds, five vibrations.
   /// The jump is instant and the cue is played once here, at the tap.
-  static const MethodChannel _lifecycle = MethodChannel('meshmore/app_lifecycle');
+  static const MethodChannel _lifecycle =
+      MethodChannel('meshmore/app_lifecycle');
 
   /// Back on the Dashboard: keep the engine (and the radio) alive, in the background.
   /// Best effort: a test or a platform without the channel simply ignores the back.
@@ -216,7 +216,9 @@ class _HomeShellState extends State<HomeShell>
   /// One view change, one cue (R95) — whether the change came from a strip
   /// tap or from a swipe that settled, so the two paths cannot play it twice.
   void _playNavCue(int from, int to) {
-    context.read<CueService>().play(to > from ? CueKind.navNext : CueKind.navPrev);
+    context
+        .read<CueService>()
+        .play(to > from ? CueKind.navNext : CueKind.navPrev);
   }
 
   void _onPageChanged(int i) {
@@ -277,62 +279,63 @@ class _HomeShellState extends State<HomeShell>
           _moveToBackground();
         }
       },
-      child: BootOverlay(child: Scaffold(
-      appBar: AppBar(
-        // The app bar says who this is, always. The *view* name lives in
-        // MmPageHeader below the tab strip, in the same place on every
-        // view, so the top of the screen stopped changing on every swipe.
-        title: Text(l.appName),
-        // SOS is one tap from every primary view, in every skin: an alarm that
-        // needs three taps and a remembered menu is not an alarm. The control
-        // only opens the alarm screen; raising still takes the three-second
-        // hold, so a stray tap costs nothing (`meshmore-sos-spec.md` §8).
-        actions: <Widget>[
-          IconButton(
-            key: const ValueKey<String>('sos-entry'),
-            tooltip: l.sosEntryTooltip,
-            icon: const Icon(Icons.sos),
-            onPressed: () => context.push('/sos'),
+      child: BootOverlay(
+        child: Scaffold(
+          appBar: AppBar(
+            // The app bar says who this is, always. The *view* name lives in
+            // MmPageHeader below the tab strip, in the same place on every
+            // view, so the top of the screen stopped changing on every swipe.
+            title: Text(l.appName),
+            // SOS is one tap from every primary view, in every skin: an alarm that
+            // needs three taps and a remembered menu is not an alarm. The control
+            // only opens the alarm screen; raising still takes the three-second
+            // hold, so a stray tap costs nothing (`meshmore-sos-spec.md` §8).
+            actions: <Widget>[
+              IconButton(
+                key: const ValueKey<String>('sos-entry'),
+                tooltip: l.sosEntryTooltip,
+                icon: const Icon(Icons.sos),
+                onPressed: () => context.push('/sos'),
+              ),
+              const DemoChip(),
+              const RadioLinkIndicator(),
+            ],
+            bottom: _ViewStrip(
+              index: _index,
+              onSelect: _select,
+              chatUnread: chatUnread,
+            ),
           ),
-          const DemoChip(),
-          const RadioLinkIndicator(),
-        ],
-        bottom: _ViewStrip(
-          index: _index,
-          onSelect: _select,
-          chatUnread: chatUnread,
+          // R109 — a horizontal drag pages the body, except while the current
+          // view needs the same drag: the Map (its pan/zoom canvas owns the
+          // middle, and the R67 edge bands are its gesture exit) and the grid
+          // in pan mode, which holds the claim itself. R95's half of this
+          // stays: a strip tap jumps in one frame with one cue, and a vertical
+          // drag on the strip steps one view.
+          body: ValueListenableBuilder<bool>(
+            valueListenable: shellDragClaim.claimed,
+            builder: (BuildContext _, bool gridOwnsDrag, Widget? __) {
+              // The Map is the current view or it is not: a page is built as a
+              // neighbour before it is shown, so a mount-time hold would lock
+              // the shell while another view was on screen.
+              final bool dragOwned = gridOwnsDrag || _index == MmView.map.index;
+              return PageView(
+                controller: _pc,
+                physics:
+                    dragOwned ? const NeverScrollableScrollPhysics() : null,
+                onPageChanged: _onPageChanged,
+                children: <Widget>[
+                  const DashboardHost(),
+                  ChatScreen(isCurrent: _index == MmView.chat.index),
+                  const NodesScreen(),
+                  const GridScreen(),
+                  MapScreen(onEdgeSwipe: _edgeSwipe),
+                  const _SettingsView(),
+                ],
+              );
+            },
+          ),
         ),
-      ),
-      // R109 — a horizontal drag pages the body, except while the current
-      // view needs the same drag: the Map (its pan/zoom canvas owns the
-      // middle, and the R67 edge bands are its gesture exit) and the grid
-      // in pan mode, which holds the claim itself. R95's half of this
-      // stays: a strip tap jumps in one frame with one cue, and a vertical
-      // drag on the strip steps one view.
-      body: ValueListenableBuilder<bool>(
-        valueListenable: shellDragClaim.claimed,
-        builder: (BuildContext _, bool gridOwnsDrag, Widget? __) {
-          // The Map is the current view or it is not: a page is built as a
-          // neighbour before it is shown, so a mount-time hold would lock
-          // the shell while another view was on screen.
-          final bool dragOwned =
-              gridOwnsDrag || _index == MmView.map.index;
-          return PageView(
-        controller: _pc,
-        physics: dragOwned ? const NeverScrollableScrollPhysics() : null,
-        onPageChanged: _onPageChanged,
-        children: <Widget>[
-          const DashboardHost(),
-          ChatScreen(isCurrent: _index == MmView.chat.index),
-          const NodesScreen(),
-          const GridScreen(),
-          MapScreen(onEdgeSwipe: _edgeSwipe),
-          const _SettingsView(),
-        ],
-          );
-        },
-      ),
-      ),
       ),
     );
   }
@@ -454,9 +457,8 @@ class _ViewStripState extends State<_ViewStrip> {
                 Container(
                   width: 22,
                   height: 3,
-                  color: v.index == widget.index
-                      ? cs.primary
-                      : Colors.transparent,
+                  color:
+                      v.index == widget.index ? cs.primary : Colors.transparent,
                 ),
               ],
             ),
@@ -533,23 +535,27 @@ class _SettingsView extends StatelessWidget {
                   ? const EdgeInsets.fromLTRB(12, 8, 12, 12)
                   : EdgeInsets.zero,
               children: <Widget>[
-                for (final ({String label, List<(IconData, String, String)> rows})
-                    g in _settingsGroups(l))
-                  ...<Widget>[
-                    _GroupLabel(text: g.label, skin: skin, first: g.label == l.settingsGroupRadio),
-                    for (final (IconData icon, String title, String route) r
-                        in g.rows)
-                      Padding(
-                        padding: EdgeInsets.only(bottom: cardRows ? 8 : 0),
-                        child: MmListRow(
-                          leading: Icon(r.$1, color: skin.color.accent),
-                          title: Text(r.$2),
-                          trailing: Icon(Icons.chevron_right,
-                              color: skin.color.fgMuted),
-                          onTap: () => context.push(r.$3),
-                        ),
+                for (final ({
+                  String label,
+                  List<(IconData, String, String)> rows
+                }) g in _settingsGroups(l)) ...<Widget>[
+                  _GroupLabel(
+                      text: g.label,
+                      skin: skin,
+                      first: g.label == l.settingsGroupRadio),
+                  for (final (IconData icon, String title, String route) r
+                      in g.rows)
+                    Padding(
+                      padding: EdgeInsets.only(bottom: cardRows ? 8 : 0),
+                      child: MmListRow(
+                        leading: Icon(r.$1, color: skin.color.accent),
+                        title: Text(r.$2),
+                        trailing: Icon(Icons.chevron_right,
+                            color: skin.color.fgMuted),
+                        onTap: () => context.push(r.$3),
                       ),
-                  ],
+                    ),
+                ],
               ],
             ),
           ),
@@ -584,8 +590,11 @@ List<({String label, List<(IconData, String, String)> rows})> _settingsGroups(
       (
         label: l.settingsGroupConnect,
         rows: <(IconData, String, String)>[
-          (Icons.bluetooth_searching, l.settingsHubDiagnostics,
-              '/settings/diagnostics'),
+          (
+            Icons.bluetooth_searching,
+            l.settingsHubDiagnostics,
+            '/settings/diagnostics'
+          ),
           (Icons.handyman_outlined, l.settingsHubTools, '/settings/tools'),
         ],
       ),
@@ -600,7 +609,8 @@ List<({String label, List<(IconData, String, String)> rows})> _settingsGroups(
 
 /// A group's name, at the same weight and tracking in every skin.
 class _GroupLabel extends StatelessWidget {
-  const _GroupLabel({required this.text, required this.skin, this.first = false});
+  const _GroupLabel(
+      {required this.text, required this.skin, this.first = false});
 
   final String text;
   final MmSkin skin;
@@ -626,8 +636,7 @@ class RadioLinkIndicator extends StatelessWidget {
     final ColorScheme cs = Theme.of(context).colorScheme;
     final AppLocalizations l = AppLocalizations.of(context);
 
-    final ({String label, Color color, IconData icon}) v =
-        switch (mc.state) {
+    final ({String label, Color color, IconData icon}) v = switch (mc.state) {
       MeshcoreConnectionState.ready => (
           label: l.linkChipLinked,
           // R97 — green in every skin, not `ok`, which is beige in SEELE,
@@ -657,14 +666,31 @@ class RadioLinkIndicator extends StatelessWidget {
         ),
     };
 
+    // The chip is the app bar's only route to Diagnostics, and it used to be a
+    // dot, an icon and coloured text with no boundary at all: a status readout
+    // that happened to be pressable. It now carries the pill's own edge in the
+    // state's colour, so the shape says "control" and the colour still says
+    // "which state".
     return Semantics(
       button: true,
       label: l.linkChipSemantics(v.label),
       child: InkWell(
         onTap: () => context.push('/settings/diagnostics'),
         borderRadius: mmRadius(context, 20),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12),
+        child: Container(
+          decoration: ShapeDecoration(
+            shape: mmShapeBorder(
+              MmShape(
+                corner: context.skin.shape.corner == MmCorner.chamfer
+                    ? MmCorner.chamfer
+                    : MmCorner.rounded,
+                cornerSize: 20,
+                borderWidth: 1,
+              ),
+              side: BorderSide(color: v.color.withValues(alpha: .55)),
+            ),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
@@ -694,7 +720,6 @@ class RadioLinkIndicator extends StatelessWidget {
   }
 }
 
-
 /// The chat cell's unread count, drawn over its icon.
 ///
 /// A count rather than a dot, and the same shape the channel chip uses, so
@@ -723,7 +748,8 @@ class _StripBadge extends StatelessWidget {
         children: <Widget>[
           Icon(icon,
               size: 22,
-              color: selected ? cs.primary : cs.onSurface.withValues(alpha: .55)),
+              color:
+                  selected ? cs.primary : cs.onSurface.withValues(alpha: .55)),
           Positioned(
             right: -10,
             top: -4,
