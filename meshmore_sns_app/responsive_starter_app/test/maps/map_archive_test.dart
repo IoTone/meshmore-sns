@@ -351,6 +351,21 @@ void main() {
       m.dispose();
     });
 
+    test('an unwritable archive directory is a named local failure', () async {
+      // The directory can vanish under a queued download (storage cleared or
+      // evicted). It must become a failure with its own sentence, not an
+      // unhandled async error that leaves the row "downloading" for ever.
+      final File blocker = File('${dir.path}/archives');
+      await blocker.writeAsString('not a directory');
+      final MapsController m = await loaded();
+      await m.addArchive(name: 'x', url: 'https://host.example/x.pmtiles');
+      await settle(m);
+      final MapArchive a = m.archives.single;
+      expect(a.state, ArchiveState.failed);
+      expect(a.failure, ArchiveFailure.storage);
+      m.dispose();
+    });
+
     test('setup refusals: name, https, duplicate, size over budget', () async {
       final MapsController m = await loaded();
       expect(await m.addArchive(name: ' ', url: 'https://h/x'),
@@ -366,6 +381,9 @@ void main() {
       expect(await m.addArchive(name: 'x', url: 'https://h/x'), isNull);
       expect(await m.addArchive(name: 'y', url: 'https://h/x'),
           ArchiveRefusal.duplicate);
+      // The accepted one starts a download pass. Drain it: a pass still in
+      // flight would outlive this test and its temporary directory.
+      await m.idle();
       m.dispose();
     });
   });

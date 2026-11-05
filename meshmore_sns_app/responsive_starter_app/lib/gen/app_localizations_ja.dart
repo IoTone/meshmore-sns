@@ -3530,6 +3530,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get archiveFailNotFound => 'リンクが見つかりません。';
 
   @override
+  String get archiveFailStorage => '端末の空き容量に書き込めませんでした。空きを作ってから再度お試しください。';
+
+  @override
   String get archiveRefusalDuplicate => '追加済みです。';
 
   @override

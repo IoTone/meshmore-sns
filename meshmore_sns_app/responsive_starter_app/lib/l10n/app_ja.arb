@@ -1966,6 +1966,7 @@
   "archiveFailNotPm": "PMTiles ファイルではありません。",
   "archiveFailSchema": "地図のレイヤー構成が違います。このファイルは互換性のない地図です。",
   "archiveFailNotFound": "リンクが見つかりません。",
+  "archiveFailStorage": "端末の空き容量に書き込めませんでした。空きを作ってから再度お試しください。",
   "archiveRefusalDuplicate": "追加済みです。",
   "mapsLayers": "イベント地図",
   "mapsNoLayersShort": "イベントマップ未登録",

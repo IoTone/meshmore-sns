@@ -942,7 +942,15 @@ class MapsController extends ChangeNotifier {
 
   /// One download attempt. False when the network went away.
   Future<bool> _runArchive(MapArchive a) async {
-    await _archiveDir!.create(recursive: true);
+    try {
+      await _archiveDir!.create(recursive: true);
+    } on FileSystemException {
+      // The directory can vanish under a queued download (storage cleared or
+      // evicted). That is a local failure with its own sentence, not an
+      // unhandled async error that leaves the archive "downloading" for ever.
+      await _rejectArchive(a, ArchiveFailure.storage);
+      return true;
+    }
     final File part = _partFile(a);
     final int own = _archiveSize[a.id] ?? 0;
     int lastNotify = 0;

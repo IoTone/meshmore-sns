@@ -6290,6 +6290,12 @@ abstract class AppLocalizations {
   /// **'Link not found.'**
   String get archiveFailNotFound;
 
+  /// No description provided for @archiveFailStorage.
+  ///
+  /// In en, this message translates to:
+  /// **'The app could not write to its storage. Free some space and try again.'**
+  String get archiveFailStorage;
+
   /// No description provided for @archiveRefusalDuplicate.
   ///
   /// In en, this message translates to:

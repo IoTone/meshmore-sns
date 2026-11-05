@@ -2363,6 +2363,7 @@
   "archiveFailNotPm": "Not a PMTiles file.",
   "archiveFailSchema": "Wrong map layout. This file is not a compatible basemap.",
   "archiveFailNotFound": "Link not found.",
+  "archiveFailStorage": "The app could not write to its storage. Free some space and try again.",
   "archiveRefusalDuplicate": "Already added.",
   "mapsLayers": "Event maps",
   "mapsNoLayersShort": "No event maps added",

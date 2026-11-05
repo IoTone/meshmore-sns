@@ -62,6 +62,7 @@ String archiveFailureText(AppLocalizations l, ArchiveFailure f) => switch (f) {
       ArchiveFailure.notPmTiles => l.archiveFailNotPm,
       ArchiveFailure.wrongSchema => l.archiveFailSchema,
       ArchiveFailure.notFound => l.archiveFailNotFound,
+      ArchiveFailure.storage => l.archiveFailStorage,
     };
 
 String archiveRefusalText(AppLocalizations l, ArchiveRefusal r) => switch (r) {

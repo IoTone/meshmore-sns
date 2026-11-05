@@ -30,7 +30,10 @@ enum ArchiveState {
   failed,
 }
 
-enum ArchiveFailure { badHash, badSize, notPmTiles, wrongSchema, notFound }
+/// Why a downloaded archive was not kept. [storage] is the local side: the
+/// app could not create or write its own archive directory, which happens when
+/// storage is cleared or evicted while a download is queued.
+enum ArchiveFailure { badHash, badSize, notPmTiles, wrongSchema, notFound, storage }
 
 /// Why an archive was not added — one sentence each in the UI.
 enum ArchiveRefusal { noName, badUrl, duplicate, overBudget }

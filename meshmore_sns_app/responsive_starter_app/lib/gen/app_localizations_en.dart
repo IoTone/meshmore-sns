@@ -3663,6 +3663,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get archiveFailNotFound => 'Link not found.';
 
   @override
+  String get archiveFailStorage =>
+      'The app could not write to its storage. Free some space and try again.';
+
+  @override
   String get archiveRefusalDuplicate => 'Already added.';
 
   @override
