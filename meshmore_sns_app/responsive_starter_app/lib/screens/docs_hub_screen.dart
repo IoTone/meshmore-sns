@@ -35,7 +35,7 @@ class DocsHubScreen extends StatelessWidget {
               l.docsHubSubtitle,
               style: TextStyle(
                   fontFamily: context.skin.type.wordsMono,
-                  fontSize: 12,
+                  fontSize: context.skin.type.sizeBody,
                   height: 1.4,
                   color: cs.onSurfaceVariant),
             ),
@@ -71,7 +71,7 @@ class DocsHubScreen extends StatelessWidget {
               l.docsHubFooter,
               style: TextStyle(
                   fontFamily: context.skin.type.wordsMono,
-                  fontSize: 10.5,
+                  fontSize: context.skin.type.size(10.5),
                   height: 1.5,
                   color: cs.onSurfaceVariant.withValues(alpha: .8)),
             ),
@@ -129,7 +129,7 @@ class _DocCard extends StatelessWidget {
                     Text(title.toUpperCase(),
                         style: TextStyle(
                             fontFamily: context.skin.type.wordsMono,
-                            fontSize: 14,
+                            fontSize: context.skin.type.size(14),
                             letterSpacing: 1.5,
                             fontWeight: FontWeight.w700,
                             color: cs.onSurface)),
@@ -137,7 +137,7 @@ class _DocCard extends StatelessWidget {
                     Text(subtitle,
                         style: TextStyle(
                             fontFamily: context.skin.type.wordsMono,
-                            fontSize: 11.5,
+                            fontSize: context.skin.type.size(11.5),
                             height: 1.35,
                             color: cs.onSurfaceVariant)),
                   ],

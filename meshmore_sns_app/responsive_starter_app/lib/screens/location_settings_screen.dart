@@ -12,6 +12,7 @@ import '../meshcore/auto_publish_controller.dart';
 import '../meshcore/meshcore_controller.dart';
 import '../perms/location_service.dart';
 import '../perms/permissions_service.dart';
+import '../theme/mm_skin.dart';
 import '../ui/mm_shape.dart';
 
 /// R36 — App settings → Auto-publish location.
@@ -99,6 +100,7 @@ class LocationSettingsScreen extends StatelessWidget {
     final AutoPublishController ap = context.watch<AutoPublishController>();
     final AppLocalizations l = AppLocalizations.of(context);
     final ColorScheme cs = Theme.of(context).colorScheme;
+    final MmSkin skin = context.skin;
     final MeshcoreController mc = context.read<MeshcoreController>();
 
     return Scaffold(
@@ -110,7 +112,9 @@ class LocationSettingsScreen extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(16, 14, 16, 4),
               child: Text(
                 l.locHelp,
-                style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12),
+                style: TextStyle(
+                    color: cs.onSurfaceVariant,
+                    fontSize: skin.type.sizeBody),
               ),
             ),
             MmCollapsibleSection(
@@ -216,7 +220,7 @@ class LocationSettingsScreen extends StatelessWidget {
                         style: TextStyle(
                             color: cs.onSurface,
                             fontFamily: 'JetBrains Mono',
-                            fontSize: 12),
+                            fontSize: skin.type.sizeBody),
                       ),
                     ),
                   ),
@@ -227,7 +231,9 @@ class LocationSettingsScreen extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
               child: Text(
                 l.locBatteryHint,
-                style: TextStyle(color: cs.onSurfaceVariant, fontSize: 11),
+                style: TextStyle(
+                    color: cs.onSurfaceVariant,
+                    fontSize: skin.type.sizeSm),
               ),
             ),
           ],
