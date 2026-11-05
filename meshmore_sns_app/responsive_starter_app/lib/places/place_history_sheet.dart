@@ -47,6 +47,9 @@ class _PlaceHistorySheetState extends State<PlaceHistorySheet> {
   bool _liveOnly = true;
   bool _keyedOnly = false;
 
+  /// The spec's "expires within" filter (§10). Null is no window.
+  Duration? _within;
+
   @override
   void dispose() {
     _search.dispose();
@@ -76,6 +79,7 @@ class _PlaceHistorySheetState extends State<PlaceHistorySheet> {
     final List<Place> rows = widget.store.filtered(
       liveOnly: _liveOnly,
       types: _types,
+      expiresWithin: _within,
       query: _search.text,
       keyedOnly: _keyedOnly,
     );
@@ -125,6 +129,11 @@ class _PlaceHistorySheetState extends State<PlaceHistorySheet> {
                   selected: _liveOnly,
                   onSelected: (bool v) => setState(() => _liveOnly = v),
                 ),
+                // "Expires within": one choice at a time, because two windows
+                // describe one span and the narrower is the one asked for.
+                _withinChip(null, l.placeWithinAny),
+                _withinChip(const Duration(hours: 1), l.placeWithinHour),
+                _withinChip(const Duration(hours: 24), l.placeWithinDay),
                 FilterChip(
                   key: const ValueKey<String>('place-filter-keyed'),
                   label: Text(l.placeKeyedOnly),
@@ -163,6 +172,16 @@ class _PlaceHistorySheetState extends State<PlaceHistorySheet> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _withinChip(Duration? window, String label) {
+    return FilterChip(
+      key: ValueKey<String>('place-filter-within-'
+          '${window == null ? 'any' : '${window.inHours}h'}'),
+      label: Text(label),
+      selected: _within == window,
+      onSelected: (bool _) => setState(() => _within = window),
     );
   }
 

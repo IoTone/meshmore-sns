@@ -183,6 +183,32 @@ void main() {
           reason: 'an unkeyed place never matches keyed-only');
     });
 
+    test('"expires within" means still live and running out inside it', () {
+      // A short-lived report beside the two long ones: only it is inside an
+      // hour, and an expired row is never inside any window.
+      store.upsert(_place(
+          at: now, id: 'cccc0003', label: 'Now', ttl: PlaceTtl.m15));
+      expect(
+          store
+              .filtered(
+                  liveOnly: true, expiresWithin: const Duration(hours: 1))
+              .map((Place p) => p.id),
+          <String>['cccc0003']);
+      // Two hours on, the short report has expired and the two long ones are
+      // still live but outside the window.
+      now = now.add(const Duration(hours: 2));
+      expect(
+          store.filtered(
+              liveOnly: false, expiresWithin: const Duration(hours: 1)),
+          isEmpty,
+          reason: 'an expired row has nothing left to expire');
+      now = now.subtract(const Duration(hours: 2));
+      expect(
+          store.filtered(
+              liveOnly: true, expiresWithin: const Duration(days: 7)),
+          hasLength(3));
+    });
+
     test('the ledger has one row per place and carries its final state', () {
       now = now.add(const Duration(days: 3));
       final List<String> lines = const LineSplitter().convert(store.exportLedgerCsv());

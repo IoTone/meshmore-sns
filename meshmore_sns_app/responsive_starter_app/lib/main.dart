@@ -46,6 +46,7 @@ import 'package:meshmore_sns_app/perms/location_service.dart';
 import 'package:meshmore_sns_app/perms/permissions_service.dart';
 import 'package:meshmore_sns_app/places/place_report_budget.dart';
 import 'package:meshmore_sns_app/places/place_store.dart';
+import 'package:meshmore_sns_app/places/place_wiring.dart';
 import 'package:meshmore_sns_app/screens/first_run_intro_screen.dart';
 import 'package:meshmore_sns_app/screens/terms_screen.dart';
 import 'package:meshmore_sns_app/splash/branded_splash_screen.dart';
@@ -95,6 +96,12 @@ void main() {
     // ask the same object (block-spec §5).
     final BlockStore blockStore = BlockStore();
     unawaited(blockStore.load());
+    // Places share the block list: a blocked reporter's stored rows leave with
+    // the block rather than sitting on disk behind a read-time filter (places
+    // spec §10). Attached here, before the tree reads the store.
+    final PlaceStore placeStore =
+        PlaceStore(isBlocked: blockStore.isBlocked)..load();
+    attachPlaceBlockDeletion(blockStore, placeStore);
     final BlockFilter blockFilter = BlockFilter(blockStore);
     final LocalNotifier notifier = LocalNotifier();
     final NotificationPrefs notificationPrefs = NotificationPrefs();
@@ -268,8 +275,7 @@ void main() {
           // send-side rate limit and is app-scoped for the same reason: it
           // must survive leaving the sheet that charged it.
           ChangeNotifierProvider<BlockStore>.value(value: blockStore),
-          ChangeNotifierProvider<PlaceStore>(
-              create: (_) => PlaceStore(isBlocked: blockStore.isBlocked)..load()),
+          ChangeNotifierProvider<PlaceStore>.value(value: placeStore),
           Provider<PlaceReportBudget>(
             create: (_) => PlaceReportBudget(clock: DateTime.now),
           ),
