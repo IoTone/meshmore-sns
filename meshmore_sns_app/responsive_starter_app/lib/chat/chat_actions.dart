@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 
 import '../gen/app_localizations.dart';
 import '../meshcore/chat_message.dart';
+import '../meshcore/failure.dart';
 
 /// R20 / U11 — per-message Reply / Copy / Delete actions (+ R76 Retry
 /// on a failed outgoing row) for chat
@@ -32,9 +33,7 @@ Future<ChatAction?> showChatActions(
             ListTile(
               leading: const Icon(Icons.refresh),
               title: Text(l.actionRetry),
-              subtitle: Text(m.failReason == null
-                  ? l.actionRetrySub
-                  : '${l.actionRetrySub} (${m.failReason})'),
+              subtitle: Text(_retrySubtitle(l, m)),
               onTap: () => Navigator.pop(ctx, ChatAction.retry),
             ),
           ListTile(
@@ -115,4 +114,17 @@ Future<bool> confirmDeleteMessage(
     ),
   );
   return ok == true;
+}
+
+
+/// The reason shown under Retry: the catalogue's translated sentence when the
+/// row carries a cause, the older stored sentence otherwise (APP-N2).
+String _retrySubtitle(AppLocalizations l, ChatMessage m) {
+  final FailureCause? cause = m.failCause;
+  if (cause != null) {
+    return '${l.actionRetrySub} (${failureText(l, Failure(cause))})';
+  }
+  return m.failReason == null
+      ? l.actionRetrySub
+      : '${l.actionRetrySub} (${m.failReason})';
 }

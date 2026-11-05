@@ -1,6 +1,8 @@
 // Copyright (c) 2026 IoTone, Inc.
 // SPDX-License-Identifier: MIT
 
+import 'failure.dart';
+
 /// Delivery lifecycle of an **outgoing** message. Null on incoming
 /// lines (not applicable). Drives the per-bubble status glyph.
 ///
@@ -32,6 +34,7 @@ class ChatMessage {
     this.delivery,
     this.expectedAck,
     this.failReason,
+    this.failCause,
   })  : id = id ?? _genId(),
         at = at ?? DateTime.now();
 
@@ -85,6 +88,11 @@ class ChatMessage {
   /// persisted before this field existed.
   String? failReason;
 
+  /// Why the row failed, as a cause rather than a sentence (APP-N2). A row
+  /// written before the catalogue existed has only [failReason]; the retry
+  /// sheet prefers this when both are present.
+  FailureCause? failCause;
+
   /// Compact JSON for local persistence (history survives restarts —
   /// the companion protocol has no history-fetch; the device queue is
   /// drained destructively).
@@ -100,7 +108,18 @@ class ChatMessage {
         if (delivery != null) 'd': delivery!.index,
         if (expectedAck != null) 'k': expectedAck,
         if (failReason != null) 'r': failReason,
+        if (failCause != null) 'c': failCause!.name,
       };
+
+  /// Reads a persisted cause name. An unknown name (a row written by a newer
+  /// build) becomes null, so the row keeps its older sentence rather than
+  /// showing a cause this build cannot translate.
+  static FailureCause? _causeByName(String name) {
+    for (final FailureCause c in FailureCause.values) {
+      if (c.name == name) return c;
+    }
+    return null;
+  }
 
   static ChatMessage fromJson(Map<String, Object?> j) {
     final int? dIdx = (j['d'] as num?)?.toInt();
@@ -130,6 +149,7 @@ class ChatMessage {
       delivery: delivery,
       expectedAck: (j['k'] as num?)?.toInt(),
       failReason: reason,
+      failCause: j['c'] is String ? _causeByName(j['c'] as String) : null,
     );
   }
 }

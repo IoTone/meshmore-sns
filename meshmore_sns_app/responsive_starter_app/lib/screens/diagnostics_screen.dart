@@ -11,6 +11,7 @@ import '../bot/bot_controller.dart';
 import '../bot/bot_guards.dart';
 import '../bot/responder.dart';
 import '../gen/app_localizations.dart';
+import '../meshcore/failure.dart';
 import '../ui/mm_scaffold.dart';
 import '../ui/radio_health_block.dart';
 import 'diagnostics_redaction.dart';
@@ -198,6 +199,8 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
               else if (mc.truncatedFrames > 0 || mc.trailingBytesFrames > 0)
                 l.diagnosticsFramingLine(
                     '${mc.truncatedFrames}', '${mc.trailingBytesFrames}')
+              else if (mc.failure != null)
+                l.diagnosticsErrorLine(failureText(l, mc.failure!))
               else if (mc.error != null)
                 l.diagnosticsErrorLine('${mc.error}'),
             ].join('\n')),

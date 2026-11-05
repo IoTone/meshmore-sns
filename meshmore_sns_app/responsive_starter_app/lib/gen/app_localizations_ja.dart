@@ -4187,4 +4187,84 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get placeTypeOther => 'その他';
+
+  @override
+  String get failureUnsupportedCommand =>
+      'ラジオはこのコマンドに対応していません。ファームウェアがこのアプリの想定より古い可能性があります。ラジオを更新するか、対応しているコマンドを使ってください。';
+
+  @override
+  String get failureNotFound =>
+      'ラジオはその要求の対象（チャンネル・連絡先・メッセージ）を見つけられませんでした。連絡先を更新してから再試行してください。';
+
+  @override
+  String get failureTableFull =>
+      'ラジオのキューまたはテーブルが満杯のため、要求を拒否しました。空くのを待ってから再試行してください。失われたものはありません。';
+
+  @override
+  String get failureBadState =>
+      'ラジオは別の操作の実行中で、これを開始できません。現在の操作が終わってから再試行してください。';
+
+  @override
+  String get failureFileIoError =>
+      'ラジオのストレージが書き込みを拒否しました。詳細はラジオ側のログにあります。一度再試行し、繰り返す場合はラジオのファイルシステムを確認してください。';
+
+  @override
+  String get failureIllegalArgument =>
+      'ラジオは値または長さを不正として拒否しました。変更した項目を確認してください。このファームウェアが受け付けない値が 1 つあります。';
+
+  @override
+  String get failureUnknownDeviceError =>
+      'ラジオはこのアプリが知らない理由で要求を拒否しました。診断ページに生のフレームが表示されます。';
+
+  @override
+  String get failureBlePermissions =>
+      'Bluetooth の権限が拒否されたため、ラジオに接続できません。Android の設定でこのアプリに「付近のデバイス」を許可し、再接続してください。';
+
+  @override
+  String get failureBluetoothOff => 'Bluetooth がオフです。オンにしてから再接続してください。';
+
+  @override
+  String get failureNoRadioFound =>
+      'スキャンに応答したラジオがありません。ラジオの電源・距離・他のスマートフォンへの接続を確認してください。';
+
+  @override
+  String get failurePairingFailed =>
+      'ペアリングが完了しませんでした。ラジオの画面に表示された PIN を入力し（画面のないラジオは 123456）、再試行してください。';
+
+  @override
+  String get failureStalePairing =>
+      'ラジオはこのペアリングを保持していません。Android の Bluetooth 設定で削除し、ラジオの電源を入れ直してから再ペアリングしてください。';
+
+  @override
+  String get failurePairingNotKept =>
+      'ラジオはペアリング後に次の接続で暗号化できず、保存したペアリングを失っています。電源を入れ直してアプリを開き直し、再ペアリングしてください。繰り返す場合はラジオのボンド保存側の問題です。';
+
+  @override
+  String get failureServiceMissing =>
+      'このデバイスは MeshCore サービスを公開していないため、MeshCore ラジオではない可能性があります。';
+
+  @override
+  String get failureCharacteristicMissing =>
+      'ラジオのリンクに、アプリが必要とするキャラクタリスティックがありません。ファームウェアがこのアプリの想定より古い可能性があります。';
+
+  @override
+  String failureMtuTooSmall(String mtu, String need) {
+    return 'このリンクは $mtu バイトでネゴシエートしましたが、ラジオの 1 フレームには $need 必要です。再接続して再交渉してください。リンクをそれ以上に広げられないラジオは全フレームを送れません。';
+  }
+
+  @override
+  String get failureFrameTruncated =>
+      'フレームが途中で切れて届き、デコードできませんでした。リンクがラジオの最長フレームを運べません。件数は診断ページに表示されます。';
+
+  @override
+  String get failureFrameTrailingBytes =>
+      'フレームの終端より後ろに余分なバイトがありました。推測せずに破棄しました。件数は診断ページに表示されます。';
+
+  @override
+  String get failureStorageFull =>
+      'ストレージが満杯のため書き込みを拒否しました。無言で削除はしていません。空き容量を確保してください。履歴はそのまま残ります。';
+
+  @override
+  String get failureRadioSilent =>
+      'ラジオは要求を受け取りましたが、時間内に応答しませんでした。実行済みの可能性があります。再試行の前にラジオを確認してください。';
 }

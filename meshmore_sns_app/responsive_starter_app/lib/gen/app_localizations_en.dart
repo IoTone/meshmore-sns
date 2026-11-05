@@ -4333,4 +4333,85 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get placeTypeOther => 'Other';
+
+  @override
+  String get failureUnsupportedCommand =>
+      'The radio does not support that command. Its firmware is older than this app expects; update the radio or use a command it lists.';
+
+  @override
+  String get failureNotFound =>
+      'The radio could not find the target of that request: the channel, contact or message is not on it. Refresh the contact list, then retry.';
+
+  @override
+  String get failureTableFull =>
+      'The radio\'s queue or table is full, so it refused the request. Wait for it to drain, then retry; nothing was lost.';
+
+  @override
+  String get failureBadState =>
+      'The radio is busy with another operation and cannot start this one. Wait for the current operation to finish, then retry.';
+
+  @override
+  String get failureFileIoError =>
+      'The radio\'s storage refused the write. Its own log has the detail; retry once, and if it repeats the radio\'s filesystem needs attention.';
+
+  @override
+  String get failureIllegalArgument =>
+      'The radio rejected the value or length as invalid. Check the field you changed: one value is outside what this firmware accepts.';
+
+  @override
+  String get failureUnknownDeviceError =>
+      'The radio refused the request without a reason this app knows. The diagnostics page shows the raw frame.';
+
+  @override
+  String get failureBlePermissions =>
+      'Bluetooth permission was refused, so the app cannot reach the radio. Allow Nearby devices for this app in Android settings, then reconnect.';
+
+  @override
+  String get failureBluetoothOff =>
+      'Bluetooth is off. Turn it on, then reconnect.';
+
+  @override
+  String get failureNoRadioFound =>
+      'No radio answered the scan. Check that the radio is powered on, in range, and not already connected to another phone.';
+
+  @override
+  String get failurePairingFailed =>
+      'The pairing did not complete. Enter the PIN shown on the radio screen (screenless radios use 123456), then retry.';
+
+  @override
+  String get failureStalePairing =>
+      'The radio no longer holds this pairing. Forget it in Android Bluetooth settings, power-cycle the radio, then pair again.';
+
+  @override
+  String get failurePairingNotKept =>
+      'The radio paired and then could not encrypt on the next connection, so it is losing its stored pairing. Power-cycle it, reopen the app and pair again; if it repeats, the radio\'s bond storage is the fault.';
+
+  @override
+  String get failureServiceMissing =>
+      'This device does not expose the MeshCore service, so it is probably not a MeshCore radio.';
+
+  @override
+  String get failureCharacteristicMissing =>
+      'The radio\'s link is missing a characteristic the app needs. Its firmware may be older than this app expects.';
+
+  @override
+  String failureMtuTooSmall(String mtu, String need) {
+    return 'This phone link negotiated $mtu bytes and one radio frame needs $need. Reconnect to negotiate again; a radio that caps the link smaller cannot carry every frame.';
+  }
+
+  @override
+  String get failureFrameTruncated =>
+      'A frame arrived cut short and was not decoded. The link cannot carry the radio\'s longest frames; the count is on the diagnostics page.';
+
+  @override
+  String get failureFrameTrailingBytes =>
+      'A frame carried bytes past its own end. The extra bytes were dropped rather than guessed at; the count is on the diagnostics page.';
+
+  @override
+  String get failureStorageFull =>
+      'The phone refused a write because storage is full. Nothing is being deleted silently; free space and the history stays as it is.';
+
+  @override
+  String get failureRadioSilent =>
+      'The radio accepted the request but did not answer in time. It may still have carried it out; check the radio before retrying.';
 }

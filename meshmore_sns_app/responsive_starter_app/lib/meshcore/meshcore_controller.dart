@@ -6,6 +6,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:meshcore/meshcore.dart';
+import 'failure.dart';
 
 import 'background_keepalive.dart';
 import 'background_prefs.dart';
@@ -495,6 +496,7 @@ class MeshcoreController extends ChangeNotifier {
   MeshcoreConnectionState _state = MeshcoreConnectionState.disconnected;
   MeshcoreInbound? _lastFrame;
   String? _error;
+  Failure? _failure;
   BleMtuTooSmall? _mtuRefusal;
   bool _connecting = false;
   bool _manualDisconnect = false;
@@ -804,6 +806,10 @@ class MeshcoreController extends ChangeNotifier {
     return NodeProximity.unknown;
   }
   String? get error => _error;
+
+  /// The last link failure as a translated cause (APP-N2). Null when the
+  /// last attempt did not fail, or when the failure was not a link one.
+  Failure? get failure => _failure;
   bool get isConnecting => _connecting;
   bool get isReady => _state == MeshcoreConnectionState.ready;
 
@@ -870,6 +876,7 @@ class MeshcoreController extends ChangeNotifier {
       _reconnectGen++;
     }
     _error = null;
+    _failure = null;
     _mtuRefusal = null;
     notifyListeners();
     Object? failure;
@@ -888,6 +895,7 @@ class MeshcoreController extends ChangeNotifier {
       // can explain it, and do not let the reconnect policy spin on it.
       _mtuRefusal = e is BleMtuTooSmall ? e : null;
       _error = e.toString();
+      _failure = Failure.from(e);
       _state = MeshcoreConnectionState.failed;
     }
     _connecting = false;
@@ -1620,14 +1628,16 @@ class MeshcoreController extends ChangeNotifier {
   void _failOutgoing(String id, String reason,
       {Set<MessageDelivery> from = const <MessageDelivery>{
         MessageDelivery.sending
-      }}) {
+      },
+      FailureCause? cause}) {
     _dropPending(id);
     _deliveryTimers.remove(id)?.cancel();
     final ChatMessage? m = _messageById(id);
     if (m == null || m.delivery == null || !from.contains(m.delivery)) return;
     m
       ..delivery = MessageDelivery.failed
-      ..failReason = reason;
+      ..failReason = reason
+      ..failCause = cause;
     _deliveryRevision++;
     _persistChat();
   }
@@ -1762,6 +1772,7 @@ class MeshcoreController extends ChangeNotifier {
         return;
       }
       _failOutgoing(p.id, deviceErrorReason(f.code),
+          cause: Failure.causeForDeviceError(f.code),
           from: const <MessageDelivery>{MessageDelivery.sending});
     } else if (f is MsgSentFrame) {
       final CommandEntry? p = _takePending(CommandAnswer.sent);
