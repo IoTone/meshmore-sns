@@ -86,6 +86,43 @@ Widget _host({
   );
 }
 
+
+/// The real Coverage screen, so a test can measure the space a pinned block
+/// used to occupy. Pinning must leave no gap: not a smaller one, none.
+Widget _coverageScreen({
+  required ThemeController tc,
+  required DashboardPinsController pins,
+  required MeshcoreController mc,
+  required CoverageSession coverage,
+}) {
+  return MultiProvider(
+    providers: <SingleChildWidget>[
+      ChangeNotifierProvider<ThemeController>.value(value: tc),
+      ChangeNotifierProvider<DashboardPinsController?>.value(value: pins),
+      ChangeNotifierProvider<MeshcoreController>.value(value: mc),
+      ChangeNotifierProvider<SosController>.value(
+          value: SosController(mc: mc, autoTick: false)),
+      ChangeNotifierProvider<CoverageSession>.value(value: coverage),
+      ChangeNotifierProvider<PlaceStore>.value(value: PlaceStore()),
+      ChangeNotifierProvider<PositionRecorder>.value(value: PositionRecorder()),
+      ChangeNotifierProvider<ChannelReadStore?>.value(
+          value: ChannelReadStore()),
+      ChangeNotifierProvider<BlockStore>.value(value: BlockStore()),
+    ],
+    child: MaterialApp(
+      locale: const Locale('en'),
+      supportedLocales: LocaleController.supported,
+      localizationsDelegates: const <LocalizationsDelegate<Object>>[
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      home: const CoverageScreen(),
+    ),
+  );
+}
+
 Future<DashboardPinsController> _pins(List<String> ids) async {
   final DashboardPinsController c = DashboardPinsController();
   await c.load();
@@ -204,5 +241,51 @@ void main() {
       expect(t.takeException(), isNull, reason: preset.name);
       expect(find.byType(MmPinCard), findsOneWidget, reason: preset.name);
     }
+  });
+
+  testWidgets('a pinned block leaves no gap on the screen it came from',
+      (WidgetTester t) async {
+    // Tall enough that the whole screen is built: the ListView would otherwise
+    // skip the cells header and the measurement would have nothing to anchor to.
+    t.view.physicalSize = const Size(400, 2400);
+    t.view.devicePixelRatio = 1.0;
+    addTearDown(t.view.reset);
+    final MeshcoreController mc = MeshcoreController(
+        transportFactory: () async => FakeMeshcoreTransport());
+    final CoverageSession coverage = CoverageSession(mc: mc)..start();
+
+    Future<double> gapWith(List<String> ids) async {
+      final DashboardPinsController pins = await _pins(ids);
+      await t.pumpWidget(_coverageScreen(
+        tc: ThemeController(),
+        pins: pins,
+        mc: mc,
+        coverage: coverage,
+      ));
+      await t.pump();
+      expect(t.takeException(), isNull);
+      // Anchored on the empty-cells line rather than the section header: a
+      // section label is uppercased by some skins, so its text is not the
+      // string the ARB holds.
+      return t
+              .getTopLeft(find.byKey(const ValueKey<String>('coverage-empty')))
+              .dy -
+          t
+              .getBottomLeft(
+                  find.byKey(const ValueKey<String>('coverage-before-start')))
+              .dy;
+    }
+
+    final double unpinned = await gapWith(<String>[]);
+    final double blockHeight = t
+        .getSize(find.byType(CoverageSummaryBlock, skipOffstage: false))
+        .height;
+    expect(blockHeight, greaterThan(0));
+
+    final double pinned = await gapWith(<String>[PinBlocks.coverageSummary]);
+    expect(find.byType(CoverageSummaryBlock), findsNothing,
+        reason: 'the block moved to the dashboard');
+    expect(pinned, lessThanOrEqualTo(unpinned - blockHeight + 1),
+        reason: 'the space the block and its gap occupied is gone, not hidden');
   });
 }
