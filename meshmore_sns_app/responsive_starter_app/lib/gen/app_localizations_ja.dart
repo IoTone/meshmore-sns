@@ -33,67 +33,10 @@ class AppLocalizationsJa extends AppLocalizations {
   String get dashboardPinsMoveDown => '下へ移動';
 
   @override
-  String get dashboardPinsUnpin => 'ピンを外す';
-
-  @override
   String get dashboardPinAdd => 'ダッシュボードにピン留め';
 
   @override
-  String get dashboardPinRemove => 'ダッシュボードのピンを外す';
-
-  @override
-  String get pinUnavailable => 'この概要は利用できません';
-
-  @override
-  String get pinSosRunning => '警報を送信中';
-
-  @override
-  String get pinSosAcknowledged => '応答あり';
-
-  @override
-  String get pinSosIdle => '待機中';
-
-  @override
-  String get pinSosDetailRunning => '次のパケットは予定どおり送信されます。宛先からの直接の応答で停止します。';
-
-  @override
-  String get pinSosDetailIdle => 'SOS画面でボタンを長押しすると警報が鳴ります。';
-
-  @override
-  String get pinOpenSos => 'SOSを開く';
-
-  @override
-  String get pinActivityTitle => 'チャンネル';
-
-  @override
-  String get pinActivityNone => '未読なし';
-
-  @override
-  String pinActivityUnread(int count) {
-    return '未読 $count 件';
-  }
-
-  @override
-  String pinOpenChat(String channel) {
-    return '$channel を開く';
-  }
-
-  @override
-  String get pinPlacesTitle => 'プレイス';
-
-  @override
-  String get pinPlacesNone => '有効なものなし';
-
-  @override
-  String pinPlacesCount(int count) {
-    return '有効なプレイス $count 件';
-  }
-
-  @override
-  String get pinOpenPlaces => 'プレイスを開く';
-
-  @override
-  String get pinCoverageTitle => 'カバレッジ';
+  String get dashboardPinRemove => 'ダッシュボードから外す';
 
   @override
   String get pinCoverageNone => 'まだ送信していません';
@@ -102,15 +45,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String pinCoverageAnswered(int answered, int tried) {
     return '$answered / $tried 応答';
   }
-
-  @override
-  String get pinCoverageRunning => 'このセッションを記録中';
-
-  @override
-  String get pinCoverageIdle => '記録停止中';
-
-  @override
-  String get pinOpenCoverage => 'カバレッジを開く';
 
   @override
   String get tabChat => 'チャット';
@@ -4850,6 +4784,18 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get coverageTitle => 'カバレッジ';
+
+  @override
+  String get coverageCountsTitle => 'カバレッジ';
+
+  @override
+  String get fieldExportSummaryLine => '軌跡とフィールド記録';
+
+  @override
+  String get diagnosticsRadioHealth => '無線の状態';
+
+  @override
+  String get radioHealthSummaryLine => 'バッテリー・ノイズフロア・直近パケット';
 
   @override
   String get coverageBeforeStart =>

@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import '../theme/mm_skin.dart';
 import 'mm_components.dart';
 
-/// The collapsed height of a pinned card.
+/// The collapsed height of a pinned block's card.
 ///
 /// Fixed rather than intrinsic so a list of pins is predictable: ten cards
 /// cannot push the content below them off the screen, and the two skins that
@@ -13,7 +13,14 @@ import 'mm_components.dart';
 /// ellipsised, never allowed to grow the card.
 const double kPinCardCollapsedHeight = 64;
 
-/// One pinned summary: a fixed-height row that expands in place.
+/// One entry in a card's overflow menu.
+final class PinCardMenuEntry {
+  const PinCardMenuEntry({required this.label, required this.onSelected});
+  final String label;
+  final VoidCallback onSelected;
+}
+
+/// One pinned block: a fixed-height row that expands in place.
 ///
 /// Deliberately the same fold idiom as [MmCollapsibleSection] rather than a
 /// second one: no animation (so reduce-motion needs no case and tests do not
@@ -23,8 +30,8 @@ const double kPinCardCollapsedHeight = 64;
 /// a card is [kPinCardCollapsedHeight] when closed because a dashboard is a
 /// summary surface.
 ///
-/// [detail] is not built while collapsed, which is what keeps a card cheap:
-/// a closed card holds no list, no image and no timer.
+/// A card is the block's only render site while it is pinned: [detail] is the
+/// block itself, built only while expanded.
 ///
 /// Expansion state is owned by the caller (the pins controller), not by this
 /// widget, so a rebuilt dashboard cannot disagree with itself about what is
@@ -39,9 +46,7 @@ class MmPinCard extends StatelessWidget {
     required this.onToggle,
     this.leading,
     this.trailing,
-    this.onOpen,
-    this.openLabel,
-    this.editActions = const <Widget>[],
+    this.menu = const <PinCardMenuEntry>[],
   });
 
   /// Section label, one or two words. Localised by the caller.
@@ -50,7 +55,7 @@ class MmPinCard extends StatelessWidget {
   /// One line that must fit at 320 dp and 200 % text.
   final String summary;
 
-  /// Built only while [expanded].
+  /// Built only while [expanded]. This is the block itself.
   final Widget detail;
 
   final bool expanded;
@@ -62,20 +67,13 @@ class MmPinCard extends StatelessWidget {
   /// A value or count shown at the end of the collapsed row.
   final String? trailing;
 
-  /// Tap-through from the expanded detail. A collapsed card's tap is the
-  /// fold, so the way out is inside, where it can be labelled.
-  final VoidCallback? onOpen;
-
-  /// Label for the tap-through, localised by the caller.
-  final String? openLabel;
-
-  /// Reorder and unpin controls, shown only in the dashboard's edit mode.
-  final List<Widget> editActions;
+  /// The card's three-dot overflow. While pinned the only action is to remove
+  /// it from the dashboard, which puts the block back on its own screen.
+  final List<PinCardMenuEntry> menu;
 
   @override
   Widget build(BuildContext context) {
     final MmSkin skin = context.skin;
-    final bool editing = editActions.isNotEmpty;
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -85,7 +83,7 @@ class MmPinCard extends StatelessWidget {
           expanded: expanded,
           label: '$title. $summary',
           child: InkWell(
-            onTap: editing ? null : onToggle,
+            onTap: onToggle,
             child: ConstrainedBox(
               constraints: const BoxConstraints(
                 minHeight: kPinCardCollapsedHeight,
@@ -135,19 +133,28 @@ class MmPinCard extends StatelessWidget {
                         ),
                       ),
                     ],
-                    if (editing) ...<Widget>[
-                      SizedBox(width: skin.space.step(2)),
-                      for (final Widget a in editActions) a,
-                    ] else ...<Widget>[
-                      SizedBox(width: skin.space.step(2)),
-                      // Shape, not colour, is the state: a right chevron when
-                      // closed, a down chevron when open.
-                      Icon(
-                        expanded ? Icons.expand_less : Icons.expand_more,
-                        size: skin.type.sizeXl,
-                        color: skin.color.fgMuted,
+                    if (menu.isNotEmpty)
+                      PopupMenuButton<int>(
+                        key: const ValueKey<String>('pin-card-menu'),
+                        tooltip: title,
+                        icon: const Icon(Icons.more_vert),
+                        onSelected: (int i) => menu[i].onSelected(),
+                        itemBuilder: (BuildContext _) => <PopupMenuEntry<int>>[
+                          for (int i = 0; i < menu.length; i++)
+                            PopupMenuItem<int>(
+                              value: i,
+                              child: Text(menu[i].label),
+                            ),
+                        ],
                       ),
-                    ],
+                    SizedBox(width: skin.space.step(2)),
+                    // Shape, not colour, is the state: a right chevron when
+                    // closed, a down chevron when open.
+                    Icon(
+                      expanded ? Icons.expand_less : Icons.expand_more,
+                      size: skin.type.sizeXl,
+                      color: skin.color.fgMuted,
+                    ),
                   ],
                 ),
               ),
@@ -162,19 +169,7 @@ class MmPinCard extends StatelessWidget {
               skin.space.step(5),
               skin.space.step(4),
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                detail,
-                if (onOpen != null) ...<Widget>[
-                  SizedBox(height: skin.space.step(2)),
-                  TextButton(
-                    onPressed: onOpen,
-                    child: Text(openLabel ?? ''),
-                  ),
-                ],
-              ],
-            ),
+            child: detail,
           ),
         Container(
           height: skin.shape.hairlineWidth,

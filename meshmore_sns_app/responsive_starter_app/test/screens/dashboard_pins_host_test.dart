@@ -21,6 +21,7 @@ import 'package:meshmore_sns_app/theme/mm_tokens.dart';
 import 'package:meshmore_sns_app/theme/theme_controller.dart';
 import 'package:meshmore_sns_app/ui/dashboard_pins_controller.dart';
 import 'package:meshmore_sns_app/ui/mm_pin_card.dart';
+import 'package:meshmore_sns_app/ui/pin_blocks.dart';
 
 import '../meshcore/fake_transport.dart';
 
@@ -38,7 +39,7 @@ void main() {
           transportFactory: () async => FakeMeshcoreTransport());
       final DashboardPinsController pins = DashboardPinsController();
       await pins.load();
-      await pins.pin(MmPinIds.sos);
+      await pins.pin(PinBlocks.coverageSummary);
 
       await t.pumpWidget(
         MultiProvider(
@@ -50,7 +51,7 @@ void main() {
             ChangeNotifierProvider<SosController>.value(
                 value: SosController(mc: mc, autoTick: false)),
             ChangeNotifierProvider<CoverageSession>.value(
-                value: CoverageSession(mc: mc)),
+                value: CoverageSession(mc: mc)..start()),
             ChangeNotifierProvider<PlaceStore>.value(value: PlaceStore()),
             ChangeNotifierProvider<ChannelReadStore?>.value(
                 value: ChannelReadStore()),

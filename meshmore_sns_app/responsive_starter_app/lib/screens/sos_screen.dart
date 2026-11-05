@@ -14,8 +14,6 @@ import '../sos/sos_engine.dart';
 import '../sos/sos_schedule.dart';
 import '../theme/mm_skin.dart';
 import '../ui/mm_components.dart';
-import '../ui/dashboard_pin_action.dart';
-import '../ui/dashboard_pins_controller.dart';
 import '../ui/mm_scaffold.dart';
 import '../ui/mm_shape.dart';
 
@@ -144,7 +142,6 @@ class _SosScreenState extends State<SosScreen> {
       appBar: AppBar(
         title: Text(l.sosTitle),
         actions: <Widget>[
-          const DashboardPinAction(pinId: MmPinIds.sos),
           IconButton(
             key: const ValueKey<String>('checkin-entry'),
             tooltip: l.checkinEntryTooltip,

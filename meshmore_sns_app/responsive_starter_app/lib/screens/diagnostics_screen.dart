@@ -14,6 +14,7 @@ import '../gen/app_localizations.dart';
 import '../meshcore/failure.dart';
 import '../ui/mm_scaffold.dart';
 import '../ui/radio_health_block.dart';
+import '../ui/pin_blocks.dart';
 import 'diagnostics_redaction.dart';
 import '../meshcore/meshcore_controller.dart';
 import '../ui/mm_shape.dart';
@@ -66,7 +67,8 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
       ..showSnackBar(SnackBar(content: Text(m)));
   }
 
-  Future<void> _send(MeshcoreController mc, Uint8List frame, String what) async {
+  Future<void> _send(
+      MeshcoreController mc, Uint8List frame, String what) async {
     try {
       await mc.send(frame);
       _toast('Sent $what');
@@ -142,284 +144,294 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
     Widget section(String t) => Padding(
           padding: const EdgeInsets.fromLTRB(16, 18, 16, 6),
           child: Text(t,
-              style: TextStyle(
-                  fontSize: 11, letterSpacing: 2, color: cs.primary)),
+              style:
+                  TextStyle(fontSize: 11, letterSpacing: 2, color: cs.primary)),
         );
 
     return Scaffold(
-      appBar: AppBar(title: Text(AppLocalizations.of(context).diagnosticsTitle)),
+      appBar:
+          AppBar(title: Text(AppLocalizations.of(context).diagnosticsTitle)),
       body: MmScaffold(
         child: ListView(
-        children: <Widget>[
-          section(l.diagnosticsSectionConnection),
-          ListTile(
-            title: Text(l.diagnosticsStateLine(switch (mc.state) {
-                  MeshcoreConnectionState.disconnected =>
-                    l.diagnosticsStateDisconnected,
-                  MeshcoreConnectionState.handshaking =>
-                    l.diagnosticsStateHandshaking,
-                  MeshcoreConnectionState.ready => l.diagnosticsStateReady,
-                  MeshcoreConnectionState.reconnecting =>
-                    l.diagnosticsStateReconnecting,
-                  MeshcoreConnectionState.failed => l.diagnosticsStateFailed,
-                }) +
-                (mc.isConnecting ? l.diagnosticsConnectingSuffix : '')),
-            subtitle: Text(<String>[
-              if (mc.selfInfo != null)
-                l.diagnosticsDeviceLine(
-                    mc.selfInfo!.name,
-                    '${mc.selfInfo!.frequencyMhz}',
-                    '${mc.selfInfo!.spreadingFactor}'),
-              if (mc.batteryMillivolts != null)
-                l.diagnosticsBatteryLine(
-                        mc.batteryVolts!.toStringAsFixed(2),
-                        '${mc.batteryPercent}') +
-                    (mc.charging == true ? l.diagnosticsChargingSuffix : ''),
-              if (mc.mtu != null)
-                l.diagnosticsMtuLine(
-                    '${mc.mtu}', '${MeshcoreBle.requiredMtu}'),
-              // Which radio carried the last channel datagram. The byte only
-              // means something while a second profile is on, so "unreported"
-              // is the normal reading on a single-profile radio.
-              if (mc.lastFrame case final ChannelDataFrame d)
-                l.diagnosticsDatagramLine('${d.channelIndex}',
-                    viaLabel(l, d.via),
-                    '0x${d.dataType.toRadixString(16).padLeft(4, '0')}'),
-              if (mc.reconnectAttempt > 0)
-                l.diagnosticsReconnectLine('${mc.reconnectAttempt}') +
-                    (mc.gaveUp ? l.diagnosticsGaveUpSuffix : ''),
-              // A refused MTU is a sentence, not an exception string: it is the
-              // only failure here a reader can act on.
-              if (mc.mtuRefusal != null)
-                l.diagnosticsMtuRefusedLine('${mc.mtuRefusal!.mtu}',
-                    '${MeshcoreBle.requiredMtu}')
-              // The framing counters only speak when they have something to
-              // say; on a healthy link they are both zero and the line is
-              // noise.
-              else if (mc.truncatedFrames > 0 || mc.trailingBytesFrames > 0)
-                l.diagnosticsFramingLine(
-                    '${mc.truncatedFrames}', '${mc.trailingBytesFrames}')
-              else if (mc.failure != null)
-                l.diagnosticsErrorLine(failureText(l, mc.failure!))
-              else if (mc.error != null)
-                l.diagnosticsErrorLine('${mc.error}'),
-            ].join('\n')),
-            isThreeLine: mc.selfInfo != null ||
-                mc.error != null ||
-                mc.mtuRefusal != null,
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
-            child: const RadioHealthBlock(),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Row(
-              children: <Widget>[
-                Expanded(
-                  child: FilledButton.icon(
-                    icon: Icon(
-                        live ? Icons.link_off : Icons.bluetooth_searching),
-                    label: Text(live
-                        ? l.diagnosticsDisconnect
-                        : l.diagnosticsScanConnect),
-                    onPressed: () =>
-                        live ? mc.disconnect() : mc.connect(),
-                  ),
-                ),
-                if (mc.hasPairedDevice) ...<Widget>[
-                  const SizedBox(width: 8),
-                  OutlinedButton(
-                    onPressed: () => mc.forgetDevice(),
-                    child: Text(l.diagnosticsForgetShort),
-                  ),
-                ],
-              ],
+          children: <Widget>[
+            section(l.diagnosticsSectionConnection),
+            ListTile(
+              title: Text(l.diagnosticsStateLine(switch (mc.state) {
+                    MeshcoreConnectionState.disconnected =>
+                      l.diagnosticsStateDisconnected,
+                    MeshcoreConnectionState.handshaking =>
+                      l.diagnosticsStateHandshaking,
+                    MeshcoreConnectionState.ready => l.diagnosticsStateReady,
+                    MeshcoreConnectionState.reconnecting =>
+                      l.diagnosticsStateReconnecting,
+                    MeshcoreConnectionState.failed => l.diagnosticsStateFailed,
+                  }) +
+                  (mc.isConnecting ? l.diagnosticsConnectingSuffix : '')),
+              subtitle: Text(<String>[
+                if (mc.selfInfo != null)
+                  l.diagnosticsDeviceLine(
+                      mc.selfInfo!.name,
+                      '${mc.selfInfo!.frequencyMhz}',
+                      '${mc.selfInfo!.spreadingFactor}'),
+                if (mc.batteryMillivolts != null)
+                  l.diagnosticsBatteryLine(mc.batteryVolts!.toStringAsFixed(2),
+                          '${mc.batteryPercent}') +
+                      (mc.charging == true ? l.diagnosticsChargingSuffix : ''),
+                if (mc.mtu != null)
+                  l.diagnosticsMtuLine(
+                      '${mc.mtu}', '${MeshcoreBle.requiredMtu}'),
+                // Which radio carried the last channel datagram. The byte only
+                // means something while a second profile is on, so "unreported"
+                // is the normal reading on a single-profile radio.
+                if (mc.lastFrame case final ChannelDataFrame d)
+                  l.diagnosticsDatagramLine(
+                      '${d.channelIndex}',
+                      viaLabel(l, d.via),
+                      '0x${d.dataType.toRadixString(16).padLeft(4, '0')}'),
+                if (mc.reconnectAttempt > 0)
+                  l.diagnosticsReconnectLine('${mc.reconnectAttempt}') +
+                      (mc.gaveUp ? l.diagnosticsGaveUpSuffix : ''),
+                // A refused MTU is a sentence, not an exception string: it is the
+                // only failure here a reader can act on.
+                if (mc.mtuRefusal != null)
+                  l.diagnosticsMtuRefusedLine(
+                      '${mc.mtuRefusal!.mtu}', '${MeshcoreBle.requiredMtu}')
+                // The framing counters only speak when they have something to
+                // say; on a healthy link they are both zero and the line is
+                // noise.
+                else if (mc.truncatedFrames > 0 || mc.trailingBytesFrames > 0)
+                  l.diagnosticsFramingLine(
+                      '${mc.truncatedFrames}', '${mc.trailingBytesFrames}')
+                else if (mc.failure != null)
+                  l.diagnosticsErrorLine(failureText(l, mc.failure!))
+                else if (mc.error != null)
+                  l.diagnosticsErrorLine('${mc.error}'),
+              ].join('\n')),
+              isThreeLine: mc.selfInfo != null ||
+                  mc.error != null ||
+                  mc.mtuRefusal != null,
             ),
-          ),
-          if (mc.hasPairedDevice)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 6, 16, 0),
-              child: Text(l.diagnosticsPairedLine('${mc.pairedName}'),
-                  style: TextStyle(
-                      color: cs.onSurface.withValues(alpha: .6),
-                      fontSize: 12)),
-            ),
-          section('SEND (requires connection)'),
-          Wrap(
-            spacing: 8,
-            children: <Widget>[
-              const SizedBox(width: 8),
-              OutlinedButton(
-                onPressed: () => _send(
-                    mc, MeshcoreFrameCodec.sendSelfAdvert(), 'self-advert'),
-                child: const Text('Self-advert'),
-              ),
-              OutlinedButton(
-                onPressed: () => _send(
-                    mc, MeshcoreFrameCodec.getDeviceTime(), 'get-time'),
-                child: const Text('Get time'),
-              ),
-              OutlinedButton(
-                onPressed: () => _send(mc,
-                    MeshcoreFrameCodec.syncNextMessage(), 'sync-msg'),
-                child: const Text('Sync msg'),
-              ),
-            ],
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-            child: Row(
-              children: <Widget>[
-                Expanded(
-                  child: TextField(
-                    controller: _msg,
-                    decoration: const InputDecoration(
-                        labelText: 'Public-channel test message'),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                FilledButton(
-                  onPressed: () => _send(
-                    mc,
-                    MeshcoreFrameCodec.sendChannelTextMessage(
-                      channelIdx: 0,
-                      timestamp: nowUnix,
-                      text: _msg.text,
+            // Radio health is a content block, so it is pinnable: pinning
+            // moves it to the dashboard and this screen lays out without it.
+            PinnableBlockHost(
+              pinId: PinBlocks.radioHealth,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: <Widget>[
+                    PinnableBlockHeader(
+                      pinId: PinBlocks.radioHealth,
+                      title: l.diagnosticsRadioHealth,
                     ),
-                    'ch0 message',
+                    const RadioHealthBlock(),
+                  ],
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Row(
+                children: <Widget>[
+                  Expanded(
+                    child: FilledButton.icon(
+                      icon: Icon(
+                          live ? Icons.link_off : Icons.bluetooth_searching),
+                      label: Text(live
+                          ? l.diagnosticsDisconnect
+                          : l.diagnosticsScanConnect),
+                      onPressed: () => live ? mc.disconnect() : mc.connect(),
+                    ),
                   ),
-                  child: const Text('Send'),
+                  if (mc.hasPairedDevice) ...<Widget>[
+                    const SizedBox(width: 8),
+                    OutlinedButton(
+                      onPressed: () => mc.forgetDevice(),
+                      child: Text(l.diagnosticsForgetShort),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            if (mc.hasPairedDevice)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 6, 16, 0),
+                child: Text(l.diagnosticsPairedLine('${mc.pairedName}'),
+                    style: TextStyle(
+                        color: cs.onSurface.withValues(alpha: .6),
+                        fontSize: 12)),
+              ),
+            section('SEND (requires connection)'),
+            Wrap(
+              spacing: 8,
+              children: <Widget>[
+                const SizedBox(width: 8),
+                OutlinedButton(
+                  onPressed: () => _send(
+                      mc, MeshcoreFrameCodec.sendSelfAdvert(), 'self-advert'),
+                  child: const Text('Self-advert'),
+                ),
+                OutlinedButton(
+                  onPressed: () =>
+                      _send(mc, MeshcoreFrameCodec.getDeviceTime(), 'get-time'),
+                  child: const Text('Get time'),
+                ),
+                OutlinedButton(
+                  onPressed: () => _send(
+                      mc, MeshcoreFrameCodec.syncNextMessage(), 'sync-msg'),
+                  child: const Text('Sync msg'),
                 ),
               ],
             ),
-          ),
-          section('M6 INTEROP CLOSURE'),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Wrap(spacing: 8, children: <Widget>[
-              OutlinedButton.icon(
-                icon: const Icon(Icons.bug_report_outlined),
-                label: const Text('Resolve channel-tail'),
-                onPressed: () => _resolveTail(mc),
-              ),
-              OutlinedButton.icon(
-                icon: const Icon(Icons.save_alt),
-                label: const Text('Export fixture'),
-                onPressed: () => _export(mc),
-              ),
-            ]),
-          ),
-          if (_oracleResult != null)
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-              child: Text(_oracleResult!,
-                  style: TextStyle(color: cs.primary)),
-            ),
-          if (_exportJson != null)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              child: Row(
                 children: <Widget>[
-                  TextButton.icon(
-                    icon: const Icon(Icons.copy, size: 16),
-                    label: const Text('Copy fixture JSON'),
-                    onPressed: () {
-                      Clipboard.setData(ClipboardData(text: _exportJson!));
-                      _toast('Copied — save to '
-                          'packages/meshcore/test/vectors/interop/');
-                    },
+                  Expanded(
+                    child: TextField(
+                      controller: _msg,
+                      decoration: const InputDecoration(
+                          labelText: 'Public-channel test message'),
+                    ),
                   ),
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(10),
-                    color: cs.surfaceContainerHighest,
-                    child: SelectableText(_exportJson!,
-                        style: const TextStyle(
-                            fontFamily: 'JetBrains Mono', fontSize: 11)),
+                  const SizedBox(width: 8),
+                  FilledButton(
+                    onPressed: () => _send(
+                      mc,
+                      MeshcoreFrameCodec.sendChannelTextMessage(
+                        channelIdx: 0,
+                        timestamp: nowUnix,
+                        text: _msg.text,
+                      ),
+                      'ch0 message',
+                    ),
+                    child: const Text('Send'),
                   ),
                 ],
               ),
             ),
-          // R59 — soak evidence. Per-scope counters aggregated here so a
-          // run can be read and exported without opening each sheet.
-          const _BotSoakPanel(),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 18, 8, 6),
-            child: Row(
-              children: <Widget>[
-                Expanded(
-                  child: Text(AppLocalizations.of(context).diagnosticsRawFrameLog,
-                      style: TextStyle(
-                          fontSize: 11,
-                          letterSpacing: 2,
-                          color: cs.primary)),
+            section('M6 INTEROP CLOSURE'),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Wrap(spacing: 8, children: <Widget>[
+                OutlinedButton.icon(
+                  icon: const Icon(Icons.bug_report_outlined),
+                  label: const Text('Resolve channel-tail'),
+                  onPressed: () => _resolveTail(mc),
                 ),
-                TextButton.icon(
-                  onPressed: mc.captureLog.isEmpty
-                      ? null
-                      : () {
-                          final String blob = mc.captureLog.reversed
-                              .map((String h) => '${_label(h)}\t$h')
-                              .join('\n');
-                          Clipboard.setData(ClipboardData(text: blob));
-                          _toast(
-                              'Copied ${mc.captureLog.length} frames — '
-                              'paste into the chat');
-                        },
-                  icon: const Icon(Icons.copy, size: 16),
-                  label: Text(AppLocalizations.of(context).diagnosticsCopyLog),
+                OutlinedButton.icon(
+                  icon: const Icon(Icons.save_alt),
+                  label: const Text('Export fixture'),
+                  onPressed: () => _export(mc),
                 ),
-              ],
+              ]),
             ),
-          ),
-          // R23 / U14: bounded inner scroll for the frame log so the
-          // user can scroll the capture without losing the State /
-          // Sends / Capture context above. Nested ListView is
-          // constrained by the SizedBox; outer page-level ListView
-          // still owns the rest of the column.
-          Container(
-            margin: const EdgeInsets.fromLTRB(16, 4, 16, 16),
-            height: 360,
-            decoration: BoxDecoration(
-              border: Border.all(
-                  color: cs.outline.withValues(alpha: .35)),
-              borderRadius: mmRadius(context, 8),
-            ),
-            child: log.isEmpty
-                ? const Center(child: Text('— no frames yet —'))
-                : Scrollbar(
-                    child: ListView.builder(
-                      padding:
-                          const EdgeInsets.symmetric(vertical: 4),
-                      itemCount: log.length,
-                      itemBuilder: (BuildContext _, int i) {
-                        final String hex = log[i];
-                        return ListTile(
-                          dense: true,
-                          title: Text(
-                            _label(hex),
-                            style: TextStyle(
-                                color: hex.startsWith('88')
-                                    ? cs.primary
-                                    : cs.onSurface),
-                          ),
-                          subtitle: Text(
-                            hex.length > 64
-                                ? '${hex.substring(0, 64)}…'
-                                : hex,
-                            style: const TextStyle(
-                                fontFamily: 'JetBrains Mono',
-                                fontSize: 10),
-                          ),
-                        );
+            if (_oracleResult != null)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                child:
+                    Text(_oracleResult!, style: TextStyle(color: cs.primary)),
+              ),
+            if (_exportJson != null)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    TextButton.icon(
+                      icon: const Icon(Icons.copy, size: 16),
+                      label: const Text('Copy fixture JSON'),
+                      onPressed: () {
+                        Clipboard.setData(ClipboardData(text: _exportJson!));
+                        _toast('Copied — save to '
+                            'packages/meshcore/test/vectors/interop/');
                       },
                     ),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(10),
+                      color: cs.surfaceContainerHighest,
+                      child: SelectableText(_exportJson!,
+                          style: const TextStyle(
+                              fontFamily: 'JetBrains Mono', fontSize: 11)),
+                    ),
+                  ],
+                ),
+              ),
+            // R59 — soak evidence. Per-scope counters aggregated here so a
+            // run can be read and exported without opening each sheet.
+            const _BotSoakPanel(),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 18, 8, 6),
+              child: Row(
+                children: <Widget>[
+                  Expanded(
+                    child: Text(
+                        AppLocalizations.of(context).diagnosticsRawFrameLog,
+                        style: TextStyle(
+                            fontSize: 11, letterSpacing: 2, color: cs.primary)),
                   ),
-          ),
-        ],
-      ),
+                  TextButton.icon(
+                    onPressed: mc.captureLog.isEmpty
+                        ? null
+                        : () {
+                            final String blob = mc.captureLog.reversed
+                                .map((String h) => '${_label(h)}\t$h')
+                                .join('\n');
+                            Clipboard.setData(ClipboardData(text: blob));
+                            _toast('Copied ${mc.captureLog.length} frames — '
+                                'paste into the chat');
+                          },
+                    icon: const Icon(Icons.copy, size: 16),
+                    label:
+                        Text(AppLocalizations.of(context).diagnosticsCopyLog),
+                  ),
+                ],
+              ),
+            ),
+            // R23 / U14: bounded inner scroll for the frame log so the
+            // user can scroll the capture without losing the State /
+            // Sends / Capture context above. Nested ListView is
+            // constrained by the SizedBox; outer page-level ListView
+            // still owns the rest of the column.
+            Container(
+              margin: const EdgeInsets.fromLTRB(16, 4, 16, 16),
+              height: 360,
+              decoration: BoxDecoration(
+                border: Border.all(color: cs.outline.withValues(alpha: .35)),
+                borderRadius: mmRadius(context, 8),
+              ),
+              child: log.isEmpty
+                  ? const Center(child: Text('— no frames yet —'))
+                  : Scrollbar(
+                      child: ListView.builder(
+                        padding: const EdgeInsets.symmetric(vertical: 4),
+                        itemCount: log.length,
+                        itemBuilder: (BuildContext _, int i) {
+                          final String hex = log[i];
+                          return ListTile(
+                            dense: true,
+                            title: Text(
+                              _label(hex),
+                              style: TextStyle(
+                                  color: hex.startsWith('88')
+                                      ? cs.primary
+                                      : cs.onSurface),
+                            ),
+                            subtitle: Text(
+                              hex.length > 64
+                                  ? '${hex.substring(0, 64)}…'
+                                  : hex,
+                              style: const TextStyle(
+                                  fontFamily: 'JetBrains Mono', fontSize: 10),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -470,8 +482,8 @@ class _BotSoakPanel extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           Text('BOT SOAK',
-              style: TextStyle(
-                  fontSize: 11, letterSpacing: 2, color: cs.primary)),
+              style:
+                  TextStyle(fontSize: 11, letterSpacing: 2, color: cs.primary)),
           const SizedBox(height: 6),
           Text(
             'total  rx ${t.received}  tx ${t.replied}  '
@@ -491,7 +503,8 @@ class _BotSoakPanel extends StatelessWidget {
                 '(${e.value.mode.id}'
                 '${e.value.mode == BotMode.random ? " seed ${e.value.seed}" : ""})',
                 style: mono.copyWith(
-                    color: e.value.enabled ? cs.onSurface : cs.onSurfaceVariant),
+                    color:
+                        e.value.enabled ? cs.onSurface : cs.onSurfaceVariant),
               ),
             ),
           const SizedBox(height: 4),

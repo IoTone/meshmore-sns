@@ -9,8 +9,6 @@ import '../util/share.dart';
 
 import '../gen/app_localizations.dart';
 import '../theme/mm_skin.dart';
-import '../ui/dashboard_pin_action.dart';
-import '../ui/dashboard_pins_controller.dart';
 import 'place.dart';
 import 'place_detail_sheet.dart';
 import 'place_sender.dart';
@@ -116,7 +114,6 @@ class _PlaceHistorySheetState extends State<PlaceHistorySheet> {
                     ),
                   ),
                 ),
-                const DashboardPinAction(pinId: MmPinIds.places),
                 IconButton(
                   key: const ValueKey<String>('place-export'),
                   tooltip: l.placeExportLedger,

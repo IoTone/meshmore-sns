@@ -33,81 +33,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get dashboardPinsMoveDown => 'Move down';
 
   @override
-  String get dashboardPinsUnpin => 'Unpin';
-
-  @override
   String get dashboardPinAdd => 'Pin to dashboard';
 
   @override
-  String get dashboardPinRemove => 'Unpin from dashboard';
-
-  @override
-  String get pinUnavailable => 'This summary is no longer available';
-
-  @override
-  String get pinSosRunning => 'Alarm running';
-
-  @override
-  String get pinSosAcknowledged => 'Acknowledged';
-
-  @override
-  String get pinSosIdle => 'Ready';
-
-  @override
-  String get pinSosDetailRunning =>
-      'The next packet goes out on the schedule. A direct reply from a target stops it.';
-
-  @override
-  String get pinSosDetailIdle =>
-      'Hold the button on the SOS screen to raise the alarm.';
-
-  @override
-  String get pinOpenSos => 'Open SOS';
-
-  @override
-  String get pinActivityTitle => 'Channels';
-
-  @override
-  String get pinActivityNone => 'Nothing unread';
-
-  @override
-  String pinActivityUnread(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count unread',
-      one: '1 unread',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String pinOpenChat(String channel) {
-    return 'Open $channel';
-  }
-
-  @override
-  String get pinPlacesTitle => 'Places';
-
-  @override
-  String get pinPlacesNone => 'None live';
-
-  @override
-  String pinPlacesCount(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count live places',
-      one: '1 live place',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String get pinOpenPlaces => 'Open places';
-
-  @override
-  String get pinCoverageTitle => 'Coverage';
+  String get dashboardPinRemove => 'Remove from dashboard';
 
   @override
   String get pinCoverageNone => 'No pings yet';
@@ -116,15 +45,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String pinCoverageAnswered(int answered, int tried) {
     return '$answered of $tried answered';
   }
-
-  @override
-  String get pinCoverageRunning => 'Recording this session';
-
-  @override
-  String get pinCoverageIdle => 'Recording stopped';
-
-  @override
-  String get pinOpenCoverage => 'Open coverage';
 
   @override
   String get tabChat => 'Chat';
@@ -5032,6 +4952,18 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get coverageTitle => 'Coverage';
+
+  @override
+  String get coverageCountsTitle => 'Coverage';
+
+  @override
+  String get fieldExportSummaryLine => 'Trail and field record';
+
+  @override
+  String get diagnosticsRadioHealth => 'Radio health';
+
+  @override
+  String get radioHealthSummaryLine => 'Battery, noise floor, last packet';
 
   @override
   String get coverageBeforeStart =>

@@ -146,12 +146,6 @@ abstract class AppLocalizations {
   /// **'Move down'**
   String get dashboardPinsMoveDown;
 
-  /// No description provided for @dashboardPinsUnpin.
-  ///
-  /// In en, this message translates to:
-  /// **'Unpin'**
-  String get dashboardPinsUnpin;
-
   /// No description provided for @dashboardPinAdd.
   ///
   /// In en, this message translates to:
@@ -161,104 +155,8 @@ abstract class AppLocalizations {
   /// No description provided for @dashboardPinRemove.
   ///
   /// In en, this message translates to:
-  /// **'Unpin from dashboard'**
+  /// **'Remove from dashboard'**
   String get dashboardPinRemove;
-
-  /// No description provided for @pinUnavailable.
-  ///
-  /// In en, this message translates to:
-  /// **'This summary is no longer available'**
-  String get pinUnavailable;
-
-  /// No description provided for @pinSosRunning.
-  ///
-  /// In en, this message translates to:
-  /// **'Alarm running'**
-  String get pinSosRunning;
-
-  /// No description provided for @pinSosAcknowledged.
-  ///
-  /// In en, this message translates to:
-  /// **'Acknowledged'**
-  String get pinSosAcknowledged;
-
-  /// No description provided for @pinSosIdle.
-  ///
-  /// In en, this message translates to:
-  /// **'Ready'**
-  String get pinSosIdle;
-
-  /// No description provided for @pinSosDetailRunning.
-  ///
-  /// In en, this message translates to:
-  /// **'The next packet goes out on the schedule. A direct reply from a target stops it.'**
-  String get pinSosDetailRunning;
-
-  /// No description provided for @pinSosDetailIdle.
-  ///
-  /// In en, this message translates to:
-  /// **'Hold the button on the SOS screen to raise the alarm.'**
-  String get pinSosDetailIdle;
-
-  /// No description provided for @pinOpenSos.
-  ///
-  /// In en, this message translates to:
-  /// **'Open SOS'**
-  String get pinOpenSos;
-
-  /// No description provided for @pinActivityTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Channels'**
-  String get pinActivityTitle;
-
-  /// No description provided for @pinActivityNone.
-  ///
-  /// In en, this message translates to:
-  /// **'Nothing unread'**
-  String get pinActivityNone;
-
-  /// No description provided for @pinActivityUnread.
-  ///
-  /// In en, this message translates to:
-  /// **'{count, plural, =1{1 unread} other{{count} unread}}'**
-  String pinActivityUnread(int count);
-
-  /// No description provided for @pinOpenChat.
-  ///
-  /// In en, this message translates to:
-  /// **'Open {channel}'**
-  String pinOpenChat(String channel);
-
-  /// No description provided for @pinPlacesTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Places'**
-  String get pinPlacesTitle;
-
-  /// No description provided for @pinPlacesNone.
-  ///
-  /// In en, this message translates to:
-  /// **'None live'**
-  String get pinPlacesNone;
-
-  /// No description provided for @pinPlacesCount.
-  ///
-  /// In en, this message translates to:
-  /// **'{count, plural, =1{1 live place} other{{count} live places}}'**
-  String pinPlacesCount(int count);
-
-  /// No description provided for @pinOpenPlaces.
-  ///
-  /// In en, this message translates to:
-  /// **'Open places'**
-  String get pinOpenPlaces;
-
-  /// No description provided for @pinCoverageTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Coverage'**
-  String get pinCoverageTitle;
 
   /// No description provided for @pinCoverageNone.
   ///
@@ -271,24 +169,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{answered} of {tried} answered'**
   String pinCoverageAnswered(int answered, int tried);
-
-  /// No description provided for @pinCoverageRunning.
-  ///
-  /// In en, this message translates to:
-  /// **'Recording this session'**
-  String get pinCoverageRunning;
-
-  /// No description provided for @pinCoverageIdle.
-  ///
-  /// In en, this message translates to:
-  /// **'Recording stopped'**
-  String get pinCoverageIdle;
-
-  /// No description provided for @pinOpenCoverage.
-  ///
-  /// In en, this message translates to:
-  /// **'Open coverage'**
-  String get pinOpenCoverage;
 
   /// No description provided for @tabChat.
   ///
@@ -8559,6 +8439,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Coverage'**
   String get coverageTitle;
+
+  /// No description provided for @coverageCountsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Coverage'**
+  String get coverageCountsTitle;
+
+  /// No description provided for @fieldExportSummaryLine.
+  ///
+  /// In en, this message translates to:
+  /// **'Trail and field record'**
+  String get fieldExportSummaryLine;
+
+  /// No description provided for @diagnosticsRadioHealth.
+  ///
+  /// In en, this message translates to:
+  /// **'Radio health'**
+  String get diagnosticsRadioHealth;
+
+  /// No description provided for @radioHealthSummaryLine.
+  ///
+  /// In en, this message translates to:
+  /// **'Battery, noise floor, last packet'**
+  String get radioHealthSummaryLine;
 
   /// No description provided for @coverageBeforeStart.
   ///

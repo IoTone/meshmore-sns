@@ -1280,22 +1280,23 @@ were written, so their numbering is not monotonic. A few records live in
 the sibling specs: R93 in `meshmore-sns-maps-spec.md`, R60 in
 `meshmore-sns-tools-spec.md`, R79 in `meshmore_sns_app/STATUS.md`.
 
-- R114: **the dashboard can be told what matters, and stops printing a debug line.** The home screen
-  answers "what is happening" and had no way to answer "what do I care about". Four summaries can be
-  pinned — the alarm, channel unread, live places, coverage — each a fixed-height row that expands in
-  place in the same fold idiom as the collapsible sections, each a summary plus a tap-through rather than
-  a second copy of the screen it summarises. One section serves all seven skins: the host passes it into
-  each dashboard's own children, so no skin's scroll physics is fought and the two fixed-viewport skins
-  (radar, recon) get a bounded strip that scrolls inside itself. Per-skin paint, numerals and ornament
-  are untouched on purpose, because the app's author wants the skins to keep different character; the
-  unification is the vocabulary, not one renderer. The pin control lives with the feature that owns the
-  summary, so the dashboard stays a read surface, and the dashboard's edit mode unpins and reorders.
-  Membership, order and expansion are one record with a closed id set, so a renamed feature drops its
-  stored pin instead of leaving a blank card. The raw `selfInfo` latitude, `advertLocPolicy` integer and
-  phone fix are no longer printed under the location value: that is a developer readout on the home
-  screen, and Diagnostics already shows every sourced readout with the frame it came from. Definition:
-  a closed card is 64 dp plus the closing rule, its detail is not built while closed, and its semantics
-  carry `expanded`.
+- R114: **a block can be moved to the dashboard, and the dashboard stops printing a debug line.** The home
+  screen answers "what is happening" and had no way to answer "what do I care about". Only content blocks are
+  pinnable, never navigation entries: the SOS action, the Chat tab and the map's Places button are the only route
+  to what they open, so pinning one would duplicate a path or strand a feature. Three blocks qualify today: the
+  coverage summary and the field/trail export block on the coverage screen, and the radio-health block in
+  Diagnostics. Pinning moves a block rather than copying it: its own screen renders through `PinnableBlockHost`,
+  which returns nothing at all while the block is pinned, so the screen lays out without the block and without a
+  ghost row, and the dashboard's card is then the block's only render site. The pin affordance sits in the
+  block's own header overflow across from the fold, the card's overflow carries one action that puts the block
+  back, and membership, order and expansion are one store with a closed id set loaded before the first frame. One
+  section serves all seven skins: the host passes it into each dashboard's own children, and the two
+  fixed-viewport skins get a bounded strip that scrolls inside itself. Per-skin paint, numerals and ornament are
+  untouched on purpose, because the app's author wants the skins to keep different character. The raw `selfInfo`
+  latitude, `advertLocPolicy` integer and phone fix are no longer printed under the location value: that is a
+  developer readout on the home screen, and it belongs in the Diagnostics developer section. Definition: a
+  pinned block has exactly one render site, a closed card is 64 dp plus the closing rule, its block is not built
+  while closed, and its semantics carry `expanded`.
 - R112: **the datagram's profile byte is read out.** The channel-datagram receive frame carries a
   byte that the mainline firmware writes as 0 and a two-profile radio fills with the profile the packet
   arrived on. The decoder now names it (`RxVia`), and Diagnostics states it with the channel and the

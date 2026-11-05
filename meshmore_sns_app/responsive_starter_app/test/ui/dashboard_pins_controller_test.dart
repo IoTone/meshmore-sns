@@ -21,48 +21,48 @@ void main() {
       'restart', () async {
     final DashboardPinsController c = DashboardPinsController();
     await c.load();
-    await c.pin(MmPinIds.sos);
-    await c.pin(MmPinIds.places);
-    await c.move(MmPinIds.places, 0);
-    expect(c.pins, <String>[MmPinIds.places, MmPinIds.sos]);
+    await c.pin(MmPinIds.radioHealth);
+    await c.pin(MmPinIds.fieldExport);
+    await c.move(MmPinIds.fieldExport, 0);
+    expect(c.pins, <String>[MmPinIds.fieldExport, MmPinIds.radioHealth]);
 
     final DashboardPinsController again = DashboardPinsController();
     await again.load();
-    expect(again.pins, <String>[MmPinIds.places, MmPinIds.sos]);
+    expect(again.pins, <String>[MmPinIds.fieldExport, MmPinIds.radioHealth]);
   });
 
   test('pinning twice keeps the first position, so a second tap cannot move '
       'a card', () async {
     final DashboardPinsController c = DashboardPinsController();
     await c.load();
-    await c.pin(MmPinIds.sos);
-    await c.pin(MmPinIds.places);
-    await c.pin(MmPinIds.sos);
-    expect(c.pins, <String>[MmPinIds.sos, MmPinIds.places]);
+    await c.pin(MmPinIds.radioHealth);
+    await c.pin(MmPinIds.fieldExport);
+    await c.pin(MmPinIds.radioHealth);
+    expect(c.pins, <String>[MmPinIds.radioHealth, MmPinIds.fieldExport]);
   });
 
   test('move clamps instead of throwing, and unpin removes the expansion '
       'state with the card', () async {
     final DashboardPinsController c = DashboardPinsController();
     await c.load();
-    await c.pin(MmPinIds.sos);
-    await c.pin(MmPinIds.coverage);
-    await c.setOpen(MmPinIds.coverage, true);
-    expect(c.isOpen(MmPinIds.coverage), isTrue);
+    await c.pin(MmPinIds.radioHealth);
+    await c.pin(MmPinIds.radioHealth);
+    await c.setOpen(MmPinIds.radioHealth, true);
+    expect(c.isOpen(MmPinIds.radioHealth), isTrue);
 
-    await c.move(MmPinIds.sos, 99);
-    expect(c.pins.last, MmPinIds.sos);
+    await c.move(MmPinIds.radioHealth, 99);
+    expect(c.pins.last, MmPinIds.radioHealth);
 
-    await c.unpin(MmPinIds.coverage);
-    expect(c.contains(MmPinIds.coverage), isFalse);
-    expect(c.isOpen(MmPinIds.coverage), isFalse);
+    await c.unpin(MmPinIds.radioHealth);
+    expect(c.contains(MmPinIds.radioHealth), isFalse);
+    expect(c.isOpen(MmPinIds.radioHealth), isFalse);
   });
 
   test('expansion is only stored for a card that is pinned', () async {
     final DashboardPinsController c = DashboardPinsController();
     await c.load();
-    await c.setOpen(MmPinIds.places, true);
-    expect(c.isOpen(MmPinIds.places), isFalse);
+    await c.setOpen(MmPinIds.fieldExport, true);
+    expect(c.isOpen(MmPinIds.fieldExport), isFalse);
   });
 
   test('a stored id that no longer exists is dropped on load, and a '
@@ -70,18 +70,19 @@ void main() {
     SharedPreferences.setMockInitialValues(<String, Object>{
       DashboardPinsController.prefsKey: jsonEncode(<String, Object>{
         'pins': <String>[
-          MmPinIds.sos,
+          MmPinIds.radioHealth,
           'pin.removedFeature',
-          MmPinIds.sos,
-          MmPinIds.coverage,
+          MmPinIds.radioHealth,
+          MmPinIds.coverageSummary,
         ],
-        'open': <String>[MmPinIds.sos, 'pin.removedFeature'],
+        'open': <String>[MmPinIds.radioHealth, 'pin.removedFeature'],
       }),
     });
     final DashboardPinsController c = DashboardPinsController();
     await c.load();
-    expect(c.pins, <String>[MmPinIds.sos, MmPinIds.coverage]);
-    expect(c.isOpen(MmPinIds.sos), isTrue);
+    expect(c.pins,
+        <String>[MmPinIds.radioHealth, MmPinIds.coverageSummary]);
+    expect(c.isOpen(MmPinIds.radioHealth), isTrue);
     expect(c.isOpen('pin.removedFeature'), isFalse);
   });
 

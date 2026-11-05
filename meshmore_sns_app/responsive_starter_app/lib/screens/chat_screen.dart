@@ -39,8 +39,6 @@ import '../bot/bot_tag.dart';
 import '../theme/mm_skin.dart';
 import '../theme/mm_tokens.dart';
 import '../tts/tts_controller.dart';
-import '../ui/dashboard_pin_action.dart';
-import '../ui/dashboard_pins_controller.dart';
 import '../ui/mm_page_header.dart';
 import '../ui/mm_scaffold.dart';
 import '../util/clock_model.dart';
@@ -641,10 +639,6 @@ class _ChatScreenState extends State<ChatScreen>
                       icon: const Icon(Icons.ios_share),
                     ),
                   ),
-                Padding(
-                  padding: const EdgeInsets.only(left: 4),
-                  child: const DashboardPinAction(pinId: MmPinIds.activity),
-                ),
                 // Manage channels: a chip, not a "#" icon next to the
                 // channel chips, where two different meanings of "channel"
                 // sat side by side.

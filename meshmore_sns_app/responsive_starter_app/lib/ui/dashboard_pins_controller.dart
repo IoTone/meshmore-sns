@@ -5,7 +5,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// Which summaries a user may pin to the dashboard.
+/// Which content blocks a user may pin to the dashboard.
 ///
 /// An id is a fixed English token, never the localised title (so an English
 /// and a Japanese user share the stored value) and never an index (so
@@ -19,16 +19,22 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// that has to ask the radio on rebuild are deliberately absent, because a
 /// dashboard that polls is worse than the tab it duplicates.
 abstract final class MmPinIds {
-  static const String sos = 'pin.sos';
-  static const String activity = 'pin.activity';
-  static const String places = 'pin.places';
-  static const String coverage = 'pin.coverage';
+  static const String coverageSummary = 'pin.coverageSummary';
+  static const String fieldExport = 'pin.fieldExport';
+  static const String radioHealth = 'pin.radioHealth';
 
-  /// The order the "pin" menu offers them in, and the reason a first pin has
-  /// a predictable place.
-  static const List<String> menu = <String>[sos, activity, places, coverage];
+  /// The order the pin menu offers them in.
+  static const List<String> menu = <String>[
+    coverageSummary,
+    fieldExport,
+    radioHealth,
+  ];
 
-  static const Set<String> all = <String>{sos, activity, places, coverage};
+  static const Set<String> all = <String>{
+    coverageSummary,
+    fieldExport,
+    radioHealth,
+  };
 }
 
 /// Remembers which summaries the user pinned, their order, and which of them
