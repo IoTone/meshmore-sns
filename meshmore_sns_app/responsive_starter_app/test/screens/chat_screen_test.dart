@@ -1,13 +1,18 @@
 // Copyright (c) 2026 IoTone, Inc.
 // SPDX-License-Identifier: MIT
+import 'dart:io';
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 
+import 'package:meshmore_sns_app/chat/draft_store.dart';
 import 'package:meshmore_sns_app/gen/app_localizations.dart';
 import 'package:meshmore_sns_app/l10n/locale_controller.dart';
 import 'package:meshmore_sns_app/meshcore/meshcore_controller.dart';
+import 'package:meshmore_sns_app/meshcore/secure/record_cipher.dart';
 import 'package:meshmore_sns_app/screens/chat_screen.dart';
 import 'package:meshmore_sns_app/tts/tts_controller.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -214,4 +219,144 @@ void main() {
     expect(spk.spoken, isEmpty);
     mc.dispose();
   });
+
+  group('APP-D1/D2 composer budget and APP-E7 drafts', () {
+    late Directory dir;
+
+    setUp(() {
+      dir = Directory.systemTemp.createTempSync('mm_drafts_w');
+      DraftStore.cipherOverride = MemoryRecordCipher.random();
+      DraftStore.directoryOverride = dir;
+    });
+
+    tearDown(() {
+      DraftStore.cipherOverride = null;
+      DraftStore.directoryOverride = null;
+      if (dir.existsSync()) dir.deleteSync(recursive: true);
+    });
+
+    Future<MeshcoreController> open(WidgetTester t,
+        FakeMeshcoreTransport fake) async {
+      await t.binding.setSurfaceSize(const Size(900, 1600));
+      addTearDown(() => t.binding.setSurfaceSize(null));
+      final MeshcoreController mc = MeshcoreController(
+        transportFactory: () async => fake,
+        connection:
+            MeshcoreConnection(handshakeTimeout: const Duration(seconds: 5)),
+      );
+      await t.pumpWidget(_host(mc, TtsController(speaker: FakeTtsSpeaker())));
+      await mc.connect();
+      fake.emit(selfInfoFrame());
+      await t.pumpAndSettle();
+      return mc;
+    }
+
+    testWidgets('the counter counts the bytes the radio counts', (t) async {
+      final MeshcoreController mc = await open(t, FakeMeshcoreTransport(connected: true));
+      // No name on the self-info frame: the fallback prefix is 8 bytes, so 152
+      // of the radio's 160 remain, and the copy says the number is an estimate.
+      expect(find.textContaining('about 152 of 160'), findsOneWidget);
+      mc.dispose();
+    });
+
+    testWidgets('an over-long message is refused before it is sent', (t) async {
+      final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
+      final MeshcoreController mc = await open(t, fake);
+      await t.enterText(find.byType(TextField), 'a' * 160);
+      await t.pump();
+      await t.tap(find.byTooltip('Send'));
+      await t.pump();
+      // The counter and the refusal both say it, so the send icon cannot be
+      // tapped into a silent truncation.
+      expect(find.textContaining('Too long by 8 bytes'), findsWidgets);
+      expect(mc.messagesFor(mc.activeChannel), isEmpty);
+      mc.dispose();
+    });
+
+    testWidgets('typing is kept as a draft, and a stored one comes back',
+        (t) async {
+      final _MemoryDrafts sink = _MemoryDrafts();
+      DraftStore.sinkOverride = sink;
+      addTearDown(() => DraftStore.sinkOverride = null);
+      await sink.save(
+          DraftStore.keyFor(DraftStore.noRadio, channelIdx: 0), 'half a thought');
+
+      final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
+      final MeshcoreController mc = MeshcoreController(
+        transportFactory: () async => fake,
+        connection:
+            MeshcoreConnection(handshakeTimeout: const Duration(seconds: 5)),
+      );
+      await t.binding.setSurfaceSize(const Size(900, 1600));
+      addTearDown(() => t.binding.setSurfaceSize(null));
+      await t.pumpWidget(_host(mc, TtsController(speaker: FakeTtsSpeaker())));
+      await t.pump();
+      // The draft for this conversation is recalled into the composer.
+      expect(find.text('half a thought'), findsOneWidget);
+
+      // A new keystroke replaces it after one pause, not per character. The
+      // composer only accepts typing once the radio has answered.
+      await mc.connect();
+      fake.emit(selfInfoFrame());
+      await t.pumpAndSettle();
+      await t.enterText(find.byType(TextField), 'half a thought, finished');
+      await t.pump(const Duration(milliseconds: 100));
+      expect(sink.values.values, contains('half a thought'));
+      await t.pumpAndSettle(DraftStore.debounce);
+      await t.pump(DraftStore.debounce);
+      expect(sink.values.values, contains('half a thought, finished'));
+      mc.dispose();
+    });
+
+    testWidgets('a refused send gives the text back, and keeps it as a draft',
+        (t) async {
+      final _MemoryDrafts sink = _MemoryDrafts();
+      DraftStore.sinkOverride = sink;
+      addTearDown(() => DraftStore.sinkOverride = null);
+      final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
+      final MeshcoreController mc = MeshcoreController(
+        transportFactory: () async => fake,
+        connection:
+            MeshcoreConnection(handshakeTimeout: const Duration(seconds: 5)),
+      );
+      await t.binding.setSurfaceSize(const Size(900, 1600));
+      addTearDown(() => t.binding.setSurfaceSize(null));
+      await t.pumpWidget(_host(mc, TtsController(speaker: FakeTtsSpeaker())));
+      await mc.connect();
+      fake.emit(selfInfoFrame());
+      await t.pumpAndSettle();
+
+      await t.enterText(find.byType(TextField), 'hello mesh');
+      await t.tap(find.byTooltip('Send'));
+      await t.pumpAndSettle();
+      // The radio refuses the channel send: ERR with a device reason code.
+      fake.emit(Uint8List.fromList(<int>[0x01, 3]));
+      await t.pumpAndSettle();
+
+      final TextField field = t.widget<TextField>(find.byType(TextField));
+      expect(field.controller?.text, 'hello mesh',
+          reason: 'a failure must not cost the user what they typed');
+      expect(sink.values.values, contains('hello mesh'),
+          reason: 'and the draft comes back with it');
+      mc.dispose();
+    });
+  });
 }
+
+class _MemoryDrafts implements DraftSink {
+  final Map<String, String> values = <String, String>{};
+  @override
+  Future<String> read(String key) async => values[key] ?? '';
+  @override
+  Future<void> save(String key, String text) async {
+    if (text.trim().isEmpty) {
+      values.remove(key);
+    } else {
+      values[key] = text;
+    }
+  }
+
+  @override
+  Future<void> clear(String key) async => values.remove(key);
+}
+

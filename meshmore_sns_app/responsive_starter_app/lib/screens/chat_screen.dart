@@ -7,6 +7,8 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../chat/chat_actions.dart';
+import '../chat/composer_budget.dart';
+import '../chat/draft_store.dart';
 import '../chat/studio_message_row.dart';
 import '../gen/app_localizations.dart';
 import '../meshcore/chat_message.dart';
@@ -52,6 +54,21 @@ class _ChatScreenState extends State<ChatScreen>
   final ScrollController _scroll = ScrollController();
   int _lastCount = 0;
 
+  /// APP-D1/D2 — the composer's byte budget, recomputed when the radio or its
+  /// advertised name changes (the name is part of what the radio sends).
+  ComposerBudget _budget = ComposerBudget.forSender(null);
+  String _budgetName = '<unknown>';
+
+  /// APP-E7 — the conversation this composer is drafting into, and the pending
+  /// write. A null key means the radio or the channel is not known yet.
+  String? _draftKey;
+  Timer? _draftTimer;
+  bool _nearWarned = false;
+
+  /// The message the last send created, so a failure can put the text back.
+  String? _sentId;
+  String _sentText = '';
+
   /// R29 — number of new messages that have arrived while the user
   /// has scrolled away from the bottom. Drives the "↓ N new" pill.
   /// Resets whenever the user returns to the bottom (manually or via
@@ -94,6 +111,9 @@ class _ChatScreenState extends State<ChatScreen>
       // The cached record, not an ancestor lookup: the controller can notify
       // while this element is being deactivated, where a lookup is illegal.
       _focus?.openChannel = mc.activeChannel;
+      _syncBudget(mc);
+      _syncDraftScope(mc);
+      _restoreIfFailed(mc);
     }
 
     _focusListener = listener;
@@ -101,6 +121,92 @@ class _ChatScreenState extends State<ChatScreen>
     // simply has nothing to suppress.
     _focus?.openChannel = mc.activeChannel;
     mc.addListener(listener);
+    _input.addListener(_onComposerChanged);
+    _syncBudget(mc);
+    _syncDraftScope(mc);
+  }
+
+  /// R109-composer — the counter and the refusal read one model, so they cannot
+  /// disagree about whether a message fits.
+  void _syncBudget(MeshcoreController mc) {
+    final String name = mc.selfInfo?.name ?? '';
+    if (name == _budgetName) return;
+    _budgetName = name;
+    final ComposerBudget next = ComposerBudget.forSender(name);
+    if (next.prefixBytes == _budget.prefixBytes &&
+        next.prefixKnown == _budget.prefixKnown) {
+      return;
+    }
+    setState(() => _budget = next);
+  }
+
+  /// APP-E7 — keep one draft per conversation. Moving to another channel (or
+  /// another radio) flushes what was typed and recalls what belongs there.
+  void _syncDraftScope(MeshcoreController mc) {
+    final String key = DraftStore.keyFor(
+      DraftStore.radioScope(mc.selfInfo?.publicKey),
+      channelIdx: mc.activeChannel,
+    );
+    if (key == _draftKey) return;
+    final String? previous = _draftKey;
+    final String typed = _input.text;
+    _draftKey = key;
+    _draftTimer?.cancel();
+    _draftTimer = null;
+    if (previous != null) unawaited(DraftStore.save(previous, typed));
+    unawaited(_recall(key));
+  }
+
+  Future<void> _recall(String key) async {
+    final String draft = await DraftStore.read(key);
+    if (!mounted || key != _draftKey || draft.isEmpty) return;
+    if (_input.text.isNotEmpty) return;
+    setState(() => _input.text = draft);
+    _input.selection = TextSelection.collapsed(offset: draft.length);
+  }
+
+  /// APP-E7 — a keystroke is not a write. One per pause, keyed to the draft it
+  /// belongs to, so a channel switch mid-typing cannot land in the new thread.
+  void _onComposerChanged() {
+    final String? key = _draftKey;
+    if (key == null) return;
+    final String text = _input.text;
+    _draftTimer?.cancel();
+    _draftTimer = Timer(DraftStore.debounce, () {
+      unawaited(DraftStore.save(key, text));
+    });
+    if (text.trim().isEmpty) _nearWarned = false;
+    if (!_nearWarned && _budget.stateFor(text) == ComposerState.near) {
+      _nearWarned = true;
+      ScaffoldMessenger.maybeOf(context)?.showSnackBar(
+        SnackBar(
+            content: Text(AppLocalizations.of(context).chatBudgetNear)),
+      );
+    }
+    setState(() {});
+  }
+
+  /// A send that fails gives the text back: the composer keeps what the user
+  /// typed instead of clearing it into a red row they have to retype.
+  void _restoreIfFailed(MeshcoreController mc) {
+    final String? id = _sentId;
+    if (id == null || _sentText.isEmpty) return;
+    ChatMessage? found;
+    for (final ChatMessage m in mc.messagesFor(mc.activeChannel)) {
+      if (m.id == id) {
+        found = m;
+        break;
+      }
+    }
+    if (found == null || found.delivery != MessageDelivery.failed) return;
+    _sentId = null;
+    final String text = _sentText;
+    _sentText = '';
+    if (!mounted || _input.text.isNotEmpty) return;
+    setState(() => _input.text = text);
+    _input.selection = TextSelection.collapsed(offset: text.length);
+    final String? key = _draftKey;
+    if (key != null) unawaited(DraftStore.save(key, text));
   }
 
   MeshcoreController? _focusOwner;
@@ -143,6 +249,8 @@ class _ChatScreenState extends State<ChatScreen>
     if (_focusListener != null) _focusOwner?.removeListener(_focusListener!);
     _focus?.openChannel = null;
     _scroll.removeListener(_onScroll);
+    _input.removeListener(_onComposerChanged);
+    _draftTimer?.cancel();
     _input.dispose();
     _scroll.dispose();
     super.dispose();
@@ -151,8 +259,30 @@ class _ChatScreenState extends State<ChatScreen>
   void _send(MeshcoreController mc) {
     final String t = _input.text;
     if (t.trim().isEmpty) return;
-    unawaited(mc.sendChannelText(t));
+    final ComposerBudget budget = _budget;
+    if (!budget.canSend(t)) {
+      final AppLocalizations l = AppLocalizations.of(context);
+      ScaffoldMessenger.maybeOf(context)?.showSnackBar(
+        SnackBar(content: Text(l.chatBudgetTooLong(budget.overBy(t)))),
+      );
+      return;
+    }
+    final String? key = _draftKey;
+    // The draft is cleared only when the radio has taken the text; a failure
+    // puts it back through `_restoreIfFailed`.
+    if (key != null) {
+      _draftTimer?.cancel();
+      unawaited(DraftStore.clear(key));
+    }
+    _sentText = t;
+    _sentId = null;
+    unawaited(mc.sendChannelTextTo(mc.activeChannel, t).then(
+      (ChatMessage? m) {
+        if (m != null) _sentId = m.id;
+      },
+    ));
     _input.clear();
+    _nearWarned = false;
   }
 
   Future<void> _onAction(MeshcoreController mc, ChatMessage m) async {
@@ -362,18 +492,29 @@ class _ChatScreenState extends State<ChatScreen>
             child: Row(
               children: <Widget>[
                 Expanded(
-                  child: TextField(
-                    controller: _input,
-                    enabled: ready,
-                    textInputAction: TextInputAction.send,
-                    onSubmitted: (_) => _send(mc),
-                    decoration: InputDecoration(
-                      isDense: true,
-                      hintText: ready
-                          ? l.chatComposerHint(activeName)
-                          : l.chatComposerOffline,
-                      border: const OutlineInputBorder(),
-                    ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      TextField(
+                        controller: _input,
+                        enabled: ready,
+                        textInputAction: TextInputAction.send,
+                        onSubmitted: (_) => _send(mc),
+                        decoration: InputDecoration(
+                          isDense: true,
+                          hintText: ready
+                              ? l.chatComposerHint(activeName)
+                              : l.chatComposerOffline,
+                          border: const OutlineInputBorder(),
+                        ),
+                      ),
+                      _ComposerCounter(
+                        budget: _budget,
+                        text: _input.text,
+                        label: l,
+                      ),
+                    ],
                   ),
                 ),
                 IconButton(
@@ -927,6 +1068,60 @@ class _JumpToNewestPill extends StatelessWidget {
                       fontWeight: FontWeight.w600,
                       fontSize: 13)),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// APP-D1 — how much of the radio's text budget the composer has used.
+///
+/// The number is the same one `_send` refuses with, computed by
+/// [ComposerBudget]. It is shown as remaining bytes rather than a ratio because
+/// the limit is in bytes, not characters: a Japanese message has far fewer
+/// characters than an English one at the same count. The count is text, not
+/// colour, and it is a live region so a screen reader announces the change.
+class _ComposerCounter extends StatelessWidget {
+  const _ComposerCounter({
+    required this.budget,
+    required this.text,
+    required this.label,
+  });
+
+  final ComposerBudget budget;
+  final String text;
+  final AppLocalizations label;
+
+  @override
+  Widget build(BuildContext context) {
+    final ComposerState state = budget.stateFor(text);
+    final MmTokens tokens = context.skin.color;
+    final Color colour = switch (state) {
+      ComposerState.ok => tokens.fgMuted,
+      ComposerState.near => tokens.accent,
+      ComposerState.over => tokens.alert,
+    };
+    final int remaining = budget.remainingFor(text);
+    final String shown = state == ComposerState.over
+        ? label.chatBudgetTooLong(budget.overBy(text))
+        : budget.prefixKnown
+            // Measured against the radio's whole budget, not the sender's
+            // share: "152 of 160 left" is a number a person can check.
+            ? label.chatBudgetRemaining(
+                remaining, ChannelTextLimits.maxTextBytes)
+            : label.chatBudgetEstimate(
+                remaining, ChannelTextLimits.maxTextBytes);
+    return Padding(
+      padding: const EdgeInsets.only(top: 2),
+      child: Semantics(
+        liveRegion: true,
+        label: shown,
+        child: Text(
+          shown,
+          style: TextStyle(
+            color: colour,
+            fontSize: context.skin.type.sizeMicro,
           ),
         ),
       ),
