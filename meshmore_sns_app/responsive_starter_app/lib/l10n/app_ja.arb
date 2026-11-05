@@ -505,7 +505,7 @@
       }
     }
   },
-  "equalGridAwaitingFix": "等分グリッド表示には自分の位置が必要です — GPS 取得待ち（スマートフォンまたはデバイス）。",
+  "gridNeedsFix": "自分の位置が必要です — GPS の取得を待っています（スマートフォンまたはデバイス）。",
   "equalGridCellSize": "セル {size}",
   "@equalGridCellSize": {
     "placeholders": {
@@ -1111,7 +1111,6 @@
   "gridViewTree": "メッシュツリー",
   "gridViewSnsCells": "SNS セル（ヒート）",
   "gridViewWeather": "気象（環境）",
-  "gridViewMeshbook": "メッシュブック（チャンネル活動）",
   "meshbookTitle": "メッシュブック",
   "meshbookLast24h": "直近24時間",
   "meshbookEmpty": "このチャンネルには直近24時間のメッセージがありません。",
@@ -1170,9 +1169,10 @@
   "wxCondStorm": "嵐",
   "wxCondHeat": "暑い",
   "wxCondCold": "寒い",
-  "weatherEmpty": "環境データを報告しているノードはまだありません。\nセンサー搭載ノードが照会されると表示されます — アプリ設定で「ノードのテレメトリを収集」を有効にしてください。",
-  "weatherSelfNoTelemetry": "このデバイスはまだテレメトリを返していません。接続を確認してから、この画面を開き直してください。",
-  "weatherSelfNoEnv": "このデバイスのファームウェアは環境テレメトリに対応していません。\n報告内容: {types}。\nセンサー（例: T1000-E の BME280）には MeshCore センサーファームウェアが必要です。標準ビルドはバッテリー／GPS のみを送信し、環境モードを設定してもデバイス側でオフに戻されます。これはアプリの設定ではなくデバイス側の制限です。",
+  "weatherEmpty": "環境データを報告しているノードはまだありません。",
+  "weatherOpenTelemetrySettings": "ノードのテレメトリを有効にする",
+  "weatherSelfNoTelemetry": "無線がまだテレメトリ要求に応答していません。",
+  "weatherSelfNoEnv": "このファームウェアは環境センサーを報告しません。受信内容: {types}。",
   "@weatherSelfNoEnv": {
     "placeholders": {
       "types": {
@@ -1279,7 +1279,6 @@
       }
     }
   },
-  "snsCellsAwaitingFix": "位置情報を待機中 — ヒートマップは自分を中心に表示されます。",
   "snsCellsClear": "クリア",
   "snsCellsStatus": "{active} セル · {hot} ホット",
   "@snsPlacesButton": {

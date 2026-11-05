@@ -8,6 +8,7 @@ import 'package:flutter/scheduler.dart';
 import 'package:provider/provider.dart';
 
 import '../gen/app_localizations.dart';
+import 'grid_notice.dart';
 import '../meshcore/coverage_store.dart';
 import '../meshcore/discovered_node.dart';
 import '../meshcore/meshcore_controller.dart';
@@ -156,15 +157,9 @@ class _SnsCellsViewState extends State<SnsCellsView>
     final double? selfLon = own?.longitude;
 
     if (selfLat == null || selfLon == null) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Text(
-            l.snsCellsAwaitingFix,
-            textAlign: TextAlign.center,
-            style: TextStyle(color: cs.onSurfaceVariant),
-          ),
-        ),
+      return GridNotice(
+        message: l.gridNeedsFix,
+        icon: Icons.location_searching,
       );
     }
 

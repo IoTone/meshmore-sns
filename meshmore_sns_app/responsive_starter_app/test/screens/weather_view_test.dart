@@ -33,12 +33,12 @@ Widget _host(MeshcoreController mc) => ChangeNotifierProvider<MeshcoreController
 void main() {
   testWidgets('W2 the weather view takes its text sizes from the ladder',
       (WidgetTester t) async {
-    // The migration replaced the section headers (11 -> sizeSm), the sensor
-    // section's diagnostic card (13 -> sizeBodyLg), the summary statistics
-    // (22 -> size(22), no role) and the microclimate bubble's label and
-    // detail. Only the no-telemetry state renders without a sensor frame, so
-    // those are the two asserted here: a section header and the diagnostic
-    // card.
+    // The migration replaced the section headers (11 -> sizeSm), the summary
+    // statistics (22 -> size(22), no role) and the microclimate bubble's label
+    // and detail. The empty state is the shared GridNotice now: one sentence
+    // at sizeBody and one smaller line naming which of the two causes it is.
+    // Only the no-telemetry state renders without a sensor frame, so those are
+    // what is asserted here.
     final MmType type = mmSkinFor(MmThemePreset.seele).type;
     final MeshcoreController mc = MeshcoreController(
       transportFactory: () async => FakeMeshcoreTransport(connected: true),
@@ -55,9 +55,14 @@ void main() {
     expect(header.style?.fontSize, type.sizeSm);
     expect(header.style?.fontSize, 11);
 
-    Text diag = t.widget<Text>(find.textContaining('hasn\'t returned telemetry'));
-    expect(diag.style?.fontSize, type.sizeBodyLg);
-    expect(diag.style?.fontSize, 13);
+    Text empty = t.widget<Text>(find.text(
+        'No nodes are reporting environment data yet.'));
+    expect(empty.style?.fontSize, type.sizeBody);
+    Text diag =
+        t.widget<Text>(find.textContaining('has not answered a telemetry'));
+    expect(diag.style?.fontSize, type.sizeSm);
+    // The empty state carries the action that fixes it.
+    expect(find.text('Turn on node telemetry'), findsOneWidget);
 
     await t.pumpWidget(const SizedBox());
   });

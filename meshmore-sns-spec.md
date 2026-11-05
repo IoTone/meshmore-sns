@@ -1280,6 +1280,17 @@ were written, so their numbering is not monotonic. A few records live in
 the sibling specs: R93 in `meshmore-sns-maps-spec.md`, R60 in
 `meshmore-sns-tools-spec.md`, R79 in `meshmore_sns_app/STATUS.md`.
 
+- R117: **the Hyperlocal grid keeps only what earns its place, and states one thing one way.** The tab leads
+  with three views (radar, coverage survey, weather), one row that leaves for the Map tab, and five parked
+  views one step down in the order a user is most likely to want (globe, equal grid, mesh tree, altitude, SNS
+  cells). The channel activity report left the tab entirely: it is a report about a conversation, so it opens
+  from the Chat strip on the channel it describes. Every "nothing to show" answer is one shared `GridNotice`
+  (an icon, one sentence, one action where an action exists) instead of five shapes across five views, the
+  no-fix sentence is one string instead of two, and the weather view's empty state offers the switch that
+  fixes it rather than naming a setting in prose. The nine view files read the skin's type ladder (zero
+  numeric sizes, zero literal monospace families, enforced by `test/screens/grid_views_type_test.dart`), and a
+  view closed while its poll indicator is pending cancels that timer instead of leaving it to fire after
+  disposal.
 - R114: **a block can be moved to the dashboard, and the dashboard stops printing a debug line.** The home
   screen answers "what is happening" and had no way to answer "what do I care about". Only content blocks are
   pinnable, never navigation entries: the SOS action, the Chat tab and the map's Places button are the only route

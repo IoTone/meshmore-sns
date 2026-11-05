@@ -8,6 +8,7 @@ import 'package:meshcore/meshcore.dart';
 import 'package:provider/provider.dart';
 
 import '../gen/app_localizations.dart';
+import 'grid_notice.dart';
 import '../theme/mm_skin.dart';
 import '../meshcore/discovered_node.dart';
 import '../meshcore/mesh_graph.dart';
@@ -317,8 +318,6 @@ class _MeshTreeViewState extends State<MeshTreeView>
                           edgeFloat: cs.outline.withValues(alpha: .35),
                           label: cs.onSurface,
                           bg: cs.surface,
-                          emptyMsg:
-                              graph.nodes.length <= 1 ? l.meshTreeEmpty : null,
                         ),
                       ),
                     ),
@@ -326,6 +325,17 @@ class _MeshTreeViewState extends State<MeshTreeView>
                 ),
               ),
             ),
+            // Nothing but us: one sentence in the shape every other view
+            // uses, rather than a line painted inside the canvas.
+            if (graph.nodes.length <= 1)
+              Positioned.fill(
+                child: IgnorePointer(
+                  child: GridNotice(
+                    message: l.meshTreeEmpty,
+                    icon: Icons.account_tree,
+                  ),
+                ),
+              ),
             // Recenter overlay — listens to the transformation
             // controller so it appears only when the user has zoomed
             // or panned away from the default view. Identity matrix
@@ -463,7 +473,6 @@ class _MeshTreePainter extends CustomPainter {
     required this.edgeFloat,
     required this.label,
     required this.bg,
-    this.emptyMsg,
   });
 
   /// The skin's type roles, passed in because a painter has no [BuildContext].
@@ -480,25 +489,10 @@ class _MeshTreePainter extends CustomPainter {
   final Color edgeFloat;
   final Color label;
   final Color bg;
-  final String? emptyMsg;
 
   @override
   void paint(Canvas canvas, Size size) {
     canvas.drawRect(Offset.zero & size, Paint()..color = bg);
-
-    if (emptyMsg != null) {
-      final TextPainter tp = TextPainter(
-        text: TextSpan(
-          text: emptyMsg!,
-          style: TextStyle(color: edgeFloat, fontSize: type.sizeBody),
-        ),
-        textDirection: TextDirection.ltr,
-        textAlign: TextAlign.center,
-      )..layout(maxWidth: size.width * 0.7);
-      tp.paint(canvas,
-          Offset((size.width - tp.width) / 2, (size.height - tp.height) / 2));
-      return;
-    }
 
     // Edges first so node circles sit on top.
     final Paint edgePaint = Paint()

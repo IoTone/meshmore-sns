@@ -12,6 +12,7 @@ import 'package:meshcore/meshcore.dart' show SelfInfo;
 import 'package:provider/provider.dart';
 
 import '../gen/app_localizations.dart';
+import 'grid_notice.dart';
 import '../field/relationship.dart';
 import '../meshcore/own_location.dart';
 import '../geofence/geofence_controller.dart';
@@ -419,15 +420,9 @@ class _StreetMapViewState extends State<StreetMapView> {
     final double? selfLon = mc.ownLocation?.longitude;
     final bool hasFix = selfLat != null && selfLon != null;
     if (!hasFix && !widget.browseWithoutFix) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Text(
-            l.equalGridAwaitingFix,
-            textAlign: TextAlign.center,
-            style: TextStyle(color: cs.onSurfaceVariant),
-          ),
-        ),
+      return GridNotice(
+        message: l.gridNeedsFix,
+        icon: Icons.location_searching,
       );
     }
     // R69 — a fix arrived after browsing: leave the world view.

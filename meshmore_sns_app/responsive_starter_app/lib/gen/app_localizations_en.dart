@@ -1087,8 +1087,8 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get equalGridAwaitingFix =>
-      'Equal-grid view needs your own location — waiting for a GPS fix (phone or device).';
+  String get gridNeedsFix =>
+      'Needs your own location — waiting for a GPS fix (phone or device).';
 
   @override
   String equalGridCellSize(String size) {
@@ -1908,9 +1908,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get gridViewWeather => 'Weather (environment)';
 
   @override
-  String get gridViewMeshbook => 'Meshbook (channel activity)';
-
-  @override
   String get meshbookTitle => 'MESHBOOK';
 
   @override
@@ -2001,16 +1998,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get wxCondCold => 'Cold';
 
   @override
-  String get weatherEmpty =>
-      'No nodes are reporting environment data yet.\nReadings appear as sensor-equipped nodes are polled — enable \"Gather node telemetry\" in App settings.';
+  String get weatherEmpty => 'No nodes are reporting environment data yet.';
+
+  @override
+  String get weatherOpenTelemetrySettings => 'Turn on node telemetry';
 
   @override
   String get weatherSelfNoTelemetry =>
-      'This device hasn\'t returned telemetry yet. Make sure you\'re connected, then reopen this view.';
+      'The radio has not answered a telemetry request yet.';
 
   @override
   String weatherSelfNoEnv(String types) {
-    return 'Environment telemetry isn\'t supported by this device\'s firmware.\nIt reported: $types.\nThe sensor (e.g. the T1000-E\'s BME280) needs a MeshCore sensor firmware build — the standard build sends only battery/GPS, and the device clamps the environment mode back to off. This is a device limitation, not an app setting.';
+    return 'This firmware reports no environment sensor. It sent: $types.';
   }
 
   @override
@@ -2123,10 +2122,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String weatherAgoHours(int h) {
     return '${h}h ago';
   }
-
-  @override
-  String get snsCellsAwaitingFix =>
-      'Waiting for a location fix — the heat map centres on you.';
 
   @override
   String get snsCellsClear => 'Clear';

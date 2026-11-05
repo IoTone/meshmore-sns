@@ -1,6 +1,7 @@
 // Copyright (c) 2026 IoTone, Inc.
 // SPDX-License-Identifier: MIT
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../gen/app_localizations.dart';
@@ -11,6 +12,7 @@ import '../meshcore/node_telemetry.dart';
 import '../sns/weather_inference.dart';
 import '../sns/weather_lexicon.dart';
 import '../util/geo.dart' as geo;
+import 'grid_notice.dart';
 import 'node_detail_sheet.dart';
 import '../theme/viz_palette.dart';
 import '../theme/mm_skin.dart';
@@ -113,31 +115,14 @@ class _WeatherViewState extends State<WeatherView> {
               : selfT.entries
                   .map((e) => '0x${e.type.toRadixString(16)}')
                   .join(', '));
-      measured.add(Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        child: Column(
-          children: <Widget>[
-            Icon(Icons.thermostat, size: 36, color: cs.onSurfaceVariant),
-            const SizedBox(height: 10),
-            Text(l.weatherEmpty,
-                textAlign: TextAlign.center,
-                style: TextStyle(color: cs.onSurfaceVariant, height: 1.4)),
-            const SizedBox(height: 10),
-            Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-              decoration: BoxDecoration(
-                color: cs.surfaceContainerHighest.withValues(alpha: .35),
-                borderRadius: mmRadius(context, 12),
-                border: Border.all(color: cs.outline.withValues(alpha: .3)),
-              ),
-              child: Text(selfDiag,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                      color: cs.onSurfaceVariant, fontSize: context.skin.type.sizeBodyLg, height: 1.45)),
-            ),
-          ],
-        ),
+      measured.add(GridNotice(
+        message: l.weatherEmpty,
+        icon: Icons.thermostat,
+        // Which of two causes this is, in one line rather than a panel: the
+        // radio has not answered yet, or this firmware has no sensor.
+        detail: selfDiag,
+        actionLabel: l.weatherOpenTelemetrySettings,
+        onAction: () => context.push('/settings/app'),
       ));
     } else {
       if (temps.isNotEmpty) {

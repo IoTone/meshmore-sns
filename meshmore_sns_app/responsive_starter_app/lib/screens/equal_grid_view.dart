@@ -10,6 +10,7 @@ import 'package:latlong2/latlong.dart' hide Path; // collides with ui.Path
 import 'package:provider/provider.dart';
 
 import '../gen/app_localizations.dart';
+import 'grid_notice.dart';
 import '../theme/mm_skin.dart';
 import '../maps/basemap.dart';
 import '../maps/map_source.dart';
@@ -195,15 +196,9 @@ class _EqualGridViewState extends State<EqualGridView> {
     final double? selfLat = mc.ownLocation?.latitude;
     final double? selfLon = mc.ownLocation?.longitude;
     if (selfLat == null || selfLon == null) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Text(
-            l.equalGridAwaitingFix,
-            textAlign: TextAlign.center,
-            style: TextStyle(color: cs.onSurfaceVariant),
-          ),
-        ),
+      return GridNotice(
+        message: l.gridNeedsFix,
+        icon: Icons.location_searching,
       );
     }
 
@@ -852,7 +847,7 @@ class _EqualGridPainter extends CustomPainter {
             text: label,
             style: TextStyle(
                 color: cellLabel,
-                fontSize: city != null ? 10 : 9,
+                fontSize: city != null ? type.sizeMicro : type.size(9),
                 fontWeight: city != null ? FontWeight.w500 : FontWeight.normal,
                 letterSpacing: city != null ? 0.5 : 1,
                 fontFeatures: const <FontFeature>[

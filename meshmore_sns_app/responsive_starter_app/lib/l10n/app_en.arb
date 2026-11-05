@@ -557,7 +557,7 @@
       }
     }
   },
-  "equalGridAwaitingFix": "Equal-grid view needs your own location — waiting for a GPS fix (phone or device).",
+  "gridNeedsFix": "Needs your own location — waiting for a GPS fix (phone or device).",
   "equalGridCellSize": "CELL {size}",
   "@equalGridCellSize": {
     "placeholders": {
@@ -1203,7 +1203,6 @@
   "gridViewTree": "Mesh tree",
   "gridViewSnsCells": "SNS cells (heat)",
   "gridViewWeather": "Weather (environment)",
-  "gridViewMeshbook": "Meshbook (channel activity)",
   "meshbookTitle": "MESHBOOK",
   "meshbookLast24h": "last 24h",
   "meshbookEmpty": "No messages on this channel in the last 24h.",
@@ -1262,9 +1261,10 @@
   "wxCondStorm": "Storm",
   "wxCondHeat": "Hot",
   "wxCondCold": "Cold",
-  "weatherEmpty": "No nodes are reporting environment data yet.\nReadings appear as sensor-equipped nodes are polled — enable \"Gather node telemetry\" in App settings.",
-  "weatherSelfNoTelemetry": "This device hasn't returned telemetry yet. Make sure you're connected, then reopen this view.",
-  "weatherSelfNoEnv": "Environment telemetry isn't supported by this device's firmware.\nIt reported: {types}.\nThe sensor (e.g. the T1000-E's BME280) needs a MeshCore sensor firmware build — the standard build sends only battery/GPS, and the device clamps the environment mode back to off. This is a device limitation, not an app setting.",
+  "weatherEmpty": "No nodes are reporting environment data yet.",
+  "weatherOpenTelemetrySettings": "Turn on node telemetry",
+  "weatherSelfNoTelemetry": "The radio has not answered a telemetry request yet.",
+  "weatherSelfNoEnv": "This firmware reports no environment sensor. It sent: {types}.",
   "@weatherSelfNoEnv": {
     "placeholders": {
       "types": {
@@ -1371,7 +1371,6 @@
       }
     }
   },
-  "snsCellsAwaitingFix": "Waiting for a location fix — the heat map centres on you.",
   "snsCellsClear": "Clear",
   "snsCellsStatus": "{active} cells · {hot} hot",
   "@snsPlacesButton": {

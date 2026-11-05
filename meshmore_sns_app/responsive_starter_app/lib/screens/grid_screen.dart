@@ -27,8 +27,8 @@ import 'globe_view.dart';
 import 'mesh_tree_view.dart';
 import 'node_detail_sheet.dart';
 import 'sns_cells_view.dart';
+import 'grid_notice.dart';
 import 'grid_prefs_store.dart';
-import 'meshbook_view.dart';
 import 'weather_view.dart';
 import '../ui/mm_shape.dart';
 import 'package:meshcore/meshcore.dart';
@@ -47,7 +47,6 @@ enum _GridViewMode {
   tree,
   snsCells,
   elevation,
-  meshbook,
 }
 
 /// The rows the view picker shows first: the views that answer a question a
@@ -66,8 +65,8 @@ const List<_GridViewMode> _moreViews = <_GridViewMode>[
   _GridViewMode.globe,
   _GridViewMode.equalGrid,
   _GridViewMode.tree,
-  _GridViewMode.snsCells,
   _GridViewMode.elevation,
+  _GridViewMode.snsCells,
 ];
 
 extension on _GridViewMode {
@@ -89,8 +88,7 @@ extension on _GridViewMode {
         _GridViewMode.radial ||
         _GridViewMode.equalGrid ||
         _GridViewMode.elevation ||
-        _GridViewMode.weather ||
-        _GridViewMode.meshbook =>
+        _GridViewMode.weather =>
           false,
       };
 }
@@ -298,9 +296,6 @@ class _GridScreenState extends State<GridScreen>
         for (final _GridViewMode v in _moreViews)
           MmPickerItem<_GridViewMode>.option(
               v, _longLabel(v, l), icon: _iconForMode(v)),
-        MmPickerItem<_GridViewMode>.option(_GridViewMode.meshbook,
-            _longLabel(_GridViewMode.meshbook, l),
-            icon: _iconForMode(_GridViewMode.meshbook)),
       ],
     ).then((_GridViewMode? m) {
       if (m != null && mounted) _selectMode(m);
@@ -364,8 +359,7 @@ class _GridScreenState extends State<GridScreen>
         _GridViewMode.snsCells =>
           true,
         _GridViewMode.weather ||
-        _GridViewMode.elevation ||
-        _GridViewMode.meshbook =>
+        _GridViewMode.elevation =>
           false,
       };
 
@@ -499,7 +493,6 @@ class _GridScreenState extends State<GridScreen>
         _GridViewMode.tree => Icons.account_tree,
         _GridViewMode.snsCells => Icons.local_fire_department,
         _GridViewMode.weather => Icons.thermostat,
-        _GridViewMode.meshbook => Icons.menu_book_outlined,
       };
 
 
@@ -513,7 +506,6 @@ class _GridScreenState extends State<GridScreen>
         _GridViewMode.tree => l.gridViewTree,
         _GridViewMode.snsCells => l.gridViewSnsCells,
         _GridViewMode.weather => l.gridViewWeather,
-        _GridViewMode.meshbook => l.gridViewMeshbook,
       };
 
 
@@ -917,7 +909,6 @@ class _GridScreenState extends State<GridScreen>
             ],
           ),
         _GridViewMode.weather => WeatherView(filteredNodes: visible),
-        _GridViewMode.meshbook => const MeshbookView(),
         _GridViewMode.radial => Column(
           // R109 — the radar never pans, so it is always the shell's drag;
           // no toggle, no hold-still wrapper.
@@ -934,15 +925,9 @@ class _GridScreenState extends State<GridScreen>
                   // Offline still paints the rings — an empty radar with
                   // the message over it, not a blank page (issue #4).
                   child: visible.isEmpty && ready
-                ? Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(28),
-                      child: Text(
-                        l.gridEmpty,
-                        textAlign: TextAlign.center,
-                        style: TextStyle(color: cs.onSurfaceVariant),
-                      ),
-                    ),
+                ? GridNotice(
+                    message: l.gridEmpty,
+                    icon: Icons.radar,
                   )
                 : LayoutBuilder(
                     builder: (BuildContext _, BoxConstraints c) {

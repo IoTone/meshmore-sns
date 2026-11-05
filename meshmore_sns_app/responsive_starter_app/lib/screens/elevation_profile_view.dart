@@ -66,8 +66,14 @@ class _ElevationProfileViewState extends State<ElevationProfileView>
     });
   }
 
+  /// The polling indicator's reset. Held so a view that is closed before it
+  /// fires cannot leave a timer behind: a delayed future that touches
+  /// `setState` after disposal is a leak the harness (and a real device) sees.
+  Timer? _pollReset;
+
   @override
   void dispose() {
+    _pollReset?.cancel();
     _scan.dispose();
     super.dispose();
   }
@@ -84,7 +90,8 @@ class _ElevationProfileViewState extends State<ElevationProfileView>
     // Always flash the polling indicator so the tap has visible
     // feedback even when the altitude comes back unchanged.
     setState(() => _polling = true);
-    Future<void>.delayed(const Duration(seconds: 2), () {
+    _pollReset?.cancel();
+    _pollReset = Timer(const Duration(seconds: 2), () {
       if (mounted) setState(() => _polling = false);
     });
   }

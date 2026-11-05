@@ -1029,8 +1029,7 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get equalGridAwaitingFix =>
-      '等分グリッド表示には自分の位置が必要です — GPS 取得待ち（スマートフォンまたはデバイス）。';
+  String get gridNeedsFix => '自分の位置が必要です — GPS の取得を待っています（スマートフォンまたはデバイス）。';
 
   @override
   String equalGridCellSize(String size) {
@@ -1825,9 +1824,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get gridViewWeather => '気象（環境）';
 
   @override
-  String get gridViewMeshbook => 'メッシュブック（チャンネル活動）';
-
-  @override
   String get meshbookTitle => 'メッシュブック';
 
   @override
@@ -1918,16 +1914,17 @@ class AppLocalizationsJa extends AppLocalizations {
   String get wxCondCold => '寒い';
 
   @override
-  String get weatherEmpty =>
-      '環境データを報告しているノードはまだありません。\nセンサー搭載ノードが照会されると表示されます — アプリ設定で「ノードのテレメトリを収集」を有効にしてください。';
+  String get weatherEmpty => '環境データを報告しているノードはまだありません。';
 
   @override
-  String get weatherSelfNoTelemetry =>
-      'このデバイスはまだテレメトリを返していません。接続を確認してから、この画面を開き直してください。';
+  String get weatherOpenTelemetrySettings => 'ノードのテレメトリを有効にする';
+
+  @override
+  String get weatherSelfNoTelemetry => '無線がまだテレメトリ要求に応答していません。';
 
   @override
   String weatherSelfNoEnv(String types) {
-    return 'このデバイスのファームウェアは環境テレメトリに対応していません。\n報告内容: $types。\nセンサー（例: T1000-E の BME280）には MeshCore センサーファームウェアが必要です。標準ビルドはバッテリー／GPS のみを送信し、環境モードを設定してもデバイス側でオフに戻されます。これはアプリの設定ではなくデバイス側の制限です。';
+    return 'このファームウェアは環境センサーを報告しません。受信内容: $types。';
   }
 
   @override
@@ -2038,9 +2035,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String weatherAgoHours(int h) {
     return '$h時間前';
   }
-
-  @override
-  String get snsCellsAwaitingFix => '位置情報を待機中 — ヒートマップは自分を中心に表示されます。';
 
   @override
   String get snsCellsClear => 'クリア';

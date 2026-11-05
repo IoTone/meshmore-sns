@@ -8,6 +8,7 @@ import 'package:latlong2/latlong.dart' hide Path;
 import 'package:provider/provider.dart';
 
 import '../gen/app_localizations.dart';
+import 'grid_notice.dart';
 import '../maps/basemap.dart';
 import '../maps/map_source.dart';
 import '../meshcore/coverage_store.dart';
@@ -110,15 +111,9 @@ class _FabricSurveyViewState extends State<FabricSurveyView> {
     final double? selfLat = mc.ownLocation?.latitude;
     final double? selfLon = mc.ownLocation?.longitude;
     if (selfLat == null || selfLon == null) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Text(
-            l.equalGridAwaitingFix,
-            textAlign: TextAlign.center,
-            style: TextStyle(color: cs.onSurfaceVariant),
-          ),
-        ),
+      return GridNotice(
+        message: l.gridNeedsFix,
+        icon: Icons.location_searching,
       );
     }
     if (!_centered) {

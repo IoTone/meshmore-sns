@@ -1976,11 +1976,11 @@ abstract class AppLocalizations {
   /// **'{label} loaded — Apply when a device is connected.'**
   String deviceRegionLoadedOffline(String label);
 
-  /// No description provided for @equalGridAwaitingFix.
+  /// No description provided for @gridNeedsFix.
   ///
   /// In en, this message translates to:
-  /// **'Equal-grid view needs your own location — waiting for a GPS fix (phone or device).'**
-  String get equalGridAwaitingFix;
+  /// **'Needs your own location — waiting for a GPS fix (phone or device).'**
+  String get gridNeedsFix;
 
   /// No description provided for @equalGridCellSize.
   ///
@@ -3290,12 +3290,6 @@ abstract class AppLocalizations {
   /// **'Weather (environment)'**
   String get gridViewWeather;
 
-  /// No description provided for @gridViewMeshbook.
-  ///
-  /// In en, this message translates to:
-  /// **'Meshbook (channel activity)'**
-  String get gridViewMeshbook;
-
   /// No description provided for @meshbookTitle.
   ///
   /// In en, this message translates to:
@@ -3467,19 +3461,25 @@ abstract class AppLocalizations {
   /// No description provided for @weatherEmpty.
   ///
   /// In en, this message translates to:
-  /// **'No nodes are reporting environment data yet.\nReadings appear as sensor-equipped nodes are polled — enable \"Gather node telemetry\" in App settings.'**
+  /// **'No nodes are reporting environment data yet.'**
   String get weatherEmpty;
+
+  /// No description provided for @weatherOpenTelemetrySettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn on node telemetry'**
+  String get weatherOpenTelemetrySettings;
 
   /// No description provided for @weatherSelfNoTelemetry.
   ///
   /// In en, this message translates to:
-  /// **'This device hasn\'t returned telemetry yet. Make sure you\'re connected, then reopen this view.'**
+  /// **'The radio has not answered a telemetry request yet.'**
   String get weatherSelfNoTelemetry;
 
   /// No description provided for @weatherSelfNoEnv.
   ///
   /// In en, this message translates to:
-  /// **'Environment telemetry isn\'t supported by this device\'s firmware.\nIt reported: {types}.\nThe sensor (e.g. the T1000-E\'s BME280) needs a MeshCore sensor firmware build — the standard build sends only battery/GPS, and the device clamps the environment mode back to off. This is a device limitation, not an app setting.'**
+  /// **'This firmware reports no environment sensor. It sent: {types}.'**
   String weatherSelfNoEnv(String types);
 
   /// No description provided for @weatherReporting.
@@ -3655,12 +3655,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{h}h ago'**
   String weatherAgoHours(int h);
-
-  /// No description provided for @snsCellsAwaitingFix.
-  ///
-  /// In en, this message translates to:
-  /// **'Waiting for a location fix — the heat map centres on you.'**
-  String get snsCellsAwaitingFix;
 
   /// No description provided for @snsCellsClear.
   ///
