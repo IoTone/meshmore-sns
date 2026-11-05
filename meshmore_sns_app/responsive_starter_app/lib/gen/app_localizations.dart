@@ -1940,6 +1940,12 @@ abstract class AppLocalizations {
   /// **'No position fix yet. This is a world view, not centred on you.'**
   String get mapNoFixBanner;
 
+  /// No description provided for @mapPackZoomOutside.
+  ///
+  /// In en, this message translates to:
+  /// **'This pack covers zoom {min} to {max}. Coarser tiles stand in outside that range.'**
+  String mapPackZoomOutside(int min, int max);
+
   /// No description provided for @mapHideTiles.
   ///
   /// In en, this message translates to:

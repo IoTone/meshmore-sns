@@ -1007,6 +1007,11 @@ class AppLocalizationsJa extends AppLocalizations {
   String get mapNoFixBanner => '位置情報がまだ取得できていません。表示は世界地図で、現在地には合わせていません。';
 
   @override
+  String mapPackZoomOutside(int min, int max) {
+    return 'このパックの範囲はズーム $min〜$max です。範囲外は粗いタイルで表示します。';
+  }
+
+  @override
   String get mapHideTiles => '地図タイルを非表示';
 
   @override

@@ -521,6 +521,8 @@
   "fabricResetApply": "Reset",
   "streetMapRecenter": "Re-centre on me",
   "mapNoFixBanner": "No position fix yet. This is a world view, not centred on you.",
+  "mapPackZoomOutside": "This pack covers zoom {min} to {max}. Coarser tiles stand in outside that range.",
+  "@mapPackZoomOutside": {"placeholders": {"min": {"type": "int"}, "max": {"type": "int"}}},
   "@mapNoFixBanner": {
     "description": "R69: quiet banner on the Map tab when there is no position fix."
   },

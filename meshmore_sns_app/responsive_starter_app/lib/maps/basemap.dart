@@ -11,6 +11,12 @@ import 'package:provider/provider.dart';
 import 'event_layer.dart';
 import 'map_source.dart';
 import 'maps_controller.dart';
+import 'tile_ancestor.dart';
+
+/// The edge of one slippy tile in pixels. flutter_map's `TileLayer` default,
+/// and the size a cropped ancestor is emitted at so it lands in the cell
+/// without a second scale.
+const int kTilePixelSize = 256;
 
 /// R61 — tiles come from [MapsController]: disk first, network second.
 class CachedTileProvider extends TileProvider {
@@ -43,12 +49,63 @@ class MapTileImage extends ImageProvider<MapTileImage> {
 
   Future<ui.Codec> _load(ImageDecoderCallback decode) async {
     final Uint8List? bytes = await maps.loadTile(source, z, x, y);
-    if (bytes == null) {
-      // Offline and never seen: flutter_map leaves the cell blank and
-      // the image cache forgets the failure, so it is tried again.
+    if (bytes != null) {
+      return decode(await ui.ImmutableBuffer.fromUint8List(bytes));
+    }
+    // R114 — nothing at this zoom yet: draw the nearest coarser tile that is
+    // on disk, cropped to the slice this cell owns. The alternative is the
+    // black hole the owner reported when a zoom out outruns the network.
+    final TileAncestor? ancestor = await maps.ancestorTile(source, z, x, y);
+    if (ancestor == null) {
+      // Offline and never seen, at any zoom: flutter_map leaves the cell
+      // blank and the image cache forgets the failure, so it is tried again.
       throw StateError('tile ${source.id}/$z/$x/$y unavailable');
     }
-    return decode(await ui.ImmutableBuffer.fromUint8List(bytes));
+    return _codecFromAncestor(ancestor, decode);
+  }
+
+  /// Decode the ancestor once, take this cell's slice out of it, and hand the
+  /// slice back as a 256 px tile so it fills the cell exactly.
+  ///
+  /// Raw RGBA in, raw RGBA out: no image is re-encoded, and the ancestor's
+  /// own pixels are what the user sees, only coarser.
+  Future<ui.Codec> _codecFromAncestor(
+      TileAncestor ancestor, ImageDecoderCallback decode) async {
+    final TileAncestorCoord a = ancestor.coord;
+    final ui.Codec codec =
+        await decode(await ui.ImmutableBuffer.fromUint8List(ancestor.bytes));
+    final ui.FrameInfo frame = await codec.getNextFrame();
+    final ui.Image whole = frame.image;
+    try {
+      final ({double left, double top, double width, double height}) slice =
+          cropRectInAncestor(x, y, a.levelsUp, whole.width.toDouble());
+      final ui.PictureRecorder recorder = ui.PictureRecorder();
+      final Canvas canvas = Canvas(recorder);
+      final double side = kTilePixelSize.toDouble();
+      canvas.drawImageRect(
+        whole,
+        Rect.fromLTWH(slice.left, slice.top, slice.width, slice.height),
+        Rect.fromLTWH(0, 0, side, side),
+        Paint()..filterQuality = FilterQuality.medium,
+      );
+      final ui.Image cropped =
+          await recorder.endRecording().toImage(kTilePixelSize, kTilePixelSize);
+      final ByteData? raw =
+          await cropped.toByteData(format: ui.ImageByteFormat.rawRgba);
+      cropped.dispose();
+      if (raw == null) {
+        throw StateError('tile ${source.id}/$z/$x/$y unreadable');
+      }
+      final ui.ImageDescriptor desc = ui.ImageDescriptor.raw(
+        await ui.ImmutableBuffer.fromUint8List(raw.buffer.asUint8List()),
+        width: kTilePixelSize,
+        height: kTilePixelSize,
+        pixelFormat: ui.PixelFormat.rgba8888,
+      );
+      return await desc.instantiateCodec();
+    } finally {
+      whole.dispose();
+    }
   }
 
   @override

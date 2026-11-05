@@ -203,6 +203,9 @@ class _StreetMapViewState extends State<StreetMapView> {
       }
     }
     await maps.prefetch(kOsmVector, ring);
+    // R114 — the parents of what is on screen, so a zoom out draws a coarser
+    // picture straight away instead of waiting for the finer tiles to fail.
+    await maps.prefetchParents(kOsmVector, ring);
   }
 
   /// The self marker's bearing comes from the **phone's magnetometer**
@@ -385,6 +388,19 @@ class _StreetMapViewState extends State<StreetMapView> {
     final bool vectorDrawn = _rasterOverride == null;
     _vectorSkin = vectorDrawn;
 
+    // R114 — is the current zoom outside what the downloaded pack holds, and
+    // are we offline? That is the one case where a coarser tile is the
+    // deliberate picture rather than a gap the network is filling.
+    final int zoomLevel = _zoom.round();
+    final ({int minZoom, int maxZoom})? packSpan =
+        maps?.packZoomSpan(shownSource);
+    final String? packZoomNotice = maps == null ||
+            maps.online ||
+            packSpan == null ||
+            (zoomLevel >= packSpan.minZoom && zoomLevel <= packSpan.maxZoom)
+        ? null
+        : l.mapPackZoomOutside(packSpan.minZoom, packSpan.maxZoom);
+
     final double? selfLat = mc.ownLocation?.latitude;
     final double? selfLon = mc.ownLocation?.longitude;
     final bool hasFix = selfLat != null && selfLon != null;
@@ -489,8 +505,12 @@ class _StreetMapViewState extends State<StreetMapView> {
               // "here" (meshmore-places-spec.md §9).
               onLongPress: (TapPosition _, LatLng point) =>
                   _createPlace(context, point),
+              // R115 — the vector map is painted from this skin's tokens, so
+              // the underlay has to be this skin's ground: a tile that has not
+              // arrived yet must read as land in this skin, not as Studio's
+              // charcoal in all seven.
               backgroundColor: vectorDrawn
-                  ? kVectorBasemapBackground
+                  ? context.skin.color.base
                   : cs.surfaceContainerHighest,
             ),
             children: <Widget>[
@@ -707,6 +727,20 @@ class _StreetMapViewState extends State<StreetMapView> {
               MapAttribution(vectorDrawn
                   ? kOsmVector.attribution
                   : shownSource.attribution),
+              // R114 — a pack has a zoom range. Outside it, offline, the map is
+              // showing coarser tiles on purpose, and saying so once is the
+              // difference between "working as designed" and "broken".
+              if (packZoomNotice != null)
+                Container(
+                  key: const ValueKey<String>('map-pack-zoom-banner'),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                  color: cs.surface,
+                  child: Text(packZoomNotice,
+                      style: TextStyle(
+                          color: cs.onSurfaceVariant,
+                          fontSize: context.skin.type.sizeSm)),
+                ),
               if (!hasFix)
                 Container(
                   key: const ValueKey<String>('map-no-fix-banner'),

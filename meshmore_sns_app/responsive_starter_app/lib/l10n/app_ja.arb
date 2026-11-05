@@ -492,6 +492,7 @@
   "fabricResetApply": "リセット",
   "streetMapRecenter": "現在地に戻す",
   "mapNoFixBanner": "位置情報がまだ取得できていません。表示は世界地図で、現在地には合わせていません。",
+  "mapPackZoomOutside": "このパックの範囲はズーム {min}〜{max} です。範囲外は粗いタイルで表示します。",
   "mapHideTiles": "地図タイルを非表示",
   "mapShowTiles": "地図タイルを表示",
   "deviceRegionLoadedOffline": "{label} を読み込みました — デバイス接続時に「適用」してください。",
