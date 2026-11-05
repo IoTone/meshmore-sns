@@ -67,8 +67,12 @@ android {
 
     defaultConfig {
         applicationId "com.iotone.meshmore_sns_app"
-        // Meshmore requires BLE + modern permissions; minSdk 23 per spec.
-        minSdkVersion flutter.minSdkVersion
+        // Pinned rather than inherited: `flutter.minSdkVersion` moves with the
+        // Flutter release, so a toolchain bump would silently drop devices the
+        // app still supports. 24 is what this build installs on (Android 7 and
+        // up) because `flutter_local_notifications` needs java.time desugaring
+        // anyway; raising it costs devices, lowering it is untested.
+        minSdkVersion 24
         targetSdkVersion 36
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
@@ -99,12 +103,16 @@ flutter {
     source '../..'
 }
 
-// Ask for a release artifact without a keystore and the build stops here,
-// naming the file it looked for. The check runs on the task graph, so a debug
-// build, a test run and `flutter run` are unaffected.
+// Ask for a shippable release artifact without a keystore and the build stops
+// here, naming the file it looked for. Only the tasks that produce or install
+// a release build count: `compileReleaseKotlin`, `lintVitalRelease` and
+// `testReleaseUnitTest` are ordinary work that needs no signing key, and a
+// substring match used to refuse them.
 gradle.taskGraph.whenReady { graph ->
+    def ships = ['assembleRelease', 'bundleRelease', 'installRelease',
+                 'packageRelease']
     def wantsRelease = graph.allTasks.any { task ->
-        task.name.toLowerCase().contains('release')
+        ships.any { task.name == it || task.name.startsWith(it) }
     }
     if (wantsRelease && !hasReleaseKeystore) {
         throw new GradleException(
