@@ -4662,4 +4662,76 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get placePhotoFetching => 'メッシュに写真を問い合わせています…';
+
+  @override
+  String get geofenceTitle => 'ジオフェンス';
+
+  @override
+  String get geofenceExplainer =>
+      'フェンスは見張る円です。入ったときと出たときに一度ずつ知らせるので、境界を歩いても通知が連続しません。';
+
+  @override
+  String get geofenceAddSection => 'フェンスを追加';
+
+  @override
+  String geofenceRadius(int meters) {
+    return '$meters m';
+  }
+
+  @override
+  String get geofenceNeedsFix => 'フェンスには現在地が必要です。先に無線を接続するか位置情報を許可してください。';
+
+  @override
+  String get geofenceAddHere => 'ここにフェンスを追加';
+
+  @override
+  String get geofenceListSection => 'フェンス';
+
+  @override
+  String get geofenceEmpty => 'フェンスはまだありません。';
+
+  @override
+  String get geofenceInsideNow => '内側にいます';
+
+  @override
+  String get geofenceOutsideNow => '外側にいます';
+
+  @override
+  String get geofenceDelete => 'フェンスを削除';
+
+  @override
+  String get geofenceEventsSection => '最近の出入り';
+
+  @override
+  String geofenceEntered(String label) {
+    return '$label に入りました';
+  }
+
+  @override
+  String geofenceLeft(String label) {
+    return '$label を出ました';
+  }
+
+  @override
+  String geofenceDefaultName(int number) {
+    return 'フェンス $number';
+  }
+
+  @override
+  String nodeClosing(String name, String distance) {
+    return '$name は $distance 先で近づいています';
+  }
+
+  @override
+  String nodeOpening(String name, String distance) {
+    return '$name は $distance 先で遠ざかっています';
+  }
+
+  @override
+  String nodeSteady(String name, String distance) {
+    return '$name は $distance 先です';
+  }
+
+  @override
+  String get geofenceExplainerShort => '到着・出発を知らせる円';
 }

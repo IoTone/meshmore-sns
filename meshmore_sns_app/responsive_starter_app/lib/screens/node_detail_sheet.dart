@@ -12,6 +12,7 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../gen/app_localizations.dart';
+import '../field/relationship.dart';
 import '../meshcore/chat_message.dart';
 import '../meshcore/discovered_node.dart';
 import '../meshcore/meshcore_controller.dart';
@@ -35,6 +36,7 @@ class NodeDetailSheet extends StatefulWidget {
     super.key,
     required this.node,
     required this.distanceMeters,
+    this.relationship,
     required this.isFavourite,
     required this.isKnown,
     required this.onToggleFavourite,
@@ -50,6 +52,10 @@ class NodeDetailSheet extends StatefulWidget {
 
   final DiscoveredNode node;
   final double? distanceMeters;
+
+  /// Which way the distance is going, when a caller has two readings. Null
+  /// when there is nothing to compare, so the sheet never invents a trend.
+  final RelationshipReading? relationship;
 
   /// Spatial-aware proximity classification for the IN RANGE / FAR
   /// header badge. Default `unknown` shows no badge — caller should
@@ -429,7 +435,16 @@ class _NodeDetailSheetState extends State<NodeDetailSheet> {
               kv(l.nodeDetailSignalKv, n.signalLabel),
             kv(l.nodeDetailLastHeardKv, _ago(n.lastHeardUnix, l)),
             if (distance != null)
-              kv(l.nodeDetailDistanceKv, distance),
+              kv(
+                l.nodeDetailDistanceKv,
+                switch (widget.relationship?.trend) {
+                  RelationshipTrend.closing =>
+                    l.nodeClosing(name, distance),
+                  RelationshipTrend.opening =>
+                    l.nodeOpening(name, distance),
+                  _ => distance,
+                },
+              ),
             if (n.hasLocation)
               kv(l.nodeDetailLatLonKv,
                   '${n.latitude!.toStringAsFixed(5)}, '

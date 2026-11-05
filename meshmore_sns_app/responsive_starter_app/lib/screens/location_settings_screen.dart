@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: MIT
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:go_router/go_router.dart';
 
 import '../gen/app_localizations.dart';
 import '../ui/mm_collapse_controller.dart';
@@ -117,6 +118,15 @@ class LocationSettingsScreen extends StatelessWidget {
                     fontSize: skin.type.sizeBody),
               ),
             ),
+            // Fences are a location feature and live beside the publish
+            // controls, not under Tools: a fence is drawn from where you are.
+            ListTile(
+              leading: const Icon(Icons.fence_outlined),
+              title: Text(l.geofenceTitle),
+              subtitle: Text(l.geofenceExplainerShort),
+              onTap: () => context.push('/settings/geofences'),
+            ),
+            const Divider(height: 1),
             MmCollapsibleSection(
               id: MmGroupIds.locAutoPublish,
               title: l.locGroupAutoPublish,

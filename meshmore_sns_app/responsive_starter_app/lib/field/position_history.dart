@@ -1,9 +1,12 @@
 // Copyright (c) 2026 IoTone, Inc.
 // SPDX-License-Identifier: MIT
+import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../meshcore/meshcore_controller.dart';
 import '../meshcore/own_location.dart';
 import '../util/geo.dart';
 
@@ -181,12 +184,24 @@ final class PositionHistoryStore {
 /// controller owns the fix (radio GPS first, phone fallback) and already
 /// notifies listeners when it changes, so sampling [MeshcoreController
 /// .ownLocation] costs nothing extra and needs no new platform permission.
-final class PositionRecorder {
-  PositionRecorder({DateTime Function()? clock, this.persist = true})
-      : _clock = clock ?? DateTime.now;
+final class PositionRecorder extends ChangeNotifier {
+  PositionRecorder({
+    MeshcoreController? mc,
+    DateTime Function()? clock,
+    this.persist = true,
+    this.autoTick = true,
+  })  : _mc = mc,
+        _clock = clock ?? DateTime.now;
 
+  final MeshcoreController? _mc;
   final DateTime Function() _clock;
   final bool persist;
+
+  /// False in tests that record by hand; a real one-second timer would race
+  /// the assertions.
+  final bool autoTick;
+
+  Timer? _ticker;
 
   List<PositionSample> _rows = <PositionSample>[];
   bool _loaded = false;
@@ -196,6 +211,27 @@ final class PositionRecorder {
   List<PositionSample> get rows => List<PositionSample>.unmodifiable(_rows);
 
   bool get isEmpty => _rows.isEmpty;
+
+  /// Samples the live fix once a second until disposed.
+  void start() {
+    if (!autoTick || _mc == null || _ticker != null) return;
+    _ticker = Timer.periodic(const Duration(seconds: 1), (_) => tick());
+  }
+
+  @override
+  void dispose() {
+    _ticker?.cancel();
+    _ticker = null;
+    super.dispose();
+  }
+
+  /// One sampling pass against the live fix. Public so a test can move the
+  /// clock and call it without a timer.
+  bool tick() {
+    final bool changed = record(_mc?.ownLocation);
+    if (changed) notifyListeners();
+    return changed;
+  }
 
   Future<void> load() async {
     _rows = persist

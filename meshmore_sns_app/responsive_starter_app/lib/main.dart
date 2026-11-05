@@ -19,6 +19,9 @@ import 'package:meshmore_sns_app/l10n/locale_controller.dart';
 import 'package:meshmore_sns_app/legal/terms_controller.dart';
 import 'package:meshmore_sns_app/licenses/asset_licenses.dart';
 import 'package:meshmore_sns_app/maps/maps_controller.dart';
+import 'package:meshmore_sns_app/field/position_history.dart';
+import 'package:meshmore_sns_app/field/relationship.dart';
+import 'package:meshmore_sns_app/geofence/geofence_controller.dart';
 import 'package:meshmore_sns_app/meshcore/auto_publish_controller.dart';
 import 'package:meshmore_sns_app/meshcore/block_filter.dart';
 import 'package:meshmore_sns_app/meshcore/block_store.dart';
@@ -184,6 +187,28 @@ void main() {
             create: (BuildContext ctx) =>
                 SosController(mc: ctx.read<MeshcoreController>())..start(),
           ),
+          // Fences watch our own position against circles the user drew. The
+          // tick is app-scoped for the same reason the alarm's is: a fence
+          // crossed while the screen is off still happened.
+          ChangeNotifierProvider<GeofenceController>(
+            create: (BuildContext ctx) => GeofenceController(
+                mc: ctx.read<MeshcoreController>())
+              ..load()
+              ..start(),
+          ),
+          // The recorded trail: our own fixes only, bounded (see
+          // `field/position_history.dart`). App-scoped so the map, the export
+          // and the coverage session read the same list.
+          // Which way each node's distance is going: two measurements, so it
+          // belongs to the session, not to a node.
+          Provider<RelationshipTracker>(create: (_) => RelationshipTracker()),
+          ChangeNotifierProvider<PositionRecorder>(
+            create: (BuildContext ctx) =>
+                PositionRecorder(mc: ctx.read<MeshcoreController>())
+                  ..load()
+                  ..start(),
+          ),
+
           // R61 — offline maps (issue #5): tile cache, region packs,
           // event layers. App-scoped so downloads run in the background.
           ChangeNotifierProvider<MapsController>(

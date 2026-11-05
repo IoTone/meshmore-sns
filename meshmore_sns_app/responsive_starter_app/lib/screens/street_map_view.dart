@@ -11,6 +11,10 @@ import 'package:meshcore/meshcore.dart' show SelfInfo;
 import 'package:provider/provider.dart';
 
 import '../gen/app_localizations.dart';
+import '../field/relationship.dart';
+import '../meshcore/own_location.dart';
+import '../geofence/geofence_controller.dart';
+import '../geofence/geofence_store.dart';
 import '../maps/basemap.dart';
 import '../maps/basemap_prefs.dart';
 import '../maps/event_layer.dart';
@@ -221,6 +225,26 @@ class _StreetMapViewState extends State<StreetMapView> {
     );
   }
 
+  /// The node's distance trend, fed from this call. A caller that never opens
+  /// the sheet never records a reading, which is why the first open says
+  /// nothing about direction.
+  RelationshipReading? _relationship(
+      BuildContext ctx, MeshcoreController mc, DiscoveredNode n) {
+    final RelationshipTracker? tracker =
+        Provider.of<RelationshipTracker?>(context, listen: false);
+    if (tracker == null || !n.hasLocation) return null;
+    final OwnLocation? own = mc.ownLocation;
+    if (own == null) return null;
+    return tracker.updateBetween(
+      n.pubKeyHex,
+      fromLat: own.latitude,
+      fromLon: own.longitude,
+      toLat: n.latitude!,
+      toLon: n.longitude!,
+      at: DateTime.now(),
+    );
+  }
+
   Future<void> _showDetail(
       BuildContext ctx, MeshcoreController mc, DiscoveredNode n) {
     return showModalBottomSheet<void>(
@@ -232,6 +256,9 @@ class _StreetMapViewState extends State<StreetMapView> {
         distanceMeters: n.hasLocation
             ? mc.distanceMetersTo(n.latitude!, n.longitude!)
             : null,
+        // A trend needs two readings, so it is only claimed when there are
+        // two: the first time a node is opened there is nothing to compare.
+        relationship: _relationship(ctx, mc, n),
         isFavourite: mc.favorites.contains(n.pubKeyHex),
         isKnown: mc.known.contains(n.pubKeyHex),
         onToggleFavourite: () => mc.toggleFavorite(n.pubKeyHex),
@@ -254,6 +281,12 @@ class _StreetMapViewState extends State<StreetMapView> {
     // build and so must not read a watching provider.
 
     final MapsController? maps = Provider.of<MapsController?>(context);
+    // Fences are drawn when the app provides them; a harness that builds this
+    // view on its own simply has none.
+    final GeofenceController? geofences =
+        Provider.of<GeofenceController?>(context);
+    final List<StoredGeofence> fences =
+        geofences?.fences ?? const <StoredGeofence>[];
     final List<MapSource> sources = maps?.sources ?? kBuiltInSources;
     final MapSource tileSource = sources.firstWhere(
         (MapSource s) => s.id == _sourceId,
@@ -388,6 +421,28 @@ class _StreetMapViewState extends State<StreetMapView> {
                     borderColor: cs.tertiary.withValues(alpha: .75),
                     borderStrokeWidth: 1.4,
                   ),
+                  // A fence is drawn as its radius plus the margin band the
+                  // hysteresis actually uses: an entry is at 95 % of this
+                  // circle, a leave at 105 %, so the pair of rings is the
+                  // fence's real extent rather than a decoration.
+                  for (final StoredGeofence f in fences) ...<CircleMarker>[
+                    CircleMarker(
+                      point: LatLng(f.latitude, f.longitude),
+                      radius: f.radiusMeters,
+                      useRadiusInMeter: true,
+                      color: Colors.transparent,
+                      borderColor: cs.secondary.withValues(alpha: .85),
+                      borderStrokeWidth: 1.6,
+                    ),
+                    CircleMarker(
+                      point: LatLng(f.latitude, f.longitude),
+                      radius: f.radiusMeters * 1.05,
+                      useRadiusInMeter: true,
+                      color: Colors.transparent,
+                      borderColor: cs.secondary.withValues(alpha: .35),
+                      borderStrokeWidth: 1.0,
+                    ),
+                  ],
                   for (final DiscoveredNode n in withLoc)
                     CircleMarker(
                       point: LatLng(n.latitude!, n.longitude!),

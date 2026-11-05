@@ -8229,6 +8229,120 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Asking the mesh for the photo…'**
   String get placePhotoFetching;
+
+  /// No description provided for @geofenceTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Geofences'**
+  String get geofenceTitle;
+
+  /// No description provided for @geofenceExplainer.
+  ///
+  /// In en, this message translates to:
+  /// **'A fence is a circle you watch. It tells you once when you enter it and once when you leave, so walking along its edge does not produce a stream of alerts.'**
+  String get geofenceExplainer;
+
+  /// No description provided for @geofenceAddSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a fence'**
+  String get geofenceAddSection;
+
+  /// No description provided for @geofenceRadius.
+  ///
+  /// In en, this message translates to:
+  /// **'{meters} m'**
+  String geofenceRadius(int meters);
+
+  /// No description provided for @geofenceNeedsFix.
+  ///
+  /// In en, this message translates to:
+  /// **'A fence needs your position. Connect the radio or allow location first.'**
+  String get geofenceNeedsFix;
+
+  /// No description provided for @geofenceAddHere.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a fence here'**
+  String get geofenceAddHere;
+
+  /// No description provided for @geofenceListSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Your fences'**
+  String get geofenceListSection;
+
+  /// No description provided for @geofenceEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No fences yet.'**
+  String get geofenceEmpty;
+
+  /// No description provided for @geofenceInsideNow.
+  ///
+  /// In en, this message translates to:
+  /// **'You are inside'**
+  String get geofenceInsideNow;
+
+  /// No description provided for @geofenceOutsideNow.
+  ///
+  /// In en, this message translates to:
+  /// **'You are outside'**
+  String get geofenceOutsideNow;
+
+  /// No description provided for @geofenceDelete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete fence'**
+  String get geofenceDelete;
+
+  /// No description provided for @geofenceEventsSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent crossings'**
+  String get geofenceEventsSection;
+
+  /// No description provided for @geofenceEntered.
+  ///
+  /// In en, this message translates to:
+  /// **'Entered {label}'**
+  String geofenceEntered(String label);
+
+  /// No description provided for @geofenceLeft.
+  ///
+  /// In en, this message translates to:
+  /// **'Left {label}'**
+  String geofenceLeft(String label);
+
+  /// No description provided for @geofenceDefaultName.
+  ///
+  /// In en, this message translates to:
+  /// **'Fence {number}'**
+  String geofenceDefaultName(int number);
+
+  /// No description provided for @nodeClosing.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} is {distance} away and closing'**
+  String nodeClosing(String name, String distance);
+
+  /// No description provided for @nodeOpening.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} is {distance} away and moving away'**
+  String nodeOpening(String name, String distance);
+
+  /// No description provided for @nodeSteady.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} is {distance} away'**
+  String nodeSteady(String name, String distance);
+
+  /// No description provided for @geofenceExplainerShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Circles that tell you when you arrive or leave'**
+  String get geofenceExplainerShort;
 }
 
 class _AppLocalizationsDelegate

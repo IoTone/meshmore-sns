@@ -4826,4 +4826,78 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get placePhotoFetching => 'Asking the mesh for the photo…';
+
+  @override
+  String get geofenceTitle => 'Geofences';
+
+  @override
+  String get geofenceExplainer =>
+      'A fence is a circle you watch. It tells you once when you enter it and once when you leave, so walking along its edge does not produce a stream of alerts.';
+
+  @override
+  String get geofenceAddSection => 'Add a fence';
+
+  @override
+  String geofenceRadius(int meters) {
+    return '$meters m';
+  }
+
+  @override
+  String get geofenceNeedsFix =>
+      'A fence needs your position. Connect the radio or allow location first.';
+
+  @override
+  String get geofenceAddHere => 'Add a fence here';
+
+  @override
+  String get geofenceListSection => 'Your fences';
+
+  @override
+  String get geofenceEmpty => 'No fences yet.';
+
+  @override
+  String get geofenceInsideNow => 'You are inside';
+
+  @override
+  String get geofenceOutsideNow => 'You are outside';
+
+  @override
+  String get geofenceDelete => 'Delete fence';
+
+  @override
+  String get geofenceEventsSection => 'Recent crossings';
+
+  @override
+  String geofenceEntered(String label) {
+    return 'Entered $label';
+  }
+
+  @override
+  String geofenceLeft(String label) {
+    return 'Left $label';
+  }
+
+  @override
+  String geofenceDefaultName(int number) {
+    return 'Fence $number';
+  }
+
+  @override
+  String nodeClosing(String name, String distance) {
+    return '$name is $distance away and closing';
+  }
+
+  @override
+  String nodeOpening(String name, String distance) {
+    return '$name is $distance away and moving away';
+  }
+
+  @override
+  String nodeSteady(String name, String distance) {
+    return '$name is $distance away';
+  }
+
+  @override
+  String get geofenceExplainerShort =>
+      'Circles that tell you when you arrive or leave';
 }
