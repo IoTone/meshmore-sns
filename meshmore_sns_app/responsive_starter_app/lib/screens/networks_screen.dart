@@ -8,6 +8,7 @@ import '../meshcore/mesh_network.dart';
 import '../meshcore/mesh_network_store.dart';
 import '../meshcore/meshcore_controller.dart';
 import '../meshcore/region_presets.dart';
+import '../theme/mm_skin.dart';
 import '../ui/mm_scaffold.dart';
 import 'network_detail_screen.dart';
 
@@ -83,6 +84,7 @@ class _NetworksScreenState extends State<NetworksScreen> {
                             color: cs.onSurface.withValues(alpha: .6))),
                   )
                 : ListView(
+                    padding: context.skin.space.padScreen,
                     children: <Widget>[
                       for (final MeshNetwork n in networks)
                         ListTile(
@@ -198,7 +200,7 @@ class _NetworkEditScreenState extends State<NetworkEditScreen> {
       appBar: AppBar(title: Text(l.networksNew)),
       body: MmScaffold(
         child: ListView(
-          padding: const EdgeInsets.all(16),
+          padding: context.skin.space.padScreen,
           children: <Widget>[
             TextField(
               key: const Key('network-name'),

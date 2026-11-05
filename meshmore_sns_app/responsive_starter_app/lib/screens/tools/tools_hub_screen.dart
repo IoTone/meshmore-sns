@@ -33,7 +33,7 @@ class ToolsHubScreen extends StatelessWidget {
       ToolsController tools, ToolKind k) {
     final (IconData icon, String name, String sub) = entry(l, k);
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
+      padding: EdgeInsets.only(bottom: skin.space.rowGap),
       child: MmListRow(
         leading: Icon(icon, color: skin.color.accent),
         title: Text(name),
@@ -58,11 +58,11 @@ class ToolsHubScreen extends StatelessWidget {
       appBar: AppBar(title: Text(l.toolsTitle)),
       body: MmScaffold(
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
+          padding: skin.space.padScreen,
           children: <Widget>[
             if (!ready)
               Padding(
-                padding: const EdgeInsets.only(bottom: 8),
+                padding: EdgeInsets.only(bottom: skin.space.rowGap),
                 child: ToolNotice(text: l.toolsOffline, icon: Icons.link_off),
               ),
             // Two tools answer a question a user asks; the rest are
@@ -74,8 +74,9 @@ class ToolsHubScreen extends StatelessWidget {
               ToolKind.discover,
             ])
               _row(context, l, skin, tools, k),
-            const SizedBox(height: 4),
+            SizedBox(height: skin.space.sectionGap),
             MmSectionHeader(l.toolsGroupDiagnostics),
+            SizedBox(height: skin.space.rowGap),
             for (final ToolKind k in const <ToolKind>[
               ToolKind.stats,
               ToolKind.range,
