@@ -1,6 +1,9 @@
 // Copyright (c) 2026 IoTone, Inc.
 // SPDX-License-Identifier: MIT
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -23,9 +26,11 @@ Place _place({
   double lat = 51.5,
   double lon = -0.12,
   PlaceTtl ttl = PlaceTtl.d2,
+  Uint8List? reporterKey,
 }) =>
     Place(
       id: id,
+      reporterKey: reporterKey,
       reporterName: 'Ana',
       type: PlaceType.water,
       typeToken: 'water',
@@ -171,5 +176,29 @@ void main() {
     await t.tap(clusterMarker);
     await t.pump();
     expect(cluster, isNotNull);
+  });
+
+  testWidgets('an unkeyed place carries the ring and says so to a reader',
+      (WidgetTester t) async {
+    // A report derived from a channel name has no key behind it: the detail
+    // sheet said so, the map pin did not, so a name-derived pin sat on the
+    // same canvas looking exactly like a key-bound one.
+    store.upsert(_place(id: 'name0001'));
+    await t.pumpWidget(_host(store));
+    await t.pump();
+    expect(find.byKey(const ValueKey<String>('place-unkeyed-name0001')),
+        findsOneWidget);
+    final SemanticsNode node = t.getSemantics(
+        find.byKey(const ValueKey<String>('place-pin-name0001')));
+    expect(node.label, contains('channel name'));
+
+    // A keyed report is drawn without it.
+    store.upsert(_place(id: 'key00002', reporterKey: Uint8List(32)));
+    await t.pumpWidget(_host(store));
+    await t.pump();
+    expect(find.byKey(const ValueKey<String>('place-unkeyed-name0001')),
+        findsOneWidget);
+    expect(find.byKey(const ValueKey<String>('place-unkeyed-key00002')),
+        findsNothing);
   });
 }

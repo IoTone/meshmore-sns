@@ -2308,7 +2308,7 @@
   "mediaSend": "送信",
   "mediaRetrySend": "再試行",
   "mediaClose": "閉じる",
-  "mediaOffOnPublic": "パブリックチャンネルではメディアは無効です。先にそのチャンネルの設定で有効にしてください。",
+  "mediaOffOnPublic": "パブリックチャンネルではメディアは送信できません。プライベートなチャンネルで送ってください。",
   "mediaPayloadUnusable": "送信する内容がありません。",
   "mediaChannelUnknown": "チャンネルが選択されていないため、送信先がありません。",
   "mediaReceiveWaiting": "{total} 中 {received} パケット · 残り {missing} を待機中",
@@ -2460,6 +2460,9 @@
   "toolsGroupDiagnostics": "無線の診断",
   "nodeMarkerSemantics": "{name} — 詳細はタップ",
   "placePinSemantics": "{label}、{expiry}",
+  "placePinSemanticsUnkeyed": "{label}、{expiry}。チャンネル名から送られたため、そのチャンネルを知る誰でも書けます。",
+  "placeUnkeyedShort": "名前のみ",
+
   "placeClusterSemantics": "ここに {count} 件の場所",
   "mapCanvasSemantics": "マップ上のマーカーをタップすると開きます",
   "gridLegendSignalOnly": "中抜き · 位置なし",

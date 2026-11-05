@@ -98,11 +98,17 @@ class _PlaceLayerState extends State<PlaceLayer> {
       height: 56,
       alignment: Alignment.center,
       // A pin draws its own hit area, so nothing announces it to a screen
-      // reader without this: the label the user gave it, and how long it lasts.
+      // reader without this: the label the user gave it, how long it lasts, and
+      // — when the report came from a channel name rather than a key — that the
+      // identity is a name. That last fact is the one the places spec says a
+      // reader must be able to weigh, and it is otherwise only in the sheet.
       child: Semantics(
         button: true,
-        label: l.placePinSemantics(
-            place.label, placeDurationText(place.remainingAt(now))),
+        label: place.isUnkeyed
+            ? l.placePinSemanticsUnkeyed(
+                place.label, placeDurationText(place.remainingAt(now)))
+            : l.placePinSemantics(
+                place.label, placeDurationText(place.remainingAt(now))),
         child: GestureDetector(
           key: ValueKey<String>('place-pin-${place.id}'),
           onTap: () {
@@ -112,7 +118,24 @@ class _PlaceLayerState extends State<PlaceLayer> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
-              Icon(placeIcon(place.type), size: 24, color: colour),
+              // A hollow ring is the marker vocabulary the grid already uses
+              // for a node whose position was never reported: it says "this
+              // one is not verified" without a second icon or a colour rule.
+              if (place.isUnkeyed)
+                SizedBox(
+                  key: ValueKey<String>('place-unkeyed-${place.id}'),
+                  width: 30,
+                  height: 30,
+                  child: CustomPaint(
+                    painter: _UnkeyedRingPainter(colour: skin.color.fgMuted),
+                    child: Center(
+                      child: Icon(placeIcon(place.type),
+                          size: 20, color: colour),
+                    ),
+                  ),
+                )
+              else
+                Icon(placeIcon(place.type), size: 24, color: colour),
               Text(
                 placeDurationText(place.remainingAt(now)),
                 maxLines: 1,
@@ -210,4 +233,43 @@ class _PlaceLayerState extends State<PlaceLayer> {
         'c:$i:${clusters[i].first.id}': clusters[i],
     };
   }
+}
+
+/// A dashed ring: the app's mark for "this is a report, not a verified fact".
+///
+/// Drawn from the skin's muted ink and dashes rather than a fill, so it reads
+/// on every ground — a fill would collide with the type colour it surrounds.
+class _UnkeyedRingPainter extends CustomPainter {
+  const _UnkeyedRingPainter({required this.colour});
+
+  final Color colour;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final Paint paint = Paint()
+      ..color = colour
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.2;
+    final Rect r = Offset.zero & size;
+    final double radius = r.shortestSide / 2 - paint.strokeWidth / 2;
+    // 12 dashes around the circle: enough to read as dashed at 20 dp, few
+    // enough that it does not look like a texture.
+    const int dashes = 12;
+    const double gapFraction = 0.45;
+    final double sweep = (2 * math.pi / dashes) * (1 - gapFraction);
+    for (int i = 0; i < dashes; i++) {
+      final double start = (2 * math.pi / dashes) * i;
+      canvas.drawArc(
+        Rect.fromCircle(center: r.center, radius: radius),
+        start,
+        sweep,
+        false,
+        paint,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _UnkeyedRingPainter old) =>
+      old.colour != colour;
 }

@@ -4878,7 +4878,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mediaOffOnPublic =>
-      'Media is off on the Public channel. Turn it on for that channel in its settings first.';
+      'Media stays off on the Public channel. Send it on a private channel instead.';
 
   @override
   String get mediaPayloadUnusable => 'There is nothing to send.';
@@ -5363,6 +5363,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String placePinSemantics(String label, String expiry) {
     return '$label, $expiry';
   }
+
+  @override
+  String placePinSemanticsUnkeyed(String label, String expiry) {
+    return '$label, $expiry. Sent from a channel name, so anyone with the channel could have written it.';
+  }
+
+  @override
+  String get placeUnkeyedShort => 'name only';
 
   @override
   String placeClusterSemantics(int count) {

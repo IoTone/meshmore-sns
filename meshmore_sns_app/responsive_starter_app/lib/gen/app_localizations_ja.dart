@@ -4700,7 +4700,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get mediaOffOnPublic =>
-      'パブリックチャンネルではメディアは無効です。先にそのチャンネルの設定で有効にしてください。';
+      'パブリックチャンネルではメディアは送信できません。プライベートなチャンネルで送ってください。';
 
   @override
   String get mediaPayloadUnusable => '送信する内容がありません。';
@@ -5160,6 +5160,14 @@ class AppLocalizationsJa extends AppLocalizations {
   String placePinSemantics(String label, String expiry) {
     return '$label、$expiry';
   }
+
+  @override
+  String placePinSemanticsUnkeyed(String label, String expiry) {
+    return '$label、$expiry。チャンネル名から送られたため、そのチャンネルを知る誰でも書けます。';
+  }
+
+  @override
+  String get placeUnkeyedShort => '名前のみ';
 
   @override
   String placeClusterSemantics(int count) {

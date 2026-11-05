@@ -91,6 +91,19 @@ class PlaceEchoLine extends StatelessWidget {
               ),
             ),
           ),
+          // The provenance fact the places spec says a reader must be able to
+          // weigh: a report written from a channel name is not from a key.
+          if (shown.isUnkeyed)
+            Padding(
+              padding: EdgeInsets.only(left: skin.space.step(1)),
+              child: Text(
+                l.placeUnkeyedShort,
+                key: ValueKey<String>('place-echo-unkeyed-${shown.id}'),
+                style: TextStyle(
+                    color: skin.color.fgMuted,
+                    fontSize: skin.type.sizeMicro),
+              ),
+            ),
           if (counts.totalConfirming > 0)
             Padding(
               padding: EdgeInsets.only(left: skin.space.step(1)),

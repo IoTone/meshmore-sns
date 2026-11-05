@@ -8328,7 +8328,7 @@ abstract class AppLocalizations {
   /// No description provided for @mediaOffOnPublic.
   ///
   /// In en, this message translates to:
-  /// **'Media is off on the Public channel. Turn it on for that channel in its settings first.'**
+  /// **'Media stays off on the Public channel. Send it on a private channel instead.'**
   String get mediaOffOnPublic;
 
   /// No description provided for @mediaPayloadUnusable.
@@ -9068,6 +9068,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{label}, {expiry}'**
   String placePinSemantics(String label, String expiry);
+
+  /// No description provided for @placePinSemanticsUnkeyed.
+  ///
+  /// In en, this message translates to:
+  /// **'{label}, {expiry}. Sent from a channel name, so anyone with the channel could have written it.'**
+  String placePinSemanticsUnkeyed(String label, String expiry);
+
+  /// No description provided for @placeUnkeyedShort.
+  ///
+  /// In en, this message translates to:
+  /// **'name only'**
+  String get placeUnkeyedShort;
 
   /// No description provided for @placeClusterSemantics.
   ///
