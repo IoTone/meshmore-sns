@@ -1,4 +1,6 @@
 import 'media/media_inbox.dart';
+import 'media/photo_source.dart';
+import 'media/media_composer.dart';
 import 'places/place_photo.dart';
 import 'media/media_codec.dart';
 // Copyright (c) 2026 IoTone, Inc.
@@ -306,6 +308,11 @@ void main() {
           // second store built here would leave that hook pointing at nothing.
           ChangeNotifierProvider<PlaceStore>.value(value: placeStore),
           Provider<MediaInbox>.value(value: mediaInbox),
+          // The real photo source for the composer: the platform picker plus
+          // the engine's decoder. Nullable-safe for harnesses: the composer
+          // falls back to the named "cannot read a photo" state.
+          Provider<MediaPhotoSource>.value(
+              value: const PlatformMediaPhotoSource()),
           Provider<PlacePhotos>.value(value: placePhotos),
           Provider<PlaceReportBudget>(
             create: (_) => PlaceReportBudget(clock: DateTime.now),

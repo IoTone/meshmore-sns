@@ -8086,6 +8086,24 @@ abstract class AppLocalizations {
   /// **'That photo could not be read. Try another one.'**
   String get mediaSourceFailed;
 
+  /// No description provided for @mediaPickCamera.
+  ///
+  /// In en, this message translates to:
+  /// **'Take a photo'**
+  String get mediaPickCamera;
+
+  /// No description provided for @mediaPickGallery.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a photo'**
+  String get mediaPickGallery;
+
+  /// No description provided for @mediaSourceUnsupportedFormat.
+  ///
+  /// In en, this message translates to:
+  /// **'That file is not an image this build can read. HEIC and AV1 are not supported here, so choose a JPEG or PNG photo.'**
+  String get mediaSourceUnsupportedFormat;
+
   /// No description provided for @mediaEncoding.
   ///
   /// In en, this message translates to:

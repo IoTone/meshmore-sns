@@ -109,9 +109,17 @@ void main() {
     await t.pumpAndSettle();
     await t.tap(find.byKey(const ValueKey<String>('chat-attach')));
     await t.pumpAndSettle();
-    // This build has no platform photo reader, so the composer states that
-    // rather than showing a control that cannot work.
+    // The composer asks which source first, because a camera capture and a
+    // saved photo are different intentions.
     expect(find.text('Send a photo'), findsOneWidget);
+    expect(find.byKey(const ValueKey<String>('media-pick-camera')),
+        findsOneWidget);
+    expect(find.byKey(const ValueKey<String>('media-pick-gallery')),
+        findsOneWidget);
+    // This harness registers no picker, so the source is the named "cannot
+    // read a photo" state and the sheet says that instead of failing a tap.
+    await t.tap(find.byKey(const ValueKey<String>('media-pick-camera')));
+    await t.pumpAndSettle();
     expect(find.textContaining('cannot read a photo'), findsOneWidget);
     mc.dispose();
   });

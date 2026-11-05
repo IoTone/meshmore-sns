@@ -774,7 +774,11 @@ class _ChatScreenState extends State<ChatScreen>
                       ? () => MediaComposer.show(
                             context,
                             service: _media,
-                            source: kNoMediaPhotoSource,
+                            // The platform picker where this build has one,
+                            // and a named "cannot read a photo" state where it
+                            // does not, so a harness never reaches a plugin.
+                            source: context.read<MediaPhotoSource?>() ??
+                                kNoMediaPhotoSource,
                             channelPsk: mc.channelPsk(mc.activeChannel),
                             byteBudget: kMediaPhotoBudgetBytes,
                             sendBlob: (Uint8List blob) => mc.sendChannelData(

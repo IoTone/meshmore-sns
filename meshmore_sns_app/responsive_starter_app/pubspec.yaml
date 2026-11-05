@@ -135,6 +135,7 @@ dependencies:
   # `archiveSha256`/`librarySha256` in its own manifest. A patch release would
   # be a different native binary, so it has to be a deliberate change here.
   avif_native: 0.2.0
+  image_picker: ^1.2.4
 
 dev_dependencies:
   flutter_test:

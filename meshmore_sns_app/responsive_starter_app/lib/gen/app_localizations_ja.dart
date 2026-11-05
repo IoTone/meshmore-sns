@@ -4563,6 +4563,16 @@ class AppLocalizationsJa extends AppLocalizations {
   String get mediaSourceFailed => '写真を読み取れませんでした。別の写真をお試しください。';
 
   @override
+  String get mediaPickCamera => '写真を撮る';
+
+  @override
+  String get mediaPickGallery => '写真を選ぶ';
+
+  @override
+  String get mediaSourceUnsupportedFormat =>
+      'このビルドで読み取れない形式です。HEIC と AV1 には対応していません。JPEG か PNG の写真を選んでください。';
+
+  @override
   String get mediaEncoding => '写真をメッシュ用に調整しています…';
 
   @override
