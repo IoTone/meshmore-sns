@@ -8385,6 +8385,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Bundle copied.'**
   String get reportCopied;
+
+  /// No description provided for @blockedKeysNotPersisted.
+  ///
+  /// In en, this message translates to:
+  /// **'This list could not be saved on this device. It filters for now and will be empty after a restart.'**
+  String get blockedKeysNotPersisted;
 }
 
 class _AppLocalizationsDelegate

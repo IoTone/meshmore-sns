@@ -2314,5 +2314,6 @@
   "reportNothingSent": "何も送信していません。アプリはこの端末にファイルを作成しただけです。送り先はあなたが決めます。",
   "reportBundleWritten": "バンドルを書き出しました: {path}",
   "reportCopyBundle": "バンドルをコピー",
-  "reportCopied": "バンドルをコピーしました。"
+  "reportCopied": "バンドルをコピーしました。",
+  "blockedKeysNotPersisted": "この一覧を端末に保存できませんでした。今は機能しますが、再起動後は空になります。"
 }

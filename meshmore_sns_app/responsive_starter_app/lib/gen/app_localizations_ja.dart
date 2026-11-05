@@ -4779,4 +4779,8 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get reportCopied => 'バンドルをコピーしました。';
+
+  @override
+  String get blockedKeysNotPersisted =>
+      'この一覧を端末に保存できませんでした。今は機能しますが、再起動後は空になります。';
 }

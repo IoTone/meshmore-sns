@@ -4948,4 +4948,8 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get reportCopied => 'Bundle copied.';
+
+  @override
+  String get blockedKeysNotPersisted =>
+      'This list could not be saved on this device. It filters for now and will be empty after a restart.';
 }

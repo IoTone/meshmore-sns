@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import '../app/demo_mode.dart';
 import '../gen/app_localizations.dart';
 import '../l10n/locale_controller.dart';
+import '../meshcore/block_store.dart';
 import '../meshcore/meshcore_controller.dart';
 import '../perms/first_run_controller.dart';
 import '../perms/permissions_service.dart';
@@ -266,8 +267,20 @@ class AppSettingsScreen extends StatelessWidget {
             onTap: () =>
                 context.read<PermissionsService>().openAppSettingsPage(),
           ),
+          // APP-F1..F3 - blocking is a content setting, so it lives with the
+          // content settings rather than in Device configuration.
+          ListTile(
+            leading: const Icon(Icons.block),
+            title: Text(l.blockedKeysTitle),
+            subtitle: Text(
+              l.blockedKeysSubtitle(context.watch<BlockStore>().count),
+              style: TextStyle(color: cs.onSurface.withValues(alpha: .6)),
+            ),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => context.push('/settings/blocks'),
+          ),
           // The terms text is a commitment; this row is how a user reads it
-          // again without a way to un-agree retroactively.
+          // again without having a way to un-agree retroactively.
           ListTile(
             leading: const Icon(Icons.privacy_tip_outlined),
             title: Text(l.termsSettingsRow),

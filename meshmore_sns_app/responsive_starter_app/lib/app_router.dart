@@ -6,6 +6,7 @@ import 'screens/app_settings_screen.dart';
 import 'screens/about_screen.dart';
 import 'screens/docs_hub_screen.dart';
 import 'screens/battery_screen.dart';
+import 'screens/blocked_keys_screen.dart';
 import 'screens/channels_screen.dart';
 import 'docs/doc_section.dart';
 import 'screens/device_config_screen.dart';
@@ -88,6 +89,12 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: '/pair',
       builder: (_, __) => const PairRadioScreen(),
+    ),
+    // APP-F1..F3 - the keys this device blocks, and the one action that
+    // matters there.
+    GoRoute(
+      path: '/settings/blocks',
+      builder: (_, __) => const BlockedKeysScreen(),
     ),
     GoRoute(
       path: '/settings/voice',

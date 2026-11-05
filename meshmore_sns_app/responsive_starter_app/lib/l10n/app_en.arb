@@ -3356,5 +3356,6 @@
     }
   },
   "reportCopyBundle": "Copy the bundle",
-  "reportCopied": "Bundle copied."
+  "reportCopied": "Bundle copied.",
+  "blockedKeysNotPersisted": "This list could not be saved on this device. It filters for now and will be empty after a restart."
 }
