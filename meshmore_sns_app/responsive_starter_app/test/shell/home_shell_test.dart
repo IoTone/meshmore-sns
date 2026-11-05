@@ -27,7 +27,10 @@ import 'package:meshmore_sns_app/places/place_store.dart';
 import 'package:meshmore_sns_app/perms/first_run_controller.dart';
 import 'package:meshmore_sns_app/perms/permissions_service.dart';
 import 'package:meshmore_sns_app/screens/grid_screen.dart';
+import 'package:meshcore/meshcore.dart';
+import 'package:meshmore_sns_app/chat/channel_read_store.dart';
 import 'package:meshmore_sns_app/theme/mm_tokens.dart';
+import '../meshcore/fake_transport.dart';
 import 'package:meshmore_sns_app/theme/theme_controller.dart';
 import 'package:meshmore_sns_app/tts/tts_controller.dart';
 
@@ -51,7 +54,10 @@ class _SilentSpeaker implements TtsSpeaker {
 }
 
 Future<void> _pumpApp(WidgetTester tester,
-    {MmThemePreset? preset, bool demo = false}) async {
+    {MmThemePreset? preset,
+    bool demo = false,
+    MeshcoreController? mc,
+    ChannelReadStore? reads}) async {
   await tester.pumpWidget(
     MultiProvider(
       providers: [
@@ -81,9 +87,15 @@ Future<void> _pumpApp(WidgetTester tester,
         ChangeNotifierProvider<BotController>(
           create: (_) => BotController(),
         ),
-        ChangeNotifierProvider<MeshcoreController>(
-          create: (_) => MeshcoreController(),
-        ),
+        if (mc == null)
+          ChangeNotifierProvider<MeshcoreController>(
+            create: (_) => MeshcoreController(),
+          )
+        else
+          ChangeNotifierProvider<MeshcoreController>.value(value: mc),
+        // Registered nullable, exactly as main.dart registers it: a harness
+        // without a read store shows no badges rather than failing the lookup.
+        ChangeNotifierProvider<ChannelReadStore?>.value(value: reads),
         ChangeNotifierProvider<PlaceStore>(
           create: (_) => PlaceStore(),
         ),
@@ -825,6 +837,34 @@ void main() {
       // 270dp is far below any real phone: the Dashboard body overflows
       // there, which is not what this test is about, so drain it.
       while (t.takeException() != null) {}
+    });
+  });
+
+  group('channel unread on the strip (register 2)', () {
+    testWidgets('the chat cell shows the count and a screen reader reads it',
+        (WidgetTester tester) async {
+      final FakeMeshcoreTransport fake =
+          FakeMeshcoreTransport(connected: true);
+      final MeshcoreController mc = MeshcoreController(
+        transportFactory: () async => fake,
+        connection:
+            MeshcoreConnection(handshakeTimeout: const Duration(seconds: 5)),
+      );
+      final ChannelReadStore reads = ChannelReadStore();
+      await _pumpApp(tester, mc: mc, reads: reads);
+      await mc.connect();
+      fake.emit(selfInfoFrame());
+      await tester.pumpAndSettle();
+      // A channel message while the reader is on the Dashboard: the chat tab
+      // is not the current view, so nothing marks it read.
+      fake.emit(channelMsgFrame(idx: 0, text: 'Trudy: the ford is high'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('1'), findsWidgets,
+          reason: 'the cell carries the number, not a bare dot');
+      expect(find.bySemanticsLabel('Chat, 1 unread'), findsOneWidget,
+          reason: 'a badge a screen reader cannot read is not a badge');
+      mc.dispose();
     });
   });
 

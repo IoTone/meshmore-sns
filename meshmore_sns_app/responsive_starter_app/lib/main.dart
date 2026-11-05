@@ -11,6 +11,7 @@ import 'package:provider/provider.dart';
 import 'package:meshmore_sns_app/app/demo_mode.dart';
 import 'package:meshmore_sns_app/app_router.dart';
 import 'package:meshmore_sns_app/app_state_model.dart';
+import 'package:meshmore_sns_app/chat/channel_read_store.dart';
 import 'package:meshmore_sns_app/cue/asset_audio_pack.dart';
 import 'package:meshmore_sns_app/cue/cue_service.dart';
 import 'package:meshmore_sns_app/docs/docs_repository.dart';
@@ -91,6 +92,10 @@ void main() {
     final BlockStore blockStore = BlockStore();
     unawaited(blockStore.load());
     final BlockFilter blockFilter = BlockFilter(blockStore);
+    // When each channel was last read, so a channel badge counts what the
+    // reader has not seen rather than the whole channel's traffic.
+    final ChannelReadStore channelReads = ChannelReadStore();
+    unawaited(channelReads.load());
     final LocalNotifier notifier = LocalNotifier();
     final NotificationPrefs notificationPrefs = NotificationPrefs();
     final NotificationFocus notificationFocus = NotificationFocus();
@@ -219,6 +224,7 @@ void main() {
           // send-side rate limit and is app-scoped for the same reason: it
           // must survive leaving the sheet that charged it.
           ChangeNotifierProvider<BlockStore>.value(value: blockStore),
+          ChangeNotifierProvider<ChannelReadStore?>.value(value: channelReads),
           ChangeNotifierProvider<PlaceStore>(
               create: (_) => PlaceStore(isBlocked: blockStore.isBlocked)..load()),
           Provider<PlaceReportBudget>(

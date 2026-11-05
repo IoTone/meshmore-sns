@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
+import '../chat/channel_read_store.dart';
 import '../chat/chat_actions.dart';
 import '../chat/composer_budget.dart';
 import '../chat/draft_store.dart';
@@ -16,6 +17,8 @@ import '../media/media_codec.dart';
 import '../media/media_composer.dart';
 import '../media/media_transfer.dart';
 import '../meshcore/airtime.dart';
+import '../meshcore/block_filter.dart';
+import '../meshcore/block_store.dart';
 import '../meshcore/chat_message.dart';
 import '../places/place.dart';
 import '../places/place_echo.dart';
@@ -23,6 +26,7 @@ import '../places/place_store.dart';
 import 'delivery_status_icon.dart';
 import '../meshcore/meshcore_controller.dart';
 import '../chat/history_retention_notice.dart';
+import '../chat/unread_counts.dart';
 import '../notifications/notification_focus.dart';
 import '../meshcore/message_heat.dart' show parseChannelSenderName;
 import '../bot/bot_guards.dart';
@@ -44,7 +48,12 @@ import 'package:meshcore/meshcore.dart';
 /// Lives inside [HomeShell]'s `PageView` (the shell owns the AppBar),
 /// so this is a plain [Column], not a [Scaffold].
 class ChatScreen extends StatefulWidget {
-  const ChatScreen({super.key});
+  const ChatScreen({super.key, this.isCurrent});
+
+  /// True when this tab is the one on screen. Null means "assume current",
+  /// which is what a widget test that builds the screen alone wants and what
+  /// the shell overrides with its own index.
+  final bool? isCurrent;
 
   @override
   State<ChatScreen> createState() => _ChatScreenState();
@@ -102,6 +111,11 @@ class _ChatScreenState extends State<ChatScreen>
   final GlobalKey _highlightKey = GlobalKey();
   int _revealTries = 0;
   Timer? _highlightTimer;
+
+  /// The message count this screen last marked read, so a rebuild does not
+  /// write the same mark again and a new message does write a new one.
+  int _markedCount = -1;
+  BlockFilter? _fallbackFilter;
 
   /// Vertical slack in pixels — within this we treat the user as
   /// "at the bottom" and keep auto-following. Generous enough to
@@ -471,6 +485,50 @@ class _ChatScreenState extends State<ChatScreen>
     _autoScroll(msgs.length);
     final AppLocalizations l = AppLocalizations.of(context);
 
+    // Channel unread (register §2: only DM unread existed). The badge is
+    // per channel and skips blocked rows, and the mark moves only while this
+    // tab is the one on screen and the reader is at the bottom of the thread.
+    final ChannelReadStore? reads = context.watch<ChannelReadStore?>();
+    final BlockStore? blocks = context.watch<BlockStore?>();
+    final BlockFilter filter = blocks == null
+        ? (_fallbackFilter ??= BlockFilter(BlockStore()))
+        : BlockFilter(blocks);
+    // A badge is about a channel this screen is not showing, so the build has
+    // to notice a message arriving anywhere. The total count is the cheapest
+    // value that moves when it does; a per-channel map would compare by
+    // identity and rebuild on every unrelated notification.
+    final int allMessages = context.select<MeshcoreController, int>(
+      (MeshcoreController c) {
+        int n = 0;
+        for (final MapEntry<int, String> ch in c.channels) {
+          n += c.messagesFor(ch.key).length;
+        }
+        return n;
+      },
+    );
+    final Map<int, int> unread = allMessages == 0
+        ? const <int, int>{}
+        : UnreadCounts.perChannel(
+            channels: channels.map((MapEntry<int, String> e) => e.key),
+            history: mc.messagesFor,
+            reads: reads,
+            filter: filter,
+          );
+    if (reads != null &&
+        (widget.isCurrent ?? true) &&
+        _atBottom &&
+        msgs.isNotEmpty &&
+        _markedCount != msgs.length) {
+      _markedCount = msgs.length;
+      final int channel = active;
+      final ChatMessage newest = msgs.last;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        unawaited(reads.markRead(channel,
+            at: newest.at.add(const Duration(milliseconds: 1))));
+      });
+    }
+
     return MmScaffold(
       child: Column(
       children: <Widget>[
@@ -488,17 +546,33 @@ class _ChatScreenState extends State<ChatScreen>
               for (final MapEntry<int, String> ch in channels)
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 4),
-                  child: ChoiceChip(
-                    label: Text(ch.value),
+                  child: Semantics(
+                    label: (unread[ch.key] ?? 0) > 0
+                        ? '${ch.value}, ${l.chatUnread(unread[ch.key]!)}'
+                        : ch.value,
                     selected: ch.key == active,
-                    labelStyle: TextStyle(
-                      color: ch.key == active
-                          ? Theme.of(context).colorScheme.onPrimary
-                          : Theme.of(context).colorScheme.onSurface,
-                      fontWeight:
-                          ch.key == active ? FontWeight.w600 : FontWeight.w400,
+                    button: true,
+                    excludeSemantics: true,
+                    child: ChoiceChip(
+                      label: Text(ch.value),
+                      selected: ch.key == active,
+                      avatar: (unread[ch.key] ?? 0) > 0
+                          ? _UnreadBadge(
+                              key: ValueKey<String>('unread-${ch.key}'),
+                              count: unread[ch.key]!,
+                              onSelectedColor: ch.key == active,
+                            )
+                          : null,
+                      labelStyle: TextStyle(
+                        color: ch.key == active
+                            ? cs.onPrimary
+                            : cs.onSurface,
+                        fontWeight: ch.key == active
+                            ? FontWeight.w600
+                            : FontWeight.w400,
+                      ),
+                      onSelected: (_) => mc.setActiveChannel(ch.key),
                     ),
-                    onSelected: (_) => mc.setActiveChannel(ch.key),
                   ),
                 ),
               // APP-E6 — search sits at the end of the strip, where the
@@ -1267,6 +1341,44 @@ class _ComposerCounter extends StatelessWidget {
             color: colour,
             fontSize: context.skin.type.sizeMicro,
           ),
+        ),
+      ),
+    );
+  }
+}
+
+
+/// The count a channel chip carries while it has unread messages.
+///
+/// A count, not a dot: the register asks for per-channel unread counts, and a
+/// bare dot makes the reader open a channel to learn whether it was one
+/// message or forty. The colour follows the chip's own selected state so the
+/// number stays legible on both.
+class _UnreadBadge extends StatelessWidget {
+  const _UnreadBadge(
+      {super.key, required this.count, required this.onSelectedColor});
+
+  final int count;
+  final bool onSelectedColor;
+
+  @override
+  Widget build(BuildContext context) {
+    final MmSkin skin = context.skin;
+    final ColorScheme cs = Theme.of(context).colorScheme;
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: skin.space.step(1)),
+      constraints: BoxConstraints(minWidth: skin.space.step(5)),
+      decoration: BoxDecoration(
+        color: onSelectedColor ? cs.onPrimary : cs.primary,
+        borderRadius: BorderRadius.circular(skin.shape.cornerSize),
+      ),
+      child: Text(
+        count > 99 ? '99+' : '$count',
+        textAlign: TextAlign.center,
+        style: TextStyle(
+          fontSize: skin.type.sizeMicro,
+          fontWeight: FontWeight.w700,
+          color: onSelectedColor ? cs.primary : cs.onPrimary,
         ),
       ),
     );
