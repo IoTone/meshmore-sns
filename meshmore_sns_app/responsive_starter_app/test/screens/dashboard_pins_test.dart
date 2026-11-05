@@ -3,7 +3,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:meshcore/meshcore.dart';
 import 'package:provider/provider.dart';
 import 'package:provider/single_child_widget.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -163,20 +162,24 @@ void main() {
   });
 
   testWidgets('every skin renders the pinned section', (WidgetTester t) async {
+    // One controller set for the whole loop: seven fresh sets would cost more
+    // time than the assertion is worth and the loop is about paint, not state.
+    final DashboardPinsController pins = await _pins(<String>[
+      MmPinIds.sos,
+      MmPinIds.activity,
+      MmPinIds.places,
+      MmPinIds.coverage,
+    ]);
+    final MeshcoreController mc = MeshcoreController(
+        transportFactory: () async => FakeMeshcoreTransport());
+    final CoverageSession coverage = CoverageSession(mc: mc);
+    final ThemeController theme = ThemeController();
     for (final MmThemePreset preset in MmThemePreset.values) {
-      final DashboardPinsController pins = await _pins(<String>[
-        MmPinIds.sos,
-        MmPinIds.activity,
-        MmPinIds.places,
-        MmPinIds.coverage,
-      ]);
       await t.pumpWidget(_host(
-        tc: ThemeController()..setPreset(preset),
+        tc: theme..setPreset(preset),
         pins: pins,
-        coverage: CoverageSession(
-          mc: MeshcoreController(
-              transportFactory: () async => FakeMeshcoreTransport()),
-        ),
+        mc: mc,
+        coverage: coverage,
       ));
       await t.pump();
       expect(t.takeException(), isNull, reason: preset.name);
