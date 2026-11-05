@@ -1,5 +1,40 @@
 # Changelog
 
+## 0.2.0 — receive-path corrections and a real capture replay
+
+Four decoder defects that a bench capture and the firmware source made
+provable. The decode contract tightened, hence the minor bump.
+
+- **`deviceQuery` asks for protocol version 3 by default**
+  (`kAppTargetProtocolVersion`). The firmware stores the byte and gates
+  both V3 receive frames on `>= 3` (`MyMesh.cpp:435-443`, `:548-556`);
+  asking for 1 made every modern companion answer with the legacy frames
+  and silently dropped per-message SNR.
+- **The receiving radio profile is surfaced.** `ChannelDataFrame.via` and
+  `RawDataFrame.via` carry `RxVia` (`unknown` / `primary` / `secondary`)
+  from the byte the firmware fills in while a second profile is on
+  (`MyMesh.cpp:2423`, `:2830-2840`). Previously the channel-datagram byte
+  was read and discarded and the raw-data byte was left in the payload.
+- **`decode` consumes the whole frame.** A parsed frame that leaves bytes
+  is now `DecodeFailure(trailingBytes)` naming the opcode and the count,
+  so two frames in one buffer cannot half-decode into a silent drop. Two
+  frames whose layouts have grown in place keep an explicit, documented
+  allowance (login reply, repeater status payload).
+- **`CHANNEL_INFO` accepts both secret widths**: 16 bytes for an ordinary
+  request and 32 for a full-secret request; any other width is a failure
+  rather than a guess.
+- **`RESP_CODE_CLI_REPLY` (0x1D)** is decoded (`CliReplyFrame`) and named.
+  `isPush` stays the firmware's own split — every `PUSH_CODE_*` is
+  `>= 0x80`, every `RESP_CODE_*` below it, including the queued
+  `CHANNEL_DATA_RECV` and the `CLI_REPLY` stream — now pinned by a table
+  test over both firmware trees instead of by the magic number alone.
+- **`interop_replay_test.dart` replays real captures.** Three
+  `PUSH_CODE_LOG_RX_DATA` notifications recorded on the bench decode to
+  the keys, names and positions the recording side reported for the same
+  events (framing, OTA parse and advert layout all have to agree). The
+  channel-text half stays skipped and says so: no such capture exists yet.
+- Tests: 312 passed, 1 skipped; `dart analyze` clean.
+
 ## 0.1.2 — advert-from-OTA (signal-aware discovery)
 
 - `Advert.parse` / `Advert.tryParse`: single source of truth for the
