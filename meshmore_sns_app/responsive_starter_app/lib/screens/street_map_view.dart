@@ -55,10 +55,16 @@ class StreetMapView extends StatefulWidget {
     this.filteredNodes,
     this.frozen = false,
     this.browseWithoutFix = false,
+    this.interactive = true,
   });
 
   final List<DiscoveredNode>? filteredNodes;
   final bool frozen;
+
+  /// R109 — false while the grid is in swipe mode: the map is a still picture
+  /// so a horizontal drag pages the shell. Taps still reach the pins, which is
+  /// why this is not an `IgnorePointer`.
+  final bool interactive;
 
   /// R69 — with no position fix, render the map at a world view (and a
   /// quiet "no fix" row) instead of the empty "awaiting fix" text.
@@ -362,13 +368,15 @@ class _StreetMapViewState extends State<StreetMapView> {
               initialZoom: _zoom,
               minZoom: _minZoom,
               maxZoom: _zoomMax,
-              interactionOptions: const InteractionOptions(
+              interactionOptions: InteractionOptions(
                 // Pan + pinch + scroll-wheel zoom; no rotation
                 // (heading still works via the self-marker arrow).
-                flags: InteractiveFlag.drag |
-                    InteractiveFlag.pinchZoom |
-                    InteractiveFlag.scrollWheelZoom |
-                    InteractiveFlag.doubleTapZoom,
+                flags: widget.interactive
+                    ? InteractiveFlag.drag |
+                        InteractiveFlag.pinchZoom |
+                        InteractiveFlag.scrollWheelZoom |
+                        InteractiveFlag.doubleTapZoom
+                    : InteractiveFlag.none,
               ),
               onPositionChanged: (MapCamera cam, bool hasGesture) =>
                   _scheduleWarm(),
