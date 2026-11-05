@@ -49,6 +49,11 @@ enum MediaInboxOutcome {
   refused,
   foreignType,
   foreignChannel,
+
+  /// Room had to be made: a seventeenth transfer evicted an older one, which
+  /// will now never complete. Reported rather than swallowed, because the
+  /// other side is waiting on a payload this phone stopped tracking.
+  evicted,
 }
 
 /// The app's one inbound consumer of media datagrams.
@@ -118,6 +123,13 @@ final class MediaInbox {
 
   int get completedPayloads => _completedCount;
 
+  int _evictedTransfers = 0;
+
+  /// Transfers dropped to make room for newer ones. A surface that shows an
+  /// inbound picture reads this: a transfer that stopped arriving because
+  /// another one started is not the same as a lost packet.
+  int get evictedTransfers => _evictedTransfers;
+
   bool get listening => _subscription != null;
 
   /// Starts reading the radio's datagrams. Idempotent, so a rebuild cannot
@@ -160,7 +172,13 @@ final class MediaInbox {
       _lastOutcome = MediaInboxOutcome.foreignChannel;
       return;
     }
+    final int evictionsBefore = download.reassembler.evictions;
     final MediaIntake intake = download.accept(datagram.blob, now: _clock());
+    if (download.reassembler.evictions > evictionsBefore) {
+      _evictedTransfers++;
+      _lastOutcome = MediaInboxOutcome.evicted;
+      return;
+    }
     switch (intake) {
       case MediaIntake.chunk:
         _lastOutcome = MediaInboxOutcome.chunk;

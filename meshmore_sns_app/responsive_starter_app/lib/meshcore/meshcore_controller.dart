@@ -1386,7 +1386,10 @@ class MeshcoreController extends ChangeNotifier {
   // --- Channel chat (R6) ---
 
   final List<ChatMessage> _messages = <ChatMessage>[];
-  static const int _messagesCap = 250;
+  /// One cap, not two: the store truncates at `ChatStore.cap` when it writes,
+  /// so a second number here would silently cut rows the store would have
+  /// kept (or keep rows it will drop) depending on which ran first.
+  static const int _messagesCap = ChatStore.cap;
 
   /// Rows the cap has already dropped, per thread (`ch:<idx>` / `dm:<peer>`).
   ///

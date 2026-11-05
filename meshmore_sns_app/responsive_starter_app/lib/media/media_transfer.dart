@@ -290,6 +290,10 @@ final class MediaDownload {
 
   Iterable<MediaTransfer> get transfers => _reassembler.transfers;
 
+  /// The reassembler itself, read-only for callers that need its eviction
+  /// count: a transfer dropped to make room is a fact the inbox reports.
+  MediaReassembler get reassembler => _reassembler;
+
   /// Takes one datagram blob. A request is routed away from the reassembler —
   /// a bitmap is not image bytes — and reported as [MediaIntake.request].
   MediaIntake accept(List<int> blob, {DateTime? now}) {

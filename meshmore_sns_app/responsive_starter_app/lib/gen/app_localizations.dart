@@ -2696,6 +2696,12 @@ abstract class AppLocalizations {
   /// **'saved'**
   String get diagnosticsPlaceStoreOk;
 
+  /// No description provided for @mediaReceiveDropped.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{One earlier transfer was dropped to make room, so that picture stopped} other{{count} earlier transfers were dropped to make room, so those pictures stopped}}'**
+  String mediaReceiveDropped(int count);
+
   /// No description provided for @chatEmpty.
   ///
   /// In en, this message translates to:

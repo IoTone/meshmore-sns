@@ -22,6 +22,7 @@ class MediaReceiveView extends StatelessWidget {
     required this.progress,
     this.requested,
     this.onAskForMissing,
+    this.dropped = 0,
   });
 
   final MediaDownloadProgress progress;
@@ -32,6 +33,11 @@ class MediaReceiveView extends StatelessWidget {
   /// Sends the request datagram. Null while the surface cannot send (no link),
   /// in which case the surface says so rather than showing a dead button.
   final Future<void> Function()? onAskForMissing;
+
+  /// Transfers this phone dropped to make room. A picture that stops arriving
+  /// because another one started is not a lost packet, and saying so is the
+  /// difference between "the mesh is flaky" and "ask again".
+  final int dropped;
 
   @override
   Widget build(BuildContext context) {
@@ -52,6 +58,14 @@ class MediaReceiveView extends StatelessWidget {
             style:
                 TextStyle(color: skin.color.fg, fontSize: skin.type.sizeSm),
           ),
+          if (dropped > 0) ...<Widget>[
+            SizedBox(height: skin.space.step(2)),
+            Text(
+              l.mediaReceiveDropped(dropped),
+              style: TextStyle(
+                  color: skin.color.fgMuted, fontSize: skin.type.sizeSm),
+            ),
+          ],
           SizedBox(height: skin.space.step(2)),
           ClipRect(
             child: LinearProgressIndicator(

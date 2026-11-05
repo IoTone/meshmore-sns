@@ -324,6 +324,7 @@ class _PhotoSectionState extends State<_PhotoSection> {
         return MediaReceiveView(
           progress: progress,
           requested: _requested,
+          dropped: fetch.download.reassembler.evictions,
           onAskForMissing: fetch.sendRequest == null
               ? null
               : () async {

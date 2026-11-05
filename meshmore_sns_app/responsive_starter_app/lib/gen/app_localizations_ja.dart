@@ -1477,6 +1477,17 @@ class AppLocalizationsJa extends AppLocalizations {
   String get diagnosticsPlaceStoreOk => '保存済み';
 
   @override
+  String mediaReceiveDropped(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '空きを作るため以前の転送$count件が破棄され、それらの写真は途中で止まりました',
+      one: '空きを作るため以前の転送1件が破棄され、その写真は途中で止まりました',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get chatEmpty => '— このチャンネルにメッセージはありません —';
 
   @override

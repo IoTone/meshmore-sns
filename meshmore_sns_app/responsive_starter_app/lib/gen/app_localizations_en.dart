@@ -1547,6 +1547,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get diagnosticsPlaceStoreOk => 'saved';
 
   @override
+  String mediaReceiveDropped(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          '$count earlier transfers were dropped to make room, so those pictures stopped',
+      one:
+          'One earlier transfer was dropped to make room, so that picture stopped',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get chatEmpty => '— no messages on this channel —';
 
   @override
