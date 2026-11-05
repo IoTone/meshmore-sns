@@ -4436,9 +4436,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get sosHoldReleased => '早く離したため、何も送信していません。';
 
   @override
-  String get sosNoRadio => '無線が接続されていないため、送信できません。';
-
-  @override
   String get sosNoIdentity => '無線が名前を返していないため、警報にコールサインを載せられません。';
 
   @override
@@ -4502,11 +4499,6 @@ class AppLocalizationsJa extends AppLocalizations {
   @override
   String sosSeenBy(String name) {
     return '$name が受信しました（直接メッセージ）。';
-  }
-
-  @override
-  String sosAckCounted(String name) {
-    return '$name が応答しましたが、この警報の宛先ではありません。';
   }
 
   @override

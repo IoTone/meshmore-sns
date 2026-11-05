@@ -4584,9 +4584,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sosHoldReleased => 'Released too early — nothing was sent.';
 
   @override
-  String get sosNoRadio => 'No radio is connected, so nothing can be sent.';
-
-  @override
   String get sosNoIdentity =>
       'The radio has not reported its name, so an alarm has no callsign to carry.';
 
@@ -4653,11 +4650,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String sosSeenBy(String name) {
     return '$name has seen this, by direct message.';
-  }
-
-  @override
-  String sosAckCounted(String name) {
-    return '$name answered, but this alarm was not addressed to them.';
   }
 
   @override

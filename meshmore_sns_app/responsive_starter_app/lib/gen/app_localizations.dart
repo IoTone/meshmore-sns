@@ -7834,12 +7834,6 @@ abstract class AppLocalizations {
   /// **'Released too early — nothing was sent.'**
   String get sosHoldReleased;
 
-  /// No description provided for @sosNoRadio.
-  ///
-  /// In en, this message translates to:
-  /// **'No radio is connected, so nothing can be sent.'**
-  String get sosNoRadio;
-
   /// No description provided for @sosNoIdentity.
   ///
   /// In en, this message translates to:
@@ -7947,12 +7941,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{name} has seen this, by direct message.'**
   String sosSeenBy(String name);
-
-  /// No description provided for @sosAckCounted.
-  ///
-  /// In en, this message translates to:
-  /// **'{name} answered, but this alarm was not addressed to them.'**
-  String sosAckCounted(String name);
 
   /// No description provided for @sosExpired.
   ///
