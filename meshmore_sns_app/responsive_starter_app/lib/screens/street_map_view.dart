@@ -18,6 +18,10 @@ import '../geofence/geofence_controller.dart';
 import '../geofence/geofence_store.dart';
 import '../maps/basemap.dart';
 import '../maps/basemap_prefs.dart';
+import '../maps/map_archive.dart';
+import '../maps/map_centre.dart';
+import '../perms/location_service.dart';
+import '../perms/permissions_service.dart';
 import '../maps/event_layer.dart';
 import '../maps/map_source.dart';
 import '../maps/maps_controller.dart';
@@ -84,8 +88,8 @@ class StreetMapView extends StatefulWidget {
   /// R69 — the honest default centre when there is no fix: a world view
   /// (the middle of the Atlantic/Africa band), not a guess at the user's
   /// region. [browseZoom] shows the whole globe's land masses.
-  static const LatLng browseCentre = LatLng(20.0, 0.0);
-  static const double browseZoom = 2.0;
+  static const LatLng browseCentre = MapCentre.worldCentre;
+  static const double browseZoom = MapCentre.worldZoom;
 
   /// R70 — the control column's geometry, shared with the Map tab's
   /// edge band so the band's inset is derived, not a magic number: five
@@ -157,8 +161,6 @@ class _StreetMapViewState extends State<StreetMapView> {
   /// Discrete zoom levels. Pinch on the map also works; these
   /// buttons are an explicit affordance for users on devices
   /// without multi-touch or who prefer one-handed operation.
-  static const double _zoomMin = 6.0;
-
   /// R83 — the Studio basemap is Shortbread, whose tiles stop at z14, so
   /// every level past it is an upscale. Past z17 the upscale is 8x linear
   /// and the map stops carrying information; the raster presets keep the
@@ -166,16 +168,75 @@ class _StreetMapViewState extends State<StreetMapView> {
   double get _zoomMax => _vectorSkin ? 17.0 : 18.5;
   static const double _zoomStep = 1.0;
   late final MapController _map = MapController();
-  double _zoom = 14.0; // metro default; pinned to self on first build
+
+  /// The camera starts where [MapCentre.resolve] says, and [MapCentre] keeps
+  /// the reasoning in one testable place: the phone's position, then the
+  /// radio's own, then the view the user left, then the world.
+  double _zoom = MapCentre.personalZoom;
   bool _centered = false;
 
-  /// R69 — true while this view is showing the no-fix world view, so the
-  /// first real fix can reset the zoom from world to metro.
-  bool _browsing = false;
+  /// The view the user left, read once at startup. It is step three of the
+  /// ladder, which is the "centred on them" that matters most in practice.
+  SavedMapView? _saved;
+
+  /// True once the user pans or zooms the map. A position that arrives after
+  /// that must not move the camera out from under their finger.
+  bool _userMoved = false;
+
+  /// The ladder rung the camera is currently centred on. A rebuild that
+  /// resolves to the same rung must not move anything.
+  MapCentreSource? _centredOn;
+
+  /// Where the user left the camera when they last moved it themselves. While
+  /// they have, this is the honest `initialCenter`: the resolved ladder must
+  /// not be handed to the map again, or a late position would take the view
+  /// back.
+  LatLng? _userCentre;
+
+  /// Why the last attempt to get a position produced none. Null means either
+  /// no attempt yet or a position is known; the banner says which.
+  LocationFailure? _locationFailure;
+  bool _askingForFix = false;
+
+  /// Debounced so a pan does not write a preference on every frame.
+  Timer? _saveView;
 
   /// R83 - warms the ring around a settled viewport so the next pan paints
   /// from storage. Debounced, and only when nothing else is fetching.
   Timer? _warm;
+
+  /// The region a downloaded map region covers, largest first, so the map can
+  /// open on the area the user went to the trouble of keeping offline. Null
+  /// when nothing is installed.
+  GeoBox? _regionOnDevice(MapsController? maps) {
+    if (maps == null) return null;
+    GeoBox? best;
+    double bestArea = 0;
+    for (final MapArchive a in maps.archives) {
+      if (!a.complete) continue;
+      final double? w = a.west, so = a.south, e = a.east, n = a.north;
+      if (w == null || so == null || e == null || n == null) continue;
+      final double area = (e - w).abs() * (n - so).abs();
+      if (area > bestArea) {
+        bestArea = area;
+        best = GeoBox(south: so, west: w, north: n, east: e);
+      }
+    }
+    return best;
+  }
+
+  void _rememberView() {
+    _saveView?.cancel();
+    _saveView = Timer(const Duration(milliseconds: 700), () {
+      if (!mounted) return;
+      final MapCamera cam = _map.camera;
+      unawaited(MapViewPrefs.save(SavedMapView(
+        latitude: cam.center.latitude,
+        longitude: cam.center.longitude,
+        zoom: cam.zoom,
+      )));
+    });
+  }
 
   /// Read during build; `context.skin` watches a provider and must not be
   /// touched from a timer or an async callback.
@@ -263,13 +324,16 @@ class _StreetMapViewState extends State<StreetMapView> {
         _rasterOverride = id;
       });
     });
-    if (widget.browseWithoutFix) {
-      // The context-free read of the fix happens in build; here we only
-      // pre-seed the world zoom so the first frame is not zoom 14 over
-      // (0,0) while the controller is still resolving.
-      _zoom = StreetMapView.browseZoom;
-      _browsing = true;
-    }
+    // Step three of the ladder, read before the first frame so the camera
+    // opens where the user left it instead of jumping once the preference
+    // arrives. A malformed value is dropped by the decoder.
+    MapViewPrefs.load().then((SavedMapView? view) {
+      if (!mounted || view == null) return;
+      setState(() {
+        _saved = view;
+        if (!_centered) _zoom = view.zoom;
+      });
+    });
     _compassSub = FlutterCompass.events?.listen((CompassEvent e) {
       final double? h = e.heading;
       if (h == null || !mounted) return;
@@ -281,6 +345,7 @@ class _StreetMapViewState extends State<StreetMapView> {
   @override
   void dispose() {
     _warm?.cancel();
+    _saveView?.cancel();
     _compassSub?.cancel();
     super.dispose();
   }
@@ -299,11 +364,32 @@ class _StreetMapViewState extends State<StreetMapView> {
     _map.move(_map.camera.center, _zoom);
   }
 
-  /// R69 — the world view needs a lower floor than the metro default.
-  double get _minZoom => _browsing ? StreetMapView.browseZoom : _zoomMin;
+  /// The floor is the world view: zooming out to the whole globe is allowed,
+  /// because the map's own fallback is that view and clamping it would snap
+  /// the first frame.
+  double get _minZoom => MapCentre.worldZoom;
 
-  void _recenterOnSelf(double lat, double lon) {
-    _map.move(LatLng(lat, lon), _zoom);
+  void _recenterOnSelf(LatLng centre, MapCentreSource rung) {
+    _userMoved = false;
+    _userCentre = null;
+    _centredOn = rung;
+    _map.move(centre, _zoom);
+    _rememberView();
+  }
+
+  /// One explicit ask for a position, used by the banner's action. It reports
+  /// why it failed so the banner can name the real problem rather than
+  /// telling a user with location switched off to go outside.
+  Future<void> _askForFix() async {
+    if (_askingForFix) return;
+    setState(() => _askingForFix = true);
+    final MeshcoreController mc = context.read<MeshcoreController>();
+    final LocationOutcome outcome = await mc.requestPhoneLocationFixOutcome();
+    if (!mounted) return;
+    setState(() {
+      _askingForFix = false;
+      _locationFailure = outcome.failure;
+    });
   }
 
   /// Drops a pin where the long-press landed and reports it on the active
@@ -415,34 +501,52 @@ class _StreetMapViewState extends State<StreetMapView> {
         ? null
         : l.mapPackZoomOutside(packSpan.minZoom, packSpan.maxZoom);
 
-    final double? selfLat = mc.ownLocation?.latitude;
-    final double? selfLon = mc.ownLocation?.longitude;
-    final bool hasFix = selfLat != null && selfLon != null;
+    // One ladder decides both the camera and where "me" is drawn, so the two
+    // cannot disagree: the phone's position, the radio's own position, the
+    // view the user left, a region on the device, then the world view.
+    final MapCentre start = MapCentre.resolve(
+      phone: mc.phoneLocationFix,
+      radio: mc.selfInfo,
+      last: _saved,
+      region: _regionOnDevice(maps),
+    );
+    final bool hasPersonalPosition = start.source == MapCentreSource.phone ||
+        start.source == MapCentreSource.radio;
+    final double? selfLat = hasPersonalPosition ? start.centre.latitude : null;
+    final double? selfLon = hasPersonalPosition ? start.centre.longitude : null;
+    final bool hasFix = hasPersonalPosition;
+
+    // Only the grid's street-map mode — which is a picture of the fabric, not
+    // a place to browse — refuses to draw without a position. The Map tab
+    // always draws, because the world view is a real answer.
     if (!hasFix && !widget.browseWithoutFix) {
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(24),
           child: Text(
-            l.equalGridAwaitingFix,
+            l.streetMapNeedsPosition,
             textAlign: TextAlign.center,
             style: TextStyle(color: cs.onSurfaceVariant),
           ),
         ),
       );
     }
-    // R69 — a fix arrived after browsing: leave the world view.
-    if (hasFix && _browsing) {
-      _browsing = false;
-      _zoom = 14.0;
-    }
-    // First build after the controller has a location: centre on self.
-    if (hasFix && !_centered) {
+
+    // Take the ladder's camera on the first build, and again only when the
+    // *source* improves (a fix arrives) while the user has not moved the map.
+    // Comparing the source rather than the point is what keeps a rebuild - a
+    // skin change, a toast, a poll - from yanking the camera.
+    final bool sourceChanged = start.source != _centredOn;
+    if (!_centered || (!_userMoved && sourceChanged)) {
+      _zoom = start.zoom;
+      _centredOn = start.source;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
         try {
-          _map.move(LatLng(selfLat, selfLon), _zoom);
+          _map.move(start.centre, start.zoom);
         } catch (_) {/* map not laid out yet */}
         _centered = true;
+        _rememberView();
       });
     }
 
@@ -495,9 +599,7 @@ class _StreetMapViewState extends State<StreetMapView> {
           child: FlutterMap(
             mapController: _map,
             options: MapOptions(
-              initialCenter: hasFix
-                  ? LatLng(selfLat, selfLon)
-                  : StreetMapView.browseCentre,
+              initialCenter: _userCentre ?? start.centre,
               initialZoom: _zoom,
               minZoom: _minZoom,
               maxZoom: _zoomMax,
@@ -511,8 +613,18 @@ class _StreetMapViewState extends State<StreetMapView> {
                         InteractiveFlag.doubleTapZoom
                     : InteractiveFlag.none,
               ),
-              onPositionChanged: (MapCamera cam, bool hasGesture) =>
-                  _scheduleWarm(),
+              onPositionChanged: (MapCamera cam, bool hasGesture) {
+                // A gesture is the user's own move: it suppresses the
+                // automatic re-centre for the rest of this visit and it is
+                // what the next launch should reopen at.
+                if (hasGesture) {
+                  _userMoved = true;
+                  _userCentre = cam.center;
+                  _zoom = cam.zoom;
+                  _rememberView();
+                }
+                _scheduleWarm();
+              },
               // A long-press drops a place where the finger is: the map point
               // is what the user aimed at, so the report travels at exact
               // precision rather than the snapped default that belongs to
@@ -559,7 +671,7 @@ class _StreetMapViewState extends State<StreetMapView> {
                     // no centre in sight.
                     if (StreetMapView.reachRingReadable(rangeM, viewportMeters))
                       CircleMarker(
-                        point: LatLng(selfLat, selfLon),
+                        point: start.centre,
                         radius: rangeM,
                         useRadiusInMeter: true,
                         // Outline-only: even modest fill alpha accumulates
@@ -664,7 +776,7 @@ class _StreetMapViewState extends State<StreetMapView> {
                   // Self marker last so it sits on top.
                   if (hasFix)
                     Marker(
-                      point: LatLng(selfLat, selfLon),
+                      point: start.centre,
                       width: 56,
                       height: 56,
                       alignment: Alignment.center,
@@ -760,29 +872,15 @@ class _StreetMapViewState extends State<StreetMapView> {
                           color: cs.onSurfaceVariant,
                           fontSize: context.skin.type.sizeSm)),
                 ),
-              if (!hasFix)
-                Container(
-                  key: const ValueKey<String>('map-no-fix-banner'),
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                  decoration: BoxDecoration(
-                    color: cs.surface,
-                    border: Border(top: BorderSide(color: cs.outlineVariant)),
-                  ),
-                  child: Row(
-                    children: <Widget>[
-                      Icon(Icons.location_disabled,
-                          size: 16, color: cs.onSurfaceVariant),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          l.mapNoFixBanner,
-                          style: TextStyle(
-                              color: cs.onSurfaceVariant, fontSize: 12),
-                        ),
-                      ),
-                    ],
-                  ),
+              if (!hasPersonalPosition)
+                _NoPositionBanner(
+                  failure: _locationFailure,
+                  asking: _askingForFix,
+                  onAsk: _askForFix,
+                  onOpenSettings: () =>
+                      context.read<PermissionsService>().openAppSettingsPage(),
+                  colour: cs,
+                  skin: context.skin,
                 ),
             ],
           ),
@@ -851,8 +949,16 @@ class _StreetMapViewState extends State<StreetMapView> {
                       minWidth: StreetMapView.controlCell,
                       minHeight: StreetMapView.controlCell),
                   icon: const Icon(Icons.my_location),
-                  onPressed:
-                      hasFix ? () => _recenterOnSelf(selfLat, selfLon) : null,
+                  // Always available: with a position it re-centres, and
+                  // without one it asks for a position and says what went
+                  // wrong instead of being a dead button.
+                  onPressed: () {
+                    if (hasPersonalPosition) {
+                      _recenterOnSelf(start.centre, start.source);
+                    } else {
+                      _askForFix();
+                    }
+                  },
                 ),
                 // R25+3 / R61 — basemap picker.
                 PopupMenuButton<String>(
@@ -1159,4 +1265,85 @@ class _HeadingWedgePainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _HeadingWedgePainter old) => color != old.color;
+}
+
+/// What the map says when it has no position, and the one action that helps.
+///
+/// Two different problems used to share one sentence: permission is missing
+/// (nothing can produce a position until the user allows it) and no position
+/// has arrived yet (the phone or the radio may yet report one). They read
+/// differently and act differently, which is the whole point of the split.
+class _NoPositionBanner extends StatelessWidget {
+  const _NoPositionBanner({
+    required this.failure,
+    required this.asking,
+    required this.onAsk,
+    required this.onOpenSettings,
+    required this.colour,
+    required this.skin,
+  });
+
+  final LocationFailure? failure;
+  final bool asking;
+  final VoidCallback onAsk;
+  final VoidCallback onOpenSettings;
+  final ColorScheme colour;
+  final MmSkin skin;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations l = AppLocalizations.of(context);
+    final String message;
+    final String action;
+    final VoidCallback press;
+    switch (failure) {
+      case LocationFailure.permissionDenied:
+        message = l.mapLocationOffApp;
+        action = l.mapLocationAllow;
+        press = onAsk;
+      case LocationFailure.permissionDeniedForever:
+        message = l.mapLocationBlockedApp;
+        action = l.mapLocationOpenSettings;
+        press = onOpenSettings;
+      case LocationFailure.servicesDisabled:
+        message = l.mapLocationOffDevice;
+        action = l.mapLocationOpenSettings;
+        press = onOpenSettings;
+      case LocationFailure.timeout:
+      case LocationFailure.failed:
+      case null:
+        message = l.mapNoPositionYet;
+        action = l.mapNoPositionFind;
+        press = onAsk;
+    }
+    return Container(
+      key: const ValueKey<String>('map-no-position-banner'),
+      padding: const EdgeInsets.fromLTRB(16, 8, 8, 8),
+      decoration: BoxDecoration(
+        color: colour.surface,
+        border: Border(top: BorderSide(color: colour.outlineVariant)),
+      ),
+      child: Row(
+        children: <Widget>[
+          Icon(Icons.location_searching,
+              size: 16, color: colour.onSurfaceVariant),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              message,
+              style: TextStyle(
+                color: colour.onSurfaceVariant,
+                fontSize: skin.type.sizeSm,
+              ),
+            ),
+          ),
+          TextButton(
+            key: const ValueKey<String>('map-no-position-action'),
+            onPressed: asking ? null : press,
+            child: Text(asking ? l.mapNoPositionAsking : action),
+          ),
+        ],
+      ),
+    );
+  }
 }
