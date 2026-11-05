@@ -458,7 +458,7 @@
   "nodesEmptyOffline": "Connect a radio to discover nearby nodes.",
   "nodesFavTooltip": "Add to favourites",
   "nodesUnfavTooltip": "Remove from favourites",
-  "gridTitle": "Hyperlocal grid",
+  "gridTitle": "Survey",
   "gridShowLegend": "Show legend",
   "gridHideLegend": "Hide legend",
   "gridPlayTooltip": "Play (refresh every interval)",
@@ -490,9 +490,11 @@
   "gridLegendTap": "Tap a node to see details + Message / Favourite.",
   "gridViewRadial": "Radial",
   "gridViewGlobe": "Globe",
-  "gridViewEqualGrid": "Equal grid",
   "gridViewPicker": "View",
-  "gridViewFabric": "Mesh survey",
+  "gridZoomWider": "Wider (zoom out)",
+  "gridZoomTighter": "Tighter (zoom in)",
+  "gridNeedsFix": "This view needs your own position. Waiting for a GPS fix (phone or device).",
+  "gridViewFabric": "Coverage",
   "gridViewElevation": "Altitude",
   "fujiLegendTitle": "FUJIさん",
   "fujiLegendDesc": "Altitude survey. Heights on a √-scaled axis against famous landmarks. Your device's altitude comes from device GPS telemetry or the phone fix.",
@@ -557,19 +559,6 @@
       }
     }
   },
-  "equalGridAwaitingFix": "Equal-grid view needs your own location — waiting for a GPS fix (phone or device).",
-  "equalGridCellSize": "CELL {size}",
-  "@equalGridCellSize": {
-    "placeholders": {
-      "size": {
-        "type": "String"
-      }
-    }
-  },
-  "equalGridZoomIn": "Zoom in (tighter cells)",
-  "equalGridZoomOut": "Zoom out (wider cells)",
-  "equalGridShowStats": "Show targeting panel",
-  "equalGridHideStats": "Hide targeting panel",
   "globeFooter": "Showing {n} nodes with a known location",
   "globeOverlayArcs": "arcs",
   "globeOverlayRegion": "region",
@@ -3852,5 +3841,27 @@
     }
   },
   "chatSpeechOffAction": "Speech is off in App settings",
-  "nodeDetailAltitudeNotReported": "not reported"
+  "nodeDetailAltitudeNotReported": "not reported",
+  "gridPurposeRadial": "How far each node is, and how long ago it was heard.",
+  "gridPurposeCoverage": "Where the mesh has answered, cell by cell.",
+  "gridPurposeWeather": "Temperature, humidity and pressure, from nodes that report them.",
+  "gridPurposeGlobe": "The same positions on a globe, for distance at a glance.",
+  "gridPurposeTree": "How nodes reach each other, from the routes they advertise.",
+  "gridPurposeSnsCells": "Where messages came from, cooling over the last hour.",
+  "gridPurposeElevation": "How high each node is, against landmarks.",
+  "gridPurposeMeshbook": "What this channel did in the last day: messages, replies, top voices.",
+  "meshTreeCounts": "{shown} shown · {input} in · {total} total",
+  "@meshTreeCounts": {
+    "placeholders": {
+      "shown": {
+        "type": "String"
+      },
+      "input": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  }
 }

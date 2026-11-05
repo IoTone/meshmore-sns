@@ -205,7 +205,7 @@ void main() {
     await t.tap(find.byTooltip('View'));
     await t.pump();
     await t.pump(const Duration(milliseconds: 400));
-    await t.tap(find.text('Mesh survey').last);
+    await t.tap(find.text('Coverage').last);
     await t.pump();
     await t.pump(const Duration(milliseconds: 400));
 
@@ -237,7 +237,7 @@ void main() {
     await t.tap(find.byTooltip('View'));
     await t.pump();
     await t.pump(const Duration(milliseconds: 400));
-    await t.tap(find.text('Mesh survey').last);
+    await t.tap(find.text('Coverage').last);
     await t.pump();
     await t.pump(const Duration(milliseconds: 400));
     expect(
@@ -258,21 +258,22 @@ void main() {
     await t.pump();
     expect(shellDragClaim.isClaimed, isFalse);
 
-    // The equal grid looks like a map and is not one: its tiles are pinned to
-    // us and its zoom is the cell stepper, so a toggle there would lock the
-    // shell's swipe and give the drag to nothing. It must not appear.
+    // The equal grid was deleted with R117: equal-area cells answered the same
+    // question the Map tab answers better, and its own doc called it a stage-1
+    // skeleton. The picker must not offer it any more.
     await t.tap(find.byTooltip('View'));
     await t.pump();
     await t.pump(const Duration(milliseconds: 400));
     await t.tap(find.text('More views').last);
     await t.pump();
     await t.pump(const Duration(milliseconds: 400));
-    await t.tap(find.text('Equal grid').last);
+    expect(find.text('Equal grid'), findsNothing,
+        reason: 'the equal grid view is gone, so no picker row may offer it');
+    // Close the sheet before the next step: a modal sheet left open swallows
+    // the next tap and the assertions after it would test the wrong view.
+    await t.tapAt(const Offset(4, 4));
     await t.pump();
     await t.pump(const Duration(milliseconds: 400));
-    expect(find.byKey(const ValueKey<String>('grid-pan-toggle')), findsNothing,
-        reason: 'the equal grid has no drag of its own to hand over');
-    expect(shellDragClaim.isClaimed, isFalse);
 
     // A report view draws to fit, so the toggle disappears.
     await t.tap(find.byTooltip('View'));
@@ -287,7 +288,7 @@ void main() {
     await t.tap(find.byTooltip('View'));
     await t.pump();
     await t.pump(const Duration(milliseconds: 400));
-    await t.tap(find.text('Mesh survey').last);
+    await t.tap(find.text('Coverage').last);
     await t.pump();
     await t.pump(const Duration(milliseconds: 400));
     await t.tap(find.byKey(const ValueKey<String>('grid-pan-toggle')));

@@ -1631,7 +1631,7 @@ abstract class AppLocalizations {
   /// No description provided for @gridTitle.
   ///
   /// In en, this message translates to:
-  /// **'Hyperlocal grid'**
+  /// **'Survey'**
   String get gridTitle;
 
   /// No description provided for @gridShowLegend.
@@ -1778,22 +1778,34 @@ abstract class AppLocalizations {
   /// **'Globe'**
   String get gridViewGlobe;
 
-  /// No description provided for @gridViewEqualGrid.
-  ///
-  /// In en, this message translates to:
-  /// **'Equal grid'**
-  String get gridViewEqualGrid;
-
   /// No description provided for @gridViewPicker.
   ///
   /// In en, this message translates to:
   /// **'View'**
   String get gridViewPicker;
 
+  /// No description provided for @gridZoomWider.
+  ///
+  /// In en, this message translates to:
+  /// **'Wider (zoom out)'**
+  String get gridZoomWider;
+
+  /// No description provided for @gridZoomTighter.
+  ///
+  /// In en, this message translates to:
+  /// **'Tighter (zoom in)'**
+  String get gridZoomTighter;
+
+  /// No description provided for @gridNeedsFix.
+  ///
+  /// In en, this message translates to:
+  /// **'This view needs your own position. Waiting for a GPS fix (phone or device).'**
+  String get gridNeedsFix;
+
   /// No description provided for @gridViewFabric.
   ///
   /// In en, this message translates to:
-  /// **'Mesh survey'**
+  /// **'Coverage'**
   String get gridViewFabric;
 
   /// No description provided for @gridViewElevation.
@@ -1975,42 +1987,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{label} loaded — Apply when a device is connected.'**
   String deviceRegionLoadedOffline(String label);
-
-  /// No description provided for @equalGridAwaitingFix.
-  ///
-  /// In en, this message translates to:
-  /// **'Equal-grid view needs your own location — waiting for a GPS fix (phone or device).'**
-  String get equalGridAwaitingFix;
-
-  /// No description provided for @equalGridCellSize.
-  ///
-  /// In en, this message translates to:
-  /// **'CELL {size}'**
-  String equalGridCellSize(String size);
-
-  /// No description provided for @equalGridZoomIn.
-  ///
-  /// In en, this message translates to:
-  /// **'Zoom in (tighter cells)'**
-  String get equalGridZoomIn;
-
-  /// No description provided for @equalGridZoomOut.
-  ///
-  /// In en, this message translates to:
-  /// **'Zoom out (wider cells)'**
-  String get equalGridZoomOut;
-
-  /// No description provided for @equalGridShowStats.
-  ///
-  /// In en, this message translates to:
-  /// **'Show targeting panel'**
-  String get equalGridShowStats;
-
-  /// No description provided for @equalGridHideStats.
-  ///
-  /// In en, this message translates to:
-  /// **'Hide targeting panel'**
-  String get equalGridHideStats;
 
   /// No description provided for @globeFooter.
   ///
@@ -9501,6 +9477,60 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'not reported'**
   String get nodeDetailAltitudeNotReported;
+
+  /// No description provided for @gridPurposeRadial.
+  ///
+  /// In en, this message translates to:
+  /// **'How far each node is, and how long ago it was heard.'**
+  String get gridPurposeRadial;
+
+  /// No description provided for @gridPurposeCoverage.
+  ///
+  /// In en, this message translates to:
+  /// **'Where the mesh has answered, cell by cell.'**
+  String get gridPurposeCoverage;
+
+  /// No description provided for @gridPurposeWeather.
+  ///
+  /// In en, this message translates to:
+  /// **'Temperature, humidity and pressure, from nodes that report them.'**
+  String get gridPurposeWeather;
+
+  /// No description provided for @gridPurposeGlobe.
+  ///
+  /// In en, this message translates to:
+  /// **'The same positions on a globe, for distance at a glance.'**
+  String get gridPurposeGlobe;
+
+  /// No description provided for @gridPurposeTree.
+  ///
+  /// In en, this message translates to:
+  /// **'How nodes reach each other, from the routes they advertise.'**
+  String get gridPurposeTree;
+
+  /// No description provided for @gridPurposeSnsCells.
+  ///
+  /// In en, this message translates to:
+  /// **'Where messages came from, cooling over the last hour.'**
+  String get gridPurposeSnsCells;
+
+  /// No description provided for @gridPurposeElevation.
+  ///
+  /// In en, this message translates to:
+  /// **'How high each node is, against landmarks.'**
+  String get gridPurposeElevation;
+
+  /// No description provided for @gridPurposeMeshbook.
+  ///
+  /// In en, this message translates to:
+  /// **'What this channel did in the last day: messages, replies, top voices.'**
+  String get gridPurposeMeshbook;
+
+  /// No description provided for @meshTreeCounts.
+  ///
+  /// In en, this message translates to:
+  /// **'{shown} shown · {input} in · {total} total'**
+  String meshTreeCounts(String shown, String input, String total);
 }
 
 class _AppLocalizationsDelegate

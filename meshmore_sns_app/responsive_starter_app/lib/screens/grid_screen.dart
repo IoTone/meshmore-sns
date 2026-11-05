@@ -21,7 +21,6 @@ import '../ui/mm_page_header.dart';
 import '../ui/mm_scaffold.dart';
 import '../util/geo.dart' as geo;
 import 'elevation_profile_view.dart';
-import 'equal_grid_view.dart';
 import 'fabric_survey_view.dart';
 import 'globe_view.dart';
 import 'mesh_tree_view.dart';
@@ -33,17 +32,20 @@ import 'weather_view.dart';
 import '../ui/mm_shape.dart';
 import 'package:meshcore/meshcore.dart';
 
-/// R27 — the map views in the grid's picker: `radial` (R18, default)
-/// + `globe` (R27) + `equalGrid` (R25) + `streetMap` (R25+2) + the
-/// rest. Selected via a sheet in the grid's toolbar (R104), which is the
-/// only way between views: a left/right swipe belongs to the shell's tabs
-/// (R109).
+/// R117 — the mesh survey: one tab for the views that answer "what does the
+/// mesh look like from here, and where has it been heard?". `radial` (R18) is
+/// the default and the tab's identity; `fabric` (persisted coverage) and
+/// `weather` (environment telemetry) complete the primary set. The rest are
+/// behind "More views…" because they answer narrower questions: `globe` (a
+/// projection, not a zoom level), `tree` (topology, works with no GPS),
+/// `snsCells` (chatter heat) and `elevation` (altitude against landmarks).
+/// The view picker is the only way between them: a left/right swipe belongs
+/// to the shell's tabs (R109).
 enum _GridViewMode {
   radial,
   fabric,
   weather,
   globe,
-  equalGrid,
   tree,
   snsCells,
   elevation,
@@ -64,7 +66,6 @@ const List<_GridViewMode> _primaryViews = <_GridViewMode>[
 /// tree is topology rather than geography, and the last two are reports.
 const List<_GridViewMode> _moreViews = <_GridViewMode>[
   _GridViewMode.globe,
-  _GridViewMode.equalGrid,
   _GridViewMode.tree,
   _GridViewMode.snsCells,
   _GridViewMode.elevation,
@@ -87,7 +88,6 @@ extension on _GridViewMode {
         _GridViewMode.snsCells =>
           true,
         _GridViewMode.radial ||
-        _GridViewMode.equalGrid ||
         _GridViewMode.elevation ||
         _GridViewMode.weather ||
         _GridViewMode.meshbook =>
@@ -347,10 +347,7 @@ class _GridScreenState extends State<GridScreen>
   /// The bar carries a refresh cadence on the radar (the one view that shows a
   /// snapshot in time) and the range scale on the two views that use it.
   /// "Play" over a map meant "freeze the picture", which is not transport.
-  bool get _hasTransport => switch (_viewMode) {
-        _GridViewMode.radial || _GridViewMode.equalGrid => true,
-        _ => false,
-      };
+  bool get _hasTransport => _viewMode == _GridViewMode.radial;
 
   /// Whether the view plots nodes, and therefore whether a node count means
   /// anything above it. A weather report over "3 in mesh · 2 known" was three
@@ -359,7 +356,6 @@ class _GridScreenState extends State<GridScreen>
         _GridViewMode.radial ||
         _GridViewMode.fabric ||
         _GridViewMode.globe ||
-        _GridViewMode.equalGrid ||
         _GridViewMode.tree ||
         _GridViewMode.snsCells =>
           true,
@@ -380,12 +376,10 @@ class _GridScreenState extends State<GridScreen>
         _ => false,
       };
 
-  /// The range scale is the radar's ring scale and the cell grid's cell
-  /// size. It used to be editable only inside the radar branch, so CELLS
-  /// inherited a value it could not change.
-  bool get _hasRange =>
-      _viewMode == _GridViewMode.radial ||
-      _viewMode == _GridViewMode.equalGrid;
+  /// The range scale is the radar's ring scale, and only the radar draws
+  /// rings. It used to be editable only inside the radar branch, so the cell
+  /// grid inherited a value it could not change; that view is gone.
+  bool get _hasRange => _viewMode == _GridViewMode.radial;
 
 
   /// Bottom bar: transport (play/pause + interval) and, in the two views
@@ -493,7 +487,6 @@ class _GridScreenState extends State<GridScreen>
   static IconData _iconForMode(_GridViewMode m) => switch (m) {
         _GridViewMode.radial => Icons.radar,
         _GridViewMode.globe => Icons.public,
-        _GridViewMode.equalGrid => Icons.grid_on,
         _GridViewMode.fabric => Icons.view_quilt,
         _GridViewMode.elevation => Icons.terrain,
         _GridViewMode.tree => Icons.account_tree,
@@ -507,7 +500,6 @@ class _GridScreenState extends State<GridScreen>
       switch (m) {
         _GridViewMode.radial => l.gridViewRadial,
         _GridViewMode.globe => l.gridViewGlobe,
-        _GridViewMode.equalGrid => l.gridViewEqualGrid,
         _GridViewMode.fabric => l.gridViewFabric,
         _GridViewMode.elevation => l.gridViewElevation,
         _GridViewMode.tree => l.gridViewTree,
@@ -516,6 +508,21 @@ class _GridScreenState extends State<GridScreen>
         _GridViewMode.meshbook => l.gridViewMeshbook,
       };
 
+
+  /// One line under the header saying what this view answers, so a view is
+  /// not a name the user has to decode. Kept to one line on purpose: a view
+  /// that needs a paragraph to explain itself is the wrong view.
+  static String _purposeFor(_GridViewMode m, AppLocalizations l) =>
+      switch (m) {
+        _GridViewMode.radial => l.gridPurposeRadial,
+        _GridViewMode.fabric => l.gridPurposeCoverage,
+        _GridViewMode.weather => l.gridPurposeWeather,
+        _GridViewMode.globe => l.gridPurposeGlobe,
+        _GridViewMode.tree => l.gridPurposeTree,
+        _GridViewMode.snsCells => l.gridPurposeSnsCells,
+        _GridViewMode.elevation => l.gridPurposeElevation,
+        _GridViewMode.meshbook => l.gridPurposeMeshbook,
+      };
 
   void _togglePlay() {
     setState(() {
@@ -723,6 +730,19 @@ class _GridScreenState extends State<GridScreen>
       child: Column(
         children: <Widget>[
       MmPageHeader(title: l.gridTitle),
+      // The view's purpose, one line, muted: a name is not an explanation and
+      // a paragraph is not a header.
+      Padding(
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 2),
+        child: Text(
+          _purposeFor(_viewMode, l),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(
+              color: cs.onSurfaceVariant,
+              fontSize: context.skin.type.sizeSm),
+        ),
+      ),
       Padding(
         padding: const EdgeInsets.fromLTRB(16, 4, 4, 0),
         child: Row(
@@ -846,12 +866,6 @@ class _GridScreenState extends State<GridScreen>
             filteredNodes: visible,
             frozen: !_live && _userInteracted,
             interactive: _panMode,
-          ),
-        _GridViewMode.equalGrid => EqualGridView(
-            cellSizeMeters: EqualGridView.cellSizeForRangeKm(
-                GridScreen.rangeStops[_scaleIndex].km),
-            filteredNodes: visible,
-            frozen: !_live && _userInteracted,
           ),
         _GridViewMode.fabric => Stack(
             children: <Widget>[

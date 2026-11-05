@@ -843,7 +843,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get nodesUnfavTooltip => 'お気に入りから削除';
 
   @override
-  String get gridTitle => 'ハイパーローカルグリッド';
+  String get gridTitle => '調査';
 
   @override
   String get gridShowLegend => '凡例を表示';
@@ -920,13 +920,19 @@ class AppLocalizationsJa extends AppLocalizations {
   String get gridViewGlobe => 'グローブ';
 
   @override
-  String get gridViewEqualGrid => '等分グリッド';
-
-  @override
   String get gridViewPicker => '表示';
 
   @override
-  String get gridViewFabric => 'メッシュ調査';
+  String get gridZoomWider => '広く（ズームアウト）';
+
+  @override
+  String get gridZoomTighter => '狭く（ズームイン）';
+
+  @override
+  String get gridNeedsFix => 'この表示には自分の位置が必要です。GPS 取得待ち（スマートフォンまたはデバイス）。';
+
+  @override
+  String get gridViewFabric => 'カバレッジ';
 
   @override
   String get gridViewElevation => '高度';
@@ -1027,27 +1033,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String deviceRegionLoadedOffline(String label) {
     return '$label を読み込みました — デバイス接続時に「適用」してください。';
   }
-
-  @override
-  String get equalGridAwaitingFix =>
-      '等分グリッド表示には自分の位置が必要です — GPS 取得待ち（スマートフォンまたはデバイス）。';
-
-  @override
-  String equalGridCellSize(String size) {
-    return 'セル $size';
-  }
-
-  @override
-  String get equalGridZoomIn => 'ズームイン（セルを狭く）';
-
-  @override
-  String get equalGridZoomOut => 'ズームアウト（セルを広く）';
-
-  @override
-  String get equalGridShowStats => 'ターゲティングパネルを表示';
-
-  @override
-  String get equalGridHideStats => 'ターゲティングパネルを非表示';
 
   @override
   String globeFooter(int n) {
@@ -5416,4 +5401,33 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get nodeDetailAltitudeNotReported => '報告されません';
+
+  @override
+  String get gridPurposeRadial => '各ノードまでの距離と、最後に聞こえた時刻。';
+
+  @override
+  String get gridPurposeCoverage => 'メッシュが応答した場所をセルごとに。';
+
+  @override
+  String get gridPurposeWeather => '温度・湿度・気圧（報告するノードのみ）。';
+
+  @override
+  String get gridPurposeGlobe => '同じ位置を地球儀で。距離がひと目で分かります。';
+
+  @override
+  String get gridPurposeTree => 'ノード同士の経路（広告されたルートより）。';
+
+  @override
+  String get gridPurposeSnsCells => 'メッセージの発信元を直近1時間で。';
+
+  @override
+  String get gridPurposeElevation => '各ノードの高度を地形と比較して。';
+
+  @override
+  String get gridPurposeMeshbook => 'このチャンネルの直近1日: メッセージ・返信・主な発言者。';
+
+  @override
+  String meshTreeCounts(String shown, String input, String total) {
+    return '表示 $shown · 入力 $input · 合計 $total';
+  }
 }

@@ -10,7 +10,6 @@ import 'package:meshmore_sns_app/gen/app_localizations.dart';
 import 'package:meshmore_sns_app/l10n/locale_controller.dart';
 import 'package:meshmore_sns_app/meshcore/meshcore_controller.dart';
 import 'package:meshmore_sns_app/screens/elevation_profile_view.dart';
-import 'package:meshmore_sns_app/screens/equal_grid_view.dart';
 import 'package:meshmore_sns_app/screens/fabric_survey_view.dart';
 import 'package:meshmore_sns_app/screens/globe_view.dart';
 import 'package:meshmore_sns_app/screens/grid_screen.dart';
@@ -81,22 +80,53 @@ void main() {
     // The three that suit a small mesh, in order. "Radial" appears twice: the
     // toolbar shows the current view's name and the sheet lists it.
     expect(find.text('Radial'), findsNWidgets(2));
-    expect(find.text('Mesh survey'), findsOneWidget);
+    expect(find.text('Coverage'), findsOneWidget);
     expect(find.text('Weather (environment)'), findsOneWidget);
     // The map is a hand-off, not a seventh view of the same widget.
     expect(find.text('Open the map'), findsOneWidget);
     expect(find.text('More views'), findsOneWidget);
+    // R117: the street map is the Map tab's widget, and the equal grid was
+    // deleted with it — neither may appear as a view of this tab.
     expect(find.text('Street map'), findsNothing);
+    expect(find.text('Equal grid'), findsNothing);
 
     // The parked views are one step down, and still reachable.
     await t.tap(find.text('More views').last);
     await t.pump();
     await t.pump(const Duration(milliseconds: 400));
     expect(find.text('Globe'), findsOneWidget);
-    expect(find.text('Equal grid'), findsOneWidget);
     expect(find.text('Mesh tree'), findsOneWidget);
     expect(find.text('Altitude'), findsOneWidget);
     expect(find.text('Meshbook (channel activity)'), findsOneWidget);
+    await t.pumpWidget(const SizedBox());
+    mc.dispose();
+  });
+
+  testWidgets('every view says what it answers, in one line', (
+      WidgetTester t) async {
+    await t.binding.setSurfaceSize(const Size(800, 1600));
+    addTearDown(() => t.binding.setSurfaceSize(null));
+    final MeshcoreController mc = MeshcoreController(
+        transportFactory: () async => FakeMeshcoreTransport());
+    await t.pumpWidget(_host(mc));
+    await t.pump();
+
+    const Map<String, String> purposes = <String, String>{
+      'Coverage': 'Where the mesh has answered, cell by cell.',
+      'Weather (environment)':
+          'Temperature, humidity and pressure, from nodes that report them.',
+    };
+    for (final MapEntry<String, String> e in purposes.entries) {
+      await _openView(t, e.key);
+      expect(find.text(e.value), findsOneWidget,
+          reason: '${e.key} must say what it answers, not only its name');
+    }
+    // A parked view carries its line too.
+    await _openView(t, 'Mesh tree', more: true);
+    expect(
+        find.text('How nodes reach each other, from the routes they '
+            'advertise.'),
+        findsOneWidget);
     await t.pumpWidget(const SizedBox());
     mc.dispose();
   });
@@ -132,7 +162,7 @@ void main() {
     await t.pump();
 
     // Primary views.
-    await _openView(t, 'Mesh survey');
+    await _openView(t, 'Coverage');
     expect(find.byType(FabricSurveyView), findsOneWidget);
     await _openView(t, 'Weather (environment)');
     expect(find.byType(WeatherView), findsOneWidget);
@@ -140,8 +170,6 @@ void main() {
     // Parked views, one level down.
     await _openView(t, 'Globe', more: true);
     expect(find.byType(GlobeView), findsOneWidget);
-    await _openView(t, 'Equal grid', more: true);
-    expect(find.byType(EqualGridView), findsOneWidget);
     await _openView(t, 'Mesh tree', more: true);
     expect(find.byType(MeshTreeView), findsOneWidget);
     await _openView(t, 'Altitude', more: true);

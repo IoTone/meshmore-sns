@@ -419,7 +419,7 @@
   "nodesEmptyOffline": "ラジオを接続して周辺ノードを発見してください。",
   "nodesFavTooltip": "お気に入りに追加",
   "nodesUnfavTooltip": "お気に入りから削除",
-  "gridTitle": "ハイパーローカルグリッド",
+  "gridTitle": "調査",
   "gridShowLegend": "凡例を表示",
   "gridHideLegend": "凡例を非表示",
   "gridPlayTooltip": "再生 (一定間隔で更新)",
@@ -451,9 +451,11 @@
   "gridLegendTap": "ノードをタップで詳細 + メッセージ / お気に入り。",
   "gridViewRadial": "ラジアル",
   "gridViewGlobe": "グローブ",
-  "gridViewEqualGrid": "等分グリッド",
   "gridViewPicker": "表示",
-  "gridViewFabric": "メッシュ調査",
+  "gridZoomWider": "広く（ズームアウト）",
+  "gridZoomTighter": "狭く（ズームイン）",
+  "gridNeedsFix": "この表示には自分の位置が必要です。GPS 取得待ち（スマートフォンまたはデバイス）。",
+  "gridViewFabric": "カバレッジ",
   "gridViewElevation": "高度",
   "fujiLegendTitle": "Fujiさん",
   "fujiLegendDesc": "標高測量。√スケール軸で有名な建造物と高さを比較。自分の標高はデバイスGPSテレメトリまたは電話の位置情報から取得。",
@@ -505,19 +507,6 @@
       }
     }
   },
-  "equalGridAwaitingFix": "等分グリッド表示には自分の位置が必要です — GPS 取得待ち（スマートフォンまたはデバイス）。",
-  "equalGridCellSize": "セル {size}",
-  "@equalGridCellSize": {
-    "placeholders": {
-      "size": {
-        "type": "String"
-      }
-    }
-  },
-  "equalGridZoomIn": "ズームイン（セルを狭く）",
-  "equalGridZoomOut": "ズームアウト（セルを広く）",
-  "equalGridShowStats": "ターゲティングパネルを表示",
-  "equalGridHideStats": "ターゲティングパネルを非表示",
   "globeFooter": "位置が分かる {n} 件のノードを表示",
   "globeOverlayArcs": "アーク",
   "globeOverlayRegion": "地域",
@@ -2532,5 +2521,27 @@
   "fujiPeersShort": "点 · ピア",
   "fujiUnknownShort": "縞 · 標高なし",
   "chatSpeechOffAction": "読み上げはアプリ設定でオフです",
-  "nodeDetailAltitudeNotReported": "報告されません"
+  "nodeDetailAltitudeNotReported": "報告されません",
+  "gridPurposeRadial": "各ノードまでの距離と、最後に聞こえた時刻。",
+  "gridPurposeCoverage": "メッシュが応答した場所をセルごとに。",
+  "gridPurposeWeather": "温度・湿度・気圧（報告するノードのみ）。",
+  "gridPurposeGlobe": "同じ位置を地球儀で。距離がひと目で分かります。",
+  "gridPurposeTree": "ノード同士の経路（広告されたルートより）。",
+  "gridPurposeSnsCells": "メッセージの発信元を直近1時間で。",
+  "gridPurposeElevation": "各ノードの高度を地形と比較して。",
+  "gridPurposeMeshbook": "このチャンネルの直近1日: メッセージ・返信・主な発言者。",
+  "meshTreeCounts": "表示 {shown} · 入力 {input} · 合計 {total}",
+  "@meshTreeCounts": {
+    "placeholders": {
+      "shown": {
+        "type": "String"
+      },
+      "input": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  }
 }

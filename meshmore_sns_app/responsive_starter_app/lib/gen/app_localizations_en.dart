@@ -889,7 +889,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get nodesUnfavTooltip => 'Remove from favourites';
 
   @override
-  String get gridTitle => 'Hyperlocal grid';
+  String get gridTitle => 'Survey';
 
   @override
   String get gridShowLegend => 'Show legend';
@@ -972,13 +972,20 @@ class AppLocalizationsEn extends AppLocalizations {
   String get gridViewGlobe => 'Globe';
 
   @override
-  String get gridViewEqualGrid => 'Equal grid';
-
-  @override
   String get gridViewPicker => 'View';
 
   @override
-  String get gridViewFabric => 'Mesh survey';
+  String get gridZoomWider => 'Wider (zoom out)';
+
+  @override
+  String get gridZoomTighter => 'Tighter (zoom in)';
+
+  @override
+  String get gridNeedsFix =>
+      'This view needs your own position. Waiting for a GPS fix (phone or device).';
+
+  @override
+  String get gridViewFabric => 'Coverage';
 
   @override
   String get gridViewElevation => 'Altitude';
@@ -1085,27 +1092,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String deviceRegionLoadedOffline(String label) {
     return '$label loaded — Apply when a device is connected.';
   }
-
-  @override
-  String get equalGridAwaitingFix =>
-      'Equal-grid view needs your own location — waiting for a GPS fix (phone or device).';
-
-  @override
-  String equalGridCellSize(String size) {
-    return 'CELL $size';
-  }
-
-  @override
-  String get equalGridZoomIn => 'Zoom in (tighter cells)';
-
-  @override
-  String get equalGridZoomOut => 'Zoom out (wider cells)';
-
-  @override
-  String get equalGridShowStats => 'Show targeting panel';
-
-  @override
-  String get equalGridHideStats => 'Hide targeting panel';
 
   @override
   String globeFooter(int n) {
@@ -5634,4 +5620,41 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get nodeDetailAltitudeNotReported => 'not reported';
+
+  @override
+  String get gridPurposeRadial =>
+      'How far each node is, and how long ago it was heard.';
+
+  @override
+  String get gridPurposeCoverage =>
+      'Where the mesh has answered, cell by cell.';
+
+  @override
+  String get gridPurposeWeather =>
+      'Temperature, humidity and pressure, from nodes that report them.';
+
+  @override
+  String get gridPurposeGlobe =>
+      'The same positions on a globe, for distance at a glance.';
+
+  @override
+  String get gridPurposeTree =>
+      'How nodes reach each other, from the routes they advertise.';
+
+  @override
+  String get gridPurposeSnsCells =>
+      'Where messages came from, cooling over the last hour.';
+
+  @override
+  String get gridPurposeElevation =>
+      'How high each node is, against landmarks.';
+
+  @override
+  String get gridPurposeMeshbook =>
+      'What this channel did in the last day: messages, replies, top voices.';
+
+  @override
+  String meshTreeCounts(String shown, String input, String total) {
+    return '$shown shown · $input in · $total total';
+  }
 }
