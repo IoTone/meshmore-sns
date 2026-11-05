@@ -20,6 +20,7 @@ import '../bot/bot_section.dart';
 import '../cue/cue_service.dart';
 import '../meshcore/node_telemetry.dart';
 import '../peer/peer_profiles.dart';
+import '../theme/mm_skin.dart';
 import '../theme/theme_controller.dart';
 import '../util/geo.dart' as geo;
 import '../ui/mm_shape.dart';
@@ -325,7 +326,7 @@ class _NodeDetailSheetState extends State<NodeDetailSheet> {
               const SizedBox(width: 4),
               Text(label,
                   style: TextStyle(
-                      color: colour, fontSize: 11, letterSpacing: 1)),
+                      color: colour, fontSize: context.skin.type.sizeSm, letterSpacing: 1)),
             ],
           ),
         );
@@ -339,14 +340,14 @@ class _NodeDetailSheetState extends State<NodeDetailSheet> {
                 width: 84,
                 child: Text(k,
                     style: TextStyle(
-                        color: cs.onSurfaceVariant, fontSize: 12)),
+                        color: cs.onSurfaceVariant, fontSize: context.skin.type.sizeBody)),
               ),
               Expanded(
                 child: Text(v,
                     style: TextStyle(
                         color: cs.onSurface,
-                        fontFamily: 'JetBrains Mono',
-                        fontSize: 12,
+                        fontFamily: context.skin.type.monoFamily,
+                        fontSize: context.skin.type.sizeBody,
                         height: 1.35)),
               ),
             ],
@@ -464,7 +465,7 @@ class _NodeDetailSheetState extends State<NodeDetailSheet> {
                   style: TextStyle(
                       color: cs.onSurfaceVariant,
                       fontStyle: FontStyle.italic,
-                      fontSize: 12)),
+                      fontSize: context.skin.type.sizeBody)),
             ],
             // Option D — RECENT DMS excerpt. Suppressed for own node.
             if (!widget.isSelf && widget.recentDms.isNotEmpty) ...<Widget>[
@@ -472,7 +473,7 @@ class _NodeDetailSheetState extends State<NodeDetailSheet> {
               Text(l.nodeDetailRecentDms,
                   style: TextStyle(
                       color: cs.onSurfaceVariant,
-                      fontSize: 11,
+                      fontSize: context.skin.type.sizeSm,
                       letterSpacing: 3)),
               const SizedBox(height: 6),
               for (final ChatMessage m
@@ -495,8 +496,8 @@ class _NodeDetailSheetState extends State<NodeDetailSheet> {
                               color: m.outgoing
                                   ? cs.primary
                                   : cs.onSurfaceVariant,
-                              fontFamily: 'JetBrains Mono',
-                              fontSize: 11),
+                              fontFamily: context.skin.type.monoFamily,
+                              fontSize: context.skin.type.sizeSm),
                         ),
                       ),
                       Expanded(
@@ -505,7 +506,7 @@ class _NodeDetailSheetState extends State<NodeDetailSheet> {
                               ? '${m.text.substring(0, 64)}…'
                               : m.text,
                           style: TextStyle(
-                              color: cs.onSurface, fontSize: 12),
+                              color: cs.onSurface, fontSize: context.skin.type.sizeBody),
                         ),
                       ),
                     ],
@@ -521,7 +522,7 @@ class _NodeDetailSheetState extends State<NodeDetailSheet> {
               Text(l.nodeDetailTags,
                   style: TextStyle(
                       color: cs.onSurfaceVariant,
-                      fontSize: 11,
+                      fontSize: context.skin.type.sizeSm,
                       letterSpacing: 2)),
               const SizedBox(height: 6),
               Wrap(
@@ -603,7 +604,7 @@ class _NodeDetailSheetState extends State<NodeDetailSheet> {
                   children: <Widget>[
                     Text(l.nodeDetailNotDeviceContact,
                         style: TextStyle(
-                            color: cs.onSurface, fontSize: 13, height: 1.35)),
+                            color: cs.onSurface, fontSize: context.skin.type.sizeBodyLg, height: 1.35)),
                     const SizedBox(height: 8),
                     Align(
                       alignment: Alignment.centerRight,
@@ -725,7 +726,7 @@ class _ContactTelemetryShareSection extends StatelessWidget {
           contentPadding: EdgeInsets.zero,
           dense: true,
           visualDensity: VisualDensity.compact,
-          title: Text(label, style: const TextStyle(fontSize: 13)),
+          title: Text(label, style: TextStyle(fontSize: context.skin.type.sizeBodyLg)),
           value: value,
           onChanged: onChanged,
         );
@@ -739,10 +740,10 @@ class _ContactTelemetryShareSection extends StatelessWidget {
         Text(l.nodeDetailShareTelemetryTitle,
             style: TextStyle(
                 color: cs.onSurfaceVariant,
-                fontSize: 12,
+                fontSize: context.skin.type.sizeBody,
                 letterSpacing: 1)),
         Text(l.nodeDetailShareTelemetryHelp,
-            style: TextStyle(color: cs.onSurfaceVariant, fontSize: 11)),
+            style: TextStyle(color: cs.onSurfaceVariant, fontSize: context.skin.type.sizeSm)),
         row(l.otherTelemetryBase, c.allowsTelemBase,
             (bool v) => mc.setContactTelemetryPermissions(node.pubKeyHex,
                 base: v)),
@@ -833,7 +834,7 @@ class _TelemetrySection extends StatelessWidget {
           l.nodeDetailTelemetryAge(ageOf(t.receivedAt)),
           style: TextStyle(
               color: cs.onSurfaceVariant,
-              fontSize: 11,
+              fontSize: context.skin.type.sizeSm,
               fontStyle: FontStyle.italic),
         ),
       ));
@@ -854,7 +855,7 @@ class _TelemetrySection extends StatelessWidget {
           l.nodeDetailTelemetryNotContact,
           style: TextStyle(
               color: cs.onSurfaceVariant,
-              fontSize: 12,
+              fontSize: context.skin.type.sizeBody,
               fontStyle: FontStyle.italic),
         ));
       } else if (querying) {
@@ -867,7 +868,7 @@ class _TelemetrySection extends StatelessWidget {
             const SizedBox(width: 8),
             Text(l.nodeDetailTelemetryQuerying,
                 style: TextStyle(
-                    color: cs.onSurfaceVariant, fontSize: 12)),
+                    color: cs.onSurfaceVariant, fontSize: context.skin.type.sizeBody)),
           ],
         ));
       } else {
@@ -1025,15 +1026,15 @@ class _ReconcileCard extends StatelessWidget {
           const SizedBox(height: 6),
           Text(
             l.nodeIdentityBody(match.fresh.name, match.messageCount),
-            style: TextStyle(color: cs.onSurface, height: 1.35, fontSize: 13),
+            style: TextStyle(color: cs.onSurface, height: 1.35, fontSize: context.skin.type.sizeBodyLg),
           ),
           const SizedBox(height: 4),
           Text(
             l.nodeIdentityOldKey(match.stale.shortId),
             style: TextStyle(
                 color: cs.onSurfaceVariant,
-                fontFamily: 'JetBrains Mono',
-                fontSize: 11),
+                fontFamily: context.skin.type.monoFamily,
+                fontSize: context.skin.type.sizeSm),
           ),
           const SizedBox(height: 8),
           Align(
@@ -1112,7 +1113,7 @@ class _LinkPickerState extends State<_LinkPicker> {
                 style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 4),
             Text(l.nodeIdentityLinkHelp,
-                style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13)),
+                style: TextStyle(color: cs.onSurfaceVariant, fontSize: context.skin.type.sizeBodyLg)),
             const SizedBox(height: 12),
             TextField(
               controller: _q,
@@ -1142,8 +1143,8 @@ class _LinkPickerState extends State<_LinkPicker> {
                 title: Text(l.nodeIdentityLinkUseKey),
                 subtitle: Text(
                     '…${manualKey.substring(0, manualKey.length < 16 ? manualKey.length : 16)}',
-                    style: const TextStyle(
-                        fontFamily: 'JetBrains Mono', fontSize: 11)),
+                    style: TextStyle(
+                        fontFamily: context.skin.type.monoFamily, fontSize: context.skin.type.sizeSm)),
                 onTap: () => Navigator.pop(
                     context, _LinkTarget(pubKeyHex: manualKey)),
               ),
@@ -1178,8 +1179,8 @@ class _LinkPickerState extends State<_LinkPicker> {
                           overflow: TextOverflow.ellipsis),
                       subtitle: Text(
                           '…${c.shortId.substring(0, 6)} · ${widget.ago(c.lastHeardUnix, l)}',
-                          style: const TextStyle(
-                              fontFamily: 'JetBrains Mono', fontSize: 11)),
+                          style: TextStyle(
+                              fontFamily: context.skin.type.monoFamily, fontSize: context.skin.type.sizeSm)),
                       onTap: () => Navigator.pop(context,
                           _LinkTarget(pubKeyHex: c.pubKeyHex, displayName: c.name)),
                     );

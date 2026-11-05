@@ -10,6 +10,8 @@ import 'package:meshmore_sns_app/l10n/locale_controller.dart';
 import 'package:meshmore_sns_app/meshcore/meshcore_controller.dart';
 import 'package:meshmore_sns_app/screens/grid_screen.dart';
 import 'package:meshmore_sns_app/shell/horizontal_drag_claim.dart';
+import 'package:meshmore_sns_app/theme/mm_skin.dart';
+import 'package:meshmore_sns_app/theme/mm_tokens.dart';
 import 'package:meshmore_sns_app/theme/theme_controller.dart';
 
 import '../meshcore/fake_transport.dart';
@@ -276,6 +278,53 @@ void main() {
     mc.dispose();
     await t.pumpWidget(const SizedBox());
     await t.pump(const Duration(seconds: 5));
+  });
+
+  testWidgets('W2 the text sizes come from the skin ladder, not literals',
+      (WidgetTester t) async {
+    // The migration replaced four literals on this screen: the picker's
+    // long label (13), the status line (12), the legend's section title (11)
+    // and the legend row text (12). Every preset's typeScale is 1.0, so the
+    // resolved sizes must still be the numbers the literals were — a
+    // migration that moves a pixel fails here instead of passing review.
+    // The legend strip is tall; the default 800x600 test surface clips it,
+    // which is the pre-existing layout (the real screen is 900+ dp tall).
+    t.view.physicalSize = const Size(900, 1600);
+    t.view.devicePixelRatio = 1.0;
+    addTearDown(t.view.resetPhysicalSize);
+    addTearDown(t.view.resetDevicePixelRatio);
+    final MmType type = mmSkinFor(MmThemePreset.seele).type;
+    final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
+    final MeshcoreController mc = MeshcoreController(
+      transportFactory: () async => fake,
+      connection:
+          MeshcoreConnection(handshakeTimeout: const Duration(seconds: 5)),
+    );
+    await t.pumpWidget(_host(mc));
+    await mc.connect();
+    fake.emit(selfInfoFrame());
+    fake.emit(advertFrame(name: 'AdvNode', firstPubByte: 70));
+    await t.pump();
+    await t.pump(const Duration(milliseconds: 16));
+
+    Text picker() => t.widget<Text>(find.text('Radial'));
+    expect(picker().style?.fontSize, type.sizeBodyLg);
+    expect(picker().style?.fontSize, 13);
+    expect(picker().style?.fontWeight, FontWeight.w600);
+
+    Text status() =>
+        t.widget<Text>(find.textContaining('1 in fabric'));
+    expect(status().style?.fontSize, type.sizeBody);
+    expect(status().style?.fontSize, 12);
+
+    await t.tap(find.byTooltip('Show legend'));
+    await t.pump();
+    expect(t.widget<Text>(find.text('LEGEND')).style?.fontSize, type.sizeSm);
+    expect(find.text('LEGEND'), findsOneWidget);
+    expect(t.widget<Text>(find.text('LEGEND')).style?.fontSize, 11);
+
+    await t.pumpWidget(const SizedBox());
+    mc.dispose();
   });
 
 }

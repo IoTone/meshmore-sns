@@ -10,6 +10,8 @@ import 'package:meshmore_sns_app/meshcore/discovered_node.dart';
 import 'package:meshmore_sns_app/meshcore/meshcore_controller.dart';
 import 'package:meshmore_sns_app/peer/peer_profiles.dart';
 import 'package:meshmore_sns_app/screens/node_detail_sheet.dart';
+import 'package:meshmore_sns_app/theme/mm_skin.dart';
+import 'package:meshmore_sns_app/theme/mm_tokens.dart';
 import 'package:meshmore_sns_app/theme/theme_controller.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -117,5 +119,35 @@ void main() {
     expect(find.byIcon(Icons.send), findsOneWidget,
         reason: 'every other entry point keeps the Message action');
     expect(t.takeException(), isNull);
+  });
+
+  testWidgets('W2 the node sheet takes its text sizes from the ladder',
+      (t) async {
+    // The migration replaced literals in this sheet: key/value labels
+    // (12 -> sizeBody), the value side set in the mono face
+    // (monoFamily + sizeBody), section captions (11 -> sizeSm) and body
+    // prose (13 -> sizeBodyLg). Only the kv pairs render without contact
+    // or telemetry records, so those are the ones asserted; keep it that
+    // way rather than manufacturing a record just for a style check.
+    SharedPreferences.setMockInitialValues(<String, Object>{});
+    await t.binding.setSurfaceSize(const Size(900, 2400));
+    addTearDown(() => t.binding.setSurfaceSize(null));
+    final MmType type = mmSkinFor(MmThemePreset.seele).type;
+    await t.pumpWidget(_app(Scaffold(body: _sheet())));
+    await t.pump();
+
+    final Text label =
+        t.widget<Text>(find.text('last heard'));
+    expect(label.style?.fontSize, type.sizeBody);
+    expect(label.style?.fontSize, 12);
+
+    // The value beside it carries the mono face from the same type system.
+    final Iterable<Text> all = t.widgetList<Text>(find.byType(Text));
+    expect(
+        all.any((Text w) =>
+            w.style?.fontFamily == type.monoFamily &&
+            w.style?.fontSize == type.sizeBody),
+        isTrue,
+        reason: 'the kv value uses skin.type.monoFamily at sizeBody');
   });
 }

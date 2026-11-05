@@ -9,6 +9,8 @@ import 'package:meshmore_sns_app/gen/app_localizations.dart';
 import 'package:meshmore_sns_app/l10n/locale_controller.dart';
 import 'package:meshmore_sns_app/meshcore/meshcore_controller.dart';
 import 'package:meshmore_sns_app/screens/device_config_screen.dart';
+import 'package:meshmore_sns_app/theme/mm_skin.dart';
+import 'package:meshmore_sns_app/theme/mm_tokens.dart';
 
 import '../meshcore/fake_transport.dart';
 import 'package:meshcore/meshcore.dart';
@@ -281,5 +283,46 @@ void main() {
     expect(fake.sent.any((List<int> f) => f.isNotEmpty && f[0] == 0x3D), isFalse,
         reason: 'the feed lists a hash size for Canada only; a US user keeps theirs');
     ctrl.dispose();
+  });
+
+  testWidgets('W2 the label sizes come from the skin ladder, not literals',
+      (WidgetTester t) async {
+    // Four roles replaced literals here: a quiet family heading and helper
+    // (11 -> sizeSm), a list label and the section label (12 -> sizeBody),
+    // the "currently applied" caption (10 -> sizeMicro) and the region name
+    // (15, no role, size()). Under SEELE the scale is 1.0, so every one of
+    // them must still resolve to the number it replaced.
+    await t.binding.setSurfaceSize(const Size(900, 2600));
+    addTearDown(() => t.binding.setSurfaceSize(null));
+    final MmType type = mmSkinFor(MmThemePreset.seele).type;
+    final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
+    final MeshcoreController ctrl = MeshcoreController(
+      transportFactory: () async => fake,
+      connection:
+          MeshcoreConnection(handshakeTimeout: const Duration(seconds: 5)),
+    );
+    await t.pumpWidget(
+      MaterialApp(
+        locale: const Locale('en'),
+        supportedLocales: LocaleController.supported,
+        localizationsDelegates: _kLocaleDelegates,
+        home: ChangeNotifierProvider<MeshcoreController>.value(
+          value: ctrl,
+          child: const DeviceConfigScreen(),
+        ),
+      ),
+    );
+    await ctrl.connect();
+    fake.emit(selfInfoFrame());
+    await t.pumpAndSettle();
+
+    Text find1(String s) => t.widget<Text>(find.text(s));
+    expect(find1('CHANNELS').style?.fontSize, type.sizeBody);
+    expect(find1('CHANNELS').style?.fontSize, 12);
+    expect(find1('Path hash size').style?.fontSize, type.sizeBody);
+    expect(find1('Path hash size').style?.fontSize, 12);
+
+    ctrl.dispose();
+    await t.pumpWidget(const SizedBox());
   });
 }

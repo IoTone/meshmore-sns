@@ -13,6 +13,7 @@ import '../sns/weather_lexicon.dart';
 import '../util/geo.dart' as geo;
 import 'node_detail_sheet.dart';
 import '../theme/viz_palette.dart';
+import '../theme/mm_skin.dart';
 import '../ui/mm_shape.dart';
 
 /// Mesh weather — a glanceable view of the environment telemetry
@@ -133,7 +134,7 @@ class _WeatherViewState extends State<WeatherView> {
               child: Text(selfDiag,
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                      color: cs.onSurfaceVariant, fontSize: 13, height: 1.45)),
+                      color: cs.onSurfaceVariant, fontSize: context.skin.type.sizeBodyLg, height: 1.45)),
             ),
           ],
         ),
@@ -166,7 +167,7 @@ class _WeatherViewState extends State<WeatherView> {
           const SizedBox(height: 12),
           Text(l.wxMicroclimatesHeader,
               style: TextStyle(
-                  color: cs.onSurfaceVariant, fontSize: 11, letterSpacing: 2)),
+                  color: cs.onSurfaceVariant, fontSize: context.skin.type.sizeSm, letterSpacing: 2)),
           const SizedBox(height: 8),
           Wrap(
             spacing: 8,
@@ -181,7 +182,7 @@ class _WeatherViewState extends State<WeatherView> {
         Text(l.weatherMeasuredHeader,
             style: TextStyle(
                 color: cs.onSurfaceVariant,
-                fontSize: 11,
+                fontSize: context.skin.type.sizeSm,
                 letterSpacing: 2)),
         const SizedBox(height: 8),
         ...measured,
@@ -262,11 +263,11 @@ class _SummaryCard extends StatelessWidget {
             Text('${c.toStringAsFixed(1)}°',
                 style: TextStyle(
                     color: temperatureColor(c),
-                    fontSize: 22,
+                    fontSize: context.skin.type.size(22),
                     fontWeight: FontWeight.w700,
-                    fontFamily: 'JetBrains Mono')),
+                    fontFamily: context.skin.type.monoFamily)),
             Text(label,
-                style: TextStyle(color: cs.onSurfaceVariant, fontSize: 10)),
+                style: TextStyle(color: cs.onSurfaceVariant, fontSize: context.skin.type.sizeMicro)),
           ],
         );
     return Container(
@@ -281,7 +282,7 @@ class _SummaryCard extends StatelessWidget {
         children: <Widget>[
           Text(l.weatherReporting(count),
               style: TextStyle(
-                  color: cs.onSurfaceVariant, fontSize: 11, letterSpacing: 2)),
+                  color: cs.onSurfaceVariant, fontSize: context.skin.type.sizeSm, letterSpacing: 2)),
           const SizedBox(height: 10),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -330,7 +331,7 @@ class _ReadingTile extends StatelessWidget {
           style: TextStyle(
               color: c != null ? temperatureColor(c) : cs.onSurfaceVariant,
               fontWeight: FontWeight.w700,
-              fontFamily: 'JetBrains Mono'),
+              fontFamily: context.skin.type.monoFamily),
         ),
       ),
       title: Row(
@@ -348,7 +349,7 @@ class _ReadingTile extends StatelessWidget {
         <String>[if (extra.isNotEmpty) extra.join(' · '), _ago(r.t.receivedAt, l)]
             .where((String s) => s.isNotEmpty)
             .join('  ·  '),
-        style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12),
+        style: TextStyle(color: cs.onSurfaceVariant, fontSize: context.skin.type.sizeBody),
       ),
       onTap: r.pubKeyHex == null
           ? null
@@ -449,7 +450,7 @@ class _MicroclimateStrip extends StatelessWidget {
               Text('${l.wxMicroclimateTitle} · $channelLabel',
                   style: TextStyle(
                       color: cs.primary,
-                      fontSize: 11,
+                      fontSize: context.skin.type.sizeSm,
                       letterSpacing: 2,
                       fontWeight: FontWeight.w600)),
             ],
@@ -457,7 +458,7 @@ class _MicroclimateStrip extends StatelessWidget {
           const SizedBox(height: 10),
           if (last24h == null)
             Text(l.wxAmbientEmpty,
-                style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13))
+                style: TextStyle(color: cs.onSurfaceVariant, fontSize: context.skin.type.sizeBodyLg))
           else ...<Widget>[
             _WindowRow(label: l.wxLastHour, ambient: lastHour, l: l, cs: cs),
             Divider(height: 18, color: cs.outline.withValues(alpha: .25)),
@@ -513,10 +514,10 @@ class _WindowRow extends StatelessWidget {
       child: Text(label,
           style: TextStyle(
               color: a == null ? cs.onSurfaceVariant : cs.primary,
-              fontSize: 10,
+              fontSize: context.skin.type.sizeMicro,
               letterSpacing: 1,
               fontWeight: FontWeight.w700,
-              fontFamily: 'JetBrains Mono')),
+              fontFamily: context.skin.type.monoFamily)),
     );
 
     if (a == null) {
@@ -525,7 +526,7 @@ class _WindowRow extends StatelessWidget {
           pill,
           const SizedBox(width: 12),
           Text('—',
-              style: TextStyle(color: cs.onSurfaceVariant, fontSize: 16)),
+              style: TextStyle(color: cs.onSurfaceVariant, fontSize: context.skin.type.sizeLg)),
         ],
       );
     }
@@ -536,7 +537,7 @@ class _WindowRow extends StatelessWidget {
         pill,
         const SizedBox(width: 10),
         Text(a.dominant != null ? wxGlyph(a.dominant!) : '🌡',
-            style: const TextStyle(fontSize: 26)),
+            style: TextStyle(fontSize: context.skin.type.size(26))),
         const SizedBox(width: 10),
         Expanded(
           child: Column(
@@ -548,29 +549,29 @@ class _WindowRow extends StatelessWidget {
                     Text(wxConditionLabel(a.dominant!, l),
                         style: TextStyle(
                             color: cs.onSurface,
-                            fontSize: 17,
+                            fontSize: context.skin.type.size(17),
                             fontWeight: FontWeight.w600)),
                   if (a.hasTemp) ...<Widget>[
                     if (a.dominant != null) const SizedBox(width: 8),
                     Text(_tempLabel(a),
                         style: TextStyle(
                             color: cs.onSurface,
-                            fontFamily: 'JetBrains Mono',
-                            fontSize: 15)),
+                            fontFamily: context.skin.type.monoFamily,
+                            fontSize: context.skin.type.size(15))),
                   ],
                 ],
               ),
               const SizedBox(height: 2),
               Text(l.wxMentionsShort(a.mentions),
                   style:
-                      TextStyle(color: cs.onSurfaceVariant, fontSize: 12)),
+                      TextStyle(color: cs.onSurfaceVariant, fontSize: context.skin.type.sizeBody)),
             ],
           ),
         ),
         ..._others(a).map((WxCondition c) => Padding(
               padding: const EdgeInsets.only(left: 4),
               child:
-                  Text(wxGlyph(c), style: const TextStyle(fontSize: 15)),
+                  Text(wxGlyph(c), style: TextStyle(fontSize: context.skin.type.size(15))),
             )),
       ],
     );
@@ -625,7 +626,7 @@ class _MicroclimateBubble extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
           Text(climate.dominant != null ? wxGlyph(climate.dominant!) : '🌡',
-              style: const TextStyle(fontSize: 20)),
+              style: TextStyle(fontSize: context.skin.type.sizeXl)),
           const SizedBox(width: 8),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -634,7 +635,7 @@ class _MicroclimateBubble extends StatelessWidget {
               Text(_label(),
                   style: TextStyle(
                       color: cs.onSurface,
-                      fontSize: 13,
+                      fontSize: context.skin.type.sizeBodyLg,
                       fontWeight: FontWeight.w600)),
               Text(
                   <String>[
@@ -645,7 +646,7 @@ class _MicroclimateBubble extends StatelessWidget {
                   ].join(' · '),
                   style: TextStyle(
                       color: climate.measured ? cs.tertiary : cs.onSurfaceVariant,
-                      fontSize: 11)),
+                      fontSize: context.skin.type.sizeSm)),
             ],
           ),
         ],

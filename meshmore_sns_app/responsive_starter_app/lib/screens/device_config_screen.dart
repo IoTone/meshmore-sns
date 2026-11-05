@@ -458,7 +458,7 @@ class _DeviceConfigScreenState extends State<DeviceConfigScreen> {
                         // louder than the section header above it.
                         style: TextStyle(
                             color: cs.onSurfaceVariant,
-                            fontSize: 11,
+                            fontSize: context.skin.type.sizeSm,
                             letterSpacing: 1.2,
                             fontWeight: FontWeight.w600),
                       ),
@@ -508,7 +508,7 @@ class _DeviceConfigScreenState extends State<DeviceConfigScreen> {
                       Expanded(
                         child: Text(l.deviceRegionDisclaimerShort,
                             style: TextStyle(
-                                color: cs.onSurfaceVariant, fontSize: 11)),
+                                color: cs.onSurfaceVariant, fontSize: context.skin.type.sizeSm)),
                       ),
                       MmAction(
                         dense: true,
@@ -549,8 +549,8 @@ class _DeviceConfigScreenState extends State<DeviceConfigScreen> {
                             '${si.txPowerDbm}'),
                         style: TextStyle(
                             color: cs.onSurfaceVariant,
-                            fontFamily: 'JetBrains Mono',
-                            fontSize: 12)),
+                            fontFamily: context.skin.type.monoFamily,
+                            fontSize: context.skin.type.sizeBody)),
                   ),
                 num(l.deviceFrequency, _freq, 'e.g. 915.0'),
                 num(l.deviceBandwidth, _bw, 'e.g. 250'),
@@ -575,7 +575,7 @@ class _DeviceConfigScreenState extends State<DeviceConfigScreen> {
                       Text(l.devicePathHashSize,
                           style: TextStyle(
                               color: cs.onSurfaceVariant,
-                              fontSize: 12,
+                              fontSize: context.skin.type.sizeBody,
                               letterSpacing: 1)),
                       const SizedBox(height: 6),
                       SegmentedButton<int>(
@@ -596,7 +596,7 @@ class _DeviceConfigScreenState extends State<DeviceConfigScreen> {
                                       _pathHashSize != d.pathHashMode + 1
                                   ? cs.error
                                   : cs.onSurfaceVariant,
-                              fontSize: 12,
+                              fontSize: context.skin.type.sizeBody,
                               height: 1.4)),
                     ],
                   );
@@ -674,7 +674,7 @@ class _DeviceConfigScreenState extends State<DeviceConfigScreen> {
                 Text(l.deviceAdvertSource,
                     style: TextStyle(
                         color: cs.onSurfaceVariant,
-                        fontSize: 12,
+                        fontSize: context.skin.type.sizeBody,
                         letterSpacing: 1)),
                 const SizedBox(height: 4),
                 Builder(builder: (BuildContext _) {
@@ -744,8 +744,8 @@ class _DeviceConfigScreenState extends State<DeviceConfigScreen> {
                           }(),
                           style: TextStyle(
                               color: cs.onSurfaceVariant,
-                              fontSize: 11,
-                              fontFamily: 'JetBrains Mono'),
+                              fontSize: context.skin.type.sizeSm,
+                              fontFamily: context.skin.type.monoFamily),
                         ),
                       ),
                     ],
@@ -797,7 +797,7 @@ class _DeviceConfigScreenState extends State<DeviceConfigScreen> {
                 ),
                 Text(
                   l.deviceAdvertPropagatesHint,
-                  style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12),
+                  style: TextStyle(color: cs.onSurfaceVariant, fontSize: context.skin.type.sizeBody),
                 ),
               ],
             ),
@@ -806,7 +806,7 @@ class _DeviceConfigScreenState extends State<DeviceConfigScreen> {
             // CHANNELS → dedicated screen
             Text(l.deviceChannelsSection,
                 style: TextStyle(
-                    color: cs.primary, fontSize: 12, letterSpacing: 3)),
+                    color: cs.primary, fontSize: context.skin.type.sizeBody, letterSpacing: 3)),
             ListTile(
               contentPadding: EdgeInsets.zero,
               leading: const Icon(Icons.tag),
@@ -863,7 +863,7 @@ class _DeviceConfigScreenState extends State<DeviceConfigScreen> {
                             'battery: $batt',
                     style: TextStyle(
                         color: cs.onSurface,
-                        fontFamily: 'JetBrains Mono',
+                        fontFamily: context.skin.type.monoFamily,
                         height: 1.5),
                   );
                 }),
@@ -1006,7 +1006,7 @@ class _OtherParamsEditorState extends State<_OtherParamsEditor> {
                 ? l.otherManualAddSubOn
                 : l.otherManualAddSubOff,
             style: TextStyle(
-                color: cs.onSurface.withValues(alpha: .6), fontSize: 12),
+                color: cs.onSurface.withValues(alpha: .6), fontSize: context.skin.type.sizeBody),
           ),
           value: widget.si.manualAddContacts,
           onChanged: widget.enabled
@@ -1020,7 +1020,7 @@ class _OtherParamsEditorState extends State<_OtherParamsEditor> {
         // multi-acks — 0..3 segmented.
         Text(l.otherMultiAcksLabel,
             style: TextStyle(
-                color: cs.onSurfaceVariant, fontSize: 12, letterSpacing: 1)),
+                color: cs.onSurfaceVariant, fontSize: context.skin.type.sizeBody, letterSpacing: 1)),
         const SizedBox(height: 4),
         SegmentedButton<int>(
           segments: const <ButtonSegment<int>>[
@@ -1037,14 +1037,14 @@ class _OtherParamsEditorState extends State<_OtherParamsEditor> {
         ),
         const SizedBox(height: 4),
         Text(l.otherMultiAcksHelper,
-            style: TextStyle(color: cs.onSurfaceVariant, fontSize: 11)),
+            style: TextStyle(color: cs.onSurfaceVariant, fontSize: context.skin.type.sizeSm)),
         const SizedBox(height: 10),
         // Telemetry sharing — base / location / environment. Each is a
         // permission level (Off / Contacts / Anyone) packed into one
         // byte; applied to the device on each change.
         Text(l.otherTelemetryModeTitle,
             style: TextStyle(
-                color: cs.onSurfaceVariant, fontSize: 12, letterSpacing: 1)),
+                color: cs.onSurfaceVariant, fontSize: context.skin.type.sizeBody, letterSpacing: 1)),
         const SizedBox(height: 4),
         for (final (String, int, void Function(int)) row
             in <(String, int, void Function(int))>[
@@ -1079,7 +1079,7 @@ class _OtherParamsEditorState extends State<_OtherParamsEditor> {
               builder: (BuildContext c, BoxConstraints box) {
                 final TextScaler scaler = MediaQuery.textScalerOf(context);
                 final Widget label = Text(row.$1,
-                    style: TextStyle(color: cs.onSurface, fontSize: 13));
+                    style: TextStyle(color: cs.onSurface, fontSize: context.skin.type.sizeBodyLg));
                 final Widget segments = SegmentedButton<int>(
                   segments: <ButtonSegment<int>>[
                     ButtonSegment<int>(
@@ -1124,7 +1124,7 @@ class _OtherParamsEditorState extends State<_OtherParamsEditor> {
         const SizedBox(height: 4),
         Text(
           l.otherTelemetryModeHelp,
-          style: TextStyle(color: cs.onSurfaceVariant, fontSize: 11),
+          style: TextStyle(color: cs.onSurfaceVariant, fontSize: context.skin.type.sizeSm),
         ),
       ],
     );
@@ -1214,7 +1214,7 @@ class _LatLonFieldState extends State<_LatLonField> {
                   widget.unsavedLabel,
                   style: TextStyle(
                       color: cs.tertiary,
-                      fontSize: 11,
+                      fontSize: context.skin.type.sizeSm,
                       fontWeight: FontWeight.w600),
                 )
               : null,
@@ -1273,12 +1273,12 @@ class _CurrentRegionBanner extends StatelessWidget {
                 Text(l.deviceRegionCurrent,
                     style: TextStyle(
                         color: cs.onSurfaceVariant,
-                        fontSize: 10,
+                        fontSize: context.skin.type.sizeMicro,
                         letterSpacing: 2)),
                 const SizedBox(height: 2),
                 Text(label,
                     style: TextStyle(
-                        color: fg, fontSize: 15, fontWeight: FontWeight.w600)),
+                        color: fg, fontSize: context.skin.type.size(15), fontWeight: FontWeight.w600)),
                 if (si != null)
                   Text(
                     '${si!.frequencyMhz} MHz · ${si!.bandwidthKhz} kHz · '
@@ -1286,8 +1286,8 @@ class _CurrentRegionBanner extends StatelessWidget {
                     '${si!.txPowerDbm} dBm',
                     style: TextStyle(
                         color: cs.onSurfaceVariant,
-                        fontFamily: 'JetBrains Mono',
-                        fontSize: 11),
+                        fontFamily: context.skin.type.monoFamily,
+                        fontSize: context.skin.type.sizeSm),
                   ),
               ],
             ),
@@ -1381,7 +1381,7 @@ class _GpsModuleControls extends StatelessWidget {
         children: <Widget>[
           Text(l.deviceGpsModule,
               style: TextStyle(
-                  color: cs.onSurfaceVariant, fontSize: 12, letterSpacing: 1)),
+                  color: cs.onSurfaceVariant, fontSize: context.skin.type.sizeBody, letterSpacing: 1)),
           const SizedBox(height: 4),
           // gps switch
           SwitchListTile(
@@ -1431,7 +1431,7 @@ class _GpsModuleControls extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.only(top: 4, bottom: 4),
               child: Text(l.deviceGpsIntervalFixedByFirmware,
-                  style: TextStyle(color: cs.onSurfaceVariant, fontSize: 11)),
+                  style: TextStyle(color: cs.onSurfaceVariant, fontSize: context.skin.type.sizeSm)),
             ),
         ],
       ),
