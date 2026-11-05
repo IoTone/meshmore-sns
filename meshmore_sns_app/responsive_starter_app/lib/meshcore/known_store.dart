@@ -1,6 +1,7 @@
 // Copyright (c) 2026 IoTone, Inc.
 // SPDX-License-Identifier: MIT
 import 'package:shared_preferences/shared_preferences.dart';
+import '../util/prefs.dart';
 
 /// Persisted set of *known* node public keys (hex) — nodes we've had
 /// **direct/attributable communication with** (received DM, or one
@@ -19,7 +20,7 @@ abstract final class KnownStore {
 
   static Future<void> save(Set<String> pubKeyHexes) async {
     final SharedPreferences p = await SharedPreferences.getInstance();
-    await p.setStringList(_kKey, pubKeyHexes.toList(growable: false));
+    await Prefs.setStringList(p, _kKey, pubKeyHexes.toList(growable: false));
   }
 
   static Future<void> clear() async {

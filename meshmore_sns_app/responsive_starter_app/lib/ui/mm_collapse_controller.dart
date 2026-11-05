@@ -4,6 +4,7 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../util/prefs.dart';
 
 /// R65 — every collapsible group's stable id.
 ///
@@ -112,7 +113,7 @@ class MmCollapseController extends ChangeNotifier {
     _state[id] = open;
     notifyListeners();
     final SharedPreferences p = await SharedPreferences.getInstance();
-    await p.setString(prefsKey, jsonEncode(_state));
+    await Prefs.setString(p, prefsKey, jsonEncode(_state));
   }
 
   /// Corrupt input, unknown ids and non-bool values are all ignored, so

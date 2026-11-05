@@ -4,6 +4,7 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../util/prefs.dart';
 
 /// Which content blocks a user may pin to the dashboard.
 ///
@@ -131,7 +132,7 @@ class DashboardPinsController extends ChangeNotifier {
 
   Future<void> _save() async {
     final SharedPreferences p = await SharedPreferences.getInstance();
-    await p.setString(
+    await Prefs.setString(p, 
       prefsKey,
       jsonEncode(<String, Object>{
         'pins': _pins,

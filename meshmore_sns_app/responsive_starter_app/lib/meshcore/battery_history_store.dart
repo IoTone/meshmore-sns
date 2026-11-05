@@ -5,6 +5,7 @@ import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'battery_model.dart' show BatterySample;
+import '../util/prefs.dart';
 
 /// Persistent battery-voltage history, keyed per device.
 ///
@@ -86,7 +87,7 @@ class BatteryHistoryStore {
           <int>[s.atUnix, s.millivolts],
       ];
     });
-    await p.setString(_kKey, jsonEncode(doc));
+    await Prefs.setString(p, _kKey, jsonEncode(doc));
   }
 
   static Future<void> clear() async {

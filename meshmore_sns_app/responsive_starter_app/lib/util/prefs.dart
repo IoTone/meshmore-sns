@@ -61,8 +61,52 @@ abstract final class Prefs {
     return null;
   }
 
+  /// True when a write this launch did not land: a full disk, a quota, or a
+  /// platform refusal. `SharedPreferences.set*` returns a bool that every call
+  /// site in the app used to discard, so "my setting did not stick" had no
+  /// explanation anywhere. The dashboard's degraded state reads this.
+  static final ValueNotifier<bool> writeFailed = ValueNotifier<bool>(false);
+
+  static Future<bool> setString(SharedPreferences p, String k, String v) =>
+      _write(p.setString(k, v));
+
+  static Future<bool> setBool(SharedPreferences p, String k, bool v) =>
+      _write(p.setBool(k, v));
+
+  static Future<bool> setInt(SharedPreferences p, String k, int v) =>
+      _write(p.setInt(k, v));
+
+  static Future<bool> setDouble(SharedPreferences p, String k, double v) =>
+      _write(p.setDouble(k, v));
+
+  static Future<bool> setStringList(
+      SharedPreferences p, String k, List<String> v) =>
+      _write(p.setStringList(k, v));
+
+  static Future<bool> _write(Future<bool> pending) async {
+    bool ok;
+    try {
+      ok = await pending;
+    } catch (_) {
+      ok = false;
+    }
+    // Sticky for the session: a write that failed once means the device is out
+    // of room, and retrying every later write would only add noise.
+    if (!ok) writeFailed.value = true;
+    return ok;
+  }
+
+  /// Test seam: the platform's write result, without a platform. A real
+  /// `SharedPreferences` in a test always reports success, so the failure path
+  /// would never run.
+  @visibleForTesting
+  static Future<bool> probeWrite(Future<bool> pending) => _write(pending);
+
   static void _note() => dropped.value = dropped.value + 1;
 
   @visibleForTesting
-  static void reset() => dropped.value = 0;
+  static void reset() {
+    dropped.value = 0;
+    writeFailed.value = false;
+  }
 }

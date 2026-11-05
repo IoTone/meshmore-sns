@@ -2702,6 +2702,12 @@ abstract class AppLocalizations {
   /// **'{count, plural, =1{One earlier transfer was dropped to make room, so that picture stopped} other{{count} earlier transfers were dropped to make room, so those pictures stopped}}'**
   String mediaReceiveDropped(int count);
 
+  /// No description provided for @diagnosticsPlaceStoreCorruptKept.
+  ///
+  /// In en, this message translates to:
+  /// **'the last document was unreadable, and its bytes were kept aside'**
+  String get diagnosticsPlaceStoreCorruptKept;
+
   /// No description provided for @chatEmpty.
   ///
   /// In en, this message translates to:

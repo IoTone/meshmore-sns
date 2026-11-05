@@ -1,6 +1,7 @@
 // Copyright (c) 2026 IoTone, Inc.
 // SPDX-License-Identifier: MIT
 import 'package:shared_preferences/shared_preferences.dart';
+import '../util/prefs.dart';
 
 /// Persisted set of **superseded** node public keys (hex) — old keys the
 /// user reconciled away when a contact returned under a new key (R56).
@@ -20,6 +21,6 @@ abstract final class SupersededStore {
 
   static Future<void> save(Set<String> pubKeyHexes) async {
     final SharedPreferences p = await SharedPreferences.getInstance();
-    await p.setStringList(_kKey, pubKeyHexes.toList(growable: false));
+    await Prefs.setStringList(p, _kKey, pubKeyHexes.toList(growable: false));
   }
 }

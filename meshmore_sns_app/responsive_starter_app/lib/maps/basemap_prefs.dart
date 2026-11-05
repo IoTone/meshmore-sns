@@ -1,6 +1,7 @@
 // Copyright (c) 2026 IoTone, Inc.
 // SPDX-License-Identifier: MIT
 import 'package:shared_preferences/shared_preferences.dart';
+import '../util/prefs.dart';
 
 /// The basemap the user last chose, so relaunching does not silently put the
 /// streets back. `null` means the vector basemap (the default); any other
@@ -22,7 +23,7 @@ abstract final class BasemapPrefs {
     if (rasterId == null) {
       await p.remove(_kKey);
     } else {
-      await p.setString(_kKey, rasterId);
+      await Prefs.setString(p, _kKey, rasterId);
     }
   }
 }

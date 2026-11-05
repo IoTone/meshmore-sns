@@ -5,6 +5,7 @@ import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'mesh_network.dart';
+import '../util/prefs.dart';
 
 /// Persisted list of [MeshNetwork]s.
 ///
@@ -39,7 +40,7 @@ abstract final class MeshNetworkStore {
       throw ArgumentError('duplicate network id');
     }
     final SharedPreferences p = await SharedPreferences.getInstance();
-    await p.setString(
+    await Prefs.setString(p, 
       _kKey,
       jsonEncode(<Map<String, Object?>>[
         for (final MeshNetwork n in networks) n.toJson(),

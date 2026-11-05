@@ -24,7 +24,7 @@ abstract final class DefaultChannelStore {
     if (idx == null) {
       await p.remove(_kKey);
     } else {
-      await p.setInt(_kKey, idx);
+      await Prefs.setInt(p, _kKey, idx);
     }
   }
 }

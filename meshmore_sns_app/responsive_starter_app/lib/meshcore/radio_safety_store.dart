@@ -5,6 +5,7 @@ import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'radio_config_transaction.dart';
+import '../util/prefs.dart';
 
 /// Remembers the operating point a radio was running before the app changed
 /// it, so a mistake can be taken back once.
@@ -26,8 +27,8 @@ abstract final class RadioSafetyStore {
 
   static Future<void> arm(String radioKey, RadioOperatingPoint previous) async {
     final SharedPreferences p = await SharedPreferences.getInstance();
-    await p.setString(_kArmed, jsonEncode(previous.toJson()));
-    await p.setString(_kArmedFor, radioKey);
+    await Prefs.setString(p, _kArmed, jsonEncode(previous.toJson()));
+    await Prefs.setString(p, _kArmedFor, radioKey);
   }
 
   /// The point [arm] recorded for [radioKey], or null. Read-only: the record

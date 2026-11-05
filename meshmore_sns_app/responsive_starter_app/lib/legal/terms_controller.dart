@@ -49,7 +49,7 @@ class TermsController extends ChangeNotifier {
   Future<void> accept() async {
     if (accepted) return;
     final SharedPreferences p = await SharedPreferences.getInstance();
-    await p.setInt(_key, currentVersion);
+    await Prefs.setInt(p, _key, currentVersion);
     _acceptedVersion = currentVersion;
     _loaded = true;
     notifyListeners();

@@ -911,6 +911,7 @@
   "diagnosticsPlaceStoreOk": "saved",
   "mediaReceiveDropped": "{count, plural, =1{One earlier transfer was dropped to make room, so that picture stopped} other{{count} earlier transfers were dropped to make room, so those pictures stopped}}",
   "@mediaReceiveDropped": {"placeholders": {"count": {"type": "int"}}},
+  "diagnosticsPlaceStoreCorruptKept": "the last document was unreadable, and its bytes were kept aside",
   "chatEmpty": "— no messages on this channel —",
   "chatJumpToNewest": "{count, plural, =1{1 new} other{{count} new}}",
   "@chatJumpToNewest": {

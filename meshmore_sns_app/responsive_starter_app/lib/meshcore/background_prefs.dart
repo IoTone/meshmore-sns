@@ -3,6 +3,7 @@
 import 'dart:convert';
 
 import 'package:shared_preferences/shared_preferences.dart';
+import '../util/prefs.dart';
 
 /// Persisted opt-in for the Android background keep-alive foreground
 /// service (R17 / U8). Default **on** — the user accepted the
@@ -18,7 +19,7 @@ abstract final class BackgroundKeepalivePrefs {
 
   static Future<void> setEnabled(bool v) async {
     final SharedPreferences p = await SharedPreferences.getInstance();
-    await p.setBool(_kEnabled, v);
+    await Prefs.setBool(p, _kEnabled, v);
   }
 }
 
@@ -38,7 +39,7 @@ abstract final class TelemetryPollPrefs {
 
   static Future<void> setEnabled(bool v) async {
     final SharedPreferences p = await SharedPreferences.getInstance();
-    await p.setBool(_kEnabled, v);
+    await Prefs.setBool(p, _kEnabled, v);
   }
 }
 
@@ -59,7 +60,7 @@ abstract final class PeriodicAdvertPrefs {
 
   static Future<void> setEnabled(bool v) async {
     final SharedPreferences p = await SharedPreferences.getInstance();
-    await p.setBool(_kEnabled, v);
+    await Prefs.setBool(p, _kEnabled, v);
   }
 }
 
@@ -94,7 +95,7 @@ abstract final class PlaceInferencePrefs {
 
   static Future<void> save(Map<int, bool> overrides) async {
     final SharedPreferences p = await SharedPreferences.getInstance();
-    await p.setString(
+    await Prefs.setString(p, 
       _kMap,
       jsonEncode(<String, bool>{
         for (final MapEntry<int, bool> e in overrides.entries)

@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: MIT
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../util/prefs.dart';
 
 /// Radio-free mode: the app opens without trying to reach a companion, and
 /// says so.
@@ -47,7 +48,7 @@ class DemoMode extends ChangeNotifier {
       {VoidCallback? onEnabled, VoidCallback? onDisabled}) async {
     if (_enabled == value) return;
     final SharedPreferences p = await SharedPreferences.getInstance();
-    await p.setBool(_key, value);
+    await Prefs.setBool(p, _key, value);
     _enabled = value;
     notifyListeners();
     if (value) {

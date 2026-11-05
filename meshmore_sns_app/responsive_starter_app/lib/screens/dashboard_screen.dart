@@ -21,6 +21,7 @@ import '../ui/mm_collapse_controller.dart';
 import '../ui/mm_collapsible.dart';
 import 'device_manager_sheet.dart';
 import '../ui/mm_shape.dart';
+import '../util/prefs.dart';
 
 /// R8 home — "SEELE Monolith" dashboard: one dominant numeral
 /// (peers in range), a full-width status slab that colour-inverts on
@@ -104,23 +105,27 @@ class DashboardScreen extends StatelessWidget {
         // own battery. Location and tiles are observed where they are known,
         // not guessed from here. The two link states are taken out of the set
         // because the slab below is already saying them in the same words.
-        DegradedBanner(
-          state: DegradedState.observe(
-            radioPaired: mc.state != MeshcoreConnectionState.disconnected,
-            radioAnswering: mc.state == MeshcoreConnectionState.ready,
-            storageFull: false,
-            hasLocation: true,
-            mapReachable: true,
-            clockUnset: false,
-            // The battery is the radio's own reading, fetched by the stats
-            // tool. Diagnostics already shows it with its source
-            // (`RadioHealthBlock`); the dashboard does not read stats just to
-            // draw a banner, so it passes nothing rather than guessing.
-            batteryMilliVolts: null,
-          ).minus(const <DegradedMode>{
-            DegradedMode.radioAbsent,
-            DegradedMode.radioSilent,
-          }),
+        ValueListenableBuilder<bool>(
+          valueListenable: Prefs.writeFailed,
+          builder: (BuildContext _, bool writesFailed, Widget? __) =>
+              DegradedBanner(
+            state: DegradedState.observe(
+              radioPaired: mc.state != MeshcoreConnectionState.disconnected,
+              radioAnswering: mc.state == MeshcoreConnectionState.ready,
+              storageFull: writesFailed,
+              hasLocation: true,
+              mapReachable: true,
+              clockUnset: false,
+              // The battery is the radio's own reading, fetched by the stats
+              // tool. Diagnostics already shows it with its source
+              // (`RadioHealthBlock`); the dashboard does not read stats just to
+              // draw a banner, so it passes nothing rather than guessing.
+              batteryMilliVolts: null,
+            ).minus(const <DegradedMode>{
+              DegradedMode.radioAbsent,
+              DegradedMode.radioSilent,
+            }),
+          ),
         ),
 
         // Status slab — colour-inverts to error on alert. The audio toggle
@@ -352,7 +357,8 @@ Widget _statusSlab(
           SizedBox(
             width: 14,
             height: 14,
-            child: CircularProgressIndicator(strokeWidth: 2, color: statusColor),
+            child:
+                CircularProgressIndicator(strokeWidth: 2, color: statusColor),
           )
         else
           Container(
@@ -372,7 +378,8 @@ Widget _statusSlab(
         // Inline "SYNCING…" when the post-handshake drain is in flight, so
         // the 1–3 s of BLE round-trip work does not read as a freeze. A
         // static glyph, not a spinner, so widget tests can still settle.
-        if (mc.state == MeshcoreConnectionState.ready && mc.isDraining) ...<Widget>[
+        if (mc.state == MeshcoreConnectionState.ready &&
+            mc.isDraining) ...<Widget>[
           Icon(Icons.sync, size: 14, color: cs.primary),
           const SizedBox(width: 4),
           Text(l.statusSyncing,
@@ -385,7 +392,8 @@ Widget _statusSlab(
         // Connect / Retry sit in the slab because they are the state's own
         // action: with nothing paired they open the in-app pairing flow,
         // where which radio you get is your choice.
-        if (mc.state == MeshcoreConnectionState.disconnected && !mc.isConnecting)
+        if (mc.state == MeshcoreConnectionState.disconnected &&
+            !mc.isConnecting)
           IconButton(
             tooltip: l.actionConnect,
             icon: Icon(Icons.link, color: statusColor, size: 20),
@@ -439,7 +447,9 @@ class _RegionRow extends StatelessWidget {
                 size: 14, color: isCustom ? cs.tertiary : cs.primary),
             const SizedBox(width: 6),
             Text(
-                p == null ? l.deviceRegionCustom : localizedPresetLabel(l, p.id),
+                p == null
+                    ? l.deviceRegionCustom
+                    : localizedPresetLabel(l, p.id),
                 style: TextStyle(
                     color: isCustom ? cs.tertiary : cs.primary,
                     fontSize: context.skin.type.sizeBody,
@@ -539,9 +549,7 @@ class _LocationTile extends StatelessWidget {
                 '· ${l.dashboardLocationAltitude(loc.altitudeMeters!.round())}'}'
             '  · ${loc.localizedSourceLabel(l)}',
             style: TextStyle(
-                color: cs.onSurface,
-                fontFamily: 'JetBrains Mono',
-                height: 1.5),
+                color: cs.onSurface, fontFamily: 'JetBrains Mono', height: 1.5),
           )
         else if (awaitingSelf)
           Text(l.dashboardAwaitingDeviceLocation,

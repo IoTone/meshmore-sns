@@ -263,7 +263,7 @@ class TtsController extends ChangeNotifier {
     if (!v) await _speaker.stop();
     notifyListeners();
     final SharedPreferences p = await SharedPreferences.getInstance();
-    await p.setBool(_kEnabled, v);
+    await Prefs.setBool(p, _kEnabled, v);
   }
 
   Future<void> setRate(double v) async {
@@ -273,7 +273,7 @@ class TtsController extends ChangeNotifier {
     await _speaker.setRate(c);
     notifyListeners();
     final SharedPreferences p = await SharedPreferences.getInstance();
-    await p.setDouble(_kRate, c);
+    await Prefs.setDouble(p, _kRate, c);
   }
 
   Future<void> setPitch(double v) async {
@@ -283,7 +283,7 @@ class TtsController extends ChangeNotifier {
     await _speaker.setPitch(c);
     notifyListeners();
     final SharedPreferences p = await SharedPreferences.getInstance();
-    await p.setDouble(_kPitch, c);
+    await Prefs.setDouble(p, _kPitch, c);
   }
 
   Future<void> setVoice(TtsVoice? v) async {
@@ -295,7 +295,7 @@ class TtsController extends ChangeNotifier {
     if (v == null) {
       await p.remove(_kVoiceId);
     } else {
-      await p.setString(_kVoiceId, v.id);
+      await Prefs.setString(p, _kVoiceId, v.id);
     }
   }
 

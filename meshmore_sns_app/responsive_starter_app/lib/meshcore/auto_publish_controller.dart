@@ -92,7 +92,7 @@ class AutoPublishController extends ChangeNotifier {
     if (v == _enabled) return;
     _enabled = v;
     final SharedPreferences p = await SharedPreferences.getInstance();
-    await p.setBool(_kEnabled, v);
+    await Prefs.setBool(p, _kEnabled, v);
     _restart();
     notifyListeners();
   }
@@ -102,7 +102,7 @@ class AutoPublishController extends ChangeNotifier {
     if (v == _intervalSec) return;
     _intervalSec = v;
     final SharedPreferences p = await SharedPreferences.getInstance();
-    await p.setInt(_kIntervalSec, v);
+    await Prefs.setInt(p, _kIntervalSec, v);
     _restart();
     notifyListeners();
   }
@@ -112,7 +112,7 @@ class AutoPublishController extends ChangeNotifier {
     if (v == _minMovementM) return;
     _minMovementM = v;
     final SharedPreferences p = await SharedPreferences.getInstance();
-    await p.setInt(_kMinMovementM, v);
+    await Prefs.setInt(p, _kMinMovementM, v);
     _restart();
     notifyListeners();
   }
