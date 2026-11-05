@@ -12,13 +12,11 @@ Offline-first, theme-driven, with a hyperlocal radar grid, per-channel chat,
 > one skipped, the pure-Java port's 143 pass with one skipped, and `flutter
 > analyze` is clean apart from two pre-existing `unawaited_return_in_try_block`
 > warnings in `lib/maps/maps_controller.dart`. A debug APK builds and installs.
-> No screen-level, on-air or Doze behaviour has been checked on hardware yet: the
-> phone is behind a PIN keyguard.
-> **What is still owed is device verification**: every screen-level, on-air and
-> background path needs a run on an unlocked phone, and one dependency is not
-> store-ready: the bundled image codec's native library fails the 16 KB page
-> requirement (deadline 1 Feb 2027). What is not built at all is listed as
-> residue in the feature register.
+> **What is still owed is device verification**: no screen-level, on-air or Doze
+> behaviour has been checked on hardware, because the phone is behind a PIN
+> keyguard, and one dependency is not store-ready: the bundled image codec's
+> native library fails the 16 KB page requirement (deadline 1 Feb 2027). What is
+> not built at all is listed as residue in the feature register.
 
 ---
 
