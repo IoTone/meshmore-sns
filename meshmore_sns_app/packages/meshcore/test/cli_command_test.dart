@@ -1,6 +1,5 @@
 // Copyright (c) 2026 IoTone, Inc.
 // SPDX-License-Identifier: MIT
-import 'dart:typed_data';
 
 import 'package:meshcore/meshcore.dart';
 import 'package:test/test.dart';
