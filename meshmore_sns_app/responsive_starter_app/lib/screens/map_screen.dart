@@ -11,8 +11,6 @@ import '../places/place_history_sheet.dart';
 import '../places/place_store.dart';
 import '../places/place_wiring.dart';
 import 'street_map_view.dart';
-import '../theme/mm_skin.dart';
-import '../ui/mm_shape.dart';
 
 /// R61 — the **Map** primary view: the street map as its own swipe page.
 ///
@@ -41,10 +39,13 @@ class MapScreen extends StatelessWidget {
   /// Null (a bare `MapScreen` in a test) means the bands do nothing.
   final ValueChanged<int>? onEdgeSwipe;
 
-  /// R70 — derived from [StreetMapView]'s own control geometry (five
-  /// 48 dp controls from the top), so the right band always starts below
-  /// the column and cannot shadow a button.
-  static const double rightControlsBottom = StreetMapView.controlsBottom;
+  /// The two controls this page contributes to the map's own column.
+  static const int _controlExtras = 2;
+
+  /// R70 — the edge band starts below the whole column, built-in controls
+  /// plus the two this page adds, so it can never shadow a button.
+  static double get rightControlsBottom =>
+      StreetMapView.controlsBottomFor(_controlExtras);
 
   @override
   Widget build(BuildContext context) {
@@ -56,113 +57,45 @@ class MapScreen extends StatelessWidget {
         // would cover the thing you are trying to read.
         MmPageHeader(title: l.tabMap),
         Expanded(
-          child: Stack(
-      children: <Widget>[
-        Positioned.fill(
           child: MmEdgeSwipe(
             onSwipe: (int d) => onEdgeSwipe?.call(d),
-            rightInsets: const EdgeInsets.only(top: rightControlsBottom),
-            child: const StreetMapView(browseWithoutFix: true),
-          ),
-        ),
-        // Top-left is free in StreetMapView (its controls are top-right
-        // and its "paused" chip never shows here: `frozen` is false).
-        Positioned(
-          left: 12,
-          top: 12,
-          child: _MapTool(
-            label: l.mapsTitle,
-            icon: Icons.download_for_offline_outlined,
-            onTap: () => context.push('/settings/maps'),
-          ),
-        ),
-        // Places history (meshmore-places-spec.md §10): every report this
-        // device saw, live and expired, with the ledger export. Below the
-        // offline-maps button so the two read as one column of map tools.
-        Positioned(
-          left: 12,
-          top: 12 + 40 + 8,
-          child: _MapTool(
-            key: const ValueKey<String>('map-places-button'),
-            label: l.placeHistoryTitle,
-            icon: Icons.push_pin_outlined,
-            onTap: () => PlaceHistorySheet.show(
-              context,
-              store: context.read<PlaceStore>(),
-              composer: placeComposerOf(context),
-            ),
-          ),
-        ),
-      ],
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-/// One labelled map tool. The map's chrome used to be icon-only, so the only
-/// way to learn what a button did was to press it (UX audit C8). A short label
-/// under the glyph is cheaper than a tooltip that does not exist on touch.
-class _MapTool extends StatelessWidget {
-  const _MapTool({
-    super.key,
-    required this.label,
-    required this.icon,
-    required this.onTap,
-  });
-
-  final String label;
-  final IconData icon;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final ColorScheme cs = Theme.of(context).colorScheme;
-    final MmSkin skin = context.skin;
-    return Semantics(
-      button: true,
-      label: label,
-      // The label is visible, and the tooltip stays so the control keeps the
-      // same discoverable name on long-press and in tests.
-      child: Tooltip(
-        message: label,
-        child: Material(
-        color: cs.surface.withValues(alpha: .9),
-        elevation: 1,
-        shape: RoundedRectangleBorder(
-          borderRadius: mmRadius(context, 6),
-          side: BorderSide(color: cs.outline.withValues(alpha: .4)),
-        ),
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: mmRadius(context, 6),
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(
-                minWidth: 64, maxWidth: 88, minHeight: 40),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  Icon(icon, size: skin.type.sizeLg, color: cs.onSurface),
-                  Text(
-                    label,
-                    textAlign: TextAlign.center,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: cs.onSurface,
-                      fontSize: skin.type.sizeMicro,
-                    ),
+            rightInsets: EdgeInsets.only(top: rightControlsBottom),
+            child: StreetMapView(
+              browseWithoutFix: true,
+              // Both map tools live in the map's own right-hand column, under
+              // the built-in controls. They used to sit on the left edge, and
+              // with the zoom column on the right the left ones were the
+              // buttons a thumb never found.
+              controlExtras: <Widget>[
+                IconButton(
+                  key: const ValueKey<String>('map-offline-maps-button'),
+                  tooltip: l.mapsTitle,
+                  iconSize: 18,
+                  constraints: const BoxConstraints(
+                      minWidth: StreetMapView.controlCell,
+                      minHeight: StreetMapView.controlCell),
+                  icon: const Icon(Icons.download_for_offline_outlined),
+                  onPressed: () => context.push('/settings/maps'),
+                ),
+                IconButton(
+                  key: const ValueKey<String>('map-places-button'),
+                  tooltip: l.placeHistoryTitle,
+                  iconSize: 18,
+                  constraints: const BoxConstraints(
+                      minWidth: StreetMapView.controlCell,
+                      minHeight: StreetMapView.controlCell),
+                  icon: const Icon(Icons.push_pin_outlined),
+                  onPressed: () => PlaceHistorySheet.show(
+                    context,
+                    store: context.read<PlaceStore>(),
+                    composer: placeComposerOf(context),
                   ),
-                ],
-              ),
-            ),
+                ),
+              ],
             ),
           ),
         ),
-      ),
+      ],
     );
   }
 }
