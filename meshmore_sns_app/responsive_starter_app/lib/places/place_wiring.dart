@@ -3,6 +3,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:provider/provider.dart';
 
+import '../meshcore/block_store.dart';
 import '../meshcore/meshcore_controller.dart';
 import 'place_report_budget.dart';
 import 'place_sender.dart';
@@ -22,3 +23,25 @@ PlaceComposer placeComposerOf(BuildContext context, {int? channelIdx}) =>
         channelIdx: channelIdx,
       ),
     );
+
+/// A block takes the reporter's stored places with it (`meshmore-places-spec.md`
+/// §10).
+///
+/// Hiding a blocked reporter's rows at read time is not enough: the rows would
+/// still be on disk, and the history list, the ledger export and search all
+/// read the store rather than the map. So the rows are deleted on the block,
+/// and again whenever the list changes, because a blocked key can also arrive
+/// from a restored export or a reload.
+///
+/// Returns the detach function for a caller that needs to stop listening.
+VoidCallback attachPlaceBlockDeletion(BlockStore blocks, PlaceStore places) {
+  void drop() {
+    for (final BlockedKey key in blocks.all) {
+      places.deleteByReporterKey(key.pubKeyHex);
+    }
+  }
+
+  blocks.addListener(drop);
+  drop();
+  return () => blocks.removeListener(drop);
+}
