@@ -152,28 +152,20 @@ class LocationSettingsScreen extends StatelessWidget {
                 ),
                 const Divider(height: 1),
                 // Periodic interval.
-                ListTile(
+                MmPickerTile(
                   enabled: ap.enabled,
                   leading: const Icon(Icons.timer_outlined),
-                  title: Text(l.locInterval),
-                  subtitle: Text(
-                    _intervalLabel(l, ap.intervalSec),
-                    style: TextStyle(color: cs.onSurface.withValues(alpha: .6)),
-                  ),
-                  onTap:
-                      !ap.enabled ? null : () => _pickInterval(context, ap, l),
+                  title: l.locInterval,
+                  value: _intervalLabel(l, ap.intervalSec),
+                  onTap: () => _pickInterval(context, ap, l),
                 ),
                 // Smart-broadcast distance.
-                ListTile(
+                MmPickerTile(
                   enabled: ap.enabled,
                   leading: const Icon(Icons.straighten),
-                  title: Text(l.locMovement),
-                  subtitle: Text(
-                    _movementLabel(l, ap.minMovementMeters),
-                    style: TextStyle(color: cs.onSurface.withValues(alpha: .6)),
-                  ),
-                  onTap:
-                      !ap.enabled ? null : () => _pickMovement(context, ap, l),
+                  title: l.locMovement,
+                  value: _movementLabel(l, ap.minMovementMeters),
+                  onTap: () => _pickMovement(context, ap, l),
                 ),
               ],
             ),

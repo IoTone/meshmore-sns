@@ -4980,4 +4980,22 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get reportActionSub => '送信先を選べるよう、端末にファイルを作成します。自動送信はしません。';
+
+  @override
+  String nodeMarkerSemantics(String name) {
+    return '$name — 詳細はタップ';
+  }
+
+  @override
+  String placePinSemantics(String label, String expiry) {
+    return '$label、$expiry';
+  }
+
+  @override
+  String placeClusterSemantics(int count) {
+    return 'ここに $count 件の場所';
+  }
+
+  @override
+  String get mapCanvasSemantics => 'マップ上のマーカーをタップすると開きます';
 }

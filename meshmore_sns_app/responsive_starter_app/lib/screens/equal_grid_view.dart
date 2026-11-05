@@ -205,8 +205,7 @@ class _EqualGridViewState extends State<EqualGridView> {
     final AppLocalizations l = AppLocalizations.of(context);
     final ColorScheme cs = Theme.of(context).colorScheme;
 
-    final List<DiscoveredNode> source =
-        widget.filteredNodes ?? mc.nodes;
+    final List<DiscoveredNode> source = widget.filteredNodes ?? mc.nodes;
     final List<DiscoveredNode> withLoc = <DiscoveredNode>[
       for (final DiscoveredNode n in source)
         if (n.hasLocation) n
@@ -246,258 +245,257 @@ class _EqualGridViewState extends State<EqualGridView> {
             txPowerDbm: si.txPowerDbm,
           );
 
-    return GestureDetector(
-      onTapUp: (TapUpDetails d) {
-        final Size size =
-            _lastPaintSize ?? context.size ?? Size.zero;
-        if (size.isEmpty) return;
-        final DiscoveredNode? hit = _hitTest(
-          tap: d.localPosition,
-          size: size,
-          selfLat: selfLat,
-          selfLon: selfLon,
-          peers: withLoc,
-        );
-        if (hit != null) _showDetail(context, mc, hit);
-      },
-      child: Stack(
-        children: <Widget>[
-          // R25 Stage 3 + R25+1 themed — OSM raster tile background.
-          // Wrapped in a ColorFiltered with BlendMode.color so the
-          // basemap hue picks up the active theme accent (Seele /
-          // Nerv / Hyperlocal / …). Locked to the self-anchor; no
-          // user pan/zoom on the underlying map (zoom is via the
-          // dedicated +/- buttons over the cell scale).
-          Positioned.fill(
-            child: ColorFiltered(
-              colorFilter: ColorFilter.mode(
-                cs.primary.withValues(alpha: .35),
-                BlendMode.color,
-              ),
-              child: FlutterMap(
-                // ValueKey forces a fresh FlutterMap (and thus a fresh
-                // `initialCenter` / `initialZoom`) when the user
-                // changes the effective cell size or our own location
-                // updates. Cheaper than wiring a MapController +
-                // .move() since the map is locked anyway.
-                key: ValueKey<String>(
-                    '${selfLat.toStringAsFixed(4)}_'
-                    '${selfLon.toStringAsFixed(4)}_'
-                    '$cellMeters'),
-                options: MapOptions(
-                  initialCenter: LatLng(selfLat, selfLon),
-                  initialZoom:
-                      EqualGridView._tileZoomForCellMeters(cellMeters),
-                  interactionOptions: const InteractionOptions(
-                    flags: InteractiveFlag.none,
-                  ),
-                  backgroundColor: cs.surfaceContainerHighest,
+    return Semantics(
+      button: true,
+      label: l.mapCanvasSemantics,
+      child: GestureDetector(
+        onTapUp: (TapUpDetails d) {
+          final Size size = _lastPaintSize ?? context.size ?? Size.zero;
+          if (size.isEmpty) return;
+          final DiscoveredNode? hit = _hitTest(
+            tap: d.localPosition,
+            size: size,
+            selfLat: selfLat,
+            selfLon: selfLon,
+            peers: withLoc,
+          );
+          if (hit != null) _showDetail(context, mc, hit);
+        },
+        child: Stack(
+          children: <Widget>[
+            // R25 Stage 3 + R25+1 themed — OSM raster tile background.
+            // Wrapped in a ColorFiltered with BlendMode.color so the
+            // basemap hue picks up the active theme accent (Seele /
+            // Nerv / Hyperlocal / …). Locked to the self-anchor; no
+            // user pan/zoom on the underlying map (zoom is via the
+            // dedicated +/- buttons over the cell scale).
+            Positioned.fill(
+              child: ColorFiltered(
+                colorFilter: ColorFilter.mode(
+                  cs.primary.withValues(alpha: .35),
+                  BlendMode.color,
                 ),
-                children: <Widget>[
-                  if (_showTiles)
-                    // R61 — cached OSM (view cache; see maps spec).
-                    basemapLayer(context, kOsmStandard),
-                  if (_showTiles) MapAttribution(kOsmStandard.attribution),
-                ],
-              ),
-            ),
-          ),
-          // Theme darken/lighten overlay — sits on top of the tinted
-          // tiles to settle them into the theme's surface tone, so
-          // the cell glyphs above always have a comfortable contrast.
-          Positioned.fill(
-            child: IgnorePointer(
-              child: Container(
-                color: cs.surface.withValues(alpha: .25),
-              ),
-            ),
-          ),
-          Positioned.fill(
-            child: LayoutBuilder(builder:
-                (BuildContext _, BoxConstraints c) {
-              final Size sz = Size(c.maxWidth, c.maxHeight);
-              if (_lastPaintSize != sz) {
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  if (mounted) _lastPaintSize = sz;
-                });
-              }
-              return CustomPaint(
-                painter: _EqualGridPainter(
-                  selfLat: selfLat,
-                  selfLon: selfLon,
-                  peers: withLoc,
-                  knownPubKeys: mc.known,
-                  favPubKeys: mc.favorites,
-                  cellSizeMeters: cellMeters,
-                  cellLine: cs.outline.withValues(alpha: .35),
-                  cellLabel:
-                      cs.onSurfaceVariant.withValues(alpha: .85),
-                  selfPin: cs.primary,
-                  peerCompanion: cs.tertiary,
-                  peerRepeater: cs.primary,
-                  badgeFill: cs.tertiaryContainer,
-                  badgeText: cs.onTertiaryContainer,
-                  trail: mc.ownTrail,
-                  trailColor: cs.secondary,
-                  headingDeg: _headingDeg,
-                  estimatedRangeMeters: estimatedRangeM,
-                  rangeRing: cs.tertiary.withValues(alpha: .25),
-                ),
-              );
-            }),
-          ),
-          // R25+3 — NERV-style stats panel pinned to the top of the
-          // view. Floats above the basemap + cell overlay; never
-          // intercepts pointer events so taps still hit peers.
-          // R25+3.1 — collapsible via the toolbar toggle below.
-          if (_showStats)
-          Positioned(
-            left: 12,
-            right: 12,
-            top: 12,
-            child: IgnorePointer(
-              child: _NervStatsPanel(
-                cellLat: selfLat,
-                cellLon: selfLon,
-                cellSizeMeters: cellMeters,
-                peerCount: withLoc.length,
-                nearestPeerMeters: _nearestPeerMeters(
-                    withLoc, selfLat, selfLon),
-                nearestPeerName: _nearestPeerName(
-                    withLoc, selfLat, selfLon),
-                estimatedRangeMeters: estimatedRangeM,
-                headingDeg: _headingDeg,
-                altitudeMeters: mc.ownLocation?.altitudeMeters,
-                accent: cs.primary,
-                bg: cs.surface.withValues(alpha: .80),
-                border: cs.primary.withValues(alpha: .60),
-              ),
-            ),
-          ),
-          // R25+1 — Zoom controls + cell-size readout. The +/- pair
-          // shrinks/grows the cell size by 2× per tap on top of the
-          // radial-range-derived base; long-press the readout to
-          // reset to base zoom.
-          Positioned(
-            right: 12,
-            bottom: 12,
-            child: Material(
-              color: cs.surface.withValues(alpha: .85),
-              elevation: 1,
-              shape: RoundedRectangleBorder(
-                borderRadius: mmRadius(context, 6),
-                side: BorderSide(
-                    color: cs.outline.withValues(alpha: .4)),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 4, vertical: 2),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: <Widget>[
-                    IconButton(
-                      tooltip: l.equalGridZoomOut,
-                      iconSize: 18,
-                      constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
-                      icon: const Icon(Icons.remove),
-                      onPressed: _zoomSteps > _zoomStepMin
-                          ? _zoomOut
-                          : null,
+                child: FlutterMap(
+                  // ValueKey forces a fresh FlutterMap (and thus a fresh
+                  // `initialCenter` / `initialZoom`) when the user
+                  // changes the effective cell size or our own location
+                  // updates. Cheaper than wiring a MapController +
+                  // .move() since the map is locked anyway.
+                  key: ValueKey<String>('${selfLat.toStringAsFixed(4)}_'
+                      '${selfLon.toStringAsFixed(4)}_'
+                      '$cellMeters'),
+                  options: MapOptions(
+                    initialCenter: LatLng(selfLat, selfLon),
+                    initialZoom:
+                        EqualGridView._tileZoomForCellMeters(cellMeters),
+                    interactionOptions: const InteractionOptions(
+                      flags: InteractiveFlag.none,
                     ),
-                    GestureDetector(
-                      onLongPress: _zoomReset,
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 4),
-                        child: Text(
-                          l.equalGridCellSize(
-                              _formatMeters(cellMeters)),
-                          style: TextStyle(
-                              color: cs.onSurface,
-                              fontFamily: 'JetBrains Mono',
-                              fontSize: 10,
-                              letterSpacing: 1),
+                    backgroundColor: cs.surfaceContainerHighest,
+                  ),
+                  children: <Widget>[
+                    if (_showTiles)
+                      // R61 — cached OSM (view cache; see maps spec).
+                      basemapLayer(context, kOsmStandard),
+                    if (_showTiles) MapAttribution(kOsmStandard.attribution),
+                  ],
+                ),
+              ),
+            ),
+            // Theme darken/lighten overlay — sits on top of the tinted
+            // tiles to settle them into the theme's surface tone, so
+            // the cell glyphs above always have a comfortable contrast.
+            Positioned.fill(
+              child: IgnorePointer(
+                child: Container(
+                  color: cs.surface.withValues(alpha: .25),
+                ),
+              ),
+            ),
+            Positioned.fill(
+              child: LayoutBuilder(builder: (BuildContext _, BoxConstraints c) {
+                final Size sz = Size(c.maxWidth, c.maxHeight);
+                if (_lastPaintSize != sz) {
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    if (mounted) _lastPaintSize = sz;
+                  });
+                }
+                return CustomPaint(
+                  painter: _EqualGridPainter(
+                    selfLat: selfLat,
+                    selfLon: selfLon,
+                    peers: withLoc,
+                    knownPubKeys: mc.known,
+                    favPubKeys: mc.favorites,
+                    cellSizeMeters: cellMeters,
+                    cellLine: cs.outline.withValues(alpha: .35),
+                    cellLabel: cs.onSurfaceVariant.withValues(alpha: .85),
+                    selfPin: cs.primary,
+                    peerCompanion: cs.tertiary,
+                    peerRepeater: cs.primary,
+                    badgeFill: cs.tertiaryContainer,
+                    badgeText: cs.onTertiaryContainer,
+                    trail: mc.ownTrail,
+                    trailColor: cs.secondary,
+                    headingDeg: _headingDeg,
+                    estimatedRangeMeters: estimatedRangeM,
+                    rangeRing: cs.tertiary.withValues(alpha: .25),
+                  ),
+                );
+              }),
+            ),
+            // R25+3 — NERV-style stats panel pinned to the top of the
+            // view. Floats above the basemap + cell overlay; never
+            // intercepts pointer events so taps still hit peers.
+            // R25+3.1 — collapsible via the toolbar toggle below.
+            if (_showStats)
+              Positioned(
+                left: 12,
+                right: 12,
+                top: 12,
+                child: IgnorePointer(
+                  child: _NervStatsPanel(
+                    cellLat: selfLat,
+                    cellLon: selfLon,
+                    cellSizeMeters: cellMeters,
+                    peerCount: withLoc.length,
+                    nearestPeerMeters:
+                        _nearestPeerMeters(withLoc, selfLat, selfLon),
+                    nearestPeerName:
+                        _nearestPeerName(withLoc, selfLat, selfLon),
+                    estimatedRangeMeters: estimatedRangeM,
+                    headingDeg: _headingDeg,
+                    altitudeMeters: mc.ownLocation?.altitudeMeters,
+                    accent: cs.primary,
+                    bg: cs.surface.withValues(alpha: .80),
+                    border: cs.primary.withValues(alpha: .60),
+                  ),
+                ),
+              ),
+            // R25+1 — Zoom controls + cell-size readout. The +/- pair
+            // shrinks/grows the cell size by 2× per tap on top of the
+            // radial-range-derived base; long-press the readout to
+            // reset to base zoom.
+            Positioned(
+              right: 12,
+              bottom: 12,
+              child: Material(
+                color: cs.surface.withValues(alpha: .85),
+                elevation: 1,
+                shape: RoundedRectangleBorder(
+                  borderRadius: mmRadius(context, 6),
+                  side: BorderSide(color: cs.outline.withValues(alpha: .4)),
+                ),
+                child: Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      IconButton(
+                        tooltip: l.equalGridZoomOut,
+                        iconSize: 18,
+                        constraints:
+                            const BoxConstraints(minWidth: 48, minHeight: 48),
+                        icon: const Icon(Icons.remove),
+                        onPressed: _zoomSteps > _zoomStepMin ? _zoomOut : null,
+                      ),
+                      // A long-press is invisible: the cell size also resets
+                      // on a tap, and the label says what the control shows.
+                      Semantics(
+                        button: true,
+                        label: l.equalGridCellSize(_formatMeters(cellMeters)),
+                        onTap: _zoomReset,
+                        child: GestureDetector(
+                          onLongPress: _zoomReset,
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 4),
+                            child: Text(
+                              l.equalGridCellSize(_formatMeters(cellMeters)),
+                              style: TextStyle(
+                                  color: cs.onSurface,
+                                  fontFamily: 'JetBrains Mono',
+                                  fontSize: 10,
+                                  letterSpacing: 1),
+                            ),
+                          ),
                         ),
                       ),
-                    ),
-                    IconButton(
-                      tooltip: l.equalGridZoomIn,
-                      iconSize: 18,
-                      constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
-                      icon: const Icon(Icons.add),
-                      onPressed: _zoomSteps < _zoomStepMax
-                          ? _zoomIn
-                          : null,
-                    ),
-                    // R25+3.1 — show/hide the NERV stats panel.
-                    // Decluttering the view back to the original
-                    // R25+1 "circles + futuristic" look is one tap;
-                    // bringing the panel back is the same tap again.
-                    Container(
-                      width: 1,
-                      height: 18,
-                      margin:
-                          const EdgeInsets.symmetric(horizontal: 2),
-                      color: cs.outline.withValues(alpha: .4),
-                    ),
-                    IconButton(
-                      tooltip: _showStats
-                          ? l.equalGridHideStats
-                          : l.equalGridShowStats,
-                      iconSize: 18,
-                      constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
-                      icon: Icon(_showStats
-                          ? Icons.dashboard
-                          : Icons.dashboard_outlined),
-                      onPressed: () =>
-                          setState(() => _showStats = !_showStats),
-                    ),
-                    // R25+5 — hide / show basemap tiles.
-                    IconButton(
-                      tooltip: _showTiles
-                          ? l.mapHideTiles
-                          : l.mapShowTiles,
-                      iconSize: 18,
-                      constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
-                      icon: Icon(_showTiles
-                          ? Icons.layers
-                          : Icons.layers_clear),
-                      onPressed: () =>
-                          setState(() => _showTiles = !_showTiles),
-                    ),
-                  ],
+                      IconButton(
+                        tooltip: l.equalGridZoomIn,
+                        iconSize: 18,
+                        constraints:
+                            const BoxConstraints(minWidth: 48, minHeight: 48),
+                        icon: const Icon(Icons.add),
+                        onPressed: _zoomSteps < _zoomStepMax ? _zoomIn : null,
+                      ),
+                      // R25+3.1 — show/hide the NERV stats panel.
+                      // Decluttering the view back to the original
+                      // R25+1 "circles + futuristic" look is one tap;
+                      // bringing the panel back is the same tap again.
+                      Container(
+                        width: 1,
+                        height: 18,
+                        margin: const EdgeInsets.symmetric(horizontal: 2),
+                        color: cs.outline.withValues(alpha: .4),
+                      ),
+                      IconButton(
+                        tooltip: _showStats
+                            ? l.equalGridHideStats
+                            : l.equalGridShowStats,
+                        iconSize: 18,
+                        constraints:
+                            const BoxConstraints(minWidth: 48, minHeight: 48),
+                        icon: Icon(_showStats
+                            ? Icons.dashboard
+                            : Icons.dashboard_outlined),
+                        onPressed: () =>
+                            setState(() => _showStats = !_showStats),
+                      ),
+                      // R25+5 — hide / show basemap tiles.
+                      IconButton(
+                        tooltip: _showTiles ? l.mapHideTiles : l.mapShowTiles,
+                        iconSize: 18,
+                        constraints:
+                            const BoxConstraints(minWidth: 48, minHeight: 48),
+                        icon: Icon(
+                            _showTiles ? Icons.layers : Icons.layers_clear),
+                        onPressed: () =>
+                            setState(() => _showTiles = !_showTiles),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
-          ),
-          if (widget.frozen)
-            Positioned(
-              left: 12,
-              top: 12,
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color:
-                      cs.tertiaryContainer.withValues(alpha: .85),
-                  borderRadius: BorderRadius.circular(kRadiusMd),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: <Widget>[
-                    Icon(Icons.pause,
-                        size: 12, color: cs.onTertiaryContainer),
-                    const SizedBox(width: 4),
-                    Text(l.globePaused,
-                        style: TextStyle(
-                            color: cs.onTertiaryContainer,
-                            fontSize: 10,
-                            letterSpacing: 1)),
-                  ],
+            if (widget.frozen)
+              Positioned(
+                left: 12,
+                top: 12,
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: cs.tertiaryContainer.withValues(alpha: .85),
+                    borderRadius: BorderRadius.circular(kRadiusMd),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      Icon(Icons.pause,
+                          size: 12, color: cs.onTertiaryContainer),
+                      const SizedBox(width: 4),
+                      Text(l.globePaused,
+                          style: TextStyle(
+                              color: cs.onTertiaryContainer,
+                              fontSize: 10,
+                              letterSpacing: 1)),
+                    ],
+                  ),
                 ),
               ),
-            ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -514,8 +512,7 @@ class _EqualGridViewState extends State<EqualGridView> {
   }) {
     final Offset centre = size.center(Offset.zero);
     final double cellM = _effectiveCellSizeMeters;
-    final double cellPx =
-        _EqualGridPainter.cellPixels(size, cellM);
+    final double cellPx = _EqualGridPainter.cellPixels(size, cellM);
     DiscoveredNode? best;
     double bestSq = 24 * 24;
     for (final DiscoveredNode n in peers) {
@@ -552,10 +549,8 @@ class _EqualGridViewState extends State<EqualGridView> {
     const double earthM = 6371000.0;
     double? best;
     for (final DiscoveredNode n in peers) {
-      final double dLat =
-          (n.latitude! - selfLat) * math.pi / 180.0;
-      final double dLon =
-          (n.longitude! - selfLon) * math.pi / 180.0;
+      final double dLat = (n.latitude! - selfLat) * math.pi / 180.0;
+      final double dLon = (n.longitude! - selfLon) * math.pi / 180.0;
       final double a = math.sin(dLat / 2) * math.sin(dLat / 2) +
           math.cos(selfLat * math.pi / 180.0) *
               math.cos(n.latitude! * math.pi / 180.0) *
@@ -573,10 +568,8 @@ class _EqualGridViewState extends State<EqualGridView> {
     DiscoveredNode? best;
     double bestD = double.infinity;
     for (final DiscoveredNode n in peers) {
-      final double dLat =
-          (n.latitude! - selfLat) * math.pi / 180.0;
-      final double dLon =
-          (n.longitude! - selfLon) * math.pi / 180.0;
+      final double dLat = (n.latitude! - selfLat) * math.pi / 180.0;
+      final double dLon = (n.longitude! - selfLon) * math.pi / 180.0;
       final double a = math.sin(dLat / 2) * math.sin(dLat / 2) +
           math.cos(selfLat * math.pi / 180.0) *
               math.cos(n.latitude! * math.pi / 180.0) *
@@ -630,9 +623,7 @@ class _NervStatsPanel extends StatelessWidget {
   String _fmtMeters(double m) {
     if (m < 1000) return '${m.round()} m';
     final double km = m / 1000.0;
-    return km < 10
-        ? '${km.toStringAsFixed(1)} km'
-        : '${km.round()} km';
+    return km < 10 ? '${km.toStringAsFixed(1)} km' : '${km.round()} km';
   }
 
   String _cardinal(double deg) {
@@ -662,8 +653,7 @@ class _NervStatsPanel extends StatelessWidget {
     );
     final String gridLabel = cityLabel ?? '—';
 
-    String entry(String key, String val) =>
-        '$key // ${val.toUpperCase()}';
+    String entry(String key, String val) => '$key // ${val.toUpperCase()}';
 
     final List<String> bits = <String>[
       entry('LOC', gridLabel),
@@ -677,8 +667,7 @@ class _NervStatsPanel extends StatelessWidget {
       if (headingDeg != null)
         entry('HDG',
             '${headingDeg!.toStringAsFixed(0)}° ${_cardinal(headingDeg!)}'),
-      if (altitudeMeters != null)
-        entry('ALT', '${altitudeMeters!.round()} m'),
+      if (altitudeMeters != null) entry('ALT', '${altitudeMeters!.round()} m'),
     ];
 
     return Container(
@@ -687,8 +676,7 @@ class _NervStatsPanel extends StatelessWidget {
         borderRadius: BorderRadius.circular(kRadiusXs),
         border: Border.all(color: border, width: 1.0),
       ),
-      padding:
-          const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
@@ -774,8 +762,7 @@ class _EqualGridPainter extends CustomPainter {
   /// R25+1 — list of recent own-location samples (oldest first).
   /// Empty list = no trail drawn. Each point's recency tunes the
   /// stroke alpha so the oldest fades and the newest is solid.
-  final List<({double latitude, double longitude, int unixSec})>
-      trail;
+  final List<({double latitude, double longitude, int unixSec})> trail;
   final Color trailColor;
 
   /// R25+1 — current magnetic-compass heading in degrees from N
@@ -857,15 +844,12 @@ class _EqualGridPainter extends CustomPainter {
     // is the one containing (centre); cells span outwards from
     // there. We enumerate cell indices large enough to cover the
     // canvas in both directions.
-    final int colsHalf =
-        (size.width / cellPx / 2.0).ceil() + 1;
-    final int rowsHalf =
-        (size.height / cellPx / 2.0).ceil() + 1;
+    final int colsHalf = (size.width / cellPx / 2.0).ceil() + 1;
+    final int rowsHalf = (size.height / cellPx / 2.0).ceil() + 1;
     // Pre-resolve metres-per-degree at our latitude so per-cell
     // centre-coord math doesn't repeat the cos() in the hot loop.
     const double mPerDegLat = 6371000.0 * math.pi / 180.0;
-    final double mPerDegLon =
-        mPerDegLat * math.cos(selfLat * math.pi / 180.0);
+    final double mPerDegLon = mPerDegLat * math.cos(selfLat * math.pi / 180.0);
     final Paint currentCellFill = Paint()
       ..color = selfPin.withValues(alpha: .12);
     final Paint currentCellBorder = Paint()
@@ -909,9 +893,7 @@ class _EqualGridPainter extends CustomPainter {
             style: TextStyle(
                 color: cellLabel,
                 fontSize: city != null ? 10 : 9,
-                fontWeight: city != null
-                    ? FontWeight.w500
-                    : FontWeight.normal,
+                fontWeight: city != null ? FontWeight.w500 : FontWeight.normal,
                 letterSpacing: city != null ? 0.5 : 1,
                 fontFeatures: const <FontFeature>[
                   FontFeature.tabularFigures(),
@@ -921,17 +903,15 @@ class _EqualGridPainter extends CustomPainter {
           ellipsis: '…',
           maxLines: 1,
         )..layout(maxWidth: cellPx - 8);
-        tp.paint(canvas,
-            cellRect.topLeft + const Offset(4, 3));
+        tp.paint(canvas, cellRect.topLeft + const Offset(4, 3));
       }
     }
 
     // Group peers by cell so we can collapse dense cells to a
     // "• × N" badge. Peer screen position is preserved for un-
     // collapsed cells; collapsed cells render at the cell centre.
-    final Map<({int cx, int cy}), List<({DiscoveredNode n, Offset p})>>
-        byCell = <({int cx, int cy}),
-            List<({DiscoveredNode n, Offset p})>>{};
+    final Map<({int cx, int cy}), List<({DiscoveredNode n, Offset p})>> byCell =
+        <({int cx, int cy}), List<({DiscoveredNode n, Offset p})>>{};
     for (final DiscoveredNode n in peers) {
       final Offset p = projectPeer(
         centre: centre,
@@ -944,10 +924,8 @@ class _EqualGridPainter extends CustomPainter {
       );
       final int cx = ((p.dx - centre.dx) / cellPx).round();
       final int cy = ((p.dy - centre.dy) / cellPx).round();
-      byCell
-          .putIfAbsent((cx: cx, cy: cy),
-              () => <({DiscoveredNode n, Offset p})>[])
-          .add((n: n, p: p));
+      byCell.putIfAbsent((cx: cx, cy: cy),
+          () => <({DiscoveredNode n, Offset p})>[]).add((n: n, p: p));
     }
 
     // R25+1 — estimated signal-range rings. Drawn BEFORE peer glyphs
@@ -968,8 +946,7 @@ class _EqualGridPainter extends CustomPainter {
       // already represents many nodes — drawing N overlapping rings
       // is noise).
       for (final MapEntry<({int cx, int cy}),
-          List<({DiscoveredNode n, Offset p})>> entry
-          in byCell.entries) {
+          List<({DiscoveredNode n, Offset p})>> entry in byCell.entries) {
         if (entry.value.length > 8) continue;
         for (final ({DiscoveredNode n, Offset p}) e in entry.value) {
           canvas.drawCircle(e.p, rangePx, ring);
@@ -984,8 +961,7 @@ class _EqualGridPainter extends CustomPainter {
       for (int i = 1; i < trail.length; i++) {
         final ({double latitude, double longitude, int unixSec}) a =
             trail[i - 1];
-        final ({double latitude, double longitude, int unixSec}) b =
-            trail[i];
+        final ({double latitude, double longitude, int unixSec}) b = trail[i];
         final Offset pa = projectPeer(
           centre: centre,
           cellPx: cellPx,
@@ -1041,9 +1017,7 @@ class _EqualGridPainter extends CustomPainter {
       text: TextSpan(
         text: '• × $count',
         style: TextStyle(
-            color: badgeText,
-            fontSize: 11,
-            fontWeight: FontWeight.w600),
+            color: badgeText, fontSize: 11, fontWeight: FontWeight.w600),
       ),
       textDirection: TextDirection.ltr,
     )..layout();
@@ -1075,7 +1049,9 @@ class _EqualGridPainter extends CustomPainter {
       canvas.drawPath(p, fill);
     } else if (n.type == 3 || n.type == 4) {
       // Room / Sensor — small open ring.
-      canvas.drawCircle(at, 5.0,
+      canvas.drawCircle(
+          at,
+          5.0,
           Paint()
             ..color = base
             ..style = PaintingStyle.stroke
@@ -1086,11 +1062,11 @@ class _EqualGridPainter extends CustomPainter {
     // Favourite or known badge: tiny dot above the glyph.
     if (favPubKeys.contains(n.pubKeyHex)) {
       canvas.drawCircle(
-          at + const Offset(0, -10), 2.0,
-          Paint()..color = peerRepeater);
+          at + const Offset(0, -10), 2.0, Paint()..color = peerRepeater);
     } else if (knownPubKeys.contains(n.pubKeyHex)) {
       canvas.drawCircle(
-          at + const Offset(0, -10), 2.0,
+          at + const Offset(0, -10),
+          2.0,
           Paint()
             ..color = peerCompanion
             ..style = PaintingStyle.stroke
@@ -1104,10 +1080,8 @@ class _EqualGridPainter extends CustomPainter {
     // with a peer's filled-circle glyph. Optional heading wedge
     // points the direction the phone is facing (from the magnetic
     // compass).
-    final Paint haloOuter = Paint()
-      ..color = selfPin.withValues(alpha: .18);
-    final Paint haloMid = Paint()
-      ..color = selfPin.withValues(alpha: .35);
+    final Paint haloOuter = Paint()..color = selfPin.withValues(alpha: .18);
+    final Paint haloMid = Paint()..color = selfPin.withValues(alpha: .35);
     canvas.drawCircle(at, 18.0, haloOuter);
     canvas.drawCircle(at, 11.0, haloMid);
 
@@ -1125,8 +1099,7 @@ class _EqualGridPainter extends CustomPainter {
 
     // Inner solid dot, slightly bigger than a peer dot.
     canvas.drawCircle(at, 6.0, Paint()..color = selfPin);
-    canvas.drawCircle(at, 2.5,
-        Paint()..color = selfPin.withValues(alpha: 1.0));
+    canvas.drawCircle(at, 2.5, Paint()..color = selfPin.withValues(alpha: 1.0));
 
     // Heading arrow: small triangular wedge above the bullseye,
     // rotated to the compass heading. Magnetic-north relative — the
@@ -1147,12 +1120,10 @@ class _EqualGridPainter extends CustomPainter {
       final Offset tip = at + Offset(fx * tipDist, fy * tipDist);
       final Offset baseL = at +
           Offset(
-              fx * baseDist + rx * halfWidth,
-              fy * baseDist + ry * halfWidth);
+              fx * baseDist + rx * halfWidth, fy * baseDist + ry * halfWidth);
       final Offset baseR = at +
           Offset(
-              fx * baseDist - rx * halfWidth,
-              fy * baseDist - ry * halfWidth);
+              fx * baseDist - rx * halfWidth, fy * baseDist - ry * halfWidth);
       final Path p = Path()
         ..moveTo(tip.dx, tip.dy)
         ..lineTo(baseL.dx, baseL.dy)

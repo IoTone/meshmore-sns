@@ -3478,5 +3478,12 @@
   "reportCopyBundle": "Copy the bundle",
   "reportCopied": "Bundle copied.",
   "blockedKeysNotPersisted": "This list could not be saved on this device. It filters for now and will be empty after a restart.",
-  "reportActionSub": "Writes a file on this device for you to send. Nothing is transmitted."
+  "reportActionSub": "Writes a file on this device for you to send. Nothing is transmitted.",
+  "nodeMarkerSemantics": "{name} — tap for details",
+  "@nodeMarkerSemantics": {"placeholders": {"name": {"type": "String"}}},
+  "placePinSemantics": "{label}, {expiry}",
+  "@placePinSemantics": {"placeholders": {"label": {"type": "String"}, "expiry": {"type": "String"}}},
+  "placeClusterSemantics": "{count} places here",
+  "@placeClusterSemantics": {"placeholders": {"count": {"type": "int"}}},
+  "mapCanvasSemantics": "Tap a marker on the map to open it"
 }

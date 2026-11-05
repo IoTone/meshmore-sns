@@ -5173,4 +5173,22 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get reportActionSub =>
       'Writes a file on this device for you to send. Nothing is transmitted.';
+
+  @override
+  String nodeMarkerSemantics(String name) {
+    return '$name — tap for details';
+  }
+
+  @override
+  String placePinSemantics(String label, String expiry) {
+    return '$label, $expiry';
+  }
+
+  @override
+  String placeClusterSemantics(int count) {
+    return '$count places here';
+  }
+
+  @override
+  String get mapCanvasSemantics => 'Tap a marker on the map to open it';
 }

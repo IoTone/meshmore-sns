@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 
+import '../gen/app_localizations.dart';
 import '../theme/mm_skin.dart';
 import 'place.dart';
 import 'place_store.dart';
@@ -80,14 +81,14 @@ class _PlaceLayerState extends State<PlaceLayer> {
       markers: <Marker>[
         for (final MapEntry<String, List<Place>> e in buckets.entries)
           if (e.value.length == 1)
-            _pin(skin, now, e.value.single)
+            _pin(skin, now, e.value.single, AppLocalizations.of(context))
           else
-            _cluster(skin, e.value),
+            _cluster(skin, e.value, AppLocalizations.of(context)),
       ],
     );
   }
 
-  Marker _pin(MmSkin skin, DateTime now, Place place) {
+  Marker _pin(MmSkin skin, DateTime now, Place place, AppLocalizations l) {
     final bool seen = widget.store.isSeen(place.id);
     final Color colour =
         seen ? skin.color.fgMuted : placeTypeColour(skin, place.type);
@@ -96,33 +97,40 @@ class _PlaceLayerState extends State<PlaceLayer> {
       width: 84,
       height: 56,
       alignment: Alignment.center,
-      child: GestureDetector(
-        key: ValueKey<String>('place-pin-${place.id}'),
-        onTap: () {
-          widget.store.markSeen(place.id);
-          widget.onOpen(place);
-        },
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            Icon(placeIcon(place.type), size: 24, color: colour),
-            Text(
-              placeDurationText(place.remainingAt(now)),
-              maxLines: 1,
-              softWrap: false,
-              style: TextStyle(
-                color: skin.color.fgMuted,
-                fontFamily: skin.type.monoFamily,
-                fontSize: skin.type.sizeMicro,
+      // A pin draws its own hit area, so nothing announces it to a screen
+      // reader without this: the label the user gave it, and how long it lasts.
+      child: Semantics(
+        button: true,
+        label: l.placePinSemantics(
+            place.label, placeDurationText(place.remainingAt(now))),
+        child: GestureDetector(
+          key: ValueKey<String>('place-pin-${place.id}'),
+          onTap: () {
+            widget.store.markSeen(place.id);
+            widget.onOpen(place);
+          },
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Icon(placeIcon(place.type), size: 24, color: colour),
+              Text(
+                placeDurationText(place.remainingAt(now)),
+                maxLines: 1,
+                softWrap: false,
+                style: TextStyle(
+                  color: skin.color.fgMuted,
+                  fontFamily: skin.type.monoFamily,
+                  fontSize: skin.type.sizeMicro,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Marker _cluster(MmSkin skin, List<Place> places) {
+  Marker _cluster(MmSkin skin, List<Place> places, AppLocalizations l) {
     double lat = 0;
     double lon = 0;
     for (final Place p in places) {
@@ -135,23 +143,27 @@ class _PlaceLayerState extends State<PlaceLayer> {
       width: 64,
       height: 64,
       alignment: Alignment.center,
-      child: GestureDetector(
-        key: ValueKey<String>('place-cluster-${places.first.id}'),
-        onTap: () => widget.onClusterTap(centre),
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: skin.color.surfaceAlt,
-            border: Border.all(color: skin.color.accent),
-          ),
-          child: Center(
-            child: Text(
-              '${places.length}',
-              style: TextStyle(
-                color: skin.color.fg,
-                fontFamily: skin.type.monoFamily,
-                fontSize: skin.type.sizeBody,
-                fontWeight: FontWeight.w700,
+      child: Semantics(
+        button: true,
+        label: l.placeClusterSemantics(places.length),
+        child: GestureDetector(
+          key: ValueKey<String>('place-cluster-${places.first.id}'),
+          onTap: () => widget.onClusterTap(centre),
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: skin.color.surfaceAlt,
+              border: Border.all(color: skin.color.accent),
+            ),
+            child: Center(
+              child: Text(
+                '${places.length}',
+                style: TextStyle(
+                  color: skin.color.fg,
+                  fontFamily: skin.type.monoFamily,
+                  fontSize: skin.type.sizeBody,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ),
           ),

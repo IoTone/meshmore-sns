@@ -8715,6 +8715,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Writes a file on this device for you to send. Nothing is transmitted.'**
   String get reportActionSub;
+
+  /// No description provided for @nodeMarkerSemantics.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} — tap for details'**
+  String nodeMarkerSemantics(String name);
+
+  /// No description provided for @placePinSemantics.
+  ///
+  /// In en, this message translates to:
+  /// **'{label}, {expiry}'**
+  String placePinSemantics(String label, String expiry);
+
+  /// No description provided for @placeClusterSemantics.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} places here'**
+  String placeClusterSemantics(int count);
+
+  /// No description provided for @mapCanvasSemantics.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap a marker on the map to open it'**
+  String get mapCanvasSemantics;
 }
 
 class _AppLocalizationsDelegate

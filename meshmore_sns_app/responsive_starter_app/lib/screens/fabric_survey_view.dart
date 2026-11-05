@@ -133,12 +133,10 @@ class _FabricSurveyViewState extends State<FabricSurveyView> {
     // Build the coverage polygon set. One CircleMarker per cell —
     // sized so adjacent cells touch (radius = half the cell
     // diagonal × cos(lat) for square-ish look at this latitude).
-    final int nowSec =
-        DateTime.now().millisecondsSinceEpoch ~/ 1000;
+    final int nowSec = DateTime.now().millisecondsSinceEpoch ~/ 1000;
     final List<Polygon> cells = <Polygon>[];
     mc.coverageCells.forEach((String key, int unixSec) {
-      final ({int latBucket, int lonBucket})? b =
-          CoverageStore.parseKey(key);
+      final ({int latBucket, int lonBucket})? b = CoverageStore.parseKey(key);
       if (b == null) return;
       final double latOrigin = b.latBucket * CoverageStore.cellDeg;
       final double lonOrigin = b.lonBucket * CoverageStore.cellDeg;
@@ -173,8 +171,7 @@ class _FabricSurveyViewState extends State<FabricSurveyView> {
       ));
     });
 
-    final List<DiscoveredNode> source =
-        widget.filteredNodes ?? mc.nodes;
+    final List<DiscoveredNode> source = widget.filteredNodes ?? mc.nodes;
     final List<DiscoveredNode> withLoc = <DiscoveredNode>[
       for (final DiscoveredNode n in source)
         if (n.hasLocation) n
@@ -207,8 +204,7 @@ class _FabricSurveyViewState extends State<FabricSurveyView> {
               if (_showTiles) MapAttribution(kOsmStandard.attribution),
               // Theme-tinted overlay so cells stay readable on busy
               // street tiles.
-              if (cells.isNotEmpty)
-                PolygonLayer(polygons: cells),
+              if (cells.isNotEmpty) PolygonLayer(polygons: cells),
               // R48 — per-peer reach circles. Diameter is an
               // estimate of how far the peer would still be hearable
               // by another node like ours, derived from the heard
@@ -244,10 +240,8 @@ class _FabricSurveyViewState extends State<FabricSurveyView> {
                         distanceMeters:
                             mc.distanceMetersTo(n.latitude!, n.longitude!),
                         peerType: n.type,
-                        ourSpreadingFactor:
-                            mc.selfInfo?.spreadingFactor ?? 7,
-                        ourBandwidthKhz:
-                            mc.selfInfo?.bandwidthKhz ?? 125.0,
+                        ourSpreadingFactor: mc.selfInfo?.spreadingFactor ?? 7,
+                        ourBandwidthKhz: mc.selfInfo?.bandwidthKhz ?? 125.0,
                         ourTxPowerDbm: mc.selfInfo?.txPowerDbm ?? 14,
                       ),
                       useRadiusInMeter: true,
@@ -268,14 +262,19 @@ class _FabricSurveyViewState extends State<FabricSurveyView> {
                       width: 18,
                       height: 18,
                       alignment: Alignment.center,
-                      child: GestureDetector(
-                        onTap: () => _showDetail(mc, n),
-                        child: Container(
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: cs.tertiary,
-                            border: Border.all(
-                                color: Colors.white, width: 1.5),
+                      child: Semantics(
+                        button: true,
+                        label: l.nodeMarkerSemantics(
+                            n.name.isEmpty ? n.shortId : n.name),
+                        child: GestureDetector(
+                          onTap: () => _showDetail(mc, n),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: cs.tertiary,
+                              border:
+                                  Border.all(color: Colors.white, width: 1.5),
+                            ),
                           ),
                         ),
                       ),
@@ -289,8 +288,7 @@ class _FabricSurveyViewState extends State<FabricSurveyView> {
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         color: cs.primary,
-                        border: Border.all(
-                            color: Colors.white, width: 2),
+                        border: Border.all(color: Colors.white, width: 2),
                       ),
                     ),
                   ),
@@ -305,13 +303,11 @@ class _FabricSurveyViewState extends State<FabricSurveyView> {
           top: 12,
           child: IgnorePointer(
             child: Container(
-              padding: const EdgeInsets.symmetric(
-                  horizontal: 10, vertical: 6),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               decoration: BoxDecoration(
                 color: cs.surface.withValues(alpha: .85),
                 borderRadius: BorderRadius.circular(kRadiusMd),
-                border: Border.all(
-                    color: cs.primary.withValues(alpha: .5)),
+                border: Border.all(color: cs.primary.withValues(alpha: .5)),
               ),
               child: Text(
                 l.fabricCoverageCount(cells.length),
@@ -330,8 +326,7 @@ class _FabricSurveyViewState extends State<FabricSurveyView> {
             left: 12,
             bottom: 12,
             child: Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
                 color: cs.tertiaryContainer.withValues(alpha: .85),
                 borderRadius: BorderRadius.circular(kRadiusMd),
@@ -339,8 +334,7 @@ class _FabricSurveyViewState extends State<FabricSurveyView> {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
-                  Icon(Icons.pause,
-                      size: 12, color: cs.onTertiaryContainer),
+                  Icon(Icons.pause, size: 12, color: cs.onTertiaryContainer),
                   const SizedBox(width: 4),
                   Text(l.globePaused,
                       style: TextStyle(
@@ -360,8 +354,7 @@ class _FabricSurveyViewState extends State<FabricSurveyView> {
             elevation: 1,
             shape: RoundedRectangleBorder(
               borderRadius: mmRadius(context, 6),
-              side: BorderSide(
-                  color: cs.outline.withValues(alpha: .4)),
+              side: BorderSide(color: cs.outline.withValues(alpha: .4)),
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -369,7 +362,8 @@ class _FabricSurveyViewState extends State<FabricSurveyView> {
                 IconButton(
                   tooltip: l.equalGridZoomIn,
                   iconSize: 18,
-                  constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+                  constraints:
+                      const BoxConstraints(minWidth: 48, minHeight: 48),
                   icon: const Icon(Icons.add),
                   onPressed: _zoom < _zoomMax
                       ? () {
@@ -381,7 +375,8 @@ class _FabricSurveyViewState extends State<FabricSurveyView> {
                 IconButton(
                   tooltip: l.equalGridZoomOut,
                   iconSize: 18,
-                  constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+                  constraints:
+                      const BoxConstraints(minWidth: 48, minHeight: 48),
                   icon: const Icon(Icons.remove),
                   onPressed: _zoom > _zoomMin
                       ? () {
@@ -393,31 +388,26 @@ class _FabricSurveyViewState extends State<FabricSurveyView> {
                 IconButton(
                   tooltip: l.streetMapRecenter,
                   iconSize: 18,
-                  constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+                  constraints:
+                      const BoxConstraints(minWidth: 48, minHeight: 48),
                   icon: const Icon(Icons.my_location),
-                  onPressed: () =>
-                      _map.move(LatLng(selfLat, selfLon), _zoom),
+                  onPressed: () => _map.move(LatLng(selfLat, selfLon), _zoom),
                 ),
                 IconButton(
-                  tooltip: _showTiles
-                      ? l.mapHideTiles
-                      : l.mapShowTiles,
+                  tooltip: _showTiles ? l.mapHideTiles : l.mapShowTiles,
                   iconSize: 18,
-                  constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
-                  icon: Icon(_showTiles
-                      ? Icons.layers
-                      : Icons.layers_clear),
-                  onPressed: () =>
-                      setState(() => _showTiles = !_showTiles),
+                  constraints:
+                      const BoxConstraints(minWidth: 48, minHeight: 48),
+                  icon: Icon(_showTiles ? Icons.layers : Icons.layers_clear),
+                  onPressed: () => setState(() => _showTiles = !_showTiles),
                 ),
                 IconButton(
                   tooltip: l.fabricResetTooltip,
                   iconSize: 18,
-                  constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+                  constraints:
+                      const BoxConstraints(minWidth: 48, minHeight: 48),
                   icon: const Icon(Icons.delete_outline),
-                  onPressed: cells.isEmpty
-                      ? null
-                      : () => _confirmReset(mc),
+                  onPressed: cells.isEmpty ? null : () => _confirmReset(mc),
                 ),
               ],
             ),

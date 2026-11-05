@@ -172,8 +172,7 @@ class _MeshTreeViewState extends State<MeshTreeView>
           next[n.id] = prev;
         } else {
           final double angle = 2 * math.pi * i / math.max(1, g.nodes.length);
-          final double jitter =
-              (rnd.nextDouble() - 0.5) * r0 * 0.4;
+          final double jitter = (rnd.nextDouble() - 0.5) * r0 * 0.4;
           next[n.id] = NodePosition(
             x: cx + (r0 + jitter) * math.cos(angle),
             y: cy + (r0 + jitter) * math.sin(angle),
@@ -261,8 +260,7 @@ class _MeshTreeViewState extends State<MeshTreeView>
     // Diagnostic counts — localise any "nodes missing" issue to the
     // filter (input vs shown) vs rendering (shown vs what's drawn).
     final int totalNodes = mc.nodes.length;
-    final int inputNodes =
-        (widget.filteredNodes ?? mc.nodes).length;
+    final int inputNodes = (widget.filteredNodes ?? mc.nodes).length;
     final int shownPeers = graph.nodes.length - 1; // minus self
 
     return LayoutBuilder(
@@ -293,28 +291,33 @@ class _MeshTreeViewState extends State<MeshTreeView>
                 onInteractionStart: (_) {
                   if (_autoFit) setState(() => _autoFit = false);
                 },
-                child: GestureDetector(
-                  onTapUp: (TapUpDetails d) =>
-                      _maybeShowDetail(mc, d.localPosition),
-                  child: SizedBox(
-                    width: size.width,
-                    height: size.height,
-                    child: CustomPaint(
-                      painter: _MeshTreePainter(
-                        graph: graph,
-                        positions: _positions,
-                        knownPubKeys: mc.known,
-                        favPubKeys: mc.favorites,
-                        accent: cs.primary,
-                        accentDim: cs.primary.withValues(alpha: .35),
-                        hub: cs.tertiary,
-                        edge: cs.primary.withValues(alpha: .55),
-                        edgeFloat: cs.outline.withValues(alpha: .35),
-                        label: cs.onSurface,
-                        bg: cs.surface,
-                        emptyMsg: graph.nodes.length <= 1
-                            ? l.meshTreeEmpty
-                            : null,
+                // The canvas hit-tests its own marks, so the label is on the
+                // canvas: a screen reader is told what a tap does here.
+                child: Semantics(
+                  button: true,
+                  label: l.mapCanvasSemantics,
+                  child: GestureDetector(
+                    onTapUp: (TapUpDetails d) =>
+                        _maybeShowDetail(mc, d.localPosition),
+                    child: SizedBox(
+                      width: size.width,
+                      height: size.height,
+                      child: CustomPaint(
+                        painter: _MeshTreePainter(
+                          graph: graph,
+                          positions: _positions,
+                          knownPubKeys: mc.known,
+                          favPubKeys: mc.favorites,
+                          accent: cs.primary,
+                          accentDim: cs.primary.withValues(alpha: .35),
+                          hub: cs.tertiary,
+                          edge: cs.primary.withValues(alpha: .55),
+                          edgeFloat: cs.outline.withValues(alpha: .35),
+                          label: cs.onSurface,
+                          bg: cs.surface,
+                          emptyMsg:
+                              graph.nodes.length <= 1 ? l.meshTreeEmpty : null,
+                        ),
                       ),
                     ),
                   ),
@@ -332,8 +335,7 @@ class _MeshTreeViewState extends State<MeshTreeView>
                 right: 12,
                 bottom: 12,
                 child: FilledButton.tonalIcon(
-                  icon: const Icon(
-                      Icons.center_focus_strong, size: 16),
+                  icon: const Icon(Icons.center_focus_strong, size: 16),
                   label: Text(l.meshTreeRecenter),
                   onPressed: _recenter,
                 ),
@@ -343,13 +345,11 @@ class _MeshTreeViewState extends State<MeshTreeView>
               left: 12,
               top: 12,
               child: Container(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 8, vertical: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
                   color: cs.surface.withValues(alpha: .82),
                   borderRadius: mmRadius(context, 6),
-                  border: Border.all(
-                      color: cs.outline.withValues(alpha: .5)),
+                  border: Border.all(color: cs.outline.withValues(alpha: .5)),
                 ),
                 child: Text(
                   'shown $shownPeers · in $inputNodes · '
@@ -565,8 +565,7 @@ class _MeshTreePainter extends CustomPainter {
         ),
         textDirection: TextDirection.ltr,
       )..layout(maxWidth: 120);
-      tp.paint(canvas,
-          Offset(c.dx - tp.width / 2, c.dy + style.radius + 2));
+      tp.paint(canvas, Offset(c.dx - tp.width / 2, c.dy + style.radius + 2));
     }
   }
 
@@ -599,18 +598,16 @@ class _MeshTreePainter extends CustomPainter {
 
   _NodeStyle _styleFor(MeshGraphNode n) {
     if (n.isSelf) {
-      return _NodeStyle(
-          colour: accent, radius: 10, shape: _NodeShape.circle);
+      return _NodeStyle(colour: accent, radius: 10, shape: _NodeShape.circle);
     }
     return switch (n.type) {
-      kAdvTypeRepeater => _NodeStyle(
-          colour: hub, radius: 10, shape: _NodeShape.square),
-      kAdvTypeRoom => _NodeStyle(
-          colour: hub, radius: 9, shape: _NodeShape.diamond),
-      kAdvTypeSensor => _NodeStyle(
-          colour: accentDim, radius: 5, shape: _NodeShape.circle),
-      _ => _NodeStyle(
-          colour: accent, radius: 6, shape: _NodeShape.circle),
+      kAdvTypeRepeater =>
+        _NodeStyle(colour: hub, radius: 10, shape: _NodeShape.square),
+      kAdvTypeRoom =>
+        _NodeStyle(colour: hub, radius: 9, shape: _NodeShape.diamond),
+      kAdvTypeSensor =>
+        _NodeStyle(colour: accentDim, radius: 5, shape: _NodeShape.circle),
+      _ => _NodeStyle(colour: accent, radius: 6, shape: _NodeShape.circle),
     };
   }
 
@@ -624,8 +621,7 @@ class _MeshTreePainter extends CustomPainter {
     final double ux = dx / d;
     final double uy = dy / d;
     final double backoff = 12;
-    final Offset tip =
-        Offset(to.dx - ux * backoff, to.dy - uy * backoff);
+    final Offset tip = Offset(to.dx - ux * backoff, to.dy - uy * backoff);
     const double arrowSize = 6;
     final Offset left = Offset(
       tip.dx - ux * arrowSize - uy * arrowSize * 0.6,

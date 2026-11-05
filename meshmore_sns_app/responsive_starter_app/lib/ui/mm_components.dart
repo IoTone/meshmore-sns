@@ -267,6 +267,69 @@ class MmListRow extends StatelessWidget {
   }
 }
 
+/// A row that opens a picker, with the current value where a value belongs.
+///
+/// A `ListTile` whose current choice sits in the `subtitle` slot reads as a
+/// two-line description: nothing in it says "this opens a choice". Putting the
+/// value in the trailing slot beside a chevron says both things at once, and
+/// matches every other navigable row in the app.
+class MmPickerTile extends StatelessWidget {
+  const MmPickerTile({
+    super.key,
+    required this.title,
+    required this.value,
+    required this.onTap,
+    this.leading,
+    this.enabled = true,
+    this.hint,
+  });
+
+  final String title;
+
+  /// The current choice, in the trailing slot.
+  final String value;
+  final VoidCallback? onTap;
+  final Widget? leading;
+  final bool enabled;
+
+  /// Optional one-line explanation, kept in the subtitle slot because it is not
+  /// a value.
+  final String? hint;
+
+  @override
+  Widget build(BuildContext context) {
+    final MmSkin skin = context.skin;
+    final bool on = enabled && onTap != null;
+    final Color valueColor = on ? skin.color.accent : skin.color.fgMuted;
+    return ListTile(
+      enabled: on,
+      leading: leading,
+      title: Text(title),
+      subtitle: hint == null ? null : Text(hint!),
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 160),
+            child: Text(
+              value,
+              textAlign: TextAlign.end,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                  color: valueColor,
+                  fontSize: skin.type.sizeBody,
+                  fontWeight: FontWeight.w600),
+            ),
+          ),
+          const SizedBox(width: 4),
+          Icon(Icons.chevron_right, size: 18, color: valueColor),
+        ],
+      ),
+      onTap: on ? onTap : null,
+    );
+  }
+}
+
 /// A small status pill (app-bar / header chip) — dot + tracked label,
 /// inverting to the alert colour when [alert].
 class MmStatusPill extends StatelessWidget {

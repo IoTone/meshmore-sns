@@ -123,8 +123,7 @@ class _GlobeViewState extends State<GlobeView> {
 
   static final double _scaleMin = _scaleFromAltMi(_altMaxMi); // 1.0
   static final double _scaleMax = _scaleFromAltMi(_altMinMi); // ~402_640
-  static final double _scaleDefault =
-      _scaleFromAltMi(_altDefaultMi); // 7625
+  static final double _scaleDefault = _scaleFromAltMi(_altDefaultMi); // 7625
 
   double _scale = _scaleDefault;
   double _scaleAtGestureStart = _scaleDefault;
@@ -148,8 +147,7 @@ class _GlobeViewState extends State<GlobeView> {
     try {
       final String raw =
           await rootBundle.loadString('assets/data/world-110m.geojson');
-      final Map<String, dynamic> doc =
-          jsonDecode(raw) as Map<String, dynamic>;
+      final Map<String, dynamic> doc = jsonDecode(raw) as Map<String, dynamic>;
       // The asset is a FeatureCollection with a single MultiPolygon
       // feature. Flatten to a list of rings — for our visual
       // purposes we don't need to keep polygons grouped.
@@ -157,8 +155,7 @@ class _GlobeViewState extends State<GlobeView> {
       final List<dynamic> features = (doc['features'] as List<dynamic>);
       for (final dynamic f in features) {
         final Map<String, dynamic> geom =
-            (f as Map<String, dynamic>)['geometry']
-                as Map<String, dynamic>;
+            (f as Map<String, dynamic>)['geometry'] as Map<String, dynamic>;
         final String type = geom['type'] as String;
         if (type == 'Polygon') {
           for (final dynamic ring in geom['coordinates'] as List<dynamic>) {
@@ -209,9 +206,8 @@ class _GlobeViewState extends State<GlobeView> {
   /// Duplicate of the painter's projection, public to the state
   /// class so the tap hit-test can reuse it without going through
   /// the painter's private method.
-  ({Offset offset, double rotY}) _projectPoint(Offset centre,
-      double r, double rotLon, double rotLat, double latDeg,
-      double lonDeg) {
+  ({Offset offset, double rotY}) _projectPoint(Offset centre, double r,
+      double rotLon, double rotLat, double latDeg, double lonDeg) {
     final double lonShift = (lonDeg * math.pi / 180) - rotLon;
     final double lat = latDeg * math.pi / 180;
     final double cl = math.cos(lat);
@@ -272,8 +268,7 @@ class _GlobeViewState extends State<GlobeView> {
     // pause-snapshot + recency window already applied), use it.
     // Otherwise fall back to the controller's live nodes so the
     // globe is still useful when constructed standalone.
-    final List<DiscoveredNode> source =
-        widget.filteredNodes ?? mc.nodes;
+    final List<DiscoveredNode> source = widget.filteredNodes ?? mc.nodes;
     final List<DiscoveredNode> withLoc = <DiscoveredNode>[
       for (final DiscoveredNode n in source)
         if (n.hasLocation) n
@@ -288,8 +283,7 @@ class _GlobeViewState extends State<GlobeView> {
     final Map<String, List<DiscoveredNode>?> chains =
         <String, List<DiscoveredNode>?>{};
     for (final DiscoveredNode n in withLoc) {
-      final List<DiscoveredNode>? resolved =
-          mc.topologyChainFor(n.pubKeyHex);
+      final List<DiscoveredNode>? resolved = mc.topologyChainFor(n.pubKeyHex);
       if (resolved == null) {
         chains[n.pubKeyHex] = null;
       } else if (resolved.every((DiscoveredNode r) => r.hasLocation)) {
@@ -302,248 +296,240 @@ class _GlobeViewState extends State<GlobeView> {
       }
     }
 
-    return GestureDetector(
-      onScaleStart:
-          widget.interactive ? (_) => _scaleAtGestureStart = _scale : null,
-      onTapUp: (TapUpDetails d) {
-        // Hit-test the tap against every visible peer pin. We
-        // need the surface size for the projection; LayoutBuilder
-        // gave us a Size we cached in `_lastPaintSize` during
-        // paint. Fall back to context.size if we haven't painted
-        // yet (e.g. first frame race).
-        final Size size = _lastPaintSize ?? context.size ?? Size.zero;
-        if (size.isEmpty) return;
-        final Offset centre = size.center(Offset.zero);
-        final double r =
-            math.min(size.width, size.height) * 0.45 * _scale;
-        final double rotLon = _centreLonDeg * math.pi / 180;
-        final double rotLat = _centreLatDeg * math.pi / 180;
-        DiscoveredNode? best;
-        double bestSq = 24 * 24; // 24-px tap radius²
-        for (final DiscoveredNode n in withLoc) {
-          final ({Offset offset, double rotY}) pp = _projectPoint(
-              centre, r, rotLon, rotLat, n.latitude!, n.longitude!);
-          if (pp.rotY < 0) continue;
-          final double dx = pp.offset.dx - d.localPosition.dx;
-          final double dy = pp.offset.dy - d.localPosition.dy;
-          final double sq = dx * dx + dy * dy;
-          if (sq < bestSq) {
-            bestSq = sq;
-            best = n;
+    return Semantics(
+      button: true,
+      label: l.mapCanvasSemantics,
+      child: GestureDetector(
+        onScaleStart:
+            widget.interactive ? (_) => _scaleAtGestureStart = _scale : null,
+        onTapUp: (TapUpDetails d) {
+          // Hit-test the tap against every visible peer pin. We
+          // need the surface size for the projection; LayoutBuilder
+          // gave us a Size we cached in `_lastPaintSize` during
+          // paint. Fall back to context.size if we haven't painted
+          // yet (e.g. first frame race).
+          final Size size = _lastPaintSize ?? context.size ?? Size.zero;
+          if (size.isEmpty) return;
+          final Offset centre = size.center(Offset.zero);
+          final double r = math.min(size.width, size.height) * 0.45 * _scale;
+          final double rotLon = _centreLonDeg * math.pi / 180;
+          final double rotLat = _centreLatDeg * math.pi / 180;
+          DiscoveredNode? best;
+          double bestSq = 24 * 24; // 24-px tap radius²
+          for (final DiscoveredNode n in withLoc) {
+            final ({Offset offset, double rotY}) pp = _projectPoint(
+                centre, r, rotLon, rotLat, n.latitude!, n.longitude!);
+            if (pp.rotY < 0) continue;
+            final double dx = pp.offset.dx - d.localPosition.dx;
+            final double dy = pp.offset.dy - d.localPosition.dy;
+            final double sq = dx * dx + dy * dy;
+            if (sq < bestSq) {
+              bestSq = sq;
+              best = n;
+            }
           }
-        }
-        if (best != null) _showDetail(context, mc, best);
-      },
-      onScaleUpdate: (ScaleUpdateDetails d) {
-        // Trackball drag + pinch zoom in one handler. With a single
-        // pointer, `scale` is always 1.0 and `focalPointDelta` is
-        // the pan delta; with two pointers we get both. Scale-aware
-        // drag: when zoomed in (higher _scale), the same pixel
-        // distance maps to a smaller angular rotation so the globe
-        // doesn't fly past under the finger.
-        setState(() {
-          _scale = (_scaleAtGestureStart * d.scale)
-              .clamp(_scaleMin, _scaleMax);
-          final double k = 0.5 / _scale;
-          _centreLonDeg =
-              ((_centreLonDeg - d.focalPointDelta.dx * k) + 540) %
-                      360 -
-                  180;
-          _centreLatDeg = (_centreLatDeg + d.focalPointDelta.dy * k)
-              .clamp(-89.0, 89.0);
-        });
-      },
-      child: Stack(
-        children: <Widget>[
-          Positioned.fill(
-            child: LayoutBuilder(builder:
-                (BuildContext _, BoxConstraints constraints) {
-              // Cache the size so the tap hit-test in
-              // GestureDetector has the same coords the painter
-              // used. Done post-frame so we don't setState during
-              // a build.
-              final Size sz =
-                  Size(constraints.maxWidth, constraints.maxHeight);
-              if (_lastPaintSize != sz) {
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  if (mounted) _lastPaintSize = sz;
-                });
-              }
-              return CustomPaint(
-              painter: _GlobePainter(
-                centreLonDeg: _centreLonDeg,
-                centreLatDeg: _centreLatDeg,
-                scale: _scale,
-                ocean: cs.surfaceContainerHighest,
-                land: cs.surfaceContainer,
-                landStroke: cs.outline.withValues(alpha: .55),
-                grid: cs.outline.withValues(alpha: .35),
-                selfPin: cs.primary,
-                peerRecent: cs.tertiary,
-                peerStale: cs.onSurfaceVariant,
-                arc: cs.primary.withValues(alpha: .55),
-                regionFill: cs.tertiary.withValues(alpha: .20),
-                regionStroke: cs.tertiary,
-                regionLabel: cs.onSurface,
-                labelText: cs.onSurfaceVariant,
-                frame: cs.outline,
-                rings: _land ?? const <List<List<double>>>[],
-                selfLat: selfLat,
-                selfLon: selfLon,
-                peers: withLoc,
-                chains: chains,
-                showArcs: _showArcs,
-                showRegions: _showRegions,
-                showLabels: _showLabels,
-              ),
-            );
-            }),
-          ),
-          // Overlay toggle strip — top-right, three small chips.
-          Positioned(
-            right: 8,
-            top: 8,
-            child: Container(
-              padding: const EdgeInsets.symmetric(
-                  horizontal: 6, vertical: 4),
-              decoration: BoxDecoration(
-                color: cs.surface.withValues(alpha: .75),
-                borderRadius: mmRadius(context, 6),
-                border: Border.all(
-                    color: cs.outline.withValues(alpha: .5)),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  _OverlayChip(
-                    icon: Icons.timeline,
-                    label: l.globeOverlayArcs,
-                    on: _showArcs,
-                    onTap: () =>
-                        setState(() => _showArcs = !_showArcs),
+          if (best != null) _showDetail(context, mc, best);
+        },
+        onScaleUpdate: (ScaleUpdateDetails d) {
+          // Trackball drag + pinch zoom in one handler. With a single
+          // pointer, `scale` is always 1.0 and `focalPointDelta` is
+          // the pan delta; with two pointers we get both. Scale-aware
+          // drag: when zoomed in (higher _scale), the same pixel
+          // distance maps to a smaller angular rotation so the globe
+          // doesn't fly past under the finger.
+          setState(() {
+            _scale =
+                (_scaleAtGestureStart * d.scale).clamp(_scaleMin, _scaleMax);
+            final double k = 0.5 / _scale;
+            _centreLonDeg =
+                ((_centreLonDeg - d.focalPointDelta.dx * k) + 540) % 360 - 180;
+            _centreLatDeg =
+                (_centreLatDeg + d.focalPointDelta.dy * k).clamp(-89.0, 89.0);
+          });
+        },
+        child: Stack(
+          children: <Widget>[
+            Positioned.fill(
+              child: LayoutBuilder(
+                  builder: (BuildContext _, BoxConstraints constraints) {
+                // Cache the size so the tap hit-test in
+                // GestureDetector has the same coords the painter
+                // used. Done post-frame so we don't setState during
+                // a build.
+                final Size sz =
+                    Size(constraints.maxWidth, constraints.maxHeight);
+                if (_lastPaintSize != sz) {
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    if (mounted) _lastPaintSize = sz;
+                  });
+                }
+                return CustomPaint(
+                  painter: _GlobePainter(
+                    centreLonDeg: _centreLonDeg,
+                    centreLatDeg: _centreLatDeg,
+                    scale: _scale,
+                    ocean: cs.surfaceContainerHighest,
+                    land: cs.surfaceContainer,
+                    landStroke: cs.outline.withValues(alpha: .55),
+                    grid: cs.outline.withValues(alpha: .35),
+                    selfPin: cs.primary,
+                    peerRecent: cs.tertiary,
+                    peerStale: cs.onSurfaceVariant,
+                    arc: cs.primary.withValues(alpha: .55),
+                    regionFill: cs.tertiary.withValues(alpha: .20),
+                    regionStroke: cs.tertiary,
+                    regionLabel: cs.onSurface,
+                    labelText: cs.onSurfaceVariant,
+                    frame: cs.outline,
+                    rings: _land ?? const <List<List<double>>>[],
+                    selfLat: selfLat,
+                    selfLon: selfLon,
+                    peers: withLoc,
+                    chains: chains,
+                    showArcs: _showArcs,
+                    showRegions: _showRegions,
+                    showLabels: _showLabels,
                   ),
-                  const SizedBox(width: 4),
-                  _OverlayChip(
-                    icon: Icons.scatter_plot,
-                    label: l.globeOverlayRegion,
-                    on: _showRegions,
-                    onTap: () => setState(
-                        () => _showRegions = !_showRegions),
-                  ),
-                  const SizedBox(width: 4),
-                  _OverlayChip(
-                    icon: Icons.label_outline,
-                    label: l.globeOverlayLabels,
-                    on: _showLabels,
-                    onTap: () => setState(
-                        () => _showLabels = !_showLabels),
-                  ),
-                ],
-              ),
+                );
+              }),
             ),
-          ),
-          Positioned(
-            left: 12,
-            bottom: 12,
-            child: Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: cs.surface.withValues(alpha: .75),
-                borderRadius: BorderRadius.circular(kRadiusMd),
-                border: Border.all(
-                    color: cs.outline.withValues(alpha: .4)),
-              ),
-              child: Text(
-                l.globeFooter(withLoc.length),
-                style: TextStyle(
-                    color: cs.onSurfaceVariant,
-                    fontSize: 11,
-                    letterSpacing: 1),
-              ),
-            ),
-          ),
-          // R40 — altitude slider. Log-mapped so the range from
-          // hemisphere (~7600 mi) down to 100 ft fits a single
-          // 0..1 slider track without the entire useful range
-          // collapsing into the last 1% (it would on a linear
-          // slider given the 400 000× zoom factor).
-          Positioned(
-            right: 12,
-            bottom: 12,
-            child: Container(
-              width: 220,
-              padding: const EdgeInsets.symmetric(
-                  horizontal: 8, vertical: 2),
-              decoration: BoxDecoration(
-                color: cs.surface.withValues(alpha: .75),
-                borderRadius: BorderRadius.circular(kRadiusMd),
-                border: Border.all(
-                    color: cs.outline.withValues(alpha: .4)),
-              ),
-              child: Row(
-                children: <Widget>[
-                  Text(l.globeAltitude,
-                      style: TextStyle(
-                          color: cs.onSurfaceVariant,
-                          fontSize: 10,
-                          letterSpacing: 1.2)),
-                  Expanded(
-                    child: Slider(
-                      min: 0.0,
-                      max: 1.0,
-                      // Slider is reversed in meaning: 0.0 = max
-                      // altitude (zoomed out), 1.0 = min altitude
-                      // (zoomed in). Reads more naturally on screen.
-                      value: _scaleToSliderPos(_scale),
-                      onChanged: (double v) => setState(
-                          () => _scale = _sliderPosToScale(v)),
-                    ),
-                  ),
-                  SizedBox(
-                    width: 56,
-                    child: Text(
-                      _formatAltitude(_altMiFromScale(_scale)),
-                      textAlign: TextAlign.end,
-                      style: TextStyle(
-                          color: cs.onSurface,
-                          fontFamily: 'JetBrains Mono',
-                          fontSize: 10),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          // R40 — PAUSED indicator when the grid handed us a frozen
-          // snapshot; otherwise hidden.
-          if (widget.frozen)
+            // Overlay toggle strip — top-right, three small chips.
             Positioned(
-              left: 12,
-              top: 12,
+              right: 8,
+              top: 8,
               child: Container(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 8, vertical: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
                 decoration: BoxDecoration(
-                  color: cs.tertiaryContainer.withValues(alpha: .85),
-                  borderRadius: BorderRadius.circular(kRadiusMd),
+                  color: cs.surface.withValues(alpha: .75),
+                  borderRadius: mmRadius(context, 6),
+                  border: Border.all(color: cs.outline.withValues(alpha: .5)),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: <Widget>[
-                    Icon(Icons.pause,
-                        size: 12, color: cs.onTertiaryContainer),
+                    _OverlayChip(
+                      icon: Icons.timeline,
+                      label: l.globeOverlayArcs,
+                      on: _showArcs,
+                      onTap: () => setState(() => _showArcs = !_showArcs),
+                    ),
                     const SizedBox(width: 4),
-                    Text(l.globePaused,
-                        style: TextStyle(
-                            color: cs.onTertiaryContainer,
-                            fontSize: 10,
-                            letterSpacing: 1)),
+                    _OverlayChip(
+                      icon: Icons.scatter_plot,
+                      label: l.globeOverlayRegion,
+                      on: _showRegions,
+                      onTap: () => setState(() => _showRegions = !_showRegions),
+                    ),
+                    const SizedBox(width: 4),
+                    _OverlayChip(
+                      icon: Icons.label_outline,
+                      label: l.globeOverlayLabels,
+                      on: _showLabels,
+                      onTap: () => setState(() => _showLabels = !_showLabels),
+                    ),
                   ],
                 ),
               ),
             ),
-        ],
+            Positioned(
+              left: 12,
+              bottom: 12,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: cs.surface.withValues(alpha: .75),
+                  borderRadius: BorderRadius.circular(kRadiusMd),
+                  border: Border.all(color: cs.outline.withValues(alpha: .4)),
+                ),
+                child: Text(
+                  l.globeFooter(withLoc.length),
+                  style: TextStyle(
+                      color: cs.onSurfaceVariant,
+                      fontSize: 11,
+                      letterSpacing: 1),
+                ),
+              ),
+            ),
+            // R40 — altitude slider. Log-mapped so the range from
+            // hemisphere (~7600 mi) down to 100 ft fits a single
+            // 0..1 slider track without the entire useful range
+            // collapsing into the last 1% (it would on a linear
+            // slider given the 400 000× zoom factor).
+            Positioned(
+              right: 12,
+              bottom: 12,
+              child: Container(
+                width: 220,
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: cs.surface.withValues(alpha: .75),
+                  borderRadius: BorderRadius.circular(kRadiusMd),
+                  border: Border.all(color: cs.outline.withValues(alpha: .4)),
+                ),
+                child: Row(
+                  children: <Widget>[
+                    Text(l.globeAltitude,
+                        style: TextStyle(
+                            color: cs.onSurfaceVariant,
+                            fontSize: 10,
+                            letterSpacing: 1.2)),
+                    Expanded(
+                      child: Slider(
+                        min: 0.0,
+                        max: 1.0,
+                        // Slider is reversed in meaning: 0.0 = max
+                        // altitude (zoomed out), 1.0 = min altitude
+                        // (zoomed in). Reads more naturally on screen.
+                        value: _scaleToSliderPos(_scale),
+                        onChanged: (double v) =>
+                            setState(() => _scale = _sliderPosToScale(v)),
+                      ),
+                    ),
+                    SizedBox(
+                      width: 56,
+                      child: Text(
+                        _formatAltitude(_altMiFromScale(_scale)),
+                        textAlign: TextAlign.end,
+                        style: TextStyle(
+                            color: cs.onSurface,
+                            fontFamily: 'JetBrains Mono',
+                            fontSize: 10),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            // R40 — PAUSED indicator when the grid handed us a frozen
+            // snapshot; otherwise hidden.
+            if (widget.frozen)
+              Positioned(
+                left: 12,
+                top: 12,
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: cs.tertiaryContainer.withValues(alpha: .85),
+                    borderRadius: BorderRadius.circular(kRadiusMd),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      Icon(Icons.pause,
+                          size: 12, color: cs.onTertiaryContainer),
+                      const SizedBox(width: 4),
+                      Text(l.globePaused,
+                          style: TextStyle(
+                              color: cs.onTertiaryContainer,
+                              fontSize: 10,
+                              letterSpacing: 1)),
+                    ],
+                  ),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -572,16 +558,13 @@ class _OverlayChip extends StatelessWidget {
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(kRadiusMd),
           border: Border.all(
-              color: on
-                  ? cs.primary
-                  : cs.outline.withValues(alpha: .35),
+              color: on ? cs.primary : cs.outline.withValues(alpha: .35),
               width: 1),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
-            Icon(icon, size: 12,
-                color: on ? cs.primary : cs.onSurfaceVariant),
+            Icon(icon, size: 12, color: on ? cs.primary : cs.onSurfaceVariant),
             const SizedBox(width: 4),
             Text(label,
                 style: TextStyle(
@@ -661,8 +644,7 @@ class _GlobePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final Offset centre = size.center(Offset.zero);
-    final double r =
-        math.min(size.width, size.height) * 0.45 * scale;
+    final double r = math.min(size.width, size.height) * 0.45 * scale;
     // Convert centre to radians once; pass to every project call.
     final double rotLon = centreLonDeg * math.pi / 180;
     final double rotLat = centreLatDeg * math.pi / 180;
@@ -686,12 +668,12 @@ class _GlobePainter extends CustomPainter {
       ..strokeWidth = 0.6
       ..color = grid;
     for (int latDeg = -60; latDeg <= 60; latDeg += 30) {
-      _drawParallel(canvas, centre, r, rotLon, rotLat,
-          latDeg.toDouble(), gridPaint);
+      _drawParallel(
+          canvas, centre, r, rotLon, rotLat, latDeg.toDouble(), gridPaint);
     }
     for (int lonDeg = 0; lonDeg < 360; lonDeg += 30) {
-      _drawMeridian(canvas, centre, r, rotLon, rotLat,
-          lonDeg.toDouble(), gridPaint);
+      _drawMeridian(
+          canvas, centre, r, rotLon, rotLat, lonDeg.toDouble(), gridPaint);
     }
 
     // Land — fill + thin stroke.
@@ -720,21 +702,21 @@ class _GlobePainter extends CustomPainter {
       for (final DiscoveredNode n in peers) {
         final List<DiscoveredNode>? chain = chains[n.pubKeyHex];
         if (chain == null) {
-          _drawDashedGreatCircle(canvas, centre, r, rotLon, rotLat,
-              selfLat!, selfLon!, n.latitude!, n.longitude!, arc);
+          _drawDashedGreatCircle(canvas, centre, r, rotLon, rotLat, selfLat!,
+              selfLon!, n.latitude!, n.longitude!, arc);
           continue;
         }
         // Walk us → hop[0] → hop[1] → … → hop[N-1] → peer.
         double prevLat = selfLat!;
         double prevLon = selfLon!;
         for (final DiscoveredNode hop in chain) {
-          _drawGreatCircle(canvas, centre, r, rotLon, rotLat, prevLat,
-              prevLon, hop.latitude!, hop.longitude!, solid);
+          _drawGreatCircle(canvas, centre, r, rotLon, rotLat, prevLat, prevLon,
+              hop.latitude!, hop.longitude!, solid);
           prevLat = hop.latitude!;
           prevLon = hop.longitude!;
         }
-        _drawGreatCircle(canvas, centre, r, rotLon, rotLat, prevLat,
-            prevLon, n.latitude!, n.longitude!, solid);
+        _drawGreatCircle(canvas, centre, r, rotLon, rotLat, prevLat, prevLon,
+            n.latitude!, n.longitude!, solid);
       }
     }
 
@@ -748,8 +730,8 @@ class _GlobePainter extends CustomPainter {
     // Self pin (crosshair + dot). Drawn after peers so it's on
     // top in the overlap case.
     if (selfLat != null && selfLon != null) {
-      final ({Offset offset, double rotY}) pp = _project(
-          centre, r, rotLon, rotLat, selfLat!, selfLon!);
+      final ({Offset offset, double rotY}) pp =
+          _project(centre, r, rotLon, rotLat, selfLat!, selfLon!);
       if (pp.rotY >= 0) {
         final Offset p = pp.offset;
         final Paint x = Paint()
@@ -762,12 +744,12 @@ class _GlobePainter extends CustomPainter {
     }
   }
 
-  void _drawPeerPins(Canvas canvas, Offset centre, double r,
-      double rotLon, double rotLat) {
+  void _drawPeerPins(
+      Canvas canvas, Offset centre, double r, double rotLon, double rotLat) {
     final int now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
     for (final DiscoveredNode n in peers) {
-      final ({Offset offset, double rotY}) pp = _project(
-          centre, r, rotLon, rotLat, n.latitude!, n.longitude!);
+      final ({Offset offset, double rotY}) pp =
+          _project(centre, r, rotLon, rotLat, n.latitude!, n.longitude!);
       if (pp.rotY < 0) continue;
       final Offset p = pp.offset;
       final int dtHours = ((now - n.lastHeardUnix) / 3600).round();
@@ -779,9 +761,7 @@ class _GlobePainter extends CustomPainter {
           text: TextSpan(
             text: n.name,
             style: TextStyle(
-                color: labelText,
-                fontSize: 10,
-                fontFamily: 'JetBrains Mono'),
+                color: labelText, fontSize: 10, fontFamily: 'JetBrains Mono'),
           ),
           textDirection: ui.TextDirection.ltr,
         )..layout();
@@ -790,15 +770,15 @@ class _GlobePainter extends CustomPainter {
     }
   }
 
-  void _drawRegionClusters(Canvas canvas, Offset centre, double r,
-      double rotLon, double rotLat) {
+  void _drawRegionClusters(
+      Canvas canvas, Offset centre, double r, double rotLon, double rotLat) {
     final Map<String, _RegionAcc> buckets = <String, _RegionAcc>{};
     for (final DiscoveredNode n in peers) {
       final int lb = (n.latitude! / 10).floor() * 10;
       final int wb = (n.longitude! / 10).floor() * 10;
       final String key = '$lb,$wb';
-      final _RegionAcc acc = buckets.putIfAbsent(
-          key, () => _RegionAcc(0, 0, 0));
+      final _RegionAcc acc =
+          buckets.putIfAbsent(key, () => _RegionAcc(0, 0, 0));
       acc.count++;
       acc.latSum += n.latitude!;
       acc.lonSum += n.longitude!;
@@ -878,9 +858,17 @@ class _GlobePainter extends CustomPainter {
   /// projected; segments are skipped where either end falls on the
   /// far side of the sphere. Matches the d3 mockup convention used
   /// by the rest of the painter — see `_project` for the math.
-  void _drawGreatCircle(Canvas canvas, Offset centre, double r,
-      double rotLon, double rotLat, double lat1, double lon1,
-      double lat2, double lon2, Paint paint) {
+  void _drawGreatCircle(
+      Canvas canvas,
+      Offset centre,
+      double r,
+      double rotLon,
+      double rotLat,
+      double lat1,
+      double lon1,
+      double lat2,
+      double lon2,
+      Paint paint) {
     const int N = 48;
     Offset? prev;
     for (int i = 0; i <= N; i++) {
@@ -893,8 +881,7 @@ class _GlobePainter extends CustomPainter {
       final double sinL = math.sin(lat1 * math.pi / 180) * (1 - t) +
           math.sin(lat2 * math.pi / 180) * t;
       final double lonI = lon1 * (1 - t) + lon2 * t;
-      final double latI =
-          math.asin(sinL.clamp(-1.0, 1.0)) * 180 / math.pi;
+      final double latI = math.asin(sinL.clamp(-1.0, 1.0)) * 180 / math.pi;
       final ({Offset offset, double rotY}) pp =
           _project(centre, r, rotLon, rotLat, latI, lonI);
       final Offset? proj = pp.rotY < 0 ? null : pp.offset;
@@ -910,9 +897,17 @@ class _GlobePainter extends CustomPainter {
   /// for peers whose topology chain couldn't be resolved — visually
   /// communicates "we know they connect, route unknown" without
   /// pretending the line traces the actual path.
-  void _drawDashedGreatCircle(Canvas canvas, Offset centre, double r,
-      double rotLon, double rotLat, double lat1, double lon1,
-      double lat2, double lon2, Color colour) {
+  void _drawDashedGreatCircle(
+      Canvas canvas,
+      Offset centre,
+      double r,
+      double rotLon,
+      double rotLat,
+      double lat1,
+      double lon1,
+      double lat2,
+      double lon2,
+      Color colour) {
     const int N = 48;
     const int dash = 3;
     const int gap = 3;
@@ -926,8 +921,7 @@ class _GlobePainter extends CustomPainter {
       final double sinL = math.sin(lat1 * math.pi / 180) * (1 - t) +
           math.sin(lat2 * math.pi / 180) * t;
       final double lonI = lon1 * (1 - t) + lon2 * t;
-      final double latI =
-          math.asin(sinL.clamp(-1.0, 1.0)) * 180 / math.pi;
+      final double latI = math.asin(sinL.clamp(-1.0, 1.0)) * 180 / math.pi;
       final ({Offset offset, double rotY}) pp =
           _project(centre, r, rotLon, rotLat, latI, lonI);
       final Offset? proj = pp.rotY < 0 ? null : pp.offset;
@@ -952,8 +946,7 @@ class _GlobePainter extends CustomPainter {
   ///     polygon edge transitions from visible to invisible.
   ({Offset offset, double rotY}) _project(Offset centre, double r,
       double rotLon, double rotLat, double latDeg, double lonDeg) {
-    final double lonShift =
-        (lonDeg * math.pi / 180) - rotLon;
+    final double lonShift = (lonDeg * math.pi / 180) - rotLon;
     final double lat = latDeg * math.pi / 180;
     final double cl = math.cos(lat);
     final double x = cl * math.sin(lonShift);
@@ -969,8 +962,8 @@ class _GlobePainter extends CustomPainter {
     );
   }
 
-  void _drawParallel(Canvas canvas, Offset centre, double r,
-      double rotLon, double rotLat, double latDeg, Paint paint) {
+  void _drawParallel(Canvas canvas, Offset centre, double r, double rotLon,
+      double rotLat, double latDeg, Paint paint) {
     Offset? prev;
     for (int i = 0; i <= 72; i++) {
       final double lon = (i * 5).toDouble();
@@ -984,8 +977,8 @@ class _GlobePainter extends CustomPainter {
     }
   }
 
-  void _drawMeridian(Canvas canvas, Offset centre, double r,
-      double rotLon, double rotLat, double lonDeg, Paint paint) {
+  void _drawMeridian(Canvas canvas, Offset centre, double r, double rotLon,
+      double rotLat, double lonDeg, Paint paint) {
     Offset? prev;
     for (int i = 0; i <= 36; i++) {
       final double lat = (i * 5).toDouble() - 90;
@@ -1013,9 +1006,9 @@ class _GlobePainter extends CustomPainter {
   /// consecutive ring vertices anyway. The result hugs the sphere
   /// edge closely enough at typical zoom levels that the chunky-
   /// chord artifact disappears.
-  void _drawPolygon(Canvas canvas, Offset centre, double r,
-      double rotLon, double rotLat, List<List<double>> ring,
-      Paint fill, {Paint? stroke}) {
+  void _drawPolygon(Canvas canvas, Offset centre, double r, double rotLon,
+      double rotLat, List<List<double>> ring, Paint fill,
+      {Paint? stroke}) {
     if (ring.isEmpty) return;
     final Path path = Path();
     // Project every vertex once up-front so we can look at adjacent
@@ -1069,8 +1062,8 @@ class _GlobePainter extends CustomPainter {
   /// `rotY = 0` crossing. Both endpoints have known `rotY` (one
   /// positive, one negative) so the crossing parameter is
   /// `t = rotY_a / (rotY_a - rotY_b)`.
-  Offset _lerpHorizon(({Offset offset, double rotY}) a,
-      ({Offset offset, double rotY}) b) {
+  Offset _lerpHorizon(
+      ({Offset offset, double rotY}) a, ({Offset offset, double rotY}) b) {
     final double denom = a.rotY - b.rotY;
     if (denom.abs() < 1e-9) return a.offset;
     final double t = a.rotY / denom;
@@ -1083,8 +1076,8 @@ class _GlobePainter extends CustomPainter {
   /// Per-node-type shape glyph. type 1 = chat/companion (circle),
   /// type 2 = repeater/router (triangle), type 3 = room (square),
   /// type 4 = sensor (diamond), other = circle.
-  void _drawPeerShape(Canvas canvas, Offset p, int type,
-      Color fill, Color outline) {
+  void _drawPeerShape(
+      Canvas canvas, Offset p, int type, Color fill, Color outline) {
     final Paint fillPaint = Paint()..color = fill;
     final Paint outlinePaint = Paint()
       ..style = PaintingStyle.stroke
@@ -1101,8 +1094,8 @@ class _GlobePainter extends CustomPainter {
         canvas.drawPath(tri, fillPaint);
         canvas.drawPath(tri, outlinePaint);
       case 3: // Room — square.
-        final Rect sq = Rect.fromCenter(
-            center: p, width: s * 1.8, height: s * 1.8);
+        final Rect sq =
+            Rect.fromCenter(center: p, width: s * 1.8, height: s * 1.8);
         canvas.drawRect(sq, fillPaint);
         canvas.drawRect(sq, outlinePaint);
       case 4: // Sensor — diamond.
