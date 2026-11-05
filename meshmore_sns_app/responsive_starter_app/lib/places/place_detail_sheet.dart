@@ -77,7 +77,7 @@ class PlaceDetailSheet extends StatelessWidget {
     final PlaceConfirmationSummary counts = store.confirmationsFor(place.id);
     return SafeArea(
       child: Padding(
-        padding: skin.space.pad(5),
+        padding: skin.space.pad(6),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,

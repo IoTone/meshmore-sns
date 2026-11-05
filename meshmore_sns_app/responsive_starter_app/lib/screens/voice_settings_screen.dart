@@ -189,7 +189,7 @@ class _VoiceSettingsScreenState extends State<VoiceSettingsScreen> {
                     color: cs.onSurfaceVariant,
                     fontFamily: 'JetBrains Mono')),
           ),
-          const Divider(),
+          SizedBox(height: context.skin.space.sectionGap),
           // Voice picker.
           Padding(
             padding: EdgeInsets.fromLTRB(context.skin.space.screenEdge, context.skin.space.rowGap, context.skin.space.screenEdge, context.skin.space.labelToControl),
@@ -303,7 +303,7 @@ class _VoiceSettingsScreenState extends State<VoiceSettingsScreen> {
                 ),
               ),
           ],
-          const Divider(),
+          SizedBox(height: context.skin.space.sectionGap),
           // Preview.
           Padding(
             padding: const EdgeInsets.all(16),
