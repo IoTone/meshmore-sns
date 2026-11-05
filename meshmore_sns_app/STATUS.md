@@ -4,11 +4,13 @@ _Snapshot as of 2026-11-05. App `1.0.197+13`, branch `feat/app-completion`.
 Change records below are newest first from R113; older entries are kept in
 the order they were written._
 
-**What is proven and what is not.** 1645 tests pass in 2 m 29 s and `flutter analyze` reports no errors beyond
-two pre-existing `unawaited_return_in_try_block` warnings in `lib/maps/maps_controller.dart` (both measured
-2026-11-05 on this tree). A debug APK builds and installs, and the process survives with the radio link loop
-running. **Nothing below is device-verified**: the phone is behind a PIN lock, so every screen-level, on-air and
-Doze path is owed a run. Rows that say device-unverified are the honest reading, not a qualifier.
+**What is proven and what is not.** Measured on this tree, 2026-11-05: `flutter test` 1680 passed in 2 m 51 s;
+`flutter analyze` no errors beyond two pre-existing `unawaited_return_in_try_block` warnings in
+`lib/maps/maps_controller.dart` (13 s); the protocol package `dart test` 368 passed with 1 skipped (13 s); the pure-Java
+port `./gradlew test` 143 passed (6 s); `flutter build apk --debug` succeeds (64 s) with the native AVIF library in the
+APK. **Nothing below is device-verified.** The phone is behind a PIN keyguard, so every screen-level, on-air and Doze
+path is owed a run, and the rows that say device-unverified are the honest reading rather than a qualifier. What is
+not built at all is listed as residue in `meshmore-feature-register.md` §10.
 
 An offline-first Flutter companion app for MeshCore LoRa mesh radios
 over BLE. Mesh-first, no backend, no account, no server.
@@ -64,6 +66,64 @@ over BLE. Mesh-first, no backend, no account, no server.
   and the app bar ends in a 2 px `fg`@22% rule.
 - Device configuration (5 groups) and Profile & personalization (4
   groups) fold with `MmCollapsibleSection`, open by default.
+
+**What this branch added (R109–R113 and the completion waves)**
+
+- **Notifications.** Three OS channels (channel message, direct message, SOS) at
+  high importance with no full-screen intent, a per-channel bundle with
+  audio/haptic/OS/TTS and a mentions-only mode, one post per message id, the
+  open thread suppressed by a focus record the shell publishes, tap-through to
+  the thread including after a cold start, and an SOS body that carries no
+  coordinates. `lib/notifications/`, `test/notifications/**`,
+  `test/shell/home_shell_test.dart`.
+- **Composer.** The byte counter delegates to the encoder, so the number and
+  the refusal agree (160 UTF-8 bytes including the `sender: ` prefix), and
+  per-channel and per-thread drafts are sealed, debounced, restored after a
+  failed send and keyed by radio. `lib/chat/composer_budget.dart`,
+  `lib/chat/draft_store.dart`.
+- **History.** Search over stored history with blocked hits counted and
+  ranked word matches, per-channel unread badges, a thread that says how many
+  rows the 250-row cap dropped, and a per-thread `MMEX` export that leaves
+  through the share channel. `lib/screens/chat_search_screen.dart`,
+  `lib/chat/unread_counts.dart`, `lib/meshcore/history_export.dart`,
+  `lib/util/share.dart`.
+- **Block list.** Full 32-byte keys, app-side only, read by the timeline, the
+  roster, places, search, unread counts, speech and notifications, with a list
+  screen at `/settings/blocks` and copy that says the radio still carries the
+  packet. `lib/meshcore/block_store.dart`, `block_filter.dart`.
+- **At rest.** History, drafts, places, the block list and the retention tally
+  live in one sealed file whose AES-256-GCM key the Android Keystore generates
+  and does not export; the plaintext was migrated once with a serialised
+  read-back; Auto Backup and device transfer exclude everything; exports are
+  passphrase files that fail closed. `lib/meshcore/secure/`, `SecureStore.kt`.
+- **Places.** The text convention with a trailing TTL, a nine-token type set, a
+  deterministic id over six-decimal coordinates, a layer with clustering and a
+  countdown, long-press create with the 6-per-hour budget, confirm and refute
+  as claimed, the directions ladder, echoes in the thread, a ledger export and
+  a photo path whose photo never extends the TTL. `lib/places/`,
+  `test/places/**`.
+- **Media.** One AV1-class format behind a codec seam with a 320x240 floor, a
+  12-byte chunk header with its own CRC and a resend salt, reassembly with a
+  missing-chunk request, erasure FEC at 10 % for images and 15 % for voice,
+  350 ms pacing with table-full as backpressure, a Public-channel gate on the
+  only send path, a cost line before the send, and an inbound consumer that
+  decodes what arrives. `lib/media/`, `test/media/**`.
+- **Field operations.** Our own position trail with age and count bounds, GPX
+  and an operational bundle, both of which leave through the share channel,
+  geofences with a ±5 % margin shown on the map, an inter-node relationship
+  line, and SOS plus check-in as engines with surfaces and exact timings.
+  `lib/field/`, `lib/geofence/`, `lib/telemetry/coverage_*`, `lib/sos/`.
+- **Pairing and the radio.** In-app pairing with five named failure paths, the
+  four stranding parameters as one transaction with a single-use revert, a
+  capability model learned from replies, a health readout that names each
+  frame, and an MTU refusal at 179 with the negotiated number in the copy.
+  `lib/screens/pair_radio_screen.dart`, `lib/meshcore/radio_config_transaction.dart`,
+  `lib/ui/radio_health_block.dart`.
+- **Accessibility and l10n.** A 320 dp by 200 % floor over every primary screen
+  and the three new routes, semantics on the shell strip and the icon-only
+  controls, and a lockstep test that fails when an ARB key or a getter is
+  missing on one side. `test/screens/a11y_floors_test.dart`,
+  `test/l10n/lockstep_test.dart`.
 
 **Studio skin (R63)**
 - Seventh preset `studio` ("Studio Dark — clean · square"): grey layer
