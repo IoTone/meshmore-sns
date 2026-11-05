@@ -1811,7 +1811,7 @@ abstract class AppLocalizations {
   /// No description provided for @fujiLegendDesc.
   ///
   /// In en, this message translates to:
-  /// **'Altitude survey. Heights on a √-scaled axis against famous landmarks. Your device\'s altitude comes from device GPS telemetry or the phone fix.'**
+  /// **'Altitude survey. Heights on a square-root axis against known landmarks. Your altitude comes from the radio\'s telemetry or from the phone.'**
   String get fujiLegendDesc;
 
   /// No description provided for @fujiLegendMe.
@@ -1946,12 +1946,6 @@ abstract class AppLocalizations {
   /// **'Re-centre on me'**
   String get streetMapRecenter;
 
-  /// R69: quiet banner on the Map tab when there is no position fix.
-  ///
-  /// In en, this message translates to:
-  /// **'No position fix yet. This is a world view, not centred on you.'**
-  String get mapNoFixBanner;
-
   /// No description provided for @mapPackZoomOutside.
   ///
   /// In en, this message translates to:
@@ -1979,7 +1973,7 @@ abstract class AppLocalizations {
   /// No description provided for @equalGridAwaitingFix.
   ///
   /// In en, this message translates to:
-  /// **'Equal-grid view needs your own location — waiting for a GPS fix (phone or device).'**
+  /// **'This view needs your position. Turn location on, or wait for the phone or radio to report one.'**
   String get equalGridAwaitingFix;
 
   /// No description provided for @equalGridCellSize.
@@ -2075,7 +2069,7 @@ abstract class AppLocalizations {
   /// No description provided for @deviceLocReportsNone.
   ///
   /// In en, this message translates to:
-  /// **'Device reports: no GPS fix (0, 0)'**
+  /// **'The radio reports no position (0, 0)'**
   String get deviceLocReportsNone;
 
   /// No description provided for @deviceLocReportsValue.
@@ -3659,7 +3653,7 @@ abstract class AppLocalizations {
   /// No description provided for @snsCellsAwaitingFix.
   ///
   /// In en, this message translates to:
-  /// **'Waiting for a location fix — the heat map centres on you.'**
+  /// **'This heat map is built around your position, which is not known yet.'**
   String get snsCellsAwaitingFix;
 
   /// No description provided for @snsCellsClear.
@@ -4553,7 +4547,7 @@ abstract class AppLocalizations {
   /// No description provided for @deviceRegionSuggestNoFix.
   ///
   /// In en, this message translates to:
-  /// **'No GPS fix yet. Try outdoors with location on.'**
+  /// **'No position yet. Try outdoors with location on.'**
   String get deviceRegionSuggestNoFix;
 
   /// No description provided for @deviceRegionSuggestNoMatch.
@@ -4985,37 +4979,37 @@ abstract class AppLocalizations {
   /// No description provided for @deviceToastNoGpsYet.
   ///
   /// In en, this message translates to:
-  /// **'Device has no location yet (no GPS fix)'**
+  /// **'The radio has no position yet'**
   String get deviceToastNoGpsYet;
 
   /// No description provided for @deviceToastLoadedDeviceLoc.
   ///
   /// In en, this message translates to:
-  /// **'Loaded device location · tap Set advert location to broadcast'**
+  /// **'Loaded the radio\'s position. Tap Set advert location to broadcast it.'**
   String get deviceToastLoadedDeviceLoc;
 
   /// No description provided for @deviceToastGettingPhoneFix.
   ///
   /// In en, this message translates to:
-  /// **'Getting phone GPS fix…'**
+  /// **'Getting your position...'**
   String get deviceToastGettingPhoneFix;
 
   /// No description provided for @deviceToastPhoneFixFailed.
   ///
   /// In en, this message translates to:
-  /// **'Phone GPS fix failed (services off or timeout)'**
+  /// **'Could not get your position (location off, or no signal)'**
   String get deviceToastPhoneFixFailed;
 
   /// No description provided for @deviceToastNoFixReturned.
   ///
   /// In en, this message translates to:
-  /// **'No fix returned'**
+  /// **'No position came back'**
   String get deviceToastNoFixReturned;
 
   /// No description provided for @deviceToastGotPhoneLoc.
   ///
   /// In en, this message translates to:
-  /// **'Got phone location · tap Set advert location to broadcast'**
+  /// **'Got the phone\'s position. Tap Set advert location to broadcast it.'**
   String get deviceToastGotPhoneLoc;
 
   /// No description provided for @deviceToastInvalidLatLon.
@@ -5039,7 +5033,7 @@ abstract class AppLocalizations {
   /// No description provided for @deviceLocPermDenied.
   ///
   /// In en, this message translates to:
-  /// **'Location permission needed for a phone GPS fix.'**
+  /// **'Allow location to use the phone\'s position.'**
   String get deviceLocPermDenied;
 
   /// No description provided for @deviceLocPermDeniedPerm.
@@ -7920,7 +7914,7 @@ abstract class AppLocalizations {
   /// No description provided for @degradedNoLocation.
   ///
   /// In en, this message translates to:
-  /// **'Location is off, so distances, bearings and place reports have no fix. Everything else works.'**
+  /// **'Location is off, so distances, directions and place reports cannot be worked out. Everything else works.'**
   String get degradedNoLocation;
 
   /// No description provided for @degradedMapOffline.
@@ -9266,6 +9260,60 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'not reported'**
   String get nodeDetailAltitudeNotReported;
+
+  /// No description provided for @mapNoPositionYet.
+  ///
+  /// In en, this message translates to:
+  /// **'Your position is not known yet.'**
+  String get mapNoPositionYet;
+
+  /// No description provided for @mapNoPositionFind.
+  ///
+  /// In en, this message translates to:
+  /// **'Find me'**
+  String get mapNoPositionFind;
+
+  /// No description provided for @mapNoPositionAsking.
+  ///
+  /// In en, this message translates to:
+  /// **'Finding you...'**
+  String get mapNoPositionAsking;
+
+  /// No description provided for @mapLocationOffApp.
+  ///
+  /// In en, this message translates to:
+  /// **'Location is off for this app.'**
+  String get mapLocationOffApp;
+
+  /// No description provided for @mapLocationAllow.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow location'**
+  String get mapLocationAllow;
+
+  /// No description provided for @mapLocationBlockedApp.
+  ///
+  /// In en, this message translates to:
+  /// **'Location is blocked for this app.'**
+  String get mapLocationBlockedApp;
+
+  /// No description provided for @mapLocationOpenSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Open settings'**
+  String get mapLocationOpenSettings;
+
+  /// No description provided for @mapLocationOffDevice.
+  ///
+  /// In en, this message translates to:
+  /// **'Location is off on this phone.'**
+  String get mapLocationOffDevice;
+
+  /// No description provided for @streetMapNeedsPosition.
+  ///
+  /// In en, this message translates to:
+  /// **'This view needs your position. Turn location on for the app, then try again.'**
+  String get streetMapNeedsPosition;
 }
 
 class _AppLocalizationsDelegate

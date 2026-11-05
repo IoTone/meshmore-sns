@@ -988,7 +988,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get fujiLegendDesc =>
-      'Altitude survey. Heights on a √-scaled axis against famous landmarks. Your device\'s altitude comes from device GPS telemetry or the phone fix.';
+      'Altitude survey. Heights on a square-root axis against known landmarks. Your altitude comes from the radio\'s telemetry or from the phone.';
 
   @override
   String get fujiLegendMe =>
@@ -1067,10 +1067,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get streetMapRecenter => 'Re-centre on me';
 
   @override
-  String get mapNoFixBanner =>
-      'No position fix yet. This is a world view, not centred on you.';
-
-  @override
   String mapPackZoomOutside(int min, int max) {
     return 'This pack covers zoom $min to $max. Coarser tiles stand in outside that range.';
   }
@@ -1088,7 +1084,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get equalGridAwaitingFix =>
-      'Equal-grid view needs your own location — waiting for a GPS fix (phone or device).';
+      'This view needs your position. Turn location on, or wait for the phone or radio to report one.';
 
   @override
   String equalGridCellSize(String size) {
@@ -1142,7 +1138,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get deviceLocReportsAwaiting => 'Device reports: (awaiting)';
 
   @override
-  String get deviceLocReportsNone => 'Device reports: no GPS fix (0, 0)';
+  String get deviceLocReportsNone => 'The radio reports no position (0, 0)';
 
   @override
   String deviceLocReportsValue(String lat, String lon) {
@@ -2126,7 +2122,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get snsCellsAwaitingFix =>
-      'Waiting for a location fix — the heat map centres on you.';
+      'This heat map is built around your position, which is not known yet.';
 
   @override
   String get snsCellsClear => 'Clear';
@@ -2660,7 +2656,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get deviceRegionSuggestNoFix =>
-      'No GPS fix yet. Try outdoors with location on.';
+      'No position yet. Try outdoors with location on.';
 
   @override
   String get deviceRegionSuggestNoMatch =>
@@ -2903,25 +2899,25 @@ class AppLocalizationsEn extends AppLocalizations {
       'Device hasn\'t reported yet — try once linked';
 
   @override
-  String get deviceToastNoGpsYet => 'Device has no location yet (no GPS fix)';
+  String get deviceToastNoGpsYet => 'The radio has no position yet';
 
   @override
   String get deviceToastLoadedDeviceLoc =>
-      'Loaded device location · tap Set advert location to broadcast';
+      'Loaded the radio\'s position. Tap Set advert location to broadcast it.';
 
   @override
-  String get deviceToastGettingPhoneFix => 'Getting phone GPS fix…';
+  String get deviceToastGettingPhoneFix => 'Getting your position...';
 
   @override
   String get deviceToastPhoneFixFailed =>
-      'Phone GPS fix failed (services off or timeout)';
+      'Could not get your position (location off, or no signal)';
 
   @override
-  String get deviceToastNoFixReturned => 'No fix returned';
+  String get deviceToastNoFixReturned => 'No position came back';
 
   @override
   String get deviceToastGotPhoneLoc =>
-      'Got phone location · tap Set advert location to broadcast';
+      'Got the phone\'s position. Tap Set advert location to broadcast it.';
 
   @override
   String get deviceToastInvalidLatLon =>
@@ -2935,7 +2931,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get deviceLocPermDenied =>
-      'Location permission needed for a phone GPS fix.';
+      'Allow location to use the phone\'s position.';
 
   @override
   String get deviceLocPermDeniedPerm =>
@@ -4617,7 +4613,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get degradedNoLocation =>
-      'Location is off, so distances, bearings and place reports have no fix. Everything else works.';
+      'Location is off, so distances, directions and place reports cannot be worked out. Everything else works.';
 
   @override
   String get degradedMapOffline =>
@@ -5464,4 +5460,32 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get nodeDetailAltitudeNotReported => 'not reported';
+
+  @override
+  String get mapNoPositionYet => 'Your position is not known yet.';
+
+  @override
+  String get mapNoPositionFind => 'Find me';
+
+  @override
+  String get mapNoPositionAsking => 'Finding you...';
+
+  @override
+  String get mapLocationOffApp => 'Location is off for this app.';
+
+  @override
+  String get mapLocationAllow => 'Allow location';
+
+  @override
+  String get mapLocationBlockedApp => 'Location is blocked for this app.';
+
+  @override
+  String get mapLocationOpenSettings => 'Open settings';
+
+  @override
+  String get mapLocationOffDevice => 'Location is off on this phone.';
+
+  @override
+  String get streetMapNeedsPosition =>
+      'This view needs your position. Turn location on for the app, then try again.';
 }

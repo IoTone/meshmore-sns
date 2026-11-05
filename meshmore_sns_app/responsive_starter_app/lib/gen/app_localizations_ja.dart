@@ -936,7 +936,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get fujiLegendDesc =>
-      '標高測量。√スケール軸で有名な建造物と高さを比較。自分の標高はデバイスGPSテレメトリまたは電話の位置情報から取得。';
+      '標高測量。√スケールの軸で既知の建造物と高さを比べます。標高は無線機のテレメトリまたはスマートフォンから取得します。';
 
   @override
   String get fujiLegendMe => '破線 = あなた。標高が判明していればその位置に、未取得なら地面に「ALT?」表示。';
@@ -1010,9 +1010,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get streetMapRecenter => '現在地に戻す';
 
   @override
-  String get mapNoFixBanner => '位置情報がまだ取得できていません。表示は世界地図で、現在地には合わせていません。';
-
-  @override
   String mapPackZoomOutside(int min, int max) {
     return 'このパックの範囲はズーム $min〜$max です。範囲外は粗いタイルで表示します。';
   }
@@ -1030,7 +1027,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get equalGridAwaitingFix =>
-      '等分グリッド表示には自分の位置が必要です — GPS 取得待ち（スマートフォンまたはデバイス）。';
+      'この表示には現在地が必要です。位置情報をオンにするか、スマートフォンか無線機の位置を待ってください。';
 
   @override
   String equalGridCellSize(String size) {
@@ -1084,7 +1081,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get deviceLocReportsAwaiting => 'デバイス報告値: (待機中)';
 
   @override
-  String get deviceLocReportsNone => 'デバイス報告値: GPS 未取得 (0, 0)';
+  String get deviceLocReportsNone => '無線機は位置を報告していません (0, 0)';
 
   @override
   String deviceLocReportsValue(String lat, String lon) {
@@ -2040,7 +2037,7 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get snsCellsAwaitingFix => '位置情報を待機中 — ヒートマップは自分を中心に表示されます。';
+  String get snsCellsAwaitingFix => 'このヒートマップは現在地を中心に作られますが、まだ現在地が分かりません。';
 
   @override
   String get snsCellsClear => 'クリア';
@@ -2547,8 +2544,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get deviceRegionSuggestApply => '使う';
 
   @override
-  String get deviceRegionSuggestNoFix =>
-      'まだ GPS を取得できません。屋外で位置情報をオンにして試してください。';
+  String get deviceRegionSuggestNoFix => 'まだ現在地が分かりません。屋外で位置情報をオンにして試してください。';
 
   @override
   String get deviceRegionSuggestNoMatch => '現在地が出荷時プリセットの対象外です — 手動で選択してください。';
@@ -2785,24 +2781,24 @@ class AppLocalizationsJa extends AppLocalizations {
   String get deviceToastNoDeviceYet => 'デバイス未応答 — 接続後に再試行';
 
   @override
-  String get deviceToastNoGpsYet => 'デバイスにまだ位置情報がありません (GPS 未取得)';
+  String get deviceToastNoGpsYet => '無線機の位置がまだありません';
 
   @override
   String get deviceToastLoadedDeviceLoc =>
-      'デバイス位置を読込 · ブロードキャストするには「アドバート位置を設定」をタップ';
+      '無線機の位置を読み込みました。アドバート位置に設定して送信してください。';
 
   @override
-  String get deviceToastGettingPhoneFix => 'スマートフォン GPS を取得中…';
+  String get deviceToastGettingPhoneFix => '現在地を取得中...';
 
   @override
-  String get deviceToastPhoneFixFailed => 'スマートフォン GPS の取得失敗 (サービス無効またはタイムアウト)';
+  String get deviceToastPhoneFixFailed => '現在地を取得できませんでした (位置情報がオフ、または電波なし)';
 
   @override
-  String get deviceToastNoFixReturned => '位置情報が返されませんでした';
+  String get deviceToastNoFixReturned => '現在地が返されませんでした';
 
   @override
   String get deviceToastGotPhoneLoc =>
-      'スマートフォン位置を取得 · ブロードキャストするには「アドバート位置を設定」をタップ';
+      'スマートフォンの位置を取得しました。アドバート位置に設定して送信してください。';
 
   @override
   String get deviceToastInvalidLatLon => '有効な緯度 (−90..90) と経度 (−180..180) を入力';
@@ -2814,7 +2810,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get deviceToastInvalidRadio => 'freq/BW/SF/CR に有効な数値を入力';
 
   @override
-  String get deviceLocPermDenied => 'スマートフォン GPS 取得には位置情報の許可が必要です。';
+  String get deviceLocPermDenied => 'スマートフォンの位置を使うには位置情報を許可してください。';
 
   @override
   String get deviceLocPermDeniedPerm => '位置情報が永続的に拒否されました — OS 設定で許可してください。';
@@ -4454,7 +4450,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get degradedNoLocation =>
-      '位置情報が無効のため、距離・方位・プレイス報告の基準がありません。それ以外は動作します。';
+      '位置情報がオフのため、距離・方位・プレイス報告を計算できません。それ以外は動作します。';
 
   @override
   String get degradedMapOffline =>
@@ -5261,4 +5257,32 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get nodeDetailAltitudeNotReported => '報告されません';
+
+  @override
+  String get mapNoPositionYet => '現在地がまだ分かりません。';
+
+  @override
+  String get mapNoPositionFind => '現在地を取得';
+
+  @override
+  String get mapNoPositionAsking => '取得中...';
+
+  @override
+  String get mapLocationOffApp => 'このアプリの位置情報がオフです。';
+
+  @override
+  String get mapLocationAllow => '位置情報を許可';
+
+  @override
+  String get mapLocationBlockedApp => 'このアプリの位置情報がブロックされています。';
+
+  @override
+  String get mapLocationOpenSettings => '設定を開く';
+
+  @override
+  String get mapLocationOffDevice => 'この端末の位置情報がオフです。';
+
+  @override
+  String get streetMapNeedsPosition =>
+      'この表示には現在地が必要です。アプリの位置情報をオンにして、もう一度お試しください。';
 }

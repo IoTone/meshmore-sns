@@ -495,7 +495,7 @@
   "gridViewFabric": "Mesh survey",
   "gridViewElevation": "Altitude",
   "fujiLegendTitle": "FUJIさん",
-  "fujiLegendDesc": "Altitude survey. Heights on a √-scaled axis against famous landmarks. Your device's altitude comes from device GPS telemetry or the phone fix.",
+  "fujiLegendDesc": "Altitude survey. Heights on a square-root axis against known landmarks. Your altitude comes from the radio's telemetry or from the phone.",
   "fujiLegendMe": "Dashed line = you. At your altitude, or pinned to the ground with ALT? until it resolves.",
   "fujiLegendRefs": "Silhouettes = real-world references (person → Mt Fuji) for scale.",
   "fujiLegendPeers": "Dots are nodes, plotted at their altitude once asked.",
@@ -532,7 +532,6 @@
   "fabricResetBody": "Drops every recorded cell. New observations will start filling the map again as you move and the mesh reports nearby nodes.",
   "fabricResetApply": "Reset",
   "streetMapRecenter": "Re-centre on me",
-  "mapNoFixBanner": "No position fix yet. This is a world view, not centred on you.",
   "mapPackZoomOutside": "This pack covers zoom {min} to {max}. Coarser tiles stand in outside that range.",
   "@mapPackZoomOutside": {
     "placeholders": {
@@ -544,9 +543,6 @@
       }
     }
   },
-  "@mapNoFixBanner": {
-    "description": "R69: quiet banner on the Map tab when there is no position fix."
-  },
   "mapHideTiles": "Hide map tiles",
   "mapShowTiles": "Show map tiles",
   "deviceRegionLoadedOffline": "{label} loaded — Apply when a device is connected.",
@@ -557,7 +553,7 @@
       }
     }
   },
-  "equalGridAwaitingFix": "Equal-grid view needs your own location — waiting for a GPS fix (phone or device).",
+  "equalGridAwaitingFix": "This view needs your position. Turn location on, or wait for the phone or radio to report one.",
   "equalGridCellSize": "CELL {size}",
   "@equalGridCellSize": {
     "placeholders": {
@@ -587,7 +583,7 @@
     }
   },
   "deviceLocReportsAwaiting": "Device reports: (awaiting)",
-  "deviceLocReportsNone": "Device reports: no GPS fix (0, 0)",
+  "deviceLocReportsNone": "The radio reports no position (0, 0)",
   "deviceLocReportsValue": "Device reports: {lat}, {lon}",
   "@deviceLocReportsValue": {
     "placeholders": {
@@ -1371,7 +1367,7 @@
       }
     }
   },
-  "snsCellsAwaitingFix": "Waiting for a location fix — the heat map centres on you.",
+  "snsCellsAwaitingFix": "This heat map is built around your position, which is not known yet.",
   "snsCellsClear": "Clear",
   "snsCellsStatus": "{active} cells · {hot} hot",
   "@snsPlacesButton": {
@@ -1751,7 +1747,7 @@
     }
   },
   "deviceRegionSuggestApply": "Use it",
-  "deviceRegionSuggestNoFix": "No GPS fix yet. Try outdoors with location on.",
+  "deviceRegionSuggestNoFix": "No position yet. Try outdoors with location on.",
   "deviceRegionSuggestNoMatch": "Your location doesn't match any shipped country preset — pick one manually.",
   "@deviceRegionAppliedToast": {
     "placeholders": {
@@ -1905,16 +1901,16 @@
     }
   },
   "deviceToastNoDeviceYet": "Device hasn't reported yet — try once linked",
-  "deviceToastNoGpsYet": "Device has no location yet (no GPS fix)",
-  "deviceToastLoadedDeviceLoc": "Loaded device location · tap Set advert location to broadcast",
-  "deviceToastGettingPhoneFix": "Getting phone GPS fix…",
-  "deviceToastPhoneFixFailed": "Phone GPS fix failed (services off or timeout)",
-  "deviceToastNoFixReturned": "No fix returned",
-  "deviceToastGotPhoneLoc": "Got phone location · tap Set advert location to broadcast",
+  "deviceToastNoGpsYet": "The radio has no position yet",
+  "deviceToastLoadedDeviceLoc": "Loaded the radio's position. Tap Set advert location to broadcast it.",
+  "deviceToastGettingPhoneFix": "Getting your position...",
+  "deviceToastPhoneFixFailed": "Could not get your position (location off, or no signal)",
+  "deviceToastNoFixReturned": "No position came back",
+  "deviceToastGotPhoneLoc": "Got the phone's position. Tap Set advert location to broadcast it.",
   "deviceToastInvalidLatLon": "Enter valid lat (−90..90) and lon (−180..180)",
   "deviceToastAdvertLocSet": "Advert location set",
   "deviceToastInvalidRadio": "Enter valid numbers for freq/BW/SF/CR",
-  "deviceLocPermDenied": "Location permission needed for a phone GPS fix.",
+  "deviceLocPermDenied": "Allow location to use the phone's position.",
   "deviceLocPermDeniedPerm": "Location permission permanently denied — open OS settings to grant it.",
   "deviceOpenSettings": "Open settings",
   "diagnosticsTitle": "Diagnostics & connect",
@@ -3103,7 +3099,7 @@
   "@degradedRadioAbsent": {},
   "degradedRadioSilent": "The radio is paired but has not answered. It may still have carried out the last request; check the radio before retrying.",
   "@degradedRadioSilent": {},
-  "degradedNoLocation": "Location is off, so distances, bearings and place reports have no fix. Everything else works.",
+  "degradedNoLocation": "Location is off, so distances, directions and place reports cannot be worked out. Everything else works.",
   "@degradedNoLocation": {},
   "degradedMapOffline": "Map tiles cannot be fetched. The bundled basemap and anything already on disk still draw; the rest of the app is unaffected.",
   "@degradedMapOffline": {},
@@ -3775,5 +3771,14 @@
     }
   },
   "chatSpeechOffAction": "Speech is off in App settings",
-  "nodeDetailAltitudeNotReported": "not reported"
+  "nodeDetailAltitudeNotReported": "not reported",
+  "mapNoPositionYet": "Your position is not known yet.",
+  "mapNoPositionFind": "Find me",
+  "mapNoPositionAsking": "Finding you...",
+  "mapLocationOffApp": "Location is off for this app.",
+  "mapLocationAllow": "Allow location",
+  "mapLocationBlockedApp": "Location is blocked for this app.",
+  "mapLocationOpenSettings": "Open settings",
+  "mapLocationOffDevice": "Location is off on this phone.",
+  "streetMapNeedsPosition": "This view needs your position. Turn location on for the app, then try again."
 }
