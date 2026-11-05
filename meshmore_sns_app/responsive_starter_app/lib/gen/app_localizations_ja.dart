@@ -4232,6 +4232,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get placeExportLedger => '台帳を書き出す';
 
   @override
+  String get placeExportShared => '台帳を共有できます。';
+
+  @override
   String placeExportDone(String path) {
     return '台帳を $path に保存しました';
   }
@@ -4827,12 +4830,38 @@ class AppLocalizationsJa extends AppLocalizations {
   String get fieldExportAction => 'このセッションを書き出す';
 
   @override
+  String get fieldExportShared => '現地記録を共有できます。';
+
+  @override
   String fieldExportDone(String path) {
     return '現地記録を書き出しました。パスはクリップボードにあります: $path';
   }
 
   @override
   String get chatSearchAction => 'メッセージを検索';
+
+  @override
+  String get chatExportAction => 'この会話を書き出す';
+
+  @override
+  String get chatExportTitle => '書き出すファイルのパスフレーズ';
+
+  @override
+  String get chatExportPassphrase => 'パスフレーズ';
+
+  @override
+  String get chatExportConfirm => '書き出す';
+
+  @override
+  String get chatExportShared => '会話を共有できます。';
+
+  @override
+  String chatExportDone(String path) {
+    return '会話を保存しました: $path';
+  }
+
+  @override
+  String get chatExportFailed => '会話を書き出せませんでした。何も書き出していません。';
 
   @override
   String get chatSearchHint => '保存済みの履歴を検索';

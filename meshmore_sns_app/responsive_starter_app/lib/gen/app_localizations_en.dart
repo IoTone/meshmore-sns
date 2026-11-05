@@ -4379,6 +4379,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get placeExportLedger => 'Export ledger';
 
   @override
+  String get placeExportShared => 'Ledger ready to share.';
+
+  @override
   String placeExportDone(String path) {
     return 'Ledger saved to $path';
   }
@@ -5005,12 +5008,39 @@ class AppLocalizationsEn extends AppLocalizations {
   String get fieldExportAction => 'Export this session';
 
   @override
+  String get fieldExportShared => 'Field record ready to share.';
+
+  @override
   String fieldExportDone(String path) {
     return 'Field record written. The path is on the clipboard: $path';
   }
 
   @override
   String get chatSearchAction => 'Search messages';
+
+  @override
+  String get chatExportAction => 'Export this conversation';
+
+  @override
+  String get chatExportTitle => 'Passphrase for the exported file';
+
+  @override
+  String get chatExportPassphrase => 'Passphrase';
+
+  @override
+  String get chatExportConfirm => 'Export';
+
+  @override
+  String get chatExportShared => 'Conversation ready to share.';
+
+  @override
+  String chatExportDone(String path) {
+    return 'Conversation saved to $path';
+  }
+
+  @override
+  String get chatExportFailed =>
+      'The conversation could not be written. Nothing was exported.';
 
   @override
   String get chatSearchHint => 'Search stored history';

@@ -11,6 +11,7 @@ import '../places/place_store.dart';
 import '../sos/checkin.dart';
 import '../sos/sos_controller.dart';
 import '../telemetry/coverage_session.dart';
+import '../util/share.dart';
 import '../ui/mm_components.dart';
 
 /// Builds one field bundle from what this session has, writes it, and puts the
@@ -54,10 +55,14 @@ class _FieldExportActionState extends State<FieldExportAction> {
     final String path = (await OperationalExport.write(bundle, clock: clock)).path;
     if (!mounted) return;
     setState(() => _busy = false);
+    // The file is in the app's private directory: it leaves through the share
+    // sheet, and the path stays as the fallback and as a copy for the user.
+    final bool shared = await Share.file(path,
+        mime: 'application/json', subject: l.fieldExportSection);
     await Clipboard.setData(ClipboardData(text: path));
     if (!mounted) return;
-    ScaffoldMessenger.maybeOf(context)
-        ?.showSnackBar(SnackBar(content: Text(l.fieldExportDone(path))));
+    ScaffoldMessenger.maybeOf(context)?.showSnackBar(
+        SnackBar(content: Text(shared ? l.fieldExportShared : l.fieldExportDone(path))));
   }
 
   /// The check-in as a row, when one was raised this session. The text is the
