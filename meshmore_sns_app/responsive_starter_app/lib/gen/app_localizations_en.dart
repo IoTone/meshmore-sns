@@ -3932,4 +3932,191 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get networksDeleteConfirm => 'Delete';
+
+  @override
+  String get placeCreateTitle => 'Drop a place';
+
+  @override
+  String get placeCreateAction => 'Report';
+
+  @override
+  String get placeLabelField => 'What is here?';
+
+  @override
+  String get placeLabelHint => 'A few words, 60 characters at most';
+
+  @override
+  String get placeTypeTitle => 'Type';
+
+  @override
+  String get placeTtlTitle => 'How long does it last?';
+
+  @override
+  String get placePrecisionTitle => 'Precision';
+
+  @override
+  String get placePrecisionExact => 'Exact';
+
+  @override
+  String get placePrecision100 => 'About 100 m';
+
+  @override
+  String get placePrecision1000 => 'About 1 km';
+
+  @override
+  String get placeSent => 'Place reported. It expires on its own.';
+
+  @override
+  String placeBudgetRefused(int n, String time) {
+    return 'You have sent $n in the last hour. The next one can go at $time.';
+  }
+
+  @override
+  String get placeNoIdentity =>
+      'Connect a radio first: a place is reported as you.';
+
+  @override
+  String get placeLabelEmpty => 'A place needs a few words.';
+
+  @override
+  String get placeLabelTooLong => 'A label is at most 60 characters.';
+
+  @override
+  String get placeLabelCarriesTtl => 'A label cannot contain a TTL token.';
+
+  @override
+  String placeExpiresIn(String value) {
+    return 'Expires in $value';
+  }
+
+  @override
+  String get placeExpired => 'Expired';
+
+  @override
+  String placeReportedBy(String name, String time) {
+    return 'Reported by $name, $time';
+  }
+
+  @override
+  String get placeTimeUnknown => 'time unknown';
+
+  @override
+  String get placeSourceGps => 'from the sender\'s GPS';
+
+  @override
+  String get placeSourcePhone => 'from their phone';
+
+  @override
+  String get placeSourcePinned => 'placed by hand';
+
+  @override
+  String get placeSourceReceived => 'received over the mesh';
+
+  @override
+  String get placeSourceInferred => 'inferred';
+
+  @override
+  String get placeUnkeyedIdentity =>
+      'Identity is a name on a channel, not a key.';
+
+  @override
+  String placeUnknownType(String token) {
+    return 'Sent as $token';
+  }
+
+  @override
+  String get placeConfirmAction => 'Still there';
+
+  @override
+  String get placeRefuteAction => 'Gone';
+
+  @override
+  String placeConfirmations(int n) {
+    return '$n confirmed';
+  }
+
+  @override
+  String placeConfirmationsMore(int n) {
+    return '+$n more';
+  }
+
+  @override
+  String placeClaimedConfirmations(int n) {
+    return '$n claimed';
+  }
+
+  @override
+  String get placeHiddenByRefutation =>
+      'Hidden here after a refutation from a known key';
+
+  @override
+  String get placeDirections => 'Directions';
+
+  @override
+  String get placeDirectionsCopied => 'Coordinates copied';
+
+  @override
+  String get placeHistoryTitle => 'Places';
+
+  @override
+  String get placeHistoryEmpty =>
+      'No places yet. Long-press the map to report one.';
+
+  @override
+  String get placeStateLive => 'live';
+
+  @override
+  String get placeStateExpired => 'expired';
+
+  @override
+  String get placeSearchHint => 'Search label or reporter';
+
+  @override
+  String get placeKeyedOnly => 'Keyed places only';
+
+  @override
+  String get placeExportLedger => 'Export ledger';
+
+  @override
+  String placeExportDone(String path) {
+    return 'Ledger saved to $path';
+  }
+
+  @override
+  String get placeExportFailed => 'Could not write the ledger.';
+
+  @override
+  String get placeCoordinatesRefused => 'Those coordinates cannot be sent.';
+
+  @override
+  String placeEchoLine(String label, String type, String expiry) {
+    return '$label · $type · $expiry';
+  }
+
+  @override
+  String get placeTypeHazard => 'Hazard';
+
+  @override
+  String get placeTypeWater => 'Water';
+
+  @override
+  String get placeTypeFuel => 'Fuel';
+
+  @override
+  String get placeTypeMed => 'Medical';
+
+  @override
+  String get placeTypeRally => 'Rally';
+
+  @override
+  String get placeTypeView => 'View';
+
+  @override
+  String get placeTypeCamp => 'Camp';
+
+  @override
+  String get placeTypeLook => 'Look';
+
+  @override
+  String get placeTypeOther => 'Other';
 }

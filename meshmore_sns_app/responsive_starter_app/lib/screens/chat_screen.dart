@@ -10,6 +10,9 @@ import '../chat/chat_actions.dart';
 import '../chat/studio_message_row.dart';
 import '../gen/app_localizations.dart';
 import '../meshcore/chat_message.dart';
+import '../places/place.dart';
+import '../places/place_echo.dart';
+import '../places/place_store.dart';
 import 'delivery_status_icon.dart';
 import '../meshcore/meshcore_controller.dart';
 import '../meshcore/message_heat.dart' show parseChannelSenderName;
@@ -414,11 +417,15 @@ class _MessageRow extends StatelessWidget {
     // StudioMessageRow); the terminal presets keep the all-mono log.
     if (skin.type.sansLabels) {
       final ({String? sender, String body}) s = _split();
+      final Place? place = PlaceEchoLine.placeOf(m);
       return StudioMessageRow(
           message: m,
           body: s.body,
           sender: s.sender,
           extraMeta: _meta,
+          echo: place == null
+              ? null
+              : PlaceEchoLine(place: place, store: context.read<PlaceStore>()),
           onAction: onAction);
     }
     final String mono = skin.type.monoFamily;
@@ -455,6 +462,9 @@ class _MessageRow extends StatelessWidget {
                   Text(stripBotMarker(m.text),
                       style:
                           TextStyle(color: skin.color.fg, fontFamily: mono)),
+                  if (PlaceEchoLine.placeOf(m) case final Place place)
+                    PlaceEchoLine(
+                        place: place, store: context.read<PlaceStore>()),
                   _metaRow(skin, meta, mono),
                 ],
               ),
@@ -646,6 +656,9 @@ class _MessageRow extends StatelessWidget {
                         fontFamily: bodyFamily,
                         fontWeight: bodyWeight,
                         height: 1.3)),
+                if (PlaceEchoLine.placeOf(m) case final Place place)
+                  PlaceEchoLine(
+                      place: place, store: context.read<PlaceStore>()),
                 const SizedBox(height: 2),
                 Row(
                   mainAxisSize: MainAxisSize.min,

@@ -20,6 +20,8 @@ import 'package:meshmore_sns_app/ui/mm_page_header.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:meshmore_sns_app/bot/bot_controller.dart';
 import 'package:meshmore_sns_app/meshcore/meshcore_controller.dart';
+import 'package:meshmore_sns_app/places/place_report_budget.dart';
+import 'package:meshmore_sns_app/places/place_store.dart';
 import 'package:meshmore_sns_app/perms/first_run_controller.dart';
 import 'package:meshmore_sns_app/perms/permissions_service.dart';
 import 'package:meshmore_sns_app/screens/grid_screen.dart';
@@ -72,6 +74,12 @@ Future<void> _pumpApp(WidgetTester tester, {MmThemePreset? preset}) async {
         ),
         ChangeNotifierProvider<MeshcoreController>(
           create: (_) => MeshcoreController(),
+        ),
+        ChangeNotifierProvider<PlaceStore>(
+          create: (_) => PlaceStore(),
+        ),
+        Provider<PlaceReportBudget>(
+          create: (_) => PlaceReportBudget(clock: DateTime.now),
         ),
         Provider<PermissionsService>(
           create: (_) => NoopPermissionsService(),

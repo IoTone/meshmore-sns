@@ -14,6 +14,8 @@ import 'package:meshmore_sns_app/bot/bot_controller.dart';
 import 'package:meshmore_sns_app/meshcore/meshcore_controller.dart';
 import 'package:meshmore_sns_app/perms/first_run_controller.dart';
 import 'package:meshmore_sns_app/perms/permissions_service.dart';
+import 'package:meshmore_sns_app/places/place_report_budget.dart';
+import 'package:meshmore_sns_app/places/place_store.dart';
 import 'package:meshmore_sns_app/theme/theme_controller.dart';
 import 'package:meshmore_sns_app/tts/tts_controller.dart';
 
@@ -58,6 +60,12 @@ void main() {
           ),
           ChangeNotifierProvider<MeshcoreController>(
             create: (_) => MeshcoreController(),
+          ),
+          ChangeNotifierProvider<PlaceStore>(
+            create: (_) => PlaceStore(),
+          ),
+          Provider<PlaceReportBudget>(
+            create: (_) => PlaceReportBudget(clock: DateTime.now),
           ),
           Provider<PermissionsService>(
             create: (_) => NoopPermissionsService(),

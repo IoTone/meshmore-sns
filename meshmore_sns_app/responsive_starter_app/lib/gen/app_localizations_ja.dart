@@ -3800,4 +3800,187 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get networksDeleteConfirm => '削除';
+
+  @override
+  String get placeCreateTitle => '場所を立てる';
+
+  @override
+  String get placeCreateAction => '報告';
+
+  @override
+  String get placeLabelField => 'ここは何ですか?';
+
+  @override
+  String get placeLabelHint => '短い言葉で。60文字まで';
+
+  @override
+  String get placeTypeTitle => '種類';
+
+  @override
+  String get placeTtlTitle => 'いつまで有効ですか?';
+
+  @override
+  String get placePrecisionTitle => '精度';
+
+  @override
+  String get placePrecisionExact => '正確';
+
+  @override
+  String get placePrecision100 => '約100 m';
+
+  @override
+  String get placePrecision1000 => '約1 km';
+
+  @override
+  String get placeSent => '報告しました。期限が来ると自動で消えます。';
+
+  @override
+  String placeBudgetRefused(int n, String time) {
+    return '直近1時間に $n 件送信しました。次は $time に送れます。';
+  }
+
+  @override
+  String get placeNoIdentity => '先に無線機に接続してください。場所はあなたとして報告されます。';
+
+  @override
+  String get placeLabelEmpty => '場所には短い言葉が必要です。';
+
+  @override
+  String get placeLabelTooLong => 'ラベルは60文字までです。';
+
+  @override
+  String get placeLabelCarriesTtl => 'ラベルにTTLトークンは入れられません。';
+
+  @override
+  String placeExpiresIn(String value) {
+    return '残り $value';
+  }
+
+  @override
+  String get placeExpired => '期限切れ';
+
+  @override
+  String placeReportedBy(String name, String time) {
+    return '$name が $time に報告';
+  }
+
+  @override
+  String get placeTimeUnknown => '時刻不明';
+
+  @override
+  String get placeSourceGps => '送信者のGPSから';
+
+  @override
+  String get placeSourcePhone => '送信者の電話から';
+
+  @override
+  String get placeSourcePinned => '手で置いた場所';
+
+  @override
+  String get placeSourceReceived => 'メッシュ経由で受信';
+
+  @override
+  String get placeSourceInferred => '推定';
+
+  @override
+  String get placeUnkeyedIdentity => 'この身元はチャンネル上の名前であり、鍵ではありません。';
+
+  @override
+  String placeUnknownType(String token) {
+    return '$token として送信';
+  }
+
+  @override
+  String get placeConfirmAction => 'まだある';
+
+  @override
+  String get placeRefuteAction => 'もう無い';
+
+  @override
+  String placeConfirmations(int n) {
+    return '$n 件の確認';
+  }
+
+  @override
+  String placeConfirmationsMore(int n) {
+    return '他 $n 件';
+  }
+
+  @override
+  String placeClaimedConfirmations(int n) {
+    return '$n 件は名前のみ';
+  }
+
+  @override
+  String get placeHiddenByRefutation => '既知の鍵からの否定によりここでは非表示';
+
+  @override
+  String get placeDirections => '経路';
+
+  @override
+  String get placeDirectionsCopied => '座標をコピーしました';
+
+  @override
+  String get placeHistoryTitle => '場所';
+
+  @override
+  String get placeHistoryEmpty => 'まだ場所はありません。地図を長押しして報告できます。';
+
+  @override
+  String get placeStateLive => '有効';
+
+  @override
+  String get placeStateExpired => '期限切れ';
+
+  @override
+  String get placeSearchHint => 'ラベルまたは報告者で検索';
+
+  @override
+  String get placeKeyedOnly => '鍵のある場所のみ';
+
+  @override
+  String get placeExportLedger => '台帳を書き出す';
+
+  @override
+  String placeExportDone(String path) {
+    return '台帳を $path に保存しました';
+  }
+
+  @override
+  String get placeExportFailed => '台帳を書き出せませんでした。';
+
+  @override
+  String get placeCoordinatesRefused => 'この座標は送信できません。';
+
+  @override
+  String placeEchoLine(String label, String type, String expiry) {
+    return '$label · $type · $expiry';
+  }
+
+  @override
+  String get placeTypeHazard => '危険';
+
+  @override
+  String get placeTypeWater => '水';
+
+  @override
+  String get placeTypeFuel => '燃料';
+
+  @override
+  String get placeTypeMed => '医療';
+
+  @override
+  String get placeTypeRally => '集会';
+
+  @override
+  String get placeTypeView => '眺め';
+
+  @override
+  String get placeTypeCamp => '野営';
+
+  @override
+  String get placeTypeLook => '目印';
+
+  @override
+  String get placeTypeOther => 'その他';
 }

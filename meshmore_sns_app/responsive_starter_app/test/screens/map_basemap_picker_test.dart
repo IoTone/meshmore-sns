@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
+import 'package:provider/single_child_widget.dart';
 
 import 'package:meshmore_sns_app/gen/app_localizations.dart';
 import 'package:meshmore_sns_app/l10n/locale_controller.dart';
@@ -15,6 +16,8 @@ import 'package:meshmore_sns_app/maps/maps_controller.dart';
 import 'package:meshmore_sns_app/maps/vector_basemap.dart';
 import 'package:meshmore_sns_app/meshcore/meshcore_controller.dart';
 import 'package:meshmore_sns_app/screens/map_screen.dart';
+import 'package:meshmore_sns_app/places/place_report_budget.dart';
+import 'package:meshmore_sns_app/places/place_store.dart';
 import 'package:meshmore_sns_app/theme/mm_tokens.dart';
 import 'package:meshmore_sns_app/theme/theme_controller.dart';
 
@@ -60,10 +63,12 @@ Future<void> _pump(WidgetTester t, MmThemePreset preset) async {
 
   await t.pumpWidget(
     MultiProvider(
-      providers: <ChangeNotifierProvider<ChangeNotifier>>[
+      providers: <SingleChildWidget>[
         ChangeNotifierProvider<MeshcoreController>.value(value: mc),
         ChangeNotifierProvider<ThemeController>.value(value: theme),
         ChangeNotifierProvider<MapsController>.value(value: maps),
+        ChangeNotifierProvider<PlaceStore>.value(value: PlaceStore()),
+        Provider<PlaceReportBudget>(create: (_) => PlaceReportBudget(clock: DateTime.now)),
       ],
       child: MaterialApp(
         locale: const Locale('en'),
