@@ -11,7 +11,6 @@ import '../places/place_history_sheet.dart';
 import '../places/place_store.dart';
 import '../places/place_wiring.dart';
 import 'street_map_view.dart';
-import '../ui/mm_shape.dart';
 
 /// R61 — the **Map** primary view: the street map as its own swipe page.
 ///
@@ -40,15 +39,17 @@ class MapScreen extends StatelessWidget {
   /// Null (a bare `MapScreen` in a test) means the bands do nothing.
   final ValueChanged<int>? onEdgeSwipe;
 
-  /// R70 — derived from [StreetMapView]'s own control geometry (five
-  /// 48 dp controls from the top), so the right band always starts below
-  /// the column and cannot shadow a button.
-  static const double rightControlsBottom = StreetMapView.controlsBottom;
+  /// The two controls this page contributes to the map's own column.
+  static const int _controlExtras = 2;
+
+  /// R70 — the edge band starts below the whole column, built-in controls
+  /// plus the two this page adds, so it can never shadow a button.
+  static double get rightControlsBottom =>
+      StreetMapView.controlsBottomFor(_controlExtras);
 
   @override
   Widget build(BuildContext context) {
     final AppLocalizations l = AppLocalizations.of(context);
-    final ColorScheme cs = Theme.of(context).colorScheme;
     return Column(
       children: <Widget>[
         // The map is the one view whose content is full-bleed, so its header
@@ -56,60 +57,42 @@ class MapScreen extends StatelessWidget {
         // would cover the thing you are trying to read.
         MmPageHeader(title: l.tabMap),
         Expanded(
-          child: Stack(
-      children: <Widget>[
-        Positioned.fill(
           child: MmEdgeSwipe(
             onSwipe: (int d) => onEdgeSwipe?.call(d),
-            rightInsets: const EdgeInsets.only(top: rightControlsBottom),
-            child: const StreetMapView(browseWithoutFix: true),
-          ),
-        ),
-        // Top-left is free in StreetMapView (its controls are top-right
-        // and its "paused" chip never shows here: `frozen` is false).
-        Positioned(
-          left: 12,
-          top: 12,
-          child: Material(
-            color: cs.surface.withValues(alpha: .9),
-            elevation: 1,
-            shape: RoundedRectangleBorder(
-              borderRadius: mmRadius(context, 6),
-              side: BorderSide(color: cs.outline.withValues(alpha: .4)),
+            rightInsets: EdgeInsets.only(top: rightControlsBottom),
+            child: StreetMapView(
+              browseWithoutFix: true,
+              // Both map tools live in the map's own right-hand column, under
+              // the built-in controls. They used to sit on the left edge, and
+              // with the zoom column on the right the left ones were the
+              // buttons a thumb never found.
+              controlExtras: <Widget>[
+                IconButton(
+                  key: const ValueKey<String>('map-offline-maps-button'),
+                  tooltip: l.mapsTitle,
+                  iconSize: 18,
+                  constraints: const BoxConstraints(
+                      minWidth: StreetMapView.controlCell,
+                      minHeight: StreetMapView.controlCell),
+                  icon: const Icon(Icons.download_for_offline_outlined),
+                  onPressed: () => context.push('/settings/maps'),
+                ),
+                IconButton(
+                  key: const ValueKey<String>('map-places-button'),
+                  tooltip: l.placeHistoryTitle,
+                  iconSize: 18,
+                  constraints: const BoxConstraints(
+                      minWidth: StreetMapView.controlCell,
+                      minHeight: StreetMapView.controlCell),
+                  icon: const Icon(Icons.push_pin_outlined),
+                  onPressed: () => PlaceHistorySheet.show(
+                    context,
+                    store: context.read<PlaceStore>(),
+                    composer: placeComposerOf(context),
+                  ),
+                ),
+              ],
             ),
-            child: IconButton(
-              tooltip: l.mapsTitle,
-              icon: const Icon(Icons.download_for_offline_outlined),
-              onPressed: () => context.push('/settings/maps'),
-            ),
-          ),
-        ),
-        // Places history (meshmore-places-spec.md §10): every report this
-        // device saw, live and expired, with the ledger export. Below the
-        // offline-maps button so the two read as one column of map tools.
-        Positioned(
-          left: 12,
-          top: 12 + 48 + 8,
-          child: Material(
-            color: cs.surface.withValues(alpha: .9),
-            elevation: 1,
-            shape: RoundedRectangleBorder(
-              borderRadius: mmRadius(context, 6),
-              side: BorderSide(color: cs.outline.withValues(alpha: .4)),
-            ),
-            child: IconButton(
-              key: const ValueKey<String>('map-places-button'),
-              tooltip: l.placeHistoryTitle,
-              icon: const Icon(Icons.push_pin_outlined),
-              onPressed: () => PlaceHistorySheet.show(
-                context,
-                store: context.read<PlaceStore>(),
-                composer: placeComposerOf(context),
-              ),
-            ),
-          ),
-        ),
-      ],
           ),
         ),
       ],
