@@ -77,7 +77,11 @@ void main() {
     return out;
   }
 
-  int offLadder(String src) {
+  int offLadder(String raw) {
+    // `step(n)` and `pad(n)` are references to the ladder, not literals: an
+    // argument of 5 there means "the fifth step", which is 12 px.
+    final String src =
+        raw.replaceAll(RegExp(r'\b(?:step|pad)\(\s*\d+\s*\)'), 'step()');
     int n = 0;
     for (final RegExpMatch m in RegExp(r'EdgeInsets\.\w+').allMatches(src)) {
       final int j = src.indexOf('(', m.end);
@@ -101,27 +105,19 @@ void main() {
       'lib/bot/bot_scope_config.dart': 1,
       'lib/bot/bot_section.dart': 1,
       'lib/bot/bot_tag.dart': 1,
-      'lib/chat/history_retention_notice.dart': 1,
       'lib/chat/studio_message_row.dart': 2,
       'lib/docs/markdown_view.dart': 4,
       'lib/maps/basemap.dart': 1,
-      'lib/media/media_composer.dart': 1,
-      'lib/places/place_create_sheet.dart': 5,
-      'lib/places/place_detail_sheet.dart': 1,
       'lib/screens/about_screen.dart': 6,
       'lib/screens/battery_screen.dart': 4,
-      'lib/screens/blocked_keys_screen.dart': 1,
       'lib/screens/channels_screen.dart': 6,
       'lib/screens/chat_screen.dart': 10,
-      'lib/screens/chat_search_screen.dart': 1,
-      'lib/screens/checkin_screen.dart': 3,
-      'lib/screens/coverage_screen.dart': 2,
-      'lib/screens/dashboard_screen.dart': 4,
+      'lib/screens/checkin_screen.dart': 1,
       'lib/screens/dashboards/aghud_dashboard.dart': 13,
+      'lib/screens/dashboard_screen.dart': 4,
       'lib/screens/dashboards/drpop_dashboard.dart': 10,
       'lib/screens/dashboards/hyperlocal_dashboard.dart': 4,
       'lib/screens/dashboards/nerv_dashboard.dart': 6,
-      'lib/screens/dashboards/pinned_cards_section.dart': 3,
       'lib/screens/dashboards/recon_dashboard.dart': 13,
       'lib/screens/dashboards/studio_dashboard.dart': 11,
       'lib/screens/device_config_screen.dart': 3,
@@ -134,18 +130,17 @@ void main() {
       'lib/screens/equal_grid_view.dart': 1,
       'lib/screens/fabric_survey_view.dart': 1,
       'lib/screens/first_run_intro_screen.dart': 4,
-      'lib/screens/geofences_screen.dart': 1,
       'lib/screens/globe_view.dart': 2,
       'lib/screens/grid_screen.dart': 7,
       'lib/screens/location_settings_screen.dart': 1,
-      'lib/screens/mesh_tree_view.dart': 2,
       'lib/screens/meshbook_view.dart': 14,
+      'lib/screens/mesh_tree_view.dart': 2,
       'lib/screens/node_detail_sheet.dart': 14,
       'lib/screens/nodes_screen.dart': 4,
       'lib/screens/pair_radio_screen.dart': 10,
       'lib/screens/personalization_screen.dart': 2,
       'lib/screens/sns_cells_view.dart': 2,
-      'lib/screens/sos_screen.dart': 7,
+      'lib/screens/sos_screen.dart': 1,
       'lib/screens/street_map_view.dart': 2,
       'lib/screens/tools/tool_widgets.dart': 4,
       'lib/screens/tools/trace_screen.dart': 3,
@@ -153,10 +148,8 @@ void main() {
       'lib/screens/weather_view.dart': 15,
       'lib/shell/home_shell.dart': 3,
       'lib/splash/branded_splash_screen.dart': 1,
-      'lib/ui/degraded_banner.dart': 1,
-      'lib/ui/mm_components.dart': 9,
+      'lib/ui/mm_components.dart': 5,
       'lib/ui/mm_edge_swipe.dart': 1,
-      'lib/ui/mm_pin_card.dart': 4,
     };
 
     // Exact equality, in both directions: a migration lowers its entry in the

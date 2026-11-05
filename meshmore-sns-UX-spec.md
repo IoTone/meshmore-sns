@@ -173,8 +173,9 @@ Companion rules:
   inside a settings block whose rows carry their own labels is noise: use the
   group gap and the section label instead. A card-mode row carries no
   hairline, so a list never shows a row hairline under a list divider.
-- `test/ui/mm_spacing_test.dart` holds a lower-only, exact per-file count of
-  off-ladder numbers in `EdgeInsets` and in `SizedBox(height|width:)`, plus
+- `test/ui/mm_spacing_test.dart` holds an exact per-file count of off-ladder
+  numbers in `EdgeInsets` and in `SizedBox(height|width:)`, checked in both
+  directions, plus
   assertions that the shared tokens and the job getters are ladder members and
   that a row's leading gap is the same in all eight presets. A new literal has
   to move its file's baseline in the same commit.
