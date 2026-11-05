@@ -80,7 +80,12 @@ void main() {
       // distinct packs; the alias itself is pinned in
       // asset_audio_pack_test.dart.
       for (final MmThemePreset p in MmThemePreset.values) {
-        if (p == MmThemePreset.studio) continue;
+        if (<MmThemePreset>[
+          MmThemePreset.studio,
+          MmThemePreset.studioLight,
+        ].contains(p)) {
+          continue;
+        }
         for (final CueKind s in kSignatureSlots) {
           expect(seen.add(AssetAudioPack.assetPathFor(p, s)), isTrue);
         }

@@ -88,10 +88,14 @@ void main() {
   });
 
   test('R79 only Studio opts into the dimmed basemap', () {
+    // R115 — the dim pushes a bright basemap under dark chrome. A light
+    // ground wants the basemap to belong to the page, so it is not dimmed.
     for (final MmThemePreset p in MmThemePreset.values) {
       expect(mmSkinFor(p).shape.dimmedBasemap, p == MmThemePreset.studio,
           reason: '$p');
     }
+    expect(mmSkinFor(MmThemePreset.studioLight).shape.dimmedBasemap, isFalse,
+        reason: 'a light ground wants the basemap as the page, not under it');
   });
 
   test('mmDimTileFilter is a colour-matrix filter', () {

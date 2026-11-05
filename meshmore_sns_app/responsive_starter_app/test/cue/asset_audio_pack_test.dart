@@ -31,20 +31,29 @@ void main() {
       for (final MmThemePreset p in MmThemePreset.values) {
         for (final CueKind k in CueKind.values) {
           final String s = AssetAudioPack.assetPathFor(p, k);
-          if (p == MmThemePreset.studio) continue; // aliased, see below
+          if (<MmThemePreset>[
+            MmThemePreset.studio,
+            MmThemePreset.studioLight,
+          ].contains(p)) {
+            continue; // aliased, see below
+          }
           expect(seen.add(s), isTrue,
               reason: 'duplicate asset path for $p/$k: $s');
         }
       }
       // R63 — Studio deliberately ALIASES the Hyperlocal pack (no studio
-      // audio exists), so uniqueness is per distinct audioPackKey, not
-      // per preset. Any other duplicate is still a bug.
+      // audio exists), and R115's light skin does the same for the same
+      // reason (a light skin changes colour, not the cue set). Uniqueness is
+      // therefore per distinct audioPackKey, not per preset. Any other
+      // duplicate is still a bug.
       final Set<String> keys = <String>{
         for (final MmThemePreset p in MmThemePreset.values) p.audioPackKey,
       };
-      expect(keys.length, MmThemePreset.values.length - 1,
-          reason: 'exactly one alias (studio -> hyperlocal)');
+      expect(keys.length, MmThemePreset.values.length - 2,
+          reason: 'exactly two aliases (studio and studioLight -> hyperlocal)');
       expect(MmThemePreset.studio.audioPackKey,
+          MmThemePreset.hyperlocal.audioPackKey);
+      expect(MmThemePreset.studioLight.audioPackKey,
           MmThemePreset.hyperlocal.audioPackKey);
       expect(seen.length, 6 * CueKind.values.length,
           reason: '6 distinct packs × 7 cues = 42 unique paths');

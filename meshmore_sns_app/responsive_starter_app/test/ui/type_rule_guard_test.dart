@@ -33,10 +33,16 @@ const String _mono = 'JetBrains Mono';
 void main() {
   setUp(() => SharedPreferences.setMockInitialValues(<String, Object>{}));
 
-  test('only Studio turns words sans; other skins keep their mono', () {
+  test('the tool skins turn words sans; the others keep their mono', () {
+    // R115 — the tool language is one rule for both grounds: words in the UI
+    // face, mono for machine data. Every other skin sets words in mono by
+    // design, which is that skin's character.
     for (final MmThemePreset p in MmThemePreset.values) {
       final MmType t = mmSkinFor(p).type;
-      if (p == MmThemePreset.studio) {
+      if (<MmThemePreset>[
+        MmThemePreset.studio,
+        MmThemePreset.studioLight,
+      ].contains(p)) {
         expect(t.wordsMono, isNull);
       } else {
         expect(t.wordsMono, t.monoFamily, reason: '$p');

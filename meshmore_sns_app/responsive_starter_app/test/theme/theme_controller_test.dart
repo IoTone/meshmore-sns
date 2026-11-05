@@ -11,9 +11,9 @@ void main() {
 
   setUp(() => SharedPreferences.setMockInitialValues(<String, Object>{}));
 
-  test('all seven presets defined, distinct, non-degenerate', () {
-    expect(MmThemePreset.values, hasLength(7));
-    expect(kMmPresets.length, 7);
+  test('all eight presets defined, distinct, non-degenerate', () {
+    expect(MmThemePreset.values, hasLength(8));
+    expect(kMmPresets.length, 8);
     final Set<int> bases = <int>{
       for (final MmThemePreset p in MmThemePreset.values)
         // ignore: deprecated_member_use
@@ -21,6 +21,13 @@ void main() {
     };
     expect(bases.length, greaterThanOrEqualTo(4),
         reason: 'preset backgrounds should not all be identical');
+    // R115 — exactly one preset is a light ground: a light theme is the
+    // deliberate opposite of the other seven, not another dark variant.
+    expect(
+        MmThemePreset.values
+            .where((MmThemePreset p) => kMmPresets[p]!.isLight)
+            .toList(),
+        <MmThemePreset>[MmThemePreset.studioLight]);
   });
 
   test('default preset is STUDIO with no stored prefs', () async {
