@@ -13,7 +13,6 @@ import '../meshcore/discovered_node.dart';
 import '../meshcore/meshcore_controller.dart';
 import '../meshcore/message_heat.dart';
 import '../meshcore/own_location.dart';
-import '../sns/inferred_place_store.dart';
 import '../sns/sns_frame.dart';
 import '../theme/mm_skin.dart';
 import '../theme/viz_palette.dart';
@@ -173,8 +172,6 @@ class _SnsCellsViewState extends State<SnsCellsView>
     final VizPalette viz = VizPalette.of(context.skin);
     final Map<String, double> heat = mc.messageHeatScores();
     final Map<String, int> heatCounts = mc.messageHeatCounts();
-    // R54 — inferred "place echoes" from channel banter.
-    final List<InferredMarker> inferred = mc.inferredPlaces();
     final List<DiscoveredNode> source =
         widget.filteredNodes ?? mc.nodes;
     final List<DiscoveredNode> nodes = <DiscoveredNode>[
@@ -207,7 +204,6 @@ class _SnsCellsViewState extends State<SnsCellsView>
                 heat: heat,
                 heatCounts: heatCounts,
                 nodes: nodes,
-                inferred: inferred,
                 toasts: _toasts,
                 flashPubKey: _flashPubKey,
                 nowMs: now,
@@ -217,7 +213,6 @@ class _SnsCellsViewState extends State<SnsCellsView>
                 cool: viz.cool,
                 node: viz.node,
                 flash: cs.tertiary,
-                infer: viz.inferred,
                 self: viz.self,
                 label: cs.onSurface,
                 toastBg: cs.surface,
@@ -279,8 +274,7 @@ class _SnsCellsViewState extends State<SnsCellsView>
                   Border.all(color: cs.outline.withValues(alpha: .55)),
             ),
             child: Text(
-              '${l.snsCellsStatus(heat.length, hotCells)}'
-              '${inferred.isNotEmpty ? '  ◇${inferred.length}' : ''}',
+              l.snsCellsStatus(heat.length, hotCells),
               style: TextStyle(
                 color: cs.onSurface,
                 fontSize: 10,
@@ -299,15 +293,6 @@ class _SnsCellsViewState extends State<SnsCellsView>
             crossAxisAlignment: CrossAxisAlignment.end,
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
-              if (inferred.isNotEmpty) ...<Widget>[
-                FilledButton.tonalIcon(
-                  icon: const Icon(Icons.place_outlined, size: 16),
-                  label: Text(l.snsPlacesButton(inferred.length)),
-                  onPressed: () => _showPlacesList(
-                      context, mc, selfLat, selfLon),
-                ),
-                const SizedBox(height: 8),
-              ],
               FilledButton.tonalIcon(
                 icon: const Icon(Icons.clear_all, size: 16),
                 label: Text(l.snsCellsClear),
@@ -327,71 +312,6 @@ class _SnsCellsViewState extends State<SnsCellsView>
     );
   }
 
-  /// R54 — a textual list of the inferred places (so distant ones that
-  /// pin off-screen are still readable): name · distance · confidence ·
-  /// last-hour count · the source banter, each dismissible.
-  void _showPlacesList(BuildContext context, MeshcoreController mc,
-      double selfLat, double selfLon) {
-    showModalBottomSheet<void>(
-      context: context,
-      showDragHandle: true,
-      isScrollControlled: true,
-      builder: (BuildContext ctx) {
-        final AppLocalizations l = AppLocalizations.of(ctx);
-        final ColorScheme cs = Theme.of(ctx).colorScheme;
-        return Consumer<MeshcoreController>(
-          builder: (BuildContext ctx, MeshcoreController mc, Widget? _) {
-            final List<InferredMarker> places = mc.inferredPlaces();
-            if (places.isEmpty) {
-              return Padding(
-                padding: const EdgeInsets.all(28),
-                child: Text(l.snsPlacesEmpty,
-                    textAlign: TextAlign.center,
-                    style: TextStyle(color: cs.onSurfaceVariant)),
-              );
-            }
-            return SafeArea(
-              child: ListView(
-                shrinkWrap: true,
-                padding: const EdgeInsets.fromLTRB(8, 0, 8, 16),
-                children: <Widget>[
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
-                    child: Text(l.snsPlacesTitle,
-                        style: TextStyle(
-                            color: cs.onSurfaceVariant,
-                            fontSize: 12,
-                            letterSpacing: 2)),
-                  ),
-                  for (final InferredMarker m in places)
-                    ListTile(
-                      dense: true,
-                      leading: Icon(Icons.place_outlined,
-                          color: kInferredPlaceMarker, size: 20),
-                      title: Text(m.place.displayName),
-                      subtitle: Text(
-                        '${_SnsCellsPainter._distKm(selfLat, selfLon, m.place.latitude, m.place.longitude).round()} km'
-                        '  ·  ${(m.confidence * 100).round()}%'
-                        '  ·  ×${m.recentCount}'
-                        '\n${m.place.sourceSpan}',
-                        style: TextStyle(
-                            color: cs.onSurfaceVariant, fontSize: 11),
-                      ),
-                      isThreeLine: true,
-                      trailing: IconButton(
-                        tooltip: l.snsPlacesDismiss,
-                        icon: const Icon(Icons.close, size: 18),
-                        onPressed: () => mc.dismissInferredPlace(m.key),
-                      ),
-                    ),
-                ],
-              ),
-            );
-          },
-        );
-      },
-    );
-  }
 }
 
 class _SnsCellsPainter extends CustomPainter {
@@ -402,7 +322,6 @@ class _SnsCellsPainter extends CustomPainter {
     required this.heat,
     required this.heatCounts,
     required this.nodes,
-    required this.inferred,
     required this.toasts,
     required this.flashPubKey,
     required this.nowMs,
@@ -412,7 +331,6 @@ class _SnsCellsPainter extends CustomPainter {
     required this.cool,
     required this.node,
     required this.flash,
-    required this.infer,
     required this.self,
     required this.label,
     required this.toastBg,
@@ -428,7 +346,6 @@ class _SnsCellsPainter extends CustomPainter {
   final Map<String, double> heat;
   final Map<String, int> heatCounts;
   final List<DiscoveredNode> nodes;
-  final List<InferredMarker> inferred;
   final List<_Toast> toasts;
   final String? flashPubKey;
   final int nowMs;
@@ -438,7 +355,6 @@ class _SnsCellsPainter extends CustomPainter {
   final Color cool;
   final Color node;
   final Color flash;
-  final Color infer;
   final Color self;
   final Color label;
   final Color toastBg;
@@ -475,9 +391,6 @@ class _SnsCellsPainter extends CustomPainter {
     });
     for (final DiscoveredNode n in nodes) {
       considerLatLon(n.latitude!, n.longitude!);
-    }
-    for (final InferredMarker m in inferred) {
-      considerLatLon(m.place.latitude, m.place.longitude);
     }
     final double half = snsHalfExtentMeters(maxOffset, maxHalfMeters);
     final double pxPerMeter =
@@ -690,57 +603,6 @@ class _SnsCellsPainter extends CustomPainter {
           Paint()..color = flashing ? flash : node);
     }
 
-    // --- Inferred "place echoes" (R54) ---
-    // Distinct ghost markers: a dashed ring + hollow diamond, clearly
-    // not a node dot. Confidence drives opacity. Each carries its
-    // last-hour mention count. Markers beyond the frame (e.g. a city
-    // 200 km away) are pinned to the edge with a direction arrow + the
-    // distance, so they aren't lost off-screen.
-    final Rect frame = Offset.zero & size;
-    final Rect inner = frame.deflate(18);
-    for (final InferredMarker m in inferred) {
-      final Offset p = project(m.place.latitude, m.place.longitude);
-      final double op = (0.40 + 0.55 * m.confidence).clamp(0.0, 1.0);
-      if (inner.contains(p)) {
-        _drawDashedCircle(canvas, p, 9, infer.withValues(alpha: op * 0.85));
-        canvas.drawPath(_diamond(p, 5),
-            Paint()..color = infer.withValues(alpha: op * 0.45));
-        canvas.drawPath(
-            _diamond(p, 5),
-            Paint()
-              ..style = PaintingStyle.stroke
-              ..strokeWidth = 1.2
-              ..color = infer.withValues(alpha: op));
-        _drawInferLabel(
-            canvas,
-            p.translate(0, -13),
-            '${m.place.displayName}  ×${m.recentCount}',
-            op);
-      } else {
-        // Edge-pinned: clamp to the border along the ray from self.
-        final Offset edge = _edgePoint(centre, p, inner);
-        final double ang = math.atan2(p.dy - centre.dy, p.dx - centre.dx);
-        canvas.save();
-        canvas.translate(edge.dx, edge.dy);
-        canvas.rotate(ang);
-        // Small arrow-head pointing outward.
-        canvas.drawPath(
-            Path()
-              ..moveTo(6, 0)
-              ..lineTo(-4, -4)
-              ..lineTo(-4, 4)
-              ..close(),
-            Paint()..color = infer.withValues(alpha: op));
-        canvas.restore();
-        final double km = _distKm(
-            selfLat, selfLon, m.place.latitude, m.place.longitude);
-        _drawInferLabel(
-            canvas,
-            edge.translate(0, edge.dy < size.height / 2 ? 12 : -10),
-            '${m.place.displayName}  ${km.round()}km ×${m.recentCount}',
-            op);
-      }
-    }
 
     // --- Self pin (crosshair) ---
     final Paint selfPaint = Paint()
@@ -837,36 +699,7 @@ class _SnsCellsPainter extends CustomPainter {
     }
   }
 
-  static Path _diamond(Offset p, double r) => Path()
-    ..moveTo(p.dx, p.dy - r)
-    ..lineTo(p.dx + r, p.dy)
-    ..lineTo(p.dx, p.dy + r)
-    ..lineTo(p.dx - r, p.dy)
-    ..close();
 
-  /// Point on rect [r]'s border along the ray from [c] toward [target].
-  static Offset _edgePoint(Offset c, Offset target, Rect r) {
-    final double dx = target.dx - c.dx;
-    final double dy = target.dy - c.dy;
-    double t = double.infinity;
-    if (dx > 0) t = math.min(t, (r.right - c.dx) / dx);
-    if (dx < 0) t = math.min(t, (r.left - c.dx) / dx);
-    if (dy > 0) t = math.min(t, (r.bottom - c.dy) / dy);
-    if (dy < 0) t = math.min(t, (r.top - c.dy) / dy);
-    if (!t.isFinite || t < 0) t = 0;
-    return Offset(c.dx + dx * t, c.dy + dy * t);
-  }
-
-  static double _distKm(double lat1, double lon1, double lat2, double lon2) {
-    const double rad = math.pi / 180.0;
-    final double dLat = (lat2 - lat1) * rad;
-    final double dLon = (lon2 - lon1) * rad;
-    final double a = math.pow(math.sin(dLat / 2), 2).toDouble() +
-        math.cos(lat1 * rad) *
-            math.cos(lat2 * rad) *
-            math.pow(math.sin(dLon / 2), 2).toDouble();
-    return 6371.0 * 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a));
-  }
 
   /// Centred message count for a heat square.
   void _drawCount(Canvas canvas, Offset c, String text, bool onHot) {
@@ -891,43 +724,6 @@ class _SnsCellsPainter extends CustomPainter {
     tp.paint(canvas, Offset(c.dx - tp.width / 2, c.dy - tp.height / 2));
   }
 
-  /// A dashed ring — the "inferred / not a real node" signal.
-  void _drawDashedCircle(Canvas canvas, Offset c, double r, Color color) {
-    final Paint p = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.2
-      ..color = color;
-    const int dashes = 10;
-    final double seg = (2 * math.pi) / (dashes * 2);
-    for (int i = 0; i < dashes; i++) {
-      final double start = i * 2 * seg;
-      canvas.drawArc(
-          Rect.fromCircle(center: c, radius: r), start, seg, false, p);
-    }
-  }
-
-  /// Small place-name label above an inferred marker (no box — it's a
-  /// soft annotation, not a chat toast).
-  void _drawInferLabel(
-      Canvas canvas, Offset anchor, String text, double opacity) {
-    final String trimmed =
-        text.length > 22 ? '${text.substring(0, 22)}…' : text;
-    final TextPainter tp = TextPainter(
-      text: TextSpan(
-        text: trimmed,
-        style: TextStyle(
-          color: infer.withValues(alpha: opacity),
-          fontSize: 10,
-          fontWeight: FontWeight.w600,
-          shadows: const <Shadow>[
-            Shadow(color: kMarkerShadow, blurRadius: 2),
-          ],
-        ),
-      ),
-      textDirection: TextDirection.ltr,
-    )..layout(maxWidth: 120);
-    tp.paint(canvas, Offset(anchor.dx - tp.width / 2, anchor.dy - tp.height));
-  }
 
   void _drawToast(Canvas canvas, Offset anchor, String text,
       double opacity, bool isChannel) {

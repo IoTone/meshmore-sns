@@ -455,14 +455,24 @@ class MmPickerItem<T> {
   const MmPickerItem.header(this.label)
       : value = null,
         icon = null,
-        isHeader = true;
+        isHeader = true,
+        onAction = null;
   const MmPickerItem.option(this.value, this.label, {this.icon})
-      : isHeader = false;
+      : isHeader = false,
+        onAction = null;
+
+  /// A row that does something instead of choosing a value: leave for another
+  /// screen, or open a second list. The sheet closes first, so the action can
+  /// push a route or another sheet without fighting the dismissal.
+  const MmPickerItem.action(this.label, {this.icon, this.onAction})
+      : value = null,
+        isHeader = false;
 
   final T? value;
   final String label;
   final IconData? icon;
   final bool isHeader;
+  final VoidCallback? onAction;
 }
 
 /// R104 — the one pick-one-of-N surface. `PopupMenuButton` is not scrollable,
@@ -516,7 +526,10 @@ Future<T?> showMmPicker<T>({
               )
             else
               InkWell(
-                onTap: () => Navigator.pop<T>(c, it.value),
+                onTap: () {
+                  Navigator.pop<T>(c, it.value);
+                  it.onAction?.call();
+                },
                 child: SizedBox(
                   height: 48,
                   child: Padding(

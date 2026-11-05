@@ -5,7 +5,6 @@ import 'dart:math' as math;
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_compass/flutter_compass.dart';
 import 'package:provider/provider.dart';
 
 import '../gen/app_localizations.dart';
@@ -16,6 +15,7 @@ import '../meshcore/meshcore_controller.dart';
 import '../meshcore/own_location.dart';
 import '../theme/theme_controller.dart';
 import '../shell/horizontal_drag_claim.dart';
+import '../shell/shell_view_request.dart';
 import '../ui/mm_components.dart';
 import '../ui/mm_page_header.dart';
 import '../ui/mm_scaffold.dart';
@@ -27,7 +27,6 @@ import 'globe_view.dart';
 import 'mesh_tree_view.dart';
 import 'node_detail_sheet.dart';
 import 'sns_cells_view.dart';
-import 'street_map_view.dart';
 import 'grid_prefs_store.dart';
 import 'meshbook_view.dart';
 import 'weather_view.dart';
@@ -41,16 +40,35 @@ import 'package:meshcore/meshcore.dart';
 /// (R109).
 enum _GridViewMode {
   radial,
+  fabric,
+  weather,
   globe,
   equalGrid,
-  streetMap,
-  fabric,
-  elevation,
   tree,
   snsCells,
-  weather,
+  elevation,
   meshbook,
 }
+
+/// The rows the view picker shows first: the views that answer a question a
+/// small mesh actually raises. Everything else is one level down, because ten
+/// options in one sheet buried the three that matter.
+const List<_GridViewMode> _primaryViews = <_GridViewMode>[
+  _GridViewMode.radial,
+  _GridViewMode.fabric,
+  _GridViewMode.weather,
+];
+
+/// The views behind "More views…": still available, deliberately not in the
+/// way. Globe and equal grid are two ways to look at the same positions, the
+/// tree is topology rather than geography, and the last two are reports.
+const List<_GridViewMode> _moreViews = <_GridViewMode>[
+  _GridViewMode.globe,
+  _GridViewMode.equalGrid,
+  _GridViewMode.tree,
+  _GridViewMode.snsCells,
+  _GridViewMode.elevation,
+];
 
 extension on _GridViewMode {
   /// Views whose body pans or zooms with a drag. These offer the Swipe ⇄ Pan
@@ -64,7 +82,6 @@ extension on _GridViewMode {
   /// to nothing. The views that draw to fit never need the toggle either.
   bool get pansHorizontally => switch (this) {
         _GridViewMode.globe ||
-        _GridViewMode.streetMap ||
         _GridViewMode.fabric ||
         _GridViewMode.tree ||
         _GridViewMode.snsCells =>
@@ -77,6 +94,23 @@ extension on _GridViewMode {
           false,
       };
 }
+
+/// What a radar marker can honestly be drawn from.
+///
+/// A node with a reported position is placed by bearing and distance. A node
+/// without one is placed on the ring its signal strength implies, at an angle
+/// that is a stable placeholder — the app does not know which way it lies. The
+/// marker says so: the glyph is hollow, and the legend states that the angle is
+/// not a direction. Drawing both as the same solid dot was the lie.
+enum GridMarkerSource { position, signal }
+
+GridMarkerSource gridMarkerSourceFor({
+  required bool nodeHasLocation,
+  required bool selfHasLocation,
+}) =>
+    nodeHasLocation && selfHasLocation
+        ? GridMarkerSource.position
+        : GridMarkerSource.signal;
 
 /// R18 / U9 — the hyperlocal grid: a radial range-ring view of the
 /// mesh **fabric** relative to us. Brightness = recency (100 % at
@@ -204,23 +238,6 @@ class _GridScreenState extends State<GridScreen>
   int _scaleIndex =
       GridScreen.rangeStops.indexWhere((s) => s.label == 'Wide');
 
-  /// Live phone compass heading in degrees from magnetic north
-  /// (0=N, 90=E, 180=S, 270=W). Null when no sensor data has
-  /// arrived yet. Drives the radar's heading needle + heading-up mode.
-  double? _headingDeg;
-
-  /// Radar orientation. True (default) = north-up: north is always at
-  /// the top, with a heading needle showing which way you face. False
-  /// = heading-up: the whole radar rotates so your facing direction is
-  /// at the top and the cardinal rose rotates to show where north is.
-  bool _northUp = true;
-
-  /// Reported accuracy (degrees, lower = better). When > 25 we
-  /// surface a small "calibrate phone (figure-8 wave)" hint.
-  double? _headingAccuracyDeg;
-
-  StreamSubscription<CompassEvent>? _compassSub;
-
   @override
   void initState() {
     super.initState();
@@ -234,20 +251,6 @@ class _GridScreenState extends State<GridScreen>
         mc.incomingChannelMessages.listen((_) {
       if (mounted) _rippleAt = DateTime.now();
     });
-    // Compass subscription — platform-fused heading. Stream may be
-    // null on devices without a magnetometer; in that case the
-    // overlay is just skipped. We subscribe at screen-mount time
-    // (cheap ~5-10 mA while open) and cancel on dispose.
-    final Stream<CompassEvent>? src = FlutterCompass.events;
-    if (src != null) {
-      _compassSub = src.listen((CompassEvent e) {
-        if (!mounted) return;
-        setState(() {
-          _headingDeg = e.heading;
-          _headingAccuracyDeg = e.accuracy;
-        });
-      }, onError: (_) {});
-    }
     // R109 — pan mode is per visit, not per session: the view mode is
     // remembered, the gesture lock is not.
     _panMode = false;
@@ -262,7 +265,6 @@ class _GridScreenState extends State<GridScreen>
             p.scaleIndex < GridScreen.rangeStops.length) {
           _scaleIndex = p.scaleIndex;
         }
-        _northUp = p.northUp;
         _interval = Duration(seconds: p.intervalSec.clamp(1, 600));
         // Don't auto-restore `live` — the screen intentionally opens paused
         // (a fresh snapshot), and live restore is handled by the existing
@@ -274,7 +276,6 @@ class _GridScreenState extends State<GridScreen>
   void _savePrefs() {
     GridPrefsStore.save(GridPrefs(
       scaleIndex: _scaleIndex,
-      northUp: _northUp,
       live: _live,
       intervalSec: _interval.inSeconds,
     ));
@@ -284,6 +285,26 @@ class _GridScreenState extends State<GridScreen>
     setState(() => _viewMode = m);
     GridScreen._sessionMode = m;
     _publishDragClaim();
+  }
+
+  /// The second level of the picker: the views that are worth keeping but
+  /// do not earn a primary slot.
+  void _showMoreViews(BuildContext context, AppLocalizations l) {
+    showMmPicker<_GridViewMode>(
+      context: context,
+      title: l.gridMoreViews,
+      current: _viewMode,
+      items: <MmPickerItem<_GridViewMode>>[
+        for (final _GridViewMode v in _moreViews)
+          MmPickerItem<_GridViewMode>.option(
+              v, _longLabel(v, l), icon: _iconForMode(v)),
+        MmPickerItem<_GridViewMode>.option(_GridViewMode.meshbook,
+            _longLabel(_GridViewMode.meshbook, l),
+            icon: _iconForMode(_GridViewMode.meshbook)),
+      ],
+    ).then((_GridViewMode? m) {
+      if (m != null && mounted) _selectMode(m);
+    });
   }
 
   void _togglePanMode() {
@@ -307,7 +328,6 @@ class _GridScreenState extends State<GridScreen>
     shellDragClaim.release(GridScreen.dragHolder);
     _refreshTimer?.cancel();
     _msgSub?.cancel();
-    _compassSub?.cancel();
     _tick.dispose();
     super.dispose();
   }
@@ -324,12 +344,29 @@ class _GridScreenState extends State<GridScreen>
   /// Views that read a time-ordered snapshot, so the transport bar means
   /// something. The three report views (altitude, weather, activity) are
   /// always current and have no transport.
+  /// The bar carries a refresh cadence on the radar (the one view that shows a
+  /// snapshot in time) and the range scale on the two views that use it.
+  /// "Play" over a map meant "freeze the picture", which is not transport.
   bool get _hasTransport => switch (_viewMode) {
-        _GridViewMode.elevation ||
+        _GridViewMode.radial || _GridViewMode.equalGrid => true,
+        _ => false,
+      };
+
+  /// Whether the view plots nodes, and therefore whether a node count means
+  /// anything above it. A weather report over "3 in mesh · 2 known" was three
+  /// counts about something the view does not show.
+  bool get _plotsNodes => switch (_viewMode) {
+        _GridViewMode.radial ||
+        _GridViewMode.fabric ||
+        _GridViewMode.globe ||
+        _GridViewMode.equalGrid ||
+        _GridViewMode.tree ||
+        _GridViewMode.snsCells =>
+          true,
         _GridViewMode.weather ||
+        _GridViewMode.elevation ||
         _GridViewMode.meshbook =>
           false,
-        _ => true,
       };
 
   /// Views that render a legend, so the info button exists only there.
@@ -351,47 +388,6 @@ class _GridScreenState extends State<GridScreen>
       _viewMode == _GridViewMode.equalGrid;
 
 
-  /// A pannable view under its Swipe ⇄ Pan mode (R109). In swipe mode the
-  /// view is held still — its own drags would win the gesture and the tab
-  /// could never be swiped — with a hint saying how to get it back. In pan
-  /// mode a quieter hint says how to get the swipe back. Every other view
-  /// passes through untouched.
-  Widget _modeHint(ColorScheme cs, AppLocalizations l, Widget body) {
-    if (!_viewMode.pansHorizontally) return body;
-    return Stack(
-      children: <Widget>[
-        // Not an IgnorePointer: in swipe mode the pannable views drop their
-        // own drag (each one knows which gesture that is) and keep their taps,
-        // because a node you can see should be a node you can open.
-        Positioned.fill(child: body),
-        Positioned(
-          left: 0,
-          right: 0,
-          bottom: 12,
-          child: IgnorePointer(
-            child: Center(
-              child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: cs.surface.withValues(alpha: .8),
-                  borderRadius: mmRadius(context, 16),
-                  border:
-                      Border.all(color: cs.outline.withValues(alpha: .4)),
-                ),
-                child: Text(
-                  _panMode ? l.gridPanHint : l.gridSwipeHint,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: cs.onSurface, fontSize: context.skin.type.sizeBody),
-                ),
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
   /// Bottom bar: transport (play/pause + interval) and, in the two views
   /// that consume it, the range scale. Kept off the header so switching
   /// views is one control, and so play/pause is not a per-view toggle
@@ -411,11 +407,14 @@ class _GridScreenState extends State<GridScreen>
           alignment: WrapAlignment.spaceBetween,
           crossAxisAlignment: WrapCrossAlignment.center,
           children: <Widget>[
-            IconButton(
-              tooltip: _live ? l.gridPauseTooltip : l.gridPlayTooltip,
-              icon: Icon(_live ? Icons.pause : Icons.play_arrow),
-              onPressed: _togglePlay,
-            ),
+            if (_viewMode == _GridViewMode.radial)
+              IconButton(
+                tooltip: _live ? l.gridPauseTooltip : l.gridPlayTooltip,
+                icon: Icon(_live ? Icons.pause : Icons.play_arrow),
+                onPressed: _togglePlay,
+              ),
+            if (_viewMode != _GridViewMode.radial) const SizedBox.shrink(),
+            if (_viewMode == _GridViewMode.radial)
             Tooltip(
               message: l.gridIntervalTooltip,
               child: InkWell(
@@ -495,7 +494,6 @@ class _GridScreenState extends State<GridScreen>
         _GridViewMode.radial => Icons.radar,
         _GridViewMode.globe => Icons.public,
         _GridViewMode.equalGrid => Icons.grid_on,
-        _GridViewMode.streetMap => Icons.map_outlined,
         _GridViewMode.fabric => Icons.view_quilt,
         _GridViewMode.elevation => Icons.terrain,
         _GridViewMode.tree => Icons.account_tree,
@@ -510,7 +508,6 @@ class _GridScreenState extends State<GridScreen>
         _GridViewMode.radial => l.gridViewRadial,
         _GridViewMode.globe => l.gridViewGlobe,
         _GridViewMode.equalGrid => l.gridViewEqualGrid,
-        _GridViewMode.streetMap => l.gridViewStreetMap,
         _GridViewMode.fabric => l.gridViewFabric,
         _GridViewMode.elevation => l.gridViewElevation,
         _GridViewMode.tree => l.gridViewTree,
@@ -621,7 +618,6 @@ class _GridScreenState extends State<GridScreen>
     required List<DiscoveredNode> visible,
     required double? selfLat,
     required double? selfLon,
-    double rotationRad = 0,
   }) {
     final Offset center = Offset(area.width / 2, area.height / 2);
     final double maxR = math.min(area.width, area.height) / 2 - 24;
@@ -637,7 +633,6 @@ class _GridScreenState extends State<GridScreen>
         selfLat: selfLat,
         selfLon: selfLon,
         scaleKm: scaleKm,
-        rotationRad: rotationRad,
       );
       final double d = (p - tap).distance;
       if (d <= _tapRadius && d < bestDist) {
@@ -749,31 +744,27 @@ class _GridScreenState extends State<GridScreen>
                   title: l.gridViewPicker,
                   current: _viewMode,
                   items: <MmPickerItem<_GridViewMode>>[
-                    MmPickerItem<_GridViewMode>.header(l.gridGroupPeers),
-                    for (final _GridViewMode v in <_GridViewMode>[
-                      _GridViewMode.radial,
-                      _GridViewMode.globe,
-                      _GridViewMode.equalGrid,
-                      _GridViewMode.streetMap,
-                    ])
+                    for (final _GridViewMode v in _primaryViews)
                       MmPickerItem<_GridViewMode>.option(
                           v, _longLabel(v, l), icon: _iconForMode(v)),
-                    MmPickerItem<_GridViewMode>.header(l.gridGroupSurvey),
-                    for (final _GridViewMode v in <_GridViewMode>[
-                      _GridViewMode.fabric,
-                      _GridViewMode.tree,
-                      _GridViewMode.snsCells,
-                    ])
-                      MmPickerItem<_GridViewMode>.option(
-                          v, _longLabel(v, l), icon: _iconForMode(v)),
-                    MmPickerItem<_GridViewMode>.header(l.gridGroupReports),
-                    for (final _GridViewMode v in <_GridViewMode>[
-                      _GridViewMode.elevation,
-                      _GridViewMode.weather,
-                      _GridViewMode.meshbook,
-                    ])
-                      MmPickerItem<_GridViewMode>.option(
-                          v, _longLabel(v, l), icon: _iconForMode(v)),
+                    // The map is a tab, not a grid view: this row leaves for
+                    // it instead of showing a second copy of the same widget
+                    // inside the grid (the street map used to do exactly that).
+                    MmPickerItem<_GridViewMode>.action(
+                      l.gridOpenMap,
+                      icon: Icons.map_outlined,
+                      onAction: () {
+                        if (!mounted) return;
+                        context.read<ShellViewRequest?>()?.openMap();
+                      },
+                    ),
+                    MmPickerItem<_GridViewMode>.action(
+                      l.gridMoreViews,
+                      icon: Icons.more_horiz,
+                      onAction: () {
+                        if (mounted) _showMoreViews(context, l);
+                      },
+                    ),
                   ],
                 );
                 if (m != null) _selectMode(m);
@@ -833,10 +824,12 @@ class _GridScreenState extends State<GridScreen>
         child: Align(
           alignment: Alignment.centerLeft,
           child: Text(
-            ready
+            ready && _plotsNodes
                 ? l.gridStatusCounts(visible.length, mc.known.length,
                     mc.favorites.length)
-                : l.gridStatusOffline,
+                : ready
+                    ? ''
+                    : l.gridStatusOffline,
             style: TextStyle(color: cs.onSurfaceVariant, fontSize: context.skin.type.sizeBody),
           ),
         ),
@@ -848,7 +841,7 @@ class _GridScreenState extends State<GridScreen>
       // The picker drives mode; the body renders the chosen mode's widget
       // under its Swipe ⇄ Pan state (R109).
       Expanded(
-        child: _modeHint(cs, l, switch (_viewMode) {
+        child: switch (_viewMode) {
         _GridViewMode.globe => GlobeView(
             filteredNodes: visible,
             frozen: !_live && _userInteracted,
@@ -859,11 +852,6 @@ class _GridScreenState extends State<GridScreen>
                 GridScreen.rangeStops[_scaleIndex].km),
             filteredNodes: visible,
             frozen: !_live && _userInteracted,
-          ),
-        _GridViewMode.streetMap => StreetMapView(
-            filteredNodes: visible,
-            frozen: !_live && _userInteracted,
-            interactive: _panMode,
           ),
         _GridViewMode.fabric => Stack(
             children: <Widget>[
@@ -960,13 +948,6 @@ class _GridScreenState extends State<GridScreen>
                     builder: (BuildContext _, BoxConstraints c) {
                       final Size area =
                           Size(c.maxWidth, c.maxHeight);
-                      // Heading-up rotates the whole plot so the facing
-                      // direction is at the top. North-up (default) or
-                      // no compass data → no rotation.
-                      final double headingRot =
-                          (_northUp || _headingDeg == null)
-                              ? 0.0
-                              : -(_headingDeg! * math.pi / 180);
                       return GestureDetector(
                         behavior: HitTestBehavior.opaque,
                         onTapDown: (TapDownDetails d) {
@@ -976,7 +957,6 @@ class _GridScreenState extends State<GridScreen>
                             visible: visible,
                             selfLat: self?.latitude,
                             selfLon: self?.longitude,
-                            rotationRad: headingRot,
                           );
                           if (hit != null) {
                             _showDetail(context, mc, hit);
@@ -1005,10 +985,8 @@ class _GridScreenState extends State<GridScreen>
                               type: context.skin.type,
                               rippleAt: _rippleAt,
                               rippleDuration: _rippleDuration,
-                              headingDeg: _headingDeg,
                               scaleKm: scaleKm,
-                              rotationRad: headingRot,
-                            ),
+                              ),
                           ),
                         ),
                       );
@@ -1024,130 +1002,13 @@ class _GridScreenState extends State<GridScreen>
                       ),
                     ),
                   ),
-                if (_headingDeg != null && visible.isNotEmpty)
-                  Positioned(
-                    top: 10,
-                    left: 0,
-                    right: 0,
-                    child: Center(child: _headingHud(cs, l)),
-                  ),
               ],
             ),
           ),
         ],
       ),
-      })),
+      }),
       if (_hasTransport) _transportBar(l, cs, scaleLabel, scaleValue),
-        ],
-      ),
-    );
-  }
-
-  /// Map a compass heading (degrees, 0 = N) to a one- or two-letter
-  /// cardinal direction. 16-wind compass.
-  String _cardinal(double headingDeg) {
-    final double n = ((headingDeg % 360) + 360) % 360;
-    const List<String> winds = <String>[
-      'N', 'NNE', 'NE', 'ENE',
-      'E', 'ESE', 'SE', 'SSE',
-      'S', 'SSW', 'SW', 'WSW',
-      'W', 'WNW', 'NW', 'NNW',
-    ];
-    final int idx = ((n + 11.25) ~/ 22.5) % 16;
-    return winds[idx];
-  }
-
-  /// Prominent heading HUD pinned to the top of the radar — a large,
-  /// monospace, HUD-style readout of the compass heading with the
-  /// north-up / heading-up toggle. Replaces the tiny footer text.
-  Widget _headingHud(ColorScheme cs, AppLocalizations l) {
-    final int deg = _headingDeg!.round();
-    final String card = _cardinal(_headingDeg!);
-    final bool poorAccuracy =
-        _headingAccuracyDeg != null && _headingAccuracyDeg! > 25;
-    return Container(
-      padding: const EdgeInsets.fromLTRB(16, 6, 8, 8),
-      decoration: BoxDecoration(
-        color: cs.surface.withValues(alpha: .55),
-        borderRadius: mmRadius(context, 12),
-        border: Border.all(color: cs.primary.withValues(alpha: .35)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: <Widget>[
-          Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              Text(
-                '◊ ${l.gridHeadingHud}',
-                style: TextStyle(
-                    color: cs.primary.withValues(alpha: .7),
-                    fontSize: context.skin.type.size(9),
-                    letterSpacing: 5,
-                    fontFamily: context.skin.type.wordsMono),
-              ),
-              const SizedBox(height: 1),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.baseline,
-                textBaseline: TextBaseline.alphabetic,
-                children: <Widget>[
-                  Text(
-                    deg.toString().padLeft(3, '0'),
-                    style: TextStyle(
-                        color: cs.primary,
-                        fontSize: context.skin.type.size(38),
-                        height: 1,
-                        fontWeight: FontWeight.w700,
-                        fontFamily: context.skin.type.monoFamily,
-                        letterSpacing: 2),
-                  ),
-                  Text('°',
-                      style: TextStyle(
-                          color: cs.primary.withValues(alpha: .7),
-                          fontSize: context.skin.type.size(22),
-                          fontFamily: context.skin.type.monoFamily)),
-                  const SizedBox(width: 10),
-                  Text(card,
-                      style: TextStyle(
-                          color: cs.tertiary,
-                          fontSize: context.skin.type.size(22),
-                          fontWeight: FontWeight.w600,
-                          fontFamily: context.skin.type.monoFamily,
-                          letterSpacing: 3)),
-                ],
-              ),
-              if (poorAccuracy)
-                Padding(
-                  padding: const EdgeInsets.only(top: 2),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: <Widget>[
-                      Icon(Icons.explore_off, size: 11, color: cs.tertiary),
-                      const SizedBox(width: 4),
-                      Text(l.gridHeadingCalibrate,
-                          style:
-                              TextStyle(color: cs.tertiary, fontSize: context.skin.type.size(9))),
-                    ],
-                  ),
-                ),
-            ],
-          ),
-          const SizedBox(width: 6),
-          IconButton(
-            visualDensity: VisualDensity.compact,
-            iconSize: 22,
-            tooltip:
-                _northUp ? l.gridOrientHeadingUp : l.gridOrientNorthUp,
-            icon: Icon(
-              _northUp ? Icons.explore_outlined : Icons.navigation,
-              color: cs.primary,
-            ),
-            onPressed: () {
-              setState(() => _northUp = !_northUp);
-              _savePrefs();
-            },
-          ),
         ],
       ),
     );
@@ -1157,6 +1018,54 @@ class _GridScreenState extends State<GridScreen>
 /// Toggleable legend overlay strip. Explains what the rings, the
 /// node glyphs, the animations, and the ripple mean — every cue is
 /// in here so a new user can decode the grid at a glance.
+/// The rest of a legend, behind one tap. A legend explains glyphs; the
+/// sentences that explain the animations belong in a dialog, not on the canvas.
+class _LegendMore extends StatelessWidget {
+  const _LegendMore({required this.title, required this.lines});
+  final String title;
+  final List<String> lines;
+
+  @override
+  Widget build(BuildContext context) {
+    final ColorScheme cs = Theme.of(context).colorScheme;
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: TextButton(
+        onPressed: () => showDialog<void>(
+          context: context,
+          builder: (BuildContext c) => AlertDialog(
+            title: Text(title),
+            content: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  for (final String line in lines)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: Text(line,
+                          style: TextStyle(
+                              color: cs.onSurface,
+                              fontSize: context.skin.type.sizeBody)),
+                    ),
+                ],
+              ),
+            ),
+            actions: <Widget>[
+              TextButton(
+                onPressed: () => Navigator.pop(c),
+                child: Text(MaterialLocalizations.of(c).closeButtonLabel),
+              ),
+            ],
+          ),
+        ),
+        child: Text(title,
+            style: TextStyle(color: cs.primary, fontSize: context.skin.type.sizeBody)),
+      ),
+    );
+  }
+}
+
 class _GridLegend extends StatelessWidget {
   const _GridLegend(
       {required this.cs, required this.scaleKm, required this.l});
@@ -1204,18 +1113,24 @@ class _GridLegend extends StatelessWidget {
                   fontSize: context.skin.type.sizeSm,
                   letterSpacing: 3)),
           const SizedBox(height: 6),
-          row(Icons.adjust, l.gridLegendRings(scaleValueDisplay)),
-          row(Icons.my_location, l.gridLegendSelf),
-          row(Icons.circle, l.gridLegendDot),
-          row(Icons.radio_button_checked, l.gridLegendKnown),
-          row(Icons.star, l.gridLegendFavourite),
-          row(Icons.waves, l.gridLegendRipple),
-          row(Icons.touch_app, l.gridLegendTap),
+          row(Icons.adjust, l.gridLegendRingsShort),
+          row(Icons.my_location, l.gridLegendSelfShort),
+          row(Icons.circle, l.gridLegendDotShort),
+          row(Icons.blur_circular, l.gridLegendSignalOnly),
+          row(Icons.radio_button_checked, l.gridLegendKnownShort),
+          row(Icons.star, l.gridLegendFavShort),
+          row(Icons.waves, l.gridLegendRippleShort),
+          row(Icons.touch_app, l.gridLegendTapShort),
+          _LegendMore(title: l.gridLegendMore, lines: <String>[
+            l.gridLegendRings(scaleValueDisplay),
+            l.gridLegendSelf,
+            l.gridLegendDot,
+            l.gridLegendKnown,
+            l.gridLegendFavourite,
+            l.gridLegendRipple,
+            l.gridLegendTap,
+          ]),
           const SizedBox(height: 6),
-          // Heading semantics — what the wedge actually means + how
-          // to fix it when it points the wrong way.
-          row(Icons.explore, l.gridLegendHeading),
-          row(Icons.threesixty, l.gridLegendCalibration),
         ],
       ),
     );
@@ -1280,8 +1195,6 @@ class _GridPainter extends CustomPainter {
     required this.rippleAt,
     required this.rippleDuration,
     required this.scaleKm,
-    this.headingDeg,
-    this.rotationRad = 0,
   });
 
   final List<DiscoveredNode> nodes;
@@ -1298,27 +1211,22 @@ class _GridPainter extends CustomPainter {
   final Color ringStroke;
   final Color base;
 
-  /// The active skin's type system: the ring labels and the compass rose are
-  /// painted, not built, so the ladder reaches them through this.
+  /// The active skin's type system: the ring labels are painted, not built,
+  /// so the ladder reaches them through this.
   final MmType type;
   final DateTime? rippleAt;
   final Duration rippleDuration;
   final double scaleKm;
 
-  /// Live phone compass heading (degrees from magnetic north,
-  /// 0=N / 90=E / 180=S / 270=W). When non-null, the painter draws a
-  /// heading needle from the centre showing which way the user is
-  /// facing, paired with the cardinal rose.
-  final double? headingDeg;
-
-  /// Plot rotation in radians. 0 = north-up (north at the top).
-  /// `-headingRad` rotates the whole scene so the facing direction is
-  /// at the top (heading-up mode). Applied to nodes, the cardinal
-  /// rose, and the heading needle so they stay mutually consistent.
-  final double rotationRad;
-
   static bool _selfHasGpsStatic(double? lat, double? lon) =>
       lat != null && lon != null && !(lat == 0 && lon == 0);
+
+  /// Whether this node is placed by a reported position or only by signal.
+  static GridMarkerSource _sourceFor(
+          DiscoveredNode node, double? selfLat, double? selfLon) =>
+      gridMarkerSourceFor(
+          nodeHasLocation: node.hasLocation,
+          selfHasLocation: _selfHasGpsStatic(selfLat, selfLon));
 
   /// Stable arbitrary angle from pubkey (so a node doesn't jump).
   static double _hashAngle(String pubKeyHex) {
@@ -1348,7 +1256,6 @@ class _GridPainter extends CustomPainter {
     required double? selfLat,
     required double? selfLon,
     required double scaleKm,
-    double rotationRad = 0,
   }) {
     final bool selfGps = _selfHasGpsStatic(selfLat, selfLon);
     final double angle;
@@ -1368,10 +1275,8 @@ class _GridPainter extends CustomPainter {
       radius = maxR;
       angle = _hashAngle(node.pubKeyHex);
     }
-    // rotationRad rotates the whole plot (heading-up mode); 0 = north-up.
-    final double a = angle + rotationRad;
     return center +
-        Offset(radius * math.sin(a), -radius * math.cos(a));
+        Offset(radius * math.sin(angle), -radius * math.cos(angle));
   }
 
   @override
@@ -1425,11 +1330,6 @@ class _GridPainter extends CustomPainter {
     canvas.drawLine(Offset(center.dx, center.dy - maxR),
         Offset(center.dx, center.dy + maxR), cross);
 
-    // Compass rose — north-up cardinal markers + a tick ring so the
-    // radar reads like a real compass. North is always up (the grid
-    // frame is north-up); the needle below shows which way you face.
-    _drawCompassRose(canvas, center, maxR);
-
     // Self marker.
     canvas.drawCircle(center, 5, Paint()..color = accent);
     canvas.drawCircle(center, 9,
@@ -1437,14 +1337,6 @@ class _GridPainter extends CustomPainter {
           ..style = PaintingStyle.stroke
           ..strokeWidth = 1.5
           ..color = accent.withValues(alpha: .6));
-
-    // Heading needle — points in the user's compass heading (the way
-    // they're facing). The north-up frame stays the stable reference;
-    // needle + rose together read as a real compass.
-    final double? hd = headingDeg;
-    if (hd != null) {
-      _drawHeadingNeedle(canvas, center, maxR, hd);
-    }
 
     // R18 anonymous-channel ripple: an incoming channel message is
     // not attributable to a node, so draw a transient centre-out
@@ -1478,7 +1370,6 @@ class _GridPainter extends CustomPainter {
         selfLat: selfLat,
         selfLon: selfLon,
         scaleKm: scaleKm,
-        rotationRad: rotationRad,
       );
 
       final bool isFav = favorites.contains(n.pubKeyHex);
@@ -1502,7 +1393,22 @@ class _GridPainter extends CustomPainter {
 
       final double r0 = (isFav || isKnown ? 6.0 : 4.0) * scale;
       final Color c = accent.withValues(alpha: bright * opacityMul);
-      canvas.drawCircle(p, r0, Paint()..color = c);
+      final GridMarkerSource source = _sourceFor(n, selfLat, selfLon);
+      if (source == GridMarkerSource.position) {
+        canvas.drawCircle(p, r0, Paint()..color = c);
+      } else {
+        // Hollow: a position we do not have is not a position. The ring sits
+        // on the band its signal implies; the angle is a placeholder.
+        canvas.drawCircle(p, r0 + 1, Paint()..color = c.withValues(alpha: .18));
+        canvas.drawCircle(
+          p,
+          r0 + 1,
+          Paint()
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 1.4
+            ..color = c,
+        );
+      }
 
       // Reduce-motion accessibility ring: known = thin ring; fav =
       // thicker ring (info preserved without animation).
@@ -1519,78 +1425,6 @@ class _GridPainter extends CustomPainter {
     }
   }
 
-  /// Screen direction unit vector for a compass bearing (radians,
-  /// 0 = N) under the current [rotationRad]. north-up → N points up.
-  Offset _bearingDir(double bearingRad) {
-    final double a = bearingRad + rotationRad;
-    return Offset(math.sin(a), -math.cos(a));
-  }
-
-  /// Compass rose: an 8-point tick ring + N/E/S/W letters just outside
-  /// the outer range ring. Rotates with [rotationRad] so in heading-up
-  /// mode the cardinals show where north actually is.
-  void _drawCompassRose(Canvas canvas, Offset center, double maxR) {
-    final Paint tick = Paint()
-      ..color = base.withValues(alpha: .6)
-      ..strokeWidth = 1.2;
-    for (int i = 0; i < 8; i++) {
-      final Offset dir = _bearingDir(i * math.pi / 4);
-      final double inner = maxR - (i.isEven ? 10 : 6);
-      canvas.drawLine(center + dir * inner, center + dir * maxR, tick);
-    }
-    final List<({String s, double bearing, bool n})> marks =
-        <({String s, double bearing, bool n})>[
-      (s: 'N', bearing: 0, n: true),
-      (s: 'E', bearing: math.pi / 2, n: false),
-      (s: 'S', bearing: math.pi, n: false),
-      (s: 'W', bearing: 3 * math.pi / 2, n: false),
-    ];
-    final double lr = maxR + 12;
-    for (final ({String s, double bearing, bool n}) m in marks) {
-      final TextPainter tp = TextPainter(
-        text: TextSpan(
-          text: m.s,
-          style: TextStyle(
-            color: m.n ? accent : base,
-            fontSize: m.n ? type.sizeBodyLg : type.sizeSm,
-            fontFamily: type.monoFamily,
-            fontWeight: m.n ? FontWeight.w700 : FontWeight.w500,
-          ),
-        ),
-        textDirection: TextDirection.ltr,
-      )..layout();
-      final Offset c = center + _bearingDir(m.bearing) * lr;
-      tp.paint(canvas, c - Offset(tp.width / 2, tp.height / 2));
-    }
-  }
-
-  /// Heading needle pointing in the user's facing direction. In
-  /// north-up it points toward the heading bearing; in heading-up it
-  /// points straight up (the facing direction is the top). A short
-  /// muted tail gives it a magnetic-needle feel.
-  void _drawHeadingNeedle(
-      Canvas canvas, Offset center, double maxR, double headingDeg) {
-    final Offset dir = _bearingDir(headingDeg * math.pi / 180);
-    final Offset perp = Offset(-dir.dy, dir.dx);
-    final double len = (maxR * 0.34).clamp(28.0, 80.0);
-    const double halfW = 6.0;
-    final Offset tip = center + dir * len;
-    final Offset baseC = center + dir * 12;
-    final Path needle = Path()
-      ..moveTo(tip.dx, tip.dy)
-      ..lineTo((baseC + perp * halfW).dx, (baseC + perp * halfW).dy)
-      ..lineTo((baseC - perp * halfW).dx, (baseC - perp * halfW).dy)
-      ..close();
-    canvas.drawPath(needle, Paint()..color = accent);
-    canvas.drawLine(
-      center,
-      center - dir * (len * 0.4),
-      Paint()
-        ..color = base.withValues(alpha: .5)
-        ..strokeWidth = 2,
-    );
-  }
-
   @override
   bool shouldRepaint(covariant _GridPainter old) =>
       old.nodes != nodes ||
@@ -1600,8 +1434,6 @@ class _GridPainter extends CustomPainter {
       old.reduceMotion != reduceMotion ||
       old.rippleAt != rippleAt ||
       old.scaleKm != scaleKm ||
-      old.headingDeg != headingDeg ||
-      old.rotationRad != rotationRad ||
       old.type != type;
 }
 
@@ -1659,19 +1491,27 @@ class _TreeLegend extends StatelessWidget {
                     fontSize: context.skin.type.sizeBody,
                     height: 1.35)),
           ),
-          row(Icons.my_location, l.meshTreeLegendSelf, colour: cs.primary),
-          row(Icons.crop_square, l.meshTreeLegendRepeater,
-              colour: cs.tertiary),
-          row(Icons.diamond, l.meshTreeLegendRoom, colour: cs.tertiary),
-          row(Icons.circle, l.meshTreeLegendChat, colour: cs.primary),
-          row(Icons.sensors, l.meshTreeLegendSensor,
+          row(Icons.my_location, l.treeSelfShort, colour: cs.primary),
+          row(Icons.crop_square, l.treeRepeaterShort, colour: cs.tertiary),
+          row(Icons.diamond, l.treeRoomShort, colour: cs.tertiary),
+          row(Icons.circle, l.treeChatShort, colour: cs.primary),
+          row(Icons.sensors, l.treeSensorShort,
               colour: cs.primary.withValues(alpha: .55)),
-          row(Icons.more_horiz, l.meshTreeLegendFlood,
+          row(Icons.more_horiz, l.treeFloodShort,
               colour: cs.onSurfaceVariant),
-          row(Icons.help_outline, l.meshTreeLegendFloat,
-              colour: cs.onSurfaceVariant),
-          row(Icons.arrow_forward, l.meshTreeLegendArrow),
-          row(Icons.touch_app, l.meshTreeLegendInteract),
+          row(Icons.arrow_forward, l.treeArrowShort),
+          _LegendMore(title: l.gridLegendMore, lines: <String>[
+            l.meshTreeLegendDesc,
+            l.meshTreeLegendSelf,
+            l.meshTreeLegendRepeater,
+            l.meshTreeLegendRoom,
+            l.meshTreeLegendChat,
+            l.meshTreeLegendSensor,
+            l.meshTreeLegendFlood,
+            l.meshTreeLegendFloat,
+            l.meshTreeLegendArrow,
+            l.meshTreeLegendInteract,
+          ]),
         ],
       ),
     );
@@ -1732,11 +1572,18 @@ class _FabricLegend extends StatelessWidget {
                     fontSize: context.skin.type.sizeBody,
                     height: 1.35)),
           ),
-          row(Icons.grid_view, l.fabricLegendCell, colour: cs.secondary),
-          row(Icons.gradient, l.fabricLegendRecency, colour: cs.secondary),
-          row(Icons.place, l.fabricLegendMarker, colour: cs.tertiary),
-          row(Icons.my_location, l.fabricLegendSelf, colour: cs.primary),
-          row(Icons.delete_sweep, l.fabricLegendReset),
+          row(Icons.grid_view, l.fabricCellShort, colour: cs.secondary),
+          row(Icons.gradient, l.fabricRecencyShort, colour: cs.secondary),
+          row(Icons.place, l.fabricMarkerShort, colour: cs.tertiary),
+          row(Icons.my_location, l.gridLegendSelfShort, colour: cs.primary),
+          _LegendMore(title: l.gridLegendMore, lines: <String>[
+            l.fabricLegendDesc,
+            l.fabricLegendCell,
+            l.fabricLegendRecency,
+            l.fabricLegendMarker,
+            l.fabricLegendSelf,
+            l.fabricLegendReset,
+          ]),
         ],
       ),
     );
@@ -1786,19 +1633,20 @@ class _FujiLegend extends StatelessWidget {
                   fontSize: context.skin.type.sizeSm,
                   letterSpacing: 3)),
           const SizedBox(height: 6),
-          Padding(
-            padding: const EdgeInsets.only(bottom: 6),
-            child: Text(l.fujiLegendDesc,
-                style: TextStyle(
-                    color: cs.onSurface, fontSize: context.skin.type.sizeBody, height: 1.35)),
-          ),
-          row(Icons.my_location, l.fujiLegendMe, colour: cs.tertiary),
-          row(Icons.terrain, l.fujiLegendRefs, colour: cs.primary),
-          row(Icons.circle, l.fujiLegendPeers,
+          row(Icons.my_location, l.fujiMeShort, colour: cs.tertiary),
+          row(Icons.terrain, l.fujiRefsShort, colour: cs.primary),
+          row(Icons.circle, l.fujiPeersShort,
               colour: cs.primary.withValues(alpha: .7)),
-          row(Icons.help_outline, l.fujiLegendUnknown,
+          row(Icons.help_outline, l.fujiUnknownShort,
               colour: cs.onSurfaceVariant),
-          row(Icons.touch_app, l.fujiLegendAutoQuery),
+          _LegendMore(title: l.gridLegendMore, lines: <String>[
+            l.fujiLegendDesc,
+            l.fujiLegendMe,
+            l.fujiLegendRefs,
+            l.fujiLegendPeers,
+            l.fujiLegendUnknown,
+            l.fujiLegendAutoQuery,
+          ]),
         ],
       ),
     );
@@ -1848,22 +1696,19 @@ class _SnsCellsLegend extends StatelessWidget {
                   fontSize: context.skin.type.sizeSm,
                   letterSpacing: 3)),
           const SizedBox(height: 6),
-          Padding(
-            padding: const EdgeInsets.only(bottom: 6),
-            child: Text(l.snsCellsLegendDesc,
-                style: TextStyle(
-                    color: cs.onSurface, fontSize: context.skin.type.sizeBody, height: 1.35)),
-          ),
-          row(Icons.local_fire_department, l.snsCellsLegendHot,
-              colour: cs.error),
-          row(Icons.ac_unit, l.snsCellsLegendCool),
-          row(Icons.chat_bubble_outline, l.snsCellsLegendToast,
+          row(Icons.local_fire_department, l.snsHotShort, colour: cs.error),
+          row(Icons.ac_unit, l.snsCoolShort),
+          row(Icons.chat_bubble_outline, l.snsToastShort,
               colour: cs.tertiary),
-          row(Icons.lock_outline, l.snsCellsLegendChannel,
-              colour: cs.primary),
-          row(Icons.place_outlined, l.snsCellsLegendInferred,
-              colour: cs.primary),
-          row(Icons.timelapse, l.snsCellsLegendDecay),
+          row(Icons.timelapse, l.snsDecayShort),
+          _LegendMore(title: l.gridLegendMore, lines: <String>[
+            l.snsCellsLegendDesc,
+            l.snsCellsLegendHot,
+            l.snsCellsLegendCool,
+            l.snsCellsLegendToast,
+            l.snsCellsLegendChannel,
+            l.snsCellsLegendDecay,
+          ]),
         ],
       ),
     );

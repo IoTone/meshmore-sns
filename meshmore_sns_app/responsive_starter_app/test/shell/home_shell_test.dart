@@ -614,13 +614,13 @@ void main() {
     expect(find.byKey(const ValueKey<String>('grid-pan-toggle')), findsNothing);
     expect(shellDragClaim.isClaimed, isFalse);
 
-    // A pannable view offers the toggle, and starts in swipe mode with the
-    // view held still so the drag is the shell's.
-    await t.tap(find.byTooltip('Switch map view'));
+    // A pannable view offers the toggle, and starts in swipe mode so the
+    // drag is the shell's.
+    await t.tap(find.byTooltip('View'));
     await settle(t);
-    await t.tap(find.text('Street map').last);
+    await t.tap(find.text('Fabric survey').last);
     await settle(t);
-    expect(find.text('Swipe ← → for other screens · tap ✋ to pan & zoom'),
+    expect(find.byKey(const ValueKey<String>('grid-pan-toggle')),
         findsOneWidget);
     expect(shellDragClaim.isClaimed, isFalse,
         reason: 'swipe mode is the default on every visit');
@@ -628,7 +628,6 @@ void main() {
     // Pan mode takes the drag: the shell stops paging.
     await t.tap(find.byKey(const ValueKey<String>('grid-pan-toggle')));
     await settle(t);
-    expect(find.text('Pan & zoom · tap ⇆ to swipe screens'), findsOneWidget);
     expect(shellDragClaim.heldBy(GridScreen.dragHolder), isTrue);
     await t.fling(find.byType(PageView), const Offset(-400, 0), 1000);
     await settle(t);

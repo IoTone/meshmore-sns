@@ -8,8 +8,9 @@ import 'package:provider/provider.dart';
 import 'package:meshmore_sns_app/gen/app_localizations.dart';
 import 'package:meshmore_sns_app/l10n/locale_controller.dart';
 import 'package:meshmore_sns_app/meshcore/meshcore_controller.dart';
+import 'package:meshmore_sns_app/screens/fabric_survey_view.dart';
 import 'package:meshmore_sns_app/screens/grid_screen.dart';
-import 'package:meshmore_sns_app/screens/street_map_view.dart';
+
 import 'package:meshmore_sns_app/shell/horizontal_drag_claim.dart';
 import 'package:meshmore_sns_app/theme/mm_skin.dart';
 import 'package:meshmore_sns_app/theme/mm_tokens.dart';
@@ -168,7 +169,7 @@ void main() {
         transportFactory: () async => FakeMeshcoreTransport());
     await t.pumpWidget(_host(mc));
     await t.pump();
-    await t.tap(find.byTooltip('Switch map view'));
+    await t.tap(find.byTooltip('View'));
     // The grid runs a ticker, so pumpAndSettle cannot settle here.
     await t.pump();
     await t.pump(const Duration(milliseconds: 400));
@@ -201,21 +202,21 @@ void main() {
         transportFactory: () async => FakeMeshcoreTransport());
     await t.pumpWidget(_host(mc));
     await t.pump();
-    await t.tap(find.byTooltip('Switch map view'));
+    await t.tap(find.byTooltip('View'));
     await t.pump();
     await t.pump(const Duration(milliseconds: 400));
-    await t.tap(find.text('Street map').last);
+    await t.tap(find.text('Fabric survey').last);
     await t.pump();
     await t.pump(const Duration(milliseconds: 400));
 
     // Swipe mode: the map does not take the drag, and it is still tappable.
     // Before this, the whole body was inside an IgnorePointer, so a node you
     // could see could not be opened until you switched modes.
-    expect(t.widget<StreetMapView>(find.byType(StreetMapView)).interactive,
+    expect(t.widget<FabricSurveyView>(find.byType(FabricSurveyView)).interactive,
         isFalse);
     await t.tap(find.byKey(const ValueKey<String>('grid-pan-toggle')));
     await t.pump();
-    expect(t.widget<StreetMapView>(find.byType(StreetMapView)).interactive,
+    expect(t.widget<FabricSurveyView>(find.byType(FabricSurveyView)).interactive,
         isTrue);
   });
 
@@ -233,10 +234,10 @@ void main() {
     expect(shellDragClaim.isClaimed, isFalse);
 
     // A pannable view: the toggle, in swipe mode, with the view held still.
-    await t.tap(find.byTooltip('Switch map view'));
+    await t.tap(find.byTooltip('View'));
     await t.pump();
     await t.pump(const Duration(milliseconds: 400));
-    await t.tap(find.text('Street map').last);
+    await t.tap(find.text('Fabric survey').last);
     await t.pump();
     await t.pump(const Duration(milliseconds: 400));
     expect(
@@ -260,7 +261,10 @@ void main() {
     // The equal grid looks like a map and is not one: its tiles are pinned to
     // us and its zoom is the cell stepper, so a toggle there would lock the
     // shell's swipe and give the drag to nothing. It must not appear.
-    await t.tap(find.byTooltip('Switch map view'));
+    await t.tap(find.byTooltip('View'));
+    await t.pump();
+    await t.pump(const Duration(milliseconds: 400));
+    await t.tap(find.text('More views').last);
     await t.pump();
     await t.pump(const Duration(milliseconds: 400));
     await t.tap(find.text('Equal grid').last);
@@ -271,7 +275,7 @@ void main() {
     expect(shellDragClaim.isClaimed, isFalse);
 
     // A report view draws to fit, so the toggle disappears.
-    await t.tap(find.byTooltip('Switch map view'));
+    await t.tap(find.byTooltip('View'));
     await t.pump();
     await t.pump(const Duration(milliseconds: 400));
     await t.tap(find.text('Weather (environment)').last);
@@ -280,10 +284,10 @@ void main() {
     expect(find.byKey(const ValueKey<String>('grid-pan-toggle')), findsNothing);
 
     // Disposing the tab in pan mode must not leave the shell locked.
-    await t.tap(find.byTooltip('Switch map view'));
+    await t.tap(find.byTooltip('View'));
     await t.pump();
     await t.pump(const Duration(milliseconds: 400));
-    await t.tap(find.text('Street map').last);
+    await t.tap(find.text('Fabric survey').last);
     await t.pump();
     await t.pump(const Duration(milliseconds: 400));
     await t.tap(find.byKey(const ValueKey<String>('grid-pan-toggle')));
