@@ -308,7 +308,7 @@ protocols (§9.14 M1-M3, all needing hardware) · which map-pack source is permi
 
 | Wave | State | Owner | Evidence |
 | --- | --- | --- | --- |
-| W0 toolchain | **done** | scout | SDK path verified; 1044 tests / 90 s; gradle pins known |
+| W0 toolchain | **done** | scout | The environment block, the commands and the measured timings live in `meshmore_sns_app/TOOLING.md`, which is the page a child reads before running anything |
 | W0 docs commit | **done** | supervisor | `e86a712` on `feat/ldmux-gateway` |
 | W0 branch rename + dev re-port | **done** | worker | rename `feat/app-completion`; `origin/dev` merged (`c393d26`), then ported per R109 (§2b): shell paging + grid Swipe ⇄ Pan + shared claim, EN/JA strings, `test/shell/home_shell_test.dart` 34 pass / 12 s |
 | W0 gateway removal + doc correction | **done** | worker | `R110`: 8 app files removed or rewritten, 2 packages deleted, Binder service + permission + method channel gone, 6 docs corrected, D10.1 in the scope of record |
