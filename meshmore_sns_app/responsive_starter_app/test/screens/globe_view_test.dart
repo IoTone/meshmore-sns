@@ -112,7 +112,7 @@ void main() {
     expect(find.text('PAUSED'), findsOneWidget,
         reason: 'frozen: true must show the PAUSED indicator');
     // Footer "Showing N peers..." reflects the prop-supplied list.
-    expect(find.textContaining('2 peers'), findsOneWidget);
+    expect(find.textContaining('2 nodes'), findsOneWidget);
     ctrl.dispose();
   });
 }
