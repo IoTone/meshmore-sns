@@ -1,7 +1,11 @@
 package com.iotone.meshmore_sns_app
 
 import android.content.ClipData
+import android.content.Context
 import android.content.Intent
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
+import android.os.storage.StorageManager
 import androidx.core.content.FileProvider
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
@@ -82,6 +86,42 @@ class MainActivity : FlutterActivity() {
                     result.success(true)
                 } catch (e: Exception) {
                     result.error("share", e.message ?: e.javaClass.simpleName, null)
+                }
+            }
+        // Region packs are hundreds of megabytes, so the preflight asks the
+        // platform what it can actually allocate, and the downloader asks
+        // whether the current link is one the user pays by the byte. A
+        // partition stat and a plugin's guess both answer the wrong question.
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "meshmore/storage")
+            .setMethodCallHandler { call, result ->
+                if (call.method != "allocatableBytes") {
+                    result.notImplemented()
+                    return@setMethodCallHandler
+                }
+                try {
+                    val sm = getSystemService(Context.STORAGE_SERVICE) as StorageManager
+                    result.success(sm.getAllocatableBytes(StorageManager.UUID_DEFAULT))
+                } catch (e: Exception) {
+                    // Unknown is not "zero": the Dart side treats a failure as
+                    // "cannot say" and never refuses a download on it.
+                    result.error("storage", e.message ?: e.javaClass.simpleName, null)
+                }
+            }
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "meshmore/network")
+            .setMethodCallHandler { call, result ->
+                if (call.method != "unmetered") {
+                    result.notImplemented()
+                    return@setMethodCallHandler
+                }
+                try {
+                    val cm = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+                    val caps = cm.getNetworkCapabilities(cm.activeNetwork)
+                    result.success(
+                        caps?.hasCapability(NetworkCapabilities.NET_CAPABILITY_NOT_METERED)
+                            ?: false
+                    )
+                } catch (e: Exception) {
+                    result.error("network", e.message ?: e.javaClass.simpleName, null)
                 }
             }
     }

@@ -697,7 +697,7 @@ class MapsController extends ChangeNotifier {
   Future<void> _pumpBody() async {
     _pumping = true;
     try {
-      _promoteWifiParked();
+      await _promoteWifiParked();
       while (!_disposed) {
         MapPack? next;
         for (final MapPack p in packs) {
@@ -982,7 +982,10 @@ class MapsController extends ChangeNotifier {
   Future<void> refreshCatalog() async {
     if (catalogLoading) return;
     catalogLoading = true;
-    notifyListeners();
+    // No notify here: the screen calls this from initState, which runs inside
+    // a build pass, so notifying now is "setState during build". The loading
+    // flag matters to the screen only as "the list is not ready yet", which
+    // is the state it already rendered.
     try {
       final PackCatalogLoader loader = PackCatalogLoader(
         bundled: _bundledCatalog,
@@ -1028,19 +1031,22 @@ class MapsController extends ChangeNotifier {
     _changed();
   }
 
-  /// Moves anything parked on the Wi-Fi-only preference back into the queue.
-  /// Called at the top of a pump and whenever the preference or the link
-  /// changes, so the pack resumes without the user finding it again.
-  void _promoteWifiParked() {
-    if (wifiOnlyArchives) return;
-    bool changed = false;
+  /// Moves anything parked on the Wi-Fi-only rule back into the queue.
+  ///
+  /// Two things un-park a download: the preference turned off, or an
+  /// unmetered link arriving. Checking the link here rather than only in
+  /// [setWifiOnlyArchives] is what lets a pack sitting in
+  /// [ArchiveState.waitingForWifi] resume on its own when the phone joins
+  /// Wi-Fi, without the user finding it again.
+  Future<void> _promoteWifiParked() async {
     for (final MapArchive a in archives) {
-      if (a.state == ArchiveState.waitingForWifi) {
-        a.state = ArchiveState.downloading;
-        changed = true;
+      if (a.state != ArchiveState.waitingForWifi) continue;
+      if (wifiOnlyArchives && await _networkGate.unmetered() == false) {
+        continue;
       }
+      a.state = ArchiveState.downloading;
+      _changed();
     }
-    if (changed) _changed();
   }
 
   /// True when [a] must wait for an unmetered link, having parked it.
@@ -1169,6 +1175,23 @@ class MapsController extends ChangeNotifier {
       ..failure = why
       ..etag = null;
     _changed();
+  }
+
+  /// True when a finished region archive covers [box] at zoom [z].
+  ///
+  /// This is the question the map asks before it tells a user that the area
+  /// on screen is outside every offline pack: a pack answers a whole bbox and
+  /// a zoom range, so "do I have this view offline" is a box test, not a
+  /// per-tile guess.
+  bool archiveCovers(GeoBox box, int z) {
+    for (final MapArchive a in archives) {
+      if (!a.complete || a.minZoom == null || a.maxZoom == null) continue;
+      if (z < a.minZoom! || z > a.maxZoom!) continue;
+      final GeoBox pack = GeoBox(
+          south: a.south!, west: a.west!, north: a.north!, east: a.east!);
+      if (pack.intersects(box)) return true;
+    }
+    return false;
   }
 
   /// Archive-first read for the vector basemap: a tile inside a complete

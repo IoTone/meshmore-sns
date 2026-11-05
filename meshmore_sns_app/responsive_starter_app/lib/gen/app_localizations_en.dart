@@ -3673,7 +3673,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Not enough free space. Free up some and try again.';
 
   @override
-  String get mapsPacksPublished => 'Offline maps';
+  String get mapsPacksPublished => 'Available packs';
 
   @override
   String get mapsPacksEmpty =>

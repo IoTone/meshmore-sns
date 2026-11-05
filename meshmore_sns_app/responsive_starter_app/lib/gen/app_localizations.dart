@@ -6311,7 +6311,7 @@ abstract class AppLocalizations {
   /// No description provided for @mapsPacksPublished.
   ///
   /// In en, this message translates to:
-  /// **'Offline maps'**
+  /// **'Available packs'**
   String get mapsPacksPublished;
 
   /// No description provided for @mapsPacksEmpty.

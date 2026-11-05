@@ -3539,7 +3539,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get archiveRefusalNoSpace => '空き容量が足りません。空けてからやり直してください。';
 
   @override
-  String get mapsPacksPublished => 'オフライン地図';
+  String get mapsPacksPublished => 'ダウンロード可能なパック';
 
   @override
   String get mapsPacksEmpty => '公開されているオフライン地図はまだありません。リンクから追加できます。';
