@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:meshmore_sns_app/meshcore/block_store.dart';
+import 'package:meshmore_sns_app/meshcore/secure/encrypted_store.dart';
 import 'package:meshmore_sns_app/meshcore/secure/record_cipher.dart';
 
 /// The store is the whole filter's authority, so the rules that matter are the
@@ -113,5 +114,37 @@ void main() {
     expect(BlockedKey.fromJson(<String, Object?>{'pubKeyHex': 'short'}),
         isNull);
     expect(store.count, 1);
+  });
+
+  test('a store that cannot be opened is reported unreadable, not empty', () async {
+    // A file that is not this app's store: the magic does not match, which is
+    // the shape a damaged or foreign file takes.
+    final File file =
+        File('${dir.path}${Platform.pathSeparator}${EncryptedStore.fileName}');
+    file.writeAsBytesSync(<int>[0, 1, 2, 3, 4, 5, 6, 7]);
+
+    final List<int> damaged = file.readAsBytesSync();
+
+    final BlockStore store = BlockStore();
+    await store.load();
+
+    expect(store.count, 0, reason: 'nothing is blocked this session');
+    expect(store.persisted, isFalse);
+    expect(store.unreadable, isTrue,
+        reason: 'the list existed and could not be read, which is not the '
+            'same as never having been saved');
+
+    // The damaged bytes survive the session in a copy beside the store, and
+    // the unreadable original is gone so a later block can be saved at all.
+    final File copy = File(
+        '${dir.path}${Platform.pathSeparator}${EncryptedStore.corruptName}');
+    expect(copy.existsSync(), isTrue);
+    expect(copy.readAsBytesSync(), damaged);
+    expect(file.existsSync(), isFalse);
+
+    // And a new block still saves normally, because the copy kept the damage.
+    expect(await store.block(BlockedKey(pubKeyHex: hex('a'), sinceMs: 1)),
+        isTrue);
+    expect(store.persisted, isTrue);
   });
 }

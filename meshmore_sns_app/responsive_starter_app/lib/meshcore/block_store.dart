@@ -104,6 +104,12 @@ class BlockStore extends ChangeNotifier {
   bool _persisted = true;
   bool get persisted => _persisted;
 
+  /// True when the sealed list existed but could not be read. Different from
+  /// "nothing is saved yet": the list the user had is not in force this
+  /// session, and a damaged copy is kept beside the store.
+  bool _unreadable = false;
+  bool get unreadable => _unreadable;
+
   bool _loaded = false;
   bool get loaded => _loaded;
 
@@ -174,10 +180,26 @@ class BlockStore extends ChangeNotifier {
       // A damaged list is not an empty list; keep it empty this session but
       // say the list could not be read rather than pretending it is clean.
       _persisted = false;
+      _unreadable = true;
+      await _dropDamagedFile();
     } on FormatException {
       _persisted = false;
+      _unreadable = true;
+      await _dropDamagedFile();
     }
     notifyListeners();
+  }
+
+  /// Removes a store file that cannot be opened, so the next block can be
+  /// saved. The store copied the damaged bytes aside while it detected them,
+  /// which is what makes deleting the original safe: the evidence survives the
+  /// session and the user can block again.
+  Future<void> _dropDamagedFile() async {
+    try {
+      await _store().clear();
+    } on EncryptedStoreCorrupt {
+      // Nothing more to do: the read already failed and the copy is made.
+    }
   }
 
   /// Blocks [key]. Refuses a key that is not the full 32 bytes and refuses a

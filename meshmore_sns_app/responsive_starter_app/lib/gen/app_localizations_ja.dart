@@ -518,7 +518,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get termsLeavesBody =>
-      '送信したもの以外は出ません。メッセージと位置は接続中の無線から送られます。オンライン地図パックは既定でオフで、有効にしたときだけ取得し、取得元を画面に表示します。書き出したファイルの保管先はあなたが決めます。';
+      'この端末から出るのは2つだけです。送信したもの（メッセージ・位置・リアクション）は接続中の無線から送られます。そして地図はタイルサーバーに地図の区画を要求するため、おおよそどこを見ているかがそのサーバーに伝わります。地図には取得元を表示します。オフライン地図パックは既定でオフで、有効にしたときだけ取得します。それ以外は出ません。書き出したファイルの保管先はあなたが決めます。';
 
   @override
   String get termsSectionPermissions => '権限とその理由';
@@ -5198,6 +5198,10 @@ class AppLocalizationsJa extends AppLocalizations {
   @override
   String get blockedKeysNotPersisted =>
       'この一覧を端末に保存できませんでした。今は機能しますが、再起動後は空になります。';
+
+  @override
+  String get blockedKeysUnreadable =>
+      '保存された一覧を読み取れなかったため、現在は何もブロックしていません。壊れたファイルのコピーは保存され、新しいブロックは通常どおり保存されます。';
 
   @override
   String get reportActionSub => '送信先を選べるよう、端末にファイルを作成します。自動送信はしません。';

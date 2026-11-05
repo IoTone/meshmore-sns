@@ -294,7 +294,7 @@ void main() {
           // event layers. App-scoped so downloads run in the background.
           ChangeNotifierProvider<MapsController>(
             create: (_) => MapsController(
-              appVersion: () => AppState.packageInfo?.version ?? '',
+              appVersion: () => AppState.versionWithBuild,
             )..load(),
           ),
           Provider<PermissionsService>(

@@ -545,7 +545,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get termsLeavesBody =>
-      'Nothing leaves except what you send: messages and positions go out over the radio you are connected to. Online map packs are off by default and are fetched only after you turn them on, with the source named on screen. Files you export are yours to place.';
+      'Two things leave this device. What you send goes out over the radio you are connected to: messages, positions and reactions. And the map asks a tile server for map squares, which tells that server roughly where you are looking; the map names the source it is using. Offline map packs are off by default and are fetched only after you turn them on. Nothing else leaves. Files you export are yours to place.';
 
   @override
   String get termsSectionPermissions => 'PERMISSIONS AND WHY';
@@ -5413,6 +5413,10 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get blockedKeysNotPersisted =>
       'This list could not be saved on this device. It filters for now and will be empty after a restart.';
+
+  @override
+  String get blockedKeysUnreadable =>
+      'The saved list could not be read, so nothing is blocked right now. A copy of the damaged file is kept, and new blocks will be saved normally.';
 
   @override
   String get reportActionSub =>

@@ -32,8 +32,11 @@ void main() {
     expect(RegExp(r'^\s*targetSdkVersion 36\s*$', multiLine: true).hasMatch(g),
         isTrue,
         reason: 'targetSdkVersion must be the literal 36');
-    // minSdk stays the toolchain's minimum: it is not a store obligation.
-    expect(g, contains('minSdkVersion flutter.minSdkVersion'));
+    // minSdk is pinned rather than inherited: `flutter.minSdkVersion` moves
+    // with the toolchain, so a Flutter bump would silently drop the devices
+    // the app claims to support. 24 is what this build installs on.
+    expect(RegExp(r'^\s*minSdkVersion 24\s*$', multiLine: true).hasMatch(g),
+        isTrue, reason: 'minSdkVersion must be the literal 24');
   });
 
   test('the foreground service is declared as connectedDevice', () {

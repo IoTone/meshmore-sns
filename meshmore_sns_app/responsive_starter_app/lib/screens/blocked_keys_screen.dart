@@ -50,7 +50,18 @@ class BlockedKeysScreen extends StatelessWidget {
                 ),
               ),
             ),
-            if (!store.persisted)
+            if (store.unreadable)
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: skin.space.step(4)),
+                child: Text(
+                  l.blockedKeysUnreadable,
+                  style: TextStyle(
+                    color: cs.error,
+                    fontSize: skin.type.sizeSm,
+                  ),
+                ),
+              )
+            else if (!store.persisted)
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: skin.space.step(4)),
                 child: Text(
