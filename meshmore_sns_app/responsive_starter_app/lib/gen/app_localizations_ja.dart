@@ -4267,4 +4267,46 @@ class AppLocalizationsJa extends AppLocalizations {
   @override
   String get failureRadioSilent =>
       'ラジオは要求を受け取りましたが、時間内に応答しませんでした。実行済みの可能性があります。再試行の前にラジオを確認してください。';
+
+  @override
+  String get clockUnknown => '時刻不明';
+
+  @override
+  String get clockJustNow => 'たった今';
+
+  @override
+  String clockMinutesAgo(String count) {
+    return '$count 分前';
+  }
+
+  @override
+  String clockHoursAgo(String count) {
+    return '$count 時間前';
+  }
+
+  @override
+  String clockDaysAgo(String count) {
+    return '$count 日前';
+  }
+
+  @override
+  String clockAhead(String count) {
+    return '送信側の時計が $count 分進んでいます';
+  }
+
+  @override
+  String get degradedRadioDown =>
+      '応答しているラジオがありません。受信済みの内容は読めます。送信・テレメトリ・プレイスはラジオが接続するまで待機します。';
+
+  @override
+  String get degradedStorageFull =>
+      'ストレージが満杯のため、この端末は書き込みを拒否しました。容量を空けるために削除はしていません。空き容量を確保すれば履歴は継続します。';
+
+  @override
+  String get degradedClockUnset =>
+      'ラジオの時計が一度も設定されていないため、ラジオが報告する時刻は「時刻不明」と表示されます。';
+
+  @override
+  String get degradedBatteryCritical =>
+      'ラジオの電池残量が少なく、送信が途中で切れる可能性があります。長い送信の前に充電してください。';
 }

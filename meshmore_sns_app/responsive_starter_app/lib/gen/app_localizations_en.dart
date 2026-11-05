@@ -4414,4 +4414,46 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get failureRadioSilent =>
       'The radio accepted the request but did not answer in time. It may still have carried it out; check the radio before retrying.';
+
+  @override
+  String get clockUnknown => 'time unknown';
+
+  @override
+  String get clockJustNow => 'just now';
+
+  @override
+  String clockMinutesAgo(String count) {
+    return '$count min ago';
+  }
+
+  @override
+  String clockHoursAgo(String count) {
+    return '$count h ago';
+  }
+
+  @override
+  String clockDaysAgo(String count) {
+    return '$count d ago';
+  }
+
+  @override
+  String clockAhead(String count) {
+    return 'sender\'s clock is $count min ahead';
+  }
+
+  @override
+  String get degradedRadioDown =>
+      'No radio is answering. Everything already received stays readable; sending, telemetry and places wait until a radio connects.';
+
+  @override
+  String get degradedStorageFull =>
+      'This phone refused a write because storage is full. Nothing was deleted to make room; free space and history continues.';
+
+  @override
+  String get degradedClockUnset =>
+      'The radio\'s clock has never been set, so times it reports are shown as time unknown until it is.';
+
+  @override
+  String get degradedBatteryCritical =>
+      'The radio\'s battery is low enough that its transmissions may be cut. Charge it before relying on a long send.';
 }

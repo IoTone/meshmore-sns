@@ -7599,6 +7599,66 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'The radio accepted the request but did not answer in time. It may still have carried it out; check the radio before retrying.'**
   String get failureRadioSilent;
+
+  /// No description provided for @clockUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'time unknown'**
+  String get clockUnknown;
+
+  /// No description provided for @clockJustNow.
+  ///
+  /// In en, this message translates to:
+  /// **'just now'**
+  String get clockJustNow;
+
+  /// No description provided for @clockMinutesAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} min ago'**
+  String clockMinutesAgo(String count);
+
+  /// No description provided for @clockHoursAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} h ago'**
+  String clockHoursAgo(String count);
+
+  /// No description provided for @clockDaysAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} d ago'**
+  String clockDaysAgo(String count);
+
+  /// No description provided for @clockAhead.
+  ///
+  /// In en, this message translates to:
+  /// **'sender\'s clock is {count} min ahead'**
+  String clockAhead(String count);
+
+  /// No description provided for @degradedRadioDown.
+  ///
+  /// In en, this message translates to:
+  /// **'No radio is answering. Everything already received stays readable; sending, telemetry and places wait until a radio connects.'**
+  String get degradedRadioDown;
+
+  /// No description provided for @degradedStorageFull.
+  ///
+  /// In en, this message translates to:
+  /// **'This phone refused a write because storage is full. Nothing was deleted to make room; free space and history continues.'**
+  String get degradedStorageFull;
+
+  /// No description provided for @degradedClockUnset.
+  ///
+  /// In en, this message translates to:
+  /// **'The radio\'s clock has never been set, so times it reports are shown as time unknown until it is.'**
+  String get degradedClockUnset;
+
+  /// No description provided for @degradedBatteryCritical.
+  ///
+  /// In en, this message translates to:
+  /// **'The radio\'s battery is low enough that its transmissions may be cut. Charge it before relying on a long send.'**
+  String get degradedBatteryCritical;
 }
 
 class _AppLocalizationsDelegate
