@@ -1681,9 +1681,11 @@ class MeshcoreController extends ChangeNotifier {
     if (c != null && !c.isCompleted) c.complete(reply);
   }
 
-  /// Fail a message that is still in flight, with a reason. Monotonic:
-  /// only a `sending` / `sent` row can move to `failed`, so a late
-  /// watchdog or ERR never overwrites `sent`-terminal or `delivered`.
+  /// Fail a message that is still in flight, with a reason. Monotonic: only
+  /// a row in one of [from] moves, so a late watchdog or ERR never overwrites
+  /// a terminal state. The caller narrows [from]: an explicit rejection
+  /// fails a `sending` row, and the end of the ack grace fails an `unknown`
+  /// one.
   void _failOutgoing(String id, String reason,
       {Set<MessageDelivery> from = const <MessageDelivery>{
         MessageDelivery.sending

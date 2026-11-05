@@ -13,9 +13,9 @@ import 'failure.dart';
 ///                 (flood-routed → no recipient receipt exists).
 /// - [delivered] — a direct message's recipient ACK arrived
 ///                 (`PUSH_CODE_ACK` matched our expectedAck tag).
-/// - [failed]    — the BLE send threw, or a direct message saw no ACK
-///                 within the device's estimated timeout (no path /
-///                 recipient unreachable).
+/// - [failed]    — the BLE send threw, the radio refused it with an
+///                 explicit `ERR`, or a direct message saw no ACK after the
+///                 device's estimate and the 30 s grace that follows it.
 /// - [unknown]   — the app went away while the send was in flight. The
 ///                 in-flight tracking (the pending queue and the ack
 ///                 timers) does not survive a restart, so whether the
