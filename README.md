@@ -140,11 +140,16 @@ meshmore-sns/
 └── meshmore_sns_app/               ← the Flutter project (tracked in this repo)
     ├── STATUS.md                   ← what is built, what is open
     ├── packages/meshcore/          ← pure-Dart protocol codec
-    └── responsive_starter_app/     ← Flutter app
+    └── responsive_starter_app/     ← Flutter app (Android is the target; iOS is kept, deprioritised)
         ├── lib/                    ← all controllers, screens, theme, perms…
         ├── test/                   ← 1690 widget/unit tests
         ├── android/                ← FGS manifest, BLE perms
-        └── ios/                    ← Info.plist usage strings
+        ├── ios/                    ← Info.plist usage strings
+        └── web/                    ← build only; no radio link, so it is not a supported target
+
+There are no `linux/`, `macos/` or `windows/` runners. They existed so this app
+could serve another application over the removed inter-app bridge, and they were
+deleted with it.
 ```
 
 ---
@@ -208,7 +213,9 @@ visual lineage:
   builds from this concept.
 - **Tactical Recon / Codec** — *Metal Gear* codec-screen idiom (Konami).
 
-Fonts default to the platform's system family (no bundled fonts).
+Type is bundled, not inherited: Saira (display and headings) and JetBrains Mono
+(monospace, and the whole body of the technical skins) ship in
+`assets/fonts/` and are declared in `pubspec.yaml`.
 
 ### Test fixtures + interop replay
 

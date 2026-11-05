@@ -700,8 +700,9 @@ class _NodeDetailSheetState extends State<NodeDetailSheet> {
     final String lon = n.longitude!.toStringAsFixed(6);
     final String label = Uri.encodeQueryComponent(
         n.name.isEmpty ? n.shortId : n.name);
-    final bool isApple =
-        !kIsWeb && (Platform.isIOS || Platform.isMacOS);
+    // iOS prefers Apple Maps; with no macOS runner the only Apple target left
+    // is iOS, so the check names just that.
+    final bool isApple = !kIsWeb && Platform.isIOS;
     final Uri uri = isApple
         ? Uri.parse('https://maps.apple.com/?ll=$lat,$lon&q=$label')
         : Uri.parse('https://www.google.com/maps?q=$lat,$lon');

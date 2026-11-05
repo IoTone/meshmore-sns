@@ -17,9 +17,9 @@ abstract final class Share {
 
   /// True when a share sheet was opened for [path].
   ///
-  /// False means there is no platform side (a test, a desktop host) or the
-  /// intent could not be built; the caller then says where the file is instead
-  /// of claiming it was shared.
+  /// False means there is no platform side (a widget test, or a build with no
+  /// share handler) or the intent could not be built; the caller then says
+  /// where the file is instead of claiming it was shared.
   static Future<bool> file(
     String path, {
     required String mime,

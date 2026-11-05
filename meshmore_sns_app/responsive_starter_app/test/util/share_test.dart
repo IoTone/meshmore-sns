@@ -45,7 +45,7 @@ void main() {
 
   test('a host without the channel reports that nothing was shared', () async {
     // No handler installed: the call raises MissingPluginException, which is
-    // what a desktop or a test host does.
+    // what any host without the share channel does.
     expect(await Share.file('/tmp/x.csv', mime: 'text/csv'), isFalse);
   });
 
