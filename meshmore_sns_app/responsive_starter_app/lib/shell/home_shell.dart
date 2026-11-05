@@ -15,6 +15,7 @@ import '../gen/app_localizations.dart';
 import '../meshcore/meshcore_controller.dart';
 import '../screens/chat_screen.dart';
 import '../notifications/notification_focus.dart';
+import 'shell_view_request.dart';
 import 'boot_overlay.dart';
 import 'horizontal_drag_claim.dart';
 import '../screens/dashboards/dashboard_host.dart';
@@ -99,6 +100,12 @@ class _HomeShellState extends State<HomeShell>
   NotificationFocus? _notificationFocus;
   MeshcoreController? _focusOwner;
 
+  /// "Show me Chat on this slot", asked from outside the shell (a notification
+  /// tap from the app root). The last sequence number acted on, so a rebuild
+  /// cannot replay a request.
+  ShellViewRequest? _viewRequest;
+  int _viewRequestSeq = 0;
+
   @override
   void initState() {
     super.initState();
@@ -127,6 +134,8 @@ class _HomeShellState extends State<HomeShell>
     );
     _notificationFocus = context.read<NotificationFocus?>();
     _focusOwner = context.read<MeshcoreController>();
+    _viewRequest = context.read<ShellViewRequest?>();
+    _viewRequest?.addListener(_onViewRequest);
     // The active slot can change without a page change (the chat header, the
     // channel picker, a radio that renumbers its channels), so follow it.
     _focusOwner?.addListener(_publishNotificationFocus);
@@ -142,6 +151,7 @@ class _HomeShellState extends State<HomeShell>
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _focusOwner?.removeListener(_publishNotificationFocus);
+    _viewRequest?.removeListener(_onViewRequest);
     _notificationFocus?.clearThread();
     _cueBridge?.dispose();
     _botBridge?.dispose();
@@ -184,6 +194,15 @@ class _HomeShellState extends State<HomeShell>
     setState(() => _index = i);
     _publishNotificationFocus();
     _playNavCue(from, i);
+  }
+
+  /// A notification tap asked for Chat on a slot: change view, keep the slot.
+  void _onViewRequest() {
+    final ShellViewRequest? request = _viewRequest;
+    if (request == null || request.chatSlot == null) return;
+    if (request.seq == _viewRequestSeq) return;
+    _viewRequestSeq = request.seq;
+    _select(MmView.chat.index);
   }
 
   /// The channel on screen is not announced; nothing else is suppressed.
