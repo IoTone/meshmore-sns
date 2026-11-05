@@ -13,6 +13,45 @@ import io.flutter.plugin.common.MethodChannel
 import java.io.File
 
 class MainActivity : FlutterActivity() {
+    /**
+     * An export the user opened or shared into the app, staged to a private
+     * file and handed to Dart once. The history import is the only way back
+     * from a restore onto a new device, so the app has to be able to receive
+     * a file the user still has.
+     */
+    private var incomingExport: File? = null
+
+    override fun onCreate(savedInstanceState: android.os.Bundle?) {
+        super.onCreate(savedInstanceState)
+        stageIncoming(intent)
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        stageIncoming(intent)
+    }
+
+    private fun stageIncoming(intent: Intent?) {
+        if (intent == null) return
+        if (intent.action != Intent.ACTION_VIEW && intent.action != Intent.ACTION_SEND) return
+        @Suppress("DEPRECATION") // the typed overload needs API 33; minSdk is 24
+        val uri: android.net.Uri? = intent.data
+            ?: (intent.getParcelableExtra(Intent.EXTRA_STREAM) as? android.net.Uri)
+            ?: return
+        try {
+            val target = File(cacheDir, "incoming.mmex")
+            contentResolver.openInputStream(uri)?.use { input ->
+                target.outputStream().use { output -> input.copyTo(output, 64 * 1024) }
+            } ?: return
+            incomingExport = target
+        } catch (e: Exception) {
+            // A file the app cannot read is reported to Dart as "nothing
+            // arrived", which the restore surface already words.
+            incomingExport = null
+        }
+    }
+
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "meshmore/app_lifecycle")
@@ -58,6 +97,14 @@ class MainActivity : FlutterActivity() {
         // content:// URI with a read grant for that one file and nothing else.
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "meshmore/share")
             .setMethodCallHandler { call, result ->
+                if (call.method == "takeIncomingFile") {
+                    // Once: the restore consumes it, and a second launch must
+                    // not offer the same file again.
+                    val staged = incomingExport
+                    incomingExport = null
+                    result.success(staged?.absolutePath)
+                    return@setMethodCallHandler
+                }
                 if (call.method != "shareFile") {
                     result.notImplemented()
                     return@setMethodCallHandler

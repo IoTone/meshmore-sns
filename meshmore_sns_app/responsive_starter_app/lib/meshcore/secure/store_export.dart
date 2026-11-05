@@ -1,6 +1,7 @@
 // Copyright (c) 2026 IoTone, Inc.
 // SPDX-License-Identifier: MIT
 import 'dart:convert';
+import 'dart:isolate';
 import 'dart:math';
 
 import 'package:flutter/services.dart';
@@ -36,6 +37,12 @@ abstract final class StoreExport {
   /// space, and the only defence is making each guess cost this much.
   static const int defaultIterations = 210000;
   static const int saltBytes = 16;
+
+  /// The most iterations an import will honour: four times what this build
+  /// writes. The count travels in the file, so a crafted header claiming ten
+  /// million would be minutes of key stretching on the UI thread — a denial of
+  /// service, not a passphrase.
+  static const int maxAcceptedIterations = defaultIterations * 4;
 
   static Uint8List encode(Map<String, Uint8List> records,
       String passphrase,
@@ -83,7 +90,7 @@ abstract final class StoreExport {
     }
     final int iterations =
         (bytes[6] << 24) | (bytes[7] << 16) | (bytes[8] << 8) | bytes[9];
-    if (iterations < 1000 || iterations > 10000000) {
+    if (iterations < 1000 || iterations > maxAcceptedIterations) {
       throw ExportRefused('implausible iteration count $iterations');
     }
     final Uint8List salt = bytes.sublist(10, 10 + saltBytes);
@@ -111,6 +118,18 @@ abstract final class StoreExport {
       throw const ExportRefused('payload has a non-string value');
     }
   }
+
+  /// The same work off the UI isolate: the KDF is deliberately slow, and a
+  /// slow call on the frame thread is a frozen app (an ANR on a low-end
+  /// phone), whether it takes a second or a minute.
+  static Future<Uint8List> encodeAsync(Map<String, Uint8List> records,
+          String passphrase,
+          {int iterations = defaultIterations}) =>
+      Isolate.run(() => encode(records, passphrase, iterations: iterations));
+
+  static Future<Map<String, Uint8List>> decodeAsync(
+          Uint8List bytes, String passphrase) =>
+      Isolate.run(() => decode(bytes, passphrase));
 
   static Uint8List _derive(String passphrase, Uint8List salt, int iterations) {
     final PBKDF2KeyDerivator d =

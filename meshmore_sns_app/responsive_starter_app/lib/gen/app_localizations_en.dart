@@ -1503,6 +1503,40 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get chatHistoryRestoreAction => 'Restore from an export';
+
+  @override
+  String get chatRestoreMenu => 'Restore from export…';
+
+  @override
+  String get chatRestoreNothing =>
+      'Open the export file with this app, or share it here, and then run restore again.';
+
+  @override
+  String get chatRestoreTitle => 'Restore a conversation';
+
+  @override
+  String get chatRestorePassphrase => 'Passphrase for the export';
+
+  @override
+  String get chatRestoreConfirm => 'Restore';
+
+  @override
+  String chatRestoreDone(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count messages restored',
+      one: '1 message restored',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get chatRestoreFailed =>
+      'That file could not be opened with that passphrase, or it is not an export.';
+
+  @override
   String get chatEmpty => '— no messages on this channel —';
 
   @override

@@ -438,6 +438,42 @@ class MeshcoreController extends ChangeNotifier {
   void _persistChat() =>
       unawaited(ChatStore.save(List<ChatMessage>.from(_messages)));
 
+  /// Merges rows from an exported file into the history, in memory and on
+  /// disk, newest last. Returns how many rows were new.
+  ///
+  /// A restore is the one path that brings history back after the sealed key
+  /// is gone, so it must survive what the live path never meets: rows whose
+  /// ids already exist (a file exported twice), rows out of order, and more
+  /// rows than the cap holds.
+  Future<int> importHistory(List<ChatMessage> rows) async {
+    final Set<String> known = <String>{for (final ChatMessage m in _messages) m.id};
+    int added = 0;
+    for (final ChatMessage m in rows) {
+      if (known.add(m.id)) added++;
+    }
+    if (added == 0) return 0;
+    final List<ChatMessage> merged = <ChatMessage>[
+      ..._messages,
+      for (final ChatMessage m in rows)
+        if (!_messages.any((ChatMessage x) => x.id == m.id)) m,
+    ]..sort((ChatMessage a, ChatMessage b) => a.at.compareTo(b.at));
+    _messages
+      ..clear()
+      ..addAll(merged);
+    if (_messages.length > _messagesCap) {
+      for (final ChatMessage m
+          in _messages.getRange(0, _messages.length - _messagesCap)) {
+        _noteDropped(m);
+      }
+      _messages.removeRange(0, _messages.length - _messagesCap);
+    }
+    _invalidateMessagesCache();
+    await ChatStore.save(List<ChatMessage>.from(_messages));
+    ChatStore.unreadable.value = false;
+    notifyListeners();
+    return added;
+  }
+
   /// R20 / U11 — delete a single message **locally**. The OTA copy
   /// has already been delivered; MeshCore has no recall semantic, so
   /// the UI must convey that the remote/other recipients still have

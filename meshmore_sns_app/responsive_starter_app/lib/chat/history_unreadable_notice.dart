@@ -13,7 +13,11 @@ import '../theme/mm_skin.dart';
 /// data is the one lie this store can still tell, so the state is carried out
 /// of `ChatStore` and said above the list, with the way back named.
 class HistoryUnreadableNotice extends StatelessWidget {
-  const HistoryUnreadableNotice({super.key});
+  const HistoryUnreadableNotice({super.key, this.onRestore});
+
+  /// Opens the restore path. A lost key has exactly one way back, so the line
+  /// carries the action rather than naming it from a distance.
+  final VoidCallback? onRestore;
 
   @override
   Widget build(BuildContext context) {
@@ -59,6 +63,17 @@ class HistoryUnreadableNotice extends StatelessWidget {
                   fontSize: skin.type.sizeSm,
                 ),
               ),
+              if (onRestore != null) ...<Widget>[
+                SizedBox(height: skin.space.step(2)),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: OutlinedButton(
+                    key: const ValueKey<String>('chat-history-restore'),
+                    onPressed: onRestore,
+                    child: Text(l.chatHistoryRestoreAction),
+                  ),
+                ),
+              ],
             ],
           ),
         );

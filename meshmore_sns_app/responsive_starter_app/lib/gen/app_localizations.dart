@@ -2630,6 +2630,54 @@ abstract class AppLocalizations {
   /// **'last write did not reach the store ({code})'**
   String diagnosticsHistoryStoreWriteFailed(String code);
 
+  /// No description provided for @chatHistoryRestoreAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore from an export'**
+  String get chatHistoryRestoreAction;
+
+  /// No description provided for @chatRestoreMenu.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore from export…'**
+  String get chatRestoreMenu;
+
+  /// No description provided for @chatRestoreNothing.
+  ///
+  /// In en, this message translates to:
+  /// **'Open the export file with this app, or share it here, and then run restore again.'**
+  String get chatRestoreNothing;
+
+  /// No description provided for @chatRestoreTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore a conversation'**
+  String get chatRestoreTitle;
+
+  /// No description provided for @chatRestorePassphrase.
+  ///
+  /// In en, this message translates to:
+  /// **'Passphrase for the export'**
+  String get chatRestorePassphrase;
+
+  /// No description provided for @chatRestoreConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore'**
+  String get chatRestoreConfirm;
+
+  /// No description provided for @chatRestoreDone.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 message restored} other{{count} messages restored}}'**
+  String chatRestoreDone(int count);
+
+  /// No description provided for @chatRestoreFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'That file could not be opened with that passphrase, or it is not an export.'**
+  String get chatRestoreFailed;
+
   /// No description provided for @chatEmpty.
   ///
   /// In en, this message translates to:

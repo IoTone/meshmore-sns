@@ -33,6 +33,7 @@ import 'delivery_status_icon.dart';
 import '../meshcore/meshcore_controller.dart';
 import '../chat/history_retention_notice.dart';
 import '../chat/history_unreadable_notice.dart';
+import '../meshcore/secure/incoming_export.dart';
 import '../chat/unread_counts.dart';
 import '../meshcore/message_heat.dart' show parseChannelSenderName;
 import '../bot/bot_guards.dart';
@@ -302,7 +303,7 @@ class _ChatScreenState extends State<ChatScreen>
     );
     if (passphrase == null || !mounted) return;
     try {
-      final Uint8List bytes = HistoryExport.encodeThread(
+      final Uint8List bytes = await HistoryExport.encodeThreadAsync(
         key: key,
         messages: rows,
         passphrase: passphrase,
@@ -323,6 +324,57 @@ class _ChatScreenState extends State<ChatScreen>
       if (!mounted) return;
       ScaffoldMessenger.maybeOf(context)
           ?.showSnackBar(SnackBar(content: Text(l.chatExportFailed)));
+    }
+  }
+
+  /// Restores conversations from a passphrase export the user still holds.
+  ///
+  /// The export is the one recovery path once the sealed key is gone, so this
+  /// is deliberately forgiving about where the file is: the platform stages a
+  /// file the user opened or shared into the app, and the passphrase is asked
+  /// here because it is the only secret that travels with the file.
+  Future<void> _restoreFromExport(MeshcoreController mc) async {
+    final AppLocalizations l = AppLocalizations.of(context);
+    final String? path = await IncomingExport.take();
+    if (!mounted) return;
+    if (path == null) {
+      ScaffoldMessenger.maybeOf(context)
+          ?.showSnackBar(SnackBar(content: Text(l.chatRestoreNothing)));
+      return;
+    }
+    final String? passphrase = await showDialog<String>(
+      context: context,
+      builder: (BuildContext ctx) => _PassphraseDialog(
+        l: l,
+        titleKey: l.chatRestoreTitle,
+        fieldLabel: l.chatRestorePassphrase,
+        confirmLabel: l.chatRestoreConfirm,
+      ),
+    );
+    if (passphrase == null || !mounted) return;
+    try {
+      final File file = File(path);
+      // An export is a few hundred kilobytes; anything far larger is not one.
+      if (await file.length() > 8 * 1024 * 1024) {
+        throw const ExportRefused('file larger than an export');
+      }
+      final List<ChatMessage> rows = await HistoryExport.decodeFileAsync(
+        bytes: await file.readAsBytes(),
+        passphrase: passphrase,
+      );
+      final int added = await mc.importHistory(rows);
+      await file.delete().catchError((Object _) => file);
+      if (!mounted) return;
+      ScaffoldMessenger.maybeOf(context)
+          ?.showSnackBar(SnackBar(content: Text(l.chatRestoreDone(added))));
+    } on ExportRefused {
+      if (!mounted) return;
+      ScaffoldMessenger.maybeOf(context)
+          ?.showSnackBar(SnackBar(content: Text(l.chatRestoreFailed)));
+    } on FileSystemException {
+      if (!mounted) return;
+      ScaffoldMessenger.maybeOf(context)
+          ?.showSnackBar(SnackBar(content: Text(l.chatRestoreFailed)));
     }
   }
 
@@ -645,6 +697,15 @@ class _ChatScreenState extends State<ChatScreen>
                     icon: const Icon(Icons.ios_share),
                   ),
                 ),
+                Padding(
+                  padding: const EdgeInsets.only(left: 4),
+                  child: IconButton(
+                    key: const ValueKey<String>('chat-restore-thread'),
+                    tooltip: l.chatRestoreMenu,
+                    onPressed: () => _restoreFromExport(mc),
+                    icon: const Icon(Icons.settings_backup_restore),
+                  ),
+                ),
               // Manage channels: a chip, not a "#" icon next to the
               // channel chips, where two different meanings of "channel"
               // sat side by side.
@@ -692,7 +753,7 @@ class _ChatScreenState extends State<ChatScreen>
           ),
         ),
         const Divider(height: 1),
-        const HistoryUnreadableNotice(),
+        HistoryUnreadableNotice(onRestore: () => _restoreFromExport(mc)),
         HistoryRetentionNotice(dropped: dropped),
 
         // Message list (active channel) + R29 jump-to-newest pill.
@@ -1467,9 +1528,22 @@ class _UnreadBadge extends StatelessWidget {
 /// The passphrase a thread export travels with. The store's own key never
 /// leaves the Keystore, so a file that must open years later carries its own.
 class _PassphraseDialog extends StatefulWidget {
-  const _PassphraseDialog({required this.l});
+  const _PassphraseDialog({
+    required this.l,
+    String? titleKey,
+    String? fieldLabel,
+    String? confirmLabel,
+  })  : _title = titleKey,
+        _field = fieldLabel,
+        _confirm = confirmLabel;
 
   final AppLocalizations l;
+
+  /// Overridable so the same dialog asks for a passphrase to write a file and
+  /// to open one: the words differ, the control does not.
+  final String? _title;
+  final String? _field;
+  final String? _confirm;
 
   @override
   State<_PassphraseDialog> createState() => _PassphraseDialogState();
@@ -1487,13 +1561,14 @@ class _PassphraseDialogState extends State<_PassphraseDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text(widget.l.chatExportTitle),
+      title: Text(widget._title ?? widget.l.chatExportTitle),
       content: TextField(
         key: const ValueKey<String>('chat-export-passphrase'),
         controller: _input,
         obscureText: true,
         autofocus: true,
-        decoration: InputDecoration(labelText: widget.l.chatExportPassphrase),
+        decoration:
+            InputDecoration(labelText: widget._field ?? widget.l.chatExportPassphrase),
         onSubmitted: (String v) => Navigator.of(context).pop(v),
       ),
       actions: <Widget>[
@@ -1504,7 +1579,7 @@ class _PassphraseDialogState extends State<_PassphraseDialog> {
         FilledButton(
           key: const ValueKey<String>('chat-export-confirm'),
           onPressed: () => Navigator.of(context).pop(_input.text),
-          child: Text(widget.l.chatExportConfirm),
+          child: Text(widget._confirm ?? widget.l.chatExportConfirm),
         ),
       ],
     );

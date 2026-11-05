@@ -1435,6 +1435,38 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
+  String get chatHistoryRestoreAction => '書き出しから復元';
+
+  @override
+  String get chatRestoreMenu => '書き出しから復元…';
+
+  @override
+  String get chatRestoreNothing => '書き出しファイルをこのアプリで開くか、ここに共有してから、もう一度復元してください。';
+
+  @override
+  String get chatRestoreTitle => '会話を復元';
+
+  @override
+  String get chatRestorePassphrase => '書き出しのパスフレーズ';
+
+  @override
+  String get chatRestoreConfirm => '復元';
+
+  @override
+  String chatRestoreDone(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'メッセージ$count件を復元しました',
+      one: 'メッセージ1件を復元しました',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get chatRestoreFailed => 'そのパスフレーズでは開けませんでした。書き出しファイルではない可能性があります。';
+
+  @override
   String get chatEmpty => '— このチャンネルにメッセージはありません —';
 
   @override
