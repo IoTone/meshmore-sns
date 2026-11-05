@@ -93,7 +93,7 @@ void main() {
     final ThemeController tc = await _pump(t, mc);
 
     // Default preset (SEELE) → the monolith dashboard (no NERV brand bar).
-    expect(find.text('PEERS IN RANGE'), findsOneWidget);
+    expect(find.text('NODES IN RANGE'), findsOneWidget);
     expect(find.text('NERV'), findsNothing);
 
     // Switch to NERV → the telemetry-grid re-imagining (brand bar +
@@ -108,7 +108,7 @@ void main() {
     await tc.setPreset(MmThemePreset.seele);
     await t.pumpAndSettle();
     expect(find.text('NERV'), findsNothing);
-    expect(find.text('PEERS IN RANGE'), findsOneWidget);
+    expect(find.text('NODES IN RANGE'), findsOneWidget);
   });
 
   testWidgets('host shows the Hyperlocal radar when selected',
@@ -128,10 +128,10 @@ void main() {
     // Radar dashboard: the empty-field prompt + the PEERS status rail,
     // and none of the other skins' signatures.
     expect(find.text('Listening for nodes…'), findsOneWidget);
-    expect(find.textContaining('PEERS', findRichText: true),
+    expect(find.textContaining('NODES', findRichText: true),
         findsOneWidget); // status rail
     expect(find.text('NERV'), findsNothing);
-    expect(find.text('PEERS IN RANGE'), findsNothing);
+    expect(find.text('NODES IN RANGE'), findsNothing);
   });
 
   testWidgets('host shows the AG-HUD gauges when selected',

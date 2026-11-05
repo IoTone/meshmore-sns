@@ -170,7 +170,7 @@ void main() {
       'RADIO',
       'LOCATION',
       'RECENT',
-      'PEERS IN RANGE',
+      'NODES IN RANGE',
       '(unnamed)',
       'LINKED',
     ]) {

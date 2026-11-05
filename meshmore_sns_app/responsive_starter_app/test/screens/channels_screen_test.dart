@@ -70,7 +70,7 @@ void main() {
     // Open the editor for slot 1 (empty → "Set").
     await t.tap(find.text('Set').first);
     await t.pumpAndSettle();
-    expect(find.text('Channel slot 1'), findsOneWidget);
+    expect(find.text('Channel 1'), findsOneWidget);
 
     await t.tap(find.text('#tag'));
     await t.pumpAndSettle();
@@ -149,26 +149,26 @@ void main() {
     await t.pump();
 
     Text find1(String key) => t.widget<Text>(find.text(key));
-    expect(find1('Slot 0 is the shared public channel. A private group needs '
-                    'the same slot, name and PSK on every node.')
+    expect(find1('Channel 0 is the shared public one. A private group needs the '
+                    'same channel number, name and key on every radio.')
                 .style
                 ?.fontSize,
         type.sizeBody);
     expect(
-        find1('Slot 0 is the shared public channel. A private group needs '
-                    'the same slot, name and PSK on every node.')
+        find1('Channel 0 is the shared public one. A private group needs the '
+                    'same channel number, name and key on every radio.')
                 .style
                 ?.fontSize,
         12);
     // The encryption panel is the second guaranteed block: 12 -> sizeBody
     // with the mono face on the key readouts it carries.
     expect(
-        find1("Slot 0's key is public. Other slots use AES-128 with the PSK you set.")
+        find1("Channel 0's key is public. Other channels use the key you set.")
             .style
             ?.fontSize,
         type.sizeBody);
     expect(
-        find1("Slot 0's key is public. Other slots use AES-128 with the PSK you set.")
+        find1("Channel 0's key is public. Other channels use the key you set.")
             .style
             ?.fontSize,
         12);

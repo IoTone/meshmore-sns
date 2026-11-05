@@ -65,7 +65,7 @@ void main() {
 
     expect(t.widget<SwitchListTile>(find.byType(SwitchListTile)).onChanged,
         isNull);
-    expect(find.textContaining('Slot 0 is the public channel'),
+    expect(find.textContaining('Not available on the public channel'),
         findsOneWidget);
   });
 
@@ -73,7 +73,7 @@ void main() {
       (WidgetTester t) async {
     final BotController bot = make(pskFor: (int _) => kPublicChannelPsk);
     await t.pumpWidget(host(bot, const ChannelScope(3)));
-    expect(find.textContaining('Public under another number'),
+    expect(find.textContaining('public whatever its number'),
         findsOneWidget);
   });
 
@@ -81,7 +81,7 @@ void main() {
       (WidgetTester t) async {
     final BotController bot = make(pskFor: (int _) => null);
     await t.pumpWidget(host(bot, const ChannelScope(3)));
-    expect(find.textContaining("Waiting for this slot's key"),
+    expect(find.textContaining("Waiting for the radio to send this channel"),
         findsOneWidget);
   });
 

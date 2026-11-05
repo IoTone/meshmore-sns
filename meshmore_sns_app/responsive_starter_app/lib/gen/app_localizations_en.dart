@@ -36,7 +36,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tabAbout => 'About';
 
   @override
-  String get dashboardPeersInRange => 'PEERS IN RANGE';
+  String get dashboardPeersInRange => 'NODES IN RANGE';
 
   @override
   String dashboardKnownCount(int n) {
@@ -74,16 +74,15 @@ class AppLocalizationsEn extends AppLocalizations {
       'Replies are sent with a [bot] prefix, so the person on the other end can tell a machine wrote them.';
 
   @override
-  String get botRefusedPublicSlot =>
-      'Not available on Public. Slot 0 is the public channel.';
+  String get botRefusedPublicSlot => 'Not available on the public channel.';
 
   @override
   String get botRefusedPublicPsk =>
-      'This slot still uses the well-known public key, so it is Public under another number. Give it a private key first.';
+      'This channel still uses the public key, so it is public whatever its number. Give it a private key first.';
 
   @override
   String get botRefusedUnknownPsk =>
-      'Waiting for this slot\'s key from the radio.';
+      'Waiting for the radio to send this channel\'s key.';
 
   @override
   String get botMode => 'Reply mode';
@@ -166,7 +165,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get dashHyperEmpty => 'Listening for nodes…';
 
   @override
-  String get dashHyperPeers => 'PEERS';
+  String get dashHyperPeers => 'NODES';
 
   @override
   String get dashAgHudSignal => 'SIGNAL';
@@ -846,7 +845,7 @@ class AppLocalizationsEn extends AppLocalizations {
       one: '1 contact',
       zero: '0 contacts',
     );
-    return '$shown of $total in fabric · $inRange in range · $_temp0';
+    return '$shown of $total shown · $inRange in range · $_temp0';
   }
 
   @override
@@ -857,12 +856,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get nodesFarBadge => 'FAR';
 
   @override
-  String get nodesEmptyFiltered =>
-      'No nodes match this filter.\n\nTap Clear to widen, or change the chip cutoffs above.';
+  String get nodesEmptyFiltered => 'No nodes match this filter.';
 
   @override
   String get nodesEmptyReady =>
-      'No nodes yet. Discovery is advert-driven: a node appears when its advert is heard.';
+      'No nodes yet. A node appears once it announces itself.';
 
   @override
   String get nodesEmptyOffline => 'Connect a radio to discover nearby nodes.';
@@ -923,7 +921,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String gridLegendRings(String value) {
-    return 'Three concentric rings = distance bands. With GPS on both ends, the outer ring is the **Range** scale above (~$value right now). Without GPS, rings are RSSI bands (near / mid / far).';
+    return 'Rings are distance bands. With GPS at both ends the outer ring is the Range scale above (about $value now). Without GPS they are signal bands: near, mid, far.';
   }
 
   @override
@@ -932,11 +930,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get gridLegendDot =>
-      'Dot = a fabric node we\'ve heard. Brightness = recency (full = just now, fades to 0 over 24 h then disappears).';
+      'A dot is a node we have heard. Brighter means more recent; it fades out over a day.';
 
   @override
   String get gridLegendKnown =>
-      'Pulse (slow growing halo) = a known node — we have had a direct attributable exchange (DM) with them.';
+      'A slow growing halo is a node we have messaged directly.';
 
   @override
   String get gridLegendFavourite =>
@@ -944,7 +942,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get gridLegendRipple =>
-      'Centre-out ripple = an anonymous channel message (the protocol doesn\'t attribute channel msgs to a sender).';
+      'A ripple from the centre is a channel message from someone we cannot name.';
 
   @override
   String get gridLegendTap =>
@@ -952,11 +950,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get gridLegendHeading =>
-      'Heading wedge / HDG line = the direction the phone\'s top edge is pointing relative to MAGNETIC north (not true north, not GPS travel direction). Comes from the phone\'s compass sensor.';
+      'The wedge is the direction the top of the phone points, measured from magnetic north.';
 
   @override
   String get gridLegendCalibration =>
-      'Calibration: if the arrow seems wrong, hold the phone level and wave it in a figure-8 motion several times. The OS handles compass calibration; the app only displays sensor accuracy (a \'Calibrate\' hint appears when accuracy is poor).';
+      'If the arrow seems wrong, hold the phone level and turn it in a figure-8 a few times. A Calibrate hint appears when the compass needs it.';
 
   @override
   String get gridViewRadial => 'Radial';
@@ -974,7 +972,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get gridViewPicker => 'Switch map view';
 
   @override
-  String get gridViewFabric => 'Fabric survey';
+  String get gridViewFabric => 'Mesh survey';
 
   @override
   String get gridViewElevation => 'Fujiさん';
@@ -996,15 +994,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get fujiLegendPeers =>
-      'Dots = peers, plotted at their telemetry altitude once queried.';
+      'Dots are nodes, plotted at their altitude once asked.';
 
   @override
   String get fujiLegendUnknown =>
-      'Striped band along the ground = peers with no altitude yet.';
+      'A striped band along the ground is a node with no altitude yet.';
 
   @override
   String get fujiLegendAutoQuery =>
-      'The AUTO-QUERY box pulls peer altitudes slowly; tap it to restart.';
+      'The auto-query box asks for altitudes slowly. Tap it to start again.';
 
   @override
   String get elevationProfileTitle => 'MESHMORE :: FUJIさん';
@@ -1020,7 +1018,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String elevationProfilePeers(int n) {
-    return '$n peers tracked';
+    return '$n nodes tracked';
   }
 
   @override
@@ -1100,7 +1098,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String globeFooter(int n) {
-    return 'Showing $n peers with known location';
+    return 'Showing $n nodes with a known location';
   }
 
   @override
@@ -1257,7 +1255,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get gridEmpty =>
-      'No fabric in range yet.\n\nA node appears when its advert is heard.';
+      'No nodes in range yet.\n\nA node appears once it announces itself.';
 
   @override
   String get gridStatusOffline =>
@@ -1287,11 +1285,11 @@ class AppLocalizationsEn extends AppLocalizations {
       one: '1 contact',
       zero: '0 contacts',
     );
-    return '$visible in fabric · $known known · $_temp0';
+    return '$visible shown · $known known · $_temp0';
   }
 
   @override
-  String get gridGroupPeers => 'PEERS';
+  String get gridGroupPeers => 'NODES';
 
   @override
   String get gridGroupSurvey => 'SURVEY';
@@ -1474,7 +1472,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String eventMsgSent(String ack) {
-    return 'msg sent (ack $ack)';
+    return 'sent (confirmed by $ack)';
   }
 
   @override
@@ -1582,7 +1580,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String dmTitle(String peer) {
-    return 'DM · $peer';
+    return 'Direct · $peer';
   }
 
   @override
@@ -1591,18 +1589,18 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get nodeDetailSignature => 'Arrival signature';
+  String get nodeDetailSignature => 'Message sound';
 
   @override
   String get nodeDetailSignatureHint =>
-      'A cue just for this peer, instead of the DM cue.';
+      'Plays for messages from this person instead of the usual sound.';
 
   @override
   String get nodeDetailSignatureNone => 'Default';
 
   @override
   String nodeDetailSignatureSlot(int n) {
-    return 'Signature $n';
+    return 'Sound $n';
   }
 
   @override
@@ -1613,10 +1611,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get dmEmpty => '— no messages yet —';
 
   @override
-  String get dmOpenPeerDetail => 'Peer details';
+  String get dmOpenPeerDetail => 'Contact details';
 
   @override
-  String get dmSpeech => 'Speak this peer';
+  String get dmSpeech => 'Read this conversation aloud';
 
   @override
   String get dmSpeechInherit => 'Follow global speech setting';
@@ -1632,7 +1630,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get dmPeerNotInFabric =>
-      'This peer hasn\'t shown up on the mesh yet (no advert heard).';
+      'This person has not been heard on the mesh yet.';
 
   @override
   String dmComposerHint(String peer) {
@@ -1720,7 +1718,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get nodeIdentityLinkAction => 'Key changed? Link to another node';
+  String get nodeIdentityLinkAction => 'New key: link this contact';
 
   @override
   String get nodeIdentityLinkTitle => 'Link a changed key';
@@ -2256,18 +2254,19 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get meshTreeLegendRepeater =>
-      'Square = repeater. Mast-mounted infra, hub colour. Peers fan out through these.';
+      'A square is a repeater: a radio that passes other radios\' messages.';
 
   @override
   String get meshTreeLegendRoom =>
-      'Diamond = room server. Server-class node hosting named rooms.';
+      'A diamond is a room server: a radio that hosts named rooms.';
 
   @override
-  String get meshTreeLegendChat => 'Circle = chat node. Peer you can DM.';
+  String get meshTreeLegendChat =>
+      'A circle is a node you can message directly.';
 
   @override
   String get meshTreeLegendSensor =>
-      'Small circle (dim) = sensor. Narrow-purpose node.';
+      'A small dim circle is a sensor: it only reports readings.';
 
   @override
   String get meshTreeLegendFlood =>
@@ -2283,10 +2282,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get meshTreeLegendInteract =>
-      'Pinch to zoom, drag to pan, tap a node for details. Use Recenter to reset.';
+      'Tap a node for details, or Recenter to reset the view.';
 
   @override
-  String get fabricLegendTitle => 'FABRIC SURVEY';
+  String get fabricLegendTitle => 'MESH SURVEY';
 
   @override
   String get fabricLegendDesc =>
@@ -2298,11 +2297,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get fabricLegendRecency =>
-      'Brighter fill = more recent. Tiers: < 1 h, < 24 h, < 7 d, older.';
+      'Brighter is more recent: under an hour, under a day, under a week, older.';
 
   @override
   String get fabricLegendMarker =>
-      'Tertiary-coloured pins mark peers in the current set. Tap one for details.';
+      'Filled pins are the nodes in range now. Tap one for details.';
 
   @override
   String get fabricLegendSelf => 'The primary-coloured pin is you.';
@@ -2370,7 +2369,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get nodeDetailRefreshTelemetry => 'Refresh telemetry';
 
   @override
-  String get nodeDetailTelemetryQuerying => 'querying peer over the air…';
+  String get nodeDetailTelemetryQuerying => 'Asking the radio for readings…';
 
   @override
   String get nodeDetailTelemetryNotContact =>
@@ -2406,7 +2405,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get channelsHelp =>
-      'Slot 0 is the shared public channel. A private group needs the same slot, name and PSK on every node.';
+      'Channel 0 is the shared public one. A private group needs the same channel number, name and key on every radio.';
 
   @override
   String get channelsOfflineHint =>
@@ -2417,12 +2416,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String channelsSlotLabel(int idx) {
-    return 'slot $idx';
+    return 'channel $idx';
   }
 
   @override
   String channelsSlotActive(int idx) {
-    return 'slot $idx · ACTIVE';
+    return 'channel $idx · ACTIVE';
   }
 
   @override
@@ -2433,12 +2432,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String channelsSetSnack(int idx, String name) {
-    return 'Channel $idx set to \"$name\" — every node needs the same name & PSK here';
+    return 'Channel $idx set to \"$name\" — every radio needs the same name and key here';
   }
 
   @override
   String channelsDialogTitle(int idx) {
-    return 'Channel slot $idx';
+    return 'Channel $idx';
   }
 
   @override
@@ -2472,10 +2471,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get notifSectionTitle => 'Notifications';
 
   @override
-  String get notifOs => 'Notify on the lock screen';
+  String get notifOs => 'Show a notification';
 
   @override
-  String get notifAudio => 'Play a cue';
+  String get notifAudio => 'Play a sound';
 
   @override
   String get notifHaptic => 'Vibrate';
@@ -2484,18 +2483,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get notifTts => 'Speak the message';
 
   @override
-  String get notifMentionsOnly => 'Only when named';
+  String get notifMentionsOnly => 'Only when someone names me';
 
   @override
   String get notifMentionsOnlySub =>
       'Whole word or @name. Off means every message alerts.';
 
   @override
-  String get notifKeySuffix => 'Also match the key suffix';
+  String get notifKeySuffix => 'Also match the last 4 characters of my ID';
 
   @override
   String get notifKeySuffixSub =>
-      'Four hex characters are not an identity; leave this off unless you know the sender\'s.';
+      'Anyone can choose those four characters, so leave this off unless you know the sender.';
 
   @override
   String get notifDeniedBanner =>
@@ -2530,7 +2529,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get channelsErrorTag => 'Enter a #hashtag';
 
   @override
-  String get channelsErrorHex => 'PSK must be 32 hex chars (16 bytes)';
+  String get channelsErrorHex => 'The key must be 32 characters, 0-9 or A-F';
 
   @override
   String get channelsErrorName => 'Enter a channel name';
@@ -2543,16 +2542,16 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get channelsHelpEncryption =>
-      'Slot 0\'s key is public. Other slots use AES-128 with the PSK you set.';
+      'Channel 0\'s key is public. Other channels use the key you set.';
 
   @override
-  String get channelsHexGenerate => 'Generate random PSK';
+  String get channelsHexGenerate => 'Generate a random key';
 
   @override
   String get channelsHexCopy => 'Copy';
 
   @override
-  String get channelsHexCopied => 'PSK copied to clipboard';
+  String get channelsHexCopied => 'Key copied';
 
   @override
   String get channelsTagWeakShort =>
@@ -2567,10 +2566,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get channelsSlot0WarnBody =>
-      'Slot 0 is the well-known Public channel. Writing a private PSK here means you\'ll only be able to talk to nodes that use this exact key in slot 0 — you\'ll lose the shared Public channel. Proceed?';
+      'Channel 0 is the shared public channel. A private key here means you can only talk to radios using that same key, and you lose the public channel. Continue?';
 
   @override
-  String get channelsSlot0WarnContinue => 'Overwrite slot 0';
+  String get channelsSlot0WarnContinue => 'Overwrite channel 0';
 
   @override
   String get channelsSlot0WarnCancel => 'Cancel';
@@ -2585,23 +2584,23 @@ class AppLocalizationsEn extends AppLocalizations {
   String get channelsHideKey => 'Hide';
 
   @override
-  String get channelsClear => 'Clear slot';
+  String get channelsClear => 'Reset channel';
 
   @override
   String channelsClearConfirmTitle(int idx) {
-    return 'Clear slot $idx?';
+    return 'Reset channel $idx?';
   }
 
   @override
   String get channelsClearConfirmBody =>
-      'MeshCore has no protocol-level \"clear\" — this slot will be overwritten back to the well-known Public defaults (name + key). Other nodes will need to do the same to talk on it again.';
+      'The radio has no empty channel, so this one goes back to the public name and key. Other radios need the same to talk here again.';
 
   @override
   String get channelsClearConfirmAction => 'Clear';
 
   @override
   String channelsClearSnack(int idx) {
-    return 'Slot $idx cleared (reset to Public defaults)';
+    return 'Channel $idx reset to the public defaults';
   }
 
   @override
@@ -2653,10 +2652,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get channelsQrBody =>
-      'Scan with a Meshmore device or any QR reader. Anyone with this code can join the channel — share only with trusted peers.';
+      'Scan with a Meshmore device or any QR reader. Anyone with this code can join the channel, so share it only with people you trust.';
 
   @override
-  String get channelsQrPayload => 'Payload (also copy-friendly)';
+  String get channelsQrPayload => 'Channel code (you can copy it)';
 
   @override
   String get channelsQrClose => 'Close';

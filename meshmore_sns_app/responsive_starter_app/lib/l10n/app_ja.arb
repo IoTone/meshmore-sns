@@ -9,7 +9,7 @@
   "tabDocs": "ドキュメント",
   "tabSettings": "設定",
   "tabAbout": "アプリ情報",
-  "dashboardPeersInRange": "範囲内のピア",
+  "dashboardPeersInRange": "範囲内のノード",
   "dashboardKnownCount": "{n}件 既知",
   "@dashboardKnownCount": {
     "placeholders": {
@@ -31,9 +31,9 @@
   "botTitle": "自動応答ボット",
   "botSubtitle": "ここのメッセージに自動で返信します。既定はオフ。",
   "botOnWire": "返信には [bot] を付けて送信し、相手が機械の発言だと分かるようにします。",
-  "botRefusedPublicSlot": "パブリックでは使用できません。スロット0は公開チャンネルです。",
-  "botRefusedPublicPsk": "このスロットは公開鍵のままなので、実質パブリックです。先に専用の鍵を設定してください。",
-  "botRefusedUnknownPsk": "無線機からこのスロットの鍵を取得中です。",
+  "botRefusedPublicSlot": "パブリックでは使えません。",
+  "botRefusedPublicPsk": "このチャンネルは公開の鍵のままなので、番号が違ってもパブリックです。先に非公開の鍵を設定してください。",
+  "botRefusedUnknownPsk": "ラジオからこのチャンネルの鍵を待っています。",
   "botMode": "返信モード",
   "botModeDeterministic": "決定的",
   "botModeRandom": "ランダム",
@@ -85,7 +85,7 @@
   "dashNervKnown": "既知",
   "dashNervEvents": "イベント",
   "dashHyperEmpty": "ノードを探索中…",
-  "dashHyperPeers": "ピア",
+  "dashHyperPeers": "ノード",
   "dashAgHudSignal": "シグナル",
   "dashAgHudTraffic": "ch トラフィック",
   "dashDrPopLink": "リンク",
@@ -387,7 +387,7 @@
   "nodesDist500m": "500 m 以内",
   "nodesDist5km": "5 km 以内",
   "nodesDist25km": "25 km 以内",
-  "nodesStatusReady": "{shown}/{total}件 表示 · {inRange}件 範囲内 · {favs}件 コンタクト",
+  "nodesStatusReady": "{shown}/{total}件 表示 · {inRange}件 範囲内 · {favs}件 連絡先",
   "@nodesStatusReady": {
     "placeholders": {
       "shown": {
@@ -406,8 +406,8 @@
   },
   "nodesStatusOffline": "未接続 — 設定 → 診断で接続",
   "nodesFarBadge": "遠距離",
-  "nodesEmptyFiltered": "条件に一致するノードがありません。\n\n上の「クリア」で絞り込みを解除するか、各チップで条件を変更してください。",
-  "nodesEmptyReady": "ノードはまだありません。アドバートを受信すると表示されます。",
+  "nodesEmptyFiltered": "条件に一致するノードがありません。",
+  "nodesEmptyReady": "ノードはまだありません。ノードが自分を知らせると表示されます。",
   "nodesEmptyOffline": "ラジオを接続して周辺ノードを発見してください。",
   "nodesFavTooltip": "お気に入りに追加",
   "nodesUnfavTooltip": "お気に入りから削除",
@@ -427,7 +427,7 @@
   "gridRangeCity": "市",
   "gridRangeRegion": "地域",
   "gridLegend": "凡例",
-  "gridLegendRings": "同心円 3 本 = 距離帯。両端に GPS がある場合、外側のリングは上の「範囲」スケール (現在 ~{value})。GPS がない場合は RSSI 帯 (近 / 中 / 遠)。",
+  "gridLegendRings": "輪は距離の帯です。両方に GPS があれば、外側の輪が上の範囲スケール（現在 約 {value}）です。GPS がないときは電波の強さの帯（近・中・遠）です。",
   "@gridLegendRings": {
     "placeholders": {
       "value": {
@@ -436,32 +436,32 @@
     }
   },
   "gridLegendSelf": "中央 = 自分。十字 = 南北 / 東西の目安。",
-  "gridLegendDot": "ドット = 受信したファブリックノード。明るさ = 新しさ (受信直後 = 最大、24時間で 0 に減衰し消滅)。",
-  "gridLegendKnown": "パルス (緩やかに広がる輪) = 既知ノード — 直接やり取り (DM) があったノード。",
+  "gridLegendDot": "点は受信したノードです。明るいほど新しく、1日かけて消えていきます。",
+  "gridLegendKnown": "ゆっくり広がる輪は、直接やり取りしたことのあるノードです。",
   "gridLegendFavourite": "別色での速い点滅 = お気に入りのノード。",
-  "gridLegendRipple": "中央からの波紋 = 匿名のチャネルメッセージ (プロトコル上、送信者を特定できません)。",
+  "gridLegendRipple": "中央からの波紋は、送信者が分からないチャンネルのメッセージです。",
   "gridLegendTap": "ノードをタップで詳細 + メッセージ / お気に入り。",
-  "gridLegendHeading": "方位ウェッジ・HDG 表示 = スマートフォン上端が**磁北**を基準に向いている方向（真北でも GPS 進行方向でもなく、スマートフォンの方位センサーが示す方位）。",
-  "gridLegendCalibration": "キャリブレーション: 矢印がずれている場合、スマートフォンを水平に持って数回 8 の字に動かしてください。コンパスのキャリブレーションは OS が行い、アプリは精度のみ表示します（精度が悪いと「Calibrate」ヒントが出ます）。",
+  "gridLegendHeading": "くさび形は、スマートフォンの上端が磁北からどちらを向いているかです。",
+  "gridLegendCalibration": "矢印がずれて見えるときは、スマートフォンを水平にして 8 の字を数回描いてください。精度が悪いとキャリブレーションのヒントが出ます。",
   "gridViewRadial": "ラジアル",
   "gridViewGlobe": "グローブ",
   "gridViewEqualGrid": "等分グリッド",
   "gridViewStreetMap": "ストリートマップ",
   "gridViewPicker": "マップ表示を切替",
-  "gridViewFabric": "ファブリック調査",
+  "gridViewFabric": "メッシュ調査",
   "gridViewElevation": "Fujiさん",
   "fujiLegendTitle": "Fujiさん",
   "fujiLegendDesc": "標高測量。√スケール軸で有名な建造物と高さを比較。自分の標高はデバイスGPSテレメトリまたは電話の位置情報から取得。",
   "fujiLegendMe": "破線 = あなた。標高が判明していればその位置に、未取得なら地面に「ALT?」表示。",
   "fujiLegendRefs": "シルエット = 実世界の基準（人 → 富士山）でスケール感を示す。",
-  "fujiLegendPeers": "点 = ピア。問い合わせ後にテレメトリ標高でプロット。",
-  "fujiLegendUnknown": "地面沿いの縞帯 = まだ標高不明のピア。",
-  "fujiLegendAutoQuery": "AUTO-QUERY ボックスがピア標高を順次取得。タップで再起動。",
+  "fujiLegendPeers": "点はノードです。問い合わせた標高に置かれます。",
+  "fujiLegendUnknown": "地面沿いの縞帯は、まだ標高が分からないノードです。",
+  "fujiLegendAutoQuery": "自動問い合わせは標高をゆっくり集めます。タップでやり直します。",
   "elevationProfileTitle": "MESHMORE :: Fujiさん",
   "elevationProfileAltLabel": "高度",
   "elevationProfileMeLabel": "現在地",
   "elevationProfileUnknownLabel": "高度不明",
-  "elevationProfilePeers": "{n} 個のノード",
+  "elevationProfilePeers": "{n} 個のノードを追跡中",
   "@elevationProfilePeers": {
     "placeholders": {
       "n": {
@@ -512,7 +512,7 @@
   "equalGridZoomOut": "ズームアウト（セルを広く）",
   "equalGridShowStats": "ターゲティングパネルを表示",
   "equalGridHideStats": "ターゲティングパネルを非表示",
-  "globeFooter": "位置情報のある {n} 件のピアを表示",
+  "globeFooter": "位置が分かる {n} 件のノードを表示",
   "globeOverlayArcs": "アーク",
   "globeOverlayRegion": "地域",
   "globeOverlayLabels": "ラベル",
@@ -644,14 +644,14 @@
       }
     }
   },
-  "gridEmpty": "まだ範囲内にノードがありません。\n\nアドバートを受信すると表示されます。",
+  "gridEmpty": "まだ範囲内にノードがありません。\n\nノードが自分を知らせると表示されます。",
   "gridStatusOffline": "未接続 — 設定 → 診断で接続",
   "gridSwipeModeTooltip": "スワイプモード:左右にスワイプで他の画面へ。タップでこのマップを移動・ズーム",
   "gridPanModeTooltip": "移動・ズームモード:ドラッグでマップを移動。タップで画面スワイプに戻る",
   "gridSwipeHint": "← → スワイプで他の画面 · ✋ をタップで移動・ズーム",
   "gridPanHint": "移動・ズーム中 · ⇆ をタップで画面スワイプ",
-  "gridStatusCounts": "{visible}件 ファブリック · {known}件 既知 · {favs, plural, =0{0件 コンタクト} other{{favs}件 コンタクト}}",
-  "gridGroupPeers": "ピア",
+  "gridStatusCounts": "{visible}件 表示 · {known}件 既知 · {favs, plural, =0{0件 連絡先} other{{favs}件 連絡先}}",
+  "gridGroupPeers": "ノード",
   "gridGroupSurvey": "調査",
   "gridGroupReports": "レポート",
   "gridNotConnected": "メッシュに未接続",
@@ -786,7 +786,7 @@
       }
     }
   },
-  "eventMsgSent": "メッセージ送信 (ack {ack})",
+  "eventMsgSent": "送信済み（{ack} が確認）",
   "@eventMsgSent": {
     "placeholders": {
       "ack": {
@@ -882,7 +882,7 @@
       }
     }
   },
-  "dmTitle": "DM · {peer}",
+  "dmTitle": "直接 · {peer}",
   "@dmTitle": {
     "placeholders": {
       "peer": {
@@ -898,10 +898,10 @@
       }
     }
   },
-  "nodeDetailSignature": "着信シグネチャ",
-  "nodeDetailSignatureHint": "この相手専用の通知音（DM の通知の代わり）。",
+  "nodeDetailSignature": "メッセージ音",
+  "nodeDetailSignatureHint": "この相手からのメッセージでは、通常の音の代わりに鳴ります。",
   "nodeDetailSignatureNone": "デフォルト",
-  "nodeDetailSignatureSlot": "シグネチャ {n}",
+  "nodeDetailSignatureSlot": "音 {n}",
   "@nodeDetailSignatureSlot": {
     "placeholders": {
       "n": {
@@ -911,13 +911,13 @@
   },
   "nodeDetailSignatureMutedHint": "音声はミュート中です。振動は伝わりますが音は鳴りません。",
   "dmEmpty": "— メッセージはまだありません —",
-  "dmOpenPeerDetail": "相手の詳細",
-  "dmSpeech": "この相手を読み上げる",
+  "dmOpenPeerDetail": "連絡先の詳細",
+  "dmSpeech": "この会話を読み上げる",
   "dmSpeechInherit": "全体の読み上げ設定に従う",
   "dmSpeechAlways": "常に読み上げる",
   "dmSpeechNever": "読み上げない",
   "dmSpeechMutedByMaster": "オーディオミュートにより消音中",
-  "dmPeerNotInFabric": "この相手はまだメッシュ上で確認されていません（アドバート未受信）。",
+  "dmPeerNotInFabric": "この相手はまだメッシュで確認できていません。",
   "dmComposerHint": "{peer} へメッセージ",
   "@dmComposerHint": {
     "placeholders": {
@@ -973,7 +973,7 @@
       }
     }
   },
-  "nodeIdentityLinkAction": "キーが変わった？ 別のノードにリンク",
+  "nodeIdentityLinkAction": "新しい鍵: この連絡先をリンク",
   "nodeIdentityLinkTitle": "変更されたキーをリンク",
   "nodeIdentityLinkHelp": "同じ相手の新しい鍵です。ノードを選ぶか鍵を貼り付けると、お気に入り・タグ・メッセージが移ります。",
   "nodeIdentityLinkEmpty": "まだ他のノードがありません。新しい鍵のアドバートを待つか、鍵を貼り付けてください。",
@@ -1337,19 +1337,19 @@
   "meshTreeLegendTitle": "メッシュツリー",
   "meshTreeLegendDesc": "無線がどの経路で各コンタクトに到達するかの有向グラフ。エッジは Contact.outPath — デバイスが送信に使う正確なリピーター連鎖。",
   "meshTreeLegendSelf": "あなた — 中央に固定。",
-  "meshTreeLegendRepeater": "四角 = リピーター。マスト設置インフラ、ハブ色。ピアはこれらを経由して広がる。",
-  "meshTreeLegendRoom": "ひし形 = ルームサーバ。名前付きルームをホストするサーバ級ノード。",
-  "meshTreeLegendChat": "円 = チャットノード。DM 可能なピア。",
-  "meshTreeLegendSensor": "小さい円（暗）= センサー。特定用途のノード。",
+  "meshTreeLegendRepeater": "四角はリピーターです。他のラジオのメッセージを中継します。",
+  "meshTreeLegendRoom": "ひし形はルームサーバです。名前付きのルームを提供するラジオです。",
+  "meshTreeLegendChat": "円は、直接メッセージできるノードです。",
+  "meshTreeLegendSensor": "小さく暗い円はセンサーです。計測値だけを送ります。",
   "meshTreeLegendFlood": "破線で自分とつながる = フラッドルーティングのコンタクト。到達可能だが固定経路なし。",
   "meshTreeLegendFloat": "浮遊（エッジなし）— advert のみで受信、経路不明。",
   "meshTreeLegendArrow": "矢印は自分から目的ピアへ向かう。",
-  "meshTreeLegendInteract": "ピンチで拡大縮小、ドラッグで移動、ノードをタップで詳細。「中央に戻す」でリセット。",
-  "fabricLegendTitle": "ファブリックサーベイ",
+  "meshTreeLegendInteract": "ノードをタップで詳細、「中央に戻す」で表示を戻します。",
+  "fabricLegendTitle": "メッシュ調査",
   "fabricLegendDesc": "メッシュが観測された場所の永続的な記録。各長方形は小さな地理セル（約 220 m × 220 m）で、デバイスがこの位置と接続したときにログ。",
   "fabricLegendCell": "塗りつぶしセル — ここで一度はメッシュが届いた。",
-  "fabricLegendRecency": "明るい塗り = より新しい。階層 — 1時間以内、24時間以内、7日以内、それ以上。",
-  "fabricLegendMarker": "第三色のピンは現在のセット内のピア。タップで詳細。",
+  "fabricLegendRecency": "明るいほど新しい: 1時間以内、1日以内、1週間以内、それ以上。",
+  "fabricLegendMarker": "塗りつぶしたピンは、いま範囲内にいるノードです。タップで詳細。",
   "fabricLegendSelf": "原色のピンはあなた。",
   "fabricLegendReset": "新しい地域に移動するときは、オーバーフローメニューからサーベイをリセット。",
   "nodeDetailHopsKv": "ホップ数",
@@ -1403,7 +1403,7 @@
   "nodeDetailLuminosityKv": "照度",
   "nodeDetailQueryTelemetry": "テレメトリを取得",
   "nodeDetailRefreshTelemetry": "テレメトリを更新",
-  "nodeDetailTelemetryQuerying": "電波経由でピアに問い合わせ中…",
+  "nodeDetailTelemetryQuerying": "ラジオに計測値を問い合わせ中…",
   "nodeDetailTelemetryNotContact": "デバイスの連絡先ではないため、テレメトリは取得できません。",
   "nodeDetailTelemetryAge": "{age}前のテレメトリ",
   "@nodeDetailTelemetryAge": {
@@ -1446,10 +1446,10 @@
     }
   },
   "channelsTitle": "チャンネル",
-  "channelsHelp": "スロット 0 は共有のパブリック。プライベートは全ノードで同じスロット・名前・PSK にします。",
+  "channelsHelp": "チャンネル 0 は共有のパブリックです。非公開にするには、どのラジオでも同じ番号・名前・鍵にします。",
   "channelsOfflineHint": "チャンネルを編集するにはラジオを接続 (診断)。",
   "channelsEmpty": "— 未設定 —",
-  "channelsSlotLabel": "スロット {idx}",
+  "channelsSlotLabel": "チャンネル {idx}",
   "@channelsSlotLabel": {
     "placeholders": {
       "idx": {
@@ -1457,7 +1457,7 @@
       }
     }
   },
-  "channelsSlotActive": "スロット {idx} · 有効",
+  "channelsSlotActive": "チャンネル {idx} · 有効",
   "@channelsSlotActive": {
     "placeholders": {
       "idx": {
@@ -1467,7 +1467,7 @@
   },
   "channelsEdit": "編集",
   "channelsSet": "設定",
-  "channelsSetSnack": "チャンネル {idx} を「{name}」に設定 — 全ノードで同じ名前 & PSK が必要",
+  "channelsSetSnack": "チャンネル {idx} を「{name}」に設定 — どのラジオでも同じ名前と鍵が必要です",
   "@channelsSetSnack": {
     "placeholders": {
       "idx": {
@@ -1478,7 +1478,7 @@
       }
     }
   },
-  "channelsDialogTitle": "チャンネルスロット {idx}",
+  "channelsDialogTitle": "チャンネル {idx}",
   "@channelsDialogTitle": {
     "placeholders": {
       "idx": {
@@ -1494,14 +1494,14 @@
   "notifTitleSos": "緊急アラート",
   "notifBodySos": "位置はアプリで確認してください。警報には座標が含まれますが、ロック画面には表示しません。",
   "notifSectionTitle": "通知",
-  "notifOs": "ロック画面に通知",
-  "notifAudio": "効果音を鳴らす",
+  "notifOs": "通知を表示",
+  "notifAudio": "音を鳴らす",
   "notifHaptic": "振動",
   "notifTts": "読み上げ",
-  "notifMentionsOnly": "名前を呼ばれた時だけ",
+  "notifMentionsOnly": "自分の名前が出たときだけ",
   "notifMentionsOnlySub": "単語全体か @名前。オフなら全メッセージで通知します。",
-  "notifKeySuffix": "鍵の末尾にも一致させる",
-  "notifKeySuffixSub": "16進4文字は識別子ではありません。送信者を確実に知っている場合のみ。",
+  "notifKeySuffix": "ID の末尾 4 文字にも一致させる",
+  "notifKeySuffixSub": "4 文字は誰でも選べるので、送信者が確かなとき以外はオフにしてください。",
   "notifDeniedBanner": "このアプリの通知がオフのため、メッセージはロック画面に表示されません。",
   "channelsKeySource": "鍵ソース",
   "channelsKeyPublic": "Public",
@@ -1512,25 +1512,25 @@
   "channelsKeyHashtagHelper": "sha256(\"#タグ\") から鍵を導出 — # も鍵の一部です",
   "channelsKeyHexHint": "16 進 32 文字 (16 バイト)",
   "channelsErrorTag": "#ハッシュタグを入力してください",
-  "channelsErrorHex": "PSK は 16 進 32 文字 (16 バイト) で入力してください",
+  "channelsErrorHex": "鍵は 0〜9 か A〜F の 32 文字です",
   "channelsErrorName": "チャンネル名を入力してください",
   "channelsCancel": "キャンセル",
   "channelsSave": "保存",
-  "channelsHelpEncryption": "スロット 0 の鍵は公開。他のスロットは設定した PSK による AES-128 です。",
-  "channelsHexGenerate": "PSK をランダム生成",
+  "channelsHelpEncryption": "チャンネル 0 の鍵は公開です。他のチャンネルは設定した鍵を使います。",
+  "channelsHexGenerate": "ランダムな鍵を作る",
   "channelsHexCopy": "コピー",
-  "channelsHexCopied": "PSK をクリップボードにコピー",
+  "channelsHexCopied": "鍵をコピーしました",
   "channelsTagWeakShort": "短いタグは推測されやすい。12 文字以上または独自の表現を使用してください。",
   "channelsTagWeakCommon": "一般的な単語は推測されやすい — 攻撃者にタグ総当りを許します。独自の表現を使用してください。",
   "channelsSlot0WarnTitle": "Public チャンネルを上書きしますか?",
-  "channelsSlot0WarnBody": "スロット 0 は既知の Public チャンネルです。ここにプライベート PSK を書き込むと、同じ鍵を持つノードとしか通話できなくなり、共通の Public チャンネルを失います。続行しますか?",
-  "channelsSlot0WarnContinue": "スロット 0 を上書き",
+  "channelsSlot0WarnBody": "チャンネル 0 は共有のパブリックです。ここに非公開の鍵を入れると、同じ鍵のラジオとしか通信できず、パブリックを失います。続行しますか？",
+  "channelsSlot0WarnContinue": "チャンネル 0 を上書き",
   "channelsSlot0WarnCancel": "キャンセル",
   "channelsCurrentKey": "現在の鍵",
   "channelsRevealKey": "表示",
   "channelsHideKey": "隠す",
-  "channelsClear": "スロットをクリア",
-  "channelsClearConfirmTitle": "スロット {idx} をクリアしますか?",
+  "channelsClear": "チャンネルをリセット",
+  "channelsClearConfirmTitle": "チャンネル {idx} をリセットしますか？",
   "@channelsClearConfirmTitle": {
     "placeholders": {
       "idx": {
@@ -1538,9 +1538,9 @@
       }
     }
   },
-  "channelsClearConfirmBody": "MeshCore にはプロトコルレベルの「クリア」がありません — このスロットは Public 既定値 (名前 + 鍵) に上書きされます。他ノードも同様の操作が必要です。",
+  "channelsClearConfirmBody": "ラジオに空のチャンネルはないので、このチャンネルは公開の名前と鍵に戻ります。他のラジオも同じにしないと、ここで通信できません。",
   "channelsClearConfirmAction": "クリア",
-  "channelsClearSnack": "スロット {idx} をクリア (Public 既定値にリセット)",
+  "channelsClearSnack": "チャンネル {idx} を公開の既定値に戻しました",
   "@channelsClearSnack": {
     "placeholders": {
       "idx": {
@@ -1588,8 +1588,8 @@
       }
     }
   },
-  "channelsQrBody": "Meshmore デバイス、または任意の QR リーダーでスキャン。このコードを持つ人はチャンネルに参加できます — 信頼できる相手のみと共有してください。",
-  "channelsQrPayload": "ペイロード (コピー用)",
+  "channelsQrBody": "Meshmore の端末や QR リーダーでスキャンします。このコードを持つ人はチャンネルに参加できるので、信頼できる相手にだけ見せてください。",
+  "channelsQrPayload": "チャンネルコード（コピーできます）",
   "channelsQrClose": "閉じる",
   "deviceConfigTitle": "デバイス設定",
   "deviceRegionBand": "リージョン / バンド",

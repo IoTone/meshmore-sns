@@ -47,7 +47,7 @@ void main() {
     );
 
     // Disconnected state.
-    expect(find.text('PEERS IN RANGE'), findsOneWidget);
+    expect(find.text('NODES IN RANGE'), findsOneWidget);
     expect(find.text('0'), findsOneWidget);
     expect(find.textContaining('OFFLINE'), findsOneWidget);
     expect(find.text('CONNECT'), findsOneWidget);

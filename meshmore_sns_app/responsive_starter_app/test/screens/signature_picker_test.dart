@@ -96,10 +96,10 @@ void main() {
     final ThemeController theme = ThemeController();
     await pump(t, PeerProfiles(), _RecordingCue(theme), theme);
 
-    expect(find.text('Arrival signature'), findsOneWidget);
+    expect(find.text('Message sound'), findsOneWidget);
     expect(find.text('Default'), findsOneWidget);
     for (int i = 1; i <= kSignatureSlots.length; i++) {
-      expect(find.text('Signature $i'), findsOneWidget);
+      expect(find.text('Sound $i'), findsOneWidget);
     }
   });
 
@@ -113,7 +113,7 @@ void main() {
     final _RecordingCue cue = _RecordingCue(theme);
     await pump(t, peers, cue, theme);
 
-    await t.tap(find.text('Signature 3'));
+    await t.tap(find.text('Sound 3'));
     await t.pumpAndSettle();
 
     expect(peers.signatureFor(peerHex), CueKind.sig3);
@@ -146,7 +146,7 @@ void main() {
 
     final ChoiceChip chip = t.widget<ChoiceChip>(
       find.ancestor(
-        of: find.text('Signature 5'),
+        of: find.text('Sound 5'),
         matching: find.byType(ChoiceChip),
       ),
     );
