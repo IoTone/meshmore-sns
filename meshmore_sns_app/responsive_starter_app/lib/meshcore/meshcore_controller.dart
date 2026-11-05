@@ -2465,7 +2465,7 @@ class MeshcoreController extends ChangeNotifier {
     if (!enabled || own == null) {
       // Diagnostic: why a channel message was skipped (gaz=-1 means the
       // city gazetteer hasn't loaded yet).
-      debugPrint('[place] ch=${cm.channelIdx} enabled=$enabled '
+      meshLog('place', 'ch=${cm.channelIdx} enabled=$enabled '
           'located=${own != null} gaz=$gaz — skipped');
       return;
     }
@@ -2474,7 +2474,7 @@ class MeshcoreController extends ChangeNotifier {
       originLat: own.latitude,
       originLon: own.longitude,
     );
-    debugPrint('[place] ch=${cm.channelIdx} gaz=$gaz '
+    meshLog('place', 'ch=${cm.channelIdx} gaz=$gaz '
         'text="${cm.text}" → ${hits.length} hit(s)'
         '${hits.map((InferredPlace h) => ' ${h.anchorName}'
             '(${h.confidence.toStringAsFixed(2)})').join()}');
@@ -3579,7 +3579,7 @@ class MeshcoreController extends ChangeNotifier {
     );
     // Diagnostic so we can see exactly what a node reports (run
     // `flutter logs`): which LPP types arrived + the decoded env/alt.
-    debugPrint('[telem] key=$pub6 '
+    meshLog('telem', 'key=$pub6 '
         'types=${entries.map((LppEntry e) => '0x${e.type.toRadixString(16)}').join(',')} '
         'temp=${nt.temperatureC} hum=${nt.humidityPct} '
         'press=${nt.pressureHpa} alt=${nt.altitudeMeters}');

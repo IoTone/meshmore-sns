@@ -1,5 +1,6 @@
 // Copyright (c) 2026 IoTone, Inc.
 // SPDX-License-Identifier: MIT
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -92,9 +93,11 @@ class _MmCollapsibleSectionState extends State<MmCollapsibleSection> {
       // only on a toggle (no static state to leak between tests).
       if (!_warned) {
         _warned = true;
-        debugPrint('MmCollapsibleSection "${widget.id}": no '
-            'MmCollapseController provided, collapse state is '
-            'session-only (not persisted)');
+        if (kDebugMode) {
+          debugPrint('MmCollapsibleSection "${widget.id}": no '
+              'MmCollapseController provided, collapse state is '
+              'session-only (not persisted)');
+        }
       }
       setState(() => _local = next);
     }
