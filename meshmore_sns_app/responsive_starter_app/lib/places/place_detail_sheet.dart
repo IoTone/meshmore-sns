@@ -9,6 +9,9 @@ import 'place_confirmation.dart';
 import 'place_directions.dart';
 import 'place_sender.dart';
 import 'place_store.dart';
+import '../media/media_receive_view.dart';
+import '../media/media_transfer.dart';
+import 'place_photo.dart';
 import 'place_ui.dart';
 
 /// What one place says when it is opened (`meshmore-places-spec.md` §12).
@@ -24,10 +27,20 @@ class PlaceDetailSheet extends StatelessWidget {
     required this.store,
     this.composer,
     this.probe = const SystemDirectionsProbe(),
+    this.photos,
+    this.onFetchPhoto,
   });
 
   final Place place;
   final PlaceStore store;
+
+  /// The fetched pictures, when the app has a store. Null keeps the section
+  /// out of the sheet rather than showing a button that cannot work.
+  final PlacePhotos? photos;
+
+  /// Starts a fetch for this place's picture, or null when there is no radio.
+  /// The sheet watches the returned fetch's progress while it runs.
+  final Future<PlacePhotoFetch?> Function()? onFetchPhoto;
 
   /// Null when there is no radio: the confirm/refute actions are then hidden
   /// rather than shown broken.
@@ -40,6 +53,8 @@ class PlaceDetailSheet extends StatelessWidget {
     required PlaceStore store,
     PlaceComposer? composer,
     DirectionsProbe probe = const SystemDirectionsProbe(),
+    PlacePhotos? photos,
+    Future<PlacePhotoFetch?> Function()? onFetchPhoto,
   }) =>
       showModalBottomSheet<void>(
         context: context,
@@ -49,6 +64,8 @@ class PlaceDetailSheet extends StatelessWidget {
           store: store,
           composer: composer,
           probe: probe,
+          photos: photos,
+          onFetchPhoto: onFetchPhoto,
         ),
       );
 
@@ -103,6 +120,17 @@ class PlaceDetailSheet extends StatelessWidget {
             Text(placeSourceText(l, place.provenance),
                 style:
                     TextStyle(color: skin.color.fgMuted, fontSize: skin.type.sizeSm)),
+            if (photos != null)
+              Padding(
+                padding: EdgeInsets.only(top: skin.space.step(3)),
+                child: _PhotoSection(
+                  place: place,
+                  photos: photos!,
+                  onFetch: onFetchPhoto,
+                  skin: skin,
+                  l: l,
+                ),
+              ),
             if (place.isUnkeyed)
               Padding(
                 padding: EdgeInsets.only(top: skin.space.step(2)),
@@ -201,5 +229,109 @@ class PlaceDetailSheet extends StatelessWidget {
       ScaffoldMessenger.maybeOf(context)
           ?.showSnackBar(SnackBar(content: Text(l.placeDirectionsCopied)));
     }
+  }
+}
+
+/// The picture line: bytes when they are here, "not fetched" when they are not.
+///
+/// The copy before a fetch is the spec's own warning (§12): the photo may never
+/// arrive, and the text already did. Saying that only after a timeout would be
+/// late and would read as a failure rather than as the nature of a broadcast.
+class _PhotoSection extends StatefulWidget {
+  const _PhotoSection({
+    required this.place,
+    required this.photos,
+    required this.onFetch,
+    required this.skin,
+    required this.l,
+  });
+
+  final Place place;
+  final PlacePhotos photos;
+  final Future<PlacePhotoFetch?> Function()? onFetch;
+  final MmSkin skin;
+  final AppLocalizations l;
+
+  @override
+  State<_PhotoSection> createState() => _PhotoSectionState();
+}
+
+class _PhotoSectionState extends State<_PhotoSection> {
+  PlacePhotoFetch? _fetch;
+  int? _requested;
+
+  @override
+  void dispose() {
+    _fetch?.dispose();
+    super.dispose();
+  }
+
+  Future<void> _start() async {
+    final PlacePhotoFetch? fetch = await widget.onFetch!();
+    if (!mounted) {
+      fetch?.dispose();
+      return;
+    }
+    setState(() => _fetch = fetch);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final PlacePhoto? photo = widget.photos.photoFor(widget.place);
+    if (photo != null) {
+      return MediaPhotoView(
+        photo: photo.photo,
+        height: 160,
+        key: const ValueKey<String>('place-photo'),
+      );
+    }
+    final PlacePhotoFetch? fetch = _fetch;
+    if (fetch == null) {
+      return Row(
+        children: <Widget>[
+          Icon(Icons.image_outlined,
+              size: widget.skin.type.sizeLg, color: widget.skin.color.fgMuted),
+          SizedBox(width: widget.skin.space.step(2)),
+          Expanded(
+            child: Text(
+              widget.onFetch == null
+                  ? widget.l.placePhotoNotFetched
+                  : widget.l.placePhotoMayNotArrive,
+              key: const ValueKey<String>('place-photo-not-fetched'),
+              style: TextStyle(
+                  color: widget.skin.color.fgMuted,
+                  fontSize: widget.skin.type.sizeSm),
+            ),
+          ),
+          if (widget.onFetch != null)
+            TextButton(
+              key: const ValueKey<String>('place-photo-fetch'),
+              onPressed: _start,
+              child: Text(widget.l.placePhotoFetch),
+            ),
+        ],
+      );
+    }
+    return ValueListenableBuilder<MediaDownloadProgress?>(
+      valueListenable: fetch.progress,
+      builder: (BuildContext c, MediaDownloadProgress? progress, Widget? _) {
+        if (progress == null) {
+          return Text(widget.l.placePhotoFetching,
+              style: TextStyle(
+                  color: widget.skin.color.fgMuted,
+                  fontSize: widget.skin.type.sizeSm));
+        }
+        return MediaReceiveView(
+          progress: progress,
+          requested: _requested,
+          onAskForMissing: fetch.sendRequest == null
+              ? null
+              : () async {
+                  final int asked = await fetch.askForMissing();
+                  if (mounted) setState(() => _requested = asked);
+                },
+        );
+      },
+    );
   }
 }

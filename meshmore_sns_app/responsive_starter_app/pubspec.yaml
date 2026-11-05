@@ -130,7 +130,11 @@ dependencies:
   vector_map_tiles: ^8.0.0
   vector_tile_renderer: ^5.2.1
   flutter_local_notifications: ^22.3.3
-  avif_native: ^0.2.0
+  # Exact, not a caret: the package's build hook downloads prebuilt libavif,
+  # dav1d and libaom archives named `native-v0.2.0` and verifies each against
+  # `archiveSha256`/`librarySha256` in its own manifest. A patch release would
+  # be a different native binary, so it has to be a deliberate change here.
+  avif_native: 0.2.0
 
 dev_dependencies:
   flutter_test:

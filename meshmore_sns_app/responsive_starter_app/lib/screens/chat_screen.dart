@@ -1,6 +1,7 @@
 // Copyright (c) 2026 IoTone, Inc.
 // SPDX-License-Identifier: MIT
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -11,6 +12,10 @@ import '../chat/composer_budget.dart';
 import '../chat/draft_store.dart';
 import '../chat/studio_message_row.dart';
 import '../gen/app_localizations.dart';
+import '../media/media_codec.dart';
+import '../media/media_composer.dart';
+import '../media/media_transfer.dart';
+import '../meshcore/airtime.dart';
 import '../meshcore/chat_message.dart';
 import '../places/place.dart';
 import '../places/place_echo.dart';
@@ -66,6 +71,14 @@ class _ChatScreenState extends State<ChatScreen>
   String? _draftKey;
   Timer? _draftTimer;
   bool _nearWarned = false;
+
+  /// The media path for this tab: one codec, one estimate, one receiver.
+  /// Built once so a photo send does not reload the native library per tap.
+  final MediaTransferService _media = MediaTransferService(
+    codec: const AvifMediaCodec(),
+    estimator: const AirtimeEstimator(),
+    clock: DateTime.now,
+  );
 
   /// The message the last send created, so a failure can put the text back.
   String? _sentId;
@@ -526,6 +539,25 @@ class _ChatScreenState extends State<ChatScreen>
                       ),
                     ],
                   ),
+                ),
+                IconButton(
+                  key: const ValueKey<String>('chat-attach'),
+                  tooltip: l.mediaComposerTitle,
+                  onPressed: ready
+                      ? () => MediaComposer.show(
+                            context,
+                            service: _media,
+                            source: kNoMediaPhotoSource,
+                            channelPsk: mc.channelPsk(mc.activeChannel),
+                            byteBudget: kMediaPhotoBudgetBytes,
+                            sendBlob: (Uint8List blob) => mc.sendChannelData(
+                              channelIdx: mc.activeChannel,
+                              dataType: kChannelDataTypeDev,
+                              blob: blob,
+                            ),
+                          )
+                      : null,
+                  icon: const Icon(Icons.add_photo_alternate_outlined),
                 ),
                 IconButton(
                   tooltip: l.chatSend,

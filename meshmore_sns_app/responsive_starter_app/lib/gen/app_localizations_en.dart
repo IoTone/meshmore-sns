@@ -4696,4 +4696,102 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get checkinNeedsRadio =>
       'A check-in needs a connected radio and the radio\'s name.';
+
+  @override
+  String get mediaComposerTitle => 'Send a photo';
+
+  @override
+  String get mediaSourceUnavailable =>
+      'This build cannot read a photo from the device, so nothing can be sent from here.';
+
+  @override
+  String get mediaSourceFailed =>
+      'That photo could not be read. Try another one.';
+
+  @override
+  String get mediaEncoding => 'Fitting the photo to the mesh…';
+
+  @override
+  String mediaCostLine(int chunks, String airtime) {
+    return '$chunks packets · about $airtime on air';
+  }
+
+  @override
+  String get mediaOverBudget =>
+      'This photo will not fit the mesh budget even at the lowest quality. It can still be sent, but it will be cut off.';
+
+  @override
+  String mediaSendingProgress(int sent, int total) {
+    return '$sent of $total packets sent';
+  }
+
+  @override
+  String mediaReceiptLine(int chunks, int resends) {
+    return '$chunks packets sent, $resends of them resent';
+  }
+
+  @override
+  String get mediaAcceptedNotDelivered =>
+      'The radio accepted these packets. A broadcast carries no delivery promise.';
+
+  @override
+  String mediaSendFailed(int count) {
+    return 'The radio refused $count packet(s), so this photo did not finish.';
+  }
+
+  @override
+  String get mediaSend => 'Send';
+
+  @override
+  String get mediaRetrySend => 'Try again';
+
+  @override
+  String get mediaClose => 'Close';
+
+  @override
+  String get mediaOffOnPublic =>
+      'Media is off on the Public channel. Turn it on for that channel in its settings first.';
+
+  @override
+  String get mediaPayloadUnusable => 'There is nothing to send.';
+
+  @override
+  String get mediaChannelUnknown =>
+      'No channel is selected, so there is nobody to send to.';
+
+  @override
+  String mediaReceiveWaiting(int received, int total, int missing) {
+    return '$received of $total packets · waiting for $missing';
+  }
+
+  @override
+  String get mediaReceiveAsk => 'Ask for the missing packets';
+
+  @override
+  String mediaReceiveRequested(int count) {
+    return 'Asked the sender for $count packet(s).';
+  }
+
+  @override
+  String get mediaReceiveComplete => 'Photo received.';
+
+  @override
+  String get mediaDecodeFailed => 'This photo arrived but cannot be read.';
+
+  @override
+  String get mediaPhotoSemantics => 'Photo received over the mesh';
+
+  @override
+  String get placePhotoNotFetched =>
+      'Photo not fetched. The report itself is complete; the picture is optional and may never arrive.';
+
+  @override
+  String get placePhotoMayNotArrive =>
+      'The photo may not arrive. The text will.';
+
+  @override
+  String get placePhotoFetch => 'Fetch photo';
+
+  @override
+  String get placePhotoFetching => 'Asking the mesh for the photo…';
 }

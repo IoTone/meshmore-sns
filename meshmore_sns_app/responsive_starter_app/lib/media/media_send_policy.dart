@@ -36,6 +36,20 @@ final class MediaSendPolicy {
     return true;
   }
 
+  /// The channel rules alone.
+  ///
+  /// A composer asks before it has encoded anything, so it cannot pass a
+  /// payload size yet, and answering `payloadUnusable` there would be a lie
+  /// about an empty field. The size rule belongs to [refusalFor], which a
+  /// caller with bytes in hand uses.
+  MediaSendRefusal? channelRefusalFor({required List<int>? channelPsk}) {
+    if (channelPsk == null) return MediaSendRefusal.channelUnknown;
+    if (isPublicChannel(channelPsk) && !mediaOnPublic) {
+      return MediaSendRefusal.mediaOffOnPublic;
+    }
+    return null;
+  }
+
   /// Null when the send may proceed; the refusal otherwise, so the caller has
   /// one thing to switch on and the copy can say which rule refused it.
   MediaSendRefusal? refusalFor({
@@ -43,10 +57,6 @@ final class MediaSendPolicy {
     required int payloadBytes,
   }) {
     if (payloadBytes <= 0) return MediaSendRefusal.payloadUnusable;
-    if (channelPsk == null) return MediaSendRefusal.channelUnknown;
-    if (isPublicChannel(channelPsk) && !mediaOnPublic) {
-      return MediaSendRefusal.mediaOffOnPublic;
-    }
-    return null;
+    return channelRefusalFor(channelPsk: channelPsk);
   }
 }
