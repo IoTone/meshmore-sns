@@ -21,7 +21,7 @@ over BLE. Mesh-first, no backend, no account, no server.
   facade over the BLE link + MeshCore companion protocol. Owns nodes,
   chat/DM, channels, telemetry, battery, location, delivery tracking.
   Transport is injectable, so the whole controller is `flutter test`-
-  covered with a fake (1645 app-wide tests, measured 2026-11-05).
+  covered with a fake (1680 app-wide tests, measured 2026-11-05).
 - **`packages/meshcore`** — pure-Dart protocol codec (frames/opcodes,
   CayenneLPP, channel/identity crypto, the binary/raw carriers). No Flutter deps.
 - **`lib/meshcore/mesh_sender.dart`** — the app's own raw send path: one opaque

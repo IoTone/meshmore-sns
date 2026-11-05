@@ -35,7 +35,7 @@ export ANDROID_USER_HOME=/home/ldeen/.config/.android   # build only
 ```
 
 - `flutter --version` → 3.47.4 / Dart 3.13.3 (re-verified this session). `dart` is beside it.
-- `flutter test` baseline: **1044 tests, ~90 s**. One file: ~6 s. Use `flutter test test/<dir>` while iterating.
+- `flutter test` baseline at W0: **1044 tests, ~90 s**, now **1680 tests, 2 m 51 s** (measured 2026-11-05 at the review-fix tip). One file: ~6 s. Use `flutter test test/<dir>` while iterating. Current numbers and commands are in `meshmore_sns_app/TOOLING.md`.
 - Build: `flutter build apk --debug` then `adb -s ZD222W34LJ install -r build/app/outputs/flutter-apk/app-debug.apk`;
   `JAVA_HOME` is mandatory for gradle (Gradle 8.14.3 / AGP 8.11.1 / Kotlin 2.2.20 are the working pins).
 - Package `com.iotone.meshmore_sns_app`; permissions granted non-interactively with `adb shell pm grant …
@@ -176,7 +176,7 @@ Waves run in this order because it is the register's dependency order. Items ins
 3. Remove the LDMUX gateway surface and correct the documents (§2a). `flutter test` + `flutter analyze` green after;
    the app still connects, sends a channel message and a DM on the phone.
 4. `meshmore_sns_app/TOOLING.md` with the verified environment block, test timings, build/install/log commands.
-5. Baseline numbers recorded: **1044 tests, 75 s wall, all passed (measured 2026-11-05)**; `flutter analyze` warnings;
+5. Baseline numbers recorded at W0: **1044 tests, 75 s wall, all passed (measured 2026-11-05)**; `flutter analyze` warnings;
    APK install.
 
 Done when: a child can run `flutter test test/...` (6 s for one file) against a branch that has no gateway code and
