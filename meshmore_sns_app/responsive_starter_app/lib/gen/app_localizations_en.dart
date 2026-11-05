@@ -1394,31 +1394,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsGroupAbout => 'ABOUT';
 
   @override
-  String get settingsHubDeviceSub => 'MeshCore radio & device';
-
-  @override
   String get settingsHubApp => 'App settings';
-
-  @override
-  String get settingsHubAppSub => 'Connection, language, speech, data';
 
   @override
   String get settingsHubProfile => 'Profile & personalization';
 
   @override
-  String get settingsHubProfileSub => 'Theme, font size, audio, accessibility';
-
-  @override
   String get settingsHubChannels => 'Channels';
 
   @override
-  String get settingsHubChannelsSub => 'Slots · name + PSK · #hashtag · active';
-
-  @override
   String get settingsHubDiagnostics => 'Diagnostics & connect';
-
-  @override
-  String get settingsHubDiagnosticsSub => 'Connect a radio, frame log, capture';
 
   @override
   String get bootHeader => 'MESHMORE  /  SYNCHRONIZING';
@@ -3201,9 +3186,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsHubTools => 'Tools';
 
   @override
-  String get settingsHubToolsSub => 'Ping, trace, discover, soak, range test';
-
-  @override
   String get toolsTitle => 'Tools';
 
   @override
@@ -3568,12 +3550,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsHubInfo => 'Information';
 
   @override
-  String get settingsHubInfoSub => 'About, licences, version';
-
-  @override
-  String get settingsHubDocsSub => 'Protocol, firmware, app, field notes';
-
-  @override
   String get settingsNotifDeniedPermanent =>
       'Notifications were permanently denied. The background service needs a persistent notification.';
 
@@ -3587,9 +3563,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsHubMaps => 'Offline maps';
-
-  @override
-  String get settingsHubMapsSub => 'Basemap, event maps, storage';
 
   @override
   String get mapsTitle => 'Offline maps';

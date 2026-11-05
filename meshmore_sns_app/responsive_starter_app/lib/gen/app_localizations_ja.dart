@@ -1326,31 +1326,16 @@ class AppLocalizationsJa extends AppLocalizations {
   String get settingsGroupAbout => 'このアプリについて';
 
   @override
-  String get settingsHubDeviceSub => 'MeshCore ラジオ & デバイス';
-
-  @override
   String get settingsHubApp => 'アプリ設定';
-
-  @override
-  String get settingsHubAppSub => '接続 · 言語 · 音声 · データ';
 
   @override
   String get settingsHubProfile => 'プロフィール & パーソナライズ';
 
   @override
-  String get settingsHubProfileSub => 'テーマ · フォントサイズ · 音声 · アクセシビリティ';
-
-  @override
   String get settingsHubChannels => 'チャンネル';
 
   @override
-  String get settingsHubChannelsSub => 'スロット · 名前 + PSK · #ハッシュタグ · 有効';
-
-  @override
   String get settingsHubDiagnostics => '診断 & 接続';
-
-  @override
-  String get settingsHubDiagnosticsSub => '無線接続・フレームログ・キャプチャ';
 
   @override
   String get bootHeader => 'MESHMORE  /  同期中';
@@ -3070,9 +3055,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get settingsHubTools => 'ツール';
 
   @override
-  String get settingsHubToolsSub => 'Ping・トレース・探索・ソーク・レンジテスト';
-
-  @override
   String get toolsTitle => 'ツール';
 
   @override
@@ -3430,12 +3412,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get settingsHubInfo => '情報';
 
   @override
-  String get settingsHubInfoSub => 'このアプリ・ライセンス・バージョン';
-
-  @override
-  String get settingsHubDocsSub => 'プロトコル・ファームウェア・アプリ・実地メモ';
-
-  @override
   String get settingsNotifDeniedPermanent =>
       '通知が永続的に拒否されました。バックグラウンドサービスには常駐通知が必要です。';
 
@@ -3449,9 +3425,6 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get settingsHubMaps => 'オフライン地図';
-
-  @override
-  String get settingsHubMapsSub => 'ベースマップ・イベント地図・容量';
 
   @override
   String get mapsTitle => 'オフライン地図';
