@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
+import '../app/demo_mode.dart';
 import '../gen/app_localizations.dart';
 import '../l10n/locale_controller.dart';
 import '../meshcore/meshcore_controller.dart';
@@ -119,6 +120,7 @@ class AppSettingsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final ColorScheme cs = Theme.of(context).colorScheme;
     final TtsController tts = context.watch<TtsController>();
+    final DemoMode demo = context.watch<DemoMode>();
     final MeshcoreController mc = context.watch<MeshcoreController>();
     final FirstRunController fr = context.watch<FirstRunController>();
     final LocaleController lc = context.watch<LocaleController>();
@@ -128,6 +130,20 @@ class AppSettingsScreen extends StatelessWidget {
       body: MmScaffold(
         child: ListView(
         children: <Widget>[
+          // Radio-free mode. Off is the normal state; turning it off asks an
+          // already-paired companion to reconnect rather than waiting for the
+          // next launch.
+          SwitchListTile(
+            title: Text(l.demoModeRow),
+            subtitle: Text(
+              demo.enabled ? l.demoModeOn : l.demoModeOff,
+              style: TextStyle(color: cs.onSurface.withValues(alpha: .6)),
+            ),
+            secondary: Icon(demo.enabled ? Icons.science : Icons.podcasts),
+            value: demo.enabled,
+            onChanged: (bool v) => demo.setEnabled(v,
+                onDisabled: () => mc.autoConnectIfPaired()),
+          ),
           // R17/U8 — Android background keep-alive (foreground service
           // + persistent notification). No-op on iOS.
           SwitchListTile(
@@ -245,6 +261,16 @@ class AppSettingsScreen extends StatelessWidget {
             trailing: const Icon(Icons.open_in_new),
             onTap: () =>
                 context.read<PermissionsService>().openAppSettingsPage(),
+          ),
+          // The terms text is a commitment; this row is how a user reads it
+          // again without a way to un-agree retroactively.
+          ListTile(
+            leading: const Icon(Icons.privacy_tip_outlined),
+            title: Text(l.termsSettingsRow),
+            subtitle: Text(l.termsSettingsSubtitle,
+                style: TextStyle(color: cs.onSurface.withValues(alpha: .6))),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => context.push('/settings/terms'),
           ),
           ListTile(
             leading: const Icon(Icons.refresh),

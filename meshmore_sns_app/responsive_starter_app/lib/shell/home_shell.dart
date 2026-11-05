@@ -18,6 +18,7 @@ import 'boot_overlay.dart';
 import 'horizontal_drag_claim.dart';
 import '../screens/dashboards/dashboard_host.dart';
 import '../screens/grid_screen.dart';
+import '../ui/demo_chip.dart';
 import '../screens/map_screen.dart';
 import '../screens/nodes_screen.dart';
 import '../theme/mm_skin.dart';
@@ -207,7 +208,7 @@ class _HomeShellState extends State<HomeShell>
         // MmPageHeader below the tab strip, in the same place on every
         // view, so the top of the screen stopped changing on every swipe.
         title: Text(l.appName),
-        actions: const <Widget>[RadioLinkIndicator()],
+        actions: const <Widget>[DemoChip(), RadioLinkIndicator()],
         bottom: _ViewStrip(
           index: _index,
           onSelect: _select,

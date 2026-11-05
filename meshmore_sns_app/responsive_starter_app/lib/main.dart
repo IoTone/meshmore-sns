@@ -8,6 +8,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:provider/provider.dart';
 
+import 'package:meshmore_sns_app/app/demo_mode.dart';
 import 'package:meshmore_sns_app/app_router.dart';
 import 'package:meshmore_sns_app/app_state_model.dart';
 import 'package:meshmore_sns_app/cue/asset_audio_pack.dart';
@@ -15,6 +16,7 @@ import 'package:meshmore_sns_app/cue/cue_service.dart';
 import 'package:meshmore_sns_app/docs/docs_repository.dart';
 import 'package:meshmore_sns_app/gen/app_localizations.dart';
 import 'package:meshmore_sns_app/l10n/locale_controller.dart';
+import 'package:meshmore_sns_app/legal/terms_controller.dart';
 import 'package:meshmore_sns_app/licenses/asset_licenses.dart';
 import 'package:meshmore_sns_app/maps/maps_controller.dart';
 import 'package:meshmore_sns_app/meshcore/auto_publish_controller.dart';
@@ -27,6 +29,7 @@ import 'package:meshmore_sns_app/perms/first_run_controller.dart';
 import 'package:meshmore_sns_app/perms/location_service.dart';
 import 'package:meshmore_sns_app/perms/permissions_service.dart';
 import 'package:meshmore_sns_app/screens/first_run_intro_screen.dart';
+import 'package:meshmore_sns_app/screens/terms_screen.dart';
 import 'package:meshmore_sns_app/splash/branded_splash_screen.dart';
 import 'package:meshmore_sns_app/theme/theme_controller.dart';
 import 'package:meshmore_sns_app/tools/tools_controller.dart';
@@ -55,6 +58,16 @@ void main() {
     // group the user folded never paints open and then snaps shut.
     final MmCollapseController collapse = MmCollapseController();
     await collapse.load();
+    // Radio-free mode is read before the tree exists: it decides whether the
+    // launch reaches for a paired companion at all, and doing that after the
+    // first frame would make the decision twice.
+    final DemoMode demo = DemoMode();
+    await demo.load();
+    final MeshcoreController controller = MeshcoreController(
+      backgroundKeepalive: createBackgroundKeepalive(),
+      locationService: const GeolocatorLocationService(),
+    );
+    if (!demo.enabled) controller.autoConnectIfPaired();
     runApp(
       MultiProvider(
         providers: [
@@ -92,12 +105,8 @@ void main() {
               );
             },
           ),
-          ChangeNotifierProvider<MeshcoreController>(
-            create: (_) => MeshcoreController(
-              backgroundKeepalive: createBackgroundKeepalive(),
-              locationService: const GeolocatorLocationService(),
-            )..autoConnectIfPaired(),
-          ),
+          ChangeNotifierProvider<DemoMode>.value(value: demo),
+          ChangeNotifierProvider<MeshcoreController>.value(value: controller),
           // R59 — the bot. `pskFor` is what makes the "never on Public"
           // refusal real: it reads the slot's live key off the radio,
           // so a slot reset to the stock key stops qualifying at once.
@@ -127,6 +136,12 @@ void main() {
           Provider<DocsRepository>(create: (_) => DocsRepository()),
           ChangeNotifierProvider<FirstRunController>(
             create: (_) => FirstRunController()..load(),
+          ),
+          // The terms page is a gate, not a banner: it is read once at
+          // first use and again only when the wording changes (N-group:
+          // "terms acceptance at first use"). Version lives with the text.
+          ChangeNotifierProvider<TermsController>(
+            create: (_) => TermsController()..load(),
           ),
           ChangeNotifierProvider<LocaleController>(
             create: (_) => LocaleController()..load(),
@@ -199,6 +214,7 @@ class _MyAppState extends State<MyApp> {
     final ThemeController tc = context.watch<ThemeController>();
     final FirstRunController fr = context.watch<FirstRunController>();
     final LocaleController lc = context.watch<LocaleController>();
+    final TermsController terms = context.watch<TermsController>();
 
     // R21 / U12 — gate the app on first-run state. While the pref
     // is loading we render the splash holder so the test binding
@@ -228,6 +244,28 @@ class _MyAppState extends State<MyApp> {
         supportedLocales: LocaleController.supported,
         localizationsDelegates: _localeDelegates,
         home: const FirstRunIntroScreen(),
+      );
+    }
+    // Terms and privacy. `loaded` false is one frame of splash; an older
+    // accepted version than [TermsController.currentVersion] is the same as
+    // none, so changed wording is read before the app opens again.
+    if (!terms.loaded) {
+      return MaterialApp(
+        theme: tc.theme,
+        locale: lc.locale,
+        supportedLocales: LocaleController.supported,
+        localizationsDelegates: _localeDelegates,
+        home: const BrandedSplashScreen(),
+      );
+    }
+    if (!terms.accepted) {
+      return MaterialApp(
+        title: 'Meshmore SNS',
+        theme: tc.theme,
+        locale: lc.locale,
+        supportedLocales: LocaleController.supported,
+        localizationsDelegates: _localeDelegates,
+        home: const TermsScreen(),
       );
     }
     return MaterialApp.router(

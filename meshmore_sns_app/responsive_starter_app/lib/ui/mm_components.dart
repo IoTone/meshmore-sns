@@ -74,9 +74,12 @@ class MmSectionHeader extends StatelessWidget {
       skin.type.upperHeadings ? label.toUpperCase() : label,
       style: mmSectionLabelStyle(skin),
     );
+    // The label is the one unbounded child: at 200 % text a heading like
+    // "PERMISSIONS AND WHY" is wider than a 320 dp phone, and a bare Row
+    // overflowed by 370 px instead of wrapping.
     return Row(
       children: <Widget>[
-        labelWidget,
+        Flexible(child: labelWidget),
         if (skin.ornament.warningStripes) ...<Widget>[
           const SizedBox(width: 10),
           Expanded(

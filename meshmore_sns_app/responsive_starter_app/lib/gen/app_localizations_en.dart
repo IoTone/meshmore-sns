@@ -414,6 +414,82 @@ class AppLocalizationsEn extends AppLocalizations {
       'Intro is currently scheduled for next launch';
 
   @override
+  String get termsTitle => 'Terms and privacy';
+
+  @override
+  String get termsLead =>
+      'This app talks to a mesh radio. There is no account, no cloud and no analytics.';
+
+  @override
+  String get termsSectionLocal => 'WHAT STAYS ON THIS DEVICE';
+
+  @override
+  String get termsLocalBody =>
+      'Messages, contacts, channels and settings are stored on this device. Cloud backup and device transfer are switched off for the app\'s own data, so a new phone does not silently inherit it. Deleting the app deletes that data.';
+
+  @override
+  String get termsSectionLeaves => 'WHAT LEAVES THE DEVICE';
+
+  @override
+  String get termsLeavesBody =>
+      'Nothing leaves except what you send: messages and positions go out over the radio you are connected to. Online map packs are off by default and are fetched only after you turn them on, with the source named on screen. Files you export are yours to place.';
+
+  @override
+  String get termsSectionPermissions => 'PERMISSIONS AND WHY';
+
+  @override
+  String get termsPermissionsBody =>
+      'Bluetooth connects to the radio. Location is used for your own position and, on older Android, to allow a Bluetooth scan. Notifications are used for messages that arrive while the app is in the background. Refusing any of them leaves the app usable without a radio.';
+
+  @override
+  String get termsSectionRetention => 'HOW MUCH IS KEPT';
+
+  @override
+  String termsRetentionBody(int cap) {
+    return 'Each conversation keeps its newest $cap messages; older ones are dropped. A place expires when its own timer runs out, and is then gone.';
+  }
+
+  @override
+  String get termsSectionChanges => 'CHANGES';
+
+  @override
+  String get termsChangesBody =>
+      'If this text changes in a way that matters, the version below changes and this page is shown again before the app opens.';
+
+  @override
+  String termsVersion(int version) {
+    return 'Version $version';
+  }
+
+  @override
+  String get termsGateNote => 'Agreeing is required to use the app.';
+
+  @override
+  String get termsExit => 'Exit';
+
+  @override
+  String get termsAccept => 'Agree and continue';
+
+  @override
+  String termsAcceptedVersion(int version) {
+    return 'You agreed to version $version.';
+  }
+
+  @override
+  String get termsNotAccepted => 'Not agreed.';
+
+  @override
+  String get termsSettingsRow => 'Terms and privacy';
+
+  @override
+  String get termsSettingsSubtitle =>
+      'What is stored, what leaves the device, and why each permission is asked for';
+
+  @override
+  String get termsReadOnlySubtitle =>
+      'The text you agreed to. Reached from Settings, it is read-only.';
+
+  @override
   String get aboutCopyright => 'Copyright (c) 2026 IoTone, Inc.';
 
   @override
@@ -500,6 +576,23 @@ class AppLocalizationsEn extends AppLocalizations {
   String get dashboardAudioUnmute => 'Unmute alert sounds';
 
   @override
+  String get demoBanner => 'DEMO';
+
+  @override
+  String get demoTooltip =>
+      'Demo mode — no radio. Explore channels, settings and docs without a companion.';
+
+  @override
+  String get demoModeRow => 'Demo mode (no radio)';
+
+  @override
+  String get demoModeOn => 'On — the app opens without connecting to a radio';
+
+  @override
+  String get demoModeOff =>
+      'Off — the app connects to a paired radio at launch';
+
+  @override
   String get firstRunHeader => 'MESHMORE · WELCOME';
 
   @override
@@ -524,13 +617,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get firstRunOfflineBody =>
-      'If you skip Bluetooth, the app still works — browse message history, configure channels, read diagnostics. Just no live mesh traffic until you grant Bluetooth.';
+      'If you skip Bluetooth the app opens in demo mode: browse message history, configure channels, read diagnostics and the docs. No live mesh traffic until you connect a radio.';
 
   @override
   String get firstRunGrant => 'Grant Bluetooth & continue';
 
   @override
-  String get firstRunSkip => 'Continue offline (skip permissions)';
+  String get firstRunSkip => 'Explore in demo mode (no radio)';
 
   @override
   String get firstRunDeniedTransient =>

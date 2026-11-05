@@ -392,6 +392,79 @@ class AppLocalizationsJa extends AppLocalizations {
   String get settingsShowIntroDisabled => '紹介は次回起動時に表示予定';
 
   @override
+  String get termsTitle => '利用規約とプライバシー';
+
+  @override
+  String get termsLead => 'このアプリはメッシュ無線と通信します。アカウントもクラウドも解析もありません。';
+
+  @override
+  String get termsSectionLocal => 'この端末に残るもの';
+
+  @override
+  String get termsLocalBody =>
+      'メッセージ、連絡先、チャンネル、設定はこの端末に保存されます。アプリ自身のデータはクラウドバックアップと端末間転送の対象外なので、新しい端末が黙って引き継ぐことはありません。アプリを削除すると、そのデータも削除されます。';
+
+  @override
+  String get termsSectionLeaves => '端末の外に出るもの';
+
+  @override
+  String get termsLeavesBody =>
+      '送信したもの以外は出ません。メッセージと位置は接続中の無線から送られます。オンライン地図パックは既定でオフで、有効にしたときだけ取得し、取得元を画面に表示します。書き出したファイルの保管先はあなたが決めます。';
+
+  @override
+  String get termsSectionPermissions => '権限とその理由';
+
+  @override
+  String get termsPermissionsBody =>
+      'Bluetooth は無線に接続するために使います。位置情報は自分の現在地と、古い Android で Bluetooth スキャンを許可するために使います。通知はバックグラウンドで届いたメッセージを知らせるために使います。いずれを拒否しても、無線を使わない範囲でアプリは動作します。';
+
+  @override
+  String get termsSectionRetention => '保存される量';
+
+  @override
+  String termsRetentionBody(int cap) {
+    return '会話ごとに新しい $cap 件を保持し、それより古いものは破棄します。場所はそれぞれの期限が切れると消えます。';
+  }
+
+  @override
+  String get termsSectionChanges => '変更';
+
+  @override
+  String get termsChangesBody =>
+      'この文章が重要な点で変わった場合は下の版番号が変わり、アプリを開く前にこのページが再表示されます。';
+
+  @override
+  String termsVersion(int version) {
+    return '版 $version';
+  }
+
+  @override
+  String get termsGateNote => 'アプリを使うには同意が必要です。';
+
+  @override
+  String get termsExit => '終了';
+
+  @override
+  String get termsAccept => '同意して続ける';
+
+  @override
+  String termsAcceptedVersion(int version) {
+    return '版 $version に同意済みです。';
+  }
+
+  @override
+  String get termsNotAccepted => '未同意です。';
+
+  @override
+  String get termsSettingsRow => '利用規約とプライバシー';
+
+  @override
+  String get termsSettingsSubtitle => '保存されるもの、端末外に出るもの、各権限が必要な理由';
+
+  @override
+  String get termsReadOnlySubtitle => '同意した文章です。設定から開いた場合は閲覧のみです。';
+
+  @override
   String get aboutCopyright => 'Copyright (c) 2026 IoTone, Inc.';
 
   @override
@@ -474,6 +547,21 @@ class AppLocalizationsJa extends AppLocalizations {
   String get dashboardAudioUnmute => 'アラート音のミュート解除';
 
   @override
+  String get demoBanner => 'デモ';
+
+  @override
+  String get demoTooltip => 'デモモード — 無線なし。コンパニオンに接続せずにチャンネル・設定・ドキュメントを試せます。';
+
+  @override
+  String get demoModeRow => 'デモモード（無線なし）';
+
+  @override
+  String get demoModeOn => 'オン — 起動時に無線へ接続しません';
+
+  @override
+  String get demoModeOff => 'オフ — 起動時にペアリング済みの無線へ接続します';
+
+  @override
   String get firstRunHeader => 'MESHMORE · ようこそ';
 
   @override
@@ -498,13 +586,13 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get firstRunOfflineBody =>
-      'Bluetooth をスキップしてもアプリは動作します — メッセージ履歴の閲覧、チャネル設定、診断などが可能。Bluetooth を許可するまでライブメッシュ通信のみ利用不可。';
+      'Bluetooth をスキップするとデモモードで起動します。メッセージ履歴の閲覧、チャネル設定、診断、ドキュメントが使えます。無線を接続するまでライブのメッシュ通信はありません。';
 
   @override
   String get firstRunGrant => 'Bluetooth を許可して続行';
 
   @override
-  String get firstRunSkip => 'オフラインで続行 (権限をスキップ)';
+  String get firstRunSkip => 'デモモードで試す（無線なし）';
 
   @override
   String get firstRunDeniedTransient =>
