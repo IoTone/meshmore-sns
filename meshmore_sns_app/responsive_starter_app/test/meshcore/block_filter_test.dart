@@ -32,6 +32,16 @@ void main() {
         outgoing: false,
       );
 
+  /// A row on [channelIdx] stamped [secondsAgo] in the past, so ranking and
+  /// recency can be asserted without depending on the order of a list.
+  ChatMessage chatAt(int channelIdx, String text, {int secondsAgo = 0}) =>
+      ChatMessage(
+        channelIdx: channelIdx,
+        text: text,
+        outgoing: false,
+        at: DateTime.now().subtract(Duration(seconds: secondsAgo)),
+      );
+
   test('the channel timeline hides a keyed DM and a pinned name', () {
     final BlockFilter f = BlockFilter(storeWith(blocked));
     expect(f.hidesMessage(dm(key: blockedKey)), isTrue);
@@ -84,6 +94,46 @@ void main() {
     expect(r.hidden, 2);
     expect(r.hiddenCount, 2);
     expect(r.isEmpty, isFalse);
+  });
+
+  test('search folds Latin accents, so a missing diaeresis still finds it',
+      () {
+    final BlockFilter f = BlockFilter(storeWith(blocked));
+    final List<ChatMessage> history = <ChatMessage>[
+      chatAt(1, 'Jose: the cafe is open', secondsAgo: 30),
+      chatAt(1, 'Trudy: Strassenende gesperrt', secondsAgo: 20),
+    ];
+    expect(MessageSearch.run(history, 'café', filter: f).hits.length, 1,
+        reason: 'APP-E6 rule 4: accent-insensitive in both directions');
+    expect(MessageSearch.run(history, 'CAFÉ', filter: f).hits.length, 1,
+        reason: 'and case-insensitive');
+    expect(MessageSearch.run(history, 'straße', filter: f).hits.length, 1);
+  });
+
+  test('a word that starts a row outranks one found inside it', () {
+    final BlockFilter f = BlockFilter(storeWith(blocked));
+    final List<ChatMessage> history = <ChatMessage>[
+      chatAt(1, 'Trudy: Waterford is flooded', secondsAgo: 10),
+      chatAt(1, 'Jose: ford closed at the bridge', secondsAgo: 300),
+    ];
+    final MessageSearchResult r = MessageSearch.run(history, 'ford', filter: f);
+    expect(r.hits.length, 2);
+    expect(r.hits.first.text, contains('ford closed'),
+        reason: 'the newer row is a substring hit, the older one starts the '
+            'word — rank wins over recency (APP-E6 rule 4)');
+  });
+
+  test('search says when the display cap cut the list, not silence', () {
+    final BlockFilter f = BlockFilter(storeWith(blocked));
+    final List<ChatMessage> history = <ChatMessage>[
+      for (int i = 0; i < 12; i++) chatAt(1, 'Trudy: ford $i', secondsAgo: i),
+    ];
+    final MessageSearchResult r =
+        MessageSearch.run(history, 'ford', filter: f, displayCap: 5);
+    expect(r.hits.length, 5);
+    expect(r.truncated, isTrue, reason: 'APP-E6 rule 3: say it was cut');
+    expect(MessageSearch.run(history, 'ford', filter: f).truncated, isFalse,
+        reason: 'under the real cap nothing is cut');
   });
 
   test('an empty query returns nothing and says so', () {
