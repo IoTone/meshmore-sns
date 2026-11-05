@@ -43,7 +43,7 @@ void main() {
     final NoopPermissionsService perms = NoopPermissionsService();
     await t.pumpWidget(_host(fr, perms));
 
-    await t.tap(find.text('Grant Bluetooth & continue'));
+    await t.tap(find.text('Allow Bluetooth'));
     await t.pumpAndSettle();
 
     expect(fr.done, isTrue);
@@ -76,7 +76,7 @@ void main() {
     final NoopPermissionsService perms = NoopPermissionsService(ble: false);
     await t.pumpWidget(_host(fr, perms));
 
-    await t.tap(find.text('Grant Bluetooth & continue'));
+    await t.tap(find.text('Allow Bluetooth'));
     await t.pumpAndSettle();
 
     expect(fr.done, isFalse);

@@ -12,7 +12,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get appName => 'Meshmore SNS';
 
   @override
-  String get appSubtitle => 'ソーシャルロボット・ネットワークサービス';
+  String get appSubtitle => 'ラジオでつながるメッシュ通信';
 
   @override
   String get tabDashboard => 'ダッシュボード';
@@ -661,7 +661,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get firstRunHeader => 'MESHMORE · ようこそ';
 
   @override
-  String get firstRunTitle => 'アプリが必要とする権限について';
+  String get firstRunTitle => 'このアプリが求めるもの';
 
   @override
   String get firstRunBleTitle => 'Bluetooth';
@@ -674,29 +674,28 @@ class AppLocalizationsJa extends AppLocalizations {
   String get firstRunNotificationsTitle => '通知';
 
   @override
-  String get firstRunNotificationsBody =>
-      '後でアプリ設定の「バックグラウンドで接続を維持」を ON にした場合のみ求めます。今回はスキップし二度確認しません。';
+  String get firstRunNotificationsBody => 'バックグラウンドで接続を維持する場合にだけ、後で確認します。';
 
   @override
   String get firstRunOfflineTitle => 'オフラインでも使えます';
 
   @override
   String get firstRunOfflineBody =>
-      'Bluetooth をスキップするとデモモードで起動します。メッセージ履歴の閲覧、チャネル設定、診断、ドキュメントが使えます。無線を接続するまでライブのメッシュ通信はありません。';
+      'Bluetooth を使わない場合、デモモードで起動します。履歴・チャネル・設定・ドキュメントは使えますが、無線の通信はありません。';
 
   @override
-  String get firstRunGrant => 'Bluetooth を許可して続行';
+  String get firstRunGrant => 'Bluetooth を許可';
 
   @override
   String get firstRunSkip => 'デモモードで試す（無線なし）';
 
   @override
   String get firstRunDeniedTransient =>
-      'Bluetooth が許可されませんでした — オフラインで続行するか、OS 設定で許可を変更できます。';
+      'このアプリでは Bluetooth がオフです。オフラインで続けるか、設定で許可してください。';
 
   @override
   String get firstRunDeniedPermanent =>
-      'Bluetooth が永続的に拒否されました — OS 設定で許可してください。オフラインでも引き続き利用可能です。';
+      'このアプリでは Bluetooth がブロックされています。設定で許可するか、オフラインのまま使ってください。';
 
   @override
   String get firstRunOpenSettings => 'OS 設定を開く';
@@ -3441,7 +3440,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get settingsNotifDeniedTransient =>
-      'バックグラウンドサービスには通知の許可が必要です。「設定を開く」から許可してください。';
+      'バックグラウンド接続には通知の許可が必要です。設定で許可してください。';
 
   @override
   String get deviceAdvertPropagatesHint =>

@@ -29,12 +29,12 @@ Future<void> _pump(WidgetTester t, Locale locale) async {
 }
 
 void main() {
-  const String kJapanese = 'ソーシャルロボット・ネットワークサービス';
+  const String kJapanese = 'ラジオでつながるメッシュ通信';
 
   testWidgets('English splash shows the English subtitle, not Japanese',
       (WidgetTester t) async {
     await _pump(t, const Locale('en'));
-    expect(find.text('Socialrobot Network Service'), findsOneWidget);
+    expect(find.text('Mesh messaging over radio'), findsOneWidget);
     expect(find.text(kJapanese), findsNothing,
         reason: 'the Japanese literal was hardcoded before R75');
     expect(find.text('Meshmore SNS'), findsOneWidget,
@@ -45,6 +45,6 @@ void main() {
       (WidgetTester t) async {
     await _pump(t, const Locale('ja'));
     expect(find.text(kJapanese), findsOneWidget);
-    expect(find.text('Socialrobot Network Service'), findsNothing);
+    expect(find.text('Mesh messaging over radio'), findsNothing);
   });
 }

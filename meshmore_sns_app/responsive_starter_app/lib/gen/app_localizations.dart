@@ -107,7 +107,7 @@ abstract class AppLocalizations {
   /// No description provided for @appSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Socialrobot Network Service'**
+  /// **'Mesh messaging over radio'**
   String get appSubtitle;
 
   /// No description provided for @tabDashboard.
@@ -1289,7 +1289,7 @@ abstract class AppLocalizations {
   /// No description provided for @firstRunTitle.
   ///
   /// In en, this message translates to:
-  /// **'Quick heads-up on what we\'ll ask for'**
+  /// **'What this app will ask for'**
   String get firstRunTitle;
 
   /// No description provided for @firstRunBleTitle.
@@ -1313,7 +1313,7 @@ abstract class AppLocalizations {
   /// No description provided for @firstRunNotificationsBody.
   ///
   /// In en, this message translates to:
-  /// **'Asked only if you turn on \"Stay connected in background\" later in App settings. Skipped today so you\'re not interrupted twice.'**
+  /// **'We ask later, only if you keep the app connected in the background.'**
   String get firstRunNotificationsBody;
 
   /// No description provided for @firstRunOfflineTitle.
@@ -1325,13 +1325,13 @@ abstract class AppLocalizations {
   /// No description provided for @firstRunOfflineBody.
   ///
   /// In en, this message translates to:
-  /// **'If you skip Bluetooth the app opens in demo mode: browse message history, configure channels, read diagnostics and the docs. No live mesh traffic until you connect a radio.'**
+  /// **'Without Bluetooth the app opens in demo mode: history, channels, settings and docs, with no radio traffic.'**
   String get firstRunOfflineBody;
 
   /// No description provided for @firstRunGrant.
   ///
   /// In en, this message translates to:
-  /// **'Grant Bluetooth & continue'**
+  /// **'Allow Bluetooth'**
   String get firstRunGrant;
 
   /// No description provided for @firstRunSkip.
@@ -1343,13 +1343,13 @@ abstract class AppLocalizations {
   /// No description provided for @firstRunDeniedTransient.
   ///
   /// In en, this message translates to:
-  /// **'Bluetooth wasn\'t granted — you can continue offline or open OS settings to change your mind.'**
+  /// **'Bluetooth is off for this app. Continue offline, or allow it in Settings.'**
   String get firstRunDeniedTransient;
 
   /// No description provided for @firstRunDeniedPermanent.
   ///
   /// In en, this message translates to:
-  /// **'Bluetooth was permanently denied — open OS settings to grant it. You can still use the app offline.'**
+  /// **'Bluetooth is blocked for this app. Allow it in Settings, or keep using the app offline.'**
   String get firstRunDeniedPermanent;
 
   /// No description provided for @firstRunOpenSettings.
@@ -6131,7 +6131,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsNotifDeniedTransient.
   ///
   /// In en, this message translates to:
-  /// **'Notifications are required for the background service. Tap Open settings to grant them.'**
+  /// **'Keeping the app connected in the background needs notifications. Allow them in Settings.'**
   String get settingsNotifDeniedTransient;
 
   /// No description provided for @deviceAdvertPropagatesHint.

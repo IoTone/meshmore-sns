@@ -12,7 +12,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get appName => 'Meshmore SNS';
 
   @override
-  String get appSubtitle => 'Socialrobot Network Service';
+  String get appSubtitle => 'Mesh messaging over radio';
 
   @override
   String get tabDashboard => 'Dashboard';
@@ -691,7 +691,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get firstRunHeader => 'MESHMORE · WELCOME';
 
   @override
-  String get firstRunTitle => 'Quick heads-up on what we\'ll ask for';
+  String get firstRunTitle => 'What this app will ask for';
 
   @override
   String get firstRunBleTitle => 'Bluetooth';
@@ -705,28 +705,28 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get firstRunNotificationsBody =>
-      'Asked only if you turn on \"Stay connected in background\" later in App settings. Skipped today so you\'re not interrupted twice.';
+      'We ask later, only if you keep the app connected in the background.';
 
   @override
   String get firstRunOfflineTitle => 'Offline is fine';
 
   @override
   String get firstRunOfflineBody =>
-      'If you skip Bluetooth the app opens in demo mode: browse message history, configure channels, read diagnostics and the docs. No live mesh traffic until you connect a radio.';
+      'Without Bluetooth the app opens in demo mode: history, channels, settings and docs, with no radio traffic.';
 
   @override
-  String get firstRunGrant => 'Grant Bluetooth & continue';
+  String get firstRunGrant => 'Allow Bluetooth';
 
   @override
   String get firstRunSkip => 'Explore in demo mode (no radio)';
 
   @override
   String get firstRunDeniedTransient =>
-      'Bluetooth wasn\'t granted — you can continue offline or open OS settings to change your mind.';
+      'Bluetooth is off for this app. Continue offline, or allow it in Settings.';
 
   @override
   String get firstRunDeniedPermanent =>
-      'Bluetooth was permanently denied — open OS settings to grant it. You can still use the app offline.';
+      'Bluetooth is blocked for this app. Allow it in Settings, or keep using the app offline.';
 
   @override
   String get firstRunOpenSettings => 'Open OS settings';
@@ -3573,7 +3573,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsNotifDeniedTransient =>
-      'Notifications are required for the background service. Tap Open settings to grant them.';
+      'Keeping the app connected in the background needs notifications. Allow them in Settings.';
 
   @override
   String get deviceAdvertPropagatesHint =>
