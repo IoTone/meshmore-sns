@@ -6,6 +6,7 @@ import '../gen/app_localizations.dart';
 import '../meshcore/chat_message.dart';
 import 'channel_notification_prefs.dart';
 import 'mention_matcher.dart';
+import '../sos/sos_message.dart';
 import 'message_notification.dart';
 import 'notification_focus.dart';
 import 'notifier.dart';
@@ -178,7 +179,7 @@ class NotificationService {
     if (m.outgoing) return;
     if (isBlocked?.call(m) ?? false) return;
     if (!_firstTime(m.id)) return;
-    final bool sos = m.text.toUpperCase().startsWith('[SOS:');
+    final bool sos = isSosLine(m.text);
     if (!sos) {
       if (focus.isChannelOpen(m.channelIdx)) return;
       final ChannelNotificationPrefs p = prefs.prefsFor(m.channelIdx);
@@ -221,7 +222,7 @@ class NotificationService {
     final String? name = peerDisplayName(key);
     _effects.cue(NotificationClass.direct);
     _effects.vibrate();
-    final bool sos = m.text.toUpperCase().startsWith('[SOS:');
+    final bool sos = isSosLine(m.text);
     notifier.show(MessageNotification(
       id: idFor(m.id),
       cls: sos ? NotificationClass.sos : NotificationClass.direct,

@@ -29,6 +29,30 @@ const int freeTextBytes = 96;
 /// Callsign ceiling.
 const int callsignBytes = 32;
 
+/// The body of a channel line, with the firmware's `"name: "` prefix removed.
+///
+/// Channel text arrives as `sender: body` — the firmware prepends the sender's
+/// name — while a direct message's text *is* the body. Anything that looks for
+/// a bracketed tag has to skip the prefix, and it must do so the same way
+/// everywhere: two spellings of this rule is how a channel SOS was classified
+/// as an ordinary message (safety audit SOS-1).
+String withoutSenderPrefix(String text) {
+  final int sep = text.indexOf(': ');
+  if (sep <= 0 || sep > callsignBytes) return text;
+  return text.substring(sep + 2).trim();
+}
+
+/// True when [text] carries an SOS tag, whatever the path it arrived by.
+///
+/// Used by the notification handler to pick the SOS class for a channel line,
+/// which is the case the audit found broken: the tag starts after the prefix,
+/// so a bare `startsWith('[SOS:')` never matched channel traffic.
+bool isSosLine(String text) {
+  final String body = withoutSenderPrefix(text);
+  if (body.length < 5) return false;
+  return body.substring(0, 5).toUpperCase() == '[SOS:';
+}
+
 /// What a message is, from its tag.
 enum SosTag { sos, ack, safe, checkin }
 

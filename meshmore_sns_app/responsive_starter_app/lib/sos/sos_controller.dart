@@ -476,12 +476,10 @@ final class SosController extends ChangeNotifier {
   }
 
   /// Channel text is `"name: body"` (the firmware prepends the sender's
-  /// name); the tag starts after that, not at the beginning of the line.
-  static String _afterSenderPrefix(String text) {
-    final int sep = text.indexOf(': ');
-    if (sep <= 0 || sep > 32) return text;
-    return text.substring(sep + 2).trim();
-  }
+  /// name); the tag starts after that, not at the beginning of the line. The
+  /// rule lives in `sos_message.dart` so the notification handler cannot
+  /// spell it differently.
+  static String _afterSenderPrefix(String text) => withoutSenderPrefix(text);
 
   /// A direct message carries the peer's key (full or a 12-hex prefix); the
   /// name behind it is the fabric's, not the message's, so it is looked up
