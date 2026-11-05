@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 
 import '../app/demo_mode.dart';
 import '../gen/app_localizations.dart';
+import '../meshcore/meshcore_controller.dart';
 import '../perms/first_run_controller.dart';
 import '../perms/permissions_service.dart';
 import '../ui/mm_shape.dart';
@@ -60,13 +61,15 @@ class _FirstRunIntroScreenState extends State<FirstRunIntroScreen> {
 
   /// The offline path is demo mode by name: it records the choice so the next
   /// launch does not reach for a radio either, and so the shell can say why
-  /// the fabric is empty.
+  /// the fabric is empty. A radio that answered the auto-connect before this
+  /// tap is dropped, because a demo that keeps a live link is not radio-free.
   Future<void> _continueOffline() async {
     if (_busy) return;
     setState(() => _busy = true);
     final DemoMode demo = context.read<DemoMode>();
     final FirstRunController fr = context.read<FirstRunController>();
-    await demo.setEnabled(true);
+    final MeshcoreController mc = context.read<MeshcoreController>();
+    await demo.setEnabled(true, onEnabled: () => mc.disconnect());
     await fr.markDone();
   }
 

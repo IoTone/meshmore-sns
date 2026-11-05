@@ -13,9 +13,12 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// strength; the radio surfaces stay empty and honest, and the app-bar chip
 /// names the mode so an empty fabric is never mistaken for a quiet mesh.
 ///
-/// Persisted as one bool so the choice survives a launch. Leaving the mode
-/// takes a callback rather than knowing about the radio, so the caller can ask
-/// an already-paired companion to reconnect without a relaunch.
+/// Persisted as one bool so the choice survives a launch. Both directions take
+/// a callback rather than knowing about the radio, because the mode makes a
+/// claim about the radio and has to be able to keep it: entering the mode
+/// drops a link that is already up (an empty fabric with a live LINKED chip
+/// would be the lie this mode exists to avoid), and leaving it asks an
+/// already-paired companion to reconnect without a relaunch.
 class DemoMode extends ChangeNotifier {
   DemoMode({bool? initial, bool? loaded})
       : _enabled = initial ?? false,
@@ -40,12 +43,17 @@ class DemoMode extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> setEnabled(bool value, {VoidCallback? onDisabled}) async {
+  Future<void> setEnabled(bool value,
+      {VoidCallback? onEnabled, VoidCallback? onDisabled}) async {
     if (_enabled == value) return;
     final SharedPreferences p = await SharedPreferences.getInstance();
     await p.setBool(_key, value);
     _enabled = value;
     notifyListeners();
-    if (!value) onDisabled?.call();
+    if (value) {
+      onEnabled?.call();
+    } else {
+      onDisabled?.call();
+    }
   }
 }

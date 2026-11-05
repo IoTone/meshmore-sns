@@ -147,6 +147,7 @@ class AppSettingsScreen extends StatelessWidget {
             secondary: Icon(demo.enabled ? Icons.science : Icons.podcasts),
             value: demo.enabled,
             onChanged: (bool v) => demo.setEnabled(v,
+                onEnabled: () => mc.disconnect(),
                 onDisabled: () => mc.autoConnectIfPaired()),
           ),
           // R17/U8 — Android background keep-alive (foreground service

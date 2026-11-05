@@ -43,4 +43,35 @@ void main() {
     await d.setEnabled(true, onDisabled: () => calls++);
     expect(calls, 0);
   });
+
+  test('entering the mode calls back so a live link is dropped', () async {
+    final DemoMode d = DemoMode();
+    await d.load();
+
+    int entered = 0;
+    int left = 0;
+    await d.setEnabled(true,
+        onEnabled: () => entered++, onDisabled: () => left++);
+
+    expect(d.enabled, isTrue);
+    expect(entered, 1,
+        reason: 'a radio that answered before the choice must be dropped, or '
+            'the mode shows DEMO and a live LINKED chip at once');
+    expect(left, 0);
+  });
+
+  test('each direction calls back only for itself', () async {
+    final DemoMode d = DemoMode();
+    await d.load();
+
+    int entered = 0;
+    int left = 0;
+    await d.setEnabled(true, onEnabled: () => entered++);
+    await d.setEnabled(true, onEnabled: () => entered++);
+    await d.setEnabled(false, onDisabled: () => left++);
+    await d.setEnabled(false, onDisabled: () => left++);
+
+    expect(entered, 1);
+    expect(left, 1);
+  });
 }
