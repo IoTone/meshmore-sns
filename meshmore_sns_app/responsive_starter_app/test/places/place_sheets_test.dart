@@ -6,16 +6,22 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:provider/provider.dart';
+
 import 'package:meshmore_sns_app/gen/app_localizations.dart';
 import 'package:meshmore_sns_app/l10n/locale_controller.dart';
 import 'package:meshmore_sns_app/meshcore/chat_message.dart';
 import 'package:meshmore_sns_app/places/place.dart';
 import 'package:meshmore_sns_app/places/place_create_sheet.dart';
+import 'package:meshmore_sns_app/places/place_detail_sheet.dart';
 import 'package:meshmore_sns_app/places/place_echo.dart';
 import 'package:meshmore_sns_app/places/place_history_sheet.dart';
 import 'package:meshmore_sns_app/places/place_report_budget.dart';
 import 'package:meshmore_sns_app/places/place_sender.dart';
 import 'package:meshmore_sns_app/places/place_store.dart';
+import 'package:meshmore_sns_app/theme/mm_skin.dart';
+import 'package:meshmore_sns_app/theme/mm_tokens.dart';
+import 'package:meshmore_sns_app/theme/theme_controller.dart';
 
 final DateTime _now = DateTime(2026, 11, 5, 12);
 
@@ -54,7 +60,11 @@ Place _place({
       lastSeen: _now,
     );
 
-Widget _host(Widget child) => MaterialApp(
+Widget _host(Widget child, {ThemeController? theme}) {
+  final ThemeController tc = theme ?? ThemeController();
+  return ChangeNotifierProvider<ThemeController>.value(
+    value: tc,
+    child: MaterialApp(
       locale: const Locale('en'),
       supportedLocales: LocaleController.supported,
       localizationsDelegates: const <LocalizationsDelegate<Object>>[
@@ -64,7 +74,9 @@ Widget _host(Widget child) => MaterialApp(
         GlobalCupertinoLocalizations.delegate,
       ],
       home: Scaffold(body: child),
-    );
+    ),
+  );
+}
 
 void main() {
   late PlaceStore store;
@@ -165,6 +177,35 @@ void main() {
           findsOneWidget);
       expect(sender.sent, isEmpty);
     });
+  });
+
+  // R109 skins: every surface has to survive all seven presets, including the
+  // ones that draw square controls and the monospace log layout, because a
+  // sheet is a bottom-sheet route with its own scaffold and theme lookups.
+  // A preset that cannot build one is a crash in the field, not a style note.
+  testWidgets('the three place sheets build in every one of the seven skins',
+      (WidgetTester t) async {
+    store.upsert(_place());
+    final Place live = store.history().single;
+    for (final MmThemePreset preset in MmThemePreset.values) {
+      final ThemeController tc = ThemeController();
+      await tc.setPreset(preset);
+      final List<Widget> sheets = <Widget>[
+        PlaceCreateSheet(
+            latitude: 51.500741,
+            longitude: -0.124596,
+            composer: composer),
+        PlaceDetailSheet(place: live, store: store, composer: composer),
+        PlaceHistorySheet(store: store, composer: composer),
+      ];
+      for (final Widget sheet in sheets) {
+        await t.pumpWidget(_host(sheet, theme: tc));
+        await t.pump();
+        expect(t.takeException(), isNull,
+            reason: '${sheet.runtimeType} under preset ${preset.name}');
+        await t.pumpWidget(const SizedBox());
+      }
+    }
   });
 
   group('the history sheet (spec §10)', () {
