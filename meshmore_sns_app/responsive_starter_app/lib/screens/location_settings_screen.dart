@@ -121,6 +121,12 @@ class LocationSettingsScreen extends StatelessWidget {
             // Fences are a location feature and live beside the publish
             // controls, not under Tools: a fence is drawn from where you are.
             ListTile(
+              leading: const Icon(Icons.cell_tower),
+              title: Text(l.coverageTitle),
+              subtitle: Text(l.coverageExplainerShort),
+              onTap: () => context.push('/settings/coverage'),
+            ),
+            ListTile(
               leading: const Icon(Icons.fence_outlined),
               title: Text(l.geofenceTitle),
               subtitle: Text(l.geofenceExplainerShort),

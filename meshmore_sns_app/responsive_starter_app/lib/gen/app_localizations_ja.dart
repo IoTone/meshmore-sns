@@ -4734,4 +4734,70 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get geofenceExplainerShort => '到着・出発を知らせる円';
+
+  @override
+  String get coverageTitle => 'カバレッジ';
+
+  @override
+  String get coverageBeforeStart =>
+      '現在地と、応答した相手を記録します。端末内にのみ保存され、アプリを閉じると記録は終わります。';
+
+  @override
+  String get coverageStart => '記録を開始';
+
+  @override
+  String get coverageStop => '記録を停止';
+
+  @override
+  String coverageCounts(int answered, int tried) {
+    return '$tried 回中 $answered 回応答あり';
+  }
+
+  @override
+  String coverageUnmatched(int count) {
+    return '識別できなかった応答が $count 件あります';
+  }
+
+  @override
+  String get coverageRefusedTooSoon => 'このアプリは自ら間隔を守ります。30秒に1回までなので、今回は待ちます。';
+
+  @override
+  String get coverageRefusedCellFresh =>
+      'この場所は1時間以内に ping 済みです。同じ場所に留まれば1時間に1回です。';
+
+  @override
+  String get coverageRefusedManualUsed => 'この1時間の手動 ping は使用済みです。';
+
+  @override
+  String get coveragePacingNote => 'このアプリは自ら間隔を守りますが、他の端末が守ることは保証できません。';
+
+  @override
+  String get coveragePingNow => '今すぐ ping（1時間に1回）';
+
+  @override
+  String get coverageCellsSection => 'ping した場所';
+
+  @override
+  String get coverageNoSamples => 'まだ記録はありません。';
+
+  @override
+  String coverageCellLine(String cell, int percent, int samples) {
+    return '$cell · $percent% · $samples 件';
+  }
+
+  @override
+  String coverageHidden(int count) {
+    return '$count 件非表示';
+  }
+
+  @override
+  String coverageEdges(int count) {
+    return '描画された応答 $count 件 — 応答のみで、推定したリンクはありません';
+  }
+
+  @override
+  String get coverageNotAMap => 'これは ping が応答された場所であり、メッシュが届く範囲ではありません。';
+
+  @override
+  String get coverageExplainerShort => 'ここで応答があった ping';
 }

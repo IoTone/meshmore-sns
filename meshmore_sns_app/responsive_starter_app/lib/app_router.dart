@@ -8,6 +8,7 @@ import 'screens/docs_hub_screen.dart';
 import 'screens/battery_screen.dart';
 import 'screens/channels_screen.dart';
 import 'docs/doc_section.dart';
+import 'screens/coverage_screen.dart';
 import 'screens/geofences_screen.dart';
 import 'screens/device_config_screen.dart';
 import 'screens/networks_screen.dart';
@@ -93,6 +94,10 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: '/settings/geofences',
       builder: (_, __) => const GeofencesScreen(),
+    ),
+    GoRoute(
+      path: '/settings/coverage',
+      builder: (_, __) => const CoverageScreen(),
     ),
     // R60 — Settings → Tools (issue #7). Unknown tool names fall back
     // to the hub.

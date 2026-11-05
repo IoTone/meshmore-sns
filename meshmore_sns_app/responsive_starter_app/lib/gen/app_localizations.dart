@@ -8343,6 +8343,114 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Circles that tell you when you arrive or leave'**
   String get geofenceExplainerShort;
+
+  /// No description provided for @coverageTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Coverage'**
+  String get coverageTitle;
+
+  /// No description provided for @coverageBeforeStart.
+  ///
+  /// In en, this message translates to:
+  /// **'This records where you are and who answered. It stays on this device, and closing the app ends the record.'**
+  String get coverageBeforeStart;
+
+  /// No description provided for @coverageStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Start recording'**
+  String get coverageStart;
+
+  /// No description provided for @coverageStop.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop recording'**
+  String get coverageStop;
+
+  /// No description provided for @coverageCounts.
+  ///
+  /// In en, this message translates to:
+  /// **'{answered} of {tried} pings answered'**
+  String coverageCounts(int answered, int tried);
+
+  /// No description provided for @coverageUnmatched.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{One reply could not be identified.} other{{count} replies could not be identified.}}'**
+  String coverageUnmatched(int count);
+
+  /// No description provided for @coverageRefusedTooSoon.
+  ///
+  /// In en, this message translates to:
+  /// **'The app paces itself: one ping every thirty seconds, so this one waits.'**
+  String get coverageRefusedTooSoon;
+
+  /// No description provided for @coverageRefusedCellFresh.
+  ///
+  /// In en, this message translates to:
+  /// **'This area was pinged within the hour. Standing still costs one ping an hour.'**
+  String get coverageRefusedCellFresh;
+
+  /// No description provided for @coverageRefusedManualUsed.
+  ///
+  /// In en, this message translates to:
+  /// **'This hour\'s manual ping is already spent.'**
+  String get coverageRefusedManualUsed;
+
+  /// No description provided for @coveragePacingNote.
+  ///
+  /// In en, this message translates to:
+  /// **'This app paces its own pings; it cannot promise other devices do.'**
+  String get coveragePacingNote;
+
+  /// No description provided for @coveragePingNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Ping now (once an hour)'**
+  String get coveragePingNow;
+
+  /// No description provided for @coverageCellsSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Where you pinged'**
+  String get coverageCellsSection;
+
+  /// No description provided for @coverageNoSamples.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing recorded yet.'**
+  String get coverageNoSamples;
+
+  /// No description provided for @coverageCellLine.
+  ///
+  /// In en, this message translates to:
+  /// **'{cell} · {percent}% · {samples} samples'**
+  String coverageCellLine(String cell, int percent, int samples);
+
+  /// No description provided for @coverageHidden.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} hidden'**
+  String coverageHidden(int count);
+
+  /// No description provided for @coverageEdges.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} answers drawn — answers only, never an inferred link'**
+  String coverageEdges(int count);
+
+  /// No description provided for @coverageNotAMap.
+  ///
+  /// In en, this message translates to:
+  /// **'This is where your pings were answered, not where the mesh reaches.'**
+  String get coverageNotAMap;
+
+  /// No description provided for @coverageExplainerShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Which pings were answered, here'**
+  String get coverageExplainerShort;
 }
 
 class _AppLocalizationsDelegate

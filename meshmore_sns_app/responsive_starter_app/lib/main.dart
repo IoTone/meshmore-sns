@@ -22,6 +22,8 @@ import 'package:meshmore_sns_app/maps/maps_controller.dart';
 import 'package:meshmore_sns_app/field/position_history.dart';
 import 'package:meshmore_sns_app/field/relationship.dart';
 import 'package:meshmore_sns_app/geofence/geofence_controller.dart';
+import 'package:meshmore_sns_app/telemetry/coverage_session.dart';
+import 'package:meshmore_sns_app/tools/discover_tool.dart';
 import 'package:meshmore_sns_app/meshcore/auto_publish_controller.dart';
 import 'package:meshmore_sns_app/meshcore/block_filter.dart';
 import 'package:meshmore_sns_app/meshcore/block_store.dart';
@@ -202,6 +204,28 @@ void main() {
           // Which way each node's distance is going: two measurements, so it
           // belongs to the session, not to a node.
           Provider<RelationshipTracker>(create: (_) => RelationshipTracker()),
+          // Coverage: pings from where we are, session-only. The pinger is the
+          // app's own discover tool, because that is the one code path that
+          // knows how to ask the radio.
+          ChangeNotifierProvider<CoverageSession>(
+            create: (BuildContext ctx) {
+              final ToolsController tools = ctx.read<ToolsController>();
+              return CoverageSession(
+                mc: ctx.read<MeshcoreController>(),
+                pinger: () async {
+                  await tools.discover.start();
+                  return <CoverageResponder>[
+                    for (final DiscoveredRepeater r in tools.discover.found)
+                      CoverageResponder(
+                        key: r.response.publicKey,
+                        snr: r.weakerSnrDb.round(),
+                      ),
+                  ];
+                },
+              );
+            },
+          ),
+
           ChangeNotifierProvider<PositionRecorder>(
             create: (BuildContext ctx) =>
                 PositionRecorder(mc: ctx.read<MeshcoreController>())

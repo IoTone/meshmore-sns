@@ -4900,4 +4900,80 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get geofenceExplainerShort =>
       'Circles that tell you when you arrive or leave';
+
+  @override
+  String get coverageTitle => 'Coverage';
+
+  @override
+  String get coverageBeforeStart =>
+      'This records where you are and who answered. It stays on this device, and closing the app ends the record.';
+
+  @override
+  String get coverageStart => 'Start recording';
+
+  @override
+  String get coverageStop => 'Stop recording';
+
+  @override
+  String coverageCounts(int answered, int tried) {
+    return '$answered of $tried pings answered';
+  }
+
+  @override
+  String coverageUnmatched(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count replies could not be identified.',
+      one: 'One reply could not be identified.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get coverageRefusedTooSoon =>
+      'The app paces itself: one ping every thirty seconds, so this one waits.';
+
+  @override
+  String get coverageRefusedCellFresh =>
+      'This area was pinged within the hour. Standing still costs one ping an hour.';
+
+  @override
+  String get coverageRefusedManualUsed =>
+      'This hour\'s manual ping is already spent.';
+
+  @override
+  String get coveragePacingNote =>
+      'This app paces its own pings; it cannot promise other devices do.';
+
+  @override
+  String get coveragePingNow => 'Ping now (once an hour)';
+
+  @override
+  String get coverageCellsSection => 'Where you pinged';
+
+  @override
+  String get coverageNoSamples => 'Nothing recorded yet.';
+
+  @override
+  String coverageCellLine(String cell, int percent, int samples) {
+    return '$cell · $percent% · $samples samples';
+  }
+
+  @override
+  String coverageHidden(int count) {
+    return '$count hidden';
+  }
+
+  @override
+  String coverageEdges(int count) {
+    return '$count answers drawn — answers only, never an inferred link';
+  }
+
+  @override
+  String get coverageNotAMap =>
+      'This is where your pings were answered, not where the mesh reaches.';
+
+  @override
+  String get coverageExplainerShort => 'Which pings were answered, here';
 }
