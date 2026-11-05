@@ -21,7 +21,7 @@ class TermsController extends ChangeNotifier {
       TermsController(acceptedVersion: version, loaded: true);
 
   /// Bump when the text changes materially.
-  static const int currentVersion = 1;
+  static const int currentVersion = 2;
 
   static const String _key = 'mm.legal.acceptedVersion';
 

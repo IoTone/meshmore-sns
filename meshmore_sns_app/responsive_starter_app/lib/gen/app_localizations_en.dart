@@ -517,7 +517,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get termsLocalBody =>
-      'Messages, contacts, channels and settings are stored on this device. Cloud backup and device transfer are switched off for the app\'s own data, so a new phone does not silently inherit it. Deleting the app deletes that data.';
+      'Messages, contacts, channels, settings and the trail you record are stored on this device. Cloud backup and device transfer are switched off for the app\'s own data, so a new phone does not silently inherit it. Deleting the app deletes that data.';
 
   @override
   String get termsSectionLeaves => 'WHAT LEAVES THE DEVICE';

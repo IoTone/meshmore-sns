@@ -205,7 +205,7 @@
   "termsTitle": "Terms and privacy",
   "termsLead": "This app talks to a mesh radio. There is no account, no cloud and no analytics.",
   "termsSectionLocal": "WHAT STAYS ON THIS DEVICE",
-  "termsLocalBody": "Messages, contacts, channels and settings are stored on this device. Cloud backup and device transfer are switched off for the app's own data, so a new phone does not silently inherit it. Deleting the app deletes that data.",
+  "termsLocalBody": "Messages, contacts, channels, settings and the trail you record are stored on this device. Cloud backup and device transfer are switched off for the app's own data, so a new phone does not silently inherit it. Deleting the app deletes that data.",
   "termsSectionLeaves": "WHAT LEAVES THE DEVICE",
   "termsLeavesBody": "Nothing leaves except what you send: messages and positions go out over the radio you are connected to. Online map packs are off by default and are fetched only after you turn them on, with the source named on screen. Files you export are yours to place.",
   "termsSectionPermissions": "PERMISSIONS AND WHY",
