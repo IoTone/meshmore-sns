@@ -49,13 +49,30 @@ class EncryptedStore {
   static const List<int> magic = <int>[0x4D, 0x4D, 0x53, 0x31]; // 'MMS1'
   static const int formatVersion = 1;
 
-  /// Writes are serialised: two messages arriving together must not read the
-  /// same map, each add one entry, and lose one of them.
-  Future<void> _chain = Future<void>.value();
+  /// Writes are serialised per file, not per instance: two messages arriving
+  /// together must not read the same map, each add one entry, and lose one of
+  /// them.
+  ///
+  /// The lock lives on the file path because several stores write this one
+  /// file (history, drafts, the block list) and each of them builds its own
+  /// instance per operation. A chain held on the instance would therefore
+  /// serialise nothing in the app: a draft save and a chat save would both read
+  /// the map, each set its own record, and the later write would take the
+  /// earlier one's record with it. Keyed by path, two files stay independent,
+  /// which keeps a test's temporary directory out of another's way.
+  static final Map<String, Future<void>> _chains = <String, Future<void>>{};
 
-  Future<T> _serial<T>(Future<T> Function() action) {
-    final Future<T> next = _chain.then((_) => action());
-    _chain = next.then((_) {}, onError: (Object _) {});
+  Future<T> _serial<T>(Future<T> Function() action) async {
+    final String key = (await _dir()).path;
+    final Future<void> previous = _chains[key] ?? Future<void>.value();
+    final Future<T> next = previous.then((_) => action());
+    final Future<void> tail = next.then((_) {}, onError: (Object _) {});
+    _chains[key] = tail;
+    // Drop the entry once nothing is queued behind it, so a process that
+    // touches many directories (a test suite) does not grow the map forever.
+    tail.whenComplete(() {
+      if (identical(_chains[key], tail)) _chains.remove(key);
+    });
     return next;
   }
 
