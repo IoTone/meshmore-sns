@@ -109,7 +109,6 @@ void main() {
       'lib/screens/channels_screen.dart': 3,
       'lib/screens/dashboard_screen.dart': 7,
       'lib/screens/dashboards/my_pubkey_line.dart': 1,
-      'lib/screens/device_config_screen.dart': 4,
       'lib/screens/device_contacts_screen.dart': 1,
       'lib/screens/device_manager_sheet.dart': 3,
       'lib/screens/diagnostics_screen.dart': 3,

@@ -72,7 +72,6 @@ void main() {
       'lib/screens/dashboards/nerv_dashboard.dart': 3,
       'lib/screens/dashboards/recon_dashboard.dart': 7,
       'lib/screens/dashboards/studio_dashboard.dart': 4,
-      'lib/screens/device_config_screen.dart': 21,
       'lib/screens/device_contacts_screen.dart': 6,
       'lib/screens/device_manager_sheet.dart': 10,
       'lib/screens/diagnostics_screen.dart': 8,
