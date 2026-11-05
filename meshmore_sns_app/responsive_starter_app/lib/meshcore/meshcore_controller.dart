@@ -536,6 +536,11 @@ class MeshcoreController extends ChangeNotifier {
   /// measurement rather than a claim (APP-C5, register §2).
   final AirtimeMeter _airtime;
 
+  /// The meter itself, for a test that needs to fill or inspect it without
+  /// sending an hour of traffic.
+  @visibleForTesting
+  AirtimeMeter get airtimeMeterForTest => _airtime;
+
   /// Frames the meter refused, since launch. A refusal never reaches the radio.
   int _airtimeRefusals = 0;
   final LocationService _location;

@@ -5,6 +5,8 @@ import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:meshcore/meshcore.dart';
+import 'package:meshmore_sns_app/meshcore/airtime.dart';
+import 'package:meshmore_sns_app/meshcore/airtime_meter.dart';
 import 'package:meshmore_sns_app/meshcore/meshcore_controller.dart';
 import 'package:meshmore_sns_app/sos/checkin.dart';
 import 'package:meshmore_sns_app/sos/sos_controller.dart';
@@ -19,11 +21,13 @@ class _Clock {
   DateTime call() => now;
 }
 
-Future<MeshcoreController> _ready(FakeMeshcoreTransport fake) async {
+Future<MeshcoreController> _ready(FakeMeshcoreTransport fake,
+    {AirtimeMeter? meter}) async {
   final MeshcoreController mc = MeshcoreController(
     transportFactory: () async => fake,
     connection:
         MeshcoreConnection(handshakeTimeout: const Duration(seconds: 5)),
+    airtimeMeter: meter,
   );
   await mc.connect();
   // SELF_INFO ends with the device name; the alarm cannot be raised without
@@ -127,7 +131,10 @@ void main() {
 
   test('a refused repeat is counted, and the schedule continues', () async {
     await raiseAndConfirm();
-    fake.failSend = true;
+    // Exhaust the app's own airtime meter: the next repeat is refused here,
+    // synchronously, which is the refusal the badge can know about at the
+    // moment it sends.
+    mc.airtimeMeterForTest.charge(const Duration(hours: 1));
     clock.now = clock.now.add(const Duration(seconds: 61));
     sos.pump();
     await Future<void>.delayed(Duration.zero);
@@ -135,12 +142,29 @@ void main() {
     expect(sos.state, SosState.active,
         reason: 'one refused repeat is not a failed alarm');
 
-    fake.failSend = false;
+    // The hour rolls over, so the meter has room again: the next repeat goes
+    // and the badge clears.
+    mc.airtimeMeterForTest.reset();
     clock.now = clock.now.add(const Duration(seconds: 60));
     sos.pump();
     await Future<void>.delayed(Duration.zero);
     expect(sos.failedSends, 0, reason: 'a good send clears the refusal badge');
-    expect(sentTexts(), hasLength(2));
+    expect(sentTexts(), hasLength(2),
+        reason: 'the refused repeat never reached the radio');
+  });
+
+  test('a write that threw is not a refusal: the packet may have gone',
+      () async {
+    await raiseAndConfirm();
+    // A thrown write leaves the row `unknown` (APP-C2), so the alarm neither
+    // counts it as a refusal nor stops: the packet may be on its way.
+    fake.failSend = true;
+    clock.now = clock.now.add(const Duration(seconds: 61));
+    sos.pump();
+    await Future<void>.delayed(Duration.zero);
+    expect(sos.failedSends, 0);
+    expect(sos.state, SosState.active);
+    fake.failSend = false;
   });
 
   test('a channel ACK is claimed and the alarm keeps running', () async {
