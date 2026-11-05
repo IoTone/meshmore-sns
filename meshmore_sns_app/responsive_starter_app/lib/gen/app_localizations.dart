@@ -1130,6 +1130,18 @@ abstract class AppLocalizations {
   /// **'v{version}'**
   String aboutVersion(String version);
 
+  /// No description provided for @aboutReportProblem.
+  ///
+  /// In en, this message translates to:
+  /// **'Report a problem'**
+  String get aboutReportProblem;
+
+  /// No description provided for @aboutReportProblemSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Opens the issue tracker with the app and radio details filled in. Nothing is sent unless you send it there.'**
+  String get aboutReportProblemSub;
+
   /// No description provided for @aboutLicensesButton.
   ///
   /// In en, this message translates to:

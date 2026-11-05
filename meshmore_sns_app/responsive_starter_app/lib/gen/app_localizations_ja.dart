@@ -580,6 +580,13 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
+  String get aboutReportProblem => '問題を報告';
+
+  @override
+  String get aboutReportProblemSub =>
+      'アプリとラジオの情報を入れた状態で課題トラッカーを開きます。そこで送信するまで何も送られません。';
+
+  @override
   String get aboutLicensesButton => 'オープンソースライセンスと権利表示';
 
   @override

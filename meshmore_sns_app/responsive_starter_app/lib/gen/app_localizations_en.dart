@@ -605,6 +605,13 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get aboutReportProblem => 'Report a problem';
+
+  @override
+  String get aboutReportProblemSub =>
+      'Opens the issue tracker with the app and radio details filled in. Nothing is sent unless you send it there.';
+
+  @override
   String get aboutLicensesButton => 'Open-source licenses & attributions';
 
   @override
