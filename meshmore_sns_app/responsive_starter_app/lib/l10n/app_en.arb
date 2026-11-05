@@ -141,6 +141,45 @@
   "@deviceMgrAgoDays": {
     "placeholders": {"n": {"type": "int"}}
   },
+  "deviceMgrPairNew": "Pair a new radio",
+
+  "pairTitle": "Pair a radio",
+  "pairStepOf": "STEP {step} OF {total}",
+  "@pairStepOf": {
+    "placeholders": {"step": {"type": "int"}, "total": {"type": "int"}}
+  },
+  "pairPermissionTitle": "Bluetooth permission",
+  "pairPermissionBody": "The app needs Nearby devices to find your radio and talk to it. Nothing is paired yet.",
+  "pairPermissionAllow": "Allow Bluetooth",
+  "pairPermissionOpenSettings": "Open OS settings",
+  "pairAdapterTitle": "Bluetooth is off",
+  "pairAdapterBody": "Switch Bluetooth on to find your radio. This screen continues by itself once it is on.",
+  "pairAdapterUnsupported": "This phone reports no usable Bluetooth adapter, so a radio cannot be paired here.",
+  "pairRetry": "Try again",
+  "pairScanTitle": "Looking for radios",
+  "pairScanBody": "A radio advertises as MeshCore-<name>. Keep it switched on and within a metre or two of the phone.",
+  "pairScanning": "Scanning…",
+  "pairStopScan": "Stop",
+  "pairScanAgain": "Scan again",
+  "pairNothingFound": "No radio answered. Check that it is switched on, in range, and not already connected to another phone, then scan again.",
+  "pairRssi": "RSSI {rssi}",
+  "@pairRssi": {
+    "placeholders": {"rssi": {"type": "int"}}
+  },
+  "pairConnecting": "Connecting to {name}…",
+  "@pairConnecting": {
+    "placeholders": {"name": {"type": "String"}}
+  },
+  "pairConnectingBody": "If the radio shows a PIN, enter it on the phone when asked. Screenless radios use 123456.",
+  "pairConfirmTitle": "Radio connected",
+  "pairConfirmBody": "{name} answered, so the link and the protocol both work. This radio is now the one the app uses.",
+  "@pairConfirmBody": {
+    "placeholders": {"name": {"type": "String"}}
+  },
+  "pairConfirmNode": "Node",
+  "pairConfirmFirmware": "Firmware",
+  "pairConfirmUse": "Use this radio",
+  "pairChooseAnother": "Choose another radio",
 
   "settingsHeading": "App settings",
   "settingsBackgroundTitle": "Stay connected in background",

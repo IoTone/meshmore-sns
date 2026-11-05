@@ -329,6 +329,98 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
+  String get deviceMgrPairNew => '新しいラジオをペアリング';
+
+  @override
+  String get pairTitle => 'ラジオをペアリング';
+
+  @override
+  String pairStepOf(int step, int total) {
+    return 'ステップ $step / $total';
+  }
+
+  @override
+  String get pairPermissionTitle => 'Bluetooth の権限';
+
+  @override
+  String get pairPermissionBody =>
+      'ラジオを見つけて通信するために「付近のデバイス」の権限が必要です。まだ何もペアリングされていません。';
+
+  @override
+  String get pairPermissionAllow => 'Bluetooth を許可';
+
+  @override
+  String get pairPermissionOpenSettings => 'OS 設定を開く';
+
+  @override
+  String get pairAdapterTitle => 'Bluetooth がオフです';
+
+  @override
+  String get pairAdapterBody =>
+      'ラジオを探すには Bluetooth をオンにしてください。オンにするとこの画面は自動で次に進みます。';
+
+  @override
+  String get pairAdapterUnsupported =>
+      'この端末には利用できる Bluetooth アダプターがないため、ここではペアリングできません。';
+
+  @override
+  String get pairRetry => '再試行';
+
+  @override
+  String get pairScanTitle => 'ラジオを検索中';
+
+  @override
+  String get pairScanBody =>
+      'ラジオは MeshCore-<名前> としてアドバタイズします。電源を入れたまま、1〜2 m 以内に置いてください。';
+
+  @override
+  String get pairScanning => 'スキャン中…';
+
+  @override
+  String get pairStopScan => '停止';
+
+  @override
+  String get pairScanAgain => '再スキャン';
+
+  @override
+  String get pairNothingFound =>
+      '応答したラジオがありません。電源・距離・他のスマートフォンへの接続を確認して、もう一度スキャンしてください。';
+
+  @override
+  String pairRssi(int rssi) {
+    return 'RSSI $rssi';
+  }
+
+  @override
+  String pairConnecting(String name) {
+    return '$name に接続中…';
+  }
+
+  @override
+  String get pairConnectingBody =>
+      'ラジオに PIN が表示されたら、求められたときにスマートフォンへ入力してください。画面のないラジオは 123456 です。';
+
+  @override
+  String get pairConfirmTitle => 'ラジオに接続しました';
+
+  @override
+  String pairConfirmBody(String name) {
+    return '$name が応答しました。リンクとプロトコルの両方が動作しています。このラジオがアプリの接続先になります。';
+  }
+
+  @override
+  String get pairConfirmNode => 'ノード';
+
+  @override
+  String get pairConfirmFirmware => 'ファームウェア';
+
+  @override
+  String get pairConfirmUse => 'このラジオを使う';
+
+  @override
+  String get pairChooseAnother => '別のラジオを選ぶ';
+
+  @override
   String get settingsHeading => 'アプリ設定';
 
   @override

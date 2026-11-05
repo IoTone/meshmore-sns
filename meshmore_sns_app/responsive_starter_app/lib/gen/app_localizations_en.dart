@@ -344,6 +344,98 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get deviceMgrPairNew => 'Pair a new radio';
+
+  @override
+  String get pairTitle => 'Pair a radio';
+
+  @override
+  String pairStepOf(int step, int total) {
+    return 'STEP $step OF $total';
+  }
+
+  @override
+  String get pairPermissionTitle => 'Bluetooth permission';
+
+  @override
+  String get pairPermissionBody =>
+      'The app needs Nearby devices to find your radio and talk to it. Nothing is paired yet.';
+
+  @override
+  String get pairPermissionAllow => 'Allow Bluetooth';
+
+  @override
+  String get pairPermissionOpenSettings => 'Open OS settings';
+
+  @override
+  String get pairAdapterTitle => 'Bluetooth is off';
+
+  @override
+  String get pairAdapterBody =>
+      'Switch Bluetooth on to find your radio. This screen continues by itself once it is on.';
+
+  @override
+  String get pairAdapterUnsupported =>
+      'This phone reports no usable Bluetooth adapter, so a radio cannot be paired here.';
+
+  @override
+  String get pairRetry => 'Try again';
+
+  @override
+  String get pairScanTitle => 'Looking for radios';
+
+  @override
+  String get pairScanBody =>
+      'A radio advertises as MeshCore-<name>. Keep it switched on and within a metre or two of the phone.';
+
+  @override
+  String get pairScanning => 'Scanning…';
+
+  @override
+  String get pairStopScan => 'Stop';
+
+  @override
+  String get pairScanAgain => 'Scan again';
+
+  @override
+  String get pairNothingFound =>
+      'No radio answered. Check that it is switched on, in range, and not already connected to another phone, then scan again.';
+
+  @override
+  String pairRssi(int rssi) {
+    return 'RSSI $rssi';
+  }
+
+  @override
+  String pairConnecting(String name) {
+    return 'Connecting to $name…';
+  }
+
+  @override
+  String get pairConnectingBody =>
+      'If the radio shows a PIN, enter it on the phone when asked. Screenless radios use 123456.';
+
+  @override
+  String get pairConfirmTitle => 'Radio connected';
+
+  @override
+  String pairConfirmBody(String name) {
+    return '$name answered, so the link and the protocol both work. This radio is now the one the app uses.';
+  }
+
+  @override
+  String get pairConfirmNode => 'Node';
+
+  @override
+  String get pairConfirmFirmware => 'Firmware';
+
+  @override
+  String get pairConfirmUse => 'Use this radio';
+
+  @override
+  String get pairChooseAnother => 'Choose another radio';
+
+  @override
   String get settingsHeading => 'App settings';
 
   @override

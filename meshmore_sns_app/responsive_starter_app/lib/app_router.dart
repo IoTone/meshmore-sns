@@ -15,6 +15,7 @@ import 'screens/dm_screen.dart';
 import 'screens/diagnostics_screen.dart';
 import 'screens/terms_screen.dart';
 import 'screens/location_settings_screen.dart';
+import 'screens/pair_radio_screen.dart';
 import 'screens/personalization_screen.dart';
 import 'screens/maps/maps_screen.dart';
 import 'screens/maps/maps_self_test_screen.dart';
@@ -66,6 +67,12 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: '/settings/diagnostics',
       builder: (_, __) => const DiagnosticsScreen(),
+    ),
+    // The in-app pairing flow. A route rather than a sheet so the store's
+    // declaration video can show one screen going scan → connect → done.
+    GoRoute(
+      path: '/pair',
+      builder: (_, __) => const PairRadioScreen(),
     ),
     GoRoute(
       path: '/settings/voice',

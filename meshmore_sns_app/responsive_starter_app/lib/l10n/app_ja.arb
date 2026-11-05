@@ -134,6 +134,45 @@
   "@deviceMgrAgoDays": {
     "placeholders": {"n": {"type": "int"}}
   },
+  "deviceMgrPairNew": "新しいラジオをペアリング",
+
+  "pairTitle": "ラジオをペアリング",
+  "pairStepOf": "ステップ {step} / {total}",
+  "@pairStepOf": {
+    "placeholders": {"step": {"type": "int"}, "total": {"type": "int"}}
+  },
+  "pairPermissionTitle": "Bluetooth の権限",
+  "pairPermissionBody": "ラジオを見つけて通信するために「付近のデバイス」の権限が必要です。まだ何もペアリングされていません。",
+  "pairPermissionAllow": "Bluetooth を許可",
+  "pairPermissionOpenSettings": "OS 設定を開く",
+  "pairAdapterTitle": "Bluetooth がオフです",
+  "pairAdapterBody": "ラジオを探すには Bluetooth をオンにしてください。オンにするとこの画面は自動で次に進みます。",
+  "pairAdapterUnsupported": "この端末には利用できる Bluetooth アダプターがないため、ここではペアリングできません。",
+  "pairRetry": "再試行",
+  "pairScanTitle": "ラジオを検索中",
+  "pairScanBody": "ラジオは MeshCore-<名前> としてアドバタイズします。電源を入れたまま、1〜2 m 以内に置いてください。",
+  "pairScanning": "スキャン中…",
+  "pairStopScan": "停止",
+  "pairScanAgain": "再スキャン",
+  "pairNothingFound": "応答したラジオがありません。電源・距離・他のスマートフォンへの接続を確認して、もう一度スキャンしてください。",
+  "pairRssi": "RSSI {rssi}",
+  "@pairRssi": {
+    "placeholders": {"rssi": {"type": "int"}}
+  },
+  "pairConnecting": "{name} に接続中…",
+  "@pairConnecting": {
+    "placeholders": {"name": {"type": "String"}}
+  },
+  "pairConnectingBody": "ラジオに PIN が表示されたら、求められたときにスマートフォンへ入力してください。画面のないラジオは 123456 です。",
+  "pairConfirmTitle": "ラジオに接続しました",
+  "pairConfirmBody": "{name} が応答しました。リンクとプロトコルの両方が動作しています。このラジオがアプリの接続先になります。",
+  "@pairConfirmBody": {
+    "placeholders": {"name": {"type": "String"}}
+  },
+  "pairConfirmNode": "ノード",
+  "pairConfirmFirmware": "ファームウェア",
+  "pairConfirmUse": "このラジオを使う",
+  "pairChooseAnother": "別のラジオを選ぶ",
 
   "settingsHeading": "アプリ設定",
   "settingsBackgroundTitle": "バックグラウンドで接続を維持",

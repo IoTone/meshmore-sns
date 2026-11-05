@@ -686,6 +686,162 @@ abstract class AppLocalizations {
   /// **'{n} d ago'**
   String deviceMgrAgoDays(int n);
 
+  /// No description provided for @deviceMgrPairNew.
+  ///
+  /// In en, this message translates to:
+  /// **'Pair a new radio'**
+  String get deviceMgrPairNew;
+
+  /// No description provided for @pairTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Pair a radio'**
+  String get pairTitle;
+
+  /// No description provided for @pairStepOf.
+  ///
+  /// In en, this message translates to:
+  /// **'STEP {step} OF {total}'**
+  String pairStepOf(int step, int total);
+
+  /// No description provided for @pairPermissionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Bluetooth permission'**
+  String get pairPermissionTitle;
+
+  /// No description provided for @pairPermissionBody.
+  ///
+  /// In en, this message translates to:
+  /// **'The app needs Nearby devices to find your radio and talk to it. Nothing is paired yet.'**
+  String get pairPermissionBody;
+
+  /// No description provided for @pairPermissionAllow.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow Bluetooth'**
+  String get pairPermissionAllow;
+
+  /// No description provided for @pairPermissionOpenSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Open OS settings'**
+  String get pairPermissionOpenSettings;
+
+  /// No description provided for @pairAdapterTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Bluetooth is off'**
+  String get pairAdapterTitle;
+
+  /// No description provided for @pairAdapterBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch Bluetooth on to find your radio. This screen continues by itself once it is on.'**
+  String get pairAdapterBody;
+
+  /// No description provided for @pairAdapterUnsupported.
+  ///
+  /// In en, this message translates to:
+  /// **'This phone reports no usable Bluetooth adapter, so a radio cannot be paired here.'**
+  String get pairAdapterUnsupported;
+
+  /// No description provided for @pairRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again'**
+  String get pairRetry;
+
+  /// No description provided for @pairScanTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Looking for radios'**
+  String get pairScanTitle;
+
+  /// No description provided for @pairScanBody.
+  ///
+  /// In en, this message translates to:
+  /// **'A radio advertises as MeshCore-<name>. Keep it switched on and within a metre or two of the phone.'**
+  String get pairScanBody;
+
+  /// No description provided for @pairScanning.
+  ///
+  /// In en, this message translates to:
+  /// **'Scanning…'**
+  String get pairScanning;
+
+  /// No description provided for @pairStopScan.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop'**
+  String get pairStopScan;
+
+  /// No description provided for @pairScanAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan again'**
+  String get pairScanAgain;
+
+  /// No description provided for @pairNothingFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No radio answered. Check that it is switched on, in range, and not already connected to another phone, then scan again.'**
+  String get pairNothingFound;
+
+  /// No description provided for @pairRssi.
+  ///
+  /// In en, this message translates to:
+  /// **'RSSI {rssi}'**
+  String pairRssi(int rssi);
+
+  /// No description provided for @pairConnecting.
+  ///
+  /// In en, this message translates to:
+  /// **'Connecting to {name}…'**
+  String pairConnecting(String name);
+
+  /// No description provided for @pairConnectingBody.
+  ///
+  /// In en, this message translates to:
+  /// **'If the radio shows a PIN, enter it on the phone when asked. Screenless radios use 123456.'**
+  String get pairConnectingBody;
+
+  /// No description provided for @pairConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Radio connected'**
+  String get pairConfirmTitle;
+
+  /// No description provided for @pairConfirmBody.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} answered, so the link and the protocol both work. This radio is now the one the app uses.'**
+  String pairConfirmBody(String name);
+
+  /// No description provided for @pairConfirmNode.
+  ///
+  /// In en, this message translates to:
+  /// **'Node'**
+  String get pairConfirmNode;
+
+  /// No description provided for @pairConfirmFirmware.
+  ///
+  /// In en, this message translates to:
+  /// **'Firmware'**
+  String get pairConfirmFirmware;
+
+  /// No description provided for @pairConfirmUse.
+  ///
+  /// In en, this message translates to:
+  /// **'Use this radio'**
+  String get pairConfirmUse;
+
+  /// No description provided for @pairChooseAnother.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose another radio'**
+  String get pairChooseAnother;
+
   /// No description provided for @settingsHeading.
   ///
   /// In en, this message translates to:
