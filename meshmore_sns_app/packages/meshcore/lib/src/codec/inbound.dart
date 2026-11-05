@@ -367,6 +367,15 @@ class ContactsFullFrame extends MeshcoreInbound {
   String toString() => 'ContactsFullFrame()';
 }
 
+/// `PUSH_CODE_ONE_KEY_DM_REJECTED` (0x91). The radio refused a stranger's
+/// message for want of a signed introduction; [publicKey] is the sender.
+class OneKeyRejectedFrame extends MeshcoreInbound {
+  const OneKeyRejectedFrame(this.publicKey);
+  final Uint8List publicKey;
+  @override
+  String toString() => 'OneKeyRejectedFrame(${publicKey.length} bytes)';
+}
+
 /// `PUSH_CODE_PATH_UPDATED` (0x81). Only the key: re-read the contact.
 class PathUpdatedFrame extends MeshcoreInbound {
   const PathUpdatedFrame(this.publicKey);
