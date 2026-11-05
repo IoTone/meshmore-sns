@@ -1,6 +1,5 @@
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
-
 import 'app_localizations.dart';
 
 // ignore_for_file: type=lint
@@ -1183,8 +1182,11 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get deviceGpsIntervalFixedByFirmware =>
-      'Polling cadence is fixed by this firmware build (the sensors module doesn\'t expose `gps_interval`).';
+  String get deviceGpsIntervalFixedByFirmware => 'Set on the radio';
+
+  @override
+  String get deviceGpsIntervalWhy =>
+      'This firmware build fixes the polling cadence: the sensors module does not expose gps_interval.';
 
   @override
   String get locTitle => 'Auto-publish location';
@@ -2667,7 +2669,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get deviceConfigTitle => 'Device configuration';
 
   @override
-  String get deviceRegionBand => 'REGION / BAND';
+  String get deviceRegionBand => 'Band preset';
+
+  @override
+  String get deviceRegionWhy => 'Why';
+
+  @override
+  String get deviceRegionCaveatTitle => 'Region caveat';
+
+  @override
+  String get deviceRegionCaveatClose => 'Close';
 
   @override
   String get deviceRegionCurrent => 'CURRENTLY APPLIED';
@@ -2676,7 +2687,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get deviceRegionUnknown => 'Waiting for device…';
 
   @override
-  String get deviceRegionCustom => 'Custom (no preset match)';
+  String get deviceRegionCustom => 'Custom';
 
   @override
   String get deviceRegionSuggestFromLocation => 'Suggest from my location';
@@ -2694,7 +2705,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get deviceRegionFamilyOther => 'Other';
 
   @override
-  String get deviceRegionSuggestTitle => 'Apply suggested region?';
+  String get deviceRegionSuggestTitle => 'Use the preset for your location?';
 
   @override
   String deviceRegionSuggestBody(String lat, String lon, String label) {
@@ -2702,7 +2713,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get deviceRegionSuggestApply => 'Apply';
+  String get deviceRegionSuggestApply => 'Use it';
 
   @override
   String get deviceRegionSuggestNoFix =>
@@ -2713,16 +2724,8 @@ class AppLocalizationsEn extends AppLocalizations {
       'Your location doesn\'t match any shipped country preset — pick one manually.';
 
   @override
-  String deviceRegionAppliedToast(String label) {
-    return '$label applied — make sure every node in your mesh uses the same preset.';
-  }
-
-  @override
   String get deviceRegionDisclaimerShort =>
       'Community-curated values, not regulatory guarantees.';
-
-  @override
-  String get deviceRegionDisclaimerMore => 'Details';
 
   @override
   String get deviceRegionDisclaimer =>
@@ -2780,19 +2783,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get closeSheet => 'Close';
 
   @override
-  String get deviceRadioParams => 'Frequency & bandwidth';
+  String get deviceRadioParams => 'Radio';
 
   @override
-  String get deviceIdentityAdvert => 'IDENTITY / ADVERT';
+  String get deviceIdentityAdvert => 'Identity and advert';
 
   @override
   String get deviceChannelsSection => 'CHANNELS';
 
   @override
-  String get deviceOtherParamsSection => 'OTHER PARAMS';
+  String get deviceOtherParamsSection => 'Advanced';
 
   @override
-  String get deviceDeviceSection => 'DEVICE';
+  String get deviceDeviceSection => 'Device';
 
   @override
   String get deviceFrequency => 'Frequency (MHz)';
@@ -2817,12 +2820,11 @@ class AppLocalizationsEn extends AppLocalizations {
       'The hash length this radio stamps on the packets it sends. Repeaters follow each packet\'s own length, so nodes need not agree. Longer hashes tell repeaters apart better but shrink the directed payload budget.';
 
   @override
-  String get devicePathHashUnread =>
-      'path hash: unknown (device not queried yet)';
+  String get devicePathHashUnread => 'unknown';
 
   @override
   String devicePathHashMismatch(String device, String form) {
-    return 'Not applied yet: this radio uses $device byte(s), the form is set to $form.';
+    return 'On the radio: $device. Yours: $form. Tap Apply to send yours.';
   }
 
   @override
@@ -3024,8 +3026,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get otherManualAddSubOff => 'Heard nodes auto-promote to contacts.';
 
   @override
-  String get otherTelemetryModeTitle =>
-      'Telemetry sharing — who may request each kind';
+  String get otherTelemetryModeTitle => 'Who may read telemetry';
 
   @override
   String get otherTelemetryBase => 'Base';
@@ -3050,11 +3051,11 @@ class AppLocalizationsEn extends AppLocalizations {
       'Who may request battery, GPS and environment data from this device.';
 
   @override
-  String get otherMultiAcksLabel => 'Multi-acks (0–3)';
+  String get otherMultiAcksLabel => 'Extra confirmations';
 
   @override
   String get otherMultiAcksHelper =>
-      '0 = single ack (default). Higher = wait for N extra acks before considering a send confirmed.';
+      'How many other nodes must confirm before a send counts as delivered.';
 
   @override
   String get otherSentSnack =>
@@ -3959,17 +3960,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String deviceNowParams(
-    String freq,
-    String bw,
-    String sf,
-    String cr,
-    String tx,
-  ) {
-    return 'device now: ${freq}MHz ${bw}kHz SF$sf CR$cr ${tx}dBm';
-  }
-
-  @override
   String get locationSourceDevice => 'device';
 
   @override
@@ -4251,12 +4241,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String networksSummary(
-    String freq,
-    String bw,
-    String sf,
-    String cr,
-    String ph,
-  ) {
+      String freq, String bw, String sf, String cr, String ph) {
     return '$freq MHz · $bw kHz · SF$sf · CR$cr · path hash $ph';
   }
 

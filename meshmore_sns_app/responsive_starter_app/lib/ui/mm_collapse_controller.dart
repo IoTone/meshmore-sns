@@ -21,7 +21,6 @@ abstract final class MmGroupIds {
   static const String locBeacon = 'location.beacon';
   static const String locManual = 'location.manual';
   // device_config_screen.dart
-  static const String devRegion = 'device.region';
   static const String devRadio = 'device.radio';
   static const String devIdentity = 'device.identity';
   static const String devOther = 'device.other';
@@ -42,7 +41,6 @@ abstract final class MmGroupIds {
     locAutoPublish,
     locBeacon,
     locManual,
-    devRegion,
     devRadio,
     devIdentity,
     devOther,

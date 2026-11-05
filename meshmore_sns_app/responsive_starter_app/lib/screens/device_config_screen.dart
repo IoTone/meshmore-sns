@@ -249,10 +249,10 @@ class _DeviceConfigScreenState extends State<DeviceConfigScreen> {
     }
   }
 
-  /// Fill the radio fields from a region preset and apply
-  /// immediately. The preset's tuple is the canonical operating
-  /// point — there's no "frequency only" partial-fill anymore.
-  Future<void> _applyPreset(MeshcoreController mc, RegionPreset p) async {
+  /// Fill the radio fields from a region preset. Nothing is sent: the radio
+  /// has one Apply, so a picked preset and a typed value travel the same way
+  /// and a preset can never look applied while the form holds other numbers.
+  String _fillFromPreset(RegionPreset p) {
     final AppLocalizations l = AppLocalizations.of(context);
     setState(() {
       _freq.text = p.frequencyMhz.toString();
@@ -264,39 +264,98 @@ class _DeviceConfigScreenState extends State<DeviceConfigScreen> {
       // disagree on it cannot forward directed traffic for each other.
       if (p.pathHashSize != null) _pathHashSize = p.pathHashSize!;
     });
-    final String localized = localizedPresetLabel(l, p.id);
-    if (!mc.isReady) {
-      // R25+3 — clearer feedback. The fields are filled and visible;
-      // tell the user explicitly that the values won't reach the
-      // radio until they connect. Pairs with the "Connect a device
-      // first" toast on the bottom Apply button.
-      _toast(l.deviceRegionLoadedOffline(localized));
-      return;
-    }
-    final String? key = _radioKey(mc);
-    final RadioOperatingPoint? previous =
-        RadioOperatingPoint.known(mc.selfInfo, mc.deviceInfo);
-    if (key == null || previous == null) {
-      _toast(l.deviceRadioUnknownState);
-      return;
-    }
-    await RadioSafetyStore.arm(key, previous);
-    final RadioOperatingPoint target = RadioOperatingPoint(
-      frequencyMhz: p.frequencyMhz,
-      bandwidthKhz: p.bandwidthKhz,
-      spreadingFactor: p.spreadingFactor,
-      codingRate: p.codingRate,
-      txPowerDbm: p.txPowerDbm,
-      // The feed's path_hash_size is a BYTE COUNT (1..3); the model keeps
-      // the wire's mode numbering (0..2) so nothing has to remember which
-      // is which.
-      pathHashMode:
-          p.pathHashSize == null ? previous.pathHashMode : p.pathHashSize! - 1,
+    return localizedPresetLabel(l, p.id);
+  }
+
+  /// The preset the radio is actually on, or Custom when it matches none.
+  String _presetLabel(AppLocalizations l, SelfInfo? si) {
+    if (si == null) return l.deviceRegionUnknown;
+    final RegionPreset? match = matchPresetByRadioParams(
+      frequencyMhz: si.frequencyMhz,
+      bandwidthKhz: si.bandwidthKhz,
+      spreadingFactor: si.spreadingFactor,
+      codingRate: si.codingRate,
     );
-    if (!mounted) return;
-    if (await _runTransaction(mc, target, radioKey: key) && mounted) {
-      _toast(l.deviceRegionAppliedToast(localized));
-    }
+    return match == null
+        ? l.deviceRegionCustom
+        : localizedPresetLabel(l, match.id);
+  }
+
+  /// The preset chooser. A sheet, because fifteen booked-out chips on the page
+  /// pushed every field below the fold (R103) and this section is the page's
+  /// reason to exist.
+  Future<void> _pickPreset(MeshcoreController mc, SelfInfo? si) async {
+    final AppLocalizations l = AppLocalizations.of(context);
+    final ColorScheme cs = Theme.of(context).colorScheme;
+    // An event handler, so the non-subscribing read: `context.skin` watches.
+    final MmSkin skin = context.skinRead;
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (BuildContext ctx) => DraggableScrollableSheet(
+        expand: false,
+        initialChildSize: 0.75,
+        maxChildSize: 0.95,
+        builder: (BuildContext ctx, ScrollController ctl) => ListView(
+          controller: ctl,
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+          children: <Widget>[
+            Text(l.deviceRegionBand, style: mmSectionLabelStyle(skin)),
+            const SizedBox(height: 4),
+            for (final RegionFamily fam in RegionFamily.values)
+              if (kRegionPresets.any(
+                  (RegionPreset p) => regionFamilyOf(p.id) == fam)) ...<Widget>[
+                Padding(
+                  padding: const EdgeInsets.only(top: 12, bottom: 6),
+                  child: Text(_familyLabel(l, fam),
+                      style: TextStyle(
+                          color: cs.onSurfaceVariant,
+                          fontSize: skin.type.sizeSm,
+                          letterSpacing: 1.2,
+                          fontWeight: FontWeight.w600)),
+                ),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: <Widget>[
+                    for (final RegionPreset p in kRegionPresets)
+                      if (regionFamilyOf(p.id) == fam)
+                        _RegionChip(
+                          label: localizedPresetLabel(l, p.id),
+                          note: p.note,
+                          selected: si != null &&
+                              matchPresetByRadioParams(
+                                    frequencyMhz: si.frequencyMhz,
+                                    bandwidthKhz: si.bandwidthKhz,
+                                    spreadingFactor: si.spreadingFactor,
+                                    codingRate: si.codingRate,
+                                  )?.id ==
+                                  p.id,
+                          onTap: () {
+                            final String name = _fillFromPreset(p);
+                            Navigator.pop(ctx);
+                            _toast(l.deviceRegionLoadedOffline(name));
+                          },
+                        ),
+                  ],
+                ),
+              ],
+            const SizedBox(height: 16),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: OutlinedButton.icon(
+                icon: const Icon(Icons.my_location, size: 16),
+                label: Text(l.deviceRegionSuggestFromLocation),
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  _suggestFromMyLocation(mc);
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   /// Suggest a preset from the phone's GPS fix. No-op if location is
@@ -343,7 +402,10 @@ class _DeviceConfigScreenState extends State<DeviceConfigScreen> {
         ],
       ),
     );
-    if (ok == true) await _applyPreset(mc, p);
+    if (ok == true && mounted) {
+      final String name = _fillFromPreset(p);
+      _toast(l.deviceRegionLoadedOffline(name));
+    }
   }
 
   void _toast(String m) {
@@ -517,7 +579,7 @@ class _DeviceConfigScreenState extends State<DeviceConfigScreen> {
       });
     }
 
-    Widget num(String label, TextEditingController c, String hint) => Padding(
+    Widget num(String label, TextEditingController c) => Padding(
           padding: const EdgeInsets.symmetric(vertical: 6),
           child: TextField(
             controller: c,
@@ -526,8 +588,7 @@ class _DeviceConfigScreenState extends State<DeviceConfigScreen> {
             inputFormatters: <TextInputFormatter>[
               FilteringTextInputFormatter.allow(RegExp(r'[0-9.\-]')),
             ],
-            decoration: InputDecoration(
-                labelText: label, hintText: hint, isDense: true),
+            decoration: InputDecoration(labelText: label, isDense: true),
           ),
         );
 
@@ -543,124 +604,62 @@ class _DeviceConfigScreenState extends State<DeviceConfigScreen> {
             // on a 387 dp phone at 1.3x text that pushed every other group
             // off the first screen. The banner stays; the picker folds.
             _CurrentRegionBanner(si: si, cs: cs, l: l),
-            const SizedBox(height: 8),
-            MmCollapsibleSection(
-              id: MmGroupIds.devRegion,
-              title: l.deviceRegionBand,
-              initiallyExpanded: false,
-              children: <Widget>[
-                // R68: grouped by family so the list is scannable.
-                for (final RegionFamily fam in RegionFamily.values)
-                  if (kRegionPresets.any((RegionPreset p) =>
-                      regionFamilyOf(p.id) == fam)) ...<Widget>[
-                    Padding(
-                      padding: const EdgeInsets.only(top: 10, bottom: 6),
-                      child: Text(
-                        _familyLabel(l, fam),
-                        // R103 — a family heading is a quiet label, not a
-                        // sentence. At 12 px semibold, at 1.3x text, it read
-                        // louder than the section header above it.
-                        style: TextStyle(
-                            color: cs.onSurfaceVariant,
-                            fontSize: context.skin.type.sizeSm,
-                            letterSpacing: 1.2,
-                            fontWeight: FontWeight.w600),
-                      ),
-                    ),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: <Widget>[
-                        for (final RegionPreset p in kRegionPresets)
-                          if (regionFamilyOf(p.id) == fam)
-                            _RegionChip(
-                              label: localizedPresetLabel(l, p.id),
-                              note: p.note,
-                              selected: si != null &&
-                                  matchPresetByRadioParams(
-                                        frequencyMhz: si.frequencyMhz,
-                                        bandwidthKhz: si.bandwidthKhz,
-                                        spreadingFactor: si.spreadingFactor,
-                                        codingRate: si.codingRate,
-                                      )?.id ==
-                                      p.id,
-                              onTap: () => _applyPreset(mc, p),
-                            ),
-                      ],
-                    ),
-                  ],
-                const SizedBox(height: 10),
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: OutlinedButton.icon(
-                    icon: const Icon(Icons.my_location, size: 16),
-                    label: Text(l.deviceRegionSuggestFromLocation),
-                    onPressed: () => _suggestFromMyLocation(mc),
-                  ),
-                ),
-                // R92 — 620 characters of legal caveat used to sit open
-                // under the preset picker. One line now; the full text is
-                // one tap away.
-                Padding(
-                  padding: const EdgeInsets.only(top: 4),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      Icon(Icons.info_outline,
-                          size: 14, color: cs.onSurfaceVariant),
-                      const SizedBox(width: 6),
-                      Expanded(
-                        child: Text(l.deviceRegionDisclaimerShort,
-                            style: TextStyle(
-                                color: cs.onSurfaceVariant, fontSize: context.skin.type.sizeSm)),
-                      ),
-                      MmAction(
-                        dense: true,
-                        label: l.deviceRegionDisclaimerMore,
-                        onPressed: () => showDialog<void>(
-                          context: context,
-                          builder: (BuildContext _) => AlertDialog(
-                            content: SingleChildScrollView(
-                                child: Text(l.deviceRegionDisclaimer)),
-                            actions: <Widget>[
-                              TextButton(
-                                onPressed: () => Navigator.pop(context),
-                                child: Text(l.deviceRegionDisclaimerMore),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
             const Divider(height: 28),
             MmCollapsibleSection(
               id: MmGroupIds.devRadio,
               title: l.deviceRadioParams,
+              initiallyExpanded: true,
               children: <Widget>[
-                if (si != null)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 4),
-                    child: Text(
-                        l.deviceNowParams(
-                            '${si.frequencyMhz}',
-                            '${si.bandwidthKhz}',
-                            '${si.spreadingFactor}',
-                            '${si.codingRate}',
-                            '${si.txPowerDbm}'),
-                        style: TextStyle(
-                            color: cs.onSurfaceVariant,
-                            fontFamily: context.skin.type.monoFamily,
-                            fontSize: context.skin.type.sizeBody)),
-                  ),
-                num(l.deviceFrequency, _freq, 'e.g. 915.0'),
-                num(l.deviceBandwidth, _bw, 'e.g. 250'),
-                num(l.deviceSpreadingFactor, _sf, 'e.g. 7'),
-                num(l.deviceCodingRate, _cr, 'e.g. 5'),
-                num(l.deviceTxPower, _tx, 'within regional limit'),
+                // R103 kept the fifteen chips off the page; the chooser is a
+                // sheet now, and a picked preset only fills the fields. One
+                // Apply sends whatever the form holds.
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: Icon(Icons.public,
+                      size: 18, color: cs.onSurfaceVariant),
+                  title: Text(l.deviceRegionBand),
+                  subtitle: Text(_presetLabel(l, si),
+                      style: TextStyle(color: cs.onSurfaceVariant)),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => _pickPreset(mc, si),
+                ),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Icon(Icons.info_outline,
+                        size: 14, color: cs.onSurfaceVariant),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(l.deviceRegionDisclaimerShort,
+                          style: TextStyle(
+                              color: cs.onSurfaceVariant,
+                              fontSize: context.skin.type.sizeSm)),
+                    ),
+                    MmAction(
+                      dense: true,
+                      label: l.deviceRegionWhy,
+                      onPressed: () => showDialog<void>(
+                        context: context,
+                        builder: (BuildContext ctx) => AlertDialog(
+                          title: Text(l.deviceRegionCaveatTitle),
+                          content: SingleChildScrollView(
+                              child: Text(l.deviceRegionDisclaimer)),
+                          actions: <Widget>[
+                            TextButton(
+                              onPressed: () => Navigator.pop(ctx),
+                              child: Text(l.deviceRegionCaveatClose),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                num(l.deviceFrequency, _freq),
+                num(l.deviceBandwidth, _bw),
+                num(l.deviceSpreadingFactor, _sf),
+                num(l.deviceCodingRate, _cr),
+                num(l.deviceTxPower, _tx),
                 const SizedBox(height: 14),
                 // Path hash length. Kept as a bare 1/2/3 segmented control
                 // rather than a numeric field: it is a three-value choice,
@@ -739,8 +738,14 @@ class _DeviceConfigScreenState extends State<DeviceConfigScreen> {
                 if (!ready)
                   Padding(
                     padding: const EdgeInsets.only(top: 8),
-                    child: Text(l.deviceConnectFirst,
-                        style: TextStyle(color: cs.onSurfaceVariant)),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: OutlinedButton.icon(
+                        icon: const Icon(Icons.add_link, size: 16),
+                        label: Text(l.diagnosticsPairRadio),
+                        onPressed: () => context.push('/pair'),
+                      ),
+                    ),
                   ),
               ],
             ),
@@ -1539,8 +1544,15 @@ class _GpsModuleControls extends StatelessWidget {
           else if (mc.supportsGpsInterval == false && enabled == true)
             Padding(
               padding: const EdgeInsets.only(top: 4, bottom: 4),
-              child: Text(l.deviceGpsIntervalFixedByFirmware,
-                  style: TextStyle(color: cs.onSurfaceVariant, fontSize: context.skin.type.sizeSm)),
+              // The reason is a tooltip rather than a line: a firmware key
+              // name is not something to read on the page.
+              child: Tooltip(
+                message: l.deviceGpsIntervalWhy,
+                child: Text(l.deviceGpsIntervalFixedByFirmware,
+                    style: TextStyle(
+                        color: cs.onSurfaceVariant,
+                        fontSize: context.skin.type.sizeSm)),
+              ),
             ),
         ],
       ),

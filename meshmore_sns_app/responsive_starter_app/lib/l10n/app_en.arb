@@ -604,7 +604,8 @@
       }
     }
   },
-  "deviceGpsIntervalFixedByFirmware": "Polling cadence is fixed by this firmware build (the sensors module doesn't expose `gps_interval`).",
+  "deviceGpsIntervalFixedByFirmware": "Set on the radio",
+  "deviceGpsIntervalWhy": "This firmware build fixes the polling cadence: the sensors module does not expose gps_interval.",
   "locTitle": "Auto-publish location",
   "locTileSubtitle": "Periodic + on-movement phone-GPS push to the device",
   "locHelp": "When the radio's GPS fix is stale, write the phone's position to it.",
@@ -1715,16 +1716,19 @@
   "channelsQrPayload": "Payload (also copy-friendly)",
   "channelsQrClose": "Close",
   "deviceConfigTitle": "Device configuration",
-  "deviceRegionBand": "REGION / BAND",
+  "deviceRegionBand": "Band preset",
+  "deviceRegionWhy": "Why",
+  "deviceRegionCaveatTitle": "Region caveat",
+  "deviceRegionCaveatClose": "Close",
   "deviceRegionCurrent": "CURRENTLY APPLIED",
   "deviceRegionUnknown": "Waiting for device…",
-  "deviceRegionCustom": "Custom (no preset match)",
+  "deviceRegionCustom": "Custom",
   "deviceRegionSuggestFromLocation": "Suggest from my location",
   "deviceRegionFamilyAmericas": "Americas",
   "deviceRegionFamilyEurope": "Europe",
   "deviceRegionFamilyAsiaPacific": "Asia-Pacific",
   "deviceRegionFamilyOther": "Other",
-  "deviceRegionSuggestTitle": "Apply suggested region?",
+  "deviceRegionSuggestTitle": "Use the preset for your location?",
   "deviceRegionSuggestBody": "Based on your phone GPS ({lat}, {lon}), the matching preset is {label}. Verify this is legal where you are before applying — particularly outside the country you set up in.",
   "@deviceRegionSuggestBody": {
     "placeholders": {
@@ -1739,10 +1743,9 @@
       }
     }
   },
-  "deviceRegionSuggestApply": "Apply",
+  "deviceRegionSuggestApply": "Use it",
   "deviceRegionSuggestNoFix": "Couldn't get a GPS fix — try outdoors with location permission granted.",
   "deviceRegionSuggestNoMatch": "Your location doesn't match any shipped country preset — pick one manually.",
-  "deviceRegionAppliedToast": "{label} applied — make sure every node in your mesh uses the same preset.",
   "@deviceRegionAppliedToast": {
     "placeholders": {
       "label": {
@@ -1751,7 +1754,6 @@
     }
   },
   "deviceRegionDisclaimerShort": "Community-curated values, not regulatory guarantees.",
-  "deviceRegionDisclaimerMore": "Details",
   "deviceRegionDisclaimer": "Operating points are community-curated, not regulatory guarantees. Pick the preset legal where you are and use the SAME tuple on every node. In Japan, legal parameters are not enough — the radio hardware itself must carry 技適 (giteki) certification; most grey-import LoRa boards do not, and operating one is an offence under the Radio Act regardless of settings. The Japan (ARIB STD-T108) preset is a community proposal that hasn't been broadly field-validated — please confirm it is legal and works on your hardware before relying on it.",
   "presetUsCanada": "USA / Canada",
   "presetUsArizona": "USA — Arizona",
@@ -1770,11 +1772,11 @@
   "presetVn": "Vietnam",
   "cancel": "Cancel",
   "closeSheet": "Close",
-  "deviceRadioParams": "Frequency & bandwidth",
-  "deviceIdentityAdvert": "IDENTITY / ADVERT",
+  "deviceRadioParams": "Radio",
+  "deviceIdentityAdvert": "Identity and advert",
   "deviceChannelsSection": "CHANNELS",
-  "deviceOtherParamsSection": "OTHER PARAMS",
-  "deviceDeviceSection": "DEVICE",
+  "deviceOtherParamsSection": "Advanced",
+  "deviceDeviceSection": "Device",
   "deviceFrequency": "Frequency (MHz)",
   "deviceBandwidth": "Bandwidth (kHz)",
   "deviceSpreadingFactor": "Spreading factor (5–12)",
@@ -1785,8 +1787,8 @@
     "description": "Radio/network setting. MeshCore path hash length."
   },
   "devicePathHashSizeHelp": "The hash length this radio stamps on the packets it sends. Repeaters follow each packet's own length, so nodes need not agree. Longer hashes tell repeaters apart better but shrink the directed payload budget.",
-  "devicePathHashUnread": "path hash: unknown (device not queried yet)",
-  "devicePathHashMismatch": "Not applied yet: this radio uses {device} byte(s), the form is set to {form}.",
+  "devicePathHashUnread": "unknown",
+  "devicePathHashMismatch": "On the radio: {device}. Yours: {form}. Tap Apply to send yours.",
   "@devicePathHashMismatch": {
     "placeholders": {
       "device": {
@@ -1915,7 +1917,7 @@
   "otherManualAddTitle": "Manual-add contacts",
   "otherManualAddSubOn": "You add heard nodes as contacts on demand.",
   "otherManualAddSubOff": "Heard nodes auto-promote to contacts.",
-  "otherTelemetryModeTitle": "Telemetry sharing — who may request each kind",
+  "otherTelemetryModeTitle": "Who may read telemetry",
   "otherTelemetryBase": "Base",
   "otherTelemetryLoc": "Location",
   "otherTelemetryEnv": "Environment",
@@ -1923,8 +1925,8 @@
   "otherTelemetryFlags": "Contacts",
   "otherTelemetryAll": "Anyone",
   "otherTelemetryModeHelp": "Who may request battery, GPS and environment data from this device.",
-  "otherMultiAcksLabel": "Multi-acks (0–3)",
-  "otherMultiAcksHelper": "0 = single ack (default). Higher = wait for N extra acks before considering a send confirmed.",
+  "otherMultiAcksLabel": "Extra confirmations",
+  "otherMultiAcksHelper": "How many other nodes must confirm before a send counts as delivered.",
   "otherSentSnack": "OTHER PARAMS sent — device-side write may take a moment.",
   "otherAwaitingDevice": "— awaiting device —",
   "batteryTitle": "Battery",
@@ -2534,7 +2536,6 @@
       }
     }
   },
-  "deviceNowParams": "device now: {freq}MHz {bw}kHz SF{sf} CR{cr} {tx}dBm",
   "@deviceNowParams": {
     "placeholders": {
       "freq": {

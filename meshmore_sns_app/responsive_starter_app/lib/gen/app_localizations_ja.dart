@@ -1,6 +1,5 @@
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
-
 import 'app_localizations.dart';
 
 // ignore_for_file: type=lint
@@ -1131,8 +1130,11 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get deviceGpsIntervalFixedByFirmware =>
-      'このファームウェアビルドでは GPS 更新間隔がハードコードされており、変更できません（sensors モジュールが `gps_interval` を公開していないため）。';
+  String get deviceGpsIntervalFixedByFirmware => '無線側の設定です';
+
+  @override
+  String get deviceGpsIntervalWhy =>
+      'このファームウェアはポーリング周期を固定しています。センサーモジュールが gps_interval を公開していません。';
 
   @override
   String get locTitle => '位置の自動公開';
@@ -2563,7 +2565,16 @@ class AppLocalizationsJa extends AppLocalizations {
   String get deviceConfigTitle => 'デバイス設定';
 
   @override
-  String get deviceRegionBand => 'リージョン / バンド';
+  String get deviceRegionBand => 'バンドプリセット';
+
+  @override
+  String get deviceRegionWhy => '理由';
+
+  @override
+  String get deviceRegionCaveatTitle => '地域の注意';
+
+  @override
+  String get deviceRegionCaveatClose => '閉じる';
 
   @override
   String get deviceRegionCurrent => '現在の設定';
@@ -2572,7 +2583,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get deviceRegionUnknown => 'デバイス応答待ち…';
 
   @override
-  String get deviceRegionCustom => 'カスタム（プリセット非該当）';
+  String get deviceRegionCustom => 'カスタム';
 
   @override
   String get deviceRegionSuggestFromLocation => '現在地から自動選択';
@@ -2590,7 +2601,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get deviceRegionFamilyOther => 'その他';
 
   @override
-  String get deviceRegionSuggestTitle => '推奨リージョンを適用しますか？';
+  String get deviceRegionSuggestTitle => '現在地のプリセットを使いますか？';
 
   @override
   String deviceRegionSuggestBody(String lat, String lon, String label) {
@@ -2598,7 +2609,7 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get deviceRegionSuggestApply => '適用';
+  String get deviceRegionSuggestApply => '使う';
 
   @override
   String get deviceRegionSuggestNoFix =>
@@ -2608,15 +2619,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get deviceRegionSuggestNoMatch => '現在地が出荷時プリセットの対象外です — 手動で選択してください。';
 
   @override
-  String deviceRegionAppliedToast(String label) {
-    return '$label を適用しました。メッシュ内の全ノードで同じプリセットを使用してください。';
-  }
-
-  @override
   String get deviceRegionDisclaimerShort => 'コミュニティによる値であり、規制上の保証ではありません。';
-
-  @override
-  String get deviceRegionDisclaimerMore => '詳細';
 
   @override
   String get deviceRegionDisclaimer =>
@@ -2674,16 +2677,16 @@ class AppLocalizationsJa extends AppLocalizations {
   String get closeSheet => '閉じる';
 
   @override
-  String get deviceRadioParams => '周波数と帯域幅';
+  String get deviceRadioParams => '無線';
 
   @override
-  String get deviceIdentityAdvert => 'アイデンティティ / アドバート';
+  String get deviceIdentityAdvert => '識別とアドバート';
 
   @override
   String get deviceChannelsSection => 'チャンネル';
 
   @override
-  String get deviceOtherParamsSection => 'その他のパラメータ';
+  String get deviceOtherParamsSection => '詳細設定';
 
   @override
   String get deviceDeviceSection => 'デバイス';
@@ -2711,11 +2714,11 @@ class AppLocalizationsJa extends AppLocalizations {
       'このラジオが送信するパケットに付けるハッシュ長です。中継は各パケット自身の長さに従うため、ノード間で揃える必要はありません。長いほど中継を区別しやすい一方、直接送信のペイロード容量が減ります。';
 
   @override
-  String get devicePathHashUnread => 'パスハッシュ: 不明 (デバイス未問い合わせ)';
+  String get devicePathHashUnread => '不明';
 
   @override
   String devicePathHashMismatch(String device, String form) {
-    return '未適用: ラジオは $device バイト、フォームは $form です。';
+    return '無線: $device。この画面: $form。適用を押すと画面の値が送られます。';
   }
 
   @override
@@ -2907,7 +2910,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get otherManualAddSubOff => '受信したノードは自動でコンタクトに昇格します。';
 
   @override
-  String get otherTelemetryModeTitle => 'テレメトリ共有 — 各種類を誰が要求できるか';
+  String get otherTelemetryModeTitle => 'テレメトリを読める相手';
 
   @override
   String get otherTelemetryBase => '基本';
@@ -2931,11 +2934,10 @@ class AppLocalizationsJa extends AppLocalizations {
   String get otherTelemetryModeHelp => 'この端末からバッテリー・GPS・環境データを要求できる相手を設定します。';
 
   @override
-  String get otherMultiAcksLabel => 'マルチ ACK (0–3)';
+  String get otherMultiAcksLabel => '追加の確認数';
 
   @override
-  String get otherMultiAcksHelper =>
-      '0 = シングル ACK (既定)。値が大きいほど送信確定までに待つ追加 ACK 数。';
+  String get otherMultiAcksHelper => '送信を配達済みとみなす前に、他の何台が確認するか。';
 
   @override
   String get otherSentSnack => 'OTHER PARAMS を送信 — デバイス側の書込に時間がかかる場合があります。';
@@ -3821,17 +3823,6 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String deviceNowParams(
-    String freq,
-    String bw,
-    String sf,
-    String cr,
-    String tx,
-  ) {
-    return 'デバイスの現在値: ${freq}MHz ${bw}kHz SF$sf CR$cr ${tx}dBm';
-  }
-
-  @override
   String get locationSourceDevice => 'デバイス';
 
   @override
@@ -4107,12 +4098,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String networksSummary(
-    String freq,
-    String bw,
-    String sf,
-    String cr,
-    String ph,
-  ) {
+      String freq, String bw, String sf, String cr, String ph) {
     return '$freq MHz · $bw kHz · SF$sf · CR$cr · パスハッシュ $ph';
   }
 

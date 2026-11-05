@@ -63,7 +63,7 @@ import 'app_localizations_ja.dart';
 /// property.
 abstract class AppLocalizations {
   AppLocalizations(String locale)
-    : localeName = intl.Intl.canonicalizedLocale(locale.toString());
+      : localeName = intl.Intl.canonicalizedLocale(locale.toString());
 
   final String localeName;
 
@@ -86,16 +86,16 @@ abstract class AppLocalizations {
   /// of delegates is preferred or required.
   static const List<LocalizationsDelegate<dynamic>> localizationsDelegates =
       <LocalizationsDelegate<dynamic>>[
-        delegate,
-        GlobalMaterialLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-      ];
+    delegate,
+    GlobalMaterialLocalizations.delegate,
+    GlobalCupertinoLocalizations.delegate,
+    GlobalWidgetsLocalizations.delegate,
+  ];
 
   /// A list of this localizations delegate's supported locales.
   static const List<Locale> supportedLocales = <Locale>[
     Locale('en'),
-    Locale('ja'),
+    Locale('ja')
   ];
 
   /// No description provided for @appName.
@@ -2135,8 +2135,14 @@ abstract class AppLocalizations {
   /// No description provided for @deviceGpsIntervalFixedByFirmware.
   ///
   /// In en, this message translates to:
-  /// **'Polling cadence is fixed by this firmware build (the sensors module doesn\'t expose `gps_interval`).'**
+  /// **'Set on the radio'**
   String get deviceGpsIntervalFixedByFirmware;
+
+  /// No description provided for @deviceGpsIntervalWhy.
+  ///
+  /// In en, this message translates to:
+  /// **'This firmware build fixes the polling cadence: the sensors module does not expose gps_interval.'**
+  String get deviceGpsIntervalWhy;
 
   /// No description provided for @locTitle.
   ///
@@ -4559,8 +4565,26 @@ abstract class AppLocalizations {
   /// No description provided for @deviceRegionBand.
   ///
   /// In en, this message translates to:
-  /// **'REGION / BAND'**
+  /// **'Band preset'**
   String get deviceRegionBand;
+
+  /// No description provided for @deviceRegionWhy.
+  ///
+  /// In en, this message translates to:
+  /// **'Why'**
+  String get deviceRegionWhy;
+
+  /// No description provided for @deviceRegionCaveatTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Region caveat'**
+  String get deviceRegionCaveatTitle;
+
+  /// No description provided for @deviceRegionCaveatClose.
+  ///
+  /// In en, this message translates to:
+  /// **'Close'**
+  String get deviceRegionCaveatClose;
 
   /// No description provided for @deviceRegionCurrent.
   ///
@@ -4577,7 +4601,7 @@ abstract class AppLocalizations {
   /// No description provided for @deviceRegionCustom.
   ///
   /// In en, this message translates to:
-  /// **'Custom (no preset match)'**
+  /// **'Custom'**
   String get deviceRegionCustom;
 
   /// No description provided for @deviceRegionSuggestFromLocation.
@@ -4613,7 +4637,7 @@ abstract class AppLocalizations {
   /// No description provided for @deviceRegionSuggestTitle.
   ///
   /// In en, this message translates to:
-  /// **'Apply suggested region?'**
+  /// **'Use the preset for your location?'**
   String get deviceRegionSuggestTitle;
 
   /// No description provided for @deviceRegionSuggestBody.
@@ -4625,7 +4649,7 @@ abstract class AppLocalizations {
   /// No description provided for @deviceRegionSuggestApply.
   ///
   /// In en, this message translates to:
-  /// **'Apply'**
+  /// **'Use it'**
   String get deviceRegionSuggestApply;
 
   /// No description provided for @deviceRegionSuggestNoFix.
@@ -4640,23 +4664,11 @@ abstract class AppLocalizations {
   /// **'Your location doesn\'t match any shipped country preset — pick one manually.'**
   String get deviceRegionSuggestNoMatch;
 
-  /// No description provided for @deviceRegionAppliedToast.
-  ///
-  /// In en, this message translates to:
-  /// **'{label} applied — make sure every node in your mesh uses the same preset.'**
-  String deviceRegionAppliedToast(String label);
-
   /// No description provided for @deviceRegionDisclaimerShort.
   ///
   /// In en, this message translates to:
   /// **'Community-curated values, not regulatory guarantees.'**
   String get deviceRegionDisclaimerShort;
-
-  /// No description provided for @deviceRegionDisclaimerMore.
-  ///
-  /// In en, this message translates to:
-  /// **'Details'**
-  String get deviceRegionDisclaimerMore;
 
   /// No description provided for @deviceRegionDisclaimer.
   ///
@@ -4769,13 +4781,13 @@ abstract class AppLocalizations {
   /// No description provided for @deviceRadioParams.
   ///
   /// In en, this message translates to:
-  /// **'Frequency & bandwidth'**
+  /// **'Radio'**
   String get deviceRadioParams;
 
   /// No description provided for @deviceIdentityAdvert.
   ///
   /// In en, this message translates to:
-  /// **'IDENTITY / ADVERT'**
+  /// **'Identity and advert'**
   String get deviceIdentityAdvert;
 
   /// No description provided for @deviceChannelsSection.
@@ -4787,13 +4799,13 @@ abstract class AppLocalizations {
   /// No description provided for @deviceOtherParamsSection.
   ///
   /// In en, this message translates to:
-  /// **'OTHER PARAMS'**
+  /// **'Advanced'**
   String get deviceOtherParamsSection;
 
   /// No description provided for @deviceDeviceSection.
   ///
   /// In en, this message translates to:
-  /// **'DEVICE'**
+  /// **'Device'**
   String get deviceDeviceSection;
 
   /// No description provided for @deviceFrequency.
@@ -4841,13 +4853,13 @@ abstract class AppLocalizations {
   /// No description provided for @devicePathHashUnread.
   ///
   /// In en, this message translates to:
-  /// **'path hash: unknown (device not queried yet)'**
+  /// **'unknown'**
   String get devicePathHashUnread;
 
   /// No description provided for @devicePathHashMismatch.
   ///
   /// In en, this message translates to:
-  /// **'Not applied yet: this radio uses {device} byte(s), the form is set to {form}.'**
+  /// **'On the radio: {device}. Yours: {form}. Tap Apply to send yours.'**
   String devicePathHashMismatch(String device, String form);
 
   /// No description provided for @deviceRadioApplied.
@@ -5189,7 +5201,7 @@ abstract class AppLocalizations {
   /// No description provided for @otherTelemetryModeTitle.
   ///
   /// In en, this message translates to:
-  /// **'Telemetry sharing — who may request each kind'**
+  /// **'Who may read telemetry'**
   String get otherTelemetryModeTitle;
 
   /// No description provided for @otherTelemetryBase.
@@ -5237,13 +5249,13 @@ abstract class AppLocalizations {
   /// No description provided for @otherMultiAcksLabel.
   ///
   /// In en, this message translates to:
-  /// **'Multi-acks (0–3)'**
+  /// **'Extra confirmations'**
   String get otherMultiAcksLabel;
 
   /// No description provided for @otherMultiAcksHelper.
   ///
   /// In en, this message translates to:
-  /// **'0 = single ack (default). Higher = wait for N extra acks before considering a send confirmed.'**
+  /// **'How many other nodes must confirm before a send counts as delivered.'**
   String get otherMultiAcksHelper;
 
   /// No description provided for @otherSentSnack.
@@ -6824,18 +6836,6 @@ abstract class AppLocalizations {
   /// **'Active: {name} · slots · name + PSK · #hashtag'**
   String deviceActiveChannelSub(String name);
 
-  /// No description provided for @deviceNowParams.
-  ///
-  /// In en, this message translates to:
-  /// **'device now: {freq}MHz {bw}kHz SF{sf} CR{cr} {tx}dBm'**
-  String deviceNowParams(
-    String freq,
-    String bw,
-    String sf,
-    String cr,
-    String tx,
-  );
-
   /// No description provided for @locationSourceDevice.
   ///
   /// In en, this message translates to:
@@ -7315,12 +7315,7 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{freq} MHz · {bw} kHz · SF{sf} · CR{cr} · path hash {ph}'**
   String networksSummary(
-    String freq,
-    String bw,
-    String sf,
-    String cr,
-    String ph,
-  );
+      String freq, String bw, String sf, String cr, String ph);
 
   /// No description provided for @networksMembers.
   ///
@@ -8964,9 +8959,8 @@ AppLocalizations lookupAppLocalizations(Locale locale) {
   }
 
   throw FlutterError(
-    'AppLocalizations.delegate failed to load unsupported locale "$locale". This is likely '
-    'an issue with the localizations generation tool. Please file an issue '
-    'on GitHub with a reproducible sample app and the gen-l10n configuration '
-    'that was used.',
-  );
+      'AppLocalizations.delegate failed to load unsupported locale "$locale". This is likely '
+      'an issue with the localizations generation tool. Please file an issue '
+      'on GitHub with a reproducible sample app and the gen-l10n configuration '
+      'that was used.');
 }
