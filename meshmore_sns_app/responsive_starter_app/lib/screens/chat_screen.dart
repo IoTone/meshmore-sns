@@ -91,7 +91,9 @@ class _ChatScreenState extends State<ChatScreen>
     _focus = context.read<NotificationFocus?>();
     void listener() {
       if (!mounted) return;
-      context.read<NotificationFocus>().openChannel = mc.activeChannel;
+      // The cached record, not an ancestor lookup: the controller can notify
+      // while this element is being deactivated, where a lookup is illegal.
+      _focus?.openChannel = mc.activeChannel;
     }
 
     _focusListener = listener;

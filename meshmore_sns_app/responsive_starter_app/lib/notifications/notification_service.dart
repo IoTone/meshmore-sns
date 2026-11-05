@@ -10,6 +10,38 @@ import 'message_notification.dart';
 import 'notification_focus.dart';
 import 'notifier.dart';
 
+/// What the app does around a notification, besides posting it.
+///
+/// The per-channel bundle has four switches (D8.13), and the OS answers only
+/// one of them. Cue, vibration and speech are the app's, so they sit behind
+/// this seam: the service decides *whether* from the channel's settings, and
+/// the app decides *how*.
+abstract interface class NotificationEffects {
+  /// Play the theme's inbound cue.
+  void cue(NotificationClass cls);
+
+  /// Vibrate for an inbound message.
+  void vibrate();
+
+  /// Read [text] aloud for [channelIdx] through the TTS layer, which keeps
+  /// its own per-channel mute and voice.
+  void speakChannel(int channelIdx, String text);
+}
+
+/// The effects a harness gets: nothing.
+class SilentNotificationEffects implements NotificationEffects {
+  const SilentNotificationEffects();
+
+  @override
+  void cue(NotificationClass cls) {}
+
+  @override
+  void vibrate() {}
+
+  @override
+  void speakChannel(int channelIdx, String text) {}
+}
+
 /// The strings a notification needs, behind one call so the service can be
 /// tested without a widget tree and can follow a locale change.
 abstract interface class NotificationStrings {
@@ -55,7 +87,8 @@ class NotificationService {
     required this.ownPubKeyHex,
     required this.peerDisplayName,
     required this.channelName,
-  });
+    NotificationEffects effects = const SilentNotificationEffects(),
+  }) : _effects = effects;
 
   /// One notification per inbound message, never per transport event.
   final Stream<ChatMessage> channelMessages;
@@ -77,6 +110,13 @@ class NotificationService {
 
   /// A channel slot's name, or its index when the radio has not listed it.
   final String Function(int slot) channelName;
+
+  NotificationEffects _effects;
+
+  /// The app attaches the real cue/vibration/speech after its first frame,
+  /// when the providers that own them exist. Before that the effects are
+  /// silent, which is also what a harness gets.
+  set effects(NotificationEffects e) => _effects = e;
 
   StreamSubscription<ChatMessage>? _channelSub;
   StreamSubscription<ChatMessage>? _dmSub;
@@ -124,6 +164,16 @@ class NotificationService {
     }
     final NotificationClass cls =
         sos ? NotificationClass.sos : NotificationClass.channel;
+    // The bundle's other three switches. Honoured here rather than in the
+    // notifier, because a cue and a vibration are the app's, not the OS's,
+    // and a silent channel must not cue either.
+    final ChannelNotificationPrefs bundle = prefs.prefsFor(m.channelIdx);
+    // An SOS is loud whatever the channel's bundle says: the OS channel is
+    // the user's control for its silence, and a channel that was muted for
+    // chatter must not mute a distress call with it.
+    if (bundle.audio || sos) _effects.cue(cls);
+    if (bundle.haptic || sos) _effects.vibrate();
+    if (bundle.tts) _effects.speakChannel(m.channelIdx, m.text);
     notifier.show(MessageNotification(
       id: idFor(m.id),
       cls: cls,
@@ -139,6 +189,8 @@ class NotificationService {
     final String key = m.peerPubKeyHex ?? '';
     if (focus.isPeerOpen(key)) return;
     final String? name = peerDisplayName(key);
+    _effects.cue(NotificationClass.direct);
+    _effects.vibrate();
     notifier.show(MessageNotification(
       id: idFor(m.id),
       cls: NotificationClass.direct,

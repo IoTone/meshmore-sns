@@ -28,6 +28,8 @@ import 'package:meshmore_sns_app/peer/peer_profiles.dart';
 import 'package:meshmore_sns_app/meshcore/discovered_node.dart';
 import 'package:meshmore_sns_app/notifications/channel_notification_prefs.dart';
 import 'package:meshmore_sns_app/notifications/local_notifier.dart';
+import 'package:meshmore_sns_app/notifications/app_notification_effects.dart';
+import 'package:meshmore_sns_app/notifications/message_notification.dart';
 import 'package:meshmore_sns_app/notifications/notification_focus.dart';
 import 'package:meshmore_sns_app/notifications/notification_service.dart';
 import 'package:meshmore_sns_app/notifications/notifier.dart';
@@ -188,7 +190,11 @@ void main() {
           ),
           ChangeNotifierProvider<LocaleController>.value(
               value: notificationLocale),
-          Provider<NotificationFocus>.value(value: notificationFocus),
+          // Registered nullable on purpose: the notification subsystem is
+          // app-scoped and optional, so a widget test that builds this tree
+          // without it runs with no notifications instead of failing a lookup
+          // it never needed (D8.21's rule, applied to the harness).
+          Provider<NotificationFocus?>.value(value: notificationFocus),
           // Places (meshmore-places-spec.md): reports live in one app-scoped
           // store, so the map layer, the history list, the chat echo and
           // search cannot disagree about what exists. The budget is the
@@ -198,10 +204,10 @@ void main() {
           Provider<PlaceReportBudget>(
             create: (_) => PlaceReportBudget(clock: DateTime.now),
           ),
-          Provider<Notifier>.value(value: notifier),
-          ChangeNotifierProvider<NotificationPrefs>.value(
+          Provider<Notifier?>.value(value: notifier),
+          ChangeNotifierProvider<NotificationPrefs?>.value(
               value: notificationPrefs),
-          Provider<NotificationService>.value(value: notifications),
+          Provider<NotificationService?>.value(value: notifications),
           // R36 — auto-publish location. Owns its own
           // shared_preferences-backed settings + the periodic
           // timer / position stream. Constructed lazily to read
@@ -258,6 +264,19 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       final NotificationService? service =
           context.read<NotificationService?>();
       if (notifier != null && service != null) {
+        // The bundle's cue, vibration and speech are the app's, not the OS's,
+        // so they are attached here, where the providers that own them exist.
+        service.effects = AppNotificationEffects(
+          onCue: (NotificationClass cls) =>
+              context.read<CueService>().play(switch (cls) {
+                NotificationClass.channel => CueKind.messageIn,
+                NotificationClass.direct => CueKind.dmIn,
+                NotificationClass.sos => CueKind.alert,
+              }),
+          onVibrate: HapticFeedback.mediumImpact,
+          onSpeakChannel: (int slot, String text) =>
+              context.read<TtsController>().speakForChannel(slot, text),
+        );
         notifier.init().then((_) => service.start());
       }
     });
@@ -278,8 +297,8 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (!mounted) return;
-    context.read<NotificationFocus>().foreground =
-        state == AppLifecycleState.resumed;
+    final NotificationFocus? focus = context.read<NotificationFocus?>();
+    if (focus != null) focus.foreground = state == AppLifecycleState.resumed;
   }
 
   // R4 / U5 — l10n wiring shared between every MaterialApp branch:

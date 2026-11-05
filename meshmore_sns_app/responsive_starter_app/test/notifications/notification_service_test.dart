@@ -23,6 +23,23 @@ class _Strings implements NotificationStrings {
       };
 }
 
+/// Records what the app asked the phone to do besides posting.
+class _Effects implements NotificationEffects {
+  final List<NotificationClass> cues = <NotificationClass>[];
+  int vibrations = 0;
+  final List<(int, String)> spoken = <(int, String)>[];
+
+  @override
+  void cue(NotificationClass cls) => cues.add(cls);
+
+  @override
+  void vibrate() => vibrations++;
+
+  @override
+  void speakChannel(int channelIdx, String text) =>
+      spoken.add((channelIdx, text));
+}
+
 void main() {
   late StreamController<ChatMessage> channel;
   late StreamController<ChatMessage> direct;
@@ -206,5 +223,69 @@ void main() {
       NotificationService.idFor('abc'),
       isNot(NotificationService.idFor('abd')),
     );
+  });
+
+  // D8.13 — the bundle's three non-OS switches actually do something, and a
+  // silent channel stays silent in all of them.
+  group('the per-channel bundle', () {
+    test('a cue and a vibration follow the channel settings', () async {
+      final _Effects fx = _Effects();
+      service.effects = fx;
+      await prefs.setFor(0, const ChannelNotificationPrefs(audio: true));
+      await channelMsg('hello');
+      expect(fx.cues, <NotificationClass>[NotificationClass.channel]);
+      expect(fx.vibrations, 1);
+    });
+
+    test('a silenced channel neither cues nor vibrates', () async {
+      final _Effects fx = _Effects();
+      service.effects = fx;
+      await prefs.setFor(0, const ChannelNotificationPrefs(
+        os: false,
+        audio: false,
+        haptic: false,
+      ));
+      await channelMsg('hello');
+      expect(fx.cues, isEmpty);
+      expect(fx.vibrations, 0);
+    });
+
+    test('speech is per channel and carries the message text', () async {
+      final _Effects fx = _Effects();
+      service.effects = fx;
+      await prefs.setFor(0, const ChannelNotificationPrefs(tts: true));
+      await channelMsg('bridge out', slot: 0);
+      expect(fx.spoken, <(int, String)>[(0, 'bridge out')]);
+    });
+
+    test('an SOS is loud even where the channel is silent', () async {
+      final _Effects fx = _Effects();
+      service.effects = fx;
+      await prefs.setFor(0, const ChannelNotificationPrefs(
+        os: false,
+        audio: false,
+        haptic: false,
+      ));
+      await channelMsg('[SOS:abc123] 38.9,-104.8');
+      expect(fx.cues, <NotificationClass>[NotificationClass.sos]);
+      expect(fx.vibrations, 1);
+      expect(notifier.shown.single.cls, NotificationClass.sos);
+    });
+
+    test('a direct message cues and vibrates without a channel bundle',
+        () async {
+      final _Effects fx = _Effects();
+      service.effects = fx;
+      direct.add(ChatMessage(
+        id: 'd1',
+        channelIdx: 0,
+        text: 'hi',
+        outgoing: false,
+        peerPubKeyHex: 'beef',
+      ));
+      await Future<void>.delayed(Duration.zero);
+      expect(fx.cues, <NotificationClass>[NotificationClass.direct]);
+      expect(fx.vibrations, 1);
+    });
   });
 }

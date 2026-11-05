@@ -130,6 +130,10 @@ class AppSettingsScreen extends StatelessWidget {
       body: MmScaffold(
         child: ListView(
         children: <Widget>[
+          // D8.20 — the OS may have the permission off while the app is
+          // otherwise ready. Say so once, in the place the toggle lives, so
+          // a silent lock screen is not mistaken for a radio failure.
+          const _NotificationsDeniedBanner(),
           // Radio-free mode. Off is the normal state; turning it off asks an
           // already-paired companion to reconnect rather than waiting for the
           // next launch.
@@ -287,6 +291,35 @@ class AppSettingsScreen extends StatelessWidget {
         ],
       ),
       ),
+    );
+  }
+}
+
+
+/// A one-line notice when the OS notification permission is off.
+///
+/// It reads the permission each build rather than caching it, because the
+/// user can grant it from system settings and come back without a restart.
+class _NotificationsDeniedBanner extends StatelessWidget {
+  const _NotificationsDeniedBanner();
+
+  @override
+  Widget build(BuildContext context) {
+    final PermissionsService perms = context.read<PermissionsService>();
+    return FutureBuilder<bool>(
+      future: perms.notificationsGranted(),
+      builder: (BuildContext ctx, AsyncSnapshot<bool> snap) {
+        if (snap.data != false) return const SizedBox.shrink();
+        final AppLocalizations l = AppLocalizations.of(ctx);
+        return ListTile(
+          leading: const Icon(Icons.notifications_off_outlined),
+          title: Text(l.notifDeniedBanner),
+          trailing: TextButton(
+            onPressed: () => ctx.read<PermissionsService>().openAppSettingsPage(),
+            child: Text(l.deviceOpenSettings),
+          ),
+        );
+      },
     );
   }
 }
