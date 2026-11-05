@@ -373,6 +373,60 @@ void main() {
       mc.dispose();
     });
   });
+
+  // The per-channel speech toggle only exists while speech is on somewhere.
+  // With speech off globally the slot carries the reason and the way out: the
+  // handoff build did that with a disabled button and its hint, and losing it
+  // left a mute control that simply vanished for the user who turned it off.
+  testWidgets('speech off in settings says where to switch it on',
+      (WidgetTester t) async {
+    await t.binding.setSurfaceSize(const Size(900, 1600));
+    addTearDown(() => t.binding.setSurfaceSize(null));
+    final FakeMeshcoreTransport fake =
+        FakeMeshcoreTransport(connected: true);
+    final MeshcoreController mc = MeshcoreController(
+      transportFactory: () async => fake,
+      connection:
+          MeshcoreConnection(handshakeTimeout: const Duration(seconds: 5)),
+    );
+    final TtsController tts = TtsController(speaker: FakeTtsSpeaker());
+    await t.pumpWidget(_host(mc, tts));
+    await mc.connect();
+    fake.emit(selfInfoFrame());
+    await t.pumpAndSettle();
+
+    expect(tts.enabled, isFalse, reason: 'speech is off by default');
+    expect(find.byKey(const ValueKey<String>('chat-speech-off')),
+        findsOneWidget);
+    expect(find.byTooltip('Speech is off in App settings'), findsOneWidget);
+    expect(find.byTooltip('TTS reading this channel'), findsNothing);
+    mc.dispose();
+  });
+
+  testWidgets('the per-channel toggle returns once speech is on',
+      (WidgetTester t) async {
+    await t.binding.setSurfaceSize(const Size(900, 1600));
+    addTearDown(() => t.binding.setSurfaceSize(null));
+    final FakeMeshcoreTransport fake =
+        FakeMeshcoreTransport(connected: true);
+    final MeshcoreController mc = MeshcoreController(
+      transportFactory: () async => fake,
+      connection:
+          MeshcoreConnection(handshakeTimeout: const Duration(seconds: 5)),
+    );
+    final TtsController tts = TtsController(speaker: FakeTtsSpeaker());
+    await t.pumpWidget(_host(mc, tts));
+    await mc.connect();
+    fake.emit(selfInfoFrame());
+    await t.pumpAndSettle();
+
+    await tts.setEnabled(true);
+    await t.pumpAndSettle();
+
+    expect(find.byKey(const ValueKey<String>('chat-speech-off')), findsNothing);
+    expect(find.byTooltip('TTS reading this channel'), findsOneWidget);
+    mc.dispose();
+  });
 }
 
 class _MemoryDrafts implements DraftSink {

@@ -12,7 +12,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get appName => 'Meshmore SNS';
 
   @override
-  String get appSubtitle => 'ソーシャルロボット・ネットワークサービス';
+  String get appSubtitle => 'ラジオでつながるメッシュ通信';
 
   @override
   String get tabDashboard => 'ダッシュボード';
@@ -65,7 +65,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get tabAbout => 'アプリ情報';
 
   @override
-  String get dashboardPeersInRange => '範囲内のピア';
+  String get dashboardPeersInRange => '範囲内のノード';
 
   @override
   String dashboardKnownCount(int n) {
@@ -98,14 +98,14 @@ class AppLocalizationsJa extends AppLocalizations {
   String get botOnWire => '返信には [bot] を付けて送信し、相手が機械の発言だと分かるようにします。';
 
   @override
-  String get botRefusedPublicSlot => 'パブリックでは使用できません。スロット0は公開チャンネルです。';
+  String get botRefusedPublicSlot => 'パブリックでは使えません。';
 
   @override
   String get botRefusedPublicPsk =>
-      'このスロットは公開鍵のままなので、実質パブリックです。先に専用の鍵を設定してください。';
+      'このチャンネルは公開の鍵のままなので、番号が違ってもパブリックです。先に非公開の鍵を設定してください。';
 
   @override
-  String get botRefusedUnknownPsk => '無線機からこのスロットの鍵を取得中です。';
+  String get botRefusedUnknownPsk => 'ラジオからこのチャンネルの鍵を待っています。';
 
   @override
   String get botMode => '返信モード';
@@ -117,7 +117,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get botModeRandom => 'ランダム';
 
   @override
-  String get botModeDeterministicSub => '常に最初に一致した規則を使うため、記録を差分比較できます。';
+  String get botModeDeterministicSub => '最初に一致した規則が必ず使われるので、2 回の実行を比べられます。';
 
   @override
   String get botModeRandomSub => '一致した規則から選択します。シードで再現可能。';
@@ -186,7 +186,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get dashHyperEmpty => 'ノードを探索中…';
 
   @override
-  String get dashPeers => 'ピア';
+  String get dashPeers => 'ノード';
 
   @override
   String get dashAgHudSignal => 'シグナル';
@@ -456,12 +456,10 @@ class AppLocalizationsJa extends AppLocalizations {
   String get settingsBackgroundTitle => 'バックグラウンドで接続を維持';
 
   @override
-  String get settingsBackgroundOn =>
-      'Android: 常駐通知でラジオ接続を維持し、バックグラウンド中もメッセージを受信';
+  String get settingsBackgroundOn => 'アプリを閉じていてもメッセージが届きます';
 
   @override
-  String get settingsBackgroundOff =>
-      'アプリ再表示時にメッセージ受信 (ラジオがバッファ); バックグラウンド通知なし';
+  String get settingsBackgroundOff => 'アプリを開いたときにメッセージが届きます';
 
   @override
   String get settingsTelemetryPoll => 'ノードのテレメトリを収集';
@@ -494,14 +492,13 @@ class AppLocalizationsJa extends AppLocalizations {
   String get settingsSpeechOff => '音声読み上げ OFF (既定) · チャネルメッセージを読み上げ';
 
   @override
-  String get settingsSpeechMuted => '読み上げは ON ですが、オーディオミュートにより消音されています';
+  String get settingsSpeechMuted => '読み上げはオンですが、通知音のミュートで消えています。';
 
   @override
   String get settingsPermissions => '権限';
 
   @override
-  String get settingsPermissionsSubtitle =>
-      'このアプリの OS 設定画面を開く — Bluetooth / 通知をオン・オフできます。';
+  String get settingsPermissionsSubtitle => 'Bluetooth・通知・位置情報';
 
   @override
   String get termsTitle => '利用規約とプライバシー';
@@ -629,11 +626,10 @@ class AppLocalizationsJa extends AppLocalizations {
   String get personalizationHighContrast => 'ハイコントラスト';
 
   @override
-  String get personalizationHighContrastSubtitle => 'SEELE ハイコントラストパレットを強制適用';
+  String get personalizationHighContrastSubtitle => 'ハイコントラストの配色を使う';
 
   @override
-  String get personalizationHighContrastHint =>
-      'ハイコントラストが ON のため、プリセットの選択に関わらず SEELE ハイコントラストパレットが強制されます。別テーマを使うには下の「ハイコントラスト」を OFF にしてください。';
+  String get personalizationHighContrastHint => 'ハイコントラストは選んだスキンより優先されます。';
 
   @override
   String get personalizationReduceMotion => 'モーションを減らす';
@@ -642,7 +638,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get personalizationVisualHapticOnly => '視覚 + 触覚のみ';
 
   @override
-  String get personalizationVisualHapticOnlySubtitle => '音による情報提示なし; 音声をオフ';
+  String get personalizationVisualHapticOnlySubtitle => '通知は振動のみ';
 
   @override
   String get personalizationAudioAlerts => '音声アラート';
@@ -669,7 +665,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get demoTooltip => 'デモモード — 無線なし。コンパニオンに接続せずにチャンネル・設定・ドキュメントを試せます。';
 
   @override
-  String get demoModeRow => 'デモモード（無線なし）';
+  String get demoModeRow => '無線なし';
 
   @override
   String get demoModeSubtitle => 'オフラインでアプリを試せます';
@@ -678,7 +674,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get firstRunHeader => 'MESHMORE · ようこそ';
 
   @override
-  String get firstRunTitle => 'アプリが必要とする権限について';
+  String get firstRunTitle => 'このアプリが求めるもの';
 
   @override
   String get firstRunBleTitle => 'Bluetooth';
@@ -691,29 +687,28 @@ class AppLocalizationsJa extends AppLocalizations {
   String get firstRunNotificationsTitle => '通知';
 
   @override
-  String get firstRunNotificationsBody =>
-      '後でアプリ設定の「バックグラウンドで接続を維持」を ON にした場合のみ求めます。今回はスキップし二度確認しません。';
+  String get firstRunNotificationsBody => 'バックグラウンドで接続を維持する場合にだけ、後で確認します。';
 
   @override
   String get firstRunOfflineTitle => 'オフラインでも使えます';
 
   @override
   String get firstRunOfflineBody =>
-      'Bluetooth をスキップするとデモモードで起動します。メッセージ履歴の閲覧、チャネル設定、診断、ドキュメントが使えます。無線を接続するまでライブのメッシュ通信はありません。';
+      'Bluetooth を使わない場合、デモモードで起動します。履歴・チャネル・設定・ドキュメントは使えますが、無線の通信はありません。';
 
   @override
-  String get firstRunGrant => 'Bluetooth を許可して続行';
+  String get firstRunGrant => 'Bluetooth を許可';
 
   @override
   String get firstRunSkip => 'デモモードで試す（無線なし）';
 
   @override
   String get firstRunDeniedTransient =>
-      'Bluetooth が許可されませんでした — オフラインで続行するか、OS 設定で許可を変更できます。';
+      'このアプリでは Bluetooth がオフです。オフラインで続けるか、設定で許可してください。';
 
   @override
   String get firstRunDeniedPermanent =>
-      'Bluetooth が永続的に拒否されました — OS 設定で許可してください。オフラインでも引き続き利用可能です。';
+      'このアプリでは Bluetooth がブロックされています。設定で許可するか、オフラインのまま使ってください。';
 
   @override
   String get firstRunOpenSettings => 'OS 設定を開く';
@@ -755,7 +750,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get nodesFloodAdvertBody => 'メッシュ全体 — 隣接 + リピーター。発見に最適。';
 
   @override
-  String get nodesZeroHopAdvert => 'ゼロホップアドバート';
+  String get nodesZeroHopAdvert => '直接アドバート';
 
   @override
   String get nodesZeroHopAdvertBody => '隣接のみ — 再ブロードキャストなし。混雑したメッシュ向け。';
@@ -765,8 +760,7 @@ class AppLocalizationsJa extends AppLocalizations {
       'フラッドアドバートを送信 — メッシュ全体に伝播 (隣接 + リピーター)。相手側でも Advertise を実行するまで表示されません。';
 
   @override
-  String get nodesZeroHopAdvertSent =>
-      'ゼロホップアドバートを送信 — 隣接のみ、リピーターは再ブロードキャストしません。';
+  String get nodesZeroHopAdvertSent => '直接届く範囲のラジオにだけ送りました。';
 
   @override
   String get nodesSearchHint => '名前 / shortId / 公開鍵で検索…';
@@ -824,7 +818,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String nodesStatusReady(int shown, int total, int inRange, int favs) {
-    return '$shown/$total件 表示 · $inRange件 範囲内 · $favs件 コンタクト';
+    return '$shown/$total件 表示 · $inRange件 範囲内 · $favs件 連絡先';
   }
 
   @override
@@ -834,11 +828,10 @@ class AppLocalizationsJa extends AppLocalizations {
   String get nodesFarBadge => '遠距離';
 
   @override
-  String get nodesEmptyFiltered =>
-      '条件に一致するノードがありません。\n\n上の「クリア」で絞り込みを解除するか、各チップで条件を変更してください。';
+  String get nodesEmptyFiltered => '条件に一致するノードがありません。';
 
   @override
-  String get nodesEmptyReady => 'ノードはまだありません。アドバートを受信すると表示されます。';
+  String get nodesEmptyReady => 'ノードはまだありません。ノードが自分を知らせると表示されます。';
 
   @override
   String get nodesEmptyOffline => 'ラジオを接続して周辺ノードを発見してください。';
@@ -899,24 +892,23 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String gridLegendRings(String value) {
-    return '同心円 3 本 = 距離帯。両端に GPS がある場合、外側のリングは上の「範囲」スケール (現在 ~$value)。GPS がない場合は RSSI 帯 (近 / 中 / 遠)。';
+    return '輪は距離の帯です。両方に GPS があれば、外側の輪が上の範囲スケール（現在 約 $value）です。GPS がないときは電波の強さの帯（近・中・遠）です。';
   }
 
   @override
   String get gridLegendSelf => '中央 = 自分。十字 = 南北 / 東西の目安。';
 
   @override
-  String get gridLegendDot =>
-      'ドット = 受信したファブリックノード。明るさ = 新しさ (受信直後 = 最大、24時間で 0 に減衰し消滅)。';
+  String get gridLegendDot => '点は受信したノードです。明るいほど新しく、1日かけて消えていきます。';
 
   @override
-  String get gridLegendKnown => 'パルス (緩やかに広がる輪) = 既知ノード — 直接やり取り (DM) があったノード。';
+  String get gridLegendKnown => 'ゆっくり広がる輪は、直接やり取りしたことのあるノードです。';
 
   @override
   String get gridLegendFavourite => '別色での速い点滅 = お気に入りのノード。';
 
   @override
-  String get gridLegendRipple => '中央からの波紋 = 匿名のチャネルメッセージ (プロトコル上、送信者を特定できません)。';
+  String get gridLegendRipple => '中央からの波紋は、送信者が分からないチャンネルのメッセージです。';
 
   @override
   String get gridLegendTap => 'ノードをタップで詳細 + メッセージ / お気に入り。';
@@ -934,13 +926,13 @@ class AppLocalizationsJa extends AppLocalizations {
   String get gridViewPicker => '表示';
 
   @override
-  String get gridViewFabric => 'ファブリック調査';
+  String get gridViewFabric => 'メッシュ調査';
 
   @override
-  String get gridViewElevation => '標高';
+  String get gridViewElevation => 'Fujiさん';
 
   @override
-  String get fujiLegendTitle => '標高測量';
+  String get fujiLegendTitle => 'Fujiさん';
 
   @override
   String get fujiLegendDesc =>
@@ -953,16 +945,16 @@ class AppLocalizationsJa extends AppLocalizations {
   String get fujiLegendRefs => 'シルエット = 実世界の基準（人 → 富士山）でスケール感を示す。';
 
   @override
-  String get fujiLegendPeers => '点 = ピア。問い合わせ後にテレメトリ標高でプロット。';
+  String get fujiLegendPeers => '点はノードです。問い合わせた標高に置かれます。';
 
   @override
-  String get fujiLegendUnknown => '地面沿いの縞帯 = まだ標高不明のピア。';
+  String get fujiLegendUnknown => '地面沿いの縞帯は、まだ標高が分からないノードです。';
 
   @override
-  String get fujiLegendAutoQuery => 'AUTO-QUERY ボックスがピア標高を順次取得。タップで再起動。';
+  String get fujiLegendAutoQuery => '自動問い合わせは標高をゆっくり集めます。タップでやり直します。';
 
   @override
-  String get elevationProfileTitle => '標高';
+  String get elevationProfileTitle => 'MESHMORE :: Fujiさん';
 
   @override
   String get elevationProfileAltLabel => '高度';
@@ -975,7 +967,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String elevationProfilePeers(int n) {
-    return '$n 個のノード';
+    return '$n 個のノードを追跡中';
   }
 
   @override
@@ -1059,7 +1051,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String globeFooter(int n) {
-    return '位置情報のある $n 件のピアを表示';
+    return '位置が分かる $n 件のノードを表示';
   }
 
   @override
@@ -1113,8 +1105,7 @@ class AppLocalizationsJa extends AppLocalizations {
       'デバイスファームウェアが GPS チップを定期的に読み取り、位置を自動更新します。';
 
   @override
-  String get deviceGpsDisabledHint =>
-      'オフ — デバイスは GPS を一切読み取らず、配信される位置は最後に書き込まれた値のままです。';
+  String get deviceGpsDisabledHint => 'オフ。ラジオは GPS を読まず、最後に設定した位置を送り続けます。';
 
   @override
   String get deviceGpsUnknown => 'デバイス応答待ち…';
@@ -1141,14 +1132,13 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get deviceGpsIntervalFixedByFirmware =>
-      'このファームウェアビルドでは GPS 更新間隔がハードコードされており、変更できません（sensors モジュールが `gps_interval` を公開していないため）。';
+  String get deviceGpsIntervalFixedByFirmware => '無線側の設定です';
 
   @override
   String get locTitle => '位置の自動公開';
 
   @override
-  String get locTileSubtitle => '定期 + 移動検知でスマートフォン GPS をデバイスに反映';
+  String get locTileSubtitle => 'スマートフォンの位置をラジオに送ります';
 
   @override
   String get deviceGpsIntervalWhy =>
@@ -1207,11 +1197,10 @@ class AppLocalizationsJa extends AppLocalizations {
   String get locBeacon => '定期位置ビーコン';
 
   @override
-  String get locBeaconSub => '60 秒ごとに位置をアドバートします（ゼロホップ）。通信時間と電池を使います。';
+  String get locBeaconSub => '60 秒ごとに位置を送ります。通信時間と電池を使います。';
 
   @override
-  String get locBatteryHint =>
-      'スマートブロードキャストは GPS を継続使用 (約 10 mA)。定期のみは省電力。両方有効で応答性最大、バッテリー優先ならスマートブロードキャストのみ推奨。';
+  String get locBatteryHint => 'GPS を流し続けると反応は速くなりますが、電池を多く使います。';
 
   @override
   String get gridEmpty => 'まだ範囲内にノードがありません。\n\nノードが自分を知らせると表示されます。';
@@ -1247,10 +1236,10 @@ class AppLocalizationsJa extends AppLocalizations {
       '「アプリ設定」で SPEECH を ON にするまで無効。レート / ピッチ / 音声は次の発話から適用されます。';
 
   @override
-  String get voiceRate => '速度';
+  String get voiceRate => '速さ';
 
   @override
-  String get voicePitch => 'ピッチ';
+  String get voicePitch => '高さ';
 
   @override
   String get voicePicker => '音声';
@@ -1383,7 +1372,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String eventMsgSent(String ack) {
-    return 'メッセージ送信 (ack $ack)';
+    return '送信済み（$ack が確認）';
   }
 
   @override
@@ -1484,7 +1473,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String dmTitle(String peer) {
-    return 'DM · $peer';
+    return '直接 · $peer';
   }
 
   @override
@@ -1493,17 +1482,17 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get nodeDetailSignature => '着信シグネチャ';
+  String get nodeDetailSignature => 'メッセージ音';
 
   @override
-  String get nodeDetailSignatureHint => 'この相手専用の通知音（DM の通知の代わり）。';
+  String get nodeDetailSignatureHint => 'この相手からのメッセージでは、通常の音の代わりに鳴ります。';
 
   @override
   String get nodeDetailSignatureNone => 'デフォルト';
 
   @override
   String nodeDetailSignatureSlot(int n) {
-    return 'シグネチャ $n';
+    return '音 $n';
   }
 
   @override
@@ -1513,10 +1502,10 @@ class AppLocalizationsJa extends AppLocalizations {
   String get dmEmpty => '— メッセージはまだありません —';
 
   @override
-  String get dmOpenPeerDetail => '相手の詳細';
+  String get dmOpenPeerDetail => '連絡先の詳細';
 
   @override
-  String get dmSpeech => 'この相手を読み上げる';
+  String get dmSpeech => 'この会話を読み上げる';
 
   @override
   String get dmSpeechInherit => '全体の読み上げ設定に従う';
@@ -1531,7 +1520,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get dmSpeechMutedByMaster => 'オーディオミュートにより消音中';
 
   @override
-  String get dmPeerNotInFabric => 'この相手はまだメッシュ上で確認されていません（アドバート未受信）。';
+  String get dmPeerNotInFabric => 'この相手はまだメッシュで確認できていません。';
 
   @override
   String dmComposerHint(String peer) {
@@ -1615,7 +1604,7 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get nodeIdentityLinkAction => 'キーが変わった？ 別のノードにリンク';
+  String get nodeIdentityLinkAction => '新しい鍵: この連絡先をリンク';
 
   @override
   String get nodeIdentityLinkTitle => '変更されたキーをリンク';
@@ -1658,7 +1647,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String nodeDetailRemoveDeviceContactConfirm(String name) {
-    return '「$name」を無線機の連絡先から削除しますか？空きができます。後で再追加できます。';
+    return '「$name」をラジオの連絡先から削除しますか？後から追加し直せます。';
   }
 
   @override
@@ -1701,7 +1690,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get deviceContactsOutOfRangeIntro =>
-      '現在地から遠い連絡先、または位置を隠している（GPS なし）連絡先を削除します（圏外として扱います）。お気に入りと既知の連絡先は保持されます。';
+      '遠い連絡先と、位置を共有していない連絡先を削除します。お気に入りと既知の連絡先は残ります。';
 
   @override
   String deviceContactsBeyondKm(int km) {
@@ -1739,7 +1728,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String deviceContactsRemoveAllConfirm(int count) {
-    return '無線機の連絡先 $count 件をすべて削除しますか？チャンネルには連絡先は不要で、DM のときだけ必要です。後でメッセージしたい相手を再追加できます。';
+    return '連絡先 $count 件をすべて削除しますか？連絡先は直接メッセージを送るときだけ必要で、後から追加し直せます。';
   }
 
   @override
@@ -1993,7 +1982,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get docsUpToDate => 'すでに最新です';
 
   @override
-  String get docsOriginBundled => '同梱スナップショット';
+  String get docsOriginBundled => 'アプリに同梱';
 
   @override
   String docsOriginUpdated(String when) {
@@ -2121,17 +2110,16 @@ class AppLocalizationsJa extends AppLocalizations {
   String get meshTreeLegendSelf => 'あなた — 中央に固定。';
 
   @override
-  String get meshTreeLegendRepeater =>
-      '四角 = リピーター。マスト設置インフラ、ハブ色。ピアはこれらを経由して広がる。';
+  String get meshTreeLegendRepeater => '四角はリピーターです。他のラジオのメッセージを中継します。';
 
   @override
-  String get meshTreeLegendRoom => 'ひし形 = ルームサーバ。名前付きルームをホストするサーバ級ノード。';
+  String get meshTreeLegendRoom => 'ひし形はルームサーバです。名前付きのルームを提供するラジオです。';
 
   @override
-  String get meshTreeLegendChat => '円 = チャットノード。DM 可能なピア。';
+  String get meshTreeLegendChat => '円は、直接メッセージできるノードです。';
 
   @override
-  String get meshTreeLegendSensor => '小さい円（暗）= センサー。特定用途のノード。';
+  String get meshTreeLegendSensor => '小さく暗い円はセンサーです。計測値だけを送ります。';
 
   @override
   String get meshTreeLegendFlood =>
@@ -2144,11 +2132,10 @@ class AppLocalizationsJa extends AppLocalizations {
   String get meshTreeLegendArrow => '矢印は自分から目的ピアへ向かう。';
 
   @override
-  String get meshTreeLegendInteract =>
-      'ピンチで拡大縮小、ドラッグで移動、ノードをタップで詳細。「中央に戻す」でリセット。';
+  String get meshTreeLegendInteract => 'ノードをタップで詳細、「中央に戻す」で表示を戻します。';
 
   @override
-  String get fabricLegendTitle => 'ファブリックサーベイ';
+  String get fabricLegendTitle => 'メッシュ調査';
 
   @override
   String get fabricLegendDesc =>
@@ -2158,11 +2145,10 @@ class AppLocalizationsJa extends AppLocalizations {
   String get fabricLegendCell => '塗りつぶしセル — ここで一度はメッシュが届いた。';
 
   @override
-  String get fabricLegendRecency =>
-      '明るい塗り = より新しい。階層 — 1時間以内、24時間以内、7日以内、それ以上。';
+  String get fabricLegendRecency => '明るいほど新しい: 1時間以内、1日以内、1週間以内、それ以上。';
 
   @override
-  String get fabricLegendMarker => '第三色のピンは現在のセット内のピア。タップで詳細。';
+  String get fabricLegendMarker => '塗りつぶしたピンは、いま範囲内にいるノードです。タップで詳細。';
 
   @override
   String get fabricLegendSelf => '原色のピンはあなた。';
@@ -2229,7 +2215,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get nodeDetailRefreshTelemetry => 'テレメトリを更新';
 
   @override
-  String get nodeDetailTelemetryQuerying => '電波経由でピアに問い合わせ中…';
+  String get nodeDetailTelemetryQuerying => 'ラジオに計測値を問い合わせ中…';
 
   @override
   String get nodeDetailTelemetryNotContact => 'デバイスの連絡先ではないため、テレメトリは取得できません。';
@@ -2263,7 +2249,8 @@ class AppLocalizationsJa extends AppLocalizations {
   String get channelsTitle => 'チャンネル';
 
   @override
-  String get channelsHelp => 'スロット 0 は共有のパブリック。プライベートは全ノードで同じスロット・名前・PSK にします。';
+  String get channelsHelp =>
+      'チャンネル 0 は共有のパブリックです。非公開にするには、どのラジオでも同じ番号・名前・鍵にします。';
 
   @override
   String get channelsOfflineHint => 'チャンネルを編集するにはラジオを接続 (診断)。';
@@ -2273,12 +2260,12 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String channelsSlotLabel(int idx) {
-    return 'スロット $idx';
+    return 'チャンネル $idx';
   }
 
   @override
   String channelsSlotActive(int idx) {
-    return 'スロット $idx · 有効';
+    return 'チャンネル $idx · 有効';
   }
 
   @override
@@ -2289,12 +2276,12 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String channelsSetSnack(int idx, String name) {
-    return 'チャンネル $idx を「$name」に設定 — 全ノードで同じ名前 & PSK が必要';
+    return 'チャンネル $idx を「$name」に設定 — どのラジオでも同じ名前と鍵が必要です';
   }
 
   @override
   String channelsDialogTitle(int idx) {
-    return 'チャンネルスロット $idx';
+    return 'チャンネル $idx';
   }
 
   @override
@@ -2326,10 +2313,10 @@ class AppLocalizationsJa extends AppLocalizations {
   String get notifSectionTitle => '通知';
 
   @override
-  String get notifOs => 'ロック画面に通知';
+  String get notifOs => '通知を表示';
 
   @override
-  String get notifAudio => '効果音を鳴らす';
+  String get notifAudio => '音を鳴らす';
 
   @override
   String get notifHaptic => '振動';
@@ -2338,16 +2325,16 @@ class AppLocalizationsJa extends AppLocalizations {
   String get notifTts => '読み上げ';
 
   @override
-  String get notifMentionsOnly => '名前を呼ばれた時だけ';
+  String get notifMentionsOnly => '自分の名前が出たときだけ';
 
   @override
   String get notifMentionsOnlySub => '単語全体か @名前。オフなら全メッセージで通知します。';
 
   @override
-  String get notifKeySuffix => '鍵の末尾にも一致させる';
+  String get notifKeySuffix => 'ID の末尾 4 文字にも一致させる';
 
   @override
-  String get notifKeySuffixSub => '16進4文字は識別子ではありません。送信者を確実に知っている場合のみ。';
+  String get notifKeySuffixSub => '4 文字は誰でも選べるので、送信者が確かなとき以外はオフにしてください。';
 
   @override
   String get notifDeniedBanner => 'このアプリの通知がオフのため、メッセージはロック画面に表示されません。';
@@ -2380,7 +2367,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get channelsErrorTag => '#ハッシュタグを入力してください';
 
   @override
-  String get channelsErrorHex => 'PSK は 16 進 32 文字 (16 バイト) で入力してください';
+  String get channelsErrorHex => '鍵は 0〜9 か A〜F の 32 文字です';
 
   @override
   String get channelsErrorName => 'チャンネル名を入力してください';
@@ -2392,17 +2379,16 @@ class AppLocalizationsJa extends AppLocalizations {
   String get channelsSave => '保存';
 
   @override
-  String get channelsHelpEncryption =>
-      'スロット 0 の鍵は公開。他のスロットは設定した PSK による AES-128 です。';
+  String get channelsHelpEncryption => 'チャンネル 0 の鍵は公開です。他のチャンネルは設定した鍵を使います。';
 
   @override
-  String get channelsHexGenerate => 'PSK をランダム生成';
+  String get channelsHexGenerate => 'ランダムな鍵を作る';
 
   @override
   String get channelsHexCopy => 'コピー';
 
   @override
-  String get channelsHexCopied => 'PSK をクリップボードにコピー';
+  String get channelsHexCopied => '鍵をコピーしました';
 
   @override
   String get channelsTagWeakShort => '短いタグは推測されやすい。12 文字以上または独自の表現を使用してください。';
@@ -2416,10 +2402,10 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get channelsSlot0WarnBody =>
-      'スロット 0 は既知の Public チャンネルです。ここにプライベート PSK を書き込むと、同じ鍵を持つノードとしか通話できなくなり、共通の Public チャンネルを失います。続行しますか?';
+      'チャンネル 0 は共有のパブリックです。ここに非公開の鍵を入れると、同じ鍵のラジオとしか通信できず、パブリックを失います。続行しますか？';
 
   @override
-  String get channelsSlot0WarnContinue => 'スロット 0 を上書き';
+  String get channelsSlot0WarnContinue => 'チャンネル 0 を上書き';
 
   @override
   String get channelsSlot0WarnCancel => 'キャンセル';
@@ -2434,23 +2420,23 @@ class AppLocalizationsJa extends AppLocalizations {
   String get channelsHideKey => '隠す';
 
   @override
-  String get channelsClear => 'スロットをクリア';
+  String get channelsClear => 'チャンネルをリセット';
 
   @override
   String channelsClearConfirmTitle(int idx) {
-    return 'スロット $idx をクリアしますか?';
+    return 'チャンネル $idx をリセットしますか？';
   }
 
   @override
   String get channelsClearConfirmBody =>
-      'MeshCore にはプロトコルレベルの「クリア」がありません — このスロットは Public 既定値 (名前 + 鍵) に上書きされます。他ノードも同様の操作が必要です。';
+      'ラジオに空のチャンネルはないので、このチャンネルは公開の名前と鍵に戻ります。他のラジオも同じにしないと、ここで通信できません。';
 
   @override
   String get channelsClearConfirmAction => 'クリア';
 
   @override
   String channelsClearSnack(int idx) {
-    return 'スロット $idx をクリア (Public 既定値にリセット)';
+    return 'チャンネル $idx を公開の既定値に戻しました';
   }
 
   @override
@@ -2464,7 +2450,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String channelsSetDefaultSnack(int idx) {
-    return 'スロット $idx を起動時の既定に設定';
+    return 'チャンネル $idx を起動時に開くよう設定しました';
   }
 
   @override
@@ -2502,10 +2488,10 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get channelsQrBody =>
-      'Meshmore デバイス、または任意の QR リーダーでスキャン。このコードを持つ人はチャンネルに参加できます — 信頼できる相手のみと共有してください。';
+      'Meshmore の端末や QR リーダーでスキャンします。このコードを持つ人はチャンネルに参加できるので、信頼できる相手にだけ見せてください。';
 
   @override
-  String get channelsQrPayload => 'ペイロード (コピー用)';
+  String get channelsQrPayload => 'チャンネルコード（コピーできます）';
 
   @override
   String get channelsQrClose => '閉じる';
@@ -2514,7 +2500,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get deviceConfigTitle => 'デバイス設定';
 
   @override
-  String get deviceRegionBand => 'リージョン / バンド';
+  String get deviceRegionBand => 'バンドプリセット';
 
   @override
   String get deviceRegionWhy => '理由';
@@ -2532,7 +2518,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get deviceRegionUnknown => 'デバイス応答待ち…';
 
   @override
-  String get deviceRegionCustom => 'カスタム（プリセット非該当）';
+  String get deviceRegionCustom => 'カスタム';
 
   @override
   String get deviceRegionSuggestFromLocation => '現在地から自動選択';
@@ -2550,7 +2536,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get deviceRegionFamilyOther => 'その他';
 
   @override
-  String get deviceRegionSuggestTitle => '推奨リージョンを適用しますか？';
+  String get deviceRegionSuggestTitle => '現在地のプリセットを使いますか？';
 
   @override
   String deviceRegionSuggestBody(String lat, String lon, String label) {
@@ -2558,21 +2544,21 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get deviceRegionSuggestApply => '適用';
+  String get deviceRegionSuggestApply => '使う';
 
   @override
   String get deviceRegionSuggestNoFix =>
-      'GPS の取得に失敗しました — 屋外で位置情報の許可を確認してから再試行してください。';
+      'まだ GPS を取得できません。屋外で位置情報をオンにして試してください。';
 
   @override
   String get deviceRegionSuggestNoMatch => '現在地が出荷時プリセットの対象外です — 手動で選択してください。';
 
   @override
-  String get deviceRegionDisclaimerShort => 'コミュニティによる値であり、規制上の保証ではありません。';
+  String get deviceRegionDisclaimerShort => '利用者どうしの値で、規制当局の確認はありません。';
 
   @override
   String get deviceRegionDisclaimer =>
-      'プリセット値はコミュニティで合意された運用例であり、法令適合を保証するものではありません。利用地で合法なプリセットを選び、メッシュ内の全ノードで同じ値を使用してください。日本では設定値が合法でも不十分です。無線機本体が技適（技術基準適合証明）を取得している必要があり、海外から個人輸入したLoRaボードの多くは未取得です。未取得機の運用は設定内容にかかわらず電波法違反となります。日本（ARIB STD-T108）のプリセットはコミュニティ提案で、広範な実機検証は完了していません。実運用前に、法令適合性と動作をご自身のハードウェアで必ず確認してください。';
+      'プリセットは利用者どうしで共有されている値で、規制当局の確認を受けたものではありません。利用地で合法なものを選び、どのラジオでも同じ設定にしてください。日本では無線機自体が技適を取得している必要があり、輸入したボードの多くは未取得です。設定にかかわらず、未取得機の使用は電波法違反になります。日本（ARIB STD-T108）のプリセットはコミュニティ提案で、広く検証されたものではありません。';
 
   @override
   String get presetUsCanada => '米国 / カナダ';
@@ -2626,16 +2612,16 @@ class AppLocalizationsJa extends AppLocalizations {
   String get closeSheet => '閉じる';
 
   @override
-  String get deviceRadioParams => '周波数と帯域幅';
+  String get deviceRadioParams => '無線';
 
   @override
-  String get deviceIdentityAdvert => 'アイデンティティ / アドバート';
+  String get deviceIdentityAdvert => '識別とアドバート';
 
   @override
   String get deviceChannelsSection => 'チャンネル';
 
   @override
-  String get deviceOtherParamsSection => 'その他のパラメータ';
+  String get deviceOtherParamsSection => '詳細設定';
 
   @override
   String get deviceDeviceSection => 'デバイス';
@@ -2663,11 +2649,11 @@ class AppLocalizationsJa extends AppLocalizations {
       'このラジオが送信するパケットに付けるハッシュ長です。中継は各パケット自身の長さに従うため、ノード間で揃える必要はありません。長いほど中継を区別しやすい一方、直接送信のペイロード容量が減ります。';
 
   @override
-  String get devicePathHashUnread => 'パスハッシュ: 不明 (デバイス未問い合わせ)';
+  String get devicePathHashUnread => '不明';
 
   @override
   String devicePathHashMismatch(String device, String form) {
-    return '未適用: ラジオは $device バイト、フォームは $form です。';
+    return '無線: $device。この画面: $form。適用を押すと画面の値が送られます。';
   }
 
   @override
@@ -2705,7 +2691,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get deviceRadioRevertFailed => '元に戻せませんでした — 無線機は直前の値のままです。';
 
   @override
-  String get radioHealthTitle => '無線機の状態';
+  String get radioHealthTitle => '無線の状態';
 
   @override
   String get radioHealthRead => '取得';
@@ -2714,34 +2700,33 @@ class AppLocalizationsJa extends AppLocalizations {
   String get radioHealthReading => '取得中…';
 
   @override
-  String get radioHealthUnread =>
-      'まだ取得していません。「取得」で無線機自身の統計(CMD_GET_STATS)を読みます。';
+  String get radioHealthUnread => '「読む」を押してください';
 
   @override
   String radioHealthNoise(String dbm) {
-    return 'ノイズフロア $dbm dBm — 無線機自身の測定値';
+    return 'ノイズ $dbm dBm';
   }
 
   @override
   String radioHealthLast(String rssi, String snr) {
-    return '直近パケット RSSI $rssi dBm、SNR $snr dB — 無線機のパケット統計より';
+    return '直近 $rssi dBm · SNR $snr dB';
   }
 
   @override
   String radioHealthBattery(String volts) {
-    return 'バッテリー $volts V — 無線機のコア統計値(スマートフォン側の測定ではありません)';
+    return '電池 $volts V';
   }
 
   @override
-  String get radioHealthNotReported => 'このファームウェアでは報告されません';
+  String get radioHealthNotReported => '未報告';
 
   @override
   String radioHealthUptime(String uptime) {
-    return '稼働 $uptime — 無線機の稼働カウンタ(電源再投入でリセットされます)';
+    return '稼働 $uptime';
   }
 
   @override
-  String get radioHealthSource => 'すべて無線機自身のカウンタです。この画面の値はスマートフォン側の測定ではありません。';
+  String get radioHealthSource => '無線の値です';
 
   @override
   String get deviceLoadFromDevice => 'デバイスから読込';
@@ -2856,10 +2841,10 @@ class AppLocalizationsJa extends AppLocalizations {
   String get otherManualAddSubOn => '受信したノードは必要時に手動でコンタクトに追加します。';
 
   @override
-  String get otherManualAddSubOff => '受信したノードは自動でコンタクトに昇格します。';
+  String get otherManualAddSubOff => '受信したノードは連絡先として保存されます。';
 
   @override
-  String get otherTelemetryModeTitle => 'テレメトリ共有 — 各種類を誰が要求できるか';
+  String get otherTelemetryModeTitle => 'テレメトリを読める相手';
 
   @override
   String get otherTelemetryBase => '基本';
@@ -2883,11 +2868,11 @@ class AppLocalizationsJa extends AppLocalizations {
   String get otherTelemetryModeHelp => 'この端末からバッテリー・GPS・環境データを要求できる相手を設定します。';
 
   @override
-  String get otherMultiAcksLabel => 'マルチ ACK (0–3)';
+  String get otherMultiAcksLabel => '追加の確認 (0–3)';
 
   @override
   String get otherMultiAcksHelper =>
-      '0 = シングル ACK (既定)。値が大きいほど送信確定までに待つ追加 ACK 数。';
+      '0 が既定です。大きくすると、その数だけ多くのラジオの確認を待ってから送信済みとみなします。';
 
   @override
   String get otherSentSnack => 'OTHER PARAMS を送信 — デバイス側の書込に時間がかかる場合があります。';
@@ -3208,8 +3193,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get pingMethodStatus => 'ステータス要求 — リピーター・ルーム・センサーが応答します。';
 
   @override
-  String get pingMethodTelemetry =>
-      'テレメトリ要求 — 相手には通知されず、テレメトリを共有している場合のみ応答します。';
+  String get pingMethodTelemetry => '計測値を求めます。相手のラジオが共有している場合だけ応答します。';
 
   @override
   String pingSummary(int sent, int replied, int lost) {
@@ -3385,11 +3369,10 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get settingsNotifDeniedTransient =>
-      'バックグラウンドサービスには通知の許可が必要です。「設定を開く」から許可してください。';
+      'バックグラウンド接続には通知の許可が必要です。設定で許可してください。';
 
   @override
-  String get deviceAdvertPropagatesHint =>
-      '名前・位置の変更は次のアドバートで反映されます (ノード → アドバート送信)。';
+  String get deviceAdvertPropagatesHint => 'ラジオが次に自分の名前を知らせたときに反映されます。';
 
   @override
   String get settingsHubMaps => 'オフライン地図';
@@ -3411,7 +3394,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String mapsBreakdown(String packs, String layers, String view) {
-    return '地域 $packs・イベント地図 $layers・閲覧済みタイル $view';
+    return '地域 $packs・イベント地図 $layers・保存済みタイル $view';
   }
 
   @override
@@ -3731,7 +3714,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get selfTestIntro =>
-      'この端末でオフライン地図を一通り検証します(実際の地図サーバー、保存、ダウンロード、中断と再開、期限切れ削除)。サンドボックスで実行し終了後に削除するため、あなたの地図には影響しません。所要約1分、通信量は1 MB未満です。';
+      '地図のダウンロードを一通り検証します（実際のサーバー、保存、中断と再開、期限切れ）。サンドボックスで実行して後で削除するため、あなたの地図には影響しません。所要約 1 分、通信量は 1 MB 未満です。';
 
   @override
   String get selfTestRun => 'セルフテストを実行';
@@ -3787,7 +3770,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get selfCheckDisk => '保存量と記録の一致';
 
   @override
-  String get locGroupAutoPublish => '自動送信';
+  String get locGroupAutoPublish => '公開';
 
   @override
   String get locGroupBeacon => 'ビーコン';
@@ -3800,7 +3783,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String deviceActiveChannelSub(String name) {
-    return '有効: $name · スロット · 名前 + PSK · #ハッシュタグ';
+    return '使用中: $name · チャンネルとキー';
   }
 
   @override
@@ -3891,12 +3874,12 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String diagnosticsMtuLine(String mtu, String need) {
-    return 'リンク MTU: $mtu (1 フレーム全体には $need 必要)';
+    return 'リンク $mtu バイト（1 フレームに $need 必要）';
   }
 
   @override
   String diagnosticsMtuRefusedLine(String mtu, String need) {
-    return 'このリンクは $mtu バイトでネゴシエートしましたが、ラジオの 1 フレームには $need 必要です。再接続して再交渉してください。MTU がそれ以上の値に上がらないラジオでは全フレームを送れません';
+    return 'このリンクは $mtu バイトで、1 フレームには $need 必要です。再接続して試してください。リンクを広げられないラジオはすべてのフレームを運べません。';
   }
 
   @override
@@ -4296,18 +4279,18 @@ class AppLocalizationsJa extends AppLocalizations {
   String get placeKeyedOnly => '鍵のある場所のみ';
 
   @override
-  String get placeExportLedger => '台帳を書き出す';
+  String get placeExportLedger => '場所を書き出す';
 
   @override
-  String get placeExportShared => '台帳を共有できます。';
+  String get placeExportShared => '場所の一覧を共有できます。';
 
   @override
   String placeExportDone(String path) {
-    return '台帳を $path に保存しました';
+    return '場所を $path に保存しました';
   }
 
   @override
-  String get placeExportFailed => '台帳を書き出せませんでした。';
+  String get placeExportFailed => '一覧を保存できませんでした。';
 
   @override
   String get placeCoordinatesRefused => 'この座標は送信できません。';
@@ -4393,7 +4376,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get failurePairingNotKept =>
-      'ラジオはペアリング後に次の接続で暗号化できず、保存したペアリングを失っています。電源を入れ直してアプリを開き直し、再ペアリングしてください。繰り返す場合はラジオのボンド保存側の問題です。';
+      'ラジオはペアリングできましたが、次の接続で暗号化できず、ペアリングが保存されていません。電源を入れ直して再ペアリングしてください。繰り返す場合はラジオ側の問題です。';
 
   @override
   String get failureServiceMissing =>
@@ -4405,16 +4388,15 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String failureMtuTooSmall(String mtu, String need) {
-    return 'このリンクは $mtu バイトでネゴシエートしましたが、ラジオの 1 フレームには $need 必要です。再接続して再交渉してください。リンクをそれ以上に広げられないラジオは全フレームを送れません。';
+    return 'このリンクは $mtu バイトで、1 フレームには $need 必要です。再接続して試してください。リンクを広げられないラジオはすべてのフレームを運べません。';
   }
 
   @override
-  String get failureFrameTruncated =>
-      'フレームが途中で切れて届き、デコードできませんでした。リンクがラジオの最長フレームを運べません。件数は診断ページに表示されます。';
+  String get failureFrameTruncated => 'メッセージの一部が届きませんでした。件数は診断ページにあります。';
 
   @override
   String get failureFrameTrailingBytes =>
-      'フレームの終端より後ろに余分なバイトがありました。推測せずに破棄しました。件数は診断ページに表示されます。';
+      'メッセージの末尾に余分なバイトがあり、破棄しました。件数は診断ページにあります。';
 
   @override
   String get failureStorageFull =>
@@ -4515,7 +4497,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get sosHoldReleased => '早く離したため、何も送信していません。';
 
   @override
-  String get sosNoIdentity => '無線が名前を返していないため、警報にコールサインを載せられません。';
+  String get sosNoIdentity => 'ラジオがまだ名前を知らせていないため、警報に名前を載せられません。';
 
   @override
   String get sosWords => '何が起きていますか';
@@ -4532,7 +4514,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get sosEmergencyRepeat =>
-      '無線は約2分後に各パケットを一度だけ再送します。それ以外の繰り返しはアプリと共に止まります。';
+      'ラジオは約 2 分後に各メッセージを一度だけ再送します。アプリを閉じると、残りは止まります。';
 
   @override
   String get sosContactsNone => '連絡先への直接送信がないため、チャンネルの応答ではこの警報を止められません。';
@@ -4610,7 +4592,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get sosRefusedNoWords => '先に状況を入力してください。';
 
   @override
-  String get sosRefusedTooLong => 'コールサインと位置を含めると長すぎます。短くしてください。';
+  String get sosRefusedTooLong => '名前と位置を含めると長すぎます。短くしてください。';
 
   @override
   String get sosRefusedHold => '長押しが完了していません。';
@@ -4650,7 +4632,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get checkinAnsweredDirect => '応答あり（直接メッセージ）。';
 
   @override
-  String get checkinAnsweredChannel => '応答あり（チャンネル・主張のみで鍵の裏付けなし）。';
+  String get checkinAnsweredChannel => 'チャンネルで応答がありました（名前だけで、鍵による確認はありません）。';
 
   @override
   String get checkinSent => 'チェックインを送信しました。繰り返しはしません。';
@@ -5075,14 +5057,14 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String reportBundleWritten(String path) {
-    return 'バンドルを書き出しました: $path';
+    return 'レポートを $path に保存しました';
   }
 
   @override
-  String get reportCopyBundle => 'バンドルをコピー';
+  String get reportCopyBundle => 'レポートをコピー';
 
   @override
-  String get reportCopied => 'バンドルをコピーしました。';
+  String get reportCopied => 'レポートをコピーしました。';
 
   @override
   String get blockedKeysNotPersisted =>
@@ -5273,4 +5255,10 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get fujiUnknownShort => '縞 · 標高なし';
+
+  @override
+  String get chatSpeechOffAction => '読み上げはアプリ設定でオフです';
+
+  @override
+  String get nodeDetailAltitudeNotReported => '報告されません';
 }

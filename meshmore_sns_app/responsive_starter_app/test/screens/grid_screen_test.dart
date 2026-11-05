@@ -205,7 +205,7 @@ void main() {
     await t.tap(find.byTooltip('View'));
     await t.pump();
     await t.pump(const Duration(milliseconds: 400));
-    await t.tap(find.text('Fabric survey').last);
+    await t.tap(find.text('Mesh survey').last);
     await t.pump();
     await t.pump(const Duration(milliseconds: 400));
 
@@ -237,7 +237,7 @@ void main() {
     await t.tap(find.byTooltip('View'));
     await t.pump();
     await t.pump(const Duration(milliseconds: 400));
-    await t.tap(find.text('Fabric survey').last);
+    await t.tap(find.text('Mesh survey').last);
     await t.pump();
     await t.pump(const Duration(milliseconds: 400));
     expect(
@@ -287,7 +287,7 @@ void main() {
     await t.tap(find.byTooltip('View'));
     await t.pump();
     await t.pump(const Duration(milliseconds: 400));
-    await t.tap(find.text('Fabric survey').last);
+    await t.tap(find.text('Mesh survey').last);
     await t.pump();
     await t.pump(const Duration(milliseconds: 400));
     await t.tap(find.byKey(const ValueKey<String>('grid-pan-toggle')));

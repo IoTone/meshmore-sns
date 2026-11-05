@@ -618,7 +618,7 @@ void main() {
     // drag is the shell's.
     await t.tap(find.byTooltip('View'));
     await settle(t);
-    await t.tap(find.text('Fabric survey').last);
+    await t.tap(find.text('Mesh survey').last);
     await settle(t);
     expect(find.byKey(const ValueKey<String>('grid-pan-toggle')),
         findsOneWidget);

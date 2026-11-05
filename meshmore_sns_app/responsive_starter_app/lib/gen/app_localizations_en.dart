@@ -12,7 +12,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get appName => 'Meshmore SNS';
 
   @override
-  String get appSubtitle => 'Socialrobot Network Service';
+  String get appSubtitle => 'Mesh messaging over radio';
 
   @override
   String get tabDashboard => 'Dashboard';
@@ -65,7 +65,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tabAbout => 'About';
 
   @override
-  String get dashboardPeersInRange => 'PEERS IN RANGE';
+  String get dashboardPeersInRange => 'NODES IN RANGE';
 
   @override
   String dashboardKnownCount(int n) {
@@ -115,16 +115,15 @@ class AppLocalizationsEn extends AppLocalizations {
       'Replies are sent with a [bot] prefix, so the person on the other end can tell a machine wrote them.';
 
   @override
-  String get botRefusedPublicSlot =>
-      'Not available on Public. Slot 0 is the public channel.';
+  String get botRefusedPublicSlot => 'Not available on the public channel.';
 
   @override
   String get botRefusedPublicPsk =>
-      'This slot still uses the well-known public key, so it is Public under another number. Give it a private key first.';
+      'This channel still uses the public key, so it is public whatever its number. Give it a private key first.';
 
   @override
   String get botRefusedUnknownPsk =>
-      'Waiting for this slot\'s key from the radio.';
+      'Waiting for the radio to send this channel\'s key.';
 
   @override
   String get botMode => 'Reply mode';
@@ -137,7 +136,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get botModeDeterministicSub =>
-      'First matching rule always wins, so a soak trace is diffable.';
+      'The first matching rule always wins, so two runs can be compared.';
 
   @override
   String get botModeRandomSub =>
@@ -207,7 +206,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get dashHyperEmpty => 'Listening for nodes…';
 
   @override
-  String get dashPeers => 'PEERS';
+  String get dashPeers => 'NODES';
 
   @override
   String get dashAgHudSignal => 'SIGNAL';
@@ -386,7 +385,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String pairStepOf(int step, int total) {
-    return 'STEP $step OF $total';
+    return 'Step $step of $total';
   }
 
   @override
@@ -477,12 +476,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsBackgroundTitle => 'Stay connected in background';
 
   @override
-  String get settingsBackgroundOn =>
-      'Android: a persistent notification keeps the radio linked so messages arrive while backgrounded';
+  String get settingsBackgroundOn => 'Messages arrive while the app is closed';
 
   @override
-  String get settingsBackgroundOff =>
-      'Messages still arrive when you reopen the app (radio buffers them); no background notification';
+  String get settingsBackgroundOff => 'Messages arrive when you open the app';
 
   @override
   String get settingsTelemetryPoll => 'Gather node telemetry';
@@ -520,14 +517,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsSpeechMuted =>
-      'Text-to-speech ON, but the audio mute is silencing it';
+      'Speech is on but muted with the alert sounds.';
 
   @override
   String get settingsPermissions => 'Permissions';
 
   @override
   String get settingsPermissionsSubtitle =>
-      'Open the OS settings page for this app — flip Bluetooth / Notifications on or off here.';
+      'Bluetooth, notifications and location';
 
   @override
   String get termsTitle => 'Terms and privacy';
@@ -658,11 +655,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get personalizationHighContrastSubtitle =>
-      'Force the SEELE high-contrast palette';
+      'Use the high-contrast colours';
 
   @override
   String get personalizationHighContrastHint =>
-      'High contrast is on — the SEELE high-contrast palette is forced regardless of your preset pick. Turn off High contrast below to use another theme.';
+      'High contrast overrides the skin you pick.';
 
   @override
   String get personalizationReduceMotion => 'Reduce motion';
@@ -672,7 +669,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get personalizationVisualHapticOnlySubtitle =>
-      'No information by sound; turns audio off';
+      'Alerts by vibration only';
 
   @override
   String get personalizationAudioAlerts => 'AUDIO ALERTS';
@@ -702,7 +699,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Demo mode — no radio. Explore channels, settings and docs without a companion.';
 
   @override
-  String get demoModeRow => 'Demo mode (no radio)';
+  String get demoModeRow => 'No radio';
 
   @override
   String get demoModeSubtitle => 'Explore the app offline';
@@ -711,7 +708,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get firstRunHeader => 'MESHMORE · WELCOME';
 
   @override
-  String get firstRunTitle => 'Quick heads-up on what we\'ll ask for';
+  String get firstRunTitle => 'What this app will ask for';
 
   @override
   String get firstRunBleTitle => 'Bluetooth';
@@ -725,28 +722,28 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get firstRunNotificationsBody =>
-      'Asked only if you turn on \"Stay connected in background\" later in App settings. Skipped today so you\'re not interrupted twice.';
+      'We ask later, only if you keep the app connected in the background.';
 
   @override
   String get firstRunOfflineTitle => 'Offline is fine';
 
   @override
   String get firstRunOfflineBody =>
-      'If you skip Bluetooth the app opens in demo mode: browse message history, configure channels, read diagnostics and the docs. No live mesh traffic until you connect a radio.';
+      'Without Bluetooth the app opens in demo mode: history, channels, settings and docs, with no radio traffic.';
 
   @override
-  String get firstRunGrant => 'Grant Bluetooth & continue';
+  String get firstRunGrant => 'Allow Bluetooth';
 
   @override
   String get firstRunSkip => 'Explore in demo mode (no radio)';
 
   @override
   String get firstRunDeniedTransient =>
-      'Bluetooth wasn\'t granted — you can continue offline or open OS settings to change your mind.';
+      'Bluetooth is off for this app. Continue offline, or allow it in Settings.';
 
   @override
   String get firstRunDeniedPermanent =>
-      'Bluetooth was permanently denied — open OS settings to grant it. You can still use the app offline.';
+      'Bluetooth is blocked for this app. Allow it in Settings, or keep using the app offline.';
 
   @override
   String get firstRunOpenSettings => 'Open OS settings';
@@ -789,7 +786,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Whole mesh — neighbours + repeaters. Best for discovery.';
 
   @override
-  String get nodesZeroHopAdvert => 'Zero-hop advert';
+  String get nodesZeroHopAdvert => 'Direct advert';
 
   @override
   String get nodesZeroHopAdvertBody =>
@@ -800,8 +797,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Flood advert sent — propagates across the whole mesh (neighbours + repeaters). The other node must Advertise too before it appears here.';
 
   @override
-  String get nodesZeroHopAdvertSent =>
-      'Zero-hop advert sent — direct neighbours only, not rebroadcast by repeaters.';
+  String get nodesZeroHopAdvertSent => 'Sent to radios in direct range only.';
 
   @override
   String get nodesSearchHint => 'Search by name, shortId, or pubkey…';
@@ -866,7 +862,7 @@ class AppLocalizationsEn extends AppLocalizations {
       one: '1 contact',
       zero: '0 contacts',
     );
-    return '$shown of $total in fabric · $inRange in range · $_temp0';
+    return '$shown of $total shown · $inRange in range · $_temp0';
   }
 
   @override
@@ -877,12 +873,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get nodesFarBadge => 'FAR';
 
   @override
-  String get nodesEmptyFiltered =>
-      'No nodes match this filter.\n\nTap Clear to widen, or change the chip cutoffs above.';
+  String get nodesEmptyFiltered => 'No nodes match this filter.';
 
   @override
   String get nodesEmptyReady =>
-      'No nodes yet. Discovery is advert-driven: a node appears when its advert is heard.';
+      'No nodes yet. A node appears once it announces itself.';
 
   @override
   String get nodesEmptyOffline => 'Connect a radio to discover nearby nodes.';
@@ -943,7 +938,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String gridLegendRings(String value) {
-    return 'Three concentric rings = distance bands. With GPS on both ends, the outer ring is the **Range** scale above (~$value right now). Without GPS, rings are RSSI bands (near / mid / far).';
+    return 'Rings are distance bands. With GPS at both ends the outer ring is the Range scale above (about $value now). Without GPS they are signal bands: near, mid, far.';
   }
 
   @override
@@ -952,11 +947,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get gridLegendDot =>
-      'Dot = a fabric node we\'ve heard. Brightness = recency (full = just now, fades to 0 over 24 h then disappears).';
+      'A dot is a node we have heard. Brighter means more recent; it fades out over a day.';
 
   @override
   String get gridLegendKnown =>
-      'Pulse (slow growing halo) = a known node — we have had a direct attributable exchange (DM) with them.';
+      'A slow growing halo is a node we have messaged directly.';
 
   @override
   String get gridLegendFavourite =>
@@ -964,7 +959,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get gridLegendRipple =>
-      'Centre-out ripple = an anonymous channel message (the protocol doesn\'t attribute channel msgs to a sender).';
+      'A ripple from the centre is a channel message from someone we cannot name.';
 
   @override
   String get gridLegendTap =>
@@ -983,13 +978,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get gridViewPicker => 'View';
 
   @override
-  String get gridViewFabric => 'Fabric survey';
+  String get gridViewFabric => 'Mesh survey';
 
   @override
-  String get gridViewElevation => 'Altitude';
+  String get gridViewElevation => 'Fujiさん';
 
   @override
-  String get fujiLegendTitle => 'ALTITUDE SURVEY';
+  String get fujiLegendTitle => 'FUJIさん';
 
   @override
   String get fujiLegendDesc =>
@@ -1005,18 +1000,18 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get fujiLegendPeers =>
-      'Dots = peers, plotted at their telemetry altitude once queried.';
+      'Dots are nodes, plotted at their altitude once asked.';
 
   @override
   String get fujiLegendUnknown =>
-      'Striped band along the ground = peers with no altitude yet.';
+      'A striped band along the ground is a node with no altitude yet.';
 
   @override
   String get fujiLegendAutoQuery =>
-      'The AUTO-QUERY box pulls peer altitudes slowly; tap it to restart.';
+      'The auto-query box asks for altitudes slowly. Tap it to start again.';
 
   @override
-  String get elevationProfileTitle => 'ALTITUDE';
+  String get elevationProfileTitle => 'MESHMORE :: FUJIさん';
 
   @override
   String get elevationProfileAltLabel => 'Altitude';
@@ -1029,7 +1024,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String elevationProfilePeers(int n) {
-    return '$n peers tracked';
+    return '$n nodes tracked';
   }
 
   @override
@@ -1114,7 +1109,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String globeFooter(int n) {
-    return 'Showing $n peers with known location';
+    return 'Showing $n nodes with a known location';
   }
 
   @override
@@ -1169,7 +1164,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get deviceGpsDisabledHint =>
-      'Off — the device never reads its GPS chip; advertised location stays whatever was last written.';
+      'Off. The radio does not read its GPS, so it keeps announcing the last position set.';
 
   @override
   String get deviceGpsUnknown => 'Waiting for device…';
@@ -1196,15 +1191,13 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get deviceGpsIntervalFixedByFirmware =>
-      'Polling cadence is fixed by this firmware build (the sensors module doesn\'t expose `gps_interval`).';
+  String get deviceGpsIntervalFixedByFirmware => 'Set on the radio';
 
   @override
   String get locTitle => 'Auto-publish location';
 
   @override
-  String get locTileSubtitle =>
-      'Periodic + on-movement phone-GPS push to the device';
+  String get locTileSubtitle => 'Sends the phone\'s position to the radio';
 
   @override
   String get deviceGpsIntervalWhy =>
@@ -1264,11 +1257,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get locBeaconSub =>
-      'Every 60 s, advertise your position (zero-hop). Uses airtime and battery.';
+      'Every 60 s, send your position. Uses airtime and battery.';
 
   @override
   String get locBatteryHint =>
-      'Smart-broadcast streams GPS (~10 mA continuous). Periodic-only is cheaper. Combine both for responsiveness; pick smart-broadcast alone if battery matters.';
+      'Streaming GPS reacts faster and uses more battery.';
 
   @override
   String get gridEmpty =>
@@ -1309,7 +1302,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Off until you turn on SPEECH in App settings. Rate / pitch / voice take effect on the next utterance.';
 
   @override
-  String get voiceRate => 'Rate';
+  String get voiceRate => 'Speed';
 
   @override
   String get voicePitch => 'Pitch';
@@ -1445,7 +1438,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String eventMsgSent(String ack) {
-    return 'msg sent (ack $ack)';
+    return 'sent (confirmed by $ack)';
   }
 
   @override
@@ -1553,7 +1546,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String dmTitle(String peer) {
-    return 'DM · $peer';
+    return 'Direct · $peer';
   }
 
   @override
@@ -1562,18 +1555,18 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get nodeDetailSignature => 'Arrival signature';
+  String get nodeDetailSignature => 'Message sound';
 
   @override
   String get nodeDetailSignatureHint =>
-      'A cue just for this peer, instead of the DM cue.';
+      'Plays for messages from this person instead of the usual sound.';
 
   @override
   String get nodeDetailSignatureNone => 'Default';
 
   @override
   String nodeDetailSignatureSlot(int n) {
-    return 'Signature $n';
+    return 'Sound $n';
   }
 
   @override
@@ -1584,10 +1577,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get dmEmpty => '— no messages yet —';
 
   @override
-  String get dmOpenPeerDetail => 'Peer details';
+  String get dmOpenPeerDetail => 'Contact details';
 
   @override
-  String get dmSpeech => 'Speak this peer';
+  String get dmSpeech => 'Read this conversation aloud';
 
   @override
   String get dmSpeechInherit => 'Follow global speech setting';
@@ -1603,7 +1596,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get dmPeerNotInFabric =>
-      'This peer hasn\'t shown up on the mesh yet (no advert heard).';
+      'This person has not been heard on the mesh yet.';
 
   @override
   String dmComposerHint(String peer) {
@@ -1691,7 +1684,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get nodeIdentityLinkAction => 'Key changed? Link to another node';
+  String get nodeIdentityLinkAction => 'New key: link this contact';
 
   @override
   String get nodeIdentityLinkTitle => 'Link a changed key';
@@ -1735,7 +1728,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String nodeDetailRemoveDeviceContactConfirm(String name) {
-    return 'Remove “$name” from your radio\'s contacts? Frees a slot. You can re-add it later.';
+    return 'Remove “$name” from the radio\'s contacts? You can add them again later.';
   }
 
   @override
@@ -1780,7 +1773,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get deviceContactsOutOfRangeIntro =>
-      'Removes contacts that are far from you — or that hide their location (no GPS), which we treat as out of range. Favourites and known contacts are kept.';
+      'Removes contacts far away, and those that do not share a position. Favourites and known contacts are kept.';
 
   @override
   String deviceContactsBeyondKm(int km) {
@@ -1818,7 +1811,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String deviceContactsRemoveAllConfirm(int count) {
-    return 'Remove all $count contacts from the radio? You don\'t need contacts for channels — only to DM someone. Re-add anyone you want to message later.';
+    return 'Remove all $count contacts? You only need them to send direct messages, and you can add anyone back later.';
   }
 
   @override
@@ -2074,7 +2067,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get docsUpToDate => 'Already up to date';
 
   @override
-  String get docsOriginBundled => 'Bundled snapshot';
+  String get docsOriginBundled => 'Included copy';
 
   @override
   String docsOriginUpdated(String when) {
@@ -2209,18 +2202,19 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get meshTreeLegendRepeater =>
-      'Square = repeater. Mast-mounted infra, hub colour. Peers fan out through these.';
+      'A square is a repeater: a radio that passes other radios\' messages.';
 
   @override
   String get meshTreeLegendRoom =>
-      'Diamond = room server. Server-class node hosting named rooms.';
+      'A diamond is a room server: a radio that hosts named rooms.';
 
   @override
-  String get meshTreeLegendChat => 'Circle = chat node. Peer you can DM.';
+  String get meshTreeLegendChat =>
+      'A circle is a node you can message directly.';
 
   @override
   String get meshTreeLegendSensor =>
-      'Small circle (dim) = sensor. Narrow-purpose node.';
+      'A small dim circle is a sensor: it only reports readings.';
 
   @override
   String get meshTreeLegendFlood =>
@@ -2236,10 +2230,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get meshTreeLegendInteract =>
-      'Pinch to zoom, drag to pan, tap a node for details. Use Recenter to reset.';
+      'Tap a node for details, or Recenter to reset the view.';
 
   @override
-  String get fabricLegendTitle => 'FABRIC SURVEY';
+  String get fabricLegendTitle => 'MESH SURVEY';
 
   @override
   String get fabricLegendDesc =>
@@ -2251,11 +2245,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get fabricLegendRecency =>
-      'Brighter fill = more recent. Tiers: < 1 h, < 24 h, < 7 d, older.';
+      'Brighter is more recent: under an hour, under a day, under a week, older.';
 
   @override
   String get fabricLegendMarker =>
-      'Tertiary-coloured pins mark peers in the current set. Tap one for details.';
+      'Filled pins are the nodes in range now. Tap one for details.';
 
   @override
   String get fabricLegendSelf => 'The primary-coloured pin is you.';
@@ -2323,7 +2317,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get nodeDetailRefreshTelemetry => 'Refresh telemetry';
 
   @override
-  String get nodeDetailTelemetryQuerying => 'querying peer over the air…';
+  String get nodeDetailTelemetryQuerying => 'Asking the radio for readings…';
 
   @override
   String get nodeDetailTelemetryNotContact =>
@@ -2359,7 +2353,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get channelsHelp =>
-      'Slot 0 is the shared public channel. A private group needs the same slot, name and PSK on every node.';
+      'Channel 0 is the shared public one. A private group needs the same channel number, name and key on every radio.';
 
   @override
   String get channelsOfflineHint =>
@@ -2370,12 +2364,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String channelsSlotLabel(int idx) {
-    return 'slot $idx';
+    return 'channel $idx';
   }
 
   @override
   String channelsSlotActive(int idx) {
-    return 'slot $idx · ACTIVE';
+    return 'channel $idx · ACTIVE';
   }
 
   @override
@@ -2386,12 +2380,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String channelsSetSnack(int idx, String name) {
-    return 'Channel $idx set to \"$name\" — every node needs the same name & PSK here';
+    return 'Channel $idx set to \"$name\" — every radio needs the same name and key here';
   }
 
   @override
   String channelsDialogTitle(int idx) {
-    return 'Channel slot $idx';
+    return 'Channel $idx';
   }
 
   @override
@@ -2425,10 +2419,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get notifSectionTitle => 'Notifications';
 
   @override
-  String get notifOs => 'Notify on the lock screen';
+  String get notifOs => 'Show a notification';
 
   @override
-  String get notifAudio => 'Play a cue';
+  String get notifAudio => 'Play a sound';
 
   @override
   String get notifHaptic => 'Vibrate';
@@ -2437,18 +2431,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get notifTts => 'Speak the message';
 
   @override
-  String get notifMentionsOnly => 'Only when named';
+  String get notifMentionsOnly => 'Only when someone names me';
 
   @override
   String get notifMentionsOnlySub =>
       'Whole word or @name. Off means every message alerts.';
 
   @override
-  String get notifKeySuffix => 'Also match the key suffix';
+  String get notifKeySuffix => 'Also match the last 4 characters of my ID';
 
   @override
   String get notifKeySuffixSub =>
-      'Four hex characters are not an identity; leave this off unless you know the sender\'s.';
+      'Anyone can choose those four characters, so leave this off unless you know the sender.';
 
   @override
   String get notifDeniedBanner =>
@@ -2483,7 +2477,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get channelsErrorTag => 'Enter a #hashtag';
 
   @override
-  String get channelsErrorHex => 'PSK must be 32 hex chars (16 bytes)';
+  String get channelsErrorHex => 'The key must be 32 characters, 0-9 or A-F';
 
   @override
   String get channelsErrorName => 'Enter a channel name';
@@ -2496,16 +2490,16 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get channelsHelpEncryption =>
-      'Slot 0\'s key is public. Other slots use AES-128 with the PSK you set.';
+      'Channel 0\'s key is public. Other channels use the key you set.';
 
   @override
-  String get channelsHexGenerate => 'Generate random PSK';
+  String get channelsHexGenerate => 'Generate a random key';
 
   @override
   String get channelsHexCopy => 'Copy';
 
   @override
-  String get channelsHexCopied => 'PSK copied to clipboard';
+  String get channelsHexCopied => 'Key copied';
 
   @override
   String get channelsTagWeakShort =>
@@ -2520,10 +2514,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get channelsSlot0WarnBody =>
-      'Slot 0 is the well-known Public channel. Writing a private PSK here means you\'ll only be able to talk to nodes that use this exact key in slot 0 — you\'ll lose the shared Public channel. Proceed?';
+      'Channel 0 is the shared public channel. A private key here means you can only talk to radios using that same key, and you lose the public channel. Continue?';
 
   @override
-  String get channelsSlot0WarnContinue => 'Overwrite slot 0';
+  String get channelsSlot0WarnContinue => 'Overwrite channel 0';
 
   @override
   String get channelsSlot0WarnCancel => 'Cancel';
@@ -2538,23 +2532,23 @@ class AppLocalizationsEn extends AppLocalizations {
   String get channelsHideKey => 'Hide';
 
   @override
-  String get channelsClear => 'Clear slot';
+  String get channelsClear => 'Reset channel';
 
   @override
   String channelsClearConfirmTitle(int idx) {
-    return 'Clear slot $idx?';
+    return 'Reset channel $idx?';
   }
 
   @override
   String get channelsClearConfirmBody =>
-      'MeshCore has no protocol-level \"clear\" — this slot will be overwritten back to the well-known Public defaults (name + key). Other nodes will need to do the same to talk on it again.';
+      'The radio has no empty channel, so this one goes back to the public name and key. Other radios need the same to talk here again.';
 
   @override
   String get channelsClearConfirmAction => 'Clear';
 
   @override
   String channelsClearSnack(int idx) {
-    return 'Slot $idx cleared (reset to Public defaults)';
+    return 'Channel $idx reset to the public defaults';
   }
 
   @override
@@ -2568,7 +2562,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String channelsSetDefaultSnack(int idx) {
-    return 'Slot $idx is now the launch default';
+    return 'Channel $idx is now the one the app opens on';
   }
 
   @override
@@ -2606,10 +2600,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get channelsQrBody =>
-      'Scan with a Meshmore device or any QR reader. Anyone with this code can join the channel — share only with trusted peers.';
+      'Scan with a Meshmore device or any QR reader. Anyone with this code can join the channel, so share it only with people you trust.';
 
   @override
-  String get channelsQrPayload => 'Payload (also copy-friendly)';
+  String get channelsQrPayload => 'Channel code (you can copy it)';
 
   @override
   String get channelsQrClose => 'Close';
@@ -2618,7 +2612,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get deviceConfigTitle => 'Device configuration';
 
   @override
-  String get deviceRegionBand => 'REGION / BAND';
+  String get deviceRegionBand => 'Band preset';
 
   @override
   String get deviceRegionWhy => 'Why';
@@ -2636,7 +2630,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get deviceRegionUnknown => 'Waiting for device…';
 
   @override
-  String get deviceRegionCustom => 'Custom (no preset match)';
+  String get deviceRegionCustom => 'Custom';
 
   @override
   String get deviceRegionSuggestFromLocation => 'Suggest from my location';
@@ -2654,7 +2648,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get deviceRegionFamilyOther => 'Other';
 
   @override
-  String get deviceRegionSuggestTitle => 'Apply suggested region?';
+  String get deviceRegionSuggestTitle => 'Use the preset for your location?';
 
   @override
   String deviceRegionSuggestBody(String lat, String lon, String label) {
@@ -2662,11 +2656,11 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get deviceRegionSuggestApply => 'Apply';
+  String get deviceRegionSuggestApply => 'Use it';
 
   @override
   String get deviceRegionSuggestNoFix =>
-      'Couldn\'t get a GPS fix — try outdoors with location permission granted.';
+      'No GPS fix yet. Try outdoors with location on.';
 
   @override
   String get deviceRegionSuggestNoMatch =>
@@ -2674,11 +2668,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get deviceRegionDisclaimerShort =>
-      'Community-curated values, not regulatory guarantees.';
+      'Shared by users, not checked by a regulator.';
 
   @override
   String get deviceRegionDisclaimer =>
-      'Operating points are community-curated, not regulatory guarantees. Pick the preset legal where you are and use the SAME tuple on every node. In Japan, legal parameters are not enough — the radio hardware itself must carry 技適 (giteki) certification; most grey-import LoRa boards do not, and operating one is an offence under the Radio Act regardless of settings. The Japan (ARIB STD-T108) preset is a community proposal that hasn\'t been broadly field-validated — please confirm it is legal and works on your hardware before relying on it.';
+      'These presets are shared by users, not checked by a regulator. Pick one that is legal where you are and use the same settings on every radio. In Japan the radio itself must carry 技適 (giteki) certification; most imported boards do not, and using one is an offence under the Radio Act whatever the settings. The Japan (ARIB STD-T108) preset is a community proposal that has not been widely tested.';
 
   @override
   String get presetUsCanada => 'USA / Canada';
@@ -2732,19 +2726,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get closeSheet => 'Close';
 
   @override
-  String get deviceRadioParams => 'Frequency & bandwidth';
+  String get deviceRadioParams => 'Radio';
 
   @override
-  String get deviceIdentityAdvert => 'IDENTITY / ADVERT';
+  String get deviceIdentityAdvert => 'Identity and advert';
 
   @override
   String get deviceChannelsSection => 'CHANNELS';
 
   @override
-  String get deviceOtherParamsSection => 'OTHER PARAMS';
+  String get deviceOtherParamsSection => 'Advanced';
 
   @override
-  String get deviceDeviceSection => 'DEVICE';
+  String get deviceDeviceSection => 'Device';
 
   @override
   String get deviceFrequency => 'Frequency (MHz)';
@@ -2769,12 +2763,11 @@ class AppLocalizationsEn extends AppLocalizations {
       'The hash length this radio stamps on the packets it sends. Repeaters follow each packet\'s own length, so nodes need not agree. Longer hashes tell repeaters apart better but shrink the directed payload budget.';
 
   @override
-  String get devicePathHashUnread =>
-      'path hash: unknown (device not queried yet)';
+  String get devicePathHashUnread => 'unknown';
 
   @override
   String devicePathHashMismatch(String device, String form) {
-    return 'Not applied yet: this radio uses $device byte(s), the form is set to $form.';
+    return 'On the radio: $device. Yours: $form. Tap Apply to send yours.';
   }
 
   @override
@@ -2813,7 +2806,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Undo did not apply — the radio kept its last values.';
 
   @override
-  String get radioHealthTitle => 'RADIO HEALTH';
+  String get radioHealthTitle => 'Radio health';
 
   @override
   String get radioHealthRead => 'Read';
@@ -2822,35 +2815,33 @@ class AppLocalizationsEn extends AppLocalizations {
   String get radioHealthReading => 'Reading…';
 
   @override
-  String get radioHealthUnread =>
-      'Not read yet. Read asks the radio for its own stats (CMD_GET_STATS).';
+  String get radioHealthUnread => 'Tap Read';
 
   @override
   String radioHealthNoise(String dbm) {
-    return 'noise floor $dbm dBm — the radio\'s own measurement';
+    return 'Noise $dbm dBm';
   }
 
   @override
   String radioHealthLast(String rssi, String snr) {
-    return 'last packet RSSI $rssi dBm, SNR $snr dB — from the radio\'s packet statistics';
+    return 'Last $rssi dBm · $snr dB SNR';
   }
 
   @override
   String radioHealthBattery(String volts) {
-    return 'battery $volts V — from the radio\'s core statistics, not a phone reading';
+    return 'Battery $volts V';
   }
 
   @override
-  String get radioHealthNotReported => 'not reported by this firmware';
+  String get radioHealthNotReported => 'Not reported';
 
   @override
   String radioHealthUptime(String uptime) {
-    return 'up $uptime — the radio\'s uptime counter, which resets when it power-cycles';
+    return 'Up $uptime';
   }
 
   @override
-  String get radioHealthSource =>
-      'All values are the radio\'s own counters; nothing here is measured by the phone.';
+  String get radioHealthSource => 'From the radio';
 
   @override
   String get deviceLoadFromDevice => 'Load from device';
@@ -2973,11 +2964,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'You add heard nodes as contacts on demand.';
 
   @override
-  String get otherManualAddSubOff => 'Heard nodes auto-promote to contacts.';
+  String get otherManualAddSubOff => 'Nodes you hear are saved as contacts.';
 
   @override
-  String get otherTelemetryModeTitle =>
-      'Telemetry sharing — who may request each kind';
+  String get otherTelemetryModeTitle => 'Who may read telemetry';
 
   @override
   String get otherTelemetryBase => 'Base';
@@ -3002,11 +2992,11 @@ class AppLocalizationsEn extends AppLocalizations {
       'Who may request battery, GPS and environment data from this device.';
 
   @override
-  String get otherMultiAcksLabel => 'Multi-acks (0–3)';
+  String get otherMultiAcksLabel => 'Extra confirmations (0–3)';
 
   @override
   String get otherMultiAcksHelper =>
-      '0 = single ack (default). Higher = wait for N extra acks before considering a send confirmed.';
+      '0 is the default. Higher waits for that many more radios to confirm before calling a send confirmed.';
 
   @override
   String get otherSentSnack =>
@@ -3338,7 +3328,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get pingMethodTelemetry =>
-      'Telemetry request — silent for the peer; it answers only if it shares telemetry with us.';
+      'Asks for readings. The other radio answers only if it shares them with you.';
 
   @override
   String pingSummary(int sent, int replied, int lost) {
@@ -3517,11 +3507,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsNotifDeniedTransient =>
-      'Notifications are required for the background service. Tap Open settings to grant them.';
+      'Keeping the app connected in the background needs notifications. Allow them in Settings.';
 
   @override
   String get deviceAdvertPropagatesHint =>
-      'Name/location change propagates on the next advert (Nodes → Advertise).';
+      'Takes effect the next time the radio announces itself.';
 
   @override
   String get settingsHubMaps => 'Offline maps';
@@ -3543,7 +3533,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String mapsBreakdown(String packs, String layers, String view) {
-    return 'Regions $packs · Event maps $layers · Viewed tiles $view';
+    return 'Regions $packs · Event maps $layers · Cached tiles $view';
   }
 
   @override
@@ -3874,7 +3864,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get selfTestIntro =>
-      'Checks offline maps end to end on this phone: the real map servers, storage, downloads, pause and resume, expiry. Runs in a sandbox and deletes it afterwards; your maps are not touched. Takes about a minute and under 1 MB of data.';
+      'Checks map downloads end to end: the real servers, storage, downloads, pause and resume, expiry. It runs in a sandbox and deletes it afterwards, so your maps are not touched. Takes about a minute and under 1 MB of data.';
 
   @override
   String get selfTestRun => 'Run self-test';
@@ -3930,7 +3920,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get selfCheckDisk => 'Storage matches the books';
 
   @override
-  String get locGroupAutoPublish => 'Auto-publish';
+  String get locGroupAutoPublish => 'Publishing';
 
   @override
   String get locGroupBeacon => 'Beacon';
@@ -3943,7 +3933,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String deviceActiveChannelSub(String name) {
-    return 'Active: $name · slots · name + PSK · #hashtag';
+    return 'Using: $name · channels and keys';
   }
 
   @override
@@ -4034,12 +4024,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String diagnosticsMtuLine(String mtu, String need) {
-    return 'link MTU: $mtu (needs $need for a full frame)';
+    return 'Link size $mtu bytes, $need needed for a full frame';
   }
 
   @override
   String diagnosticsMtuRefusedLine(String mtu, String need) {
-    return 'this phone link negotiated $mtu bytes and a full radio frame needs $need. Reconnect to negotiate again; a radio whose stack caps the MTU smaller cannot carry every frame';
+    return 'This phone link is $mtu bytes and a full radio frame needs $need. Reconnect to try again; a radio that caps the link smaller cannot carry every frame.';
   }
 
   @override
@@ -4450,18 +4440,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get placeKeyedOnly => 'Keyed places only';
 
   @override
-  String get placeExportLedger => 'Export ledger';
+  String get placeExportLedger => 'Export places';
 
   @override
-  String get placeExportShared => 'Ledger ready to share.';
+  String get placeExportShared => 'Places ready to share.';
 
   @override
   String placeExportDone(String path) {
-    return 'Ledger saved to $path';
+    return 'Places saved to $path';
   }
 
   @override
-  String get placeExportFailed => 'Could not write the ledger.';
+  String get placeExportFailed => 'Could not save the list.';
 
   @override
   String get placeCoordinatesRefused => 'Those coordinates cannot be sent.';
@@ -4548,7 +4538,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get failurePairingNotKept =>
-      'The radio paired and then could not encrypt on the next connection, so it is losing its stored pairing. Power-cycle it, reopen the app and pair again; if it repeats, the radio\'s bond storage is the fault.';
+      'The radio paired but then could not encrypt on the next connection, so the pairing is not being kept. Power-cycle it and pair again; if it repeats, the fault is in the radio.';
 
   @override
   String get failureServiceMissing =>
@@ -4560,16 +4550,16 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String failureMtuTooSmall(String mtu, String need) {
-    return 'This phone link negotiated $mtu bytes and one radio frame needs $need. Reconnect to negotiate again; a radio that caps the link smaller cannot carry every frame.';
+    return 'This phone link is $mtu bytes and one radio frame needs $need. Reconnect to try again; a radio that caps the link smaller cannot carry every frame.';
   }
 
   @override
   String get failureFrameTruncated =>
-      'A frame arrived cut short and was not decoded. The link cannot carry the radio\'s longest frames; the count is on the diagnostics page.';
+      'Part of a message did not arrive. The count is in Diagnostics.';
 
   @override
   String get failureFrameTrailingBytes =>
-      'A frame carried bytes past its own end. The extra bytes were dropped rather than guessed at; the count is on the diagnostics page.';
+      'A message carried extra bytes at the end. They were dropped; the count is in Diagnostics.';
 
   @override
   String get failureStorageFull =>
@@ -4672,7 +4662,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get sosNoIdentity =>
-      'The radio has not reported its name, so an alarm has no callsign to carry.';
+      'The radio has not reported a name yet, so the alarm has no name to send.';
 
   @override
   String get sosWords => 'What is happening';
@@ -4689,7 +4679,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get sosEmergencyRepeat =>
-      'The radio repeats each packet once about two minutes later; the rest of the schedule does not outlive the app.';
+      'The radio repeats each message once, about two minutes later. If the app closes, the rest stops.';
 
   @override
   String get sosContactsNone =>
@@ -4772,7 +4762,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get sosRefusedTooLong =>
-      'That text is too long to carry the callsign and the position. Shorten it.';
+      'Too long to carry a name and a position. Shorten it.';
 
   @override
   String get sosRefusedHold => 'The hold is not finished.';
@@ -4816,7 +4806,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get checkinAnsweredChannel =>
-      'Answered on the channel (claimed, not a key).';
+      'Answered on the channel by name only, not by their key.';
 
   @override
   String get checkinSent => 'Check-in sent. Nothing repeats.';
@@ -5267,14 +5257,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String reportBundleWritten(String path) {
-    return 'Bundle written: $path';
+    return 'Report saved to $path';
   }
 
   @override
-  String get reportCopyBundle => 'Copy the bundle';
+  String get reportCopyBundle => 'Copy the report';
 
   @override
-  String get reportCopied => 'Bundle copied.';
+  String get reportCopied => 'Report copied.';
 
   @override
   String get blockedKeysNotPersisted =>
@@ -5468,4 +5458,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get fujiUnknownShort => 'Striped · no altitude';
+
+  @override
+  String get chatSpeechOffAction => 'Speech is off in App settings';
+
+  @override
+  String get nodeDetailAltitudeNotReported => 'not reported';
 }

@@ -10,9 +10,9 @@ import 'package:meshmore_sns_app/gen/app_localizations.dart';
 import 'package:meshmore_sns_app/l10n/locale_controller.dart';
 import 'package:meshmore_sns_app/meshcore/meshcore_controller.dart';
 import 'package:meshmore_sns_app/screens/dashboard_screen.dart';
+import 'package:meshmore_sns_app/screens/dashboards/dashboard_host.dart';
 import 'package:meshmore_sns_app/screens/dashboards/nerv_dashboard.dart';
 import 'package:meshmore_sns_app/screens/dashboards/studio_dashboard.dart';
-import 'package:meshmore_sns_app/screens/dashboards/dashboard_host.dart';
 import 'package:meshmore_sns_app/screens/dashboards/my_pubkey_line.dart';
 import 'package:meshmore_sns_app/theme/mm_tokens.dart';
 import 'package:meshmore_sns_app/theme/theme_controller.dart';
@@ -95,17 +95,20 @@ void main() {
     );
     final ThemeController tc = await _pump(t, mc);
 
-    // The key names the view, not one skin's layout: it is on the host, so it
-    // is present whichever preset is selected (R114).
+    // The key answers "is the dashboard showing", so it belongs to the host
+    // and holds under every preset. Which layout is showing is a separate
+    // question, answered by the layout's own type.
     expect(find.byKey(dashboardKey), findsOneWidget);
     expect(find.byType(StudioDashboard), findsOneWidget,
-        reason: 'a fresh install opens on STUDIO');
+        reason: 'kDefaultPreset is STUDIO');
+    expect(find.byType(NervDashboard), findsNothing);
 
-    // Switch to NERV → the telemetry-grid re-imagining, and the key stays.
+    // Switch to NERV → the telemetry-grid re-imagining.
     await tc.setPreset(MmThemePreset.nerv);
     await t.pumpAndSettle();
-    expect(find.byType(NervDashboard), findsOneWidget);
     expect(find.byKey(dashboardKey), findsOneWidget);
+    expect(find.byType(NervDashboard), findsOneWidget);
+    expect(find.byType(StudioDashboard), findsNothing);
     // The icon-only Bluetooth button is named for screen readers.
     expect(find.byTooltip('Device'), findsOneWidget);
 
@@ -113,8 +116,6 @@ void main() {
     await tc.setPreset(MmThemePreset.seele);
     await t.pumpAndSettle();
     expect(find.byType(DashboardScreen), findsOneWidget);
-    expect(find.byKey(dashboardKey), findsOneWidget);
-    expect(find.text('NERV'), findsNothing);
   });
 
   testWidgets('host shows the Hyperlocal radar when selected',
