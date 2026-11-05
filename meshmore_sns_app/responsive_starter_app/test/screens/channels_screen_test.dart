@@ -10,6 +10,8 @@ import 'package:meshmore_sns_app/l10n/locale_controller.dart';
 import 'package:meshmore_sns_app/bot/bot_controller.dart';
 import 'package:meshmore_sns_app/meshcore/meshcore_controller.dart';
 import 'package:meshmore_sns_app/screens/channels_screen.dart';
+import 'package:meshmore_sns_app/theme/mm_skin.dart';
+import 'package:meshmore_sns_app/theme/mm_tokens.dart';
 
 import '../meshcore/fake_transport.dart';
 import 'package:meshcore/meshcore.dart';
@@ -97,5 +99,47 @@ void main() {
     await t.pumpAndSettle();
     expect(mc.activeChannel, 1);
     mc.dispose();
+  });
+
+  testWidgets('W2 the channel screen takes its text sizes from the ladder',
+      (t) async {
+    // Fourteen size literals became roles here: the two help blocks are
+    // sizeBody (12), the slot's DEFAULT badge is sizeMicro (10), key
+    // readouts are sizeSm/sizeBody in the mono face. Under SEELE the scale
+    // is 1.0, so the header help and the badge keep the numbers they had.
+    final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
+    final MeshcoreController ctrl = await _ready(fake);
+    final MmType type = mmSkinFor(MmThemePreset.seele).type;
+    await t.binding.setSurfaceSize(const Size(900, 1600));
+    addTearDown(() => t.binding.setSurfaceSize(null));
+    await t.pumpWidget(_host(ctrl));
+    await t.pump();
+
+    Text find1(String key) => t.widget<Text>(find.text(key));
+    expect(find1('Slot 0 is the shared public channel. A private group needs '
+                    'the same slot, name and PSK on every node.')
+                .style
+                ?.fontSize,
+        type.sizeBody);
+    expect(
+        find1('Slot 0 is the shared public channel. A private group needs '
+                    'the same slot, name and PSK on every node.')
+                .style
+                ?.fontSize,
+        12);
+    // The encryption panel is the second guaranteed block: 12 -> sizeBody
+    // with the mono face on the key readouts it carries.
+    expect(
+        find1("Slot 0's key is public. Other slots use AES-128 with the PSK you set.")
+            .style
+            ?.fontSize,
+        type.sizeBody);
+    expect(
+        find1("Slot 0's key is public. Other slots use AES-128 with the PSK you set.")
+            .style
+            ?.fontSize,
+        12);
+
+    ctrl.dispose();
   });
 }

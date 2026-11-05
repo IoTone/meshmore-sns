@@ -15,6 +15,7 @@ import '../cryptokit/dice_roll_entropy.dart';
 import '../gen/app_localizations.dart';
 import '../meshcore/meshcore_controller.dart';
 import '../ui/mm_scaffold.dart';
+import '../theme/mm_skin.dart';
 import '../theme/theme_controller.dart';
 import '../ui/mm_shape.dart';
 
@@ -108,7 +109,7 @@ class ChannelsScreen extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(16, 14, 16, 4),
             child: Text(
               l.channelsHelp,
-              style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12),
+              style: TextStyle(color: cs.onSurfaceVariant, fontSize: context.skin.type.sizeBody),
             ),
           ),
           Padding(
@@ -131,7 +132,7 @@ class ChannelsScreen extends StatelessWidget {
                       l.channelsHelpEncryption,
                       style: TextStyle(
                           color: cs.onSurface,
-                          fontSize: 12,
+                          fontSize: context.skin.type.sizeBody,
                           height: 1.35),
                     ),
                   ),
@@ -179,7 +180,7 @@ class ChannelsScreen extends StatelessWidget {
                       child: Text(l.channelsDefaultBadge,
                           style: TextStyle(
                               color: cs.tertiary,
-                              fontSize: 10,
+                              fontSize: context.skin.type.sizeMicro,
                               letterSpacing: 1.5)),
                     ),
                 ],
@@ -470,7 +471,7 @@ class _EditChannelDialogState extends State<_EditChannelDialog> {
             const SizedBox(height: 10),
             if (_src == _PskSource.public)
               Text(l.channelsKeyPublicBody,
-                  style: const TextStyle(fontSize: 12))
+                  style: TextStyle(fontSize: context.skin.type.sizeBody))
             else if (_src == _PskSource.hashtag) ...<Widget>[
               TextField(
                 controller: _tag,
@@ -495,7 +496,7 @@ class _EditChannelDialogState extends State<_EditChannelDialog> {
                               color: Theme.of(context)
                                   .colorScheme
                                   .tertiary,
-                              fontSize: 11)),
+                              fontSize: context.skin.type.sizeSm)),
                     ),
                   ],
                 ),
@@ -589,8 +590,8 @@ class _EditChannelDialogState extends State<_EditChannelDialog> {
                       color: Theme.of(context).colorScheme.primary),
                   const SizedBox(width: 6),
                   Text(l.channelsCurrentKey,
-                      style: const TextStyle(
-                          fontSize: 12, letterSpacing: 1)),
+                      style: TextStyle(
+                          fontSize: context.skin.type.sizeBody, letterSpacing: 1)),
                   const Spacer(),
                   TextButton.icon(
                     icon: Icon(
@@ -612,8 +613,8 @@ class _EditChannelDialogState extends State<_EditChannelDialog> {
                       .map((int b) =>
                           b.toRadixString(16).padLeft(2, '0'))
                       .join(),
-                  style: const TextStyle(
-                      fontFamily: 'JetBrains Mono', fontSize: 11),
+                  style: TextStyle(
+                      fontFamily: context.skin.type.monoFamily, fontSize: context.skin.type.sizeSm),
                 ),
               // QR-share — only meaningful for non-Public slots
               // (Public's key is world-known, no point sharing).
@@ -657,7 +658,7 @@ class _EditChannelDialogState extends State<_EditChannelDialog> {
               Text(_error!,
                   style: TextStyle(
                       color: Theme.of(context).colorScheme.error,
-                      fontSize: 12)),
+                      fontSize: context.skin.type.sizeBody)),
             ],
           ],
         ),
@@ -761,7 +762,7 @@ void _showQrShare(BuildContext outer, int idx, String name,
               children: <Widget>[
                 Text(l.channelsQrBody,
                     style: TextStyle(
-                        color: cs.onSurfaceVariant, fontSize: 12)),
+                        color: cs.onSurfaceVariant, fontSize: ctx.skin.type.sizeBody)),
                 const SizedBox(height: 14),
                 Center(
                   child: Container(
@@ -782,14 +783,14 @@ void _showQrShare(BuildContext outer, int idx, String name,
                 Text(l.channelsQrPayload,
                     style: TextStyle(
                         color: cs.onSurfaceVariant,
-                        fontSize: 11,
+                        fontSize: ctx.skin.type.sizeSm,
                         letterSpacing: 1)),
                 const SizedBox(height: 4),
                 SelectableText(
                   payload,
-                  style: const TextStyle(
-                      fontFamily: 'JetBrains Mono',
-                      fontSize: 11,
+                  style: TextStyle(
+                      fontFamily: ctx.skin.type.monoFamily,
+                      fontSize: ctx.skin.type.sizeSm,
                       height: 1.4),
                 ),
               ],
@@ -838,7 +839,7 @@ class _DiceRollPanel extends StatelessWidget {
               tc.reduceMotion
                   ? l.channelsShakeTapFallback
                   : l.channelsShakeBody,
-              style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12),
+              style: TextStyle(color: cs.onSurfaceVariant, fontSize: context.skin.type.sizeBody),
             ),
             const SizedBox(height: 12),
             Row(
@@ -858,8 +859,8 @@ class _DiceRollPanel extends StatelessWidget {
                     hex,
                     style: TextStyle(
                         color: d.complete ? cs.onSurface : cs.onSurfaceVariant,
-                        fontFamily: 'JetBrains Mono',
-                        fontSize: 12,
+                        fontFamily: context.skin.type.monoFamily,
+                        fontSize: context.skin.type.sizeBody,
                         height: 1.4),
                   ),
                 ),
@@ -873,7 +874,7 @@ class _DiceRollPanel extends StatelessWidget {
                 (d.progress * 100).round(),
               ),
               style: TextStyle(
-                  color: cs.onSurfaceVariant, fontSize: 11),
+                  color: cs.onSurfaceVariant, fontSize: context.skin.type.sizeSm),
             ),
             const SizedBox(height: 6),
             OutlinedButton.icon(

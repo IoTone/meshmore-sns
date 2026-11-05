@@ -106,7 +106,6 @@ void main() {
       'lib/bot/bot_section.dart': 1,
       'lib/bot/bot_tag.dart': 1,
       'lib/screens/battery_screen.dart': 3,
-      'lib/screens/channels_screen.dart': 3,
       'lib/screens/dashboard_screen.dart': 7,
       'lib/screens/dashboards/my_pubkey_line.dart': 1,
       'lib/screens/device_contacts_screen.dart': 1,
