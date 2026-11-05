@@ -124,6 +124,10 @@ over BLE. Mesh-first, no backend, no account, no server.
   controls, and a lockstep test that fails when an ARB key or a getter is
   missing on one side. `test/screens/a11y_floors_test.dart`,
   `test/l10n/lockstep_test.dart`.
+- **Skin sweep.** The six shell views are built once per preset, so a view that
+  breaks under one skin fails a test rather than a user. Seven cases, measured
+  8 s for the file, which is the only test here that mounts the whole app seven
+  times. `test/theme/skin_sweep_test.dart`.
 
 **Studio skin (R63)**
 - Seventh preset `studio` ("Studio Dark — clean · square"): grey layer
