@@ -21,6 +21,11 @@ MediaPhoto photo(int width, int height) => MediaPhoto(
       rgba: Uint8List(width * height * 4),
     );
 
+/// The failure a radio call throws when the link is gone rather than busy.
+final class _LinkGone implements Exception {
+  const _LinkGone();
+}
+
 /// A clock a test moves by hand, so a transfer that would take a minute of
 /// wall time costs nothing here.
 final class TestClock {
@@ -240,6 +245,69 @@ void main() {
       final Set<int> headers = <int>{for (final Uint8List b in sent) b[0]};
       expect(headers.length, sent.length,
           reason: 'the radio drops a packet it has already seen');
+    });
+
+    test('a thrown send puts the chunk back instead of losing it', () async {
+      final TestClock clock = TestClock();
+      final MediaUpload upload = MediaUpload(
+        plan: MediaTransferPlan(
+          payloadId: 9,
+          kind: MediaKind.image,
+          photo: photo(320, 240),
+          payload: Uint8List(150),
+          chunks: MediaChunkCodec.split(List<int>.filled(150, 7),
+              payloadId: 9, kind: MediaKind.image),
+          cost: const MediaTransferCost(
+              chunks: 1, bytes: 150, airtime: Duration(milliseconds: 4)),
+          withinBudget: true,
+        ),
+        clock: clock.call,
+        wait: clock.wait,
+      );
+      int calls = 0;
+      final MediaReceipt receipt = await upload.run((Uint8List blob) async {
+        calls++;
+        if (calls == 1) throw StateError('the link went away');
+        return const ChannelDataSendResult(ChannelDataSendStatus.accepted);
+      });
+      // Two calls, one receipt, no resend: the chunk went out once.
+      expect(calls, 2);
+      expect(receipt.chunks, 1);
+      expect(receipt.resends, 0);
+      expect(upload.sent, 1);
+    });
+
+    test('a run of thrown sends reports the link failure, not a lost receipt',
+        () async {
+      final TestClock clock = TestClock();
+      final MediaUpload upload = MediaUpload(
+        plan: MediaTransferPlan(
+          payloadId: 10,
+          kind: MediaKind.image,
+          photo: photo(320, 240),
+          payload: Uint8List(150),
+          chunks: MediaChunkCodec.split(List<int>.filled(150, 8),
+              payloadId: 10, kind: MediaKind.image),
+          cost: const MediaTransferCost(
+              chunks: 1, bytes: 150, airtime: Duration(milliseconds: 4)),
+          withinBudget: true,
+        ),
+        clock: clock.call,
+        wait: clock.wait,
+      );
+      int calls = 0;
+      await expectLater(
+        upload.run((Uint8List blob) async {
+          calls++;
+          throw const _LinkGone();
+        }),
+        throwsA(isA<_LinkGone>()),
+      );
+      // The first throw is treated as a busy link and retried; the third one
+      // in a row is the link being gone, so the transfer stops and says so
+      // instead of looping or reporting a lost receipt.
+      expect(calls, 3,
+          reason: 'a run of throws is a dead link, not a busy one');
     });
 
     test('a peer request resends exactly what it asked for, once', () async {

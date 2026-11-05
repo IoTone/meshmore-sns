@@ -125,6 +125,13 @@ final class MediaUpload {
   final MediaSender _sender;
   final Set<String> _requestsTaken = <String>{};
 
+  /// How many throws from the radio call, in a row, are treated as a busy
+  /// link before the transfer stops pretending. One throw is a hiccup; a run
+  /// of them is the link being gone, and the caller needs that error rather
+  /// than the engine's own end-of-loop one.
+  static const int maxConsecutiveSendFailures = 3;
+  int _consecutiveSendFailures = 0;
+
   int get sent => _sender.delivered;
 
   int get chunks => _sender.chunkCount;
@@ -159,7 +166,21 @@ final class MediaUpload {
         continue;
       }
       for (final MediaSend item in due) {
-        final ChannelDataSendResult result = await send(item.blob);
+        final ChannelDataSendResult result;
+        try {
+          result = await send(item.blob);
+          _consecutiveSendFailures = 0;
+        } catch (_) {
+          // The call threw, so nothing was written: the chunk goes back to the
+          // front of the queue with no attempt spent, the same accounting a
+          // full packet table gets. Without this the chunk is lost and the
+          // loop ends by throwing its own "no receipt" error, which names
+          // neither the chunk nor the radio's failure.
+          _consecutiveSendFailures++;
+          _sender.acknowledge(item.index, MediaSendResult.tableFull);
+          if (_consecutiveSendFailures >= maxConsecutiveSendFailures) rethrow;
+          continue;
+        }
         _sender.acknowledge(item.index, resultFor(result.status));
       }
     }
