@@ -261,12 +261,13 @@ is a named gap, not a silent one.
 
 | Item | State | Why it is still open, and what closes it |
 | --- | --- | --- |
-| Photo reference on the wire | OPEN | Nothing writes a `PlacePhotoRef`, so no place names a payload id to claim and the photo section stays hidden even though the inbound consumer is built. Closes with a decision on where the reference travels (report text or a follow-up datagram), then one wire field and one test |
+| Photo reference on the wire | OPEN | Nothing writes a `PlacePhotoRef`, so no place names a payload id to claim and the photo section stays hidden even though the inbound consumer is built, subscribed (`main.dart`), and the fetch now takes the inbox's download so exactly one reassembler exists (`place_photo.dart`, `test/places/place_photo_test.dart`). Closes with a decision on where the reference travels (report text or a follow-up datagram), then one wire field and one test |
 | Key-bound confirm/refute over a DM | OPEN | The grammar and tally support a key-bound reply; no surface sends a place reply on a DM thread, so every reply the app emits reads *claimed*. Closes with a place opened from the thread plus a sender bound to that peer |
 | Report bundle has no share action | TODO | It writes and copies the JSON; the share channel exists (`lib/util/share.dart`) and this flow does not use it. Closes with one call beside the copy action |
 | Forwarding a message to another thread | TODO | Reply, copy and delete exist; no composer path takes an existing message into another thread |
 | Settings entry for the encrypted export | TODO | The export and its share path exist; the only entry is a thread action. Closes with one Settings row |
 | Storage total and a cleanup action | TODO | Every store states its own bound; no single place shows growth or offers a sweep |
+| Places at rest | OPEN | Place rows, confirmations and the ledger persist in `mm.places.v1` in plain preferences while history, drafts and the block list are sealed. Closes by moving the place store onto the same named-record store, which is a migration, not a rewrite |
 | Two-profile radio2 control | SPECIFIED | Measured contract exists (96–99 % primary, 96–100 % secondary); the app must say what it costs. Closes with a screen and the cost copy |
 | Identity replacement carry-over | SPECIFIED | D8.7: a changed radio key is a new radio with a one-tap carry-over of tags, favourites and blocks. Closes with the carry-over flow |
 | Multi-radio ownership | SPECIFIED | D8.9: one active session, explicit switch, an in-flight send reads unknown never failed |
