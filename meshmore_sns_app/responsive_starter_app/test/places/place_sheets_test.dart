@@ -115,8 +115,11 @@ void main() {
       await t.enterText(
           find.byKey(const ValueKey<String>('place-label')), 'Ford is out');
       await t.tap(find.byKey(const ValueKey<String>('place-type-water')));
-      await t.tap(find.byKey(const ValueKey<String>('place-ttl-6h')));
-      await t.pump();
+      // The ten chips became one picker: open it, then choose the stop.
+      await t.tap(find.byKey(const ValueKey<String>('place-ttl-picker')));
+      await t.pumpAndSettle();
+      await t.tap(find.byKey(const ValueKey<String>('place-ttl-6h')).last);
+      await t.pumpAndSettle();
       await t.tap(find.byKey(const ValueKey<String>('place-send')));
       await t.pumpAndSettle();
 
@@ -131,6 +134,8 @@ void main() {
         latitude: 51.500741,
         longitude: -0.124596,
         composer: composer,
+        // Offered only where the point is not one the user aimed at.
+        showPrecision: true,
       )));
       await t.enterText(
           find.byKey(const ValueKey<String>('place-label')), 'Ford');

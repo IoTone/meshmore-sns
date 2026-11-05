@@ -11,6 +11,7 @@ import '../places/place_history_sheet.dart';
 import '../places/place_store.dart';
 import '../places/place_wiring.dart';
 import 'street_map_view.dart';
+import '../theme/mm_skin.dart';
 import '../ui/mm_shape.dart';
 
 /// R61 — the **Map** primary view: the street map as its own swipe page.
@@ -48,7 +49,6 @@ class MapScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final AppLocalizations l = AppLocalizations.of(context);
-    final ColorScheme cs = Theme.of(context).colorScheme;
     return Column(
       children: <Widget>[
         // The map is the one view whose content is full-bleed, so its header
@@ -70,18 +70,10 @@ class MapScreen extends StatelessWidget {
         Positioned(
           left: 12,
           top: 12,
-          child: Material(
-            color: cs.surface.withValues(alpha: .9),
-            elevation: 1,
-            shape: RoundedRectangleBorder(
-              borderRadius: mmRadius(context, 6),
-              side: BorderSide(color: cs.outline.withValues(alpha: .4)),
-            ),
-            child: IconButton(
-              tooltip: l.mapsTitle,
-              icon: const Icon(Icons.download_for_offline_outlined),
-              onPressed: () => context.push('/settings/maps'),
-            ),
+          child: _MapTool(
+            label: l.mapsTitle,
+            icon: Icons.download_for_offline_outlined,
+            onTap: () => context.push('/settings/maps'),
           ),
         ),
         // Places history (meshmore-places-spec.md §10): every report this
@@ -89,30 +81,88 @@ class MapScreen extends StatelessWidget {
         // offline-maps button so the two read as one column of map tools.
         Positioned(
           left: 12,
-          top: 12 + 48 + 8,
-          child: Material(
-            color: cs.surface.withValues(alpha: .9),
-            elevation: 1,
-            shape: RoundedRectangleBorder(
-              borderRadius: mmRadius(context, 6),
-              side: BorderSide(color: cs.outline.withValues(alpha: .4)),
+          top: 12 + 40 + 8,
+          child: _MapTool(
+            key: const ValueKey<String>('map-places-button'),
+            label: l.placeHistoryTitle,
+            icon: Icons.push_pin_outlined,
+            onTap: () => PlaceHistorySheet.show(
+              context,
+              store: context.read<PlaceStore>(),
+              composer: placeComposerOf(context),
             ),
-            child: IconButton(
-              key: const ValueKey<String>('map-places-button'),
-              tooltip: l.placeHistoryTitle,
-              icon: const Icon(Icons.push_pin_outlined),
-              onPressed: () => PlaceHistorySheet.show(
-                context,
-                store: context.read<PlaceStore>(),
-                composer: placeComposerOf(context),
+          ),
+        ),
+      ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// One labelled map tool. The map's chrome used to be icon-only, so the only
+/// way to learn what a button did was to press it (UX audit C8). A short label
+/// under the glyph is cheaper than a tooltip that does not exist on touch.
+class _MapTool extends StatelessWidget {
+  const _MapTool({
+    super.key,
+    required this.label,
+    required this.icon,
+    required this.onTap,
+  });
+
+  final String label;
+  final IconData icon;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final ColorScheme cs = Theme.of(context).colorScheme;
+    final MmSkin skin = context.skin;
+    return Semantics(
+      button: true,
+      label: label,
+      // The label is visible, and the tooltip stays so the control keeps the
+      // same discoverable name on long-press and in tests.
+      child: Tooltip(
+        message: label,
+        child: Material(
+        color: cs.surface.withValues(alpha: .9),
+        elevation: 1,
+        shape: RoundedRectangleBorder(
+          borderRadius: mmRadius(context, 6),
+          side: BorderSide(color: cs.outline.withValues(alpha: .4)),
+        ),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: mmRadius(context, 6),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(
+                minWidth: 64, maxWidth: 88, minHeight: 40),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  Icon(icon, size: skin.type.sizeLg, color: cs.onSurface),
+                  Text(
+                    label,
+                    textAlign: TextAlign.center,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: cs.onSurface,
+                      fontSize: skin.type.sizeMicro,
+                    ),
+                  ),
+                ],
               ),
             ),
+            ),
           ),
         ),
-      ],
-          ),
-        ),
-      ],
+      ),
     );
   }
 }

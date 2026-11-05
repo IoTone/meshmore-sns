@@ -227,4 +227,18 @@ void main() {
     expect(find.byType(FlutterMap), findsOneWidget);
     await _drain(t, mc, m);
   });
+
+  testWidgets('the map offers a labelled way to report a place',
+      (WidgetTester t) async {
+    final (MapsController m, MeshcoreController mc) = await _pump(t, _Net());
+    // A long-press was the only way in, and the empty state had to teach it in
+    // a sentence (UX audit C7). The control is labelled, so the gesture is one
+    // option rather than the secret.
+    expect(find.text('Report a place'), findsOneWidget);
+
+    await t.tap(find.byKey(const ValueKey<String>('map-report-place')));
+    await t.pumpAndSettle();
+    expect(find.byKey(const ValueKey<String>('place-label')), findsOneWidget);
+    await _drain(t, mc, m);
+  });
 }

@@ -7822,12 +7822,6 @@ abstract class AppLocalizations {
   /// **'Emergency alarm and check-in'**
   String get sosEntryTooltip;
 
-  /// No description provided for @sosRepeatsOneHour.
-  ///
-  /// In en, this message translates to:
-  /// **'This repeats for up to one hour.'**
-  String get sosRepeatsOneHour;
-
   /// No description provided for @sosGoesToChannel.
   ///
   /// In en, this message translates to:
@@ -8763,6 +8757,108 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Writes a file on this device for you to send. Nothing is transmitted.'**
   String get reportActionSub;
+
+  /// No description provided for @sosDestinationContactsLimit.
+  ///
+  /// In en, this message translates to:
+  /// **'Up to {count} contacts'**
+  String sosDestinationContactsLimit(int count);
+
+  /// No description provided for @sosDestinationChange.
+  ///
+  /// In en, this message translates to:
+  /// **'Change'**
+  String get sosDestinationChange;
+
+  /// No description provided for @sosDestinationPickerTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Where the alarm goes'**
+  String get sosDestinationPickerTitle;
+
+  /// No description provided for @sosDestinationChannelHeader.
+  ///
+  /// In en, this message translates to:
+  /// **'Channel'**
+  String get sosDestinationChannelHeader;
+
+  /// No description provided for @sosDestinationContactsHeader.
+  ///
+  /// In en, this message translates to:
+  /// **'Direct copies'**
+  String get sosDestinationContactsHeader;
+
+  /// No description provided for @sosDestinationContactsHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'A direct copy from one of these keys can stop the alarm. A channel reply cannot.'**
+  String get sosDestinationContactsHelp;
+
+  /// No description provided for @sosDestinationMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'The channel this alarm was set to is gone. Choose another.'**
+  String get sosDestinationMissing;
+
+  /// No description provided for @sosDestinationNoContacts.
+  ///
+  /// In en, this message translates to:
+  /// **'No contacts yet'**
+  String get sosDestinationNoContacts;
+
+  /// No description provided for @sosDestinationNotAContact.
+  ///
+  /// In en, this message translates to:
+  /// **'not in contacts'**
+  String get sosDestinationNotAContact;
+
+  /// No description provided for @sosDestinationDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get sosDestinationDone;
+
+  /// No description provided for @sosEmergencyShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Public channel, one repeat if the app closes'**
+  String get sosEmergencyShort;
+
+  /// No description provided for @sosAboutTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'About this destination'**
+  String get sosAboutTitle;
+
+  /// No description provided for @sosRepeatsShort.
+  ///
+  /// In en, this message translates to:
+  /// **'repeats up to 1 h'**
+  String get sosRepeatsShort;
+
+  /// No description provided for @placeTtlMinutes.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} min'**
+  String placeTtlMinutes(int count);
+
+  /// No description provided for @placeTtlHours.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} h'**
+  String placeTtlHours(int count);
+
+  /// No description provided for @placeTtlDays.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} d'**
+  String placeTtlDays(int count);
+
+  /// No description provided for @mapReportPlace.
+  ///
+  /// In en, this message translates to:
+  /// **'Report a place'**
+  String get mapReportPlace;
 }
 
 class _AppLocalizationsDelegate

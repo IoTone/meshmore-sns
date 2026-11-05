@@ -4566,9 +4566,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sosEntryTooltip => 'Emergency alarm and check-in';
 
   @override
-  String get sosRepeatsOneHour => 'This repeats for up to one hour.';
-
-  @override
   String sosGoesToChannel(String name) {
     return 'Channel $name';
   }
@@ -5190,4 +5187,66 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get reportActionSub =>
       'Writes a file on this device for you to send. Nothing is transmitted.';
+
+  @override
+  String sosDestinationContactsLimit(int count) {
+    return 'Up to $count contacts';
+  }
+
+  @override
+  String get sosDestinationChange => 'Change';
+
+  @override
+  String get sosDestinationPickerTitle => 'Where the alarm goes';
+
+  @override
+  String get sosDestinationChannelHeader => 'Channel';
+
+  @override
+  String get sosDestinationContactsHeader => 'Direct copies';
+
+  @override
+  String get sosDestinationContactsHelp =>
+      'A direct copy from one of these keys can stop the alarm. A channel reply cannot.';
+
+  @override
+  String get sosDestinationMissing =>
+      'The channel this alarm was set to is gone. Choose another.';
+
+  @override
+  String get sosDestinationNoContacts => 'No contacts yet';
+
+  @override
+  String get sosDestinationNotAContact => 'not in contacts';
+
+  @override
+  String get sosDestinationDone => 'Done';
+
+  @override
+  String get sosEmergencyShort =>
+      'Public channel, one repeat if the app closes';
+
+  @override
+  String get sosAboutTitle => 'About this destination';
+
+  @override
+  String get sosRepeatsShort => 'repeats up to 1 h';
+
+  @override
+  String placeTtlMinutes(int count) {
+    return '$count min';
+  }
+
+  @override
+  String placeTtlHours(int count) {
+    return '$count h';
+  }
+
+  @override
+  String placeTtlDays(int count) {
+    return '$count d';
+  }
+
+  @override
+  String get mapReportPlace => 'Report a place';
 }

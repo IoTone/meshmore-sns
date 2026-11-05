@@ -8,6 +8,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../gen/app_localizations.dart';
+import '../meshcore/discovered_node.dart';
 import '../meshcore/meshcore_controller.dart';
 import '../sos/sos_controller.dart';
 import '../sos/sos_engine.dart';
@@ -127,6 +128,20 @@ class _SosScreenState extends State<SosScreen> {
         SosRefusal.noIdentity => l.sosNoIdentity,
       };
 
+  /// Opens the destination picker. The controller saves the choice, so the
+  /// next launch starts where this one left off.
+  Future<void> _openDestinationPicker(
+    BuildContext context,
+    SosController sos,
+    MeshcoreController mc,
+  ) {
+    return showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (_) => _DestinationPicker(sos: sos, mc: mc),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final AppLocalizations l = AppLocalizations.of(context);
@@ -158,7 +173,27 @@ class _SosScreenState extends State<SosScreen> {
             if (ended)
               _Ended(sos: sos, l: l)
             else ...<Widget>[
-              _Destination(sos: sos, mc: mc, l: l),
+              // The control comes first. On an emergency screen the eye has to
+              // land on the thing that raises the alarm, not on a sentence
+              // about it (UX audit E1/E2).
+              if (!sos.isRunning) ...<Widget>[
+                _holdControl(context, sos, l, skin, mc.isReady),
+                if (_note != null) ...<Widget>[
+                  SizedBox(height: skin.space.step(3)),
+                  Text(_note!,
+                      key: const ValueKey<String>('sos-note'),
+                      style: TextStyle(
+                          color: skin.color.alert,
+                          fontSize: skin.type.sizeBody)),
+                ],
+                SizedBox(height: skin.space.step(4)),
+              ],
+              // Where it goes, one row, one tap to change it.
+              _DestinationRow(
+                sos: sos,
+                l: l,
+                onTap: () => _openDestinationPicker(context, sos, mc),
+              ),
               SizedBox(height: skin.space.step(4)),
               // While the hold is still under the finger the hold control
               // stays: swapping it for the running panel would dispose the
@@ -191,16 +226,8 @@ class _SosScreenState extends State<SosScreen> {
                   ),
                 ),
                 SizedBox(height: skin.space.step(4)),
-                _holdControl(context, sos, l, skin, mc.isReady),
-                if (_note != null) ...<Widget>[
-                  SizedBox(height: skin.space.step(3)),
-                  Text(_note!,
-                      key: const ValueKey<String>('sos-note'),
-                      style: TextStyle(
-                          color: skin.color.alert,
-                          fontSize: skin.type.sizeBody)),
-                ],
               ],
+              _AboutLines(sos: sos, l: l),
             ],
           ],
         ),
@@ -219,7 +246,11 @@ class _SosScreenState extends State<SosScreen> {
       button: true,
       enabled: enabled,
       label: l.sosHoldToArm,
-      onLongPress: enabled ? () {} : null,
+      // A screen reader's double-tap-and-hold runs the same hold the finger
+      // does: the timer below arms, waits the engine's three seconds and
+      // confirms. The empty callback this replaces made the alarm impossible
+      // to raise without sight (UX audit E3).
+      onLongPress: enabled ? () => _beginHold(sos, l) : null,
       child: GestureDetector(
         key: const ValueKey<String>('sos-hold'),
         onTapDown: (_) => _beginHold(sos, l),
@@ -279,74 +310,321 @@ class _SosScreenState extends State<SosScreen> {
   }
 }
 
-/// Where the alarm goes, and the two honest lines about reach (§10 items 1-3).
-class _Destination extends StatelessWidget {
-  const _Destination({required this.sos, required this.mc, required this.l});
+/// Where the alarm goes: one row, one line, one tap to change it.
+///
+/// §10 items 2 and 3 are the title and the subtitle. A channel and a direct
+/// copy guarantee different things, and the row states both: the channel the
+/// alarm is heard on, and how many keyed copies it carries.
+class _DestinationRow extends StatelessWidget {
+  const _DestinationRow({
+    required this.sos,
+    required this.l,
+    required this.onTap,
+  });
 
   final SosController sos;
-  final MeshcoreController mc;
+  final AppLocalizations l;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final MmSkin skin = context.skin;
+    final bool missing = sos.destinationMissing;
+    final int copies = sos.contactKeysHex.length;
+    final String sub = missing
+        ? l.sosDestinationMissing
+        : '${l.sosGoesToContacts(copies)} · ${l.sosRepeatsShort}';
+    return Semantics(
+      button: true,
+      label: '${l.sosDestination}: ${l.sosGoesToChannel(sos.channelName)}. $sub',
+      child: InkWell(
+        key: const ValueKey<String>('sos-destination-row'),
+        onTap: onTap,
+        borderRadius: mmRadius(context, kRadiusSm),
+        child: Padding(
+          padding: EdgeInsets.symmetric(vertical: skin.space.step(2)),
+          child: Row(
+            children: <Widget>[
+              Icon(
+                missing ? Icons.error_outline : Icons.campaign_outlined,
+                size: skin.type.sizeLg,
+                color: missing ? skin.color.alert : skin.color.fgMuted,
+              ),
+              SizedBox(width: skin.space.step(3)),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(
+                      l.sosGoesToChannel(sos.channelName),
+                      style: TextStyle(
+                        color: skin.color.fg,
+                        fontSize: skin.type.sizeBodyLg,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    SizedBox(height: skin.space.step(1)),
+                    Text(
+                      sub,
+                      style: TextStyle(
+                        color: missing
+                            ? skin.color.alert
+                            : skin.color.fgMuted,
+                        fontSize: skin.type.sizeSm,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(width: skin.space.step(3)),
+              Text(
+                l.sosDestinationChange,
+                style: TextStyle(
+                  color: skin.color.fgMuted,
+                  fontSize: skin.type.sizeSm,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// The consequences, one line each, with the long explanation behind the info
+/// affordance. APP-H5 needs the fact stated, not recited on every visit.
+class _AboutLines extends StatelessWidget {
+  const _AboutLines({required this.sos, required this.l});
+
+  final SosController sos;
   final AppLocalizations l;
 
   @override
   Widget build(BuildContext context) {
     final MmSkin skin = context.skin;
+    final TextStyle muted =
+        TextStyle(color: skin.color.fgMuted, fontSize: skin.type.sizeSm);
     final bool emergency = sos.emergencyChannelSlot != null &&
         sos.channelSlot == sos.emergencyChannelSlot;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        Text(l.sosRepeatsOneHour,
-            style: TextStyle(
+        if (sos.contactKeysHex.isEmpty)
+          Padding(
+            padding: EdgeInsets.only(bottom: skin.space.step(2)),
+            child: Text(
+              l.sosContactsNone,
+              key: const ValueKey<String>('sos-no-copies'),
+              style: muted,
+            ),
+          ),
+        if (emergency)
+          Row(
+            children: <Widget>[
+              Expanded(
+                child: Text(
+                  l.sosEmergencyShort,
+                  key: const ValueKey<String>('sos-emergency-key'),
+                  style: muted,
+                ),
+              ),
+              IconButton(
+                key: const ValueKey<String>('sos-about'),
+                tooltip: l.sosAboutTitle,
+                iconSize: skin.type.sizeLg,
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+                icon: Icon(Icons.info_outline, color: skin.color.fgMuted),
+                onPressed: () => _showAbout(context),
+              ),
+            ],
+          ),
+        Text(l.sosInRange, style: muted),
+      ],
+    );
+  }
+
+  void _showAbout(BuildContext context) {
+    showDialog<void>(
+      context: context,
+      builder: (BuildContext ctx) => AlertDialog(
+        title: Text(l.sosAboutTitle),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Text(l.sosEmergencyPublicKey),
+            const SizedBox(height: 12),
+            Text(l.sosEmergencyRepeat),
+          ],
+        ),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: Text(MaterialLocalizations.of(ctx).closeButtonLabel),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// The sheet that picks the destination: the radio's channels, and up to four
+/// contacts that also get a direct copy.
+///
+/// It writes through [SosController.setDestination], which persists the
+/// choice, so this is the one place a destination is ever chosen.
+class _DestinationPicker extends StatefulWidget {
+  const _DestinationPicker({required this.sos, required this.mc});
+
+  final SosController sos;
+  final MeshcoreController mc;
+
+  @override
+  State<_DestinationPicker> createState() => _DestinationPickerState();
+}
+
+class _DestinationPickerState extends State<_DestinationPicker> {
+  late int _slot = widget.sos.channelSlot;
+  late final List<String> _keys =
+      List<String>.of(widget.sos.contactKeysHex);
+
+  void _toggle(String keyHex) {
+    setState(() {
+      if (_keys.contains(keyHex)) {
+        _keys.remove(keyHex);
+      } else if (_keys.length < SosTargets.maxContactTargets) {
+        _keys.add(keyHex);
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations l = AppLocalizations.of(context);
+    final MmSkin skin = context.skin;
+    final Set<String> contacts = <String>{
+      for (final DiscoveredNode n in widget.mc.nodes)
+        if (n.type == 1) n.pubKeyHex.toLowerCase(),
+    };
+    final TextStyle rowStyle =
+        TextStyle(color: skin.color.fg, fontSize: skin.type.sizeBody);
+    final TextStyle muted =
+        TextStyle(color: skin.color.fgMuted, fontSize: skin.type.sizeSm);
+    final List<String> orphans = <String>[
+      for (final String hex in _keys)
+        if (!contacts.contains(hex)) hex,
+    ];
+    return SafeArea(
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(
+          skin.space.step(5),
+          skin.space.step(4),
+          skin.space.step(5),
+          skin.space.step(5),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Text(
+              l.sosDestinationPickerTitle,
+              style: TextStyle(
                 color: skin.color.fg,
                 fontSize: skin.type.sizeLg,
-                fontWeight: FontWeight.w700)),
-        SizedBox(height: skin.space.step(3)),
-        Text(l.sosDestination,
-            style: TextStyle(
-                color: skin.color.fgMuted,
-                fontSize: skin.type.sizeSm,
-                letterSpacing: 1.5)),
-        SizedBox(height: skin.space.step(1)),
-        // Where it goes is two separate lines, because a channel and a direct
-        // message guarantee different things (§10 item 2).
-        Text(l.sosGoesToChannel(sos.channelName),
-            style: TextStyle(
-                color: skin.color.fg, fontSize: skin.type.sizeBody)),
-        Text(
-            l.sosGoesToContacts(sos.contactKeysHex.length),
-            style: TextStyle(
-                color: sos.contactKeysHex.isEmpty
-                    ? skin.color.fgMuted
-                    : skin.color.fg,
-                fontSize: skin.type.sizeBody)),
-        if (sos.contactKeysHex.isEmpty) ...<Widget>[
-          SizedBox(height: skin.space.step(1)),
-          Text(l.sosContactsNone,
-              style: TextStyle(
-                  color: skin.color.fgMuted,
-                  fontSize: skin.type.sizeSm)),
-        ],
-        if (emergency) ...<Widget>[
-          SizedBox(height: skin.space.step(2)),
-          // APP-H5: the key is computable from the name, so the alarm is
-          // public by construction. No surface may call it private.
-          Text(l.sosEmergencyPublicKey,
-              key: const ValueKey<String>('sos-emergency-key'),
-              style: TextStyle(
-                  color: skin.color.fgMuted,
-                  fontSize: skin.type.sizeSm,
-                  height: 1.4)),
-          Text(l.sosEmergencyRepeat,
-              style: TextStyle(
-                  color: skin.color.fgMuted,
-                  fontSize: skin.type.sizeSm,
-                  height: 1.4)),
-        ],
-        SizedBox(height: skin.space.step(3)),
-        Text(l.sosInRange,
-            style: TextStyle(
-                color: skin.color.fgMuted, fontSize: skin.type.sizeSm)),
-      ],
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            if (widget.sos.destinationMissing) ...<Widget>[
+              SizedBox(height: skin.space.step(2)),
+              Text(
+                l.sosDestinationMissing,
+                key: const ValueKey<String>('sos-destination-missing'),
+                style:
+                    TextStyle(color: skin.color.alert, fontSize: skin.type.sizeSm),
+              ),
+            ],
+            SizedBox(height: skin.space.step(3)),
+            Flexible(
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(l.sosDestinationChannelHeader, style: muted),
+                    for (final MapEntry<int, String> c in widget.mc.channels)
+                      ListTile(
+                        key: ValueKey<String>('sos-destination-channel-${c.key}'),
+                        dense: true,
+                        contentPadding: EdgeInsets.zero,
+                        title: Text(c.value, style: rowStyle),
+                        trailing: _slot == c.key
+                            ? Icon(Icons.check,
+                                size: skin.type.sizeLg, color: skin.color.link)
+                            : null,
+                        selected: _slot == c.key,
+                        onTap: () => setState(() => _slot = c.key),
+                      ),
+                    SizedBox(height: skin.space.step(3)),
+                    Text(l.sosDestinationContactsHeader, style: muted),
+                    Text(l.sosDestinationContactsHelp, style: muted),
+                    if (widget.mc.nodes.where((DiscoveredNode n) => n.type == 1).isEmpty)
+                      Padding(
+                        padding: EdgeInsets.only(top: skin.space.step(2)),
+                        child: Text(l.sosDestinationNoContacts, style: muted),
+                      ),
+                    for (final DiscoveredNode n in widget.mc.nodes)
+                      if (n.type == 1)
+                        CheckboxListTile(
+                          key: ValueKey<String>(
+                              'sos-destination-contact-${n.pubKeyHex.toLowerCase()}'),
+                          value: _keys.contains(n.pubKeyHex.toLowerCase()),
+                          dense: true,
+                          contentPadding: EdgeInsets.zero,
+                          title: Text(n.name, style: rowStyle),
+                          subtitle: Text(
+                              l.sosDestinationContactsLimit(
+                                  SosTargets.maxContactTargets),
+                              style: muted),
+                          onChanged: (_) => _toggle(n.pubKeyHex.toLowerCase()),
+                        ),
+                    // A saved key that is no longer a contact is still a
+                    // destination the alarm addresses: it stays visible so it
+                    // can be removed deliberately, never dropped in silence.
+                    for (final String hex in orphans)
+                      CheckboxListTile(
+                        key: ValueKey<String>('sos-destination-contact-$hex'),
+                        value: true,
+                        dense: true,
+                        contentPadding: EdgeInsets.zero,
+                        title: Text(hex.substring(0, 8), style: rowStyle),
+                        subtitle:
+                            Text(l.sosDestinationNotAContact, style: muted),
+                        onChanged: (_) => _toggle(hex),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+            SizedBox(height: skin.space.step(3)),
+            Align(
+              alignment: Alignment.centerRight,
+              child: FilledButton(
+                key: const ValueKey<String>('sos-destination-done'),
+                onPressed: () {
+                  widget.sos.setDestination(
+                    channelSlot: _slot,
+                    contactKeysHex: _keys,
+                  );
+                  Navigator.of(context).pop();
+                },
+                child: Text(l.sosDestinationDone),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

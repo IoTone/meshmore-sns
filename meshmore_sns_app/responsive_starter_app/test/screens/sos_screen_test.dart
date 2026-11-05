@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:meshcore/meshcore.dart';
@@ -16,6 +17,7 @@ import 'package:meshmore_sns_app/sos/sos_engine.dart';
 import 'package:meshmore_sns_app/theme/mm_tokens.dart';
 import 'package:meshmore_sns_app/theme/theme_controller.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../meshcore/fake_transport.dart';
 
@@ -96,8 +98,8 @@ void main() {
       await t.pumpWidget(_host(mc, sos, tc));
       await t.pump();
       expect(t.takeException(), isNull, reason: 'preset ${preset.name}');
-      // §10 item 1: what repeats, before anything is armed.
-      expect(find.text('This repeats for up to one hour.'), findsOneWidget,
+      // §10 item 1: what repeats, as one line under the destination.
+      expect(find.textContaining('repeats up to 1 h'), findsOneWidget,
           reason: 'preset ${preset.name}');
       // §10 items 2 and 3: where it goes, and that nobody is notified.
       expect(find.textContaining('Channel '), findsOneWidget);
@@ -245,5 +247,94 @@ void main() {
     expect(find.text('The alarm has stopped repeating. It is not resolved.'),
         findsOneWidget);
     await _settle(t);
+  });
+
+  testWidgets('the destination is chosen on this screen and remembered',
+      (WidgetTester t) async {
+    SharedPreferences.setMockInitialValues(<String, Object>{});
+    await t.binding.setSurfaceSize(const Size(400, 900));
+    addTearDown(() => t.binding.setSurfaceSize(null));
+    await t.pumpWidget(_host(mc, sos, tc));
+    await t.pump();
+
+    await t.tap(find.byKey(const ValueKey<String>('sos-destination-row')));
+    await t.pumpAndSettle();
+    expect(find.byKey(const ValueKey<String>('sos-destination-channel-0')),
+        findsOneWidget);
+    await t.tap(find.byKey(const ValueKey<String>('sos-destination-done')));
+    await t.pumpAndSettle();
+
+    expect(sos.channelSlot, 0);
+    expect(sos.destinationChosen, isTrue);
+
+    // Remembered: a fresh controller reading the same preferences starts on it.
+    final SosController restored =
+        SosController(mc: mc, clock: clock.call, autoTick: false)..start();
+    await t.pump();
+    expect(restored.channelSlot, 0);
+    expect(restored.destinationChosen, isTrue);
+    restored.dispose();
+  });
+
+  testWidgets('a remembered channel the radio no longer lists is named, not swapped',
+      (WidgetTester t) async {
+    // Slot 2 is not in this radio's channel list, so the remembered
+    // destination is gone rather than merely different.
+    SharedPreferences.setMockInitialValues(<String, Object>{
+      'mm.sos.channelSlot': 2,
+      'mm.sos.contactTargets': <String>[],
+    });
+    final SosController restored =
+        SosController(mc: mc, clock: clock.call, autoTick: false)..start();
+    await t.pump();
+
+    expect(restored.destinationMissing, isTrue);
+    expect(restored.arm(words: 'trail washed out'), SosRefusal.noDestination);
+    expect(restored.state, SosState.idle);
+
+    await t.pumpWidget(_host(mc, restored, tc));
+    await t.pump();
+    expect(
+        find.text('The channel this alarm was set to is gone. Choose another.'),
+        findsOneWidget);
+    restored.dispose();
+  });
+
+  testWidgets('a screen reader can raise the alarm with the same hold',
+      (WidgetTester t) async {
+    await t.binding.setSurfaceSize(const Size(400, 900));
+    addTearDown(() => t.binding.setSurfaceSize(null));
+    final SemanticsHandle semantics = t.ensureSemantics();
+    await t.pumpWidget(_host(mc, sos, tc));
+    await t.pump();
+
+    final SemanticsNode node =
+        t.getSemantics(find.byKey(const ValueKey<String>('sos-hold')));
+    // Dispatch through the owner that holds this node: the screen reader's
+    // double-tap-and-hold arrives as a semantic action, not as a gesture.
+    node.owner!.performAction(node.id, SemanticsAction.longPress);
+    await t.pump();
+    expect(sos.state, SosState.arming,
+        reason: 'the advertised long-press has to do the hold, not nothing');
+
+    clock.now = clock.now.add(SosEngine.hold);
+    await t.pump(const Duration(seconds: 4));
+    expect(sos.state, SosState.active);
+    semantics.dispose();
+    await _settle(t);
+  });
+
+  testWidgets('the control comes before the explanation', (WidgetTester t) async {
+    await t.binding.setSurfaceSize(const Size(400, 900));
+    addTearDown(() => t.binding.setSurfaceSize(null));
+    await t.pumpWidget(_host(mc, sos, tc));
+    await t.pump();
+
+    final double hold =
+        t.getTopLeft(find.byKey(const ValueKey<String>('sos-hold'))).dy;
+    final double destination =
+        t.getTopLeft(find.byKey(const ValueKey<String>('sos-destination-row')))
+            .dy;
+    expect(hold, lessThan(destination));
   });
 }
