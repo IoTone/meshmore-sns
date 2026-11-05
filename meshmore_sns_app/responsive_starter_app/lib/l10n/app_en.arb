@@ -3646,6 +3646,7 @@
   "reportCopyBundle": "Copy the report",
   "reportCopied": "Report copied.",
   "blockedKeysNotPersisted": "This list could not be saved on this device. It filters for now and will be empty after a restart.",
+  "blockedKeysUnreadable": "The saved list could not be read, so nothing is blocked right now. A copy of the damaged file is kept, and new blocks will be saved normally.",
   "reportActionSub": "Writes a file on this device for you to send. Nothing is transmitted.",
   "sosDestinationContactsLimit": "Up to {count} contacts",
   "sosDestinationChange": "Change",

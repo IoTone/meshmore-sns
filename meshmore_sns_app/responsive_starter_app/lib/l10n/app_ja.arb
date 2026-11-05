@@ -2406,6 +2406,7 @@
   "reportCopyBundle": "レポートをコピー",
   "reportCopied": "レポートをコピーしました。",
   "blockedKeysNotPersisted": "この一覧を端末に保存できませんでした。今は機能しますが、再起動後は空になります。",
+  "blockedKeysUnreadable": "保存された一覧を読み取れなかったため、現在は何もブロックしていません。壊れたファイルのコピーは保存され、新しいブロックは通常どおり保存されます。",
   "reportActionSub": "送信先を選べるよう、端末にファイルを作成します。自動送信はしません。",
   "sosDestinationContactsLimit": "{count} 件まで",
   "sosDestinationChange": "変更",

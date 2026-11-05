@@ -1,6 +1,5 @@
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
-
 import 'app_localizations.dart';
 
 // ignore_for_file: type=lint
@@ -4219,12 +4218,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String networksSummary(
-    String freq,
-    String bw,
-    String sf,
-    String cr,
-    String ph,
-  ) {
+      String freq, String bw, String sf, String cr, String ph) {
     return '$freq MHz · $bw kHz · SF$sf · CR$cr · path hash $ph';
   }
 
@@ -5275,6 +5269,10 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get blockedKeysNotPersisted =>
       'This list could not be saved on this device. It filters for now and will be empty after a restart.';
+
+  @override
+  String get blockedKeysUnreadable =>
+      'The saved list could not be read, so nothing is blocked right now. A copy of the damaged file is kept, and new blocks will be saved normally.';
 
   @override
   String get reportActionSub =>

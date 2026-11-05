@@ -63,7 +63,7 @@ import 'app_localizations_ja.dart';
 /// property.
 abstract class AppLocalizations {
   AppLocalizations(String locale)
-    : localeName = intl.Intl.canonicalizedLocale(locale.toString());
+      : localeName = intl.Intl.canonicalizedLocale(locale.toString());
 
   final String localeName;
 
@@ -86,16 +86,16 @@ abstract class AppLocalizations {
   /// of delegates is preferred or required.
   static const List<LocalizationsDelegate<dynamic>> localizationsDelegates =
       <LocalizationsDelegate<dynamic>>[
-        delegate,
-        GlobalMaterialLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-      ];
+    delegate,
+    GlobalMaterialLocalizations.delegate,
+    GlobalCupertinoLocalizations.delegate,
+    GlobalWidgetsLocalizations.delegate,
+  ];
 
   /// A list of this localizations delegate's supported locales.
   static const List<Locale> supportedLocales = <Locale>[
     Locale('en'),
-    Locale('ja'),
+    Locale('ja')
   ];
 
   /// No description provided for @appName.
@@ -7267,12 +7267,7 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{freq} MHz · {bw} kHz · SF{sf} · CR{cr} · path hash {ph}'**
   String networksSummary(
-    String freq,
-    String bw,
-    String sf,
-    String cr,
-    String ph,
-  );
+      String freq, String bw, String sf, String cr, String ph);
 
   /// No description provided for @networksMembers.
   ///
@@ -8918,6 +8913,12 @@ abstract class AppLocalizations {
   /// **'This list could not be saved on this device. It filters for now and will be empty after a restart.'**
   String get blockedKeysNotPersisted;
 
+  /// No description provided for @blockedKeysUnreadable.
+  ///
+  /// In en, this message translates to:
+  /// **'The saved list could not be read, so nothing is blocked right now. A copy of the damaged file is kept, and new blocks will be saved normally.'**
+  String get blockedKeysUnreadable;
+
   /// No description provided for @reportActionSub.
   ///
   /// In en, this message translates to:
@@ -9300,9 +9301,8 @@ AppLocalizations lookupAppLocalizations(Locale locale) {
   }
 
   throw FlutterError(
-    'AppLocalizations.delegate failed to load unsupported locale "$locale". This is likely '
-    'an issue with the localizations generation tool. Please file an issue '
-    'on GitHub with a reproducible sample app and the gen-l10n configuration '
-    'that was used.',
-  );
+      'AppLocalizations.delegate failed to load unsupported locale "$locale". This is likely '
+      'an issue with the localizations generation tool. Please file an issue '
+      'on GitHub with a reproducible sample app and the gen-l10n configuration '
+      'that was used.');
 }

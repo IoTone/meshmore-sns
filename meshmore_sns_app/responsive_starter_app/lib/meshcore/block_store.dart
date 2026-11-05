@@ -104,6 +104,12 @@ class BlockStore extends ChangeNotifier {
   bool _persisted = true;
   bool get persisted => _persisted;
 
+  /// True when the sealed list existed but could not be read. Different from
+  /// "nothing is saved yet": the list the user had is not in force this
+  /// session, and a damaged copy is kept beside the store.
+  bool _unreadable = false;
+  bool get unreadable => _unreadable;
+
   bool _loaded = false;
   bool get loaded => _loaded;
 
@@ -173,9 +179,13 @@ class BlockStore extends ChangeNotifier {
     } on EncryptedStoreCorrupt {
       // A damaged list is not an empty list; keep it empty this session but
       // say the list could not be read rather than pretending it is clean.
+      // The store keeps a copy of the damaged file, so a later write cannot be
+      // the moment the evidence disappears.
       _persisted = false;
+      _unreadable = true;
     } on FormatException {
       _persisted = false;
+      _unreadable = true;
     }
     notifyListeners();
   }

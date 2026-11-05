@@ -46,6 +46,11 @@ class EncryptedStore {
 
   static const String fileName = 'mm_store.bin';
   static const String tempName = 'mm_store.bin.new';
+
+  /// Where a file that cannot be opened is copied before anything writes over
+  /// it. One slot, overwritten each time: the point is that the bytes survive
+  /// the session, not that every damaged generation is archived.
+  static const String corruptName = 'mm_store.bin.corrupt';
   static const List<int> magic = <int>[0x4D, 0x4D, 0x53, 0x31]; // 'MMS1'
   static const int formatVersion = 1;
 
@@ -98,20 +103,38 @@ class EncryptedStore {
   /// Every record, or an empty map when the file does not exist yet.
   Future<Map<String, Uint8List>> readAll() => _serial(_readAll);
 
+  /// Keeps a copy of a store that cannot be opened, so a later write cannot be
+  /// the moment the only evidence of the damage disappears. Best effort: the
+  /// failure that led here is reported whether or not the copy succeeds.
+  Future<void> _quarantine() async {
+    try {
+      final File f = await _file();
+      if (!f.existsSync()) return;
+      final File copy = File(
+          '${(await _dir()).path}${Platform.pathSeparator}$corruptName');
+      await f.copy(copy.path);
+    } catch (_) {
+      // Nothing useful to add: the caller already reports the corruption.
+    }
+  }
+
   Future<Map<String, Uint8List>> _readAll() async {
     final File f = await _file();
     if (!f.existsSync()) return <String, Uint8List>{};
     final Uint8List raw = await f.readAsBytes();
     if (raw.length < magic.length + 1) {
+      await _quarantine();
       throw const EncryptedStoreCorrupt('shorter than a header');
     }
     for (int i = 0; i < magic.length; i++) {
       if (raw[i] != magic[i]) {
+        await _quarantine();
         throw const EncryptedStoreCorrupt('not this app\'s store');
       }
     }
     final int version = raw[magic.length];
     if (version != formatVersion) {
+      await _quarantine();
       throw EncryptedStoreCorrupt('format version $version');
     }
     final Uint8List sealed = raw.sublist(magic.length + 1);
@@ -119,6 +142,7 @@ class EncryptedStore {
     try {
       plain = await _cipher.open(sealed);
     } on SealedDataCorrupt catch (e) {
+      await _quarantine();
       throw EncryptedStoreCorrupt(e.reason);
     } on RecordCipherUnavailable catch (e) {
       throw EncryptedStoreUnavailable(e.reason);
@@ -126,6 +150,7 @@ class EncryptedStore {
     try {
       final Object? decoded = jsonDecode(utf8.decode(plain));
       if (decoded is! Map<String, Object?>) {
+        await _quarantine();
         throw const EncryptedStoreCorrupt('payload is not a map');
       }
       return <String, Uint8List>{
@@ -133,8 +158,10 @@ class EncryptedStore {
           e.key: base64Decode(e.value! as String),
       };
     } on FormatException catch (e) {
+      await _quarantine();
       throw EncryptedStoreCorrupt('payload not decodable: ${e.message}');
     } on TypeError {
+      await _quarantine();
       throw const EncryptedStoreCorrupt('payload has a non-string value');
     }
   }
@@ -143,16 +170,28 @@ class EncryptedStore {
 
   Future<void> write(String name, Uint8List bytes) =>
       _serial(() async {
-        final Map<String, Uint8List> all = await _readAll();
+        final Map<String, Uint8List> all = await _readForWrite();
         all[name] = bytes;
         await _writeAll(all);
       });
 
   Future<void> remove(String name) => _serial(() async {
-        final Map<String, Uint8List> all = await _readAll();
+        final Map<String, Uint8List> all = await _readForWrite();
         if (all.remove(name) == null) return;
         await _writeAll(all);
       });
+
+  /// A write has to be able to proceed when the file it finds is damaged: the
+  /// read that detected the damage already copied the bytes aside, so refusing
+  /// here would leave the app unable to save anything ever again. A read keeps
+  /// throwing, because a caller that is only reading wants to know.
+  Future<Map<String, Uint8List>> _readForWrite() async {
+    try {
+      return await _readAll();
+    } on EncryptedStoreCorrupt {
+      return <String, Uint8List>{};
+    }
+  }
 
   Future<void> clear() => _serial(() async {
         final File f = await _file();
