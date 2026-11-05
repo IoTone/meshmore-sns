@@ -147,6 +147,27 @@ third-party tile company sits in the middle: one credit,
 need no glyph server: the renderer draws `text-font` with Flutter's text
 engine.
 
+**R115 — one vector map, seven skins.** The same style file and the same
+source serve every preset; what changes per skin is paint. `VectorSkinPalette`
+derives ground, water, waterway, forest, grass, sand, rock, building, boundary,
+the eight-step road ramp and the label colours from that skin's own tokens, and
+`themedVectorStyleJson` applies them to the style's existing layers - layer
+order, widths, filters and label fields stay the style's, so a themed map is
+the same map. A guard test asserts no two presets paint the same document, and
+that a label's halo is always its skin's ground. The map's underlay colour is
+the skin's ground too, so an unloaded tile reads as land in that skin rather
+than as Studio's charcoal in all seven.
+
+**R114 — level of detail, so a zoom out is never a black hole.** A tile that is
+not on disk falls back to the nearest coarser tile that is: the raster provider
+takes the child's slice out of the nearest ancestor (up to six levels) and
+emits it at the tile edge, and the vector provider serves the ancestor's
+geometry (two levels, matching the layer's `maximumTileSubstitutionDifference`)
+so the renderer scales it sharp rather than upscaling pixels. The ancestor
+lookup is a store read, never a fetch: a stand-in is a drawing decision. Parents
+are warmed ahead of a miss, and a downloaded pack whose zoom range excludes the
+current view says so once instead of looking broken.
+
 The dimmed raster path remains as the fallback for a skin that has not
 opted in, and for a build where the style asset fails to load (R79:
 `out = 0.70 * in`, a pure RGB scale, so hue survives - land 169, sea

@@ -402,8 +402,12 @@ class _StreetMapViewState extends State<StreetMapView> {
               // "here" (meshmore-places-spec.md §9).
               onLongPress: (TapPosition _, LatLng point) =>
                   _createPlace(context, point),
+              // R115 — the vector map is painted from this skin's tokens, so
+              // the underlay has to be this skin's ground: a tile that has not
+              // arrived yet must read as land in this skin, not as Studio's
+              // charcoal in all seven.
               backgroundColor: vectorDrawn
-                  ? kVectorBasemapBackground
+                  ? context.skin.color.base
                   : cs.surfaceContainerHighest,
             ),
             children: <Widget>[
