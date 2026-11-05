@@ -5205,4 +5205,22 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get toolsGroupDiagnostics => '無線の診断';
+
+  @override
+  String nodeMarkerSemantics(String name) {
+    return '$name — 詳細はタップ';
+  }
+
+  @override
+  String placePinSemantics(String label, String expiry) {
+    return '$label、$expiry';
+  }
+
+  @override
+  String placeClusterSemantics(int count) {
+    return 'ここに $count 件の場所';
+  }
+
+  @override
+  String get mapCanvasSemantics => 'マップ上のマーカーをタップすると開きます';
 }

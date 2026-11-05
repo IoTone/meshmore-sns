@@ -48,7 +48,10 @@ void main() {
     expect(f.borderSide.color, kMmPresets[MmThemePreset.studio]!.accent);
   });
 
-  test('older presets: button, FAB, menu and field themes are untouched', () {
+  // R114 — the one family that is themed in EVERY preset is the text button,
+  // because a bare one is a control that looks like a label. The others keep
+  // their skin defaults.
+  test('older presets: only the text button is themed, and it is bounded', () {
     for (final MmThemePreset p in MmThemePreset.values) {
       if (<MmThemePreset>[
         MmThemePreset.studio,
@@ -59,11 +62,20 @@ void main() {
       final ThemeData t = themeFor(p);
       expect(t.filledButtonTheme.style, isNull, reason: '$p');
       expect(t.outlinedButtonTheme.style, isNull, reason: '$p');
-      expect(t.textButtonTheme.style, isNull, reason: '$p');
       expect(t.elevatedButtonTheme.style, isNull, reason: '$p');
       expect(t.floatingActionButtonTheme.shape, isNull, reason: '$p');
       expect(t.popupMenuTheme.shape, isNull, reason: '$p');
       expect(t.inputDecorationTheme.border, isNull, reason: '$p');
+
+      final ButtonStyle? text = t.textButtonTheme.style;
+      expect(text, isNotNull, reason: '$p has no text-button affordance');
+      expect(shapeOf(text), isA<RoundedRectangleBorder>(), reason: '$p');
+      expect(text!.side!.resolve(<WidgetState>{}), isNotNull, reason: '$p');
+      expect(text.backgroundColor!.resolve(<WidgetState>{}),
+          kMmPresets[p]!.surfaceAlt,
+          reason: '$p label sits on the raised tone');
+      expect(text.minimumSize!.resolve(<WidgetState>{})!.height, 48,
+          reason: '$p meets the app minimum');
     }
   });
 

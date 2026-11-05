@@ -241,67 +241,72 @@ class _SosScreenState extends State<SosScreen> {
     final bool armed = sos.state == SosState.arming;
     final bool enabled = radioReady && !armed;
     final Color fg = enabled ? skin.color.fg : skin.color.fgMuted;
+    // A screen reader cannot press and hold, and the semantic action used to be
+    // an empty closure, so the alarm was reachable by finger only (UX audit E3).
+    // Both semantic actions run the same three-second hold the finger runs, and
+    // the recogniser below is excluded from semantics: it turns a semantic tap
+    // into a down and an up in the same frame, which would arm and then abort
+    // the alarm a moment after raising it.
     return Semantics(
       button: true,
       enabled: enabled,
       label: l.sosHoldToArm,
-      // A screen reader's double-tap-and-hold runs the same hold the finger
-      // does: the timer below arms, waits the engine's three seconds and
-      // confirms. The empty callback this replaces made the alarm impossible
-      // to raise without sight (UX audit E3).
+      onTap: enabled ? () => _beginHold(sos, l) : null,
       onLongPress: enabled ? () => _beginHold(sos, l) : null,
-      child: GestureDetector(
-        key: const ValueKey<String>('sos-hold'),
-        onTapDown: (_) => _beginHold(sos, l),
-        onTapUp: (_) => _endHold(sos, l),
-        onTapCancel: () => _endHold(sos, l),
-        child: Container(
-          constraints: const BoxConstraints(minHeight: 56),
-          padding: EdgeInsets.symmetric(
-              horizontal: skin.space.step(4), vertical: skin.space.step(3)),
-          decoration: ShapeDecoration(
-            color: skin.color.surfaceAlt,
-            shape: mmShapeBorder(
-              skin.shape,
-              side: BorderSide(
-                  color: enabled ? skin.color.alert : skin.color.line,
-                  width: skin.shape.borderWidth),
+      child: ExcludeSemantics(
+        child: GestureDetector(
+          key: const ValueKey<String>('sos-hold'),
+          onTapDown: (_) => _beginHold(sos, l),
+          onTapUp: (_) => _endHold(sos, l),
+          onTapCancel: () => _endHold(sos, l),
+          child: Container(
+            constraints: const BoxConstraints(minHeight: 56),
+            padding: EdgeInsets.symmetric(
+                horizontal: skin.space.step(4), vertical: skin.space.step(3)),
+            decoration: ShapeDecoration(
+              color: skin.color.surfaceAlt,
+              shape: mmShapeBorder(
+                skin.shape,
+                side: BorderSide(
+                    color: enabled ? skin.color.alert : skin.color.line,
+                    width: skin.shape.borderWidth),
+              ),
             ),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: <Widget>[
-              Row(
-                children: <Widget>[
-                  Icon(Icons.emergency_share,
-                      size: skin.type.sizeXl, color: skin.color.alert),
-                  SizedBox(width: skin.space.step(3)),
-                  Expanded(
-                    child: Text(
-                      armed
-                          ? l.sosHoldRemaining(
-                              ((1 - _held) * SosEngine.hold.inSeconds)
-                                  .ceil()
-                                  .clamp(0, SosEngine.hold.inSeconds))
-                          : l.sosHoldToArm,
-                      style: TextStyle(
-                          color: fg,
-                          fontSize: skin.type.sizeBodyLg,
-                          fontWeight: FontWeight.w600),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: <Widget>[
+                Row(
+                  children: <Widget>[
+                    Icon(Icons.emergency_share,
+                        size: skin.type.sizeXl, color: skin.color.alert),
+                    SizedBox(width: skin.space.step(3)),
+                    Expanded(
+                      child: Text(
+                        armed
+                            ? l.sosHoldRemaining(
+                                ((1 - _held) * SosEngine.hold.inSeconds)
+                                    .ceil()
+                                    .clamp(0, SosEngine.hold.inSeconds))
+                            : l.sosHoldToArm,
+                        style: TextStyle(
+                            color: fg,
+                            fontSize: skin.type.sizeBodyLg,
+                            fontWeight: FontWeight.w600),
+                      ),
                     ),
+                  ],
+                ),
+                if (armed) ...<Widget>[
+                  SizedBox(height: skin.space.step(2)),
+                  LinearProgressIndicator(
+                    value: _held,
+                    minHeight: 4,
+                    color: skin.color.alert,
+                    backgroundColor: skin.color.line,
                   ),
                 ],
-              ),
-              if (armed) ...<Widget>[
-                SizedBox(height: skin.space.step(2)),
-                LinearProgressIndicator(
-                  value: _held,
-                  minHeight: 4,
-                  color: skin.color.alert,
-                  backgroundColor: skin.color.line,
-                ),
               ],
-            ],
+            ),
           ),
         ),
       ),

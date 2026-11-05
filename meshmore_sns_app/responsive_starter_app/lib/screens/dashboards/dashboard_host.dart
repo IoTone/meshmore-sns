@@ -28,20 +28,29 @@ class DashboardHost extends StatelessWidget {
     // 56 dp of nothing above the first thing worth reading. Every other view
     // keeps its header, which carries that view's filters and actions.
     //
+    // The key names the view, not one skin's layout: a test that asserts "the
+    // dashboard is showing" must not depend on which preset is selected, and
+    // since the default preset is STUDIO the SEELE layout's own key is no
+    // longer the one on screen.
+    //
     // One pinned section, drawn by every skin: the skin paints the cards, it
     // does not reimplement them. The two skins whose body owns its viewport
     // (the radar and the recon body) get a bounded strip that scrolls inside
     // itself, so a pin can never squeeze the view they exist for.
     const Widget pins = PinnedCardsSection();
     const Widget boundedPins = PinnedCardsSection(maxHeight: 232);
-    return switch (context.skin.preset) {
-      MmThemePreset.nerv => const NervDashboard(pinned: pins),
-      MmThemePreset.hyperlocal => const HyperlocalDashboard(pinned: boundedPins),
-      MmThemePreset.agHud => const AgHudDashboard(pinned: pins),
-      MmThemePreset.drPop => const DrPopDashboard(pinned: pins),
-      MmThemePreset.recon => const ReconDashboard(pinned: boundedPins),
-      MmThemePreset.studio => const StudioDashboard(pinned: pins),
-      _ => const DashboardScreen(pinned: pins),
-    };
+    return KeyedSubtree(
+      key: dashboardKey,
+      child: switch (context.skin.preset) {
+        MmThemePreset.nerv => const NervDashboard(pinned: pins),
+        MmThemePreset.hyperlocal =>
+          const HyperlocalDashboard(pinned: boundedPins),
+        MmThemePreset.agHud => const AgHudDashboard(pinned: pins),
+        MmThemePreset.drPop => const DrPopDashboard(pinned: pins),
+        MmThemePreset.recon => const ReconDashboard(pinned: boundedPins),
+        MmThemePreset.studio => const StudioDashboard(pinned: pins),
+        _ => const DashboardScreen(pinned: pins),
+      },
+    );
   }
 }

@@ -10,6 +10,8 @@ import 'package:meshmore_sns_app/gen/app_localizations.dart';
 import 'package:meshmore_sns_app/l10n/locale_controller.dart';
 import 'package:meshmore_sns_app/meshcore/meshcore_controller.dart';
 import 'package:meshmore_sns_app/screens/dashboard_screen.dart';
+import 'package:meshmore_sns_app/screens/dashboards/nerv_dashboard.dart';
+import 'package:meshmore_sns_app/screens/dashboards/studio_dashboard.dart';
 import 'package:meshmore_sns_app/screens/dashboards/dashboard_host.dart';
 import 'package:meshmore_sns_app/screens/dashboards/my_pubkey_line.dart';
 import 'package:meshmore_sns_app/theme/mm_tokens.dart';
@@ -84,7 +86,7 @@ void main() {
     await t.pump();
   });
 
-  testWidgets('host shows the SEELE monolith, NERV when selected',
+  testWidgets('the host shows the default skin, then the one selected',
       (WidgetTester t) async {
     final MeshcoreController mc = MeshcoreController(
       transportFactory: () async => FakeMeshcoreTransport(connected: true),
@@ -93,25 +95,24 @@ void main() {
     );
     final ThemeController tc = await _pump(t, mc);
 
-    // The preset picks the layout, and a fresh install opens on STUDIO, so
-    // the test names the skin it means rather than leaning on the default.
-    await tc.setPreset(MmThemePreset.seele);
-    await t.pump();
+    // The key names the view, not one skin's layout: it is on the host, so it
+    // is present whichever preset is selected (R114).
     expect(find.byKey(dashboardKey), findsOneWidget);
-    expect(find.text('NERV'), findsNothing);
+    expect(find.byType(StudioDashboard), findsOneWidget,
+        reason: 'a fresh install opens on STUDIO');
 
-    // Switch to NERV → the telemetry-grid re-imagining. A skin names itself
-    // through its own typography and colour now, so the body type is the
-    // signal, not a text badge the page header used to duplicate.
+    // Switch to NERV → the telemetry-grid re-imagining, and the key stays.
     await tc.setPreset(MmThemePreset.nerv);
     await t.pumpAndSettle();
-    expect(find.byKey(dashboardKey), findsNothing);
+    expect(find.byType(NervDashboard), findsOneWidget);
+    expect(find.byKey(dashboardKey), findsOneWidget);
     // The icon-only Bluetooth button is named for screen readers.
     expect(find.byTooltip('Device'), findsOneWidget);
 
-    // Back to SEELE → the monolith again.
+    // Back to SEELE → the monolith, still under the same view key.
     await tc.setPreset(MmThemePreset.seele);
     await t.pumpAndSettle();
+    expect(find.byType(DashboardScreen), findsOneWidget);
     expect(find.byKey(dashboardKey), findsOneWidget);
     expect(find.text('NERV'), findsNothing);
   });

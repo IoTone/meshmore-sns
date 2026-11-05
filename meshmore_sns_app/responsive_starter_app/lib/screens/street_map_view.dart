@@ -644,15 +644,20 @@ class _StreetMapViewState extends State<StreetMapView> {
                       width: 32,
                       height: 32,
                       alignment: Alignment.center,
-                      child: GestureDetector(
-                        onTap: () => _showDetail(context, mc, n),
-                        child: _PeerGlyph(
-                          node: n,
-                          ring: context.skin.color.fg,
-                          companion: cs.tertiary,
-                          repeater: cs.primary,
-                          known: mc.known.contains(n.pubKeyHex),
-                          favourite: mc.favorites.contains(n.pubKeyHex),
+                      child: Semantics(
+                        button: true,
+                        label: l.nodeMarkerSemantics(
+                            n.name.isEmpty ? n.shortId : n.name),
+                        child: GestureDetector(
+                          onTap: () => _showDetail(context, mc, n),
+                          child: _PeerGlyph(
+                            node: n,
+                            ring: context.skin.color.fg,
+                            companion: cs.tertiary,
+                            repeater: cs.primary,
+                            known: mc.known.contains(n.pubKeyHex),
+                            favourite: mc.favorites.contains(n.pubKeyHex),
+                          ),
                         ),
                       ),
                     ),

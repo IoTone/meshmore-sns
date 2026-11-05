@@ -5411,4 +5411,22 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get toolsGroupDiagnostics => 'Radio diagnostics';
+
+  @override
+  String nodeMarkerSemantics(String name) {
+    return '$name — tap for details';
+  }
+
+  @override
+  String placePinSemantics(String label, String expiry) {
+    return '$label, $expiry';
+  }
+
+  @override
+  String placeClusterSemantics(int count) {
+    return '$count places here';
+  }
+
+  @override
+  String get mapCanvasSemantics => 'Tap a marker on the map to open it';
 }

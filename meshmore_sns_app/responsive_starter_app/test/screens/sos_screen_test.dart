@@ -129,6 +129,45 @@ void main() {
     expect(fake.sent.where((Uint8List f) => f.first == 0x03), isEmpty);
   });
 
+  // A screen reader cannot press and hold, and the semantic action used to be
+  // an empty closure: the alarm was reachable by finger only. This drives the
+  // action a screen reader would, and expects the same alarm a finger raises.
+  testWidgets('a screen reader can raise the alarm through the hold control',
+      (WidgetTester t) async {
+    final SemanticsHandle handle = t.ensureSemantics();
+    await t.binding.setSurfaceSize(const Size(400, 900));
+    addTearDown(() => t.binding.setSurfaceSize(null));
+    await t.pumpWidget(_host(mc, sos, tc));
+    await t.pump();
+
+    final Finder hold = find.byKey(const ValueKey<String>('sos-hold'));
+    final SemanticsNode node = t.getSemantics(hold);
+    expect(node.getSemanticsData().hasAction(SemanticsAction.tap), isTrue,
+        reason: 'the control advertises an action a screen reader can perform');
+
+    // The semantics tree this widget lives in is owned by the binding's view
+    // pipeline; `rootPipelineOwner` roots the tree but does not dispatch into
+    // it, so the deprecated accessor is the one that reaches this node. The
+    // alternative is driving the action through a `SemanticsOwner` handle the
+    // framework does not expose, which would test less.
+    // ignore: deprecated_member_use
+    t.binding.pipelineOwner.semanticsOwner!
+        .performAction(node.id, SemanticsAction.tap);
+    await t.pump(const Duration(milliseconds: 150));
+    expect(sos.state, SosState.arming,
+        reason: 'the semantic action starts the same hold');
+
+    clock.now = clock.now.add(SosEngine.hold);
+    await t.pump(const Duration(seconds: 2));
+    await t.pump(const Duration(seconds: 2));
+    expect(sos.state, SosState.active);
+    expect(find.byKey(const ValueKey<String>('sos-active')), findsOneWidget);
+    expect(fake.sent.where((Uint8List f) => f.first == 0x03), hasLength(1));
+
+    handle.dispose();
+    await _settle(t);
+  });
+
   testWidgets('a held press raises the alarm, and the countdown is shown',
       (WidgetTester t) async {
     await t.binding.setSurfaceSize(const Size(400, 900));

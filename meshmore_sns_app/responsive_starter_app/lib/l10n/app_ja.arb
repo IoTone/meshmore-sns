@@ -2450,5 +2450,9 @@
   "settingsAppGroupData": "データ",
   "settingsAppGroupSystem": "システム",
   "aboutReplayIntro": "初回画面をもう一度表示",
-  "toolsGroupDiagnostics": "無線の診断"
+  "toolsGroupDiagnostics": "無線の診断",
+  "nodeMarkerSemantics": "{name} — 詳細はタップ",
+  "placePinSemantics": "{label}、{expiry}",
+  "placeClusterSemantics": "ここに {count} 件の場所",
+  "mapCanvasSemantics": "マップ上のマーカーをタップすると開きます"
 }

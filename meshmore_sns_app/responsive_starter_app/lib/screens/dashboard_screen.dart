@@ -98,7 +98,6 @@ class DashboardScreen extends StatelessWidget {
       // A stable marker for tests: the dashboard no longer carries a title
       // row of its own (the strip says which view is showing), so the body
       // has to identify itself.
-      key: dashboardKey,
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
       children: <Widget>[
         // APP-N4 — the states this view can observe: the link and the radio's
@@ -445,6 +444,11 @@ class _RegionRow extends StatelessWidget {
                     color: isCustom ? cs.tertiary : cs.primary,
                     fontSize: context.skin.type.sizeBody,
                     fontWeight: FontWeight.w600)),
+            // Every other row in this panel opens a page and says so with a
+            // chevron; this one opened Device configuration without one, which
+            // taught the opposite rule two rows above it.
+            const SizedBox(width: 6),
+            Icon(Icons.chevron_right, size: 16, color: cs.onSurfaceVariant),
           ],
         ),
       ),
