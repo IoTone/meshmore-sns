@@ -3,6 +3,8 @@
 import 'dart:async';
 import 'dart:typed_data';
 
+import 'package:meshcore/meshcore.dart';
+
 import '../meshcore/airtime.dart';
 import '../meshcore/channel_datagram.dart';
 import 'media_chunk.dart';
@@ -394,9 +396,16 @@ final class MediaTransferService {
       cost: MediaTransferCost(
         chunks: chunks.length,
         bytes: encoded.bytes.length,
-        // Every datagram is a full frame on air: the radio wraps the blob, so
-        // the cost is per chunk, not per payload byte.
-        airtime: estimator.forBytes(1) * chunks.length,
+        // Every datagram is its own frame on air: the radio wraps each blob in
+        // the datagram header and the packet it sends, so the cost is the sum
+        // over chunks of the bytes that datagram puts on air — not one byte
+        // per chunk, which understated a photo by roughly two orders of
+        // magnitude.
+        airtime: chunks.fold<Duration>(
+          Duration.zero,
+          (Duration sum, Uint8List chunk) => sum +
+              estimator.forBytes(ChannelDataLimits.airtimeBytesFor(chunk.length)),
+        ),
       ),
       withinBudget: encoded.withinBudget,
     ));

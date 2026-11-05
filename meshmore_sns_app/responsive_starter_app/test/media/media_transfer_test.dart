@@ -69,12 +69,37 @@ void main() {
         byteBudget: 2000,
       );
       final MediaTransferPlan plan = (outcome as MediaPrepared).plan;
-      // 900 bytes at 150 per chunk is six chunks, six datagrams on air.
+      // 900 bytes at 150 per chunk is six chunks, six datagrams on air. Each
+      // datagram is a full frame: 12 header bytes and 150 payload bytes, plus
+      // the four bytes of datagram header the radio adds before the blob, so
+      // 166 bytes of airtime at the flat 4 ms/byte estimate is 664 ms — the
+      // number the cost line has to show before anyone taps Send.
       expect(plan.payloadId, 42);
       expect(plan.chunks.length, 6);
       expect(plan.cost.chunks, 6);
       expect(plan.cost.bytes, 900);
-      expect(plan.cost.airtime, const Duration(milliseconds: 24));
+      expect(plan.cost.airtime, const Duration(milliseconds: 3984));
+    });
+
+    test('a short last chunk is charged for what it actually carries', () async {
+      final TestClock clock = TestClock();
+      final MediaTransferService service = MediaTransferService(
+        codec: FakeMediaCodec(encodedBytes: 460),
+        estimator: const AirtimeEstimator(millisPerByte: 4),
+        clock: clock.call,
+        newPayloadId: () => 7,
+      );
+      final MediaPreparation outcome = await service.prepare(
+        photo(320, 240),
+        channelPsk: List<int>.filled(16, 0x11),
+        byteBudget: 2000,
+      );
+      final MediaTransferPlan plan = (outcome as MediaPrepared).plan;
+      // Three full datagrams of 150 and one of 10: charging every chunk as if
+      // it were full would overstate the last one by 140 bytes of airtime.
+      expect(plan.chunks.length, 4);
+      expect(
+          plan.cost.airtime, const Duration(milliseconds: 4 * (3 * 166 + 26)));
       expect(plan.withinBudget, isTrue);
     });
 
