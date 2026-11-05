@@ -8,6 +8,7 @@ import 'package:meshcore/meshcore.dart';
 import 'package:provider/provider.dart';
 
 import '../gen/app_localizations.dart';
+import '../theme/mm_skin.dart';
 import '../meshcore/discovered_node.dart';
 import '../meshcore/mesh_graph.dart';
 import '../meshcore/meshcore_controller.dart';
@@ -304,6 +305,7 @@ class _MeshTreeViewState extends State<MeshTreeView>
                       height: size.height,
                       child: CustomPaint(
                         painter: _MeshTreePainter(
+                          type: context.skin.type,
                           graph: graph,
                           positions: _positions,
                           knownPubKeys: mc.known,
@@ -356,8 +358,8 @@ class _MeshTreeViewState extends State<MeshTreeView>
                   'total $totalNodes',
                   style: TextStyle(
                     color: cs.onSurfaceVariant,
-                    fontSize: 10,
-                    fontFamily: 'JetBrains Mono',
+                    fontSize: context.skin.type.sizeMicro,
+                    fontFamily: context.skin.type.monoFamily,
                   ),
                 ),
               ),
@@ -426,8 +428,8 @@ class _HopSlider extends StatelessWidget {
               label,
               style: TextStyle(
                 color: cs.onSurface,
-                fontSize: 11,
-                fontFamily: 'JetBrains Mono',
+                fontSize: context.skin.type.sizeSm,
+                fontFamily: context.skin.type.monoFamily,
                 letterSpacing: 1,
               ),
             ),
@@ -449,6 +451,7 @@ class _HopSlider extends StatelessWidget {
 
 class _MeshTreePainter extends CustomPainter {
   _MeshTreePainter({
+    required this.type,
     required this.graph,
     required this.positions,
     required this.knownPubKeys,
@@ -462,6 +465,9 @@ class _MeshTreePainter extends CustomPainter {
     required this.bg,
     this.emptyMsg,
   });
+
+  /// The skin's type roles, passed in because a painter has no [BuildContext].
+  final MmType type;
 
   final MeshGraph graph;
   final Map<String, NodePosition> positions;
@@ -484,7 +490,7 @@ class _MeshTreePainter extends CustomPainter {
       final TextPainter tp = TextPainter(
         text: TextSpan(
           text: emptyMsg!,
-          style: TextStyle(color: edgeFloat, fontSize: 12),
+          style: TextStyle(color: edgeFloat, fontSize: type.sizeBody),
         ),
         textDirection: TextDirection.ltr,
         textAlign: TextAlign.center,
@@ -558,8 +564,8 @@ class _MeshTreePainter extends CustomPainter {
           text: n.label,
           style: TextStyle(
             color: label,
-            fontSize: 10,
-            fontFamily: 'JetBrains Mono',
+            fontSize: type.sizeMicro,
+            fontFamily: type.monoFamily,
             letterSpacing: 0.5,
           ),
         ),

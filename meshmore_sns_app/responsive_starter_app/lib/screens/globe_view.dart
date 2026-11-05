@@ -10,6 +10,7 @@ import 'package:flutter/services.dart' show rootBundle;
 import 'package:provider/provider.dart';
 
 import '../gen/app_localizations.dart';
+import '../theme/mm_skin.dart';
 import '../meshcore/discovered_node.dart';
 import '../meshcore/meshcore_controller.dart';
 import '../meshcore/own_location.dart';
@@ -365,6 +366,7 @@ class _GlobeViewState extends State<GlobeView> {
                 }
                 return CustomPaint(
                   painter: _GlobePainter(
+                    type: context.skin.type,
                     centreLonDeg: _centreLonDeg,
                     centreLatDeg: _centreLatDeg,
                     scale: _scale,
@@ -445,7 +447,7 @@ class _GlobeViewState extends State<GlobeView> {
                   l.globeFooter(withLoc.length),
                   style: TextStyle(
                       color: cs.onSurfaceVariant,
-                      fontSize: 11,
+                      fontSize: context.skin.type.sizeSm,
                       letterSpacing: 1),
                 ),
               ),
@@ -471,7 +473,7 @@ class _GlobeViewState extends State<GlobeView> {
                     Text(l.globeAltitude,
                         style: TextStyle(
                             color: cs.onSurfaceVariant,
-                            fontSize: 10,
+                            fontSize: context.skin.type.sizeMicro,
                             letterSpacing: 1.2)),
                     Expanded(
                       child: Slider(
@@ -492,8 +494,8 @@ class _GlobeViewState extends State<GlobeView> {
                         textAlign: TextAlign.end,
                         style: TextStyle(
                             color: cs.onSurface,
-                            fontFamily: 'JetBrains Mono',
-                            fontSize: 10),
+                            fontFamily: context.skin.type.monoFamily,
+                            fontSize: context.skin.type.sizeMicro),
                       ),
                     ),
                   ],
@@ -522,7 +524,7 @@ class _GlobeViewState extends State<GlobeView> {
                       Text(l.globePaused,
                           style: TextStyle(
                               color: cs.onTertiaryContainer,
-                              fontSize: 10,
+                              fontSize: context.skin.type.sizeMicro,
                               letterSpacing: 1)),
                     ],
                   ),
@@ -569,7 +571,7 @@ class _OverlayChip extends StatelessWidget {
             Text(label,
                 style: TextStyle(
                     color: on ? cs.primary : cs.onSurfaceVariant,
-                    fontSize: 10,
+                    fontSize: context.skin.type.sizeMicro,
                     letterSpacing: 0.5)),
           ],
         ),
@@ -579,7 +581,11 @@ class _OverlayChip extends StatelessWidget {
 }
 
 class _GlobePainter extends CustomPainter {
+  /// The skin's type roles, passed in because a painter has no [BuildContext].
+  final MmType type;
+
   _GlobePainter({
+    required this.type,
     required this.centreLonDeg,
     required this.centreLatDeg,
     required this.scale,
@@ -761,7 +767,9 @@ class _GlobePainter extends CustomPainter {
           text: TextSpan(
             text: n.name,
             style: TextStyle(
-                color: labelText, fontSize: 10, fontFamily: 'JetBrains Mono'),
+                color: labelText,
+                fontSize: type.sizeMicro,
+                fontFamily: type.monoFamily),
           ),
           textDirection: ui.TextDirection.ltr,
         )..layout();
@@ -844,8 +852,8 @@ class _GlobePainter extends CustomPainter {
           text: '${acc.count}',
           style: TextStyle(
               color: regionLabel,
-              fontSize: (10.0 * sphereScale).clamp(8.0, 14.0),
-              fontFamily: 'JetBrains Mono',
+              fontSize: (type.sizeMicro * sphereScale).clamp(8.0, 14.0),
+              fontFamily: type.monoFamily,
               fontWeight: FontWeight.w600),
         ),
         textDirection: ui.TextDirection.ltr,

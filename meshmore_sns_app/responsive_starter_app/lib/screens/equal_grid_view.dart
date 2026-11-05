@@ -10,6 +10,7 @@ import 'package:latlong2/latlong.dart' hide Path; // collides with ui.Path
 import 'package:provider/provider.dart';
 
 import '../gen/app_localizations.dart';
+import '../theme/mm_skin.dart';
 import '../maps/basemap.dart';
 import '../maps/map_source.dart';
 import '../meshcore/city_lookup.dart';
@@ -299,6 +300,7 @@ class _EqualGridViewState extends State<EqualGridView> {
                 }
                 return CustomPaint(
                   painter: _EqualGridPainter(
+                    type: context.skin.type,
                     selfLat: selfLat,
                     selfLon: selfLon,
                     peers: withLoc,
@@ -389,8 +391,8 @@ class _EqualGridViewState extends State<EqualGridView> {
                               l.equalGridCellSize(_formatMeters(cellMeters)),
                               style: TextStyle(
                                   color: cs.onSurface,
-                                  fontFamily: 'JetBrains Mono',
-                                  fontSize: 10,
+                                  fontFamily: context.skin.type.monoFamily,
+                                  fontSize: context.skin.type.sizeMicro,
                                   letterSpacing: 1),
                             ),
                           ),
@@ -463,7 +465,7 @@ class _EqualGridViewState extends State<EqualGridView> {
                       Text(l.globePaused,
                           style: TextStyle(
                               color: cs.onTertiaryContainer,
-                              fontSize: 10,
+                              fontSize: context.skin.type.sizeMicro,
                               letterSpacing: 1)),
                     ],
                   ),
@@ -649,8 +651,8 @@ class _NervStatsPanel extends StatelessWidget {
               Text('[ MESHMORE :: HYPERLOCAL :: TARGETING ]',
                   style: TextStyle(
                       color: accent,
-                      fontFamily: 'JetBrains Mono',
-                      fontSize: 9,
+                      fontFamily: context.skin.type.monoFamily,
+                      fontSize: context.skin.type.size(9),
                       letterSpacing: 2,
                       fontWeight: FontWeight.w700)),
             ],
@@ -665,8 +667,8 @@ class _NervStatsPanel extends StatelessWidget {
                 Text(b,
                     style: TextStyle(
                         color: accent,
-                        fontFamily: 'JetBrains Mono',
-                        fontSize: 11,
+                        fontFamily: context.skin.type.monoFamily,
+                        fontSize: context.skin.type.sizeSm,
                         height: 1.15,
                         letterSpacing: 1)),
             ],
@@ -680,7 +682,11 @@ class _NervStatsPanel extends StatelessWidget {
 /// Painter for the equal-grid view. Owns the lat/lon → cell → screen
 /// projection so the tap hit-test can reuse the same math.
 class _EqualGridPainter extends CustomPainter {
+  /// The skin's type roles, passed in because a painter has no [BuildContext].
+  final MmType type;
+
   _EqualGridPainter({
+    required this.type,
     required this.selfLat,
     required this.selfLon,
     required this.peers,
@@ -971,7 +977,9 @@ class _EqualGridPainter extends CustomPainter {
       text: TextSpan(
         text: '• × $count',
         style: TextStyle(
-            color: badgeText, fontSize: 11, fontWeight: FontWeight.w600),
+            color: badgeText,
+            fontSize: type.sizeSm,
+            fontWeight: FontWeight.w600),
       ),
       textDirection: TextDirection.ltr,
     )..layout();

@@ -778,7 +778,8 @@ class _StreetMapViewState extends State<StreetMapView> {
                         child: Text(
                           l.mapNoFixBanner,
                           style: TextStyle(
-                              color: cs.onSurfaceVariant, fontSize: 12),
+                              color: cs.onSurfaceVariant,
+                              fontSize: context.skin.type.sizeBody),
                         ),
                       ),
                     ],
@@ -805,7 +806,7 @@ class _StreetMapViewState extends State<StreetMapView> {
                   Text(l.globePaused,
                       style: TextStyle(
                           color: cs.onTertiaryContainer,
-                          fontSize: 10,
+                          fontSize: context.skin.type.sizeMicro,
                           letterSpacing: 1)),
                 ],
               ),
