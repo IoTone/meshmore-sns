@@ -360,8 +360,7 @@ class _SnsCellsViewState extends State<SnsCellsView>
                     ListTile(
                       dense: true,
                       leading: Icon(Icons.place_outlined,
-                          color: const Color(0xFF8A6CFF),
-                          size: 20),
+                          color: kInferredPlaceMarker, size: 20),
                       title: Text(m.place.displayName),
                       subtitle: Text(
                         '${_SnsCellsPainter._distKm(selfLat, selfLon, m.place.latitude, m.place.longitude).round()} km'
@@ -627,12 +626,10 @@ class _SnsCellsPainter extends CustomPainter {
       if (hotness > 0.6) {
         final double s = splitPhase * (1.0 + hotness * 2.5);
         final Paint redGhost = Paint()
-          ..color =
-              const Color(0xFFFF0040).withValues(alpha: 0.30 * hotness)
+          ..color = kCellHeatHot.withValues(alpha: 0.30 * hotness)
           ..blendMode = BlendMode.screen;
         final Paint cyanGhost = Paint()
-          ..color =
-              const Color(0xFF00FFE0).withValues(alpha: 0.22 * hotness)
+          ..color = kCellHeatCool.withValues(alpha: 0.22 * hotness)
           ..blendMode = BlendMode.screen;
         canvas.drawRect(r.shift(Offset(s, 0)), redGhost);
         canvas.drawRect(r.shift(Offset(-s, 0)), cyanGhost);
@@ -823,12 +820,12 @@ class _SnsCellsPainter extends CustomPainter {
       canvas.drawRect(
           Rect.fromLTWH(0, ty, size.width, th),
           Paint()
-            ..color = const Color(0xFFFF0040).withValues(alpha: 0.18)
+            ..color = kCellHeatHot.withValues(alpha: 0.18)
             ..blendMode = BlendMode.screen);
       canvas.drawRect(
           Rect.fromLTWH(0, ty + th, size.width, th),
           Paint()
-            ..color = const Color(0xFF00FFE0).withValues(alpha: 0.14)
+            ..color = kCellHeatCool.withValues(alpha: 0.14)
             ..blendMode = BlendMode.screen);
     }
   }
@@ -916,7 +913,7 @@ class _SnsCellsPainter extends CustomPainter {
           fontSize: 10,
           fontWeight: FontWeight.w600,
           shadows: const <Shadow>[
-            Shadow(color: Color(0xCC000000), blurRadius: 2),
+            Shadow(color: kMarkerShadow, blurRadius: 2),
           ],
         ),
       ),
