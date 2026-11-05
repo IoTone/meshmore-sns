@@ -7851,6 +7851,66 @@ abstract class AppLocalizations {
   /// **'The radio accepted the request but did not answer in time. It may still have carried it out; check the radio before retrying.'**
   String get failureRadioSilent;
 
+  /// No description provided for @failureAirtimeBudget.
+  ///
+  /// In en, this message translates to:
+  /// **'This phone has used its own radio time limit for the last hour, so nothing was sent. It sends again as the hour rolls on.'**
+  String get failureAirtimeBudget;
+
+  /// No description provided for @airtimeSpentLine.
+  ///
+  /// In en, this message translates to:
+  /// **'Radio time this hour: {spent} of {budget}'**
+  String airtimeSpentLine(String spent, String budget);
+
+  /// No description provided for @airtimeSpentLineUnlimited.
+  ///
+  /// In en, this message translates to:
+  /// **'Radio time this hour: {spent}, with no limit set'**
+  String airtimeSpentLineUnlimited(String spent);
+
+  /// No description provided for @airtimeRefusedCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 send refused by the limit} other{{count} sends refused by the limit}}'**
+  String airtimeRefusedCount(int count);
+
+  /// No description provided for @settingsAirtimeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Radio time limit'**
+  String get settingsAirtimeTitle;
+
+  /// No description provided for @settingsAirtimeHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Every frame this app sends is counted. At the limit it stops sending until the hour rolls on. The radio keeps its own legal limit either way.'**
+  String get settingsAirtimeHelp;
+
+  /// No description provided for @airtimePolicyOnePercent.
+  ///
+  /// In en, this message translates to:
+  /// **'1 % duty cycle'**
+  String get airtimePolicyOnePercent;
+
+  /// No description provided for @airtimePolicyOnePercentSub.
+  ///
+  /// In en, this message translates to:
+  /// **'36 seconds of sending per hour. The legal limit in the EU and UK.'**
+  String get airtimePolicyOnePercentSub;
+
+  /// No description provided for @airtimePolicyOwned.
+  ///
+  /// In en, this message translates to:
+  /// **'No limit'**
+  String get airtimePolicyOwned;
+
+  /// No description provided for @airtimePolicyOwnedSub.
+  ///
+  /// In en, this message translates to:
+  /// **'For a channel you own, where nobody else uses the frequency.'**
+  String get airtimePolicyOwnedSub;
+
   /// No description provided for @clockUnknown.
   ///
   /// In en, this message translates to:

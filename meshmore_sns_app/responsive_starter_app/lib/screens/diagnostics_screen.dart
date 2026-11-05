@@ -235,6 +235,15 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
                 fault(l.diagnosticsErrorLine(failureText(l, mc.failure!)))
               else if (mc.error != null)
                 fault(l.diagnosticsErrorLine('${mc.error}')),
+              // APP-C5 — the app's own duty-cycle meter, always charging.
+              // A refusal is the one line here a user can act on, so it is a
+              // sentence rather than a counter when it has happened.
+              fact(mc.airtimeBudget == null
+                  ? l.airtimeSpentLineUnlimited(_shortDuration(mc.airtimeSpent))
+                  : l.airtimeSpentLine(_shortDuration(mc.airtimeSpent),
+                      _shortDuration(mc.airtimeBudget!))),
+              if (mc.airtimeRefusals > 0)
+                fault(l.airtimeRefusedCount(mc.airtimeRefusals)),
               const SizedBox(height: 10),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -589,4 +598,14 @@ class _BotSoakPanel extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Seconds to `12s`, a minute and more to `1m 05s`. The meter line is read at a
+/// glance next to other one-fact lines, so it never says `0:00:12`.
+String _shortDuration(Duration d) {
+  final int s = d.inSeconds;
+  if (s < 60) return '${s}s';
+  final int m = s ~/ 60;
+  final int rest = s % 60;
+  return rest == 0 ? '${m}m' : '${m}m ${rest.toString().padLeft(2, '0')}s';
 }
