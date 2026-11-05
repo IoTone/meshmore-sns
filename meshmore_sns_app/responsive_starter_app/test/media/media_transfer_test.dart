@@ -367,6 +367,28 @@ void main() {
       expect(download.payloadFor(21), hasLength(320));
     });
 
+    test('a frame naming too many chunks is refused, not called a duplicate',
+        () {
+      final MediaDownload download = MediaDownload();
+      // A chunk whose header is well formed — the CRC is right, so the parse
+      // succeeds — but whose count field names far more chunks than the pool
+      // will hold.
+      final Uint8List data = Uint8List(8);
+      final Uint8List forged = Uint8List(MediaChunkCodec.headerBytes + 8);
+      final ByteData view = ByteData.sublistView(forged);
+      forged[0] = MediaChunkCodec.version << 4;
+      forged[1] = MediaKind.image.code;
+      view.setUint32(2, 44);
+      view.setUint16(6, 0);
+      view.setUint16(8, 0xFFFF);
+      view.setUint16(10, MediaChunkCodec.crc16(data));
+      forged.setRange(MediaChunkCodec.headerBytes, forged.length, data);
+      expect(download.accept(forged), MediaIntake.refused);
+      expect(download.lastReassemblyRefusal,
+          MediaReassemblyRefusal.countTooLarge);
+      expect(download.transfers, isEmpty);
+    });
+
     test('a request is routed away from the reassembler', () {
       final MediaDownload download = MediaDownload();
       final Uint8List request = MediaRequestCodec.encode(

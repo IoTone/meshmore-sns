@@ -73,9 +73,10 @@ void main() {
     r.add(chunk(1, 0, 1), now: t0);
     r.forget(1);
     expect(r.add(chunk(1, 0, 1), now: t0), isNull);
-    expect(r.lastRefusal, MediaReassemblyRefusal.duplicate);
+    // Named for what it is: the payload is done, not merely seen twice.
+    expect(r.lastRefusal, MediaReassemblyRefusal.alreadyCompleted);
     expect(r.transfer(1), isNull,
-        reason: 'the dedupe window outlives the transfer, by design');
+        reason: 'the completion memory outlives the transfer, by design');
   });
 
   test('the dedupe window keeps the last 160 slots, not all of them', () {
@@ -98,6 +99,64 @@ void main() {
     // Slot 0 fell out of the 160-long window, so it can be seen again.
     expect(r.hasSeen(0, 0), isFalse);
     expect(r.hasSeen(160, 0), isTrue);
+  });
+
+  test('a replay after the window moved on is refused, not reassembled twice',
+      () {
+    final MediaReassembler r = MediaReassembler();
+    expect(r.add(chunk(1, 0, 1), now: t0), isNotNull);
+    r.forget(1);
+    // Push the completed payload's slot out of the dedupe window.
+    for (int i = 2; i <= 200; i++) {
+      r.add(chunk(i, 0, 1), now: t0);
+      r.forget(i);
+    }
+    expect(r.hasSeen(1, 0), isFalse,
+        reason: 'the window has moved on, which is the whole problem');
+    final int before = r.completions;
+    expect(r.add(chunk(1, 0, 1), now: t0), isNull);
+    expect(r.lastRefusal, MediaReassemblyRefusal.alreadyCompleted);
+    expect(r.completions, before,
+        reason: 'the payload completed once, not twice');
+    expect(r.transfer(1), isNull);
+  });
+
+  test('a count larger than the pool can hold is refused by name', () {
+    final MediaReassembler r = MediaReassembler();
+    expect(r.add(chunk(1, 0, MediaReassembler.maxChunks + 1), now: t0), isNull);
+    expect(r.lastRefusal, MediaReassemblyRefusal.countTooLarge);
+    expect(r.transfers, isEmpty,
+        reason: 'an untrusted count must not size the pool');
+    expect(r.add(chunk(1, 0, MediaReassembler.maxChunks), now: t0), isNull);
+    expect(r.transfer(1), isNotNull);
+  });
+
+  test('the completion memory is bounded, and the bound is the stated one', () {
+    final MediaReassembler r = MediaReassembler();
+    for (int id = 1; id <= MediaReassembler.completedMemory; id++) {
+      r.add(chunk(id, 0, 1), now: t0);
+      r.forget(id);
+    }
+    // The newest completion is still remembered, so its replay is refused.
+    expect(r.add(chunk(MediaReassembler.completedMemory, 0, 1), now: t0), isNull);
+    expect(r.lastRefusal, MediaReassemblyRefusal.alreadyCompleted);
+    // One more completion pushes the oldest out: that is the documented bound,
+    // and it is why the memory is sized for a session rather than a moment.
+    r.add(chunk(MediaReassembler.completedMemory + 1, 0, 1), now: t0);
+    expect(r.add(chunk(1, 0, 1), now: t0), isNotNull,
+        reason: 'past the memory, a replay is new traffic again');
+  });
+
+  test('evictions are remembered, and the remembered list is bounded', () {
+    final MediaReassembler r = MediaReassembler();
+    // 56 transfers through a 16-slot pool is 40 evictions.
+    for (int id = 1; id <= 56; id++) {
+      r.add(chunk(id, 0, 2), now: t0);
+    }
+    expect(r.evictions, 40);
+    expect(r.evicted.length, MediaReassembler.evictionMemory);
+    expect(r.evicted.last, 40, reason: 'the list keeps the most recent');
+    expect(r.transfers.length, 16);
   });
 
   test('an FEC-restored chunk completes through the same path', () {

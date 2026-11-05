@@ -309,7 +309,14 @@ final class MediaDownload {
     final MediaTransfer? complete =
         _reassembler.add(chunk, now: now);
     _lastReassemblyRefusal = _reassembler.lastRefusal;
-    if (_lastReassemblyRefusal != null) return MediaIntake.duplicate;
+    if (_lastReassemblyRefusal != null) {
+      // A duplicate is normal traffic. Every other refusal is a datagram this
+      // build will not use, and calling a frame that names 65,535 chunks a
+      // duplicate would hide the only interesting thing about it.
+      return _lastReassemblyRefusal == MediaReassemblyRefusal.duplicate
+          ? MediaIntake.duplicate
+          : MediaIntake.refused;
+    }
     return complete == null ? MediaIntake.chunk : MediaIntake.complete;
   }
 
