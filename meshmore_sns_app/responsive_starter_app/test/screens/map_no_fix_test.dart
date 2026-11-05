@@ -6,13 +6,17 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:provider/single_child_widget.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:meshmore_sns_app/gen/app_localizations.dart';
 import 'package:meshmore_sns_app/l10n/locale_controller.dart';
 import 'package:meshmore_sns_app/meshcore/meshcore_controller.dart';
 import 'package:meshmore_sns_app/places/place_report_budget.dart';
 import 'package:meshmore_sns_app/places/place_store.dart';
+import 'package:meshmore_sns_app/perms/location_service.dart';
+import 'package:meshmore_sns_app/perms/permissions_service.dart';
 import 'package:meshmore_sns_app/screens/map_screen.dart';
+import 'package:meshmore_sns_app/maps/map_centre.dart';
 import 'package:meshmore_sns_app/screens/street_map_view.dart';
 
 import '../meshcore/fake_transport.dart';
@@ -20,12 +24,24 @@ import 'package:meshcore/meshcore.dart';
 
 /// R69 — the Map tab is browsable with no position fix; the grid's
 /// street-map mode keeps its empty state.
+/// Records whether the app asked the OS settings page to open.
+class _RecordingPermissions implements PermissionsService {
+  int settingsOpened = 0;
+  @override
+  Future<void> openAppSettingsPage() async => settingsOpened++;
+  @override
+  noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
 Future<MeshcoreController> _pump(WidgetTester t, Widget body,
-    {Locale locale = const Locale('en')}) async {
+    {Locale locale = const Locale('en'),
+    NoopLocationService? location,
+    _RecordingPermissions? permissions}) async {
   await t.binding.setSurfaceSize(const Size(400, 800));
   addTearDown(() => t.binding.setSurfaceSize(null));
   final MeshcoreController ctrl = MeshcoreController(
     transportFactory: () async => FakeMeshcoreTransport(connected: true),
+    locationService: location ?? NoopLocationService(),
     connection:
         MeshcoreConnection(handshakeTimeout: const Duration(seconds: 5)),
   );
@@ -44,6 +60,8 @@ Future<MeshcoreController> _pump(WidgetTester t, Widget body,
           ChangeNotifierProvider<MeshcoreController>.value(value: ctrl),
           ChangeNotifierProvider<PlaceStore>.value(value: PlaceStore()),
           Provider<PlaceReportBudget>(create: (_) => PlaceReportBudget(clock: DateTime.now)),
+          Provider<PermissionsService>.value(
+              value: permissions ?? _RecordingPermissions()),
         ],
         child: Scaffold(body: body),
       ),
@@ -54,8 +72,8 @@ Future<MeshcoreController> _pump(WidgetTester t, Widget body,
 }
 
 void main() {
-  const String en =
-      'No position fix yet. This is a world view, not centred on you.';
+  const String en = 'Your position is not known yet.';
+  const String ja = '現在地がまだ分かりません。';
 
   testWidgets('Map tab with no fix renders a map and the banner',
       (WidgetTester t) async {
@@ -63,11 +81,13 @@ void main() {
     expect(find.byType(FlutterMap), findsOneWidget,
         reason: 'a map, not just text');
     expect(find.text(en), findsOneWidget);
-    expect(find.byKey(const ValueKey<String>('map-no-fix-banner')),
+    expect(find.byKey(const ValueKey<String>('map-no-position-banner')),
         findsOneWidget);
     final FlutterMap fm = t.widget(find.byType(FlutterMap));
-    expect(fm.options.initialZoom, StreetMapView.browseZoom);
-    expect(fm.options.initialCenter, StreetMapView.browseCentre);
+    expect(fm.options.initialZoom, MapCentre.worldZoom);
+    expect(fm.options.initialCenter, MapCentre.worldCentre);
+    expect(find.text('Find me'), findsOneWidget,
+        reason: 'the banner carries the action that helps');
     expect(find.byTooltip('Offline maps'), findsOneWidget);
     c.dispose();
     await t.pumpWidget(const SizedBox());
@@ -78,7 +98,7 @@ void main() {
       (WidgetTester t) async {
     final MeshcoreController c =
         await _pump(t, const MapScreen(), locale: const Locale('ja'));
-    expect(find.textContaining('世界地図'), findsOneWidget);
+    expect(find.text(ja), findsOneWidget);
     expect(find.text(en), findsNothing);
     c.dispose();
     await t.pumpWidget(const SizedBox());
@@ -89,9 +109,9 @@ void main() {
       (WidgetTester t) async {
     final MeshcoreController c = await _pump(t, const StreetMapView());
     expect(find.byType(FlutterMap), findsNothing);
-    expect(
-        find.byKey(const ValueKey<String>('map-no-fix-banner')), findsNothing);
-    expect(find.textContaining('waiting for a GPS fix'), findsOneWidget);
+    expect(find.byKey(const ValueKey<String>('map-no-position-banner')),
+        findsNothing);
+    expect(find.textContaining('This view needs your position'), findsOneWidget);
     c.dispose();
     await t.pumpWidget(const SizedBox());
     await t.pump(const Duration(seconds: 30));
@@ -103,7 +123,7 @@ void main() {
     final Finder credit = find.text('© OpenStreetMap contributors');
     expect(credit, findsOneWidget);
     final Rect banner = t.getRect(
-        find.byKey(const ValueKey<String>('map-no-fix-banner')));
+        find.byKey(const ValueKey<String>('map-no-position-banner')));
     expect(t.getRect(credit).bottom, lessThanOrEqualTo(banner.top),
         reason: 'attribution sits above the banner, not under it');
     c.dispose();
@@ -123,6 +143,84 @@ void main() {
         t.getRect(find.byKey(const ValueKey<String>('mm-edge-right')));
     expect(band.top, greaterThanOrEqualTo(col.bottom),
         reason: 'the band must not overlap any control');
+    c.dispose();
+    await t.pumpWidget(const SizedBox());
+    await t.pump(const Duration(seconds: 30));
+  });
+
+  testWidgets('a late position does not move a map the user has panned',
+      (WidgetTester t) async {
+    final NoopLocationService location = NoopLocationService();
+    final MeshcoreController c =
+        await _pump(t, const MapScreen(), location: location);
+    // Drag the map, which is the user's own move.
+    await t.drag(find.byType(FlutterMap), const Offset(-120, 0));
+    await t.pump(const Duration(milliseconds: 50));
+
+    // Now a phone position arrives and the widget rebuilds.
+    location.next =
+        PhoneFix(latitude: 38.9, longitude: -104.7, altitudeMeters: null);
+    await c.requestPhoneLocationFix();
+    await t.pump(const Duration(milliseconds: 50));
+
+    final FlutterMap after = t.widget(find.byType(FlutterMap));
+    expect(after.options.initialCenter.latitude, isNot(closeTo(38.9, 1e-6)),
+        reason: 'the camera must not jump under the finger');
+    expect(after.options.initialCenter.longitude, isNot(closeTo(-104.7, 1e-6)),
+        reason: 'the camera must not jump under the finger');
+    c.dispose();
+    await t.pumpWidget(const SizedBox());
+    await t.pump(const Duration(seconds: 30));
+  });
+
+  testWidgets('the locate control asks for a position and names the failure',
+      (WidgetTester t) async {
+    final NoopLocationService location =
+        NoopLocationService(failure: LocationFailure.permissionDenied);
+    final _RecordingPermissions perms = _RecordingPermissions();
+    final MeshcoreController c = await _pump(t, const MapScreen(),
+        location: location, permissions: perms);
+    await t.tap(find.byTooltip('Re-centre on me'));
+    await t.pump(const Duration(milliseconds: 50));
+    expect(location.callCount, greaterThan(0),
+        reason: 'the control asks instead of being dead');
+    expect(find.text('Location is off for this app.'), findsOneWidget,
+        reason: 'the permission failure is named, not blamed on the sky');
+    expect(find.text('Allow location'), findsOneWidget);
+    c.dispose();
+    await t.pumpWidget(const SizedBox());
+    await t.pump(const Duration(seconds: 30));
+  });
+
+  testWidgets('a blocked permission offers the OS settings page',
+      (WidgetTester t) async {
+    final NoopLocationService location =
+        NoopLocationService(failure: LocationFailure.permissionDeniedForever);
+    final _RecordingPermissions perms = _RecordingPermissions();
+    final MeshcoreController c = await _pump(t, const MapScreen(),
+        location: location, permissions: perms);
+    await t.tap(find.byTooltip('Re-centre on me'));
+    await t.pump(const Duration(milliseconds: 50));
+    expect(find.text('Location is blocked for this app.'), findsOneWidget);
+    await t.tap(find.text('Open settings'));
+    await t.pump(const Duration(milliseconds: 50));
+    expect(perms.settingsOpened, 1);
+    c.dispose();
+    await t.pumpWidget(const SizedBox());
+    await t.pump(const Duration(seconds: 30));
+  });
+
+  testWidgets('the app opens on the view the user left',
+      (WidgetTester t) async {
+    SharedPreferences.setMockInitialValues(<String, Object>{
+      'flutter.mm.mapview.v1': '{"lat":35.6,"lon":139.7,"z":11.0}',
+    });
+    final MeshcoreController c = await _pump(t, const MapScreen());
+    await t.pump(const Duration(milliseconds: 50));
+    final FlutterMap fm = t.widget(find.byType(FlutterMap));
+    expect(fm.options.initialCenter.latitude, closeTo(35.6, 1e-6));
+    expect(fm.options.initialCenter.longitude, closeTo(139.7, 1e-6));
+    expect(fm.options.initialZoom, 11.0);
     c.dispose();
     await t.pumpWidget(const SizedBox());
     await t.pump(const Duration(seconds: 30));
