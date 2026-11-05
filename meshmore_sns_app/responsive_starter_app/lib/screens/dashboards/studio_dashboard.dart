@@ -318,44 +318,80 @@ class _StatusRow extends StatelessWidget {
     final bool canConnect =
         mc.state == MeshcoreConnectionState.disconnected && !mc.isConnecting;
     final bool canRetry = mc.state == MeshcoreConnectionState.failed;
-    return Padding(
-      padding: const EdgeInsets.only(left: 16, right: 4),
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(minHeight: 56),
-        child: Row(
-          children: <Widget>[
-            SizedBox(width: 14, child: Center(child: dot)),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                m.statusLabel,
-                style: const TextStyle(fontWeight: FontWeight.w600),
-              ),
-            ),
-            if (linked && mc.isDraining)
-              Padding(
-                padding: const EdgeInsets.only(right: 8),
-                child: Text(l.statusSyncing,
-                    style: TextStyle(color: muted, fontSize: 12)),
-              ),
-            if (canConnect || canRetry)
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4),
-                child: MmAction(
-                  dense: true,
-                  label: canRetry ? l.actionRetry : l.actionConnect,
-                  onPressed: () => mc.connect(),
-                ),
-              ),
-            IconButton(
-              tooltip: l.dashboardDevice,
-              icon: Icon(Icons.bluetooth, size: 20, color: muted),
-              onPressed: () => DeviceManagerSheet.show(context),
-            ),
-            MmAudioToggle(color: muted),
-          ],
+    final Widget status = Row(
+      children: <Widget>[
+        SizedBox(width: 14, child: Center(child: dot)),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Text(
+            m.statusLabel,
+            style: const TextStyle(fontWeight: FontWeight.w600),
+          ),
         ),
+      ],
+    );
+    final List<Widget> controls = <Widget>[
+      if (linked && mc.isDraining)
+        Padding(
+          padding: const EdgeInsets.only(right: 8),
+          child: Text(l.statusSyncing,
+              style: TextStyle(color: muted, fontSize: 12)),
+        ),
+      if (canConnect || canRetry)
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4),
+          child: MmAction(
+            dense: true,
+            label: canRetry ? l.actionRetry : l.actionConnect,
+            onPressed: () => mc.connect(),
+          ),
+        ),
+      IconButton(
+        tooltip: l.dashboardDevice,
+        icon: Icon(Icons.bluetooth, size: 20, color: muted),
+        onPressed: () => DeviceManagerSheet.show(context),
       ),
+      MmAudioToggle(color: muted),
+    ];
+    // R68 — the status line and its three controls fit one row on a normal
+    // phone. On a narrow screen, or at the accessibility floor where the
+    // status label and the Connect action both grow, one row cannot hold them
+    // and the row overflowed (14 px at 256 dp, 41 px at 320 dp with 200 %
+    // text). Below that point the controls take their own line rather than
+    // being clipped: nothing here may become unreachable.
+    return LayoutBuilder(
+      builder: (BuildContext context, BoxConstraints c) {
+        final bool stacked = c.maxWidth < 380 ||
+            MediaQuery.textScalerOf(context).scale(14) > 20;
+        return Padding(
+          padding: const EdgeInsets.only(left: 16, right: 4),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 56),
+            child: stacked
+                ? Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: <Widget>[
+                      status,
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 4),
+                        child: Wrap(
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          spacing: 4,
+                          children: controls,
+                        ),
+                      ),
+                    ],
+                  )
+                : Row(
+                    children: <Widget>[
+                      Expanded(child: status),
+                      ...controls,
+                    ],
+                  ),
+          ),
+        );
+      },
     );
   }
 }
