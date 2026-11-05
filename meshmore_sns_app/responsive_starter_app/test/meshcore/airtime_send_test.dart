@@ -48,7 +48,6 @@ void main() {
     await Future<void>.delayed(Duration.zero);
 
     final Duration spentBefore = meter.spent;
-    final int before = fake.sent.length;
     final Uint8List probe = Uint8List.fromList(<int>[0x99, 0x01, 0x02]);
     await expectLater(
         c.send(probe, gated: true), throwsA(isA<AirtimeRefused>()));

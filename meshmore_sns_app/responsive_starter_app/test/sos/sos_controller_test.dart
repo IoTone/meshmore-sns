@@ -5,7 +5,6 @@ import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:meshcore/meshcore.dart';
-import 'package:meshmore_sns_app/meshcore/airtime.dart';
 import 'package:meshmore_sns_app/meshcore/airtime_meter.dart';
 import 'package:meshmore_sns_app/meshcore/meshcore_controller.dart';
 import 'package:meshmore_sns_app/sos/checkin.dart';
