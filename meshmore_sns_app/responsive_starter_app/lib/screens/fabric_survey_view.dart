@@ -302,7 +302,7 @@ class _FabricSurveyViewState extends State<FabricSurveyView> {
                   horizontal: 10, vertical: 6),
               decoration: BoxDecoration(
                 color: cs.surface.withValues(alpha: .85),
-                borderRadius: BorderRadius.circular(4),
+                borderRadius: BorderRadius.circular(kRadiusMd),
                 border: Border.all(
                     color: cs.primary.withValues(alpha: .5)),
               ),
@@ -327,7 +327,7 @@ class _FabricSurveyViewState extends State<FabricSurveyView> {
                   const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
                 color: cs.tertiaryContainer.withValues(alpha: .85),
-                borderRadius: BorderRadius.circular(4),
+                borderRadius: BorderRadius.circular(kRadiusMd),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,

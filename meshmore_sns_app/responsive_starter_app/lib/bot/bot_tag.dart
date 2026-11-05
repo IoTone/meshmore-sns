@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 
 import '../gen/app_localizations.dart';
+import '../ui/mm_shape.dart';
 
 /// Marks a transcript row as machine-written (R59).
 ///
@@ -24,7 +25,7 @@ class BotTag extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
       decoration: BoxDecoration(
         border: Border.all(color: c, width: 1),
-        borderRadius: BorderRadius.circular(4),
+        borderRadius: BorderRadius.circular(kRadiusMd),
       ),
       child: Text(
         AppLocalizations.of(context).botFromBot.toUpperCase(),

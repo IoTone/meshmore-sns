@@ -490,7 +490,7 @@ class _StreetMapViewState extends State<StreetMapView> {
                   const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
                 color: cs.tertiaryContainer.withValues(alpha: .85),
-                borderRadius: BorderRadius.circular(4),
+                borderRadius: BorderRadius.circular(kRadiusMd),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,

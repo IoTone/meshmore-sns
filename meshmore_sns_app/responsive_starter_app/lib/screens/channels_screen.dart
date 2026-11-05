@@ -172,7 +172,7 @@ class ChannelsScreen extends StatelessWidget {
                           horizontal: 6, vertical: 2),
                       decoration: BoxDecoration(
                         color: cs.tertiary.withValues(alpha: .15),
-                        borderRadius: BorderRadius.circular(4),
+                        borderRadius: BorderRadius.circular(kRadiusMd),
                         border: Border.all(
                             color: cs.tertiary.withValues(alpha: .55)),
                       ),

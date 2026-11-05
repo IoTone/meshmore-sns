@@ -169,7 +169,7 @@ class _Swatches extends StatelessWidget {
           margin: const EdgeInsets.only(left: 3),
           decoration: BoxDecoration(
             color: c,
-            borderRadius: BorderRadius.circular(3),
+            borderRadius: BorderRadius.circular(kRadiusSm),
             border: Border.all(color: const Color(0x33FFFFFF)),
           ),
         );

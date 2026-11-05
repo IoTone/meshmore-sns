@@ -238,7 +238,7 @@ class _VoiceRow extends StatelessWidget {
                         color: cs.onSurface, fontWeight: FontWeight.w600)),
                 const SizedBox(height: 3),
                 ClipRRect(
-                  borderRadius: BorderRadius.circular(2),
+                  borderRadius: BorderRadius.circular(kRadiusXs),
                   child: LinearProgressIndicator(
                     value: frac,
                     minHeight: 4,
