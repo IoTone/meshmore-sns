@@ -13,6 +13,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 
 import 'app/boot_guard.dart';
+import 'app/mm_text_scaler.dart';
 import 'package:provider/provider.dart';
 
 import 'package:meshmore_sns_app/app/demo_mode.dart';
@@ -524,13 +525,14 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       localizationsDelegates: _localeDelegates,
       routerConfig: appRouter,
       builder: (BuildContext context, Widget? child) {
-        // User font-size scale (R14) layered on top of the OS text
-        // scale (R13 — honour the platform setting).
+        // User font-size scale (R14) layered on the OS text scale (R13 —
+        // honour the platform setting). MmTextScaler keeps the platform curve
+        // instead of re-linearising it, and caps the product at the largest
+        // scale the accessibility floor test builds.
         final MediaQueryData mq = MediaQuery.of(context);
-        final double osScale = mq.textScaler.scale(1.0);
         return MediaQuery(
           data: mq.copyWith(
-            textScaler: TextScaler.linear(osScale * tc.fontScale),
+            textScaler: MmTextScaler(os: mq.textScaler, user: tc.fontScale),
           ),
           child: child ?? const SizedBox.shrink(),
         );
