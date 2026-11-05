@@ -89,10 +89,18 @@ void main() {
       final AppLocalizations l = AppLocalizations.of(
           t.element(find.byType(TermsScreen)));
       expect(find.text(l.termsTitle), findsOneWidget);
-      expect(find.text(l.termsSectionLocal), findsOneWidget);
-      expect(find.text(l.termsSectionLeaves), findsOneWidget);
-      expect(find.text(l.termsSectionPermissions), findsOneWidget);
-      expect(find.text(l.termsSectionRetention), findsOneWidget);
+      // The list is lazy: a section builds only when it is scrolled to, so
+      // every one is approached the same way rather than assuming the copy
+      // will always fit one screen.
+      for (final String section in <String>[
+        l.termsSectionLocal,
+        l.termsSectionLeaves,
+        l.termsSectionPermissions,
+        l.termsSectionRetention,
+      ]) {
+        await t.scrollUntilVisible(find.text(section), 200);
+        expect(find.text(section), findsOneWidget);
+      }
       expect(find.text(l.termsAccept), findsOneWidget);
 
       // The list is lazy: the last sections build only when scrolled to.
