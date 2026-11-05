@@ -146,9 +146,9 @@ Decided: D10.1 in `meshmore-scope-of-record.md` §12. The consumer stopped exist
 
 | Feature | State | Ruling or document |
 | --- | --- | --- |
-| Target API 36 | OPEN, deadline 31 Aug 2026 | Mandatory for updates, no stagger |
-| 16 KB pages | OPEN, deadline 1 Feb 2027 | Check RELRO end-padding, not only `zipalign` |
-| `connectedDevice` foreground service | BUILT | `FOREGROUND_SERVICE_CONNECTED_DEVICE` + `BLUETOOTH_CONNECT` |
+| Target API 36 | **BUILT 2026-11-05** | Was already 36 through Flutter 3.47.4's defaults; now **pinned** in `android/app/build.gradle` so a toolchain change cannot move a Play obligation. Measured from the built APK: `aapt2 dump badging` → `targetSdkVersion:'36'`, `compileSdkVersion='36'` |
+| 16 KB pages | **BUILT 2026-11-05** | `tool/check_16k.sh` checks all ten shipped `.so` files (every `PT_LOAD` ≥ 16 KB, `GNU_RELRO` ends at or before the next load once rounded up) and the archive (`zipalign -c -P 16`): all pass on the debug APK. No plugin ships a failing prebuilt library; re-run after any dependency bump. Table in `meshmore_sns_app/TOOLING.md` §3a |
+| `connectedDevice` foreground service | BUILT, now regression-guarded | `FOREGROUND_SERVICE_CONNECTED_DEVICE` + `BLUETOOTH_CONNECT`; type `connectedDevice`, `exported=false`, notification states why it runs. `test/store/store_declarations_test.dart` fails if the declaration, the type or the copy drifts |
 | In-app pair flow + declaration video | TODO | The video must show pairing inside the app, not system settings |
 | Companion Device Manager | TODO | Platform recommendation for this exact case |
 | Export compliance | TODO | Blocks every track; three triggers |
