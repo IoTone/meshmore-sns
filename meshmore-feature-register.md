@@ -93,16 +93,18 @@ The state column answers one question: can work start? `TODO` means yes, the des
 
 | Feature | State | Ruling or document |
 | --- | --- | --- |
-| Place text convention | SPECIFIED — full spec | `[PLACE]<lat>,<lon> <label> [<type>] [TTL:<duration>]`, one message, TTL anchored last; `meshmore-places-spec.md` §3 |
-| Place object with TTL | SPECIFIED — full spec | Ten duration tokens 15 m–7 d, per-type default, expiry final, receiver clamps a future or stale timestamp; `meshmore-places-spec.md` §3, §8 |
-| Place type and deterministic id | SPECIFIED — full spec | D8.2 plus the closed nine-token set (`hazard water fuel med rally view camp look other`); id `sha256(pubkey‖latE7‖lonE7‖type)` first 8 hex, no time, unkeyed when the source is channel text; `meshmore-places-spec.md` §4, §5 |
-| Place renewal, confirmation, correction | SPECIFIED — confirmations now specified | Renewal is a re-broadcast with the same id and a new timestamp (`meshmore-places-spec.md` §6). `[CONFIRM:<id8>]` / `[REFUTE:<id8>]` per `meshmore-places-spec.md` §11 — key-bound from a DM, "claimed" from a channel, never extends the TTL, shares the 6-per-hour budget. **Correction remains open** |
-| Photo on a place, fetched on demand | SPECIFIED | Text first, photo later; the photo does not extend the TTL |
-| Directions handoff | SPECIFIED | D8.10: generic `geo:lat,lon?q=lat,lon(label)` first, then OsmAnd, Organic Maps, Google, Apple where installed; copy coordinates when there is no fix |
-| Offline map stack (R61) | BUILT | Disk-first tiles, packs, tile budget, 50,000-tile cap, self-test |
+| Place text convention | BUILT | `parsePlace`/`encodePlace` (`places/place_codec.dart:94,226`), frozen spec examples in `test/places/place_codec_test.dart`; TTL anchored last, unknown type falls back to `other` |
+| Place object with TTL | BUILT | `Place`/`PlaceTtl` (`places/place.dart:57,307,310`) — ten stops 15 m–7 d, per-type default, expiry final, `remainingAt` clamps; `test/places/place_ttl_test.dart` |
+| Place type and deterministic id | BUILT | nine-token closed set (`places/place.dart:16`), `placeIdFor` = `sha256(pubkey‖latE7‖lonE7‖type)` first 8 hex, no time (`places/place_id.dart:26`); `test/places/place_id_test.dart` proves id stability across a renewal and across precision |
+| Place renewal, confirmation, correction | BUILT — confirmation claimed-path; **key-bound reply path GAP** | Renewal is a same-id re-broadcast (`places/place_store.dart:139`, tested in `place_store_test.dart`). `[CONFIRM:<id8>]`/`[REFUTE:<id8>]` parse and tally (`place_confirmation.dart:105,146,195`), the sheet sends both (`place_detail_sheet.dart` keys `place-confirm`/`place-refute`) on the same 6-per-hour budget (`place_sender.dart:192`), a key-bound refutation hides the pin and a claimed one does not. The app has no surface that sends a reply over a DM, so every reply it emits is attributed *claimed*; that is a named gap below, not silence. **Correction remains OPEN** (its own row) |
+| Photo on a place, fetched on demand | BUILT | `PlacePhotos`/`PlacePhotoFetch` (`places/place_photo.dart:61,112`), the sheet shows bytes or the spec's "may not arrive" line, the photo never extends the TTL (`test/places/place_photo_test.dart`) |
+| Directions handoff | BUILT | `PlaceDirections` (`places/place_directions.dart:77`): generic `geo:` first, then OsmAnd/Organic/Google/Apple where installed, coordinates copied when no handler answers; `test/places/place_directions_test.dart` fakes the probe |
+| Place filters, search and the pinned layers | BUILT | `filtered()` — type, "expires within" (still-live semantics, `place_store.dart:234`), label/reporter search, keyed-only, blocked reporters excluded; the history sheet carries the chips (`place_history_sheet.dart`, keys `place-filter-*`). Layer: cluster below zoom 14, countdown badge, colour until tapped then neutral (`place_layer.dart:96,125`) |
+| Blocking a place reporter | BUILT | `attachPlaceBlockDeletion` (`places/place_wiring.dart`) drops the reporter's stored rows on a block and keeps listening for a restored list; the read-time filter alone would leave the row on disk. `test/places/place_block_deletion_test.dart` |
 | Map-pack sources and attribution | TODO | Fetch from a permitting source; emit an ODbL notice beside every pack |
 | Map fetches and the privacy claim | SPECIFIED | D8.18: bundled basemap default (no network), online packs opt-in with a consent screen naming the source and the disclosure |
-| Place-ledger export | SPECIFIED | After-action record, one row per place with final state; `meshmore-places-spec.md` §10 |
+| Place-ledger export | BUILT | `exportLedgerCsv` (`places/place_store.dart:260`) — one row per place with final state, confirmations, claimed confirmations, refutations, hidden flag; written from the history sheet (`place-export`), tested in `place_store_test.dart` |
+| Offline map stack (R61) | BUILT | Disk-first tiles, packs, tile budget, 50,000-tile cap, self-test |
 
 ## 5. Field operations
 
@@ -236,6 +238,7 @@ changes, not by topic.
 - ~~Whether the app should create the `#emergency` channel itself~~ **Decided D8.23** — it offers a one-tap add and
   never creates silently. The key being derivable means creation leaks nothing, but a slot is consumed and a public
   channel appears in the user's list unasked.
+- **A confirmation sent over a DM, so it is key-bound.** The grammar and the tally support a key-bound reply (`place_confirmation.dart`), and the spec makes a key-bound refutation hide the pin, but no surface sends a place reply on a DM thread: the detail sheet is reached from the map and echoes, so every reply the app emits is attributed *claimed*. Building it needs a place opened from a DM thread and a sender bound to that peer — a surface, not a codec gap. Owner: places wave.
 - **Whether an unkeyed place gets a per-channel "keyed only" filter.** D8.25's companion decision shows unkeyed places
   by default and says a block cannot filter them, because a block is keyed. The filter is the honest middle ground and
   is not built.
