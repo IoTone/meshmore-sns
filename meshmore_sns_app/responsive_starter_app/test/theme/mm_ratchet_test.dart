@@ -63,7 +63,7 @@ void main() {
       'lib/screens/about_screen.dart': 5,
       'lib/screens/battery_screen.dart': 10,
       'lib/screens/chat_screen.dart': 8,
-      'lib/screens/dashboard_screen.dart': 13,
+      'lib/screens/dashboard_screen.dart': 12,
       'lib/screens/dashboards/aghud_dashboard.dart': 12,
       'lib/screens/dashboards/drpop_dashboard.dart': 10,
       'lib/screens/dashboards/hyperlocal_dashboard.dart': 9,

@@ -59,6 +59,7 @@ import 'package:meshmore_sns_app/theme/theme_controller.dart';
 import 'package:meshmore_sns_app/tools/tools_controller.dart';
 import 'package:meshmore_sns_app/tts/tts_controller.dart';
 import 'package:meshmore_sns_app/ui/mm_collapse_controller.dart';
+import 'package:meshmore_sns_app/ui/dashboard_pins_controller.dart';
 
 void main() {
   final WidgetsBinding widgetsBinding =
@@ -82,6 +83,10 @@ void main() {
     // group the user folded never paints open and then snaps shut.
     final MmCollapseController collapse = MmCollapseController();
     await collapse.load();
+    // The pinned dashboard cards are read before the first frame for the same
+    // reason: a pin that paints late would move the dashboard under the user.
+    final DashboardPinsController pins = DashboardPinsController();
+    await pins.load();
     // Radio-free mode is read before the tree exists: it decides whether the
     // launch reaches for a paired companion at all, and doing that after the
     // first frame would make the decision twice.
@@ -104,8 +109,8 @@ void main() {
     // Places share the block list: a blocked reporter's stored rows leave with
     // the block rather than sitting on disk behind a read-time filter (places
     // spec §10). Attached here, before the tree reads the store.
-    final PlaceStore placeStore =
-        PlaceStore(isBlocked: blockStore.isBlocked)..load();
+    final PlaceStore placeStore = PlaceStore(isBlocked: blockStore.isBlocked)
+      ..load();
     attachPlaceBlockDeletion(blockStore, placeStore);
     final BlockFilter blockFilter = BlockFilter(blockStore);
     // When each channel was last read, so a channel badge counts what the
@@ -164,6 +169,7 @@ void main() {
       MultiProvider(
         providers: [
           ChangeNotifierProvider<MmCollapseController>.value(value: collapse),
+          ChangeNotifierProvider<DashboardPinsController?>.value(value: pins),
           ChangeNotifierProvider<AppState>(create: (_) => AppState()),
           ChangeNotifierProvider<ThemeController>(
             create: (_) => ThemeController()..load(),
@@ -225,10 +231,10 @@ void main() {
           // tick is app-scoped for the same reason the alarm's is: a fence
           // crossed while the screen is off still happened.
           ChangeNotifierProvider<GeofenceController>(
-            create: (BuildContext ctx) => GeofenceController(
-                mc: ctx.read<MeshcoreController>())
-              ..load()
-              ..start(),
+            create: (BuildContext ctx) =>
+                GeofenceController(mc: ctx.read<MeshcoreController>())
+                  ..load()
+                  ..start(),
           ),
           // The recorded trail: our own fixes only, bounded (see
           // `field/position_history.dart`). App-scoped so the map, the export
@@ -294,7 +300,8 @@ void main() {
           // without it runs with no notifications instead of failing a lookup
           // it never needed (D8.21's rule, applied to the harness).
           Provider<NotificationFocus?>.value(value: notificationFocus),
-          ChangeNotifierProvider<ShellViewRequest?>.value(value: shellViewRequest),
+          ChangeNotifierProvider<ShellViewRequest?>.value(
+              value: shellViewRequest),
           // Places (meshmore-places-spec.md): reports live in one app-scoped
           // store, so the map layer, the history list, the chat echo and
           // search cannot disagree about what exists. The budget is the
@@ -367,18 +374,17 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       // (every widget test) simply runs without notifications, rather than
       // failing on a lookup it never needed.
       final Notifier? notifier = context.read<Notifier?>();
-      final NotificationService? service =
-          context.read<NotificationService?>();
+      final NotificationService? service = context.read<NotificationService?>();
       if (notifier != null && service != null) {
         // The bundle's cue, vibration and speech are the app's, not the OS's,
         // so they are attached here, where the providers that own them exist.
         service.effects = AppNotificationEffects(
           onCue: (NotificationClass cls) =>
               context.read<CueService>().play(switch (cls) {
-                NotificationClass.channel => CueKind.messageIn,
-                NotificationClass.direct => CueKind.dmIn,
-                NotificationClass.sos => CueKind.alert,
-              }),
+                    NotificationClass.channel => CueKind.messageIn,
+                    NotificationClass.direct => CueKind.dmIn,
+                    NotificationClass.sos => CueKind.alert,
+                  }),
           onVibrate: HapticFeedback.mediumImpact,
           onSpeakChannel: (int slot, String text) =>
               context.read<TtsController>().speakForChannel(slot, text),
@@ -507,7 +513,9 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
 Locale _notificationLocale(Locale? chosen) {
   final Locale effective =
       chosen ?? WidgetsBinding.instance.platformDispatcher.locale;
-  return effective.languageCode == 'ja' ? const Locale('ja') : const Locale('en');
+  return effective.languageCode == 'ja'
+      ? const Locale('ja')
+      : const Locale('en');
 }
 
 /// A peer's display name for a DM notification title, from the full key or

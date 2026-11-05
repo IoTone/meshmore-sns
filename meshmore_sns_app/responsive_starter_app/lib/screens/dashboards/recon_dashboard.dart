@@ -26,7 +26,11 @@ import 'my_pubkey_line.dart';
 /// proximity). All-mono, dark-adapted, low-overdraw. Tap a row → the node
 /// sheet. Same DashboardModel/controller as every skin.
 class ReconDashboard extends StatefulWidget {
-  const ReconDashboard({super.key});
+
+  const ReconDashboard({super.key, this.pinned});
+
+  /// Pinned summaries, in a bounded strip above the recon body.
+  final Widget? pinned;
 
   @override
   State<ReconDashboard> createState() => _ReconDashboardState();
@@ -100,6 +104,7 @@ class _ReconDashboardState extends State<ReconDashboard>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           // Header.
+          if (widget.pinned != null) widget.pinned!,
           Padding(
             padding: const EdgeInsets.fromLTRB(14, 14, 6, 6),
             child: Row(

@@ -11,6 +11,8 @@ import '../telemetry/coverage_pacing.dart';
 import '../telemetry/coverage_session.dart';
 import '../theme/mm_skin.dart';
 import '../ui/mm_components.dart';
+import '../ui/dashboard_pin_action.dart';
+import '../ui/dashboard_pins_controller.dart';
 import '../ui/mm_scaffold.dart';
 
 /// Settings → Tools → Coverage, or the field screen.
@@ -29,7 +31,12 @@ class CoverageScreen extends StatelessWidget {
     final CoverageSession s = context.watch<CoverageSession>();
 
     return Scaffold(
-      appBar: AppBar(title: Text(l.coverageTitle)),
+      appBar: AppBar(
+        title: Text(l.coverageTitle),
+        actions: <Widget>[
+          const DashboardPinAction(pinId: MmPinIds.coverage),
+        ],
+      ),
       body: MmScaffold(
         child: ListView(
           padding: EdgeInsets.all(skin.space.step(5)),
@@ -70,8 +77,7 @@ class CoverageScreen extends StatelessWidget {
                 Text(l.coverageUnmatched(s.unmatched),
                     key: const ValueKey<String>('coverage-unmatched'),
                     style: TextStyle(
-                        color: skin.color.fgMuted,
-                        fontSize: skin.type.sizeSm)),
+                        color: skin.color.fgMuted, fontSize: skin.type.sizeSm)),
               if (s.lastRefusal != null)
                 Text(_refusalCopy(l, s.lastRefusal!),
                     key: const ValueKey<String>('coverage-refusal'),
@@ -94,8 +100,7 @@ class CoverageScreen extends StatelessWidget {
                 Text(l.coverageNoSamples,
                     key: const ValueKey<String>('coverage-empty'),
                     style: TextStyle(
-                        color: skin.color.fgMuted,
-                        fontSize: skin.type.sizeSm))
+                        color: skin.color.fgMuted, fontSize: skin.type.sizeSm))
               else
                 for (final CoverageCellSummary c in s.summaries())
                   _CellRow(summary: c),
@@ -104,8 +109,7 @@ class CoverageScreen extends StatelessWidget {
                 Text(l.coverageEdges(s.edges().length),
                     key: const ValueKey<String>('coverage-edges'),
                     style: TextStyle(
-                        color: skin.color.fgMuted,
-                        fontSize: skin.type.sizeSm)),
+                        color: skin.color.fgMuted, fontSize: skin.type.sizeSm)),
                 Text(l.coverageNotAMap,
                     style: TextStyle(
                         color: skin.color.fgMuted, fontSize: skin.type.sizeSm)),
@@ -166,8 +170,8 @@ class _CellRow extends StatelessWidget {
           Expanded(
             child: Text(
               l.coverageCellLine(summary.cell, percent, summary.samples),
-              style: TextStyle(
-                  color: skin.color.fg, fontSize: skin.type.sizeBody),
+              style:
+                  TextStyle(color: skin.color.fg, fontSize: skin.type.sizeBody),
             ),
           ),
           if (summary.hidden > 0)

@@ -39,6 +39,8 @@ import '../bot/bot_tag.dart';
 import '../theme/mm_skin.dart';
 import '../theme/mm_tokens.dart';
 import '../tts/tts_controller.dart';
+import '../ui/dashboard_pin_action.dart';
+import '../ui/dashboard_pins_controller.dart';
 import '../ui/mm_page_header.dart';
 import '../ui/mm_scaffold.dart';
 import '../util/clock_model.dart';
@@ -213,8 +215,7 @@ class _ChatScreenState extends State<ChatScreen>
     if (!_nearWarned && _budget.stateFor(text) == ComposerState.near) {
       _nearWarned = true;
       ScaffoldMessenger.maybeOf(context)?.showSnackBar(
-        SnackBar(
-            content: Text(AppLocalizations.of(context).chatBudgetNear)),
+        SnackBar(content: Text(AppLocalizations.of(context).chatBudgetNear)),
       );
     }
     setState(() {});
@@ -384,8 +385,7 @@ class _ChatScreenState extends State<ChatScreen>
     final double extent = _scroll.position.maxScrollExtent;
     final double frac = msgs.length <= 1 ? 0 : idx / (msgs.length - 1);
     _scroll.jumpTo((extent * frac).clamp(0.0, extent));
-    WidgetsBinding.instance
-        .addPostFrameCallback((_) => _scrollToHighlight(mc));
+    WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToHighlight(mc));
   }
 
   @override
@@ -494,8 +494,7 @@ class _ChatScreenState extends State<ChatScreen>
     // battery-sample / per-drain rebuilds that the previous
     // `context.watch<MeshcoreController>()` would cause.
     final bool ready = context.select<MeshcoreController, bool>(
-        (MeshcoreController mc) =>
-            mc.state == MeshcoreConnectionState.ready);
+        (MeshcoreController mc) => mc.state == MeshcoreConnectionState.ready);
     final int active = context.select<MeshcoreController, int>(
         (MeshcoreController mc) => mc.activeChannel);
     final String activeName = context.select<MeshcoreController, String>(
@@ -511,8 +510,8 @@ class _ChatScreenState extends State<ChatScreen>
     // elements); this counter is what repaints them.
     context.select<MeshcoreController, int>(
         (MeshcoreController mc) => mc.deliveryRevision);
-    final bool ttsEnabled = context.select<TtsController, bool>(
-        (TtsController t) => t.enabled);
+    final bool ttsEnabled =
+        context.select<TtsController, bool>((TtsController t) => t.enabled);
     final bool muted = context.select<TtsController, bool>(
         (TtsController t) => t.isChannelMuted(active));
     final bool speaks = context.select<TtsController, bool>(
@@ -575,227 +574,228 @@ class _ChatScreenState extends State<ChatScreen>
 
     return MmScaffold(
       child: Column(
-      children: <Widget>[
-        MmPageHeader(title: l.tabChat),
-        // R91 — one row, one job: switch channel. The caption above it
-        // said "CHANNEL · PUBLIC" while the selected chip two lines below
-        // already said "Public", and the collapse chevron existed only to
-        // hide the strip under it. Header + strip was 108 dp for that.
-        SizedBox(
-          height: 48,
-          child: ListView(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
-            children: <Widget>[
-              for (final MapEntry<int, String> ch in channels)
+        children: <Widget>[
+          MmPageHeader(title: l.tabChat),
+          // R91 — one row, one job: switch channel. The caption above it
+          // said "CHANNEL · PUBLIC" while the selected chip two lines below
+          // already said "Public", and the collapse chevron existed only to
+          // hide the strip under it. Header + strip was 108 dp for that.
+          SizedBox(
+            height: 48,
+            child: ListView(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+              children: <Widget>[
+                for (final MapEntry<int, String> ch in channels)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    child: Semantics(
+                      label: (unread[ch.key] ?? 0) > 0
+                          ? '${ch.value}, ${l.chatUnread(unread[ch.key]!)}'
+                          : ch.value,
+                      selected: ch.key == active,
+                      button: true,
+                      excludeSemantics: true,
+                      child: ChoiceChip(
+                        label: Text(ch.value),
+                        selected: ch.key == active,
+                        avatar: (unread[ch.key] ?? 0) > 0
+                            ? _UnreadBadge(
+                                key: ValueKey<String>('unread-${ch.key}'),
+                                count: unread[ch.key]!,
+                                onSelectedColor: ch.key == active,
+                              )
+                            : null,
+                        labelStyle: TextStyle(
+                          color: ch.key == active ? cs.onPrimary : cs.onSurface,
+                          fontWeight: ch.key == active
+                              ? FontWeight.w600
+                              : FontWeight.w400,
+                        ),
+                        onSelected: (_) => mc.setActiveChannel(ch.key),
+                      ),
+                    ),
+                  ),
+                // APP-E6 — search sits at the end of the strip, where the
+                // strip's own subject (which channel) is already decided.
+                if (msgs.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(left: 4),
+                    child: IconButton(
+                      key: const ValueKey<String>('chat-search'),
+                      tooltip: l.chatSearchAction,
+                      onPressed: () => _openSearch(mc),
+                      icon: const Icon(Icons.search),
+                    ),
+                  ),
+                // APP-E4 - one conversation leaves as its own passphrase file.
+                // The file is app-private, so it goes to the share sheet rather
+                // than being named in a snackbar the user cannot reach.
+                if (msgs.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(left: 4),
+                    child: IconButton(
+                      key: const ValueKey<String>('chat-export-thread'),
+                      tooltip: l.chatExportAction,
+                      onPressed: () => _exportThread(mc),
+                      icon: const Icon(Icons.ios_share),
+                    ),
+                  ),
+                Padding(
+                  padding: const EdgeInsets.only(left: 4),
+                  child: const DashboardPinAction(pinId: MmPinIds.activity),
+                ),
+                // Manage channels: a chip, not a "#" icon next to the
+                // channel chips, where two different meanings of "channel"
+                // sat side by side.
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 4),
-                  child: Semantics(
-                    label: (unread[ch.key] ?? 0) > 0
-                        ? '${ch.value}, ${l.chatUnread(unread[ch.key]!)}'
-                        : ch.value,
-                    selected: ch.key == active,
-                    button: true,
-                    excludeSemantics: true,
-                    child: ChoiceChip(
-                      label: Text(ch.value),
-                      selected: ch.key == active,
-                      avatar: (unread[ch.key] ?? 0) > 0
-                          ? _UnreadBadge(
-                              key: ValueKey<String>('unread-${ch.key}'),
-                              count: unread[ch.key]!,
-                              onSelectedColor: ch.key == active,
-                            )
-                          : null,
-                      labelStyle: TextStyle(
-                        color: ch.key == active
-                            ? cs.onPrimary
-                            : cs.onSurface,
-                        fontWeight: ch.key == active
-                            ? FontWeight.w600
-                            : FontWeight.w400,
+                  child: ActionChip(
+                    avatar: const Icon(Icons.add, size: 16),
+                    label: Text(l.chatManageChannels),
+                    onPressed: () => context.push('/settings/channels'),
+                  ),
+                ),
+                // Per-channel speech, at the end of the strip because it is
+                // a property of the channel that is selected there.
+                if (ttsEnabled)
+                  Padding(
+                    padding: const EdgeInsets.only(left: 4),
+                    child: IconButton(
+                      tooltip: muted ? l.chatTtsMuted : l.chatTtsActive,
+                      onPressed: () => context
+                          .read<TtsController>()
+                          .toggleChannelMute(active),
+                      icon: Icon(
+                        speaks ? Icons.volume_up : Icons.volume_off,
+                        color: speaks ? cs.primary : cs.onSurfaceVariant,
                       ),
-                      onSelected: (_) => mc.setActiveChannel(ch.key),
                     ),
                   ),
-                ),
-              // APP-E6 — search sits at the end of the strip, where the
-              // strip's own subject (which channel) is already decided.
-              if (msgs.isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.only(left: 4),
-                  child: IconButton(
-                    key: const ValueKey<String>('chat-search'),
-                    tooltip: l.chatSearchAction,
-                    onPressed: () => _openSearch(mc),
-                    icon: const Icon(Icons.search),
-                  ),
-                ),
-              // APP-E4 - one conversation leaves as its own passphrase file.
-              // The file is app-private, so it goes to the share sheet rather
-              // than being named in a snackbar the user cannot reach.
-              if (msgs.isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.only(left: 4),
-                  child: IconButton(
-                    key: const ValueKey<String>('chat-export-thread'),
-                    tooltip: l.chatExportAction,
-                    onPressed: () => _exportThread(mc),
-                    icon: const Icon(Icons.ios_share),
-                  ),
-                ),
-              // Manage channels: a chip, not a "#" icon next to the
-              // channel chips, where two different meanings of "channel"
-              // sat side by side.
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4),
-                child: ActionChip(
-                  avatar: const Icon(Icons.add, size: 16),
-                  label: Text(l.chatManageChannels),
-                  onPressed: () => context.push('/settings/channels'),
-                ),
-              ),
-              // Per-channel speech, at the end of the strip because it is
-              // a property of the channel that is selected there.
-              if (ttsEnabled)
-                Padding(
-                  padding: const EdgeInsets.only(left: 4),
-                  child: IconButton(
-                    tooltip: muted ? l.chatTtsMuted : l.chatTtsActive,
-                    onPressed: () => context
-                        .read<TtsController>()
-                        .toggleChannelMute(active),
-                    icon: Icon(
-                      speaks ? Icons.volume_up : Icons.volume_off,
-                      color: speaks ? cs.primary : cs.onSurfaceVariant,
-                    ),
-                  ),
-                ),
-            ],
-          ),
-        ),
-        const Divider(height: 1),
-        HistoryRetentionNotice(dropped: dropped),
-
-        // Message list (active channel) + R29 jump-to-newest pill.
-        Expanded(
-          child: Stack(
-            children: <Widget>[
-              Positioned.fill(
-                child: msgs.isEmpty
-                    ? Center(
-                        child: Text(l.chatEmpty,
-                            style: TextStyle(
-                                color: cs.onSurfaceVariant)),
-                      )
-                    : ListView.builder(
-                        controller: _scroll,
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 8),
-                        itemCount: msgs.length,
-                        itemBuilder: (BuildContext ctx, int i) {
-                          final bool lit = msgs[i].id == _highlightId;
-                          final Widget row = _MessageRow(
-                            msgs[i],
-                            key: lit ? _highlightKey : null,
-                            onAction: () => _onAction(mc, msgs[i]),
-                            // The DR Pop name tag shows the cadence since
-                            // this identity last spoke; only that mode reads
-                            // it, so only compute it there.
-                            sinceLast: _chatModeFor(ctx.skin.preset) ==
-                                    _ChatMode.block
-                                ? _sinceLastFromSame(msgs, i)
-                                : null,
-                          );
-                          if (!lit) return row;
-                          return ColoredBox(
-                            color: cs.secondaryContainer,
-                            child: row,
-                          );
-                        },
-                      ),
-              ),
-              // The pill only appears when the user is NOT at the
-              // bottom (so they wouldn't otherwise see the newest
-              // row) AND new messages have actually arrived since
-              // they scrolled away. If the user scrolls up but no
-              // new messages come in, no pill — silence is correct.
-              if (!_atBottom && _unreadSinceScrollAway > 0)
-                Positioned(
-                  right: 12,
-                  bottom: 12,
-                  child: _JumpToNewestPill(
-                    count: _unreadSinceScrollAway,
-                    onTap: _jumpToNewest,
-                    label: l.chatJumpToNewest(_unreadSinceScrollAway),
-                  ),
-                ),
-            ],
-          ),
-        ),
-
-        // Composer.
-        SafeArea(
-          top: false,
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(12, 6, 8, 10),
-            child: Row(
-              children: <Widget>[
-                Expanded(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      TextField(
-                        controller: _input,
-                        enabled: ready,
-                        textInputAction: TextInputAction.send,
-                        onSubmitted: (_) => _send(mc),
-                        decoration: InputDecoration(
-                          isDense: true,
-                          hintText: ready
-                              ? l.chatComposerHint(activeName)
-                              : l.chatComposerOffline,
-                          border: const OutlineInputBorder(),
-                        ),
-                      ),
-                      _ComposerCounter(
-                        budget: _budget,
-                        text: _input.text,
-                        label: l,
-                      ),
-                    ],
-                  ),
-                ),
-                IconButton(
-                  key: const ValueKey<String>('chat-attach'),
-                  tooltip: l.mediaComposerTitle,
-                  onPressed: ready
-                      ? () => MediaComposer.show(
-                            context,
-                            service: _media,
-                            source: kNoMediaPhotoSource,
-                            channelPsk: mc.channelPsk(mc.activeChannel),
-                            byteBudget: kMediaPhotoBudgetBytes,
-                            sendBlob: (Uint8List blob) => mc.sendChannelData(
-                              channelIdx: mc.activeChannel,
-                              dataType: kChannelDataTypeDev,
-                              blob: blob,
-                            ),
-                          )
-                      : null,
-                  icon: const Icon(Icons.add_photo_alternate_outlined),
-                ),
-                IconButton(
-                  tooltip: l.chatSend,
-                  onPressed: ready ? () => _send(mc) : null,
-                  icon: const Icon(Icons.send),
-                ),
               ],
             ),
           ),
-        ),
-      ],
+          const Divider(height: 1),
+          HistoryRetentionNotice(dropped: dropped),
+
+          // Message list (active channel) + R29 jump-to-newest pill.
+          Expanded(
+            child: Stack(
+              children: <Widget>[
+                Positioned.fill(
+                  child: msgs.isEmpty
+                      ? Center(
+                          child: Text(l.chatEmpty,
+                              style: TextStyle(color: cs.onSurfaceVariant)),
+                        )
+                      : ListView.builder(
+                          controller: _scroll,
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 8),
+                          itemCount: msgs.length,
+                          itemBuilder: (BuildContext ctx, int i) {
+                            final bool lit = msgs[i].id == _highlightId;
+                            final Widget row = _MessageRow(
+                              msgs[i],
+                              key: lit ? _highlightKey : null,
+                              onAction: () => _onAction(mc, msgs[i]),
+                              // The DR Pop name tag shows the cadence since
+                              // this identity last spoke; only that mode reads
+                              // it, so only compute it there.
+                              sinceLast: _chatModeFor(ctx.skin.preset) ==
+                                      _ChatMode.block
+                                  ? _sinceLastFromSame(msgs, i)
+                                  : null,
+                            );
+                            if (!lit) return row;
+                            return ColoredBox(
+                              color: cs.secondaryContainer,
+                              child: row,
+                            );
+                          },
+                        ),
+                ),
+                // The pill only appears when the user is NOT at the
+                // bottom (so they wouldn't otherwise see the newest
+                // row) AND new messages have actually arrived since
+                // they scrolled away. If the user scrolls up but no
+                // new messages come in, no pill — silence is correct.
+                if (!_atBottom && _unreadSinceScrollAway > 0)
+                  Positioned(
+                    right: 12,
+                    bottom: 12,
+                    child: _JumpToNewestPill(
+                      count: _unreadSinceScrollAway,
+                      onTap: _jumpToNewest,
+                      label: l.chatJumpToNewest(_unreadSinceScrollAway),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+
+          // Composer.
+          SafeArea(
+            top: false,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(12, 6, 8, 10),
+              child: Row(
+                children: <Widget>[
+                  Expanded(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        TextField(
+                          controller: _input,
+                          enabled: ready,
+                          textInputAction: TextInputAction.send,
+                          onSubmitted: (_) => _send(mc),
+                          decoration: InputDecoration(
+                            isDense: true,
+                            hintText: ready
+                                ? l.chatComposerHint(activeName)
+                                : l.chatComposerOffline,
+                            border: const OutlineInputBorder(),
+                          ),
+                        ),
+                        _ComposerCounter(
+                          budget: _budget,
+                          text: _input.text,
+                          label: l,
+                        ),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    key: const ValueKey<String>('chat-attach'),
+                    tooltip: l.mediaComposerTitle,
+                    onPressed: ready
+                        ? () => MediaComposer.show(
+                              context,
+                              service: _media,
+                              source: kNoMediaPhotoSource,
+                              channelPsk: mc.channelPsk(mc.activeChannel),
+                              byteBudget: kMediaPhotoBudgetBytes,
+                              sendBlob: (Uint8List blob) => mc.sendChannelData(
+                                channelIdx: mc.activeChannel,
+                                dataType: kChannelDataTypeDev,
+                                blob: blob,
+                              ),
+                            )
+                        : null,
+                    icon: const Icon(Icons.add_photo_alternate_outlined),
+                  ),
+                  IconButton(
+                    tooltip: l.chatSend,
+                    onPressed: ready ? () => _send(mc) : null,
+                    icon: const Icon(Icons.send),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -886,9 +886,8 @@ class _MessageRow extends StatelessWidget {
                   maxLines: 1,
                   softWrap: false,
                   style: TextStyle(
-                      color: m.outgoing
-                          ? skin.color.accent
-                          : skin.color.fgMuted,
+                      color:
+                          m.outgoing ? skin.color.accent : skin.color.fgMuted,
                       fontFamily: mono,
                       fontSize: 12)),
             ),
@@ -902,8 +901,7 @@ class _MessageRow extends StatelessWidget {
                       child: BotTag(),
                     ),
                   Text(stripBotMarker(m.text),
-                      style:
-                          TextStyle(color: skin.color.fg, fontFamily: mono)),
+                      style: TextStyle(color: skin.color.fg, fontFamily: mono)),
                   if (PlaceEchoLine.placeOf(m) case final Place place)
                     PlaceEchoLine(
                         place: place, store: context.read<PlaceStore>()),
@@ -971,8 +969,8 @@ class _MessageRow extends StatelessWidget {
     final Widget field = Container(
       padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
       // Mondrian black rule around every colour field.
-      decoration: BoxDecoration(
-          color: fill, border: Border.all(color: base, width: 3)),
+      decoration:
+          BoxDecoration(color: fill, border: Border.all(color: base, width: 3)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
@@ -1031,8 +1029,8 @@ class _MessageRow extends StatelessWidget {
     final List<Widget> cells = <Widget>[
       Flexible(
         child: ConstrainedBox(
-          constraints: BoxConstraints(
-              maxWidth: MediaQuery.of(context).size.width * 0.6),
+          constraints:
+              BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.6),
           child: field,
         ),
       ),
@@ -1074,8 +1072,8 @@ class _MessageRow extends StatelessWidget {
     return Align(
       alignment: m.outgoing ? Alignment.centerRight : Alignment.centerLeft,
       child: ConstrainedBox(
-        constraints: BoxConstraints(
-            maxWidth: MediaQuery.of(context).size.width * 0.78),
+        constraints:
+            BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.78),
         child: InkWell(
           onLongPress: onAction,
           child: Container(
@@ -1111,8 +1109,7 @@ class _MessageRow extends StatelessWidget {
                       DeliveryStatusIcon(m.delivery!),
                       const SizedBox(width: 5),
                     ],
-                    Text(
-                        <String>[_time(l), ...meta].join(' · '),
+                    Text(<String>[_time(l), ...meta].join(' · '),
                         style: TextStyle(color: metaColor, fontSize: 10)),
                   ],
                 ),
@@ -1226,8 +1223,8 @@ class _NameTag extends StatelessWidget {
     return Container(
       width: 58,
       padding: const EdgeInsets.all(5),
-      decoration:
-          BoxDecoration(color: base, border: Border.all(color: color, width: 3)),
+      decoration: BoxDecoration(
+          color: base, border: Border.all(color: color, width: 3)),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
@@ -1235,8 +1232,8 @@ class _NameTag extends StatelessWidget {
             width: 36,
             height: 36,
             child: CustomPaint(
-              painter:
-                  _InvaderPainter(seed: _fnv1a(seedKey), color: color, bg: base),
+              painter: _InvaderPainter(
+                  seed: _fnv1a(seedKey), color: color, bg: base),
             ),
           ),
           if (since != null) ...<Widget>[
@@ -1287,8 +1284,7 @@ class _InvaderPainter extends CustomPainter {
     for (int y = 0; y < _rows; y++) {
       for (int x = 0; x < half; x++) {
         if (bit() == 0) continue;
-        canvas.drawRect(
-            Rect.fromLTWH(x * cw, y * ch, cw, ch).deflate(0.6), on);
+        canvas.drawRect(Rect.fromLTWH(x * cw, y * ch, cw, ch).deflate(0.6), on);
         final int mx = _cols - 1 - x; // mirror
         if (mx != x) {
           canvas.drawRect(
@@ -1334,8 +1330,7 @@ class _JumpToNewestPill extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
-              Icon(Icons.arrow_downward,
-                  size: 16, color: cs.onPrimary),
+              Icon(Icons.arrow_downward, size: 16, color: cs.onPrimary),
               const SizedBox(width: 6),
               Text(label,
                   style: TextStyle(
@@ -1403,7 +1398,6 @@ class _ComposerCounter extends StatelessWidget {
     );
   }
 }
-
 
 /// The count a channel chip carries while it has unread messages.
 ///

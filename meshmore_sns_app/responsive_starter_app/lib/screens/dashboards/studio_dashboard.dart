@@ -37,7 +37,11 @@ import 'my_pubkey_line.dart';
 /// location-source-of-truth guard). The status is text plus a dot whose
 /// *shape* (filled / ring / spinner) differs, never a colour fill.
 class StudioDashboard extends StatelessWidget {
-  const StudioDashboard({super.key});
+
+  const StudioDashboard({super.key, this.pinned});
+
+  /// Pinned summaries, drawn under the status row.
+  final Widget? pinned;
 
   @override
   Widget build(BuildContext context) {
@@ -57,6 +61,7 @@ class StudioDashboard extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 28),
       children: <Widget>[
         _StatusRow(mc: mc, m: m),
+        if (pinned != null) pinned!,
         _hairline(skin),
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),

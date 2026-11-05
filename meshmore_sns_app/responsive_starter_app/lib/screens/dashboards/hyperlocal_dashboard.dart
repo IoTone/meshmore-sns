@@ -29,7 +29,12 @@ import 'my_pubkey_line.dart';
 /// the node sheet; tap the centre → self. A compact status rail sits
 /// underneath. Renders from the same controller as every other skin.
 class HyperlocalDashboard extends StatefulWidget {
-  const HyperlocalDashboard({super.key});
+
+  const HyperlocalDashboard({super.key, this.pinned});
+
+  /// Pinned summaries, in a bounded strip above the radar so the radar keeps
+  /// its viewport.
+  final Widget? pinned;
 
   @override
   State<HyperlocalDashboard> createState() => _HyperlocalDashboardState();
@@ -94,6 +99,7 @@ class _HyperlocalDashboardState extends State<HyperlocalDashboard>
       child: Column(
         children: <Widget>[
           _TopBar(model: m, skin: skin),
+          if (widget.pinned != null) widget.pinned!,
           Expanded(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),

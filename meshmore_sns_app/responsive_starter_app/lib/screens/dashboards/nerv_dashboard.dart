@@ -20,7 +20,11 @@ import 'my_pubkey_line.dart';
 /// SEELE monolith shows, re-imagined as a telemetry grid — proving a
 /// skin can drive layout, not just colour.
 class NervDashboard extends StatelessWidget {
-  const NervDashboard({super.key});
+
+  const NervDashboard({super.key, this.pinned});
+
+  /// Pinned summaries, drawn above the HUD panels.
+  final Widget? pinned;
 
   @override
   Widget build(BuildContext context) {
@@ -36,6 +40,7 @@ class NervDashboard extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(14, 14, 14, 28),
         children: <Widget>[
           // Brand bar + status pills.
+          if (pinned != null) pinned!,
           Row(
             children: <Widget>[
               Expanded(

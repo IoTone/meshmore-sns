@@ -14,6 +14,8 @@ import '../sos/sos_engine.dart';
 import '../sos/sos_schedule.dart';
 import '../theme/mm_skin.dart';
 import '../ui/mm_components.dart';
+import '../ui/dashboard_pin_action.dart';
+import '../ui/dashboard_pins_controller.dart';
 import '../ui/mm_scaffold.dart';
 import '../ui/mm_shape.dart';
 
@@ -142,6 +144,7 @@ class _SosScreenState extends State<SosScreen> {
       appBar: AppBar(
         title: Text(l.sosTitle),
         actions: <Widget>[
+          const DashboardPinAction(pinId: MmPinIds.sos),
           IconButton(
             key: const ValueKey<String>('checkin-entry'),
             tooltip: l.checkinEntryTooltip,
@@ -182,8 +185,7 @@ class _SosScreenState extends State<SosScreen> {
                   decoration: InputDecoration(
                     hintText: l.sosWordsHint,
                     hintStyle: TextStyle(
-                        color: skin.color.fgMuted,
-                        fontSize: skin.type.sizeSm),
+                        color: skin.color.fgMuted, fontSize: skin.type.sizeSm),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: mmRadius(context, kRadiusSm),
                       borderSide: BorderSide(color: skin.color.line),
@@ -310,10 +312,9 @@ class _Destination extends StatelessWidget {
         // Where it goes is two separate lines, because a channel and a direct
         // message guarantee different things (§10 item 2).
         Text(l.sosGoesToChannel(sos.channelName),
-            style: TextStyle(
-                color: skin.color.fg, fontSize: skin.type.sizeBody)),
-        Text(
-            l.sosGoesToContacts(sos.contactKeysHex.length),
+            style:
+                TextStyle(color: skin.color.fg, fontSize: skin.type.sizeBody)),
+        Text(l.sosGoesToContacts(sos.contactKeysHex.length),
             style: TextStyle(
                 color: sos.contactKeysHex.isEmpty
                     ? skin.color.fgMuted
@@ -323,8 +324,7 @@ class _Destination extends StatelessWidget {
           SizedBox(height: skin.space.step(1)),
           Text(l.sosContactsNone,
               style: TextStyle(
-                  color: skin.color.fgMuted,
-                  fontSize: skin.type.sizeSm)),
+                  color: skin.color.fgMuted, fontSize: skin.type.sizeSm)),
         ],
         if (emergency) ...<Widget>[
           SizedBox(height: skin.space.step(2)),
@@ -376,16 +376,15 @@ class _Running extends StatelessWidget {
               Text(l.sosNextSend(next.inSeconds),
                   key: const ValueKey<String>('sos-next'),
                   style: TextStyle(
-                      color: skin.color.fg,
-                      fontSize: skin.type.sizeBody)),
+                      color: skin.color.fg, fontSize: skin.type.sizeBody)),
           ],
         ),
         SizedBox(height: skin.space.step(2)),
         Text(
             '${l.sosElapsed(sos.elapsed.inMinutes)}  ·  '
             '${l.sosRemaining(left, total)}',
-            style:
-                TextStyle(color: skin.color.fgMuted, fontSize: skin.type.sizeSm)),
+            style: TextStyle(
+                color: skin.color.fgMuted, fontSize: skin.type.sizeSm)),
         // What the schedule did not manage, said plainly: a sleep window skips
         // repeats rather than firing a burst the radio would drop, and a
         // refused repeat is a repeat nobody heard.
@@ -502,8 +501,7 @@ class _Ended extends StatelessWidget {
               child: Text(
                 a.claimed ? l.sosClaimedBy(a.name) : l.sosSeenBy(a.name),
                 style: TextStyle(
-                    color: skin.color.fgMuted,
-                    fontSize: skin.type.sizeBody),
+                    color: skin.color.fgMuted, fontSize: skin.type.sizeBody),
               ),
             ),
         if (other.isNotEmpty) SizedBox(height: skin.space.step(4)),

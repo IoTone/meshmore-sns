@@ -19,7 +19,11 @@ import 'my_pubkey_line.dart';
 /// colour from being a sole information carrier (every block carries a
 /// label + value too). Same DashboardModel as every skin.
 class DrPopDashboard extends StatelessWidget {
-  const DrPopDashboard({super.key});
+
+  const DrPopDashboard({super.key, this.pinned});
+
+  /// Pinned summaries, drawn under the brand slab.
+  final Widget? pinned;
 
   // Wipeout-flavoured fake corp names + katakana, picked deterministically
   // per channel so a channel always wears the same livery.
@@ -55,6 +59,7 @@ class DrPopDashboard extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(12, 12, 12, 28),
         children: <Widget>[
           // Brand bar — magenta slab + PHASE code.
+          if (pinned != null) pinned!,
           Row(
             children: <Widget>[
               Expanded(

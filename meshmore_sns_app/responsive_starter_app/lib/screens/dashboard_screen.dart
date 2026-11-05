@@ -25,19 +25,34 @@ import '../ui/mm_shape.dart';
 /// alert, a terse radio readout, and the recent-activity feed. Pure
 /// token styling so every theme preset re-skins it.
 class DashboardScreen extends StatelessWidget {
-  const DashboardScreen({super.key});
+  const DashboardScreen({super.key, this.pinned});
+
+  /// Pinned summaries, drawn under the headline.
+  final Widget? pinned;
 
   ({String label, bool alert, bool busy}) _status(
       MeshcoreController mc, AppLocalizations l) {
     return switch (mc.state) {
-      MeshcoreConnectionState.ready =>
-        (label: l.statusLinked, alert: false, busy: false),
-      MeshcoreConnectionState.handshaking =>
-        (label: l.statusHandshaking, alert: false, busy: true),
-      MeshcoreConnectionState.reconnecting =>
-        (label: l.statusReconnecting, alert: true, busy: true),
-      MeshcoreConnectionState.failed =>
-        (label: l.statusLinkLost, alert: true, busy: false),
+      MeshcoreConnectionState.ready => (
+          label: l.statusLinked,
+          alert: false,
+          busy: false
+        ),
+      MeshcoreConnectionState.handshaking => (
+          label: l.statusHandshaking,
+          alert: false,
+          busy: true
+        ),
+      MeshcoreConnectionState.reconnecting => (
+          label: l.statusReconnecting,
+          alert: true,
+          busy: true
+        ),
+      MeshcoreConnectionState.failed => (
+          label: l.statusLinkLost,
+          alert: true,
+          busy: false
+        ),
       MeshcoreConnectionState.disconnected => (
           label: mc.isConnecting ? l.statusConnecting : l.statusOffline,
           alert: !mc.isConnecting,
@@ -92,12 +107,11 @@ class DashboardScreen extends StatelessWidget {
             style: TextStyle(
                 color: cs.onSurfaceVariant, fontSize: 12, letterSpacing: 4)),
         Text('$inRange',
-            style: (tt.displayLarge ?? const TextStyle(fontSize: 72))
-                .copyWith(
-                    color: cs.onSurface,
-                    fontSize: 88,
-                    height: 1.0,
-                    fontWeight: FontWeight.w300)),
+            style: (tt.displayLarge ?? const TextStyle(fontSize: 72)).copyWith(
+                color: cs.onSurface,
+                fontSize: 88,
+                height: 1.0,
+                fontWeight: FontWeight.w300)),
         const SizedBox(height: 4),
         Text(
             mc.deviceContactCount == null
@@ -107,6 +121,7 @@ class DashboardScreen extends StatelessWidget {
                     '${mc.maxContacts == null ? '' : '/${mc.maxContacts}'}',
             style: TextStyle(color: cs.onSurfaceVariant)),
         const SizedBox(height: 24),
+        if (pinned != null) pinned!,
 
         // Status slab — colour-inverts to error on alert.
         Container(
@@ -120,16 +135,14 @@ class DashboardScreen extends StatelessWidget {
                   width: 14,
                   height: 14,
                   child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: statusColor),
+                      strokeWidth: 2, color: statusColor),
                 )
               else
                 Container(
                   width: 10,
                   height: 10,
-                  decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: statusColor),
+                  decoration:
+                      BoxDecoration(shape: BoxShape.circle, color: statusColor),
                 ),
               const SizedBox(width: 10),
               Expanded(
@@ -150,9 +163,7 @@ class DashboardScreen extends StatelessWidget {
                 const SizedBox(width: 4),
                 Text(l.statusSyncing,
                     style: TextStyle(
-                        color: cs.primary,
-                        fontSize: 10,
-                        letterSpacing: 2)),
+                        color: cs.primary, fontSize: 10, letterSpacing: 2)),
                 const SizedBox(width: 4),
               ],
               // R41 — Device chip. Single tap target for disconnect /
@@ -185,9 +196,8 @@ class DashboardScreen extends StatelessWidget {
             child: MmAction(
               icon: Icons.link,
               label: l.actionConnect,
-              onPressed: () => mc.hasPairedDevice
-                  ? mc.connect()
-                  : context.push('/pair'),
+              onPressed: () =>
+                  mc.hasPairedDevice ? mc.connect() : context.push('/pair'),
             ),
           )
         else if (mc.state == MeshcoreConnectionState.failed)
@@ -196,9 +206,8 @@ class DashboardScreen extends StatelessWidget {
             child: MmAction(
               icon: Icons.refresh,
               label: l.actionRetry,
-              onPressed: () => mc.hasPairedDevice
-                  ? mc.connect()
-                  : context.push('/pair'),
+              onPressed: () =>
+                  mc.hasPairedDevice ? mc.connect() : context.push('/pair'),
             ),
           ),
         const SizedBox(height: 22),
@@ -261,9 +270,7 @@ class DashboardScreen extends StatelessWidget {
             'CR${selfInfo.codingRate}  '
             '${selfInfo.txPowerDbm}dBm',
             style: TextStyle(
-                color: cs.onSurface,
-                fontFamily: 'JetBrains Mono',
-                height: 1.5),
+                color: cs.onSurface, fontFamily: 'JetBrains Mono', height: 1.5),
           ),
         ],
         // R39 — region preset readout. The answer to "what region am
@@ -287,8 +294,7 @@ class DashboardScreen extends StatelessWidget {
                 child: Row(
                   children: <Widget>[
                     Icon(isCustom ? Icons.tune : Icons.public,
-                        size: 14,
-                        color: isCustom ? cs.tertiary : cs.primary),
+                        size: 14, color: isCustom ? cs.tertiary : cs.primary),
                     const SizedBox(width: 6),
                     Text(
                         p == null
@@ -307,8 +313,7 @@ class DashboardScreen extends StatelessWidget {
         if (mc.pairedName != null) ...<Widget>[
           const SizedBox(height: 6),
           Text(l.dashboardPaired(mc.pairedName!),
-              style:
-                  TextStyle(color: cs.onSurfaceVariant, fontSize: 12)),
+              style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12)),
         ],
         // Location surface (Phase A) — pulled from the device's
         // SelfInfo when present, otherwise flagged as unset with a
@@ -341,9 +346,7 @@ class DashboardScreen extends StatelessWidget {
                   Text(
                     _batteryLine(mc, l),
                     style: TextStyle(
-                        color: mc.charging == true
-                            ? cs.tertiary
-                            : cs.onSurface,
+                        color: mc.charging == true ? cs.tertiary : cs.onSurface,
                         fontFamily: 'JetBrains Mono'),
                   ),
                 ],
@@ -401,8 +404,8 @@ String _eventLine(AppLocalizations l, MeshEvent e) {
   final Map<String, String> a = e.args;
   return switch (e.kind) {
     MeshEventKind.advert => l.eventAdvert(a['name'] ?? '?'),
-    MeshEventKind.channelMsg => l.eventChannelMsg(
-        a['channel'] ?? '?', a['text'] ?? ''),
+    MeshEventKind.channelMsg =>
+      l.eventChannelMsg(a['channel'] ?? '?', a['text'] ?? ''),
     MeshEventKind.dm => l.eventDm(a['text'] ?? ''),
     MeshEventKind.contact => l.eventContact(a['name'] ?? '?'),
     MeshEventKind.battery => l.eventBattery(a['volts'] ?? '?'),
@@ -473,26 +476,15 @@ class _LocationTile extends StatelessWidget {
             '\n'
             '${l.dashboardLocationSourceLabel(loc.localizedSourceLabel(l))}',
             style: TextStyle(
-                color: cs.onSurface,
-                fontFamily: 'JetBrains Mono',
-                height: 1.5),
+                color: cs.onSurface, fontFamily: 'JetBrains Mono', height: 1.5),
           ),
-          // Diagnostic readout — shows the raw selfInfo lat/lon,
-          // the device's advertLocPolicy, and the phoneFix value
-          // (if any). Lets us tell at a glance whether the device
-          // is reporting fresh GPS or whether ownLocation is
-          // falling through to a cached phone fix.
-          const SizedBox(height: 4),
-          _LocationDebugLine(mc: mc, cs: cs),
-        ]
-        else if (awaitingSelf)
+        ] else if (awaitingSelf)
           Text(l.dashboardAwaitingDeviceLocation,
               style: TextStyle(color: cs.onSurfaceVariant))
         else
           Row(
             children: <Widget>[
-              Icon(Icons.location_off,
-                  size: 18, color: cs.error),
+              Icon(Icons.location_off, size: 18, color: cs.error),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
@@ -507,60 +499,6 @@ class _LocationTile extends StatelessWidget {
             ],
           ),
       ],
-    );
-  }
-}
-
-/// Small dev-style readout under the formatted Location value.
-/// Shows the **raw** values our controller currently sees:
-/// - `dev: lat, lon` — `mc.selfInfo.latitude/longitude` straight
-///   off the wire. Frozen at (0, 0) → the firmware reports "no
-///   GPS." Frozen at a non-zero pair across multiple refreshes →
-///   the firmware is caching and not re-reading GPS.
-/// - `pol: N` — `mc.selfInfo.advertLocPolicy`, using MeshCore's
-///   integers from `src/helpers/CommonCLI.h`: 0=None, 1=Device GPS
-///   (`ADVERT_LOC_SHARE`), 2=Pinned (`ADVERT_LOC_PREFS`). If the user
-///   picked "Device GPS" but this is not 1, the policy didn't stick on
-///   the device. (Companion firmware only distinguishes 0 from
-///   non-zero — `examples/companion_radio/NodePrefs.h:9-10` — so 2
-///   behaves like 1 there. This comment previously read
-///   "1=Pinned, 2=Device GPS", the label reversal fixed on this branch (cc5acb2).)
-/// - `phone: lat, lon` — the one-shot phone fix `mc.phoneLocationFix`.
-///   Only present if the user has tapped "Use phone location" or
-///   the dashboard requested a fix. `ownLocation` falls back to
-///   this when the device reports (0, 0).
-class _LocationDebugLine extends StatelessWidget {
-  const _LocationDebugLine({required this.mc, required this.cs});
-  final MeshcoreController mc;
-  final ColorScheme cs;
-
-  @override
-  Widget build(BuildContext context) {
-    final SelfInfo? si = mc.selfInfo;
-    final OwnLocation? phone = mc.phoneLocationFix;
-    final List<String> parts = <String>[
-      if (si != null)
-        'dev: ${si.latitude.toStringAsFixed(5)}, '
-            '${si.longitude.toStringAsFixed(5)} '
-            'pol:${si.advertLocPolicy}'
-      else
-        'dev: —',
-      if (phone != null)
-        'phone: ${phone.latitude.toStringAsFixed(5)}, '
-            '${phone.longitude.toStringAsFixed(5)}'
-            '${phone.altitudeMeters == null ? '' : ' '
-                'alt:${phone.altitudeMeters!.round()}m'}'
-      else
-        'phone: —',
-    ];
-    return Text(
-      parts.join('\n'),
-      style: TextStyle(
-        color: cs.onSurfaceVariant.withValues(alpha: .7),
-        fontFamily: 'JetBrains Mono',
-        fontSize: 10,
-        height: 1.35,
-      ),
     );
   }
 }
@@ -580,7 +518,8 @@ String _batteryLine(MeshcoreController mc, AppLocalizations l) {
   if (mc.charging == true) {
     b.write('  ⚡ ${l.dashboardCharging}');
   } else if (est.timeToEmpty != null) {
-    b.write(' · ${l.dashboardBatteryLeft(_fmtBatteryDur(est.timeToEmpty!, l))}');
+    b.write(
+        ' · ${l.dashboardBatteryLeft(_fmtBatteryDur(est.timeToEmpty!, l))}');
   }
   return b.toString();
 }
