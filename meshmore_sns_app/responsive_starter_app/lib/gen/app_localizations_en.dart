@@ -4893,11 +4893,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String nodeSteady(String name, String distance) {
-    return '$name is $distance away';
-  }
-
-  @override
   String get geofenceExplainerShort =>
       'Circles that tell you when you arrive or leave';
 
@@ -4976,4 +4971,19 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get coverageExplainerShort => 'Which pings were answered, here';
+
+  @override
+  String get fieldExportSection => 'Field record';
+
+  @override
+  String get fieldExportExplainer =>
+      'One file with the trail, the places, the answered pings and the check-in. It is plain JSON, not encrypted, so it can be handed on.';
+
+  @override
+  String get fieldExportAction => 'Export this session';
+
+  @override
+  String fieldExportDone(String path) {
+    return 'Field record written. The path is on the clipboard: $path';
+  }
 }

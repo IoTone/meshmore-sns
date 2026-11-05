@@ -1795,7 +1795,6 @@
   "geofenceDefaultName": "フェンス {number}",
   "nodeClosing": "{name} は {distance} 先で近づいています",
   "nodeOpening": "{name} は {distance} 先で遠ざかっています",
-  "nodeSteady": "{name} は {distance} 先です",
   "geofenceExplainerShort": "到着・出発を知らせる円",
   "coverageTitle": "カバレッジ",
   "coverageBeforeStart": "現在地と、応答した相手を記録します。端末内にのみ保存され、アプリを閉じると記録は終わります。",
@@ -1814,5 +1813,9 @@
   "coverageHidden": "{count} 件非表示",
   "coverageEdges": "描画された応答 {count} 件 — 応答のみで、推定したリンクはありません",
   "coverageNotAMap": "これは ping が応答された場所であり、メッシュが届く範囲ではありません。",
-  "coverageExplainerShort": "ここで応答があった ping"
+  "coverageExplainerShort": "ここで応答があった ping",
+  "fieldExportSection": "現地記録",
+  "fieldExportExplainer": "軌跡・プレイス・応答のあった ping・チェックインを1つのファイルにまとめます。暗号化されない JSON なので、そのまま渡せます。",
+  "fieldExportAction": "このセッションを書き出す",
+  "fieldExportDone": "現地記録を書き出しました。パスはクリップボードにあります: {path}"
 }

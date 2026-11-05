@@ -8332,12 +8332,6 @@ abstract class AppLocalizations {
   /// **'{name} is {distance} away and moving away'**
   String nodeOpening(String name, String distance);
 
-  /// No description provided for @nodeSteady.
-  ///
-  /// In en, this message translates to:
-  /// **'{name} is {distance} away'**
-  String nodeSteady(String name, String distance);
-
   /// No description provided for @geofenceExplainerShort.
   ///
   /// In en, this message translates to:
@@ -8451,6 +8445,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Which pings were answered, here'**
   String get coverageExplainerShort;
+
+  /// No description provided for @fieldExportSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Field record'**
+  String get fieldExportSection;
+
+  /// No description provided for @fieldExportExplainer.
+  ///
+  /// In en, this message translates to:
+  /// **'One file with the trail, the places, the answered pings and the check-in. It is plain JSON, not encrypted, so it can be handed on.'**
+  String get fieldExportExplainer;
+
+  /// No description provided for @fieldExportAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Export this session'**
+  String get fieldExportAction;
+
+  /// No description provided for @fieldExportDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Field record written. The path is on the clipboard: {path}'**
+  String fieldExportDone(String path);
 }
 
 class _AppLocalizationsDelegate

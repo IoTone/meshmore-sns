@@ -2066,8 +2066,6 @@
   "@nodeClosing": {"placeholders": {"name": {"type": "String"}, "distance": {"type": "String"}}},
   "nodeOpening": "{name} is {distance} away and moving away",
   "@nodeOpening": {"placeholders": {"name": {"type": "String"}, "distance": {"type": "String"}}},
-  "nodeSteady": "{name} is {distance} away",
-  "@nodeSteady": {"placeholders": {"name": {"type": "String"}, "distance": {"type": "String"}}},
   "geofenceExplainerShort": "Circles that tell you when you arrive or leave",
   "coverageTitle": "Coverage",
   "coverageBeforeStart": "This records where you are and who answered. It stays on this device, and closing the app ends the record.",
@@ -2091,5 +2089,10 @@
   "coverageEdges": "{count} answers drawn — answers only, never an inferred link",
   "@coverageEdges": {"placeholders": {"count": {"type": "int"}}},
   "coverageNotAMap": "This is where your pings were answered, not where the mesh reaches.",
-  "coverageExplainerShort": "Which pings were answered, here"
+  "coverageExplainerShort": "Which pings were answered, here",
+  "fieldExportSection": "Field record",
+  "fieldExportExplainer": "One file with the trail, the places, the answered pings and the check-in. It is plain JSON, not encrypted, so it can be handed on.",
+  "fieldExportAction": "Export this session",
+  "fieldExportDone": "Field record written. The path is on the clipboard: {path}",
+  "@fieldExportDone": {"placeholders": {"path": {"type": "String"}}}
 }

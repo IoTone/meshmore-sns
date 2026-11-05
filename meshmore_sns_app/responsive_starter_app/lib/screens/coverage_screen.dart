@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../field/field_export_action.dart';
 import '../gen/app_localizations.dart';
 import '../telemetry/coverage_model.dart';
 import '../telemetry/coverage_pacing.dart';
@@ -108,6 +109,16 @@ class CoverageScreen extends StatelessWidget {
                     style: TextStyle(
                         color: skin.color.fgMuted, fontSize: skin.type.sizeSm)),
               ],
+              SizedBox(height: skin.space.step(5)),
+              MmSectionHeader(l.fieldExportSection),
+              Text(l.fieldExportExplainer,
+                  key: const ValueKey<String>('field-export-explainer'),
+                  style: TextStyle(
+                      color: skin.color.fgMuted,
+                      fontSize: skin.type.sizeSm,
+                      height: 1.4)),
+              SizedBox(height: skin.space.step(2)),
+              const FieldExportAction(),
             ],
           ],
         ),

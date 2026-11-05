@@ -4728,11 +4728,6 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String nodeSteady(String name, String distance) {
-    return '$name は $distance 先です';
-  }
-
-  @override
   String get geofenceExplainerShort => '到着・出発を知らせる円';
 
   @override
@@ -4800,4 +4795,19 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get coverageExplainerShort => 'ここで応答があった ping';
+
+  @override
+  String get fieldExportSection => '現地記録';
+
+  @override
+  String get fieldExportExplainer =>
+      '軌跡・プレイス・応答のあった ping・チェックインを1つのファイルにまとめます。暗号化されない JSON なので、そのまま渡せます。';
+
+  @override
+  String get fieldExportAction => 'このセッションを書き出す';
+
+  @override
+  String fieldExportDone(String path) {
+    return '現地記録を書き出しました。パスはクリップボードにあります: $path';
+  }
 }
