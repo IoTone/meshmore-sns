@@ -1329,8 +1329,10 @@ the sibling specs: R93 in `meshmore-sns-maps-spec.md`, R60 in
   toggle exists only on the five views that pan or zoom (globe, street map,
   fabric, tree, SNS cells). The equal grid looks like a map but is not one:
   its tiles are pinned to us and its zoom is the cell stepper, so a toggle
-  there would lock the swipe and hand the drag to nothing. In swipe mode the
-  view is held still behind an `IgnorePointer` with a hint. The Map keeps its R67 edge bands as
+  there would lock the swipe and hand the drag to nothing. In swipe mode a
+  pannable view drops its own drag and keeps its taps (`interactive: _panMode`
+  on globe, street map, fabric, tree and SNS cells), so a node you can see is a
+  node you can open; the hint says which mode is on. The Map keeps its R67 edge bands as
   its gesture exit, and they change exactly one view because the page is
   locked while it shows. New EN/JA strings: `gridSwipeModeTooltip`,
   `gridPanModeTooltip`, `gridSwipeHint`, `gridPanHint`.
