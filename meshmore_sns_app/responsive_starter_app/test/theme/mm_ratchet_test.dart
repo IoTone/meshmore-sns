@@ -90,7 +90,6 @@ void main() {
       'lib/screens/sns_cells_view.dart': 6,
       'lib/screens/street_map_view.dart': 2,
       'lib/screens/tools/tool_widgets.dart': 3,
-      'lib/screens/tools/tools_hub_screen.dart': 1,
       'lib/screens/tools/trace_screen.dart': 2,
       'lib/screens/voice_settings_screen.dart': 9,
       'lib/shell/home_shell.dart': 3,

@@ -11,6 +11,7 @@ import '../app/issue_report.dart';
 import '../app_state_model.dart';
 import '../gen/app_localizations.dart';
 import '../meshcore/meshcore_controller.dart';
+import '../perms/first_run_controller.dart';
 import '../theme/mm_skin.dart';
 import '../ui/mm_scaffold.dart';
 
@@ -50,7 +51,7 @@ class AboutScreen extends StatelessWidget {
         child: ListView(
           padding: const EdgeInsets.fromLTRB(20, 24, 20, 32),
           children: <Widget>[
-            Text('MESHMORE SNS',
+            Text(l.appName.toUpperCase(),
                 textAlign: TextAlign.center,
                 style: TextStyle(
                     fontSize: 22,
@@ -105,6 +106,16 @@ class AboutScreen extends StatelessWidget {
               textAlign: TextAlign.center,
               style: TextStyle(
                   fontSize: skin.type.size(10.5), color: skin.color.fgMuted),
+            ),
+            const SizedBox(height: 10),
+            // Moved out of App settings: replaying the first-run screens is a
+            // support action, not a setting.
+            OutlinedButton.icon(
+              onPressed: context.watch<FirstRunController>().done
+                  ? () => context.read<FirstRunController>().reset()
+                  : null,
+              icon: const Icon(Icons.refresh, size: 18),
+              label: Text(l.aboutReplayIntro),
             ),
             const SizedBox(height: 10),
             OutlinedButton.icon(

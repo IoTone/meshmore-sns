@@ -427,12 +427,10 @@ class AppLocalizationsJa extends AppLocalizations {
   String get settingsBackgroundTitle => 'バックグラウンドで接続を維持';
 
   @override
-  String get settingsBackgroundOn =>
-      'Android: 常駐通知でラジオ接続を維持し、バックグラウンド中もメッセージを受信';
+  String get settingsBackgroundOn => 'アプリを閉じていてもメッセージが届きます';
 
   @override
-  String get settingsBackgroundOff =>
-      'アプリ再表示時にメッセージ受信 (ラジオがバッファ); バックグラウンド通知なし';
+  String get settingsBackgroundOff => 'アプリを開いたときにメッセージが届きます';
 
   @override
   String get settingsTelemetryPoll => 'ノードのテレメトリを収集';
@@ -471,17 +469,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get settingsPermissions => '権限';
 
   @override
-  String get settingsPermissionsSubtitle =>
-      'このアプリの OS 設定画面を開く — Bluetooth / 通知をオン・オフできます。';
-
-  @override
-  String get settingsShowIntro => '次回起動時に紹介を再表示';
-
-  @override
-  String get settingsShowIntroEnabled => '初回フラグを消去し権限紹介を再表示 — フロー検証時に便利';
-
-  @override
-  String get settingsShowIntroDisabled => '紹介は次回起動時に表示予定';
+  String get settingsPermissionsSubtitle => 'Bluetooth・通知・位置情報';
 
   @override
   String get termsTitle => '利用規約とプライバシー';
@@ -649,13 +637,13 @@ class AppLocalizationsJa extends AppLocalizations {
   String get demoTooltip => 'デモモード — 無線なし。コンパニオンに接続せずにチャンネル・設定・ドキュメントを試せます。';
 
   @override
-  String get demoModeRow => 'デモモード（無線なし）';
+  String get demoModeRow => '無線なし';
 
   @override
-  String get demoModeOn => 'オン — 起動時に無線へ接続しません';
+  String get demoModeOn => 'オフラインでアプリを試せます';
 
   @override
-  String get demoModeOff => 'オフ — 起動時にペアリング済みの無線へ接続します';
+  String get demoModeOff => 'オフラインでアプリを試せます';
 
   @override
   String get firstRunHeader => 'MESHMORE · ようこそ';
@@ -1143,9 +1131,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get locTileSubtitle => '定期 + 移動検知でスマートフォン GPS をデバイスに反映';
 
   @override
-  String get locHelp => '無線機の GPS が古いとき、スマートフォンの位置を書き込みます。';
-
-  @override
   String get locMaster => '自動公開';
 
   @override
@@ -1265,10 +1250,10 @@ class AppLocalizationsJa extends AppLocalizations {
       '「アプリ設定」で SPEECH を ON にするまで無効。レート / ピッチ / 音声は次の発話から適用されます。';
 
   @override
-  String get voiceRate => '速度';
+  String get voiceRate => '速さ';
 
   @override
-  String get voicePitch => 'ピッチ';
+  String get voicePitch => '高さ';
 
   @override
   String get voicePicker => '音声';
@@ -1329,7 +1314,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get settingsGroupAbout => 'このアプリについて';
 
   @override
-  String get settingsHubDeviceSub => 'MeshCore ラジオ & デバイス';
+  String get settingsHubDeviceSub => '周波数・出力・名前・位置';
 
   @override
   String get settingsHubApp => 'アプリ設定';
@@ -1347,13 +1332,13 @@ class AppLocalizationsJa extends AppLocalizations {
   String get settingsHubChannels => 'チャンネル';
 
   @override
-  String get settingsHubChannelsSub => 'スロット · 名前 + PSK · #ハッシュタグ · 有効';
+  String get settingsHubChannelsSub => 'チャンネル名・鍵・使用中のもの';
 
   @override
   String get settingsHubDiagnostics => '診断 & 接続';
 
   @override
-  String get settingsHubDiagnosticsSub => '無線接続・フレームログ・キャプチャ';
+  String get settingsHubDiagnosticsSub => '接続・信号・ログ';
 
   @override
   String get bootHeader => 'MESHMORE  /  同期中';
@@ -2756,7 +2741,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get deviceRadioRevertFailed => '元に戻せませんでした — 無線機は直前の値のままです。';
 
   @override
-  String get radioHealthTitle => '無線機の状態';
+  String get radioHealthTitle => '無線の状態';
 
   @override
   String get radioHealthRead => '取得';
@@ -2765,34 +2750,33 @@ class AppLocalizationsJa extends AppLocalizations {
   String get radioHealthReading => '取得中…';
 
   @override
-  String get radioHealthUnread =>
-      'まだ取得していません。「取得」で無線機自身の統計(CMD_GET_STATS)を読みます。';
+  String get radioHealthUnread => '「読む」を押してください';
 
   @override
   String radioHealthNoise(String dbm) {
-    return 'ノイズフロア $dbm dBm — 無線機自身の測定値';
+    return 'ノイズ $dbm dBm';
   }
 
   @override
   String radioHealthLast(String rssi, String snr) {
-    return '直近パケット RSSI $rssi dBm、SNR $snr dB — 無線機のパケット統計より';
+    return '直近 $rssi dBm · SNR $snr dB';
   }
 
   @override
   String radioHealthBattery(String volts) {
-    return 'バッテリー $volts V — 無線機のコア統計値(スマートフォン側の測定ではありません)';
+    return '電池 $volts V';
   }
 
   @override
-  String get radioHealthNotReported => 'このファームウェアでは報告されません';
+  String get radioHealthNotReported => '未報告';
 
   @override
   String radioHealthUptime(String uptime) {
-    return '稼働 $uptime — 無線機の稼働カウンタ(電源再投入でリセットされます)';
+    return '稼働 $uptime';
   }
 
   @override
-  String get radioHealthSource => 'すべて無線機自身のカウンタです。この画面の値はスマートフォン側の測定ではありません。';
+  String get radioHealthSource => '無線の値です';
 
   @override
   String get deviceLoadFromDevice => 'デバイスから読込';
@@ -3806,7 +3790,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get selfCheckDisk => '保存量と記録の一致';
 
   @override
-  String get locGroupAutoPublish => '自動送信';
+  String get locGroupAutoPublish => '公開';
 
   @override
   String get locGroupBeacon => 'ビーコン';
@@ -5090,4 +5074,22 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get reportActionSub => '送信先を選べるよう、端末にファイルを作成します。自動送信はしません。';
+
+  @override
+  String get settingsAppGroupRadio => '無線';
+
+  @override
+  String get settingsAppGroupSound => '表示と音';
+
+  @override
+  String get settingsAppGroupData => 'データ';
+
+  @override
+  String get settingsAppGroupSystem => 'システム';
+
+  @override
+  String get aboutReplayIntro => '初回画面をもう一度表示';
+
+  @override
+  String get toolsGroupDiagnostics => '無線の診断';
 }

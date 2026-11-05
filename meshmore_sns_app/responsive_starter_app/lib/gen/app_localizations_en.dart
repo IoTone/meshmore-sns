@@ -442,12 +442,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsBackgroundTitle => 'Stay connected in background';
 
   @override
-  String get settingsBackgroundOn =>
-      'Android: a persistent notification keeps the radio linked so messages arrive while backgrounded';
+  String get settingsBackgroundOn => 'Messages arrive while the app is closed';
 
   @override
-  String get settingsBackgroundOff =>
-      'Messages still arrive when you reopen the app (radio buffers them); no background notification';
+  String get settingsBackgroundOff => 'Messages arrive when you open the app';
 
   @override
   String get settingsTelemetryPoll => 'Gather node telemetry';
@@ -492,18 +490,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsPermissionsSubtitle =>
-      'Open the OS settings page for this app — flip Bluetooth / Notifications on or off here.';
-
-  @override
-  String get settingsShowIntro => 'Show intro again on next launch';
-
-  @override
-  String get settingsShowIntroEnabled =>
-      'Wipes the first-run flag so the permissions intro shows again — useful when you\'re testing the flow';
-
-  @override
-  String get settingsShowIntroDisabled =>
-      'Intro is currently scheduled for next launch';
+      'Bluetooth, notifications and location';
 
   @override
   String get termsTitle => 'Terms and privacy';
@@ -678,14 +665,13 @@ class AppLocalizationsEn extends AppLocalizations {
       'Demo mode — no radio. Explore channels, settings and docs without a companion.';
 
   @override
-  String get demoModeRow => 'Demo mode (no radio)';
+  String get demoModeRow => 'No radio';
 
   @override
-  String get demoModeOn => 'On — the app opens without connecting to a radio';
+  String get demoModeOn => 'Explore the app offline';
 
   @override
-  String get demoModeOff =>
-      'Off — the app connects to a paired radio at launch';
+  String get demoModeOff => 'Explore the app offline';
 
   @override
   String get firstRunHeader => 'MESHMORE · WELCOME';
@@ -1196,10 +1182,6 @@ class AppLocalizationsEn extends AppLocalizations {
       'Periodic + on-movement phone-GPS push to the device';
 
   @override
-  String get locHelp =>
-      'When the radio\'s GPS fix is stale, write the phone\'s position to it.';
-
-  @override
   String get locMaster => 'Auto-publish';
 
   @override
@@ -1327,7 +1309,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Off until you turn on SPEECH in App settings. Rate / pitch / voice take effect on the next utterance.';
 
   @override
-  String get voiceRate => 'Rate';
+  String get voiceRate => 'Speed';
 
   @override
   String get voicePitch => 'Pitch';
@@ -1391,7 +1373,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsGroupAbout => 'ABOUT';
 
   @override
-  String get settingsHubDeviceSub => 'MeshCore radio & device';
+  String get settingsHubDeviceSub => 'Frequency, power, name, position';
 
   @override
   String get settingsHubApp => 'App settings';
@@ -1409,13 +1391,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsHubChannels => 'Channels';
 
   @override
-  String get settingsHubChannelsSub => 'Slots · name + PSK · #hashtag · active';
+  String get settingsHubChannelsSub => 'Channel names, keys and the active one';
 
   @override
   String get settingsHubDiagnostics => 'Diagnostics & connect';
 
   @override
-  String get settingsHubDiagnosticsSub => 'Connect a radio, frame log, capture';
+  String get settingsHubDiagnosticsSub => 'Connect, signal, logs';
 
   @override
   String get bootHeader => 'MESHMORE  /  SYNCHRONIZING';
@@ -2863,7 +2845,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Undo did not apply — the radio kept its last values.';
 
   @override
-  String get radioHealthTitle => 'RADIO HEALTH';
+  String get radioHealthTitle => 'Radio health';
 
   @override
   String get radioHealthRead => 'Read';
@@ -2872,35 +2854,33 @@ class AppLocalizationsEn extends AppLocalizations {
   String get radioHealthReading => 'Reading…';
 
   @override
-  String get radioHealthUnread =>
-      'Not read yet. Read asks the radio for its own stats (CMD_GET_STATS).';
+  String get radioHealthUnread => 'Tap Read';
 
   @override
   String radioHealthNoise(String dbm) {
-    return 'noise floor $dbm dBm — the radio\'s own measurement';
+    return 'Noise $dbm dBm';
   }
 
   @override
   String radioHealthLast(String rssi, String snr) {
-    return 'last packet RSSI $rssi dBm, SNR $snr dB — from the radio\'s packet statistics';
+    return 'Last $rssi dBm · $snr dB SNR';
   }
 
   @override
   String radioHealthBattery(String volts) {
-    return 'battery $volts V — from the radio\'s core statistics, not a phone reading';
+    return 'Battery $volts V';
   }
 
   @override
-  String get radioHealthNotReported => 'not reported by this firmware';
+  String get radioHealthNotReported => 'Not reported';
 
   @override
   String radioHealthUptime(String uptime) {
-    return 'up $uptime — the radio\'s uptime counter, which resets when it power-cycles';
+    return 'Up $uptime';
   }
 
   @override
-  String get radioHealthSource =>
-      'All values are the radio\'s own counters; nothing here is measured by the phone.';
+  String get radioHealthSource => 'From the radio';
 
   @override
   String get deviceLoadFromDevice => 'Load from device';
@@ -3943,7 +3923,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get selfCheckDisk => 'Storage matches the books';
 
   @override
-  String get locGroupAutoPublish => 'Auto-publish';
+  String get locGroupAutoPublish => 'Publishing';
 
   @override
   String get locGroupBeacon => 'Beacon';
@@ -5277,4 +5257,22 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get reportActionSub =>
       'Writes a file on this device for you to send. Nothing is transmitted.';
+
+  @override
+  String get settingsAppGroupRadio => 'Radio';
+
+  @override
+  String get settingsAppGroupSound => 'Reading and sound';
+
+  @override
+  String get settingsAppGroupData => 'Data';
+
+  @override
+  String get settingsAppGroupSystem => 'System';
+
+  @override
+  String get aboutReplayIntro => 'Replay the first-run screens';
+
+  @override
+  String get toolsGroupDiagnostics => 'Radio diagnostics';
 }

@@ -857,13 +857,13 @@ abstract class AppLocalizations {
   /// No description provided for @settingsBackgroundOn.
   ///
   /// In en, this message translates to:
-  /// **'Android: a persistent notification keeps the radio linked so messages arrive while backgrounded'**
+  /// **'Messages arrive while the app is closed'**
   String get settingsBackgroundOn;
 
   /// No description provided for @settingsBackgroundOff.
   ///
   /// In en, this message translates to:
-  /// **'Messages still arrive when you reopen the app (radio buffers them); no background notification'**
+  /// **'Messages arrive when you open the app'**
   String get settingsBackgroundOff;
 
   /// No description provided for @settingsTelemetryPoll.
@@ -941,26 +941,8 @@ abstract class AppLocalizations {
   /// No description provided for @settingsPermissionsSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Open the OS settings page for this app — flip Bluetooth / Notifications on or off here.'**
+  /// **'Bluetooth, notifications and location'**
   String get settingsPermissionsSubtitle;
-
-  /// No description provided for @settingsShowIntro.
-  ///
-  /// In en, this message translates to:
-  /// **'Show intro again on next launch'**
-  String get settingsShowIntro;
-
-  /// No description provided for @settingsShowIntroEnabled.
-  ///
-  /// In en, this message translates to:
-  /// **'Wipes the first-run flag so the permissions intro shows again — useful when you\'re testing the flow'**
-  String get settingsShowIntroEnabled;
-
-  /// No description provided for @settingsShowIntroDisabled.
-  ///
-  /// In en, this message translates to:
-  /// **'Intro is currently scheduled for next launch'**
-  String get settingsShowIntroDisabled;
 
   /// No description provided for @termsTitle.
   ///
@@ -1265,19 +1247,19 @@ abstract class AppLocalizations {
   /// No description provided for @demoModeRow.
   ///
   /// In en, this message translates to:
-  /// **'Demo mode (no radio)'**
+  /// **'No radio'**
   String get demoModeRow;
 
   /// No description provided for @demoModeOn.
   ///
   /// In en, this message translates to:
-  /// **'On — the app opens without connecting to a radio'**
+  /// **'Explore the app offline'**
   String get demoModeOn;
 
   /// No description provided for @demoModeOff.
   ///
   /// In en, this message translates to:
-  /// **'Off — the app connects to a paired radio at launch'**
+  /// **'Explore the app offline'**
   String get demoModeOff;
 
   /// No description provided for @firstRunHeader.
@@ -2156,12 +2138,6 @@ abstract class AppLocalizations {
   /// **'Periodic + on-movement phone-GPS push to the device'**
   String get locTileSubtitle;
 
-  /// No description provided for @locHelp.
-  ///
-  /// In en, this message translates to:
-  /// **'When the radio\'s GPS fix is stale, write the phone\'s position to it.'**
-  String get locHelp;
-
   /// No description provided for @locMaster.
   ///
   /// In en, this message translates to:
@@ -2363,7 +2339,7 @@ abstract class AppLocalizations {
   /// No description provided for @voiceRate.
   ///
   /// In en, this message translates to:
-  /// **'Rate'**
+  /// **'Speed'**
   String get voiceRate;
 
   /// No description provided for @voicePitch.
@@ -2471,7 +2447,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsHubDeviceSub.
   ///
   /// In en, this message translates to:
-  /// **'MeshCore radio & device'**
+  /// **'Frequency, power, name, position'**
   String get settingsHubDeviceSub;
 
   /// No description provided for @settingsHubApp.
@@ -2507,7 +2483,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsHubChannelsSub.
   ///
   /// In en, this message translates to:
-  /// **'Slots · name + PSK · #hashtag · active'**
+  /// **'Channel names, keys and the active one'**
   String get settingsHubChannelsSub;
 
   /// No description provided for @settingsHubDiagnostics.
@@ -2519,7 +2495,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsHubDiagnosticsSub.
   ///
   /// In en, this message translates to:
-  /// **'Connect a radio, frame log, capture'**
+  /// **'Connect, signal, logs'**
   String get settingsHubDiagnosticsSub;
 
   /// No description provided for @bootHeader.
@@ -4919,7 +4895,7 @@ abstract class AppLocalizations {
   /// No description provided for @radioHealthTitle.
   ///
   /// In en, this message translates to:
-  /// **'RADIO HEALTH'**
+  /// **'Radio health'**
   String get radioHealthTitle;
 
   /// No description provided for @radioHealthRead.
@@ -4937,43 +4913,43 @@ abstract class AppLocalizations {
   /// No description provided for @radioHealthUnread.
   ///
   /// In en, this message translates to:
-  /// **'Not read yet. Read asks the radio for its own stats (CMD_GET_STATS).'**
+  /// **'Tap Read'**
   String get radioHealthUnread;
 
   /// No description provided for @radioHealthNoise.
   ///
   /// In en, this message translates to:
-  /// **'noise floor {dbm} dBm — the radio\'s own measurement'**
+  /// **'Noise {dbm} dBm'**
   String radioHealthNoise(String dbm);
 
   /// No description provided for @radioHealthLast.
   ///
   /// In en, this message translates to:
-  /// **'last packet RSSI {rssi} dBm, SNR {snr} dB — from the radio\'s packet statistics'**
+  /// **'Last {rssi} dBm · {snr} dB SNR'**
   String radioHealthLast(String rssi, String snr);
 
   /// No description provided for @radioHealthBattery.
   ///
   /// In en, this message translates to:
-  /// **'battery {volts} V — from the radio\'s core statistics, not a phone reading'**
+  /// **'Battery {volts} V'**
   String radioHealthBattery(String volts);
 
   /// No description provided for @radioHealthNotReported.
   ///
   /// In en, this message translates to:
-  /// **'not reported by this firmware'**
+  /// **'Not reported'**
   String get radioHealthNotReported;
 
   /// No description provided for @radioHealthUptime.
   ///
   /// In en, this message translates to:
-  /// **'up {uptime} — the radio\'s uptime counter, which resets when it power-cycles'**
+  /// **'Up {uptime}'**
   String radioHealthUptime(String uptime);
 
   /// No description provided for @radioHealthSource.
   ///
   /// In en, this message translates to:
-  /// **'All values are the radio\'s own counters; nothing here is measured by the phone.'**
+  /// **'From the radio'**
   String get radioHealthSource;
 
   /// No description provided for @deviceLoadFromDevice.
@@ -6809,7 +6785,7 @@ abstract class AppLocalizations {
   /// No description provided for @locGroupAutoPublish.
   ///
   /// In en, this message translates to:
-  /// **'Auto-publish'**
+  /// **'Publishing'**
   String get locGroupAutoPublish;
 
   /// No description provided for @locGroupBeacon.
@@ -8930,6 +8906,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Writes a file on this device for you to send. Nothing is transmitted.'**
   String get reportActionSub;
+
+  /// No description provided for @settingsAppGroupRadio.
+  ///
+  /// In en, this message translates to:
+  /// **'Radio'**
+  String get settingsAppGroupRadio;
+
+  /// No description provided for @settingsAppGroupSound.
+  ///
+  /// In en, this message translates to:
+  /// **'Reading and sound'**
+  String get settingsAppGroupSound;
+
+  /// No description provided for @settingsAppGroupData.
+  ///
+  /// In en, this message translates to:
+  /// **'Data'**
+  String get settingsAppGroupData;
+
+  /// No description provided for @settingsAppGroupSystem.
+  ///
+  /// In en, this message translates to:
+  /// **'System'**
+  String get settingsAppGroupSystem;
+
+  /// No description provided for @aboutReplayIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'Replay the first-run screens'**
+  String get aboutReplayIntro;
+
+  /// No description provided for @toolsGroupDiagnostics.
+  ///
+  /// In en, this message translates to:
+  /// **'Radio diagnostics'**
+  String get toolsGroupDiagnostics;
 }
 
 class _AppLocalizationsDelegate

@@ -247,8 +247,8 @@
   "pairChooseAnother": "Choose another radio",
   "settingsHeading": "App settings",
   "settingsBackgroundTitle": "Stay connected in background",
-  "settingsBackgroundOn": "Android: a persistent notification keeps the radio linked so messages arrive while backgrounded",
-  "settingsBackgroundOff": "Messages still arrive when you reopen the app (radio buffers them); no background notification",
+  "settingsBackgroundOn": "Messages arrive while the app is closed",
+  "settingsBackgroundOff": "Messages arrive when you open the app",
   "settingsTelemetryPoll": "Gather node telemetry",
   "settingsTelemetryPollOn": "Politely polls contacts for temperature / altitude (a little OTA airtime)",
   "settingsTelemetryPollOff": "No telemetry requests sent; query a node manually from its detail",
@@ -261,10 +261,7 @@
   "settingsSpeechOff": "Text-to-speech OFF (default) · reads channel messages",
   "settingsSpeechMuted": "Text-to-speech ON, but the audio mute is silencing it",
   "settingsPermissions": "Permissions",
-  "settingsPermissionsSubtitle": "Open the OS settings page for this app — flip Bluetooth / Notifications on or off here.",
-  "settingsShowIntro": "Show intro again on next launch",
-  "settingsShowIntroEnabled": "Wipes the first-run flag so the permissions intro shows again — useful when you're testing the flow",
-  "settingsShowIntroDisabled": "Intro is currently scheduled for next launch",
+  "settingsPermissionsSubtitle": "Bluetooth, notifications and location",
   "termsTitle": "Terms and privacy",
   "termsLead": "This app talks to a mesh radio. There is no account, no cloud and no analytics.",
   "termsSectionLocal": "WHAT STAYS ON THIS DEVICE",
@@ -343,9 +340,9 @@
   "dashboardAudioUnmute": "Unmute alert sounds",
   "demoBanner": "DEMO",
   "demoTooltip": "Demo mode — no radio. Explore channels, settings and docs without a companion.",
-  "demoModeRow": "Demo mode (no radio)",
-  "demoModeOn": "On — the app opens without connecting to a radio",
-  "demoModeOff": "Off — the app connects to a paired radio at launch",
+  "demoModeRow": "No radio",
+  "demoModeOn": "Explore the app offline",
+  "demoModeOff": "Explore the app offline",
   "firstRunHeader": "MESHMORE · WELCOME",
   "firstRunTitle": "Quick heads-up on what we'll ask for",
   "firstRunBleTitle": "Bluetooth",
@@ -608,7 +605,6 @@
   "deviceGpsIntervalWhy": "This firmware build fixes the polling cadence: the sensors module does not expose gps_interval.",
   "locTitle": "Auto-publish location",
   "locTileSubtitle": "Periodic + on-movement phone-GPS push to the device",
-  "locHelp": "When the radio's GPS fix is stale, write the phone's position to it.",
   "locMaster": "Auto-publish",
   "locMasterOn": "On — using phone GPS",
   "locMasterOff": "Off",
@@ -706,7 +702,7 @@
   "gridHeadingHud": "HEADING",
   "voiceSettingsTitle": "Voice (TTS quality)",
   "voiceSettingsHint": "Off until you turn on SPEECH in App settings. Rate / pitch / voice take effect on the next utterance.",
-  "voiceRate": "Rate",
+  "voiceRate": "Speed",
   "voicePitch": "Pitch",
   "voicePicker": "Voice",
   "voicePickerEmpty": "No voices reported by the platform engine — using the system default.",
@@ -755,15 +751,15 @@
   "settingsGroupApp": "APP",
   "settingsGroupConnect": "CONNECTION",
   "settingsGroupAbout": "ABOUT",
-  "settingsHubDeviceSub": "MeshCore radio & device",
+  "settingsHubDeviceSub": "Frequency, power, name, position",
   "settingsHubApp": "App settings",
   "settingsHubAppSub": "Connection, language, speech, data",
   "settingsHubProfile": "Profile & personalization",
   "settingsHubProfileSub": "Theme, font size, audio, accessibility",
   "settingsHubChannels": "Channels",
-  "settingsHubChannelsSub": "Slots · name + PSK · #hashtag · active",
+  "settingsHubChannelsSub": "Channel names, keys and the active one",
   "settingsHubDiagnostics": "Diagnostics & connect",
-  "settingsHubDiagnosticsSub": "Connect a radio, frame log, capture",
+  "settingsHubDiagnosticsSub": "Connect, signal, logs",
   "bootHeader": "MESHMORE  /  SYNCHRONIZING",
   "bootConnecting": "CONNECTING TO RADIO…",
   "bootHandshaking": "HANDSHAKING…",
@@ -1832,11 +1828,11 @@
   "deviceRadioReverted": "Previous operating point restored.",
   "deviceRadioRevertUnavailable": "Undo is one use only.",
   "deviceRadioRevertFailed": "Undo did not apply — the radio kept its last values.",
-  "radioHealthTitle": "RADIO HEALTH",
+  "radioHealthTitle": "Radio health",
   "radioHealthRead": "Read",
   "radioHealthReading": "Reading…",
-  "radioHealthUnread": "Not read yet. Read asks the radio for its own stats (CMD_GET_STATS).",
-  "radioHealthNoise": "noise floor {dbm} dBm — the radio's own measurement",
+  "radioHealthUnread": "Tap Read",
+  "radioHealthNoise": "Noise {dbm} dBm",
   "@radioHealthNoise": {
     "placeholders": {
       "dbm": {
@@ -1844,7 +1840,7 @@
       }
     }
   },
-  "radioHealthLast": "last packet RSSI {rssi} dBm, SNR {snr} dB — from the radio's packet statistics",
+  "radioHealthLast": "Last {rssi} dBm · {snr} dB SNR",
   "@radioHealthLast": {
     "placeholders": {
       "rssi": {
@@ -1855,7 +1851,7 @@
       }
     }
   },
-  "radioHealthBattery": "battery {volts} V — from the radio's core statistics, not a phone reading",
+  "radioHealthBattery": "Battery {volts} V",
   "@radioHealthBattery": {
     "placeholders": {
       "volts": {
@@ -1863,8 +1859,8 @@
       }
     }
   },
-  "radioHealthNotReported": "not reported by this firmware",
-  "radioHealthUptime": "up {uptime} — the radio's uptime counter, which resets when it power-cycles",
+  "radioHealthNotReported": "Not reported",
+  "radioHealthUptime": "Up {uptime}",
   "@radioHealthUptime": {
     "placeholders": {
       "uptime": {
@@ -1872,7 +1868,7 @@
       }
     }
   },
-  "radioHealthSource": "All values are the radio's own counters; nothing here is measured by the phone.",
+  "radioHealthSource": "From the radio",
   "deviceLoadFromDevice": "Load from device",
   "deviceApplyRadio": "Apply radio params",
   "deviceConnectFirst": "Connect a radio first (Diagnostics & connect).",
@@ -2524,7 +2520,7 @@
   "selfCheckGuards": "Refusals (size, budget, policy, coverage)",
   "selfCheckExpiry": "Delete-after expiry",
   "selfCheckDisk": "Storage matches the books",
-  "locGroupAutoPublish": "Auto-publish",
+  "locGroupAutoPublish": "Publishing",
   "locGroupBeacon": "Beacon",
   "locGroupManual": "Manual",
   "deviceManageChannels": "Manage channels",
@@ -3513,5 +3509,11 @@
   "reportCopyBundle": "Copy the bundle",
   "reportCopied": "Bundle copied.",
   "blockedKeysNotPersisted": "This list could not be saved on this device. It filters for now and will be empty after a restart.",
-  "reportActionSub": "Writes a file on this device for you to send. Nothing is transmitted."
+  "reportActionSub": "Writes a file on this device for you to send. Nothing is transmitted.",
+  "settingsAppGroupRadio": "Radio",
+  "settingsAppGroupSound": "Reading and sound",
+  "settingsAppGroupData": "Data",
+  "settingsAppGroupSystem": "System",
+  "aboutReplayIntro": "Replay the first-run screens",
+  "toolsGroupDiagnostics": "Radio diagnostics"
 }

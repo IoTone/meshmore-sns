@@ -9,8 +9,8 @@ import '../gen/app_localizations.dart';
 import '../l10n/locale_controller.dart';
 import '../meshcore/block_store.dart';
 import '../meshcore/meshcore_controller.dart';
-import '../perms/first_run_controller.dart';
 import '../perms/permissions_service.dart';
+import '../ui/mm_components.dart';
 import '../ui/mm_scaffold.dart';
 import '../tts/tts_controller.dart';
 
@@ -123,7 +123,6 @@ class AppSettingsScreen extends StatelessWidget {
     final TtsController tts = context.watch<TtsController>();
     final DemoMode demo = context.watch<DemoMode>();
     final MeshcoreController mc = context.watch<MeshcoreController>();
-    final FirstRunController fr = context.watch<FirstRunController>();
     final LocaleController lc = context.watch<LocaleController>();
     final AppLocalizations l = AppLocalizations.of(context);
     return Scaffold(
@@ -135,6 +134,7 @@ class AppSettingsScreen extends StatelessWidget {
           // otherwise ready. Say so once, in the place the toggle lives, so
           // a silent lock screen is not mistaken for a radio failure.
           const _NotificationsDeniedBanner(),
+          MmSectionHeader(l.settingsAppGroupRadio),
           // Radio-free mode. Off is the normal state; turning it off asks an
           // already-paired companion to reconnect rather than waiting for the
           // next launch.
@@ -183,6 +183,7 @@ class AppSettingsScreen extends StatelessWidget {
             value: mc.telemetryPollEnabled,
             onChanged: (bool v) => mc.setTelemetryPollEnabled(v),
           ),
+          MmSectionHeader(l.settingsAppGroupSound),
           // R4 — language picker. Tap-to-open bottom sheet with
           // System / English / 日本語; the choice is persisted by
           // LocaleController and re-skins the whole tree live.
@@ -225,14 +226,15 @@ class AppSettingsScreen extends StatelessWidget {
             leading: const Icon(Icons.tune),
             title: Text(l.voiceSettingsTitle),
             subtitle: Text(
-              '${l.voiceRate} · ${tts.rate.toStringAsFixed(2)}  ·  '
-              '${l.voicePitch} · ${tts.pitch.toStringAsFixed(2)}'
-              '${tts.voice == null ? '' : '  ·  ${tts.voice!.name}'}',
+              '${l.voiceRate} ${tts.rate.toStringAsFixed(1)}× · '
+              '${l.voicePitch} ${tts.pitch.toStringAsFixed(1)}'
+              '${tts.voice == null ? '' : ' · ${tts.voice!.name}'}',
               style: TextStyle(color: cs.onSurface.withValues(alpha: .6)),
             ),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => context.push('/settings/voice'),
           ),
+          MmSectionHeader(l.settingsAppGroupData),
           // R36 — Auto-publish location. Lives here so users find
           // it under "App settings" rather than buried in Device
           // config; the device-side advert policy is separate.
@@ -253,6 +255,7 @@ class AppSettingsScreen extends StatelessWidget {
             trailing: const Icon(Icons.chevron_right),
             onTap: () => context.push('/settings/networks'),
           ),
+          MmSectionHeader(l.settingsAppGroupSystem),
           // R21 / U12 — Permissions row: jumps to the OS app-settings
           // page where the user can flip BLE / Notifications etc.
           // back on after a permanent denial.
@@ -288,18 +291,6 @@ class AppSettingsScreen extends StatelessWidget {
                 style: TextStyle(color: cs.onSurface.withValues(alpha: .6))),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => context.push('/settings/terms'),
-          ),
-          ListTile(
-            leading: const Icon(Icons.refresh),
-            title: Text(l.settingsShowIntro),
-            subtitle: Text(
-              fr.done
-                  ? l.settingsShowIntroEnabled
-                  : l.settingsShowIntroDisabled,
-              style: TextStyle(color: cs.onSurface.withValues(alpha: .6)),
-            ),
-            enabled: fr.done,
-            onTap: () => fr.reset(),
           ),
         ],
       ),
