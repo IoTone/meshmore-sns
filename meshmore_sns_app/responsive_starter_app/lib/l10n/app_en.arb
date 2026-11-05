@@ -251,7 +251,7 @@
   "pairChooseAnother": "Choose another radio",
   "settingsHeading": "App settings",
   "settingsBackgroundTitle": "Stay connected in background",
-  "settingsBackgroundOn": "Android: a persistent notification keeps the radio linked so messages arrive while backgrounded",
+  "settingsBackgroundOn": "Android: a persistent notification keeps the radio linked so messages arrive while backgrounded, and it starts again after a phone restart",
   "settingsBackgroundOff": "Messages still arrive when you reopen the app (radio buffers them); no background notification",
   "settingsTelemetryPoll": "Gather node telemetry",
   "settingsTelemetryPollOn": "Politely polls contacts for temperature / altitude (a little OTA airtime)",

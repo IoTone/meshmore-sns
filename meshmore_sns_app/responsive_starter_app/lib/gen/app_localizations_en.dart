@@ -449,7 +449,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsBackgroundOn =>
-      'Android: a persistent notification keeps the radio linked so messages arrive while backgrounded';
+      'Android: a persistent notification keeps the radio linked so messages arrive while backgrounded, and it starts again after a phone restart';
 
   @override
   String get settingsBackgroundOff =>

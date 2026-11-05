@@ -857,7 +857,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsBackgroundOn.
   ///
   /// In en, this message translates to:
-  /// **'Android: a persistent notification keeps the radio linked so messages arrive while backgrounded'**
+  /// **'Android: a persistent notification keeps the radio linked so messages arrive while backgrounded, and it starts again after a phone restart'**
   String get settingsBackgroundOn;
 
   /// No description provided for @settingsBackgroundOff.

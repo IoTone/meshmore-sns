@@ -428,7 +428,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get settingsBackgroundOn =>
-      'Android: 常駐通知でラジオ接続を維持し、バックグラウンド中もメッセージを受信';
+      'Android: 常駐通知でラジオ接続を維持し、バックグラウンド中もメッセージを受信。端末の再起動後も自動で再開します';
 
   @override
   String get settingsBackgroundOff =>

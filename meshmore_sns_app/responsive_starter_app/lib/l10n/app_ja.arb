@@ -243,7 +243,7 @@
   "pairChooseAnother": "別のラジオを選ぶ",
   "settingsHeading": "アプリ設定",
   "settingsBackgroundTitle": "バックグラウンドで接続を維持",
-  "settingsBackgroundOn": "Android: 常駐通知でラジオ接続を維持し、バックグラウンド中もメッセージを受信",
+  "settingsBackgroundOn": "Android: 常駐通知でラジオ接続を維持し、バックグラウンド中もメッセージを受信。端末の再起動後も自動で再開します",
   "settingsBackgroundOff": "アプリ再表示時にメッセージ受信 (ラジオがバッファ); バックグラウンド通知なし",
   "settingsTelemetryPoll": "ノードのテレメトリを収集",
   "settingsTelemetryPollOn": "コンタクトに温度・標高を控えめに問い合わせ (少量の電波使用)",
