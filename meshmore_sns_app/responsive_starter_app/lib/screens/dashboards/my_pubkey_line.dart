@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../gen/app_localizations.dart';
+import '../../theme/mm_skin.dart';
 import '../../ui/mm_shape.dart';
 
 /// Your own public key, rendered the same way on every skin.
@@ -44,7 +45,7 @@ class MyPubkeyLine extends StatelessWidget {
         TextStyle(
           color: cs.onSurfaceVariant,
           fontFamily: 'JetBrains Mono',
-          fontSize: 12,
+          fontSize: context.skin.type.sizeBody,
           height: 1.5,
         );
     final String? hex = pubKeyHex;

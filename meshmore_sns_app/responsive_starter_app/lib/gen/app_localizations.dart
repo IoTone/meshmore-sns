@@ -164,6 +164,12 @@ abstract class AppLocalizations {
   /// **'{n, plural, =0{0 known} =1{1 known} other{{n} known}}'**
   String dashboardKnownCount(int n);
 
+  /// One line on the dashboard: how many nodes the app knows, and the radio's own contact table. One localised sentence rather than fragments joined with literal separators.
+  ///
+  /// In en, this message translates to:
+  /// **'{n, plural, =0{0 known} =1{1 known} other{{n} known}} · contacts {contacts}'**
+  String dashboardKnownAndContacts(int n, String contacts);
+
   /// No description provided for @dashboardMyPubkey.
   ///
   /// In en, this message translates to:
@@ -362,11 +368,11 @@ abstract class AppLocalizations {
   /// **'Listening for nodes…'**
   String get dashHyperEmpty;
 
-  /// No description provided for @dashHyperPeers.
+  /// No description provided for @dashPeers.
   ///
   /// In en, this message translates to:
   /// **'PEERS'**
-  String get dashHyperPeers;
+  String get dashPeers;
 
   /// No description provided for @dashAgHudSignal.
   ///
@@ -389,7 +395,7 @@ abstract class AppLocalizations {
   /// No description provided for @dashReconNoContacts.
   ///
   /// In en, this message translates to:
-  /// **'no contacts in range'**
+  /// **'No contacts in range'**
   String get dashReconNoContacts;
 
   /// No description provided for @dashAgHudOfKnown.
@@ -419,19 +425,19 @@ abstract class AppLocalizations {
   /// No description provided for @dashboardNoActivity.
   ///
   /// In en, this message translates to:
-  /// **'— no activity —'**
+  /// **'No activity yet'**
   String get dashboardNoActivity;
 
   /// No description provided for @dashboardAwaitingDevice.
   ///
   /// In en, this message translates to:
-  /// **'— awaiting device —'**
+  /// **'Waiting for the radio…'**
   String get dashboardAwaitingDevice;
 
   /// No description provided for @dashboardAwaitingDeviceLocation.
   ///
   /// In en, this message translates to:
-  /// **'— awaiting device location —'**
+  /// **'Waiting for a location…'**
   String get dashboardAwaitingDeviceLocation;
 
   /// No description provided for @dashboardUnnamed.
@@ -443,7 +449,7 @@ abstract class AppLocalizations {
   /// No description provided for @dashboardLocationNotSet.
   ///
   /// In en, this message translates to:
-  /// **'Not set — neither device nor phone fix yet'**
+  /// **'No location'**
   String get dashboardLocationNotSet;
 
   /// No description provided for @dashboardLocationConfigure.
@@ -452,16 +458,10 @@ abstract class AppLocalizations {
   /// **'CONFIGURE'**
   String get dashboardLocationConfigure;
 
-  /// No description provided for @dashboardLocationSourceLabel.
-  ///
-  /// In en, this message translates to:
-  /// **'source · {source}'**
-  String dashboardLocationSourceLabel(String source);
-
   /// No description provided for @statusLinked.
   ///
   /// In en, this message translates to:
-  /// **'LINKED · NO ALERTS'**
+  /// **'LINKED'**
   String get statusLinked;
 
   /// No description provided for @statusSyncing.
@@ -2462,23 +2462,11 @@ abstract class AppLocalizations {
   /// **'ABOUT'**
   String get settingsGroupAbout;
 
-  /// No description provided for @settingsHubDeviceSub.
-  ///
-  /// In en, this message translates to:
-  /// **'MeshCore radio & device'**
-  String get settingsHubDeviceSub;
-
   /// No description provided for @settingsHubApp.
   ///
   /// In en, this message translates to:
   /// **'App settings'**
   String get settingsHubApp;
-
-  /// No description provided for @settingsHubAppSub.
-  ///
-  /// In en, this message translates to:
-  /// **'Connection, language, speech, data'**
-  String get settingsHubAppSub;
 
   /// No description provided for @settingsHubProfile.
   ///
@@ -2486,35 +2474,17 @@ abstract class AppLocalizations {
   /// **'Profile & personalization'**
   String get settingsHubProfile;
 
-  /// No description provided for @settingsHubProfileSub.
-  ///
-  /// In en, this message translates to:
-  /// **'Theme, font size, audio, accessibility'**
-  String get settingsHubProfileSub;
-
   /// No description provided for @settingsHubChannels.
   ///
   /// In en, this message translates to:
   /// **'Channels'**
   String get settingsHubChannels;
 
-  /// No description provided for @settingsHubChannelsSub.
-  ///
-  /// In en, this message translates to:
-  /// **'Slots · name + PSK · #hashtag · active'**
-  String get settingsHubChannelsSub;
-
   /// No description provided for @settingsHubDiagnostics.
   ///
   /// In en, this message translates to:
   /// **'Diagnostics & connect'**
   String get settingsHubDiagnostics;
-
-  /// No description provided for @settingsHubDiagnosticsSub.
-  ///
-  /// In en, this message translates to:
-  /// **'Connect a radio, frame log, capture'**
-  String get settingsHubDiagnosticsSub;
 
   /// No description provided for @bootHeader.
   ///
@@ -5480,12 +5450,6 @@ abstract class AppLocalizations {
   /// **'Tools'**
   String get settingsHubTools;
 
-  /// No description provided for @settingsHubToolsSub.
-  ///
-  /// In en, this message translates to:
-  /// **'Ping, trace, discover, soak, range test'**
-  String get settingsHubToolsSub;
-
   /// No description provided for @toolsTitle.
   ///
   /// In en, this message translates to:
@@ -6110,18 +6074,6 @@ abstract class AppLocalizations {
   /// **'Information'**
   String get settingsHubInfo;
 
-  /// No description provided for @settingsHubInfoSub.
-  ///
-  /// In en, this message translates to:
-  /// **'About, licences, version'**
-  String get settingsHubInfoSub;
-
-  /// No description provided for @settingsHubDocsSub.
-  ///
-  /// In en, this message translates to:
-  /// **'Protocol, firmware, app, field notes'**
-  String get settingsHubDocsSub;
-
   /// No description provided for @settingsNotifDeniedPermanent.
   ///
   /// In en, this message translates to:
@@ -6145,12 +6097,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Offline maps'**
   String get settingsHubMaps;
-
-  /// No description provided for @settingsHubMapsSub.
-  ///
-  /// In en, this message translates to:
-  /// **'Basemap, event maps, storage'**
-  String get settingsHubMapsSub;
 
   /// No description provided for @mapsTitle.
   ///

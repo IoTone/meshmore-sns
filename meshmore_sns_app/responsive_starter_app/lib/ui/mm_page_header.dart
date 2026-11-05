@@ -22,17 +22,15 @@ class MmPageHeader extends StatelessWidget {
   const MmPageHeader({
     super.key,
     required this.title,
-    this.subtitle,
     this.actions = const <Widget>[],
   });
 
   /// Minimum height, so the first content row starts at the same y on
-  /// every view. Taller only when a view supplies a subtitle or tall
-  /// actions — never to eyeball a particular screen.
+  /// every view. Taller only when a view supplies tall actions — never to
+  /// eyeball a particular screen.
   static const double minHeight = 56;
 
   final String title;
-  final String? subtitle;
   final List<Widget> actions;
 
   @override
@@ -69,26 +67,7 @@ class MmPageHeader extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(16, 8, 8, 8),
           child: Row(
             children: <Widget>[
-              Expanded(
-                child: subtitle == null
-                    ? label
-                    : Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: <Widget>[
-                          label,
-                          const SizedBox(height: 2),
-                          Text(
-                            subtitle!,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: (tt.bodySmall ??
-                                    TextStyle(fontSize: skin.type.sizeBody))
-                                .copyWith(color: skin.color.fgMuted),
-                          ),
-                        ],
-                      ),
-              ),
+              Expanded(child: label),
               for (final Widget a in actions) ...<Widget>[
                 const SizedBox(width: 4),
                 a,

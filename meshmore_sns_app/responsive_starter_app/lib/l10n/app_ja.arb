@@ -18,6 +18,17 @@
       }
     }
   },
+  "dashboardKnownAndContacts": "{n}件 既知 · 連絡先 {contacts}",
+  "@dashboardKnownAndContacts": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "contacts": {
+        "type": "String"
+      }
+    }
+  },
   "dashboardMyPubkey": "自分の公開鍵 · {hex}",
   "@dashboardMyPubkey": {
     "placeholders": {
@@ -85,7 +96,7 @@
   "dashNervKnown": "既知",
   "dashNervEvents": "イベント",
   "dashHyperEmpty": "ノードを探索中…",
-  "dashHyperPeers": "ピア",
+  "dashPeers": "ピア",
   "dashAgHudSignal": "シグナル",
   "dashAgHudTraffic": "ch トラフィック",
   "dashDrPopLink": "リンク",
@@ -101,21 +112,13 @@
   "dashboardLocation": "現在地",
   "dashboardBattery": "バッテリー",
   "dashboardRecent": "最近のアクティビティ",
-  "dashboardNoActivity": "— アクティビティなし —",
-  "dashboardAwaitingDevice": "— デバイス待機中 —",
-  "dashboardAwaitingDeviceLocation": "— デバイス位置情報を待機中 —",
+  "dashboardNoActivity": "まだ動きはありません",
+  "dashboardAwaitingDevice": "無線を待っています…",
+  "dashboardAwaitingDeviceLocation": "位置情報を待っています…",
   "dashboardUnnamed": "(名前なし)",
-  "dashboardLocationNotSet": "未設定 — デバイス・スマートフォンともに位置情報未取得",
+  "dashboardLocationNotSet": "位置情報なし",
   "dashboardLocationConfigure": "設定",
-  "dashboardLocationSourceLabel": "ソース · {source}",
-  "@dashboardLocationSourceLabel": {
-    "placeholders": {
-      "source": {
-        "type": "String"
-      }
-    }
-  },
-  "statusLinked": "接続中 · 通常",
+  "statusLinked": "接続中",
   "statusSyncing": "同期中…",
   "statusHandshaking": "同期中…",
   "statusReconnecting": "再接続中…",
@@ -710,15 +713,10 @@
   "settingsGroupApp": "アプリ",
   "settingsGroupConnect": "接続",
   "settingsGroupAbout": "このアプリについて",
-  "settingsHubDeviceSub": "MeshCore ラジオ & デバイス",
   "settingsHubApp": "アプリ設定",
-  "settingsHubAppSub": "接続 · 言語 · 音声 · データ",
   "settingsHubProfile": "プロフィール & パーソナライズ",
-  "settingsHubProfileSub": "テーマ · フォントサイズ · 音声 · アクセシビリティ",
   "settingsHubChannels": "チャンネル",
-  "settingsHubChannelsSub": "スロット · 名前 + PSK · #ハッシュタグ · 有効",
   "settingsHubDiagnostics": "診断 & 接続",
-  "settingsHubDiagnosticsSub": "無線接続・フレームログ・キャプチャ",
   "bootHeader": "MESHMORE  /  同期中",
   "bootConnecting": "ラジオに接続中…",
   "bootHandshaking": "ハンドシェイク中…",
@@ -1831,7 +1829,6 @@
   "deliveryFailed": "未配信 — 確認応答なし、または送信失敗",
   "deliveryUnknown": "アプリ終了中に送信 — 無線機が送信したかは不明です",
   "settingsHubTools": "ツール",
-  "settingsHubToolsSub": "Ping・トレース・探索・ソーク・レンジテスト",
   "toolsTitle": "ツール",
   "toolsOffline": "未接続 — ツールには無線機が必要です。",
   "toolsRunning": "実行中",
@@ -1936,13 +1933,10 @@
   "rangeCopyCsv": "CSV をコピー",
   "rangeFlood": "フラッド",
   "settingsHubInfo": "情報",
-  "settingsHubInfoSub": "このアプリ・ライセンス・バージョン",
-  "settingsHubDocsSub": "プロトコル・ファームウェア・アプリ・実地メモ",
   "settingsNotifDeniedPermanent": "通知が永続的に拒否されました。バックグラウンドサービスには常駐通知が必要です。",
   "settingsNotifDeniedTransient": "バックグラウンドサービスには通知の許可が必要です。「設定を開く」から許可してください。",
   "deviceAdvertPropagatesHint": "名前・位置の変更は次のアドバートで反映されます (ノード → アドバート送信)。",
   "settingsHubMaps": "オフライン地図",
-  "settingsHubMapsSub": "ベースマップ・イベント地図・容量",
   "mapsTitle": "オフライン地図",
   "mapsOffline": "ネットワークがありません。新しい地図の設定はオンライン時のみ可能です。ダウンロードは自動で再開します。",
   "mapsStorage": "ストレージ",

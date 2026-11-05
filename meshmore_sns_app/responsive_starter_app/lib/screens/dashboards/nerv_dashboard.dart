@@ -29,7 +29,7 @@ class NervDashboard extends StatelessWidget {
     final MmSkin skin = context.skin;
     final DashboardModel m = DashboardModel.gather(mc, l);
     final TextStyle mono = TextStyle(
-        fontFamily: skin.type.monoFamily, color: skin.color.fg, fontSize: 12);
+        fontFamily: skin.type.monoFamily, color: skin.color.fg, fontSize: skin.type.sizeBody);
 
     return MmScaffold(
       child: ListView(
@@ -38,19 +38,9 @@ class NervDashboard extends StatelessWidget {
           // Brand bar + status pills.
           Row(
             children: <Widget>[
-              Expanded(
-                child: Text(
-                  'NERV',
-                  style: TextStyle(
-                    fontFamily:
-                        skin.type.headingFamily ?? skin.type.monoFamily,
-                    color: skin.color.accent,
-                    fontSize: 15,
-                    letterSpacing: 3,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
+              // The skin's identity is its own typography and colour, not a
+              // second name for a screen the strip already names.
+              const Spacer(),
               MmStatusPill(m.channelLabel),
               const SizedBox(width: 6),
               MmStatusPill(
@@ -164,7 +154,7 @@ class NervDashboard extends StatelessWidget {
                         children: <Widget>[
                           Text(e.time,
                               style: mono.copyWith(
-                                  color: skin.color.fgMuted, fontSize: 11)),
+                                  color: skin.color.fgMuted, fontSize: skin.type.sizeSm)),
                           const SizedBox(width: 8),
                           Expanded(child: Text(e.text, style: mono)),
                         ],

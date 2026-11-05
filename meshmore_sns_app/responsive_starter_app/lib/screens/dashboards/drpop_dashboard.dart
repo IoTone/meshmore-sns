@@ -63,7 +63,7 @@ class DrPopDashboard extends StatelessWidget {
                     style: TextStyle(
                         fontFamily: skin.type.headingFamily,
                         color: magenta,
-                        fontSize: 20,
+                        fontSize: skin.type.sizeXl,
                         letterSpacing: 1,
                         fontWeight: FontWeight.w800)),
               ),
@@ -71,7 +71,7 @@ class DrPopDashboard extends StatelessWidget {
                   style: TextStyle(
                       color: skin.color.fgMuted,
                       fontFamily: skin.type.monoFamily,
-                      fontSize: 12,
+                      fontSize: skin.type.sizeBody,
                       letterSpacing: 1)),
               const MmAudioToggle(),
               IconButton(
@@ -91,7 +91,7 @@ class DrPopDashboard extends StatelessWidget {
                 child: _Block(
                   skin: skin,
                   color: acid,
-                  label: l.dashHyperPeers,
+                  label: l.dashPeers,
                   value: '${m.peersInRange}',
                   accent: 'ノード',
                 ),
@@ -158,7 +158,7 @@ class DrPopDashboard extends StatelessWidget {
                 style: TextStyle(
                     color: skin.color.fg,
                     fontFamily: skin.type.monoFamily,
-                    fontSize: 12)),
+                    fontSize: skin.type.sizeBody)),
           ),
           // Own pubkey — the identifier another operator needs to add
           // you before their DMs can route.
@@ -171,7 +171,7 @@ class DrPopDashboard extends StatelessWidget {
               style: TextStyle(
                   color: skin.color.fg,
                   fontFamily: skin.type.monoFamily,
-                  fontSize: 12),
+                  fontSize: skin.type.sizeBody),
             ),
           ),
         ],
@@ -219,7 +219,7 @@ class _Block extends StatelessWidget {
           Text(label,
               style: TextStyle(
                   color: outline ? skin.color.fgMuted : sub,
-                  fontSize: 11,
+                  fontSize: skin.type.sizeSm,
                   letterSpacing: 1.5,
                   fontWeight: FontWeight.w700)),
           const Spacer(),
@@ -237,7 +237,7 @@ class _Block extends StatelessWidget {
             Text(accent!,
                 style: TextStyle(
                     color: outline ? skin.color.fgMuted : sub,
-                    fontSize: 13,
+                    fontSize: skin.type.sizeBodyLg,
                     letterSpacing: 2)),
           ],
         ],
@@ -283,14 +283,14 @@ class _SubBrandBlock extends StatelessWidget {
                   style: TextStyle(
                       color: ink,
                       fontFamily: skin.type.monoFamily,
-                      fontSize: 14,
+                      fontSize: skin.type.size(14),
                       fontWeight: FontWeight.w800,
                       letterSpacing: 1)),
               const Spacer(),
               Text(kata,
                   style: TextStyle(
                       color: ink.withValues(alpha: 0.75),
-                      fontSize: 14,
+                      fontSize: skin.type.size(14),
                       letterSpacing: 3)),
             ],
           ),
@@ -302,13 +302,13 @@ class _SubBrandBlock extends StatelessWidget {
                   style: TextStyle(
                       color: ink,
                       fontFamily: skin.type.monoFamily,
-                      fontSize: 30,
+                      fontSize: skin.type.size(30),
                       height: 1.0,
                       fontWeight: FontWeight.w800)),
               const Spacer(),
               Text(bars,
                   style: TextStyle(
-                      color: ink, fontSize: 18, letterSpacing: 1)),
+                      color: ink, fontSize: skin.type.size(18), letterSpacing: 1)),
             ],
           ),
         ],

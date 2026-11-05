@@ -514,76 +514,43 @@ class _SettingsView extends StatelessWidget {
     final MmSkin skin = context.skin;
     final bool cardRows =
         skin.shape.corner != MmCorner.sharp || skin.ornament.any;
-    // A group label is a row with a null icon; its text sits in the
-    // subtitle slot. The label travels with its group rather than being
-    // derived from the row index: R92 shipped a switch on `i` that only
-    // matched three of the four separators, so APP, CONNECTION and ABOUT
-    // all rendered as "ABOUT" on the device (found on the phone 2026-10-21).
-    final List<(IconData?, String?, String, String)> items =
-        <(IconData?, String?, String, String)>[
-      // R92 — grouped by what the row is for, not one flat list of nine.
-      (null, null, l.settingsGroupRadio, ''),
-      (Icons.router_outlined, l.settingsHubDevice, l.settingsHubDeviceSub,
-          '/settings/device'),
-      (Icons.tag, l.settingsHubChannels, l.settingsHubChannelsSub,
-          '/settings/channels'),
-      (null, null, l.settingsGroupApp, ''),
-      (Icons.tune, l.settingsHubApp, l.settingsHubAppSub, '/settings/app'),
-      (Icons.palette_outlined, l.settingsHubProfile, l.settingsHubProfileSub,
-          '/settings/profile'),
-      (Icons.map_outlined, l.settingsHubMaps, l.settingsHubMapsSub,
-          '/settings/maps'),
-      (null, null, l.settingsGroupConnect, ''),
-      (Icons.bluetooth_searching, l.settingsHubDiagnostics,
-          l.settingsHubDiagnosticsSub, '/settings/diagnostics'),
-      (Icons.handyman_outlined, l.settingsHubTools, l.settingsHubToolsSub,
-          '/settings/tools'),
-      (null, null, l.settingsGroupAbout, ''),
-      (Icons.menu_book_outlined, l.tabDocs, l.settingsHubDocsSub,
-          '/settings/docs'),
-      (Icons.info_outline, l.settingsHubInfo, l.settingsHubInfoSub,
-          '/settings/about'),
-    ];
+    // Titles only. Ten one-line subtitles were jargon a user cannot decode
+    // (`PSK`, `frame log`, `event maps`) and four facts crammed into one line
+    // with interpuncts. A destination's own header says what it holds, in
+    // words that screen can keep true.
+    //
+    // The group label travels with its group rather than being derived from
+    // the row index: R92 shipped a switch on `i` that matched three of the
+    // four separators, so APP, CONNECTION and ABOUT all rendered as "ABOUT"
+    // on the device (found on the phone 2026-10-21).
     return MmScaffold(
       child: Column(
         children: <Widget>[
           MmPageHeader(title: l.tabSettings),
           Expanded(
-            child: ListView.separated(
-        padding: cardRows
-            ? const EdgeInsets.fromLTRB(12, 8, 12, 12)
-            : EdgeInsets.zero,
-        itemCount: items.length,
-        separatorBuilder: (_, __) => SizedBox(height: cardRows ? 8 : 0),
-        itemBuilder: (BuildContext context, int i) {
-          final (IconData?, String?, String, String) it = items[i];
-          if (it.$2 == null) {
-            // A group label, not a row. R92 — nine flat rows with subtitles
-            // gave no clue which of them configure the radio, which the app,
-            // which are about the build.
-            return Padding(
-              padding: EdgeInsets.fromLTRB(
-                  cardRows ? 8 : 16, i == 0 ? 8 : 18, 16, 6),
-              child: Text(
-                it.$3,
-                style: TextStyle(
-                    color: skin.color.fgMuted,
-                    fontSize: 11,
-                    letterSpacing: 1.5,
-                    fontWeight: FontWeight.w600),
-              ),
-            );
-          }
-          return MmListRow(
-            leading: Icon(it.$1!, color: skin.color.accent),
-            title: Text(it.$2!),
-            subtitle: Text(it.$3,
-                style:
-                    TextStyle(color: skin.color.fgMuted, fontSize: 12)),
-            trailing: Icon(Icons.chevron_right, color: skin.color.fgMuted),
-            onTap: () => context.push(it.$4),
-          );
-        },
+            child: ListView(
+              padding: cardRows
+                  ? const EdgeInsets.fromLTRB(12, 8, 12, 12)
+                  : EdgeInsets.zero,
+              children: <Widget>[
+                for (final ({String label, List<(IconData, String, String)> rows})
+                    g in _settingsGroups(l))
+                  ...<Widget>[
+                    _GroupLabel(text: g.label, skin: skin, first: g.label == l.settingsGroupRadio),
+                    for (final (IconData icon, String title, String route) r
+                        in g.rows)
+                      Padding(
+                        padding: EdgeInsets.only(bottom: cardRows ? 8 : 0),
+                        child: MmListRow(
+                          leading: Icon(r.$1, color: skin.color.accent),
+                          title: Text(r.$2),
+                          trailing: Icon(Icons.chevron_right,
+                              color: skin.color.fgMuted),
+                          onTap: () => context.push(r.$3),
+                        ),
+                      ),
+                  ],
+              ],
             ),
           ),
         ],
@@ -592,6 +559,61 @@ class _SettingsView extends StatelessWidget {
   }
 }
 
+/// The Settings hub, grouped by what a row is for rather than by module
+/// (R92): what configures the radio, what configures the app, what connects
+/// it, and what the build is.
+List<({String label, List<(IconData, String, String)> rows})> _settingsGroups(
+  AppLocalizations l,
+) =>
+    <({String label, List<(IconData, String, String)> rows})>[
+      (
+        label: l.settingsGroupRadio,
+        rows: <(IconData, String, String)>[
+          (Icons.router_outlined, l.settingsHubDevice, '/settings/device'),
+          (Icons.tag, l.settingsHubChannels, '/settings/channels'),
+        ],
+      ),
+      (
+        label: l.settingsGroupApp,
+        rows: <(IconData, String, String)>[
+          (Icons.tune, l.settingsHubApp, '/settings/app'),
+          (Icons.palette_outlined, l.settingsHubProfile, '/settings/profile'),
+          (Icons.map_outlined, l.settingsHubMaps, '/settings/maps'),
+        ],
+      ),
+      (
+        label: l.settingsGroupConnect,
+        rows: <(IconData, String, String)>[
+          (Icons.bluetooth_searching, l.settingsHubDiagnostics,
+              '/settings/diagnostics'),
+          (Icons.handyman_outlined, l.settingsHubTools, '/settings/tools'),
+        ],
+      ),
+      (
+        label: l.settingsGroupAbout,
+        rows: <(IconData, String, String)>[
+          (Icons.menu_book_outlined, l.tabDocs, '/settings/docs'),
+          (Icons.info_outline, l.settingsHubInfo, '/settings/about'),
+        ],
+      ),
+    ];
+
+/// A group's name, at the same weight and tracking in every skin.
+class _GroupLabel extends StatelessWidget {
+  const _GroupLabel({required this.text, required this.skin, this.first = false});
+
+  final String text;
+  final MmSkin skin;
+  final bool first;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.fromLTRB(first ? 0 : 16, first ? 8 : 18, 16, 6),
+      child: Text(text, style: mmSectionLabelStyle(skin)),
+    );
+  }
+}
 
 /// Always-visible radio link state (every primary view). Tap → the
 /// Diagnostics & connect screen.
@@ -659,7 +681,7 @@ class RadioLinkIndicator extends StatelessWidget {
                 v.label,
                 style: TextStyle(
                   color: v.color,
-                  fontSize: 11,
+                  fontSize: context.skin.type.sizeSm,
                   letterSpacing: 1.5,
                   fontWeight: FontWeight.w600,
                 ),

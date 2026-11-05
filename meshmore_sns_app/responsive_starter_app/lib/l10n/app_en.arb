@@ -18,6 +18,18 @@
       }
     }
   },
+  "dashboardKnownAndContacts": "{n, plural, =0{0 known} =1{1 known} other{{n} known}} · contacts {contacts}",
+  "@dashboardKnownAndContacts": {
+    "description": "One line on the dashboard: how many nodes the app knows, and the radio's own contact table. One localised sentence rather than fragments joined with literal separators.",
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "contacts": {
+        "type": "String"
+      }
+    }
+  },
   "dashboardMyPubkey": "my pubkey · {hex}",
   "@dashboardMyPubkey": {
     "placeholders": {
@@ -85,11 +97,11 @@
   "dashNervKnown": "Known",
   "dashNervEvents": "Events",
   "dashHyperEmpty": "Listening for nodes…",
-  "dashHyperPeers": "PEERS",
+  "dashPeers": "PEERS",
   "dashAgHudSignal": "SIGNAL",
   "dashAgHudTraffic": "ch traffic",
   "dashDrPopLink": "LINK",
-  "dashReconNoContacts": "no contacts in range",
+  "dashReconNoContacts": "No contacts in range",
   "dashAgHudOfKnown": "of {count} known",
   "@dashAgHudOfKnown": {
     "placeholders": {
@@ -101,21 +113,13 @@
   "dashboardLocation": "LOCATION",
   "dashboardBattery": "BATTERY",
   "dashboardRecent": "RECENT",
-  "dashboardNoActivity": "— no activity —",
-  "dashboardAwaitingDevice": "— awaiting device —",
-  "dashboardAwaitingDeviceLocation": "— awaiting device location —",
+  "dashboardNoActivity": "No activity yet",
+  "dashboardAwaitingDevice": "Waiting for the radio…",
+  "dashboardAwaitingDeviceLocation": "Waiting for a location…",
   "dashboardUnnamed": "(unnamed)",
-  "dashboardLocationNotSet": "Not set — neither device nor phone fix yet",
+  "dashboardLocationNotSet": "No location",
   "dashboardLocationConfigure": "CONFIGURE",
-  "dashboardLocationSourceLabel": "source · {source}",
-  "@dashboardLocationSourceLabel": {
-    "placeholders": {
-      "source": {
-        "type": "String"
-      }
-    }
-  },
-  "statusLinked": "LINKED · NO ALERTS",
+  "statusLinked": "LINKED",
   "statusSyncing": "SYNCING…",
   "statusHandshaking": "SYNCING…",
   "statusReconnecting": "RECONNECTING…",
@@ -754,15 +758,10 @@
   "settingsGroupApp": "APP",
   "settingsGroupConnect": "CONNECTION",
   "settingsGroupAbout": "ABOUT",
-  "settingsHubDeviceSub": "MeshCore radio & device",
   "settingsHubApp": "App settings",
-  "settingsHubAppSub": "Connection, language, speech, data",
   "settingsHubProfile": "Profile & personalization",
-  "settingsHubProfileSub": "Theme, font size, audio, accessibility",
   "settingsHubChannels": "Channels",
-  "settingsHubChannelsSub": "Slots · name + PSK · #hashtag · active",
   "settingsHubDiagnostics": "Diagnostics & connect",
-  "settingsHubDiagnosticsSub": "Connect a radio, frame log, capture",
   "bootHeader": "MESHMORE  /  SYNCHRONIZING",
   "bootConnecting": "CONNECTING TO RADIO…",
   "bootHandshaking": "HANDSHAKING…",
@@ -2022,7 +2021,6 @@
   "deliveryFailed": "Not delivered — no acknowledgement or send failed",
   "deliveryUnknown": "Sent while the app was closing — whether the radio transmitted it is not knowable",
   "settingsHubTools": "Tools",
-  "settingsHubToolsSub": "Ping, trace, discover, soak, range test",
   "toolsTitle": "Tools",
   "toolsOffline": "Not connected — the tools need the radio.",
   "toolsRunning": "RUNNING",
@@ -2310,13 +2308,10 @@
   "rangeCopyCsv": "Copy CSV",
   "rangeFlood": "flood",
   "settingsHubInfo": "Information",
-  "settingsHubInfoSub": "About, licences, version",
-  "settingsHubDocsSub": "Protocol, firmware, app, field notes",
   "settingsNotifDeniedPermanent": "Notifications were permanently denied. The background service needs a persistent notification.",
   "settingsNotifDeniedTransient": "Notifications are required for the background service. Tap Open settings to grant them.",
   "deviceAdvertPropagatesHint": "Name/location change propagates on the next advert (Nodes → Advertise).",
   "settingsHubMaps": "Offline maps",
-  "settingsHubMapsSub": "Basemap, event maps, storage",
   "mapsTitle": "Offline maps",
   "mapsOffline": "No network. New maps can be set up only while online; downloads resume on their own.",
   "mapsStorage": "Storage",

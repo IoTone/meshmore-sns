@@ -51,6 +51,18 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String dashboardKnownAndContacts(int n, String contacts) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n known',
+      one: '1 known',
+      zero: '0 known',
+    );
+    return '$_temp0 · contacts $contacts';
+  }
+
+  @override
   String dashboardMyPubkey(String hex) {
     return 'my pubkey · $hex';
   }
@@ -166,7 +178,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get dashHyperEmpty => 'Listening for nodes…';
 
   @override
-  String get dashHyperPeers => 'PEERS';
+  String get dashPeers => 'PEERS';
 
   @override
   String get dashAgHudSignal => 'SIGNAL';
@@ -178,7 +190,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get dashDrPopLink => 'LINK';
 
   @override
-  String get dashReconNoContacts => 'no contacts in range';
+  String get dashReconNoContacts => 'No contacts in range';
 
   @override
   String dashAgHudOfKnown(String count) {
@@ -195,31 +207,25 @@ class AppLocalizationsEn extends AppLocalizations {
   String get dashboardRecent => 'RECENT';
 
   @override
-  String get dashboardNoActivity => '— no activity —';
+  String get dashboardNoActivity => 'No activity yet';
 
   @override
-  String get dashboardAwaitingDevice => '— awaiting device —';
+  String get dashboardAwaitingDevice => 'Waiting for the radio…';
 
   @override
-  String get dashboardAwaitingDeviceLocation => '— awaiting device location —';
+  String get dashboardAwaitingDeviceLocation => 'Waiting for a location…';
 
   @override
   String get dashboardUnnamed => '(unnamed)';
 
   @override
-  String get dashboardLocationNotSet =>
-      'Not set — neither device nor phone fix yet';
+  String get dashboardLocationNotSet => 'No location';
 
   @override
   String get dashboardLocationConfigure => 'CONFIGURE';
 
   @override
-  String dashboardLocationSourceLabel(String source) {
-    return 'source · $source';
-  }
-
-  @override
-  String get statusLinked => 'LINKED · NO ALERTS';
+  String get statusLinked => 'LINKED';
 
   @override
   String get statusSyncing => 'SYNCING…';
@@ -1388,31 +1394,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsGroupAbout => 'ABOUT';
 
   @override
-  String get settingsHubDeviceSub => 'MeshCore radio & device';
-
-  @override
   String get settingsHubApp => 'App settings';
-
-  @override
-  String get settingsHubAppSub => 'Connection, language, speech, data';
 
   @override
   String get settingsHubProfile => 'Profile & personalization';
 
   @override
-  String get settingsHubProfileSub => 'Theme, font size, audio, accessibility';
-
-  @override
   String get settingsHubChannels => 'Channels';
 
   @override
-  String get settingsHubChannelsSub => 'Slots · name + PSK · #hashtag · active';
-
-  @override
   String get settingsHubDiagnostics => 'Diagnostics & connect';
-
-  @override
-  String get settingsHubDiagnosticsSub => 'Connect a radio, frame log, capture';
 
   @override
   String get bootHeader => 'MESHMORE  /  SYNCHRONIZING';
@@ -3195,9 +3186,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsHubTools => 'Tools';
 
   @override
-  String get settingsHubToolsSub => 'Ping, trace, discover, soak, range test';
-
-  @override
   String get toolsTitle => 'Tools';
 
   @override
@@ -3562,12 +3550,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsHubInfo => 'Information';
 
   @override
-  String get settingsHubInfoSub => 'About, licences, version';
-
-  @override
-  String get settingsHubDocsSub => 'Protocol, firmware, app, field notes';
-
-  @override
   String get settingsNotifDeniedPermanent =>
       'Notifications were permanently denied. The background service needs a persistent notification.';
 
@@ -3581,9 +3563,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsHubMaps => 'Offline maps';
-
-  @override
-  String get settingsHubMapsSub => 'Basemap, event maps, storage';
 
   @override
   String get mapsTitle => 'Offline maps';

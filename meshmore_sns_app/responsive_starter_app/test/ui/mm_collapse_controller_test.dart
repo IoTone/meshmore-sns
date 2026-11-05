@@ -188,6 +188,7 @@ void main() {
       'dashRadio': MmGroupIds.dashRadio,
       'dashLocation': MmGroupIds.dashLocation,
       'dashRecent': MmGroupIds.dashRecent,
+      'dashBattery': MmGroupIds.dashBattery,
     };
     expect(used, byName.keys.toSet(), reason: 'screens vs the id list');
     expect(byName.values.toSet(), MmGroupIds.all);

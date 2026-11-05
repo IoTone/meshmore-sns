@@ -140,7 +140,11 @@ void main() {
     final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
     final MeshcoreController mc = _mc(fake);
     await t.pumpWidget(_app(mc, const DashboardScreen()));
-    await t.pump();
+    // The location block exists once the radio has answered: with no radio
+    // the dashboard is a link state and one action, by design.
+    await mc.connect();
+    fake.emit(selfInfoFrame());
+    await t.pumpAndSettle();
     expectMin48(t, _en.dashboardLocationRefresh);
     await _drain(t, mc);
   });

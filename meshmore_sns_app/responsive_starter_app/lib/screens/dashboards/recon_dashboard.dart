@@ -86,7 +86,7 @@ class _ReconDashboardState extends State<ReconDashboard>
     final Color amber = skin.color.fg;
     final Color dim = skin.color.fgMuted;
     final TextStyle mono = TextStyle(
-        fontFamily: skin.type.monoFamily, color: amber, fontSize: 13);
+        fontFamily: skin.type.monoFamily, color: amber, fontSize: skin.type.sizeBodyLg);
 
     final List<_Waypoint> waypoints = _waypoints(mc);
     double? bestSnr;
@@ -104,21 +104,14 @@ class _ReconDashboardState extends State<ReconDashboard>
             padding: const EdgeInsets.fromLTRB(14, 14, 6, 6),
             child: Row(
               children: <Widget>[
-                Expanded(
-                  child: Text('RECON',
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                          fontFamily: skin.type.headingFamily,
-                          color: amber,
-                          fontSize: 15,
-                          letterSpacing: 2,
-                          fontWeight: FontWeight.w700)),
-                ),
+                // The skin's identity is its own typography and colour, not
+                // a second name for a screen the strip already names.
+                const Spacer(),
                 Text(m.statusLabel,
                     style: TextStyle(
                         color: m.alert ? skin.color.alert : dim,
                         fontFamily: skin.type.monoFamily,
-                        fontSize: 11,
+                        fontSize: skin.type.sizeSm,
                         letterSpacing: 1)),
                 const MmAudioToggle(),
                 IconButton(
@@ -157,13 +150,13 @@ class _ReconDashboardState extends State<ReconDashboard>
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: <Widget>[
-                      _kv('PEERS', '${m.peersInRange}/${m.knownCount}', mono, dim),
-                      _kv('CH', m.channelLabel, mono, dim),
+                      _kv(context, 'PEERS', '${m.peersInRange}/${m.knownCount}', mono, dim),
+                      _kv(context, 'CH', m.channelLabel, mono, dim),
                       if (m.contactsLabel != null)
-                        _kv('CON', m.contactsLabel!, mono, dim),
+                        _kv(context, 'CON', m.contactsLabel!, mono, dim),
                       if (m.batteryLine != null)
-                        _kv('BATT', m.batteryLine!, mono, dim),
-                      _kv('SNR',
+                        _kv(context, 'BATT', m.batteryLine!, mono, dim),
+                      _kv(context, 'SNR',
                           bestSnr == null ? '—' : '${bestSnr.toStringAsFixed(0)}dB',
                           mono, dim),
                       // Own pubkey — needed by anyone who wants to
@@ -186,7 +179,7 @@ class _ReconDashboardState extends State<ReconDashboard>
                 style: TextStyle(
                     color: dim,
                     fontFamily: skin.type.monoFamily,
-                    fontSize: 11,
+                    fontSize: skin.type.sizeSm,
                     letterSpacing: 1.5)),
           ),
           // Waypoint readout.
@@ -212,7 +205,7 @@ class _ReconDashboardState extends State<ReconDashboard>
                               Text(w.inRange ? '▲' : '△',
                                   style: TextStyle(
                                       color: w.inRange ? amber : dim,
-                                      fontSize: 13)),
+                                      fontSize: skin.type.sizeBodyLg)),
                               const SizedBox(width: 10),
                               Expanded(
                                 child: Text(
@@ -227,7 +220,7 @@ class _ReconDashboardState extends State<ReconDashboard>
                                   style: TextStyle(
                                       color: dim,
                                       fontFamily: skin.type.monoFamily,
-                                      fontSize: 12)),
+                                      fontSize: skin.type.sizeBody)),
                               const SizedBox(width: 14),
                               SizedBox(
                                 width: 42,
@@ -247,7 +240,8 @@ class _ReconDashboardState extends State<ReconDashboard>
     );
   }
 
-  Widget _kv(String k, String v, TextStyle mono, Color dim) => Padding(
+  Widget _kv(BuildContext context, String k, String v, TextStyle mono, Color dim) =>
+      Padding(
         padding: const EdgeInsets.symmetric(vertical: 2),
         child: Row(
           children: <Widget>[
@@ -257,7 +251,7 @@ class _ReconDashboardState extends State<ReconDashboard>
                     style: TextStyle(
                         color: dim,
                         fontFamily: mono.fontFamily,
-                        fontSize: 12,
+                        fontSize: context.skin.type.sizeBody,
                         letterSpacing: 1))),
             Text(v, style: mono),
           ],

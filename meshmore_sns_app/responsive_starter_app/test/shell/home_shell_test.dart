@@ -14,6 +14,7 @@ import 'package:meshmore_sns_app/app_state_model.dart';
 import 'package:meshmore_sns_app/cue/cue_service.dart';
 import 'package:meshmore_sns_app/l10n/locale_controller.dart';
 import 'package:meshmore_sns_app/main.dart';
+import 'package:meshmore_sns_app/screens/dashboard_screen.dart';
 import 'package:meshmore_sns_app/screens/map_screen.dart';
 import 'package:meshmore_sns_app/screens/street_map_view.dart';
 import 'package:meshmore_sns_app/shell/home_shell.dart';
@@ -136,7 +137,7 @@ Future<void> _pumpApp(WidgetTester tester,
 void main() {
   testWidgets('shell starts on Dashboard (R8 home)', (WidgetTester t) async {
     await _pumpApp(t);
-    expect(find.widgetWithText(MmPageHeader, 'Dashboard'), findsOneWidget);
+    expect(find.byKey(dashboardKey), findsOneWidget);
   });
 
   testWidgets('R86 Settings lists Docs and Information as peers',
@@ -258,7 +259,7 @@ void main() {
     final ShellViewRequest request = ShellViewRequest();
     final MeshcoreController mc = MeshcoreController();
     await _pumpApp(t, mc: mc, viewRequest: request);
-    expect(find.widgetWithText(MmPageHeader, 'Dashboard'), findsOneWidget);
+    expect(find.byKey(dashboardKey), findsOneWidget);
     request.openChat(2);
     await t.pumpAndSettle();
     expect(find.widgetWithText(MmPageHeader, 'Chat'), findsOneWidget,
@@ -372,7 +373,7 @@ void main() {
   testWidgets('a body fling changes one view; a strip tap jumps in one frame '
       '(R109, R95)', (WidgetTester t) async {
     await _pumpApp(t);
-    expect(find.widgetWithText(MmPageHeader, 'Dashboard'), findsOneWidget);
+    expect(find.byKey(dashboardKey), findsOneWidget);
     // R109 — the swipe between views is the shell's again, one page a drag.
     await t.fling(find.byType(PageView), const Offset(-400, 0), 1000);
     await t.pumpAndSettle();
@@ -380,7 +381,7 @@ void main() {
         reason: 'a left fling moves one view, not four');
     await t.fling(find.byType(PageView), const Offset(400, 0), 1000);
     await t.pumpAndSettle();
-    expect(find.widgetWithText(MmPageHeader, 'Dashboard'), findsOneWidget,
+    expect(find.byKey(dashboardKey), findsOneWidget,
         reason: 'a right fling comes back one view');
 
     // A tap is one jump: no travel through the pages in between. R95's
@@ -405,7 +406,7 @@ void main() {
     final bool handled = await t.binding.handlePopRoute();
     await t.pumpAndSettle();
     expect(handled, isTrue);
-    expect(find.widgetWithText(MmPageHeader, 'Dashboard'), findsOneWidget);
+    expect(find.byKey(dashboardKey), findsOneWidget);
     expect(t.takeException(), isNull); // no root-pop exception
   });
 
@@ -429,7 +430,7 @@ void main() {
     await t.pumpAndSettle();
     expect(handled, isTrue);
     expect(calls, <String>['moveTaskToBack']);
-    expect(find.widgetWithText(MmPageHeader, 'Dashboard'), findsOneWidget);
+    expect(find.byKey(dashboardKey), findsOneWidget);
     expect(t.takeException(), isNull);
   });
 
@@ -441,7 +442,7 @@ void main() {
     t.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
     await t.pumpAndSettle();
     expect(t.takeException(), isNull);
-    expect(find.widgetWithText(MmPageHeader, 'Dashboard'), findsOneWidget);
+    expect(find.byKey(dashboardKey), findsOneWidget);
   });
 
   // The grid tab runs a repeating animation, so once it is on screen
@@ -473,7 +474,7 @@ void main() {
   testWidgets('a vertical drag on the strip steps one view (R95)',
       (WidgetTester t) async {
     await _pumpApp(t);
-    expect(find.widgetWithText(MmPageHeader, 'Dashboard'), findsOneWidget);
+    expect(find.byKey(dashboardKey), findsOneWidget);
     final Offset strip = t.getCenter(find.byTooltip('Chat'));
 
     // Up -> the next view, the same result as tapping the next cell.
@@ -484,14 +485,14 @@ void main() {
     // Down -> the previous view.
     await t.flingFrom(strip, const Offset(0, 60), 800);
     await settle(t);
-    expect(find.widgetWithText(MmPageHeader, 'Dashboard'), findsOneWidget);
+    expect(find.byKey(dashboardKey), findsOneWidget);
 
     // A short drag is not a step. It is started on the current cell, so if
     // the arena resolves it as a tap it lands on the view already shown.
     await t.dragFrom(t.getCenter(find.byTooltip('Dashboard')),
         const Offset(0, -12), touchSlopY: 0);
     await settle(t);
-    expect(find.widgetWithText(MmPageHeader, 'Dashboard'), findsOneWidget,
+    expect(find.byKey(dashboardKey), findsOneWidget,
         reason: '12 dp is below the step threshold');
     expect(t.takeException(), isNull);
   });
@@ -676,7 +677,7 @@ void main() {
     final bool handled = await t.binding.handlePopRoute();
     await settle(t);
     expect(handled, isTrue);
-    expect(find.widgetWithText(MmPageHeader, 'Dashboard'), findsOneWidget);
+    expect(find.byKey(dashboardKey), findsOneWidget);
     expect(t.takeException(), isNull);
   });
 
