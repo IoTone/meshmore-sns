@@ -170,8 +170,10 @@ class _PairRadioScreenState extends State<PairRadioScreen> {
   }
 
   Future<void> _open(PairHit hit) async {
+    // Stop at the platform first, then drop the listener without waiting on
+    // it: a cancel that waits for a queued event must not hold the open.
     await widget.scanner.stopScan();
-    await _scanSub?.cancel();
+    unawaited(_scanSub?.cancel());
     _scanSub = null;
     if (!mounted) return;
     setState(() {
@@ -181,8 +183,12 @@ class _PairRadioScreenState extends State<PairRadioScreen> {
     });
     final MeshcoreController mc = context.read<MeshcoreController>();
     await mc.connectToPickedDevice(remoteId: hit.remoteId, name: hit.name);
+    // `connectToPickedDevice` returns once the transport is attached; the link
+    // is only proven when the handshake answers. Waiting for that is the
+    // difference between "we opened a socket" and "this radio is talking".
+    final MeshcoreConnectionState end = await _awaitLink(mc);
     if (!mounted) return;
-    if (mc.state == MeshcoreConnectionState.ready) {
+    if (end == MeshcoreConnectionState.ready) {
       setState(() {
         _step = _Step.confirm;
         _connectedName = mc.selfInfo?.name ?? hit.name;
@@ -193,6 +199,33 @@ class _PairRadioScreenState extends State<PairRadioScreen> {
       _step = _Step.scan;
       _failure = mc.failure ?? const Failure(FailureCause.pairingFailed);
     });
+  }
+
+  /// Wait until the link answers or the attempt fails.
+  ///
+  /// The bound is generous because a screen radio shows a PIN the user has to
+  /// type: five seconds is a handshake timeout, not a pairing timeout.
+  Future<MeshcoreConnectionState> _awaitLink(MeshcoreController mc) async {
+    MeshcoreConnectionState settled() => mc.state;
+    bool done() =>
+        settled() == MeshcoreConnectionState.ready ||
+        settled() == MeshcoreConnectionState.failed;
+    if (done()) return settled();
+    final Completer<void> reached = Completer<void>();
+    void onState() {
+      if (!reached.isCompleted && done()) reached.complete();
+    }
+
+    mc.addListener(onState);
+    try {
+      await reached.future.timeout(const Duration(seconds: 30));
+    } catch (_) {
+      // Timed out: the caller reads the state and reports it like any other
+      // failure, with the copy the catalogue already has for a silent radio.
+    } finally {
+      mc.removeListener(onState);
+    }
+    return settled();
   }
 
   void _finish() {
@@ -307,7 +340,7 @@ class _PairRadioScreenState extends State<PairRadioScreen> {
             TextButton(
               onPressed: () async {
                 await widget.scanner.stopScan();
-                await _scanSub?.cancel();
+                unawaited(_scanSub?.cancel());
                 _scanSub = null;
                 if (mounted) setState(() => _scanning = false);
               },
