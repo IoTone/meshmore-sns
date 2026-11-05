@@ -53,7 +53,7 @@ void main() {
       for (final MmThemePreset p in MmThemePreset.values) {
         if (p == MmThemePreset.studioLight) continue;
         expect(buildMmTheme(kMmPresets[p]!).brightness, Brightness.dark,
-            reason: '${p.name}');
+            reason: p.name);
       }
     });
 
