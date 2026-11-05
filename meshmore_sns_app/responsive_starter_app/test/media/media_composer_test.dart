@@ -31,13 +31,16 @@ final class _Source implements MediaPhotoSource {
   final bool available;
   final bool fails;
   int calls = 0;
+  MediaPhotoOrigin? lastOrigin;
 
   @override
   bool get isAvailable => available;
 
   @override
-  Future<MediaPhoto?> pick() async {
+  Future<MediaPhoto?> pick(
+      {MediaPhotoOrigin origin = MediaPhotoOrigin.gallery}) async {
     calls++;
+    lastOrigin = origin;
     if (fails) throw const MediaPhotoSourceFailure('unreadable');
     return photo;
   }
@@ -75,6 +78,15 @@ MediaTransferService _service({
       wait: (Duration d) async => _now = _now.add(d),
     );
 
+/// Opening the sheet no longer picks on its own: the user says whether the
+/// photo is a new one or one they already have, so every case taps a source
+/// first, exactly as a person would.
+Future<void> _pickIn(WidgetTester t, {bool camera = false}) async {
+  await t.tap(find.byKey(ValueKey<String>(
+      camera ? 'media-pick-camera' : 'media-pick-gallery')));
+  await t.pumpAndSettle();
+}
+
 void main() {
   setUp(() => _now = DateTime(2026, 11, 5, 12));
 
@@ -94,6 +106,7 @@ void main() {
       },
     )));
     await t.pumpAndSettle();
+    await _pickIn(t);
 
     expect(find.text('Send a photo'), findsOneWidget);
     expect(find.textContaining('Media is off on the Public channel'),
@@ -116,6 +129,7 @@ void main() {
       },
     )));
     await t.pumpAndSettle();
+    await _pickIn(t);
 
     // 300 bytes at 150 per chunk is two packets, two datagrams of airtime.
     expect(find.textContaining('2 packets'), findsOneWidget);
@@ -141,6 +155,7 @@ void main() {
           const ChannelDataSendResult(ChannelDataSendStatus.accepted),
     )));
     await t.pumpAndSettle();
+    await _pickIn(t);
     expect(find.textContaining('cannot read a photo'), findsOneWidget);
   });
 
@@ -157,6 +172,7 @@ void main() {
       },
     )));
     await t.pumpAndSettle();
+    await _pickIn(t);
     expect(find.textContaining('could not be read'), findsOneWidget);
     expect(sent, isEmpty);
   });
@@ -175,6 +191,7 @@ void main() {
       },
     )));
     await t.pumpAndSettle();
+    await _pickIn(t);
     expect(source.calls, 1);
     expect(sent, isEmpty);
   });
@@ -190,6 +207,7 @@ void main() {
           const ChannelDataSendResult(ChannelDataSendStatus.accepted),
     )));
     await t.pumpAndSettle();
+    await _pickIn(t);
     expect(find.textContaining('will not fit the mesh budget'), findsOneWidget);
   });
 
@@ -199,6 +217,9 @@ void main() {
       await tc.setPreset(preset);
       await t.pumpWidget(_host(
         MediaComposer(
+          // A key per preset so the next iteration builds a fresh composer
+          // rather than reusing the state of the one that already picked.
+          key: ValueKey<String>(preset.name),
           service: _service(),
           source: _Source(photo: _photo(320, 240)),
           channelPsk: List<int>.filled(16, 0x35),
@@ -209,6 +230,7 @@ void main() {
         theme: tc,
       ));
       await t.pumpAndSettle();
+      await _pickIn(t);
       expect(t.takeException(), isNull, reason: 'skin ${preset.name}');
       expect(find.textContaining('2 packets'), findsOneWidget,
           reason: 'skin ${preset.name}');

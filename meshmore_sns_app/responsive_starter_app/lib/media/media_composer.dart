@@ -13,6 +13,13 @@ import 'media_send_policy.dart';
 import 'media_sender.dart';
 import 'media_transfer.dart';
 
+/// Where a picture comes from: the camera, or the gallery.
+///
+/// A photo of the thing in front of you and a photo saved last week are two
+/// intentions, and the platform asks for them with two different sources. The
+/// composer offers both rather than guessing.
+enum MediaPhotoOrigin { camera, gallery }
+
 /// Where a picture comes from.
 ///
 /// A seam rather than a direct plugin call: the platform picker is a
@@ -26,14 +33,26 @@ abstract interface class MediaPhotoSource {
   /// The picture the user chose, or null when they backed out. A failure to
   /// read one is [MediaPhotoSourceFailure], which is a different thing from
   /// choosing nothing.
-  Future<MediaPhoto?> pick();
+  Future<MediaPhoto?> pick({MediaPhotoOrigin origin = MediaPhotoOrigin.gallery});
 }
+
+/// Why a chosen file did not become a picture.
+///
+/// The two are separate because the answers differ: an unreadable file is
+/// worth retrying with another one, and an unsupported container means the
+/// photo the user has cannot be sent at all, so the copy has to say what to
+/// do instead.
+enum MediaPhotoSourceProblem { unreadable, unsupportedFormat }
 
 /// The source refused or could not read the picture.
 final class MediaPhotoSourceFailure implements Exception {
-  const MediaPhotoSourceFailure(this.reason);
+  const MediaPhotoSourceFailure(
+    this.reason, {
+    this.problem = MediaPhotoSourceProblem.unreadable,
+  });
 
   final String reason;
+  final MediaPhotoSourceProblem problem;
 
   @override
   String toString() => 'MediaPhotoSourceFailure($reason)';
@@ -53,7 +72,9 @@ final class UnavailableMediaPhotoSource implements MediaPhotoSource {
   bool get isAvailable => false;
 
   @override
-  Future<MediaPhoto?> pick() async => null;
+  Future<MediaPhoto?> pick(
+          {MediaPhotoOrigin origin = MediaPhotoOrigin.gallery}) async =>
+      null;
 }
 
 /// The source the chat surface uses until a platform picker is decided.
@@ -126,24 +147,21 @@ class _MediaComposerState extends State<MediaComposer> {
   String? _sourceProblem;
   Set<int> _lost = <int>{};
 
-  @override
-  void initState() {
-    super.initState();
-    // The sheet exists to send a photo, so it asks for one immediately; a
-    // second tap to reach a picker behind a sheet is one tap too many.
-    WidgetsBinding.instance.addPostFrameCallback((_) => _pick());
-  }
-
-  Future<void> _pick() async {
+  Future<void> _pick(MediaPhotoOrigin origin) async {
     if (!widget.source.isAvailable) {
       setState(() => _sourceProblem = 'unavailable');
       return;
     }
     MediaPhoto? photo;
     try {
-      photo = await widget.source.pick();
-    } on MediaPhotoSourceFailure {
-      if (mounted) setState(() => _sourceProblem = 'failed');
+      photo = await widget.source.pick(origin: origin);
+    } on MediaPhotoSourceFailure catch (e) {
+      if (mounted) {
+        setState(() => _sourceProblem = switch (e.problem) {
+              MediaPhotoSourceProblem.unsupportedFormat => 'unsupported',
+              MediaPhotoSourceProblem.unreadable => 'failed',
+            });
+      }
       return;
     }
     if (photo == null) {
@@ -229,11 +247,31 @@ class _MediaComposerState extends State<MediaComposer> {
             if (_sourceProblem != null)
               _Note(
                 skin: skin,
-                text: _sourceProblem == 'unavailable'
-                    ? l.mediaSourceUnavailable
-                    : l.mediaSourceFailed,
+                text: switch (_sourceProblem) {
+                  'unavailable' => l.mediaSourceUnavailable,
+                  'unsupported' => l.mediaSourceUnsupportedFormat,
+                  _ => l.mediaSourceFailed,
+                },
               ),
             if (_refusal != null) _refusalNote(skin, l),
+            if (_stage == _Stage.idle && _plan == null && _sourceProblem == null)
+              Row(
+                children: <Widget>[
+                  FilledButton.icon(
+                    key: const ValueKey<String>('media-pick-camera'),
+                    onPressed: () => _pick(MediaPhotoOrigin.camera),
+                    icon: const Icon(Icons.photo_camera_outlined),
+                    label: Text(l.mediaPickCamera),
+                  ),
+                  SizedBox(width: skin.space.step(3)),
+                  OutlinedButton.icon(
+                    key: const ValueKey<String>('media-pick-gallery'),
+                    onPressed: () => _pick(MediaPhotoOrigin.gallery),
+                    icon: const Icon(Icons.photo_library_outlined),
+                    label: Text(l.mediaPickGallery),
+                  ),
+                ],
+              ),
             if (_stage == _Stage.encoding)
               Text(l.mediaEncoding,
                   style: TextStyle(

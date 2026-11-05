@@ -4766,6 +4766,16 @@ class AppLocalizationsEn extends AppLocalizations {
       'That photo could not be read. Try another one.';
 
   @override
+  String get mediaPickCamera => 'Take a photo';
+
+  @override
+  String get mediaPickGallery => 'Choose a photo';
+
+  @override
+  String get mediaSourceUnsupportedFormat =>
+      'That is a HEIC or AV1 file, which this build cannot read. Choose a JPEG or PNG photo instead.';
+
+  @override
   String get mediaEncoding => 'Fitting the photo to the mesh…';
 
   @override
