@@ -4853,6 +4853,13 @@ class AppLocalizationsEn extends AppLocalizations {
       'This photo will not fit the mesh budget even at the lowest quality. It can still be sent, but it will be cut off.';
 
   @override
+  String get mediaInterruptedEarlier =>
+      'An earlier photo did not finish sending.';
+
+  @override
+  String get mediaInterruptedDismiss => 'Dismiss';
+
+  @override
   String mediaSendingProgress(int sent, int total) {
     return '$sent of $total packets sent';
   }

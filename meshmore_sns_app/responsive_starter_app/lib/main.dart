@@ -1,4 +1,5 @@
 import 'media/media_inbox.dart';
+import 'media/media_journal.dart';
 import 'media/photo_source.dart';
 import 'media/media_composer.dart';
 import 'places/place_photo.dart';
@@ -156,6 +157,12 @@ Future<void> startApp() async {
     clock: DateTime.now,
   )..start();
   final PlacePhotos placePhotos = PlacePhotos(clock: DateTime.now);
+
+  // Transfers the last process left unfinished. Read at startup so the
+  // composer can say so once, instead of the payload vanishing with no trace
+  // when the process was killed mid-send.
+  final MediaInterruptions mediaInterruptions = MediaInterruptions();
+  unawaited(mediaInterruptions.load());
   final LocalNotifier notifier = LocalNotifier();
   final NotificationPrefs notificationPrefs = NotificationPrefs();
   final NotificationFocus notificationFocus = NotificationFocus();
@@ -349,6 +356,8 @@ Future<void> startApp() async {
         Provider<MediaPhotoSource>.value(
             value: const PlatformMediaPhotoSource()),
         Provider<PlacePhotos>.value(value: placePhotos),
+        ChangeNotifierProvider<MediaInterruptions>.value(
+            value: mediaInterruptions),
         Provider<PlaceReportBudget>(
           create: (_) => PlaceReportBudget(clock: DateTime.now),
         ),

@@ -2302,6 +2302,8 @@
   "mediaEncoding": "写真をメッシュ用に調整しています…",
   "mediaCostLine": "{chunks} パケット · 送信時間は約 {airtime}",
   "mediaOverBudget": "この写真は最低品質でもメッシュの上限に収まりません。送信はできますが途中で切れます。",
+  "mediaInterruptedEarlier": "前回の写真は送信が完了しませんでした。",
+  "mediaInterruptedDismiss": "閉じる",
   "mediaSendingProgress": "{total} 中 {sent} パケット送信済み",
   "mediaReceiptLine": "{chunks} パケット送信、うち {resends} は再送",
   "mediaAcceptedNotDelivered": "ラジオはこれらのパケットを受け取りました。同報に配達の保証はありません。",

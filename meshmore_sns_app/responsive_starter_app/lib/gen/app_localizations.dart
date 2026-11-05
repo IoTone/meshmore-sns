@@ -8289,6 +8289,18 @@ abstract class AppLocalizations {
   /// **'This photo will not fit the mesh budget even at the lowest quality. It can still be sent, but it will be cut off.'**
   String get mediaOverBudget;
 
+  /// No description provided for @mediaInterruptedEarlier.
+  ///
+  /// In en, this message translates to:
+  /// **'An earlier photo did not finish sending.'**
+  String get mediaInterruptedEarlier;
+
+  /// No description provided for @mediaInterruptedDismiss.
+  ///
+  /// In en, this message translates to:
+  /// **'Dismiss'**
+  String get mediaInterruptedDismiss;
+
   /// No description provided for @mediaSendingProgress.
   ///
   /// In en, this message translates to:

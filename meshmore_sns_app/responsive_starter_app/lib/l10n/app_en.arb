@@ -3268,6 +3268,8 @@
     }
   },
   "mediaOverBudget": "This photo will not fit the mesh budget even at the lowest quality. It can still be sent, but it will be cut off.",
+  "mediaInterruptedEarlier": "An earlier photo did not finish sending.",
+  "mediaInterruptedDismiss": "Dismiss",
   "@mediaOverBudget": {},
   "mediaSendingProgress": "{sent} of {total} packets sent",
   "@mediaSendingProgress": {

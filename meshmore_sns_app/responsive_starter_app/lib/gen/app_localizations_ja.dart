@@ -4675,6 +4675,12 @@ class AppLocalizationsJa extends AppLocalizations {
   String get mediaOverBudget => 'この写真は最低品質でもメッシュの上限に収まりません。送信はできますが途中で切れます。';
 
   @override
+  String get mediaInterruptedEarlier => '前回の写真は送信が完了しませんでした。';
+
+  @override
+  String get mediaInterruptedDismiss => '閉じる';
+
+  @override
   String mediaSendingProgress(int sent, int total) {
     return '$total 中 $sent パケット送信済み';
   }
