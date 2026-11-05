@@ -538,6 +538,21 @@ extension type const MeshcoreCommand(int code) {
   /// `PUSH_CODE_BINARY_RESPONSE` (0x8C). `MyMesh.cpp:1557`.
   static const MeshcoreCommand sendAnonReq = MeshcoreCommand(0x39);
 
+  /// `CMD_EXEC_LOCAL_OTA_CONTROL` (0x4A) — one bounded local TempRadio or
+  /// OTA command, only in a companion built with the OTA CLI.
+  static const MeshcoreCommand execLocalOtaControl = MeshcoreCommand(0x4A);
+
+  /// `CMD_BLE_MOTA_SOURCE` (0x4B) — query, start or stop an nRF52 full
+  /// companion's Bluetooth-backed LoRa mOTA source.
+  static const MeshcoreCommand bleMotaSource = MeshcoreCommand(0x4B);
+
+  /// `CMD_RUN_CLI_COMMAND` (0x42) — the local CLI, protocol v14+.
+  ///
+  /// The body is CLI text and the reply arrives as `RESP_CODE_CLI_REPLY`
+  /// frames. The app never sends this as free text: it is reachable only
+  /// through the typed whitelist in `cli_command.dart`.
+  static const MeshcoreCommand runCliCommand = MeshcoreCommand(0x42);
+
   /// `CMD_SET_AUTOADD_CONFIG` (58): `3A [flags] [max_hops]?` → OK.
   /// `MyMesh.cpp:1981`.
   static const MeshcoreCommand setAutoAddConfig = MeshcoreCommand(0x3A);
@@ -644,20 +659,6 @@ extension type const MeshcoreResponse(int code) {
   /// before it emits this (`MyMesh.cpp:2602-2611`).
   static const MeshcoreResponse oneKeyDmRejected = MeshcoreResponse(0x91);
 
-  /// `CMD_EXEC_LOCAL_OTA_CONTROL` (0x4A) — one bounded local TempRadio or
-  /// OTA command, only in a companion built with the OTA CLI.
-  static const MeshcoreCommand execLocalOtaControl = MeshcoreCommand(0x4A);
-
-  /// `CMD_BLE_MOTA_SOURCE` (0x4B) — query, start or stop an nRF52 full
-  /// companion's Bluetooth-backed LoRa mOTA source.
-  static const MeshcoreCommand bleMotaSource = MeshcoreCommand(0x4B);
-
-  /// `CMD_RUN_CLI_COMMAND` (0x42) — the local CLI, protocol v14+.
-  ///
-  /// The body is CLI text and the reply arrives as `RESP_CODE_CLI_REPLY`
-  /// frames. The app never sends this as free text: it is reachable only
-  /// through the typed whitelist in `cli_command.dart`.
-  static const MeshcoreCommand runCliCommand = MeshcoreCommand(0x42);
 
   /// `PUSH_CODE_PATH_UPDATED` (0x81) — `[81][pub_key 32]`. Carries ONLY the
   /// key: the app must re-read the contact to learn the new path
