@@ -30,7 +30,6 @@ import 'package:meshmore_sns_app/screens/grid_screen.dart';
 import 'package:meshcore/meshcore.dart';
 import 'package:meshmore_sns_app/chat/channel_read_store.dart';
 import 'package:meshmore_sns_app/notifications/notification_focus.dart';
-import 'package:meshmore_sns_app/notifications/notification_focus.dart';
 import 'package:meshmore_sns_app/theme/mm_tokens.dart';
 import '../meshcore/fake_transport.dart';
 import 'package:meshmore_sns_app/theme/theme_controller.dart';

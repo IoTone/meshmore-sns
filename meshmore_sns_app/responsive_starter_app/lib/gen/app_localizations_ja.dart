@@ -2368,6 +2368,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get notifTitleSos => '緊急アラート';
 
   @override
+  String get notifBodySos => '位置はアプリで確認してください。警報には座標が含まれますが、ロック画面には表示しません。';
+
+  @override
   String get notifSectionTitle => '通知';
 
   @override

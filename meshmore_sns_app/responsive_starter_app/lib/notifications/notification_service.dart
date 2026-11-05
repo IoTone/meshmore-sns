@@ -47,6 +47,15 @@ class SilentNotificationEffects implements NotificationEffects {
 abstract interface class NotificationStrings {
   /// The bold line the OS shows. [name] is the channel name or the peer's.
   String title(NotificationClass cls, String? name);
+
+  /// The body for an SOS, which never carries the coordinates.
+  ///
+  /// An SOS text is `[SOS:<id6>] <lat>,<lon> <callsign> …`, and the lock
+  /// screen is not where a position should be published: the diagnostics
+  /// redactor treats coordinates as opt-in, so the one surface that shows text
+  /// without the user opening the app must not publish them either. The full
+  /// text stays in the thread.
+  String sosBody();
 }
 
 /// [NotificationStrings] over the generated ARB bundle.
@@ -64,6 +73,9 @@ class LocalizedNotificationStrings implements NotificationStrings {
       NotificationClass.sos => l10n.notifTitleSos,
     };
   }
+
+  @override
+  String sosBody() => l10n.notifBodySos;
 }
 
 /// Decides which inbound messages become notifications, and which do not.
@@ -149,8 +161,18 @@ class NotificationService {
     _started = false;
   }
 
-  /// The OS id for a message, stable for the life of the message.
-  static int idFor(String messageId) => messageId.hashCode & 0x7FFFFFFF;
+  /// The OS id for a message, stable for the life of the message **and across
+  /// processes**: `String.hashCode` is not guaranteed stable between runs, and
+  /// `cancelFor` targets ids that were posted by an earlier process. FNV-1a
+  /// over the id is the same number every run.
+  static int idFor(String messageId) {
+    int h = 0x811C9DC5;
+    for (final int unit in messageId.codeUnits) {
+      h ^= unit & 0xFF;
+      h = (h * 0x01000193) & 0xFFFFFFFF;
+    }
+    return h & 0x7FFFFFFF;
+  }
 
   void _onChannel(ChatMessage m) {
     if (m.outgoing) return;
@@ -185,7 +207,7 @@ class NotificationService {
       id: idFor(m.id),
       cls: cls,
       title: strings().title(cls, channelName(m.channelIdx)),
-      body: m.text,
+      body: sos ? strings().sosBody() : m.text,
       payload: 'ch:${m.channelIdx}',
     ));
   }
@@ -199,11 +221,13 @@ class NotificationService {
     final String? name = peerDisplayName(key);
     _effects.cue(NotificationClass.direct);
     _effects.vibrate();
+    final bool sos = m.text.toUpperCase().startsWith('[SOS:');
     notifier.show(MessageNotification(
       id: idFor(m.id),
-      cls: NotificationClass.direct,
-      title: strings().title(NotificationClass.direct, name ?? key),
-      body: m.text,
+      cls: sos ? NotificationClass.sos : NotificationClass.direct,
+      title: strings().title(
+          sos ? NotificationClass.sos : NotificationClass.direct, name ?? key),
+      body: sos ? strings().sosBody() : m.text,
       payload: 'dm:$key',
     ));
   }

@@ -1492,6 +1492,7 @@
   "notifTitleChannel": "{name} のメッセージ",
   "notifTitleDirect": "{name} からのダイレクトメッセージ",
   "notifTitleSos": "緊急アラート",
+  "notifBodySos": "位置はアプリで確認してください。警報には座標が含まれますが、ロック画面には表示しません。",
   "notifSectionTitle": "通知",
   "notifOs": "ロック画面に通知",
   "notifAudio": "効果音を鳴らす",

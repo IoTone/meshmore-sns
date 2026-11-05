@@ -1582,6 +1582,10 @@
   "@notifTitleSos": {
     "description": "OS notification title for an SOS or its acknowledgement."
   },
+  "notifBodySos": "Open the app for the position. The alert carries coordinates that this phone does not show on the lock screen.",
+  "@notifBodySos": {
+    "description": "OS notification body for an SOS. Deliberately omits the coordinates: the lock screen is not where a position should be published."
+  },
   "notifSectionTitle": "Notifications",
   "@notifSectionTitle": {
     "description": "Section heading in the channel editor for the per-channel notification bundle."

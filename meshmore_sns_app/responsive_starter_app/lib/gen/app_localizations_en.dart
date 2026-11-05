@@ -2466,6 +2466,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get notifTitleSos => 'Emergency alert';
 
   @override
+  String get notifBodySos =>
+      'Open the app for the position. The alert carries coordinates that this phone does not show on the lock screen.';
+
+  @override
   String get notifSectionTitle => 'Notifications';
 
   @override

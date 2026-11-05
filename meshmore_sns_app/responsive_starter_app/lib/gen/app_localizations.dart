@@ -4202,6 +4202,12 @@ abstract class AppLocalizations {
   /// **'Emergency alert'**
   String get notifTitleSos;
 
+  /// OS notification body for an SOS. Deliberately omits the coordinates: the lock screen is not where a position should be published.
+  ///
+  /// In en, this message translates to:
+  /// **'Open the app for the position. The alert carries coordinates that this phone does not show on the lock screen.'**
+  String get notifBodySos;
+
   /// Section heading in the channel editor for the per-channel notification bundle.
   ///
   /// In en, this message translates to:
