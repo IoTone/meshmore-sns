@@ -85,6 +85,16 @@ actual MTU. (`(build)` — no read-back exists today.)
 
 *Check:* fake transport reports MTU 23; the composer disables send and the banner reads the number.
 
+*Built 2026-11-05 (R111):* enforced one step earlier — a link that negotiated below 179 is **refused at open**
+(`lib/meshcore/ble_connector.dart`, before the TX subscribe). Nothing is sent on a link that cannot carry a whole
+frame, so the composer-disabled state the check describes cannot arise. The number is named in Diagnostics
+(`diagnosticsMtuLine`, `diagnosticsMtuRefusedLine`) and the refusal is typed (`BleMtuTooSmall`) so no reconnect
+attempt is spent on it. Undecodable notifications are counted instead of dropped: truncated and trailing-bytes
+frames each have a counter (`MeshcoreConnection.truncatedFrames`, `.trailingBytesFrames`, shown by
+`diagnosticsFramingLine`). Not done here: a link that stays up and silently truncates every large frame is
+reported, not repaired — reassembly has no firmware path that produces split frames (an ATT notification is
+atomic), so it would be speculative work.
+
 **APP-A3.** Reconnect MUST be governed by `reconnect_policy.dart` and MUST be bounded: a documented
 maximum attempt count, exponential backoff with jitter, and a user-visible "reconnect now" action after
 the bound is hit. It MUST NOT spin at a fixed interval.
@@ -104,6 +114,11 @@ either be decoded or counted as an unknown type — not ignored. (`(build)` for 
 
 *Check:* the fake transport emits a frame with an unknown type byte; the counter increments and nothing
 throws.
+
+*Built 2026-11-05 (R111):* the `DecodeFailure` path is now consumed — truncated frames and trailing-bytes frames are
+counted per kind and shown in Diagnostics. An unknown opcode was never dropped: it is an `UnsupportedFrame` carrying its bytes,
+so nothing is lost there. Counting **by type byte** is not built (the counters are structural); `0x91`'s own decode
+is W3 and will land with it.
 
 **APP-A8.** A channel tag MUST be normalized to the canonical `#`-prefixed form **before** the key is derived, or the
 app MUST refuse the tag and say why. `channelPskFromHashtag` hashes the string it is given, so `emergency` and

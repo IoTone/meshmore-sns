@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 // Copyright (c) 2026 IoTone, Inc.
 // SPDX-License-Identifier: MIT
 import 'package:flutter/material.dart';
@@ -9,6 +11,7 @@ import 'package:meshmore_sns_app/gen/app_localizations.dart';
 import 'package:meshmore_sns_app/l10n/locale_controller.dart';
 import 'package:meshmore_sns_app/bot/bot_controller.dart';
 import 'package:meshmore_sns_app/meshcore/meshcore_controller.dart';
+import 'package:meshmore_sns_app/meshcore/ble_connector.dart';
 import 'package:meshmore_sns_app/screens/diagnostics_screen.dart';
 
 import '../meshcore/fake_transport.dart';
@@ -80,6 +83,83 @@ void main() {
     await t.pumpAndSettle();
     expect(fake.sent.length, greaterThan(before));
     expect(find.text('Sent get-time'), findsOneWidget);
+    ctrl.dispose();
+  });
+
+  testWidgets('a link whose MTU is too small says so, with the number',
+      (WidgetTester t) async {
+    // The connector refuses a link below 179 on Android; the refusal is
+    // typed so this screen can state the number instead of echoing an
+    // exception string, and the reconnect policy must not spin on it.
+    final MeshcoreController ctrl = MeshcoreController(
+      transportFactory: () async => throw BleMtuTooSmall(23),
+      connection:
+          MeshcoreConnection(handshakeTimeout: const Duration(seconds: 5)),
+      reconnectDelay: (_) async {},
+    );
+    await t.pumpWidget(
+      MaterialApp(
+        locale: const Locale('en'),
+        supportedLocales: LocaleController.supported,
+        localizationsDelegates: const <LocalizationsDelegate<Object>>[
+          AppLocalizations.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        home: MultiProvider(
+          providers: <ChangeNotifierProvider<ChangeNotifier>>[
+            ChangeNotifierProvider<MeshcoreController>.value(value: ctrl),
+            ChangeNotifierProvider<BotController>(
+                create: (_) => BotController()),
+          ],
+          child: const DiagnosticsScreen(),
+        ),
+      ),
+    );
+    await ctrl.connect();
+    await t.pumpAndSettle();
+
+    expect(ctrl.mtuRefusal?.mtu, 23);
+    expect(find.textContaining('negotiated 23 bytes'), findsOneWidget);
+    expect(find.textContaining('needs 179'), findsOneWidget);
+    // No backoff: the same radio negotiates the same MTU.
+    expect(ctrl.reconnectAttempt, 0);
+    ctrl.dispose();
+  });
+
+  testWidgets('a good link shows the MTU it negotiated',
+      (WidgetTester t) async {
+    final (MeshcoreController ctrl, FakeMeshcoreTransport fake) =
+        await pump(t);
+    fake.mtuValue = 247;
+    await t.tap(find.text('Scan & connect'));
+    await t.pumpAndSettle();
+    fake.emit(selfInfoFrame());
+    await t.pumpAndSettle();
+
+    expect(find.textContaining('link MTU: 247'), findsOneWidget);
+    expect(find.textContaining('needs 179'), findsOneWidget);
+    ctrl.dispose();
+  });
+
+  testWidgets('a channel datagram reports which radio carried it',
+      (WidgetTester t) async {
+    final (MeshcoreController ctrl, FakeMeshcoreTransport fake) =
+        await pump(t);
+    await t.tap(find.text('Scan & connect'));
+    await t.pumpAndSettle();
+    fake.emit(selfInfoFrame());
+    await t.pumpAndSettle();
+
+    // 0x1B: snr, via=0xA1 (the second profile), reserved, channel, pathLen,
+    // dataType, len, payload.
+    fake.emit(Uint8List.fromList(<int>[
+      0x1B, 0x20, 0xA1, 0x00, 0x01, 0xFF, 0x0A, 0x00, 0x02, 0xDE, 0xAD,
+    ]));
+    await t.pumpAndSettle();
+
+    expect(find.textContaining('radio 2'), findsOneWidget);
     ctrl.dispose();
   });
 

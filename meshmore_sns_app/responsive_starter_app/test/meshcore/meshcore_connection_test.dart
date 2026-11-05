@@ -79,6 +79,52 @@ void main() {
     await c.dispose();
   });
 
+  test('a notification that ends mid-frame is counted, not just dropped',
+      () async {
+    final FakeMeshcoreTransport t = FakeMeshcoreTransport(connected: true);
+    final MeshcoreConnection c = MeshcoreConnection();
+    c.attach(t);
+    expect(c.truncatedFrames, 0);
+
+    // SELF_INFO is 58 bytes; half of one is a frame the decoder cannot
+    // finish, which is what a link below the required MTU produces.
+    t.emit(Uint8List.fromList(<int>[0x05, 0x00, 0x01]));
+    await Future<void>.delayed(Duration.zero);
+    expect(c.truncatedFrames, 1);
+    expect(c.trailingBytesFrames, 0);
+    await c.dispose();
+  });
+
+  test('two frames in one notification leaves bytes over and is counted',
+      () async {
+    final FakeMeshcoreTransport t = FakeMeshcoreTransport(connected: true);
+    final MeshcoreConnection c = MeshcoreConnection();
+    c.attach(t);
+
+    // CURRENT_TIME (0x09, 4-byte epoch) followed by a second frame in the
+    // same buffer: the decoder finishes the first and reports the rest.
+    final Uint8List two = Uint8List.fromList(<int>[
+      0x09, 0x00, 0x00, 0x00, 0x00, //
+      0x09, 0x01, 0x00, 0x00, 0x00,
+    ]);
+    t.emit(two);
+    await Future<void>.delayed(Duration.zero);
+    expect(c.trailingBytesFrames, 1);
+    expect(c.truncatedFrames, 0);
+    await c.dispose();
+  });
+
+  test('the transport\'s MTU is reported, and null when it has none',
+      () async {
+    final FakeMeshcoreTransport t = FakeMeshcoreTransport(connected: true);
+    final MeshcoreConnection c = MeshcoreConnection();
+    c.attach(t);
+    expect(c.mtu, isNull);
+    t.mtuValue = 247;
+    expect(c.mtu, 247);
+    await c.dispose();
+  });
+
   test('sendCommand throws when not connected', () async {
     final FakeMeshcoreTransport t = FakeMeshcoreTransport(connected: false);
     final MeshcoreConnection c = MeshcoreConnection();

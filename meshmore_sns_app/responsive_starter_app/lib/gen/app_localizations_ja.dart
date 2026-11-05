@@ -3631,6 +3631,35 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
+  String diagnosticsMtuLine(String mtu, String need) {
+    return 'リンク MTU: $mtu (1 フレーム全体には $need 必要)';
+  }
+
+  @override
+  String diagnosticsMtuRefusedLine(String mtu, String need) {
+    return 'このリンクは $mtu バイトでネゴシエートしましたが、ラジオの 1 フレームには $need 必要です。再接続して再交渉してください。MTU がそれ以上の値に上がらないラジオでは全フレームを送れません';
+  }
+
+  @override
+  String diagnosticsDatagramLine(String ch, String via, String type) {
+    return 'データグラム: チャンネル $ch、経由 $via、種別 $type';
+  }
+
+  @override
+  String get rxViaPrimary => 'プライマリ無線';
+
+  @override
+  String get rxViaSecondary => '無線 2';
+
+  @override
+  String get rxViaUnknown => '無線の報告なし';
+
+  @override
+  String diagnosticsFramingLine(String truncated, String trailing) {
+    return '不完全なフレーム: 途中で切れた $truncated 件、余りのバイトがある $trailing 件';
+  }
+
+  @override
   String get diagnosticsScanConnect => 'スキャンして接続';
 
   @override

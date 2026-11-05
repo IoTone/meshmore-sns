@@ -52,6 +52,25 @@ abstract final class MeshcoreBle {
   /// Device → App (the app SUBSCRIBES for response/push notifications).
   static const String txCharacteristicUuid =
       '6E400003-B5A3-F393-E0A9-E50E24DCCA9E';
+
+  /// Largest frame the firmware sends in one notification: `MAX_FRAME_SIZE`
+  /// (`src/helpers/BaseSerialInterface.h:5`). Its BLE interface asks the
+  /// phone for an ATT MTU of exactly this (`setMTU(MAX_FRAME_SIZE)`,
+  /// `src/helpers/esp32/SerialBLEInterface.cpp:29`), which is three bytes
+  /// short of what a notification of that size needs.
+  static const int maxFrameSize = 176;
+
+  /// ATT overhead of one notification: an attribute handle (2) and the
+  /// opcode (1). The payload is `mtu - 3`.
+  static const int notificationOverhead = 3;
+
+  /// The ATT MTU a link needs for any protocol frame to cross whole:
+  /// `176 + 3` = 179. Below it the largest frames cannot fit in one
+  /// notification, so frames are lost at the radio's own notify, not split
+  /// (an ATT notification is atomic). A link that negotiated less is still
+  /// usable for short frames, so the app reports the number instead of
+  /// pretending the radio is broken.
+  static const int requiredMtu = maxFrameSize + notificationOverhead;
 }
 
 /// Common protocol field sizes (from firmware, pinned commit).

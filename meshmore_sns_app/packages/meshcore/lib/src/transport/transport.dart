@@ -17,6 +17,15 @@ import 'dart:typed_data';
 ///  * [connected] reflects link state; the codec/session layers react to
 ///    it for reconnection.
 abstract interface class MeshcoreTransport {
+  /// The link's negotiated ATT MTU, when the transport has one.
+  ///
+  /// One frame's payload is `mtu - 3`, so a link below
+  /// [MeshcoreBle.requiredMtu] cannot carry the firmware's largest frame in
+  /// one notification. `null` means the transport does not negotiate an MTU
+  /// at all (an in-memory or socket link), which is not a fault: report
+  /// nothing rather than inventing a number.
+  int? get mtu;
+
   /// One decoded frame's raw bytes per event (response/push frames).
   Stream<Uint8List> get incoming;
 

@@ -3758,6 +3758,35 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String diagnosticsMtuLine(String mtu, String need) {
+    return 'link MTU: $mtu (needs $need for a full frame)';
+  }
+
+  @override
+  String diagnosticsMtuRefusedLine(String mtu, String need) {
+    return 'this phone link negotiated $mtu bytes and a full radio frame needs $need. Reconnect to negotiate again; a radio whose stack caps the MTU smaller cannot carry every frame';
+  }
+
+  @override
+  String diagnosticsDatagramLine(String ch, String via, String type) {
+    return 'datagram: channel $ch, via $via, type $type';
+  }
+
+  @override
+  String get rxViaPrimary => 'the primary radio';
+
+  @override
+  String get rxViaSecondary => 'radio 2';
+
+  @override
+  String get rxViaUnknown => 'an unreported radio';
+
+  @override
+  String diagnosticsFramingLine(String truncated, String trailing) {
+    return 'incomplete frames: $truncated cut short, $trailing with bytes left over';
+  }
+
+  @override
   String get diagnosticsScanConnect => 'Scan & connect';
 
   @override

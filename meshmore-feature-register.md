@@ -38,7 +38,7 @@ The state column answers one question: can work start? `TODO` means yes, the des
 | Feature | State | Ruling or document |
 | --- | --- | --- |
 | `0x3E CMD_SEND_CHANNEL_DATA` encoder | TODO — **unblocked** | The single highest-leverage missing line; gates every channel media format. Unblocked by D8.22: any first blob byte is safe, the type comes from the `0xFFxx` dev band |
-| `0x1B` inbound channel-datagram decode | BUILT | Frame decoded and tested, **no consumer** in the dispatch |
+| `0x1B` inbound channel-datagram decode | BUILT | Frame decoded and tested; the profile byte is now `RxVia` (R112) and Diagnostics reads it out (channel, radio, data type). The datagram itself still has no application consumer — that is W3 |
 | Channel tag → key normalization | BUILT | R110: `MeshcoreChannelCrypto.canonicalHashtag` trims and `#`-prefixes before the hash and the PSK derivation, the weak-tag warning reads the same canonical string, and a bare tag saves the canonical name to the slot. Case stays case-sensitive because the firmware hashes literal bytes. Slots written before the fix keep their old key and are not the public `#name` channel — recorded, not migrated, because the tag was never stored. Tests: both typed forms equal the `#test` KAT |
 | `0x42 CMD_RUN_CLI_COMMAND` | TODO | Dual-purpose: CLI when `len >= 2`, FEM-gain GET when `len == 1`. Product call whether to surface |
 | `0x19 CMD_SEND_RAW_DATA` raw send | BUILT | `lib/meshcore/mesh_sender.dart` (send, OK/ERR outcome, per-contact record budget) over `MeshCarryCodec.sendRawData`; tests `test/meshcore/mesh_sender_test.dart` |
@@ -77,7 +77,7 @@ The state column answers one question: can work start? `TODO` means yes, the des
 | --- | --- | --- |
 | Two-profile radio2 control | TODO | Measured contract exists: 96–99 % primary vs 96–100 % secondary; the app must say what it costs |
 | Staged commit + single-use revert | SPECIFIED | Four params as one transaction; previous set to disk first; no dead-man timer |
-| BLE MTU check | TODO | Read at connect; **refuse below 179** |
+| BLE MTU check | BUILT | R111: read at open (before subscribe), refused below **179** = `MAX_FRAME_SIZE` 176 + 3 bytes of notification overhead, and the refusal is typed with the negotiated number so the screen says it (`BleMtuTooSmall`, `MeshcoreBle.requiredMtu`). Not retried: the same radio negotiates the same value |
 | Capability refusal wording | TODO | The app must explain what the firmware cannot do |
 | Firmware OTA from the app | SPECIFIED | D8.19: status only this phase; no install start until the queue-drain handling exists, because OTA consumes the offline queue to `OTA_RETAINED_OFFLINE_FRAMES`. Full mOTA source flow (`0x4B`) deferred |
 | Identity replacement | SPECIFIED | D8.7: a changed radio key is a new radio; offer one-tap carry-over of tags, favourites and blocks; history stays with the radio it came from |

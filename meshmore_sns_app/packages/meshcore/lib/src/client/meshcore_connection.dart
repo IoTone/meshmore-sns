@@ -58,8 +58,31 @@ class MeshcoreConnection {
   MeshcoreConnectionState _state = MeshcoreConnectionState.disconnected;
   SelfInfo? _selfInfo;
 
+  int _truncatedFrames = 0;
+  int _trailingBytesFrames = 0;
+
   /// Current link state.
   MeshcoreConnectionState get state => _state;
+
+  /// Notifications that ended before the frame they started.
+  ///
+  /// A notification is one frame by contract, so a partial one means the
+  /// boundary moved: the link is below [MeshcoreBle.requiredMtu], or the
+  /// radio truncated. Counted so a short-frame-only link says so instead of
+  /// looking like packets that vanish.
+  int get truncatedFrames => _truncatedFrames;
+
+  /// Frames that decoded and then had bytes left over.
+  ///
+  /// Either two frames arrived in one notification (a transport boundary
+  /// error) or the radio sent a longer layout than this codec models. Both
+  /// used to be dropped in silence, which is how a coalesced pair lost its
+  /// second frame.
+  int get trailingBytesFrames => _trailingBytesFrames;
+
+  /// The negotiated ATT MTU when the transport has one; `null` for a
+  /// transport that does not negotiate (in-memory, socket).
+  int? get mtu => _transport?.mtu;
 
   /// SELF_INFO captured during the handshake (null until [ready]).
   SelfInfo? get selfInfo => _selfInfo;
@@ -133,6 +156,16 @@ class MeshcoreConnection {
   void _onFrame(Uint8List bytes) {
     if (!_rawInbound.isClosed) _rawInbound.add(Uint8List.fromList(bytes));
     final MeshcoreInbound frame = MeshcoreFrameCodec.decode(bytes);
+    if (frame case DecodeFailure(:final MeshcoreDecodeError error)) {
+      switch (error.kind) {
+        case DecodeErrorKind.truncated:
+          _truncatedFrames++;
+        case DecodeErrorKind.trailingBytes:
+          _trailingBytesFrames++;
+        case DecodeErrorKind.empty:
+          break;
+      }
+    }
     if (frame is SelfInfoFrame) {
       // Always cache the latest SelfInfo — the device can update us
       // post-handshake (e.g. when it eventually acquires a GPS fix

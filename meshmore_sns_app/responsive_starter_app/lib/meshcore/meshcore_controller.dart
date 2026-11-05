@@ -480,6 +480,7 @@ class MeshcoreController extends ChangeNotifier {
   MeshcoreConnectionState _state = MeshcoreConnectionState.disconnected;
   MeshcoreInbound? _lastFrame;
   String? _error;
+  BleMtuTooSmall? _mtuRefusal;
   bool _connecting = false;
   bool _manualDisconnect = false;
   bool _gaveUp = false;
@@ -791,6 +792,28 @@ class MeshcoreController extends ChangeNotifier {
   bool get isConnecting => _connecting;
   bool get isReady => _state == MeshcoreConnectionState.ready;
 
+  /// The link's negotiated ATT MTU, when the transport reports one.
+  ///
+  /// A link below [MeshcoreBle.requiredMtu] cannot carry the firmware's
+  /// largest frame in one notification. [BleConnector] refuses such a link on
+  /// Android, so this is normally the value of a link that is good enough —
+  /// shown because it is the number that explains a lost frame when one goes
+  /// missing anyway.
+  int? get mtu => _connection.mtu;
+
+  /// Set when the last connect attempt was refused for a too-small MTU.
+  /// Typed rather than a string so the screen can say it in the user's
+  /// language, with the number the link actually got.
+  BleMtuTooSmall? get mtuRefusal => _mtuRefusal;
+
+  /// Notifications that ended mid-frame (see [MeshcoreConnection
+  /// .truncatedFrames]).
+  int get truncatedFrames => _connection.truncatedFrames;
+
+  /// Frames that decoded with bytes left over (see [MeshcoreConnection
+  /// .trailingBytesFrames]).
+  int get trailingBytesFrames => _connection.trailingBytesFrames;
+
   /// Number of reconnect attempts since the last successful link.
   int get reconnectAttempt => _reconnectAttempt;
 
@@ -832,6 +855,7 @@ class MeshcoreController extends ChangeNotifier {
       _reconnectGen++;
     }
     _error = null;
+    _mtuRefusal = null;
     notifyListeners();
     Object? failure;
     try {
@@ -844,14 +868,20 @@ class MeshcoreController extends ChangeNotifier {
       // delivered asynchronously and would still read `failed`.
     } catch (e) {
       failure = e;
+      // An MTU refusal is not a link fault and not retryable by backoff: the
+      // same radio will negotiate the same MTU. Keep it typed so the screen
+      // can explain it, and do not let the reconnect policy spin on it.
+      _mtuRefusal = e is BleMtuTooSmall ? e : null;
       _error = e.toString();
       _state = MeshcoreConnectionState.failed;
     }
     _connecting = false;
     notifyListeners();
     // Transport acquisition failed (the connection stream never sees
-    // this, so drive the backoff from here).
-    if (failure != null) _maybeScheduleReconnect();
+    // this, so drive the backoff from here). An MTU refusal is the one
+    // failure backoff cannot fix: the same radio negotiates the same value,
+    // so retrying is only five more identical failures.
+    if (failure != null && _mtuRefusal == null) _maybeScheduleReconnect();
   }
 
   /// Send a raw command frame (e.g. from [MeshcoreFrameCodec]).

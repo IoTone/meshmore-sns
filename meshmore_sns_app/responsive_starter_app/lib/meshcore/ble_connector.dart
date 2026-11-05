@@ -28,6 +28,24 @@ class BleConnectException implements Exception {
   String toString() => 'BleConnectException: $message';
 }
 
+/// The link came up but negotiated an ATT MTU too small to carry one whole
+/// protocol frame.
+///
+/// The number is the whole diagnosis: short frames still cross, the firmware's
+/// largest ones do not, and every symptom downstream looks like a lost packet.
+/// It is a separate type from [BleConnectException] because it is not a bond or
+/// identity failure and must not trigger a bond repair.
+class BleMtuTooSmall implements Exception {
+  BleMtuTooSmall(this.mtu);
+
+  /// The value the link actually negotiated.
+  final int mtu;
+
+  @override
+  String toString() =>
+      'BleMtuTooSmall: MTU $mtu < ${MeshcoreBle.requiredMtu} required';
+}
+
 /// Scans for a MeshCore companion device, connects, locates the
 /// RX/TX characteristics, and returns a ready [BleMeshcoreTransport].
 ///
@@ -642,6 +660,16 @@ abstract final class BleConnector {
       _Link link, bool writeWithoutResponse) async {
     final BluetoothCharacteristic rx = link.rx;
     final BluetoothCharacteristic tx = link.tx;
+    // R111 — the negotiated MTU is read before anything else on this link.
+    // `mtuNow` reports the platform's value (23 until the OS reports one), so
+    // a link that never negotiated is treated as the minimum, which is what
+    // it is. Android is the platform this app targets; elsewhere the number
+    // is reported but not enforced, because those stacks negotiate per write.
+    final int mtu = device.mtuNow;
+    if (!kIsWeb && Platform.isAndroid && mtu < MeshcoreBle.requiredMtu) {
+      await _safeDisconnect(device);
+      throw BleMtuTooSmall(mtu);
+    }
     await tx.setNotifyValue(true);
     final String name = pairedNameFor(
       platformName: device.platformName,
@@ -660,6 +688,7 @@ abstract final class BleConnector {
       rx: rx,
       tx: tx,
       writeWithoutResponse: writeWithoutResponse,
+      mtu: mtu,
     );
   }
 

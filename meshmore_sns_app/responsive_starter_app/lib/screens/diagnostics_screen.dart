@@ -123,6 +123,14 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
     // visible regardless of how long the log gets.
     final List<String> log = mc.captureLog.reversed.toList();
 
+    // The profile byte has three readings and only one of them is a fault,
+    // so the label says which without judging it.
+    String viaLabel(AppLocalizations l, RxVia via) => switch (via) {
+          RxVia.primary => l.rxViaPrimary,
+          RxVia.secondary => l.rxViaSecondary,
+          RxVia.unknown => l.rxViaUnknown,
+        };
+
     Widget section(String t) => Padding(
           padding: const EdgeInsets.fromLTRB(16, 18, 16, 6),
           child: Text(t,
@@ -159,12 +167,36 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
                         mc.batteryVolts!.toStringAsFixed(2),
                         '${mc.batteryPercent}') +
                     (mc.charging == true ? l.diagnosticsChargingSuffix : ''),
+              if (mc.mtu != null)
+                l.diagnosticsMtuLine(
+                    '${mc.mtu}', '${MeshcoreBle.requiredMtu}'),
+              // Which radio carried the last channel datagram. The byte only
+              // means something while a second profile is on, so "unreported"
+              // is the normal reading on a single-profile radio.
+              if (mc.lastFrame case final ChannelDataFrame d)
+                l.diagnosticsDatagramLine('${d.channelIndex}',
+                    viaLabel(l, d.via),
+                    '0x${d.dataType.toRadixString(16).padLeft(4, '0')}'),
               if (mc.reconnectAttempt > 0)
                 l.diagnosticsReconnectLine('${mc.reconnectAttempt}') +
                     (mc.gaveUp ? l.diagnosticsGaveUpSuffix : ''),
-              if (mc.error != null) l.diagnosticsErrorLine('${mc.error}'),
+              // A refused MTU is a sentence, not an exception string: it is the
+              // only failure here a reader can act on.
+              if (mc.mtuRefusal != null)
+                l.diagnosticsMtuRefusedLine('${mc.mtuRefusal!.mtu}',
+                    '${MeshcoreBle.requiredMtu}')
+              // The framing counters only speak when they have something to
+              // say; on a healthy link they are both zero and the line is
+              // noise.
+              else if (mc.truncatedFrames > 0 || mc.trailingBytesFrames > 0)
+                l.diagnosticsFramingLine(
+                    '${mc.truncatedFrames}', '${mc.trailingBytesFrames}')
+              else if (mc.error != null)
+                l.diagnosticsErrorLine('${mc.error}'),
             ].join('\n')),
-            isThreeLine: mc.selfInfo != null || mc.error != null,
+            isThreeLine: mc.selfInfo != null ||
+                mc.error != null ||
+                mc.mtuRefusal != null,
           ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),

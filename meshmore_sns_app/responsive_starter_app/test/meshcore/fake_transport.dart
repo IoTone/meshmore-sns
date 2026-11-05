@@ -35,6 +35,13 @@ class FakeMeshcoreTransport implements MeshcoreTransport {
   bool failSend = false;
   bool closed = false;
 
+  /// What the fake link reports as its negotiated ATT MTU. `null` by
+  /// default, which is what a transport with no MTU concept reports.
+  int? mtuValue;
+
+  @override
+  int? get mtu => mtuValue;
+
   @override
   Stream<Uint8List> get incoming => _incoming.stream;
 

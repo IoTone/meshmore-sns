@@ -1275,10 +1275,24 @@ While Meshcore protocol is open source, the client is not open source.  We want 
 ### Revision log
 
 Entries from here down are change records, not requirements. The block
-R88–R110 is newest first. Older entries below it were appended where they
+R88–R112 is newest first. Older entries below it were appended where they
 were written, so their numbering is not monotonic. A few records live in
 the sibling specs: R93 in `meshmore-sns-maps-spec.md`, R60 in
 `meshmore-sns-tools-spec.md`, R79 in `meshmore_sns_app/STATUS.md`.
+
+- R112: **the datagram's profile byte is read out.** The channel-datagram receive frame carries a
+  byte that the mainline firmware writes as 0 and a two-profile radio fills with the profile the packet
+  arrived on. The decoder now names it (`RxVia`), and Diagnostics states it with the channel and the
+  application data type — the byte only means something while a second profile is on, so "unreported" is
+  the honest reading on a single-profile radio. The datagram has no application consumer yet; that is the
+  `0x3E`/blob work, not this.
+- R111: **the link says what it negotiated, and a link that cannot carry a frame is refused.** One BLE
+  notification is one protocol frame, so a notification below the firmware's 176-byte `MAX_FRAME_SIZE`
+  plus the 3-byte ATT overhead cannot carry it; the app now reads the negotiated MTU before subscribing,
+  refuses below **179** with a typed failure carrying the number, and spends no reconnect attempt on it
+  (the same radio negotiates the same value). Diagnostics prints the MTU, the refusal in the user's
+  language, and two counters for frames the decoder could not finish — truncated, and trailing bytes —
+  which used to be dropped in silence by a `DecodeFailure` nothing consumed.
 
 - R110: **a channel tag has one canonical form.** The key is a hash of the
   literal name, so `emergency` and `#emergency` derived two different keys for

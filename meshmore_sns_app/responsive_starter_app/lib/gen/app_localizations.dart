@@ -6519,6 +6519,48 @@ abstract class AppLocalizations {
   /// **'error: {error}'**
   String diagnosticsErrorLine(String error);
 
+  /// No description provided for @diagnosticsMtuLine.
+  ///
+  /// In en, this message translates to:
+  /// **'link MTU: {mtu} (needs {need} for a full frame)'**
+  String diagnosticsMtuLine(String mtu, String need);
+
+  /// No description provided for @diagnosticsMtuRefusedLine.
+  ///
+  /// In en, this message translates to:
+  /// **'this phone link negotiated {mtu} bytes and a full radio frame needs {need}. Reconnect to negotiate again; a radio whose stack caps the MTU smaller cannot carry every frame'**
+  String diagnosticsMtuRefusedLine(String mtu, String need);
+
+  /// No description provided for @diagnosticsDatagramLine.
+  ///
+  /// In en, this message translates to:
+  /// **'datagram: channel {ch}, via {via}, type {type}'**
+  String diagnosticsDatagramLine(String ch, String via, String type);
+
+  /// No description provided for @rxViaPrimary.
+  ///
+  /// In en, this message translates to:
+  /// **'the primary radio'**
+  String get rxViaPrimary;
+
+  /// No description provided for @rxViaSecondary.
+  ///
+  /// In en, this message translates to:
+  /// **'radio 2'**
+  String get rxViaSecondary;
+
+  /// No description provided for @rxViaUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'an unreported radio'**
+  String get rxViaUnknown;
+
+  /// No description provided for @diagnosticsFramingLine.
+  ///
+  /// In en, this message translates to:
+  /// **'incomplete frames: {truncated} cut short, {trailing} with bytes left over'**
+  String diagnosticsFramingLine(String truncated, String trailing);
+
   /// No description provided for @diagnosticsScanConnect.
   ///
   /// In en, this message translates to:
