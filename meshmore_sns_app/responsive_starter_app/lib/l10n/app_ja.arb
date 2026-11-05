@@ -825,6 +825,12 @@
       }
     }
   },
+  "chatHistoryUnreadableTitle": "この端末では履歴を開けません",
+  "chatHistoryUnreadableBody": "メッセージはこの端末に残っています。この端末にもう無い鍵で封印されているため、暗号化した書き出しから復元するまで読めません。",
+  "diagnosticsHistoryStore": "履歴ストア",
+  "diagnosticsHistoryStoreOk": "封印済みで読み取り可能",
+  "diagnosticsHistoryStoreKeyLost": "封印済みだが、鍵がこの端末にありません",
+  "diagnosticsHistoryStoreWriteFailed": "最後の書き込みがストアに届きませんでした（{code}）",
   "chatEmpty": "— このチャンネルにメッセージはありません —",
   "chatJumpToNewest": "新着 {count} 件",
   "@chatJumpToNewest": {

@@ -2594,6 +2594,42 @@ abstract class AppLocalizations {
   /// **'{count, plural, =1{1 older message is gone} other{{count} older messages are gone}} — each conversation keeps its newest {cap}'**
   String chatRetentionDropped(int count, int cap);
 
+  /// No description provided for @chatHistoryUnreadableTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'History cannot be opened on this device'**
+  String get chatHistoryUnreadableTitle;
+
+  /// No description provided for @chatHistoryUnreadableBody.
+  ///
+  /// In en, this message translates to:
+  /// **'The messages are still saved here. They were sealed with a key this phone no longer has, so they cannot be read until they are restored from an encrypted export.'**
+  String get chatHistoryUnreadableBody;
+
+  /// No description provided for @diagnosticsHistoryStore.
+  ///
+  /// In en, this message translates to:
+  /// **'History store'**
+  String get diagnosticsHistoryStore;
+
+  /// No description provided for @diagnosticsHistoryStoreOk.
+  ///
+  /// In en, this message translates to:
+  /// **'sealed and readable'**
+  String get diagnosticsHistoryStoreOk;
+
+  /// No description provided for @diagnosticsHistoryStoreKeyLost.
+  ///
+  /// In en, this message translates to:
+  /// **'sealed, but the key is gone from this device'**
+  String get diagnosticsHistoryStoreKeyLost;
+
+  /// No description provided for @diagnosticsHistoryStoreWriteFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'last write did not reach the store ({code})'**
+  String diagnosticsHistoryStoreWriteFailed(String code);
+
   /// No description provided for @chatEmpty.
   ///
   /// In en, this message translates to:

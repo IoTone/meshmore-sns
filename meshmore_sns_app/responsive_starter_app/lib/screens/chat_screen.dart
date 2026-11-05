@@ -32,6 +32,7 @@ import '../places/place_store.dart';
 import 'delivery_status_icon.dart';
 import '../meshcore/meshcore_controller.dart';
 import '../chat/history_retention_notice.dart';
+import '../chat/history_unreadable_notice.dart';
 import '../chat/unread_counts.dart';
 import '../meshcore/message_heat.dart' show parseChannelSenderName;
 import '../bot/bot_guards.dart';
@@ -691,6 +692,7 @@ class _ChatScreenState extends State<ChatScreen>
           ),
         ),
         const Divider(height: 1),
+        const HistoryUnreadableNotice(),
         HistoryRetentionNotice(dropped: dropped),
 
         // Message list (active channel) + R29 jump-to-newest pill.

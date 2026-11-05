@@ -1414,6 +1414,27 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
+  String get chatHistoryUnreadableTitle => 'この端末では履歴を開けません';
+
+  @override
+  String get chatHistoryUnreadableBody =>
+      'メッセージはこの端末に残っています。この端末にもう無い鍵で封印されているため、暗号化した書き出しから復元するまで読めません。';
+
+  @override
+  String get diagnosticsHistoryStore => '履歴ストア';
+
+  @override
+  String get diagnosticsHistoryStoreOk => '封印済みで読み取り可能';
+
+  @override
+  String get diagnosticsHistoryStoreKeyLost => '封印済みだが、鍵がこの端末にありません';
+
+  @override
+  String diagnosticsHistoryStoreWriteFailed(String code) {
+    return '最後の書き込みがストアに届きませんでした（$code）';
+  }
+
+  @override
   String get chatEmpty => '— このチャンネルにメッセージはありません —';
 
   @override

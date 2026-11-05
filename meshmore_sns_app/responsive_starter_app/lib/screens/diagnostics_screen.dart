@@ -21,6 +21,7 @@ import '../theme/mm_skin.dart';
 import '../ui/radio_health_block.dart';
 import '../ui/pin_blocks.dart';
 import 'diagnostics_redaction.dart';
+import '../meshcore/chat_store.dart';
 import '../meshcore/meshcore_controller.dart';
 import '../ui/mm_shape.dart';
 
@@ -298,6 +299,25 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
               title: l.diagnosticsSectionDeveloper,
               initiallyExpanded: false,
               children: <Widget>[
+                // The one place the sealed store's state is stated: whether the
+                // history can be opened on this device, and whether the last
+                // write reached it. Both are facts a support question needs.
+                section(l.diagnosticsHistoryStore),
+                ValueListenableBuilder<bool>(
+                  valueListenable: ChatStore.unreadable,
+                  builder: (BuildContext _, bool lost, Widget? __) =>
+                      ValueListenableBuilder<String?>(
+                    valueListenable: ChatStore.lastWriteFailure,
+                    builder: (BuildContext _, String? failed, Widget? ___) {
+                      final String code = failed ?? 'current';
+                      return fact(lost
+                          ? l.diagnosticsHistoryStoreKeyLost
+                          : failed == null
+                              ? l.diagnosticsHistoryStoreOk
+                              : l.diagnosticsHistoryStoreWriteFailed(code));
+                    },
+                  ),
+                ),
                 section(l.diagnosticsSectionSend),
                 Wrap(
                   spacing: 8,

@@ -890,6 +890,13 @@
       }
     }
   },
+  "chatHistoryUnreadableTitle": "History cannot be opened on this device",
+  "chatHistoryUnreadableBody": "The messages are still saved here. They were sealed with a key this phone no longer has, so they cannot be read until they are restored from an encrypted export.",
+  "diagnosticsHistoryStore": "History store",
+  "diagnosticsHistoryStoreOk": "sealed and readable",
+  "diagnosticsHistoryStoreKeyLost": "sealed, but the key is gone from this device",
+  "diagnosticsHistoryStoreWriteFailed": "last write did not reach the store ({code})",
+  "@diagnosticsHistoryStoreWriteFailed": {"placeholders": {"code": {"type": "String"}}},
   "chatEmpty": "— no messages on this channel —",
   "chatJumpToNewest": "{count, plural, =1{1 new} other{{count} new}}",
   "@chatJumpToNewest": {

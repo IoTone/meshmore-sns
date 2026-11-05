@@ -1480,6 +1480,29 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get chatHistoryUnreadableTitle =>
+      'History cannot be opened on this device';
+
+  @override
+  String get chatHistoryUnreadableBody =>
+      'The messages are still saved here. They were sealed with a key this phone no longer has, so they cannot be read until they are restored from an encrypted export.';
+
+  @override
+  String get diagnosticsHistoryStore => 'History store';
+
+  @override
+  String get diagnosticsHistoryStoreOk => 'sealed and readable';
+
+  @override
+  String get diagnosticsHistoryStoreKeyLost =>
+      'sealed, but the key is gone from this device';
+
+  @override
+  String diagnosticsHistoryStoreWriteFailed(String code) {
+    return 'last write did not reach the store ($code)';
+  }
+
+  @override
   String get chatEmpty => '— no messages on this channel —';
 
   @override
