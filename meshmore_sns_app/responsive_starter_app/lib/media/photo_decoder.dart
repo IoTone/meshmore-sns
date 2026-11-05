@@ -64,6 +64,10 @@ final class SystemPhotoDecoder implements PhotoDecoder {
   /// [MediaPhoto.fittedToFloor].
   final int targetWidth;
 
+  /// Height the decoder fits inside. Only a width is passed to the engine, so
+  /// this is used to decide *whether* to scale, never as a second target.
+  static const int targetHeight = MediaPhoto.floorHeight * 2;
+
   @override
   Future<MediaPhoto> decode(Uint8List bytes) async {
     if (bytes.isEmpty) {
@@ -81,10 +85,22 @@ final class SystemPhotoDecoder implements PhotoDecoder {
         format: format,
       );
     }
+    ui.ImmutableBuffer? buffer;
+    ui.ImageDescriptor? descriptor;
     ui.Codec? codec;
     ui.Image? image;
     try {
-      codec = await ui.instantiateImageCodec(bytes, targetWidth: targetWidth);
+      // The descriptor reads the header, so the picture's real size is known
+      // before any pixels are decoded. That is what keeps a small photo from
+      // being enlarged to the target width: `instantiateImageCodec` scales to
+      // whatever width it is given, which is only what this wants when the
+      // source is actually larger.
+      buffer = await ui.ImmutableBuffer.fromUint8List(bytes);
+      descriptor = await ui.ImageDescriptor.encoded(buffer);
+      final int? targetWidth = _widthFor(descriptor.width, descriptor.height);
+      codec = targetWidth == null
+          ? await descriptor.instantiateCodec()
+          : await descriptor.instantiateCodec(targetWidth: targetWidth);
       final ui.FrameInfo frame = await codec.getNextFrame();
       image = frame.image;
       final ByteData? data =
@@ -112,6 +128,23 @@ final class SystemPhotoDecoder implements PhotoDecoder {
     } finally {
       image?.dispose();
       codec?.dispose();
+      descriptor?.dispose();
+      buffer?.dispose();
     }
+  }
+
+  /// The width to ask the decoder for, or null when the picture is already
+  /// small enough and must be left at its own size.
+  ///
+  /// Only a width is given, never both, because the two together stretch the
+  /// picture and the aspect ratio is the one thing a mesh photo cannot afford
+  /// to lose. The limiting dimension decides which of the two is the target.
+  int? _widthFor(int sourceWidth, int sourceHeight) {
+    if (sourceWidth <= targetWidth && sourceHeight <= targetHeight) return null;
+    final double byWidth = targetWidth / sourceWidth;
+    final double byHeight = targetHeight / sourceHeight;
+    final double scale = byWidth < byHeight ? byWidth : byHeight;
+    final int width = (sourceWidth * scale).round();
+    return width < 1 ? 1 : width;
   }
 }

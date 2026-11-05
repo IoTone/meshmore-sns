@@ -3188,7 +3188,7 @@
   "@mediaPickCamera": {},
   "mediaPickGallery": "Choose a photo",
   "@mediaPickGallery": {},
-  "mediaSourceUnsupportedFormat": "That is a HEIC or AV1 file, which this build cannot read. Choose a JPEG or PNG photo instead.",
+  "mediaSourceUnsupportedFormat": "That file is not an image this build can read. HEIC and AV1 are not supported here, so choose a JPEG or PNG photo.",
   "@mediaSourceUnsupportedFormat": {},
   "@mediaSourceFailed": {},
   "mediaEncoding": "Fitting the photo to the mesh…",

@@ -4773,7 +4773,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mediaSourceUnsupportedFormat =>
-      'That is a HEIC or AV1 file, which this build cannot read. Choose a JPEG or PNG photo instead.';
+      'That file is not an image this build can read. HEIC and AV1 are not supported here, so choose a JPEG or PNG photo.';
 
   @override
   String get mediaEncoding => 'Fitting the photo to the mesh…';

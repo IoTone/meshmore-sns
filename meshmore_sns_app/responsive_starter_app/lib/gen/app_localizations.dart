@@ -8149,7 +8149,7 @@ abstract class AppLocalizations {
   /// No description provided for @mediaSourceUnsupportedFormat.
   ///
   /// In en, this message translates to:
-  /// **'That is a HEIC or AV1 file, which this build cannot read. Choose a JPEG or PNG photo instead.'**
+  /// **'That file is not an image this build can read. HEIC and AV1 are not supported here, so choose a JPEG or PNG photo.'**
   String get mediaSourceUnsupportedFormat;
 
   /// No description provided for @mediaEncoding.

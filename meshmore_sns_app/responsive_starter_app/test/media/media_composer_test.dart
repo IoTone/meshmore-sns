@@ -25,11 +25,16 @@ MediaPhoto _photo(int w, int h) =>
     MediaPhoto(width: w, height: h, rgba: Uint8List(w * h * 4));
 
 final class _Source implements MediaPhotoSource {
-  _Source({this.photo, this.available = true, this.fails = false});
+  _Source(
+      {this.photo,
+      this.available = true,
+      this.fails = false,
+      this.unsupported = false});
 
   final MediaPhoto? photo;
   final bool available;
   final bool fails;
+  final bool unsupported;
   int calls = 0;
   MediaPhotoOrigin? lastOrigin;
 
@@ -41,6 +46,10 @@ final class _Source implements MediaPhotoSource {
       {MediaPhotoOrigin origin = MediaPhotoOrigin.gallery}) async {
     calls++;
     lastOrigin = origin;
+    if (unsupported) {
+      throw const MediaPhotoSourceFailure('unsupportedFormat',
+          problem: MediaPhotoSourceProblem.unsupportedFormat);
+    }
     if (fails) throw const MediaPhotoSourceFailure('unreadable');
     return photo;
   }
@@ -175,6 +184,22 @@ void main() {
     await _pickIn(t);
     expect(find.textContaining('could not be read'), findsOneWidget);
     expect(sent, isEmpty);
+  });
+
+  testWidgets('a HEIC is named as a format this build cannot read',
+      (WidgetTester t) async {
+    await t.pumpWidget(_host(MediaComposer(
+      service: _service(),
+      source: _Source(unsupported: true),
+      channelPsk: List<int>.filled(16, 0x37),
+      byteBudget: 2000,
+      sendBlob: (Uint8List blob) async =>
+          const ChannelDataSendResult(ChannelDataSendStatus.accepted),
+    )));
+    await t.pumpAndSettle();
+    await _pickIn(t);
+    expect(find.textContaining('HEIC and AV1 are not supported'), findsOneWidget);
+    expect(find.textContaining('could not be read'), findsNothing);
   });
 
   testWidgets('backing out of the picker sends nothing', (WidgetTester t) async {

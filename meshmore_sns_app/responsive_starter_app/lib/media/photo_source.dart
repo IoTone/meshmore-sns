@@ -1,9 +1,9 @@
 // Copyright (c) 2026 IoTone, Inc.
 // SPDX-License-Identifier: MIT
-import 'dart:io' show Platform;
 import 'dart:typed_data';
 
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart'
+    show kIsWeb, defaultTargetPlatform, TargetPlatform;
 import 'package:image_picker/image_picker.dart';
 
 import 'media_composer.dart';
@@ -34,7 +34,10 @@ final class PlatformMediaPhotoSource implements MediaPhotoSource {
   @override
   bool get isAvailable {
     if (kIsWeb) return false;
-    return Platform.isAndroid || Platform.isIOS;
+    // The platform, not the host: `defaultTargetPlatform` is the value a test
+    // can set, so availability is provable without a phone.
+    return defaultTargetPlatform == TargetPlatform.android ||
+        defaultTargetPlatform == TargetPlatform.iOS;
   }
 
   @override

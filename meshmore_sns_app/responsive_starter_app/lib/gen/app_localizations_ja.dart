@@ -4611,7 +4611,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get mediaSourceUnsupportedFormat =>
-      'HEIC または AV1 のファイルはこのビルドでは読み取れません。代わりに JPEG か PNG の写真を選んでください。';
+      'このビルドで読み取れない形式です。HEIC と AV1 には対応していません。JPEG か PNG の写真を選んでください。';
 
   @override
   String get mediaEncoding => '写真をメッシュ用に調整しています…';

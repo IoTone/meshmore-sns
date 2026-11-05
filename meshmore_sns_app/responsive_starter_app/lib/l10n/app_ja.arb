@@ -2275,7 +2275,7 @@
   "mediaSourceFailed": "写真を読み取れませんでした。別の写真をお試しください。",
   "mediaPickCamera": "写真を撮る",
   "mediaPickGallery": "写真を選ぶ",
-  "mediaSourceUnsupportedFormat": "HEIC または AV1 のファイルはこのビルドでは読み取れません。代わりに JPEG か PNG の写真を選んでください。",
+  "mediaSourceUnsupportedFormat": "このビルドで読み取れない形式です。HEIC と AV1 には対応していません。JPEG か PNG の写真を選んでください。",
   "mediaEncoding": "写真をメッシュ用に調整しています…",
   "mediaCostLine": "{chunks} パケット · 送信時間は約 {airtime}",
   "mediaOverBudget": "この写真は最低品質でもメッシュの上限に収まりません。送信はできますが途中で切れます。",
