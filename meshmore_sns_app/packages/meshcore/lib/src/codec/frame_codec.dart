@@ -1233,6 +1233,12 @@ abstract final class MeshcoreFrameCodec {
         case 0x90: // PUSH_CODE_CONTACTS_FULL
           return const ContactsFullFrame();
 
+        case 0x91: // PUSH_CODE_ONE_KEY_DM_REJECTED
+          return OneKeyRejectedFrame(
+            Uint8List.fromList(
+                c.bytes(kPubKeySize, 'oneKeyRejected.pubKey')),
+          );
+
         default:
           return UnsupportedFrame(op, Uint8List.fromList(frame));
     }
