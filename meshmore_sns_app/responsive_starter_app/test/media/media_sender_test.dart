@@ -50,6 +50,55 @@ void main() {
     });
   });
 
+  group('the loop knows how long to wait instead of spinning', () {
+    test('the wait is the pacing interval that is still to run', () {
+      DateTime now = DateTime.utc(2026, 11, 5, 12);
+      final MediaSender s = MediaSender(
+        chunks: MediaChunkCodec.split(List<int>.filled(450, 3),
+            payloadId: 11, kind: MediaKind.image),
+        clock: () => now,
+      );
+      expect(s.waitBeforeDue, Duration.zero,
+          reason: 'nothing has gone out, so the first chunk is due now');
+      s.takeDue();
+      expect(s.waitBeforeDue, s.pacing);
+      now = now.add(const Duration(milliseconds: 200));
+      expect(s.waitBeforeDue, const Duration(milliseconds: 150));
+      now = now.add(const Duration(milliseconds: 150));
+      expect(s.waitBeforeDue, Duration.zero);
+    });
+
+    test('a full table outranks the pacing: the longer wait wins', () {
+      DateTime now = DateTime.utc(2026, 11, 5, 12);
+      final MediaSender s = MediaSender(
+        chunks: MediaChunkCodec.split(List<int>.filled(200, 1),
+            payloadId: 12, kind: MediaKind.image),
+        clock: () => now,
+      );
+      final MediaSend first = s.takeDue().single;
+      s.acknowledge(first.index, MediaSendResult.tableFull);
+      // 2 s of backoff against 350 ms of pacing: the backoff is what the loop
+      // must sleep, or it wakes four times to learn nothing.
+      expect(s.waitBeforeDue, s.tableFullBackoff);
+    });
+
+    test('a finished transfer has nothing to wait for', () {
+      DateTime now = DateTime.utc(2026, 11, 5, 12);
+      final MediaSender s = MediaSender(
+        chunks: MediaChunkCodec.split(List<int>.filled(30, 1),
+            payloadId: 13, kind: MediaKind.image),
+        clock: () => now,
+      );
+      while (!s.complete) {
+        for (final MediaSend send in s.takeDue()) {
+          s.acknowledge(send.index, MediaSendResult.accepted);
+        }
+        now = now.add(s.pacing);
+      }
+      expect(s.waitBeforeDue, Duration.zero);
+    });
+  });
+
   group('table full is capacity, not loss', () {
     test('a full table pauses the sender and keeps the chunk', () {
       DateTime now = DateTime.utc(2026, 11, 5, 12);

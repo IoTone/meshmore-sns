@@ -127,6 +127,25 @@ final class MediaSender {
     );
   }
 
+  /// How long until [takeDue] can return a packet, or zero when it can now.
+  ///
+  /// The paced loop needs this: "nothing is due" is not a reason to spin, and
+  /// the wait is either the pacing interval or the table-full backoff,
+  /// whichever is further out.
+  Duration get waitBeforeDue {
+    final DateTime now = _clock();
+    DateTime? until;
+    if (_pausedUntil != null && now.isBefore(_pausedUntil!)) {
+      until = _pausedUntil;
+    }
+    final DateTime? next = _nextSendAt;
+    if (next != null && now.isBefore(next)) {
+      until = until == null || next.isAfter(until) ? next : until;
+    }
+    if (until == null) return Duration.zero;
+    return until.difference(now);
+  }
+
   /// What may go on air now: at most one chunk, because the pacing is a
   /// minimum interval rather than a burst size. An empty list means "wait".
   List<MediaSend> takeDue() {
