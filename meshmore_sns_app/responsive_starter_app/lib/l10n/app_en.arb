@@ -635,6 +635,19 @@
   },
   "chatComposerOffline": "Connect a radio to send",
   "chatSend": "Send",
+  "chatBudgetRemaining": "{remaining} of {max} bytes left",
+  "@chatBudgetRemaining": {
+    "placeholders": {"remaining": {"type": "int"}, "max": {"type": "int"}}
+  },
+  "chatBudgetEstimate": "about {remaining} of {max} bytes left — the radio's name is not known yet",
+  "@chatBudgetEstimate": {
+    "placeholders": {"remaining": {"type": "int"}, "max": {"type": "int"}}
+  },
+  "chatBudgetNear": "Nearly at the limit: the radio counts its own name in these bytes",
+  "chatBudgetTooLong": "Too long by {over} bytes — the radio would cut the rest without telling you",
+  "@chatBudgetTooLong": {
+    "placeholders": {"over": {"type": "int"}}
+  },
   "chatMessageActions": "Message actions",
   "chatSinceNow": "now",
   "chatSinceMinutes": "{m}m",

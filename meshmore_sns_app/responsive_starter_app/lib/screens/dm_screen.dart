@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../chat/chat_actions.dart';
+import '../chat/draft_store.dart';
 import '../chat/studio_message_row.dart';
 import '../gen/app_localizations.dart';
 import '../bot/bot_guards.dart';
@@ -44,10 +45,24 @@ class _DmScreenState extends State<DmScreen> {
   NotificationFocus? _focus;
   int _lastCount = 0;
 
+  /// APP-E7 — the draft key for this thread, and its pending debounced write.
+  /// A thread draft is keyed by the radio and the peer, so the same peer on a
+  /// second radio is a second conversation with its own unsent text.
+  String? _draftKey;
+  Timer? _draftTimer;
+
+  /// The message the last send created, so a failure can put the text back.
+  String? _sentId;
+  String _sentText = '';
+
   @override
   void initState() {
     super.initState();
     final MeshcoreController mc = context.read<MeshcoreController>();
+    _draftKey = _keyFor(mc);
+    _input.addListener(_onComposerChanged);
+    unawaited(_recall());
+    mc.addListener(_onControllerChanged);
     // No special live action needed — the controller's _ingestDm
     // already adds inbound DMs to the store and notifies. The
     // stream subscription is here only as a hook for future per-DM
@@ -71,9 +86,79 @@ class _DmScreenState extends State<DmScreen> {
   void dispose() {
     _focus?.openPeer = null;
     _sub?.cancel();
+    _input.removeListener(_onComposerChanged);
+    _draftTimer?.cancel();
     _input.dispose();
     _scroll.dispose();
     super.dispose();
+  }
+
+  String _keyFor(MeshcoreController mc) => DraftStore.keyFor(
+        DraftStore.radioScope(mc.selfInfo?.publicKey),
+        peerHex: widget.peerPubKeyHex,
+      );
+
+  /// The radio can answer its self-info after this screen opened, which moves
+  /// the draft out of the `noradio` namespace and into the real one.
+  void _onControllerChanged() {
+    if (!mounted) return;
+    final MeshcoreController mc = context.read<MeshcoreController>();
+    final String key = _keyFor(mc);
+    if (key != _draftKey) {
+      final String? previous = _draftKey;
+      final String typed = _input.text;
+      _draftKey = key;
+      _draftTimer?.cancel();
+      _draftTimer = null;
+      if (previous != null) unawaited(DraftStore.save(previous, typed));
+      unawaited(_recall());
+    }
+    _restoreIfFailed(mc);
+  }
+
+  Future<void> _recall() async {
+    final String? key = _draftKey;
+    if (key == null) return;
+    final String draft = await DraftStore.read(key);
+    if (!mounted || key != _draftKey || draft.isEmpty) return;
+    if (_input.text.isNotEmpty) return;
+    setState(() => _input.text = draft);
+    _input.selection = TextSelection.collapsed(offset: draft.length);
+  }
+
+  /// One write per pause, keyed to the draft it belongs to.
+  void _onComposerChanged() {
+    final String? key = _draftKey;
+    if (key == null) return;
+    final String text = _input.text;
+    _draftTimer?.cancel();
+    _draftTimer = Timer(DraftStore.debounce, () {
+      unawaited(DraftStore.save(key, text));
+    });
+    setState(() {});
+  }
+
+  /// A failed direct message gives the text back rather than leaving an empty
+  /// composer under a red row.
+  void _restoreIfFailed(MeshcoreController mc) {
+    final String? id = _sentId;
+    if (id == null || _sentText.isEmpty) return;
+    ChatMessage? found;
+    for (final ChatMessage m in mc.dmHistoryFor(widget.peerPubKeyHex)) {
+      if (m.id == id) {
+        found = m;
+        break;
+      }
+    }
+    if (found == null || found.delivery != MessageDelivery.failed) return;
+    _sentId = null;
+    final String text = _sentText;
+    _sentText = '';
+    if (!mounted || _input.text.isNotEmpty) return;
+    setState(() => _input.text = text);
+    _input.selection = TextSelection.collapsed(offset: text.length);
+    final String? key = _draftKey;
+    if (key != null) unawaited(DraftStore.save(key, text));
   }
 
   String _peerName(MeshcoreController mc) {
@@ -148,7 +233,19 @@ class _DmScreenState extends State<DmScreen> {
   void _send(MeshcoreController mc) {
     final String t = _input.text;
     if (t.trim().isEmpty) return;
-    unawaited(mc.sendDirectText(widget.peerPubKeyHex, t));
+    final String? key = _draftKey;
+    // Cleared on the send, put back by [_restoreIfFailed] if the row fails.
+    if (key != null) {
+      _draftTimer?.cancel();
+      unawaited(DraftStore.clear(key));
+    }
+    _sentText = t;
+    _sentId = null;
+    unawaited(mc.sendDirectText(widget.peerPubKeyHex, t).then(
+      (ChatMessage? m) {
+        if (m != null) _sentId = m.id;
+      },
+    ));
     _input.clear();
   }
 

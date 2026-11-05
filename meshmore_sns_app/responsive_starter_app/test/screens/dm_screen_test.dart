@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:meshmore_sns_app/chat/draft_store.dart';
 import 'package:meshmore_sns_app/gen/app_localizations.dart';
 import 'package:meshmore_sns_app/l10n/locale_controller.dart';
 import 'package:meshmore_sns_app/meshcore/meshcore_controller.dart';
@@ -123,4 +124,72 @@ void main() {
     expect(find.byIcon(Icons.record_voice_over), findsOneWidget);
     mc.dispose();
   });
+
+  testWidgets('APP-E7: a thread keeps its own unsent text',
+      (WidgetTester t) async {
+    SharedPreferences.setMockInitialValues(<String, Object>{});
+    const String peer = 'aabbccddeeff00112233445566778899';
+    final _MemoryDrafts sink = _MemoryDrafts();
+    DraftStore.sinkOverride = sink;
+    addTearDown(() => DraftStore.sinkOverride = null);
+
+    final FakeMeshcoreTransport fake =
+        FakeMeshcoreTransport(connected: true);
+    final MeshcoreController mc =
+        MeshcoreController(transportFactory: () async => fake);
+    await t.pumpWidget(_host(mc, peer));
+    await t.pump();
+    await mc.connect();
+    fake.emit(selfInfoFrame());
+    await t.pump();
+    await t.pump(const Duration(milliseconds: 10));
+
+    // The radio has now answered, so the thread's draft lives in its
+    // namespace; seeding it here exercises the recall, not the save.
+    final String key = DraftStore.keyFor(
+        DraftStore.radioScope(mc.selfInfo?.publicKey),
+        peerHex: peer);
+    sink.text[key] = 'half typed';
+    // A fresh State so initState recalls what is stored.
+    await t.pumpWidget(const SizedBox());
+    await t.pumpWidget(_host(mc, peer));
+    await t.pump();
+    await t.pump(const Duration(milliseconds: 10));
+
+    expect(find.text('half typed'), findsOneWidget,
+        reason: 'the thread hands back what was left in it');
+
+    await t.enterText(find.byType(TextField), 'still typing');
+    await t.pump();
+    // One write per pause: nothing before the debounce, one after it.
+    expect(sink.saves, 0);
+    await t.pump(DraftStore.debounce + const Duration(milliseconds: 1));
+    expect(sink.saves, 1);
+    expect(sink.text[key], 'still typing');
+    mc.dispose();
+  });
+}
+
+/// In-memory stand-in for the sealed file, so the debounce runs in fake time.
+class _MemoryDrafts implements DraftSink {
+  final Map<String, String> text = <String, String>{};
+  int saves = 0;
+
+  @override
+  Future<String> read(String key) async => text[key] ?? '';
+
+  @override
+  Future<void> save(String key, String value) async {
+    // Blank is a removal in the real store, not a row: counting it here would
+    // make an emptied composer look like a typed one.
+    if (value.trim().isEmpty) {
+      text.remove(key);
+      return;
+    }
+    saves++;
+    text[key] = value;
+  }
+
+  @override
+  Future<void> clear(String key) async => text.remove(key);
 }

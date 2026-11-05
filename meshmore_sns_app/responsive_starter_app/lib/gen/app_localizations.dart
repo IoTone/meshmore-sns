@@ -2582,6 +2582,30 @@ abstract class AppLocalizations {
   /// **'Send'**
   String get chatSend;
 
+  /// No description provided for @chatBudgetRemaining.
+  ///
+  /// In en, this message translates to:
+  /// **'{remaining} of {max} bytes left'**
+  String chatBudgetRemaining(int remaining, int max);
+
+  /// No description provided for @chatBudgetEstimate.
+  ///
+  /// In en, this message translates to:
+  /// **'about {remaining} of {max} bytes left — the radio\'s name is not known yet'**
+  String chatBudgetEstimate(int remaining, int max);
+
+  /// No description provided for @chatBudgetNear.
+  ///
+  /// In en, this message translates to:
+  /// **'Nearly at the limit: the radio counts its own name in these bytes'**
+  String get chatBudgetNear;
+
+  /// No description provided for @chatBudgetTooLong.
+  ///
+  /// In en, this message translates to:
+  /// **'Too long by {over} bytes — the radio would cut the rest without telling you'**
+  String chatBudgetTooLong(int over);
+
   /// No description provided for @chatMessageActions.
   ///
   /// In en, this message translates to:

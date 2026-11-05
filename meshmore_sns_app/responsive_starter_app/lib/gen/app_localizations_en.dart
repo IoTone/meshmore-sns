@@ -1472,6 +1472,25 @@ class AppLocalizationsEn extends AppLocalizations {
   String get chatSend => 'Send';
 
   @override
+  String chatBudgetRemaining(int remaining, int max) {
+    return '$remaining of $max bytes left';
+  }
+
+  @override
+  String chatBudgetEstimate(int remaining, int max) {
+    return 'about $remaining of $max bytes left — the radio\'s name is not known yet';
+  }
+
+  @override
+  String get chatBudgetNear =>
+      'Nearly at the limit: the radio counts its own name in these bytes';
+
+  @override
+  String chatBudgetTooLong(int over) {
+    return 'Too long by $over bytes — the radio would cut the rest without telling you';
+  }
+
+  @override
   String get chatMessageActions => 'Message actions';
 
   @override

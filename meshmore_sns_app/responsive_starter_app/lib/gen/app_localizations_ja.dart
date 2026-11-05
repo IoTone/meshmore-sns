@@ -1403,6 +1403,24 @@ class AppLocalizationsJa extends AppLocalizations {
   String get chatSend => '送信';
 
   @override
+  String chatBudgetRemaining(int remaining, int max) {
+    return '残り $remaining / $max バイト';
+  }
+
+  @override
+  String chatBudgetEstimate(int remaining, int max) {
+    return '残り約 $remaining / $max バイト — 無線機の名前はまだ不明です';
+  }
+
+  @override
+  String get chatBudgetNear => '上限が近いです:無線機は自分の名前もこのバイト数に含めます';
+
+  @override
+  String chatBudgetTooLong(int over) {
+    return '$over バイト超過 — 無線機は残りを通知せずに切り捨てます';
+  }
+
+  @override
   String get chatMessageActions => 'メッセージ操作';
 
   @override
