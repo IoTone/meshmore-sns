@@ -121,7 +121,6 @@ void main() {
       'lib/screens/location_settings_screen.dart': 1,
       'lib/screens/meshbook_view.dart': 3,
       'lib/screens/mesh_tree_view.dart': 3,
-      'lib/screens/node_detail_sheet.dart': 5,
       'lib/screens/sns_cells_view.dart': 2,
       'lib/screens/voice_settings_screen.dart': 2,
       'lib/screens/weather_view.dart': 4,
