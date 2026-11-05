@@ -733,7 +733,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get nodesFloodAdvertBody => 'メッシュ全体 — 隣接 + リピーター。発見に最適。';
 
   @override
-  String get nodesZeroHopAdvert => 'ゼロホップアドバート';
+  String get nodesZeroHopAdvert => '直接アドバート';
 
   @override
   String get nodesZeroHopAdvertBody => '隣接のみ — 再ブロードキャストなし。混雑したメッシュ向け。';
@@ -743,8 +743,7 @@ class AppLocalizationsJa extends AppLocalizations {
       'フラッドアドバートを送信 — メッシュ全体に伝播 (隣接 + リピーター)。相手側でも Advertise を実行するまで表示されません。';
 
   @override
-  String get nodesZeroHopAdvertSent =>
-      'ゼロホップアドバートを送信 — 隣接のみ、リピーターは再ブロードキャストしません。';
+  String get nodesZeroHopAdvertSent => '直接届く範囲のラジオにだけ送りました。';
 
   @override
   String get nodesSearchHint => '名前 / shortId / 公開鍵で検索…';
@@ -1667,7 +1666,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String nodeDetailRemoveDeviceContactConfirm(String name) {
-    return '「$name」を無線機の連絡先から削除しますか？空きができます。後で再追加できます。';
+    return '「$name」をラジオの連絡先から削除しますか？後から追加し直せます。';
   }
 
   @override
@@ -2002,7 +2001,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get docsUpToDate => 'すでに最新です';
 
   @override
-  String get docsOriginBundled => '同梱スナップショット';
+  String get docsOriginBundled => 'アプリに同梱';
 
   @override
   String docsOriginUpdated(String when) {
@@ -2488,7 +2487,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String channelsSetDefaultSnack(int idx) {
-    return 'スロット $idx を起動時の既定に設定';
+    return 'チャンネル $idx を起動時に開くよう設定しました';
   }
 
   @override

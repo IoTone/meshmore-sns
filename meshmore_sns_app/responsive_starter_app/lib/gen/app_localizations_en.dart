@@ -774,7 +774,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Whole mesh — neighbours + repeaters. Best for discovery.';
 
   @override
-  String get nodesZeroHopAdvert => 'Zero-hop advert';
+  String get nodesZeroHopAdvert => 'Direct advert';
 
   @override
   String get nodesZeroHopAdvertBody =>
@@ -785,8 +785,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Flood advert sent — propagates across the whole mesh (neighbours + repeaters). The other node must Advertise too before it appears here.';
 
   @override
-  String get nodesZeroHopAdvertSent =>
-      'Zero-hop advert sent — direct neighbours only, not rebroadcast by repeaters.';
+  String get nodesZeroHopAdvertSent => 'Sent to radios in direct range only.';
 
   @override
   String get nodesSearchHint => 'Search by name, shortId, or pubkey…';
@@ -1758,7 +1757,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String nodeDetailRemoveDeviceContactConfirm(String name) {
-    return 'Remove “$name” from your radio\'s contacts? Frees a slot. You can re-add it later.';
+    return 'Remove “$name” from the radio\'s contacts? You can add them again later.';
   }
 
   @override
@@ -2097,7 +2096,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get docsUpToDate => 'Already up to date';
 
   @override
-  String get docsOriginBundled => 'Bundled snapshot';
+  String get docsOriginBundled => 'Included copy';
 
   @override
   String docsOriginUpdated(String when) {
@@ -2610,7 +2609,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String channelsSetDefaultSnack(int idx) {
-    return 'Slot $idx is now the launch default';
+    return 'Channel $idx is now the one the app opens on';
   }
 
   @override

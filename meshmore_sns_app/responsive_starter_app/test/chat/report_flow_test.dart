@@ -38,7 +38,7 @@ void main() {
     if (dir.existsSync()) dir.deleteSync(recursive: true);
   });
 
-  testWidgets('the flow writes a bundle and says it was not sent',
+  testWidgets('the flow writes a report and says it was not sent',
       (WidgetTester t) async {
     final ChatMessage m = ChatMessage(
       channelIdx: 1,
