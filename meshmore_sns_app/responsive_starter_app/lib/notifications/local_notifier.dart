@@ -180,7 +180,8 @@ class LocalNotifier implements Notifier {
   /// The last state read from the OS, and the channels it reported.
   NotifierHealth _health = NotifierHealth.ok;
   @override
-  Future<NotifierHealth> health() async => _health;
+  Future<NotifierHealth> health({bool refresh = false}) async =>
+      refresh ? refreshHealth() : _health;
 
   /// Reads the OS back and recreates a channel the user deleted.
   ///

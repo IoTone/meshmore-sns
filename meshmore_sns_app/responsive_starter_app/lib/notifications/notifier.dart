@@ -40,7 +40,11 @@ abstract interface class Notifier {
 
   /// Reads the OS state back. Never throws: an unreadable state is [ok], so a
   /// platform that cannot answer does not paint a warning that may be false.
-  Future<NotifierHealth> health();
+  ///
+  /// [refresh] asks the platform again. The settings row passes it, because a
+  /// user who just changed the channel in Android settings expects to see the
+  /// result when they come back, not on the next launch.
+  Future<NotifierHealth> health({bool refresh = false});
 }
 
 /// Records what the app asked the OS to show. Test-only.
@@ -65,7 +69,7 @@ class FakeNotifier implements Notifier {
   NotifierHealth healthValue = NotifierHealth.ok;
 
   @override
-  Future<NotifierHealth> health() async => healthValue;
+  Future<NotifierHealth> health({bool refresh = false}) async => healthValue;
 
   void clear() {
     shown.clear();
