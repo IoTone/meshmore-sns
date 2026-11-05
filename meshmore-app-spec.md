@@ -131,7 +131,7 @@ tag is. Two people who both type "emergency" land on a channel nobody else can j
 the canonical form; a unit test asserts `channelPskFromHashtag('#emergency')` equals keymind's
 `EMERGENCY_CHANNEL_SECRET` bytes and that the unprefixed input is normalized to the same value.
 
-*Built 2026-11-05 (R110):* normalised, not refused — `canonicalHashtag` trims and prefixes, and every derivation and
+*Built 2026-11-05 (R113):* normalised, not refused — `canonicalHashtag` trims and prefixes, and every derivation and
 the weak-tag warning go through it. Tests: `channel_crypto_test.dart` (both typed forms equal the `#test` KAT,
 canonical form trims, case preserved) and `channels_screen_test.dart` (a bare tag writes `#emergency` to the slot).
 The cross-check against a fork's hardcoded `#emergency` bytes is dropped: one product's constant is not the
@@ -327,7 +327,7 @@ another device.
 ## 8. G — Places and the map
 
 **APP-G1.** A place MUST carry coordinates, a label, a type, a TTL and a deterministic id. The id MUST be
-`sha256(pubkey ‖ latE7 ‖ lonE7 ‖ type)` truncated to 8 hex characters, with **no time component**, so a
+`sha256(pubkey ‖ latE6 ‖ lonE6 ‖ type)` truncated to 8 hex characters, with **no time component**, so a
 renewal keeps the id (decision D8.2). Where the report arrives as channel text there is no public key, so the
 id MUST use the sender's name bytes and the row MUST be marked **unkeyed** and say so in the detail sheet.
 

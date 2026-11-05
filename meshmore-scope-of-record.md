@@ -264,7 +264,7 @@ because nothing persists.
   `[PLACE]`, so it cannot corrupt a label the way a `[WAY]` suffix would.
 - **What the text does carry, and what it still cannot prove:** the type token and the TTL are now in the
   grammar (D8.2) as an optional closed-set token immediately before the anchored TTL. The id is derived
-  (`sha256(pubkey ‖ latE7 ‖ lonE7 ‖ type)`, first 8 hex), **not transmitted**, so a receiver recomputes it. On
+  (`sha256(pubkey ‖ latE6 ‖ lonE6 ‖ type)`, first 8 hex), **not transmitted**, so a receiver recomputes it. On
   channel text there is no public key to derive from — the id uses the sender's name and is marked unkeyed.
   That is the one thing the text form cannot fix, and the spec says so rather than implying a verified identity.
 - **Binary second**, on the channel-datagram path once `0x3E` exists, with the text announcement as the
@@ -460,7 +460,7 @@ low — it is a default, not a protocol.
 
 **D8.2 Place type and deterministic id — trailing tokens, id without time.**
 Grammar: `[PLACE]<lat>,<lon> <label> [<type>] [TTL:<duration>]`, TTL last and anchored, type an optional closed-set
-token immediately before it. The **id excludes time** — `sha256(pubkey ‖ latE7 ‖ lonE7 ‖ type)` truncated to 8 hex —
+token immediately before it. The **id excludes time** — `sha256(pubkey ‖ latE6 ‖ lonE6 ‖ type)` truncated to 8 hex —
 because the scope of record requires renewal to keep the id while changing the timestamp; a time bucket would make
 every renewal a new place. Duplicate suppression is per id with the newest timestamp winning, so one row per
 reporter per location per type. Reversal cost: medium — ids are persisted.
