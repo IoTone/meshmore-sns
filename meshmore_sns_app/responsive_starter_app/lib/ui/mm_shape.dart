@@ -67,30 +67,41 @@ const double kRadiusXs = 2;
 const double kRadiusSm = 3;
 const double kRadiusMd = 4;
 
-/// The [OutlinedBorder] for a skin's [MmShape] — sharp, rounded, or
+/// R114 — no corner in this app is perfectly sharp.
+///
+/// A hairline corner is what [kSquareRadius] means: the edge stays flat to the
+/// eye and the stroke still has somewhere to turn. A true zero cuts the
+/// border's own pixel at the corner, which at phone densities reads as a
+/// damaged corner, and it makes the "sharp" presets (SEELE, Dr Pop, RECON)
+/// disagree with Studio's square controls for no reason a user can see. Every
+/// border and every screen-drawn radius goes through this floor, so the rule
+/// lives in one place instead of in seven skins.
+double mmCornerFloor(double radius) =>
+    radius < kSquareRadius ? kSquareRadius : radius;
+
+/// The [OutlinedBorder] for a skin's [MmShape] — square, rounded, or
 /// chamfered — carrying the given [side].
 OutlinedBorder mmShapeBorder(MmShape shape, {required BorderSide side}) =>
     switch (shape.corner) {
       MmCorner.sharp => RoundedRectangleBorder(
           side: side,
-          borderRadius: shape.squareControls
-              ? BorderRadius.circular(kSquareRadius)
-              : BorderRadius.zero),
+          borderRadius: BorderRadius.circular(kSquareRadius)),
       MmCorner.rounded => RoundedRectangleBorder(
           side: side,
-          borderRadius: BorderRadius.circular(shape.cornerSize)),
+          borderRadius: BorderRadius.circular(mmCornerFloor(shape.cornerSize))),
       MmCorner.chamfer =>
-        MmChamferBorder(side: side, cut: shape.cornerSize),
+        MmChamferBorder(side: side, cut: mmCornerFloor(shape.cornerSize)),
     };
 
 /// R71 — the corner radius for a *control or card surface* that a screen
 /// draws itself (a `Material`/`Container` with a hard-coded
 /// `BorderRadius.circular`). [kSquareRadius] when the active skin sets
-/// [MmShape.squareControls] (Studio, R98), [radius] otherwise, so the six
-/// older presets keep their exact rounding. Screens must use this instead of
-/// a literal radius; `test/ui/square_controls_guard_test.dart` fails the
-/// build when one reappears.
+/// [MmShape.squareControls] (Studio, R98), [radius] otherwise so the six
+/// older presets keep their exact rounding, and never below the
+/// [mmCornerFloor] hairline. Screens must use this instead of a literal
+/// radius; `test/ui/square_controls_guard_test.dart` fails the build when one
+/// reappears.
 BorderRadius mmRadius(BuildContext context, double radius) =>
     context.skin.shape.squareControls
         ? BorderRadius.circular(kSquareRadius)
-        : BorderRadius.circular(radius);
+        : BorderRadius.circular(mmCornerFloor(radius));
