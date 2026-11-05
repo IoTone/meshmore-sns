@@ -22,6 +22,8 @@ import 'package:meshmore_sns_app/main.dart';
 import 'package:meshmore_sns_app/meshcore/meshcore_controller.dart';
 import 'package:meshmore_sns_app/perms/first_run_controller.dart';
 import 'package:meshmore_sns_app/perms/permissions_service.dart';
+import 'package:meshmore_sns_app/chat/channel_read_store.dart';
+import 'package:meshmore_sns_app/meshcore/block_store.dart';
 import 'package:meshmore_sns_app/places/place_report_budget.dart';
 import 'package:meshmore_sns_app/places/place_store.dart';
 import 'package:meshmore_sns_app/theme/theme_controller.dart';
@@ -89,6 +91,8 @@ List<SingleChildWidget> _providers() => <SingleChildWidget>[
       // R109 places: the map tab and the chat echo read these, so every
       // harness that builds the shell needs them (as `home_shell_test` does).
       ChangeNotifierProvider<PlaceStore>(create: (_) => PlaceStore()),
+      ChangeNotifierProvider<BlockStore>(create: (_) => BlockStore()),
+      ChangeNotifierProvider<ChannelReadStore?>.value(value: null),
       Provider<PlaceReportBudget>(
           create: (_) => PlaceReportBudget(clock: DateTime.now)),
     ];
@@ -185,6 +189,8 @@ void main() {
   // The Settings sub-screens are one tap away; a floor that only holds on the
   // six primary views is not a floor. Each is opened through the real router.
   const List<String> routes = <String>[
+    '/settings/blocks',
+    '/chat/search',
     '/settings/device',
     '/settings/channels',
     '/settings/app',

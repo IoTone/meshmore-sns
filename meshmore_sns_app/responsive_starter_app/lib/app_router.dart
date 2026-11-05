@@ -6,6 +6,7 @@ import 'screens/app_settings_screen.dart';
 import 'screens/about_screen.dart';
 import 'screens/docs_hub_screen.dart';
 import 'screens/battery_screen.dart';
+import 'screens/blocked_keys_screen.dart';
 import 'screens/channels_screen.dart';
 import 'docs/doc_section.dart';
 import 'screens/coverage_screen.dart';
@@ -17,6 +18,7 @@ import 'screens/dm_screen.dart';
 import 'screens/diagnostics_screen.dart';
 import 'screens/terms_screen.dart';
 import 'screens/location_settings_screen.dart';
+import 'screens/chat_search_screen.dart';
 import 'screens/checkin_screen.dart';
 import 'screens/pair_radio_screen.dart';
 import 'screens/personalization_screen.dart';
@@ -67,6 +69,13 @@ final GoRouter appRouter = GoRouter(
     // beside it on the alarm screen because it is the non-emergency sibling.
     GoRoute(path: '/sos', builder: (_, __) => const SosScreen()),
     GoRoute(path: '/checkin', builder: (_, __) => const CheckinScreen()),
+    // APP-E6 — search over stored history. A route rather than a sheet
+    // because a hit opens a thread, and a sheet over the list makes that read
+    // as a preview rather than a jump.
+    GoRoute(
+      path: '/chat/search',
+      builder: (_, __) => const ChatSearchScreen(),
+    ),
     GoRoute(
       path: '/dm/:pubkey',
       builder: (_, GoRouterState state) => DmScreen(
@@ -82,6 +91,12 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: '/pair',
       builder: (_, __) => const PairRadioScreen(),
+    ),
+    // APP-F1..F3 - the keys this device blocks, and the one action that
+    // matters there.
+    GoRoute(
+      path: '/settings/blocks',
+      builder: (_, __) => const BlockedKeysScreen(),
     ),
     GoRoute(
       path: '/settings/voice',

@@ -11,7 +11,7 @@ import '../meshcore/failure.dart';
 /// on a failed outgoing row) for chat
 /// rows (channel chat **and** DM thread). Long-press a row OR tap
 /// the trailing affordance to open this sheet.
-enum ChatAction { reply, copy, delete, retry }
+enum ChatAction { reply, copy, delete, retry, report }
 
 /// Modal bottom sheet listing the three actions. Returns the chosen
 /// action (or null on dismiss). The caller wires the consequences:
@@ -52,6 +52,16 @@ Future<ChatAction?> showChatActions(
             subtitle: Text(l.actionCopySub),
             onTap: () => Navigator.pop(ctx, ChatAction.copy),
           ),
+          // A report is not a block and not moderation: it is a bundle the
+          // reader sends wherever they choose, so it sits beside Copy rather
+          // than beside Delete.
+          if (!m.outgoing)
+            ListTile(
+              leading: const Icon(Icons.flag_outlined),
+              title: Text(l.reportAction),
+              subtitle: Text(l.reportActionSub),
+              onTap: () => Navigator.pop(ctx, ChatAction.report),
+            ),
           ListTile(
             leading: Icon(Icons.delete_outline,
                 color: Theme.of(ctx).colorScheme.error),

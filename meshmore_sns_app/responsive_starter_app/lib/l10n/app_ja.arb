@@ -1,9 +1,7 @@
 {
   "@@locale": "ja",
-
   "appName": "Meshmore SNS",
   "appSubtitle": "ソーシャルロボット・ネットワークサービス",
-
   "tabDashboard": "ダッシュボード",
   "tabChat": "チャット",
   "tabNodes": "ノード",
@@ -11,15 +9,22 @@
   "tabDocs": "ドキュメント",
   "tabSettings": "設定",
   "tabAbout": "アプリ情報",
-
   "dashboardPeersInRange": "範囲内のピア",
   "dashboardKnownCount": "{n}件 既知",
   "@dashboardKnownCount": {
-    "placeholders": {"n": {"type": "int"}}
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
   },
   "dashboardMyPubkey": "自分の公開鍵 · {hex}",
   "@dashboardMyPubkey": {
-    "placeholders": {"hex": {"type": "String"}}
+    "placeholders": {
+      "hex": {
+        "type": "String"
+      }
+    }
   },
   "dashboardPubkeyAwaiting": "自分の公開鍵 · デバイス待機中",
   "dashboardPubkeyHint": "タップでコピー。相手が連絡先として追加する際に必要です。",
@@ -37,11 +42,25 @@
   "botSeed": "シード",
   "botBudget": "このウィンドウで残り {n} 件",
   "@botBudget": {
-    "placeholders": {"n": {"type": "int"}}
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
   },
   "botCounters": "受信 {r} · 返信 {p} · 抑制 {s}",
   "@botCounters": {
-    "placeholders": {"r": {"type": "int"}, "p": {"type": "int"}, "s": {"type": "int"}}
+    "placeholders": {
+      "r": {
+        "type": "int"
+      },
+      "p": {
+        "type": "int"
+      },
+      "s": {
+        "type": "int"
+      }
+    }
   },
   "botResetCounters": "カウンタをリセット",
   "botEditRules": "規則を編集",
@@ -49,7 +68,11 @@
   "botRulesRestore": "既定に戻す",
   "botRulesErrors": "{n} 行を読み取れずスキップしました",
   "@botRulesErrors": {
-    "placeholders": {"n": {"type": "int"}}
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
   },
   "botRulesSave": "保存",
   "botFromBot": "ボット",
@@ -69,7 +92,11 @@
   "dashReconNoContacts": "範囲内に連絡先なし",
   "dashAgHudOfKnown": "既知 {count} 中",
   "@dashAgHudOfKnown": {
-    "placeholders": { "count": { "type": "String" } }
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
   },
   "dashboardLocation": "現在地",
   "dashboardBattery": "バッテリー",
@@ -82,7 +109,11 @@
   "dashboardLocationConfigure": "設定",
   "dashboardLocationSourceLabel": "ソース · {source}",
   "@dashboardLocationSourceLabel": {
-    "placeholders": {"source": {"type": "String"}}
+    "placeholders": {
+      "source": {
+        "type": "String"
+      }
+    }
   },
   "statusLinked": "接続中 · 通常",
   "statusSyncing": "同期中…",
@@ -99,7 +130,7 @@
   "linkChipOffline": "オフライン",
   "linkChipSemantics": "ラジオ: {state}",
   "actionConnect": "接続",
-  "actionRetry": "再試行",
+  "actionRetry": "再送",
   "dashboardDevice": "デバイス",
   "deviceMgrTitle": "デバイス",
   "deviceMgrNoPair": "デバイス未ペアリング",
@@ -117,29 +148,51 @@
   "deviceMgrScanHint": "「スキャン」をタップして近くの MeshCore デバイスを探します。2 台以上ある場合はリストから選んでください。",
   "deviceMgrScanFailed": "スキャン失敗: {message}",
   "@deviceMgrScanFailed": {
-    "placeholders": {"message": {"type": "String"}}
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
   },
   "deviceMgrRecent": "最近のペアリング",
   "deviceMgrAgoNever": "未使用",
   "deviceMgrAgoNow": "たった今",
   "deviceMgrAgoMinutes": "{n} 分前",
   "@deviceMgrAgoMinutes": {
-    "placeholders": {"n": {"type": "int"}}
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
   },
   "deviceMgrAgoHours": "{n} 時間前",
   "@deviceMgrAgoHours": {
-    "placeholders": {"n": {"type": "int"}}
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
   },
   "deviceMgrAgoDays": "{n} 日前",
   "@deviceMgrAgoDays": {
-    "placeholders": {"n": {"type": "int"}}
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
   },
   "deviceMgrPairNew": "新しいラジオをペアリング",
-
   "pairTitle": "ラジオをペアリング",
   "pairStepOf": "ステップ {step} / {total}",
   "@pairStepOf": {
-    "placeholders": {"step": {"type": "int"}, "total": {"type": "int"}}
+    "placeholders": {
+      "step": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
   },
   "pairPermissionTitle": "Bluetooth の権限",
   "pairPermissionBody": "ラジオを見つけて通信するために「付近のデバイス」の権限が必要です。まだ何もペアリングされていません。",
@@ -157,23 +210,34 @@
   "pairNothingFound": "応答したラジオがありません。電源・距離・他のスマートフォンへの接続を確認して、もう一度スキャンしてください。",
   "pairRssi": "RSSI {rssi}",
   "@pairRssi": {
-    "placeholders": {"rssi": {"type": "int"}}
+    "placeholders": {
+      "rssi": {
+        "type": "int"
+      }
+    }
   },
   "pairConnecting": "{name} に接続中…",
   "@pairConnecting": {
-    "placeholders": {"name": {"type": "String"}}
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
   },
   "pairConnectingBody": "ラジオに PIN が表示されたら、求められたときにスマートフォンへ入力してください。画面のないラジオは 123456 です。",
   "pairConfirmTitle": "ラジオに接続しました",
   "pairConfirmBody": "{name} が応答しました。リンクとプロトコルの両方が動作しています。このラジオがアプリの接続先になります。",
   "@pairConfirmBody": {
-    "placeholders": {"name": {"type": "String"}}
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
   },
   "pairConfirmNode": "ノード",
   "pairConfirmFirmware": "ファームウェア",
   "pairConfirmUse": "このラジオを使う",
   "pairChooseAnother": "別のラジオを選ぶ",
-
   "settingsHeading": "アプリ設定",
   "settingsBackgroundTitle": "バックグラウンドで接続を維持",
   "settingsBackgroundOn": "Android: 常駐通知でラジオ接続を維持し、バックグラウンド中もメッセージを受信",
@@ -194,7 +258,6 @@
   "settingsShowIntro": "次回起動時に紹介を再表示",
   "settingsShowIntroEnabled": "初回フラグを消去し権限紹介を再表示 — フロー検証時に便利",
   "settingsShowIntroDisabled": "紹介は次回起動時に表示予定",
-
   "termsTitle": "利用規約とプライバシー",
   "termsLead": "このアプリはメッシュ無線と通信します。アカウントもクラウドも解析もありません。",
   "termsSectionLocal": "この端末に残るもの",
@@ -227,9 +290,12 @@
   "aboutLicensesButton": "オープンソースライセンスと権利表示",
   "aboutAttributions": "MeshCore ドキュメント（MIT）、GeoNames 都市データ（CC-BY 4.0）、Natural Earth（パブリックドメイン）、OpenStreetMap 地図データ（ODbL）、Saira・JetBrains Mono フォント（OFL）を含みます。",
   "@aboutVersion": {
-    "placeholders": {"version": {"type": "String"}}
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
   },
-
   "personalizationHeading": "プロフィール & パーソナライズ",
   "personalizationThemePreset": "テーマプリセット",
   "personalizationType": "文字",
@@ -247,7 +313,6 @@
   "personalizationAudioMasterEnabled": "既定で ON; 補助としてのみ",
   "dashboardAudioMute": "アラート音をミュート",
   "dashboardAudioUnmute": "アラート音のミュート解除",
-
   "demoBanner": "デモ",
   "demoTooltip": "デモモード — 無線なし。コンパニオンに接続せずにチャンネル・設定・ドキュメントを試せます。",
   "demoModeRow": "デモモード（無線なし）",
@@ -266,26 +331,34 @@
   "firstRunDeniedTransient": "Bluetooth が許可されませんでした — オフラインで続行するか、OS 設定で許可を変更できます。",
   "firstRunDeniedPermanent": "Bluetooth が永続的に拒否されました — OS 設定で許可してください。オフラインでも引き続き利用可能です。",
   "firstRunOpenSettings": "OS 設定を開く",
-
   "dashboardPaired": "ペア済み: {name}",
   "@dashboardPaired": {
-    "placeholders": {"name": {"type": "String"}}
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
   },
   "dashboardCharging": "充電中",
   "dashboardBatteryReadout": "{volts}V · 約{percent}%",
   "@dashboardBatteryReadout": {
     "placeholders": {
-      "volts": {"type": "String"},
-      "percent": {"type": "int"}
+      "volts": {
+        "type": "String"
+      },
+      "percent": {
+        "type": "int"
+      }
     }
   },
   "dashboardBatteryLeft": "残り約{time}",
   "@dashboardBatteryLeft": {
     "placeholders": {
-      "time": {"type": "String"}
+      "time": {
+        "type": "String"
+      }
     }
   },
-
   "nodesScanArea": "周辺をスキャン",
   "nodesScanning": "スキャン中…",
   "nodesAdvertise": "アドバート送信",
@@ -317,10 +390,18 @@
   "nodesStatusReady": "{shown}/{total}件 表示 · {inRange}件 範囲内 · {favs}件 コンタクト",
   "@nodesStatusReady": {
     "placeholders": {
-      "shown": {"type": "int"},
-      "total": {"type": "int"},
-      "inRange": {"type": "int"},
-      "favs": {"type": "int"}
+      "shown": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      },
+      "inRange": {
+        "type": "int"
+      },
+      "favs": {
+        "type": "int"
+      }
     }
   },
   "nodesStatusOffline": "未接続 — 設定 → 診断で接続",
@@ -330,7 +411,6 @@
   "nodesEmptyOffline": "ラジオを接続して周辺ノードを発見してください。",
   "nodesFavTooltip": "お気に入りに追加",
   "nodesUnfavTooltip": "お気に入りから削除",
-
   "gridTitle": "ハイパーローカルグリッド",
   "gridShowLegend": "凡例を表示",
   "gridHideLegend": "凡例を非表示",
@@ -349,7 +429,11 @@
   "gridLegend": "凡例",
   "gridLegendRings": "同心円 3 本 = 距離帯。両端に GPS がある場合、外側のリングは上の「範囲」スケール (現在 ~{value})。GPS がない場合は RSSI 帯 (近 / 中 / 遠)。",
   "@gridLegendRings": {
-    "placeholders": {"value": {"type": "String"}}
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
   },
   "gridLegendSelf": "中央 = 自分。十字 = 南北 / 東西の目安。",
   "gridLegendDot": "ドット = 受信したファブリックノード。明るさ = 新しさ (受信直後 = 最大、24時間で 0 に減衰し消滅)。",
@@ -379,7 +463,11 @@
   "elevationProfileUnknownLabel": "高度不明",
   "elevationProfilePeers": "{n} 個のノード",
   "@elevationProfilePeers": {
-    "placeholders": {"n": {"type": "int"}}
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
   },
   "elevationRefPerson": "人間",
   "elevationRefHouse": "家",
@@ -389,7 +477,11 @@
   "elevationRefMtFuji": "富士山",
   "fabricCoverageCount": "メッシュ調査 · {n} セル",
   "@fabricCoverageCount": {
-    "placeholders": {"n": {"type": "int"}}
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
   },
   "fabricResetTooltip": "調査結果をリセット",
   "fabricResetTitle": "メッシュ調査結果をリセットしますか？",
@@ -401,12 +493,20 @@
   "mapShowTiles": "地図タイルを表示",
   "deviceRegionLoadedOffline": "{label} を読み込みました — デバイス接続時に「適用」してください。",
   "@deviceRegionLoadedOffline": {
-    "placeholders": {"label": {"type": "String"}}
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
   },
   "equalGridAwaitingFix": "等分グリッド表示には自分の位置が必要です — GPS 取得待ち（スマートフォンまたはデバイス）。",
   "equalGridCellSize": "セル {size}",
   "@equalGridCellSize": {
-    "placeholders": {"size": {"type": "String"}}
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
   },
   "equalGridZoomIn": "ズームイン（セルを狭く）",
   "equalGridZoomOut": "ズームアウト（セルを広く）",
@@ -422,19 +522,26 @@
   "dashboardLocationRefresh": "デバイスから位置を更新",
   "dashboardLocationAltitude": "高度 {meters} m",
   "@dashboardLocationAltitude": {
-    "placeholders": {"meters": {"type": "int"}}
+    "placeholders": {
+      "meters": {
+        "type": "int"
+      }
+    }
   },
   "deviceLocReportsAwaiting": "デバイス報告値: (待機中)",
   "deviceLocReportsNone": "デバイス報告値: GPS 未取得 (0, 0)",
   "deviceLocReportsValue": "デバイス報告値: {lat}, {lon}",
   "@deviceLocReportsValue": {
     "placeholders": {
-      "lat": {"type": "String"},
-      "lon": {"type": "String"}
+      "lat": {
+        "type": "String"
+      },
+      "lon": {
+        "type": "String"
+      }
     }
   },
   "deviceLocUnsaved": "✱ 未保存",
-
   "deviceGpsModule": "オンボード GPS モジュール",
   "deviceGpsEnable": "オンボード GPS を有効化",
   "deviceGpsEnabledHint": "デバイスファームウェアが GPS チップを定期的に読み取り、位置を自動更新します。",
@@ -444,18 +551,29 @@
   "deviceGpsIntervalOff": "オフ",
   "deviceGpsIntervalSec": "{n} 秒ごと",
   "@deviceGpsIntervalSec": {
-    "placeholders": {"n": {"type": "int"}}
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
   },
   "deviceGpsIntervalMin": "{n} 分ごと",
   "@deviceGpsIntervalMin": {
-    "placeholders": {"n": {"type": "int"}}
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
   },
   "deviceGpsIntervalHour": "{n} 時間ごと",
   "@deviceGpsIntervalHour": {
-    "placeholders": {"n": {"type": "int"}}
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
   },
   "deviceGpsIntervalFixedByFirmware": "このファームウェアビルドでは GPS 更新間隔がハードコードされており、変更できません（sensors モジュールが `gps_interval` を公開していないため）。",
-
   "locTitle": "位置の自動公開",
   "locTileSubtitle": "定期 + 移動検知でスマートフォン GPS をデバイスに反映",
   "locHelp": "無線機の GPS が古いとき、スマートフォンの位置を書き込みます。",
@@ -467,36 +585,64 @@
   "locOff": "オフ",
   "locIntervalMin": "{n} 分ごと",
   "@locIntervalMin": {
-    "placeholders": {"n": {"type": "int"}}
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
   },
   "locIntervalHour": "{n} 時間ごと",
   "@locIntervalHour": {
-    "placeholders": {"n": {"type": "int"}}
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
   },
   "locMovementM": "{m} m",
   "@locMovementM": {
-    "placeholders": {"m": {"type": "int"}}
+    "placeholders": {
+      "m": {
+        "type": "int"
+      }
+    }
   },
   "locMovementKm": "{km} km",
   "@locMovementKm": {
-    "placeholders": {"km": {"type": "int"}}
+    "placeholders": {
+      "km": {
+        "type": "int"
+      }
+    }
   },
   "locPublishNow": "今すぐ公開",
   "locPublishNowSub": "ループ動作の確認用に手動で 1 回送信。",
   "locLastPublished": "最終: {lat}, {lon}  ·  {time}  ·  {trigger}",
   "@locLastPublished": {
     "placeholders": {
-      "lat": {"type": "String"},
-      "lon": {"type": "String"},
-      "time": {"type": "String"},
-      "trigger": {"type": "String"}
+      "lat": {
+        "type": "String"
+      },
+      "lon": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      },
+      "trigger": {
+        "type": "String"
+      }
     }
   },
   "locBeacon": "定期位置ビーコン",
   "locBeaconSub": "60 秒ごとに位置をアドバートします（ゼロホップ）。通信時間と電池を使います。",
   "locBatteryHint": "スマートブロードキャストは GPS を継続使用 (約 10 mA)。定期のみは省電力。両方有効で応答性最大、バッテリー優先ならスマートブロードキャストのみ推奨。",
   "@globeFooter": {
-    "placeholders": {"n": {"type": "int"}}
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
   },
   "gridEmpty": "まだ範囲内にノードがありません。\n\nアドバートを受信すると表示されます。",
   "gridStatusOffline": "未接続 — 設定 → 診断で接続",
@@ -513,7 +659,6 @@
   "gridOrientNorthUp": "北を上",
   "gridOrientHeadingUp": "進行方向を上",
   "gridHeadingHud": "方位",
-
   "voiceSettingsTitle": "音声 (TTS 品質)",
   "voiceSettingsHint": "「アプリ設定」で SPEECH を ON にするまで無効。レート / ピッチ / 音声は次の発話から適用されます。",
   "voiceRate": "速度",
@@ -523,28 +668,43 @@
   "voicePickerOnlyMyLanguage": "現在の言語のみ表示",
   "voicePickerOnlyMyLanguageHint": "スマートフォンの現在の言語（{lang}）に一致する音声のみを表示します。オフにするとOSが報告する全音声を表示します。",
   "@voicePickerOnlyMyLanguageHint": {
-    "placeholders": {"lang": {"type": "String"}}
+    "placeholders": {
+      "lang": {
+        "type": "String"
+      }
+    }
   },
   "voicePickerFilteredCount": "{n} 件 · {lang}",
   "@voicePickerFilteredCount": {
     "placeholders": {
-      "n": {"type": "int"},
-      "lang": {"type": "String"}
+      "n": {
+        "type": "int"
+      },
+      "lang": {
+        "type": "String"
+      }
     }
   },
   "voicePickerAllCount": "{n} 件 · すべて",
   "@voicePickerAllCount": {
-    "placeholders": {"n": {"type": "int"}}
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
   },
   "voicePickerNoMatchForLanguage": "{lang} の音声がインストールされていません。上のフィルターをオフにして他言語を表示するか、OS の設定から {lang} の音声を追加してください。",
   "@voicePickerNoMatchForLanguage": {
-    "placeholders": {"lang": {"type": "String"}}
+    "placeholders": {
+      "lang": {
+        "type": "String"
+      }
+    }
   },
   "voicePickerSystem": "システム既定",
   "voicePreview": "サンプル再生",
   "voicePreviewPhrase": "これは Meshmore SNS の音声プレビューです。",
   "voicePreviewDisabledHint": "プレビューを聴くには、アプリ設定で SPEECH を ON にしてください。",
-
   "settingsHubDevice": "デバイス設定",
   "settingsGroupRadio": "無線",
   "settingsGroupApp": "アプリ",
@@ -559,7 +719,6 @@
   "settingsHubChannelsSub": "スロット · 名前 + PSK · #ハッシュタグ · 有効",
   "settingsHubDiagnostics": "診断 & 接続",
   "settingsHubDiagnosticsSub": "無線接続・フレームログ・キャプチャ",
-
   "bootHeader": "MESHMORE  /  同期中",
   "bootConnecting": "ラジオに接続中…",
   "bootHandshaking": "ハンドシェイク中…",
@@ -567,75 +726,129 @@
   "bootOffline": "オフライン — 設定 → 診断 & 接続",
   "bootSkip": "スキップ",
   "bootSubtitle": "待機  /  WAIT",
-
   "eventAdvert": "アドバート · {name}",
   "@eventAdvert": {
-    "placeholders": {"name": {"type": "String"}}
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
   },
   "eventChannelMsg": "ch{channel} · 「{text}」",
   "@eventChannelMsg": {
     "placeholders": {
-      "channel": {"type": "String"},
-      "text": {"type": "String"}
+      "channel": {
+        "type": "String"
+      },
+      "text": {
+        "type": "String"
+      }
     }
   },
   "eventDm": "DM · 「{text}」",
   "@eventDm": {
-    "placeholders": {"text": {"type": "String"}}
+    "placeholders": {
+      "text": {
+        "type": "String"
+      }
+    }
   },
   "eventContact": "コンタクト · {name}",
   "@eventContact": {
-    "placeholders": {"name": {"type": "String"}}
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
   },
   "eventBattery": "バッテリー {volts}V",
   "@eventBattery": {
-    "placeholders": {"volts": {"type": "String"}}
+    "placeholders": {
+      "volts": {
+        "type": "String"
+      }
+    }
   },
   "eventDeviceError": "デバイスエラー (コード {code})",
   "@eventDeviceError": {
-    "placeholders": {"code": {"type": "String"}}
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
   },
   "eventDeviceClockSynced": "デバイス時計 同期",
   "eventDeviceClockSkew": "デバイス時計 読取 (オフセット {seconds}s)",
   "@eventDeviceClockSkew": {
-    "placeholders": {"seconds": {"type": "String"}}
+    "placeholders": {
+      "seconds": {
+        "type": "String"
+      }
+    }
   },
   "eventMsgSent": "メッセージ送信 (ack {ack})",
   "@eventMsgSent": {
-    "placeholders": {"ack": {"type": "String"}}
+    "placeholders": {
+      "ack": {
+        "type": "String"
+      }
+    }
   },
   "eventDeviceInfo": "デバイス {version}",
   "@eventDeviceInfo": {
-    "placeholders": {"version": {"type": "String"}}
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
   },
   "eventSelfInfo": "セルフ情報 · {name}",
   "@eventSelfInfo": {
-    "placeholders": {"name": {"type": "String"}}
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
   },
   "eventQueuedWaiting": "キュー待機中",
   "eventQueuedWaitingN": "キュー待機中 ({count})",
   "@eventQueuedWaitingN": {
-    "placeholders": {"count": {"type": "String"}}
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
   },
-
   "chatManageChannels": "チャンネル管理",
   "chatTtsMuted": "このチャンネルの TTS をミュート中",
   "chatTtsActive": "このチャンネルを TTS で読み上げ中",
   "chatRetentionDropped": "{count, plural, =1{古いメッセージ1件が削除済み} other{古いメッセージ{count}件が削除済み}} — 各会話は最新の{cap}件を保持します",
   "@chatRetentionDropped": {
     "placeholders": {
-      "count": {"type": "int"},
-      "cap": {"type": "int"}
+      "count": {
+        "type": "int"
+      },
+      "cap": {
+        "type": "int"
+      }
     }
   },
   "chatEmpty": "— このチャンネルにメッセージはありません —",
   "chatJumpToNewest": "新着 {count} 件",
   "@chatJumpToNewest": {
-    "placeholders": {"count": {"type": "int"}}
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
   "chatComposerHint": "{channel} へメッセージ",
   "@chatComposerHint": {
-    "placeholders": {"channel": {"type": "String"}}
+    "placeholders": {
+      "channel": {
+        "type": "String"
+      }
+    }
   },
   "chatComposerOffline": "送信するにはラジオに接続",
   "chatSend": "送信",
@@ -647,31 +860,54 @@
   "chatSinceNow": "今",
   "chatSinceMinutes": "{m}分",
   "@chatSinceMinutes": {
-    "placeholders": { "m": { "type": "int" } }
+    "placeholders": {
+      "m": {
+        "type": "int"
+      }
+    }
   },
   "chatSinceHours": "{h}時間",
   "@chatSinceHours": {
-    "placeholders": { "h": { "type": "int" } }
+    "placeholders": {
+      "h": {
+        "type": "int"
+      }
+    }
   },
   "chatSinceDays": "{d}日",
   "@chatSinceDays": {
-    "placeholders": { "d": { "type": "int" } }
+    "placeholders": {
+      "d": {
+        "type": "int"
+      }
+    }
   },
-
   "dmTitle": "DM · {peer}",
   "@dmTitle": {
-    "placeholders": {"peer": {"type": "String"}}
+    "placeholders": {
+      "peer": {
+        "type": "String"
+      }
+    }
   },
   "dmPubkeyLabel": "公開鍵 · {hex}",
   "@dmPubkeyLabel": {
-    "placeholders": {"hex": {"type": "String"}}
+    "placeholders": {
+      "hex": {
+        "type": "String"
+      }
+    }
   },
   "nodeDetailSignature": "着信シグネチャ",
   "nodeDetailSignatureHint": "この相手専用の通知音（DM の通知の代わり）。",
   "nodeDetailSignatureNone": "デフォルト",
   "nodeDetailSignatureSlot": "シグネチャ {n}",
   "@nodeDetailSignatureSlot": {
-    "placeholders": {"n": {"type": "int"}}
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
   },
   "nodeDetailSignatureMutedHint": "音声はミュート中です。振動は伝わりますが音は鳴りません。",
   "dmEmpty": "— メッセージはまだありません —",
@@ -684,11 +920,13 @@
   "dmPeerNotInFabric": "この相手はまだメッシュ上で確認されていません（アドバート未受信）。",
   "dmComposerHint": "{peer} へメッセージ",
   "@dmComposerHint": {
-    "placeholders": {"peer": {"type": "String"}}
+    "placeholders": {
+      "peer": {
+        "type": "String"
+      }
+    }
   },
   "dmSend": "DM 送信",
-
-  "actionRetry": "再送",
   "actionRetrySub": "このメッセージをもう一度送信",
   "actionReply": "返信",
   "actionReplySub": "このメッセージを引用して返信",
@@ -701,7 +939,6 @@
   "actionDeleteConfirmBody": "ローカル履歴からこの行を削除します。MeshCore に取り消しはなく、受信者側には残ります。",
   "actionCancel": "キャンセル",
   "actionDelete": "削除",
-
   "nodeDetailSelf": "これはあなた自身のノードです — メッセージ / お気に入りは利用不可。",
   "nodeDetailShareTelemetryTitle": "この連絡先と自分のテレメトリを共有",
   "nodeDetailShareTelemetryHelp": "テレメトリモードが「連絡先」で、基本がオンのときのみ有効です。",
@@ -711,18 +948,30 @@
   "nodeIdentityBody": "「{name}」は新しいキーで稼働中です — 相手の端末で削除・再追加された可能性があります。お気に入り・タグ・保存済みメッセージ {count} 件を現在のキーに移動しますか？",
   "@nodeIdentityBody": {
     "placeholders": {
-      "name": { "type": "String" },
-      "count": { "type": "int" }
+      "name": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
     }
   },
   "nodeIdentityOldKey": "旧キー …{shortId}",
   "@nodeIdentityOldKey": {
-    "placeholders": { "shortId": { "type": "String" } }
+    "placeholders": {
+      "shortId": {
+        "type": "String"
+      }
+    }
   },
   "nodeIdentityAction": "現在のキーに移動",
   "nodeIdentityMoved": "データを「{name}」の現在のキーに移動しました",
   "@nodeIdentityMoved": {
-    "placeholders": { "name": { "type": "String" } }
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
   },
   "nodeIdentityLinkAction": "キーが変わった？ 別のノードにリンク",
   "nodeIdentityLinkTitle": "変更されたキーをリンク",
@@ -738,7 +987,11 @@
   "nodeDetailRemoveDeviceContact": "デバイスの連絡先から削除",
   "nodeDetailRemoveDeviceContactConfirm": "「{name}」を無線機の連絡先から削除しますか？空きができます。後で再追加できます。",
   "@nodeDetailRemoveDeviceContactConfirm": {
-    "placeholders": { "name": { "type": "String" } }
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
   },
   "nodeDetailRemoveDeviceContactDone": "無線機の連絡先から削除しました。",
   "deviceContactsTitle": "無線機の連絡先",
@@ -747,11 +1000,22 @@
   "deviceContactsEmpty": "無線機に連絡先がありません。",
   "deviceContactsCount": "無線機の連絡先 {count} / {max} 件",
   "@deviceContactsCount": {
-    "placeholders": { "count": { "type": "int" }, "max": { "type": "int" } }
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "max": {
+        "type": "int"
+      }
+    }
   },
   "deviceContactsCountOnly": "無線機の連絡先 {count} 件",
   "@deviceContactsCountOnly": {
-    "placeholders": { "count": { "type": "int" } }
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
   "deviceContactsFullHelp": "連絡先がいっぱいです。下で削除すると追加できます。",
   "deviceContactsChannelsNote": "連絡先が必要なのはダイレクトメッセージを送るときだけです。チャンネルのメッセージは連絡先がなくても機能し、全員がチャンネルに表示されます。",
@@ -760,43 +1024,75 @@
   "deviceContactsOutOfRangeIntro": "現在地から遠い連絡先、または位置を隠している（GPS なし）連絡先を削除します（圏外として扱います）。お気に入りと既知の連絡先は保持されます。",
   "deviceContactsBeyondKm": "{km} km 以上（＋位置非公開）",
   "@deviceContactsBeyondKm": {
-    "placeholders": { "km": { "type": "int" } }
+    "placeholders": {
+      "km": {
+        "type": "int"
+      }
+    }
   },
   "deviceContactsNeedLocation": "現在地が未設定のため距離を測定できません。位置非公開の連絡先のみが対象です。GPS または手動ピンで位置を設定すると、遠方の GPS 連絡先も削除できます。",
   "deviceContactsRemoveOutOfRangeDone": "圏外の連絡先を {count} 件削除しました。",
   "@deviceContactsRemoveOutOfRangeDone": {
-    "placeholders": { "count": { "type": "int" } }
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
   "deviceContactsRemoveStale": "最近未受信を削除",
   "deviceContactsStaleIntro": "しばらく受信していない連絡先を削除します。お気に入りと既知の連絡先は保持されます。",
   "deviceContactsNotHeardDays": "{days} 日間未受信",
   "@deviceContactsNotHeardDays": {
-    "placeholders": { "days": { "type": "int" } }
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
   },
   "deviceContactsRemoveStaleDone": "古い連絡先を {count} 件削除しました。",
   "@deviceContactsRemoveStaleDone": {
-    "placeholders": { "count": { "type": "int" } }
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
   "deviceContactsRemoveAll": "すべて削除",
   "deviceContactsRemoveAllConfirm": "無線機の連絡先 {count} 件をすべて削除しますか？チャンネルには連絡先は不要で、DM のときだけ必要です。後でメッセージしたい相手を再追加できます。",
   "@deviceContactsRemoveAllConfirm": {
-    "placeholders": { "count": { "type": "int" } }
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
   "deviceContactsRemoveAllDone": "無線機の連絡先を {count} 件削除しました。",
   "@deviceContactsRemoveAllDone": {
-    "placeholders": { "count": { "type": "int" } }
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
   "deviceContactsFlood": "フラッド",
   "deviceContactsDirect": "直接",
   "deviceContactsHops": "{n} ホップ",
   "@deviceContactsHops": {
-    "placeholders": { "n": { "type": "int" } }
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
   },
   "nodeIdentityLinkConfirm": "お気に入り・タグ・メッセージを「{from}」から「{to}」へ移動し、古いキーを廃止しますか？",
   "@nodeIdentityLinkConfirm": {
     "placeholders": {
-      "from": { "type": "String" },
-      "to": { "type": "String" }
+      "from": {
+        "type": "String"
+      },
+      "to": {
+        "type": "String"
+      }
     }
   },
   "nodeDetailFavourite": "お気に入り",
@@ -833,15 +1129,27 @@
   "meshbookClear": "クリア",
   "meshbookClearConfirm": "CH{channel} の直近24時間のメッシュブックデータをクリアしますか？新しいチャンネルメッセージが届くと再構築されます。（チャンネルごとに別々に保存されます。）",
   "@meshbookClearConfirm": {
-    "placeholders": { "channel": { "type": "String" } }
+    "placeholders": {
+      "channel": {
+        "type": "String"
+      }
+    }
   },
   "meshbookStats": "{total} 件 · 返信 {replies} 件（{pct}%）· {voices} 人",
   "@meshbookStats": {
     "placeholders": {
-      "total": { "type": "int" },
-      "replies": { "type": "int" },
-      "pct": { "type": "int" },
-      "voices": { "type": "int" }
+      "total": {
+        "type": "int"
+      },
+      "replies": {
+        "type": "int"
+      },
+      "pct": {
+        "type": "int"
+      },
+      "voices": {
+        "type": "int"
+      }
     }
   },
   "weatherSelf": "このデバイス",
@@ -854,7 +1162,9 @@
   "wxMentionsShort": "{count} 件の言及",
   "@wxMentionsShort": {
     "placeholders": {
-      "count": { "type": "int" }
+      "count": {
+        "type": "int"
+      }
     }
   },
   "wxLastHour": "1時間",
@@ -871,10 +1181,21 @@
   "weatherEmpty": "環境データを報告しているノードはまだありません。\nセンサー搭載ノードが照会されると表示されます — アプリ設定で「ノードのテレメトリを収集」を有効にしてください。",
   "weatherSelfNoTelemetry": "このデバイスはまだテレメトリを返していません。接続を確認してから、この画面を開き直してください。",
   "weatherSelfNoEnv": "このデバイスのファームウェアは環境テレメトリに対応していません。\n報告内容: {types}。\nセンサー（例: T1000-E の BME280）には MeshCore センサーファームウェアが必要です。標準ビルドはバッテリー／GPS のみを送信し、環境モードを設定してもデバイス側でオフに戻されます。これはアプリの設定ではなくデバイス側の制限です。",
-  "@weatherSelfNoEnv": { "placeholders": { "types": { "type": "String" } } },
+  "@weatherSelfNoEnv": {
+    "placeholders": {
+      "types": {
+        "type": "String"
+      }
+    }
+  },
   "weatherReporting": "{count} 件が報告中",
-  "@weatherReporting": { "placeholders": { "count": { "type": "int" } } },
-
+  "@weatherReporting": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "docsHubSubtitle": "プロトコル・ファームウェア・アプリ・実地メモをオフラインで。",
   "docsHubFooter": "ドキュメントはオフライン閲覧用に端末にキャッシュされます。項目を開いて ↻ で最新版を取得。出典: meshcore-dev/MeshCore。",
   "docsProtocolTitle": "プロトコル",
@@ -882,7 +1203,13 @@
   "docsFirmwareTitle": "ファームウェア",
   "docsFirmwareSub": "MeshCore ファームウェア概要（README）。",
   "docsFirmwareSubVersion": "MeshCore ファームウェア — {version} に対応。",
-  "@docsFirmwareSubVersion": { "placeholders": { "version": { "type": "String" } } },
+  "@docsFirmwareSubVersion": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
   "docsAppTitle": "アプリ",
   "docsAppSub": "Meshmore SNS の仕組みとメッシュの活用方法。",
   "docsDevicesTitle": "デバイス",
@@ -892,31 +1219,85 @@
   "docsUpToDate": "すでに最新です",
   "docsOriginBundled": "同梱スナップショット",
   "docsOriginUpdated": "更新: {when}",
-  "@docsOriginUpdated": { "placeholders": { "when": { "type": "String" } } },
+  "@docsOriginUpdated": {
+    "placeholders": {
+      "when": {
+        "type": "String"
+      }
+    }
+  },
   "docsFirmwareForVersion": "デバイス {version}",
-  "@docsFirmwareForVersion": { "placeholders": { "version": { "type": "String" } } },
+  "@docsFirmwareForVersion": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
   "docsFirmwareNoDevice": "デバイス未接続",
   "docsAgoJustNow": "たった今",
   "docsAgoMinutes": "{n}分前",
-  "@docsAgoMinutes": { "placeholders": { "n": { "type": "int" } } },
+  "@docsAgoMinutes": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
   "docsAgoHours": "{n}時間前",
-  "@docsAgoHours": { "placeholders": { "n": { "type": "int" } } },
+  "@docsAgoHours": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
   "docsAgoDays": "{n}日前",
-  "@docsAgoDays": { "placeholders": { "n": { "type": "int" } } },
+  "@docsAgoDays": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
   "weatherMin": "最低",
   "weatherAvg": "平均",
   "weatherMax": "最高",
   "weatherAgoSeconds": "{s}秒前",
-  "@weatherAgoSeconds": { "placeholders": { "s": { "type": "int" } } },
+  "@weatherAgoSeconds": {
+    "placeholders": {
+      "s": {
+        "type": "int"
+      }
+    }
+  },
   "weatherAgoMinutes": "{m}分前",
-  "@weatherAgoMinutes": { "placeholders": { "m": { "type": "int" } } },
+  "@weatherAgoMinutes": {
+    "placeholders": {
+      "m": {
+        "type": "int"
+      }
+    }
+  },
   "weatherAgoHours": "{h}時間前",
-  "@weatherAgoHours": { "placeholders": { "h": { "type": "int" } } },
+  "@weatherAgoHours": {
+    "placeholders": {
+      "h": {
+        "type": "int"
+      }
+    }
+  },
   "snsCellsAwaitingFix": "位置情報を待機中 — ヒートマップは自分を中心に表示されます。",
   "snsCellsClear": "クリア",
   "snsCellsStatus": "{active} セル · {hot} ホット",
   "snsPlacesButton": "場所 ({count})",
-  "@snsPlacesButton": { "placeholders": { "count": { "type": "int" } } },
+  "@snsPlacesButton": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "snsPlacesTitle": "推定された場所（過去1時間）",
   "snsPlacesEmpty": "現在、推定された場所はありません。",
   "snsPlacesDismiss": "場所ではない — 削除",
@@ -924,7 +1305,14 @@
   "snsFrameRegion": "地域 · 約300 km",
   "snsFrameMesh": "メッシュ · 全体",
   "@snsCellsStatus": {
-    "placeholders": {"active": {"type": "int"}, "hot": {"type": "int"}}
+    "placeholders": {
+      "active": {
+        "type": "int"
+      },
+      "hot": {
+        "type": "int"
+      }
+    }
   },
   "snsCellsLegendTitle": "SNS セル",
   "snsCellsLegendDesc": "ライブのソーシャル活動ヒートマップ。観測したメッセージごとにセルが温まり、1時間の地平で冷えていきます。",
@@ -939,7 +1327,11 @@
   "meshTreeHopsFlood": "フラッド / 全て",
   "meshTreeHopsN": "≤{n} ホップ",
   "@meshTreeHopsN": {
-    "placeholders": {"n": {"type": "int"}}
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
   },
   "meshTreeRecenter": "中央に戻す",
   "meshTreeLegendTitle": "メッシュツリー",
@@ -964,29 +1356,49 @@
   "nodeDetailHopsDirect": "直接 (0 ホップ)",
   "nodeDetailHopsViaRepeaters": "{n} 経由リピーター",
   "@nodeDetailHopsViaRepeaters": {
-    "placeholders": {"n": {"type": "int"}}
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
   },
   "nodeDetailHopsUnknown": "不明",
   "nodeDetailHopsFlood": "フラッド",
   "nodeDetailAltitudeKv": "標高",
   "nodeDetailAltitudeMeters": "{m} m",
   "@nodeDetailAltitudeMeters": {
-    "placeholders": {"m": {"type": "String"}}
+    "placeholders": {
+      "m": {
+        "type": "String"
+      }
+    }
   },
   "nodeDetailTempKv": "温度",
   "nodeDetailTempValue": "{c} °C",
   "@nodeDetailTempValue": {
-    "placeholders": {"c": {"type": "String"}}
+    "placeholders": {
+      "c": {
+        "type": "String"
+      }
+    }
   },
   "nodeDetailHumidityKv": "湿度",
   "nodeDetailHumidityValue": "{p}%",
   "@nodeDetailHumidityValue": {
-    "placeholders": {"p": {"type": "String"}}
+    "placeholders": {
+      "p": {
+        "type": "String"
+      }
+    }
   },
   "nodeDetailPressureKv": "気圧",
   "nodeDetailPressureValue": "{hpa} hPa",
   "@nodeDetailPressureValue": {
-    "placeholders": {"hpa": {"type": "String"}}
+    "placeholders": {
+      "hpa": {
+        "type": "String"
+      }
+    }
   },
   "nodeDetailLuminosityKv": "照度",
   "nodeDetailQueryTelemetry": "テレメトリを取得",
@@ -995,49 +1407,84 @@
   "nodeDetailTelemetryNotContact": "デバイスの連絡先ではないため、テレメトリは取得できません。",
   "nodeDetailTelemetryAge": "{age}前のテレメトリ",
   "@nodeDetailTelemetryAge": {
-    "placeholders": {"age": {"type": "String"}}
+    "placeholders": {
+      "age": {
+        "type": "String"
+      }
+    }
   },
   "nodeDetailAgoSeconds": "{n}秒前",
   "@nodeDetailAgoSeconds": {
-    "placeholders": {"n": {"type": "int"}}
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
   },
   "nodeDetailAgoMinutes": "{n}分前",
   "@nodeDetailAgoMinutes": {
-    "placeholders": {"n": {"type": "int"}}
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
   },
   "nodeDetailAgoHours": "{n}時間前",
   "@nodeDetailAgoHours": {
-    "placeholders": {"n": {"type": "int"}}
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
   },
   "nodeDetailAgoDays": "{n}日前",
   "@nodeDetailAgoDays": {
-    "placeholders": {"n": {"type": "int"}}
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
   },
-
   "channelsTitle": "チャンネル",
   "channelsHelp": "スロット 0 は共有のパブリック。プライベートは全ノードで同じスロット・名前・PSK にします。",
   "channelsOfflineHint": "チャンネルを編集するにはラジオを接続 (診断)。",
   "channelsEmpty": "— 未設定 —",
   "channelsSlotLabel": "スロット {idx}",
   "@channelsSlotLabel": {
-    "placeholders": {"idx": {"type": "int"}}
+    "placeholders": {
+      "idx": {
+        "type": "int"
+      }
+    }
   },
   "channelsSlotActive": "スロット {idx} · 有効",
   "@channelsSlotActive": {
-    "placeholders": {"idx": {"type": "int"}}
+    "placeholders": {
+      "idx": {
+        "type": "int"
+      }
+    }
   },
   "channelsEdit": "編集",
   "channelsSet": "設定",
   "channelsSetSnack": "チャンネル {idx} を「{name}」に設定 — 全ノードで同じ名前 & PSK が必要",
   "@channelsSetSnack": {
     "placeholders": {
-      "idx": {"type": "int"},
-      "name": {"type": "String"}
+      "idx": {
+        "type": "int"
+      },
+      "name": {
+        "type": "String"
+      }
     }
   },
   "channelsDialogTitle": "チャンネルスロット {idx}",
   "@channelsDialogTitle": {
-    "placeholders": {"idx": {"type": "int"}}
+    "placeholders": {
+      "idx": {
+        "type": "int"
+      }
+    }
   },
   "channelsName": "チャンネル名",
   "channelsInferPlaces": "メッセージから場所を推定",
@@ -1084,20 +1531,32 @@
   "channelsClear": "スロットをクリア",
   "channelsClearConfirmTitle": "スロット {idx} をクリアしますか?",
   "@channelsClearConfirmTitle": {
-    "placeholders": {"idx": {"type": "int"}}
+    "placeholders": {
+      "idx": {
+        "type": "int"
+      }
+    }
   },
   "channelsClearConfirmBody": "MeshCore にはプロトコルレベルの「クリア」がありません — このスロットは Public 既定値 (名前 + 鍵) に上書きされます。他ノードも同様の操作が必要です。",
   "channelsClearConfirmAction": "クリア",
   "channelsClearSnack": "スロット {idx} をクリア (Public 既定値にリセット)",
   "@channelsClearSnack": {
-    "placeholders": {"idx": {"type": "int"}}
+    "placeholders": {
+      "idx": {
+        "type": "int"
+      }
+    }
   },
   "channelsDefaultBadge": "既定",
   "channelsSetDefaultTooltip": "起動時の既定チャンネルに設定",
   "channelsClearDefaultTooltip": "既定チャンネル設定を解除",
   "channelsSetDefaultSnack": "スロット {idx} を起動時の既定に設定",
   "@channelsSetDefaultSnack": {
-    "placeholders": {"idx": {"type": "int"}}
+    "placeholders": {
+      "idx": {
+        "type": "int"
+      }
+    }
   },
   "channelsClearedDefaultSnack": "起動時の既定を解除しました",
   "channelsKeyShake": "振る",
@@ -1106,9 +1565,15 @@
   "channelsShakeProgress": "{accepted} / {target} サンプル · {pct}%",
   "@channelsShakeProgress": {
     "placeholders": {
-      "accepted": {"type": "int"},
-      "target": {"type": "int"},
-      "pct": {"type": "int"}
+      "accepted": {
+        "type": "int"
+      },
+      "target": {
+        "type": "int"
+      },
+      "pct": {
+        "type": "int"
+      }
     }
   },
   "channelsShakeReroll": "再ロール",
@@ -1116,12 +1581,15 @@
   "channelsShareQr": "QR で共有",
   "channelsQrTitle": "チャンネル {idx} を共有",
   "@channelsQrTitle": {
-    "placeholders": {"idx": {"type": "int"}}
+    "placeholders": {
+      "idx": {
+        "type": "int"
+      }
+    }
   },
   "channelsQrBody": "Meshmore デバイス、または任意の QR リーダーでスキャン。このコードを持つ人はチャンネルに参加できます — 信頼できる相手のみと共有してください。",
   "channelsQrPayload": "ペイロード (コピー用)",
   "channelsQrClose": "閉じる",
-
   "deviceConfigTitle": "デバイス設定",
   "deviceRegionBand": "リージョン / バンド",
   "deviceRegionCurrent": "現在の設定",
@@ -1136,9 +1604,15 @@
   "deviceRegionSuggestBody": "スマートフォンの GPS（{lat}, {lon}）に基づくと、該当するプリセットは「{label}」です。国境付近では誤判定する可能性があるため、適用前に現地の法令に適合するか必ず確認してください。",
   "@deviceRegionSuggestBody": {
     "placeholders": {
-      "lat": {"type": "String"},
-      "lon": {"type": "String"},
-      "label": {"type": "String"}
+      "lat": {
+        "type": "String"
+      },
+      "lon": {
+        "type": "String"
+      },
+      "label": {
+        "type": "String"
+      }
     }
   },
   "deviceRegionSuggestApply": "適用",
@@ -1146,12 +1620,15 @@
   "deviceRegionSuggestNoMatch": "現在地が出荷時プリセットの対象外です — 手動で選択してください。",
   "deviceRegionAppliedToast": "{label} を適用しました。メッシュ内の全ノードで同じプリセットを使用してください。",
   "@deviceRegionAppliedToast": {
-    "placeholders": {"label": {"type": "String"}}
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
   },
-    "deviceRegionDisclaimerShort": "コミュニティによる値であり、規制上の保証ではありません。",
+  "deviceRegionDisclaimerShort": "コミュニティによる値であり、規制上の保証ではありません。",
   "deviceRegionDisclaimerMore": "詳細",
-"deviceRegionDisclaimer": "プリセット値はコミュニティで合意された運用例であり、法令適合を保証するものではありません。利用地で合法なプリセットを選び、メッシュ内の全ノードで同じ値を使用してください。日本では設定値が合法でも不十分です。無線機本体が技適（技術基準適合証明）を取得している必要があり、海外から個人輸入したLoRaボードの多くは未取得です。未取得機の運用は設定内容にかかわらず電波法違反となります。日本（ARIB STD-T108）のプリセットはコミュニティ提案で、広範な実機検証は完了していません。実運用前に、法令適合性と動作をご自身のハードウェアで必ず確認してください。",
-
+  "deviceRegionDisclaimer": "プリセット値はコミュニティで合意された運用例であり、法令適合を保証するものではありません。利用地で合法なプリセットを選び、メッシュ内の全ノードで同じ値を使用してください。日本では設定値が合法でも不十分です。無線機本体が技適（技術基準適合証明）を取得している必要があり、海外から個人輸入したLoRaボードの多くは未取得です。未取得機の運用は設定内容にかかわらず電波法違反となります。日本（ARIB STD-T108）のプリセットはコミュニティ提案で、広範な実機検証は完了していません。実運用前に、法令適合性と動作をご自身のハードウェアで必ず確認してください。",
   "presetUsCanada": "米国 / カナダ",
   "presetUsArizona": "米国 — アリゾナ",
   "presetJpAribT108": "日本（ARIB STD-T108）",
@@ -1167,10 +1644,9 @@
   "presetAuSaWaQld": "オーストラリア（SA / WA / QLD）",
   "presetNz": "ニュージーランド",
   "presetVn": "ベトナム",
-
   "cancel": "キャンセル",
   "closeSheet": "閉じる",
-  "deviceRadioParams": "ラジオパラメータ",
+  "deviceRadioParams": "周波数と帯域幅",
   "deviceIdentityAdvert": "アイデンティティ / アドバート",
   "deviceChannelsSection": "チャンネル",
   "deviceOtherParamsSection": "その他のパラメータ",
@@ -1184,7 +1660,6 @@
   "devicePathHashSizeHelp": "このラジオが送信するパケットに付けるハッシュ長です。中継は各パケット自身の長さに従うため、ノード間で揃える必要はありません。長いほど中継を区別しやすい一方、直接送信のペイロード容量が減ります。",
   "devicePathHashUnread": "パスハッシュ: 不明 (デバイス未問い合わせ)",
   "devicePathHashMismatch": "未適用: ラジオは {device} バイト、フォームは {form} です。",
-  "deviceRadioParams": "周波数と帯域幅",
   "deviceRadioApplied": "無線機が変更を確認しました。",
   "deviceRadioRefused": "無線機が {param} を拒否しました(エラー {code})。以降の書き込みは送信していません。",
   "deviceRadioSilent": "{param} の応答が5秒以内にありません。書き込みが反映されていない可能性があります。",
@@ -1222,7 +1697,11 @@
   "deviceToastNameSet": "名前を更新 — 隣接ノードへ再アドバート中",
   "deviceToastSendFailed": "送信失敗: {error}",
   "@deviceToastSendFailed": {
-    "placeholders": {"error": {"type": "String"}}
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
   },
   "deviceToastNoDeviceYet": "デバイス未応答 — 接続後に再試行",
   "deviceToastNoGpsYet": "デバイスにまだ位置情報がありません (GPS 未取得)",
@@ -1237,12 +1716,10 @@
   "deviceLocPermDenied": "スマートフォン GPS 取得には位置情報の許可が必要です。",
   "deviceLocPermDeniedPerm": "位置情報が永続的に拒否されました — OS 設定で許可してください。",
   "deviceOpenSettings": "設定を開く",
-
   "diagnosticsTitle": "診断 & 接続",
   "diagnosticsRawFrameLog": "RAW フレームログ (新しい順)",
   "diagnosticsDisconnect": "切断",
   "diagnosticsCopyLog": "ログをコピー",
-
   "otherManualAddTitle": "コンタクトを手動追加",
   "otherManualAddSubOn": "受信したノードは必要時に手動でコンタクトに追加します。",
   "otherManualAddSubOff": "受信したノードは自動でコンタクトに昇格します。",
@@ -1258,7 +1735,6 @@
   "otherMultiAcksHelper": "0 = シングル ACK (既定)。値が大きいほど送信確定までに待つ追加 ACK 数。",
   "otherSentSnack": "OTHER PARAMS を送信 — デバイス側の書込に時間がかかる場合があります。",
   "otherAwaitingDevice": "— デバイス待機中 —",
-
   "batteryTitle": "バッテリー",
   "batteryConfigSubtitle": "充電量・消費レート・残り時間の推定",
   "batteryAwaiting": "デバイスからのバッテリー値を待機中…",
@@ -1273,7 +1749,11 @@
   "batteryBasis": "根拠",
   "batteryBasisObserved": "{span} の放電実測に基づく",
   "@batteryBasisObserved": {
-    "placeholders": {"span": {"type": "String"}}
+    "placeholders": {
+      "span": {
+        "type": "String"
+      }
+    }
   },
   "batteryBasisRated": "定格 (容量 ÷ 標準消費電流)",
   "batteryConfidence": "信頼度",
@@ -1287,37 +1767,68 @@
   "batterySpecGeneric": "不明なハードウェア — 汎用の単セル Li-ion モデルを使用します。定格容量での照合ができないため、推定は実測消費に依存します。",
   "batterySpecCapacity": "容量: {mah} mAh",
   "@batterySpecCapacity": {
-    "placeholders": {"mah": {"type": "int"}}
+    "placeholders": {
+      "mah": {
+        "type": "int"
+      }
+    }
   },
   "batterySpecCapacityUnknown": "容量: ユーザー供給 (不明)",
   "batterySpecDraw": "標準消費: 約 {ma} mA (受信時)",
   "@batterySpecDraw": {
-    "placeholders": {"ma": {"type": "int"}}
+    "placeholders": {
+      "ma": {
+        "type": "int"
+      }
+    }
   },
   "batteryHistoryTitle": "電圧履歴",
   "batteryHistorySpan": "{span} · {count} サンプル",
   "@batteryHistorySpan": {
-    "placeholders": {"span": {"type": "String"}, "count": {"type": "int"}}
+    "placeholders": {
+      "span": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
   },
   "batteryDurDH": "{days}日 {hours}時間",
   "@batteryDurDH": {
-    "placeholders": {"days": {"type": "int"}, "hours": {"type": "int"}}
+    "placeholders": {
+      "days": {
+        "type": "int"
+      },
+      "hours": {
+        "type": "int"
+      }
+    }
   },
   "batteryDurHM": "{hours}時間 {mins}分",
   "@batteryDurHM": {
-    "placeholders": {"hours": {"type": "int"}, "mins": {"type": "int"}}
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      },
+      "mins": {
+        "type": "int"
+      }
+    }
   },
   "batteryDurM": "{mins}分",
   "@batteryDurM": {
-    "placeholders": {"mins": {"type": "int"}}
+    "placeholders": {
+      "mins": {
+        "type": "int"
+      }
+    }
   },
-
   "deliverySending": "送信中…",
   "deliverySent": "メッシュへ送信済み",
   "deliveryDelivered": "配信完了 (受信側が確認)",
   "deliveryFailed": "未配信 — 確認応答なし、または送信失敗",
   "deliveryUnknown": "アプリ終了中に送信 — 無線機が送信したかは不明です",
-
   "settingsHubTools": "ツール",
   "settingsHubToolsSub": "Ping・トレース・探索・ソーク・レンジテスト",
   "toolsTitle": "ツール",
@@ -1820,5 +2331,33 @@
   "fieldExportSection": "現地記録",
   "fieldExportExplainer": "軌跡・プレイス・応答のあった ping・チェックインを1つのファイルにまとめます。暗号化されない JSON なので、そのまま渡せます。",
   "fieldExportAction": "このセッションを書き出す",
-  "fieldExportDone": "現地記録を書き出しました。パスはクリップボードにあります: {path}"
+  "fieldExportDone": "現地記録を書き出しました。パスはクリップボードにあります: {path}",
+  "chatSearchAction": "メッセージを検索",
+  "chatSearchHint": "保存済みの履歴を検索",
+  "chatSearchPrompt": "入力すると、この端末に保存されたメッセージを検索します。",
+  "chatSearchNoResults": "「{query}」に一致するメッセージはありません。",
+  "chatSearchHidden": "{count, plural, other{ブロックにより{count}件の一致を非表示}}",
+  "chatSearchTruncated": "最新の{count}件を表示しています。絞り込むと残りを確認できます。",
+  "chatSearchRetention": "この端末は最新の{cap}件を保持するため、それより古いメッセージは検索されません。",
+  "chatSearchDm": "ダイレクトメッセージ",
+  "chatUnread": "{count, plural, other{未読{count}件}}",
+  "blockedKeysTitle": "ブロックした鍵",
+  "blockedKeysSubtitle": "{count, plural, =0{ブロックした鍵はありません} other{{count}件の鍵をブロック中}}",
+  "blockedKeysEmpty": "ブロックした鍵はありません。鍵をブロックすると、その相手からのメッセージ・通知・プレイスがこの端末で非表示になります。",
+  "blockedKeysCannotStop": "ブロックはこのアプリ内だけの設定です。無線は今もパケットを受信・中継します。止まるのはこのアプリの表示だけです。",
+  "blockedKeysUnblock": "ブロック解除",
+  "blockedKeysSince": "{when}にブロック",
+  "blockedKeysUnknownName": "名前は不明",
+  "blockedKeysCapacity": "リストが上限（{cap}件）です。追加する前に1件解除してください。",
+  "blockedKeysUnblocked": "{name}のブロックを解除しました。メッセージが再び表示されます。",
+  "blockedKeysUnblockedUnnamed": "ブロックを解除しました。メッセージが再び表示されます。",
+  "reportAction": "報告…",
+  "reportSheetTitle": "このメッセージを報告",
+  "reportObservationLabel": "何を見ましたか？（任意）",
+  "reportNothingSent": "何も送信していません。アプリはこの端末にファイルを作成しただけです。送り先はあなたが決めます。",
+  "reportBundleWritten": "バンドルを書き出しました: {path}",
+  "reportCopyBundle": "バンドルをコピー",
+  "reportCopied": "バンドルをコピーしました。",
+  "blockedKeysNotPersisted": "この一覧を端末に保存できませんでした。今は機能しますが、再起動後は空になります。",
+  "reportActionSub": "送信先を選べるよう、端末にファイルを作成します。自動送信はしません。"
 }

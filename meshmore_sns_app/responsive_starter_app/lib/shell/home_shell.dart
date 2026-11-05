@@ -17,12 +17,16 @@ import '../screens/chat_screen.dart';
 import 'boot_overlay.dart';
 import 'horizontal_drag_claim.dart';
 import '../screens/dashboards/dashboard_host.dart';
+import '../chat/channel_read_store.dart';
+import '../chat/unread_counts.dart';
 import '../places/place_bridge.dart';
 import '../places/place_store.dart';
 import '../screens/grid_screen.dart';
 import '../ui/demo_chip.dart';
 import '../screens/map_screen.dart';
 import '../screens/nodes_screen.dart';
+import '../meshcore/block_filter.dart';
+import '../meshcore/block_store.dart';
 import '../theme/mm_skin.dart';
 import '../ui/mm_components.dart';
 import '../ui/mm_page_header.dart';
@@ -202,6 +206,20 @@ class _HomeShellState extends State<HomeShell>
     // pressing Back on the Dashboard left the process running but dropped the
     // link). The foreground notification already says the app is running, so
     // leaving the task in the background is the honest answer.
+    // Channel unread for the strip's chat cell. The count is computed inside a
+    // selector so the shell repaints only when the number changes, not on
+    // every controller notification (battery samples, telemetry, RSSI).
+    final ChannelReadStore? reads = context.watch<ChannelReadStore?>();
+    final BlockStore? blocks = context.watch<BlockStore?>();
+    final BlockFilter filter = BlockFilter(blocks ?? BlockStore());
+    final int chatUnread = context.select<MeshcoreController, int>(
+      (MeshcoreController mc) => UnreadCounts.total(
+        channels: mc.channels.map((MapEntry<int, String> e) => e.key),
+        history: mc.messagesFor,
+        reads: reads,
+        filter: filter,
+      ),
+    );
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (bool didPop, Object? result) {
@@ -235,6 +253,7 @@ class _HomeShellState extends State<HomeShell>
         bottom: _ViewStrip(
           index: _index,
           onSelect: _select,
+          chatUnread: chatUnread,
         ),
       ),
       // R109 — a horizontal drag pages the body, except while the current
@@ -257,7 +276,7 @@ class _HomeShellState extends State<HomeShell>
         onPageChanged: _onPageChanged,
         children: <Widget>[
           const DashboardHost(),
-          const ChatScreen(),
+          ChatScreen(isCurrent: _index == MmView.chat.index),
           const NodesScreen(),
           const GridScreen(),
           MapScreen(onEdgeSwipe: _edgeSwipe),
@@ -281,10 +300,17 @@ class _HomeShellState extends State<HomeShell>
 /// fills the full width in equal cells, and scrolls sideways (keeping the
 /// current view in sight) only if the screen is narrower than 6 x 48dp.
 class _ViewStrip extends StatefulWidget implements PreferredSizeWidget {
-  const _ViewStrip({required this.index, required this.onSelect});
+  const _ViewStrip({
+    required this.index,
+    required this.onSelect,
+    this.chatUnread = 0,
+  });
 
   final int index;
   final ValueChanged<int> onSelect;
+
+  /// Unread channel messages, shown on the chat cell.
+  final int chatUnread;
 
   /// Minimum cell width; the fill branch shares the width equally.
   static const double cell = 48;
@@ -343,11 +369,14 @@ class _ViewStripState extends State<_ViewStrip> {
   /// One view button. [width] null means "fill the Expanded slot the caller
   /// gave me"; a number pins it (the scrolling fallback).
   Widget _cell(MmView v, AppLocalizations l, ColorScheme cs, {double? width}) {
+    final int unread = v == MmView.chat ? widget.chatUnread : 0;
     return Semantics(
       key: _keys[v.index],
       button: true,
       selected: v.index == widget.index,
-      label: v.title(l),
+      // The count is part of the label, not only a number drawn on the icon:
+      // a badge a screen reader cannot read is a badge that does not exist.
+      label: unread > 0 ? '${v.title(l)}, ${l.chatUnread(unread)}' : v.title(l),
       excludeSemantics: true,
       onTap: () => widget.onSelect(v.index),
       child: Tooltip(
@@ -361,11 +390,19 @@ class _ViewStripState extends State<_ViewStrip> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: <Widget>[
-                Icon(v.icon,
-                    size: 22,
-                    color: v.index == widget.index
-                        ? cs.primary
-                        : cs.onSurface.withValues(alpha: .55)),
+                if (unread > 0)
+                  _StripBadge(
+                    icon: v.icon,
+                    count: unread,
+                    selected: v.index == widget.index,
+                    cs: cs,
+                  )
+                else
+                  Icon(v.icon,
+                      size: 22,
+                      color: v.index == widget.index
+                          ? cs.primary
+                          : cs.onSurface.withValues(alpha: .55)),
                 const SizedBox(height: 6),
                 Container(
                   width: 22,
@@ -583,6 +620,63 @@ class RadioLinkIndicator extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+
+/// The chat cell's unread count, drawn over its icon.
+///
+/// A count rather than a dot, and the same shape the channel chip uses, so
+/// the two badges read as the same fact at two scopes.
+class _StripBadge extends StatelessWidget {
+  const _StripBadge({
+    required this.icon,
+    required this.count,
+    required this.selected,
+    required this.cs,
+  });
+
+  final IconData icon;
+  final int count;
+  final bool selected;
+  final ColorScheme cs;
+
+  @override
+  Widget build(BuildContext context) {
+    final MmSkin skin = context.skin;
+    return SizedBox(
+      height: 22,
+      child: Stack(
+        clipBehavior: Clip.none,
+        alignment: Alignment.center,
+        children: <Widget>[
+          Icon(icon,
+              size: 22,
+              color: selected ? cs.primary : cs.onSurface.withValues(alpha: .55)),
+          Positioned(
+            right: -10,
+            top: -4,
+            child: Container(
+              padding: EdgeInsets.symmetric(horizontal: skin.space.step(1)),
+              constraints: BoxConstraints(minWidth: skin.space.step(4)),
+              decoration: BoxDecoration(
+                color: cs.primary,
+                borderRadius: BorderRadius.circular(skin.shape.cornerSize),
+              ),
+              child: Text(
+                count > 99 ? '99+' : '$count',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: skin.type.sizeMicro,
+                  fontWeight: FontWeight.w700,
+                  color: cs.onPrimary,
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

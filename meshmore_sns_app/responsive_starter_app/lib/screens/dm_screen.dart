@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../chat/chat_actions.dart';
+import '../chat/report_flow.dart';
 import '../chat/draft_store.dart';
 import '../chat/studio_message_row.dart';
 import '../gen/app_localizations.dart';
@@ -268,6 +269,15 @@ class _DmScreenState extends State<DmScreen> {
         break;
       case ChatAction.retry:
         await mc.retryMessage(m.id);
+        break;
+      case ChatAction.report:
+        if (!mounted) return;
+        await reportMessage(
+          context,
+          m,
+          threadName: _peerName(mc),
+          senderDisplayName: _peerName(mc),
+        );
         break;
       case ChatAction.delete:
         if (!mounted) return;

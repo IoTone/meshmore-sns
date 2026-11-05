@@ -63,7 +63,7 @@ import 'app_localizations_ja.dart';
 /// property.
 abstract class AppLocalizations {
   AppLocalizations(String locale)
-    : localeName = intl.Intl.canonicalizedLocale(locale.toString());
+      : localeName = intl.Intl.canonicalizedLocale(locale.toString());
 
   final String localeName;
 
@@ -86,16 +86,16 @@ abstract class AppLocalizations {
   /// of delegates is preferred or required.
   static const List<LocalizationsDelegate<dynamic>> localizationsDelegates =
       <LocalizationsDelegate<dynamic>>[
-        delegate,
-        GlobalMaterialLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-      ];
+    delegate,
+    GlobalMaterialLocalizations.delegate,
+    GlobalCupertinoLocalizations.delegate,
+    GlobalWidgetsLocalizations.delegate,
+  ];
 
   /// A list of this localizations delegate's supported locales.
   static const List<Locale> supportedLocales = <Locale>[
     Locale('en'),
-    Locale('ja'),
+    Locale('ja')
   ];
 
   /// No description provided for @appName.
@@ -6823,12 +6823,7 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'device now: {freq}MHz {bw}kHz SF{sf} CR{cr} {tx}dBm'**
   String deviceNowParams(
-    String freq,
-    String bw,
-    String sf,
-    String cr,
-    String tx,
-  );
+      String freq, String bw, String sf, String cr, String tx);
 
   /// No description provided for @locationSourceDevice.
   ///
@@ -7147,12 +7142,7 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{freq} MHz · {bw} kHz · SF{sf} · CR{cr} · path hash {ph}'**
   String networksSummary(
-    String freq,
-    String bw,
-    String sf,
-    String cr,
-    String ph,
-  );
+      String freq, String bw, String sf, String cr, String ph);
 
   /// No description provided for @networksMembers.
   ///
@@ -8497,6 +8487,174 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Field record written. The path is on the clipboard: {path}'**
   String fieldExportDone(String path);
+
+  /// Icon tooltip in the chat channel strip: opens search over stored history.
+  ///
+  /// In en, this message translates to:
+  /// **'Search messages'**
+  String get chatSearchAction;
+
+  /// No description provided for @chatSearchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search stored history'**
+  String get chatSearchHint;
+
+  /// No description provided for @chatSearchPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Type to search the messages this device stored.'**
+  String get chatSearchPrompt;
+
+  /// No description provided for @chatSearchNoResults.
+  ///
+  /// In en, this message translates to:
+  /// **'No message matches “{query}”.'**
+  String chatSearchNoResults(String query);
+
+  /// No description provided for @chatSearchHidden.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 match hidden by a block} other{{count} matches hidden by a block}}'**
+  String chatSearchHidden(int count);
+
+  /// No description provided for @chatSearchTruncated.
+  ///
+  /// In en, this message translates to:
+  /// **'Showing the newest {count} matches. Narrow the search to see the rest.'**
+  String chatSearchTruncated(int count);
+
+  /// No description provided for @chatSearchRetention.
+  ///
+  /// In en, this message translates to:
+  /// **'This device keeps the newest {cap} messages, so older ones are not searched.'**
+  String chatSearchRetention(int cap);
+
+  /// No description provided for @chatSearchDm.
+  ///
+  /// In en, this message translates to:
+  /// **'Direct message'**
+  String get chatSearchDm;
+
+  /// Screen-reader label on a channel's unread badge; the badge itself is a count.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 unread} other{{count} unread}}'**
+  String chatUnread(int count);
+
+  /// No description provided for @blockedKeysTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocked keys'**
+  String get blockedKeysTitle;
+
+  /// No description provided for @blockedKeysSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{No key is blocked} =1{1 key blocked} other{{count} keys blocked}}'**
+  String blockedKeysSubtitle(int count);
+
+  /// No description provided for @blockedKeysEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No key is blocked. Blocking a key hides what it sends — messages, notifications, places — on this device.'**
+  String get blockedKeysEmpty;
+
+  /// No description provided for @blockedKeysCannotStop.
+  ///
+  /// In en, this message translates to:
+  /// **'A block is local to this app. The radio still receives and relays the packet; what stops is what this app shows.'**
+  String get blockedKeysCannotStop;
+
+  /// No description provided for @blockedKeysUnblock.
+  ///
+  /// In en, this message translates to:
+  /// **'Unblock'**
+  String get blockedKeysUnblock;
+
+  /// No description provided for @blockedKeysSince.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocked {when}'**
+  String blockedKeysSince(String when);
+
+  /// No description provided for @blockedKeysUnknownName.
+  ///
+  /// In en, this message translates to:
+  /// **'No name known'**
+  String get blockedKeysUnknownName;
+
+  /// No description provided for @blockedKeysCapacity.
+  ///
+  /// In en, this message translates to:
+  /// **'The list is full: {cap} keys. Unblock one before adding another.'**
+  String blockedKeysCapacity(int cap);
+
+  /// No description provided for @blockedKeysUnblocked.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} is unblocked. Their messages appear again.'**
+  String blockedKeysUnblocked(String name);
+
+  /// No description provided for @blockedKeysUnblockedUnnamed.
+  ///
+  /// In en, this message translates to:
+  /// **'The key is unblocked. Its messages appear again.'**
+  String get blockedKeysUnblockedUnnamed;
+
+  /// No description provided for @reportAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Report…'**
+  String get reportAction;
+
+  /// No description provided for @reportSheetTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Report this message'**
+  String get reportSheetTitle;
+
+  /// No description provided for @reportObservationLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'What did you see? (optional)'**
+  String get reportObservationLabel;
+
+  /// No description provided for @reportNothingSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing was sent. The app wrote a file on this device; you decide where it goes.'**
+  String get reportNothingSent;
+
+  /// No description provided for @reportBundleWritten.
+  ///
+  /// In en, this message translates to:
+  /// **'Bundle written: {path}'**
+  String reportBundleWritten(String path);
+
+  /// No description provided for @reportCopyBundle.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy the bundle'**
+  String get reportCopyBundle;
+
+  /// No description provided for @reportCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Bundle copied.'**
+  String get reportCopied;
+
+  /// No description provided for @blockedKeysNotPersisted.
+  ///
+  /// In en, this message translates to:
+  /// **'This list could not be saved on this device. It filters for now and will be empty after a restart.'**
+  String get blockedKeysNotPersisted;
+
+  /// No description provided for @reportActionSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Writes a file on this device for you to send. Nothing is transmitted.'**
+  String get reportActionSub;
 }
 
 class _AppLocalizationsDelegate
@@ -8526,9 +8684,8 @@ AppLocalizations lookupAppLocalizations(Locale locale) {
   }
 
   throw FlutterError(
-    'AppLocalizations.delegate failed to load unsupported locale "$locale". This is likely '
-    'an issue with the localizations generation tool. Please file an issue '
-    'on GitHub with a reproducible sample app and the gen-l10n configuration '
-    'that was used.',
-  );
+      'AppLocalizations.delegate failed to load unsupported locale "$locale". This is likely '
+      'an issue with the localizations generation tool. Please file an issue '
+      'on GitHub with a reproducible sample app and the gen-l10n configuration '
+      'that was used.');
 }
