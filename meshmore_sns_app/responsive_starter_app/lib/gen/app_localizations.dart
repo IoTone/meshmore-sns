@@ -7833,6 +7833,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Photo received over the mesh'**
   String get mediaPhotoSemantics;
+
+  /// No description provided for @placePhotoNotFetched.
+  ///
+  /// In en, this message translates to:
+  /// **'Photo not fetched. The report itself is complete; the picture is optional and may never arrive.'**
+  String get placePhotoNotFetched;
+
+  /// No description provided for @placePhotoMayNotArrive.
+  ///
+  /// In en, this message translates to:
+  /// **'The photo may not arrive. The text will.'**
+  String get placePhotoMayNotArrive;
+
+  /// No description provided for @placePhotoFetch.
+  ///
+  /// In en, this message translates to:
+  /// **'Fetch photo'**
+  String get placePhotoFetch;
 }
 
 class _AppLocalizationsDelegate

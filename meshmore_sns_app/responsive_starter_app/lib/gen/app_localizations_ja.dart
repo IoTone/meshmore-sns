@@ -4419,4 +4419,13 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get mediaPhotoSemantics => 'メッシュで受信した写真';
+
+  @override
+  String get placePhotoNotFetched => '写真は未取得です。報告自体は完全で、写真は任意であり届かないこともあります。';
+
+  @override
+  String get placePhotoMayNotArrive => '写真は届かないことがあります。テキストは届きます。';
+
+  @override
+  String get placePhotoFetch => '写真を取得';
 }

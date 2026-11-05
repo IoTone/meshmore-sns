@@ -1953,5 +1953,11 @@
   "mediaDecodeFailed": "This photo arrived but cannot be read.",
   "@mediaDecodeFailed": {},
   "mediaPhotoSemantics": "Photo received over the mesh",
-  "@mediaPhotoSemantics": {}
+  "@mediaPhotoSemantics": {},
+  "placePhotoNotFetched": "Photo not fetched. The report itself is complete; the picture is optional and may never arrive.",
+  "@placePhotoNotFetched": {},
+  "placePhotoMayNotArrive": "The photo may not arrive. The text will.",
+  "@placePhotoMayNotArrive": {},
+  "placePhotoFetch": "Fetch photo",
+  "@placePhotoFetch": {}
 }

@@ -9,6 +9,8 @@ import 'place_confirmation.dart';
 import 'place_directions.dart';
 import 'place_sender.dart';
 import 'place_store.dart';
+import '../media/media_receive_view.dart';
+import 'place_photo.dart';
 import 'place_ui.dart';
 
 /// What one place says when it is opened (`meshmore-places-spec.md` §12).
@@ -24,10 +26,19 @@ class PlaceDetailSheet extends StatelessWidget {
     required this.store,
     this.composer,
     this.probe = const SystemDirectionsProbe(),
+    this.photos,
+    this.onFetchPhoto,
   });
 
   final Place place;
   final PlaceStore store;
+
+  /// The fetched pictures, when the app has a store. Null keeps the section
+  /// out of the sheet rather than showing a button that cannot work.
+  final PlacePhotos? photos;
+
+  /// Asks the mesh for this place's picture. Null when there is no radio.
+  final Future<void> Function()? onFetchPhoto;
 
   /// Null when there is no radio: the confirm/refute actions are then hidden
   /// rather than shown broken.
@@ -40,6 +51,8 @@ class PlaceDetailSheet extends StatelessWidget {
     required PlaceStore store,
     PlaceComposer? composer,
     DirectionsProbe probe = const SystemDirectionsProbe(),
+    PlacePhotos? photos,
+    Future<void> Function()? onFetchPhoto,
   }) =>
       showModalBottomSheet<void>(
         context: context,
@@ -49,6 +62,8 @@ class PlaceDetailSheet extends StatelessWidget {
           store: store,
           composer: composer,
           probe: probe,
+          photos: photos,
+          onFetchPhoto: onFetchPhoto,
         ),
       );
 
@@ -103,6 +118,17 @@ class PlaceDetailSheet extends StatelessWidget {
             Text(placeSourceText(l, place.provenance),
                 style:
                     TextStyle(color: skin.color.fgMuted, fontSize: skin.type.sizeSm)),
+            if (photos != null)
+              Padding(
+                padding: EdgeInsets.only(top: skin.space.step(3)),
+                child: _PhotoSection(
+                  place: place,
+                  photos: photos!,
+                  onFetch: onFetchPhoto,
+                  skin: skin,
+                  l: l,
+                ),
+              ),
             if (place.isUnkeyed)
               Padding(
                 padding: EdgeInsets.only(top: skin.space.step(2)),
@@ -201,5 +227,59 @@ class PlaceDetailSheet extends StatelessWidget {
       ScaffoldMessenger.maybeOf(context)
           ?.showSnackBar(SnackBar(content: Text(l.placeDirectionsCopied)));
     }
+  }
+}
+
+/// The picture line: bytes when they are here, "not fetched" when they are not.
+///
+/// The copy before a fetch is the spec's own warning (§12): the photo may never
+/// arrive, and the text already did. Saying that only after a timeout would be
+/// late and would read as a failure rather than as the nature of a broadcast.
+class _PhotoSection extends StatelessWidget {
+  const _PhotoSection({
+    required this.place,
+    required this.photos,
+    required this.onFetch,
+    required this.skin,
+    required this.l,
+  });
+
+  final Place place;
+  final PlacePhotos photos;
+  final Future<void> Function()? onFetch;
+  final MmSkin skin;
+  final AppLocalizations l;
+
+  @override
+  Widget build(BuildContext context) {
+    final PlacePhoto? photo = photos.photoFor(place);
+    if (photo != null) {
+      return MediaPhotoView(
+        photo: photo.photo,
+        height: 160,
+        key: const ValueKey<String>('place-photo'),
+      );
+    }
+    return Row(
+      children: <Widget>[
+        Icon(Icons.image_outlined,
+            size: skin.type.sizeLg, color: skin.color.fgMuted),
+        SizedBox(width: skin.space.step(2)),
+        Expanded(
+          child: Text(
+            onFetch == null ? l.placePhotoNotFetched : l.placePhotoMayNotArrive,
+            key: const ValueKey<String>('place-photo-not-fetched'),
+            style:
+                TextStyle(color: skin.color.fgMuted, fontSize: skin.type.sizeSm),
+          ),
+        ),
+        if (onFetch != null)
+          TextButton(
+            key: const ValueKey<String>('place-photo-fetch'),
+            onPressed: () => onFetch!(),
+            child: Text(l.placePhotoFetch),
+          ),
+      ],
+    );
   }
 }

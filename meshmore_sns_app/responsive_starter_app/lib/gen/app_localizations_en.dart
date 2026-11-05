@@ -4571,4 +4571,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mediaPhotoSemantics => 'Photo received over the mesh';
+
+  @override
+  String get placePhotoNotFetched =>
+      'Photo not fetched. The report itself is complete; the picture is optional and may never arrive.';
+
+  @override
+  String get placePhotoMayNotArrive =>
+      'The photo may not arrive. The text will.';
+
+  @override
+  String get placePhotoFetch => 'Fetch photo';
 }

@@ -1701,5 +1701,8 @@
   "mediaReceiveRequested": "送信者に {count} パケットを要求しました。",
   "mediaReceiveComplete": "写真を受信しました。",
   "mediaDecodeFailed": "写真は届きましたが読み取れません。",
-  "mediaPhotoSemantics": "メッシュで受信した写真"
+  "mediaPhotoSemantics": "メッシュで受信した写真",
+  "placePhotoNotFetched": "写真は未取得です。報告自体は完全で、写真は任意であり届かないこともあります。",
+  "placePhotoMayNotArrive": "写真は届かないことがあります。テキストは届きます。",
+  "placePhotoFetch": "写真を取得"
 }
