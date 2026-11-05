@@ -72,10 +72,15 @@ void main() {
     final int before0C =
         fake.sent.where((f) => f.isNotEmpty && f[0] == 0x0C).length;
 
-    // R103: the band picker is folded until asked for.
-    await t.tap(find.text('REGION / BAND'));
+    // The preset chooser is a row; a pick fills the form and nothing is sent
+    // until Apply.
+    await t.tap(find.text('Band preset'));
     await t.pumpAndSettle();
     await t.tap(find.text('USA / Canada'));
+    await t.pumpAndSettle();
+    expect(fake.sent.where((f) => f.isNotEmpty && f[0] == 0x0B).length, before0B,
+        reason: 'picking a preset must not send');
+    await t.tap(find.text('Apply radio params'));
     await t.pumpAndSettle();
     await answerRadioConfig(t, fake);
 
@@ -129,9 +134,11 @@ void main() {
     fake.emit(deviceInfoFrame());
     await t.pumpAndSettle();
 
-    await t.tap(find.text('REGION / BAND'));
+    await t.tap(find.text('Band preset'));
     await t.pumpAndSettle();
     await t.tap(find.text('Japan (ARIB STD-T108)'));
+    await t.pumpAndSettle();
+    await t.tap(find.text('Apply radio params'));
     await t.pumpAndSettle();
     await answerRadioConfig(t, fake);
 
@@ -276,9 +283,11 @@ void main() {
       '2 bytes -> mode 1)', (WidgetTester t) async {
     final (FakeMeshcoreTransport fake, MeshcoreController ctrl) =
         await openScreen(t);
-    await t.tap(find.text('REGION / BAND'));
+    await t.tap(find.text('Band preset'));
     await t.pumpAndSettle();
     await t.tap(find.text('Hungary'));
+    await t.pumpAndSettle();
+    await t.tap(find.text('Apply radio params'));
     await t.pumpAndSettle();
     await answerRadioConfig(t, fake);
     expect(
@@ -295,9 +304,11 @@ void main() {
       'size in force (the feed lists one for Canada only)', (WidgetTester t) async {
     final (FakeMeshcoreTransport fake, MeshcoreController ctrl) =
         await openScreen(t);
-    await t.tap(find.text('REGION / BAND'));
+    await t.tap(find.text('Band preset'));
     await t.pumpAndSettle();
     await t.tap(find.text('USA / Canada'));
+    await t.pumpAndSettle();
+    await t.tap(find.text('Apply radio params'));
     await t.pumpAndSettle();
     await answerRadioConfig(t, fake);
     expect(fake.sent.any((List<int> f) => f.isNotEmpty && f[0] == 0x0B), isTrue);

@@ -857,13 +857,13 @@ abstract class AppLocalizations {
   /// No description provided for @settingsBackgroundOn.
   ///
   /// In en, this message translates to:
-  /// **'A notification stays visible so messages arrive while the app is closed.'**
+  /// **'Messages arrive while the app is closed'**
   String get settingsBackgroundOn;
 
   /// No description provided for @settingsBackgroundOff.
   ///
   /// In en, this message translates to:
-  /// **'Messages arrive when you reopen the app.'**
+  /// **'Messages arrive when you open the app'**
   String get settingsBackgroundOff;
 
   /// No description provided for @settingsTelemetryPoll.
@@ -941,26 +941,8 @@ abstract class AppLocalizations {
   /// No description provided for @settingsPermissionsSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Turn this app\'s Bluetooth and notifications on or off.'**
+  /// **'Bluetooth, notifications and location'**
   String get settingsPermissionsSubtitle;
-
-  /// No description provided for @settingsShowIntro.
-  ///
-  /// In en, this message translates to:
-  /// **'Show intro again on next launch'**
-  String get settingsShowIntro;
-
-  /// No description provided for @settingsShowIntroEnabled.
-  ///
-  /// In en, this message translates to:
-  /// **'Wipes the first-run flag so the permissions intro shows again — useful when you\'re testing the flow'**
-  String get settingsShowIntroEnabled;
-
-  /// No description provided for @settingsShowIntroDisabled.
-  ///
-  /// In en, this message translates to:
-  /// **'Intro is currently scheduled for next launch'**
-  String get settingsShowIntroDisabled;
 
   /// No description provided for @termsTitle.
   ///
@@ -1265,20 +1247,14 @@ abstract class AppLocalizations {
   /// No description provided for @demoModeRow.
   ///
   /// In en, this message translates to:
-  /// **'Demo mode (no radio)'**
+  /// **'No radio'**
   String get demoModeRow;
 
-  /// No description provided for @demoModeOn.
+  /// No description provided for @demoModeSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'On — the app opens without connecting to a radio'**
-  String get demoModeOn;
-
-  /// No description provided for @demoModeOff.
-  ///
-  /// In en, this message translates to:
-  /// **'Off — the app connects to a paired radio at launch'**
-  String get demoModeOff;
+  /// **'Explore the app offline'**
+  String get demoModeSubtitle;
 
   /// No description provided for @firstRunHeader.
   ///
@@ -2141,7 +2117,7 @@ abstract class AppLocalizations {
   /// No description provided for @deviceGpsIntervalFixedByFirmware.
   ///
   /// In en, this message translates to:
-  /// **'This radio sets its own GPS interval.'**
+  /// **'Set on the radio'**
   String get deviceGpsIntervalFixedByFirmware;
 
   /// No description provided for @locTitle.
@@ -2156,11 +2132,11 @@ abstract class AppLocalizations {
   /// **'Sends the phone\'s position to the radio'**
   String get locTileSubtitle;
 
-  /// No description provided for @locHelp.
+  /// No description provided for @deviceGpsIntervalWhy.
   ///
   /// In en, this message translates to:
-  /// **'When the radio\'s GPS fix is stale, write the phone\'s position to it.'**
-  String get locHelp;
+  /// **'This firmware build decides how often the sensors are read, so the app cannot change it.'**
+  String get deviceGpsIntervalWhy;
 
   /// No description provided for @locMaster.
   ///
@@ -2363,7 +2339,7 @@ abstract class AppLocalizations {
   /// No description provided for @voiceRate.
   ///
   /// In en, this message translates to:
-  /// **'Rate'**
+  /// **'Speed'**
   String get voiceRate;
 
   /// No description provided for @voicePitch.
@@ -4535,8 +4511,26 @@ abstract class AppLocalizations {
   /// No description provided for @deviceRegionBand.
   ///
   /// In en, this message translates to:
-  /// **'REGION / BAND'**
+  /// **'Band preset'**
   String get deviceRegionBand;
+
+  /// No description provided for @deviceRegionWhy.
+  ///
+  /// In en, this message translates to:
+  /// **'Why'**
+  String get deviceRegionWhy;
+
+  /// No description provided for @deviceRegionCaveatTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Region caveat'**
+  String get deviceRegionCaveatTitle;
+
+  /// No description provided for @deviceRegionCaveatClose.
+  ///
+  /// In en, this message translates to:
+  /// **'Close'**
+  String get deviceRegionCaveatClose;
 
   /// No description provided for @deviceRegionCurrent.
   ///
@@ -4553,7 +4547,7 @@ abstract class AppLocalizations {
   /// No description provided for @deviceRegionCustom.
   ///
   /// In en, this message translates to:
-  /// **'Custom (no preset match)'**
+  /// **'Custom'**
   String get deviceRegionCustom;
 
   /// No description provided for @deviceRegionSuggestFromLocation.
@@ -4589,7 +4583,7 @@ abstract class AppLocalizations {
   /// No description provided for @deviceRegionSuggestTitle.
   ///
   /// In en, this message translates to:
-  /// **'Use the suggested region?'**
+  /// **'Use the preset for your location?'**
   String get deviceRegionSuggestTitle;
 
   /// No description provided for @deviceRegionSuggestBody.
@@ -4601,7 +4595,7 @@ abstract class AppLocalizations {
   /// No description provided for @deviceRegionSuggestApply.
   ///
   /// In en, this message translates to:
-  /// **'Apply'**
+  /// **'Use it'**
   String get deviceRegionSuggestApply;
 
   /// No description provided for @deviceRegionSuggestNoFix.
@@ -4616,23 +4610,11 @@ abstract class AppLocalizations {
   /// **'Your location doesn\'t match any shipped country preset — pick one manually.'**
   String get deviceRegionSuggestNoMatch;
 
-  /// No description provided for @deviceRegionAppliedToast.
-  ///
-  /// In en, this message translates to:
-  /// **'{label} applied — make sure every node in your mesh uses the same preset.'**
-  String deviceRegionAppliedToast(String label);
-
   /// No description provided for @deviceRegionDisclaimerShort.
   ///
   /// In en, this message translates to:
   /// **'Shared by users, not checked by a regulator.'**
   String get deviceRegionDisclaimerShort;
-
-  /// No description provided for @deviceRegionDisclaimerMore.
-  ///
-  /// In en, this message translates to:
-  /// **'Details'**
-  String get deviceRegionDisclaimerMore;
 
   /// No description provided for @deviceRegionDisclaimer.
   ///
@@ -4745,13 +4727,13 @@ abstract class AppLocalizations {
   /// No description provided for @deviceRadioParams.
   ///
   /// In en, this message translates to:
-  /// **'Frequency & bandwidth'**
+  /// **'Radio'**
   String get deviceRadioParams;
 
   /// No description provided for @deviceIdentityAdvert.
   ///
   /// In en, this message translates to:
-  /// **'IDENTITY / ADVERT'**
+  /// **'Identity and advert'**
   String get deviceIdentityAdvert;
 
   /// No description provided for @deviceChannelsSection.
@@ -4763,13 +4745,13 @@ abstract class AppLocalizations {
   /// No description provided for @deviceOtherParamsSection.
   ///
   /// In en, this message translates to:
-  /// **'OTHER PARAMS'**
+  /// **'Advanced'**
   String get deviceOtherParamsSection;
 
   /// No description provided for @deviceDeviceSection.
   ///
   /// In en, this message translates to:
-  /// **'DEVICE'**
+  /// **'Device'**
   String get deviceDeviceSection;
 
   /// No description provided for @deviceFrequency.
@@ -4811,19 +4793,19 @@ abstract class AppLocalizations {
   /// No description provided for @devicePathHashSizeHelp.
   ///
   /// In en, this message translates to:
-  /// **'How much of its key each message carries. Longer makes repeaters easier to tell apart and costs a few bytes per message.'**
+  /// **'The hash length this radio stamps on the packets it sends. Repeaters follow each packet\'s own length, so nodes need not agree. Longer hashes tell repeaters apart better but shrink the directed payload budget.'**
   String get devicePathHashSizeHelp;
 
   /// No description provided for @devicePathHashUnread.
   ///
   /// In en, this message translates to:
-  /// **'path hash: unknown (device not queried yet)'**
+  /// **'unknown'**
   String get devicePathHashUnread;
 
   /// No description provided for @devicePathHashMismatch.
   ///
   /// In en, this message translates to:
-  /// **'Not applied yet: this radio uses {device} byte(s), the form is set to {form}.'**
+  /// **'On the radio: {device}. Yours: {form}. Tap Apply to send yours.'**
   String devicePathHashMismatch(String device, String form);
 
   /// No description provided for @deviceRadioApplied.
@@ -4883,7 +4865,7 @@ abstract class AppLocalizations {
   /// No description provided for @radioHealthTitle.
   ///
   /// In en, this message translates to:
-  /// **'RADIO HEALTH'**
+  /// **'Radio health'**
   String get radioHealthTitle;
 
   /// No description provided for @radioHealthRead.
@@ -4901,43 +4883,43 @@ abstract class AppLocalizations {
   /// No description provided for @radioHealthUnread.
   ///
   /// In en, this message translates to:
-  /// **'Not read yet. Read asks the radio for its own stats (CMD_GET_STATS).'**
+  /// **'Tap Read'**
   String get radioHealthUnread;
 
   /// No description provided for @radioHealthNoise.
   ///
   /// In en, this message translates to:
-  /// **'noise floor {dbm} dBm — the radio\'s own measurement'**
+  /// **'Noise {dbm} dBm'**
   String radioHealthNoise(String dbm);
 
   /// No description provided for @radioHealthLast.
   ///
   /// In en, this message translates to:
-  /// **'last packet RSSI {rssi} dBm, SNR {snr} dB — from the radio\'s packet statistics'**
+  /// **'Last {rssi} dBm · {snr} dB SNR'**
   String radioHealthLast(String rssi, String snr);
 
   /// No description provided for @radioHealthBattery.
   ///
   /// In en, this message translates to:
-  /// **'battery {volts} V — from the radio\'s core statistics, not a phone reading'**
+  /// **'Battery {volts} V'**
   String radioHealthBattery(String volts);
 
   /// No description provided for @radioHealthNotReported.
   ///
   /// In en, this message translates to:
-  /// **'not reported by this firmware'**
+  /// **'Not reported'**
   String get radioHealthNotReported;
 
   /// No description provided for @radioHealthUptime.
   ///
   /// In en, this message translates to:
-  /// **'up {uptime} — the radio\'s uptime counter, which resets when it power-cycles'**
+  /// **'Up {uptime}'**
   String radioHealthUptime(String uptime);
 
   /// No description provided for @radioHealthSource.
   ///
   /// In en, this message translates to:
-  /// **'All values are the radio\'s own counters; nothing here is measured by the phone.'**
+  /// **'From the radio'**
   String get radioHealthSource;
 
   /// No description provided for @deviceLoadFromDevice.
@@ -5165,7 +5147,7 @@ abstract class AppLocalizations {
   /// No description provided for @otherTelemetryModeTitle.
   ///
   /// In en, this message translates to:
-  /// **'Who can read this radio\'s readings'**
+  /// **'Who may read telemetry'**
   String get otherTelemetryModeTitle;
 
   /// No description provided for @otherTelemetryBase.
@@ -6755,7 +6737,7 @@ abstract class AppLocalizations {
   /// No description provided for @locGroupAutoPublish.
   ///
   /// In en, this message translates to:
-  /// **'Auto-publish'**
+  /// **'Publishing'**
   String get locGroupAutoPublish;
 
   /// No description provided for @locGroupBeacon.
@@ -6781,13 +6763,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Using: {name} · channels and keys'**
   String deviceActiveChannelSub(String name);
-
-  /// No description provided for @deviceNowParams.
-  ///
-  /// In en, this message translates to:
-  /// **'device now: {freq}MHz {bw}kHz SF{sf} CR{cr} {tx}dBm'**
-  String deviceNowParams(
-      String freq, String bw, String sf, String cr, String tx);
 
   /// No description provided for @locationSourceDevice.
   ///
@@ -6992,6 +6967,168 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Paired: {name} — auto-reconnects on startup'**
   String diagnosticsPairedLine(String name);
+
+  /// No description provided for @diagnosticsSectionDeveloper.
+  ///
+  /// In en, this message translates to:
+  /// **'Developer'**
+  String get diagnosticsSectionDeveloper;
+
+  /// No description provided for @diagnosticsPairRadio.
+  ///
+  /// In en, this message translates to:
+  /// **'Pair a radio'**
+  String get diagnosticsPairRadio;
+
+  /// No description provided for @diagnosticsForgetConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Forget this radio?'**
+  String get diagnosticsForgetConfirmTitle;
+
+  /// No description provided for @diagnosticsForgetConfirmBody.
+  ///
+  /// In en, this message translates to:
+  /// **'You will need to pair it again, and this clears its bond. Do not do this while the radio is out of reach.'**
+  String get diagnosticsForgetConfirmBody;
+
+  /// No description provided for @diagnosticsSectionSend.
+  ///
+  /// In en, this message translates to:
+  /// **'Send'**
+  String get diagnosticsSectionSend;
+
+  /// No description provided for @diagnosticsSendSelfAdvert.
+  ///
+  /// In en, this message translates to:
+  /// **'Send self-advert'**
+  String get diagnosticsSendSelfAdvert;
+
+  /// No description provided for @diagnosticsReadClock.
+  ///
+  /// In en, this message translates to:
+  /// **'Read the radio\'s clock'**
+  String get diagnosticsReadClock;
+
+  /// No description provided for @diagnosticsPullMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Pull the next message'**
+  String get diagnosticsPullMessage;
+
+  /// No description provided for @diagnosticsTestMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Public-channel test message'**
+  String get diagnosticsTestMessage;
+
+  /// No description provided for @diagnosticsSend.
+  ///
+  /// In en, this message translates to:
+  /// **'Send'**
+  String get diagnosticsSend;
+
+  /// No description provided for @diagnosticsSentWhat.
+  ///
+  /// In en, this message translates to:
+  /// **'Sent {what}'**
+  String diagnosticsSentWhat(String what);
+
+  /// No description provided for @diagnosticsSendFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'The send failed: {error}'**
+  String diagnosticsSendFailed(String error);
+
+  /// No description provided for @diagnosticsSectionM6.
+  ///
+  /// In en, this message translates to:
+  /// **'Channel-tail evidence'**
+  String get diagnosticsSectionM6;
+
+  /// No description provided for @diagnosticsResolveTail.
+  ///
+  /// In en, this message translates to:
+  /// **'Resolve channel-tail'**
+  String get diagnosticsResolveTail;
+
+  /// No description provided for @diagnosticsExportFixture.
+  ///
+  /// In en, this message translates to:
+  /// **'Export fixture'**
+  String get diagnosticsExportFixture;
+
+  /// No description provided for @diagnosticsCopyFixture.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy fixture JSON'**
+  String get diagnosticsCopyFixture;
+
+  /// No description provided for @diagnosticsFixtureCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Copied. Save it under the protocol package\'s captured vectors.'**
+  String get diagnosticsFixtureCopied;
+
+  /// No description provided for @diagnosticsNoRfLog.
+  ///
+  /// In en, this message translates to:
+  /// **'No RF-log frame captured yet'**
+  String get diagnosticsNoRfLog;
+
+  /// No description provided for @diagnosticsNotRfLog.
+  ///
+  /// In en, this message translates to:
+  /// **'The last RF-log frame did not decode'**
+  String get diagnosticsNotRfLog;
+
+  /// No description provided for @diagnosticsNotGrpTxt.
+  ///
+  /// In en, this message translates to:
+  /// **'That packet is not a group text. Send on the Public channel and try again.'**
+  String get diagnosticsNotGrpTxt;
+
+  /// No description provided for @diagnosticsExportNeedsCapture.
+  ///
+  /// In en, this message translates to:
+  /// **'Needs a captured RF-log frame first'**
+  String get diagnosticsExportNeedsCapture;
+
+  /// No description provided for @diagnosticsNoFrames.
+  ///
+  /// In en, this message translates to:
+  /// **'No frames yet'**
+  String get diagnosticsNoFrames;
+
+  /// No description provided for @diagnosticsFramesCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Copied {count} frames'**
+  String diagnosticsFramesCopied(String count);
+
+  /// No description provided for @diagnosticsSectionSoak.
+  ///
+  /// In en, this message translates to:
+  /// **'Soak'**
+  String get diagnosticsSectionSoak;
+
+  /// No description provided for @diagnosticsSoakEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No scopes bound'**
+  String get diagnosticsSoakEmpty;
+
+  /// No description provided for @diagnosticsCopySoak.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy soak report'**
+  String get diagnosticsCopySoak;
+
+  /// No description provided for @diagnosticsSoakCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Soak report copied'**
+  String get diagnosticsSoakCopied;
 
   /// No description provided for @nodesClearSearch.
   ///
@@ -8835,6 +8972,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Report a place'**
   String get mapReportPlace;
+
+  /// No description provided for @settingsAppGroupRadio.
+  ///
+  /// In en, this message translates to:
+  /// **'Radio'**
+  String get settingsAppGroupRadio;
+
+  /// No description provided for @settingsAppGroupSound.
+  ///
+  /// In en, this message translates to:
+  /// **'Reading and sound'**
+  String get settingsAppGroupSound;
+
+  /// No description provided for @settingsAppGroupData.
+  ///
+  /// In en, this message translates to:
+  /// **'Data'**
+  String get settingsAppGroupData;
+
+  /// No description provided for @settingsAppGroupSystem.
+  ///
+  /// In en, this message translates to:
+  /// **'System'**
+  String get settingsAppGroupSystem;
+
+  /// No description provided for @aboutReplayIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'Replay the first-run screens'**
+  String get aboutReplayIntro;
+
+  /// No description provided for @toolsGroupDiagnostics.
+  ///
+  /// In en, this message translates to:
+  /// **'Radio diagnostics'**
+  String get toolsGroupDiagnostics;
 }
 
 class _AppLocalizationsDelegate

@@ -109,15 +109,6 @@ class LocationSettingsScreen extends StatelessWidget {
       body: MmScaffold(
         child: ListView(
           children: <Widget>[
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 14, 16, 4),
-              child: Text(
-                l.locHelp,
-                style: TextStyle(
-                    color: cs.onSurfaceVariant,
-                    fontSize: skin.type.sizeBody),
-              ),
-            ),
             // Fences are a location feature and live beside the publish
             // controls, not under Tools: a fence is drawn from where you are.
             ListTile(

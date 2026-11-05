@@ -251,8 +251,8 @@
   "pairChooseAnother": "Choose another radio",
   "settingsHeading": "App settings",
   "settingsBackgroundTitle": "Stay connected in background",
-  "settingsBackgroundOn": "A notification stays visible so messages arrive while the app is closed.",
-  "settingsBackgroundOff": "Messages arrive when you reopen the app.",
+  "settingsBackgroundOn": "Messages arrive while the app is closed",
+  "settingsBackgroundOff": "Messages arrive when you open the app",
   "settingsTelemetryPoll": "Gather node telemetry",
   "settingsTelemetryPollOn": "Politely polls contacts for temperature / altitude (a little OTA airtime)",
   "settingsTelemetryPollOff": "No telemetry requests sent; query a node manually from its detail",
@@ -265,10 +265,7 @@
   "settingsSpeechOff": "Text-to-speech OFF (default) · reads channel messages",
   "settingsSpeechMuted": "Speech is on but muted with the alert sounds.",
   "settingsPermissions": "Permissions",
-  "settingsPermissionsSubtitle": "Turn this app's Bluetooth and notifications on or off.",
-  "settingsShowIntro": "Show intro again on next launch",
-  "settingsShowIntroEnabled": "Wipes the first-run flag so the permissions intro shows again — useful when you're testing the flow",
-  "settingsShowIntroDisabled": "Intro is currently scheduled for next launch",
+  "settingsPermissionsSubtitle": "Bluetooth, notifications and location",
   "termsTitle": "Terms and privacy",
   "termsLead": "This app talks to a mesh radio. There is no account, no cloud and no analytics.",
   "termsSectionLocal": "WHAT STAYS ON THIS DEVICE",
@@ -347,9 +344,8 @@
   "dashboardAudioUnmute": "Unmute alert sounds",
   "demoBanner": "DEMO",
   "demoTooltip": "Demo mode — no radio. Explore channels, settings and docs without a companion.",
-  "demoModeRow": "Demo mode (no radio)",
-  "demoModeOn": "On — the app opens without connecting to a radio",
-  "demoModeOff": "Off — the app connects to a paired radio at launch",
+  "demoModeRow": "No radio",
+  "demoModeSubtitle": "Explore the app offline",
   "firstRunHeader": "MESHMORE · WELCOME",
   "firstRunTitle": "What this app will ask for",
   "firstRunBleTitle": "Bluetooth",
@@ -610,10 +606,10 @@
       }
     }
   },
-  "deviceGpsIntervalFixedByFirmware": "This radio sets its own GPS interval.",
+  "deviceGpsIntervalFixedByFirmware": "Set on the radio",
   "locTitle": "Auto-publish location",
   "locTileSubtitle": "Sends the phone's position to the radio",
-  "locHelp": "When the radio's GPS fix is stale, write the phone's position to it.",
+  "deviceGpsIntervalWhy": "This firmware build decides how often the sensors are read, so the app cannot change it.",
   "locMaster": "Auto-publish",
   "locMasterOn": "On — using phone GPS",
   "locMasterOff": "Off",
@@ -711,7 +707,7 @@
   "gridHeadingHud": "HEADING",
   "voiceSettingsTitle": "Voice (TTS quality)",
   "voiceSettingsHint": "Off until you turn on SPEECH in App settings. Rate / pitch / voice take effect on the next utterance.",
-  "voiceRate": "Rate",
+  "voiceRate": "Speed",
   "voicePitch": "Pitch",
   "voicePicker": "Voice",
   "voicePickerEmpty": "No voices reported by the platform engine — using the system default.",
@@ -1716,16 +1712,19 @@
   "channelsQrPayload": "Channel code (you can copy it)",
   "channelsQrClose": "Close",
   "deviceConfigTitle": "Device configuration",
-  "deviceRegionBand": "REGION / BAND",
+  "deviceRegionBand": "Band preset",
+  "deviceRegionWhy": "Why",
+  "deviceRegionCaveatTitle": "Region caveat",
+  "deviceRegionCaveatClose": "Close",
   "deviceRegionCurrent": "CURRENTLY APPLIED",
   "deviceRegionUnknown": "Waiting for device…",
-  "deviceRegionCustom": "Custom (no preset match)",
+  "deviceRegionCustom": "Custom",
   "deviceRegionSuggestFromLocation": "Suggest from my location",
   "deviceRegionFamilyAmericas": "Americas",
   "deviceRegionFamilyEurope": "Europe",
   "deviceRegionFamilyAsiaPacific": "Asia-Pacific",
   "deviceRegionFamilyOther": "Other",
-  "deviceRegionSuggestTitle": "Use the suggested region?",
+  "deviceRegionSuggestTitle": "Use the preset for your location?",
   "deviceRegionSuggestBody": "Based on your phone GPS ({lat}, {lon}), the matching preset is {label}. Verify this is legal where you are before applying — particularly outside the country you set up in.",
   "@deviceRegionSuggestBody": {
     "placeholders": {
@@ -1740,10 +1739,9 @@
       }
     }
   },
-  "deviceRegionSuggestApply": "Apply",
+  "deviceRegionSuggestApply": "Use it",
   "deviceRegionSuggestNoFix": "No GPS fix yet. Try outdoors with location on.",
   "deviceRegionSuggestNoMatch": "Your location doesn't match any shipped country preset — pick one manually.",
-  "deviceRegionAppliedToast": "{label} applied — make sure every node in your mesh uses the same preset.",
   "@deviceRegionAppliedToast": {
     "placeholders": {
       "label": {
@@ -1752,7 +1750,6 @@
     }
   },
   "deviceRegionDisclaimerShort": "Shared by users, not checked by a regulator.",
-  "deviceRegionDisclaimerMore": "Details",
   "deviceRegionDisclaimer": "These presets are shared by users, not checked by a regulator. Pick one that is legal where you are and use the same settings on every radio. In Japan the radio itself must carry 技適 (giteki) certification; most imported boards do not, and using one is an offence under the Radio Act whatever the settings. The Japan (ARIB STD-T108) preset is a community proposal that has not been widely tested.",
   "presetUsCanada": "USA / Canada",
   "presetUsArizona": "USA — Arizona",
@@ -1771,11 +1768,11 @@
   "presetVn": "Vietnam",
   "cancel": "Cancel",
   "closeSheet": "Close",
-  "deviceRadioParams": "Frequency & bandwidth",
-  "deviceIdentityAdvert": "IDENTITY / ADVERT",
+  "deviceRadioParams": "Radio",
+  "deviceIdentityAdvert": "Identity and advert",
   "deviceChannelsSection": "CHANNELS",
-  "deviceOtherParamsSection": "OTHER PARAMS",
-  "deviceDeviceSection": "DEVICE",
+  "deviceOtherParamsSection": "Advanced",
+  "deviceDeviceSection": "Device",
   "deviceFrequency": "Frequency (MHz)",
   "deviceBandwidth": "Bandwidth (kHz)",
   "deviceSpreadingFactor": "Spreading factor (5–12)",
@@ -1785,9 +1782,9 @@
   "@devicePathHashSize": {
     "description": "Radio/network setting. MeshCore path hash length."
   },
-  "devicePathHashSizeHelp": "How much of its key each message carries. Longer makes repeaters easier to tell apart and costs a few bytes per message.",
-  "devicePathHashUnread": "path hash: unknown (device not queried yet)",
-  "devicePathHashMismatch": "Not applied yet: this radio uses {device} byte(s), the form is set to {form}.",
+  "devicePathHashSizeHelp": "The hash length this radio stamps on the packets it sends. Repeaters follow each packet's own length, so nodes need not agree. Longer hashes tell repeaters apart better but shrink the directed payload budget.",
+  "devicePathHashUnread": "unknown",
+  "devicePathHashMismatch": "On the radio: {device}. Yours: {form}. Tap Apply to send yours.",
   "@devicePathHashMismatch": {
     "placeholders": {
       "device": {
@@ -1831,11 +1828,11 @@
   "deviceRadioReverted": "Previous operating point restored.",
   "deviceRadioRevertUnavailable": "Undo is one use only.",
   "deviceRadioRevertFailed": "Undo did not apply — the radio kept its last values.",
-  "radioHealthTitle": "RADIO HEALTH",
+  "radioHealthTitle": "Radio health",
   "radioHealthRead": "Read",
   "radioHealthReading": "Reading…",
-  "radioHealthUnread": "Not read yet. Read asks the radio for its own stats (CMD_GET_STATS).",
-  "radioHealthNoise": "noise floor {dbm} dBm — the radio's own measurement",
+  "radioHealthUnread": "Tap Read",
+  "radioHealthNoise": "Noise {dbm} dBm",
   "@radioHealthNoise": {
     "placeholders": {
       "dbm": {
@@ -1843,7 +1840,7 @@
       }
     }
   },
-  "radioHealthLast": "last packet RSSI {rssi} dBm, SNR {snr} dB — from the radio's packet statistics",
+  "radioHealthLast": "Last {rssi} dBm · {snr} dB SNR",
   "@radioHealthLast": {
     "placeholders": {
       "rssi": {
@@ -1854,7 +1851,7 @@
       }
     }
   },
-  "radioHealthBattery": "battery {volts} V — from the radio's core statistics, not a phone reading",
+  "radioHealthBattery": "Battery {volts} V",
   "@radioHealthBattery": {
     "placeholders": {
       "volts": {
@@ -1862,8 +1859,8 @@
       }
     }
   },
-  "radioHealthNotReported": "not reported by this firmware",
-  "radioHealthUptime": "up {uptime} — the radio's uptime counter, which resets when it power-cycles",
+  "radioHealthNotReported": "Not reported",
+  "radioHealthUptime": "Up {uptime}",
   "@radioHealthUptime": {
     "placeholders": {
       "uptime": {
@@ -1871,7 +1868,7 @@
       }
     }
   },
-  "radioHealthSource": "All values are the radio's own counters; nothing here is measured by the phone.",
+  "radioHealthSource": "From the radio",
   "deviceLoadFromDevice": "Load from device",
   "deviceApplyRadio": "Apply radio params",
   "deviceConnectFirst": "Connect a radio first (Diagnostics & connect).",
@@ -1916,7 +1913,7 @@
   "otherManualAddTitle": "Manual-add contacts",
   "otherManualAddSubOn": "You add heard nodes as contacts on demand.",
   "otherManualAddSubOff": "Nodes you hear are saved as contacts.",
-  "otherTelemetryModeTitle": "Who can read this radio's readings",
+  "otherTelemetryModeTitle": "Who may read telemetry",
   "otherTelemetryBase": "Base",
   "otherTelemetryLoc": "Location",
   "otherTelemetryEnv": "Environment",
@@ -2520,7 +2517,7 @@
   "selfCheckGuards": "Refusals (size, budget, policy, coverage)",
   "selfCheckExpiry": "Delete-after expiry",
   "selfCheckDisk": "Storage matches the books",
-  "locGroupAutoPublish": "Auto-publish",
+  "locGroupAutoPublish": "Publishing",
   "locGroupBeacon": "Beacon",
   "locGroupManual": "Manual",
   "deviceManageChannels": "Manage channels",
@@ -2528,26 +2525,6 @@
   "@deviceActiveChannelSub": {
     "placeholders": {
       "name": {
-        "type": "String"
-      }
-    }
-  },
-  "deviceNowParams": "device now: {freq}MHz {bw}kHz SF{sf} CR{cr} {tx}dBm",
-  "@deviceNowParams": {
-    "placeholders": {
-      "freq": {
-        "type": "String"
-      },
-      "bw": {
-        "type": "String"
-      },
-      "sf": {
-        "type": "String"
-      },
-      "cr": {
-        "type": "String"
-      },
-      "tx": {
         "type": "String"
       }
     }
@@ -2694,6 +2671,36 @@
       }
     }
   },
+  "diagnosticsSectionDeveloper": "Developer",
+  "diagnosticsPairRadio": "Pair a radio",
+  "diagnosticsForgetConfirmTitle": "Forget this radio?",
+  "diagnosticsForgetConfirmBody": "You will need to pair it again, and this clears its bond. Do not do this while the radio is out of reach.",
+  "diagnosticsSectionSend": "Send",
+  "diagnosticsSendSelfAdvert": "Send self-advert",
+  "diagnosticsReadClock": "Read the radio's clock",
+  "diagnosticsPullMessage": "Pull the next message",
+  "diagnosticsTestMessage": "Public-channel test message",
+  "diagnosticsSend": "Send",
+  "diagnosticsSentWhat": "Sent {what}",
+  "@diagnosticsSentWhat": {"placeholders": {"what": {"type": "String"}}},
+  "diagnosticsSendFailed": "The send failed: {error}",
+  "@diagnosticsSendFailed": {"placeholders": {"error": {"type": "String"}}},
+  "diagnosticsSectionM6": "Channel-tail evidence",
+  "diagnosticsResolveTail": "Resolve channel-tail",
+  "diagnosticsExportFixture": "Export fixture",
+  "diagnosticsCopyFixture": "Copy fixture JSON",
+  "diagnosticsFixtureCopied": "Copied. Save it under the protocol package's captured vectors.",
+  "diagnosticsNoRfLog": "No RF-log frame captured yet",
+  "diagnosticsNotRfLog": "The last RF-log frame did not decode",
+  "diagnosticsNotGrpTxt": "That packet is not a group text. Send on the Public channel and try again.",
+  "diagnosticsExportNeedsCapture": "Needs a captured RF-log frame first",
+  "diagnosticsNoFrames": "No frames yet",
+  "diagnosticsFramesCopied": "Copied {count} frames",
+  "@diagnosticsFramesCopied": {"placeholders": {"count": {"type": "String"}}},
+  "diagnosticsSectionSoak": "Soak",
+  "diagnosticsSoakEmpty": "No scopes bound",
+  "diagnosticsCopySoak": "Copy soak report",
+  "diagnosticsSoakCopied": "Soak report copied",
   "nodesClearSearch": "Clear search",
   "networksTitle": "Networks",
   "networksTileSubtitle": "Radio settings shared by a group of radios",
@@ -3506,5 +3513,11 @@
   "@sosDestinationContactsLimit": {"placeholders": {"count": {"type": "int"}}},
   "@placeTtlMinutes": {"placeholders": {"count": {"type": "int"}}},
   "@placeTtlHours": {"placeholders": {"count": {"type": "int"}}},
-  "@placeTtlDays": {"placeholders": {"count": {"type": "int"}}}
+  "@placeTtlDays": {"placeholders": {"count": {"type": "int"}}},
+  "settingsAppGroupRadio": "Radio",
+  "settingsAppGroupSound": "Reading and sound",
+  "settingsAppGroupData": "Data",
+  "settingsAppGroupSystem": "System",
+  "aboutReplayIntro": "Replay the first-run screens",
+  "toolsGroupDiagnostics": "Radio diagnostics"
 }

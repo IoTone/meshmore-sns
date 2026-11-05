@@ -57,7 +57,7 @@ void main() {
   testWidgets('before a read, the block says so rather than showing zeros',
       (WidgetTester t) async {
     await _pump(t);
-    expect(find.textContaining('Not read yet'), findsOneWidget);
+    expect(find.textContaining('Tap Read'), findsOneWidget);
   });
 
   testWidgets('the radio numbers are shown, each with its source',
@@ -83,7 +83,7 @@ void main() {
     expect(find.textContaining('-88'), findsOneWidget);
     expect(find.textContaining('4.10 V'), findsOneWidget);
     expect(find.textContaining('1h 30m'), findsOneWidget);
-    expect(find.textContaining('own counters'), findsOneWidget);
+    expect(find.textContaining('From the radio'), findsOneWidget);
   });
 
   testWidgets('a battery the firmware does not report is said, not shown as 0',
@@ -98,7 +98,7 @@ void main() {
         )
         ..fetchedAt = DateTime(2026, 11, 5);
     });
-    expect(find.textContaining('not reported'), findsOneWidget);
+    expect(find.textContaining('Not reported'), findsOneWidget);
     expect(find.textContaining('0.00 V'), findsNothing);
   });
 }

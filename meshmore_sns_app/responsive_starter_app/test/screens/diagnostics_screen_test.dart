@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:meshmore_sns_app/gen/app_localizations.dart';
 import 'package:meshmore_sns_app/l10n/locale_controller.dart';
@@ -56,6 +57,13 @@ void main() {
     return (ctrl, fake);
   }
 
+  /// The developer blocks are folded away by default (D1): the page opens on
+  /// the connection facts and the one action.
+  Future<void> openDeveloper(WidgetTester t) async {
+    await t.tap(find.text('DEVELOPER'));
+    await t.pumpAndSettle();
+  }
+
   testWidgets('starts disconnected; connect → ready shows device',
       (WidgetTester t) async {
     final (MeshcoreController ctrl, FakeMeshcoreTransport fake) =
@@ -84,7 +92,8 @@ void main() {
     await t.pumpAndSettle();
 
     final int before = fake.sent.length; // APP_START already sent
-    await t.tap(find.text('Get time'));
+    await openDeveloper(t);
+    await t.tap(find.text("Read the radio's clock"));
     await t.pumpAndSettle();
     expect(fake.sent.length, greaterThan(before));
     expect(find.text('Sent get-time'), findsOneWidget);
@@ -172,6 +181,63 @@ void main() {
     ctrl.dispose();
   });
 
+  testWidgets('forgetting a radio asks first and names the consequence',
+      (WidgetTester t) async {
+    SharedPreferences.setMockInitialValues(<String, Object>{
+      'mm.paired.id': 'AA:BB:CC',
+      'mm.paired.name': 'T1000-E',
+    });
+    final FakeMeshcoreTransport fake =
+        FakeMeshcoreTransport(connected: true);
+    final MeshcoreController ctrl = MeshcoreController(
+      transportFactory: () async => fake,
+      connection:
+          MeshcoreConnection(handshakeTimeout: const Duration(seconds: 5)),
+    );
+    await t.pumpWidget(
+      MaterialApp(
+        locale: const Locale('en'),
+        supportedLocales: LocaleController.supported,
+        localizationsDelegates: const <LocalizationsDelegate<Object>>[
+          AppLocalizations.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        home: MultiProvider(
+          providers: <ChangeNotifierProvider<ChangeNotifier>>[
+            ChangeNotifierProvider<MeshcoreController>.value(value: ctrl),
+            ChangeNotifierProvider<ToolsController>(
+                create: (_) => ToolsController(ctrl)),
+            ChangeNotifierProvider<BotController>(
+                create: (_) => BotController()),
+          ],
+          child: const DiagnosticsScreen(),
+        ),
+      ),
+    );
+    await ctrl.autoConnectIfPaired();
+    await t.pumpAndSettle();
+    expect(ctrl.hasPairedDevice, isTrue);
+
+    await t.tap(find.text('Forget'));
+    await t.pumpAndSettle();
+    expect(find.text('Forget this radio?'), findsOneWidget);
+    expect(find.textContaining('You will need to pair it again'), findsOneWidget);
+
+    // Cancelling changes nothing.
+    await t.tap(find.text('Cancel'));
+    await t.pumpAndSettle();
+    expect(ctrl.hasPairedDevice, isTrue);
+
+    await t.tap(find.text('Forget'));
+    await t.pumpAndSettle();
+    await t.tap(find.widgetWithText(FilledButton, 'Forget'));
+    await t.pumpAndSettle();
+    expect(ctrl.hasPairedDevice, isFalse);
+    ctrl.dispose();
+  });
+
   testWidgets('raw frame log decodes inbound frames', (WidgetTester t) async {
     // The health readout sits above the log, so the log is no longer inside
     // the default 800x600 test viewport; this is a decode assertion, not a
@@ -186,6 +252,9 @@ void main() {
     fake.emit(currentTimeFrame());
     await t.pumpAndSettle();
 
+    // Folded until asked for.
+    expect(find.textContaining('CurrentTimeFrame'), findsNothing);
+    await openDeveloper(t);
     expect(find.textContaining('CurrentTimeFrame'), findsWidgets);
     ctrl.dispose();
   });

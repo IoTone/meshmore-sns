@@ -29,6 +29,24 @@ class ToolsHubScreen extends StatelessWidget {
         ToolKind.range => (Icons.straighten, l.toolRangeName, l.toolRangeSub),
       };
 
+  Widget _row(BuildContext context, AppLocalizations l, MmSkin skin,
+      ToolsController tools, ToolKind k) {
+    final (IconData icon, String name, String sub) = entry(l, k);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: MmListRow(
+        leading: Icon(icon, color: skin.color.accent),
+        title: Text(name),
+        subtitle: Text(sub,
+            style: TextStyle(color: skin.color.fgMuted, fontSize: skin.type.sizeBody)),
+        trailing: tools.running == k
+            ? MmStatusPill(l.toolsRunning)
+            : Icon(Icons.chevron_right, color: skin.color.fgMuted),
+        onTap: () => context.push('/settings/tools/${k.name}'),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final AppLocalizations l = AppLocalizations.of(context);
@@ -47,26 +65,23 @@ class ToolsHubScreen extends StatelessWidget {
                 padding: const EdgeInsets.only(bottom: 8),
                 child: ToolNotice(text: l.toolsOffline, icon: Icons.link_off),
               ),
-            for (final ToolKind k in ToolKind.values)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: Builder(builder: (BuildContext context) {
-                  final (IconData icon, String name, String sub) =
-                      entry(l, k);
-                  return MmListRow(
-                    leading: Icon(icon, color: skin.color.accent),
-                    title: Text(name),
-                    subtitle: Text(sub,
-                        style: TextStyle(
-                            color: skin.color.fgMuted, fontSize: 12)),
-                    trailing: tools.running == k
-                        ? MmStatusPill(l.toolsRunning)
-                        : Icon(Icons.chevron_right,
-                            color: skin.color.fgMuted),
-                    onTap: () => context.push('/settings/tools/${k.name}'),
-                  );
-                }),
-              ),
+            // Two tools answer a question a user asks; the rest are
+            // engineering, so they sit under their own label instead of in
+            // the same undifferentiated list.
+            for (final ToolKind k in const <ToolKind>[
+              ToolKind.ping,
+              ToolKind.trace,
+              ToolKind.discover,
+            ])
+              _row(context, l, skin, tools, k),
+            const SizedBox(height: 4),
+            MmSectionHeader(l.toolsGroupDiagnostics),
+            for (final ToolKind k in const <ToolKind>[
+              ToolKind.stats,
+              ToolKind.range,
+              ToolKind.soak,
+            ])
+              _row(context, l, skin, tools, k),
           ],
         ),
       ),

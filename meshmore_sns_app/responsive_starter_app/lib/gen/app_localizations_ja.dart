@@ -427,10 +427,10 @@ class AppLocalizationsJa extends AppLocalizations {
   String get settingsBackgroundTitle => 'バックグラウンドで接続を維持';
 
   @override
-  String get settingsBackgroundOn => '通知が表示されたままになり、アプリを閉じていてもメッセージが届きます。';
+  String get settingsBackgroundOn => 'アプリを閉じていてもメッセージが届きます';
 
   @override
-  String get settingsBackgroundOff => 'アプリを開き直すとメッセージが届きます。';
+  String get settingsBackgroundOff => 'アプリを開いたときにメッセージが届きます';
 
   @override
   String get settingsTelemetryPoll => 'ノードのテレメトリを収集';
@@ -469,16 +469,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get settingsPermissions => '権限';
 
   @override
-  String get settingsPermissionsSubtitle => 'このアプリの Bluetooth と通知をオン・オフします。';
-
-  @override
-  String get settingsShowIntro => '次回起動時に紹介を再表示';
-
-  @override
-  String get settingsShowIntroEnabled => '初回フラグを消去し権限紹介を再表示 — フロー検証時に便利';
-
-  @override
-  String get settingsShowIntroDisabled => '紹介は次回起動時に表示予定';
+  String get settingsPermissionsSubtitle => 'Bluetooth・通知・位置情報';
 
   @override
   String get termsTitle => '利用規約とプライバシー';
@@ -645,13 +636,10 @@ class AppLocalizationsJa extends AppLocalizations {
   String get demoTooltip => 'デモモード — 無線なし。コンパニオンに接続せずにチャンネル・設定・ドキュメントを試せます。';
 
   @override
-  String get demoModeRow => 'デモモード（無線なし）';
+  String get demoModeRow => '無線なし';
 
   @override
-  String get demoModeOn => 'オン — 起動時に無線へ接続しません';
-
-  @override
-  String get demoModeOff => 'オフ — 起動時にペアリング済みの無線へ接続します';
+  String get demoModeSubtitle => 'オフラインでアプリを試せます';
 
   @override
   String get firstRunHeader => 'MESHMORE · ようこそ';
@@ -1125,7 +1113,7 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get deviceGpsIntervalFixedByFirmware => 'GPS の間隔はこのラジオが決めます。';
+  String get deviceGpsIntervalFixedByFirmware => '無線側の設定です';
 
   @override
   String get locTitle => '位置の自動公開';
@@ -1134,7 +1122,8 @@ class AppLocalizationsJa extends AppLocalizations {
   String get locTileSubtitle => 'スマートフォンの位置をラジオに送ります';
 
   @override
-  String get locHelp => '無線機の GPS が古いとき、スマートフォンの位置を書き込みます。';
+  String get deviceGpsIntervalWhy =>
+      'このファームウェアがセンサーの読み取り間隔を決めるため、アプリからは変更できません。';
 
   @override
   String get locMaster => '自動公開';
@@ -1255,10 +1244,10 @@ class AppLocalizationsJa extends AppLocalizations {
       '「アプリ設定」で SPEECH を ON にするまで無効。レート / ピッチ / 音声は次の発話から適用されます。';
 
   @override
-  String get voiceRate => '速度';
+  String get voiceRate => '速さ';
 
   @override
-  String get voicePitch => 'ピッチ';
+  String get voicePitch => '高さ';
 
   @override
   String get voicePicker => '音声';
@@ -2537,7 +2526,16 @@ class AppLocalizationsJa extends AppLocalizations {
   String get deviceConfigTitle => 'デバイス設定';
 
   @override
-  String get deviceRegionBand => 'リージョン / バンド';
+  String get deviceRegionBand => 'バンドプリセット';
+
+  @override
+  String get deviceRegionWhy => '理由';
+
+  @override
+  String get deviceRegionCaveatTitle => '地域の注意';
+
+  @override
+  String get deviceRegionCaveatClose => '閉じる';
 
   @override
   String get deviceRegionCurrent => '現在の設定';
@@ -2546,7 +2544,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get deviceRegionUnknown => 'デバイス応答待ち…';
 
   @override
-  String get deviceRegionCustom => 'カスタム（プリセット非該当）';
+  String get deviceRegionCustom => 'カスタム';
 
   @override
   String get deviceRegionSuggestFromLocation => '現在地から自動選択';
@@ -2564,7 +2562,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get deviceRegionFamilyOther => 'その他';
 
   @override
-  String get deviceRegionSuggestTitle => '推奨の地域を使いますか？';
+  String get deviceRegionSuggestTitle => '現在地のプリセットを使いますか？';
 
   @override
   String deviceRegionSuggestBody(String lat, String lon, String label) {
@@ -2572,7 +2570,7 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get deviceRegionSuggestApply => '適用';
+  String get deviceRegionSuggestApply => '使う';
 
   @override
   String get deviceRegionSuggestNoFix =>
@@ -2582,15 +2580,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get deviceRegionSuggestNoMatch => '現在地が出荷時プリセットの対象外です — 手動で選択してください。';
 
   @override
-  String deviceRegionAppliedToast(String label) {
-    return '$label を適用しました。メッシュ内の全ノードで同じプリセットを使用してください。';
-  }
-
-  @override
   String get deviceRegionDisclaimerShort => '利用者どうしの値で、規制当局の確認はありません。';
-
-  @override
-  String get deviceRegionDisclaimerMore => '詳細';
 
   @override
   String get deviceRegionDisclaimer =>
@@ -2648,16 +2638,16 @@ class AppLocalizationsJa extends AppLocalizations {
   String get closeSheet => '閉じる';
 
   @override
-  String get deviceRadioParams => '周波数と帯域幅';
+  String get deviceRadioParams => '無線';
 
   @override
-  String get deviceIdentityAdvert => 'アイデンティティ / アドバート';
+  String get deviceIdentityAdvert => '識別とアドバート';
 
   @override
   String get deviceChannelsSection => 'チャンネル';
 
   @override
-  String get deviceOtherParamsSection => 'その他のパラメータ';
+  String get deviceOtherParamsSection => '詳細設定';
 
   @override
   String get deviceDeviceSection => 'デバイス';
@@ -2682,14 +2672,14 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get devicePathHashSizeHelp =>
-      '各メッセージが鍵の何バイトを運ぶかです。長いほど中継を区別しやすくなり、1 通あたり数バイト増えます。';
+      'このラジオが送信するパケットに付けるハッシュ長です。中継は各パケット自身の長さに従うため、ノード間で揃える必要はありません。長いほど中継を区別しやすい一方、直接送信のペイロード容量が減ります。';
 
   @override
-  String get devicePathHashUnread => 'パスハッシュ: 不明 (デバイス未問い合わせ)';
+  String get devicePathHashUnread => '不明';
 
   @override
   String devicePathHashMismatch(String device, String form) {
-    return '未適用: ラジオは $device バイト、フォームは $form です。';
+    return '無線: $device。この画面: $form。適用を押すと画面の値が送られます。';
   }
 
   @override
@@ -2727,7 +2717,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get deviceRadioRevertFailed => '元に戻せませんでした — 無線機は直前の値のままです。';
 
   @override
-  String get radioHealthTitle => '無線機の状態';
+  String get radioHealthTitle => '無線の状態';
 
   @override
   String get radioHealthRead => '取得';
@@ -2736,34 +2726,33 @@ class AppLocalizationsJa extends AppLocalizations {
   String get radioHealthReading => '取得中…';
 
   @override
-  String get radioHealthUnread =>
-      'まだ取得していません。「取得」で無線機自身の統計(CMD_GET_STATS)を読みます。';
+  String get radioHealthUnread => '「読む」を押してください';
 
   @override
   String radioHealthNoise(String dbm) {
-    return 'ノイズフロア $dbm dBm — 無線機自身の測定値';
+    return 'ノイズ $dbm dBm';
   }
 
   @override
   String radioHealthLast(String rssi, String snr) {
-    return '直近パケット RSSI $rssi dBm、SNR $snr dB — 無線機のパケット統計より';
+    return '直近 $rssi dBm · SNR $snr dB';
   }
 
   @override
   String radioHealthBattery(String volts) {
-    return 'バッテリー $volts V — 無線機のコア統計値(スマートフォン側の測定ではありません)';
+    return '電池 $volts V';
   }
 
   @override
-  String get radioHealthNotReported => 'このファームウェアでは報告されません';
+  String get radioHealthNotReported => '未報告';
 
   @override
   String radioHealthUptime(String uptime) {
-    return '稼働 $uptime — 無線機の稼働カウンタ(電源再投入でリセットされます)';
+    return '稼働 $uptime';
   }
 
   @override
-  String get radioHealthSource => 'すべて無線機自身のカウンタです。この画面の値はスマートフォン側の測定ではありません。';
+  String get radioHealthSource => '無線の値です';
 
   @override
   String get deviceLoadFromDevice => 'デバイスから読込';
@@ -2881,7 +2870,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get otherManualAddSubOff => '受信したノードは連絡先として保存されます。';
 
   @override
-  String get otherTelemetryModeTitle => 'このラジオの計測値を誰が読めるか';
+  String get otherTelemetryModeTitle => 'テレメトリを読める相手';
 
   @override
   String get otherTelemetryBase => '基本';
@@ -3767,7 +3756,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get selfCheckDisk => '保存量と記録の一致';
 
   @override
-  String get locGroupAutoPublish => '自動送信';
+  String get locGroupAutoPublish => '公開';
 
   @override
   String get locGroupBeacon => 'ビーコン';
@@ -3781,12 +3770,6 @@ class AppLocalizationsJa extends AppLocalizations {
   @override
   String deviceActiveChannelSub(String name) {
     return '使用中: $name · チャンネルとキー';
-  }
-
-  @override
-  String deviceNowParams(
-      String freq, String bw, String sf, String cr, String tx) {
-    return 'デバイスの現在値: ${freq}MHz ${bw}kHz SF$sf CR$cr ${tx}dBm';
   }
 
   @override
@@ -3914,6 +3897,95 @@ class AppLocalizationsJa extends AppLocalizations {
   String diagnosticsPairedLine(String name) {
     return 'ペアリング済み: $name — 起動時に自動再接続します';
   }
+
+  @override
+  String get diagnosticsSectionDeveloper => '開発者向け';
+
+  @override
+  String get diagnosticsPairRadio => '無線をペアリング';
+
+  @override
+  String get diagnosticsForgetConfirmTitle => 'この無線のペアリングを解除しますか？';
+
+  @override
+  String get diagnosticsForgetConfirmBody =>
+      '再度ペアリングが必要になり、ボンドも削除されます。無線が手の届かない場所にあるときは行わないでください。';
+
+  @override
+  String get diagnosticsSectionSend => '送信';
+
+  @override
+  String get diagnosticsSendSelfAdvert => '自己アドバートを送信';
+
+  @override
+  String get diagnosticsReadClock => '無線の時計を読む';
+
+  @override
+  String get diagnosticsPullMessage => '次のメッセージを取り込む';
+
+  @override
+  String get diagnosticsTestMessage => '公開チャンネルのテストメッセージ';
+
+  @override
+  String get diagnosticsSend => '送信';
+
+  @override
+  String diagnosticsSentWhat(String what) {
+    return '$what を送信しました';
+  }
+
+  @override
+  String diagnosticsSendFailed(String error) {
+    return '送信に失敗しました: $error';
+  }
+
+  @override
+  String get diagnosticsSectionM6 => 'チャンネル末尾の証跡';
+
+  @override
+  String get diagnosticsResolveTail => 'チャンネル末尾を解決';
+
+  @override
+  String get diagnosticsExportFixture => 'フィクスチャを書き出す';
+
+  @override
+  String get diagnosticsCopyFixture => 'フィクスチャ JSON をコピー';
+
+  @override
+  String get diagnosticsFixtureCopied => 'コピーしました。プロトコルパッケージの取得済みベクタに保存してください。';
+
+  @override
+  String get diagnosticsNoRfLog => 'RF ログのフレームがまだありません';
+
+  @override
+  String get diagnosticsNotRfLog => '最後の RF ログフレームをデコードできませんでした';
+
+  @override
+  String get diagnosticsNotGrpTxt =>
+      'このパケットはグループテキストではありません。公開チャンネルで送信して再試行してください。';
+
+  @override
+  String get diagnosticsExportNeedsCapture => '先に RF ログのフレームを取得してください';
+
+  @override
+  String get diagnosticsNoFrames => 'フレームはまだありません';
+
+  @override
+  String diagnosticsFramesCopied(String count) {
+    return '$count 件のフレームをコピーしました';
+  }
+
+  @override
+  String get diagnosticsSectionSoak => 'ソーク';
+
+  @override
+  String get diagnosticsSoakEmpty => 'スコープが未設定です';
+
+  @override
+  String get diagnosticsCopySoak => 'ソークレポートをコピー';
+
+  @override
+  String get diagnosticsSoakCopied => 'ソークレポートをコピーしました';
 
   @override
   String get nodesClearSearch => '検索をクリア';
@@ -5034,4 +5106,22 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get mapReportPlace => '場所を報告';
+
+  @override
+  String get settingsAppGroupRadio => '無線';
+
+  @override
+  String get settingsAppGroupSound => '表示と音';
+
+  @override
+  String get settingsAppGroupData => 'データ';
+
+  @override
+  String get settingsAppGroupSystem => 'システム';
+
+  @override
+  String get aboutReplayIntro => '初回画面をもう一度表示';
+
+  @override
+  String get toolsGroupDiagnostics => '無線の診断';
 }

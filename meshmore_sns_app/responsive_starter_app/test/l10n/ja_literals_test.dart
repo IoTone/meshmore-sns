@@ -51,9 +51,9 @@ void main() {
       en.deviceActiveChannelSub(p),
       ja.deviceActiveChannelSub(p)
     ),
-    'deviceNowParams': (
-      en.deviceNowParams(p, p, p, p, p),
-      ja.deviceNowParams(p, p, p, p, p)
+    'devicePathHashMismatch': (
+      en.devicePathHashMismatch(p, p),
+      ja.devicePathHashMismatch(p, p)
     ),
     'locationSourceDevice': (en.locationSourceDevice, ja.locationSourceDevice),
     'locationSourcePhone': (en.locationSourcePhone, ja.locationSourcePhone),

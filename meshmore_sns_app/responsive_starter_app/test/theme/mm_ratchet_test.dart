@@ -65,7 +65,6 @@ void main() {
       'lib/screens/chat_screen.dart': 8,
       'lib/screens/device_contacts_screen.dart': 6,
       'lib/screens/device_manager_sheet.dart': 10,
-      'lib/screens/diagnostics_screen.dart': 8,
       'lib/screens/dm_screen.dart': 3,
       'lib/screens/doc_reader_screen.dart': 1,
       'lib/screens/elevation_profile_view.dart': 8,
@@ -83,7 +82,6 @@ void main() {
       'lib/screens/sns_cells_view.dart': 6,
       'lib/screens/street_map_view.dart': 2,
       'lib/screens/tools/tool_widgets.dart': 3,
-      'lib/screens/tools/tools_hub_screen.dart': 1,
       'lib/screens/tools/trace_screen.dart': 2,
       'lib/screens/voice_settings_screen.dart': 9,
     };

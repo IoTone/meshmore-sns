@@ -80,7 +80,7 @@ void main() {
     expect(_sizeOf(t, find.text(l.docsHubFooter)), 10.5);
   });
 
-  testWidgets('location settings keeps its 12 and 11 px prose',
+  testWidgets('location settings keeps its 11 px hint',
       (WidgetTester t) async {
     await t.binding.setSurfaceSize(const Size(900, 2400));
     addTearDown(() => t.binding.setSurfaceSize(null));
@@ -91,7 +91,8 @@ void main() {
     final AppLocalizations l =
         AppLocalizations.of(t.element(find.byType(LocationSettingsScreen)));
 
-    expect(_sizeOf(t, find.text(l.locHelp)), 12);
+    // The page's own explaining paragraph is gone (D22): the switch carries
+    // the consequence and the remaining hint stays on the 11 px step.
     expect(_sizeOf(t, find.text(l.locBatteryHint)), 11);
   });
 }
