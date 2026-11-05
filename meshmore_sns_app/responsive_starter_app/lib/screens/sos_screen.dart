@@ -182,8 +182,7 @@ class _SosScreenState extends State<SosScreen> {
                   decoration: InputDecoration(
                     hintText: l.sosWordsHint,
                     hintStyle: TextStyle(
-                        color: skin.color.fgMuted,
-                        fontSize: skin.type.sizeSm),
+                        color: skin.color.fgMuted, fontSize: skin.type.sizeSm),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: mmRadius(context, kRadiusSm),
                       borderSide: BorderSide(color: skin.color.line),
@@ -215,63 +214,76 @@ class _SosScreenState extends State<SosScreen> {
     final bool armed = sos.state == SosState.arming;
     final bool enabled = radioReady && !armed;
     final Color fg = enabled ? skin.color.fg : skin.color.fgMuted;
+    // A screen reader cannot press and hold, and the semantic action used to be
+    // an empty closure: the alarm was reachable by finger only. Both semantic
+    // actions start the same hold the finger starts, and the hold is timed by
+    // this widget rather than by the gesture, so the alarm raises exactly as it
+    // does with a finger on the control.
     return Semantics(
       button: true,
       enabled: enabled,
       label: l.sosHoldToArm,
-      onLongPress: enabled ? () {} : null,
-      child: GestureDetector(
-        key: const ValueKey<String>('sos-hold'),
-        onTapDown: (_) => _beginHold(sos, l),
-        onTapUp: (_) => _endHold(sos, l),
-        onTapCancel: () => _endHold(sos, l),
-        child: Container(
-          constraints: const BoxConstraints(minHeight: 56),
-          padding: EdgeInsets.symmetric(
-              horizontal: skin.space.step(4), vertical: skin.space.step(3)),
-          decoration: ShapeDecoration(
-            color: skin.color.surfaceAlt,
-            shape: mmShapeBorder(
-              skin.shape,
-              side: BorderSide(
-                  color: enabled ? skin.color.alert : skin.color.line,
-                  width: skin.shape.borderWidth),
+      onTap: enabled ? () => _beginHold(sos, l) : null,
+      onLongPress: enabled ? () => _beginHold(sos, l) : null,
+      // The recognizer below turns a semantic tap into a down and an up in the
+      // same frame, which arms and then aborts — "released too early" to a
+      // screen reader who did nothing wrong. Its own semantics are excluded so
+      // the action above is the only one a screen reader can reach; the finger
+      // path is unchanged.
+      child: ExcludeSemantics(
+        child: GestureDetector(
+          key: const ValueKey<String>('sos-hold'),
+          onTapDown: (_) => _beginHold(sos, l),
+          onTapUp: (_) => _endHold(sos, l),
+          onTapCancel: () => _endHold(sos, l),
+          child: Container(
+            constraints: const BoxConstraints(minHeight: 56),
+            padding: EdgeInsets.symmetric(
+                horizontal: skin.space.step(4), vertical: skin.space.step(3)),
+            decoration: ShapeDecoration(
+              color: skin.color.surfaceAlt,
+              shape: mmShapeBorder(
+                skin.shape,
+                side: BorderSide(
+                    color: enabled ? skin.color.alert : skin.color.line,
+                    width: skin.shape.borderWidth),
+              ),
             ),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: <Widget>[
-              Row(
-                children: <Widget>[
-                  Icon(Icons.emergency_share,
-                      size: skin.type.sizeXl, color: skin.color.alert),
-                  SizedBox(width: skin.space.step(3)),
-                  Expanded(
-                    child: Text(
-                      armed
-                          ? l.sosHoldRemaining(
-                              ((1 - _held) * SosEngine.hold.inSeconds)
-                                  .ceil()
-                                  .clamp(0, SosEngine.hold.inSeconds))
-                          : l.sosHoldToArm,
-                      style: TextStyle(
-                          color: fg,
-                          fontSize: skin.type.sizeBodyLg,
-                          fontWeight: FontWeight.w600),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: <Widget>[
+                Row(
+                  children: <Widget>[
+                    Icon(Icons.emergency_share,
+                        size: skin.type.sizeXl, color: skin.color.alert),
+                    SizedBox(width: skin.space.step(3)),
+                    Expanded(
+                      child: Text(
+                        armed
+                            ? l.sosHoldRemaining(
+                                ((1 - _held) * SosEngine.hold.inSeconds)
+                                    .ceil()
+                                    .clamp(0, SosEngine.hold.inSeconds))
+                            : l.sosHoldToArm,
+                        style: TextStyle(
+                            color: fg,
+                            fontSize: skin.type.sizeBodyLg,
+                            fontWeight: FontWeight.w600),
+                      ),
                     ),
+                  ],
+                ),
+                if (armed) ...<Widget>[
+                  SizedBox(height: skin.space.step(2)),
+                  LinearProgressIndicator(
+                    value: _held,
+                    minHeight: 4,
+                    color: skin.color.alert,
+                    backgroundColor: skin.color.line,
                   ),
                 ],
-              ),
-              if (armed) ...<Widget>[
-                SizedBox(height: skin.space.step(2)),
-                LinearProgressIndicator(
-                  value: _held,
-                  minHeight: 4,
-                  color: skin.color.alert,
-                  backgroundColor: skin.color.line,
-                ),
               ],
-            ],
+            ),
           ),
         ),
       ),
@@ -310,10 +322,9 @@ class _Destination extends StatelessWidget {
         // Where it goes is two separate lines, because a channel and a direct
         // message guarantee different things (§10 item 2).
         Text(l.sosGoesToChannel(sos.channelName),
-            style: TextStyle(
-                color: skin.color.fg, fontSize: skin.type.sizeBody)),
-        Text(
-            l.sosGoesToContacts(sos.contactKeysHex.length),
+            style:
+                TextStyle(color: skin.color.fg, fontSize: skin.type.sizeBody)),
+        Text(l.sosGoesToContacts(sos.contactKeysHex.length),
             style: TextStyle(
                 color: sos.contactKeysHex.isEmpty
                     ? skin.color.fgMuted
@@ -323,8 +334,7 @@ class _Destination extends StatelessWidget {
           SizedBox(height: skin.space.step(1)),
           Text(l.sosContactsNone,
               style: TextStyle(
-                  color: skin.color.fgMuted,
-                  fontSize: skin.type.sizeSm)),
+                  color: skin.color.fgMuted, fontSize: skin.type.sizeSm)),
         ],
         if (emergency) ...<Widget>[
           SizedBox(height: skin.space.step(2)),
@@ -376,16 +386,15 @@ class _Running extends StatelessWidget {
               Text(l.sosNextSend(next.inSeconds),
                   key: const ValueKey<String>('sos-next'),
                   style: TextStyle(
-                      color: skin.color.fg,
-                      fontSize: skin.type.sizeBody)),
+                      color: skin.color.fg, fontSize: skin.type.sizeBody)),
           ],
         ),
         SizedBox(height: skin.space.step(2)),
         Text(
             '${l.sosElapsed(sos.elapsed.inMinutes)}  ·  '
             '${l.sosRemaining(left, total)}',
-            style:
-                TextStyle(color: skin.color.fgMuted, fontSize: skin.type.sizeSm)),
+            style: TextStyle(
+                color: skin.color.fgMuted, fontSize: skin.type.sizeSm)),
         // What the schedule did not manage, said plainly: a sleep window skips
         // repeats rather than firing a burst the radio would drop, and a
         // refused repeat is a repeat nobody heard.
@@ -502,8 +511,7 @@ class _Ended extends StatelessWidget {
               child: Text(
                 a.claimed ? l.sosClaimedBy(a.name) : l.sosSeenBy(a.name),
                 style: TextStyle(
-                    color: skin.color.fgMuted,
-                    fontSize: skin.type.sizeBody),
+                    color: skin.color.fgMuted, fontSize: skin.type.sizeBody),
               ),
             ),
         if (other.isNotEmpty) SizedBox(height: skin.space.step(4)),

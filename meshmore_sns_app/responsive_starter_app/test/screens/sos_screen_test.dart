@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:meshcore/meshcore.dart';
@@ -125,6 +126,39 @@ void main() {
     expect(sos.state, SosState.idle);
     expect(find.text('Released too early — nothing was sent.'), findsOneWidget);
     expect(fake.sent.where((Uint8List f) => f.first == 0x03), isEmpty);
+  });
+
+  // A screen reader cannot press and hold, and the semantic action used to be
+  // an empty closure: the alarm was reachable by finger only. This drives the
+  // action a screen reader would, and expects the same alarm a finger raises.
+  testWidgets('a screen reader can raise the alarm through the hold control',
+      (WidgetTester t) async {
+    final SemanticsHandle handle = t.ensureSemantics();
+    await t.binding.setSurfaceSize(const Size(400, 900));
+    addTearDown(() => t.binding.setSurfaceSize(null));
+    await t.pumpWidget(_host(mc, sos, tc));
+    await t.pump();
+
+    final Finder hold = find.byKey(const ValueKey<String>('sos-hold'));
+    final SemanticsNode node = t.getSemantics(hold);
+    expect(node.getSemanticsData().hasAction(SemanticsAction.tap), isTrue,
+        reason: 'the control advertises an action a screen reader can perform');
+
+    t.binding.pipelineOwner.semanticsOwner!
+        .performAction(node.id, SemanticsAction.tap);
+    await t.pump(const Duration(milliseconds: 150));
+    expect(sos.state, SosState.arming,
+        reason: 'the semantic action starts the same hold');
+
+    clock.now = clock.now.add(SosEngine.hold);
+    await t.pump(const Duration(seconds: 2));
+    await t.pump(const Duration(seconds: 2));
+    expect(sos.state, SosState.active);
+    expect(find.byKey(const ValueKey<String>('sos-active')), findsOneWidget);
+    expect(fake.sent.where((Uint8List f) => f.first == 0x03), hasLength(1));
+
+    handle.dispose();
+    await _settle(t);
   });
 
   testWidgets('a held press raises the alarm, and the countdown is shown',
