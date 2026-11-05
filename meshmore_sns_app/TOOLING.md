@@ -132,6 +132,11 @@ the archive. Exit status is non-zero on any failure. Measured on the debug APK, 
 | x86_64/libdartjni.so | 0x4000 | 0x1c000 | 0x1f340 |
 | x86_64/libdatastore_shared_counter.so | 0x4000 | 0x8000 | — |
 
+`libapp.so`, which exists only in a release build, has no `GNU_RELRO` segment: the Dart AOT snapshot is
+read-only, so there is nothing to remap and nothing to pad, and the alignment check alone is the requirement. The
+script used to call that a failure; it now passes it with `ok (no GNU_RELRO)`, because a false blocker on every
+release artifact is worse than no check.
+
 `zipalign -P 16`: ok. **One shipped library fails: `libavif_native.so`** (all three ABIs) — `PT_LOAD` alignment
 `0x1000` and a `GNU_RELRO` range that runs past the next `PT_LOAD` once rounded to 16 KB. That is the recorded D11.2
 item with the 1 Feb 2027 deadline, and it is not fixable from this repository: the archive is prebuilt by the package,
@@ -173,6 +178,13 @@ $ANDROID_HOME/build-tools/37.0.0/apksigner verify --print-certs \
   build/app/outputs/flutter-apk/app-release.apk | head -3
 tool/check_16k.sh build/app/outputs/flutter-apk/app-release.apk
 ```
+
+Measured once with a throwaway keystore, 2026-11-05, so the numbers are known before the publisher's key exists:
+`flutter build appbundle --release` 4 m 22 s, AAB 76 136 550 B (72.6 MiB); `flutter build apk --release
+--target-platform android-arm64` 31 902 037 B; `jarsigner -verify` reports `jar verified`, signed by the generated
+certificate rather than `CN=Android Debug`; `tool/check_16k.sh` on that release APK fails only on `libavif_native.so`
+(D11.2) and passes everything else, `zipalign -P 16` included. Delete `key.properties` afterwards: a throwaway key in
+the build is worse than no key.
 
 Verify the signer before every upload: a release signed with the debug certificate prints `CN=Android Debug`, and that
 line is the difference between an upload that is accepted and one that is not. `minifyEnabled` is not set for release,

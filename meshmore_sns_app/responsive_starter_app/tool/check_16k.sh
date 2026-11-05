@@ -6,9 +6,12 @@
 #
 # Two things have to hold for every native library the APK ships:
 #   1. each PT_LOAD segment is aligned to at least 16 KB, so the loader can map
-#      the segment at a 16 KB-page address;
-#   2. the GNU_RELRO range ends at or before the next PT_LOAD once rounded up to
-#      a 16 KB page, so the read-only remap cannot cover writable data.
+#      the segment at a 16 KB-page address. This holds for every library;
+#   2. where a library has a GNU_RELRO segment, its range ends at or before the
+#      next PT_LOAD once rounded up to a 16 KB page, so the read-only remap
+#      cannot cover writable data. A library with no writable segment to remap
+#      has no GNU_RELRO at all (the Dart AOT snapshot `libapp.so` is the common
+#      case), and that is not a failure: alignment is the whole requirement.
 # And the archive itself must keep every .so stored uncompressed and 16 KB
 # aligned: `zipalign -P 16`.
 #
@@ -55,8 +58,13 @@ for so in sorted(glob.glob(sys.argv[1] + '/lib/*/*.so')):
         continue
     min_align = min(l[2] for l in loads)
     if relro is None:
-        print(f"{rel:46s} {min_align:10x} {'-':>10s} {'-':>10s}  fail: no GNU_RELRO")
-        status = 1
+        # Nothing to remap read-only, so nothing to pad. Only the alignment
+        # requirement applies.
+        ok = min_align >= PAGE
+        if not ok:
+            status = 1
+        print(f"{rel:46s} {min_align:10x} {'-':>10s} {'-':>10s}  "
+              f"{'ok (no GNU_RELRO)' if ok else 'fail: align < 16 KB'}")
         continue
     end = relro[0] + relro[1]
     nxt = min((l[0] for l in loads if l[0] > end), default=None)
