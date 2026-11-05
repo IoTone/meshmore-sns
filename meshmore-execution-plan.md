@@ -126,19 +126,25 @@ point at the ldmux repo), and the master plan's gateway rows.
 - `c81b051` left/right swipes change screens again; maps chosen by dropdown (`grid_screen.dart`, `home_shell.dart`,
   ARB, `pubspec.yaml` version).
 
-**Resolved 2026-11-05: merged for history, not ported — R95 removed the mechanism dev's commits add.** The earlier
-plan said to re-port these two commits onto the local rewrite. Reading both sides overturns that: dev's base
-`e7691c8` is 2026-10-15, R95 (`693f395`, 2026-10-22; `meshmore-sns-spec.md` "one navigation model") landed on this
-line after that and made the body `PageView` `NeverScrollableScrollPhysics` in **every** skin, deleting
-`MmShape.swipeNavigation` and `GridScreen.capturesHorizontalDrag`. `capturesHorizontalDrag` is what dev's pan toggle
-exists to drive, so ported onto R95 the toggle would hold a pannable map still and hand the drag to a shell that never
-pages: a dead control, and a regression on every panning view. The map keeps its R67 edge bands because that gesture
-is its only exit; the grid changes maps by the R104 labelled picker sheet, so nothing dev added is lost. Therefore the
-12 conflicted files resolve to the local side (`git checkout HEAD --` all 12),
-dev's four ARB keys are dropped rather than shipped unused, `lib/gen/*` is unchanged by `flutter gen-l10n`, and the
-version moves to `1.0.196+12` — above both lines (`1.0.193+9` local, `1.0.195+11` dev) so the two version sequences
-cannot collide on a device. The supersession is recorded in `meshmore_sns_app/STATUS.md` under R95 and in
-`meshmore-sns-UX-spec.md` view 3b.
+**Resolved 2026-11-05 (second pass): merged, then ported — R109.** The first resolution kept R95 whole and dropped these
+two commits. That was overturned by reading who decided what: the merge base `e7691c8` is 2026-10-15, R95 (`693f395`,
+2026-10-22) is the supervisor's line, and `10a8c14` + `c81b051` (2026-11-02/03) are the **app owner's** own later
+model. So R95's two halves are separated: taps still jump with one cue and the vertical strip drag still steps a view,
+while body paging returns and every pan surface gates it — the Map while it is the current view, the grid while a
+pan/zoom view is in pan mode (`lib/shell/horizontal_drag_claim.dart`). Pan mode is off on every visit; the toggle is
+only on the six views that pan; in swipe mode the view is held still behind an `IgnorePointer` with a hint. The four
+ARB keys are back in EN + JA and `lib/gen/*` is regenerated; the version moves to `1.0.197+13`, above both lines
+(`1.0.193+9` local, `1.0.195+11` dev), so the sequences cannot collide on a device. The merge commit `c393d26` itself
+resolved all 12 conflicted files to the local side, and the port reimplements the owner's model on top of that tree
+rather than re-merging. The record lives at R109 in `meshmore-sns-spec.md`, in `STATUS.md`, and in
+`meshmore-sns-UX-spec.md` views 3a/3b.
+
+Two traps worth keeping in the plan because they cost measurement time:
+- A claim held on mount is wrong. The shell's `PageView` builds the neighbouring page before it is shown, so a
+  mount-time hold on the Map locked paging while the user was on another view. The lock is keyed on the current index.
+- The claim must publish outside a build pass: `dispose` runs inside `finalizeTree`, and notifying the shell there
+  marks an ancestor dirty mid-pass. `HorizontalDragClaim._publish` defers to a post-frame callback when the scheduler
+  is mid-frame.
 
 ## 2c. Where the app's own structure sits (file ownership for briefs)
 
@@ -290,7 +296,7 @@ plugin set. Each is a child task with a written answer, not a guess.
 | --- | --- | --- | --- |
 | W0 toolchain | **done** | scout | SDK path verified; 1044 tests / 90 s; gradle pins known |
 | W0 docs commit | **done** | supervisor | `e86a712` on `feat/ldmux-gateway` |
-| W0 branch rename + dev re-port | **done** | worker | rename `feat/app-completion`; dev merged, resolved to R95 (see §2b): 12 files taken local, 4 dev ARB keys dropped, version `1.0.196+12` |
+| W0 branch rename + dev re-port | **done** | worker | rename `feat/app-completion`; `origin/dev` merged (`c393d26`), then ported per R109 (§2b): shell paging + grid Swipe ⇄ Pan + shared claim, EN/JA strings, `test/shell/home_shell_test.dart` 34 pass / 12 s |
 | W0 gateway removal + doc correction | not started | — | 14 app files, 2 packages, 6 docs |
 | W1 defects | not started | — | — |
 | W2 skin tokens | not started | — | — |

@@ -15,6 +15,7 @@ import 'package:meshmore_sns_app/main.dart';
 import 'package:meshmore_sns_app/screens/map_screen.dart';
 import 'package:meshmore_sns_app/screens/street_map_view.dart';
 import 'package:meshmore_sns_app/shell/home_shell.dart';
+import 'package:meshmore_sns_app/shell/horizontal_drag_claim.dart';
 import 'package:meshmore_sns_app/ui/mm_page_header.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:meshmore_sns_app/bot/bot_controller.dart';
@@ -303,16 +304,19 @@ void main() {
     expect(find.widgetWithText(MmPageHeader, 'Settings'), findsOneWidget);
   });
 
-  testWidgets('the body never pages by swipe; the strip snaps (R95)',
-      (WidgetTester t) async {
+  testWidgets('a body fling changes one view; a strip tap jumps in one frame '
+      '(R109, R95)', (WidgetTester t) async {
     await _pumpApp(t);
     expect(find.widgetWithText(MmPageHeader, 'Dashboard'), findsOneWidget);
+    // R109 — the swipe between views is the shell's again, one page a drag.
     await t.fling(find.byType(PageView), const Offset(-400, 0), 1000);
     await t.pumpAndSettle();
+    expect(find.widgetWithText(MmPageHeader, 'Chat'), findsOneWidget,
+        reason: 'a left fling moves one view, not four');
     await t.fling(find.byType(PageView), const Offset(400, 0), 1000);
     await t.pumpAndSettle();
     expect(find.widgetWithText(MmPageHeader, 'Dashboard'), findsOneWidget,
-        reason: 'a fling in the body must not change the view');
+        reason: 'a right fling comes back one view');
 
     // A tap is one jump: no travel through the pages in between. R95's
     // defect was Dashboard -> Settings scrolling five pages and firing a
@@ -458,13 +462,13 @@ void main() {
           preset,
           reason: 'the skin under test is actually applied');
       await openFromStrip(t, 'Hyperlocal grid');
-      // R95: no skin pages by touch. A fling is inert everywhere and the
-      // strip is the only way across.
-      await t.fling(find.byType(PageView), const Offset(-400, 0), 1000);
+      // R109 — the grid opens on the radar in swipe mode, so the shell,
+      // not the view, takes the drag: one fling left is the next view.
+      await t.fling(find.byType(PageView), const Offset(-600, 0), 2000);
       await settle(t);
-      expect(find.widgetWithText(MmPageHeader, 'Hyperlocal grid'), findsOneWidget,
-          reason: '${preset.name}: the shell does not swipe');
-      await openFromStrip(t, 'Map');
+      expect(find.widgetWithText(MmPageHeader, 'Map'), findsOneWidget,
+          reason: '${preset.name}: a swipe in swipe mode hands over to the '
+              'shell and pages');
       expect(find.widgetWithText(MmPageHeader, 'Map'), findsOneWidget,
           reason: '${preset.name}: Map is reachable from the grid');
       expect(find.byType(MapScreen), findsOneWidget);
@@ -474,21 +478,33 @@ void main() {
     }
   });
 
-  testWidgets('every skin locks the body PageView (R95)',
+  testWidgets('the Map tab holds the body swipe in every skin (R109)',
       (WidgetTester t) async {
     for (final MmThemePreset preset in MmThemePreset.values) {
       SharedPreferences.setMockInitialValues(<String, Object>{});
       GridScreen.resetSession();
+      shellDragClaim.reset();
       await t.pumpWidget(const SizedBox());
       await _pumpApp(t, preset: preset);
-      final PageView pv = t.widget<PageView>(find.byType(PageView));
-      expect(pv.physics, isA<NeverScrollableScrollPhysics>(),
-          reason: '${preset.name}: the body never pages by touch');
+      expect(t.widget<PageView>(find.byType(PageView)).physics,
+          isNot(isA<NeverScrollableScrollPhysics>()),
+          reason: '${preset.name}: an ordinary view pages by touch');
+      await openFromStrip(t, 'Map');
+      expect(t.widget<PageView>(find.byType(PageView)).physics,
+          isA<NeverScrollableScrollPhysics>(),
+          reason: '${preset.name}: the map owns the middle, the shell locks');
+      expect(shellDragClaim.isClaimed, isFalse,
+          reason: '${preset.name}: the map locks by being the current view, '
+              'not by holding the grid claim');
+      // Leaving unlocks it, so the next view pages again.
+      await openFromStrip(t, 'Nodes');
+      expect(t.widget<PageView>(find.byType(PageView)).physics,
+          isNot(isA<NeverScrollableScrollPhysics>()));
     }
   });
 
   testWidgets(
-      'the map edge bands step one view in every skin (R95)',
+      'the map edge bands step exactly one view in every skin (R109)',
       (WidgetTester t) async {
     SharedPreferences.setMockInitialValues(<String, Object>{});
     GridScreen.resetSession();
@@ -498,12 +514,65 @@ void main() {
     await openFromStrip(t, 'Map');
     expect(find.byType(MapScreen), findsOneWidget);
 
-    // R67's bands are the map's only gesture exit now that the body
-    // never pages: an inward fling from the left edge goes back one view.
+    // R67's bands are the map's gesture exit (R109): an inward fling from
+    // the left edge goes back exactly one view. Two would mean the band's
+    // drag also paged the body.
     await t.flingFrom(const Offset(2, 300), const Offset(300, 0), 1200);
     await settle(t);
     expect(find.widgetWithText(MmPageHeader, 'Hyperlocal grid'), findsOneWidget,
-        reason: 'the left band leaves the map');
+        reason: 'the left band leaves the map by one view');
+    expect(find.byType(MapScreen), findsNothing,
+        reason: 'the map is gone, so its claim is too');
+    expect(t.takeException(), isNull);
+  });
+
+  testWidgets('the grid locks the body swipe in pan mode, and every visit '
+      'starts in swipe mode (R109)', (WidgetTester t) async {
+    await t.binding.setSurfaceSize(const Size(800, 1600));
+    addTearDown(() => t.binding.setSurfaceSize(null));
+    SharedPreferences.setMockInitialValues(<String, Object>{});
+    GridScreen.resetSession();
+    shellDragClaim.reset();
+    await _pumpApp(t);
+    await openFromStrip(t, 'Hyperlocal grid');
+    // The radar has no drag of its own: no toggle and no claim.
+    expect(
+        find.byKey(const ValueKey<String>('grid-pan-toggle')), findsNothing);
+    expect(shellDragClaim.isClaimed, isFalse);
+
+    // A pannable view offers the toggle, and starts in swipe mode with the
+    // view held still so the drag is the shell's.
+    await t.tap(find.byTooltip('Switch map view'));
+    await settle(t);
+    await t.tap(find.text('Street map').last);
+    await settle(t);
+    expect(find.text('Swipe ← → for other screens · tap ✋ to pan & zoom'),
+        findsOneWidget);
+    expect(shellDragClaim.isClaimed, isFalse,
+        reason: 'swipe mode is the default on every visit');
+
+    // Pan mode takes the drag: the shell stops paging.
+    await t.tap(find.byKey(const ValueKey<String>('grid-pan-toggle')));
+    await settle(t);
+    expect(find.text('Pan & zoom · tap ⇆ to swipe screens'), findsOneWidget);
+    expect(shellDragClaim.heldBy(GridScreen.dragHolder), isTrue);
+    await t.fling(find.byType(PageView), const Offset(-400, 0), 1000);
+    await settle(t);
+    expect(find.widgetWithText(MmPageHeader, 'Hyperlocal grid'), findsOneWidget,
+        reason: 'pan mode owns the drag, so the fling moves the map');
+
+    // The view is remembered for the session, the lock is not: a fresh visit
+    // can always be swiped away from.
+    await openFromStrip(t, 'Settings');
+    expect(shellDragClaim.isClaimed, isFalse,
+        reason: 'leaving the tab releases the claim');
+    await openFromStrip(t, 'Hyperlocal grid');
+    expect(shellDragClaim.heldBy(GridScreen.dragHolder), isFalse,
+        reason: 'pan mode is per visit, not per session');
+    await t.fling(find.byType(PageView), const Offset(-600, 0), 2000);
+    await settle(t);
+    expect(find.widgetWithText(MmPageHeader, 'Map'), findsOneWidget,
+        reason: 'a fresh visit is in swipe mode again');
     expect(t.takeException(), isNull);
   });
 
@@ -531,12 +600,14 @@ void main() {
     await openFromStrip(t, 'Settings');
     expect(find.widgetWithText(MmPageHeader, 'Settings'), findsOneWidget);
 
-    // R95: still inert off the map.
+    // R109 — off the map the body pages again: one fling right is the
+    // previous view.
     await t.fling(find.byType(PageView), const Offset(400, 0), 1000);
     await settle(t);
-    expect(find.widgetWithText(MmPageHeader, 'Settings'), findsOneWidget);
+    expect(find.widgetWithText(MmPageHeader, 'Map'), findsOneWidget,
+        reason: 'the body pages once the map is not the current view');
 
-    // Back from the map returns to the Dashboard.
+    // Back returns to the Dashboard.
     final bool handled = await t.binding.handlePopRoute();
     await settle(t);
     expect(handled, isTrue);

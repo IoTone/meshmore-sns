@@ -9,6 +9,7 @@ import 'package:meshmore_sns_app/gen/app_localizations.dart';
 import 'package:meshmore_sns_app/l10n/locale_controller.dart';
 import 'package:meshmore_sns_app/meshcore/meshcore_controller.dart';
 import 'package:meshmore_sns_app/screens/grid_screen.dart';
+import 'package:meshmore_sns_app/shell/horizontal_drag_claim.dart';
 import 'package:meshmore_sns_app/theme/theme_controller.dart';
 
 import '../meshcore/fake_transport.dart';
@@ -58,7 +59,10 @@ Widget _hostWithScale(MeshcoreController mc, double scale) => MaterialApp(
     );
 
 void main() {
-  setUp(GridScreen.resetSession);
+  setUp(() {
+    GridScreen.resetSession();
+    shellDragClaim.reset();
+  });
 
   testWidgets('empty state when nothing is in fabric', (t) async {
     final FakeMeshcoreTransport fake =
@@ -186,6 +190,69 @@ void main() {
     await t.pumpWidget(const SizedBox());
     mc.dispose();
   });
+  testWidgets('R109 the Swipe ⇄ Pan toggle exists only where the view pans, '
+      'and the claim follows it', (WidgetTester t) async {
+    await t.binding.setSurfaceSize(const Size(800, 1600));
+    addTearDown(() => t.binding.setSurfaceSize(null));
+    final MeshcoreController mc = MeshcoreController(
+        transportFactory: () async => FakeMeshcoreTransport());
+    await t.pumpWidget(_host(mc));
+    await t.pump();
+
+    // Radar: no drag of its own, so no toggle and no claim.
+    expect(find.byKey(const ValueKey<String>('grid-pan-toggle')), findsNothing);
+    expect(shellDragClaim.isClaimed, isFalse);
+
+    // A pannable view: the toggle, in swipe mode, with the view held still.
+    await t.tap(find.byTooltip('Switch map view'));
+    await t.pump();
+    await t.pump(const Duration(milliseconds: 400));
+    await t.tap(find.text('Street map').last);
+    await t.pump();
+    await t.pump(const Duration(milliseconds: 400));
+    expect(
+        find.byKey(const ValueKey<String>('grid-pan-toggle')), findsOneWidget);
+    expect(find.byTooltip('Swipe mode: swipe left/right for other screens. '
+        'Tap to pan and zoom this map'), findsOneWidget);
+    expect(shellDragClaim.isClaimed, isFalse);
+
+    // Pan mode holds the claim; tapping again releases it.
+    await t.tap(find.byKey(const ValueKey<String>('grid-pan-toggle')));
+    await t.pump();
+    expect(shellDragClaim.heldBy(GridScreen.dragHolder), isTrue);
+    expect(
+        find.byTooltip('Pan & zoom mode: drags move the map. Tap to swipe '
+            'between screens again'),
+        findsOneWidget);
+    await t.tap(find.byKey(const ValueKey<String>('grid-pan-toggle')));
+    await t.pump();
+    expect(shellDragClaim.isClaimed, isFalse);
+
+    // A report view draws to fit, so the toggle disappears.
+    await t.tap(find.byTooltip('Switch map view'));
+    await t.pump();
+    await t.pump(const Duration(milliseconds: 400));
+    await t.tap(find.text('Weather (environment)').last);
+    await t.pump();
+    await t.pump(const Duration(milliseconds: 400));
+    expect(find.byKey(const ValueKey<String>('grid-pan-toggle')), findsNothing);
+
+    // Disposing the tab in pan mode must not leave the shell locked.
+    await t.tap(find.byTooltip('Switch map view'));
+    await t.pump();
+    await t.pump(const Duration(milliseconds: 400));
+    await t.tap(find.text('Street map').last);
+    await t.pump();
+    await t.pump(const Duration(milliseconds: 400));
+    await t.tap(find.byKey(const ValueKey<String>('grid-pan-toggle')));
+    await t.pump();
+    expect(shellDragClaim.heldBy(GridScreen.dragHolder), isTrue);
+    await t.pumpWidget(const SizedBox());
+    expect(shellDragClaim.isClaimed, isFalse,
+        reason: 'the tab lets go of the drag when it is disposed');
+    mc.dispose();
+  });
+
   testWidgets('R91 the transport bar fits a 320dp phone at 2.0x text',
       (WidgetTester t) async {
     // The bar's Row overflowed by 26 px at 320 dp with normal text: play,

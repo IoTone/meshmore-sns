@@ -21,13 +21,14 @@ import '../ui/mm_shape.dart';
 /// ([MapsScreen]) is unchanged and is one tap away from the corner
 /// button here.
 ///
-/// A pan/zoom map owns every horizontal drag in the middle of the
-/// screen, and R95 made the shell's `PageView` unscrollable in every skin,
-/// so the drag is always the map's. **Edge swipe** is how you
-/// leave by gesture: a 24 dp band on each screen edge ([MmEdgeSwipe])
-/// is hit-tested before the map, and an inward fling there calls
-/// [onEdgeSwipe] (`-1` previous, `+1` next). Back and the view strip
-/// also leave.
+/// A pan/zoom map owns every horizontal drag in the middle of the screen, so
+/// while this page is the current one the shell does not page (R109, the
+/// `HomeShell` rule; the page is built as a neighbour before it is shown, so
+/// the lock cannot be a mount-time claim). **Edge swipe** is then the way out
+/// by gesture: a 24 dp band on each screen edge ([MmEdgeSwipe]) is hit-tested
+/// before the map, and an inward fling there calls [onEdgeSwipe] (`-1`
+/// previous, `+1` next). Back and the view strip also leave. The band is
+/// hit-tested above the map, so its drag never also pages the body.
 class MapScreen extends StatelessWidget {
   const MapScreen({super.key, this.onEdgeSwipe});
 

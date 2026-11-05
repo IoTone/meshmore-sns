@@ -461,6 +461,10 @@
   },
   "gridEmpty": "No fabric in range yet.\n\nA node appears when its advert is heard.",
   "gridStatusOffline": "Not connected — Settings → Diagnostics & connect",
+  "gridSwipeModeTooltip": "Swipe mode: swipe left/right for other screens. Tap to pan and zoom this map",
+  "gridPanModeTooltip": "Pan & zoom mode: drags move the map. Tap to swipe between screens again",
+  "gridSwipeHint": "Swipe ← → for other screens · tap ✋ to pan & zoom",
+  "gridPanHint": "Pan & zoom · tap ⇆ to swipe screens",
   "gridStatusCounts": "{visible} in fabric · {known} known · {favs, plural, =0{0 contacts} =1{1 contact} other{{favs} contacts}}",
   "@gridStatusCounts": {
     "placeholders": {

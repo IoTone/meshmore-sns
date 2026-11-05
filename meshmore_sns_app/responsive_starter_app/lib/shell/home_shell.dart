@@ -15,6 +15,7 @@ import '../gen/app_localizations.dart';
 import '../meshcore/meshcore_controller.dart';
 import '../screens/chat_screen.dart';
 import 'boot_overlay.dart';
+import 'horizontal_drag_claim.dart';
 import '../screens/dashboards/dashboard_host.dart';
 import '../screens/grid_screen.dart';
 import '../screens/map_screen.dart';
@@ -58,9 +59,13 @@ extension on MmView {
 
 /// Primary navigation shell (R11, R64): horizontal swipe between the
 /// primary views. There is no menu, sheet or drawer that switches
-/// views; the strip under the app bar ([_ViewStrip]) only shows where
-/// you are and is the tappable, labelled, 48dp-minimum path for anyone
-/// who cannot swipe (screen readers, switch access, a locked map).
+/// views; the strip under the app bar ([_ViewStrip]) shows where you are
+/// and is the tappable, labelled, 48dp-minimum path for anyone who cannot
+/// swipe (screen readers, switch access, a locked map).
+///
+/// R109 — the swipe is the shell's, but a surface that needs the same drag
+/// takes it: the Map tab and the grid in pan mode hold
+/// [shellDragClaim], and the body stops paging while they do.
 class HomeShell extends StatefulWidget {
   const HomeShell({super.key});
 
@@ -144,14 +149,30 @@ class _HomeShellState extends State<HomeShell>
     final int from = _index;
     _pc.jumpToPage(i);
     setState(() => _index = i);
-    context
-        .read<CueService>()
-        .play(i > from ? CueKind.navNext : CueKind.navPrev);
+    _playNavCue(from, i);
+  }
+
+  /// One view change, one cue (R95) — whether the change came from a strip
+  /// tap or from a swipe that settled, so the two paths cannot play it twice.
+  void _playNavCue(int from, int to) {
+    context.read<CueService>().play(to > from ? CueKind.navNext : CueKind.navPrev);
+  }
+
+  void _onPageChanged(int i) {
+    // Leaving a view with a focused text field (e.g. Chat) — drop the
+    // keyboard so it doesn't linger and shrink the next view.
+    FocusManager.instance.primaryFocus?.unfocus();
+    // A strip tap already moved [_index] and played its cue.
+    if (i == _index) return;
+    final int from = _index;
+    setState(() => _index = i);
+    _playNavCue(from, i);
   }
 
   /// R67 — an edge swipe on the map: one view back (-1) or forward (+1),
-  /// clamped to the ends. R95 keeps it for every skin: the map owns horizontal
-  /// drags, so the band is its only gesture exit.
+  /// clamped to the ends. R109 keeps it for every skin: the map holds the
+  /// drag claim while it shows, so the band is its only gesture exit and the
+  /// band's own drag must not also page the body.
   void _edgeSwipe(int delta) {
     _select((_index + delta).clamp(0, MmView.values.length - 1));
   }
@@ -193,20 +214,24 @@ class _HomeShellState extends State<HomeShell>
           onSelect: _select,
         ),
       ),
-      // R95 — the body never scrolls by touch, in any skin. Swiping
-      // between views fought every panning surface in the app (map, globe,
-      // street map, radar) and each gesture had to be special-cased. The strip
-      // is the switcher: tap snaps, a vertical drag on the strip steps one
-      // view. The map keeps its edge bands (R67) because it is a pan surface.
-      body: PageView(
+      // R109 — a horizontal drag pages the body, except while the current
+      // view needs the same drag: the Map (its pan/zoom canvas owns the
+      // middle, and the R67 edge bands are its gesture exit) and the grid
+      // in pan mode, which holds the claim itself. R95's half of this
+      // stays: a strip tap jumps in one frame with one cue, and a vertical
+      // drag on the strip steps one view.
+      body: ValueListenableBuilder<bool>(
+        valueListenable: shellDragClaim.claimed,
+        builder: (BuildContext _, bool gridOwnsDrag, Widget? __) {
+          // The Map is the current view or it is not: a page is built as a
+          // neighbour before it is shown, so a mount-time hold would lock
+          // the shell while another view was on screen.
+          final bool dragOwned =
+              gridOwnsDrag || _index == MmView.map.index;
+          return PageView(
         controller: _pc,
-        physics: const NeverScrollableScrollPhysics(),
-        onPageChanged: (int i) {
-          // Leaving a view with a focused text field (e.g. Chat) — drop
-          // the keyboard so it doesn't linger and shrink the next view.
-          FocusManager.instance.primaryFocus?.unfocus();
-          setState(() => _index = i);
-        },
+        physics: dragOwned ? const NeverScrollableScrollPhysics() : null,
+        onPageChanged: _onPageChanged,
         children: <Widget>[
           const DashboardHost(),
           const ChatScreen(),
@@ -215,6 +240,8 @@ class _HomeShellState extends State<HomeShell>
           MapScreen(onEdgeSwipe: _edgeSwipe),
           const _SettingsView(),
         ],
+          );
+        },
       ),
       ),
       ),

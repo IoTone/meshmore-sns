@@ -1,7 +1,7 @@
 # Meshmore SNS — project status
 
 _Snapshot as of 2026-11-05. App `1.0.196+12`, branch `feat/app-completion`.
-Change records below are newest first from R108; older entries are kept in
+Change records below are newest first from R109; older entries are kept in
 the order they were written._
 
 An offline-first Flutter companion app for MeshCore LoRa mesh radios
@@ -46,13 +46,14 @@ codebase.
   / unknown), per-node telemetry (altitude + **temp/humidity/pressure**),
   on-tap telemetry query (contacts only).
 
-**Navigation (R64/R85/R95)**
-- Six views (`dashboard, chat, nodes, grid, map, settings`; R85). The
-  **view strip** is the only switcher: a tap jumps in one frame, a
-  vertical drag on the strip steps one view, and body swipe paging is off
-  in every skin (R95). Strip is 56 dp tall, 48 dp cells with 22 px
-  icon-only glyphs, 3 px selected rule, and the app bar ends in a 2 px
-  `fg`@22% rule.
+**Navigation (R64/R85/R95/R109)**
+- Six views (`dashboard, chat, nodes, grid, map, settings`; R85). Two ways
+  across: a horizontal swipe on the body pages one view (R109), and the
+  **view strip** — tap jumps in one frame with one cue, vertical drag steps
+  one view (R95). A surface that needs the drag takes it: the **Map** while
+  it is current, and the grid while a pan/zoom view is in pan mode. Strip is
+  56 dp tall, 48 dp cells with 22 px icon-only glyphs, 3 px selected rule,
+  and the app bar ends in a 2 px `fg`@22% rule.
 - Device configuration (5 groups) and Profile & personalization (4
   groups) fold with `MmCollapsibleSection`, open by default.
 
@@ -116,6 +117,7 @@ codebase.
 - R85: **six views.** Docs and About are no longer tabs: Settings > Information (`/settings/about`) holds the brand/version block and licences. New EN/JA strings, `DocsHubScreen` is now a routed sub-page. **Not device-verified yet.**
 - R86: **Docs is a Settings row beside Information** (`/settings/docs`, was `/settings/about/docs`), listed immediately before Information. The top view strip fills the full width in equal cells (scrolls only below 288dp). **Not device-verified yet.**
 - R87: **clean-up pass.** `MmScaffold` gains an ink surface (tap ripples on Device/Channels/Personalization rows); `about.dart`, `boilerplate_main.dart` and 24 unread ARB keys deleted; Docs hub on the skin ground; tooltips on two icon-only buttons; three strings localised. Known, not fixed: 320dp at 2.0x text overflows the Dashboard status row (~7 px) and the New-region source dropdown (~57 px). **Not device-verified yet.**
+- R109: **the swipe between views is the shell's again, gated per pan surface.** `origin/dev` (the app owner's own branch) shipped the opposite of R95's second half in `10a8c14` + `c81b051`: a left/right swipe changes screens, maps change by the picker, and a pan/zoom view carries a **Swipe ⇄ Pan** toggle. Ported onto this tree with R95's first half intact (tap jumps, one cue; vertical strip drag steps a view). Paging is locked while the drag belongs to a surface: the Map while it is the current view, and the grid while a pan/zoom view is in pan mode (`lib/shell/horizontal_drag_claim.dart`, named holders, published outside the build pass). Pan mode is off on every visit; the toggle is on the six views that pan (globe, equal grid, street map, fabric, tree, SNS cells); in swipe mode the view is held still with a hint. The Map's R67 edge bands stay and change exactly one view. EN/JA: `gridSwipeModeTooltip`, `gridPanModeTooltip`, `gridSwipeHint`, `gridPanHint`. One measured trap recorded in the tests: a claim held on mount is wrong, because the shell builds the neighbour page before it is shown, which locked the shell while another view was on screen.
 - R108: **node row right column.** Age and badge were centred against the 48 dp star button; both are start-aligned now, star is compact, and the FAR/IN RANGE badge is removed from the list (it contradicted the age and the distance, which already says it).
 - R107: **prose pass 2.** Node sheet: telemetry-share help 139 -> 68, add-contact done 141 -> 76, remove-contact question 112 -> 87, empty link list 93 -> 66. Identity dialogs deliberately untouched.
 - R106: **three more sheets unified.** Location interval, location movement and device GPS interval now use `showMmPicker` (they were the last sheets with no drag handle).
@@ -134,7 +136,7 @@ codebase.
 - R98: **square = 1 px corner.** `kSquareRadius` backs mmRadius, squareBorder, squareField, cards, FAB and the chat pill's square branch. Sharp non-square presets keep 0; the >=6 px guard still runs.
 - R97: **link green everywhere.** New `MmTokens.link` (#3DDC84) for the app-bar chip, dashboard status slab, Studio dot and AG-HUD/NERV/Hyperlocal pills. `DashboardModel.linked` separates "link up" from "not alert".
 - R96: **node sheet exit.** Close button in the header (EN/JA). A sheet opened from a DM no longer offers Message (it stacked duplicate DM routes).
-- R95: **one navigation model.** Strip taps jump (no 250 ms scroll across the views in between, one nav cue instead of one per page crossed). Body swipe paging removed in every skin; `swipeNavigation` and the grid pan flag deleted. Vertical drag on the strip steps one view. Strip 56 dp tall with a 3 px selected rule; every preset's app bar ends in a 2 px `fg`@22% rule. **Supersedes `origin/dev`'s #4-follow-up swipe model** (`10a8c14`, `c81b051`, both authored on a base from before R95): those commits give the grid tab a left/right swipe with a Swipe ⇄ Pan toggle whose only reader was `GridScreen.capturesHorizontalDrag`. That is the mechanism R95 deleted, so the two commits are merged for history and not ported; maps change by the grid's labelled picker sheet. The merged tree is `1.0.196+12`, above dev's `1.0.195+11`.
+- R95: **one navigation model.** Strip taps jump (no 250 ms scroll across the views in between, one nav cue instead of one per page crossed). Body swipe paging removed in every skin; `swipeNavigation` and the grid pan flag deleted. Vertical drag on the strip steps one view. Strip 56 dp tall with a 3 px selected rule; every preset's app bar ends in a 2 px `fg`@22% rule. **Half of this is superseded by R109.** The tap behaviour (jump, one cue) and the vertical strip drag stay; body paging is back, gated per pan surface. R95's own claim that paging is gone in every skin is history now, kept because it explains why the flag was deleted once.
 - R94: **Settings hub labels fixed.** R92 picked the group label by list index (0/4/8) while the separators sit at 0/3/7/10, so the phone showed RADIO / ABOUT / ABOUT / ABOUT. The label now lives on its own group row; a test builds every row and asserts each label once, in order. Found on the phone while recording the radio model.
 - R92: **Settings grouping + text cuts.** Hub grouped RADIO / APP / CONNECTION / ABOUT. Three dead chevron rows removed from App settings (Connection, Notifications, Data/About). Region disclaimer 620 → one line + Details dialog; telemetry help 470 → one sentence; nodes empty state 4 paragraphs → one; docs subtitle 150 → one line. Two jargon subtitles rewritten.
 - R91: **crowded headers.** Chat is one 48 dp strip (chips + "+ Manage channels" + speech toggle); the "CHANNEL · NAME" caption and collapse chevron are gone. Nodes filters move into one sheet behind a counted Filters button (search stays). Grid transport bar is a Wrap with an icon+stop range control (no 320dp overflow). Dashboard Connect/Retry gets its own row instead of squatting in the status slab.

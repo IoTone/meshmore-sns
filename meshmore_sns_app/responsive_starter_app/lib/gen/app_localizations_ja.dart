@@ -1060,6 +1060,18 @@ class AppLocalizationsJa extends AppLocalizations {
   String get gridStatusOffline => '未接続 — 設定 → 診断で接続';
 
   @override
+  String get gridSwipeModeTooltip => 'スワイプモード:左右にスワイプで他の画面へ。タップでこのマップを移動・ズーム';
+
+  @override
+  String get gridPanModeTooltip => '移動・ズームモード:ドラッグでマップを移動。タップで画面スワイプに戻る';
+
+  @override
+  String get gridSwipeHint => '← → スワイプで他の画面 · ✋ をタップで移動・ズーム';
+
+  @override
+  String get gridPanHint => '移動・ズーム中 · ⇆ をタップで画面スワイプ';
+
+  @override
   String gridStatusCounts(int visible, int known, int favs) {
     String _temp0 = intl.Intl.pluralLogic(
       favs,

@@ -1275,11 +1275,33 @@ While Meshcore protocol is open source, the client is not open source.  We want 
 ### Revision log
 
 Entries from here down are change records, not requirements. The block
-R88–R108 is newest first. Older entries below it were appended where they
+R88–R109 is newest first. Older entries below it were appended where they
 were written, so their numbering is not monotonic. A few records live in
 the sibling specs: R93 in `meshmore-sns-maps-spec.md`, R60 in
 `meshmore-sns-tools-spec.md`, R79 in `meshmore_sns_app/STATUS.md`.
 
+- R109: **the swipe between views is the shell's again, gated per pan
+  surface.** R95 removed body paging in every skin; the app's owner then
+  shipped the opposite model on his own branch (`10a8c14`, `c81b051`,
+  2026-11-02/03): a left/right swipe changes screens, the map views change by
+  the picker, and a pan/zoom view carries a **Swipe ⇄ Pan** toggle whose only
+  reader was the grid's deleted capture flag. R95's two halves are separable,
+  so only the second is reversed: taps still `jumpToPage` with one cue, and a
+  vertical drag on the strip still steps one view. The body `PageView` pages
+  again, and a surface that needs the same drag takes it: the **Map** page
+  while it is the current view (a page is built as a neighbour before it is
+  shown, so this is a shell rule keyed on the current index, not a mount-time
+  hold — measured in the widget tests, a mount-time hold kept the shell locked
+  while a different view was on screen), and the grid while a pannable view is
+  in pan mode, through `shellDragClaim`
+  (`lib/shell/horizontal_drag_claim.dart`), which counts named holders and
+  publishes outside the build pass. Pan mode is **off on every visit** and the
+  toggle exists only on the six views that pan or zoom (globe, equal grid,
+  street map, fabric, tree, SNS cells); in swipe mode the view is held still
+  behind an `IgnorePointer` with a hint. The Map keeps its R67 edge bands as
+  its gesture exit, and they change exactly one view because the page is
+  locked while it shows. New EN/JA strings: `gridSwipeModeTooltip`,
+  `gridPanModeTooltip`, `gridSwipeHint`, `gridPanHint`.
 - R108: **the node row's right column was centre-aligned, and the
   proximity badge was lying.** Measured on the phone at 1.3x: on a two-line
   name the age sat on the second line and the FAR / IN RANGE badge floated

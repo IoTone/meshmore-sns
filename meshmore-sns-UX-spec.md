@@ -6,9 +6,9 @@ This is the Meshmore SNS UX.
 > U0–U15 implementation plan as written. Three parts of it were overtaken by
 > later work, and `meshmore-sns-spec.md` is the authority where they differ:
 > the shell has **six** views with Docs and About moved under Settings (R85,
-> R86), body **swipe paging is gone** in every skin and the strip is the only
-> switcher (R95), and the grid's chrome was regrouped (R89). Sections below
-> still describe the eight-view swipe shell on purpose, as history.
+> R86), body swipe paging is back but gated per pan surface (R109, reversing
+> R95's second half), and the grid's chrome was regrouped (R89). Sections
+> below still describe the eight-view swipe shell on purpose, as history.
 
 ## Design Intent
 
@@ -45,8 +45,8 @@ pushed via `go_router`.
 | 1 | **Dashboard** (default home) | Network status, RSSI/SNR gauges, peer count, link state, recent events, active-channel summary. Also hosts the small collapsible chat overlay. | R6, R8 |
 | 2 | **Chat** | Full chat for the active channel, with channel-selector chip strip on top. Per-channel TTS toggle in the header. | R6, R5 |
 | 3 | **Nodes** | Discovered peers with signal strength, distance estimate, last-heard, and a hook for the future live map (F1). | R6 |
-| 3a | **Hyperlocal grid** | The radar and the other map views, as the tab after Nodes (issue #4). Offline = empty radar + "Not Connected to Mesh"; the view choice lasts the session, launch resets to radar. | R18, R25, R27 |
-| 3b | **Map** | The street map as its own page after the grid (R61). Pan/zoom owns every horizontal drag — the shell's `PageView` never pages in any skin (R95), so nothing contests the map's middle of the screen. A 24dp **edge band** on each side (R67) changes view by an inward fling: left edge to the previous view, right edge to the next. Back and the view strip also leave. A corner button opens Settings → Offline maps. Same in every skin: `HomeShell` does not read the skin to build pages. | R25, R61 |
+| 3a | **Hyperlocal grid** | The radar and the other map views, as the tab after Nodes (issue #4). Offline = empty radar + "Not Connected to Mesh"; the view choice lasts the session, launch resets to radar. A left/right swipe changes screen; maps change by the picker sheet. The six views that pan or zoom carry a **Swipe ⇄ Pan** toggle: swipe mode holds the view still so the drag pages, pan mode gives the view every drag and locks the shell, and every visit starts in swipe mode (R109). | R18, R25, R27, R109 |
+| 3b | **Map** | The street map as its own page after the grid (R61). Pan/zoom owns every horizontal drag, so while this page is the current view the shell's `PageView` does not page (R109) and nothing contests the map's middle of the screen. A 24dp **edge band** on each side (R67) changes view by an inward fling — exactly one view, because the page does not also drag: left edge to the previous view, right edge to the next. Back and the view strip also leave. A corner button opens Settings → Offline maps. Same in every skin: `HomeShell` does not read the skin to build pages. | R25, R61, R109 |
 | 4 | **Settings** (hub) | Entry point to the three sub-screens below. | R3,R4,R5,R7,R12,R13,R14 |
 | 5 | **About / Terms** | App info + legal. | R9, R10 |
 
