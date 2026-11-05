@@ -19,8 +19,7 @@ enum ChatAction { reply, copy, delete, retry, report }
 /// quoting into the composer (Reply), `Clipboard.setData` + snack
 /// (Copy), and `deleteMessageById` with a "OTA can't be recalled"
 /// confirmation (Delete).
-Future<ChatAction?> showChatActions(
-    BuildContext context, ChatMessage m) async {
+Future<ChatAction?> showChatActions(BuildContext context, ChatMessage m) async {
   final AppLocalizations l = AppLocalizations.of(context);
   return showModalBottomSheet<ChatAction>(
     context: context,
@@ -103,8 +102,7 @@ String? _metaLine(AppLocalizations l, ChatMessage m) {
 
 /// Apply a Copy action: write [m]'s text to the clipboard and show
 /// a brief confirmation snack on [scaffoldKey].
-Future<void> copyMessageToClipboard(
-    BuildContext context, ChatMessage m) async {
+Future<void> copyMessageToClipboard(BuildContext context, ChatMessage m) async {
   final AppLocalizations l = AppLocalizations.of(context);
   await Clipboard.setData(ClipboardData(text: m.text));
   if (!context.mounted) return;
@@ -128,8 +126,7 @@ String buildReplyQuote(ChatMessage m) {
 /// Confirm + delete dialog. Caller passes a deletion closure (so
 /// this helper stays platform-agnostic). Returns true if the user
 /// confirmed.
-Future<bool> confirmDeleteMessage(
-    BuildContext context, ChatMessage m) async {
+Future<bool> confirmDeleteMessage(BuildContext context, ChatMessage m) async {
   final AppLocalizations l = AppLocalizations.of(context);
   final bool? ok = await showDialog<bool>(
     context: context,
@@ -154,7 +151,6 @@ Future<bool> confirmDeleteMessage(
   );
   return ok == true;
 }
-
 
 /// The reason shown under Retry: the catalogue's translated sentence when the
 /// row carries a cause, the older stored sentence otherwise (APP-N2).

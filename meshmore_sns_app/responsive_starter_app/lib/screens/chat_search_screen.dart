@@ -192,14 +192,18 @@ class _SearchNotes extends StatelessWidget {
     final AppLocalizations l = AppLocalizations.of(context);
     final MmSkin skin = context.skin;
     final ColorScheme cs = Theme.of(context).colorScheme;
+    // One line above the answer, highest priority first, and the rest behind
+    // one info tap: three stacked sentences of meta made the notes louder
+    // than the results they described.
     final List<String> lines = <String>[
+      if (result.truncated) l.chatSearchTruncated(result.hits.length),
       if (query.isNotEmpty && result.hiddenCount > 0)
         l.chatSearchHidden(result.hiddenCount),
-      if (result.truncated) l.chatSearchTruncated(result.hits.length),
       if (query.isNotEmpty && result.boundedByRetention)
         l.chatSearchRetention(ChatStore.cap),
     ];
     if (lines.isEmpty) return const SizedBox.shrink();
+    final List<String> rest = lines.skip(1).toList();
     return Container(
       width: double.infinity,
       color: cs.surfaceContainerHighest,
@@ -207,16 +211,23 @@ class _SearchNotes extends StatelessWidget {
         horizontal: skin.space.step(4),
         vertical: skin.space.step(2),
       ),
-      child: Column(
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          for (final String line in lines)
-            Text(
-              line,
+          Expanded(
+            child: Text(
+              lines.first,
               style: TextStyle(
                 color: cs.onSurfaceVariant,
                 fontSize: skin.type.sizeSm,
               ),
+            ),
+          ),
+          if (rest.isNotEmpty)
+            Tooltip(
+              message: rest.join('\n'),
+              child: Icon(Icons.info_outline,
+                  size: skin.type.sizeSm, color: cs.onSurfaceVariant),
             ),
         ],
       ),

@@ -155,8 +155,13 @@ void main() {
     await t.pumpAndSettle();
     await t.enterText(find.byType(TextField), 'row');
     await t.pumpAndSettle();
-    expect(find.textContaining('keeps the newest ${ChatStore.cap} messages'),
-        findsOneWidget);
+    // The first line carries the highest-priority note. At this size the
+    // display cap bites first, so retention is named in the info tooltip
+    // beside it rather than stacked as a second sentence.
+    expect(find.byIcon(Icons.info_outline), findsOneWidget);
+    final Tooltip tip = t.widget<Tooltip>(
+        find.ancestor(of: find.byIcon(Icons.info_outline), matching: find.byType(Tooltip)));
+    expect(tip.message, contains('keeps the newest ${ChatStore.cap} messages'));
     mc.dispose();
   });
 }

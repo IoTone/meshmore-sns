@@ -64,6 +64,7 @@ class _DmScreenState extends State<DmScreen> {
     }
     setState(() => _budget = next);
   }
+
   final ScrollController _scroll = ScrollController();
   StreamSubscription<ChatMessage>? _sub;
   NotificationFocus? _focus;
@@ -365,14 +366,14 @@ class _DmScreenState extends State<DmScreen> {
     // lifetime: a second DM pushed over this one hides it, and popping back
     // has to claim it again, or the visible thread is announced while it is
     // being read and the hidden one is not.
-    _focus?.openPeer =
-        (ModalRoute.of(context)?.isCurrent ?? true) ? widget.peerPubKeyHex : null;
+    _focus?.openPeer = (ModalRoute.of(context)?.isCurrent ?? true)
+        ? widget.peerPubKeyHex
+        : null;
     _syncBudget(mc);
     final ColorScheme cs = Theme.of(context).colorScheme;
     final bool ready = mc.state == MeshcoreConnectionState.ready;
     final AppLocalizations l = AppLocalizations.of(context);
-    final List<ChatMessage> msgs =
-        mc.dmHistoryFor(widget.peerPubKeyHex);
+    final List<ChatMessage> msgs = mc.dmHistoryFor(widget.peerPubKeyHex);
     _autoScroll(msgs.length);
 
     return Scaffold(
@@ -395,68 +396,68 @@ class _DmScreenState extends State<DmScreen> {
       ),
       body: MmScaffold(
         child: Column(
-        children: <Widget>[
-          HistoryRetentionNotice(
-              dropped: mc.droppedForPeer(widget.peerPubKeyHex)),
-          Expanded(
-            child: msgs.isEmpty
-                ? Center(
-                    child: Text(l.dmEmpty,
-                        textAlign: TextAlign.center,
-                        style: TextStyle(color: cs.onSurfaceVariant)),
-                  )
-                : ListView.builder(
-                    controller: _scroll,
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 8),
-                    itemCount: msgs.length,
-                    itemBuilder: (BuildContext _, int i) => _DmRow(
-                      msgs[i],
-                      onAction: () => _onAction(mc, msgs[i]),
+          children: <Widget>[
+            HistoryRetentionNotice(
+                dropped: mc.droppedForPeer(widget.peerPubKeyHex)),
+            Expanded(
+              child: msgs.isEmpty
+                  ? Center(
+                      child: Text(l.dmEmpty,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(color: cs.onSurfaceVariant)),
+                    )
+                  : ListView.builder(
+                      controller: _scroll,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 8),
+                      itemCount: msgs.length,
+                      itemBuilder: (BuildContext _, int i) => _DmRow(
+                        msgs[i],
+                        onAction: () => _onAction(mc, msgs[i]),
+                      ),
                     ),
-                  ),
-          ),
-          SafeArea(
-            top: false,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(12, 6, 8, 10),
-              child: !ready
-                  ? ComposerOffline(connecting: mc.isConnecting)
-                  : Row(
-                children: <Widget>[
-                  Expanded(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: <Widget>[
-                        TextField(
-                          controller: _input,
-                          textInputAction: TextInputAction.send,
-                          onSubmitted: (_) => _send(mc),
-                          decoration: InputDecoration(
-                            isDense: true,
-                            hintText: l.dmComposerHint(_peerName(mc)),
-                            border: const OutlineInputBorder(),
+            ),
+            SafeArea(
+              top: false,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(12, 6, 8, 10),
+                child: !ready
+                    ? ComposerOffline(connecting: mc.isConnecting)
+                    : Row(
+                        children: <Widget>[
+                          Expanded(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: <Widget>[
+                                TextField(
+                                  controller: _input,
+                                  textInputAction: TextInputAction.send,
+                                  onSubmitted: (_) => _send(mc),
+                                  decoration: InputDecoration(
+                                    isDense: true,
+                                    hintText: l.dmComposerHint(_peerName(mc)),
+                                    border: const OutlineInputBorder(),
+                                  ),
+                                ),
+                                ComposerCounter(
+                                  budget: _budget,
+                                  text: _input.text,
+                                  label: l,
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
-                        ComposerCounter(
-                          budget: _budget,
-                          text: _input.text,
-                          label: l,
-                        ),
-                      ],
-                    ),
-                  ),
-                  IconButton(
-                    tooltip: l.dmSend,
-                    onPressed: () => _send(mc),
-                    icon: const Icon(Icons.send),
-                  ),
-                ],
+                          IconButton(
+                            tooltip: l.dmSend,
+                            onPressed: () => _send(mc),
+                            icon: const Icon(Icons.send),
+                          ),
+                        ],
+                      ),
               ),
             ),
-          ),
-        ],
+          ],
         ),
       ),
     );
@@ -493,8 +494,7 @@ class _DmRow extends StatelessWidget {
     // Route and signal are facts about the transmission, not the message:
     // they are said in the row's actions sheet, not on every row here.
     if (skin.type.sansLabels) {
-      return StudioMessageRow(
-          message: m, body: m.text, onAction: onAction);
+      return StudioMessageRow(message: m, body: m.text, onAction: onAction);
     }
     return InkWell(
       onLongPress: onAction,
@@ -538,8 +538,7 @@ class _DmRow extends StatelessWidget {
               padding: EdgeInsets.zero,
               constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
               onPressed: onAction,
-              icon: Icon(Icons.more_vert,
-                  color: cs.onSurfaceVariant),
+              icon: Icon(Icons.more_vert, color: cs.onSurfaceVariant),
             ),
           ],
         ),
@@ -577,8 +576,7 @@ class _SpeechMenu extends StatelessWidget {
         color: mastered ? Theme.of(context).colorScheme.error : null,
       ),
       initialValue: mode,
-      onSelected: (PeerSpeechMode m) =>
-          tts.setPeerSpeechMode(peerPubKeyHex, m),
+      onSelected: (PeerSpeechMode m) => tts.setPeerSpeechMode(peerPubKeyHex, m),
       itemBuilder: (BuildContext _) => <PopupMenuEntry<PeerSpeechMode>>[
         PopupMenuItem<PeerSpeechMode>(
           value: PeerSpeechMode.inherit,

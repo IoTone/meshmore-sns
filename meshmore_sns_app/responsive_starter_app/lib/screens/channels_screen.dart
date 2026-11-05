@@ -45,11 +45,10 @@ class ChannelsScreen extends StatelessWidget {
     Future<void> edit(int idx) async {
       final _ChannelEdit? r = await showDialog<_ChannelEdit>(
         context: context,
-        builder: (BuildContext _) =>
-            _EditChannelDialog(
-                idx: idx,
-                initialName: known[idx] ?? '',
-                currentPsk: mc.channelPsk(idx)),
+        builder: (BuildContext _) => _EditChannelDialog(
+            idx: idx,
+            initialName: known[idx] ?? '',
+            currentPsk: mc.channelPsk(idx)),
       );
       if (r == null) return;
       if (!context.mounted) return;
@@ -60,8 +59,7 @@ class ChannelsScreen extends StatelessWidget {
         if (context.mounted) {
           ScaffoldMessenger.of(context)
             ..clearSnackBars()
-            ..showSnackBar(SnackBar(
-                content: Text(l.channelsClearSnack(idx))));
+            ..showSnackBar(SnackBar(content: Text(l.channelsClearSnack(idx))));
         }
         return;
       }
@@ -96,8 +94,7 @@ class ChannelsScreen extends StatelessWidget {
       if (context.mounted) {
         ScaffoldMessenger.of(context)
           ..clearSnackBars()
-          ..showSnackBar(SnackBar(
-              content: Text(l.channelsSetSnack(idx))));
+          ..showSnackBar(SnackBar(content: Text(l.channelsSetSnack(idx))));
       }
     }
 
@@ -141,118 +138,118 @@ class ChannelsScreen extends StatelessWidget {
       ),
       body: MmScaffold(
         child: ListView(
-        children: <Widget>[
-          if (!ready)
-            Padding(
-              padding: const EdgeInsets.symmetric(
-                  horizontal: 16, vertical: 8),
-              child: Text(l.channelsOfflineHint,
-                  style: TextStyle(color: cs.error)),
-            ),
-          const Divider(height: 1),
-          for (int idx = 0; idx < _slots; idx++)
-            ListTile(
-              leading: Icon(
-                idx == mc.activeChannel
-                    ? Icons.radio_button_checked
-                    : Icons.radio_button_unchecked,
-                color: idx == mc.activeChannel
-                    ? cs.primary
-                    : cs.onSurfaceVariant,
+          children: <Widget>[
+            if (!ready)
+              Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: Text(l.channelsOfflineHint,
+                    style: TextStyle(color: cs.error)),
               ),
-              title: Row(
-                children: <Widget>[
-                  Expanded(
-                    child: Text(known[idx] ?? l.channelsEmpty,
-                        style: TextStyle(
-                            color: known.containsKey(idx)
-                                ? cs.onSurface
-                                : cs.onSurfaceVariant)),
-                  ),
-                  if (mc.isDefaultChannel(idx))
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: cs.tertiary.withValues(alpha: .15),
-                        borderRadius: BorderRadius.circular(kRadiusMd),
-                        border: Border.all(
-                            color: cs.tertiary.withValues(alpha: .55)),
-                      ),
-                      child: Text(l.channelsDefaultBadge,
+            const Divider(height: 1),
+            for (int idx = 0; idx < _slots; idx++)
+              ListTile(
+                leading: Icon(
+                  idx == mc.activeChannel
+                      ? Icons.radio_button_checked
+                      : Icons.radio_button_unchecked,
+                  color: idx == mc.activeChannel
+                      ? cs.primary
+                      : cs.onSurfaceVariant,
+                ),
+                title: Row(
+                  children: <Widget>[
+                    Expanded(
+                      child: Text(known[idx] ?? l.channelsEmpty,
                           style: TextStyle(
-                              color: cs.tertiary,
-                              fontSize: context.skin.type.sizeMicro,
-                              letterSpacing: 1.5)),
+                              color: known.containsKey(idx)
+                                  ? cs.onSurface
+                                  : cs.onSurfaceVariant)),
                     ),
-                ],
-              ),
-              subtitle: Text(idx == mc.activeChannel
-                  ? l.channelsSlotActive(idx)
-                  : l.channelsSlotLabel(idx)),
-              onTap: known.containsKey(idx)
-                  ? () => mc.setActiveChannel(idx)
-                  : null,
-              trailing: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  if (known.containsKey(idx))
-                    IconButton(
-                      tooltip: mc.isDefaultChannel(idx)
-                          ? l.channelsClearDefaultTooltip
-                          : l.channelsSetDefaultTooltip,
-                      icon: Icon(
-                          mc.isDefaultChannel(idx)
-                              ? Icons.star
-                              : Icons.star_border,
-                          size: 20,
-                          color: mc.isDefaultChannel(idx)
-                              ? cs.tertiary
-                              : cs.onSurfaceVariant),
-                      onPressed: () async {
-                        if (mc.isDefaultChannel(idx)) {
-                          await mc.setDefaultChannelIdx(null);
-                          if (!context.mounted) return;
-                          ScaffoldMessenger.of(context)
-                            ..clearSnackBars()
-                            ..showSnackBar(SnackBar(
-                                content: Text(
-                                    l.channelsClearedDefaultSnack)));
-                        } else {
-                          await mc.setDefaultChannelIdx(idx);
-                          if (!context.mounted) return;
-                          ScaffoldMessenger.of(context)
-                            ..clearSnackBars()
-                            ..showSnackBar(SnackBar(
-                                content: Text(
-                                    l.channelsSetDefaultSnack(idx))));
-                        }
-                      },
-                    ),
-                  if (known.containsKey(idx))
-                    IconButton(
-                      key: ValueKey<String>('channel-options-$idx'),
-                      tooltip: l.channelsOptionsTooltip,
-                      icon: const Icon(Icons.tune, size: 20),
-                      onPressed: () => showModalBottomSheet<void>(
-                        context: context,
-                        showDragHandle: true,
-                        isScrollControlled: true,
-                        builder: (BuildContext _) => _ChannelOptionsSheet(
-                            idx: idx, name: known[idx] ?? l.channelsEmpty),
+                    if (mc.isDefaultChannel(idx))
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: cs.tertiary.withValues(alpha: .15),
+                          borderRadius: BorderRadius.circular(kRadiusMd),
+                          border: Border.all(
+                              color: cs.tertiary.withValues(alpha: .55)),
+                        ),
+                        child: Text(l.channelsDefaultBadge,
+                            style: TextStyle(
+                                color: cs.tertiary,
+                                fontSize: context.skin.type.sizeMicro,
+                                letterSpacing: 1.5)),
                       ),
+                  ],
+                ),
+                subtitle: Text(idx == mc.activeChannel
+                    ? l.channelsSlotActive(idx)
+                    : l.channelsSlotLabel(idx)),
+                onTap: known.containsKey(idx)
+                    ? () => mc.setActiveChannel(idx)
+                    : null,
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    if (known.containsKey(idx))
+                      IconButton(
+                        tooltip: mc.isDefaultChannel(idx)
+                            ? l.channelsClearDefaultTooltip
+                            : l.channelsSetDefaultTooltip,
+                        icon: Icon(
+                            mc.isDefaultChannel(idx)
+                                ? Icons.star
+                                : Icons.star_border,
+                            size: 20,
+                            color: mc.isDefaultChannel(idx)
+                                ? cs.tertiary
+                                : cs.onSurfaceVariant),
+                        onPressed: () async {
+                          if (mc.isDefaultChannel(idx)) {
+                            await mc.setDefaultChannelIdx(null);
+                            if (!context.mounted) return;
+                            ScaffoldMessenger.of(context)
+                              ..clearSnackBars()
+                              ..showSnackBar(SnackBar(
+                                  content:
+                                      Text(l.channelsClearedDefaultSnack)));
+                          } else {
+                            await mc.setDefaultChannelIdx(idx);
+                            if (!context.mounted) return;
+                            ScaffoldMessenger.of(context)
+                              ..clearSnackBars()
+                              ..showSnackBar(SnackBar(
+                                  content:
+                                      Text(l.channelsSetDefaultSnack(idx))));
+                          }
+                        },
+                      ),
+                    if (known.containsKey(idx))
+                      IconButton(
+                        key: ValueKey<String>('channel-options-$idx'),
+                        tooltip: l.channelsOptionsTooltip,
+                        icon: const Icon(Icons.tune, size: 20),
+                        onPressed: () => showModalBottomSheet<void>(
+                          context: context,
+                          showDragHandle: true,
+                          isScrollControlled: true,
+                          builder: (BuildContext _) => _ChannelOptionsSheet(
+                              idx: idx, name: known[idx] ?? l.channelsEmpty),
+                        ),
+                      ),
+                    TextButton(
+                      onPressed: ready ? () => edit(idx) : null,
+                      child: Text(known.containsKey(idx)
+                          ? l.channelsEdit
+                          : l.channelsSet),
                     ),
-                  TextButton(
-                    onPressed: ready ? () => edit(idx) : null,
-                    child: Text(known.containsKey(idx)
-                        ? l.channelsEdit
-                        : l.channelsSet),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-        ],
-      ),
+          ],
+        ),
       ),
     );
   }
@@ -307,8 +304,7 @@ class _EditChannelDialogState extends State<_EditChannelDialog> {
     // already set and the key isn't the well-known Public PSK).
     // Lets the user see what's there and tweak it instead of
     // re-typing 32 hex chars from scratch.
-    text: widget.currentPsk != null &&
-            !_pskMatchesPublic(widget.currentPsk!)
+    text: widget.currentPsk != null && !_pskMatchesPublic(widget.currentPsk!)
         ? widget.currentPsk!
             .map((int b) => b.toRadixString(16).padLeft(2, '0'))
             .join()
@@ -320,10 +316,10 @@ class _EditChannelDialogState extends State<_EditChannelDialog> {
   // from random-hex keys after the fact (both are opaque bytes), so
   // any non-Public slot reads as Hex on re-open. The user can
   // switch modes manually if they prefer to re-derive from a tag.
-  late _PskSource _src = widget.currentPsk == null ||
-          _pskMatchesPublic(widget.currentPsk!)
-      ? _PskSource.public
-      : _PskSource.hex;
+  late _PskSource _src =
+      widget.currentPsk == null || _pskMatchesPublic(widget.currentPsk!)
+          ? _PskSource.public
+          : _PskSource.hex;
   String? _error;
 
   /// "Show current key" reveal state. Latched per-dialog session;
@@ -351,11 +347,36 @@ class _EditChannelDialogState extends State<_EditChannelDialog> {
   /// SHA-256 of the literal string — a tag that looks weak in EN
   /// is just as weak in JA.
   static const Set<String> _weakTagDeny = <String>{
-    'public', 'private', 'group', 'channel', 'mesh', 'meshcore',
-    'meshmore', 'chat', 'test', 'hello', 'home', 'work', 'family',
-    'friends', 'main', 'general', 'team', 'crew', 'fleet',
-    'パブリック', 'プライベート', 'グループ', 'チャンネル', 'メッシュ',
-    'チャット', 'テスト', '家', '家族', '仲間', 'チーム',
+    'public',
+    'private',
+    'group',
+    'channel',
+    'mesh',
+    'meshcore',
+    'meshmore',
+    'chat',
+    'test',
+    'hello',
+    'home',
+    'work',
+    'family',
+    'friends',
+    'main',
+    'general',
+    'team',
+    'crew',
+    'fleet',
+    'パブリック',
+    'プライベート',
+    'グループ',
+    'チャンネル',
+    'メッシュ',
+    'チャット',
+    'テスト',
+    '家',
+    '家族',
+    '仲間',
+    'チーム',
   };
 
   String? _tagWeakHint(AppLocalizations l) {
@@ -379,9 +400,8 @@ class _EditChannelDialogState extends State<_EditChannelDialog> {
       for (int i = 0; i < 16; i++) r.nextInt(256),
     ];
     setState(() {
-      _hex.text = bytes
-          .map((int b) => b.toRadixString(16).padLeft(2, '0'))
-          .join();
+      _hex.text =
+          bytes.map((int b) => b.toRadixString(16).padLeft(2, '0')).join();
     });
   }
 
@@ -397,8 +417,7 @@ class _EditChannelDialogState extends State<_EditChannelDialog> {
         }
         return MeshcoreChannelCrypto.channelPskFromHashtag(t);
       case _PskSource.hex:
-        final String h =
-            _hex.text.trim().replaceAll(RegExp(r'\s'), '');
+        final String h = _hex.text.trim().replaceAll(RegExp(r'\s'), '');
         if (h.length != 32 || !RegExp(r'^[0-9a-fA-F]+$').hasMatch(h)) {
           _error = l.channelsErrorHex;
           return null;
@@ -455,24 +474,21 @@ class _EditChannelDialogState extends State<_EditChannelDialog> {
           children: <Widget>[
             TextField(
               controller: _name,
-              decoration: InputDecoration(
-                  labelText: l.channelsName, isDense: true),
+              decoration:
+                  InputDecoration(labelText: l.channelsName, isDense: true),
             ),
             const SizedBox(height: 14),
             SegmentedButton<_PskSource>(
               segments: <ButtonSegment<_PskSource>>[
                 ButtonSegment<_PskSource>(
-                    value: _PskSource.public,
-                    label: Text(l.channelsKeyPublic)),
+                    value: _PskSource.public, label: Text(l.channelsKeyPublic)),
                 ButtonSegment<_PskSource>(
                     value: _PskSource.hashtag,
                     label: Text(l.channelsKeyHashtag)),
                 ButtonSegment<_PskSource>(
-                    value: _PskSource.hex,
-                    label: Text(l.channelsKeyHex)),
+                    value: _PskSource.hex, label: Text(l.channelsKeyHex)),
                 ButtonSegment<_PskSource>(
-                    value: _PskSource.shake,
-                    label: Text(l.channelsKeyShake)),
+                    value: _PskSource.shake, label: Text(l.channelsKeyShake)),
               ],
               selected: <_PskSource>{_src},
               onSelectionChanged: (Set<_PskSource> s) {
@@ -481,8 +497,7 @@ class _EditChannelDialogState extends State<_EditChannelDialog> {
                   // Tearing down the entropy collector when the user
                   // leaves Shake mode avoids surprise background
                   // accelerometer sampling.
-                  if (_src == _PskSource.shake &&
-                      next != _PskSource.shake) {
+                  if (_src == _PskSource.shake && next != _PskSource.shake) {
                     _dice?.freeze();
                   }
                   _src = next;
@@ -517,9 +532,7 @@ class _EditChannelDialogState extends State<_EditChannelDialog> {
                     Expanded(
                       child: Text(_tagWeakHint(l)!,
                           style: TextStyle(
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .tertiary,
+                              color: Theme.of(context).colorScheme.tertiary,
                               fontSize: context.skin.type.sizeSm)),
                     ),
                   ],
@@ -529,8 +542,7 @@ class _EditChannelDialogState extends State<_EditChannelDialog> {
               TextField(
                 controller: _hex,
                 inputFormatters: <TextInputFormatter>[
-                  FilteringTextInputFormatter.allow(
-                      RegExp(r'[0-9a-fA-F]')),
+                  FilteringTextInputFormatter.allow(RegExp(r'[0-9a-fA-F]')),
                 ],
                 decoration: InputDecoration(
                     labelText: l.channelsKeyHexHint, isDense: true),
@@ -557,11 +569,10 @@ class _EditChannelDialogState extends State<_EditChannelDialog> {
                         await Clipboard.setData(ClipboardData(
                             text: _hex.text.trim().toLowerCase()));
                         if (!context.mounted) return;
-                        ScaffoldMessenger.maybeOf(context)
-                          ?.showSnackBar(SnackBar(
-                              content: Text(l.channelsHexCopied),
-                              duration:
-                                  const Duration(seconds: 2)));
+                        ScaffoldMessenger.maybeOf(context)?.showSnackBar(
+                            SnackBar(
+                                content: Text(l.channelsHexCopied),
+                                duration: const Duration(seconds: 2)));
                       },
                     ),
                 ],
@@ -578,8 +589,7 @@ class _EditChannelDialogState extends State<_EditChannelDialog> {
                     // digest from Random.secure once instead of
                     // listening to the accelerometer. We still
                     // present a Reroll button, which re-seeds.
-                    final ThemeController tc =
-                        context.read<ThemeController>();
+                    final ThemeController tc = context.read<ThemeController>();
                     if (tc.reduceMotion) {
                       _dice!.seedFromSecureRandom();
                     } else {
@@ -590,8 +600,7 @@ class _EditChannelDialogState extends State<_EditChannelDialog> {
                 },
                 reroll: () {
                   _dice?.reset();
-                  final ThemeController tc =
-                      context.read<ThemeController>();
+                  final ThemeController tc = context.read<ThemeController>();
                   if (tc.reduceMotion) {
                     _dice!.seedFromSecureRandom();
                   } else {
@@ -610,12 +619,12 @@ class _EditChannelDialogState extends State<_EditChannelDialog> {
               Row(
                 children: <Widget>[
                   Icon(Icons.vpn_key,
-                      size: 16,
-                      color: Theme.of(context).colorScheme.primary),
+                      size: 16, color: Theme.of(context).colorScheme.primary),
                   const SizedBox(width: 6),
                   Text(l.channelsCurrentKey,
                       style: TextStyle(
-                          fontSize: context.skin.type.sizeBody, letterSpacing: 1)),
+                          fontSize: context.skin.type.sizeBody,
+                          letterSpacing: 1)),
                   const Spacer(),
                   TextButton.icon(
                     icon: Icon(
@@ -626,19 +635,19 @@ class _EditChannelDialogState extends State<_EditChannelDialog> {
                     label: Text(_revealCurrent
                         ? l.channelsHideKey
                         : l.channelsRevealKey),
-                    onPressed: () => setState(
-                        () => _revealCurrent = !_revealCurrent),
+                    onPressed: () =>
+                        setState(() => _revealCurrent = !_revealCurrent),
                   ),
                 ],
               ),
               if (_revealCurrent)
                 SelectableText(
                   widget.currentPsk!
-                      .map((int b) =>
-                          b.toRadixString(16).padLeft(2, '0'))
+                      .map((int b) => b.toRadixString(16).padLeft(2, '0'))
                       .join(),
                   style: TextStyle(
-                      fontFamily: context.skin.type.monoFamily, fontSize: context.skin.type.sizeSm),
+                      fontFamily: context.skin.type.monoFamily,
+                      fontSize: context.skin.type.sizeSm),
                 ),
               // QR-share — only meaningful for non-Public slots
               // (Public's key is world-known, no point sharing).
@@ -649,9 +658,8 @@ class _EditChannelDialogState extends State<_EditChannelDialog> {
                   child: OutlinedButton.icon(
                     icon: const Icon(Icons.qr_code_2, size: 16),
                     label: Text(l.channelsShareQr),
-                    onPressed: () => _showQrShare(
-                        context, widget.idx, widget.initialName,
-                        widget.currentPsk!),
+                    onPressed: () => _showQrShare(context, widget.idx,
+                        widget.initialName, widget.currentPsk!),
                   ),
                 ),
               ],
@@ -681,8 +689,7 @@ class _EditChannelDialogState extends State<_EditChannelDialog> {
               final bool? ok = await showDialog<bool>(
                 context: context,
                 builder: (BuildContext ctx) => AlertDialog(
-                  title: Text(
-                      l.channelsClearConfirmTitle(widget.idx)),
+                  title: Text(l.channelsClearConfirmTitle(widget.idx)),
                   content: Text(l.channelsClearConfirmBody),
                   actions: <Widget>[
                     TextButton(
@@ -692,12 +699,10 @@ class _EditChannelDialogState extends State<_EditChannelDialog> {
                     FilledButton.tonal(
                       onPressed: () => Navigator.pop(ctx, true),
                       style: FilledButton.styleFrom(
-                        backgroundColor: Theme.of(ctx)
-                            .colorScheme
-                            .errorContainer,
-                        foregroundColor: Theme.of(ctx)
-                            .colorScheme
-                            .onErrorContainer,
+                        backgroundColor:
+                            Theme.of(ctx).colorScheme.errorContainer,
+                        foregroundColor:
+                            Theme.of(ctx).colorScheme.onErrorContainer,
                       ),
                       child: Text(l.channelsClearConfirmAction),
                     ),
@@ -711,16 +716,14 @@ class _EditChannelDialogState extends State<_EditChannelDialog> {
               // call mc.clearChannel here directly, but the outer
               // screen owns the snack + provider lookup, so it's
               // cleaner to delegate.
-              Navigator.pop(
-                  context, _ChannelEdit(widget.idx, '__clear__', const <int>[]));
+              Navigator.pop(context,
+                  _ChannelEdit(widget.idx, '__clear__', const <int>[]));
             },
           ),
         TextButton(
             onPressed: () => Navigator.pop(context),
             child: Text(l.channelsCancel)),
-        FilledButton(
-            onPressed: () => _save(l),
-            child: Text(l.channelsSave)),
+        FilledButton(onPressed: () => _save(l), child: Text(l.channelsSave)),
       ],
     );
   }
@@ -738,16 +741,14 @@ class _EditChannelDialogState extends State<_EditChannelDialog> {
 /// `meshmore://channel?idx=N&name=URL-ENC&psk=HEX`. Kept small
 /// on purpose (fits inside NTAG213 user memory for R34 NFC).
 String encodeChannelShareUri(int idx, String name, List<int> psk) {
-  final String hex = psk
-      .map((int b) => b.toRadixString(16).padLeft(2, '0'))
-      .join();
+  final String hex =
+      psk.map((int b) => b.toRadixString(16).padLeft(2, '0')).join();
   return 'meshmore://channel?idx=$idx'
       '&name=${Uri.encodeQueryComponent(name)}'
       '&psk=$hex';
 }
 
-void _showQrShare(BuildContext outer, int idx, String name,
-    List<int> psk) {
+void _showQrShare(BuildContext outer, int idx, String name, List<int> psk) {
   final AppLocalizations l = AppLocalizations.of(outer);
   final String payload = encodeChannelShareUri(idx, name, psk);
   showDialog<void>(
@@ -765,7 +766,8 @@ void _showQrShare(BuildContext outer, int idx, String name,
               children: <Widget>[
                 Text(l.channelsQrBody,
                     style: TextStyle(
-                        color: cs.onSurfaceVariant, fontSize: ctx.skin.type.sizeBody)),
+                        color: cs.onSurfaceVariant,
+                        fontSize: ctx.skin.type.sizeBody)),
                 const SizedBox(height: 14),
                 Center(
                   child: Container(
@@ -829,9 +831,8 @@ class _DiceRollPanel extends StatelessWidget {
     return AnimatedBuilder(
       animation: d,
       builder: (BuildContext _, Widget? __) {
-        final String hex = d.psk
-            .map((int b) => b.toRadixString(16).padLeft(2, '0'))
-            .join();
+        final String hex =
+            d.psk.map((int b) => b.toRadixString(16).padLeft(2, '0')).join();
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
@@ -842,7 +843,9 @@ class _DiceRollPanel extends StatelessWidget {
               tc.reduceMotion
                   ? l.channelsShakeTapFallback
                   : l.channelsShakeBody,
-              style: TextStyle(color: cs.onSurfaceVariant, fontSize: context.skin.type.sizeBody),
+              style: TextStyle(
+                  color: cs.onSurfaceVariant,
+                  fontSize: context.skin.type.sizeBody),
             ),
             const SizedBox(height: 12),
             Row(
@@ -877,7 +880,8 @@ class _DiceRollPanel extends StatelessWidget {
                 (d.progress * 100).round(),
               ),
               style: TextStyle(
-                  color: cs.onSurfaceVariant, fontSize: context.skin.type.sizeSm),
+                  color: cs.onSurfaceVariant,
+                  fontSize: context.skin.type.sizeSm),
             ),
             const SizedBox(height: 6),
             OutlinedButton.icon(
@@ -913,91 +917,87 @@ class _ChannelOptionsSheet extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
         children: <Widget>[
           Text(name, style: Theme.of(context).textTheme.titleMedium),
-            // R54 — per-channel place inference. Applied immediately
-            // (independent of the name/PSK save), default on for the
-            // public channel.
-            const Divider(height: 20),
-            Builder(builder: (BuildContext ctx) {
-              final MeshcoreController mc = ctx.watch<MeshcoreController>();
-              return SwitchListTile(
-                contentPadding: EdgeInsets.zero,
-                dense: true,
-                title: Text(l.channelsInferPlaces),
-                subtitle: Text(l.channelsInferPlacesSub),
-                value: mc.placeInferenceEnabled(idx),
-                onChanged: (bool v) =>
-                    mc.setPlaceInferenceEnabled(idx, v),
-              );
-            }),
-            // D8.13 — the per-channel notification bundle. Every toggle is
-            // per slot: silencing the busy channel must not silence the
-            // emergency one, and mentions-only is off unless asked for.
-            const Divider(height: 20),
-            Builder(builder: (BuildContext ctx) {
-              final NotificationPrefs? np = ctx.watch<NotificationPrefs?>();
-              if (np == null) return const SizedBox.shrink();
-              final ChannelNotificationPrefs p = np.prefsFor(idx);
-              void save(ChannelNotificationPrefs next) =>
-                  np.setFor(idx, next);
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Text(l.notifSectionTitle,
-                      style: Theme.of(ctx).textTheme.titleSmall),
-                  SwitchListTile(
-                    contentPadding: EdgeInsets.zero,
-                    dense: true,
-                    title: Text(l.notifOs),
-                    value: p.os,
-                    onChanged: (bool v) => save(p.copyWith(os: v)),
-                  ),
-                  SwitchListTile(
-                    contentPadding: EdgeInsets.zero,
-                    dense: true,
-                    title: Text(l.notifAudio),
-                    value: p.audio,
-                    onChanged: (bool v) => save(p.copyWith(audio: v)),
-                  ),
-                  SwitchListTile(
-                    contentPadding: EdgeInsets.zero,
-                    dense: true,
-                    title: Text(l.notifHaptic),
-                    value: p.haptic,
-                    onChanged: (bool v) => save(p.copyWith(haptic: v)),
-                  ),
-                  SwitchListTile(
-                    contentPadding: EdgeInsets.zero,
-                    dense: true,
-                    title: Text(l.notifTts),
-                    value: p.tts,
-                    onChanged: (bool v) => save(p.copyWith(tts: v)),
-                  ),
-                  SwitchListTile(
-                    contentPadding: EdgeInsets.zero,
-                    dense: true,
-                    title: Text(l.notifMentionsOnly),
-                    subtitle: Text(l.notifMentionsOnlySub),
-                    value: p.mentionsOnly,
-                    onChanged: (bool v) => save(p.copyWith(mentionsOnly: v)),
-                  ),
-                  SwitchListTile(
-                    contentPadding: EdgeInsets.zero,
-                    dense: true,
-                    title: Text(l.notifKeySuffix),
-                    subtitle: Text(l.notifKeySuffixSub),
-                    value: p.keySuffixMentions,
-                    onChanged: (bool v) =>
-                        save(p.copyWith(keySuffixMentions: v)),
-                  ),
-                ],
-              );
-            }),
-            // R59 — the bot binds per channel. The section renders on
-            // every slot, including Public, because a refusal that
-            // explains itself teaches more than a missing control.
-            const Divider(height: 20),
-            BotSection(scope: ChannelScope(idx)),
-
+          // R54 — per-channel place inference. Applied immediately
+          // (independent of the name/PSK save), default on for the
+          // public channel.
+          const Divider(height: 20),
+          Builder(builder: (BuildContext ctx) {
+            final MeshcoreController mc = ctx.watch<MeshcoreController>();
+            return SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              dense: true,
+              title: Text(l.channelsInferPlaces),
+              subtitle: Text(l.channelsInferPlacesSub),
+              value: mc.placeInferenceEnabled(idx),
+              onChanged: (bool v) => mc.setPlaceInferenceEnabled(idx, v),
+            );
+          }),
+          // D8.13 — the per-channel notification bundle. Every toggle is
+          // per slot: silencing the busy channel must not silence the
+          // emergency one, and mentions-only is off unless asked for.
+          const Divider(height: 20),
+          Builder(builder: (BuildContext ctx) {
+            final NotificationPrefs? np = ctx.watch<NotificationPrefs?>();
+            if (np == null) return const SizedBox.shrink();
+            final ChannelNotificationPrefs p = np.prefsFor(idx);
+            void save(ChannelNotificationPrefs next) => np.setFor(idx, next);
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(l.notifSectionTitle,
+                    style: Theme.of(ctx).textTheme.titleSmall),
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  dense: true,
+                  title: Text(l.notifOs),
+                  value: p.os,
+                  onChanged: (bool v) => save(p.copyWith(os: v)),
+                ),
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  dense: true,
+                  title: Text(l.notifAudio),
+                  value: p.audio,
+                  onChanged: (bool v) => save(p.copyWith(audio: v)),
+                ),
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  dense: true,
+                  title: Text(l.notifHaptic),
+                  value: p.haptic,
+                  onChanged: (bool v) => save(p.copyWith(haptic: v)),
+                ),
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  dense: true,
+                  title: Text(l.notifTts),
+                  value: p.tts,
+                  onChanged: (bool v) => save(p.copyWith(tts: v)),
+                ),
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  dense: true,
+                  title: Text(l.notifMentionsOnly),
+                  subtitle: Text(l.notifMentionsOnlySub),
+                  value: p.mentionsOnly,
+                  onChanged: (bool v) => save(p.copyWith(mentionsOnly: v)),
+                ),
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  dense: true,
+                  title: Text(l.notifKeySuffix),
+                  subtitle: Text(l.notifKeySuffixSub),
+                  value: p.keySuffixMentions,
+                  onChanged: (bool v) => save(p.copyWith(keySuffixMentions: v)),
+                ),
+              ],
+            );
+          }),
+          // R59 — the bot binds per channel. The section renders on
+          // every slot, including Public, because a refusal that
+          // explains itself teaches more than a missing control.
+          const Divider(height: 20),
+          BotSection(scope: ChannelScope(idx)),
         ],
       ),
     );

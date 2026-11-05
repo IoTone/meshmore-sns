@@ -387,8 +387,7 @@ class _ChatScreenState extends State<ChatScreen>
     final double extent = _scroll.position.maxScrollExtent;
     final double frac = msgs.length <= 1 ? 0 : idx / (msgs.length - 1);
     _scroll.jumpTo((extent * frac).clamp(0.0, extent));
-    WidgetsBinding.instance
-        .addPostFrameCallback((_) => _scrollToHighlight(mc));
+    WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToHighlight(mc));
   }
 
   @override
@@ -497,8 +496,7 @@ class _ChatScreenState extends State<ChatScreen>
     // battery-sample / per-drain rebuilds that the previous
     // `context.watch<MeshcoreController>()` would cause.
     final bool ready = context.select<MeshcoreController, bool>(
-        (MeshcoreController mc) =>
-            mc.state == MeshcoreConnectionState.ready);
+        (MeshcoreController mc) => mc.state == MeshcoreConnectionState.ready);
     final int active = context.select<MeshcoreController, int>(
         (MeshcoreController mc) => mc.activeChannel);
     final String activeName = context.select<MeshcoreController, String>(
@@ -514,8 +512,8 @@ class _ChatScreenState extends State<ChatScreen>
     // elements); this counter is what repaints them.
     context.select<MeshcoreController, int>(
         (MeshcoreController mc) => mc.deliveryRevision);
-    final bool ttsEnabled = context.select<TtsController, bool>(
-        (TtsController t) => t.enabled);
+    final bool ttsEnabled =
+        context.select<TtsController, bool>((TtsController t) => t.enabled);
     final bool muted = context.select<TtsController, bool>(
         (TtsController t) => t.isChannelMuted(active));
     final bool speaks = context.select<TtsController, bool>(
@@ -578,250 +576,247 @@ class _ChatScreenState extends State<ChatScreen>
 
     return MmScaffold(
       child: Column(
-      children: <Widget>[
-        MmPageHeader(title: l.tabChat),
-        // R91 — one row, one job: switch channel. The caption above it
-        // said "CHANNEL · PUBLIC" while the selected chip two lines below
-        // already said "Public", and the collapse chevron existed only to
-        // hide the strip under it. Header + strip was 108 dp for that.
-        SizedBox(
-          height: 48,
-          child: ListView(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
-            children: <Widget>[
-              for (final MapEntry<int, String> ch in channels)
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 4),
-                  child: Semantics(
-                    label: (unread[ch.key] ?? 0) > 0
-                        ? '${ch.value}, ${l.chatUnread(unread[ch.key]!)}'
-                        : ch.value,
-                    selected: ch.key == active,
-                    button: true,
-                    excludeSemantics: true,
-                    child: ChoiceChip(
-                      label: Text(ch.value),
+        children: <Widget>[
+          MmPageHeader(title: l.tabChat),
+          // R91 — one row, one job: switch channel. The caption above it
+          // said "CHANNEL · PUBLIC" while the selected chip two lines below
+          // already said "Public", and the collapse chevron existed only to
+          // hide the strip under it. Header + strip was 108 dp for that.
+          SizedBox(
+            height: 48,
+            child: ListView(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+              children: <Widget>[
+                for (final MapEntry<int, String> ch in channels)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    child: Semantics(
+                      label: (unread[ch.key] ?? 0) > 0
+                          ? '${ch.value}, ${l.chatUnread(unread[ch.key]!)}'
+                          : ch.value,
                       selected: ch.key == active,
-                      avatar: (unread[ch.key] ?? 0) > 0
-                          ? _UnreadBadge(
-                              key: ValueKey<String>('unread-${ch.key}'),
-                              count: unread[ch.key]!,
-                              onSelectedColor: ch.key == active,
-                            )
-                          : null,
-                      labelStyle: TextStyle(
-                        color: ch.key == active
-                            ? cs.onPrimary
-                            : cs.onSurface,
-                        fontWeight: ch.key == active
-                            ? FontWeight.w600
-                            : FontWeight.w400,
+                      button: true,
+                      excludeSemantics: true,
+                      child: ChoiceChip(
+                        label: Text(ch.value),
+                        selected: ch.key == active,
+                        avatar: (unread[ch.key] ?? 0) > 0
+                            ? _UnreadBadge(
+                                key: ValueKey<String>('unread-${ch.key}'),
+                                count: unread[ch.key]!,
+                                onSelectedColor: ch.key == active,
+                              )
+                            : null,
+                        labelStyle: TextStyle(
+                          color: ch.key == active ? cs.onPrimary : cs.onSurface,
+                          fontWeight: ch.key == active
+                              ? FontWeight.w600
+                              : FontWeight.w400,
+                        ),
+                        onSelected: (_) => mc.setActiveChannel(ch.key),
                       ),
-                      onSelected: (_) => mc.setActiveChannel(ch.key),
                     ),
                   ),
-                ),
-              // One overflow for everything that is not a channel. The
-              // strip answers "which channel", so search, export and manage
-              // live behind one control at its end instead of competing with
-              // the channel names (and instead of appearing only when a
-              // thread happens to have rows).
-              Padding(
-                padding: const EdgeInsets.only(left: 4),
-                child: PopupMenuButton<String>(
-                  key: const ValueKey<String>('chat-overflow'),
-                  tooltip: l.chatMoreActions,
-                  icon: const Icon(Icons.more_vert),
-                  onSelected: (String v) {
-                    switch (v) {
-                      case 'search':
-                        _openSearch(mc);
-                      case 'export':
-                        _exportThread(mc);
-                      case 'manage':
-                        context.push('/settings/channels');
-                    }
-                  },
-                  itemBuilder: (BuildContext _) => <PopupMenuEntry<String>>[
-                    PopupMenuItem<String>(
-                      key: const ValueKey<String>('chat-search'),
-                      value: 'search',
-                      enabled: msgs.isNotEmpty,
-                      child: ListTile(
-                        contentPadding: EdgeInsets.zero,
-                        leading: const Icon(Icons.search),
-                        title: Text(l.chatSearchAction),
-                      ),
-                    ),
-                    PopupMenuItem<String>(
-                      key: const ValueKey<String>('chat-export-thread'),
-                      value: 'export',
-                      enabled: msgs.isNotEmpty,
-                      child: ListTile(
-                        contentPadding: EdgeInsets.zero,
-                        leading: const Icon(Icons.ios_share),
-                        title: Text(l.chatExportAction),
-                      ),
-                    ),
-                    PopupMenuItem<String>(
-                      key: const ValueKey<String>('chat-manage-channels'),
-                      value: 'manage',
-                      child: ListTile(
-                        contentPadding: EdgeInsets.zero,
-                        leading: const Icon(Icons.tune),
-                        title: Text(l.chatManageChannels),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              // Per-channel speech, at the end of the strip because it is
-              // a property of the channel that is selected there.
-              if (ttsEnabled)
+                // One overflow for everything that is not a channel. The
+                // strip answers "which channel", so search, export and manage
+                // live behind one control at its end instead of competing with
+                // the channel names (and instead of appearing only when a
+                // thread happens to have rows).
                 Padding(
                   padding: const EdgeInsets.only(left: 4),
-                  child: IconButton(
-                    tooltip: muted ? l.chatTtsMuted : l.chatTtsActive,
-                    onPressed: () => context
-                        .read<TtsController>()
-                        .toggleChannelMute(active),
-                    icon: Icon(
-                      speaks ? Icons.volume_up : Icons.volume_off,
-                      color: speaks ? cs.primary : cs.onSurfaceVariant,
-                    ),
-                  ),
-                ),
-            ],
-          ),
-        ),
-        const Divider(height: 1),
-        HistoryRetentionNotice(dropped: dropped),
-
-        // Message list (active channel) + R29 jump-to-newest pill.
-        Expanded(
-          child: Stack(
-            children: <Widget>[
-              Positioned.fill(
-                child: msgs.isEmpty
-                    ? Center(
-                        child: Text(l.chatEmpty,
-                            style: TextStyle(
-                                color: cs.onSurfaceVariant)),
-                      )
-                    : ListView.builder(
-                        controller: _scroll,
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 8),
-                        itemCount: msgs.length,
-                        itemBuilder: (BuildContext ctx, int i) {
-                          final bool lit = msgs[i].id == _highlightId;
-                          final Widget row = _MessageRow(
-                            msgs[i],
-                            key: lit ? _highlightKey : null,
-                            onAction: () => _onAction(mc, msgs[i]),
-                            // The DR Pop name tag shows the cadence since
-                            // this identity last spoke; only that mode reads
-                            // it, so only compute it there.
-                            sinceLast: _chatModeFor(ctx.skin.preset) ==
-                                    _ChatMode.block
-                                ? _sinceLastFromSame(msgs, i)
-                                : null,
-                          );
-                          if (!lit) return row;
-                          return ColoredBox(
-                            color: cs.secondaryContainer,
-                            child: row,
-                          );
-                        },
-                      ),
-              ),
-              // The pill only appears when the user is NOT at the
-              // bottom (so they wouldn't otherwise see the newest
-              // row) AND new messages have actually arrived since
-              // they scrolled away. If the user scrolls up but no
-              // new messages come in, no pill — silence is correct.
-              if (!_atBottom && _unreadSinceScrollAway > 0)
-                Positioned(
-                  right: 12,
-                  bottom: 12,
-                  child: _JumpToNewestPill(
-                    count: _unreadSinceScrollAway,
-                    onTap: _jumpToNewest,
-                    label: l.chatJumpToNewest(_unreadSinceScrollAway),
-                  ),
-                ),
-            ],
-          ),
-        ),
-
-        // Composer. Without a radio there is nothing to type into, so the
-        // row becomes the state and the way out of it instead of a disabled
-        // field whose only advice is on another screen.
-        SafeArea(
-          top: false,
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(12, 6, 8, 10),
-            child: !ready
-                ? ComposerOffline(
-                    connecting:
-                        context.select<MeshcoreController, bool>(
-                            (MeshcoreController mc) => mc.isConnecting),
-                  )
-                : Row(
-              children: <Widget>[
-                Expanded(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      TextField(
-                        controller: _input,
-                        textInputAction: TextInputAction.send,
-                        onSubmitted: (_) => _send(mc),
-                        decoration: InputDecoration(
-                          isDense: true,
-                          hintText: l.chatComposerHint(activeName),
-                          border: const OutlineInputBorder(),
+                  child: PopupMenuButton<String>(
+                    key: const ValueKey<String>('chat-overflow'),
+                    tooltip: l.chatMoreActions,
+                    icon: const Icon(Icons.more_vert),
+                    onSelected: (String v) {
+                      switch (v) {
+                        case 'search':
+                          _openSearch(mc);
+                        case 'export':
+                          _exportThread(mc);
+                        case 'manage':
+                          context.push('/settings/channels');
+                      }
+                    },
+                    itemBuilder: (BuildContext _) => <PopupMenuEntry<String>>[
+                      PopupMenuItem<String>(
+                        key: const ValueKey<String>('chat-search'),
+                        value: 'search',
+                        enabled: msgs.isNotEmpty,
+                        child: ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          leading: const Icon(Icons.search),
+                          title: Text(l.chatSearchAction),
                         ),
                       ),
-                      ComposerCounter(
-                        budget: _budget,
-                        text: _input.text,
-                        label: l,
+                      PopupMenuItem<String>(
+                        key: const ValueKey<String>('chat-export-thread'),
+                        value: 'export',
+                        enabled: msgs.isNotEmpty,
+                        child: ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          leading: const Icon(Icons.ios_share),
+                          title: Text(l.chatExportAction),
+                        ),
+                      ),
+                      PopupMenuItem<String>(
+                        key: const ValueKey<String>('chat-manage-channels'),
+                        value: 'manage',
+                        child: ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          leading: const Icon(Icons.tune),
+                          title: Text(l.chatManageChannels),
+                        ),
                       ),
                     ],
                   ),
                 ),
-                IconButton(
-                  key: const ValueKey<String>('chat-attach'),
-                  tooltip: l.mediaComposerTitle,
-                  onPressed: ready
-                      ? () => MediaComposer.show(
-                            context,
-                            service: _media,
-                            source: kNoMediaPhotoSource,
-                            channelPsk: mc.channelPsk(mc.activeChannel),
-                            byteBudget: kMediaPhotoBudgetBytes,
-                            sendBlob: (Uint8List blob) => mc.sendChannelData(
-                              channelIdx: mc.activeChannel,
-                              dataType: kChannelDataTypeDev,
-                              blob: blob,
-                            ),
-                          )
-                      : null,
-                  icon: const Icon(Icons.add_photo_alternate_outlined),
-                ),
-                IconButton(
-                  tooltip: l.chatSend,
-                  onPressed: () => _send(mc),
-                  icon: const Icon(Icons.send),
-                ),
+                // Per-channel speech, at the end of the strip because it is
+                // a property of the channel that is selected there.
+                if (ttsEnabled)
+                  Padding(
+                    padding: const EdgeInsets.only(left: 4),
+                    child: IconButton(
+                      tooltip: muted ? l.chatTtsMuted : l.chatTtsActive,
+                      onPressed: () => context
+                          .read<TtsController>()
+                          .toggleChannelMute(active),
+                      icon: Icon(
+                        speaks ? Icons.volume_up : Icons.volume_off,
+                        color: speaks ? cs.primary : cs.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
               ],
             ),
           ),
-        ),
-      ],
+          const Divider(height: 1),
+          HistoryRetentionNotice(dropped: dropped),
+
+          // Message list (active channel) + R29 jump-to-newest pill.
+          Expanded(
+            child: Stack(
+              children: <Widget>[
+                Positioned.fill(
+                  child: msgs.isEmpty
+                      ? Center(
+                          child: Text(l.chatEmpty,
+                              style: TextStyle(color: cs.onSurfaceVariant)),
+                        )
+                      : ListView.builder(
+                          controller: _scroll,
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 8),
+                          itemCount: msgs.length,
+                          itemBuilder: (BuildContext ctx, int i) {
+                            final bool lit = msgs[i].id == _highlightId;
+                            final Widget row = _MessageRow(
+                              msgs[i],
+                              key: lit ? _highlightKey : null,
+                              onAction: () => _onAction(mc, msgs[i]),
+                              // The DR Pop name tag shows the cadence since
+                              // this identity last spoke; only that mode reads
+                              // it, so only compute it there.
+                              sinceLast: _chatModeFor(ctx.skin.preset) ==
+                                      _ChatMode.block
+                                  ? _sinceLastFromSame(msgs, i)
+                                  : null,
+                            );
+                            if (!lit) return row;
+                            return ColoredBox(
+                              color: cs.secondaryContainer,
+                              child: row,
+                            );
+                          },
+                        ),
+                ),
+                // The pill only appears when the user is NOT at the
+                // bottom (so they wouldn't otherwise see the newest
+                // row) AND new messages have actually arrived since
+                // they scrolled away. If the user scrolls up but no
+                // new messages come in, no pill — silence is correct.
+                if (!_atBottom && _unreadSinceScrollAway > 0)
+                  Positioned(
+                    right: 12,
+                    bottom: 12,
+                    child: _JumpToNewestPill(
+                      count: _unreadSinceScrollAway,
+                      onTap: _jumpToNewest,
+                      label: l.chatJumpToNewest(_unreadSinceScrollAway),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+
+          // Composer. Without a radio there is nothing to type into, so the
+          // row becomes the state and the way out of it instead of a disabled
+          // field whose only advice is on another screen.
+          SafeArea(
+            top: false,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(12, 6, 8, 10),
+              child: !ready
+                  ? ComposerOffline(
+                      connecting: context.select<MeshcoreController, bool>(
+                          (MeshcoreController mc) => mc.isConnecting),
+                    )
+                  : Row(
+                      children: <Widget>[
+                        Expanded(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: <Widget>[
+                              TextField(
+                                controller: _input,
+                                textInputAction: TextInputAction.send,
+                                onSubmitted: (_) => _send(mc),
+                                decoration: InputDecoration(
+                                  isDense: true,
+                                  hintText: l.chatComposerHint(activeName),
+                                  border: const OutlineInputBorder(),
+                                ),
+                              ),
+                              ComposerCounter(
+                                budget: _budget,
+                                text: _input.text,
+                                label: l,
+                              ),
+                            ],
+                          ),
+                        ),
+                        IconButton(
+                          key: const ValueKey<String>('chat-attach'),
+                          tooltip: l.mediaComposerTitle,
+                          onPressed: ready
+                              ? () => MediaComposer.show(
+                                    context,
+                                    service: _media,
+                                    source: kNoMediaPhotoSource,
+                                    channelPsk: mc.channelPsk(mc.activeChannel),
+                                    byteBudget: kMediaPhotoBudgetBytes,
+                                    sendBlob: (Uint8List blob) =>
+                                        mc.sendChannelData(
+                                      channelIdx: mc.activeChannel,
+                                      dataType: kChannelDataTypeDev,
+                                      blob: blob,
+                                    ),
+                                  )
+                              : null,
+                          icon: const Icon(Icons.add_photo_alternate_outlined),
+                        ),
+                        IconButton(
+                          tooltip: l.chatSend,
+                          onPressed: () => _send(mc),
+                          icon: const Icon(Icons.send),
+                        ),
+                      ],
+                    ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -891,54 +886,65 @@ class _MessageRow extends StatelessWidget {
           onAction: onAction);
     }
     final String mono = skin.type.monoFamily;
-    return InkWell(
-      onLongPress: onAction,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 4),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            // R102 — scale the gutter with the text (see StudioMessageRow).
-            SizedBox(
-              width: 56 * MediaQuery.textScalerOf(context).scale(1),
-              child: Text('${_time(l)} ${m.outgoing ? '»' : '«'}',
-                  maxLines: 1,
-                  softWrap: false,
-                  style: TextStyle(
-                      color: m.outgoing
-                          ? skin.color.accent
-                          : skin.color.fgMuted,
-                      fontFamily: mono,
-                      fontSize: 12)),
-            ),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  if (looksLikeBot(m.text))
-                    const Padding(
-                      padding: EdgeInsets.only(bottom: 2),
-                      child: BotTag(),
-                    ),
-                  Text(stripBotMarker(m.text),
-                      style:
-                          TextStyle(color: skin.color.fg, fontFamily: mono)),
-                  if (PlaceEchoLine.placeOf(m) case final Place place)
-                    PlaceEchoLine(
-                        place: place, store: context.read<PlaceStore>()),
-                  _metaRow(skin),
-                ],
+    final ({String? sender, String body}) parts = _split();
+    final String? state =
+        m.outgoing && m.delivery != null ? deliveryLabel(l, m.delivery!) : null;
+    final String spoken = <String>[
+      if (parts.sender != null) parts.sender!,
+      _time(l),
+      if (state != null) state,
+      parts.body,
+    ].join(', ');
+    return Semantics(
+      label: spoken,
+      child: InkWell(
+        onLongPress: onAction,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              // R102 — scale the gutter with the text (see StudioMessageRow).
+              SizedBox(
+                width: 56 * MediaQuery.textScalerOf(context).scale(1),
+                child: Text('${_time(l)} ${m.outgoing ? '»' : '«'}',
+                    maxLines: 1,
+                    softWrap: false,
+                    style: TextStyle(
+                        color:
+                            m.outgoing ? skin.color.accent : skin.color.fgMuted,
+                        fontFamily: mono,
+                        fontSize: 12)),
               ),
-            ),
-            IconButton(
-              tooltip: AppLocalizations.of(context).chatMessageActions,
-              iconSize: 18,
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
-              onPressed: onAction,
-              icon: Icon(Icons.more_vert, color: skin.color.fgMuted),
-            ),
-          ],
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    if (looksLikeBot(m.text))
+                      const Padding(
+                        padding: EdgeInsets.only(bottom: 2),
+                        child: BotTag(),
+                      ),
+                    Text(stripBotMarker(m.text),
+                        style:
+                            TextStyle(color: skin.color.fg, fontFamily: mono)),
+                    if (PlaceEchoLine.placeOf(m) case final Place place)
+                      PlaceEchoLine(
+                          place: place, store: context.read<PlaceStore>()),
+                    _metaRow(skin),
+                  ],
+                ),
+              ),
+              IconButton(
+                tooltip: AppLocalizations.of(context).chatMessageActions,
+                iconSize: 18,
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+                onPressed: onAction,
+                icon: Icon(Icons.more_vert, color: skin.color.fgMuted),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -989,8 +995,8 @@ class _MessageRow extends StatelessWidget {
     final Widget field = Container(
       padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
       // Mondrian black rule around every colour field.
-      decoration: BoxDecoration(
-          color: fill, border: Border.all(color: base, width: 3)),
+      decoration:
+          BoxDecoration(color: fill, border: Border.all(color: base, width: 3)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
@@ -1049,8 +1055,8 @@ class _MessageRow extends StatelessWidget {
     final List<Widget> cells = <Widget>[
       Flexible(
         child: ConstrainedBox(
-          constraints: BoxConstraints(
-              maxWidth: MediaQuery.of(context).size.width * 0.6),
+          constraints:
+              BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.6),
           child: field,
         ),
       ),
@@ -1091,8 +1097,8 @@ class _MessageRow extends StatelessWidget {
     return Align(
       alignment: m.outgoing ? Alignment.centerRight : Alignment.centerLeft,
       child: ConstrainedBox(
-        constraints: BoxConstraints(
-            maxWidth: MediaQuery.of(context).size.width * 0.78),
+        constraints:
+            BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.78),
         child: InkWell(
           onLongPress: onAction,
           child: Container(
@@ -1237,8 +1243,8 @@ class _NameTag extends StatelessWidget {
     return Container(
       width: 58,
       padding: const EdgeInsets.all(5),
-      decoration:
-          BoxDecoration(color: base, border: Border.all(color: color, width: 3)),
+      decoration: BoxDecoration(
+          color: base, border: Border.all(color: color, width: 3)),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
@@ -1246,8 +1252,8 @@ class _NameTag extends StatelessWidget {
             width: 36,
             height: 36,
             child: CustomPaint(
-              painter:
-                  _InvaderPainter(seed: _fnv1a(seedKey), color: color, bg: base),
+              painter: _InvaderPainter(
+                  seed: _fnv1a(seedKey), color: color, bg: base),
             ),
           ),
           if (since != null) ...<Widget>[
@@ -1298,8 +1304,7 @@ class _InvaderPainter extends CustomPainter {
     for (int y = 0; y < _rows; y++) {
       for (int x = 0; x < half; x++) {
         if (bit() == 0) continue;
-        canvas.drawRect(
-            Rect.fromLTWH(x * cw, y * ch, cw, ch).deflate(0.6), on);
+        canvas.drawRect(Rect.fromLTWH(x * cw, y * ch, cw, ch).deflate(0.6), on);
         final int mx = _cols - 1 - x; // mirror
         if (mx != x) {
           canvas.drawRect(
@@ -1345,8 +1350,7 @@ class _JumpToNewestPill extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
-              Icon(Icons.arrow_downward,
-                  size: 16, color: cs.onPrimary),
+              Icon(Icons.arrow_downward, size: 16, color: cs.onPrimary),
               const SizedBox(width: 6),
               Text(label,
                   style: TextStyle(
