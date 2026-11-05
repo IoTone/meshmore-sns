@@ -2736,6 +2736,46 @@ class AppLocalizationsEn extends AppLocalizations {
       'Undo did not apply — the radio kept its last values.';
 
   @override
+  String get radioHealthTitle => 'RADIO HEALTH';
+
+  @override
+  String get radioHealthRead => 'Read';
+
+  @override
+  String get radioHealthReading => 'Reading…';
+
+  @override
+  String get radioHealthUnread =>
+      'Not read yet. Read asks the radio for its own stats (CMD_GET_STATS).';
+
+  @override
+  String radioHealthNoise(String dbm) {
+    return 'noise floor $dbm dBm — the radio\'s own measurement';
+  }
+
+  @override
+  String radioHealthLast(String rssi, String snr) {
+    return 'last packet RSSI $rssi dBm, SNR $snr dB — from the radio\'s packet statistics';
+  }
+
+  @override
+  String radioHealthBattery(String volts) {
+    return 'battery $volts V — from the radio\'s core statistics, not a phone reading';
+  }
+
+  @override
+  String get radioHealthNotReported => 'not reported by this firmware';
+
+  @override
+  String radioHealthUptime(String uptime) {
+    return 'up $uptime — the radio\'s uptime counter, which resets when it power-cycles';
+  }
+
+  @override
+  String get radioHealthSource =>
+      'All values are the radio\'s own counters; nothing here is measured by the phone.';
+
+  @override
   String get deviceLoadFromDevice => 'Load from device';
 
   @override

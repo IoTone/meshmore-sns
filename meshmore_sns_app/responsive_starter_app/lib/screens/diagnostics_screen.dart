@@ -12,6 +12,7 @@ import '../bot/bot_guards.dart';
 import '../bot/responder.dart';
 import '../gen/app_localizations.dart';
 import '../ui/mm_scaffold.dart';
+import '../ui/radio_health_block.dart';
 import 'diagnostics_redaction.dart';
 import '../meshcore/meshcore_controller.dart';
 import '../ui/mm_shape.dart';
@@ -203,6 +204,10 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
             isThreeLine: mc.selfInfo != null ||
                 mc.error != null ||
                 mc.mtuRefusal != null,
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
+            child: const RadioHealthBlock(),
           ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),

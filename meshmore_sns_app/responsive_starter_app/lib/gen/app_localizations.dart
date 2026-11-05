@@ -4718,6 +4718,66 @@ abstract class AppLocalizations {
   /// **'Undo did not apply — the radio kept its last values.'**
   String get deviceRadioRevertFailed;
 
+  /// No description provided for @radioHealthTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'RADIO HEALTH'**
+  String get radioHealthTitle;
+
+  /// No description provided for @radioHealthRead.
+  ///
+  /// In en, this message translates to:
+  /// **'Read'**
+  String get radioHealthRead;
+
+  /// No description provided for @radioHealthReading.
+  ///
+  /// In en, this message translates to:
+  /// **'Reading…'**
+  String get radioHealthReading;
+
+  /// No description provided for @radioHealthUnread.
+  ///
+  /// In en, this message translates to:
+  /// **'Not read yet. Read asks the radio for its own stats (CMD_GET_STATS).'**
+  String get radioHealthUnread;
+
+  /// No description provided for @radioHealthNoise.
+  ///
+  /// In en, this message translates to:
+  /// **'noise floor {dbm} dBm — the radio\'s own measurement'**
+  String radioHealthNoise(String dbm);
+
+  /// No description provided for @radioHealthLast.
+  ///
+  /// In en, this message translates to:
+  /// **'last packet RSSI {rssi} dBm, SNR {snr} dB — from the radio\'s packet statistics'**
+  String radioHealthLast(String rssi, String snr);
+
+  /// No description provided for @radioHealthBattery.
+  ///
+  /// In en, this message translates to:
+  /// **'battery {volts} V — from the radio\'s core statistics, not a phone reading'**
+  String radioHealthBattery(String volts);
+
+  /// No description provided for @radioHealthNotReported.
+  ///
+  /// In en, this message translates to:
+  /// **'not reported by this firmware'**
+  String get radioHealthNotReported;
+
+  /// No description provided for @radioHealthUptime.
+  ///
+  /// In en, this message translates to:
+  /// **'up {uptime} — the radio\'s uptime counter, which resets when it power-cycles'**
+  String radioHealthUptime(String uptime);
+
+  /// No description provided for @radioHealthSource.
+  ///
+  /// In en, this message translates to:
+  /// **'All values are the radio\'s own counters; nothing here is measured by the phone.'**
+  String get radioHealthSource;
+
   /// No description provided for @deviceLoadFromDevice.
   ///
   /// In en, this message translates to:

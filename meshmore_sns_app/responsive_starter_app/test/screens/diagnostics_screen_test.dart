@@ -13,6 +13,7 @@ import 'package:meshmore_sns_app/bot/bot_controller.dart';
 import 'package:meshmore_sns_app/meshcore/meshcore_controller.dart';
 import 'package:meshmore_sns_app/meshcore/ble_connector.dart';
 import 'package:meshmore_sns_app/screens/diagnostics_screen.dart';
+import 'package:meshmore_sns_app/tools/tools_controller.dart';
 
 import '../meshcore/fake_transport.dart';
 import 'package:meshcore/meshcore.dart';
@@ -40,6 +41,10 @@ void main() {
         home: MultiProvider(
           providers: <ChangeNotifierProvider<ChangeNotifier>>[
             ChangeNotifierProvider<MeshcoreController>.value(value: ctrl),
+            // R109 radio health: the block reads the stats tool, which the
+            // app always provides on this screen.
+            ChangeNotifierProvider<ToolsController>(
+                create: (_) => ToolsController(ctrl)),
             // R59 — Diagnostics carries the bot soak panel.
             ChangeNotifierProvider<BotController>(
                 create: (_) => BotController()),
@@ -110,6 +115,10 @@ void main() {
         home: MultiProvider(
           providers: <ChangeNotifierProvider<ChangeNotifier>>[
             ChangeNotifierProvider<MeshcoreController>.value(value: ctrl),
+            // R109 radio health: the block reads the stats tool, which the
+            // app always provides on this screen.
+            ChangeNotifierProvider<ToolsController>(
+                create: (_) => ToolsController(ctrl)),
             ChangeNotifierProvider<BotController>(
                 create: (_) => BotController()),
           ],
@@ -164,6 +173,12 @@ void main() {
   });
 
   testWidgets('raw frame log decodes inbound frames', (WidgetTester t) async {
+    // The health readout sits above the log, so the log is no longer inside
+    // the default 800x600 test viewport; this is a decode assertion, not a
+    // scroll-geometry one.
+    t.view.physicalSize = const Size(900, 2400);
+    t.view.devicePixelRatio = 1.0;
+    addTearDown(t.view.reset);
     final (MeshcoreController ctrl, FakeMeshcoreTransport fake) =
         await pump(t);
     await t.tap(find.text('Scan & connect'));

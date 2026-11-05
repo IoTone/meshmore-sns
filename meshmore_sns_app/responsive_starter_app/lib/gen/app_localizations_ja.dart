@@ -2632,6 +2632,45 @@ class AppLocalizationsJa extends AppLocalizations {
   String get deviceRadioRevertFailed => '元に戻せませんでした — 無線機は直前の値のままです。';
 
   @override
+  String get radioHealthTitle => '無線機の状態';
+
+  @override
+  String get radioHealthRead => '取得';
+
+  @override
+  String get radioHealthReading => '取得中…';
+
+  @override
+  String get radioHealthUnread =>
+      'まだ取得していません。「取得」で無線機自身の統計(CMD_GET_STATS)を読みます。';
+
+  @override
+  String radioHealthNoise(String dbm) {
+    return 'ノイズフロア $dbm dBm — 無線機自身の測定値';
+  }
+
+  @override
+  String radioHealthLast(String rssi, String snr) {
+    return '直近パケット RSSI $rssi dBm、SNR $snr dB — 無線機のパケット統計より';
+  }
+
+  @override
+  String radioHealthBattery(String volts) {
+    return 'バッテリー $volts V — 無線機のコア統計値(スマートフォン側の測定ではありません)';
+  }
+
+  @override
+  String get radioHealthNotReported => 'このファームウェアでは報告されません';
+
+  @override
+  String radioHealthUptime(String uptime) {
+    return '稼働 $uptime — 無線機の稼働カウンタ(電源再投入でリセットされます)';
+  }
+
+  @override
+  String get radioHealthSource => 'すべて無線機自身のカウンタです。この画面の値はスマートフォン側の測定ではありません。';
+
+  @override
   String get deviceLoadFromDevice => 'デバイスから読込';
 
   @override
