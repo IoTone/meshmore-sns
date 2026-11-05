@@ -6898,12 +6898,6 @@ abstract class AppLocalizations {
   /// **'A label cannot contain a TTL token.'**
   String get placeLabelCarriesTtl;
 
-  /// No description provided for @placeDetailTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Place'**
-  String get placeDetailTitle;
-
   /// No description provided for @placeExpiresIn.
   ///
   /// In en, this message translates to:
@@ -7017,24 +7011,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Coordinates copied'**
   String get placeDirectionsCopied;
-
-  /// No description provided for @placePhotoPending.
-  ///
-  /// In en, this message translates to:
-  /// **'Photo not fetched'**
-  String get placePhotoPending;
-
-  /// No description provided for @placeCountdown.
-  ///
-  /// In en, this message translates to:
-  /// **'{value} left'**
-  String placeCountdown(String value);
-
-  /// No description provided for @placeCluster.
-  ///
-  /// In en, this message translates to:
-  /// **'{n} places'**
-  String placeCluster(int n);
 
   /// No description provided for @placeHistoryTitle.
   ///

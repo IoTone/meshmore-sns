@@ -3852,9 +3852,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get placeLabelCarriesTtl => 'ラベルにTTLトークンは入れられません。';
 
   @override
-  String get placeDetailTitle => '場所';
-
-  @override
   String placeExpiresIn(String value) {
     return '残り $value';
   }
@@ -3922,19 +3919,6 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get placeDirectionsCopied => '座標をコピーしました';
-
-  @override
-  String get placePhotoPending => '写真は未取得';
-
-  @override
-  String placeCountdown(String value) {
-    return '残り $value';
-  }
-
-  @override
-  String placeCluster(int n) {
-    return '$n 件の場所';
-  }
 
   @override
   String get placeHistoryTitle => '場所';

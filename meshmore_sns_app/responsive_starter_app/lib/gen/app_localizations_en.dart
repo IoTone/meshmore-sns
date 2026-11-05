@@ -3985,9 +3985,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get placeLabelCarriesTtl => 'A label cannot contain a TTL token.';
 
   @override
-  String get placeDetailTitle => 'Place';
-
-  @override
   String placeExpiresIn(String value) {
     return 'Expires in $value';
   }
@@ -4057,19 +4054,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get placeDirectionsCopied => 'Coordinates copied';
-
-  @override
-  String get placePhotoPending => 'Photo not fetched';
-
-  @override
-  String placeCountdown(String value) {
-    return '$value left';
-  }
-
-  @override
-  String placeCluster(int n) {
-    return '$n places';
-  }
 
   @override
   String get placeHistoryTitle => 'Places';

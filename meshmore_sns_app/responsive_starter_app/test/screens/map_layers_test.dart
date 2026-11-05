@@ -18,6 +18,8 @@ import 'package:meshmore_sns_app/maps/event_layer.dart';
 import 'package:meshmore_sns_app/maps/map_fetch.dart';
 import 'package:meshmore_sns_app/maps/maps_controller.dart';
 import 'package:meshmore_sns_app/meshcore/meshcore_controller.dart';
+import 'package:meshmore_sns_app/places/place_report_budget.dart';
+import 'package:meshmore_sns_app/places/place_store.dart';
 import 'package:meshmore_sns_app/screens/map_screen.dart';
 
 import '../meshcore/fake_transport.dart';
@@ -98,6 +100,8 @@ Future<(MapsController, MeshcoreController)> _pump(
       providers: <SingleChildWidget>[
         ChangeNotifierProvider<MapsController>.value(value: maps),
         ChangeNotifierProvider<MeshcoreController>.value(value: mc),
+        ChangeNotifierProvider<PlaceStore>.value(value: PlaceStore()),
+        Provider<PlaceReportBudget>(create: (_) => PlaceReportBudget(clock: DateTime.now)),
       ],
       child: const Scaffold(body: MapScreen()),
     ),

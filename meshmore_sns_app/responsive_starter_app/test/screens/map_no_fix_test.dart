@@ -5,10 +5,13 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
+import 'package:provider/single_child_widget.dart';
 
 import 'package:meshmore_sns_app/gen/app_localizations.dart';
 import 'package:meshmore_sns_app/l10n/locale_controller.dart';
 import 'package:meshmore_sns_app/meshcore/meshcore_controller.dart';
+import 'package:meshmore_sns_app/places/place_report_budget.dart';
+import 'package:meshmore_sns_app/places/place_store.dart';
 import 'package:meshmore_sns_app/screens/map_screen.dart';
 import 'package:meshmore_sns_app/screens/street_map_view.dart';
 
@@ -36,8 +39,12 @@ Future<MeshcoreController> _pump(WidgetTester t, Widget body,
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      home: ChangeNotifierProvider<MeshcoreController>.value(
-        value: ctrl,
+      home: MultiProvider(
+        providers: <SingleChildWidget>[
+          ChangeNotifierProvider<MeshcoreController>.value(value: ctrl),
+          ChangeNotifierProvider<PlaceStore>.value(value: PlaceStore()),
+          Provider<PlaceReportBudget>(create: (_) => PlaceReportBudget(clock: DateTime.now)),
+        ],
         child: Scaffold(body: body),
       ),
     ),

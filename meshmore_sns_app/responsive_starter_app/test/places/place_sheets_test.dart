@@ -19,7 +19,6 @@ import 'package:meshmore_sns_app/places/place_history_sheet.dart';
 import 'package:meshmore_sns_app/places/place_report_budget.dart';
 import 'package:meshmore_sns_app/places/place_sender.dart';
 import 'package:meshmore_sns_app/places/place_store.dart';
-import 'package:meshmore_sns_app/theme/mm_skin.dart';
 import 'package:meshmore_sns_app/theme/mm_tokens.dart';
 import 'package:meshmore_sns_app/theme/theme_controller.dart';
 
