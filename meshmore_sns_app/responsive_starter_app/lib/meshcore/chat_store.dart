@@ -34,8 +34,55 @@ abstract final class ChatStore {
   /// The record's name inside the store file.
   static const String recordName = 'chat';
 
+  /// Where the per-thread count of rows the cap has already dropped lives.
+  /// A separate record, not a new message payload shape: the history file
+  /// keeps its format, and a missing count reads as zero.
+  static const String droppedRecordName = 'chat.dropped';
+
   /// Hard cap on persisted messages (oldest dropped first).
   static const int cap = 250;
+
+  /// The key a dropped row is counted under: a channel slot, or a DM peer.
+  static String threadKeyOf(ChatMessage m) => m.channelIdx >= 0
+      ? 'ch:${m.channelIdx}'
+      : 'dm:${m.peerPubKeyHex?.substring(0, 12) ?? ''}';
+
+  /// How many older rows the cap has already dropped, per thread. A store
+  /// that drops rows without saying so makes "where did it go" unanswerable,
+  /// so the count outlives the rows it counts.
+  static Future<Map<String, int>> loadDropped() async {
+    try {
+      if (!await _ensureSealed()) return <String, int>{};
+      final Uint8List? raw = await _store().read(droppedRecordName);
+      if (raw == null) return <String, int>{};
+      final Object? decoded = jsonDecode(utf8.decode(raw));
+      if (decoded is! Map<String, Object?>) return <String, int>{};
+      return <String, int>{
+        for (final MapEntry<String, Object?> e in decoded.entries)
+          if (e.value is num) e.key: (e.value! as num).toInt(),
+      };
+    } on EncryptedStoreUnavailable {
+      return <String, int>{};
+    } on EncryptedStoreCorrupt {
+      return <String, int>{};
+    } on FormatException {
+      return <String, int>{};
+    }
+  }
+
+  static Future<void> saveDropped(Map<String, int> counts) async {
+    final Map<String, int> kept = <String, int>{
+      for (final MapEntry<String, int> e in counts.entries)
+        if (e.value > 0) e.key: e.value,
+    };
+    try {
+      if (!await _ensureSealed()) return;
+      await _store().write(droppedRecordName,
+          Uint8List.fromList(utf8.encode(jsonEncode(kept))));
+    } on EncryptedStoreUnavailable {
+      // No key: the count is session-only, like the history itself would be.
+    }
+  }
 
   /// Test seams. The app leaves both null: the real store seals through the
   /// Android Keystore and lives in the app-support directory.
@@ -44,12 +91,16 @@ abstract final class ChatStore {
   @visibleForTesting
   static Directory? directoryOverride;
 
-  static EncryptedStore _store() => EncryptedStore(
-        cipher: cipherOverride,
-        directory: directoryOverride == null
-            ? null
-            : () async => directoryOverride!,
-      );
+  static EncryptedStore _store() {
+    // Capture the seams now. A closure that reads the mutable static later
+    // throws if a test clears it while an unawaited save is still in flight,
+    // which is exactly when the writes are queued.
+    final Directory? dir = directoryOverride;
+    return EncryptedStore(
+      cipher: cipherOverride,
+      directory: dir == null ? null : () async => dir,
+    );
+  }
 
   static Future<List<ChatMessage>> load() async {
     if (await _ensureSealed()) {

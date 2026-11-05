@@ -15,6 +15,7 @@ import '../meshcore/chat_message.dart';
 import 'delivery_status_icon.dart';
 import '../meshcore/discovered_node.dart';
 import '../meshcore/meshcore_controller.dart';
+import '../chat/history_retention_notice.dart';
 import '../notifications/notification_focus.dart';
 import '../theme/mm_skin.dart';
 import '../tts/tts_controller.dart';
@@ -326,6 +327,8 @@ class _DmScreenState extends State<DmScreen> {
             ),
           ),
           const Divider(height: 1),
+          HistoryRetentionNotice(
+              dropped: mc.droppedForPeer(widget.peerPubKeyHex)),
           Expanded(
             child: msgs.isEmpty
                 ? Center(

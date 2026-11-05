@@ -214,6 +214,7 @@ class MeshcoreController extends ChangeNotifier {
       if (_capture.length > _captureCap) _capture.removeAt(0);
     });
     _loadChatHistory();
+    unawaited(_loadDropped());
     unawaited(_meshbook.load().then((_) => notifyListeners()));
     _loadBackgroundPref();
     _loadDefaultChannel();
@@ -414,6 +415,10 @@ class MeshcoreController extends ChangeNotifier {
     if (hist.isEmpty) return;
     _messages.insertAll(0, hist);
     if (_messages.length > _messagesCap) {
+      for (final ChatMessage m
+          in _messages.getRange(0, _messages.length - _messagesCap)) {
+        _noteDropped(m);
+      }
       _messages.removeRange(0, _messages.length - _messagesCap);
     }
     _invalidateMessagesCache();
@@ -1339,6 +1344,40 @@ class MeshcoreController extends ChangeNotifier {
   final List<ChatMessage> _messages = <ChatMessage>[];
   static const int _messagesCap = 250;
 
+  /// Rows the cap has already dropped, per thread (`ch:<idx>` / `dm:<peer>`).
+  ///
+  /// The 250-row cap used to truncate in silence, which made "where did it
+  /// go" unanswerable. The count is persisted beside the history so the
+  /// notice survives the restart that made the rows disappear.
+  final Map<String, int> _dropped = <String, int>{};
+
+  /// How many older rows this thread has lost to the cap.
+  int droppedForChannel(int idx) => _dropped['ch:$idx'] ?? 0;
+
+  /// Same, for a DM thread (keyed by the 12-hex prefix the row stores).
+  int droppedForPeer(String peerPubKeyHex) {
+    final String prefix = peerPubKeyHex.length >= 12
+        ? peerPubKeyHex.substring(0, 12)
+        : peerPubKeyHex;
+    return _dropped['dm:$prefix'] ?? 0;
+  }
+
+  /// Count [m] as a row the cap dropped, and persist the tally.
+  void _noteDropped(ChatMessage m) {
+    final String k = ChatStore.threadKeyOf(m);
+    _dropped[k] = (_dropped[k] ?? 0) + 1;
+    unawaited(ChatStore.saveDropped(Map<String, int>.from(_dropped)));
+  }
+
+  Future<void> _loadDropped() async {
+    final Map<String, int> loaded = await ChatStore.loadDropped();
+    if (loaded.isEmpty) return;
+    _dropped
+      ..clear()
+      ..addAll(loaded);
+    notifyListeners();
+  }
+
   /// Known channels by index → name. Channel 0 ("Public") always
   /// exists; the rest are filled in from `CHANNEL_INFO` replies.
   final Map<int, String> _channels = <int, String>{0: 'Public'};
@@ -1532,7 +1571,7 @@ class MeshcoreController extends ChangeNotifier {
   void _addMessage(ChatMessage m) {
     _messages.add(m);
     if (_messages.length > _messagesCap) {
-      _messages.removeAt(0);
+      _noteDropped(_messages.removeAt(0));
       // The cap-eviction may have removed a row from any channel,
       // not just `m.channelIdx`. Conservative: clear the whole cache
       // when we evict; otherwise just invalidate the affected slot.

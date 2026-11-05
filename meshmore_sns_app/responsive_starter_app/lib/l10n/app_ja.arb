@@ -600,6 +600,13 @@
   "chatManageChannels": "チャンネル管理",
   "chatTtsMuted": "このチャンネルの TTS をミュート中",
   "chatTtsActive": "このチャンネルを TTS で読み上げ中",
+  "chatRetentionDropped": "{count, plural, =1{古いメッセージ1件が削除済み} other{古いメッセージ{count}件が削除済み}} — 各会話は最新の{cap}件を保持します",
+  "@chatRetentionDropped": {
+    "placeholders": {
+      "count": {"type": "int"},
+      "cap": {"type": "int"}
+    }
+  },
   "chatEmpty": "— このチャンネルにメッセージはありません —",
   "chatJumpToNewest": "新着 {count} 件",
   "@chatJumpToNewest": {

@@ -17,6 +17,7 @@ import '../places/place_echo.dart';
 import '../places/place_store.dart';
 import 'delivery_status_icon.dart';
 import '../meshcore/meshcore_controller.dart';
+import '../chat/history_retention_notice.dart';
 import '../notifications/notification_focus.dart';
 import '../meshcore/message_heat.dart' show parseChannelSenderName;
 import '../bot/bot_guards.dart';
@@ -369,6 +370,9 @@ class _ChatScreenState extends State<ChatScreen>
         (TtsController t) => t.isChannelMuted(active));
     final bool speaks = context.select<TtsController, bool>(
         (TtsController t) => t.channelSpeaks(active));
+    // Rows this thread has lost to the 250-row cap, said out loud.
+    final int dropped = context.select<MeshcoreController, int>(
+        (MeshcoreController mc) => mc.droppedForChannel(active));
 
     // Read (no listen) for action callbacks + values we deliberately
     // didn't list above (channel name + chip list are derived from
@@ -439,6 +443,7 @@ class _ChatScreenState extends State<ChatScreen>
           ),
         ),
         const Divider(height: 1),
+        HistoryRetentionNotice(dropped: dropped),
 
         // Message list (active channel) + R29 jump-to-newest pill.
         Expanded(

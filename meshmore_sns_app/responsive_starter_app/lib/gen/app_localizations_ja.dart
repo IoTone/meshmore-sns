@@ -1384,6 +1384,17 @@ class AppLocalizationsJa extends AppLocalizations {
   String get chatTtsActive => 'このチャンネルを TTS で読み上げ中';
 
   @override
+  String chatRetentionDropped(int count, int cap) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '古いメッセージ$count件が削除済み',
+      one: '古いメッセージ1件が削除済み',
+    );
+    return '$_temp0 — 各会話は最新の$cap件を保持します';
+  }
+
+  @override
   String get chatEmpty => '— このチャンネルにメッセージはありません —';
 
   @override

@@ -1447,6 +1447,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get chatTtsActive => 'TTS reading this channel';
 
   @override
+  String chatRetentionDropped(int count, int cap) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count older messages are gone',
+      one: '1 older message is gone',
+    );
+    return '$_temp0 — each conversation keeps its newest $cap';
+  }
+
+  @override
   String get chatEmpty => '— no messages on this channel —';
 
   @override

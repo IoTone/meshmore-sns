@@ -2552,6 +2552,12 @@ abstract class AppLocalizations {
   /// **'TTS reading this channel'**
   String get chatTtsActive;
 
+  /// No description provided for @chatRetentionDropped.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 older message is gone} other{{count} older messages are gone}} — each conversation keeps its newest {cap}'**
+  String chatRetentionDropped(int count, int cap);
+
   /// No description provided for @chatEmpty.
   ///
   /// In en, this message translates to:

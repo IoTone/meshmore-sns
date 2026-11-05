@@ -624,6 +624,13 @@
   "chatManageChannels": "Manage channels",
   "chatTtsMuted": "TTS muted for this channel",
   "chatTtsActive": "TTS reading this channel",
+  "chatRetentionDropped": "{count, plural, =1{1 older message is gone} other{{count} older messages are gone}} — each conversation keeps its newest {cap}",
+  "@chatRetentionDropped": {
+    "placeholders": {
+      "count": {"type": "int"},
+      "cap": {"type": "int"}
+    }
+  },
   "chatEmpty": "— no messages on this channel —",
   "chatJumpToNewest": "{count, plural, =1{1 new} other{{count} new}}",
   "@chatJumpToNewest": {
