@@ -3,10 +3,14 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import '../chat/chat_actions.dart';
 import '../chat/report_flow.dart';
+import '../chat/composer_budget.dart';
+import '../chat/composer_counter.dart';
+import '../chat/composer_offline.dart';
 import '../chat/draft_store.dart';
 import '../chat/studio_message_row.dart';
 import '../gen/app_localizations.dart';
@@ -42,6 +46,24 @@ class DmScreen extends StatefulWidget {
 
 class _DmScreenState extends State<DmScreen> {
   final TextEditingController _input = TextEditingController();
+
+  /// APP-D1 — DM text is bounded by the same radio buffer as a channel
+  /// message, so the same model counts it. The prefix is the sender's name,
+  /// which the radio writes, not the body.
+  ComposerBudget _budget = ComposerBudget.forSender(null);
+  String _budgetName = '<unknown>';
+
+  void _syncBudget(MeshcoreController mc) {
+    final String name = mc.selfInfo?.name ?? '';
+    if (name == _budgetName) return;
+    _budgetName = name;
+    final ComposerBudget next = ComposerBudget.forSender(name);
+    if (next.prefixBytes == _budget.prefixBytes &&
+        next.prefixKnown == _budget.prefixKnown) {
+      return;
+    }
+    setState(() => _budget = next);
+  }
   final ScrollController _scroll = ScrollController();
   StreamSubscription<ChatMessage>? _sub;
   NotificationFocus? _focus;
@@ -345,19 +367,23 @@ class _DmScreenState extends State<DmScreen> {
     // being read and the hidden one is not.
     _focus?.openPeer =
         (ModalRoute.of(context)?.isCurrent ?? true) ? widget.peerPubKeyHex : null;
+    _syncBudget(mc);
     final ColorScheme cs = Theme.of(context).colorScheme;
     final bool ready = mc.state == MeshcoreConnectionState.ready;
     final AppLocalizations l = AppLocalizations.of(context);
     final List<ChatMessage> msgs =
         mc.dmHistoryFor(widget.peerPubKeyHex);
     _autoScroll(msgs.length);
-    final String pubkeyDisplay = widget.peerPubKeyHex.length >= 12
-        ? '${widget.peerPubKeyHex.substring(0, 12)}…'
-        : widget.peerPubKeyHex;
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(l.dmTitle(_peerName(mc))),
+        // The route is already a DM and the header already says whose, so the
+        // title is the peer and nothing else. The key is a copy away for the
+        // reader who needs it, and lives in full in Peer details.
+        title: GestureDetector(
+          onLongPress: () => copyPeerKey(context, widget.peerPubKeyHex),
+          child: Text(l.dmTitle(_peerName(mc))),
+        ),
         actions: <Widget>[
           _SpeechMenu(tts: tts, peerPubKeyHex: widget.peerPubKeyHex, l: l),
           IconButton(
@@ -370,23 +396,13 @@ class _DmScreenState extends State<DmScreen> {
       body: MmScaffold(
         child: Column(
         children: <Widget>[
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-            child: Text(
-              l.dmPubkeyLabel(pubkeyDisplay),
-              style: TextStyle(
-                  color: cs.onSurfaceVariant,
-                  fontFamily: 'JetBrains Mono',
-                  fontSize: 11),
-            ),
-          ),
-          const Divider(height: 1),
           HistoryRetentionNotice(
               dropped: mc.droppedForPeer(widget.peerPubKeyHex)),
           Expanded(
             child: msgs.isEmpty
                 ? Center(
                     child: Text(l.dmEmpty,
+                        textAlign: TextAlign.center,
                         style: TextStyle(color: cs.onSurfaceVariant)),
                   )
                 : ListView.builder(
@@ -404,26 +420,36 @@ class _DmScreenState extends State<DmScreen> {
             top: false,
             child: Padding(
               padding: const EdgeInsets.fromLTRB(12, 6, 8, 10),
-              child: Row(
+              child: !ready
+                  ? ComposerOffline(connecting: mc.isConnecting)
+                  : Row(
                 children: <Widget>[
                   Expanded(
-                    child: TextField(
-                      controller: _input,
-                      enabled: ready,
-                      textInputAction: TextInputAction.send,
-                      onSubmitted: (_) => _send(mc),
-                      decoration: InputDecoration(
-                        isDense: true,
-                        hintText: ready
-                            ? l.dmComposerHint(_peerName(mc))
-                            : l.chatComposerOffline,
-                        border: const OutlineInputBorder(),
-                      ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        TextField(
+                          controller: _input,
+                          textInputAction: TextInputAction.send,
+                          onSubmitted: (_) => _send(mc),
+                          decoration: InputDecoration(
+                            isDense: true,
+                            hintText: l.dmComposerHint(_peerName(mc)),
+                            border: const OutlineInputBorder(),
+                          ),
+                        ),
+                        ComposerCounter(
+                          budget: _budget,
+                          text: _input.text,
+                          label: l,
+                        ),
+                      ],
                     ),
                   ),
                   IconButton(
                     tooltip: l.dmSend,
-                    onPressed: ready ? () => _send(mc) : null,
+                    onPressed: () => _send(mc),
                     icon: const Icon(Icons.send),
                   ),
                 ],
@@ -435,6 +461,20 @@ class _DmScreenState extends State<DmScreen> {
       ),
     );
   }
+}
+
+/// Long-press on the title copies the peer key, which is the one thing an
+/// operator needs to compare against the other end's screen.
+Future<void> copyPeerKey(BuildContext context, String key) async {
+  final AppLocalizations l = AppLocalizations.of(context);
+  await Clipboard.setData(ClipboardData(text: key));
+  if (!context.mounted) return;
+  ScaffoldMessenger.maybeOf(context)?.showSnackBar(
+    SnackBar(
+      content: Text(l.dmKeyCopied),
+      duration: const Duration(seconds: 2),
+    ),
+  );
 }
 
 class _DmRow extends StatelessWidget {
@@ -450,14 +490,11 @@ class _DmRow extends StatelessWidget {
     final String time = '${m.at.hour.toString().padLeft(2, '0')}:'
         '${m.at.minute.toString().padLeft(2, '0')}';
     final String tag = m.outgoing ? '»' : '«';
-    final List<String> meta = <String>[
-      if (m.snrDb != null) 'SNR ${m.snrDb!.toStringAsFixed(1)}',
-      if (m.isFlood) 'flood',
-    ];
-    // R71: Studio = words sans, machine data mono (StudioMessageRow).
+    // Route and signal are facts about the transmission, not the message:
+    // they are said in the row's actions sheet, not on every row here.
     if (skin.type.sansLabels) {
       return StudioMessageRow(
-          message: m, body: m.text, extraMeta: meta, onAction: onAction);
+          message: m, body: m.text, onAction: onAction);
     }
     return InkWell(
       onLongPress: onAction,
@@ -486,17 +523,10 @@ class _DmRow extends StatelessWidget {
                     ),
                   Text(stripBotMarker(m.text),
                       style: TextStyle(color: skin.color.fg, fontFamily: mono)),
-                  if (meta.isNotEmpty || m.outgoing && m.delivery != null)
+                  if (m.outgoing && m.delivery != null)
                     Row(
                       children: <Widget>[
-                        if (m.outgoing && m.delivery != null) ...<Widget>[
-                          DeliveryStatusIcon(m.delivery!),
-                          const SizedBox(width: 5),
-                        ],
-                        if (meta.isNotEmpty)
-                          Text(meta.join(' · '),
-                              style: TextStyle(
-                                  color: cs.onSurfaceVariant, fontSize: 11)),
+                        DeliveryStatusIcon(m.delivery!),
                       ],
                     ),
                 ],

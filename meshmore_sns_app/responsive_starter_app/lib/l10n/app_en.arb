@@ -866,7 +866,7 @@
   "chatManageChannels": "Manage channels",
   "chatTtsMuted": "TTS muted for this channel",
   "chatTtsActive": "TTS reading this channel",
-  "chatRetentionDropped": "{count, plural, =1{1 older message is gone} other{{count} older messages are gone}} — each conversation keeps its newest {cap}",
+  "chatRetentionDropped": "{cap} kept · {count} older removed",
   "@chatRetentionDropped": {
     "placeholders": {
       "count": {
@@ -877,7 +877,7 @@
       }
     }
   },
-  "chatEmpty": "— no messages on this channel —",
+  "chatEmpty": "Nothing here yet",
   "chatJumpToNewest": "{count, plural, =1{1 new} other{{count} new}}",
   "@chatJumpToNewest": {
     "placeholders": {
@@ -894,30 +894,7 @@
       }
     }
   },
-  "chatComposerOffline": "Connect a radio to send",
   "chatSend": "Send",
-  "chatBudgetRemaining": "{remaining} of {max} bytes left",
-  "@chatBudgetRemaining": {
-    "placeholders": {
-      "remaining": {
-        "type": "int"
-      },
-      "max": {
-        "type": "int"
-      }
-    }
-  },
-  "chatBudgetEstimate": "about {remaining} of {max} bytes left — the radio's name is not known yet",
-  "@chatBudgetEstimate": {
-    "placeholders": {
-      "remaining": {
-        "type": "int"
-      },
-      "max": {
-        "type": "int"
-      }
-    }
-  },
   "chatBudgetNear": "Nearly at the limit: the radio counts its own name in these bytes",
   "chatBudgetTooLong": "Too long by {over} bytes — the radio would cut the rest without telling you",
   "@chatBudgetTooLong": {
@@ -953,18 +930,10 @@
       }
     }
   },
-  "dmTitle": "DM · {peer}",
+  "dmTitle": "{peer}",
   "@dmTitle": {
     "placeholders": {
       "peer": {
-        "type": "String"
-      }
-    }
-  },
-  "dmPubkeyLabel": "pubkey · {hex}",
-  "@dmPubkeyLabel": {
-    "placeholders": {
-      "hex": {
         "type": "String"
       }
     }
@@ -981,7 +950,7 @@
     }
   },
   "nodeDetailSignatureMutedHint": "Audio is muted — you will feel the vibration but not hear it.",
-  "dmEmpty": "— no messages yet —",
+  "dmEmpty": "Send the first message",
   "dmOpenPeerDetail": "Peer details",
   "dmSpeech": "Speak this peer",
   "dmSpeechInherit": "Follow global speech setting",
@@ -1000,9 +969,7 @@
   "dmSend": "Send DM",
   "actionRetrySub": "Send this message again",
   "actionReply": "Reply",
-  "actionReplySub": "Quote this message in your reply",
   "actionCopy": "Copy",
-  "actionCopySub": "Copy the message text to the clipboard",
   "actionDeleteLocal": "Delete locally",
   "actionDeleteLocalSub": "Removes this row from your history only — over-the-air messages cannot be recalled.",
   "actionCopied": "Copied to clipboard",
@@ -1538,7 +1505,7 @@
   },
   "channelsEdit": "Edit",
   "channelsSet": "Set",
-  "channelsSetSnack": "Channel {idx} set to \"{name}\" — every node needs the same name & PSK here",
+  "channelsSetSnack": "Slot {idx} saved",
   "@channelsSetSnack": {
     "placeholders": {
       "idx": {
@@ -1582,7 +1549,7 @@
   "@notifTitleSos": {
     "description": "OS notification title for an SOS or its acknowledgement."
   },
-  "notifBodySos": "Open the app for the position. The alert carries coordinates that this phone does not show on the lock screen.",
+  "notifBodySos": "Open the app for the position.",
   "@notifBodySos": {
     "description": "OS notification body for an SOS. Deliberately omits the coordinates: the lock screen is not where a position should be published."
   },
@@ -1630,7 +1597,7 @@
   "channelsKeyPublic": "Public",
   "channelsKeyHashtag": "#tag",
   "channelsKeyHex": "Hex",
-  "channelsKeyPublicBody": "Uses the well-known Public channel key.",
+  "channelsKeyPublicBody": "Anyone can read this channel.",
   "channelsKeyHashtagHint": "e.g. #mygroup",
   "channelsKeyHashtagHelper": "Key derived from sha256(\"#tag\") — the # is part of the key",
   "channelsKeyHexHint": "32 hex chars (16 bytes)",
@@ -1643,8 +1610,8 @@
   "channelsHexGenerate": "Generate random PSK",
   "channelsHexCopy": "Copy",
   "channelsHexCopied": "PSK copied to clipboard",
-  "channelsTagWeakShort": "Short tags are guessable. Use 12+ chars or unusual phrasing.",
-  "channelsTagWeakCommon": "Common words are guessable — an attacker can grind tags. Use unusual phrasing.",
+  "channelsTagWeakShort": "Guessable. Use 8 or more unusual characters.",
+  "channelsTagWeakCommon": "Guessable. Use 12 or more unusual characters.",
   "channelsSlot0WarnTitle": "Overwriting the Public channel?",
   "channelsSlot0WarnBody": "Slot 0 is the well-known Public channel. Writing a private PSK here means you'll only be able to talk to nodes that use this exact key in slot 0 — you'll lose the shared Public channel. Proceed?",
   "channelsSlot0WarnContinue": "Overwrite slot 0",
@@ -3482,5 +3449,18 @@
   "reportCopyBundle": "Copy the bundle",
   "reportCopied": "Bundle copied.",
   "blockedKeysNotPersisted": "This list could not be saved on this device. It filters for now and will be empty after a restart.",
-  "reportActionSub": "Writes a file on this device for you to send. Nothing is transmitted."
+  "reportActionSub": "Writes a file on this device for you to send. Nothing is transmitted.",
+  "chatNoRadio": "No radio connected",
+  "chatConnectRadio": "Connect a radio",
+  "chatConnecting": "Connecting…",
+  "chatBudgetNear": "{remaining} left",
+  "@chatBudgetNear": {"placeholders": {"remaining": {"type": "int"}}},
+  "chatBudgetEstimateNear": "~{remaining} left",
+  "@chatBudgetEstimateNear": {"placeholders": {"remaining": {"type": "int"}}},
+  "chatMetaFlood": "via flood",
+  "chatMetaSnr": "SNR {snr} dB",
+  "@chatMetaSnr": {"placeholders": {"snr": {"type": "String"}}},
+  "chatActionsMeta": "Delivery, route and signal",
+  "chatMoreActions": "More",
+  "dmKeyCopied": "Peer key copied"
 }

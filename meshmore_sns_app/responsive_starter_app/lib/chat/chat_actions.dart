@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import '../gen/app_localizations.dart';
 import '../meshcore/chat_message.dart';
 import '../meshcore/failure.dart';
+import '../screens/delivery_status_icon.dart';
 
 /// R20 / U11 — per-message Reply / Copy / Delete actions (+ R76 Retry
 /// on a failed outgoing row) for chat
@@ -29,6 +30,19 @@ Future<ChatAction?> showChatActions(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
+          // Route and signal belong to the transmission, not to the message,
+          // so they are said once here instead of on every row of the thread.
+          if (_metaLine(l, m) case final String meta)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+              child: Text(
+                meta,
+                style: TextStyle(
+                  color: Theme.of(ctx).colorScheme.onSurfaceVariant,
+                  fontSize: Theme.of(ctx).textTheme.labelSmall?.fontSize,
+                ),
+              ),
+            ),
           // `unknown` is offered a retry as well: a send the app could not
           // vouch for is the row a user most wants to try again.
           if (m.outgoing &&
@@ -43,13 +57,11 @@ Future<ChatAction?> showChatActions(
           ListTile(
             leading: const Icon(Icons.reply),
             title: Text(l.actionReply),
-            subtitle: Text(l.actionReplySub),
             onTap: () => Navigator.pop(ctx, ChatAction.reply),
           ),
           ListTile(
             leading: const Icon(Icons.copy_outlined),
             title: Text(l.actionCopy),
-            subtitle: Text(l.actionCopySub),
             onTap: () => Navigator.pop(ctx, ChatAction.copy),
           ),
           // A report is not a block and not moderation: it is a bundle the
@@ -74,6 +86,19 @@ Future<ChatAction?> showChatActions(
       ),
     ),
   );
+}
+
+/// APP-N2 — what the transmission itself can say about this row: how it went
+/// out, how strong it arrived, and, for our own rows, what the app can vouch
+/// for. Null when there is nothing to say, so the sheet stays short.
+String? _metaLine(AppLocalizations l, ChatMessage m) {
+  final List<String> parts = <String>[
+    if (m.isFlood) l.chatMetaFlood,
+    if (m.snrDb != null) l.chatMetaSnr(m.snrDb!.toStringAsFixed(1)),
+    if (m.outgoing && m.delivery != null) deliveryLabel(l, m.delivery!),
+  ];
+  if (parts.isEmpty) return null;
+  return '${l.chatActionsMeta}: ${parts.join(' · ')}';
 }
 
 /// Apply a Copy action: write [m]'s text to the clipboard and show

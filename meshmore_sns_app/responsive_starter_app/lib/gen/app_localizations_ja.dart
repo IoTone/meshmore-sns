@@ -1445,17 +1445,11 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String chatRetentionDropped(int count, int cap) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '古いメッセージ$count件が削除済み',
-      one: '古いメッセージ1件が削除済み',
-    );
-    return '$_temp0 — 各会話は最新の$cap件を保持します';
+    return '$cap 件保持 · 古い $count 件を削除';
   }
 
   @override
-  String get chatEmpty => '— このチャンネルにメッセージはありません —';
+  String get chatEmpty => 'まだ何もありません';
 
   @override
   String chatJumpToNewest(int count) {
@@ -1468,23 +1462,12 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get chatComposerOffline => '送信するにはラジオに接続';
-
-  @override
   String get chatSend => '送信';
 
   @override
-  String chatBudgetRemaining(int remaining, int max) {
-    return '残り $remaining / $max バイト';
+  String chatBudgetNear(int remaining) {
+    return '残り $remaining';
   }
-
-  @override
-  String chatBudgetEstimate(int remaining, int max) {
-    return '残り約 $remaining / $max バイト — 無線機の名前はまだ不明です';
-  }
-
-  @override
-  String get chatBudgetNear => '上限が近いです:無線機は自分の名前もこのバイト数に含めます';
 
   @override
   String chatBudgetTooLong(int over) {
@@ -1514,12 +1497,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String dmTitle(String peer) {
-    return 'DM · $peer';
-  }
-
-  @override
-  String dmPubkeyLabel(String hex) {
-    return '公開鍵 · $hex';
+    return '$peer';
   }
 
   @override
@@ -1540,7 +1518,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get nodeDetailSignatureMutedHint => '音声はミュート中です。振動は伝わりますが音は鳴りません。';
 
   @override
-  String get dmEmpty => '— メッセージはまだありません —';
+  String get dmEmpty => '最初のメッセージを送信';
 
   @override
   String get dmOpenPeerDetail => '相手の詳細';
@@ -1578,13 +1556,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get actionReply => '返信';
 
   @override
-  String get actionReplySub => 'このメッセージを引用して返信';
-
-  @override
   String get actionCopy => 'コピー';
-
-  @override
-  String get actionCopySub => 'メッセージ本文をクリップボードにコピー';
 
   @override
   String get actionDeleteLocal => 'ローカル削除';
@@ -2337,7 +2309,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String channelsSetSnack(int idx, String name) {
-    return 'チャンネル $idx を「$name」に設定 — 全ノードで同じ名前 & PSK が必要';
+    return 'スロット $idx を保存しました';
   }
 
   @override
@@ -2368,7 +2340,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get notifTitleSos => '緊急アラート';
 
   @override
-  String get notifBodySos => '位置はアプリで確認してください。警報には座標が含まれますが、ロック画面には表示しません。';
+  String get notifBodySos => '位置はアプリで確認してください。';
 
   @override
   String get notifSectionTitle => '通知';
@@ -2413,7 +2385,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get channelsKeyHex => 'Hex';
 
   @override
-  String get channelsKeyPublicBody => '公開チャンネル既定鍵を使用。';
+  String get channelsKeyPublicBody => 'このチャンネルは誰でも読めます。';
 
   @override
   String get channelsKeyHashtagHint => '例: #mygroup';
@@ -2453,11 +2425,10 @@ class AppLocalizationsJa extends AppLocalizations {
   String get channelsHexCopied => 'PSK をクリップボードにコピー';
 
   @override
-  String get channelsTagWeakShort => '短いタグは推測されやすい。12 文字以上または独自の表現を使用してください。';
+  String get channelsTagWeakShort => '推測されやすい。8 文字以上の独自の表現を使用してください。';
 
   @override
-  String get channelsTagWeakCommon =>
-      '一般的な単語は推測されやすい — 攻撃者にタグ総当りを許します。独自の表現を使用してください。';
+  String get channelsTagWeakCommon => '推測されやすい。12 文字以上の独自の表現を使用してください。';
 
   @override
   String get channelsSlot0WarnTitle => 'Public チャンネルを上書きしますか?';
@@ -5004,4 +4975,35 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get reportActionSub => '送信先を選べるよう、端末にファイルを作成します。自動送信はしません。';
+
+  @override
+  String get chatNoRadio => '無線機が接続されていません';
+
+  @override
+  String get chatConnectRadio => '無線機を接続';
+
+  @override
+  String get chatConnecting => '接続中…';
+
+  @override
+  String chatBudgetEstimateNear(int remaining) {
+    return '残り約 $remaining';
+  }
+
+  @override
+  String get chatMetaFlood => 'フラッド経由';
+
+  @override
+  String chatMetaSnr(String snr) {
+    return 'SNR $snr dB';
+  }
+
+  @override
+  String get chatActionsMeta => '配送・経路・信号';
+
+  @override
+  String get chatMoreActions => 'その他';
+
+  @override
+  String get dmKeyCopied => '相手の鍵をコピーしました';
 }

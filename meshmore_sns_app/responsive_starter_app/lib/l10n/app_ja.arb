@@ -822,7 +822,7 @@
   "chatManageChannels": "チャンネル管理",
   "chatTtsMuted": "このチャンネルの TTS をミュート中",
   "chatTtsActive": "このチャンネルを TTS で読み上げ中",
-  "chatRetentionDropped": "{count, plural, =1{古いメッセージ1件が削除済み} other{古いメッセージ{count}件が削除済み}} — 各会話は最新の{cap}件を保持します",
+  "chatRetentionDropped": "{cap} 件保持 · 古い {count} 件を削除",
   "@chatRetentionDropped": {
     "placeholders": {
       "count": {
@@ -833,7 +833,7 @@
       }
     }
   },
-  "chatEmpty": "— このチャンネルにメッセージはありません —",
+  "chatEmpty": "まだ何もありません",
   "chatJumpToNewest": "新着 {count} 件",
   "@chatJumpToNewest": {
     "placeholders": {
@@ -850,10 +850,7 @@
       }
     }
   },
-  "chatComposerOffline": "送信するにはラジオに接続",
   "chatSend": "送信",
-  "chatBudgetRemaining": "残り {remaining} / {max} バイト",
-  "chatBudgetEstimate": "残り約 {remaining} / {max} バイト — 無線機の名前はまだ不明です",
   "chatBudgetNear": "上限が近いです:無線機は自分の名前もこのバイト数に含めます",
   "chatBudgetTooLong": "{over} バイト超過 — 無線機は残りを通知せずに切り捨てます",
   "chatMessageActions": "メッセージ操作",
@@ -882,18 +879,10 @@
       }
     }
   },
-  "dmTitle": "DM · {peer}",
+  "dmTitle": "{peer}",
   "@dmTitle": {
     "placeholders": {
       "peer": {
-        "type": "String"
-      }
-    }
-  },
-  "dmPubkeyLabel": "公開鍵 · {hex}",
-  "@dmPubkeyLabel": {
-    "placeholders": {
-      "hex": {
         "type": "String"
       }
     }
@@ -910,7 +899,7 @@
     }
   },
   "nodeDetailSignatureMutedHint": "音声はミュート中です。振動は伝わりますが音は鳴りません。",
-  "dmEmpty": "— メッセージはまだありません —",
+  "dmEmpty": "最初のメッセージを送信",
   "dmOpenPeerDetail": "相手の詳細",
   "dmSpeech": "この相手を読み上げる",
   "dmSpeechInherit": "全体の読み上げ設定に従う",
@@ -929,9 +918,7 @@
   "dmSend": "DM 送信",
   "actionRetrySub": "このメッセージをもう一度送信",
   "actionReply": "返信",
-  "actionReplySub": "このメッセージを引用して返信",
   "actionCopy": "コピー",
-  "actionCopySub": "メッセージ本文をクリップボードにコピー",
   "actionDeleteLocal": "ローカル削除",
   "actionDeleteLocalSub": "履歴からこの行のみ削除 — OTA 送信済みのメッセージは取り消せません。",
   "actionCopied": "クリップボードにコピーしました",
@@ -1467,7 +1454,7 @@
   },
   "channelsEdit": "編集",
   "channelsSet": "設定",
-  "channelsSetSnack": "チャンネル {idx} を「{name}」に設定 — 全ノードで同じ名前 & PSK が必要",
+  "channelsSetSnack": "スロット {idx} を保存しました",
   "@channelsSetSnack": {
     "placeholders": {
       "idx": {
@@ -1492,7 +1479,7 @@
   "notifTitleChannel": "{name} のメッセージ",
   "notifTitleDirect": "{name} からのダイレクトメッセージ",
   "notifTitleSos": "緊急アラート",
-  "notifBodySos": "位置はアプリで確認してください。警報には座標が含まれますが、ロック画面には表示しません。",
+  "notifBodySos": "位置はアプリで確認してください。",
   "notifSectionTitle": "通知",
   "notifOs": "ロック画面に通知",
   "notifAudio": "効果音を鳴らす",
@@ -1507,7 +1494,7 @@
   "channelsKeyPublic": "Public",
   "channelsKeyHashtag": "#タグ",
   "channelsKeyHex": "Hex",
-  "channelsKeyPublicBody": "公開チャンネル既定鍵を使用。",
+  "channelsKeyPublicBody": "このチャンネルは誰でも読めます。",
   "channelsKeyHashtagHint": "例: #mygroup",
   "channelsKeyHashtagHelper": "sha256(\"#タグ\") から鍵を導出 — # も鍵の一部です",
   "channelsKeyHexHint": "16 進 32 文字 (16 バイト)",
@@ -1520,8 +1507,8 @@
   "channelsHexGenerate": "PSK をランダム生成",
   "channelsHexCopy": "コピー",
   "channelsHexCopied": "PSK をクリップボードにコピー",
-  "channelsTagWeakShort": "短いタグは推測されやすい。12 文字以上または独自の表現を使用してください。",
-  "channelsTagWeakCommon": "一般的な単語は推測されやすい — 攻撃者にタグ総当りを許します。独自の表現を使用してください。",
+  "channelsTagWeakShort": "推測されやすい。8 文字以上の独自の表現を使用してください。",
+  "channelsTagWeakCommon": "推測されやすい。12 文字以上の独自の表現を使用してください。",
   "channelsSlot0WarnTitle": "Public チャンネルを上書きしますか?",
   "channelsSlot0WarnBody": "スロット 0 は既知の Public チャンネルです。ここにプライベート PSK を書き込むと、同じ鍵を持つノードとしか通話できなくなり、共通の Public チャンネルを失います。続行しますか?",
   "channelsSlot0WarnContinue": "スロット 0 を上書き",
@@ -2377,5 +2364,15 @@
   "reportCopyBundle": "バンドルをコピー",
   "reportCopied": "バンドルをコピーしました。",
   "blockedKeysNotPersisted": "この一覧を端末に保存できませんでした。今は機能しますが、再起動後は空になります。",
-  "reportActionSub": "送信先を選べるよう、端末にファイルを作成します。自動送信はしません。"
+  "reportActionSub": "送信先を選べるよう、端末にファイルを作成します。自動送信はしません。",
+  "chatNoRadio": "無線機が接続されていません",
+  "chatConnectRadio": "無線機を接続",
+  "chatConnecting": "接続中…",
+  "chatBudgetNear": "残り {remaining}",
+  "chatBudgetEstimateNear": "残り約 {remaining}",
+  "chatMetaFlood": "フラッド経由",
+  "chatMetaSnr": "SNR {snr} dB",
+  "chatActionsMeta": "配送・経路・信号",
+  "chatMoreActions": "その他",
+  "dmKeyCopied": "相手の鍵をコピーしました"
 }

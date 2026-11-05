@@ -5,6 +5,20 @@ import 'package:flutter/material.dart';
 import '../gen/app_localizations.dart';
 import '../meshcore/chat_message.dart';
 
+/// The translated name of a delivery state.
+///
+/// One spelling of the fact for two readers: the glyph's tooltip, and the line
+/// in the row's actions sheet where the state is written out for anyone who
+/// cannot read the icon.
+String deliveryLabel(AppLocalizations l, MessageDelivery delivery) =>
+    switch (delivery) {
+      MessageDelivery.sending => l.deliverySending,
+      MessageDelivery.sent => l.deliverySent,
+      MessageDelivery.delivered => l.deliveryDelivered,
+      MessageDelivery.failed => l.deliveryFailed,
+      MessageDelivery.unknown => l.deliveryUnknown,
+    };
+
 /// Per-message delivery glyph for outgoing chat/DM rows.
 ///
 /// - sending   → clock (in flight to the radio)
@@ -24,36 +38,16 @@ class DeliveryStatusIcon extends StatelessWidget {
   Widget build(BuildContext context) {
     final ColorScheme cs = Theme.of(context).colorScheme;
     final AppLocalizations l = AppLocalizations.of(context);
-    final (IconData, Color, String) v = switch (delivery) {
-      MessageDelivery.sending => (
-          Icons.schedule,
-          cs.onSurfaceVariant,
-          l.deliverySending,
-        ),
-      MessageDelivery.sent => (
-          Icons.check,
-          cs.onSurfaceVariant,
-          l.deliverySent,
-        ),
-      MessageDelivery.delivered => (
-          Icons.done_all,
-          cs.primary,
-          l.deliveryDelivered,
-        ),
-      MessageDelivery.failed => (
-          Icons.error_outline,
-          cs.error,
-          l.deliveryFailed,
-        ),
-      MessageDelivery.unknown => (
-          Icons.help_outline,
-          cs.onSurfaceVariant,
-          l.deliveryUnknown,
-        ),
+    final (IconData, Color) g = switch (delivery) {
+      MessageDelivery.sending => (Icons.schedule, cs.onSurfaceVariant),
+      MessageDelivery.sent => (Icons.check, cs.onSurfaceVariant),
+      MessageDelivery.delivered => (Icons.done_all, cs.primary),
+      MessageDelivery.failed => (Icons.error_outline, cs.error),
+      MessageDelivery.unknown => (Icons.help_outline, cs.onSurfaceVariant),
     };
     return Tooltip(
-      message: v.$3,
-      child: Icon(v.$1, size: size, color: v.$2),
+      message: deliveryLabel(l, delivery),
+      child: Icon(g.$1, size: size, color: g.$2),
     );
   }
 }

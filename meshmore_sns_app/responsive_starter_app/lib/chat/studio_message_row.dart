@@ -36,7 +36,6 @@ class StudioMessageRow extends StatelessWidget {
     required this.body,
     required this.onAction,
     this.sender,
-    this.extraMeta = const <String>[],
     this.echo,
   });
 
@@ -49,7 +48,6 @@ class StudioMessageRow extends StatelessWidget {
   final String? sender;
 
   /// Machine-data fragments after the time (`flood`, `SNR 6.5`).
-  final List<String> extraMeta;
 
   /// An optional line rendered under the body. The place echo uses it, so a
   /// report in the thread says what it means without the row growing a second
@@ -120,24 +118,10 @@ class StudioMessageRow extends StatelessWidget {
                       style: TextStyle(
                           color: skin.color.fg, fontSize: 15, height: 1.35)),
                   if (echo != null) echo!,
-                  if (extraMeta.isNotEmpty || delivery)
+                  if (delivery)
                     Padding(
                       padding: const EdgeInsets.only(top: 2),
-                      child: Row(
-                        children: <Widget>[
-                          if (delivery) ...<Widget>[
-                            DeliveryStatusIcon(message.delivery!),
-                            const SizedBox(width: 5),
-                          ],
-                          if (extraMeta.isNotEmpty)
-                            Text(extraMeta.join(' · '),
-                                key: const ValueKey<String>('studio-msg-meta'),
-                                style: TextStyle(
-                                    color: skin.color.fgMuted,
-                                    fontFamily: mono,
-                                    fontSize: 11)),
-                        ],
-                      ),
+                      child: DeliveryStatusIcon(message.delivery!),
                     ),
                 ],
               ),

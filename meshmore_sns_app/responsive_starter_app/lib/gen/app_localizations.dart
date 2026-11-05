@@ -2657,13 +2657,13 @@ abstract class AppLocalizations {
   /// No description provided for @chatRetentionDropped.
   ///
   /// In en, this message translates to:
-  /// **'{count, plural, =1{1 older message is gone} other{{count} older messages are gone}} — each conversation keeps its newest {cap}'**
+  /// **'{cap} kept · {count} older removed'**
   String chatRetentionDropped(int count, int cap);
 
   /// No description provided for @chatEmpty.
   ///
   /// In en, this message translates to:
-  /// **'— no messages on this channel —'**
+  /// **'Nothing here yet'**
   String get chatEmpty;
 
   /// No description provided for @chatJumpToNewest.
@@ -2678,35 +2678,17 @@ abstract class AppLocalizations {
   /// **'Message {channel}'**
   String chatComposerHint(String channel);
 
-  /// No description provided for @chatComposerOffline.
-  ///
-  /// In en, this message translates to:
-  /// **'Connect a radio to send'**
-  String get chatComposerOffline;
-
   /// No description provided for @chatSend.
   ///
   /// In en, this message translates to:
   /// **'Send'**
   String get chatSend;
 
-  /// No description provided for @chatBudgetRemaining.
-  ///
-  /// In en, this message translates to:
-  /// **'{remaining} of {max} bytes left'**
-  String chatBudgetRemaining(int remaining, int max);
-
-  /// No description provided for @chatBudgetEstimate.
-  ///
-  /// In en, this message translates to:
-  /// **'about {remaining} of {max} bytes left — the radio\'s name is not known yet'**
-  String chatBudgetEstimate(int remaining, int max);
-
   /// No description provided for @chatBudgetNear.
   ///
   /// In en, this message translates to:
-  /// **'Nearly at the limit: the radio counts its own name in these bytes'**
-  String get chatBudgetNear;
+  /// **'{remaining} left'**
+  String chatBudgetNear(int remaining);
 
   /// No description provided for @chatBudgetTooLong.
   ///
@@ -2747,14 +2729,8 @@ abstract class AppLocalizations {
   /// No description provided for @dmTitle.
   ///
   /// In en, this message translates to:
-  /// **'DM · {peer}'**
+  /// **'{peer}'**
   String dmTitle(String peer);
-
-  /// No description provided for @dmPubkeyLabel.
-  ///
-  /// In en, this message translates to:
-  /// **'pubkey · {hex}'**
-  String dmPubkeyLabel(String hex);
 
   /// No description provided for @nodeDetailSignature.
   ///
@@ -2789,7 +2765,7 @@ abstract class AppLocalizations {
   /// No description provided for @dmEmpty.
   ///
   /// In en, this message translates to:
-  /// **'— no messages yet —'**
+  /// **'Send the first message'**
   String get dmEmpty;
 
   /// No description provided for @dmOpenPeerDetail.
@@ -2858,23 +2834,11 @@ abstract class AppLocalizations {
   /// **'Reply'**
   String get actionReply;
 
-  /// No description provided for @actionReplySub.
-  ///
-  /// In en, this message translates to:
-  /// **'Quote this message in your reply'**
-  String get actionReplySub;
-
   /// No description provided for @actionCopy.
   ///
   /// In en, this message translates to:
   /// **'Copy'**
   String get actionCopy;
-
-  /// No description provided for @actionCopySub.
-  ///
-  /// In en, this message translates to:
-  /// **'Copy the message text to the clipboard'**
-  String get actionCopySub;
 
   /// No description provided for @actionDeleteLocal.
   ///
@@ -4157,7 +4121,7 @@ abstract class AppLocalizations {
   /// No description provided for @channelsSetSnack.
   ///
   /// In en, this message translates to:
-  /// **'Channel {idx} set to \"{name}\" — every node needs the same name & PSK here'**
+  /// **'Slot {idx} saved'**
   String channelsSetSnack(int idx, String name);
 
   /// No description provided for @channelsDialogTitle.
@@ -4205,7 +4169,7 @@ abstract class AppLocalizations {
   /// OS notification body for an SOS. Deliberately omits the coordinates: the lock screen is not where a position should be published.
   ///
   /// In en, this message translates to:
-  /// **'Open the app for the position. The alert carries coordinates that this phone does not show on the lock screen.'**
+  /// **'Open the app for the position.'**
   String get notifBodySos;
 
   /// Section heading in the channel editor for the per-channel notification bundle.
@@ -4295,7 +4259,7 @@ abstract class AppLocalizations {
   /// No description provided for @channelsKeyPublicBody.
   ///
   /// In en, this message translates to:
-  /// **'Uses the well-known Public channel key.'**
+  /// **'Anyone can read this channel.'**
   String get channelsKeyPublicBody;
 
   /// No description provided for @channelsKeyHashtagHint.
@@ -4373,13 +4337,13 @@ abstract class AppLocalizations {
   /// No description provided for @channelsTagWeakShort.
   ///
   /// In en, this message translates to:
-  /// **'Short tags are guessable. Use 12+ chars or unusual phrasing.'**
+  /// **'Guessable. Use 8 or more unusual characters.'**
   String get channelsTagWeakShort;
 
   /// No description provided for @channelsTagWeakCommon.
   ///
   /// In en, this message translates to:
-  /// **'Common words are guessable — an attacker can grind tags. Use unusual phrasing.'**
+  /// **'Guessable. Use 12 or more unusual characters.'**
   String get channelsTagWeakCommon;
 
   /// No description provided for @channelsSlot0WarnTitle.
@@ -8763,6 +8727,60 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Writes a file on this device for you to send. Nothing is transmitted.'**
   String get reportActionSub;
+
+  /// No description provided for @chatNoRadio.
+  ///
+  /// In en, this message translates to:
+  /// **'No radio connected'**
+  String get chatNoRadio;
+
+  /// No description provided for @chatConnectRadio.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect a radio'**
+  String get chatConnectRadio;
+
+  /// No description provided for @chatConnecting.
+  ///
+  /// In en, this message translates to:
+  /// **'Connecting…'**
+  String get chatConnecting;
+
+  /// No description provided for @chatBudgetEstimateNear.
+  ///
+  /// In en, this message translates to:
+  /// **'~{remaining} left'**
+  String chatBudgetEstimateNear(int remaining);
+
+  /// No description provided for @chatMetaFlood.
+  ///
+  /// In en, this message translates to:
+  /// **'via flood'**
+  String get chatMetaFlood;
+
+  /// No description provided for @chatMetaSnr.
+  ///
+  /// In en, this message translates to:
+  /// **'SNR {snr} dB'**
+  String chatMetaSnr(String snr);
+
+  /// No description provided for @chatActionsMeta.
+  ///
+  /// In en, this message translates to:
+  /// **'Delivery, route and signal'**
+  String get chatActionsMeta;
+
+  /// No description provided for @chatMoreActions.
+  ///
+  /// In en, this message translates to:
+  /// **'More'**
+  String get chatMoreActions;
+
+  /// No description provided for @dmKeyCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Peer key copied'**
+  String get dmKeyCopied;
 }
 
 class _AppLocalizationsDelegate

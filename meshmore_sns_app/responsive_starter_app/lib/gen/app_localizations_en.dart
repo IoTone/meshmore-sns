@@ -1507,17 +1507,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String chatRetentionDropped(int count, int cap) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count older messages are gone',
-      one: '1 older message is gone',
-    );
-    return '$_temp0 — each conversation keeps its newest $cap';
+    return '$cap kept · $count older removed';
   }
 
   @override
-  String get chatEmpty => '— no messages on this channel —';
+  String get chatEmpty => 'Nothing here yet';
 
   @override
   String chatJumpToNewest(int count) {
@@ -1536,24 +1530,12 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get chatComposerOffline => 'Connect a radio to send';
-
-  @override
   String get chatSend => 'Send';
 
   @override
-  String chatBudgetRemaining(int remaining, int max) {
-    return '$remaining of $max bytes left';
+  String chatBudgetNear(int remaining) {
+    return '$remaining left';
   }
-
-  @override
-  String chatBudgetEstimate(int remaining, int max) {
-    return 'about $remaining of $max bytes left — the radio\'s name is not known yet';
-  }
-
-  @override
-  String get chatBudgetNear =>
-      'Nearly at the limit: the radio counts its own name in these bytes';
 
   @override
   String chatBudgetTooLong(int over) {
@@ -1583,12 +1565,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String dmTitle(String peer) {
-    return 'DM · $peer';
-  }
-
-  @override
-  String dmPubkeyLabel(String hex) {
-    return 'pubkey · $hex';
+    return '$peer';
   }
 
   @override
@@ -1611,7 +1588,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Audio is muted — you will feel the vibration but not hear it.';
 
   @override
-  String get dmEmpty => '— no messages yet —';
+  String get dmEmpty => 'Send the first message';
 
   @override
   String get dmOpenPeerDetail => 'Peer details';
@@ -1650,13 +1627,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get actionReply => 'Reply';
 
   @override
-  String get actionReplySub => 'Quote this message in your reply';
-
-  @override
   String get actionCopy => 'Copy';
-
-  @override
-  String get actionCopySub => 'Copy the message text to the clipboard';
 
   @override
   String get actionDeleteLocal => 'Delete locally';
@@ -2434,7 +2405,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String channelsSetSnack(int idx, String name) {
-    return 'Channel $idx set to \"$name\" — every node needs the same name & PSK here';
+    return 'Slot $idx saved';
   }
 
   @override
@@ -2466,8 +2437,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get notifTitleSos => 'Emergency alert';
 
   @override
-  String get notifBodySos =>
-      'Open the app for the position. The alert carries coordinates that this phone does not show on the lock screen.';
+  String get notifBodySos => 'Open the app for the position.';
 
   @override
   String get notifSectionTitle => 'Notifications';
@@ -2515,7 +2485,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get channelsKeyHex => 'Hex';
 
   @override
-  String get channelsKeyPublicBody => 'Uses the well-known Public channel key.';
+  String get channelsKeyPublicBody => 'Anyone can read this channel.';
 
   @override
   String get channelsKeyHashtagHint => 'e.g. #mygroup';
@@ -2557,11 +2527,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get channelsTagWeakShort =>
-      'Short tags are guessable. Use 12+ chars or unusual phrasing.';
+      'Guessable. Use 8 or more unusual characters.';
 
   @override
   String get channelsTagWeakCommon =>
-      'Common words are guessable — an attacker can grind tags. Use unusual phrasing.';
+      'Guessable. Use 12 or more unusual characters.';
 
   @override
   String get channelsSlot0WarnTitle => 'Overwriting the Public channel?';
@@ -5190,4 +5160,35 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get reportActionSub =>
       'Writes a file on this device for you to send. Nothing is transmitted.';
+
+  @override
+  String get chatNoRadio => 'No radio connected';
+
+  @override
+  String get chatConnectRadio => 'Connect a radio';
+
+  @override
+  String get chatConnecting => 'Connecting…';
+
+  @override
+  String chatBudgetEstimateNear(int remaining) {
+    return '~$remaining left';
+  }
+
+  @override
+  String get chatMetaFlood => 'via flood';
+
+  @override
+  String chatMetaSnr(String snr) {
+    return 'SNR $snr dB';
+  }
+
+  @override
+  String get chatActionsMeta => 'Delivery, route and signal';
+
+  @override
+  String get chatMoreActions => 'More';
+
+  @override
+  String get dmKeyCopied => 'Peer key copied';
 }

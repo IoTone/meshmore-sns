@@ -13,6 +13,8 @@ import 'package:provider/provider.dart';
 import '../chat/channel_read_store.dart';
 import '../chat/chat_actions.dart';
 import '../chat/composer_budget.dart';
+import '../chat/composer_counter.dart';
+import '../chat/composer_offline.dart';
 import '../chat/draft_store.dart';
 import '../chat/report_flow.dart';
 import '../chat/studio_message_row.dart';
@@ -214,7 +216,8 @@ class _ChatScreenState extends State<ChatScreen>
       _nearWarned = true;
       ScaffoldMessenger.maybeOf(context)?.showSnackBar(
         SnackBar(
-            content: Text(AppLocalizations.of(context).chatBudgetNear)),
+            content: Text(AppLocalizations.of(context)
+                .chatBudgetNear(_budget.remainingFor(text)))),
       );
     }
     setState(() {});
@@ -619,40 +622,58 @@ class _ChatScreenState extends State<ChatScreen>
                     ),
                   ),
                 ),
-              // APP-E6 — search sits at the end of the strip, where the
-              // strip's own subject (which channel) is already decided.
-              if (msgs.isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.only(left: 4),
-                  child: IconButton(
-                    key: const ValueKey<String>('chat-search'),
-                    tooltip: l.chatSearchAction,
-                    onPressed: () => _openSearch(mc),
-                    icon: const Icon(Icons.search),
-                  ),
-                ),
-              // APP-E4 - one conversation leaves as its own passphrase file.
-              // The file is app-private, so it goes to the share sheet rather
-              // than being named in a snackbar the user cannot reach.
-              if (msgs.isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.only(left: 4),
-                  child: IconButton(
-                    key: const ValueKey<String>('chat-export-thread'),
-                    tooltip: l.chatExportAction,
-                    onPressed: () => _exportThread(mc),
-                    icon: const Icon(Icons.ios_share),
-                  ),
-                ),
-              // Manage channels: a chip, not a "#" icon next to the
-              // channel chips, where two different meanings of "channel"
-              // sat side by side.
+              // One overflow for everything that is not a channel. The
+              // strip answers "which channel", so search, export and manage
+              // live behind one control at its end instead of competing with
+              // the channel names (and instead of appearing only when a
+              // thread happens to have rows).
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4),
-                child: ActionChip(
-                  avatar: const Icon(Icons.add, size: 16),
-                  label: Text(l.chatManageChannels),
-                  onPressed: () => context.push('/settings/channels'),
+                padding: const EdgeInsets.only(left: 4),
+                child: PopupMenuButton<String>(
+                  key: const ValueKey<String>('chat-overflow'),
+                  tooltip: l.chatMoreActions,
+                  icon: const Icon(Icons.more_vert),
+                  onSelected: (String v) {
+                    switch (v) {
+                      case 'search':
+                        _openSearch(mc);
+                      case 'export':
+                        _exportThread(mc);
+                      case 'manage':
+                        context.push('/settings/channels');
+                    }
+                  },
+                  itemBuilder: (BuildContext _) => <PopupMenuEntry<String>>[
+                    PopupMenuItem<String>(
+                      key: const ValueKey<String>('chat-search'),
+                      value: 'search',
+                      enabled: msgs.isNotEmpty,
+                      child: ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        leading: const Icon(Icons.search),
+                        title: Text(l.chatSearchAction),
+                      ),
+                    ),
+                    PopupMenuItem<String>(
+                      key: const ValueKey<String>('chat-export-thread'),
+                      value: 'export',
+                      enabled: msgs.isNotEmpty,
+                      child: ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        leading: const Icon(Icons.ios_share),
+                        title: Text(l.chatExportAction),
+                      ),
+                    ),
+                    PopupMenuItem<String>(
+                      key: const ValueKey<String>('chat-manage-channels'),
+                      value: 'manage',
+                      child: ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        leading: const Icon(Icons.tune),
+                        title: Text(l.chatManageChannels),
+                      ),
+                    ),
+                  ],
                 ),
               ),
               // Per-channel speech, at the end of the strip because it is
@@ -734,12 +755,20 @@ class _ChatScreenState extends State<ChatScreen>
           ),
         ),
 
-        // Composer.
+        // Composer. Without a radio there is nothing to type into, so the
+        // row becomes the state and the way out of it instead of a disabled
+        // field whose only advice is on another screen.
         SafeArea(
           top: false,
           child: Padding(
             padding: const EdgeInsets.fromLTRB(12, 6, 8, 10),
-            child: Row(
+            child: !ready
+                ? ComposerOffline(
+                    connecting:
+                        context.select<MeshcoreController, bool>(
+                            (MeshcoreController mc) => mc.isConnecting),
+                  )
+                : Row(
               children: <Widget>[
                 Expanded(
                   child: Column(
@@ -748,18 +777,15 @@ class _ChatScreenState extends State<ChatScreen>
                     children: <Widget>[
                       TextField(
                         controller: _input,
-                        enabled: ready,
                         textInputAction: TextInputAction.send,
                         onSubmitted: (_) => _send(mc),
                         decoration: InputDecoration(
                           isDense: true,
-                          hintText: ready
-                              ? l.chatComposerHint(activeName)
-                              : l.chatComposerOffline,
+                          hintText: l.chatComposerHint(activeName),
                           border: const OutlineInputBorder(),
                         ),
                       ),
-                      _ComposerCounter(
+                      ComposerCounter(
                         budget: _budget,
                         text: _input.text,
                         label: l,
@@ -788,7 +814,7 @@ class _ChatScreenState extends State<ChatScreen>
                 ),
                 IconButton(
                   tooltip: l.chatSend,
-                  onPressed: ready ? () => _send(mc) : null,
+                  onPressed: () => _send(mc),
                   icon: const Icon(Icons.send),
                 ),
               ],
@@ -827,11 +853,6 @@ class _MessageRow extends StatelessWidget {
   /// (a sender running fast used to print a time in the future).
   String _time(AppLocalizations l) => clockStamp(l, m.at);
 
-  List<String> get _meta => <String>[
-        if (m.isFlood) 'flood',
-        if (m.snrDb != null) 'SNR ${m.snrDb!.toStringAsFixed(1)}',
-      ];
-
   /// Sender handle + body for incoming channel messages (`name: text`);
   /// our own outgoing messages carry no prefix.
   ({String? sender, String body}) _split() {
@@ -864,14 +885,12 @@ class _MessageRow extends StatelessWidget {
           message: m,
           body: s.body,
           sender: s.sender,
-          extraMeta: _meta,
           echo: place == null
               ? null
               : PlaceEchoLine(place: place, store: context.read<PlaceStore>()),
           onAction: onAction);
     }
     final String mono = skin.type.monoFamily;
-    final List<String> meta = _meta;
     return InkWell(
       onLongPress: onAction,
       child: Padding(
@@ -907,7 +926,7 @@ class _MessageRow extends StatelessWidget {
                   if (PlaceEchoLine.placeOf(m) case final Place place)
                     PlaceEchoLine(
                         place: place, store: context.read<PlaceStore>()),
-                  _metaRow(skin, meta, mono),
+                  _metaRow(skin),
                 ],
               ),
             ),
@@ -966,7 +985,6 @@ class _MessageRow extends StatelessWidget {
         ? skin.color.accent
         : _mondrianColorFor(idKey.isEmpty ? s.body : idKey);
     final Color ink = fill.computeLuminance() > 0.45 ? base : skin.color.fg;
-    final List<String> meta = _meta;
 
     final Widget field = Container(
       padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
@@ -1007,7 +1025,7 @@ class _MessageRow extends StatelessWidget {
                 DeliveryStatusIcon(m.delivery!),
                 const SizedBox(width: 5),
               ],
-              Text(<String>[_time(l), ...meta].join(' · '),
+              Text(_time(l),
                   style: TextStyle(
                       color: ink.withValues(alpha: 0.65), fontSize: 10)),
             ],
@@ -1069,7 +1087,6 @@ class _MessageRow extends StatelessWidget {
     FontWeight? bodyWeight,
     required Color metaColor,
   }) {
-    final List<String> meta = _meta;
     final AppLocalizations l = AppLocalizations.of(context);
     return Align(
       alignment: m.outgoing ? Alignment.centerRight : Alignment.centerLeft,
@@ -1111,8 +1128,7 @@ class _MessageRow extends StatelessWidget {
                       DeliveryStatusIcon(m.delivery!),
                       const SizedBox(width: 5),
                     ],
-                    Text(
-                        <String>[_time(l), ...meta].join(' · '),
+                    Text(_time(l),
                         style: TextStyle(color: metaColor, fontSize: 10)),
                   ],
                 ),
@@ -1124,19 +1140,14 @@ class _MessageRow extends StatelessWidget {
     );
   }
 
-  Widget _metaRow(MmSkin skin, List<String> meta, String mono) {
-    if (meta.isEmpty && !(m.outgoing && m.delivery != null)) {
-      return const SizedBox.shrink();
-    }
+  /// The row's own delivery glyph, and nothing else: route and signal are
+  /// facts about a transmission, not about the message, so they live in the
+  /// row's actions sheet where a reader goes when they need them.
+  Widget _metaRow(MmSkin skin) {
+    if (!(m.outgoing && m.delivery != null)) return const SizedBox.shrink();
     return Row(
       children: <Widget>[
-        if (m.outgoing && m.delivery != null) ...<Widget>[
-          DeliveryStatusIcon(m.delivery!),
-          const SizedBox(width: 5),
-        ],
-        if (meta.isNotEmpty)
-          Text(meta.join(' · '),
-              style: TextStyle(color: skin.color.fgMuted, fontSize: 11)),
+        DeliveryStatusIcon(m.delivery!),
       ],
     );
   }
@@ -1349,61 +1360,6 @@ class _JumpToNewestPill extends StatelessWidget {
     );
   }
 }
-
-/// APP-D1 — how much of the radio's text budget the composer has used.
-///
-/// The number is the same one `_send` refuses with, computed by
-/// [ComposerBudget]. It is shown as remaining bytes rather than a ratio because
-/// the limit is in bytes, not characters: a Japanese message has far fewer
-/// characters than an English one at the same count. The count is text, not
-/// colour, and it is a live region so a screen reader announces the change.
-class _ComposerCounter extends StatelessWidget {
-  const _ComposerCounter({
-    required this.budget,
-    required this.text,
-    required this.label,
-  });
-
-  final ComposerBudget budget;
-  final String text;
-  final AppLocalizations label;
-
-  @override
-  Widget build(BuildContext context) {
-    final ComposerState state = budget.stateFor(text);
-    final MmTokens tokens = context.skin.color;
-    final Color colour = switch (state) {
-      ComposerState.ok => tokens.fgMuted,
-      ComposerState.near => tokens.accent,
-      ComposerState.over => tokens.alert,
-    };
-    final int remaining = budget.remainingFor(text);
-    final String shown = state == ComposerState.over
-        ? label.chatBudgetTooLong(budget.overBy(text))
-        : budget.prefixKnown
-            // Measured against the radio's whole budget, not the sender's
-            // share: "152 of 160 left" is a number a person can check.
-            ? label.chatBudgetRemaining(
-                remaining, ChannelTextLimits.maxTextBytes)
-            : label.chatBudgetEstimate(
-                remaining, ChannelTextLimits.maxTextBytes);
-    return Padding(
-      padding: const EdgeInsets.only(top: 2),
-      child: Semantics(
-        liveRegion: true,
-        label: shown,
-        child: Text(
-          shown,
-          style: TextStyle(
-            color: colour,
-            fontSize: context.skin.type.sizeMicro,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 
 /// The count a channel chip carries while it has unread messages.
 ///
