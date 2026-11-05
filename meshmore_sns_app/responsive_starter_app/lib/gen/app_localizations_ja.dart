@@ -4339,4 +4339,181 @@ class AppLocalizationsJa extends AppLocalizations {
   @override
   String get degradedMapOffline =>
       '地図タイルを取得できません。同梱のベースマップと端末に保存済みの範囲は表示され、他の機能には影響しません。';
+
+  @override
+  String get sosTitle => '緊急';
+
+  @override
+  String get sosEntryTooltip => '緊急警報とチェックイン';
+
+  @override
+  String get sosRepeatsOneHour => '最大1時間、繰り返し送信します。';
+
+  @override
+  String sosGoesToChannel(String name) {
+    return 'チャンネル $name';
+  }
+
+  @override
+  String sosGoesToContacts(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '連絡先 $count 件へ直接送信',
+      zero: '直接送信なし',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get sosInRange => '電波の届く範囲にいる人以外には通知されません。';
+
+  @override
+  String get sosHoldToArm => '長押しで警報を発します';
+
+  @override
+  String sosHoldRemaining(int seconds) {
+    return 'そのまま長押し · $seconds秒';
+  }
+
+  @override
+  String get sosHoldReleased => '早く離したため、何も送信していません。';
+
+  @override
+  String get sosNoRadio => '無線が接続されていないため、送信できません。';
+
+  @override
+  String get sosNoIdentity => '無線が名前を返していないため、警報にコールサインを載せられません。';
+
+  @override
+  String get sosWords => '何が起きていますか';
+
+  @override
+  String get sosWordsHint => '繰り返しごとに送信されます（最大96バイト）';
+
+  @override
+  String get sosDestination => '送信先';
+
+  @override
+  String get sosEmergencyPublicKey =>
+      '#emergency の鍵は名前から計算できるため、名前を知る人は誰でもこの内容を読めます。';
+
+  @override
+  String get sosEmergencyRepeat =>
+      '無線は約2分後に各パケットを一度だけ再送します。それ以外の繰り返しはアプリと共に止まります。';
+
+  @override
+  String get sosContactsNone => '連絡先への直接送信がないため、チャンネルの応答ではこの警報を止められません。';
+
+  @override
+  String get sosActive => '警報送信中';
+
+  @override
+  String sosNextSend(int seconds) {
+    return '次は $seconds秒後';
+  }
+
+  @override
+  String sosElapsed(int minutes) {
+    return '$minutes分経過';
+  }
+
+  @override
+  String sosRemaining(int count, int total) {
+    return '残り $count/$total';
+  }
+
+  @override
+  String get sosImSafe => '無事です';
+
+  @override
+  String get sosImSafeHint => '[SAFE] を1通送って繰り返しを止めます。';
+
+  @override
+  String get sosDefaultWords => '助けが必要です';
+
+  @override
+  String sosClaimedBy(String name) {
+    return '$name が受信したと主張しています（チャンネル）。警報は継続します。';
+  }
+
+  @override
+  String sosSeenBy(String name) {
+    return '$name が受信しました（直接メッセージ）。';
+  }
+
+  @override
+  String sosAckCounted(String name) {
+    return '$name が応答しましたが、この警報の宛先ではありません。';
+  }
+
+  @override
+  String get sosExpired => '警報の繰り返しは終了しました。解決したわけではありません。';
+
+  @override
+  String get sosCancelled => '警報は停止しました。';
+
+  @override
+  String get sosAcknowledgedHeading => '受信済み';
+
+  @override
+  String get sosDismiss => '閉じる';
+
+  @override
+  String get sosRefusedAlreadyActive => 'すでに警報が動作中です。';
+
+  @override
+  String get sosRefusedNoDestination => '先に送信先を選んでください。';
+
+  @override
+  String get sosRefusedNoWords => '先に状況を入力してください。';
+
+  @override
+  String get sosRefusedTooLong => 'コールサインと位置を含めると長すぎます。短くしてください。';
+
+  @override
+  String get sosRefusedHold => '長押しが完了していません。';
+
+  @override
+  String get checkinTitle => 'チェックイン';
+
+  @override
+  String get checkinEntryTooltip => 'チェックイン';
+
+  @override
+  String get checkinIntro => '期限付きの1通のみ。期限切れはこのアプリが判断します。無線側にタイマーはありません。';
+
+  @override
+  String checkinInMinutes(int minutes) {
+    return '期限は $minutes 分後';
+  }
+
+  @override
+  String get checkinSend => 'チェックインを送信';
+
+  @override
+  String get checkinOneMessage => 'チェックインは1通のみで、繰り返しません。';
+
+  @override
+  String checkinUntil(String time) {
+    return '期限 $time';
+  }
+
+  @override
+  String get checkinWatching => '応答待ち';
+
+  @override
+  String get checkinOverdue => '期限切れ — 期限を過ぎ、応答はありませんでした。';
+
+  @override
+  String get checkinAnsweredDirect => '応答あり（直接メッセージ）。';
+
+  @override
+  String get checkinAnsweredChannel => '応答あり（チャンネル・主張のみで鍵の裏付けなし）。';
+
+  @override
+  String get checkinSent => 'チェックインを送信しました。繰り返しはしません。';
+
+  @override
+  String get checkinNeedsRadio => 'チェックインには無線の接続と無線の名前が必要です。';
 }

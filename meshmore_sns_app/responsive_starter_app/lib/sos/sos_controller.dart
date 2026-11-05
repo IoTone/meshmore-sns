@@ -4,6 +4,7 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/scheduler.dart';
 
 import '../meshcore/chat_message.dart';
 import '../meshcore/meshcore_controller.dart';
@@ -154,7 +155,7 @@ final class SosController extends ChangeNotifier {
           if (k.length == 64) k.toLowerCase(),
       ];
     }
-    notifyListeners();
+    _notify();
   }
 
   /// Arms the alarm: `idle` → `arming`. Nothing is sent until [confirm].
@@ -167,7 +168,7 @@ final class SosController extends ChangeNotifier {
       // Without an identity the id cannot be derived and the callsign cannot
       // travel; the engine would report it as a malformed message instead.
       _lastRefusal = SosRefusal.noIdentity;
-      notifyListeners();
+      _notify();
       return _lastRefusal;
     }
 
@@ -196,7 +197,7 @@ final class SosController extends ChangeNotifier {
     );
     _lastRefusal = _engine.raise(raise);
     if (_lastRefusal == null) _acks.clear();
-    notifyListeners();
+    _notify();
     return _lastRefusal;
   }
 
@@ -207,21 +208,21 @@ final class SosController extends ChangeNotifier {
       _ensureTicker();
       pump();
     }
-    notifyListeners();
+    _notify();
     return _lastRefusal;
   }
 
   void abort() {
     _engine.abort();
     _stopTicker();
-    notifyListeners();
+    _notify();
   }
 
   /// The raiser's own stop. [iAmSafe] is the one that also tells the mesh.
   void cancel() {
     _engine.cancel();
     _stopTicker();
-    notifyListeners();
+    _notify();
   }
 
   /// "I'm safe": one `[SAFE]` on the same destinations, then nothing more.
@@ -229,7 +230,7 @@ final class SosController extends ChangeNotifier {
     final ({String? text, SosMessageRefusal? refusal})? safe =
         _engine.iAmSafe();
     _stopTicker();
-    notifyListeners();
+    _notify();
     if (safe?.text == null) return;
     await _send(safe!.text!);
   }
@@ -237,7 +238,7 @@ final class SosController extends ChangeNotifier {
   void dismiss() {
     _engine.dismiss();
     _stopTicker();
-    notifyListeners();
+    _notify();
   }
 
   /// Sends exactly one check-in and starts watching its deadline (D8.5: the
@@ -269,7 +270,7 @@ final class SosController extends ChangeNotifier {
     watch.markSent();
     _checkin = watch;
     _ensureTicker();
-    notifyListeners();
+    _notify();
     return watch.state;
   }
 
@@ -286,7 +287,7 @@ final class SosController extends ChangeNotifier {
     // is still repeating, or a check-in whose deadline has not passed.
     final bool checkinWatching = _checkin?.state == CheckinState.watching;
     if (!_engine.isRunning && !checkinWatching) _stopTicker();
-    notifyListeners();
+    _notify();
   }
 
   /// Puts one packet on air, on every destination the alarm carries.
@@ -356,7 +357,7 @@ final class SosController extends ChangeNotifier {
             at: _clock()));
       }
       if (!_engine.isRunning) _stopTicker();
-      notifyListeners();
+      _notify();
       return;
     }
 
@@ -366,7 +367,7 @@ final class SosController extends ChangeNotifier {
       final CheckinWatch? w = _checkin;
       if (w != null && parsed.id == w.checkin.id) {
         w.recordAnswer(direct: direct, fromKey: fromKey);
-        notifyListeners();
+        _notify();
       }
     }
   }
@@ -414,8 +415,37 @@ final class SosController extends ChangeNotifier {
           int.parse(hex.substring(i, i + 2), radix: 16),
       ];
 
+  /// Tells the screen, but never from inside a frame the framework has locked.
+  ///
+  /// A gesture arena can resolve while an element is being unmounted — the
+  /// alarm screen's hold is exactly that case, because a released hold aborts
+  /// an armed alarm — and `finalizeTree` is not a legal place to mark an
+  /// ancestor dirty. The state changes immediately either way; only the
+  /// notification waits for the frame to end, and one deferral is enough for
+  /// however many transitions happen in that frame.
+  void _notify() {
+    final SchedulerPhase phase = SchedulerBinding.instance.schedulerPhase;
+    final bool locked = phase == SchedulerPhase.persistentCallbacks ||
+        phase == SchedulerPhase.midFrameMicrotasks;
+    if (!locked) {
+      notifyListeners();
+      return;
+    }
+    if (_notifyPending) return;
+    _notifyPending = true;
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      _notifyPending = false;
+      if (_disposed) return;
+      notifyListeners();
+    });
+  }
+
+  bool _notifyPending = false;
+  bool _disposed = false;
+
   @override
   void dispose() {
+    _disposed = true;
     _stopTicker();
     _channelSub?.cancel();
     _dmSub?.cancel();

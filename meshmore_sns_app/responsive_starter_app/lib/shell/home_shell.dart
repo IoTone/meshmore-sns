@@ -218,7 +218,20 @@ class _HomeShellState extends State<HomeShell>
         // MmPageHeader below the tab strip, in the same place on every
         // view, so the top of the screen stopped changing on every swipe.
         title: Text(l.appName),
-        actions: const <Widget>[DemoChip(), RadioLinkIndicator()],
+        // SOS is one tap from every primary view, in every skin: an alarm that
+        // needs three taps and a remembered menu is not an alarm. The control
+        // only opens the alarm screen; raising still takes the three-second
+        // hold, so a stray tap costs nothing (`meshmore-sos-spec.md` §8).
+        actions: <Widget>[
+          IconButton(
+            key: const ValueKey<String>('sos-entry'),
+            tooltip: l.sosEntryTooltip,
+            icon: const Icon(Icons.sos),
+            onPressed: () => context.push('/sos'),
+          ),
+          const DemoChip(),
+          const RadioLinkIndicator(),
+        ],
         bottom: _ViewStrip(
           index: _index,
           onSelect: _select,
