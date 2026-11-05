@@ -5,7 +5,7 @@ Written 2026-11-05 as the supervisor's operating document. `meshmore-feature-reg
 order, with which files, and what counts as done. Where this page and the register disagree, the register's authority
 order wins and this page is corrected.
 
-State: **toolchain unblocked pending one scout result; no code changes made yet in this pass.**
+State: **toolchain verified, branch strategy decided, no application code changed yet. Next action is W0 below.**
 
 ---
 
@@ -24,9 +24,26 @@ State: **toolchain unblocked pending one scout result; no code changes made yet 
 | `MeshcoreTransport` documents "one BLE notification = one frame" as the transport's responsibility | `packages/meshcore/lib/src/transport/transport.dart:14-17` |
 | Subagents: fork context by default, `maxTasks 12`, `concurrency 6`, all seven builtin agents `tools: "inherit"` | `~/.pi/agent/extensions/subagent/config.json`, `settings.json` |
 
-**Toolchain gate (must close before any code child starts).** Preferred fix: copy the unwrapped SDK to a writable path
-and symlink the three artifact sets into its `bin/cache/`, then verify `flutter --version`, `flutter devices`,
-`flutter pub get`, `flutter test` and an APK build. Record the exact recipe in `meshmore_sns_app/TOOLING.md`.
+**Toolchain — closed, verified 2026-11-05.** Flutter is installed as a nix store SDK and must be invoked from the
+`-sdk-links` wrapper, not the plain wrapper (the plain one tries to write into the read-only store).
+
+```bash
+export PATH="/nix/store/x8cc2489gk0lhbgm5q3y7pxfb7v9r706-flutter-wrapped-3.47.4-sdk-links/bin:$PATH"
+export JAVA_HOME=/home/ldeen/.local/jdk/jdk-21.0.12+8
+export ANDROID_HOME=$HOME/Android/Sdk
+export ANDROID_USER_HOME=/home/ldeen/.config/.android   # build only
+```
+
+- `flutter --version` → 3.47.4 / Dart 3.13.3 (re-verified this session). `dart` is beside it.
+- `flutter test` baseline: **1044 tests, ~90 s**. One file: ~6 s. Use `flutter test test/<dir>` while iterating.
+- Build: `flutter build apk --debug` then `adb -s ZD222W34LJ install -r build/app/outputs/flutter-apk/app-debug.apk`;
+  `JAVA_HOME` is mandatory for gradle (Gradle 8.14.3 / AGP 8.11.1 / Kotlin 2.2.20 are the working pins).
+- Package `com.iotone.meshmore_sns_app`; permissions granted non-interactively with `adb shell pm grant …
+  BLUETOOTH_SCAN BLUETOOTH_CONNECT ACCESS_FINE_LOCATION ACCESS_COARSE_LOCATION POST_NOTIFICATIONS`.
+- App-side log: `adb logcat -d --pid=$(adb shell pidof com.iotone.meshmore_sns_app)` filtered on
+  `flutter :|\[meshcore|\[telem|\[place|BluetoothGatt`. UI: `adb exec-out screencap -p`, `uiautomator dump`.
+- Side-by-side audit builds used a separate `git worktree` + a `sed` on `applicationId`; never the user's checkout.
+- Record this block in `meshmore_sns_app/TOOLING.md` as W0's deliverable.
 
 ---
 
@@ -60,6 +77,48 @@ Primary protocol evidence on disk (never cite the research corpus as truth when 
 
 ---
 
+## 2a. Branch strategy, and the LDMUX gateway removal (decided 2026-11-05)
+
+**The L2 loopback gateway is out of MeshMore's scope. LDMUX is a separate app** (own repo at
+`/home/ldeen/Documents/ldmux`, branches `feat/meshmore-gateway` and `feat/standalone-radio`). The local branch
+`feat/ldmux-gateway` still contains that work at its tip and is named after it, so both are corrected in W0.
+
+Measured entanglement in the app (so the removal is bounded, not a rewrite):
+
+| Surface | Count | Paths |
+| --- | --- | --- |
+| Gateway implementation | 3 files | `lib/meshcore/gateway/{gateway_service,gateway_handoff,mesh_sender_adapter,secure_pairing_persistence}.dart` |
+| Touch points | 5 files | `lib/main.dart`, `lib/meshcore/meshcore_controller.dart`, `lib/meshcore/airtime_prefs.dart`, `lib/meshcore/mesh_network_store.dart`, `lib/shell/home_shell.dart` |
+| UI | 1 screen | `lib/screens/connected_apps_screen.dart` + its entry in `lib/screens/app_settings_screen.dart` |
+| Tests | 5 files | `test/meshcore/gateway/*` (3), `test/screens/connected_apps_screen_test.dart`, `test/shell/home_shell_test.dart` |
+| Packages | 2 dirs | `meshmore_sns_app/packages/meshcore_gateway/` (L2 codec), `meshmore_sns_app/packages/meshcore_host/` (desktop daemon) |
+| Dependency | 1 | `pubspec.yaml:64-67` `meshcore_gateway` |
+
+Rule for the removal: **keep the capability, drop the gateway.** `MeshSenderAdapter` already gives the app the
+raw-data/OK-ERR send path that register W1 asks for; it moves out of `lib/meshcore/gateway/` and loses only
+`bindPeer`. Everything else (server, sessions, grants, pairing token, Binder handoff, airtime governor, host daemon,
+gateway status screens, QR grant) leaves the app.
+
+Documents to correct in the same commit: `meshmore-feature-register.md` §6a and the gateway rows, `meshmore-app-spec.md`
+APP-M1–M6 (to AGAINST with the decision date), `meshmore-scope-of-record.md` (new dated decision), the architecture
+§5.5 / §2.4 sections, `README.md`, `meshmore_sns_app/STATUS.md`, `meshmore-sns-gateway-handoff.md` (mark superseded and
+point at the ldmux repo), and the master plan's gateway rows.
+
+## 2b. Remote state (2026-11-05)
+
+`origin/dev` is 2 commits ahead of this branch's base and both are R4 follow-ups that the app must keep:
+
+- `10a8c14` swipe between grid maps + a Swipe ⇄ Pan toggle (`grid_screen.dart` `_panMode`, key `grid-pan-toggle`,
+  two new ARB strings, shell capture lock).
+- `c81b051` left/right swipes change screens again; maps chosen by dropdown (`grid_screen.dart`, `home_shell.dart`,
+  ARB, `pubspec.yaml` version).
+
+**It is a re-port, not a merge.** This branch rewrote `grid_screen.dart` (+494/−…) and `home_shell.dart`
+(+522/−…) after the merge base `e7691c8`, while dev's change is ~108 lines in the same regions. Resolve the 6 conflict
+hunks by keeping the local structure and porting dev's behaviour onto it: pan mode off on entering the tab, the
+toggle only on pannable views, swipe belongs to the shell, capture lock driven by `_panMode && pansHorizontally`.
+`app_en.arb`/`app_ja.arb` gain dev's two tooltip strings; regenerate `lib/gen/*` with `flutter gen-l10n`.
+
 ## 3. Waves, ownership and gates
 
 Rules that hold for every wave: one writer per directory (concurrent writers use `worktree: true`); every item ends
@@ -69,12 +128,16 @@ behavioural claim carries `file:line` evidence.
 Waves run in this order because it is the register's dependency order. Items inside a wave are independent unless a
 "serial" note says otherwise.
 
-### W0 — Toolchain and baseline (serial, gate)
-1. Writable SDK recipe + `meshmore_sns_app/TOOLING.md`; record `flutter test` baseline (count, wall time),
-   `flutter analyze` output, `flutter build apk --debug`, `adb install` of the current build.
-2. Commit the untracked planning set on a new branch `feat/app-completion` (docs first, no code).
+### W0 — Base, toolchain and the gateway removal (serial, gate)
+1. Rename the branch `feat/ldmux-gateway` → `feat/app-completion` (history kept, name corrected).
+2. Merge `origin/dev` and re-port its two swipe commits onto the local grid/shell rewrite (§2b).
+3. Remove the LDMUX gateway surface and correct the documents (§2a). `flutter test` + `flutter analyze` green after;
+   the app still connects, sends a channel message and a DM on the phone.
+4. `meshmore_sns_app/TOOLING.md` with the verified environment block, test timings, build/install/log commands.
+5. Baseline numbers recorded: 1044 tests / ~90 s, `flutter analyze` warnings, APK install.
 
-Done when: a child can run `flutter test test/...` in under a minute and the phone runs the current build.
+Done when: a child can run `flutter test test/...` (6 s for one file) against a branch that has no gateway code and
+all of dev's behaviour, and the phone runs that build.
 
 ### W1 — Correctness defects (register §1, master plan §9.1)
 - **D1** `0x3E`… no: **D1 is the version default.** `appTargetVer` default becomes 3 at both call sites; tests prove
@@ -190,8 +253,10 @@ plugin set. Each is a child task with a written answer, not a guess.
 
 | Wave | State | Owner | Evidence |
 | --- | --- | --- | --- |
-| W0 toolchain + baseline | in progress | scout | open |
-| W0 docs commit on `feat/app-completion` | not started | supervisor | — |
+| W0 toolchain | **done** | scout | SDK path verified; 1044 tests / 90 s; gradle pins known |
+| W0 docs commit | **done** | supervisor | `e86a712` on `feat/ldmux-gateway` |
+| W0 branch rename + dev re-port | not started | — | conflicts: grid_screen, home_shell, arb ×2, gen ×2, tests ×2, STATUS, UX spec |
+| W0 gateway removal + doc correction | not started | — | 14 app files, 2 packages, 6 docs |
 | W1 defects | not started | — | — |
 | W2 skin tokens | not started | — | — |
 | W3 protocol | not started | — | — |
