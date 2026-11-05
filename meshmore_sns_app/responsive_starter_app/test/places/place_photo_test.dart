@@ -15,8 +15,10 @@ import 'package:meshmore_sns_app/theme/theme_controller.dart';
 
 import 'package:meshmore_sns_app/media/media_chunk.dart';
 import 'package:meshmore_sns_app/media/media_codec.dart';
+import 'package:meshmore_sns_app/media/media_inbox.dart';
 import 'package:meshmore_sns_app/media/media_photo.dart';
 import 'package:meshmore_sns_app/media/media_transfer.dart';
+import 'package:meshmore_sns_app/meshcore/channel_datagram.dart';
 import 'package:meshmore_sns_app/places/place.dart';
 import 'package:meshmore_sns_app/places/place_photo.dart';
 
@@ -233,5 +235,47 @@ void main() {
       expect(find.byKey(const ValueKey<String>('place-photo-fetch')), findsNothing);
       expect(t.takeException(), isNull);
     });
+  });
+
+  test('a fetch built from the inbox takes the inbox download, never its own',
+      () {
+    final MediaInbox inbox = MediaInbox(
+      datagrams: Stream<ChannelDatagram>.empty(),
+      codec: FakeMediaCodec(),
+      clock: () => DateTime(2026),
+    );
+    final PlacePhotos photos = PlacePhotos(clock: () => DateTime(2026));
+    final PlacePhotoFetch? fetch = placePhotoFetchFrom(
+      inbox: inbox,
+      place: _place(),
+      ref: const PlacePhotoRef(contentHash: 'ab', payloadId: 7),
+      photos: photos,
+      clock: () => DateTime(2026),
+      sendAsk: () async {},
+    );
+    expect(fetch, isNotNull);
+    expect(identical(fetch!.download, inbox.download), isTrue,
+        reason: 'two reassemblers would each hold half the chunks');
+    expect(fetch.codec, same(inbox.codec));
+  });
+
+  test('a place with no picture reference builds no fetch', () {
+    final MediaInbox inbox = MediaInbox(
+      datagrams: Stream<ChannelDatagram>.empty(),
+      codec: FakeMediaCodec(),
+      clock: () => DateTime(2026),
+    );
+    expect(
+      placePhotoFetchFrom(
+        inbox: inbox,
+        place: _place(),
+        ref: null,
+        photos: PlacePhotos(clock: () => DateTime(2026)),
+        clock: () => DateTime(2026),
+        sendAsk: () async {},
+      ),
+      isNull,
+      reason: 'there is nothing to ask for until the report carries a reference',
+    );
   });
 }

@@ -4,6 +4,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 
 import '../media/media_codec.dart';
+import '../media/media_inbox.dart';
 import '../media/media_photo.dart';
 import '../media/media_transfer.dart';
 import 'place.dart';
@@ -101,6 +102,35 @@ enum PlacePhotoFetchFailure {
 
   /// There was no reference to ask about.
   noReference,
+}
+
+/// Builds the fetch for one place over the app's single inbound consumer.
+///
+/// The download is the inbox's, never a second one: two reassemblers would each
+/// hold half the chunks and neither would complete. A place with no reference
+/// gets null rather than a fetch that has nothing to ask for, which is the
+/// state every place is in until the report carries one.
+PlacePhotoFetch? placePhotoFetchFrom({
+  required MediaInbox inbox,
+  required Place place,
+  required PlacePhotoRef? ref,
+  required PlacePhotos photos,
+  required DateTime Function() clock,
+  required Future<void> Function() sendAsk,
+  Future<void> Function(Uint8List request)? sendRequest,
+}) {
+  final PlacePhotoRef? reference = ref;
+  if (reference == null) return null;
+  return PlacePhotoFetch(
+    place: place,
+    ref: reference,
+    download: inbox.download,
+    codec: inbox.codec,
+    photos: photos,
+    clock: clock,
+    sendAsk: sendAsk,
+    sendRequest: sendRequest,
+  );
 }
 
 /// One fetch: ask, take datagrams, decode, keep.
