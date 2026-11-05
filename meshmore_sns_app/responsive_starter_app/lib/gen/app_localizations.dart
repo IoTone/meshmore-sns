@@ -63,7 +63,7 @@ import 'app_localizations_ja.dart';
 /// property.
 abstract class AppLocalizations {
   AppLocalizations(String locale)
-      : localeName = intl.Intl.canonicalizedLocale(locale.toString());
+    : localeName = intl.Intl.canonicalizedLocale(locale.toString());
 
   final String localeName;
 
@@ -86,16 +86,16 @@ abstract class AppLocalizations {
   /// of delegates is preferred or required.
   static const List<LocalizationsDelegate<dynamic>> localizationsDelegates =
       <LocalizationsDelegate<dynamic>>[
-    delegate,
-    GlobalMaterialLocalizations.delegate,
-    GlobalCupertinoLocalizations.delegate,
-    GlobalWidgetsLocalizations.delegate,
-  ];
+        delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+      ];
 
   /// A list of this localizations delegate's supported locales.
   static const List<Locale> supportedLocales = <Locale>[
     Locale('en'),
-    Locale('ja')
+    Locale('ja'),
   ];
 
   /// No description provided for @appName.
@@ -1031,7 +1031,7 @@ abstract class AppLocalizations {
   /// No description provided for @termsLeavesBody.
   ///
   /// In en, this message translates to:
-  /// **'Nothing leaves except what you send: messages and positions go out over the radio you are connected to. Online map packs are off by default and are fetched only after you turn them on, with the source named on screen. Files you export are yours to place.'**
+  /// **'Two things leave this device. What you send goes out over the radio you are connected to: messages, positions and reactions. And the map asks a tile server for map squares, which tells that server roughly where you are looking; the map names the source it is using. Offline map packs are off by default and are fetched only after you turn them on. Nothing else leaves. Files you export are yours to place.'**
   String get termsLeavesBody;
 
   /// No description provided for @termsSectionPermissions.
@@ -7267,7 +7267,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{freq} MHz · {bw} kHz · SF{sf} · CR{cr} · path hash {ph}'**
   String networksSummary(
-      String freq, String bw, String sf, String cr, String ph);
+    String freq,
+    String bw,
+    String sf,
+    String cr,
+    String ph,
+  );
 
   /// No description provided for @networksMembers.
   ///
@@ -9295,8 +9300,9 @@ AppLocalizations lookupAppLocalizations(Locale locale) {
   }
 
   throw FlutterError(
-      'AppLocalizations.delegate failed to load unsupported locale "$locale". This is likely '
-      'an issue with the localizations generation tool. Please file an issue '
-      'on GitHub with a reproducible sample app and the gen-l10n configuration '
-      'that was used.');
+    'AppLocalizations.delegate failed to load unsupported locale "$locale". This is likely '
+    'an issue with the localizations generation tool. Please file an issue '
+    'on GitHub with a reproducible sample app and the gen-l10n configuration '
+    'that was used.',
+  );
 }

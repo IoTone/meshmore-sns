@@ -1,5 +1,6 @@
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
+
 import 'app_localizations.dart';
 
 // ignore_for_file: type=lint
@@ -518,7 +519,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get termsLeavesBody =>
-      '送信したもの以外は出ません。メッセージと位置は接続中の無線から送られます。オンライン地図パックは既定でオフで、有効にしたときだけ取得し、取得元を画面に表示します。書き出したファイルの保管先はあなたが決めます。';
+      'この端末から出るのは2つだけです。送信したもの（メッセージ・位置・リアクション）は接続中の無線から送られます。そして地図はタイルサーバーに地図の区画を要求するため、おおよそどこを見ているかがそのサーバーに伝わります。地図には取得元を表示します。オフライン地図パックは既定でオフで、有効にしたときだけ取得します。それ以外は出ません。書き出したファイルの保管先はあなたが決めます。';
 
   @override
   String get termsSectionPermissions => '権限とその理由';
@@ -4062,7 +4063,12 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String networksSummary(
-      String freq, String bw, String sf, String cr, String ph) {
+    String freq,
+    String bw,
+    String sf,
+    String cr,
+    String ph,
+  ) {
     return '$freq MHz · $bw kHz · SF$sf · CR$cr · パスハッシュ $ph';
   }
 

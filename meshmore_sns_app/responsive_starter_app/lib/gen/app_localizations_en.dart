@@ -1,5 +1,6 @@
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
+
 import 'app_localizations.dart';
 
 // ignore_for_file: type=lint
@@ -545,7 +546,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get termsLeavesBody =>
-      'Nothing leaves except what you send: messages and positions go out over the radio you are connected to. Online map packs are off by default and are fetched only after you turn them on, with the source named on screen. Files you export are yours to place.';
+      'Two things leave this device. What you send goes out over the radio you are connected to: messages, positions and reactions. And the map asks a tile server for map squares, which tells that server roughly where you are looking; the map names the source it is using. Offline map packs are off by default and are fetched only after you turn them on. Nothing else leaves. Files you export are yours to place.';
 
   @override
   String get termsSectionPermissions => 'PERMISSIONS AND WHY';
@@ -4218,7 +4219,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String networksSummary(
-      String freq, String bw, String sf, String cr, String ph) {
+    String freq,
+    String bw,
+    String sf,
+    String cr,
+    String ph,
+  ) {
     return '$freq MHz · $bw kHz · SF$sf · CR$cr · path hash $ph';
   }
 

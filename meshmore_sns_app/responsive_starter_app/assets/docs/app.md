@@ -83,6 +83,13 @@ Meshmore SNS has no backend and collects nothing. Identities, channel
 keys, message history, and tags live only in your phone's local
 storage. Sharing happens over the radio, on your terms.
 
+Two requests do leave the phone, and neither carries your identity.
+The map asks a tile server for the squares it is showing, which tells
+that server roughly where you are looking; the map names the source and
+nothing is drawn from it until you open the map. Offline map packs and
+their catalogue are off by default and are fetched only after you turn
+them on.
+
 ---
 
 _Meshmore SNS — IoTone, Inc. Licensed MIT. Built with Flutter._
