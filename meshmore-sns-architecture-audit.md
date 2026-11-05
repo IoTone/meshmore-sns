@@ -822,3 +822,46 @@ restored on the device afterwards.
 the byte that `readOpsLeft` already parsed. Note for anyone writing a probe:
 `GatewayClient.hello()` sends capabilities 0, so it receives no `STATUS` at all;
 pass `capabilities: 2` for the status push.
+
+---
+
+## Companion Device Manager, evaluated 2026-11-05
+
+CDM is the platform's recommendation for "an app and its accessory", so the pairing wave had to answer it rather than
+inherit the question. Evidence is the API 36 surface itself, read with `javap` against
+`$ANDROID_HOME/platforms/android-36/android.jar`, plus this app's own connection code.
+
+What CDM offers:
+
+- `CompanionDeviceManager.associate(AssociationRequest, Callback, Handler)` and the `Executor` overload; the
+  `CompanionDeviceManager` class also carries `RESULT_USER_REJECTED` and `RESULT_DISCOVERY_TIMEOUT`, i.e. the choice is
+  made in a system-owned dialog, not in the caller's UI.
+- `AssociationRequest.Builder` with a `DeviceFilter`; `BluetoothDeviceFilter.Builder` has `addServiceUuid`,
+  `setAddress` and `setNamePattern`, so a radio *could* be matched by the Nordic UART service the firmware advertises.
+- `getMyAssociations()` / `getAssociations()` (MAC strings) and `startObservingDevicePresence(...)` for presence.
+- The permission set: `REQUEST_COMPANION_PROFILE_NEARBY_DEVICE_STREAMING`, `REQUEST_COMPANION_RUN_IN_BACKGROUND`,
+  `REQUEST_COMPANION_START_FOREGROUND_SERVICES_FROM_BACKGROUND`, `REQUEST_OBSERVE_COMPANION_DEVICE_PRESENCE`,
+  `REQUEST_COMPANION_SELF_MANAGED`.
+
+**Verdict: not adopted.** Four reasons, in order of weight.
+
+1. **It moves the choice out of the app.** `associate()` is a system dialog; `RESULT_USER_REJECTED` and
+   `RESULT_DISCOVERY_TIMEOUT` are the caller's outcomes. The store's declaration video has to show pairing inside the
+   app, and the flow that replaced the sheet (`lib/screens/pair_radio_screen.dart`) exists to show one state and one
+   action at a time. CDM would put a second picker beside it, in a UI the app cannot style, translate or explain.
+2. **It duplicates state the app already keeps.** The association lives in the OS; the app's pairing lives in
+   `mm.paired.id` (`paired_device_store.dart`), and a bond can exist in either without the other — which is exactly the
+   bug class this branch already paid for once: `BleConnector.adoptableBond`/`adoptBondId` exist so a bond made in the
+   phone's Bluetooth menu is adopted instead of ignored. A third source of truth is a third way to disagree.
+3. **Presence is already known.** `startObservingDevicePresence` would replace a signal the app already has: the BLE
+   adapter state, the GATT connection state, and a reconnect policy with backoff. The association adds no state the
+   screen cannot already read.
+4. **The one real benefit is already held.** The permission that matters for a persistent link —
+   starting a foreground service from the background — is held through the `connectedDevice` FGS type, which the app
+   declares and a test guards (`test/store/store_declarations_test.dart`).
+
+Re-open if either becomes true: the platform stops letting an unassociated app hold a GATT link in the background, or
+Play requires an association for a `connectedDevice` service. Neither is the case at API 36.
+
+The decision is recorded in `meshmore-feature-register.md` §7 with the date, and the flow it would have duplicated is
+`lib/screens/pair_radio_screen.dart`.

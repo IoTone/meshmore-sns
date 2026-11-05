@@ -329,6 +329,98 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
+  String get deviceMgrPairNew => '新しいラジオをペアリング';
+
+  @override
+  String get pairTitle => 'ラジオをペアリング';
+
+  @override
+  String pairStepOf(int step, int total) {
+    return 'ステップ $step / $total';
+  }
+
+  @override
+  String get pairPermissionTitle => 'Bluetooth の権限';
+
+  @override
+  String get pairPermissionBody =>
+      'ラジオを見つけて通信するために「付近のデバイス」の権限が必要です。まだ何もペアリングされていません。';
+
+  @override
+  String get pairPermissionAllow => 'Bluetooth を許可';
+
+  @override
+  String get pairPermissionOpenSettings => 'OS 設定を開く';
+
+  @override
+  String get pairAdapterTitle => 'Bluetooth がオフです';
+
+  @override
+  String get pairAdapterBody =>
+      'ラジオを探すには Bluetooth をオンにしてください。オンにするとこの画面は自動で次に進みます。';
+
+  @override
+  String get pairAdapterUnsupported =>
+      'この端末には利用できる Bluetooth アダプターがないため、ここではペアリングできません。';
+
+  @override
+  String get pairRetry => '再試行';
+
+  @override
+  String get pairScanTitle => 'ラジオを検索中';
+
+  @override
+  String get pairScanBody =>
+      'ラジオは MeshCore-<名前> としてアドバタイズします。電源を入れたまま、1〜2 m 以内に置いてください。';
+
+  @override
+  String get pairScanning => 'スキャン中…';
+
+  @override
+  String get pairStopScan => '停止';
+
+  @override
+  String get pairScanAgain => '再スキャン';
+
+  @override
+  String get pairNothingFound =>
+      '応答したラジオがありません。電源・距離・他のスマートフォンへの接続を確認して、もう一度スキャンしてください。';
+
+  @override
+  String pairRssi(int rssi) {
+    return 'RSSI $rssi';
+  }
+
+  @override
+  String pairConnecting(String name) {
+    return '$name に接続中…';
+  }
+
+  @override
+  String get pairConnectingBody =>
+      'ラジオに PIN が表示されたら、求められたときにスマートフォンへ入力してください。画面のないラジオは 123456 です。';
+
+  @override
+  String get pairConfirmTitle => 'ラジオに接続しました';
+
+  @override
+  String pairConfirmBody(String name) {
+    return '$name が応答しました。リンクとプロトコルの両方が動作しています。このラジオがアプリの接続先になります。';
+  }
+
+  @override
+  String get pairConfirmNode => 'ノード';
+
+  @override
+  String get pairConfirmFirmware => 'ファームウェア';
+
+  @override
+  String get pairConfirmUse => 'このラジオを使う';
+
+  @override
+  String get pairChooseAnother => '別のラジオを選ぶ';
+
+  @override
   String get settingsHeading => 'アプリ設定';
 
   @override
@@ -462,9 +554,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get termsSettingsSubtitle => '保存されるもの、端末外に出るもの、各権限が必要な理由';
 
   @override
-  String get termsReadOnlySubtitle => '同意した文章です。設定から開いた場合は閲覧のみです。';
-
-  @override
   String get aboutCopyright => 'Copyright (c) 2026 IoTone, Inc.';
 
   @override
@@ -486,6 +575,13 @@ class AppLocalizationsJa extends AppLocalizations {
   String aboutVersion(String version) {
     return 'v$version';
   }
+
+  @override
+  String get aboutReportProblem => '問題を報告';
+
+  @override
+  String get aboutReportProblemSub =>
+      'アプリとラジオの情報を入れた状態で課題トラッカーを開きます。そこで送信するまで何も送られません。';
 
   @override
   String get aboutLicensesButton => 'オープンソースライセンスと権利表示';
@@ -683,21 +779,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get nodesTagFilter => 'タグ';
 
   @override
-  String nodesTagFilterN(int count) {
-    return 'タグ ($count)';
-  }
-
-  @override
-  String nodesFilterLastSeen(String label) {
-    return '最終受信 · $label';
-  }
-
-  @override
-  String nodesFilterWithin(String label) {
-    return '距離 · $label';
-  }
-
-  @override
   String get nodesAgeAny => '指定なし';
 
   @override
@@ -731,9 +812,6 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get nodesStatusOffline => '未接続 — 設定 → 診断で接続';
-
-  @override
-  String get nodesInRangeBadge => '範囲内';
 
   @override
   String get nodesFarBadge => '遠距離';
@@ -850,28 +928,10 @@ class AppLocalizationsJa extends AppLocalizations {
   String get gridViewPicker => 'マップ表示を切替';
 
   @override
-  String get gridViewRadialShort => 'レーダー';
-
-  @override
-  String get gridViewGlobeShort => 'グローブ';
-
-  @override
-  String get gridViewEqualGridShort => 'セル';
-
-  @override
-  String get gridViewStreetMapShort => 'ロード';
-
-  @override
   String get gridViewFabric => 'ファブリック調査';
 
   @override
-  String get gridViewFabricShort => 'メッシュ';
-
-  @override
   String get gridViewElevation => 'Fujiさん';
-
-  @override
-  String get gridViewElevationShort => '富士';
 
   @override
   String get fujiLegendTitle => 'Fujiさん';
@@ -1800,25 +1860,13 @@ class AppLocalizationsJa extends AppLocalizations {
   String get gridViewTree => 'メッシュツリー';
 
   @override
-  String get gridViewTreeShort => 'ツリー';
-
-  @override
   String get gridViewSnsCells => 'SNS セル（ヒート）';
-
-  @override
-  String get gridViewSnsCellsShort => 'SNS';
 
   @override
   String get gridViewWeather => '気象（環境）';
 
   @override
-  String get gridViewWeatherShort => 'WX';
-
-  @override
   String get gridViewMeshbook => 'メッシュブック（チャンネル活動）';
-
-  @override
-  String get gridViewMeshbookShort => 'MBk';
 
   @override
   String get meshbookTitle => 'メッシュブック';
@@ -1927,9 +1975,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String weatherReporting(int count) {
     return '$count 件が報告中';
   }
-
-  @override
-  String get docsHubTitle => 'ドキュメント';
 
   @override
   String get docsHubSubtitle => 'プロトコル・ファームウェア・アプリ・実地メモをオフラインで。';
@@ -2826,9 +2871,6 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get deviceToastInvalidRadio => 'freq/BW/SF/CR に有効な数値を入力';
-
-  @override
-  String get deviceToastRadioSent => 'ラジオパラメータを送信 — デバイスを再起動 / 観測して確認';
 
   @override
   String get deviceLocPermDenied => 'スマートフォン GPS 取得には位置情報の許可が必要です。';

@@ -584,6 +584,35 @@ in-app banners when refused. A refusal MUST NOT disable the foreground service's
 
 *Check:* a test that refusal leaves the service notification present and the in-app banner shown.
 
+**APP-N9.** Export compliance is a declaration, not a checkbox. The Play Console's encryption question blocks every
+track, so the answer MUST be derived from the mechanisms the build actually carries, and the derivation MUST live in
+the repo rather than in a console field that the next release cannot read.
+
+The build carries three encryption mechanisms and no others:
+
+1. **The radio link.** Frames between the phone and the companion are encrypted by the companion firmware's protocol
+   crypto (`src/helpers/` in the firmware tree). The app implements the framing, not the cipher.
+2. **The local store.** `lib/meshcore/secure/` seals history in AES-256-GCM with a key the Android Keystore generates
+   (`SecureStore.kt`, alias `meshmore_history_key`) and never exports; the Dart side never holds it.
+3. **The user's export.** `StoreExport` writes a passphrase file: PBKDF2-HMAC-SHA256 (210,000 iterations, salt in the
+   header) → AES-256-GCM, in the app's own `MMEX` container.
+
+A fourth cipher is present but is not a fourth mechanism: the in-repo protocol package verifies Ed25519 signatures
+and derives X25519 shared secrets with `package:cryptography` (`packages/meshcore/lib/src/crypto/identity_crypto.dart`),
+which is how a DM's key agreement and an advert's signature are checked. It is the same protocol crypto the firmware
+runs, seen from the phone side, so it belongs under mechanism 1.
+
+There is no account, no cloud service, no key server, no analytics and no crash reporting (scope of record §8), so
+there is nothing to declare beyond those three.
+
+The declaration text to paste into the Play Console's *Export compliance* section, and the register row that carries
+it, MUST state that answer for the mechanisms above and MUST be re-checked whenever a dependency adds a cipher. The
+classification itself belongs to the publisher: this row states what the app does, not what a government decides it
+is.
+
+*Check:* the declaration in the register names all three mechanisms and no others; a dependency sweep shows no fourth
+cipher; `test/store/store_declarations_test.dart` and the Keystore alias test keep the two store mechanisms honest.
+
 ---
 
 ## 15. Traceability
@@ -620,6 +649,7 @@ in-app banners when refused. A refusal MUST NOT disable the foreground service's
 | N5 | D8.8 passphrase export |
 | N6 | reference low-end device class (plan §9.14 M1) |
 | N8 | Android 13 `POST_NOTIFICATIONS`; D8.20 |
+| N9 | `lib/meshcore/secure/`; `SecureStore.kt`; firmware protocol crypto; no cloud, account or analytics (scope of record §8) |
 
 ---
 

@@ -134,6 +134,45 @@
   "@deviceMgrAgoDays": {
     "placeholders": {"n": {"type": "int"}}
   },
+  "deviceMgrPairNew": "新しいラジオをペアリング",
+
+  "pairTitle": "ラジオをペアリング",
+  "pairStepOf": "ステップ {step} / {total}",
+  "@pairStepOf": {
+    "placeholders": {"step": {"type": "int"}, "total": {"type": "int"}}
+  },
+  "pairPermissionTitle": "Bluetooth の権限",
+  "pairPermissionBody": "ラジオを見つけて通信するために「付近のデバイス」の権限が必要です。まだ何もペアリングされていません。",
+  "pairPermissionAllow": "Bluetooth を許可",
+  "pairPermissionOpenSettings": "OS 設定を開く",
+  "pairAdapterTitle": "Bluetooth がオフです",
+  "pairAdapterBody": "ラジオを探すには Bluetooth をオンにしてください。オンにするとこの画面は自動で次に進みます。",
+  "pairAdapterUnsupported": "この端末には利用できる Bluetooth アダプターがないため、ここではペアリングできません。",
+  "pairRetry": "再試行",
+  "pairScanTitle": "ラジオを検索中",
+  "pairScanBody": "ラジオは MeshCore-<名前> としてアドバタイズします。電源を入れたまま、1〜2 m 以内に置いてください。",
+  "pairScanning": "スキャン中…",
+  "pairStopScan": "停止",
+  "pairScanAgain": "再スキャン",
+  "pairNothingFound": "応答したラジオがありません。電源・距離・他のスマートフォンへの接続を確認して、もう一度スキャンしてください。",
+  "pairRssi": "RSSI {rssi}",
+  "@pairRssi": {
+    "placeholders": {"rssi": {"type": "int"}}
+  },
+  "pairConnecting": "{name} に接続中…",
+  "@pairConnecting": {
+    "placeholders": {"name": {"type": "String"}}
+  },
+  "pairConnectingBody": "ラジオに PIN が表示されたら、求められたときにスマートフォンへ入力してください。画面のないラジオは 123456 です。",
+  "pairConfirmTitle": "ラジオに接続しました",
+  "pairConfirmBody": "{name} が応答しました。リンクとプロトコルの両方が動作しています。このラジオがアプリの接続先になります。",
+  "@pairConfirmBody": {
+    "placeholders": {"name": {"type": "String"}}
+  },
+  "pairConfirmNode": "ノード",
+  "pairConfirmFirmware": "ファームウェア",
+  "pairConfirmUse": "このラジオを使う",
+  "pairChooseAnother": "別のラジオを選ぶ",
 
   "settingsHeading": "アプリ設定",
   "settingsBackgroundTitle": "バックグラウンドで接続を維持",
@@ -176,7 +215,6 @@
   "termsNotAccepted": "未同意です。",
   "termsSettingsRow": "利用規約とプライバシー",
   "termsSettingsSubtitle": "保存されるもの、端末外に出るもの、各権限が必要な理由",
-  "termsReadOnlySubtitle": "同意した文章です。設定から開いた場合は閲覧のみです。",
   "aboutCopyright": "Copyright (c) 2026 IoTone, Inc.",
   "aboutSubtitleEn": "(Socialrobot Network Service)",
   "aboutSubtitleJa": "(ソーシャルロボット・ネットワークサービス)",
@@ -184,6 +222,8 @@
   "aboutLicense": "MIT (X11) ライセンスで提供。",
   "aboutMadeWith": "福岡から ♥ をこめて",
   "aboutVersion": "v{version}",
+  "aboutReportProblem": "問題を報告",
+  "aboutReportProblemSub": "アプリとラジオの情報を入れた状態で課題トラッカーを開きます。そこで送信するまで何も送られません。",
   "aboutLicensesButton": "オープンソースライセンスと権利表示",
   "aboutAttributions": "MeshCore ドキュメント（MIT）、GeoNames 都市データ（CC-BY 4.0）、Natural Earth（パブリックドメイン）、OpenStreetMap 地図データ（ODbL）、Saira・JetBrains Mono フォント（OFL）を含みます。",
   "@aboutVersion": {
@@ -265,18 +305,6 @@
   "nodesFilterWithinTitle": "距離",
   "nodesFiltersDone": "完了",
   "nodesTagFilter": "タグ",
-  "nodesTagFilterN": "タグ ({count})",
-  "@nodesTagFilterN": {
-    "placeholders": { "count": { "type": "int" } }
-  },
-  "nodesFilterLastSeen": "最終受信 · {label}",
-  "@nodesFilterLastSeen": {
-    "placeholders": {"label": {"type": "String"}}
-  },
-  "nodesFilterWithin": "距離 · {label}",
-  "@nodesFilterWithin": {
-    "placeholders": {"label": {"type": "String"}}
-  },
   "nodesAgeAny": "指定なし",
   "nodesAgeHour": "1時間以内",
   "nodesAge24h": "24時間以内",
@@ -296,7 +324,6 @@
     }
   },
   "nodesStatusOffline": "未接続 — 設定 → 診断で接続",
-  "nodesInRangeBadge": "範囲内",
   "nodesFarBadge": "遠距離",
   "nodesEmptyFiltered": "条件に一致するノードがありません。\n\n上の「クリア」で絞り込みを解除するか、各チップで条件を変更してください。",
   "nodesEmptyReady": "ノードはまだありません。アドバートを受信すると表示されます。",
@@ -337,14 +364,8 @@
   "gridViewEqualGrid": "等分グリッド",
   "gridViewStreetMap": "ストリートマップ",
   "gridViewPicker": "マップ表示を切替",
-  "gridViewRadialShort": "レーダー",
-  "gridViewGlobeShort": "グローブ",
-  "gridViewEqualGridShort": "セル",
-  "gridViewStreetMapShort": "ロード",
   "gridViewFabric": "ファブリック調査",
-  "gridViewFabricShort": "メッシュ",
   "gridViewElevation": "Fujiさん",
-  "gridViewElevationShort": "富士",
   "fujiLegendTitle": "Fujiさん",
   "fujiLegendDesc": "標高測量。√スケール軸で有名な建造物と高さを比較。自分の標高はデバイスGPSテレメトリまたは電話の位置情報から取得。",
   "fujiLegendMe": "破線 = あなた。標高が判明していればその位置に、未取得なら地面に「ALT?」表示。",
@@ -800,13 +821,9 @@
   "nodeDetailDistanceKv": "距離",
   "nodeDetailLatLonKv": "緯度 / 経度",
   "gridViewTree": "メッシュツリー",
-  "gridViewTreeShort": "ツリー",
   "gridViewSnsCells": "SNS セル（ヒート）",
-  "gridViewSnsCellsShort": "SNS",
   "gridViewWeather": "気象（環境）",
-  "gridViewWeatherShort": "WX",
   "gridViewMeshbook": "メッシュブック（チャンネル活動）",
-  "gridViewMeshbookShort": "MBk",
   "meshbookTitle": "メッシュブック",
   "meshbookLast24h": "直近24時間",
   "meshbookEmpty": "このチャンネルには直近24時間のメッセージがありません。",
@@ -858,7 +875,6 @@
   "weatherReporting": "{count} 件が報告中",
   "@weatherReporting": { "placeholders": { "count": { "type": "int" } } },
 
-  "docsHubTitle": "ドキュメント",
   "docsHubSubtitle": "プロトコル・ファームウェア・アプリ・実地メモをオフラインで。",
   "docsHubFooter": "ドキュメントはオフライン閲覧用に端末にキャッシュされます。項目を開いて ↻ で最新版を取得。出典: meshcore-dev/MeshCore。",
   "docsProtocolTitle": "プロトコル",
@@ -1218,7 +1234,6 @@
   "deviceToastInvalidLatLon": "有効な緯度 (−90..90) と経度 (−180..180) を入力",
   "deviceToastAdvertLocSet": "アドバート位置を設定しました",
   "deviceToastInvalidRadio": "freq/BW/SF/CR に有効な数値を入力",
-  "deviceToastRadioSent": "ラジオパラメータを送信 — デバイスを再起動 / 観測して確認",
   "deviceLocPermDenied": "スマートフォン GPS 取得には位置情報の許可が必要です。",
   "deviceLocPermDeniedPerm": "位置情報が永続的に拒否されました — OS 設定で許可してください。",
   "deviceOpenSettings": "設定を開く",

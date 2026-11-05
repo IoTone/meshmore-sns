@@ -35,9 +35,11 @@ android {
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_17
         targetCompatibility JavaVersion.VERSION_17
-        // `flutter_local_notifications` uses java.time on every API level, so
-        // the plugin's own requirement is desugaring rather than a minSdk bump
-        // (which would drop the devices this app still supports).
+        // `flutter_local_notifications` is built against java.time, which is
+        // not in the API level the app supports. Its AAR metadata refuses the
+        // build without desugaring, and that failure only appears at
+        // `assembleDebug`, not in any test. Desugaring is the fix rather than a
+        // minSdk bump, which would drop the devices this app still supports.
         coreLibraryDesugaringEnabled true
     }
 
@@ -72,5 +74,5 @@ flutter {
 }
 
 dependencies {
-    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.4'
+    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.5'
 }

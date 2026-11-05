@@ -174,6 +174,10 @@ class DashboardScreen extends StatelessWidget {
         // that row overflowed (51 px at 256), and it starved the label it
         // was supposed to explain. It gets its own row, shown only in the
         // states that need it.
+        // Connect with nothing paired opens the in-app pairing flow instead of
+        // a blind scan-and-take-the-first: with two radios in range, which one
+        // you get must be the user's choice, and the flow is also what the
+        // store's declaration video shows.
         if (mc.state == MeshcoreConnectionState.disconnected &&
             !mc.isConnecting)
           Align(
@@ -181,7 +185,9 @@ class DashboardScreen extends StatelessWidget {
             child: MmAction(
               icon: Icons.link,
               label: l.actionConnect,
-              onPressed: () => mc.connect(),
+              onPressed: () => mc.hasPairedDevice
+                  ? mc.connect()
+                  : context.push('/pair'),
             ),
           )
         else if (mc.state == MeshcoreConnectionState.failed)
@@ -190,7 +196,9 @@ class DashboardScreen extends StatelessWidget {
             child: MmAction(
               icon: Icons.refresh,
               label: l.actionRetry,
-              onPressed: () => mc.connect(),
+              onPressed: () => mc.hasPairedDevice
+                  ? mc.connect()
+                  : context.push('/pair'),
             ),
           ),
         const SizedBox(height: 22),

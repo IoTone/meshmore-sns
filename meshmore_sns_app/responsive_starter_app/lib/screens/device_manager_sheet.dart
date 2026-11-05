@@ -4,6 +4,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../gen/app_localizations.dart';
@@ -224,6 +225,22 @@ class _DeviceManagerSheetState extends State<DeviceManagerSheet> {
                     onPressed: () => _forget(mc),
                   ),
               ],
+            ),
+            // The guided flow, for a first pairing or a new radio: one screen
+            // that explains each state instead of a scan list on its own.
+            ListTile(
+              dense: true,
+              contentPadding: EdgeInsets.zero,
+              leading: Icon(Icons.add_link, color: cs.primary),
+              title: Text(l.deviceMgrPairNew),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () {
+                // Capture the router before the pop: the sheet's context is
+                // gone by the time the push would run.
+                final GoRouter router = GoRouter.of(context);
+                Navigator.of(context).pop();
+                router.push('/pair');
+              },
             ),
             // Probe + manage the radio's actual contact list (diagnose a
             // full table / a contact that won't DM).

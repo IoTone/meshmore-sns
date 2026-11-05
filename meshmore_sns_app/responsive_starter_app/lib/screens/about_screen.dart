@@ -1,10 +1,16 @@
 // Copyright (c) 2026 IoTone, Inc.
 // SPDX-License-Identifier: MIT
+import 'dart:io' show Platform;
+
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
+import '../app/issue_report.dart';
 import '../app_state_model.dart';
 import '../gen/app_localizations.dart';
+import '../meshcore/meshcore_controller.dart';
 import '../theme/mm_skin.dart';
 import '../ui/mm_scaffold.dart';
 
@@ -14,6 +20,24 @@ import '../ui/mm_scaffold.dart';
 /// page, with Licences) and, beside it, Settings > Docs (R86).
 class AboutScreen extends StatelessWidget {
   const AboutScreen({super.key});
+
+  /// Opens the tracker with what the app already knows. Read, not watched: the
+  /// page does not need to rebuild when a radio connects.
+  Future<void> _reportProblem(BuildContext context) async {
+    final MeshcoreController mc = context.read<MeshcoreController>();
+    final AppState app = context.read<AppState>();
+    final IssueReport report = IssueReport(
+      appVersion: app.getAppVersion(),
+      platform: kIsWeb
+          ? 'web'
+          : '${Platform.operatingSystem} ${Platform.operatingSystemVersion}',
+      radioName: mc.selfInfo?.name,
+      radioModel: mc.deviceInfo?.manufacturer,
+      radioFirmware: mc.deviceInfo?.firmwareVersion,
+      mtu: mc.mtu,
+    );
+    await launchUrl(report.toUri(), mode: LaunchMode.externalApplication);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -66,6 +90,23 @@ class AboutScreen extends StatelessWidget {
             // page: the string said "wired in U5" and was visibly a note to
             // self on a shipped About page (seen on the device).
             const SizedBox(height: 18),
+            // R10 — the only route a defect has to a person who can fix it:
+            // there is no crash reporter and no analytics. The issue is
+            // assembled on the phone, redacted, and sent only if the user sends
+            // it in the tracker.
+            OutlinedButton.icon(
+              onPressed: () => _reportProblem(context),
+              icon: const Icon(Icons.bug_report_outlined, size: 18),
+              label: Text(l.aboutReportProblem),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              l.aboutReportProblemSub,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                  fontSize: skin.type.size(10.5), color: skin.color.fgMuted),
+            ),
+            const SizedBox(height: 10),
             OutlinedButton.icon(
               onPressed: () => showLicensePage(
                 context: context,

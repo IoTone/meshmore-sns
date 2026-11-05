@@ -344,6 +344,98 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get deviceMgrPairNew => 'Pair a new radio';
+
+  @override
+  String get pairTitle => 'Pair a radio';
+
+  @override
+  String pairStepOf(int step, int total) {
+    return 'STEP $step OF $total';
+  }
+
+  @override
+  String get pairPermissionTitle => 'Bluetooth permission';
+
+  @override
+  String get pairPermissionBody =>
+      'The app needs Nearby devices to find your radio and talk to it. Nothing is paired yet.';
+
+  @override
+  String get pairPermissionAllow => 'Allow Bluetooth';
+
+  @override
+  String get pairPermissionOpenSettings => 'Open OS settings';
+
+  @override
+  String get pairAdapterTitle => 'Bluetooth is off';
+
+  @override
+  String get pairAdapterBody =>
+      'Switch Bluetooth on to find your radio. This screen continues by itself once it is on.';
+
+  @override
+  String get pairAdapterUnsupported =>
+      'This phone reports no usable Bluetooth adapter, so a radio cannot be paired here.';
+
+  @override
+  String get pairRetry => 'Try again';
+
+  @override
+  String get pairScanTitle => 'Looking for radios';
+
+  @override
+  String get pairScanBody =>
+      'A radio advertises as MeshCore-<name>. Keep it switched on and within a metre or two of the phone.';
+
+  @override
+  String get pairScanning => 'Scanning…';
+
+  @override
+  String get pairStopScan => 'Stop';
+
+  @override
+  String get pairScanAgain => 'Scan again';
+
+  @override
+  String get pairNothingFound =>
+      'No radio answered. Check that it is switched on, in range, and not already connected to another phone, then scan again.';
+
+  @override
+  String pairRssi(int rssi) {
+    return 'RSSI $rssi';
+  }
+
+  @override
+  String pairConnecting(String name) {
+    return 'Connecting to $name…';
+  }
+
+  @override
+  String get pairConnectingBody =>
+      'If the radio shows a PIN, enter it on the phone when asked. Screenless radios use 123456.';
+
+  @override
+  String get pairConfirmTitle => 'Radio connected';
+
+  @override
+  String pairConfirmBody(String name) {
+    return '$name answered, so the link and the protocol both work. This radio is now the one the app uses.';
+  }
+
+  @override
+  String get pairConfirmNode => 'Node';
+
+  @override
+  String get pairConfirmFirmware => 'Firmware';
+
+  @override
+  String get pairConfirmUse => 'Use this radio';
+
+  @override
+  String get pairChooseAnother => 'Choose another radio';
+
+  @override
   String get settingsHeading => 'App settings';
 
   @override
@@ -486,10 +578,6 @@ class AppLocalizationsEn extends AppLocalizations {
       'What is stored, what leaves the device, and why each permission is asked for';
 
   @override
-  String get termsReadOnlySubtitle =>
-      'The text you agreed to. Reached from Settings, it is read-only.';
-
-  @override
   String get aboutCopyright => 'Copyright (c) 2026 IoTone, Inc.';
 
   @override
@@ -511,6 +599,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String aboutVersion(String version) {
     return 'v$version';
   }
+
+  @override
+  String get aboutReportProblem => 'Report a problem';
+
+  @override
+  String get aboutReportProblemSub =>
+      'Opens the issue tracker with the app and radio details filled in. Nothing is sent unless you send it there.';
 
   @override
   String get aboutLicensesButton => 'Open-source licenses & attributions';
@@ -716,21 +811,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get nodesTagFilter => 'Tags';
 
   @override
-  String nodesTagFilterN(int count) {
-    return 'Tags ($count)';
-  }
-
-  @override
-  String nodesFilterLastSeen(String label) {
-    return 'Last seen · $label';
-  }
-
-  @override
-  String nodesFilterWithin(String label) {
-    return 'Within · $label';
-  }
-
-  @override
   String get nodesAgeAny => 'Any';
 
   @override
@@ -772,9 +852,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get nodesStatusOffline =>
       'Not connected — Settings → Diagnostics & connect';
-
-  @override
-  String get nodesInRangeBadge => 'IN RANGE';
 
   @override
   String get nodesFarBadge => 'FAR';
@@ -897,28 +974,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get gridViewPicker => 'Switch map view';
 
   @override
-  String get gridViewRadialShort => 'RADAR';
-
-  @override
-  String get gridViewGlobeShort => 'GLOBE';
-
-  @override
-  String get gridViewEqualGridShort => 'CELLS';
-
-  @override
-  String get gridViewStreetMapShort => 'ROADS';
-
-  @override
   String get gridViewFabric => 'Fabric survey';
 
   @override
-  String get gridViewFabricShort => 'MESH';
-
-  @override
   String get gridViewElevation => 'Fujiさん';
-
-  @override
-  String get gridViewElevationShort => 'FUJI';
 
   @override
   String get fujiLegendTitle => 'FUJIさん';
@@ -1880,25 +1939,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get gridViewTree => 'Mesh tree';
 
   @override
-  String get gridViewTreeShort => 'TREE';
-
-  @override
   String get gridViewSnsCells => 'SNS cells (heat)';
-
-  @override
-  String get gridViewSnsCellsShort => 'SNS';
 
   @override
   String get gridViewWeather => 'Weather (environment)';
 
   @override
-  String get gridViewWeatherShort => 'WX';
-
-  @override
   String get gridViewMeshbook => 'Meshbook (channel activity)';
-
-  @override
-  String get gridViewMeshbookShort => 'MBk';
 
   @override
   String get meshbookTitle => 'MESHBOOK';
@@ -2007,9 +2054,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String weatherReporting(int count) {
     return '$count reporting';
   }
-
-  @override
-  String get docsHubTitle => 'Docs';
 
   @override
   String get docsHubSubtitle =>
@@ -2940,10 +2984,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get deviceToastInvalidRadio => 'Enter valid numbers for freq/BW/SF/CR';
-
-  @override
-  String get deviceToastRadioSent =>
-      'Radio params sent — restart/observe the device to confirm';
 
   @override
   String get deviceLocPermDenied =>

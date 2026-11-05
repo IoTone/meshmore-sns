@@ -141,6 +141,45 @@
   "@deviceMgrAgoDays": {
     "placeholders": {"n": {"type": "int"}}
   },
+  "deviceMgrPairNew": "Pair a new radio",
+
+  "pairTitle": "Pair a radio",
+  "pairStepOf": "STEP {step} OF {total}",
+  "@pairStepOf": {
+    "placeholders": {"step": {"type": "int"}, "total": {"type": "int"}}
+  },
+  "pairPermissionTitle": "Bluetooth permission",
+  "pairPermissionBody": "The app needs Nearby devices to find your radio and talk to it. Nothing is paired yet.",
+  "pairPermissionAllow": "Allow Bluetooth",
+  "pairPermissionOpenSettings": "Open OS settings",
+  "pairAdapterTitle": "Bluetooth is off",
+  "pairAdapterBody": "Switch Bluetooth on to find your radio. This screen continues by itself once it is on.",
+  "pairAdapterUnsupported": "This phone reports no usable Bluetooth adapter, so a radio cannot be paired here.",
+  "pairRetry": "Try again",
+  "pairScanTitle": "Looking for radios",
+  "pairScanBody": "A radio advertises as MeshCore-<name>. Keep it switched on and within a metre or two of the phone.",
+  "pairScanning": "Scanning…",
+  "pairStopScan": "Stop",
+  "pairScanAgain": "Scan again",
+  "pairNothingFound": "No radio answered. Check that it is switched on, in range, and not already connected to another phone, then scan again.",
+  "pairRssi": "RSSI {rssi}",
+  "@pairRssi": {
+    "placeholders": {"rssi": {"type": "int"}}
+  },
+  "pairConnecting": "Connecting to {name}…",
+  "@pairConnecting": {
+    "placeholders": {"name": {"type": "String"}}
+  },
+  "pairConnectingBody": "If the radio shows a PIN, enter it on the phone when asked. Screenless radios use 123456.",
+  "pairConfirmTitle": "Radio connected",
+  "pairConfirmBody": "{name} answered, so the link and the protocol both work. This radio is now the one the app uses.",
+  "@pairConfirmBody": {
+    "placeholders": {"name": {"type": "String"}}
+  },
+  "pairConfirmNode": "Node",
+  "pairConfirmFirmware": "Firmware",
+  "pairConfirmUse": "Use this radio",
+  "pairChooseAnother": "Choose another radio",
 
   "settingsHeading": "App settings",
   "settingsBackgroundTitle": "Stay connected in background",
@@ -192,7 +231,6 @@
   "termsNotAccepted": "Not agreed.",
   "termsSettingsRow": "Terms and privacy",
   "termsSettingsSubtitle": "What is stored, what leaves the device, and why each permission is asked for",
-  "termsReadOnlySubtitle": "The text you agreed to. Reached from Settings, it is read-only.",
   "aboutCopyright": "Copyright (c) 2026 IoTone, Inc.",
   "aboutSubtitleEn": "(Socialrobot Network Service)",
   "aboutSubtitleJa": "(ソーシャルロボット・ネットワークサービス)",
@@ -200,6 +238,8 @@
   "aboutLicense": "Licensed under the MIT (X11) License.",
   "aboutMadeWith": "Made with ♥ in Fukuoka, Japan",
   "aboutVersion": "v{version}",
+  "aboutReportProblem": "Report a problem",
+  "aboutReportProblemSub": "Opens the issue tracker with the app and radio details filled in. Nothing is sent unless you send it there.",
   "aboutLicensesButton": "Open-source licenses & attributions",
   "aboutAttributions": "Includes MeshCore documentation (MIT), GeoNames cities (CC-BY 4.0), Natural Earth (public domain), OpenStreetMap map data (ODbL), and the Saira & JetBrains Mono fonts (OFL).",
   "@aboutVersion": {
@@ -281,18 +321,6 @@
   "nodesFilterWithinTitle": "Within",
   "nodesFiltersDone": "Done",
   "nodesTagFilter": "Tags",
-  "nodesTagFilterN": "Tags ({count})",
-  "@nodesTagFilterN": {
-    "placeholders": { "count": { "type": "int" } }
-  },
-  "nodesFilterLastSeen": "Last seen · {label}",
-  "@nodesFilterLastSeen": {
-    "placeholders": {"label": {"type": "String"}}
-  },
-  "nodesFilterWithin": "Within · {label}",
-  "@nodesFilterWithin": {
-    "placeholders": {"label": {"type": "String"}}
-  },
   "nodesAgeAny": "Any",
   "nodesAgeHour": "Last hour",
   "nodesAge24h": "Last 24 h",
@@ -312,7 +340,6 @@
     }
   },
   "nodesStatusOffline": "Not connected — Settings → Diagnostics & connect",
-  "nodesInRangeBadge": "IN RANGE",
   "nodesFarBadge": "FAR",
   "nodesEmptyFiltered": "No nodes match this filter.\n\nTap Clear to widen, or change the chip cutoffs above.",
   "nodesEmptyReady": "No nodes yet. Discovery is advert-driven: a node appears when its advert is heard.",
@@ -353,14 +380,8 @@
   "gridViewEqualGrid": "Equal grid",
   "gridViewStreetMap": "Street map",
   "gridViewPicker": "Switch map view",
-  "gridViewRadialShort": "RADAR",
-  "gridViewGlobeShort": "GLOBE",
-  "gridViewEqualGridShort": "CELLS",
-  "gridViewStreetMapShort": "ROADS",
   "gridViewFabric": "Fabric survey",
-  "gridViewFabricShort": "MESH",
   "gridViewElevation": "Fujiさん",
-  "gridViewElevationShort": "FUJI",
   "fujiLegendTitle": "FUJIさん",
   "fujiLegendDesc": "Altitude survey. Heights on a √-scaled axis against famous landmarks. Your device's altitude comes from device GPS telemetry or the phone fix.",
   "fujiLegendMe": "Dashed line = you. At your altitude, or pinned to the ground with ALT? until it resolves.",
@@ -833,13 +854,9 @@
   "nodeDetailDistanceKv": "distance",
   "nodeDetailLatLonKv": "lat / lon",
   "gridViewTree": "Mesh tree",
-  "gridViewTreeShort": "TREE",
   "gridViewSnsCells": "SNS cells (heat)",
-  "gridViewSnsCellsShort": "SNS",
   "gridViewWeather": "Weather (environment)",
-  "gridViewWeatherShort": "WX",
   "gridViewMeshbook": "Meshbook (channel activity)",
-  "gridViewMeshbookShort": "MBk",
   "meshbookTitle": "MESHBOOK",
   "meshbookLast24h": "last 24h",
   "meshbookEmpty": "No messages on this channel in the last 24h.",
@@ -891,7 +908,6 @@
   "weatherReporting": "{count} reporting",
   "@weatherReporting": { "placeholders": { "count": { "type": "int" } } },
 
-  "docsHubTitle": "Docs",
   "docsHubSubtitle": "Protocol, firmware, app and field notes, offline.",
   "docsHubFooter": "Documentation is cached on-device for offline reading. Tap a doc, then ↻ to pull the latest. Upstream: meshcore-dev/MeshCore.",
   "docsProtocolTitle": "Protocol",
@@ -1287,7 +1303,6 @@
   "deviceToastInvalidLatLon": "Enter valid lat (−90..90) and lon (−180..180)",
   "deviceToastAdvertLocSet": "Advert location set",
   "deviceToastInvalidRadio": "Enter valid numbers for freq/BW/SF/CR",
-  "deviceToastRadioSent": "Radio params sent — restart/observe the device to confirm",
   "deviceLocPermDenied": "Location permission needed for a phone GPS fix.",
   "deviceLocPermDeniedPerm": "Location permission permanently denied — open OS settings to grant it.",
   "deviceOpenSettings": "Open settings",

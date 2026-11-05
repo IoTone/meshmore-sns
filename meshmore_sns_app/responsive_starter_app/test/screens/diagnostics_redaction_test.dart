@@ -45,6 +45,24 @@ void main() {
     expect(revealed, contains('38.924131'));
   });
 
+  test('a coordinate or PIN sent as a number is masked like a string', () {
+    // The JSON form of a capture carries lat/lon as numbers and the radio's
+    // BLE PIN as an int, so a string-only redactor leaked both into whatever
+    // the capture was pasted into.
+    final String out =
+        redactor.json('{"lat":38.924131,"lon":-104.77322,"ble_pin":123456}');
+    expect(out.contains('38.924131'), isFalse);
+    expect(out.contains('-104.77322'), isFalse);
+    expect(out.contains('123456'), isFalse);
+
+    final String revealed = const DiagnosticsRedaction(revealPosition: true)
+        .json('{"lat":38.924131,"ble_pin":123456}');
+    expect(revealed, contains('38.92'),
+        reason: 'a position may be revealed on request');
+    expect(revealed.contains('123456'), isFalse,
+        reason: 'a PIN is never revealed by the position switch');
+  });
+
   test('a secret in plain text is masked, and a bare frame is not', () {
     final String out = redactor.maskSecrets(
         'channel key: $psk\nrun rx 12 tx 3\nframe 8811a4f0ffee00112233');

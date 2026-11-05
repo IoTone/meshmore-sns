@@ -67,6 +67,16 @@ class DiagnosticsRedaction {
         return _coarsened(node);
       }
     }
+    // A coordinate is usually a number, and a PIN is an int on the wire: both
+    // have to be caught here or the JSON form leaks what the string form
+    // masks. Found while wiring the issue link, which pastes a capture into a
+    // public tracker.
+    if (node is num && field != null) {
+      if (_secretField.hasMatch(field)) return _mask;
+      if (!revealPosition && _positionField.hasMatch(field)) {
+        return double.parse(node.toDouble().toStringAsFixed(2));
+      }
+    }
     return node;
   }
 

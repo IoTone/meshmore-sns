@@ -686,6 +686,162 @@ abstract class AppLocalizations {
   /// **'{n} d ago'**
   String deviceMgrAgoDays(int n);
 
+  /// No description provided for @deviceMgrPairNew.
+  ///
+  /// In en, this message translates to:
+  /// **'Pair a new radio'**
+  String get deviceMgrPairNew;
+
+  /// No description provided for @pairTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Pair a radio'**
+  String get pairTitle;
+
+  /// No description provided for @pairStepOf.
+  ///
+  /// In en, this message translates to:
+  /// **'STEP {step} OF {total}'**
+  String pairStepOf(int step, int total);
+
+  /// No description provided for @pairPermissionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Bluetooth permission'**
+  String get pairPermissionTitle;
+
+  /// No description provided for @pairPermissionBody.
+  ///
+  /// In en, this message translates to:
+  /// **'The app needs Nearby devices to find your radio and talk to it. Nothing is paired yet.'**
+  String get pairPermissionBody;
+
+  /// No description provided for @pairPermissionAllow.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow Bluetooth'**
+  String get pairPermissionAllow;
+
+  /// No description provided for @pairPermissionOpenSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Open OS settings'**
+  String get pairPermissionOpenSettings;
+
+  /// No description provided for @pairAdapterTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Bluetooth is off'**
+  String get pairAdapterTitle;
+
+  /// No description provided for @pairAdapterBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch Bluetooth on to find your radio. This screen continues by itself once it is on.'**
+  String get pairAdapterBody;
+
+  /// No description provided for @pairAdapterUnsupported.
+  ///
+  /// In en, this message translates to:
+  /// **'This phone reports no usable Bluetooth adapter, so a radio cannot be paired here.'**
+  String get pairAdapterUnsupported;
+
+  /// No description provided for @pairRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again'**
+  String get pairRetry;
+
+  /// No description provided for @pairScanTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Looking for radios'**
+  String get pairScanTitle;
+
+  /// No description provided for @pairScanBody.
+  ///
+  /// In en, this message translates to:
+  /// **'A radio advertises as MeshCore-<name>. Keep it switched on and within a metre or two of the phone.'**
+  String get pairScanBody;
+
+  /// No description provided for @pairScanning.
+  ///
+  /// In en, this message translates to:
+  /// **'Scanning…'**
+  String get pairScanning;
+
+  /// No description provided for @pairStopScan.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop'**
+  String get pairStopScan;
+
+  /// No description provided for @pairScanAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan again'**
+  String get pairScanAgain;
+
+  /// No description provided for @pairNothingFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No radio answered. Check that it is switched on, in range, and not already connected to another phone, then scan again.'**
+  String get pairNothingFound;
+
+  /// No description provided for @pairRssi.
+  ///
+  /// In en, this message translates to:
+  /// **'RSSI {rssi}'**
+  String pairRssi(int rssi);
+
+  /// No description provided for @pairConnecting.
+  ///
+  /// In en, this message translates to:
+  /// **'Connecting to {name}…'**
+  String pairConnecting(String name);
+
+  /// No description provided for @pairConnectingBody.
+  ///
+  /// In en, this message translates to:
+  /// **'If the radio shows a PIN, enter it on the phone when asked. Screenless radios use 123456.'**
+  String get pairConnectingBody;
+
+  /// No description provided for @pairConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Radio connected'**
+  String get pairConfirmTitle;
+
+  /// No description provided for @pairConfirmBody.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} answered, so the link and the protocol both work. This radio is now the one the app uses.'**
+  String pairConfirmBody(String name);
+
+  /// No description provided for @pairConfirmNode.
+  ///
+  /// In en, this message translates to:
+  /// **'Node'**
+  String get pairConfirmNode;
+
+  /// No description provided for @pairConfirmFirmware.
+  ///
+  /// In en, this message translates to:
+  /// **'Firmware'**
+  String get pairConfirmFirmware;
+
+  /// No description provided for @pairConfirmUse.
+  ///
+  /// In en, this message translates to:
+  /// **'Use this radio'**
+  String get pairConfirmUse;
+
+  /// No description provided for @pairChooseAnother.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose another radio'**
+  String get pairChooseAnother;
+
   /// No description provided for @settingsHeading.
   ///
   /// In en, this message translates to:
@@ -926,12 +1082,6 @@ abstract class AppLocalizations {
   /// **'What is stored, what leaves the device, and why each permission is asked for'**
   String get termsSettingsSubtitle;
 
-  /// No description provided for @termsReadOnlySubtitle.
-  ///
-  /// In en, this message translates to:
-  /// **'The text you agreed to. Reached from Settings, it is read-only.'**
-  String get termsReadOnlySubtitle;
-
   /// No description provided for @aboutCopyright.
   ///
   /// In en, this message translates to:
@@ -973,6 +1123,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'v{version}'**
   String aboutVersion(String version);
+
+  /// No description provided for @aboutReportProblem.
+  ///
+  /// In en, this message translates to:
+  /// **'Report a problem'**
+  String get aboutReportProblem;
+
+  /// No description provided for @aboutReportProblemSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Opens the issue tracker with the app and radio details filled in. Nothing is sent unless you send it there.'**
+  String get aboutReportProblemSub;
 
   /// No description provided for @aboutLicensesButton.
   ///
@@ -1334,24 +1496,6 @@ abstract class AppLocalizations {
   /// **'Tags'**
   String get nodesTagFilter;
 
-  /// No description provided for @nodesTagFilterN.
-  ///
-  /// In en, this message translates to:
-  /// **'Tags ({count})'**
-  String nodesTagFilterN(int count);
-
-  /// No description provided for @nodesFilterLastSeen.
-  ///
-  /// In en, this message translates to:
-  /// **'Last seen · {label}'**
-  String nodesFilterLastSeen(String label);
-
-  /// No description provided for @nodesFilterWithin.
-  ///
-  /// In en, this message translates to:
-  /// **'Within · {label}'**
-  String nodesFilterWithin(String label);
-
   /// No description provided for @nodesAgeAny.
   ///
   /// In en, this message translates to:
@@ -1417,12 +1561,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Not connected — Settings → Diagnostics & connect'**
   String get nodesStatusOffline;
-
-  /// No description provided for @nodesInRangeBadge.
-  ///
-  /// In en, this message translates to:
-  /// **'IN RANGE'**
-  String get nodesInRangeBadge;
 
   /// No description provided for @nodesFarBadge.
   ///
@@ -1640,53 +1778,17 @@ abstract class AppLocalizations {
   /// **'Switch map view'**
   String get gridViewPicker;
 
-  /// No description provided for @gridViewRadialShort.
-  ///
-  /// In en, this message translates to:
-  /// **'RADAR'**
-  String get gridViewRadialShort;
-
-  /// No description provided for @gridViewGlobeShort.
-  ///
-  /// In en, this message translates to:
-  /// **'GLOBE'**
-  String get gridViewGlobeShort;
-
-  /// No description provided for @gridViewEqualGridShort.
-  ///
-  /// In en, this message translates to:
-  /// **'CELLS'**
-  String get gridViewEqualGridShort;
-
-  /// No description provided for @gridViewStreetMapShort.
-  ///
-  /// In en, this message translates to:
-  /// **'ROADS'**
-  String get gridViewStreetMapShort;
-
   /// No description provided for @gridViewFabric.
   ///
   /// In en, this message translates to:
   /// **'Fabric survey'**
   String get gridViewFabric;
 
-  /// No description provided for @gridViewFabricShort.
-  ///
-  /// In en, this message translates to:
-  /// **'MESH'**
-  String get gridViewFabricShort;
-
   /// No description provided for @gridViewElevation.
   ///
   /// In en, this message translates to:
   /// **'Fujiさん'**
   String get gridViewElevation;
-
-  /// No description provided for @gridViewElevationShort.
-  ///
-  /// In en, this message translates to:
-  /// **'FUJI'**
-  String get gridViewElevationShort;
 
   /// No description provided for @fujiLegendTitle.
   ///
@@ -3242,23 +3344,11 @@ abstract class AppLocalizations {
   /// **'Mesh tree'**
   String get gridViewTree;
 
-  /// No description provided for @gridViewTreeShort.
-  ///
-  /// In en, this message translates to:
-  /// **'TREE'**
-  String get gridViewTreeShort;
-
   /// No description provided for @gridViewSnsCells.
   ///
   /// In en, this message translates to:
   /// **'SNS cells (heat)'**
   String get gridViewSnsCells;
-
-  /// No description provided for @gridViewSnsCellsShort.
-  ///
-  /// In en, this message translates to:
-  /// **'SNS'**
-  String get gridViewSnsCellsShort;
 
   /// No description provided for @gridViewWeather.
   ///
@@ -3266,23 +3356,11 @@ abstract class AppLocalizations {
   /// **'Weather (environment)'**
   String get gridViewWeather;
 
-  /// No description provided for @gridViewWeatherShort.
-  ///
-  /// In en, this message translates to:
-  /// **'WX'**
-  String get gridViewWeatherShort;
-
   /// No description provided for @gridViewMeshbook.
   ///
   /// In en, this message translates to:
   /// **'Meshbook (channel activity)'**
   String get gridViewMeshbook;
-
-  /// No description provided for @gridViewMeshbookShort.
-  ///
-  /// In en, this message translates to:
-  /// **'MBk'**
-  String get gridViewMeshbookShort;
 
   /// No description provided for @meshbookTitle.
   ///
@@ -3475,12 +3553,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count} reporting'**
   String weatherReporting(int count);
-
-  /// No description provided for @docsHubTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Docs'**
-  String get docsHubTitle;
 
   /// No description provided for @docsHubSubtitle.
   ///
@@ -5047,12 +5119,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Enter valid numbers for freq/BW/SF/CR'**
   String get deviceToastInvalidRadio;
-
-  /// No description provided for @deviceToastRadioSent.
-  ///
-  /// In en, this message translates to:
-  /// **'Radio params sent — restart/observe the device to confirm'**
-  String get deviceToastRadioSent;
 
   /// No description provided for @deviceLocPermDenied.
   ///
