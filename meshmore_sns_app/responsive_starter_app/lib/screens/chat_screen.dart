@@ -26,6 +26,7 @@ import '../theme/mm_tokens.dart';
 import '../tts/tts_controller.dart';
 import '../ui/mm_page_header.dart';
 import '../ui/mm_scaffold.dart';
+import '../util/clock_model.dart';
 import '../ui/mm_shape.dart';
 import 'package:meshcore/meshcore.dart';
 
@@ -552,8 +553,10 @@ class _MessageRow extends StatelessWidget {
   /// tag). Null = first message from them this session, or not block mode.
   final Duration? sinceLast;
 
-  String get _time =>
-      '${m.at.hour.toString().padLeft(2, '0')}:${m.at.minute.toString().padLeft(2, '0')}';
+  /// APP-N3 — a stamp the reader can trust: the sender's own `HH:MM` when
+  /// that clock agrees with this phone, and a named marker when it does not
+  /// (a sender running fast used to print a time in the future).
+  String _time(AppLocalizations l) => clockStamp(l, m.at);
 
   List<String> get _meta => <String>[
         if (m.isFlood) 'flood',
@@ -582,6 +585,7 @@ class _MessageRow extends StatelessWidget {
 
   // --- terminal log (SEELE / NERV / Recon) ---------------------------
   Widget _log(BuildContext context, MmSkin skin) {
+    final AppLocalizations l = AppLocalizations.of(context);
     // R71: Studio sets words sans, machine data mono (see
     // StudioMessageRow); the terminal presets keep the all-mono log.
     if (skin.type.sansLabels) {
@@ -609,7 +613,7 @@ class _MessageRow extends StatelessWidget {
             // R102 — scale the gutter with the text (see StudioMessageRow).
             SizedBox(
               width: 56 * MediaQuery.textScalerOf(context).scale(1),
-              child: Text('$_time ${m.outgoing ? '»' : '«'}',
+              child: Text('${_time(l)} ${m.outgoing ? '»' : '«'}',
                   maxLines: 1,
                   softWrap: false,
                   style: TextStyle(
@@ -683,6 +687,7 @@ class _MessageRow extends StatelessWidget {
   // (unique per name, stable for the session) plus the cadence since that
   // name last spoke.
   Widget _block(BuildContext context, MmSkin skin) {
+    final AppLocalizations l = AppLocalizations.of(context);
     final ({String? sender, String body}) s = _split();
     final Color base = skin.color.base;
     final String idKey = _identityKey(m);
@@ -733,7 +738,7 @@ class _MessageRow extends StatelessWidget {
                 DeliveryStatusIcon(m.delivery!),
                 const SizedBox(width: 5),
               ],
-              Text(<String>[_time, ...meta].join(' · '),
+              Text(<String>[_time(l), ...meta].join(' · '),
                   style: TextStyle(
                       color: ink.withValues(alpha: 0.65), fontSize: 10)),
             ],
@@ -796,6 +801,7 @@ class _MessageRow extends StatelessWidget {
     required Color metaColor,
   }) {
     final List<String> meta = _meta;
+    final AppLocalizations l = AppLocalizations.of(context);
     return Align(
       alignment: m.outgoing ? Alignment.centerRight : Alignment.centerLeft,
       child: ConstrainedBox(
@@ -837,7 +843,7 @@ class _MessageRow extends StatelessWidget {
                       const SizedBox(width: 5),
                     ],
                     Text(
-                        <String>[_time, ...meta].join(' · '),
+                        <String>[_time(l), ...meta].join(' · '),
                         style: TextStyle(color: metaColor, fontSize: 10)),
                   ],
                 ),

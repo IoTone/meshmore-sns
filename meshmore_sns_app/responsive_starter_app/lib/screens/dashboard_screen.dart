@@ -11,6 +11,8 @@ import '../meshcore/mesh_event.dart';
 import '../meshcore/meshcore_controller.dart';
 import '../meshcore/own_location.dart';
 import '../theme/mm_skin.dart';
+import '../app/degraded_state.dart';
+import '../ui/degraded_banner.dart';
 import 'dashboards/my_pubkey_line.dart';
 import '../ui/mm_components.dart';
 import '../meshcore/region_presets.dart';
@@ -67,6 +69,24 @@ class DashboardScreen extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 28),
       children: <Widget>[
+        // APP-N4 — the states this view can observe: the link and the radio's
+        // own battery. Location and tiles are observed where they are known,
+        // not guessed from here.
+        DegradedBanner(
+          state: DegradedState.observe(
+            radioPaired: mc.state != MeshcoreConnectionState.disconnected,
+            radioAnswering: mc.state == MeshcoreConnectionState.ready,
+            storageFull: false,
+            hasLocation: true,
+            mapReachable: true,
+            clockUnset: false,
+            // The battery is the radio's own reading, fetched by the stats
+            // tool. Diagnostics already shows it with its source
+            // (`RadioHealthBlock`); the dashboard does not read stats just to
+            // draw a banner, so it passes nothing rather than guessing.
+            batteryMilliVolts: null,
+          ),
+        ),
         // Dominant numeral.
         Text(l.dashboardPeersInRange,
             style: TextStyle(

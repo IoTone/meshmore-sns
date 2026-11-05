@@ -104,10 +104,42 @@ implementing networking. Concretely:
 - It does not yet have a way to save a set of values as a named network and
   apply it to another radio. That is the missing piece, and it is a data
   model plus UI, not a protocol.
-- Nothing about LDMUX changes: it still carries records as direct raw custom
-  over whatever the radio is configured to.
+- Raw custom records (`CMD_SEND_RAW_DATA`, `CMD_SEND_RAW_PACKET`) stay
+  available in the app's own send path: they travel as direct raw over
+  whatever the radio is configured to, so a private payload needs no radio
+  support beyond those two commands.
 
-## 6. Sources
+## 7. Interop matrix (APP-N7)
+
+What is proven, against what, and what a user outside the proven set loses.
+A cell is `PROVEN` only with a test name or a capture behind it; everything
+else says what would prove it. The mechanism is the capability probe
+(`packages/meshcore/lib/src/codec/capability.dart`): a capability is
+`unknown` until a reply or a probe says otherwise, and `unknown` is refused
+rather than attempted.
+
+| Capability | Mainline companion | Two-profile companion | Degrades to | Evidence |
+|---|---|---|---|---|
+| Frame envelope, V1 message frames | PROVEN | PROVEN | — | `frame_codec_test.dart`, `conformance_test.dart` (golden vectors `m1`–`m6`) |
+| V3 message frames (per-message SNR) | PROVEN decode, from firmware layout (`MyMesh.cpp:435-443`, `:548-556`) | PROVEN decode | An older radio answers V1 frames; the app decodes both, so the SNR cell is simply empty | `frame_codec_test.dart` (V1 + V3 cases), `interop_replay_test.dart` |
+| `appTargetVer` 3 request | PROVEN | PROVEN | firmware that ignores the second byte keeps emitting V1 | `constants.dart` `kAppTargetVer`, `conformance_test.dart` |
+| `0x3E` channel datagram send | PROVEN encoder + fake-transport round trip | PROVEN encoder | `kErrUnsupportedCmd` before the write, refused with the catalogue sentence | `packages/meshcore/test/channel_data_test.dart`, plus the app-side round trip in `test/meshcore/channel_datagram_test.dart` |
+| Inbound `0x1B` profile/via byte | Always `0` on mainline (`MyMesh.cpp:601-602`) | Carries the receiving profile (`rxViaTag`) | Shows "not reported" rather than a fabricated profile | `inbound_push_test.dart`, diagnostics screen test |
+| `CHANNEL_INFO` secret width | 16 bytes (`MyMesh.cpp:1715-1721`) | 16 or 32 | A third width is a named decode failure, not a guess | `decode` cases in `frame_codec_test.dart` |
+| `0x1D` CLI reply | PROVEN decode | PROVEN decode | — | `packages/meshcore/test/cli_command_test.dart` |
+| `0x91` one-key DM rejected | Not emitted | PROVEN decode (`1 + 32`, `MyMesh.cpp:2602-2611` in the two-profile tree) | The capability stays `unknown`, so the app cannot claim it will be told | `packages/meshcore/test/one_key_reject_test.dart` |
+| `0x42` typed CLI whitelist | Only `get/set buzzer`, `get/set vibration` are documented as unambiguous typed operations (`docs/cli_commands.md:2716-2722`) | Same | An undocumented selector is not offered; the row stays open | `packages/meshcore/test/cli_command_test.dart` |
+| `0x4A`/`0x4B` firmware OTA | Status decode only; an install consumes the offline queue to `OTA_RETAINED_OFFLINE_FRAMES` (`MyMesh.cpp:607-611`) | Same | Start is refused with its reason, never attempted | the start refusal in the package's OTA codec test |
+| ATT MTU for one whole frame (179) | **UNVERIFIED** — mainline asks 176 (`src/helpers/esp32/SerialBLEInterface.cpp:29`), which is 3 short of its own largest frame | **UNVERIFIED** | The app refuses a link below 179 and shows the negotiated value; short frames still cross, and the truncation counter names what did not | `MeshcoreBle.requiredMtu`; needs a measured `mtuNow` per radio at W10 |
+| Java port (`libmeshcore`) | PROVEN against the same vectors (`m1`–`m6`, pinned to `companion-v1.15.0`) | Not modelled | The port is a host-side mirror, not shipped to the phone | `libmeshcore/src/test/.../GoldenVectorsTest`, `DecodeContractTest` |
+
+Two rows are deliberately `UNVERIFIED` rather than asserted: the MTU a real
+phone negotiates with each firmware family, and whether any shipping build
+emits `0x91`. Both are W10 measurements, and the matrix is where their result
+lands. Until then the app's behaviour is the capability probe's: refuse, with
+the reason, not attempt.
+
+## 8. Sources
 
 - `examples/companion_radio/MyMesh.cpp` @ `companion-v1.17.1` (`d929643`):
   command defines `:30-65`, path hash mode `:1466-1473`, flood scope key

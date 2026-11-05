@@ -9,6 +9,7 @@ import 'package:meshcore/meshcore.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 import 'ble_meshcore_transport.dart';
+import 'failure.dart';
 import 'paired_device_history.dart';
 import 'paired_device_store.dart';
 
@@ -21,11 +22,18 @@ class _Link {
 }
 
 /// Thrown when scan/connect cannot complete.
+///
+/// Carries a [FailureCause] rather than a sentence (APP-N2): the same failure
+/// reaches a log line and a translated banner, and only the banner is read by
+/// a person. [adapter] keeps the one detail a developer needs to tell "off"
+/// from "not on this phone".
 class BleConnectException implements Exception {
-  BleConnectException(this.message);
-  final String message;
+  BleConnectException(this.cause, {this.adapter});
+  final FailureCause cause;
+  final String? adapter;
   @override
-  String toString() => 'BleConnectException: $message';
+  String toString() =>
+      'BleConnectException(${cause.name}${adapter == null ? '' : ' $adapter'})';
 }
 
 /// The link came up but negotiated an ATT MTU too small to carry one whole
@@ -94,11 +102,6 @@ abstract final class BleConnector {
   /// in range, is.
   static int _consecutiveFailures = 0;
 
-  static const String _notKeepingPairing =
-      'The radio is not keeping its pairing: it paired, then could not encrypt '
-      'on the next connection. Power-cycle the radio, then reopen the app and '
-      'pair again. If that repeats, the radio is losing its stored bond.';
-
   /// Request the runtime BLE permissions. The permission model is
   /// platform-specific:
   ///
@@ -146,7 +149,7 @@ abstract final class BleConnector {
     bool writeWithoutResponse = false,
   }) async {
     if (!await ensurePermissions()) {
-      throw BleConnectException('BLE permissions denied');
+      throw BleConnectException(FailureCause.blePermissionsDenied);
     }
 
     // Wait for the adapter to be on.
@@ -157,7 +160,7 @@ abstract final class BleConnector {
         .timeout(const Duration(seconds: 5),
             onTimeout: () => BluetoothAdapterState.unknown);
     if (adapter != BluetoothAdapterState.on) {
-      throw BleConnectException('Bluetooth adapter not on ($adapter)');
+      throw BleConnectException(FailureCause.bluetoothOff, adapter: '$adapter');
     }
 
     await FlutterBluePlus.startScan(
@@ -184,7 +187,7 @@ abstract final class BleConnector {
     await sub.cancel();
     await FlutterBluePlus.stopScan();
     if (seen.isEmpty) {
-      throw BleConnectException('No MeshCore device found');
+      throw BleConnectException(FailureCause.noRadioFound);
     }
 
     final BluetoothDevice device =
@@ -245,7 +248,7 @@ abstract final class BleConnector {
     bool writeWithoutResponse = false,
   }) async {
     if (!await ensurePermissions()) {
-      throw BleConnectException('BLE permissions denied');
+      throw BleConnectException(FailureCause.blePermissionsDenied);
     }
     final BluetoothDevice device = BluetoothDevice.fromId(remoteId);
     return _open(device, writeWithoutResponse, timeout: timeout);
@@ -266,7 +269,7 @@ abstract final class BleConnector {
     Duration timeout = const Duration(seconds: 12),
   }) async* {
     if (!await ensurePermissions()) {
-      throw BleConnectException('BLE permissions denied');
+      throw BleConnectException(FailureCause.blePermissionsDenied);
     }
     final BluetoothAdapterState adapter = await FlutterBluePlus.adapterState
         .firstWhere((BluetoothAdapterState s) =>
@@ -275,7 +278,7 @@ abstract final class BleConnector {
         .timeout(const Duration(seconds: 5),
             onTimeout: () => BluetoothAdapterState.unknown);
     if (adapter != BluetoothAdapterState.on) {
-      throw BleConnectException('Bluetooth adapter not on ($adapter)');
+      throw BleConnectException(FailureCause.bluetoothOff, adapter: '$adapter');
     }
     await FlutterBluePlus.startScan(
       withServices: <Guid>[_service],
@@ -428,9 +431,7 @@ abstract final class BleConnector {
       // type it into the system dialog.
       await device.createBond(timeout: 60);
     } catch (_) {
-      throw BleConnectException(
-          'Pairing failed — enter the PIN shown on the radio screen '
-          '(screenless radios use 123456), then retry');
+      throw BleConnectException(FailureCause.pairingFailed);
     }
     return false;
   }
@@ -477,7 +478,7 @@ abstract final class BleConnector {
     // Refuse before anything else once the repair has been spent and failed:
     // connecting would kill the link on the radio's own key check and then ask
     // for a PIN nobody can make stick.
-    if (_repairFailed) throw BleConnectException(_notKeepingPairing);
+    if (_repairFailed) throw BleConnectException(FailureCause.pairingNotKept);
     // Read before connecting: the bond that has to be judged is the one that
     // existed before this attempt, and reading makes no bond and asks nothing.
     final bool hadBond = await _bondExists(device);
@@ -521,7 +522,7 @@ abstract final class BleConnector {
         return await _repairBond(device, writeWithoutResponse);
       } catch (_) {
         _repairFailed = true;
-        throw BleConnectException(_notKeepingPairing);
+        throw BleConnectException(FailureCause.pairingNotKept);
       }
     }
   }
@@ -558,9 +559,7 @@ abstract final class BleConnector {
       rethrow;
     } catch (_) {
       await _safeDisconnect(device);
-      throw BleConnectException(
-          'Stale pairing — the radio no longer holds this bond. Forget it in '
-          'Android Bluetooth settings, power-cycle the radio, then pair again');
+      throw BleConnectException(FailureCause.stalePairing);
     }
   }
 
@@ -642,15 +641,15 @@ abstract final class BleConnector {
     final List<BluetoothService> services = await device.discoverServices();
     final BluetoothService svc = services.firstWhere(
       (BluetoothService s) => _sameUuid(s.uuid, _service),
-      orElse: () => throw BleConnectException('MeshCore service not present'),
+      orElse: () => throw BleConnectException(FailureCause.serviceMissing),
     );
     final BluetoothCharacteristic rx = svc.characteristics.firstWhere(
       (BluetoothCharacteristic c) => _sameUuid(c.uuid, _rxUuid),
-      orElse: () => throw BleConnectException('RX characteristic missing'),
+      orElse: () => throw BleConnectException(FailureCause.characteristicMissing),
     );
     final BluetoothCharacteristic tx = svc.characteristics.firstWhere(
       (BluetoothCharacteristic c) => _sameUuid(c.uuid, _txUuid),
-      orElse: () => throw BleConnectException('TX characteristic missing'),
+      orElse: () => throw BleConnectException(FailureCause.characteristicMissing),
     );
     return _Link(rx, tx);
   }

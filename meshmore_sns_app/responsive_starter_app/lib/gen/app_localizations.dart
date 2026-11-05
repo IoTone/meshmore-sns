@@ -7503,6 +7503,204 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Other'**
   String get placeTypeOther;
+
+  /// No description provided for @failureUnsupportedCommand.
+  ///
+  /// In en, this message translates to:
+  /// **'The radio does not support that command. Its firmware is older than this app expects; update the radio or use a command it lists.'**
+  String get failureUnsupportedCommand;
+
+  /// No description provided for @failureNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'The radio could not find the target of that request: the channel, contact or message is not on it. Refresh the contact list, then retry.'**
+  String get failureNotFound;
+
+  /// No description provided for @failureTableFull.
+  ///
+  /// In en, this message translates to:
+  /// **'The radio\'s queue or table is full, so it refused the request. Wait for it to drain, then retry; nothing was lost.'**
+  String get failureTableFull;
+
+  /// No description provided for @failureBadState.
+  ///
+  /// In en, this message translates to:
+  /// **'The radio is busy with another operation and cannot start this one. Wait for the current operation to finish, then retry.'**
+  String get failureBadState;
+
+  /// No description provided for @failureFileIoError.
+  ///
+  /// In en, this message translates to:
+  /// **'The radio\'s storage refused the write. Its own log has the detail; retry once, and if it repeats the radio\'s filesystem needs attention.'**
+  String get failureFileIoError;
+
+  /// No description provided for @failureIllegalArgument.
+  ///
+  /// In en, this message translates to:
+  /// **'The radio rejected the value or length as invalid. Check the field you changed: one value is outside what this firmware accepts.'**
+  String get failureIllegalArgument;
+
+  /// No description provided for @failureUnknownDeviceError.
+  ///
+  /// In en, this message translates to:
+  /// **'The radio refused the request without a reason this app knows. The diagnostics page shows the raw frame.'**
+  String get failureUnknownDeviceError;
+
+  /// No description provided for @failureBlePermissions.
+  ///
+  /// In en, this message translates to:
+  /// **'Bluetooth permission was refused, so the app cannot reach the radio. Allow Nearby devices for this app in Android settings, then reconnect.'**
+  String get failureBlePermissions;
+
+  /// No description provided for @failureBluetoothOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Bluetooth is off. Turn it on, then reconnect.'**
+  String get failureBluetoothOff;
+
+  /// No description provided for @failureNoRadioFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No radio answered the scan. Check that the radio is powered on, in range, and not already connected to another phone.'**
+  String get failureNoRadioFound;
+
+  /// No description provided for @failurePairingFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'The pairing did not complete. Enter the PIN shown on the radio screen (screenless radios use 123456), then retry.'**
+  String get failurePairingFailed;
+
+  /// No description provided for @failureStalePairing.
+  ///
+  /// In en, this message translates to:
+  /// **'The radio no longer holds this pairing. Forget it in Android Bluetooth settings, power-cycle the radio, then pair again.'**
+  String get failureStalePairing;
+
+  /// No description provided for @failurePairingNotKept.
+  ///
+  /// In en, this message translates to:
+  /// **'The radio paired and then could not encrypt on the next connection, so it is losing its stored pairing. Power-cycle it, reopen the app and pair again; if it repeats, the radio\'s bond storage is the fault.'**
+  String get failurePairingNotKept;
+
+  /// No description provided for @failureServiceMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'This device does not expose the MeshCore service, so it is probably not a MeshCore radio.'**
+  String get failureServiceMissing;
+
+  /// No description provided for @failureCharacteristicMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'The radio\'s link is missing a characteristic the app needs. Its firmware may be older than this app expects.'**
+  String get failureCharacteristicMissing;
+
+  /// No description provided for @failureMtuTooSmall.
+  ///
+  /// In en, this message translates to:
+  /// **'This phone link negotiated {mtu} bytes and one radio frame needs {need}. Reconnect to negotiate again; a radio that caps the link smaller cannot carry every frame.'**
+  String failureMtuTooSmall(String mtu, String need);
+
+  /// No description provided for @failureFrameTruncated.
+  ///
+  /// In en, this message translates to:
+  /// **'A frame arrived cut short and was not decoded. The link cannot carry the radio\'s longest frames; the count is on the diagnostics page.'**
+  String get failureFrameTruncated;
+
+  /// No description provided for @failureFrameTrailingBytes.
+  ///
+  /// In en, this message translates to:
+  /// **'A frame carried bytes past its own end. The extra bytes were dropped rather than guessed at; the count is on the diagnostics page.'**
+  String get failureFrameTrailingBytes;
+
+  /// No description provided for @failureStorageFull.
+  ///
+  /// In en, this message translates to:
+  /// **'The phone refused a write because storage is full. Nothing is being deleted silently; free space and the history stays as it is.'**
+  String get failureStorageFull;
+
+  /// No description provided for @failureRadioSilent.
+  ///
+  /// In en, this message translates to:
+  /// **'The radio accepted the request but did not answer in time. It may still have carried it out; check the radio before retrying.'**
+  String get failureRadioSilent;
+
+  /// No description provided for @clockUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'time unknown'**
+  String get clockUnknown;
+
+  /// No description provided for @clockJustNow.
+  ///
+  /// In en, this message translates to:
+  /// **'just now'**
+  String get clockJustNow;
+
+  /// No description provided for @clockMinutesAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} min ago'**
+  String clockMinutesAgo(String count);
+
+  /// No description provided for @clockHoursAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} h ago'**
+  String clockHoursAgo(String count);
+
+  /// No description provided for @clockDaysAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} d ago'**
+  String clockDaysAgo(String count);
+
+  /// No description provided for @clockAhead.
+  ///
+  /// In en, this message translates to:
+  /// **'sender\'s clock is {count} min ahead'**
+  String clockAhead(String count);
+
+  /// No description provided for @degradedStorageFull.
+  ///
+  /// In en, this message translates to:
+  /// **'This phone refused a write because storage is full. Nothing was deleted to make room; free space and history continues.'**
+  String get degradedStorageFull;
+
+  /// No description provided for @degradedClockUnset.
+  ///
+  /// In en, this message translates to:
+  /// **'The radio\'s clock has never been set, so times it reports are shown as time unknown until it is.'**
+  String get degradedClockUnset;
+
+  /// No description provided for @degradedBatteryCritical.
+  ///
+  /// In en, this message translates to:
+  /// **'The radio\'s battery is low enough that its transmissions may be cut. Charge it before relying on a long send.'**
+  String get degradedBatteryCritical;
+
+  /// No description provided for @degradedRadioAbsent.
+  ///
+  /// In en, this message translates to:
+  /// **'No radio is connected. Everything already received stays readable; sending, telemetry and places wait until a radio connects.'**
+  String get degradedRadioAbsent;
+
+  /// No description provided for @degradedRadioSilent.
+  ///
+  /// In en, this message translates to:
+  /// **'The radio is paired but has not answered. It may still have carried out the last request; check the radio before retrying.'**
+  String get degradedRadioSilent;
+
+  /// No description provided for @degradedNoLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Location is off, so distances, bearings and place reports have no fix. Everything else works.'**
+  String get degradedNoLocation;
+
+  /// No description provided for @degradedMapOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'Map tiles cannot be fetched. The bundled basemap and anything already on disk still draw; the rest of the app is unaffected.'**
+  String get degradedMapOffline;
 }
 
 class _AppLocalizationsDelegate
