@@ -48,3 +48,44 @@ class ChannelDatagram {
   String toString() => 'ChannelDatagram(ch $channelIndex, type '
       '0x${dataType.toRadixString(16)}, ${blob.length} B, ${rxVia.name})';
 }
+
+/// What the radio did with a datagram the app handed it.
+///
+/// The radio answers `CMD_SEND_CHANNEL_DATA` with a bare OK or ERR
+/// (`MyMesh.cpp:1158-1189`), never `RESP_CODE_SENT`, so this says what the
+/// radio accepted — not what any peer received.
+enum ChannelDataSendStatus {
+  /// The radio took the datagram and put it on air.
+  accepted,
+
+  /// Refused here, before the radio saw it: the blob or the path did not
+  /// fit. [ChannelDataSendResult.refusal] says which budget bound.
+  refusedLocally,
+
+  /// The radio refused it ([ChannelDataSendResult.errorCode] carries the
+  /// firmware's code, e.g. `ERR_CODE_NOT_FOUND` for a bad channel slot).
+  refusedByRadio,
+
+  /// Written to the radio with no answer inside the deadline. The radio may
+  /// have transmitted, so a caller that meters airtime must still charge it.
+  noAnswer,
+
+  /// The link is not ready; nothing was written.
+  notReady,
+}
+
+/// The outcome of one channel-datagram send.
+class ChannelDataSendResult {
+  const ChannelDataSendResult(this.status, {this.refusal, this.errorCode});
+
+  final ChannelDataSendStatus status;
+  final ChannelDataRefusal? refusal;
+  final int? errorCode;
+
+  bool get accepted => status == ChannelDataSendStatus.accepted;
+
+  @override
+  String toString() => 'ChannelDataSendResult(${status.name}'
+      '${refusal == null ? '' : ', ${refusal!.name}'}'
+      '${errorCode == null ? '' : ', err $errorCode'})';
+}

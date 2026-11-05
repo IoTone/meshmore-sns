@@ -75,10 +75,12 @@ class MeshcoreController extends ChangeNotifier {
     BackgroundKeepalive? backgroundKeepalive,
     LocationService? locationService,
     Duration? deliveryTimeoutOverride,
+    Duration? channelDataTimeout,
     Duration? telemetryPollInterval,
     Duration? selfInfoPollInterval,
     PlaceInferenceEngine? placeInferenceEngine,
   })  : _deliveryTimeoutOverride = deliveryTimeoutOverride,
+        _channelDataTimeoutOverride = channelDataTimeout,
         _selfInfoPollInterval =
             selfInfoPollInterval ?? const Duration(seconds: 60),
         _telemPollIntervalOverride = telemetryPollInterval,
@@ -928,6 +930,97 @@ class MeshcoreController extends ChangeNotifier {
   /// drop its marker so the next SENT goes to the right message.
   void abandonToolRequest() => _dropPending(_toolSendMarker);
 
+  /// Marker id in [_ledger] for a channel datagram (`CMD_SEND_CHANNEL_DATA`),
+  /// which the firmware answers with a bare OK/ERR (`MyMesh.cpp:1158-1189`).
+  static const String _channelDataMarker = '\u0000chdata';
+
+  /// The datagram send currently waiting for its OK/ERR, if any. Sends are
+  /// serialised ([_channelDataTail]) because the answer carries no tag.
+  Completer<MeshcoreInbound>? _channelDataAnswer;
+  Future<void> _channelDataTail = Future<void>.value();
+
+  /// How long a datagram send waits for the radio's answer. Overridable so
+  /// tests do not spend five seconds proving a timeout.
+  final Duration? _channelDataTimeoutOverride;
+
+  static const Duration _channelDataTimeout = Duration(seconds: 5);
+
+  /// Send [blob] on [channelIdx] as a channel datagram (`0x3E`).
+  ///
+  /// The blob is a payload for whatever layer owns [dataType]; this method
+  /// only carries it. Sends are serialised: the radio's answer has no tag,
+  /// so two in flight could not be told apart.
+  Future<ChannelDataSendResult> sendChannelData({
+    required int channelIdx,
+    required int dataType,
+    required List<int> blob,
+    int pathLen = kPathLenFlood,
+    List<int> path = const <int>[],
+  }) {
+    final Future<ChannelDataSendResult> result =
+        _channelDataTail.then((_) => _sendChannelData(
+              channelIdx: channelIdx,
+              dataType: dataType,
+              blob: blob,
+              pathLen: pathLen,
+              path: path,
+            ));
+    _channelDataTail = result.then<void>((_) {}, onError: (Object _) {});
+    return result;
+  }
+
+  Future<ChannelDataSendResult> _sendChannelData({
+    required int channelIdx,
+    required int dataType,
+    required List<int> blob,
+    required int pathLen,
+    required List<int> path,
+  }) async {
+    if (!isReady) {
+      return const ChannelDataSendResult(ChannelDataSendStatus.notReady);
+    }
+    final Uint8List frame;
+    try {
+      frame = MeshcoreFrameCodec.sendChannelData(
+        channelIdx: channelIdx,
+        dataType: dataType,
+        blob: blob,
+        pathLen: pathLen,
+        path: path,
+      );
+    } on ChannelDataException catch (e) {
+      return ChannelDataSendResult(
+        ChannelDataSendStatus.refusedLocally,
+        refusal: e.refusal,
+      );
+    }
+    final Completer<MeshcoreInbound> answer = Completer<MeshcoreInbound>();
+    _channelDataAnswer = answer;
+    _registerMarker(_channelDataMarker, CommandAnswer.ok);
+    try {
+      await send(frame);
+      final MeshcoreInbound reply = await answer.future
+          .timeout(_channelDataTimeoutOverride ?? _channelDataTimeout);
+      if (reply is OkFrame) {
+        return const ChannelDataSendResult(ChannelDataSendStatus.accepted);
+      }
+      return ChannelDataSendResult(
+        ChannelDataSendStatus.refusedByRadio,
+        errorCode: (reply as ErrorFrame).code,
+      );
+    } on TimeoutException {
+      _dropPending(_channelDataMarker);
+      // The frame was written, so the radio may have transmitted it.
+      return const ChannelDataSendResult(ChannelDataSendStatus.noAnswer);
+    } catch (_) {
+      _dropPending(_channelDataMarker);
+      _emitTaskError('sendChannelData');
+      return const ChannelDataSendResult(ChannelDataSendStatus.notReady);
+    } finally {
+      if (identical(_channelDataAnswer, answer)) _channelDataAnswer = null;
+    }
+  }
+
   /// Marker id in [_ledger] for a raw-data send (`CMD_SEND_RAW_DATA`),
   /// which the firmware answers with a bare OK or ERR, never SENT
   /// (`MyMesh.cpp` CMD_SEND_RAW_DATA: `writeOKFrame()` / `writeErrFrame()`).
@@ -1411,11 +1504,17 @@ class MeshcoreController extends ChangeNotifier {
     for (final String id in _ledger.expire()) {
       if (id == _toolSendMarker ||
           id == _advertSendMarker ||
-          id == _rawSendMarker) {
+          id == _rawSendMarker ||
+          id == _channelDataMarker) {
         continue;
       }
       _failOutgoing(id, 'no answer from the radio');
     }
+  }
+
+  void _completeChannelData(MeshcoreInbound reply) {
+    final Completer<MeshcoreInbound>? c = _channelDataAnswer;
+    if (c != null && !c.isCompleted) c.complete(reply);
   }
 
   /// Fail a message that is still in flight, with a reason. Monotonic:
@@ -1525,9 +1624,12 @@ class MeshcoreController extends ChangeNotifier {
       // Channel text, raw data, channel datagrams and the self-advert are
       // acknowledged with a bare OK.
       final CommandEntry? p = _takePending(CommandAnswer.ok);
-      if (p == null ||
-          p.id == _advertSendMarker ||
-          p.id == _rawSendMarker) {
+      if (p == null) return;
+      if (p.id == _channelDataMarker) {
+        _completeChannelData(f);
+        return;
+      }
+      if (p.id == _advertSendMarker || p.id == _rawSendMarker) {
         return;
       }
       final ChatMessage? m = _messageById(p.id);
@@ -1545,6 +1647,10 @@ class MeshcoreController extends ChangeNotifier {
       if (_squelchNextDeviceError > 0) return;
       final CommandEntry? p = _ledger.takeHead();
       if (p == null) return;
+      if (p.id == _channelDataMarker) {
+        _completeChannelData(f);
+        return;
+      }
       if (p.id == _toolSendMarker ||
           p.id == _advertSendMarker ||
           p.id == _rawSendMarker) {
