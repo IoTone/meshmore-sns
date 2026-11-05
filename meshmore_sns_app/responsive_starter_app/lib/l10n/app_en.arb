@@ -1959,5 +1959,6 @@
   "placePhotoMayNotArrive": "The photo may not arrive. The text will.",
   "@placePhotoMayNotArrive": {},
   "placePhotoFetch": "Fetch photo",
-  "@placePhotoFetch": {}
+  "@placePhotoFetch": {},
+  "placePhotoFetching": "Asking the mesh for the photo…"
 }

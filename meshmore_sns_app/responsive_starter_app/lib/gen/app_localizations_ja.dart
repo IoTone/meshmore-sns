@@ -4428,4 +4428,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get placePhotoFetch => '写真を取得';
+
+  @override
+  String get placePhotoFetching => 'メッシュに写真を問い合わせています…';
 }

@@ -1,7 +1,7 @@
 // Copyright (c) 2026 IoTone, Inc.
 // SPDX-License-Identifier: MIT
 import 'dart:async';
-import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
 
 import '../media/media_codec.dart';
 import '../media/media_photo.dart';
@@ -118,6 +118,7 @@ final class PlacePhotoFetch {
     required this.photos,
     required this.clock,
     required this.sendAsk,
+    this.sendRequest,
     this.timeout = const Duration(seconds: 90),
   });
 
@@ -134,6 +135,15 @@ final class PlacePhotoFetch {
 
   final Duration timeout;
 
+  /// Sends the missing-chunk request datagram. Null when the surface cannot
+  /// send, in which case the progress view offers no ask.
+  final Future<void> Function(Uint8List request)? sendRequest;
+
+  /// The live progress of the transfer, so a surface can show what arrived
+  /// without polling.
+  final ValueNotifier<MediaDownloadProgress?> progress =
+      ValueNotifier<MediaDownloadProgress?>(null);
+
   final Completer<PlacePhoto?> _done = Completer<PlacePhoto?>();
 
   PlacePhotoFetchFailure? _failure;
@@ -147,10 +157,34 @@ final class PlacePhotoFetch {
   /// surface sharing this stream can keep its own accounting.
   MediaIntake accept(List<int> blob) {
     final MediaIntake intake = download.accept(blob);
+    final PlacePhotoRef? reference = ref;
+    if (reference != null) {
+      progress.value = download.progressFor(reference.payloadId);
+    }
     if (intake == MediaIntake.complete && !_done.isCompleted) {
       unawaited(_finish());
     }
     return intake;
+  }
+
+  /// Asks for the chunks that are still missing. Returns how many the request
+  /// named, so the copy can say it rather than leaving the user guessing.
+  Future<int> askForMissing() async {
+    final PlacePhotoRef? reference = ref;
+    final Future<void> Function(Uint8List)? send = sendRequest;
+    if (reference == null || send == null) return 0;
+    final Uint8List? request = download.requestBytesFor(reference.payloadId);
+    if (request == null) return 0;
+    final List<int> missing =
+        download.progressFor(reference.payloadId)?.missing ?? <int>[];
+    await send(request);
+    return missing.length;
+  }
+
+  /// Releases the notifier. A fetch is short-lived, so its owner disposes it
+  /// when the sheet closes rather than keeping a listener on a dead transfer.
+  void dispose() {
+    progress.dispose();
   }
 
   Future<PlacePhoto?> run() async {

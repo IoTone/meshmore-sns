@@ -39,6 +39,26 @@ final class MediaPhotoSourceFailure implements Exception {
   String toString() => 'MediaPhotoSourceFailure($reason)';
 }
 
+/// A source for a build with no platform photo reader.
+///
+/// It is a named state rather than a disabled button: the composer says the
+/// build cannot read a photo, which is true, instead of failing on a tap. The
+/// platform picker is a separate dependency with its own permissions and its
+/// own native library, so it arrives as its own decision with its own 16 KB
+/// check.
+final class UnavailableMediaPhotoSource implements MediaPhotoSource {
+  const UnavailableMediaPhotoSource();
+
+  @override
+  bool get isAvailable => false;
+
+  @override
+  Future<MediaPhoto?> pick() async => null;
+}
+
+/// The source the chat surface uses until a platform picker is decided.
+const MediaPhotoSource kNoMediaPhotoSource = UnavailableMediaPhotoSource();
+
 /// The composer for one channel: choose a picture, read its cost, send it.
 ///
 /// The order is deliberate. The channel rules run before the encoder, so a

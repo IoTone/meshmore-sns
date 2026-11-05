@@ -12,6 +12,15 @@ import 'media_reassembly.dart';
 import 'media_send_policy.dart';
 import 'media_sender.dart';
 
+/// The byte budget a channel photo is encoded to.
+///
+/// 4 KB is what the 320x240 floor is worth: a container spends 200-350 bytes
+/// before the first pixel, so a bigger number buys no visible detail and costs
+/// airtime, and a smaller one turns a sign into a smear. It is a target, not a
+/// guarantee — the plan reports an over-budget picture rather than refusing it
+/// after the encode.
+const int kMediaPhotoBudgetBytes = 4096;
+
 /// What one transfer costs, stated before anything goes on air.
 ///
 /// Airtime is the number people do not have: a 3 KB photo is twenty datagrams,

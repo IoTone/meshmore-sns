@@ -10,7 +10,6 @@ import 'package:provider/provider.dart';
 import 'package:meshmore_sns_app/gen/app_localizations.dart';
 import 'package:meshmore_sns_app/l10n/locale_controller.dart';
 import 'package:meshmore_sns_app/places/place_detail_sheet.dart';
-import 'package:meshmore_sns_app/places/place_echo.dart';
 import 'package:meshmore_sns_app/places/place_store.dart';
 import 'package:meshmore_sns_app/theme/theme_controller.dart';
 
@@ -204,7 +203,10 @@ void main() {
         place: p,
         store: store,
         photos: PlacePhotos(clock: () => _now),
-        onFetchPhoto: () async => asked = true,
+        onFetchPhoto: () async {
+          asked = true;
+          return null;
+        },
       )));
       await t.pump();
       expect(find.text('The photo may not arrive. The text will.'), findsOneWidget);

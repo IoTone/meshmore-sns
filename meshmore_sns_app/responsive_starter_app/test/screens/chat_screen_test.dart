@@ -92,6 +92,30 @@ void main() {
     mc.dispose();
   });
 
+  testWidgets('the attach control opens the media composer', (t) async {
+    await t.binding.setSurfaceSize(const Size(900, 1600));
+    addTearDown(() => t.binding.setSurfaceSize(null));
+    final FakeMeshcoreTransport fake =
+        FakeMeshcoreTransport(connected: true);
+    final MeshcoreController mc = MeshcoreController(
+      transportFactory: () async => fake,
+      connection:
+          MeshcoreConnection(handshakeTimeout: const Duration(seconds: 5)),
+    );
+    final TtsController tts = TtsController(speaker: FakeTtsSpeaker());
+    await t.pumpWidget(_host(mc, tts));
+    await mc.connect();
+    fake.emit(selfInfoFrame()); // → ready
+    await t.pumpAndSettle();
+    await t.tap(find.byKey(const ValueKey<String>('chat-attach')));
+    await t.pumpAndSettle();
+    // This build has no platform photo reader, so the composer states that
+    // rather than showing a control that cannot work.
+    expect(find.text('Send a photo'), findsOneWidget);
+    expect(find.textContaining('cannot read a photo'), findsOneWidget);
+    mc.dispose();
+  });
+
   testWidgets('channel chips switch the active channel', (t) async {
     await t.binding.setSurfaceSize(const Size(900, 1600));
     addTearDown(() => t.binding.setSurfaceSize(null));

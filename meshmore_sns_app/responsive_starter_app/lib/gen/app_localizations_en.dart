@@ -4582,4 +4582,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get placePhotoFetch => 'Fetch photo';
+
+  @override
+  String get placePhotoFetching => 'Asking the mesh for the photo…';
 }

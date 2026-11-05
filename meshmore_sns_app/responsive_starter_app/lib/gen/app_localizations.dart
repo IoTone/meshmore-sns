@@ -7851,6 +7851,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Fetch photo'**
   String get placePhotoFetch;
+
+  /// No description provided for @placePhotoFetching.
+  ///
+  /// In en, this message translates to:
+  /// **'Asking the mesh for the photo…'**
+  String get placePhotoFetching;
 }
 
 class _AppLocalizationsDelegate

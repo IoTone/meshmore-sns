@@ -1704,5 +1704,6 @@
   "mediaPhotoSemantics": "メッシュで受信した写真",
   "placePhotoNotFetched": "写真は未取得です。報告自体は完全で、写真は任意であり届かないこともあります。",
   "placePhotoMayNotArrive": "写真は届かないことがあります。テキストは届きます。",
-  "placePhotoFetch": "写真を取得"
+  "placePhotoFetch": "写真を取得",
+  "placePhotoFetching": "メッシュに写真を問い合わせています…"
 }
