@@ -399,6 +399,11 @@ codebase.
 
 ## Backlog (flagged, not started)
 
+- **Block a key** _(specified 2026-11-04, not started)._ Spec: `../meshmore-sns-block-spec.md`.
+  No firmware has a per-sender block or mute, so this is an app-side store keyed by the full
+  32-byte public key, filtered on ten surfaces and on contact-list replay. Also needs the
+  `0x91 PUSH_CODE_ONE_KEY_DM_REJECTED` decoder (keymind-only frame, 1 + 32 bytes) and an optional
+  "also remove the contact" action. Copy must name what a block cannot stop.
 - **Real per-feature app docs ("online-help-md")** _(noted, not started)._
   The Docs → App section currently points at `assets/docs/app.md`, a
   single **summary** doc. Replace it with proper per-feature help —

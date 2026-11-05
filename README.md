@@ -53,6 +53,13 @@ The requirements, the change record and the sibling specs:
 - **Telemetry and weather:** [`meshmore-sns-telemetry-research.md`](./meshmore-sns-telemetry-research.md), [`meshmore-sns-microclimate-wx.md`](./meshmore-sns-microclimate-wx.md)
 - **Tracking and Meshbook earmarks:** [`meshmore-sns-geofence-tracking.md`](./meshmore-sns-geofence-tracking.md), [`meshmore-sns-meshbook-mbk.md`](./meshmore-sns-meshbook-mbk.md)
 - **Status — what is built, what is open:** [`meshmore_sns_app/STATUS.md`](./meshmore_sns_app/STATUS.md)
+- **Feature register (start here):** [`meshmore-feature-register.md`](./meshmore-feature-register.md)
+- **The app specification — normative requirements with a check per row:** [`meshmore-app-spec.md`](./meshmore-app-spec.md)
+- **Specification breadth review — what a complete spec needs beyond the feature list:** [`meshmore-spec-breadth-review.md`](./meshmore-spec-breadth-review.md)
+- **Blocking a key — feature spec:** [`meshmore-sns-block-spec.md`](./meshmore-sns-block-spec.md)
+- **SOS and check-in — feature spec:** [`meshmore-sos-spec.md`](./meshmore-sos-spec.md)
+- **Places on the map — feature spec:** [`meshmore-places-spec.md`](./meshmore-places-spec.md)
+- **Telemetry and coverage — feature spec:** [`meshmore-telemetry-coverage-spec.md`](./meshmore-telemetry-coverage-spec.md)
 
 Highlights of what's already shipping:
 

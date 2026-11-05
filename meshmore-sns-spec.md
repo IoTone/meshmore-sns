@@ -38,7 +38,9 @@ While Meshcore protocol is open source, the client is not open source.  We want 
 ## Requirements
 
 - R1: app is written in flutter
-- R2: app runs on Android and iOS
+- R2: app runs on Android and iOS — **corrected 2026-11-04: Android only for now.** The owner deprioritised iOS
+  ("we are not worried about at all about IOS right now"); the scope of record rules it out, and no iOS target is
+  built or tested. Keep the code portable, do not claim the platform.
 - R3: app uses bluetooth to communicate with a Meshcore client device. 
 - R4: app is localized to English and Japanese
 - R5: app can perform TTS using the GPU on the phone and should have a TTS mode that can be turned on, off by default
