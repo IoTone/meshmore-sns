@@ -190,7 +190,7 @@
   },
   "deviceMgrPairNew": "Pair a new radio",
   "pairTitle": "Pair a radio",
-  "pairStepOf": "STEP {step} OF {total}",
+  "pairStepOf": "Step {step} of {total}",
   "@pairStepOf": {
     "placeholders": {
       "step": {
@@ -2907,12 +2907,12 @@
   "placeWithinHour": "Expires within 1 h",
   "placeWithinDay": "Expires within 24 h",
   "placeKeyedOnly": "Keyed places only",
-  "placeExportLedger": "Export ledger",
-  "placeExportShared": "Ledger ready to share.",
+  "placeExportLedger": "Export places",
+  "placeExportShared": "Places ready to share.",
   "@placeExportShared": {
     "description": "Snackbar after the ledger was handed to the share sheet."
   },
-  "placeExportDone": "Ledger saved to {path}",
+  "placeExportDone": "Places saved to {path}",
   "@placeExportDone": {
     "placeholders": {
       "path": {
@@ -2920,7 +2920,7 @@
       }
     }
   },
-  "placeExportFailed": "Could not write the ledger.",
+  "placeExportFailed": "Could not save the list.",
   "placeCoordinatesRefused": "Those coordinates cannot be sent.",
   "placeEchoLine": "{label} · {type} · {expiry}",
   "@placeEchoLine": {
@@ -3074,12 +3074,12 @@
     }
   },
   "sosHoldReleased": "Released too early — nothing was sent.",
-  "sosNoIdentity": "The radio has not reported its name, so an alarm has no callsign to carry.",
+  "sosNoIdentity": "The radio has not reported a name yet, so the alarm has no name to send.",
   "sosWords": "What is happening",
   "sosWordsHint": "Carried by every repeat, up to 96 bytes",
   "sosDestination": "Goes to",
   "sosEmergencyPublicKey": "The #emergency channel's key is derived from its name, so anyone who knows the name can compute it and read this.",
-  "sosEmergencyRepeat": "The radio repeats each packet once about two minutes later; the rest of the schedule does not outlive the app.",
+  "sosEmergencyRepeat": "The radio repeats each message once, about two minutes later. If the app closes, the rest stops.",
   "sosContactsNone": "With no contact copies, a channel acknowledgement can never stop this alarm.",
   "sosActive": "Alarm running",
   "sosNextSend": "Next in {seconds}s",
@@ -3150,7 +3150,7 @@
   "sosRefusedAlreadyActive": "An alarm is already running.",
   "sosRefusedNoDestination": "Choose where the alarm goes first.",
   "sosRefusedNoWords": "Say what is happening first.",
-  "sosRefusedTooLong": "That text is too long to carry the callsign and the position. Shorten it.",
+  "sosRefusedTooLong": "Too long to carry a name and a position. Shorten it.",
   "sosRefusedHold": "The hold is not finished.",
   "checkinTitle": "Check-in",
   "checkinEntryTooltip": "Check-in",
@@ -3176,7 +3176,7 @@
   "checkinWatching": "Waiting for an answer",
   "checkinOverdue": "Overdue — the deadline passed and no answer came back.",
   "checkinAnsweredDirect": "Answered, by direct message.",
-  "checkinAnsweredChannel": "Answered on the channel (claimed, not a key).",
+  "checkinAnsweredChannel": "Answered on the channel by name only, not by their key.",
   "checkinSent": "Check-in sent. Nothing repeats.",
   "checkinNeedsRadio": "A check-in needs a connected radio and the radio's name.",
   "mediaComposerTitle": "Send a photo",
@@ -3471,7 +3471,7 @@
   "reportSheetTitle": "Report this message",
   "reportObservationLabel": "What did you see? (optional)",
   "reportNothingSent": "Nothing was sent. The app wrote a file on this device; you decide where it goes.",
-  "reportBundleWritten": "Bundle written: {path}",
+  "reportBundleWritten": "Report saved to {path}",
   "@reportBundleWritten": {
     "placeholders": {
       "path": {
@@ -3479,8 +3479,8 @@
       }
     }
   },
-  "reportCopyBundle": "Copy the bundle",
-  "reportCopied": "Bundle copied.",
+  "reportCopyBundle": "Copy the report",
+  "reportCopied": "Report copied.",
   "blockedKeysNotPersisted": "This list could not be saved on this device. It filters for now and will be empty after a restart.",
   "reportActionSub": "Writes a file on this device for you to send. Nothing is transmitted."
 }

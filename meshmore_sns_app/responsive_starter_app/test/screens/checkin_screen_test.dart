@@ -168,7 +168,7 @@ void main() {
     expect(watch.state, CheckinState.answered);
     expect(watch.answer, CheckinAnswer.claimedOnChannel,
         reason: 'a channel name is a claim, not a key');
-    expect(find.text('Answered on the channel (claimed, not a key).'),
+    expect(find.text('Answered on the channel by name only, not by their key.'),
         findsOneWidget);
     await _settle(t);
   });

@@ -4213,18 +4213,18 @@ class AppLocalizationsJa extends AppLocalizations {
   String get placeKeyedOnly => '鍵のある場所のみ';
 
   @override
-  String get placeExportLedger => '台帳を書き出す';
+  String get placeExportLedger => '場所を書き出す';
 
   @override
-  String get placeExportShared => '台帳を共有できます。';
+  String get placeExportShared => '場所の一覧を共有できます。';
 
   @override
   String placeExportDone(String path) {
-    return '台帳を $path に保存しました';
+    return '場所を $path に保存しました';
   }
 
   @override
-  String get placeExportFailed => '台帳を書き出せませんでした。';
+  String get placeExportFailed => '一覧を保存できませんでした。';
 
   @override
   String get placeCoordinatesRefused => 'この座標は送信できません。';
@@ -4434,7 +4434,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get sosHoldReleased => '早く離したため、何も送信していません。';
 
   @override
-  String get sosNoIdentity => '無線が名前を返していないため、警報にコールサインを載せられません。';
+  String get sosNoIdentity => 'ラジオがまだ名前を知らせていないため、警報に名前を載せられません。';
 
   @override
   String get sosWords => '何が起きていますか';
@@ -4451,7 +4451,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get sosEmergencyRepeat =>
-      '無線は約2分後に各パケットを一度だけ再送します。それ以外の繰り返しはアプリと共に止まります。';
+      'ラジオは約 2 分後に各メッセージを一度だけ再送します。アプリを閉じると、残りは止まります。';
 
   @override
   String get sosContactsNone => '連絡先への直接送信がないため、チャンネルの応答ではこの警報を止められません。';
@@ -4529,7 +4529,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get sosRefusedNoWords => '先に状況を入力してください。';
 
   @override
-  String get sosRefusedTooLong => 'コールサインと位置を含めると長すぎます。短くしてください。';
+  String get sosRefusedTooLong => '名前と位置を含めると長すぎます。短くしてください。';
 
   @override
   String get sosRefusedHold => '長押しが完了していません。';
@@ -4569,7 +4569,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get checkinAnsweredDirect => '応答あり（直接メッセージ）。';
 
   @override
-  String get checkinAnsweredChannel => '応答あり（チャンネル・主張のみで鍵の裏付けなし）。';
+  String get checkinAnsweredChannel => 'チャンネルで応答がありました（名前だけで、鍵による確認はありません）。';
 
   @override
   String get checkinSent => 'チェックインを送信しました。繰り返しはしません。';
@@ -4972,14 +4972,14 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String reportBundleWritten(String path) {
-    return 'バンドルを書き出しました: $path';
+    return 'レポートを $path に保存しました';
   }
 
   @override
-  String get reportCopyBundle => 'バンドルをコピー';
+  String get reportCopyBundle => 'レポートをコピー';
 
   @override
-  String get reportCopied => 'バンドルをコピーしました。';
+  String get reportCopied => 'レポートをコピーしました。';
 
   @override
   String get blockedKeysNotPersisted =>

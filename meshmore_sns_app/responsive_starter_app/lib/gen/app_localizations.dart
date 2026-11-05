@@ -701,7 +701,7 @@ abstract class AppLocalizations {
   /// No description provided for @pairStepOf.
   ///
   /// In en, this message translates to:
-  /// **'STEP {step} OF {total}'**
+  /// **'Step {step} of {total}'**
   String pairStepOf(int step, int total);
 
   /// No description provided for @pairPermissionTitle.
@@ -7525,25 +7525,25 @@ abstract class AppLocalizations {
   /// No description provided for @placeExportLedger.
   ///
   /// In en, this message translates to:
-  /// **'Export ledger'**
+  /// **'Export places'**
   String get placeExportLedger;
 
   /// Snackbar after the ledger was handed to the share sheet.
   ///
   /// In en, this message translates to:
-  /// **'Ledger ready to share.'**
+  /// **'Places ready to share.'**
   String get placeExportShared;
 
   /// No description provided for @placeExportDone.
   ///
   /// In en, this message translates to:
-  /// **'Ledger saved to {path}'**
+  /// **'Places saved to {path}'**
   String placeExportDone(String path);
 
   /// No description provided for @placeExportFailed.
   ///
   /// In en, this message translates to:
-  /// **'Could not write the ledger.'**
+  /// **'Could not save the list.'**
   String get placeExportFailed;
 
   /// No description provided for @placeCoordinatesRefused.
@@ -7867,7 +7867,7 @@ abstract class AppLocalizations {
   /// No description provided for @sosNoIdentity.
   ///
   /// In en, this message translates to:
-  /// **'The radio has not reported its name, so an alarm has no callsign to carry.'**
+  /// **'The radio has not reported a name yet, so the alarm has no name to send.'**
   String get sosNoIdentity;
 
   /// No description provided for @sosWords.
@@ -7897,7 +7897,7 @@ abstract class AppLocalizations {
   /// No description provided for @sosEmergencyRepeat.
   ///
   /// In en, this message translates to:
-  /// **'The radio repeats each packet once about two minutes later; the rest of the schedule does not outlive the app.'**
+  /// **'The radio repeats each message once, about two minutes later. If the app closes, the rest stops.'**
   String get sosEmergencyRepeat;
 
   /// No description provided for @sosContactsNone.
@@ -8029,7 +8029,7 @@ abstract class AppLocalizations {
   /// No description provided for @sosRefusedTooLong.
   ///
   /// In en, this message translates to:
-  /// **'That text is too long to carry the callsign and the position. Shorten it.'**
+  /// **'Too long to carry a name and a position. Shorten it.'**
   String get sosRefusedTooLong;
 
   /// No description provided for @sosRefusedHold.
@@ -8101,7 +8101,7 @@ abstract class AppLocalizations {
   /// No description provided for @checkinAnsweredChannel.
   ///
   /// In en, this message translates to:
-  /// **'Answered on the channel (claimed, not a key).'**
+  /// **'Answered on the channel by name only, not by their key.'**
   String get checkinAnsweredChannel;
 
   /// No description provided for @checkinSent.
@@ -8737,19 +8737,19 @@ abstract class AppLocalizations {
   /// No description provided for @reportBundleWritten.
   ///
   /// In en, this message translates to:
-  /// **'Bundle written: {path}'**
+  /// **'Report saved to {path}'**
   String reportBundleWritten(String path);
 
   /// No description provided for @reportCopyBundle.
   ///
   /// In en, this message translates to:
-  /// **'Copy the bundle'**
+  /// **'Copy the report'**
   String get reportCopyBundle;
 
   /// No description provided for @reportCopied.
   ///
   /// In en, this message translates to:
-  /// **'Bundle copied.'**
+  /// **'Report copied.'**
   String get reportCopied;
 
   /// No description provided for @blockedKeysNotPersisted.

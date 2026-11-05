@@ -350,7 +350,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String pairStepOf(int step, int total) {
-    return 'STEP $step OF $total';
+    return 'Step $step of $total';
   }
 
   @override
@@ -4373,18 +4373,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get placeKeyedOnly => 'Keyed places only';
 
   @override
-  String get placeExportLedger => 'Export ledger';
+  String get placeExportLedger => 'Export places';
 
   @override
-  String get placeExportShared => 'Ledger ready to share.';
+  String get placeExportShared => 'Places ready to share.';
 
   @override
   String placeExportDone(String path) {
-    return 'Ledger saved to $path';
+    return 'Places saved to $path';
   }
 
   @override
-  String get placeExportFailed => 'Could not write the ledger.';
+  String get placeExportFailed => 'Could not save the list.';
 
   @override
   String get placeCoordinatesRefused => 'Those coordinates cannot be sent.';
@@ -4598,7 +4598,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get sosNoIdentity =>
-      'The radio has not reported its name, so an alarm has no callsign to carry.';
+      'The radio has not reported a name yet, so the alarm has no name to send.';
 
   @override
   String get sosWords => 'What is happening';
@@ -4615,7 +4615,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get sosEmergencyRepeat =>
-      'The radio repeats each packet once about two minutes later; the rest of the schedule does not outlive the app.';
+      'The radio repeats each message once, about two minutes later. If the app closes, the rest stops.';
 
   @override
   String get sosContactsNone =>
@@ -4698,7 +4698,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get sosRefusedTooLong =>
-      'That text is too long to carry the callsign and the position. Shorten it.';
+      'Too long to carry a name and a position. Shorten it.';
 
   @override
   String get sosRefusedHold => 'The hold is not finished.';
@@ -4742,7 +4742,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get checkinAnsweredChannel =>
-      'Answered on the channel (claimed, not a key).';
+      'Answered on the channel by name only, not by their key.';
 
   @override
   String get checkinSent => 'Check-in sent. Nothing repeats.';
@@ -5171,14 +5171,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String reportBundleWritten(String path) {
-    return 'Bundle written: $path';
+    return 'Report saved to $path';
   }
 
   @override
-  String get reportCopyBundle => 'Copy the bundle';
+  String get reportCopyBundle => 'Copy the report';
 
   @override
-  String get reportCopied => 'Bundle copied.';
+  String get reportCopied => 'Report copied.';
 
   @override
   String get blockedKeysNotPersisted =>

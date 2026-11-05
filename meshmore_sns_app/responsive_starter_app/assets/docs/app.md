@@ -14,28 +14,28 @@ your connected device.
 Meshmore SNS turns a MeshCore companion radio into a social, glanceable
 network you can actually see and feel:
 
-- **Dashboard** — peers in range, radio + location readouts, a battery
+- **Dashboard** — nodes in range, radio + location readouts, a battery
   estimate, and recent mesh activity at a glance. The device name is a
   readout: tapping it opens Device configuration, where renaming and
   re-advertising live.
 - **Chat** — channel chat and direct messages, each with a delivery
-  status (sending → sent → delivered / failed). Channels can be plain
-  name+PSK, `#hashtag`-derived public channels, hex-PSK, or shake-to-
-  derive, and shared by QR.
+  state: sent, delivered, unknown, or failed. A channel can be the
+  shared public one, named by hashtag, or given a key you choose, and
+  shared by QR.
 - **Nodes** — every node you've heard, with message counts, tags, and
   favourites. Tap any node for identity, proximity, signal, hop path,
   and telemetry.
-- **Hyperlocal grid** — ten ways to see the fabric around you: radial
+- **Hyperlocal grid** — ten ways to see the mesh around you: radial
   radar with range rings and a heading HUD, globe, equal grid, street
-  map on the vector basemap, fabric survey, elevated terrain view,
+  map on the vector basemap, mesh survey, elevated terrain view,
   force-directed mesh tree, SNS cell heat map, weather, and channel
   activity.
 - **Battery** — a real state-of-charge estimate from the radio's
   voltage, with a time-to-empty projection.
 - **Tools** (Settings → Tools) — radio stats (noise floor, airtime),
-  ping, per-hop trace, nearby-repeater discovery, soak test and range
-  test, each with an exportable result. One runs at a time, and the
-  ones that send text never use Public.
+  ping, per-hop trace, nearby-repeater discovery, a long run and a
+  range test, each with an exportable result. One runs at a time, and
+  the ones that send text never use the public channel.
 - **Offline maps** (Settings → Offline maps) — map tiles you view are
   cached on the phone; regions can be downloaded from servers that
   allow it (USGS in the US, or your own tile server); GeoJSON event
@@ -53,10 +53,10 @@ network you can actually see and feel:
 - The protocol codec is a **pure-Dart package** with no Flutter
   dependencies, so the whole stack is unit-tested against a fake
   transport.
-- The UI is Flutter, with a six-view shell: slide sideways to change
-  view, or use the strip under the app bar. A map that pans takes the
-  drag while you are moving it, and the strip is always one tap away.
-  Seven skins, and full English + Japanese localisation.
+- Six views: slide sideways to change view, or use the strip under the
+  app bar. A map that pans takes the drag while you are moving it, and
+  the strip is always one tap away. Seven skins, and full English and
+  Japanese.
 
 ## Offline-first by design
 
