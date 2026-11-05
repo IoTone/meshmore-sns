@@ -5246,4 +5246,28 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get nodeDetailAltitudeNotReported => '報告されません';
+
+  @override
+  String get gridPurposeRadial => '各ノードまでの距離と、最後に聞こえた時刻。';
+
+  @override
+  String get gridPurposeCoverage => 'メッシュが応答した場所をセルごとに。';
+
+  @override
+  String get gridPurposeWeather => '温度・湿度・気圧（報告するノードのみ）。';
+
+  @override
+  String get gridPurposeGlobe => '同じ位置を地球儀で。距離がひと目で分かります。';
+
+  @override
+  String get gridPurposeTree => 'ノード同士の経路（広告されたルートより）。';
+
+  @override
+  String get gridPurposeSnsCells => 'メッセージの発信元を直近1時間で。';
+
+  @override
+  String get gridPurposeElevation => '各ノードの高度を地形と比較して。';
+
+  @override
+  String get gridPurposeMeshbook => 'このチャンネルの直近1日: メッセージ・返信・主な発言者。';
 }

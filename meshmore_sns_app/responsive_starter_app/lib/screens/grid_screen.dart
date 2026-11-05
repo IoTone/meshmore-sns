@@ -509,6 +509,21 @@ class _GridScreenState extends State<GridScreen>
       };
 
 
+  /// One line under the header saying what this view answers, so a view is
+  /// not a name the user has to decode. Kept to one line on purpose: a view
+  /// that needs a paragraph to explain itself is the wrong view.
+  static String _purposeFor(_GridViewMode m, AppLocalizations l) =>
+      switch (m) {
+        _GridViewMode.radial => l.gridPurposeRadial,
+        _GridViewMode.fabric => l.gridPurposeCoverage,
+        _GridViewMode.weather => l.gridPurposeWeather,
+        _GridViewMode.globe => l.gridPurposeGlobe,
+        _GridViewMode.tree => l.gridPurposeTree,
+        _GridViewMode.snsCells => l.gridPurposeSnsCells,
+        _GridViewMode.elevation => l.gridPurposeElevation,
+        _GridViewMode.meshbook => l.gridPurposeMeshbook,
+      };
+
   void _togglePlay() {
     setState(() {
       _userInteracted = true;
@@ -715,6 +730,19 @@ class _GridScreenState extends State<GridScreen>
       child: Column(
         children: <Widget>[
       MmPageHeader(title: l.gridTitle),
+      // The view's purpose, one line, muted: a name is not an explanation and
+      // a paragraph is not a header.
+      Padding(
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 2),
+        child: Text(
+          _purposeFor(_viewMode, l),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(
+              color: cs.onSurfaceVariant,
+              fontSize: context.skin.type.sizeSm),
+        ),
+      ),
       Padding(
         padding: const EdgeInsets.fromLTRB(16, 4, 4, 0),
         child: Row(

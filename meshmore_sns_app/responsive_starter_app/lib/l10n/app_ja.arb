@@ -2481,5 +2481,13 @@
   "fujiPeersShort": "点 · ピア",
   "fujiUnknownShort": "縞 · 標高なし",
   "chatSpeechOffAction": "読み上げはアプリ設定でオフです",
-  "nodeDetailAltitudeNotReported": "報告されません"
+  "nodeDetailAltitudeNotReported": "報告されません",
+  "gridPurposeRadial": "各ノードまでの距離と、最後に聞こえた時刻。",
+  "gridPurposeCoverage": "メッシュが応答した場所をセルごとに。",
+  "gridPurposeWeather": "温度・湿度・気圧（報告するノードのみ）。",
+  "gridPurposeGlobe": "同じ位置を地球儀で。距離がひと目で分かります。",
+  "gridPurposeTree": "ノード同士の経路（広告されたルートより）。",
+  "gridPurposeSnsCells": "メッセージの発信元を直近1時間で。",
+  "gridPurposeElevation": "各ノードの高度を地形と比較して。",
+  "gridPurposeMeshbook": "このチャンネルの直近1日: メッセージ・返信・主な発言者。"
 }

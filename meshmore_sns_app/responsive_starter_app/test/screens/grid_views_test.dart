@@ -102,6 +102,35 @@ void main() {
     mc.dispose();
   });
 
+  testWidgets('every view says what it answers, in one line', (
+      WidgetTester t) async {
+    await t.binding.setSurfaceSize(const Size(800, 1600));
+    addTearDown(() => t.binding.setSurfaceSize(null));
+    final MeshcoreController mc = MeshcoreController(
+        transportFactory: () async => FakeMeshcoreTransport());
+    await t.pumpWidget(_host(mc));
+    await t.pump();
+
+    const Map<String, String> purposes = <String, String>{
+      'Coverage': 'Where the mesh has answered, cell by cell.',
+      'Weather (environment)':
+          'Temperature, humidity and pressure, from nodes that report them.',
+    };
+    for (final MapEntry<String, String> e in purposes.entries) {
+      await _openView(t, e.key);
+      expect(find.text(e.value), findsOneWidget,
+          reason: '${e.key} must say what it answers, not only its name');
+    }
+    // A parked view carries its line too.
+    await _openView(t, 'Mesh tree', more: true);
+    expect(
+        find.text('How nodes reach each other, from the routes they '
+            'advertise.'),
+        findsOneWidget);
+    await t.pumpWidget(const SizedBox());
+    mc.dispose();
+  });
+
   testWidgets('the map row asks the shell for the map tab',
       (WidgetTester t) async {
     await t.binding.setSurfaceSize(const Size(800, 1600));

@@ -3764,5 +3764,13 @@
     }
   },
   "chatSpeechOffAction": "Speech is off in App settings",
-  "nodeDetailAltitudeNotReported": "not reported"
+  "nodeDetailAltitudeNotReported": "not reported",
+  "gridPurposeRadial": "How far each node is, and how long ago it was heard.",
+  "gridPurposeCoverage": "Where the mesh has answered, cell by cell.",
+  "gridPurposeWeather": "Temperature, humidity and pressure, from nodes that report them.",
+  "gridPurposeGlobe": "The same positions on a globe, for distance at a glance.",
+  "gridPurposeTree": "How nodes reach each other, from the routes they advertise.",
+  "gridPurposeSnsCells": "Where messages came from, cooling over the last hour.",
+  "gridPurposeElevation": "How high each node is, against landmarks.",
+  "gridPurposeMeshbook": "What this channel did in the last day: messages, replies, top voices."
 }

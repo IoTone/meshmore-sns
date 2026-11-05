@@ -5450,4 +5450,36 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get nodeDetailAltitudeNotReported => 'not reported';
+
+  @override
+  String get gridPurposeRadial =>
+      'How far each node is, and how long ago it was heard.';
+
+  @override
+  String get gridPurposeCoverage =>
+      'Where the mesh has answered, cell by cell.';
+
+  @override
+  String get gridPurposeWeather =>
+      'Temperature, humidity and pressure, from nodes that report them.';
+
+  @override
+  String get gridPurposeGlobe =>
+      'The same positions on a globe, for distance at a glance.';
+
+  @override
+  String get gridPurposeTree =>
+      'How nodes reach each other, from the routes they advertise.';
+
+  @override
+  String get gridPurposeSnsCells =>
+      'Where messages came from, cooling over the last hour.';
+
+  @override
+  String get gridPurposeElevation =>
+      'How high each node is, against landmarks.';
+
+  @override
+  String get gridPurposeMeshbook =>
+      'What this channel did in the last day: messages, replies, top voices.';
 }

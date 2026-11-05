@@ -9242,6 +9242,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'not reported'**
   String get nodeDetailAltitudeNotReported;
+
+  /// No description provided for @gridPurposeRadial.
+  ///
+  /// In en, this message translates to:
+  /// **'How far each node is, and how long ago it was heard.'**
+  String get gridPurposeRadial;
+
+  /// No description provided for @gridPurposeCoverage.
+  ///
+  /// In en, this message translates to:
+  /// **'Where the mesh has answered, cell by cell.'**
+  String get gridPurposeCoverage;
+
+  /// No description provided for @gridPurposeWeather.
+  ///
+  /// In en, this message translates to:
+  /// **'Temperature, humidity and pressure, from nodes that report them.'**
+  String get gridPurposeWeather;
+
+  /// No description provided for @gridPurposeGlobe.
+  ///
+  /// In en, this message translates to:
+  /// **'The same positions on a globe, for distance at a glance.'**
+  String get gridPurposeGlobe;
+
+  /// No description provided for @gridPurposeTree.
+  ///
+  /// In en, this message translates to:
+  /// **'How nodes reach each other, from the routes they advertise.'**
+  String get gridPurposeTree;
+
+  /// No description provided for @gridPurposeSnsCells.
+  ///
+  /// In en, this message translates to:
+  /// **'Where messages came from, cooling over the last hour.'**
+  String get gridPurposeSnsCells;
+
+  /// No description provided for @gridPurposeElevation.
+  ///
+  /// In en, this message translates to:
+  /// **'How high each node is, against landmarks.'**
+  String get gridPurposeElevation;
+
+  /// No description provided for @gridPurposeMeshbook.
+  ///
+  /// In en, this message translates to:
+  /// **'What this channel did in the last day: messages, replies, top voices.'**
+  String get gridPurposeMeshbook;
 }
 
 class _AppLocalizationsDelegate
