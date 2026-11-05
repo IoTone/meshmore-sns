@@ -130,6 +130,7 @@ dependencies:
   vector_map_tiles: ^8.0.0
   vector_tile_renderer: ^5.2.1
   flutter_local_notifications: ^22.3.3
+  avif_native: ^0.2.0
 
 dev_dependencies:
   flutter_test:
