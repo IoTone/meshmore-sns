@@ -337,6 +337,7 @@ final class MediaTransferService {
     required this.clock,
     this.kind = MediaKind.image,
     this.mediaOnPublic = false,
+    this.wait = _realWait,
     MediaDownload? download,
     int Function()? newPayloadId,
   })  : _newPayloadId = newPayloadId ?? _randomPayloadId,
@@ -347,6 +348,10 @@ final class MediaTransferService {
   final DateTime Function() clock;
   final MediaKind kind;
   final bool mediaOnPublic;
+
+  /// How the pacing loop sleeps. Injected so a test's clock owns the time and
+  /// a transfer that would take a minute costs none.
+  final Future<void> Function(Duration) wait;
   final MediaDownload download;
   final int Function() _newPayloadId;
 
@@ -388,7 +393,10 @@ final class MediaTransferService {
     ));
   }
 
-  MediaUpload upload(MediaTransferPlan plan) => MediaUpload(plan: plan, clock: clock);
+  MediaUpload upload(MediaTransferPlan plan) =>
+      MediaUpload(plan: plan, clock: clock, wait: wait);
+
+  static Future<void> _realWait(Duration d) => Future<void>.delayed(d);
 
   static int _randomPayloadId() {
     // Random, because a counter would collide with another sender's counter on

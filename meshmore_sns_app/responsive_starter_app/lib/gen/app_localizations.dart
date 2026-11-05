@@ -7701,6 +7701,138 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Map tiles cannot be fetched. The bundled basemap and anything already on disk still draw; the rest of the app is unaffected.'**
   String get degradedMapOffline;
+
+  /// No description provided for @mediaComposerTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Send a photo'**
+  String get mediaComposerTitle;
+
+  /// No description provided for @mediaSourceUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'This build cannot read a photo from the device, so nothing can be sent from here.'**
+  String get mediaSourceUnavailable;
+
+  /// No description provided for @mediaSourceFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'That photo could not be read. Try another one.'**
+  String get mediaSourceFailed;
+
+  /// No description provided for @mediaEncoding.
+  ///
+  /// In en, this message translates to:
+  /// **'Fitting the photo to the mesh…'**
+  String get mediaEncoding;
+
+  /// No description provided for @mediaCostLine.
+  ///
+  /// In en, this message translates to:
+  /// **'{chunks} packets · about {airtime} on air'**
+  String mediaCostLine(int chunks, String airtime);
+
+  /// No description provided for @mediaOverBudget.
+  ///
+  /// In en, this message translates to:
+  /// **'This photo will not fit the mesh budget even at the lowest quality. It can still be sent, but it will be cut off.'**
+  String get mediaOverBudget;
+
+  /// No description provided for @mediaSendingProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'{sent} of {total} packets sent'**
+  String mediaSendingProgress(int sent, int total);
+
+  /// No description provided for @mediaReceiptLine.
+  ///
+  /// In en, this message translates to:
+  /// **'{chunks} packets sent, {resends} of them resent'**
+  String mediaReceiptLine(int chunks, int resends);
+
+  /// No description provided for @mediaAcceptedNotDelivered.
+  ///
+  /// In en, this message translates to:
+  /// **'The radio accepted these packets. A broadcast carries no delivery promise.'**
+  String get mediaAcceptedNotDelivered;
+
+  /// No description provided for @mediaSendFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'The radio refused {count} packet(s), so this photo did not finish.'**
+  String mediaSendFailed(int count);
+
+  /// No description provided for @mediaSend.
+  ///
+  /// In en, this message translates to:
+  /// **'Send'**
+  String get mediaSend;
+
+  /// No description provided for @mediaRetrySend.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again'**
+  String get mediaRetrySend;
+
+  /// No description provided for @mediaClose.
+  ///
+  /// In en, this message translates to:
+  /// **'Close'**
+  String get mediaClose;
+
+  /// No description provided for @mediaOffOnPublic.
+  ///
+  /// In en, this message translates to:
+  /// **'Media is off on the Public channel. Turn it on for that channel in its settings first.'**
+  String get mediaOffOnPublic;
+
+  /// No description provided for @mediaPayloadUnusable.
+  ///
+  /// In en, this message translates to:
+  /// **'There is nothing to send.'**
+  String get mediaPayloadUnusable;
+
+  /// No description provided for @mediaChannelUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'No channel is selected, so there is nobody to send to.'**
+  String get mediaChannelUnknown;
+
+  /// No description provided for @mediaReceiveWaiting.
+  ///
+  /// In en, this message translates to:
+  /// **'{received} of {total} packets · waiting for {missing}'**
+  String mediaReceiveWaiting(int received, int total, int missing);
+
+  /// No description provided for @mediaReceiveAsk.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask for the missing packets'**
+  String get mediaReceiveAsk;
+
+  /// No description provided for @mediaReceiveRequested.
+  ///
+  /// In en, this message translates to:
+  /// **'Asked the sender for {count} packet(s).'**
+  String mediaReceiveRequested(int count);
+
+  /// No description provided for @mediaReceiveComplete.
+  ///
+  /// In en, this message translates to:
+  /// **'Photo received.'**
+  String get mediaReceiveComplete;
+
+  /// No description provided for @mediaDecodeFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'This photo arrived but cannot be read.'**
+  String get mediaDecodeFailed;
+
+  /// No description provided for @mediaPhotoSemantics.
+  ///
+  /// In en, this message translates to:
+  /// **'Photo received over the mesh'**
+  String get mediaPhotoSemantics;
 }
 
 class _AppLocalizationsDelegate

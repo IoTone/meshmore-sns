@@ -4339,4 +4339,84 @@ class AppLocalizationsJa extends AppLocalizations {
   @override
   String get degradedMapOffline =>
       '地図タイルを取得できません。同梱のベースマップと端末に保存済みの範囲は表示され、他の機能には影響しません。';
+
+  @override
+  String get mediaComposerTitle => '写真を送る';
+
+  @override
+  String get mediaSourceUnavailable => 'このビルドは端末から写真を読み取れないため、ここからは送信できません。';
+
+  @override
+  String get mediaSourceFailed => '写真を読み取れませんでした。別の写真をお試しください。';
+
+  @override
+  String get mediaEncoding => '写真をメッシュ用に調整しています…';
+
+  @override
+  String mediaCostLine(int chunks, String airtime) {
+    return '$chunks パケット · 送信時間は約 $airtime';
+  }
+
+  @override
+  String get mediaOverBudget => 'この写真は最低品質でもメッシュの上限に収まりません。送信はできますが途中で切れます。';
+
+  @override
+  String mediaSendingProgress(int sent, int total) {
+    return '$total 中 $sent パケット送信済み';
+  }
+
+  @override
+  String mediaReceiptLine(int chunks, int resends) {
+    return '$chunks パケット送信、うち $resends は再送';
+  }
+
+  @override
+  String get mediaAcceptedNotDelivered =>
+      'ラジオはこれらのパケットを受け取りました。同報に配達の保証はありません。';
+
+  @override
+  String mediaSendFailed(int count) {
+    return 'ラジオが $count パケットを拒否したため、この写真は完了しませんでした。';
+  }
+
+  @override
+  String get mediaSend => '送信';
+
+  @override
+  String get mediaRetrySend => '再試行';
+
+  @override
+  String get mediaClose => '閉じる';
+
+  @override
+  String get mediaOffOnPublic =>
+      'パブリックチャンネルではメディアは無効です。先にそのチャンネルの設定で有効にしてください。';
+
+  @override
+  String get mediaPayloadUnusable => '送信する内容がありません。';
+
+  @override
+  String get mediaChannelUnknown => 'チャンネルが選択されていないため、送信先がありません。';
+
+  @override
+  String mediaReceiveWaiting(int received, int total, int missing) {
+    return '$total 中 $received パケット · 残り $missing を待機中';
+  }
+
+  @override
+  String get mediaReceiveAsk => '不足パケットを要求する';
+
+  @override
+  String mediaReceiveRequested(int count) {
+    return '送信者に $count パケットを要求しました。';
+  }
+
+  @override
+  String get mediaReceiveComplete => '写真を受信しました。';
+
+  @override
+  String get mediaDecodeFailed => '写真は届きましたが読み取れません。';
+
+  @override
+  String get mediaPhotoSemantics => 'メッシュで受信した写真';
 }
