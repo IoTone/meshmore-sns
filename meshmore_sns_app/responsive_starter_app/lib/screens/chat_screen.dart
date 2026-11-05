@@ -306,7 +306,10 @@ class _ChatScreenState extends State<ChatScreen>
         messages: rows,
         passphrase: passphrase,
       );
-      final Directory dir = await getApplicationDocumentsDirectory();
+      // App-support, for the same reason the places ledger uses it: the
+      // FileProvider roots cover `files-path` and `cache-path`, and the
+      // documents directory is neither.
+      final Directory dir = await getApplicationSupportDirectory();
       final File file = File('${dir.path}/thread-$slot.mmex');
       await file.writeAsBytes(bytes);
       final bool shared = await Share.file(file.path,

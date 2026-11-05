@@ -61,12 +61,16 @@ class _PlaceHistorySheetState extends State<PlaceHistorySheet> {
   Future<void> _export() async {
     final AppLocalizations l = AppLocalizations.of(context);
     try {
-      final Directory dir = await getApplicationDocumentsDirectory();
+      // App-support, not documents: the FileProvider roots in
+      // `res/xml/file_paths.xml` are `files-path` and `cache-path`, and the
+      // documents directory resolves under `app_flutter`, which is neither, so
+      // a file written there cannot be turned into a shareable URI at all.
+      final Directory dir = await getApplicationSupportDirectory();
       final File file = File('${dir.path}/places-ledger.csv');
       await file.writeAsString(widget.store.exportLedgerCsv());
-      // The documents directory is app-private, so the path alone is not an
-      // export: the file goes to the share sheet, and the path is the fallback
-      // only when there is nothing to share with.
+      // App-private either way, so a path alone is not an export: the file
+      // goes to the share sheet, and the path is the fallback only when there
+      // is nothing to share with.
       final bool shared = await Share.file(file.path,
           mime: 'text/csv', subject: l.placeExportLedger);
       if (!mounted) return;
