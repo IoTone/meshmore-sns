@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import '../app/demo_mode.dart';
 import '../gen/app_localizations.dart';
 import '../l10n/locale_controller.dart';
+import '../meshcore/airtime.dart';
 import '../meshcore/block_store.dart';
 import '../meshcore/meshcore_controller.dart';
 import '../perms/permissions_service.dart';
@@ -184,6 +185,21 @@ class AppSettingsScreen extends StatelessWidget {
             value: mc.telemetryPollEnabled,
             onChanged: (bool v) => mc.setTelemetryPollEnabled(v),
           ),
+          // APP-C5 — the app meters its own transmitter and stops at the
+          // limit. The policy is a claim about the channel, not about the
+          // law: the radio keeps its own regulatory limit either way.
+          ListTile(
+            leading: const Icon(Icons.data_usage),
+            title: Text(l.settingsAirtimeTitle),
+            subtitle: Text(
+              mc.airtimePolicy == AirtimePolicy.ownedChannel
+                  ? l.airtimePolicyOwned
+                  : l.airtimePolicyOnePercent,
+              style: TextStyle(color: cs.onSurface.withValues(alpha: .6)),
+            ),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => _pickAirtimePolicy(context, mc, l),
+          ),
           MmSectionHeader(l.settingsAppGroupSound),
           // R4 — language picker. Tap-to-open bottom sheet with
           // System / English / 日本語; the choice is persisted by
@@ -297,6 +313,29 @@ class AppSettingsScreen extends StatelessWidget {
       ),
       ),
     );
+  }
+  /// The two policies, with what each one claims. A list rather than a switch
+  /// because "no limit" is a statement about the frequency, not a preference
+  /// about speed, and it needs a sentence to be safe.
+  Future<void> _pickAirtimePolicy(BuildContext ctx, MeshcoreController mc,
+      AppLocalizations l) async {
+    final AirtimePolicy? chosen = await showMmPicker<AirtimePolicy>(
+      context: ctx,
+      title: l.settingsAirtimeTitle,
+      current: mc.airtimePolicy,
+      items: <MmPickerItem<AirtimePolicy>>[
+        MmPickerItem<AirtimePolicy>.header(l.settingsAirtimeTitle),
+        MmPickerItem<AirtimePolicy>.option(
+            AirtimePolicy.onePercentDutyCycle, l.airtimePolicyOnePercentSub,
+            icon: Icons.timer_outlined),
+        MmPickerItem<AirtimePolicy>.option(
+            AirtimePolicy.ownedChannel, l.airtimePolicyOwnedSub,
+            icon: Icons.all_inclusive),
+        MmPickerItem<AirtimePolicy>.header(l.settingsAirtimeHelp),
+      ],
+    );
+    if (chosen == null) return;
+    await mc.setAirtimePolicy(chosen);
   }
 }
 

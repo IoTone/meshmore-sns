@@ -59,6 +59,7 @@ class MeshcoreConnection {
   SelfInfo? _selfInfo;
 
   int _truncatedFrames = 0;
+  int _emptyFrames = 0;
   int _trailingBytesFrames = 0;
 
   /// Current link state.
@@ -71,6 +72,13 @@ class MeshcoreConnection {
   /// radio truncated. Counted so a short-frame-only link says so instead of
   /// looking like packets that vanish.
   int get truncatedFrames => _truncatedFrames;
+
+  /// Notifications that carried no bytes at all.
+  ///
+  /// A transport that emits an empty notification is not a frame error the
+  /// radio knows about, so nothing else would record it: the counter is the
+  /// only evidence a link is producing them.
+  int get emptyFrames => _emptyFrames;
 
   /// Frames that decoded and then had bytes left over.
   ///
@@ -163,7 +171,7 @@ class MeshcoreConnection {
         case DecodeErrorKind.trailingBytes:
           _trailingBytesFrames++;
         case DecodeErrorKind.empty:
-          break;
+          _emptyFrames++;
       }
     }
     if (frame is SelfInfoFrame) {

@@ -39,6 +39,16 @@ class BleMeshcoreTransport implements MeshcoreTransport {
       _isConnected = s == BluetoothConnectionState.connected;
       if (!_connected.isClosed) _connected.add(_isConnected);
     });
+    // Keep the negotiated size current rather than trusting the open-time
+    // reading: a stack that renegotiates downward would otherwise turn every
+    // full-size frame into an unexplained platform error.
+    try {
+      _mtuSub = _device.mtu.listen((int v) {
+        if (v > 0) _mtu = v;
+      });
+    } catch (_) {
+      // A platform without an MTU stream keeps the open-time value.
+    }
   }
 
   final BluetoothDevice _device;
@@ -46,9 +56,13 @@ class BleMeshcoreTransport implements MeshcoreTransport {
   final BluetoothCharacteristic _tx;
   final bool _writeWithoutResponse;
 
-  /// Negotiated ATT MTU, read once at open. `null` when the platform could
-  /// not report a value.
-  final int? _mtu;
+  /// Negotiated ATT MTU, kept current.
+  ///
+  /// Android can renegotiate the ATT MTU after the link is up, so a value read
+  /// once at open goes stale: a later, smaller MTU turns a full-size frame into
+  /// a generic GATT error with no explanation. The platform's own stream is
+  /// followed for the life of the transport.
+  int? _mtu;
 
   final StreamController<Uint8List> _incoming =
       StreamController<Uint8List>.broadcast();
@@ -57,6 +71,7 @@ class BleMeshcoreTransport implements MeshcoreTransport {
 
   StreamSubscription<List<int>>? _incomingSub;
   StreamSubscription<BluetoothConnectionState>? _connSub;
+  StreamSubscription<int>? _mtuSub;
   bool _isConnected = true;
 
   @override
@@ -83,6 +98,7 @@ class BleMeshcoreTransport implements MeshcoreTransport {
   Future<void> close() async {
     await _incomingSub?.cancel();
     await _connSub?.cancel();
+    await _mtuSub?.cancel();
     _isConnected = false;
     try {
       await _device.disconnect();

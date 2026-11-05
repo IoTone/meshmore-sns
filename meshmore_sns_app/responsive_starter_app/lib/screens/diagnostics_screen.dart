@@ -230,13 +230,24 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
               if (mc.mtuRefusal != null)
                 fault(l.diagnosticsMtuRefusedLine(
                     '${mc.mtuRefusal!.mtu}', '${MeshcoreBle.requiredMtu}'))
-              else if (mc.truncatedFrames > 0 || mc.trailingBytesFrames > 0)
-                fact(l.diagnosticsFramingLine(
-                    '${mc.truncatedFrames}', '${mc.trailingBytesFrames}'))
+              else if (mc.truncatedFrames > 0 ||
+                  mc.trailingBytesFrames > 0 ||
+                  mc.emptyFrames > 0)
+                fact(l.diagnosticsFramingLine('${mc.truncatedFrames}',
+                    '${mc.trailingBytesFrames}', '${mc.emptyFrames}'))
               else if (mc.failure != null)
                 fault(l.diagnosticsErrorLine(failureText(l, mc.failure!)))
               else if (mc.error != null)
                 fault(l.diagnosticsErrorLine('${mc.error}')),
+              // APP-C5 — the app's own duty-cycle meter, always charging.
+              // A refusal is the one line here a user can act on, so it is a
+              // sentence rather than a counter when it has happened.
+              fact(mc.airtimeBudget == null
+                  ? l.airtimeSpentLineUnlimited(_shortDuration(mc.airtimeSpent))
+                  : l.airtimeSpentLine(_shortDuration(mc.airtimeSpent),
+                      _shortDuration(mc.airtimeBudget!))),
+              if (mc.airtimeRefusals > 0)
+                fault(l.airtimeRefusedCount(mc.airtimeRefusals)),
               const SizedBox(height: 10),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -269,6 +280,34 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
                 Padding(
                   padding: const EdgeInsets.only(top: 8),
                   child: fact(l.diagnosticsPairedLine('${mc.pairedName}')),
+                ),
+              // D8.7 — the BLE identity can survive a reflash while the
+              // radio's own key does not. When the key changed, the history
+              // on screen belongs to another node and nothing is migrated
+              // until the user says which radio this is.
+              if (mc.radioChanged)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Text(
+                        l.diagnosticsRadioChangedLine(
+                            _shortKey(mc.previousRadioKey ?? '?'),
+                            _shortKey(mc.ownPubKeyHex ?? '?')),
+                        style: TextStyle(
+                            color: cs.error,
+                            fontSize: skin.type.sizeBody,
+                            fontFamily: skin.type.bodyFamily,
+                            height: 1.35),
+                      ),
+                      const SizedBox(height: 4),
+                      OutlinedButton(
+                        onPressed: () => mc.acceptRadioIdentity(),
+                        child: Text(l.diagnosticsRadioChangedAccept),
+                      ),
+                    ],
+                  ),
                 ),
               // Radio health is a content block, so it is pinnable: pinning
               // moves it to the dashboard and this screen lays out without it.
@@ -619,3 +658,18 @@ class _BotSoakPanel extends StatelessWidget {
     );
   }
 }
+
+/// Seconds to `12s`, a minute and more to `1m 05s`. The meter line is read at a
+/// glance next to other one-fact lines, so it never says `0:00:12`.
+String _shortDuration(Duration d) {
+  final int s = d.inSeconds;
+  if (s < 60) return '${s}s';
+  final int m = s ~/ 60;
+  final int rest = s % 60;
+  return rest == 0 ? '${m}m' : '${m}m ${rest.toString().padLeft(2, '0')}s';
+}
+
+/// The first and last four hex characters of a key, which is enough to tell two
+/// radios apart without putting a 64-character key in a sentence.
+String _shortKey(String hex) =>
+    hex.length <= 8 ? hex : '${hex.substring(0, 4)}…${hex.substring(hex.length - 4)}';

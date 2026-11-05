@@ -316,7 +316,8 @@ class _StatusRow extends StatelessWidget {
           );
     final bool canConnect =
         mc.state == MeshcoreConnectionState.disconnected && !mc.isConnecting;
-    final bool canRetry = mc.state == MeshcoreConnectionState.failed;
+    final bool canRetry = mc.state == MeshcoreConnectionState.failed ||
+        mc.gaveUp;
     final Widget status = Row(
       children: <Widget>[
         SizedBox(width: 14, child: Center(child: dot)),

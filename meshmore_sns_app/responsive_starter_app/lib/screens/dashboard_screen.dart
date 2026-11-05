@@ -392,7 +392,11 @@ Widget _statusSlab(
             onPressed: () =>
                 mc.hasPairedDevice ? mc.connect() : context.push('/pair'),
           )
-        else if (mc.state == MeshcoreConnectionState.failed)
+        else if (mc.state == MeshcoreConnectionState.failed || mc.gaveUp)
+          // A link that gave up sits in `reconnecting` with no timer left, so
+          // the state alone cannot offer the way out. Gave-up is the point at
+          // which retrying is the only thing the user can do, and it is the
+          // one action this row may not omit.
           IconButton(
             tooltip: l.actionRetry,
             icon: Icon(Icons.refresh, color: statusColor, size: 20),

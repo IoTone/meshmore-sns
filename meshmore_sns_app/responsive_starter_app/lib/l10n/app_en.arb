@@ -2711,12 +2711,15 @@
   "rxViaPrimary": "the primary radio",
   "rxViaSecondary": "radio 2",
   "rxViaUnknown": "an unreported radio",
-  "diagnosticsFramingLine": "incomplete frames: {truncated} cut short, {trailing} with bytes left over",
+  "diagnosticsFramingLine": "incomplete frames: {truncated} cut short, {trailing} with bytes left over, {empty} empty",
   "@diagnosticsFramingLine": {
     "placeholders": {
       "truncated": {
         "type": "String"
-      },
+     ,
+      "empty": {
+        "type": "String"
+      } },
       "trailing": {
         "type": "String"
       }
@@ -3059,7 +3062,7 @@
   "@failureServiceMissing": {},
   "failureCharacteristicMissing": "The radio's link is missing a characteristic the app needs. Its firmware may be older than this app expects.",
   "@failureCharacteristicMissing": {},
-  "failureMtuTooSmall": "This phone link is {mtu} bytes and one radio frame needs {need}. Reconnect to try again; a radio that caps the link smaller cannot carry every frame.",
+  "failureMtuTooSmall": "This radio's link is {mtu} bytes and a full frame needs {need}. Some firmware builds ask for the smaller size themselves, so this radio cannot carry the largest frames: try a newer firmware, or reconnect.",
   "@failureMtuTooSmall": {
     "placeholders": {
       "mtu": {
@@ -3078,6 +3081,41 @@
   "@failureStorageFull": {},
   "failureRadioSilent": "The radio accepted the request but did not answer in time. It may still have carried it out; check the radio before retrying.",
   "@failureRadioSilent": {},
+  "diagnosticsRadioChangedLine": "This radio is not the one this app last used ({previous} then, {current} now). Its history is not carried over.",
+  "@diagnosticsRadioChangedLine": {
+    "placeholders": {
+      "previous": {"type": "String"},
+      "current": {"type": "String"}
+    }
+  },
+  "diagnosticsRadioChangedAccept": "This is my radio",
+  "failureAirtimeBudget": "This phone has used its own radio time limit for the last hour, so nothing was sent. It sends again as the hour rolls on.",
+  "@failureAirtimeBudget": {},
+  "airtimeSpentLine": "Radio time this hour: {spent} of {budget}",
+  "@airtimeSpentLine": {
+    "placeholders": {
+      "spent": {"type": "String"},
+      "budget": {"type": "String"}
+    }
+  },
+  "airtimeSpentLineUnlimited": "Radio time this hour: {spent}, with no limit set",
+  "@airtimeSpentLineUnlimited": {
+    "placeholders": {
+      "spent": {"type": "String"}
+    }
+  },
+  "airtimeRefusedCount": "{count, plural, =1{1 send refused by the limit} other{{count} sends refused by the limit}}",
+  "@airtimeRefusedCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "settingsAirtimeTitle": "Radio time limit",
+  "settingsAirtimeHelp": "Every frame this app sends is counted. At the limit it stops sending until the hour rolls on. The radio keeps its own legal limit either way.",
+  "airtimePolicyOnePercent": "1 % duty cycle",
+  "airtimePolicyOnePercentSub": "36 seconds of sending per hour. The legal limit in the EU and UK.",
+  "airtimePolicyOwned": "No limit",
+  "airtimePolicyOwnedSub": "For a channel you own, where nobody else uses the frequency.",
   "clockUnknown": "time unknown",
   "@clockUnknown": {},
   "clockJustNow": "just now",

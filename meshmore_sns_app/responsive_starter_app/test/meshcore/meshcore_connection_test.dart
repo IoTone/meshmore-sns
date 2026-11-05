@@ -114,6 +114,21 @@ void main() {
     await c.dispose();
   });
 
+  test('a notification with no bytes at all is counted', () async {
+    final FakeMeshcoreTransport t = FakeMeshcoreTransport(connected: true);
+    final MeshcoreConnection c = MeshcoreConnection();
+    c.attach(t);
+    expect(c.emptyFrames, 0);
+
+    // A stack that emits an empty notification produces no frame and no
+    // error the radio knows about, so the counter is the only evidence.
+    t.emit(Uint8List(0));
+    await Future<void>.delayed(Duration.zero);
+    expect(c.emptyFrames, 1);
+    expect(c.truncatedFrames, 0);
+    await c.dispose();
+  });
+
   test('the transport\'s MTU is reported, and null when it has none',
       () async {
     final FakeMeshcoreTransport t = FakeMeshcoreTransport(connected: true);

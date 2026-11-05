@@ -4127,8 +4127,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get rxViaUnknown => 'an unreported radio';
 
   @override
-  String diagnosticsFramingLine(String truncated, String trailing) {
-    return 'incomplete frames: $truncated cut short, $trailing with bytes left over';
+  String diagnosticsFramingLine(
+      String truncated, String trailing, Object empty) {
+    return 'incomplete frames: $truncated cut short, $trailing with bytes left over, $empty empty';
   }
 
   @override
@@ -4630,7 +4631,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String failureMtuTooSmall(String mtu, String need) {
-    return 'This phone link is $mtu bytes and one radio frame needs $need. Reconnect to try again; a radio that caps the link smaller cannot carry every frame.';
+    return 'This radio\'s link is $mtu bytes and a full frame needs $need. Some firmware builds ask for the smaller size themselves, so this radio cannot carry the largest frames: try a newer firmware, or reconnect.';
   }
 
   @override
@@ -4648,6 +4649,60 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get failureRadioSilent =>
       'The radio accepted the request but did not answer in time. It may still have carried it out; check the radio before retrying.';
+
+  @override
+  String diagnosticsRadioChangedLine(String previous, String current) {
+    return 'This radio is not the one this app last used ($previous then, $current now). Its history is not carried over.';
+  }
+
+  @override
+  String get diagnosticsRadioChangedAccept => 'This is my radio';
+
+  @override
+  String get failureAirtimeBudget =>
+      'This phone has used its own radio time limit for the last hour, so nothing was sent. It sends again as the hour rolls on.';
+
+  @override
+  String airtimeSpentLine(String spent, String budget) {
+    return 'Radio time this hour: $spent of $budget';
+  }
+
+  @override
+  String airtimeSpentLineUnlimited(String spent) {
+    return 'Radio time this hour: $spent, with no limit set';
+  }
+
+  @override
+  String airtimeRefusedCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count sends refused by the limit',
+      one: '1 send refused by the limit',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get settingsAirtimeTitle => 'Radio time limit';
+
+  @override
+  String get settingsAirtimeHelp =>
+      'Every frame this app sends is counted. At the limit it stops sending until the hour rolls on. The radio keeps its own legal limit either way.';
+
+  @override
+  String get airtimePolicyOnePercent => '1 % duty cycle';
+
+  @override
+  String get airtimePolicyOnePercentSub =>
+      '36 seconds of sending per hour. The legal limit in the EU and UK.';
+
+  @override
+  String get airtimePolicyOwned => 'No limit';
+
+  @override
+  String get airtimePolicyOwnedSub =>
+      'For a channel you own, where nobody else uses the frequency.';
 
   @override
   String get clockUnknown => 'time unknown';

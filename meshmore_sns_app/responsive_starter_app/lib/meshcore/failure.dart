@@ -4,6 +4,7 @@
 import 'package:meshcore/meshcore.dart';
 
 import '../gen/app_localizations.dart';
+import 'airtime_meter.dart';
 import 'ble_connector.dart';
 
 /// APP-N2 — one table for every refusal the app can show.
@@ -40,6 +41,9 @@ enum FailureCause {
   frameTrailingBytes,
   storageFull,
   radioSilent,
+
+  /// The app's own duty-cycle meter refused the frame. The radio never saw it.
+  airtimeBudget,
 }
 
 /// One refusal: what happened, plus the numbers the copy needs.
@@ -78,6 +82,9 @@ class Failure {
       return Failure(FailureCause.mtuTooSmall, mtu: error.mtu);
     }
     if (error is BleConnectException) return Failure(error.cause);
+    if (error is AirtimeRefused) {
+      return const Failure(FailureCause.airtimeBudget);
+    }
     return const Failure(FailureCause.unknownDeviceError);
   }
 
@@ -109,4 +116,5 @@ String failureText(AppLocalizations l, Failure f) => switch (f.cause) {
       FailureCause.frameTrailingBytes => l.failureFrameTrailingBytes,
       FailureCause.storageFull => l.failureStorageFull,
       FailureCause.radioSilent => l.failureRadioSilent,
+      FailureCause.airtimeBudget => l.failureAirtimeBudget,
     };

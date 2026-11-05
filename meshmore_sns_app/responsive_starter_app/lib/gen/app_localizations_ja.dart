@@ -3971,8 +3971,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get rxViaUnknown => '無線の報告なし';
 
   @override
-  String diagnosticsFramingLine(String truncated, String trailing) {
-    return '不完全なフレーム: 途中で切れた $truncated 件、余りのバイトがある $trailing 件';
+  String diagnosticsFramingLine(
+      String truncated, String trailing, Object empty) {
+    return '不完全なフレーム: 途中で切れた $truncated 件、余りのバイトがある $trailing 件、空の $empty 件';
   }
 
   @override
@@ -4462,7 +4463,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String failureMtuTooSmall(String mtu, String need) {
-    return 'このリンクは $mtu バイトで、1 フレームには $need 必要です。再接続して試してください。リンクを広げられないラジオはすべてのフレームを運べません。';
+    return 'この無線機のリンクは $mtu バイトで、1フレームには $need バイト必要です。小さい値を要求するファームウェアもあるため、この無線機は最大サイズのフレームを運べません。ファームウェアを新しくするか、再接続してください。';
   }
 
   @override
@@ -4479,6 +4480,52 @@ class AppLocalizationsJa extends AppLocalizations {
   @override
   String get failureRadioSilent =>
       'ラジオは要求を受け取りましたが、時間内に応答しませんでした。実行済みの可能性があります。再試行の前にラジオを確認してください。';
+
+  @override
+  String diagnosticsRadioChangedLine(String previous, String current) {
+    return 'この無線機は前回まで使っていたものではありません(前回 $previous、今回 $current)。履歴は引き継がれません。';
+  }
+
+  @override
+  String get diagnosticsRadioChangedAccept => 'この無線機を使う';
+
+  @override
+  String get failureAirtimeBudget =>
+      'この1時間でアプリの送信時間の上限に達したため、送信していません。時間の経過とともにまた送信できます。';
+
+  @override
+  String airtimeSpentLine(String spent, String budget) {
+    return 'この1時間の送信時間: $spent / $budget';
+  }
+
+  @override
+  String airtimeSpentLineUnlimited(String spent) {
+    return 'この1時間の送信時間: $spent(上限なし)';
+  }
+
+  @override
+  String airtimeRefusedCount(int count) {
+    return '$count 件が上限で拒否されました';
+  }
+
+  @override
+  String get settingsAirtimeTitle => '送信時間の上限';
+
+  @override
+  String get settingsAirtimeHelp =>
+      'このアプリが送信したフレームはすべて記録されます。上限に達すると、1時間が経過するまで送信を止めます。無線側の法的な上限は別に働きます。';
+
+  @override
+  String get airtimePolicyOnePercent => '1 % デューティ比';
+
+  @override
+  String get airtimePolicyOnePercentSub => '1時間あたり36秒の送信。EU・英国の法定上限です。';
+
+  @override
+  String get airtimePolicyOwned => '上限なし';
+
+  @override
+  String get airtimePolicyOwnedSub => '自分が使う周波数で、他に利用者がいない場合。';
 
   @override
   String get clockUnknown => '時刻不明';
