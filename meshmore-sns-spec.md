@@ -1280,6 +1280,22 @@ were written, so their numbering is not monotonic. A few records live in
 the sibling specs: R93 in `meshmore-sns-maps-spec.md`, R60 in
 `meshmore-sns-tools-spec.md`, R79 in `meshmore_sns_app/STATUS.md`.
 
+- R114: **the dashboard can be told what matters, and stops printing a debug line.** The home screen
+  answers "what is happening" and had no way to answer "what do I care about". Four summaries can be
+  pinned — the alarm, channel unread, live places, coverage — each a fixed-height row that expands in
+  place in the same fold idiom as the collapsible sections, each a summary plus a tap-through rather than
+  a second copy of the screen it summarises. One section serves all seven skins: the host passes it into
+  each dashboard's own children, so no skin's scroll physics is fought and the two fixed-viewport skins
+  (radar, recon) get a bounded strip that scrolls inside itself. Per-skin paint, numerals and ornament
+  are untouched on purpose, because the app's author wants the skins to keep different character; the
+  unification is the vocabulary, not one renderer. The pin control lives with the feature that owns the
+  summary, so the dashboard stays a read surface, and the dashboard's edit mode unpins and reorders.
+  Membership, order and expansion are one record with a closed id set, so a renamed feature drops its
+  stored pin instead of leaving a blank card. The raw `selfInfo` latitude, `advertLocPolicy` integer and
+  phone fix are no longer printed under the location value: that is a developer readout on the home
+  screen, and Diagnostics already shows every sourced readout with the frame it came from. Definition:
+  a closed card is 64 dp plus the closing rule, its detail is not built while closed, and its semantics
+  carry `expanded`.
 - R112: **the datagram's profile byte is read out.** The channel-datagram receive frame carries a
   byte that the mainline firmware writes as 0 and a two-profile radio fills with the profile the packet
   arrived on. The decoder now names it (`RxVia`), and Diagnostics states it with the channel and the

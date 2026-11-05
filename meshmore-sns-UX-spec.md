@@ -42,7 +42,7 @@ pushed via `go_router`.
 
 | # | View | Purpose | Maps to spec |
 |---|------|---------|---|
-| 1 | **Dashboard** (default home) | Network status, RSSI/SNR gauges, peer count, link state, recent events, active-channel summary. Also hosts the small collapsible chat overlay. | R6, R8 |
+| 1 | **Dashboard** (default home) | Network status, RSSI/SNR gauges, peer count, link state, recent events, active-channel summary. Each skin keeps its own layout and paint; one **pinned summaries** section is shared (alarm, channel unread, live places, coverage), added from the screen that owns the summary and reordered in the dashboard's edit mode. | R6, R8, R114 |
 | 2 | **Chat** | Full chat for the active channel, with channel-selector chip strip on top. Per-channel TTS toggle in the header. | R6, R5 |
 | 3 | **Nodes** | Discovered peers with signal strength, distance estimate, last-heard, and a hook for the future live map (F1). | R6 |
 | 3a | **Hyperlocal grid** | The radar and the other map views, as the tab after Nodes (issue #4). Offline = empty radar + "Not Connected to Mesh"; the view choice lasts the session, launch resets to radar. A left/right swipe changes screen; maps change by the picker sheet. The five views that pan or zoom carry a **Swipe ⇄ Pan** toggle: swipe mode holds the view still so the drag pages, pan mode gives the view every drag and locks the shell, and every visit starts in swipe mode (R109). | R18, R25, R27, R109 |
