@@ -108,6 +108,41 @@ void main() {
     expect(sentTexts(), hasLength(2), reason: 'nothing is due after a cancel');
   });
 
+  test('a sleep window sends the newest repeat, not a burst', () async {
+    await raiseAndConfirm();
+    expect(sentTexts(), hasLength(1));
+
+    // The isolate slept for four minutes: five sends are due at once.
+    clock.now = clock.now.add(const Duration(minutes: 4));
+    sos.pump();
+    await Future<void>.delayed(Duration.zero);
+
+    expect(sentTexts(), hasLength(2),
+        reason: 'one packet per tick: a burst fills the radio table and loses '
+            'all of them');
+    expect(sos.missedSends, greaterThan(0));
+    expect(sos.missedSends, 3,
+        reason: 'the four due sends become one sent and three counted as missed');
+  });
+
+  test('a refused repeat is counted, and the schedule continues', () async {
+    await raiseAndConfirm();
+    fake.failSend = true;
+    clock.now = clock.now.add(const Duration(seconds: 61));
+    sos.pump();
+    await Future<void>.delayed(Duration.zero);
+    expect(sos.failedSends, 1);
+    expect(sos.state, SosState.active,
+        reason: 'one refused repeat is not a failed alarm');
+
+    fake.failSend = false;
+    clock.now = clock.now.add(const Duration(seconds: 60));
+    sos.pump();
+    await Future<void>.delayed(Duration.zero);
+    expect(sos.failedSends, 0, reason: 'a good send clears the refusal badge');
+    expect(sentTexts(), hasLength(2));
+  });
+
   test('a channel ACK is claimed and the alarm keeps running', () async {
     await raiseAndConfirm();
     final String id = sos.request!.id;

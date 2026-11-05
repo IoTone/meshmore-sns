@@ -2242,6 +2242,8 @@
   "sosImSafeHint": "[SAFE] を1通送って繰り返しを止めます。",
   "sosStopRepeats": "繰り返しを停止",
   "sosStopHint": "この端末での繰り返しを止めます。送信しないため、誰にも伝わりません。",
+  "sosMissedSends": "アプリのスリープ中に送信できなかった回数: {count}",
+  "sosSendFailed": "無線が繰り返し送信を拒否しました。スケジュールは継続します。",
   "sosDefaultWords": "助けが必要です",
   "sosClaimedBy": "{name} が受信したと主張しています（チャンネル）。警報は継続します。",
   "sosSeenBy": "{name} が受信しました（直接メッセージ）。",

@@ -3109,6 +3109,19 @@
   "sosImSafeHint": "Sends one [SAFE] and stops the repeats.",
   "sosStopRepeats": "Stop the repeats",
   "sosStopHint": "Stops the repeats on this phone. Nothing is sent, so nobody is told.",
+  "sosMissedSends": "Not sent while the app was asleep: {count}",
+  "@sosMissedSends": {
+    "description": "Active alarm: repeats that were due during a sleep window and were skipped rather than fired as a burst.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "sosSendFailed": "The radio refused a repeat. The schedule continues.",
+  "@sosSendFailed": {
+    "description": "Active alarm: at least one repeat did not leave the radio."
+  },
   "sosDefaultWords": "I need help",
   "sosClaimedBy": "{name} claims to have seen this, on the channel. The alarm keeps going.",
   "@sosClaimedBy": {

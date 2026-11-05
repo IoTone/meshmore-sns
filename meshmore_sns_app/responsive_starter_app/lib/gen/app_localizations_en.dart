@@ -4653,6 +4653,15 @@ class AppLocalizationsEn extends AppLocalizations {
       'Stops the repeats on this phone. Nothing is sent, so nobody is told.';
 
   @override
+  String sosMissedSends(int count) {
+    return 'Not sent while the app was asleep: $count';
+  }
+
+  @override
+  String get sosSendFailed =>
+      'The radio refused a repeat. The schedule continues.';
+
+  @override
   String get sosDefaultWords => 'I need help';
 
   @override

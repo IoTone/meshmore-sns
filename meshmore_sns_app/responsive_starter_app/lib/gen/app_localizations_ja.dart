@@ -4501,6 +4501,14 @@ class AppLocalizationsJa extends AppLocalizations {
   String get sosStopHint => 'この端末での繰り返しを止めます。送信しないため、誰にも伝わりません。';
 
   @override
+  String sosMissedSends(int count) {
+    return 'アプリのスリープ中に送信できなかった回数: $count';
+  }
+
+  @override
+  String get sosSendFailed => '無線が繰り返し送信を拒否しました。スケジュールは継続します。';
+
+  @override
   String get sosDefaultWords => '助けが必要です';
 
   @override

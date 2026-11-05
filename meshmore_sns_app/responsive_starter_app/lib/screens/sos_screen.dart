@@ -386,6 +386,23 @@ class _Running extends StatelessWidget {
             '${l.sosRemaining(left, total)}',
             style:
                 TextStyle(color: skin.color.fgMuted, fontSize: skin.type.sizeSm)),
+        // What the schedule did not manage, said plainly: a sleep window skips
+        // repeats rather than firing a burst the radio would drop, and a
+        // refused repeat is a repeat nobody heard.
+        if (sos.missedSends > 0) ...<Widget>[
+          SizedBox(height: skin.space.step(2)),
+          Text(l.sosMissedSends(sos.missedSends),
+              key: const ValueKey<String>('sos-missed'),
+              style: TextStyle(
+                  color: skin.color.alert, fontSize: skin.type.sizeSm)),
+        ],
+        if (sos.failedSends > 0) ...<Widget>[
+          SizedBox(height: skin.space.step(2)),
+          Text(l.sosSendFailed,
+              key: const ValueKey<String>('sos-send-failed'),
+              style: TextStyle(
+                  color: skin.color.alert, fontSize: skin.type.sizeSm)),
+        ],
         SizedBox(height: skin.space.step(4)),
         if (sos.acks.isNotEmpty) ...<Widget>[
           MmSectionHeader(l.sosAcknowledgedHeading),

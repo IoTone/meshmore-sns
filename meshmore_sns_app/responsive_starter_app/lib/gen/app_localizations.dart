@@ -7948,6 +7948,18 @@ abstract class AppLocalizations {
   /// **'Stops the repeats on this phone. Nothing is sent, so nobody is told.'**
   String get sosStopHint;
 
+  /// Active alarm: repeats that were due during a sleep window and were skipped rather than fired as a burst.
+  ///
+  /// In en, this message translates to:
+  /// **'Not sent while the app was asleep: {count}'**
+  String sosMissedSends(int count);
+
+  /// Active alarm: at least one repeat did not leave the radio.
+  ///
+  /// In en, this message translates to:
+  /// **'The radio refused a repeat. The schedule continues.'**
+  String get sosSendFailed;
+
   /// No description provided for @sosDefaultWords.
   ///
   /// In en, this message translates to:
