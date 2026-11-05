@@ -92,5 +92,31 @@ void registerAssetLicenses() {
       'https://scripts.sil.org/OFL. The fonts and derivatives, however, '
       'cannot be released under any other type of license.',
     );
+
+    // The image codec rides a prebuilt native library that bundles three
+    // third-party projects. Their notices are reproduced here because the
+    // library ships as an asset the package licence page cannot enumerate.
+    yield const LicenseEntryWithLineBreaks(
+      <String>['Meshmore SNS — libavif'],
+      'The AVIF container and encoder/decoder library is libavif, used under '
+      'the BSD 2-Clause License.\n'
+      '\n'
+      'Copyright 2019 Joe Drago. All rights reserved.',
+    );
+
+    yield const LicenseEntryWithLineBreaks(
+      <String>['Meshmore SNS — dav1d'],
+      'The AV1 decoder is dav1d, used under the BSD 2-Clause License.\n'
+      '\n'
+      'Copyright © 2018-2025, VideoLAN and dav1d authors. All rights '
+      'reserved.',
+    );
+
+    yield const LicenseEntryWithLineBreaks(
+      <String>['Meshmore SNS — libaom'],
+      'The AV1 encoder is libaom, used under the BSD 3-Clause License.\n'
+      '\n'
+      'Copyright (c) 2016, Alliance for Open Media. All rights reserved.',
+    );
   });
 }

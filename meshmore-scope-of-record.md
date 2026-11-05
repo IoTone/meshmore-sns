@@ -723,3 +723,30 @@ rather than as dead code in the tree.
 Reversal cost: high for the socket and its security model, low for the capability — the wire encoders were
 never gateway code, and a future client would be a new feature with a new decision, not a resurrection of this
 one.
+
+---
+
+## §13 Round 11 — 2026-11-05: one AVIF dependency, because the decided pair cannot be installed
+
+**D11.1 `avif_native` alone carries both directions of the image codec.** The plan named a pair —
+`flutter_libavif` for display and `avif_native` for encode — and the pair is impossible: `flutter_libavif 0.1.1`
+depends on `code_assets >=1.0.0 <2.0.0` while `avif_native 0.2.0` depends on `code_assets ^2.0.0`, so any
+resolution of both fails at the version solver. Independently, `libavif`'s build hook compiles its vendored
+dav1d with Meson, and this host has no Meson or nasm, so the decode half could not have been built here either.
+
+`avif_native` is MIT and bundles libavif 1.4.2, dav1d 1.5.3 and libaom 3.14.1 as a prebuilt archive per ABI,
+verified against the package's own `archiveSha256` and `librarySha256`. It encodes *and* decodes, so the seam
+(`MediaCodec`) is satisfied by one library with one set of notices. Display goes through a small `ImageProvider`
+built on `decodeAvif(..., premultiplyAlpha: true)`, which is the same property the plan wanted from
+`flutter_libavif` — a real provider with `cacheWidth` folded into the native decode.
+
+Unchanged by this: one AV1-class image format (`0x5643`), no third image codec, no LGPL dependency.
+
+**D11.2 The bundled library fails the 16 KB page check today, and the register carries it.** Measured on the
+debug APK built 2026-11-05 with `tool/check_16k.sh`: `libavif_native.so` has load segments aligned to 4 KB, not
+16 KB, on arm64-v8a, armeabi-v7a and x86_64, and its `GNU_RELRO` range ends past the next load segment on all
+three. Every other shipped library passes and the archive itself passes `zipalign -P 16`. The store requires
+16 KB support from 1 Feb 2027, so this is a build requirement with a deadline, not a defect in the app: the
+options are a libavif build aligned with `-Wl,-z,max-page-size=16384`, a vendor rebuild of the same, or
+dropping media before that date. Recorded rather than worked around.
+
