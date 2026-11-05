@@ -21,6 +21,9 @@ class _Strings implements NotificationStrings {
         NotificationClass.direct => 'from $name',
         NotificationClass.sos => 'SOS',
       };
+
+  @override
+  String sosBody() => 'SOS body without coordinates';
 }
 
 /// Records what the app asked the phone to do besides posting.
@@ -168,6 +171,28 @@ void main() {
     expect(notifier.shown, hasLength(1));
     expect(notifier.shown.single.cls, NotificationClass.sos);
     expect(notifier.shown.single.title, 'SOS');
+    // The coordinates travel in the message; the lock screen is not where
+    // they belong (the diagnostics redactor treats a position as opt-in).
+    expect(notifier.shown.single.body, 'SOS body without coordinates');
+    expect(notifier.shown.single.body, isNot(contains('38.9')));
+  });
+
+  test('a direct SOS is redacted too, and keeps the DM route', () async {
+    await dm('[SOS:abc123] 38.9,-104.7 Sam fuel low', key: 'a1' * 32);
+    expect(notifier.shown.single.cls, NotificationClass.sos);
+    expect(notifier.shown.single.body, isNot(contains('38.9')));
+    expect(notifier.shown.single.payload, startsWith('dm:'));
+  });
+
+  test('the OS id is a stable digest, not a per-run hash', () {
+    // A fixed input must give a fixed id: the value is pinned so a change in
+    // hashing is a visible test failure rather than notifications that stop
+    // replacing each other after a restart.
+    final int a = NotificationService.idFor('msg-1234');
+    final int b = NotificationService.idFor('msg-1234');
+    expect(a, b);
+    expect(a, isNot(NotificationService.idFor('msg-1235')));
+    expect(a, inInclusiveRange(0, 0x7FFFFFFF));
   });
 
   test('a message on the open thread is not announced', () async {

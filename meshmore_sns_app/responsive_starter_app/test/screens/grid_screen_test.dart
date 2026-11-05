@@ -9,6 +9,7 @@ import 'package:meshmore_sns_app/gen/app_localizations.dart';
 import 'package:meshmore_sns_app/l10n/locale_controller.dart';
 import 'package:meshmore_sns_app/meshcore/meshcore_controller.dart';
 import 'package:meshmore_sns_app/screens/grid_screen.dart';
+import 'package:meshmore_sns_app/screens/street_map_view.dart';
 import 'package:meshmore_sns_app/shell/horizontal_drag_claim.dart';
 import 'package:meshmore_sns_app/theme/mm_skin.dart';
 import 'package:meshmore_sns_app/theme/mm_tokens.dart';
@@ -192,6 +193,32 @@ void main() {
     await t.pumpWidget(const SizedBox());
     mc.dispose();
   });
+  testWidgets('R109 swipe mode drops the drag, not the taps',
+      (WidgetTester t) async {
+    await t.binding.setSurfaceSize(const Size(800, 1600));
+    addTearDown(() => t.binding.setSurfaceSize(null));
+    final MeshcoreController mc = MeshcoreController(
+        transportFactory: () async => FakeMeshcoreTransport());
+    await t.pumpWidget(_host(mc));
+    await t.pump();
+    await t.tap(find.byTooltip('Switch map view'));
+    await t.pump();
+    await t.pump(const Duration(milliseconds: 400));
+    await t.tap(find.text('Street map').last);
+    await t.pump();
+    await t.pump(const Duration(milliseconds: 400));
+
+    // Swipe mode: the map does not take the drag, and it is still tappable.
+    // Before this, the whole body was inside an IgnorePointer, so a node you
+    // could see could not be opened until you switched modes.
+    expect(t.widget<StreetMapView>(find.byType(StreetMapView)).interactive,
+        isFalse);
+    await t.tap(find.byKey(const ValueKey<String>('grid-pan-toggle')));
+    await t.pump();
+    expect(t.widget<StreetMapView>(find.byType(StreetMapView)).interactive,
+        isTrue);
+  });
+
   testWidgets('R109 the Swipe ⇄ Pan toggle exists only where the view pans, '
       'and the claim follows it', (WidgetTester t) async {
     await t.binding.setSurfaceSize(const Size(800, 1600));

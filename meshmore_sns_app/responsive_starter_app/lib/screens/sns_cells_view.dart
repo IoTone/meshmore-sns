@@ -33,10 +33,15 @@ class SnsCellsView extends StatefulWidget {
     super.key,
     this.filteredNodes,
     this.frozen = false,
+    this.interactive = true,
   });
 
   final List<DiscoveredNode>? filteredNodes;
   final bool frozen;
+
+  /// R109 — false in the grid's swipe mode: the viewer is the drag, so it is
+  /// switched off rather than the body being absorbed. Cell taps still work.
+  final bool interactive;
 
   @override
   State<SnsCellsView> createState() => _SnsCellsViewState();
@@ -189,6 +194,8 @@ class _SnsCellsViewState extends State<SnsCellsView>
         Positioned.fill(
           child: InteractiveViewer(
             transformationController: _transform,
+            panEnabled: widget.interactive,
+            scaleEnabled: widget.interactive,
             minScale: 0.4,
             maxScale: 6.0,
             boundaryMargin: const EdgeInsets.all(800),

@@ -4202,6 +4202,12 @@ abstract class AppLocalizations {
   /// **'Emergency alert'**
   String get notifTitleSos;
 
+  /// OS notification body for an SOS. Deliberately omits the coordinates: the lock screen is not where a position should be published.
+  ///
+  /// In en, this message translates to:
+  /// **'Open the app for the position. The alert carries coordinates that this phone does not show on the lock screen.'**
+  String get notifBodySos;
+
   /// Section heading in the channel editor for the per-channel notification bundle.
   ///
   /// In en, this message translates to:
@@ -7522,6 +7528,12 @@ abstract class AppLocalizations {
   /// **'Export ledger'**
   String get placeExportLedger;
 
+  /// Snackbar after the ledger was handed to the share sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'Ledger ready to share.'**
+  String get placeExportShared;
+
   /// No description provided for @placeExportDone.
   ///
   /// In en, this message translates to:
@@ -7941,6 +7953,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Stops the repeats on this phone. Nothing is sent, so nobody is told.'**
   String get sosStopHint;
+
+  /// Active alarm: repeats that were due during a sleep window and were skipped rather than fired as a burst.
+  ///
+  /// In en, this message translates to:
+  /// **'Not sent while the app was asleep: {count}'**
+  String sosMissedSends(int count);
+
+  /// Active alarm: at least one repeat did not leave the radio.
+  ///
+  /// In en, this message translates to:
+  /// **'The radio refused a repeat. The schedule continues.'**
+  String get sosSendFailed;
 
   /// No description provided for @sosDefaultWords.
   ///
@@ -8482,6 +8506,12 @@ abstract class AppLocalizations {
   /// **'Export this session'**
   String get fieldExportAction;
 
+  /// Snackbar after the field record was handed to the share sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'Field record ready to share.'**
+  String get fieldExportShared;
+
   /// No description provided for @fieldExportDone.
   ///
   /// In en, this message translates to:
@@ -8493,6 +8523,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Search messages'**
   String get chatSearchAction;
+
+  /// Tooltip on the chat header action that exports one conversation.
+  ///
+  /// In en, this message translates to:
+  /// **'Export this conversation'**
+  String get chatExportAction;
+
+  /// Dialog title when exporting a conversation.
+  ///
+  /// In en, this message translates to:
+  /// **'Passphrase for the exported file'**
+  String get chatExportTitle;
+
+  /// Label for the passphrase field on a conversation export.
+  ///
+  /// In en, this message translates to:
+  /// **'Passphrase'**
+  String get chatExportPassphrase;
+
+  /// Confirm the conversation export.
+  ///
+  /// In en, this message translates to:
+  /// **'Export'**
+  String get chatExportConfirm;
+
+  /// The exported file was handed to the share sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'Conversation ready to share.'**
+  String get chatExportShared;
+
+  /// Fallback when there is nothing to share with.
+  ///
+  /// In en, this message translates to:
+  /// **'Conversation saved to {path}'**
+  String chatExportDone(String path);
+
+  /// An export refused, for example an empty passphrase.
+  ///
+  /// In en, this message translates to:
+  /// **'The conversation could not be written. Nothing was exported.'**
+  String get chatExportFailed;
 
   /// No description provided for @chatSearchHint.
   ///

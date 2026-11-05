@@ -355,8 +355,10 @@ class _GridScreenState extends State<GridScreen>
     if (!_viewMode.pansHorizontally) return body;
     return Stack(
       children: <Widget>[
-        Positioned.fill(
-            child: IgnorePointer(ignoring: !_panMode, child: body)),
+        // Not an IgnorePointer: in swipe mode the pannable views drop their
+        // own drag (each one knows which gesture that is) and keep their taps,
+        // because a node you can see should be a node you can open.
+        Positioned.fill(child: body),
         Positioned(
           left: 0,
           right: 0,
@@ -845,6 +847,7 @@ class _GridScreenState extends State<GridScreen>
         _GridViewMode.globe => GlobeView(
             filteredNodes: visible,
             frozen: !_live && _userInteracted,
+            interactive: _panMode,
           ),
         _GridViewMode.equalGrid => EqualGridView(
             cellSizeMeters: EqualGridView.cellSizeForRangeKm(
@@ -855,12 +858,14 @@ class _GridScreenState extends State<GridScreen>
         _GridViewMode.streetMap => StreetMapView(
             filteredNodes: visible,
             frozen: !_live && _userInteracted,
+            interactive: _panMode,
           ),
         _GridViewMode.fabric => Stack(
             children: <Widget>[
               FabricSurveyView(
                 filteredNodes: visible,
                 frozen: !_live && _userInteracted,
+                interactive: _panMode,
               ),
               if (_legendVisible)
                 Positioned(
@@ -907,6 +912,7 @@ class _GridScreenState extends State<GridScreen>
               SnsCellsView(
                 filteredNodes: visible,
                 frozen: !_live && _userInteracted,
+                interactive: _panMode,
               ),
               if (_legendVisible)
                 Positioned(

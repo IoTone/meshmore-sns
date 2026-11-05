@@ -26,6 +26,8 @@ import 'package:meshmore_sns_app/chat/channel_read_store.dart';
 import 'package:meshmore_sns_app/meshcore/block_store.dart';
 import 'package:meshmore_sns_app/places/place_report_budget.dart';
 import 'package:meshmore_sns_app/places/place_store.dart';
+import 'package:meshmore_sns_app/meshcore/pair_scanner.dart';
+import 'package:meshmore_sns_app/sos/sos_controller.dart';
 import 'package:meshmore_sns_app/theme/theme_controller.dart';
 import 'package:meshmore_sns_app/tools/tools_controller.dart';
 import 'package:meshmore_sns_app/tts/tts_controller.dart';
@@ -91,6 +93,16 @@ List<SingleChildWidget> _providers() => <SingleChildWidget>[
       // R109 places: the map tab and the chat echo read these, so every
       // harness that builds the shell needs them (as `home_shell_test` does).
       ChangeNotifierProvider<PlaceStore>(create: (_) => PlaceStore()),
+      // The SOS and check-in screens read one app-scoped controller, exactly
+      // as main.dart registers it; a route in this list without it fails on a
+      // missing provider rather than on a layout.
+      ChangeNotifierProvider<SosController>(
+          create: (BuildContext ctx) =>
+              SosController(mc: ctx.read<MeshcoreController>())),
+      // The pairing screen's seam: the real scanner is the platform's BLE and
+      // cannot run under a widget test, so this harness registers a scanner
+      // that reports an adapter that is simply switching on.
+      Provider<PairScanner?>.value(value: _OffScanner()),
       ChangeNotifierProvider<BlockStore>(create: (_) => BlockStore()),
       ChangeNotifierProvider<ChannelReadStore?>.value(value: null),
       Provider<PlaceReportBudget>(
@@ -204,6 +216,11 @@ void main() {
     '/settings/terms',
     '/settings/maps',
     '/settings/tools',
+    // The three screens added by the field-operations and pairing waves. SOS
+    // matters most here: it is used one-handed, under stress, often at 200 %.
+    '/sos',
+    '/checkin',
+    '/pair',
   ];
   for (final String route in routes) {
     testWidgets('$route survives 320 dp at 200 % text',
@@ -219,4 +236,24 @@ void main() {
       await _drain(t);
     });
   }
+}
+
+/// A scanner the accessibility floor can build: nothing is found and the
+/// adapter waits, which is one of the screen's real states.
+class _OffScanner implements PairScanner {
+  const _OffScanner();
+
+  @override
+  Future<AdapterState> adapterNow() async => AdapterState.off;
+
+  @override
+  Stream<AdapterState> get adapter =>
+      Stream<AdapterState>.value(AdapterState.off);
+
+  @override
+  Stream<List<PairHit>> scan({Duration? timeout}) =>
+      Stream<List<PairHit>>.value(const <PairHit>[]);
+
+  @override
+  Future<void> stopScan() async {}
 }

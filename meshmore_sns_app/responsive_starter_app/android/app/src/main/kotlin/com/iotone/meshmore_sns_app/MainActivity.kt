@@ -1,8 +1,11 @@
 package com.iotone.meshmore_sns_app
 
+import android.content.Intent
+import androidx.core.content.FileProvider
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
+import java.io.File
 
 class MainActivity : FlutterActivity() {
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
@@ -40,6 +43,43 @@ class MainActivity : FlutterActivity() {
                     result.error("corrupt", "tag mismatch", null)
                 } catch (e: Exception) {
                     result.error("cipher", e.message ?: e.javaClass.simpleName, null)
+                }
+            }
+        // Exported files live in the app's private directory, so a path in a
+        // snackbar is not an export. The intent hands the receiver a
+        // content:// URI with a read grant for that one file and nothing else.
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "meshmore/share")
+            .setMethodCallHandler { call, result ->
+                if (call.method != "shareFile") {
+                    result.notImplemented()
+                    return@setMethodCallHandler
+                }
+                val path = call.argument<String>("path")
+                val mime = call.argument<String>("mime") ?: "application/octet-stream"
+                val subject = call.argument<String>("subject")
+                if (path == null) {
+                    result.error("bad_args", "path is required", null)
+                    return@setMethodCallHandler
+                }
+                try {
+                    val file = File(path)
+                    if (!file.exists()) {
+                        result.error("missing", "no such file", null)
+                        return@setMethodCallHandler
+                    }
+                    val uri = FileProvider.getUriForFile(
+                        this, "$packageName.fileprovider", file
+                    )
+                    val send = Intent(Intent.ACTION_SEND).apply {
+                        type = mime
+                        putExtra(Intent.EXTRA_STREAM, uri)
+                        if (subject != null) putExtra(Intent.EXTRA_SUBJECT, subject)
+                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                    }
+                    startActivity(Intent.createChooser(send, subject))
+                    result.success(true)
+                } catch (e: Exception) {
+                    result.error("share", e.message ?: e.javaClass.simpleName, null)
                 }
             }
     }

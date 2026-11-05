@@ -14,6 +14,8 @@ import '../cue/cue_service.dart';
 import '../gen/app_localizations.dart';
 import '../meshcore/meshcore_controller.dart';
 import '../screens/chat_screen.dart';
+import '../notifications/notification_focus.dart';
+import 'shell_view_request.dart';
 import 'boot_overlay.dart';
 import 'horizontal_drag_claim.dart';
 import '../screens/dashboards/dashboard_host.dart';
@@ -88,6 +90,22 @@ class _HomeShellState extends State<HomeShell>
   BotBridge? _botBridge;
   PlaceBridge? _placeBridge;
 
+  /// D8.20 — who is on screen, for the notification decision.
+  ///
+  /// The shell owns this rather than the chat page: the page is kept alive
+  /// once visited, so a record it wrote would outlive the user leaving the
+  /// tab and silence that channel for the rest of the process (measured on
+  /// 2026-11-05: one Chat visit stopped every channel notification while the
+  /// app sat on the Dashboard).
+  NotificationFocus? _notificationFocus;
+  MeshcoreController? _focusOwner;
+
+  /// "Show me Chat on this slot", asked from outside the shell (a notification
+  /// tap from the app root). The last sequence number acted on, so a rebuild
+  /// cannot replay a request.
+  ShellViewRequest? _viewRequest;
+  int _viewRequestSeq = 0;
+
   @override
   void initState() {
     super.initState();
@@ -114,6 +132,13 @@ class _HomeShellState extends State<HomeShell>
       context.read<MeshcoreController>(),
       context.read<PlaceStore>(),
     );
+    _notificationFocus = context.read<NotificationFocus?>();
+    _focusOwner = context.read<MeshcoreController>();
+    _viewRequest = context.read<ShellViewRequest?>();
+    _viewRequest?.addListener(_onViewRequest);
+    // The active slot can change without a page change (the chat header, the
+    // channel picker, a radio that renumbers its channels), so follow it.
+    _focusOwner?.addListener(_publishNotificationFocus);
     // Owns splash teardown now (replaces the old demo home).
     WidgetsBinding.instance.addPostFrameCallback((_) {
       FlutterNativeSplash.remove();
@@ -125,6 +150,9 @@ class _HomeShellState extends State<HomeShell>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _focusOwner?.removeListener(_publishNotificationFocus);
+    _viewRequest?.removeListener(_onViewRequest);
+    _notificationFocus?.clearThread();
     _cueBridge?.dispose();
     _botBridge?.dispose();
     _placeBridge?.dispose();
@@ -164,7 +192,25 @@ class _HomeShellState extends State<HomeShell>
     final int from = _index;
     _pc.jumpToPage(i);
     setState(() => _index = i);
+    _publishNotificationFocus();
     _playNavCue(from, i);
+  }
+
+  /// A notification tap asked for Chat on a slot: change view, keep the slot.
+  void _onViewRequest() {
+    final ShellViewRequest? request = _viewRequest;
+    if (request == null || request.chatSlot == null) return;
+    if (request.seq == _viewRequestSeq) return;
+    _viewRequestSeq = request.seq;
+    _select(MmView.chat.index);
+  }
+
+  /// The channel on screen is not announced; nothing else is suppressed.
+  void _publishNotificationFocus() {
+    final NotificationFocus? focus = _notificationFocus;
+    if (focus == null) return;
+    focus.openChannel =
+        _index == MmView.chat.index ? _focusOwner?.activeChannel : null;
   }
 
   /// One view change, one cue (R95) — whether the change came from a strip
@@ -181,6 +227,7 @@ class _HomeShellState extends State<HomeShell>
     if (i == _index) return;
     final int from = _index;
     setState(() => _index = i);
+    _publishNotificationFocus();
     _playNavCue(from, i);
   }
 

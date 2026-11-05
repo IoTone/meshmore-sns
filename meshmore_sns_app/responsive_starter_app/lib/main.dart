@@ -40,6 +40,7 @@ import 'package:meshmore_sns_app/notifications/local_notifier.dart';
 import 'package:meshmore_sns_app/notifications/app_notification_effects.dart';
 import 'package:meshmore_sns_app/notifications/message_notification.dart';
 import 'package:meshmore_sns_app/notifications/notification_focus.dart';
+import 'package:meshmore_sns_app/shell/shell_view_request.dart';
 import 'package:meshmore_sns_app/notifications/notification_service.dart';
 import 'package:meshmore_sns_app/notifications/notifier.dart';
 import 'package:meshmore_sns_app/perms/first_run_controller.dart';
@@ -111,6 +112,9 @@ void main() {
     final LocalNotifier notifier = LocalNotifier();
     final NotificationPrefs notificationPrefs = NotificationPrefs();
     final NotificationFocus notificationFocus = NotificationFocus();
+    // A tap has to be able to change the shell's visible view, and the tap
+    // handler lives out here with no way to reach the page controller.
+    final ShellViewRequest shellViewRequest = ShellViewRequest();
     unawaited(notificationPrefs.load());
     // The notification text follows the app's own locale choice, and it is
     // resolved per message rather than once, so switching language takes
@@ -136,8 +140,12 @@ void main() {
         appRouter.push('/dm/${payload.substring(3)}');
       } else if (payload.startsWith('ch:')) {
         final int? slot = int.tryParse(payload.substring(3));
-        if (slot != null) controller.setActiveChannel(slot);
+        if (slot == null) return;
+        controller.setActiveChannel(slot);
+        // The shell is the only thing that knows which page is showing, so the
+        // tap asks it rather than going to the root route and stopping there.
         appRouter.go('/');
+        shellViewRequest.openChat(slot);
       }
     };
     runApp(
@@ -274,6 +282,7 @@ void main() {
           // without it runs with no notifications instead of failing a lookup
           // it never needed (D8.21's rule, applied to the harness).
           Provider<NotificationFocus?>.value(value: notificationFocus),
+          ChangeNotifierProvider<ShellViewRequest?>.value(value: shellViewRequest),
           // Places (meshmore-places-spec.md): reports live in one app-scoped
           // store, so the map layer, the history list, the chat echo and
           // search cannot disagree about what exists. The budget is the

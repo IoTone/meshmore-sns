@@ -1,7 +1,10 @@
 // Copyright (c) 2026 IoTone, Inc.
 // SPDX-License-Identifier: MIT
 import 'dart:async';
+import 'dart:io';
 import 'dart:typed_data';
+
+import 'package:path_provider/path_provider.dart';
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -21,6 +24,8 @@ import '../meshcore/airtime.dart';
 import '../meshcore/block_filter.dart';
 import '../meshcore/block_store.dart';
 import '../meshcore/chat_message.dart';
+import '../meshcore/history_export.dart';
+import '../meshcore/secure/store_export.dart';
 import '../places/place.dart';
 import '../places/place_echo.dart';
 import '../places/place_store.dart';
@@ -28,7 +33,6 @@ import 'delivery_status_icon.dart';
 import '../meshcore/meshcore_controller.dart';
 import '../chat/history_retention_notice.dart';
 import '../chat/unread_counts.dart';
-import '../notifications/notification_focus.dart';
 import '../meshcore/message_heat.dart' show parseChannelSenderName;
 import '../bot/bot_guards.dart';
 import '../bot/bot_tag.dart';
@@ -38,6 +42,7 @@ import '../tts/tts_controller.dart';
 import '../ui/mm_page_header.dart';
 import '../ui/mm_scaffold.dart';
 import '../util/clock_model.dart';
+import '../util/share.dart';
 import '../ui/mm_shape.dart';
 import 'package:meshcore/meshcore.dart';
 
@@ -136,28 +141,19 @@ class _ChatScreenState extends State<ChatScreen>
     // newest message automatically or surface a jump-to-newest pill.
     _scroll.addListener(_onScroll);
 
-    // D8.20 — the channel on screen is not announced. The active slot can
-    // change without this widget rebuilding into a new state, so follow the
-    // controller rather than reading the index once.
+    // D8.20's "do not announce the thread I am reading" is the shell's
+    // record, not this page's: the page is kept alive once visited, so a
+    // write here would outlive the user leaving the tab.
     final MeshcoreController mc = context.read<MeshcoreController>();
-    _focusOwner = mc;
-    // Resolved once: `dispose` must not look up an ancestor, and the focus
-    // record outlives this screen's element by no more than this reference.
-    _focus = context.read<NotificationFocus?>();
+    _owner = mc;
     void listener() {
       if (!mounted) return;
-      // The cached record, not an ancestor lookup: the controller can notify
-      // while this element is being deactivated, where a lookup is illegal.
-      _focus?.openChannel = mc.activeChannel;
       _syncBudget(mc);
       _syncDraftScope(mc);
       _restoreIfFailed(mc);
     }
 
-    _focusListener = listener;
-    // A harness that builds this screen without the app-scoped focus record
-    // simply has nothing to suppress.
-    _focus?.openChannel = mc.activeChannel;
+    _listener = listener;
     mc.addListener(listener);
     _input.addListener(_onComposerChanged);
     _syncBudget(mc);
@@ -251,9 +247,8 @@ class _ChatScreenState extends State<ChatScreen>
     if (key != null) unawaited(DraftStore.save(key, text));
   }
 
-  MeshcoreController? _focusOwner;
-  VoidCallback? _focusListener;
-  NotificationFocus? _focus;
+  MeshcoreController? _owner;
+  VoidCallback? _listener;
 
   void _onScroll() {
     if (!_scroll.hasClients) return;
@@ -290,6 +285,43 @@ class _ChatScreenState extends State<ChatScreen>
   ///
   /// A direct message lives in its own route, so the hit pushes it; a channel
   /// row switches to that channel and reveals the row in place.
+  /// One conversation as an `MMEX` passphrase file, then the share sheet.
+  Future<void> _exportThread(MeshcoreController mc) async {
+    final AppLocalizations l = AppLocalizations.of(context);
+    final int slot = mc.activeChannel;
+    final String key = HistoryExport.channelKey(slot);
+    final List<ChatMessage> rows = mc
+        .messagesFor(slot)
+        .where((ChatMessage m) => HistoryExport.threadKeyOf(m) == key)
+        .toList();
+    if (rows.isEmpty) return;
+    final String? passphrase = await showDialog<String>(
+      context: context,
+      builder: (BuildContext ctx) => _PassphraseDialog(l: l),
+    );
+    if (passphrase == null || !mounted) return;
+    try {
+      final Uint8List bytes = HistoryExport.encodeThread(
+        key: key,
+        messages: rows,
+        passphrase: passphrase,
+      );
+      final Directory dir = await getApplicationDocumentsDirectory();
+      final File file = File('${dir.path}/thread-$slot.mmex');
+      await file.writeAsBytes(bytes);
+      final bool shared = await Share.file(file.path,
+          mime: 'application/octet-stream', subject: l.chatExportAction);
+      if (!mounted) return;
+      ScaffoldMessenger.maybeOf(context)?.showSnackBar(SnackBar(
+          content:
+              Text(shared ? l.chatExportShared : l.chatExportDone(file.path))));
+    } on ExportRefused {
+      if (!mounted) return;
+      ScaffoldMessenger.maybeOf(context)
+          ?.showSnackBar(SnackBar(content: Text(l.chatExportFailed)));
+    }
+  }
+
   Future<void> _openSearch(MeshcoreController mc) async {
     final String? id = await context.push<String>('/chat/search');
     if (id == null || !mounted) return;
@@ -356,8 +388,7 @@ class _ChatScreenState extends State<ChatScreen>
   @override
   void dispose() {
     _highlightTimer?.cancel();
-    if (_focusListener != null) _focusOwner?.removeListener(_focusListener!);
-    _focus?.openChannel = null;
+    if (_listener != null) _owner?.removeListener(_listener!);
     _scroll.removeListener(_onScroll);
     _input.removeListener(_onComposerChanged);
     _draftTimer?.cancel();
@@ -595,6 +626,19 @@ class _ChatScreenState extends State<ChatScreen>
                     tooltip: l.chatSearchAction,
                     onPressed: () => _openSearch(mc),
                     icon: const Icon(Icons.search),
+                  ),
+                ),
+              // APP-E4 - one conversation leaves as its own passphrase file.
+              // The file is app-private, so it goes to the share sheet rather
+              // than being named in a snackbar the user cannot reach.
+              if (msgs.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(left: 4),
+                  child: IconButton(
+                    key: const ValueKey<String>('chat-export-thread'),
+                    tooltip: l.chatExportAction,
+                    onPressed: () => _exportThread(mc),
+                    icon: const Icon(Icons.ios_share),
                   ),
                 ),
               // Manage channels: a chip, not a "#" icon next to the
@@ -1391,6 +1435,53 @@ class _UnreadBadge extends StatelessWidget {
           color: onSelectedColor ? cs.primary : cs.onPrimary,
         ),
       ),
+    );
+  }
+}
+
+/// The passphrase a thread export travels with. The store's own key never
+/// leaves the Keystore, so a file that must open years later carries its own.
+class _PassphraseDialog extends StatefulWidget {
+  const _PassphraseDialog({required this.l});
+
+  final AppLocalizations l;
+
+  @override
+  State<_PassphraseDialog> createState() => _PassphraseDialogState();
+}
+
+class _PassphraseDialogState extends State<_PassphraseDialog> {
+  final TextEditingController _input = TextEditingController();
+
+  @override
+  void dispose() {
+    _input.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text(widget.l.chatExportTitle),
+      content: TextField(
+        key: const ValueKey<String>('chat-export-passphrase'),
+        controller: _input,
+        obscureText: true,
+        autofocus: true,
+        decoration: InputDecoration(labelText: widget.l.chatExportPassphrase),
+        onSubmitted: (String v) => Navigator.of(context).pop(v),
+      ),
+      actions: <Widget>[
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text(widget.l.cancel),
+        ),
+        FilledButton(
+          key: const ValueKey<String>('chat-export-confirm'),
+          onPressed: () => Navigator.of(context).pop(_input.text),
+          child: Text(widget.l.chatExportConfirm),
+        ),
+      ],
     );
   }
 }

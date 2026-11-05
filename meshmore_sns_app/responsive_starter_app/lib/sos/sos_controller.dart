@@ -74,6 +74,11 @@ final class SosController extends ChangeNotifier {
   SosRefusal? _lastRefusal;
   CheckinWatch? _checkin;
 
+  /// Counters behind the panel's honesty: what the radio refused, and what the
+  /// sleep window swallowed. Both reset when a new alarm is raised.
+  int _failedSends = 0;
+  int _missedSends = 0;
+
   /// The channel slot the alarm goes out on, and the one the screen names.
   int _channelSlot = 0;
 
@@ -205,6 +210,8 @@ final class SosController extends ChangeNotifier {
   SosRefusal? confirm() {
     _lastRefusal = _engine.confirm();
     if (_lastRefusal == null) {
+      _failedSends = 0;
+      _missedSends = 0;
       _ensureTicker();
       pump();
     }
@@ -274,14 +281,21 @@ final class SosController extends ChangeNotifier {
     return watch.state;
   }
 
-  /// One tick: every due packet, the hard stop, and the check-in deadline.
+  /// One packet per tick, never a catch-up burst.
   ///
   /// Called by the timer in the app and directly by a test with a fake clock.
+  /// When the isolate was asleep the engine can have several packets due at
+  /// once; firing them back to back fills the radio's packet table and loses
+  /// all of them, and each one carries a position the user has since walked
+  /// away from. The most recent due packet goes out, the rest are counted as
+  /// missed and shown, so the panel never claims sends that did not happen.
   void pump() {
     final DateTime now = _clock();
-    for (final SosSend s in _engine.advanceTo(now)) {
-      unawaited(_send(s.text));
+    final List<SosSend> due = _engine.advanceTo(now);
+    if (due.length > 1) {
+      _missedSends += due.length - 1;
     }
+    if (due.isNotEmpty) unawaited(_send(due.last.text));
     _checkin?.tick();
     // The ticker lives as long as *something* is being watched: an alarm that
     // is still repeating, or a check-in whose deadline has not passed.
@@ -291,18 +305,39 @@ final class SosController extends ChangeNotifier {
   }
 
   /// Puts one packet on air, on every destination the alarm carries.
+  ///
+  /// A failure is not a failed alarm (`meshmore-sos-spec.md` §10), but it is
+  /// also not nothing: a radio that refused the packet means nobody heard that
+  /// repeat, and the panel says so rather than reporting a clean run.
   Future<void> _send(String text) async {
+    // The controller answers with the row it created and marks it failed when
+    // the write did not leave, so the refusal is read from the row rather than
+    // from a throw: the send path deliberately does not throw for a refused
+    // message (a refused send is not a crashed app).
+    bool refused = false;
     try {
-      await _mc.sendChannelTextTo(_channelSlot, text);
+      final ChatMessage? ch = await _mc.sendChannelTextTo(_channelSlot, text);
+      if (ch?.delivery == MessageDelivery.failed) refused = true;
       for (final String hex in _contactKeysHex) {
-        await _mc.sendDirectText(hex, text);
+        final ChatMessage? dm = await _mc.sendDirectText(hex, text);
+        if (dm?.delivery == MessageDelivery.failed) refused = true;
       }
     } catch (_) {
-      // A failed send is not a failed alarm: the schedule keeps its count and
-      // the next packet is still due. Nothing is claimed about delivery
-      // (`meshmore-sos-spec.md` §10), so there is nothing to correct here.
+      refused = true;
+    }
+    if (refused) {
+      _failedSends++;
+      _notify();
+    } else {
+      _failedSends = 0;
     }
   }
+
+  /// Repeats the radio refused, since the alarm was raised.
+  int get failedSends => _failedSends;
+
+  /// Repeats that were due while the app was asleep and were not sent.
+  int get missedSends => _missedSends;
 
   void _onChannel(ChatMessage m) {
     if (m.outgoing) return;

@@ -5,6 +5,8 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 
+import '../util/share.dart';
+
 import '../gen/app_localizations.dart';
 import '../theme/mm_skin.dart';
 import 'place.dart';
@@ -62,9 +64,14 @@ class _PlaceHistorySheetState extends State<PlaceHistorySheet> {
       final Directory dir = await getApplicationDocumentsDirectory();
       final File file = File('${dir.path}/places-ledger.csv');
       await file.writeAsString(widget.store.exportLedgerCsv());
+      // The documents directory is app-private, so the path alone is not an
+      // export: the file goes to the share sheet, and the path is the fallback
+      // only when there is nothing to share with.
+      final bool shared = await Share.file(file.path,
+          mime: 'text/csv', subject: l.placeExportLedger);
       if (!mounted) return;
-      ScaffoldMessenger.maybeOf(context)
-          ?.showSnackBar(SnackBar(content: Text(l.placeExportDone(file.path))));
+      ScaffoldMessenger.maybeOf(context)?.showSnackBar(
+          SnackBar(content: Text(shared ? l.placeExportShared : l.placeExportDone(file.path))));
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.maybeOf(context)

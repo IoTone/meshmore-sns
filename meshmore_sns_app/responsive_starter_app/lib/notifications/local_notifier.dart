@@ -22,7 +22,34 @@ class LocalNotifier implements Notifier {
   final FlutterLocalNotificationsPlugin _plugin;
 
   /// Set by the app so a tap can route. Called with the notification payload.
-  void Function(String payload)? onTap;
+  ///
+  /// A tap that launched the app arrives from `init`, which runs before the
+  /// router exists; that payload waits here until the handler is set, so a
+  /// notification tapped from a cold start still opens its thread instead of
+  /// landing on the Dashboard.
+  set onTap(void Function(String payload)? handler) {
+    _onTap = handler;
+    final String? pending = _pendingTap;
+    if (pending != null && handler != null) {
+      _pendingTap = null;
+      handler(pending);
+    }
+  }
+
+  void Function(String payload)? get onTap => _onTap;
+
+  void Function(String payload)? _onTap;
+  String? _pendingTap;
+
+  void _deliver(String payload) {
+    if (payload.isEmpty) return;
+    final void Function(String payload)? handler = _onTap;
+    if (handler == null) {
+      _pendingTap = payload;
+      return;
+    }
+    handler(payload);
+  }
 
   bool _inited = false;
 
@@ -59,9 +86,17 @@ class LocalNotifier implements Notifier {
       ),
       onDidReceiveNotificationResponse: (NotificationResponse r) {
         final String? payload = r.payload;
-        if (payload != null && payload.isNotEmpty) onTap?.call(payload);
+        if (payload != null) _deliver(payload);
       },
     );
+    // The tap that launched the process is not delivered to the callback
+    // above; it is only readable here, once.
+    final NotificationAppLaunchDetails? launch =
+        await _plugin.getNotificationAppLaunchDetails();
+    if (launch != null && launch.didNotificationLaunchApp) {
+      final String? payload = launch.notificationResponse?.payload;
+      if (payload != null) _deliver(payload);
+    }
     if (!Platform.isAndroid) return;
     final AndroidFlutterLocalNotificationsPlugin? android =
         _plugin.resolvePlatformSpecificImplementation<

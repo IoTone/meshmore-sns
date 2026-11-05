@@ -34,10 +34,15 @@ class FabricSurveyView extends StatefulWidget {
     super.key,
     this.filteredNodes,
     this.frozen = false,
+    this.interactive = true,
   });
 
   final List<DiscoveredNode>? filteredNodes;
   final bool frozen;
+
+  /// R109 — false in the grid's swipe mode: the survey does not take the drag
+  /// that pages the shell. Taps still open a node's detail.
+  final bool interactive;
 
   @override
   State<FabricSurveyView> createState() => _FabricSurveyViewState();
@@ -185,11 +190,13 @@ class _FabricSurveyViewState extends State<FabricSurveyView> {
               initialZoom: _zoom,
               minZoom: _zoomMin,
               maxZoom: _zoomMax,
-              interactionOptions: const InteractionOptions(
-                flags: InteractiveFlag.drag |
-                    InteractiveFlag.pinchZoom |
-                    InteractiveFlag.scrollWheelZoom |
-                    InteractiveFlag.doubleTapZoom,
+              interactionOptions: InteractionOptions(
+                flags: widget.interactive
+                    ? InteractiveFlag.drag |
+                        InteractiveFlag.pinchZoom |
+                        InteractiveFlag.scrollWheelZoom |
+                        InteractiveFlag.doubleTapZoom
+                    : InteractiveFlag.none,
               ),
               backgroundColor: cs.surfaceContainerHighest,
             ),

@@ -2466,6 +2466,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get notifTitleSos => 'Emergency alert';
 
   @override
+  String get notifBodySos =>
+      'Open the app for the position. The alert carries coordinates that this phone does not show on the lock screen.';
+
+  @override
   String get notifSectionTitle => 'Notifications';
 
   @override
@@ -4375,6 +4379,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get placeExportLedger => 'Export ledger';
 
   @override
+  String get placeExportShared => 'Ledger ready to share.';
+
+  @override
   String placeExportDone(String path) {
     return 'Ledger saved to $path';
   }
@@ -4647,6 +4654,15 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get sosStopHint =>
       'Stops the repeats on this phone. Nothing is sent, so nobody is told.';
+
+  @override
+  String sosMissedSends(int count) {
+    return 'Not sent while the app was asleep: $count';
+  }
+
+  @override
+  String get sosSendFailed =>
+      'The radio refused a repeat. The schedule continues.';
 
   @override
   String get sosDefaultWords => 'I need help';
@@ -4992,12 +5008,39 @@ class AppLocalizationsEn extends AppLocalizations {
   String get fieldExportAction => 'Export this session';
 
   @override
+  String get fieldExportShared => 'Field record ready to share.';
+
+  @override
   String fieldExportDone(String path) {
     return 'Field record written. The path is on the clipboard: $path';
   }
 
   @override
   String get chatSearchAction => 'Search messages';
+
+  @override
+  String get chatExportAction => 'Export this conversation';
+
+  @override
+  String get chatExportTitle => 'Passphrase for the exported file';
+
+  @override
+  String get chatExportPassphrase => 'Passphrase';
+
+  @override
+  String get chatExportConfirm => 'Export';
+
+  @override
+  String get chatExportShared => 'Conversation ready to share.';
+
+  @override
+  String chatExportDone(String path) {
+    return 'Conversation saved to $path';
+  }
+
+  @override
+  String get chatExportFailed =>
+      'The conversation could not be written. Nothing was exported.';
 
   @override
   String get chatSearchHint => 'Search stored history';

@@ -36,7 +36,13 @@ class GlobeView extends StatefulWidget {
     super.key,
     this.filteredNodes,
     this.frozen = false,
+    this.interactive = true,
   });
+
+  /// R109 — false while the grid is in swipe mode. The scale gesture is the
+  /// globe's drag, so it is dropped rather than absorbing the whole body: a
+  /// tap on a pin still opens the node.
+  final bool interactive;
 
   /// R40 — when non-null, the globe renders this list verbatim
   /// instead of pulling `mc.nodes` itself. This is how the radial
@@ -297,7 +303,8 @@ class _GlobeViewState extends State<GlobeView> {
     }
 
     return GestureDetector(
-      onScaleStart: (_) => _scaleAtGestureStart = _scale,
+      onScaleStart:
+          widget.interactive ? (_) => _scaleAtGestureStart = _scale : null,
       onTapUp: (TapUpDetails d) {
         // Hit-test the tap against every visible peer pin. We
         // need the surface size for the projection; LayoutBuilder

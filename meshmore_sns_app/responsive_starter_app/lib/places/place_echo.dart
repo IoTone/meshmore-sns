@@ -32,6 +32,11 @@ class PlaceEchoLine extends StatelessWidget {
   ///
   /// Parsing is side-effect free so a list build can call it; the store ingests
   /// the same message once, when it arrives.
+  ///
+  /// The TTL is anchored on the **message's own arrival time**, never on the
+  /// moment of the build: a build-time anchor re-starts the countdown on every
+  /// rebuild, so a report that expired hours ago would keep reading "expires in
+  /// 2 h" and the number under the pin would never move.
   static Place? placeOf(ChatMessage message, {DateTime Function()? clock}) {
     if (message.outgoing) return null;
     final String text = message.text;
@@ -42,7 +47,7 @@ class PlaceEchoLine extends StatelessWidget {
     final String body = prefixed ? text.substring(at + 2) : text;
     return parsePlace(
       body,
-      receivedAt: (clock ?? DateTime.now)(),
+      receivedAt: (clock ?? () => message.at)(),
       reporterName: sender,
       provenance: PlaceProvenance.received,
     ).place;
@@ -53,28 +58,31 @@ class PlaceEchoLine extends StatelessWidget {
     final AppLocalizations l = AppLocalizations.of(context);
     final MmSkin skin = context.skin;
     final DateTime now = DateTime.now();
-    final PlaceConfirmationSummary counts = store.confirmationsFor(place.id);
+    // The store ingested this same message when it arrived, so its row is the
+    // one the rest of the app agrees with (renewals, kept flags, expiry).
+    final Place shown = store.byId(place.id) ?? place;
+    final PlaceConfirmationSummary counts = store.confirmationsFor(shown.id);
     return Padding(
       padding: EdgeInsets.only(top: skin.space.step(1)),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
           Icon(
-            placeIcon(place.type),
+            placeIcon(shown.type),
             size: skin.type.sizeBody,
-            color: store.isSeen(place.id)
+            color: store.isSeen(shown.id)
                 ? skin.color.fgMuted
-                : placeTypeColour(skin, place.type),
+                : placeTypeColour(skin, shown.type),
           ),
           SizedBox(width: skin.space.step(1)),
           Flexible(
             child: Text(
               l.placeEchoLine(
-                place.label,
-                placeTypeLabel(l, place.type),
-                placeExpiryText(l, place, now),
+                shown.label,
+                placeTypeLabel(l, shown.type),
+                placeExpiryText(l, shown, now),
               ),
-              key: ValueKey<String>('place-echo-${place.id}'),
+              key: ValueKey<String>('place-echo-${shown.id}'),
               maxLines: 2,
               style: TextStyle(
                 color: skin.color.fgMuted,

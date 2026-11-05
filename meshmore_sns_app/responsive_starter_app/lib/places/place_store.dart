@@ -80,6 +80,16 @@ final class PlaceStore extends ChangeNotifier {
   /// Every row, newest report first — live and expired.
   List<Place> get all => List<Place>.unmodifiable(_rows);
 
+  /// The stored row for [id], or null when this device has never kept one.
+  /// A display that parsed the message itself prefers this, so the pin and
+  /// the thread cannot disagree about a renewal or a kept row.
+  Place? byId(String id) {
+    for (final Place p in _rows) {
+      if (p.id == id) return p;
+    }
+    return null;
+  }
+
   /// Rows whose life has not ended, newest report first: what the layer draws.
   List<Place> live([DateTime? now]) {
     final DateTime at = now ?? _clock();
