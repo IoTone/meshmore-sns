@@ -16,6 +16,7 @@ import 'default_channel_store.dart';
 import 'device_power_specs.dart';
 import 'ble_connector.dart';
 import 'channel_datagram.dart';
+import 'command_ledger.dart';
 import 'chat_message.dart';
 import 'chat_store.dart';
 import 'discovered_node.dart';
@@ -61,16 +62,10 @@ String deviceErrorReason(int? code) => switch (code) {
 /// scans/connects over BLE, but tests inject a fake transport so the
 /// whole controller path is `flutter test`-covered without hardware.
 /// Which reply the firmware gives for a send (verified against
-/// `MyMesh.cpp`): channel text and self-advert → `ok`; DM, status and
-/// telemetry requests, trace → `sent`.
-enum _Expect { ok, sent }
-
-class _PendingSend {
-  const _PendingSend(this.id, this.expect);
-  final String id;
-  final _Expect expect;
-}
-
+/// `MyMesh.cpp`): channel text, raw data, channel datagrams and the
+/// self-advert are answered with a bare OK/ERR; a DM, a status request, a
+/// telemetry request and a trace are answered with `RESP_CODE_SENT`.
+/// [CommandAnswer] carries that distinction into the ledger.
 class MeshcoreController extends ChangeNotifier {
   MeshcoreController({
     Future<MeshcoreTransport> Function()? transportFactory,
@@ -165,11 +160,20 @@ class MeshcoreController extends ChangeNotifier {
         }
       } else if (s == MeshcoreConnectionState.reconnecting ||
           s == MeshcoreConnectionState.failed) {
+        // The link the commands were sent over is gone, so the radio's
+        // answers cannot be attributed to them any more. Failing them here
+        // would be wrong (a reconnect may still deliver), so they keep
+        // their own watchdogs and the queue is cleared so the *next* OK is
+        // not credited to a command that may never be answered.
+        _ledger.reset();
         _maybeScheduleReconnect();
       }
     });
     _inboundSub = _connection.inbound.listen((MeshcoreInbound f) {
       _lastFrame = f;
+      // A command that has waited past the ledger's timeout cannot hold the
+      // head of the answer order any more.
+      _expireCommands();
       _trackDeviceClock(f);
       _trackBattery(f);
       _trackDeviceInfo(f);
@@ -895,12 +899,12 @@ class MeshcoreController extends ChangeNotifier {
   /// replies here; the controller keeps processing them as usual.
   Stream<MeshcoreInbound> get inboundFrames => _connection.inbound;
 
-  /// Marker id in [_pending] for a tool request that will be answered
+  /// Marker id in [_ledger] for a tool request that will be answered
   /// by RESP_CODE_SENT. Without it, that SENT would be taken as the
   /// confirmation of whichever chat message is oldest in flight.
   static const String _toolSendMarker = '\u0000tool';
 
-  /// Marker id in [_pending] for a self-advert, which the firmware
+  /// Marker id in [_ledger] for a self-advert, which the firmware
   /// answers with RESP_CODE_OK (`MyMesh.cpp` CMD_SEND_SELF_ADVERT).
   /// Without it that OK would confirm a channel message that is still
   /// waiting for its own OK.
@@ -911,7 +915,7 @@ class MeshcoreController extends ChangeNotifier {
   /// delivery tracking. If the radio answers ERR instead, call
   /// [abandonToolRequest].
   Future<void> sendToolRequest(Uint8List frame) async {
-    _pending.add(const _PendingSend(_toolSendMarker, _Expect.sent));
+    _registerMarker(_toolSendMarker, CommandAnswer.sent);
     try {
       await send(frame);
     } catch (_) {
@@ -924,7 +928,7 @@ class MeshcoreController extends ChangeNotifier {
   /// drop its marker so the next SENT goes to the right message.
   void abandonToolRequest() => _dropPending(_toolSendMarker);
 
-  /// Marker id in [_pending] for a raw-data send (`CMD_SEND_RAW_DATA`),
+  /// Marker id in [_ledger] for a raw-data send (`CMD_SEND_RAW_DATA`),
   /// which the firmware answers with a bare OK or ERR, never SENT
   /// (`MyMesh.cpp` CMD_SEND_RAW_DATA: `writeOKFrame()` / `writeErrFrame()`).
   /// Without it that OK would confirm a channel message still waiting for
@@ -935,7 +939,7 @@ class MeshcoreController extends ChangeNotifier {
   /// credited to a chat message. The caller reads the answer from
   /// [inboundFrames]; if none arrives, call [abandonRawSend].
   Future<void> sendRawCommand(Uint8List frame) async {
-    _pending.add(const _PendingSend(_rawSendMarker, _Expect.ok));
+    _registerMarker(_rawSendMarker, CommandAnswer.ok);
     try {
       await send(frame);
     } catch (_) {
@@ -1380,14 +1384,38 @@ class MeshcoreController extends ChangeNotifier {
   int get deliveryRevision => _deliveryRevision;
   int _deliveryRevision = 0;
 
-  /// Sends awaiting the device's reply, oldest first. Each entry says
+  /// Commands awaiting the device's reply, oldest first. Each entry says
   /// which reply it expects, because the firmware does not answer every
-  /// send the same way (see [_Expect]).
-  final List<_PendingSend> _pending = <_PendingSend>[];
+  /// command the same way; [CommandLedger] decides which entry a reply
+  /// belongs to and refuses to credit one out of order.
+  final CommandLedger _ledger = CommandLedger(
+    timeout: const Duration(seconds: 20),
+  );
 
-  void _dropPending(String id) {
-    final int i = _pending.indexWhere((_PendingSend p) => p.id == id);
-    if (i >= 0) _pending.removeAt(i);
+  /// Replies that arrived with nothing at the head to take them: a late
+  /// answer to a command that had timed out, a duplicate, or an answer to a
+  /// command this app never registered. Each one used to be credited to
+  /// whatever happened to be waiting.
+  int get unclaimedReplies => _ledger.unclaimed;
+
+  /// Commands that reached the ledger's timeout without an answer.
+  int get unansweredCommands => _ledger.unanswered;
+
+  void _dropPending(String id) => _ledger.drop(id);
+
+  /// Fail every command that has waited past the ledger's timeout, so a
+  /// silent radio cannot hold the head of the queue and misroute the next
+  /// reply. A marker (tool, raw, advert) has no message to fail; its
+  /// removal is the whole effect.
+  void _expireCommands() {
+    for (final String id in _ledger.expire()) {
+      if (id == _toolSendMarker ||
+          id == _advertSendMarker ||
+          id == _rawSendMarker) {
+        continue;
+      }
+      _failOutgoing(id, 'no answer from the radio');
+    }
   }
 
   /// Fail a message that is still in flight, with a reason. Monotonic:
@@ -1434,8 +1462,18 @@ class MeshcoreController extends ChangeNotifier {
     return null;
   }
 
-  void _registerOutgoing(ChatMessage m, _Expect expect) {
-    _pending.add(_PendingSend(m.id, expect));
+  /// A command that is not a chat message (a tool request, a raw send, a
+  /// self-advert) still has to hold its place in the answer order, or the
+  /// next reply lands on whatever is waiting. Re-registering an id that is
+  /// already in flight is a no-op: the old entry still owns its answer.
+  void _registerMarker(String id, CommandAnswer answer) {
+    if (_ledger.isPending(id)) return;
+    _ledger.register(id, answer);
+  }
+
+  void _registerOutgoing(ChatMessage m, CommandAnswer expect) {
+    if (_ledger.isPending(m.id)) _ledger.drop(m.id);
+    _ledger.register(m.id, expect);
     _deliveryTimers[m.id]?.cancel();
     _deliveryTimers[m.id] =
         Timer(_deliveryTimeoutOverride ?? _confirmWatchdog, () {
@@ -1475,20 +1513,18 @@ class MeshcoreController extends ChangeNotifier {
     return DateTime.now().millisecondsSinceEpoch - ts <= _recentAckTtlMs;
   }
 
-  /// Consume the oldest pending send that expects [kind]. The wire
-  /// carries no correlation tag for OK or ERR, so within one kind this
-  /// is strictly oldest-first; sends are serialised over BLE, so the
-  /// device answers in the order we sent. Entries of the other kind are
-  /// never touched.
-  _PendingSend? _takePending(_Expect kind) {
-    final int i = _pending.indexWhere((_PendingSend p) => p.expect == kind);
-    return i < 0 ? null : _pending.removeAt(i);
-  }
+  /// Take [answer] if it belongs to the command at the head of the queue.
+  ///
+  /// The wire carries no correlation tag, so order is the only evidence
+  /// there is. A reply for the other kind is therefore *not* skipped past
+  /// the head: the ledger counts it as unclaimed and the caller gets null.
+  CommandEntry? _takePending(CommandAnswer answer) => _ledger.claim(answer);
 
   void _trackDelivery(MeshcoreInbound f) {
     if (f is OkFrame) {
-      // Channel text (and self-advert) are acknowledged with a bare OK.
-      final _PendingSend? p = _takePending(_Expect.ok);
+      // Channel text, raw data, channel datagrams and the self-advert are
+      // acknowledged with a bare OK.
+      final CommandEntry? p = _takePending(CommandAnswer.ok);
       if (p == null ||
           p.id == _advertSendMarker ||
           p.id == _rawSendMarker) {
@@ -1502,11 +1538,13 @@ class MeshcoreController extends ChangeNotifier {
       _deliveryRevision++;
       _persistChat();
     } else if (f is ErrorFrame) {
-      // ERR answers the oldest command still in flight. A probe whose
-      // ERR is expected (see [_squelchNextDeviceError]) is not a send.
-      if (_squelchNextDeviceError > 0 || _pending.isEmpty) return;
-      final _PendingSend p = _pending.first;
-      _pending.removeAt(0);
+      // ERR answers the command at the head, whatever kind it is: an ERR
+      // for a raw send must not fail a chat message that happens to be
+      // older. A probe whose ERR is expected (see [_squelchNextDeviceError])
+      // is not a send.
+      if (_squelchNextDeviceError > 0) return;
+      final CommandEntry? p = _ledger.takeHead();
+      if (p == null) return;
       if (p.id == _toolSendMarker ||
           p.id == _advertSendMarker ||
           p.id == _rawSendMarker) {
@@ -1515,7 +1553,7 @@ class MeshcoreController extends ChangeNotifier {
       _failOutgoing(p.id, deviceErrorReason(f.code),
           from: const <MessageDelivery>{MessageDelivery.sending});
     } else if (f is MsgSentFrame) {
-      final _PendingSend? p = _takePending(_Expect.sent);
+      final CommandEntry? p = _takePending(CommandAnswer.sent);
       if (p == null) return;
       final String id = p.id;
       if (id == _toolSendMarker) return; // a tool's request, not a message
@@ -1857,7 +1895,7 @@ class MeshcoreController extends ChangeNotifier {
       delivery: MessageDelivery.sending,
     );
     _addMessage(m);
-    _registerOutgoing(m, _Expect.sent);
+    _registerOutgoing(m, CommandAnswer.sent);
     notifyListeners();
     try {
       await send(MeshcoreFrameCodec.sendTextMessage(
@@ -1895,7 +1933,7 @@ class MeshcoreController extends ChangeNotifier {
       ..delivery = MessageDelivery.sending
       ..failReason = null
       ..expectedAck = null;
-    _registerOutgoing(m, dm ? _Expect.sent : _Expect.ok);
+    _registerOutgoing(m, dm ? CommandAnswer.sent : CommandAnswer.ok);
     _deliveryRevision++;
     _persistChat();
     notifyListeners();
@@ -3256,7 +3294,7 @@ class MeshcoreController extends ChangeNotifier {
       delivery: MessageDelivery.sending,
     );
     _addMessage(m);
-    _registerOutgoing(m, _Expect.ok);
+    _registerOutgoing(m, CommandAnswer.ok);
     notifyListeners();
     try {
       await send(MeshcoreFrameCodec.sendChannelTextMessage(
@@ -3789,7 +3827,7 @@ class MeshcoreController extends ChangeNotifier {
   Future<void> sendSelfAdvert({bool flood = true}) async {
     // The firmware answers with OK; register it so that OK is not
     // credited to a channel message waiting for its own.
-    _pending.add(const _PendingSend(_advertSendMarker, _Expect.ok));
+    _registerMarker(_advertSendMarker, CommandAnswer.ok);
     try {
       await send(MeshcoreFrameCodec.sendSelfAdvert(flood: flood));
     } catch (_) {
