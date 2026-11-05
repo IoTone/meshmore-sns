@@ -105,7 +105,7 @@ void main() {
     expect(find.text('NodeZ'), findsOneWidget);
     expect(find.text('RfNode'), findsOneWidget);
     expect(find.textContaining('SNR 6.0'), findsOneWidget);
-    expect(find.textContaining('in fabric'), findsOneWidget);
+    expect(find.textContaining('in range'), findsOneWidget);
     expect(ctrl.nodes.length, 3);
 
     // Scan action solicits adverts + syncs contacts.
@@ -142,7 +142,7 @@ void main() {
     await t.pumpAndSettle();
 
     // Empty state sets the right expectation (advert-driven).
-    expect(find.textContaining('Discovery is advert-driven'),
+    expect(find.textContaining('A node appears once it announces itself'),
         findsOneWidget);
 
     // Advertise opens a routing chooser.

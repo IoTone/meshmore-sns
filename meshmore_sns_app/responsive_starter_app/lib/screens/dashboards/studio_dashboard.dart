@@ -86,7 +86,7 @@ class StudioDashboard extends StatelessWidget {
           ),
         ),
         MmCollapsibleSection(
-          id: MmGroupIds.dashRadio,
+          id: MmGroupIds.studioRadio,
           title: l.dashboardRadio,
           children: <Widget>[
             Padding(
@@ -172,7 +172,7 @@ class StudioDashboard extends StatelessWidget {
           ],
         ),
         MmCollapsibleSection(
-          id: MmGroupIds.dashLocation,
+          id: MmGroupIds.studioLocation,
           title: l.dashboardLocation,
           children: <Widget>[
             Padding(
@@ -192,7 +192,7 @@ class StudioDashboard extends StatelessWidget {
           ],
         ),
         MmCollapsibleSection(
-          id: MmGroupIds.dashRecent,
+          id: MmGroupIds.studioRecent,
           title: l.dashboardRecent,
           children: <Widget>[
             Padding(

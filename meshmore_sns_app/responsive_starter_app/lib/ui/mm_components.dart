@@ -151,13 +151,18 @@ class MmReadout extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.baseline,
       textBaseline: TextBaseline.alphabetic,
       children: <Widget>[
-        Text(
-          skin.type.upperHeadings ? label.toUpperCase() : label,
-          style: TextStyle(
-            fontFamily: skin.type.wordsMono,
-            color: skin.color.fgMuted,
-            fontSize: skin.type.sizeBody,
-            letterSpacing: 1,
+        // Flexible, not fixed: at the accessibility floor a label in caps is
+        // wider than a 320 dp screen on its own, and a fixed child in a Row
+        // cannot give the width back (it overflowed by 96 px on NERV).
+        Flexible(
+          child: Text(
+            skin.type.upperHeadings ? label.toUpperCase() : label,
+            style: TextStyle(
+              fontFamily: skin.type.wordsMono,
+              color: skin.color.fgMuted,
+              fontSize: skin.type.sizeBody,
+              letterSpacing: 1,
+            ),
           ),
         ),
         const SizedBox(width: 8),

@@ -104,9 +104,9 @@ void main() {
     addTearDown(() => t.binding.defaultBinaryMessenger
         .setMockMethodCallHandler(SystemChannels.platform, null));
 
-    await t.tap(find.widgetWithText(TextButton, 'Copy the bundle'));
+    await t.tap(find.widgetWithText(TextButton, 'Copy the report'));
     await t.pumpAndSettle();
-    expect(find.text('Bundle copied.'), findsOneWidget);
+    expect(find.text('Report copied.'), findsOneWidget);
     expect(clipboard, isNotNull);
     final Map<String, dynamic> copied =
         jsonDecode(clipboard!) as Map<String, dynamic>;

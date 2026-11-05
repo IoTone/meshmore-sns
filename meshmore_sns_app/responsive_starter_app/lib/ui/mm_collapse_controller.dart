@@ -31,11 +31,19 @@ abstract final class MmGroupIds {
   static const String persAccessibility = 'personalization.accessibility';
   static const String persType = 'personalization.type';
   static const String persAudio = 'personalization.audio';
-  // studio_dashboard.dart (R68)
+  // dashboard_screen.dart — the monolith most skins inherit.
   static const String dashRadio = 'dashboard.radio';
   static const String dashLocation = 'dashboard.location';
   static const String dashRecent = 'dashboard.recent';
   static const String dashBattery = 'dashboard.battery';
+  // studio_dashboard.dart (R68) — its own ids, not the monolith's. Both
+  // layouts fill the same slot and swap in one frame when the skin changes,
+  // so a shared id trips the per-screen duplicate guard for a frame; the two
+  // dashboards also fold different blocks, so their state is not the same
+  // state.
+  static const String studioRadio = 'studio.radio';
+  static const String studioLocation = 'studio.location';
+  static const String studioRecent = 'studio.recent';
 
   static const Set<String> all = <String>{
     locAutoPublish,
@@ -54,6 +62,9 @@ abstract final class MmGroupIds {
     dashLocation,
     dashRecent,
     dashBattery,
+    studioRadio,
+    studioLocation,
+    studioRecent,
   };
 }
 

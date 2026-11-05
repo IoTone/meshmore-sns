@@ -35,19 +35,23 @@ class NervDashboard extends StatelessWidget {
       child: ListView(
         padding: const EdgeInsets.fromLTRB(14, 14, 14, 28),
         children: <Widget>[
-          // Brand bar + status pills.
-          Row(
-            children: <Widget>[
-              // The skin's identity is its own typography and colour, not a
-              // second name for a screen the strip already names.
-              const Spacer(),
-              MmStatusPill(m.channelLabel),
-              const SizedBox(width: 6),
-              MmStatusPill(
-                m.statusLabel,
-                alert: m.alert,
-              ),
-            ],
+          // Status pills, right-aligned. A Wrap rather than a Row: at the
+          // accessibility floor the two labels together are wider than a
+          // 320 dp screen, and a Row cannot give the width back.
+          Align(
+            alignment: Alignment.centerRight,
+            child: Wrap(
+              alignment: WrapAlignment.end,
+              spacing: 6,
+              runSpacing: 6,
+              children: <Widget>[
+                MmStatusPill(m.channelLabel),
+                MmStatusPill(
+                  m.statusLabel,
+                  alert: m.alert,
+                ),
+              ],
+            ),
           ),
           const SizedBox(height: 14),
 
