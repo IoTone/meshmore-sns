@@ -302,7 +302,7 @@ Every entry is a question with the decision it changes. Most have not been resea
 | `meshmore-scope-of-record.md` | Decisions taken, with consequences | current |
 | `meshmore-feature-audit.md` | Evidence: what exists, what is broken, where docs lie | current |
 | `meshmore-maps-and-directions.md` | Map stack, places, routing options and licences | current |
-| `meshmore-app-spec.md` | **The normative app specification:** fourteen requirement groups, a check per row, traceability to decisions, five structural gaps named |
+| `meshmore-app-spec.md` | **The normative app specification:** fourteen requirement groups, a check per row, traceability to decisions, five structural gaps named | current |
 | `meshmore-sns-block-spec.md` | The block feature: three actions, the keyed store, surfaces, state machine, copy, tests. **The depth template** | current |
 | `meshmore-sos-spec.md` | SOS and check-in: grammar, exact 12-send/10-beacon schedule, the channel-vs-direct ACK attribution rule, ten tests | new |
 | `meshmore-places-spec.md` | Places: anchored grammar, nine-token closed type set, id derivation without time, renewal, rate limit, ten tests | new |
