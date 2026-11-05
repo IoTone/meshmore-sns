@@ -29,6 +29,8 @@ import 'package:meshmore_sns_app/perms/permissions_service.dart';
 import 'package:meshmore_sns_app/screens/grid_screen.dart';
 import 'package:meshcore/meshcore.dart';
 import 'package:meshmore_sns_app/chat/channel_read_store.dart';
+import 'package:meshmore_sns_app/notifications/notification_focus.dart';
+import 'package:meshmore_sns_app/notifications/notification_focus.dart';
 import 'package:meshmore_sns_app/theme/mm_tokens.dart';
 import '../meshcore/fake_transport.dart';
 import 'package:meshmore_sns_app/theme/theme_controller.dart';
@@ -57,7 +59,8 @@ Future<void> _pumpApp(WidgetTester tester,
     {MmThemePreset? preset,
     bool demo = false,
     MeshcoreController? mc,
-    ChannelReadStore? reads}) async {
+    ChannelReadStore? reads,
+    NotificationFocus? focus}) async {
   await tester.pumpWidget(
     MultiProvider(
       providers: [
@@ -96,6 +99,7 @@ Future<void> _pumpApp(WidgetTester tester,
         // Registered nullable, exactly as main.dart registers it: a harness
         // without a read store shows no badges rather than failing the lookup.
         ChangeNotifierProvider<ChannelReadStore?>.value(value: reads),
+        Provider<NotificationFocus?>.value(value: focus),
         ChangeNotifierProvider<PlaceStore>(
           create: (_) => PlaceStore(),
         ),
@@ -227,6 +231,24 @@ void main() {
     expect(find.text('Device configuration'), findsOneWidget);
     expect(find.text('App settings'), findsOneWidget);
     expect(find.text('Profile & personalization'), findsOneWidget);
+  });
+
+  testWidgets(
+      'the shell owns the notification focus, so leaving Chat re-announces the '
+      'channel (D8.20)', (WidgetTester t) async {
+    final NotificationFocus focus = NotificationFocus();
+    final MeshcoreController mc = MeshcoreController();
+    await _pumpApp(t, mc: mc, focus: focus);
+    expect(focus.openChannel, isNull);
+    await t.tap(find.byTooltip('Chat'));
+    await t.pumpAndSettle();
+    expect(focus.openChannel, mc.activeChannel,
+        reason: 'the channel on screen is not announced');
+    await t.tap(find.byTooltip('Dashboard'));
+    await t.pumpAndSettle();
+    expect(focus.openChannel, isNull,
+        reason: 'a kept-alive chat page must not silence the channel while the '
+            'user sits on another view');
   });
 
   testWidgets('there is no switcher menu, only the strip (R64)',

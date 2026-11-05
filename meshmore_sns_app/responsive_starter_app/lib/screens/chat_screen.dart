@@ -28,7 +28,6 @@ import 'delivery_status_icon.dart';
 import '../meshcore/meshcore_controller.dart';
 import '../chat/history_retention_notice.dart';
 import '../chat/unread_counts.dart';
-import '../notifications/notification_focus.dart';
 import '../meshcore/message_heat.dart' show parseChannelSenderName;
 import '../bot/bot_guards.dart';
 import '../bot/bot_tag.dart';
@@ -136,28 +135,19 @@ class _ChatScreenState extends State<ChatScreen>
     // newest message automatically or surface a jump-to-newest pill.
     _scroll.addListener(_onScroll);
 
-    // D8.20 — the channel on screen is not announced. The active slot can
-    // change without this widget rebuilding into a new state, so follow the
-    // controller rather than reading the index once.
+    // D8.20's "do not announce the thread I am reading" is the shell's
+    // record, not this page's: the page is kept alive once visited, so a
+    // write here would outlive the user leaving the tab.
     final MeshcoreController mc = context.read<MeshcoreController>();
-    _focusOwner = mc;
-    // Resolved once: `dispose` must not look up an ancestor, and the focus
-    // record outlives this screen's element by no more than this reference.
-    _focus = context.read<NotificationFocus?>();
+    _owner = mc;
     void listener() {
       if (!mounted) return;
-      // The cached record, not an ancestor lookup: the controller can notify
-      // while this element is being deactivated, where a lookup is illegal.
-      _focus?.openChannel = mc.activeChannel;
       _syncBudget(mc);
       _syncDraftScope(mc);
       _restoreIfFailed(mc);
     }
 
-    _focusListener = listener;
-    // A harness that builds this screen without the app-scoped focus record
-    // simply has nothing to suppress.
-    _focus?.openChannel = mc.activeChannel;
+    _listener = listener;
     mc.addListener(listener);
     _input.addListener(_onComposerChanged);
     _syncBudget(mc);
@@ -251,9 +241,8 @@ class _ChatScreenState extends State<ChatScreen>
     if (key != null) unawaited(DraftStore.save(key, text));
   }
 
-  MeshcoreController? _focusOwner;
-  VoidCallback? _focusListener;
-  NotificationFocus? _focus;
+  MeshcoreController? _owner;
+  VoidCallback? _listener;
 
   void _onScroll() {
     if (!_scroll.hasClients) return;
@@ -356,8 +345,7 @@ class _ChatScreenState extends State<ChatScreen>
   @override
   void dispose() {
     _highlightTimer?.cancel();
-    if (_focusListener != null) _focusOwner?.removeListener(_focusListener!);
-    _focus?.openChannel = null;
+    if (_listener != null) _owner?.removeListener(_listener!);
     _scroll.removeListener(_onScroll);
     _input.removeListener(_onComposerChanged);
     _draftTimer?.cancel();
