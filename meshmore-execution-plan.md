@@ -79,9 +79,18 @@ Primary protocol evidence on disk (never cite the research corpus as truth when 
 
 ## 2a. Branch strategy, and the LDMUX gateway removal (decided 2026-11-05)
 
-**The L2 loopback gateway is out of MeshMore's scope. LDMUX is a separate app** (own repo at
-`/home/ldeen/Documents/ldmux`, branches `feat/meshmore-gateway` and `feat/standalone-radio`). The local branch
-`feat/ldmux-gateway` still contains that work at its tip and is named after it, so both are corrected in W0.
+**Decided by evidence, 2026-11-05: remove the inter-app gateway from MeshMore.** LDMUX is a separate product with its
+own repo (`/home/ldeen/Documents/ldmux`) and, on its current branch `feat/standalone-radio`, **owns the radio link
+itself**: `packages/mobile/composeApp/src/androidMain/kotlin/dev/ldmux/mobile/mesh/AndroidRadioLink.kt` imports
+`io.iotone.meshcore.android.{AndroidBleTransport, MeshcoreSession, RawSendCallback, SessionListener}` from its own
+vendored `packages/mobile/vendor/libmeshcore` (README: copied from `meshmore-sns` at `7386999`). There is no
+`GATEWAY_HANDOFF`, no loopback client and no pairing-token use left in ldmux; `mesh/Radio.kt:347` describes the
+gateway protocol's sequence number and `SEND_RESULT` in the past tense. The one remaining consumer of the pattern is
+gone, so MeshMore keeps no server, no grants and no second app's protocol.
+
+The branch `feat/ldmux-gateway` still carries that work at its tip and is named after it; both are corrected in W0.
+The decision record goes in `meshmore-scope-of-record.md` as a dated ruling, because the architecture document's §8
+("architecture accepted: the two-app gateway design stands", 2026-10-24) is now superseded.
 
 Measured entanglement in the app (so the removal is bounded, not a rewrite):
 
@@ -94,10 +103,14 @@ Measured entanglement in the app (so the removal is bounded, not a rewrite):
 | Packages | 2 dirs | `meshmore_sns_app/packages/meshcore_gateway/` (L2 codec), `meshmore_sns_app/packages/meshcore_host/` (desktop daemon) |
 | Dependency | 1 | `pubspec.yaml:64-67` `meshcore_gateway` |
 
-Rule for the removal: **keep the capability, drop the gateway.** `MeshSenderAdapter` already gives the app the
-raw-data/OK-ERR send path that register W1 asks for; it moves out of `lib/meshcore/gateway/` and loses only
-`bindPeer`. Everything else (server, sessions, grants, pairing token, Binder handoff, airtime governor, host daemon,
-gateway status screens, QR grant) leaves the app.
+Rule for the removal: **keep the MeshCore capability, delete the gateway.** `MeshSenderAdapter` gives the app the
+raw-data/OK-ERR send path that register W1 asks for ("MeshCarryCodec lifted into the app's send path"); it becomes
+`lib/meshcore/mesh_sender.dart` and loses only `bindPeer`. Everything else leaves: the loopback server, sessions,
+grants, pairing token and secure-storage record, Binder handoff and its Kotlin service/manifest permission, the
+gateway status and Connected-apps screen, the QR grant, the LDMUX-tuned airtime governor (the app's own airtime
+meter stays, `airtime_prefs.dart`), the `meshcore_gateway` package, the `meshcore_host` desktop daemon, the gateway
+tests and the gateway rows in the specs. Nothing is lost: ldmux vendors the codecs it needs and keeps its own history
+of the branch.
 
 Documents to correct in the same commit: `meshmore-feature-register.md` §6a and the gateway rows, `meshmore-app-spec.md`
 APP-M1–M6 (to AGAINST with the decision date), `meshmore-scope-of-record.md` (new dated decision), the architecture
@@ -119,6 +132,19 @@ hunks by keeping the local structure and porting dev's behaviour onto it: pan mo
 toggle only on pannable views, swipe belongs to the shell, capture lock driven by `_panMode && pansHorizontally`.
 `app_en.arb`/`app_ja.arb` gain dev's two tooltip strings; regenerate `lib/gen/*` with `flutter gen-l10n`.
 
+## 2c. Where the app's own structure sits (file ownership for briefs)
+
+Measured 2026-11-05 (`lib` = 172 files, ~54k lines excluding generated l10n):
+
+| Area | Files / lines | Notes |
+| --- | --- | --- |
+| `lib/meshcore/` | 36 / 9.4k | controller is 4,023 lines — the single biggest coupling point; split work here by concern, never two children at once |
+| `lib/screens/` | 56 / 24.9k | grid 1,743 · device config 1,464 · node sheet 1,288 · chat 894 · channels 889 |
+| `lib/maps/` | 14 / 3.9k | `maps_controller.dart` 1,239 lines, disk-first tile stack |
+| `lib/sns/` + `cue/` + `bot/` + `tools/` | 29 / 5.4k | SNS cells, cue/earcons, bot responder, six tools |
+| `lib/theme/` `lib/ui/` | 12 / 2.3k | tokens + shared widgets; the type/colour ratchet lands here |
+| `lib/gen/` | 3 / 14.7k | generated; never hand-edit, regenerate with `flutter gen-l10n` |
+
 ## 3. Waves, ownership and gates
 
 Rules that hold for every wave: one writer per directory (concurrent writers use `worktree: true`); every item ends
@@ -134,7 +160,8 @@ Waves run in this order because it is the register's dependency order. Items ins
 3. Remove the LDMUX gateway surface and correct the documents (§2a). `flutter test` + `flutter analyze` green after;
    the app still connects, sends a channel message and a DM on the phone.
 4. `meshmore_sns_app/TOOLING.md` with the verified environment block, test timings, build/install/log commands.
-5. Baseline numbers recorded: 1044 tests / ~90 s, `flutter analyze` warnings, APK install.
+5. Baseline numbers recorded: **1044 tests, 75 s wall, all passed (measured 2026-11-05)**; `flutter analyze` warnings;
+   APK install.
 
 Done when: a child can run `flutter test test/...` (6 s for one file) against a branch that has no gateway code and
 all of dev's behaviour, and the phone runs that build.
@@ -268,3 +295,13 @@ plugin set. Each is a child task with a written answer, not a guess.
 | W9 store + breadth | not started | — | — |
 | W10 on-device matrix | not started | — | — |
 | W11 docs sync | continuous | — | — |
+
+## 8. Questions that stay with the owner (ask only when blocked)
+
+1. Branch: work continues on `feat/ldmux-gateway` renamed to `feat/app-completion`, or a fresh branch from `origin/dev`
+   with the local line merged in? (Current plan: rename in place, so no history is lost.)
+2. Is anything in the removal list above meant to survive for another client (a second app, a desktop tool) that is
+   not LDMUX? If yes, name it and the capability it needs; otherwise the removal is total.
+3. Push policy: is `feat/app-completion` allowed to be pushed to `origin`, or does it stay local until reviewed?
+4. On-device work that needs hands: nothing yet. Later, W10 will ask for a radio reflash or a PIN only after every
+   software-only route is exhausted.
