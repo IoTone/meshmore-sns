@@ -40,7 +40,7 @@ void main() {
     expect(m, contains('android.permission.POST_NOTIFICATIONS'));
 
     final RegExp service = RegExp('<service[^>]*>', dotAll: true);
-    final String? declared = service
+    final String declared = service
         .allMatches(m)
         .map((RegExpMatch x) => x.group(0)!)
         .firstWhere(
