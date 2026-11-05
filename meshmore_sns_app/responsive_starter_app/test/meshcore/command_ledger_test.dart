@@ -57,6 +57,26 @@ void main() {
       expect(l.unclaimed, 1, reason: 'the late answer credits nothing');
     });
 
+    test('a command swept by a claim is reported, not lost', () {
+      DateTime now = DateTime(2026, 11, 5, 12);
+      final CommandLedger l = CommandLedger(
+        timeout: const Duration(seconds: 10),
+        clock: () => now,
+      );
+      l.register('stale', CommandAnswer.ok);
+      now = now.add(const Duration(seconds: 5));
+      l.register('fresh', CommandAnswer.ok);
+      // The stale head reaches its deadline between two ticks of the owner's
+      // timer; the arriving reply is what notices.
+      now = now.add(const Duration(seconds: 6));
+      expect(l.claim(CommandAnswer.ok)?.id, 'fresh',
+          reason: 'the fresh command is the oldest one still waiting');
+      expect(l.drainSwept(), <String>['stale'],
+          reason: 'the sweep under the claim must still be resolvable');
+      expect(l.drainSwept(), isEmpty);
+      expect(l.unanswered, 1);
+    });
+
     test('expiry only clears the head, so a fresh command keeps its place',
         () {
       DateTime now = DateTime(2026, 11, 5, 12);

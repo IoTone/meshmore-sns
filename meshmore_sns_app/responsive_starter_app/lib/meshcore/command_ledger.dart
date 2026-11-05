@@ -103,6 +103,23 @@ class CommandLedger {
     return true;
   }
 
+  /// Swept ids since the owner last drained them.
+  ///
+  /// [claim] and [takeHead] expire before they look, because a command can
+  /// reach its deadline between two ticks of the owner's timer. Those sweeps
+  /// have no caller to return to, so every swept id is also recorded here:
+  /// an owner that only read [expire]'s return value would never hear about
+  /// a command that expired underneath a reply.
+  final List<String> _swept = <String>[];
+
+  /// Ids swept since the last call, oldest first. Draining clears them.
+  List<String> drainSwept() {
+    if (_swept.isEmpty) return const <String>[];
+    final List<String> out = List<String>.unmodifiable(_swept);
+    _swept.clear();
+    return out;
+  }
+
   /// Remove entries older than [timeout] and return their ids, oldest
   /// first, so the owner can fail whatever they stood for.
   List<String> expire() {
@@ -117,6 +134,7 @@ class CommandLedger {
       _deadlines.remove(head.sequence);
       _unanswered++;
       gone.add(head.id);
+      _swept.add(head.id);
     }
     return gone;
   }

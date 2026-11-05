@@ -1663,8 +1663,17 @@ class MeshcoreController extends ChangeNotifier {
   /// APP-C2 rule 1: a wait that ran out is not evidence the send failed —
   /// the frame may still be queued on the radio — so the row becomes
   /// `unknown`, never `failed`.
-  void _expireCommands() {
-    for (final String id in _ledger.expire()) {
+  void _expireCommands() => _resolveExpired(_ledger.expire());
+
+  /// Resolves ids the ledger swept while a reply was being claimed.
+  ///
+  /// `claim` and `takeHead` expire first, so a command that reached its
+  /// deadline between two ticks of the expiry timer is swept there rather
+  /// than here. Draining is what keeps those rows from waiting forever.
+  void _resolveSwept() => _resolveExpired(_ledger.drainSwept());
+
+  void _resolveExpired(List<String> ids) {
+    for (final String id in ids) {
       if (id == _toolSendMarker ||
           id == _advertSendMarker ||
           id == _rawSendMarker ||
@@ -1816,6 +1825,11 @@ class MeshcoreController extends ChangeNotifier {
   CommandEntry? _takePending(CommandAnswer answer) => _ledger.claim(answer);
 
   void _trackDelivery(MeshcoreInbound f) {
+    _trackDeliveryInner(f);
+    _resolveSwept();
+  }
+
+  void _trackDeliveryInner(MeshcoreInbound f) {
     if (f is OkFrame) {
       // Channel text, raw data, channel datagrams and the self-advert are
       // acknowledged with a bare OK.
