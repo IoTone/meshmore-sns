@@ -2416,6 +2416,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'Open the app for the position. The alert carries coordinates that this phone does not show on the lock screen.';
 
   @override
+  String get notifAlarmRunningBody =>
+      'An alarm is repeating. Open the app to stop it.';
+
+  @override
   String get notifSectionTitle => 'Notifications';
 
   @override
@@ -4720,6 +4724,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String sosMissedSends(int count) {
     return 'Not sent while the app was asleep: $count';
   }
+
+  @override
+  String get sosSafeSent => 'Your safe message was sent.';
+
+  @override
+  String get sosSafeNotSent =>
+      'Your safe message did not leave this phone. The repeats have stopped here, but nobody was told you are safe.';
+
+  @override
+  String get sosResumed =>
+      'This alarm was running when the app last closed. What is left of the hour continues; repeats missed while the app was closed were not sent.';
+
+  @override
+  String get sosBestEffort =>
+      'Repeats are best effort while the phone sleeps: a delayed tick sends the most recent one, not a burst.';
 
   @override
   String get sosSendFailed =>

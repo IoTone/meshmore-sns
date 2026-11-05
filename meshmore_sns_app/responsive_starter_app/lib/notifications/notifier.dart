@@ -15,6 +15,9 @@ abstract interface class Notifier {
 
   /// Removes the notification a thread may still be showing.
   Future<void> cancelFor(String payload);
+
+  /// Removes one notification by its OS id, used for the alarm's ongoing one.
+  Future<void> cancel(int id);
 }
 
 /// Records what the app asked the OS to show. Test-only.
@@ -31,6 +34,9 @@ class FakeNotifier implements Notifier {
 
   @override
   Future<void> cancelFor(String payload) async => cancelled.add(payload);
+
+  @override
+  Future<void> cancel(int id) async => cancelled.add('id:$id');
 
   void clear() {
     shown.clear();

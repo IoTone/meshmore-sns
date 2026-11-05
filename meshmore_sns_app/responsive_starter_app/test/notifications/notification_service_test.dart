@@ -24,6 +24,9 @@ class _Strings implements NotificationStrings {
 
   @override
   String sosBody() => 'SOS body without coordinates';
+
+  @override
+  String alarmRunningBody() => 'alarm running body';
 }
 
 /// Records what the app asked the phone to do besides posting.

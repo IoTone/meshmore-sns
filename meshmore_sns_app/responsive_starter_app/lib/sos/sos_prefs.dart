@@ -1,5 +1,7 @@
 // Copyright (c) 2026 IoTone, Inc.
 // SPDX-License-Identifier: MIT
+import 'dart:convert';
+
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// The alarm's destination, remembered between launches.
@@ -17,6 +19,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 abstract final class SosPrefs {
   static const String _kChannel = 'mm.sos.channelSlot';
   static const String _kTargets = 'mm.sos.contactTargets';
+  static const String _kAlarm = 'mm.sos.alarm';
 
   /// The saved channel slot, or null when the user never chose one.
   static Future<int?> channelSlot() async {
@@ -49,6 +52,39 @@ abstract final class SosPrefs {
       await p.setStringList(_kTargets, contactTargets);
     } catch (_) {
       // See the class comment: the alarm does not depend on this write.
+    }
+  }
+
+  /// The alarm that was running when the process died, or null.
+  ///
+  /// Written on every transition and cleared when the alarm is dismissed. The
+  /// engine's snapshot is the unit: packets already on air are not replayed,
+  /// and an hour that elapsed while the app was dead is `expired`, not
+  /// resumed (`meshmore-sos-spec.md` §13.10).
+  static Future<Map<String, Object?>?> alarm() async {
+    try {
+      final SharedPreferences p = await SharedPreferences.getInstance();
+      final String? raw = p.getString(_kAlarm);
+      if (raw == null) return null;
+      final Object? decoded = jsonDecode(raw);
+      return decoded is Map<String, Object?> ? decoded : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  static Future<void> saveAlarm(Map<String, Object?>? json) async {
+    try {
+      final SharedPreferences p = await SharedPreferences.getInstance();
+      if (json == null) {
+        await p.remove(_kAlarm);
+      } else {
+        await p.setString(_kAlarm, jsonEncode(json));
+      }
+    } catch (_) {
+      // See the class comment: a preference that cannot be written must not
+      // stop the alarm, and a lost snapshot only means the next launch cannot
+      // resume it.
     }
   }
 }

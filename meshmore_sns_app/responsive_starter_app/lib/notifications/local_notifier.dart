@@ -151,6 +151,14 @@ class LocalNotifier implements Notifier {
   }
 
   @override
+  Future<void> cancel(int id) async {
+    for (final Set<int> ids in _live.values) {
+      ids.remove(id);
+    }
+    await _plugin.cancel(id: id);
+  }
+
+  @override
   Future<void> cancelFor(String payload) async {
     final Set<int>? ids = _live.remove(payload);
     if (ids == null) return;

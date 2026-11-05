@@ -4112,6 +4112,12 @@ abstract class AppLocalizations {
   /// **'Open the app for the position. The alert carries coordinates that this phone does not show on the lock screen.'**
   String get notifBodySos;
 
+  /// Ongoing notification shown while an SOS is running.
+  ///
+  /// In en, this message translates to:
+  /// **'An alarm is repeating. Open the app to stop it.'**
+  String get notifAlarmRunningBody;
+
   /// Section heading in the channel editor for the per-channel notification bundle.
   ///
   /// In en, this message translates to:
@@ -8072,6 +8078,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Not sent while the app was asleep: {count}'**
   String sosMissedSends(int count);
+
+  /// Ended panel after I'm safe, when the [SAFE] left the phone.
+  ///
+  /// In en, this message translates to:
+  /// **'Your safe message was sent.'**
+  String get sosSafeSent;
+
+  /// Ended panel after I'm safe, when the radio refused it or there was no link.
+  ///
+  /// In en, this message translates to:
+  /// **'Your safe message did not leave this phone. The repeats have stopped here, but nobody was told you are safe.'**
+  String get sosSafeNotSent;
+
+  /// Running panel, when the alarm was restored from disk after a restart.
+  ///
+  /// In en, this message translates to:
+  /// **'This alarm was running when the app last closed. What is left of the hour continues; repeats missed while the app was closed were not sent.'**
+  String get sosResumed;
+
+  /// Running panel, honest limit of a one-second timer under Doze.
+  ///
+  /// In en, this message translates to:
+  /// **'Repeats are best effort while the phone sleeps: a delayed tick sends the most recent one, not a burst.'**
+  String get sosBestEffort;
 
   /// Active alarm: at least one repeat did not leave the radio.
   ///

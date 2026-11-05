@@ -9,6 +9,8 @@ import 'package:meshmore_sns_app/meshcore/meshcore_controller.dart';
 import 'package:meshmore_sns_app/sos/checkin.dart';
 import 'package:meshmore_sns_app/sos/sos_controller.dart';
 import 'package:meshmore_sns_app/sos/sos_engine.dart';
+import 'package:meshmore_sns_app/sos/sos_schedule.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../meshcore/fake_transport.dart';
 
@@ -42,6 +44,10 @@ void main() {
   late SosController sos;
 
   setUp(() async {
+    // The alarm's record lives in preferences, so a restart can be simulated
+    // in a test: a fresh controller over the same store is exactly what a new
+    // process sees.
+    SharedPreferences.setMockInitialValues(<String, Object>{});
     fake = FakeMeshcoreTransport(connected: true);
     mc = await _ready(fake);
     clock = _Clock();
@@ -67,6 +73,120 @@ void main() {
             // `[03][txtType][ch][ts u32][text]` — the text is the tail.
             utf8.decode(f.sublist(7)),
       ];
+
+  test('an alarm that was running comes back after a restart, and says so',
+      () async {
+    await raiseAndConfirm();
+    expect(sos.isRunning, isTrue);
+    final int slot = sos.channelSlot;
+
+    // Process death: a second controller over the same preferences. This is
+    // the app path, not the engine's: before the fix nothing wrote a snapshot,
+    // so the alarm was simply gone.
+    final SosController revived =
+        SosController(mc: mc, clock: clock.call, autoTick: false)..start();
+    addTearDown(revived.dispose);
+    await Future<void>.delayed(const Duration(milliseconds: 20));
+
+    expect(revived.isRunning, isTrue);
+    expect(revived.resumedFromRestart, isTrue);
+    expect(revived.channelSlot, slot);
+    // What is left of the hour is still scheduled; nothing already sent is
+    // replayed, because the radio's seen table would drop it.
+    expect(revived.remaining.length, lessThan(SosSchedule.packetCount));
+  });
+
+  test('an hour that ran while the app was dead opens expired and sends '
+      'nothing', () async {
+    await raiseAndConfirm();
+    fake.sent.clear();
+    clock.now = clock.now.add(const Duration(hours: 2));
+
+    final SosController revived =
+        SosController(mc: mc, clock: clock.call, autoTick: false)..start();
+    addTearDown(revived.dispose);
+    await Future<void>.delayed(const Duration(milliseconds: 20));
+
+    expect(revived.state, SosState.expired);
+    expect(revived.isRunning, isFalse);
+    expect(sentTexts(), isEmpty);
+  });
+
+  test('a dismissed alarm does not come back', () async {
+    await raiseAndConfirm();
+    sos.dismiss();
+    await Future<void>.delayed(const Duration(milliseconds: 20));
+
+    final SosController revived =
+        SosController(mc: mc, clock: clock.call, autoTick: false)..start();
+    addTearDown(revived.dispose);
+    await Future<void>.delayed(const Duration(milliseconds: 20));
+    expect(revived.state, SosState.idle);
+    expect(revived.resumedFromRestart, isFalse);
+  });
+
+  test('a safe message that never left is reported as not sent', () async {
+    await raiseAndConfirm();
+    fake.failSend = true;
+    await sos.iAmSafe();
+    expect(sos.safeSent, isFalse);
+    expect(sos.state, SosState.cancelled);
+  });
+
+  test('a safe message that left is reported as sent', () async {
+    await raiseAndConfirm();
+    fake.sent.clear();
+    await sos.iAmSafe();
+    expect(sos.safeSent, isTrue);
+    expect(sentTexts().single, startsWith('[SAFE:'));
+  });
+
+  test('a blocked key is not offered as a target and its claim is dropped',
+      () async {
+    final SosController blocked = SosController(
+      mc: mc,
+      clock: clock.call,
+      autoTick: false,
+      isBlockedKey: (String hex) => hex == 'aa' * 32,
+    )..start();
+    addTearDown(blocked.dispose);
+    blocked.setDestination(
+        channelSlot: blocked.channelSlot, contactKeysHex: <String>['aa' * 32]);
+    await Future<void>.delayed(Duration.zero);
+    expect(blocked.contactTargets, isEmpty);
+
+    expect(blocked.arm(words: 'blocked target'), isNull);
+    clock.now = clock.now.add(SosEngine.hold);
+    expect(blocked.confirm(), isNull);
+    await Future<void>.delayed(Duration.zero);
+    blocked.attributeInbound(
+      '[ACK:${blocked.request!.id}] Ron',
+      direct: true,
+      fromKey: List<int>.filled(32, 0xaa),
+    );
+    // A blocked key's acknowledgement is not shown and cannot stop the alarm.
+    expect(blocked.acks, isEmpty);
+    expect(blocked.isRunning, isTrue);
+  });
+
+  test('the app is told when the alarm starts and stops', () async {
+    final List<bool> changes = <bool>[];
+    final SosController watched = SosController(
+      mc: mc,
+      clock: clock.call,
+      autoTick: false,
+      onRunningChanged: changes.add,
+    )..start();
+    addTearDown(watched.dispose);
+    expect(watched.arm(words: 'watch me'), isNull);
+    clock.now = clock.now.add(SosEngine.hold);
+    expect(watched.confirm(), isNull);
+    await Future<void>.delayed(const Duration(milliseconds: 20));
+    expect(changes, <bool>[true]);
+    watched.cancel();
+    await Future<void>.delayed(const Duration(milliseconds: 20));
+    expect(changes, <bool>[true, false]);
+  });
 
   test('the hold is not a formality: confirming before three seconds sends '
       'nothing', () async {
