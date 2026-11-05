@@ -173,7 +173,7 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
                   height: 1.35)),
         );
     Widget section(String t) => Padding(
-          padding: const EdgeInsets.fromLTRB(16, 18, 16, 6),
+          padding: EdgeInsets.fromLTRB(context.skin.space.screenEdge, context.skin.space.screenEdge, context.skin.space.screenEdge, context.skin.space.rowGap),
           child: Text(t, style: mmSectionLabelStyle(skin)),
         );
 

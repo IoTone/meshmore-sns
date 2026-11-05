@@ -151,7 +151,7 @@ class _VoiceSettingsScreenState extends State<VoiceSettingsScreen> {
         child: ListView(
         children: <Widget>[
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+            padding: EdgeInsets.fromLTRB(context.skin.space.screenEdge, context.skin.space.screenEdge, context.skin.space.screenEdge, 0),
             child: Text(
               l.voiceSettingsHint,
               style: TextStyle(
@@ -192,7 +192,7 @@ class _VoiceSettingsScreenState extends State<VoiceSettingsScreen> {
           const Divider(),
           // Voice picker.
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+            padding: EdgeInsets.fromLTRB(context.skin.space.screenEdge, context.skin.space.rowGap, context.skin.space.screenEdge, context.skin.space.labelToControl),
             child: Row(
               children: <Widget>[
                 Expanded(

@@ -107,14 +107,14 @@ class ChannelsScreen extends StatelessWidget {
         child: ListView(
         children: <Widget>[
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 14, 16, 4),
+            padding: EdgeInsets.fromLTRB(context.skin.space.screenEdge, context.skin.space.screenEdge, context.skin.space.screenEdge, context.skin.space.labelToControl),
             child: Text(
               l.channelsHelp,
               style: TextStyle(color: cs.onSurfaceVariant, fontSize: context.skin.type.sizeBody),
             ),
           ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+            padding: EdgeInsets.fromLTRB(context.skin.space.screenEdge, 0, context.skin.space.screenEdge, context.skin.space.rowGap),
             child: Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(

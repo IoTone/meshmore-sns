@@ -227,7 +227,7 @@ class LocationSettingsScreen extends StatelessWidget {
             ),
             // Battery transparency footer.
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+              padding: EdgeInsets.fromLTRB(context.skin.space.screenEdge, context.skin.space.screenEdge, context.skin.space.screenEdge, context.skin.space.screenEdge),
               child: Text(
                 l.locBatteryHint,
                 style: TextStyle(
