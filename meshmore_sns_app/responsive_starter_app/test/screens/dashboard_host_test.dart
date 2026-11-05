@@ -9,6 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:meshmore_sns_app/gen/app_localizations.dart';
 import 'package:meshmore_sns_app/l10n/locale_controller.dart';
 import 'package:meshmore_sns_app/meshcore/meshcore_controller.dart';
+import 'package:meshmore_sns_app/screens/dashboard_screen.dart';
 import 'package:meshmore_sns_app/screens/dashboards/dashboard_host.dart';
 import 'package:meshmore_sns_app/screens/dashboards/my_pubkey_line.dart';
 import 'package:meshmore_sns_app/theme/mm_tokens.dart';
@@ -92,23 +93,23 @@ void main() {
     );
     final ThemeController tc = await _pump(t, mc);
 
-    // Default preset (SEELE) → the monolith dashboard (no NERV brand bar).
-    expect(find.text('PEERS IN RANGE'), findsOneWidget);
+    // Default preset (SEELE) → the monolith dashboard.
+    expect(find.byKey(dashboardKey), findsOneWidget);
     expect(find.text('NERV'), findsNothing);
 
-    // Switch to NERV → the telemetry-grid re-imagining (brand bar +
-    // chamfered panels appear).
+    // Switch to NERV → the telemetry-grid re-imagining. A skin names itself
+    // through its own typography and colour now, so the body type is the
+    // signal, not a text badge the page header used to duplicate.
     await tc.setPreset(MmThemePreset.nerv);
     await t.pumpAndSettle();
-    expect(find.text('NERV'), findsOneWidget);
+    expect(find.byKey(dashboardKey), findsNothing);
     // The icon-only Bluetooth button is named for screen readers.
     expect(find.byTooltip('Device'), findsOneWidget);
 
-    // Back to SEELE → brand bar gone again.
+    // Back to SEELE → the monolith again.
     await tc.setPreset(MmThemePreset.seele);
     await t.pumpAndSettle();
-    expect(find.text('NERV'), findsNothing);
-    expect(find.text('PEERS IN RANGE'), findsOneWidget);
+    expect(find.byKey(dashboardKey), findsOneWidget);
   });
 
   testWidgets('host shows the Hyperlocal radar when selected',
@@ -183,8 +184,9 @@ void main() {
     await tc.setPreset(MmThemePreset.recon);
     await t.pumpAndSettle();
 
-    // Recon signature: the codec header + the contacts band.
-    expect(find.text('RECON'), findsOneWidget);
+    // Recon signature: the mono codec readout, not a second name for the
+    // screen the strip already names.
+    expect(find.text('RECON'), findsNothing);
     expect(find.textContaining('CONTACTS'), findsOneWidget);
     expect(find.text('MESHMORE™'), findsNothing);
   });
