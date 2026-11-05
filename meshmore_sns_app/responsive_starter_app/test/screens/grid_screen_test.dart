@@ -257,6 +257,19 @@ void main() {
     await t.pump();
     expect(shellDragClaim.isClaimed, isFalse);
 
+    // The equal grid looks like a map and is not one: its tiles are pinned to
+    // us and its zoom is the cell stepper, so a toggle there would lock the
+    // shell's swipe and give the drag to nothing. It must not appear.
+    await t.tap(find.byTooltip('Switch map view'));
+    await t.pump();
+    await t.pump(const Duration(milliseconds: 400));
+    await t.tap(find.text('Equal grid').last);
+    await t.pump();
+    await t.pump(const Duration(milliseconds: 400));
+    expect(find.byKey(const ValueKey<String>('grid-pan-toggle')), findsNothing,
+        reason: 'the equal grid has no drag of its own to hand over');
+    expect(shellDragClaim.isClaimed, isFalse);
+
     // A report view draws to fit, so the toggle disappears.
     await t.tap(find.byTooltip('Switch map view'));
     await t.pump();

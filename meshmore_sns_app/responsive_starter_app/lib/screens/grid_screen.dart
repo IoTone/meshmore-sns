@@ -56,16 +56,21 @@ extension on _GridViewMode {
   /// Views whose body pans or zooms with a drag. These offer the Swipe ⇄ Pan
   /// toggle: in swipe mode the view is a still picture and a horizontal drag
   /// changes tab; in pan mode it takes every drag and the shell stops paging
-  /// (R109). The four report views draw to fit and never need the toggle.
+  /// (R109).
+  ///
+  /// The equal grid is not one of them even though it looks like a map: its
+  /// tiles are pinned to us (`InteractiveFlag.none`) and its zoom is the cell
+  /// stepper, so a toggle there would lock the shell's swipe and hand the drag
+  /// to nothing. The views that draw to fit never need the toggle either.
   bool get pansHorizontally => switch (this) {
         _GridViewMode.globe ||
-        _GridViewMode.equalGrid ||
         _GridViewMode.streetMap ||
         _GridViewMode.fabric ||
         _GridViewMode.tree ||
         _GridViewMode.snsCells =>
           true,
         _GridViewMode.radial ||
+        _GridViewMode.equalGrid ||
         _GridViewMode.elevation ||
         _GridViewMode.weather ||
         _GridViewMode.meshbook =>

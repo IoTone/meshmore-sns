@@ -1326,9 +1326,11 @@ the sibling specs: R93 in `meshmore-sns-maps-spec.md`, R60 in
   in pan mode, through `shellDragClaim`
   (`lib/shell/horizontal_drag_claim.dart`), which counts named holders and
   publishes outside the build pass. Pan mode is **off on every visit** and the
-  toggle exists only on the six views that pan or zoom (globe, equal grid,
-  street map, fabric, tree, SNS cells); in swipe mode the view is held still
-  behind an `IgnorePointer` with a hint. The Map keeps its R67 edge bands as
+  toggle exists only on the five views that pan or zoom (globe, street map,
+  fabric, tree, SNS cells). The equal grid looks like a map but is not one:
+  its tiles are pinned to us and its zoom is the cell stepper, so a toggle
+  there would lock the swipe and hand the drag to nothing. In swipe mode the
+  view is held still behind an `IgnorePointer` with a hint. The Map keeps its R67 edge bands as
   its gesture exit, and they change exactly one view because the page is
   locked while it shows. New EN/JA strings: `gridSwipeModeTooltip`,
   `gridPanModeTooltip`, `gridSwipeHint`, `gridPanHint`.
