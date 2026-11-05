@@ -107,4 +107,15 @@ void main() {
     expect(find.textContaining('Bridge reopened'), findsOneWidget);
     expect(find.textContaining('expired'), findsNothing);
   });
+
+  testWidgets('an unkeyed report is marked as a name, not a key',
+      (WidgetTester t) async {
+    final DateTime now = DateTime(2026, 11, 5, 12);
+    final Place place = PlaceEchoLine.placeOf(_report(at: now))!;
+    await t.pumpWidget(_host(PlaceStore(), place));
+    await t.pump();
+    expect(
+        find.byKey(ValueKey<String>('place-echo-unkeyed-${place.id}')),
+        findsOneWidget);
+  });
 }

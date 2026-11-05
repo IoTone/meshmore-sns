@@ -480,7 +480,13 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
                         onPressed: mc.captureLog.isEmpty
                             ? null
                             : () {
-                                final String blob = mc.captureLog.reversed
+                                // A capture pasted into a bug report must not
+                                // carry a channel secret: a frame log has no
+                                // field names, so the redactor masks the one
+                                // frame that does (CHANNEL_INFO) and leaves
+                                // every other frame replayable.
+                                final String blob = _redaction
+                                    .frames(mc.captureLog.reversed)
                                     .map((String h) => '${_label(h)}\t$h')
                                     .join('\n');
                                 Clipboard.setData(ClipboardData(text: blob));

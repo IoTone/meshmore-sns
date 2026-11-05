@@ -3365,7 +3365,7 @@
   "@mediaRetrySend": {},
   "mediaClose": "Close",
   "@mediaClose": {},
-  "mediaOffOnPublic": "Media is off on the Public channel. Turn it on for that channel in its settings first.",
+  "mediaOffOnPublic": "Media stays off on the Public channel. Send it on a private channel instead.",
   "@mediaOffOnPublic": {},
   "mediaPayloadUnusable": "There is nothing to send.",
   "@mediaPayloadUnusable": {},
@@ -3776,6 +3776,10 @@
       }
     }
   },
+  "placePinSemanticsUnkeyed": "{label}, {expiry}. Sent from a channel name, so anyone with the channel could have written it.",
+  "@placePinSemanticsUnkeyed": {"placeholders": {"label": {"type": "String"}, "expiry": {"type": "String"}}},
+  "placeUnkeyedShort": "name only",
+  "@placeUnkeyedShort": {},
   "placeClusterSemantics": "{count} places here",
   "@placeClusterSemantics": {
     "placeholders": {

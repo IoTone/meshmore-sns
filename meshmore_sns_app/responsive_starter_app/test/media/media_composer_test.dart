@@ -118,8 +118,11 @@ void main() {
     await _pickIn(t);
 
     expect(find.text('Send a photo'), findsOneWidget);
-    expect(find.textContaining('Media is off on the Public channel'),
+    // The refusal sends the user to a private channel: the old copy pointed at
+    // a per-channel media switch, and no such setting exists.
+    expect(find.textContaining('Media stays off on the Public channel'),
         findsOneWidget);
+    expect(find.textContaining('private channel'), findsOneWidget);
     expect(codec.encodeCalls, 0);
     expect(sent, isEmpty);
   });
