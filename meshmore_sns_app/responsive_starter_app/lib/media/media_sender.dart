@@ -143,8 +143,24 @@ final class MediaSender {
     _nextSendAt = now.add(pacing);
     if (attempt > 0) _resends++;
     return <MediaSend>[
-      MediaSend(index: index, attempt: attempt, blob: _chunks[index]),
+      MediaSend(index: index, attempt: attempt, blob: _salted(index, attempt)),
     ];
+  }
+
+  /// The bytes for [index] at [attempt].
+  ///
+  /// A resend rewrites the header's attempt nibble and nothing else: the CRC
+  /// covers the payload, so a salted packet still validates at the receiver,
+  /// and the radio's seen-table — which compares whole payloads — sees a
+  /// packet it has not carried before. Sending the original bytes again is the
+  /// one thing that cannot work, which is why the pacing loop does not return
+  /// the stored blob for a retry.
+  Uint8List _salted(int index, int attempt) {
+    final Uint8List stored = _chunks[index];
+    if (attempt == 0) return stored;
+    final Uint8List out = Uint8List.fromList(stored);
+    out[0] = (MediaChunkCodec.version << 4) | attempt;
+    return out;
   }
 
   /// Records what the radio said. A `TABLE_FULL` puts the chunk back at the

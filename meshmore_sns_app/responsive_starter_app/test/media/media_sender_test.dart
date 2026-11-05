@@ -97,6 +97,33 @@ void main() {
     });
   });
 
+  group('the paced retry is the salted packet, not the same bytes again', () {
+    test('a refused chunk goes back out with a new attempt nibble', () {
+      DateTime now = DateTime.utc(2026, 11, 5, 12);
+      final MediaSender s = MediaSender(
+        chunks: MediaChunkCodec.split(List<int>.filled(300, 1),
+            payloadId: 7, kind: MediaKind.image),
+        clock: () => now,
+      );
+      final MediaSend first = s.takeDue().single;
+      expect(first.isResend, isFalse);
+      s.acknowledge(first.index, MediaSendResult.refused);
+      now = now.add(s.pacing);
+      final MediaSend retry = s.takeDue().single;
+      expect(retry.index, first.index);
+      expect(retry.attempt, 1);
+      expect(retry.isResend, isTrue);
+      // The radio drops a packet it has already seen, so an identical retry is
+      // never heard. The header differs; the payload does not.
+      expect(retry.blob[0] != first.blob[0], isTrue);
+      expect(retry.blob.sublist(1), first.blob.sublist(1));
+      final MediaChunk parsed = MediaChunkCodec.parse(retry.blob).chunk!;
+      expect(parsed.attempt, 1);
+      expect(parsed.payloadId, 7);
+      expect(parsed.index, first.index);
+    });
+  });
+
   group('media is off on Public, at the send path', () {
     test('the well-known channel is refused by default', () {
       const MediaSendPolicy policy = MediaSendPolicy();
