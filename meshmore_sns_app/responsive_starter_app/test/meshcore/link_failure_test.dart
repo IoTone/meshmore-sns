@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:meshcore/meshcore.dart';
 import 'package:meshmore_sns_app/meshcore/chat_message.dart';
+import 'package:meshmore_sns_app/meshcore/failure.dart';
 import 'package:meshmore_sns_app/meshcore/meshcore_controller.dart';
 
 import 'fake_transport.dart';
@@ -58,5 +59,23 @@ void main() {
 
     expect(m!.text, 'keep me');
     expect(m.delivery, MessageDelivery.unknown);
+  });
+
+  test('a channel send the radio has denied is refused here, not on the air',
+      () async {
+    final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
+    final MeshcoreController c = await _ready(fake);
+    // The radio answered ERR_CODE_UNSUPPORTED_CMD for a channel text earlier.
+    c.capabilities
+        .observeError(MeshcoreCommand.sendChannelMessage, 1);
+    final int before = fake.sent.length;
+
+    final ChatMessage? m = await c.sendChannelTextTo(0, 'hello');
+
+    expect(m!.delivery, MessageDelivery.failed);
+    expect(m.failCause, FailureCause.unsupportedCommand,
+        reason: 'the row names the gap instead of waiting for an ERR');
+    expect(fake.sent.length, before,
+        reason: 'a command the radio denied is not written again');
   });
 }

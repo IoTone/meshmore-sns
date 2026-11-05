@@ -4551,7 +4551,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String failureMtuTooSmall(String mtu, String need) {
-    return 'This phone link is $mtu bytes and one radio frame needs $need. Reconnect to try again; a radio that caps the link smaller cannot carry every frame.';
+    return 'This radio\'s link is $mtu bytes and a full frame needs $need. Some firmware builds ask for the smaller size themselves, so this radio cannot carry the largest frames: try a newer firmware, or reconnect.';
   }
 
   @override

@@ -71,9 +71,7 @@ class MeshcoreMeshSender {
   MeshcoreMeshSender(
     this._mc, {
     this.answerTimeout = const Duration(seconds: 5),
-  }) {
-    _frames = _mc.inboundFrames.listen(_onFrame);
-  }
+  });
 
   final MeshcoreController _mc;
 
@@ -81,9 +79,7 @@ class MeshcoreMeshSender {
   /// [SendOutcome.localTimeout].
   final Duration answerTimeout;
 
-  late final StreamSubscription<MeshcoreInbound> _frames;
   Future<void> _tail = Future<void>.value();
-  Completer<MeshcoreInbound>? _awaiting;
   bool _disposed = false;
 
   /// The largest record [to]'s path leaves room for: `174 - path_len`, the
@@ -120,11 +116,9 @@ class MeshcoreMeshSender {
     } on ArgumentError {
       return SendOutcome.errTooLong; // under the 4-byte raw-data minimum
     }
-    final Completer<MeshcoreInbound> answer = Completer<MeshcoreInbound>();
-    _awaiting = answer;
     try {
-      await _mc.sendRawCommand(frame);
-      final MeshcoreInbound reply = await answer.future.timeout(answerTimeout);
+      final MeshcoreInbound reply =
+          await _mc.sendRawCommand(frame).timeout(answerTimeout);
       if (reply is OkFrame) return SendOutcome.sentDirect;
       final int? code = (reply as ErrorFrame).code;
       if (code == MeshcoreErrorCode.notFound.code) {
@@ -138,15 +132,6 @@ class MeshcoreMeshSender {
       // The frame was written, so the radio may have transmitted. The caller
       // charges localTimeout for that reason.
       return SendOutcome.localTimeout;
-    } finally {
-      if (identical(_awaiting, answer)) _awaiting = null;
-    }
-  }
-
-  void _onFrame(MeshcoreInbound f) {
-    if (f is OkFrame || f is ErrorFrame) {
-      final Completer<MeshcoreInbound>? a = _awaiting;
-      if (a != null && !a.isCompleted) a.complete(f);
     }
   }
 
@@ -157,6 +142,6 @@ class MeshcoreMeshSender {
   Future<void> dispose() async {
     if (_disposed) return;
     _disposed = true;
-    await _frames.cancel();
+
   }
 }

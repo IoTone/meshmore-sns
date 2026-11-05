@@ -182,7 +182,23 @@ class MeshcoreController extends ChangeNotifier {
         // would be wrong (a reconnect may still deliver), so they keep
         // their own watchdogs and the queue is cleared so the *next* OK is
         // not credited to a command that may never be answered.
-        _ledger.reset();
+        for (final String id in _ledger.reset()) {
+          // A marker dropped by the link is not an answer. A chat row waiting
+          // on it reads unknown rather than being left in `sending` forever.
+          if (id == _channelDataMarker) {
+            _completeChannelData(const DecodeFailure(
+              MeshcoreDecodeError(DecodeErrorKind.empty, 'link lost'),
+            ));
+          } else if (id == _configMarker) {
+            _completeRadioConfig(const RadioAnswer.silent());
+          } else if (id == _rawSendMarker) {
+            abandonRawSend();
+          } else if (id == _toolSendMarker || id == _advertSendMarker) {
+            _dropPending(id);
+          } else {
+            _uncertainOutgoing(id, 'link lost before the radio answered');
+          }
+        }
         // A radio-config write in flight on that link will never be answered
         // now. Report it as silent rather than let the caller wait out the
         // timeout for an answer that cannot come.
@@ -1225,19 +1241,39 @@ class MeshcoreController extends ChangeNotifier {
   /// Send one raw-data command and register its OK/ERR so neither is
   /// credited to a chat message. The caller reads the answer from
   /// [inboundFrames]; if none arrives, call [abandonRawSend].
-  Future<void> sendRawCommand(Uint8List frame) async {
+  /// The record's answer: the OK or ERR the ledger credited to *this* send.
+  ///
+  /// Returning it is the point. The caller used to watch every inbound
+  /// OK/ERR itself, which credited one answer twice — once to the chat
+  /// message the ledger had claimed and once to the raw send waiting beside
+  /// it. An answer now belongs to whoever claimed it.
+  Future<MeshcoreInbound> sendRawCommand(Uint8List frame) async {
+    final Completer<MeshcoreInbound> answer = Completer<MeshcoreInbound>();
+    _rawAnswer = answer;
     _registerMarker(_rawSendMarker, CommandAnswer.ok);
     try {
-      await send(frame);
+      await send(frame, gated: true);
     } catch (_) {
       abandonRawSend();
       rethrow;
     }
+    return answer.future;
+  }
+
+  Completer<MeshcoreInbound>? _rawAnswer;
+
+  void _completeRawSend(MeshcoreInbound f) {
+    final Completer<MeshcoreInbound>? c = _rawAnswer;
+    _rawAnswer = null;
+    if (c != null && !c.isCompleted) c.complete(f);
   }
 
   /// No answer came for a [sendRawCommand]: drop its marker so the next OK
-  /// goes to the right message.
-  void abandonRawSend() => _dropPending(_rawSendMarker);
+  /// goes to the right message, and forget the completer nobody can satisfy.
+  void abandonRawSend() {
+    _rawAnswer = null;
+    _dropPending(_rawSendMarker);
+  }
 
   // --- Radio configuration: the radio's own answer, attributed ---
 
@@ -2015,7 +2051,11 @@ class MeshcoreController extends ChangeNotifier {
         _completeChannelData(f);
         return;
       }
-      if (p.id == _advertSendMarker || p.id == _rawSendMarker) {
+      if (p.id == _rawSendMarker) {
+        _completeRawSend(f);
+        return;
+      }
+      if (p.id == _advertSendMarker) {
         return;
       }
       final ChatMessage? m = _messageById(p.id);
@@ -2041,9 +2081,11 @@ class MeshcoreController extends ChangeNotifier {
         _completeChannelData(f);
         return;
       }
-      if (p.id == _toolSendMarker ||
-          p.id == _advertSendMarker ||
-          p.id == _rawSendMarker) {
+      if (p.id == _rawSendMarker) {
+        _completeRawSend(f);
+        return;
+      }
+      if (p.id == _toolSendMarker || p.id == _advertSendMarker) {
         return;
       }
       _failOutgoing(p.id, deviceErrorReason(f.code),
@@ -3805,6 +3847,23 @@ class MeshcoreController extends ChangeNotifier {
   Future<ChatMessage?> sendChannelTextTo(int channelIdx, String text) async {
     final String t = text.trim();
     if (t.isEmpty || !isReady) return null;
+    // A capability the radio has denied is a local refusal with its own
+    // sentence, not an ERR that arrives after the row was written. Unknown is
+    // not refused: the first send is how the state gets learned.
+    if (_capabilities.stateOf(MeshcoreCommand.sendChannelMessage) ==
+        CapabilityState.absent) {
+      final ChatMessage refused = ChatMessage(
+        channelIdx: channelIdx,
+        text: t,
+        outgoing: true,
+        delivery: MessageDelivery.failed,
+        failReason: 'this radio has no channel send',
+        failCause: FailureCause.unsupportedCommand,
+      );
+      _addMessage(refused);
+      notifyListeners();
+      return refused;
+    }
     final int ts = DateTime.now().millisecondsSinceEpoch ~/ 1000;
     final ChatMessage m = ChatMessage(
       channelIdx: channelIdx,
@@ -3893,10 +3952,19 @@ class MeshcoreController extends ChangeNotifier {
   void _drainStart({bool backlog = false}) {
     if (_draining) return;
     _drainIsBacklog = backlog;
+    _drainRetried = false;
     _setDraining(true);
     _drainSteps = 0;
     _drainStep();
   }
+
+  /// Whether the current drain has already been restarted once after a stall.
+  ///
+  /// The MSGS_WAITING push is what starts a drain, and a push lost on the link
+  /// left the queued messages sitting until the next push or reconnect. One
+  /// restart is enough to cover a dropped push; a second would loop forever on
+  /// a radio that cannot answer.
+  bool _drainRetried = false;
 
   void _drainStep() {
     if (++_drainSteps > _drainStepCap) {
@@ -3917,6 +3985,14 @@ class MeshcoreController extends ChangeNotifier {
     _drainWatchdog = Timer(_drainStall, () {
       if (!_draining) return;
       _emitTaskError('drainStalled');
+      if (!_drainRetried) {
+        // One restart: the push that started this drain may simply have been
+        // lost, and the queued messages would otherwise wait for the next one.
+        _drainRetried = true;
+        _drainSteps = 0;
+        _drainStep();
+        return;
+      }
       _endDrain();
     });
   }

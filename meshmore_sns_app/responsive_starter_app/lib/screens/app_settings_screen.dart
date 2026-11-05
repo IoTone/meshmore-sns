@@ -326,10 +326,10 @@ class AppSettingsScreen extends StatelessWidget {
       items: <MmPickerItem<AirtimePolicy>>[
         MmPickerItem<AirtimePolicy>.header(l.settingsAirtimeTitle),
         MmPickerItem<AirtimePolicy>.option(
-            AirtimePolicy.onePercentDutyCycle, l.airtimePolicyOnePercent,
+            AirtimePolicy.onePercentDutyCycle, l.airtimePolicyOnePercentSub,
             icon: Icons.timer_outlined),
         MmPickerItem<AirtimePolicy>.option(
-            AirtimePolicy.ownedChannel, l.airtimePolicyOwned,
+            AirtimePolicy.ownedChannel, l.airtimePolicyOwnedSub,
             icon: Icons.all_inclusive),
         MmPickerItem<AirtimePolicy>.header(l.settingsAirtimeHelp),
       ],

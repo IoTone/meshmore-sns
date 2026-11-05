@@ -7825,7 +7825,7 @@ abstract class AppLocalizations {
   /// No description provided for @failureMtuTooSmall.
   ///
   /// In en, this message translates to:
-  /// **'This phone link is {mtu} bytes and one radio frame needs {need}. Reconnect to try again; a radio that caps the link smaller cannot carry every frame.'**
+  /// **'This radio\'s link is {mtu} bytes and a full frame needs {need}. Some firmware builds ask for the smaller size themselves, so this radio cannot carry the largest frames: try a newer firmware, or reconnect.'**
   String failureMtuTooSmall(String mtu, String need);
 
   /// No description provided for @failureFrameTruncated.

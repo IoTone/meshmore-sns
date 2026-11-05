@@ -29,10 +29,21 @@ void main() {
     await t.pump();
     expect(mc.isDraining, isTrue);
 
-    // The radio says nothing more, ever.
+    final int syncsBefore = fake.sent.length;
+
+    // The radio says nothing more. One restart is allowed, because the push
+    // that started this drain may simply have been lost on the link.
+    await t.pump(const Duration(seconds: 25));
+    expect(mc.isDraining, isTrue,
+        reason: 'the first stall restarts the drain once');
+    expect(fake.sent.length, greaterThan(syncsBefore),
+        reason: 'the restart asks the radio again');
+
+    // A second stall is the end: a radio that cannot answer must not be
+    // asked forever.
     await t.pump(const Duration(seconds: 25));
     expect(mc.isDraining, isFalse,
-        reason: 'the watchdog must end a stalled drain');
+        reason: 'the watchdog must end a drain that stalled twice');
 
     mc.dispose();
   });

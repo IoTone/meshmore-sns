@@ -4389,7 +4389,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String failureMtuTooSmall(String mtu, String need) {
-    return 'このリンクは $mtu バイトで、1 フレームには $need 必要です。再接続して試してください。リンクを広げられないラジオはすべてのフレームを運べません。';
+    return 'この無線機のリンクは $mtu バイトで、1フレームには $need バイト必要です。小さい値を要求するファームウェアもあるため、この無線機は最大サイズのフレームを運べません。ファームウェアを新しくするか、再接続してください。';
   }
 
   @override

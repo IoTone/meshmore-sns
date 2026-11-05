@@ -175,8 +175,16 @@ class CommandLedger {
 
   /// Forget everything (a new link: the radio has no memory of what this
   /// side was waiting for, so neither should the queue).
-  void reset() {
+  /// Drops every outstanding entry and returns their ids.
+  ///
+  /// The ids are the point: a marker dropped on a link change used to vanish,
+  /// so the row that was waiting for it stayed `sending` until an independent
+  /// timer happened to fire. The caller voids them explicitly instead.
+  List<String> reset() {
+    final List<String> ids =
+        List<String>.unmodifiable(_entries.map((CommandEntry e) => e.id));
     _entries.clear();
     _deadlines.clear();
+    return ids;
   }
 }
