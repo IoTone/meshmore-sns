@@ -93,9 +93,9 @@ over BLE. Mesh-first, no backend, no account, no server.
   packet. `lib/meshcore/block_store.dart`, `block_filter.dart`.
 - **At rest.** History, drafts, places, the block list and the retention tally
   live in one sealed file whose AES-256-GCM key the Android Keystore generates
-  and does not export; the plaintext was migrated once with a serialised
-  read-back; Auto Backup and device transfer exclude everything; exports are
-  passphrase files that fail closed. `lib/meshcore/secure/`, `SecureStore.kt`.
+  and does not export. The plaintext was migrated once with a serialised
+  read-back. Auto Backup and device transfer exclude everything, and exports
+  are passphrase files that fail closed. `lib/meshcore/secure/`, `SecureStore.kt`.
 - **Places.** The text convention with a trailing TTL, a nine-token type set, a
   deterministic id over six-decimal coordinates, a layer with clustering and a
   countdown, long-press create with the 6-per-hour budget, confirm and refute
