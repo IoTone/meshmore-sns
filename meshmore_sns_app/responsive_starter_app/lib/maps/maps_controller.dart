@@ -6,6 +6,7 @@ import 'dart:io';
 import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -15,6 +16,9 @@ import 'map_archive.dart';
 import 'map_fetch.dart';
 import 'map_pack.dart';
 import 'map_source.dart';
+import 'network_gate.dart';
+import 'disk_space.dart';
+import 'pack_catalog.dart';
 import 'pmtiles.dart';
 import 'tile_ancestor.dart';
 import 'tile_math.dart';
@@ -73,7 +77,16 @@ class MapsController extends ChangeNotifier {
     this.retryFloor = const Duration(seconds: 30),
     math.Random? random,
     ArchiveFetcher? archiveFetcher,
+    DiskSpace? diskSpace,
+    NetworkGate? networkGate,
+    this.catalogUrl = kPackCatalogUrl,
+    Future<String> Function()? bundledCatalog,
+    Future<String> Function(Uri)? catalogFetcher,
   })  : _random = random ?? math.Random(),
+        _diskSpace = diskSpace ?? const PlatformDiskSpace(),
+        _networkGate = networkGate ?? const PlatformNetworkGate(),
+        _bundledCatalog = bundledCatalog ?? _bundleCatalogText,
+        _catalogFetcher = catalogFetcher ?? _httpCatalogText,
         _rootDir = rootDir ?? _defaultRoot,
         _clock = clock ?? DateTime.now {
     _fetch = fetcher ??
@@ -146,6 +159,22 @@ class MapsController extends ChangeNotifier {
 
   int budgetMb = 500;
   int viewKeepDays = 30;
+
+  /// R84 — a region archive is tens to hundreds of megabytes, so the download
+  /// waits for an unmetered link unless the user says otherwise.
+  bool wifiOnlyArchives = true;
+
+  final DiskSpace _diskSpace;
+  final NetworkGate _networkGate;
+  final Future<String> Function() _bundledCatalog;
+  final Future<String> Function(Uri) _catalogFetcher;
+
+  /// Where a published pack list is fetched from; empty = bundle only.
+  final String catalogUrl;
+
+  /// The pack list a user may install from, once [refreshCatalog] has run.
+  PackCatalog? catalog;
+  bool catalogLoading = false;
 
   bool _pumping = false;
   bool _disposed = false;
@@ -231,6 +260,7 @@ class MapsController extends ChangeNotifier {
       final Map<String, Object?> j = jsonDecode(raw) as Map<String, Object?>;
       budgetMb = (j['budgetMb'] as num?)?.toInt() ?? budgetMb;
       viewKeepDays = (j['viewKeep'] as num?)?.toInt() ?? viewKeepDays;
+      wifiOnlyArchives = (j['wifiOnly'] as bool?) ?? wifiOnlyArchives;
       for (final Object? s in (j['sources'] as List<Object?>?) ?? <Object?>[]) {
         _custom.add(MapSource.fromJson(s! as Map<String, Object?>));
       }
@@ -257,6 +287,7 @@ class MapsController extends ChangeNotifier {
           'packs': <Object>[for (final MapPack p in packs) p.toJson()],
           'layers': <Object>[for (final EventLayer l in layers) l.toJson()],
           'archives': <Object>[for (final MapArchive a in archives) a.toJson()],
+          'wifiOnly': wifiOnlyArchives,
         }));
   }
 
@@ -732,6 +763,7 @@ class MapsController extends ChangeNotifier {
   Future<void> _pumpBody() async {
     _pumping = true;
     try {
+      await _promoteWifiParked();
       while (!_disposed) {
         MapPack? next;
         for (final MapPack p in packs) {
@@ -753,6 +785,7 @@ class MapsController extends ChangeNotifier {
           }
         }
         if (arch == null) break;
+        if (await _parkedForWifi(arch)) break;
         if (!await _runArchive(arch)) break;
       }
     } finally {
@@ -957,6 +990,10 @@ class MapsController extends ChangeNotifier {
     if (expectedBytes != null && pinnedBytes + expectedBytes > budgetBytes) {
       return ArchiveRefusal.overBudget;
     }
+    if (expectedBytes != null) {
+      final int? free = await _diskSpace.allocatableBytes();
+      if (!hasRoomFor(free, expectedBytes)) return ArchiveRefusal.notEnoughSpace;
+    }
     final MapArchive a = MapArchive(
       id: 'a${_now.toRadixString(36)}',
       name: name.trim(),
@@ -981,7 +1018,9 @@ class MapsController extends ChangeNotifier {
   }
 
   void resumeArchive(MapArchive a) {
-    if (a.state == ArchiveState.paused || a.state == ArchiveState.overBudget) {
+    if (a.state == ArchiveState.paused ||
+        a.state == ArchiveState.overBudget ||
+        a.state == ArchiveState.waitingForWifi) {
       a.state = ArchiveState.downloading;
       _changed();
       unawaited(_pump());
@@ -991,6 +1030,58 @@ class MapsController extends ChangeNotifier {
   void setArchiveKeep(MapArchive a, int days) {
     a.keepDays = days;
     _changed();
+  }
+
+  /// Wi-Fi-only for region downloads. Turning it off lets a metered link
+  /// through, and the next pump picks up anything parked in
+  /// [ArchiveState.waitingForWifi].
+  void setWifiOnlyArchives(bool value) {
+    if (wifiOnlyArchives == value) return;
+    wifiOnlyArchives = value;
+    _changed();
+    unawaited(_pump());
+  }
+
+  /// Reads the bundled pack list, then the published one when this build was
+  /// pointed at it. Safe to call more than once; a failed remote fetch keeps
+  /// the bundled list and records why.
+  Future<void> refreshCatalog() async {
+    if (catalogLoading) return;
+    catalogLoading = true;
+    // No notify here: the screen calls this from initState, which runs inside
+    // a build pass, so notifying now is "setState during build". The loading
+    // flag matters to the screen only as "the list is not ready yet", which
+    // is the state it already rendered.
+    try {
+      final PackCatalogLoader loader = PackCatalogLoader(
+        bundled: _bundledCatalog,
+        url: catalogUrl,
+        remote: catalogUrl.isEmpty ? null : _catalogFetcher,
+      );
+      catalog = await loader.load();
+    } finally {
+      catalogLoading = false;
+      if (!_disposed) notifyListeners();
+    }
+  }
+
+  static Future<String> _bundleCatalogText() =>
+      rootBundle.loadString('assets/maps/packs.json');
+
+  static Future<String> _httpCatalogText(Uri url) async {
+    final HttpClient client = HttpClient()
+      ..connectionTimeout = const Duration(seconds: 10);
+    try {
+      final HttpClientRequest req = await client.getUrl(url);
+      final HttpClientResponse resp =
+          await req.close().timeout(const Duration(seconds: 10));
+      if (resp.statusCode != 200) {
+        throw HttpException('catalogue ${resp.statusCode}', uri: url);
+      }
+      return await resp.transform(utf8.decoder).join();
+    } finally {
+      client.close(force: true);
+    }
   }
 
   Future<void> deleteArchive(MapArchive a) async {
@@ -1004,6 +1095,34 @@ class MapsController extends ChangeNotifier {
     }
     _archiveSize.remove(a.id);
     _changed();
+  }
+
+  /// Moves anything parked on the Wi-Fi-only rule back into the queue.
+  ///
+  /// Two things un-park a download: the preference turned off, or an
+  /// unmetered link arriving. Checking the link here rather than only in
+  /// [setWifiOnlyArchives] is what lets a pack sitting in
+  /// [ArchiveState.waitingForWifi] resume on its own when the phone joins
+  /// Wi-Fi, without the user finding it again.
+  Future<void> _promoteWifiParked() async {
+    for (final MapArchive a in archives) {
+      if (a.state != ArchiveState.waitingForWifi) continue;
+      if (wifiOnlyArchives && await _networkGate.unmetered() == false) {
+        continue;
+      }
+      a.state = ArchiveState.downloading;
+      _changed();
+    }
+  }
+
+  /// True when [a] must wait for an unmetered link, having parked it.
+  Future<bool> _parkedForWifi(MapArchive a) async {
+    if (!wifiOnlyArchives) return false;
+    if (await _networkGate.unmetered() != false) return false;
+    a.state = ArchiveState.waitingForWifi;
+    _changed();
+    _scheduleRetry();
+    return true;
   }
 
   /// One download attempt. False when the network went away.
@@ -1130,6 +1249,23 @@ class MapsController extends ChangeNotifier {
       ..failure = why
       ..etag = null;
     _changed();
+  }
+
+  /// True when a finished region archive covers [box] at zoom [z].
+  ///
+  /// This is the question the map asks before it tells a user that the area
+  /// on screen is outside every offline pack: a pack answers a whole bbox and
+  /// a zoom range, so "do I have this view offline" is a box test, not a
+  /// per-tile guess.
+  bool archiveCovers(GeoBox box, int z) {
+    for (final MapArchive a in archives) {
+      if (!a.complete || a.minZoom == null || a.maxZoom == null) continue;
+      if (z < a.minZoom! || z > a.maxZoom!) continue;
+      final GeoBox pack = GeoBox(
+          south: a.south!, west: a.west!, north: a.north!, east: a.east!);
+      if (pack.intersects(box)) return true;
+    }
+    return false;
   }
 
   /// Archive-first read for the vector basemap: a tile inside a complete

@@ -173,6 +173,8 @@ flutter:
       # offline by brand/_audio_pack.py.
       # R80 Studio vector basemap style (Apache-2.0, OpenFreeMap dark).
       - assets/maps/studio_dark.json
+      # R84 — the shipped offline pack list (empty until a host publishes one).
+      - assets/maps/packs.json
       - assets/audio/seele/
       - assets/audio/nerv/
       - assets/audio/aghud/

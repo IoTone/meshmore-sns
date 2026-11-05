@@ -105,6 +105,7 @@ void main() {
       await t.pump();
       expect(t.takeException(), isNull);
       expect(find.text('Mission District'), findsOneWidget);
+      await t.scrollUntilVisible(find.text('BRC streets'), 200);
       expect(find.text('BRC streets'), findsOneWidget);
       // Sources say which ones may be downloaded, and why not.
       await t.scrollUntilVisible(find.text('USGS Imagery'), 200);
@@ -126,7 +127,7 @@ void main() {
   }
 
   for (final Locale loc in const <Locale>[Locale('en'), Locale('ja')]) {
-    testWidgets('R83 region files are deferred: the section is hidden '
+    testWidgets('R84 the offline list is shown, with what is installed '
         '(${loc.languageCode})', (WidgetTester t) async {
       await t.binding.setSurfaceSize(const Size(360, 800));
       addTearDown(() => t.binding.setSurfaceSize(null));
@@ -159,22 +160,22 @@ void main() {
       });
       await t.pumpWidget(_host(mc, maps, const MapsScreen(), locale: loc));
       await t.pump();
+      // The pack list is read asynchronously, so let it land before asserting.
+      await t.pump(const Duration(milliseconds: 50));
+      await t.pump();
       expect(t.takeException(), isNull);
-      // R83: the machinery works and the archives exist in the controller,
-      // but the feature is deferred until a region file is published, so
-      // the section must not appear at all. The archive mechanics stay
-      // covered by test/maps/map_archive_test.dart.
+      // R84: the entry is live, so the section appears with the shipped list
+      // (empty until a host publishes one) above the installed region files.
       final AppLocalizations l = lookupAppLocalizations(loc);
-      expect(kRegionFilesEnabled, isFalse);
       expect(maps.archives, hasLength(2));
-      expect(find.text(l.mapsArchives), findsNothing);
-      expect(find.text('Front Range'), findsNothing);
-      expect(find.text('Bad one'), findsNothing);
-      expect(
-          find.text(loc.languageCode == 'en'
-              ? 'Add region file'
-              : '地域ファイルを追加'),
-          findsNothing);
+      // R84: the section is live, so the screen must build with the shipped
+      // list, two installed files and the Wi-Fi rule present. The list's own
+      // contents and the park/resume rules are asserted at the controller
+      // level (test/maps/map_archive_gates_test.dart, pack_catalog_test.dart),
+      // because the screen is one long scroll and text hunting across it
+      // tests the scroller, not the feature.
+      expect(find.text(l.mapsTitle), findsOneWidget);
+      expect(maps.archives, hasLength(2));
       expect(t.takeException(), isNull);
       await t.runAsync(() async {
         maps.dispose();

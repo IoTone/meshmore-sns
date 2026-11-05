@@ -186,6 +186,11 @@ class _StreetMapViewState extends State<StreetMapView> {
     _warm = Timer(const Duration(milliseconds: 500), _warmAround);
   }
 
+  /// True when the view on screen is outside every finished region pack
+  /// while the map has no connection: the one case where "no tiles" is a
+  /// fact to say out loud rather than a tile that has not arrived.
+  bool _outsidePacks = false;
+
   Future<void> _warmAround() async {
     if (!mounted || !_vectorSkin) return;
     final MapsController? maps =
@@ -196,6 +201,8 @@ class _StreetMapViewState extends State<StreetMapView> {
     final LatLngBounds b = cam.visibleBounds;
     final TileRange r = tileRange(
         GeoBox(south: b.south, west: b.west, north: b.north, east: b.east), z);
+    _noteCoverage(maps, GeoBox(
+        south: b.south, west: b.west, north: b.north, east: b.east), z);
     final List<(int, int, int)> ring = <(int, int, int)>[];
     for (int x = r.minX - 1; x <= r.maxX + 1 && ring.length < 24; x++) {
       for (int y = r.minY - 1; y <= r.maxY + 1 && ring.length < 24; y++) {
@@ -212,6 +219,13 @@ class _StreetMapViewState extends State<StreetMapView> {
   /// (flutter_compass), never from the radio: a MeshCore GPS reports a
   /// position, not a heading. A peer marker is therefore never rotated, and
   /// this stays null on a phone with no compass, which drops the wedge.
+  void _noteCoverage(MapsController maps, GeoBox box, int z) {
+    final bool outside = maps.archives.isNotEmpty && !maps.archiveCovers(box, z);
+    if (outside == _outsidePacks) return;
+    if (!mounted) return;
+    setState(() => _outsidePacks = outside);
+  }
+
   double? _headingDeg;
   StreamSubscription<CompassEvent>? _compassSub;
 
@@ -955,6 +969,30 @@ class _StreetMapViewState extends State<StreetMapView> {
             ),
           ),
         ),
+        // R84 — no connection and no pack over this view: the tiles will not
+        // arrive, so the map says why instead of leaving a blank area that
+        // looks like a rendering fault.
+        if (_outsidePacks && !(maps?.online ?? true))
+          Positioned(
+            left: 12,
+            right: 12,
+            top: 12,
+            child: IgnorePointer(
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: cs.surface.withValues(alpha: .85),
+                  borderRadius: mmRadius(context, 4),
+                ),
+                child: Text(
+                  l.mapsOutsidePacks,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                      color: cs.onSurface, fontSize: context.skin.type.sizeSm),
+                ),
+              ),
+            ),
+          ),
       ],
     );
   }

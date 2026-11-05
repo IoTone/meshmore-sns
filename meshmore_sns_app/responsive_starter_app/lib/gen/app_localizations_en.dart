@@ -3659,6 +3659,50 @@ class AppLocalizationsEn extends AppLocalizations {
   String get archiveRefusalDuplicate => 'Already added.';
 
   @override
+  String get archiveStateWaitingWifi => 'Waiting for Wi-Fi';
+
+  @override
+  String get archiveRefusalNoSpace =>
+      'Not enough free space. Free up some and try again.';
+
+  @override
+  String get mapsPacksPublished => 'Available packs';
+
+  @override
+  String get mapsPacksEmpty =>
+      'No offline maps published yet. You can still install one from a link.';
+
+  @override
+  String mapsPacksFrom(String source) {
+    return 'List from $source';
+  }
+
+  @override
+  String get mapsPacksBundle => 'Built-in list';
+
+  @override
+  String get mapsPacksUnreadable =>
+      'The published list could not be read. Showing the built-in one.';
+
+  @override
+  String get mapsPackInstall => 'Download';
+
+  @override
+  String mapsPackLicence(String licence, String attribution) {
+    return '$licence · $attribution';
+  }
+
+  @override
+  String get mapsWifiOnly => 'Download over Wi-Fi only';
+
+  @override
+  String get mapsWifiOnlyHint => 'A pack can be hundreds of megabytes.';
+
+  @override
+  String get mapsOutsidePacks =>
+      'Outside your offline maps, the map needs a connection.';
+
+  @override
   String get mapsLayers => 'Event maps';
 
   @override
