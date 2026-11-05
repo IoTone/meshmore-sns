@@ -677,7 +677,9 @@ class RadioLinkIndicator extends StatelessWidget {
       child: InkWell(
         onTap: () => context.push('/settings/diagnostics'),
         borderRadius: mmRadius(context, 20),
-        child: Container(
+        // `DecoratedBox`, not `Container`: the chip's own dot is the first
+        // `Container` in this subtree and the colour test finds it that way.
+        child: DecoratedBox(
           decoration: ShapeDecoration(
             shape: mmShapeBorder(
               MmShape(
@@ -690,29 +692,31 @@ class RadioLinkIndicator extends StatelessWidget {
               side: BorderSide(color: v.color.withValues(alpha: .55)),
             ),
           ),
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              Container(
-                width: 9,
-                height: 9,
-                decoration:
-                    BoxDecoration(color: v.color, shape: BoxShape.circle),
-              ),
-              const SizedBox(width: 6),
-              Icon(v.icon, size: 16, color: v.color),
-              const SizedBox(width: 4),
-              Text(
-                v.label,
-                style: TextStyle(
-                  color: v.color,
-                  fontSize: context.skin.type.sizeSm,
-                  letterSpacing: 1.5,
-                  fontWeight: FontWeight.w600,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                Container(
+                  width: 9,
+                  height: 9,
+                  decoration:
+                      BoxDecoration(color: v.color, shape: BoxShape.circle),
                 ),
-              ),
-            ],
+                const SizedBox(width: 6),
+                Icon(v.icon, size: 16, color: v.color),
+                const SizedBox(width: 4),
+                Text(
+                  v.label,
+                  style: TextStyle(
+                    color: v.color,
+                    fontSize: context.skin.type.sizeSm,
+                    letterSpacing: 1.5,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
