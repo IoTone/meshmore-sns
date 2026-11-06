@@ -8,7 +8,7 @@ Offline-first, theme-driven, with a hyperlocal radar grid, per-channel chat,
 
 > **Status — in development.** Source is here for review and contribution;
 > there's no public release channel yet. Measured 2026-11-05 in a fresh checkout:
-> 1690 widget/unit tests pass in about 2 minutes, the protocol package's 368 pass with
+> 1997 widget/unit tests pass in about 3 minutes, the protocol package's 368 pass with
 > one skipped, the pure-Java port's 143 pass with one skipped, and `flutter
 > analyze` is clean apart from two pre-existing `unawaited_return_in_try_block`
 > warnings in `lib/maps/maps_controller.dart`. A debug APK builds and installs.
@@ -97,9 +97,12 @@ Highlights of what's already shipping:
 Forward-looking but already speccd (not built):
 
 - **R24** per-channel notification settings.
-- **R25** reverse-geocoded equal-grid map view.
+- **R25** the equal-area cell overlay on the map (the standalone equal-grid view was
+  removed; the property worth keeping, equal-area density, is recorded in the
+  register's residue row).
 - **R26** XR data streaming via private temp-URL reverse proxy.
-- **R27** Globe.GL macro view inside a WebView with a pre-cached macro basemap.
+- **R27** ~~Globe.GL macro view~~ — withdrawn 2026-11-05; the globe was removed
+  from the product.
 
 ---
 
@@ -110,7 +113,7 @@ cd meshmore_sns_app/responsive_starter_app
 flutter pub get
 flutter run            # debug on a connected device
 flutter analyze        # static analysis
-flutter test           # 1690 tests at time of writing
+flutter test           # 1997 tests at time of writing
 ```
 
 **Submodule note** — the `meshcore` codec lives at
@@ -142,7 +145,7 @@ meshmore-sns/
     ├── packages/meshcore/          ← pure-Dart protocol codec
     └── responsive_starter_app/     ← Flutter app (Android is the target; iOS is kept, deprioritised)
         ├── lib/                    ← all controllers, screens, theme, perms…
-        ├── test/                   ← 1690 widget/unit tests
+        ├── test/                   ← 1997 widget/unit tests
         ├── android/                ← FGS manifest, BLE perms
         ├── ios/                    ← Info.plist usage strings
         └── web/                    ← build only; no radio link, so it is not a supported target
@@ -182,7 +185,7 @@ deleted with it.
 | [`flutter_native_splash`](https://pub.dev/packages/flutter_native_splash) | Launch splash |
 | [`cupertino_icons`](https://pub.dev/packages/cupertino_icons) | iOS-style glyphs |
 | [`responsive_toolkit`](https://pub.dev/packages/responsive_toolkit) | Breakpoint helpers |
-| [`package_info_plus`](https://pub.dev/packages/package_info_plus), [`device_info_plus`](https://pub.dev/packages/device_info_plus) | App/device introspection (About screen, Diagnostics) |
+| [`package_info_plus`](https://pub.dev/packages/package_info_plus) | App version/build shown in About |
 | [`intl`](https://pub.dev/packages/intl) | Locale + formatting |
 | [`flutter_localizations`](https://api.flutter.dev/flutter/flutter_localizations/flutter_localizations-library.html) | L10n scaffolding (R4) |
 | [`flutter_lints`](https://pub.dev/packages/flutter_lints) | Lint config (dev) |
@@ -190,8 +193,6 @@ deleted with it.
 
 ### External tools / libraries referenced but not yet integrated
 
-- [**Globe.GL**](https://globe.gl/) — referenced by **R27** (future Globe macro
-  view inside a WebView).
 - [**OpenStreetMap**](https://www.openstreetmap.org/) raster tiles — one
   candidate basemap source for **R25** (future reverse-geocoded equal-grid map).
 - [**Natural Earth**](https://www.naturalearthdata.com/), [**GeoNames**](https://www.geonames.org/) — public
