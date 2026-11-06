@@ -731,11 +731,18 @@ class _ChatScreenState extends State<ChatScreen>
                         value: 'search',
                         enabled: msgs.isNotEmpty,
                         child: Row(
-                          mainAxisSize: MainAxisSize.min,
                           children: <Widget>[
                             const Icon(Icons.search, size: 20),
                             const SizedBox(width: 12),
-                            Text(l.chatSearchAction),
+                            // A menu row has to survive a long label on
+                            // a narrow screen: the text takes what is
+                            // left and ellipsises rather than overflowing.
+                            Expanded(
+                              child: Text(
+                                l.chatSearchAction,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
                           ],
                         ),
                       ),
@@ -744,11 +751,18 @@ class _ChatScreenState extends State<ChatScreen>
                         value: 'export',
                         enabled: msgs.isNotEmpty,
                         child: Row(
-                          mainAxisSize: MainAxisSize.min,
                           children: <Widget>[
                             const Icon(Icons.ios_share, size: 20),
                             const SizedBox(width: 12),
-                            Text(l.chatExportAction),
+                            // A menu row has to survive a long label on
+                            // a narrow screen: the text takes what is
+                            // left and ellipsises rather than overflowing.
+                            Expanded(
+                              child: Text(
+                                l.chatExportAction,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
                           ],
                         ),
                       ),
@@ -756,11 +770,18 @@ class _ChatScreenState extends State<ChatScreen>
                         key: const ValueKey<String>('chat-restore'),
                         value: 'restore',
                         child: Row(
-                          mainAxisSize: MainAxisSize.min,
                           children: <Widget>[
                             const Icon(Icons.settings_backup_restore, size: 20),
                             const SizedBox(width: 12),
-                            Text(l.chatRestoreMenu),
+                            // A menu row has to survive a long label on
+                            // a narrow screen: the text takes what is
+                            // left and ellipsises rather than overflowing.
+                            Expanded(
+                              child: Text(
+                                l.chatRestoreMenu,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
                           ],
                         ),
                       ),
@@ -768,11 +789,18 @@ class _ChatScreenState extends State<ChatScreen>
                         key: const ValueKey<String>('chat-activity'),
                         value: 'activity',
                         child: Row(
-                          mainAxisSize: MainAxisSize.min,
                           children: <Widget>[
                             const Icon(Icons.insights, size: 20),
                             const SizedBox(width: 12),
-                            Text(l.meshbookTitle),
+                            // A menu row has to survive a long label on
+                            // a narrow screen: the text takes what is
+                            // left and ellipsises rather than overflowing.
+                            Expanded(
+                              child: Text(
+                                l.meshbookTitle,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
                           ],
                         ),
                       ),
@@ -780,11 +808,18 @@ class _ChatScreenState extends State<ChatScreen>
                         key: const ValueKey<String>('chat-manage-channels'),
                         value: 'manage',
                         child: Row(
-                          mainAxisSize: MainAxisSize.min,
                           children: <Widget>[
                             const Icon(Icons.tune, size: 20),
                             const SizedBox(width: 12),
-                            Text(l.chatManageChannels),
+                            // A menu row has to survive a long label on
+                            // a narrow screen: the text takes what is
+                            // left and ellipsises rather than overflowing.
+                            Expanded(
+                              child: Text(
+                                l.chatManageChannels,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
                           ],
                         ),
                       ),
