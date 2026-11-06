@@ -279,10 +279,13 @@ void main() {
       expect(mmSkinFor(p).shape.vectorBasemap, p == MmThemePreset.studio,
           reason: 'the flag still records which skin first adopted it: $p');
     }
-    // R115 — the bundled vector style is a dark palette, so the light skin
-    // keeps raster tiles (whose own colours suit a paper ground) until the
-    // style set has a light counterpart.
-    expect(mmSkinFor(MmThemePreset.studioLight).shape.vectorBasemap, isFalse);
+    // The light skin draws the vector map too: the style asset is neutral and
+    // R115 paints it from the skin's own tokens, so there is no "dark palette"
+    // for a paper ground to avoid. The flag staying false on this one skin is
+    // the only stale part of it, and it is vestigial — `StreetMapView` decides
+    // from the user's source choice, never from this bit.
+    expect(mmSkinFor(MmThemePreset.studioLight).shape.vectorBasemap, isFalse,
+        reason: 'vestigial flag; behaviour is in StreetMapView.vectorDrawn');
   });
 
   test('R82 the vector source is OSM itself, credited, and view-only', () {
