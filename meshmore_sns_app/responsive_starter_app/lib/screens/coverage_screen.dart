@@ -11,7 +11,6 @@ import '../telemetry/coverage_pacing.dart';
 import '../telemetry/coverage_session.dart';
 import '../theme/mm_skin.dart';
 import '../ui/mm_components.dart';
-import '../ui/pin_blocks.dart';
 import '../ui/mm_scaffold.dart';
 
 /// Settings → Tools → Coverage, or the field screen.
@@ -58,19 +57,9 @@ class CoverageScreen extends StatelessWidget {
                 label: l.coverageStop,
                 onPressed: s.stop,
               ),
-              // The gap above the block travels with it: a pinned block must
-              // leave no row, no space and no rule behind on its own screen.
-              PinnableBlockHost(
-                pinId: PinBlocks.coverageSummary,
-                child: Padding(
-                  padding: EdgeInsets.only(top: skin.space.step(4)),
-                  child: CoverageSummaryBlock(
-                    header: PinnableBlockHeader(
-                      pinId: PinBlocks.coverageSummary,
-                      title: l.coverageCountsTitle,
-                    ),
-                  ),
-                ),
+              Padding(
+                padding: EdgeInsets.only(top: skin.space.step(4)),
+                child: const CoverageSummaryBlock(),
               ),
               SizedBox(height: skin.space.step(5)),
               MmSectionHeader(l.coverageCellsSection),
@@ -92,17 +81,9 @@ class CoverageScreen extends StatelessWidget {
                     style: TextStyle(
                         color: skin.color.fgMuted, fontSize: skin.type.sizeSm)),
               ],
-              PinnableBlockHost(
-                pinId: PinBlocks.fieldExport,
-                child: Padding(
-                  padding: EdgeInsets.only(top: skin.space.step(5)),
-                  child: FieldExportBlock(
-                    header: PinnableBlockHeader(
-                      pinId: PinBlocks.fieldExport,
-                      title: l.fieldExportSection,
-                    ),
-                  ),
-                ),
+              Padding(
+                padding: EdgeInsets.only(top: skin.space.step(5)),
+                child: const FieldExportBlock(),
               ),
             ],
           ],
@@ -155,16 +136,10 @@ class _CellRow extends StatelessWidget {
   }
 }
 
-/// The coverage counts, as its own block so it can be pinned.
-///
-/// One widget for both places a reader meets it: on this screen behind a
-/// [PinnableBlockHost], and on the dashboard as a card's detail. There is only
-/// ever one render site, which is the point of pinning a block rather than
-/// copying it.
+/// The coverage counts: how many pings the mesh answered, out of how many
+/// this device sent. One widget, one place a reader meets it.
 class CoverageSummaryBlock extends StatelessWidget {
-  const CoverageSummaryBlock({super.key, this.header});
-
-  final Widget? header;
+  const CoverageSummaryBlock({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -174,7 +149,7 @@ class CoverageSummaryBlock extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        if (header != null) header!,
+        MmSectionHeader(l.coverageCountsTitle),
         Text(
           l.coverageCounts(s.answeredPings, s.tried),
           key: const ValueKey<String>('coverage-counts'),
@@ -209,11 +184,10 @@ class CoverageSummaryBlock extends StatelessWidget {
   }
 }
 
-/// The field and trail exports, as its own block so it can be pinned.
+/// The field and trail exports, each with the sentence that says what it
+/// writes and where.
 class FieldExportBlock extends StatelessWidget {
-  const FieldExportBlock({super.key, this.header});
-
-  final Widget? header;
+  const FieldExportBlock({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -222,7 +196,7 @@ class FieldExportBlock extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        header ?? MmSectionHeader(l.fieldExportSection),
+        MmSectionHeader(l.fieldExportSection),
         Text(l.fieldExportExplainer,
             key: const ValueKey<String>('field-export-explainer'),
             style: TextStyle(
@@ -243,12 +217,4 @@ class FieldExportBlock extends StatelessWidget {
       ],
     );
   }
-}
-
-/// One line for the pinned card, read from the session and never fetched.
-String coverageSummaryLine(BuildContext context, AppLocalizations l) {
-  final CoverageSession s = context.watch<CoverageSession>();
-  return s.tried == 0
-      ? l.pinCoverageNone
-      : l.pinCoverageAnswered(s.answeredPings, s.tried);
 }

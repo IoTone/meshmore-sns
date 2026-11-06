@@ -1,5 +1,6 @@
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
+
 import 'app_localizations.dart';
 
 // ignore_for_file: type=lint
@@ -16,35 +17,6 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get tabDashboard => 'ダッシュボード';
-
-  @override
-  String get dashboardPinsTitle => 'ピン留め';
-
-  @override
-  String get dashboardPinsEdit => 'ピンを編集';
-
-  @override
-  String get dashboardPinsDone => '完了';
-
-  @override
-  String get dashboardPinsMoveUp => '上へ移動';
-
-  @override
-  String get dashboardPinsMoveDown => '下へ移動';
-
-  @override
-  String get dashboardPinAdd => 'ダッシュボードにピン留め';
-
-  @override
-  String get dashboardPinRemove => 'ダッシュボードから外す';
-
-  @override
-  String get pinCoverageNone => 'まだ送信していません';
-
-  @override
-  String pinCoverageAnswered(int answered, int tried) {
-    return '$answered / $tried 応答';
-  }
 
   @override
   String get tabChat => 'チャット';
@@ -3940,7 +3912,10 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String diagnosticsFramingLine(
-      String truncated, String trailing, Object empty) {
+    String truncated,
+    String trailing,
+    Object empty,
+  ) {
     return '不完全なフレーム: 途中で切れた $truncated 件、余りのバイトがある $trailing 件、空の $empty 件';
   }
 
@@ -4105,7 +4080,12 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String networksSummary(
-      String freq, String bw, String sf, String cr, String ph) {
+    String freq,
+    String bw,
+    String sf,
+    String cr,
+    String ph,
+  ) {
     return '$freq MHz · $bw kHz · SF$sf · CR$cr · パスハッシュ $ph';
   }
 
@@ -4923,13 +4903,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get coverageCountsTitle => 'カバレッジ';
 
   @override
-  String get fieldExportSummaryLine => '軌跡とフィールド記録';
-
-  @override
   String get diagnosticsRadioHealth => '無線の状態';
-
-  @override
-  String get radioHealthSummaryLine => 'バッテリー・ノイズフロア・直近パケット';
 
   @override
   String get coverageBeforeStart =>

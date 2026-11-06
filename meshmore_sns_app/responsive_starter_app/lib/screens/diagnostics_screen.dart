@@ -20,7 +20,6 @@ import '../ui/mm_collapsible.dart';
 import '../ui/mm_scaffold.dart';
 import '../theme/mm_skin.dart';
 import '../ui/radio_health_block.dart';
-import '../ui/pin_blocks.dart';
 import 'diagnostics_redaction.dart';
 import '../meshcore/chat_store.dart';
 import '../places/place_store.dart';
@@ -310,23 +309,15 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
                     ],
                   ),
                 ),
-              // Radio health is a content block, so it is pinnable: pinning
-              // moves it to the dashboard and this screen lays out without it.
-              PinnableBlockHost(
-                pinId: PinBlocks.radioHealth,
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: <Widget>[
-                      PinnableBlockHeader(
-                        pinId: PinBlocks.radioHealth,
-                        title: l.diagnosticsRadioHealth,
-                      ),
-                      const SizedBox(height: 6),
-                      const RadioHealthBlock(),
-                    ],
-                  ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: <Widget>[
+                    MmSectionHeader(l.diagnosticsRadioHealth),
+                    const SizedBox(height: 6),
+                    const RadioHealthBlock(),
+                  ],
                 ),
               ),
             ],

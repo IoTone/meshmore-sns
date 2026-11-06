@@ -3,25 +3,6 @@
   "appName": "Meshmore SNS",
   "appSubtitle": "Mesh messaging over radio",
   "tabDashboard": "Dashboard",
-  "dashboardPinsTitle": "Pinned",
-  "dashboardPinsEdit": "Edit pins",
-  "dashboardPinsDone": "Done",
-  "dashboardPinsMoveUp": "Move up",
-  "dashboardPinsMoveDown": "Move down",
-  "dashboardPinAdd": "Pin to dashboard",
-  "dashboardPinRemove": "Remove from dashboard",
-  "pinCoverageNone": "No pings yet",
-  "pinCoverageAnswered": "{answered} of {tried} answered",
-  "@pinCoverageAnswered": {
-    "placeholders": {
-      "answered": {
-        "type": "int"
-      },
-      "tried": {
-        "type": "int"
-      }
-    }
-  },
   "tabChat": "Chat",
   "tabNodes": "Nodes",
   "tabMap": "Map",
@@ -3468,9 +3449,7 @@
   "geofenceExplainerShort": "Circles that tell you when you arrive or leave",
   "coverageTitle": "Coverage",
   "coverageCountsTitle": "Coverage",
-  "fieldExportSummaryLine": "Trail and field record",
   "diagnosticsRadioHealth": "Radio health",
-  "radioHealthSummaryLine": "Battery, noise floor, last packet",
   "coverageBeforeStart": "This records where you are and who answered. It stays on this device, and closing the app ends the record.",
   "coverageStart": "Start recording",
   "coverageStop": "Stop recording",
