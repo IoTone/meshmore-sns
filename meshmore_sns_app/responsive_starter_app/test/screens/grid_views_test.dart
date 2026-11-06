@@ -76,14 +76,14 @@ void main() {
     await t.pump();
     await t.pump(const Duration(milliseconds: 400));
 
-    // Every view in one list. "Radial" appears twice: the toolbar shows the
+    // Every view in one list. "Radar" appears twice: the toolbar shows the
     // current view's name and the sheet lists it.
-    expect(find.text('Radial'), findsNWidgets(2));
+    expect(find.text('Radar'), findsNWidgets(2));
     expect(find.text('Coverage'), findsOneWidget);
-    expect(find.text('Weather (environment)'), findsOneWidget);
+    expect(find.text('Weather'), findsOneWidget);
     expect(find.text('Mesh tree'), findsOneWidget);
     expect(find.text('Altitude'), findsOneWidget);
-    expect(find.text('SNS cells (heat)'), findsOneWidget);
+    expect(find.text('Message heat'), findsOneWidget);
     // The tab does not route to another tab: the map is the Map tab's job,
     // and there is no hand-off row here.
     expect(find.text('Open the map'), findsNothing);
@@ -108,7 +108,7 @@ void main() {
 
     const Map<String, String> purposes = <String, String>{
       'Coverage': 'Where the mesh has answered, cell by cell.',
-      'Weather (environment)':
+      'Weather':
           'Temperature, humidity and pressure, from nodes that report them.',
     };
     for (final MapEntry<String, String> e in purposes.entries) {
@@ -157,13 +157,13 @@ void main() {
 
     await _openView(t, 'Coverage');
     expect(find.byType(FabricSurveyView), findsOneWidget);
-    await _openView(t, 'Weather (environment)');
+    await _openView(t, 'Weather');
     expect(find.byType(WeatherView), findsOneWidget);
     await _openView(t, 'Mesh tree');
     expect(find.byType(MeshTreeView), findsOneWidget);
     await _openView(t, 'Altitude');
     expect(find.byType(ElevationProfileView), findsOneWidget);
-    await _openView(t, 'SNS cells (heat)');
+    await _openView(t, 'Message heat');
     expect(find.byType(SnsCellsView), findsOneWidget);
 
     // No radio: every one of them says so instead of showing a blank canvas.
@@ -186,11 +186,11 @@ void main() {
 
     for (final String label in <String>[
       'Coverage',
-      'Weather (environment)',
+      'Weather',
       'Mesh tree',
       'Altitude',
-      'SNS cells (heat)',
-      'Radial',
+      'Message heat',
+      'Radar',
     ]) {
       await _openView(t, label);
       expect(t.takeException(), isNull,

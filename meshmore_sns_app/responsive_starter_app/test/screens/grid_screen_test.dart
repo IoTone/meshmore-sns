@@ -80,7 +80,7 @@ void main() {
     await mc.connect();
     fake.emit(selfInfoFrame()); // → ready, but nobody heard yet
     await t.pump();
-    expect(find.text('Radial'), findsOneWidget);
+    expect(find.text('Radar'), findsOneWidget);
     expect(
         find.textContaining('No nodes in range yet'), findsOneWidget);
     expect(t.takeException(), isNull);
@@ -173,24 +173,24 @@ void main() {
     // The grid runs a ticker, so pumpAndSettle cannot settle here.
     await t.pump();
     await t.pump(const Duration(milliseconds: 400));
-    await t.tap(find.text('Weather (environment)').last);
+    await t.tap(find.text('Weather').last);
     await t.pump();
     await t.pump(const Duration(milliseconds: 400));
-    expect(find.text('Weather (environment)'), findsOneWidget);
+    expect(find.text('Weather'), findsOneWidget);
 
     // Leave the tab (the PageView disposes it) and come back.
     await t.pumpWidget(const SizedBox());
     await t.pumpWidget(_host(mc));
     await t.pump();
-    expect(find.text('Weather (environment)'), findsOneWidget);
-    expect(find.text('Radial'), findsNothing);
+    expect(find.text('Weather'), findsOneWidget);
+    expect(find.text('Radar'), findsNothing);
 
     // A fresh launch starts on the radar again.
     await t.pumpWidget(const SizedBox());
     GridScreen.resetSession();
     await t.pumpWidget(_host(mc));
     await t.pump();
-    expect(find.text('Radial'), findsOneWidget);
+    expect(find.text('Radar'), findsOneWidget);
     await t.pumpWidget(const SizedBox());
     mc.dispose();
   });
@@ -277,7 +277,7 @@ void main() {
     await t.tap(find.byTooltip('View'));
     await t.pump();
     await t.pump(const Duration(milliseconds: 400));
-    await t.tap(find.text('Weather (environment)').last);
+    await t.tap(find.text('Weather').last);
     await t.pump();
     await t.pump(const Duration(milliseconds: 400));
     expect(find.byKey(const ValueKey<String>('grid-pan-toggle')), findsNothing);
@@ -350,7 +350,7 @@ void main() {
     await t.pump();
     await t.pump(const Duration(milliseconds: 16));
 
-    Text picker() => t.widget<Text>(find.text('Radial'));
+    Text picker() => t.widget<Text>(find.text('Radar'));
     expect(picker().style?.fontSize, type.sizeBodyLg);
     expect(picker().style?.fontSize, 13);
     expect(picker().style?.fontWeight, FontWeight.w600);
