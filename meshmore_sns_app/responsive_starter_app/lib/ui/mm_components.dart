@@ -429,6 +429,11 @@ class MmAction extends StatelessWidget {
                   : skin.color.surfaceAlt.withValues(alpha: .4),
               shape: border,
             ),
+            // The label wraps rather than overflowing. At the 200 % text
+            // floor a two-word label is wider than a 320 dp row, and a
+            // control that clips its own name is not a control; the border
+            // and the minimum height keep it looking pressable however many
+            // lines it takes.
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
@@ -436,12 +441,15 @@ class MmAction extends StatelessWidget {
                   Icon(icon, size: 16, color: fg),
                   const SizedBox(width: 6),
                 ],
-                Text(label,
-                    style: TextStyle(
-                        color: fg,
-                        fontSize: skin.type.sizeBodyLg,
-                        letterSpacing: .4,
-                        fontWeight: FontWeight.w600)),
+                Flexible(
+                  child: Text(label,
+                      softWrap: true,
+                      style: TextStyle(
+                          color: fg,
+                          fontSize: skin.type.sizeBodyLg,
+                          letterSpacing: .4,
+                          fontWeight: FontWeight.w600)),
+                ),
               ],
             ),
           ),

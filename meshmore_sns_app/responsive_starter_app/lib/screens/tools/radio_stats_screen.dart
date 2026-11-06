@@ -56,20 +56,32 @@ class _RadioStatsScreenState extends State<RadioStatsScreen> {
       title: l.toolStatsName,
       tool: t,
       children: <Widget>[
-        Row(
+        // A wrap, not a row: at the 200 % text floor "Refresh" and "Auto"
+        // together are wider than 320 dp, and the switch must stay reachable.
+        // On a normal phone both fit on one line, so this changes nothing
+        // there.
+        Wrap(
+          spacing: 12,
+          runSpacing: 8,
+          crossAxisAlignment: WrapCrossAlignment.center,
           children: <Widget>[
-            Expanded(
-              child: FilledButton.icon(
-                icon: const Icon(Icons.refresh),
-                label: Text(l.statsRefresh),
-                onPressed: t.running || !t.mc.isReady ? null : t.fetch,
-              ),
+            FilledButton.icon(
+              icon: const Icon(Icons.refresh),
+              label: Text(l.statsRefresh),
+              onPressed: t.running || !t.mc.isReady ? null : t.fetch,
             ),
-            const SizedBox(width: 12),
-            Text(l.statsAuto),
-            Switch(
-              value: t.auto,
-              onChanged: t.mc.isReady ? t.setAuto : null,
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                // "Auto (every 5 s)" alone is wider than the row at 200 %,
+                // so the label takes what is left and wraps; the switch keeps
+                // its tap target.
+                Flexible(child: Text(l.statsAuto, softWrap: true)),
+                Switch(
+                  value: t.auto,
+                  onChanged: t.mc.isReady ? t.setAuto : null,
+                ),
+              ],
             ),
           ],
         ),

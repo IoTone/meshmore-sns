@@ -26,6 +26,8 @@ import 'package:meshmore_sns_app/chat/channel_read_store.dart';
 import 'package:meshmore_sns_app/meshcore/block_store.dart';
 import 'package:meshmore_sns_app/places/place_report_budget.dart';
 import 'package:meshmore_sns_app/places/place_store.dart';
+import 'package:meshmore_sns_app/geofence/geofence_controller.dart';
+import 'package:meshmore_sns_app/telemetry/coverage_session.dart';
 import 'package:meshmore_sns_app/meshcore/pair_scanner.dart';
 import 'package:meshmore_sns_app/sos/sos_controller.dart';
 import 'package:meshmore_sns_app/theme/mm_tokens.dart';
@@ -100,6 +102,19 @@ List<SingleChildWidget> _providers() => <SingleChildWidget>[
       ChangeNotifierProvider<SosController>(
           create: (BuildContext ctx) =>
               SosController(mc: ctx.read<MeshcoreController>())),
+      // Fences sample on a one-second tick; a real timer would race the
+      // harness, so this one samples by hand like the alarm's own harness.
+      ChangeNotifierProvider<GeofenceController>(
+          create: (BuildContext ctx) => GeofenceController(
+                mc: ctx.read<MeshcoreController>(),
+                autoTick: false,
+              )),
+      // Coverage is session state with no radio under a widget test: the
+      // screen has to render its "not started" state, which is the state a
+      // user meets first anyway.
+      ChangeNotifierProvider<CoverageSession>(
+          create: (BuildContext ctx) =>
+              CoverageSession(mc: ctx.read<MeshcoreController>())),
       // The pairing screen's seam: the real scanner is the platform's BLE and
       // cannot run under a widget test, so this harness registers a scanner
       // that reports an adapter that is simply switching on.
@@ -241,7 +256,30 @@ void main() {
     '/settings/docs',
     '/settings/terms',
     '/settings/maps',
+    '/settings/maps/new',
+    '/settings/maps/selftest',
     '/settings/tools',
+    // One route per tool: the sub-screens are separate layouts and two of
+    // them (stats, range) carry the widest readouts in the app.
+    '/settings/tools/stats',
+    '/settings/tools/ping',
+    '/settings/tools/trace',
+    '/settings/tools/discover',
+    '/settings/tools/soak',
+    '/settings/tools/range',
+    '/settings/voice',
+    '/settings/location',
+    '/settings/geofences',
+    '/settings/coverage',
+    // The docs reader renders long prose; it is the one route where a
+    // heading and a paragraph share a row.
+    '/docs/protocol',
+    '/docs/firmware',
+    '/docs/app',
+    '/docs/devices',
+    // A direct-message thread: a fixed-height chrome row and a composer sit
+    // under a long, unbroken public key.
+    '/dm/0000000000000000000000000000000000000000000000000000000000000000',
     // The three screens added by the field-operations and pairing waves. SOS
     // matters most here: it is used one-handed, under stress, often at 200 %.
     '/sos',
