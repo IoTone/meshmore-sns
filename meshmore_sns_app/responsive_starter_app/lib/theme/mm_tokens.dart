@@ -523,9 +523,15 @@ ThemeData buildMmTheme(MmTokens t, {String? fontFamily, MmShape? shape}) {
       // `t.hairline`, which is near-black on the calm presets and invisible.
       // 2 logical px of `fg` at low alpha reads as a chrome bar over the page
       // without becoming a decoration in its own right.
+      //
+      // On paper that same 22 % is 1.35:1, so the chrome had no boundary at all
+      // — the page simply continued under the tab strip. Paper takes the border
+      // tier at one pixel, which is also the rule a group header opens with, so
+      // the two coincide instead of stacking.
       shape: Border(
         bottom: BorderSide(
-            color: t.fg.withValues(alpha: .22), width: 2),
+            color: t.isLight ? t.line : t.fg.withValues(alpha: .22),
+            width: t.isLight ? 1 : 2),
       ),
     ),
     listTileTheme: ListTileThemeData(iconColor: t.fgMuted, textColor: t.fg),

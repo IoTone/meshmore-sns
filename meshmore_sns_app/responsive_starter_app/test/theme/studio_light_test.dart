@@ -222,6 +222,11 @@ void main() {
               .borderSide
               .color,
           t.line);
+      final BorderSide chrome =
+          (td.appBarTheme.shape! as Border).bottom;
+      expect(chrome.color, t.line,
+          reason: 'the app bar ends in a rule, and on paper it has to show');
+      expect(chrome.width, 1);
       // The segmented group is a control, so its edge is the border tier.
       final ButtonStyle seg = td.segmentedButtonTheme.style!;
       final BorderSide side = seg.side!.resolve(const <WidgetState>{})!;
