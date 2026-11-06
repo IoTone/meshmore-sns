@@ -4891,9 +4891,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get checkinTitle => 'Check-in';
 
   @override
-  String get checkinEntryTooltip => 'Check-in';
-
-  @override
   String get checkinIntro =>
       'One message with a deadline. The app marks it overdue here; the radio keeps no timer.';
 
@@ -5849,4 +5846,16 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get diagnosticsPositionNone => 'none';
+
+  @override
+  String get sosWordsOptional =>
+      'Optional — the default is used if you clear it.';
+
+  @override
+  String sosHoldSummary(Object channel) {
+    return 'Hold to send the words above to $channel, with your name and position.';
+  }
+
+  @override
+  String get sosUseDefaults => 'Use defaults';
 }

@@ -8308,12 +8308,6 @@ abstract class AppLocalizations {
   /// **'Check-in'**
   String get checkinTitle;
 
-  /// No description provided for @checkinEntryTooltip.
-  ///
-  /// In en, this message translates to:
-  /// **'Check-in'**
-  String get checkinEntryTooltip;
-
   /// No description provided for @checkinIntro.
   ///
   /// In en, this message translates to:
@@ -9837,6 +9831,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'none'**
   String get diagnosticsPositionNone;
+
+  /// No description provided for @sosWordsOptional.
+  ///
+  /// In en, this message translates to:
+  /// **'Optional — the default is used if you clear it.'**
+  String get sosWordsOptional;
+
+  /// No description provided for @sosHoldSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Hold to send the words above to {channel}, with your name and position.'**
+  String sosHoldSummary(Object channel);
+
+  /// No description provided for @sosUseDefaults.
+  ///
+  /// In en, this message translates to:
+  /// **'Use defaults'**
+  String get sosUseDefaults;
 }
 
 class _AppLocalizationsDelegate

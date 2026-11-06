@@ -2274,7 +2274,6 @@
   "sosRefusedTooLong": "名前と位置を含めると長すぎます。短くしてください。",
   "sosRefusedHold": "長押しが完了していません。",
   "checkinTitle": "チェックイン",
-  "checkinEntryTooltip": "チェックイン",
   "checkinIntro": "期限付きの1通のみ。期限切れはこのアプリが判断します。無線側にタイマーはありません。",
   "checkinInMinutes": "期限は {minutes} 分後",
   "checkinSend": "チェックインを送信",
@@ -2569,5 +2568,8 @@
   "diagnosticsPositionRadio": "無線機 {lat}, {lon}",
   "diagnosticsPositionPolicy": "位置広告の方針 {policy}",
   "diagnosticsPositionPhone": "スマートフォンの測位 {source}",
-  "diagnosticsPositionNone": "なし"
+  "diagnosticsPositionNone": "なし",
+  "sosWordsOptional": "任意 — 空にすると既定の文言で送信します。",
+  "sosHoldSummary": "長押しで、上の文言を名前と位置とともに {channel} へ送信します。",
+  "sosUseDefaults": "既定に戻す"
 }

@@ -29,6 +29,10 @@ Widget _host(MeshcoreController mc, ToolsController tools, Widget home,
     GoRoute(
         path: '/settings/tools/:tool',
         builder: (_, __) => const Scaffold(body: Text('tool page'))),
+    // Check-in is reached from this hub now that the alarm screen carries one
+    // control only (`sos_screen.dart`).
+    GoRoute(
+        path: '/checkin', builder: (_, __) => const Scaffold(body: Text('check-in page'))),
   ]);
   return MultiProvider(
     providers: [
@@ -75,6 +79,22 @@ void main() {
     await t.pumpAndSettle();
     expect(find.text('tool page'), findsOneWidget);
     expect(t.takeException(), isNull);
+    tools.dispose();
+    mc.dispose();
+  });
+
+  testWidgets('check-in is reachable from the hub, not the alarm screen',
+      (WidgetTester t) async {
+    final MeshcoreController mc = MeshcoreController(
+        transportFactory: () async => FakeMeshcoreTransport());
+    final ToolsController tools = ToolsController(mc);
+    await t.pumpWidget(_host(mc, tools, const ToolsHubScreen()));
+    await t.pumpAndSettle();
+
+    expect(find.byKey(const ValueKey<String>('tools-checkin')), findsOneWidget);
+    await t.tap(find.byKey(const ValueKey<String>('tools-checkin')));
+    await t.pumpAndSettle();
+    expect(find.text('check-in page'), findsOneWidget);
     tools.dispose();
     mc.dispose();
   });

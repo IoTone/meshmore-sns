@@ -4708,9 +4708,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get checkinTitle => 'チェックイン';
 
   @override
-  String get checkinEntryTooltip => 'チェックイン';
-
-  @override
   String get checkinIntro => '期限付きの1通のみ。期限切れはこのアプリが判断します。無線側にタイマーはありません。';
 
   @override
@@ -5622,4 +5619,15 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get diagnosticsPositionNone => 'なし';
+
+  @override
+  String get sosWordsOptional => '任意 — 空にすると既定の文言で送信します。';
+
+  @override
+  String sosHoldSummary(Object channel) {
+    return '長押しで、上の文言を名前と位置とともに $channel へ送信します。';
+  }
+
+  @override
+  String get sosUseDefaults => '既定に戻す';
 }
