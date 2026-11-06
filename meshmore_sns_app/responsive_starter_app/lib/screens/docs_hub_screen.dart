@@ -68,14 +68,14 @@ class DocsHubScreen extends StatelessWidget {
               subtitle: l.docsDevicesSub,
               onTap: () => context.push('/docs/devices'),
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: context.skin.space.screenEdge),
             Text(
               l.docsHubFooter,
               style: TextStyle(
                   fontFamily: context.skin.type.wordsMono,
                   fontSize: context.skin.type.size(10.5),
                   height: 1.5,
-                  color: cs.onSurfaceVariant.withValues(alpha: .8)),
+                  color: cs.onSurfaceVariant),
             ),
           ],
         ),
@@ -100,26 +100,35 @@ class _DocCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ColorScheme cs = Theme.of(context).colorScheme;
+    final MmSkin skin = context.skin;
+    // A card is a control here, so it is an object with a full-strength
+    // outline: at 40 % the border is 1.5:1 on paper and the card's only edge
+    // was a Material shadow, which a light ground renders as a grey smear under
+    // the text rather than as an edge.
     return Card(
-      margin: const EdgeInsets.only(bottom: 12),
+      elevation: 0,
+      color: skin.color.surface,
+      margin: EdgeInsets.only(bottom: skin.space.rowInset),
       shape: RoundedRectangleBorder(
-        borderRadius: mmRadius(context, 12),
-        side: BorderSide(color: cs.outline.withValues(alpha: .4)),
+        borderRadius: mmRadius(context, kRadiusMd),
+        side: BorderSide(color: skin.color.line, width: skin.shape.borderWidth),
       ),
       child: InkWell(
         borderRadius: mmRadius(context, 12),
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          padding: EdgeInsets.symmetric(
+              horizontal: skin.space.screenEdge,
+              vertical: skin.space.screenEdge),
           child: Row(
             children: <Widget>[
               Container(
-                width: 42,
-                height: 42,
+                width: skin.space.step(9) + skin.space.step(4),
+                height: skin.space.step(9) + skin.space.step(4),
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
                   color: cs.primary.withValues(alpha: .14),
-                  borderRadius: mmRadius(context, 10),
+                  borderRadius: mmRadius(context, kRadiusSm),
                 ),
                 child: Icon(icon, color: cs.primary, size: 22),
               ),
