@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../gen/app_localizations.dart';
+import '../theme/mm_skin.dart';
 import '../meshcore/meshcore_controller.dart';
 import '../sns/meshbook.dart';
 import '../ui/mm_shape.dart';
@@ -61,7 +62,7 @@ class MeshbookView extends StatelessWidget {
               child: Text('${l.meshbookTitle} · CH$ch · ${l.meshbookLast24h}',
                   style: TextStyle(
                       color: cs.primary,
-                      fontSize: 12,
+                      fontSize: context.skin.type.sizeBody,
                       letterSpacing: 2,
                       fontWeight: FontWeight.w600)),
             ),
@@ -88,18 +89,23 @@ class MeshbookView extends StatelessWidget {
           Text(
             l.meshbookStats(
                 day.total, day.replies, day.replyPercent, day.voices),
-            style: TextStyle(color: cs.onSurface, fontSize: 15),
+            style: TextStyle(
+                color: cs.onSurface, fontSize: context.skin.type.size(15)),
           ),
           const SizedBox(height: 18),
           Text(l.meshbookByHour,
               style: TextStyle(
-                  color: cs.onSurfaceVariant, fontSize: 11, letterSpacing: 2)),
+                  color: cs.onSurfaceVariant,
+                  fontSize: context.skin.type.sizeSm,
+                  letterSpacing: 2)),
           const SizedBox(height: 6),
           _Hourly(day: day, nowHour: now.hour, cs: cs),
           const SizedBox(height: 18),
           Text(l.meshbookTopVoices,
               style: TextStyle(
-                  color: cs.onSurfaceVariant, fontSize: 11, letterSpacing: 2)),
+                  color: cs.onSurfaceVariant,
+                  fontSize: context.skin.type.sizeSm,
+                  letterSpacing: 2)),
           const SizedBox(height: 6),
           for (int i = 0; i < day.top.length; i++)
             _VoiceRow(
@@ -113,7 +119,7 @@ class MeshbookView extends StatelessWidget {
             Text(l.meshbookTopics,
                 style: TextStyle(
                     color: cs.onSurfaceVariant,
-                    fontSize: 11,
+                    fontSize: context.skin.type.sizeSm,
                     letterSpacing: 2)),
             const SizedBox(height: 8),
             Wrap(
@@ -130,7 +136,8 @@ class MeshbookView extends StatelessWidget {
                     ),
                     child: Text('${t.term} ·${t.count}',
                         style: TextStyle(
-                            color: cs.onSurface, fontSize: 13)),
+                            color: cs.onSurface,
+                            fontSize: context.skin.type.sizeBodyLg)),
                   ),
               ],
             ),
@@ -187,8 +194,8 @@ class _Hourly extends StatelessWidget {
                     textAlign: TextAlign.center,
                     style: TextStyle(
                         color: cs.onSurfaceVariant,
-                        fontSize: 9,
-                        fontFamily: 'JetBrains Mono')),
+                        fontSize: context.skin.type.size(9),
+                        fontFamily: context.skin.type.monoFamily)),
               ),
           ],
         ),
@@ -224,8 +231,8 @@ class _VoiceRow extends StatelessWidget {
             child: Text('$rank',
                 style: TextStyle(
                     color: cs.onSurfaceVariant,
-                    fontFamily: 'JetBrains Mono',
-                    fontSize: 13)),
+                    fontFamily: context.skin.type.monoFamily,
+                    fontSize: context.skin.type.sizeBodyLg)),
           ),
           Expanded(
             child: Column(
@@ -253,13 +260,15 @@ class _VoiceRow extends StatelessWidget {
           Text('${sender.count}',
               style: TextStyle(
                   color: cs.onSurface,
-                  fontFamily: 'JetBrains Mono',
-                  fontSize: 14,
+                  fontFamily: context.skin.type.monoFamily,
+                  fontSize: context.skin.type.size(14),
                   fontWeight: FontWeight.w600)),
           if (sender.replies > 0) ...<Widget>[
             const SizedBox(width: 6),
             Text('↩${sender.replies}',
-                style: TextStyle(color: cs.onSurfaceVariant, fontSize: 11)),
+                style: TextStyle(
+                    color: cs.onSurfaceVariant,
+                    fontSize: context.skin.type.sizeSm)),
           ],
         ],
       ),

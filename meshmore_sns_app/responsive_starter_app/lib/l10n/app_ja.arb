@@ -1118,7 +1118,6 @@
   "gridViewTree": "メッシュツリー",
   "gridViewSnsCells": "SNS セル（ヒート）",
   "gridViewWeather": "気象（環境）",
-  "gridViewMeshbook": "メッシュブック（チャンネル活動）",
   "meshbookTitle": "メッシュブック",
   "meshbookLast24h": "直近24時間",
   "meshbookEmpty": "このチャンネルには直近24時間のメッセージがありません。",
@@ -1286,7 +1285,6 @@
       }
     }
   },
-  "snsCellsAwaitingFix": "位置情報を待機中 — ヒートマップは自分を中心に表示されます。",
   "snsCellsClear": "クリア",
   "snsCellsStatus": "{active} セル · {hot} ホット",
   "@snsPlacesButton": {
@@ -2531,7 +2529,6 @@
   "gridPurposeTree": "ノード同士の経路（広告されたルートより）。",
   "gridPurposeSnsCells": "メッセージの発信元を直近1時間で。",
   "gridPurposeElevation": "各ノードの高度を地形と比較して。",
-  "gridPurposeMeshbook": "このチャンネルの直近1日: メッセージ・返信・主な発言者。",
   "meshTreeCounts": "表示 {shown} · 入力 {input} · 合計 {total}",
   "@meshTreeCounts": {
     "placeholders": {
@@ -2560,5 +2557,6 @@
   "mapLocationAllow": "位置情報を許可",
   "mapLocationBlockedApp": "このアプリの位置情報がブロックされています。",
   "mapLocationOpenSettings": "設定を開く",
-  "mapLocationOffDevice": "この端末の位置情報がオフです。"
+  "mapLocationOffDevice": "この端末の位置情報がオフです。",
+  "weatherOpenTelemetrySettings": "ノードのテレメトリを有効にする"
 }

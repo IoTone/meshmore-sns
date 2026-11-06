@@ -3374,12 +3374,6 @@ abstract class AppLocalizations {
   /// **'Weather (environment)'**
   String get gridViewWeather;
 
-  /// No description provided for @gridViewMeshbook.
-  ///
-  /// In en, this message translates to:
-  /// **'Meshbook (channel activity)'**
-  String get gridViewMeshbook;
-
   /// No description provided for @meshbookTitle.
   ///
   /// In en, this message translates to:
@@ -3739,12 +3733,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{h}h ago'**
   String weatherAgoHours(int h);
-
-  /// No description provided for @snsCellsAwaitingFix.
-  ///
-  /// In en, this message translates to:
-  /// **'Waiting for a location fix — the heat map centres on you.'**
-  String get snsCellsAwaitingFix;
 
   /// No description provided for @snsCellsClear.
   ///
@@ -9538,12 +9526,6 @@ abstract class AppLocalizations {
   /// **'How high each node is, against landmarks.'**
   String get gridPurposeElevation;
 
-  /// No description provided for @gridPurposeMeshbook.
-  ///
-  /// In en, this message translates to:
-  /// **'What this channel did in the last day: messages, replies, top voices.'**
-  String get gridPurposeMeshbook;
-
   /// No description provided for @meshTreeCounts.
   ///
   /// In en, this message translates to:
@@ -9597,6 +9579,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Location is off on this phone.'**
   String get mapLocationOffDevice;
+
+  /// No description provided for @weatherOpenTelemetrySettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn on node telemetry'**
+  String get weatherOpenTelemetrySettings;
 }
 
 class _AppLocalizationsDelegate

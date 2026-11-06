@@ -8,6 +8,7 @@ import 'package:latlong2/latlong.dart' hide Path;
 import 'package:provider/provider.dart';
 
 import '../gen/app_localizations.dart';
+import '../theme/mm_skin.dart';
 import '../maps/basemap.dart';
 import '../maps/map_source.dart';
 import '../meshcore/coverage_store.dart';
@@ -313,9 +314,9 @@ class _FabricSurveyViewState extends State<FabricSurveyView> {
                 l.fabricCoverageCount(cells.length),
                 style: TextStyle(
                     color: cs.primary,
-                    fontSize: 11,
+                    fontSize: context.skin.type.sizeSm,
                     letterSpacing: 1,
-                    fontFamily: 'JetBrains Mono',
+                    fontFamily: context.skin.type.monoFamily,
                     fontWeight: FontWeight.w600),
               ),
             ),
@@ -339,7 +340,7 @@ class _FabricSurveyViewState extends State<FabricSurveyView> {
                   Text(l.globePaused,
                       style: TextStyle(
                           color: cs.onTertiaryContainer,
-                          fontSize: 10,
+                          fontSize: context.skin.type.sizeMicro,
                           letterSpacing: 1)),
                 ],
               ),

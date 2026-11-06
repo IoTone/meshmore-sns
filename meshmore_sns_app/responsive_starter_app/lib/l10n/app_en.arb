@@ -1228,7 +1228,6 @@
   "gridViewTree": "Mesh tree",
   "gridViewSnsCells": "SNS cells (heat)",
   "gridViewWeather": "Weather (environment)",
-  "gridViewMeshbook": "Meshbook (channel activity)",
   "meshbookTitle": "MESHBOOK",
   "meshbookLast24h": "last 24h",
   "meshbookEmpty": "No messages on this channel in the last 24h.",
@@ -1396,7 +1395,6 @@
       }
     }
   },
-  "snsCellsAwaitingFix": "Waiting for a location fix — the heat map centres on you.",
   "snsCellsClear": "Clear",
   "snsCellsStatus": "{active} cells · {hot} hot",
   "@snsPlacesButton": {
@@ -3902,7 +3900,6 @@
   "gridPurposeTree": "How nodes reach each other, from the routes they advertise.",
   "gridPurposeSnsCells": "Where messages came from, cooling over the last hour.",
   "gridPurposeElevation": "How high each node is, against landmarks.",
-  "gridPurposeMeshbook": "What this channel did in the last day: messages, replies, top voices.",
   "meshTreeCounts": "{shown} shown · {input} in · {total} total",
   "@meshTreeCounts": {
     "placeholders": {
@@ -3931,5 +3928,9 @@
   "mapLocationAllow": "Allow location",
   "mapLocationBlockedApp": "Location is blocked for this app.",
   "mapLocationOpenSettings": "Open settings",
-  "mapLocationOffDevice": "Location is off on this phone."
+  "mapLocationOffDevice": "Location is off on this phone.",
+  "@mapNoFixBanner": {
+    "description": "R69: quiet banner on the Map tab when there is no position fix."
+  },
+  "weatherOpenTelemetrySettings": "Turn on node telemetry"
 }

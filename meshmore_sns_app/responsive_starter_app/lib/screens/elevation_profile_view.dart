@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../gen/app_localizations.dart';
+import '../theme/mm_skin.dart';
 import '../meshcore/discovered_node.dart';
 import '../meshcore/meshcore_controller.dart';
 import '../ui/mm_shape.dart';
@@ -65,8 +66,14 @@ class _ElevationProfileViewState extends State<ElevationProfileView>
     });
   }
 
+  /// The polling indicator's reset. Held so a view that is closed before it
+  /// fires cannot leave a timer behind: a delayed future that touches
+  /// `setState` after disposal is a leak the harness (and a real device) sees.
+  Timer? _pollReset;
+
   @override
   void dispose() {
+    _pollReset?.cancel();
     _scan.dispose();
     super.dispose();
   }
@@ -83,7 +90,8 @@ class _ElevationProfileViewState extends State<ElevationProfileView>
     // Always flash the polling indicator so the tap has visible
     // feedback even when the altitude comes back unchanged.
     setState(() => _polling = true);
-    Future<void>.delayed(const Duration(seconds: 2), () {
+    _pollReset?.cancel();
+    _pollReset = Timer(const Duration(seconds: 2), () {
       if (mounted) setState(() => _polling = false);
     });
   }
@@ -132,6 +140,7 @@ class _ElevationProfileViewState extends State<ElevationProfileView>
             return SizedBox.expand(
               child: CustomPaint(
                 painter: _ElevationProfilePainter(
+                  type: context.skin.type,
                   selfAltMeters: selfAlt,
                   peers: peers,
                   peerAltOverrides: peerAlt,
@@ -186,8 +195,8 @@ class _ElevationProfileViewState extends State<ElevationProfileView>
                 child: DefaultTextStyle(
                   style: TextStyle(
                     color: cs.onSurface,
-                    fontSize: 10,
-                    fontFamily: 'JetBrains Mono',
+                    fontSize: context.skin.type.sizeMicro,
+                    fontFamily: context.skin.type.monoFamily,
                     letterSpacing: 1,
                   ),
                   child: Column(
@@ -264,7 +273,11 @@ double _altToYOffset(double altMeters, double pxPerSqrtMeter) {
 }
 
 class _ElevationProfilePainter extends CustomPainter {
+  /// The skin's type roles, passed in because a painter has no [BuildContext].
+  final MmType type;
+
   _ElevationProfilePainter({
+    required this.type,
     required this.selfAltMeters,
     required this.peers,
     required this.peerAltOverrides,
@@ -391,9 +404,9 @@ class _ElevationProfilePainter extends CustomPainter {
               : '${meLabel.toUpperCase()} ALT?',
           style: TextStyle(
               color: warn,
-              fontSize: 10,
+              fontSize: type.sizeMicro,
               letterSpacing: 1,
-              fontFamily: 'JetBrains Mono',
+              fontFamily: type.monoFamily,
               fontWeight: FontWeight.w700),
         ),
         textDirection: TextDirection.ltr,
@@ -465,9 +478,9 @@ class _ElevationProfilePainter extends CustomPainter {
             '$unknownCount $unknownLabel',
         style: TextStyle(
             color: accentDim,
-            fontSize: 9,
+            fontSize: type.size(9),
             letterSpacing: 2,
-            fontFamily: 'JetBrains Mono'),
+            fontFamily: type.monoFamily),
       ),
       textDirection: TextDirection.ltr,
     )..layout();
@@ -502,9 +515,9 @@ class _ElevationProfilePainter extends CustomPainter {
         text: '[ $header ]',
         style: TextStyle(
             color: accent,
-            fontSize: 11,
+            fontSize: type.sizeSm,
             letterSpacing: 3,
-            fontFamily: 'JetBrains Mono',
+            fontFamily: type.monoFamily,
             fontWeight: FontWeight.w700),
       ),
       textDirection: TextDirection.ltr,
@@ -535,9 +548,9 @@ class _ElevationProfilePainter extends CustomPainter {
         text: altLabel.toUpperCase(),
         style: TextStyle(
             color: accentDim,
-            fontSize: 9,
+            fontSize: type.size(9),
             letterSpacing: 2,
-            fontFamily: 'JetBrains Mono'),
+            fontFamily: type.monoFamily),
       ),
       textDirection: TextDirection.ltr,
     )..layout();
@@ -564,9 +577,9 @@ class _ElevationProfilePainter extends CustomPainter {
           text: a < 1000 ? '${a.round()} m' : '${(a / 1000).toStringAsFixed(1)} km',
           style: TextStyle(
               color: accent,
-              fontSize: 9,
+              fontSize: type.size(9),
               letterSpacing: 1,
-              fontFamily: 'JetBrains Mono'),
+              fontFamily: type.monoFamily),
         ),
         textDirection: TextDirection.ltr,
       )..layout();
@@ -585,9 +598,9 @@ class _ElevationProfilePainter extends CustomPainter {
             : '${(r.altMeters / 1000).toStringAsFixed(1)}km'}',
         style: TextStyle(
             color: accent,
-            fontSize: 9,
+            fontSize: type.size(9),
             letterSpacing: 1,
-            fontFamily: 'JetBrains Mono'),
+            fontFamily: type.monoFamily),
       ),
       textDirection: TextDirection.ltr,
     )..layout();
@@ -627,9 +640,9 @@ class _ElevationProfilePainter extends CustomPainter {
         text: '/ ${unknownLabel.toUpperCase()}',
         style: TextStyle(
             color: accentDim,
-            fontSize: 8,
+            fontSize: type.size(8),
             letterSpacing: 2,
-            fontFamily: 'JetBrains Mono'),
+            fontFamily: type.monoFamily),
       ),
       textDirection: TextDirection.ltr,
     )..layout();

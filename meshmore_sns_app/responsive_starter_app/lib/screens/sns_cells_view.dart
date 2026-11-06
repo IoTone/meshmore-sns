@@ -8,6 +8,7 @@ import 'package:flutter/scheduler.dart';
 import 'package:provider/provider.dart';
 
 import '../gen/app_localizations.dart';
+import 'grid_notice.dart';
 import '../meshcore/coverage_store.dart';
 import '../meshcore/discovered_node.dart';
 import '../meshcore/meshcore_controller.dart';
@@ -156,15 +157,9 @@ class _SnsCellsViewState extends State<SnsCellsView>
     final double? selfLon = own?.longitude;
 
     if (selfLat == null || selfLon == null) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Text(
-            l.snsCellsAwaitingFix,
-            textAlign: TextAlign.center,
-            style: TextStyle(color: cs.onSurfaceVariant),
-          ),
-        ),
+      return GridNotice(
+        message: l.gridNeedsFix,
+        icon: Icons.location_searching,
       );
     }
 
@@ -198,6 +193,7 @@ class _SnsCellsViewState extends State<SnsCellsView>
             boundaryMargin: const EdgeInsets.all(800),
             child: CustomPaint(
               painter: _SnsCellsPainter(
+                type: context.skin.type,
                 selfLat: selfLat,
                 selfLon: selfLon,
                 maxHalfMeters: _frame.maxHalfMeters,
@@ -277,8 +273,8 @@ class _SnsCellsViewState extends State<SnsCellsView>
               l.snsCellsStatus(heat.length, hotCells),
               style: TextStyle(
                 color: cs.onSurface,
-                fontSize: 10,
-                fontFamily: 'JetBrains Mono',
+                fontSize: context.skin.type.sizeMicro,
+                fontFamily: context.skin.type.monoFamily,
                 letterSpacing: 1,
               ),
             ),
@@ -316,6 +312,7 @@ class _SnsCellsViewState extends State<SnsCellsView>
 
 class _SnsCellsPainter extends CustomPainter {
   _SnsCellsPainter({
+    required this.type,
     required this.selfLat,
     required this.selfLon,
     required this.maxHalfMeters,
@@ -337,6 +334,9 @@ class _SnsCellsPainter extends CustomPainter {
     required this.toastBorder,
     required this.bg,
   });
+
+  /// The skin's type roles, passed in because a painter has no [BuildContext].
+  final MmType type;
 
   final double selfLat;
   final double selfLon;
@@ -708,9 +708,9 @@ class _SnsCellsPainter extends CustomPainter {
         text: text,
         style: TextStyle(
           color: (onHot ? Colors.white : Colors.black).withValues(alpha: .85),
-          fontSize: 10,
+          fontSize: type.sizeMicro,
           fontWeight: FontWeight.w700,
-          fontFamily: 'JetBrains Mono',
+          fontFamily: type.monoFamily,
           shadows: <Shadow>[
             Shadow(
                 color: (onHot ? Colors.black : Colors.white)
@@ -734,7 +734,7 @@ class _SnsCellsPainter extends CustomPainter {
         text: trimmed,
         style: TextStyle(
           color: label.withValues(alpha: opacity),
-          fontSize: 11,
+          fontSize: type.sizeSm,
           fontWeight: FontWeight.w600,
         ),
       ),

@@ -1975,9 +1975,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get gridViewWeather => 'Weather (environment)';
 
   @override
-  String get gridViewMeshbook => 'Meshbook (channel activity)';
-
-  @override
   String get meshbookTitle => 'MESHBOOK';
 
   @override
@@ -2190,10 +2187,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String weatherAgoHours(int h) {
     return '${h}h ago';
   }
-
-  @override
-  String get snsCellsAwaitingFix =>
-      'Waiting for a location fix — the heat map centres on you.';
 
   @override
   String get snsCellsClear => 'Clear';
@@ -5662,10 +5655,6 @@ class AppLocalizationsEn extends AppLocalizations {
       'How high each node is, against landmarks.';
 
   @override
-  String get gridPurposeMeshbook =>
-      'What this channel did in the last day: messages, replies, top voices.';
-
-  @override
   String meshTreeCounts(String shown, String input, String total) {
     return '$shown shown · $input in · $total total';
   }
@@ -5693,4 +5682,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mapLocationOffDevice => 'Location is off on this phone.';
+
+  @override
+  String get weatherOpenTelemetrySettings => 'Turn on node telemetry';
 }

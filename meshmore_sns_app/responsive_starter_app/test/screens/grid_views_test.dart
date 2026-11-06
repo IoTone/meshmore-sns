@@ -14,7 +14,6 @@ import 'package:meshmore_sns_app/screens/fabric_survey_view.dart';
 import 'package:meshmore_sns_app/screens/globe_view.dart';
 import 'package:meshmore_sns_app/screens/grid_screen.dart';
 import 'package:meshmore_sns_app/screens/mesh_tree_view.dart';
-import 'package:meshmore_sns_app/screens/meshbook_view.dart';
 import 'package:meshmore_sns_app/screens/sns_cells_view.dart';
 import 'package:meshmore_sns_app/screens/weather_view.dart';
 import 'package:meshmore_sns_app/shell/horizontal_drag_claim.dart';
@@ -97,7 +96,6 @@ void main() {
     expect(find.text('Globe'), findsOneWidget);
     expect(find.text('Mesh tree'), findsOneWidget);
     expect(find.text('Altitude'), findsOneWidget);
-    expect(find.text('Meshbook (channel activity)'), findsOneWidget);
     await t.pumpWidget(const SizedBox());
     mc.dispose();
   });
@@ -174,9 +172,7 @@ void main() {
     expect(find.byType(MeshTreeView), findsOneWidget);
     await _openView(t, 'Altitude', more: true);
     expect(find.byType(ElevationProfileView), findsOneWidget);
-    await _openView(t, 'Meshbook (channel activity)', more: true);
-    expect(find.byType(MeshbookView), findsOneWidget);
-    // SNS cells is the ninth row in More views.
+    // SNS cells is the last row in More views.
     await _openView(t, 'SNS cells (heat)', more: true);
     expect(find.byType(SnsCellsView), findsOneWidget);
 

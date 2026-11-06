@@ -30,6 +30,7 @@ import '../places/place.dart';
 import '../places/place_echo.dart';
 import '../places/place_store.dart';
 import 'delivery_status_icon.dart';
+import 'meshbook_view.dart';
 import '../meshcore/meshcore_controller.dart';
 import '../chat/history_retention_notice.dart';
 import '../chat/history_unreadable_notice.dart';
@@ -378,6 +379,34 @@ class _ChatScreenState extends State<ChatScreen>
     }
   }
 
+  /// The channel's own activity report — its last 24 h, in a sheet.
+  ///
+  /// It used to be one entry in the grid's view picker, which is a page about
+  /// where things are; a report about this channel belongs on this channel,
+  /// one tap from the strip that names it.
+  void _openActivity() {
+    final AppLocalizations l = AppLocalizations.of(context);
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (BuildContext ctx) => SizedBox(
+        height: MediaQuery.sizeOf(ctx).height * 0.7,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            Padding(
+              padding: EdgeInsets.fromLTRB(16, 0, 16, 8),
+              child: Text(l.meshbookTitle,
+                  style: Theme.of(ctx).textTheme.titleMedium),
+            ),
+            const Expanded(child: MeshbookView()),
+          ],
+        ),
+      ),
+    );
+  }
+
   Future<void> _openSearch(MeshcoreController mc) async {
     final String? id = await context.push<String>('/chat/search');
     if (id == null || !mounted) return;
@@ -706,6 +735,17 @@ class _ChatScreenState extends State<ChatScreen>
                     icon: const Icon(Icons.settings_backup_restore),
                   ),
                 ),
+              // This channel's activity report, one tap from the strip that
+              // names the channel it describes.
+              Padding(
+                padding: const EdgeInsets.only(left: 4),
+                child: IconButton(
+                  key: const ValueKey<String>('chat-activity'),
+                  tooltip: l.meshbookTitle,
+                  onPressed: _openActivity,
+                  icon: const Icon(Icons.insights),
+                ),
+              ),
               // Manage channels: a chip, not a "#" icon next to the
               // channel chips, where two different meanings of "channel"
               // sat side by side.

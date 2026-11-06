@@ -1886,9 +1886,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get gridViewWeather => '気象（環境）';
 
   @override
-  String get gridViewMeshbook => 'メッシュブック（チャンネル活動）';
-
-  @override
   String get meshbookTitle => 'メッシュブック';
 
   @override
@@ -2099,9 +2096,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String weatherAgoHours(int h) {
     return '$h時間前';
   }
-
-  @override
-  String get snsCellsAwaitingFix => '位置情報を待機中 — ヒートマップは自分を中心に表示されます。';
 
   @override
   String get snsCellsClear => 'クリア';
@@ -5436,9 +5430,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get gridPurposeElevation => '各ノードの高度を地形と比較して。';
 
   @override
-  String get gridPurposeMeshbook => 'このチャンネルの直近1日: メッセージ・返信・主な発言者。';
-
-  @override
   String meshTreeCounts(String shown, String input, String total) {
     return '表示 $shown · 入力 $input · 合計 $total';
   }
@@ -5466,4 +5457,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get mapLocationOffDevice => 'この端末の位置情報がオフです。';
+
+  @override
+  String get weatherOpenTelemetrySettings => 'ノードのテレメトリを有効にする';
 }
