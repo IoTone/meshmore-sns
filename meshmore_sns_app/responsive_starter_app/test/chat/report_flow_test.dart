@@ -119,17 +119,16 @@ void main() {
 
   testWidgets('the reader can hand the file to another app',
       (WidgetTester t) async {
-    final ChatMessage m =
-        ChatMessage(channelIdx: 0, text: 'Trent: follow the treeline', outgoing: false);
+    final ChatMessage m = ChatMessage(
+        channelIdx: 0, text: 'Trent: follow the treeline', outgoing: false);
     await t.pumpWidget(wrap(Builder(
       builder: (BuildContext ctx) => TextButton(
-        onPressed: () => reportMessage(ctx, m,
-            threadName: 'Public',
+        onPressed: () => reportMessage(ctx, m, threadName: 'Public',
             write: (Map<String, Object?> bundle) async {
-              final File f = File('${dir.path}/bundle.json')
-                ..writeAsStringSync(jsonEncode(bundle));
-              return f;
-            }),
+          final File f = File('${dir.path}/bundle.json')
+            ..writeAsStringSync(jsonEncode(bundle));
+          return f;
+        }),
         child: const Text('open'),
       ),
     )));
@@ -144,13 +143,11 @@ void main() {
     // the way Android does when a share sheet opens.
     final MethodChannel channel = Share.channel;
     final List<MethodCall> calls = <MethodCall>[];
-    t.binding.defaultBinaryMessenger.setMockMethodCallHandler(
-      channel,
-      (MethodCall call) async {
-        calls.add(call);
-        return true;
-      },
-    );
+    t.binding.defaultBinaryMessenger.setMockMethodCallHandler(channel,
+        (MethodCall call) async {
+      calls.add(call);
+      return true;
+    });
     addTearDown(() => t.binding.defaultBinaryMessenger
         .setMockMethodCallHandler(channel, null));
 
@@ -173,13 +170,12 @@ void main() {
         ChatMessage(channelIdx: 0, text: 'Trudy: hi', outgoing: false);
     await t.pumpWidget(wrap(Builder(
       builder: (BuildContext ctx) => TextButton(
-        onPressed: () => reportMessage(ctx, m,
-            threadName: 'Public',
+        onPressed: () => reportMessage(ctx, m, threadName: 'Public',
             write: (Map<String, Object?> bundle) async {
-              final File f = File('${dir.path}/bundle.json')
-                ..writeAsStringSync(jsonEncode(bundle));
-              return f;
-            }),
+          final File f = File('${dir.path}/bundle.json')
+            ..writeAsStringSync(jsonEncode(bundle));
+          return f;
+        }),
         child: const Text('open'),
       ),
     )));

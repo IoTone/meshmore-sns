@@ -971,8 +971,7 @@ class _ChatScreenState extends State<ChatScreen>
                                     // one, and a named "cannot read a photo"
                                     // state where it does not, so a harness
                                     // never reaches a plugin.
-                                    source: context
-                                            .read<MediaPhotoSource?>() ??
+                                    source: context.read<MediaPhotoSource?>() ??
                                         kNoMediaPhotoSource,
                                     channelPsk: mc.channelPsk(mc.activeChannel),
                                     byteBudget: kMediaPhotoBudgetBytes,

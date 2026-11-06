@@ -72,7 +72,8 @@ abstract final class HistoryExport {
     final Map<String, List<Map<String, Object?>>> byThread =
         <String, List<Map<String, Object?>>>{};
     for (final ChatMessage m in messages) {
-      byThread.putIfAbsent(threadKeyOf(m), () => <Map<String, Object?>>[])
+      byThread
+          .putIfAbsent(threadKeyOf(m), () => <Map<String, Object?>>[])
           .add(m.toJson());
     }
     if (byThread.isEmpty) {
@@ -139,9 +140,8 @@ abstract final class HistoryExport {
       if (decoded is! List) {
         throw const ExportRefused('the thread payload is not a message list');
       }
-      out.addAll(decoded
-          .whereType<Map<String, Object?>>()
-          .map(ChatMessage.fromJson));
+      out.addAll(
+          decoded.whereType<Map<String, Object?>>().map(ChatMessage.fromJson));
     }
     if (out.isEmpty) {
       throw const ExportRefused('the file holds no conversation');
@@ -181,8 +181,7 @@ abstract final class HistoryExport {
   }) =>
       Isolate.run(() => decodeFile(bytes: bytes, passphrase: passphrase));
 
-  static String _peerPrefix(String peerPubKeyHex) =>
-      peerPubKeyHex.length >= 12
-          ? peerPubKeyHex.substring(0, 12)
-          : peerPubKeyHex;
+  static String _peerPrefix(String peerPubKeyHex) => peerPubKeyHex.length >= 12
+      ? peerPubKeyHex.substring(0, 12)
+      : peerPubKeyHex;
 }

@@ -58,9 +58,8 @@ Future<void> exportAllHistory(
   } on ExportRefused catch (e) {
     if (!context.mounted) return;
     ScaffoldMessenger.maybeOf(context)?.showSnackBar(SnackBar(
-        content: Text(rows.isEmpty
-            ? l.settingsHistoryExportEmpty
-            : l.chatExportFailed)));
+        content: Text(
+            rows.isEmpty ? l.settingsHistoryExportEmpty : l.chatExportFailed)));
     // The refusal's own words are for the field log, not the user.
     meshLog('history', 'export refused: ${e.reason}');
   }

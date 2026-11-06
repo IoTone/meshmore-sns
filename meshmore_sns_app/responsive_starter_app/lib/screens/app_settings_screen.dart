@@ -321,6 +321,18 @@ class AppSettingsScreen extends StatelessWidget {
             trailing: const Icon(Icons.ios_share),
             onTap: () => exportAllHistory(context, mc),
           ),
+          // A backup is the opposite promise to the per-conversation export:
+          // that one hands over this thread only, this one hands over
+          // everything, which is what restore reads.
+          ListTile(
+            key: const ValueKey<String>('settings-export-history'),
+            leading: const Icon(Icons.save_alt),
+            title: Text(l.settingsHistoryExportRow),
+            subtitle: Text(l.settingsHistoryExportSubtitle,
+                style: TextStyle(color: cs.onSurface.withValues(alpha: .6))),
+            trailing: const Icon(Icons.ios_share),
+            onTap: () => exportAllHistory(context, mc),
+          ),
           // The terms text is a commitment; this row is how a user reads it
           // again without having a way to un-agree retroactively.
           ListTile(

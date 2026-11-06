@@ -51,7 +51,8 @@ void main() {
       key: HistoryExport.channelKey(2),
     );
     expect(back, hasLength(4));
-    expect(back.map((ChatMessage m) => m.text), rows.map((ChatMessage m) => m.text));
+    expect(back.map((ChatMessage m) => m.text),
+        rows.map((ChatMessage m) => m.text));
     expect(back.every((ChatMessage m) => m.channelIdx == 2), isTrue);
   });
 
@@ -82,8 +83,7 @@ void main() {
       passphrase: 'pw',
       iterations: iterations,
     );
-    final Map<String, Uint8List> records =
-        StoreExport.decode(file, 'pw');
+    final Map<String, Uint8List> records = StoreExport.decode(file, 'pw');
     expect(records.keys, <String>['thread:ch:1']);
     expect(utf8.decode(records.values.single), isNot(contains('channel 0')));
   });
@@ -218,8 +218,8 @@ void main() {
           passphrase: 'pw',
           iterations: iterations,
         ),
-        throwsA(isA<ExportRefused>().having((ExportRefused e) => e.reason,
-            'reason', contains('no history'))),
+        throwsA(isA<ExportRefused>().having(
+            (ExportRefused e) => e.reason, 'reason', contains('no history'))),
       );
     });
 
