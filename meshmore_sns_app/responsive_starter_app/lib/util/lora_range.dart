@@ -59,6 +59,16 @@ double estimatedPeerReachMeters({
   double clampMin = 200.0,
   double clampMax = 20000.0,
 }) {
+  // A non-finite input is not a measurement. `clamp` propagates NaN, and a
+  // NaN radius reaching the map library's circle painter crashes it (see
+  // [estimatedLoraRangeMeters]), so the bad value is dropped here instead.
+  final double? rssi =
+      (rssiDbm != null && rssiDbm.isFinite) ? rssiDbm : null;
+  final double? distance = (distanceMeters != null &&
+          distanceMeters.isFinite &&
+          distanceMeters > 0)
+      ? distanceMeters
+      : null;
   final double sensitivity = loraSensitivityDbm(
       spreadingFactor: ourSpreadingFactor, bandwidthKhz: ourBandwidthKhz);
   final double anchor = estimatedLoraRangeMeters(
@@ -69,24 +79,24 @@ double estimatedPeerReachMeters({
   final double typeMult = peerReachTypeMultiplier(peerType);
 
   // Path 1: RSSI + distance (most precise — log-distance path-loss).
-  if (rssiDbm != null && distanceMeters != null && distanceMeters > 0) {
-    final double headroom = rssiDbm - sensitivity;
-    if (headroom <= 0) return distanceMeters.clamp(clampMin, clampMax);
-    final double reach = distanceMeters *
+  if (rssi != null && distance != null) {
+    final double headroom = rssi - sensitivity;
+    if (headroom <= 0) return distance.clamp(clampMin, clampMax);
+    final double reach = distance *
         math.pow(10.0, headroom / (10.0 * pathLossExponent)).toDouble();
-    return reach.clamp(clampMin, clampMax);
+    return reach.isFinite ? reach.clamp(clampMin, clampMax) : clampMin;
   }
 
   // Path 2: RSSI only — coarse RSSI bin scaled by type.
-  if (rssiDbm != null) {
+  if (rssi != null) {
     final double binned;
-    if (rssiDbm > -75) {
+    if (rssi > -75) {
       binned = 5000.0;
-    } else if (rssiDbm > -90) {
+    } else if (rssi > -90) {
       binned = 2500.0;
-    } else if (rssiDbm > -105) {
+    } else if (rssi > -105) {
       binned = 1200.0;
-    } else if (rssiDbm > -115) {
+    } else if (rssi > -115) {
       binned = 600.0;
     } else {
       binned = 300.0;
@@ -99,10 +109,8 @@ double estimatedPeerReachMeters({
   // further than the point where we happen to be" and take the max
   // with the type-scaled anchor so a known-repeater nearby still gets
   // a big circle.
-  if (distanceMeters != null && distanceMeters > 0) {
-    return math
-        .max(distanceMeters * 1.5, anchor * typeMult)
-        .clamp(clampMin, clampMax);
+  if (distance != null) {
+    return math.max(distance * 1.5, anchor * typeMult).clamp(clampMin, clampMax);
   }
 
   // Path 4: nothing known about the peer beyond its type — anchor ×
@@ -174,11 +182,22 @@ double estimatedLoraRangeMeters({
       math.pow(2.0, (spreadingFactor - refSf) * 0.5).toDouble();
 
   // Halving BW yields √2× range; widening cuts it by the same.
-  final double bwFactor = math.sqrt(refBwKhz / bandwidthKhz);
+  //
+  // A bandwidth of zero is not a narrow channel, it is a radio that has not
+  // been configured (a SelfInfo read before the config lands reports 0). The
+  // division would make this infinite, and an infinite radius reaches the map
+  // library as a NaN offset — which crashes its circle painter outright
+  // (`flutter_map` painter.dart:62 groups points by a NaN radius key, and NaN
+  // never matches itself). Treat an unset radio as the reference channel
+  // instead of poisoning everything downstream with a non-finite number.
+  final double bw = bandwidthKhz > 0 ? bandwidthKhz : refBwKhz;
+  final double bwFactor = math.sqrt(refBwKhz / bw);
 
   // Free-space rule: 6 dB doubles range. Each dB → 10^(1/20).
   final double txFactor =
       math.pow(10.0, (txPowerDbm - refTxDbm) / 20.0).toDouble();
 
-  return baseRangeM * sfFactor * bwFactor * txFactor;
+  final double range = baseRangeM * sfFactor * bwFactor * txFactor;
+  if (!range.isFinite) return baseRangeM;
+  return range;
 }

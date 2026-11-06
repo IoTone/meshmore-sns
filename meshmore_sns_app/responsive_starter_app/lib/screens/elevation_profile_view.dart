@@ -10,6 +10,7 @@ import '../gen/app_localizations.dart';
 import '../theme/mm_skin.dart';
 import '../meshcore/discovered_node.dart';
 import '../meshcore/meshcore_controller.dart';
+import '../ui/mm_components.dart';
 import '../ui/mm_shape.dart';
 
 /// R45 — exploratory altitude-profile view. **Not** meant to be
@@ -71,6 +72,11 @@ class _ElevationProfileViewState extends State<ElevationProfileView>
   /// `setState` after disposal is a leak the harness (and a real device) sees.
   Timer? _pollReset;
 
+  /// How many peers one tap asks. Every request is one unicast over the air,
+  /// so a view full of nodes must not turn one tap into twenty transmissions.
+  /// The controller's own cache, in-flight and attempt rules do the rest.
+  static const int _askBatch = 8;
+
   @override
   void dispose() {
     _pollReset?.cancel();
@@ -95,6 +101,34 @@ class _ElevationProfileViewState extends State<ElevationProfileView>
       if (mounted) setState(() => _polling = false);
     });
   }
+
+  /// Ask the peers that have no altitude yet, up to [_askBatch] of them.
+  ///
+  /// Until this existed the view's own legend promised that dots are "plotted
+  /// at their altitude once asked", and nothing ever asked: the only way a
+  /// peer left the unknown band was telemetry arriving for some other reason.
+  /// A view that waits for data no surface requests is the unfinished case the
+  /// owner reported.
+  Future<void> _askNodesElevation(MeshcoreController mc) async {
+    final List<DiscoveredNode> missing = <DiscoveredNode>[
+      for (final DiscoveredNode n in mc.nodes)
+        if (n.pubKeyHex != mc.ownPubKeyHex &&
+            n.altitudeMeters == null &&
+            mc.telemetryFor(n.pubKeyHex)?.altitudeMeters == null &&
+            !mc.isQueryingTelemetry(n.pubKeyHex))
+          n,
+    ].take(_askBatch).toList();
+    if (missing.isEmpty) return;
+    setState(() => _asking = true);
+    for (final DiscoveredNode n in missing) {
+      await mc.requestPeerTelemetry(n.pubKeyHex,
+          cacheFor: const Duration(minutes: 5), maxAttempts: 3);
+    }
+    if (!mounted) return;
+    setState(() => _asking = false);
+  }
+
+  bool _asking = false;
 
   @override
   Widget build(BuildContext context) {
@@ -233,6 +267,40 @@ class _ElevationProfileViewState extends State<ElevationProfileView>
                   ),
                 ),
               ),
+            ),
+          ),
+        ),
+        // The one action this view owed: ask the peers that have no altitude.
+        // It sits under the self chip so the two refreshes read as the same
+        // kind of thing, and it disappears when there is nothing to ask.
+        if (peers.any((DiscoveredNode n) =>
+            n.pubKeyHex != mc.ownPubKeyHex &&
+            peerAlt[n.pubKeyHex] == null))
+          Positioned(
+            left: 12,
+            top: 132,
+            child: MmAction(
+              key: const ValueKey<String>('elevation-ask-nodes'),
+              icon: Icons.height,
+              label: _asking ? l.elevationAsking : l.elevationAskNodes,
+              dense: true,
+              onPressed: _asking ? null : () => _askNodesElevation(mc),
+            ),
+          ),
+        // What this chart is not: the horizontal axis is a stagger so the
+        // dots do not overlap, not a distance. The legend says the dots are
+        // nodes; only this says the x-position means nothing.
+        Positioned(
+          left: 12,
+          right: 12,
+          bottom: 8,
+          child: IgnorePointer(
+            child: Text(
+              l.elevationNotADistance,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                  color: cs.onSurfaceVariant,
+                  fontSize: context.skin.type.sizeMicro),
             ),
           ),
         ),

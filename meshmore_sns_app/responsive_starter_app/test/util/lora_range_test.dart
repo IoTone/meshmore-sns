@@ -261,4 +261,28 @@ void main() {
           greaterThanOrEqualTo(200.0));
     });
   });
+  group('a radio that has not been configured yet is not a NaN radius', () {
+    // `flutter_map`'s circle painter groups points by radius, and a NaN key
+    // never matches itself, so a NaN radius crashes the paint outright. It got
+    // there from a SelfInfo read before the radio's config landed: bandwidth
+    // 0 made the range infinite. The survey view crashed on exactly that.
+    test('bandwidth 0 falls back to the reference channel, finite', () {
+      final double r = estimatedLoraRangeMeters(
+          spreadingFactor: 7, bandwidthKhz: 0, txPowerDbm: 14);
+      expect(r.isFinite, isTrue);
+      expect(r, closeTo(1500.0, 1.0));
+    });
+
+    test('a non-finite reading is dropped, not clamped into the answer', () {
+      final double r = estimatedPeerReachMeters(
+        rssiDbm: double.nan,
+        distanceMeters: double.infinity,
+        ourSpreadingFactor: 7,
+        ourBandwidthKhz: 125,
+        ourTxPowerDbm: 14,
+      );
+      expect(r.isFinite, isTrue);
+      expect(r, inInclusiveRange(200.0, 20000.0));
+    });
+  });
 }

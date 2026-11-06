@@ -5828,4 +5828,41 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get sosUseDefaults => 'Use defaults';
+
+  @override
+  String wxMicroclimateFromChat(Object ago) {
+    return 'Read from this channel\'s messages; newest $ago.';
+  }
+
+  @override
+  String get wxMicroclimateFromChatNoMessages =>
+      'Nothing yet: this reads what people write in this channel.';
+
+  @override
+  String get elevationAskNodes => 'Ask nodes for altitude';
+
+  @override
+  String get elevationAsking => 'Asking…';
+
+  @override
+  String get elevationNotADistance =>
+      'Dots line up side to side, not by distance.';
+
+  @override
+  String fabricNewestCell(Object ago) {
+    return 'newest cell $ago';
+  }
+
+  @override
+  String get fabricNothingYet =>
+      'nothing recorded yet — cells fill as you hear the mesh';
+
+  @override
+  String fabricAgoDays(Object d) {
+    return '${d}d ago';
+  }
+
+  @override
+  String get meshbookEmptyDetail =>
+      'Messages on this channel fill it; the window is the last 24 hours.';
 }

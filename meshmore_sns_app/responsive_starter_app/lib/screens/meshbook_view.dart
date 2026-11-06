@@ -8,6 +8,7 @@ import '../theme/mm_skin.dart';
 import '../meshcore/meshcore_controller.dart';
 import '../sns/meshbook.dart';
 import '../ui/mm_shape.dart';
+import 'grid_notice.dart';
 
 /// Meshbook (MBk) — a rolling last-24h readout of the current channel's
 /// social shape: how many messages, the reply rate, the top voices, topics,
@@ -59,7 +60,10 @@ class MeshbookView extends StatelessWidget {
             Icon(Icons.menu_book_outlined, size: 16, color: cs.primary),
             const SizedBox(width: 6),
             Expanded(
-              child: Text('${l.meshbookTitle} · CH$ch · ${l.meshbookLast24h}',
+              // The channel's name, not its slot: "CH0" is a firmware index
+              // and the user chose a name for this channel.
+              child: Text(
+                  '${l.meshbookTitle} · ${mc.activeChannelName} · ${l.meshbookLast24h}',
                   style: TextStyle(
                       color: cs.primary,
                       fontSize: context.skin.type.sizeBody,
@@ -78,12 +82,12 @@ class MeshbookView extends StatelessWidget {
         ),
         const SizedBox(height: 10),
         if (day.isEmpty)
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 24),
-            child: Center(
-              child: Text(l.meshbookEmpty,
-                  style: TextStyle(color: cs.onSurfaceVariant)),
-            ),
+          // The shared notice shape every other grid view uses, with the one
+          // line that answers "so what fills it".
+          GridNotice(
+            message: l.meshbookEmpty,
+            icon: Icons.menu_book_outlined,
+            detail: l.meshbookEmptyDetail,
           )
         else ...<Widget>[
           Text(

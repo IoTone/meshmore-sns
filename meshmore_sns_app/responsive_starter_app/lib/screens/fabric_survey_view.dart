@@ -5,6 +5,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart' hide Path;
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../gen/app_localizations.dart';
@@ -15,6 +16,7 @@ import '../meshcore/coverage_store.dart';
 import '../meshcore/discovered_node.dart';
 import '../meshcore/meshcore_controller.dart';
 import '../util/lora_range.dart';
+import 'grid_notice.dart';
 import 'node_detail_sheet.dart';
 import '../ui/mm_shape.dart';
 
@@ -57,6 +59,24 @@ class _FabricSurveyViewState extends State<FabricSurveyView> {
   double _zoom = 12.0; // metro-area default; quilt reads best here
   bool _centered = false;
   bool _showTiles = true;
+
+  /// "12m ago" for the newest recorded cell, or the empty-state sentence's
+  /// age when there is nothing recorded. The map stays: it is still a useful
+  /// picture of where you are, and replacing it with a notice would take the
+  /// place away rather than explain the survey.
+  String _newestAgo(MeshcoreController mc, AppLocalizations l) {
+    int newest = 0;
+    mc.coverageCells.forEach((String _, int at) {
+      if (at > newest) newest = at;
+    });
+    if (newest == 0) return l.weatherAgoHours(0);
+    final int ageSec =
+        DateTime.now().millisecondsSinceEpoch ~/ 1000 - newest;
+    if (ageSec < 60) return l.weatherAgoSeconds(ageSec < 1 ? 0 : ageSec);
+    if (ageSec < 3600) return l.weatherAgoMinutes(ageSec ~/ 60);
+    if (ageSec < 86400) return l.weatherAgoHours(ageSec ~/ 3600);
+    return l.fabricAgoDays(ageSec ~/ 86400);
+  }
 
   Future<void> _confirmReset(MeshcoreController mc) async {
     final AppLocalizations l = AppLocalizations.of(context);
@@ -110,15 +130,14 @@ class _FabricSurveyViewState extends State<FabricSurveyView> {
     final double? selfLat = mc.ownLocation?.latitude;
     final double? selfLon = mc.ownLocation?.longitude;
     if (selfLat == null || selfLon == null) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Text(
-            l.gridNeedsFix,
-            textAlign: TextAlign.center,
-            style: TextStyle(color: cs.onSurfaceVariant),
-          ),
-        ),
+      // The same notice shape the other grid views use, with the one action
+      // that can actually resolve it: the fix comes from the phone or the
+      // radio, and both are settings rather than something to wait for.
+      return GridNotice(
+        message: l.gridNeedsFix,
+        icon: Icons.location_searching,
+        actionLabel: l.dashboardLocationConfigure,
+        onAction: () => context.push('/settings/location'),
       );
     }
     if (!_centered) {
@@ -298,27 +317,15 @@ class _FabricSurveyViewState extends State<FabricSurveyView> {
             ],
           ),
         ),
-        // Top-left stat strip — coverage cell count + age cue.
+        // Top-left stat strip — coverage cell count and how old the newest
+        // cell is, as one widget so it can be read without a live map.
         Positioned(
           left: 12,
           top: 12,
           child: IgnorePointer(
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              decoration: BoxDecoration(
-                color: cs.surface.withValues(alpha: .85),
-                borderRadius: BorderRadius.circular(kRadiusMd),
-                border: Border.all(color: cs.primary.withValues(alpha: .5)),
-              ),
-              child: Text(
-                l.fabricCoverageCount(cells.length),
-                style: TextStyle(
-                    color: cs.primary,
-                    fontSize: context.skin.type.sizeSm,
-                    letterSpacing: 1,
-                    fontFamily: context.skin.type.monoFamily,
-                    fontWeight: FontWeight.w600),
-              ),
+            child: FabricSurveyStatStrip(
+              cellCount: cells.length,
+              newestAgo: cells.isEmpty ? null : _newestAgo(mc, l),
             ),
           ),
         ),
@@ -415,6 +422,63 @@ class _FabricSurveyViewState extends State<FabricSurveyView> {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// The survey's own two facts, in the corner of the map.
+///
+/// It states the count and the age of the newest cell, and says which of the
+/// two states the record is in: cells recorded, or nothing yet. Extracted so
+/// the strip can be read in a widget test without laying out a map.
+class FabricSurveyStatStrip extends StatelessWidget {
+  const FabricSurveyStatStrip({
+    super.key,
+    required this.cellCount,
+    required this.newestAgo,
+  });
+
+  final int cellCount;
+
+  /// "12m ago" for the newest recorded cell, or null when nothing is
+  /// recorded.
+  final String? newestAgo;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations l = AppLocalizations.of(context);
+    final ColorScheme cs = Theme.of(context).colorScheme;
+    final MmSkin skin = context.skin;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: cs.surface.withValues(alpha: .85),
+        borderRadius: BorderRadius.circular(kRadiusMd),
+        border: Border.all(color: cs.primary.withValues(alpha: .5)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          Text(
+            l.fabricCoverageCount(cellCount),
+            style: TextStyle(
+                color: cs.primary,
+                fontSize: skin.type.sizeSm,
+                letterSpacing: 1,
+                fontFamily: skin.type.monoFamily,
+                fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            newestAgo == null
+                ? l.fabricNothingYet
+                : l.fabricNewestCell(newestAgo!),
+            style: TextStyle(
+                color: cs.onSurfaceVariant, fontSize: skin.type.sizeMicro),
+          ),
+        ],
+      ),
     );
   }
 }
