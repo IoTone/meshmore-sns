@@ -18,7 +18,6 @@ import '../geofence/geofence_controller.dart';
 import '../geofence/geofence_store.dart';
 import '../maps/basemap.dart';
 import '../maps/basemap_prefs.dart';
-import '../maps/map_archive.dart';
 import '../maps/map_centre.dart';
 import '../perms/location_service.dart';
 import '../perms/permissions_service.dart';
@@ -207,23 +206,6 @@ class _StreetMapViewState extends State<StreetMapView> {
   /// The region a downloaded map region covers, largest first, so the map can
   /// open on the area the user went to the trouble of keeping offline. Null
   /// when nothing is installed.
-  GeoBox? _regionOnDevice(MapsController? maps) {
-    if (maps == null) return null;
-    GeoBox? best;
-    double bestArea = 0;
-    for (final MapArchive a in maps.archives) {
-      if (!a.complete) continue;
-      final double? w = a.west, so = a.south, e = a.east, n = a.north;
-      if (w == null || so == null || e == null || n == null) continue;
-      final double area = (e - w).abs() * (n - so).abs();
-      if (area > bestArea) {
-        bestArea = area;
-        best = GeoBox(south: so, west: w, north: n, east: e);
-      }
-    }
-    return best;
-  }
-
   void _rememberView() {
     _saveView?.cancel();
     _saveView = Timer(const Duration(milliseconds: 700), () {
@@ -507,7 +489,6 @@ class _StreetMapViewState extends State<StreetMapView> {
       phone: mc.phoneLocationFix,
       radio: mc.selfInfo,
       last: _saved,
-      region: _regionOnDevice(maps),
     );
     final bool hasPersonalPosition = start.source == MapCentreSource.phone ||
         start.source == MapCentreSource.radio;

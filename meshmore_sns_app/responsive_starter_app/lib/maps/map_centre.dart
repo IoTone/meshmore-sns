@@ -83,10 +83,6 @@ enum MapCentreSource {
   /// The view the user left last time, so the map reopens where they were.
   lastView,
 
-  /// A region on the device: a downloaded map region, whose box is the only
-  /// area the app knows the user cares about without a position.
-  region,
-
   /// Nothing is known: the widest useful view, stated as such rather than
   /// pretending to be centred on anybody.
   world,
@@ -116,14 +112,16 @@ class MapCentre {
   static const LatLng worldCentre = LatLng(20.0, 0.0);
 
   /// The centring ladder, in order: the phone's position, the radio's own
-  /// position, the view the user left, a region on the device, the world.
-  /// Every step is a real source; the last one says so instead of imitating
-  /// the first four.
+  /// position, the view the user left, and then the world.
+  ///
+  /// A downloaded region pack is deliberately NOT a rung. A pack says which
+  /// map this device holds, not where the user is, and centring on it would
+  /// put a place on screen under the same heading as a real fix. With no
+  /// position the honest answer is the world view, which says so.
   static MapCentre resolve({
     OwnLocation? phone,
     SelfInfo? radio,
     SavedMapView? last,
-    GeoBox? region,
   }) {
     if (phone != null && _usable(phone.latitude, phone.longitude)) {
       return MapCentre(
@@ -144,16 +142,6 @@ class MapCentre {
         centre: last.centre,
         zoom: last.zoom,
         source: MapCentreSource.lastView,
-      );
-    }
-    if (region != null) {
-      return MapCentre(
-        centre: LatLng(
-          (region.south + region.north) / 2,
-          (region.west + region.east) / 2,
-        ),
-        zoom: zoomToFit(region),
-        source: MapCentreSource.region,
       );
     }
     return const MapCentre(

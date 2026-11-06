@@ -44,7 +44,6 @@ void main() {
         phone: _phone(38.9, -104.8),
         radio: _radio(51.5, -0.1),
         last: const SavedMapView(latitude: 1, longitude: 2, zoom: 9),
-        region: const GeoBox(south: 0, west: 0, north: 1, east: 1),
       );
       expect(c.source, MapCentreSource.phone);
       expect(c.centre, const LatLng(38.9, -104.8));
@@ -55,7 +54,6 @@ void main() {
       final MapCentre c = MapCentre.resolve(
         radio: _radio(51.5, -0.1),
         last: const SavedMapView(latitude: 1, longitude: 2, zoom: 9),
-        region: const GeoBox(south: 0, west: 0, north: 1, east: 1),
       );
       expect(c.source, MapCentreSource.radio);
       expect(c.centre, const LatLng(51.5, -0.1));
@@ -64,21 +62,10 @@ void main() {
     test('the view the user left is used when neither reports a position', () {
       final MapCentre c = MapCentre.resolve(
         last: const SavedMapView(latitude: 35.0, longitude: 139.0, zoom: 11),
-        region: const GeoBox(south: 0, west: 0, north: 1, east: 1),
       );
       expect(c.source, MapCentreSource.lastView);
       expect(c.centre, const LatLng(35.0, 139.0));
       expect(c.zoom, 11);
-    });
-
-    test('a region on the device is used when nothing else is known', () {
-      const GeoBox box = GeoBox(south: 36.0, west: -110.0, north: 40.0, east: -102.0);
-      final MapCentre c = MapCentre.resolve(region: box);
-      expect(c.source, MapCentreSource.region);
-      expect(c.centre.latitude, closeTo(38.0, 1e-9));
-      expect(c.centre.longitude, closeTo(-106.0, 1e-9));
-      expect(c.zoom, greaterThan(MapCentre.worldZoom));
-      expect(c.zoom, lessThanOrEqualTo(MapCentre.personalZoom));
     });
 
     test('the world view is the last rung, and says so', () {
