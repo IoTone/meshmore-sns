@@ -5571,4 +5571,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get placeSuggestNeedsLocation => '場所を報告するには位置情報をオンにしてください。';
+
+  @override
+  String get mapCompassLegend => '矢印はこの端末の方位磁針です。';
 }

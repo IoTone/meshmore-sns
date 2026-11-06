@@ -3983,5 +3983,6 @@
   },
   "placeSuggestReport": "Report place",
   "placeSuggestDismiss": "Dismiss",
-  "placeSuggestNeedsLocation": "Turn on location to report a place."
+  "placeSuggestNeedsLocation": "Turn on location to report a place.",
+  "mapCompassLegend": "The arrow is this phone's compass."
 }

@@ -5798,4 +5798,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get placeSuggestNeedsLocation => 'Turn on location to report a place.';
+
+  @override
+  String get mapCompassLegend => 'The arrow is this phone\'s compass.';
 }

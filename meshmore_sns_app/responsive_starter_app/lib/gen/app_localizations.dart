@@ -9753,6 +9753,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Turn on location to report a place.'**
   String get placeSuggestNeedsLocation;
+
+  /// No description provided for @mapCompassLegend.
+  ///
+  /// In en, this message translates to:
+  /// **'The arrow is this phone\'s compass.'**
+  String get mapCompassLegend;
 }
 
 class _AppLocalizationsDelegate
