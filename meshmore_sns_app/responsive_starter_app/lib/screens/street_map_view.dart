@@ -484,7 +484,8 @@ class _StreetMapViewState extends State<StreetMapView> {
 
     // One ladder decides both the camera and where "me" is drawn, so the two
     // cannot disagree: the phone's position, the radio's own position, the
-    // view the user left, a region on the device, then the world view.
+    // view the user left, then the world view. A downloaded pack is not a
+    // position and is not a rung.
     final MapCentre start = MapCentre.resolve(
       phone: mc.phoneLocationFix,
       radio: mc.selfInfo,
