@@ -5,6 +5,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart' hide Path;
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../gen/app_localizations.dart';
@@ -15,6 +16,7 @@ import '../meshcore/coverage_store.dart';
 import '../meshcore/discovered_node.dart';
 import '../meshcore/meshcore_controller.dart';
 import '../util/lora_range.dart';
+import 'grid_notice.dart';
 import 'node_detail_sheet.dart';
 import '../ui/mm_shape.dart';
 
@@ -128,15 +130,14 @@ class _FabricSurveyViewState extends State<FabricSurveyView> {
     final double? selfLat = mc.ownLocation?.latitude;
     final double? selfLon = mc.ownLocation?.longitude;
     if (selfLat == null || selfLon == null) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Text(
-            l.gridNeedsFix,
-            textAlign: TextAlign.center,
-            style: TextStyle(color: cs.onSurfaceVariant),
-          ),
-        ),
+      // The same notice shape the other grid views use, with the one action
+      // that can actually resolve it: the fix comes from the phone or the
+      // radio, and both are settings rather than something to wait for.
+      return GridNotice(
+        message: l.gridNeedsFix,
+        icon: Icons.location_searching,
+        actionLabel: l.dashboardLocationConfigure,
+        onAction: () => context.push('/settings/location'),
       );
     }
     if (!_centered) {
