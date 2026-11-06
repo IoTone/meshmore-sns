@@ -389,7 +389,7 @@ class _NotificationHealthRow extends StatelessWidget {
     final Notifier? notifier = context.watch<Notifier?>();
     if (notifier == null) return const SizedBox.shrink();
     return FutureBuilder<NotifierHealth>(
-      future: notifier.health(),
+      future: notifier.health(refresh: true),
       builder: (BuildContext ctx, AsyncSnapshot<NotifierHealth> snap) {
         final NotifierHealth? state = snap.data;
         if (state == null ||

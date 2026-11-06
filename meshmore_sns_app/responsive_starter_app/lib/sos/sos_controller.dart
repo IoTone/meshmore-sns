@@ -227,9 +227,27 @@ final class SosController extends ChangeNotifier {
   }
 
   /// Writes the current alarm, or clears the record once nothing is running.
+  ///
+  /// The schedule ticks once a second, and a write per tick would be 3,600
+  /// preference writes over an alarm for no new information: the record only
+  /// changes when the state does or when another packet has gone out. So the
+  /// write is keyed on exactly that.
   void _persistAlarm() {
-    unawaited(SosPrefs.saveAlarm(alarmToJson(_engine.snapshot())));
+    final SosSnapshot? snap = _engine.snapshot();
+    if (snap == null) {
+      if (_persistedSignature == null) return;
+      _persistedSignature = null;
+      unawaited(SosPrefs.saveAlarm(null));
+      return;
+    }
+    final String signature = '${snap.state.name}|${snap.issued.length}';
+    if (signature == _persistedSignature) return;
+    _persistedSignature = signature;
+    unawaited(SosPrefs.saveAlarm(alarmToJson(snap)));
   }
+
+  /// What the last write recorded, so an unchanged alarm is not rewritten.
+  String? _persistedSignature;
 
   /// Applies a remembered destination once preferences answer. A test that
   /// never saved one keeps the radio's default, because the load is a no-op.
