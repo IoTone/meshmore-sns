@@ -5630,4 +5630,35 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get sosUseDefaults => '既定に戻す';
+
+  @override
+  String wxMicroclimateFromChat(Object ago) {
+    return 'このチャンネルの発言から読み取りました。最新は$ago。';
+  }
+
+  @override
+  String get wxMicroclimateFromChatNoMessages =>
+      'まだありません。このチャンネルに書かれた内容から読み取ります。';
+
+  @override
+  String get elevationAskNodes => '各ノードに高度を問い合わせる';
+
+  @override
+  String get elevationAsking => '問い合わせ中…';
+
+  @override
+  String get elevationNotADistance => '点は横並びで、距離の順ではありません。';
+
+  @override
+  String fabricNewestCell(Object ago) {
+    return '最新のセルは$ago';
+  }
+
+  @override
+  String get fabricNothingYet => 'まだ記録はありません。メッシュを受信するとセルが埋まります。';
+
+  @override
+  String fabricAgoDays(Object d) {
+    return '$d日前';
+  }
 }

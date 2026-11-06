@@ -9849,6 +9849,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Use defaults'**
   String get sosUseDefaults;
+
+  /// No description provided for @wxMicroclimateFromChat.
+  ///
+  /// In en, this message translates to:
+  /// **'Read from this channel\'s messages; newest {ago}.'**
+  String wxMicroclimateFromChat(Object ago);
+
+  /// No description provided for @wxMicroclimateFromChatNoMessages.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing yet: this reads what people write in this channel.'**
+  String get wxMicroclimateFromChatNoMessages;
+
+  /// No description provided for @elevationAskNodes.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask nodes for altitude'**
+  String get elevationAskNodes;
+
+  /// No description provided for @elevationAsking.
+  ///
+  /// In en, this message translates to:
+  /// **'Asking…'**
+  String get elevationAsking;
+
+  /// No description provided for @elevationNotADistance.
+  ///
+  /// In en, this message translates to:
+  /// **'Dots line up side to side, not by distance.'**
+  String get elevationNotADistance;
+
+  /// No description provided for @fabricNewestCell.
+  ///
+  /// In en, this message translates to:
+  /// **'newest cell {ago}'**
+  String fabricNewestCell(Object ago);
+
+  /// No description provided for @fabricNothingYet.
+  ///
+  /// In en, this message translates to:
+  /// **'nothing recorded yet — cells fill as you hear the mesh'**
+  String get fabricNothingYet;
+
+  /// No description provided for @fabricAgoDays.
+  ///
+  /// In en, this message translates to:
+  /// **'{d}d ago'**
+  String fabricAgoDays(Object d);
 }
 
 class _AppLocalizationsDelegate

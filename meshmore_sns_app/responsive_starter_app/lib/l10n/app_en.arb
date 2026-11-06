@@ -4006,5 +4006,13 @@
   "diagnosticsPositionNone": "none",
   "sosWordsOptional": "Optional — the default is used if you clear it.",
   "sosHoldSummary": "Hold to send the words above to {channel}, with your name and position.",
-  "sosUseDefaults": "Use defaults"
+  "sosUseDefaults": "Use defaults",
+  "wxMicroclimateFromChat": "Read from this channel's messages; newest {ago}.",
+  "wxMicroclimateFromChatNoMessages": "Nothing yet: this reads what people write in this channel.",
+  "elevationAskNodes": "Ask nodes for altitude",
+  "elevationAsking": "Asking…",
+  "elevationNotADistance": "Dots line up side to side, not by distance.",
+  "fabricNewestCell": "newest cell {ago}",
+  "fabricNothingYet": "nothing recorded yet — cells fill as you hear the mesh",
+  "fabricAgoDays": "{d}d ago"
 }

@@ -2571,5 +2571,13 @@
   "diagnosticsPositionNone": "なし",
   "sosWordsOptional": "任意 — 空にすると既定の文言で送信します。",
   "sosHoldSummary": "長押しで、上の文言を名前と位置とともに {channel} へ送信します。",
-  "sosUseDefaults": "既定に戻す"
+  "sosUseDefaults": "既定に戻す",
+  "wxMicroclimateFromChatNoMessages": "まだありません。このチャンネルに書かれた内容から読み取ります。",
+  "wxMicroclimateFromChat": "このチャンネルの発言から読み取りました。最新は{ago}。",
+  "elevationAskNodes": "各ノードに高度を問い合わせる",
+  "elevationAsking": "問い合わせ中…",
+  "elevationNotADistance": "点は横並びで、距離の順ではありません。",
+  "fabricNewestCell": "最新のセルは{ago}",
+  "fabricNothingYet": "まだ記録はありません。メッシュを受信するとセルが埋まります。",
+  "fabricAgoDays": "{d}日前"
 }

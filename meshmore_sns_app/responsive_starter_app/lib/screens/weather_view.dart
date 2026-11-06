@@ -87,10 +87,20 @@ class _WeatherViewState extends State<WeatherView> {
     final AmbientWx? lastHour = aggregateAmbient(scanned.where(
         (WxObservation o) => now.difference(o.at) <= const Duration(hours: 1)));
     final AmbientWx? last24h = aggregateAmbient(scanned);
+    // The newest mention in the window, so the strip can say how old the
+    // reading is. A rollup that states no age is the kind of number a reader
+    // trusts for a week after it stopped being true.
+    DateTime? newest;
+    for (final WxObservation o in scanned) {
+      if (newest == null || o.at.isAfter(newest)) newest = o.at;
+    }
     final Widget micro = _MicroclimateStrip(
       lastHour: lastHour,
       last24h: last24h,
-      channelLabel: 'CH${mc.activeChannel}',
+      // The channel's own name, not its slot number: "CH0" is an index the
+      // firmware uses, and the user picked a name.
+      channelLabel: mc.activeChannelName,
+      newestAt: newest,
       l: l,
       cs: cs,
     );
@@ -405,6 +415,7 @@ class _MicroclimateStrip extends StatelessWidget {
     required this.lastHour,
     required this.last24h,
     required this.channelLabel,
+    required this.newestAt,
     required this.l,
     required this.cs,
   });
@@ -412,6 +423,9 @@ class _MicroclimateStrip extends StatelessWidget {
   final AmbientWx? lastHour;
   final AmbientWx? last24h;
   final String channelLabel;
+
+  /// The most recent message this rollup read, or null when there is none.
+  final DateTime? newestAt;
   final AppLocalizations l;
   final ColorScheme cs;
 
@@ -440,6 +454,19 @@ class _MicroclimateStrip extends StatelessWidget {
                       fontWeight: FontWeight.w600)),
             ],
           ),
+          const SizedBox(height: 4),
+          // What this block is made of. It is inferred from what people wrote
+          // in the channel, not measured by a sensor, and the header alone
+          // does not say so — a reader would take it for telemetry.
+          Text(
+            newestAt == null
+                ? l.wxMicroclimateFromChatNoMessages
+                : l.wxMicroclimateFromChat(_ago(newestAt!, l)),
+            style: TextStyle(
+                color: cs.onSurfaceVariant,
+                fontSize: context.skin.type.sizeSm,
+                height: 1.3),
+          ),
           const SizedBox(height: 10),
           if (last24h == null)
             Text(l.wxAmbientEmpty,
@@ -455,6 +482,14 @@ class _MicroclimateStrip extends StatelessWidget {
       ),
     );
   }
+}
+
+/// "3 min ago", "2 h ago" — the same shape the reading tiles use.
+String _ago(DateTime at, AppLocalizations l) {
+  final int s = DateTime.now().difference(at).inSeconds;
+  if (s < 60) return l.weatherAgoSeconds(s);
+  if (s < 3600) return l.weatherAgoMinutes(s ~/ 60);
+  return l.weatherAgoHours(s ~/ 3600);
 }
 
 /// One window's ambient rollup (e.g. "1H" or "24H"): a window pill, the
