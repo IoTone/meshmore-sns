@@ -395,6 +395,35 @@ void main() {
     await _settle(t);
   });
 
+  testWidgets('a running alarm does not offer to change where it goes',
+      (WidgetTester t) async {
+    await t.binding.setSurfaceSize(const Size(400, 900));
+    addTearDown(() => t.binding.setSurfaceSize(null));
+    await t.pumpWidget(_host(mc, sos, tc));
+    await t.pump();
+
+    final Offset at =
+        t.getCenter(find.byKey(const ValueKey<String>('sos-hold')));
+    final TestGesture g = await t.startGesture(at);
+    await t.pump(const Duration(milliseconds: 150));
+    clock.now = clock.now.add(SosEngine.hold);
+    await t.pump(const Duration(seconds: 2));
+    await t.pump(const Duration(seconds: 2));
+    await g.up();
+    await t.pump();
+    expect(sos.state, SosState.active);
+
+    // The repeats are a snapshot of the targets it raised with, so the row
+    // says where they are going and stops offering a change.
+    expect(find.text('Change'), findsNothing);
+    await t.tap(find.byKey(const ValueKey<String>('sos-destination-row')));
+    await t.pumpAndSettle();
+    expect(find.byKey(const ValueKey<String>('sos-destination-done')),
+        findsNothing,
+        reason: 'no picker opens while the alarm is repeating');
+    await _settle(t);
+  });
+
   testWidgets('the destination sheet keeps its actions at 320 dp and 200 %',
       (WidgetTester t) async {
     await t.binding.setSurfaceSize(const Size(320, 640));

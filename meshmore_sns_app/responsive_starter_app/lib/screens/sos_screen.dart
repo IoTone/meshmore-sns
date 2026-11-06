@@ -182,7 +182,13 @@ class _SosScreenState extends State<SosScreen> {
               _DestinationRow(
                 sos: sos,
                 l: l,
-                onTap: () => _openDestinationPicker(context, sos, mc),
+                // A running alarm is a snapshot: it keeps repeating on the
+                // targets it raised with, so the row must not offer to change
+                // them mid-run and then describe a destination the repeats are
+                // not using.
+                onTap: sos.isRunning
+                    ? null
+                    : () => _openDestinationPicker(context, sos, mc),
               ),
               SizedBox(height: skin.space.step(4)),
               // While the hold is still under the finger the hold control
@@ -343,7 +349,10 @@ class _DestinationRow extends StatelessWidget {
 
   final SosController sos;
   final AppLocalizations l;
-  final VoidCallback onTap;
+
+  /// Null while an alarm is running: the row then states where the repeats are
+  /// going and offers nothing to change, because they cannot be changed.
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -354,7 +363,7 @@ class _DestinationRow extends StatelessWidget {
         ? l.sosDestinationMissing
         : '${l.sosGoesToContacts(copies)} · ${l.sosRepeatsShort}';
     return Semantics(
-      button: true,
+      button: onTap != null,
       label: '${l.sosDestination}: ${l.sosGoesToChannel(sos.channelName)}. $sub',
       child: InkWell(
         key: const ValueKey<String>('sos-destination-row'),
@@ -395,14 +404,16 @@ class _DestinationRow extends StatelessWidget {
                   ],
                 ),
               ),
-              SizedBox(width: skin.space.step(3)),
-              Text(
-                l.sosDestinationChange,
-                style: TextStyle(
-                  color: skin.color.fgMuted,
-                  fontSize: skin.type.sizeSm,
+              if (onTap != null) ...<Widget>[
+                SizedBox(width: skin.space.step(3)),
+                Text(
+                  l.sosDestinationChange,
+                  style: TextStyle(
+                    color: skin.color.fgMuted,
+                    fontSize: skin.type.sizeSm,
+                  ),
                 ),
-              ),
+              ],
             ],
           ),
         ),
