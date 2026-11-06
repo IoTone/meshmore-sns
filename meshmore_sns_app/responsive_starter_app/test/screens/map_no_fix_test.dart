@@ -105,13 +105,14 @@ void main() {
     await t.pump(const Duration(seconds: 30));
   });
 
-  testWidgets('a bare StreetMapView (the grid mode) keeps its empty state',
+  testWidgets('a bare StreetMapView draws the world view, like the Map tab',
       (WidgetTester t) async {
+    // There is no "needs your position" screen any more: the world view is a
+    // real answer to "where am I", and the only caller that wanted a refusal
+    // (the grid's street-map mode) has left the picker.
     final MeshcoreController c = await _pump(t, const StreetMapView());
-    expect(find.byType(FlutterMap), findsNothing);
-    expect(find.byKey(const ValueKey<String>('map-no-position-banner')),
-        findsNothing);
-    expect(find.textContaining('This view needs your position'), findsOneWidget);
+    expect(find.byType(FlutterMap), findsOneWidget);
+    expect(find.textContaining('This view needs your position'), findsNothing);
     c.dispose();
     await t.pumpWidget(const SizedBox());
     await t.pump(const Duration(seconds: 30));

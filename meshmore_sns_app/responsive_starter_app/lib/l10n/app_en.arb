@@ -915,7 +915,6 @@
       }
     }
   },
-  "@mediaReceiveDropped": {"placeholders": {"count": {"type": "int"}}},
   "diagnosticsPlaceStoreCorruptKept": "the last document was unreadable, and its bytes were kept aside",
   "chatEmpty": "— no messages on this channel —",
   "chatJumpToNewest": "{count, plural, =1{1 new} other{{count} new}}",
@@ -934,30 +933,7 @@
       }
     }
   },
-  "chatComposerOffline": "Connect a radio to send",
   "chatSend": "Send",
-  "chatBudgetRemaining": "{remaining} of {max} bytes left",
-  "@chatBudgetRemaining": {
-    "placeholders": {
-      "remaining": {
-        "type": "int"
-      },
-      "max": {
-        "type": "int"
-      }
-    }
-  },
-  "chatBudgetEstimate": "about {remaining} of {max} bytes left — the radio's name is not known yet",
-  "@chatBudgetEstimate": {
-    "placeholders": {
-      "remaining": {
-        "type": "int"
-      },
-      "max": {
-        "type": "int"
-      }
-    }
-  },
   "chatBudgetNear": "Nearly at the limit: the radio counts its own name in these bytes",
   "chatBudgetTooLong": "Too long by {over} bytes — the radio would cut the rest without telling you",
   "@chatBudgetTooLong": {
@@ -1001,14 +977,6 @@
       }
     }
   },
-  "dmPubkeyLabel": "pubkey · {hex}",
-  "@dmPubkeyLabel": {
-    "placeholders": {
-      "hex": {
-        "type": "String"
-      }
-    }
-  },
   "nodeDetailSignature": "Message sound",
   "nodeDetailSignatureHint": "Plays for messages from this person instead of the usual sound.",
   "nodeDetailSignatureNone": "Default",
@@ -1040,9 +1008,7 @@
   "dmSend": "Send DM",
   "actionRetrySub": "Send this message again",
   "actionReply": "Reply",
-  "actionReplySub": "Quote this message in your reply",
   "actionCopy": "Copy",
-  "actionCopySub": "Copy the message text to the clipboard",
   "actionDeleteLocal": "Delete locally",
   "actionDeleteLocalSub": "Removes this row from your history only — over-the-air messages cannot be recalled.",
   "actionCopied": "Copied to clipboard",
@@ -1399,13 +1365,6 @@
   },
   "snsCellsClear": "Clear",
   "snsCellsStatus": "{active} cells · {hot} hot",
-  "@snsPlacesButton": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
   "snsFrameMetro": "Metro · ~20 km",
   "snsFrameRegion": "Region · ~300 km",
   "snsFrameMesh": "Mesh · fit all",
@@ -1571,14 +1530,11 @@
   },
   "channelsEdit": "Edit",
   "channelsSet": "Set",
-  "channelsSetSnack": "Channel {idx} set to \"{name}\" — every radio needs the same name and key here",
+  "channelsSetSnack": "Slot {idx} saved",
   "@channelsSetSnack": {
     "placeholders": {
       "idx": {
         "type": "int"
-      },
-      "name": {
-        "type": "String"
       }
     }
   },
@@ -1671,7 +1627,6 @@
   "@notifDeniedBanner": {
     "description": "Shown when the OS notification permission is denied."
   },
-  "channelsKeySource": "Key source",
   "channelsKeyPublic": "Public",
   "channelsKeyHashtag": "#tag",
   "channelsKeyHex": "Hex",
@@ -1790,13 +1745,6 @@
   "deviceRegionSuggestApply": "Use it",
   "deviceRegionSuggestNoFix": "No GPS fix yet. Try outdoors with location on.",
   "deviceRegionSuggestNoMatch": "Your location doesn't match any shipped country preset — pick one manually.",
-  "@deviceRegionAppliedToast": {
-    "placeholders": {
-      "label": {
-        "type": "String"
-      }
-    }
-  },
   "deviceRegionDisclaimerShort": "Shared by users, not checked by a regulator.",
   "deviceRegionDisclaimer": "These presets are shared by users, not checked by a regulator. Pick one that is legal where you are and use the same settings on every radio. In Japan the radio itself must carry 技適 (giteki) certification; most imported boards do not, and using one is an offence under the Radio Act whatever the settings. The Japan (ARIB STD-T108) preset is a community proposal that has not been widely tested.",
   "presetUsCanada": "USA / Canada",
@@ -3874,25 +3822,6 @@
   "fujiRefsShort": "Silhouettes · scale",
   "fujiPeersShort": "Dots · peers",
   "fujiUnknownShort": "Striped · no altitude",
-  "@deviceNowParams": {
-    "placeholders": {
-      "freq": {
-        "type": "String"
-      },
-      "bw": {
-        "type": "String"
-      },
-      "sf": {
-        "type": "String"
-      },
-      "cr": {
-        "type": "String"
-      },
-      "tx": {
-        "type": "String"
-      }
-    }
-  },
   "chatSpeechOffAction": "Speech is off in App settings",
   "nodeDetailAltitudeNotReported": "not reported",
   "gridPurposeRadial": "How far each node is, and how long ago it was heard.",
@@ -3916,13 +3845,6 @@
       }
     }
   },
-  "@equalGridCellSize": {
-    "placeholders": {
-      "size": {
-        "type": "String"
-      }
-    }
-  },
   "mapNoPositionYet": "Your position is not known yet.",
   "mapNoPositionFind": "Find me",
   "mapNoPositionAsking": "Finding you...",
@@ -3931,8 +3853,46 @@
   "mapLocationBlockedApp": "Location is blocked for this app.",
   "mapLocationOpenSettings": "Open settings",
   "mapLocationOffDevice": "Location is off on this phone.",
-  "@mapNoFixBanner": {
-    "description": "R69: quiet banner on the Map tab when there is no position fix."
+  "weatherOpenTelemetrySettings": "Turn on node telemetry",
+  "chatNoRadio": "No radio connected",
+  "chatConnectRadio": "Connect a radio",
+  "chatConnecting": "Connecting…",
+  "@chatBudgetNear": {
+    "placeholders": {
+      "remaining": {
+        "type": "int"
+      }
+    }
   },
-  "weatherOpenTelemetrySettings": "Turn on node telemetry"
+  "chatBudgetEstimateNear": "~{remaining} left",
+  "@chatBudgetEstimateNear": {
+    "placeholders": {
+      "remaining": {
+        "type": "int"
+      }
+    }
+  },
+  "chatMetaFlood": "via flood",
+  "chatMetaSnr": "SNR {snr} dB",
+  "@chatMetaSnr": {
+    "placeholders": {
+      "snr": {
+        "type": "String"
+      }
+    }
+  },
+  "chatActionsMeta": "Delivery, route and signal",
+  "chatMoreActions": "More",
+  "dmKeyCopied": "Peer key copied",
+  "channelsInfoTooltip": "How channels work",
+  "channelsOptionsTooltip": "Channel settings",
+  "sosSafeUnconfirmed": "Not confirmed. The link dropped while sending, so this may or may not have been heard.",
+  "sosSendUnconfirmed": "{count, plural, =1{One repeat was not confirmed. The schedule continues.} other{{count} repeats were not confirmed. The schedule continues.}}",
+  "@sosSendUnconfirmed": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
 }

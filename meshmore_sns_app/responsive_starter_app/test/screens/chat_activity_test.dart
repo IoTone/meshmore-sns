@@ -82,6 +82,10 @@ void main() {
     fake.emit(selfInfoFrame());
     await t.pumpAndSettle();
 
+    // The strip answers "which channel", so the report is one item in the
+    // strip's overflow rather than a control competing with the channel names.
+    await t.tap(find.byKey(const ValueKey<String>('chat-overflow')));
+    await t.pumpAndSettle();
     await t.tap(find.byKey(const ValueKey<String>('chat-activity')));
     await t.pumpAndSettle();
 
@@ -117,6 +121,8 @@ void main() {
         data: const MediaQueryData(textScaler: TextScaler.linear(2.0)),
         child: _host(mc, tts, theme),
       ));
+      await t.pumpAndSettle();
+      await t.tap(find.byKey(const ValueKey<String>('chat-overflow')));
       await t.pumpAndSettle();
       await t.tap(find.byKey(const ValueKey<String>('chat-activity')));
       await t.pumpAndSettle();

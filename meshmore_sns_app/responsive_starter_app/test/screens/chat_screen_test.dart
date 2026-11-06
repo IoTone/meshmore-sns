@@ -81,7 +81,8 @@ void main() {
     fake.emit(selfInfoFrame()); // → ready
     await t.pumpAndSettle();
 
-    expect(find.text('— no messages on this channel —'), findsOneWidget);
+    // The empty thread is one line, and it says which channel it means.
+    expect(find.textContaining('no messages on this channel'), findsOneWidget);
 
     await t.enterText(find.byType(TextField), 'hello mesh');
     await t.tap(find.byIcon(Icons.send));
@@ -140,7 +141,7 @@ void main() {
     fake.emit(selfInfoFrame()); // → ready
     await t.pump();
     fake.emit(channelInfoFrame(idx: 1, name: 'Ops'));
-    await t.pump();
+    await t.pumpAndSettle();
 
     // R91 — the selected chip is the header. There is no separate
     // "CHANNEL · NAME" caption repeating it.
@@ -173,7 +174,7 @@ void main() {
     fake.emit(selfInfoFrame()); // → ready
     await t.pump();
     fake.emit(channelMsgFrame(text: 'delete me'));
-    await t.pump();
+    await t.pumpAndSettle();
     expect(find.text('delete me'), findsOneWidget);
 
     await t.longPress(find.text('delete me'));
@@ -208,7 +209,7 @@ void main() {
     fake.emit(selfInfoFrame());
     await t.pump();
     fake.emit(channelMsgFrame(text: 'hey there'));
-    await t.pump();
+    await t.pumpAndSettle();
 
     await t.longPress(find.text('hey there'));
     await t.pumpAndSettle();
@@ -284,10 +285,18 @@ void main() {
     }
 
     testWidgets('the counter counts the bytes the radio counts', (t) async {
-      final MeshcoreController mc = await open(t, FakeMeshcoreTransport(connected: true));
-      // No name on the self-info frame: the fallback prefix is 8 bytes, so 152
-      // of the radio's 160 remain, and the copy says the number is an estimate.
-      expect(find.textContaining('about 152 of 160'), findsOneWidget);
+      final MeshcoreController mc =
+          await open(t, FakeMeshcoreTransport(connected: true));
+      // Silent while the text fits: a count in the reading path before it
+      // matters is noise, and the reader cannot act on it anyway.
+      expect(find.textContaining('left'), findsNothing);
+
+      // No name on the self-info frame: the fallback prefix is 8 bytes, so
+      // 152 of the radio's 160 remain. Ten bytes short of that, the counter
+      // appears and says the number is an estimate.
+      await t.enterText(find.byType(TextField), 'a' * 142);
+      await t.pump();
+      expect(find.text('~10 left'), findsOneWidget);
       mc.dispose();
     });
 
@@ -322,15 +331,14 @@ void main() {
       await t.binding.setSurfaceSize(const Size(900, 1600));
       addTearDown(() => t.binding.setSurfaceSize(null));
       await t.pumpWidget(_host(mc, TtsController(speaker: FakeTtsSpeaker())));
-      await t.pump();
-      // The draft for this conversation is recalled into the composer.
-      expect(find.text('half a thought'), findsOneWidget);
-
-      // A new keystroke replaces it after one pause, not per character. The
-      // composer only accepts typing once the radio has answered.
+      // The composer only accepts typing once the radio has answered, so the
+      // draft comes back when there is somewhere to type.
       await mc.connect();
       fake.emit(selfInfoFrame());
       await t.pumpAndSettle();
+      expect(find.text('half a thought'), findsOneWidget);
+
+      // A new keystroke replaces it after one pause, not per character.
       await t.enterText(find.byType(TextField), 'half a thought, finished');
       await t.pump(const Duration(milliseconds: 100));
       expect(sink.values.values, contains('half a thought'));

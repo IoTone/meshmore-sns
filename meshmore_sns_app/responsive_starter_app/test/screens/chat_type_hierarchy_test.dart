@@ -62,9 +62,9 @@ void main() {
     ));
     await mc.connect();
     fake.emit(selfInfoFrame());
-    await t.pump();
+    await t.pumpAndSettle();
     fake.emit(channelMsgFrame(text: 'MikeP: a long line of ordinary prose'));
-    await t.pump();
+    await t.pumpAndSettle();
     return mc;
   }
 

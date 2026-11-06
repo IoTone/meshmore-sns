@@ -13,9 +13,12 @@ import 'package:provider/provider.dart';
 import '../chat/channel_read_store.dart';
 import '../chat/chat_actions.dart';
 import '../chat/composer_budget.dart';
+import '../chat/composer_counter.dart';
+import '../chat/composer_offline.dart';
 import '../chat/draft_store.dart';
 import '../chat/report_flow.dart';
 import '../chat/studio_message_row.dart';
+import '../chat/history_unreadable_notice.dart';
 import '../gen/app_localizations.dart';
 import '../media/media_codec.dart';
 import '../media/media_composer.dart';
@@ -25,6 +28,7 @@ import '../meshcore/block_filter.dart';
 import '../meshcore/block_store.dart';
 import '../meshcore/chat_message.dart';
 import '../meshcore/history_export.dart';
+import '../meshcore/secure/incoming_export.dart';
 import '../meshcore/secure/store_export.dart';
 import '../places/place.dart';
 import '../places/place_echo.dart';
@@ -33,8 +37,6 @@ import 'delivery_status_icon.dart';
 import 'meshbook_view.dart';
 import '../meshcore/meshcore_controller.dart';
 import '../chat/history_retention_notice.dart';
-import '../chat/history_unreadable_notice.dart';
-import '../meshcore/secure/incoming_export.dart';
 import '../chat/unread_counts.dart';
 import '../meshcore/message_heat.dart' show parseChannelSenderName;
 import '../bot/bot_guards.dart';
@@ -217,7 +219,8 @@ class _ChatScreenState extends State<ChatScreen>
       _nearWarned = true;
       ScaffoldMessenger.maybeOf(context)?.showSnackBar(
         SnackBar(
-            content: Text(AppLocalizations.of(context).chatBudgetNear)),
+            content: Text(AppLocalizations.of(context)
+                .chatBudgetNear(_budget.remainingFor(text)))),
       );
     }
     setState(() {});
@@ -304,7 +307,7 @@ class _ChatScreenState extends State<ChatScreen>
     );
     if (passphrase == null || !mounted) return;
     try {
-      final Uint8List bytes = await HistoryExport.encodeThreadAsync(
+      final Uint8List bytes = HistoryExport.encodeThread(
         key: key,
         messages: rows,
         passphrase: passphrase,
@@ -326,6 +329,34 @@ class _ChatScreenState extends State<ChatScreen>
       ScaffoldMessenger.maybeOf(context)
           ?.showSnackBar(SnackBar(content: Text(l.chatExportFailed)));
     }
+  }
+
+  /// The channel's own activity report — its last 24 h, in a sheet.
+  ///
+  /// It used to be one entry in the grid's view picker, which is a page about
+  /// where things are; a report about this channel belongs on this channel,
+  /// one tap from the strip that names it.
+  void _openActivity() {
+    final AppLocalizations l = AppLocalizations.of(context);
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (BuildContext ctx) => SizedBox(
+        height: MediaQuery.sizeOf(ctx).height * 0.7,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            Padding(
+              padding: EdgeInsets.fromLTRB(16, 0, 16, 8),
+              child: Text(l.meshbookTitle,
+                  style: Theme.of(ctx).textTheme.titleMedium),
+            ),
+            const Expanded(child: MeshbookView()),
+          ],
+        ),
+      ),
+    );
   }
 
   /// Restores conversations from a passphrase export the user still holds.
@@ -377,34 +408,6 @@ class _ChatScreenState extends State<ChatScreen>
       ScaffoldMessenger.maybeOf(context)
           ?.showSnackBar(SnackBar(content: Text(l.chatRestoreFailed)));
     }
-  }
-
-  /// The channel's own activity report — its last 24 h, in a sheet.
-  ///
-  /// It used to be one entry in the grid's view picker, which is a page about
-  /// where things are; a report about this channel belongs on this channel,
-  /// one tap from the strip that names it.
-  void _openActivity() {
-    final AppLocalizations l = AppLocalizations.of(context);
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      showDragHandle: true,
-      builder: (BuildContext ctx) => SizedBox(
-        height: MediaQuery.sizeOf(ctx).height * 0.7,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: <Widget>[
-            Padding(
-              padding: EdgeInsets.fromLTRB(16, 0, 16, 8),
-              child: Text(l.meshbookTitle,
-                  style: Theme.of(ctx).textTheme.titleMedium),
-            ),
-            const Expanded(child: MeshbookView()),
-          ],
-        ),
-      ),
-    );
   }
 
   Future<void> _openSearch(MeshcoreController mc) async {
@@ -466,8 +469,7 @@ class _ChatScreenState extends State<ChatScreen>
     final double extent = _scroll.position.maxScrollExtent;
     final double frac = msgs.length <= 1 ? 0 : idx / (msgs.length - 1);
     _scroll.jumpTo((extent * frac).clamp(0.0, extent));
-    WidgetsBinding.instance
-        .addPostFrameCallback((_) => _scrollToHighlight(mc));
+    WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToHighlight(mc));
   }
 
   @override
@@ -576,8 +578,7 @@ class _ChatScreenState extends State<ChatScreen>
     // battery-sample / per-drain rebuilds that the previous
     // `context.watch<MeshcoreController>()` would cause.
     final bool ready = context.select<MeshcoreController, bool>(
-        (MeshcoreController mc) =>
-            mc.state == MeshcoreConnectionState.ready);
+        (MeshcoreController mc) => mc.state == MeshcoreConnectionState.ready);
     final int active = context.select<MeshcoreController, int>(
         (MeshcoreController mc) => mc.activeChannel);
     final String activeName = context.select<MeshcoreController, String>(
@@ -593,8 +594,8 @@ class _ChatScreenState extends State<ChatScreen>
     // elements); this counter is what repaints them.
     context.select<MeshcoreController, int>(
         (MeshcoreController mc) => mc.deliveryRevision);
-    final bool ttsEnabled = context.select<TtsController, bool>(
-        (TtsController t) => t.enabled);
+    final bool ttsEnabled =
+        context.select<TtsController, bool>((TtsController t) => t.enabled);
     final bool muted = context.select<TtsController, bool>(
         (TtsController t) => t.isChannelMuted(active));
     final bool speaks = context.select<TtsController, bool>(
@@ -657,268 +658,308 @@ class _ChatScreenState extends State<ChatScreen>
 
     return MmScaffold(
       child: Column(
-      children: <Widget>[
-        MmPageHeader(title: l.tabChat),
-        // R91 — one row, one job: switch channel. The caption above it
-        // said "CHANNEL · PUBLIC" while the selected chip two lines below
-        // already said "Public", and the collapse chevron existed only to
-        // hide the strip under it. Header + strip was 108 dp for that.
-        SizedBox(
-          height: 48,
-          child: ListView(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
-            children: <Widget>[
-              for (final MapEntry<int, String> ch in channels)
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 4),
-                  child: Semantics(
-                    label: (unread[ch.key] ?? 0) > 0
-                        ? '${ch.value}, ${l.chatUnread(unread[ch.key]!)}'
-                        : ch.value,
-                    selected: ch.key == active,
-                    button: true,
-                    excludeSemantics: true,
-                    child: ChoiceChip(
-                      label: Text(ch.value),
-                      selected: ch.key == active,
-                      avatar: (unread[ch.key] ?? 0) > 0
-                          ? _UnreadBadge(
-                              key: ValueKey<String>('unread-${ch.key}'),
-                              count: unread[ch.key]!,
-                              onSelectedColor: ch.key == active,
-                            )
-                          : null,
-                      labelStyle: TextStyle(
-                        color: ch.key == active
-                            ? cs.onPrimary
-                            : cs.onSurface,
-                        fontWeight: ch.key == active
-                            ? FontWeight.w600
-                            : FontWeight.w400,
-                      ),
-                      onSelected: (_) => mc.setActiveChannel(ch.key),
-                    ),
-                  ),
-                ),
-              // APP-E6 — search sits at the end of the strip, where the
-              // strip's own subject (which channel) is already decided.
-              if (msgs.isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.only(left: 4),
-                  child: IconButton(
-                    key: const ValueKey<String>('chat-search'),
-                    tooltip: l.chatSearchAction,
-                    onPressed: () => _openSearch(mc),
-                    icon: const Icon(Icons.search),
-                  ),
-                ),
-              // APP-E4 - one conversation leaves as its own passphrase file.
-              // The file is app-private, so it goes to the share sheet rather
-              // than being named in a snackbar the user cannot reach.
-              if (msgs.isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.only(left: 4),
-                  child: IconButton(
-                    key: const ValueKey<String>('chat-export-thread'),
-                    tooltip: l.chatExportAction,
-                    onPressed: () => _exportThread(mc),
-                    icon: const Icon(Icons.ios_share),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.only(left: 4),
-                  child: IconButton(
-                    key: const ValueKey<String>('chat-restore-thread'),
-                    tooltip: l.chatRestoreMenu,
-                    onPressed: () => _restoreFromExport(mc),
-                    icon: const Icon(Icons.settings_backup_restore),
-                  ),
-                ),
-              // This channel's activity report, one tap from the strip that
-              // names the channel it describes.
-              Padding(
-                padding: const EdgeInsets.only(left: 4),
-                child: IconButton(
-                  key: const ValueKey<String>('chat-activity'),
-                  tooltip: l.meshbookTitle,
-                  onPressed: _openActivity,
-                  icon: const Icon(Icons.insights),
-                ),
-              ),
-              // Manage channels: a chip, not a "#" icon next to the
-              // channel chips, where two different meanings of "channel"
-              // sat side by side.
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4),
-                child: ActionChip(
-                  avatar: const Icon(Icons.add, size: 16),
-                  label: Text(l.chatManageChannels),
-                  onPressed: () => context.push('/settings/channels'),
-                ),
-              ),
-              // Per-channel speech, at the end of the strip because it is
-              // a property of the channel that is selected there.
-              //
-              // With speech switched off globally the per-channel toggle has
-              // nothing to toggle, so this slot carries the reason and the way
-              // out instead of disappearing: a control that silently vanishes
-              // reads as a bug to the user who turned speech off and cannot
-              // find it again.
-              if (ttsEnabled)
-                Padding(
-                  padding: const EdgeInsets.only(left: 4),
-                  child: IconButton(
-                    tooltip: muted ? l.chatTtsMuted : l.chatTtsActive,
-                    onPressed: () => context
-                        .read<TtsController>()
-                        .toggleChannelMute(active),
-                    icon: Icon(
-                      speaks ? Icons.volume_up : Icons.volume_off,
-                      color: speaks ? cs.primary : cs.onSurfaceVariant,
-                    ),
-                  ),
-                )
-              else
-                Padding(
-                  padding: const EdgeInsets.only(left: 4),
-                  child: IconButton(
-                    key: const ValueKey<String>('chat-speech-off'),
-                    tooltip: l.chatSpeechOffAction,
-                    onPressed: () => context.push('/settings/app'),
-                    icon: Icon(Icons.volume_off, color: cs.onSurfaceVariant),
-                  ),
-                ),
-            ],
-          ),
-        ),
-        const Divider(height: 1),
-        HistoryUnreadableNotice(onRestore: () => _restoreFromExport(mc)),
-        HistoryRetentionNotice(dropped: dropped),
-
-        // Message list (active channel) + R29 jump-to-newest pill.
-        Expanded(
-          child: Stack(
-            children: <Widget>[
-              Positioned.fill(
-                child: msgs.isEmpty
-                    ? Center(
-                        child: Text(l.chatEmpty,
-                            style: TextStyle(
-                                color: cs.onSurfaceVariant)),
-                      )
-                    : ListView.builder(
-                        controller: _scroll,
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 8),
-                        itemCount: msgs.length,
-                        itemBuilder: (BuildContext ctx, int i) {
-                          final bool lit = msgs[i].id == _highlightId;
-                          final Widget row = _MessageRow(
-                            msgs[i],
-                            key: lit ? _highlightKey : null,
-                            onAction: () => _onAction(mc, msgs[i]),
-                            // The DR Pop name tag shows the cadence since
-                            // this identity last spoke; only that mode reads
-                            // it, so only compute it there.
-                            sinceLast: _chatModeFor(ctx.skin.preset) ==
-                                    _ChatMode.block
-                                ? _sinceLastFromSame(msgs, i)
-                                : null,
-                          );
-                          if (!lit) return row;
-                          return ColoredBox(
-                            color: cs.secondaryContainer,
-                            child: row,
-                          );
-                        },
-                      ),
-              ),
-              // The pill only appears when the user is NOT at the
-              // bottom (so they wouldn't otherwise see the newest
-              // row) AND new messages have actually arrived since
-              // they scrolled away. If the user scrolls up but no
-              // new messages come in, no pill — silence is correct.
-              if (!_atBottom && _unreadSinceScrollAway > 0)
-                Positioned(
-                  right: 12,
-                  bottom: 12,
-                  child: _JumpToNewestPill(
-                    count: _unreadSinceScrollAway,
-                    onTap: _jumpToNewest,
-                    label: l.chatJumpToNewest(_unreadSinceScrollAway),
-                  ),
-                ),
-            ],
-          ),
-        ),
-
-        // Composer.
-        SafeArea(
-          top: false,
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(12, 8, 8, 8),
-            child: Row(
+        children: <Widget>[
+          MmPageHeader(title: l.tabChat),
+          // R91 — one row, one job: switch channel. The caption above it
+          // said "CHANNEL · PUBLIC" while the selected chip two lines below
+          // already said "Public", and the collapse chevron existed only to
+          // hide the strip under it. Header + strip was 108 dp for that.
+          SizedBox(
+            height: 48,
+            child: ListView(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
               children: <Widget>[
-                Expanded(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      TextField(
-                        controller: _input,
-                        enabled: ready,
-                        textInputAction: TextInputAction.send,
-                        onSubmitted: (_) => _send(mc),
-                        decoration: InputDecoration(
-                          isDense: true,
-                          hintText: ready
-                              ? l.chatComposerHint(activeName)
-                              : l.chatComposerOffline,
-                          border: const OutlineInputBorder(),
+                for (final MapEntry<int, String> ch in channels)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    child: Semantics(
+                      label: (unread[ch.key] ?? 0) > 0
+                          ? '${ch.value}, ${l.chatUnread(unread[ch.key]!)}'
+                          : ch.value,
+                      selected: ch.key == active,
+                      button: true,
+                      excludeSemantics: true,
+                      child: ChoiceChip(
+                        label: Text(ch.value),
+                        selected: ch.key == active,
+                        avatar: (unread[ch.key] ?? 0) > 0
+                            ? _UnreadBadge(
+                                key: ValueKey<String>('unread-${ch.key}'),
+                                count: unread[ch.key]!,
+                                onSelectedColor: ch.key == active,
+                              )
+                            : null,
+                        labelStyle: TextStyle(
+                          color: ch.key == active ? cs.onPrimary : cs.onSurface,
+                          fontWeight: ch.key == active
+                              ? FontWeight.w600
+                              : FontWeight.w400,
+                        ),
+                        onSelected: (_) => mc.setActiveChannel(ch.key),
+                      ),
+                    ),
+                  ),
+                // One overflow for everything that is not a channel. The
+                // strip answers "which channel", so search, export and manage
+                // live behind one control at its end instead of competing with
+                // the channel names (and instead of appearing only when a
+                // thread happens to have rows).
+                Padding(
+                  padding: const EdgeInsets.only(left: 4),
+                  child: PopupMenuButton<String>(
+                    key: const ValueKey<String>('chat-overflow'),
+                    tooltip: l.chatMoreActions,
+                    icon: const Icon(Icons.more_vert),
+                    onSelected: (String v) {
+                      switch (v) {
+                        case 'search':
+                          _openSearch(mc);
+                        case 'export':
+                          _exportThread(mc);
+                        case 'manage':
+                          context.push('/settings/channels');
+                        case 'activity':
+                          _openActivity();
+                        case 'restore':
+                          _restoreFromExport(mc);
+                      }
+                    },
+                    itemBuilder: (BuildContext _) => <PopupMenuEntry<String>>[
+                      PopupMenuItem<String>(
+                        key: const ValueKey<String>('chat-search'),
+                        value: 'search',
+                        enabled: msgs.isNotEmpty,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: <Widget>[
+                            const Icon(Icons.search, size: 20),
+                            const SizedBox(width: 12),
+                            Text(l.chatSearchAction),
+                          ],
                         ),
                       ),
-                      _ComposerCounter(
-                        budget: _budget,
-                        text: _input.text,
-                        label: l,
+                      PopupMenuItem<String>(
+                        key: const ValueKey<String>('chat-export-thread'),
+                        value: 'export',
+                        enabled: msgs.isNotEmpty,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: <Widget>[
+                            const Icon(Icons.ios_share, size: 20),
+                            const SizedBox(width: 12),
+                            Text(l.chatExportAction),
+                          ],
+                        ),
+                      ),
+                      PopupMenuItem<String>(
+                        key: const ValueKey<String>('chat-restore'),
+                        value: 'restore',
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: <Widget>[
+                            const Icon(Icons.settings_backup_restore, size: 20),
+                            const SizedBox(width: 12),
+                            Text(l.chatRestoreMenu),
+                          ],
+                        ),
+                      ),
+                      PopupMenuItem<String>(
+                        key: const ValueKey<String>('chat-activity'),
+                        value: 'activity',
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: <Widget>[
+                            const Icon(Icons.insights, size: 20),
+                            const SizedBox(width: 12),
+                            Text(l.meshbookTitle),
+                          ],
+                        ),
+                      ),
+                      PopupMenuItem<String>(
+                        key: const ValueKey<String>('chat-manage-channels'),
+                        value: 'manage',
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: <Widget>[
+                            const Icon(Icons.tune, size: 20),
+                            const SizedBox(width: 12),
+                            Text(l.chatManageChannels),
+                          ],
+                        ),
                       ),
                     ],
                   ),
                 ),
-                IconButton(
-                  key: const ValueKey<String>('chat-attach'),
-                  tooltip: l.mediaComposerTitle,
-                  onPressed: ready
-                      ? () => MediaComposer.show(
-                            context,
-                            service: _media,
-                            // The platform picker where this build has one,
-                            // and a named "cannot read a photo" state where it
-                            // does not, so a harness never reaches a plugin.
-                            source: context.read<MediaPhotoSource?>() ??
-                                kNoMediaPhotoSource,
-                            channelPsk: mc.channelPsk(mc.activeChannel),
-                            byteBudget: kMediaPhotoBudgetBytes,
-                            sendBlob: (Uint8List blob) => mc.sendChannelData(
-                              channelIdx: mc.activeChannel,
-                              dataType: kChannelDataTypeDev,
-                              blob: blob,
-                            ),
-                          )
-                      : null,
-                  icon: const Icon(Icons.add_photo_alternate_outlined),
-                ),
-                IconButton(
-                  tooltip: l.chatSend,
-                  onPressed: ready ? () => _send(mc) : null,
-                  icon: const Icon(Icons.send),
-                ),
+                // Per-channel speech, at the end of the strip because it is
+                // a property of the channel that is selected there.
+                if (ttsEnabled)
+                  Padding(
+                    padding: const EdgeInsets.only(left: 4),
+                    child: IconButton(
+                      tooltip: muted ? l.chatTtsMuted : l.chatTtsActive,
+                      onPressed: () => context
+                          .read<TtsController>()
+                          .toggleChannelMute(active),
+                      icon: Icon(
+                        speaks ? Icons.volume_up : Icons.volume_off,
+                        color: speaks ? cs.primary : cs.onSurfaceVariant,
+                      ),
+                    ),
+                  )
+                else
+                  // Speech off everywhere: the per-channel toggle would be a
+                  // control that does nothing, so the slot says why and opens
+                  // the screen that turns it on. Losing this left a control
+                  // that simply vanished for the user who switched speech off.
+                  Padding(
+                    padding: const EdgeInsets.only(left: 4),
+                    child: IconButton(
+                      key: const ValueKey<String>('chat-speech-off'),
+                      tooltip: l.chatSpeechOffAction,
+                      onPressed: () => context.push('/settings/app'),
+                      icon: Icon(Icons.volume_off, color: cs.onSurfaceVariant),
+                    ),
+                  ),
               ],
             ),
           ),
-        ),
-      ],
+          const Divider(height: 1),
+          // The sealed history could not be opened on this device: say so and
+          // offer the one recovery path, rather than showing an empty thread
+          // beside a report that it is missing.
+          HistoryUnreadableNotice(onRestore: () => _restoreFromExport(mc)),
+          HistoryRetentionNotice(dropped: dropped),
+
+          // Message list (active channel) + R29 jump-to-newest pill.
+          Expanded(
+            child: Stack(
+              children: <Widget>[
+                Positioned.fill(
+                  child: msgs.isEmpty
+                      ? Center(
+                          child: Text(l.chatEmpty,
+                              style: TextStyle(color: cs.onSurfaceVariant)),
+                        )
+                      : ListView.builder(
+                          controller: _scroll,
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 8),
+                          itemCount: msgs.length,
+                          itemBuilder: (BuildContext ctx, int i) {
+                            final bool lit = msgs[i].id == _highlightId;
+                            final Widget row = _MessageRow(
+                              msgs[i],
+                              key: lit ? _highlightKey : null,
+                              onAction: () => _onAction(mc, msgs[i]),
+                              // The DR Pop name tag shows the cadence since
+                              // this identity last spoke; only that mode reads
+                              // it, so only compute it there.
+                              sinceLast: _chatModeFor(ctx.skin.preset) ==
+                                      _ChatMode.block
+                                  ? _sinceLastFromSame(msgs, i)
+                                  : null,
+                            );
+                            if (!lit) return row;
+                            return ColoredBox(
+                              color: cs.secondaryContainer,
+                              child: row,
+                            );
+                          },
+                        ),
+                ),
+                // The pill only appears when the user is NOT at the
+                // bottom (so they wouldn't otherwise see the newest
+                // row) AND new messages have actually arrived since
+                // they scrolled away. If the user scrolls up but no
+                // new messages come in, no pill — silence is correct.
+                if (!_atBottom && _unreadSinceScrollAway > 0)
+                  Positioned(
+                    right: 12,
+                    bottom: 12,
+                    child: _JumpToNewestPill(
+                      count: _unreadSinceScrollAway,
+                      onTap: _jumpToNewest,
+                      label: l.chatJumpToNewest(_unreadSinceScrollAway),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+
+          // Composer. Without a radio there is nothing to type into, so the
+          // row becomes the state and the way out of it instead of a disabled
+          // field whose only advice is on another screen.
+          SafeArea(
+            top: false,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(12, 8, 8, 8),
+              child: !ready
+                  ? ComposerOffline(
+                      connecting: context.select<MeshcoreController, bool>(
+                          (MeshcoreController mc) => mc.isConnecting),
+                    )
+                  : Row(
+                      children: <Widget>[
+                        Expanded(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: <Widget>[
+                              TextField(
+                                controller: _input,
+                                textInputAction: TextInputAction.send,
+                                onSubmitted: (_) => _send(mc),
+                                decoration: InputDecoration(
+                                  isDense: true,
+                                  hintText: l.chatComposerHint(activeName),
+                                  border: const OutlineInputBorder(),
+                                ),
+                              ),
+                              ComposerCounter(
+                                budget: _budget,
+                                text: _input.text,
+                                label: l,
+                              ),
+                            ],
+                          ),
+                        ),
+                        IconButton(
+                          key: const ValueKey<String>('chat-attach'),
+                          tooltip: l.mediaComposerTitle,
+                          onPressed: ready
+                              ? () => MediaComposer.show(
+                                    context,
+                                    service: _media,
+                                    // The platform picker where this build has
+                                    // one, and a named "cannot read a photo"
+                                    // state where it does not, so a harness
+                                    // never reaches a plugin.
+                                    source: context
+                                            .read<MediaPhotoSource?>() ??
+                                        kNoMediaPhotoSource,
+                                    channelPsk: mc.channelPsk(mc.activeChannel),
+                                    byteBudget: kMediaPhotoBudgetBytes,
+                                    sendBlob: (Uint8List blob) =>
+                                        mc.sendChannelData(
+                                      channelIdx: mc.activeChannel,
+                                      dataType: kChannelDataTypeDev,
+                                      blob: blob,
+                                    ),
+                                  )
+                              : null,
+                          icon: const Icon(Icons.add_photo_alternate_outlined),
+                        ),
+                        IconButton(
+                          tooltip: l.chatSend,
+                          onPressed: () => _send(mc),
+                          icon: const Icon(Icons.send),
+                        ),
+                      ],
+                    ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -949,11 +990,6 @@ class _MessageRow extends StatelessWidget {
   /// that clock agrees with this phone, and a named marker when it does not
   /// (a sender running fast used to print a time in the future).
   String _time(AppLocalizations l) => clockStamp(l, m.at);
-
-  List<String> get _meta => <String>[
-        if (m.isFlood) 'flood',
-        if (m.snrDb != null) 'SNR ${m.snrDb!.toStringAsFixed(1)}',
-      ];
 
   /// Sender handle + body for incoming channel messages (`name: text`);
   /// our own outgoing messages carry no prefix.
@@ -987,62 +1023,71 @@ class _MessageRow extends StatelessWidget {
           message: m,
           body: s.body,
           sender: s.sender,
-          extraMeta: _meta,
           echo: place == null
               ? null
               : PlaceEchoLine(place: place, store: context.read<PlaceStore>()),
           onAction: onAction);
     }
     final String mono = skin.type.monoFamily;
-    final List<String> meta = _meta;
-    return InkWell(
-      onLongPress: onAction,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 4),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            // R102 — scale the gutter with the text (see StudioMessageRow).
-            SizedBox(
-              width: 56 * MediaQuery.textScalerOf(context).scale(1),
-              child: Text('${_time(l)} ${m.outgoing ? '»' : '«'}',
-                  maxLines: 1,
-                  softWrap: false,
-                  style: TextStyle(
-                      color: m.outgoing
-                          ? skin.color.accent
-                          : skin.color.fgMuted,
-                      fontFamily: mono,
-                      fontSize: 12)),
-            ),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  if (looksLikeBot(m.text))
-                    const Padding(
-                      padding: EdgeInsets.only(bottom: 2),
-                      child: BotTag(),
-                    ),
-                  Text(stripBotMarker(m.text),
-                      style:
-                          TextStyle(color: skin.color.fg, fontFamily: mono)),
-                  if (PlaceEchoLine.placeOf(m) case final Place place)
-                    PlaceEchoLine(
-                        place: place, store: context.read<PlaceStore>()),
-                  _metaRow(skin, meta, mono),
-                ],
+    final ({String? sender, String body}) parts = _split();
+    final String? state =
+        m.outgoing && m.delivery != null ? deliveryLabel(l, m.delivery!) : null;
+    final String spoken = <String>[
+      if (parts.sender != null) parts.sender!,
+      _time(l),
+      if (state != null) state,
+      parts.body,
+    ].join(', ');
+    return Semantics(
+      label: spoken,
+      child: InkWell(
+        onLongPress: onAction,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              // R102 — scale the gutter with the text (see StudioMessageRow).
+              SizedBox(
+                width: 56 * MediaQuery.textScalerOf(context).scale(1),
+                child: Text('${_time(l)} ${m.outgoing ? '»' : '«'}',
+                    maxLines: 1,
+                    softWrap: false,
+                    style: TextStyle(
+                        color:
+                            m.outgoing ? skin.color.accent : skin.color.fgMuted,
+                        fontFamily: mono,
+                        fontSize: 12)),
               ),
-            ),
-            IconButton(
-              tooltip: AppLocalizations.of(context).chatMessageActions,
-              iconSize: 18,
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
-              onPressed: onAction,
-              icon: Icon(Icons.more_vert, color: skin.color.fgMuted),
-            ),
-          ],
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    if (looksLikeBot(m.text))
+                      const Padding(
+                        padding: EdgeInsets.only(bottom: 2),
+                        child: BotTag(),
+                      ),
+                    Text(stripBotMarker(m.text),
+                        style:
+                            TextStyle(color: skin.color.fg, fontFamily: mono)),
+                    if (PlaceEchoLine.placeOf(m) case final Place place)
+                      PlaceEchoLine(
+                          place: place, store: context.read<PlaceStore>()),
+                    _metaRow(skin),
+                  ],
+                ),
+              ),
+              IconButton(
+                tooltip: AppLocalizations.of(context).chatMessageActions,
+                iconSize: 18,
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+                onPressed: onAction,
+                icon: Icon(Icons.more_vert, color: skin.color.fgMuted),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -1089,13 +1134,12 @@ class _MessageRow extends StatelessWidget {
         ? skin.color.accent
         : _mondrianColorFor(idKey.isEmpty ? s.body : idKey);
     final Color ink = fill.computeLuminance() > 0.45 ? base : skin.color.fg;
-    final List<String> meta = _meta;
 
     final Widget field = Container(
       padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
       // Mondrian black rule around every colour field.
-      decoration: BoxDecoration(
-          color: fill, border: Border.all(color: base, width: 3)),
+      decoration:
+          BoxDecoration(color: fill, border: Border.all(color: base, width: 3)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
@@ -1130,7 +1174,7 @@ class _MessageRow extends StatelessWidget {
                 DeliveryStatusIcon(m.delivery!),
                 const SizedBox(width: 4),
               ],
-              Text(<String>[_time(l), ...meta].join(' · '),
+              Text(_time(l),
                   style: TextStyle(
                       color: ink.withValues(alpha: 0.65), fontSize: 10)),
             ],
@@ -1154,8 +1198,8 @@ class _MessageRow extends StatelessWidget {
     final List<Widget> cells = <Widget>[
       Flexible(
         child: ConstrainedBox(
-          constraints: BoxConstraints(
-              maxWidth: MediaQuery.of(context).size.width * 0.6),
+          constraints:
+              BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.6),
           child: field,
         ),
       ),
@@ -1192,13 +1236,12 @@ class _MessageRow extends StatelessWidget {
     FontWeight? bodyWeight,
     required Color metaColor,
   }) {
-    final List<String> meta = _meta;
     final AppLocalizations l = AppLocalizations.of(context);
     return Align(
       alignment: m.outgoing ? Alignment.centerRight : Alignment.centerLeft,
       child: ConstrainedBox(
-        constraints: BoxConstraints(
-            maxWidth: MediaQuery.of(context).size.width * 0.78),
+        constraints:
+            BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.78),
         child: InkWell(
           onLongPress: onAction,
           child: Container(
@@ -1234,8 +1277,7 @@ class _MessageRow extends StatelessWidget {
                       DeliveryStatusIcon(m.delivery!),
                       const SizedBox(width: 4),
                     ],
-                    Text(
-                        <String>[_time(l), ...meta].join(' · '),
+                    Text(_time(l),
                         style: TextStyle(color: metaColor, fontSize: 10)),
                   ],
                 ),
@@ -1247,19 +1289,14 @@ class _MessageRow extends StatelessWidget {
     );
   }
 
-  Widget _metaRow(MmSkin skin, List<String> meta, String mono) {
-    if (meta.isEmpty && !(m.outgoing && m.delivery != null)) {
-      return const SizedBox.shrink();
-    }
+  /// The row's own delivery glyph, and nothing else: route and signal are
+  /// facts about a transmission, not about the message, so they live in the
+  /// row's actions sheet where a reader goes when they need them.
+  Widget _metaRow(MmSkin skin) {
+    if (!(m.outgoing && m.delivery != null)) return const SizedBox.shrink();
     return Row(
       children: <Widget>[
-        if (m.outgoing && m.delivery != null) ...<Widget>[
-          DeliveryStatusIcon(m.delivery!),
-          const SizedBox(width: 4),
-        ],
-        if (meta.isNotEmpty)
-          Text(meta.join(' · '),
-              style: TextStyle(color: skin.color.fgMuted, fontSize: 11)),
+        DeliveryStatusIcon(m.delivery!),
       ],
     );
   }
@@ -1349,8 +1386,8 @@ class _NameTag extends StatelessWidget {
     return Container(
       width: 58,
       padding: const EdgeInsets.all(4),
-      decoration:
-          BoxDecoration(color: base, border: Border.all(color: color, width: 3)),
+      decoration: BoxDecoration(
+          color: base, border: Border.all(color: color, width: 3)),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
@@ -1358,12 +1395,12 @@ class _NameTag extends StatelessWidget {
             width: 36,
             height: 36,
             child: CustomPaint(
-              painter:
-                  _InvaderPainter(seed: _fnv1a(seedKey), color: color, bg: base),
+              painter: _InvaderPainter(
+                  seed: _fnv1a(seedKey), color: color, bg: base),
             ),
           ),
           if (since != null) ...<Widget>[
-            const SizedBox(height: 2),
+            const SizedBox(height: 4),
             Text(since!,
                 maxLines: 1,
                 style: TextStyle(
@@ -1410,8 +1447,7 @@ class _InvaderPainter extends CustomPainter {
     for (int y = 0; y < _rows; y++) {
       for (int x = 0; x < half; x++) {
         if (bit() == 0) continue;
-        canvas.drawRect(
-            Rect.fromLTWH(x * cw, y * ch, cw, ch).deflate(0.6), on);
+        canvas.drawRect(Rect.fromLTWH(x * cw, y * ch, cw, ch).deflate(0.6), on);
         final int mx = _cols - 1 - x; // mirror
         if (mx != x) {
           canvas.drawRect(
@@ -1457,8 +1493,7 @@ class _JumpToNewestPill extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
-              Icon(Icons.arrow_downward,
-                  size: 16, color: cs.onPrimary),
+              Icon(Icons.arrow_downward, size: 16, color: cs.onPrimary),
               const SizedBox(width: 6),
               Text(label,
                   style: TextStyle(
@@ -1472,61 +1507,6 @@ class _JumpToNewestPill extends StatelessWidget {
     );
   }
 }
-
-/// APP-D1 — how much of the radio's text budget the composer has used.
-///
-/// The number is the same one `_send` refuses with, computed by
-/// [ComposerBudget]. It is shown as remaining bytes rather than a ratio because
-/// the limit is in bytes, not characters: a Japanese message has far fewer
-/// characters than an English one at the same count. The count is text, not
-/// colour, and it is a live region so a screen reader announces the change.
-class _ComposerCounter extends StatelessWidget {
-  const _ComposerCounter({
-    required this.budget,
-    required this.text,
-    required this.label,
-  });
-
-  final ComposerBudget budget;
-  final String text;
-  final AppLocalizations label;
-
-  @override
-  Widget build(BuildContext context) {
-    final ComposerState state = budget.stateFor(text);
-    final MmTokens tokens = context.skin.color;
-    final Color colour = switch (state) {
-      ComposerState.ok => tokens.fgMuted,
-      ComposerState.near => tokens.accent,
-      ComposerState.over => tokens.alert,
-    };
-    final int remaining = budget.remainingFor(text);
-    final String shown = state == ComposerState.over
-        ? label.chatBudgetTooLong(budget.overBy(text))
-        : budget.prefixKnown
-            // Measured against the radio's whole budget, not the sender's
-            // share: "152 of 160 left" is a number a person can check.
-            ? label.chatBudgetRemaining(
-                remaining, ChannelTextLimits.maxTextBytes)
-            : label.chatBudgetEstimate(
-                remaining, ChannelTextLimits.maxTextBytes);
-    return Padding(
-      padding: const EdgeInsets.only(top: 2),
-      child: Semantics(
-        liveRegion: true,
-        label: shown,
-        child: Text(
-          shown,
-          style: TextStyle(
-            color: colour,
-            fontSize: context.skin.type.sizeMicro,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 
 /// The count a channel chip carries while it has unread messages.
 ///
@@ -1579,8 +1559,8 @@ class _PassphraseDialog extends StatefulWidget {
 
   final AppLocalizations l;
 
-  /// Overridable so the same dialog asks for a passphrase to write a file and
-  /// to open one: the words differ, the control does not.
+  /// Overridable so one dialog asks for a passphrase to write a file and to
+  /// open one: the words differ, the control does not.
   final String? _title;
   final String? _field;
   final String? _confirm;

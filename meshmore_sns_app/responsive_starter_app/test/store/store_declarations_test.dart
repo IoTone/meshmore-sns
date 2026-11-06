@@ -116,10 +116,11 @@ void main() {
     expect(chat, contains('EncryptedStore'));
     expect(chat, contains("'mm.chat.v1'"),
         reason: 'the legacy key is read for the migration and nowhere else');
-    // The plaintext write is a fallback only: it sits after the sealed path
-    // in `save`, and the migration removes the plaintext once sealed works.
-    expect(RegExp('setString\\(_kLegacyKey').allMatches(chat).length, 1,
-        reason: 'exactly one plaintext write, the host-with-no-key fallback');
+    // No plaintext write at all: a store that cannot seal says so and keeps
+    // the ciphertext, because a silent plaintext fallback is the one thing a
+    // sealed history must never do.
+    expect(RegExp('setString\\(_kLegacyKey').allMatches(chat).length, 0,
+        reason: 'history is never written in the clear');
     expect(chat, contains('p.remove(_kLegacyKey)'),
         reason: 'migration must delete the plaintext after verifying the copy');
   });

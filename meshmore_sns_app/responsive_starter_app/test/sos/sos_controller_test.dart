@@ -128,10 +128,28 @@ void main() {
     expect(revived.resumedFromRestart, isFalse);
   });
 
-  test('a safe message that never left is reported as not sent', () async {
+  test('a safe message with no answer reads as unconfirmed', () async {
     await raiseAndConfirm();
+    // A thrown write leaves the row `unknown`: the packet may have gone, so
+    // the panel says "not confirmed" rather than "not sent".
     fake.failSend = true;
     await sos.iAmSafe();
+    expect(sos.safeSent, isNull, reason: 'nothing here proves it was refused');
+    expect(sos.safeUnconfirmed, isTrue);
+    expect(sos.state, SosState.cancelled);
+  });
+
+  test('a safe message the radio refused reads as not sent', () async {
+    await raiseAndConfirm();
+    // The radio answers ERR for the [SAFE] frame: that is evidence nobody
+    // heard it, which is a different sentence from "we do not know".
+    final Future<void> safe = sos.iAmSafe();
+    await Future<void>.delayed(Duration.zero);
+    fake.emit(Uint8List.fromList(<int>[0x01, 3]));
+    await safe;
+    // The row is watched, not assumed: the panel takes the refusal when the
+    // controller resolves it, which is a beat after the write returns.
+    await Future<void>.delayed(Duration.zero);
     expect(sos.safeSent, isFalse);
     expect(sos.state, SosState.cancelled);
   });
@@ -248,40 +266,31 @@ void main() {
         reason: 'the four due sends become one sent and three counted as missed');
   });
 
-  test('a refused repeat is counted, and the schedule continues', () async {
+  test('an exhausted airtime meter does not silence the alarm', () async {
     await raiseAndConfirm();
-    // Exhaust the app's own airtime meter: the next repeat is refused here,
-    // synchronously, which is the refusal the badge can know about at the
-    // moment it sends.
+    // The app's duty cycle is its own invention; an alarm repeat is written
+    // anyway, and charged, so the meter keeps telling the truth.
     mc.airtimeMeterForTest.charge(const Duration(hours: 1));
     clock.now = clock.now.add(const Duration(seconds: 61));
     sos.pump();
     await Future<void>.delayed(Duration.zero);
-    expect(sos.failedSends, 1);
-    expect(sos.state, SosState.active,
-        reason: 'one refused repeat is not a failed alarm');
-
-    // The hour rolls over, so the meter has room again: the next repeat goes
-    // and the badge clears.
-    mc.airtimeMeterForTest.reset();
-    clock.now = clock.now.add(const Duration(seconds: 60));
-    sos.pump();
-    await Future<void>.delayed(Duration.zero);
-    expect(sos.failedSends, 0, reason: 'a good send clears the refusal badge');
+    expect(sos.failedSends, 0);
+    expect(sos.state, SosState.active);
     expect(sentTexts(), hasLength(2),
-        reason: 'the refused repeat never reached the radio');
+        reason: 'the repeat reached the radio despite the full window');
+    mc.airtimeMeterForTest.reset();
   });
 
-  test('a write that threw is not a refusal: the packet may have gone',
-      () async {
+  test('a write that threw is unconfirmed, not refused', () async {
     await raiseAndConfirm();
-    // A thrown write leaves the row `unknown` (APP-C2), so the alarm neither
-    // counts it as a refusal nor stops: the packet may be on its way.
+    // A thrown write leaves the row `unknown` (APP-C2): the packet may be on
+    // its way, so this is neither a refusal nor a send the app can vouch for.
     fake.failSend = true;
     clock.now = clock.now.add(const Duration(seconds: 61));
     sos.pump();
     await Future<void>.delayed(Duration.zero);
-    expect(sos.failedSends, 0);
+    expect(sos.failedSends, 0, reason: 'nothing here proves the radio refused');
+    expect(sos.unconfirmedSends, 1);
     expect(sos.state, SosState.active);
     fake.failSend = false;
   });

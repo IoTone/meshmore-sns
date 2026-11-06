@@ -850,10 +850,7 @@
       }
     }
   },
-  "chatComposerOffline": "送信するにはラジオに接続",
   "chatSend": "送信",
-  "chatBudgetRemaining": "残り {remaining} / {max} バイト",
-  "chatBudgetEstimate": "残り約 {remaining} / {max} バイト — 無線機の名前はまだ不明です",
   "chatBudgetNear": "上限が近いです:無線機は自分の名前もこのバイト数に含めます",
   "chatBudgetTooLong": "{over} バイト超過 — 無線機は残りを通知せずに切り捨てます",
   "chatMessageActions": "メッセージ操作",
@@ -890,14 +887,6 @@
       }
     }
   },
-  "dmPubkeyLabel": "公開鍵 · {hex}",
-  "@dmPubkeyLabel": {
-    "placeholders": {
-      "hex": {
-        "type": "String"
-      }
-    }
-  },
   "nodeDetailSignature": "メッセージ音",
   "nodeDetailSignatureHint": "この相手からのメッセージでは、通常の音の代わりに鳴ります。",
   "nodeDetailSignatureNone": "デフォルト",
@@ -929,9 +918,7 @@
   "dmSend": "DM 送信",
   "actionRetrySub": "このメッセージをもう一度送信",
   "actionReply": "返信",
-  "actionReplySub": "このメッセージを引用して返信",
   "actionCopy": "コピー",
-  "actionCopySub": "メッセージ本文をクリップボードにコピー",
   "actionDeleteLocal": "ローカル削除",
   "actionDeleteLocalSub": "履歴からこの行のみ削除 — OTA 送信済みのメッセージは取り消せません。",
   "actionCopied": "クリップボードにコピーしました",
@@ -1288,13 +1275,6 @@
   },
   "snsCellsClear": "クリア",
   "snsCellsStatus": "{active} セル · {hot} ホット",
-  "@snsPlacesButton": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
   "snsFrameMetro": "メトロ · 約20 km",
   "snsFrameRegion": "地域 · 約300 km",
   "snsFrameMesh": "メッシュ · 全体",
@@ -1460,14 +1440,11 @@
   },
   "channelsEdit": "編集",
   "channelsSet": "設定",
-  "channelsSetSnack": "チャンネル {idx} を「{name}」に設定 — どのラジオでも同じ名前と鍵が必要です",
+  "channelsSetSnack": "スロット {idx} を保存しました",
   "@channelsSetSnack": {
     "placeholders": {
       "idx": {
         "type": "int"
-      },
-      "name": {
-        "type": "String"
       }
     }
   },
@@ -1499,7 +1476,6 @@
   "notifDeniedBanner": "このアプリの通知がオフのため、メッセージはロック画面に表示されません。",
   "notifQuietBanner": "このアプリの通知が Android 設定でサイレントになっているため、警告音は鳴りません。",
   "notifMissingChannelBanner": "このアプリの通知チャンネルが削除されていたため、一部の通知を表示できませんでした。再作成しました。",
-  "channelsKeySource": "鍵ソース",
   "channelsKeyPublic": "Public",
   "channelsKeyHashtag": "#タグ",
   "channelsKeyHex": "Hex",
@@ -1618,13 +1594,6 @@
   "deviceRegionSuggestApply": "使う",
   "deviceRegionSuggestNoFix": "まだ GPS を取得できません。屋外で位置情報をオンにして試してください。",
   "deviceRegionSuggestNoMatch": "現在地が出荷時プリセットの対象外です — 手動で選択してください。",
-  "@deviceRegionAppliedToast": {
-    "placeholders": {
-      "label": {
-        "type": "String"
-      }
-    }
-  },
   "deviceRegionDisclaimerShort": "利用者どうしの値で、規制当局の確認はありません。",
   "deviceRegionDisclaimer": "プリセットは利用者どうしで共有されている値で、規制当局の確認を受けたものではありません。利用地で合法なものを選び、どのラジオでも同じ設定にしてください。日本では無線機自体が技適を取得している必要があり、輸入したボードの多くは未取得です。設定にかかわらず、未取得機の使用は電波法違反になります。日本（ARIB STD-T108）のプリセットはコミュニティ提案で、広く検証されたものではありません。",
   "presetUsCanada": "米国 / カナダ",
@@ -2544,13 +2513,6 @@
       }
     }
   },
-  "@equalGridCellSize": {
-    "placeholders": {
-      "size": {
-        "type": "String"
-      }
-    }
-  },
   "mapNoPositionYet": "現在地がまだ分かりません。",
   "mapNoPositionFind": "現在地を取得",
   "mapNoPositionAsking": "取得中...",
@@ -2559,5 +2521,18 @@
   "mapLocationBlockedApp": "このアプリの位置情報がブロックされています。",
   "mapLocationOpenSettings": "設定を開く",
   "mapLocationOffDevice": "この端末の位置情報がオフです。",
-  "weatherOpenTelemetrySettings": "ノードのテレメトリを有効にする"
+  "weatherOpenTelemetrySettings": "ノードのテレメトリを有効にする",
+  "chatNoRadio": "無線機が接続されていません",
+  "chatConnectRadio": "無線機を接続",
+  "chatConnecting": "接続中…",
+  "chatBudgetEstimateNear": "残り約 {remaining}",
+  "chatMetaFlood": "フラッド経由",
+  "chatMetaSnr": "SNR {snr} dB",
+  "chatActionsMeta": "配送・経路・信号",
+  "chatMoreActions": "その他",
+  "dmKeyCopied": "相手の鍵をコピーしました",
+  "channelsInfoTooltip": "チャンネルの仕組み",
+  "channelsOptionsTooltip": "チャンネル設定",
+  "sosSafeUnconfirmed": "確認できません。送信中に接続が切れたため、届いたかどうかは不明です。",
+  "sosSendUnconfirmed": "{count, plural, other{{count} 回の送信は確認できません。スケジュールは継続します。}}"
 }

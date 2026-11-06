@@ -80,12 +80,17 @@ void main() {
     // bare `Future.delayed` inside the test callback hangs).
     await t.pumpWidget(_host(mc, peer));
     await t.pump();
-    expect(find.text('— no messages yet —'), findsOneWidget);
+    // Without a radio the composer is the state and its way out, not a
+    // disabled field.
+    // The empty thread is one line, and it names the state rather than
+    // instructing a tap.
+    expect(find.textContaining('no messages yet'), findsOneWidget);
+    expect(find.byKey(const ValueKey<String>('composer-connect')),
+        findsOneWidget);
 
     await mc.connect();
     fake.emit(selfInfoFrame()); // → ready
-    await t.pump();
-    await t.pump(const Duration(milliseconds: 10));
+    await t.pumpAndSettle();
 
     // Compose + send a DM (outgoing path).
     await t.enterText(find.byType(TextField), 'reply to peer');

@@ -148,6 +148,11 @@ void main() {
     await t.pumpWidget(_host(ctrl));
     await t.pump();
 
+    // The rules moved behind one info action: the list is the answer, and the
+    // two paragraphs that used to sit above it are one tap away.
+    await t.tap(find.byKey(const ValueKey<String>('channels-info')));
+    await t.pumpAndSettle();
+
     Text find1(String key) => t.widget<Text>(find.text(key));
     expect(find1('Channel 0 is the shared public one. A private group needs the '
                     'same channel number, name and key on every radio.')

@@ -2702,35 +2702,17 @@ abstract class AppLocalizations {
   /// **'Message {channel}'**
   String chatComposerHint(String channel);
 
-  /// No description provided for @chatComposerOffline.
-  ///
-  /// In en, this message translates to:
-  /// **'Connect a radio to send'**
-  String get chatComposerOffline;
-
   /// No description provided for @chatSend.
   ///
   /// In en, this message translates to:
   /// **'Send'**
   String get chatSend;
 
-  /// No description provided for @chatBudgetRemaining.
-  ///
-  /// In en, this message translates to:
-  /// **'{remaining} of {max} bytes left'**
-  String chatBudgetRemaining(int remaining, int max);
-
-  /// No description provided for @chatBudgetEstimate.
-  ///
-  /// In en, this message translates to:
-  /// **'about {remaining} of {max} bytes left — the radio\'s name is not known yet'**
-  String chatBudgetEstimate(int remaining, int max);
-
   /// No description provided for @chatBudgetNear.
   ///
   /// In en, this message translates to:
   /// **'Nearly at the limit: the radio counts its own name in these bytes'**
-  String get chatBudgetNear;
+  String chatBudgetNear(int remaining);
 
   /// No description provided for @chatBudgetTooLong.
   ///
@@ -2773,12 +2755,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Direct · {peer}'**
   String dmTitle(String peer);
-
-  /// No description provided for @dmPubkeyLabel.
-  ///
-  /// In en, this message translates to:
-  /// **'pubkey · {hex}'**
-  String dmPubkeyLabel(String hex);
 
   /// No description provided for @nodeDetailSignature.
   ///
@@ -2882,23 +2858,11 @@ abstract class AppLocalizations {
   /// **'Reply'**
   String get actionReply;
 
-  /// No description provided for @actionReplySub.
-  ///
-  /// In en, this message translates to:
-  /// **'Quote this message in your reply'**
-  String get actionReplySub;
-
   /// No description provided for @actionCopy.
   ///
   /// In en, this message translates to:
   /// **'Copy'**
   String get actionCopy;
-
-  /// No description provided for @actionCopySub.
-  ///
-  /// In en, this message translates to:
-  /// **'Copy the message text to the clipboard'**
-  String get actionCopySub;
 
   /// No description provided for @actionDeleteLocal.
   ///
@@ -4139,8 +4103,8 @@ abstract class AppLocalizations {
   /// No description provided for @channelsSetSnack.
   ///
   /// In en, this message translates to:
-  /// **'Channel {idx} set to \"{name}\" — every radio needs the same name and key here'**
-  String channelsSetSnack(int idx, String name);
+  /// **'Slot {idx} saved'**
+  String channelsSetSnack(int idx);
 
   /// No description provided for @channelsDialogTitle.
   ///
@@ -4267,12 +4231,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'One of this app\'s notification channels was deleted, so some alerts could not be shown. It has been recreated.'**
   String get notifMissingChannelBanner;
-
-  /// No description provided for @channelsKeySource.
-  ///
-  /// In en, this message translates to:
-  /// **'Key source'**
-  String get channelsKeySource;
 
   /// No description provided for @channelsKeyPublic.
   ///
@@ -9591,6 +9549,84 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Turn on node telemetry'**
   String get weatherOpenTelemetrySettings;
+
+  /// No description provided for @chatNoRadio.
+  ///
+  /// In en, this message translates to:
+  /// **'No radio connected'**
+  String get chatNoRadio;
+
+  /// No description provided for @chatConnectRadio.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect a radio'**
+  String get chatConnectRadio;
+
+  /// No description provided for @chatConnecting.
+  ///
+  /// In en, this message translates to:
+  /// **'Connecting…'**
+  String get chatConnecting;
+
+  /// No description provided for @chatBudgetEstimateNear.
+  ///
+  /// In en, this message translates to:
+  /// **'~{remaining} left'**
+  String chatBudgetEstimateNear(int remaining);
+
+  /// No description provided for @chatMetaFlood.
+  ///
+  /// In en, this message translates to:
+  /// **'via flood'**
+  String get chatMetaFlood;
+
+  /// No description provided for @chatMetaSnr.
+  ///
+  /// In en, this message translates to:
+  /// **'SNR {snr} dB'**
+  String chatMetaSnr(String snr);
+
+  /// No description provided for @chatActionsMeta.
+  ///
+  /// In en, this message translates to:
+  /// **'Delivery, route and signal'**
+  String get chatActionsMeta;
+
+  /// No description provided for @chatMoreActions.
+  ///
+  /// In en, this message translates to:
+  /// **'More'**
+  String get chatMoreActions;
+
+  /// No description provided for @dmKeyCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Peer key copied'**
+  String get dmKeyCopied;
+
+  /// No description provided for @channelsInfoTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'How channels work'**
+  String get channelsInfoTooltip;
+
+  /// No description provided for @channelsOptionsTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Channel settings'**
+  String get channelsOptionsTooltip;
+
+  /// No description provided for @sosSafeUnconfirmed.
+  ///
+  /// In en, this message translates to:
+  /// **'Not confirmed. The link dropped while sending, so this may or may not have been heard.'**
+  String get sosSafeUnconfirmed;
+
+  /// No description provided for @sosSendUnconfirmed.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{One repeat was not confirmed. The schedule continues.} other{{count} repeats were not confirmed. The schedule continues.}}'**
+  String sosSendUnconfirmed(int count);
 }
 
 class _AppLocalizationsDelegate

@@ -1491,23 +1491,12 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get chatComposerOffline => '送信するにはラジオに接続';
-
-  @override
   String get chatSend => '送信';
 
   @override
-  String chatBudgetRemaining(int remaining, int max) {
-    return '残り $remaining / $max バイト';
+  String chatBudgetNear(int remaining) {
+    return '上限が近いです:無線機は自分の名前もこのバイト数に含めます';
   }
-
-  @override
-  String chatBudgetEstimate(int remaining, int max) {
-    return '残り約 $remaining / $max バイト — 無線機の名前はまだ不明です';
-  }
-
-  @override
-  String get chatBudgetNear => '上限が近いです:無線機は自分の名前もこのバイト数に含めます';
 
   @override
   String chatBudgetTooLong(int over) {
@@ -1538,11 +1527,6 @@ class AppLocalizationsJa extends AppLocalizations {
   @override
   String dmTitle(String peer) {
     return '直接 · $peer';
-  }
-
-  @override
-  String dmPubkeyLabel(String hex) {
-    return '公開鍵 · $hex';
   }
 
   @override
@@ -1601,13 +1585,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get actionReply => '返信';
 
   @override
-  String get actionReplySub => 'このメッセージを引用して返信';
-
-  @override
   String get actionCopy => 'コピー';
-
-  @override
-  String get actionCopySub => 'メッセージ本文をクリップボードにコピー';
 
   @override
   String get actionDeleteLocal => 'ローカル削除';
@@ -2333,8 +2311,8 @@ class AppLocalizationsJa extends AppLocalizations {
   String get channelsSet => '設定';
 
   @override
-  String channelsSetSnack(int idx, String name) {
-    return 'チャンネル $idx を「$name」に設定 — どのラジオでも同じ名前と鍵が必要です';
+  String channelsSetSnack(int idx) {
+    return 'スロット $idx を保存しました';
   }
 
   @override
@@ -2407,9 +2385,6 @@ class AppLocalizationsJa extends AppLocalizations {
   @override
   String get notifMissingChannelBanner =>
       'このアプリの通知チャンネルが削除されていたため、一部の通知を表示できませんでした。再作成しました。';
-
-  @override
-  String get channelsKeySource => '鍵ソース';
 
   @override
   String get channelsKeyPublic => 'Public';
@@ -5463,4 +5438,54 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get weatherOpenTelemetrySettings => 'ノードのテレメトリを有効にする';
+
+  @override
+  String get chatNoRadio => '無線機が接続されていません';
+
+  @override
+  String get chatConnectRadio => '無線機を接続';
+
+  @override
+  String get chatConnecting => '接続中…';
+
+  @override
+  String chatBudgetEstimateNear(int remaining) {
+    return '残り約 $remaining';
+  }
+
+  @override
+  String get chatMetaFlood => 'フラッド経由';
+
+  @override
+  String chatMetaSnr(String snr) {
+    return 'SNR $snr dB';
+  }
+
+  @override
+  String get chatActionsMeta => '配送・経路・信号';
+
+  @override
+  String get chatMoreActions => 'その他';
+
+  @override
+  String get dmKeyCopied => '相手の鍵をコピーしました';
+
+  @override
+  String get channelsInfoTooltip => 'チャンネルの仕組み';
+
+  @override
+  String get channelsOptionsTooltip => 'チャンネル設定';
+
+  @override
+  String get sosSafeUnconfirmed => '確認できません。送信中に接続が切れたため、届いたかどうかは不明です。';
+
+  @override
+  String sosSendUnconfirmed(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count 回の送信は確認できません。スケジュールは継続します。',
+    );
+    return '$_temp0';
+  }
 }

@@ -701,6 +701,13 @@ class _Running extends StatelessWidget {
               style: TextStyle(
                   color: skin.color.alert, fontSize: skin.type.sizeSm)),
         ],
+        if (sos.unconfirmedSends > 0) ...<Widget>[
+          SizedBox(height: skin.space.step(2)),
+          Text(l.sosSendUnconfirmed(sos.unconfirmedSends),
+              key: const ValueKey<String>('sos-send-unconfirmed'),
+              style: TextStyle(
+                  color: skin.color.fgMuted, fontSize: skin.type.sizeSm)),
+        ],
         SizedBox(height: skin.space.step(4)),
         if (sos.acks.isNotEmpty) ...<Widget>[
           MmSectionHeader(l.sosAcknowledgedHeading),
@@ -792,13 +799,17 @@ class _Ended extends StatelessWidget {
         // SOS-3: a stop that never left the phone must not read like one that
         // reached the mesh. Only the "I'm safe" path tells anyone, so only it
         // carries this line; a silent stop says nothing was sent.
-        if (sos.safeSent != null) ...<Widget>[
+        if (sos.safeSent != null || sos.safeUnconfirmed) ...<Widget>[
           SizedBox(height: skin.space.step(3)),
           Text(
-            sos.safeSent! ? l.sosSafeSent : l.sosSafeNotSent,
+            sos.safeUnconfirmed
+                ? l.sosSafeUnconfirmed
+                : (sos.safeSent! ? l.sosSafeSent : l.sosSafeNotSent),
             key: const ValueKey<String>('sos-safe-outcome'),
             style: TextStyle(
-                color: sos.safeSent! ? skin.color.fgMuted : skin.color.alert,
+                color: sos.safeSent == true && !sos.safeUnconfirmed
+                    ? skin.color.fgMuted
+                    : skin.color.alert,
                 fontSize: skin.type.sizeBody,
                 height: 1.5),
           ),

@@ -93,6 +93,10 @@ void main() {
 
     final int before = fake.sent.length; // APP_START already sent
     await openDeveloper(t);
+    // The developer half is a scrolling section: reach the button rather than
+    // assuming it fits, which stopped being true when the section grew.
+    await t.ensureVisible(find.text("Read the radio's clock"));
+    await t.pumpAndSettle();
     await t.tap(find.text("Read the radio's clock"));
     await t.pumpAndSettle();
     expect(fake.sent.length, greaterThan(before));

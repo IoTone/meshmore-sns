@@ -1570,24 +1570,12 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get chatComposerOffline => 'Connect a radio to send';
-
-  @override
   String get chatSend => 'Send';
 
   @override
-  String chatBudgetRemaining(int remaining, int max) {
-    return '$remaining of $max bytes left';
+  String chatBudgetNear(int remaining) {
+    return 'Nearly at the limit: the radio counts its own name in these bytes';
   }
-
-  @override
-  String chatBudgetEstimate(int remaining, int max) {
-    return 'about $remaining of $max bytes left — the radio\'s name is not known yet';
-  }
-
-  @override
-  String get chatBudgetNear =>
-      'Nearly at the limit: the radio counts its own name in these bytes';
 
   @override
   String chatBudgetTooLong(int over) {
@@ -1618,11 +1606,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String dmTitle(String peer) {
     return 'Direct · $peer';
-  }
-
-  @override
-  String dmPubkeyLabel(String hex) {
-    return 'pubkey · $hex';
   }
 
   @override
@@ -1684,13 +1667,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get actionReply => 'Reply';
 
   @override
-  String get actionReplySub => 'Quote this message in your reply';
-
-  @override
   String get actionCopy => 'Copy';
-
-  @override
-  String get actionCopySub => 'Copy the message text to the clipboard';
 
   @override
   String get actionDeleteLocal => 'Delete locally';
@@ -2443,8 +2420,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get channelsSet => 'Set';
 
   @override
-  String channelsSetSnack(int idx, String name) {
-    return 'Channel $idx set to \"$name\" — every radio needs the same name and key here';
+  String channelsSetSnack(int idx) {
+    return 'Slot $idx saved';
   }
 
   @override
@@ -2523,9 +2500,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get notifMissingChannelBanner =>
       'One of this app\'s notification channels was deleted, so some alerts could not be shown. It has been recreated.';
-
-  @override
-  String get channelsKeySource => 'Key source';
 
   @override
   String get channelsKeyPublic => 'Public';
@@ -5689,4 +5663,56 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get weatherOpenTelemetrySettings => 'Turn on node telemetry';
+
+  @override
+  String get chatNoRadio => 'No radio connected';
+
+  @override
+  String get chatConnectRadio => 'Connect a radio';
+
+  @override
+  String get chatConnecting => 'Connecting…';
+
+  @override
+  String chatBudgetEstimateNear(int remaining) {
+    return '~$remaining left';
+  }
+
+  @override
+  String get chatMetaFlood => 'via flood';
+
+  @override
+  String chatMetaSnr(String snr) {
+    return 'SNR $snr dB';
+  }
+
+  @override
+  String get chatActionsMeta => 'Delivery, route and signal';
+
+  @override
+  String get chatMoreActions => 'More';
+
+  @override
+  String get dmKeyCopied => 'Peer key copied';
+
+  @override
+  String get channelsInfoTooltip => 'How channels work';
+
+  @override
+  String get channelsOptionsTooltip => 'Channel settings';
+
+  @override
+  String get sosSafeUnconfirmed =>
+      'Not confirmed. The link dropped while sending, so this may or may not have been heard.';
+
+  @override
+  String sosSendUnconfirmed(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count repeats were not confirmed. The schedule continues.',
+      one: 'One repeat was not confirmed. The schedule continues.',
+    );
+    return '$_temp0';
+  }
 }

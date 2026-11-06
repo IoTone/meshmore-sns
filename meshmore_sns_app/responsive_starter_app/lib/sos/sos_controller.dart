@@ -82,6 +82,7 @@ final class SosController extends ChangeNotifier {
   /// Counters behind the panel's honesty: what the radio refused, and what the
   /// sleep window swallowed. Both reset when a new alarm is raised.
   int _failedSends = 0;
+  int _unconfirmedSends = 0;
   int _missedSends = 0;
 
   /// True when this alarm came back from a snapshot rather than from a hold
@@ -93,6 +94,11 @@ final class SosController extends ChangeNotifier {
   /// true when it left, false when the radio refused it or there was none.
   bool? _safeSent;
   bool? get safeSent => _safeSent;
+
+  /// The "I'm safe" write left no answer. Kept apart from [safeSent] because
+  /// "we do not know" is a different sentence from "it did not go".
+  bool _safeUnconfirmed = false;
+  bool get safeUnconfirmed => _safeUnconfirmed;
 
   /// A blocked key's copy or claim must not appear here either: the block
   /// spec's rule is that every surface hides it, and the alarm is one.
@@ -180,6 +186,58 @@ final class SosController extends ChangeNotifier {
 
   bool get canArm => _mc.isReady && _mc.selfInfo != null;
 
+  /// Message ids this alarm has written, and whether each has been counted.
+  ///
+  /// A radio answers ERR a moment after the frame leaves, so a refusal is not
+  /// knowable at the call site. The controller mutates the row it returned,
+  /// and this watch turns that mutation into the panel's three states.
+  final Map<String, bool> _watched = <String, bool>{};
+  bool _mcHasListener = false;
+
+  void _watch(ChatMessage? m) {
+    if (m == null) return;
+    _watched[m.id] = false;
+  }
+
+  void _classifyWatched() {
+    if (_watched.isEmpty) return;
+    bool changed = false;
+    for (final String id in _watched.keys.toList()) {
+      ChatMessage? row;
+      for (final ChatMessage m in _mc.messagesFor(_channelSlot)) {
+        if (m.id == id) {
+          row = m;
+          break;
+        }
+      }
+      if (row == null) continue;
+      final MessageDelivery? d = row.delivery;
+      if (d == MessageDelivery.failed) {
+        if (_watched[id] != true) {
+          _watched[id] = true;
+          _failedSends++;
+          _unconfirmedSends = 0;
+          if (_safeSent == true) _safeSent = false;
+          changed = true;
+        }
+      } else if (d == MessageDelivery.unknown) {
+        if (_watched[id] != true) {
+          _watched[id] = true;
+          _unconfirmedSends++;
+          if (_safeSent == true) {
+            _safeSent = null;
+            _safeUnconfirmed = true;
+          }
+          changed = true;
+        }
+      } else if (d == MessageDelivery.sent ||
+          d == MessageDelivery.delivered) {
+        _watched.remove(id);
+      }
+    }
+    if (changed) _notify();
+  }
+
   void start() {
     // The initial default is not a fallback: with nothing remembered, the
     // emergency channel is the destination when the radio lists it, and the
@@ -187,6 +245,10 @@ final class SosController extends ChangeNotifier {
     _channelSlot = emergencyChannelSlot ?? _mc.activeChannel;
     _channelSub ??= _mc.incomingChannelMessages.listen(_onChannel);
     _dmSub ??= _mc.incomingDirectMessages.listen(_onDm);
+    if (!_mcHasListener) {
+      _mc.addListener(_classifyWatched);
+      _mcHasListener = true;
+    }
     unawaited(_restoreDestination());
     unawaited(_restoreAlarm());
   }
@@ -400,11 +462,26 @@ final class SosController extends ChangeNotifier {
       // Nothing was built, so nothing left: the panel must not read as though
       // the mesh was told (safety audit SOS-3).
       _safeSent = false;
+      _safeUnconfirmed = false;
       _persistAlarm();
       _notify();
       return;
     }
-    _safeSent = await _send(safe!.text!);
+    switch (await _send(safe!.text!)) {
+      case _SendOutcome.sent:
+        // The write was accepted. A refusal can still arrive a moment later
+        // and the watcher may already have counted it, so only a clean count
+        // lets this read as sent.
+        if (!_watched.values.any((bool counted) => counted) &&
+            !_safeUnconfirmed) {
+          _safeSent = true;
+        }
+      case _SendOutcome.refused:
+        _safeSent = false;
+      case _SendOutcome.unconfirmed:
+        _safeSent = null;
+        _safeUnconfirmed = true;
+    }
     _persistAlarm();
     _notify();
   }
@@ -477,44 +554,66 @@ final class SosController extends ChangeNotifier {
 
   /// Puts one packet on air, on every destination the alarm carries.
   ///
-  /// A failure is not a failed alarm (`meshmore-sos-spec.md` §10), but it is
-  /// also not nothing: a radio that refused the packet means nobody heard that
-  /// repeat, and the panel says so rather than reporting a clean run.
-  Future<bool> _send(String text) async {
-    // The controller answers with the row it created, so the outcome is read
-    // from the row rather than from a throw: the send path deliberately does
-    // not throw for a refused message (a refused send is not a crashed app).
-    //
-    // Both terminal-and-not-sent states count here. `failed` is the radio
-    // saying no. `unknown` is the write never leaving, or leaving with no
-    // answer, which from the alarm's point of view is the same thing: nobody
-    // is known to have heard this repeat, so it must not be reported as sent.
-    // A healthy send is `sending` at this point, which is why the ordinary
-    // path is unaffected.
+  /// Three outcomes, because the app can tell them apart and they mean
+  /// different things to someone waiting for help (`meshmore-sos-spec.md`
+  /// §10): the frame left, the radio refused it, or the link died and nobody
+  /// knows. A refusal is evidence nobody heard this repeat. An unconfirmed
+  /// write is not evidence of anything, and calling it a refusal would
+  /// overstate the app's knowledge in the direction that looks worse than it
+  /// is.
+  Future<_SendOutcome> _send(String text) async {
     bool refused = false;
-    bool notSent(MessageDelivery? d) =>
-        d == MessageDelivery.failed || d == MessageDelivery.unknown;
+    bool unconfirmed = false;
     try {
-      final ChatMessage? ch = await _mc.sendChannelTextTo(_channelSlot, text, urgent: true);
-      if (ch == null || notSent(ch.delivery)) refused = true;
+      final ChatMessage? ch =
+          await _mc.sendChannelTextTo(_channelSlot, text, urgent: true);
+      _watch(ch);
+      if (ch == null) {
+        unconfirmed = true;
+      } else if (ch.delivery == MessageDelivery.failed) {
+        refused = true;
+      } else if (ch.delivery == MessageDelivery.unknown) {
+        unconfirmed = true;
+      }
       for (final String hex in _contactKeysHex) {
-        final ChatMessage? dm = await _mc.sendDirectText(hex, text, urgent: true);
-        if (dm == null || notSent(dm.delivery)) refused = true;
+        final ChatMessage? dm =
+            await _mc.sendDirectText(hex, text, urgent: true);
+        _watch(dm);
+        if (dm == null) {
+          unconfirmed = true;
+        } else if (dm.delivery == MessageDelivery.failed) {
+          refused = true;
+        } else if (dm.delivery == MessageDelivery.unknown) {
+          unconfirmed = true;
+        }
       }
     } catch (_) {
-      refused = true;
+      // A throw is the link going away at the worst moment: the radio may
+      // already hold the frame, so this is not a refusal.
+      unconfirmed = true;
     }
     if (refused) {
       _failedSends++;
+      _unconfirmedSends = 0;
+      _notify();
+    } else if (unconfirmed) {
+      _unconfirmedSends++;
       _notify();
     } else {
       _failedSends = 0;
+      _unconfirmedSends = 0;
     }
-    return !refused;
+    if (refused) return _SendOutcome.refused;
+    if (unconfirmed) return _SendOutcome.unconfirmed;
+    return _SendOutcome.sent;
   }
 
   /// Repeats the radio refused, since the alarm was raised.
   int get failedSends => _failedSends;
+
+  /// Repeats whose write left no answer either way. Not a refusal, and not a
+  /// send the app can vouch for.
+  int get unconfirmedSends => _unconfirmedSends;
 
   /// Repeats that were due while the app was asleep and were not sent.
   int get missedSends => _missedSends;
@@ -680,6 +779,13 @@ final class SosController extends ChangeNotifier {
     _stopTicker();
     _channelSub?.cancel();
     _dmSub?.cancel();
+    if (_mcHasListener) {
+      _mc.removeListener(_classifyWatched);
+      _mcHasListener = false;
+    }
     super.dispose();
   }
 }
+
+/// What the alarm learned about one repeat.
+enum _SendOutcome { sent, refused, unconfirmed }
