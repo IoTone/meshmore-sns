@@ -14,6 +14,7 @@ import '../chat/channel_read_store.dart';
 import '../chat/chat_actions.dart';
 import '../chat/composer_budget.dart';
 import '../chat/composer_counter.dart';
+import '../chat/composer_field.dart';
 import '../chat/composer_offline.dart';
 import '../chat/draft_store.dart';
 import '../chat/report_flow.dart';
@@ -208,6 +209,10 @@ class _ChatScreenState extends State<ChatScreen>
   /// APP-E7 — a keystroke is not a write. One per pause, keyed to the draft it
   /// belongs to, so a channel switch mid-typing cannot land in the new thread.
   void _onComposerChanged() {
+    // The send control's enabled state is a function of the text, so every
+    // keystroke rebuilds the composer — including the keystrokes typed before
+    // a thread exists to save a draft into.
+    setState(() {});
     final String? key = _draftKey;
     if (key == null) return;
     final String text = _input.text;
@@ -938,11 +943,8 @@ class _ChatScreenState extends State<ChatScreen>
                                 controller: _input,
                                 textInputAction: TextInputAction.send,
                                 onSubmitted: (_) => _send(mc),
-                                decoration: InputDecoration(
-                                  isDense: true,
-                                  hintText: l.chatComposerHint(activeName),
-                                  border: const OutlineInputBorder(),
-                                ),
+                                decoration: composerFieldDecoration(context,
+                                    hint: l.chatComposerHint(activeName)),
                               ),
                               ComposerCounter(
                                 budget: _budget,
@@ -977,9 +979,19 @@ class _ChatScreenState extends State<ChatScreen>
                               : null,
                           icon: const Icon(Icons.add_photo_alternate_outlined),
                         ),
+                        // The send control states whether it can act. It
+                        // used to be enabled with an empty field and with text
+                        // over the radio's byte budget, and `_send` returned
+                        // in silence in both cases: a control that looks
+                        // pressable and does nothing. The counter under the
+                        // field already says how far over the budget the text
+                        // is, so disabling here hides no explanation.
                         IconButton(
                           tooltip: l.chatSend,
-                          onPressed: () => _send(mc),
+                          onPressed: _input.text.trim().isEmpty ||
+                                  !_budget.canSend(_input.text)
+                              ? null
+                              : () => _send(mc),
                           icon: const Icon(Icons.send),
                         ),
                       ],
@@ -1101,7 +1113,7 @@ class _MessageRow extends StatelessWidget {
                         color:
                             m.outgoing ? skin.color.accent : skin.color.fgMuted,
                         fontFamily: mono,
-                        fontSize: 12)),
+                        fontSize: skin.type.sizeBody)),
               ),
               Expanded(
                 child: Column(
@@ -1140,17 +1152,23 @@ class _MessageRow extends StatelessWidget {
   // --- chat bubbles (Hyperlocal / AG-HUD) ----------------------------
   Widget _bubble(BuildContext context, MmSkin skin) {
     final ({String? sender, String body}) s = _split();
+    // A message field is delimited by its FILL, not by a stroke around it.
+    // Both at once is the shape that made the light skins read as a grid of
+    // boxes: a paper panel (`surface`) with a visible hairline round it is two
+    // ways of saying the same edge. The fill is `raised` — one step off the
+    // page in every skin's own layer stack — so an incoming bubble is visible
+    // on paper and on black without a second delimiter. Our own message keeps
+    // the accent tint, which is a different signal (whose side it is), not a
+    // second edge.
     final Color fill = m.outgoing
         ? skin.color.accent.withValues(alpha: 0.16)
-        : skin.color.surface;
+        : skin.color.raised;
     return _aligned(
       context: context,
       skin: skin,
       decoration: ShapeDecoration(
         color: fill,
-        shape: mmShapeBorder(skin.shape,
-            side: BorderSide(
-                color: skin.color.line, width: skin.shape.borderWidth)),
+        shape: mmShapeBorder(skin.shape, side: BorderSide.none),
       ),
       sender: s.sender,
       senderColor: skin.color.accent,
@@ -1163,6 +1181,12 @@ class _MessageRow extends StatelessWidget {
 
   // --- saturated colour fields + name tags (DR Pop, Mondrian) --------
   // Each message is a flat colour field bordered like a Mondrian panel.
+  //
+  // This is the one place a fill and a stroke are both right: the 3 px rule is
+  // the skin's motif, not an outline drawn around a filled box, and removing
+  // it would leave two adjacent colours touching with no edge — which is what
+  // the rule exists to prevent. The fill-only rule applies to the bubble
+  // skins (`_bubble`) and to tags; a cited exception is not a precedent.
   // Incoming fields take the *name's* stable neon colour; in the free
   // space beside the field sits a name tag — a Space-Invader sprite
   // (unique per name, stable for the session) plus the cadence since that
@@ -1193,7 +1217,7 @@ class _MessageRow extends StatelessWidget {
               child: Text(s.sender!.toUpperCase(),
                   style: TextStyle(
                       color: ink.withValues(alpha: 0.85),
-                      fontSize: 11,
+                      fontSize: skin.type.sizeSm,
                       letterSpacing: 1,
                       fontWeight: FontWeight.w800)),
             ),
@@ -1220,7 +1244,7 @@ class _MessageRow extends StatelessWidget {
               ],
               Text(_time(l),
                   style: TextStyle(
-                      color: ink.withValues(alpha: 0.65), fontSize: 10)),
+                      color: ink.withValues(alpha: 0.65), fontSize: skin.type.sizeMicro)),
             ],
           ),
         ],
@@ -1301,7 +1325,7 @@ class _MessageRow extends StatelessWidget {
                     child: Text(sender,
                         style: TextStyle(
                             color: senderColor,
-                            fontSize: 11,
+                            fontSize: skin.type.sizeSm,
                             fontWeight: FontWeight.w700)),
                   ),
                 Text(body,
@@ -1322,7 +1346,8 @@ class _MessageRow extends StatelessWidget {
                       const SizedBox(width: 4),
                     ],
                     Text(_time(l),
-                        style: TextStyle(color: metaColor, fontSize: 10)),
+                        style:
+                            TextStyle(color: metaColor, fontSize: skin.type.sizeMicro)),
                   ],
                 ),
               ],
@@ -1427,6 +1452,7 @@ class _NameTag extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final MmSkin skin = context.skin;
     return Container(
       width: 58,
       padding: const EdgeInsets.all(4),
@@ -1450,7 +1476,7 @@ class _NameTag extends StatelessWidget {
                 style: TextStyle(
                     color: color,
                     fontFamily: mono,
-                    fontSize: 10,
+                    fontSize: skin.type.sizeMicro,
                     fontWeight: FontWeight.w700)),
           ],
         ],
@@ -1543,7 +1569,7 @@ class _JumpToNewestPill extends StatelessWidget {
                   style: TextStyle(
                       color: cs.onPrimary,
                       fontWeight: FontWeight.w600,
-                      fontSize: 13)),
+                      fontSize: context.skin.type.sizeBodyLg)),
             ],
           ),
         ),

@@ -318,12 +318,19 @@ class _NodeDetailSheetState extends State<NodeDetailSheet> {
     final String? distance =
         geo.formatDistance(widget.distanceMeters);
 
+    // A pill is delimited by its TINT: a tint plus a stroke in the same colour
+    // says the same edge twice, and on a paper ground it reads as a small box
+    // rather than a tag. This matches the temperature and tag pills on the
+    // nodes list, which have always been fill-only.
     Widget chip(IconData icon, String label, Color colour) => Container(
+          // Named so a test can tell a tag from a callout: they differ in
+          // paint (tint only against tint plus hairline), and the difference
+          // is a rule, not a preference.
+          key: ValueKey<String>('node-chip-$label'),
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
           decoration: BoxDecoration(
             color: colour.withValues(alpha: .12),
             borderRadius: mmRadius(context, 12),
-            border: Border.all(color: colour.withValues(alpha: .45)),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -607,6 +614,10 @@ class _NodeDetailSheetState extends State<NodeDetailSheet> {
                 n.pubKeyHex.length == 64 &&
                 !mc.isSyncedContact(n.pubKeyHex)) ...<Widget>[
               const SizedBox(height: 8),
+              // A callout, not a pill: this block is a paragraph with an
+              // action, so it keeps both the tint and the hairline. Tint-only
+              // is the rule for tags (see `chip` above); a callout needs its
+              // edge because it is the same weight as the page around it.
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                 decoration: BoxDecoration(

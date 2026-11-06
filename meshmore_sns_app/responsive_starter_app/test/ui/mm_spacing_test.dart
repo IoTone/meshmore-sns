@@ -112,7 +112,7 @@ void main() {
       'lib/screens/dashboards/aghud_dashboard.dart': 1,
       'lib/screens/dashboards/recon_dashboard.dart': 3,
       'lib/screens/dashboards/studio_dashboard.dart': 1,
-      'lib/screens/dm_screen.dart': 2,
+      'lib/screens/dm_screen.dart': 1,
       'lib/screens/elevation_profile_view.dart': 2,
       'lib/screens/fabric_survey_view.dart': 1,
       'lib/screens/meshbook_view.dart': 14,

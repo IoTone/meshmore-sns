@@ -57,17 +57,13 @@ void main() {
       'lib/bot/bot_scope_config.dart': 2,
       'lib/bot/bot_section.dart': 4,
       'lib/bot/bot_tag.dart': 1,
-      'lib/chat/studio_message_row.dart': 3,
       'lib/docs/markdown_view.dart': 5,
       'lib/maps/basemap.dart': 1,
-      'lib/screens/chat_screen.dart': 7,
       'lib/screens/device_contacts_screen.dart': 6,
-      'lib/screens/dm_screen.dart': 1,
       'lib/screens/equal_grid_view.dart': 5,
       'lib/screens/maps/maps_screen.dart': 6,
       'lib/screens/maps/maps_self_test_screen.dart': 1,
       'lib/screens/maps/new_pack_screen.dart': 1,
-      'lib/screens/nodes_screen.dart': 6,
     };
     final List<String> drifted = <String>[];
     for (final File f in scanned()) {
@@ -88,6 +84,7 @@ void main() {
       'lib/maps/basemap.dart': 1,
       'lib/maps/vector_basemap.dart': 1,
       'lib/screens/channels_screen.dart': 2,
+      // DR Pop's Mondrian palette: seven deliberate colour fields.
       'lib/screens/chat_screen.dart': 7,
       'lib/screens/dashboards/drpop_dashboard.dart': 3,
       'lib/screens/fabric_survey_view.dart': 4,
