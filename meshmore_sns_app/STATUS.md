@@ -6,8 +6,8 @@ the order they were written._
 
 **What is proven and what is not.** Measured on this tree, 2026-11-05: `flutter test` **1997 passed** in 3 m 04 s;
 `flutter analyze` reports only the two `unawaited_return_in_try_block` warnings in `lib/maps/maps_controller.dart`;
-the protocol package `dart test` 368 passed with 1 skipped; the pure-Java port `./gradlew test` 143 passed with 1
-skipped. Both release paths build: `flutter build appbundle --release` produced a 77.0 MB bundle and
+the protocol package `dart test` 368 passed with 1 skipped; the pure-Java port at the repository root, `cd libmeshcore && ./gradlew test --offline
+--rerun-tasks`, 143 tests with 0 failures. Both release paths build: `flutter build appbundle --release` produced a 77.0 MB bundle and
 `flutter build apk --release --target-platform android-arm64` a 32.2 MB APK, each signed with a throwaway key that
 was deleted afterwards (`meshmore-publishing.md` lists what the publisher must supply instead). The debug arm64 APK
 (105 MB) is installed on the motorola edge 2024 over wireless adb.
