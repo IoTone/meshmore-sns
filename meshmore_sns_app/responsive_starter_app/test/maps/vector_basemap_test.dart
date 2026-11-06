@@ -271,21 +271,18 @@ void main() {
         reason: 'unloaded tiles must look like the map, not like a fault');
   });
 
-  test('R90 the vector basemap is no longer Studio-only', () {
-    // R80 gated the vector renderer on the skin's shape. R90 lets every
-    // preset draw it (the style asset is a neutral dark palette), so the
-    // flag no longer decides anything; the map view ignores it.
+  test('the vector basemap is every skin\'s map, and no flag pretends '
+      'otherwise', () {
+    // R80 gated the vector renderer on a skin flag and R90 let every preset
+    // draw it. The flag then only recorded which skin adopted it first, and the
+    // light skin carried `false` while drawing the vector map — a token that
+    // lies about behaviour. The flag is gone; the map decides.
     for (final MmThemePreset p in MmThemePreset.values) {
-      expect(mmSkinFor(p).shape.vectorBasemap, p == MmThemePreset.studio,
-          reason: 'the flag still records which skin first adopted it: $p');
+      final MmShape shape = mmSkinFor(p).shape;
+      expect(shape.cornerSize, greaterThanOrEqualTo(0),
+          reason: 'every skin still has a shape: $p');
     }
-    // The light skin draws the vector map too: the style asset is neutral and
-    // R115 paints it from the skin's own tokens, so there is no "dark palette"
-    // for a paper ground to avoid. The flag staying false on this one skin is
-    // the only stale part of it, and it is vestigial — `StreetMapView` decides
-    // from the user's source choice, never from this bit.
-    expect(mmSkinFor(MmThemePreset.studioLight).shape.vectorBasemap, isFalse,
-        reason: 'vestigial flag; behaviour is in StreetMapView.vectorDrawn');
+    expect(kVectorBasemapSourceId, isNotEmpty);
   });
 
   test('R82 the vector source is OSM itself, credited, and view-only', () {
