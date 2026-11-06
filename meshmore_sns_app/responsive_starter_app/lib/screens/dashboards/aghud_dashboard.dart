@@ -24,10 +24,7 @@ import '../../ui/mm_shape.dart';
 /// is off under reduce-motion). Same DashboardModel as every other skin.
 class AgHudDashboard extends StatefulWidget {
 
-  const AgHudDashboard({super.key, this.pinned});
-
-  /// Pinned summaries, drawn under the brand bar.
-  final Widget? pinned;
+  const AgHudDashboard({super.key});
 
   @override
   State<AgHudDashboard> createState() => _AgHudDashboardState();
@@ -78,11 +75,10 @@ class _AgHudDashboardState extends State<AgHudDashboard>
 
     return MmScaffold(
       child: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
+        padding: EdgeInsets.fromLTRB(skin.space.screenEdge, skin.space.rowInset, skin.space.screenEdge, skin.space.sectionGap),
         children: <Widget>[
           _BrandBar(model: m, skin: skin),
-          if (widget.pinned != null) widget.pinned!,
-          const SizedBox(height: 14),
+          SizedBox(height: skin.space.rowInset),
           Center(
             child: SizedBox(
               width: 240,
@@ -104,7 +100,7 @@ class _AgHudDashboardState extends State<AgHudDashboard>
               ),
             ),
           ),
-          const SizedBox(height: 18),
+          SizedBox(height: skin.space.sectionGap),
           Row(
             children: <Widget>[
               Expanded(
@@ -119,7 +115,7 @@ class _AgHudDashboardState extends State<AgHudDashboard>
                   livery: cyan,
                 ),
               ),
-              const SizedBox(width: 12),
+              SizedBox(width: skin.space.rowInset),
               Expanded(
                 child: _LiveryTile(
                   skin: skin,
@@ -132,9 +128,9 @@ class _AgHudDashboardState extends State<AgHudDashboard>
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: skin.space.rowInset),
           _RadioStrip(model: m, skin: skin),
-          const SizedBox(height: 12),
+          SizedBox(height: skin.space.rowInset),
           _FeedPanel(model: m, skin: skin, l: l),
         ],
       ),
@@ -156,7 +152,7 @@ class _FeedPanel extends StatelessWidget {
         fontFamily: skin.type.monoFamily, color: skin.color.fg, fontSize: skin.type.sizeBody);
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
+      padding: EdgeInsets.fromLTRB(skin.space.rowInset, skin.space.rowInset, skin.space.rowInset, skin.space.rowInset),
       decoration: BoxDecoration(
         color: skin.color.surface,
         borderRadius: BorderRadius.circular(16),
@@ -170,19 +166,19 @@ class _FeedPanel extends StatelessWidget {
                   fontSize: skin.type.sizeSm,
                   letterSpacing: 2.5,
                   fontWeight: FontWeight.w700)),
-          const SizedBox(height: 8),
+          SizedBox(height: skin.space.rowGap),
           if (model.events.isEmpty)
             Text(l.dashboardNoActivity,
                 style: mono.copyWith(color: skin.color.fgMuted))
           else
             for (final ({String time, String text}) e in model.events.take(8))
               Padding(
-                padding: const EdgeInsets.symmetric(vertical: 3),
+                padding: EdgeInsets.symmetric(vertical: skin.space.insideText),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
                     Container(
-                      margin: const EdgeInsets.only(top: 5, right: 8),
+                      margin: EdgeInsets.only(top: skin.space.labelToControl, right: skin.space.rowGap),
                       width: 5,
                       height: 5,
                       decoration: BoxDecoration(
@@ -191,7 +187,7 @@ class _FeedPanel extends StatelessWidget {
                     Text(e.time,
                         style: mono.copyWith(
                             color: skin.color.fgMuted, fontSize: skin.type.sizeSm)),
-                    const SizedBox(width: 8),
+                    SizedBox(width: skin.space.rowGap),
                     Expanded(child: Text(e.text, style: mono)),
                   ],
                 ),
@@ -240,7 +236,7 @@ class _BrandBar extends StatelessWidget {
   }
 
   Widget _pill(String text, Color c) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+        padding: EdgeInsets.symmetric(horizontal: skin.space.rowGap, vertical: skin.space.insideText),
         decoration: BoxDecoration(
           color: c.withValues(alpha: 0.16),
           borderRadius: BorderRadius.circular(20),
@@ -323,7 +319,7 @@ class _RadialGauge extends StatelessWidget {
                           fontSize: context.skin.type.size(18))),
                 ]),
               ),
-              const SizedBox(height: 2),
+              SizedBox(height: context.skin.space.insideText),
               Text(label,
                   style: TextStyle(
                       color: textMuted, fontSize: context.skin.type.sizeSm, letterSpacing: 3)),
@@ -457,7 +453,7 @@ class _LiveryTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+      padding: EdgeInsets.fromLTRB(skin.space.rowInset, skin.space.rowInset, skin.space.rowInset, skin.space.rowInset),
       decoration: BoxDecoration(
         color: skin.color.surface,
         borderRadius: BorderRadius.circular(16),
@@ -468,7 +464,7 @@ class _LiveryTile extends StatelessWidget {
         children: <Widget>[
           Text(label,
               style: TextStyle(color: livery, fontSize: skin.type.sizeSm, letterSpacing: 2)),
-          const SizedBox(height: 4),
+          SizedBox(height: skin.space.labelToControl),
           Text(value,
               style: TextStyle(
                   color: skin.color.fg,
@@ -476,7 +472,7 @@ class _LiveryTile extends StatelessWidget {
                   fontSize: skin.type.size(34),
                   height: 1.0,
                   fontWeight: FontWeight.w600)),
-          const SizedBox(height: 8),
+          SizedBox(height: skin.space.rowGap),
           ClipRRect(
             borderRadius: BorderRadius.circular(kRadiusSm),
             child: LinearProgressIndicator(
@@ -486,7 +482,7 @@ class _LiveryTile extends StatelessWidget {
               valueColor: AlwaysStoppedAnimation<Color>(livery),
             ),
           ),
-          const SizedBox(height: 6),
+          SizedBox(height: skin.space.labelToControl),
           Text(sub, style: TextStyle(color: skin.color.fgMuted, fontSize: skin.type.sizeSm)),
         ],
       ),
@@ -507,7 +503,7 @@ class _RadioStrip extends StatelessWidget {
         fontSize: skin.type.sizeBody);
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      padding: EdgeInsets.symmetric(horizontal: skin.space.rowInset, vertical: skin.space.rowInset),
       decoration: BoxDecoration(
         color: skin.color.surface,
         borderRadius: BorderRadius.circular(16),
@@ -518,20 +514,20 @@ class _RadioStrip extends StatelessWidget {
           Row(
             children: <Widget>[
               Icon(Icons.cell_tower, size: 16, color: skin.color.accent),
-              const SizedBox(width: 8),
+              SizedBox(width: skin.space.rowGap),
               Expanded(
                 child: Text(model.radioLine ?? '—',
                     overflow: TextOverflow.ellipsis, style: mono),
               ),
               if (model.contactsLabel != null) ...<Widget>[
-                const SizedBox(width: 8),
+                SizedBox(width: skin.space.rowGap),
                 Icon(Icons.contacts_outlined,
                     size: 13, color: skin.color.fgMuted),
-                const SizedBox(width: 2),
+                SizedBox(width: skin.space.insideText),
                 Text(model.contactsLabel!, style: mono),
               ],
               if (model.batteryLine != null) ...<Widget>[
-                const SizedBox(width: 8),
+                SizedBox(width: skin.space.rowGap),
                 Text(model.batteryLine!, style: mono),
               ],
             ],

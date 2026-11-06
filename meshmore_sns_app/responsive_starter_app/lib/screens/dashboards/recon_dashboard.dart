@@ -27,10 +27,7 @@ import 'my_pubkey_line.dart';
 /// sheet. Same DashboardModel/controller as every skin.
 class ReconDashboard extends StatefulWidget {
 
-  const ReconDashboard({super.key, this.pinned});
-
-  /// Pinned summaries, in a bounded strip above the recon body.
-  final Widget? pinned;
+  const ReconDashboard({super.key});
 
   @override
   State<ReconDashboard> createState() => _ReconDashboardState();
@@ -104,9 +101,8 @@ class _ReconDashboardState extends State<ReconDashboard>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           // Header.
-          if (widget.pinned != null) widget.pinned!,
           Padding(
-            padding: const EdgeInsets.fromLTRB(14, 14, 6, 6),
+            padding: EdgeInsets.fromLTRB(skin.space.rowInset, skin.space.rowInset, skin.space.labelToControl, skin.space.labelToControl),
             child: Row(
               children: <Widget>[
                 // The skin's identity is its own typography and colour, not
@@ -132,7 +128,7 @@ class _ReconDashboardState extends State<ReconDashboard>
           Divider(height: 1, color: skin.color.line),
           // Compass + terse readout.
           Padding(
-            padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+            padding: EdgeInsets.fromLTRB(skin.space.rowInset, skin.space.rowInset, skin.space.rowInset, skin.space.rowInset),
             child: Row(
               children: <Widget>[
                 SizedBox(
@@ -150,7 +146,7 @@ class _ReconDashboardState extends State<ReconDashboard>
                     ),
                   ),
                 ),
-                const SizedBox(width: 16),
+                SizedBox(width: skin.space.screenEdge),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -179,7 +175,7 @@ class _ReconDashboardState extends State<ReconDashboard>
           Container(
             width: double.infinity,
             color: skin.color.surface,
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
+            padding: EdgeInsets.symmetric(horizontal: skin.space.rowInset, vertical: skin.space.labelToControl),
             child: Text('CONTACTS // RNG · BRG',
                 style: TextStyle(
                     color: dim,
@@ -203,15 +199,14 @@ class _ReconDashboardState extends State<ReconDashboard>
                       return InkWell(
                         onTap: () => _open(mc, w.node),
                         child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 14, vertical: 11),
+                          padding: EdgeInsets.symmetric(horizontal: skin.space.rowInset, vertical: skin.space.rowInset),
                           child: Row(
                             children: <Widget>[
                               Text(w.inRange ? '▲' : '△',
                                   style: TextStyle(
                                       color: w.inRange ? amber : dim,
                                       fontSize: skin.type.sizeBodyLg)),
-                              const SizedBox(width: 10),
+                              SizedBox(width: skin.space.rowGap),
                               Expanded(
                                 child: Text(
                                     w.node.name.isEmpty
@@ -220,13 +215,13 @@ class _ReconDashboardState extends State<ReconDashboard>
                                     overflow: TextOverflow.ellipsis,
                                     style: mono),
                               ),
-                              const SizedBox(width: 8),
+                              SizedBox(width: skin.space.rowGap),
                               Text(w.range,
                                   style: TextStyle(
                                       color: dim,
                                       fontFamily: skin.type.monoFamily,
                                       fontSize: skin.type.sizeBody)),
-                              const SizedBox(width: 14),
+                              SizedBox(width: skin.space.rowInset),
                               SizedBox(
                                 width: 42,
                                 child: Text('${w.bearingDeg}°',
@@ -247,7 +242,8 @@ class _ReconDashboardState extends State<ReconDashboard>
 
   Widget _kv(BuildContext context, String k, String v, TextStyle mono, Color dim) =>
       Padding(
-        padding: const EdgeInsets.symmetric(vertical: 2),
+        padding: EdgeInsets.symmetric(
+            vertical: context.skin.space.insideText),
         child: Row(
           children: <Widget>[
             SizedBox(

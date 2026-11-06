@@ -30,11 +30,7 @@ import 'my_pubkey_line.dart';
 /// underneath. Renders from the same controller as every other skin.
 class HyperlocalDashboard extends StatefulWidget {
 
-  const HyperlocalDashboard({super.key, this.pinned});
-
-  /// Pinned summaries, in a bounded strip above the radar so the radar keeps
-  /// its viewport.
-  final Widget? pinned;
+  const HyperlocalDashboard({super.key});
 
   @override
   State<HyperlocalDashboard> createState() => _HyperlocalDashboardState();
@@ -99,10 +95,9 @@ class _HyperlocalDashboardState extends State<HyperlocalDashboard>
       child: Column(
         children: <Widget>[
           _TopBar(model: m, skin: skin),
-          if (widget.pinned != null) widget.pinned!,
           Expanded(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+              padding: EdgeInsets.fromLTRB(skin.space.screenEdge, skin.space.labelToControl, skin.space.screenEdge, skin.space.rowGap),
               child: LayoutBuilder(
                 builder: (BuildContext _, BoxConstraints c) {
                   final double side =
@@ -523,7 +518,7 @@ class _TopBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 14, 8, 4),
+      padding: EdgeInsets.fromLTRB(skin.space.screenEdge, skin.space.rowInset, skin.space.rowGap, skin.space.labelToControl),
       child: Row(
         children: <Widget>[
           // Title + channel take the remaining space and ellipsize, so
@@ -538,10 +533,10 @@ class _TopBar extends StatelessWidget {
                     fontFamily: skin.type.monoFamily,
                     fontSize: context.skin.type.sizeBody)),
           ),
-          const SizedBox(width: 8),
+          SizedBox(width: skin.space.rowGap),
           Container(
             padding:
-                const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                EdgeInsets.symmetric(horizontal: skin.space.rowGap, vertical: skin.space.insideText),
             decoration: BoxDecoration(
               color: (model.alert
                       ? skin.color.alert
@@ -584,17 +579,17 @@ class _ActivityTicker extends StatelessWidget {
   Widget build(BuildContext context) {
     final ({String time, String text}) e = model.events.first;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
+      padding: EdgeInsets.fromLTRB(skin.space.screenEdge, skin.space.insideText, skin.space.screenEdge, skin.space.labelToControl),
       child: Row(
         children: <Widget>[
           Icon(Icons.bolt, size: 13, color: skin.color.accent),
-          const SizedBox(width: 6),
+          SizedBox(width: skin.space.labelToControl),
           Text(e.time,
               style: TextStyle(
                   color: skin.color.fgMuted,
                   fontFamily: skin.type.monoFamily,
                   fontSize: skin.type.sizeSm)),
-          const SizedBox(width: 8),
+          SizedBox(width: skin.space.rowGap),
           Expanded(
             child: Text(e.text,
                 overflow: TextOverflow.ellipsis,
@@ -637,7 +632,7 @@ class _StatusRail extends StatelessWidget {
     ];
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(16, 10, 16, 18),
+      padding: EdgeInsets.fromLTRB(skin.space.screenEdge, skin.space.rowGap, skin.space.screenEdge, skin.space.sectionGap),
       decoration: BoxDecoration(
         border: Border(
             top: BorderSide(color: skin.color.line, width: 1)),

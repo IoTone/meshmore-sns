@@ -20,10 +20,7 @@ import 'my_pubkey_line.dart';
 /// label + value too). Same DashboardModel as every skin.
 class DrPopDashboard extends StatelessWidget {
 
-  const DrPopDashboard({super.key, this.pinned});
-
-  /// Pinned summaries, drawn under the brand slab.
-  final Widget? pinned;
+  const DrPopDashboard({super.key});
 
   // Wipeout-flavoured fake corp names + katakana, picked deterministically
   // per channel so a channel always wears the same livery.
@@ -56,10 +53,9 @@ class DrPopDashboard extends StatelessWidget {
 
     return MmScaffold(
       child: ListView(
-        padding: const EdgeInsets.fromLTRB(12, 12, 12, 28),
+        padding: EdgeInsets.fromLTRB(skin.space.rowInset, skin.space.rowInset, skin.space.rowInset, skin.space.sectionGap),
         children: <Widget>[
           // Brand bar — magenta slab + PHASE code.
-          if (pinned != null) pinned!,
           Row(
             children: <Widget>[
               Expanded(
@@ -88,7 +84,7 @@ class DrPopDashboard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 10),
+          SizedBox(height: skin.space.rowGap),
           // Hero row — PEERS (acid) + STATUS (magenta / alert).
           Row(
             children: <Widget>[
@@ -101,7 +97,7 @@ class DrPopDashboard extends StatelessWidget {
                   accent: 'ノード',
                 ),
               ),
-              const SizedBox(width: 8),
+              SizedBox(width: skin.space.rowGap),
               Expanded(
                 child: _Block(
                   skin: skin,
@@ -114,7 +110,7 @@ class DrPopDashboard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: skin.space.rowGap),
           // Channel sub-brand block — the generated livery.
           _SubBrandBlock(
             skin: skin,
@@ -124,7 +120,7 @@ class DrPopDashboard extends StatelessWidget {
             kata: kata,
             activity: act,
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: skin.space.rowGap),
           // KNOWN + BATTERY row.
           Row(
             children: <Widget>[
@@ -137,7 +133,7 @@ class DrPopDashboard extends StatelessWidget {
                   accent: 'メッシュ',
                 ),
               ),
-              const SizedBox(width: 8),
+              SizedBox(width: skin.space.rowGap),
               Expanded(
                 child: _Block(
                   skin: skin,
@@ -150,12 +146,12 @@ class DrPopDashboard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: skin.space.rowGap),
           // Radio line as a thin coded strip.
           Container(
             width: double.infinity,
             color: skin.color.surface,
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            padding: EdgeInsets.symmetric(horizontal: skin.space.rowInset, vertical: skin.space.rowGap),
             child: Text(
                 '通信 ${m.radioLine ?? '—'}'
                 '${m.contactsLabel != null ? '  ·  ${l.dashContacts} ${m.contactsLabel}' : ''}',
@@ -170,7 +166,7 @@ class DrPopDashboard extends StatelessWidget {
           Container(
             width: double.infinity,
             color: skin.color.surface,
-            padding: const EdgeInsets.fromLTRB(12, 0, 12, 10),
+            padding: EdgeInsets.fromLTRB(skin.space.rowInset, skin.space.insideText, skin.space.rowInset, skin.space.rowGap),
             child: MyPubkeyLine(
               pubKeyHex: m.pubKeyHex,
               style: TextStyle(
@@ -213,7 +209,7 @@ class _Block extends StatelessWidget {
     final Color sub = ink.withValues(alpha: 0.7);
     return Container(
       height: 116,
-      padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+      padding: EdgeInsets.fromLTRB(skin.space.rowInset, skin.space.rowGap, skin.space.rowInset, skin.space.rowGap),
       decoration: BoxDecoration(
         color: outline ? skin.color.surface : color,
         border: outline ? Border.all(color: color, width: 1.5) : null,
@@ -238,7 +234,7 @@ class _Block extends StatelessWidget {
                   height: 1.0,
                   fontWeight: FontWeight.w700)),
           if (accent != null) ...<Widget>[
-            const SizedBox(height: 4),
+            SizedBox(height: skin.space.labelToControl),
             Text(accent!,
                 style: TextStyle(
                     color: outline ? skin.color.fgMuted : sub,
@@ -277,7 +273,7 @@ class _SubBrandBlock extends StatelessWidget {
         '${'▮' * filled}${'▯' * (5 - filled)}';
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
+      padding: EdgeInsets.fromLTRB(skin.space.rowInset, skin.space.rowInset, skin.space.rowInset, skin.space.rowInset),
       color: color,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -299,7 +295,7 @@ class _SubBrandBlock extends StatelessWidget {
                       letterSpacing: 3)),
             ],
           ),
-          const SizedBox(height: 10),
+          SizedBox(height: skin.space.rowGap),
           Row(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: <Widget>[

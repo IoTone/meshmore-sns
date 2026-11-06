@@ -32,10 +32,9 @@ import '../util/prefs.dart';
 const Key dashboardKey = ValueKey<String>('dashboard');
 
 class DashboardScreen extends StatelessWidget {
-  const DashboardScreen({super.key, this.pinned});
+  const DashboardScreen({super.key});
 
   /// Pinned summaries, drawn under the headline.
-  final Widget? pinned;
 
   ({String label, bool alert, bool busy}) _status(
       MeshcoreController mc, AppLocalizations l) {
@@ -67,6 +66,16 @@ class DashboardScreen extends StatelessWidget {
         ),
     };
   }
+
+  /// The gap before a block that starts a subject.
+  ///
+  /// The monolith left this to whichever block happened to follow: the peers
+  /// block asked for a gap and the collapsible sections asked for none, so the
+  /// space under the status slab, between the peers count and RADIO, and
+  /// between the sections were three different distances. Every block below
+  /// the slab now starts with this one gap.
+  Widget _blockGap(BuildContext context) =>
+      SizedBox(height: context.skin.space.sectionGap);
 
   @override
   Widget build(BuildContext context) {
@@ -143,12 +152,8 @@ class DashboardScreen extends StatelessWidget {
           ],
         ),
 
-        // Pinned cards, in pin order. A block that is pinned lives here and
-        // not on the screen it came from, so nothing is drawn twice.
-        if (pinned != null) pinned!,
-
         if (hasPeers) ...<Widget>[
-          SizedBox(height: context.skin.space.sectionGap),
+          _blockGap(context),
           Text(l.dashboardPeersInRange,
               style: mmSectionLabelStyle(context.skin)),
           // The one dominant numeral on the screen. It scales with the skin
@@ -173,6 +178,7 @@ class DashboardScreen extends StatelessWidget {
               style: TextStyle(color: cs.onSurfaceVariant)),
         ],
 
+        if (hasRadio) _blockGap(context),
         if (hasRadio)
           MmCollapsibleSection(
             id: MmGroupIds.dashRadio,
@@ -245,17 +251,24 @@ class DashboardScreen extends StatelessWidget {
             ],
           ),
 
+        if (loc != null || selfInfo != null) _blockGap(context),
         if (loc != null || selfInfo != null)
           MmCollapsibleSection(
             id: MmGroupIds.dashLocation,
             title: l.dashboardLocation,
             children: <Widget>[
+              // One refresh, on the block's own row. The block used to carry a
+              // second one under it, on its own baseline, under a second copy
+              // of the word LOCATION.
               Row(
                 children: <Widget>[
                   Expanded(child: _LocationTile(mc: mc)),
                   IconButton(
                     icon: const Icon(Icons.refresh, size: 18),
                     tooltip: l.dashboardLocationRefresh,
+                    constraints: const BoxConstraints(
+                        minWidth: kMinInteractiveDimension,
+                        minHeight: kMinInteractiveDimension),
                     onPressed: mc.isReady ? () => mc.refreshSelfInfo() : null,
                   ),
                 ],
@@ -263,6 +276,7 @@ class DashboardScreen extends StatelessWidget {
             ],
           ),
 
+        if (mc.batteryMillivolts != null) _blockGap(context),
         if (mc.batteryMillivolts != null)
           MmCollapsibleSection(
             id: MmGroupIds.dashBattery,
@@ -295,6 +309,7 @@ class DashboardScreen extends StatelessWidget {
             ],
           ),
 
+        if (mc.recentEvents.isNotEmpty) _blockGap(context),
         if (mc.recentEvents.isNotEmpty)
           MmCollapsibleSection(
             id: MmGroupIds.dashRecent,
@@ -518,29 +533,6 @@ class _LocationTile extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        Row(
-          children: <Widget>[
-            Expanded(
-              child: Text(l.dashboardLocation,
-                  style: TextStyle(
-                      color: cs.onSurfaceVariant,
-                      fontSize: context.skin.type.sizeBody,
-                      letterSpacing: 4)),
-            ),
-            // Manual refresh — the periodic 30 s SelfInfo poll
-            // handles most cases, but if the user just moved
-            // significantly and doesn't want to wait, this button
-            // forces an immediate re-query.
-            IconButton(
-              icon: const Icon(Icons.refresh, size: 18),
-              tooltip: l.dashboardLocationRefresh,
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
-              onPressed: mc.isReady ? () => mc.refreshSelfInfo() : null,
-            ),
-          ],
-        ),
-        SizedBox(height: context.skin.space.labelToControl),
         if (loc != null)
           // Coordinates, and where they came from, on one line. The raw
           // wire values and the radio's advert-location policy are a
@@ -553,7 +545,9 @@ class _LocationTile extends StatelessWidget {
                 '· ${l.dashboardLocationAltitude(loc.altitudeMeters!.round())}'}'
             '  · ${loc.localizedSourceLabel(l)}',
             style: TextStyle(
-                color: cs.onSurface, fontFamily: 'JetBrains Mono', height: 1.5),
+                color: cs.onSurface,
+                fontFamily: context.skin.type.monoFamily,
+                height: 1.5),
           )
         else if (awaitingSelf)
           Text(l.dashboardAwaitingDeviceLocation,
