@@ -3,11 +3,13 @@
 import 'dart:async';
 
 import '../util/mesh_log.dart';
+import '../util/prefs.dart';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:meshcore/meshcore.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'failure.dart';
 
 import 'airtime.dart';
@@ -161,6 +163,13 @@ class MeshcoreController extends ChangeNotifier {
         // (heard contacts/adverts + received messages). This one IS a
         // backlog: it is history, not traffic arriving now.
         _drainStart(backlog: true);
+        // The radio never pushes its stored contact table: it streams it only
+        // in answer to `CMD_GET_CONTACTS`, and `END_OF_CONTACTS` carries the
+        // most recent `lastmod` so the next request can ask for changes only
+        // (`MyMesh.cpp:2209-2232`). Without this the app connected to a radio
+        // holding twenty contacts, showed "0 known", and filled the list only
+        // if the user happened to open the device-contacts screen.
+        unawaited(_syncContactsOnConnect());
         // Keep the process alive in the background so the link +
         // drain survive Doze (Android only; no-op elsewhere).
         if (_bgKeepaliveEnabled) unawaited(_startKeepalive());
@@ -203,6 +212,8 @@ class MeshcoreController extends ChangeNotifier {
         // now. Report it as silent rather than let the caller wait out the
         // timeout for an answer that cannot come.
         _completeRadioConfig(const RadioAnswer.silent());
+        // The next connection asks for the contact table again.
+        _contactsSyncRequested = false;
         _maybeScheduleReconnect();
       }
     });
@@ -241,6 +252,7 @@ class MeshcoreController extends ChangeNotifier {
     });
     _historyRestored = _loadChatHistory();
     unawaited(_loadDropped());
+    unawaited(_loadContactsSince());
     unawaited(_meshbook.load().then((_) => notifyListeners()));
     _loadBackgroundPref();
     _loadDefaultChannel();
@@ -4313,8 +4325,8 @@ class MeshcoreController extends ChangeNotifier {
   }
 
   /// Ask the radio for its synced contact list (`CMD_GET_CONTACTS`).
-  Future<void> requestContacts() =>
-      send(MeshcoreFrameCodec.getContacts());
+  Future<void> requestContacts({int? since}) =>
+      send(MeshcoreFrameCodec.getContacts(since: since));
 
   // --- Device-contacts probe (diagnostic) ---------------------------
   // The app's `_contacts` hides keys the user superseded, and the
@@ -4372,6 +4384,42 @@ class MeshcoreController extends ChangeNotifier {
     }
   }
 
+  /// The `lastmod` the radio reported when it last finished streaming its
+  /// contact table. Sent back as `since` so a reconnect asks for changes
+  /// rather than the whole table.
+  int _contactsSince = 0;
+  bool _contactsSyncRequested = false;
+
+  /// The incremental-sync token, for the test that proves a reconnect asks for
+  /// changes rather than the whole table.
+  @visibleForTesting
+  int get contactsSinceForTest => _contactsSince;
+  static const String _kContactsSince = 'mm.contacts.since';
+
+  Future<void> _persistContactsSince(int lastmod) async {
+    final SharedPreferences p = await SharedPreferences.getInstance();
+    await Prefs.setInt(p, _kContactsSince, lastmod);
+  }
+
+  Future<void> _loadContactsSince() async {
+    final SharedPreferences p = await SharedPreferences.getInstance();
+    _contactsSince = p.getInt(_kContactsSince) ?? 0;
+  }
+
+  /// Ask for the table once per connection, incrementally when we know the
+  /// radio's last `lastmod`.
+  Future<void> _syncContactsOnConnect() async {
+    if (!isReady || _contactsSyncRequested) return;
+    _contactsSyncRequested = true;
+    try {
+      await requestContacts(since: _contactsSince == 0 ? null : _contactsSince);
+    } catch (_) {
+      // A refused or unsent request is not fatal: the device-contacts screen
+      // can ask again, and the next connect retries.
+      _contactsSyncRequested = false;
+    }
+  }
+
   void _trackContactProbe(MeshcoreInbound f) {
     if (f is ContactsStartFrame) {
       _deviceContactCount = f.count;
@@ -4383,6 +4431,14 @@ class MeshcoreController extends ChangeNotifier {
       _probing = false;
       final Completer<void>? done = _contactSyncDone;
       if (done != null && !done.isCompleted) done.complete();
+      // The radio states the newest `lastmod` it sent, so the next request can
+      // be incremental. Persisted, because a reconnect after a restart is the
+      // common case and re-streaming the whole table costs BLE seconds.
+      final int lastmod = f.mostRecentLastMod;
+      if (lastmod > _contactsSince) {
+        _contactsSince = lastmod;
+        unawaited(_persistContactsSince(lastmod));
+      }
     }
   }
 
