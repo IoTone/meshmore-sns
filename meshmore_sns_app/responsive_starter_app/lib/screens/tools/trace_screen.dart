@@ -228,16 +228,16 @@ class _HopRow extends StatelessWidget {
     final MmSkin skin = context.skin;
     final double frac = ((snr + 20) / 35).clamp(0.02, 1.0);
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 3),
+      padding: EdgeInsets.symmetric(vertical: skin.space.labelToControl),
       child: Row(
         children: <Widget>[
           SizedBox(
-            width: 130,
+            width: skin.space.step(8) * 5,
             child: Text(label,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                     fontFamily: skin.type.monoFamily,
-                    fontSize: 12,
+                    fontSize: skin.type.sizeBody,
                     color: skin.color.fg)),
           ),
           Expanded(
@@ -252,13 +252,13 @@ class _HopRow extends StatelessWidget {
             ),
           ),
           SizedBox(
-            width: 70,
+            width: skin.space.step(9) * 2 + skin.space.step(4),
             child: Text(
               '${weakest ? '▼ ' : ''}${fmtDb(snr)} dB',
               textAlign: TextAlign.end,
               style: TextStyle(
                   fontFamily: skin.type.monoFamily,
-                  fontSize: 12,
+                  fontSize: skin.type.sizeBody,
                   color: skin.color.fg),
             ),
           ),

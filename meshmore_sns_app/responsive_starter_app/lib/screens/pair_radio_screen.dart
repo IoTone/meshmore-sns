@@ -260,7 +260,7 @@ class _PairRadioScreenState extends State<PairRadioScreen> {
                 color: skin.color.fgMuted,
               ),
             ),
-            const SizedBox(height: 10),
+            SizedBox(height: skin.space.rowGap),
             if (_step == _Step.permission) ..._permission(context, l, skin),
             if (_step == _Step.adapter) ..._adapter(context, l, skin),
             if (_step == _Step.scan) ..._scan(context, l, skin),
@@ -282,7 +282,7 @@ class _PairRadioScreenState extends State<PairRadioScreen> {
         const SizedBox(height: 12),
         _FailureNote(text: failureText(l, _failure!), skin: skin),
       ],
-      const SizedBox(height: 18),
+      SizedBox(height: skin.space.screenEdge),
       FilledButton.icon(
         onPressed: _requestPermission,
         icon: const Icon(Icons.bluetooth_searching, size: 18),
@@ -308,7 +308,7 @@ class _PairRadioScreenState extends State<PairRadioScreen> {
             : l.pairAdapterUnsupported,
         skin: skin,
       ),
-      const SizedBox(height: 18),
+      SizedBox(height: skin.space.screenEdge),
       FilledButton.icon(
         onPressed: _checkAdapter,
         icon: const Icon(Icons.refresh, size: 18),
@@ -328,7 +328,7 @@ class _PairRadioScreenState extends State<PairRadioScreen> {
         const SizedBox(height: 12),
         _FailureNote(text: failureText(l, _failure!), skin: skin),
       ],
-      const SizedBox(height: 14),
+      SizedBox(height: skin.space.rowInset),
       if (_scanning)
         Row(
           children: <Widget>[
@@ -338,7 +338,7 @@ class _PairRadioScreenState extends State<PairRadioScreen> {
               child: CircularProgressIndicator(
                   strokeWidth: 2, color: skin.color.accent),
             ),
-            const SizedBox(width: 10),
+            SizedBox(width: skin.space.rowGap),
             Text(l.pairScanning,
                 style: TextStyle(
                     fontSize: skin.type.sizeSm, color: skin.color.fgMuted)),
@@ -364,10 +364,10 @@ class _PairRadioScreenState extends State<PairRadioScreen> {
           ),
         ),
       if (!_scanning && sorted.isEmpty) ...<Widget>[
-        const SizedBox(height: 14),
+        SizedBox(height: skin.space.rowInset),
         _Body(text: l.pairNothingFound, skin: skin),
       ],
-      const SizedBox(height: 10),
+      SizedBox(height: skin.space.rowGap),
       for (final PairHit h in sorted)
         Card(
           margin: const EdgeInsets.only(bottom: 8),
@@ -397,9 +397,8 @@ class _PairRadioScreenState extends State<PairRadioScreen> {
       const SizedBox(height: 12),
       Row(
         children: <Widget>[
-          SizedBox(
-            width: 18,
-            height: 18,
+          SizedBox.square(
+            dimension: skin.space.screenEdge,
             child: CircularProgressIndicator(
                 strokeWidth: 2, color: skin.color.accent),
           ),
@@ -418,7 +417,7 @@ class _PairRadioScreenState extends State<PairRadioScreen> {
       _Headline(text: l.pairConfirmTitle, skin: skin),
       const SizedBox(height: 8),
       _Body(text: l.pairConfirmBody(_connectedName ?? ''), skin: skin),
-      const SizedBox(height: 14),
+      SizedBox(height: skin.space.rowInset),
       _Fact(label: l.pairConfirmNode, value: _connectedName ?? '', skin: skin),
       if (firmware != null && firmware.isNotEmpty) ...<Widget>[
         const SizedBox(height: 6),
@@ -546,7 +545,7 @@ class _Fact extends StatelessWidget {
             color: skin.color.fgMuted,
           ),
         ),
-        const SizedBox(width: 10),
+        SizedBox(width: skin.space.rowGap),
         Expanded(
           child: Text(
             value,

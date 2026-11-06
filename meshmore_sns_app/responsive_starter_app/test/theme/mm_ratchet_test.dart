@@ -60,19 +60,15 @@ void main() {
       'lib/chat/studio_message_row.dart': 3,
       'lib/docs/markdown_view.dart': 5,
       'lib/maps/basemap.dart': 1,
-      'lib/screens/about_screen.dart': 4,
       'lib/screens/chat_screen.dart': 7,
       'lib/screens/device_contacts_screen.dart': 6,
       'lib/screens/device_manager_sheet.dart': 10,
       'lib/screens/dm_screen.dart': 1,
-      'lib/screens/doc_reader_screen.dart': 1,
       'lib/screens/equal_grid_view.dart': 5,
       'lib/screens/maps/maps_screen.dart': 6,
       'lib/screens/maps/maps_self_test_screen.dart': 1,
       'lib/screens/maps/new_pack_screen.dart': 1,
       'lib/screens/nodes_screen.dart': 6,
-      'lib/screens/tools/tool_widgets.dart': 3,
-      'lib/screens/tools/trace_screen.dart': 2,
     };
     final List<String> drifted = <String>[];
     for (final File f in scanned()) {

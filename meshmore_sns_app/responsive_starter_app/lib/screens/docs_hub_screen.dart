@@ -29,7 +29,9 @@ class DocsHubScreen extends StatelessWidget {
       appBar: AppBar(title: Text(l.tabDocs)),
       body: MmScaffold(
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(16, 18, 16, 28),
+          padding: EdgeInsets.fromLTRB(context.skin.space.screenEdge,
+              context.skin.space.screenEdge, context.skin.space.screenEdge,
+              context.skin.space.emptyState),
           children: <Widget>[
             Text(
               l.docsHubSubtitle,
@@ -39,7 +41,7 @@ class DocsHubScreen extends StatelessWidget {
                   height: 1.4,
                   color: cs.onSurfaceVariant),
             ),
-            const SizedBox(height: 18),
+            SizedBox(height: context.skin.space.screenEdge),
             _DocCard(
               icon: Icons.terminal,
               title: l.docsProtocolTitle,
@@ -121,7 +123,7 @@ class _DocCard extends StatelessWidget {
                 ),
                 child: Icon(icon, color: cs.primary, size: 22),
               ),
-              const SizedBox(width: 14),
+              SizedBox(width: context.skin.space.rowInset),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -133,7 +135,7 @@ class _DocCard extends StatelessWidget {
                             letterSpacing: 1.5,
                             fontWeight: FontWeight.w700,
                             color: cs.onSurface)),
-                    const SizedBox(height: 3),
+                    SizedBox(height: context.skin.space.labelToControl),
                     Text(subtitle,
                         style: TextStyle(
                             fontFamily: context.skin.type.wordsMono,
