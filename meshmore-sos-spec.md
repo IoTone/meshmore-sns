@@ -214,15 +214,19 @@ idle --raise--> arming --confirm--> active --ack(key)--> acknowledged --(user di
 
 ## 10. What the UI says — and what it must not say
 
-Required, in this order, on the alarm screen:
+Required, in this order, on the alarm screen. The order is deliberate since 2026-11-05: the destination and
+the words come first, and the hold sits last, so that the things a user may want to change are visibly
+configure-able before the one control that sends (owner's direction, superseding the earlier
+"control first" reading):
 
-1. **"This repeats for up to one hour."** Before the hold completes.
-2. **Where it goes**: "Channel *name*" and "3 contacts" as separate lines, because they differ in what
-   they guarantee.
-3. **"Nobody is notified unless they are in radio range."** No promise of delivery. The mesh has no
+1. **Where it goes** and **what it will say**, both editable without leaving the screen.
+2. **"This repeats for up to one hour."** Before the hold completes.
+3. **Where it goes**, restated above the hold: "Channel *name*" and "3 contacts" as separate lines, because
+   they differ in what they guarantee.
+4. **"Nobody is notified unless they are in radio range."** No promise of delivery. The mesh has no
    acknowledgement for channel text at all.
-4. On the acknowledged state: **"<name> has seen this"**, plus the path — "direct" or "claimed on channel".
-5. On expiry: **"The alarm has stopped repeating. It is not resolved."**
+5. On the acknowledged state: **"<name> has seen this"**, plus the path — "direct" or "claimed on channel".
+6. On expiry: **"The alarm has stopped repeating. It is not resolved."**
 
 Must not say: "Help is on the way", "Sent", "Delivered", "Emergency services notified", or any spinner
 that implies a network wait. A tick means *the radio accepted the frame*, nothing more.
