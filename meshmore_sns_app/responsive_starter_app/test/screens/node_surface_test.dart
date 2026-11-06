@@ -39,7 +39,7 @@ const List<LocalizationsDelegate<Object>> _delegates =
 void main() {
   setUp(() => SharedPreferences.setMockInitialValues(<String, Object>{}));
 
-  Future<(MeshcoreController, ThemeController)> pumpNodes(
+  Future<(MeshcoreController, ThemeController, FakeMeshcoreTransport)> pumpNodes(
     WidgetTester t, {
     Size size = const Size(360, 780),
     double textScale = 1.0,
@@ -71,10 +71,13 @@ void main() {
     ));
     await mc.connect();
     fake.emit(selfInfoFrame());
+    // One heard node, so the floor is measured on a row and not only on the
+    // empty state.
+    fake.emit(advertFrame(name: 'Ada', firstPubByte: 0xA1));
     await t.pumpAndSettle();
     mc.dispose();
     await t.pump(const Duration(seconds: 1));
-    return (mc, theme);
+    return (mc, theme, fake);
   }
 
   testWidgets('a status pill on the detail sheet carries a tint, not a stroke',
@@ -139,6 +142,8 @@ void main() {
   testWidgets('the nodes list holds 320 dp at 200 % text on paper',
       (WidgetTester t) async {
     await pumpNodes(t, size: const Size(320, 780), textScale: 2.0);
+    expect(find.textContaining('Ada'), findsWidgets,
+        reason: 'the floor is measured on a row, not on the empty state');
     expect(t.takeException(), isNull);
   });
 }
