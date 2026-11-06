@@ -22,7 +22,8 @@ import 'package:meshmore_sns_app/ui/mm_collapsible.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  Future<void> pump(WidgetTester t, MmThemePreset preset) async {
+  Future<void> pump(WidgetTester t, MmThemePreset preset,
+      {int sections = 1}) async {
     SharedPreferences.setMockInitialValues(<String, Object>{});
     final ThemeController tc = ThemeController();
     await tc.setPreset(preset);
@@ -34,18 +35,27 @@ void main() {
         child: MaterialApp(
           theme: tc.theme,
           home: Scaffold(
-            body: MmCollapsibleSection(
-              id: MmGroupIds.dashRadio,
-              title: 'Radio',
-              initiallyExpanded: false,
-              children: const <Widget>[Text('body')],
-            ),
+            body: Column(children: <Widget>[
+              for (int i = 0; i < sections; i++)
+                MmCollapsibleSection(
+                  id: i == 0 ? MmGroupIds.dashRadio : MmGroupIds.dashLocation,
+                  title: i == 0 ? 'Radio' : 'Location',
+                  initiallyExpanded: false,
+                  children: const <Widget>[Text('body')],
+                ),
+            ]),
           ),
         ),
       ),
     ));
     await t.pump();
   }
+
+  List<Container> rules(WidgetTester t) => t
+      .widgetList<Container>(find.byType(Container))
+      .where((Container c) =>
+          c.constraints?.maxHeight != null && c.constraints!.maxHeight <= 1.0)
+      .toList();
 
   testWidgets('paper: no fill, and a border-tier rule above the label',
       (WidgetTester t) async {
@@ -54,16 +64,12 @@ void main() {
     final Material header = t.widget<Material>(find.byType(Material).last);
     expect(header.color, Colors.transparent,
         reason: 'a beige band on paper is a box, not a header');
-    final List<Container> rules = t
-        .widgetList<Container>(find.byType(Container))
-        .where((Container c) => c.constraints?.maxHeight != null &&
-            c.constraints!.maxHeight <= 1.0)
-        .toList();
-    expect(rules.length, 2, reason: 'one rule opens the group, one closes it');
-    expect(rules.first.color, skin.color.line,
+    expect(find.byKey(const ValueKey<String>('group-open-rule')),
+        findsOneWidget);
+    expect(find.byKey(const ValueKey<String>('group-close-rule')), findsNothing,
+        reason: 'a closing rule as well would draw the boundary twice');
+    expect(rules(t).single.color, skin.color.line,
         reason: 'the opening rule is the border tier');
-    expect(rules.last.color, skin.color.hairline,
-        reason: 'the closing rule stays subordinate');
   });
 
   testWidgets('dark: the header is still the tonal step, with no opening rule',
@@ -73,11 +79,34 @@ void main() {
     final Material header = t.widget<Material>(find.byType(Material).last);
     expect(header.color, skin.color.raised,
         reason: 'the dark skins group by tone, as before');
-    final List<Container> rules = t
-        .widgetList<Container>(find.byType(Container))
-        .where((Container c) => c.constraints?.maxHeight != null &&
-            c.constraints!.maxHeight <= 1.0)
-        .toList();
-    expect(rules.length, 1, reason: 'only the closing rule');
+    expect(find.byKey(const ValueKey<String>('group-open-rule')), findsNothing);
+    expect(find.byKey(const ValueKey<String>('group-close-rule')),
+        findsOneWidget);
+    expect(rules(t).single.color, skin.color.hairline);
+  });
+
+  // One boundary, one line. Between two groups there is exactly one rule on
+  // every ground: the second group's opening rule on paper, the first group's
+  // closing rule where the header is tinted. Drawing both put two lines a few
+  // dp apart between every pair of sections, which is the doubled border seen
+  // on the dashboard.
+  testWidgets('two groups on paper draw one line between them',
+      (WidgetTester t) async {
+    await pump(t, MmThemePreset.studioLight, sections: 2);
+    expect(find.byKey(const ValueKey<String>('group-open-rule')),
+        findsNWidgets(2));
+    expect(find.byKey(const ValueKey<String>('group-close-rule')), findsNothing);
+    expect(rules(t).length, 2,
+        reason: 'one rule per boundary, not two');
+  });
+
+  testWidgets('two tinted groups draw one line between them',
+      (WidgetTester t) async {
+    await pump(t, MmThemePreset.studio, sections: 2);
+    expect(find.byKey(const ValueKey<String>('group-open-rule')), findsNothing);
+    expect(find.byKey(const ValueKey<String>('group-close-rule')),
+        findsNWidgets(2));
+    expect(rules(t).length, 2,
+        reason: 'one rule per boundary, not two');
   });
 }

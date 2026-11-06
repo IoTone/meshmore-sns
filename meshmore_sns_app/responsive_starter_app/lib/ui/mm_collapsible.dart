@@ -118,7 +118,12 @@ class _MmCollapsibleSectionState extends State<MmCollapsibleSection> {
   Widget build(BuildContext context) {
     final MmSkin skin = context.skin;
     _store = context.watch<MmCollapseController?>();
-    final Widget rule = Container(
+    // One boundary, one line. A tinted header marks where a group starts, so
+    // the group closes with a hairline; an untinted header on paper needs the
+    // rule above it instead. Drawing both put two lines a few dp apart between
+    // every pair of groups, which is the doubled border the owner saw.
+    final Widget closeRule = Container(
+      key: const ValueKey<String>('group-close-rule'),
       height: skin.shape.hairlineWidth,
       color: skin.color.hairline,
     );
@@ -129,14 +134,15 @@ class _MmCollapsibleSectionState extends State<MmCollapsibleSection> {
     // That rule is the *border* tier, not the hairline tier: on paper it is
     // the only thing marking the group, and a hairline is deliberately too
     // faint to be a border (`studio_light_test`: a hairline stays under 2.6:1).
-    // The closing rule below the children stays a hairline in both cases, and
-    // never sits between a header and its own content (R77).
-    final Widget groupRule = Container(
+    // A tinted group closes with a hairline instead, so no boundary carries two
+    // lines, and no rule ever sits between a header and its own content (R77).
+    final Widget bandRule = Container(
+      key: const ValueKey<String>('group-open-rule'),
       height: skin.shape.hairlineWidth,
       color: skin.color.line,
     );
-    final Widget topRule =
-        skin.shape.tintedHeaders ? const SizedBox.shrink() : groupRule;
+    final bool tinted = skin.shape.tintedHeaders;
+    final Widget topRule = tinted ? const SizedBox.shrink() : bandRule;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
@@ -187,7 +193,9 @@ class _MmCollapsibleSectionState extends State<MmCollapsibleSection> {
         // R77: children first, then ONE rule that closes the group, so a
         // divider never sits between a header and its own content.
         if (_open) ...widget.children,
-        rule,
+        // A tinted group already says where it starts, so it closes; an
+        // untinted one opened with a rule, so it does not close.
+        if (tinted) closeRule,
       ],
     );
   }
