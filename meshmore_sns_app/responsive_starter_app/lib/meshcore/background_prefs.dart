@@ -64,12 +64,12 @@ abstract final class PeriodicAdvertPrefs {
   }
 }
 
-/// R54 — per-channel opt-in for **message-derived place inference**
-/// ("place echoes"): when on for a channel, incoming messages on it are
-/// scanned for place references and plotted on the SNS grid. Stored as a
-/// JSON map of `channelIdx → bool` of *explicit* overrides; channels
-/// with no override fall back to the default, which is **on only for the
-/// public channel** (index [publicChannelIndex]) and off elsewhere.
+/// R54 — per-channel opt-in for **place names in messages**: when on for a
+/// channel, a message on it that names a place gets one line under the row
+/// offering to report that place, and nothing is placed on a map. Stored as
+/// a JSON map of `channelIdx → bool` of *explicit* overrides; channels with
+/// no override fall back to the default, which is **on only for the public
+/// channel** (index [publicChannelIndex]) and off elsewhere.
 abstract final class PlaceInferencePrefs {
   static const String _kMap = 'mm.placeInfer.channels';
   static const int publicChannelIndex = 0;

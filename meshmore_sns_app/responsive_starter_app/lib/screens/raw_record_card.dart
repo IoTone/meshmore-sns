@@ -103,9 +103,9 @@ class _RawRecordCardState extends State<RawRecordCard> {
         content:
             Text(l.rawRecordConfirmBody(_nameOf(l, to), '${parsed.length}')),
         actions: <Widget>[
-          TextButton(
+          MmAction(
+            label: l.cancel,
             onPressed: () => Navigator.pop(ctx, false),
-            child: Text(l.cancel),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, true),

@@ -5,7 +5,10 @@ import 'dart:math' as math;
 /// R54 sub-task (a) — the **ballpark placement engine**.
 ///
 /// Scans a chat message for references to real places and resolves each
-/// to an approximate point for the SNS grid. This is an *informational*
+/// to an approximate point. The points have one remaining consumer — locating
+/// a weather observation so the microclimate view has somewhere to put it —
+/// and [placeNames] is the name-only half a chat row uses. This is an
+/// *informational*
 /// representation, not survey geography: a sub-city reference like
 /// "West Seattle" anchors on the city centre we *do* have (Seattle, from
 /// the gazetteer) and is pushed a ballpark offset in the named direction
@@ -58,7 +61,7 @@ enum PlaceCueKind {
   bareName, //  a standalone proper name
 }
 
-/// One inferred place ready to plot on the SNS grid.
+/// One inferred place, placed at a ballpark point.
 class InferredPlace {
   const InferredPlace({
     required this.displayName,
