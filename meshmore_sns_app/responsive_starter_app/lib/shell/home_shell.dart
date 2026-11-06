@@ -477,9 +477,12 @@ class _ViewStripState extends State<_ViewStrip> {
                 else
                   Icon(v.icon,
                       size: 22,
+                      // The muted tier, not ink at 55 %: on paper the alpha
+                      // version is 2.6:1 and the unselected views read as
+                      // ghosts rather than as destinations you can tap.
                       color: v.index == widget.index
                           ? cs.primary
-                          : cs.onSurface.withValues(alpha: .55)),
+                          : context.skin.color.fgMuted),
                 const SizedBox(height: 6),
                 Container(
                   width: 22,
@@ -717,7 +720,7 @@ class RadioLinkIndicator extends StatelessWidget {
                 cornerSize: 20,
                 borderWidth: 1,
               ),
-              side: BorderSide(color: v.color.withValues(alpha: .55)),
+              side: BorderSide(color: v.color),
             ),
           ),
           child: Padding(
@@ -780,8 +783,7 @@ class _StripBadge extends StatelessWidget {
         children: <Widget>[
           Icon(icon,
               size: 22,
-              color:
-                  selected ? cs.primary : cs.onSurface.withValues(alpha: .55)),
+              color: selected ? cs.primary : context.skin.color.fgMuted),
           Positioned(
             right: -10,
             top: -4,
