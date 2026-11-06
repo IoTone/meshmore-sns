@@ -740,7 +740,8 @@ verified against the package's own `archiveSha256` and `librarySha256`. It encod
 built on `decodeAvif(..., premultiplyAlpha: true)`, which is the same property the plan wanted from
 `flutter_libavif` — a real provider with `cacheWidth` folded into the native decode.
 
-Unchanged by this: one AV1-class image format (`0x5643`), no third image codec, no LGPL dependency.
+Unchanged by this: one AV1-class image format (`0x5643`) and no third image codec. **The licence clause is
+withdrawn — see D11.3.**
 
 **D11.2 The bundled library fails the 16 KB page check today, and the register carries it.** Measured on the
 debug APK built 2026-11-05 with `tool/check_16k.sh`: `libavif_native.so` has load segments aligned to 4 KB, not
@@ -749,4 +750,19 @@ three. Every other shipped library passes and the archive itself passes `zipalig
 16 KB support from 1 Feb 2027, so this is a build requirement with a deadline, not a defect in the app: the
 options are a libavif build aligned with `-Wl,-z,max-page-size=16384`, a vendor rebuild of the same, or
 dropping media before that date. Recorded rather than worked around.
+
+**D11.3 Copyleft is acceptable (owner, 2026-11-05), which retires the licence half of two earlier decisions.**
+The owner withdrew the rule that the app may not take a copyleft dependency: "LGPL we don't have to, we can use
+copyleft software. My statement about that earlier is now not true." One verdict changes and one keeps its verdict but loses an argument.
+
+- `imcodec_native` is no longer excluded for being LGPL. It stays excluded because the AVIF pair it belonged to
+  could not be installed together (`code_assets ^1` against `^2`, D11.1), which is a build fact and has nothing to
+  do with licensing.
+- Recorded voice messages stop being blocked by policy. Codec 2 is LGPL 2.1, so it is now permitted; what remains
+  is the work, not a rule. See the register's voice row for the pinned implementation.
+- The duties that come with it are real and cheap here: a notice that the library is used and is LGPL, a copy of
+  the licence, and the library's source available plus a way to relink. For a public MIT repository that already
+  carries its notices in `lib/licenses/asset_licenses.dart`, that is a notice, the licence text, the pinned
+  upstream commit and a build script. Pin Codec 2 at tag `1.2.0` (`06d4c11`), not `main`: the project declares
+  itself not actively maintained outside the 3200 mode, and upstream's own `FetchContent` example tracks `main`.
 

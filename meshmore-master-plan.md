@@ -496,7 +496,7 @@ binary cost cannot be tree-shaken). A mesh app cannot negotiate a format with a 
 years later, so **the app must ship the decoder**, which means hardware AV1 support stops being a requirement and
 becomes a power optimisation. Use `flutter_libavif` for display (real `ImageProvider`s, `cacheWidth` folded into the
 native decode so a thumbnail never allocates full-resolution RGBA) and `avif_native` for encode (`libavif` + `dav1d`
-+ `aom`). Reject `imcodec_native` on LGPL and `flutter_avif` on maintenance. Encode at speed 8–10, **320×240 floor**:
++ `aom`). Reject `imcodec_native` (unbuildable beside `avif_native`; its LGPL clause was withdrawn 2026-11-05, see scope-of-record D11.3) and `flutter_avif` on maintenance. Encode at speed 8–10, **320×240 floor**:
 container overhead is 200–350 bytes, and above q85 AVIF is *larger* than JPEG, so the small-image regime only works
 at the low-bitrate end where the app actually is.
 
