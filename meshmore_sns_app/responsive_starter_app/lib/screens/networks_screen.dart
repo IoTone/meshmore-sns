@@ -78,10 +78,13 @@ class _NetworksScreenState extends State<NetworksScreen> {
             ? const SizedBox()
             : networks.isEmpty
                 ? Padding(
-                    padding: const EdgeInsets.all(24),
+                    padding: EdgeInsets.all(context.skin.space.sectionGap),
+                    // The muted tier, not ink at 60 %: that alpha is 3.9:1 on
+                    // paper, under AA, and an empty state is the only thing on
+                    // the screen when it shows.
                     child: Text(l.networksEmpty,
                         style: TextStyle(
-                            color: cs.onSurface.withValues(alpha: .6))),
+                            color: context.skin.color.fgMuted)),
                   )
                 : ListView(
                     padding: context.skin.space.padScreen,
@@ -193,9 +196,8 @@ class _NetworkEditScreenState extends State<NetworkEditScreen> {
   @override
   Widget build(BuildContext context) {
     final AppLocalizations l = AppLocalizations.of(context);
-    final ColorScheme cs = Theme.of(context).colorScheme;
     final TextStyle muted =
-        TextStyle(color: cs.onSurface.withValues(alpha: .6));
+        TextStyle(color: context.skin.color.fgMuted);
     return Scaffold(
       appBar: AppBar(title: Text(l.networksNew)),
       body: MmScaffold(

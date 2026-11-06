@@ -155,7 +155,7 @@ class _VoiceSettingsScreenState extends State<VoiceSettingsScreen> {
             child: Text(
               l.voiceSettingsHint,
               style: TextStyle(
-                  color: cs.onSurfaceVariant, fontSize: 12, height: 1.4),
+                  color: cs.onSurfaceVariant, fontSize: context.skin.type.sizeBody, height: 1.4),
             ),
           ),
           const SizedBox(height: 12),
@@ -199,7 +199,7 @@ class _VoiceSettingsScreenState extends State<VoiceSettingsScreen> {
                   child: Text(l.voicePicker.toUpperCase(),
                       style: TextStyle(
                           color: cs.onSurfaceVariant,
-                          fontSize: 11,
+                          fontSize: context.skin.type.sizeSm,
                           letterSpacing: 2)),
                 ),
                 if (allVoices.isNotEmpty)
@@ -210,7 +210,7 @@ class _VoiceSettingsScreenState extends State<VoiceSettingsScreen> {
                         : l.voicePickerAllCount(allVoices.length),
                     style: TextStyle(
                         color: cs.onSurfaceVariant,
-                        fontSize: 11,
+                        fontSize: context.skin.type.sizeSm,
                         fontFamily: context.skin.type.wordsMono),
                   ),
               ],
@@ -226,16 +226,17 @@ class _VoiceSettingsScreenState extends State<VoiceSettingsScreen> {
             subtitle: Text(
               l.voicePickerOnlyMyLanguageHint(phoneLang.toUpperCase()),
               style: TextStyle(
-                  color: cs.onSurfaceVariant, fontSize: 11),
+                  color: cs.onSurfaceVariant, fontSize: context.skin.type.sizeSm),
             ),
             value: _onlyCurrentLanguage,
             onChanged: (bool v) =>
                 setState(() => _onlyCurrentLanguage = v),
           ),
           if (_loadingVoices)
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 18),
-              child: Center(child: CircularProgressIndicator()),
+            Padding(
+              padding: EdgeInsets.symmetric(
+                  vertical: context.skin.space.emptyState),
+              child: const Center(child: CircularProgressIndicator()),
             )
           else if (voices.isEmpty)
             Padding(
@@ -243,7 +244,7 @@ class _VoiceSettingsScreenState extends State<VoiceSettingsScreen> {
               child: Text(
                 l.voicePickerEmpty,
                 style: TextStyle(
-                    color: cs.onSurfaceVariant, fontSize: 12),
+                    color: cs.onSurfaceVariant, fontSize: context.skin.type.sizeBody),
               ),
             )
           else ...<Widget>[
@@ -289,7 +290,7 @@ class _VoiceSettingsScreenState extends State<VoiceSettingsScreen> {
                       ? v.locale
                       : '${v.locale} · ${v.qualityHint}',
                   style: TextStyle(
-                      color: cs.onSurfaceVariant, fontSize: 11),
+                      color: cs.onSurfaceVariant, fontSize: context.skin.type.sizeSm),
                 ),
               ),
             if (voices.isEmpty && allVoices.isNotEmpty)
@@ -299,7 +300,7 @@ class _VoiceSettingsScreenState extends State<VoiceSettingsScreen> {
                   l.voicePickerNoMatchForLanguage(
                       phoneLang.toUpperCase()),
                   style: TextStyle(
-                      color: cs.onSurfaceVariant, fontSize: 12),
+                      color: cs.onSurfaceVariant, fontSize: context.skin.type.sizeBody),
                 ),
               ),
           ],
@@ -324,7 +325,7 @@ class _VoiceSettingsScreenState extends State<VoiceSettingsScreen> {
               child: Text(
                 l.voicePreviewDisabledHint,
                 style: TextStyle(
-                    color: cs.onSurfaceVariant, fontSize: 12),
+                    color: cs.onSurfaceVariant, fontSize: context.skin.type.sizeBody),
               ),
             ),
         ],
@@ -356,7 +357,7 @@ class _OfflineBadge extends StatelessWidget {
         label,
         style: TextStyle(
             color: color,
-            fontSize: 9,
+            fontSize: context.skin.type.sizeMicro,
             letterSpacing: 1,
             fontWeight: FontWeight.w600),
       ),

@@ -67,14 +67,12 @@ void main() {
       'lib/screens/dm_screen.dart': 1,
       'lib/screens/doc_reader_screen.dart': 1,
       'lib/screens/equal_grid_view.dart': 5,
-      'lib/screens/first_run_intro_screen.dart': 1,
       'lib/screens/maps/maps_screen.dart': 6,
       'lib/screens/maps/maps_self_test_screen.dart': 1,
       'lib/screens/maps/new_pack_screen.dart': 1,
       'lib/screens/nodes_screen.dart': 6,
       'lib/screens/tools/tool_widgets.dart': 3,
       'lib/screens/tools/trace_screen.dart': 2,
-      'lib/screens/voice_settings_screen.dart': 9,
     };
     final List<String> drifted = <String>[];
     for (final File f in scanned()) {

@@ -8,6 +8,7 @@ import '../gen/app_localizations.dart';
 import '../meshcore/meshcore_controller.dart';
 import '../perms/first_run_controller.dart';
 import '../perms/permissions_service.dart';
+import '../theme/mm_skin.dart';
 import '../ui/mm_shape.dart';
 
 /// R21 / U12 — first-run permissions intro. Explains *why* the app
@@ -84,8 +85,9 @@ class _FirstRunIntroScreenState extends State<FirstRunIntroScreen> {
     return Scaffold(
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.symmetric(
-              horizontal: 24, vertical: 28),
+          padding: EdgeInsets.symmetric(
+              horizontal: context.skin.space.sectionGap,
+              vertical: context.skin.space.emptyState),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
@@ -97,26 +99,26 @@ class _FirstRunIntroScreenState extends State<FirstRunIntroScreen> {
                     Text(l.firstRunHeader,
                         style: TextStyle(
                             color: cs.onSurfaceVariant,
-                            fontSize: 12,
-                            letterSpacing: 3)),
-                    const SizedBox(height: 16),
+                            fontSize: context.skin.type.sizeBody,
+                            letterSpacing: context.skin.type.headingTracking)),
+                    SizedBox(height: context.skin.space.screenEdge),
                     Text(
                       l.firstRunTitle,
                       style: th.textTheme.headlineSmall,
                     ),
-                    const SizedBox(height: 18),
+                    SizedBox(height: context.skin.space.sectionGap),
                     _PermBlock(
                       icon: Icons.bluetooth_searching,
                       title: l.firstRunBleTitle,
                       body: l.firstRunBleBody,
                     ),
-                    const SizedBox(height: 14),
+                    SizedBox(height: context.skin.space.rowInset),
                     _PermBlock(
                       icon: Icons.notifications_active_outlined,
                       title: l.firstRunNotificationsTitle,
                       body: l.firstRunNotificationsBody,
                     ),
-                    const SizedBox(height: 14),
+                    SizedBox(height: context.skin.space.rowInset),
                     _PermBlock(
                       icon: Icons.cloud_off,
                       title: l.firstRunOfflineTitle,

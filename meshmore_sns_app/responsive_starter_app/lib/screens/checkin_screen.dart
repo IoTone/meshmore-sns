@@ -52,8 +52,8 @@ class _CheckinScreenState extends State<CheckinScreen> {
       appBar: AppBar(title: Text(l.checkinTitle)),
       body: MmScaffold(
         child: ListView(
-          padding: EdgeInsets.fromLTRB(
-              skin.space.step(5), skin.space.step(4), skin.space.step(5), 40),
+          padding: EdgeInsets.fromLTRB(skin.space.rowInset, skin.space.rowGap,
+              skin.space.rowInset, skin.space.emptyState),
           children: <Widget>[
             Text(l.checkinIntro,
                 style: TextStyle(

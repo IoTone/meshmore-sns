@@ -200,14 +200,20 @@ class LocationSettingsScreen extends StatelessWidget {
                 // Last-published readout.
                 if (ap.lastPublishedAt != null)
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+                    padding: EdgeInsets.fromLTRB(skin.space.screenEdge,
+                        skin.space.rowGap, skin.space.screenEdge,
+                        skin.space.labelToControl),
                     child: Container(
-                      padding: const EdgeInsets.all(10),
+                      padding: EdgeInsets.all(skin.space.rowInset),
                       decoration: BoxDecoration(
-                        color: cs.surfaceContainerHighest,
-                        borderRadius: mmRadius(context, 6),
+                        color: skin.color.surface,
+                        borderRadius: mmRadius(context, kRadiusSm),
+                        // On paper a fill and a 35 % outline both vanish, which
+                        // left the readout floating with no edge; the rule is
+                        // what draws a panel there.
                         border: Border.all(
-                            color: cs.outline.withValues(alpha: .35)),
+                            color: skin.color.line,
+                            width: skin.shape.borderWidth),
                       ),
                       child: Text(
                         l.locLastPublished(
