@@ -124,8 +124,12 @@ class _ContactSheetState extends State<_ContactSheet> {
   Widget build(BuildContext context) {
     final AppLocalizations l = widget.l;
     final List<DiscoveredNode> shown = _shown;
+    // A shrink-wrapped list inside a min-size Column asks for the height of
+    // every row, overflows the sheet's box, and stops accepting taps in the
+    // part that overflows — which on a 190-contact radio is most of the sheet.
+    // The list is a real scroll view inside the sheet's own height instead.
     return Column(
-      mainAxisSize: MainAxisSize.min,
+      mainAxisSize: MainAxisSize.max,
       children: <Widget>[
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
@@ -147,14 +151,13 @@ class _ContactSheetState extends State<_ContactSheet> {
             ),
           ),
         ),
-        Flexible(
+        Expanded(
           child: shown.isEmpty
               ? Padding(
                   padding: const EdgeInsets.all(24),
                   child: Text(l.contactFilterNone),
                 )
               : ListView(
-                  shrinkWrap: true,
                   children: <Widget>[
                     for (final DiscoveredNode n in shown)
                       Builder(builder: (BuildContext ctx) {

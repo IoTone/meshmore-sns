@@ -29,6 +29,16 @@ check, so the build stops instead.
    number (`flutter build appbundle --build-number <n+1>`) rather than assuming
    13 is free.
 
+**Debug installs and two keystores (measured 2026-11-05).** A debug build's
+signature comes from whichever debug keystore the toolchain finds. With
+`ANDROID_USER_HOME` unset, the Android Gradle Plugin in this tree uses
+`~/.config/.android/debug.keystore`; this machine's long-standing one is
+`~/.android/debug.keystore`, and the two carry different certificates. Installing
+across them fails with `INSTALL_FAILED_UPDATE_INCOMPATIBLE`, and the only way out
+of that on a device holding app data is an uninstall. Build and install debug
+APKs with `ANDROID_USER_HOME=$HOME/.android` so the signature stays the one the
+handset already trusts.
+
 ## 2. Build (verified)
 
 - `flutter build appbundle --release` → `build/app/outputs/bundle/release/app-release.aab`, 77.0 MB.
