@@ -58,6 +58,59 @@ const Color kVectorBasemapBackground = Color(0xFF141414);
 final Map<String, Future<VectorBasemapStyle>> _stylesByPreset =
     <String, Future<VectorBasemapStyle>>{};
 
+/// The bundled style document, decoded once for the whole process.
+///
+/// Themes are eight paints over one document, so the asset is read and
+/// `jsonDecode`d once and every skin then only maps colours. Before this each
+/// preset read the asset and parsed 35 KB again, which is the work the owner
+/// could see as the map rebuilding itself when the skin changed.
+final Map<String, Future<Map<String, Object?>>> _baseStyles =
+    <String, Future<Map<String, Object?>>>{};
+
+/// [cache] is false when a caller supplied its own reader. A supplied reader
+/// is a seam (a fixture, a counter), and caching its document for the process
+/// would leak one caller's style into the next — the real bundle is the only
+/// document that is the same for everyone.
+/// Test seam: forget every parsed style and decoded document.
+///
+/// The caches are process-global because the app has one style and one asset,
+/// which is right in a build and wrong in a test file: a test that loads a
+/// fixture under a preset's own key would otherwise hand that fixture to the
+/// next test. Only tests call this.
+@visibleForTesting
+void resetVectorBasemapCache() {
+  _stylesByPreset.clear();
+  _baseStyles.clear();
+  _documentsDecoded = 0;
+}
+
+/// Test seam: how many times a style document has actually been read and
+/// decoded. The whole point of the cache above is that this stays at one
+/// across eight skins, and a number is easier to check than a timing.
+@visibleForTesting
+int get vectorStyleDocumentsDecoded => _documentsDecoded;
+int _documentsDecoded = 0;
+
+Future<Map<String, Object?>> _baseStyle(
+    String asset, Future<String> Function(String) read, {bool cache = true}) {
+  final Future<Map<String, Object?>>? cached = cache ? _baseStyles[asset] : null;
+  if (cached != null) return cached;
+  _documentsDecoded++;
+  final Future<Map<String, Object?>> base =
+      read(asset).then((String json) {
+    final Object? decoded = jsonDecode(json);
+    if (decoded is! Map<String, dynamic>) {
+      throw StateError('$asset is not a style object');
+    }
+    return Map<String, Object?>.from(decoded);
+  }, onError: (Object e) {
+    if (cache) _baseStyles.remove(asset); // do not cache a failure
+    throw e;
+  });
+  if (cache) _baseStyles[asset] = base;
+  return base;
+}
+
 /// R115 — the vector basemap is one map in seven skins.
 ///
 /// Every colour here is a mix of that skin's own tokens, never a literal: the
@@ -247,9 +300,21 @@ Map<String, Object?> themedVectorStyleJson(
 @immutable
 class VectorBasemapStyle {
   const VectorBasemapStyle(this.theme, this.sprites);
+
   final vtr.Theme theme;
   final SpriteStyle? sprites;
 }
+
+/// The identity a themed style carries into `vector_map_tiles`.
+///
+/// The style asset declares no `id`, so `ThemeReader` fell back to the string
+/// `default` for every skin: eight themes all called `default`. The layer only
+/// repaints when `theme.id` changes (`vector_map_tiles` 8.0.0,
+/// `options.dart:52-61` `hasRenderDifferences`, `grid_layer.dart:312-320`), so
+/// a skin change left the old palette on screen and painted only the tiles
+/// created afterwards in the new one — a map in two themes at once. One id per
+/// skin restores the repaint the library expects.
+String vectorStyleIdFor(String skinId) => 'meshmore-$skinId';
 
 /// Load (and cache) the bundled style.
 Future<VectorBasemapStyle> loadVectorBasemapStyle({
@@ -263,17 +328,19 @@ Future<VectorBasemapStyle> loadVectorBasemapStyle({
   final Future<String> Function(String key) read =
       readText ?? (bundle ?? rootBundle).loadString;
   final Future<VectorBasemapStyle> style =
-      read(kVectorBasemapAsset).then((String json) {
-    final Object? decoded = jsonDecode(json);
-    if (decoded is! Map<String, dynamic>) {
-      throw StateError('$kVectorBasemapAsset is not a style object');
-    }
+      _baseStyle(kVectorBasemapAsset, read, cache: readText == null)
+          .then((Map<String, Object?> base) {
     final Map<String, Object?> themed = tokens == null
-        ? (decoded as Map<String, Object?>)
-        : themedVectorStyleJson(
-            Map<String, Object?>.from(decoded), VectorSkinPalette.of(tokens));
+        ? base
+        : themedVectorStyleJson(base, VectorSkinPalette.of(tokens));
+    // The identity is what tells the renderer that a skin changed; the paint
+    // alone is invisible to it. See [vectorStyleIdFor].
+    final Map<String, Object?> identified = <String, Object?>{
+      ...themed,
+      'id': vectorStyleIdFor(cacheKey),
+    };
     return VectorBasemapStyle(
-      vtr.ThemeReader().read(themed),
+      vtr.ThemeReader().read(identified),
       null, // no sprite atlas is bundled; icon layers draw nothing
     );
   }, onError: (Object e) {
@@ -343,12 +410,27 @@ class MmVectorTileProvider implements VectorTileProvider {
 
 /// The Studio basemap layer. Must be a child of `FlutterMap`.
 ///
-/// While the style loads (one asset read, once) nothing is drawn; the map
-/// still shows its markers and event layers, so this never blocks the view.
-class VectorBasemapLayer extends StatelessWidget {
+/// The last style that loaded stays on screen while the next skin's style is
+/// built. Rendering nothing in that gap is what the owner described as the
+/// vectors "loading as black and then having to get redrawn as white": the
+/// layer vanished for a frame or two, the map's own ground colour (near-black
+/// in the dark skins, paper in the light one) showed through, and the tiles
+/// popped back. One map, kept, is better than a correct one a frame later.
+class VectorBasemapLayer extends StatefulWidget {
   const VectorBasemapLayer({super.key, this.source = kOsmVector});
 
   final MapSource source;
+
+  @override
+  State<VectorBasemapLayer> createState() => _VectorBasemapLayerState();
+}
+
+class _VectorBasemapLayerState extends State<VectorBasemapLayer> {
+  /// The style currently drawn. Kept across a skin change so the map does not
+  /// blink through its ground colour.
+  VectorBasemapStyle? _shown;
+
+  MapSource get source => widget.source;
 
   @override
   Widget build(BuildContext context) {
@@ -363,8 +445,9 @@ class VectorBasemapLayer extends StatelessWidget {
       future: loadVectorBasemapStyle(
           tokens: skin.color, cacheKey: skin.preset.name),
       builder: (BuildContext context, AsyncSnapshot<VectorBasemapStyle> s) {
-        final VectorBasemapStyle? style = s.data;
+        final VectorBasemapStyle? style = s.data ?? _shown;
         if (style == null) return const SizedBox.shrink();
+        _shown = style;
         return VectorTileLayer(
           theme: style.theme,
           sprites: style.sprites,
