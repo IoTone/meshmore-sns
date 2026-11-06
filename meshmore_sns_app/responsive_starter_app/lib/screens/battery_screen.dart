@@ -415,7 +415,9 @@ class _HistorySparkline extends StatelessWidget {
               history: history,
               line: cs.primary,
               fill: cs.primary.withValues(alpha: .12),
-              grid: cs.outline.withValues(alpha: .2),
+              // The chart's own grid: a hairline, which is visible on paper
+              // where an outline at 20 % is not.
+              grid: context.skin.color.hairline,
             ),
           ),
         ),
