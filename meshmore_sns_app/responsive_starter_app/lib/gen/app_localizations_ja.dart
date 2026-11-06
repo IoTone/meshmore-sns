@@ -848,7 +848,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get nodesUnfavTooltip => 'お気に入りから削除';
 
   @override
-  String get gridTitle => '調査';
+  String get gridTitle => 'ハイパーローカルグリッド';
 
   @override
   String get gridShowLegend => '凡例を表示';
@@ -920,9 +920,6 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get gridViewRadial => 'ラジアル';
-
-  @override
-  String get gridViewGlobe => 'グローブ';
 
   @override
   String get gridViewPicker => '表示';
@@ -5322,12 +5319,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get gridLegendSignalOnly => '中抜き · 位置なし';
 
   @override
-  String get gridOpenMap => '地図を開く';
-
-  @override
-  String get gridMoreViews => 'その他の表示';
-
-  @override
   String get gridLegendMore => '凡例の全文';
 
   @override
@@ -5419,9 +5410,6 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get gridPurposeWeather => '温度・湿度・気圧（報告するノードのみ）。';
-
-  @override
-  String get gridPurposeGlobe => '同じ位置を地球儀で。距離がひと目で分かります。';
 
   @override
   String get gridPurposeTree => 'ノード同士の経路（広告されたルートより）。';

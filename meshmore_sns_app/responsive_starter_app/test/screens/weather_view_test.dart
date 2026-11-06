@@ -54,7 +54,10 @@ void main() {
     // The view scrolls; with the spacing contract's gaps the sensor section
     // can sit below the fold on a short surface, so reach it rather than
     // assuming it was built.
-    await t.scrollUntilVisible(find.text('MEASURED (sensors)'), 200);
+    // The notice is scrollable too (it must not clip its own text), so name
+    // the page's scrollable rather than letting the finder pick between two.
+    await t.scrollUntilVisible(find.text('MEASURED (sensors)'), 200,
+        scrollable: find.byType(Scrollable).first);
     Text header = t.widget<Text>(find.text('MEASURED (sensors)'));
     expect(header.style?.fontSize, type.sizeSm);
     expect(header.style?.fontSize, 11);

@@ -8,7 +8,6 @@ import 'package:meshmore_sns_app/theme/mm_skin.dart';
 import 'package:meshmore_sns_app/theme/mm_tokens.dart';
 import 'package:meshmore_sns_app/theme/theme_controller.dart';
 import 'package:meshmore_sns_app/ui/mm_components.dart';
-import 'package:meshmore_sns_app/ui/mm_page_header.dart';
 import 'package:provider/provider.dart';
 
 /// The spacing ratchet, and the invariants the contract rests on.
@@ -171,10 +170,6 @@ void main() {
     final Set<double> steps = MmSpace.steps.toSet();
     expect(steps.contains(kPadPanel), isTrue,
         reason: 'kPadPanel must be a spacing step, not a value between two');
-    expect(steps.contains(kHeaderPad.left), isTrue);
-    expect(steps.contains(kHeaderPad.top), isTrue);
-    expect(steps.contains(kHeaderPad.right), isTrue);
-    expect(steps.contains(kHeaderPad.bottom), isTrue);
   });
 
   test('the jobs order the gaps the way the contract says', () {

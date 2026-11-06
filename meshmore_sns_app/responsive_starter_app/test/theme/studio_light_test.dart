@@ -12,7 +12,6 @@ import 'package:meshmore_sns_app/theme/mm_tokens.dart';
 import 'package:meshmore_sns_app/theme/theme_controller.dart';
 import 'package:meshmore_sns_app/theme/viz_palette.dart';
 import 'package:meshmore_sns_app/ui/mm_components.dart';
-import 'package:meshmore_sns_app/ui/mm_page_header.dart';
 import 'package:meshmore_sns_app/ui/mm_scaffold.dart';
 import 'package:meshmore_sns_app/ui/mm_shape.dart';
 
@@ -193,7 +192,6 @@ void main() {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: <Widget>[
-                  MmPageHeader(title: 'Diagnostics'),
                   MmPanel(
                     child: Text('Noise floor and the radio\'s own measurements '
                         'sit here, sourced line by line.'),

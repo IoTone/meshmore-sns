@@ -6,7 +6,6 @@ import 'package:provider/provider.dart';
 
 import '../gen/app_localizations.dart';
 import '../ui/mm_edge_swipe.dart';
-import '../ui/mm_page_header.dart';
 import '../places/place_history_sheet.dart';
 import '../places/place_store.dart';
 import '../places/place_wiring.dart';
@@ -55,7 +54,6 @@ class MapScreen extends StatelessWidget {
         // The map is the one view whose content is full-bleed, so its header
         // sits above the canvas rather than floating over it: a floating box
         // would cover the thing you are trying to read.
-        MmPageHeader(title: l.tabMap),
         Expanded(
           child: MmEdgeSwipe(
             onSwipe: (int d) => onEdgeSwipe?.call(d),

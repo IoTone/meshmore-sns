@@ -40,8 +40,11 @@ class GridNotice extends StatelessWidget {
     final ColorScheme cs = Theme.of(context).colorScheme;
     final MmSkin skin = context.skin;
     final String? label = actionLabel;
+    // Scrollable, because a notice must not clip itself. It can sit over a
+    // canvas shorter than its own text — the tree's, at 200 % text on a 320 dp
+    // phone, overflowed by 8 px before this.
     return Center(
-      child: Padding(
+      child: SingleChildScrollView(
         padding: EdgeInsets.all(skin.space.step(5)),
         child: Column(
           mainAxisSize: MainAxisSize.min,

@@ -64,6 +64,16 @@ over BLE. Mesh-first, no backend, no account, no server.
   it is current, and the grid while a pan/zoom view is in pan mode. Strip is
   56 dp tall, 48 dp cells with 22 px icon-only glyphs, 3 px selected rule,
   and the app bar ends in a 2 px `fg`@22% rule.
+- **Hyperlocal grid (R118).** The tab is called **Hyperlocal grid** again
+  (`gridTitle`, EN/JA), not "Survey". Its views are one flat picker list —
+  Radar, Coverage, Weather, Mesh tree, Heat, Altitude — with no "More views…"
+  second level and no hand-off row to the Map tab: this tab is a destination,
+  not a router. The globe is out of the product.
+- **One header (R118).** The app bar names what is on screen: the app's own
+  name on the dashboard, the view's name everywhere else (`home_shell.dart`).
+  The second title block that used to sit under the strip is gone — 56 dp of
+  the same information, twice. `MmPageHeader` is deleted; its left-padding
+  token went with it.
 - Device configuration (5 groups) and Profile & personalization (4
   groups) fold with `MmCollapsibleSection`, open by default.
 
