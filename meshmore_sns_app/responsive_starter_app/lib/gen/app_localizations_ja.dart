@@ -5661,4 +5661,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String fabricAgoDays(Object d) {
     return '$d日前';
   }
+
+  @override
+  String get meshbookEmptyDetail => 'このチャンネルの発言が記録されます。対象は直近24時間です。';
 }

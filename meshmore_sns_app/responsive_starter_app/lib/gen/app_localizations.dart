@@ -9897,6 +9897,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{d}d ago'**
   String fabricAgoDays(Object d);
+
+  /// No description provided for @meshbookEmptyDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'Messages on this channel fill it; the window is the last 24 hours.'**
+  String get meshbookEmptyDetail;
 }
 
 class _AppLocalizationsDelegate

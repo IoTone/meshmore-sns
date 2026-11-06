@@ -2579,5 +2579,6 @@
   "elevationNotADistance": "点は横並びで、距離の順ではありません。",
   "fabricNewestCell": "最新のセルは{ago}",
   "fabricNothingYet": "まだ記録はありません。メッシュを受信するとセルが埋まります。",
-  "fabricAgoDays": "{d}日前"
+  "fabricAgoDays": "{d}日前",
+  "meshbookEmptyDetail": "このチャンネルの発言が記録されます。対象は直近24時間です。"
 }

@@ -4014,5 +4014,6 @@
   "elevationNotADistance": "Dots line up side to side, not by distance.",
   "fabricNewestCell": "newest cell {ago}",
   "fabricNothingYet": "nothing recorded yet — cells fill as you hear the mesh",
-  "fabricAgoDays": "{d}d ago"
+  "fabricAgoDays": "{d}d ago",
+  "meshbookEmptyDetail": "Messages on this channel fill it; the window is the last 24 hours."
 }

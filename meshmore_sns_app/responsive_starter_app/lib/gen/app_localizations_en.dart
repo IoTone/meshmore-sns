@@ -5891,4 +5891,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String fabricAgoDays(Object d) {
     return '${d}d ago';
   }
+
+  @override
+  String get meshbookEmptyDetail =>
+      'Messages on this channel fill it; the window is the last 24 hours.';
 }
