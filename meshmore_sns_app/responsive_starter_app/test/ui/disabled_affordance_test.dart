@@ -86,7 +86,7 @@ void main() {
       expect(hint.style!.color, skin.color.fgDisabled,
           reason: '${preset.name}: …and so does its explanation');
       expect(ratio(title.style!.color!, skin.color.base), greaterThanOrEqualTo(3.0),
-          reason: '${preset.name}');
+          reason: preset.name);
     }
   });
 }
