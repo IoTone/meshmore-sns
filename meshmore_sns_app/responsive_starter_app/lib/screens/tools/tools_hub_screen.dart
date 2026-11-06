@@ -65,6 +65,25 @@ class ToolsHubScreen extends StatelessWidget {
                 padding: EdgeInsets.only(bottom: skin.space.rowGap),
                 child: ToolNotice(text: l.toolsOffline, icon: Icons.link_off),
               ),
+            // Check-in is a field-safety action rather than an engineering
+            // tool, and it lives here because the alarm screen carries exactly
+            // one control and must not offer a second way to send (`/sos`,
+            // `sos_screen.dart`). It sits first: a user looking for it is in a
+            // hurry, and a tester looking for a tool is not.
+            Padding(
+              padding: EdgeInsets.only(bottom: skin.space.rowGap),
+              child: MmListRow(
+                key: const ValueKey<String>('tools-checkin'),
+                leading: Icon(Icons.schedule_send, color: skin.color.accent),
+                title: Text(l.checkinTitle),
+                subtitle: Text(l.checkinOneMessage,
+                    style: TextStyle(
+                        color: skin.color.fgMuted,
+                        fontSize: skin.type.sizeBody)),
+                trailing: Icon(Icons.chevron_right, color: skin.color.fgMuted),
+                onTap: () => context.push('/checkin'),
+              ),
+            ),
             // Two tools answer a question a user asks; the rest are
             // engineering, so they sit under their own label instead of in
             // the same undifferentiated list.

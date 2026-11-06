@@ -4,7 +4,6 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
-import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../gen/app_localizations.dart';
@@ -66,7 +65,13 @@ class _SosScreenState extends State<SosScreen> {
 
   void _beginHold(SosController c, AppLocalizations l) {
     if (c.state == SosState.arming) return;
-    final SosRefusal? refused = c.arm(words: _words.text);
+    // The field is a default, not a form: clearing it means "send the default
+    // words", not "send nothing". The engine still refuses an alarm with no
+    // words from any other caller (`SosRefusal.noWords`), so the wire always
+    // carries a sentence.
+    final String typed = _words.text.trim();
+    final SosRefusal? refused =
+        c.arm(words: typed.isEmpty ? l.sosDefaultWords : typed);
     setState(() {
       _note = null;
       _held = 0;
@@ -154,17 +159,11 @@ class _SosScreenState extends State<SosScreen> {
         sos.state == SosState.acknowledged;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(l.sosTitle),
-        actions: <Widget>[
-          IconButton(
-            key: const ValueKey<String>('checkin-entry'),
-            tooltip: l.checkinEntryTooltip,
-            icon: const Icon(Icons.schedule_send),
-            onPressed: () => context.push('/checkin'),
-          ),
-        ],
-      ),
+      // One control on this screen raises an alarm, and the app bar carries
+      // nothing beside the title: a clock-shaped action here read as a second
+      // way to send (owner, 2026-11-05). Check-in is in Settings -> Tools, so
+      // it is still reachable without being met while raising an alarm.
+      appBar: AppBar(title: Text(l.sosTitle)),
       body: MmScaffold(
         child: ListView(
           padding: EdgeInsets.fromLTRB(
@@ -173,21 +172,12 @@ class _SosScreenState extends State<SosScreen> {
             if (ended)
               _Ended(sos: sos, l: l)
             else ...<Widget>[
-              // The control comes first. On an emergency screen the eye has to
-              // land on the thing that raises the alarm, not on a sentence
-              // about it (UX audit E1/E2).
-              if (!sos.isRunning) ...<Widget>[
-                _holdControl(context, sos, l, skin, mc.isReady),
-                if (_note != null) ...<Widget>[
-                  SizedBox(height: skin.space.step(3)),
-                  Text(_note!,
-                      key: const ValueKey<String>('sos-note'),
-                      style: TextStyle(
-                          color: skin.color.alert,
-                          fontSize: skin.type.sizeBody)),
-                ],
-                SizedBox(height: skin.space.step(4)),
-              ],
+              // Configure first, then hold. UX audit E1/E2 put the control at
+              // the top so the eye landed on the alarm; the owner reversed
+              // that on 2026-11-05, because the rows above the hold are what
+              // make it clear they can be changed before it is held. Do not
+              // move the hold back above them.
+              //
               // Where it goes, one row, one tap to change it.
               _DestinationRow(
                 sos: sos,
@@ -207,6 +197,12 @@ class _SosScreenState extends State<SosScreen> {
                         color: skin.color.fg,
                         fontSize: skin.type.sizeBodyLg,
                         fontWeight: FontWeight.w600)),
+                SizedBox(height: skin.space.step(1)),
+                Text(l.sosWordsOptional,
+                    key: const ValueKey<String>('sos-words-optional'),
+                    style: TextStyle(
+                        color: skin.color.fgMuted,
+                        fontSize: skin.type.sizeSm)),
                 SizedBox(height: skin.space.step(2)),
                 TextField(
                   key: const ValueKey<String>('sos-words'),
@@ -224,6 +220,25 @@ class _SosScreenState extends State<SosScreen> {
                     ),
                   ),
                 ),
+                SizedBox(height: skin.space.step(4)),
+                // One line above the hold: what will be sent and where. The
+                // hold raises whatever the two rows above it currently say.
+                Text(l.sosHoldSummary(sos.channelName),
+                    key: const ValueKey<String>('sos-hold-summary'),
+                    style: TextStyle(
+                        color: skin.color.fgMuted,
+                        fontSize: skin.type.sizeSm,
+                        height: 1.4)),
+                SizedBox(height: skin.space.step(2)),
+                _holdControl(context, sos, l, skin, mc.isReady),
+                if (_note != null) ...<Widget>[
+                  SizedBox(height: skin.space.step(3)),
+                  Text(_note!,
+                      key: const ValueKey<String>('sos-note'),
+                      style: TextStyle(
+                          color: skin.color.alert,
+                          fontSize: skin.type.sizeBody)),
+                ],
                 SizedBox(height: skin.space.step(4)),
               ],
               _AboutLines(sos: sos, l: l),
@@ -612,19 +627,41 @@ class _DestinationPickerState extends State<_DestinationPicker> {
               ),
             ),
             SizedBox(height: skin.space.step(3)),
-            Align(
-              alignment: Alignment.centerRight,
-              child: FilledButton(
-                key: const ValueKey<String>('sos-destination-done'),
-                onPressed: () {
-                  widget.sos.setDestination(
-                    channelSlot: _slot,
-                    contactKeysHex: _keys,
-                  );
-                  Navigator.of(context).pop();
-                },
-                child: Text(l.sosDestinationDone),
-              ),
+            Wrap(
+              spacing: skin.space.step(3),
+              runSpacing: skin.space.step(2),
+              alignment: WrapAlignment.end,
+              children: <Widget>[
+                // Back to what a first launch would have chosen: the
+                // emergency channel when the radio lists one, the active
+                // channel otherwise, and no direct copies. The alarm already
+                // works without this being touched; this is how a user undoes
+                // a choice without hunting for the original.
+                MmAction(
+                  key: const ValueKey<String>('sos-destination-defaults'),
+                  icon: Icons.settings_backup_restore,
+                  label: l.sosUseDefaults,
+                  onPressed: () {
+                    widget.sos.setDestination(
+                      channelSlot: widget.sos.emergencyChannelSlot ??
+                          widget.mc.activeChannel,
+                      contactKeysHex: const <String>[],
+                    );
+                    Navigator.of(context).pop();
+                  },
+                ),
+                FilledButton(
+                  key: const ValueKey<String>('sos-destination-done'),
+                  onPressed: () {
+                    widget.sos.setDestination(
+                      channelSlot: _slot,
+                      contactKeysHex: _keys,
+                    );
+                    Navigator.of(context).pop();
+                  },
+                  child: Text(l.sosDestinationDone),
+                ),
+              ],
             ),
           ],
         ),

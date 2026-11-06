@@ -3266,7 +3266,6 @@
   "sosRefusedTooLong": "Too long to carry a name and a position. Shorten it.",
   "sosRefusedHold": "The hold is not finished.",
   "checkinTitle": "Check-in",
-  "checkinEntryTooltip": "Check-in",
   "checkinIntro": "One message with a deadline. The app marks it overdue here; the radio keeps no timer.",
   "checkinInMinutes": "Deadline in {minutes} min",
   "@checkinInMinutes": {
@@ -3995,5 +3994,8 @@
   "placeSuggestReport": "Report place",
   "placeSuggestDismiss": "Dismiss",
   "placeSuggestNeedsLocation": "Turn on location to report a place.",
-  "mapCompassLegend": "The arrow is this phone's compass."
+  "mapCompassLegend": "The arrow is this phone's compass.",
+  "sosWordsOptional": "Optional — the default is used if you clear it.",
+  "sosHoldSummary": "Hold to send the words above to {channel}, with your name and position.",
+  "sosUseDefaults": "Use defaults"
 }

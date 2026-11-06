@@ -363,7 +363,59 @@ void main() {
     await _settle(t);
   });
 
-  testWidgets('the control comes before the explanation', (WidgetTester t) async {
+  testWidgets('an empty words field still raises the alarm, on the default',
+      (WidgetTester t) async {
+    await t.binding.setSurfaceSize(const Size(400, 900));
+    addTearDown(() => t.binding.setSurfaceSize(null));
+    await t.pumpWidget(_host(mc, sos, tc));
+    await t.pump();
+
+    // The field is a default, not a form: clearing it must not turn the hold
+    // into a refusal, because the one moment this screen exists for is not a
+    // moment to type.
+    await t.enterText(
+        find.byKey(const ValueKey<String>('sos-words')), '   ');
+    await t.pump();
+
+    final Offset at =
+        t.getCenter(find.byKey(const ValueKey<String>('sos-hold')));
+    final TestGesture g = await t.startGesture(at);
+    // The tap-down arrives after the recognizer's deadline, which is when the
+    // engine records the hold's start; the clock has to move after it.
+    await t.pump(const Duration(milliseconds: 150));
+    clock.now = clock.now.add(SosEngine.hold);
+    await t.pump(const Duration(seconds: 2));
+    await t.pump(const Duration(seconds: 2));
+    await g.up();
+    await t.pump();
+
+    expect(sos.state, SosState.active);
+    expect(sos.request?.words, 'I need help',
+        reason: 'cleared words fall back to the default sentence');
+    await _settle(t);
+  });
+
+  testWidgets('the alarm screen offers no second way to send',
+      (WidgetTester t) async {
+    await t.binding.setSurfaceSize(const Size(400, 900));
+    addTearDown(() => t.binding.setSurfaceSize(null));
+    await t.pumpWidget(_host(mc, sos, tc));
+    await t.pump();
+
+    // One control raises an alarm; the check-in action that used to sit in
+    // the app bar now lives in Settings -> Tools (owner, 2026-11-05).
+    expect(find.byIcon(Icons.schedule_send), findsNothing);
+    expect(find.byKey(const ValueKey<String>('sos-hold')), findsOneWidget);
+    expect(find.byKey(const ValueKey<String>('sos-destination-defaults')),
+        findsNothing);
+  });
+
+  // The owner reversed UX audit E1/E2 on 2026-11-05: the two rows a user can
+  // change come before the hold, so it is clear they can be configured before
+  // it is held. The alarm is still one hold and still needs no setup — it just
+  // reads top-to-bottom now.
+  testWidgets('what can be configured comes before the hold',
+      (WidgetTester t) async {
     await t.binding.setSurfaceSize(const Size(400, 900));
     addTearDown(() => t.binding.setSurfaceSize(null));
     await t.pumpWidget(_host(mc, sos, tc));
@@ -374,6 +426,13 @@ void main() {
     final double destination =
         t.getTopLeft(find.byKey(const ValueKey<String>('sos-destination-row')))
             .dy;
-    expect(hold, lessThan(destination));
+    final double words =
+        t.getTopLeft(find.byKey(const ValueKey<String>('sos-words'))).dy;
+    expect(destination, lessThan(words));
+    expect(words, lessThan(hold),
+        reason: 'the destination and the words are changed before the hold');
+    // And the hold still says, on one line, what it will send and where.
+    expect(find.byKey(const ValueKey<String>('sos-hold-summary')),
+        findsOneWidget);
   });
 }
