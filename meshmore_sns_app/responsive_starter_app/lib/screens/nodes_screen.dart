@@ -139,7 +139,7 @@ class _NodesScreenState extends State<NodesScreen> {
                 child: Text(t,
                     style: TextStyle(
                         color: cs.onSurfaceVariant,
-                        fontSize: 11,
+                        fontSize: context.skin.type.sizeSm,
                         letterSpacing: 1,
                         fontWeight: FontWeight.w600)),
               );
@@ -456,7 +456,7 @@ class _NodesScreenState extends State<NodesScreen> {
                 ? l.nodesStatusReady(
                     nodes.length, totalFabric, inRange, favs.length)
                 : l.nodesStatusOffline,
-            style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12),
+            style: TextStyle(color: cs.onSurfaceVariant, fontSize: context.skin.type.sizeBody),
           ),
         ),
         const Divider(height: 1),
@@ -538,7 +538,7 @@ class _NodesScreenState extends State<NodesScreen> {
                                           ? '$unread / $dmN'
                                           : '$dmN',
                                       style: TextStyle(
-                                          fontSize: 11,
+                                          fontSize: context.skin.type.sizeSm,
                                           color: badgeFg,
                                           fontWeight: FontWeight.w600),
                                     ),
@@ -582,7 +582,7 @@ class _NodesScreenState extends State<NodesScreen> {
                                   style: TextStyle(
                                       color: cs.onSurfaceVariant,
                                       fontFamily: context.skin.type.monoFamily,
-                                      fontSize: 11,
+                                      fontSize: context.skin.type.sizeSm,
                                       height: 1.4)),
                             if (telem?.temperatureC != null) ...<Widget>[
                               const SizedBox(height: 4),
@@ -607,7 +607,7 @@ class _NodesScreenState extends State<NodesScreen> {
                                           '${telem.humidityPct!.toStringAsFixed(0)}%',
                                       ].join(' · '),
                                       style: TextStyle(
-                                          fontSize: 10,
+                                          fontSize: context.skin.type.sizeMicro,
                                           color: cs.onTertiaryContainer),
                                     ),
                                   ],
@@ -632,7 +632,7 @@ class _NodesScreenState extends State<NodesScreen> {
                                       ),
                                       child: Text(t,
                                           style: TextStyle(
-                                              fontSize: 10,
+                                              fontSize: context.skin.type.sizeMicro,
                                               color: cs
                                                   .onSecondaryContainer)),
                                     ),

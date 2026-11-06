@@ -91,7 +91,7 @@ class StudioMessageRow extends StatelessWidget {
                     style: TextStyle(
                         color: out ? skin.color.accent : skin.color.fgMuted,
                         fontFamily: mono,
-                        fontSize: 12)),
+                        fontSize: skin.type.sizeBody)),
               ),
             ),
             Expanded(
@@ -105,7 +105,7 @@ class StudioMessageRow extends StatelessWidget {
                           key: const ValueKey<String>('studio-msg-sender'),
                           style: TextStyle(
                               color: skin.color.fgMuted,
-                              fontSize: 12,
+                              fontSize: skin.type.sizeBody,
                               fontWeight: FontWeight.w600)),
                     ),
                   if (looksLikeBot(body))
@@ -116,7 +116,7 @@ class StudioMessageRow extends StatelessWidget {
                   Text(stripBotMarker(body),
                       key: const ValueKey<String>('studio-msg-body'),
                       style: TextStyle(
-                          color: skin.color.fg, fontSize: 15, height: 1.35)),
+                          color: skin.color.fg, fontSize: skin.type.size(15), height: 1.35)),
                   if (echo != null) echo!,
                   if (delivery)
                     Padding(
