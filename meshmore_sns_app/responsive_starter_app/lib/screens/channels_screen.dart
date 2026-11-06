@@ -172,10 +172,13 @@ class ChannelsScreen extends StatelessWidget {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
+                          // A badge's border is a shape, so it is drawn at
+                          // full strength: at 55 % it is 1.9:1 on paper and the
+                          // badge loses its edge exactly where the ground is
+                          // lightest.
                           color: cs.tertiary.withValues(alpha: .15),
                           borderRadius: BorderRadius.circular(kRadiusMd),
-                          border: Border.all(
-                              color: cs.tertiary.withValues(alpha: .55)),
+                          border: Border.all(color: cs.tertiary),
                         ),
                         child: Text(l.channelsDefaultBadge,
                             style: TextStyle(
@@ -479,7 +482,7 @@ class _EditChannelDialogState extends State<_EditChannelDialog> {
               decoration:
                   InputDecoration(labelText: l.channelsName, isDense: true),
             ),
-            const SizedBox(height: 14),
+            SizedBox(height: context.skin.space.rowInset),
             SegmentedButton<_PskSource>(
               segments: <ButtonSegment<_PskSource>>[
                 ButtonSegment<_PskSource>(
@@ -506,7 +509,7 @@ class _EditChannelDialogState extends State<_EditChannelDialog> {
                 });
               },
             ),
-            const SizedBox(height: 10),
+            SizedBox(height: context.skin.space.rowGap),
             if (_src == _PskSource.public)
               Text(l.channelsKeyPublicBody,
                   style: TextStyle(fontSize: context.skin.type.sizeBody))
@@ -770,13 +773,18 @@ void _showQrShare(BuildContext outer, int idx, String name, List<int> psk) {
                     style: TextStyle(
                         color: cs.onSurfaceVariant,
                         fontSize: ctx.skin.type.sizeBody)),
-                const SizedBox(height: 14),
+                SizedBox(height: ctx.skin.space.rowInset),
                 Center(
                   child: Container(
-                    padding: const EdgeInsets.all(12),
+                    padding: EdgeInsets.all(ctx.skin.space.rowInset),
                     decoration: BoxDecoration(
+                      // White is the QR format's own requirement — a camera
+                      // expects dark modules on a light field — so this one
+                      // surface does not follow the skin's ground. Its shape
+                      // does: the corner comes from the skin's radius family
+                      // rather than a decorative 8.
                       color: Colors.white,
-                      borderRadius: mmRadius(ctx, 8),
+                      borderRadius: mmRadius(ctx, kRadiusSm),
                     ),
                     child: QrImageView(
                       data: payload,
@@ -786,7 +794,7 @@ void _showQrShare(BuildContext outer, int idx, String name, List<int> psk) {
                     ),
                   ),
                 ),
-                const SizedBox(height: 14),
+                SizedBox(height: ctx.skin.space.rowInset),
                 Text(l.channelsQrPayload,
                     style: TextStyle(
                         color: cs.onSurfaceVariant,
@@ -840,7 +848,7 @@ class _DiceRollPanel extends StatelessWidget {
           children: <Widget>[
             Text(l.channelsShakeTitle,
                 style: Theme.of(context).textTheme.titleSmall),
-            const SizedBox(height: 6),
+            SizedBox(height: context.skin.space.labelToControl),
             Text(
               tc.reduceMotion
                   ? l.channelsShakeTapFallback
@@ -849,19 +857,18 @@ class _DiceRollPanel extends StatelessWidget {
                   color: cs.onSurfaceVariant,
                   fontSize: context.skin.type.sizeBody),
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: context.skin.space.rowInset),
             Row(
               children: <Widget>[
-                SizedBox(
-                  width: 56,
-                  height: 56,
+                SizedBox.square(
+                  dimension: context.skin.space.step(9),
                   child: CircularProgressIndicator(
                     value: d.progress,
                     strokeWidth: 4,
                     color: d.complete ? cs.tertiary : cs.primary,
                   ),
                 ),
-                const SizedBox(width: 14),
+                SizedBox(width: context.skin.space.rowInset),
                 Expanded(
                   child: SelectableText(
                     hex,

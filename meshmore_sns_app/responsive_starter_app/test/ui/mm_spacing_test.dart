@@ -109,7 +109,6 @@ void main() {
       'lib/maps/basemap.dart': 1,
       'lib/screens/about_screen.dart': 6,
       'lib/screens/battery_screen.dart': 4,
-      'lib/screens/channels_screen.dart': 6,
       'lib/screens/chat_screen.dart': 3,
       'lib/screens/checkin_screen.dart': 1,
       'lib/screens/dashboards/aghud_dashboard.dart': 13,
