@@ -890,7 +890,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get gridLegendTap => 'ノードをタップで詳細 + メッセージ / お気に入り。';
 
   @override
-  String get gridViewRadial => 'ラジアル';
+  String get gridViewRadial => 'レーダー';
 
   @override
   String get gridViewPicker => '表示';
@@ -1812,10 +1812,10 @@ class AppLocalizationsJa extends AppLocalizations {
   String get gridViewTree => 'メッシュツリー';
 
   @override
-  String get gridViewSnsCells => 'SNS セル（ヒート）';
+  String get gridViewSnsCells => 'メッセージの熱';
 
   @override
-  String get gridViewWeather => '気象（環境）';
+  String get gridViewWeather => '気象';
 
   @override
   String get meshbookTitle => 'メッシュブック';

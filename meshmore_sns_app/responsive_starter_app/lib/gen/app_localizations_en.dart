@@ -942,7 +942,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Tap a node to see details + Message / Favourite.';
 
   @override
-  String get gridViewRadial => 'Radial';
+  String get gridViewRadial => 'Radar';
 
   @override
   String get gridViewPicker => 'View';
@@ -1902,10 +1902,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get gridViewTree => 'Mesh tree';
 
   @override
-  String get gridViewSnsCells => 'SNS cells (heat)';
+  String get gridViewSnsCells => 'Message heat';
 
   @override
-  String get gridViewWeather => 'Weather (environment)';
+  String get gridViewWeather => 'Weather';
 
   @override
   String get meshbookTitle => 'MESHBOOK';

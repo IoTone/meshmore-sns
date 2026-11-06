@@ -1721,7 +1721,7 @@ abstract class AppLocalizations {
   /// No description provided for @gridViewRadial.
   ///
   /// In en, this message translates to:
-  /// **'Radial'**
+  /// **'Radar'**
   String get gridViewRadial;
 
   /// No description provided for @gridViewPicker.
@@ -3245,13 +3245,13 @@ abstract class AppLocalizations {
   /// No description provided for @gridViewSnsCells.
   ///
   /// In en, this message translates to:
-  /// **'SNS cells (heat)'**
+  /// **'Message heat'**
   String get gridViewSnsCells;
 
   /// No description provided for @gridViewWeather.
   ///
   /// In en, this message translates to:
-  /// **'Weather (environment)'**
+  /// **'Weather'**
   String get gridViewWeather;
 
   /// No description provided for @meshbookTitle.
