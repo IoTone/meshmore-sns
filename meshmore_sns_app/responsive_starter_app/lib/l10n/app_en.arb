@@ -3894,5 +3894,83 @@
         "type": "int"
       }
     }
+  },
+  "rawRecordTitle": "Send a raw record",
+  "rawRecordHelp": "One record to one contact, addressed over its route. The radio answers OK or ERR; the peer sends nothing back.",
+  "rawRecordNoContact": "No contact has a direct route yet. A raw record is addressed, not flooded.",
+  "rawRecordBytes": "Bytes (hex)",
+  "rawRecordEmpty": "Type the bytes to send.",
+  "rawRecordNotHex": "Not hex: use pairs such as 01 02 ab, or one run such as 0102ab.",
+  "rawRecordTooShort": "At least {min} bytes: the firmware drops anything shorter.",
+  "@rawRecordTooShort": {
+    "placeholders": {
+      "min": {
+        "type": "String"
+      }
+    }
+  },
+  "rawRecordTooLong": "Over this contact's {max}-byte budget.",
+  "@rawRecordTooLong": {
+    "placeholders": {
+      "max": {
+        "type": "String"
+      }
+    }
+  },
+  "rawRecordBudget": "Frame {frame} bytes · this route leaves {max} for the record · typed {typed}",
+  "@rawRecordBudget": {
+    "placeholders": {
+      "frame": {
+        "type": "String"
+      },
+      "max": {
+        "type": "String"
+      },
+      "typed": {
+        "type": "String"
+      }
+    }
+  },
+  "rawRecordNotReady": "No radio connected.",
+  "rawRecordSending": "Sending…",
+  "rawRecordConfirmTitle": "Send these bytes?",
+  "rawRecordConfirmBody": "The app cannot check what these bytes do. {name} receives {count} bytes as one record, and the radio answers OK or ERR.",
+  "@rawRecordConfirmBody": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "rawRecordSent": "The radio accepted it. This is not delivery: a raw record carries no receipt from the peer.",
+  "rawRecordRefused": "The radio refused it: {reason} (code {code}).",
+  "@rawRecordRefused": {
+    "placeholders": {
+      "reason": {
+        "type": "String"
+      },
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "rawRecordNoAnswer": "No answer in {seconds} s. The radio may have sent it anyway.",
+  "@rawRecordNoAnswer": {
+    "placeholders": {
+      "seconds": {
+        "type": "String"
+      }
+    }
+  },
+  "rawRecordNoRoute": "{name} has no direct route now, and a raw record cannot be flooded.",
+  "@rawRecordNoRoute": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
   }
 }

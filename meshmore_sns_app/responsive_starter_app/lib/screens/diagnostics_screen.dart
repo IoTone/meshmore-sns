@@ -13,6 +13,7 @@ import '../bot/bot_guards.dart';
 import '../bot/responder.dart';
 import '../gen/app_localizations.dart';
 import '../meshcore/failure.dart';
+import 'raw_record_card.dart';
 import '../ui/mm_components.dart';
 import '../ui/mm_collapse_controller.dart';
 import '../ui/mm_collapsible.dart';
@@ -422,6 +423,11 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
                     ],
                   ),
                 ),
+                // The retained raw-send capability, with the caller D10.1
+                // kept it for: one typed record to one contact, answered by
+                // the radio's own OK or ERR rather than by a chat row.
+                const SizedBox(height: 8),
+                RawRecordCard(mc: mc),
                 section(l.diagnosticsSectionM6),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),

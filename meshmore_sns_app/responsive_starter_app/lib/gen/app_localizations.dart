@@ -9627,6 +9627,108 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count, plural, =1{One repeat was not confirmed. The schedule continues.} other{{count} repeats were not confirmed. The schedule continues.}}'**
   String sosSendUnconfirmed(int count);
+
+  /// No description provided for @rawRecordTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Send a raw record'**
+  String get rawRecordTitle;
+
+  /// No description provided for @rawRecordHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'One record to one contact, addressed over its route. The radio answers OK or ERR; the peer sends nothing back.'**
+  String get rawRecordHelp;
+
+  /// No description provided for @rawRecordNoContact.
+  ///
+  /// In en, this message translates to:
+  /// **'No contact has a direct route yet. A raw record is addressed, not flooded.'**
+  String get rawRecordNoContact;
+
+  /// No description provided for @rawRecordBytes.
+  ///
+  /// In en, this message translates to:
+  /// **'Bytes (hex)'**
+  String get rawRecordBytes;
+
+  /// No description provided for @rawRecordEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Type the bytes to send.'**
+  String get rawRecordEmpty;
+
+  /// No description provided for @rawRecordNotHex.
+  ///
+  /// In en, this message translates to:
+  /// **'Not hex: use pairs such as 01 02 ab, or one run such as 0102ab.'**
+  String get rawRecordNotHex;
+
+  /// No description provided for @rawRecordTooShort.
+  ///
+  /// In en, this message translates to:
+  /// **'At least {min} bytes: the firmware drops anything shorter.'**
+  String rawRecordTooShort(String min);
+
+  /// No description provided for @rawRecordTooLong.
+  ///
+  /// In en, this message translates to:
+  /// **'Over this contact\'s {max}-byte budget.'**
+  String rawRecordTooLong(String max);
+
+  /// No description provided for @rawRecordBudget.
+  ///
+  /// In en, this message translates to:
+  /// **'Frame {frame} bytes · this route leaves {max} for the record · typed {typed}'**
+  String rawRecordBudget(String frame, String max, String typed);
+
+  /// No description provided for @rawRecordNotReady.
+  ///
+  /// In en, this message translates to:
+  /// **'No radio connected.'**
+  String get rawRecordNotReady;
+
+  /// No description provided for @rawRecordSending.
+  ///
+  /// In en, this message translates to:
+  /// **'Sending…'**
+  String get rawRecordSending;
+
+  /// No description provided for @rawRecordConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Send these bytes?'**
+  String get rawRecordConfirmTitle;
+
+  /// No description provided for @rawRecordConfirmBody.
+  ///
+  /// In en, this message translates to:
+  /// **'The app cannot check what these bytes do. {name} receives {count} bytes as one record, and the radio answers OK or ERR.'**
+  String rawRecordConfirmBody(String name, String count);
+
+  /// No description provided for @rawRecordSent.
+  ///
+  /// In en, this message translates to:
+  /// **'The radio accepted it. This is not delivery: a raw record carries no receipt from the peer.'**
+  String get rawRecordSent;
+
+  /// No description provided for @rawRecordRefused.
+  ///
+  /// In en, this message translates to:
+  /// **'The radio refused it: {reason} (code {code}).'**
+  String rawRecordRefused(String reason, String code);
+
+  /// No description provided for @rawRecordNoAnswer.
+  ///
+  /// In en, this message translates to:
+  /// **'No answer in {seconds} s. The radio may have sent it anyway.'**
+  String rawRecordNoAnswer(String seconds);
+
+  /// No description provided for @rawRecordNoRoute.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} has no direct route now, and a raw record cannot be flooded.'**
+  String rawRecordNoRoute(String name);
 }
 
 class _AppLocalizationsDelegate

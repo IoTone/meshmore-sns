@@ -5715,4 +5715,73 @@ class AppLocalizationsEn extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String get rawRecordTitle => 'Send a raw record';
+
+  @override
+  String get rawRecordHelp =>
+      'One record to one contact, addressed over its route. The radio answers OK or ERR; the peer sends nothing back.';
+
+  @override
+  String get rawRecordNoContact =>
+      'No contact has a direct route yet. A raw record is addressed, not flooded.';
+
+  @override
+  String get rawRecordBytes => 'Bytes (hex)';
+
+  @override
+  String get rawRecordEmpty => 'Type the bytes to send.';
+
+  @override
+  String get rawRecordNotHex =>
+      'Not hex: use pairs such as 01 02 ab, or one run such as 0102ab.';
+
+  @override
+  String rawRecordTooShort(String min) {
+    return 'At least $min bytes: the firmware drops anything shorter.';
+  }
+
+  @override
+  String rawRecordTooLong(String max) {
+    return 'Over this contact\'s $max-byte budget.';
+  }
+
+  @override
+  String rawRecordBudget(String frame, String max, String typed) {
+    return 'Frame $frame bytes · this route leaves $max for the record · typed $typed';
+  }
+
+  @override
+  String get rawRecordNotReady => 'No radio connected.';
+
+  @override
+  String get rawRecordSending => 'Sending…';
+
+  @override
+  String get rawRecordConfirmTitle => 'Send these bytes?';
+
+  @override
+  String rawRecordConfirmBody(String name, String count) {
+    return 'The app cannot check what these bytes do. $name receives $count bytes as one record, and the radio answers OK or ERR.';
+  }
+
+  @override
+  String get rawRecordSent =>
+      'The radio accepted it. This is not delivery: a raw record carries no receipt from the peer.';
+
+  @override
+  String rawRecordRefused(String reason, String code) {
+    return 'The radio refused it: $reason (code $code).';
+  }
+
+  @override
+  String rawRecordNoAnswer(String seconds) {
+    return 'No answer in $seconds s. The radio may have sent it anyway.';
+  }
+
+  @override
+  String rawRecordNoRoute(String name) {
+    return '$name has no direct route now, and a raw record cannot be flooded.';
+  }
 }

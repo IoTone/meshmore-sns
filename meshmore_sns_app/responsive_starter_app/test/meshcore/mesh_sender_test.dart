@@ -151,14 +151,17 @@ void main() {
       expect(await out, SendOutcome.sentDirect);
     });
 
-    test('ERR not_found maps to errNotFound; table_full to errBusy',
+    test('a radio refusal keeps its own code; table_full is errBusy',
         () async {
       await setUpRadio();
       final Future<SendOutcome> a = sender.sendRecord(Uint8List(8), to: peer());
       await _tick();
       await _tick();
       fake.emit(errorFrame(2));
-      expect(await a, SendOutcome.errNotFound);
+      // The radio answered, so this is its refusal with its code, not the
+      // app's own "no route" state.
+      expect(await a, const SendOutcome.refused(2));
+      expect((await a).kind, SendOutcomeKind.refusedByRadio);
 
       final Future<SendOutcome> b = sender.sendRecord(Uint8List(8), to: peer());
       await _tick();

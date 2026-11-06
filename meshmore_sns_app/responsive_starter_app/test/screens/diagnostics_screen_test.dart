@@ -104,6 +104,28 @@ void main() {
     ctrl.dispose();
   });
 
+  testWidgets('the raw-record tool sits in the developer section',
+      (WidgetTester t) async {
+    // D10.1 kept the raw send; this is its caller, and it belongs behind the
+    // developer fold rather than beside the one action the page leads with.
+    final (MeshcoreController ctrl, FakeMeshcoreTransport fake) =
+        await pump(t);
+    await t.tap(find.text('Scan & connect'));
+    await t.pumpAndSettle();
+    fake.emit(selfInfoFrame());
+    await t.pumpAndSettle();
+
+    expect(find.text('Send a raw record'), findsNothing,
+        reason: 'folded away by default');
+    await openDeveloper(t);
+    await t.ensureVisible(find.text('Send a raw record'));
+    await t.pumpAndSettle();
+    expect(find.text('Send a raw record'), findsOneWidget);
+    expect(find.textContaining('No contact has a direct route yet'),
+        findsOneWidget);
+    ctrl.dispose();
+  });
+
   testWidgets('a link whose MTU is too small says so, with the number',
       (WidgetTester t) async {
     // The connector refuses a link below 179 on Android; the refusal is

@@ -2534,5 +2534,22 @@
   "channelsInfoTooltip": "チャンネルの仕組み",
   "channelsOptionsTooltip": "チャンネル設定",
   "sosSafeUnconfirmed": "確認できません。送信中に接続が切れたため、届いたかどうかは不明です。",
-  "sosSendUnconfirmed": "{count, plural, other{{count} 回の送信は確認できません。スケジュールは継続します。}}"
+  "sosSendUnconfirmed": "{count, plural, other{{count} 回の送信は確認できません。スケジュールは継続します。}}",
+  "rawRecordTitle": "生データを送信",
+  "rawRecordHelp": "1件のレコードを、経路のある連絡先1件へ送ります。無線が OK か ERR を返し、相手からは何も返りません。",
+  "rawRecordNoContact": "直接経路のある連絡先がまだありません。生データは宛先指定のみで、フラッド送信はできません。",
+  "rawRecordBytes": "バイト列（16進）",
+  "rawRecordEmpty": "送るバイト列を入力してください。",
+  "rawRecordNotHex": "16進ではありません。01 02 ab のような2桁区切り、または 0102ab のように続けて入力してください。",
+  "rawRecordTooShort": "{min} バイト以上必要です。それ未満はファームウェアが破棄します。",
+  "rawRecordTooLong": "この連絡先の上限 {max} バイトを超えています。",
+  "rawRecordBudget": "フレーム上限 {frame} バイト · この経路で記録に使えるのは {max} バイト · 入力 {typed} バイト",
+  "rawRecordNotReady": "無線が接続されていません。",
+  "rawRecordSending": "送信中…",
+  "rawRecordConfirmTitle": "このバイト列を送信しますか？",
+  "rawRecordConfirmBody": "アプリはこのバイト列の内容を検証できません。{name} に {count} バイトを1件のレコードとして送り、無線が OK か ERR を返します。",
+  "rawRecordSent": "無線が受け付けました。配達の証明ではありません。生データには相手からの受領通知がありません。",
+  "rawRecordRefused": "無線が拒否しました: {reason}（コード {code}）。",
+  "rawRecordNoAnswer": "{seconds} 秒以内に応答がありません。送信された可能性があります。",
+  "rawRecordNoRoute": "{name} への直接経路がなくなりました。生データはフラッド送信できません。"
 }

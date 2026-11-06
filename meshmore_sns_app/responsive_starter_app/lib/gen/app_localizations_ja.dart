@@ -5488,4 +5488,72 @@ class AppLocalizationsJa extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String get rawRecordTitle => '生データを送信';
+
+  @override
+  String get rawRecordHelp =>
+      '1件のレコードを、経路のある連絡先1件へ送ります。無線が OK か ERR を返し、相手からは何も返りません。';
+
+  @override
+  String get rawRecordNoContact =>
+      '直接経路のある連絡先がまだありません。生データは宛先指定のみで、フラッド送信はできません。';
+
+  @override
+  String get rawRecordBytes => 'バイト列（16進）';
+
+  @override
+  String get rawRecordEmpty => '送るバイト列を入力してください。';
+
+  @override
+  String get rawRecordNotHex =>
+      '16進ではありません。01 02 ab のような2桁区切り、または 0102ab のように続けて入力してください。';
+
+  @override
+  String rawRecordTooShort(String min) {
+    return '$min バイト以上必要です。それ未満はファームウェアが破棄します。';
+  }
+
+  @override
+  String rawRecordTooLong(String max) {
+    return 'この連絡先の上限 $max バイトを超えています。';
+  }
+
+  @override
+  String rawRecordBudget(String frame, String max, String typed) {
+    return 'フレーム上限 $frame バイト · この経路で記録に使えるのは $max バイト · 入力 $typed バイト';
+  }
+
+  @override
+  String get rawRecordNotReady => '無線が接続されていません。';
+
+  @override
+  String get rawRecordSending => '送信中…';
+
+  @override
+  String get rawRecordConfirmTitle => 'このバイト列を送信しますか？';
+
+  @override
+  String rawRecordConfirmBody(String name, String count) {
+    return 'アプリはこのバイト列の内容を検証できません。$name に $count バイトを1件のレコードとして送り、無線が OK か ERR を返します。';
+  }
+
+  @override
+  String get rawRecordSent => '無線が受け付けました。配達の証明ではありません。生データには相手からの受領通知がありません。';
+
+  @override
+  String rawRecordRefused(String reason, String code) {
+    return '無線が拒否しました: $reason（コード $code）。';
+  }
+
+  @override
+  String rawRecordNoAnswer(String seconds) {
+    return '$seconds 秒以内に応答がありません。送信された可能性があります。';
+  }
+
+  @override
+  String rawRecordNoRoute(String name) {
+    return '$name への直接経路がなくなりました。生データはフラッド送信できません。';
+  }
 }
