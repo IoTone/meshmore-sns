@@ -754,7 +754,7 @@ class _ChatScreenState extends State<ChatScreen>
         SafeArea(
           top: false,
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(12, 6, 8, 10),
+            padding: const EdgeInsets.fromLTRB(12, 8, 8, 8),
             child: Row(
               children: <Widget>[
                 Expanded(
@@ -1025,7 +1025,7 @@ class _MessageRow extends StatelessWidget {
             children: <Widget>[
               if (m.outgoing && m.delivery != null) ...<Widget>[
                 DeliveryStatusIcon(m.delivery!),
-                const SizedBox(width: 5),
+                const SizedBox(width: 4),
               ],
               Text(<String>[_time(l), ...meta].join(' · '),
                   style: TextStyle(
@@ -1129,7 +1129,7 @@ class _MessageRow extends StatelessWidget {
                   children: <Widget>[
                     if (m.outgoing && m.delivery != null) ...<Widget>[
                       DeliveryStatusIcon(m.delivery!),
-                      const SizedBox(width: 5),
+                      const SizedBox(width: 4),
                     ],
                     Text(
                         <String>[_time(l), ...meta].join(' · '),
@@ -1152,7 +1152,7 @@ class _MessageRow extends StatelessWidget {
       children: <Widget>[
         if (m.outgoing && m.delivery != null) ...<Widget>[
           DeliveryStatusIcon(m.delivery!),
-          const SizedBox(width: 5),
+          const SizedBox(width: 4),
         ],
         if (meta.isNotEmpty)
           Text(meta.join(' · '),
@@ -1245,7 +1245,7 @@ class _NameTag extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: 58,
-      padding: const EdgeInsets.all(5),
+      padding: const EdgeInsets.all(4),
       decoration:
           BoxDecoration(color: base, border: Border.all(color: color, width: 3)),
       child: Column(
@@ -1260,7 +1260,7 @@ class _NameTag extends StatelessWidget {
             ),
           ),
           if (since != null) ...<Widget>[
-            const SizedBox(height: 3),
+            const SizedBox(height: 2),
             Text(since!,
                 maxLines: 1,
                 style: TextStyle(
@@ -1350,7 +1350,7 @@ class _JumpToNewestPill extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(12, 8, 14, 8),
+          padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[

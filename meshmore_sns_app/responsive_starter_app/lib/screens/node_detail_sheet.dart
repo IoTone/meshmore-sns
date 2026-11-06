@@ -338,7 +338,7 @@ class _NodeDetailSheetState extends State<NodeDetailSheet> {
         );
 
     Widget kv(String k, String v) => Padding(
-          padding: const EdgeInsets.symmetric(vertical: 3),
+          padding: const EdgeInsets.symmetric(vertical: 4),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
@@ -424,7 +424,7 @@ class _NodeDetailSheetState extends State<NodeDetailSheet> {
                 onMove: () => _reconcile(mc, idMatch, l),
               ),
             ],
-            const SizedBox(height: 14),
+            const SizedBox(height: 16),
             kv(l.nodeDetailShortIdKv, n.shortId),
             kv(
                 l.nodeDetailPubkeyKv,
@@ -484,7 +484,7 @@ class _NodeDetailSheetState extends State<NodeDetailSheet> {
             ],
             // Option D — RECENT DMS excerpt. Suppressed for own node.
             if (!widget.isSelf && widget.recentDms.isNotEmpty) ...<Widget>[
-              const SizedBox(height: 14),
+              const SizedBox(height: 16),
               Text(l.nodeDetailRecentDms,
                   style: TextStyle(
                       color: cs.onSurfaceVariant,
@@ -533,7 +533,7 @@ class _NodeDetailSheetState extends State<NodeDetailSheet> {
             // no onAddTag — keeps the sheet quiet in read-only
             // contexts (e.g. peer-summary embeds we might add later).
             if (_localTags.isNotEmpty || widget.onAddTag != null) ...<Widget>[
-              const SizedBox(height: 14),
+              const SizedBox(height: 16),
               Text(l.nodeDetailTags,
                   style: TextStyle(
                       color: cs.onSurfaceVariant,
@@ -562,7 +562,7 @@ class _NodeDetailSheetState extends State<NodeDetailSheet> {
                 ],
               ),
             ],
-            const SizedBox(height: 14),
+            const SizedBox(height: 16),
             if (!widget.isSelf)
               Row(
               children: <Widget>[
@@ -592,12 +592,12 @@ class _NodeDetailSheetState extends State<NodeDetailSheet> {
             ),
             // R58 — give this peer its own arrival sound + vibration.
             if (!widget.isSelf) ...<Widget>[
-              const SizedBox(height: 14),
+              const SizedBox(height: 16),
               _SignaturePicker(pubKeyHex: n.pubKeyHex),
             ],
             // R59 — the bot can answer this peer's DMs.
             if (!widget.isSelf) ...<Widget>[
-              const SizedBox(height: 10),
+              const SizedBox(height: 8),
               BotSection(scope: DmScope(n.pubKeyHex)),
             ],
             // R57 — a node we've heard but the *radio* doesn't have as a
@@ -606,9 +606,9 @@ class _NodeDetailSheetState extends State<NodeDetailSheet> {
             if (!widget.isSelf &&
                 n.pubKeyHex.length == 64 &&
                 !mc.isSyncedContact(n.pubKeyHex)) ...<Widget>[
-              const SizedBox(height: 10),
+              const SizedBox(height: 8),
               Container(
-                padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                 decoration: BoxDecoration(
                   color: cs.tertiary.withValues(alpha: .10),
                   borderRadius: mmRadius(context, 10),
@@ -750,7 +750,7 @@ class _ContactTelemetryShareSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        const SizedBox(height: 10),
+        const SizedBox(height: 8),
         const Divider(height: 1),
         const SizedBox(height: 8),
         Text(l.nodeDetailShareTelemetryTitle,

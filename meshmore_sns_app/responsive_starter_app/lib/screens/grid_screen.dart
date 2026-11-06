@@ -1100,7 +1100,7 @@ class _GridLegend extends StatelessWidget {
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.fromLTRB(12, 4, 12, 0),
-      padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
       decoration: BoxDecoration(
         color: cs.surfaceContainerHighest,
         borderRadius: mmRadius(context, 8),
@@ -1151,7 +1151,7 @@ class _NotConnectedStrip extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
         color: cs.surface.withValues(alpha: .85),
         borderRadius: mmRadius(context, 8),
@@ -1470,7 +1470,7 @@ class _TreeLegend extends StatelessWidget {
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.fromLTRB(12, 4, 12, 0),
-      padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
       decoration: BoxDecoration(
         color: cs.surfaceContainerHighest,
         borderRadius: mmRadius(context, 8),
@@ -1551,7 +1551,7 @@ class _FabricLegend extends StatelessWidget {
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.fromLTRB(12, 4, 12, 0),
-      padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
       decoration: BoxDecoration(
         color: cs.surfaceContainerHighest,
         borderRadius: mmRadius(context, 8),
@@ -1620,7 +1620,7 @@ class _FujiLegend extends StatelessWidget {
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-      padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
       decoration: BoxDecoration(
         color: cs.surfaceContainerHighest,
         borderRadius: mmRadius(context, 8),
@@ -1683,7 +1683,7 @@ class _SnsCellsLegend extends StatelessWidget {
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.fromLTRB(12, 4, 12, 0),
-      padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
       decoration: BoxDecoration(
         color: cs.surfaceContainerHighest,
         borderRadius: mmRadius(context, 8),

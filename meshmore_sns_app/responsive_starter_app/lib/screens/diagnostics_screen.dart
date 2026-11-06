@@ -153,7 +153,7 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
     // its line count changed with the link, which is why the connection block
     // is a stack now: state, radio, battery, link, last datagram, paired.
     Widget fact(String text) => Padding(
-          padding: const EdgeInsets.fromLTRB(16, 3, 16, 3),
+          padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
           child: Text(text,
               style: TextStyle(
                   color: cs.onSurface,
@@ -164,7 +164,7 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
     // A fault is the one thing here that gets a sentence, because it is the
     // only line a reader can act on.
     Widget fault(String text) => Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 3),
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
           child: Text(text,
               style: TextStyle(
                   color: cs.error,
@@ -235,7 +235,7 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
                 fault(l.diagnosticsErrorLine(failureText(l, mc.failure!)))
               else if (mc.error != null)
                 fault(l.diagnosticsErrorLine('${mc.error}')),
-              const SizedBox(height: 10),
+              const SizedBox(height: 8),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Wrap(
@@ -387,7 +387,7 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
                         ),
                         Container(
                           width: double.infinity,
-                          padding: const EdgeInsets.all(10),
+                          padding: const EdgeInsets.all(8),
                           color: cs.surfaceContainerHighest,
                           child: SelectableText(_exportJson!,
                               style: TextStyle(
@@ -401,7 +401,7 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
                 // run can be read and exported without opening each sheet.
                 const _BotSoakPanel(),
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 18, 8, 6),
+                  padding: const EdgeInsets.fromLTRB(16, 16, 8, 8),
                   child: Row(
                     children: <Widget>[
                       Expanded(
@@ -532,7 +532,7 @@ class _BotSoakPanel extends StatelessWidget {
     // an empty table that looks like a broken readout.
     if (scopes.isEmpty) {
       return Padding(
-        padding: const EdgeInsets.fromLTRB(16, 18, 16, 0),
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
         child: Text(l.diagnosticsSoakEmpty, style: mmSectionLabelStyle(skin)),
       );
     }
@@ -542,7 +542,7 @@ class _BotSoakPanel extends StatelessWidget {
         fontFamily: skin.type.monoFamily, fontSize: skin.type.sizeSm);
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 18, 16, 0),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
