@@ -4,7 +4,7 @@ _Snapshot as of 2026-11-05. App `1.0.197+13`, branch `feat/app-completion`.
 Change records below are newest first from R113; older entries are kept in
 the order they were written._
 
-**What is proven and what is not.** Measured on this tree, 2026-11-05: `flutter test` **1997 passed** in 3 m 04 s;
+**What is proven and what is not.** Measured on this tree, 2026-11-05: `flutter test` **2021 passed** in 2 m 32 s;
 `flutter analyze` reports only the two `unawaited_return_in_try_block` warnings in `lib/maps/maps_controller.dart`;
 the protocol package `dart test` 368 passed with 1 skipped; the pure-Java port at the repository root, `cd libmeshcore && ./gradlew test --offline
 --rerun-tasks`, 143 tests with 0 failures. Both release paths build: `flutter build appbundle --release` produced a 77.0 MB bundle and
@@ -85,6 +85,24 @@ over BLE. Mesh-first, no backend, no account, no server.
   The second title block that used to sit under the strip is gone — 56 dp of
   the same information, twice. `MmPageHeader` is deleted; its left-padding
   token went with it.
+- **The paper ground audited (R118).** Studio Light was the first preset to be
+  measured rather than eyeballed: `fgDisabled` went from 2.1:1 to 3.2–4.6:1 on
+  the layers it is drawn on, the dark skins' 1.9:1 gauge amber became a `warn`
+  role at 5.7:1, twenty subtitle sites moved from ink-at-60 % (3.9:1) to the
+  secondary tier, every 35–50 % border became the border tier (3.5:1), the
+  collapsible header's beige band became an opening rule (a band on paper is a
+  box), and a `Card`'s shadow became a border. Two screens could not be
+  completed at the floor and now scroll: the first-run intro (2120 px of
+  overflow above the only button) and the device sheet (the radio list was
+  under the glass). Tests: `test/theme/section_header_test.dart`,
+  `studio_light_test.dart`, `test/ui/disabled_affordance_test.dart`,
+  `mm_value_fields_test.dart`.
+- **One bubble rule, one composer (R118).** The message bubble carried a fill
+  and a hairline around one edge; it now carries one of the two, and the Dr Pop
+  Mondrian rule is the one deliberate exception, written where it is drawn. Both
+  composers used Material's bare `OutlineInputBorder` — the last control that
+  ignored the skin's corner and hairline — and now share one decoration. The
+  send control says whether it can act.
 - Device configuration (5 groups) and Profile & personalization (4
   groups) fold with `MmCollapsibleSection`, open by default.
 
