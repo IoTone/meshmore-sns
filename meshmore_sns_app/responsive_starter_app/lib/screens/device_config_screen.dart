@@ -1369,17 +1369,22 @@ class _CurrentRegionBanner extends StatelessWidget {
     final bool isCustom = si != null && match == null;
     final Color border = isCustom ? cs.tertiary : cs.primary;
     final Color fg = isCustom ? cs.tertiary : cs.primary;
+    final MmSkin skin = context.skin;
     return Container(
-      padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
+      padding: EdgeInsets.symmetric(
+          horizontal: skin.space.rowInset, vertical: skin.space.rowGap),
       decoration: BoxDecoration(
-        color: cs.surfaceContainerHighest,
-        borderRadius: mmRadius(context, 8),
-        border: Border.all(color: border.withValues(alpha: .5)),
+        color: skin.color.surface,
+        borderRadius: mmRadius(context, kRadiusSm),
+        // The region badge's whole signal is its outline: custom vs matched.
+        // At 50 % both drew the same faint edge on paper.
+        border:
+            Border.all(color: border, width: skin.shape.borderWidth),
       ),
       child: Row(
         children: <Widget>[
           Icon(isCustom ? Icons.tune : Icons.public, size: 18, color: fg),
-          const SizedBox(width: 8),
+          SizedBox(width: skin.space.rowGap),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -1389,7 +1394,7 @@ class _CurrentRegionBanner extends StatelessWidget {
                         color: cs.onSurfaceVariant,
                         fontSize: context.skin.type.sizeMicro,
                         letterSpacing: 2)),
-                const SizedBox(height: 2),
+                SizedBox(height: skin.space.insideText),
                 Text(label,
                     style: TextStyle(
                         color: fg, fontSize: context.skin.type.size(15), fontWeight: FontWeight.w600)),
