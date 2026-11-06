@@ -79,7 +79,10 @@ void main() {
 
     final AppLocalizations l =
         AppLocalizations.of(tester.element(find.byType(MeshbookView)));
-    final Finder header = find.textContaining('${l.meshbookTitle} · CH');
+    // The header names the channel the messages came from, not the firmware's
+    // slot number: "CH0" told a reader nothing (gridviews, 2026-11-05).
+    final Finder header = find.textContaining(
+        '${l.meshbookTitle} · ${mc.activeChannelName}');
     expect(header, findsOneWidget);
     expect(tester.widget<Text>(header).style?.fontSize, type.sizeBody);
 
