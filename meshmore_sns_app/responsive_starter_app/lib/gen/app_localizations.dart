@@ -2159,7 +2159,7 @@ abstract class AppLocalizations {
   /// No description provided for @locMasterOn.
   ///
   /// In en, this message translates to:
-  /// **'On — while the app is open'**
+  /// **'On — announces your position to every node in range'**
   String get locMasterOn;
 
   /// No description provided for @locMasterOff.
@@ -2219,7 +2219,7 @@ abstract class AppLocalizations {
   /// No description provided for @locPublishNowSub.
   ///
   /// In en, this message translates to:
-  /// **'One-shot manual push to verify the loop.'**
+  /// **'Send your position once, now.'**
   String get locPublishNowSub;
 
   /// No description provided for @locLastPublished.
@@ -2237,7 +2237,7 @@ abstract class AppLocalizations {
   /// No description provided for @locBeaconSub.
   ///
   /// In en, this message translates to:
-  /// **'Every 60 s, send your position. Uses airtime and battery.'**
+  /// **'Every 60 s, announce your position to every node in range. Uses airtime and battery.'**
   String get locBeaconSub;
 
   /// No description provided for @locBatteryHint.
@@ -9837,6 +9837,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'none'**
   String get diagnosticsPositionNone;
+
+  /// No description provided for @locTriggerManual.
+  ///
+  /// In en, this message translates to:
+  /// **'you asked'**
+  String get locTriggerManual;
+
+  /// No description provided for @locTriggerPeriodic.
+  ///
+  /// In en, this message translates to:
+  /// **'on the timer'**
+  String get locTriggerPeriodic;
+
+  /// No description provided for @locTriggerMovement.
+  ///
+  /// In en, this message translates to:
+  /// **'you moved'**
+  String get locTriggerMovement;
 }
 
 class _AppLocalizationsDelegate

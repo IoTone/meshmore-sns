@@ -123,7 +123,6 @@ class LocationSettingsScreen extends StatelessWidget {
               subtitle: Text(l.geofenceExplainerShort),
               onTap: () => context.push('/settings/geofences'),
             ),
-            const Divider(height: 1),
             MmCollapsibleSection(
               id: MmGroupIds.locAutoPublish,
               title: l.locGroupAutoPublish,
@@ -214,11 +213,11 @@ class LocationSettingsScreen extends StatelessWidget {
                           ap.lastLat!.toStringAsFixed(5),
                           ap.lastLon!.toStringAsFixed(5),
                           _hms(ap.lastPublishedAt!),
-                          ap.lastTrigger,
+                          _triggerLabel(l, ap.lastTrigger),
                         ),
                         style: TextStyle(
                             color: cs.onSurface,
-                            fontFamily: 'JetBrains Mono',
+                            fontFamily: skin.type.monoFamily,
                             fontSize: skin.type.sizeBody),
                       ),
                     ),
@@ -240,6 +239,18 @@ class LocationSettingsScreen extends StatelessWidget {
       ),
     );
   }
+
+  /// What fired the last publish, in words. The controller records the
+  /// internal token (`manual`, `periodic`, `movement`) because that is what
+  /// the code branches on; showing it verbatim put a code word in a sentence a
+  /// user reads.
+  static String _triggerLabel(AppLocalizations l, String trigger) =>
+      switch (trigger) {
+        'manual' => l.locTriggerManual,
+        'periodic' => l.locTriggerPeriodic,
+        'movement' => l.locTriggerMovement,
+        _ => trigger,
+      };
 
   static String _hms(DateTime t) {
     String two(int n) => n.toString().padLeft(2, '0');

@@ -1194,7 +1194,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get locMaster => 'Auto-publish';
 
   @override
-  String get locMasterOn => 'On — while the app is open';
+  String get locMasterOn =>
+      'On — announces your position to every node in range';
 
   @override
   String get locMasterOff => 'Off';
@@ -1232,7 +1233,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get locPublishNow => 'Publish now';
 
   @override
-  String get locPublishNowSub => 'One-shot manual push to verify the loop.';
+  String get locPublishNowSub => 'Send your position once, now.';
 
   @override
   String locLastPublished(String lat, String lon, String time, String trigger) {
@@ -1244,7 +1245,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get locBeaconSub =>
-      'Every 60 s, send your position. Uses airtime and battery.';
+      'Every 60 s, announce your position to every node in range. Uses airtime and battery.';
 
   @override
   String get locBatteryHint =>
@@ -5849,4 +5850,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get diagnosticsPositionNone => 'none';
+
+  @override
+  String get locTriggerManual => 'you asked';
+
+  @override
+  String get locTriggerPeriodic => 'on the timer';
+
+  @override
+  String get locTriggerMovement => 'you moved';
 }
