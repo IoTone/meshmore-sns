@@ -12,6 +12,7 @@ import '../meshcore/block_store.dart';
 import '../meshcore/meshcore_controller.dart';
 import '../notifications/notifier.dart';
 import '../perms/permissions_service.dart';
+import '../theme/mm_skin.dart';
 import '../ui/mm_components.dart';
 import '../ui/mm_scaffold.dart';
 import '../tts/tts_controller.dart';
@@ -131,6 +132,7 @@ class AppSettingsScreen extends StatelessWidget {
       appBar: AppBar(title: Text(l.settingsHeading)),
       body: MmScaffold(
         child: ListView(
+        padding: context.skin.space.padScreen,
         children: <Widget>[
           // D8.20 — the OS may have the permission off while the app is
           // otherwise ready. Say so once, in the place the toggle lives, so
@@ -204,6 +206,7 @@ class AppSettingsScreen extends StatelessWidget {
             trailing: const Icon(Icons.chevron_right),
             onTap: () => _pickAirtimePolicy(context, mc, l),
           ),
+          SizedBox(height: context.skin.space.sectionGap),
           MmSectionHeader(l.settingsAppGroupSound),
           // R4 — language picker. Tap-to-open bottom sheet with
           // System / English / 日本語; the choice is persisted by
@@ -255,6 +258,7 @@ class AppSettingsScreen extends StatelessWidget {
             trailing: const Icon(Icons.chevron_right),
             onTap: () => context.push('/settings/voice'),
           ),
+          SizedBox(height: context.skin.space.sectionGap),
           MmSectionHeader(l.settingsAppGroupData),
           // R36 — Auto-publish location. Lives here so users find
           // it under "App settings" rather than buried in Device
@@ -276,6 +280,7 @@ class AppSettingsScreen extends StatelessWidget {
             trailing: const Icon(Icons.chevron_right),
             onTap: () => context.push('/settings/networks'),
           ),
+          SizedBox(height: context.skin.space.sectionGap),
           MmSectionHeader(l.settingsAppGroupSystem),
           // R21 / U12 — Permissions row: jumps to the OS app-settings
           // page where the user can flip BLE / Notifications etc.

@@ -38,6 +38,7 @@ import '../places/place_wiring.dart';
 import '../theme/mm_skin.dart';
 import '../util/lora_range.dart';
 import 'node_detail_sheet.dart';
+import '../ui/mm_components.dart';
 import '../ui/mm_shape.dart';
 
 /// R25+2 — fourth view in the hyperlocal-grid sub-mode swipe stack.
@@ -891,7 +892,7 @@ class _StreetMapViewState extends State<StreetMapView> {
                   Text(l.globePaused,
                       style: TextStyle(
                           color: cs.onTertiaryContainer,
-                          fontSize: 10,
+                          fontSize: context.skin.type.sizeMicro,
                           letterSpacing: 1)),
                 ],
               ),
@@ -1325,10 +1326,11 @@ class _NoPositionBanner extends StatelessWidget {
               ),
             ),
           ),
-          TextButton(
+          MmAction(
             key: const ValueKey<String>('map-no-position-action'),
+            dense: true,
+            label: asking ? l.mapNoPositionAsking : action,
             onPressed: asking ? null : press,
-            child: Text(asking ? l.mapNoPositionAsking : action),
           ),
         ],
       ),

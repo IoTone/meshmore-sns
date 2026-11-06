@@ -97,7 +97,7 @@ class _PlaceHistorySheetState extends State<PlaceHistorySheet> {
     );
     return SafeArea(
       child: Padding(
-        padding: skin.space.pad(4),
+        padding: skin.space.pad(6),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -130,7 +130,7 @@ class _PlaceHistorySheetState extends State<PlaceHistorySheet> {
               style:
                   TextStyle(color: skin.color.fg, fontSize: skin.type.sizeBody),
             ),
-            SizedBox(height: skin.space.step(2)),
+            SizedBox(height: skin.space.rowGap),
             Wrap(
               spacing: skin.space.step(2),
               runSpacing: skin.space.step(2),

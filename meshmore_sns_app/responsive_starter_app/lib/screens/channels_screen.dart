@@ -107,16 +107,16 @@ class ChannelsScreen extends StatelessWidget {
         child: ListView(
         children: <Widget>[
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 14, 16, 4),
+            padding: EdgeInsets.fromLTRB(context.skin.space.screenEdge, context.skin.space.screenEdge, context.skin.space.screenEdge, context.skin.space.labelToControl),
             child: Text(
               l.channelsHelp,
               style: TextStyle(color: cs.onSurfaceVariant, fontSize: context.skin.type.sizeBody),
             ),
           ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+            padding: EdgeInsets.fromLTRB(context.skin.space.screenEdge, 0, context.skin.space.screenEdge, context.skin.space.rowGap),
             child: Container(
-              padding: const EdgeInsets.all(10),
+              padding: EdgeInsets.all(context.skin.space.rowGap),
               decoration: BoxDecoration(
                 color: cs.surfaceContainerHighest,
                 borderRadius: mmRadius(context, 6),
@@ -590,7 +590,7 @@ class _EditChannelDialogState extends State<_EditChannelDialog> {
             // "current key" is the well-known kPublicChannelPsk —
             // we still surface it for symmetry.
             if (widget.currentPsk != null) ...<Widget>[
-              const Divider(height: 24),
+              Divider(height: context.skin.space.screenEdge),
               Row(
                 children: <Widget>[
                   Icon(Icons.vpn_key,
@@ -643,7 +643,7 @@ class _EditChannelDialogState extends State<_EditChannelDialog> {
             // R54 — per-channel place inference. Applied immediately
             // (independent of the name/PSK save), default on for the
             // public channel.
-            const Divider(height: 20),
+            SizedBox(height: context.skin.space.sectionGap),
             Builder(builder: (BuildContext ctx) {
               final MeshcoreController mc = ctx.watch<MeshcoreController>();
               return SwitchListTile(
@@ -659,7 +659,7 @@ class _EditChannelDialogState extends State<_EditChannelDialog> {
             // D8.13 — the per-channel notification bundle. Every toggle is
             // per slot: silencing the busy channel must not silence the
             // emergency one, and mentions-only is off unless asked for.
-            const Divider(height: 20),
+            SizedBox(height: context.skin.space.sectionGap),
             Builder(builder: (BuildContext ctx) {
               final NotificationPrefs? np = ctx.watch<NotificationPrefs?>();
               if (np == null) return const SizedBox.shrink();
@@ -722,7 +722,7 @@ class _EditChannelDialogState extends State<_EditChannelDialog> {
             // R59 — the bot binds per channel. The section renders on
             // every slot, including Public, because a refusal that
             // explains itself teaches more than a missing control.
-            const Divider(height: 20),
+            SizedBox(height: context.skin.space.sectionGap),
             BotSection(scope: ChannelScope(widget.idx)),
             if (_error != null) ...<Widget>[
               const SizedBox(height: 8),

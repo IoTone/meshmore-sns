@@ -461,7 +461,9 @@ class _MicroclimateStrip extends StatelessWidget {
                 style: TextStyle(color: cs.onSurfaceVariant, fontSize: context.skin.type.sizeBodyLg))
           else ...<Widget>[
             _WindowRow(label: l.wxLastHour, ambient: lastHour, l: l, cs: cs),
-            Divider(height: 18, color: cs.outline.withValues(alpha: .25)),
+            Divider(
+                height: context.skin.space.screenEdge,
+                color: cs.outline.withValues(alpha: .25)),
             _WindowRow(label: l.wxLast24h, ambient: last24h, l: l, cs: cs),
           ],
         ],

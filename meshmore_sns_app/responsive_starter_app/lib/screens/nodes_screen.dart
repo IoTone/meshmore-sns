@@ -343,7 +343,7 @@ class _NodesScreenState extends State<NodesScreen> {
         // row overflowed. A Wrap lays them out at their natural width and
         // drops to a second line when the row is too narrow.
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+          padding: EdgeInsets.fromLTRB(context.skin.space.screenEdge, context.skin.space.screenEdge, context.skin.space.screenEdge, context.skin.space.rowGap),
           child: Wrap(
             alignment: WrapAlignment.spaceBetween,
             crossAxisAlignment: WrapCrossAlignment.center,
@@ -452,7 +452,7 @@ class _NodesScreenState extends State<NodesScreen> {
           ),
         ),
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 4, 16, 6),
+          padding: EdgeInsets.fromLTRB(context.skin.space.screenEdge, context.skin.space.labelToControl, context.skin.space.screenEdge, context.skin.space.rowGap),
           child: Text(
             ready
                 ? l.nodesStatusReady(

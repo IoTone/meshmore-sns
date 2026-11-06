@@ -10,6 +10,7 @@ import '../ui/mm_collapse_controller.dart';
 import '../ui/mm_collapsible.dart';
 import '../ui/mm_scaffold.dart';
 import '../ui/mm_shape.dart';
+import '../theme/mm_skin.dart';
 
 /// Profile & personalization (R14): live preset / font / accessibility
 /// picker. The chosen design concept is the default theme; all six
@@ -89,7 +90,7 @@ class PersonalizationScreen extends StatelessWidget {
                   ),
               ],
             ),
-            const Divider(),
+            SizedBox(height: context.skin.space.sectionGap),
             MmCollapsibleSection(
               id: MmGroupIds.persType,
               title: l.personalizationType,
@@ -108,7 +109,7 @@ class PersonalizationScreen extends StatelessWidget {
                 ),
               ],
             ),
-            const Divider(),
+            SizedBox(height: context.skin.space.sectionGap),
             MmCollapsibleSection(
               id: MmGroupIds.persAccessibility,
               title: l.personalizationAccessibility,
@@ -135,7 +136,7 @@ class PersonalizationScreen extends StatelessWidget {
                 ),
               ],
             ),
-            const Divider(),
+            SizedBox(height: context.skin.space.sectionGap),
             MmCollapsibleSection(
               id: MmGroupIds.persAudio,
               title: l.personalizationAudioAlerts,

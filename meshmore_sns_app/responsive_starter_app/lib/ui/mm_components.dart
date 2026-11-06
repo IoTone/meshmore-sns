@@ -7,10 +7,11 @@ import 'package:flutter/material.dart';
 import '../theme/mm_skin.dart';
 import 'mm_shape.dart';
 
-/// The inner padding of a [MmPanel]. Its own token rather than a spacing step:
-/// 14 sits between the ladder's 12 and 16, and every panel in the app uses it,
-/// so rounding it to a step would move the whole layout by 2 px.
-const double kPadPanel = 14;
+/// The inner padding of a [MmPanel]: [MmSpace.rowInset], the compact-panel
+/// inset. It is deliberately a ladder step — it used to be 14, which sat
+/// between the ladder's 12 and 16 and made every panel 2 px off the rhythm the
+/// rest of the app is built on.
+const double kPadPanel = 12;
 
 /// A framed surface panel whose edge treatment (sharp / rounded /
 /// chamfered) comes from the active skin. The NERV concept renders this
@@ -81,11 +82,11 @@ class MmSectionHeader extends StatelessWidget {
       children: <Widget>[
         Flexible(child: labelWidget),
         if (skin.ornament.warningStripes) ...<Widget>[
-          const SizedBox(width: 10),
+          const SizedBox(width: 8),
           Expanded(
             child: CustomPaint(
               painter: _HazardStripes(skin.color.accent, skin.color.line),
-              child: const SizedBox(height: 9),
+              child: const SizedBox(height: 8),
             ),
           ),
           const SizedBox(width: 8),
@@ -225,7 +226,7 @@ class MmListRow extends StatelessWidget {
           alignTop ? CrossAxisAlignment.start : CrossAxisAlignment.center,
       children: <Widget>[
         if (leading != null)
-          Padding(padding: const EdgeInsets.only(right: 12), child: leading!),
+          Padding(padding: const EdgeInsets.only(right: 8), child: leading!),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -237,7 +238,7 @@ class MmListRow extends StatelessWidget {
               ),
               if (subtitle != null)
                 Padding(
-                  padding: const EdgeInsets.only(top: 3),
+                  padding: const EdgeInsets.only(top: 2),
                   child: subtitle!,
                 ),
             ],
@@ -252,7 +253,7 @@ class MmListRow extends StatelessWidget {
         skin.shape.corner != MmCorner.sharp || skin.ornament.any;
     if (card) {
       return MmPanel(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
         child: InkWell(onTap: onTap, child: content),
       );
     }
@@ -421,7 +422,7 @@ class MmAction extends StatelessWidget {
           child: Container(
             constraints: const BoxConstraints(minHeight: 48),
             padding: EdgeInsets.symmetric(
-                horizontal: 12, vertical: dense ? 6 : 9),
+                horizontal: 12, vertical: dense ? 6 : 8),
             decoration: ShapeDecoration(
               color: on
                   ? skin.color.surfaceAlt

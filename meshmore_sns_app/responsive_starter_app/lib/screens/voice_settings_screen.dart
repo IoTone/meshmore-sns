@@ -151,7 +151,7 @@ class _VoiceSettingsScreenState extends State<VoiceSettingsScreen> {
         child: ListView(
         children: <Widget>[
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+            padding: EdgeInsets.fromLTRB(context.skin.space.screenEdge, context.skin.space.screenEdge, context.skin.space.screenEdge, 0),
             child: Text(
               l.voiceSettingsHint,
               style: TextStyle(
@@ -189,10 +189,10 @@ class _VoiceSettingsScreenState extends State<VoiceSettingsScreen> {
                     color: cs.onSurfaceVariant,
                     fontFamily: 'JetBrains Mono')),
           ),
-          const Divider(),
+          SizedBox(height: context.skin.space.sectionGap),
           // Voice picker.
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+            padding: EdgeInsets.fromLTRB(context.skin.space.screenEdge, context.skin.space.rowGap, context.skin.space.screenEdge, context.skin.space.labelToControl),
             child: Row(
               children: <Widget>[
                 Expanded(
@@ -303,7 +303,7 @@ class _VoiceSettingsScreenState extends State<VoiceSettingsScreen> {
                 ),
               ),
           ],
-          const Divider(),
+          SizedBox(height: context.skin.space.sectionGap),
           // Preview.
           Padding(
             padding: const EdgeInsets.all(16),
