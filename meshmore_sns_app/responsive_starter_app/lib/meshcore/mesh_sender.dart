@@ -12,35 +12,74 @@ import 'meshcore_controller.dart';
 /// This is **not** delivery. The firmware answers a raw-data send with a bare
 /// OK or ERR and carries no acknowledgement from the peer, so the outcome says
 /// only what the radio itself did with the bytes.
-extension type const SendOutcome(int code) {
+///
+/// A refusal keeps the firmware's own code, because the codes mean different
+/// things to the person reading it (`ERR_CODE_TABLE_FULL` is capacity and
+/// clears, `ERR_CODE_NOT_FOUND` is a route the radio does not have). The one
+/// case with no code is the app's own: a contact it cannot address never
+/// reaches the radio at all.
+enum SendOutcomeKind {
   /// The radio accepted the record and routed it over the contact's path.
-  static const SendOutcome sentDirect = SendOutcome(1);
+  accepted,
 
-  /// The radio refused it: the contact is unknown to it, or has no direct
-  /// route, so there was nowhere to send ([MeshcoreErrorCode.notFound]).
-  static const SendOutcome errNotFound = SendOutcome(2);
+  /// Refused here, before the radio saw it: the app does not hold the contact,
+  /// or the contact has no direct route, and a raw record cannot be flooded.
+  noRoute,
 
-  /// The radio had no free packet, or refused for any other reason. Every
-  /// other ERR is also "the radio did not transmit".
-  static const SendOutcome errBusy = SendOutcome(3);
+  /// The radio answered `RESP_CODE_ERR`; [SendOutcome.firmwareCode] says why.
+  refusedByRadio,
 
   /// Refused here, before the radio saw it: the record does not fit the
   /// contact's path (`MeshCarryLimits.rawDataPayloadMax`), or is under the
   /// 4-byte raw-data minimum.
-  static const SendOutcome errTooLong = SendOutcome(4);
+  tooLong,
 
   /// Written to the radio, no answer inside the deadline. The radio may have
   /// transmitted, so it must be charged for.
-  static const SendOutcome localTimeout = SendOutcome(5);
+  noAnswer,
+}
 
-  String get name => switch (code) {
-        1 => 'sent_direct',
-        2 => 'err_not_found',
-        3 => 'err_busy',
-        4 => 'err_too_long',
-        5 => 'local_timeout',
-        _ => 'unknown_$code',
+final class SendOutcome {
+  const SendOutcome(this.kind, {this.firmwareCode});
+
+  /// A refusal the radio itself reported.
+  const SendOutcome.refused(int this.firmwareCode)
+      : kind = SendOutcomeKind.refusedByRadio;
+
+  final SendOutcomeKind kind;
+
+  /// The `RESP_CODE_ERR` code when the radio answered; null otherwise.
+  final int? firmwareCode;
+
+  static const SendOutcome sentDirect = SendOutcome(SendOutcomeKind.accepted);
+  static const SendOutcome errNotFound = SendOutcome(SendOutcomeKind.noRoute);
+  static const SendOutcome errTooLong = SendOutcome(SendOutcomeKind.tooLong);
+  static const SendOutcome localTimeout = SendOutcome(SendOutcomeKind.noAnswer);
+
+  /// `ERR_CODE_TABLE_FULL` (`MeshcoreErrorCode.tableFull`): no free packet.
+  /// Capacity, not a lost record.
+  static const SendOutcome errBusy = SendOutcome.refused(3);
+
+  String get name => switch (kind) {
+        SendOutcomeKind.accepted => 'sent_direct',
+        SendOutcomeKind.noRoute => 'err_not_found',
+        SendOutcomeKind.refusedByRadio =>
+          'err_${firmwareCode ?? 'unknown'}',
+        SendOutcomeKind.tooLong => 'err_too_long',
+        SendOutcomeKind.noAnswer => 'local_timeout',
       };
+
+  @override
+  bool operator ==(Object other) =>
+      other is SendOutcome &&
+      other.kind == kind &&
+      other.firmwareCode == firmwareCode;
+
+  @override
+  int get hashCode => Object.hash(kind, firmwareCode);
+
+  @override
+  String toString() => 'SendOutcome($name)';
 }
 
 /// Sends one opaque record to a contact as a direct raw-data packet
@@ -121,12 +160,12 @@ class MeshcoreMeshSender {
           await _mc.sendRawCommand(frame).timeout(answerTimeout);
       if (reply is OkFrame) return SendOutcome.sentDirect;
       final int? code = (reply as ErrorFrame).code;
-      if (code == MeshcoreErrorCode.notFound.code) {
-        return SendOutcome.errNotFound;
-      }
-      // table_full is "no free packet". Every other refusal is also
-      // "the radio did not transmit"; errBusy is the closest outcome.
-      return SendOutcome.errBusy;
+      // The radio's own code travels: table_full is capacity and clears,
+      // not_found is a route the radio does not have, and the rest are the
+      // firmware's enum. The caller decides how to say it.
+      return code == null
+          ? const SendOutcome(SendOutcomeKind.refusedByRadio)
+          : SendOutcome.refused(code);
     } on TimeoutException {
       _mc.abandonRawSend();
       // The frame was written, so the radio may have transmitted. The caller
