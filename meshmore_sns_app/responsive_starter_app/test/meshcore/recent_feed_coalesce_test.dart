@@ -1,7 +1,6 @@
 // Copyright (c) 2026 IoTone, Inc.
 // SPDX-License-Identifier: MIT
 import 'package:flutter_test/flutter_test.dart';
-import 'package:meshmore_sns_app/meshcore/mesh_event.dart';
 import 'package:meshmore_sns_app/meshcore/meshcore_controller.dart';
 
 import 'fake_transport.dart';
