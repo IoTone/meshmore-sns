@@ -9801,6 +9801,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Lost means no answer inside the time the radio estimated for the reply. A node that ignores requests, or one that is asleep, looks the same.'**
   String get pingLostMeaning;
+
+  /// No description provided for @contactFilterHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Name or key prefix'**
+  String get contactFilterHint;
+
+  /// No description provided for @contactFilterNone.
+  ///
+  /// In en, this message translates to:
+  /// **'No contact matches that.'**
+  String get contactFilterNone;
+
+  /// No description provided for @actionClear.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear'**
+  String get actionClear;
 }
 
 class _AppLocalizationsDelegate

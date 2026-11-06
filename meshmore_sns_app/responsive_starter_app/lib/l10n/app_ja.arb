@@ -2563,5 +2563,8 @@
   "locTriggerManual": "手動",
   "locTriggerPeriodic": "タイマー",
   "locTriggerMovement": "移動",
-  "pingLostMeaning": "「応答なし」は、無線機が見積もった応答時間内に返事がなかったという意味です。要求を無視するノードも、休眠中のノードも同じに見えます。"
+  "pingLostMeaning": "「応答なし」は、無線機が見積もった応答時間内に返事がなかったという意味です。要求を無視するノードも、休眠中のノードも同じに見えます。",
+  "contactFilterHint": "名前または鍵の先頭",
+  "contactFilterNone": "一致する連絡先はありません。",
+  "actionClear": "クリア"
 }

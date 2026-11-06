@@ -58,29 +58,126 @@ Future<DiscoveredNode?> pickContact(
                 padding: const EdgeInsets.all(24),
                 child: Text(l.pingNoContacts),
               )
-            : ListView(
-                shrinkWrap: true,
-                children: <Widget>[
-                  for (final DiscoveredNode n in nodes)
-                    Builder(builder: (BuildContext _) {
-                      final bool ok = enabled?.call(n) ?? true;
-                      return ListTile(
-                        enabled: ok,
-                        leading: Icon(nodeTypeIcon(n.type)),
-                        title: Text(n.name.isEmpty
-                            ? n.pubKeyHex.substring(0, 8)
-                            : n.name),
-                        subtitle: Text(ok || reason == null
-                            ? '${n.pubKeyHex.substring(0, 6)} · ${hopsLabel(l, n)}'
-                            : reason),
-                        onTap: () => Navigator.pop(ctx, n),
-                      );
-                    }),
-                ],
+            : _ContactSheet(
+                nodes: nodes,
+                l: l,
+                enabled: enabled,
+                reason: reason,
               ),
       ),
     ),
   );
+}
+
+/// The picker's filter, as a pure function so the rule can be tested without
+/// building a sheet: a name matches anywhere in it (a user remembers "T-Deck"),
+/// a key matches from its start (a user reads the prefix off another screen).
+List<DiscoveredNode> filterContacts(
+    List<DiscoveredNode> nodes, String query) {
+  final String q = query.trim().toLowerCase();
+  if (q.isEmpty) return nodes;
+  return <DiscoveredNode>[
+    for (final DiscoveredNode n in nodes)
+      if (n.name.toLowerCase().contains(q) ||
+          n.pubKeyHex.toLowerCase().startsWith(q))
+        n,
+  ];
+}
+
+/// The picker's body: a filter and the rows.
+///
+/// A synced radio holds a couple of hundred contacts, so the list arrived as
+/// one undifferentiated scroll and finding a node meant dragging for a while.
+/// The filter matches a name or the hex prefix a user reads off another screen,
+/// and it is a plain `TextField` rather than a search sheet because the list is
+/// right there behind it.
+class _ContactSheet extends StatefulWidget {
+  const _ContactSheet({
+    required this.nodes,
+    required this.l,
+    this.enabled,
+    this.reason,
+  });
+
+  final List<DiscoveredNode> nodes;
+  final AppLocalizations l;
+  final bool Function(DiscoveredNode n)? enabled;
+  final String? reason;
+
+  @override
+  State<_ContactSheet> createState() => _ContactSheetState();
+}
+
+class _ContactSheetState extends State<_ContactSheet> {
+  final TextEditingController _filter = TextEditingController();
+
+  @override
+  void dispose() {
+    _filter.dispose();
+    super.dispose();
+  }
+
+  List<DiscoveredNode> get _shown =>
+      filterContacts(widget.nodes, _filter.text);
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations l = widget.l;
+    final List<DiscoveredNode> shown = _shown;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+          child: TextField(
+            key: const ValueKey<String>('contact-filter'),
+            controller: _filter,
+            onChanged: (String _) => setState(() {}),
+            decoration: InputDecoration(
+              isDense: true,
+              hintText: l.contactFilterHint,
+              prefixIcon: const Icon(Icons.search, size: 18),
+              suffixIcon: _filter.text.isEmpty
+                  ? null
+                  : IconButton(
+                      tooltip: l.actionClear,
+                      icon: const Icon(Icons.close, size: 18),
+                      onPressed: () => setState(_filter.clear),
+                    ),
+            ),
+          ),
+        ),
+        Flexible(
+          child: shown.isEmpty
+              ? Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Text(l.contactFilterNone),
+                )
+              : ListView(
+                  shrinkWrap: true,
+                  children: <Widget>[
+                    for (final DiscoveredNode n in shown)
+                      Builder(builder: (BuildContext ctx) {
+                        final bool ok = widget.enabled?.call(n) ?? true;
+                        return ListTile(
+                          enabled: ok,
+                          leading: Icon(nodeTypeIcon(n.type)),
+                          title: Text(n.name.isEmpty
+                              ? n.pubKeyHex.substring(0, 8)
+                              : n.name),
+                          subtitle: Text(ok || widget.reason == null
+                              ? '${n.pubKeyHex.substring(0, 6)} · '
+                                  '${hopsLabel(l, n)}'
+                              : widget.reason!),
+                          onTap: () => Navigator.pop(ctx, n),
+                        );
+                      }),
+                  ],
+                ),
+        ),
+      ],
+    );
+  }
 }
 
 /// A conversation for Soak (channels + DM contacts) or Range test

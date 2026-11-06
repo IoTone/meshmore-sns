@@ -5610,4 +5610,13 @@ class AppLocalizationsJa extends AppLocalizations {
   @override
   String get pingLostMeaning =>
       '「応答なし」は、無線機が見積もった応答時間内に返事がなかったという意味です。要求を無視するノードも、休眠中のノードも同じに見えます。';
+
+  @override
+  String get contactFilterHint => '名前または鍵の先頭';
+
+  @override
+  String get contactFilterNone => '一致する連絡先はありません。';
+
+  @override
+  String get actionClear => 'クリア';
 }
