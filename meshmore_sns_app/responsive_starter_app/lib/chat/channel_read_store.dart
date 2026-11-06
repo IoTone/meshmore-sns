@@ -4,6 +4,7 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../util/prefs.dart';
 
 /// Per-channel **last-read** timestamps, the channel sibling of [DmReadStore].
 ///
@@ -50,7 +51,7 @@ class ChannelReadStore extends ChangeNotifier {
 
   Future<void> _persist() async {
     final SharedPreferences p = await SharedPreferences.getInstance();
-    await p.setString(_key, jsonEncode(<String, int>{
+    await Prefs.setString(p, _key, jsonEncode(<String, int>{
       for (final MapEntry<int, int> e in _data.entries) '${e.key}': e.value,
     }));
   }

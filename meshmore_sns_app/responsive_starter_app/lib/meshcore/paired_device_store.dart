@@ -1,6 +1,7 @@
 // Copyright (c) 2026 IoTone, Inc.
 // SPDX-License-Identifier: MIT
 import 'package:shared_preferences/shared_preferences.dart';
+import '../util/prefs.dart';
 
 /// The last successfully-connected radio, persisted so the app can
 /// auto-reconnect on startup.
@@ -17,8 +18,8 @@ abstract final class PairedDeviceStore {
 
   static Future<void> save(String remoteId, String name) async {
     final SharedPreferences p = await SharedPreferences.getInstance();
-    await p.setString(_kId, remoteId);
-    await p.setString(_kName, name);
+    await Prefs.setString(p, _kId, remoteId);
+    await Prefs.setString(p, _kName, name);
   }
 
   static Future<PairedDevice?> read() async {

@@ -366,6 +366,12 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
                           ? l.diagnosticsPlaceStoreWriteFailed
                           : l.diagnosticsPlaceStoreOk),
                 ),
+                ValueListenableBuilder<bool>(
+                  valueListenable: PlaceStore.corruptDocumentKept,
+                  builder: (BuildContext _, bool kept, Widget? __) => kept
+                      ? fact(l.diagnosticsPlaceStoreCorruptKept)
+                      : const SizedBox.shrink(),
+                ),
                 section(l.diagnosticsSectionSend),
                 Wrap(
                   spacing: 8,

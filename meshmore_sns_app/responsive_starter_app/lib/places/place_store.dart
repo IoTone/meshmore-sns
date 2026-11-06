@@ -66,6 +66,12 @@ final class PlaceStore extends ChangeNotifier {
   /// than leaving "my pins vanished" unexplained.
   static final ValueNotifier<bool> writeFailed = ValueNotifier<bool>(false);
 
+  /// Set when a load found a document it could not parse and kept the bytes
+  /// aside. Diagnostics says so, because "my pins are gone" and "your pins
+  /// were unreadable, and here is the file" are different answers.
+  static final ValueNotifier<bool> corruptDocumentKept =
+      ValueNotifier<bool>(false);
+
   /// Injected by the block store when it arrives; a blocked reporter's places
   /// are absent everywhere and its stored rows are deleted (spec §10).
   bool Function(String reporterKeyHex)? _isBlocked;
@@ -349,11 +355,12 @@ final class PlaceStore extends ChangeNotifier {
     final SharedPreferences p = await SharedPreferences.getInstance();
     final int stored = Prefs.readInt(p, _kWaterMark, fallback: 0);
     final int mark = _highWater.millisecondsSinceEpoch;
-    if (mark > stored) await p.setInt(_kWaterMark, mark);
+    if (mark > stored) await Prefs.setInt(p, _kWaterMark, mark);
   }
 
   Future<void> load() async {
     final SharedPreferences p = await SharedPreferences.getInstance();
+    corruptDocumentKept.value = false;
     final int storedMark = Prefs.readInt(p, _kWaterMark, fallback: 0);
     if (storedMark > 0) {
       _highWater =
@@ -396,7 +403,7 @@ final class PlaceStore extends ChangeNotifier {
         // the bytes are kept aside first: a parse failure is evidence, and
         // overwriting it with an empty document destroys the only copy that
         // could have been recovered by hand.
-        await p.setString('$_kKey.bad', raw);
+        await Prefs.setString(p, '$_kKey.bad', raw);
         _rows.clear();
         _seen.clear();
         _votes.clear();
@@ -480,7 +487,7 @@ final class PlaceStore extends ChangeNotifier {
       while (_dirty) {
         _dirty = false;
         final SharedPreferences p = await SharedPreferences.getInstance();
-        final bool ok = await p.setString(_kKey, _encode());
+        final bool ok = await Prefs.setString(p, _kKey, _encode());
         writeFailed.value = !ok;
         await _persistHighWater();
       }

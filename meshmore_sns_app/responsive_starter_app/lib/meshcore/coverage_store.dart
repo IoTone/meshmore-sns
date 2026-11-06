@@ -3,6 +3,7 @@
 import 'dart:convert';
 
 import 'package:shared_preferences/shared_preferences.dart';
+import '../util/prefs.dart';
 
 /// F8 — persistent mesh-coverage record.
 ///
@@ -104,7 +105,7 @@ class CoverageStore {
 
   static Future<void> save(Map<String, int> cells) async {
     final SharedPreferences p = await SharedPreferences.getInstance();
-    await p.setString(_kKey, jsonEncode(cells));
+    await Prefs.setString(p, _kKey, jsonEncode(cells));
   }
 
   static Future<void> clear() async {

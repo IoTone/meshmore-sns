@@ -1547,6 +1547,10 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get diagnosticsPlaceStoreCorruptKept =>
+      'the last document was unreadable, and its bytes were kept aside';
+
+  @override
   String get chatEmpty => '— no messages on this channel —';
 
   @override

@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: MIT
 import 'airtime.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../util/prefs.dart';
 
 /// Which airtime policy this radio meters itself under
 /// (`meshmore-sns-architecture.md` §5.5b).
@@ -31,6 +32,6 @@ abstract final class AirtimePolicyPrefs {
 
   static Future<void> setPolicy(AirtimePolicy value) async {
     final SharedPreferences p = await SharedPreferences.getInstance();
-    await p.setString(_kPolicy, value.name);
+    await Prefs.setString(p, _kPolicy, value.name);
   }
 }

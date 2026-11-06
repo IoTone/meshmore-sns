@@ -63,16 +63,18 @@ class ThemeController extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> _save(void Function(SharedPreferences p) write) async {
+  Future<void> _save(Future<void> Function(SharedPreferences p) write) async {
     final SharedPreferences p = await SharedPreferences.getInstance();
-    write(p);
+    await write(p);
   }
 
   Future<void> setPreset(MmThemePreset v) async {
     if (v == _preset) return;
     _preset = v;
     notifyListeners();
-    await _save((SharedPreferences p) => p.setString(_kPreset, v.name));
+    await _save((SharedPreferences p) async {
+      await Prefs.setString(p, _kPreset, v.name);
+    });
   }
 
   Future<void> setFontScale(double v) async {
@@ -80,25 +82,25 @@ class ThemeController extends ChangeNotifier {
     if (c == _fontScale) return;
     _fontScale = c;
     notifyListeners();
-    await _save((SharedPreferences p) => p.setDouble(_kFontScale, c));
+    await _save((SharedPreferences p) => Prefs.setDouble(p, _kFontScale, c));
   }
 
   Future<void> setHighContrast(bool v) async {
     _highContrast = v;
     notifyListeners();
-    await _save((SharedPreferences p) => p.setBool(_kHighContrast, v));
+    await _save((SharedPreferences p) => Prefs.setBool(p, _kHighContrast, v));
   }
 
   Future<void> setReduceMotion(bool v) async {
     _reduceMotion = v;
     notifyListeners();
-    await _save((SharedPreferences p) => p.setBool(_kReduceMotion, v));
+    await _save((SharedPreferences p) => Prefs.setBool(p, _kReduceMotion, v));
   }
 
   Future<void> setAudioMaster(bool v) async {
     _audioMaster = v;
     notifyListeners();
-    await _save((SharedPreferences p) => p.setBool(_kAudioMaster, v));
+    await _save((SharedPreferences p) => Prefs.setBool(p, _kAudioMaster, v));
   }
 
   Future<void> setVisualHapticOnly(bool v) async {
@@ -106,9 +108,9 @@ class ThemeController extends ChangeNotifier {
     // Mutually reinforcing: visual+haptic-only implies audio off.
     if (v) _audioMaster = false;
     notifyListeners();
-    await _save((SharedPreferences p) {
-      p.setBool(_kVisualHapticOnly, v);
-      if (v) p.setBool(_kAudioMaster, false);
+    await _save((SharedPreferences p) async {
+      await Prefs.setBool(p, _kVisualHapticOnly, v);
+      if (v) await Prefs.setBool(p, _kAudioMaster, false);
     });
   }
 }

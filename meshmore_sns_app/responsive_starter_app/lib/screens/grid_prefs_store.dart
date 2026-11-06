@@ -3,6 +3,7 @@
 import 'dart:convert';
 
 import 'package:shared_preferences/shared_preferences.dart';
+import '../util/prefs.dart';
 
 /// Persisted last-used preferences for the hyperlocal grid screen, so the
 /// chosen scale and refresh cadence survive leaving and
@@ -52,6 +53,6 @@ abstract final class GridPrefsStore {
 
   static Future<void> save(GridPrefs prefs) async {
     final SharedPreferences p = await SharedPreferences.getInstance();
-    await p.setString(_kKey, jsonEncode(prefs.toJson()));
+    await Prefs.setString(p, _kKey, jsonEncode(prefs.toJson()));
   }
 }

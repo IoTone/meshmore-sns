@@ -3,6 +3,7 @@
 import 'dart:convert';
 
 import 'package:shared_preferences/shared_preferences.dart';
+import '../util/prefs.dart';
 
 /// Per-peer **last-seen** timestamps for DM unread tracking.
 /// Stores `pubkeyHex → lastReadAt (unix millis)`. Inbound DMs whose
@@ -45,7 +46,7 @@ class DmReadStore {
 
   Future<void> _persist() async {
     final SharedPreferences p = await SharedPreferences.getInstance();
-    await p.setString(_key, jsonEncode(_data));
+    await Prefs.setString(p, _key, jsonEncode(_data));
   }
 
   /// Returns the lastReadAt millis for [pubKeyHex] or `0` if never read.

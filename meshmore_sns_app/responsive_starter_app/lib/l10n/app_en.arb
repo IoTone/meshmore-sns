@@ -915,6 +915,8 @@
       }
     }
   },
+  "@mediaReceiveDropped": {"placeholders": {"count": {"type": "int"}}},
+  "diagnosticsPlaceStoreCorruptKept": "the last document was unreadable, and its bytes were kept aside",
   "chatEmpty": "— no messages on this channel —",
   "chatJumpToNewest": "{count, plural, =1{1 new} other{{count} new}}",
   "@chatJumpToNewest": {

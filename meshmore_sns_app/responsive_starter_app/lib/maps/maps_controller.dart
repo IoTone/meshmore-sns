@@ -23,6 +23,7 @@ import 'pmtiles.dart';
 import 'tile_ancestor.dart';
 import 'tile_math.dart';
 import 'tile_store.dart';
+import '../util/prefs.dart';
 
 /// A coarser tile that can stand in for one that is not on disk (R114).
 class TileAncestor {
@@ -278,7 +279,7 @@ class MapsController extends ChangeNotifier {
 
   Future<void> _save() async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.setString(
+    await Prefs.setString(prefs, 
         prefsKey,
         jsonEncode(<String, Object?>{
           'budgetMb': budgetMb,

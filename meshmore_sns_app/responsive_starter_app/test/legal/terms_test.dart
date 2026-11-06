@@ -89,23 +89,24 @@ void main() {
       final AppLocalizations l = AppLocalizations.of(
           t.element(find.byType(TermsScreen)));
       expect(find.text(l.termsTitle), findsOneWidget);
-      // The list is lazy: a section builds only when it is scrolled to, so
-      // every one is approached the same way rather than assuming the copy
-      // will always fit one screen.
-      for (final String section in <String>[
-        l.termsSectionLocal,
-        l.termsSectionLeaves,
-        l.termsSectionPermissions,
-        l.termsSectionRetention,
-      ]) {
-        await t.scrollUntilVisible(find.text(section), 200);
-        expect(find.text(section), findsOneWidget);
-      }
       expect(find.text(l.termsAccept), findsOneWidget);
 
-      await t.scrollUntilVisible(find.text(l.termsSectionChanges), 200);
-      expect(find.text(l.termsSectionChanges), findsOneWidget);
-      expect(find.text(l.termsChangesBody), findsOneWidget);
+      // Every section is present, walked top to bottom: the list is lazy, so a
+      // section below the fold is not built until it is scrolled to. Asserting
+      // them all at once only held while the copy was short enough to fit one
+      // screen, which is a property of the wording, not of the page.
+      final List<(String, String)> sections = <(String, String)>[
+        (l.termsSectionLocal, l.termsLocalBody),
+        (l.termsSectionLeaves, l.termsLeavesBody),
+        (l.termsSectionPermissions, l.termsPermissionsBody),
+        (l.termsSectionRetention, l.termsRetentionBody(250)),
+        (l.termsSectionChanges, l.termsChangesBody),
+      ];
+      for (final (String title, String body) in sections) {
+        await t.scrollUntilVisible(find.text(title), 200);
+        expect(find.text(title), findsOneWidget);
+        expect(find.text(body), findsOneWidget);
+      }
 
       await t.tap(find.byKey(const ValueKey<String>('terms-accept')));
       await t.pump();

@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../meshcore/chat_message.dart';
 import 'meshbook.dart';
+import '../util/prefs.dart';
 
 /// Persistence for Meshbook (MBk) P3. Holds, **per channel**, a rolling
 /// **last-24-hours** window of contributing channel messages (id/time/text
@@ -135,7 +136,7 @@ class MeshbookStore {
           ],
       },
     };
-    await p.setString(_kKey, jsonEncode(j));
+    await Prefs.setString(p, _kKey, jsonEncode(j));
   }
 
   Future<void> load() async {

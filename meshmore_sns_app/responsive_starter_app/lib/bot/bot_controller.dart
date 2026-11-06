@@ -11,6 +11,7 @@ import 'bot_scope.dart';
 import 'responder.dart';
 import 'rule.dart';
 import 'rulepack_parser.dart';
+import '../util/prefs.dart';
 
 /// What the user has configured for one scope (R59).
 class BotBinding {
@@ -147,7 +148,7 @@ class BotController extends ChangeNotifier {
       await p.remove(kKey);
       return;
     }
-    await p.setString(
+    await Prefs.setString(p, 
       kKey,
       json.encode(<String, Object?>{
         for (final MapEntry<String, BotBinding> e in _bindings.entries)

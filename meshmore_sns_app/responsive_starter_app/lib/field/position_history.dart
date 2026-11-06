@@ -9,6 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../meshcore/meshcore_controller.dart';
 import '../meshcore/own_location.dart';
 import '../util/geo.dart';
+import '../util/prefs.dart';
 
 /// One recorded position: where we were, when, and what said so.
 ///
@@ -168,7 +169,7 @@ final class PositionHistoryStore {
 
   static Future<void> save(List<PositionSample> rows) async {
     final SharedPreferences p = await SharedPreferences.getInstance();
-    await p.setString(_kKey, encode(rows));
+    await Prefs.setString(p, _kKey, encode(rows));
   }
 
   static Future<void> clear() async {

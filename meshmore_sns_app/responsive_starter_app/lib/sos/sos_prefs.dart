@@ -51,8 +51,8 @@ abstract final class SosPrefs {
   }) async {
     try {
       final SharedPreferences p = await SharedPreferences.getInstance();
-      await p.setInt(_kChannel, channelSlot);
-      await p.setStringList(_kTargets, contactTargets);
+      await Prefs.setInt(p, _kChannel, channelSlot);
+      await Prefs.setStringList(p, _kTargets, contactTargets);
     } catch (_) {
       // See the class comment: the alarm does not depend on this write.
     }

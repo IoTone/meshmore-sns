@@ -10,6 +10,7 @@ import '../app/app_errors.dart';
 import 'chat_message.dart';
 import 'secure/encrypted_store.dart';
 import 'secure/record_cipher.dart';
+import '../util/prefs.dart';
 
 /// Local persistence for channel chat history.
 ///
@@ -189,7 +190,7 @@ abstract final class ChatStore {
       lastWriteFailure.value = 'unavailable';
       return;
     }
-    await p.setString(_kLegacyKey, _encode(tail));
+    await Prefs.setString(p, _kLegacyKey, _encode(tail));
   }
 
   static Future<void> clear() async {
@@ -241,7 +242,7 @@ abstract final class ChatStore {
         // plaintext path has to stay the truth there.
         await _store().readAll();
       }
-      await p.setInt(_kMigratedKey, formatVersion);
+      await Prefs.setInt(p, _kMigratedKey, formatVersion);
       // Only now is the plaintext redundant.
       if (legacy != null) await p.remove(_kLegacyKey);
       return true;

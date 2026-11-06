@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../cue/cue_service.dart' show CueKind, isSignature;
+import '../util/prefs.dart';
 
 /// R58 — whether inbound DMs from one peer are spoken aloud.
 ///
@@ -168,7 +169,7 @@ abstract final class PeerProfileStore {
       await p.remove(kKey);
       return;
     }
-    await p.setString(kKey, json.encode(payload));
+    await Prefs.setString(p, kKey, json.encode(payload));
   }
 
   static Future<void> clear() async {

@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: MIT
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../util/prefs.dart';
 
 /// R21 / U12 — tracks whether the user has been through the first-run
 /// intro (permissions explainer + initial Grant/Skip). One bool stored
@@ -39,7 +40,7 @@ class FirstRunController extends ChangeNotifier {
   Future<void> markDone() async {
     if (_done) return;
     final SharedPreferences p = await SharedPreferences.getInstance();
-    await p.setBool(_key, true);
+    await Prefs.setBool(p, _key, true);
     _done = true;
     notifyListeners();
   }

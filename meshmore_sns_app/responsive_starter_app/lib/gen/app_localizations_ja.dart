@@ -1475,6 +1475,9 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
+  String get diagnosticsPlaceStoreCorruptKept => '前回のデータは読めなかったため、内容を別名で保存しました';
+
+  @override
   String get chatEmpty => '— このチャンネルにメッセージはありません —';
 
   @override

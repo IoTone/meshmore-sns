@@ -5,6 +5,7 @@ import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'geofence_engine.dart';
+import '../util/prefs.dart';
 
 /// A fence the user drew: a centre, a radius, and a name to say out loud.
 final class StoredGeofence {
@@ -98,7 +99,7 @@ final class GeofenceStore {
 
   static Future<void> save(List<StoredGeofence> fences) async {
     final SharedPreferences p = await SharedPreferences.getInstance();
-    await p.setString(_kKey, encode(fences));
+    await Prefs.setString(p, _kKey, encode(fences));
   }
 
   static Future<void> clear() async {

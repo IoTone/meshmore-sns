@@ -832,6 +832,7 @@
   "diagnosticsPlaceStoreWriteFailed": "最後の保存が届きませんでした — ピンは再起動後に残りません",
   "diagnosticsPlaceStoreOk": "保存済み",
   "mediaReceiveDropped": "{count, plural, =1{空きを作るため以前の転送1件が破棄され、その写真は途中で止まりました} other{空きを作るため以前の転送{count}件が破棄され、それらの写真は途中で止まりました}}",
+  "diagnosticsPlaceStoreCorruptKept": "前回のデータは読めなかったため、内容を別名で保存しました",
   "chatEmpty": "— このチャンネルにメッセージはありません —",
   "chatJumpToNewest": "新着 {count} 件",
   "@chatJumpToNewest": {

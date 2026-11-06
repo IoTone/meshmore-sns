@@ -4,6 +4,7 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../util/prefs.dart';
 
 /// What one channel slot is allowed to do when a message arrives (D8.13).
 ///
@@ -137,6 +138,6 @@ class NotificationPrefs extends ChangeNotifier {
         e.key.toString(): e.value.toJson(),
     };
     final SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_key, jsonEncode(j));
+    await Prefs.setString(prefs, _key, jsonEncode(j));
   }
 }
