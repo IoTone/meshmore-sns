@@ -4877,9 +4877,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get coverageCountsTitle => 'カバレッジ';
 
   @override
-  String get diagnosticsRadioHealth => '無線の状態';
-
-  @override
   String get coverageBeforeStart =>
       '現在地と、応答した相手を記録します。端末内にのみ保存され、アプリを閉じると記録は終わります。';
 

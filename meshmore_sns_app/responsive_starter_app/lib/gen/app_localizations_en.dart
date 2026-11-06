@@ -5075,9 +5075,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get coverageCountsTitle => 'Coverage';
 
   @override
-  String get diagnosticsRadioHealth => 'Radio health';
-
-  @override
   String get coverageBeforeStart =>
       'This records where you are and who answered. It stays on this device, and closing the app ends the record.';
 

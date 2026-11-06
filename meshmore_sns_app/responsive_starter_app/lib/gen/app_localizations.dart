@@ -8590,12 +8590,6 @@ abstract class AppLocalizations {
   /// **'Coverage'**
   String get coverageCountsTitle;
 
-  /// No description provided for @diagnosticsRadioHealth.
-  ///
-  /// In en, this message translates to:
-  /// **'Radio health'**
-  String get diagnosticsRadioHealth;
-
   /// No description provided for @coverageBeforeStart.
   ///
   /// In en, this message translates to:

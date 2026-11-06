@@ -3444,7 +3444,6 @@
   "geofenceExplainerShort": "Circles that tell you when you arrive or leave",
   "coverageTitle": "Coverage",
   "coverageCountsTitle": "Coverage",
-  "diagnosticsRadioHealth": "Radio health",
   "coverageBeforeStart": "This records where you are and who answered. It stays on this device, and closing the app ends the record.",
   "coverageStart": "Start recording",
   "coverageStop": "Stop recording",

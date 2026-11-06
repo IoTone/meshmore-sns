@@ -2321,7 +2321,6 @@
   "geofenceExplainerShort": "到着・出発を知らせる円",
   "coverageTitle": "カバレッジ",
   "coverageCountsTitle": "カバレッジ",
-  "diagnosticsRadioHealth": "無線の状態",
   "coverageBeforeStart": "現在地と、応答した相手を記録します。端末内にのみ保存され、アプリを閉じると記録は終わります。",
   "coverageStart": "記録を開始",
   "coverageStop": "記録を停止",

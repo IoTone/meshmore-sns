@@ -311,14 +311,10 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
                 ),
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: <Widget>[
-                    MmSectionHeader(l.diagnosticsRadioHealth),
-                    const SizedBox(height: 6),
-                    const RadioHealthBlock(),
-                  ],
-                ),
+                // The block carries its own title and its own Read action, so
+                // a section header above it said "radio health" twice in the
+                // same breath — the duplicated label rule the dashboard obeys.
+                child: const RadioHealthBlock(),
               ),
             ],
           ),
