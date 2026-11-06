@@ -4007,5 +4007,6 @@
   "diagnosticsPositionNone": "none",
   "locTriggerManual": "you asked",
   "locTriggerPeriodic": "on the timer",
-  "locTriggerMovement": "you moved"
+  "locTriggerMovement": "you moved",
+  "pingLostMeaning": "Lost means no answer inside the time the radio estimated for the reply. A node that ignores requests, or one that is asleep, looks the same."
 }

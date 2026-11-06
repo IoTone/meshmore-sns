@@ -5859,4 +5859,8 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get locTriggerMovement => 'you moved';
+
+  @override
+  String get pingLostMeaning =>
+      'Lost means no answer inside the time the radio estimated for the reply. A node that ignores requests, or one that is asleep, looks the same.';
 }

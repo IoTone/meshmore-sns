@@ -9855,6 +9855,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'you moved'**
   String get locTriggerMovement;
+
+  /// No description provided for @pingLostMeaning.
+  ///
+  /// In en, this message translates to:
+  /// **'Lost means no answer inside the time the radio estimated for the reply. A node that ignores requests, or one that is asleep, looks the same.'**
+  String get pingLostMeaning;
 }
 
 class _AppLocalizationsDelegate
