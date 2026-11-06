@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:meshmore_sns_app/app/app_errors.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -130,14 +131,9 @@ void main() {
     expect(seen, <bool>[false]);
   });
 
-  testWidgets('a duplicate id on screen is caught in debug',
-      (WidgetTester t) async {
+  testWidgets('a duplicate id on screen is recorded, and the screen still '
+      'draws', (WidgetTester t) async {
     final MmCollapseController c = await _fresh();
-    final List<String> errors = <String>[];
-    final void Function(FlutterErrorDetails)? old = FlutterError.onError;
-    FlutterError.onError =
-        (FlutterErrorDetails d) => errors.add(d.exceptionAsString());
-    addTearDown(() => FlutterError.onError = old);
     await t.pumpWidget(ChangeNotifierProvider<MmCollapseController>.value(
       value: c,
       child: MaterialApp(
@@ -149,11 +145,19 @@ void main() {
         ),
       ),
     ));
+    // Both sections are on screen: a shared id is a small bug (they share a
+    // fold state), and a thrown error here used to replace part of the screen
+    // with Flutter's error box — seen on a device dashboard while two layouts
+    // were mounted for a frame as the skin loaded.
+    // The section label is upper-cased by the skin, so match that.
+    expect(find.text('ONE'), findsOneWidget);
+    expect(find.text('TWO'), findsOneWidget);
+    expect(t.takeException(), isNull);
     expect(
-        errors.any((String e) => e.contains('duplicate MmCollapsibleSection')),
-        isTrue);
-    // A build-time throw cascades into layout errors; drain them.
-    while (t.takeException() != null) {}
+        AppErrors.records
+            .any((AppErrorRecord r) => r.where == 'collapsible'),
+        isTrue,
+        reason: 'the duplicate is still reported, to the diagnostics record');
   });
 
   test(

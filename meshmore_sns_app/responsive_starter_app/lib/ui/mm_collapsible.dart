@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../app/app_errors.dart';
 import '../theme/mm_skin.dart';
 import 'mm_collapse_controller.dart';
 import 'mm_components.dart';
@@ -69,8 +70,17 @@ class _MmCollapsibleSectionState extends State<MmCollapsibleSection> {
     assert(() {
       _registered = _live.add(widget.id);
       if (!_registered) {
-        throw FlutterError(
-            'duplicate MmCollapsibleSection id "${widget.id}" on screen');
+        // Two sections with one id share a fold state, and the second one to
+        // mount gets the first one's choice. That is a small bug; a thrown
+        // error here is a large one: it replaces part of the screen with
+        // Flutter's red error box in debug and with an apology card in the
+        // field (seen on the dashboard while two layouts were mounted for one
+        // frame as the skin loaded). Record it, keep rendering, and let the
+        // diagnostics record carry the fact.
+        AppErrors.record(
+            'duplicate MmCollapsibleSection id "${widget.id}" on screen',
+            kDebugMode ? StackTrace.current : null,
+            where: 'collapsible');
       }
       return true;
     }());
