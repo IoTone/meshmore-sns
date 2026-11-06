@@ -33,7 +33,6 @@ import '../meshcore/block_filter.dart';
 import '../meshcore/block_store.dart';
 import '../theme/mm_skin.dart';
 import '../ui/mm_components.dart';
-import '../ui/mm_page_header.dart';
 import '../ui/mm_scaffold.dart';
 import '../ui/mm_shape.dart';
 import 'package:meshcore/meshcore.dart';
@@ -296,10 +295,14 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
       child: BootOverlay(
         child: Scaffold(
           appBar: AppBar(
-            // The app bar says who this is, always. The *view* name lives in
-            // MmPageHeader below the tab strip, in the same place on every
-            // view, so the top of the screen stopped changing on every swipe.
-            title: Text(l.appName),
+            // One header, and it names what is on screen: the app's own name
+            // on the dashboard, the view's name everywhere else. A second
+            // title block used to sit under the strip saying the same thing
+            // 56 dp lower; two headers where one will do is space the user
+            // never gets back.
+            title: Text(_index == MmView.dashboard.index
+                ? l.appName
+                : MmView.values[_index].title(l)),
             // SOS is one tap from every primary view, in every skin: an alarm that
             // needs three taps and a remembered menu is not an alarm. The control
             // only opens the alarm screen; raising still takes the three-second
@@ -550,9 +553,10 @@ class _SettingsView extends StatelessWidget {
     // four separators, so APP, CONNECTION and ABOUT all rendered as "ABOUT"
     // on the device (found on the phone 2026-10-21).
     return MmScaffold(
+      // No second header: the app bar already says "Settings", and this list
+      // starts with its first group label.
       child: Column(
         children: <Widget>[
-          MmPageHeader(title: l.tabSettings),
           Expanded(
             child: ListView(
               padding: cardRows
