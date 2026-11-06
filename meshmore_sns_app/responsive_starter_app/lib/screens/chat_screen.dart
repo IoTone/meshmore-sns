@@ -19,6 +19,7 @@ import '../chat/draft_store.dart';
 import '../chat/report_flow.dart';
 import '../chat/studio_message_row.dart';
 import '../chat/history_unreadable_notice.dart';
+import '../chat/export_passphrase_dialog.dart';
 import '../gen/app_localizations.dart';
 import '../media/media_codec.dart';
 import '../media/media_composer.dart';
@@ -303,7 +304,7 @@ class _ChatScreenState extends State<ChatScreen>
     if (rows.isEmpty) return;
     final String? passphrase = await showDialog<String>(
       context: context,
-      builder: (BuildContext ctx) => _PassphraseDialog(l: l),
+      builder: (BuildContext ctx) => ExportPassphraseDialog(l: l),
     );
     if (passphrase == null || !mounted) return;
     try {
@@ -376,9 +377,9 @@ class _ChatScreenState extends State<ChatScreen>
     }
     final String? passphrase = await showDialog<String>(
       context: context,
-      builder: (BuildContext ctx) => _PassphraseDialog(
+      builder: (BuildContext ctx) => ExportPassphraseDialog(
         l: l,
-        titleKey: l.chatRestoreTitle,
+        title: l.chatRestoreTitle,
         fieldLabel: l.chatRestorePassphrase,
         confirmLabel: l.chatRestoreConfirm,
       ),
@@ -1582,61 +1583,3 @@ class _UnreadBadge extends StatelessWidget {
 
 /// The passphrase a thread export travels with. The store's own key never
 /// leaves the Keystore, so a file that must open years later carries its own.
-class _PassphraseDialog extends StatefulWidget {
-  const _PassphraseDialog({
-    required this.l,
-    String? titleKey,
-    String? fieldLabel,
-    String? confirmLabel,
-  })  : _title = titleKey,
-        _field = fieldLabel,
-        _confirm = confirmLabel;
-
-  final AppLocalizations l;
-
-  /// Overridable so one dialog asks for a passphrase to write a file and to
-  /// open one: the words differ, the control does not.
-  final String? _title;
-  final String? _field;
-  final String? _confirm;
-
-  @override
-  State<_PassphraseDialog> createState() => _PassphraseDialogState();
-}
-
-class _PassphraseDialogState extends State<_PassphraseDialog> {
-  final TextEditingController _input = TextEditingController();
-
-  @override
-  void dispose() {
-    _input.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Text(widget._title ?? widget.l.chatExportTitle),
-      content: TextField(
-        key: const ValueKey<String>('chat-export-passphrase'),
-        controller: _input,
-        obscureText: true,
-        autofocus: true,
-        decoration:
-            InputDecoration(labelText: widget._field ?? widget.l.chatExportPassphrase),
-        onSubmitted: (String v) => Navigator.of(context).pop(v),
-      ),
-      actions: <Widget>[
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: Text(widget.l.cancel),
-        ),
-        FilledButton(
-          key: const ValueKey<String>('chat-export-confirm'),
-          onPressed: () => Navigator.of(context).pop(_input.text),
-          child: Text(widget._confirm ?? widget.l.chatExportConfirm),
-        ),
-      ],
-    );
-  }
-}

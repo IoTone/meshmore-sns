@@ -17,6 +17,11 @@ import 'secure/store_export.dart';
 ///
 /// A thread is exported on its own (one channel slot or one peer) because
 /// exporting this conversation must not hand over the rest of them.
+///
+/// The whole history is exported the same way, one record per thread inside
+/// one file ([encodeHistory]). That is the same shape [decodeFile] already
+/// reads, so a file the app writes is a file the app can restore: before
+/// this, restore accepted several threads and nothing could produce them.
 abstract final class HistoryExport {
   static String channelKey(int channelIdx) => 'thread:ch:$channelIdx';
 
@@ -49,6 +54,36 @@ abstract final class HistoryExport {
     );
     return StoreExport.encode(
       <String, Uint8List>{key: payload},
+      passphrase,
+      iterations: iterations,
+    );
+  }
+
+  /// Every thread in one file, one record each.
+  ///
+  /// Grouping is by [threadKeyOf], the same key a single-thread export uses,
+  /// so a restore cannot see two spellings of one conversation. An empty
+  /// history throws rather than writing a file that restores to nothing.
+  static Uint8List encodeHistory({
+    required List<ChatMessage> messages,
+    required String passphrase,
+    int iterations = StoreExport.defaultIterations,
+  }) {
+    final Map<String, List<Map<String, Object?>>> byThread =
+        <String, List<Map<String, Object?>>>{};
+    for (final ChatMessage m in messages) {
+      byThread.putIfAbsent(threadKeyOf(m), () => <Map<String, Object?>>[])
+          .add(m.toJson());
+    }
+    if (byThread.isEmpty) {
+      throw const ExportRefused('there is no history to export');
+    }
+    return StoreExport.encode(
+      <String, Uint8List>{
+        for (final MapEntry<String, List<Map<String, Object?>>> e
+            in byThread.entries)
+          e.key: Uint8List.fromList(utf8.encode(jsonEncode(e.value))),
+      },
       passphrase,
       iterations: iterations,
     );
@@ -124,6 +159,17 @@ abstract final class HistoryExport {
   }) =>
       Isolate.run(() => encodeThread(
             key: key,
+            messages: messages,
+            passphrase: passphrase,
+            iterations: iterations,
+          ));
+
+  static Future<Uint8List> encodeHistoryAsync({
+    required List<ChatMessage> messages,
+    required String passphrase,
+    int iterations = StoreExport.defaultIterations,
+  }) =>
+      Isolate.run(() => encodeHistory(
             messages: messages,
             passphrase: passphrase,
             iterations: iterations,

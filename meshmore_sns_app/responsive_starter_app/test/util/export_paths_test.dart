@@ -58,6 +58,17 @@ void main() {
   // sees which directory it lives in.
   const Map<String, List<String>> exports = <String, List<String>>{
     'lib/places/place_history_sheet.dart': <String>[],
+    // The chat history export and the report bundle both left the screen for
+    // their own files when the chat strip was reorganised, so the declaration
+    // names where the share now lives rather than the screen that opens it.
+    'lib/chat/history_export_action.dart': <String>[],
+    // The bundle is written by the builder, which owns the directory and
+    // the temporary-file decision; this site only hands the file on.
+    'lib/chat/report_flow.dart': <String>['lib/screens/report_bundle.dart'],
+    // One thread, from the conversation itself. Distinct from
+    // `lib/chat/history_export_action.dart`, which writes the whole
+    // history from Settings: handing over one conversation must not
+    // hand over the rest.
     'lib/screens/chat_screen.dart': <String>[],
     'lib/field/field_export_action.dart': <String>[
       'lib/field/operational_export.dart',

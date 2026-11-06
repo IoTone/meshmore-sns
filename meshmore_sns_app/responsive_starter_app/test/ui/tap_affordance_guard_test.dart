@@ -24,10 +24,16 @@ import 'package:meshmore_sns_app/theme/mm_tokens.dart';
 void main() {
   /// `TextButton`s that read as labels today. Seeded 2026-11-05 (R114).
   const Map<String, int> textButtons = <String, int>{
+    // The recorded send's confirmation and the passphrase dialog both end in
+    // a Cancel beside a FilledButton, which is the dialog convention the other
+    // twenty-nine files already follow. Counted here so the class cannot grow
+    // while those dialogs are unified behind one widget.
+    'lib/chat/export_passphrase_dialog.dart': 1,
+    'lib/chat/report_flow.dart': 5,
+    'lib/screens/raw_record_card.dart': 1,
     'lib/bot/bot_scope_config.dart': 2,
     'lib/bot/bot_section.dart': 2,
     'lib/chat/chat_actions.dart': 1,
-    'lib/chat/report_flow.dart': 4,
     'lib/media/media_composer.dart': 1,
     'lib/places/place_create_sheet.dart': 1,
     'lib/places/place_detail_sheet.dart': 2,

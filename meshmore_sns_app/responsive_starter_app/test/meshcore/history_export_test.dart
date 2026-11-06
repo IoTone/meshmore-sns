@@ -168,4 +168,76 @@ void main() {
     expect(utf8.decode(file, allowMalformed: true),
         isNot(contains('channel 0 message')));
   });
+
+  group('the whole history', () {
+    test('every thread comes back out of one file', () {
+      final List<ChatMessage> rows = <ChatMessage>[
+        ...channelRows(0, 3),
+        ...channelRows(5, 2),
+        ...peerRows('ab' * 32, 4),
+      ];
+      final Uint8List file = HistoryExport.encodeHistory(
+        messages: rows,
+        passphrase: 'pw',
+        iterations: iterations,
+      );
+      final List<ChatMessage> back = HistoryExport.decodeFile(
+        bytes: file,
+        passphrase: 'pw',
+      );
+      expect(back.length, rows.length);
+      expect(
+        back.map((ChatMessage m) => HistoryExport.threadKeyOf(m)).toSet(),
+        <String>{
+          HistoryExport.channelKey(0),
+          HistoryExport.channelKey(5),
+          HistoryExport.peerKey('ab' * 32),
+        },
+        reason: 'one record per thread, keyed the way a single export is',
+      );
+    });
+
+    test('a backup holds every conversation, not the first one', () {
+      final Uint8List file = HistoryExport.encodeHistory(
+        messages: <ChatMessage>[
+          ...channelRows(0, 1),
+          ...channelRows(1, 1),
+        ],
+        passphrase: 'pw',
+        iterations: iterations,
+      );
+      final List<ChatMessage> back =
+          HistoryExport.decodeFile(bytes: file, passphrase: 'pw');
+      expect(back.map((ChatMessage m) => m.channelIdx).toSet(), <int>{0, 1});
+    });
+
+    test('an empty history is refused rather than written', () {
+      expect(
+        () => HistoryExport.encodeHistory(
+          messages: const <ChatMessage>[],
+          passphrase: 'pw',
+          iterations: iterations,
+        ),
+        throwsA(isA<ExportRefused>().having((ExportRefused e) => e.reason,
+            'reason', contains('no history'))),
+      );
+    });
+
+    test('the whole-history file is sealed like one thread', () {
+      final Uint8List file = HistoryExport.encodeHistory(
+        messages: <ChatMessage>[
+          ...channelRows(0, 1),
+          ...peerRows('cd' * 32, 1),
+        ],
+        passphrase: 'pw',
+        iterations: iterations,
+      );
+      expect(utf8.decode(file, allowMalformed: true),
+          isNot(contains('channel 0 message')));
+      expect(
+        () => HistoryExport.decodeFile(bytes: file, passphrase: 'wrong'),
+        throwsA(isA<ExportRefused>()),
+      );
+    });
+  });
 }

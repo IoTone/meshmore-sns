@@ -5251,6 +5251,30 @@ class AppLocalizationsEn extends AppLocalizations {
   String get chatSearchAction => 'Search messages';
 
   @override
+  String get settingsHistoryExportRow => 'Export all history';
+
+  @override
+  String get settingsHistoryExportSubtitle =>
+      'One encrypted file, with every conversation in it. You choose where it goes.';
+
+  @override
+  String get settingsHistoryExportTitle => 'Passphrase for the backup';
+
+  @override
+  String get settingsHistoryExportConfirm => 'Export';
+
+  @override
+  String get settingsHistoryExportShared => 'History ready to share.';
+
+  @override
+  String settingsHistoryExportDone(String path) {
+    return 'History saved to $path';
+  }
+
+  @override
+  String get settingsHistoryExportEmpty => 'There is no history to export yet.';
+
+  @override
   String get chatExportAction => 'Export this conversation';
 
   @override
@@ -5386,6 +5410,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String reportBundleWritten(String path) {
     return 'Report saved to $path';
   }
+
+  @override
+  String get reportShareBundle => 'Share the report';
 
   @override
   String get reportCopyBundle => 'Copy the report';

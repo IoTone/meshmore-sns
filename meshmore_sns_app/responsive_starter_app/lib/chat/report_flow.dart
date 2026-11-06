@@ -9,14 +9,17 @@ import 'package:flutter/services.dart';
 import '../gen/app_localizations.dart';
 import '../meshcore/chat_message.dart';
 import '../screens/report_bundle.dart';
+import '../util/share.dart';
 
 /// APP-F3's sibling: a report is not a block and not moderation.
 ///
 /// There is no server, so nothing is transmitted. The flow asks what the
-/// reader saw, writes the bundle to a file on this device, and then offers two
-/// things a person can actually do with it: copy it, or go find the file. The
-/// copy says no request was made, because a bundle that looks like a
-/// submission would be a lie.
+/// reader saw, writes the bundle to a file on this device, and then offers the
+/// things a person can actually do with it: copy it, hand the file to an app
+/// that can carry it, or go find it. The copy says no request was made,
+/// because a bundle that looks like a submission would be a lie — and the
+/// share sheet is the reader choosing a destination, which is the one path the
+/// app cannot take for them.
 Future<void> reportMessage(
   BuildContext context,
   ChatMessage m, {
@@ -40,7 +43,7 @@ Future<void> reportMessage(
   final File file = await (write ?? ReportBundle.write)(bundle);
   if (!context.mounted) return;
 
-  final bool copied = await showDialog<bool>(
+  final _ReportChoice? choice = await showDialog<_ReportChoice>(
         context: context,
         builder: (BuildContext ctx) {
       final AppLocalizations lt = AppLocalizations.of(ctx);
@@ -62,27 +65,47 @@ Future<void> reportMessage(
                 text: const JsonEncoder.withIndent('  ').convert(bundle),
               ));
               if (!ctx.mounted) return;
-              Navigator.pop(ctx, true);
+              Navigator.pop(ctx, _ReportChoice.copied);
             },
             child: Text(lt.reportCopyBundle),
           ),
           TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
+            onPressed: () => Navigator.pop(ctx, _ReportChoice.share),
+            child: Text(lt.reportShareBundle),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, _ReportChoice.close),
             child: Text(lt.mediaClose),
           ),
         ],
       );
         },
-      ) ??
-      false;
+      );
+  if (choice == null || choice == _ReportChoice.close || !context.mounted) {
+    return;
+  }
   // The confirmation is shown by the screen that opened the flow: the
   // dialog's own context is gone by the time the clipboard call returns.
-  if (copied && context.mounted) {
+  if (choice == _ReportChoice.copied) {
     ScaffoldMessenger.maybeOf(context)?.showSnackBar(
       SnackBar(content: Text(l.reportCopied)),
     );
+    return;
+  }
+  // The reader picks the destination. If no share handler answers, the path
+  // the dialog already showed is repeated rather than a claim that it went.
+  final bool shared = await Share.file(file.path,
+      mime: 'application/json', subject: l.reportSheetTitle);
+  if (!shared && context.mounted) {
+    ScaffoldMessenger.maybeOf(context)?.showSnackBar(
+      SnackBar(content: Text(l.reportBundleWritten(file.path))),
+    );
   }
 }
+
+/// What the reader chose after the bundle was written. Three outcomes rather
+/// than a bool: "close" must never be read as "copied".
+enum _ReportChoice { copied, share, close }
 
 /// The optional sentence the reader adds. Empty is a valid answer: the bundle
 /// already carries the message, its sender and its time.

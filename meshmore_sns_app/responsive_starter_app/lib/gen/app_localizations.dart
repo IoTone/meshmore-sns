@@ -8878,6 +8878,48 @@ abstract class AppLocalizations {
   /// **'Search messages'**
   String get chatSearchAction;
 
+  /// No description provided for @settingsHistoryExportRow.
+  ///
+  /// In en, this message translates to:
+  /// **'Export all history'**
+  String get settingsHistoryExportRow;
+
+  /// No description provided for @settingsHistoryExportSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'One encrypted file, with every conversation in it. You choose where it goes.'**
+  String get settingsHistoryExportSubtitle;
+
+  /// No description provided for @settingsHistoryExportTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Passphrase for the backup'**
+  String get settingsHistoryExportTitle;
+
+  /// No description provided for @settingsHistoryExportConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Export'**
+  String get settingsHistoryExportConfirm;
+
+  /// No description provided for @settingsHistoryExportShared.
+  ///
+  /// In en, this message translates to:
+  /// **'History ready to share.'**
+  String get settingsHistoryExportShared;
+
+  /// No description provided for @settingsHistoryExportDone.
+  ///
+  /// In en, this message translates to:
+  /// **'History saved to {path}'**
+  String settingsHistoryExportDone(String path);
+
+  /// No description provided for @settingsHistoryExportEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'There is no history to export yet.'**
+  String get settingsHistoryExportEmpty;
+
   /// Tooltip on the chat header action that exports one conversation.
   ///
   /// In en, this message translates to:
@@ -9057,6 +9099,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Report saved to {path}'**
   String reportBundleWritten(String path);
+
+  /// No description provided for @reportShareBundle.
+  ///
+  /// In en, this message translates to:
+  /// **'Share the report'**
+  String get reportShareBundle;
 
   /// No description provided for @reportCopyBundle.
   ///

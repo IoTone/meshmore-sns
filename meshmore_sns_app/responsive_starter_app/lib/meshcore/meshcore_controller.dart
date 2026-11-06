@@ -2262,6 +2262,13 @@ class MeshcoreController extends ChangeNotifier {
   /// Inbound DMs (broadcast). Outgoing DMs are NOT emitted here.
   Stream<ChatMessage> get incomingDirectMessages => _incomingDm.stream;
 
+  /// Every stored row, channels and direct messages together, oldest first.
+  ///
+  /// The whole-history export needs the whole list, and it must not be a
+  /// mutable view: the backup encodes what was there when the passphrase was
+  /// accepted, not what a frame arriving mid-encode would add.
+  List<ChatMessage> get allMessages => List<ChatMessage>.unmodifiable(_messages);
+
   /// All DM messages for a peer (by full pubkey hex, or 12-hex
   /// prefix when only the prefix was resolvable on receive), oldest
   /// first.

@@ -5042,6 +5042,30 @@ class AppLocalizationsJa extends AppLocalizations {
   String get chatSearchAction => 'メッセージを検索';
 
   @override
+  String get settingsHistoryExportRow => 'すべての履歴を書き出す';
+
+  @override
+  String get settingsHistoryExportSubtitle =>
+      'すべての会話をまとめた暗号化ファイルを1つ作成します。保存先はあなたが選びます。';
+
+  @override
+  String get settingsHistoryExportTitle => 'バックアップのパスフレーズ';
+
+  @override
+  String get settingsHistoryExportConfirm => '書き出す';
+
+  @override
+  String get settingsHistoryExportShared => '履歴を共有できます。';
+
+  @override
+  String settingsHistoryExportDone(String path) {
+    return '履歴を $path に保存しました';
+  }
+
+  @override
+  String get settingsHistoryExportEmpty => '書き出せる履歴がまだありません。';
+
+  @override
   String get chatExportAction => 'この会話を書き出す';
 
   @override
@@ -5171,6 +5195,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String reportBundleWritten(String path) {
     return 'レポートを $path に保存しました';
   }
+
+  @override
+  String get reportShareBundle => 'レポートを共有';
 
   @override
   String get reportCopyBundle => 'レポートをコピー';

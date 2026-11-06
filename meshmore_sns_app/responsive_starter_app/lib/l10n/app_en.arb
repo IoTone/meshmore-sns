@@ -3566,6 +3566,16 @@
     }
   },
   "chatSearchAction": "Search messages",
+    "settingsHistoryExportRow": "Export all history",
+  "settingsHistoryExportSubtitle": "One encrypted file, with every conversation in it. You choose where it goes.",
+  "settingsHistoryExportTitle": "Passphrase for the backup",
+  "settingsHistoryExportConfirm": "Export",
+  "settingsHistoryExportShared": "History ready to share.",
+  "settingsHistoryExportDone": "History saved to {path}",
+  "@settingsHistoryExportDone": {
+    "placeholders": { "path": { "type": "String" } }
+  },
+  "settingsHistoryExportEmpty": "There is no history to export yet.",
   "chatExportAction": "Export this conversation",
   "@chatExportAction": {
     "description": "Tooltip on the chat header action that exports one conversation."
@@ -3696,6 +3706,7 @@
       }
     }
   },
+  "reportShareBundle": "Share the report",
   "reportCopyBundle": "Copy the report",
   "reportCopied": "Report copied.",
   "blockedKeysNotPersisted": "This list could not be saved on this device. It filters for now and will be empty after a restart.",

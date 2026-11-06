@@ -12,6 +12,7 @@ import 'package:meshmore_sns_app/chat/report_flow.dart';
 import 'package:meshmore_sns_app/gen/app_localizations.dart';
 import 'package:meshmore_sns_app/l10n/locale_controller.dart';
 import 'package:meshmore_sns_app/meshcore/chat_message.dart';
+import 'package:meshmore_sns_app/util/share.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 Widget wrap(Widget child) => MaterialApp(
@@ -114,6 +115,56 @@ void main() {
         reason: 'the clipboard carries the same bundle that was written');
     expect(find.textContaining('Nothing was sent'), findsNothing,
         reason: 'the dialog closes on copy');
+  });
+
+  testWidgets('the reader can hand the file to another app',
+      (WidgetTester t) async {
+    final ChatMessage m =
+        ChatMessage(channelIdx: 0, text: 'Trent: follow the treeline', outgoing: false);
+    await t.pumpWidget(wrap(Builder(
+      builder: (BuildContext ctx) => TextButton(
+        onPressed: () => reportMessage(ctx, m,
+            threadName: 'Public',
+            write: (Map<String, Object?> bundle) async {
+              final File f = File('${dir.path}/bundle.json')
+                ..writeAsStringSync(jsonEncode(bundle));
+              return f;
+            }),
+        child: const Text('open'),
+      ),
+    )));
+    await t.pumpAndSettle();
+    await t.tap(find.text('open'));
+    await t.pumpAndSettle();
+    await t.enterText(find.byType(TextField), 'came from the north');
+    await t.tap(find.widgetWithText(TextButton, 'Report…'));
+    await t.pumpAndSettle();
+
+    // The platform side wraps the file in a content:// URI; here it answers
+    // the way Android does when a share sheet opens.
+    final MethodChannel channel = Share.channel;
+    final List<MethodCall> calls = <MethodCall>[];
+    t.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+      channel,
+      (MethodCall call) async {
+        calls.add(call);
+        return true;
+      },
+    );
+    addTearDown(() => t.binding.defaultBinaryMessenger
+        .setMockMethodCallHandler(channel, null));
+
+    await t.tap(find.widgetWithText(TextButton, 'Share the report'));
+    await t.pumpAndSettle();
+
+    expect(calls.map((MethodCall c) => c.method), <String>['shareFile']);
+    final Map<Object?, Object?> args =
+        calls.single.arguments as Map<Object?, Object?>;
+    expect(args['path'], '${dir.path}/bundle.json',
+        reason: 'the file that was written is the file handed over');
+    expect(args['mime'], 'application/json');
+    expect(find.text('Report copied.'), findsNothing,
+        reason: 'sharing is not copying, and says so by not claiming it');
   });
 
   testWidgets('cancelling the observation writes nothing',
