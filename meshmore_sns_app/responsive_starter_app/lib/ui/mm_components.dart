@@ -307,11 +307,18 @@ class MmPickerTile extends StatelessWidget {
     final MmSkin skin = context.skin;
     final bool on = enabled && onTap != null;
     final Color valueColor = on ? skin.color.accent : skin.color.fgMuted;
+    // Material's own disabled ink is `onSurface` at 38 %, which on a paper
+    // ground is 1.8:1: the row's own sentence disappears and only the trailing
+    // value survives. Both tiers are stated from the tokens instead, so a row
+    // you cannot open still says what it is.
+    final Color textColor = on ? skin.color.fg : skin.color.fgDisabled;
+    final Color subColor = on ? skin.color.fgMuted : skin.color.fgDisabled;
     return ListTile(
       enabled: on,
       leading: leading,
-      title: Text(title),
-      subtitle: hint == null ? null : Text(hint!),
+      title: Text(title, style: TextStyle(color: textColor)),
+      subtitle:
+          hint == null ? null : Text(hint!, style: TextStyle(color: subColor)),
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
@@ -404,11 +411,17 @@ class MmAction extends StatelessWidget {
   Widget build(BuildContext context) {
     final MmSkin skin = context.skin;
     final bool on = onPressed != null;
-    final Color fg = on ? skin.color.fg : skin.color.fgMuted;
+    final Color fg = on ? skin.color.fg : skin.color.fgDisabled;
+    // A control that is off keeps its outline. The border used to be the rule
+    // at half strength, which on a paper ground composites to 1.4:1 and makes
+    // the control dissolve into the page: "off" then reads as "not a control"
+    // rather than "a control you cannot press yet". The disabled ink tier is
+    // the right colour for the outline and the label both, and the fill stays
+    // at full strength so the shape is a shape.
     final OutlinedBorder border = mmShapeBorder(
       skin.shape,
       side: BorderSide(
-          color: on ? skin.color.line : skin.color.line.withValues(alpha: .5),
+          color: on ? skin.color.line : skin.color.fgDisabled,
           width: skin.shape.borderWidth),
     );
     return Semantics(
@@ -426,7 +439,7 @@ class MmAction extends StatelessWidget {
             decoration: ShapeDecoration(
               color: on
                   ? skin.color.surfaceAlt
-                  : skin.color.surfaceAlt.withValues(alpha: .4),
+                  : skin.color.surfaceAlt.withValues(alpha: .7),
               shape: border,
             ),
             // The label wraps rather than overflowing. At the 200 % text
