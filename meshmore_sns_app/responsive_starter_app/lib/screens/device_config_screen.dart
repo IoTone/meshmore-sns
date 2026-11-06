@@ -1120,7 +1120,7 @@ class _OtherParamsEditorState extends State<_OtherParamsEditor> {
                 ? l.otherManualAddSubOn
                 : l.otherManualAddSubOff,
             style: TextStyle(
-                color: cs.onSurface.withValues(alpha: .6), fontSize: context.skin.type.sizeBody),
+                color: cs.onSurfaceVariant, fontSize: context.skin.type.sizeBody),
           ),
           value: widget.si.manualAddContacts,
           onChanged: widget.enabled
@@ -1508,7 +1508,7 @@ class _GpsModuleControls extends StatelessWidget {
                   : enabled
                       ? l.deviceGpsEnabledHint
                       : l.deviceGpsDisabledHint,
-              style: TextStyle(color: cs.onSurface.withValues(alpha: .6)),
+              style: TextStyle(color: cs.onSurfaceVariant),
             ),
             value: enabled ?? false,
             onChanged: !ready || unknown
@@ -1533,7 +1533,7 @@ class _GpsModuleControls extends StatelessWidget {
                 interval == null
                     ? l.deviceGpsUnknown
                     : _intervalLabel(l, interval),
-                style: TextStyle(color: cs.onSurface.withValues(alpha: .6)),
+                style: TextStyle(color: cs.onSurfaceVariant),
               ),
               enabled: ready && enabled == true,
               trailing: const Icon(Icons.chevron_right),

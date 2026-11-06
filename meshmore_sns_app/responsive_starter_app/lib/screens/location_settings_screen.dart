@@ -133,7 +133,7 @@ class LocationSettingsScreen extends StatelessWidget {
                   title: Text(l.locMaster),
                   subtitle: Text(
                     ap.enabled ? l.locMasterOn : l.locMasterOff,
-                    style: TextStyle(color: cs.onSurface.withValues(alpha: .6)),
+                    style: TextStyle(color: cs.onSurfaceVariant),
                   ),
                   secondary: Icon(
                       ap.enabled ? Icons.satellite_alt : Icons.satellite,
@@ -175,7 +175,7 @@ class LocationSettingsScreen extends StatelessWidget {
                     subtitle: Text(
                       l.locBeaconSub,
                       style:
-                          TextStyle(color: cs.onSurface.withValues(alpha: .6)),
+                          TextStyle(color: cs.onSurfaceVariant),
                     ),
                     value: m.periodicAdvertEnabled,
                     onChanged: (bool v) => m.setPeriodicAdvertEnabled(v),

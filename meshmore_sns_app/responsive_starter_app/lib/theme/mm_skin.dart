@@ -202,8 +202,15 @@ class MmShape {
   /// R77 — a collapsible group's header row sits on `MmTokens.raised`, one
   /// tonal step above the page, so the header (not a rule) says where a
   /// group starts. Studio only; the six older presets keep a flat header.
+  /// What a filled area means, so the light and dark grounds answer the same
+  /// way: **structure** is a rule plus, at most, a surface one step off the
+  /// page ([MmPanel]); a **control** is a filled object with a full-strength
+  /// border ([MmAction]); **status** is an outline or a rule, never a fill
+  /// ([MmStatusPill], the link chip); and an **interruption** is the only
+  /// place a tint earns its fill, because it must interrupt ([DegradedBanner],
+  /// with its state bar). A group header is structure, which is why paper
+  /// turns [tintedHeaders] off and starts the group at a rule instead.
   final bool tintedHeaders;
-
 }
 
 /// Retro-futuristic chrome. All default to "off" so a calm concept

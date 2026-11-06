@@ -144,6 +144,26 @@ void main() {
           const Color(0xFFFFB020));
     });
 
+    test('the secondary text tier clears AA on every layer', () {
+      // Twenty subtitles across settings and device screens were drawn as
+      // `onSurface` at 60 %, which is 3.9:1 on paper — under AA, on screens
+      // that are mostly subtitles. The scheme's own secondary role is the
+      // right tier and it has to stay legible on every layer.
+      final ColorScheme cs = buildMmTheme(t,
+              fontFamily: skin.type.displayFamily, shape: skin.shape)
+          .colorScheme;
+      for (final Color layer in <Color>[
+        t.base,
+        t.surface,
+        t.surfaceAlt,
+        t.selected,
+        cs.surfaceContainerHigh,
+      ]) {
+        expect(ratio(cs.onSurfaceVariant, layer), greaterThanOrEqualTo(4.5),
+            reason: 'secondary text on $layer');
+      }
+    });
+
     test('alert and accent are not the same colour', () {
       expect(t.accent, isNot(t.alert));
       expect(ratio(t.alert, t.accent), greaterThan(1.2),
