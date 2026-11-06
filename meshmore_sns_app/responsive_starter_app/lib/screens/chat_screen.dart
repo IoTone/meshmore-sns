@@ -17,6 +17,7 @@ import '../chat/composer_counter.dart';
 import '../chat/composer_offline.dart';
 import '../chat/draft_store.dart';
 import '../chat/report_flow.dart';
+import '../chat/place_suggestion_line.dart';
 import '../chat/studio_message_row.dart';
 import '../chat/history_unreadable_notice.dart';
 import '../gen/app_localizations.dart';
@@ -1039,11 +1040,28 @@ class _MessageRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final MmSkin skin = context.skin;
-    return switch (_chatModeFor(skin.preset)) {
+    final Widget row = switch (_chatModeFor(skin.preset)) {
       _ChatMode.log => _log(context, skin),
       _ChatMode.bubble => _bubble(context, skin),
       _ChatMode.block => _block(context, skin),
     };
+    // A message that names a place offers to report it. The line sits under
+    // whichever row shape the skin uses — one placement, so no preset can
+    // keep the old behaviour of naming a place and offering nothing.
+    //
+    // `select` rather than `watch`: the answer changes only when this row's
+    // own text stops being a suggestion, so a notify for some other message
+    // does not rebuild the list.
+    final String? suggested = context.select<MeshcoreController, String?>(
+        (MeshcoreController mc) => mc.placeSuggestionFor(m));
+    if (suggested == null) return row;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        row,
+        PlaceSuggestionLine(message: m, name: suggested),
+      ],
+    );
   }
 
   // --- terminal log (SEELE / NERV / Recon) ---------------------------

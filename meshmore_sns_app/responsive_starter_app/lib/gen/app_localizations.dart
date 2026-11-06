@@ -4121,13 +4121,13 @@ abstract class AppLocalizations {
   /// No description provided for @channelsInferPlaces.
   ///
   /// In en, this message translates to:
-  /// **'Infer places from messages'**
+  /// **'Find place names in messages'**
   String get channelsInferPlaces;
 
   /// No description provided for @channelsInferPlacesSub.
   ///
   /// In en, this message translates to:
-  /// **'Scan this channel\'s banter for place names and plot them on the SNS grid.'**
+  /// **'Scan this channel\'s messages for place names and offer them under the message, so you can report one.'**
   String get channelsInferPlacesSub;
 
   /// OS notification title for a channel message.
@@ -9729,6 +9729,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{name} has no direct route now, and a raw record cannot be flooded.'**
   String rawRecordNoRoute(String name);
+
+  /// No description provided for @placeSuggestLooksLike.
+  ///
+  /// In en, this message translates to:
+  /// **'Looks like a place: {name}'**
+  String placeSuggestLooksLike(String name);
+
+  /// No description provided for @placeSuggestReport.
+  ///
+  /// In en, this message translates to:
+  /// **'Report place'**
+  String get placeSuggestReport;
+
+  /// No description provided for @placeSuggestDismiss.
+  ///
+  /// In en, this message translates to:
+  /// **'Dismiss'**
+  String get placeSuggestDismiss;
+
+  /// No description provided for @placeSuggestNeedsLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn on location to report a place.'**
+  String get placeSuggestNeedsLocation;
 }
 
 class _AppLocalizationsDelegate

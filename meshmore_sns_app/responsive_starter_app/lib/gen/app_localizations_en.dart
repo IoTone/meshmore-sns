@@ -2433,11 +2433,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get channelsName => 'Channel name';
 
   @override
-  String get channelsInferPlaces => 'Infer places from messages';
+  String get channelsInferPlaces => 'Find place names in messages';
 
   @override
   String get channelsInferPlacesSub =>
-      'Scan this channel\'s banter for place names and plot them on the SNS grid.';
+      'Scan this channel\'s messages for place names and offer them under the message, so you can report one.';
 
   @override
   String notifTitleChannel(String name) {
@@ -5784,4 +5784,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String rawRecordNoRoute(String name) {
     return '$name has no direct route now, and a raw record cannot be flooded.';
   }
+
+  @override
+  String placeSuggestLooksLike(String name) {
+    return 'Looks like a place: $name';
+  }
+
+  @override
+  String get placeSuggestReport => 'Report place';
+
+  @override
+  String get placeSuggestDismiss => 'Dismiss';
+
+  @override
+  String get placeSuggestNeedsLocation => 'Turn on location to report a place.';
 }

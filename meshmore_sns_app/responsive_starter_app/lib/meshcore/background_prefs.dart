@@ -104,3 +104,50 @@ abstract final class PlaceInferencePrefs {
     );
   }
 }
+
+/// The place suggestions a user has already said no to.
+///
+/// A suggestion is computed from the words of a message, so it is keyed by a
+/// hash of those words rather than by a message id: the same sentence offers
+/// the same suggestion wherever it arrives, and a message restored from an
+/// export has a new id but the same text. Keys are a hash, not the text, because the
+/// text is message content and this file is not sealed.
+///
+/// The list is bounded. A dismissal is a small opinion about a sentence, and
+/// keeping every one forever would slowly turn a preference into a transcript.
+abstract final class PlaceSuggestionDismissals {
+  static const String _kMap = 'mm.placeSuggest.dismissed';
+  static const int cap = 200;
+
+  /// The stable key for one message's suggestion.
+  static String keyFor(int channelIdx, String text) =>
+      '$channelIdx:${_fnv1a(text)}';
+
+  static Future<Set<String>> load() async {
+    final SharedPreferences p = await SharedPreferences.getInstance();
+    return <String>{...p.getStringList(_kMap) ?? const <String>[]};
+  }
+
+  /// Persist [keys], dropping the oldest when the list is over [cap].
+  ///
+  /// Insertion order is the order they were dismissed, which is the order
+  /// shared_preferences keeps, so the first entries are the oldest.
+  static Future<void> save(Set<String> keys) async {
+    final SharedPreferences p = await SharedPreferences.getInstance();
+    final List<String> all = keys.toList();
+    final List<String> kept =
+        all.length <= cap ? all : all.sublist(all.length - cap);
+    await Prefs.setStringList(p, _kMap, kept);
+  }
+
+  /// FNV-1a over the UTF-16 units. Stable across runs and machines, which
+  /// `Object.hash` is not: a dismissal has to survive the process.
+  static String _fnv1a(String s) {
+    int h = 0x811c9dc5;
+    for (final int unit in s.codeUnits) {
+      h ^= unit;
+      h = (h * 0x01000193) & 0xFFFFFFFF;
+    }
+    return h.toRadixString(16).padLeft(8, '0');
+  }
+}

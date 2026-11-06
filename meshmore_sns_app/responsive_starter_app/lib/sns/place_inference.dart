@@ -199,6 +199,50 @@ class PlaceInferenceEngine {
     return kept;
   }
 
+  /// The place names [message] mentions, in cue order and without
+  /// duplicates.
+  ///
+  /// This is the same cue ladder [infer] walks, with the two steps that only
+  /// exist to *place* a point removed: the region filter and the confidence
+  /// score both measure a distance from an origin, and there is no origin
+  /// here because nothing is being placed. What comes back is the name a row
+  /// can offer to report; the position is the user's to give, so a mention
+  /// that turns out to be idle chatter costs nothing but one line that can be
+  /// dismissed.
+  List<String> placeNames(String message) {
+    final List<String> out = <String>[];
+    final List<_Match> consumed = <_Match>[];
+
+    void consider(String phrase, {required bool allowLowercase}) {
+      final _Parsed? parsed =
+          _parsePhrase(phrase, allowLowercase: allowLowercase);
+      if (parsed == null) return;
+      final bool known = <String?>[parsed.surface, parsed.stripped]
+          .whereType<String>()
+          .any((String name) => gazetteer.lookup(name).isNotEmpty);
+      if (!known) return;
+      final String name = parsed.display.trim();
+      if (name.isEmpty || out.contains(name)) return;
+      out.add(name);
+    }
+
+    for (final _Cue cue in _cues) {
+      for (final RegExpMatch m in cue.re.allMatches(message)) {
+        if (_overlaps(m.start, m.end, consumed)) continue;
+        consider(m.group(1)!, allowLowercase: true);
+        consumed.add(_Match(m.start, m.end));
+      }
+    }
+    // A bare capitalised run is the weakest cue: "Sam says" reads as a place
+    // only because it is capitalised, so it is tried last and only for text
+    // the stronger cues did not already explain.
+    for (final RegExpMatch m in _properRe.allMatches(message)) {
+      if (_overlaps(m.start, m.end, consumed)) continue;
+      consider(m.group(0)!, allowLowercase: false);
+    }
+    return out;
+  }
+
   // --- Resolution -----------------------------------------------------
 
   InferredPlace? _resolvePhrase(

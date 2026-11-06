@@ -1457,8 +1457,8 @@
     }
   },
   "channelsName": "チャンネル名",
-  "channelsInferPlaces": "メッセージから場所を推定",
-  "channelsInferPlacesSub": "このチャンネルの会話から地名を抽出し、SNS グリッドに表示します。",
+  "channelsInferPlaces": "メッセージから地名を探す",
+  "channelsInferPlacesSub": "このチャンネルのメッセージから地名を探し、メッセージの下に候補として表示します。そこから報告できます。",
   "notifTitleChannel": "{name} のメッセージ",
   "notifTitleDirect": "{name} からのダイレクトメッセージ",
   "notifTitleSos": "緊急アラート",
@@ -2551,5 +2551,9 @@
   "rawRecordSent": "無線が受け付けました。配達の証明ではありません。生データには相手からの受領通知がありません。",
   "rawRecordRefused": "無線が拒否しました: {reason}（コード {code}）。",
   "rawRecordNoAnswer": "{seconds} 秒以内に応答がありません。送信された可能性があります。",
-  "rawRecordNoRoute": "{name} への直接経路がなくなりました。生データはフラッド送信できません。"
+  "rawRecordNoRoute": "{name} への直接経路がなくなりました。生データはフラッド送信できません。",
+  "placeSuggestLooksLike": "場所の候補: {name}",
+  "placeSuggestReport": "場所を報告",
+  "placeSuggestDismiss": "閉じる",
+  "placeSuggestNeedsLocation": "場所を報告するには位置情報をオンにしてください。"
 }
