@@ -21,7 +21,10 @@ Play Store release — and need his agreement before they change.
 - **David owns the XR client** (`meshmore-xr/`, 116 Kotlin files, 39,386 lines) — frozen in this scope, not
   abandoned.
 - **David owns the seven skins.** All seven stay; every feature must work in all seven; the skins themselves
-  need a correctness audit.
+  need a correctness audit. **Amendment (2026-11-05):** the app now ships **eight** presets, because Studio Light
+  (R115) was added on the owner's direction as the paper-ground counterpart of Studio. Every feature works in all
+  eight, and the guards (`test/theme/skin_sweep_test.dart`, the a11y floor sweep's per-preset pass, the ratchets)
+  enumerate eight rather than seven.
 - **David's documentation and work must be read before any map/place/role design is finalised** — including
   the XR repo's 14 spec documents, the Java protocol port, and material outside this repo. That reading is
   queued, not done.
