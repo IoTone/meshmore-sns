@@ -66,7 +66,6 @@ import 'package:meshmore_sns_app/theme/theme_controller.dart';
 import 'package:meshmore_sns_app/tools/tools_controller.dart';
 import 'package:meshmore_sns_app/tts/tts_controller.dart';
 import 'package:meshmore_sns_app/ui/mm_collapse_controller.dart';
-import 'package:meshmore_sns_app/ui/dashboard_pins_controller.dart';
 
 Future<void> main() async {
   final WidgetsBinding widgetsBinding =
@@ -114,10 +113,6 @@ Future<void> startApp() async {
   // group the user folded never paints open and then snaps shut.
   final MmCollapseController collapse = MmCollapseController();
   await collapse.load();
-  // The pinned dashboard cards are read before the first frame for the same
-  // reason: a pin that paints late would move the dashboard under the user.
-  final DashboardPinsController pins = DashboardPinsController();
-  await pins.load();
   // Radio-free mode is read before the tree exists: it decides whether the
   // launch reaches for a paired companion at all, and doing that after the
   // first frame would make the decision twice.
@@ -206,7 +201,6 @@ Future<void> startApp() async {
     MultiProvider(
       providers: [
         ChangeNotifierProvider<MmCollapseController>.value(value: collapse),
-        ChangeNotifierProvider<DashboardPinsController?>.value(value: pins),
         ChangeNotifierProvider<AppState>(create: (_) => AppState()),
         ChangeNotifierProvider<ThemeController>(
           create: (_) => ThemeController()..load(),

@@ -78,4 +78,41 @@ void main() {
     expect(find.textContaining('"hello mesh"'), findsOneWidget);
     ctrl.dispose();
   });
+
+  testWidgets('a block says its name once, and one refresh belongs to it',
+      (WidgetTester t) async {
+    final FakeMeshcoreTransport fake =
+        FakeMeshcoreTransport(connected: true);
+    final MeshcoreController ctrl = MeshcoreController(
+      transportFactory: () async => fake,
+      connection:
+          MeshcoreConnection(handshakeTimeout: const Duration(seconds: 5)),
+    );
+    await t.pumpWidget(
+      MaterialApp(
+        locale: const Locale('en'),
+        supportedLocales: LocaleController.supported,
+        localizationsDelegates: _kLocaleDelegates,
+        home: ChangeNotifierProvider<MeshcoreController>.value(
+          value: ctrl,
+          child: const Scaffold(body: DashboardScreen()),
+        ),
+      ),
+    );
+    await ctrl.connect();
+    fake.emit(selfInfoFrame());
+    await t.pumpAndSettle();
+
+    // The section header carries the word; the block under it starts with the
+    // value. It used to print LOCATION again, under a second refresh icon on
+    // its own baseline — the light skin made that look like two blocks.
+    // The list builds lazily, so scroll the block into view first.
+    final Finder location = find.text('LOCATION');
+    await t.scrollUntilVisible(location, 200,
+        scrollable: find.byType(Scrollable).first);
+    await t.pumpAndSettle();
+    expect(location, findsOneWidget);
+    expect(find.byTooltip('Refresh location from device'), findsOneWidget);
+    ctrl.dispose();
+  });
 }

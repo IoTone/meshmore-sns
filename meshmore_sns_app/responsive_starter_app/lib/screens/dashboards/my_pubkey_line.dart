@@ -44,7 +44,7 @@ class MyPubkeyLine extends StatelessWidget {
     final TextStyle effective = style ??
         TextStyle(
           color: cs.onSurfaceVariant,
-          fontFamily: 'JetBrains Mono',
+          fontFamily: context.skin.type.monoFamily,
           fontSize: context.skin.type.sizeBody,
           height: 1.5,
         );

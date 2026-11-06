@@ -63,7 +63,7 @@ import 'app_localizations_ja.dart';
 /// property.
 abstract class AppLocalizations {
   AppLocalizations(String locale)
-      : localeName = intl.Intl.canonicalizedLocale(locale.toString());
+    : localeName = intl.Intl.canonicalizedLocale(locale.toString());
 
   final String localeName;
 
@@ -86,16 +86,16 @@ abstract class AppLocalizations {
   /// of delegates is preferred or required.
   static const List<LocalizationsDelegate<dynamic>> localizationsDelegates =
       <LocalizationsDelegate<dynamic>>[
-    delegate,
-    GlobalMaterialLocalizations.delegate,
-    GlobalCupertinoLocalizations.delegate,
-    GlobalWidgetsLocalizations.delegate,
-  ];
+        delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+      ];
 
   /// A list of this localizations delegate's supported locales.
   static const List<Locale> supportedLocales = <Locale>[
     Locale('en'),
-    Locale('ja')
+    Locale('ja'),
   ];
 
   /// No description provided for @appName.
@@ -115,60 +115,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Dashboard'**
   String get tabDashboard;
-
-  /// No description provided for @dashboardPinsTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Pinned'**
-  String get dashboardPinsTitle;
-
-  /// No description provided for @dashboardPinsEdit.
-  ///
-  /// In en, this message translates to:
-  /// **'Edit pins'**
-  String get dashboardPinsEdit;
-
-  /// No description provided for @dashboardPinsDone.
-  ///
-  /// In en, this message translates to:
-  /// **'Done'**
-  String get dashboardPinsDone;
-
-  /// No description provided for @dashboardPinsMoveUp.
-  ///
-  /// In en, this message translates to:
-  /// **'Move up'**
-  String get dashboardPinsMoveUp;
-
-  /// No description provided for @dashboardPinsMoveDown.
-  ///
-  /// In en, this message translates to:
-  /// **'Move down'**
-  String get dashboardPinsMoveDown;
-
-  /// No description provided for @dashboardPinAdd.
-  ///
-  /// In en, this message translates to:
-  /// **'Pin to dashboard'**
-  String get dashboardPinAdd;
-
-  /// No description provided for @dashboardPinRemove.
-  ///
-  /// In en, this message translates to:
-  /// **'Remove from dashboard'**
-  String get dashboardPinRemove;
-
-  /// No description provided for @pinCoverageNone.
-  ///
-  /// In en, this message translates to:
-  /// **'No pings yet'**
-  String get pinCoverageNone;
-
-  /// No description provided for @pinCoverageAnswered.
-  ///
-  /// In en, this message translates to:
-  /// **'{answered} of {tried} answered'**
-  String pinCoverageAnswered(int answered, int tried);
 
   /// No description provided for @tabChat.
   ///
@@ -6991,7 +6937,10 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'incomplete frames: {truncated} cut short, {trailing} with bytes left over, {empty} empty'**
   String diagnosticsFramingLine(
-      String truncated, String trailing, Object empty);
+    String truncated,
+    String trailing,
+    Object empty,
+  );
 
   /// No description provided for @diagnosticsScanConnect.
   ///
@@ -7286,7 +7235,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{freq} MHz · {bw} kHz · SF{sf} · CR{cr} · path hash {ph}'**
   String networksSummary(
-      String freq, String bw, String sf, String cr, String ph);
+    String freq,
+    String bw,
+    String sf,
+    String cr,
+    String ph,
+  );
 
   /// No description provided for @networksMembers.
   ///
@@ -8644,23 +8598,11 @@ abstract class AppLocalizations {
   /// **'Coverage'**
   String get coverageCountsTitle;
 
-  /// No description provided for @fieldExportSummaryLine.
-  ///
-  /// In en, this message translates to:
-  /// **'Trail and field record'**
-  String get fieldExportSummaryLine;
-
   /// No description provided for @diagnosticsRadioHealth.
   ///
   /// In en, this message translates to:
   /// **'Radio health'**
   String get diagnosticsRadioHealth;
-
-  /// No description provided for @radioHealthSummaryLine.
-  ///
-  /// In en, this message translates to:
-  /// **'Battery, noise floor, last packet'**
-  String get radioHealthSummaryLine;
 
   /// No description provided for @coverageBeforeStart.
   ///
@@ -9878,8 +9820,9 @@ AppLocalizations lookupAppLocalizations(Locale locale) {
   }
 
   throw FlutterError(
-      'AppLocalizations.delegate failed to load unsupported locale "$locale". This is likely '
-      'an issue with the localizations generation tool. Please file an issue '
-      'on GitHub with a reproducible sample app and the gen-l10n configuration '
-      'that was used.');
+    'AppLocalizations.delegate failed to load unsupported locale "$locale". This is likely '
+    'an issue with the localizations generation tool. Please file an issue '
+    'on GitHub with a reproducible sample app and the gen-l10n configuration '
+    'that was used.',
+  );
 }

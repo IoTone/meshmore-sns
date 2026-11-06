@@ -21,10 +21,7 @@ import 'my_pubkey_line.dart';
 /// skin can drive layout, not just colour.
 class NervDashboard extends StatelessWidget {
 
-  const NervDashboard({super.key, this.pinned});
-
-  /// Pinned summaries, drawn above the HUD panels.
-  final Widget? pinned;
+  const NervDashboard({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -37,11 +34,9 @@ class NervDashboard extends StatelessWidget {
 
     return MmScaffold(
       child: ListView(
-        padding: const EdgeInsets.fromLTRB(14, 14, 14, 28),
+        padding: EdgeInsets.fromLTRB(skin.space.rowInset, skin.space.rowInset, skin.space.rowInset, skin.space.sectionGap),
         children: <Widget>[
-          // Pinned cards first: a pinned block lives here and nowhere else.
-          if (pinned != null) pinned!,
-          const SizedBox(height: 8),
+          SizedBox(height: skin.space.rowGap),
           // Status pills, right-aligned. A Wrap rather than a Row: at the
           // accessibility floor the two labels together are wider than a
           // 320 dp screen, and a Row cannot give the width back.
@@ -60,7 +55,7 @@ class NervDashboard extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(height: 14),
+          SizedBox(height: skin.space.rowInset),
 
           // LINK panel.
           MmPanel(
@@ -87,7 +82,7 @@ class NervDashboard extends StatelessWidget {
                     ],
                   ),
                 ),
-                const SizedBox(height: 8),
+                SizedBox(height: skin.space.rowGap),
                 MmReadout(
                   label: 'BLE',
                   value: m.statusLabel,
@@ -95,12 +90,12 @@ class NervDashboard extends StatelessWidget {
                       ? skin.color.alert
                       : (m.linked ? skin.color.link : skin.color.ok),
                 ),
-                const SizedBox(height: 4),
+                SizedBox(height: skin.space.labelToControl),
                 MmReadout(label: l.dashNervNode, value: m.nodeName ?? '—'),
               ],
             ),
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: skin.space.rowInset),
 
           // RADIO panel.
           MmPanel(
@@ -108,16 +103,16 @@ class NervDashboard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
                 MmSectionHeader(l.dashboardRadio),
-                const SizedBox(height: 8),
+                SizedBox(height: skin.space.rowGap),
                 Text(m.radioLine ?? l.dashboardAwaitingDevice, style: mono),
-                const SizedBox(height: 2),
+                SizedBox(height: skin.space.insideText),
                 MyPubkeyLine(pubKeyHex: m.pubKeyHex, style: mono),
-                const SizedBox(height: 4),
+                SizedBox(height: skin.space.labelToControl),
                 MmReadout(label: l.dashNervRegion, value: m.region),
               ],
             ),
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: skin.space.rowInset),
 
           // MESH panel — hazard-striped header (the "live fabric" band).
           MmPanel(
@@ -125,26 +120,26 @@ class NervDashboard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
                 MmSectionHeader(l.dashNervMesh),
-                const SizedBox(height: 10),
+                SizedBox(height: skin.space.rowGap),
                 MmReadout(
                     label: l.dashboardPeersInRange,
                     value: '${m.peersInRange}',
                     emphasize: true),
-                const SizedBox(height: 4),
+                SizedBox(height: skin.space.labelToControl),
                 MmReadout(
                     label: l.dashNervKnown, value: '${m.knownCount}'),
                 if (m.contactsLabel != null) ...<Widget>[
-                  const SizedBox(height: 4),
+                  SizedBox(height: skin.space.labelToControl),
                   MmReadout(label: l.dashContacts, value: m.contactsLabel!),
                 ],
                 if (m.batteryLine != null) ...<Widget>[
-                  const SizedBox(height: 4),
+                  SizedBox(height: skin.space.labelToControl),
                   MmReadout(label: l.dashboardBattery, value: m.batteryLine!),
                 ],
               ],
             ),
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: skin.space.rowInset),
 
           // EVENTS log.
           MmPanel(
@@ -152,21 +147,21 @@ class NervDashboard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
                 MmSectionHeader(l.dashNervEvents),
-                const SizedBox(height: 8),
+                SizedBox(height: skin.space.rowGap),
                 if (m.events.isEmpty)
                   Text(l.dashboardNoActivity,
                       style: mono.copyWith(color: skin.color.fgMuted))
                 else
                   for (final ({String time, String text}) e in m.events)
                     Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 2),
+                      padding: EdgeInsets.symmetric(vertical: skin.space.insideText),
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: <Widget>[
                           Text(e.time,
                               style: mono.copyWith(
                                   color: skin.color.fgMuted, fontSize: skin.type.sizeSm)),
-                          const SizedBox(width: 8),
+                          SizedBox(width: skin.space.rowGap),
                           Expanded(child: Text(e.text, style: mono)),
                         ],
                       ),

@@ -38,10 +38,7 @@ import 'my_pubkey_line.dart';
 /// *shape* (filled / ring / spinner) differs, never a colour fill.
 class StudioDashboard extends StatelessWidget {
 
-  const StudioDashboard({super.key, this.pinned});
-
-  /// Pinned summaries, drawn under the status row.
-  final Widget? pinned;
+  const StudioDashboard({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -58,24 +55,25 @@ class StudioDashboard extends StatelessWidget {
     String cap(String s) => skin.type.upperHeadings ? s.toUpperCase() : s;
 
     return ListView(
-      padding: const EdgeInsets.only(bottom: 28),
+      padding: EdgeInsets.only(bottom: skin.space.sectionGap),
       children: <Widget>[
         _StatusRow(mc: mc, m: m),
-        if (pinned != null) pinned!,
         _hairline(skin),
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+          padding: EdgeInsets.symmetric(
+              horizontal: skin.space.screenEdge,
+              vertical: skin.space.rowInset),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
               Text(cap(l.dashboardPeersInRange), style: label),
-              const SizedBox(height: 6),
+              SizedBox(height: skin.space.labelToControl),
               Row(
                 crossAxisAlignment: CrossAxisAlignment.baseline,
                 textBaseline: TextBaseline.alphabetic,
                 children: <Widget>[
                   Text('${m.peersInRange}', style: _data(skin, 22)),
-                  const SizedBox(width: 10),
+                  SizedBox(width: skin.space.rowGap),
                   Expanded(
                     child: Text(
                       m.contactsLabel == null
@@ -95,7 +93,8 @@ class StudioDashboard extends StatelessWidget {
           title: l.dashboardRadio,
           children: <Widget>[
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 10, 16, 14),
+              padding: EdgeInsets.fromLTRB(skin.space.screenEdge,
+                  skin.space.rowGap, skin.space.screenEdge, skin.space.rowInset),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
@@ -119,7 +118,7 @@ class StudioDashboard extends StatelessWidget {
                                       fontSize: skin.type.sizeLg,
                                       fontWeight: FontWeight.w600)),
                             ),
-                            const SizedBox(width: 8),
+                            SizedBox(width: skin.space.rowGap),
                             Icon(Icons.chevron_right, size: 16, color: muted),
                           ],
                         ),
@@ -130,7 +129,7 @@ class StudioDashboard extends StatelessWidget {
                       style: _data(skin, 12).copyWith(color: muted),
                       iconColor: muted,
                     ),
-                    const SizedBox(height: 6),
+                    SizedBox(height: skin.space.labelToControl),
                     Text(m.radioLine ?? '', style: data),
                     InkWell(
                       onTap: () => context.push('/settings/device'),
@@ -140,7 +139,7 @@ class StudioDashboard extends StatelessWidget {
                         child: Row(
                           children: <Widget>[
                             Icon(Icons.public, size: 16, color: muted),
-                            const SizedBox(width: 8),
+                            SizedBox(width: skin.space.rowGap),
                             Flexible(
                               child: Text(m.region,
                                   style: const TextStyle(
@@ -163,7 +162,7 @@ class StudioDashboard extends StatelessWidget {
                         child: Row(
                           children: <Widget>[
                             Icon(Icons.battery_std, size: 16, color: muted),
-                            const SizedBox(width: 8),
+                            SizedBox(width: skin.space.rowGap),
                             Text(m.batteryLine!, style: data),
                             const Spacer(),
                             Icon(Icons.chevron_right, size: 18, color: muted),
@@ -181,7 +180,9 @@ class StudioDashboard extends StatelessWidget {
           title: l.dashboardLocation,
           children: <Widget>[
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 4, 4, 10),
+              padding: EdgeInsets.fromLTRB(skin.space.screenEdge,
+                  skin.space.labelToControl, skin.space.labelToControl,
+                  skin.space.rowGap),
               child: Row(
                 children: <Widget>[
                   Expanded(child: _locationBody(context, mc, loc, si, skin)),
@@ -201,14 +202,17 @@ class StudioDashboard extends StatelessWidget {
           title: l.dashboardRecent,
           children: <Widget>[
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+              padding: EdgeInsets.symmetric(
+                  horizontal: skin.space.screenEdge,
+                  vertical: skin.space.rowGap),
               child: m.events.isEmpty
                   ? Text(l.dashboardNoActivity, style: TextStyle(color: muted))
                   : Column(
                       children: <Widget>[
                         for (final ({String text, String time}) e in m.events)
                           Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 3),
+                            padding: EdgeInsets.symmetric(
+                                vertical: skin.space.labelToControl),
                             child: Row(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: <Widget>[
@@ -221,7 +225,7 @@ class StudioDashboard extends StatelessWidget {
                                 Text(e.time,
                                     style: _data(skin, 12)
                                         .copyWith(color: muted)),
-                                const SizedBox(width: 10),
+                                SizedBox(width: skin.space.rowGap),
                                 Expanded(child: Text(e.text)),
                               ],
                             ),
@@ -258,7 +262,7 @@ class StudioDashboard extends StatelessWidget {
     return Row(
       children: <Widget>[
         Icon(Icons.location_off_outlined, size: 18, color: muted),
-        const SizedBox(width: 8),
+        SizedBox(width: skin.space.rowGap),
         Expanded(child: Text(l.dashboardLocationNotSet)),
         TextButton(
           style: TextButton.styleFrom(minimumSize: const Size(64, 48)),
@@ -320,8 +324,8 @@ class _StatusRow extends StatelessWidget {
         mc.gaveUp;
     final Widget status = Row(
       children: <Widget>[
-        SizedBox(width: 14, child: Center(child: dot)),
-        const SizedBox(width: 12),
+        SizedBox(width: skin.space.rowInset, child: Center(child: dot)),
+        SizedBox(width: skin.space.rowInset),
         Expanded(
           child: Text(
             m.statusLabel,
@@ -333,13 +337,13 @@ class _StatusRow extends StatelessWidget {
     final List<Widget> controls = <Widget>[
       if (linked && mc.isDraining)
         Padding(
-          padding: const EdgeInsets.only(right: 8),
+          padding: EdgeInsets.only(right: skin.space.rowGap),
           child: Text(l.statusSyncing,
               style: TextStyle(color: muted, fontSize: skin.type.sizeBody)),
         ),
       if (canConnect || canRetry)
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 4),
+          padding: EdgeInsets.symmetric(horizontal: skin.space.labelToControl),
           child: MmAction(
             dense: true,
             label: canRetry ? l.actionRetry : l.actionConnect,
@@ -364,7 +368,8 @@ class _StatusRow extends StatelessWidget {
         final bool stacked = c.maxWidth < 380 ||
             MediaQuery.textScalerOf(context).scale(14) > 20;
         return Padding(
-          padding: const EdgeInsets.only(left: 16, right: 4),
+          padding: EdgeInsets.only(
+              left: skin.space.screenEdge, right: skin.space.labelToControl),
           child: ConstrainedBox(
             constraints: const BoxConstraints(minHeight: 56),
             child: stacked
@@ -374,7 +379,7 @@ class _StatusRow extends StatelessWidget {
                     children: <Widget>[
                       status,
                       Padding(
-                        padding: const EdgeInsets.only(bottom: 4),
+                        padding: EdgeInsets.only(bottom: skin.space.labelToControl),
                         child: Wrap(
                           crossAxisAlignment: WrapCrossAlignment.center,
                           spacing: 4,

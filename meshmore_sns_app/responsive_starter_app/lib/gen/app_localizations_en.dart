@@ -1,5 +1,6 @@
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
+
 import 'app_localizations.dart';
 
 // ignore_for_file: type=lint
@@ -16,35 +17,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tabDashboard => 'Dashboard';
-
-  @override
-  String get dashboardPinsTitle => 'Pinned';
-
-  @override
-  String get dashboardPinsEdit => 'Edit pins';
-
-  @override
-  String get dashboardPinsDone => 'Done';
-
-  @override
-  String get dashboardPinsMoveUp => 'Move up';
-
-  @override
-  String get dashboardPinsMoveDown => 'Move down';
-
-  @override
-  String get dashboardPinAdd => 'Pin to dashboard';
-
-  @override
-  String get dashboardPinRemove => 'Remove from dashboard';
-
-  @override
-  String get pinCoverageNone => 'No pings yet';
-
-  @override
-  String pinCoverageAnswered(int answered, int tried) {
-    return '$answered of $tried answered';
-  }
 
   @override
   String get tabChat => 'Chat';
@@ -1520,8 +1492,7 @@ class AppLocalizationsEn extends AppLocalizations {
       locale: localeName,
       other:
           '$count earlier transfers were dropped to make room, so those pictures stopped',
-      one:
-          'One earlier transfer was dropped to make room, so that picture stopped',
+      one: 'One earlier transfer was dropped to make room, so that picture stopped',
     );
     return '$_temp0';
   }
@@ -4078,7 +4049,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String diagnosticsFramingLine(
-      String truncated, String trailing, Object empty) {
+    String truncated,
+    String trailing,
+    Object empty,
+  ) {
     return 'incomplete frames: $truncated cut short, $trailing with bytes left over, $empty empty';
   }
 
@@ -4249,7 +4223,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String networksSummary(
-      String freq, String bw, String sf, String cr, String ph) {
+    String freq,
+    String bw,
+    String sf,
+    String cr,
+    String ph,
+  ) {
     return '$freq MHz · $bw kHz · SF$sf · CR$cr · path hash $ph';
   }
 
@@ -5103,13 +5082,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get coverageCountsTitle => 'Coverage';
 
   @override
-  String get fieldExportSummaryLine => 'Trail and field record';
-
-  @override
   String get diagnosticsRadioHealth => 'Radio health';
-
-  @override
-  String get radioHealthSummaryLine => 'Battery, noise floor, last packet';
 
   @override
   String get coverageBeforeStart =>
