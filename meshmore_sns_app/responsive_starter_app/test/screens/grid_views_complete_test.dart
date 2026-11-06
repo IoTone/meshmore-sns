@@ -8,8 +8,11 @@ import 'package:provider/provider.dart';
 import 'package:meshmore_sns_app/gen/app_localizations.dart';
 import 'package:meshmore_sns_app/gen/app_localizations_en.dart';
 import 'package:meshmore_sns_app/l10n/locale_controller.dart';
+import 'dart:typed_data';
+
 import 'package:meshmore_sns_app/meshcore/meshcore_controller.dart';
 import 'package:meshmore_sns_app/screens/elevation_profile_view.dart';
+import 'package:meshmore_sns_app/screens/meshbook_view.dart';
 import 'package:meshmore_sns_app/screens/fabric_survey_view.dart';
 import 'package:meshmore_sns_app/screens/weather_view.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -130,6 +133,65 @@ void main() {
     expect(find.text(_en.elevationNotADistance), findsOneWidget);
     expect(t.takeException(), isNull,
         reason: '320 dp at the default scale must not overflow');
+    await _drain(t, mc);
+  });
+  // The floor, per view. The tab's own sweep can only reach the view it opens
+  // on, so each of these is built here at the narrowest supported width with
+  // the largest text the product promises, with no radio and nothing known.
+  for (final String name in <String>[
+    'weather',
+    'survey',
+    'meshbook',
+    'altitude',
+  ]) {
+    testWidgets('$name holds 320 dp at 200 % text', (WidgetTester t) async {
+      await t.binding.setSurfaceSize(const Size(320, 640));
+      addTearDown(() => t.binding.setSurfaceSize(null));
+      final FakeMeshcoreTransport fake =
+          FakeMeshcoreTransport(connected: true);
+      final MeshcoreController mc = _controller(fake);
+      await t.pumpWidget(MediaQuery(
+        data: const MediaQueryData(textScaler: TextScaler.linear(2.0)),
+        child: _host(
+          mc,
+          switch (name) {
+            'weather' => const WeatherView(),
+            'survey' => const FabricSurveyView(),
+            'meshbook' => const MeshbookView(),
+            _ => const ElevationProfileView(),
+          },
+        ),
+      ));
+      await t.pump();
+      await t.pump(const Duration(milliseconds: 50));
+      expect(t.takeException(), isNull,
+          reason: '$name overflowed at the accessibility floor');
+      await _drain(t, mc);
+    });
+  }
+  testWidgets('the weather view holds the floor with a reading on it',
+      (WidgetTester t) async {
+    // The empty state is the easy layout; the summary card and the window rows
+    // are where a 320 dp screen at 200 % actually breaks.
+    await t.binding.setSurfaceSize(const Size(320, 900));
+    addTearDown(() => t.binding.setSurfaceSize(null));
+    final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
+    final MeshcoreController mc = _controller(fake);
+    await mc.connect();
+    fake.emit(selfInfoFrame());
+    await t.pumpWidget(MediaQuery(
+      data: const MediaQueryData(textScaler: TextScaler.linear(2.0)),
+      child: _host(mc, const WeatherView()),
+    ));
+    await t.pump();
+    // An environment triplet lands as self telemetry (LPP channel 1, type
+    // 0x67 = temperature, 20.0 C).
+    fake.emit(Uint8List.fromList(<int>[
+      0x8B, 0x00, 0, 0, 0, 0, 0, 0, 0x01, 0x67, 0x00, 0xC8,
+    ]));
+    await t.pump(const Duration(milliseconds: 50));
+    expect(t.takeException(), isNull,
+        reason: 'a real reading overflowed at the accessibility floor');
     await _drain(t, mc);
   });
 }
