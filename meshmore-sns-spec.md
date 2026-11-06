@@ -339,7 +339,7 @@ While Meshcore protocol is open source, the client is not open source.  We want 
   (latitude / longitude / **altitude** if the protocol publishes
   it later) — adverts already carry lat/lon; altitude is a
   forward-looking extension.
-- R27 (future): **Macro-globe view via Globe.GL**. A third map
+- R27 (WITHDRAWN 2026-11-05, owner's direction): **Macro-globe view via Globe.GL**. A third map
   view (after the radial /grid and R25 equal-grid map) that
   pins our position and the fabric on a **3-D globe**, using
   [Globe.GL](https://globe.gl/) (Three.js wrapper) inside a

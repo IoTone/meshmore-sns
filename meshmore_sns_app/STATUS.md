@@ -321,9 +321,10 @@ over BLE. Mesh-first, no backend, no account, no server.
   + a dismissible "Places" list); a **scale stop** chip (Metro ~20 km /
   Region ~300 km / Mesh fit-all) so distant nodes (Seattle, Vancouver
   BC) can be framed instead of edge-pinned.
-- Globe, equal-grid (OSM tiles), street map, fabric survey, mesh tree
-  (force-directed, hop slider, Flood as first-class), **Fuji-san**
-  elevation profile.
+- Hyperlocal grid views, all at one level: radar, coverage survey (OSM
+  tiles), street map, mesh tree (force-directed, hop slider, Flood as
+  first-class), SNS cells, elevation profile. The globe was removed from the
+  product on 2026-11-05.
 
 **Telemetry & sensors**
 - Self + peer telemetry via `CMD_SEND_TELEMETRY_REQ` / `0x8B`.
