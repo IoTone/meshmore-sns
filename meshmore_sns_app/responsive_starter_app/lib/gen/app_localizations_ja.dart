@@ -1,6 +1,5 @@
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
-
 import 'app_localizations.dart';
 
 // ignore_for_file: type=lint
@@ -3895,10 +3894,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String diagnosticsFramingLine(
-    String truncated,
-    String trailing,
-    Object empty,
-  ) {
+      String truncated, String trailing, Object empty) {
     return '不完全なフレーム: 途中で切れた $truncated 件、余りのバイトがある $trailing 件、空の $empty 件';
   }
 
@@ -4063,12 +4059,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String networksSummary(
-    String freq,
-    String bw,
-    String sf,
-    String cr,
-    String ph,
-  ) {
+      String freq, String bw, String sf, String cr, String ph) {
     return '$freq MHz · $bw kHz · SF$sf · CR$cr · パスハッシュ $ph';
   }
 
