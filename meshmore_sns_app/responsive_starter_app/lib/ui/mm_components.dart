@@ -190,6 +190,71 @@ class MmReadout extends StatelessWidget {
   }
 }
 
+/// A technical value made of fields, laid out where its separators are.
+///
+/// A position read out as `38.91996, -104.77315 · alt 2041 m · device` is four
+/// facts. Left to wrap on its own it breaks wherever the width runs out — with
+/// the tracking the skins apply, often mid-number — so "‑104.77" ends a line and
+/// "315" starts the next, and a reader has to reassemble a coordinate.
+///
+/// This lays the fields out on one line when the whole value fits, and one
+/// field per line when it does not. The measurement is the real text painter at
+/// the real style, so it decides at the text floor rather than by a character
+/// count, and the same call is a single line on a tablet.
+class MmValueFields extends StatelessWidget {
+  const MmValueFields({
+    super.key,
+    required this.fields,
+    this.separator = ' · ',
+    this.color,
+    this.mono = true,
+  });
+
+  final List<String> fields;
+
+  /// What sits between two fields when they share a line. The glyph is part of
+  /// the value, so it is a parameter rather than an assumption.
+  final String separator;
+
+  final Color? color;
+
+  /// Machine data is mono; a value that is prose can opt out.
+  final bool mono;
+
+  @override
+  Widget build(BuildContext context) {
+    final MmSkin skin = context.skin;
+    final TextStyle style = TextStyle(
+      fontFamily: mono ? skin.type.monoFamily : skin.type.wordsMono,
+      color: color ?? skin.color.fg,
+      fontSize: skin.type.sizeBodyLg,
+      letterSpacing: 0.5,
+      fontFeatures:
+          skin.type.slashedZero ? const <FontFeature>[FontFeature.slashedZero()] : null,
+    );
+    final String joined = fields.join(separator);
+    return LayoutBuilder(
+      builder: (BuildContext context, BoxConstraints c) {
+        final TextPainter painter = TextPainter(
+          text: TextSpan(text: joined, style: style),
+          textDirection: Directionality.of(context),
+          maxLines: 1,
+          textScaler: MediaQuery.textScalerOf(context),
+        )..layout();
+        final bool fits = painter.width <= c.maxWidth;
+        painter.dispose();
+        if (fits) return Text(joined, style: style);
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            for (final String f in fields) Text(f, style: style),
+          ],
+        );
+      },
+    );
+  }
+}
+
 /// A list row whose container reskins with the active skin: loud
 /// concepts (NERV, chamfer/ornament) render each row as a framed
 /// **panel card**; calm ones (SEELE) render a flat row with a hairline
