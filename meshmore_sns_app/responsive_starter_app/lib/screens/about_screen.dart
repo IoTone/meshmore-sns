@@ -132,7 +132,9 @@ class AboutScreen extends StatelessWidget {
             Text(l.aboutAttributions,
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                    color: skin.color.fgMuted, fontSize: 10.5, height: 1.4)),
+                    color: skin.color.fgMuted,
+                    fontSize: skin.type.size(10.5),
+                    height: 1.4)),
           ],
         ),
       ),

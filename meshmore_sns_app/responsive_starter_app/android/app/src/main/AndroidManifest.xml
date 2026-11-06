@@ -29,6 +29,16 @@
 
     <uses-feature android:name="android.hardware.bluetooth_le" android:required="true" />
 
+    <!-- Location is a capability, not a requirement. Declaring the two
+         location permissions makes Play IMPLY android.hardware.location.gps as
+         required, which would filter every GPS-less tablet out of the listing
+         even though this app is useful without a fix: the radio can report a
+         position, a place can be typed, and the map's world view is a
+         first-class state rather than a failure. Saying so explicitly is the
+         only way to undo the implication. -->
+    <uses-feature android:name="android.hardware.location" android:required="false" />
+    <uses-feature android:name="android.hardware.location.gps" android:required="false" />
+
     <!-- R17/U8 — background keep-alive foreground service so the BLE
          link + SYNC-drain survive Doze. `connectedDevice` is the
          correct FGS type for holding a BLE peripheral connection for
@@ -39,7 +49,8 @@
     <uses-permission android:name="android.permission.WAKE_LOCK" />
 
     <application
-        android:label="Meshmore SNS"
+        android:label="@string/app_name"
+        android:localeConfig="@xml/locales_config"
         android:name="${applicationName}"
         android:enableOnBackInvokedCallback="true"
         android:allowBackup="false"
@@ -69,17 +80,26 @@
             <!-- A history export the user still has is the only way back from
                  a restore onto a new device, so the app accepts one: share it
                  here, or open it from a file manager. -->
+            <!-- The app names its own export type first, and keeps a path
+                 pattern for the extension, because a file manager reads
+                 `.mmex` as `application/octet-stream` and the user's own
+                 backup must still open. The pattern narrows the generic type
+                 to files this app can actually read: without it MeshMore
+                 appeared in "Open with" for every binary on the device, and
+                 each such tap staged a copy before the app could refuse it. -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="content" />
-                <data android:mimeType="application/octet-stream" />
+                <data android:mimeType="application/vnd.iotone.meshmore.history" />
+                <data android:mimeType="application/octet-stream" android:pathPattern=".*\\.mmex" />
             </intent-filter>
             <intent-filter>
                 <action android:name="android.intent.action.SEND" />
                 <category android:name="android.intent.category.DEFAULT" />
-                <data android:mimeType="application/octet-stream" />
+                <data android:mimeType="application/vnd.iotone.meshmore.history" />
+                <data android:mimeType="application/octet-stream" android:pathPattern=".*\\.mmex" />
             </intent-filter>
         </activity>
         <!-- Don't delete the meta-data below.

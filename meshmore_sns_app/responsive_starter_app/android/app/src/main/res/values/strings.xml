@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The launcher name. A bilingual app whose icon says English on a Japanese
+     device is a bug in the listing, not a translation gap in the UI. -->
+<resources>
+    <string name="app_name">Meshmore SNS</string>
+</resources>

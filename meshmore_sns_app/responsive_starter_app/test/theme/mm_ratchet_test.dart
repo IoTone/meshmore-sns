@@ -60,7 +60,7 @@ void main() {
       'lib/chat/studio_message_row.dart': 3,
       'lib/docs/markdown_view.dart': 5,
       'lib/maps/basemap.dart': 1,
-      'lib/screens/about_screen.dart': 5,
+      'lib/screens/about_screen.dart': 4,
       'lib/screens/battery_screen.dart': 10,
       'lib/screens/chat_screen.dart': 7,
       'lib/screens/device_contacts_screen.dart': 6,

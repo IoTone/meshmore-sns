@@ -21,6 +21,16 @@ class MainActivity : FlutterActivity() {
      */
     private var incomingExport: File? = null
 
+    companion object {
+        /**
+         * The same bound Dart applies before it decodes (`chat_screen.dart`).
+         * Enforced here as well because the copy happens before Dart runs: an
+         * unbounded copy of a hostile file would fill the cache and stall the
+         * launch on the main thread.
+         */
+        private const val MAX_INCOMING_BYTES = 8L * 1024L * 1024L
+    }
+
     override fun onCreate(savedInstanceState: android.os.Bundle?) {
         super.onCreate(savedInstanceState)
         stageIncoming(intent)
@@ -35,21 +45,56 @@ class MainActivity : FlutterActivity() {
     private fun stageIncoming(intent: Intent?) {
         if (intent == null) return
         if (intent.action != Intent.ACTION_VIEW && intent.action != Intent.ACTION_SEND) return
+        // The staged copy from the last share is gone before anything else
+        // happens. Leaving it meant a refused import (wrong passphrase, not a
+        // history file) kept the ciphertext in the cache and offered it again
+        // on the next restore.
+        val target = File(cacheDir, "incoming.mmex")
+        incomingExport = null
+        target.delete()
         @Suppress("DEPRECATION") // the typed overload needs API 33; minSdk is 24
-        val uri: android.net.Uri? = intent.data
-            ?: (intent.getParcelableExtra(Intent.EXTRA_STREAM) as? android.net.Uri)
-            ?: return
+        val chosen: android.net.Uri =
+            intent.data
+                ?: (intent.getParcelableExtra(Intent.EXTRA_STREAM) as? android.net.Uri)
+                ?: return
         try {
-            val target = File(cacheDir, "incoming.mmex")
-            contentResolver.openInputStream(uri)?.use { input ->
-                target.outputStream().use { output -> input.copyTo(output, 64 * 1024) }
+            val declared = declaredSize(chosen)
+            if (declared != null && declared > MAX_INCOMING_BYTES) return
+            var copied = 0L
+            contentResolver.openInputStream(chosen)?.use { input ->
+                target.outputStream().use { output ->
+                    val buffer = ByteArray(64 * 1024)
+                    while (true) {
+                        val read = input.read(buffer)
+                        if (read < 0) break
+                        copied += read
+                        // The size a provider declares is advisory and absent
+                        // for some sources, so the copy stops itself rather
+                        // than trusting it. A refused file leaves nothing.
+                        if (copied > MAX_INCOMING_BYTES) {
+                            output.close()
+                            target.delete()
+                            return
+                        }
+                        output.write(buffer, 0, read)
+                    }
+                }
             } ?: return
             incomingExport = target
         } catch (e: Exception) {
             // A file the app cannot read is reported to Dart as "nothing
             // arrived", which the restore surface already words.
+            target.delete()
             incomingExport = null
         }
+    }
+
+    /** What the provider says the file measures, if it says anything. */
+    private fun declaredSize(uri: android.net.Uri): Long? = try {
+        // One line: a leading `?.` on a wrapped continuation is fragile.
+        contentResolver.openAssetFileDescriptor(uri, "r")?.use { it.length }?.takeIf { it >= 0 }
+    } catch (e: Exception) {
+        null
     }
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {

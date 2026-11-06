@@ -41,7 +41,6 @@ dependencies:
 
   # --- App metadata ---
   package_info_plus: ^8.1.0
-  device_info_plus: ^11.2.0
 
   # --- State management ---
   provider: ^6.1.2
