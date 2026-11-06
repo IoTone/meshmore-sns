@@ -217,7 +217,7 @@ class DashboardScreen extends StatelessWidget {
                                 fontSize: context.skin.type.sizeLg),
                           ),
                         ),
-                        const SizedBox(width: 6),
+                        SizedBox(width: context.skin.space.rowGap),
                         Icon(Icons.chevron_right,
                             size: 16, color: cs.onSurfaceVariant),
                       ],
@@ -317,7 +317,8 @@ class DashboardScreen extends StatelessWidget {
             children: <Widget>[
               for (final MeshEvent e in mc.recentEvents.take(12))
                 Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 3),
+                  padding: EdgeInsets.symmetric(
+                      vertical: context.skin.space.labelToControl),
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: <Widget>[
@@ -334,7 +335,7 @@ class DashboardScreen extends StatelessWidget {
                             fontFamily: context.skin.type.monoFamily,
                             fontSize: context.skin.type.sizeBody),
                       ),
-                      const SizedBox(width: 10),
+                      SizedBox(width: context.skin.space.rowGap),
                       Expanded(
                         child: Text(_eventLine(l, e),
                             style: TextStyle(color: cs.onSurface)),
@@ -364,7 +365,7 @@ Widget _statusSlab(
   return Container(
     width: double.infinity,
     padding: EdgeInsets.symmetric(
-        horizontal: skin.space.step(4), vertical: skin.space.step(4)),
+        horizontal: context.skin.space.step(4), vertical: context.skin.space.step(4)),
     color: st.alert ? cs.error : cs.surfaceContainerHigh,
     child: Row(
       children: <Widget>[
@@ -382,7 +383,7 @@ Widget _statusSlab(
             decoration:
                 BoxDecoration(shape: BoxShape.circle, color: statusColor),
           ),
-        const SizedBox(width: 10),
+        SizedBox(width: context.skin.space.rowGap),
         Expanded(
           child: Text('▌ ${st.label}',
               style: TextStyle(
@@ -396,13 +397,13 @@ Widget _statusSlab(
         if (mc.state == MeshcoreConnectionState.ready &&
             mc.isDraining) ...<Widget>[
           Icon(Icons.sync, size: 14, color: cs.primary),
-          const SizedBox(width: 4),
+          SizedBox(width: context.skin.space.labelToControl),
           Text(l.statusSyncing,
               style: TextStyle(
                   color: cs.primary,
                   fontSize: skin.type.sizeMicro,
                   letterSpacing: 2)),
-          const SizedBox(width: 4),
+          SizedBox(width: context.skin.space.labelToControl),
         ],
         // Connect / Retry sit in the slab because they are the state's own
         // action: with nothing paired they open the in-app pairing flow,
@@ -464,7 +465,7 @@ class _RegionRow extends StatelessWidget {
           children: <Widget>[
             Icon(isCustom ? Icons.tune : Icons.public,
                 size: 14, color: isCustom ? cs.tertiary : cs.primary),
-            const SizedBox(width: 6),
+            SizedBox(width: context.skin.space.labelToControl),
             Text(
                 p == null
                     ? l.deviceRegionCustom
@@ -476,7 +477,7 @@ class _RegionRow extends StatelessWidget {
             // Every other row in this panel opens a page and says so with a
             // chevron; this one opened Device configuration without one, which
             // taught the opposite rule two rows above it.
-            const SizedBox(width: 6),
+            SizedBox(width: context.skin.space.labelToControl),
             Icon(Icons.chevron_right, size: 16, color: cs.onSurfaceVariant),
           ],
         ),
@@ -556,7 +557,7 @@ class _LocationTile extends StatelessWidget {
           Row(
             children: <Widget>[
               Icon(Icons.location_off, size: 18, color: cs.error),
-              const SizedBox(width: 8),
+              SizedBox(width: context.skin.space.rowGap),
               Expanded(
                 child: Text(
                   l.dashboardLocationNotSet,

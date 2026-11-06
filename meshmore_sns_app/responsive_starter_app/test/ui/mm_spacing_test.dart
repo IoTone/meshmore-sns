@@ -113,7 +113,7 @@ void main() {
       'lib/screens/chat_screen.dart': 3,
       'lib/screens/checkin_screen.dart': 1,
       'lib/screens/dashboards/aghud_dashboard.dart': 1,
-      'lib/screens/dashboard_screen.dart': 4,
+      'lib/screens/dashboard_screen.dart': 1,
       'lib/screens/dashboards/recon_dashboard.dart': 3,
       'lib/screens/dashboards/studio_dashboard.dart': 1,
       'lib/screens/device_manager_sheet.dart': 5,
