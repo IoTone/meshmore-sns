@@ -67,10 +67,6 @@ final Map<String, Future<VectorBasemapStyle>> _stylesByPreset =
 final Map<String, Future<Map<String, Object?>>> _baseStyles =
     <String, Future<Map<String, Object?>>>{};
 
-/// [cache] is false when a caller supplied its own reader. A supplied reader
-/// is a seam (a fixture, a counter), and caching its document for the process
-/// would leak one caller's style into the next — the real bundle is the only
-/// document that is the same for everyone.
 /// Test seam: forget every parsed style and decoded document.
 ///
 /// The caches are process-global because the app has one style and one asset,
@@ -91,6 +87,10 @@ void resetVectorBasemapCache() {
 int get vectorStyleDocumentsDecoded => _documentsDecoded;
 int _documentsDecoded = 0;
 
+/// [cache] is false when a caller supplied its own reader. A supplied reader
+/// is a seam (a fixture, a counter), and caching its document for the process
+/// would leak one caller's style into the next — the real bundle is the only
+/// document that is the same for everyone.
 Future<Map<String, Object?>> _baseStyle(
     String asset, Future<String> Function(String) read, {bool cache = true}) {
   final Future<Map<String, Object?>>? cached = cache ? _baseStyles[asset] : null;
