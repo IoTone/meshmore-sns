@@ -279,13 +279,33 @@ class _SummaryCard extends StatelessWidget {
               style: TextStyle(
                   color: cs.onSurfaceVariant, fontSize: context.skin.type.sizeSm, letterSpacing: 2)),
           const SizedBox(height: 10),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: <Widget>[
-              stat(l.weatherMin, minC),
-              stat(l.weatherAvg, avgC),
-              stat(l.weatherMax, maxC),
-            ],
+          // Three numbers side by side at 200 % text are wider than a
+          // 320 dp screen (measured: 402 px of overflow), and there is no
+          // useful truncation for a temperature. They wrap instead, and each
+          // column takes an equal share of the line when they fit.
+          LayoutBuilder(
+            builder: (BuildContext context, BoxConstraints box) {
+              final bool oneLine = box.maxWidth >= 300;
+              final List<Widget> stats = <Widget>[
+                stat(l.weatherMin, minC),
+                stat(l.weatherAvg, avgC),
+                stat(l.weatherMax, maxC),
+              ];
+              if (!oneLine) {
+                return Wrap(
+                  alignment: WrapAlignment.spaceAround,
+                  spacing: 16,
+                  runSpacing: 8,
+                  children: stats,
+                );
+              }
+              return Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: <Widget>[
+                  for (final Widget w in stats) Flexible(child: w)
+                ],
+              );
+            },
           ),
         ],
       ),
@@ -446,12 +466,19 @@ class _MicroclimateStrip extends StatelessWidget {
             children: <Widget>[
               Icon(Icons.cloud_queue, size: 14, color: cs.primary),
               const SizedBox(width: 6),
-              Text('${l.wxMicroclimateTitle} · $channelLabel',
-                  style: TextStyle(
-                      color: cs.primary,
-                      fontSize: context.skin.type.sizeSm,
-                      letterSpacing: 2,
-                      fontWeight: FontWeight.w600)),
+              // The title and the channel name together are wider than a
+              // 320 dp screen at 200 % text, and an unconstrained Text in a
+              // Row overflows rather than wrapping. It takes the rest of the
+              // line and wraps inside it.
+              Expanded(
+                child: Text('${l.wxMicroclimateTitle} · $channelLabel',
+                    softWrap: true,
+                    style: TextStyle(
+                        color: cs.primary,
+                        fontSize: context.skin.type.sizeSm,
+                        letterSpacing: 2,
+                        fontWeight: FontWeight.w600)),
+              ),
             ],
           ),
           const SizedBox(height: 4),
