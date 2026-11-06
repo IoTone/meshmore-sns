@@ -167,6 +167,7 @@ class _DeviceManagerSheetState extends State<DeviceManagerSheet> {
     final bool isLive = mc.state == MeshcoreConnectionState.ready ||
         mc.state == MeshcoreConnectionState.handshaking;
     final bool isPaired = mc.hasPairedDevice;
+    final MmSkin skin = context.skin;
 
     final List<ScanResult> sortedHits = _hits.values.toList()
       ..sort((ScanResult a, ScanResult b) =>
@@ -175,11 +176,18 @@ class _DeviceManagerSheetState extends State<DeviceManagerSheet> {
     return SafeArea(
       top: false,
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: <Widget>[
+        padding: EdgeInsets.fromLTRB(skin.space.screenEdge, 0,
+            skin.space.screenEdge, skin.space.rowInset),
+        // The sheet is a modal with no app bar and no second route out, and its
+        // content is a header, three action rows, the pair flow, the scan row,
+        // the hint and the hit list: at 320 dp with 200 % text it overflowed by
+        // 358 px, so the bottom of it — the list you came for — was off-screen.
+        // It scrolls, and the sheet is already `isScrollControlled`.
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
             // Header.
             Padding(
               padding: const EdgeInsets.only(bottom: 4),
@@ -412,6 +420,7 @@ class _DeviceManagerSheetState extends State<DeviceManagerSheet> {
               ),
             ),
           ],
+          ),
         ),
       ),
     );
