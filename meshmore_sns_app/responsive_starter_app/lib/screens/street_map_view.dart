@@ -119,6 +119,16 @@ class StreetMapView extends StatefulWidget {
   /// is an arc through the middle of the map with its centre off screen, which
   /// is the "stray line" the map used to show instead of a range.
   @visibleForTesting
+  /// The one line the map says when nothing is arriving from the network.
+  ///
+  /// The copy was written for the degraded model and never drawn: a user
+  /// offline with an empty cache saw a blank grey grid and no reason for it.
+  /// It is a function so the rule can be tested without standing up a live
+  /// map, which schedules timers and animations a widget test cannot settle.
+  static String? tilesOfflineNoticeFor(
+          AppLocalizations l, MapsController? maps) =>
+      maps == null || maps.online ? null : l.degradedMapOffline;
+
   static bool reachRingReadable(double radiusMeters, double viewportMeters) =>
       radiusMeters <= viewportMeters * .5;
 
@@ -475,6 +485,9 @@ class _StreetMapViewState extends State<StreetMapView> {
     final int zoomLevel = _zoom.round();
     final ({int minZoom, int maxZoom})? packSpan =
         maps?.packZoomSpan(shownSource);
+    final String? tilesOfflineNotice =
+        StreetMapView.tilesOfflineNoticeFor(l, maps);
+
     final String? packZoomNotice = maps == null ||
             maps.online ||
             packSpan == null ||
@@ -860,6 +873,17 @@ class _StreetMapViewState extends State<StreetMapView> {
               // R114 — a pack has a zoom range. Outside it, offline, the map is
               // showing coarser tiles on purpose, and saying so once is the
               // difference between "working as designed" and "broken".
+              if (tilesOfflineNotice != null)
+                Container(
+                  key: const ValueKey<String>('map-tiles-offline'),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                  color: cs.surface,
+                  child: Text(tilesOfflineNotice,
+                      style: TextStyle(
+                          color: cs.onSurfaceVariant,
+                          fontSize: context.skin.type.sizeSm)),
+                ),
               if (packZoomNotice != null)
                 Container(
                   key: const ValueKey<String>('map-pack-zoom-banner'),
