@@ -180,4 +180,28 @@ void main() {
     expect(find.textContaining('Looks like a place: Seattle'), findsNothing);
     mc.dispose();
   });
+  testWidgets('the offer holds at 320 dp and 200 % text', (WidgetTester t) async {
+    await t.binding.setSurfaceSize(const Size(320, 640));
+    addTearDown(() => t.binding.setSurfaceSize(null));
+    final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
+    final MeshcoreController mc = _controller(fake);
+    await t.pumpWidget(
+      MediaQuery(
+        data: const MediaQueryData(textScaler: TextScaler.linear(2.0)),
+        child: _host(mc),
+      ),
+    );
+    await mc.connect();
+    fake.emit(selfInfoFrame());
+    await t.pumpAndSettle();
+    fake.emit(channelMsgFrame(text: 'hello from Seattle, 73'));
+    await t.pumpAndSettle();
+    // A name and two controls do not fit beside each other at this width;
+    // the line wraps instead of clipping, which is the whole point of the
+    // wrap in PlaceSuggestionLine.
+    expect(t.takeException(), isNull,
+        reason: 'the suggestion line overflowed at the accessibility floor');
+    expect(find.textContaining('Looks like a place: Seattle'), findsOneWidget);
+    mc.dispose();
+  });
 }
