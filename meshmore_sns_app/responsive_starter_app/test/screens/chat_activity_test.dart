@@ -82,11 +82,10 @@ void main() {
     fake.emit(selfInfoFrame());
     await t.pumpAndSettle();
 
-    // The strip answers "which channel", so the report is one item in the
-    // strip's overflow rather than a control competing with the channel names.
-    await t.tap(find.byKey(const ValueKey<String>('chat-overflow')));
-    await t.pumpAndSettle();
-    await t.tap(find.byKey(const ValueKey<String>('chat-activity')));
+    // One tap, not two: the report is about the selected channel, so it has
+    // its own control beside the strip's overflow rather than a row inside a
+    // menu where actions hide.
+    await t.tap(find.byKey(const ValueKey<String>('chat-activity-visible')));
     await t.pumpAndSettle();
 
     expect(find.byType(MeshbookView), findsOneWidget);
@@ -124,7 +123,8 @@ void main() {
       await t.pumpAndSettle();
       await t.tap(find.byKey(const ValueKey<String>('chat-overflow')));
       await t.pumpAndSettle();
-      await t.tap(find.byKey(const ValueKey<String>('chat-activity')));
+      await t.tap(
+          find.byKey(const ValueKey<String>('chat-activity-visible')));
       await t.pumpAndSettle();
       expect(t.takeException(), isNull, reason: 'preset ${preset.name}');
       expect(find.byType(MeshbookView), findsOneWidget,

@@ -706,6 +706,20 @@ class _ChatScreenState extends State<ChatScreen>
                 // live behind one control at its end instead of competing with
                 // the channel names (and instead of appearing only when a
                 // thread happens to have rows).
+                // The channel activity report is about the channel that is
+                // selected here, and it is the one thing in the strip people
+                // open for fun. A `more_vert` menu is where actions hide, so
+                // it gets its own control beside the strip's overflow rather
+                // than a fifth row inside it.
+                Padding(
+                  padding: const EdgeInsets.only(left: 4),
+                  child: IconButton(
+                    key: const ValueKey<String>('chat-activity-visible'),
+                    tooltip: l.meshbookTitle,
+                    onPressed: _openActivity,
+                    icon: const Icon(Icons.insights),
+                  ),
+                ),
                 Padding(
                   padding: const EdgeInsets.only(left: 4),
                   child: PopupMenuButton<String>(
@@ -720,8 +734,6 @@ class _ChatScreenState extends State<ChatScreen>
                           _exportThread(mc);
                         case 'manage':
                           context.push('/settings/channels');
-                        case 'activity':
-                          _openActivity();
                         case 'restore':
                           _restoreFromExport(mc);
                       }
@@ -780,25 +792,6 @@ class _ChatScreenState extends State<ChatScreen>
                             Expanded(
                               child: Text(
                                 l.chatRestoreMenu,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      PopupMenuItem<String>(
-                        key: const ValueKey<String>('chat-activity'),
-                        value: 'activity',
-                        child: Row(
-                          children: <Widget>[
-                            const Icon(Icons.insights, size: 20),
-                            const SizedBox(width: 12),
-                            // A menu row has to survive a long label on
-                            // a narrow screen: the text takes what is
-                            // left and ellipsises rather than overflowing.
-                            Expanded(
-                              child: Text(
-                                l.meshbookTitle,
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),
