@@ -37,6 +37,12 @@ class PingScreen extends StatelessWidget {
       title: l.toolPingName,
       tool: t,
       children: <Widget>[
+        // What the number means, before the number. The hub carries the same
+        // line, but a screen reached from a link or a deep route has to say it
+        // itself: "ping" reads as a call to a person, and this is a radio round
+        // trip to a node that chooses whether to answer.
+        ToolLine(l.toolPingSub, muted: true),
+        const SizedBox(height: 8),
         ToolField(
           label: l.pingTarget,
           child: ToolPickerButton(
@@ -95,6 +101,10 @@ class PingScreen extends StatelessWidget {
                 ToolLine(l.pingSummary(t.sent, t.replied, t.lost)),
                 if (t.rttMin != null)
                   ToolLine(l.pingRtt(t.rttMin!, t.rttAvg!, t.rttMax!)),
+                // "Lost" is not proof of absence: the request went out and no
+                // answer came back inside the time the radio estimated. A node
+                // that ignores requests, or one that is asleep, looks the same.
+                if (t.lost > 0) ToolLine(l.pingLostMeaning, muted: true),
               ],
             ),
           ),

@@ -558,7 +558,7 @@
   "locTileSubtitle": "スマートフォンの位置をラジオに送ります",
   "deviceGpsIntervalWhy": "このファームウェアがセンサーの読み取り間隔を決めるため、アプリからは変更できません。",
   "locMaster": "自動公開",
-  "locMasterOn": "オン — スマートフォン GPS 使用中",
+  "locMasterOn": "オン — 現在地を範囲内のすべてのノードに知らせます",
   "locMasterOff": "オフ",
   "locInterval": "定期間隔",
   "locMovement": "スマートブロードキャスト (移動検知)",
@@ -596,7 +596,7 @@
     }
   },
   "locPublishNow": "今すぐ公開",
-  "locPublishNowSub": "ループ動作の確認用に手動で 1 回送信。",
+  "locPublishNowSub": "現在地を一度だけ送ります。",
   "locLastPublished": "最終: {lat}, {lon}  ·  {time}  ·  {trigger}",
   "@locLastPublished": {
     "placeholders": {
@@ -615,7 +615,7 @@
     }
   },
   "locBeacon": "定期位置ビーコン",
-  "locBeaconSub": "60 秒ごとに位置を送ります。通信時間と電池を使います。",
+  "locBeaconSub": "60秒ごとに現在地を範囲内のすべてのノードに知らせます。通信時間と電池を使います。",
   "locBatteryHint": "GPS を流し続けると反応は速くなりますが、電池を多く使います。",
   "@globeFooter": {
     "placeholders": {
@@ -2560,5 +2560,9 @@
   "fabricNewestCell": "最新のセルは{ago}",
   "fabricNothingYet": "まだ記録はありません。メッシュを受信するとセルが埋まります。",
   "fabricAgoDays": "{d}日前",
-  "meshbookEmptyDetail": "このチャンネルの発言が記録されます。対象は直近24時間です。"
+  "meshbookEmptyDetail": "このチャンネルの発言が記録されます。対象は直近24時間です。",
+  "locTriggerManual": "手動",
+  "locTriggerPeriodic": "タイマー",
+  "locTriggerMovement": "移動",
+  "pingLostMeaning": "「応答なし」は、無線機が見積もった応答時間内に返事がなかったという意味です。要求を無視するノードも、休眠中のノードも同じに見えます。"
 }

@@ -114,11 +114,35 @@ class StreetMapView extends StatefulWidget {
     return 156543.03392 * c / math.pow(2, zoom).toDouble();
   }
 
+  /// Where the camera starts, given what the ladder resolved and whether the
+  /// user has moved the map themselves.
+  ///
+  /// A panned map is never moved again: a position that arrives after the user
+  /// has taken the camera stays where they put it, and the ladder's answer is
+  /// used only while they have not. This is the one rule the map has about
+  /// taking control from a finger, so it is a function with a name rather than
+  /// a `??` inside a widget literal.
+  @visibleForTesting
+  static LatLng initialCentreFor({
+    required MapCentre resolved,
+    required LatLng? userCentre,
+  }) =>
+      userCentre ?? resolved.centre;
+
+  /// The one line the map says when nothing is arriving from the network.
+  ///
+  /// The copy was written for the degraded model and never drawn: a user
+  /// offline with an empty cache saw a blank grey grid and no reason for it.
+  /// It is a function so the rule can be tested without standing up a live
+  /// map, which schedules timers and animations a widget test cannot settle.
+  static String? tilesOfflineNoticeFor(
+          AppLocalizations l, MapsController? maps) =>
+      maps == null || maps.online ? null : l.degradedMapOffline;
+
   /// True when a ring of [radiusMeters] is small enough to read on a screen
   /// [viewportMeters] tall. Half the viewport is the cut: past it the circle
   /// is an arc through the middle of the map with its centre off screen, which
   /// is the "stray line" the map used to show instead of a range.
-  @visibleForTesting
   static bool reachRingReadable(double radiusMeters, double viewportMeters) =>
       radiusMeters <= viewportMeters * .5;
 
@@ -475,6 +499,9 @@ class _StreetMapViewState extends State<StreetMapView> {
     final int zoomLevel = _zoom.round();
     final ({int minZoom, int maxZoom})? packSpan =
         maps?.packZoomSpan(shownSource);
+    final String? tilesOfflineNotice =
+        StreetMapView.tilesOfflineNoticeFor(l, maps);
+
     final String? packZoomNotice = maps == null ||
             maps.online ||
             packSpan == null ||
@@ -570,7 +597,8 @@ class _StreetMapViewState extends State<StreetMapView> {
           child: FlutterMap(
             mapController: _map,
             options: MapOptions(
-              initialCenter: _userCentre ?? start.centre,
+              initialCenter: StreetMapView.initialCentreFor(
+                  resolved: start, userCentre: _userCentre),
               initialZoom: _zoom,
               minZoom: _minZoom,
               maxZoom: _zoomMax,
@@ -860,6 +888,17 @@ class _StreetMapViewState extends State<StreetMapView> {
               // R114 — a pack has a zoom range. Outside it, offline, the map is
               // showing coarser tiles on purpose, and saying so once is the
               // difference between "working as designed" and "broken".
+              if (tilesOfflineNotice != null)
+                Container(
+                  key: const ValueKey<String>('map-tiles-offline'),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                  color: cs.surface,
+                  child: Text(tilesOfflineNotice,
+                      style: TextStyle(
+                          color: cs.onSurfaceVariant,
+                          fontSize: context.skin.type.sizeSm)),
+                ),
               if (packZoomNotice != null)
                 Container(
                   key: const ValueKey<String>('map-pack-zoom-banner'),

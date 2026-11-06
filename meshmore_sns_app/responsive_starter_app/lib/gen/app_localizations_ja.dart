@@ -1086,7 +1086,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get locMaster => '自動公開';
 
   @override
-  String get locMasterOn => 'オン — スマートフォン GPS 使用中';
+  String get locMasterOn => 'オン — 現在地を範囲内のすべてのノードに知らせます';
 
   @override
   String get locMasterOff => 'オフ';
@@ -1124,7 +1124,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get locPublishNow => '今すぐ公開';
 
   @override
-  String get locPublishNowSub => 'ループ動作の確認用に手動で 1 回送信。';
+  String get locPublishNowSub => '現在地を一度だけ送ります。';
 
   @override
   String locLastPublished(String lat, String lon, String time, String trigger) {
@@ -1135,7 +1135,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get locBeacon => '定期位置ビーコン';
 
   @override
-  String get locBeaconSub => '60 秒ごとに位置を送ります。通信時間と電池を使います。';
+  String get locBeaconSub => '60秒ごとに現在地を範囲内のすべてのノードに知らせます。通信時間と電池を使います。';
 
   @override
   String get locBatteryHint => 'GPS を流し続けると反応は速くなりますが、電池を多く使います。';
@@ -5600,4 +5600,17 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get meshbookEmptyDetail => 'このチャンネルの発言が記録されます。対象は直近24時間です。';
+
+  @override
+  String get locTriggerManual => '手動';
+
+  @override
+  String get locTriggerPeriodic => 'タイマー';
+
+  @override
+  String get locTriggerMovement => '移動';
+
+  @override
+  String get pingLostMeaning =>
+      '「応答なし」は、無線機が見積もった応答時間内に返事がなかったという意味です。要求を無視するノードも、休眠中のノードも同じに見えます。';
 }

@@ -597,7 +597,7 @@
   "locTileSubtitle": "Sends the phone's position to the radio",
   "deviceGpsIntervalWhy": "This firmware build decides how often the sensors are read, so the app cannot change it.",
   "locMaster": "Auto-publish",
-  "locMasterOn": "On — while the app is open",
+  "locMasterOn": "On — announces your position to every node in range",
   "locMasterOff": "Off",
   "locInterval": "Periodic interval",
   "locMovement": "Smart broadcast (on movement)",
@@ -635,7 +635,7 @@
     }
   },
   "locPublishNow": "Publish now",
-  "locPublishNowSub": "One-shot manual push to verify the loop.",
+  "locPublishNowSub": "Send your position once, now.",
   "locLastPublished": "Last: {lat}, {lon}  ·  {time}  ·  {trigger}",
   "@locLastPublished": {
     "placeholders": {
@@ -654,7 +654,7 @@
     }
   },
   "locBeacon": "Periodic position beacon",
-  "locBeaconSub": "Every 60 s, send your position. Uses airtime and battery.",
+  "locBeaconSub": "Every 60 s, announce your position to every node in range. Uses airtime and battery.",
   "locBatteryHint": "Streaming GPS reacts faster and uses more battery.",
   "@globeFooter": {
     "placeholders": {
@@ -3985,5 +3985,9 @@
   "fabricNewestCell": "newest cell {ago}",
   "fabricNothingYet": "nothing recorded yet — cells fill as you hear the mesh",
   "fabricAgoDays": "{d}d ago",
-  "meshbookEmptyDetail": "Messages on this channel fill it; the window is the last 24 hours."
+  "meshbookEmptyDetail": "Messages on this channel fill it; the window is the last 24 hours.",
+  "locTriggerManual": "you asked",
+  "locTriggerPeriodic": "on the timer",
+  "locTriggerMovement": "you moved",
+  "pingLostMeaning": "Lost means no answer inside the time the radio estimated for the reply. A node that ignores requests, or one that is asleep, looks the same."
 }
