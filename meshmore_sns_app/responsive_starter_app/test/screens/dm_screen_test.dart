@@ -13,6 +13,8 @@ import 'package:meshmore_sns_app/l10n/locale_controller.dart';
 import 'package:meshmore_sns_app/meshcore/meshcore_controller.dart';
 import 'package:meshmore_sns_app/notifications/notification_focus.dart';
 import 'package:meshmore_sns_app/screens/dm_screen.dart';
+import 'package:meshmore_sns_app/theme/mm_tokens.dart';
+import 'package:meshmore_sns_app/theme/theme_controller.dart';
 import 'package:meshmore_sns_app/tts/tts_controller.dart';
 
 import '../meshcore/fake_transport.dart';
@@ -102,6 +104,51 @@ void main() {
     expect(fake.sent.any((f) => f.isNotEmpty && f[0] == 0x02), isTrue);
     expect(find.text('reply to peer'), findsOneWidget);
     mc.dispose();
+  });
+
+  testWidgets('the thread holds 320 dp at 200 % text on paper',
+      (WidgetTester t) async {
+    await t.binding.setSurfaceSize(const Size(320, 780));
+    addTearDown(() => t.binding.setSurfaceSize(null));
+    final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
+    final MeshcoreController mc = MeshcoreController(
+      transportFactory: () async => fake,
+      connection:
+          MeshcoreConnection(handshakeTimeout: const Duration(seconds: 5)),
+    );
+    final ThemeController theme = ThemeController();
+    await theme.setPreset(MmThemePreset.studioLight);
+    await t.pumpWidget(MultiProvider(
+      providers: <SingleChildWidget>[
+        ChangeNotifierProvider<ThemeController>.value(value: theme),
+        ChangeNotifierProvider<MeshcoreController>.value(value: mc),
+        ChangeNotifierProvider<TtsController>(
+            create: (_) => TtsController(speaker: _SilentSpeaker())),
+      ],
+      child: MediaQuery(
+        data: const MediaQueryData(textScaler: TextScaler.linear(2.0)),
+        child: MaterialApp(
+          locale: const Locale('en'),
+          supportedLocales: LocaleController.supported,
+          localizationsDelegates: const <LocalizationsDelegate<Object>>[
+            AppLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          home: const DmScreen(
+            peerPubKeyHex:
+                'aabbccddeeff00000000000000000000000000000000000000000000000000',
+          ),
+        ),
+      ),
+    ));
+    await mc.connect();
+    fake.emit(selfInfoFrame());
+    await t.pumpAndSettle();
+    expect(t.takeException(), isNull);
+    mc.dispose();
+    await t.pump(const Duration(seconds: 1));
   });
 
   testWidgets('R58: the DM header sets the per-peer speech tri-state',
