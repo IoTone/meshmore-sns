@@ -894,7 +894,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get nodesUnfavTooltip => 'Remove from favourites';
 
   @override
-  String get gridTitle => 'Survey';
+  String get gridTitle => 'Hyperlocal grid';
 
   @override
   String get gridShowLegend => 'Show legend';
@@ -972,9 +972,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get gridViewRadial => 'Radial';
-
-  @override
-  String get gridViewGlobe => 'Globe';
 
   @override
   String get gridViewPicker => 'View';
@@ -5542,12 +5539,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get gridLegendSignalOnly => 'Hollow · no position';
 
   @override
-  String get gridOpenMap => 'Open the map';
-
-  @override
-  String get gridMoreViews => 'More views';
-
-  @override
   String get gridLegendMore => 'Full legend';
 
   @override
@@ -5642,10 +5633,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get gridPurposeWeather =>
       'Temperature, humidity and pressure, from nodes that report them.';
-
-  @override
-  String get gridPurposeGlobe =>
-      'The same positions on a globe, for distance at a glance.';
 
   @override
   String get gridPurposeTree =>

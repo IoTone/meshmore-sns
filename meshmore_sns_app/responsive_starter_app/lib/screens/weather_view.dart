@@ -269,12 +269,14 @@ class _SummaryCard extends StatelessWidget {
               style: TextStyle(
                   color: cs.onSurfaceVariant, fontSize: context.skin.type.sizeSm, letterSpacing: 2)),
           const SizedBox(height: 10),
+          // Three readings share the width instead of each asking for its
+          // natural one: at 200 % text on a 320 dp phone the row of three
+          // numbers is wider than the card (found by the floor test).
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: <Widget>[
-              stat(l.weatherMin, minC),
-              stat(l.weatherAvg, avgC),
-              stat(l.weatherMax, maxC),
+              Expanded(child: stat(l.weatherMin, minC)),
+              Expanded(child: stat(l.weatherAvg, avgC)),
+              Expanded(child: stat(l.weatherMax, maxC)),
             ],
           ),
         ],
@@ -432,12 +434,18 @@ class _MicroclimateStrip extends StatelessWidget {
             children: <Widget>[
               Icon(Icons.cloud_queue, size: 14, color: cs.primary),
               const SizedBox(width: 6),
-              Text('${l.wxMicroclimateTitle} · $channelLabel',
-                  style: TextStyle(
-                      color: cs.primary,
-                      fontSize: context.skin.type.sizeSm,
-                      letterSpacing: 2,
-                      fontWeight: FontWeight.w600)),
+              // The channel name is unbounded and can be long; the label takes
+              // what is left and ellipsises rather than leaving the card.
+              Flexible(
+                child: Text('${l.wxMicroclimateTitle} · $channelLabel',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                        color: cs.primary,
+                        fontSize: context.skin.type.sizeSm,
+                        letterSpacing: 2,
+                        fontWeight: FontWeight.w600)),
+              ),
             ],
           ),
           const SizedBox(height: 10),

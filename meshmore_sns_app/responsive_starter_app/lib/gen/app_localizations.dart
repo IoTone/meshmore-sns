@@ -1637,7 +1637,7 @@ abstract class AppLocalizations {
   /// No description provided for @gridTitle.
   ///
   /// In en, this message translates to:
-  /// **'Survey'**
+  /// **'Hyperlocal grid'**
   String get gridTitle;
 
   /// No description provided for @gridShowLegend.
@@ -1777,12 +1777,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Radial'**
   String get gridViewRadial;
-
-  /// No description provided for @gridViewGlobe.
-  ///
-  /// In en, this message translates to:
-  /// **'Globe'**
-  String get gridViewGlobe;
 
   /// No description provided for @gridViewPicker.
   ///
@@ -9316,18 +9310,6 @@ abstract class AppLocalizations {
   /// **'Hollow · no position'**
   String get gridLegendSignalOnly;
 
-  /// No description provided for @gridOpenMap.
-  ///
-  /// In en, this message translates to:
-  /// **'Open the map'**
-  String get gridOpenMap;
-
-  /// No description provided for @gridMoreViews.
-  ///
-  /// In en, this message translates to:
-  /// **'More views'**
-  String get gridMoreViews;
-
   /// No description provided for @gridLegendMore.
   ///
   /// In en, this message translates to:
@@ -9513,12 +9495,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Temperature, humidity and pressure, from nodes that report them.'**
   String get gridPurposeWeather;
-
-  /// No description provided for @gridPurposeGlobe.
-  ///
-  /// In en, this message translates to:
-  /// **'The same positions on a globe, for distance at a glance.'**
-  String get gridPurposeGlobe;
 
   /// No description provided for @gridPurposeTree.
   ///

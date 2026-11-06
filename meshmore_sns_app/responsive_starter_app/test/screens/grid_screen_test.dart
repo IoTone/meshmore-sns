@@ -260,11 +260,9 @@ void main() {
 
     // The equal grid was deleted with R117: equal-area cells answered the same
     // question the Map tab answers better, and its own doc called it a stage-1
-    // skeleton. The picker must not offer it any more.
+    // skeleton. The picker lists every view at one level now, so the check is
+    // simply that no row offers it.
     await t.tap(find.byTooltip('View'));
-    await t.pump();
-    await t.pump(const Duration(milliseconds: 400));
-    await t.tap(find.text('More views').last);
     await t.pump();
     await t.pump(const Duration(milliseconds: 400));
     expect(find.text('Equal grid'), findsNothing,

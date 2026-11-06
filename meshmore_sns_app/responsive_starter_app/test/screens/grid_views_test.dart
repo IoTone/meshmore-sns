@@ -11,7 +11,6 @@ import 'package:meshmore_sns_app/l10n/locale_controller.dart';
 import 'package:meshmore_sns_app/meshcore/meshcore_controller.dart';
 import 'package:meshmore_sns_app/screens/elevation_profile_view.dart';
 import 'package:meshmore_sns_app/screens/fabric_survey_view.dart';
-import 'package:meshmore_sns_app/screens/globe_view.dart';
 import 'package:meshmore_sns_app/screens/grid_screen.dart';
 import 'package:meshmore_sns_app/screens/mesh_tree_view.dart';
 import 'package:meshmore_sns_app/screens/sns_cells_view.dart';
@@ -22,7 +21,9 @@ import 'package:meshmore_sns_app/theme/theme_controller.dart';
 
 import '../meshcore/fake_transport.dart';
 
-Widget _host(MeshcoreController mc, {ShellViewRequest? request}) => MaterialApp(
+Widget _host(MeshcoreController mc,
+        {ShellViewRequest? request, TextScaler textScaler = TextScaler.noScaling}) =>
+    MaterialApp(
       locale: const Locale('en'),
       supportedLocales: LocaleController.supported,
       localizationsDelegates: const <LocalizationsDelegate<Object>>[
@@ -38,20 +39,19 @@ Widget _host(MeshcoreController mc, {ShellViewRequest? request}) => MaterialApp(
               create: (_) => ThemeController()),
           ChangeNotifierProvider<ShellViewRequest?>.value(value: request),
         ],
-        child: const Scaffold(body: GridScreen()),
+        child: MediaQuery(
+          data: MediaQueryData(textScaler: textScaler),
+          child: const Scaffold(body: GridScreen()),
+        ),
       ),
     );
 
-Future<void> _openView(WidgetTester t, String label,
-    {bool more = false}) async {
+/// Opens the view picker and chooses [label]. One level: every view this tab
+/// ships is in the same list.
+Future<void> _openView(WidgetTester t, String label) async {
   await t.tap(find.byTooltip('View'));
   await t.pump();
   await t.pump(const Duration(milliseconds: 400));
-  if (more) {
-    await t.tap(find.text('More views').last);
-    await t.pump();
-    await t.pump(const Duration(milliseconds: 400));
-  }
   await t.tap(find.text(label).last);
   await t.pump();
   await t.pump(const Duration(milliseconds: 400));
@@ -63,8 +63,8 @@ void main() {
     shellDragClaim.reset();
   });
 
-  testWidgets('the picker leads with three views, the map hand-off and one '
-      'level down', (WidgetTester t) async {
+  testWidgets('the picker lists every view at one level, plus the map hand-off',
+      (WidgetTester t) async {
     await t.binding.setSurfaceSize(const Size(800, 1600));
     addTearDown(() => t.binding.setSurfaceSize(null));
     final MeshcoreController mc = MeshcoreController(
@@ -76,26 +76,23 @@ void main() {
     await t.pump();
     await t.pump(const Duration(milliseconds: 400));
 
-    // The three that suit a small mesh, in order. "Radial" appears twice: the
-    // toolbar shows the current view's name and the sheet lists it.
+    // Every view in one list. "Radial" appears twice: the toolbar shows the
+    // current view's name and the sheet lists it.
     expect(find.text('Radial'), findsNWidgets(2));
     expect(find.text('Coverage'), findsOneWidget);
     expect(find.text('Weather (environment)'), findsOneWidget);
-    // The map is a hand-off, not a seventh view of the same widget.
-    expect(find.text('Open the map'), findsOneWidget);
-    expect(find.text('More views'), findsOneWidget);
+    expect(find.text('Mesh tree'), findsOneWidget);
+    expect(find.text('Altitude'), findsOneWidget);
+    expect(find.text('SNS cells (heat)'), findsOneWidget);
+    // The tab does not route to another tab: the map is the Map tab's job,
+    // and there is no hand-off row here.
+    expect(find.text('Open the map'), findsNothing);
+    // A second level hid four working views behind a menu. It is gone.
+    expect(find.text('More views'), findsNothing);
     // R117: the street map is the Map tab's widget, and the equal grid was
     // deleted with it — neither may appear as a view of this tab.
     expect(find.text('Street map'), findsNothing);
     expect(find.text('Equal grid'), findsNothing);
-
-    // The parked views are one step down, and still reachable.
-    await t.tap(find.text('More views').last);
-    await t.pump();
-    await t.pump(const Duration(milliseconds: 400));
-    expect(find.text('Globe'), findsOneWidget);
-    expect(find.text('Mesh tree'), findsOneWidget);
-    expect(find.text('Altitude'), findsOneWidget);
     await t.pumpWidget(const SizedBox());
     mc.dispose();
   });
@@ -119,8 +116,8 @@ void main() {
       expect(find.text(e.value), findsOneWidget,
           reason: '${e.key} must say what it answers, not only its name');
     }
-    // A parked view carries its line too.
-    await _openView(t, 'Mesh tree', more: true);
+    // A narrower view carries its line too.
+    await _openView(t, 'Mesh tree');
     expect(
         find.text('How nodes reach each other, from the routes they '
             'advertise.'),
@@ -129,7 +126,7 @@ void main() {
     mc.dispose();
   });
 
-  testWidgets('the map row asks the shell for the map tab',
+  testWidgets('the tab offers no way to another tab',
       (WidgetTester t) async {
     await t.binding.setSurfaceSize(const Size(800, 1600));
     addTearDown(() => t.binding.setSurfaceSize(null));
@@ -142,10 +139,9 @@ void main() {
     await t.tap(find.byTooltip('View'));
     await t.pump();
     await t.pump(const Duration(milliseconds: 400));
-    await t.tap(find.text('Open the map').last);
-    await t.pump();
-    expect(request.seq, greaterThan(before));
-    expect(request.view, RequestedView.map);
+    expect(find.text('Open the map'), findsNothing,
+        reason: 'the grid is a destination, not a router');
+    expect(request.seq, before);
     await t.pumpWidget(const SizedBox());
     mc.dispose();
   });
@@ -159,25 +155,47 @@ void main() {
     await t.pumpWidget(_host(mc));
     await t.pump();
 
-    // Primary views.
     await _openView(t, 'Coverage');
     expect(find.byType(FabricSurveyView), findsOneWidget);
     await _openView(t, 'Weather (environment)');
     expect(find.byType(WeatherView), findsOneWidget);
-
-    // Parked views, one level down.
-    await _openView(t, 'Globe', more: true);
-    expect(find.byType(GlobeView), findsOneWidget);
-    await _openView(t, 'Mesh tree', more: true);
+    await _openView(t, 'Mesh tree');
     expect(find.byType(MeshTreeView), findsOneWidget);
-    await _openView(t, 'Altitude', more: true);
+    await _openView(t, 'Altitude');
     expect(find.byType(ElevationProfileView), findsOneWidget);
-    // SNS cells is the last row in More views.
-    await _openView(t, 'SNS cells (heat)', more: true);
+    await _openView(t, 'SNS cells (heat)');
     expect(find.byType(SnsCellsView), findsOneWidget);
 
     // No radio: every one of them says so instead of showing a blank canvas.
     expect(find.text('Not Connected to Mesh'), findsWidgets);
+    await t.pumpWidget(const SizedBox());
+    mc.dispose();
+  });
+
+  // The accessibility floor applies to every view this tab ships, not only to
+  // the three the primary list used to show. A RenderFlex overflow is an
+  // exception in a widget test, so `takeException` is the assertion.
+  testWidgets('every view holds 320 dp at 200 % text', (WidgetTester t) async {
+    await t.binding.setSurfaceSize(const Size(320, 700));
+    addTearDown(() => t.binding.setSurfaceSize(null));
+    final MeshcoreController mc = MeshcoreController(
+        transportFactory: () async => FakeMeshcoreTransport());
+    await t.pumpWidget(_host(mc, textScaler: const TextScaler.linear(2.0)));
+    await t.pump();
+    expect(t.takeException(), isNull, reason: 'the tab itself overflowed');
+
+    for (final String label in <String>[
+      'Coverage',
+      'Weather (environment)',
+      'Mesh tree',
+      'Altitude',
+      'SNS cells (heat)',
+      'Radial',
+    ]) {
+      await _openView(t, label);
+      expect(t.takeException(), isNull,
+          reason: '$label overflowed at 320 dp and 200 % text');
+    }
     await t.pumpWidget(const SizedBox());
     mc.dispose();
   });
