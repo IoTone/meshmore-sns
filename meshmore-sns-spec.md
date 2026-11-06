@@ -1291,23 +1291,7 @@ the sibling specs: R93 in `meshmore-sns-maps-spec.md`, R60 in
   numeric sizes, zero literal monospace families, enforced by `test/screens/grid_views_type_test.dart`), and a
   view closed while its poll indicator is pending cancels that timer instead of leaving it to fire after
   disposal.
-- R114: **a block can be moved to the dashboard, and the dashboard stops printing a debug line.** The home
-  screen answers "what is happening" and had no way to answer "what do I care about". Only content blocks are
-  pinnable, never navigation entries: the SOS action, the Chat tab and the map's Places button are the only route
-  to what they open, so pinning one would duplicate a path or strand a feature. Three blocks qualify today: the
-  coverage summary and the field/trail export block on the coverage screen, and the radio-health block in
-  Diagnostics. Pinning moves a block rather than copying it: its own screen renders through `PinnableBlockHost`,
-  which returns nothing at all while the block is pinned, so the screen lays out without the block and without a
-  ghost row, and the dashboard's card is then the block's only render site. The pin affordance sits in the
-  block's own header overflow across from the fold, the card's overflow carries one action that puts the block
-  back, and membership, order and expansion are one store with a closed id set loaded before the first frame. One
-  section serves all seven skins: the host passes it into each dashboard's own children, and the two
-  fixed-viewport skins get a bounded strip that scrolls inside itself. Per-skin paint, numerals and ornament are
-  untouched on purpose, because the app's author wants the skins to keep different character. The raw `selfInfo`
-  latitude, `advertLocPolicy` integer and phone fix are no longer printed under the location value: that is a
-  developer readout on the home screen, and it belongs in the Diagnostics developer section. Definition: a
-  pinned block has exactly one render site, a closed card is 64 dp plus the closing rule, its block is not built
-  while closed, and its semantics carry `expanded`.
+- R114: **the pinned-blocks section was removed the day after it landed.** R114 gave the home screen a way to answer "what do I care about" by moving a content block — the coverage summary, the field/trail export, the radio-health block — off its own screen and onto the dashboard, with the origin laying out without it and the card as the block's only render site. The owner withdrew the premise on 2026-11-05 ("it seems like we have no use case for what I was describing, the movable elements and swappable and movable-to-be-moved-into-the-dashboard"): every block it could move is already visible on the screen that owns it, so the registry, the store, the card, the host, the header affordance and their strings are gone. What R114 got right and stays: the raw `selfInfo` latitude, the `advertLocPolicy` integer and the phone fix are not printed on the home screen; that readout lives in the Diagnostics developer section. What building it taught: a block moved away from the screen a user is looking at is a block they then cannot find.
 - R112: **the datagram's profile byte is read out.** The channel-datagram receive frame carries a
   byte that the mainline firmware writes as 0 and a two-profile radio fills with the profile the packet
   arrived on. The decoder now names it (`RxVia`), and Diagnostics states it with the channel and the
