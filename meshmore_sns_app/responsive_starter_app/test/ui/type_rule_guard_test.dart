@@ -121,7 +121,6 @@ void main() {
       'lib/screens/doc_reader_screen.dart': 1,
       'lib/screens/elevation_profile_view.dart': 8,
       'lib/screens/fabric_survey_view.dart': 1,
-      'lib/screens/globe_view.dart': 3,
       'lib/screens/location_settings_screen.dart': 1,
       'lib/screens/meshbook_view.dart': 3,
       'lib/screens/mesh_tree_view.dart': 3,

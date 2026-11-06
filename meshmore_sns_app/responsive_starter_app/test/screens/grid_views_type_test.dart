@@ -27,7 +27,6 @@ void main() {
   setUp(() => SharedPreferences.setMockInitialValues(<String, Object>{}));
 
   const List<String> views = <String>[
-    'lib/screens/globe_view.dart',
         'lib/screens/street_map_view.dart',
     'lib/screens/fabric_survey_view.dart',
     'lib/screens/elevation_profile_view.dart',

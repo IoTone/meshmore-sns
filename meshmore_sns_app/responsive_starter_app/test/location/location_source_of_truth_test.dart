@@ -16,7 +16,9 @@ import 'package:flutter_test/flutter_test.dart';
 ///    unreachable and every peer fell to the RSSI-ring placement.
 ///  - `globe_view.dart` preferred the cached phone fix over the device's,
 ///    the inverse of `ownLocation`, so it could centre somewhere else
-///    than every other screen.
+///    than every other screen. The globe itself was removed from the
+///    product on 2026-11-05; the rule outlived it, which is why the
+///    radar and the map are still held to it below.
 ///
 /// These assertions are deliberately textual: the failure mode is a
 /// view picking the wrong *source*, which no behavioural widget test
@@ -67,36 +69,17 @@ void main() {
             'phone-fallback rule:\n${offenders.join('\n')}');
   });
 
-  test('the radar and the globe both go through ownLocation', () {
-    for (final String path in <String>[
-      'lib/screens/grid_screen.dart',
-      'lib/screens/globe_view.dart',
-    ]) {
-      final File f = File(path);
-      expect(f.existsSync(), isTrue, reason: '$path must exist');
-      final String src = f.readAsStringSync();
-      expect(src.contains('ownLocation'), isTrue,
-          reason: '$path must take our position from mc.ownLocation');
-      for (final (int n, String line) in codeLines(f)) {
-        expect(line.contains('selfInfo'), isFalse,
-            reason: '$path:$n reads selfInfo — this file must not pick a '
-                'position source of its own:\n  ${line.trim()}');
-      }
+  test('the radar goes through ownLocation', () {
+    final File f = File('lib/screens/grid_screen.dart');
+    expect(f.existsSync(), isTrue, reason: 'lib/screens/grid_screen.dart must exist');
+    final String src = f.readAsStringSync();
+    expect(src.contains('ownLocation'), isTrue,
+        reason: 'the radar must take our position from mc.ownLocation');
+    for (final (int n, String line) in codeLines(f)) {
+      expect(line.contains('selfInfo'), isFalse,
+          reason: 'grid_screen.dart:$n reads selfInfo — this file must not '
+              'pick a position source of its own:\n  ${line.trim()}');
     }
   });
 
-  test('the globe is device-first, not phone-first', () {
-    // The specific inversion: `phoneLocationFix ?? selfInfo`. The device
-    // fix is the authoritative one; a stale cached phone fix must not
-    // outrank it.
-    final String src = File('lib/screens/globe_view.dart').readAsStringSync();
-    final RegExp phoneFirst =
-        RegExp(r'phoneLocationFix\s*\?\?|\?phoneLocationFix');
-    for (final (int n, String line) in codeLines(File('lib/screens/globe_view.dart'))) {
-      expect(phoneFirst.hasMatch(line), isFalse,
-          reason: 'globe_view.dart:$n prefers the phone fix over the '
-              'device fix again:\n  ${line.trim()}');
-    }
-    expect(src, contains('ownLocation'));
-  });
 }

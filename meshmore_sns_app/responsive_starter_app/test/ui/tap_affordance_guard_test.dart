@@ -133,7 +133,6 @@ void main() {
       'lib/screens/fabric_survey_view.dart',
       'lib/screens/mesh_tree_view.dart',
       'lib/screens/equal_grid_view.dart',
-      'lib/screens/globe_view.dart',
     ];
     final List<String> offenders = <String>[];
     for (final String rel in canvasFiles) {

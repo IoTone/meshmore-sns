@@ -127,7 +127,6 @@ void main() {
       'lib/screens/equal_grid_view.dart': 1,
       'lib/screens/fabric_survey_view.dart': 1,
       'lib/screens/first_run_intro_screen.dart': 4,
-      'lib/screens/globe_view.dart': 2,
       'lib/screens/location_settings_screen.dart': 1,
       'lib/screens/meshbook_view.dart': 14,
       'lib/screens/mesh_tree_view.dart': 2,
