@@ -1092,23 +1092,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String globeFooter(int n) {
-    return 'Showing $n nodes with a known location';
-  }
-
-  @override
-  String get globeOverlayArcs => 'arcs';
-
-  @override
-  String get globeOverlayRegion => 'region';
-
-  @override
-  String get globeOverlayLabels => 'labels';
-
-  @override
-  String get globeAltitude => 'ALT';
-
-  @override
   String get globePaused => 'PAUSED';
 
   @override

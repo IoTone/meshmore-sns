@@ -1034,23 +1034,6 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String globeFooter(int n) {
-    return '位置が分かる $n 件のノードを表示';
-  }
-
-  @override
-  String get globeOverlayArcs => 'アーク';
-
-  @override
-  String get globeOverlayRegion => '地域';
-
-  @override
-  String get globeOverlayLabels => 'ラベル';
-
-  @override
-  String get globeAltitude => '高度';
-
-  @override
   String get globePaused => '一時停止';
 
   @override

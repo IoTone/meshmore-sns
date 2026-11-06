@@ -1982,36 +1982,6 @@ abstract class AppLocalizations {
   /// **'{label} loaded — Apply when a device is connected.'**
   String deviceRegionLoadedOffline(String label);
 
-  /// No description provided for @globeFooter.
-  ///
-  /// In en, this message translates to:
-  /// **'Showing {n} nodes with a known location'**
-  String globeFooter(int n);
-
-  /// No description provided for @globeOverlayArcs.
-  ///
-  /// In en, this message translates to:
-  /// **'arcs'**
-  String get globeOverlayArcs;
-
-  /// No description provided for @globeOverlayRegion.
-  ///
-  /// In en, this message translates to:
-  /// **'region'**
-  String get globeOverlayRegion;
-
-  /// No description provided for @globeOverlayLabels.
-  ///
-  /// In en, this message translates to:
-  /// **'labels'**
-  String get globeOverlayLabels;
-
-  /// No description provided for @globeAltitude.
-  ///
-  /// In en, this message translates to:
-  /// **'ALT'**
-  String get globeAltitude;
-
   /// No description provided for @globePaused.
   ///
   /// In en, this message translates to:

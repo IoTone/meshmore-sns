@@ -506,11 +506,6 @@
       }
     }
   },
-  "globeFooter": "位置が分かる {n} 件のノードを表示",
-  "globeOverlayArcs": "アーク",
-  "globeOverlayRegion": "地域",
-  "globeOverlayLabels": "ラベル",
-  "globeAltitude": "高度",
   "globePaused": "一時停止",
   "voiceOfflineBadge": "オフライン",
   "dashboardLocationRefresh": "デバイスから位置を更新",

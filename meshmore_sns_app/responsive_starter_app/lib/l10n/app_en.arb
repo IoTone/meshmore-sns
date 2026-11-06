@@ -555,11 +555,6 @@
       }
     }
   },
-  "globeFooter": "Showing {n} nodes with a known location",
-  "globeOverlayArcs": "arcs",
-  "globeOverlayRegion": "region",
-  "globeOverlayLabels": "labels",
-  "globeAltitude": "ALT",
   "globePaused": "PAUSED",
   "voiceOfflineBadge": "OFFLINE",
   "dashboardLocationRefresh": "Refresh location from device",
