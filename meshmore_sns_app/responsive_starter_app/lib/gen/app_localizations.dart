@@ -9807,6 +9807,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'The arrow is this phone\'s compass.'**
   String get mapCompassLegend;
+
+  /// No description provided for @diagnosticsPosition.
+  ///
+  /// In en, this message translates to:
+  /// **'Position, as the app sees it'**
+  String get diagnosticsPosition;
+
+  /// No description provided for @diagnosticsPositionRadio.
+  ///
+  /// In en, this message translates to:
+  /// **'radio {lat}, {lon}'**
+  String diagnosticsPositionRadio(Object lat, Object lon);
+
+  /// No description provided for @diagnosticsPositionPolicy.
+  ///
+  /// In en, this message translates to:
+  /// **'advert policy {policy}'**
+  String diagnosticsPositionPolicy(Object policy);
+
+  /// No description provided for @diagnosticsPositionPhone.
+  ///
+  /// In en, this message translates to:
+  /// **'phone fix {source}'**
+  String diagnosticsPositionPhone(Object source);
+
+  /// No description provided for @diagnosticsPositionNone.
+  ///
+  /// In en, this message translates to:
+  /// **'none'**
+  String get diagnosticsPositionNone;
 }
 
 class _AppLocalizationsDelegate

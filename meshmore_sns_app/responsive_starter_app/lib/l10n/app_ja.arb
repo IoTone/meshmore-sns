@@ -2369,7 +2369,7 @@
   "gpxExportShared": "軌跡を共有できます。",
   "gpxExportDone": "軌跡を書き出しました。パスはクリップボードにあります: {path}",
   "chatSearchAction": "メッセージを検索",
-    "settingsHistoryExportRow": "すべての履歴を書き出す",
+  "settingsHistoryExportRow": "すべての履歴を書き出す",
   "settingsHistoryExportSubtitle": "すべての会話をまとめた暗号化ファイルを1つ作成します。保存先はあなたが選びます。",
   "settingsHistoryExportTitle": "バックアップのパスフレーズ",
   "settingsHistoryExportConfirm": "書き出す",
@@ -2564,5 +2564,10 @@
   "placeSuggestReport": "場所を報告",
   "placeSuggestDismiss": "閉じる",
   "placeSuggestNeedsLocation": "場所を報告するには位置情報をオンにしてください。",
-  "mapCompassLegend": "矢印はこの端末の方位磁針です。"
+  "mapCompassLegend": "矢印はこの端末の方位磁針です。",
+  "diagnosticsPosition": "アプリが見ている位置",
+  "diagnosticsPositionRadio": "無線機 {lat}, {lon}",
+  "diagnosticsPositionPolicy": "位置広告の方針 {policy}",
+  "diagnosticsPositionPhone": "スマートフォンの測位 {source}",
+  "diagnosticsPositionNone": "なし"
 }

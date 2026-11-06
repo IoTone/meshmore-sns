@@ -423,6 +423,32 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
                     ],
                   ),
                 ),
+                // Where the position the app acts on actually came from,
+                // in raw numbers. This readout used to sit on the dashboard
+                // under the location value, where it was developer detail in a
+                // place a user reads; the values are the same, the audience is
+                // now the developer section that exists for exactly this.
+                section(l.diagnosticsPosition),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Wrap(
+                    spacing: 16,
+                    runSpacing: 6,
+                    children: <Widget>[
+                      fact(l.diagnosticsPositionRadio(
+                          mc.selfInfo?.latitude.toStringAsFixed(6) ?? '—',
+                          mc.selfInfo?.longitude.toStringAsFixed(6) ?? '—')),
+                      fact(l.diagnosticsPositionPolicy(
+                          mc.customVars['advert_loc_policy'] ??
+                              mc.customVars['advertLocPolicy'] ??
+                              '—')),
+                      fact(l.diagnosticsPositionPhone(
+                          mc.ownLocation == null
+                              ? l.diagnosticsPositionNone
+                              : mc.ownLocation!.source.name)),
+                    ],
+                  ),
+                ),
                 // The retained raw-send capability, with the caller D10.1
                 // kept it for: one typed record to one contact, answered by
                 // the radio's own OK or ERR rather than by a chat row.

@@ -5828,4 +5828,25 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mapCompassLegend => 'The arrow is this phone\'s compass.';
+
+  @override
+  String get diagnosticsPosition => 'Position, as the app sees it';
+
+  @override
+  String diagnosticsPositionRadio(Object lat, Object lon) {
+    return 'radio $lat, $lon';
+  }
+
+  @override
+  String diagnosticsPositionPolicy(Object policy) {
+    return 'advert policy $policy';
+  }
+
+  @override
+  String diagnosticsPositionPhone(Object source) {
+    return 'phone fix $source';
+  }
+
+  @override
+  String get diagnosticsPositionNone => 'none';
 }

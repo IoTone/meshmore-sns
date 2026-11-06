@@ -3566,14 +3566,18 @@
     }
   },
   "chatSearchAction": "Search messages",
-    "settingsHistoryExportRow": "Export all history",
+  "settingsHistoryExportRow": "Export all history",
   "settingsHistoryExportSubtitle": "One encrypted file, with every conversation in it. You choose where it goes.",
   "settingsHistoryExportTitle": "Passphrase for the backup",
   "settingsHistoryExportConfirm": "Export",
   "settingsHistoryExportShared": "History ready to share.",
   "settingsHistoryExportDone": "History saved to {path}",
   "@settingsHistoryExportDone": {
-    "placeholders": { "path": { "type": "String" } }
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
   },
   "settingsHistoryExportEmpty": "There is no history to export yet.",
   "chatExportAction": "Export this conversation",
@@ -3995,5 +3999,10 @@
   "placeSuggestReport": "Report place",
   "placeSuggestDismiss": "Dismiss",
   "placeSuggestNeedsLocation": "Turn on location to report a place.",
-  "mapCompassLegend": "The arrow is this phone's compass."
+  "mapCompassLegend": "The arrow is this phone's compass.",
+  "diagnosticsPosition": "Position, as the app sees it",
+  "diagnosticsPositionRadio": "radio {lat}, {lon}",
+  "diagnosticsPositionPolicy": "advert policy {policy}",
+  "diagnosticsPositionPhone": "phone fix {source}",
+  "diagnosticsPositionNone": "none"
 }

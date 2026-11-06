@@ -5601,4 +5601,25 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get mapCompassLegend => '矢印はこの端末の方位磁針です。';
+
+  @override
+  String get diagnosticsPosition => 'アプリが見ている位置';
+
+  @override
+  String diagnosticsPositionRadio(Object lat, Object lon) {
+    return '無線機 $lat, $lon';
+  }
+
+  @override
+  String diagnosticsPositionPolicy(Object policy) {
+    return '位置広告の方針 $policy';
+  }
+
+  @override
+  String diagnosticsPositionPhone(Object source) {
+    return 'スマートフォンの測位 $source';
+  }
+
+  @override
+  String get diagnosticsPositionNone => 'なし';
 }
