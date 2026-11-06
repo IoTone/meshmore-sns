@@ -110,6 +110,7 @@ MediaSendResult resultFor(ChannelDataSendStatus status) => switch (status) {
       ChannelDataSendStatus.refusedLocally => MediaSendResult.refused,
       ChannelDataSendStatus.refusedByRadio => MediaSendResult.refused,
       ChannelDataSendStatus.notReady => MediaSendResult.tableFull,
+      ChannelDataSendStatus.refusedAirtime => MediaSendResult.budgetRefused,
     };
 
 /// One outbound transfer, driven by the sender's pacing.

@@ -20,6 +20,11 @@ enum MediaSendResult {
   /// The radio refused the datagram itself. This is the only result that can
   /// cost a chunk for good.
   refused,
+
+  /// This app's own duty-cycle meter refused it before the radio saw the
+  /// frame. Capacity, like [tableFull], and it clears when the window rolls
+  /// over: the chunk goes back at the front and no attempt is spent.
+  budgetRefused,
 }
 
 /// One datagram the sender wants on air.
@@ -190,6 +195,9 @@ final class MediaSender {
       case MediaSendResult.accepted:
         _delivered.add(index);
       case MediaSendResult.tableFull:
+        _pending.addFirst(index);
+        _pausedUntil = _clock().add(tableFullBackoff);
+      case MediaSendResult.budgetRefused:
         _pending.addFirst(index);
         _pausedUntil = _clock().add(tableFullBackoff);
       case MediaSendResult.refused:

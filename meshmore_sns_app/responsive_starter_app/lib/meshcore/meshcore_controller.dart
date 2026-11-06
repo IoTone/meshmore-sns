@@ -1316,6 +1316,10 @@ class MeshcoreController extends ChangeNotifier {
       _dropPending(_channelDataMarker);
       // The frame was written, so the radio may have transmitted it.
       return const ChannelDataSendResult(ChannelDataSendStatus.noAnswer);
+    } on AirtimeRefused {
+      _dropPending(_channelDataMarker);
+      return const ChannelDataSendResult(
+          ChannelDataSendStatus.refusedAirtime);
     } catch (_) {
       _dropPending(_channelDataMarker);
       _emitTaskError('sendChannelData');

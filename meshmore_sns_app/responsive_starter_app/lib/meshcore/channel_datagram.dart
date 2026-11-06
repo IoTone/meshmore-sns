@@ -70,6 +70,12 @@ enum ChannelDataSendStatus {
   /// have transmitted, so a caller that meters airtime must still charge it.
   noAnswer,
 
+  /// Refused by this app's own duty-cycle meter before the radio saw it.
+  /// Distinct from [notReady] because it is this app's budget, not the link:
+  /// the caller can say "you are over this hour's allowance" and wait, rather
+  /// than blaming the connection.
+  refusedAirtime,
+
   /// The link is not ready; nothing was written.
   notReady,
 }
