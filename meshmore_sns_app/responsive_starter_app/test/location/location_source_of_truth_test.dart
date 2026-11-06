@@ -21,10 +21,13 @@ import 'package:flutter_test/flutter_test.dart';
 /// These assertions are deliberately textual: the failure mode is a
 /// view picking the wrong *source*, which no behavioural widget test
 /// notices until the two sources disagree, and the radar has no
-/// observable seam. `dashboard_screen.dart`'s `_LocationDebugLine` is
-/// the one deliberate exception — it exists to print the raw wire values
-/// so the two sources can be compared by eye — so it is excluded by
-/// name here rather than by pattern.
+/// observable seam.
+///
+/// Two files are excluded by name, both because their job is to print the raw
+/// wire values so the two sources can be compared by eye rather than to decide
+/// where "we" are: the dashboard's `_LocationDebugLine` and the Diagnostics
+/// developer section's position readout, which is where that line moved when
+/// it left the home screen. A view that picks a source is still caught.
 void main() {
   final Directory lib = Directory('lib');
 
@@ -52,6 +55,7 @@ void main() {
     for (final FileSystemEntity e in lib.listSync(recursive: true)) {
       if (e is! File || !e.path.endsWith('.dart')) continue;
       if (e.path.endsWith('dashboard_screen.dart')) continue; // by design
+      if (e.path.endsWith('diagnostics_screen.dart')) continue; // raw readout
       for (final (int n, String line) in codeLines(e)) {
         if (re.hasMatch(line)) {
           offenders.add('${e.path}:$n: ${line.trim()}');
