@@ -395,6 +395,30 @@ void main() {
     await _settle(t);
   });
 
+  testWidgets('the destination sheet keeps its actions at 320 dp and 200 %',
+      (WidgetTester t) async {
+    await t.binding.setSurfaceSize(const Size(320, 640));
+    addTearDown(() => t.binding.setSurfaceSize(null));
+    await t.pumpWidget(_host(mc, sos, tc));
+    await t.pump();
+    // The sheet now carries two actions (defaults and done): a Row would push
+    // one off a 320 dp sheet at 200 % text.
+    t.platformDispatcher.textScaleFactorTestValue = 2.0;
+    addTearDown(t.platformDispatcher.clearTextScaleFactorTestValue);
+    await t.tap(find.byKey(const ValueKey<String>('sos-destination-row')));
+    await t.pumpAndSettle();
+    expect(t.takeException(), isNull);
+    expect(find.byKey(const ValueKey<String>('sos-destination-defaults')),
+        findsOneWidget);
+    expect(find.byKey(const ValueKey<String>('sos-destination-done')),
+        findsOneWidget);
+    await t.tap(find.byKey(const ValueKey<String>('sos-destination-defaults')));
+    await t.pumpAndSettle();
+    expect(find.byKey(const ValueKey<String>('sos-destination-defaults')),
+        findsNothing,
+        reason: 'the sheet closes after restoring the defaults');
+  });
+
   testWidgets('the alarm screen offers no second way to send',
       (WidgetTester t) async {
     await t.binding.setSurfaceSize(const Size(400, 900));
