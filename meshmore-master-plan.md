@@ -525,9 +525,7 @@ The seven skins are real — `nerv, agHud, hyperlocal, seele, drPop, recon, stud
 exhaustive, so an eighth preset is a compile error until its bundle exists. **It now has one:** Studio Light
 (`studioLight`, R115, 2026-11-05) is the eighth, and `mmSkinFor` deliberately has no `default:` clause, which is
 what turned "an eighth is a compile error" into a checklist rather than a hope. But **`MmType` has no size, spacing or
-radius scale**, so every type step is a literal: >250 `fontSize:` values in `lib/screens` (grep hit its cap), 26
-
-`Color(0x…)` literals across nine files, 19 `Colors.*`, and 79 `fontFamily: 'JetBrains Mono'` which *are* ratcheted
+radius scale**, so every type step is a literal: >250 `fontSize:` values in `lib/screens` (grep hit its cap), 26 `Color(0x…)` literals across nine files, 19 `Colors.*`, and 79 `fontFamily: 'JetBrains Mono'` which *are* ratcheted
 by a test. Colours are not.
 
 **Add the type scale to the tokens and a colour ratchet before adding any feature screen**, or "every feature works
