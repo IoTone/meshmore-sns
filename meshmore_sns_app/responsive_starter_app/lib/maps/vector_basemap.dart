@@ -111,7 +111,7 @@ Future<Map<String, Object?>> _baseStyle(
   return base;
 }
 
-/// R115 — the vector basemap is one map in seven skins.
+/// R115 — the vector basemap is one map in eight skins.
 ///
 /// Every colour here is a mix of that skin's own tokens, never a literal: the
 /// map has to look like the app around it, and a literal would also fail the
