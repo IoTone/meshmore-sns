@@ -660,7 +660,7 @@ class _DeviceConfigScreenState extends State<DeviceConfigScreen> {
                 num(l.deviceSpreadingFactor, _sf),
                 num(l.deviceCodingRate, _cr),
                 num(l.deviceTxPower, _tx),
-                const SizedBox(height: 14),
+                const SizedBox(height: 16),
                 // Path hash length. Kept as a bare 1/2/3 segmented control
                 // rather than a numeric field: it is a three-value choice,
                 // and words would overflow the segment row at 1.3x text.
@@ -1152,7 +1152,7 @@ class _OtherParamsEditorState extends State<_OtherParamsEditor> {
         const SizedBox(height: 4),
         Text(l.otherMultiAcksHelper,
             style: TextStyle(color: cs.onSurfaceVariant, fontSize: context.skin.type.sizeSm)),
-        const SizedBox(height: 10),
+        const SizedBox(height: 8),
         // Telemetry sharing — base / location / environment. Each is a
         // permission level (Off / Contacts / Anyone) packed into one
         // byte; applied to the device on each change.
@@ -1370,7 +1370,7 @@ class _CurrentRegionBanner extends StatelessWidget {
     final Color border = isCustom ? cs.tertiary : cs.primary;
     final Color fg = isCustom ? cs.tertiary : cs.primary;
     return Container(
-      padding: const EdgeInsets.fromLTRB(12, 8, 12, 10),
+      padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
       decoration: BoxDecoration(
         color: cs.surfaceContainerHighest,
         borderRadius: mmRadius(context, 8),
