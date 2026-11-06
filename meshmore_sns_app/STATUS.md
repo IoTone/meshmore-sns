@@ -491,18 +491,17 @@ over BLE. Mesh-first, no backend, no account, no server.
   the real docs as a follow-up. Docs is a Settings row (R86), not a tab.
 
 
-- **R54 — message-derived place inference ("place echoes")** — follow-
-  ups only. Scans channel banter for place names/coords, region-scoped
-  to the known location, and plots ≥80%-confidence ghost markers on the
-  SNS grid. **All three sub-tasks shipped:** (a) ballpark placement
-  engine (`lib/sns/place_inference.dart`), (b) per-channel toggle in the
-  channel-edit dialog (default on for public #1; `PlaceInferencePrefs`),
-  (c) `CityLookup` forward name index + `CityGazetteer` adapter +
-  `InferredPlaceStore` (TTL/reinforcement) + dashed-◇ markers on the
-  sns-cells painter. ~31 SNS tests. **Remaining follow-ups:** tap-a-
-  marker → source-snippet/dismiss UI; the X→Y connector line; and the
-  optional finer neighbourhood gazetteer (currently city-centre +
-  directional offset only). See spec R54.
+- **R54 — place names in messages** — changed from plotting to offering.
+  The grid layer that drew these mentions as ghost markers was deleted with
+  the rest of the hyperlocal views, which left the per-channel switch
+  controlling nothing and its copy describing a screen that no longer exists.
+  A message that names a place now gets one line under the row: the
+  gazetteer's name, **Report place** (opens the place sheet at the user's own
+  position, label prefilled) and **Dismiss** (remembered per text, bounded to
+  200 entries, stored as hashes). No coordinates are derived from the words.
+  `PlaceInferenceEngine.placeNames` is the name-only path; `infer` remains for
+  placing a weather observation. `InferredPlaceStore` and the arrival-time
+  marker pass are deleted with the layer that read them.
 
 
 - **lobospeak** — closed-network robot control plane over MeshCore

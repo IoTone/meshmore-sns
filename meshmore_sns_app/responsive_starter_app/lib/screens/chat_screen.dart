@@ -17,6 +17,7 @@ import '../chat/composer_counter.dart';
 import '../chat/composer_offline.dart';
 import '../chat/draft_store.dart';
 import '../chat/report_flow.dart';
+import '../chat/place_suggestion_line.dart';
 import '../chat/studio_message_row.dart';
 import '../chat/history_unreadable_notice.dart';
 import '../chat/export_passphrase_dialog.dart';
@@ -706,6 +707,20 @@ class _ChatScreenState extends State<ChatScreen>
                 // live behind one control at its end instead of competing with
                 // the channel names (and instead of appearing only when a
                 // thread happens to have rows).
+                // The channel activity report is about the channel that is
+                // selected here, and it is the one thing in the strip people
+                // open for fun. A `more_vert` menu is where actions hide, so
+                // it gets its own control beside the strip's overflow rather
+                // than a fifth row inside it.
+                Padding(
+                  padding: const EdgeInsets.only(left: 4),
+                  child: IconButton(
+                    key: const ValueKey<String>('chat-activity-visible'),
+                    tooltip: l.meshbookTitle,
+                    onPressed: _openActivity,
+                    icon: const Icon(Icons.insights),
+                  ),
+                ),
                 Padding(
                   padding: const EdgeInsets.only(left: 4),
                   child: PopupMenuButton<String>(
@@ -720,8 +735,6 @@ class _ChatScreenState extends State<ChatScreen>
                           _exportThread(mc);
                         case 'manage':
                           context.push('/settings/channels');
-                        case 'activity':
-                          _openActivity();
                         case 'restore':
                           _restoreFromExport(mc);
                       }
@@ -780,25 +793,6 @@ class _ChatScreenState extends State<ChatScreen>
                             Expanded(
                               child: Text(
                                 l.chatRestoreMenu,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      PopupMenuItem<String>(
-                        key: const ValueKey<String>('chat-activity'),
-                        value: 'activity',
-                        child: Row(
-                          children: <Widget>[
-                            const Icon(Icons.insights, size: 20),
-                            const SizedBox(width: 12),
-                            // A menu row has to survive a long label on
-                            // a narrow screen: the text takes what is
-                            // left and ellipsises rather than overflowing.
-                            Expanded(
-                              child: Text(
-                                l.meshbookTitle,
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),
@@ -1039,11 +1033,28 @@ class _MessageRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final MmSkin skin = context.skin;
-    return switch (_chatModeFor(skin.preset)) {
+    final Widget row = switch (_chatModeFor(skin.preset)) {
       _ChatMode.log => _log(context, skin),
       _ChatMode.bubble => _bubble(context, skin),
       _ChatMode.block => _block(context, skin),
     };
+    // A message that names a place offers to report it. The line sits under
+    // whichever row shape the skin uses — one placement, so no preset can
+    // keep the old behaviour of naming a place and offering nothing.
+    //
+    // `select` rather than `watch`: the answer changes only when this row's
+    // own text stops being a suggestion, so a notify for some other message
+    // does not rebuild the list.
+    final String? suggested = context.select<MeshcoreController, String?>(
+        (MeshcoreController mc) => mc.placeSuggestionFor(m));
+    if (suggested == null) return row;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        row,
+        PlaceSuggestionLine(message: m, name: suggested),
+      ],
+    );
   }
 
   // --- terminal log (SEELE / NERV / Recon) ---------------------------

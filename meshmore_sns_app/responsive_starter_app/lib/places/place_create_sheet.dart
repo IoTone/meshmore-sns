@@ -25,6 +25,7 @@ class PlaceCreateSheet extends StatefulWidget {
     required this.longitude,
     required this.composer,
     this.showPrecision = false,
+    this.initialLabel,
   });
 
   final double latitude;
@@ -35,6 +36,11 @@ class PlaceCreateSheet extends StatefulWidget {
   /// map, where "snap it" can only lose the spot they chose.
   final bool showPrecision;
 
+  /// A name to start from, when the place came from a message that named it
+  /// rather than from a long-press. It is a starting point, not a decision:
+  /// the field is focused and editable like any other.
+  final String? initialLabel;
+
   /// Shows the sheet; resolves to the place when one went out.
   static Future<Place?> show(
     BuildContext context, {
@@ -42,6 +48,7 @@ class PlaceCreateSheet extends StatefulWidget {
     required double longitude,
     required PlaceComposer composer,
     bool showPrecision = false,
+    String? initialLabel,
   }) =>
       showModalBottomSheet<Place>(
         context: context,
@@ -51,6 +58,7 @@ class PlaceCreateSheet extends StatefulWidget {
           longitude: longitude,
           composer: composer,
           showPrecision: showPrecision,
+          initialLabel: initialLabel,
         ),
       );
 
@@ -59,7 +67,8 @@ class PlaceCreateSheet extends StatefulWidget {
 }
 
 class _PlaceCreateSheetState extends State<PlaceCreateSheet> {
-  final TextEditingController _label = TextEditingController();
+  late final TextEditingController _label =
+      TextEditingController(text: widget.initialLabel ?? '');
   PlaceType _type = PlaceType.hazard;
   late PlaceTtl _ttl = _type.defaultTtl;
   PlacePrecision _precision = PlacePrecision.exact;

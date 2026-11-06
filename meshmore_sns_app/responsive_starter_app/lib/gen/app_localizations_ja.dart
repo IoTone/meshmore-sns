@@ -2324,10 +2324,11 @@ class AppLocalizationsJa extends AppLocalizations {
   String get channelsName => 'チャンネル名';
 
   @override
-  String get channelsInferPlaces => 'メッセージから場所を推定';
+  String get channelsInferPlaces => 'メッセージから地名を探す';
 
   @override
-  String get channelsInferPlacesSub => 'このチャンネルの会話から地名を抽出し、SNS グリッドに表示します。';
+  String get channelsInferPlacesSub =>
+      'このチャンネルのメッセージから地名を探し、メッセージの下に候補として表示します。そこから報告できます。';
 
   @override
   String notifTitleChannel(String name) {
@@ -5583,4 +5584,21 @@ class AppLocalizationsJa extends AppLocalizations {
   String rawRecordNoRoute(String name) {
     return '$name への直接経路がなくなりました。生データはフラッド送信できません。';
   }
+
+  @override
+  String placeSuggestLooksLike(String name) {
+    return '場所の候補: $name';
+  }
+
+  @override
+  String get placeSuggestReport => '場所を報告';
+
+  @override
+  String get placeSuggestDismiss => '閉じる';
+
+  @override
+  String get placeSuggestNeedsLocation => '場所を報告するには位置情報をオンにしてください。';
+
+  @override
+  String get mapCompassLegend => '矢印はこの端末の方位磁針です。';
 }

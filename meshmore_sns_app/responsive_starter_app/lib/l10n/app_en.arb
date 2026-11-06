@@ -1547,8 +1547,8 @@
     }
   },
   "channelsName": "Channel name",
-  "channelsInferPlaces": "Infer places from messages",
-  "channelsInferPlacesSub": "Scan this channel's banter for place names and plot them on the SNS grid.",
+  "channelsInferPlaces": "Find place names in messages",
+  "channelsInferPlacesSub": "Scan this channel's messages for place names and offer them under the message, so you can report one.",
   "notifTitleChannel": "Message on {name}",
   "@notifTitleChannel": {
     "description": "OS notification title for a channel message.",
@@ -3983,5 +3983,17 @@
         "type": "String"
       }
     }
-  }
+  },
+  "placeSuggestLooksLike": "Looks like a place: {name}",
+  "@placeSuggestLooksLike": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "placeSuggestReport": "Report place",
+  "placeSuggestDismiss": "Dismiss",
+  "placeSuggestNeedsLocation": "Turn on location to report a place.",
+  "mapCompassLegend": "The arrow is this phone's compass."
 }

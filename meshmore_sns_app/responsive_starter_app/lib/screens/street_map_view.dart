@@ -829,6 +829,34 @@ class _StreetMapViewState extends State<StreetMapView> {
               MapAttribution(vectorDrawn
                   ? kOsmVector.attribution
                   : shownSource.attribution),
+              // The wedge on the self marker is the one heading in the app,
+              // and it comes from the phone's magnetometer, not from the
+              // radio: a MeshCore node reports a position, never a facing. It
+              // is drawn only while a compass reading exists, so the legend
+              // for it appears only while there is an arrow to explain.
+              if (_headingDeg != null && hasPersonalPosition)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      Icon(Icons.navigation,
+                          size: context.skin.type.sizeMicro,
+                          color: cs.onSurfaceVariant),
+                      const SizedBox(width: 4),
+                      Flexible(
+                        child: Text(
+                          l.mapCompassLegend,
+                          key: const ValueKey<String>('map-compass-legend'),
+                          softWrap: true,
+                          style: TextStyle(
+                              color: cs.onSurfaceVariant,
+                              fontSize: context.skin.type.sizeMicro),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               // R114 — a pack has a zoom range. Outside it, offline, the map is
               // showing coarser tiles on purpose, and saying so once is the
               // difference between "working as designed" and "broken".

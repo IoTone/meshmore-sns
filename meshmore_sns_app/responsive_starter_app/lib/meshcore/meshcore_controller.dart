@@ -18,7 +18,6 @@ import 'background_keepalive.dart';
 import 'background_prefs.dart';
 import 'battery_history_store.dart';
 import 'battery_model.dart';
-import 'city_lookup.dart';
 import 'default_channel_store.dart';
 import 'device_power_specs.dart';
 import 'ble_connector.dart';
@@ -44,7 +43,6 @@ import 'paired_device_store.dart';
 import 'reconnect_policy.dart';
 import '../perms/location_service.dart';
 import '../sns/city_gazetteer.dart';
-import '../sns/inferred_place_store.dart';
 import '../sns/meshbook.dart';
 import '../sns/meshbook_store.dart';
 import '../sns/place_inference.dart';
@@ -229,8 +227,7 @@ class MeshcoreController extends ChangeNotifier {
       _ingestChat(f);
       _ingestChannelData(f);
       _trackMessageHeat(f);
-      _trackPlaceInference(f);
-      _trackDelivery(f);
+        _trackDelivery(f);
       _logEvent(f);
       notifyListeners();
     });
@@ -2735,18 +2732,28 @@ class MeshcoreController extends ChangeNotifier {
   }
 
   // -------------------------------------------------------------------
-  // R54 — message-derived place inference ("place echoes"). Incoming
-  // channel banter is scanned for place references and plotted as
-  // ephemeral ghost markers on the SNS grid, region-scoped to our known
-  // location. Per-channel opt-in (default on for the public channel).
+  // R54 — place names in messages. A channel's messages are scanned for
+  // place names and a row that names one offers to report it. Nothing is
+  // plotted and no position is derived from the words: the offer carries a
+  // name, and the pin comes from the user's own position when they accept.
+  // Per-channel opt-in (default on for the public channel).
   // -------------------------------------------------------------------
 
   final PlaceInferenceEngine _placeEngine;
-  final InferredPlaceStore _inferredStore = InferredPlaceStore();
   Map<int, bool> _placeInferOverrides = <int, bool>{};
 
   Future<void> _loadPlaceInferPrefs() async {
-    _placeInferOverrides = await PlaceInferencePrefs.overrides();
+    // The read wins over the defaults, never over a choice the user already
+    // made in this session: the load is asynchronous, so a switch flipped
+    // while it was in flight would otherwise be silently undone by the file.
+    _placeInferOverrides = <int, bool>{
+      ...await PlaceInferencePrefs.overrides(),
+      ..._placeInferOverrides,
+    };
+    _dismissedSuggestions = <String>{
+      ...await PlaceSuggestionDismissals.load(),
+      ..._dismissedSuggestions,
+    };
     notifyListeners();
   }
 
@@ -2765,51 +2772,43 @@ class MeshcoreController extends ChangeNotifier {
     await PlaceInferencePrefs.save(_placeInferOverrides);
   }
 
-  /// Live inferred-place markers for the SNS grid, strongest first.
-  List<InferredMarker> inferredPlaces() =>
-      _inferredStore.current(now: DateTime.now());
-
-  /// Clear all inferred places (SNS "clear" control).
-  void clearInferredPlaces() {
-    _inferredStore.clear();
-    notifyListeners();
-  }
-
-  /// Dismiss a single inferred place by its marker key ("not a place").
-  void dismissInferredPlace(String key) {
-    _inferredStore.dismiss(key);
-    notifyListeners();
-  }
-
-  void _trackPlaceInference(MeshcoreInbound f) {
-    if (f is! ChannelMessageFrame) return;
-    final ChannelMessage cm = f.message;
-    final bool enabled = placeInferenceEnabled(cm.channelIdx);
-    final OwnLocation? own = ownLocation;
-    final int gaz = CityLookup.cachedOrNull?.cityCount ?? -1;
-    if (!enabled || own == null) {
-      // Diagnostic: why a channel message was skipped (gaz=-1 means the
-      // city gazetteer hasn't loaded yet).
-      meshLog('place', 'ch=${cm.channelIdx} enabled=$enabled '
-          'located=${own != null} gaz=$gaz — skipped');
-      return;
+  /// The place a chat row may offer to report, or null.
+  ///
+  /// This is what the per-channel inference switch actually controls now. It
+  /// names a place and stops there: no coordinates are derived, nothing is
+  /// drawn on a map, and the row offers the name to the person who can put a
+  /// position on it. A name the user already dismissed for these words is not
+  /// offered again.
+  String? placeSuggestionFor(ChatMessage m) {
+    if (m.outgoing) return null;
+    if (!placeInferenceEnabled(m.channelIdx)) return null;
+    if (_dismissedSuggestions
+        .contains(PlaceSuggestionDismissals.keyFor(m.channelIdx, m.text))) {
+      return null;
     }
-    final List<InferredPlace> hits = _placeEngine.infer(
-      cm.text,
-      originLat: own.latitude,
-      originLon: own.longitude,
-    );
-    meshLog('place', 'ch=${cm.channelIdx} gaz=$gaz '
-        'text="${cm.text}" → ${hits.length} hit(s)'
-        '${hits.map((InferredPlace h) => ' ${h.anchorName}'
-            '(${h.confidence.toStringAsFixed(2)})').join()}');
-    if (hits.isEmpty) return;
-    final DateTime now = DateTime.now();
-    for (final InferredPlace p in hits) {
-      _inferredStore.add(p, now: now);
-    }
-    // The dispatch loop calls notifyListeners() after all trackers.
+    if (_placeNameMemo.containsKey(m.text)) return _placeNameMemo[m.text];
+    final List<String> names = _placeEngine.placeNames(m.text);
+    final String? name = names.isEmpty ? null : names.first;
+    // The chat rebuilds rows constantly; the scan is a set of regexes plus a
+    // gazetteer lookup, so one answer per distinct text is cached and the
+    // cache is thrown away rather than grown without bound.
+    if (_placeNameMemo.length >= 500) _placeNameMemo.clear();
+    _placeNameMemo[m.text] = name;
+    return name;
   }
+
+  /// Remember that these words are not a place, so the row stops offering it.
+  Future<void> dismissPlaceSuggestion(ChatMessage m) async {
+    _dismissedSuggestions = <String>{
+      ..._dismissedSuggestions,
+      PlaceSuggestionDismissals.keyFor(m.channelIdx, m.text),
+    };
+    notifyListeners();
+    await PlaceSuggestionDismissals.save(_dismissedSuggestions);
+  }
+
+  Set<String> _dismissedSuggestions = <String>{};
+  final Map<String, String?> _placeNameMemo = <String, String?>{};
 
   // --- Microclimate / wx (P2): located weather observations -----------
   // Microclimates are *reprocessed from persisted chat history* (a rolling
