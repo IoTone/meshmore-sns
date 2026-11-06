@@ -1369,8 +1369,8 @@ void main() {
     ctrl.dispose();
   });
 
-  test('reaching ready syncs the device clock (CMD_SET_DEVICE_TIME 0x06)',
-      () async {
+  test('the device clock is set only when the device is behind '
+      '(CMD_SET_DEVICE_TIME 0x06)', () async {
     final FakeMeshcoreTransport fake =
         FakeMeshcoreTransport(connected: true);
     final MeshcoreController ctrl = MeshcoreController(
@@ -1381,14 +1381,44 @@ void main() {
     await ctrl.connect();
     fake.emit(selfInfoFrame()); // → ready
     await Future<void>.delayed(Duration.zero);
+    // The firmware only moves its clock forward, so a blind write is refused
+    // by any radio that kept time (`MyMesh.cpp:1247-1257`). The app reads
+    // first and writes only if the answer says the device is behind.
+    expect(fake.sent.where((f) => f.isNotEmpty && f[0] == 0x06), isEmpty,
+        reason: 'nothing is written before the device clock is known');
 
-    final setTime =
+    final int behind =
+        DateTime.now().millisecondsSinceEpoch ~/ 1000 - 600;
+    fake.emit(currentTimeFrameAt(behind));
+    await Future<void>.delayed(Duration.zero);
+
+    final List<Uint8List> setTime =
         fake.sent.where((f) => f.isNotEmpty && f[0] == 0x06).toList();
     expect(setTime, isNotEmpty);
     // Payload is a plausible recent unix time (u32 LE after opcode).
-    final f = setTime.first;
+    final Uint8List f = setTime.first;
     final int ts = f[1] | (f[2] << 8) | (f[3] << 16) | (f[4] << 24);
     expect(ts, greaterThan(1735689600)); // > 2025-01-01
+    ctrl.dispose();
+  });
+
+  test('a device clock that is ahead is left alone', () async {
+    final FakeMeshcoreTransport fake =
+        FakeMeshcoreTransport(connected: true);
+    final MeshcoreController ctrl = MeshcoreController(
+      transportFactory: () async => fake,
+      connection:
+          MeshcoreConnection(handshakeTimeout: const Duration(seconds: 5)),
+    );
+    await ctrl.connect();
+    fake.emit(selfInfoFrame());
+    await Future<void>.delayed(Duration.zero);
+    final int ahead =
+        DateTime.now().millisecondsSinceEpoch ~/ 1000 + 600;
+    fake.emit(currentTimeFrameAt(ahead));
+    await Future<void>.delayed(Duration.zero);
+    expect(fake.sent.where((f) => f.isNotEmpty && f[0] == 0x06), isEmpty,
+        reason: 'the firmware refuses a time behind its own, so do not ask');
     ctrl.dispose();
   });
 
@@ -1407,8 +1437,8 @@ void main() {
       await Future<void>.delayed(Duration.zero);
       expect(fake.sent.where((f) => f.isNotEmpty && f[0] == 0x05),
           isNotEmpty); // GET_DEVICE_TIME
-      expect(fake.sent.where((f) => f.isNotEmpty && f[0] == 0x06),
-          isNotEmpty); // SET_DEVICE_TIME
+      expect(fake.sent.where((f) => f.isNotEmpty && f[0] == 0x06), isEmpty,
+          reason: 'the write waits for the answer to the read');
       ctrl.dispose();
     });
 
@@ -1418,7 +1448,10 @@ void main() {
       final MeshcoreController ctrl =
           MeshcoreController(transportFactory: () async => fake);
       await ctrl.connect();
-      fake.emit(errorFrame(6)); // ERR code 6
+      // Connect reads the clock and writes it only when the device is behind
+      // (`MyMesh.cpp:1247-1257`), so no refusal is pending here: an ERR at
+      // this point is the user's business.
+      fake.emit(errorFrame(6));
       await Future<void>.delayed(Duration.zero);
       expect(
         ctrl.recentEvents.any((e) =>

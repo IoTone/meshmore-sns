@@ -128,10 +128,11 @@ class MeshcoreController extends ChangeNotifier {
         // device-sourced timestamp (contact last-heard, message
         // times) is in an unset clock, so "in range" and ordering
         // are meaningless. Standard companion-app behaviour.
-        _syncDeviceTime();
-        // Also READ the device clock: if SET_DEVICE_TIME is rejected
-        // (some firmware returns ERR), we still learn the offset and
-        // judge "in range" against the device's own clock.
+        // READ the device clock first, and write it only if the reply shows
+        // the device behind. The firmware only moves its clock forward
+        // (`MyMesh.cpp:1247-1257`), so writing blind refuses on every radio
+        // that kept time across a reboot — a refused command the app then had
+        // to explain away in the activity feed.
         _requestDeviceTime();
         _requestDeviceInfo();
         // Know whether this is still the radio the app has been talking to.
@@ -3050,8 +3051,18 @@ class MeshcoreController extends ChangeNotifier {
   /// timestamps (contact `lastAdvertTimestamp`, message times) are
   /// comparable to "now" — fixes nodes showing "known" but never
   /// "in range". Best-effort.
+  ///
+  /// The firmware only moves its clock forward (`MyMesh.cpp:1247-1257`,
+  /// `CMD_SET_DEVICE_TIME`: `secs >= curr` else `ERR_CODE_ILLEGAL_ARG`). A
+  /// radio whose clock already leads the phone therefore refuses every write,
+  /// which is a normal state after a reboot onto a device that kept time, not
+  /// a fault. The ERR is expected, so it is squelched exactly like a probing
+  /// `setCustomVar`; without this every connect ended with "device error (code
+  /// illegal argument)" in the activity feed, which reads as a fault and is
+  /// the kind of noise that teaches a user to ignore the feed.
   void _syncDeviceTime() {
     final int nowUnix = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+    _squelchNextDeviceError++;
     unawaited(
         send(MeshcoreFrameCodec.setDeviceTime(nowUnix)).catchError((_) {}));
   }
@@ -3067,10 +3078,22 @@ class MeshcoreController extends ChangeNotifier {
         send(MeshcoreFrameCodec.getDeviceTime()).catchError((_) {}));
   }
 
+  /// True once this session has offered the phone's clock to the device.
+  /// One offer is enough: the write either moved the device forward or the
+  /// firmware refused it for being behind, and repeating it would only
+  /// produce the same answer and the same noise.
+  bool _clockOffered = false;
+
   void _trackDeviceClock(MeshcoreInbound f) {
     if (f is! CurrentTimeFrame || f.unixSeconds <= 0) return;
     final int phoneNow = DateTime.now().millisecondsSinceEpoch ~/ 1000;
     _deviceClockOffsetSec = phoneNow - f.unixSeconds;
+    // The device is a couple of seconds behind: offer the phone's clock. A
+    // device that is ahead is left alone, because the firmware would refuse.
+    if (!_clockOffered && _deviceClockOffsetSec > 2) {
+      _clockOffered = true;
+      _syncDeviceTime();
+    }
     // Re-derive freshness for contacts that arrived before we knew
     // the offset (GET_CONTACTS reply can precede CURR_TIME).
     for (final DiscoveredNode n in _nodes.values) {
