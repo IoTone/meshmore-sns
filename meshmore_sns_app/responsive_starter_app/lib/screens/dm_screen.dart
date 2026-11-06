@@ -10,6 +10,7 @@ import '../chat/chat_actions.dart';
 import '../chat/report_flow.dart';
 import '../chat/composer_budget.dart';
 import '../chat/composer_counter.dart';
+import '../chat/composer_field.dart';
 import '../chat/composer_offline.dart';
 import '../chat/draft_store.dart';
 import '../chat/studio_message_row.dart';
@@ -23,6 +24,7 @@ import '../meshcore/meshcore_controller.dart';
 import '../chat/history_retention_notice.dart';
 import '../notifications/notification_focus.dart';
 import '../theme/mm_skin.dart';
+import '../util/clock_model.dart';
 import '../tts/tts_controller.dart';
 import '../ui/mm_scaffold.dart';
 import 'node_detail_sheet.dart';
@@ -420,7 +422,11 @@ class _DmScreenState extends State<DmScreen> {
             SafeArea(
               top: false,
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(12, 6, 8, 10),
+                // The same inset as the channel composer: two composers for
+                // the same act (type, then send) had two different rhythms,
+                // which is the kind of difference a user feels without being
+                // able to name.
+                padding: const EdgeInsets.fromLTRB(12, 8, 8, 8),
                 child: !ready
                     ? ComposerOffline(connecting: mc.isConnecting)
                     : Row(
@@ -434,11 +440,8 @@ class _DmScreenState extends State<DmScreen> {
                                   controller: _input,
                                   textInputAction: TextInputAction.send,
                                   onSubmitted: (_) => _send(mc),
-                                  decoration: InputDecoration(
-                                    isDense: true,
-                                    hintText: l.dmComposerHint(_peerName(mc)),
-                                    border: const OutlineInputBorder(),
-                                  ),
+                                  decoration: composerFieldDecoration(context,
+                                      hint: l.dmComposerHint(_peerName(mc))),
                                 ),
                                 ComposerCounter(
                                   budget: _budget,
@@ -485,11 +488,14 @@ class _DmRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ColorScheme cs = Theme.of(context).colorScheme;
     final MmSkin skin = context.skin;
+    final AppLocalizations l = AppLocalizations.of(context);
     final String mono = skin.type.monoFamily;
-    final String time = '${m.at.hour.toString().padLeft(2, '0')}:'
-        '${m.at.minute.toString().padLeft(2, '0')}';
+    // The same stamp as a channel row: `clockStamp` names a sender whose clock
+    // disagrees instead of printing their time as fact (APP-N3). A DM that
+    // formatted its own `HH:MM` here was the one list where a fast sender's
+    // future time still read as the truth.
+    final String time = clockStamp(l, m.at);
     final String tag = m.outgoing ? '»' : '«';
     // Route and signal are facts about the transmission, not the message:
     // they are said in the row's actions sheet, not on every row here.
@@ -503,14 +509,19 @@ class _DmRow extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
+            // R102 — the gutter scales with the text, as on a channel row: at
+            // 1.3x a 56 dp box wrapped a five-character time one character
+            // per line.
             SizedBox(
-              width: 56,
+              width: 56 * MediaQuery.textScalerOf(context).scale(1),
               child: Text('$time $tag',
+                  maxLines: 1,
+                  softWrap: false,
                   style: TextStyle(
                       color:
                           m.outgoing ? skin.color.accent : skin.color.fgMuted,
                       fontFamily: mono,
-                      fontSize: 12)),
+                      fontSize: skin.type.sizeBody)),
             ),
             Expanded(
               child: Column(
@@ -538,7 +549,7 @@ class _DmRow extends StatelessWidget {
               padding: EdgeInsets.zero,
               constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
               onPressed: onAction,
-              icon: Icon(Icons.more_vert, color: cs.onSurfaceVariant),
+              icon: Icon(Icons.more_vert, color: skin.color.fgMuted),
             ),
           ],
         ),

@@ -117,7 +117,7 @@ void main() {
       'lib/screens/dashboards/recon_dashboard.dart': 3,
       'lib/screens/dashboards/studio_dashboard.dart': 1,
       'lib/screens/device_manager_sheet.dart': 5,
-      'lib/screens/dm_screen.dart': 2,
+      'lib/screens/dm_screen.dart': 1,
       'lib/screens/doc_reader_screen.dart': 2,
       'lib/screens/docs_hub_screen.dart': 5,
       'lib/screens/elevation_profile_view.dart': 2,
