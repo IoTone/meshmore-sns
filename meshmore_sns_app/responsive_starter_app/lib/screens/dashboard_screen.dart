@@ -34,13 +34,15 @@ const Key dashboardKey = ValueKey<String>('dashboard');
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
 
-  /// Pinned summaries, drawn under the headline.
-
   ({String label, bool alert, bool busy}) _status(
       MeshcoreController mc, AppLocalizations l) {
     return switch (mc.state) {
+      // The app bar's chip already says "linked" on every view, so the slab
+      // says which radio instead of repeating the word. Two places stating the
+      // same fact in the same words is the redundancy the header rewrite
+      // removed one block above this line.
       MeshcoreConnectionState.ready => (
-          label: l.statusLinked,
+          label: mc.pairedName ?? l.statusLinked,
           alert: false,
           busy: false
         ),
