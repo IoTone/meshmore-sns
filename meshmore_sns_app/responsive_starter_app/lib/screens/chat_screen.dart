@@ -209,6 +209,10 @@ class _ChatScreenState extends State<ChatScreen>
   /// APP-E7 — a keystroke is not a write. One per pause, keyed to the draft it
   /// belongs to, so a channel switch mid-typing cannot land in the new thread.
   void _onComposerChanged() {
+    // The send control's enabled state is a function of the text, so every
+    // keystroke rebuilds the composer — including the keystrokes typed before
+    // a thread exists to save a draft into.
+    setState(() {});
     final String? key = _draftKey;
     if (key == null) return;
     final String text = _input.text;
@@ -975,9 +979,19 @@ class _ChatScreenState extends State<ChatScreen>
                               : null,
                           icon: const Icon(Icons.add_photo_alternate_outlined),
                         ),
+                        // The send control states whether it can act. It
+                        // used to be enabled with an empty field and with text
+                        // over the radio's byte budget, and `_send` returned
+                        // in silence in both cases: a control that looks
+                        // pressable and does nothing. The counter under the
+                        // field already says how far over the budget the text
+                        // is, so disabling here hides no explanation.
                         IconButton(
                           tooltip: l.chatSend,
-                          onPressed: () => _send(mc),
+                          onPressed: _input.text.trim().isEmpty ||
+                                  !_budget.canSend(_input.text)
+                              ? null
+                              : () => _send(mc),
                           icon: const Icon(Icons.send),
                         ),
                       ],

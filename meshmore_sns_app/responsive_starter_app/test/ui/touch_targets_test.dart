@@ -159,6 +159,8 @@ void main() {
     fake.emit(selfInfoFrame());
     await t.pumpAndSettle();
     await t.enterText(find.byType(TextField), 'hello mesh');
+    // The send control is disabled until a frame reflects the text.
+    await t.pump();
     await t.tap(find.byIcon(Icons.send));
     await t.pumpAndSettle();
     expectMin48(t, _en.chatMessageActions);

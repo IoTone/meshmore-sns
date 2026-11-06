@@ -206,4 +206,28 @@ void main() {
       await drain(t, mc);
     });
   }
+
+  testWidgets('the send control says whether it can act',
+      (WidgetTester t) async {
+    final (MeshcoreController mc, _, _) =
+        await pumpChat(t, MmThemePreset.studioLight);
+    final Finder send = find.widgetWithIcon(IconButton, Icons.send);
+    IconButton button() => t.widget<IconButton>(send);
+
+    // An empty field with an enabled send was a control that looked pressable
+    // and returned in silence.
+    expect(button().onPressed, isNull,
+        reason: 'nothing typed, nothing to send');
+
+    await t.enterText(find.byType(TextField).first, 'hello');
+    await t.pumpAndSettle();
+    expect(button().onPressed, isNotNull);
+
+    // Over the radio's byte budget: disabled, and the counter that says why
+    // is already on screen.
+    await t.enterText(find.byType(TextField).first, 'x' * 400);
+    await t.pumpAndSettle();
+    expect(button().onPressed, isNull);
+    await drain(t, mc);
+  });
 }

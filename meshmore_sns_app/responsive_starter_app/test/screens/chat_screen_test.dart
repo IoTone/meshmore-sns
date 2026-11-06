@@ -85,6 +85,9 @@ void main() {
     expect(find.textContaining('no messages on this channel'), findsOneWidget);
 
     await t.enterText(find.byType(TextField), 'hello mesh');
+    // The send control's enabled state follows the text, so a frame has to be
+    // drawn between the keystroke and the tap (in the app there always is).
+    await t.pump();
     await t.tap(find.byIcon(Icons.send));
     await t.pumpAndSettle();
 
@@ -300,16 +303,20 @@ void main() {
       mc.dispose();
     });
 
-    testWidgets('an over-long message is refused before it is sent', (t) async {
+    testWidgets('an over-long message cannot be sent at all', (t) async {
       final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
       final MeshcoreController mc = await open(t, fake);
       await t.enterText(find.byType(TextField), 'a' * 160);
       await t.pump();
-      await t.tap(find.byTooltip('Send'));
-      await t.pump();
-      // The counter and the refusal both say it, so the send icon cannot be
-      // tapped into a silent truncation.
+      // The control states that it cannot act, and the counter says why. An
+      // enabled send here would only lead to a snackbar after the tap; a
+      // truncation the radio performs silently is what this guards against.
+      final IconButton send =
+          t.widget<IconButton>(find.widgetWithIcon(IconButton, Icons.send));
+      expect(send.onPressed, isNull);
       expect(find.textContaining('Too long by 8 bytes'), findsWidgets);
+      await t.tap(find.byTooltip('Send'), warnIfMissed: false);
+      await t.pump();
       expect(mc.messagesFor(mc.activeChannel), isEmpty);
       mc.dispose();
     });
@@ -367,6 +374,7 @@ void main() {
       await t.pumpAndSettle();
 
       await t.enterText(find.byType(TextField), 'hello mesh');
+      await t.pump();
       await t.tap(find.byTooltip('Send'));
       await t.pumpAndSettle();
       // The radio refuses the channel send: ERR with a device reason code.

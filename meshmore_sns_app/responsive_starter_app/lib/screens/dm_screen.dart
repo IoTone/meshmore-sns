@@ -193,6 +193,9 @@ class _DmScreenState extends State<DmScreen> {
 
   /// One write per pause, keyed to the draft it belongs to.
   void _onComposerChanged() {
+    // The send control's enabled state is a function of the text, so every
+    // keystroke rebuilds the composer.
+    setState(() {});
     final String? key = _draftKey;
     if (key == null) return;
     final String text = _input.text;
@@ -200,7 +203,6 @@ class _DmScreenState extends State<DmScreen> {
     _draftTimer = Timer(DraftStore.debounce, () {
       unawaited(DraftStore.save(key, text));
     });
-    setState(() {});
   }
 
   /// A failed direct message gives the text back rather than leaving an empty
@@ -451,9 +453,14 @@ class _DmScreenState extends State<DmScreen> {
                               ],
                             ),
                           ),
+                          // Same rule as the channel composer: a disabled
+                          // send rather than a tap that returns in silence.
                           IconButton(
                             tooltip: l.dmSend,
-                            onPressed: () => _send(mc),
+                            onPressed: _input.text.trim().isEmpty ||
+                                    !_budget.canSend(_input.text)
+                                ? null
+                                : () => _send(mc),
                             icon: const Icon(Icons.send),
                           ),
                         ],
