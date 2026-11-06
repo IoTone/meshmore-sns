@@ -61,7 +61,6 @@ void main() {
       'lib/docs/markdown_view.dart': 5,
       'lib/maps/basemap.dart': 1,
       'lib/screens/about_screen.dart': 4,
-      'lib/screens/battery_screen.dart': 10,
       'lib/screens/chat_screen.dart': 7,
       'lib/screens/device_contacts_screen.dart': 6,
       'lib/screens/device_manager_sheet.dart': 10,
@@ -96,7 +95,6 @@ void main() {
     const Map<String, int> baseline = <String, int>{
       'lib/maps/basemap.dart': 1,
       'lib/maps/vector_basemap.dart': 1,
-      'lib/screens/battery_screen.dart': 2,
       'lib/screens/channels_screen.dart': 2,
       'lib/screens/chat_screen.dart': 7,
       'lib/screens/dashboards/drpop_dashboard.dart': 3,
