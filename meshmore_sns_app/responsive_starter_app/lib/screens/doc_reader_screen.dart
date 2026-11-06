@@ -9,6 +9,7 @@ import '../docs/markdown_view.dart';
 import '../gen/app_localizations.dart';
 import '../ui/mm_scaffold.dart';
 import '../meshcore/meshcore_controller.dart';
+import '../theme/mm_skin.dart';
 
 /// R53 — reads one [DocSection]. Shows the cached-or-bundled copy
 /// immediately (offline-first), then quietly refreshes from upstream;
@@ -80,9 +81,8 @@ class _DocReaderScreenState extends State<DocReaderScreen> {
               tooltip: l.docsRefresh,
               onPressed: _refreshing ? null : _manualRefresh,
               icon: _refreshing
-                  ? const SizedBox(
-                      width: 18,
-                      height: 18,
+                  ? SizedBox.square(
+                      dimension: context.skin.space.screenEdge,
                       child: CircularProgressIndicator(strokeWidth: 2))
                   : const Icon(Icons.sync),
             ),
@@ -97,7 +97,9 @@ class _DocReaderScreenState extends State<DocReaderScreen> {
                 _ProvenanceStrip(content: c, fwVersion: _fwVersion),
                 Expanded(
                   child: SingleChildScrollView(
-                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 40),
+                    padding: EdgeInsets.fromLTRB(context.skin.space.screenEdge,
+              context.skin.space.rowInset, context.skin.space.screenEdge,
+              context.skin.space.emptyState),
                     child: MarkdownView(c.markdown),
                   ),
                 ),
@@ -140,8 +142,12 @@ class _ProvenanceStrip extends StatelessWidget {
             : l.docsFirmwareForVersion(fwVersion!),
     ];
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      color: cs.surfaceContainerHighest.withValues(alpha: .3),
+      padding: EdgeInsets.symmetric(
+          horizontal: context.skin.space.screenEdge,
+          vertical: context.skin.space.rowGap),
+      // A tint of a container role at 30 % is invisible on paper, so this strip
+      // reads as floating text; the surface step is a real one.
+      color: context.skin.color.surface,
       child: Row(
         children: <Widget>[
           Icon(cached ? Icons.cloud_done_outlined : Icons.inventory_2_outlined,
@@ -152,7 +158,7 @@ class _ProvenanceStrip extends StatelessWidget {
               bits.join('  ·  '),
               style: TextStyle(
                   fontFamily: 'JetBrains Mono',
-                  fontSize: 11,
+                  fontSize: context.skin.type.sizeSm,
                   letterSpacing: .5,
                   color: cs.onSurfaceVariant),
             ),

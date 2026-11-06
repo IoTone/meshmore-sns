@@ -49,7 +49,7 @@ class BatteryScreen extends StatelessWidget {
         child: !est.hasData
           ? Center(
               child: Padding(
-                padding: const EdgeInsets.all(32),
+                padding: EdgeInsets.all(context.skin.space.emptyState),
                 child: Text(
                   l.batteryAwaiting,
                   textAlign: TextAlign.center,
@@ -58,21 +58,21 @@ class BatteryScreen extends StatelessWidget {
               ),
             )
           : ListView(
-              padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
+              padding: context.skin.space.padScreen,
               children: <Widget>[
                 _GaugeRow(est: est, l: l, cs: cs),
-                const SizedBox(height: 24),
+                SizedBox(height: context.skin.space.sectionGap),
                 _EstimateCard(est: est, l: l, cs: cs),
-                const SizedBox(height: 20),
+                SizedBox(height: context.skin.space.sectionGap),
                 if (history.length >= 2) ...<Widget>[
                   _SectionLabel(l.batteryHistoryTitle, cs: cs),
-                  const SizedBox(height: 8),
+                  SizedBox(height: context.skin.space.rowGap),
                   _HistorySparkline(
                       history: history, spec: spec, cs: cs, l: l),
-                  const SizedBox(height: 20),
+                  SizedBox(height: context.skin.space.sectionGap),
                 ],
                 _SectionLabel(l.batterySpecTitle, cs: cs),
-                const SizedBox(height: 8),
+                SizedBox(height: context.skin.space.rowGap),
                 _SpecCard(spec: spec, l: l, cs: cs),
               ],
             ),
@@ -110,18 +110,23 @@ class _GaugeRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final MmSkin skin = context.skin;
     final double soc = est.socPercent.clamp(0, 100);
-    final Color ringColor = _socColor(soc, cs);
+    final Color ringColor = _socColor(soc, skin);
     return Row(
       children: <Widget>[
-        SizedBox(
-          width: 132,
-          height: 132,
+        SizedBox.square(
+          // Four empty-state steps: the gauge is the one number the screen
+          // exists for, and a fixed 132 was neither a step nor a role.
+          dimension: skin.space.step(9) * 4,
           child: CustomPaint(
             painter: _GaugePainter(
               soc: soc,
               color: ringColor,
-              track: cs.outline.withValues(alpha: .25),
+              // On paper an outline at 25 % is invisible, so the empty part of
+              // the ring vanished and a 60 % battery looked full. The rule tier
+              // is the colour a track is drawn in.
+              track: skin.color.line,
             ),
             child: Center(
               child: Column(
@@ -131,39 +136,40 @@ class _GaugeRow extends StatelessWidget {
                     '${soc.round()}',
                     style: TextStyle(
                       color: cs.onSurface,
-                      fontSize: 38,
+                      fontSize: skin.type.sizeHero,
                       fontWeight: FontWeight.w700,
                       height: 1,
                     ),
                   ),
                   Text('%',
                       style: TextStyle(
-                          color: cs.onSurfaceVariant, fontSize: 14)),
+                          color: cs.onSurfaceVariant,
+                          fontSize: skin.type.sizeBodyLg)),
                 ],
               ),
             ),
           ),
         ),
-        const SizedBox(width: 24),
+        SizedBox(width: skin.space.sectionGap),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
               _SectionLabel(l.batteryVoltageLabel, cs: cs),
-              const SizedBox(height: 2),
+              SizedBox(height: skin.space.insideText),
               Text(
                 '${est.volts.toStringAsFixed(2)} V',
                 style: TextStyle(
                     color: cs.onSurface,
-                    fontSize: 22,
-                    fontFamily: 'JetBrains Mono'),
+                    fontSize: skin.type.sizeXl,
+                    fontFamily: skin.type.monoFamily),
               ),
-              const SizedBox(height: 12),
+              SizedBox(height: skin.space.rowInset),
               if (est.charging == true)
                 Row(
                   children: <Widget>[
                     Icon(Icons.bolt, size: 16, color: cs.tertiary),
-                    const SizedBox(width: 4),
+                    SizedBox(width: skin.space.labelToControl),
                     Text(l.batteryCharging,
                         style: TextStyle(
                             color: cs.tertiary,
@@ -192,22 +198,27 @@ class _EstimateCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final MmSkin skin = context.skin;
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(skin.space.screenEdge),
       decoration: BoxDecoration(
-        color: cs.surfaceContainerHighest.withValues(alpha: .4),
-        borderRadius: mmRadius(context, 12),
-        border: Border.all(color: cs.outline.withValues(alpha: .35)),
+        // A panel on paper is defined by its rule, not by a tint: a fill at
+        // 40 % and a border at 35 % both vanish there, which left the card's
+        // content floating with no edge.
+        color: skin.color.surface,
+        borderRadius: mmRadius(context, kRadiusMd),
+        border: Border.all(color: skin.color.line, width: skin.shape.borderWidth),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           _SectionLabel(l.batteryTimeToEmpty, cs: cs),
-          const SizedBox(height: 4),
+          SizedBox(height: skin.space.labelToControl),
           if (est.charging == true)
             Text(l.batteryChargingNote,
-                style: TextStyle(color: cs.onSurface, fontSize: 16))
+                style:
+                    TextStyle(color: cs.onSurface, fontSize: skin.type.sizeLg))
           else if (est.timeToEmpty != null)
             Row(
               crossAxisAlignment: CrossAxisAlignment.baseline,
@@ -217,27 +228,27 @@ class _EstimateCard extends StatelessWidget {
                   _fmtDuration(est.timeToEmpty!, l),
                   style: TextStyle(
                       color: cs.onSurface,
-                      fontSize: 28,
+                      fontSize: skin.type.sizeTitle,
                       fontWeight: FontWeight.w700),
                 ),
-                const SizedBox(width: 10),
+                SizedBox(width: skin.space.rowGap),
                 _ConfidenceBadge(confidence: est.confidence, l: l, cs: cs),
               ],
             )
           else
             Text(l.batteryEstimating,
                 style: TextStyle(color: cs.onSurfaceVariant)),
-          const SizedBox(height: 12),
+          SizedBox(height: skin.space.rowInset),
           if (est.drainPctPerHour != null)
-            _kv(l.batteryDrainRate,
+            _kv(context, l.batteryDrainRate,
                 '${est.drainPctPerHour!.toStringAsFixed(1)} %/h', cs),
           if (est.method == BatteryMethod.observed &&
               est.observationSpan.inMinutes > 0)
-            _kv(l.batteryBasis,
+            _kv(context, l.batteryBasis,
                 l.batteryBasisObserved(_fmtDuration(est.observationSpan, l)),
                 cs),
           if (est.method == BatteryMethod.rated)
-            _kv(l.batteryBasis, l.batteryBasisRated, cs),
+            _kv(context, l.batteryBasis, l.batteryBasisRated, cs),
           // No second "gathering" caption here: with no estimate and no
           // method the headline branch above already says it (the card
           // used to print the same sentence twice).
@@ -246,8 +257,10 @@ class _EstimateCard extends StatelessWidget {
     );
   }
 
-  Widget _kv(String k, String v, ColorScheme cs) => Padding(
-        padding: const EdgeInsets.symmetric(vertical: 2),
+  Widget _kv(BuildContext context, String k, String v, ColorScheme cs) =>
+      Padding(
+        padding:
+            EdgeInsets.symmetric(vertical: context.skin.space.insideText),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: <Widget>[
@@ -277,16 +290,22 @@ class _ConfidenceBadge extends StatelessWidget {
       BatteryConfidence.none => ('', cs.onSurfaceVariant),
     };
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      padding: EdgeInsets.symmetric(
+          horizontal: context.skin.space.rowGap,
+          vertical: context.skin.space.insideText),
       decoration: BoxDecoration(
         color: v.$2.withValues(alpha: .15),
-        borderRadius: mmRadius(context, 20),
-        border: Border.all(color: v.$2.withValues(alpha: .5)),
+        borderRadius: mmRadius(context, kRadiusSm),
+        // Full strength: a badge's edge at 50 % is 1.6:1 on paper, which is
+        // the difference between a badge and a floating word.
+        border: Border.all(color: v.$2),
       ),
       child: Text(
         '${l.batteryConfidence}: ${v.$1}',
         style: TextStyle(
-            color: v.$2, fontSize: 11, fontWeight: FontWeight.w600),
+            color: v.$2,
+            fontSize: context.skin.type.sizeSm,
+            fontWeight: FontWeight.w600),
       ),
     );
   }
@@ -305,13 +324,15 @@ class _SpecCard extends StatelessWidget {
         ? l.batterySpecCapacity(spec.capacityMah)
         : l.batterySpecCapacityUnknown;
     final double? rx = spec.currentMa['rx'] ?? spec.currentMa['idle'];
+    final MmSkin skin = context.skin;
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(skin.space.screenEdge),
       decoration: BoxDecoration(
-        color: cs.surfaceContainerHighest.withValues(alpha: .4),
-        borderRadius: mmRadius(context, 12),
-        border: Border.all(color: cs.outline.withValues(alpha: .35)),
+        color: skin.color.surface,
+        borderRadius: mmRadius(context, kRadiusMd),
+        border:
+            Border.all(color: skin.color.line, width: skin.shape.borderWidth),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -320,17 +341,17 @@ class _SpecCard extends StatelessWidget {
             children: <Widget>[
               Icon(spec.isGeneric ? Icons.help_outline : Icons.memory,
                   size: 18, color: cs.primary),
-              const SizedBox(width: 8),
+              SizedBox(width: skin.space.rowGap),
               Expanded(
                 child: Text(spec.label,
                     style: TextStyle(
                         color: cs.onSurface,
-                        fontSize: 16,
+                        fontSize: skin.type.sizeLg,
                         fontWeight: FontWeight.w600)),
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: skin.space.rowGap),
           if (spec.isGeneric)
             Text(l.batterySpecGeneric,
                 style: TextStyle(
@@ -343,7 +364,7 @@ class _SpecCard extends StatelessWidget {
                     color: cs.onSurface, fontFamily: 'JetBrains Mono')),
             if (rx != null)
               Padding(
-                padding: const EdgeInsets.only(top: 4),
+                padding: EdgeInsets.only(top: skin.space.labelToControl),
                 child: Text(
                     l.batterySpecDraw(rx.round()),
                     style: TextStyle(
@@ -352,11 +373,11 @@ class _SpecCard extends StatelessWidget {
               ),
             if (spec.notes != null)
               Padding(
-                padding: const EdgeInsets.only(top: 8),
+                padding: EdgeInsets.only(top: skin.space.rowGap),
                 child: Text(spec.notes!,
                     style: TextStyle(
                         color: cs.onSurfaceVariant,
-                        fontSize: 12,
+                        fontSize: skin.type.sizeBody,
                         height: 1.4)),
               ),
           ],
@@ -385,22 +406,28 @@ class _HistorySparkline extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
         SizedBox(
-          height: 96,
+          // The chart's height, expressed from the ladder so it moves with the
+          // spacing scale rather than being a private 96.
+          height: context.skin.space.step(8) * 4,
           width: double.infinity,
           child: CustomPaint(
             painter: _SparkPainter(
               history: history,
               line: cs.primary,
               fill: cs.primary.withValues(alpha: .12),
-              grid: cs.outline.withValues(alpha: .2),
+              // The chart's own grid: a hairline, which is visible on paper
+              // where an outline at 20 % is not.
+              grid: context.skin.color.hairline,
             ),
           ),
         ),
-        const SizedBox(height: 4),
+        SizedBox(height: context.skin.space.labelToControl),
         Text(
           l.batteryHistorySpan(_fmtDuration(Duration(seconds: span), l),
               history.length),
-          style: TextStyle(color: cs.onSurfaceVariant, fontSize: 11),
+          style: TextStyle(
+              color: cs.onSurfaceVariant,
+              fontSize: context.skin.type.sizeSm),
         ),
       ],
     );
@@ -412,17 +439,28 @@ class _SectionLabel extends StatelessWidget {
   final String text;
   final ColorScheme cs;
   @override
-  Widget build(BuildContext context) => Text(
-        text,
-        style: TextStyle(
-            color: cs.primary, fontSize: 11, letterSpacing: 3),
-      );
+  Widget build(BuildContext context) {
+    final MmSkin skin = context.skin;
+    return Text(
+      skin.type.upperHeadings ? text.toUpperCase() : text,
+      style: TextStyle(
+          color: cs.primary,
+          fontSize: skin.type.sizeSm,
+          letterSpacing: skin.type.headingTracking),
+    );
+  }
 }
 
-Color _socColor(double soc, ColorScheme cs) {
-  if (soc <= 15) return const Color(0xFFFF4030);
-  if (soc <= 35) return const Color(0xFFFFB020);
-  return cs.primary;
+/// The gauge's colour, from the skin's own roles.
+///
+/// It used to be two literals — a red and an amber — tuned on a dark ground.
+/// On paper the amber is 1.9:1, so the ring for a 30 % pack disappeared. The
+/// roles carry both meanings on every ground: `alert` is danger, `warn` is
+/// caution, and the skin's accent is the ordinary case.
+Color _socColor(double soc, MmSkin skin) {
+  if (soc <= 15) return skin.color.alert;
+  if (soc <= 35) return skin.color.warn;
+  return skin.color.accent;
 }
 
 String _methodLabel(BatteryMethod m, AppLocalizations l) => switch (m) {

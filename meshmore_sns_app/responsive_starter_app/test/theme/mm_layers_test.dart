@@ -84,18 +84,28 @@ void main() {
       expect(studio().cardTheme.elevation, isNull);
     });
 
-    test('every preset ends the app bar with the same 2px rule', () {
+    test('every preset ends the app bar with a rule of its own ground', () {
       // R95: R66 drew a 1px `hairline` under Studio's app bar only, and
       // that colour is near-black on the calm presets. One rule for all
-      // presets, 2px of `fg` at 22%, bottom edge only.
+      // presets, bottom edge only.
+      //
+      // The dark grounds keep R95's 2px of `fg` at 22 %. Paper cannot: 22 % of
+      // near-black is 1.35:1 there, so the page simply continued under the tab
+      // strip. It takes the border tier at one pixel instead — the same rule a
+      // group header opens with, so the two coincide rather than stack.
       for (final MmThemePreset p in MmThemePreset.values) {
         final MmSkin s = mmSkinFor(p);
         final ThemeData td = buildMmTheme(s.color,
             fontFamily: s.type.displayFamily, shape: s.shape);
         final Border b = td.appBarTheme.shape! as Border;
-        expect(b.bottom.width, 2.0, reason: '$p');
-        expect(b.bottom.color, s.color.fg.withValues(alpha: .22),
-            reason: '$p');
+        if (s.color.isLight) {
+          expect(b.bottom.width, 1.0, reason: '$p');
+          expect(b.bottom.color, s.color.line, reason: '$p');
+        } else {
+          expect(b.bottom.width, 2.0, reason: '$p');
+          expect(b.bottom.color, s.color.fg.withValues(alpha: .22),
+              reason: '$p');
+        }
         expect(b.top, BorderSide.none, reason: '$p');
         expect(b.left, BorderSide.none, reason: '$p');
         expect(b.right, BorderSide.none, reason: '$p');

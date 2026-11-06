@@ -116,6 +116,54 @@ void main() {
           reason: 'a hairline is not a border');
     });
 
+    test('disabled ink is still legible on the deepest layer it is drawn on',
+        () {
+      // Disabled text is exempt from AA, but a control that is off must still
+      // be readable as a control: on paper the old #8E9196 was 2.1:1 on
+      // `selected` and read as a smudge.
+      for (final Color layer in t.layers) {
+        expect(ratio(t.fgDisabled, layer), greaterThanOrEqualTo(3.0),
+            reason: 'disabled ink on $layer');
+      }
+      // …and it stays visibly below the muted tier, so "off" still reads as
+      // off rather than as secondary text.
+      expect(ratio(t.fgMuted, t.base),
+          greaterThan(ratio(t.fgDisabled, t.base)));
+    });
+
+    test('caution is a role of its own, and readable on paper', () {
+      // The gauge carried an amber literal that was tuned on a dark ground.
+      expect(t.warn, isNot(t.accent));
+      expect(t.warn, isNot(t.alert));
+      for (final Color layer in t.layers) {
+        expect(ratio(t.warn, layer), greaterThanOrEqualTo(3.0),
+            reason: 'a caution stroke on $layer');
+      }
+      // The dark presets keep the amber they were drawn with.
+      expect(kMmPresets[MmThemePreset.studio]!.warn,
+          const Color(0xFFFFB020));
+    });
+
+    test('the secondary text tier clears AA on every layer', () {
+      // Twenty subtitles across settings and device screens were drawn as
+      // `onSurface` at 60 %, which is 3.9:1 on paper — under AA, on screens
+      // that are mostly subtitles. The scheme's own secondary role is the
+      // right tier and it has to stay legible on every layer.
+      final ColorScheme cs = buildMmTheme(t,
+              fontFamily: skin.type.displayFamily, shape: skin.shape)
+          .colorScheme;
+      for (final Color layer in <Color>[
+        t.base,
+        t.surface,
+        t.surfaceAlt,
+        t.selected,
+        cs.surfaceContainerHigh,
+      ]) {
+        expect(ratio(cs.onSurfaceVariant, layer), greaterThanOrEqualTo(4.5),
+            reason: 'secondary text on $layer');
+      }
+    });
+
     test('alert and accent are not the same colour', () {
       expect(t.accent, isNot(t.alert));
       expect(ratio(t.alert, t.accent), greaterThan(1.2),
@@ -142,6 +190,47 @@ void main() {
       // chrome that sits over them.
       expect(ratio(t.fg, const Color(0xFFF2EFE6)), greaterThanOrEqualTo(7));
       expect(ratio(t.fg, const Color(0xFFAAD3DF)), greaterThanOrEqualTo(4.5));
+    });
+  });
+
+  group('the ground decides the ornament, and says so', () {
+    test('paper carries no tinted header band, and keeps no dimmed basemap', () {
+      // A tonal band reads as grouping on a dark ground and as a box on paper,
+      // where there are no other boxes to tell it apart from; the widget gives
+      // an untinted header a border-tier opening rule instead. The map flag
+      // follows the same logic: dimming exists to push a bright basemap under
+      // dark chrome, and on paper the basemap belongs to the page.
+      expect(skin.shape.tintedHeaders, isFalse);
+      expect(skin.shape.dimmedBasemap, isFalse);
+      expect(mmSkinFor(MmThemePreset.studio).shape.tintedHeaders, isTrue,
+          reason: 'the dark tool skin keeps its tonal step');
+    });
+
+    test('square controls still read as controls on paper', () {
+      // The affordance rule this app already fixed once for text buttons: a
+      // control with no corner and no fill is body text. On paper every control
+      // edge has to be drawn in the border tier, not the hairline and not an
+      // alpha.
+      expect(skin.shape.squareControls, isTrue);
+      final ThemeData td = buildMmTheme(t,
+          fontFamily: skin.type.displayFamily, shape: skin.shape);
+      expect(ratio(t.line, t.surface), greaterThanOrEqualTo(2.4));
+      expect((td.chipTheme.side ?? BorderSide.none).color, t.line);
+      expect(td.dividerTheme.color, t.line);
+      expect(
+          (td.inputDecorationTheme.enabledBorder! as OutlineInputBorder)
+              .borderSide
+              .color,
+          t.line);
+      final BorderSide chrome =
+          (td.appBarTheme.shape! as Border).bottom;
+      expect(chrome.color, t.line,
+          reason: 'the app bar ends in a rule, and on paper it has to show');
+      expect(chrome.width, 1);
+      // The segmented group is a control, so its edge is the border tier.
+      final ButtonStyle seg = td.segmentedButtonTheme.style!;
+      final BorderSide side = seg.side!.resolve(const <WidgetState>{})!;
+      expect(side.color, t.line);
     });
   });
 

@@ -533,12 +533,19 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
                 // above. Nested ListView is constrained by the SizedBox; the
                 // outer page-level ListView owns the rest.
                 Container(
-                  margin: const EdgeInsets.fromLTRB(16, 4, 16, 16),
-                  height: 360,
+                  margin: EdgeInsets.fromLTRB(
+                      context.skin.space.screenEdge,
+                      context.skin.space.labelToControl,
+                      context.skin.space.screenEdge,
+                      context.skin.space.screenEdge),
+                  // Fifteen step-eights: a bounded inner scroll, expressed from
+                  // the ladder rather than as a private 360.
+                  height: context.skin.space.step(8) * 15,
                   decoration: BoxDecoration(
-                    border:
-                        Border.all(color: cs.outline.withValues(alpha: .35)),
-                    borderRadius: mmRadius(context, 8),
+                    border: Border.all(
+                        color: context.skin.color.line,
+                        width: context.skin.shape.borderWidth),
+                    borderRadius: mmRadius(context, kRadiusSm),
                   ),
                   child: log.isEmpty
                       ? Center(child: Text(l.diagnosticsNoFrames))

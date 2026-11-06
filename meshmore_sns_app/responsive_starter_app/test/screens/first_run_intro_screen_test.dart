@@ -12,6 +12,9 @@ import 'package:meshmore_sns_app/l10n/locale_controller.dart';
 import 'package:meshmore_sns_app/perms/first_run_controller.dart';
 import 'package:meshmore_sns_app/perms/permissions_service.dart';
 import 'package:meshmore_sns_app/screens/first_run_intro_screen.dart';
+import 'package:meshmore_sns_app/theme/mm_tokens.dart';
+import 'package:meshmore_sns_app/theme/theme_controller.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 /// Counts the drops the demo path asks for. The intro cannot prove a link
 /// went down without a radio, so it proves the call that drops one.
@@ -26,7 +29,7 @@ class _CountingController extends MeshcoreController {
 }
 
 Widget _host(FirstRunController fr, PermissionsService perms,
-        {MeshcoreController? mc}) =>
+        {MeshcoreController? mc, ThemeController? theme}) =>
     MultiProvider(
       providers: [
         ChangeNotifierProvider<FirstRunController>.value(value: fr),
@@ -38,8 +41,10 @@ Widget _host(FirstRunController fr, PermissionsService perms,
         // has to be able to drop a link that is already up.
         ChangeNotifierProvider<MeshcoreController>.value(
             value: mc ?? _CountingController()),
+        if (theme != null) ChangeNotifierProvider<ThemeController>.value(value: theme),
       ],
       child: MaterialApp(
+        theme: theme?.theme,
         locale: const Locale('en'),
         supportedLocales: LocaleController.supported,
         localizationsDelegates: const <LocalizationsDelegate<Object>>[
@@ -53,6 +58,34 @@ Widget _host(FirstRunController fr, PermissionsService perms,
     );
 
 void main() {
+  // A first page is where a new user meets the app and the one screen with no
+  // app bar to escape through, so an overflow there is a wall. Paper is the
+  // ground it is read on in daylight, which is the state it exists for.
+  for (final MmThemePreset preset in <MmThemePreset>[
+    MmThemePreset.studioLight,
+    MmThemePreset.studio,
+  ]) {
+    testWidgets('${preset.name}: the first page holds 320 dp at 200 % text',
+        (WidgetTester t) async {
+      SharedPreferences.setMockInitialValues(<String, Object>{});
+      final ThemeController tc = ThemeController();
+      await tc.setPreset(preset);
+      t.view.physicalSize = const Size(320, 780);
+      t.view.devicePixelRatio = 1.0;
+      addTearDown(t.view.reset);
+      await t.pumpWidget(MediaQuery(
+        data: const MediaQueryData(textScaler: TextScaler.linear(2.0)),
+        child: _host(FirstRunController(), NoopPermissionsService(),
+            theme: tc),
+      ));
+      for (int i = 0; i < 12; i++) {
+        await t.pump(const Duration(milliseconds: 50));
+      }
+      expect(t.takeException(), isNull,
+          reason: 'the first page overflowed at the accessibility floor');
+    });
+  }
+
   testWidgets('Grant path requests BLE and marks first-run done',
       (WidgetTester t) async {
     await t.binding.setSurfaceSize(const Size(900, 1600));

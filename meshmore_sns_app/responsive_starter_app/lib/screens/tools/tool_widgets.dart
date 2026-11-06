@@ -93,14 +93,16 @@ class ToolNotice extends StatelessWidget {
     final MmSkin skin = context.skin;
     final Color c = alert ? skin.color.alert : skin.color.fgMuted;
     return MmPanel(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      padding: EdgeInsets.symmetric(
+          horizontal: context.skin.space.rowInset,
+          vertical: context.skin.space.rowGap),
       child: Row(
         children: <Widget>[
           Icon(icon, size: 18, color: c),
-          const SizedBox(width: 10),
+          SizedBox(width: context.skin.space.rowGap),
           Expanded(
             child: Text(text,
-                style: TextStyle(color: skin.color.fg, fontSize: 13)),
+                style: TextStyle(color: skin.color.fg, fontSize: skin.type.sizeBodyLg)),
           ),
         ],
       ),
@@ -118,7 +120,7 @@ class ToolFailureLine extends StatelessWidget {
     final ToolFailure? f = tool.failure;
     if (f == null) return const SizedBox.shrink();
     return Padding(
-      padding: const EdgeInsets.only(top: 10),
+      padding: EdgeInsets.only(top: context.skin.space.rowGap),
       child: ToolNotice(text: toolFailureText(AppLocalizations.of(context), f)),
     );
   }
@@ -211,7 +213,7 @@ class ToolField extends StatelessWidget {
             child: Text(label,
                 style: TextStyle(
                     color: skin.color.fgMuted,
-                    fontSize: 11,
+                    fontSize: context.skin.type.sizeSm,
                     letterSpacing: 1.5)),
           ),
           Expanded(child: child),
@@ -295,7 +297,7 @@ class ToolLine extends StatelessWidget {
   Widget build(BuildContext context) {
     final MmSkin skin = context.skin;
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 3),
+      padding: EdgeInsets.symmetric(vertical: context.skin.space.labelToControl),
       child: Row(
         children: <Widget>[
           if (leading != null) ...<Widget>[
@@ -307,7 +309,7 @@ class ToolLine extends StatelessWidget {
               text,
               style: TextStyle(
                 fontFamily: skin.type.monoFamily,
-                fontSize: 12.5,
+                fontSize: context.skin.type.size(12.5),
                 color: muted ? skin.color.fgMuted : skin.color.fg,
               ),
             ),

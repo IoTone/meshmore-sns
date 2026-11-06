@@ -148,7 +148,7 @@ class AppSettingsScreen extends StatelessWidget {
             title: Text(l.demoModeRow),
             subtitle: Text(
               l.demoModeSubtitle,
-              style: TextStyle(color: cs.onSurface.withValues(alpha: .6)),
+              style: TextStyle(color: cs.onSurfaceVariant),
             ),
             secondary: Icon(demo.enabled ? Icons.science : Icons.podcasts),
             value: demo.enabled,
@@ -166,7 +166,7 @@ class AppSettingsScreen extends StatelessWidget {
                   : mc.keepaliveFailure != null
                       ? l.settingsBackgroundFailed
                       : l.settingsBackgroundOn,
-              style: TextStyle(color: cs.onSurface.withValues(alpha: .6)),
+              style: TextStyle(color: cs.onSurfaceVariant),
             ),
             secondary: Icon(mc.backgroundKeepaliveEnabled
                 ? Icons.cloud_sync
@@ -184,7 +184,7 @@ class AppSettingsScreen extends StatelessWidget {
               mc.telemetryPollEnabled
                   ? l.settingsTelemetryPollOn
                   : l.settingsTelemetryPollOff,
-              style: TextStyle(color: cs.onSurface.withValues(alpha: .6)),
+              style: TextStyle(color: cs.onSurfaceVariant),
             ),
             secondary: Icon(mc.telemetryPollEnabled
                 ? Icons.thermostat
@@ -202,7 +202,7 @@ class AppSettingsScreen extends StatelessWidget {
               mc.airtimePolicy == AirtimePolicy.ownedChannel
                   ? l.airtimePolicyOwned
                   : l.airtimePolicyOnePercent,
-              style: TextStyle(color: cs.onSurface.withValues(alpha: .6)),
+              style: TextStyle(color: cs.onSurfaceVariant),
             ),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => _pickAirtimePolicy(context, mc, l),
@@ -216,7 +216,7 @@ class AppSettingsScreen extends StatelessWidget {
             leading: const Icon(Icons.language),
             title: Text(l.settingsLanguage),
             subtitle: Text(_languageLabel(l, lc.locale),
-                style: TextStyle(color: cs.onSurface.withValues(alpha: .6))),
+                style: TextStyle(color: cs.onSurfaceVariant)),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => _pickLanguage(context, lc),
           ),
@@ -236,7 +236,7 @@ class AppSettingsScreen extends StatelessWidget {
               style: TextStyle(
                   color: tts.enabled && !tts.speechAudible
                       ? cs.error
-                      : cs.onSurface.withValues(alpha: .6)),
+                      : cs.onSurfaceVariant),
             ),
             secondary: Icon(tts.enabled && tts.speechAudible
                 ? Icons.record_voice_over
@@ -254,7 +254,7 @@ class AppSettingsScreen extends StatelessWidget {
               '${l.voiceRate} ${tts.rate.toStringAsFixed(1)}× · '
               '${l.voicePitch} ${tts.pitch.toStringAsFixed(1)}'
               '${tts.voice == null ? '' : ' · ${tts.voice!.name}'}',
-              style: TextStyle(color: cs.onSurface.withValues(alpha: .6)),
+              style: TextStyle(color: cs.onSurfaceVariant),
             ),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => context.push('/settings/voice'),
@@ -268,7 +268,7 @@ class AppSettingsScreen extends StatelessWidget {
             leading: const Icon(Icons.satellite_alt),
             title: Text(l.locTitle),
             subtitle: Text(l.locTileSubtitle,
-                style: TextStyle(color: cs.onSurface.withValues(alpha: .6))),
+                style: TextStyle(color: cs.onSurfaceVariant)),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => context.push('/settings/location'),
           ),
@@ -277,7 +277,7 @@ class AppSettingsScreen extends StatelessWidget {
             leading: const Icon(Icons.hub_outlined),
             title: Text(l.networksTitle),
             subtitle: Text(l.networksTileSubtitle,
-                style: TextStyle(color: cs.onSurface.withValues(alpha: .6))),
+                style: TextStyle(color: cs.onSurfaceVariant)),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => context.push('/settings/networks'),
           ),
@@ -291,7 +291,7 @@ class AppSettingsScreen extends StatelessWidget {
             title: Text(l.settingsPermissions),
             subtitle: Text(
               l.settingsPermissionsSubtitle,
-              style: TextStyle(color: cs.onSurface.withValues(alpha: .6)),
+              style: TextStyle(color: cs.onSurfaceVariant),
             ),
             trailing: const Icon(Icons.open_in_new),
             onTap: () =>
@@ -304,7 +304,7 @@ class AppSettingsScreen extends StatelessWidget {
             title: Text(l.blockedKeysTitle),
             subtitle: Text(
               l.blockedKeysSubtitle(context.watch<BlockStore>().count),
-              style: TextStyle(color: cs.onSurface.withValues(alpha: .6)),
+              style: TextStyle(color: cs.onSurfaceVariant),
             ),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => context.push('/settings/blocks'),
@@ -317,7 +317,7 @@ class AppSettingsScreen extends StatelessWidget {
             leading: const Icon(Icons.save_alt),
             title: Text(l.settingsHistoryExportRow),
             subtitle: Text(l.settingsHistoryExportSubtitle,
-                style: TextStyle(color: cs.onSurface.withValues(alpha: .6))),
+                style: TextStyle(color: cs.onSurfaceVariant)),
             trailing: const Icon(Icons.ios_share),
             onTap: () => exportAllHistory(context, mc),
           ),
@@ -329,7 +329,7 @@ class AppSettingsScreen extends StatelessWidget {
             leading: const Icon(Icons.save_alt),
             title: Text(l.settingsHistoryExportRow),
             subtitle: Text(l.settingsHistoryExportSubtitle,
-                style: TextStyle(color: cs.onSurface.withValues(alpha: .6))),
+                style: TextStyle(color: cs.onSurfaceVariant)),
             trailing: const Icon(Icons.ios_share),
             onTap: () => exportAllHistory(context, mc),
           ),
@@ -339,7 +339,7 @@ class AppSettingsScreen extends StatelessWidget {
             leading: const Icon(Icons.privacy_tip_outlined),
             title: Text(l.termsSettingsRow),
             subtitle: Text(l.termsSettingsSubtitle,
-                style: TextStyle(color: cs.onSurface.withValues(alpha: .6))),
+                style: TextStyle(color: cs.onSurfaceVariant)),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => context.push('/settings/terms'),
           ),

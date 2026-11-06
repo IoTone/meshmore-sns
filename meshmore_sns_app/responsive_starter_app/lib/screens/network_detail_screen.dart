@@ -157,7 +157,7 @@ class _NetworkDetailScreenState extends State<NetworkDetailScreen> {
     }
     final bool current = networkIsCurrent(mc, n);
     final TextStyle muted =
-        TextStyle(color: cs.onSurface.withValues(alpha: .6));
+        TextStyle(color: cs.onSurfaceVariant);
     return Scaffold(
       appBar: AppBar(title: Text(n.name)),
       body: MmScaffold(

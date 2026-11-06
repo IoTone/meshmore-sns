@@ -54,7 +54,7 @@ class AboutScreen extends StatelessWidget {
             Text(l.appName.toUpperCase(),
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                    fontSize: 22,
+                    fontSize: skin.type.sizeXl,
                     letterSpacing: 4,
                     color: skin.color.fg)),
             const SizedBox(height: 4),
@@ -63,16 +63,16 @@ class AboutScreen extends StatelessWidget {
             Text(l.aboutSubtitleEn,
                 textAlign: TextAlign.center,
                 style:
-                    TextStyle(fontSize: 13, color: skin.color.fgMuted)),
+                    TextStyle(fontSize: skin.type.sizeBodyLg, color: skin.color.fgMuted)),
             const SizedBox(height: 2),
             Text(l.aboutSubtitleJa,
                 textAlign: TextAlign.center,
                 style:
-                    TextStyle(fontSize: 13, color: skin.color.fgMuted)),
-            const SizedBox(height: 14),
+                    TextStyle(fontSize: skin.type.sizeBodyLg, color: skin.color.fgMuted)),
+            SizedBox(height: skin.space.rowInset),
             Text(l.aboutVersion(app.getAppVersion()),
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 12, color: skin.color.fgMuted)),
+                style: TextStyle(fontSize: skin.type.sizeBody, color: skin.color.fgMuted)),
             const SizedBox(height: 20),
             Text(
               '${l.aboutDescription}\n'
@@ -81,7 +81,7 @@ class AboutScreen extends StatelessWidget {
               textAlign: TextAlign.center,
               style: TextStyle(color: skin.color.fgMuted, height: 1.5),
             ),
-            const SizedBox(height: 18),
+            SizedBox(height: skin.space.screenEdge),
             Text(l.aboutMadeWith,
                 textAlign: TextAlign.center,
                 style: TextStyle(
@@ -90,7 +90,7 @@ class AboutScreen extends StatelessWidget {
             // No "Terms & Conditions" line until U5 actually builds a terms
             // page: the string said "wired in U5" and was visibly a note to
             // self on a shipped About page (seen on the device).
-            const SizedBox(height: 18),
+            SizedBox(height: skin.space.screenEdge),
             // R10 — the only route a defect has to a person who can fix it:
             // there is no crash reporter and no analytics. The issue is
             // assembled on the phone, redacted, and sent only if the user sends
@@ -107,7 +107,7 @@ class AboutScreen extends StatelessWidget {
               style: TextStyle(
                   fontSize: skin.type.size(10.5), color: skin.color.fgMuted),
             ),
-            const SizedBox(height: 10),
+            SizedBox(height: skin.space.rowGap),
             // Moved out of App settings: replaying the first-run screens is a
             // support action, not a setting.
             OutlinedButton.icon(
@@ -117,7 +117,7 @@ class AboutScreen extends StatelessWidget {
               icon: const Icon(Icons.refresh, size: 18),
               label: Text(l.aboutReplayIntro),
             ),
-            const SizedBox(height: 10),
+            SizedBox(height: skin.space.rowGap),
             OutlinedButton.icon(
               onPressed: () => showLicensePage(
                 context: context,
@@ -128,7 +128,7 @@ class AboutScreen extends StatelessWidget {
               icon: const Icon(Icons.description_outlined, size: 18),
               label: Text(l.aboutLicensesButton),
             ),
-            const SizedBox(height: 10),
+            SizedBox(height: skin.space.rowGap),
             Text(l.aboutAttributions,
                 textAlign: TextAlign.center,
                 style: TextStyle(

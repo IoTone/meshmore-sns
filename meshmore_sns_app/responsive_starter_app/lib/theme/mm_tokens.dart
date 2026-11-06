@@ -104,7 +104,9 @@ class MmTokens {
     Color? fgDisabled,
     Color? onAlert,
     Color? link,
-  })  : _link = link,
+    Color? warn,
+  })  : _warn = warn,
+        _link = link,
         _onAlert = onAlert,
         _raised = raised,
         _selected = selected,
@@ -128,6 +130,15 @@ class MmTokens {
   /// skins and disagreed with Studio's own dashboard dot. A connection state
   /// is a state, not decoration, so it keeps one hue everywhere: green.
   final Color? _link;
+
+  /// Caution: a reading that is not yet a fault. `accent` means selection and
+  /// `alert` means danger, so a gauge with "35 % left" had no role to wear and
+  /// the battery screen carried two literals instead — an amber and a red that
+  /// were tuned on a dark ground and are 1.9:1 on paper. Derived as that amber
+  /// for every preset that does not state one, so the dark skins are unchanged.
+  final Color? _warn;
+
+  Color get warn => _warn ?? const Color(0xFFFFB020);
 
   Color get link => _link ?? const Color(0xFF3DDC84);
 
@@ -299,9 +310,15 @@ const Map<MmThemePreset, MmTokens> kMmPresets = <MmThemePreset, MmTokens>{
     selected: Color(0xFFDAD3BF),
     hairline: Color(0xFFA9A290),
     onAccent: Color(0xFFFFFFFF),
-    fgDisabled: Color(0xFF8E9196),
+    // 3.2:1 on the deepest layer it is drawn on (`selected`), 4.6:1 on the
+    // page. The old #8E9196 was 2.1:1 there, so a disabled control on paper
+    // read as a smudge rather than as a control that is off.
+    fgDisabled: Color(0xFF6E7278),
     onAlert: Color(0xFFFFFFFF),
     link: Color(0xFF16603A),
+    // The dark skins' amber is 1.9:1 on paper: a gauge ring in it disappears.
+    // This is the same caution at 4.6:1, hue unchanged to the eye.
+    warn: Color(0xFF8A5A00),
   ),
 };
 
@@ -506,9 +523,15 @@ ThemeData buildMmTheme(MmTokens t, {String? fontFamily, MmShape? shape}) {
       // `t.hairline`, which is near-black on the calm presets and invisible.
       // 2 logical px of `fg` at low alpha reads as a chrome bar over the page
       // without becoming a decoration in its own right.
+      //
+      // On paper that same 22 % is 1.35:1, so the chrome had no boundary at all
+      // — the page simply continued under the tab strip. Paper takes the border
+      // tier at one pixel, which is also the rule a group header opens with, so
+      // the two coincide instead of stacking.
       shape: Border(
         bottom: BorderSide(
-            color: t.fg.withValues(alpha: .22), width: 2),
+            color: t.isLight ? t.line : t.fg.withValues(alpha: .22),
+            width: t.isLight ? 1 : 2),
       ),
     ),
     listTileTheme: ListTileThemeData(iconColor: t.fgMuted, textColor: t.fg),
@@ -542,7 +565,11 @@ ThemeData buildMmTheme(MmTokens t, {String? fontFamily, MmShape? shape}) {
         iconColor: WidgetStateProperty.resolveWith((Set<WidgetState> s) =>
             s.contains(WidgetState.selected) ? t.base : t.fgMuted),
         overlayColor: WidgetStateProperty.all(t.accent.withValues(alpha: .12)),
-        side: WidgetStateProperty.all(BorderSide(color: t.hairline)),
+        // The group's own edge is a control border, so it is the border tier
+        // and not the hairline: a hairline is 2.1:1 on paper (and 1.4:1 on the
+        // dark grounds), so an unselected segment read as body text in a row
+        // rather than as a choice you can press.
+        side: WidgetStateProperty.all(BorderSide(color: t.line)),
         shape: square
             ? WidgetStateProperty.all<OutlinedBorder?>(squareBorder)
             : null,
