@@ -73,10 +73,11 @@ over BLE. Mesh-first, no backend, no account, no server.
   one view (R95). A surface that needs the drag takes it: the **Map** while
   it is current, and the grid while a pan/zoom view is in pan mode. Strip is
   56 dp tall, 48 dp cells with 22 px icon-only glyphs, 3 px selected rule,
-  and the app bar ends in a 2 px `fg`@22% rule.
+  and the app bar ends in a rule: 2 px `fg`@22 % on the dark skins, and on paper a
+  1 px `line` at 3.6:1, because the dark skin's faint rule was 1.35:1 there.
 - **Hyperlocal grid (R118).** The tab is called **Hyperlocal grid** again
   (`gridTitle`, EN/JA), not "Survey". Its views are one flat picker list —
-  Radar, Coverage, Weather, Mesh tree, Heat, Altitude — with no "More views…"
+  Radar, Coverage, Weather, Mesh tree, Message heat, Altitude — with no "More views…"
   second level and no hand-off row to the Map tab: this tab is a destination,
   not a router. The globe is out of the product.
 - **One header (R118).** The app bar names what is on screen: the app's own
