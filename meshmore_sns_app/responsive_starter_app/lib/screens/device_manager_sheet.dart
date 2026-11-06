@@ -13,6 +13,7 @@ import '../meshcore/meshcore_controller.dart';
 import '../meshcore/paired_device_history.dart';
 import 'device_contacts_screen.dart';
 import '../ui/mm_shape.dart';
+import '../theme/mm_skin.dart';
 import 'package:meshcore/meshcore.dart';
 
 /// R41 — Device management sheet. Single place to:
@@ -185,7 +186,7 @@ class _DeviceManagerSheetState extends State<DeviceManagerSheet> {
               child: Text(l.deviceMgrTitle,
                   style: TextStyle(
                       color: cs.primary,
-                      fontSize: 12,
+                      fontSize: context.skin.type.sizeBody,
                       letterSpacing: 3)),
             ),
             // Current state line.
@@ -257,7 +258,7 @@ class _DeviceManagerSheetState extends State<DeviceManagerSheet> {
                         style: TextStyle(
                             color: cs.onSurfaceVariant,
                             fontFamily: 'JetBrains Mono',
-                            fontSize: 11)),
+                            fontSize: context.skin.type.sizeSm)),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () {
                   final NavigatorState nav = Navigator.of(context);
@@ -280,7 +281,7 @@ class _DeviceManagerSheetState extends State<DeviceManagerSheet> {
               Text(l.deviceMgrRecent,
                   style: TextStyle(
                       color: cs.onSurfaceVariant,
-                      fontSize: 11,
+                      fontSize: context.skin.type.sizeSm,
                       letterSpacing: 2)),
               const SizedBox(height: 4),
               for (final PairedDeviceHistoryEntry e
@@ -298,7 +299,7 @@ class _DeviceManagerSheetState extends State<DeviceManagerSheet> {
                       style: TextStyle(
                           color: cs.onSurfaceVariant,
                           fontFamily: 'JetBrains Mono',
-                          fontSize: 11),
+                          fontSize: context.skin.type.sizeSm),
                     ),
                     trailing: IconButton(
                       tooltip: l.deviceMgrForget,
@@ -321,7 +322,7 @@ class _DeviceManagerSheetState extends State<DeviceManagerSheet> {
                   child: Text(l.deviceMgrPick,
                       style: TextStyle(
                           color: cs.onSurfaceVariant,
-                          fontSize: 11,
+                          fontSize: context.skin.type.sizeSm,
                           letterSpacing: 2)),
                 ),
                 if (_scanning)
@@ -346,7 +347,7 @@ class _DeviceManagerSheetState extends State<DeviceManagerSheet> {
                 child: Text(
                   l.deviceMgrScanFailed('$_scanError'),
                   style: TextStyle(
-                      color: cs.error, fontSize: 12),
+                      color: cs.error, fontSize: context.skin.type.sizeBody),
                 ),
               ),
             if (sortedHits.isEmpty && !_scanning && _scanError == null)
@@ -355,15 +356,15 @@ class _DeviceManagerSheetState extends State<DeviceManagerSheet> {
                     const EdgeInsets.symmetric(vertical: 12),
                 child: Text(l.deviceMgrScanHint,
                     style: TextStyle(
-                        color: cs.onSurfaceVariant, fontSize: 12)),
+                        color: cs.onSurfaceVariant, fontSize: context.skin.type.sizeBody)),
               ),
             if (sortedHits.isEmpty && _scanning)
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 18),
+              Padding(
+                padding: EdgeInsets.symmetric(
+                    vertical: context.skin.space.emptyState),
                 child: Center(
-                  child: SizedBox(
-                    width: 18,
-                    height: 18,
+                  child: SizedBox.square(
+                    dimension: context.skin.space.screenEdge,
                     child: CircularProgressIndicator(strokeWidth: 2),
                   ),
                 ),
@@ -402,7 +403,7 @@ class _DeviceManagerSheetState extends State<DeviceManagerSheet> {
                       style: TextStyle(
                           color: cs.onSurfaceVariant,
                           fontFamily: 'JetBrains Mono',
-                          fontSize: 11),
+                          fontSize: context.skin.type.sizeSm),
                     ),
                     trailing: const Icon(Icons.chevron_right),
                     onTap: () => _pickDevice(mc, r),
@@ -438,11 +439,17 @@ class _StatusRow extends StatelessWidget {
             ? cs.primary
             : cs.onSurfaceVariant;
     return Container(
-      padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+      padding: EdgeInsets.symmetric(
+          horizontal: context.skin.space.rowInset,
+          vertical: context.skin.space.rowGap),
       decoration: BoxDecoration(
-        color: cs.surfaceContainerHighest,
-        borderRadius: mmRadius(context, 8),
-        border: Border.all(color: accent.withValues(alpha: .5)),
+        color: context.skin.color.surface,
+        borderRadius: mmRadius(context, kRadiusSm),
+        // The status card's edge is its state colour, drawn at full strength:
+        // at 50 % it is 1.9:1 on paper, so a live link and a dead one had the
+        // same outline.
+        border: Border.all(
+            color: accent, width: context.skin.shape.borderWidth),
       ),
       child: Row(
         children: <Widget>[
@@ -454,7 +461,7 @@ class _StatusRow extends StatelessWidget {
                       : Icons.bluetooth_disabled,
               color: accent,
               size: 22),
-          const SizedBox(width: 10),
+          SizedBox(width: context.skin.space.rowGap),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -464,12 +471,12 @@ class _StatusRow extends StatelessWidget {
                     style: TextStyle(
                         color: cs.onSurface,
                         fontWeight: FontWeight.w600,
-                        fontSize: 14)),
-                const SizedBox(height: 2),
+                        fontSize: context.skin.type.sizeBodyLg)),
+                SizedBox(height: context.skin.space.insideText),
                 Text(state,
                     style: TextStyle(
                         color: accent,
-                        fontSize: 11,
+                        fontSize: context.skin.type.sizeSm,
                         letterSpacing: 2)),
               ],
             ),

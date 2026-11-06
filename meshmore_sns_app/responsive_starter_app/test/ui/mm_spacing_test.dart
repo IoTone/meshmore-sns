@@ -115,7 +115,6 @@ void main() {
       'lib/screens/dashboards/nerv_dashboard.dart': 6,
       'lib/screens/dashboards/recon_dashboard.dart': 13,
       'lib/screens/dashboards/studio_dashboard.dart': 11,
-      'lib/screens/device_manager_sheet.dart': 5,
       'lib/screens/dm_screen.dart': 2,
       'lib/screens/elevation_profile_view.dart': 2,
       'lib/screens/equal_grid_view.dart': 1,

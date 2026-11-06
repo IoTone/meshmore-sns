@@ -62,7 +62,6 @@ void main() {
       'lib/maps/basemap.dart': 1,
       'lib/screens/chat_screen.dart': 7,
       'lib/screens/device_contacts_screen.dart': 6,
-      'lib/screens/device_manager_sheet.dart': 10,
       'lib/screens/dm_screen.dart': 1,
       'lib/screens/equal_grid_view.dart': 5,
       'lib/screens/maps/maps_screen.dart': 6,
