@@ -1634,10 +1634,46 @@ class MeshcoreController extends ChangeNotifier {
     _pushEvent(ev);
   }
 
+  /// Kinds that describe a state rather than an occurrence. The radio reports
+  /// its battery and its own info on a timer, and a node advertises every so
+  /// often, so the same event arrives unchanged again and again.
+  static const Set<MeshEventKind> _stateKinds = <MeshEventKind>{
+    MeshEventKind.battery,
+    MeshEventKind.selfInfo,
+    MeshEventKind.deviceInfo,
+    MeshEventKind.deviceClockSynced,
+    MeshEventKind.advert,
+    MeshEventKind.contact,
+  };
+
   /// Append an event to the rolling RECENT-feed buffer.
+  ///
+  /// A repeated state refreshes the row that already says it instead of
+  /// appending a twin. On the bench the feed read "battery 4.03V",
+  /// "self-info · WIOld", "battery 4.03V", "self-info · WIOld" … — one line
+  /// per poll interval, which taught a reader to skip the feed. A state that
+  /// CHANGES is still a new row, because that is the part worth reading.
+  /// Messages and faults always append: two identical messages are two
+  /// messages, and a repeated fault is a repeated fault.
   void _pushEvent(MeshEvent ev) {
+    if (_events.isNotEmpty && _stateKinds.contains(ev.kind)) {
+      final MeshEvent last = _events.last;
+      if (last.kind == ev.kind && _sameArgs(last.args, ev.args)) {
+        _events[_events.length - 1] =
+            MeshEvent(kind: ev.kind, args: ev.args, at: ev.at);
+        return;
+      }
+    }
     _events.add(ev);
     if (_events.length > _eventsCap) _events.removeAt(0);
+  }
+
+  static bool _sameArgs(Map<String, String> a, Map<String, String> b) {
+    if (a.length != b.length) return false;
+    for (final MapEntry<String, String> e in a.entries) {
+      if (b[e.key] != e.value) return false;
+    }
+    return true;
   }
 
   String _hex(List<int> b) =>
