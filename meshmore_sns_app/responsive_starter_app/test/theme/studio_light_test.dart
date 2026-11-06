@@ -224,8 +224,7 @@ void main() {
           t.line);
       // The segmented group is a control, so its edge is the border tier.
       final ButtonStyle seg = td.segmentedButtonTheme.style!;
-      final BorderSide side =
-          seg.side!.resolve(const <WidgetState>{})! as BorderSide;
+      final BorderSide side = seg.side!.resolve(const <WidgetState>{})!;
       expect(side.color, t.line);
     });
   });
