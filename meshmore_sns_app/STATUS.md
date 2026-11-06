@@ -4,13 +4,22 @@ _Snapshot as of 2026-11-05. App `1.0.197+13`, branch `feat/app-completion`.
 Change records below are newest first from R113; older entries are kept in
 the order they were written._
 
-**What is proven and what is not.** Measured on this tree, 2026-11-05, at `1d30b0d` on this tree: `flutter test`
-1690 passed in 2 m 0 s; `flutter analyze` reports only the two pre-existing `unawaited_return_in_try_block` warnings in
-`lib/maps/maps_controller.dart` (8 s); the protocol package `dart test` 368 passed with 1 skipped; the pure-Java port
-`./gradlew test` 143 passed with 1 skipped (7 s); `flutter build apk --debug` succeeds with the native AVIF library in
-the APK (1 m 23 s cold, far shorter on a warm tree). **Nothing below is device-verified.** The phone is behind a PIN keyguard, so every screen-level, on-air and Doze
-path is owed a run, and the rows that say device-unverified are the honest reading rather than a qualifier. What is
-not built at all is listed as residue in `meshmore-feature-register.md` §10.
+**What is proven and what is not.** Measured on this tree, 2026-11-05: `flutter test` **1997 passed** in 3 m 04 s;
+`flutter analyze` reports only the two `unawaited_return_in_try_block` warnings in `lib/maps/maps_controller.dart`;
+the protocol package `dart test` 368 passed with 1 skipped; the pure-Java port `./gradlew test` 143 passed with 1
+skipped. Both release paths build: `flutter build appbundle --release` produced a 77.0 MB bundle and
+`flutter build apk --release --target-platform android-arm64` a 32.2 MB APK, each signed with a throwaway key that
+was deleted afterwards (`meshmore-publishing.md` lists what the publisher must supply instead). The debug arm64 APK
+(105 MB) is installed on the motorola edge 2024 over wireless adb.
+
+**Device-verified on that phone, 2026-11-05**: the radio's stored contact table fills the node list on connect
+(181 contacts read from a Wio holding 181/350); the clock write is read-then-write, so a device that kept time is
+left alone; the recent feed coalesces repeated polls; the app bar carries one title with no subtitle block; and the
+Japanese locale renders. Covered by tests but not yet re-read on the phone: the "Hyperlocal grid" tab label, the six
+views at one level, the alarm screen's configure-then-hold order, and the vector map repainting on a skin switch.
+Still owed: any on-air path with both radios powered, the Doze and foreground-service run, and the media
+send/receive pair. The 16 KB page check fails on `libavif_native.so` only (`tool/check_16k.sh`), and the deadline
+for it is stated two ways upstream, so the Play Console notice decides.
 
 An offline-first Flutter companion app for MeshCore LoRa mesh radios
 over BLE. Mesh-first, no backend, no account, no server.
@@ -26,8 +35,9 @@ over BLE. Mesh-first, no backend, no account, no server.
   CayenneLPP, channel/identity crypto, the binary/raw carriers). No Flutter deps.
 - **`lib/meshcore/mesh_sender.dart`** — the app's own raw send path: one opaque
   record to a contact as `0x19`, with the radio's OK/ERR as the outcome.
-- **`lib/meshcore/airtime.dart`** — the two airtime policies and the LoRa
-  time-on-air estimator. Nothing meters the app's own sends yet (D10.1).
+- **`lib/meshcore/airtime.dart`** + `airtime_meter.dart` — the two airtime policies and the LoRa time-on-air
+  estimator. Every send is charged through one path; a send over the window is refused by the app's own meter
+  (`AirtimeRefused`), an urgent send bypasses the refusal but is still charged.
 - UI: `provider` + `go_router`; token-based themes; ARB + `gen-l10n`
   localization (EN + JA, in lock-step).
 
