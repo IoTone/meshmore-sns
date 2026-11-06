@@ -36,28 +36,32 @@ class PersonalizationScreen extends StatelessWidget {
                 // the user so a tap that "does nothing" makes sense.
                 if (tc.highContrast)
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 6),
+                    padding: EdgeInsets.fromLTRB(
+                        context.skin.space.screenEdge,
+                        0,
+                        context.skin.space.screenEdge,
+                        context.skin.space.labelToControl),
                     child: Container(
-                      padding: const EdgeInsets.all(10),
+                      padding: EdgeInsets.all(context.skin.space.rowInset),
                       decoration: BoxDecoration(
                         color: Theme.of(context)
                             .colorScheme
                             .surfaceContainerHighest,
-                        borderRadius: mmRadius(context, 6),
+                        borderRadius: mmRadius(context, kRadiusSm),
                       ),
                       child: Row(
                         children: <Widget>[
                           Icon(Icons.info_outline,
                               size: 16,
                               color: Theme.of(context).colorScheme.primary),
-                          const SizedBox(width: 8),
+                          SizedBox(width: context.skin.space.rowGap),
                           Expanded(
                             child: Text(
                               l.personalizationHighContrastHint,
                               style: TextStyle(
                                   color:
                                       Theme.of(context).colorScheme.onSurface,
-                                  fontSize: 12,
+                                  fontSize: context.skin.type.sizeBody,
                                   height: 1.35),
                             ),
                           ),
@@ -164,14 +168,19 @@ class _Swatches extends StatelessWidget {
   final MmTokens t;
   @override
   Widget build(BuildContext context) {
+    // A swatch is a colour chip, so its outline comes from the skin's rule.
+    // The white 20 % edge it used before vanishes on a light ground — and the
+    // light preset is one of the choices this very row exists to offer, so the
+    // swatch for it was the one you could not see.
+    final Color outline = context.skin.color.line;
     Widget dot(Color c) => Container(
-          width: 14,
-          height: 14,
-          margin: const EdgeInsets.only(left: 3),
+          width: context.skin.space.rowInset + context.skin.space.insideText,
+          height: context.skin.space.rowInset + context.skin.space.insideText,
+          margin: EdgeInsets.only(left: context.skin.space.insideText),
           decoration: BoxDecoration(
             color: c,
             borderRadius: BorderRadius.circular(kRadiusSm),
-            border: Border.all(color: const Color(0x33FFFFFF)),
+            border: Border.all(color: outline),
           ),
         );
     return Row(

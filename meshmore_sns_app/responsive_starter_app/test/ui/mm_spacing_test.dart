@@ -132,7 +132,6 @@ void main() {
       'lib/screens/node_detail_sheet.dart': 3,
       'lib/screens/nodes_screen.dart': 4,
       'lib/screens/pair_radio_screen.dart': 10,
-      'lib/screens/personalization_screen.dart': 2,
       'lib/screens/sns_cells_view.dart': 2,
       'lib/screens/sos_screen.dart': 1,
       'lib/screens/street_map_view.dart': 1,

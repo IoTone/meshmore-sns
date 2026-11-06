@@ -122,9 +122,25 @@ class _MmCollapsibleSectionState extends State<MmCollapsibleSection> {
       height: skin.shape.hairlineWidth,
       color: skin.color.hairline,
     );
+    // A header that carries no tint needs an edge to start at. On the dark
+    // grounds the tonal step does that job; on paper a band is a box, so the
+    // rule above the label is what separates one group from the last.
+    //
+    // That rule is the *border* tier, not the hairline tier: on paper it is
+    // the only thing marking the group, and a hairline is deliberately too
+    // faint to be a border (`studio_light_test`: a hairline stays under 2.6:1).
+    // The closing rule below the children stays a hairline in both cases, and
+    // never sits between a header and its own content (R77).
+    final Widget groupRule = Container(
+      height: skin.shape.hairlineWidth,
+      color: skin.color.line,
+    );
+    final Widget topRule =
+        skin.shape.tintedHeaders ? const SizedBox.shrink() : groupRule;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
+        topRule,
         Semantics(
           button: true,
           expanded: _open,

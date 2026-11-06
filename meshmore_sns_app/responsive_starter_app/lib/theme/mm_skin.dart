@@ -391,8 +391,13 @@ MmSkin mmSkinFor(MmThemePreset preset) {
     // mono for machine data), but the opposite ground, so the ornament is
     // still none and the map is NOT dimmed: dimming exists to push a bright
     // basemap under dark chrome, and on a light page the basemap belongs to
-    // the page. `tintedHeaders` is on so a group header takes a tonal step
-    // rather than needing a rule, which on paper reads as a table line.
+    // the page.
+    //
+    // `tintedHeaders` is OFF here, and the tonal step it gave the dark skins is
+    // not a light-ground device: a beige band on paper is a box, so every
+    // collapsible group read as one more rectangle and the page became a stack
+    // of them. A hairline rule above the label does the same job on paper,
+    // where a rule *is* the table line rather than an apology for one.
     case MmThemePreset.studioLight:
       return MmSkin(
         preset: preset,
@@ -411,7 +416,7 @@ MmSkin mmSkinFor(MmThemePreset preset) {
           squareControls: true,
           dimmedBasemap: false,
           vectorBasemap: false,
-          tintedHeaders: true,
+          tintedHeaders: false,
         ),
         ornament: _calmOrnament,
       );
