@@ -559,7 +559,11 @@ ThemeData buildMmTheme(MmTokens t, {String? fontFamily, MmShape? shape}) {
         iconColor: WidgetStateProperty.resolveWith((Set<WidgetState> s) =>
             s.contains(WidgetState.selected) ? t.base : t.fgMuted),
         overlayColor: WidgetStateProperty.all(t.accent.withValues(alpha: .12)),
-        side: WidgetStateProperty.all(BorderSide(color: t.hairline)),
+        // The group's own edge is a control border, so it is the border tier
+        // and not the hairline: a hairline is 2.1:1 on paper (and 1.4:1 on the
+        // dark grounds), so an unselected segment read as body text in a row
+        // rather than as a choice you can press.
+        side: WidgetStateProperty.all(BorderSide(color: t.line)),
         shape: square
             ? WidgetStateProperty.all<OutlinedBorder?>(squareBorder)
             : null,

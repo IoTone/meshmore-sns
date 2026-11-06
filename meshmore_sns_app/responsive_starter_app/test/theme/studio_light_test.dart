@@ -193,6 +193,43 @@ void main() {
     });
   });
 
+  group('the ground decides the ornament, and says so', () {
+    test('paper carries no tinted header band, and keeps no dimmed basemap', () {
+      // A tonal band reads as grouping on a dark ground and as a box on paper,
+      // where there are no other boxes to tell it apart from; the widget gives
+      // an untinted header a border-tier opening rule instead. The map flag
+      // follows the same logic: dimming exists to push a bright basemap under
+      // dark chrome, and on paper the basemap belongs to the page.
+      expect(skin.shape.tintedHeaders, isFalse);
+      expect(skin.shape.dimmedBasemap, isFalse);
+      expect(mmSkinFor(MmThemePreset.studio).shape.tintedHeaders, isTrue,
+          reason: 'the dark tool skin keeps its tonal step');
+    });
+
+    test('square controls still read as controls on paper', () {
+      // The affordance rule this app already fixed once for text buttons: a
+      // control with no corner and no fill is body text. On paper every control
+      // edge has to be drawn in the border tier, not the hairline and not an
+      // alpha.
+      expect(skin.shape.squareControls, isTrue);
+      final ThemeData td = buildMmTheme(t,
+          fontFamily: skin.type.displayFamily, shape: skin.shape);
+      expect(ratio(t.line, t.surface), greaterThanOrEqualTo(2.4));
+      expect((td.chipTheme.side ?? BorderSide.none).color, t.line);
+      expect(td.dividerTheme.color, t.line);
+      expect(
+          (td.inputDecorationTheme.enabledBorder! as OutlineInputBorder)
+              .borderSide
+              .color,
+          t.line);
+      // The segmented group is a control, so its edge is the border tier.
+      final ButtonStyle seg = td.segmentedButtonTheme.style!;
+      final BorderSide side =
+          seg.side!.resolve(const <WidgetState>{})! as BorderSide;
+      expect(side.color, t.line);
+    });
+  });
+
   group('the tool shape rules hold on the light ground', () {
     ThemeData theme() =>
         buildMmTheme(t, fontFamily: skin.type.displayFamily, shape: skin.shape);
