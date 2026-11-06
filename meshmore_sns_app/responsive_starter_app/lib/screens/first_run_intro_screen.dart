@@ -84,7 +84,11 @@ class _FirstRunIntroScreenState extends State<FirstRunIntroScreen> {
     final ColorScheme cs = th.colorScheme;
     return Scaffold(
       body: SafeArea(
-        child: Padding(
+        // The page scrolls. It is three paragraph blocks and two full-width
+        // buttons on a screen with no app bar and no other route out, and at
+        // 320 dp with 200 % text the column overflowed by 2120 px: a new user
+        // with large text could not reach "Allow Bluetooth" at all.
+        child: SingleChildScrollView(
           padding: EdgeInsets.symmetric(
               horizontal: context.skin.space.sectionGap,
               vertical: context.skin.space.emptyState),
@@ -127,20 +131,22 @@ class _FirstRunIntroScreenState extends State<FirstRunIntroScreen> {
                   ],
                 );
               }),
-              const Spacer(),
+              // A spacer has no meaning inside a scroll view; the button
+              // group is separated by the ladder's group gap instead.
+              SizedBox(height: context.skin.space.emptyState),
               if (_denialNote != null) ...<Widget>[
                 Container(
-                  padding: const EdgeInsets.all(12),
+                  padding: EdgeInsets.all(context.skin.space.rowInset),
                   decoration: BoxDecoration(
                     color: cs.errorContainer,
-                    borderRadius: mmRadius(context, 8),
+                    borderRadius: mmRadius(context, kRadiusSm),
                   ),
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: <Widget>[
                       Icon(Icons.info_outline,
                           color: cs.onErrorContainer, size: 18),
-                      const SizedBox(width: 8),
+                      SizedBox(width: context.skin.space.rowGap),
                       Expanded(
                         child: Text(
                           _denialNote!,
@@ -150,7 +156,7 @@ class _FirstRunIntroScreenState extends State<FirstRunIntroScreen> {
                     ],
                   ),
                 ),
-                const SizedBox(height: 8),
+                SizedBox(height: context.skin.space.rowGap),
                 Align(
                   alignment: Alignment.centerRight,
                   child: TextButton.icon(
@@ -159,7 +165,7 @@ class _FirstRunIntroScreenState extends State<FirstRunIntroScreen> {
                     label: Text(AppLocalizations.of(context).firstRunOpenSettings),
                   ),
                 ),
-                const SizedBox(height: 4),
+                SizedBox(height: context.skin.space.labelToControl),
               ],
               SizedBox(
                 width: double.infinity,
@@ -169,7 +175,7 @@ class _FirstRunIntroScreenState extends State<FirstRunIntroScreen> {
                   label: Text(AppLocalizations.of(context).firstRunGrant),
                 ),
               ),
-              const SizedBox(height: 8),
+              SizedBox(height: context.skin.space.rowGap),
               SizedBox(
                 width: double.infinity,
                 child: OutlinedButton.icon(
