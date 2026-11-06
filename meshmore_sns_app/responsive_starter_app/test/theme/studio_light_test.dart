@@ -116,6 +116,34 @@ void main() {
           reason: 'a hairline is not a border');
     });
 
+    test('disabled ink is still legible on the deepest layer it is drawn on',
+        () {
+      // Disabled text is exempt from AA, but a control that is off must still
+      // be readable as a control: on paper the old #8E9196 was 2.1:1 on
+      // `selected` and read as a smudge.
+      for (final Color layer in t.layers) {
+        expect(ratio(t.fgDisabled, layer), greaterThanOrEqualTo(3.0),
+            reason: 'disabled ink on $layer');
+      }
+      // …and it stays visibly below the muted tier, so "off" still reads as
+      // off rather than as secondary text.
+      expect(ratio(t.fgMuted, t.base),
+          greaterThan(ratio(t.fgDisabled, t.base)));
+    });
+
+    test('caution is a role of its own, and readable on paper', () {
+      // The gauge carried an amber literal that was tuned on a dark ground.
+      expect(t.warn, isNot(t.accent));
+      expect(t.warn, isNot(t.alert));
+      for (final Color layer in t.layers) {
+        expect(ratio(t.warn, layer), greaterThanOrEqualTo(3.0),
+            reason: 'a caution stroke on $layer');
+      }
+      // The dark presets keep the amber they were drawn with.
+      expect(kMmPresets[MmThemePreset.studio]!.warn,
+          const Color(0xFFFFB020));
+    });
+
     test('alert and accent are not the same colour', () {
       expect(t.accent, isNot(t.alert));
       expect(ratio(t.alert, t.accent), greaterThan(1.2),
