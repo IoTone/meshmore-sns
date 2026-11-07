@@ -8,7 +8,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:meshcore/meshcore.dart'
-    show AdvertPath, Contact, PathDiscoveryResult, PathLen;
+    show AdvertPath, Contact, LoginResult, PathDiscoveryResult, PathLen,
+        kAdvTypeRoom, kAdvTypeRepeater, kLoginPasswordMax;
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -25,6 +26,7 @@ import '../peer/peer_profiles.dart';
 import '../theme/mm_skin.dart';
 import '../theme/theme_controller.dart';
 import '../util/geo.dart' as geo;
+import '../ui/mm_components.dart';
 import '../ui/mm_shape.dart';
 
 /// R18 polish — modal bottom sheet shown when the user taps a node
@@ -481,6 +483,9 @@ class _NodeDetailSheetState extends State<NodeDetailSheet> {
             if (!widget.isSelf) _AdvertPathLine(node: n),
             if (!widget.isSelf) _FindRouteLine(node: n),
             if (!widget.isSelf) _ShareContactLine(node: n),
+            if (!widget.isSelf &&
+                (n.type == kAdvTypeRepeater || n.type == kAdvTypeRoom))
+              _RepeaterSessionBlock(node: n),
             // R47 — peer telemetry on tap. CMD_SEND_TELEMETRY_REQ goes
             // to the device, which unicasts to the peer over the air;
             // the peer's response arrives async and lands in the
@@ -967,6 +972,139 @@ class _ShareContactLineState extends State<_ShareContactLine> {
             Icon(Icons.ios_share, size: 16, color: cs.onSurfaceVariant),
           ],
         ),
+      ),
+    );
+  }
+}
+
+
+/// A repeater session: sign in with the repeater's own password, see what it
+/// granted, and sign out.
+///
+/// The password is not stored anywhere: it is sent once, and the block only
+/// remembers whether this sheet signed in. What a session permits is the
+/// repeater's business (`permissions`), so it is reported, not interpreted.
+/// A command console is the natural next step and is not built: the codec has no
+/// `CMD_RUN_CLI_COMMAND` builder yet.
+class _RepeaterSessionBlock extends StatefulWidget {
+  const _RepeaterSessionBlock({required this.node});
+  final DiscoveredNode node;
+
+  @override
+  State<_RepeaterSessionBlock> createState() => _RepeaterSessionBlockState();
+}
+
+class _RepeaterSessionBlockState extends State<_RepeaterSessionBlock> {
+  final TextEditingController _password = TextEditingController();
+  bool _busy = false;
+  LoginResult? _session;
+  String? _message;
+
+  @override
+  void dispose() {
+    _password.dispose();
+    super.dispose();
+  }
+
+  Future<void> _signIn() async {
+    if (_busy) return;
+    final AppLocalizations l = AppLocalizations.of(context);
+    setState(() {
+      _busy = true;
+      _message = null;
+    });
+    final MeshcoreController mc = context.read<MeshcoreController>();
+    final LoginResult? r =
+        await mc.loginRepeater(widget.node.pubKeyHex, _password.text);
+    if (!mounted) return;
+    setState(() {
+      _busy = false;
+      _session = r != null && r.success ? r : null;
+      _message = r == null
+          ? l.repeaterNoAnswer
+          : r.success
+              ? null
+              : l.repeaterRefused;
+      _password.clear();
+    });
+  }
+
+  Future<void> _signOut() async {
+    if (_busy) return;
+    final AppLocalizations l = AppLocalizations.of(context);
+    setState(() => _busy = true);
+    await context.read<MeshcoreController>().logoutRepeater(widget.node.pubKeyHex);
+    if (!mounted) return;
+    setState(() {
+      _busy = false;
+      _session = null;
+      _message = l.repeaterSignOutDone;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations l = AppLocalizations.of(context);
+    final ColorScheme cs = Theme.of(context).colorScheme;
+    final bool ready = context.watch<MeshcoreController>().isReady && !_busy;
+    final LoginResult? s = _session;
+    return Padding(
+      padding: const EdgeInsets.only(top: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          Text(l.repeaterSession,
+              style: TextStyle(
+                  color: cs.onSurfaceVariant,
+                  fontSize: context.skin.type.sizeSm,
+                  letterSpacing: 2)),
+          const SizedBox(height: 4),
+          if (s == null) ...<Widget>[
+            Text(l.repeaterSessionIntro,
+                style: TextStyle(
+                    color: cs.onSurfaceVariant,
+                    fontSize: context.skin.type.sizeBody)),
+            const SizedBox(height: 6),
+            Row(
+              children: <Widget>[
+                Expanded(
+                  child: TextField(
+                    key: const ValueKey<String>('repeater-password'),
+                    controller: _password,
+                    enabled: ready,
+                    obscureText: true,
+                    maxLength: kLoginPasswordMax,
+                    decoration: InputDecoration(
+                      isDense: true,
+                      hintText: l.repeaterPasswordHint,
+                      counterText: '',
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                MmAction(
+                  label: l.repeaterSignIn,
+                  onPressed: !ready || _password.text.isEmpty ? null : _signIn,
+                ),
+              ],
+            ),
+          ] else ...<Widget>[
+            Text(l.repeaterSignedIn(s.permissions.toRadixString(16)),
+                style: TextStyle(
+                    color: cs.onSurface,
+                    fontFamily: context.skin.type.monoFamily)),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: MmAction(
+                label: l.repeaterSignOut,
+                onPressed: ready ? _signOut : null,
+              ),
+            ),
+          ],
+          if (_message != null)
+            Text(_message!,
+                style: TextStyle(color: cs.error, fontSize: context.skin.type.sizeSm)),
+        ],
       ),
     );
   }

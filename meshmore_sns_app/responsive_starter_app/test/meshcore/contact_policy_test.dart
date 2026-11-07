@@ -461,4 +461,65 @@ void main() {
     expect(await mc.setDevicePin(12345), isFalse);
     mc.dispose();
   });
+
+  group('a repeater session', () {
+    /// `PUSH_CODE_LOGIN_SUCCESS` (0x85) legacy form:
+    /// `[85][permissions][prefix 6]`.
+    Uint8List loginFrame(List<int> prefix, {bool success = true, int perm = 1}) =>
+        Uint8List.fromList(<int>[
+          success ? 0x85 : 0x86,
+          if (success) perm else 0,
+          ...prefix,
+        ]);
+
+    test('a sign-in reports what the repeater granted', () async {
+      final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
+      final MeshcoreController mc = await connected(fake);
+      const String key =
+          'a1b2c3d4e5f600112233445566778899aabbccddeeff00112233445566778899';
+      final Future<LoginResult?> pending = mc.loginRepeater(key, 'hunter2');
+      await settle();
+      expect(
+          fake.sent.any((Uint8List f) =>
+              f.isNotEmpty && f[0] == MeshcoreCommand.sendLogin.code),
+          isTrue);
+      fake.emit(loginFrame(<int>[0xa1, 0xb2, 0xc3, 0xd4, 0xe5, 0xf6], perm: 3));
+      final LoginResult? r = await pending;
+      expect(r, isNotNull);
+      expect(r!.success, isTrue);
+      expect(r.permissions, 3);
+      mc.dispose();
+    });
+
+    test('a refusal is the answer, not a lost request', () async {
+      final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
+      final MeshcoreController mc = await connected(fake);
+      const String key =
+          'a1b2c3d4e5f600112233445566778899aabbccddeeff00112233445566778899';
+      final Future<LoginResult?> pending = mc.loginRepeater(key, 'wrong');
+      await settle();
+      fake.emit(loginFrame(<int>[0xa1, 0xb2, 0xc3, 0xd4, 0xe5, 0xf6],
+          success: false));
+      final LoginResult? r = await pending;
+      expect(r, isNotNull);
+      expect(r!.success, isFalse);
+      mc.dispose();
+    });
+
+    test('a password the firmware would truncate is never sent', () async {
+      final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
+      final MeshcoreController mc = await connected(fake);
+      const String key =
+          'a1b2c3d4e5f600112233445566778899aabbccddeeff00112233445566778899';
+      fake.sent.clear();
+      expect(await mc.loginRepeater(key, 'x' * (kLoginPasswordMax + 1)), isNull,
+          reason: 'the firmware cuts at 15 bytes, which would be a different '
+              'password');
+      expect(
+          fake.sent.any((Uint8List f) =>
+              f.isNotEmpty && f[0] == MeshcoreCommand.sendLogin.code),
+          isFalse);
+      mc.dispose();
+    });
+  });
 }

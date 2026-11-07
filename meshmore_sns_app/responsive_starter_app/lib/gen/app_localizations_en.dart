@@ -6052,4 +6052,34 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get settingsPinConfirmRemove =>
       'Remove the pairing PIN? Anyone in range could offer to pair, and the radio would still keep its own device list.';
+
+  @override
+  String get repeaterSession => 'Repeater session';
+
+  @override
+  String get repeaterSessionIntro =>
+      'A password opens a session on this repeater. It is the repeater\'s own secret, kept between it and you; the app does not store it.';
+
+  @override
+  String get repeaterSignIn => 'Sign in';
+
+  @override
+  String get repeaterSignOut => 'Sign out';
+
+  @override
+  String get repeaterPasswordHint => 'Repeater password';
+
+  @override
+  String repeaterSignedIn(Object perm) {
+    return 'Signed in (permissions 0x$perm)';
+  }
+
+  @override
+  String get repeaterRefused => 'The repeater refused that password.';
+
+  @override
+  String get repeaterNoAnswer => 'No answer. The repeater may be out of reach.';
+
+  @override
+  String get repeaterSignOutDone => 'Signed out.';
 }

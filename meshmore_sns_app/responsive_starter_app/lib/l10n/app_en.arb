@@ -4083,5 +4083,14 @@
   "settingsPinBad": "A PIN is exactly six digits.",
   "settingsPinDone": "PIN set. A new pairing needs it now.",
   "settingsPinRemoved": "PIN removed. Pairing no longer asks for one.",
-  "settingsPinConfirmRemove": "Remove the pairing PIN? Anyone in range could offer to pair, and the radio would still keep its own device list."
+  "settingsPinConfirmRemove": "Remove the pairing PIN? Anyone in range could offer to pair, and the radio would still keep its own device list.",
+  "repeaterSession": "Repeater session",
+  "repeaterSessionIntro": "A password opens a session on this repeater. It is the repeater's own secret, kept between it and you; the app does not store it.",
+  "repeaterSignIn": "Sign in",
+  "repeaterSignOut": "Sign out",
+  "repeaterPasswordHint": "Repeater password",
+  "repeaterSignedIn": "Signed in (permissions 0x{perm})",
+  "repeaterRefused": "The repeater refused that password.",
+  "repeaterNoAnswer": "No answer. The repeater may be out of reach.",
+  "repeaterSignOutDone": "Signed out."
 }

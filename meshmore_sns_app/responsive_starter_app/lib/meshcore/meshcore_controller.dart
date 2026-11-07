@@ -4878,6 +4878,63 @@ class MeshcoreController extends ChangeNotifier {
     return out;
   }
 
+  // --- A repeater session --------------------------------------------------
+  //
+  // `CMD_SEND_LOGIN` (0x1A) opens a session on a repeater or room server with a
+  // shared secret, and the verdict arrives as `PUSH_CODE_LOGIN_SUCCESS` (0x85,
+  // carrying the permission byte) or `_FAIL` (0x86). `CMD_LOGOUT` (0x1D) closes
+  // it. Both replies name the node's prefix, so a session cannot be
+  // mis-attributed to another repeater.
+  //
+  // What a session *permits* is the radio's business: this only reports what it
+  // said. It is also the prerequisite for a command console, which is not built:
+  // there is no `CMD_RUN_CLI_COMMAND` builder in the codec yet, so this is the
+  // whole of the session and not a half-built console.
+
+  /// Signs in to a repeater. Null when the radio never answered; a
+  /// [LoginResult] with `success == false` is the repeater refusing.
+  Future<LoginResult?> loginRepeater(String pubKeyHex, String password,
+      {Duration timeout = const Duration(seconds: 10)}) async {
+    if (!isReady) return null;
+    final String hex = pubKeyHex.toLowerCase();
+    if (hex.length != kPubKeySize * 2) return null;
+    final String prefix = hex.substring(0, kPubKeyPrefixSize * 2);
+    final Uint8List key = Uint8List.fromList(<int>[
+      for (int i = 0; i < hex.length; i += 2)
+        int.parse(hex.substring(i, i + 2), radix: 16),
+    ]);
+    try {
+      final Uint8List frame =
+          MeshcoreFrameCodec.sendLogin(key, password); // refuses a bad password
+      final Future<MeshcoreInbound> reply = inboundFrames
+          .firstWhere((MeshcoreInbound f) =>
+              f is LoginResultFrame &&
+              _hex(f.result.pubKeyPrefix) == prefix)
+          .timeout(timeout);
+      await send(frame);
+      final MeshcoreInbound f = await reply;
+      return f is LoginResultFrame ? f.result : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Ends a repeater session. The radio answers OK even for an unknown key, so
+  /// there is nothing to wait for.
+  Future<void> logoutRepeater(String pubKeyHex) async {
+    if (!isReady) return;
+    final String hex = pubKeyHex.toLowerCase();
+    if (hex.length != kPubKeySize * 2) return;
+    try {
+      await send(MeshcoreFrameCodec.logout(<int>[
+        for (int i = 0; i < hex.length; i += 2)
+          int.parse(hex.substring(i, i + 2), radix: 16),
+      ]));
+    } catch (_) {
+      _emitTaskError('logout');
+    }
+  }
+
   // --- The radio's pairing PIN ------------------------------------------
   //
   // `CMD_SET_DEVICE_PIN` (0x25): 0 clears the PIN, otherwise exactly six digits.

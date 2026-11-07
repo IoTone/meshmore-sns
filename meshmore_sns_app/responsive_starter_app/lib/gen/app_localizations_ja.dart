@@ -5809,4 +5809,34 @@ class AppLocalizationsJa extends AppLocalizations {
   @override
   String get settingsPinConfirmRemove =>
       'ペアリングPINを削除しますか？範囲内の誰でもペアリングを申し出られるようになります（接続済み端末の一覧は無線機側に残ります）。';
+
+  @override
+  String get repeaterSession => 'リピーターセッション';
+
+  @override
+  String get repeaterSessionIntro =>
+      'パスワードでこのリピーターのセッションを開きます。合言葉はリピーターとあなたの間のもので、アプリは保存しません。';
+
+  @override
+  String get repeaterSignIn => 'サインイン';
+
+  @override
+  String get repeaterSignOut => 'サインアウト';
+
+  @override
+  String get repeaterPasswordHint => 'リピーターのパスワード';
+
+  @override
+  String repeaterSignedIn(Object perm) {
+    return 'サインインしました（権限 0x$perm）';
+  }
+
+  @override
+  String get repeaterRefused => 'リピーターがそのパスワードを拒否しました。';
+
+  @override
+  String get repeaterNoAnswer => '応答がありません。リピーターが届かない可能性があります。';
+
+  @override
+  String get repeaterSignOutDone => 'サインアウトしました。';
 }

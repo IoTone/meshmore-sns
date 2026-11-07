@@ -10167,6 +10167,60 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Remove the pairing PIN? Anyone in range could offer to pair, and the radio would still keep its own device list.'**
   String get settingsPinConfirmRemove;
+
+  /// No description provided for @repeaterSession.
+  ///
+  /// In en, this message translates to:
+  /// **'Repeater session'**
+  String get repeaterSession;
+
+  /// No description provided for @repeaterSessionIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'A password opens a session on this repeater. It is the repeater\'s own secret, kept between it and you; the app does not store it.'**
+  String get repeaterSessionIntro;
+
+  /// No description provided for @repeaterSignIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in'**
+  String get repeaterSignIn;
+
+  /// No description provided for @repeaterSignOut.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign out'**
+  String get repeaterSignOut;
+
+  /// No description provided for @repeaterPasswordHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Repeater password'**
+  String get repeaterPasswordHint;
+
+  /// No description provided for @repeaterSignedIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Signed in (permissions 0x{perm})'**
+  String repeaterSignedIn(Object perm);
+
+  /// No description provided for @repeaterRefused.
+  ///
+  /// In en, this message translates to:
+  /// **'The repeater refused that password.'**
+  String get repeaterRefused;
+
+  /// No description provided for @repeaterNoAnswer.
+  ///
+  /// In en, this message translates to:
+  /// **'No answer. The repeater may be out of reach.'**
+  String get repeaterNoAnswer;
+
+  /// No description provided for @repeaterSignOutDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Signed out.'**
+  String get repeaterSignOutDone;
 }
 
 class _AppLocalizationsDelegate
