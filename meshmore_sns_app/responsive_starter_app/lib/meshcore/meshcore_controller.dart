@@ -1409,6 +1409,7 @@ class MeshcoreController extends ChangeNotifier {
   /// Marker id in [_ledger] for a radio-config command (frequency, bandwidth,
   /// TX power, path-hash size) waiting for its bare `OK`/`ERR`.
   static const String _configMarker = '\u0000cfg';
+  static const String _contactAddMarker = '\u0000cadd';
 
   /// How long a config write waits for the radio's answer.
   static const Duration _configAnswerTimeout = Duration(seconds: 5);
@@ -2226,6 +2227,11 @@ class MeshcoreController extends ChangeNotifier {
       if (p.id == _advertSendMarker) {
         return;
       }
+      if (p.id == _contactAddMarker) {
+        _clearContactsFull();
+        notifyListeners();
+        return;
+      }
       final ChatMessage? m = _messageById(p.id);
       _deliveryTimers.remove(p.id)?.cancel();
       if (m == null || m.delivery != MessageDelivery.sending) return;
@@ -2251,6 +2257,14 @@ class MeshcoreController extends ChangeNotifier {
       }
       if (p.id == _rawSendMarker) {
         _completeRawSend(f);
+        return;
+      }
+      if (p.id == _contactAddMarker) {
+        // The radio refused the add. `ERR_CODE_TABLE_FULL` is the one that a
+        // user can act on, so it becomes state rather than a silent refusal.
+        if (f.code == kErrTableFull) _contactsFull = true;
+        _emitTaskError('addContact');
+        notifyListeners();
         return;
       }
       if (p.id == _toolSendMarker || p.id == _advertSendMarker) {
@@ -2738,10 +2752,34 @@ class MeshcoreController extends ChangeNotifier {
   /// stream. Resolves the 6-byte sender prefix to a known fabric
   /// node's full pubkey if possible; falls back to storing under
   /// the 12-hex prefix.
+  /// Keys of the inbound messages just ingested, so a re-delivery is not a
+  /// second row.
+  ///
+  /// The protocol has no message identifier. A received message is identified
+  /// by its sender's prefix, the sender's own timestamp and its text, and the
+  /// radio's queue re-sends anything it never saw acknowledged: after a crash
+  /// or a dropped link the same message is delivered again, and appending it
+  /// puts the same words on screen twice with no way for the reader to tell a
+  /// duplicate from a repeat. Two genuinely identical messages inside one
+  /// second are indistinguishable in the protocol itself, and dropping the
+  /// second is the cheaper error than a guaranteed duplicate on every drain.
+  ///
+  /// Bounded, because it is a memory of the last few drains, not a history.
+  final List<String> _recentInbound = <String>[];
+  static const int _recentInboundCap = 64;
+
+  bool _seenInbound(String key) {
+    if (_recentInbound.contains(key)) return true;
+    _recentInbound.add(key);
+    if (_recentInbound.length > _recentInboundCap) _recentInbound.removeAt(0);
+    return false;
+  }
+
   void _ingestDm(MeshcoreInbound f) {
     if (f is! ContactMessageFrame) return;
     final ContactMessage cm = f.message;
     final String prefixHex = _hex(cm.pubKeyPrefix);
+    if (_seenInbound('d|$prefixHex|${cm.timestamp}|${cm.text}')) return;
     String? peer;
     for (final DiscoveredNode n in _nodes.values) {
       if (n.pubKeyHex.startsWith(prefixHex)) {
@@ -2783,6 +2821,9 @@ class MeshcoreController extends ChangeNotifier {
   void _ingestChat(MeshcoreInbound f) {
     if (f is ChannelMessageFrame) {
       final ChannelMessage cm = f.message;
+      // Same rule as a direct message: the queue can deliver one twice, and a
+      // channel row is no less a duplicate for having no key on it.
+      if (_seenInbound('c|${cm.channelIdx}|${cm.timestamp}|${cm.text}')) return;
       final ChatMessage m = ChatMessage(
         channelIdx: cm.channelIdx,
         text: cm.text,
@@ -4806,12 +4847,20 @@ class MeshcoreController extends ChangeNotifier {
           n?.longitude != null ? (n!.longitude! * 1e6).round() : 0,
       lastMod: now,
     );
+    // The radio answers OK or ERR, and a transport-level success is not an add:
+    // `send` throwing only means the frame did not reach the link. The marker
+    // puts the answer where every other command's answer goes, so `ERR_CODE_TABLE_FULL`
+    // (3) becomes state the device page can show instead of a silent refusal,
+    // and a caller is not blocked waiting for a reply that is normally immediate.
+    _registerMarker(_contactAddMarker, CommandAnswer.ok);
     try {
       await send(MeshcoreFrameCodec.addUpdateContact(c));
       _contacts[hex] = c; // reflect locally; device confirms on next sync
+      _saveContactsSoon();
       notifyListeners();
       return true;
     } catch (_) {
+      _dropPending(_contactAddMarker);
       _emitTaskError('addContact');
       return false;
     }

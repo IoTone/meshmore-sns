@@ -228,4 +228,24 @@ void main() {
       mc.dispose();
     });
   });
+
+  group('an add that the radio refuses', () {
+    test('a full table is state, not a silent success', () async {
+      final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
+      final MeshcoreController mc = await connected(fake);
+      fake.emit(contactFrame(name: 'Near', firstPubByte: 0x77));
+      await settle();
+      const String peer =
+          '7778797a7b7c7d7e7f808182838485868788898a8b8c8d8e8f90919293949596';
+      expect(await mc.addNodeAsDeviceContact(peer, name: 'Near'), isTrue,
+          reason: 'the frames were written; the radio answers separately');
+      expect(mc.contactsFull, isFalse);
+      // `ERR_CODE_TABLE_FULL` (3): the radio could not store it.
+      fake.emit(Uint8List.fromList(<int>[0x01, kErrTableFull]));
+      await settle();
+      expect(mc.contactsFull, isTrue,
+          reason: 'a full table drops every new advert, so it has to be shown');
+      mc.dispose();
+    });
+  });
 }

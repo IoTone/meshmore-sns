@@ -8,6 +8,7 @@ import 'package:meshcore/meshcore.dart';
 
 import '../bot/bot_scope.dart';
 import '../meshcore/chat_message.dart';
+import '../meshcore/meshcore_controller.dart';
 import 'mesh_tool.dart';
 
 /// Rule 2 for every tool that sends text: Public is refused,
@@ -143,18 +144,14 @@ class SoakTool extends MeshTool {
       mc.inboundFrames.listen((MeshcoreInbound f) {
         if (f is AckFrame) _onAck(f);
       }),
-      switch (sc) {
-        DmScope(:final String pubKeyHex) => mc.incomingDirectMessages
-            // A sender the controller can't resolve is stored under its
-            // 12-hex prefix, so match on the prefix too.
-            .where((ChatMessage m) =>
-                m.peerPubKeyHex != null &&
-                pubKeyHex.startsWith(m.peerPubKeyHex!))
-            .listen((ChatMessage m) => _onEcho(echo, m)),
-        ChannelScope(:final int idx) => mc.incomingChannelMessages
-            .where((ChatMessage m) => m.channelIdx == idx)
-            .listen((ChatMessage m) => _onEcho(echo, m)),
-      },
+      // Echoes are counted off the *wire*, not off the message history.
+      //
+      // A soak run measures the radio: how many echoes came back, in what
+      // order, and how many arrived twice. The history is a reader's view and
+      // it drops a re-delivery, because a queue replay is not a second
+      // message; counting duplicates there would report zero by construction
+      // and the tool would be measuring its own filter.
+      _echoText(mc, sc).listen((String text) => _onEcho(echo, text)),
       // Delivery states change inside the controller; repaint with it.
       _controllerChanges().listen((_) => notifyListeners()),
     ];
@@ -213,8 +210,36 @@ class SoakTool extends MeshTool {
     }
   }
 
-  void _onEcho(RegExp echo, ChatMessage m) {
-    final RegExpMatch? hit = echo.firstMatch(m.text);
+  /// The text of every inbound message in the scope under test, taken from the
+  /// frames rather than from the controller's history.
+  static Stream<String> _echoText(MeshcoreController mc, BotScope sc) {
+    switch (sc) {
+      case DmScope(:final String pubKeyHex):
+        return mc.inboundFrames
+            .where((MeshcoreInbound f) => f is ContactMessageFrame)
+            .map((MeshcoreInbound f) =>
+                (f as ContactMessageFrame).message)
+            // The controller resolves a sender to a full key when it knows one
+            // and keeps the 6-byte prefix when it does not, so the prefix is
+            // what a match can rely on — it is all the wire carries.
+            .where((ContactMessage cm) =>
+                pubKeyHex.startsWith(_hexOf(cm.pubKeyPrefix)))
+            .map((ContactMessage cm) => cm.text);
+      case ChannelScope(:final int idx):
+        return mc.inboundFrames
+            .where((MeshcoreInbound f) =>
+                f is ChannelMessageFrame &&
+                f.message.channelIdx == idx)
+            .map((MeshcoreInbound f) =>
+                (f as ChannelMessageFrame).message.text);
+    }
+  }
+
+  static String _hexOf(List<int> bytes) =>
+      bytes.map((int b) => b.toRadixString(16).padLeft(2, '0')).join();
+
+  void _onEcho(RegExp echo, String text) {
+    final RegExpMatch? hit = echo.firstMatch(text);
     if (hit == null) return;
     final int seq = int.parse(hit.group(1)!);
     SoakEntry? e;
