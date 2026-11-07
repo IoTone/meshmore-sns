@@ -1081,7 +1081,10 @@ class _ContactTableEditorState extends State<_ContactTableEditor> {
         if (cfg == null)
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 12),
-            child: Text(l.autoAddUnknown,
+            // Only say it is reading when it is: with no radio there is
+            // nothing to read, and the page says so elsewhere.
+            child: Text(
+                widget.enabled ? l.autoAddUnknown : l.otherAwaitingDevice,
                 style: TextStyle(color: cs.onSurfaceVariant)),
           )
         else ...<Widget>[

@@ -848,16 +848,23 @@ class _AdvertPathLineState extends State<_AdvertPathLine> {
         ? '—'
         : _reading
             ? l.nodeAdvertPathReading
-            : p == null || p.path.isEmpty
+            : p == null
                 ? l.nodeAdvertPathNone
-                : <String>[
-                    for (int i = 0; i + p.pathLen.hashSize <= p.path.length;
-                        i += p.pathLen.hashSize)
-                      _name(
-                          p.path.sublist(i, i + p.pathLen.hashSize)
-                              .fold<int>(0, (int a, int b) => (a << 8) | b),
-                          p.pathLen.hashSize),
-                  ].join(' · ');
+                // A zero-length path is not "no route": it is the neighbour in
+                // radio range, and saying which is the honest answer.
+                : p.path.isEmpty
+                    ? l.deviceContactsDirect
+                    : <String>[
+                        for (int i = 0;
+                            i + p.pathLen.hashSize <= p.path.length;
+                            i += p.pathLen.hashSize)
+                          _name(
+                              p.path
+                                  .sublist(i, i + p.pathLen.hashSize)
+                                  .fold<int>(
+                                      0, (int a, int b) => (a << 8) | b),
+                              p.pathLen.hashSize),
+                      ].join(' · ');
     return InkWell(
       onTap: _reading ? null : _read,
       // A tap target, so it is 48dp tall like every other control: the row is
