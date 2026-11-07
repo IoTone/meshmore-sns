@@ -2600,5 +2600,14 @@
   "nodeFindRouteTwoWay": "復路: {back}",
   "eventOneKeyRejected": "無線機が {key} からのメッセージを拒否しました",
   "eventRadioRefused": "無線機がそのコマンドを拒否しました",
-  "failureCommandDisabled": "この無線機ではそのコマンドが無効になっているため拒否されました。通信自体に問題はありません。"
+  "failureCommandDisabled": "この無線機ではそのコマンドが無効になっているため拒否されました。通信自体に問題はありません。",
+  "nodeShareContact": "この連絡先を共有",
+  "nodeShareContactHint": "相手が取り込めるリンクです。",
+  "nodeShareContactFailed": "無線機が連絡先を返しませんでした。",
+  "shareLinkSheetTitle": "連絡先リンク",
+  "shareLinkCopied": "コピーしました。",
+  "deviceContactsImport": "リンクを取り込む",
+  "deviceContactsImportHint": "meshcore:// リンクを貼り付け",
+  "deviceContactsImportBad": "連絡先リンクではありません。",
+  "deviceContactsImportDone": "無線機に送信しました。無線機が確認すると一覧に表示されます。"
 }

@@ -380,4 +380,66 @@ void main() {
       mc.dispose();
     });
   });
+
+  group('sharing a contact as a link', () {
+    /// `RESP_CODE_EXPORT_CONTACT` (0x0B): opcode + the advert packet.
+    Uint8List exportedFrame(int len) => Uint8List.fromList(<int>[
+          0x0B,
+          for (int i = 0; i < len; i++) (0x40 + i) & 0xFF,
+        ]);
+
+    test('the link carries the radio\'s own advert packet', () async {
+      final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
+      final MeshcoreController mc = await connected(fake);
+      const String key =
+          'aabbccddeeff00112233445566778899aabbccddeeff00112233445566778899';
+      final Future<String?> pending = mc.exportContactLink(key);
+      await settle();
+      expect(
+          fake.sent.any((Uint8List f) =>
+              f.isNotEmpty && f[0] == MeshcoreCommand.exportContact.code),
+          isTrue);
+      // A real advert packet is at least kImportContactMin bytes.
+      fake.emit(exportedFrame(kImportContactMin));
+      final String? link = await pending;
+      expect(link, isNotNull);
+      expect(link!.startsWith(MeshcoreController.contactLinkPrefix), isTrue);
+      expect((link.length - MeshcoreController.contactLinkPrefix.length),
+          kImportContactMin * 2,
+          reason: 'the link is the packet, not a record this app invented');
+      // And it reads back: the same bytes, in the size the radio accepts.
+      expect(MeshcoreController.parseContactLink(link),
+          hasLength(kImportContactMin));
+      mc.dispose();
+    });
+
+    test('a link or a bare hex packet both read, a bad one does not', () {
+      final String hex = 'ab' * 100;
+      expect(MeshcoreController.parseContactLink('meshcore://${hex.toUpperCase()}'),
+          hasLength(100));
+      expect(MeshcoreController.parseContactLink(hex), hasLength(100));
+      // Too short for the firmware, odd length, a non-hex character.
+      expect(MeshcoreController.parseContactLink('meshcore://abcd'), isNull);
+      expect(MeshcoreController.parseContactLink('abc'), isNull);
+      expect(MeshcoreController.parseContactLink('zz' * 100), isNull);
+    });
+
+    test('an import asks the radio and reads the table back', () async {
+      final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
+      final MeshcoreController mc = await connected(fake);
+      fake.sent.clear();
+      expect(await mc.importContactLink('meshcore://${'ab' * 100}'), isTrue);
+      expect(
+          fake.sent.any((Uint8List f) =>
+              f.isNotEmpty && f[0] == MeshcoreCommand.importContact.code),
+          isTrue);
+      expect(
+          fake.sent.any((Uint8List f) =>
+              f.isNotEmpty && f[0] == MeshcoreCommand.getContacts.code),
+          isTrue,
+          reason: 'the radio stores it, so the app asks for the table');
+      expect(await mc.importContactLink('nonsense'), isFalse);
+      mc.dispose();
+    });
+  });
 }

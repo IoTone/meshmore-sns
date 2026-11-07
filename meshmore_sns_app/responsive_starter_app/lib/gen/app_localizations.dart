@@ -10023,6 +10023,60 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'This radio has that command switched off, so it refused. Nothing is wrong with the link.'**
   String get failureCommandDisabled;
+
+  /// No description provided for @nodeShareContact.
+  ///
+  /// In en, this message translates to:
+  /// **'Share this contact'**
+  String get nodeShareContact;
+
+  /// No description provided for @nodeShareContactHint.
+  ///
+  /// In en, this message translates to:
+  /// **'A link the other side can import.'**
+  String get nodeShareContactHint;
+
+  /// No description provided for @nodeShareContactFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'The radio did not hand over the contact.'**
+  String get nodeShareContactFailed;
+
+  /// No description provided for @shareLinkSheetTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Contact link'**
+  String get shareLinkSheetTitle;
+
+  /// No description provided for @shareLinkCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Copied.'**
+  String get shareLinkCopied;
+
+  /// No description provided for @deviceContactsImport.
+  ///
+  /// In en, this message translates to:
+  /// **'Import a link'**
+  String get deviceContactsImport;
+
+  /// No description provided for @deviceContactsImportHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste a meshcore:// link'**
+  String get deviceContactsImportHint;
+
+  /// No description provided for @deviceContactsImportBad.
+  ///
+  /// In en, this message translates to:
+  /// **'That is not a contact link.'**
+  String get deviceContactsImportBad;
+
+  /// No description provided for @deviceContactsImportDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Sent to the radio. It is in the list when the radio confirms.'**
+  String get deviceContactsImportDone;
 }
 
 class _AppLocalizationsDelegate

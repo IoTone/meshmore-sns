@@ -4800,6 +4800,84 @@ class MeshcoreController extends ChangeNotifier {
         .catchError((Object _) => _floodScopeAsked = false));
   }
 
+  // --- Sharing a contact as text ----------------------------------------
+  //
+  // `CMD_EXPORT_CONTACT` (0x11) answers with the contact's advert packet, which
+  // is the same bytes the radio puts on air, so the link that carries it is
+  // `meshcore://<hex>` and the receiving radio imports it as if it had heard the
+  // advert. That is the whole point of the format: it is the radio's own packet,
+  // not an app-specific record, so a contact shared from here can be imported by
+  // any MeshCore client. The reply carries no key, so one export is in flight at
+  // a time.
+
+  static const String contactLinkPrefix = 'meshcore://';
+
+  bool _exportContactInFlight = false;
+
+  /// The contact as a shareable link, or null when the radio did not answer.
+  Future<String?> exportContactLink(String pubKeyHex) async {
+    if (!isReady || _exportContactInFlight) return null;
+    final String hex = pubKeyHex.toLowerCase();
+    if (hex.length != kPubKeySize * 2) return null;
+    final Uint8List key = Uint8List.fromList(<int>[
+      for (int i = 0; i < hex.length; i += 2)
+        int.parse(hex.substring(i, i + 2), radix: 16),
+    ]);
+    _exportContactInFlight = true;
+    try {
+      final Future<MeshcoreInbound> reply = inboundFrames
+          .firstWhere((MeshcoreInbound f) => f is ExportedContactFrame)
+          .timeout(const Duration(seconds: 4));
+      await send(MeshcoreFrameCodec.exportContact(pubKey: key));
+      final MeshcoreInbound f = await reply;
+      if (f is! ExportedContactFrame || f.advertPacket.isEmpty) return null;
+      return '$contactLinkPrefix${_hex(f.advertPacket)}';
+    } catch (_) {
+      return null;
+    } finally {
+      _exportContactInFlight = false;
+    }
+  }
+
+  /// Import a contact from a `meshcore://` link (or the bare hex of an advert
+  /// packet). Returns false when the text is not a link, the packet is outside
+  /// the size the firmware accepts, or the radio refuses it.
+  ///
+  /// The radio validates the packet itself and answers `ERR_CODE_ILLEGAL_ARG`
+  /// for a bad advert, so a well-formed but wrong packet is its refusal to give.
+  Future<bool> importContactLink(String text) async {
+    if (!isReady) return false;
+    final Uint8List? packet = parseContactLink(text);
+    if (packet == null) return false;
+    try {
+      await send(MeshcoreFrameCodec.importContact(packet));
+      // The radio stores it; read the table back so the app can offer it.
+      await requestContacts();
+      return true;
+    } catch (_) {
+      _emitTaskError('importContact');
+      return false;
+    }
+  }
+
+  /// The advert packet inside a contact link, or null. Accepts the `meshcore://`
+  /// form and a bare even-length hex string, because a person may paste either.
+  static Uint8List? parseContactLink(String text) {
+    String t = text.trim();
+    if (t.toLowerCase().startsWith(contactLinkPrefix)) {
+      t = t.substring(contactLinkPrefix.length);
+    }
+    t = t.replaceAll(RegExp(r'[\s:,-]'), '');
+    if (t.length.isOdd || t.length < kImportContactMin * 2) return null;
+    if (t.length > kImportContactMax * 2) return null;
+    if (!RegExp(r'^[0-9a-fA-F]+$').hasMatch(t)) return null;
+    final Uint8List out = Uint8List(t.length ~/ 2);
+    for (int i = 0; i < out.length; i++) {
+      out[i] = int.parse(t.substring(i * 2, i * 2 + 2), radix: 16);
+    }
+    return out;
+  }
+
   // --- The radio's own airtime limit ------------------------------------
   //
   // `RESP_CODE_TUNING_PARAMS` (0x17) carries `rx_delay_base` and `airtime_factor`

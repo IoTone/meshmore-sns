@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 
 import '../gen/app_localizations.dart';
 import '../theme/mm_skin.dart';
+import '../ui/mm_components.dart';
 import '../ui/mm_scaffold.dart';
 import '../meshcore/meshcore_controller.dart';
 
@@ -39,6 +40,56 @@ class _DeviceContactsScreenState extends State<DeviceContactsScreen> {
     if (c.outPathLen == 0xFF) return l.deviceContactsFlood;
     if (c.outPathLen == 0) return l.deviceContactsDirect;
     return l.deviceContactsHops(c.outPathLen);
+  }
+
+  /// Import a contact from a `meshcore://` link.
+  ///
+  /// The link carries the radio's own advert packet, so the radio validates it
+  /// and answers with its own refusal for a bad one: the app checks the shape
+  /// (link or bare hex, the size the firmware accepts) and lets the radio
+  /// decide the rest.
+  Future<void> _importLink(MeshcoreController mc, AppLocalizations l) async {
+    final TextEditingController ctrl = TextEditingController();
+    final String? text = await showDialog<String>(
+      context: context,
+      builder: (BuildContext ctx) => AlertDialog(
+        title: Text(l.deviceContactsImport),
+        content: TextField(
+          key: const ValueKey<String>('contact-import-field'),
+          controller: ctrl,
+          autofocus: true,
+          maxLines: 3,
+          decoration: InputDecoration(hintText: l.deviceContactsImportHint),
+        ),
+        // `MmAction`, not a bare `TextButton`: a text button reads as a label,
+        // and the guard that caught this one exists because a control with no
+        // fill has to look like a control (`test/ui/tap_affordance_guard_test.dart`).
+        actions: <Widget>[
+          MmAction(
+              label: l.actionCancel, onPressed: () => Navigator.pop(ctx)),
+          MmAction(
+              label: l.deviceContactsImport,
+              onPressed: () => Navigator.pop(ctx, ctrl.text)),
+        ],
+      ),
+    );
+    ctrl.dispose();
+    if (!mounted || text == null || text.trim().isEmpty) return;
+    final ScaffoldMessengerState sm = ScaffoldMessenger.of(context);
+    if (MeshcoreController.parseContactLink(text) == null) {
+      sm
+        ..clearSnackBars()
+        ..showSnackBar(SnackBar(content: Text(l.deviceContactsImportBad)));
+      return;
+    }
+    final bool ok = await mc.importContactLink(text);
+    if (!mounted) return;
+    sm
+      ..clearSnackBars()
+      ..showSnackBar(SnackBar(
+          content: Text(
+              ok ? l.deviceContactsImportDone : l.deviceContactsImportBad)));
+    if (ok) await mc.refreshDeviceContacts();
   }
 
   Future<void> _removeOutOfRange(
@@ -256,6 +307,11 @@ class _DeviceContactsScreenState extends State<DeviceContactsScreen> {
                     mc.refreshDeviceContacts();
                   }
                 : null,
+          ),
+          IconButton(
+            tooltip: l.deviceContactsImport,
+            icon: const Icon(Icons.input),
+            onPressed: mc.isReady ? () => _importLink(mc, l) : null,
           ),
           PopupMenuButton<String>(
             enabled: mc.isReady && contacts.isNotEmpty,

@@ -5734,4 +5734,31 @@ class AppLocalizationsJa extends AppLocalizations {
   @override
   String get failureCommandDisabled =>
       'この無線機ではそのコマンドが無効になっているため拒否されました。通信自体に問題はありません。';
+
+  @override
+  String get nodeShareContact => 'この連絡先を共有';
+
+  @override
+  String get nodeShareContactHint => '相手が取り込めるリンクです。';
+
+  @override
+  String get nodeShareContactFailed => '無線機が連絡先を返しませんでした。';
+
+  @override
+  String get shareLinkSheetTitle => '連絡先リンク';
+
+  @override
+  String get shareLinkCopied => 'コピーしました。';
+
+  @override
+  String get deviceContactsImport => 'リンクを取り込む';
+
+  @override
+  String get deviceContactsImportHint => 'meshcore:// リンクを貼り付け';
+
+  @override
+  String get deviceContactsImportBad => '連絡先リンクではありません。';
+
+  @override
+  String get deviceContactsImportDone => '無線機に送信しました。無線機が確認すると一覧に表示されます。';
 }

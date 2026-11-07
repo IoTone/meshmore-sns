@@ -5972,4 +5972,33 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get failureCommandDisabled =>
       'This radio has that command switched off, so it refused. Nothing is wrong with the link.';
+
+  @override
+  String get nodeShareContact => 'Share this contact';
+
+  @override
+  String get nodeShareContactHint => 'A link the other side can import.';
+
+  @override
+  String get nodeShareContactFailed =>
+      'The radio did not hand over the contact.';
+
+  @override
+  String get shareLinkSheetTitle => 'Contact link';
+
+  @override
+  String get shareLinkCopied => 'Copied.';
+
+  @override
+  String get deviceContactsImport => 'Import a link';
+
+  @override
+  String get deviceContactsImportHint => 'Paste a meshcore:// link';
+
+  @override
+  String get deviceContactsImportBad => 'That is not a contact link.';
+
+  @override
+  String get deviceContactsImportDone =>
+      'Sent to the radio. It is in the list when the radio confirms.';
 }

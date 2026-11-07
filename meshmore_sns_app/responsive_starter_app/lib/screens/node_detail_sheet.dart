@@ -480,6 +480,7 @@ class _NodeDetailSheetState extends State<NodeDetailSheet> {
             // read rather than fetched for every node opened.
             if (!widget.isSelf) _AdvertPathLine(node: n),
             if (!widget.isSelf) _FindRouteLine(node: n),
+            if (!widget.isSelf) _ShareContactLine(node: n),
             // R47 — peer telemetry on tap. CMD_SEND_TELEMETRY_REQ goes
             // to the device, which unicasts to the peer over the air;
             // the peer's response arrives async and lands in the
@@ -893,6 +894,77 @@ class _FindRouteLineState extends State<_FindRouteLine> {
                       fontSize: context.skin.type.sizeBody)),
             ),
             Icon(Icons.route_outlined, size: 16, color: cs.onSurfaceVariant),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Share this contact as a link the other side can import.
+///
+/// The radio exports the contact's own advert packet (`CMD_EXPORT_CONTACT`,
+/// 0x11), and that packet is what `meshcore://<hex>` carries, so the link works
+/// in any MeshCore client rather than only this one. Copied rather than sent:
+/// the app has a file share channel and no text one, and a copied link can be
+/// pasted into whichever chat the user is already in.
+class _ShareContactLine extends StatefulWidget {
+  const _ShareContactLine({required this.node});
+  final DiscoveredNode node;
+
+  @override
+  State<_ShareContactLine> createState() => _ShareContactLineState();
+}
+
+class _ShareContactLineState extends State<_ShareContactLine> {
+  bool _busy = false;
+
+  Future<void> _share() async {
+    if (_busy) return;
+    setState(() => _busy = true);
+    final MeshcoreController mc = context.read<MeshcoreController>();
+    final AppLocalizations l = AppLocalizations.of(context);
+    final ScaffoldMessengerState sm = ScaffoldMessenger.of(context);
+    final String? link = await mc.exportContactLink(widget.node.pubKeyHex);
+    if (!mounted) return;
+    setState(() => _busy = false);
+    if (link == null) {
+      sm
+        ..clearSnackBars()
+        ..showSnackBar(SnackBar(content: Text(l.nodeShareContactFailed)));
+      return;
+    }
+    await Clipboard.setData(ClipboardData(text: link));
+    sm
+      ..clearSnackBars()
+      ..showSnackBar(SnackBar(
+          content: Text('${l.shareLinkSheetTitle} · ${l.shareLinkCopied}')));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations l = AppLocalizations.of(context);
+    final ColorScheme cs = Theme.of(context).colorScheme;
+    return InkWell(
+      onTap: _busy ? null : _share,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: kMinInteractiveDimension),
+        child: Row(
+          children: <Widget>[
+            SizedBox(
+              width: kKvLabelWidth,
+              child: Text(l.nodeShareContact,
+                  style: TextStyle(
+                      color: cs.onSurfaceVariant,
+                      fontSize: context.skin.type.sizeSm)),
+            ),
+            Expanded(
+              child: Text(l.nodeShareContactHint,
+                  style: TextStyle(
+                      color: cs.onSurface,
+                      fontSize: context.skin.type.sizeBody)),
+            ),
+            Icon(Icons.ios_share, size: 16, color: cs.onSurfaceVariant),
           ],
         ),
       ),

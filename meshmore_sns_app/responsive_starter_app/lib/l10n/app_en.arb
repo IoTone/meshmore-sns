@@ -4059,5 +4059,14 @@
   "nodeFindRouteTwoWay": "Back by {back}",
   "eventOneKeyRejected": "radio refused a message from {key}",
   "eventRadioRefused": "the radio refused that command",
-  "failureCommandDisabled": "This radio has that command switched off, so it refused. Nothing is wrong with the link."
+  "failureCommandDisabled": "This radio has that command switched off, so it refused. Nothing is wrong with the link.",
+  "nodeShareContact": "Share this contact",
+  "nodeShareContactHint": "A link the other side can import.",
+  "nodeShareContactFailed": "The radio did not hand over the contact.",
+  "shareLinkSheetTitle": "Contact link",
+  "shareLinkCopied": "Copied.",
+  "deviceContactsImport": "Import a link",
+  "deviceContactsImportHint": "Paste a meshcore:// link",
+  "deviceContactsImportBad": "That is not a contact link.",
+  "deviceContactsImportDone": "Sent to the radio. It is in the list when the radio confirms."
 }
