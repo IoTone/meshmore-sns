@@ -303,6 +303,10 @@ void main() {
     '/settings/tools/ping',
     '/settings/tools/range',
     '/settings/tools/soak',
+    // The three used one-handed, outdoors, often at 200 %.
+    '/sos',
+    '/checkin',
+    '/pair',
   ];
   for (final String route in deepRoutes) {
     testWidgets('$route holds the floor on every preset',
