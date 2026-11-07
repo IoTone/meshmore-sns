@@ -1831,13 +1831,27 @@ the sibling specs: R93 in `meshmore-sns-maps-spec.md`, R60 in
 - R77: **The collapse rule split its own group.** `MmCollapsibleSection`
   built `header, rule, content`, so an expanded group drew a divider
   between its header and its own content and the header read as belonging
-  to the block above. It now builds `header, content, rule`: collapsed =
-  header + rule, expanded = header + content + rule
-  (`lib/ui/mm_collapsible.dart`). The grouping cue is a header tint:
-  `MmShape.tintedHeaders` (Studio true, the six older presets false) fills
-  the header with `MmTokens.raised`. Header stays 48dp, `expanded`
-  semantics and chevron shape unchanged. Tests:
-  `test/ui/mm_collapsible_test.dart` (group "R77").
+  to the block above. It moved the rule to the end of the group.
+  **Superseded by R116**, which removed the header fill and the closing
+  rule; the group now starts at one rule and draws nothing else.
+
+- R116: **one boundary, one mark, on every ground.** R115 took the tinted
+  group header off paper only (a beige band there is a box). The dark
+  grounds kept it and closed each group with a hairline, so a boundary
+  between two groups was drawn twice: the previous group's closing rule sat
+  immediately above the next group's fill, and a folded group read as a box
+  bounded above and below. `MmCollapsibleSection` now draws one rule in the
+  border tier above the header, fills nothing, and draws nothing at the end
+  (`lib/ui/mm_collapsible.dart`). `MmShape.tintedHeaders` is deleted, so
+  all eight presets state a group boundary the same way. Studio Light also
+  stops having a dashboard of its own: `DashboardHost` sent it to the SEELE
+  monolith, so choosing the light Studio skin replaced the layout (a
+  colour-inverting status slab and an 88 sp numeral) instead of repainting
+  it. Both Studio presets now use `StudioDashboard`
+  (`lib/screens/dashboards/dashboard_host.dart`). Tests:
+  `test/theme/section_header_test.dart` (a group per preset, two groups = two
+  rules and no closing rule), `test/ui/mm_collapsible_test.dart`,
+  `test/screens/dashboard_host_test.dart`.
 
 - R73: **Studio's dark basemap was too dark.** The R70 filter inverted
   luminance outright (pale land to luma ~15-40), so on the phone the

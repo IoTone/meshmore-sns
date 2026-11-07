@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: MIT
 import 'dart:convert';
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';

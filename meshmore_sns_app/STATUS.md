@@ -4,7 +4,7 @@ _Snapshot as of 2026-11-05. App `1.0.197+13`, branch `feat/app-completion`.
 Change records below are newest first from R113; older entries are kept in
 the order they were written._
 
-**What is proven and what is not.** Measured on this tree, 2026-11-05: `flutter test` **2041 passed** in 2 m 48 s;
+**What is proven and what is not.** Measured on this tree, 2026-11-07: `flutter test` **2059 passed** in 3 m 22 s;
 `flutter analyze` reports **no issues** (the two `unawaited_return_in_try_block` warnings in `lib/maps/maps_controller.dart`
 were fixed on 2026-11-05, so any warning now is a regression);
 the protocol package `dart test` 368 passed with 1 skipped; the pure-Java port at the repository root, `cd libmeshcore && ./gradlew test --offline
@@ -13,7 +13,12 @@ the protocol package `dart test` 368 passed with 1 skipped; the pure-Java port a
 was deleted afterwards (`meshmore-publishing.md` lists what the publisher must supply instead). The debug arm64 APK
 (105 MB) is installed on the motorola edge 2024 over wireless adb.
 
-**Device-verified on that phone, 2026-11-05** (screenshots and accessibility dumps, not test output): the app bar
+**Device-verified on that phone, 2026-11-07** (screenshots and accessibility dumps, not test output): a group boundary
+is one rule and one only, in both the dark and the paper ground, with no filled header between them (measured: the same
+five rules at the same five y positions in both grounds); selecting Studio Light keeps the Studio dashboard instead of
+swapping in the SEELE monolith.
+
+**Device-verified on that phone, 2026-11-05**: the app bar
 carries one title and the dashboard's is the app's own name; the tab strip's cell is labelled "Hyperlocal grid"; each
 group boundary draws one rule, not two; the status slab names the radio instead of repeating the chip's "linked"; the
 radio's stored contact table fills the node list on connect and kept growing live (184 → 193 of 350); a channel text
@@ -296,7 +301,8 @@ over BLE. Mesh-first, no backend, no account, no server.
 - FIX: **two fetch defects that had hidden each other.** `httpMapFetcher` swallowed every exception (`catch (_)`), so a real failure looked like a missing tile. Adding a debug log exposed the cause: `HttpHeaders.value()` throws when a response repeats a header, and OpenFreeMap sends two `cache-control` headers, so every vector tile died in the header read. Now `headerValue()` joins list-valued headers and takes the first of single-valued ones. Tests: `test/maps/duplicate_headers_test.dart` (real loopback server).
 - R79: **the map is dimmed, not recoloured.** `out = 0.70 * in` (a pure RGB scale) replaces R70-R73's luminance invert + 0.15 desaturation, which flipped hue (OSM water read orange) and, because the filter was applied to every basemap, destroyed the USGS **aerial-imagery** source. Hue now survives (land 169, sea 119/148/156, label 36, 6.7:1). `darkBasemap`/`mmDarkTile*` renamed `dimmedBasemap`/`mmDimTile*`. **Unverified on a device.**
 - R78: **Studio has no swipe navigation** (`MmShape.swipeNavigation`, false for Studio only): the `PageView` is `NeverScrollableScrollPhysics` and the Map tab's R67 edge bands are not wired. The 48dp strip is the only view switcher; the six older presets still swipe. **Unverified on a device.** **Superseded by R95**, which removes body paging in every skin.
-- R77: collapse groups now draw header, content, then one closing rule (the rule used to sit between a header and its own content). Studio tints the header row with `raised` (`MmShape.tintedHeaders`); the six older presets are unchanged. **Unverified on a device.**
+- R77: collapse groups draw header, content, then one closing rule (the rule used to sit between a header and its own content). Studio tints the header row with `raised` (`MmShape.tintedHeaders`). **Superseded by R116.**
+- R116 (device-verified 2026-11-07): **one boundary, one mark.** The header fill is gone and so is the closing rule, on every preset: a group is a label under one rule in the border tier. R77's tint plus close rule drew a group boundary twice on the dark grounds (the previous group's rule sat directly above the next group's fill) and made a folded group a box bounded above and below; R115 had removed the fill on paper only. `MmShape.tintedHeaders` is deleted. Studio Light also stopped borrowing the SEELE dashboard: `DashboardHost` sent `studioLight` to the fallback arm, so switching from Studio Dark to Studio Light replaced the layout (colour-inverting slab, 88 sp numeral) instead of repainting it; both Studio presets now use `StudioDashboard`. Tests: `test/theme/section_header_test.dart`, `test/ui/mm_collapsible_test.dart`, `test/screens/dashboard_host_test.dart`. Measured on the handset: five rules on the dashboard in both grounds, one per boundary, identical y positions.
 - R76: **every channel send was marked failed.** The firmware answers a channel text with `OK`, the app waited for `SENT`, so the 15 s watchdog failed 4 of 4 sends (also on pristine `origin/dev`). Pending sends now record the reply they expect and match by kind, oldest first. ERR fails the send at once with the device reason. Failed rows offer Retry. The chat row glyph repaints (selector deep-compared identical objects: `deliveryRevision`). **Unverified on a device.** Known limit: OK/ERR carry no tag, and commands that are not registered (setAdvertName, tools' OK commands) can still have their OK credited to a pending channel send.
 - R75 (device pass): the RECENT rows of both dashboards used a fixed-width stamp column (70dp Studio / 64dp SEELE) narrower than their own 12pt `HH:MM:SS` mono stamp, so the stamp ran into the event text with no headroom for text scaling. Now `Text(stamp)` + 10dp gap + `Expanded`, which mono keeps aligned without a width.
 - R75 (device pass): the splash subtitle was a hardcoded Japanese literal (`branded_splash_screen.dart:75`) while `appSubtitle` already had an English value, so an en-US device showed Japanese. Now `l.appSubtitle`, which resolves because the splash is the `home:` of a `MaterialApp` that installs the locale delegates.

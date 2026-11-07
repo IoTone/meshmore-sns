@@ -39,7 +39,14 @@ class DashboardHost extends StatelessWidget {
         MmThemePreset.agHud => const AgHudDashboard(),
         MmThemePreset.drPop => const DrPopDashboard(),
         MmThemePreset.recon => const ReconDashboard(),
-        MmThemePreset.studio => const StudioDashboard(),
+        // Studio Light is the same tool on paper, so it keeps the same
+        // layout: a preset changes the ground, never which dashboard the user
+        // is looking at. The two Studio presets used to split here, so
+        // switching from Studio Dark to Studio Light replaced the whole
+        // dashboard with the SEELE monolith (a colour-inverting slab and an
+        // 88 sp numeral) instead of repainting the one on screen.
+        MmThemePreset.studio || MmThemePreset.studioLight =>
+          const StudioDashboard(),
         _ => const DashboardScreen(),
       },
     );

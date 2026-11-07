@@ -194,16 +194,14 @@ void main() {
   });
 
   group('the ground decides the ornament, and says so', () {
-    test('paper carries no tinted header band, and keeps no dimmed basemap', () {
-      // A tonal band reads as grouping on a dark ground and as a box on paper,
-      // where there are no other boxes to tell it apart from; the widget gives
-      // an untinted header a border-tier opening rule instead. The map flag
-      // follows the same logic: dimming exists to push a bright basemap under
-      // dark chrome, and on paper the basemap belongs to the page.
-      expect(skin.shape.tintedHeaders, isFalse);
+    test('paper keeps no dimmed basemap', () {
+      // Dimming exists to push a bright basemap under dark chrome; on paper the
+      // basemap belongs to the page. Group headers are not a per-ground
+      // question: every ground marks a group with the same rule above the
+      // label (see `section_header_test`).
       expect(skin.shape.dimmedBasemap, isFalse);
-      expect(mmSkinFor(MmThemePreset.studio).shape.tintedHeaders, isTrue,
-          reason: 'the dark tool skin keeps its tonal step');
+      expect(mmSkinFor(MmThemePreset.studio).shape.dimmedBasemap, isTrue,
+          reason: 'the dark tool skin still dims the map under its chrome');
     });
 
     test('square controls still read as controls on paper', () {

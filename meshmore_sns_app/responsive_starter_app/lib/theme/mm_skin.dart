@@ -163,7 +163,6 @@ class MmShape {
     this.hairlineWidth = 1.0,
     this.squareControls = false,
     this.dimmedBasemap = false,
-    this.tintedHeaders = false,
   });
 
   final MmCorner corner;
@@ -192,18 +191,18 @@ class MmShape {
   final bool dimmedBasemap;
 
 
-  /// R77 — a collapsible group's header row sits on `MmTokens.raised`, one
-  /// tonal step above the page, so the header (not a rule) says where a
-  /// group starts. Studio only; the six older presets keep a flat header.
-  /// What a filled area means, so the light and dark grounds answer the same
-  /// way: **structure** is a rule plus, at most, a surface one step off the
-  /// page ([MmPanel]); a **control** is a filled object with a full-strength
-  /// border ([MmAction]); **status** is an outline or a rule, never a fill
-  /// ([MmStatusPill], the link chip); and an **interruption** is the only
-  /// place a tint earns its fill, because it must interrupt ([DegradedBanner],
-  /// with its state bar). A group header is structure, which is why paper
-  /// turns [tintedHeaders] off and starts the group at a rule instead.
-  final bool tintedHeaders;
+  // What a filled area means, so the light and dark grounds answer the same
+  // way: **structure** is a rule plus, at most, a surface one step off the
+  // page ([MmPanel]); a **control** is a filled object with a full-strength
+  // border ([MmAction]); **status** is an outline or a rule, never a fill
+  // ([MmStatusPill], the link chip); and an **interruption** is the only
+  // place a tint earns its fill, because it must interrupt ([DegradedBanner],
+  // with its state bar).
+  //
+  // A collapsible group's header is structure, so on every ground it is a
+  // label under one rule and never a filled band. R77 gave the dark skins a
+  // tinted header closed by a hairline; between two groups that drew the
+  // boundary twice, and a folded group read as a box bounded above and below.
 }
 
 /// Retro-futuristic chrome. All default to "off" so a calm concept
@@ -381,7 +380,6 @@ MmSkin mmSkinFor(MmThemePreset preset) {
           hairlineWidth: 1,
           squareControls: true,
           dimmedBasemap: true,
-          tintedHeaders: true,
         ),
         ornament: _calmOrnament,
       );
@@ -392,11 +390,10 @@ MmSkin mmSkinFor(MmThemePreset preset) {
     // basemap under dark chrome, and on a light page the basemap belongs to
     // the page.
     //
-    // `tintedHeaders` is OFF here, and the tonal step it gave the dark skins is
-    // not a light-ground device: a beige band on paper is a box, so every
-    // collapsible group read as one more rectangle and the page became a stack
-    // of them. A hairline rule above the label does the same job on paper,
-    // where a rule *is* the table line rather than an apology for one.
+    // It draws the same group boundary as Studio: one rule above the label,
+    // no filled header. R115 turned the fill off here alone, because a beige
+    // band on paper is a box; R116 took the fill off the dark grounds too, so
+    // both grounds now say "a group starts here" once and in the same way.
     case MmThemePreset.studioLight:
       return MmSkin(
         preset: preset,
@@ -414,7 +411,6 @@ MmSkin mmSkinFor(MmThemePreset preset) {
           hairlineWidth: 1,
           squareControls: true,
           dimmedBasemap: false,
-          tintedHeaders: false,
         ),
         ornament: _calmOrnament,
       );

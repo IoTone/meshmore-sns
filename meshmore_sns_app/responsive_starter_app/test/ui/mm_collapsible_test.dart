@@ -112,7 +112,7 @@ void main() {
     });
   });
 
-  group('R77 rule placement and header tint', () {
+  group('R116 rule placement and header tint', () {
     Future<Widget> hostFor(MmThemePreset p, {bool open = true}) async {
       final ThemeController tc = ThemeController();
       await tc.setPreset(p);
@@ -126,20 +126,24 @@ void main() {
     Finder rules() => find.byWidgetPredicate((Widget w) =>
         w is Container && w.constraints?.maxHeight == 1.0 && w.color != null);
 
-    testWidgets('expanded: exactly one rule, after the content', (t) async {
+    testWidgets('expanded: one rule, and it opens the group', (t) async {
       await t.pumpWidget(await hostFor(MmThemePreset.studio));
       expect(rules(), findsOneWidget);
-      expect(
-          top(t, rules()), greaterThanOrEqualTo(bottom(t, find.text('inside'))),
-          reason: 'the rule closes the group; it is not under the header');
+      expect(top(t, rules()), lessThanOrEqualTo(top(t, find.text('inside'))),
+          reason: 'the rule marks where the group starts');
+      expect(bottom(t, rules()),
+          lessThanOrEqualTo(top(t, find.byType(InkWell)) + 1),
+          reason: 'the rule sits above the header, not between it and its '
+              'content');
     });
 
-    testWidgets('collapsed: header then its rule', (t) async {
+    testWidgets('collapsed: one rule, above the header', (t) async {
       await t.pumpWidget(await hostFor(MmThemePreset.studio, open: false));
       expect(rules(), findsOneWidget);
       expect(find.text('inside'), findsNothing);
-      expect(top(t, rules()),
-          greaterThanOrEqualTo(bottom(t, find.byType(InkWell))));
+      expect(bottom(t, rules()),
+          lessThanOrEqualTo(top(t, find.byType(InkWell)) + 1),
+          reason: 'a folded group is not also closed at its foot');
     });
 
     Color? headerFill(WidgetTester t) {
@@ -149,13 +153,13 @@ void main() {
       return m.color;
     }
 
-    testWidgets('Studio tints the header with raised; SEELE does not',
-        (t) async {
-      await t.pumpWidget(await hostFor(MmThemePreset.studio));
-      expect(headerFill(t), kMmPresets[MmThemePreset.studio]!.raised);
-      await t.pumpWidget(await hostFor(MmThemePreset.seele));
-      await t.pumpAndSettle();
-      expect(headerFill(t), Colors.transparent);
+    testWidgets('no preset fills a header', (t) async {
+      for (final MmThemePreset p in MmThemePreset.values) {
+        await t.pumpWidget(await hostFor(p));
+        await t.pumpAndSettle();
+        expect(headerFill(t), Colors.transparent,
+            reason: '$p draws a band where every other ground draws a rule');
+      }
     });
   });
 }

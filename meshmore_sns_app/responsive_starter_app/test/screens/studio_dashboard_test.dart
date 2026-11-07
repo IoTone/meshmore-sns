@@ -257,9 +257,4 @@ void main() {
     await _drain(t, mc);
   });
 
-  test('every preset except studio still renders the old dashboards', () {
-    // DashboardHost only adds a Studio arm; the other presets' arms are
-    // covered by dashboard_host_test.dart, which runs unchanged.
-    expect(MmThemePreset.values, contains(MmThemePreset.studio));
-  });
 }

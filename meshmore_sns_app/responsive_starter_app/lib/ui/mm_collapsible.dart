@@ -10,14 +10,20 @@ import 'mm_collapse_controller.dart';
 import 'mm_components.dart';
 
 /// R63 — a collapsible group: a dim section label with a chevron, content
-/// that is **not built** while the group is closed, and (R77) one hairline
-/// rule at the END that closes the group.
+/// that is **not built** while the group is closed, and (R116) exactly one
+/// rule marking where the group starts.
 ///
 /// Reuses the app's one section-label idiom ([mmSectionLabelStyle], the
 /// same style as `MmSectionHeader`) rather than inventing a second.
 /// Colours and the rule width come from the active skin
-/// (`MmTokens.hairline`, `MmShape.hairlineWidth`), so it follows every
+/// (`MmTokens.line`, `MmShape.hairlineWidth`), so it follows every
 /// preset.
+///
+/// The header is never filled. A tinted strip is a band of colour between
+/// two rules, which reads as a box, and on paper it made every section one
+/// more rectangle on a page that was already a stack of them. One rule in
+/// the border tier above the label is the mark on every ground, so a
+/// boundary is drawn once and always the same way.
 ///
 /// Accessibility: the whole header row is one button at least
 /// [kMinInteractiveDimension] (48dp) tall; its semantics carry
@@ -118,31 +124,26 @@ class _MmCollapsibleSectionState extends State<MmCollapsibleSection> {
   Widget build(BuildContext context) {
     final MmSkin skin = context.skin;
     _store = context.watch<MmCollapseController?>();
-    // One boundary, one line. A tinted header marks where a group starts, so
-    // the group closes with a hairline; an untinted header on paper needs the
-    // rule above it instead. Drawing both put two lines a few dp apart between
-    // every pair of groups, which is the doubled border the owner saw.
-    final Widget closeRule = Container(
-      key: const ValueKey<String>('group-close-rule'),
-      height: skin.shape.hairlineWidth,
-      color: skin.color.hairline,
-    );
-    // A header that carries no tint needs an edge to start at. On the dark
-    // grounds the tonal step does that job; on paper a band is a box, so the
-    // rule above the label is what separates one group from the last.
+    // One boundary, one line, on every ground and in every preset.
     //
-    // That rule is the *border* tier, not the hairline tier: on paper it is
-    // the only thing marking the group, and a hairline is deliberately too
-    // faint to be a border (`studio_light_test`: a hairline stays under 2.6:1).
-    // A tinted group closes with a hairline instead, so no boundary carries two
-    // lines, and no rule ever sits between a header and its own content (R77).
-    final Widget bandRule = Container(
+    // A group starts at a rule in the *border* tier and it starts there only:
+    // the header is not filled, and the group does not also close with a rule
+    // of its own. The earlier shape gave the dark skins a tinted header and
+    // closed it with a hairline, which meant a boundary between two groups was
+    // drawn twice wherever the previous rule and the fill's own edge nearly
+    // met, and a folded group read as a box bounded above and below. The rule
+    // above the label is the whole mark: it survives all eight presets, it
+    // never doubles with a fill, and no rule ever sits between a header and its
+    // own content (R77, R116).
+    //
+    // The *border* tier, not the hairline tier: this rule is the only thing
+    // marking the group, and a hairline is deliberately too faint to carry a
+    // border (`studio_light_test`: a hairline stays under 2.6:1).
+    final Widget topRule = Container(
       key: const ValueKey<String>('group-open-rule'),
       height: skin.shape.hairlineWidth,
       color: skin.color.line,
     );
-    final bool tinted = skin.shape.tintedHeaders;
-    final Widget topRule = tinted ? const SizedBox.shrink() : bandRule;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
@@ -154,11 +155,9 @@ class _MmCollapsibleSectionState extends State<MmCollapsibleSection> {
           excludeSemantics: true,
           onTap: _toggle,
           child: Material(
-            // R77: Studio tints the header one tonal step (raised) so the
-            // header, not a divider, marks where a group starts.
-            color: skin.shape.tintedHeaders
-                ? skin.color.raised
-                : Colors.transparent,
+            // A header is a label and a rule, never a band: a filled strip is
+            // one more rectangle on the page, and on paper it read as a box.
+            color: Colors.transparent,
             child: InkWell(
               onTap: _toggle,
               child: ConstrainedBox(
@@ -190,12 +189,9 @@ class _MmCollapsibleSectionState extends State<MmCollapsibleSection> {
             ),
           ),
         ),
-        // R77: children first, then ONE rule that closes the group, so a
-        // divider never sits between a header and its own content.
+        // The group's content follows its header; the next group opens with
+        // its own rule, so this group draws nothing at its end.
         if (_open) ...widget.children,
-        // A tinted group already says where it starts, so it closes; an
-        // untinted one opened with a rule, so it does not close.
-        if (tinted) closeRule,
       ],
     );
   }
