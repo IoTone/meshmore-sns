@@ -59,7 +59,7 @@ void main() {
       'lib/bot/bot_tag.dart': 1,
       'lib/docs/markdown_view.dart': 5,
       'lib/maps/basemap.dart': 1,
-      'lib/screens/device_contacts_screen.dart': 6,
+      'lib/screens/device_contacts_screen.dart': 4,
       'lib/screens/equal_grid_view.dart': 5,
       'lib/screens/maps/maps_screen.dart': 6,
       'lib/screens/maps/maps_self_test_screen.dart': 1,

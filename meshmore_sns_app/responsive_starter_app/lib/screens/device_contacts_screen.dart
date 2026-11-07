@@ -5,6 +5,7 @@ import 'package:meshcore/meshcore.dart';
 import 'package:provider/provider.dart';
 
 import '../gen/app_localizations.dart';
+import '../theme/mm_skin.dart';
 import '../ui/mm_scaffold.dart';
 import '../meshcore/meshcore_controller.dart';
 
@@ -199,11 +200,34 @@ class _DeviceContactsScreenState extends State<DeviceContactsScreen> {
     if (mounted) setState(() => _removed.add(key));
   }
 
+  /// Name or key prefix. This list is the radio's whole contact table — 193
+  /// rows on the bench radio — so scrolling for a node was the only way to
+  /// find one.
+  final TextEditingController _filter = TextEditingController();
+
+  @override
+  void dispose() {
+    _filter.dispose();
+    super.dispose();
+  }
+
+  List<Contact> _shown(List<Contact> all, String query) {
+    final String q = query.trim().toLowerCase();
+    if (q.isEmpty) return all;
+    return <Contact>[
+      for (final Contact c in all)
+        if (c.name.toLowerCase().contains(q) ||
+            _hex(c.publicKey).toLowerCase().startsWith(q))
+          c,
+    ];
+  }
+
   @override
   Widget build(BuildContext context) {
     final MeshcoreController mc = context.watch<MeshcoreController>();
     final AppLocalizations l = AppLocalizations.of(context);
     final ColorScheme cs = Theme.of(context).colorScheme;
+    final MmSkin skin = context.skin;
     final List<Contact> contacts = <Contact>[
       for (final Contact c in mc.probedContacts)
         if (!_removed.contains(_hex(c.publicKey))) c
@@ -211,6 +235,7 @@ class _DeviceContactsScreenState extends State<DeviceContactsScreen> {
     final int? max = mc.maxContacts;
     final int? count = mc.deviceContactCount;
     final bool full = (count != null && max != null && count >= max);
+    final List<Contact> shown = _shown(contacts, _filter.text);
 
     return Scaffold(
       appBar: AppBar(
@@ -292,25 +317,52 @@ class _DeviceContactsScreenState extends State<DeviceContactsScreen> {
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
             child: Text(l.deviceContactsChannelsNote,
                 style: TextStyle(
-                    color: cs.onSurfaceVariant, fontSize: 12, height: 1.35)),
+                    color: cs.onSurfaceVariant,
+                    fontSize: skin.type.sizeSm,
+                    height: 1.35)),
           ),
           if (full)
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
               child: Text(l.deviceContactsFullHelp,
-                  style: TextStyle(color: cs.error, fontSize: 13, height: 1.4)),
+                  style: TextStyle(
+                      color: cs.error, fontSize: skin.type.sizeBody, height: 1.4)),
             ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+            child: TextField(
+              key: const ValueKey<String>('device-contact-filter'),
+              controller: _filter,
+              onChanged: (String _) => setState(() {}),
+              decoration: InputDecoration(
+                isDense: true,
+                hintText: l.contactFilterHint,
+                prefixIcon: const Icon(Icons.search, size: 18),
+                suffixIcon: _filter.text.isEmpty
+                    ? null
+                    : IconButton(
+                        tooltip: l.actionClear,
+                        icon: const Icon(Icons.close, size: 18),
+                        onPressed: () => setState(_filter.clear),
+                      ),
+              ),
+            ),
+          ),
           Expanded(
-            child: contacts.isEmpty
+            child: shown.isEmpty && contacts.isNotEmpty
+                ? Center(
+                    child: Text(l.contactFilterNone,
+                        style: TextStyle(color: cs.onSurfaceVariant)))
+                : shown.isEmpty
                 ? Center(
                     child: Text(
                         count == 0 ? l.deviceContactsEmpty : l.deviceContactsSyncing,
                         style: TextStyle(color: cs.onSurfaceVariant)))
                 : ListView.separated(
-                    itemCount: contacts.length,
+                    itemCount: shown.length,
                     separatorBuilder: (_, __) => const Divider(height: 1),
                     itemBuilder: (BuildContext _, int i) {
-                      final Contact c = contacts[i];
+                      final Contact c = shown[i];
                       final String key = _hex(c.publicKey);
                       return ListTile(
                         title: Text(
