@@ -58,7 +58,7 @@ Future<DiscoveredNode?> pickContact(
                 padding: const EdgeInsets.all(24),
                 child: Text(l.pingNoContacts),
               )
-            : _ContactSheet(
+            : ContactPickerSheet(
                 nodes: nodes,
                 l: l,
                 enabled: enabled,
@@ -91,8 +91,8 @@ List<DiscoveredNode> filterContacts(
 /// The filter matches a name or the hex prefix a user reads off another screen,
 /// and it is a plain `TextField` rather than a search sheet because the list is
 /// right there behind it.
-class _ContactSheet extends StatefulWidget {
-  const _ContactSheet({
+class ContactPickerSheet extends StatefulWidget {
+  const ContactPickerSheet({
     required this.nodes,
     required this.l,
     this.enabled,
@@ -105,10 +105,10 @@ class _ContactSheet extends StatefulWidget {
   final String? reason;
 
   @override
-  State<_ContactSheet> createState() => _ContactSheetState();
+  State<ContactPickerSheet> createState() => _ContactPickerSheetState();
 }
 
-class _ContactSheetState extends State<_ContactSheet> {
+class _ContactPickerSheetState extends State<ContactPickerSheet> {
   final TextEditingController _filter = TextEditingController();
 
   @override
