@@ -4,7 +4,7 @@ _Snapshot as of 2026-11-05. App `1.0.197+13`, branch `feat/app-completion`.
 Change records below are newest first from R113; older entries are kept in
 the order they were written._
 
-**What is proven and what is not.** Measured on this tree, 2026-11-05: `flutter test` **2021 passed** in 2 m 32 s;
+**What is proven and what is not.** Measured on this tree, 2026-11-05: `flutter test` **2027 passed** in 2 m 42 s;
 `flutter analyze` reports only the two `unawaited_return_in_try_block` warnings in `lib/maps/maps_controller.dart`;
 the protocol package `dart test` 368 passed with 1 skipped; the pure-Java port at the repository root, `cd libmeshcore && ./gradlew test --offline
 --rerun-tasks`, 143 tests with 0 failures. Both release paths build: `flutter build appbundle --release` produced a 77.0 MB bundle and
@@ -97,6 +97,12 @@ over BLE. Mesh-first, no backend, no account, no server.
   under the glass). Tests: `test/theme/section_header_test.dart`,
   `studio_light_test.dart`, `test/ui/disabled_affordance_test.dart`,
   `mm_value_fields_test.dart`.
+- **Tool pickers filter (R118).** Ping, trace, soak and the range test all opened
+  one undifferentiated scroll of every synced contact — 190 rows on the bench
+  radio. The filter matches a name anywhere and a key from its start, and the
+  rule is a pure function with its own test. Found while driving the phone: the
+  sheet's list had been shrink-wrapped inside a min-height column, so its lower
+  rows drew outside the sheet's box and stopped accepting taps.
 - **One bubble rule, one composer (R118).** The message bubble carried a fill
   and a hairline around one edge; it now carries one of the two, and the Dr Pop
   Mondrian rule is the one deliberate exception, written where it is drawn. Both
