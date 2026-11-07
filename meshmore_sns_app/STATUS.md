@@ -4,7 +4,7 @@ _Snapshot as of 2026-11-05. App `1.0.197+13`, branch `feat/app-completion`.
 Change records below are newest first from R113; older entries are kept in
 the order they were written._
 
-**What is proven and what is not.** Measured on this tree, 2026-11-05: `flutter test` **2027 passed** in 2 m 42 s;
+**What is proven and what is not.** Measured on this tree, 2026-11-05: `flutter test` **2034 passed** in 2 m 25 s;
 `flutter analyze` reports **no issues** (the two `unawaited_return_in_try_block` warnings in `lib/maps/maps_controller.dart`
 were fixed on 2026-11-05, so any warning now is a regression);
 the protocol package `dart test` 368 passed with 1 skipped; the pure-Java port at the repository root, `cd libmeshcore && ./gradlew test --offline
@@ -104,6 +104,17 @@ over BLE. Mesh-first, no backend, no account, no server.
   under the glass). Tests: `test/theme/section_header_test.dart`,
   `studio_light_test.dart`, `test/ui/disabled_affordance_test.dart`,
   `mm_value_fields_test.dart`.
+- **Storage, in the app (R118).** Settings → App settings → Storage states what
+  the app holds with the numbers each store can prove: map data against its
+  budget with cached tiles split from downloaded regions, a sweep that clears only
+  the rebuildable tiles, and the sealed history's record size published by
+  `ChatStore.bytes`. A store that cannot measure itself is absent rather than
+  guessed at.
+- **Broadcast reach (R118).** D8.1's flood scope is now read on connect
+  (`CMD_GET_DEFAULT_FLOOD_SCOPE`, decoded from the reply the frame codec used to
+  drop) and the photo composer states which scope a send inherits — a named
+  region, no scope set, or not yet reported — plus that a photo carries no
+  acknowledgement.
 - **Tool pickers filter (R118).** Ping, trace, soak and the range test all opened
   one undifferentiated scroll of every synced contact — 190 rows on the bench
   radio. The filter matches a name anywhere and a key from its start, and the
