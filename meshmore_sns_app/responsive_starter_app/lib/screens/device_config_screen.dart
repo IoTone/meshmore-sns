@@ -975,6 +975,7 @@ class _DeviceConfigScreenState extends State<DeviceConfigScreen> {
                             'channels: ${d.maxGroupChannels}\n'
                             'BLE pin: ${d.blePin}\n'
                             'path hash: ${d.pathHashMode + 1} byte(s)\n'
+                            '${_repeatRanges(mc)}'
                             'battery: $batt',
                     style: TextStyle(
                         color: cs.onSurface,
@@ -1011,6 +1012,20 @@ class _DeviceConfigScreenState extends State<DeviceConfigScreen> {
       ),
     );
   }
+}
+
+/// The bands the radio will relay in, as one readout line.
+///
+/// The radio answers `CMD_GET_ALLOWED_REPEAT_FREQ` with a list of kHz ranges,
+/// and an empty list means it reported none. A radio that hears a channel and
+/// will not repeat it looks exactly like a range problem, so the rule is worth
+/// one line where the rest of the radio's own limits are.
+String _repeatRanges(MeshcoreController mc) {
+  final List<({int lowerKhz, int upperKhz})>? r = mc.allowedRepeatFreq;
+  if (r == null) return 'repeat: —\n';
+  if (r.isEmpty) return 'repeat: none reported\n';
+  String mhz(int khz) => (khz / 1000).toStringAsFixed(khz % 1000 == 0 ? 0 : 3);
+  return 'repeat: ${<String>[for (final ({int lowerKhz, int upperKhz}) x in r) '${mhz(x.lowerKhz)}–${mhz(x.upperKhz)}'].join(', ')} MHz\n';
 }
 
 /// The radio's contact-table policy, as switches that write the whole byte.

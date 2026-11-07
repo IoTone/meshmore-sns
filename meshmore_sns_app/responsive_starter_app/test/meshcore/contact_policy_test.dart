@@ -300,4 +300,28 @@ void main() {
       mc.dispose();
     });
   });
+
+  test('the bands the radio will relay in are read and shown', () async {
+    final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
+    final MeshcoreController mc = await connected(fake);
+    expect(mc.allowedRepeatFreq, isNull);
+    await mc.requestAllowedRepeatFreq();
+    // `RESP_CODE_ALLOWED_REPEAT_FREQ` (0x1A): `[1A][lower u32 LE][upper u32 LE]…`,
+    // kHz. 902000..928000 and 2400000..2483500.
+    fake.emit(Uint8List.fromList(<int>[
+      0x1A,
+      0x70, 0xC3, 0x0D, 0x00,
+      0x00, 0x29, 0x0E, 0x00,
+      0x00, 0x9F, 0x24, 0x00,
+      0x2C, 0xE5, 0x25, 0x00,
+    ]));
+    await settle();
+    final List<({int lowerKhz, int upperKhz})>? r = mc.allowedRepeatFreq;
+    expect(r, isNotNull);
+    expect(r!.length, 2);
+    expect(r.first.lowerKhz, 902000);
+    expect(r.first.upperKhz, 928000);
+    expect(r.last.upperKhz, 2483500);
+    mc.dispose();
+  });
 }

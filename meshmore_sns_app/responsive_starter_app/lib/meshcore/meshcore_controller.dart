@@ -181,8 +181,9 @@ class MeshcoreController extends ChangeNotifier {
         _requestFloodScope();
         // The radio's add policy, once per connection: the device page shows
         // it, and it is what decides whether a new node becomes a contact at
-        // all.
+        // all. The repeat ranges explain a radio that hears but does not relay.
         unawaited(requestAutoAddConfig());
+        unawaited(requestAllowedRepeatFreq());
         // Keep the process alive in the background so the link +
         // drain survive Doze (Android only; no-op elsewhere).
         if (_bgKeepaliveEnabled) unawaited(_startKeepalive());
@@ -241,6 +242,7 @@ class MeshcoreController extends ChangeNotifier {
       _trackDeviceInfo(f);
       _trackCustomVars(f);
       _trackFloodScope(f);
+      _trackAllowedRepeatFreq(f);
       _trackTelemetry(f);
       // R25+1 — own movement trail. Every inbound frame might have
       // bumped ownLocation (SelfInfoFrame's lat/lon), so sample
@@ -4760,6 +4762,35 @@ class MeshcoreController extends ChangeNotifier {
     _floodScopeAsked = true;
     unawaited(send(MeshcoreFrameCodec.getDefaultFloodScope())
         .catchError((Object _) => _floodScopeAsked = false));
+  }
+
+  // --- The frequency ranges the radio will repeat on -------------------
+  //
+  // `CMD_GET_ALLOWED_REPEAT_FREQ` (0x1A) is the radio's own rule about which
+  // bands it may relay in, as a list of kHz ranges. It is read-only and worth
+  // showing: it is the reason a radio hears a channel and will not repeat it,
+  // which is otherwise indistinguishable from a range problem.
+
+  List<({int lowerKhz, int upperKhz})>? _allowedRepeatFreq;
+
+  /// The ranges the radio will repeat on, in kHz, or null while it has not
+  /// answered. An empty list means it reported none.
+  List<({int lowerKhz, int upperKhz})>? get allowedRepeatFreq =>
+      _allowedRepeatFreq;
+
+  void _trackAllowedRepeatFreq(MeshcoreInbound f) {
+    if (f is! UnsupportedFrame) return;
+    if (f.opcode != MeshcoreResponse.allowedRepeatFreq.code) return;
+    _allowedRepeatFreq = MeshcoreFrameCodec.decodeAllowedRepeatFreq(f.raw);
+  }
+
+  Future<void> requestAllowedRepeatFreq() async {
+    if (!isReady) return;
+    try {
+      await send(MeshcoreFrameCodec.getAllowedRepeatFreq());
+    } catch (_) {
+      _emitTaskError('getAllowedRepeatFreq');
+    }
   }
 
   void _trackFloodScope(MeshcoreInbound f) {
