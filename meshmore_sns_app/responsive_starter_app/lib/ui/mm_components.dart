@@ -653,3 +653,41 @@ Future<T?> showMmPicker<T>({
     ),
   );
 }
+
+/// A bottom sheet body that stays above the keyboard.
+///
+/// `showModalBottomSheet(isScrollControlled: true)` positions the sheet against
+/// the bottom of the *window* and does not react to `viewInsets`, so a sheet
+/// that contains a filter field opens the keyboard over its own rows: the list
+/// is narrowed to the two matches the user asked for and both of them are under
+/// the keyboard, where no tap can reach them. Measured on the handset: the Ping
+/// target sheet filtered to HELTEC-REP and HELTEC-BASE and neither could be
+/// chosen, so the sheet looked broken while it was only covered.
+///
+/// The height is taken from the space the keyboard leaves, not from the whole
+/// screen, so the constraint and the padding describe the same box.
+class MmSheetBody extends StatelessWidget {
+  const MmSheetBody({super.key, required this.child, this.heightFactor = .7});
+
+  final Widget child;
+
+  /// The share of the free height a sheet may take. A picker is a list, not a
+  /// page: it should not cover the screen it came from.
+  final double heightFactor;
+
+  @override
+  Widget build(BuildContext context) {
+    final MediaQueryData mq = MediaQuery.of(context);
+    final double free = mq.size.height - mq.viewInsets.bottom;
+    return Padding(
+      padding: EdgeInsets.only(bottom: mq.viewInsets.bottom),
+      child: SafeArea(
+        top: false,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxHeight: free * heightFactor),
+          child: child,
+        ),
+      ),
+    );
+  }
+}

@@ -36,7 +36,7 @@ class PingScreen extends StatelessWidget {
     return ToolPage(
       title: l.toolPingName,
       tool: t,
-      children: <Widget>[
+      body: (BuildContext context) => <Widget>[
         // What the number means, before the number. The hub carries the same
         // line, but a screen reached from a link or a deep route has to say it
         // itself: "ping" reads as a call to a person, and this is a radio round

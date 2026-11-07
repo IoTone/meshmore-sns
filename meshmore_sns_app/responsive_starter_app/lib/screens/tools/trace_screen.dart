@@ -63,7 +63,7 @@ class _TraceScreenState extends State<TraceScreen> {
     return ToolPage(
       title: l.toolTraceName,
       tool: t,
-      children: <Widget>[
+      body: (BuildContext context) => <Widget>[
         SegmentedButton<bool>(
           segments: <ButtonSegment<bool>>[
             ButtonSegment<bool>(value: false, label: Text(l.traceToNode)),

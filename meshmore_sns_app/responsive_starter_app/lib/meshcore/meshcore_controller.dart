@@ -25,6 +25,7 @@ import 'device_power_specs.dart';
 import 'ble_connector.dart';
 import 'channel_datagram.dart';
 import 'command_ledger.dart';
+import 'contact_store.dart';
 import 'chat_message.dart';
 import 'radio_config_transaction.dart';
 import 'radio_identity_store.dart';
@@ -260,6 +261,10 @@ class MeshcoreController extends ChangeNotifier {
     _historyRestored = _loadChatHistory();
     unawaited(_loadDropped());
     unawaited(_loadContactsSince());
+    // The radio's contact table is kept across restarts. Without it the
+    // incremental token below asks the radio only for contacts changed since
+    // the last session, and the app searched a table it had thrown away.
+    _loadSyncedContacts();
     unawaited(_meshbook.load().then((_) => notifyListeners()));
     _loadBackgroundPref();
     _loadDefaultChannel();
@@ -4230,52 +4235,8 @@ class MeshcoreController extends ChangeNotifier {
       // re-send it byte-exactly via ADD_UPDATE_CONTACT when changing
       // per-contact telemetry permissions (R54 follow-on).
       _contacts[_hex(c.publicKey)] = c;
-      final int adv = c.lastAdvertTimestamp;
-      // A contact sync REBUILDS the node entry, so anything the contact
-      // record does not carry must be preserved from the previous entry.
-      // The record has no RSSI/SNR/altitude, and it reports (0,0) for a
-      // node that hides its position. Before this, every sync wiped the
-      // signal data that the radar's RSSI-ring placement and the per-peer
-      // reach estimate (`estimatedPeerReachMeters`) depend on, and a
-      // position learned from an advert was replaced by null.
-      final DiscoveredNode? prev = _nodes[_hex(c.publicKey)];
-      // `adv` is in the device clock; translate via the learned
-      // offset (0 until CURR_TIME, re-derived in _trackDeviceClock).
-      _nodes[_hex(c.publicKey)] = DiscoveredNode(
-        pubKeyHex: _hex(c.publicKey),
-        name: c.name,
-        type: c.type,
-        lastHeardUnix: adv == 0 ? now : adv + _deviceClockOffsetSec,
-        deviceAdvertUnix: adv == 0 ? null : adv,
-        latitude: c.latitudeMicros == 0
-            ? prev?.latitude
-            : c.latitudeMicros / 1e6,
-        longitude: c.longitudeMicros == 0
-            ? prev?.longitude
-            : c.longitudeMicros / 1e6,
-        snrDb: prev?.snrDb,
-        rssi: prev?.rssi,
-        altitudeMeters: prev?.altitudeMeters,
-        viaAdvert: false,
-        // R49 — preserve the outbound repeater chain for topology
-        // drawing. activePath gives the prefix of valid bytes; the
-        // tail of the 64-byte buffer is zero-padding we discard.
-        //
-        // A flood-routed contact reports out_path_len == 0xFF (the
-        // flood sentinel) — there is no fixed path. activePath would
-        // clamp that to a bogus 64-byte chain, which then reads as a
-        // 64-hop peer and gets filtered out of the tree at every hop
-        // setting. Treat it as an UNKNOWN route (null) instead, so
-        // it shows as a floater at the "All" setting like any other
-        // advert-only peer.
-        outPathHashes: c.outPathLen == kPathLenFlood
-            ? null
-            : List<int>.unmodifiable(c.activePath),
-        // Flood-routed = reachable, no fixed path. Keep this flag so
-        // the UI can show "Flood" (like the official app) instead of
-        // conflating it with advert-only "unknown".
-        viaFlood: c.outPathLen == kPathLenFlood,
-      );
+      _saveContactsSoon();
+      _nodes[_hex(c.publicKey)] = _nodeFromContact(c, now: now);
     } else if (f is AdvertFrame) {
       _upsertAdvert(f.advert);
     } else if (f is RfLogFrame) {
@@ -4286,6 +4247,50 @@ class MeshcoreController extends ChangeNotifier {
         _upsertAdvert(a, snr: f.log.snrDb, rssi: f.log.rssi);
       }
     }
+  }
+
+  /// The node entry a synced contact describes.
+  ///
+  /// One mapping, used when the radio streams a contact and when the persisted
+  /// table is read back at startup: a restart has to land on the same fabric the
+  /// previous session ended with, or the tools offer only the nodes that
+  /// happened to advertise since the app started, and a contact the radio can
+  /// still reach from its stored path becomes unpingable.
+  ///
+  /// A contact sync REBUILDS the node entry, so anything the contact record
+  /// does not carry is preserved from the previous entry: the record has no
+  /// RSSI/SNR/altitude, and it reports (0,0) for a node that hides its position.
+  /// `lastAdvertTimestamp` is in the device clock, so it is translated through
+  /// the learned offset (0 until `CURR_TIME`).
+  DiscoveredNode _nodeFromContact(Contact c, {int? now}) {
+    final String hex = _hex(c.publicKey);
+    final DiscoveredNode? prev = _nodes[hex];
+    final int stamp =
+        now ?? DateTime.now().millisecondsSinceEpoch ~/ 1000;
+    final int adv = c.lastAdvertTimestamp;
+    return DiscoveredNode(
+      pubKeyHex: hex,
+      name: c.name,
+      type: c.type,
+      lastHeardUnix: adv == 0 ? stamp : adv + _deviceClockOffsetSec,
+      deviceAdvertUnix: adv == 0 ? null : adv,
+      latitude:
+          c.latitudeMicros == 0 ? prev?.latitude : c.latitudeMicros / 1e6,
+      longitude:
+          c.longitudeMicros == 0 ? prev?.longitude : c.longitudeMicros / 1e6,
+      snrDb: prev?.snrDb,
+      rssi: prev?.rssi,
+      altitudeMeters: prev?.altitudeMeters,
+      viaAdvert: false,
+      // R49 — preserve the outbound repeater chain for topology drawing.
+      // A flood-routed contact reports the flood sentinel, which `activePath`
+      // would clamp to a bogus 64-byte chain reading as a 64-hop peer, so it
+      // is an UNKNOWN route (null) rather than a path.
+      outPathHashes: c.outPathLen == kPathLenFlood
+          ? null
+          : List<int>.unmodifiable(c.activePath),
+      viaFlood: c.outPathLen == kPathLenFlood,
+    );
   }
 
   void _upsertAdvert(Advert a, {double? snr, int? rssi}) {
@@ -4413,6 +4418,46 @@ class MeshcoreController extends ChangeNotifier {
     _contactsSince = p.getInt(_kContactsSince) ?? 0;
   }
 
+  /// The in-flight load of the persisted table, so a connect that lands first
+  /// waits for it instead of deciding the table is empty.
+  Future<void>? _contactsLoad;
+
+  void _loadSyncedContacts() {
+    _contactsLoad = () async {
+      final List<Contact> rows = await ContactStore.load();
+      if (rows.isEmpty) return;
+      // The user's reconciled-away keys are stale rows on the radio too, so
+      // they are dropped on the way in for the same reason `_ingestNode`
+      // drops them: the firmware has no delete-contact command.
+      final Set<String> gone = await SupersededStore.load();
+      bool added = false;
+      for (final Contact c in rows) {
+        final String hex = _hex(c.publicKey);
+        if (gone.contains(hex) || _superseded.contains(hex)) continue;
+        if (_contacts.containsKey(hex)) continue;
+        _contacts[hex] = c;
+        // The node entry too, through the same mapping a streamed contact
+        // uses: otherwise the fabric starts empty on every launch and the
+        // pickers offer only what has advertised since.
+        _nodes.putIfAbsent(hex, () => _nodeFromContact(c));
+        added = true;
+      }
+      if (added) notifyListeners();
+    }();
+  }
+
+  Timer? _contactsSaveTimer;
+
+  /// Persist the table once the burst settles: a sync streams one frame per
+  /// contact, and sealing a 200-row document on every frame would cost more
+  /// than the sync.
+  void _saveContactsSoon() {
+    _contactsSaveTimer?.cancel();
+    _contactsSaveTimer = Timer(const Duration(seconds: 3), () {
+      unawaited(ContactStore.save(_contacts.values));
+    });
+  }
+
   /// The radio's default flood scope name, or null while it is unknown and ''
   /// when the radio answered that none is set. A channel send inherits it, so
   /// "who receives this" cannot be answered without it.
@@ -4442,7 +4487,17 @@ class MeshcoreController extends ChangeNotifier {
     if (!isReady || _contactsSyncRequested) return;
     _contactsSyncRequested = true;
     try {
-      await requestContacts(since: _contactsSince == 0 ? null : _contactsSince);
+      // `since` is only meaningful when the app still holds the table it
+      // describes. With an empty table an incremental request answers with the
+      // handful of contacts changed since the last session, so the app kept an
+      // empty list while the radio reported 193 of 350: Ping, Trace and every
+      // telemetry tool then said "no synced contacts yet".
+      final Future<void>? load = _contactsLoad;
+      if (load != null) await load;
+      await requestContacts(
+          since: (_contactsSince == 0 || _contacts.isEmpty)
+              ? null
+              : _contactsSince);
     } catch (_) {
       // A refused or unsent request is not fatal: the device-contacts screen
       // can ask again, and the next connect retries.
@@ -4857,6 +4912,14 @@ class MeshcoreController extends ChangeNotifier {
   /// breadcrumb pointing back at it.
   Future<void> forgetDevice() async {
     final String? rid = _pairedRemoteId;
+    // The table and the token that describes it belong to the radio being
+    // forgotten. Leaving them behind would let the next radio be searched with
+    // a token from this one, which is the same empty-table bug by another road.
+    _contactsSaveTimer?.cancel();
+    _contacts.clear();
+    _contactsSince = 0;
+    _deviceContactCount = null;
+    await ContactStore.clear();
     await PairedDeviceStore.clear();
     // Forget the OS bond too, not just our record of it. Leaving it behind
     // would let [autoConnectIfPaired] adopt the radio straight back on the

@@ -7,6 +7,7 @@ import 'package:meshmore_sns_app/gen/app_localizations.dart';
 import 'package:meshmore_sns_app/l10n/locale_controller.dart';
 import 'package:meshmore_sns_app/meshcore/discovered_node.dart';
 import 'package:meshmore_sns_app/screens/tools/tool_pickers.dart';
+import 'package:meshmore_sns_app/ui/mm_components.dart';
 
 /// Choosing a contact in a real modal sheet returns that contact.
 ///
@@ -58,14 +59,10 @@ void main() {
                 context: ctx,
                 showDragHandle: true,
                 isScrollControlled: true,
-                builder: (BuildContext inner) => SafeArea(
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(
-                        maxHeight: MediaQuery.of(inner).size.height * .7),
-                    child: ContactPickerSheet(
-                      nodes: nodes,
-                      l: AppLocalizations.of(inner),
-                    ),
+                builder: (BuildContext inner) => MmSheetBody(
+                  child: ContactPickerSheet(
+                    nodes: nodes,
+                    l: AppLocalizations.of(inner),
                   ),
                 ),
               );

@@ -33,7 +33,7 @@ class DiscoverScreen extends StatelessWidget {
     return ToolPage(
       title: l.toolDiscoverName,
       tool: t,
-      children: <Widget>[
+      body: (BuildContext context) => <Widget>[
         ToolActionRow(tool: t, startLabel: l.discoverStart, onStart: t.start),
         ToolFailureLine(t),
         const SizedBox(height: 12),

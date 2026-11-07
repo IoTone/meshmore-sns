@@ -9,6 +9,7 @@ import '../../meshcore/discovered_node.dart';
 import '../../meshcore/meshcore_controller.dart';
 import '../../tools/mesh_tool.dart';
 import '../../tools/soak_tool.dart' show scopeRefusal;
+import '../../ui/mm_components.dart';
 import 'tool_widgets.dart';
 
 IconData nodeTypeIcon(int type) => switch (type) {
@@ -49,27 +50,22 @@ Future<DiscoveredNode?> pickContact(
     context: context,
     showDragHandle: true,
     isScrollControlled: true,
-    builder: (BuildContext ctx) => SafeArea(
-      // The shape `showMmPicker` already uses everywhere in this app: ONE
-      // shrink-wrapped ListView as the sheet's direct child, with the filter as
-      // its first item. A Column wrapper was tried and abandoned — not because
-      // it was proven broken (a widget test picks rows out of both shapes), but
-      // because one proven shape for every picker is simpler than two.
-      child: ConstrainedBox(
-        constraints: BoxConstraints(
-            maxHeight: MediaQuery.of(ctx).size.height * .7),
-        child: nodes.isEmpty
-            ? Padding(
-                padding: const EdgeInsets.all(24),
-                child: Text(l.pingNoContacts),
-              )
-            : ContactPickerSheet(
-                nodes: nodes,
-                l: l,
-                enabled: enabled,
-                reason: reason,
-              ),
-      ),
+    // The shape `showMmPicker` already uses everywhere in this app: ONE
+    // shrink-wrapped ListView as the sheet's direct child, with the filter as
+    // its first item. `MmSheetBody` lifts it above the keyboard, which this
+    // sheet opens the moment the filter is tapped.
+    builder: (BuildContext ctx) => MmSheetBody(
+      child: nodes.isEmpty
+          ? Padding(
+              padding: const EdgeInsets.all(24),
+              child: Text(l.pingNoContacts),
+            )
+          : ContactPickerSheet(
+              nodes: nodes,
+              l: l,
+              enabled: enabled,
+              reason: reason,
+            ),
     ),
   );
 }
@@ -300,19 +296,14 @@ Future<(BotScope, String)?> pickConversation(
     showDragHandle: true,
     isScrollControlled: true,
     // Same shape as the contact sheet, for the same measured reason: one
-    // shrink-wrapped list as the sheet's direct child. A Column with a flexible
-    // list inside lays out taller than the sheet and its rows stop accepting
-    // taps.
-    builder: (BuildContext ctx) => SafeArea(
-      child: ConstrainedBox(
-        constraints: BoxConstraints(
-            maxHeight: MediaQuery.of(ctx).size.height * .7),
-        child: _ConversationSheet(
-          channels: mc.channels,
-          peers: allPeers,
-          l: l,
-          pskOf: mc.channelPsk,
-        ),
+    // shrink-wrapped list as the sheet's direct child, lifted above the
+    // keyboard its own filter opens.
+    builder: (BuildContext ctx) => MmSheetBody(
+      child: _ConversationSheet(
+        channels: mc.channels,
+        peers: allPeers,
+        l: l,
+        pskOf: mc.channelPsk,
       ),
     ),
   );

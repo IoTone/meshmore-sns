@@ -42,7 +42,7 @@ class SoakScreen extends StatelessWidget {
     return ToolPage(
       title: l.toolSoakName,
       tool: t,
-      children: <Widget>[
+      body: (BuildContext context) => <Widget>[
         ToolLine(l.soakPairHint, muted: true),
         const SizedBox(height: 8),
         ToolField(

@@ -55,7 +55,7 @@ class _RadioStatsScreenState extends State<RadioStatsScreen> {
     return ToolPage(
       title: l.toolStatsName,
       tool: t,
-      children: <Widget>[
+      body: (BuildContext context) => <Widget>[
         // A wrap, not a row: at the 200 % text floor "Refresh" and "Auto"
         // together are wider than 320 dp, and the switch must stay reachable.
         // On a normal phone both fit on one line, so this changes nothing

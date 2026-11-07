@@ -40,13 +40,23 @@ class ToolPage extends StatelessWidget {
     super.key,
     required this.title,
     required this.tool,
-    required this.children,
+    required this.body,
     this.actions = const <Widget>[],
   });
 
   final String title;
   final MeshTool tool;
-  final List<Widget> children;
+
+  /// The page's rows, built inside the tool's own listener.
+  ///
+  /// A list of already-built widgets cannot work here: the page passed them in
+  /// from its own `build`, so the listener below re-laid them out without
+  /// re-running their constructors and every value captured at page-build time
+  /// stayed frozen. That is how the Ping target read "Choose…" after a contact
+  /// had been chosen, and how the tool looked dead while it was holding a
+  /// target the user had just picked. A builder is the only shape that can
+  /// describe a page whose rows depend on the tool's state.
+  final List<Widget> Function(BuildContext context) body;
   final List<Widget> actions;
 
   @override
@@ -66,7 +76,7 @@ class ToolPage extends StatelessWidget {
                 ToolNotice(text: l.toolsOffline, icon: Icons.link_off),
                 const SizedBox(height: 12),
               ],
-              ...children,
+              ...body(context),
             ],
           ),
         ),

@@ -9,6 +9,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:meshmore_sns_app/gen/app_localizations.dart';
 import 'package:meshmore_sns_app/l10n/locale_controller.dart';
+import 'package:meshcore/meshcore.dart';
+import 'package:meshmore_sns_app/meshcore/discovered_node.dart';
 import 'package:meshmore_sns_app/meshcore/meshcore_controller.dart';
 import 'package:meshmore_sns_app/screens/tools/discover_screen.dart';
 import 'package:meshmore_sns_app/screens/tools/ping_screen.dart';
@@ -130,6 +132,37 @@ void main() {
       });
     }
   }
+
+  // A tool page passes its rows to `ToolPage` as a function, not as a list.
+  // A list was built by the page's own `build`, so the tool's listener re-laid
+  // out the same widget instances and every value captured at page-build time
+  // stayed frozen: choosing a contact in the Ping target sheet closed the sheet
+  // and left the field reading "Choose…" on the phone, which read as a dead
+  // picker and a dead Start button.
+  testWidgets('a tool page follows the tool as it changes',
+      (WidgetTester t) async {
+    final MeshcoreController mc = MeshcoreController(
+        transportFactory: () async => FakeMeshcoreTransport());
+    final ToolsController tools = ToolsController(mc);
+    await t.pumpWidget(_host(mc, tools, const PingScreen()));
+    await t.pumpAndSettle();
+    expect(find.text('Choose…'), findsOneWidget);
+
+    tools.ping.setTarget(DiscoveredNode(
+      pubKeyHex: 'ab' * 32,
+      name: 'HELTEC-BASE',
+      type: kAdvTypeRepeater,
+      lastHeardUnix: 0,
+      viaAdvert: true,
+    ));
+    await t.pump();
+
+    expect(find.text('HELTEC-BASE'), findsOneWidget);
+    expect(find.text('Choose…'), findsNothing,
+        reason: 'the target line is the tool state, not the page build');
+    tools.dispose();
+    mc.dispose();
+  });
 
   testWidgets('soak picker lists Public disabled, with the reason',
       (WidgetTester t) async {
