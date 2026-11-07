@@ -7,7 +7,8 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
-import 'package:meshcore/meshcore.dart' show AdvertPath, Contact;
+import 'package:meshcore/meshcore.dart'
+    show AdvertPath, Contact, PathDiscoveryResult, PathLen;
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -478,6 +479,7 @@ class _NodeDetailSheetState extends State<NodeDetailSheet> {
             // this node at all" with no mesh traffic, so it is offered as a
             // read rather than fetched for every node opened.
             if (!widget.isSelf) _AdvertPathLine(node: n),
+            if (!widget.isSelf) _FindRouteLine(node: n),
             // R47 — peer telemetry on tap. CMD_SEND_TELEMETRY_REQ goes
             // to the device, which unicasts to the peer over the air;
             // the peer's response arrives async and lands in the
@@ -787,6 +789,113 @@ class _ContactTelemetryShareSection extends StatelessWidget {
             (bool v) => mc.setContactTelemetryPermissions(node.pubKeyHex,
                 environment: v)),
       ],
+    );
+  }
+}
+
+/// The active counterpart to the advert-path row: ask the mesh for a route.
+///
+/// It floods a discovery request and whichever repeaters answer return the
+/// outbound and inbound paths they found, so a route that did not exist a
+/// minute ago can come back. It costs airtime, which is why it is a tap and not
+/// something the sheet does on open.
+class _FindRouteLine extends StatefulWidget {
+  const _FindRouteLine({required this.node});
+  final DiscoveredNode node;
+
+  @override
+  State<_FindRouteLine> createState() => _FindRouteLineState();
+}
+
+class _FindRouteLineState extends State<_FindRouteLine> {
+  bool _busy = false;
+  bool _asked = false;
+  PathDiscoveryResult? _result;
+
+  Future<void> _read() async {
+    if (_busy) return;
+    setState(() => _busy = true);
+    final MeshcoreController mc = context.read<MeshcoreController>();
+    final PathDiscoveryResult? r =
+        await mc.discoverPathFor(widget.node.pubKeyHex);
+    if (!mounted) return;
+    setState(() {
+      _result = r;
+      _busy = false;
+      _asked = true;
+    });
+  }
+
+  /// A hop's display name: the node whose key starts with that hash, or the
+  /// hash itself when no known node matches (a repeater we have not heard).
+  String _label(String hex) {
+    for (final DiscoveredNode n in context.read<MeshcoreController>().nodes) {
+      if (n.pubKeyHex.startsWith(hex)) return '${hex.substring(0, 2)} ${n.name}';
+    }
+    return hex.length > 2 ? hex.substring(0, 2) : hex;
+  }
+
+  /// The hops of one direction, named where a node matches the hash.
+  String _hops(PathLen len, Uint8List path) {
+    if (path.isEmpty) return '';
+    final List<String> out = <String>[];
+    final int size = len.hashSize;
+    for (int i = 0; i + size <= path.length; i += size) {
+      final String hex = path
+          .sublist(i, i + size)
+          .map((int b) => b.toRadixString(16).padLeft(2, '0'))
+          .join();
+      out.add(_label(hex));
+    }
+    return out.join(' · ');
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations l = AppLocalizations.of(context);
+    final ColorScheme cs = Theme.of(context).colorScheme;
+    final PathDiscoveryResult? r = _result;
+    final String value;
+    if (!_asked) {
+      value = l.nodeFindRouteHint;
+    } else if (r == null) {
+      value = l.nodeFindRouteNone;
+    } else {
+      final String out = _hops(r.outPathLen, r.outPath);
+      final String back = _hops(r.inPathLen, r.inPath);
+      // Both directions come back in one reply, and the interesting case is
+      // when they differ: that is an asymmetric link, and hiding it would
+      // throw away half the answer.
+      value = out.isEmpty
+          ? l.nodeFindRouteDirect
+          : back.isEmpty || back == out
+              ? out
+              : '$out\n${l.nodeFindRouteTwoWay(back)}';
+    }
+    return InkWell(
+      onTap: _busy ? null : _read,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: kMinInteractiveDimension),
+        child: Row(
+          children: <Widget>[
+            SizedBox(
+              width: kKvLabelWidth,
+              child: Text(l.nodeFindRoute,
+                  style: TextStyle(
+                      color: cs.onSurfaceVariant,
+                      fontSize: context.skin.type.sizeSm)),
+            ),
+            Expanded(
+              child: Text(value,
+                  style: TextStyle(
+                      color: cs.onSurface,
+                      fontFamily: context.skin.type.monoFamily,
+                      fontSize: context.skin.type.sizeBody)),
+            ),
+            Icon(Icons.route_outlined, size: 16, color: cs.onSurfaceVariant),
+          ],
+        ),
+      ),
     );
   }
 }

@@ -5943,4 +5943,21 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get retryPathReset =>
       'Route cleared, so this retry goes out over flood.';
+
+  @override
+  String get nodeFindRoute => 'Find the route';
+
+  @override
+  String get nodeFindRouteHint => 'Asks the mesh; costs airtime.';
+
+  @override
+  String get nodeFindRouteNone => 'No route came back.';
+
+  @override
+  String get nodeFindRouteDirect => 'Direct — a neighbour in range.';
+
+  @override
+  String nodeFindRouteTwoWay(Object back) {
+    return 'Back by $back';
+  }
 }

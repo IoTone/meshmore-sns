@@ -248,4 +248,56 @@ void main() {
       mc.dispose();
     });
   });
+
+  group('asking the mesh for a route', () {
+    /// `PUSH_CODE_PATH_DISCOVERY_RESPONSE` (0x8D):
+    /// `[8D][reserved][prefix 6][out_len][out path][in_len][in path]`.
+    Uint8List discoveryFrame(List<int> prefix, List<int> out, List<int> back) =>
+        Uint8List.fromList(<int>[
+          0x8D,
+          0x00,
+          ...prefix,
+          (out.length & 0x3F),
+          ...out,
+          (back.length & 0x3F),
+          ...back,
+        ]);
+
+    test('a reply for this prefix is the route', () async {
+      final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
+      final MeshcoreController mc = await connected(fake);
+      const String key =
+          'a1b2c3d4e5f600112233445566778899aabbccddeeff00112233445566778899';
+      final Future<PathDiscoveryResult?> pending =
+          mc.discoverPathFor(key, timeout: const Duration(milliseconds: 500));
+      await settle();
+      expect(
+          fake.sent.any((Uint8List f) =>
+              f.isNotEmpty && f[0] == MeshcoreCommand.sendPathDiscoveryReq.code),
+          isTrue);
+      fake.emit(discoveryFrame(<int>[0xa1, 0xb2, 0xc3, 0xd4, 0xe5, 0xf6],
+          <int>[0x11, 0x22], <int>[0x22, 0x11]));
+      final PathDiscoveryResult? r = await pending;
+      expect(r, isNotNull);
+      expect(r!.outPath, <int>[0x11, 0x22]);
+      expect(r.inPath, <int>[0x22, 0x11]);
+      expect(r.outPathLen.hopCount, 2);
+      mc.dispose();
+    });
+
+    test('an answer for another node is not this request', () async {
+      final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
+      final MeshcoreController mc = await connected(fake);
+      const String key =
+          'a1b2c3d4e5f600112233445566778899aabbccddeeff00112233445566778899';
+      final Future<PathDiscoveryResult?> pending =
+          mc.discoverPathFor(key, timeout: const Duration(milliseconds: 40));
+      await settle();
+      fake.emit(discoveryFrame(<int>[0x99, 0x88, 0x77, 0x66, 0x55, 0x44],
+          <int>[0x01], <int>[]));
+      expect(await pending, isNull,
+          reason: 'the reply names a different prefix, so it is not an answer');
+      mc.dispose();
+    });
+  });
 }

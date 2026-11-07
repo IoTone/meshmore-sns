@@ -4051,5 +4051,10 @@
   "nodeAdvertPath": "Last advert came via",
   "nodeAdvertPathNone": "The radio has no advert route for this node.",
   "nodeAdvertPathReading": "Reading the route…",
-  "retryPathReset": "Route cleared, so this retry goes out over flood."
+  "retryPathReset": "Route cleared, so this retry goes out over flood.",
+  "nodeFindRoute": "Find the route",
+  "nodeFindRouteHint": "Asks the mesh; costs airtime.",
+  "nodeFindRouteNone": "No route came back.",
+  "nodeFindRouteDirect": "Direct — a neighbour in range.",
+  "nodeFindRouteTwoWay": "Back by {back}"
 }

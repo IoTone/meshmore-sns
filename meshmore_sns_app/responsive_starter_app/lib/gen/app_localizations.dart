@@ -9975,6 +9975,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Route cleared, so this retry goes out over flood.'**
   String get retryPathReset;
+
+  /// No description provided for @nodeFindRoute.
+  ///
+  /// In en, this message translates to:
+  /// **'Find the route'**
+  String get nodeFindRoute;
+
+  /// No description provided for @nodeFindRouteHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Asks the mesh; costs airtime.'**
+  String get nodeFindRouteHint;
+
+  /// No description provided for @nodeFindRouteNone.
+  ///
+  /// In en, this message translates to:
+  /// **'No route came back.'**
+  String get nodeFindRouteNone;
+
+  /// No description provided for @nodeFindRouteDirect.
+  ///
+  /// In en, this message translates to:
+  /// **'Direct — a neighbour in range.'**
+  String get nodeFindRouteDirect;
+
+  /// No description provided for @nodeFindRouteTwoWay.
+  ///
+  /// In en, this message translates to:
+  /// **'Back by {back}'**
+  String nodeFindRouteTwoWay(Object back);
 }
 
 class _AppLocalizationsDelegate

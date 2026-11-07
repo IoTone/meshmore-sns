@@ -4384,6 +4384,43 @@ class MeshcoreController extends ChangeNotifier {
   // The reply carries no key, so only one request can be outstanding: a second
   // answer could not be told apart from the first.
 
+  bool _pathDiscoveryInFlight = false;
+
+  /// Ask the mesh for the route to a node (`CMD_SEND_PATH_DISCOVERY_REQ` 0x34).
+  ///
+  /// This is the active counterpart to [advertPathFor]: the radio floods a
+  /// request, and whichever repeaters hear it answer with the outbound and
+  /// inbound paths they found, so it can return a route that did not exist a
+  /// minute ago. It costs airtime, so it is a deliberate action rather than
+  /// something a screen does on open. The reply carries the node's prefix, so
+  /// only one request is in flight and a stale answer cannot be mis-attributed.
+  Future<PathDiscoveryResult?> discoverPathFor(String pubKeyHex,
+      {Duration timeout = const Duration(seconds: 8)}) async {
+    if (!isReady || _pathDiscoveryInFlight) return null;
+    final String hex = pubKeyHex.toLowerCase();
+    if (hex.length < kPubKeyPrefixSize * 2) return null;
+    final String prefix = hex.substring(0, kPubKeyPrefixSize * 2);
+    final Uint8List key = Uint8List.fromList(<int>[
+      for (int i = 0; i < hex.length; i += 2)
+        int.parse(hex.substring(i, i + 2), radix: 16),
+    ]);
+    _pathDiscoveryInFlight = true;
+    try {
+      final Future<MeshcoreInbound> reply = inboundFrames
+          .firstWhere((MeshcoreInbound f) =>
+              f is PathDiscoveryFrame &&
+              _hex(f.result.pubKeyPrefix) == prefix)
+          .timeout(timeout);
+      await send(MeshcoreFrameCodec.sendPathDiscoveryReq(key));
+      final MeshcoreInbound f = await reply;
+      return f is PathDiscoveryFrame ? f.result : null;
+    } catch (_) {
+      return null;
+    } finally {
+      _pathDiscoveryInFlight = false;
+    }
+  }
+
   bool _advertPathInFlight = false;
 
   /// The route the contact's last advert took, or null when the radio could

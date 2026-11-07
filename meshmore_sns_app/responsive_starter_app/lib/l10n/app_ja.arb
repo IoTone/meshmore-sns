@@ -2592,5 +2592,10 @@
   "nodeAdvertPath": "最後のアドバートの経路",
   "nodeAdvertPathNone": "このノードのアドバート経路は無線機にありません。",
   "nodeAdvertPathReading": "経路を読み取り中…",
-  "retryPathReset": "経路をクリアしたため、この再送はフラッドで送信されます。"
+  "retryPathReset": "経路をクリアしたため、この再送はフラッドで送信されます。",
+  "nodeFindRoute": "経路を探す",
+  "nodeFindRouteHint": "メッシュに問い合わせます（エアタイムを使います）。",
+  "nodeFindRouteNone": "経路は返ってきませんでした。",
+  "nodeFindRouteDirect": "直接 — 範囲内の隣接ノードです。",
+  "nodeFindRouteTwoWay": "復路: {back}"
 }

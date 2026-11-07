@@ -5705,4 +5705,21 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get retryPathReset => '経路をクリアしたため、この再送はフラッドで送信されます。';
+
+  @override
+  String get nodeFindRoute => '経路を探す';
+
+  @override
+  String get nodeFindRouteHint => 'メッシュに問い合わせます（エアタイムを使います）。';
+
+  @override
+  String get nodeFindRouteNone => '経路は返ってきませんでした。';
+
+  @override
+  String get nodeFindRouteDirect => '直接 — 範囲内の隣接ノードです。';
+
+  @override
+  String nodeFindRouteTwoWay(Object back) {
+    return '復路: $back';
+  }
 }
