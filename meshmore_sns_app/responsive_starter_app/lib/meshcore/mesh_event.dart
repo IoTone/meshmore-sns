@@ -20,6 +20,8 @@ enum MeshEventKind {
   deviceInfo,
   selfInfo,
   queuedWaiting,
+  oneKeyRejected,
+  radioRefused,
 }
 
 /// A single line in the Dashboard's recent-activity feed, derived

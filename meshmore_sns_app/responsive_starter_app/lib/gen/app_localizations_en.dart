@@ -5960,4 +5960,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String nodeFindRouteTwoWay(Object back) {
     return 'Back by $back';
   }
+
+  @override
+  String eventOneKeyRejected(Object key) {
+    return 'radio refused a message from $key';
+  }
+
+  @override
+  String get eventRadioRefused => 'the radio refused that command';
+
+  @override
+  String get failureCommandDisabled =>
+      'This radio has that command switched off, so it refused. Nothing is wrong with the link.';
 }

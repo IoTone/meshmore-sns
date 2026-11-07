@@ -184,6 +184,7 @@ class MeshcoreController extends ChangeNotifier {
         // all. The repeat ranges explain a radio that hears but does not relay.
         unawaited(requestAutoAddConfig());
         unawaited(requestAllowedRepeatFreq());
+        unawaited(requestTuningParams());
         // Keep the process alive in the background so the link +
         // drain survive Doze (Android only; no-op elsewhere).
         if (_bgKeepaliveEnabled) unawaited(_startKeepalive());
@@ -243,6 +244,7 @@ class MeshcoreController extends ChangeNotifier {
       _trackCustomVars(f);
       _trackFloodScope(f);
       _trackAllowedRepeatFreq(f);
+      _trackTuningParams(f);
       _trackTelemetry(f);
       // R25+1 — own movement trail. Every inbound frame might have
       // bumped ownLocation (SelfInfoFrame's lat/lon), so sample
@@ -1610,6 +1612,18 @@ class MeshcoreController extends ChangeNotifier {
       ev = MeshEvent(kind: MeshEventKind.contact, args: <String, String>{
         'name': f.contact.name,
       });
+    } else if (f is OneKeyRejectedFrame) {
+      // The radio dropped a message from a key it does not hold a contact for
+      // (`PUSH_CODE_ONE_KEY_DM_REJECTED`, 0x91). Without this line the sender
+      // simply never appears and the reader cannot tell a stranger's attempt
+      // from silence, which is the one thing a busy mesh should say out loud.
+      ev = MeshEvent(
+          kind: MeshEventKind.oneKeyRejected,
+          args: <String, String>{
+            'key': _hex(f.publicKey).substring(0, 8),
+          });
+    } else if (f is DisabledFrame) {
+      ev = MeshEvent(kind: MeshEventKind.radioRefused);
     } else if (f is BatteryStorageFrame) {
       ev = MeshEvent(kind: MeshEventKind.battery, args: <String, String>{
         'volts': f.battery.batteryVolts.toStringAsFixed(2),
@@ -2274,6 +2288,28 @@ class MeshcoreController extends ChangeNotifier {
       }
       _failOutgoing(p.id, deviceErrorReason(f.code),
           cause: Failure.causeForDeviceError(f.code),
+          from: const <MessageDelivery>{MessageDelivery.sending});
+    } else if (f is DisabledFrame) {
+      // `RESP_CODE_DISABLED` (0x0F) is an answer, not silence: the command
+      // exists and is switched off on this radio. Claiming the head here turns
+      // a 15-second timeout into the truth, and the copy says it is the radio's
+      // setting rather than the link's fault.
+      final CommandEntry? p = _ledger.takeHead();
+      if (p == null) return;
+      if (p.id == _contactAddMarker) {
+        _emitTaskError('addContact');
+        notifyListeners();
+        return;
+      }
+      if (p.id == _configMarker ||
+          p.id == _channelDataMarker ||
+          p.id == _rawSendMarker ||
+          p.id == _toolSendMarker ||
+          p.id == _advertSendMarker) {
+        return;
+      }
+      _failOutgoing(p.id, 'the radio has that command switched off',
+          cause: FailureCause.commandDisabled,
           from: const <MessageDelivery>{MessageDelivery.sending});
     } else if (f is MsgSentFrame) {
       final CommandEntry? p = _takePending(CommandAnswer.sent);
@@ -4762,6 +4798,33 @@ class MeshcoreController extends ChangeNotifier {
     _floodScopeAsked = true;
     unawaited(send(MeshcoreFrameCodec.getDefaultFloodScope())
         .catchError((Object _) => _floodScopeAsked = false));
+  }
+
+  // --- The radio's own airtime limit ------------------------------------
+  //
+  // `RESP_CODE_TUNING_PARAMS` (0x17) carries `rx_delay_base` and `airtime_factor`
+  // as thousandths. `airtime_factor` is the radio's own duty-cycle rule: it may
+  // transmit `1 / (1 + af)` of the time. The app's meter invents a budget of its
+  // own, so showing the radio's actual figure is the only way the two can be
+  // reconciled.
+
+  TuningParams? _tuningParams;
+
+  /// The radio's tuning, or null while it has not answered.
+  TuningParams? get tuningParams => _tuningParams;
+
+  void _trackTuningParams(MeshcoreInbound f) {
+    if (f is! TuningParamsFrame) return;
+    _tuningParams = f.params;
+  }
+
+  Future<void> requestTuningParams() async {
+    if (!isReady) return;
+    try {
+      await send(MeshcoreFrameCodec.getTuningParams());
+    } catch (_) {
+      _emitTaskError('getTuningParams');
+    }
   }
 
   // --- The frequency ranges the radio will repeat on -------------------

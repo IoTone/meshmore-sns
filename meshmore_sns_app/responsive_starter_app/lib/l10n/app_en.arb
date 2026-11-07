@@ -4056,5 +4056,8 @@
   "nodeFindRouteHint": "Asks the mesh; costs airtime.",
   "nodeFindRouteNone": "No route came back.",
   "nodeFindRouteDirect": "Direct — a neighbour in range.",
-  "nodeFindRouteTwoWay": "Back by {back}"
+  "nodeFindRouteTwoWay": "Back by {back}",
+  "eventOneKeyRejected": "radio refused a message from {key}",
+  "eventRadioRefused": "the radio refused that command",
+  "failureCommandDisabled": "This radio has that command switched off, so it refused. Nothing is wrong with the link."
 }

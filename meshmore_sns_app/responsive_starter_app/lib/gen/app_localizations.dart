@@ -10005,6 +10005,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Back by {back}'**
   String nodeFindRouteTwoWay(Object back);
+
+  /// No description provided for @eventOneKeyRejected.
+  ///
+  /// In en, this message translates to:
+  /// **'radio refused a message from {key}'**
+  String eventOneKeyRejected(Object key);
+
+  /// No description provided for @eventRadioRefused.
+  ///
+  /// In en, this message translates to:
+  /// **'the radio refused that command'**
+  String get eventRadioRefused;
+
+  /// No description provided for @failureCommandDisabled.
+  ///
+  /// In en, this message translates to:
+  /// **'This radio has that command switched off, so it refused. Nothing is wrong with the link.'**
+  String get failureCommandDisabled;
 }
 
 class _AppLocalizationsDelegate

@@ -512,6 +512,8 @@ String _eventLine(AppLocalizations l, MeshEvent e) {
     MeshEventKind.queuedWaiting => a.containsKey('count')
         ? l.eventQueuedWaitingN(a['count']!)
         : l.eventQueuedWaiting,
+    MeshEventKind.oneKeyRejected => l.eventOneKeyRejected(a['key'] ?? '?'),
+    MeshEventKind.radioRefused => l.eventRadioRefused,
   };
 }
 

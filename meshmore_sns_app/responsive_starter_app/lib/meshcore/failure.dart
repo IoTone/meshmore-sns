@@ -44,6 +44,10 @@ enum FailureCause {
 
   /// The app's own duty-cycle meter refused the frame. The radio never saw it.
   airtimeBudget,
+
+  /// The radio answered `RESP_CODE_DISABLED` (0x0F): the command exists but is
+  /// switched off on this build, which is not the same as unsupported.
+  commandDisabled,
 }
 
 /// One refusal: what happened, plus the numbers the copy needs.
@@ -103,6 +107,7 @@ String failureText(AppLocalizations l, Failure f) => switch (f.cause) {
       FailureCause.illegalArgument => l.failureIllegalArgument,
       FailureCause.unknownDeviceError => l.failureUnknownDeviceError,
       FailureCause.blePermissionsDenied => l.failureBlePermissions,
+      FailureCause.commandDisabled => l.failureCommandDisabled,
       FailureCause.bluetoothOff => l.failureBluetoothOff,
       FailureCause.noRadioFound => l.failureNoRadioFound,
       FailureCause.pairingFailed => l.failurePairingFailed,

@@ -5722,4 +5722,16 @@ class AppLocalizationsJa extends AppLocalizations {
   String nodeFindRouteTwoWay(Object back) {
     return '復路: $back';
   }
+
+  @override
+  String eventOneKeyRejected(Object key) {
+    return '無線機が $key からのメッセージを拒否しました';
+  }
+
+  @override
+  String get eventRadioRefused => '無線機がそのコマンドを拒否しました';
+
+  @override
+  String get failureCommandDisabled =>
+      'この無線機ではそのコマンドが無効になっているため拒否されました。通信自体に問題はありません。';
 }

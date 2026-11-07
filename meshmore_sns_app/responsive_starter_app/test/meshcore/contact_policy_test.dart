@@ -5,6 +5,7 @@ import 'dart:typed_data';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:meshcore/meshcore.dart';
 import 'package:meshmore_sns_app/meshcore/chat_message.dart';
+import 'package:meshmore_sns_app/meshcore/mesh_event.dart';
 import 'package:meshmore_sns_app/meshcore/meshcore_controller.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -323,5 +324,60 @@ void main() {
     expect(r.first.upperKhz, 928000);
     expect(r.last.upperKhz, 2483500);
     mc.dispose();
+  });
+
+  group('frames that were decoded and ignored', () {
+    test('a stranger\'s refused message is an event, not silence', () async {
+      final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
+      final MeshcoreController mc = await connected(fake);
+      // `PUSH_CODE_ONE_KEY_DM_REJECTED` (0x91): opcode + the 32-byte key.
+      fake.emit(Uint8List.fromList(<int>[
+        0x91,
+        for (int i = 0; i < kPubKeySize; i++) (0xC0 + i) & 0xFF,
+      ]));
+      await settle();
+      expect(
+          mc.recentEvents.any((MeshEvent e) =>
+              e.kind == MeshEventKind.oneKeyRejected),
+          isTrue,
+          reason: 'the reader cannot tell a stranger\'s attempt from silence');
+      mc.dispose();
+    });
+
+    test('the radio\'s tuning is read, and its airtime limit means something',
+        () async {
+      final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
+      final MeshcoreController mc = await connected(fake);
+      expect(mc.tuningParams, isNull);
+      await mc.requestTuningParams();
+      // `RESP_CODE_TUNING_PARAMS` (0x17): `[17][rx ×1000 u32 LE][af ×1000 u32 LE]`.
+      // rx 0 s, af 0.5 -> the radio may transmit 1/(1+0.5) = 67% of the time.
+      fake.emit(Uint8List.fromList(<int>[
+        0x17,
+        0x00, 0x00, 0x00, 0x00,
+        0xF4, 0x01, 0x00, 0x00,
+      ]));
+      await settle();
+      final TuningParams? t = mc.tuningParams;
+      expect(t, isNotNull);
+      expect(t!.airtimeFactor, 0.5);
+      expect(t.rxDelayBaseSeconds, 0);
+      mc.dispose();
+    });
+
+    test('a disabled command fails at once instead of timing out', () async {
+      final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
+      final MeshcoreController mc = await connected(fake);
+      await mc.sendChannelText('hello');
+      final ChatMessage m = mc.messagesFor(0).single;
+      expect(m.delivery, MessageDelivery.sending);
+      // `RESP_CODE_DISABLED` (0x0F) instead of OK/ERR.
+      fake.emit(Uint8List.fromList(<int>[0x0F]));
+      await settle();
+      expect(m.delivery, MessageDelivery.failed);
+      expect(m.failReason, isNotNull,
+          reason: 'an answer the radio gives is better than a 15 s timeout');
+      mc.dispose();
+    });
   });
 }

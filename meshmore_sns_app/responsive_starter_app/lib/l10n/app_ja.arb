@@ -2597,5 +2597,8 @@
   "nodeFindRouteHint": "メッシュに問い合わせます（エアタイムを使います）。",
   "nodeFindRouteNone": "経路は返ってきませんでした。",
   "nodeFindRouteDirect": "直接 — 範囲内の隣接ノードです。",
-  "nodeFindRouteTwoWay": "復路: {back}"
+  "nodeFindRouteTwoWay": "復路: {back}",
+  "eventOneKeyRejected": "無線機が {key} からのメッセージを拒否しました",
+  "eventRadioRefused": "無線機がそのコマンドを拒否しました",
+  "failureCommandDisabled": "この無線機ではそのコマンドが無効になっているため拒否されました。通信自体に問題はありません。"
 }

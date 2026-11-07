@@ -976,6 +976,7 @@ class _DeviceConfigScreenState extends State<DeviceConfigScreen> {
                             'BLE pin: ${d.blePin}\n'
                             'path hash: ${d.pathHashMode + 1} byte(s)\n'
                             '${_repeatRanges(mc)}'
+                            '${_airtimeLimit(mc)}'
                             'battery: $batt',
                     style: TextStyle(
                         color: cs.onSurface,
@@ -1012,6 +1013,20 @@ class _DeviceConfigScreenState extends State<DeviceConfigScreen> {
       ),
     );
   }
+}
+
+/// The radio's own duty-cycle limit, as one readout line.
+///
+/// `airtime_factor` `af` means the radio may transmit `1 / (1 + af)` of the
+/// time. The app's meter sets its own budget, so this is the figure the app's
+/// number should be read against; `—` until the radio answers, because a
+/// guessed limit is worse than none.
+String _airtimeLimit(MeshcoreController mc) {
+  final TuningParams? t = mc.tuningParams;
+  if (t == null) return 'airtime limit: —\n';
+  final double share = 1 / (1 + t.airtimeFactor);
+  return 'airtime limit: ${(share * 100).toStringAsFixed(0)}% '
+      '(af ${t.airtimeFactor.toStringAsFixed(2)})\n';
 }
 
 /// The bands the radio will relay in, as one readout line.
