@@ -4,7 +4,7 @@ _Snapshot as of 2026-11-05. App `1.0.197+13`, branch `feat/app-completion`.
 Change records below are newest first from R113; older entries are kept in
 the order they were written._
 
-**What is proven and what is not.** Measured on this tree, 2026-11-05: `flutter test` **2034 passed** in 2 m 25 s;
+**What is proven and what is not.** Measured on this tree, 2026-11-05: `flutter test` **2041 passed** in 2 m 48 s;
 `flutter analyze` reports **no issues** (the two `unawaited_return_in_try_block` warnings in `lib/maps/maps_controller.dart`
 were fixed on 2026-11-05, so any warning now is a regression);
 the protocol package `dart test` 368 passed with 1 skipped; the pure-Java port at the repository root, `cd libmeshcore && ./gradlew test --offline
@@ -115,6 +115,13 @@ over BLE. Mesh-first, no backend, no account, no server.
   drop) and the photo composer states which scope a send inherits — a named
   region, no scope set, or not yet reported — plus that a photo carries no
   acknowledgement.
+- **The floor test was measuring one skin (R118).** The per-preset pass skipped
+  tapping the Dashboard, so after the first preset it measured whichever view the
+  previous iteration left on screen. With every view actually shown, three Dr Pop
+  overflows appeared at 320 dp / 200 % and are fixed: the brand tag ran 229 px
+  past the edge, the channel name 94 px, and the block grid's fixed 116 dp height
+  clipped its own label and numeral by 52. A second test renders four deep routes
+  in every preset at the floor, which is what surfaced it.
 - **Tool pickers filter (R118).** Ping, trace, soak and the range test all opened
   one undifferentiated scroll of every synced contact — 190 rows on the bench
   radio. The filter matches a name anywhere and a key from its start, and the
