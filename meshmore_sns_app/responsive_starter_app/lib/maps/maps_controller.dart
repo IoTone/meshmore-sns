@@ -1189,7 +1189,11 @@ class MapsController extends ChangeNotifier {
     final File part = _partFile(a);
     final int? want = a.expectedBytes ?? r.total;
     if (want != null && r.bytes != want) {
-      return _rejectArchive(a, ArchiveFailure.badSize);
+      // Awaited rather than returned inside the try: an unawaited return there
+      // is what the analyzer's `unawaited_return_in_try_block` flags, and this
+      // file was the reason the project carried two standing warnings.
+      await _rejectArchive(a, ArchiveFailure.badSize);
+      return;
     }
     if (a.sha256 != null && await sha256OfFile(part) != a.sha256) {
       return _rejectArchive(a, ArchiveFailure.badHash);
@@ -1199,12 +1203,14 @@ class MapsController extends ChangeNotifier {
       opened = await PmTilesArchive.open(await PmFileSource.open(part.path));
       if (opened.header.tileType != PmTileType.mvt) {
         await opened.close();
-        return _rejectArchive(a, ArchiveFailure.notPmTiles);
+        await _rejectArchive(a, ArchiveFailure.notPmTiles);
+        return;
       }
       final Set<String> layers = await opened.vectorLayerIds();
       if (!layers.containsAll(kArchiveRequiredLayers)) {
         await opened.close();
-        return _rejectArchive(a, ArchiveFailure.wrongSchema);
+        await _rejectArchive(a, ArchiveFailure.wrongSchema);
+        return;
       }
       final PmHeader h = opened.header;
       a
@@ -1217,7 +1223,8 @@ class MapsController extends ChangeNotifier {
       await opened.close();
     } catch (_) {
       await opened?.close();
-      return _rejectArchive(a, ArchiveFailure.notPmTiles);
+      await _rejectArchive(a, ArchiveFailure.notPmTiles);
+      return;
     }
     final File dest = _archiveFile(a);
     await _closeArchive(a.id);

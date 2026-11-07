@@ -82,8 +82,10 @@ handset already trusts.
 ## 4. Before the first upload
 
 - Run `flutter test` once (1 987 tests at `ede4a9c5`'s tree, about 3 minutes).
-- Run `flutter analyze`: expected output is the two known warnings in
-  `lib/maps/maps_controller.dart:1202,1207`.
+- Run `flutter analyze`: expected output is **no issues at all**. The two
+  `unawaited_return_in_try_block` warnings that used to be expected in
+  `lib/maps/maps_controller.dart` were fixed on 2026-11-05 (the four archive
+  refusals now await `_rejectArchive` and return), so a warning is a regression.
 - Install the release APK on a phone and pair a radio: the fast path
   (`adb install`) is not available over the air in release mode, so use the
   debug APK for on-air work and the release APK for a startup/logcat pass.

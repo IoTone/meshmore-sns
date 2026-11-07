@@ -5,7 +5,8 @@ Change records below are newest first from R113; older entries are kept in
 the order they were written._
 
 **What is proven and what is not.** Measured on this tree, 2026-11-05: `flutter test` **2027 passed** in 2 m 42 s;
-`flutter analyze` reports only the two `unawaited_return_in_try_block` warnings in `lib/maps/maps_controller.dart`;
+`flutter analyze` reports **no issues** (the two `unawaited_return_in_try_block` warnings in `lib/maps/maps_controller.dart`
+were fixed on 2026-11-05, so any warning now is a regression);
 the protocol package `dart test` 368 passed with 1 skipped; the pure-Java port at the repository root, `cd libmeshcore && ./gradlew test --offline
 --rerun-tasks`, 143 tests with 0 failures. Both release paths build: `flutter build appbundle --release` produced a 77.0 MB bundle and
 `flutter build apk --release --target-platform android-arm64` a 32.2 MB APK, each signed with a throwaway key that

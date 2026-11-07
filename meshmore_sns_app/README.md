@@ -45,7 +45,7 @@ meshmore_sns_app/
 cd responsive_starter_app
 
 flutter pub get
-flutter analyze                 # no errors; two known warnings, see below
+flutter analyze                 # clean: no errors, no warnings
 flutter test                    # 1016 tests, ~83 s
 flutter build apk --debug       # Android debug APK
 

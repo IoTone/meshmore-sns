@@ -7,16 +7,23 @@ Offline-first, theme-driven, with a hyperlocal radar grid, per-channel chat,
 1:1 DMs, and a device-first → phone-fallback location model.
 
 > **Status — in development.** Source is here for review and contribution;
-> there's no public release channel yet. Measured 2026-11-05 in a fresh checkout:
-> 1997 widget/unit tests pass in about 3 minutes, the protocol package's 368 pass with
-> one skipped, the pure-Java port's 143 pass with one skipped, and `flutter
-> analyze` is clean apart from two pre-existing `unawaited_return_in_try_block`
-> warnings in `lib/maps/maps_controller.dart`. A debug APK builds and installs.
-> **What is still owed is device verification**: no screen-level, on-air or Doze
-> behaviour has been checked on hardware, because the phone is behind a PIN
-> keyguard, and one dependency is not store-ready: the bundled image codec's
-> native library fails the 16 KB page requirement (deadline 1 Feb 2027). What is
-> not built at all is listed as residue in the feature register.
+> there's no public release channel yet. Measured 2026-11-05 on this tree: 2028
+> widget/unit tests pass in about 3 minutes, the protocol package's 368 pass with
+> one skipped, the pure-Java port's 143 pass with none failing, and
+> `flutter analyze` is clean with no standing warnings. Debug and release APKs
+> build, and the release bundle is 77 MB.
+>
+> Re-read on a motorola edge 2024 with a MeshCore radio paired: the shell's single
+> header, the "Hyperlocal grid" tab, one rule per group boundary, the radio's
+> contact table filling the node list on connect, a channel message sent and
+> acknowledged, the vector basemap on the paper skin repainting on a preset
+> switch, and the Japanese locale.
+>
+> Still owed: the ping round trip, the alarm's hold and cancel, a media transfer,
+> the notification tap-through and the Doze run, all of which need a handset that
+> nobody else is using. One dependency is not store-ready either: the bundled
+> image codec's native library fails the 16 KB page requirement. What is not built
+> at all is listed as residue in the feature register.
 
 ---
 
