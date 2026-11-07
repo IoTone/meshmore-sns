@@ -15,6 +15,9 @@ import '../notifications/notifier.dart';
 import '../perms/permissions_service.dart';
 import '../theme/mm_skin.dart';
 import '../ui/mm_components.dart';
+import '../ui/mm_collapsible.dart';
+import '../ui/mm_collapse_controller.dart';
+import '../ui/storage_use_block.dart';
 import '../ui/mm_scaffold.dart';
 import '../tts/tts_controller.dart';
 
@@ -321,6 +324,23 @@ class AppSettingsScreen extends StatelessWidget {
             trailing: const Icon(Icons.ios_share),
             onTap: () => exportAllHistory(context, mc),
           ),
+          // Storage: every store states its own bound, and until this block
+          // there was no single place where growth was visible. It shows the
+          // sizes that exist (map data has a real byte counter, the sealed
+          // history reports its own record size) and the counts that are rows
+          // rather than files. The action clears only what the app can rebuild.
+          Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: MmCollapsibleSection(
+              id: MmGroupIds.persStorage,
+              title: l.storageTitle,
+              initiallyExpanded: false,
+              children: <Widget>[
+                const StorageUseBlock(),
+              ],
+            ),
+          ),
+          SizedBox(height: context.skin.space.sectionGap),
           // The terms text is a commitment; this row is how a user reads it
           // again without having a way to un-agree retroactively.
           ListTile(

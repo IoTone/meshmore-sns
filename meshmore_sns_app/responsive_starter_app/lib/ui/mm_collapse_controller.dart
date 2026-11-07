@@ -31,6 +31,8 @@ abstract final class MmGroupIds {
   static const String persAccessibility = 'personalization.accessibility';
   static const String persType = 'personalization.type';
   static const String persAudio = 'personalization.audio';
+  // app_settings_screen.dart — storage, so a user can fold it away.
+  static const String persStorage = 'settings.storage';
   // diagnostics_screen.dart
   static const String diagnosticsDeveloper = 'diagnostics.developer';
   // dashboard_screen.dart — the monolith most skins inherit.
@@ -60,6 +62,7 @@ abstract final class MmGroupIds {
     persAccessibility,
     persType,
     persAudio,
+    persStorage,
     dashRadio,
     dashLocation,
     dashRecent,

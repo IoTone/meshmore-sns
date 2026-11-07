@@ -9819,6 +9819,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Clear'**
   String get actionClear;
+
+  /// No description provided for @storageTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Storage'**
+  String get storageTitle;
+
+  /// No description provided for @storageMaps.
+  ///
+  /// In en, this message translates to:
+  /// **'Map data {used} MB of {budget} MB'**
+  String storageMaps(String used, String budget);
+
+  /// No description provided for @storageMapsSplit.
+  ///
+  /// In en, this message translates to:
+  /// **'Cached tiles {view} MB · downloaded regions {packs} MB'**
+  String storageMapsSplit(String view, String packs);
+
+  /// No description provided for @storageMapsUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Map data is not open in this session'**
+  String get storageMapsUnknown;
+
+  /// No description provided for @storageClearCache.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear cached tiles'**
+  String get storageClearCache;
+
+  /// No description provided for @storageCacheCleared.
+  ///
+  /// In en, this message translates to:
+  /// **'Cached tiles cleared. Downloaded regions are kept.'**
+  String get storageCacheCleared;
+
+  /// No description provided for @storageHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'Message history {kb} KB, sealed'**
+  String storageHistory(String kb);
 }
 
 class _AppLocalizationsDelegate

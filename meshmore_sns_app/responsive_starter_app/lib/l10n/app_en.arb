@@ -3991,5 +3991,39 @@
   "pingLostMeaning": "Lost means no answer inside the time the radio estimated for the reply. A node that ignores requests, or one that is asleep, looks the same.",
   "contactFilterHint": "Name or key prefix",
   "contactFilterNone": "No contact matches that.",
-  "actionClear": "Clear"
+  "actionClear": "Clear",
+  "storageTitle": "Storage",
+  "storageMaps": "Map data {used} MB of {budget} MB",
+  "storageMapsSplit": "Cached tiles {view} MB · downloaded regions {packs} MB",
+  "storageMapsUnknown": "Map data is not open in this session",
+  "storageClearCache": "Clear cached tiles",
+  "storageCacheCleared": "Cached tiles cleared. Downloaded regions are kept.",
+  "storageHistory": "Message history {kb} KB, sealed",
+  "@storageMaps": {
+    "placeholders": {
+      "used": {
+        "type": "String"
+      },
+      "budget": {
+        "type": "String"
+      }
+    }
+  },
+  "@storageMapsSplit": {
+    "placeholders": {
+      "view": {
+        "type": "String"
+      },
+      "packs": {
+        "type": "String"
+      }
+    }
+  },
+  "@storageHistory": {
+    "placeholders": {
+      "kb": {
+        "type": "String"
+      }
+    }
+  }
 }

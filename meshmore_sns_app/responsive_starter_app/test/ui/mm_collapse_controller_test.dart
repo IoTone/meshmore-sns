@@ -189,6 +189,7 @@ void main() {
       'persAccessibility': MmGroupIds.persAccessibility,
       'persType': MmGroupIds.persType,
       'persAudio': MmGroupIds.persAudio,
+      'persStorage': MmGroupIds.persStorage,
       'dashRadio': MmGroupIds.dashRadio,
       'dashLocation': MmGroupIds.dashLocation,
       'dashRecent': MmGroupIds.dashRecent,

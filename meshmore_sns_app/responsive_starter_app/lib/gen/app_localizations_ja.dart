@@ -5619,4 +5619,31 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get actionClear => 'クリア';
+
+  @override
+  String get storageTitle => 'ストレージ';
+
+  @override
+  String storageMaps(String used, String budget) {
+    return '地図データ $used MB / $budget MB';
+  }
+
+  @override
+  String storageMapsSplit(String view, String packs) {
+    return 'キャッシュしたタイル $view MB · ダウンロード済み地域 $packs MB';
+  }
+
+  @override
+  String get storageMapsUnknown => 'このセッションでは地図データを開いていません';
+
+  @override
+  String get storageClearCache => 'キャッシュしたタイルを削除';
+
+  @override
+  String get storageCacheCleared => 'キャッシュしたタイルを削除しました。ダウンロード済みの地域は残ります。';
+
+  @override
+  String storageHistory(String kb) {
+    return 'メッセージ履歴 $kb KB（密封）';
+  }
 }

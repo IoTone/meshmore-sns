@@ -5850,4 +5850,32 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get actionClear => 'Clear';
+
+  @override
+  String get storageTitle => 'Storage';
+
+  @override
+  String storageMaps(String used, String budget) {
+    return 'Map data $used MB of $budget MB';
+  }
+
+  @override
+  String storageMapsSplit(String view, String packs) {
+    return 'Cached tiles $view MB · downloaded regions $packs MB';
+  }
+
+  @override
+  String get storageMapsUnknown => 'Map data is not open in this session';
+
+  @override
+  String get storageClearCache => 'Clear cached tiles';
+
+  @override
+  String get storageCacheCleared =>
+      'Cached tiles cleared. Downloaded regions are kept.';
+
+  @override
+  String storageHistory(String kb) {
+    return 'Message history $kb KB, sealed';
+  }
 }

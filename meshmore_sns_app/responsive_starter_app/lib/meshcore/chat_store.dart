@@ -51,6 +51,11 @@ abstract final class ChatStore {
   /// UI says so instead of showing an empty thread list.
   static final ValueNotifier<bool> unreadable = ValueNotifier<bool>(false);
 
+  /// Size of the sealed history record, in bytes. Published rather than
+  /// computed by the UI, because only this class knows which copy is live
+  /// (sealed or the pre-migration plaintext).
+  static final ValueNotifier<int> bytes = ValueNotifier<int>(0);
+
   /// The last write that did not reach the sealed store, as one of
   /// `keyLost`, `unavailable`, `corrupt`, `noSpace`. Null when the last write
   /// succeeded. A message that is shown but not persisted is a lie the app
@@ -130,6 +135,7 @@ abstract final class ChatStore {
       try {
         final Uint8List? raw = await _store().read(recordName);
         unreadable.value = false;
+        bytes.value = raw?.length ?? 0;
         if (raw == null) return <ChatMessage>[];
         return _decode(utf8.decode(raw));
       } on EncryptedStoreUnavailable {
@@ -157,8 +163,9 @@ abstract final class ChatStore {
     final bool sealed = await _ensureSealed();
     if (sealed) {
       try {
-        await _store().write(
-            recordName, Uint8List.fromList(utf8.encode(_encode(tail))));
+        final Uint8List encoded = Uint8List.fromList(utf8.encode(_encode(tail)));
+        await _store().write(recordName, encoded);
+        bytes.value = encoded.length;
         lastWriteFailure.value = null;
         return;
       } on EncryptedStoreKeyLost {

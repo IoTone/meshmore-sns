@@ -2566,5 +2566,12 @@
   "pingLostMeaning": "「応答なし」は、無線機が見積もった応答時間内に返事がなかったという意味です。要求を無視するノードも、休眠中のノードも同じに見えます。",
   "contactFilterHint": "名前または鍵の先頭",
   "contactFilterNone": "一致する連絡先はありません。",
-  "actionClear": "クリア"
+  "actionClear": "クリア",
+  "storageTitle": "ストレージ",
+  "storageMaps": "地図データ {used} MB / {budget} MB",
+  "storageMapsSplit": "キャッシュしたタイル {view} MB · ダウンロード済み地域 {packs} MB",
+  "storageMapsUnknown": "このセッションでは地図データを開いていません",
+  "storageClearCache": "キャッシュしたタイルを削除",
+  "storageCacheCleared": "キャッシュしたタイルを削除しました。ダウンロード済みの地域は残ります。",
+  "storageHistory": "メッセージ履歴 {kb} KB（密封）"
 }
