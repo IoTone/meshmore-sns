@@ -4988,8 +4988,12 @@ class MeshcoreController extends ChangeNotifier {
     _contacts.clear();
     _contactsSince = 0;
     _deviceContactCount = null;
-    await ContactStore.clear();
+    _contactsFull = false;
     await PairedDeviceStore.clear();
+    // Not awaited: forgetting a radio must not depend on a sealed store that
+    // may be unavailable. The in-memory table is already gone, and anything the
+    // clear leaves behind is overwritten by the next radio's sync.
+    unawaited(ContactStore.clear().catchError((Object _) {}));
     // Forget the OS bond too, not just our record of it. Leaving it behind
     // would let [autoConnectIfPaired] adopt the radio straight back on the
     // next start — the user pressed Forget and would see it return.
@@ -5080,6 +5084,16 @@ class MeshcoreController extends ChangeNotifier {
     _battHistorySaveTimer?.cancel();
     _telemPollTimer?.cancel();
     _meshbookSaveTimer?.cancel();
+    // The contact table has its own debounce, so closing the app inside the
+    // three-second window must still write it: a restart would otherwise ask
+    // the radio only for changes since a token describing a table that was
+    // never saved, which is the empty-table bug this store exists to end.
+    if (_contactsSaveTimer != null) {
+      _contactsSaveTimer!.cancel();
+      unawaited(ContactStore.save(_contacts.values)
+          .catchError((Object _) {}));
+      _contactsSaveTimer = null;
+    }
     _drainWatchdog?.cancel();
     for (final Timer t in _deliveryTimers.values) {
       t.cancel();
