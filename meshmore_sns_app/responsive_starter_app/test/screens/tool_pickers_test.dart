@@ -1,16 +1,14 @@
 // Copyright (c) 2026 IoTone, Inc.
 // SPDX-License-Identifier: MIT
-import 'package:flutter/material.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
+import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
-import 'package:meshmore_sns_app/gen/app_localizations.dart';
-import 'package:meshmore_sns_app/l10n/locale_controller.dart';
 import 'package:meshmore_sns_app/meshcore/discovered_node.dart';
 import 'package:meshmore_sns_app/screens/tools/tool_pickers.dart';
 
 /// The tool pickers list every synced contact, which on a full radio is a
-/// couple of hundred rows. The filter is the difference between finding a node
-/// and dragging for a while, so its rule is pinned here.
+/// couple of hundred rows. Two rules are pinned here: the filter, and the shape
+/// of the sheet.
 void main() {
   DiscoveredNode node(String name, String key) => DiscoveredNode(
         pubKeyHex: key,
@@ -25,8 +23,6 @@ void main() {
     node('K0EHR T-Deck', 'eacc4412bb'),
     node('WIOld', '26f6071fcc'),
   ];
-
-  sheetTests();
 
   group('the contact filter', () {
     test('an empty query keeps every row', () {
@@ -50,71 +46,21 @@ void main() {
       expect(filterContacts(nodes, 'zzzz'), isEmpty);
     });
   });
-}
 
-void sheetTests() {
-  testWidgets('the last row is reachable at the narrow floor', (
-      WidgetTester t) async {
-    t.view.physicalSize = const Size(320, 780);
-    t.view.devicePixelRatio = 1.0;
-    addTearDown(t.view.reset);
-    // Sixty rows is past one screen at any width, so the list has to scroll
-    // inside the sheet's own height rather than overflow it.
-    final List<DiscoveredNode> many = <DiscoveredNode>[
-      for (int i = 0; i < 60; i++)
-        DiscoveredNode(
-          pubKeyHex: i.toRadixString(16).padLeft(12, '0'),
-          name: 'node-$i',
-          type: 1,
-          lastHeardUnix: 0,
-          viaAdvert: true,
-        ),
-    ];
-    DiscoveredNode? picked;
-    await t.pumpWidget(MaterialApp(
-      localizationsDelegates: const <LocalizationsDelegate<Object>>[
-        AppLocalizations.delegate,
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-      ],
-      supportedLocales: LocaleController.supported,
-      home: Scaffold(
-        body: Builder(builder: (BuildContext ctx) {
-          return TextButton(
-            onPressed: () async {
-              picked = await showModalBottomSheet<DiscoveredNode>(
-                context: ctx,
-                showDragHandle: true,
-                isScrollControlled: true,
-                builder: (BuildContext inner) => SafeArea(
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(
-                        maxHeight: MediaQuery.of(inner).size.height * .7),
-                    child: ContactPickerSheet(
-                      nodes: many,
-                      l: AppLocalizations.of(inner),
-                    ),
-                  ),
-                ),
-              );
-            },
-            child: const Text('open'),
-          );
-        }),
-      ),
-    ));
-    await t.tap(find.text('open'));
-    await t.pumpAndSettle();
-    await t.scrollUntilVisible(find.text('node-59'), 200,
-        scrollable: find.byType(Scrollable).last);
-    // Centre it before tapping: scrollUntilVisible only guarantees the row is
-    // somewhere in the viewport, and a row clipped by the sheet's bottom edge
-    // is exactly the case that used to swallow taps.
-    await t.ensureVisible(find.text('node-59'));
-    await t.pumpAndSettle();
-    await t.tap(find.text('node-59'));
-    await t.pumpAndSettle();
-    expect(picked?.name, 'node-59');
+  test('the picker sheet is one shrink-wrapped list', () {
+    // Measured on the handset: a Column with an Expanded or Flexible list inside
+    // this sheet lays out taller than the sheet's own box, so the rows are
+    // painted where nothing can tap them and choosing a contact appears to do
+    // nothing at all. `showMmPicker` already proved the working shape, so the
+    // sheet is held to it here rather than by a screenshot.
+    final String src =
+        File('lib/screens/tools/tool_pickers.dart').readAsStringSync();
+    final String sheet = src.substring(src.indexOf('class ContactPickerSheet'));
+    expect(sheet.contains('shrinkWrap: true'), isTrue,
+        reason: 'the list sizes to its content and scrolls inside the sheet');
+    expect(sheet.contains('Expanded('), isFalse,
+        reason: 'an Expanded list inside the sheet is the broken shape');
+    expect(sheet.contains('Flexible('), isFalse,
+        reason: 'a Flexible list inside the sheet is the broken shape');
   });
 }

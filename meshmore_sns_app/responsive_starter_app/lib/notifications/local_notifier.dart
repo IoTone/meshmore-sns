@@ -105,7 +105,13 @@ class LocalNotifier implements Notifier {
     _inited = true;
     await _plugin.initialize(
       settings: const InitializationSettings(
-        android: AndroidInitializationSettings('@mipmap/ic_launcher'),
+        // A dedicated white-on-transparent glyph, not the launcher icon: the OS
+        // masks the small icon to one colour, so a full-colour launcher asset
+        // shows as a grey blob. This also stopped being available when the
+        // duplicate `ic_launcher` icon set was removed on 2026-11-05, which made
+        // initialisation throw `invalid_icon` and took every OS notification
+        // with it — found on the handset, not by a test.
+        android: AndroidInitializationSettings('@drawable/ic_notification'),
         // iOS is deprioritised this phase; the settings are still valid so
         // the same notifier compiles and behaves there.
         iOS: DarwinInitializationSettings(),

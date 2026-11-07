@@ -50,6 +50,11 @@ Future<DiscoveredNode?> pickContact(
     showDragHandle: true,
     isScrollControlled: true,
     builder: (BuildContext ctx) => SafeArea(
+      // The shape `showMmPicker` already uses everywhere in this app: ONE
+      // shrink-wrapped ListView as the sheet's direct child, with the filter as
+      // its first item. A Column wrapper was tried and abandoned — not because
+      // it was proven broken (a widget test picks rows out of both shapes), but
+      // because one proven shape for every picker is simpler than two.
       child: ConstrainedBox(
         constraints: BoxConstraints(
             maxHeight: MediaQuery.of(ctx).size.height * .7),
@@ -67,6 +72,103 @@ Future<DiscoveredNode?> pickContact(
       ),
     ),
   );
+}
+
+/// Channels first, then direct conversations, filtered by the same rule the
+/// contact sheet uses. It is a StatefulWidget so the filter can rebuild the list
+/// without rebuilding the whole sheet.
+class _ConversationSheet extends StatefulWidget {
+  const _ConversationSheet({
+    required this.channels,
+    required this.peers,
+    required this.l,
+    required this.pskOf,
+  });
+
+  final List<MapEntry<int, String>> channels;
+  final List<DiscoveredNode> peers;
+  final AppLocalizations l;
+  final List<int>? Function(int idx) pskOf;
+
+  @override
+  State<_ConversationSheet> createState() => _ConversationSheetState();
+}
+
+class _ConversationSheetState extends State<_ConversationSheet> {
+  final TextEditingController _filter = TextEditingController();
+
+  @override
+  void dispose() {
+    _filter.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final String q = _filter.text.trim().toLowerCase();
+    final List<MapEntry<int, String>> channels = <MapEntry<int, String>>[
+      for (final MapEntry<int, String> ch in widget.channels)
+        if (q.isEmpty ||
+            '#${ch.key}'.contains(q) ||
+            ch.value.toLowerCase().contains(q))
+          ch,
+    ];
+    final List<DiscoveredNode> peers = <DiscoveredNode>[
+      for (final DiscoveredNode n in widget.peers)
+        if (q.isEmpty ||
+            n.name.toLowerCase().contains(q) ||
+            n.pubKeyHex.toLowerCase().startsWith(q))
+          n,
+    ];
+    return ListView(
+      shrinkWrap: true,
+      children: <Widget>[
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+          child: TextField(
+            key: const ValueKey<String>('conversation-filter'),
+            controller: _filter,
+            onChanged: (String _) => setState(() {}),
+            decoration: InputDecoration(
+              isDense: true,
+              hintText: widget.l.contactFilterHint,
+              prefixIcon: const Icon(Icons.search, size: 18),
+            ),
+          ),
+        ),
+        if (channels.isEmpty && peers.isEmpty)
+          Padding(
+            padding: const EdgeInsets.all(24),
+            child: Text(widget.l.contactFilterNone),
+          ),
+        for (final MapEntry<int, String> ch in channels)
+          Builder(builder: (BuildContext ctx) {
+            final ChannelScope scope = ChannelScope(ch.key);
+            final ToolFailure? why = scopeRefusal(scope, widget.pskOf);
+            final String label = '#${ch.key} ${ch.value}';
+            return ListTile(
+              enabled: why == null,
+              leading: const Icon(Icons.tag),
+              title: Text(label),
+              subtitle:
+                  why == null ? null : Text(toolFailureText(widget.l, why)),
+              onTap: () => Navigator.pop(ctx, (scope, label)),
+            );
+          }),
+        if (peers.isNotEmpty && channels.isNotEmpty) const Divider(),
+        for (final DiscoveredNode n in peers)
+          Builder(builder: (BuildContext ctx) {
+            return ListTile(
+              leading: const Icon(Icons.person_outline),
+              title: Text(n.name),
+              subtitle: Text(hopsLabel(widget.l, n)),
+              onTap: () => Navigator.pop(
+                  ctx, (DmScope(n.pubKeyHex), widget.l.soakDm(n.name))),
+            );
+          }),
+      ],
+    );
+  }
 }
 
 /// The picker's filter, as a pure function so the rule can be tested without
@@ -125,12 +227,8 @@ class _ContactPickerSheetState extends State<ContactPickerSheet> {
   Widget build(BuildContext context) {
     final AppLocalizations l = widget.l;
     final List<DiscoveredNode> shown = _shown;
-    // A shrink-wrapped list inside a min-size Column asks for the height of
-    // every row, overflows the sheet's box, and stops accepting taps in the
-    // part that overflows — which on a 190-contact radio is most of the sheet.
-    // The list is a real scroll view inside the sheet's own height instead.
-    return Column(
-      mainAxisSize: MainAxisSize.max,
+    return ListView(
+      shrinkWrap: true,
       children: <Widget>[
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
@@ -152,33 +250,27 @@ class _ContactPickerSheetState extends State<ContactPickerSheet> {
             ),
           ),
         ),
-        Expanded(
-          child: shown.isEmpty
-              ? Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: Text(l.contactFilterNone),
-                )
-              : ListView(
-                  children: <Widget>[
-                    for (final DiscoveredNode n in shown)
-                      Builder(builder: (BuildContext ctx) {
-                        final bool ok = widget.enabled?.call(n) ?? true;
-                        return ListTile(
-                          enabled: ok,
-                          leading: Icon(nodeTypeIcon(n.type)),
-                          title: Text(n.name.isEmpty
-                              ? n.pubKeyHex.substring(0, 8)
-                              : n.name),
-                          subtitle: Text(ok || widget.reason == null
-                              ? '${n.pubKeyHex.substring(0, 6)} · '
-                                  '${hopsLabel(l, n)}'
-                              : widget.reason!),
-                          onTap: () => Navigator.pop(ctx, n),
-                        );
-                      }),
-                  ],
-                ),
-        ),
+        if (shown.isEmpty)
+          Padding(
+            padding: const EdgeInsets.all(24),
+            child: Text(l.contactFilterNone),
+          )
+        else
+          for (final DiscoveredNode n in shown)
+            Builder(builder: (BuildContext ctx) {
+              final bool ok = widget.enabled?.call(n) ?? true;
+              return ListTile(
+                enabled: ok,
+                leading: Icon(nodeTypeIcon(n.type)),
+                title: Text(n.name.isEmpty
+                    ? n.pubKeyHex.substring(0, 8)
+                    : n.name),
+                subtitle: Text(ok || widget.reason == null
+                    ? '${n.pubKeyHex.substring(0, 6)} · ${hopsLabel(l, n)}'
+                    : widget.reason!),
+                onTap: () => Navigator.pop(ctx, n),
+              );
+            }),
       ],
     );
   }
@@ -194,8 +286,6 @@ Future<(BotScope, String)?> pickConversation(
 }) {
   final AppLocalizations l = AppLocalizations.of(context);
   final String? own = mc.ownPubKeyHex;
-  final TextEditingController filter = TextEditingController();
-  String query = '';
   final List<DiscoveredNode> allPeers = includeDms
       ? <DiscoveredNode>[
           for (final DiscoveredNode n in mc.nodes)
@@ -209,98 +299,21 @@ Future<(BotScope, String)?> pickConversation(
     context: context,
     showDragHandle: true,
     isScrollControlled: true,
-    builder: (BuildContext ctx) => StatefulBuilder(
-      builder: (BuildContext ctx, StateSetter setSheet) {
-        final String q = query.trim().toLowerCase();
-        final List<MapEntry<int, String>> channels = <MapEntry<int, String>>[
-          for (final MapEntry<int, String> ch in mc.channels)
-            if (q.isEmpty ||
-                '#${ch.key}'.contains(q) ||
-                ch.value.toLowerCase().contains(q))
-              ch,
-        ];
-        final List<DiscoveredNode> peers = <DiscoveredNode>[
-          for (final DiscoveredNode n in allPeers)
-            if (q.isEmpty ||
-                n.name.toLowerCase().contains(q) ||
-                n.pubKeyHex.toLowerCase().startsWith(q))
-              n,
-        ];
-        return SafeArea(
-          child: ConstrainedBox(
-            constraints: BoxConstraints(
-                maxHeight: MediaQuery.of(ctx).size.height * .7),
-            child: Column(
-              mainAxisSize: MainAxisSize.max,
-              children: <Widget>[
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-                  child: TextField(
-                    key: const ValueKey<String>('conversation-filter'),
-                    controller: filter,
-                    onChanged: (String v) => setSheet(() => query = v),
-                    decoration: InputDecoration(
-                      isDense: true,
-                      hintText: l.contactFilterHint,
-                      prefixIcon: const Icon(Icons.search, size: 18),
-                      suffixIcon: query.isEmpty
-                          ? null
-                          : IconButton(
-                              tooltip: l.actionClear,
-                              icon: const Icon(Icons.close, size: 18),
-                              onPressed: () => setSheet(() {
-                                filter.clear();
-                                query = '';
-                              }),
-                            ),
-                    ),
-                  ),
-                ),
-                Expanded(
-                  child: channels.isEmpty && peers.isEmpty
-                      ? Padding(
-                          padding: const EdgeInsets.all(24),
-                          child: Text(l.contactFilterNone))
-                      : ListView(
-                          children: <Widget>[
-                            for (final MapEntry<int, String> ch in channels)
-                              Builder(builder: (BuildContext _) {
-                                final ChannelScope scope =
-                                    ChannelScope(ch.key);
-                                final ToolFailure? why =
-                                    scopeRefusal(scope, mc.channelPsk);
-                                final String label = '#${ch.key} ${ch.value}';
-                                return ListTile(
-                                  enabled: why == null,
-                                  leading: const Icon(Icons.tag),
-                                  title: Text(label),
-                                  subtitle: why == null
-                                      ? null
-                                      : Text(toolFailureText(l, why)),
-                                  onTap: () =>
-                                      Navigator.pop(ctx, (scope, label)),
-                                );
-                              }),
-                            if (peers.isNotEmpty && channels.isNotEmpty)
-                              const Divider(),
-                            for (final DiscoveredNode n in peers)
-                              ListTile(
-                                leading: const Icon(Icons.person_outline),
-                                title: Text(n.name),
-                                subtitle: Text(hopsLabel(l, n)),
-                                onTap: () => Navigator.pop(
-                                    ctx,
-                                    (DmScope(n.pubKeyHex),
-                                        l.soakDm(n.name))),
-                              ),
-                          ],
-                        ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
+    // Same shape as the contact sheet, for the same measured reason: one
+    // shrink-wrapped list as the sheet's direct child. A Column with a flexible
+    // list inside lays out taller than the sheet and its rows stop accepting
+    // taps.
+    builder: (BuildContext ctx) => SafeArea(
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(ctx).size.height * .7),
+        child: _ConversationSheet(
+          channels: mc.channels,
+          peers: allPeers,
+          l: l,
+          pskOf: mc.channelPsk,
+        ),
+      ),
     ),
   );
 }
