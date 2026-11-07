@@ -56,7 +56,7 @@ swipe pages):
 
 | Sub-screen | Purpose | Maps to spec |
 |---|---|---|
-| **Device configuration** | Meshcore radio (freq/BW/SF/CR/TX power), identity/advert (name, lat/lon, self-advert), channels + PSK / QR import, other params + tuning, device info/battery/time. Drives the M4 protocol surface. | R7 |
+| **Device configuration** | Meshcore radio (freq/BW/SF/CR/TX power), identity/advert (name, lat/lon, self-advert), channels + PSK / QR import, other params + tuning, device info/battery/time, and **Contact table** (R119: the radio's own add policy — chat/repeater/room/sensor, overwrite-oldest, hop limit — with the count and a way into the radio's contact list, plus the bands it will relay in). Drives the M4 protocol surface. | R7, R119 |
 | **App settings** | BLE auto-reconnect (M7 backoff), language EN/JA, TTS global (off by default), notification/critical parity, diagnostics export (M6), About/Terms links. | R3,R4,R5 |
 | **Profile & personalization** | Theme preset (the six concepts incl. D high-contrast & F night, plus the R63 **Studio** clean-dark skin) + custom palette, font family & **size scale**, density, **audio alerts master + per-event**, haptics + pattern preview, **accessibility switches incl. one-tap "visual + haptic only"**, identity/advert name. Persisted via `shared_preferences`. | R12,R13,R14 |
 
@@ -288,6 +288,9 @@ alert and ok are low-saturation tints, and selection is shown by lightness.
 Studio has its own dashboard (R68): a quiet status row, peers in range, then
 collapsible Radio / Location / Recent sections, with the type rule *words are
 sans, only machine data is mono*.
+
+#### Routes in the node sheet (R119)
+The sheet answers "how does this node reach me" two ways, and they are different questions. **Last advert came via** reads the route the contact's last advertisement took, from the radio's own record (`CMD_GET_ADVERT_PATH`, 0x2A): no mesh traffic, so it is a read, and a zero-length path is shown as *direct* rather than as no route. **Find the route** asks the mesh (`CMD_SEND_PATH_DISCOVERY_REQ`, 0x34), which costs airtime, so it is a tap; the reply carries both directions and both are shown, because an asymmetric link is the answer worth reading. One request of each kind is in flight at a time: the advert-path reply does not name the node, and the discovery reply names only its prefix, so a second answer could not be told apart from the first.
 
 #### Type rule (Studio, R71-R74): words sans, machine data mono
 
