@@ -4878,6 +4878,29 @@ class MeshcoreController extends ChangeNotifier {
     return out;
   }
 
+  // --- The radio's pairing PIN ------------------------------------------
+  //
+  // `CMD_SET_DEVICE_PIN` (0x25): 0 clears the PIN, otherwise exactly six digits.
+  // It is the radio's own gate on a *new* Bluetooth pairing, separate from its
+  // list of bonded devices; the app already shows the current value out of
+  // `DEVICE_INFO`, so a setter is the missing half.
+
+  Future<bool> setDevicePin(int pin) async {
+    if (!isReady) return false;
+    if (pin != 0 && (pin < 100000 || pin > 999999)) return false;
+    try {
+      await send(MeshcoreFrameCodec.setDevicePin(pin));
+      // The answer is a bare OK; re-query device info so the readout is the
+      // radio's value rather than the one just typed.
+      await send(MeshcoreFrameCodec.deviceQuery());
+      notifyListeners();
+      return true;
+    } catch (_) {
+      _emitTaskError('setDevicePin');
+      return false;
+    }
+  }
+
   // --- The radio's own airtime limit ------------------------------------
   //
   // `RESP_CODE_TUNING_PARAMS` (0x17) carries `rx_delay_base` and `airtime_factor`

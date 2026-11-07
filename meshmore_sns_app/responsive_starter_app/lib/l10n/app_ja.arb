@@ -2613,5 +2613,16 @@
   "diagnosticsRestartRadio": "無線機を再起動",
   "diagnosticsRestartConfirm": "この無線機を今すぐ再起動しますか？起動の間リンクは数秒切れ、無線機に溜まっていたものは失われます。",
   "diagnosticsRestartSent": "再起動を送信しました。リンクは切れ、自動的に戻ります。",
-  "diagnosticsRestartNoReply": "再起動に応答はありません。確認ではなく送信のみです。"
+  "diagnosticsRestartNoReply": "再起動に応答はありません。確認ではなく送信のみです。",
+  "settingsSecuritySection": "無線機へのアクセス",
+  "settingsPinIntro": "ペアリングPINは、この無線機への新しいBluetoothペアリングを制限します。接続済み端末の一覧は無線機側が保持します。",
+  "settingsPinCurrent": "ペアリングPIN",
+  "settingsPinNone": "PIN は未設定です",
+  "settingsPinSet": "新しいPINを設定",
+  "settingsPinRemove": "PIN を削除",
+  "settingsPinHint": "6桁",
+  "settingsPinBad": "PIN は6桁ちょうどです。",
+  "settingsPinDone": "PIN を設定しました。次回のペアリングには必要です。",
+  "settingsPinRemoved": "PIN を削除しました。ペアリング時に要求されません。",
+  "settingsPinConfirmRemove": "ペアリングPINを削除しますか？範囲内の誰でもペアリングを申し出られるようになります（接続済み端末の一覧は無線機側に残ります）。"
 }

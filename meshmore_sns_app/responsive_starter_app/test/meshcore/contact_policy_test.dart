@@ -442,4 +442,23 @@ void main() {
       mc.dispose();
     });
   });
+
+  test('the pairing PIN is written, and the readout is re-read', () async {
+    final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
+    final MeshcoreController mc = await connected(fake);
+    fake.sent.clear();
+    expect(await mc.setDevicePin(123456), isTrue);
+    final Uint8List set = fake.sent.firstWhere((Uint8List f) =>
+        f.isNotEmpty && f[0] == MeshcoreCommand.setDevicePin.code);
+    expect(set.length, 5, reason: 'opcode plus a four-byte PIN');
+    expect(set[1] | (set[2] << 8) | (set[3] << 16) | (set[4] << 24), 123456);
+    expect(
+        fake.sent.any((Uint8List f) =>
+            f.isNotEmpty && f[0] == MeshcoreCommand.deviceQuery.code),
+        isTrue,
+        reason: 'the radio clamps and may refuse, so its value is the truth');
+    // The codec refuses anything that is neither 0 nor six digits.
+    expect(await mc.setDevicePin(12345), isFalse);
+    mc.dispose();
+  });
 }

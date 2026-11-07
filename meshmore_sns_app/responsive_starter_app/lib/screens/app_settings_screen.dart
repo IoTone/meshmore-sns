@@ -340,6 +340,18 @@ class AppSettingsScreen extends StatelessWidget {
               ],
             ),
           ),
+          // Radio access: the pairing PIN is the radio's own gate on a new
+          // Bluetooth pairing (`CMD_SET_DEVICE_PIN` 0x25), and until this block
+          // the only way to change it was the radio's own screen.
+          Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: MmCollapsibleSection(
+              id: MmGroupIds.persSecurity,
+              title: l.settingsSecuritySection,
+              initiallyExpanded: false,
+              children: <Widget>[_RadioPinBlock(mc: mc)],
+            ),
+          ),
           SizedBox(height: context.skin.space.sectionGap),
           // The terms text is a commitment; this row is how a user reads it
           // again without having a way to un-agree retroactively.
@@ -446,6 +458,132 @@ class _NotificationHealthRow extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+}
+
+/// The radio's pairing PIN: read from `DEVICE_INFO`, written with
+/// `CMD_SET_DEVICE_PIN` (0x25). 0 clears it, otherwise exactly six digits.
+class _RadioPinBlock extends StatefulWidget {
+  const _RadioPinBlock({required this.mc});
+  final MeshcoreController mc;
+
+  @override
+  State<_RadioPinBlock> createState() => _RadioPinBlockState();
+}
+
+class _RadioPinBlockState extends State<_RadioPinBlock> {
+  final TextEditingController _pin = TextEditingController();
+  bool _busy = false;
+
+  @override
+  void dispose() {
+    _pin.dispose();
+    super.dispose();
+  }
+
+  Future<void> _write(int pin, String done) async {
+    if (_busy) return;
+    setState(() => _busy = true);
+    final ScaffoldMessengerState sm = ScaffoldMessenger.of(context);
+    final bool ok = await widget.mc.setDevicePin(pin);
+    if (!mounted) return;
+    setState(() => _busy = false);
+    if (!ok) return;
+    _pin.clear();
+    sm
+      ..clearSnackBars()
+      ..showSnackBar(SnackBar(content: Text(done)));
+  }
+
+  Future<void> _remove() async {
+    final AppLocalizations l = AppLocalizations.of(context);
+    final bool? go = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext ctx) => AlertDialog(
+        title: Text(l.settingsPinRemove),
+        content: Text(l.settingsPinConfirmRemove),
+        actions: <Widget>[
+          MmAction(
+              label: l.actionCancel, onPressed: () => Navigator.pop(ctx, false)),
+          MmAction(
+              label: l.settingsPinRemove,
+              onPressed: () => Navigator.pop(ctx, true)),
+        ],
+      ),
+    );
+    if (go == true && mounted) await _write(0, l.settingsPinRemoved);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations l = AppLocalizations.of(context);
+    final ColorScheme cs = Theme.of(context).colorScheme;
+    final int? pin = widget.mc.deviceInfo?.blePin;
+    final bool ready = widget.mc.isReady && !_busy;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 6),
+          child: Text(l.settingsPinIntro,
+              style: TextStyle(color: cs.onSurfaceVariant)),
+        ),
+        ListTile(
+          contentPadding: EdgeInsets.zero,
+          title: Text(l.settingsPinCurrent),
+          subtitle: Text(
+            pin == null || pin == 0 ? l.settingsPinNone : '$pin',
+            style: TextStyle(
+                color: cs.onSurface,
+                fontFamily: context.skin.type.monoFamily),
+          ),
+        ),
+        Row(
+          children: <Widget>[
+            Expanded(
+              child: TextField(
+                key: const ValueKey<String>('device-pin'),
+                controller: _pin,
+                enabled: ready,
+                keyboardType: TextInputType.number,
+                maxLength: 6,
+                decoration: InputDecoration(
+                  isDense: true,
+                  hintText: l.settingsPinHint,
+                  counterText: '',
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            MmAction(
+              label: l.settingsPinSet,
+              onPressed: !ready
+                  ? null
+                  : () {
+                      final int? v = int.tryParse(_pin.text.trim());
+                      final ScaffoldMessengerState sm =
+                          ScaffoldMessenger.of(context);
+                      if (v == null || v < 100000 || v > 999999) {
+                        sm
+                          ..clearSnackBars()
+                          ..showSnackBar(
+                              SnackBar(content: Text(l.settingsPinBad)));
+                        return;
+                      }
+                      _write(v, l.settingsPinDone);
+                    },
+            ),
+          ],
+        ),
+        Align(
+          alignment: Alignment.centerLeft,
+          child: MmAction(
+            label: l.settingsPinRemove,
+            onPressed: !ready || pin == null || pin == 0 ? null : _remove,
+          ),
+        ),
+      ],
     );
   }
 }

@@ -5774,4 +5774,39 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get diagnosticsRestartNoReply => '再起動に応答はありません。確認ではなく送信のみです。';
+
+  @override
+  String get settingsSecuritySection => '無線機へのアクセス';
+
+  @override
+  String get settingsPinIntro =>
+      'ペアリングPINは、この無線機への新しいBluetoothペアリングを制限します。接続済み端末の一覧は無線機側が保持します。';
+
+  @override
+  String get settingsPinCurrent => 'ペアリングPIN';
+
+  @override
+  String get settingsPinNone => 'PIN は未設定です';
+
+  @override
+  String get settingsPinSet => '新しいPINを設定';
+
+  @override
+  String get settingsPinRemove => 'PIN を削除';
+
+  @override
+  String get settingsPinHint => '6桁';
+
+  @override
+  String get settingsPinBad => 'PIN は6桁ちょうどです。';
+
+  @override
+  String get settingsPinDone => 'PIN を設定しました。次回のペアリングには必要です。';
+
+  @override
+  String get settingsPinRemoved => 'PIN を削除しました。ペアリング時に要求されません。';
+
+  @override
+  String get settingsPinConfirmRemove =>
+      'ペアリングPINを削除しますか？範囲内の誰でもペアリングを申し出られるようになります（接続済み端末の一覧は無線機側に残ります）。';
 }

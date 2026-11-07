@@ -34,6 +34,8 @@ abstract final class MmGroupIds {
   static const String persAudio = 'personalization.audio';
   // app_settings_screen.dart — storage, so a user can fold it away.
   static const String persStorage = 'settings.storage';
+  // app_settings_screen.dart — the radio's pairing PIN.
+  static const String persSecurity = 'settings.security';
   // diagnostics_screen.dart
   static const String diagnosticsDeveloper = 'diagnostics.developer';
   // dashboard_screen.dart — the monolith most skins inherit.
@@ -65,6 +67,7 @@ abstract final class MmGroupIds {
     persType,
     persAudio,
     persStorage,
+    persSecurity,
     dashRadio,
     dashLocation,
     dashRecent,

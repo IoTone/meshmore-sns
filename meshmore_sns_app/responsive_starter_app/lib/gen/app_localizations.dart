@@ -10101,6 +10101,72 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'The radio takes no reply to a restart, so this is sent, not confirmed.'**
   String get diagnosticsRestartNoReply;
+
+  /// No description provided for @settingsSecuritySection.
+  ///
+  /// In en, this message translates to:
+  /// **'Radio access'**
+  String get settingsSecuritySection;
+
+  /// No description provided for @settingsPinIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'A pairing PIN gates a new Bluetooth pairing to this radio. The radio still keeps its own list of bonded devices.'**
+  String get settingsPinIntro;
+
+  /// No description provided for @settingsPinCurrent.
+  ///
+  /// In en, this message translates to:
+  /// **'Pairing PIN'**
+  String get settingsPinCurrent;
+
+  /// No description provided for @settingsPinNone.
+  ///
+  /// In en, this message translates to:
+  /// **'No PIN set'**
+  String get settingsPinNone;
+
+  /// No description provided for @settingsPinSet.
+  ///
+  /// In en, this message translates to:
+  /// **'Set a new PIN'**
+  String get settingsPinSet;
+
+  /// No description provided for @settingsPinRemove.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove the PIN'**
+  String get settingsPinRemove;
+
+  /// No description provided for @settingsPinHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Six digits'**
+  String get settingsPinHint;
+
+  /// No description provided for @settingsPinBad.
+  ///
+  /// In en, this message translates to:
+  /// **'A PIN is exactly six digits.'**
+  String get settingsPinBad;
+
+  /// No description provided for @settingsPinDone.
+  ///
+  /// In en, this message translates to:
+  /// **'PIN set. A new pairing needs it now.'**
+  String get settingsPinDone;
+
+  /// No description provided for @settingsPinRemoved.
+  ///
+  /// In en, this message translates to:
+  /// **'PIN removed. Pairing no longer asks for one.'**
+  String get settingsPinRemoved;
+
+  /// No description provided for @settingsPinConfirmRemove.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove the pairing PIN? Anyone in range could offer to pair, and the radio would still keep its own device list.'**
+  String get settingsPinConfirmRemove;
 }
 
 class _AppLocalizationsDelegate

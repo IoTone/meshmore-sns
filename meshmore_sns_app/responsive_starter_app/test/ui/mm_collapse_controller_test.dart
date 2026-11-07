@@ -191,6 +191,7 @@ void main() {
       'persType': MmGroupIds.persType,
       'persAudio': MmGroupIds.persAudio,
       'persStorage': MmGroupIds.persStorage,
+      'persSecurity': MmGroupIds.persSecurity,
       'dashRadio': MmGroupIds.dashRadio,
       'dashLocation': MmGroupIds.dashLocation,
       'dashRecent': MmGroupIds.dashRecent,

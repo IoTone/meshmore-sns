@@ -4072,5 +4072,16 @@
   "diagnosticsRestartRadio": "Restart the radio",
   "diagnosticsRestartConfirm": "Restart this radio now? The link drops for a few seconds while it boots, and anything queued on it is lost.",
   "diagnosticsRestartSent": "Restart sent. The link will drop and come back on its own.",
-  "diagnosticsRestartNoReply": "The radio takes no reply to a restart, so this is sent, not confirmed."
+  "diagnosticsRestartNoReply": "The radio takes no reply to a restart, so this is sent, not confirmed.",
+  "settingsSecuritySection": "Radio access",
+  "settingsPinIntro": "A pairing PIN gates a new Bluetooth pairing to this radio. The radio still keeps its own list of bonded devices.",
+  "settingsPinCurrent": "Pairing PIN",
+  "settingsPinNone": "No PIN set",
+  "settingsPinSet": "Set a new PIN",
+  "settingsPinRemove": "Remove the PIN",
+  "settingsPinHint": "Six digits",
+  "settingsPinBad": "A PIN is exactly six digits.",
+  "settingsPinDone": "PIN set. A new pairing needs it now.",
+  "settingsPinRemoved": "PIN removed. Pairing no longer asks for one.",
+  "settingsPinConfirmRemove": "Remove the pairing PIN? Anyone in range could offer to pair, and the radio would still keep its own device list."
 }

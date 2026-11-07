@@ -6016,4 +6016,40 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get diagnosticsRestartNoReply =>
       'The radio takes no reply to a restart, so this is sent, not confirmed.';
+
+  @override
+  String get settingsSecuritySection => 'Radio access';
+
+  @override
+  String get settingsPinIntro =>
+      'A pairing PIN gates a new Bluetooth pairing to this radio. The radio still keeps its own list of bonded devices.';
+
+  @override
+  String get settingsPinCurrent => 'Pairing PIN';
+
+  @override
+  String get settingsPinNone => 'No PIN set';
+
+  @override
+  String get settingsPinSet => 'Set a new PIN';
+
+  @override
+  String get settingsPinRemove => 'Remove the PIN';
+
+  @override
+  String get settingsPinHint => 'Six digits';
+
+  @override
+  String get settingsPinBad => 'A PIN is exactly six digits.';
+
+  @override
+  String get settingsPinDone => 'PIN set. A new pairing needs it now.';
+
+  @override
+  String get settingsPinRemoved =>
+      'PIN removed. Pairing no longer asks for one.';
+
+  @override
+  String get settingsPinConfirmRemove =>
+      'Remove the pairing PIN? Anyone in range could offer to pair, and the radio would still keep its own device list.';
 }
