@@ -170,6 +170,11 @@ class MeshcoreController extends ChangeNotifier {
         // holding twenty contacts, showed "0 known", and filled the list only
         // if the user happened to open the device-contacts screen.
         unawaited(_syncContactsOnConnect());
+        // D8.1: a channel broadcast goes out under the radio's own flood scope,
+        // so the app asks what that is and can tell the user who receives. The
+        // reply is `RESP_CODE_DEFAULT_FLOOD_SCOPE` (0x1C), which the frame
+        // codec leaves as an unsupported frame and decodes on demand.
+        _requestFloodScope();
         // Keep the process alive in the background so the link +
         // drain survive Doze (Android only; no-op elsewhere).
         if (_bgKeepaliveEnabled) unawaited(_startKeepalive());
@@ -214,6 +219,7 @@ class MeshcoreController extends ChangeNotifier {
         _completeRadioConfig(const RadioAnswer.silent());
         // The next connection asks for the contact table again.
         _contactsSyncRequested = false;
+        _floodScopeAsked = false;
         _maybeScheduleReconnect();
       }
     });
@@ -226,6 +232,7 @@ class MeshcoreController extends ChangeNotifier {
       _trackBattery(f);
       _trackDeviceInfo(f);
       _trackCustomVars(f);
+      _trackFloodScope(f);
       _trackTelemetry(f);
       // R25+1 — own movement trail. Every inbound frame might have
       // bumped ownLocation (SelfInfoFrame's lat/lon), so sample
@@ -4404,6 +4411,29 @@ class MeshcoreController extends ChangeNotifier {
   Future<void> _loadContactsSince() async {
     final SharedPreferences p = await SharedPreferences.getInstance();
     _contactsSince = p.getInt(_kContactsSince) ?? 0;
+  }
+
+  /// The radio's default flood scope name, or null while it is unknown and ''
+  /// when the radio answered that none is set. A channel send inherits it, so
+  /// "who receives this" cannot be answered without it.
+  String? _floodScopeName;
+  String? get floodScopeName => _floodScopeName;
+  bool _floodScopeAsked = false;
+
+  void _requestFloodScope() {
+    if (_floodScopeAsked) return;
+    _floodScopeAsked = true;
+    unawaited(send(MeshcoreFrameCodec.getDefaultFloodScope())
+        .catchError((Object _) => _floodScopeAsked = false));
+  }
+
+  void _trackFloodScope(MeshcoreInbound f) {
+    if (f is! UnsupportedFrame) return;
+    if (f.opcode != MeshcoreResponse.defaultFloodScope.code) return;
+    final ({String name, Uint8List key})? scope =
+        MeshcoreFrameCodec.decodeDefaultFloodScope(f.raw);
+    _floodScopeName = scope?.name ?? '';
+    notifyListeners();
   }
 
   /// Ask for the table once per connection, incrementally when we know the

@@ -5646,4 +5646,15 @@ class AppLocalizationsJa extends AppLocalizations {
   String storageHistory(String kb) {
     return 'メッセージ履歴 $kb KB（密封）';
   }
+
+  @override
+  String mediaReachScope(String scope) {
+    return '無線機の地域スコープ「$scope」で送信されます。その地域で電波が届く全員が受信します。';
+  }
+
+  @override
+  String get mediaReachNoScope => '無線機に地域スコープが設定されていないため、電波が届く全員が受信します。';
+
+  @override
+  String get mediaReachUnknown => '到達範囲は無線機のスコープ次第で、まだ報告されていません。写真は受信確認されません。';
 }

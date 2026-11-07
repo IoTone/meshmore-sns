@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../gen/app_localizations.dart';
+import '../meshcore/meshcore_controller.dart';
 import '../meshcore/channel_datagram.dart';
 import '../theme/mm_skin.dart';
 import '../ui/mm_components.dart';
@@ -235,6 +236,10 @@ class _MediaComposerState extends State<MediaComposer> {
     final bool interrupted = interruptions?.any ?? false;
     final AppLocalizations l = AppLocalizations.of(context);
     final MmSkin skin = context.skin;
+    // D8.1: who receives this is the radio's own flood scope, not a choice this
+    // sheet invents. Null while the answer is unknown, '' when the radio says
+    // none is set — both are stated rather than guessed.
+    final String? scope = context.watch<MeshcoreController?>()?.floodScopeName;
     return SafeArea(
       child: Padding(
         padding: skin.space.pad(5),
@@ -248,6 +253,17 @@ class _MediaComposerState extends State<MediaComposer> {
                   color: skin.color.fg,
                   fontSize: skin.type.sizeLg,
                   fontWeight: FontWeight.w600),
+            ),
+            SizedBox(height: skin.space.step(2)),
+            Text(
+              scope == null
+                  ? l.mediaReachUnknown
+                  : scope.isEmpty
+                      ? l.mediaReachNoScope
+                      : l.mediaReachScope(scope),
+              key: const ValueKey<String>('media-reach'),
+              style: TextStyle(
+                  color: skin.color.fgMuted, fontSize: skin.type.sizeSm),
             ),
             SizedBox(height: skin.space.step(5)),
             if (_sourceProblem != null)

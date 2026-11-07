@@ -9861,6 +9861,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Message history {kb} KB, sealed'**
   String storageHistory(String kb);
+
+  /// No description provided for @mediaReachScope.
+  ///
+  /// In en, this message translates to:
+  /// **'Goes out under the radio\'s region scope {scope}: everyone in that region who can hear your radio.'**
+  String mediaReachScope(String scope);
+
+  /// No description provided for @mediaReachNoScope.
+  ///
+  /// In en, this message translates to:
+  /// **'No region scope is set on the radio, so everyone who can hear it receives this.'**
+  String get mediaReachNoScope;
+
+  /// No description provided for @mediaReachUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Reach is the radio\'s own scope, which it has not reported yet. A photo is not acknowledged.'**
+  String get mediaReachUnknown;
 }
 
 class _AppLocalizationsDelegate

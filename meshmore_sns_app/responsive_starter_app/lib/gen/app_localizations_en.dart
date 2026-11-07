@@ -5878,4 +5878,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String storageHistory(String kb) {
     return 'Message history $kb KB, sealed';
   }
+
+  @override
+  String mediaReachScope(String scope) {
+    return 'Goes out under the radio\'s region scope $scope: everyone in that region who can hear your radio.';
+  }
+
+  @override
+  String get mediaReachNoScope =>
+      'No region scope is set on the radio, so everyone who can hear it receives this.';
+
+  @override
+  String get mediaReachUnknown =>
+      'Reach is the radio\'s own scope, which it has not reported yet. A photo is not acknowledged.';
 }

@@ -99,6 +99,8 @@ Future<void> _pickIn(WidgetTester t, {bool camera = false}) async {
 void main() {
   setUp(() => _now = DateTime(2026, 11, 5, 12));
 
+  reachTests();
+
   testWidgets('the Public channel is refused before the encoder runs',
       (WidgetTester t) async {
     final FakeMediaCodec codec = FakeMediaCodec(encodedBytes: 300);
@@ -263,5 +265,27 @@ void main() {
       expect(find.textContaining('2 packets'), findsOneWidget,
           reason: 'skin ${preset.name}');
     }
+  });
+}
+
+// Added 2026-11-05: the composer states the reach.
+//
+// D8.1: a channel broadcast inherits the radio's own default flood scope, so
+// "who receives this" is not the app's choice and must not be invented. The
+// three states are stated: a named scope, no scope set, and not yet reported.
+void reachTests() {
+  testWidgets('with no radio answer yet the composer says the reach is '
+      'unknown rather than guessing', (WidgetTester t) async {
+    await t.pumpWidget(_host(MediaComposer(
+      service: _service(),
+      source: _Source(photo: _photo(320, 240)),
+      channelPsk: kPublicChannelPsk,
+      byteBudget: 2000,
+      sendBlob: (Uint8List _) async =>
+          const ChannelDataSendResult(ChannelDataSendStatus.accepted),
+    )));
+    await t.pumpAndSettle();
+    expect(find.byKey(const ValueKey<String>('media-reach')), findsOneWidget);
+    expect(find.textContaining('has not reported yet'), findsOneWidget);
   });
 }

@@ -2573,5 +2573,8 @@
   "storageMapsUnknown": "このセッションでは地図データを開いていません",
   "storageClearCache": "キャッシュしたタイルを削除",
   "storageCacheCleared": "キャッシュしたタイルを削除しました。ダウンロード済みの地域は残ります。",
-  "storageHistory": "メッセージ履歴 {kb} KB（密封）"
+  "storageHistory": "メッセージ履歴 {kb} KB（密封）",
+  "mediaReachScope": "無線機の地域スコープ「{scope}」で送信されます。その地域で電波が届く全員が受信します。",
+  "mediaReachNoScope": "無線機に地域スコープが設定されていないため、電波が届く全員が受信します。",
+  "mediaReachUnknown": "到達範囲は無線機のスコープ次第で、まだ報告されていません。写真は受信確認されません。"
 }
