@@ -22,6 +22,7 @@ import '../perms/location_service.dart';
 import '../perms/permissions_service.dart';
 import '../ui/mm_components.dart';
 import '../ui/mm_shape.dart';
+import 'device_contacts_screen.dart';
 
 /// The advert-location policy integers → a UI label.
 ///
@@ -991,9 +992,175 @@ class _DeviceConfigScreenState extends State<DeviceConfigScreen> {
                 ),
               ],
             ),
+            const Divider(height: 28),
+
+            // CONTACT TABLE — the radio's own add policy. Folded by default
+            // because it is a policy, not a reading; a user meets it when the
+            // table fills, and the count is here either way.
+            MmCollapsibleSection(
+              id: MmGroupIds.devContacts,
+              title: l.deviceContactsSection,
+              initiallyExpanded: false,
+              children: <Widget>[
+                const SizedBox(height: 4),
+                _ContactTableEditor(mc: mc, enabled: ready),
+              ],
+            ),
           ],
         ),
       ),
+    );
+  }
+}
+
+/// The radio's contact-table policy, as switches that write the whole byte.
+///
+/// Each control sends `CMD_SET_AUTOADD_CONFIG` (0x3A) with the other bits
+/// carried through, then re-reads the policy, because the radio clamps and may
+/// refuse and its answer is the only truth. The count above the switches is the
+/// same one the device-contacts screen shows, so "full" is visible on the page
+/// where the policy that fills it is set.
+class _ContactTableEditor extends StatefulWidget {
+  const _ContactTableEditor({required this.mc, required this.enabled});
+  final MeshcoreController mc;
+  final bool enabled;
+
+  @override
+  State<_ContactTableEditor> createState() => _ContactTableEditorState();
+}
+
+class _ContactTableEditorState extends State<_ContactTableEditor> {
+  bool _asked = false;
+  bool _busy = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || _asked || !widget.mc.isReady) return;
+      _asked = true;
+      widget.mc.requestAutoAddConfig();
+    });
+  }
+
+  Future<void> _write(Future<bool> Function() op) async {
+    if (_busy) return;
+    setState(() => _busy = true);
+    await op();
+    if (!mounted) return;
+    setState(() => _busy = false);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations l = AppLocalizations.of(context);
+    final ColorScheme cs = Theme.of(context).colorScheme;
+    final MeshcoreController mc = widget.mc;
+    final AutoAddConfig? cfg = mc.autoAddConfig;
+    final int? count = mc.deviceContactCount;
+    final int? max = mc.maxContacts;
+    final bool allow = widget.enabled && cfg != null && !_busy;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        Text(l.autoAddIntro,
+            style: TextStyle(
+                color: cs.onSurfaceVariant,
+                fontSize: context.skin.type.sizeBody)),
+        const SizedBox(height: 4),
+        if (count != null)
+          Text(
+            max == null
+                ? l.deviceContactsCountOnly(count)
+                : l.deviceContactsCount(count, max),
+            style: TextStyle(
+                color: mc.contactsFull ? cs.error : cs.onSurface,
+                fontFamily: context.skin.type.monoFamily),
+          ),
+        if (cfg == null)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            child: Text(l.autoAddUnknown,
+                style: TextStyle(color: cs.onSurfaceVariant)),
+          )
+        else ...<Widget>[
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            value: cfg.overwriteOldest,
+            onChanged: allow
+                ? (bool v) => _write(() =>
+                    mc.setAutoAddConfig(overwriteOldest: v))
+                : null,
+            title: Text(l.autoAddOverwriteOldest),
+            subtitle: Text(l.autoAddOverwriteOldestHint),
+          ),
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            value: cfg.chat,
+            onChanged:
+                allow ? (bool v) => _write(() => mc.setAutoAddConfig(chat: v)) : null,
+            title: Text(l.autoAddChat),
+          ),
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            value: cfg.repeater,
+            onChanged: allow
+                ? (bool v) => _write(() => mc.setAutoAddConfig(repeater: v))
+                : null,
+            title: Text(l.autoAddRepeater),
+          ),
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            value: cfg.roomServer,
+            onChanged: allow
+                ? (bool v) => _write(() => mc.setAutoAddConfig(roomServer: v))
+                : null,
+            title: Text(l.autoAddRoomServer),
+          ),
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            value: cfg.sensor,
+            onChanged:
+                allow ? (bool v) => _write(() => mc.setAutoAddConfig(sensor: v)) : null,
+            title: Text(l.autoAddSensor),
+          ),
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            title: Text(l.autoAddMaxHops),
+            subtitle: Text(l.autoAddMaxHopsHint),
+            trailing: SizedBox(
+              width: telemLabelWidth(MediaQuery.textScalerOf(context)),
+              child: TextFormField(
+                key: const ValueKey<String>('auto-add-hops'),
+                initialValue: '${cfg.maxHops}',
+                enabled: allow,
+                keyboardType: TextInputType.number,
+                textAlign: TextAlign.end,
+                decoration: const InputDecoration(isDense: true),
+                onFieldSubmitted: (String v) {
+                  final int? n = int.tryParse(v.trim());
+                  if (n == null || n < 0 || n > kAutoAddMaxHops) return;
+                  _write(() => mc.setAutoAddConfig(maxHops: n));
+                },
+              ),
+            ),
+          ),
+        ],
+        ListTile(
+          contentPadding: EdgeInsets.zero,
+          leading: const Icon(Icons.contacts),
+          title: Text(l.autoAddManage),
+          subtitle: Text(l.deviceContactsTitle),
+          trailing: const Icon(Icons.chevron_right),
+          // The radio-contacts screen has no named route: it is a
+          // diagnostic page reached from the device sheet, so the same shape
+          // is used here rather than inventing a second way in.
+          onTap: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                  builder: (_) => const DeviceContactsScreen())),
+        ),
+      ],
     );
   }
 }

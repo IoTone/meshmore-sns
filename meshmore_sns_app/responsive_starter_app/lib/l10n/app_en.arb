@@ -4035,5 +4035,21 @@
         "type": "String"
       }
     }
-  }
+  },
+  "deviceContactsSection": "Contact table",
+  "autoAddIntro": "The radio decides which nodes it keeps. These are its settings, not the app's.",
+  "autoAddOverwriteOldest": "Replace the oldest when full",
+  "autoAddOverwriteOldestHint": "Favourites are never replaced.",
+  "autoAddChat": "Chat nodes",
+  "autoAddRepeater": "Repeaters",
+  "autoAddRoomServer": "Room servers",
+  "autoAddSensor": "Sensors",
+  "autoAddMaxHops": "Hop limit",
+  "autoAddMaxHopsHint": "0 = no limit · 1 = direct only · N = up to N−1 hops",
+  "autoAddUnknown": "Reading the radio's policy…",
+  "autoAddManage": "Manage the table",
+  "nodeAdvertPath": "Last advert came via",
+  "nodeAdvertPathNone": "The radio has no advert route for this node.",
+  "nodeAdvertPathReading": "Reading the route…",
+  "retryPathReset": "Route cleared, so this retry goes out over flood."
 }

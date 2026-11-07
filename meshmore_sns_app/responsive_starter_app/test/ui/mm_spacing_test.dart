@@ -117,7 +117,7 @@ void main() {
       'lib/screens/fabric_survey_view.dart': 1,
       'lib/screens/meshbook_view.dart': 14,
       'lib/screens/mesh_tree_view.dart': 2,
-      'lib/screens/node_detail_sheet.dart': 3,
+      'lib/screens/node_detail_sheet.dart': 2,
       'lib/screens/nodes_screen.dart': 4,
       'lib/screens/sns_cells_view.dart': 2,
       'lib/screens/street_map_view.dart': 1,

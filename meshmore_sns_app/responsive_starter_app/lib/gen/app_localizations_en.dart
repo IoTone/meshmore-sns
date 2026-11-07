@@ -5891,4 +5891,56 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get mediaReachUnknown =>
       'Reach is the radio\'s own scope, which it has not reported yet. A photo is not acknowledged.';
+
+  @override
+  String get deviceContactsSection => 'Contact table';
+
+  @override
+  String get autoAddIntro =>
+      'The radio decides which nodes it keeps. These are its settings, not the app\'s.';
+
+  @override
+  String get autoAddOverwriteOldest => 'Replace the oldest when full';
+
+  @override
+  String get autoAddOverwriteOldestHint => 'Favourites are never replaced.';
+
+  @override
+  String get autoAddChat => 'Chat nodes';
+
+  @override
+  String get autoAddRepeater => 'Repeaters';
+
+  @override
+  String get autoAddRoomServer => 'Room servers';
+
+  @override
+  String get autoAddSensor => 'Sensors';
+
+  @override
+  String get autoAddMaxHops => 'Hop limit';
+
+  @override
+  String get autoAddMaxHopsHint =>
+      '0 = no limit · 1 = direct only · N = up to N−1 hops';
+
+  @override
+  String get autoAddUnknown => 'Reading the radio\'s policy…';
+
+  @override
+  String get autoAddManage => 'Manage the table';
+
+  @override
+  String get nodeAdvertPath => 'Last advert came via';
+
+  @override
+  String get nodeAdvertPathNone =>
+      'The radio has no advert route for this node.';
+
+  @override
+  String get nodeAdvertPathReading => 'Reading the route…';
+
+  @override
+  String get retryPathReset =>
+      'Route cleared, so this retry goes out over flood.';
 }

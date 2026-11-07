@@ -9879,6 +9879,102 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Reach is the radio\'s own scope, which it has not reported yet. A photo is not acknowledged.'**
   String get mediaReachUnknown;
+
+  /// No description provided for @deviceContactsSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Contact table'**
+  String get deviceContactsSection;
+
+  /// No description provided for @autoAddIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'The radio decides which nodes it keeps. These are its settings, not the app\'s.'**
+  String get autoAddIntro;
+
+  /// No description provided for @autoAddOverwriteOldest.
+  ///
+  /// In en, this message translates to:
+  /// **'Replace the oldest when full'**
+  String get autoAddOverwriteOldest;
+
+  /// No description provided for @autoAddOverwriteOldestHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Favourites are never replaced.'**
+  String get autoAddOverwriteOldestHint;
+
+  /// No description provided for @autoAddChat.
+  ///
+  /// In en, this message translates to:
+  /// **'Chat nodes'**
+  String get autoAddChat;
+
+  /// No description provided for @autoAddRepeater.
+  ///
+  /// In en, this message translates to:
+  /// **'Repeaters'**
+  String get autoAddRepeater;
+
+  /// No description provided for @autoAddRoomServer.
+  ///
+  /// In en, this message translates to:
+  /// **'Room servers'**
+  String get autoAddRoomServer;
+
+  /// No description provided for @autoAddSensor.
+  ///
+  /// In en, this message translates to:
+  /// **'Sensors'**
+  String get autoAddSensor;
+
+  /// No description provided for @autoAddMaxHops.
+  ///
+  /// In en, this message translates to:
+  /// **'Hop limit'**
+  String get autoAddMaxHops;
+
+  /// No description provided for @autoAddMaxHopsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'0 = no limit · 1 = direct only · N = up to N−1 hops'**
+  String get autoAddMaxHopsHint;
+
+  /// No description provided for @autoAddUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Reading the radio\'s policy…'**
+  String get autoAddUnknown;
+
+  /// No description provided for @autoAddManage.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage the table'**
+  String get autoAddManage;
+
+  /// No description provided for @nodeAdvertPath.
+  ///
+  /// In en, this message translates to:
+  /// **'Last advert came via'**
+  String get nodeAdvertPath;
+
+  /// No description provided for @nodeAdvertPathNone.
+  ///
+  /// In en, this message translates to:
+  /// **'The radio has no advert route for this node.'**
+  String get nodeAdvertPathNone;
+
+  /// No description provided for @nodeAdvertPathReading.
+  ///
+  /// In en, this message translates to:
+  /// **'Reading the route…'**
+  String get nodeAdvertPathReading;
+
+  /// No description provided for @retryPathReset.
+  ///
+  /// In en, this message translates to:
+  /// **'Route cleared, so this retry goes out over flood.'**
+  String get retryPathReset;
 }
 
 class _AppLocalizationsDelegate

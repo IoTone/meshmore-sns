@@ -26,6 +26,7 @@ abstract final class MmGroupIds {
   static const String devIdentity = 'device.identity';
   static const String devOther = 'device.other';
   static const String devDevice = 'device.device';
+  static const String devContacts = 'device.contacts';
   // personalization_screen.dart
   static const String persPreset = 'personalization.preset';
   static const String persAccessibility = 'personalization.accessibility';
@@ -57,6 +58,7 @@ abstract final class MmGroupIds {
     devIdentity,
     devOther,
     devDevice,
+    devContacts,
     diagnosticsDeveloper,
     persPreset,
     persAccessibility,

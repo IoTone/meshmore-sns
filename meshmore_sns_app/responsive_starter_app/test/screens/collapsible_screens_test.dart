@@ -46,7 +46,7 @@ void main() {
   setUp(() => SharedPreferences.setMockInitialValues(<String, Object>{}));
 
   testWidgets(
-      'Device configuration: four groups, Radio open, each folds '
+      'Device configuration: five groups, Radio open, each folds '
       'alone, Channels stays a plain row', (WidgetTester t) async {
     await t.binding.setSurfaceSize(const Size(900, 3200));
     addTearDown(() => t.binding.setSurfaceSize(null));
@@ -55,7 +55,7 @@ void main() {
     final AppLocalizations l =
         AppLocalizations.of(t.element(find.byType(DeviceConfigScreen)));
 
-    expect(find.byType(MmCollapsibleSection), findsNWidgets(4));
+    expect(find.byType(MmCollapsibleSection), findsNWidgets(5));
     // The page opens on the radio, because that is what it is for.
     expect(find.text('Frequency (MHz)'), findsOneWidget, reason: 'open');
     expect(find.text('Manage channels'), findsOneWidget);

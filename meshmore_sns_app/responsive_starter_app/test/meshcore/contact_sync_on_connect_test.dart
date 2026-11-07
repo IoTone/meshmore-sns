@@ -30,6 +30,16 @@ List<int>? getContactsFrame(List<Uint8List> sent) {
   return null;
 }
 
+
+/// Wait until [ok] holds, without a fixed tick budget: the controller waits for
+/// the sealed contact table before it asks, and the number of async hops that
+/// takes depends on the store, not on the rule under test.
+Future<void> until(bool Function() ok, {int ticks = 400}) async {
+  for (int i = 0; i < ticks && !ok(); i++) {
+    await Future<void>.delayed(Duration.zero);
+  }
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -42,9 +52,7 @@ void main() {
           MeshcoreController(transportFactory: () async => fake);
       await mc.connect();
       fake.emit(selfInfoFrame());
-      for (int i = 0; i < 4; i++) {
-        await Future<void>.delayed(Duration.zero);
-      }
+      await until(() => getContactsFrame(fake.sent) != null);
       final List<int>? frame = getContactsFrame(fake.sent);
       expect(frame, isNotNull,
           reason: 'the radio never pushes its table (MyMesh.cpp:2209)');
@@ -61,13 +69,9 @@ void main() {
           MeshcoreController(transportFactory: () async => fake);
       await mc.connect();
       fake.emit(selfInfoFrame());
-      for (int i = 0; i < 4; i++) {
-        await Future<void>.delayed(Duration.zero);
-      }
+      await until(() => getContactsFrame(fake.sent) != null);
       fake.emit(endOfContactsAt(0x0A0B0C));
-      for (int i = 0; i < 4; i++) {
-        await Future<void>.delayed(Duration.zero);
-      }
+      await until(() => mc.contactsSinceForTest == 0x0A0B0C);
       expect(mc.contactsSinceForTest, 0x0A0B0C);
       final SharedPreferences p = await SharedPreferences.getInstance();
       expect(p.getInt('mm.contacts.since'), 0x0A0B0C,
@@ -84,9 +88,7 @@ void main() {
           MeshcoreController(transportFactory: () async => second);
       await mc2.connect();
       second.emit(selfInfoFrame());
-      for (int i = 0; i < 6; i++) {
-        await Future<void>.delayed(Duration.zero);
-      }
+      await until(() => getContactsFrame(second.sent) != null);
       final List<int>? full = getContactsFrame(second.sent);
       expect(full, isNotNull);
       expect(full!.length, 1,
@@ -130,9 +132,7 @@ void main() {
           MeshcoreController(transportFactory: () async => fake);
       await mc.connect();
       fake.emit(selfInfoFrame());
-      for (int i = 0; i < 6; i++) {
-        await Future<void>.delayed(Duration.zero);
-      }
+      await until(() => getContactsFrame(fake.sent) != null);
       final List<int>? frame = getContactsFrame(fake.sent);
       expect(frame, isNotNull);
       expect(frame!.length, 5, reason: 'opcode plus a four-byte since');

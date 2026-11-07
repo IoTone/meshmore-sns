@@ -76,6 +76,9 @@ String deviceErrorReason(int? code) => switch (code) {
 /// self-advert are answered with a bare OK/ERR; a DM, a status request, a
 /// telemetry request and a trace are answered with `RESP_CODE_SENT`.
 /// [CommandAnswer] carries that distinction into the ledger.
+/// What a Retry did, so the screen can say it rather than guess.
+enum RetryOutcome { refused, sent, sentAfterPathReset }
+
 class MeshcoreController extends ChangeNotifier {
   MeshcoreController({
     Future<MeshcoreTransport> Function()? transportFactory,
@@ -176,6 +179,10 @@ class MeshcoreController extends ChangeNotifier {
         // reply is `RESP_CODE_DEFAULT_FLOOD_SCOPE` (0x1C), which the frame
         // codec leaves as an unsupported frame and decodes on demand.
         _requestFloodScope();
+        // The radio's add policy, once per connection: the device page shows
+        // it, and it is what decides whether a new node becomes a contact at
+        // all.
+        unawaited(requestAutoAddConfig());
         // Keep the process alive in the background so the link +
         // drain survive Doze (Android only; no-op elsewhere).
         if (_bgKeepaliveEnabled) unawaited(_startKeepalive());
@@ -242,6 +249,7 @@ class MeshcoreController extends ChangeNotifier {
       _ingestKnown(f);
       _trackContactProbe(f);
       _trackContactLifecycle(f);
+      _trackAutoAddConfig(f);
       _ingestDm(f);
       _maybeDrain(f);
       _ingestNode(f);
@@ -2646,19 +2654,49 @@ class MeshcoreController extends ChangeNotifier {
   /// timed-out message with no action at all. The text may already have
   /// reached the mesh, so it can arrive twice; the user chose that by
   /// tapping Retry.
-  Future<bool> retryMessage(String id) async {
+  Future<bool> retryMessage(String id) async =>
+      await retryMessageOutcome(id) != RetryOutcome.refused;
+
+  /// A retry, with what it did, so the screen can say it.
+  ///
+  /// A direct message that timed out was addressed down the radio's stored
+  /// route. The firmware replaces that route wholesale with whatever the newest
+  /// path return said and never ages it out, so a route that has died stays
+  /// dead: retrying down it fails again in exactly the same way. Clearing it
+  /// (`CMD_RESET_PATH` 0x0D) makes this attempt go out flooded, which is also
+  /// how the radio learns a fresh route from the reply. The row is reused, so
+  /// the user sees one message retried rather than a duplicate.
+  Future<RetryOutcome> retryMessageOutcome(String id) async {
     final ChatMessage? m = _messageById(id);
     if (m == null ||
         !m.outgoing ||
         (m.delivery != MessageDelivery.failed &&
             m.delivery != MessageDelivery.unknown) ||
         !isReady) {
-      return false;
+      return RetryOutcome.refused;
     }
     final int ts = DateTime.now().millisecondsSinceEpoch ~/ 1000;
     final bool dm = m.peerPubKeyHex != null;
     final String? peer = m.peerPubKeyHex;
-    if (dm && peer!.length < 12) return false;
+    if (dm && peer!.length < 12) return RetryOutcome.refused;
+    bool resetRoute = false;
+    if (dm) {
+      final Contact? c = _contacts[peer!];
+      // `directPath == null` means flood/unknown, where a reset changes
+      // nothing; a non-null path is a route that just failed to deliver.
+      if (c != null && c.directPath != null) {
+        try {
+          await send(MeshcoreFrameCodec.resetPath(c.publicKey));
+          resetRoute = true;
+          // Re-read the record so the app's copy says "no route" like the
+          // radio now does, instead of holding a path that no longer exists.
+          unawaited(send(MeshcoreFrameCodec.getContactByKey(c.publicKey))
+              .catchError((Object _) => Uint8List(0)));
+        } catch (_) {
+          // The retry is still worth sending down the old route.
+        }
+      }
+    }
     m
       ..delivery = MessageDelivery.sending
       ..failReason = null
@@ -2693,7 +2731,7 @@ class MeshcoreController extends ChangeNotifier {
       _markOutgoingFailed(m.id);
       notifyListeners();
     }
-    return true;
+    return resetRoute ? RetryOutcome.sentAfterPathReset : RetryOutcome.sent;
   }
 
   /// Ingest an inbound DM into the message store + emit on the
@@ -4224,6 +4262,115 @@ class MeshcoreController extends ChangeNotifier {
     }
   }
 
+  // --- The radio's own add policy (`CMD_GET/SET_AUTOADD_CONFIG`) --------
+  //
+  // Whether a newly heard node becomes a contact is the radio's decision, not
+  // the app's: the firmware adds by node type, may overwrite the oldest
+  // non-favourite when the 350-row table is full, and can limit how far away a
+  // node may be. Left unread, the table fills under a policy the user cannot
+  // see, and the first symptom is that a contact the app offered to add is
+  // refused. The reply is `RESP_CODE_AUTOADD_CONFIG` (0x19).
+
+  AutoAddConfig? _autoAddConfig;
+
+  /// The radio's add policy, or null while it has not answered.
+  AutoAddConfig? get autoAddConfig => _autoAddConfig;
+
+  void _trackAutoAddConfig(MeshcoreInbound f) {
+    if (f is! AutoAddConfigFrame) return;
+    _autoAddConfig = f.config;
+  }
+
+  /// Ask the radio what its add policy is. Cheap, and the reply is the only
+  /// way to know: the app cannot infer it from a table that may already be
+  /// full.
+  Future<void> requestAutoAddConfig() async {
+    if (!isReady) return;
+    try {
+      await send(MeshcoreFrameCodec.getAutoAddConfig());
+    } catch (_) {
+      _emitTaskError('getAutoAddConfig');
+    }
+  }
+
+  /// Change part of the radio's add policy. Every field is optional and the
+  /// rest is carried through, because the command replaces the whole byte.
+  ///
+  /// Refused when the current policy is unknown: writing from zero would
+  /// silently switch auto-add off for every node type, which is a setting the
+  /// user did not choose. [requestAutoAddConfig] has to land first.
+  Future<bool> setAutoAddConfig({
+    bool? overwriteOldest,
+    bool? chat,
+    bool? repeater,
+    bool? roomServer,
+    bool? sensor,
+    int? maxHops,
+  }) async {
+    final AutoAddConfig? cur = _autoAddConfig;
+    if (!isReady || cur == null) return false;
+    int flags = cur.flags;
+    void bit(int mask, bool? value) {
+      if (value == null) return;
+      flags = value ? (flags | mask) : (flags & ~mask);
+    }
+
+    bit(kAutoAddOverwriteOldest, overwriteOldest);
+    bit(kAutoAddChat, chat);
+    bit(kAutoAddRepeater, repeater);
+    bit(kAutoAddRoomServer, roomServer);
+    bit(kAutoAddSensor, sensor);
+    final int hops = maxHops ?? cur.maxHops;
+    try {
+      await send(MeshcoreFrameCodec.setAutoAddConfig(flags, maxHops: hops));
+      // The radio is the source of truth; read it back rather than assuming
+      // the write was taken as sent (it clamps and may refuse).
+      await requestAutoAddConfig();
+      return true;
+    } catch (_) {
+      _emitTaskError('setAutoAddConfig');
+      return false;
+    }
+  }
+
+  // --- The route the last advert took (`CMD_GET_ADVERT_PATH`) -----------
+  //
+  // A trace reports the route a packet took *now*; this answers the route the
+  // contact's last advertisement arrived by, from the radio's own record. It
+  // sends no mesh traffic, so it is the cheap way to answer "which repeaters
+  // hear this node at all".
+  //
+  // The reply carries no key, so only one request can be outstanding: a second
+  // answer could not be told apart from the first.
+
+  bool _advertPathInFlight = false;
+
+  /// The route the contact's last advert took, or null when the radio could
+  /// not answer inside [timeout] or another request is already waiting.
+  Future<AdvertPath?> advertPathFor(String pubKeyHex,
+      {Duration timeout = const Duration(seconds: 4)}) async {
+    if (!isReady || _advertPathInFlight) return null;
+    final String hex = pubKeyHex.toLowerCase();
+    if (hex.length != kPubKeySize * 2) return null;
+    final Uint8List key = Uint8List.fromList(<int>[
+      for (int i = 0; i < hex.length; i += 2)
+        int.parse(hex.substring(i, i + 2), radix: 16),
+    ]);
+    _advertPathInFlight = true;
+    try {
+      final Future<MeshcoreInbound> reply = inboundFrames
+          .firstWhere((MeshcoreInbound f) => f is AdvertPathFrame)
+          .timeout(timeout);
+      await send(MeshcoreFrameCodec.getAdvertPath(key));
+      final MeshcoreInbound f = await reply;
+      return f is AdvertPathFrame ? f.advertPath : null;
+    } catch (_) {
+      return null;
+    } finally {
+      _advertPathInFlight = false;
+    }
+  }
+
   /// The radio's own changes to its contact table.
   ///
   /// The table is the radio's, and the app's mirror is a cache of it. The
@@ -4482,8 +4629,8 @@ class MeshcoreController extends ChangeNotifier {
     _contactsSince = p.getInt(_kContactsSince) ?? 0;
   }
 
-  /// The in-flight load of the persisted table, so a connect that lands first
-  /// waits for it instead of deciding the table is empty.
+  /// The in-flight load of the persisted table, so the first connect waits for
+  /// it instead of reading an empty table as "we hold nothing".
   Future<void>? _contactsLoad;
 
   void _loadSyncedContacts() {
@@ -4491,9 +4638,9 @@ class MeshcoreController extends ChangeNotifier {
       final List<Contact> rows = await ContactStore.load();
       if (rows.isEmpty) return;
       // The user's reconciled-away keys are stale rows on the radio too, so
-      // they are dropped on the way in for the same reason `_ingestNode`
-      // drops them: a persisted table can still carry a key the radio has
-      // since removed.
+      // they are dropped on the way in for the same reason `_ingestNode` drops
+      // them: a persisted table can still carry a key the radio has since
+      // removed.
       final Set<String> gone = await SupersededStore.load();
       bool added = false;
       for (final Contact c in rows) {
@@ -4501,9 +4648,9 @@ class MeshcoreController extends ChangeNotifier {
         if (gone.contains(hex) || _superseded.contains(hex)) continue;
         if (_contacts.containsKey(hex)) continue;
         _contacts[hex] = c;
-        // The node entry too, through the same mapping a streamed contact
-        // uses: otherwise the fabric starts empty on every launch and the
-        // pickers offer only what has advertised since.
+        // The node entry too, through the same mapping a streamed contact uses:
+        // otherwise the fabric starts empty on every launch and the pickers
+        // offer only what has advertised since.
         _nodes.putIfAbsent(hex, () => _nodeFromContact(c));
         added = true;
       }
@@ -4557,6 +4704,10 @@ class MeshcoreController extends ChangeNotifier {
       // handful of contacts changed since the last session, so the app kept an
       // empty list while the radio reported 193 of 350: Ping, Trace and every
       // telemetry tool then said "no synced contacts yet".
+      // Wait for the persisted table: asking for `since` is only right when the
+      // table it describes is in memory, and the load is the only thing that
+      // puts it there. A load that fails leaves the table empty, which the rule
+      // below then reads as "ask for everything".
       final Future<void>? load = _contactsLoad;
       if (load != null) await load;
       await requestContacts(

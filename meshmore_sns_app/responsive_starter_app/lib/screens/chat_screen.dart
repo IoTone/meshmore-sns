@@ -532,7 +532,13 @@ class _ChatScreenState extends State<ChatScreen>
         await copyMessageToClipboard(context, m);
         break;
       case ChatAction.retry:
-        await mc.retryMessage(m.id);
+        final RetryOutcome r = await mc.retryMessageOutcome(m.id);
+        if (r == RetryOutcome.sentAfterPathReset && mounted) {
+          ScaffoldMessenger.of(context)
+            ..clearSnackBars()
+            ..showSnackBar(SnackBar(
+                content: Text(AppLocalizations.of(context).retryPathReset)));
+        }
         break;
       case ChatAction.report:
         if (!mounted) return;

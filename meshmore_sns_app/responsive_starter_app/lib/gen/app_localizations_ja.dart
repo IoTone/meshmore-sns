@@ -5657,4 +5657,52 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get mediaReachUnknown => '到達範囲は無線機のスコープ次第で、まだ報告されていません。写真は受信確認されません。';
+
+  @override
+  String get deviceContactsSection => '連絡先テーブル';
+
+  @override
+  String get autoAddIntro => 'どのノードを保持するかは無線機が決めます。これはアプリではなく無線機の設定です。';
+
+  @override
+  String get autoAddOverwriteOldest => '満杯なら最も古いものを置き換える';
+
+  @override
+  String get autoAddOverwriteOldestHint => 'お気に入りは置き換えられません。';
+
+  @override
+  String get autoAddChat => 'チャットノード';
+
+  @override
+  String get autoAddRepeater => 'リピーター';
+
+  @override
+  String get autoAddRoomServer => 'ルームサーバー';
+
+  @override
+  String get autoAddSensor => 'センサー';
+
+  @override
+  String get autoAddMaxHops => 'ホップ上限';
+
+  @override
+  String get autoAddMaxHopsHint => '0 = 無制限 · 1 = 直接のみ · N = N−1 ホップまで';
+
+  @override
+  String get autoAddUnknown => '無線機の設定を読み取り中…';
+
+  @override
+  String get autoAddManage => 'テーブルを管理';
+
+  @override
+  String get nodeAdvertPath => '最後のアドバートの経路';
+
+  @override
+  String get nodeAdvertPathNone => 'このノードのアドバート経路は無線機にありません。';
+
+  @override
+  String get nodeAdvertPathReading => '経路を読み取り中…';
+
+  @override
+  String get retryPathReset => '経路をクリアしたため、この再送はフラッドで送信されます。';
 }

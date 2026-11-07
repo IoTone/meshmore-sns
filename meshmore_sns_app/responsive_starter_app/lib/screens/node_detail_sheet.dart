@@ -7,7 +7,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
-import 'package:meshcore/meshcore.dart' show Contact;
+import 'package:meshcore/meshcore.dart' show AdvertPath, Contact;
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -350,7 +350,7 @@ class _NodeDetailSheetState extends State<NodeDetailSheet> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
               SizedBox(
-                width: 84,
+                width: kKvLabelWidth,
                 child: Text(k,
                     style: TextStyle(
                         color: cs.onSurfaceVariant, fontSize: context.skin.type.sizeBody)),
@@ -472,6 +472,12 @@ class _NodeDetailSheetState extends State<NodeDetailSheet> {
                         ? l.nodeDetailHopsFlood
                         : l.nodeDetailHopsUnknown,
               ),
+            // The route the last advert took, from the radio's own record
+            // (`CMD_GET_ADVERT_PATH` 0x2A). A trace reports the route a packet
+            // took now and costs airtime; this answers "which repeaters hear
+            // this node at all" with no mesh traffic, so it is offered as a
+            // read rather than fetched for every node opened.
+            if (!widget.isSelf) _AdvertPathLine(node: n),
             // R47 — peer telemetry on tap. CMD_SEND_TELEMETRY_REQ goes
             // to the device, which unicasts to the peer over the air;
             // the peer's response arrives async and lands in the
@@ -781,6 +787,104 @@ class _ContactTelemetryShareSection extends StatelessWidget {
             (bool v) => mc.setContactTelemetryPermissions(node.pubKeyHex,
                 environment: v)),
       ],
+    );
+  }
+}
+
+/// Width of the key column in the sheet's key/value rows, so every row's value
+/// starts at the same offset. One place, because the advert-path row has to
+/// line up with the rows the sheet builds itself.
+const double kKvLabelWidth = 84;
+
+/// The route the contact's last advert arrived by, read on demand.
+///
+/// The reply carries no key, so the controller allows one request at a time;
+/// this asks once per tap and says what came back, including "the radio has no
+/// advert route", which is the honest answer for a node heard directly or not
+/// heard since the radio started.
+class _AdvertPathLine extends StatefulWidget {
+  const _AdvertPathLine({required this.node});
+  final DiscoveredNode node;
+
+  @override
+  State<_AdvertPathLine> createState() => _AdvertPathLineState();
+}
+
+class _AdvertPathLineState extends State<_AdvertPathLine> {
+  bool _reading = false;
+  bool _asked = false;
+  AdvertPath? _path;
+
+  Future<void> _read() async {
+    if (_reading) return;
+    setState(() => _reading = true);
+    final MeshcoreController mc = context.read<MeshcoreController>();
+    final AdvertPath? p = await mc.advertPathFor(widget.node.pubKeyHex);
+    if (!mounted) return;
+    setState(() {
+      _path = p;
+      _reading = false;
+      _asked = true;
+    });
+  }
+
+  /// A hop's display name: the node whose key starts with that hash.
+  String _name(int hash, int width) {
+    final String h = hash
+        .toRadixString(16)
+        .padLeft(width * 2, '0');
+    for (final DiscoveredNode n in context.read<MeshcoreController>().nodes) {
+      if (n.pubKeyHex.startsWith(h)) return '${h.substring(0, 2)} ${n.name}';
+    }
+    return h.substring(0, 2);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations l = AppLocalizations.of(context);
+    final ColorScheme cs = Theme.of(context).colorScheme;
+    final AdvertPath? p = _path;
+    final String value = !_asked
+        ? '—'
+        : _reading
+            ? l.nodeAdvertPathReading
+            : p == null || p.path.isEmpty
+                ? l.nodeAdvertPathNone
+                : <String>[
+                    for (int i = 0; i + p.pathLen.hashSize <= p.path.length;
+                        i += p.pathLen.hashSize)
+                      _name(
+                          p.path.sublist(i, i + p.pathLen.hashSize)
+                              .fold<int>(0, (int a, int b) => (a << 8) | b),
+                          p.pathLen.hashSize),
+                  ].join(' · ');
+    return InkWell(
+      onTap: _reading ? null : _read,
+      // A tap target, so it is 48dp tall like every other control: the row is
+      // a read action, not a line of prose.
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: kMinInteractiveDimension),
+        child: Row(
+          children: <Widget>[
+            SizedBox(
+              width: kKvLabelWidth,
+              child: Text(l.nodeAdvertPath,
+                  style: TextStyle(
+                      color: cs.onSurfaceVariant,
+                      fontSize: context.skin.type.sizeSm)),
+            ),
+            Expanded(
+              child: Text(value,
+                  style: TextStyle(
+                      color: cs.onSurface,
+                      fontFamily: context.skin.type.monoFamily,
+                      fontSize: context.skin.type.sizeBody)),
+            ),
+            Icon(Icons.download_outlined,
+                size: 16, color: cs.onSurfaceVariant),
+          ],
+        ),
+      ),
     );
   }
 }

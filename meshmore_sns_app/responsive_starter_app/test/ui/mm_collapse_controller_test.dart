@@ -185,6 +185,7 @@ void main() {
       'devIdentity': MmGroupIds.devIdentity,
       'devOther': MmGroupIds.devOther,
       'devDevice': MmGroupIds.devDevice,
+      'devContacts': MmGroupIds.devContacts,
       'persPreset': MmGroupIds.persPreset,
       'persAccessibility': MmGroupIds.persAccessibility,
       'persType': MmGroupIds.persType,
