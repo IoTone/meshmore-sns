@@ -12,14 +12,20 @@ the protocol package `dart test` 368 passed with 1 skipped; the pure-Java port a
 was deleted afterwards (`meshmore-publishing.md` lists what the publisher must supply instead). The debug arm64 APK
 (105 MB) is installed on the motorola edge 2024 over wireless adb.
 
-**Device-verified on that phone, 2026-11-05**: the radio's stored contact table fills the node list on connect
-(181 contacts read from a Wio holding 181/350); the clock write is read-then-write, so a device that kept time is
-left alone; the recent feed coalesces repeated polls; the app bar carries one title with no subtitle block; and the
-Japanese locale renders. Covered by tests but not yet re-read on the phone: the "Hyperlocal grid" tab label, the six
-views at one level, the alarm screen's configure-then-hold order, and the vector map repainting on a skin switch.
-Still owed: any on-air path with both radios powered, the Doze and foreground-service run, and the media
-send/receive pair. The 16 KB page check fails on `libavif_native.so` only (`tool/check_16k.sh`), and the deadline
-for it is stated two ways upstream, so the Play Console notice decides.
+**Device-verified on that phone, 2026-11-05** (screenshots and accessibility dumps, not test output): the app bar
+carries one title and the dashboard's is the app's own name; the tab strip's cell is labelled "Hyperlocal grid"; each
+group boundary draws one rule, not two; the status slab names the radio instead of repeating the chip's "linked"; the
+radio's stored contact table fills the node list on connect and kept growing live (184 → 193 of 350); a channel text
+was sent on air and acknowledged by the radio (the row's tick); the vector basemap draws on the paper skin and
+re-paints into the dark palette on a preset switch, which is the defect the owner described; the Tools list carries
+the check-in row and the alarm screen no longer does; the contact picker lists HELTEC-BASE with "direct (0 hops)"; and
+the Japanese locale renders. The clock rule and the coalesced feed were verified the same way on the previous build.
+
+**Owed on the phone**: the ping round trip, the alarm's hold-to-raise and cancel, a media send and receive, the
+notification tap-through, a radio-settings save and revert, and the Doze/foreground-service run — scripted taps kept
+losing focus to another app mid-sequence, so this is deferred rather than half-done. The 16 KB page check fails on
+`libavif_native.so` only (`tool/check_16k.sh`); the two published deadlines differ, so the Play Console notice
+decides, and that is not needed until David uploads.
 
 An offline-first Flutter companion app for MeshCore LoRa mesh radios
 over BLE. Mesh-first, no backend, no account, no server.
