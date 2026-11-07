@@ -1,7 +1,12 @@
 // Copyright (c) 2026 IoTone, Inc.
 // SPDX-License-Identifier: MIT
 import 'package:flutter_test/flutter_test.dart';
+import 'dart:io';
+
 import 'package:shared_preferences/shared_preferences.dart';
+
+import 'package:meshmore_sns_app/meshcore/secure/record_cipher.dart';
+import 'package:meshmore_sns_app/meshcore/secure/sealed_document.dart';
 
 import 'package:meshmore_sns_app/geofence/geofence_controller.dart';
 import 'package:meshmore_sns_app/meshcore/meshcore_controller.dart';
@@ -16,7 +21,22 @@ OwnLocation _at(double lat, double lon) => OwnLocation(
     );
 
 void main() {
-  setUp(() => SharedPreferences.setMockInitialValues(<String, Object>{}));
+  late Directory dir;
+
+  setUp(() {
+    SharedPreferences.setMockInitialValues(<String, Object>{});
+    // Fences are sealed now: a persistence test needs the store's own seams
+    // rather than a preferences mock.
+    dir = Directory.systemTemp.createTempSync('mm_fence_test');
+    SealedDocument.cipherOverride = MemoryRecordCipher.random();
+    SealedDocument.directoryOverride = dir;
+  });
+
+  tearDown(() {
+    SealedDocument.cipherOverride = null;
+    SealedDocument.directoryOverride = null;
+    if (dir.existsSync()) dir.deleteSync(recursive: true);
+  });
 
   test('a fence fires once on the way in and once on the way out', () async {
     final GeofenceController g = GeofenceController(

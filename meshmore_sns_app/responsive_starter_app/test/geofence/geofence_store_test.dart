@@ -1,13 +1,32 @@
 // Copyright (c) 2026 IoTone, Inc.
 // SPDX-License-Identifier: MIT
+import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:meshmore_sns_app/geofence/geofence_engine.dart';
 import 'package:meshmore_sns_app/geofence/geofence_store.dart';
+import 'package:meshmore_sns_app/meshcore/secure/record_cipher.dart';
+import 'package:meshmore_sns_app/meshcore/secure/sealed_document.dart';
 
 void main() {
-  setUp(() => SharedPreferences.setMockInitialValues(<String, Object>{}));
+  late Directory dir;
+
+  setUp(() {
+    SharedPreferences.setMockInitialValues(<String, Object>{});
+    // Fences are sealed now: this needs the store's own seams, not a
+    // preferences mock.
+    dir = Directory.systemTemp.createTempSync('mm_fence_store');
+    SealedDocument.cipherOverride = MemoryRecordCipher.random();
+    SealedDocument.directoryOverride = dir;
+  });
+
+  tearDown(() {
+    SealedDocument.cipherOverride = null;
+    SealedDocument.directoryOverride = null;
+    if (dir.existsSync()) dir.deleteSync(recursive: true);
+  });
 
   test('a fence survives a save and a load', () async {
     await GeofenceStore.save(const <StoredGeofence>[

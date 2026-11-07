@@ -4,12 +4,11 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../meshcore/meshcore_controller.dart';
+import '../meshcore/secure/sealed_document.dart';
 import '../meshcore/own_location.dart';
 import '../util/geo.dart';
-import '../util/prefs.dart';
 
 /// One recorded position: where we were, when, and what said so.
 ///
@@ -90,9 +89,18 @@ final class PositionHistoryStore {
   /// otherwise log a point every sample and make the trail a cloud.
   static const double minMoveMeters = 10.0;
 
+  /// Record name in the app's sealed store. A trail is where the user has been,
+  /// so it does not belong in a plain preferences file next to a sealed history.
+  static const String recordName = 'trail';
+
+  /// Set when the sealed store could not be opened, so the trail is
+  /// session-only. Diagnostics says so rather than losing it silently.
+  static final ValueNotifier<bool> sealedUnreadable = ValueNotifier<bool>(false);
+
   static Future<List<PositionSample>> load({DateTime Function()? clock}) async {
-    final SharedPreferences p = await SharedPreferences.getInstance();
-    return decode(p.getString(_kKey), clock: clock);
+    final String? raw = await SealedDocument.read(recordName,
+        legacyKey: _kKey, sealedUnreadable: sealedUnreadable);
+    return decode(raw, clock: clock);
   }
 
   /// Parses a stored document. Split out so the retention and corruption rules
@@ -168,14 +176,12 @@ final class PositionHistoryStore {
       <Object?>[for (final PositionSample s in rows) s.toJson()]);
 
   static Future<void> save(List<PositionSample> rows) async {
-    final SharedPreferences p = await SharedPreferences.getInstance();
-    await Prefs.setString(p, _kKey, encode(rows));
+    final bool ok = await SealedDocument.write(recordName, encode(rows));
+    sealedUnreadable.value = !ok;
   }
 
-  static Future<void> clear() async {
-    final SharedPreferences p = await SharedPreferences.getInstance();
-    await p.remove(_kKey);
-  }
+  static Future<void> clear() =>
+      SealedDocument.clear(recordName, legacyKey: _kKey);
 }
 
 /// Records the trail as fixes arrive, and keeps it in memory for the map and

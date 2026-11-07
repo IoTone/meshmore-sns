@@ -971,7 +971,7 @@ abstract class AppLocalizations {
   /// No description provided for @termsLocalBody.
   ///
   /// In en, this message translates to:
-  /// **'Messages, contacts, channels and settings are stored on this device. Message history and places are encrypted with a key this phone holds and cannot export. The trail, coverage and geofences are kept in the clear on this device, because they are what the map draws while you use it. Cloud backup and device transfer are off for all of it, so a new phone does not silently inherit it. Deleting the app deletes that data.'**
+  /// **'Messages, contacts, channels and settings are stored on this device. Message history, places, the movement trail and geofences are encrypted with a key this phone holds and cannot export. Coverage cells are session-only, so nothing about them is written at all. Cloud backup and device transfer are off for everything, so a new phone does not silently inherit it. Deleting the app deletes that data.'**
   String get termsLocalBody;
 
   /// No description provided for @termsSectionLeaves.

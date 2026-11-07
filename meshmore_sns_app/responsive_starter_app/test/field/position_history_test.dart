@@ -1,7 +1,12 @@
 // Copyright (c) 2026 IoTone, Inc.
 // SPDX-License-Identifier: MIT
 import 'package:flutter_test/flutter_test.dart';
+import 'dart:io';
+
 import 'package:shared_preferences/shared_preferences.dart';
+
+import 'package:meshmore_sns_app/meshcore/secure/record_cipher.dart';
+import 'package:meshmore_sns_app/meshcore/secure/sealed_document.dart';
 
 import 'package:meshmore_sns_app/field/position_history.dart';
 import 'package:meshmore_sns_app/meshcore/own_location.dart';
@@ -18,7 +23,22 @@ OwnLocation _own(double lat, double lon,
     );
 
 void main() {
-  setUp(() => SharedPreferences.setMockInitialValues(<String, Object>{}));
+  late Directory dir;
+
+  setUp(() {
+    SharedPreferences.setMockInitialValues(<String, Object>{});
+    // The trail is sealed now: a persistence test needs the store's own seams
+    // rather than a preferences mock.
+    dir = Directory.systemTemp.createTempSync('mm_trail_test');
+    SealedDocument.cipherOverride = MemoryRecordCipher.random();
+    SealedDocument.directoryOverride = dir;
+  });
+
+  tearDown(() {
+    SealedDocument.cipherOverride = null;
+    SealedDocument.directoryOverride = null;
+    if (dir.existsSync()) dir.deleteSync(recursive: true);
+  });
 
   group('retention', () {
     test('a point older than the window is dropped on load', () {

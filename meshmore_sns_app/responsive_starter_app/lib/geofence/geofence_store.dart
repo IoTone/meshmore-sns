@@ -2,10 +2,10 @@
 // SPDX-License-Identifier: MIT
 import 'dart:convert';
 
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter/foundation.dart';
 
 import 'geofence_engine.dart';
-import '../util/prefs.dart';
+import '../meshcore/secure/sealed_document.dart';
 
 /// A fence the user drew: a centre, a radius, and a name to say out loud.
 final class StoredGeofence {
@@ -74,9 +74,18 @@ final class GeofenceStore {
   /// anyone watches, and every one costs a haversine per position sample.
   static const int capacity = 20;
 
+  /// Record name in the app's sealed store: a fence names a place the user
+  /// cares about, which is the same kind of fact as the trail beside it.
+  static const String recordName = 'geofences';
+
+  /// Set when the sealed store could not be opened, so the fences are
+  /// session-only.
+  static final ValueNotifier<bool> sealedUnreadable = ValueNotifier<bool>(false);
+
   static Future<List<StoredGeofence>> load() async {
-    final SharedPreferences p = await SharedPreferences.getInstance();
-    return decode(p.getString(_kKey));
+    final String? raw = await SealedDocument.read(recordName,
+        legacyKey: _kKey, sealedUnreadable: sealedUnreadable);
+    return decode(raw);
   }
 
   static List<StoredGeofence> decode(String? raw) {
@@ -98,12 +107,10 @@ final class GeofenceStore {
       jsonEncode(<Object?>[for (final StoredGeofence f in fences) f.toJson()]);
 
   static Future<void> save(List<StoredGeofence> fences) async {
-    final SharedPreferences p = await SharedPreferences.getInstance();
-    await Prefs.setString(p, _kKey, encode(fences));
+    final bool ok = await SealedDocument.write(recordName, encode(fences));
+    sealedUnreadable.value = !ok;
   }
 
-  static Future<void> clear() async {
-    final SharedPreferences p = await SharedPreferences.getInstance();
-    await p.remove(_kKey);
-  }
+  static Future<void> clear() =>
+      SealedDocument.clear(recordName, legacyKey: _kKey);
 }
