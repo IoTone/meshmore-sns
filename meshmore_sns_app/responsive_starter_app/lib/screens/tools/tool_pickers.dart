@@ -93,6 +93,7 @@ List<DiscoveredNode> filterContacts(
 /// right there behind it.
 class ContactPickerSheet extends StatefulWidget {
   const ContactPickerSheet({
+    super.key,
     required this.nodes,
     required this.l,
     this.enabled,
@@ -193,7 +194,9 @@ Future<(BotScope, String)?> pickConversation(
 }) {
   final AppLocalizations l = AppLocalizations.of(context);
   final String? own = mc.ownPubKeyHex;
-  final List<DiscoveredNode> peers = includeDms
+  final TextEditingController filter = TextEditingController();
+  String query = '';
+  final List<DiscoveredNode> allPeers = includeDms
       ? <DiscoveredNode>[
           for (final DiscoveredNode n in mc.nodes)
             if (n.pubKeyHex != own &&
@@ -206,38 +209,98 @@ Future<(BotScope, String)?> pickConversation(
     context: context,
     showDragHandle: true,
     isScrollControlled: true,
-    builder: (BuildContext ctx) => SafeArea(
-      child: ConstrainedBox(
-        constraints: BoxConstraints(
-            maxHeight: MediaQuery.of(ctx).size.height * .7),
-        child: ListView(
-          shrinkWrap: true,
-          children: <Widget>[
-            for (final MapEntry<int, String> ch in mc.channels)
-              Builder(builder: (BuildContext _) {
-                final ChannelScope scope = ChannelScope(ch.key);
-                final ToolFailure? why = scopeRefusal(scope, mc.channelPsk);
-                final String label = '#${ch.key} ${ch.value}';
-                return ListTile(
-                  enabled: why == null,
-                  leading: const Icon(Icons.tag),
-                  title: Text(label),
-                  subtitle: why == null ? null : Text(toolFailureText(l, why)),
-                  onTap: () => Navigator.pop(ctx, (scope, label)),
-                );
-              }),
-            if (peers.isNotEmpty) const Divider(),
-            for (final DiscoveredNode n in peers)
-              ListTile(
-                leading: const Icon(Icons.person_outline),
-                title: Text(n.name),
-                subtitle: Text(hopsLabel(l, n)),
-                onTap: () =>
-                    Navigator.pop(ctx, (DmScope(n.pubKeyHex), l.soakDm(n.name))),
-              ),
-          ],
-        ),
-      ),
+    builder: (BuildContext ctx) => StatefulBuilder(
+      builder: (BuildContext ctx, StateSetter setSheet) {
+        final String q = query.trim().toLowerCase();
+        final List<MapEntry<int, String>> channels = <MapEntry<int, String>>[
+          for (final MapEntry<int, String> ch in mc.channels)
+            if (q.isEmpty ||
+                '#${ch.key}'.contains(q) ||
+                ch.value.toLowerCase().contains(q))
+              ch,
+        ];
+        final List<DiscoveredNode> peers = <DiscoveredNode>[
+          for (final DiscoveredNode n in allPeers)
+            if (q.isEmpty ||
+                n.name.toLowerCase().contains(q) ||
+                n.pubKeyHex.toLowerCase().startsWith(q))
+              n,
+        ];
+        return SafeArea(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+                maxHeight: MediaQuery.of(ctx).size.height * .7),
+            child: Column(
+              mainAxisSize: MainAxisSize.max,
+              children: <Widget>[
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                  child: TextField(
+                    key: const ValueKey<String>('conversation-filter'),
+                    controller: filter,
+                    onChanged: (String v) => setSheet(() => query = v),
+                    decoration: InputDecoration(
+                      isDense: true,
+                      hintText: l.contactFilterHint,
+                      prefixIcon: const Icon(Icons.search, size: 18),
+                      suffixIcon: query.isEmpty
+                          ? null
+                          : IconButton(
+                              tooltip: l.actionClear,
+                              icon: const Icon(Icons.close, size: 18),
+                              onPressed: () => setSheet(() {
+                                filter.clear();
+                                query = '';
+                              }),
+                            ),
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: channels.isEmpty && peers.isEmpty
+                      ? Padding(
+                          padding: const EdgeInsets.all(24),
+                          child: Text(l.contactFilterNone))
+                      : ListView(
+                          children: <Widget>[
+                            for (final MapEntry<int, String> ch in channels)
+                              Builder(builder: (BuildContext _) {
+                                final ChannelScope scope =
+                                    ChannelScope(ch.key);
+                                final ToolFailure? why =
+                                    scopeRefusal(scope, mc.channelPsk);
+                                final String label = '#${ch.key} ${ch.value}';
+                                return ListTile(
+                                  enabled: why == null,
+                                  leading: const Icon(Icons.tag),
+                                  title: Text(label),
+                                  subtitle: why == null
+                                      ? null
+                                      : Text(toolFailureText(l, why)),
+                                  onTap: () =>
+                                      Navigator.pop(ctx, (scope, label)),
+                                );
+                              }),
+                            if (peers.isNotEmpty && channels.isNotEmpty)
+                              const Divider(),
+                            for (final DiscoveredNode n in peers)
+                              ListTile(
+                                leading: const Icon(Icons.person_outline),
+                                title: Text(n.name),
+                                subtitle: Text(hopsLabel(l, n)),
+                                onTap: () => Navigator.pop(
+                                    ctx,
+                                    (DmScope(n.pubKeyHex),
+                                        l.soakDm(n.name))),
+                              ),
+                          ],
+                        ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     ),
   );
 }
