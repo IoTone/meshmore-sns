@@ -297,6 +297,12 @@ void main() {
     '/settings/networks',
     '/settings/about',
     '/settings/docs',
+    // The tool screens carry the widest readouts in the app: a table of RTTs,
+    // a noise floor, a hop trace.
+    '/settings/tools/stats',
+    '/settings/tools/ping',
+    '/settings/tools/range',
+    '/settings/tools/soak',
   ];
   for (final String route in deepRoutes) {
     testWidgets('$route holds the floor on every preset',
