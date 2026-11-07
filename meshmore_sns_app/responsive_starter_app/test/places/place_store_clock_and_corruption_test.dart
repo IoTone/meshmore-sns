@@ -1,9 +1,12 @@
 // Copyright (c) 2026 IoTone, Inc.
 // SPDX-License-Identifier: MIT
 
+import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:meshmore_sns_app/meshcore/secure/record_cipher.dart';
 import 'package:meshmore_sns_app/places/place.dart';
 import 'package:meshmore_sns_app/places/place_store.dart';
 
@@ -14,7 +17,23 @@ void main() {
   const String badKey = 'mm.places.v1.bad';
   const String markKey = 'mm.places.highWater';
 
-  setUp(() => SharedPreferences.setMockInitialValues(<String, Object>{}));
+  late Directory dir;
+
+  // Places are sealed now: a persistence test needs the store's own seams
+  // rather than a preferences mock, and it has to wait for the queued write
+  // before removing the directory it wrote into.
+  setUp(() {
+    SharedPreferences.setMockInitialValues(<String, Object>{});
+    dir = Directory.systemTemp.createTempSync('mm_places_clock');
+    PlaceStore.cipherOverride = MemoryRecordCipher.random();
+    PlaceStore.directoryOverride = dir;
+  });
+
+  tearDown(() {
+    PlaceStore.cipherOverride = null;
+    PlaceStore.directoryOverride = null;
+    if (dir.existsSync()) dir.deleteSync(recursive: true);
+  });
 
   test('a corrupt document is set aside instead of erased', () async {
     const String raw = '{"v":1,"rows":[{"id":"abcd1234",';
@@ -69,6 +88,7 @@ void main() {
     await reopened.load();
     expect(reopened.live(), isEmpty);
 
+    await reopened.flush();
     final SharedPreferences p = await SharedPreferences.getInstance();
     expect(p.getInt(markKey), isNotNull,
         reason: 'the mark is what makes expiry monotonic across launches');

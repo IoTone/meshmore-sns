@@ -1,12 +1,14 @@
 // Copyright (c) 2026 IoTone, Inc.
 // SPDX-License-Identifier: MIT
 import 'dart:convert';
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:meshmore_sns_app/meshcore/chat_message.dart';
+import 'package:meshmore_sns_app/meshcore/secure/record_cipher.dart';
 import 'package:meshmore_sns_app/places/place.dart';
 import 'package:meshmore_sns_app/places/place_id.dart';
 import 'package:meshmore_sns_app/places/place_store.dart';
@@ -48,13 +50,29 @@ Uint8List _bytes(String hex) => Uint8List.fromList(<int>[
 void main() {
   late DateTime now;
   late PlaceStore store;
+  late Directory dir;
 
   setUp(() {
     now = DateTime(2026, 11, 5, 12);
+    // Places are sealed now, so a persistence test needs the store's own seams
+    // rather than a preferences mock: the same arrangement `ChatStore`'s tests
+    // use.
+    dir = Directory.systemTemp.createTempSync('mm_places');
+    PlaceStore.cipherOverride = MemoryRecordCipher.random();
+    PlaceStore.directoryOverride = dir;
+    SharedPreferences.setMockInitialValues(<String, Object>{});
     store = PlaceStore(clock: () => now);
   });
 
-  tearDown(() => store.dispose());
+  tearDown(() async {
+    // The write is queued, not awaited: a test that deletes its temporary
+    // directory has to wait for it or the store writes into a removed path.
+    await store.flush();
+    store.dispose();
+    PlaceStore.cipherOverride = null;
+    PlaceStore.directoryOverride = null;
+    if (dir.existsSync()) dir.deleteSync(recursive: true);
+  });
 
   group('renewal and expiry (spec §6, §15.6, §15.9)', () {
     test('a renewal moves the row forward and makes no second pin', () {

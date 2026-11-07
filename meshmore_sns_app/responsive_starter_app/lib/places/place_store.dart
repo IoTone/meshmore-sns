@@ -1,11 +1,15 @@
 // Copyright (c) 2026 IoTone, Inc.
 // SPDX-License-Identifier: MIT
 import 'dart:convert';
+import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../meshcore/chat_message.dart';
+import '../meshcore/secure/encrypted_store.dart';
+import '../meshcore/secure/record_cipher.dart';
 import 'place.dart';
 import 'place_codec.dart';
 import 'place_confirmation.dart';
@@ -48,7 +52,33 @@ final class PlaceStore extends ChangeNotifier {
   })  : _clock = clock ?? DateTime.now,
         _isBlocked = isBlocked;
 
+  /// The pre-migration preferences key. Read once, moved into the sealed store,
+  /// then deleted: a place is where someone was, so it does not belong in a
+  /// world-readable preferences file while the history next to it is sealed.
   static const String _kKey = 'mm.places.v1';
+
+  /// Record name in the app's sealed store.
+  static const String recordName = 'places';
+
+  /// Set when the sealed store could not be opened at all, so the rows are
+  /// session-only. Distinct from [writeFailed], which is a write that did not
+  /// land, and from the corrupt-file case which keeps the bytes.
+  static final ValueNotifier<bool> sealedUnreadable = ValueNotifier<bool>(false);
+
+  /// Test seams, as in `ChatStore`: the app leaves both null and the real store
+  /// seals through the Android Keystore in the app-support directory.
+  @visibleForTesting
+  static RecordCipher? cipherOverride;
+  @visibleForTesting
+  static Directory? directoryOverride;
+
+  static EncryptedStore _sealedStore() {
+    final Directory? dir = directoryOverride;
+    return EncryptedStore(
+      cipher: cipherOverride,
+      directory: dir == null ? null : () async => dir,
+    );
+  }
 
   /// Rows kept. A busy channel produces a handful an hour and each lives at
   /// most a week, so this is a backstop against a corrupt or hostile stream,
@@ -337,6 +367,42 @@ final class PlaceStore extends ChangeNotifier {
 
   DateTime _highWater = DateTime.fromMillisecondsSinceEpoch(0);
 
+  /// Writes [document] to the sealed store and retires the preferences copy.
+  ///
+  /// The order matters: write, read back, compare, and only then delete. A
+  /// crash between the write and the verify leaves both copies, and the next
+  /// load prefers the sealed one — the failure mode is a duplicate, not a loss.
+  Future<void> _seal(String document, SharedPreferences p) async {
+    final Uint8List bytes = Uint8List.fromList(utf8.encode(document));
+    try {
+      await _sealedStore().write(recordName, bytes);
+      final Uint8List? back = await _sealedStore().read(recordName);
+      if (back == null || utf8.decode(back) != document) {
+        writeFailed.value = true;
+        return;
+      }
+      writeFailed.value = false;
+      sealedUnreadable.value = false;
+      if (p.containsKey(_kKey)) await p.remove(_kKey);
+    } on EncryptedStoreKeyLost {
+      // The key is gone: writing would seal under a new one while the old file
+      // stays unreadable. Keep everything where it is and say so.
+      sealedUnreadable.value = true;
+      writeFailed.value = true;
+    } on EncryptedStoreUnavailable {
+      sealedUnreadable.value = true;
+    } on EncryptedStoreCorrupt {
+      sealedUnreadable.value = true;
+      writeFailed.value = true;
+    } on FileSystemException {
+      // A directory that vanished, a full disk, a permission the platform took
+      // away: the rows are in memory, the file is not, and that is what
+      // [writeFailed] is for. Throwing here would surface as an unhandled
+      // async error with no screen to show it.
+      writeFailed.value = true;
+    }
+  }
+
   /// Now, never earlier than a time this store has already seen.
   DateTime get now {
     final DateTime wall = _clock();
@@ -361,13 +427,34 @@ final class PlaceStore extends ChangeNotifier {
   Future<void> load() async {
     final SharedPreferences p = await SharedPreferences.getInstance();
     corruptDocumentKept.value = false;
+    sealedUnreadable.value = false;
     final int storedMark = Prefs.readInt(p, _kWaterMark, fallback: 0);
     if (storedMark > 0) {
       _highWater =
           DateTime.fromMillisecondsSinceEpoch(storedMark, isUtc: false);
     }
     _observeWallClock();
-    final String? raw = p.getString(_kKey);
+    // Sealed first. The preferences copy is the pre-2026-11-05 format: read it
+    // once, move it into the sealed store, verify the move, and only then
+    // delete it.
+    String? raw;
+    try {
+      final Uint8List? sealed = await _sealedStore().read(recordName);
+      if (sealed != null) raw = utf8.decode(sealed);
+    } on EncryptedStoreKeyLost {
+      sealedUnreadable.value = true;
+    } on EncryptedStoreCorrupt {
+      sealedUnreadable.value = true;
+    } on EncryptedStoreUnavailable {
+      sealedUnreadable.value = true;
+    }
+    if (raw == null) {
+      final String? legacy = p.getString(_kKey);
+      if (legacy != null && legacy.isNotEmpty) {
+        raw = legacy;
+        await _seal(raw, p);
+      }
+    }
     _rows.clear();
     _seen.clear();
     _votes.clear();
@@ -423,6 +510,11 @@ final class PlaceStore extends ChangeNotifier {
     notifyListeners();
     final SharedPreferences p = await SharedPreferences.getInstance();
     await p.remove(_kKey);
+    try {
+      await _sealedStore().write(recordName, Uint8List(0));
+    } on EncryptedStoreUnavailable {
+      // No key: nothing was sealed, so there is nothing to clear.
+    }
   }
 
   // --- internals -----------------------------------------------------------
@@ -479,6 +571,14 @@ final class PlaceStore extends ChangeNotifier {
 
   Future<void>? _pending;
 
+  /// Waits for the queued write, for a caller that needs the file to be on disk
+  /// before it does something else — a test tearing its temporary directory
+  /// down, or the app finishing a write before it closes.
+  @visibleForTesting
+  Future<void> flush() async {
+    await _pending;
+  }
+
   /// One write at a time, coalescing every change made while it runs: the
   /// store is written on every arrival, and a burst of reports must not queue
   /// a write each.
@@ -487,8 +587,7 @@ final class PlaceStore extends ChangeNotifier {
       while (_dirty) {
         _dirty = false;
         final SharedPreferences p = await SharedPreferences.getInstance();
-        final bool ok = await Prefs.setString(p, _kKey, _encode());
-        writeFailed.value = !ok;
+        await _seal(_encode(), p);
         await _persistHighWater();
       }
     } finally {

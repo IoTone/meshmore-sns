@@ -514,7 +514,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get termsLocalBody =>
-      'Messages, contacts, channels and settings are stored on this device; message history is encrypted with a key this phone holds and cannot export. Places, the trail, coverage and geofences are kept in the clear on this device, because they are what the map draws while you use it. Cloud backup and device transfer are off for all of it, so a new phone does not silently inherit it. Deleting the app deletes that data.';
+      'Messages, contacts, channels and settings are stored on this device. Message history and places are encrypted with a key this phone holds and cannot export. The trail, coverage and geofences are kept in the clear on this device, because they are what the map draws while you use it. Cloud backup and device transfer are off for all of it, so a new phone does not silently inherit it. Deleting the app deletes that data.';
 
   @override
   String get termsSectionLeaves => 'WHAT LEAVES THE DEVICE';
