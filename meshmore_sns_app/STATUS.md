@@ -18,6 +18,17 @@ is one rule and one only, in both the dark and the paper ground, with no filled 
 five rules at the same five y positions in both grounds); selecting Studio Light keeps the Studio dashboard instead of
 swapping in the SEELE monolith.
 
+**Device-verified on that phone, 2026-11-07 (later)**: the contact table now
+survives a restart — the dashboard reads "193 known · contacts 193/350" straight
+after launch instead of an empty list while the radio reports its own count — and
+the Ping target sheet lists all 193, filters by name, and a row other than the
+first is selectable. A ping to **HELTEC-BASE** (a chat node, 0 hops) runs: the
+screen states "Asks for readings. The other radio answers only if it shares them
+with you", sends, and reports `1 sent · 0 replied · 1 lost`. That loss is the
+peer's telemetry permission, not the app: a chat node is pinged with a telemetry
+request, and a node that does not share readings answers nothing. A repeater
+target would use the status request instead.
+
 **Device-verified on that phone, 2026-11-05**: the app bar
 carries one title and the dashboard's is the app's own name; the tab strip's cell is labelled "Hyperlocal grid"; each
 group boundary draws one rule, not two; the status slab names the radio instead of repeating the chip's "linked"; the
