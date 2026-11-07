@@ -241,6 +241,7 @@ class MeshcoreController extends ChangeNotifier {
       _trackOwnLocationForTrail();
       _ingestKnown(f);
       _trackContactProbe(f);
+      _trackContactLifecycle(f);
       _ingestDm(f);
       _maybeDrain(f);
       _ingestNode(f);
@@ -4223,13 +4224,76 @@ class MeshcoreController extends ChangeNotifier {
     }
   }
 
+  /// The radio's own changes to its contact table.
+  ///
+  /// The table is the radio's, and the app's mirror is a cache of it. The
+  /// firmware pushes four events that change the table without the app asking:
+  /// it evicted a contact (0x8F, `PUSH_CODE_CONTACT_DELETED` — either the user
+  /// removed it or auto-add overwrote the oldest non-favourite), it stored a
+  /// newly advertised contact automatically (0x8A), it learned a new route
+  /// (0x81), or it could not store a new contact at all (0x90,
+  /// `PUSH_CODE_CONTACTS_FULL`). Ignoring them leaves the app showing contacts
+  /// the radio no longer has, missing ones it does, sending down routes the
+  /// radio replaced, and quietly failing to add anything because the table is
+  /// full.
+  void _trackContactLifecycle(MeshcoreInbound f) {
+    if (f is ContactDeletedFrame) {
+      final String hex = _hex(f.publicKey);
+      final Contact? gone = _contacts.remove(hex);
+      _saveContactsSoon();
+      if (_deviceContactCount != null && _deviceContactCount! > 0) {
+        _deviceContactCount = _deviceContactCount! - 1;
+      }
+      // A deleted contact may still be heard on air, so the node entry stays;
+      // it simply stopped being a synced contact, which is what makes it
+      // unaddressable for a DM or a telemetry request.
+      _pushEvent(MeshEvent(
+        kind: MeshEventKind.contact,
+        args: <String, String>{
+          'name': gone?.name.isNotEmpty == true
+              ? gone!.name
+              : hex.substring(0, 8),
+        },
+      ));
+    } else if (f is NewAdvertFrame) {
+      // Auto-add stored this node on the radio. Mirror it exactly as a
+      // streamed contact, or the app holds a contact the radio has and cannot
+      // offer it anywhere.
+      _ingestNode(ContactFrame(f.contact));
+    } else if (f is PathUpdatedFrame) {
+      // The radio replaced this contact's out_path. Re-read the record rather
+      // than guessing: the app draws routes and addresses sends by it.
+      final String hex = _hex(f.publicKey);
+      for (final Contact c in _contacts.values) {
+        if (_hex(c.publicKey) == hex) {
+          unawaited(send(MeshcoreFrameCodec.getContactByKey(c.publicKey))
+              .catchError((Object _) => Uint8List(0)));
+          break;
+        }
+      }
+    } else if (f is ContactsFullFrame) {
+      _contactsFull = true;
+    }
+  }
+
+  /// True while the radio has told us its contact table is full and it is not
+  /// overwriting the oldest entry, so every new advert is being dropped.
+  bool _contactsFull = false;
+  bool get contactsFull => _contactsFull;
+
+  void _clearContactsFull() {
+    if (!_contactsFull) return;
+    _contactsFull = false;
+  }
+
   void _ingestNode(MeshcoreInbound f) {
     final int now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
     if (f is ContactFrame) {
       final Contact c = f.contact;
-      // R56 — a key the user reconciled away. The radio still syncs this
-      // dead contact (no delete-contact command); drop it on arrival so
-      // it never reappears as a duplicate of the live key.
+      // R56 — a key the user reconciled away. The radio is asked to remove
+      // it (`CMD_REMOVE_CONTACT` 0x0F), but a sync can still deliver it before
+      // that lands, so it is dropped on arrival rather than reappearing as a
+      // duplicate of the live key.
       if (_superseded.contains(_hex(c.publicKey))) return;
       // Retain the raw contact record (path, flags, lastMod) so we can
       // re-send it byte-exactly via ADD_UPDATE_CONTACT when changing
@@ -4428,7 +4492,8 @@ class MeshcoreController extends ChangeNotifier {
       if (rows.isEmpty) return;
       // The user's reconciled-away keys are stale rows on the radio too, so
       // they are dropped on the way in for the same reason `_ingestNode`
-      // drops them: the firmware has no delete-contact command.
+      // drops them: a persisted table can still carry a key the radio has
+      // since removed.
       final Set<String> gone = await SupersededStore.load();
       bool added = false;
       for (final Contact c in rows) {
@@ -4617,6 +4682,8 @@ class MeshcoreController extends ChangeNotifier {
     try {
       await send(MeshcoreFrameCodec.removeContact(pub));
       _contacts.remove(hex);
+      _clearContactsFull();
+      _saveContactsSoon();
       notifyListeners();
     } catch (_) {
       _emitTaskError('removeContact');
@@ -4642,6 +4709,8 @@ class MeshcoreController extends ChangeNotifier {
     _contacts.clear();
     _probedContacts.clear();
     _deviceContactCount = 0;
+    _clearContactsFull();
+    _saveContactsSoon();
     notifyListeners();
     return n;
   }

@@ -35,9 +35,17 @@ class _TraceScreenState extends State<TraceScreen> {
     super.dispose();
   }
 
-  List<int>? get _path => _manual
+  /// The radio's bytes-per-hop (`DEVICE_INFO` `path_hash_mode + 1`), so the
+  /// hash this screen appends is the width the mesh is actually using.
+  int _hashSize(MeshcoreController mc) =>
+      ((mc.deviceInfo?.pathHashMode ?? 0) + 1).clamp(1, 3);
+
+  List<int>? _pathFor(MeshcoreController mc) => _manual
       ? parseManualPath(_manualCtrl.text)
-      : (_node == null ? null : tracePathFor(_node!, roundTrip: _roundTrip));
+      : (_node == null
+          ? null
+          : tracePathFor(_node!,
+              roundTrip: _roundTrip, hashSize: _hashSize(mc)));
 
   static String _hex(List<int> p) =>
       p.map((int b) => b.toRadixString(16).padLeft(2, '0')).join(',');
@@ -59,7 +67,7 @@ class _TraceScreenState extends State<TraceScreen> {
     final AppLocalizations l = AppLocalizations.of(context);
     final MeshcoreController mc = context.watch<MeshcoreController>();
     final TraceTool t = context.read<ToolsController>().trace;
-    final List<int>? path = _path;
+    final List<int>? path = _pathFor(mc);
     return ToolPage(
       title: l.toolTraceName,
       tool: t,
@@ -86,7 +94,8 @@ class _TraceScreenState extends State<TraceScreen> {
                       final DiscoveredNode? n = await pickContact(
                         context,
                         mc,
-                        enabled: (DiscoveredNode n) => tracePathFor(n) != null,
+                        enabled: (DiscoveredNode n) =>
+                            tracePathFor(n, hashSize: _hashSize(mc)) != null,
                         reason: l.traceNoRoute,
                       );
                       if (n != null && mounted) setState(() => _node = n);

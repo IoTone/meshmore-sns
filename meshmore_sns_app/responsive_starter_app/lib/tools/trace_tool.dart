@@ -14,15 +14,31 @@ import 'mesh_tool.dart';
 /// - with [roundTrip], the chain is mirrored so the packet comes back
 ///   to us and our own radio reports the last hop: `a b` → `a b a`.
 ///
-/// Null when the route is unknown (flood / advert-only) or when there
-/// is no repeater between us and a chat node.
-List<int>? tracePathFor(DiscoveredNode n, {bool roundTrip = true}) {
+/// Null when the route is unknown (flood / advert-only).
+///
+/// [hashSize] is the radio's negotiated bytes-per-hop, from `DEVICE_INFO`
+/// (`path_hash_mode + 1`, 1–3). A path is a sequence of truncated public keys
+/// at *that* width, so appending one byte on a mesh configured for two is a
+/// packet addressed to nobody. It is one byte only on a default mesh, which is
+/// why a hardcoded byte survived.
+///
+/// A **direct neighbour** is a legitimate target, not a missing one: a contact
+/// whose `out_path_len` is 0 has no route bytes because it is one hop away, and
+/// a trace to it is addressed with its own hash as a single-hop path. Refusing
+/// it (the guard this replaced) made "trace the node next to me" impossible,
+/// which is the one case a person can actually verify by hand.
+List<int>? tracePathFor(DiscoveredNode n,
+    {bool roundTrip = true, int hashSize = 1}) {
   final List<int>? route = n.outPathHashes;
   if (route == null) return null;
   final bool relays = n.type == kAdvTypeRepeater || n.type == kAdvTypeRoom;
+  final int hs = hashSize.clamp(1, 3);
+  final List<int> ownHash = n.pubKeyHex.length >= hs * 2
+      ? bytesOfHex(n.pubKeyHex.substring(0, hs * 2)).toList()
+      : <int>[];
   final List<int> out = <int>[
     ...route,
-    if (relays) int.parse(n.pubKeyHex.substring(0, 2), radix: 16),
+    if (relays || route.isEmpty) ...ownHash,
   ];
   if (out.isEmpty) return null;
   if (!roundTrip || out.length == 1) return out;

@@ -234,7 +234,13 @@ class _DeviceContactsScreenState extends State<DeviceContactsScreen> {
     ];
     final int? max = mc.maxContacts;
     final int? count = mc.deviceContactCount;
-    final bool full = (count != null && max != null && count >= max);
+    // Two independent signals, either of which is enough: the counts disagree
+    // (the radio's DEVICE_INFO sends the limit as a byte that means twice its
+    // value, so a full table can read as one short), and the radio has actually
+    // pushed `PUSH_CODE_CONTACTS_FULL` (0x90). A table that is full silently
+    // drops every new advert, so this is the one place a user can see it.
+    final bool full =
+        mc.contactsFull || (count != null && max != null && count >= max);
     final List<Contact> shown = _shown(contacts, _filter.text);
 
     return Scaffold(

@@ -115,10 +115,35 @@ void main() {
           <int>[0xa1, 0x7f, 0xa1]);
     });
 
-    test('nothing to trace without a route, or with no repeater', () {
+    test('a flood-only route cannot be addressed', () {
+      // `outPathHashes == null` is the flood sentinel: there is no path to
+      // put in the packet, so there is nothing to trace.
       expect(tracePathFor(_node(route: null)), isNull);
-      expect(tracePathFor(_node(type: kAdvTypeChat, route: <int>[])),
-          isNull);
+    });
+
+    test('a direct neighbour is one hop, traced by its own hash', () {
+      // `out_path_len == 0` means "in radio range", not "no route". A trace to
+      // it is addressed with the neighbour's own hash, which is what the radio
+      // matches on. The guard this replaced refused it, so tracing the node
+      // next to you -- the one case a person can check by hand -- was the one
+      // case the tool could not do.
+      final DiscoveredNode n = _node(type: kAdvTypeChat, route: <int>[]);
+      final String first = n.pubKeyHex.substring(0, 2);
+      expect(tracePathFor(n, roundTrip: false),
+          <int>[int.parse(first, radix: 16)]);
+    });
+
+    test('the hop width is the radio\'s, not always one byte', () {
+      // A path is a run of truncated public keys at the negotiated width
+      // (`DEVICE_INFO` `path_hash_mode + 1`). Appending one byte on a mesh
+      // configured for two addresses a node that does not exist.
+      final DiscoveredNode n = _node(type: kAdvTypeChat, route: <int>[]);
+      final List<int> two =
+          bytesOfHex(n.pubKeyHex.substring(0, 4)).toList();
+      expect(tracePathFor(n, roundTrip: false, hashSize: 2), two);
+      expect(tracePathFor(n, roundTrip: false, hashSize: 3)!.length, 3);
+      expect(tracePathFor(n, roundTrip: false, hashSize: 9)!.length, 3,
+          reason: 'three bytes is the ceiling the firmware enforces');
     });
 
     test('manual paths', () {
