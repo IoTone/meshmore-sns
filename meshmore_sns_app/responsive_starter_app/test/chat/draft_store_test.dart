@@ -78,4 +78,16 @@ void main() {
     await DraftStore.save(ch(1), '   ');
     expect(await DraftStore.forRadio('aabbccdd'), isEmpty);
   });
+
+  test('a forward appends to what is already in the composer', () async {
+    // `forwardMessage` reads the target draft before writing, so a half-typed
+    // sentence in the destination is not thrown away by the forward.
+    await DraftStore.save(ch(1), 'half typed');
+    final String existing = await DraftStore.read(ch(1));
+    final String forwarded = 'a message worth passing on';
+    await DraftStore.save(
+        ch(1), existing.trim().isEmpty ? forwarded : '$existing\n$forwarded');
+    expect(await DraftStore.read(ch(1)),
+        'half typed\na message worth passing on');
+  });
 }

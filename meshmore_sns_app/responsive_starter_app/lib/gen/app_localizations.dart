@@ -10221,6 +10221,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Signed out.'**
   String get repeaterSignOutDone;
+
+  /// No description provided for @actionForward.
+  ///
+  /// In en, this message translates to:
+  /// **'Forward'**
+  String get actionForward;
+
+  /// No description provided for @actionForwardSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Into another conversation\'s composer.'**
+  String get actionForwardSub;
+
+  /// No description provided for @forwardNoTarget.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing to forward into: no channel and no contact.'**
+  String get forwardNoTarget;
+
+  /// No description provided for @forwardDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Forwarded into that thread\'s composer, where you can edit it before sending.'**
+  String get forwardDone;
+
+  /// No description provided for @forwardFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not write the draft: the sealed store is not open on this device.'**
+  String get forwardFailed;
 }
 
 class _AppLocalizationsDelegate

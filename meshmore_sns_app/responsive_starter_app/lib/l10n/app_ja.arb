@@ -2633,5 +2633,10 @@
   "repeaterSignedIn": "サインインしました（権限 0x{perm}）",
   "repeaterRefused": "リピーターがそのパスワードを拒否しました。",
   "repeaterNoAnswer": "応答がありません。リピーターが届かない可能性があります。",
-  "repeaterSignOutDone": "サインアウトしました。"
+  "repeaterSignOutDone": "サインアウトしました。",
+  "actionForward": "転送",
+  "actionForwardSub": "別の会話の入力欄に移します。",
+  "forwardNoTarget": "転送先がありません。チャンネルも連絡先もありません。",
+  "forwardDone": "その会話の入力欄に入れました。送信前に編集できます。",
+  "forwardFailed": "下書きを書けませんでした。この端末では暗号化ストアを開けません。"
 }

@@ -2,17 +2,27 @@
 // SPDX-License-Identifier: MIT
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:go_router/go_router.dart';
 
+import 'package:meshcore/meshcore.dart' show kAdvTypeChat;
+
+import '../bot/bot_scope.dart';
 import '../gen/app_localizations.dart';
 import '../meshcore/chat_message.dart';
+import '../meshcore/discovered_node.dart';
 import '../meshcore/failure.dart';
+import '../meshcore/meshcore_controller.dart';
 import '../screens/delivery_status_icon.dart';
+// The conversation picker is a widget library rather than a screen, and a
+// forward is the same question a tool asks: which conversation?
+import '../screens/tools/tool_pickers.dart';
+import 'draft_store.dart';
 
 /// R20 / U11 — per-message Reply / Copy / Delete actions (+ R76 Retry
 /// on a failed outgoing row) for chat
 /// rows (channel chat **and** DM thread). Long-press a row OR tap
 /// the trailing affordance to open this sheet.
-enum ChatAction { reply, copy, delete, retry, report }
+enum ChatAction { reply, copy, forward, delete, retry, report }
 
 /// Modal bottom sheet listing the three actions. Returns the chosen
 /// action (or null on dismiss). The caller wires the consequences:
@@ -52,16 +62,29 @@ Future<ChatAction?> showChatActions(BuildContext context, ChatMessage m) async {
               title: Text(l.actionRetry),
               subtitle: Text(_retrySubtitle(l, m)),
               onTap: () => Navigator.pop(ctx, ChatAction.retry),
+            trailing: const Icon(Icons.chevron_right, size: 18),
             ),
           ListTile(
             leading: const Icon(Icons.reply),
             title: Text(l.actionReply),
             onTap: () => Navigator.pop(ctx, ChatAction.reply),
+            trailing: const Icon(Icons.chevron_right, size: 18),
           ),
           ListTile(
             leading: const Icon(Icons.copy_outlined),
             title: Text(l.actionCopy),
             onTap: () => Navigator.pop(ctx, ChatAction.copy),
+            trailing: const Icon(Icons.chevron_right, size: 18),
+          ),
+          // Forward moves the words into another thread's composer rather than
+          // sending them for the user: a forward is an ordinary send they can
+          // edit or cancel, which is also what makes it safe on a shared mesh.
+          ListTile(
+            leading: const Icon(Icons.forward_to_inbox_outlined),
+            title: Text(l.actionForward),
+            subtitle: Text(l.actionForwardSub),
+            onTap: () => Navigator.pop(ctx, ChatAction.forward),
+            trailing: const Icon(Icons.chevron_right, size: 18),
           ),
           // A report is not a block and not moderation: it is a bundle the
           // reader sends wherever they choose, so it sits beside Copy rather
@@ -72,6 +95,7 @@ Future<ChatAction?> showChatActions(BuildContext context, ChatMessage m) async {
               title: Text(l.reportAction),
               subtitle: Text(l.reportActionSub),
               onTap: () => Navigator.pop(ctx, ChatAction.report),
+            trailing: const Icon(Icons.chevron_right, size: 18),
             ),
           ListTile(
             leading: Icon(Icons.delete_outline,
@@ -79,6 +103,7 @@ Future<ChatAction?> showChatActions(BuildContext context, ChatMessage m) async {
             title: Text(l.actionDeleteLocal),
             subtitle: Text(l.actionDeleteLocalSub),
             onTap: () => Navigator.pop(ctx, ChatAction.delete),
+            trailing: const Icon(Icons.chevron_right, size: 18),
           ),
           const SizedBox(height: 4),
         ],
@@ -121,6 +146,68 @@ String buildReplyQuote(ChatMessage m) {
   String t = m.text.replaceAll('\n', ' ').trim();
   if (t.length > 80) t = '${t.substring(0, 80)}…';
   return '> $t\n\n';
+}
+
+/// Move a message's words into another conversation's composer.
+///
+/// Forwarding is a *draft*, not a send: the target thread opens with the text
+/// in its composer, where the user can edit it, add a line of their own or
+/// throw it away. That is also the safe shape on a shared mesh — nothing leaves
+/// the phone because a menu row was tapped.
+///
+/// Returns true when the draft was written and the thread was opened.
+Future<bool> forwardMessage(
+    BuildContext context, MeshcoreController mc, ChatMessage m) async {
+  final AppLocalizations l = AppLocalizations.of(context);
+  final ScaffoldMessengerState? sm = ScaffoldMessenger.maybeOf(context);
+  final bool anyChannel = mc.channels.isNotEmpty;
+  final String? own = mc.ownPubKeyHex;
+  final bool anyPeer = mc.nodes.any((DiscoveredNode n) =>
+      n.pubKeyHex != own &&
+      n.type == kAdvTypeChat &&
+      mc.isSyncedContact(n.pubKeyHex));
+  if (!anyChannel && !anyPeer) {
+    sm
+      ?..clearSnackBars()
+      ..showSnackBar(SnackBar(content: Text(l.forwardNoTarget)));
+    return false;
+  }
+  final (BotScope, String)? dest = await pickConversation(context, mc);
+  if (dest == null || !context.mounted) return false;
+  final BotScope scope = dest.$1;
+  final String key = switch (scope) {
+    ChannelScope(:final int idx) => DraftStore.keyFor(
+        DraftStore.radioScope(mc.selfInfo?.publicKey),
+        channelIdx: idx),
+    DmScope(:final String pubKeyHex) => DraftStore.keyFor(
+        DraftStore.radioScope(mc.selfInfo?.publicKey),
+        peerHex: pubKeyHex),
+  };
+  try {
+    // Append rather than replace, so forwarding into a thread that already has
+    // half a sentence does not throw that sentence away.
+    final String existing = await DraftStore.read(key);
+    final String text =
+        existing.trim().isEmpty ? m.text : '$existing\n${m.text}';
+    await DraftStore.save(key, text);
+  } catch (_) {
+    sm
+      ?..clearSnackBars()
+      ..showSnackBar(SnackBar(content: Text(l.forwardFailed)));
+    return false;
+  }
+  if (!context.mounted) return false;
+  switch (scope) {
+    case ChannelScope(:final int idx):
+      mc.setActiveChannel(idx);
+    case DmScope(:final String pubKeyHex):
+      await context.push('/dm/$pubKeyHex');
+  }
+  if (!context.mounted) return true;
+  sm
+    ?..clearSnackBars()
+    ..showSnackBar(SnackBar(content: Text(l.forwardDone)));
+  return true;
 }
 
 /// Confirm + delete dialog. Caller passes a deletion closure (so

@@ -6082,4 +6082,22 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get repeaterSignOutDone => 'Signed out.';
+
+  @override
+  String get actionForward => 'Forward';
+
+  @override
+  String get actionForwardSub => 'Into another conversation\'s composer.';
+
+  @override
+  String get forwardNoTarget =>
+      'Nothing to forward into: no channel and no contact.';
+
+  @override
+  String get forwardDone =>
+      'Forwarded into that thread\'s composer, where you can edit it before sending.';
+
+  @override
+  String get forwardFailed =>
+      'Could not write the draft: the sealed store is not open on this device.';
 }

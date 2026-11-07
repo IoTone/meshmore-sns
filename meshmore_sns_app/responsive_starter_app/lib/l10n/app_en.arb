@@ -4092,5 +4092,10 @@
   "repeaterSignedIn": "Signed in (permissions 0x{perm})",
   "repeaterRefused": "The repeater refused that password.",
   "repeaterNoAnswer": "No answer. The repeater may be out of reach.",
-  "repeaterSignOutDone": "Signed out."
+  "repeaterSignOutDone": "Signed out.",
+  "actionForward": "Forward",
+  "actionForwardSub": "Into another conversation's composer.",
+  "forwardNoTarget": "Nothing to forward into: no channel and no contact.",
+  "forwardDone": "Forwarded into that thread's composer, where you can edit it before sending.",
+  "forwardFailed": "Could not write the draft: the sealed store is not open on this device."
 }

@@ -5839,4 +5839,19 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get repeaterSignOutDone => 'サインアウトしました。';
+
+  @override
+  String get actionForward => '転送';
+
+  @override
+  String get actionForwardSub => '別の会話の入力欄に移します。';
+
+  @override
+  String get forwardNoTarget => '転送先がありません。チャンネルも連絡先もありません。';
+
+  @override
+  String get forwardDone => 'その会話の入力欄に入れました。送信前に編集できます。';
+
+  @override
+  String get forwardFailed => '下書きを書けませんでした。この端末では暗号化ストアを開けません。';
 }

@@ -531,6 +531,9 @@ class _ChatScreenState extends State<ChatScreen>
       case ChatAction.copy:
         await copyMessageToClipboard(context, m);
         break;
+      case ChatAction.forward:
+        await forwardMessage(context, mc, m);
+        break;
       case ChatAction.retry:
         final RetryOutcome r = await mc.retryMessageOutcome(m.id);
         if (r == RetryOutcome.sentAfterPathReset && mounted) {

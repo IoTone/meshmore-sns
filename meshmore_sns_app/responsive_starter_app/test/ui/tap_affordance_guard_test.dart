@@ -67,7 +67,7 @@ void main() {
 
   /// Rows that open a choice or a page with nothing in the trailing slot.
   const Map<String, int> pickerRows = <String, int>{
-    'lib/chat/chat_actions.dart': 5,
+    'lib/chat/chat_actions.dart': 0,
     'lib/screens/location_settings_screen.dart': 2,
     'lib/screens/network_detail_screen.dart': 1,
     'lib/screens/node_detail_sheet.dart': 2,
