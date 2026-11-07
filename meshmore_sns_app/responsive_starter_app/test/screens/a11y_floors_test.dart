@@ -187,11 +187,13 @@ void main() {
       await tc.setPreset(preset);
       await t.pump();
       for (final String view in views) {
-        if (view != 'Dashboard') {
-          await t.tap(find.byTooltip(view));
-          for (int i = 0; i < 12; i++) {
-            await t.pump(const Duration(milliseconds: 100));
-          }
+        // Every view is TAPPED, the dashboard included: skipping it left the
+        // view from the previous iteration on screen, so after the first preset
+        // the dashboard was never measured again — which is how three overflow
+        // bugs in one skin's dashboard survived this test.
+        await t.tap(find.byTooltip(view));
+        for (int i = 0; i < 12; i++) {
+          await t.pump(const Duration(milliseconds: 100));
         }
         expect(t.takeException(), isNull,
             reason: '${preset.name} $view overflowed at the floor');
@@ -286,6 +288,43 @@ void main() {
     '/checkin',
     '/pair',
   ];
+  // The routes a user reaches least often are the ones nobody re-reads on a new
+  // skin, and two of them are prose on paper. Each is rendered in every preset
+  // at the floor, with the transition settled before the assertion: a route
+  // measured mid-animation reports the outgoing screen's constraints.
+  const List<String> deepRoutes = <String>[
+    '/docs/protocol',
+    '/settings/networks',
+    '/settings/about',
+    '/settings/docs',
+  ];
+  for (final String route in deepRoutes) {
+    testWidgets('$route holds the floor on every preset',
+        (WidgetTester t) async {
+      addTearDown(() => appRouter.go('/'));
+      for (final MmThemePreset preset in MmThemePreset.values) {
+        await _pumpShell(t);
+        final ThemeController tc = Provider.of<ThemeController>(
+            t.element(find.byType(MyApp)),
+            listen: false);
+        await tc.setPreset(preset);
+        for (int i = 0; i < 8; i++) {
+          await t.pump(const Duration(milliseconds: 100));
+        }
+        appRouter.go(route);
+        for (int i = 0; i < 16; i++) {
+          await t.pump(const Duration(milliseconds: 100));
+        }
+        expect(t.takeException(), isNull,
+            reason: '$route overflowed at 320 dp / 200 % on ${preset.name}');
+        appRouter.go('/');
+        for (int i = 0; i < 8; i++) {
+          await t.pump(const Duration(milliseconds: 100));
+        }
+      }
+    });
+  }
+
   for (final String route in routes) {
     testWidgets('$route survives 320 dp at 200 % text',
         (WidgetTester t) async {

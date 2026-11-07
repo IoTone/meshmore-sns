@@ -208,8 +208,12 @@ class _Block extends StatelessWidget {
         color.computeLuminance() > 0.45 ? const Color(0xFF101014) : skin.color.fg;
     final Color sub = ink.withValues(alpha: 0.7);
     return Container(
-      height: 116,
-      padding: EdgeInsets.fromLTRB(skin.space.rowInset, skin.space.rowGap, skin.space.rowInset, skin.space.rowGap),
+      // A floor, not a fixed height: the block grid reads as equal blocks at
+      // normal text, and at 200 % the label, the numeral and the accent need
+      // more room than 116 dp, which overflowed by 52 px on a 320 dp phone.
+      constraints: const BoxConstraints(minHeight: 116),
+      padding: EdgeInsets.fromLTRB(skin.space.rowInset, skin.space.rowGap,
+          skin.space.rowInset, skin.space.rowGap),
       decoration: BoxDecoration(
         color: outline ? skin.color.surface : color,
         border: outline ? Border.all(color: color, width: 1.5) : null,
@@ -223,7 +227,10 @@ class _Block extends StatelessWidget {
                   fontSize: skin.type.sizeSm,
                   letterSpacing: 1.5,
                   fontWeight: FontWeight.w700)),
-          const Spacer(),
+          // A gap, not a Spacer: with a height floor instead of a fixed
+          // height the column has no bounded space to distribute, and a flex
+          // child there is a layout error rather than a layout.
+          SizedBox(height: skin.space.labelToControl),
           Text(value,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
@@ -280,14 +287,21 @@ class _SubBrandBlock extends StatelessWidget {
         children: <Widget>[
           Row(
             children: <Widget>[
-              Text('[$brand·NET]',
-                  style: TextStyle(
-                      color: ink,
-                      fontFamily: skin.type.monoFamily,
-                      fontSize: skin.type.size(14),
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 1)),
-              const Spacer(),
+              // The brand tag is unbounded text in a Row: at 200 % on a 320 dp
+              // phone it pushed 229 px past the edge. It takes what is left and
+              // ellipsises; the katakana tag keeps its own room.
+              Expanded(
+                child: Text('[$brand·NET]',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                        color: ink,
+                        fontFamily: skin.type.monoFamily,
+                        fontSize: skin.type.size(14),
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 1)),
+              ),
+              SizedBox(width: skin.space.rowGap),
               Text(kata,
                   style: TextStyle(
                       color: ink.withValues(alpha: 0.75),
@@ -299,14 +313,23 @@ class _SubBrandBlock extends StatelessWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: <Widget>[
-              Text(channel,
-                  style: TextStyle(
-                      color: ink,
-                      fontFamily: skin.type.monoFamily,
-                      fontSize: skin.type.size(30),
-                      height: 1.0,
-                      fontWeight: FontWeight.w800)),
-              const Spacer(),
+              // The channel name is the loudest thing in this skin, and at
+              // 200 % it is wider than the phone. It scales down inside the
+              // room it has rather than pushing the activity bars off the card.
+              Expanded(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(channel,
+                      style: TextStyle(
+                          color: ink,
+                          fontFamily: skin.type.monoFamily,
+                          fontSize: skin.type.size(30),
+                          height: 1.0,
+                          fontWeight: FontWeight.w800)),
+                ),
+              ),
+              SizedBox(width: skin.space.rowGap),
               Text(bars,
                   style: TextStyle(
                       color: ink, fontSize: skin.type.size(18), letterSpacing: 1)),
