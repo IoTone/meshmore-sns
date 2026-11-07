@@ -3020,7 +3020,7 @@
   "@failureStorageFull": {},
   "failureRadioSilent": "The radio accepted the request but did not answer in time. It may still have carried it out; check the radio before retrying.",
   "@failureRadioSilent": {},
-  "diagnosticsRadioChangedLine": "This radio is not the one this app last used ({previous} then, {current} now). Its history is not carried over.",
+  "diagnosticsRadioChangedLine": "This radio is not the one this app last used ({previous} then, {current} now). Your history, tags, favourites and blocks stay, because they belong to the app. The contact table, channels and radio settings come from the radio, so they are this one's.",
   "@diagnosticsRadioChangedLine": {
     "placeholders": {
       "previous": {

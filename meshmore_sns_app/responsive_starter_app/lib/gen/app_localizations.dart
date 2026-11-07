@@ -7819,7 +7819,7 @@ abstract class AppLocalizations {
   /// No description provided for @diagnosticsRadioChangedLine.
   ///
   /// In en, this message translates to:
-  /// **'This radio is not the one this app last used ({previous} then, {current} now). Its history is not carried over.'**
+  /// **'This radio is not the one this app last used ({previous} then, {current} now). Your history, tags, favourites and blocks stay, because they belong to the app. The contact table, channels and radio settings come from the radio, so they are this one\'s.'**
   String diagnosticsRadioChangedLine(String previous, String current);
 
   /// No description provided for @diagnosticsRadioChangedAccept.

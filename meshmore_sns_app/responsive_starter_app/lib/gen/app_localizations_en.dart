@@ -4574,7 +4574,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String diagnosticsRadioChangedLine(String previous, String current) {
-    return 'This radio is not the one this app last used ($previous then, $current now). Its history is not carried over.';
+    return 'This radio is not the one this app last used ($previous then, $current now). Your history, tags, favourites and blocks stay, because they belong to the app. The contact table, channels and radio settings come from the radio, so they are this one\'s.';
   }
 
   @override

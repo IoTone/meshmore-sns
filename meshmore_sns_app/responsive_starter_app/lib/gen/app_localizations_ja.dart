@@ -4405,7 +4405,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String diagnosticsRadioChangedLine(String previous, String current) {
-    return 'この無線機は前回まで使っていたものではありません(前回 $previous、今回 $current)。履歴は引き継がれません。';
+    return 'この無線機は前回まで使っていたものではありません(前回 $previous、今回 $current)。履歴・タグ・お気に入り・ブロックはアプリ側のものなので残ります。連絡先テーブル・チャンネル・無線設定は無線機側のものなので、この無線機の内容になります。';
   }
 
   @override
