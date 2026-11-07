@@ -8,7 +8,8 @@ import 'package:meshmore_sns_app/notifications/channel_notification_prefs.dart';
 import 'package:meshmore_sns_app/notifications/message_notification.dart';
 import 'package:meshmore_sns_app/notifications/notification_focus.dart';
 import 'package:meshmore_sns_app/notifications/notification_service.dart';
-import 'package:meshmore_sns_app/notifications/notifier.dart';
+
+import '../support/fake_notifier.dart';
 
 /// D8.20 / D8.13 — what becomes a notification, and what must not.
 ///
