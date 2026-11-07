@@ -2638,5 +2638,9 @@
   "actionForwardSub": "別の会話の入力欄に移します。",
   "forwardNoTarget": "転送先がありません。チャンネルも連絡先もありません。",
   "forwardDone": "その会話の入力欄に入れました。送信前に編集できます。",
-  "forwardFailed": "下書きを書けませんでした。この端末では暗号化ストアを開けません。"
+  "forwardFailed": "下書きを書けませんでした。この端末では暗号化ストアを開けません。",
+  "placeConfirmToSender": "送信者に確認を送る",
+  "placeRefuteToSender": "送信者に否定を送る",
+  "placeSentDirect": "送信者にダイレクトメッセージで送りました。",
+  "placeNoSenderKey": "この場所には鍵が付いていないため、直接宛先にできません。"
 }

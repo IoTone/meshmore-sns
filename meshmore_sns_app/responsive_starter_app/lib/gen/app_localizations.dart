@@ -10251,6 +10251,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Could not write the draft: the sealed store is not open on this device.'**
   String get forwardFailed;
+
+  /// No description provided for @placeConfirmToSender.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm to the sender'**
+  String get placeConfirmToSender;
+
+  /// No description provided for @placeRefuteToSender.
+  ///
+  /// In en, this message translates to:
+  /// **'Refute to the sender'**
+  String get placeRefuteToSender;
+
+  /// No description provided for @placeSentDirect.
+  ///
+  /// In en, this message translates to:
+  /// **'Sent to the sender as a direct message.'**
+  String get placeSentDirect;
+
+  /// No description provided for @placeNoSenderKey.
+  ///
+  /// In en, this message translates to:
+  /// **'This place came without a key, so there is nobody to address directly.'**
+  String get placeNoSenderKey;
 }
 
 class _AppLocalizationsDelegate

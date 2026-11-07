@@ -1,5 +1,7 @@
 // Copyright (c) 2026 IoTone, Inc.
 // SPDX-License-Identifier: MIT
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 
 import '../gen/app_localizations.dart';
@@ -29,6 +31,7 @@ class PlaceDetailSheet extends StatelessWidget {
     this.probe = const SystemDirectionsProbe(),
     this.photos,
     this.onFetchPhoto,
+    this.sendDirect,
   });
 
   final Place place;
@@ -47,6 +50,11 @@ class PlaceDetailSheet extends StatelessWidget {
   final PlaceComposer? composer;
   final DirectionsProbe probe;
 
+  /// Sends a direct message to one key, or null when there is no radio. The
+  /// key-bound confirm/refute pair is hidden without it: a reply that cannot be
+  /// addressed is not offered.
+  final Future<bool> Function(Uint8List key, String text)? sendDirect;
+
   static Future<void> show(
     BuildContext context, {
     required Place place,
@@ -55,6 +63,7 @@ class PlaceDetailSheet extends StatelessWidget {
     DirectionsProbe probe = const SystemDirectionsProbe(),
     PlacePhotos? photos,
     Future<PlacePhotoFetch?> Function()? onFetchPhoto,
+    Future<bool> Function(Uint8List key, String text)? sendDirect,
   }) =>
       showModalBottomSheet<void>(
         context: context,
@@ -66,6 +75,7 @@ class PlaceDetailSheet extends StatelessWidget {
           probe: probe,
           photos: photos,
           onFetchPhoto: onFetchPhoto,
+          sendDirect: sendDirect,
         ),
       );
 
@@ -188,6 +198,25 @@ class PlaceDetailSheet extends StatelessWidget {
                     child: Text(l.placeRefuteAction),
                   ),
                 ],
+                // A key-bound reply, when there is a key to address: the same
+                // grammar over a direct message, so the tally records it as
+                // binding rather than as a name somebody typed.
+                if (composer != null &&
+                    sendDirect != null &&
+                    place.reporterKey != null &&
+                    place.isLiveAt(now)) ...<Widget>[
+                  OutlinedButton(
+                    key: const ValueKey<String>('place-confirm-sender'),
+                    onPressed: () =>
+                        _replyKeyed(context, PlaceReplyKind.confirm),
+                    child: Text(l.placeConfirmToSender),
+                  ),
+                  OutlinedButton(
+                    key: const ValueKey<String>('place-refute-sender'),
+                    onPressed: () => _replyKeyed(context, PlaceReplyKind.refute),
+                    child: Text(l.placeRefuteToSender),
+                  ),
+                ],
                 TextButton.icon(
                   key: const ValueKey<String>('place-directions'),
                   icon: const Icon(Icons.directions_outlined, size: 18),
@@ -219,6 +248,37 @@ class PlaceDetailSheet extends StatelessWidget {
           );
     Navigator.of(context).pop();
     ScaffoldMessenger.maybeOf(context)?.showSnackBar(SnackBar(content: Text(text)));
+  }
+
+  /// The key-bound pair: the same grammar, addressed to the reporter's key.
+  ///
+  /// A channel reply carries a *name*, which the tally can only record as
+  /// claimed. A direct message is addressed to a key, so the reply binds to
+  /// this node and cannot be sent in someone else's name. It shares the place
+  /// budget, so it is not a way around the rate limit.
+  Future<void> _replyKeyed(BuildContext context, PlaceReplyKind kind) async {
+    final AppLocalizations l = AppLocalizations.of(context);
+    final PlaceComposer? c = composer;
+    final Future<bool> Function(Uint8List, String)? send = sendDirect;
+    if (c == null || send == null) return;
+    final PlaceReplySendResult? result = await c.replyKeyed(place,
+        kind: kind, callsign: c.reporterNameForReply, sendDirect: send);
+    if (!context.mounted) return;
+    final String text = result == null
+        ? l.placeNoSenderKey
+        : result.sent
+            ? l.placeSentDirect
+            : l.placeBudgetRefused(
+                6,
+                MaterialLocalizations.of(context).formatTimeOfDay(
+                  TimeOfDay.fromDateTime(result.allowedAt ?? DateTime.now()),
+                  alwaysUse24HourFormat:
+                      MediaQuery.alwaysUse24HourFormatOf(context),
+                ),
+              );
+    Navigator.of(context).pop();
+    ScaffoldMessenger.maybeOf(context)
+        ?.showSnackBar(SnackBar(content: Text(text)));
   }
 
   Future<void> _directions(BuildContext context) async {

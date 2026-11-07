@@ -6100,4 +6100,17 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get forwardFailed =>
       'Could not write the draft: the sealed store is not open on this device.';
+
+  @override
+  String get placeConfirmToSender => 'Confirm to the sender';
+
+  @override
+  String get placeRefuteToSender => 'Refute to the sender';
+
+  @override
+  String get placeSentDirect => 'Sent to the sender as a direct message.';
+
+  @override
+  String get placeNoSenderKey =>
+      'This place came without a key, so there is nobody to address directly.';
 }

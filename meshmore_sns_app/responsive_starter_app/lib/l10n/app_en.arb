@@ -4097,5 +4097,9 @@
   "actionForwardSub": "Into another conversation's composer.",
   "forwardNoTarget": "Nothing to forward into: no channel and no contact.",
   "forwardDone": "Forwarded into that thread's composer, where you can edit it before sending.",
-  "forwardFailed": "Could not write the draft: the sealed store is not open on this device."
+  "forwardFailed": "Could not write the draft: the sealed store is not open on this device.",
+  "placeConfirmToSender": "Confirm to the sender",
+  "placeRefuteToSender": "Refute to the sender",
+  "placeSentDirect": "Sent to the sender as a direct message.",
+  "placeNoSenderKey": "This place came without a key, so there is nobody to address directly."
 }

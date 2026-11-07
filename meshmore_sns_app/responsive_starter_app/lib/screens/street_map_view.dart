@@ -3,6 +3,8 @@
 import 'dart:async';
 import 'dart:math' as math;
 
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_compass/flutter_compass.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -739,6 +741,18 @@ class _StreetMapViewState extends State<StreetMapView> {
                     place: place,
                     store: context.read<PlaceStore>(),
                     composer: placeComposerOf(c),
+                    // A key-bound confirm/refute goes out as a DM to the
+                    // reporter's own key, so the tally records it as binding
+                    // rather than as a name the sender typed.
+                    sendDirect: (Uint8List key, String text) async {
+                      final String hex = key
+                          .map((int b) => b.toRadixString(16).padLeft(2, '0'))
+                          .join();
+                      return await context
+                              .read<MeshcoreController>()
+                              .sendDirectText(hex, text) !=
+                          null;
+                    },
                   ),
                   onClusterTap: (LatLng centre) => _map.move(
                     centre,

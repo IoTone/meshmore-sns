@@ -5854,4 +5854,16 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get forwardFailed => '下書きを書けませんでした。この端末では暗号化ストアを開けません。';
+
+  @override
+  String get placeConfirmToSender => '送信者に確認を送る';
+
+  @override
+  String get placeRefuteToSender => '送信者に否定を送る';
+
+  @override
+  String get placeSentDirect => '送信者にダイレクトメッセージで送りました。';
+
+  @override
+  String get placeNoSenderKey => 'この場所には鍵が付いていないため、直接宛先にできません。';
 }

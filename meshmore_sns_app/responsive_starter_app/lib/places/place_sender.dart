@@ -115,6 +115,9 @@ final class PlaceComposer {
   final PlaceSender _sender;
   final DateTime Function() _clock;
 
+  /// The name this node reports under, so a key-bound reply says who sent it.
+  String get reporterNameForReply => _sender.reporterName;
+
   Future<PlaceComposeResult> compose({
     required double latitude,
     required double longitude,
@@ -204,6 +207,40 @@ final class PlaceComposer {
       return PlaceReplySendResult.refused(decision.allowedAt);
     }
     await _sender.sendPlaceText(text);
+    return const PlaceReplySendResult.sent();
+  }
+
+  /// A confirmation or refutation **addressed to the reporter's own key**.
+  ///
+  /// A channel reply is attributed by a name, and a name is whatever the sender
+  /// typed: the tally records it as `claimed`. A direct message is addressed to
+  /// a public key, so the same grammar becomes `keyBound` — the reply cannot be
+  /// sent in someone else's name. It shares the place budget with every other
+  /// place message, so this is not a way around the rate limit.
+  ///
+  /// Returns `null` when the place carries no reporter key: there is then nobody
+  /// to address, and saying so is better than falling back to a channel reply
+  /// the caller did not ask for.
+  Future<PlaceReplySendResult?> replyKeyed(
+    Place place, {
+    required PlaceReplyKind kind,
+    required String callsign,
+    required Future<bool> Function(Uint8List key, String text) sendDirect,
+  }) async {
+    final Uint8List? key = place.reporterKey;
+    if (key == null) return null;
+    final PlaceReportDecision decision = _budget.take();
+    if (!decision.allowed) {
+      return PlaceReplySendResult.refused(decision.allowedAt);
+    }
+    final String text = encodePlaceReply(PlaceReply(
+      kind: kind,
+      id8: place.id,
+      callsign: callsign,
+      attribution: PlaceReplyAttribution.keyBound,
+    ));
+    final bool ok = await sendDirect(key, text);
+    if (!ok) return null;
     return const PlaceReplySendResult.sent();
   }
 

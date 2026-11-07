@@ -2,12 +2,16 @@
 // SPDX-License-Identifier: MIT
 import 'dart:io';
 
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:provider/provider.dart';
 
 import '../util/share.dart';
 
 import '../gen/app_localizations.dart';
+import '../meshcore/meshcore_controller.dart';
 import '../theme/mm_skin.dart';
 import 'place.dart';
 import 'place_detail_sheet.dart';
@@ -226,7 +230,17 @@ class _PlaceHistorySheetState extends State<PlaceHistorySheet> {
           ? null
           : Icon(Icons.history, size: 16, color: skin.color.fgMuted),
       onTap: () => PlaceDetailSheet.show(context,
-          place: place, store: widget.store, composer: widget.composer),
+          place: place,
+          store: widget.store,
+          composer: widget.composer,
+          sendDirect: (Uint8List key, String text) async {
+            final String hex =
+                key.map((int b) => b.toRadixString(16).padLeft(2, '0')).join();
+            return await context
+                    .read<MeshcoreController>()
+                    .sendDirectText(hex, text) !=
+                null;
+          }),
     );
   }
 }

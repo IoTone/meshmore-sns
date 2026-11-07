@@ -201,4 +201,75 @@ void main() {
       expect(third.allowedAt, isNotNull);
     });
   });
+
+  group('a reply addressed to the sender', () {
+    Future<Place> report({Uint8List? key}) async {
+      sender.key = key;
+      final PlaceComposeResult r = await composer.compose(
+        latitude: 51.5,
+        longitude: -0.12,
+        label: 'Ford',
+        type: PlaceType.water,
+        ttl: PlaceTtl.h1,
+      );
+      // Only the reply matters from here: the report itself went to the
+      // channel by design.
+      sender.sent.clear();
+      return r.place!;
+    }
+
+    test('goes out as a direct message, and says it binds', () async {
+      final Uint8List key = Uint8List.fromList(List<int>.filled(32, 3));
+      final Place place = await report(key: key);
+
+      Uint8List? toKey;
+      String? sentText;
+      final PlaceReplySendResult? r = await composer.replyKeyed(place,
+          kind: PlaceReplyKind.confirm,
+          callsign: 'Ana',
+          sendDirect: (Uint8List k, String text) async {
+        toKey = k;
+        sentText = text;
+        return true;
+      });
+      expect(r!.sent, isTrue);
+      expect(toKey, key, reason: 'addressed to the reporter, not the channel');
+      // The grammar is the same; the attribution is what changed.
+      expect(sentText, startsWith('[CONFIRM:${place.id}]'));
+      // The `reporterKeyHex` argument is what decides the attribution: a
+      // direct message names a key, a channel message only a name.
+      final PlaceReplyOutcome parsed = parsePlaceReply(sentText!,
+          reporterKeyHex: '03' * 32);
+      expect(parsed.reply!.attribution, PlaceReplyAttribution.keyBound);
+      expect(sender.sent, isEmpty, reason: 'nothing went to the channel');
+    });
+
+    test('is not offered without a key, and says so instead of guessing',
+        () async {
+      final Place place = await report();
+      expect(place.reporterKey, isNull);
+      expect(
+          await composer.replyKeyed(place,
+              kind: PlaceReplyKind.confirm,
+              callsign: 'Ana',
+              sendDirect: (Uint8List k, String t) async => true),
+          isNull,
+          reason: 'nobody to address, so no channel fallback');
+    });
+
+    test('shares the place budget like every other place message', () async {
+      final Uint8List key = Uint8List.fromList(List<int>.filled(32, 9));
+      final Place place = await report(key: key);
+      await composer.replyKeyed(place,
+          kind: PlaceReplyKind.confirm,
+          callsign: 'Ana',
+          sendDirect: (Uint8List k, String t) async => true);
+      final PlaceReplySendResult? second = await composer.replyKeyed(place,
+          kind: PlaceReplyKind.refute,
+          callsign: 'Ana',
+          sendDirect: (Uint8List k, String t) async => true);
+      expect(second!.sent, isFalse);
+      expect(second.allowedAt, isNotNull);
+    });
+  });
 }
