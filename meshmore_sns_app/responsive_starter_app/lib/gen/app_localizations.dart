@@ -10077,6 +10077,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Sent to the radio. It is in the list when the radio confirms.'**
   String get deviceContactsImportDone;
+
+  /// No description provided for @diagnosticsRestartRadio.
+  ///
+  /// In en, this message translates to:
+  /// **'Restart the radio'**
+  String get diagnosticsRestartRadio;
+
+  /// No description provided for @diagnosticsRestartConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Restart this radio now? The link drops for a few seconds while it boots, and anything queued on it is lost.'**
+  String get diagnosticsRestartConfirm;
+
+  /// No description provided for @diagnosticsRestartSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Restart sent. The link will drop and come back on its own.'**
+  String get diagnosticsRestartSent;
+
+  /// No description provided for @diagnosticsRestartNoReply.
+  ///
+  /// In en, this message translates to:
+  /// **'The radio takes no reply to a restart, so this is sent, not confirmed.'**
+  String get diagnosticsRestartNoReply;
 }
 
 class _AppLocalizationsDelegate

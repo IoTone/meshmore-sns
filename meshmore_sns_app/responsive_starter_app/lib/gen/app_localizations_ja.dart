@@ -5761,4 +5761,17 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get deviceContactsImportDone => '無線機に送信しました。無線機が確認すると一覧に表示されます。';
+
+  @override
+  String get diagnosticsRestartRadio => '無線機を再起動';
+
+  @override
+  String get diagnosticsRestartConfirm =>
+      'この無線機を今すぐ再起動しますか？起動の間リンクは数秒切れ、無線機に溜まっていたものは失われます。';
+
+  @override
+  String get diagnosticsRestartSent => '再起動を送信しました。リンクは切れ、自動的に戻ります。';
+
+  @override
+  String get diagnosticsRestartNoReply => '再起動に応答はありません。確認ではなく送信のみです。';
 }

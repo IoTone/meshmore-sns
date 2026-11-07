@@ -6001,4 +6001,19 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get deviceContactsImportDone =>
       'Sent to the radio. It is in the list when the radio confirms.';
+
+  @override
+  String get diagnosticsRestartRadio => 'Restart the radio';
+
+  @override
+  String get diagnosticsRestartConfirm =>
+      'Restart this radio now? The link drops for a few seconds while it boots, and anything queued on it is lost.';
+
+  @override
+  String get diagnosticsRestartSent =>
+      'Restart sent. The link will drop and come back on its own.';
+
+  @override
+  String get diagnosticsRestartNoReply =>
+      'The radio takes no reply to a restart, so this is sent, not confirmed.';
 }

@@ -74,6 +74,41 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
       ..showSnackBar(SnackBar(content: Text(m)));
   }
 
+  /// `CMD_REBOOT`: no reply, the link drops, the reconnect brings it back.
+  ///
+  /// The firmware persists its own state and drops whatever was queued for the
+  /// app, so the confirmation names that rather than pretending the restart is
+  /// free.
+  Future<void> _restartRadio(
+      MeshcoreController mc, AppLocalizations l) async {
+    final bool? go = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext ctx) => AlertDialog(
+        title: Text(l.diagnosticsRestartRadio),
+        content: Text(l.diagnosticsRestartConfirm),
+        actions: <Widget>[
+          MmAction(
+              label: l.actionCancel, onPressed: () => Navigator.pop(ctx, false)),
+          MmAction(
+              label: l.diagnosticsRestartRadio,
+              onPressed: () => Navigator.pop(ctx, true)),
+        ],
+      ),
+    );
+    if (go != true || !mounted) return;
+    final ScaffoldMessengerState sm = ScaffoldMessenger.of(context);
+    try {
+      await mc.send(MeshcoreFrameCodec.reboot());
+      sm
+        ..clearSnackBars()
+        ..showSnackBar(SnackBar(content: Text(l.diagnosticsRestartSent)));
+    } catch (_) {
+      sm
+        ..clearSnackBars()
+        ..showSnackBar(SnackBar(content: Text(l.diagnosticsRestartNoReply)));
+    }
+  }
+
   Future<void> _send(MeshcoreController mc, Uint8List frame, String what) async {
     // Read the strings before the await: the widget can be gone afterwards,
     // and the toast already guards on mounted.
@@ -380,6 +415,15 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
                       onPressed: () => _send(mc,
                           MeshcoreFrameCodec.syncNextMessage(), 'sync-msg'),
                       child: Text(l.diagnosticsPullMessage),
+                    ),
+                    // The radio's own restart (`CMD_REBOOT` 0x13). It is the
+                    // only way out of a radio that has stopped answering its
+                    // own screens, and it silently drops any message it was
+                    // holding, so it asks first and says what it costs.
+                    OutlinedButton.icon(
+                      onPressed: mc.isReady ? () => _restartRadio(mc, l) : null,
+                      icon: const Icon(Icons.restart_alt, size: 18),
+                      label: Text(l.diagnosticsRestartRadio),
                     ),
                   ],
                 ),
