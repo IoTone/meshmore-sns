@@ -14,6 +14,7 @@ import 'place_codec.dart';
 import 'place_confirmation.dart';
 import 'place_id.dart';
 import '../util/prefs.dart';
+import '../util/safe_notifier.dart';
 
 /// What a report did to the store: a new row, a later report of the same row,
 /// or a second row that shares an id but not a point (spec §5).
@@ -39,12 +40,14 @@ enum PlaceUpsert {
 /// after-action list, and a row whose [Place.expiresAt] has passed is simply
 /// absent from [live] while staying visible in [history] with its final state.
 ///
-/// Persistence follows the app's other stores ([ChatStore] shape): one JSON
-/// document in `shared_preferences`. Nothing here is a secret — a place is a
-/// public report — so this is the right store until the encrypted message
-/// store lands; when it does, this document moves into it and gains a
-/// migration, and the interface below does not change.
-final class PlaceStore extends ChangeNotifier {
+/// Persistence is the app's sealed store, the same AES-256-GCM key and the
+/// same named-record shape as the chat history: a place says where someone
+/// was, which is not a public report to leave in a world-readable preferences
+/// file. The pre-migration document (`mm.places.v1`) is moved with
+/// write-then-read-back-then-delete, so a crash between the steps leaves a
+/// duplicate rather than a loss, and a lost Keystore key keeps the ciphertext
+/// and says so instead of sealing new rows under a new key.
+final class PlaceStore extends ChangeNotifier with SafeNotifier {
   PlaceStore({
     DateTime Function()? clock,
     bool Function(String reporterKeyHex)? isBlocked,

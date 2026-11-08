@@ -50,6 +50,7 @@ import '../sns/meshbook.dart';
 import '../sns/meshbook_store.dart';
 import '../sns/place_inference.dart';
 import '../sns/weather_inference.dart';
+import '../util/frame_trackers.dart';
 import '../util/geo.dart' as geo;
 
 /// App-facing facade over [MeshcoreConnection], exposed via Provider.
@@ -233,38 +234,7 @@ class MeshcoreController extends ChangeNotifier {
         _maybeScheduleReconnect();
       }
     });
-    _inboundSub = _connection.inbound.listen((MeshcoreInbound f) {
-      _lastFrame = f;
-      // A command that has waited past the ledger's timeout cannot hold the
-      // head of the answer order any more.
-      _expireCommands();
-      _trackDeviceClock(f);
-      _trackBattery(f);
-      _trackDeviceInfo(f);
-      _trackCustomVars(f);
-      _trackFloodScope(f);
-      _trackAllowedRepeatFreq(f);
-      _trackTuningParams(f);
-      _trackRadioProfiles(f);
-      _trackTelemetry(f);
-      // R25+1 — own movement trail. Every inbound frame might have
-      // bumped ownLocation (SelfInfoFrame's lat/lon), so sample
-      // here. Deduped internally by movement threshold.
-      _trackOwnLocationForTrail();
-      _ingestKnown(f);
-      _trackContactProbe(f);
-      _trackContactLifecycle(f);
-      _trackAutoAddConfig(f);
-      _ingestDm(f);
-      _maybeDrain(f);
-      _ingestNode(f);
-      _ingestChat(f);
-      _ingestChannelData(f);
-      _trackMessageHeat(f);
-        _trackDelivery(f);
-      _logEvent(f);
-      notifyListeners();
-    });
+    _inboundSub = _connection.inbound.listen(_processInbound);
     _rawSub = _connection.rawInbound.listen((Uint8List bytes) {
       final String hex = bytes
           .map((int b) => b.toRadixString(16).padLeft(2, '0'))
@@ -5627,6 +5597,68 @@ class MeshcoreController extends ChangeNotifier {
     _manualDisconnect = false;
     await _refreshHistory();
     await connect();
+  }
+
+  /// Frames where at least one tracker threw, so the frame arrived in part.
+  ///
+  /// The trackers below are functions of the frame plus the app's stores and
+  /// none of them is sandboxed, so one throw used to discard every tracker
+  /// after it *and* the notification at the end: a message could be recorded
+  /// and never heat-mapped, or a delivery state left half-updated, with an
+  /// uncaught async error as the only trace. Each tracker now runs on its own
+  /// ([runFrameTrackers]); this counts the frames that lost one. Per session,
+  /// and Diagnostics says nothing while it is zero, like every other counter
+  /// there.
+  int get framesDropped => _framesDropped;
+  int _framesDropped = 0;
+
+  /// One received frame, through every tracker, then one notification.
+  ///
+  /// `_expireCommands` runs first and inside the same isolation: a command
+  /// whose reply waited past the ledger's timeout cannot hold the head of the
+  /// answer order any more, and that matters more than the rest of the frame
+  /// when a tracker is the thing that broke.
+  void _processInbound(MeshcoreInbound f) {
+    _lastFrame = f;
+    final List<void Function(MeshcoreInbound)> trackers =
+        <void Function(MeshcoreInbound)>[
+      // A command that has waited past the ledger's timeout cannot hold the
+      // head of the answer order any more.
+      (MeshcoreInbound _) => _expireCommands(),
+      _trackDeviceClock,
+      _trackBattery,
+      _trackDeviceInfo,
+      _trackCustomVars,
+      _trackFloodScope,
+      _trackAllowedRepeatFreq,
+      _trackTuningParams,
+      _trackRadioProfiles,
+      _trackTelemetry,
+      // R25+1 — own movement trail. Every inbound frame might have bumped
+      // ownLocation (SelfInfoFrame's lat/lon), so sample here. Deduped
+      // internally by movement threshold.
+      (MeshcoreInbound _) => _trackOwnLocationForTrail(),
+      _ingestKnown,
+      _trackContactProbe,
+      _trackContactLifecycle,
+      _trackAutoAddConfig,
+      _ingestDm,
+      _maybeDrain,
+      _ingestNode,
+      _ingestChat,
+      _ingestChannelData,
+      _trackMessageHeat,
+      _trackDelivery,
+      _logEvent,
+    ];
+    final int lost = runFrameTrackers(
+      trackers,
+      f,
+      onFailure: (Object error, StackTrace stack) =>
+          AppErrors.record(error, stack, where: 'frame'),
+    );
+    if (lost > 0) _framesDropped++;
+    notifyListeners();
   }
 
   /// True once [dispose] has run. Late notifications are dropped rather

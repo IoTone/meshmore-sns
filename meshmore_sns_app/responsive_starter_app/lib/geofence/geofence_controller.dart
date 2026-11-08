@@ -8,6 +8,7 @@ import '../meshcore/meshcore_controller.dart';
 import '../meshcore/own_location.dart';
 import 'geofence_engine.dart';
 import 'geofence_store.dart';
+import '../util/safe_notifier.dart';
 
 /// One fence event worth telling the user about.
 final class GeofenceAlert {
@@ -30,7 +31,7 @@ final class GeofenceAlert {
 /// crossed by walking, and a sample per inbound frame would re-run a haversine
 /// for every message on a busy channel. The hysteresis lives in
 /// [GeofenceWatch], so this class only has to decide which samples to feed.
-final class GeofenceController extends ChangeNotifier {
+final class GeofenceController extends ChangeNotifier with SafeNotifier {
   GeofenceController({
     required MeshcoreController mc,
     DateTime Function()? clock,

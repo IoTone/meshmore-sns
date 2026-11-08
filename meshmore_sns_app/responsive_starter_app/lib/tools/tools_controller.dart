@@ -9,6 +9,7 @@ import 'ping_tool.dart';
 import 'radio_stats_tool.dart';
 import 'range_test_tool.dart';
 import 'soak_tool.dart';
+import '../util/safe_notifier.dart';
 import 'trace_tool.dart';
 
 /// R60 — owns every tool for the life of the app, so a run survives
@@ -17,7 +18,7 @@ import 'trace_tool.dart';
 /// tools — or a tool and the background telemetry poller — would
 /// silently clear each other's. While a tool holds the radio, the
 /// poller is held too.
-class ToolsController extends ChangeNotifier {
+class ToolsController extends ChangeNotifier with SafeNotifier {
   ToolsController(this.mc, {DateTime Function()? now}) {
     stats = RadioStatsTool(mc, now: now);
     ping = PingTool(mc, now: now);

@@ -274,6 +274,12 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
                 fault(l.diagnosticsErrorLine(failureText(l, mc.failure!)))
               else if (mc.error != null)
                 fault(l.diagnosticsErrorLine('${mc.error}')),
+              // A frame that lost a step. It is a fault rather than a counter
+              // because the app cannot say which part of it is missing, and
+              // the only honest reading is that some of its data may not be
+              // there.
+              if (mc.framesDropped > 0)
+                fault(l.diagnosticsFramesDroppedLine(mc.framesDropped)),
               // APP-C5 — the app's own duty-cycle meter, always charging.
               // A refusal is the one line here a user can act on, so it is a
               // sentence rather than a counter when it has happened.

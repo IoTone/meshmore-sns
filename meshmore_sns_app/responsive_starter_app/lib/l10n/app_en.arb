@@ -2650,6 +2650,14 @@
   "rxViaPrimary": "the primary radio",
   "rxViaSecondary": "radio 2",
   "rxViaUnknown": "an unreported radio",
+  "diagnosticsFramesDroppedLine": "{count, plural, =1{1 frame arrived in part: a step of it failed, so its data may be incomplete} other{{count} frames arrived in part: a step of each failed, so their data may be incomplete}}",
+  "@diagnosticsFramesDroppedLine": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "diagnosticsFramingLine": "incomplete frames: {truncated} cut short, {trailing} with bytes left over, {empty} empty",
   "@diagnosticsFramingLine": {
     "placeholders": {

@@ -4049,6 +4049,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get rxViaUnknown => 'an unreported radio';
 
   @override
+  String diagnosticsFramesDroppedLine(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          '$count frames arrived in part: a step of each failed, so their data may be incomplete',
+      one:
+          '1 frame arrived in part: a step of it failed, so its data may be incomplete',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String diagnosticsFramingLine(
       String truncated, String trailing, Object empty) {
     return 'incomplete frames: $truncated cut short, $trailing with bytes left over, $empty empty';

@@ -3893,6 +3893,11 @@ class AppLocalizationsJa extends AppLocalizations {
   String get rxViaUnknown => '無線の報告なし';
 
   @override
+  String diagnosticsFramesDroppedLine(int count) {
+    return '$count 件のフレームが一部だけ処理されました。処理の途中で失敗したため、内容が不完全な可能性があります';
+  }
+
+  @override
   String diagnosticsFramingLine(
       String truncated, String trailing, Object empty) {
     return '不完全なフレーム: 途中で切れた $truncated 件、余りのバイトがある $trailing 件、空の $empty 件';

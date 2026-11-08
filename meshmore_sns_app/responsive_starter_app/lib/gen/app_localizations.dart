@@ -6932,6 +6932,12 @@ abstract class AppLocalizations {
   /// **'an unreported radio'**
   String get rxViaUnknown;
 
+  /// No description provided for @diagnosticsFramesDroppedLine.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 frame arrived in part: a step of it failed, so its data may be incomplete} other{{count} frames arrived in part: a step of each failed, so their data may be incomplete}}'**
+  String diagnosticsFramesDroppedLine(int count);
+
   /// No description provided for @diagnosticsFramingLine.
   ///
   /// In en, this message translates to:
