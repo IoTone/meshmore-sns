@@ -359,7 +359,10 @@ plan above stays the baseline and this stays the delta. Evidence lives in
 **W3 — Radio safety**
 
 - Say what radio2 **costs**: 96–99 % primary reception against 96–100 % secondary over 100 packets, with the main
-  mesh paying. If radio2 is on by default, the cost is on the switch.
+  mesh paying. If radio2 is on by default, the cost is on the switch. **Shipped 2026-11-08 as a readout rather than a
+  switch (D8.27):** the frame's profile tag is followed, Device configuration states when the second profile was last
+  heard, and the cost is printed beside it. There is no switch to put a warning on, because the codec has no command
+  that writes a second profile.
 - Discovery trailers come from **repeaters, room servers and sensors only** — a companion parses but never emits.
   A three-state parse is mandatory, and "no trailer" means unsupported.
 - Surface the **device alert engine** (buzzer, LED, vibration, GPIO) as configurable from the phone — the radio can

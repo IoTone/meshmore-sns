@@ -245,6 +245,7 @@ class MeshcoreController extends ChangeNotifier {
       _trackFloodScope(f);
       _trackAllowedRepeatFreq(f);
       _trackTuningParams(f);
+      _trackRadioProfiles(f);
       _trackTelemetry(f);
       // R25+1 — own movement trail. Every inbound frame might have
       // bumped ownLocation (SelfInfoFrame's lat/lon), so sample
@@ -5006,6 +5007,38 @@ class MeshcoreController extends ChangeNotifier {
       _emitTaskError('setDevicePin');
       return false;
     }
+  }
+
+  // --- Which radio profile a frame arrived on ---------------------------
+  //
+  // A two-profile radio splits one antenna's transmit time between two channel
+  // configurations, and tags each received frame with the profile that heard it
+  // (`RxVia`). The app decodes that tag and, until this, only used it to label
+  // one diagnostic line. It is the one honest thing the app can say about a
+  // second profile: it cannot read that profile's parameters and will not write
+  // them, because the second profile takes 96-99 % of the primary's airtime and
+  // that is a decision for the radio's own configuration, not for a phone
+  // gesture.
+
+  DateTime? _radio2LastSeen;
+
+  /// When a frame was last heard on the **second** radio profile, or null when
+  /// none has been since this session started.
+  DateTime? get radio2LastSeen => _radio2LastSeen;
+
+  /// True when this radio is running a second profile, evidenced by a frame it
+  /// carried. Absence is not evidence of a single profile: a quiet second
+  /// profile looks the same as none.
+  bool get radio2Seen => _radio2LastSeen != null;
+
+  void _trackRadioProfiles(MeshcoreInbound f) {
+    final RxVia via = switch (f) {
+      RawDataFrame(:final RxVia via) => via,
+      ChannelDataFrame(:final RxVia via) => via,
+      _ => RxVia.unknown,
+    };
+    if (via != RxVia.secondary) return;
+    _radio2LastSeen = DateTime.now();
   }
 
   // --- The radio's own airtime limit ------------------------------------

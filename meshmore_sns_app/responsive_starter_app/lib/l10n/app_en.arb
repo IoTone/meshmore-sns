@@ -4112,5 +4112,15 @@
   "firmwareOtaAbsent": "this build has no over-the-air update",
   "firmwareOtaUnknown": "not known yet: the radio answers on first contact",
   "firmwareNoInstallWhy": "Installing is not offered from the app. An install consumes the radio's queued messages down to a handful of frames, and nothing in the app can yet re-sync the messages the radio would discard. A restart from Diagnostics is the only radio action offered, and it is not an install.",
-  "firmwareOtaLabel": "Over-the-air update"
+  "firmwareOtaLabel": "Over-the-air update",
+  "deviceRadio2Seen": "second profile: heard {when}",
+  "@deviceRadio2Seen": {
+    "placeholders": {
+      "when": {
+        "type": "String"
+      }
+    }
+  },
+  "deviceRadio2Never": "second profile: nothing heard this session",
+  "deviceRadio2Note": "A second profile takes 96-99 % of the radio's transmit time (measured over 100 packets), which is why switching it is set on the radio and not here. Frames from both profiles are read; the second profile's own parameters are not shown."
 }

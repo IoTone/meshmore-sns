@@ -678,6 +678,18 @@ polling **yields silently** (does not queue); a user-initiated request **waits w
 login may **abandon a background request** (`abandonRequest()` exists) but must never abandon a user-initiated one.
 No silent pre-emption — a dropped request that the user asked for is a bug the user cannot see.
 
+**D8.27 The second radio profile is reported, never written (2026-11-08).** A two-profile radio splits one
+antenna's transmit time between two channel configurations and tags every received frame with the profile that heard
+it (`0xA0` primary, `0xA1` second, on `0x1B` and `0x84`). The companion protocol has **no command that sets or reads
+a second profile's parameters** — the only mentions of the profile in `packages/meshcore/lib/src/codec/frame_codec.dart`
+are the two receive tags — so a staged switch through `radio_config_transaction.dart`, which the residue row asked
+for, could not be staged or reverted even with a screen in front of it. Decided: the app follows the tag, says when
+a frame was last heard on the second profile, and states the cost beside it (96–99 % of the radio's transmit time,
+measured over 100 packets), and offers no switch. Silence reads "nothing heard this session", never "one profile",
+because a quiet second profile looks exactly like none. What would change the decision: a firmware that publishes a
+command for the second profile's parameters, at which point the switch inherits the primary's single-use revert and
+this row's cost line stays as the warning on it.
+
 **Raised to full spec depth 2026-11-04:** `meshmore-sos-spec.md`, `meshmore-places-spec.md` and
 `meshmore-telemetry-coverage-spec.md`. Each carries its data model, state machine, exact schedule or algorithm,
 required copy, a ten-test list, and an explicit "what this does not do". The depth template is

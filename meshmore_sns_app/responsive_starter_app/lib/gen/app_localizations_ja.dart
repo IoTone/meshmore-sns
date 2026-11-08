@@ -5902,4 +5902,16 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get firmwareOtaLabel => '無線更新';
+
+  @override
+  String deviceRadio2Seen(String when) {
+    return '第2プロファイル: $when受信';
+  }
+
+  @override
+  String get deviceRadio2Never => '第2プロファイル: 今回は受信なし';
+
+  @override
+  String get deviceRadio2Note =>
+      '第2プロファイルは無線機の送信時間の96〜99%を使います（100パケットで計測）。そのため切り替えは無線機側の設定で行い、このアプリでは変更しません。両方のプロファイルのフレームは受信しますが、第2プロファイル自体のパラメータは表示しません。';
 }

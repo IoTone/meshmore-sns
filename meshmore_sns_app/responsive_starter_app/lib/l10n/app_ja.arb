@@ -2653,5 +2653,15 @@
   "firmwareOtaAbsent": "このビルドには無線更新がありません",
   "firmwareOtaUnknown": "未確認: 無線機が最初の接続時に応答します",
   "firmwareNoInstallWhy": "アプリからのインストールは提供していません。インストールは無線機の送信待ちメッセージを数フレームまで消費し、無線機が捨てるメッセージを再同期する手段がアプリにまだありません。Diagnostics からの再起動が無線機に対する唯一の操作で、これはインストールではありません。",
-  "firmwareOtaLabel": "無線更新"
+  "firmwareOtaLabel": "無線更新",
+  "deviceRadio2Seen": "第2プロファイル: {when}受信",
+  "@deviceRadio2Seen": {
+    "placeholders": {
+      "when": {
+        "type": "String"
+      }
+    }
+  },
+  "deviceRadio2Never": "第2プロファイル: 今回は受信なし",
+  "deviceRadio2Note": "第2プロファイルは無線機の送信時間の96〜99%を使います（100パケットで計測）。そのため切り替えは無線機側の設定で行い、このアプリでは変更しません。両方のプロファイルのフレームは受信しますが、第2プロファイル自体のパラメータは表示しません。"
 }

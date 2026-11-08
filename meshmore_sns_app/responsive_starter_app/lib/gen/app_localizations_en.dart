@@ -6150,4 +6150,16 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get firmwareOtaLabel => 'Over-the-air update';
+
+  @override
+  String deviceRadio2Seen(String when) {
+    return 'second profile: heard $when';
+  }
+
+  @override
+  String get deviceRadio2Never => 'second profile: nothing heard this session';
+
+  @override
+  String get deviceRadio2Note =>
+      'A second profile takes 96-99 % of the radio\'s transmit time (measured over 100 packets), which is why switching it is set on the radio and not here. Frames from both profiles are read; the second profile\'s own parameters are not shown.';
 }

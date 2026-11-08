@@ -977,6 +977,7 @@ class _DeviceConfigScreenState extends State<DeviceConfigScreen> {
                             'path hash: ${d.pathHashMode + 1} byte(s)\n'
                             '${_repeatRanges(mc)}'
                             '${_airtimeLimit(mc)}'
+                            '${_secondProfile(mc, l)}'
                             'battery: $batt',
                     style: TextStyle(
                         color: cs.onSurface,
@@ -984,6 +985,21 @@ class _DeviceConfigScreenState extends State<DeviceConfigScreen> {
                         height: 1.5),
                   );
                 }),
+                // The cost, where the status line is. Shown only once a frame
+                // has been heard on the second profile, because the note
+                // explains a line that is otherwise absent.
+                if (mc.radio2Seen)
+                  Padding(
+                    key: const Key('device-radio2-note'),
+                    padding: const EdgeInsets.only(top: 8),
+                    child: Text(
+                      l.deviceRadio2Note,
+                      style: TextStyle(
+                          color: cs.onSurfaceVariant,
+                          fontSize: context.skin.type.sizeSm,
+                          height: 1.4),
+                    ),
+                  ),
                 ListTile(
                   contentPadding: EdgeInsets.zero,
                   leading: const Icon(Icons.battery_charging_full),
@@ -1013,6 +1029,34 @@ class _DeviceConfigScreenState extends State<DeviceConfigScreen> {
       ),
     );
   }
+}
+
+/// Whether a frame has been heard on the radio's **second** profile.
+///
+/// Status only, by decision: the app decodes the profile tag on every received
+/// frame and can report that one exists, but it neither shows that profile's
+/// parameters nor changes them. A second profile takes 96-99 % of the primary's
+/// airtime, so switching it is a decision for the radio's own configuration; a
+/// quiet second profile is indistinguishable from none, which is why this says
+/// "nothing heard" rather than "single profile".
+String _secondProfile(MeshcoreController mc, AppLocalizations l) {
+  final DateTime? at = mc.radio2LastSeen;
+  if (at == null) return '${l.deviceRadio2Never}\n';
+  return '${l.deviceRadio2Seen(_agoAt(at, l))}\n';
+}
+
+/// A relative time for the profile line, with the units in the ARB.
+///
+/// The same ladder `device_manager_sheet.dart` uses, and the same two strings,
+/// so a Japanese build reads "5 分前" instead of a localized template wrapped
+/// around an English "5 min". This is the app's one relative-time formatter
+/// worth sharing; two call sites is not yet a helper file.
+String _agoAt(DateTime at, AppLocalizations l) {
+  final int s = DateTime.now().difference(at).inSeconds;
+  if (s < 90) return l.deviceMgrAgoNow;
+  if (s < 3600) return l.deviceMgrAgoMinutes(s ~/ 60);
+  if (s < 86400) return l.deviceMgrAgoHours(s ~/ 3600);
+  return l.deviceMgrAgoDays(s ~/ 86400);
 }
 
 /// The radio's own duty-cycle limit, as one readout line.

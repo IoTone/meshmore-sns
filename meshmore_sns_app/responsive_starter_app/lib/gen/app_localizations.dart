@@ -10341,6 +10341,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Over-the-air update'**
   String get firmwareOtaLabel;
+
+  /// No description provided for @deviceRadio2Seen.
+  ///
+  /// In en, this message translates to:
+  /// **'second profile: heard {when}'**
+  String deviceRadio2Seen(String when);
+
+  /// No description provided for @deviceRadio2Never.
+  ///
+  /// In en, this message translates to:
+  /// **'second profile: nothing heard this session'**
+  String get deviceRadio2Never;
+
+  /// No description provided for @deviceRadio2Note.
+  ///
+  /// In en, this message translates to:
+  /// **'A second profile takes 96-99 % of the radio\'s transmit time (measured over 100 packets), which is why switching it is set on the radio and not here. Frames from both profiles are read; the second profile\'s own parameters are not shown.'**
+  String get deviceRadio2Note;
 }
 
 class _AppLocalizationsDelegate
