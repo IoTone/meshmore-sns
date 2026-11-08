@@ -320,6 +320,40 @@ void main() {
   });
 
   testWidgets(
+      'a link that is retrying offers the retry, rather than making '
+      'the user watch it', (WidgetTester t) async {
+    // The owner's report was a screen that said "handshaking" for a long time
+    // with nothing to press. The ladder retries on its own for about two and a
+    // half minutes with a jittered backoff, so the slab offers the action while
+    // it retries: a tap restarts the ladder from zero instead of waiting out the
+    // delay. A dropped link is `reconnecting`, which is the state this checks.
+    final AppLocalizations l = await _localizations(t);
+    final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
+    final MeshcoreController mc = MeshcoreController(
+      transportFactory: () async => fake,
+      connection:
+          MeshcoreConnection(handshakeTimeout: const Duration(seconds: 5)),
+    );
+    await mc.connect();
+    fake.emit(selfInfoFrame());
+    await t.pump();
+    expect(mc.state, MeshcoreConnectionState.ready);
+
+    fake.setConnected(false);
+    await t.pump();
+    expect(mc.state, MeshcoreConnectionState.reconnecting);
+
+    await _pumpDashboard(t, mc, preset: MmThemePreset.seele);
+    expect(find.byTooltip(l.actionRetry), findsWidgets,
+        reason: 'a retrying link with no action reads as a stuck screen');
+    expect(
+        find.textContaining(l.statusLinked, findRichText: true), findsNothing,
+        reason: 'the slab must not claim a link that just dropped');
+
+    await _finish(t, mc);
+  });
+
+  testWidgets(
       'the degraded banner is above every layout, so a storage-full warning '
       'is not one preset\'s secret', (WidgetTester t) async {
     // APP-N4: one banner, built from what the surface can observe. It used to

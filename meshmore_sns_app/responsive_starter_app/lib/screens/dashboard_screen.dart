@@ -392,11 +392,16 @@ Widget _statusSlab(
             onPressed: () =>
                 mc.hasPairedDevice ? mc.connect() : context.push('/pair'),
           )
-        else if (mc.state == MeshcoreConnectionState.failed || mc.gaveUp)
+        else if (mc.state == MeshcoreConnectionState.failed ||
+            mc.state == MeshcoreConnectionState.reconnecting ||
+            mc.gaveUp)
+          // The ladder retries on its own for about two and a half minutes with
+          // a jittered backoff, so this is offered *while* it retries rather
+          // than only after it gives up: the owner's own report was that a
+          // wait with no action in it reads as a stuck screen, and a tap here
+          // restarts the ladder from zero instead of waiting out the delay.
           // A link that gave up sits in `reconnecting` with no timer left, so
-          // the state alone cannot offer the way out. Gave-up is the point at
-          // which retrying is the only thing the user can do, and it is the
-          // one action this row may not omit.
+          // the state alone cannot offer the way out either.
           IconButton(
             tooltip: l.actionRetry,
             icon: Icon(Icons.refresh, color: statusColor, size: 20),
