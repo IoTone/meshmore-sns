@@ -3042,6 +3042,27 @@
   "diagnosticsRadioChangedAccept": "This is my radio",
   "failureAirtimeBudget": "This phone has used its own radio time limit for the last hour, so nothing was sent. It sends again as the hour rolls on.",
   "@failureAirtimeBudget": {},
+  "failureLinkTimeout": "The phone did not finish opening the radio link in time. Nothing was sent; retry to open it again.",
+  "@failureLinkTimeout": {},
+  "diagnosticsHandshakeLine": "link handshakes: {started} started, {timedOut} with no answer",
+  "@diagnosticsHandshakeLine": {
+    "placeholders": {
+      "started": {
+        "type": "String"
+      },
+      "timedOut": {
+        "type": "String"
+      }
+    }
+  },
+  "diagnosticsLinkCloseLine": "link teardowns that did not finish: {count}",
+  "@diagnosticsLinkCloseLine": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
   "airtimeSpentLine": "Radio time this hour: {spent} of {budget}",
   "@airtimeSpentLine": {
     "placeholders": {
@@ -4007,6 +4028,16 @@
   "storageClearCache": "Clear cached tiles",
   "storageCacheCleared": "Cached tiles cleared. Downloaded regions are kept.",
   "storageHistory": "Message history {kb} KB, sealed",
+  "storagePlaces": "Places {n} of {cap}",
+  "storageTrail": "Trail {n} points of {cap}, seven days",
+  "storageMedia": "Unfinished media transfers {n}",
+  "storageClearAll": "Delete everything the app kept",
+  "storageClearAllTitle": "Delete everything?",
+  "storageClearAllGoes": "This deletes the message history this app kept, places, the movement trail, unfinished media records and cached map tiles.",
+  "storageClearAllStays": "The radio is untouched: its contact table, channels and settings stay, and a message already sent is not recalled. Your settings and the map regions you downloaded also stay.",
+  "storageClearAllTypeWord": "Type {word} to confirm",
+  "storageClearAllConfirm": "Delete",
+  "storageClearAllDone": "Deleted. The radio and your settings are untouched.",
   "@storageMaps": {
     "placeholders": {
       "used": {
@@ -4030,6 +4061,40 @@
   "@storageHistory": {
     "placeholders": {
       "kb": {
+        "type": "String"
+      }
+    }
+  },
+  "@storagePlaces": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "cap": {
+        "type": "int"
+      }
+    }
+  },
+  "@storageTrail": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "cap": {
+        "type": "int"
+      }
+    }
+  },
+  "@storageMedia": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "@storageClearAllTypeWord": {
+    "placeholders": {
+      "word": {
         "type": "String"
       }
     }

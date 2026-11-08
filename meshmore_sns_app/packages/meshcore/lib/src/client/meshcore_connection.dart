@@ -47,6 +47,9 @@ class MeshcoreConnection {
   StreamSubscription<Uint8List>? _incomingSub;
   StreamSubscription<bool>? _connectedSub;
   Timer? _handshakeTimer;
+  Timer? _handshakeRepeatTimer;
+  int _handshakeAttempts = 0;
+  int _handshakeTimeouts = 0;
 
   final StreamController<MeshcoreConnectionState> _states =
       StreamController<MeshcoreConnectionState>.broadcast();
@@ -92,6 +95,22 @@ class MeshcoreConnection {
   /// transport that does not negotiate (in-memory, socket).
   int? get mtu => _transport?.mtu;
 
+  /// How many handshakes this connection has started.
+  ///
+  /// One per link open, plus one per repeat the owner asked for. Counted
+  /// here because the connection is the only object that knows a handshake
+  /// ran at all: a link that never answered leaves the controller holding a
+  /// `failed` state and nothing else to report.
+  int get handshakeAttempts => _handshakeAttempts;
+
+  /// How many handshakes ended without a SELF_INFO before the window closed.
+  ///
+  /// An owner uses this to tell a silent radio from congestion: the radio
+  /// never answered a frame that was sent to it, so waiting out a scan-throttle
+  /// floor before trying again adds seconds to a screen that is showing
+  /// nothing.
+  int get handshakeTimeouts => _handshakeTimeouts;
+
   /// SELF_INFO captured during the handshake (null until [ready]).
   SelfInfo? get selfInfo => _selfInfo;
 
@@ -132,6 +151,7 @@ class MeshcoreConnection {
       }
     } else {
       _handshakeTimer?.cancel();
+      _handshakeRepeatTimer?.cancel();
       _selfInfo = null;
       _setState(_state == MeshcoreConnectionState.ready
           ? MeshcoreConnectionState.reconnecting
@@ -143,11 +163,23 @@ class MeshcoreConnection {
     final MeshcoreTransport? t = _transport;
     if (t == null) return;
     _setState(MeshcoreConnectionState.handshaking);
+    _handshakeAttempts++;
     _handshakeTimer?.cancel();
+    _handshakeRepeatTimer?.cancel();
     _handshakeTimer = Timer(handshakeTimeout, () {
-      if (_state == MeshcoreConnectionState.handshaking) {
-        _setState(MeshcoreConnectionState.failed);
-      }
+      if (_state != MeshcoreConnectionState.handshaking) return;
+      _handshakeRepeatTimer?.cancel();
+      _handshakeTimeouts++;
+      _setState(MeshcoreConnectionState.failed);
+    });
+    // A handshake needs exactly one frame from the radio, and one lost
+    // notification costs the whole window. Repeat APP_START once at half the
+    // window: the firmware answers SELF_INFO to every APP_START, so a repeat
+    // that was not needed costs one small frame, and a repeat that was needed
+    // saves the window. One repeat, not a poll.
+    _handshakeRepeatTimer = Timer(handshakeTimeout ~/ 2, () {
+      if (_state != MeshcoreConnectionState.handshaking) return;
+      unawaited(_safeSend(t, MeshcoreFrameCodec.appStart(appName: appName)));
     });
     // Fire-and-forget; a send failure surfaces as a handshake timeout.
     unawaited(_safeSend(t, MeshcoreFrameCodec.appStart(appName: appName)));
@@ -184,6 +216,7 @@ class MeshcoreConnection {
     if (_state == MeshcoreConnectionState.handshaking &&
         frame is SelfInfoFrame) {
       _handshakeTimer?.cancel();
+      _handshakeRepeatTimer?.cancel();
       _setState(MeshcoreConnectionState.ready);
     }
     if (!_inbound.isClosed) _inbound.add(frame);
@@ -217,6 +250,7 @@ class MeshcoreConnection {
     _incomingSub = null;
     _connectedSub = null;
     _handshakeTimer?.cancel();
+    _handshakeRepeatTimer?.cancel();
   }
 
   /// Tear down. Does not close the transport (the owner does that).

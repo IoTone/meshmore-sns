@@ -284,4 +284,60 @@ void main() {
     expect(find.textContaining('CurrentTimeFrame'), findsWidgets);
     ctrl.dispose();
   });
+
+  testWidgets('a link that handshook twice says so', (WidgetTester t) async {
+    // The owner's report was "it said handshaking for a long time", and the
+    // only trace of it afterwards is that the link did it more than once. The
+    // line stays silent for one clean handshake, because that is every launch
+    // and this page is already dense.
+    final List<FakeMeshcoreTransport> links = <FakeMeshcoreTransport>[];
+    final MeshcoreController ctrl = MeshcoreController(
+      transportFactory: () async {
+        final FakeMeshcoreTransport f = FakeMeshcoreTransport(connected: true);
+        links.add(f);
+        return f;
+      },
+      connection:
+          MeshcoreConnection(handshakeTimeout: const Duration(seconds: 5)),
+    );
+    await t.pumpWidget(
+      MaterialApp(
+        locale: const Locale('en'),
+        supportedLocales: LocaleController.supported,
+        localizationsDelegates: const <LocalizationsDelegate<Object>>[
+          AppLocalizations.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        home: MultiProvider(
+          providers: <ChangeNotifierProvider<ChangeNotifier>>[
+            ChangeNotifierProvider<MeshcoreController>.value(value: ctrl),
+            ChangeNotifierProvider<ToolsController>(
+                create: (_) => ToolsController(ctrl)),
+            ChangeNotifierProvider<BotController>(
+                create: (_) => BotController()),
+          ],
+          child: const DiagnosticsScreen(),
+        ),
+      ),
+    );
+
+    await t.tap(find.text('Scan & connect'));
+    await t.pumpAndSettle();
+    links.last.emit(selfInfoFrame());
+    await t.pumpAndSettle();
+
+    expect(find.textContaining('link handshakes:'), findsNothing,
+        reason: 'one clean handshake is the normal case');
+
+    // A user retry: the app tears the old link down and opens a new one.
+    await ctrl.connect();
+    links.last.emit(selfInfoFrame());
+    await t.pumpAndSettle();
+
+    expect(find.textContaining('link handshakes: 2 started, 0 with no answer'),
+        findsOneWidget);
+    ctrl.dispose();
+  });
 }

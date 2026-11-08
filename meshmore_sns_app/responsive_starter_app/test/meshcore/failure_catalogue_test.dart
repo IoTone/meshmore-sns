@@ -8,6 +8,7 @@ import 'package:meshcore/meshcore.dart';
 import 'package:meshmore_sns_app/gen/app_localizations.dart';
 import 'package:meshmore_sns_app/meshcore/ble_connector.dart';
 import 'package:meshmore_sns_app/meshcore/failure.dart';
+import 'package:meshmore_sns_app/meshcore/link_acquire.dart';
 
 /// APP-N2 — one table, whole in both directions: a cause the firmware can send
 /// has an entry, and a cause with an entry is emitted by code that can fail.
@@ -63,6 +64,12 @@ void main() {
         FailureCause.noRadioFound);
     expect(Failure.from(StateError('unexpected')).cause,
         FailureCause.unknownDeviceError);
+    expect(
+        Failure.from(const LinkAcquireTimeout(
+                LinkStage.open, Duration(seconds: 30)))
+            .cause,
+        FailureCause.linkTimeout,
+        reason: 'a platform call that never returns is a named cause');
   });
 
   test('every cause a link can raise is emitted by real code', () {
@@ -90,6 +97,9 @@ void main() {
       // Classified from the typed `BleMtuTooSmall` inside `Failure.from`, which
       // the scan excludes because it is the catalogue's own file.
       FailureCause.mtuTooSmall,
+      // Same shape: `LinkAcquireTimeout` is classified in `Failure.from`, and
+      // the mapping is pinned by the "a link failure is classified" case above.
+      FailureCause.linkTimeout,
     };
     for (int code = 1; code <= 6; code++) {
       expect(byMapper.contains(Failure.causeForDeviceError(code)), isTrue,

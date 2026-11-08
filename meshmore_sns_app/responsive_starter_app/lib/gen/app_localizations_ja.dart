@@ -4421,6 +4421,19 @@ class AppLocalizationsJa extends AppLocalizations {
       'この1時間でアプリの送信時間の上限に達したため、送信していません。時間の経過とともにまた送信できます。';
 
   @override
+  String get failureLinkTimeout => '無線リンクを時間内に開けませんでした。送信はしていません。もう一度お試しください。';
+
+  @override
+  String diagnosticsHandshakeLine(String started, String timedOut) {
+    return 'リンクのハンドシェイク: $started 回開始、$timedOut 回応答なし';
+  }
+
+  @override
+  String diagnosticsLinkCloseLine(String count) {
+    return '完了しなかったリンク切断: $count 回';
+  }
+
+  @override
   String airtimeSpentLine(String spent, String budget) {
     return 'この1時間の送信時間: $spent / $budget';
   }
@@ -5651,6 +5664,46 @@ class AppLocalizationsJa extends AppLocalizations {
   String storageHistory(String kb) {
     return 'メッセージ履歴 $kb KB（密封）';
   }
+
+  @override
+  String storagePlaces(int n, int cap) {
+    return '場所 $n / $cap 件';
+  }
+
+  @override
+  String storageTrail(int n, int cap) {
+    return '軌跡 $n 点 / $cap 点、7日間';
+  }
+
+  @override
+  String storageMedia(int n) {
+    return '未完了のメディア送信 $n 件';
+  }
+
+  @override
+  String get storageClearAll => 'アプリが保持したデータをすべて削除';
+
+  @override
+  String get storageClearAllTitle => 'すべて削除しますか？';
+
+  @override
+  String get storageClearAllGoes =>
+      'このアプリが保持していたメッセージ履歴、場所、移動の軌跡、未完了のメディア記録、キャッシュした地図タイルを削除します。';
+
+  @override
+  String get storageClearAllStays =>
+      '無線機には影響しません。無線機自身の連絡先表、チャンネル、設定は残り、送信済みのメッセージは取り消されません。アプリの設定と、ダウンロード済みの地図地域も残ります。';
+
+  @override
+  String storageClearAllTypeWord(String word) {
+    return '確認のため $word と入力';
+  }
+
+  @override
+  String get storageClearAllConfirm => '削除';
+
+  @override
+  String get storageClearAllDone => '削除しました。無線機と設定はそのままです。';
 
   @override
   String mediaReachScope(String scope) {

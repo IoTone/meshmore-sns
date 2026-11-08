@@ -11,6 +11,7 @@ import 'package:flutter/services.dart' show rootBundle;
 import 'package:meshcore/meshcore.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'failure.dart';
+import 'link_acquire.dart';
 
 import 'airtime.dart';
 import 'airtime_prefs.dart';
@@ -93,9 +94,13 @@ class MeshcoreController extends ChangeNotifier {
     Duration? radioConfigTimeout,
     Duration? telemetryPollInterval,
     Duration? selfInfoPollInterval,
+    Duration? linkCloseTimeout,
+    Duration? linkOpenTimeout,
     PlaceInferenceEngine? placeInferenceEngine,
     AirtimeMeter? airtimeMeter,
   })  : _deliveryTimeoutOverride = deliveryTimeoutOverride,
+        _linkCloseTimeout = linkCloseTimeout ?? kLinkCloseTimeout,
+        _linkOpenTimeout = linkOpenTimeout ?? kLinkOpenTimeout,
         _channelDataTimeoutOverride = channelDataTimeout,
         _radioConfigTimeoutOverride = radioConfigTimeout,
         _selfInfoPollInterval =
@@ -231,7 +236,18 @@ class MeshcoreController extends ChangeNotifier {
         // The next connection asks for the contact table again.
         _contactsSyncRequested = false;
         _floodScopeAsked = false;
-        _maybeScheduleReconnect();
+        // A handshake timeout is not congestion: the radio never answered a
+        // frame that was sent to it, and the ladder's six-second floor exists
+        // for Android's BLE scan throttle rather than for this. The first
+        // retry after a timeout therefore goes out at once. Only the first:
+        // a radio that never answers would otherwise be re-scanned with no
+        // delay at all, which is the pattern that throttle drops silently, so
+        // from the second attempt the ladder and its floor apply again.
+        final int timeouts = _connection.handshakeTimeouts;
+        final bool handshakeTimedOut = timeouts > _handshakeTimeoutsSeen;
+        if (handshakeTimedOut) _handshakeTimeoutsSeen = timeouts;
+        _maybeScheduleReconnect(
+            immediate: handshakeTimedOut && _reconnectAttempt == 0);
       }
     });
     _inboundSub = _connection.inbound.listen(_processInbound);
@@ -652,9 +668,35 @@ class MeshcoreController extends ChangeNotifier {
   int _reconnectAttempt = 0;
   int _reconnectGen = 0;
 
+  /// How long a teardown of the previous link is given, and how long a new
+  /// transport is given, before the app stops waiting. See `link_acquire.dart`
+  /// for where the numbers come from.
+  final Duration _linkCloseTimeout;
+  final Duration _linkOpenTimeout;
+
+  /// Teardowns that outlasted [_linkCloseTimeout].
+  ///
+  /// Counted rather than treated as a failure: the app went on to open a new
+  /// link, so nothing was refused. It is a fact about the phone's stack, and
+  /// the reason a reconnect would otherwise look frozen.
+  int _linkCloseTimeouts = 0;
+
+  /// Handshake timeouts already reacted to, so one timeout is one immediate
+  /// retry rather than a retry on every state notification.
+  int _handshakeTimeoutsSeen = 0;
+
   MeshcoreConnectionState get state => _state;
   MeshcoreInbound? get lastFrame => _lastFrame;
   SelfInfo? get selfInfo => _connection.selfInfo;
+
+  /// Handshakes this session has started. One per link open.
+  int get handshakeAttempts => _connection.handshakeAttempts;
+
+  /// Handshakes this session that ended without the radio's SELF_INFO.
+  int get handshakeTimeouts => _connection.handshakeTimeouts;
+
+  /// Link teardowns that outlasted the wait the app allows.
+  int get linkCloseTimeouts => _linkCloseTimeouts;
 
   /// Our own node's 64-char pubkey hex (lower-case, no spaces), or
   /// `null` until `SelfInfo` arrives. Used to filter ourselves out
@@ -1040,7 +1082,7 @@ class MeshcoreController extends ChangeNotifier {
     notifyListeners();
   }
 
-  void _maybeScheduleReconnect() {
+  void _maybeScheduleReconnect({bool immediate = false}) {
     if (_manualDisconnect || _connecting) return;
     final int next = _reconnectAttempt + 1;
     if (!_reconnect.shouldRetry(next)) {
@@ -1052,7 +1094,8 @@ class MeshcoreController extends ChangeNotifier {
     }
     _reconnectAttempt = next;
     final int gen = _reconnectGen;
-    final Duration d = _reconnect.delayForAttempt(next);
+    final Duration d =
+        immediate ? Duration.zero : _reconnect.delayForAttempt(next);
     unawaited(_delay(d).then((_) {
       // Drop stale schedules (a newer connect/disconnect superseded us).
       if (gen != _reconnectGen || _manualDisconnect || _connecting) return;
@@ -1079,13 +1122,35 @@ class MeshcoreController extends ChangeNotifier {
     notifyListeners();
     Object? failure;
     try {
-      await _transport?.close();
-      final MeshcoreTransport t = await _transportFactory();
+      // Both waits are bounded. An unbounded close held `_connecting` set
+      // forever and left the screen reading "handshaking" with nothing behind
+      // it; a timed-out close is recorded and the app goes on to open a new
+      // link, because the old transport is unreachable either way.
+      final MeshcoreTransport? previous = _transport;
+      if (previous != null) {
+        try {
+          await previous.close().timeout(_linkCloseTimeout);
+        } on TimeoutException {
+          _linkCloseTimeouts++;
+          notifyListeners();
+        }
+      }
+      final MeshcoreTransport t =
+          await _transportFactory().timeout(_linkOpenTimeout);
       _transport = t;
       _connection.attach(t);
       // Success: the handshake now drives state via the connection
       // stream. Do NOT inspect _state here — that transition is
       // delivered asynchronously and would still read `failed`.
+    } on TimeoutException {
+      // The factory did not resolve inside the wait. Typed rather than left
+      // as a raw timeout so the screen can name the half that stalled; a
+      // TimeoutException from inside the connector lands here too, and the
+      // copy holds for both.
+      failure = LinkAcquireTimeout(LinkStage.open, _linkOpenTimeout);
+      _error = failure.toString();
+      _failure = Failure.from(failure);
+      _state = MeshcoreConnectionState.failed;
     } catch (e) {
       failure = e;
       // An MTU refusal is not a link fault and not retryable by backoff: the
@@ -1739,6 +1804,29 @@ class MeshcoreController extends ChangeNotifier {
     _dropped
       ..clear()
       ..addAll(loaded);
+    notifyListeners();
+  }
+
+  /// Delete everything this app kept of the conversation: every stored row,
+  /// and the per-thread tally of rows the cap had already dropped.
+  ///
+  /// The radio's own copy is untouched, and so is anything already on air: this
+  /// removes what the phone held, not what was said. The in-memory rows go
+  /// first, because `ChatStore.clear()` alone would leave them on screen and the
+  /// next persist would write them back — a delete that reports success and then
+  /// resurrects the history is worse than no delete at all.
+  ///
+  /// Read markers (`DmReadStore`) are left alone deliberately: they are timestamps
+  /// keyed by peer, they carry no message content, and a peer whose thread is
+  /// re-created would otherwise have its newest row look unread.
+  Future<void> clearAllHistory() async {
+    _messages.clear();
+    _invalidateMessagesCache();
+    if (_dropped.isNotEmpty) {
+      _dropped.clear();
+      await ChatStore.saveDropped(<String, int>{});
+    }
+    await ChatStore.clear();
     notifyListeners();
   }
 

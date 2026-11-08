@@ -4598,6 +4598,20 @@ class AppLocalizationsEn extends AppLocalizations {
       'This phone has used its own radio time limit for the last hour, so nothing was sent. It sends again as the hour rolls on.';
 
   @override
+  String get failureLinkTimeout =>
+      'The phone did not finish opening the radio link in time. Nothing was sent; retry to open it again.';
+
+  @override
+  String diagnosticsHandshakeLine(String started, String timedOut) {
+    return 'link handshakes: $started started, $timedOut with no answer';
+  }
+
+  @override
+  String diagnosticsLinkCloseLine(String count) {
+    return 'link teardowns that did not finish: $count';
+  }
+
+  @override
   String airtimeSpentLine(String spent, String budget) {
     return 'Radio time this hour: $spent of $budget';
   }
@@ -5891,6 +5905,47 @@ class AppLocalizationsEn extends AppLocalizations {
   String storageHistory(String kb) {
     return 'Message history $kb KB, sealed';
   }
+
+  @override
+  String storagePlaces(int n, int cap) {
+    return 'Places $n of $cap';
+  }
+
+  @override
+  String storageTrail(int n, int cap) {
+    return 'Trail $n points of $cap, seven days';
+  }
+
+  @override
+  String storageMedia(int n) {
+    return 'Unfinished media transfers $n';
+  }
+
+  @override
+  String get storageClearAll => 'Delete everything the app kept';
+
+  @override
+  String get storageClearAllTitle => 'Delete everything?';
+
+  @override
+  String get storageClearAllGoes =>
+      'This deletes the message history this app kept, places, the movement trail, unfinished media records and cached map tiles.';
+
+  @override
+  String get storageClearAllStays =>
+      'The radio is untouched: its contact table, channels and settings stay, and a message already sent is not recalled. Your settings and the map regions you downloaded also stay.';
+
+  @override
+  String storageClearAllTypeWord(String word) {
+    return 'Type $word to confirm';
+  }
+
+  @override
+  String get storageClearAllConfirm => 'Delete';
+
+  @override
+  String get storageClearAllDone =>
+      'Deleted. The radio and your settings are untouched.';
 
   @override
   String mediaReachScope(String scope) {

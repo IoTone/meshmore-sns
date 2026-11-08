@@ -2196,6 +2196,27 @@
   "diagnosticsRadioChangedLine": "この無線機は前回まで使っていたものではありません(前回 {previous}、今回 {current})。履歴・タグ・お気に入り・ブロックはアプリ側のものなので残ります。連絡先テーブル・チャンネル・無線設定は無線機側のものなので、この無線機の内容になります。",
   "diagnosticsRadioChangedAccept": "この無線機を使う",
   "failureAirtimeBudget": "この1時間でアプリの送信時間の上限に達したため、送信していません。時間の経過とともにまた送信できます。",
+  "failureLinkTimeout": "無線リンクを時間内に開けませんでした。送信はしていません。もう一度お試しください。",
+  "@failureLinkTimeout": {},
+  "diagnosticsHandshakeLine": "リンクのハンドシェイク: {started} 回開始、{timedOut} 回応答なし",
+  "@diagnosticsHandshakeLine": {
+    "placeholders": {
+      "started": {
+        "type": "String"
+      },
+      "timedOut": {
+        "type": "String"
+      }
+    }
+  },
+  "diagnosticsLinkCloseLine": "完了しなかったリンク切断: {count} 回",
+  "@diagnosticsLinkCloseLine": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
   "airtimeSpentLine": "この1時間の送信時間: {spent} / {budget}",
   "airtimeSpentLineUnlimited": "この1時間の送信時間: {spent}(上限なし)",
   "airtimeRefusedCount": "{count} 件が上限で拒否されました",
@@ -2575,6 +2596,16 @@
   "storageClearCache": "キャッシュしたタイルを削除",
   "storageCacheCleared": "キャッシュしたタイルを削除しました。ダウンロード済みの地域は残ります。",
   "storageHistory": "メッセージ履歴 {kb} KB（密封）",
+  "storagePlaces": "場所 {n} / {cap} 件",
+  "storageTrail": "軌跡 {n} 点 / {cap} 点、7日間",
+  "storageMedia": "未完了のメディア送信 {n} 件",
+  "storageClearAll": "アプリが保持したデータをすべて削除",
+  "storageClearAllTitle": "すべて削除しますか？",
+  "storageClearAllGoes": "このアプリが保持していたメッセージ履歴、場所、移動の軌跡、未完了のメディア記録、キャッシュした地図タイルを削除します。",
+  "storageClearAllStays": "無線機には影響しません。無線機自身の連絡先表、チャンネル、設定は残り、送信済みのメッセージは取り消されません。アプリの設定と、ダウンロード済みの地図地域も残ります。",
+  "storageClearAllTypeWord": "確認のため {word} と入力",
+  "storageClearAllConfirm": "削除",
+  "storageClearAllDone": "削除しました。無線機と設定はそのままです。",
   "mediaReachScope": "無線機の地域スコープ「{scope}」で送信されます。その地域で電波が届く全員が受信します。",
   "mediaReachNoScope": "無線機に地域スコープが設定されていないため、電波が届く全員が受信します。",
   "mediaReachUnknown": "到達範囲は無線機のスコープ次第で、まだ報告されていません。写真は受信確認されません。",

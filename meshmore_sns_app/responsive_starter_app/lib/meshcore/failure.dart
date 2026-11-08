@@ -6,6 +6,7 @@ import 'package:meshcore/meshcore.dart';
 import '../gen/app_localizations.dart';
 import 'airtime_meter.dart';
 import 'ble_connector.dart';
+import 'link_acquire.dart';
 
 /// APP-N2 — one table for every refusal the app can show.
 ///
@@ -48,6 +49,10 @@ enum FailureCause {
   /// The radio answered `RESP_CODE_DISABLED` (0x0F): the command exists but is
   /// switched off on this build, which is not the same as unsupported.
   commandDisabled,
+
+  /// Opening the link did not finish inside the wait the app allows: a
+  /// platform call that never resolved, not a refusal by the radio.
+  linkTimeout,
 }
 
 /// One refusal: what happened, plus the numbers the copy needs.
@@ -84,6 +89,9 @@ class Failure {
   static Failure from(Object error) {
     if (error is BleMtuTooSmall) {
       return Failure(FailureCause.mtuTooSmall, mtu: error.mtu);
+    }
+    if (error is LinkAcquireTimeout) {
+      return const Failure(FailureCause.linkTimeout);
     }
     if (error is BleConnectException) return Failure(error.cause);
     if (error is AirtimeRefused) {
@@ -122,4 +130,5 @@ String failureText(AppLocalizations l, Failure f) => switch (f.cause) {
       FailureCause.storageFull => l.failureStorageFull,
       FailureCause.radioSilent => l.failureRadioSilent,
       FailureCause.airtimeBudget => l.failureAirtimeBudget,
+      FailureCause.linkTimeout => l.failureLinkTimeout,
     };

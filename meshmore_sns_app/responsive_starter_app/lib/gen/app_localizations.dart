@@ -7840,6 +7840,24 @@ abstract class AppLocalizations {
   /// **'This phone has used its own radio time limit for the last hour, so nothing was sent. It sends again as the hour rolls on.'**
   String get failureAirtimeBudget;
 
+  /// No description provided for @failureLinkTimeout.
+  ///
+  /// In en, this message translates to:
+  /// **'The phone did not finish opening the radio link in time. Nothing was sent; retry to open it again.'**
+  String get failureLinkTimeout;
+
+  /// No description provided for @diagnosticsHandshakeLine.
+  ///
+  /// In en, this message translates to:
+  /// **'link handshakes: {started} started, {timedOut} with no answer'**
+  String diagnosticsHandshakeLine(String started, String timedOut);
+
+  /// No description provided for @diagnosticsLinkCloseLine.
+  ///
+  /// In en, this message translates to:
+  /// **'link teardowns that did not finish: {count}'**
+  String diagnosticsLinkCloseLine(String count);
+
   /// No description provided for @airtimeSpentLine.
   ///
   /// In en, this message translates to:
@@ -9867,6 +9885,66 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Message history {kb} KB, sealed'**
   String storageHistory(String kb);
+
+  /// No description provided for @storagePlaces.
+  ///
+  /// In en, this message translates to:
+  /// **'Places {n} of {cap}'**
+  String storagePlaces(int n, int cap);
+
+  /// No description provided for @storageTrail.
+  ///
+  /// In en, this message translates to:
+  /// **'Trail {n} points of {cap}, seven days'**
+  String storageTrail(int n, int cap);
+
+  /// No description provided for @storageMedia.
+  ///
+  /// In en, this message translates to:
+  /// **'Unfinished media transfers {n}'**
+  String storageMedia(int n);
+
+  /// No description provided for @storageClearAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete everything the app kept'**
+  String get storageClearAll;
+
+  /// No description provided for @storageClearAllTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete everything?'**
+  String get storageClearAllTitle;
+
+  /// No description provided for @storageClearAllGoes.
+  ///
+  /// In en, this message translates to:
+  /// **'This deletes the message history this app kept, places, the movement trail, unfinished media records and cached map tiles.'**
+  String get storageClearAllGoes;
+
+  /// No description provided for @storageClearAllStays.
+  ///
+  /// In en, this message translates to:
+  /// **'The radio is untouched: its contact table, channels and settings stay, and a message already sent is not recalled. Your settings and the map regions you downloaded also stay.'**
+  String get storageClearAllStays;
+
+  /// No description provided for @storageClearAllTypeWord.
+  ///
+  /// In en, this message translates to:
+  /// **'Type {word} to confirm'**
+  String storageClearAllTypeWord(String word);
+
+  /// No description provided for @storageClearAllConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get storageClearAllConfirm;
+
+  /// No description provided for @storageClearAllDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Deleted. The radio and your settings are untouched.'**
+  String get storageClearAllDone;
 
   /// No description provided for @mediaReachScope.
   ///

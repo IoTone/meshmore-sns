@@ -262,6 +262,18 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
               if (mc.reconnectAttempt > 0)
                 fact(l.diagnosticsReconnectLine('${mc.reconnectAttempt}') +
                     (mc.gaveUp ? l.diagnosticsGaveUpSuffix : '')),
+              // A handshake started more than once, or one that got no answer,
+              // is the shape of the report that read "handshaking for a long
+              // time". Shown only when there is something to see: one clean
+              // handshake is the normal case, and this page is already dense.
+              if (mc.handshakeAttempts > 1 || mc.handshakeTimeouts > 0)
+                fact(l.diagnosticsHandshakeLine(
+                    '${mc.handshakeAttempts}', '${mc.handshakeTimeouts}')),
+              // A teardown the phone never finished. Counted, not a fault: the
+              // app opened a new link anyway, and this is the only trace that
+              // the previous one had to be abandoned.
+              if (mc.linkCloseTimeouts > 0)
+                fact(l.diagnosticsLinkCloseLine('${mc.linkCloseTimeouts}')),
               if (mc.mtuRefusal != null)
                 fault(l.diagnosticsMtuRefusedLine(
                     '${mc.mtuRefusal!.mtu}', '${MeshcoreBle.requiredMtu}'))
