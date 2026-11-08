@@ -221,7 +221,7 @@ Vocabulary:
 - **Do not quote "R1–R108" as a requirement count.** R38–R51 do not exist; the namespace is broken.
 - **Do not copy GPL reference code or test-vector files into an MIT project.** Formats yes, files no.
 - **Do not build a fourth protocol implementation by accident.** Three already exist; decide deliberately.
-- **Do not add a skin per feature.** Seven skins already cost real money; consolidate before adding an eighth.
+- **Do not add a skin per feature.** Seven skins already cost real money; consolidate before adding an eighth. (A ninth preset now exists in spite of this — Studio Light, R115 — so treat the rule as stricter, not retired.)
 - **Do not chase full protocol coverage in the UI.** 21 opcodes are refused by policy and that is correct; expose
   the ones a user needs, and say why the rest are absent.
 - **Do not add a feature whose flash/RAM budget was not checked on the smallest supported board.**
@@ -246,7 +246,7 @@ Vocabulary:
 | D11 | **Release channel**: store or sideload | A8.3 demo mode, A8.1 terms, review-safe scope |
 | D12 | **Firmware baseline**: which boards/versions must work; may older ones be dropped | A3.5; the whole gating layer |
 | D13 | **History**: is searchable archive a requirement | A1.2; storage architecture |
-| D14 | **Design scope**: keep seven skins or consolidate | Frees real effort for A1/B1 |
+| D14 | **Design scope**: keep the presets or consolidate (decided: kept, and a ninth is now the bar for adding one) | Frees real effort for A1/B1 |
 | D15 | **Shared protocol core**: one implementation or three | A9.2; every future protocol change |
 | D16 | **Interop**: which of TAK / MQTT / Meshtastic / KISS-TCP is actually wanted | B2.4–B2.7 |
 | D17 | **Location**: is tracking/geofencing in scope, or is location presence-only | B5.1–B5.2 |

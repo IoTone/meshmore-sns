@@ -25,11 +25,11 @@ network you can actually see and feel:
 - **Nodes** — every node you've heard, with message counts, tags, and
   favourites. Tap any node for identity, proximity, signal, hop path,
   and telemetry.
-- **Hyperlocal grid** — ten ways to see the mesh around you: radial
-  radar with range rings and a heading HUD, globe, equal grid, street
-  map on the vector basemap, mesh survey, elevated terrain view,
-  force-directed mesh tree, SNS cell heat map, weather, and channel
-  activity.
+- **Hyperlocal grid** — six views of the mesh around you, picked from one
+  list: Radar (range rings, GPS or signal positioning, a heading HUD),
+  Coverage (which cells answered a ping), Weather, Mesh tree (who is
+  reachable through whom), Message heat, and Altitude. The street map is
+  the Map tab, not a grid view.
 - **Battery** — a real state-of-charge estimate from the radio's
   voltage, with a time-to-empty projection.
 - **Tools** (Settings → Tools) — radio stats (noise floor, airtime),
@@ -55,14 +55,13 @@ network you can actually see and feel:
   transport.
 - Six views: slide sideways to change view, or use the strip under the
   app bar. A map that pans takes the drag while you are moving it, and
-  the strip is always one tap away. Seven skins, and full English and
+  the strip is always one tap away. Eight presets, and full English and
   Japanese.
 
 ## Offline-first by design
 
-Region radio presets, device power profiles, the world map outline,
-and these docs are **baked into the app** so it works with no
-connectivity. The only network traffic is opportunistic: OSM map tiles
+Region radio presets, the world map outline, and these docs are
+**baked into the app** so it works with no connectivity. The only network traffic is opportunistic: OSM map tiles
 and refreshing these documentation snapshots when you happen to be
 online. Your mesh data never leaves your device.
 

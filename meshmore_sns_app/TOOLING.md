@@ -46,8 +46,8 @@ Run from `meshmore_sns_app/responsive_starter_app/` unless stated.
 | --- | --- | --- |
 | One file | `flutter test test/meshcore/ble_adopt_bond_test.dart` | **4.9 s**, 10 tests |
 | One subtree | `flutter test test/theme` | **7.5 s**, 36 tests |
-| Full app suite | `flutter test` | **71.6 s**, **1016 tests**, all passed |
-| Protocol package | `cd ../packages/meshcore && dart test` | **2.7 s**, 312 passed, 1 skipped |
+| Full app suite | `flutter test` | about three minutes; the current count is the dated figure in `STATUS.md` |
+| Protocol package | `cd ../packages/meshcore && dart test` | a few seconds; the current count is in `STATUS.md` |
 | Java port | `cd ../../../libmeshcore && ./gradlew test --offline` | **4.7 s**, 143 tests, 0 failures |
 
 - **A test file that takes more than ~5 s is a defect to report, not to live with.** `test/shell/home_shell_test.dart`
@@ -56,8 +56,8 @@ Run from `meshmore_sns_app/responsive_starter_app/` unless stated.
   thrash each other and both look slow.
 - The Java port's test task is incremental: the first run after a clean checkout is much slower than 4.7 s (it compiles
   the module and resolves plugins). `--offline` works because the cache is warm; drop it only if a dependency changed.
-- `flutter analyze` must stay at **two** warnings, both pre-existing: `lib/maps/maps_controller.dart:1008` and `:1013`
-  (`unawaited_return_in_try_block`). Anything else that appears is yours. Analyzer run: 3–5 s.
+- `flutter analyze` must stay at **zero** issues. The two `unawaited_return_in_try_block` warnings in
+  `lib/maps/maps_controller.dart` were fixed on 2026-11-05, so any warning now is a regression. Analyzer run: 3–7 s.
 
 ---
 

@@ -199,8 +199,8 @@ Gate: package suite green and fast; a device build still connects.
 `MmType` gains size/spacing/radius scales; a colour ratchet test forbids new literals; the remaining `fontSize:`
 literals migrate screen by screen in later waves (only the ratchet + scale land here, plus the migration of shared
 widgets and two pattern-setters).
-Gate: seven-preset exhaustiveness still compiles (`MmThemePreset` has seven; the earlier "eight-preset" line here was
-wrong); `test/theme/**` green.
+Gate: preset exhaustiveness still compiles (`MmThemePreset` had seven in this wave; Studio Light became the eighth
+on 2026-11-05, R115, and the enum now has eight); `test/theme/**` green.
 Landed 2026-11-05: `MmType` roles + `typeScale` + `size(step)`, `MmSpace` 1..9 = 2,4,6,8,12,16,20,24,32, `kPadPanel`
 keeps a panel's 14 px, `kRadiusXs/Sm/Md` for the sub-6 px corners, and the thermal ramp and heat cue are declared once
 in `viz_palette.dart`. The ratchet (`test/theme/mm_ratchet_test.dart`) is two lower-only baselines — 302 type sizes

@@ -1,10 +1,15 @@
 name: CI
 
+# Every branch and every pull request. The previous file listed `meshmore-sns`
+# and `main`, and neither was the branch under work, so even in the right place
+# it would have gated nothing.
 on:
   push:
-    branches: [meshmore-sns, main]
   pull_request:
-    branches: [meshmore-sns, main]
+
+# TODO: add `dart format --output=none --set-exit-if-changed lib test` in the
+# app job once the tree is format-clean. It is not today, and a gate that is red
+# on its first push teaches everyone to ignore the whole file.
 
 jobs:
   # Meshcore protocol conformance gate. Pure Dart — no device/emulator.
@@ -14,12 +19,14 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: packages/meshcore
+        working-directory: meshmore_sns_app/packages/meshcore
     steps:
       - uses: actions/checkout@v4
       - uses: dart-lang/setup-dart@v1
         with:
-          sdk: "3.9.2"
+          # Dart 3.13.3 is the SDK that ships with the Flutter pin below, and it
+          # satisfies the codec's own `sdk: ^3.5.0`.
+          sdk: "3.13.3"
       - name: Resolve
         run: dart pub get
       - name: Analyze
@@ -33,12 +40,15 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: responsive_starter_app
+        working-directory: meshmore_sns_app/responsive_starter_app
     steps:
       - uses: actions/checkout@v4
       - uses: subosito/flutter-action@v2
         with:
-          flutter-version: "3.35.6"
+          # The tree is developed against 3.47.4: `pubspec.lock` floors it at
+          # `flutter: ">=3.47.0"` and the Android target SDK is measured from
+          # this toolchain's defaults.
+          flutter-version: "3.47.4"
           channel: stable
       - name: Resolve
         run: flutter pub get
@@ -46,3 +56,22 @@ jobs:
         run: flutter analyze
       - name: Widget tests
         run: flutter test
+
+  # The pure-Java port of the codec, which the app never links but which shares
+  # the wire formats. No `--offline`: the local box's copy of this command runs
+  # against a warm ~/.gradle cache, and a fresh runner has none.
+  java-port:
+    name: java port (gradlew test)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: libmeshcore
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          # libmeshcore/build.gradle.kts: languageVersion = JavaLanguageVersion.of(17)
+          java-version: "17"
+      - name: Test
+        run: ./gradlew test --rerun-tasks

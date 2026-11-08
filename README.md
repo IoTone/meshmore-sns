@@ -7,11 +7,14 @@ Offline-first, theme-driven, with a hyperlocal radar grid, per-channel chat,
 1:1 DMs, and a device-first → phone-fallback location model.
 
 > **Status — in development.** Source is here for review and contribution;
-> there's no public release channel yet. Measured 2026-11-05 on this tree: 2028
-> widget/unit tests pass in about 3 minutes, the protocol package's 368 pass with
-> one skipped, the pure-Java port's 143 pass with none failing, and
-> `flutter analyze` is clean with no standing warnings. Debug and release APKs
-> build, and the release bundle is 77 MB.
+> there's no public release channel yet. The one measured set of numbers lives in
+> [`meshmore_sns_app/STATUS.md`](./meshmore_sns_app/STATUS.md), with the date and
+> the command behind each, because a count restated in five documents goes wrong
+> in four of them. Measured there on 2026-11-05: about 2,000 widget/unit tests in
+> roughly three minutes, the protocol package's 368 with one skipped, the
+> pure-Java port's 143 with none failing, and `flutter analyze` clean with no
+> standing warnings. Debug and release APKs build, and the release bundle is
+> 77 MB.
 >
 > Re-read on a motorola edge 2024 with a MeshCore radio paired: the shell's single
 > header, the "Hyperlocal grid" tab, one rule per group boundary, the radio's
@@ -30,7 +33,7 @@ Offline-first, theme-driven, with a hyperlocal radar grid, per-channel chat,
 ## Screens at this stage
 
 Honest UI mockups in the **SEELE Monolith** default theme (still the default
-preset). The drawings predate R89–R113, so the chrome in a current build
+preset). The drawings predate R116–R119, so the chrome in a current build
 differs: the grid's transport and range are controls in a bottom bar (the
 range is picked, not slid), the node row no longer carries an IN RANGE chip,
 the app-bar strip uses 22 px icon cells, and the phone build now also has an
@@ -59,7 +62,7 @@ SEELE, DR Pop, Recon) with palette anchors and per-theme rendering plans.
 
 The requirements, the change record and the sibling specs:
 
-- **Requirements + change record (R1–R113):** [`meshmore-sns-spec.md`](./meshmore-sns-spec.md)
+- **Requirements R1–R117 and their change record:** [`meshmore-sns-spec.md`](./meshmore-sns-spec.md). R118 onward are recorded in [`STATUS.md`](./meshmore_sns_app/STATUS.md), which is the live change log
 - **UX implementation spec (U0–U15, six skins):** [`meshmore-sns-UX-spec.md`](./meshmore-sns-UX-spec.md)
 - **Offline maps (R61, R93):** [`meshmore-sns-maps-spec.md`](./meshmore-sns-maps-spec.md)
 - **Tools surface (R60):** [`meshmore-sns-tools-spec.md`](./meshmore-sns-tools-spec.md)
@@ -101,12 +104,21 @@ Highlights of what's already shipping:
 - **Diagnostics** screen with a bounded RAW FRAME LOG scroll (R23) for live
   protocol inspection.
 
+- **Per-channel notifications (R24)** — each channel carries its own bundle
+  (OS notification, sound, vibration, speech, mentions-only), edited from the
+  channel row.
+- **Documentation inside the app (R53, R86)** — a Docs hub with Protocol,
+  Firmware, App and Devices bundled into the APK, so it reads offline, with an
+  opportunistic refresh when the phone happens to be online.
+- **Storage and backup** — Settings states what each store holds and what it can
+  prove, and one history export produces a passphrase-encrypted file the same app
+  restores.
+
 Forward-looking but already speccd (not built):
 
-- **R24** per-channel notification settings.
-- **R25** the equal-area cell overlay on the map (the standalone equal-grid view was
-  removed; the property worth keeping, equal-area density, is recorded in the
-  register's residue row).
+- **R25** the equal-area cell overlay on the map. The standalone equal-grid view was
+  removed; the density idea survives as the grid's **Message heat** view, and the
+  per-cell map layer itself is unbuilt (register residue row).
 - **R26** XR data streaming via private temp-URL reverse proxy.
 - **R27** ~~Globe.GL macro view~~ — withdrawn 2026-11-05; the globe was removed
   from the product.
@@ -120,7 +132,7 @@ cd meshmore_sns_app/responsive_starter_app
 flutter pub get
 flutter run            # debug on a connected device
 flutter analyze        # static analysis
-flutter test           # 1997 tests at time of writing
+flutter test           # the whole suite; the count is in STATUS.md
 ```
 
 **Submodule note** — the `meshcore` codec lives at
@@ -135,7 +147,14 @@ codec directly.
 ```
 meshmore-sns/
 ├── README.md                       ← this file
-├── meshmore-sns-spec.md            ← requirements + change record (R1–R113)
+├── .github/workflows/ci.yml        ← the gates: codec, app, Java port
+├── meshmore-feature-register.md    ← the single list of state (start here)
+├── meshmore-app-spec.md            ← APP-* requirements, each with a check
+├── meshmore-scope-of-record.md     ← decisions D8.x / D10.x / D11.x
+├── meshmore-master-plan.md         ← the plan of record, §W1–§W12
+├── meshmore-execution-plan.md      ← the wave order and what closes each item
+├── meshmore-publishing.md          ← what a publisher must supply
+├── meshmore-sns-spec.md            ← requirements R1–R117 + their change record
 ├── meshmore-sns-UX-spec.md         ← U0–U15 implementation plan
 ├── meshmore-sns-maps-spec.md       ← offline maps (R61, R93)
 ├── meshmore-sns-tools-spec.md      ← Tools surface (R60)
@@ -147,12 +166,17 @@ meshmore-sns/
 │   ├── _render_plan.py             ← per-theme rendering plan in the brief
 │   └── _apply_headers.py           ← MIT/SPDX header sweep
 ├── screens/                        ← README screen mockups
+├── libmeshcore/                    ← the protocol codec ported to pure Java
+├── libmeshcore-android/            ← the Android library wrapper for it
+├── meshmore-xr/                    ← the Android XR companion (Kotlin)
+├── meshmore-xr-www/                ← the XR project's Hugo site
 └── meshmore_sns_app/               ← the Flutter project (tracked in this repo)
-    ├── STATUS.md                   ← what is built, what is open
+    ├── STATUS.md                   ← what is built, what is open, the change log
+    ├── TOOLING.md                  ← the commands, and what each costs
     ├── packages/meshcore/          ← pure-Dart protocol codec
     └── responsive_starter_app/     ← Flutter app (Android is the target; iOS is kept, deprioritised)
         ├── lib/                    ← all controllers, screens, theme, perms…
-        ├── test/                   ← 1997 widget/unit tests
+        ├── assets/docs/            ← the four docs the app ships and reads offline
         ├── android/                ← FGS manifest, BLE perms
         ├── ios/                    ← Info.plist usage strings
         └── web/                    ← build only; no radio link, so it is not a supported target

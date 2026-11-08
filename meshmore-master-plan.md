@@ -211,7 +211,7 @@ These are not features. Nothing above is safe or shippable without them.
 - **N11 A licence register** — MIT project; GPL reference code cannot be copied; Codec2, AV1, image codecs and ODbL map data each carry obligations.
 - **N12 Documentation repair** (W11) as its own pass, because plans keep being derived from documents that are wrong.
 - **N13 A measurement plan** for the two gaps the research left open: bulk-transfer reliability, and collision behaviour under load. The tools exist (`mcsim`); the experiments do not.
-- **N14 Accessibility and l10n guard expansion** so "every feature works in all seven skins" is enforced rather than remembered.
+- **N14 Accessibility and l10n guard expansion** so "every feature works in every preset" is enforced rather than remembered.
 - **N15 A store-policy review of the block action** — what blocking must do to satisfy Play's UGC policy, and what it honestly cannot do: stop the radio receiving, relaying or storing a packet.
 
 ---
@@ -286,7 +286,7 @@ Every entry is a question with the decision it changes. Most have not been resea
 - **Blocking is app-side, so it cannot be enforced on the radio.** A blocked key's channel messages still arrive and are stored on the device. The firmware has no per-sender mute either: `setNotificationOutputMute` takes an output (`Sound`, `Vibration`), not a key (`meshcore-keymind/examples/companion_radio/MyMesh.h:334`), so silencing a blocked key is the app's job. The honest block is three actions: a keyed store the app filters on every surface, contact removal, and the keymind `dm.one_key` consent gate where that fork is present.
 - **`0x3E` is verified only against third-party implementations.** The first real-hardware test is a milestone gate, not a detail.
 - **Media and places both depend on W1**, and W1 is unglamorous work with no user-visible output. It is the most likely thing to be skipped and the most expensive thing to skip.
-- **The seven-skins requirement multiplies every feature by seven.** It is a deliberate choice; it should be priced as one.
+- **The all-presets requirement multiplies every feature by eight.** It is a deliberate choice; it should be priced as one.
 - **Fetching packs from public sources makes a third party's URL a product dependency.** A dead URL is a support ticket nobody can fix.
 - **Nothing in the field set has been run against real radios** except two documented passes. Every "SHIPPED" in the audit means "runs in tests", not "runs in the field".
 - **Documentation keeps being the weakest link.** Plans derived from the spec have been wrong by two-thirds; plans derived from the "Future" list have been wrong in both directions.
@@ -524,7 +524,7 @@ at the low-bitrate end where the app actually is.
 
 ### 9.5 The theme problem, because every new screen makes it worse
 
-The seven skins are real — `nerv, agHud, hyperlocal, seele, drPop, recon, studio` — and the preset switch is
+The presets are real — `nerv, agHud, hyperlocal, seele, drPop, recon, studio, studioLight` — and the switch is
 exhaustive, so an eighth preset is a compile error until its bundle exists. **It now has one:** Studio Light
 (`studioLight`, R115, 2026-11-05) is the eighth, and `mmSkinFor` deliberately has no `default:` clause, which is
 what turned "an eighth is a compile error" into a checklist rather than a hope. But **`MmType` has no size, spacing or
@@ -532,7 +532,7 @@ radius scale**, so every type step is a literal: >250 `fontSize:` values in `lib
 by a test. Colours are not.
 
 **Add the type scale to the tokens and a colour ratchet before adding any feature screen**, or "every feature works
-in all seven skins" becomes unenforceable within a release.
+in every preset" becomes unenforceable within a release.
 
 **Done (W2, 2026-11-04):** the scale exists — `MmType.size`/`typeScale`, `MmSpace` (insideText 2, labelToControl 4,
 rowGap 8, rowInset 12, screenEdge 16, sectionGap 24, emptyState 32), `kRadiusXs/Sm/Md` with the 1 px floor, and the
@@ -631,7 +631,7 @@ offline stack.
 David's product with its own policy — so MeshMore's privacy declarations describe MeshMore and inherit none of the
 XR server dependencies. Remaining calls: the XR design's server-backed audio
 profile, cloud STT/TTS and private temp-URL proxy; "no lobospeak in MeshMore" against the XR client rendering
-lobospeak pins and geofences natively; "seven skins" against "the six SNS themes cannot be ported"; "no AI work"
+lobospeak pins and geofences natively; "every preset" against "the six SNS themes cannot be ported"; "no AI work"
 against the shipped Autopen. Two factual corrections applied to his brief: `CMD_SET_ADVERT_LATLON` is **14 = 0x0E**,
 not `0x0C`, and the offline-map claim above.
 

@@ -10,15 +10,15 @@ This directory is tracked in the parent repository, not a submodule.
 | Document | What it holds |
 |---|---|
 | [`../README.md`](../README.md) | Project overview, doc map, repository layout |
-| [`../meshmore-sns-spec.md`](../meshmore-sns-spec.md) | Requirements (R1–R24) and the change record (R29–R108) |
-| [`../meshmore-sns-UX-spec.md`](../meshmore-sns-UX-spec.md) | U0–U15 implementation plan and the six skins (historical plan, see its header) |
+| [`../meshmore-sns-spec.md`](../meshmore-sns-spec.md) | Requirements R1–R117 and their change record. R118 onward live in [`STATUS.md`](STATUS.md), which is the current change log |
+| [`../meshmore-sns-UX-spec.md`](../meshmore-sns-UX-spec.md) | U0–U15 implementation plan and the six original skins (historical plan; the app now ships eight presets) |
 | [`../meshmore-sns-maps-spec.md`](../meshmore-sns-maps-spec.md) | Basemaps and offline region files (R61, R93) |
 | [`../meshmore-sns-tools-spec.md`](../meshmore-sns-tools-spec.md) | Tools surface (R60) |
 | [`../meshmore-sns-radio-alerts.md`](../meshmore-sns-radio-alerts.md) | Radio chime in firmware, per-board matrix, silence patch |
 | [`../meshmore-sns-architecture.md`](../meshmore-sns-architecture.md) | The design of record, including the responsibility matrix (§13) |
 | [`../meshmore-sns-architecture-audit.md`](../meshmore-sns-architecture-audit.md) | The audit trail, append-only |
-| [`STATUS.md`](STATUS.md) | What is built, what is open, test counts |
-| [`responsive_starter_app/assets/docs/`](responsive_starter_app/assets/docs/) | In-app offline docs (Protocol, Firmware, App) |
+| [`STATUS.md`](STATUS.md) | What is built, what is open, and the one dated test count every other document defers to |
+| [`responsive_starter_app/assets/docs/`](responsive_starter_app/assets/docs/) | In-app offline docs: Protocol, Firmware, App and Devices |
 
 ## Layout
 
@@ -31,11 +31,11 @@ meshmore_sns_app/
     │   ├── meshcore/          ← controller facade over BLE + protocol
     │   ├── screens/           ← routed pages and the shell tabs
     │   ├── shell/             ← HomeShell, view strip, boot overlay
-    │   ├── theme/             ← skins (NERV, AG-HUD, Hyperlocal, SEELE, DR Pop, Recon, Studio)
+    │   ├── theme/             ← eight presets (NERV, AG-HUD, Hyperlocal, SEELE, DR Pop, Recon, Studio, Studio Light)
     │   ├── maps/              ← tiles, style, offline packs, region files
     │   ├── ui/                ← shared components (MmListRow, MmAction, showMmPicker…)
     │   └── l10n/              ← ARB files (app_en.arb, app_ja.arb)
-    ├── test/                  ← 1016 widget/unit tests
+    ├── test/                  ← widget and unit tests, with the count in STATUS.md
     └── android/, ios/         ← platform shells
 ```
 
@@ -45,8 +45,8 @@ meshmore_sns_app/
 cd responsive_starter_app
 
 flutter pub get
-flutter analyze                 # clean: no errors, no warnings
-flutter test                    # 1016 tests, ~83 s
+flutter analyze                 # must report no issues at all
+flutter test                    # the whole suite, about three minutes
 flutter build apk --debug       # Android debug APK
 
 # Toolchain floor with Flutter 3.47.4, enforced by dev.flutter.flutter-gradle-plugin:
@@ -55,8 +55,6 @@ flutter build apk --debug       # Android debug APK
 flutter run -d <device>         # install on a device
 ```
 
-- Known analyzer warnings: `lib/maps/maps_controller.dart` (two
-  `unawaited_return_in_try_block`).
 - Android APK output: `build/app/outputs/flutter-apk/app-debug.apk`.
 - iOS builds need a Mac with Xcode and CocoaPods.
 
@@ -68,9 +66,10 @@ flutter run -d <device>         # install on a device
 - **Themes**: behaviour is generalized through `MmTokens` / `MmType` / `MmShape`,
   not forked per theme. Read tokens through `context.skin` in build and
   `context.skinRead` in event handlers.
-- **Navigation**: six views in one `PageView` with `NeverScrollableScrollPhysics`.
-  The view strip is the only switcher (tap jumps, vertical drag steps one).
-  Panning surfaces keep their edge bands.
+- **Navigation**: six views, paged by a horizontal swipe on the body. The view
+  strip is always there as well (tap jumps in one frame, vertical drag steps one
+  view), and a surface that needs the drag takes it: the Map while it is current,
+  and the grid while a pan/zoom view is in pan mode.
 - **Surfaces**: `showMmPicker` for pick-one-of-N, a bottom sheet for a choice
   that ends where it started, a routed page for a destination with its own
   state.

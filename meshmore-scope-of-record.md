@@ -5,7 +5,7 @@ today, and what is being built. It supersedes `meshmore-feature-plan.md` whereve
 document remains as the analysis trail, and `meshmore-feature-audit.md` remains the evidence trail.
 
 Every entry is a decision taken on 2026-11-04 by the project owner, with the consequence stated. Entries
-marked **[DAVID]** touch work that David owns — the original project, the seven skins, the XR client and the
+marked **[DAVID]** touch work that David owns — the original project, the skins, the XR client and the
 Play Store release — and need his agreement before they change.
 
 ---
@@ -20,7 +20,7 @@ Play Store release — and need his agreement before they change.
 - **David releases to the Play Store.** That makes store constraints requirements, not options.
 - **David owns the XR client** (`meshmore-xr/`, 116 Kotlin files, 39,386 lines) — frozen in this scope, not
   abandoned.
-- **David owns the seven skins.** All seven stay; every feature must work in all seven; the skins themselves
+- **David owns the skins.** All of them stay; every feature must work in all of them; the skins themselves
   need a correctness audit. **Amendment (2026-11-05):** the app now ships **eight** presets, because Studio Light
   (R115) was added on the owner's direction as the paper-ground counterpart of Studio. Every feature works in all
   eight, and the guards (`test/theme/skin_sweep_test.dart`, the a11y floor sweep's per-preset pass, the ratchets)
@@ -169,7 +169,8 @@ Each item is an amendment to shipped behaviour. Ordered by user impact.
     second is removable, or declare it.
 35. **Add an issues link in Settings** in place of crash reporting.
 36. **Add a radio-free demo mode** for store review and evaluation.
-37. **Audit the seven skins for correctness** and keep all seven; every feature must work in all of them.
+37. **Audit every preset for correctness** and keep all of them; every feature must work in all eight (R115 added
+    Studio Light to the seven originals).
 38. **Repair the documentation set** — the requirement numbering, the "Future" section and the contradictions
     named in the audit.
 39. **Add a block action, an in-app report action and first-use terms acceptance.** Play's UGC policy asks for
