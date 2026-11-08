@@ -10,7 +10,7 @@ page is the list; the other documents hold the reasoning.
 | --- | --- | --- |
 | 1 | `meshmore-scope-of-record.md` | **Decisions.** If a ruling is here, it wins over everything below |
 | 2 | `meshmore-master-plan.md` | **Plan and evidence.** §9 supersedes §8, which supersedes §2 and §4 for anything they both cover |
-| 3 | `meshmore-app-spec.md` | **Normative requirements.** APP-A…APP-N, 62 numbered requirements (counted 2026-11-05 by listing the ids and deduplicating them), a check per row. Where it and the scope disagree, the scope wins |
+| 3 | `meshmore-app-spec.md` | **Normative requirements.** APP-A…APP-N, **61** declared requirements, each with a check (re-counted 2026-11-08: 61 ids declared as `**APP-x.**`, 61 `*Check:*` lines, zero without one). The 62nd distinct id in the file is `APP-M1`, which is only mentioned in passing where its surviving half is described; it is not a requirement and should not be counted as one. Where the spec and the scope disagree, the scope wins |
 | 4 | `meshmore-sns-block-spec.md`, `meshmore-sos-spec.md`, `meshmore-places-spec.md`, `meshmore-telemetry-coverage-spec.md` | **Feature specs at implementation depth.** The block spec is the depth template; the other three follow its shape |
 | 4a | `meshmore-spec-breadth-review.md` | **Breadth.** What a complete specification needs beyond the feature list, what was missing, and what is deliberately out |
 | 5 | `meshmore-feature-audit.md` | **What exists.** Measured against source; a "SHIPPED" here beats a plan row's assumption |
