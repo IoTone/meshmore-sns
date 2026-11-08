@@ -285,6 +285,29 @@ Report back
   had to take that the documents do not cover. Name anything you deliberately did not do.
 ```
 
+The owner's standing rules that the block above did not carry, mined from the session history on 2026-11-08. Each one
+has cost a session to re-learn, so each is written here as a rule rather than a preference:
+
+- **Never push.** Local commits, investigations and edits are free; a push is shown to the owner first, and nothing in
+  this project has been pushed since 2026-11-05.
+- **No borrowed inspiration in code or comments.** Do not name another project, library or design as the source of an
+  idea in a comment, an identifier or user copy. (The one exception is a licence obligation, which must name its
+  source.) The repo's prose documents may credit visual lineage; the shipped app may not.
+- **Hardware agnostic, by construction.** Nothing may be built around one radio, one board or one phone. A behaviour
+  that only works on the model in hand is a defect with a friendly face, and the owner has asked for this twice:
+  "we should not be building software around specific hardware" and "we need to make the project super radio
+  agnostic".
+- **Plain words in UI copy, and less of it.** A settings page is buttons and values, not an essay; a label says what
+  the control does. Words the owner has struck out: "signature" for a notification sound, "Q", "routes", "repro".
+- **Session history is evidence.** When something is unclear — a decision, a regression, a repeated complaint —
+  search the pi transcripts (`~/.pi/agent/sessions/--home-ldeen-Documents-*--`) and the Claude projects directory
+  before asking again or guessing. Prompts are dictated and noisy, so read intent with what the work then did.
+- **No placeholders, no fakes, no partial implementations.** "We should not like do a partial implementation", and a
+  state that exists only in a test is not built. If something cannot be finished here, say which half is missing and
+  why.
+- **A reported symptom is a fact until disproved.** The "handshaking, then refresh fixes it" report was repeated
+  across five days before anyone read it as a bug in the state machine rather than in the user's retelling.
+
 ---
 
 ## 5. Verification protocol
@@ -325,6 +348,13 @@ protocols (§9.14 M1-M3, all needing hardware) · which map-pack source is permi
 | W10 on-device matrix | **blocked on the phone's PIN** | — | The build installs and the process survives the gateway removal, and the radio link keeps its link loop (`[meshcore.loc]` every 60 s), but the keyguard blocks every screen-level check. Every W8 row, tap-through, Doze SOS, MTU per radio, and the on-air paths wait for an unlocked phone |
 | W11 docs sync | **done 2026-11-05** | worker | register rows moved to BUILT with code evidence, R113 collision resolved, tracker and STATUS/README measured numbers, places id field renamed to its real precision, Java port divergence recorded |
 | W12 review and integration | **closed on this branch, device matrix owed** | reviewer | Two adversarial reviewers over `origin/dev...HEAD` returned BLOCK on four P1s each: media airtime arithmetic (~150x understated), no inbound media consumer, a per-call `EncryptedStore` losing records, notifications suppressed after one Chat visit, a place echo re-anchoring its TTL, an unpaced SOS catch-up burst, and no export leaving the app. Seven core fixes (`85efd9b`, `f0865b1`, `5920269`, `34c6a72`, `5abb070`, `1e77ac5`, `9ea1084`) and the UI fixes (`f136fd5`, `cc41782`, `3498204`, `7526fc8`, `ec6c1e4`, `b1454fa`, `4131269`, `17cf437`) landed, each with the test that fails without it, plus the inbound media wiring (`a9248f4`). The second pass read the fixes and their joins and returned BLOCK on three more: the per-call store lock (carried over from round one), two exports the FileProvider could not serve, and three register rows that had gone stale. Those are closed in `463d60b` (the lock is keyed by the file, `test/meshcore/store_sharing_test.dart`), `a44b2d9` (both files write under a declared root, `test/util/export_paths_test.dart`), `cbf6b98` (the equal grid does not offer a toggle it has no drag for), `f6e2383` (a DM thread's suppression follows the route stack), `ff21f9a` (the photo fetch takes the inbox's download) and `ef0a34e` (clip data on the share intent). Final measured at `1d30b0d`: `flutter test` 1690 passed / 2 m 0 s, package 368 + 1 skipped, Java 143 + 1 skipped, APK 1 m 23 s cold, analyze only the two known warnings. What no child can close is the device matrix, which the PIN keyguard blocks and §7 records |
+
+**This tracker stops at 2026-11-05, and that is deliberate.** Every wave above is closed or has a named owner and a
+named gap, so the table is the record of how the work was ordered rather than a live queue. The live queue is the
+register: its §9 carries the questions that still need an answer and §10 carries the residue, row by row, with what
+closes each one. Work done after this table was written lives in `meshmore_sns_app/STATUS.md` (R113 onward, newest
+first), which is the change log of record. A wave row that was never updated here is not evidence that the wave is
+still open: read the register row before starting anything from this page.
 
 ## 8. Questions that stay with the owner (ask only when blocked)
 
