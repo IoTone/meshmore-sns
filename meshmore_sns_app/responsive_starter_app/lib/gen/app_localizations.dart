@@ -9946,6 +9946,12 @@ abstract class AppLocalizations {
   /// **'Deleted. The radio and your settings are untouched.'**
   String get storageClearAllDone;
 
+  /// No description provided for @storageClearAllPartly.
+  ///
+  /// In en, this message translates to:
+  /// **'{unfinished} of {total} stores did not finish. What is left is listed here; the radio and your settings are untouched.'**
+  String storageClearAllPartly(int unfinished, int total);
+
   /// No description provided for @mediaReachScope.
   ///
   /// In en, this message translates to:

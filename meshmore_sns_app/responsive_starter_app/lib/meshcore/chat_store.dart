@@ -105,8 +105,8 @@ abstract final class ChatStore {
     };
     try {
       if (!await _ensureSealed()) return;
-      await _store().write(droppedRecordName,
-          Uint8List.fromList(utf8.encode(jsonEncode(kept))));
+      await _store().write(
+          droppedRecordName, Uint8List.fromList(utf8.encode(jsonEncode(kept))));
     } on EncryptedStoreUnavailable {
       // No key: the count is session-only, like the history itself would be.
     }
@@ -163,7 +163,8 @@ abstract final class ChatStore {
     final bool sealed = await _ensureSealed();
     if (sealed) {
       try {
-        final Uint8List encoded = Uint8List.fromList(utf8.encode(_encode(tail)));
+        final Uint8List encoded =
+            Uint8List.fromList(utf8.encode(_encode(tail)));
         await _store().write(recordName, encoded);
         bytes.value = encoded.length;
         lastWriteFailure.value = null;
@@ -216,6 +217,11 @@ abstract final class ChatStore {
     }
     final SharedPreferences p = await SharedPreferences.getInstance();
     await p.remove(_kLegacyKey);
+    // The published size is what the storage block prints, so a delete that
+    // left it standing would report the history it just removed. Only this
+    // path knows the record is gone, so the reset belongs here rather than in
+    // the surface that reads it.
+    bytes.value = 0;
   }
 
   /// Moves the plaintext history into the sealed store, once.
@@ -235,8 +241,8 @@ abstract final class ChatStore {
     final List<ChatMessage> messages = _decode(legacy ?? '');
     try {
       if (legacy != null) {
-        await _store()
-            .write(recordName, Uint8List.fromList(utf8.encode(_encode(messages))));
+        await _store().write(
+            recordName, Uint8List.fromList(utf8.encode(_encode(messages))));
         final Uint8List? back = await _store().read(recordName);
         if (back == null) throw const EncryptedStoreCorrupt('read back empty');
         final List<ChatMessage> verified = _decode(utf8.decode(back));

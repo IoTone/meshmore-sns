@@ -34,6 +34,10 @@ void main() {
     'lib/bot/bot_scope_config.dart': 2,
     'lib/bot/bot_section.dart': 2,
     'lib/chat/chat_actions.dart': 1,
+    // The delete-everything dialog: a Cancel beside a filled destructive
+    // confirm, the same shape as the two above and the one thing a dialog's
+    // action row may be.
+    'lib/ui/storage_use_block.dart': 1,
     'lib/media/media_composer.dart': 1,
     'lib/places/place_create_sheet.dart': 1,
     'lib/places/place_detail_sheet.dart': 2,
@@ -158,8 +162,11 @@ void main() {
       expect(t.textButtonTheme.style, isNotNull, reason: '$p');
       expect(t.textButtonTheme.style!.side!.resolve(<WidgetState>{}), isNotNull,
           reason: '$p carries a boundary');
-      expect(t.textButtonTheme.style!.minimumSize!
-          .resolve(<WidgetState>{})!.height, 48, reason: '$p meets the floor');
+      expect(
+          t.textButtonTheme.style!.minimumSize!
+              .resolve(<WidgetState>{})!.height,
+          48,
+          reason: '$p meets the floor');
     }
   });
 }

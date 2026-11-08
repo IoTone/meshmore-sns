@@ -5706,6 +5706,11 @@ class AppLocalizationsJa extends AppLocalizations {
   String get storageClearAllDone => '削除しました。無線機と設定はそのままです。';
 
   @override
+  String storageClearAllPartly(int unfinished, int total) {
+    return '$total 件中 $unfinished 件を削除できませんでした。残っているものはここに表示されます。無線機と設定はそのままです。';
+  }
+
+  @override
   String mediaReachScope(String scope) {
     return '無線機の地域スコープ「$scope」で送信されます。その地域で電波が届く全員が受信します。';
   }

@@ -5948,6 +5948,11 @@ class AppLocalizationsEn extends AppLocalizations {
       'Deleted. The radio and your settings are untouched.';
 
   @override
+  String storageClearAllPartly(int unfinished, int total) {
+    return '$unfinished of $total stores did not finish. What is left is listed here; the radio and your settings are untouched.';
+  }
+
+  @override
   String mediaReachScope(String scope) {
     return 'Goes out under the radio\'s region scope $scope: everyone in that region who can hear your radio.';
   }

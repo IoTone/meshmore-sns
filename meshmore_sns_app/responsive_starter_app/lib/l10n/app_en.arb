@@ -4038,6 +4038,7 @@
   "storageClearAllTypeWord": "Type {word} to confirm",
   "storageClearAllConfirm": "Delete",
   "storageClearAllDone": "Deleted. The radio and your settings are untouched.",
+  "storageClearAllPartly": "{unfinished} of {total} stores did not finish. What is left is listed here; the radio and your settings are untouched.",
   "@storageMaps": {
     "placeholders": {
       "used": {
@@ -4096,6 +4097,16 @@
     "placeholders": {
       "word": {
         "type": "String"
+      }
+    }
+  },
+  "@storageClearAllPartly": {
+    "placeholders": {
+      "unfinished": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
       }
     }
   },
