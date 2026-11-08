@@ -2643,5 +2643,15 @@
   "placeRefuteToSender": "送信者に否定を送る",
   "placeSentDirect": "送信者にダイレクトメッセージで送りました。",
   "placeNoSenderKey": "この場所には鍵が付いていないため、直接宛先にできません。",
-  "dmWaiting": "上のメッセージの結果を待っています。連絡先ごとに1通ずつにすることで、無線機がどのメッセージに応答があったかを示せます。"
+  "dmWaiting": "上のメッセージの結果を待っています。連絡先ごとに1通ずつにすることで、無線機がどのメッセージに応答があったかを示せます。",
+  "settingsHubFirmware": "ファームウェア",
+  "firmwareTitle": "ファームウェア",
+  "firmwareIntro": "この無線機が動かしているものと、アプリがそれに対して行うこと。この画面から何かをインストールすることはありません。",
+  "firmwareRadioLabel": "無線機のファームウェア",
+  "firmwareAppLabel": "このアプリ",
+  "firmwareOtaSupported": "無線更新に対応してビルドされています",
+  "firmwareOtaAbsent": "このビルドには無線更新がありません",
+  "firmwareOtaUnknown": "未確認: 無線機が最初の接続時に応答します",
+  "firmwareNoInstallWhy": "アプリからのインストールは提供していません。インストールは無線機の送信待ちメッセージを数フレームまで消費し、無線機が捨てるメッセージを再同期する手段がアプリにまだありません。Diagnostics からの再起動が無線機に対する唯一の操作で、これはインストールではありません。",
+  "firmwareOtaLabel": "無線更新"
 }

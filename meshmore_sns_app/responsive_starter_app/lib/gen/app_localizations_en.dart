@@ -6117,4 +6117,37 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get dmWaiting =>
       'Waiting for the message above to settle. One message per contact at a time keeps the radio able to say which one was answered.';
+
+  @override
+  String get settingsHubFirmware => 'Firmware';
+
+  @override
+  String get firmwareTitle => 'Firmware';
+
+  @override
+  String get firmwareIntro =>
+      'What this radio is running, and what this app will do about it. Nothing on this page installs anything.';
+
+  @override
+  String get firmwareRadioLabel => 'Radio firmware';
+
+  @override
+  String get firmwareAppLabel => 'This app';
+
+  @override
+  String get firmwareOtaSupported => 'built with over-the-air update support';
+
+  @override
+  String get firmwareOtaAbsent => 'this build has no over-the-air update';
+
+  @override
+  String get firmwareOtaUnknown =>
+      'not known yet: the radio answers on first contact';
+
+  @override
+  String get firmwareNoInstallWhy =>
+      'Installing is not offered from the app. An install consumes the radio\'s queued messages down to a handful of frames, and nothing in the app can yet re-sync the messages the radio would discard. A restart from Diagnostics is the only radio action offered, and it is not an install.';
+
+  @override
+  String get firmwareOtaLabel => 'Over-the-air update';
 }

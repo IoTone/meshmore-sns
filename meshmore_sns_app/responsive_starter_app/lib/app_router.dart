@@ -36,6 +36,7 @@ import 'screens/tools/trace_screen.dart';
 import 'screens/voice_settings_screen.dart';
 import 'tools/mesh_tool.dart';
 import 'shell/home_shell.dart';
+import 'screens/firmware_screen.dart';
 
 /// App routes (R11). `/` hosts the swipe shell (the hyperlocal grid is
 /// one of its tabs, not a route); the Settings hub pushes its
@@ -47,6 +48,10 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: '/settings/device',
       builder: (_, __) => const DeviceConfigScreen(),
+    ),
+    GoRoute(
+      path: '/settings/firmware',
+      builder: (_, __) => const FirmwareScreen(),
     ),
     GoRoute(
       path: '/settings/networks',

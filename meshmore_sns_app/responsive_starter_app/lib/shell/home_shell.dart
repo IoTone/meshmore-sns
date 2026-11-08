@@ -630,6 +630,11 @@ List<({String label, List<(IconData, String, String)> rows})> _settingsGroups(
             '/settings/diagnostics'
           ),
           (Icons.handyman_outlined, l.settingsHubTools, '/settings/tools'),
+          (
+            Icons.system_update_alt,
+            l.settingsHubFirmware,
+            '/settings/firmware'
+          ),
         ],
       ),
       (

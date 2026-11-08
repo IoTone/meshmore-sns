@@ -5870,4 +5870,36 @@ class AppLocalizationsJa extends AppLocalizations {
   @override
   String get dmWaiting =>
       '上のメッセージの結果を待っています。連絡先ごとに1通ずつにすることで、無線機がどのメッセージに応答があったかを示せます。';
+
+  @override
+  String get settingsHubFirmware => 'ファームウェア';
+
+  @override
+  String get firmwareTitle => 'ファームウェア';
+
+  @override
+  String get firmwareIntro =>
+      'この無線機が動かしているものと、アプリがそれに対して行うこと。この画面から何かをインストールすることはありません。';
+
+  @override
+  String get firmwareRadioLabel => '無線機のファームウェア';
+
+  @override
+  String get firmwareAppLabel => 'このアプリ';
+
+  @override
+  String get firmwareOtaSupported => '無線更新に対応してビルドされています';
+
+  @override
+  String get firmwareOtaAbsent => 'このビルドには無線更新がありません';
+
+  @override
+  String get firmwareOtaUnknown => '未確認: 無線機が最初の接続時に応答します';
+
+  @override
+  String get firmwareNoInstallWhy =>
+      'アプリからのインストールは提供していません。インストールは無線機の送信待ちメッセージを数フレームまで消費し、無線機が捨てるメッセージを再同期する手段がアプリにまだありません。Diagnostics からの再起動が無線機に対する唯一の操作で、これはインストールではありません。';
+
+  @override
+  String get firmwareOtaLabel => '無線更新';
 }

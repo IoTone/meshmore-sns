@@ -10281,6 +10281,66 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Waiting for the message above to settle. One message per contact at a time keeps the radio able to say which one was answered.'**
   String get dmWaiting;
+
+  /// No description provided for @settingsHubFirmware.
+  ///
+  /// In en, this message translates to:
+  /// **'Firmware'**
+  String get settingsHubFirmware;
+
+  /// No description provided for @firmwareTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Firmware'**
+  String get firmwareTitle;
+
+  /// No description provided for @firmwareIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'What this radio is running, and what this app will do about it. Nothing on this page installs anything.'**
+  String get firmwareIntro;
+
+  /// No description provided for @firmwareRadioLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Radio firmware'**
+  String get firmwareRadioLabel;
+
+  /// No description provided for @firmwareAppLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'This app'**
+  String get firmwareAppLabel;
+
+  /// No description provided for @firmwareOtaSupported.
+  ///
+  /// In en, this message translates to:
+  /// **'built with over-the-air update support'**
+  String get firmwareOtaSupported;
+
+  /// No description provided for @firmwareOtaAbsent.
+  ///
+  /// In en, this message translates to:
+  /// **'this build has no over-the-air update'**
+  String get firmwareOtaAbsent;
+
+  /// No description provided for @firmwareOtaUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'not known yet: the radio answers on first contact'**
+  String get firmwareOtaUnknown;
+
+  /// No description provided for @firmwareNoInstallWhy.
+  ///
+  /// In en, this message translates to:
+  /// **'Installing is not offered from the app. An install consumes the radio\'s queued messages down to a handful of frames, and nothing in the app can yet re-sync the messages the radio would discard. A restart from Diagnostics is the only radio action offered, and it is not an install.'**
+  String get firmwareNoInstallWhy;
+
+  /// No description provided for @firmwareOtaLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Over-the-air update'**
+  String get firmwareOtaLabel;
 }
 
 class _AppLocalizationsDelegate
