@@ -4,11 +4,12 @@ _Snapshot as of 2026-11-08. App `1.0.197+13`, branch `feat/app-completion`.
 Change records below are newest first from R122; older entries are kept in
 the order they were written._
 
-**What is proven and what is not.** Measured on this tree, 2026-11-07: `flutter test` **2114 passed** in 3 m 08 s;
+**What is proven and what is not.** Measured on this tree, **2026-11-08**: `flutter test` **2155 passed** in 3 m 00 s;
 `flutter analyze` reports **no issues** (the two `unawaited_return_in_try_block` warnings in `lib/maps/maps_controller.dart`
 were fixed on 2026-11-05, so any warning now is a regression);
-the protocol package `dart test` 368 passed with 1 skipped; the pure-Java port at the repository root, `cd libmeshcore && ./gradlew test --offline
---rerun-tasks`, 143 tests with 0 failures. Both release paths build: `flutter build appbundle --release` produced a 77.0 MB bundle and
+the protocol package `dart test` **372 passed with 1 skipped**; the pure-Java port at the repository root, `cd libmeshcore && ./gradlew test --offline
+--rerun-tasks`, **164 tests with 0 failures and 1 pre-existing skip**. This paragraph is the only place a count lives: every other
+document points here rather than restating a number that goes stale. Both release paths build: `flutter build appbundle --release` produced a 77.0 MB bundle and
 `flutter build apk --release --target-platform android-arm64` a 32.2 MB APK, each signed with a throwaway key that
 was deleted afterwards (`meshmore-publishing.md` lists what the publisher must supply instead). The debug arm64 APK
 (105 MB) is installed on the motorola edge 2024 over wireless adb.
@@ -53,7 +54,7 @@ over BLE. Mesh-first, no backend, no account, no server.
   facade over the BLE link + MeshCore companion protocol. Owns nodes,
   chat/DM, channels, telemetry, battery, location, delivery tracking.
   Transport is injectable, so the whole controller is `flutter test`-
-  covered with a fake (1680 app-wide tests, measured 2026-11-05).
+  covered with a fake (the app-wide count is in the proof paragraph above).
 - **`packages/meshcore`** — pure-Dart protocol codec (frames/opcodes,
   CayenneLPP, channel/identity crypto, the binary/raw carriers). No Flutter deps.
 - **`lib/meshcore/mesh_sender.dart`** — the app's own raw send path: one opaque
