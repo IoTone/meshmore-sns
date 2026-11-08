@@ -46,12 +46,13 @@ void main() {
     fake.emit(channelMsgFrame(text: 'hello from the mesh'));
     await settle();
 
-    // `_ingestChat` records the row, `_trackMessageHeat` scores it, and
-    // `_logEvent` appends the feed line — three trackers in that order, so a
-    // throw in any earlier one would have left all three undone.
+    // `_ingestChat` records the row and `_logEvent`, last in the list, appends
+    // the feed line — a throw in any tracker before it used to leave both
+    // undone, and the tail of the list is exactly what a throw costs.
     expect(mc.messagesFor(0).any((dynamic m) => '${m.text}'.contains('hello')),
         isTrue);
-    expect(mc.messageHeatCounts(), isNotEmpty);
+    expect(mc.recentEvents, isNotEmpty,
+        reason: 'the last tracker in the list still ran');
     expect(mc.framesDropped, 0);
     expect(AppErrors.records, isEmpty,
         reason: 'nothing threw, so nothing was recorded');
