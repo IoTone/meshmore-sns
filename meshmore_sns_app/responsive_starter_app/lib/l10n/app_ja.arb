@@ -2642,5 +2642,6 @@
   "placeConfirmToSender": "送信者に確認を送る",
   "placeRefuteToSender": "送信者に否定を送る",
   "placeSentDirect": "送信者にダイレクトメッセージで送りました。",
-  "placeNoSenderKey": "この場所には鍵が付いていないため、直接宛先にできません。"
+  "placeNoSenderKey": "この場所には鍵が付いていないため、直接宛先にできません。",
+  "dmWaiting": "上のメッセージの結果を待っています。連絡先ごとに1通ずつにすることで、無線機がどのメッセージに応答があったかを示せます。"
 }

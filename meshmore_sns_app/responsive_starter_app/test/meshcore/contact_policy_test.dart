@@ -522,4 +522,31 @@ void main() {
       mc.dispose();
     });
   });
+
+  test('one message in flight per contact, so the ACK table keeps its slots',
+      () async {
+    final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
+    final MeshcoreController mc = await connected(fake);
+    const String peer =
+        '7778797a7b7c7d7e7f808182838485868788898a8b8c8d8e8f90919293949596';
+    expect(mc.hasUnsettledDmTo(peer), isFalse);
+    final ChatMessage? first = await mc.sendDirectText(peer, 'one');
+    expect(first, isNotNull);
+    expect(mc.hasUnsettledDmTo(peer), isTrue,
+        reason: 'the row is sending, so the contact has an unanswered entry');
+    // The composer refuses a second message to the same contact while one is
+    // unsettled; the controller allows it, because a diagnostic that measures
+    // several messages to one node is a legitimate caller.
+    expect(await mc.sendDirectText(peer, 'two'), isNotNull);
+    // The backstop is the radio's ACK table: eight entries, four kept for the
+    // app. A fifth unsettled message is refused rather than evicting an entry
+    // the radio needs to attribute an answer.
+    for (int i = 0; i < 8 && mc.unsettledOutgoingCount < 4; i++) {
+      await mc.sendDirectText(peer, 'filler $i');
+    }
+    expect(mc.unsettledOutgoingCount, 4);
+    expect(await mc.sendDirectText(peer, 'over the ceiling'), isNull);
+    expect(mc.unsettledOutgoingCount, 4, reason: 'a refusal sends nothing');
+    mc.dispose();
+  });
 }

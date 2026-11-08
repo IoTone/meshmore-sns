@@ -2658,10 +2658,60 @@ class MeshcoreController extends ChangeNotifier {
   /// for itself, so those sends are always written; they are still charged, so
   /// the meter keeps telling the truth. The same reasoning as link maintenance
   /// in [send], for a stronger reason.
+  /// True while a message to [peerPubKeyHex] has not settled.
+  ///
+  /// The firmware keeps eight pending ACKs in a circular table, and a second
+  /// message to the same contact can overwrite the first one's entry, which
+  /// loses the ability to attribute the ACK rather than the message. The
+  /// published rule is therefore **one in-flight message per contact**; this is
+  /// that rule, checked against the rows the app already tracks. `unknown`
+  /// counts as unsettled because the radio may still be holding the entry; it
+  /// resolves to `failed` on its own grace timer, so the block is bounded.
+  /// How many outgoing messages are waiting for an answer, of any kind.
+  ///
+  /// Half the firmware's eight-entry ACK table: a message the radio cannot keep
+  /// an entry for is a message whose ACK cannot be attributed, and a lost entry
+  /// is worse than a refused send the caller can see.
+  static const int kMaxInFlightMessages = 4;
+
+  int get unsettledOutgoingCount {
+    int n = 0;
+    for (final ChatMessage m in _messages) {
+      if (!m.outgoing) continue;
+      if (m.delivery == MessageDelivery.sending ||
+          m.delivery == MessageDelivery.sent ||
+          m.delivery == MessageDelivery.unknown) {
+        n++;
+      }
+    }
+    return n;
+  }
+
+  bool hasUnsettledDmTo(String peerPubKeyHex) {
+    final String peer = peerPubKeyHex.toLowerCase();
+    for (final ChatMessage m in _messages) {
+      if (!m.outgoing || m.peerPubKeyHex?.toLowerCase() != peer) continue;
+      if (m.delivery == MessageDelivery.sending ||
+          m.delivery == MessageDelivery.sent ||
+          m.delivery == MessageDelivery.unknown) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   Future<ChatMessage?> sendDirectText(
       String peerPubKeyHex, String text, {bool urgent = false}) async {
     final String t = text.trim();
     if (t.isEmpty || !isReady || peerPubKeyHex.length < 12) return null;
+    // The firmware keeps eight pending ACKs in one circular table, so a ninth
+    // in-flight message evicts the oldest entry and that message can no longer
+    // be attributed. The app keeps to half of it, leaving room for anything the
+    // radio is doing itself. The composer additionally refuses a *second*
+    // message to the same contact while one is unsettled ([hasUnsettledDmTo]),
+    // which is the published client rule; this ceiling is the backstop for
+    // callers that are not a composer.
+    if (unsettledOutgoingCount >= kMaxInFlightMessages) return null;
     final List<int> prefix = <int>[
       for (int i = 0; i < 12; i += 2)
         int.parse(peerPubKeyHex.substring(i, i + 2), radix: 16),

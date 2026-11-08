@@ -6113,4 +6113,8 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get placeNoSenderKey =>
       'This place came without a key, so there is nobody to address directly.';
+
+  @override
+  String get dmWaiting =>
+      'Waiting for the message above to settle. One message per contact at a time keeps the radio able to say which one was answered.';
 }

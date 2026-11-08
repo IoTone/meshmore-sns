@@ -10275,6 +10275,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'This place came without a key, so there is nobody to address directly.'**
   String get placeNoSenderKey;
+
+  /// No description provided for @dmWaiting.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for the message above to settle. One message per contact at a time keeps the radio able to say which one was answered.'**
+  String get dmWaiting;
 }
 
 class _AppLocalizationsDelegate

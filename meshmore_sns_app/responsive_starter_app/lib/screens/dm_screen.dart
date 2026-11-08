@@ -385,7 +385,11 @@ class _DmScreenState extends State<DmScreen> {
     _syncBudget(mc);
     final ColorScheme cs = Theme.of(context).colorScheme;
     final bool ready = mc.state == MeshcoreConnectionState.ready;
+    // One message in flight per contact: the composer says so rather than
+    // accepting a tap the controller would refuse.
+    final bool waiting = mc.hasUnsettledDmTo(widget.peerPubKeyHex);
     final AppLocalizations l = AppLocalizations.of(context);
+    final MmSkin skin = context.skin;
     final List<ChatMessage> msgs = mc.dmHistoryFor(widget.peerPubKeyHex);
     _autoScroll(msgs.length);
 
@@ -459,15 +463,26 @@ class _DmScreenState extends State<DmScreen> {
                                   text: _input.text,
                                   label: l,
                                 ),
+                                if (waiting)
+                                  Text(l.dmWaiting,
+                                      style: TextStyle(
+                                          color: cs.onSurfaceVariant,
+                                          fontSize: skin.type.sizeSm)),
                               ],
                             ),
                           ),
                           // Same rule as the channel composer: a disabled
                           // send rather than a tap that returns in silence.
+                          // The third condition is the radio's own limit: one
+                          // message in flight per contact, because the firmware
+                          // keeps eight pending ACKs in a circular table and a
+                          // second send to the same contact can overwrite the
+                          // first one's entry.
                           IconButton(
-                            tooltip: l.dmSend,
+                            tooltip: waiting ? l.dmWaiting : l.dmSend,
                             onPressed: _input.text.trim().isEmpty ||
-                                    !_budget.canSend(_input.text)
+                                    !_budget.canSend(_input.text) ||
+                                    waiting
                                 ? null
                                 : () => _send(mc),
                             icon: const Icon(Icons.send),

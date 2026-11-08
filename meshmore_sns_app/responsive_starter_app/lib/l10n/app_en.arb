@@ -4101,5 +4101,6 @@
   "placeConfirmToSender": "Confirm to the sender",
   "placeRefuteToSender": "Refute to the sender",
   "placeSentDirect": "Sent to the sender as a direct message.",
-  "placeNoSenderKey": "This place came without a key, so there is nobody to address directly."
+  "placeNoSenderKey": "This place came without a key, so there is nobody to address directly.",
+  "dmWaiting": "Waiting for the message above to settle. One message per contact at a time keeps the radio able to say which one was answered."
 }

@@ -5866,4 +5866,8 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get placeNoSenderKey => 'この場所には鍵が付いていないため、直接宛先にできません。';
+
+  @override
+  String get dmWaiting =>
+      '上のメッセージの結果を待っています。連絡先ごとに1通ずつにすることで、無線機がどのメッセージに応答があったかを示せます。';
 }
