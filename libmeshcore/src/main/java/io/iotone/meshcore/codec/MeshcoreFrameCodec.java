@@ -6,42 +6,75 @@ import io.iotone.meshcore.MeshcoreCommand;
 import io.iotone.meshcore.MeshcoreConstants;
 import io.iotone.meshcore.frames.AckFrame;
 import io.iotone.meshcore.frames.AdvertFrame;
+import io.iotone.meshcore.frames.AdvertPathFrame;
+import io.iotone.meshcore.frames.AutoAddConfigFrame;
 import io.iotone.meshcore.frames.BatteryStorageFrame;
 import io.iotone.meshcore.frames.ChannelDataFrame;
 import io.iotone.meshcore.frames.ChannelInfoFrame;
 import io.iotone.meshcore.frames.ChannelMessageFrame;
 import io.iotone.meshcore.frames.CliReplyFrame;
+import io.iotone.meshcore.frames.ContactDeletedFrame;
 import io.iotone.meshcore.frames.ContactFrame;
 import io.iotone.meshcore.frames.ContactMessageFrame;
+import io.iotone.meshcore.frames.ContactsFullFrame;
 import io.iotone.meshcore.frames.ContactsStartFrame;
+import io.iotone.meshcore.frames.ControlDataFrame;
 import io.iotone.meshcore.frames.CurrentTimeFrame;
 import io.iotone.meshcore.frames.CustomVarsFrame;
 import io.iotone.meshcore.frames.DecodeFailure;
 import io.iotone.meshcore.frames.DeviceInfoFrame;
+import io.iotone.meshcore.frames.DisabledFrame;
 import io.iotone.meshcore.frames.EndOfContactsFrame;
 import io.iotone.meshcore.frames.ErrorFrame;
+import io.iotone.meshcore.frames.ExportedContactFrame;
+import io.iotone.meshcore.frames.LoginResultFrame;
 import io.iotone.meshcore.frames.MeshcoreInbound;
 import io.iotone.meshcore.frames.MessagesWaitingFrame;
 import io.iotone.meshcore.frames.MsgSentFrame;
+import io.iotone.meshcore.frames.NewAdvertFrame;
 import io.iotone.meshcore.frames.NoMoreMessagesFrame;
 import io.iotone.meshcore.frames.OkFrame;
+import io.iotone.meshcore.frames.OneKeyRejectedFrame;
+import io.iotone.meshcore.frames.PathDiscoveryFrame;
+import io.iotone.meshcore.frames.PathUpdatedFrame;
+import io.iotone.meshcore.frames.PrivateKeyFrame;
+import io.iotone.meshcore.frames.RawDataFrame;
 import io.iotone.meshcore.frames.RfLogFrame;
 import io.iotone.meshcore.frames.SelfInfoFrame;
+import io.iotone.meshcore.frames.SignStartFrame;
+import io.iotone.meshcore.frames.SignatureFrame;
+import io.iotone.meshcore.frames.StatsFrame;
+import io.iotone.meshcore.frames.StatusResponseFrame;
 import io.iotone.meshcore.frames.TelemetryResponseFrame;
+import io.iotone.meshcore.frames.TraceDataFrame;
+import io.iotone.meshcore.frames.TuningParamsFrame;
 import io.iotone.meshcore.frames.UnsupportedFrame;
 import io.iotone.meshcore.model.Advert;
+import io.iotone.meshcore.model.AdvertPath;
+import io.iotone.meshcore.model.AutoAddConfig;
 import io.iotone.meshcore.model.BatteryStorage;
 import io.iotone.meshcore.model.ChannelData;
 import io.iotone.meshcore.model.ChannelInfo;
 import io.iotone.meshcore.model.ChannelMessage;
 import io.iotone.meshcore.model.Contact;
 import io.iotone.meshcore.model.ContactMessage;
+import io.iotone.meshcore.model.CoreStats;
 import io.iotone.meshcore.model.DeviceInfo;
+import io.iotone.meshcore.model.DiscoverResponse;
+import io.iotone.meshcore.model.FrameStats;
+import io.iotone.meshcore.model.LoginResult;
 import io.iotone.meshcore.model.MsgSent;
+import io.iotone.meshcore.model.PacketStats;
+import io.iotone.meshcore.model.PathDiscoveryResult;
+import io.iotone.meshcore.model.PathLen;
 import io.iotone.meshcore.model.RadioParams;
+import io.iotone.meshcore.model.RadioStats;
+import io.iotone.meshcore.model.RepeaterStatus;
 import io.iotone.meshcore.model.RfLog;
 import io.iotone.meshcore.model.RxVia;
 import io.iotone.meshcore.model.SelfInfo;
+import io.iotone.meshcore.model.TraceResult;
+import io.iotone.meshcore.model.TuningParams;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
@@ -843,6 +876,144 @@ public final class MeshcoreFrameCodec {
                 return new CliReplyFrame(
                         c.atEnd() ? "" : c.utf8ToEnd("cliReply.text"));
 
+            case 0x0B: { // RESP_CODE_EXPORT_CONTACT
+                byte[] exported = c.atEnd()
+                        ? new byte[0]
+                        : c.bytes(c.remaining(), "export.packet");
+                return new ExportedContactFrame(exported);
+            }
+            case 0x0E: // RESP_CODE_PRIVATE_KEY
+                return new PrivateKeyFrame(c.bytes(
+                        MeshcoreConstants.PRIV_KEY_SIZE, "privateKey.key"));
+
+            case 0x0F: // RESP_CODE_DISABLED
+                return new DisabledFrame();
+
+            case 0x13: // RESP_CODE_SIGN_START
+                c.u8("signStart.reserved");
+                return new SignStartFrame(c.u32("signStart.maxLen"));
+
+            case 0x14: // RESP_CODE_SIGNATURE
+                return new SignatureFrame(c.bytes(
+                        MeshcoreConstants.SIGNATURE_SIZE, "signature"));
+
+            case 0x16: { // RESP_CODE_ADVERT_PATH
+                long receivedAt = c.u32("advertPath.ts");
+                PathLen apl = new PathLen(c.u8("advertPath.pathLen"));
+                return new AdvertPathFrame(new AdvertPath(
+                        receivedAt, apl, readPath(c, apl, "advertPath.path")));
+            }
+            case 0x17: // RESP_CODE_TUNING_PARAMS
+                return new TuningParamsFrame(new TuningParams(
+                        c.u32("tuning.rx")
+                                / (double) MeshcoreConstants.RADIO_SCALE,
+                        c.u32("tuning.af")
+                                / (double) MeshcoreConstants.RADIO_SCALE));
+
+            case 0x18: // RESP_CODE_STATS
+                return decodeStats(c, op, frame);
+
+            case 0x19: // RESP_CODE_AUTOADD_CONFIG
+                return new AutoAddConfigFrame(new AutoAddConfig(
+                        c.u8("autoAdd.flags"), c.u8("autoAdd.maxHops")));
+
+            case 0x81: // PUSH_CODE_PATH_UPDATED
+                return new PathUpdatedFrame(c.bytes(
+                        MeshcoreConstants.PUB_KEY_SIZE, "pathUpdated.pubKey"));
+
+            case 0x84: { // PUSH_CODE_RAW_DATA
+                double rawSnr = c.i8("raw.snr") / 4.0;
+                int rawRssi = c.i8("raw.rssi");
+                // 0xFF on a single-profile radio; 0xA0/0xA1 when a second
+                // profile is on (onRawDataRecv, MyMesh.cpp:2830-2840).
+                RxVia rawVia = RxVia.fromWireByte(c.u8("raw.via"));
+                byte[] rawPayload = c.atEnd()
+                        ? new byte[0]
+                        : c.bytes(c.remaining(), "raw.payload");
+                return new RawDataFrame(rawSnr, rawRssi, rawPayload, rawVia);
+            }
+            case 0x85: { // PUSH_CODE_LOGIN_SUCCESS
+                int perm = c.u8("login.permissions");
+                byte[] lp = c.bytes(
+                        MeshcoreConstants.PUB_KEY_PREFIX_SIZE, "login.pubKey6");
+                Long ts = null;
+                Integer acl = null;
+                Integer lvl = null;
+                // The new-format frame appends 4+1+1 bytes; the legacy one
+                // stops. The same writer added these to the legacy form
+                // (MyMesh.cpp:684-702), so a tail shorter than a whole
+                // extension is a future field, not a second frame.
+                if (c.remaining() >= 6) {
+                    ts = c.u32("login.serverTs");
+                    acl = c.u8("login.acl");
+                    lvl = c.u8("login.fwLevel");
+                }
+                c.skipRemaining("login reply has grown in place before");
+                return new LoginResultFrame(new LoginResult(
+                        true, perm, lp, ts, acl, lvl));
+            }
+            case 0x86: // PUSH_CODE_LOGIN_FAIL
+                c.u8("login.reserved");
+                return new LoginResultFrame(new LoginResult(
+                        false, 0,
+                        c.bytes(MeshcoreConstants.PUB_KEY_PREFIX_SIZE,
+                                "login.pubKey6"),
+                        null, null, null));
+
+            case 0x87: { // PUSH_CODE_STATUS_RESPONSE
+                c.u8("status.reserved");
+                byte[] sp = c.bytes(
+                        MeshcoreConstants.PUB_KEY_PREFIX_SIZE, "status.pubKey6");
+                RepeaterStatus status = decodeRepeaterStatus(c);
+                // The firmware forwards the answering node's on-air status
+                // payload verbatim (MyMesh.cpp:718-724), so anything after
+                // the fields modelled here is that node's own tail.
+                c.skipRemaining("repeater status payload is forwarded verbatim");
+                return new StatusResponseFrame(sp, status);
+            }
+            case 0x89: // PUSH_CODE_TRACE_DATA
+                return new TraceDataFrame(decodeTrace(c));
+
+            case 0x8A: // PUSH_CODE_NEW_ADVERT
+                return new NewAdvertFrame(decodeContact(c));
+
+            case 0x8D: { // PUSH_CODE_PATH_DISCOVERY_RESPONSE
+                c.u8("discovery.reserved");
+                byte[] dp = c.bytes(
+                        MeshcoreConstants.PUB_KEY_PREFIX_SIZE,
+                        "discovery.pubKey6");
+                PathLen outL = new PathLen(c.u8("discovery.outPathLen"));
+                byte[] outP = readPath(c, outL, "discovery.outPath");
+                PathLen inL = new PathLen(c.u8("discovery.inPathLen"));
+                byte[] inP = readPath(c, inL, "discovery.inPath");
+                return new PathDiscoveryFrame(new PathDiscoveryResult(
+                        dp, outL, outP, inL, inP));
+            }
+            case 0x8E: { // PUSH_CODE_CONTROL_DATA
+                double ctlSnr = c.i8("control.snr") / 4.0;
+                int ctlRssi = c.i8("control.rssi");
+                int ctlPath = c.u8("control.pathLen");
+                // The firmware copies the payload straight after path_len —
+                // no path bytes, whatever path_len says.
+                byte[] ctlPayload = c.atEnd()
+                        ? new byte[0]
+                        : c.bytes(c.remaining(), "control.payload");
+                return new ControlDataFrame(ctlSnr, ctlRssi, ctlPath,
+                        ctlPayload,
+                        decodeDiscover(ctlPayload, ctlSnr, ctlRssi));
+            }
+            case 0x8F: // PUSH_CODE_CONTACT_DELETED
+                return new ContactDeletedFrame(c.bytes(
+                        MeshcoreConstants.PUB_KEY_SIZE, "deleted.pubKey"));
+
+            case 0x90: // PUSH_CODE_CONTACTS_FULL
+                return new ContactsFullFrame();
+
+            case 0x91: // PUSH_CODE_ONE_KEY_DM_REJECTED
+                return new OneKeyRejectedFrame(c.bytes(
+                        MeshcoreConstants.PUB_KEY_SIZE,
+                        "oneKeyRejected.pubKey"));
+
             default:
                 return new UnsupportedFrame(op, frame.clone());
         }
@@ -937,6 +1108,215 @@ public final class MeshcoreFrameCodec {
         String text = c.atEnd() ? "" : c.utf8ToEnd("contactMsg.text");
         return new ContactMessage(prefix, pathLen, txtType, ts, text, v3, snr,
                 sig);
+    }
+
+
+    /**
+     * Reads the path bytes a {@code path_len} byte announces.
+     *
+     * <p>An invalid length (over {@link MeshcoreConstants#MAX_PATH_SIZE}, or
+     * the reserved hash width) yields an empty path because that is exactly
+     * what the firmware writes ({@code Packet.cpp:24-27}); the caller can see
+     * the refusal through {@link PathLen#isValid()}.</p>
+     *
+     * @param c   cursor positioned at the first path byte
+     * @param len the length byte that announces them
+     * @param ctx field context for truncation reporting
+     * @return the path bytes, empty when the length is one the radio refuses
+     */
+    private static byte[] readPath(ByteCursor c, PathLen len, String ctx) {
+        if (!len.isValid() || len.byteLength() == 0) {
+            return new byte[0];
+        }
+        return c.bytes(len.byteLength(), ctx);
+    }
+
+    /**
+     * Decodes {@code RESP_CODE_STATS} (0x18): the sub-type byte chooses which
+     * of the three structs follows.
+     *
+     * <p>A sub-type this build does not model is handed back as
+     * {@link UnsupportedFrame} rather than guessed at, and a tail the struct
+     * grew after this layout is consumed: the packet counters gained a
+     * receive-error counter inside the same frame, so a longer payload is a
+     * field, not a second frame.</p>
+     *
+     * @param c     cursor positioned after the opcode
+     * @param op    the opcode, for the unsupported report
+     * @param frame the whole frame, preserved for {@link UnsupportedFrame}
+     * @return the reading, or an unsupported frame for an unknown sub-type
+     */
+    private static MeshcoreInbound decodeStats(
+            ByteCursor c, int op, byte[] frame) {
+        int sub = c.u8("stats.subType");
+        FrameStats stats;
+        switch (sub) {
+            case MeshcoreConstants.STATS_TYPE_CORE:
+                stats = new FrameStats(
+                        new CoreStats(
+                                c.u16("stats.core.batt"),
+                                c.u32("stats.core.uptime"),
+                                c.u16("stats.core.errFlags"),
+                                c.u8("stats.core.queue")),
+                        null, null);
+                break;
+            case MeshcoreConstants.STATS_TYPE_RADIO:
+                stats = new FrameStats(
+                        null,
+                        new RadioStats(
+                                c.i16("stats.radio.noise"),
+                                c.i8("stats.radio.rssi"),
+                                c.i8("stats.radio.snr") / 4.0,
+                                c.u32("stats.radio.txAir"),
+                                c.u32("stats.radio.rxAir")),
+                        null);
+                break;
+            case MeshcoreConstants.STATS_TYPE_PACKETS:
+                stats = new FrameStats(
+                        null, null,
+                        new PacketStats(
+                                c.u32("stats.pkts.recv"),
+                                c.u32("stats.pkts.sent"),
+                                c.u32("stats.pkts.sentFlood"),
+                                c.u32("stats.pkts.sentDirect"),
+                                c.u32("stats.pkts.recvFlood"),
+                                c.u32("stats.pkts.recvDirect"),
+                                c.remaining() >= 4
+                                        ? c.u32("stats.pkts.recvErrors")
+                                        : null));
+                break;
+            default:
+                return new UnsupportedFrame(op, frame.clone());
+        }
+        c.skipRemaining("stats struct grows in place");
+        return new StatsFrame(stats);
+    }
+
+    /**
+     * Decodes the {@code RepeaterStats} struct.
+     *
+     * <p>The first 24 bytes are required; every later field was added by a
+     * firmware release, so it is read only when the payload carries it and
+     * stays {@code null} otherwise. An old repeater's short answer still
+     * decodes.</p>
+     *
+     * @param c cursor positioned at the first status byte
+     * @return the decoded status, or {@code null} when the payload is too
+     *         short to be one
+     */
+    private static RepeaterStatus decodeRepeaterStatus(ByteCursor c) {
+        if (c.remaining() < 24) {
+            return null;
+        }
+        int batt = c.u16("rs.batt");
+        int queue = c.u16("rs.queue");
+        int noise = c.i16("rs.noise");
+        int rssi = c.i16("rs.rssi");
+        long recv = c.u32("rs.recv");
+        long sent = c.u32("rs.sent");
+        long air = c.u32("rs.air");
+        long up = c.u32("rs.uptime");
+        Long sentFlood = u32OrNull(c, "rs.sentFlood");
+        Long sentDirect = u32OrNull(c, "rs.sentDirect");
+        Long recvFlood = u32OrNull(c, "rs.recvFlood");
+        Long recvDirect = u32OrNull(c, "rs.recvDirect");
+        Integer errEvents = u16OrNull(c, "rs.errEvents");
+        Double snr = c.remaining() >= 2 ? c.i16("rs.snr") / 4.0 : null;
+        Integer directDups = u16OrNull(c, "rs.directDups");
+        Integer floodDups = u16OrNull(c, "rs.floodDups");
+        Long rxAir = u32OrNull(c, "rs.rxAir");
+        Long recvErrors = u32OrNull(c, "rs.recvErrors");
+        return new RepeaterStatus(batt, queue, noise, rssi, recv, sent, air,
+                up, sentFlood, sentDirect, recvFlood, recvDirect, errEvents,
+                snr, directDups, floodDups, rxAir, recvErrors);
+    }
+
+    /**
+     * Reads an optional little-endian u32.
+     *
+     * @param c   cursor
+     * @param ctx field context for truncation reporting
+     * @return the value, or {@code null} when fewer than 4 bytes remain
+     */
+    private static Long u32OrNull(ByteCursor c, String ctx) {
+        return c.remaining() >= 4 ? c.u32(ctx) : null;
+    }
+
+    /**
+     * Reads an optional little-endian u16.
+     *
+     * @param c   cursor
+     * @param ctx field context for truncation reporting
+     * @return the value, or {@code null} when fewer than 2 bytes remain
+     */
+    private static Integer u16OrNull(ByteCursor c, String ctx) {
+        return c.remaining() >= 2 ? c.u16(ctx) : null;
+    }
+
+    /**
+     * Decodes {@code PUSH_CODE_TRACE_DATA} (0x89).
+     *
+     * <pre>
+     * [reserved][path_len][flags][tag u32][auth u32][hashes]
+     * [snr i8 x hops][final snr i8]
+     * </pre>
+     *
+     * <p>The hop count is not carried: it is {@code path_len} shifted down by
+     * the hash code in the low two flag bits, which is why the flags are
+     * needed before the SNR block can be located.</p>
+     *
+     * @param c cursor positioned after the opcode
+     * @return the trace
+     */
+    private static TraceResult decodeTrace(ByteCursor c) {
+        c.u8("trace.reserved");
+        int pathLen = c.u8("trace.pathLen");
+        int flags = c.u8("trace.flags");
+        long tag = c.u32("trace.tag");
+        long auth = c.u32("trace.auth");
+        byte[] hashes = c.bytes(pathLen, "trace.hashes");
+        int hops = pathLen >> (flags & 0x03);
+        double[] snrs = new double[hops];
+        for (int i = 0; i < hops; i++) {
+            snrs[i] = c.i8("trace.snr[" + i + "]") / 4.0;
+        }
+        double last = c.i8("trace.finalSnr") / 4.0;
+        return new TraceResult(tag, auth, flags, hashes, snrs, last);
+    }
+
+    /**
+     * Decodes a node-discover response out of a control payload.
+     *
+     * <pre>
+     * [0x9X | node_type][their snr x4][tag u32][pub_key 32 or 8]
+     * </pre>
+     *
+     * <p>Returns {@code null} for any other control packet, which the caller
+     * keeps as raw bytes: not every control payload is a discover reply, and
+     * guessing at one would invent a node that is not there.</p>
+     *
+     * @param payload  the control payload
+     * @param ourSnr   the SNR our radio measured for the packet
+     * @param ourRssi  the RSSI our radio measured for the packet
+     * @return the discover response, or {@code null} when this payload is not
+     *         one
+     */
+    private static DiscoverResponse decodeDiscover(
+            byte[] payload, double ourSnr, int ourRssi) {
+        if (payload.length < 6 + 8
+                || (payload[0] & 0xF0)
+                        != MeshcoreConstants.CTL_TYPE_NODE_DISCOVER_RESP) {
+            return null;
+        }
+        ByteCursor p = new ByteCursor(payload);
+        int type = p.u8("discover.type") & 0x0F;
+        double theirs = p.i8("discover.snr") / 4.0;
+        long tag = p.u32("discover.tag");
+        int keyLen = p.remaining() >= MeshcoreConstants.PUB_KEY_SIZE
+                ? MeshcoreConstants.PUB_KEY_SIZE
+                : 8;
+        return new DiscoverResponse(type, tag, p.bytes(keyLen, "discover.key"),
+                theirs, ourSnr, ourRssi);
     }
 
     private static Contact decodeContact(ByteCursor c) {

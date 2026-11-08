@@ -262,6 +262,47 @@ public final class MeshcoreConstants {
     /** Path-length byte: hash-size code shift (bits 6-7). */
     public static final int PATH_HASH_SIZE_SHIFT = 6;
 
+    /**
+     * Path-length byte: the reserved hash-size code ({@code 3}, i.e. 4-byte
+     * hashes). {@code Packet::isValidPathLen} refuses it outright
+     * ({@code src/Packet.cpp:17-22}), so a path carrying it reads as
+     * invalid rather than as 252 bytes.
+     */
+    public static final int PATH_HASH_SIZE_RESERVED_CODE = 3;
+
+    // --- RESP_CODE_STATS (0x18) sub-types -------------------------------
+
+    /** {@code RESP_CODE_STATS} sub-type: the radio's own housekeeping. */
+    public static final int STATS_TYPE_CORE = 0;
+
+    /** {@code RESP_CODE_STATS} sub-type: what the radio hears. */
+    public static final int STATS_TYPE_RADIO = 1;
+
+    /** {@code RESP_CODE_STATS} sub-type: packet counters since boot. */
+    public static final int STATS_TYPE_PACKETS = 2;
+
+    // --- Control-packet types carried in PUSH_CODE_CONTROL_DATA (0x8E) ---
+
+    /** Control-packet type: a zero-hop node-discover response ({@code 0x9X}). */
+    public static final int CTL_TYPE_NODE_DISCOVER_RESP = 0x90;
+
+    // --- AUTOADD_CONFIG flags (RESP_CODE_AUTOADD_CONFIG 0x19) -----------
+
+    /** Auto-add flag: overwrite the oldest contact when the table is full. */
+    public static final int AUTO_ADD_OVERWRITE_OLDEST = 0x01;
+
+    /** Auto-add flag: store newly heard chat nodes. */
+    public static final int AUTO_ADD_CHAT = 0x02;
+
+    /** Auto-add flag: store newly heard repeaters. */
+    public static final int AUTO_ADD_REPEATER = 0x04;
+
+    /** Auto-add flag: store newly heard room servers. */
+    public static final int AUTO_ADD_ROOM_SERVER = 0x08;
+
+    /** Auto-add flag: store newly heard sensors. */
+    public static final int AUTO_ADD_SENSOR = 0x10;
+
     // --- Well-known PUBLIC channel (docs/qr_codes.md, pinned commit) ------
 
     /** The well-known public channel's name. */
