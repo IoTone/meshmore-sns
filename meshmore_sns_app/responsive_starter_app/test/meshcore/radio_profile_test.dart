@@ -28,12 +28,28 @@ void main() {
   /// A `0x1B` channel datagram: snr, via, reserved, channel, pathLen,
   /// dataType (u16), len, payload.
   Uint8List channelDataFrame(int viaTag) => Uint8List.fromList(<int>[
-        0x1B, 0x20, viaTag, 0x00, 0x01, 0xFF, 0x0A, 0x00, 0x02, 0xDE, 0xAD,
+        0x1B,
+        0x20,
+        viaTag,
+        0x00,
+        0x01,
+        0xFF,
+        0x0A,
+        0x00,
+        0x02,
+        0xDE,
+        0xAD,
       ]);
 
   /// A `0x84` raw-data push: snr, rssi, via, payload.
   Uint8List rawDataFrame(int viaTag) => Uint8List.fromList(<int>[
-        0x84, 0x20, 0x40, viaTag, 0xAA, 0xBB, 0xCC,
+        0x84,
+        0x20,
+        0x40,
+        viaTag,
+        0xAA,
+        0xBB,
+        0xCC,
       ]);
 
   Future<void> settle() async {
@@ -53,7 +69,8 @@ void main() {
 
   setUp(() => SharedPreferences.setMockInitialValues(<String, Object>{}));
 
-  test('no frame on the second profile reads as "nothing heard", not as one '
+  test(
+      'no frame on the second profile reads as "nothing heard", not as one '
       'profile', () async {
     final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
     final MeshcoreController mc = await connected(fake);

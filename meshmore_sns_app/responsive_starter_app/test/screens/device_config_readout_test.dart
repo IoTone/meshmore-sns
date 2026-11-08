@@ -34,8 +34,17 @@ void main() {
 
   /// A `0x1B` channel datagram heard on the radio's second profile.
   Uint8List secondProfileFrame() => Uint8List.fromList(<int>[
-        0x1B, 0x20, kRxViaSecondaryTag, 0x00, 0x01, 0xFF, 0x0A, 0x00, 0x02,
-        0xDE, 0xAD,
+        0x1B,
+        0x20,
+        kRxViaSecondaryTag,
+        0x00,
+        0x01,
+        0xFF,
+        0x0A,
+        0x00,
+        0x02,
+        0xDE,
+        0xAD,
       ]);
 
   /// Pumps the screen over a fake radio and returns both halves, so a case can
@@ -69,7 +78,8 @@ void main() {
     return (fake, mc);
   }
 
-  testWidgets('with nothing heard on a second profile the block says so and '
+  testWidgets(
+      'with nothing heard on a second profile the block says so and '
       'offers no cost note', (WidgetTester t) async {
     final (FakeMeshcoreTransport _, MeshcoreController mc) =
         await pumpScreen(t, locale: const Locale('en'));
@@ -80,7 +90,8 @@ void main() {
     mc.dispose();
   });
 
-  testWidgets('a frame heard on the second profile states when, and states '
+  testWidgets(
+      'a frame heard on the second profile states when, and states '
       'what the profile costs', (WidgetTester t) async {
     final (FakeMeshcoreTransport fake, MeshcoreController mc) =
         await pumpScreen(t, locale: const Locale('en'));
