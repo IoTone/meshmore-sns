@@ -6,6 +6,7 @@ import '../../theme/mm_skin.dart';
 import '../../theme/mm_tokens.dart';
 import '../dashboard_screen.dart';
 import 'aghud_dashboard.dart';
+import 'dashboard_degraded_banner.dart';
 import 'drpop_dashboard.dart';
 import 'hyperlocal_dashboard.dart';
 import 'nerv_dashboard.dart';
@@ -31,24 +32,47 @@ class DashboardHost extends StatelessWidget {
     // dashboard is showing" must not depend on which preset is selected, and
     // since the default preset is STUDIO the SEELE layout's own key is no
     // longer the one on screen.
+    // APP-N4's banner sits above the layout, not inside one: the facts it
+    // reports are the same whichever preset is on screen, and it used to be
+    // built inside the SEELE monolith only, so a storage-full warning was
+    // invisible on six of the seven presets.
     return KeyedSubtree(
       key: dashboardKey,
-      child: switch (context.skin.preset) {
-        MmThemePreset.nerv => const NervDashboard(),
-        MmThemePreset.hyperlocal => const HyperlocalDashboard(),
-        MmThemePreset.agHud => const AgHudDashboard(),
-        MmThemePreset.drPop => const DrPopDashboard(),
-        MmThemePreset.recon => const ReconDashboard(),
-        // Studio Light is the same tool on paper, so it keeps the same
-        // layout: a preset changes the ground, never which dashboard the user
-        // is looking at. The two Studio presets used to split here, so
-        // switching from Studio Dark to Studio Light replaced the whole
-        // dashboard with the SEELE monolith (a colour-inverting slab and an
-        // 88 sp numeral) instead of repainting the one on screen.
-        MmThemePreset.studio || MmThemePreset.studioLight =>
-          const StudioDashboard(),
-        _ => const DashboardScreen(),
-      },
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          Padding(
+            padding: EdgeInsets.fromLTRB(
+              context.skin.space.padScreen.left,
+              context.skin.space.padScreen.top,
+              context.skin.space.padScreen.right,
+              0,
+            ),
+            child: const DashboardDegradedBanner(),
+          ),
+          Expanded(child: _layout(context)),
+        ],
+      ),
     );
+  }
+
+  Widget _layout(BuildContext context) {
+    return switch (context.skin.preset) {
+      MmThemePreset.nerv => const NervDashboard(),
+      MmThemePreset.hyperlocal => const HyperlocalDashboard(),
+      MmThemePreset.agHud => const AgHudDashboard(),
+      MmThemePreset.drPop => const DrPopDashboard(),
+      MmThemePreset.recon => const ReconDashboard(),
+      // Studio Light is the same tool on paper, so it keeps the same layout:
+      // a preset changes the ground, never which dashboard the user is looking
+      // at. The two Studio presets used to split here, so switching from Studio
+      // Dark to Studio Light replaced the whole dashboard with the SEELE
+      // monolith (a colour-inverting slab and an 88 sp numeral) instead of
+      // repainting the one on screen.
+      MmThemePreset.studio ||
+      MmThemePreset.studioLight =>
+        const StudioDashboard(),
+      _ => const DashboardScreen(),
+    };
   }
 }

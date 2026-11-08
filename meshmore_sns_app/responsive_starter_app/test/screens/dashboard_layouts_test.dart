@@ -38,7 +38,6 @@ class _Layout {
     required this.peers,
     this.hasFeed = true,
     this.hasLocationTile = false,
-    this.hasDegradedBanner = false,
   });
 
   final String name;
@@ -58,11 +57,6 @@ class _Layout {
   /// instruments and never carried it; only SEELE and Studio do
   /// (`dashboard_host_test.dart` records the same split).
   final bool hasLocationTile;
-
-  /// Whether the APP-N4 degraded banner renders here. The register records it
-  /// as wired on the Dashboard (SEELE) only, so a storage-full warning is
-  /// invisible on the other five skins; this table says so out loud.
-  final bool hasDegradedBanner;
 }
 
 Finder _numeral(AppLocalizations l, int peers, int known) =>
@@ -100,7 +94,6 @@ const List<_Layout> _layouts = <_Layout>[
     preset: MmThemePreset.seele,
     peers: _numeral,
     hasLocationTile: true,
-    hasDegradedBanner: true,
   ),
 ];
 
@@ -327,12 +320,13 @@ void main() {
   });
 
   testWidgets(
-      'the degraded banner is on the monolith, and the table records '
-      'the rest', (WidgetTester t) async {
-    // APP-N4: one banner, built from what the surface can observe. The
-    // register records it as wired on the Dashboard (SEELE), so a storage-full
-    // warning is invisible on the other five skins. Asserting the split keeps
-    // the gap visible rather than letting it read as wired everywhere.
+      'the degraded banner is above every layout, so a storage-full warning '
+      'is not one preset\'s secret', (WidgetTester t) async {
+    // APP-N4: one banner, built from what the surface can observe. It used to
+    // be built inside the SEELE monolith, so a storage-full warning appeared on
+    // one of the seven presets and on none of the others. The observation is
+    // hoisted to `DashboardHost`, and this case runs every preset to prove it
+    // arrived.
     final AppLocalizations l = await _localizations(t);
     final String storageFull =
         DegradedState(const <DegradedMode>{DegradedMode.storageFull}).text(l);
@@ -349,10 +343,8 @@ void main() {
 
     for (final _Layout layout in _layouts) {
       await _pumpDashboard(t, mc, preset: layout.preset);
-      expect(find.text(storageFull),
-          layout.hasDegradedBanner ? findsWidgets : findsNothing,
-          reason: 'the degraded banner does not match the recorded table on '
-              '${layout.name}');
+      expect(find.text(storageFull), findsWidgets,
+          reason: '${layout.name} must not hide a storage-full warning');
     }
 
     await _finish(t, mc);

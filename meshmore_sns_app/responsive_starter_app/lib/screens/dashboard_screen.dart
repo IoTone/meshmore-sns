@@ -11,8 +11,6 @@ import '../meshcore/mesh_event.dart';
 import '../meshcore/meshcore_controller.dart';
 import '../meshcore/own_location.dart';
 import '../theme/mm_skin.dart';
-import '../app/degraded_state.dart';
-import '../ui/degraded_banner.dart';
 import 'dashboards/my_pubkey_line.dart';
 import '../ui/mm_components.dart';
 import '../meshcore/region_presets.dart';
@@ -21,7 +19,6 @@ import '../ui/mm_collapse_controller.dart';
 import '../ui/mm_collapsible.dart';
 import 'device_manager_sheet.dart';
 import '../ui/mm_shape.dart';
-import '../util/prefs.dart';
 
 /// R8 home — "SEELE Monolith" dashboard: one dominant numeral
 /// (peers in range), a full-width status slab that colour-inverts on
@@ -112,32 +109,9 @@ class DashboardScreen extends StatelessWidget {
       // has to identify itself.
       padding: context.skin.space.padScreen,
       children: <Widget>[
-        // APP-N4 — the states this view can observe: the link and the radio's
-        // own battery. Location and tiles are observed where they are known,
-        // not guessed from here. The two link states are taken out of the set
-        // because the slab below is already saying them in the same words.
-        ValueListenableBuilder<bool>(
-          valueListenable: Prefs.writeFailed,
-          builder: (BuildContext _, bool writesFailed, Widget? __) =>
-              DegradedBanner(
-            state: DegradedState.observe(
-              radioPaired: mc.state != MeshcoreConnectionState.disconnected,
-              radioAnswering: mc.state == MeshcoreConnectionState.ready,
-              storageFull: writesFailed,
-              hasLocation: true,
-              mapReachable: true,
-              clockUnset: false,
-              // The battery is the radio's own reading, fetched by the stats
-              // tool. Diagnostics already shows it with its source
-              // (`RadioHealthBlock`); the dashboard does not read stats just to
-              // draw a banner, so it passes nothing rather than guessing.
-              batteryMilliVolts: null,
-            ).minus(const <DegradedMode>{
-              DegradedMode.radioAbsent,
-              DegradedMode.radioSilent,
-            }),
-          ),
-        ),
+        // APP-N4's banner is above this layout, in `DashboardHost`: the facts
+        // are the same on every preset, and building it here made a
+        // storage-full warning visible on this one layout only.
 
         // Status slab — colour-inverts to error on alert. The audio toggle
         // sits beside it rather than inside it: a mute is not a link state,

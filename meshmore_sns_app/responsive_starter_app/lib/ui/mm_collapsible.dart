@@ -59,8 +59,14 @@ class MmCollapsibleSection extends StatefulWidget {
 }
 
 class _MmCollapsibleSectionState extends State<MmCollapsibleSection> {
-  /// Ids currently mounted, to catch a duplicate id while developing.
-  static final Set<String> _live = <String>{};
+  /// How many sections currently hold each id, to catch a duplicate while
+  /// developing.
+  ///
+  /// A count rather than a set, because a set cannot tell a duplicate from a
+  /// replacement: when a layout swaps under the same id (the dashboard does
+  /// this as a preset loads), the incoming section mounts before the outgoing
+  /// one disposes, and a set reports that as two sections sharing a fold.
+  static final Map<String, int> _live = <String, int>{};
 
   bool _registered = false;
   bool _warned = false;
@@ -74,19 +80,26 @@ class _MmCollapsibleSectionState extends State<MmCollapsibleSection> {
   void initState() {
     super.initState();
     assert(() {
-      _registered = _live.add(widget.id);
-      if (!_registered) {
+      _live[widget.id] = (_live[widget.id] ?? 0) + 1;
+      _registered = true;
+      if (_live[widget.id]! > 1) {
+        // Deferred to the end of the frame: by then the outgoing section has
+        // disposed, so only a real duplicate is still counted above one.
+        //
         // Two sections with one id share a fold state, and the second one to
         // mount gets the first one's choice. That is a small bug; a thrown
         // error here is a large one: it replaces part of the screen with
         // Flutter's red error box in debug and with an apology card in the
-        // field (seen on the dashboard while two layouts were mounted for one
-        // frame as the skin loaded). Record it, keep rendering, and let the
-        // diagnostics record carry the fact.
-        AppErrors.record(
-            'duplicate MmCollapsibleSection id "${widget.id}" on screen',
-            kDebugMode ? StackTrace.current : null,
-            where: 'collapsible');
+        // field. Record it, keep rendering, and let the diagnostics record
+        // carry the fact.
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          if ((_live[widget.id] ?? 0) <= 1) return;
+          AppErrors.record(
+              'duplicate MmCollapsibleSection id "${widget.id}" on screen',
+              kDebugMode ? StackTrace.current : null,
+              where: 'collapsible');
+        });
       }
       return true;
     }());
@@ -94,7 +107,17 @@ class _MmCollapsibleSectionState extends State<MmCollapsibleSection> {
 
   @override
   void dispose() {
-    assert(!_registered || _live.remove(widget.id));
+    assert(() {
+      if (_registered) {
+        final int left = (_live[widget.id] ?? 1) - 1;
+        if (left <= 0) {
+          _live.remove(widget.id);
+        } else {
+          _live[widget.id] = left;
+        }
+      }
+      return true;
+    }());
     super.dispose();
   }
 
@@ -164,8 +187,7 @@ class _MmCollapsibleSectionState extends State<MmCollapsibleSection> {
                 constraints:
                     const BoxConstraints(minHeight: kMinInteractiveDimension),
                 child: Padding(
-                  padding:
-                      EdgeInsets.symmetric(horizontal: skin.space.step(6)),
+                  padding: EdgeInsets.symmetric(horizontal: skin.space.step(6)),
                   child: Row(
                     children: <Widget>[
                       Icon(
