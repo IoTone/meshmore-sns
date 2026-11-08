@@ -83,10 +83,34 @@ final class EncodedPhoto {
 /// for no gain. The format is unchanged by that choice: one AV1-class image
 /// type on the wire.
 final class AvifMediaCodec implements MediaCodec {
-  const AvifMediaCodec({this.speed = 9});
+  const AvifMediaCodec({this.speed = 5});
 
-  /// Encoder effort, 0–10 (higher is faster and larger). The decided range is
-  /// 8–10; 9 trades a little size for encoding time on a phone.
+  /// Encoder effort, 0–10, where 0 is the slowest encoder and the largest file
+  /// saving (D11.4, 2026-11-08).
+  ///
+  /// Measured on this tree with the bundled libavif/libaom, a 320×240 gradient
+  /// photo, quantiser 18 (the ladder's first step):
+  ///
+  /// | speed | bytes | encode |
+  /// | --- | --- | --- |
+  /// | 9 (was the default) | 1390 | 7 ms |
+  /// | 6 | 887 | 22 ms |
+  /// | **5** | **784** | **90 ms** |
+  /// | 4 | 796 | 131 ms |
+  /// | 0 | 749 | 818 ms |
+  ///
+  /// The curve has a knee at 5: it is 44 % smaller than the old default, and
+  /// the remaining 35 bytes to speed 0 cost nine times the CPU and a frame that
+  /// would freeze on a phone. Airtime is what this buys: 1390 bytes is ten
+  /// datagrams (3.5 s of channel time at the sender's 350 ms pacing), 784 is
+  /// five (1.75 s).
+  ///
+  /// The numbers are content-dependent — a high-entropy photo lands near the
+  /// ladder's ceiling where every speed produces about the same bytes — so this
+  /// is the effort setting, not a promise about any one picture. What it must
+  /// never do is block the frame: the encode is synchronous, so the M1 protocol
+  /// (median encode at most a third of the transfer time) is also the gate that
+  /// keeps this number honest on a phone.
   final int speed;
 
   /// The quantiser ladder, worst case last.
@@ -109,7 +133,8 @@ final class AvifMediaCodec implements MediaCodec {
       avifNativeCapabilities.canEncode && avifNativeCapabilities.canDecode;
 
   @override
-  Future<EncodedPhoto> encode(MediaPhoto photo, {required int byteBudget}) async {
+  Future<EncodedPhoto> encode(MediaPhoto photo,
+      {required int byteBudget}) async {
     if (!avifNativeCapabilities.canEncode) {
       throw const MediaCodecException(
         MediaCodecFailure.unavailable,
@@ -212,7 +237,8 @@ final class FakeMediaCodec implements MediaCodec {
   bool get isAvailable => true;
 
   @override
-  Future<EncodedPhoto> encode(MediaPhoto photo, {required int byteBudget}) async {
+  Future<EncodedPhoto> encode(MediaPhoto photo,
+      {required int byteBudget}) async {
     encodeCalls++;
     budgets.add(byteBudget);
     return EncodedPhoto(

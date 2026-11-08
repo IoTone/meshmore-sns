@@ -782,3 +782,36 @@ copyleft software. My statement about that earlier is now not true." One verdict
   upstream commit and a build script. Pin Codec 2 at tag `1.2.0` (`06d4c11`), not `main`: the project declares
   itself not actively maintained outside the 3200 mode, and upstream's own `FetchContent` example tracks `main`.
 
+**D11.4 The image encoder spends CPU to buy airtime (owner, 2026-11-08).** In the owner's words: "whatever
+compression we should use should be the maximum ... the cost of encoding/decoding would be faaar less no matter
+what than the crazy latency we get right now." The app's encoder default was `speed: 9` on a 0–10 scale where lower
+is slower and smaller, chosen to save encoding time on a phone. That optimises the resource this app has most of and
+spends the one it has least of: one datagram goes out every 350 ms with 150 bytes of payload, so a full-budget 4 KB
+photo is 27 datagrams and about nine seconds of channel time, on a channel shared with every node in range, against
+a USA/Canada preset whose whole hourly transmit budget is 36 seconds.
+
+Measured rather than assumed, with the bundled libavif/libaom on this tree, a 320×240 gradient photo at quantiser 18
+(the ladder's first step):
+
+| speed | bytes | encode | datagrams | channel time |
+| --- | --- | --- | --- | --- |
+| 9 (the old default) | 1390 | 7 ms | 10 | 3.5 s |
+| 6 | 887 | 22 ms | 6 | 2.1 s |
+| **5 (decided)** | **784** | **90 ms** | **5** | **1.75 s** |
+| 4 | 796 | 131 ms | 6 | 2.1 s |
+| 0 (the maximum) | 749 | 818 ms | 5 | 1.75 s |
+
+The curve has a knee at 5. "The maximum" is speed 0, and it is only 35 bytes better than 5 for nine times the CPU —
+and the encode is synchronous, so on a phone that is a frozen frame, not a slower one. So the decision is **5**, which
+is 44 % smaller than what shipped, and the reason the owner's rule does not land on 0 is his other rule: a control
+that appears to hang is a defect. The numbers are content-dependent (a high-entropy photo lands near the ladder's
+ceiling, where every speed produces about the same bytes), so this is an effort setting and not a promise about any
+one picture.
+
+What this does not settle: the same curve on a phone. The encode is synchronous and the ladder returns the first
+fitting step, so M1's measurement (median encode at most a third of the transfer time, p95 RSS at most 64 MB on a
+lower-mid device) is also the gate that keeps 5 honest on hardware; if a phone's encode at 5 exceeds about a second,
+the honest response is to move the encode off the frame thread rather than to lower the effort again.
+`test/media/media_codec_settings_test.dart` pins the effort, the ladder's shape, and the 350 ms / 150 B / 27-datagram
+arithmetic this reasoning rests on.
+
