@@ -47,8 +47,7 @@ void main() {
   group('R58 signature replaces dmIn, never stacks with it', () {
     test('a peer with a signature gets the slot and NOT dmIn', () async {
       SharedPreferences.setMockInitialValues(<String, Object>{});
-      final FakeMeshcoreTransport fake =
-          FakeMeshcoreTransport(connected: true);
+      final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
       final MeshcoreController ctrl =
           MeshcoreController(transportFactory: () async => fake);
       final TtsController tts = TtsController(speaker: _RecordingSpeaker());
@@ -57,8 +56,8 @@ void main() {
       final _RecordingCue cue = _RecordingCue(ThemeController());
       final CueBridge bridge = CueBridge(ctrl, cue, tts);
       await ctrl.connect();
-      fake.emit(contactMessageFrame(
-          prefix: <int>[1, 2, 3, 4, 5, 6], text: 'hi'));
+      fake.emit(
+          contactMessageFrame(prefix: <int>[1, 2, 3, 4, 5, 6], text: 'hi'));
       await Future<void>.delayed(Duration.zero);
 
       expect(cue.calls, contains(CueKind.sig3));
@@ -68,19 +67,17 @@ void main() {
       ctrl.dispose();
     });
 
-    test('a peer without a signature still gets the ordinary dmIn',
-        () async {
+    test('a peer without a signature still gets the ordinary dmIn', () async {
       SharedPreferences.setMockInitialValues(<String, Object>{});
-      final FakeMeshcoreTransport fake =
-          FakeMeshcoreTransport(connected: true);
+      final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
       final MeshcoreController ctrl =
           MeshcoreController(transportFactory: () async => fake);
       final _RecordingCue cue = _RecordingCue(ThemeController());
-      final CueBridge bridge = CueBridge(
-          ctrl, cue, TtsController(speaker: _RecordingSpeaker()));
+      final CueBridge bridge =
+          CueBridge(ctrl, cue, TtsController(speaker: _RecordingSpeaker()));
       await ctrl.connect();
-      fake.emit(contactMessageFrame(
-          prefix: <int>[9, 9, 9, 9, 9, 9], text: 'plain'));
+      fake.emit(
+          contactMessageFrame(prefix: <int>[9, 9, 9, 9, 9, 9], text: 'plain'));
       await Future<void>.delayed(Duration.zero);
 
       expect(cue.calls, contains(CueKind.dmIn));
@@ -91,14 +88,13 @@ void main() {
     test('a signature set on the full key fires for a prefix-only DM',
         () async {
       SharedPreferences.setMockInitialValues(<String, Object>{});
-      final FakeMeshcoreTransport fake =
-          FakeMeshcoreTransport(connected: true);
+      final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
       final MeshcoreController ctrl =
           MeshcoreController(transportFactory: () async => fake);
       final TtsController tts = TtsController(speaker: _RecordingSpeaker());
       // The sheet knows the full pubkey; the DM may carry only 12 hex.
-      await tts.peers.setSignature(
-          '010203040506aabbccddeeff00112233', CueKind.sig5);
+      await tts.peers
+          .setSignature('010203040506aabbccddeeff00112233', CueKind.sig5);
 
       final _RecordingCue cue = _RecordingCue(ThemeController());
       final CueBridge bridge = CueBridge(ctrl, cue, tts);
@@ -115,15 +111,14 @@ void main() {
 
     test('no TtsController wired -> DMs fall back to dmIn', () async {
       SharedPreferences.setMockInitialValues(<String, Object>{});
-      final FakeMeshcoreTransport fake =
-          FakeMeshcoreTransport(connected: true);
+      final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
       final MeshcoreController ctrl =
           MeshcoreController(transportFactory: () async => fake);
       final _RecordingCue cue = _RecordingCue(ThemeController());
       final CueBridge bridge = CueBridge(ctrl, cue); // no tts
       await ctrl.connect();
-      fake.emit(contactMessageFrame(
-          prefix: <int>[1, 2, 3, 4, 5, 6], text: 'hi'));
+      fake.emit(
+          contactMessageFrame(prefix: <int>[1, 2, 3, 4, 5, 6], text: 'hi'));
       await Future<void>.delayed(Duration.zero);
 
       expect(cue.calls, contains(CueKind.dmIn));
@@ -136,8 +131,7 @@ void main() {
     test('an inbound channel message is spoken with no ChatScreen mounted',
         () async {
       SharedPreferences.setMockInitialValues(<String, Object>{});
-      final FakeMeshcoreTransport fake =
-          FakeMeshcoreTransport(connected: true);
+      final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
       final MeshcoreController ctrl =
           MeshcoreController(transportFactory: () async => fake);
       final _RecordingSpeaker spk = _RecordingSpeaker();
@@ -159,8 +153,7 @@ void main() {
     test('the per-channel mute still wins, and only for that channel',
         () async {
       SharedPreferences.setMockInitialValues(<String, Object>{});
-      final FakeMeshcoreTransport fake =
-          FakeMeshcoreTransport(connected: true);
+      final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
       final MeshcoreController ctrl =
           MeshcoreController(transportFactory: () async => fake);
       final _RecordingSpeaker spk = _RecordingSpeaker();
@@ -183,15 +176,13 @@ void main() {
 
     test('the audio master silences channel speech', () async {
       SharedPreferences.setMockInitialValues(<String, Object>{});
-      final FakeMeshcoreTransport fake =
-          FakeMeshcoreTransport(connected: true);
+      final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
       final MeshcoreController ctrl =
           MeshcoreController(transportFactory: () async => fake);
       final _RecordingSpeaker spk = _RecordingSpeaker();
       final ThemeController theme = ThemeController();
       await theme.setAudioMaster(false);
-      final TtsController tts =
-          TtsController(speaker: spk, theme: theme);
+      final TtsController tts = TtsController(speaker: spk, theme: theme);
       await tts.setEnabled(true);
 
       final CueBridge bridge = CueBridge(ctrl, _RecordingCue(theme), tts);
@@ -209,8 +200,7 @@ void main() {
     test('an inbound DM from an always-peer is spoken with no DM screen open',
         () async {
       SharedPreferences.setMockInitialValues(<String, Object>{});
-      final FakeMeshcoreTransport fake =
-          FakeMeshcoreTransport(connected: true);
+      final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
       final MeshcoreController ctrl =
           MeshcoreController(transportFactory: () async => fake);
       final _RecordingSpeaker spk = _RecordingSpeaker();
@@ -233,8 +223,7 @@ void main() {
 
     test('a never-peer is not spoken even with global speech on', () async {
       SharedPreferences.setMockInitialValues(<String, Object>{});
-      final FakeMeshcoreTransport fake =
-          FakeMeshcoreTransport(connected: true);
+      final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
       final MeshcoreController ctrl =
           MeshcoreController(transportFactory: () async => fake);
       final _RecordingSpeaker spk = _RecordingSpeaker();
@@ -245,8 +234,8 @@ void main() {
       final CueBridge bridge =
           CueBridge(ctrl, _RecordingCue(ThemeController()), tts);
       await ctrl.connect();
-      fake.emit(contactMessageFrame(
-          prefix: <int>[1, 2, 3, 4, 5, 6], text: 'shush'));
+      fake.emit(
+          contactMessageFrame(prefix: <int>[1, 2, 3, 4, 5, 6], text: 'shush'));
       await Future<void>.delayed(Duration.zero);
 
       expect(spk.spoken, isEmpty);
@@ -254,19 +243,17 @@ void main() {
       ctrl.dispose();
     });
 
-    test('no TtsController wired → cues still fire, nothing speaks',
-        () async {
+    test('no TtsController wired → cues still fire, nothing speaks', () async {
       SharedPreferences.setMockInitialValues(<String, Object>{});
-      final FakeMeshcoreTransport fake =
-          FakeMeshcoreTransport(connected: true);
+      final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
       final MeshcoreController ctrl =
           MeshcoreController(transportFactory: () async => fake);
       final _RecordingCue cue = _RecordingCue(ThemeController());
       final CueBridge bridge = CueBridge(ctrl, cue); // no tts
 
       await ctrl.connect();
-      fake.emit(contactMessageFrame(
-          prefix: <int>[1, 2, 3, 4, 5, 6], text: 'hi'));
+      fake.emit(
+          contactMessageFrame(prefix: <int>[1, 2, 3, 4, 5, 6], text: 'hi'));
       await Future<void>.delayed(Duration.zero);
 
       expect(cue.calls, contains(CueKind.dmIn));
@@ -276,8 +263,7 @@ void main() {
   });
 
   test('reaching ready fires linkUp', () async {
-    final FakeMeshcoreTransport fake =
-        FakeMeshcoreTransport(connected: true);
+    final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
     final MeshcoreController ctrl = MeshcoreController(
       transportFactory: () async => fake,
       connection:
@@ -296,16 +282,14 @@ void main() {
   });
 
   test('incoming DM fires dmIn', () async {
-    final FakeMeshcoreTransport fake =
-        FakeMeshcoreTransport(connected: true);
+    final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
     final MeshcoreController ctrl =
         MeshcoreController(transportFactory: () async => fake);
     final _RecordingCue cue = _RecordingCue(ThemeController());
     final CueBridge bridge = CueBridge(ctrl, cue);
 
     await ctrl.connect();
-    fake.emit(contactMessageFrame(
-        prefix: <int>[1, 2, 3, 4, 5, 6], text: 'hi'));
+    fake.emit(contactMessageFrame(prefix: <int>[1, 2, 3, 4, 5, 6], text: 'hi'));
     await Future<void>.delayed(Duration.zero);
 
     expect(cue.calls, contains(CueKind.dmIn));
@@ -314,8 +298,7 @@ void main() {
   });
 
   test('a newly heard node fires discovery (the Geiger tick)', () async {
-    final FakeMeshcoreTransport fake =
-        FakeMeshcoreTransport(connected: true);
+    final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
     final MeshcoreController ctrl =
         MeshcoreController(transportFactory: () async => fake);
     final _RecordingCue cue = _RecordingCue(ThemeController());
@@ -341,8 +324,7 @@ void main() {
   });
 
   test('incoming channel message fires messageIn', () async {
-    final FakeMeshcoreTransport fake =
-        FakeMeshcoreTransport(connected: true);
+    final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
     final MeshcoreController ctrl =
         MeshcoreController(transportFactory: () async => fake);
     final _RecordingCue cue = _RecordingCue(ThemeController());
@@ -361,10 +343,10 @@ void main() {
   // message through the SYNC drain, and each one cued — dozens of
   // overlapping haptic patterns for history that was already old.
   group('backlog replay is not a burst of arrivals', () {
-    testWidgets('queued messages do not cue one-by-one, the drain end cues once',
+    testWidgets(
+        'queued messages do not cue one-by-one, the drain end cues once',
         (WidgetTester t) async {
-      final FakeMeshcoreTransport fake =
-          FakeMeshcoreTransport(connected: true);
+      final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
       final MeshcoreController ctrl =
           MeshcoreController(transportFactory: () async => fake);
       final _RecordingCue cue = _RecordingCue(ThemeController());
@@ -393,8 +375,7 @@ void main() {
     });
 
     testWidgets('a DM in the backlog is silent too', (WidgetTester t) async {
-      final FakeMeshcoreTransport fake =
-          FakeMeshcoreTransport(connected: true);
+      final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
       final MeshcoreController ctrl =
           MeshcoreController(transportFactory: () async => fake);
       final _RecordingCue cue = _RecordingCue(ThemeController());
@@ -417,9 +398,9 @@ void main() {
       ctrl.dispose();
     });
 
-    testWidgets('live traffic after the backlog still cues', (WidgetTester t) async {
-      final FakeMeshcoreTransport fake =
-          FakeMeshcoreTransport(connected: true);
+    testWidgets('live traffic after the backlog still cues',
+        (WidgetTester t) async {
+      final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
       final MeshcoreController ctrl =
           MeshcoreController(transportFactory: () async => fake);
       final _RecordingCue cue = _RecordingCue(ThemeController());

@@ -33,11 +33,15 @@ void main() {
   }
 
   group('the light ground is declared, not implied', () {
-    test('exactly one preset is light, and it is this one', () {
-      final List<MmThemePreset> light = MmThemePreset.values
+    test('this preset is one of the three light grounds', () {
+      // Two more light themes arrived with the LDMUX port (Air, Daybreak), so
+      // the claim is no longer "only one" — it is that this one is still
+      // declared light and still builds a light Material scheme.
+      final Set<MmThemePreset> light = MmThemePreset.values
           .where((MmThemePreset p) => kMmPresets[p]!.isLight)
-          .toList();
-      expect(light, <MmThemePreset>[MmThemePreset.studioLight]);
+          .toSet();
+      expect(light, contains(MmThemePreset.studioLight));
+      expect(light.length, 3);
       expect(t.isLight, isTrue);
     });
 
@@ -48,10 +52,13 @@ void main() {
       expect(td.colorScheme.brightness, Brightness.light);
       expect(td.scaffoldBackgroundColor, t.base);
       expect(td.colorScheme.onSurface, t.fg);
-      // Every dark preset still asks for a dark scheme.
+      // Every preset asks for the scheme its own ground implies: brightness
+      // is derived from the page, not declared beside it, so a light preset
+      // added later cannot inherit a dark scheme by being forgotten here.
       for (final MmThemePreset p in MmThemePreset.values) {
-        if (p == MmThemePreset.studioLight) continue;
-        expect(buildMmTheme(kMmPresets[p]!).brightness, Brightness.dark,
+        final MmTokens tokens = kMmPresets[p]!;
+        expect(buildMmTheme(tokens).brightness,
+            tokens.isLight ? Brightness.light : Brightness.dark,
             reason: p.name);
       }
     });
@@ -127,8 +134,8 @@ void main() {
       }
       // …and it stays visibly below the muted tier, so "off" still reads as
       // off rather than as secondary text.
-      expect(ratio(t.fgMuted, t.base),
-          greaterThan(ratio(t.fgDisabled, t.base)));
+      expect(
+          ratio(t.fgMuted, t.base), greaterThan(ratio(t.fgDisabled, t.base)));
     });
 
     test('caution is a role of its own, and readable on paper', () {
@@ -140,8 +147,7 @@ void main() {
             reason: 'a caution stroke on $layer');
       }
       // The dark presets keep the amber they were drawn with.
-      expect(kMmPresets[MmThemePreset.studio]!.warn,
-          const Color(0xFFFFB020));
+      expect(kMmPresets[MmThemePreset.studio]!.warn, const Color(0xFFFFB020));
     });
 
     test('the secondary text tier clears AA on every layer', () {
@@ -220,8 +226,7 @@ void main() {
               .borderSide
               .color,
           t.line);
-      final BorderSide chrome =
-          (td.appBarTheme.shape! as Border).bottom;
+      final BorderSide chrome = (td.appBarTheme.shape! as Border).bottom;
       expect(chrome.color, t.line,
           reason: 'the app bar ends in a rule, and on paper it has to show');
       expect(chrome.width, 1);

@@ -33,7 +33,6 @@ import 'package:meshmore_sns_app/theme/theme_controller.dart';
 import 'package:meshmore_sns_app/tools/tools_controller.dart';
 import 'package:meshmore_sns_app/tts/tts_controller.dart';
 
-
 /// The seven-skin sweep: every primary surface is built once per preset.
 ///
 /// The per-feature waves each prove their own seven-preset rendering (places
@@ -61,7 +60,8 @@ class _SilentSpeaker implements TtsSpeaker {
   Future<bool> isLanguageAvailable(String locale) async => true;
 }
 
-List<SingleChildWidget> _providers(ThemeController theme) => <SingleChildWidget>[
+List<SingleChildWidget> _providers(ThemeController theme) =>
+    <SingleChildWidget>[
       ChangeNotifierProvider<AppState>(create: (_) => AppState()),
       ChangeNotifierProvider<ThemeController>.value(value: theme),
       ChangeNotifierProvider<TtsController>(
@@ -76,8 +76,7 @@ List<SingleChildWidget> _providers(ThemeController theme) => <SingleChildWidget>
       ChangeNotifierProvider<FirstRunController>(
           create: (_) => FirstRunController.preloaded(done: true)),
       ChangeNotifierProvider<LocaleController>(
-          create: (_) =>
-              LocaleController(initial: const Locale('en'))..load()),
+          create: (_) => LocaleController(initial: const Locale('en'))..load()),
       ChangeNotifierProvider<TermsController>(
           create: (_) => TermsController.accepted()),
       ChangeNotifierProvider<DemoMode>(
@@ -93,9 +92,9 @@ List<SingleChildWidget> _providers(ThemeController theme) => <SingleChildWidget>
           create: (_) => MapsController(appVersion: () => '1.0.0')),
       ChangeNotifierProvider<AutoPublishController>(
           create: (BuildContext ctx) => AutoPublishController(
-            mc: ctx.read<MeshcoreController>(),
-            location: const GeolocatorLocationService(),
-          )),
+                mc: ctx.read<MeshcoreController>(),
+                location: const GeolocatorLocationService(),
+              )),
       // R109 places: the map tab and the chat echo read these, so every
       // harness that builds the shell needs them (as `home_shell_test` does).
       ChangeNotifierProvider<PlaceStore>(create: (_) => PlaceStore()),
@@ -114,7 +113,6 @@ List<SingleChildWidget> _providers(ThemeController theme) => <SingleChildWidget>
       Provider<PlaceReportBudget>(
           create: (_) => PlaceReportBudget(clock: DateTime.now)),
     ];
-
 
 /// The pairing screen's seam: the real scanner is the platform's BLE and cannot
 /// run under a widget test, so this harness registers a scanner that reports an

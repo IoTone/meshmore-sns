@@ -55,8 +55,7 @@ void main() {
         (WidgetTester t) async {
       SharedPreferences.setMockInitialValues(<String, Object>{});
       final ThemeController theme = ThemeController()..setPreset(preset);
-      final FakeMeshcoreTransport fake =
-          FakeMeshcoreTransport(connected: true);
+      final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
       final MeshcoreController mc =
           MeshcoreController(transportFactory: () async => fake);
       await mc.connect();

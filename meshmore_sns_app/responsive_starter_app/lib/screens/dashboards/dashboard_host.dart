@@ -72,6 +72,11 @@ class DashboardHost extends StatelessWidget {
       MmThemePreset.studio ||
       MmThemePreset.studioLight =>
         const StudioDashboard(),
+      // The four LDMUX presets (forest, air, daybreak, umber) land here on
+      // purpose: a layout is a screen's own design, and inheriting the SEELE
+      // monolith is the honest default until one of them earns a layout of its
+      // own. This is not a forgotten case — the arm is reached only by presets
+      // with no bundle above it.
       _ => const DashboardScreen(),
     };
   }

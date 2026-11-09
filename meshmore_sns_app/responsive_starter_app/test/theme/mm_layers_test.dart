@@ -8,12 +8,14 @@ import 'package:meshmore_sns_app/theme/mm_tokens.dart';
 /// R63 — the layer-stack extension must be invisible to the six older
 /// presets, and Studio must actually be a stack.
 void main() {
-  /// R115 — the presets that supply their own layer stack. Everything else
-  /// derives the stack from `surfaceAlt`, which is what keeps the older
-  /// presets byte-identical to what they drew before R63.
+  /// The presets that supply their own layer stack, derived from the tokens
+  /// rather than listed: everything else derives the stack from `surfaceAlt`,
+  /// which is what keeps the older presets byte-identical to what they drew
+  /// before R63. Deriving it means a new preset is classified by what it
+  /// actually declares, and a list here can never fall behind the enum.
   final List<MmThemePreset> stacked = <MmThemePreset>[
-    MmThemePreset.studio,
-    MmThemePreset.studioLight,
+    for (final MmThemePreset p in MmThemePreset.values)
+      if (kMmPresets[p]!.hasLayerStack) p,
   ];
   final List<MmThemePreset> legacy = <MmThemePreset>[
     for (final MmThemePreset p in MmThemePreset.values)
@@ -226,14 +228,14 @@ void main() {
           fontFamily: s.type.displayFamily, shape: s.shape);
       // R98: square is a 1 px corner, not 0.
       const BorderRadius r1 = BorderRadius.all(Radius.circular(1));
-      expect(td.chipTheme.shape,
-          const RoundedRectangleBorder(borderRadius: r1));
+      expect(
+          td.chipTheme.shape, const RoundedRectangleBorder(borderRadius: r1));
       expect(
           td.cardTheme.shape,
           RoundedRectangleBorder(
               side: BorderSide(color: t.hairline), borderRadius: r1));
-      expect(td.dialogTheme.shape,
-          const RoundedRectangleBorder(borderRadius: r1));
+      expect(
+          td.dialogTheme.shape, const RoundedRectangleBorder(borderRadius: r1));
       expect(td.colorScheme.surfaceContainerHighest, t.selected);
       expect(td.colorScheme.onPrimary, t.onAccent);
     });

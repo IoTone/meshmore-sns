@@ -190,7 +190,6 @@ class MmShape {
   /// older presets.
   final bool dimmedBasemap;
 
-
   // What a filled area means, so the light and dark grounds answer the same
   // way: **structure** is a rule plus, at most, a surface one step off the
   // page ([MmPanel]); a **control** is a filled object with a full-strength
@@ -414,6 +413,87 @@ MmSkin mmSkinFor(MmThemePreset preset) {
         ),
         ornament: _calmOrnament,
       );
+    // The four LDMUX looks (2026-11-09). All four set words in the mono face,
+    // which is the LDMUX character (a terminal on a page) and keeps the type
+    // rule this app already enforces: only Studio and Studio Light turn words
+    // sans. None of them squares Material's own controls, so each keeps the
+    // framework's rounding and only the panel corner changes.
+    //
+    // Forest: dark pine, soft corners, and a dimmed basemap for the same
+    // reason Studio dims one — a pale basemap under dark chrome reads as a
+    // hole. Air and Daybreak are light grounds, so neither dims: dimming
+    // exists to push a bright map under dark chrome, and on a light page the
+    // map belongs to the page.
+    case MmThemePreset.forest:
+      return MmSkin(
+        preset: preset,
+        color: color,
+        type: const MmType(
+          monoFamily: 'JetBrains Mono',
+          upperHeadings: true,
+          headingTracking: 1.6,
+          slashedZero: true,
+        ),
+        shape: const MmShape(
+          corner: MmCorner.rounded,
+          cornerSize: 8,
+          borderWidth: 1,
+          dimmedBasemap: true,
+        ),
+        ornament: _calmOrnament,
+      );
+    case MmThemePreset.air:
+      return MmSkin(
+        preset: preset,
+        color: color,
+        type: const MmType(
+          monoFamily: 'JetBrains Mono',
+          upperHeadings: true,
+          headingTracking: 1.4,
+          slashedZero: true,
+        ),
+        shape: const MmShape(
+          corner: MmCorner.rounded,
+          cornerSize: 6,
+          borderWidth: 1,
+        ),
+        ornament: _calmOrnament,
+      );
+    case MmThemePreset.daybreak:
+      return MmSkin(
+        preset: preset,
+        color: color,
+        type: const MmType(
+          monoFamily: 'JetBrains Mono',
+          upperHeadings: true,
+          headingTracking: 1.4,
+          slashedZero: true,
+        ),
+        shape: const MmShape(
+          corner: MmCorner.rounded,
+          cornerSize: 10,
+          borderWidth: 1,
+        ),
+        ornament: _calmOrnament,
+      );
+    case MmThemePreset.umber:
+      return MmSkin(
+        preset: preset,
+        color: color,
+        type: const MmType(
+          monoFamily: 'JetBrains Mono',
+          upperHeadings: true,
+          headingTracking: 1.6,
+          slashedZero: true,
+        ),
+        shape: const MmShape(
+          corner: MmCorner.rounded,
+          cornerSize: 8,
+          borderWidth: 1,
+          dimmedBasemap: true,
+        ),
+        ornament: _calmOrnament,
+      );
     // F — Tactical Recon: night-ops codec. OLED-black, single amber
     // phosphor hue, all-mono (Departure-Mono-class) terminal type, sharp
     // edges, glare-/battery-aware (no scanline overdraw on the black).
@@ -463,7 +543,8 @@ extension MmSkinContext on BuildContext {
   MmSkin get skinRead {
     MmThemePreset preset = MmThemePreset.seele;
     try {
-      final ThemeController tc = Provider.of<ThemeController>(this, listen: false);
+      final ThemeController tc =
+          Provider.of<ThemeController>(this, listen: false);
       preset = tc.highContrast ? MmThemePreset.seele : tc.preset;
     } on ProviderNotFoundException {
       // No ThemeController above us — default skin.

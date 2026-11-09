@@ -30,6 +30,13 @@ enum MmThemePreset {
   recon,
   studio,
   studioLight,
+  // The owner's own looks, ported from LDMUX (2026-11-09). Four palettes
+  // whose every role was measured before it was drawn, including the
+  // control-boundary role this app had been missing.
+  forest,
+  air,
+  daybreak,
+  umber,
 }
 
 extension MmThemePresetX on MmThemePreset {
@@ -42,6 +49,10 @@ extension MmThemePresetX on MmThemePreset {
         MmThemePreset.recon => 'Recon Night',
         MmThemePreset.studio => 'Studio Dark — clean · square',
         MmThemePreset.studioLight => 'Studio Light — paper · square',
+        MmThemePreset.forest => 'Forest — dark pine · one green',
+        MmThemePreset.air => 'Air — white page · blue',
+        MmThemePreset.daybreak => 'Daybreak — white page · vermilion',
+        MmThemePreset.umber => 'Umber — gruvbox browns',
       };
 
   /// Asset-folder slug for the R12 per-theme audio pack. Used by
@@ -62,6 +73,11 @@ extension MmThemePresetX on MmThemePreset {
         // R115 — same reason: a light skin changes colour, not the cue
         // set. The calm pack is the one that fits a paper ground.
         MmThemePreset.studioLight => 'hyperlocal',
+        // Same reason again: these four change colour, not the cue set.
+        MmThemePreset.forest => 'hyperlocal',
+        MmThemePreset.air => 'hyperlocal',
+        MmThemePreset.daybreak => 'hyperlocal',
+        MmThemePreset.umber => 'hyperlocal',
       };
 }
 
@@ -320,6 +336,118 @@ const Map<MmThemePreset, MmTokens> kMmPresets = <MmThemePreset, MmTokens>{
     // This is the same caution at 4.6:1, hue unchanged to the eye.
     warn: Color(0xFF8A5A00),
   ),
+
+  // --- The four LDMUX looks (2026-11-09) -------------------------------
+  //
+  // Ported from the owner's LDMUX project, where every neutral is a Radix
+  // Colors 3.0 value and every role has a stated contrast floor. The mapping
+  // into this app's roles is the same for all four, and it is the part worth
+  // reading before changing a number:
+  //
+  //   LDMUX edge -> line      a control and panel boundary, held to 3:1
+  //   LDMUX line -> hairline  a divider, meant to be barely there
+  //   LDMUX dim  -> fgMuted   the second voice, held to 4.5:1
+  //   LDMUX muted             NOT mapped: this app has no third *legible*
+  //                           text tier, and its `fgDisabled` is a disabled
+  //                           style rather than a note. Recorded in
+  //                           `test/theme/ldmux_presets_test.dart` so the
+  //                           value is not lost.
+  //   LDMUX chosen            NOT mapped as a fill: it is a 3:1 *outline*
+  //                           for a chosen control, and this app draws that
+  //                           state with `accent` plus a rule.
+  //
+  // Three values were moved off the LDMUX literal because this app draws a
+  // role on `surfaceAlt`, which LDMUX does not have: Daybreak's accent and
+  // alert, Umber's alert, and the two light themes' `edge`. Each is one step
+  // in the same family and every floor still holds; the test lists them.
+  MmThemePreset.forest: MmTokens(
+    base: Color(0xFF121514),
+    surface: Color(0xFF1A211D),
+    surfaceAlt: Color(0xFF232C27),
+    // edge, not line: a row or control boundary has to be visible at 3:1.
+    line: Color(0xFF7C8884),
+    hairline: Color(0xFF2F3A33),
+    fg: Color(0xFFEDF2EE),
+    fgMuted: Color(0xFFAEBBB2),
+    accent: Color(0xFF7FC98A),
+    alert: Color(0xFFE58A84),
+    // Not a green the palette names: LDMUX has no success role, and its
+    // accent is already green, so `ok` is a paler leaf tint that reads as
+    // "fine" without becoming a second accent.
+    ok: Color(0xFFA6D189),
+    raised: Color(0xFF232C27),
+    selected: Color(0xFF2F3A33),
+    onAccent: Color(0xFF0E1512),
+    // The LDMUX muted grey, blended halfway to the page exactly as the
+    // derived tier would be, then nudged so it clears 3:1 on every layer with
+    // headroom (the answer above is 3.83 / 3.68 / 3.22).
+    fgDisabled: Color(0xFF6F7A73),
+    onAlert: Color(0xFF0E1512),
+    warn: Color(0xFFE6C177),
+  ),
+  MmThemePreset.air: MmTokens(
+    base: Color(0xFFFFFFFF),
+    surface: Color(0xFFF4F6F9),
+    surfaceAlt: Color(0xFFECEFF3),
+    // LDMUX's edge #8B8D98 is 2.86:1 on this theme's raised fill, under the
+    // control-boundary floor; one step darker in the same blue-grey.
+    line: Color(0xFF7E808A),
+    hairline: Color(0xFFCDCED6),
+    fg: Color(0xFF1C2024),
+    fgMuted: Color(0xFF4D525A),
+    accent: Color(0xFF0A68BA),
+    alert: Color(0xFFCE2C31),
+    ok: Color(0xFF17703A),
+    raised: Color(0xFFECEFF3),
+    selected: Color(0xFFCDCED6),
+    onAccent: Color(0xFFFFFFFF),
+    fgDisabled: Color(0xFF84888F),
+    onAlert: Color(0xFFFFFFFF),
+    link: Color(0xFF17703A),
+    warn: Color(0xFF8A5A00),
+  ),
+  MmThemePreset.daybreak: MmTokens(
+    base: Color(0xFFFFFFFF),
+    surface: Color(0xFFF5F7F4),
+    surfaceAlt: Color(0xFFEBEEEB),
+    line: Color(0xFF7A7F79),
+    hairline: Color(0xFFD7DAD7),
+    fg: Color(0xFF1D211C),
+    fgMuted: Color(0xFF4D524B),
+    // LDMUX tomato-11 (#D13415) is 4.26:1 on this theme's raised fill, under
+    // the label floor; one step darker in the same vermilion.
+    accent: Color(0xFFBE2C11),
+    // Same correction for danger: red-11 is 4.46:1 on the raised fill.
+    alert: Color(0xFFC4272C),
+    ok: Color(0xFF17703A),
+    raised: Color(0xFFEBEEEB),
+    selected: Color(0xFFD7DAD7),
+    onAccent: Color(0xFFFFFFFF),
+    fgDisabled: Color(0xFF7F837B),
+    onAlert: Color(0xFFFFFFFF),
+    link: Color(0xFF17703A),
+    warn: Color(0xFF8A5A00),
+  ),
+  MmThemePreset.umber: MmTokens(
+    base: Color(0xFF211D1B),
+    surface: Color(0xFF2B2521),
+    surfaceAlt: Color(0xFF38312B),
+    line: Color(0xFF8C7F73),
+    hairline: Color(0xFF4A403A),
+    fg: Color(0xFFE7D7AD),
+    fgMuted: Color(0xFFC5B18D),
+    accent: Color(0xFFE78A4E),
+    // gruvbox red #EA6962 is 4.08:1 on the raised fill; lightened one step.
+    alert: Color(0xFFF07A74),
+    // gruvbox-material's aqua, which is this family's own "good" colour.
+    ok: Color(0xFF89B482),
+    raised: Color(0xFF38312B),
+    selected: Color(0xFF4A403A),
+    onAccent: Color(0xFF282828),
+    fgDisabled: Color(0xFF8A7C6E),
+    onAlert: Color(0xFF211D1B),
+    warn: Color(0xFFD8A657),
+  ),
 };
 
 /// The skin a fresh install opens on. STUDIO: the quiet, sans-face,
@@ -374,8 +502,9 @@ ThemeData buildMmTheme(MmTokens t, {String? fontFamily, MmShape? shape}) {
   // the page, inside a hairline in the skin's own corner, at the app's 48 dp
   // minimum. Dialog and sheet action rows keep TextButtons and now inherit the
   // same boundary, which is the pairing convention rather than a change to it.
-  final double controlCorner =
-      square ? kSquareRadius : ((shape?.cornerSize ?? 8).clamp(2, 8)).toDouble();
+  final double controlCorner = square
+      ? kSquareRadius
+      : ((shape?.cornerSize ?? 8).clamp(2, 8)).toDouble();
   final BorderRadius controlRadius = BorderRadius.circular(controlCorner);
   final ButtonStyle affordanceTextButton = ButtonStyle(
     minimumSize: WidgetStateProperty.all<Size>(const Size(0, 48)),
@@ -397,14 +526,12 @@ ThemeData buildMmTheme(MmTokens t, {String? fontFamily, MmShape? shape}) {
           : t.surfaceAlt,
     ),
     foregroundColor: WidgetStateProperty.resolveWith<Color>(
-      (Set<WidgetState> states) => states.contains(WidgetState.disabled)
-          ? t.fgMuted
-          : t.fg,
+      (Set<WidgetState> states) =>
+          states.contains(WidgetState.disabled) ? t.fgMuted : t.fg,
     ),
   );
   OutlineInputBorder squareField(Color c, [double w = 1]) => OutlineInputBorder(
-      borderRadius: squareRadius,
-      borderSide: BorderSide(color: c, width: w));
+      borderRadius: squareRadius, borderSide: BorderSide(color: c, width: w));
   final Brightness brightness = t.isLight ? Brightness.light : Brightness.dark;
   final ColorScheme scheme = ColorScheme(
     brightness: brightness,

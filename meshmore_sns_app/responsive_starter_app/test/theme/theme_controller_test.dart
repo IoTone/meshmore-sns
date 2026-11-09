@@ -11,9 +11,10 @@ void main() {
 
   setUp(() => SharedPreferences.setMockInitialValues(<String, Object>{}));
 
-  test('all eight presets defined, distinct, non-degenerate', () {
-    expect(MmThemePreset.values, hasLength(8));
-    expect(kMmPresets.length, 8);
+  test('all twelve presets defined, distinct, non-degenerate', () {
+    // R115 added Studio Light; the LDMUX port added four more (2026-11-09).
+    expect(MmThemePreset.values, hasLength(12));
+    expect(kMmPresets.length, 12);
     final Set<int> bases = <int>{
       for (final MmThemePreset p in MmThemePreset.values)
         // ignore: deprecated_member_use
@@ -21,13 +22,19 @@ void main() {
     };
     expect(bases.length, greaterThanOrEqualTo(4),
         reason: 'preset backgrounds should not all be identical');
-    // R115 — exactly one preset is a light ground: a light theme is the
-    // deliberate opposite of the other seven, not another dark variant.
+    // Three presets are light grounds, and each was a deliberate opposite of
+    // the dark ones rather than another dark variant: Studio Light (R115),
+    // then Air and Daybreak from the LDMUX port. A fourth light theme would
+    // need a reason that is not "another shade of paper".
     expect(
         MmThemePreset.values
             .where((MmThemePreset p) => kMmPresets[p]!.isLight)
-            .toList(),
-        <MmThemePreset>[MmThemePreset.studioLight]);
+            .toSet(),
+        <MmThemePreset>{
+          MmThemePreset.studioLight,
+          MmThemePreset.air,
+          MmThemePreset.daybreak,
+        });
   });
 
   test('default preset is STUDIO with no stored prefs', () async {
@@ -70,8 +77,7 @@ void main() {
     await c.setPreset(MmThemePreset.recon);
     await c.setHighContrast(true);
     final ThemeData t = c.theme;
-    expect(t.scaffoldBackgroundColor,
-        kMmPresets[MmThemePreset.seele]!.base);
+    expect(t.scaffoldBackgroundColor, kMmPresets[MmThemePreset.seele]!.base);
   });
 
   test('visual+haptic-only forces audio off', () async {
@@ -97,7 +103,8 @@ void main() {
     expect(td.brightness, Brightness.dark);
   });
 
-  test('switching preset re-skins the WHOLE theme (regression: '
+  test(
+      'switching preset re-skins the WHOLE theme (regression: '
       'themes did not change)', () {
     final ThemeData d = buildMmTheme(kMmPresets[MmThemePreset.seele]!);
     final ThemeData r = buildMmTheme(kMmPresets[MmThemePreset.recon]!);
@@ -108,12 +115,11 @@ void main() {
     // Material default and made themes look identical).
     expect(d.textTheme.bodyMedium!.color, dt.fg);
     expect(r.textTheme.bodyMedium!.color, rt.fg);
-    expect(d.textTheme.bodyMedium!.color,
-        isNot(r.textTheme.bodyMedium!.color));
+    expect(d.textTheme.bodyMedium!.color, isNot(r.textTheme.bodyMedium!.color));
 
     // M3 container roles + icons + primary all differ between presets.
-    expect(d.colorScheme.surfaceContainer,
-        isNot(r.colorScheme.surfaceContainer));
+    expect(
+        d.colorScheme.surfaceContainer, isNot(r.colorScheme.surfaceContainer));
     expect(d.colorScheme.onSurfaceVariant, dt.fgMuted);
     expect(d.iconTheme.color, dt.fg);
     expect(d.colorScheme.primary, isNot(r.colorScheme.primary));
@@ -125,8 +131,7 @@ void main() {
       final MmTokens t = kMmPresets[p]!;
       final ThemeData td = buildMmTheme(t);
       expect(td.textTheme.titleLarge!.color, t.fg, reason: p.name);
-      expect(td.colorScheme.surfaceContainerHigh, t.surfaceAlt,
-          reason: p.name);
+      expect(td.colorScheme.surfaceContainerHigh, t.surfaceAlt, reason: p.name);
     }
   });
 }

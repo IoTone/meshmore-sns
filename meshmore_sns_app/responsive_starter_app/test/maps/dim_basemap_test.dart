@@ -87,15 +87,27 @@ void main() {
         reason: 'label text keeps AA on land');
   });
 
-  test('R79 only Studio opts into the dimmed basemap', () {
-    // R115 — the dim pushes a bright basemap under dark chrome. A light
-    // ground wants the basemap to belong to the page, so it is not dimmed.
+  test('R79 the dimmed basemap is opted into per preset, never on a light '
+      'ground', () {
+    // R79 — the dim pushes a bright raster basemap under dark chrome, which is
+    // a decision each skin takes rather than a rule the dark grounds inherit:
+    // the radar, HUD, codec and pop skins draw their own map palettes and do
+    // not want a second treatment. R115 settled the other half: a light ground
+    // wants the basemap to belong to the page, so it is never dimmed.
+    const Set<MmThemePreset> dimmed = <MmThemePreset>{
+      MmThemePreset.studio,
+      MmThemePreset.forest,
+      MmThemePreset.umber,
+    };
     for (final MmThemePreset p in MmThemePreset.values) {
-      expect(mmSkinFor(p).shape.dimmedBasemap, p == MmThemePreset.studio,
+      expect(mmSkinFor(p).shape.dimmedBasemap, dimmed.contains(p),
           reason: '$p');
+      if (kMmPresets[p]!.isLight) {
+        expect(mmSkinFor(p).shape.dimmedBasemap, isFalse,
+            reason: '$p is a light ground: the basemap is the page, not '
+                'something under it');
+      }
     }
-    expect(mmSkinFor(MmThemePreset.studioLight).shape.dimmedBasemap, isFalse,
-        reason: 'a light ground wants the basemap as the page, not under it');
   });
 
   test('mmDimTileFilter is a colour-matrix filter', () {

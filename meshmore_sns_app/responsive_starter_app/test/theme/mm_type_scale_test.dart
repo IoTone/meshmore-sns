@@ -72,6 +72,7 @@ void main() {
     expect(ramp, hasLength(3));
     expect(kCellHeatHot, isNot(kCellHeatCool));
     expect(kInferredPlaceMarker, isNot(kThermalHot));
-    expect(kMarkerShadow.a, lessThan(1.0), reason: 'a shadow must be see-through');
+    expect(kMarkerShadow.a, lessThan(1.0),
+        reason: 'a shadow must be see-through');
   });
 }

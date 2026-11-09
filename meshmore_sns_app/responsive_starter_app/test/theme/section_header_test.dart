@@ -73,8 +73,8 @@ void main() {
     final Material header = t.widget<Material>(find.byType(Material).last);
     expect(header.color, Colors.transparent,
         reason: 'a band on paper is a box, not a header');
-    expect(find.byKey(const ValueKey<String>('group-open-rule')),
-        findsOneWidget);
+    expect(
+        find.byKey(const ValueKey<String>('group-open-rule')), findsOneWidget);
     expect(rules(t).single.color, skin.color.line,
         reason: 'the opening rule is the border tier');
   });
@@ -86,19 +86,21 @@ void main() {
     final Material header = t.widget<Material>(find.byType(Material).last);
     expect(header.color, Colors.transparent,
         reason: 'a tinted header is a boundary drawn twice, on any ground');
-    expect(find.byKey(const ValueKey<String>('group-open-rule')),
-        findsOneWidget);
+    expect(
+        find.byKey(const ValueKey<String>('group-open-rule')), findsOneWidget);
     expect(rules(t).single.color, skin.color.line);
   });
 
-  testWidgets('every preset marks a group the same way', (WidgetTester t) async {
+  testWidgets('every preset marks a group the same way',
+      (WidgetTester t) async {
     for (final MmThemePreset preset in MmThemePreset.values) {
       final MmSkin skin = mmSkinFor(preset);
       await pump(t, preset);
       final Material header = t.widget<Material>(find.byType(Material).last);
-      expect(header.color, Colors.transparent, reason: '$preset fills a header');
-      expect(find.byKey(const ValueKey<String>('group-open-rule')),
-          findsOneWidget,
+      expect(header.color, Colors.transparent,
+          reason: '$preset fills a header');
+      expect(
+          find.byKey(const ValueKey<String>('group-open-rule')), findsOneWidget,
           reason: '$preset draws no opening rule');
       expect(rules(t).single.color, skin.color.line,
           reason: '$preset draws the rule outside the border tier');
@@ -118,8 +120,8 @@ void main() {
       await pump(t, preset, sections: 2);
       expect(find.byKey(const ValueKey<String>('group-open-rule')),
           findsNWidgets(2));
-      expect(find.byKey(const ValueKey<String>('group-close-rule')),
-          findsNothing,
+      expect(
+          find.byKey(const ValueKey<String>('group-close-rule')), findsNothing,
           reason: 'a closing rule would draw the boundary twice');
       expect(rules(t).length, 2,
           reason: '$preset: one rule per boundary, not two');

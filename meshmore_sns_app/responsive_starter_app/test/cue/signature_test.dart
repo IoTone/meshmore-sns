@@ -76,21 +76,19 @@ void main() {
 
     test('each slot resolves to its own asset in every pack', () {
       final Set<String> seen = <String>{};
-      // R63 — Studio aliases the Hyperlocal pack, so check the six
-      // distinct packs; the alias itself is pinned in
-      // asset_audio_pack_test.dart.
+      // Uniqueness is per distinct audio pack, not per preset: a preset that
+      // borrows another's pack is deliberate (no cue set exists for it), and
+      // the aliases are pinned in asset_audio_pack_test.dart. Deriving the
+      // alias list from the packs keeps a new preset from needing an edit here.
+      final Set<String> packs = <String>{};
       for (final MmThemePreset p in MmThemePreset.values) {
-        if (<MmThemePreset>[
-          MmThemePreset.studio,
-          MmThemePreset.studioLight,
-        ].contains(p)) {
-          continue;
-        }
+        if (!packs.add(p.audioPackKey)) continue;
         for (final CueKind s in kSignatureSlots) {
-          expect(seen.add(AssetAudioPack.assetPathFor(p, s)), isTrue);
+          expect(seen.add(AssetAudioPack.assetPathFor(p, s)), isTrue,
+              reason: 'duplicate signature path for ${p.name}/${s.name}');
         }
       }
-      expect(seen.length, 6 * 5);
+      expect(seen.length, packs.length * kSignatureSlots.length);
       expect(
         AssetAudioPack.assetPathFor(MmThemePreset.seele, CueKind.sig3),
         'audio/seele/sig3.wav',

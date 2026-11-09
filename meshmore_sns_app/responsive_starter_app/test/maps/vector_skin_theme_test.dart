@@ -103,11 +103,12 @@ void main() {
         for (final MmThemePreset p in presets)
           VectorSkinPalette.of(kMmPresets[p]!).ground.toARGB32(),
       };
-      // SEELE and RECON are both pure black by design (mm_tokens.dart), so a
-      // map that tinted only the ground would be identical in those two. Their
-      // water, road and label roles still part the palettes, which the test
-      // above proves.
-      expect(grounds.length, presets.length - 1);
+      // Two pairs share a ground by design: SEELE and RECON are both pure
+      // black, and AIR and DAYBREAK are both pure white (mm_tokens.dart). A
+      // map that tinted only the ground would be identical inside each pair,
+      // and their water, road and label roles still part the palettes, which
+      // the test above proves.
+      expect(grounds.length, presets.length - 2);
     });
 
     test('the halo is the ground, so a label never floats on a foreign fill',

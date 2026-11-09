@@ -9,20 +9,14 @@ void main() {
   group('AssetAudioPack.assetPathFor', () {
     test('uses the preset audioPackKey + CueKind.name', () {
       expect(
-          AssetAudioPack.assetPathFor(
-              MmThemePreset.seele, CueKind.messageIn),
+          AssetAudioPack.assetPathFor(MmThemePreset.seele, CueKind.messageIn),
           'audio/seele/messageIn.wav');
-      expect(
-          AssetAudioPack.assetPathFor(
-              MmThemePreset.nerv, CueKind.dmIn),
+      expect(AssetAudioPack.assetPathFor(MmThemePreset.nerv, CueKind.dmIn),
           'audio/nerv/dmIn.wav');
-      expect(
-          AssetAudioPack.assetPathFor(
-              MmThemePreset.drPop, CueKind.alert),
+      expect(AssetAudioPack.assetPathFor(MmThemePreset.drPop, CueKind.alert),
           'audio/drpop/alert.wav');
       expect(
-          AssetAudioPack.assetPathFor(
-              MmThemePreset.hyperlocal, CueKind.linkUp),
+          AssetAudioPack.assetPathFor(MmThemePreset.hyperlocal, CueKind.linkUp),
           'audio/hyperlocal/linkUp.wav');
     });
 
@@ -31,12 +25,13 @@ void main() {
       for (final MmThemePreset p in MmThemePreset.values) {
         for (final CueKind k in CueKind.values) {
           final String s = AssetAudioPack.assetPathFor(p, k);
-          if (<MmThemePreset>[
-            MmThemePreset.studio,
-            MmThemePreset.studioLight,
-          ].contains(p)) {
-            continue; // aliased, see below
-          }
+          // A preset that borrows an earlier preset's pack is an alias, and
+          // the aliases are asserted by name below. Deriving the list from the
+          // packs keeps a new preset from needing an edit here: the bug this
+          // guards is two *different* packs colliding on one path.
+          final MmThemePreset owner = MmThemePreset.values.firstWhere(
+              (MmThemePreset q) => q.audioPackKey == p.audioPackKey);
+          if (owner != p) continue;
           expect(seen.add(s), isTrue,
               reason: 'duplicate asset path for $p/$k: $s');
         }
@@ -49,12 +44,23 @@ void main() {
       final Set<String> keys = <String>{
         for (final MmThemePreset p in MmThemePreset.values) p.audioPackKey,
       };
-      expect(keys.length, MmThemePreset.values.length - 2,
-          reason: 'exactly two aliases (studio and studioLight -> hyperlocal)');
-      expect(MmThemePreset.studio.audioPackKey,
-          MmThemePreset.hyperlocal.audioPackKey);
-      expect(MmThemePreset.studioLight.audioPackKey,
-          MmThemePreset.hyperlocal.audioPackKey);
+      // Six aliases now: the two Studio presets and the four LDMUX ones all
+      // borrow the calm pack, because a skin changes colour rather than the
+      // cue set.
+      expect(keys.length, MmThemePreset.values.length - 6,
+          reason: 'six aliases (studio, studioLight, forest, air, daybreak, '
+              'umber -> hyperlocal)');
+      for (final MmThemePreset p in <MmThemePreset>[
+        MmThemePreset.studio,
+        MmThemePreset.studioLight,
+        MmThemePreset.forest,
+        MmThemePreset.air,
+        MmThemePreset.daybreak,
+        MmThemePreset.umber,
+      ]) {
+        expect(p.audioPackKey, MmThemePreset.hyperlocal.audioPackKey,
+            reason: '$p');
+      }
       expect(seen.length, 6 * CueKind.values.length,
           reason: '6 distinct packs × 7 cues = 42 unique paths');
     });
