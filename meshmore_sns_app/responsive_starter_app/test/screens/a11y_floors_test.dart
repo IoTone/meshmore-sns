@@ -21,6 +21,7 @@ import 'package:meshmore_sns_app/legal/terms_controller.dart';
 import 'package:meshmore_sns_app/main.dart';
 import 'package:meshmore_sns_app/meshcore/meshcore_controller.dart';
 import 'package:meshmore_sns_app/perms/first_run_controller.dart';
+import 'package:meshmore_sns_app/notifications/channel_notification_prefs.dart';
 import 'package:meshmore_sns_app/perms/permissions_service.dart';
 import 'package:meshmore_sns_app/chat/channel_read_store.dart';
 import 'package:meshmore_sns_app/meshcore/block_store.dart';
@@ -67,14 +68,17 @@ List<SingleChildWidget> _providers() => <SingleChildWidget>[
           create: (BuildContext ctx) =>
               CueService(theme: ctx.read<ThemeController>())),
       ChangeNotifierProvider<BotController>(create: (_) => BotController()),
+      // App settings reads the per-channel notification store for its Public
+      // channel switch, so the floor sweep has to provide it as the app does.
+      ChangeNotifierProvider<NotificationPrefs>(
+          create: (_) => NotificationPrefs()),
       ChangeNotifierProvider<MeshcoreController>(
           create: (_) => MeshcoreController()),
       Provider<PermissionsService>(create: (_) => NoopPermissionsService()),
       ChangeNotifierProvider<FirstRunController>(
           create: (_) => FirstRunController.preloaded(done: true)),
       ChangeNotifierProvider<LocaleController>(
-          create: (_) =>
-              LocaleController(initial: const Locale('en'))..load()),
+          create: (_) => LocaleController(initial: const Locale('en'))..load()),
       ChangeNotifierProvider<TermsController>(
           create: (_) => TermsController.accepted()),
       ChangeNotifierProvider<DemoMode>(
@@ -90,9 +94,9 @@ List<SingleChildWidget> _providers() => <SingleChildWidget>[
           create: (_) => MapsController(appVersion: () => '1.0.0')),
       ChangeNotifierProvider<AutoPublishController>(
           create: (BuildContext ctx) => AutoPublishController(
-            mc: ctx.read<MeshcoreController>(),
-            location: const GeolocatorLocationService(),
-          )),
+                mc: ctx.read<MeshcoreController>(),
+                location: const GeolocatorLocationService(),
+              )),
       // R109 places: the map tab and the chat echo read these, so every
       // harness that builds the shell needs them (as `home_shell_test` does).
       ChangeNotifierProvider<PlaceStore>(create: (_) => PlaceStore()),
@@ -179,10 +183,12 @@ void main() {
   // preset is built at the same width and scale. A light ground changes
   // contrast and the Material brightness, so it is exactly the case that
   // regresses spacing if a surface assumes dark paint.
-  testWidgets('every preset holds 320 dp at 200 % text', (WidgetTester t) async {
+  testWidgets('every preset holds 320 dp at 200 % text',
+      (WidgetTester t) async {
     await _pumpShell(t);
-    final ThemeController tc =
-        Provider.of<ThemeController>(t.element(find.byType(MyApp)), listen: false);
+    final ThemeController tc = Provider.of<ThemeController>(
+        t.element(find.byType(MyApp)),
+        listen: false);
     for (final MmThemePreset preset in MmThemePreset.values) {
       await tc.setPreset(preset);
       await t.pump();
@@ -336,8 +342,7 @@ void main() {
   }
 
   for (final String route in routes) {
-    testWidgets('$route survives 320 dp at 200 % text',
-        (WidgetTester t) async {
+    testWidgets('$route survives 320 dp at 200 % text', (WidgetTester t) async {
       addTearDown(() => appRouter.go('/'));
       await _pumpShell(t);
       appRouter.go(route);

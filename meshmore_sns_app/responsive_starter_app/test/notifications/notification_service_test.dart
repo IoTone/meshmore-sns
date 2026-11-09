@@ -165,10 +165,12 @@ void main() {
   });
 
   test('an SOS outranks the channel being silent', () async {
-    await prefs.setFor(0, const ChannelNotificationPrefs(
-      os: false,
-      mentionsOnly: true,
-    ));
+    await prefs.setFor(
+        0,
+        const ChannelNotificationPrefs(
+          os: false,
+          mentionsOnly: true,
+        ));
     await service.dispose();
     service = build();
     // The real shape of channel text: the firmware prepends the sender's name,
@@ -189,12 +191,14 @@ void main() {
     // so a channel alarm arrived on the chatter channel, could be silenced by
     // the channel's own bundle, and put the raw coordinates on the lock
     // screen as an ordinary message body.
-    await prefs.setFor(0, const ChannelNotificationPrefs(
-      os: true,
-      audio: false,
-      haptic: false,
-      mentionsOnly: true,
-    ));
+    await prefs.setFor(
+        0,
+        const ChannelNotificationPrefs(
+          os: true,
+          audio: false,
+          haptic: false,
+          mentionsOnly: true,
+        ));
     await service.dispose();
     service = build();
     await channelMsg('Sam: [SOS:abc123] 38.9,-104.7 fuel low',
@@ -297,11 +301,13 @@ void main() {
     test('a silenced channel neither cues nor vibrates', () async {
       final _Effects fx = _Effects();
       service.effects = fx;
-      await prefs.setFor(0, const ChannelNotificationPrefs(
-        os: false,
-        audio: false,
-        haptic: false,
-      ));
+      await prefs.setFor(
+          0,
+          const ChannelNotificationPrefs(
+            os: false,
+            audio: false,
+            haptic: false,
+          ));
       await channelMsg('hello');
       expect(fx.cues, isEmpty);
       expect(fx.vibrations, 0);
@@ -315,14 +321,56 @@ void main() {
       expect(fx.spoken, <(int, String)>[(0, 'bridge out')]);
     });
 
+    test('a muted channel is silent in every way, switches or not', () async {
+      // `muted` is the master silence Settings exposes for the Public
+      // channel. It has to outrank the four switches rather than sit beside
+      // them, or a user who said "quiet" still gets a cue because `audio`
+      // happened to be on from an earlier visit.
+      final _Effects fx = _Effects();
+      service.effects = fx;
+      await prefs.setFor(
+        0,
+        const ChannelNotificationPrefs(
+            audio: true, haptic: true, tts: true, muted: true),
+      );
+      await channelMsg('hello');
+      expect(notifier.shown, isEmpty);
+      expect(fx.cues, isEmpty);
+      expect(fx.vibrations, 0);
+      expect(fx.spoken, isEmpty);
+    });
+
+    test('muting one channel leaves another alone', () async {
+      final _Effects fx = _Effects();
+      service.effects = fx;
+      await prefs.setFor(0, const ChannelNotificationPrefs(muted: true));
+      await channelMsg('quiet here', id: 'a', slot: 0);
+      await channelMsg('loud here', id: 'b', slot: 1);
+      expect(notifier.shown, hasLength(1));
+      expect(notifier.shown.single.payload, 'ch:1');
+      expect(fx.vibrations, 1);
+    });
+
+    test('an SOS is loud on a muted channel too', () async {
+      final _Effects fx = _Effects();
+      service.effects = fx;
+      await prefs.setFor(0, const ChannelNotificationPrefs(muted: true));
+      await channelMsg('[SOS:abc123] 38.9,-104.8');
+      expect(notifier.shown.single.cls, NotificationClass.sos);
+      expect(fx.cues, <NotificationClass>[NotificationClass.sos]);
+      expect(fx.vibrations, 1);
+    });
+
     test('an SOS is loud even where the channel is silent', () async {
       final _Effects fx = _Effects();
       service.effects = fx;
-      await prefs.setFor(0, const ChannelNotificationPrefs(
-        os: false,
-        audio: false,
-        haptic: false,
-      ));
+      await prefs.setFor(
+          0,
+          const ChannelNotificationPrefs(
+            os: false,
+            audio: false,
+            haptic: false,
+          ));
       await channelMsg('[SOS:abc123] 38.9,-104.8');
       expect(fx.cues, <NotificationClass>[NotificationClass.sos]);
       expect(fx.vibrations, 1);

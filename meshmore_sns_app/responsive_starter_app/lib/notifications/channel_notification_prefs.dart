@@ -20,6 +20,7 @@ class ChannelNotificationPrefs {
     this.tts = false,
     this.mentionsOnly = false,
     this.keySuffixMentions = false,
+    this.muted = false,
   });
 
   /// Post an OS notification.
@@ -42,6 +43,16 @@ class ChannelNotificationPrefs {
   /// not recommended — four hex characters are not an identity.
   final bool keySuffixMentions;
 
+  /// Master silence for this channel: nothing at all, whatever the four
+  /// switches above say.
+  ///
+  /// The four switches answer "how loud", and a user who wants a busy channel
+  /// quiet should not have to turn off four of them and remember the ones they
+  /// had. Silencing is its own answer, and it is the one Settings exposes for
+  /// the Public channel. It does not survive an SOS: a distress call on a
+  /// channel the user muted for chatter still alerts.
+  final bool muted;
+
   ChannelNotificationPrefs copyWith({
     bool? os,
     bool? audio,
@@ -49,6 +60,7 @@ class ChannelNotificationPrefs {
     bool? tts,
     bool? mentionsOnly,
     bool? keySuffixMentions,
+    bool? muted,
   }) =>
       ChannelNotificationPrefs(
         os: os ?? this.os,
@@ -57,6 +69,7 @@ class ChannelNotificationPrefs {
         tts: tts ?? this.tts,
         mentionsOnly: mentionsOnly ?? this.mentionsOnly,
         keySuffixMentions: keySuffixMentions ?? this.keySuffixMentions,
+        muted: muted ?? this.muted,
       );
 
   Map<String, dynamic> toJson() => <String, dynamic>{
@@ -66,6 +79,7 @@ class ChannelNotificationPrefs {
         'tts': tts,
         'mentionsOnly': mentionsOnly,
         'keySuffixMentions': keySuffixMentions,
+        'muted': muted,
       };
 
   static ChannelNotificationPrefs fromJson(Map<String, dynamic> j) =>
@@ -76,6 +90,7 @@ class ChannelNotificationPrefs {
         tts: j['tts'] as bool? ?? false,
         mentionsOnly: j['mentionsOnly'] as bool? ?? false,
         keySuffixMentions: j['keySuffixMentions'] as bool? ?? false,
+        muted: j['muted'] as bool? ?? false,
       );
 
   @override
@@ -86,11 +101,12 @@ class ChannelNotificationPrefs {
       other.haptic == haptic &&
       other.tts == tts &&
       other.mentionsOnly == mentionsOnly &&
-      other.keySuffixMentions == keySuffixMentions;
+      other.keySuffixMentions == keySuffixMentions &&
+      other.muted == muted;
 
   @override
-  int get hashCode =>
-      Object.hash(os, audio, haptic, tts, mentionsOnly, keySuffixMentions);
+  int get hashCode => Object.hash(
+      os, audio, haptic, tts, mentionsOnly, keySuffixMentions, muted);
 }
 
 /// The per-channel notification settings, persisted as one JSON map.
@@ -134,7 +150,8 @@ class NotificationPrefs extends ChangeNotifier {
     _byChannel[channelIdx] = p;
     notifyListeners();
     final Map<String, dynamic> j = <String, dynamic>{
-      for (final MapEntry<int, ChannelNotificationPrefs> e in _byChannel.entries)
+      for (final MapEntry<int, ChannelNotificationPrefs> e
+          in _byChannel.entries)
         e.key.toString(): e.value.toJson(),
     };
     final SharedPreferences prefs = await SharedPreferences.getInstance();

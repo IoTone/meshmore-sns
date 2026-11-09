@@ -950,6 +950,21 @@ class _ChannelOptionsSheet extends StatelessWidget {
               children: <Widget>[
                 Text(l.notifSectionTitle,
                     style: Theme.of(ctx).textTheme.titleSmall),
+                // A silenced channel's four switches do nothing, so say so
+                // where they are rather than leaving a user toggling them and
+                // hearing nothing. Settings owns the silence itself.
+                if (p.muted)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 6),
+                    child: Text(
+                      l.notifMutedNotice,
+                      key: const ValueKey<String>('notif-muted-notice'),
+                      style: Theme.of(ctx)
+                          .textTheme
+                          .bodySmall
+                          ?.copyWith(color: Theme.of(ctx).colorScheme.error),
+                    ),
+                  ),
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,
                   dense: true,

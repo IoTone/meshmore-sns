@@ -188,9 +188,14 @@ class NotificationService {
     if (isBlocked?.call(m) ?? false) return;
     if (!_firstTime(m.id)) return;
     final bool sos = isSosLine(m.text);
+    // The channel's bundle is read once: `muted` is a master silence, and the
+    // four switches below only refine it. An SOS outranks the silence, the
+    // same way it outranks a muted cue — a channel quieted for chatter must
+    // not swallow a distress call.
+    final ChannelNotificationPrefs p = prefs.prefsFor(m.channelIdx);
     if (!sos) {
       if (focus.isChannelOpen(m.channelIdx)) return;
-      final ChannelNotificationPrefs p = prefs.prefsFor(m.channelIdx);
+      if (p.muted) return;
       if (!p.os) return;
       final bool mentioned = isMentioned(
         m.text,
@@ -205,7 +210,7 @@ class NotificationService {
     // The bundle's other three switches. Honoured here rather than in the
     // notifier, because a cue and a vibration are the app's, not the OS's,
     // and a silent channel must not cue either.
-    final ChannelNotificationPrefs bundle = prefs.prefsFor(m.channelIdx);
+    final ChannelNotificationPrefs bundle = p;
     // An SOS is loud whatever the channel's bundle says: the OS channel is
     // the user's control for its silence, and a channel that was muted for
     // chatter must not mute a distress call with it.

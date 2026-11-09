@@ -41,8 +41,15 @@ void main() {
       blob: <int>[9, 8, 7],
     );
     await Future<void>.delayed(Duration.zero);
-    expect(fake.sent.last[0], 0x3E);
-    expect(_hex(fake.sent.last), '3e02ffffff090807');
+    // One 0x3E frame with exactly this body. Not `sent.last`: the controller
+    // walks the radio's channel slots on connect, so a probe request can land
+    // after the datagram and say nothing about it.
+    final List<Uint8List> datagramFrames = fake.sent
+        .where((Uint8List f) => f.isNotEmpty && f[0] == 0x3E)
+        .toList(growable: false);
+    expect(datagramFrames, hasLength(1),
+        reason: 'the blob left as one datagram, not as part of another frame');
+    expect(_hex(datagramFrames.single), '3e02ffffff090807');
 
     fake.emit(Uint8List.fromList(<int>[0x00]));
     final ChannelDataSendResult r = await pending;

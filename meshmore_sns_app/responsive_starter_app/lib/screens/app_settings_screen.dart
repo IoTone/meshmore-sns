@@ -11,6 +11,7 @@ import '../l10n/locale_controller.dart';
 import '../meshcore/airtime.dart';
 import '../meshcore/block_store.dart';
 import '../meshcore/meshcore_controller.dart';
+import '../notifications/channel_notification_prefs.dart';
 import '../notifications/notifier.dart';
 import '../perms/permissions_service.dart';
 import '../theme/mm_skin.dart';
@@ -47,8 +48,7 @@ class AppSettingsScreen extends StatelessWidget {
       r = await perms.requestNotifications();
     }
     if (!ctx.mounted) return;
-    if (r == PermissionResult.granted ||
-        r == PermissionResult.notApplicable) {
+    if (r == PermissionResult.granted || r == PermissionResult.notApplicable) {
       await mc.setBackgroundKeepaliveEnabled(true);
       return;
     }
@@ -61,8 +61,7 @@ class AppSettingsScreen extends StatelessWidget {
             : l.settingsNotifDeniedTransient),
         action: SnackBarAction(
           label: l.deviceOpenSettings,
-          onPressed: () =>
-              ctx.read<PermissionsService>().openAppSettingsPage(),
+          onPressed: () => ctx.read<PermissionsService>().openAppSettingsPage(),
         ),
         duration: const Duration(seconds: 6),
       ),
@@ -78,8 +77,7 @@ class AppSettingsScreen extends StatelessWidget {
     };
   }
 
-  Future<void> _pickLanguage(
-      BuildContext ctx, LocaleController lc) async {
+  Future<void> _pickLanguage(BuildContext ctx, LocaleController lc) async {
     final AppLocalizations l = AppLocalizations.of(ctx);
     final Locale? picked = await showModalBottomSheet<Locale?>(
       context: ctx,
@@ -91,9 +89,7 @@ class AppSettingsScreen extends StatelessWidget {
           children: <Widget>[
             ListTile(
               title: Text(l.settingsLanguageSystem),
-              trailing: lc.locale == null
-                  ? const Icon(Icons.check)
-                  : null,
+              trailing: lc.locale == null ? const Icon(Icons.check) : null,
               onTap: () => Navigator.pop(ctx, null),
             ),
             ListTile(
@@ -132,248 +128,275 @@ class AppSettingsScreen extends StatelessWidget {
     final DemoMode demo = context.watch<DemoMode>();
     final MeshcoreController mc = context.watch<MeshcoreController>();
     final LocaleController lc = context.watch<LocaleController>();
+    final NotificationPrefs np = context.watch<NotificationPrefs>();
     final AppLocalizations l = AppLocalizations.of(context);
     return Scaffold(
       appBar: AppBar(title: Text(l.settingsHeading)),
       body: MmScaffold(
         child: ListView(
-        padding: context.skin.space.padScreen,
-        children: <Widget>[
-          // D8.20 — the OS may have the permission off while the app is
-          // otherwise ready. Say so once, in the place the toggle lives, so
-          // a silent lock screen is not mistaken for a radio failure.
-          const _NotificationsDeniedBanner(),
-          const _NotificationHealthRow(),
-          MmSectionHeader(l.settingsAppGroupRadio),
-          // Radio-free mode. Off is the normal state; turning it off asks an
-          // already-paired companion to reconnect rather than waiting for the
-          // next launch.
-          SwitchListTile(
-            title: Text(l.demoModeRow),
-            subtitle: Text(
-              l.demoModeSubtitle,
-              style: TextStyle(color: cs.onSurfaceVariant),
+          padding: context.skin.space.padScreen,
+          children: <Widget>[
+            // D8.20 — the OS may have the permission off while the app is
+            // otherwise ready. Say so once, in the place the toggle lives, so
+            // a silent lock screen is not mistaken for a radio failure.
+            const _NotificationsDeniedBanner(),
+            const _NotificationHealthRow(),
+            MmSectionHeader(l.settingsAppGroupRadio),
+            // Radio-free mode. Off is the normal state; turning it off asks an
+            // already-paired companion to reconnect rather than waiting for the
+            // next launch.
+            SwitchListTile(
+              title: Text(l.demoModeRow),
+              subtitle: Text(
+                l.demoModeSubtitle,
+                style: TextStyle(color: cs.onSurfaceVariant),
+              ),
+              secondary: Icon(demo.enabled ? Icons.science : Icons.podcasts),
+              value: demo.enabled,
+              onChanged: (bool v) => demo.setEnabled(v,
+                  onEnabled: () => mc.disconnect(),
+                  onDisabled: () => mc.autoConnectIfPaired()),
             ),
-            secondary: Icon(demo.enabled ? Icons.science : Icons.podcasts),
-            value: demo.enabled,
-            onChanged: (bool v) => demo.setEnabled(v,
-                onEnabled: () => mc.disconnect(),
-                onDisabled: () => mc.autoConnectIfPaired()),
-          ),
-          // R17/U8 — Android background keep-alive (foreground service
-          // + persistent notification). No-op on iOS.
-          SwitchListTile(
-            title: Text(l.settingsBackgroundTitle),
-            subtitle: Text(
-              !mc.backgroundKeepaliveEnabled
-                  ? l.settingsBackgroundOff
-                  : mc.keepaliveFailure != null
-                      ? l.settingsBackgroundFailed
-                      : l.settingsBackgroundOn,
-              style: TextStyle(color: cs.onSurfaceVariant),
+            // R17/U8 — Android background keep-alive (foreground service
+            // + persistent notification). No-op on iOS.
+            SwitchListTile(
+              title: Text(l.settingsBackgroundTitle),
+              subtitle: Text(
+                !mc.backgroundKeepaliveEnabled
+                    ? l.settingsBackgroundOff
+                    : mc.keepaliveFailure != null
+                        ? l.settingsBackgroundFailed
+                        : l.settingsBackgroundOn,
+                style: TextStyle(color: cs.onSurfaceVariant),
+              ),
+              secondary: Icon(mc.backgroundKeepaliveEnabled
+                  ? Icons.cloud_sync
+                  : Icons.cloud_off),
+              value: mc.backgroundKeepaliveEnabled,
+              onChanged: (bool v) => _onBgToggle(context, mc, v),
             ),
-            secondary: Icon(mc.backgroundKeepaliveEnabled
-                ? Icons.cloud_sync
-                : Icons.cloud_off),
-            value: mc.backgroundKeepaliveEnabled,
-            onChanged: (bool v) => _onBgToggle(context, mc, v),
-          ),
-          // Background peer-telemetry polling — politely cycles
-          // contacts so temperature / altitude populate across the
-          // fabric. Costs a little OTA airtime; off = no telemetry
-          // traffic from us.
-          SwitchListTile(
-            title: Text(l.settingsTelemetryPoll),
-            subtitle: Text(
-              mc.telemetryPollEnabled
-                  ? l.settingsTelemetryPollOn
-                  : l.settingsTelemetryPollOff,
-              style: TextStyle(color: cs.onSurfaceVariant),
+            // Background peer-telemetry polling — politely cycles
+            // contacts so temperature / altitude populate across the
+            // fabric. Costs a little OTA airtime; off = no telemetry
+            // traffic from us.
+            SwitchListTile(
+              title: Text(l.settingsTelemetryPoll),
+              subtitle: Text(
+                mc.telemetryPollEnabled
+                    ? l.settingsTelemetryPollOn
+                    : l.settingsTelemetryPollOff,
+                style: TextStyle(color: cs.onSurfaceVariant),
+              ),
+              secondary: Icon(mc.telemetryPollEnabled
+                  ? Icons.thermostat
+                  : Icons.thermostat_auto),
+              value: mc.telemetryPollEnabled,
+              onChanged: (bool v) => mc.setTelemetryPollEnabled(v),
             ),
-            secondary: Icon(mc.telemetryPollEnabled
-                ? Icons.thermostat
-                : Icons.thermostat_auto),
-            value: mc.telemetryPollEnabled,
-            onChanged: (bool v) => mc.setTelemetryPollEnabled(v),
-          ),
-          // APP-C5 — the app meters its own transmitter and stops at the
-          // limit. The policy is a claim about the channel, not about the
-          // law: the radio keeps its own regulatory limit either way.
-          ListTile(
-            leading: const Icon(Icons.data_usage),
-            title: Text(l.settingsAirtimeTitle),
-            subtitle: Text(
-              mc.airtimePolicy == AirtimePolicy.ownedChannel
-                  ? l.airtimePolicyOwned
-                  : l.airtimePolicyOnePercent,
-              style: TextStyle(color: cs.onSurfaceVariant),
+            // APP-C5 — the app meters its own transmitter and stops at the
+            // limit. The policy is a claim about the channel, not about the
+            // law: the radio keeps its own regulatory limit either way.
+            ListTile(
+              leading: const Icon(Icons.data_usage),
+              title: Text(l.settingsAirtimeTitle),
+              subtitle: Text(
+                mc.airtimePolicy == AirtimePolicy.ownedChannel
+                    ? l.airtimePolicyOwned
+                    : l.airtimePolicyOnePercent,
+                style: TextStyle(color: cs.onSurfaceVariant),
+              ),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => _pickAirtimePolicy(context, mc, l),
             ),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => _pickAirtimePolicy(context, mc, l),
-          ),
-          SizedBox(height: context.skin.space.sectionGap),
-          MmSectionHeader(l.settingsAppGroupSound),
-          // R4 — language picker. Tap-to-open bottom sheet with
-          // System / English / 日本語; the choice is persisted by
-          // LocaleController and re-skins the whole tree live.
-          ListTile(
-            leading: const Icon(Icons.language),
-            title: Text(l.settingsLanguage),
-            subtitle: Text(_languageLabel(l, lc.locale),
-                style: TextStyle(color: cs.onSurfaceVariant)),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => _pickLanguage(context, lc),
-          ),
-          // SPEECH (R5) — functional from U3. Off by default; the
-          // per-channel toggle in the Chat header is gated on this.
-          // Speech also answers to the audio master, so an enabled
-          // switch can still be inaudible — say so rather than
-          // leaving the user with a toggle that does nothing.
-          SwitchListTile(
-            title: Text(l.settingsSpeech),
-            subtitle: Text(
-              !tts.enabled
-                  ? l.settingsSpeechOff
-                  : tts.speechAudible
-                      ? l.settingsSpeechOn
-                      : l.settingsSpeechMuted,
-              style: TextStyle(
-                  color: tts.enabled && !tts.speechAudible
-                      ? cs.error
-                      : cs.onSurfaceVariant),
+            SizedBox(height: context.skin.space.sectionGap),
+            MmSectionHeader(l.settingsAppGroupSound),
+            // R4 — language picker. Tap-to-open bottom sheet with
+            // System / English / 日本語; the choice is persisted by
+            // LocaleController and re-skins the whole tree live.
+            ListTile(
+              leading: const Icon(Icons.language),
+              title: Text(l.settingsLanguage),
+              subtitle: Text(_languageLabel(l, lc.locale),
+                  style: TextStyle(color: cs.onSurfaceVariant)),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => _pickLanguage(context, lc),
             ),
-            secondary: Icon(tts.enabled && tts.speechAudible
-                ? Icons.record_voice_over
-                : Icons.voice_over_off),
-            value: tts.enabled,
-            onChanged: (bool v) => tts.setEnabled(v),
-          ),
-          // R5 / U5 — Voice quality picker (rate / pitch / voice +
-          // preview). Always reachable, even when SPEECH is off —
-          // the preview button greys-out instead, with a hint.
-          ListTile(
-            leading: const Icon(Icons.tune),
-            title: Text(l.voiceSettingsTitle),
-            subtitle: Text(
-              '${l.voiceRate} ${tts.rate.toStringAsFixed(1)}× · '
-              '${l.voicePitch} ${tts.pitch.toStringAsFixed(1)}'
-              '${tts.voice == null ? '' : ' · ${tts.voice!.name}'}',
-              style: TextStyle(color: cs.onSurfaceVariant),
+            // SPEECH (R5) — functional from U3. Off by default; the
+            // per-channel toggle in the Chat header is gated on this.
+            // Speech also answers to the audio master, so an enabled
+            // switch can still be inaudible — say so rather than
+            // leaving the user with a toggle that does nothing.
+            SwitchListTile(
+              title: Text(l.settingsSpeech),
+              subtitle: Text(
+                !tts.enabled
+                    ? l.settingsSpeechOff
+                    : tts.speechAudible
+                        ? l.settingsSpeechOn
+                        : l.settingsSpeechMuted,
+                style: TextStyle(
+                    color: tts.enabled && !tts.speechAudible
+                        ? cs.error
+                        : cs.onSurfaceVariant),
+              ),
+              secondary: Icon(tts.enabled && tts.speechAudible
+                  ? Icons.record_voice_over
+                  : Icons.voice_over_off),
+              value: tts.enabled,
+              onChanged: (bool v) => tts.setEnabled(v),
             ),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => context.push('/settings/voice'),
-          ),
-          SizedBox(height: context.skin.space.sectionGap),
-          MmSectionHeader(l.settingsAppGroupData),
-          // R36 — Auto-publish location. Lives here so users find
-          // it under "App settings" rather than buried in Device
-          // config; the device-side advert policy is separate.
-          ListTile(
-            leading: const Icon(Icons.satellite_alt),
-            title: Text(l.locTitle),
-            subtitle: Text(l.locTileSubtitle,
-                style: TextStyle(color: cs.onSurfaceVariant)),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => context.push('/settings/location'),
-          ),
-          // The radio settings a group of radios agree on (private mesh).
-          ListTile(
-            leading: const Icon(Icons.hub_outlined),
-            title: Text(l.networksTitle),
-            subtitle: Text(l.networksTileSubtitle,
-                style: TextStyle(color: cs.onSurfaceVariant)),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => context.push('/settings/networks'),
-          ),
-          SizedBox(height: context.skin.space.sectionGap),
-          MmSectionHeader(l.settingsAppGroupSystem),
-          // R21 / U12 — Permissions row: jumps to the OS app-settings
-          // page where the user can flip BLE / Notifications etc.
-          // back on after a permanent denial.
-          ListTile(
-            leading: const Icon(Icons.lock_outline),
-            title: Text(l.settingsPermissions),
-            subtitle: Text(
-              l.settingsPermissionsSubtitle,
-              style: TextStyle(color: cs.onSurfaceVariant),
+            // The Public channel is the one every radio hears, so it is the one
+            // a user most needs to quiet: a busy channel that alerts all day
+            // teaches people to ignore the app. This is a master silence for
+            // that slot, kept in the same per-channel store the chat header
+            // edits, so the two never disagree — the toggle is the slot-0
+            // bundle's `muted` flag, not a second setting beside it. An SOS is
+            // not silenced by it, and the subtitle says so rather than leaving
+            // a user to find out.
+            SwitchListTile(
+              key: const ValueKey<String>(
+                  'settings-public-channel-notifications'),
+              title: Text(l.settingsPublicChannelNotifications),
+              subtitle: Text(
+                np.prefsFor(0).muted
+                    ? l.settingsPublicChannelNotificationsOff
+                    : l.settingsPublicChannelNotificationsOn,
+                style: TextStyle(color: cs.onSurfaceVariant),
+              ),
+              secondary: Icon(np.prefsFor(0).muted
+                  ? Icons.notifications_off_outlined
+                  : Icons.notifications_active_outlined),
+              value: !np.prefsFor(0).muted,
+              onChanged: (bool v) =>
+                  np.setFor(0, np.prefsFor(0).copyWith(muted: !v)),
             ),
-            trailing: const Icon(Icons.open_in_new),
-            onTap: () =>
-                context.read<PermissionsService>().openAppSettingsPage(),
-          ),
-          // APP-F1..F3 - blocking is a content setting, so it lives with the
-          // content settings rather than in Device configuration.
-          ListTile(
-            leading: const Icon(Icons.block),
-            title: Text(l.blockedKeysTitle),
-            subtitle: Text(
-              l.blockedKeysSubtitle(context.watch<BlockStore>().count),
-              style: TextStyle(color: cs.onSurfaceVariant),
+            // R5 / U5 — Voice quality picker (rate / pitch / voice +
+            // preview). Always reachable, even when SPEECH is off —
+            // the preview button greys-out instead, with a hint.
+            ListTile(
+              leading: const Icon(Icons.tune),
+              title: Text(l.voiceSettingsTitle),
+              subtitle: Text(
+                '${l.voiceRate} ${tts.rate.toStringAsFixed(1)}× · '
+                '${l.voicePitch} ${tts.pitch.toStringAsFixed(1)}'
+                '${tts.voice == null ? '' : ' · ${tts.voice!.name}'}',
+                style: TextStyle(color: cs.onSurfaceVariant),
+              ),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => context.push('/settings/voice'),
             ),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => context.push('/settings/blocks'),
-          ),
-          // A backup is the opposite promise to the per-conversation export:
-          // that one hands over this thread only, this one hands over
-          // everything, which is what restore reads.
-          ListTile(
-            key: const ValueKey<String>('settings-export-history'),
-            leading: const Icon(Icons.save_alt),
-            title: Text(l.settingsHistoryExportRow),
-            subtitle: Text(l.settingsHistoryExportSubtitle,
-                style: TextStyle(color: cs.onSurfaceVariant)),
-            trailing: const Icon(Icons.ios_share),
-            onTap: () => exportAllHistory(context, mc),
-          ),
-          // Storage: every store states its own bound, and until this block
-          // there was no single place where growth was visible. It shows the
-          // sizes that exist (map data has a real byte counter, the sealed
-          // history reports its own record size) and the counts that are rows
-          // rather than files. The action clears only what the app can rebuild.
-          Padding(
-            padding: const EdgeInsets.only(top: 4),
-            child: MmCollapsibleSection(
-              id: MmGroupIds.persStorage,
-              title: l.storageTitle,
-              initiallyExpanded: false,
-              children: <Widget>[
-                const StorageUseBlock(),
-              ],
+            SizedBox(height: context.skin.space.sectionGap),
+            MmSectionHeader(l.settingsAppGroupData),
+            // R36 — Auto-publish location. Lives here so users find
+            // it under "App settings" rather than buried in Device
+            // config; the device-side advert policy is separate.
+            ListTile(
+              leading: const Icon(Icons.satellite_alt),
+              title: Text(l.locTitle),
+              subtitle: Text(l.locTileSubtitle,
+                  style: TextStyle(color: cs.onSurfaceVariant)),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => context.push('/settings/location'),
             ),
-          ),
-          // Radio access: the pairing PIN is the radio's own gate on a new
-          // Bluetooth pairing (`CMD_SET_DEVICE_PIN` 0x25), and until this block
-          // the only way to change it was the radio's own screen.
-          Padding(
-            padding: const EdgeInsets.only(top: 4),
-            child: MmCollapsibleSection(
-              id: MmGroupIds.persSecurity,
-              title: l.settingsSecuritySection,
-              initiallyExpanded: false,
-              children: <Widget>[_RadioPinBlock(mc: mc)],
+            // The radio settings a group of radios agree on (private mesh).
+            ListTile(
+              leading: const Icon(Icons.hub_outlined),
+              title: Text(l.networksTitle),
+              subtitle: Text(l.networksTileSubtitle,
+                  style: TextStyle(color: cs.onSurfaceVariant)),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => context.push('/settings/networks'),
             ),
-          ),
-          SizedBox(height: context.skin.space.sectionGap),
-          // The terms text is a commitment; this row is how a user reads it
-          // again without having a way to un-agree retroactively.
-          ListTile(
-            leading: const Icon(Icons.privacy_tip_outlined),
-            title: Text(l.termsSettingsRow),
-            subtitle: Text(l.termsSettingsSubtitle,
-                style: TextStyle(color: cs.onSurfaceVariant)),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => context.push('/settings/terms'),
-          ),
-        ],
-      ),
+            SizedBox(height: context.skin.space.sectionGap),
+            MmSectionHeader(l.settingsAppGroupSystem),
+            // R21 / U12 — Permissions row: jumps to the OS app-settings
+            // page where the user can flip BLE / Notifications etc.
+            // back on after a permanent denial.
+            ListTile(
+              leading: const Icon(Icons.lock_outline),
+              title: Text(l.settingsPermissions),
+              subtitle: Text(
+                l.settingsPermissionsSubtitle,
+                style: TextStyle(color: cs.onSurfaceVariant),
+              ),
+              trailing: const Icon(Icons.open_in_new),
+              onTap: () =>
+                  context.read<PermissionsService>().openAppSettingsPage(),
+            ),
+            // APP-F1..F3 - blocking is a content setting, so it lives with the
+            // content settings rather than in Device configuration.
+            ListTile(
+              leading: const Icon(Icons.block),
+              title: Text(l.blockedKeysTitle),
+              subtitle: Text(
+                l.blockedKeysSubtitle(context.watch<BlockStore>().count),
+                style: TextStyle(color: cs.onSurfaceVariant),
+              ),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => context.push('/settings/blocks'),
+            ),
+            // A backup is the opposite promise to the per-conversation export:
+            // that one hands over this thread only, this one hands over
+            // everything, which is what restore reads.
+            ListTile(
+              key: const ValueKey<String>('settings-export-history'),
+              leading: const Icon(Icons.save_alt),
+              title: Text(l.settingsHistoryExportRow),
+              subtitle: Text(l.settingsHistoryExportSubtitle,
+                  style: TextStyle(color: cs.onSurfaceVariant)),
+              trailing: const Icon(Icons.ios_share),
+              onTap: () => exportAllHistory(context, mc),
+            ),
+            // Storage: every store states its own bound, and until this block
+            // there was no single place where growth was visible. It shows the
+            // sizes that exist (map data has a real byte counter, the sealed
+            // history reports its own record size) and the counts that are rows
+            // rather than files. The action clears only what the app can rebuild.
+            Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: MmCollapsibleSection(
+                id: MmGroupIds.persStorage,
+                title: l.storageTitle,
+                initiallyExpanded: false,
+                children: <Widget>[
+                  const StorageUseBlock(),
+                ],
+              ),
+            ),
+            // Radio access: the pairing PIN is the radio's own gate on a new
+            // Bluetooth pairing (`CMD_SET_DEVICE_PIN` 0x25), and until this block
+            // the only way to change it was the radio's own screen.
+            Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: MmCollapsibleSection(
+                id: MmGroupIds.persSecurity,
+                title: l.settingsSecuritySection,
+                initiallyExpanded: false,
+                children: <Widget>[_RadioPinBlock(mc: mc)],
+              ),
+            ),
+            SizedBox(height: context.skin.space.sectionGap),
+            // The terms text is a commitment; this row is how a user reads it
+            // again without having a way to un-agree retroactively.
+            ListTile(
+              leading: const Icon(Icons.privacy_tip_outlined),
+              title: Text(l.termsSettingsRow),
+              subtitle: Text(l.termsSettingsSubtitle,
+                  style: TextStyle(color: cs.onSurfaceVariant)),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => context.push('/settings/terms'),
+            ),
+          ],
+        ),
       ),
     );
   }
+
   /// The two policies, with what each one claims. A list rather than a switch
   /// because "no limit" is a statement about the frequency, not a preference
   /// about speed, and it needs a sentence to be safe.
-  Future<void> _pickAirtimePolicy(BuildContext ctx, MeshcoreController mc,
-      AppLocalizations l) async {
+  Future<void> _pickAirtimePolicy(
+      BuildContext ctx, MeshcoreController mc, AppLocalizations l) async {
     final AirtimePolicy? chosen = await showMmPicker<AirtimePolicy>(
       context: ctx,
       title: l.settingsAirtimeTitle,
@@ -394,7 +417,6 @@ class AppSettingsScreen extends StatelessWidget {
   }
 }
 
-
 /// A one-line notice when the OS notification permission is off.
 ///
 /// It reads the permission each build rather than caching it, because the
@@ -414,7 +436,8 @@ class _NotificationsDeniedBanner extends StatelessWidget {
           leading: const Icon(Icons.notifications_off_outlined),
           title: Text(l.notifDeniedBanner),
           trailing: TextButton(
-            onPressed: () => ctx.read<PermissionsService>().openAppSettingsPage(),
+            onPressed: () =>
+                ctx.read<PermissionsService>().openAppSettingsPage(),
             child: Text(l.deviceOpenSettings),
           ),
         );
@@ -455,7 +478,8 @@ class _NotificationHealthRow extends StatelessWidget {
           trailing: MmAction(
             dense: true,
             label: l.deviceOpenSettings,
-            onPressed: () => ctx.read<PermissionsService>().openAppSettingsPage(),
+            onPressed: () =>
+                ctx.read<PermissionsService>().openAppSettingsPage(),
           ),
         );
       },
@@ -530,8 +554,7 @@ class _RadioPinBlockState extends State<_RadioPinBlock> {
           subtitle: Text(
             pin == null || pin == 0 ? l.settingsPinNone : '$pin',
             style: TextStyle(
-                color: cs.onSurface,
-                fontFamily: context.skin.type.monoFamily),
+                color: cs.onSurface, fontFamily: context.skin.type.monoFamily),
           ),
         ),
         Row(

@@ -1450,6 +1450,8 @@
   "notifBodySos": "位置はアプリで確認してください。警報には座標が含まれますが、ロック画面には表示しません。",
   "notifAlarmRunningBody": "警報を繰り返し送信中です。アプリを開いて停止してください。",
   "notifSectionTitle": "通知",
+
+  "notifMutedNotice": "設定でミュートされています。ここのスイッチは再びオンにしたときに適用されます。",
   "notifOs": "通知を表示",
   "notifAudio": "音を鳴らす",
   "notifHaptic": "振動",
@@ -2462,6 +2464,9 @@
   },
   "settingsAppGroupRadio": "無線",
   "settingsAppGroupSound": "表示と音",
+  "settingsPublicChannelNotifications": "パブリックチャンネルの通知",
+  "settingsPublicChannelNotificationsOn": "パブリックチャンネルのメッセージをこの端末で通知します。",
+  "settingsPublicChannelNotificationsOff": "この端末では通知しません。チャンネルの SOS は通知します。",
   "settingsAppGroupData": "データ",
   "settingsAppGroupSystem": "システム",
   "aboutReplayIntro": "初回画面をもう一度表示",

@@ -2416,6 +2416,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get notifSectionTitle => 'Notifications';
 
   @override
+  String get notifMutedNotice =>
+      'Silenced in Settings. These switches apply when it is turned back on.';
+
+  @override
   String get notifOs => 'Show a notification';
 
   @override
@@ -5466,6 +5470,18 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsAppGroupSound => 'Reading and sound';
+
+  @override
+  String get settingsPublicChannelNotifications =>
+      'Public channel notifications';
+
+  @override
+  String get settingsPublicChannelNotificationsOn =>
+      'Messages on the Public channel alert this phone.';
+
+  @override
+  String get settingsPublicChannelNotificationsOff =>
+      'Silent on this phone. An SOS on the channel still alerts.';
 
   @override
   String get settingsAppGroupData => 'Data';

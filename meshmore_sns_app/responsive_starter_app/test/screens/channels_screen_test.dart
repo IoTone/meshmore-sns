@@ -11,6 +11,7 @@ import 'package:meshmore_sns_app/gen/app_localizations.dart';
 import 'package:meshmore_sns_app/l10n/locale_controller.dart';
 import 'package:meshmore_sns_app/bot/bot_controller.dart';
 import 'package:meshmore_sns_app/meshcore/meshcore_controller.dart';
+import 'package:meshmore_sns_app/notifications/channel_notification_prefs.dart';
 import 'package:meshmore_sns_app/screens/channels_screen.dart';
 import 'package:meshmore_sns_app/theme/mm_skin.dart';
 import 'package:meshmore_sns_app/theme/mm_tokens.dart';
@@ -52,6 +53,63 @@ Widget _host(MeshcoreController mc) => MultiProvider(
     );
 
 void main() {
+  testWidgets('a silenced channel says so where its switches are',
+      (WidgetTester t) async {
+    // Settings owns the Public channel's silence, so the channel editor's four
+    // switches do nothing while it is on. A user who opens the row and toggles
+    // them must be told, not left hearing nothing.
+    await t.binding.setSurfaceSize(const Size(900, 2400));
+    addTearDown(() => t.binding.setSurfaceSize(null));
+    final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
+    final MeshcoreController mc = await _ready(fake);
+    final NotificationPrefs np = NotificationPrefs(
+      seed: <int, ChannelNotificationPrefs>{
+        0: const ChannelNotificationPrefs(muted: true),
+      },
+    );
+    final BotController bot = BotController();
+    await t.pumpWidget(MultiProvider(
+      providers: <ChangeNotifierProvider<ChangeNotifier>>[
+        ChangeNotifierProvider<MeshcoreController>.value(value: mc),
+        ChangeNotifierProvider<NotificationPrefs>.value(value: np),
+        ChangeNotifierProvider<BotController>(create: (_) => BotController()),
+      ],
+      child: MaterialApp(
+        locale: const Locale('en'),
+        supportedLocales: LocaleController.supported,
+        localizationsDelegates: const <LocalizationsDelegate<Object>>[
+          AppLocalizations.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        home: const ChannelsScreen(),
+      ),
+    ));
+    fake.emit(channelInfoFrame(idx: 0, name: 'Public'));
+    await t.pumpAndSettle();
+    // The bundle lives in the slot's options sheet, so that is where a
+    // silenced channel has to say it is silenced.
+    final Finder options = find.byIcon(Icons.tune).first;
+    await t.ensureVisible(options);
+    await t.pumpAndSettle();
+    await t.tap(options);
+    await t.pumpAndSettle();
+    await t.scrollUntilVisible(
+      find.byKey(const ValueKey<String>('notif-muted-notice')),
+      200,
+      scrollable: find.byType(Scrollable).last,
+    );
+    await t.pumpAndSettle();
+    expect(find.byKey(const ValueKey<String>('notif-muted-notice')),
+        findsOneWidget);
+    // Disposed inside the body: a pending controller timer fails the test
+    // after the tree is gone, and a tear-down runs too late for that check.
+    bot.dispose();
+    np.dispose();
+    mc.dispose();
+  });
+
   testWidgets('the slot list is the radio\'s own count, not a hardcoded four',
       (WidgetTester t) async {
     // The screen exposed four slots whatever the board held, so a radio with
