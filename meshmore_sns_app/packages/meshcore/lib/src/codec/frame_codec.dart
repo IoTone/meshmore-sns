@@ -972,19 +972,45 @@ abstract final class MeshcoreFrameCodec {
           ));
 
         case 0x0D: // RESP_CODE_DEVICE_INFO
+          // The fields after the 20-byte version string are version-gated:
+          // `repeat_enabled` arrived at companion protocol 9 and
+          // `path_hash_mode` at 10, so the frame is 80, 81 or 82 bytes and
+          // nothing in it says which except its own length. Reading the two
+          // unconditionally made every radio older than version 9 fail the
+          // whole decode with a truncation error, which cost the app the
+          // device's name, build date, contact capacity and channel count.
+          // The length decides, and the version has to agree before the tail
+          // is treated as a reading rather than a default.
+          final int diVer = c.u8('deviceInfo.fwVer');
+          final int diContacts = c.u8('deviceInfo.maxContactsHalf') * 2;
+          final int diChannels = c.u8('deviceInfo.maxGroupChannels');
+          final int diPin = c.u32('deviceInfo.blePin');
+          final String diBuild =
+              c.fixedCString(kDeviceBuildDateSize, 'deviceInfo.build');
+          final String diMfr = c.fixedCString(
+              kDeviceManufacturerSize, 'deviceInfo.manufacturer');
+          final String diFw = c.fixedCString(
+              kDeviceFirmwareVersionSize, 'deviceInfo.fwVersion');
+          final bool hasRepeat = diVer >= 9 && c.remaining >= 1;
+          final int repeat = hasRepeat ? c.u8('deviceInfo.clientRepeat') : 0;
+          final bool hasPathHash = diVer >= 10 && c.remaining >= 1;
+          final int pathHash =
+              hasPathHash ? c.u8('deviceInfo.pathHashMode') : 0;
+          // A tail this build does not model is a field added to the struct,
+          // not a second frame.
+          c.skipRemaining('device info struct grows in place');
           return DeviceInfoFrame(DeviceInfo(
-            firmwareVerCode: c.u8('deviceInfo.fwVer'),
-            maxContacts: c.u8('deviceInfo.maxContactsHalf') * 2,
-            maxGroupChannels: c.u8('deviceInfo.maxGroupChannels'),
-            blePin: c.u32('deviceInfo.blePin'),
-            firmwareBuildDate:
-                c.fixedCString(kDeviceBuildDateSize, 'deviceInfo.build'),
-            manufacturer: c.fixedCString(
-                kDeviceManufacturerSize, 'deviceInfo.manufacturer'),
-            firmwareVersion: c.fixedCString(
-                kDeviceFirmwareVersionSize, 'deviceInfo.fwVersion'),
-            clientRepeat: c.u8('deviceInfo.clientRepeat'),
-            pathHashMode: c.u8('deviceInfo.pathHashMode'),
+            firmwareVerCode: diVer,
+            maxContacts: diContacts,
+            maxGroupChannels: diChannels,
+            blePin: diPin,
+            firmwareBuildDate: diBuild,
+            manufacturer: diMfr,
+            firmwareVersion: diFw,
+            clientRepeat: repeat,
+            pathHashMode: pathHash,
+            hasClientRepeat: hasRepeat,
+            hasPathHashMode: hasPathHash,
           ));
 
         case 0x0A: // RESP_CODE_NO_MORE_MESSAGES

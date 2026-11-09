@@ -12,6 +12,7 @@
 // INVENTORY group is a ratchet: it refuses a new encoder that nobody wrote a
 // check for.
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
@@ -21,8 +22,7 @@ import 'package:test/test.dart';
 /// A transport that records what it was asked to send and never connects.
 class _RecordingTransport implements MeshcoreTransport {
   final List<Uint8List> sent = <Uint8List>[];
-  final StreamController<bool> _connected =
-      StreamController<bool>.broadcast();
+  final StreamController<bool> _connected = StreamController<bool>.broadcast();
 
   @override
   int? get mtu => 179;
@@ -172,7 +172,8 @@ void main() {
   });
 
   group('CEILINGS — one frame on the link', () {
-    test('176 bytes crosses, 177 is refused before the platform write', () async {
+    test('176 bytes crosses, 177 is refused before the platform write',
+        () async {
       final MeshcoreConnection conn = MeshcoreConnection();
       final _RecordingTransport t = _RecordingTransport();
       conn.attach(t);
@@ -245,13 +246,179 @@ void main() {
         () {
       const int budgetMillis = 36 * 1000;
       const int millisPerByte = 4;
-      final int datagramBytes = ChannelDataLimits.airtimeBytesFor(
-          ChannelDataLimits.maxBlob);
+      final int datagramBytes =
+          ChannelDataLimits.airtimeBytesFor(ChannelDataLimits.maxBlob);
       // Floor, because a policy that rounds up would spend more than it has.
       final int datagrams = budgetMillis ~/ (millisPerByte * datagramBytes);
       expect(datagrams, 54);
       expect(datagrams * millisPerByte * datagramBytes,
           lessThanOrEqualTo(budgetMillis));
+    });
+  });
+
+  group('DEVICE_INFO — the length decides what the tail means', () {
+    /// `0x0D [fw_ver][max_contacts/2][max_channels][pin u32][build 12]
+    /// [mfr 40][fw 20]` and then, only when the protocol version is new enough,
+    /// `[client_repeat]` and `[path_hash_mode]`.
+    Uint8List deviceInfo({required int ver, int tail = 2, int tailBytes = 2}) {
+      final Uint8List f = Uint8List(82);
+      f[0] = 0x0D;
+      f[1] = ver;
+      f[2] = 175; // 350 contacts after the ×2
+      f[3] = 40;
+      // pin at 4..7, build 8..19, mfr 20..59, version 60..79
+      if (tailBytes >= 1) f[80] = tail & 0xFF;
+      if (tailBytes >= 2) f[81] = (tail >> 8) & 0xFF;
+      return Uint8List.sublistView(f, 0, 80 + tailBytes);
+    }
+
+    test('a version-8 radio (80 bytes) decodes, with no tail reading', () {
+      final MeshcoreInbound got =
+          MeshcoreFrameCodec.decode(deviceInfo(ver: 8, tailBytes: 0));
+      expect(got, isA<DeviceInfoFrame>(),
+          reason: 'the tail is optional, so its absence is not truncation');
+      final DeviceInfo d = (got as DeviceInfoFrame).info;
+      expect(d.maxContacts, 350);
+      expect(d.maxGroupChannels, 40);
+      expect(d.hasClientRepeat, isFalse);
+      expect(d.hasPathHashMode, isFalse);
+      expect(d.pathHashMode, 0,
+          reason: 'pre-10 radios can only use one-byte hashes');
+    });
+
+    test('a version-9 radio (81 bytes) reports repeat and no path mode', () {
+      final DeviceInfo d =
+          (MeshcoreFrameCodec.decode(deviceInfo(ver: 9, tail: 1, tailBytes: 1))
+                  as DeviceInfoFrame)
+              .info;
+      expect(d.hasClientRepeat, isTrue);
+      expect(d.clientRepeat, 1);
+      expect(d.hasPathHashMode, isFalse);
+      expect(d.pathHashMode, 0);
+    });
+
+    test('a version-10 radio (82 bytes) reports both', () {
+      final DeviceInfo d = (MeshcoreFrameCodec.decode(
+                  deviceInfo(ver: 10, tail: 0x0102, tailBytes: 2))
+              as DeviceInfoFrame)
+          .info;
+      expect(d.hasClientRepeat, isTrue);
+      expect(d.clientRepeat, 2);
+      expect(d.hasPathHashMode, isTrue);
+      expect(d.pathHashMode, 1);
+    });
+
+    test(
+        'a frame that advertises version 10 but stops at 80 bytes does not '
+        'read past its end', () {
+      final MeshcoreInbound got =
+          MeshcoreFrameCodec.decode(deviceInfo(ver: 10, tailBytes: 0));
+      expect(got, isA<DeviceInfoFrame>(),
+          reason: 'the version is a claim; the length is the fact');
+      final DeviceInfo d = (got as DeviceInfoFrame).info;
+      expect(d.hasPathHashMode, isFalse);
+    });
+
+    test('a frame shorter than the fixed fields is still a truncation', () {
+      final MeshcoreInbound got = MeshcoreFrameCodec.decode(
+          Uint8List.fromList(<int>[0x0D, 10, 175, 40, 0]));
+      expect(got, isA<DecodeFailure>());
+      expect((got as DecodeFailure).error.kind, DecodeErrorKind.truncated);
+    });
+  });
+
+  group('MULTI-FORM frames — discriminated by length, never by assumption', () {
+    test(
+        'DEFAULT_FLOOD_SCOPE: the bare reply means unset, the 48-byte reply '
+        'carries a name and a key', () {
+      expect(
+          MeshcoreFrameCodec.decodeDefaultFloodScope(
+              Uint8List.fromList(<int>[0x1C])),
+          isNull);
+      final Uint8List full = Uint8List(1 + 31 + 16)..[0] = 0x1C;
+      full.setRange(1, 5, utf8.encode('#reg'));
+      for (int i = 0; i < 16; i++) {
+        full[32 + i] = i;
+      }
+      final ({String name, Uint8List key})? got =
+          MeshcoreFrameCodec.decodeDefaultFloodScope(full);
+      expect(got, isNotNull);
+      expect(got!.name, '#reg');
+      expect(got.key.length, 16);
+    });
+
+    test(
+        'LOGIN_SUCCESS: the 8-byte legacy form and the 15-byte form both '
+        'decode', () {
+      // 0x85 [permissions][reserved 6][pubkey6] (+ serverTs, acl, fwLevel)
+      final Uint8List legacy = Uint8List(8)..[0] = 0x85;
+      legacy[1] = 3;
+      final MeshcoreInbound a = MeshcoreFrameCodec.decode(legacy);
+      expect(a, isA<LoginResultFrame>());
+      final LoginResult la = (a as LoginResultFrame).result;
+      expect(la.success, isTrue);
+      expect(la.permissions, 3);
+      expect(la.serverTimestamp, isNull);
+
+      final Uint8List full = Uint8List(15)..[0] = 0x85;
+      full[1] = 3;
+      full.setRange(8, 12, <int>[0x10, 0x27, 0, 0]);
+      full[12] = 5;
+      full[13] = 7;
+      final LoginResult lb =
+          (MeshcoreFrameCodec.decode(full) as LoginResultFrame).result;
+      expect(lb.serverTimestamp, 0x2710);
+      expect(lb.aclPermissions, 5);
+      expect(lb.firmwareLevel, 7);
+    });
+
+    test('STATS: recvErrors is read only when the struct carries it', () {
+      // 0x18 [sub=2] then six u32 counters, optionally a seventh.
+      Uint8List packets({required bool withErrors}) {
+        final int n = 2 + (withErrors ? 28 : 24);
+        final Uint8List f = Uint8List(n)..[0] = 0x18;
+        f[1] = 2; // kStatsTypePackets
+        for (int i = 0; i < (withErrors ? 7 : 6); i++) {
+          f[2 + i * 4] = i + 1;
+        }
+        return f;
+      }
+
+      final StatsFrame short =
+          (MeshcoreFrameCodec.decode(packets(withErrors: false)) as StatsFrame);
+      expect(short.packets!.receiveErrors, isNull);
+      final StatsFrame long =
+          (MeshcoreFrameCodec.decode(packets(withErrors: true)) as StatsFrame);
+      expect(long.packets!.receiveErrors, isNotNull);
+    });
+  });
+
+  group('ERRORS - the six firmware codes, and an unknown one degrades', () {
+    test('1..6 map to the firmware constants and an unknown code degrades', () {
+      expect(MeshcoreErrorCode.unsupportedCmd.code, 1);
+      expect(MeshcoreErrorCode.notFound.code, 2);
+      expect(MeshcoreErrorCode.tableFull.code, 3);
+      expect(MeshcoreErrorCode.badState.code, 4);
+      expect(MeshcoreErrorCode.fileIoError.code, 5);
+      expect(MeshcoreErrorCode.illegalArg.code, 6);
+
+      // 0x01 [code] decodes for every value, including ones this build has
+      // never seen: a newer firmware's code must not crash the decoder.
+      for (final int code in <int>[0, 1, 2, 3, 4, 5, 6, 7, 42, 255]) {
+        final MeshcoreInbound got =
+            MeshcoreFrameCodec.decode(Uint8List.fromList(<int>[0x01, code]));
+        expect(got, isA<ErrorFrame>());
+        expect((got as ErrorFrame).code, code);
+      }
+    });
+
+    test('the obsolete nine-entry table is not what this build implements', () {
+      // The v1.12 document lists 0x03 as "channel not found"; the firmware's
+      // own constants say 0x03 is table-full. A client built on the old table
+      // would mislabel every refusal.
+      expect(MeshcoreErrorCode.tableFull.code, 3);
+      expect(MeshcoreErrorCode(3).name, 'table_full');
+      expect(MeshcoreErrorCode(3), MeshcoreErrorCode.tableFull);
     });
   });
 
@@ -261,22 +428,63 @@ void main() {
     // purpose: the entry must come with a golden vector under test/vectors/ or
     // an assertion in this file, and then the list is updated.
     const Set<String> encoders = <String>{
-      'appStart', 'getContacts', 'getDeviceTime', 'setDeviceTime',
-      'syncNextMessage', 'sendChannelTextMessage', 'sendChannelData',
-      'sendTextMessage', 'sendSelfAdvert', 'setAdvertName', 'removeContact',
-      'addUpdateContact', 'setRadioParams', 'setPathHashMode',
-      'setFloodScopeKey', 'sendUnscopedFlood', 'setDefaultFloodScope',
-      'getDefaultFloodScope', 'getAllowedRepeatFreq', 'setRadioTxPower',
-      'setAdvertLatLon', 'setOtherParams', 'getCustomVars', 'setCustomVar',
-      'sendTelemetryReq', 'setTuningParams', 'deviceQuery',
-      'getBatteryStorage', 'getChannel', 'setChannel', 'getStats',
-      'sendStatusReq', 'resetPath', 'sendTracePath', 'sendDiscoverReq',
-      'shareContact', 'exportContact', 'importContact', 'reboot',
-      'factoryReset', 'exportPrivateKey', 'importPrivateKey', 'sendLogin',
-      'hasConnection', 'logout', 'getContactByKey', 'signStart', 'signData',
-      'signDataFrames', 'signFinish', 'setDevicePin', 'getAdvertPath',
-      'getTuningParams', 'sendPathDiscoveryReq', 'sendAnonReq',
-      'setAutoAddConfig', 'getAutoAddConfig',
+      'appStart',
+      'getContacts',
+      'getDeviceTime',
+      'setDeviceTime',
+      'syncNextMessage',
+      'sendChannelTextMessage',
+      'sendChannelData',
+      'sendTextMessage',
+      'sendSelfAdvert',
+      'setAdvertName',
+      'removeContact',
+      'addUpdateContact',
+      'setRadioParams',
+      'setPathHashMode',
+      'setFloodScopeKey',
+      'sendUnscopedFlood',
+      'setDefaultFloodScope',
+      'getDefaultFloodScope',
+      'getAllowedRepeatFreq',
+      'setRadioTxPower',
+      'setAdvertLatLon',
+      'setOtherParams',
+      'getCustomVars',
+      'setCustomVar',
+      'sendTelemetryReq',
+      'setTuningParams',
+      'deviceQuery',
+      'getBatteryStorage',
+      'getChannel',
+      'setChannel',
+      'getStats',
+      'sendStatusReq',
+      'resetPath',
+      'sendTracePath',
+      'sendDiscoverReq',
+      'shareContact',
+      'exportContact',
+      'importContact',
+      'reboot',
+      'factoryReset',
+      'exportPrivateKey',
+      'importPrivateKey',
+      'sendLogin',
+      'hasConnection',
+      'logout',
+      'getContactByKey',
+      'signStart',
+      'signData',
+      'signDataFrames',
+      'signFinish',
+      'setDevicePin',
+      'getAdvertPath',
+      'getTuningParams',
+      'sendPathDiscoveryReq',
+      'sendAnonReq',
+      'setAutoAddConfig',
+      'getAutoAddConfig',
     };
 
     // Encoders no test names yet. This list may only shrink: an encoder that
@@ -307,8 +515,10 @@ void main() {
     test('every encoder is either checked somewhere or on the known-gap list',
         () {
       final StringBuffer all = StringBuffer();
-      for (final FileSystemEntity e in Directory('test').listSync(recursive: true)) {
-        if (e is File && e.path.endsWith('.dart') &&
+      for (final FileSystemEntity e
+          in Directory('test').listSync(recursive: true)) {
+        if (e is File &&
+            e.path.endsWith('.dart') &&
             !e.path.endsWith('conformance_test.dart')) {
           all.write(e.readAsStringSync());
         }

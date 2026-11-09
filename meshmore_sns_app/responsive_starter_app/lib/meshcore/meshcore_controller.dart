@@ -96,11 +96,15 @@ class MeshcoreController extends ChangeNotifier {
     Duration? selfInfoPollInterval,
     Duration? linkCloseTimeout,
     Duration? linkOpenTimeout,
+    Duration? contactIdleOverride,
+    Duration? channelProbeIdleOverride,
     PlaceInferenceEngine? placeInferenceEngine,
     AirtimeMeter? airtimeMeter,
   })  : _deliveryTimeoutOverride = deliveryTimeoutOverride,
         _linkCloseTimeout = linkCloseTimeout ?? kLinkCloseTimeout,
         _linkOpenTimeout = linkOpenTimeout ?? kLinkOpenTimeout,
+        _contactIdleOverride = contactIdleOverride,
+        _channelProbeIdleOverride = channelProbeIdleOverride,
         _channelDataTimeoutOverride = channelDataTimeout,
         _radioConfigTimeoutOverride = radioConfigTimeout,
         _selfInfoPollInterval =
@@ -233,7 +237,13 @@ class MeshcoreController extends ChangeNotifier {
         // now. Report it as silent rather than let the caller wait out the
         // timeout for an answer that cannot come.
         _completeRadioConfig(const RadioAnswer.silent());
-        // The next connection asks for the contact table again.
+        // The next connection asks for the contact table again. The stream's
+        // watchdog stops here too: an end-of-contacts frame that never arrived
+        // would otherwise leave `_probing` true and make the next sync wait out
+        // its idle windows before asking anything.
+        _contactIdleTimer?.cancel();
+        _contactIdleTimer = null;
+        _probing = false;
         _contactsSyncRequested = false;
         _floodScopeAsked = false;
         // A handshake timeout is not congestion: the radio never answered a
@@ -1848,9 +1858,23 @@ class MeshcoreController extends ChangeNotifier {
   /// The list is unmodifiable; copy if you need to mutate.
   List<int>? channelPsk(int idx) => _channelPsks[idx];
 
-  /// Probe this many channel slots on link-up (typical meshes use a
-  /// handful; the radio answers only the ones it has).
+  /// Slots to probe before `DEVICE_INFO` says how many the radio actually has.
+  /// Four is the pessimistic count: most boards hold 40, small ones 8, and the
+  /// exact number arrives with the device query that follows the handshake.
   static const int _channelProbeCount = 4;
+
+  /// How long a slot may take to answer before the walk moves on. The reply is
+  /// one short frame the radio writes immediately, so a second is generous.
+  static const Duration _channelProbeIdle = Duration(seconds: 1);
+
+  Timer? _channelProbeIdleTimer;
+  int _channelProbeCursor = 0;
+  bool _channelProbeOutstanding = false;
+  final Duration? _channelProbeIdleOverride;
+
+  /// Slots asked for since the last link-up, so a repeated reply cannot make
+  /// the walk ask twice.
+  final Set<int> _channelsProbed = <int>{};
 
   int _activeChannel = 0;
 
@@ -2394,6 +2418,11 @@ class MeshcoreController extends ChangeNotifier {
         // The ACK raced ahead of this SENT confirmation (firmware
         // ordering). Reconcile now — delivered, no timeout.
         m.delivery = MessageDelivery.delivered;
+      } else if (f.sent.expectedAck == 0 && !f.sent.isFlood) {
+        // The radio said no acknowledgement will come for this send (it reports
+        // `expected_ack = 0` when none is expected). `sent` is then the last
+        // word there will ever be, so waiting out an ACK watchdog would turn a
+        // successful send into `unknown` and then `failed`.
       } else if (!f.sent.isFlood) {
         // Direct message: wait for the recipient ACK, bounded by the
         // device's own estimate (`estTimeoutMs`).
@@ -3000,6 +3029,11 @@ class MeshcoreController extends ChangeNotifier {
       // carries 16 bytes — the AES-128 key. We store a defensive
       // copy because Uint8List can be a view.
       _channelPsks[ci.channelIdx] = List<int>.unmodifiable(ci.psk);
+      // The next slot is only asked for once this one has answered: the
+      // firmware serialises replies, so a burst would overtake itself. The walk
+      // skips slots it has already asked for, so a late or repeated reply
+      // cannot make it ask twice.
+      _channelProbeAnswered();
     }
   }
 
@@ -3705,7 +3739,14 @@ class MeshcoreController extends ChangeNotifier {
   }
 
   void _trackDeviceInfo(MeshcoreInbound f) {
-    if (f is DeviceInfoFrame) _deviceInfo = f.info;
+    if (f is! DeviceInfoFrame) return;
+    final bool grew = _deviceInfo == null ||
+        _deviceInfo!.maxGroupChannels != f.info.maxGroupChannels;
+    _deviceInfo = f.info;
+    // The walk starts before the device query answers, so it begins with the
+    // pessimistic four. Once the radio says how many slots it holds, carry on
+    // from where the walk stopped rather than starting over.
+    if (grew && state == MeshcoreConnectionState.ready) _probeNextChannel();
   }
 
   // --- R38: device custom variables (gps, gps_interval, …) ---
@@ -4255,12 +4296,66 @@ class MeshcoreController extends ChangeNotifier {
     _recordBatterySample(f.battery.batteryMillivolts, now);
   }
 
+  /// Read the radio's channel table, one slot at a time.
+  ///
+  /// The published rule is to fetch **every** slot, including past an empty
+  /// one, because a radio with five configured channels and a gap at two still
+  /// holds channels the user may need. This used to fire four blind requests
+  /// and stop, so a table beyond slot three was invisible in the picker.
+  ///
+  /// One slot is asked for at a time and the next waits for its answer or for
+  /// the idle window: the firmware serialises its replies, and a burst of forty
+  /// requests would have them overtake one another. The count comes from
+  /// `DEVICE_INFO`'s `max_group_channels` once known (8 on the small boards, 40
+  /// on most), and [_channelProbeCount] is the pessimistic count for the window
+  /// before that answer arrives.
   void _probeChannels() {
-    for (int i = 0; i < _channelProbeCount; i++) {
-      // Best-effort: ignore failures (radio replies only for the
-      // channels it actually has configured).
-      unawaited(send(MeshcoreFrameCodec.getChannel(i)).catchError((_) {}));
+    _channelProbeIdleTimer?.cancel();
+    _channelProbeIdleTimer = null;
+    _channelsProbed.clear();
+    _channelProbeCursor = 0;
+    _channelProbeOutstanding = false;
+    _probeNextChannel();
+  }
+
+  void _probeNextChannel() {
+    // One slot in flight: the firmware keeps a single reply buffer, so a second
+    // request would have its answer overtake the first.
+    if (_channelProbeOutstanding) return;
+    if (state != MeshcoreConnectionState.ready) return;
+    final int limit = _channelProbeLimit;
+    while (_channelProbeCursor < limit &&
+        _channelsProbed.contains(_channelProbeCursor)) {
+      _channelProbeCursor++;
     }
+    if (_channelProbeCursor >= limit) return;
+    final int idx = _channelProbeCursor;
+    _channelProbeCursor++;
+    _channelsProbed.add(idx);
+    _channelProbeOutstanding = true;
+    unawaited(send(MeshcoreFrameCodec.getChannel(idx)).catchError((_) {}));
+    _channelProbeIdleTimer =
+        Timer(_channelProbeIdleOverride ?? _channelProbeIdle, () {
+      // A slot that never answers is either unconfigured or refused; either
+      // way the table continues, so the walk does rather than stopping at the
+      // first gap.
+      _channelProbeOutstanding = false;
+      _probeNextChannel();
+    });
+  }
+
+  void _channelProbeAnswered() {
+    _channelProbeOutstanding = false;
+    _channelProbeIdleTimer?.cancel();
+    _channelProbeIdleTimer = null;
+    _probeNextChannel();
+  }
+
+  /// How many slots to ask about, once the radio has said how many it has.
+  int get _channelProbeLimit {
+    final int? reported = _deviceInfo?.maxGroupChannels;
+    if (reported == null || reported <= 0) return _channelProbeCount;
+    return reported;
   }
 
   /// Send a text message on the active channel (`SEND_CHANNEL_TXT_MSG`,
@@ -4809,10 +4904,61 @@ class MeshcoreController extends ChangeNotifier {
 
   /// Trigger a fresh full contact sync (fills [probedContacts] +
   /// [deviceContactCount]); also refresh device info for [maxContacts].
-  /// How long a full contact sync may take before callers stop waiting. The
-  /// radio streams one frame per contact, so a full table is hundreds of
-  /// frames; the wait is a ceiling, not an expectation.
+  /// How long the radio may go quiet mid-stream before the app asks again.
+  /// The radio streams one frame per contact, so the wait is for the next
+  /// frame, not for the whole table.
+  static const Duration contactIdleTimeout = Duration(seconds: 3);
+
+  /// How many times a stalled stream is re-requested before the app keeps what
+  /// arrived and says the table may be short.
+  static const int contactSyncAttempts = 3;
+
+  /// Overall ceiling for a caller waiting on a sync, derived from the watchdog
+  /// rather than guessed: every attempt costs at most one idle window, and the
+  /// caller gets a little slack on top.
   static const Duration contactSyncTimeout = Duration(seconds: 8);
+
+  Timer? _contactIdleTimer;
+  final Duration? _contactIdleOverride;
+  int _contactSyncAttempt = 0;
+  bool _contactsIncomplete = false;
+
+  /// True when the last sync stopped before the radio's end-of-contacts frame:
+  /// the app kept what arrived, and the table it holds may be missing entries.
+  /// Cleared by the next end-of-contacts.
+  bool get contactsIncomplete => _contactsIncomplete;
+
+  void _armContactIdle() {
+    _contactIdleTimer?.cancel();
+    _contactIdleTimer =
+        Timer(_contactIdleOverride ?? contactIdleTimeout, _onContactIdle);
+  }
+
+  void _onContactIdle() {
+    if (!_probing) {
+      _completeContactSync();
+      return;
+    }
+    if (_contactSyncAttempt >= contactSyncAttempts) {
+      // Give up rather than wait forever, and keep the entries that did arrive:
+      // a partial table is more useful than none, and the flag says so instead
+      // of presenting it as complete.
+      _contactsIncomplete = true;
+      _completeContactSync();
+      return;
+    }
+    _contactSyncAttempt++;
+    unawaited(requestContacts(since: _contactsSince).catchError((_) {}));
+    _armContactIdle();
+  }
+
+  void _completeContactSync() {
+    _contactIdleTimer?.cancel();
+    _contactIdleTimer = null;
+    _probing = false;
+    final Completer<void>? done = _contactSyncDone;
+    if (done != null && !done.isCompleted) done.complete();
+  }
 
   /// Full contact sync, returning once the radio says the list ended.
   ///
@@ -4835,7 +4981,12 @@ class MeshcoreController extends ChangeNotifier {
         await Future<void>.delayed(const Duration(milliseconds: 50));
       }
       if (!_probing) return;
-      await done.future.timeout(contactSyncTimeout, onTimeout: () {});
+      // The watchdog owns the retries and completes `done` when it stops; the
+      // outer ceiling is only a guard against a bug in it.
+      await done.future.timeout(
+          (_contactIdleOverride ?? contactIdleTimeout) *
+              (contactSyncAttempts + 2),
+          onTimeout: () {});
     } finally {
       if (identical(_contactSyncDone, done)) _contactSyncDone = null;
     }
@@ -5291,12 +5442,20 @@ class MeshcoreController extends ChangeNotifier {
       _deviceContactCount = f.count;
       _probedContacts.clear();
       _probing = true;
+      _contactSyncAttempt = 0;
+      _contactsIncomplete = false;
+      _armContactIdle();
     } else if (f is ContactFrame && _probing) {
       _probedContacts.add(f.contact);
+      // The wait is for the *next* frame, not for a fixed window: a full table
+      // is hundreds of frames and a slow link can take longer than any single
+      // timeout, so each arrival pushes the deadline out.
+      _armContactIdle();
     } else if (f is EndOfContactsFrame) {
-      _probing = false;
-      final Completer<void>? done = _contactSyncDone;
-      if (done != null && !done.isCompleted) done.complete();
+      // The radio finished the table, so whatever an earlier stalled attempt
+      // missed is now supplied.
+      _contactsIncomplete = false;
+      _completeContactSync();
       // The radio states the newest `lastmod` it sent, so the next request can
       // be incremental. Persisted, because a reconnect after a restart is the
       // common case and re-streaming the whole table costs BLE seconds.
@@ -5881,6 +6040,13 @@ class MeshcoreController extends ChangeNotifier {
       _contactsSaveTimer = null;
     }
     _drainWatchdog?.cancel();
+    // The two protocol walks own timers of their own: the channel probe's idle
+    // window and the contact stream's watchdog. Left armed they outlive the
+    // controller and fire into a disposed one.
+    _channelProbeIdleTimer?.cancel();
+    _channelProbeIdleTimer = null;
+    _contactIdleTimer?.cancel();
+    _contactIdleTimer = null;
     for (final Timer t in _deliveryTimers.values) {
       t.cancel();
     }
