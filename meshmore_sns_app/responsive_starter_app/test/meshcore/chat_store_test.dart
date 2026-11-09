@@ -110,13 +110,42 @@ void main() {
 
       await ctrl.sendChannelText('outgoing one');
       fake.emit(channelMsgFrame(text: 'incoming one'));
-      await Future<void>.delayed(const Duration(milliseconds: 20));
+      // The history is written on a 400 ms window rather than once per message,
+      // because a full sealed rewrite per ingest was the most expensive thing
+      // the app did per frame. Wait the window out; the dispose path flushes
+      // whatever is still pending, which the next case covers.
+      await Future<void>.delayed(const Duration(milliseconds: 450));
 
       final List<ChatMessage> persisted = await ChatStore.load();
       final Iterable<String> texts =
           persisted.map((ChatMessage m) => m.text);
       expect(texts, containsAll(<String>['outgoing one', 'incoming one']));
       ctrl.dispose();
+    });
+  });
+
+  group('the write window', () {
+    test('dispose flushes history that has not been written yet', () async {
+      SharedPreferences.setMockInitialValues(<String, Object>{});
+      final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
+      final MeshcoreController ctrl = MeshcoreController(
+        transportFactory: () async => fake,
+        connection:
+            MeshcoreConnection(handshakeTimeout: const Duration(seconds: 5)),
+      );
+      await ctrl.connect();
+      fake.emit(selfInfoFrame());
+      await Future<void>.delayed(Duration.zero);
+      fake.emit(channelMsgFrame(text: 'inside the window'));
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+      // Well inside the 400 ms window: nothing has been sealed yet.
+      expect((await ChatStore.load()).map((ChatMessage m) => m.text),
+          isNot(contains('inside the window')));
+      ctrl.dispose();
+      // The flush is a real write, so give the event loop one turn.
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+      expect((await ChatStore.load()).map((ChatMessage m) => m.text),
+          contains('inside the window'));
     });
   });
 }

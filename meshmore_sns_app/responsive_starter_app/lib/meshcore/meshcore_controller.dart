@@ -512,8 +512,35 @@ class MeshcoreController extends ChangeNotifier {
     notifyListeners();
   }
 
-  void _persistChat() =>
-      unawaited(ChatStore.save(List<ChatMessage>.from(_messages)));
+  /// Write the history soon, not necessarily now.
+  ///
+  /// `ChatStore.save` seals the whole kept history (up to 250 rows) through
+  /// the Keystore and rewrites one file, and this used to run on every ingest
+  /// *and* every delivery-state change — two full-history seals per message,
+  /// which on a busy channel is the most expensive thing the app does per
+  /// frame. A short window collapses a burst into one write; the dispose path
+  /// flushes whatever is pending, so an app killed inside the window still
+  /// loses nothing that was on screen.
+  ///
+  /// The debounce is the same shape the contact table already uses
+  /// (`_contactsSaveTimer`), because two stores with two strategies is how a
+  /// codebase grows a third.
+  static const Duration _chatSaveWindow = Duration(milliseconds: 400);
+  Timer? _chatSaveTimer;
+  bool _chatSavePending = false;
+
+  void _persistChat() {
+    _chatSavePending = true;
+    _chatSaveTimer ??= Timer(_chatSaveWindow, _flushChat);
+  }
+
+  void _flushChat() {
+    _chatSaveTimer?.cancel();
+    _chatSaveTimer = null;
+    if (!_chatSavePending) return;
+    _chatSavePending = false;
+    unawaited(ChatStore.save(List<ChatMessage>.from(_messages)));
+  }
 
   /// Merges rows from an exported file into the history, in memory and on
   /// disk, newest last. Returns how many rows were new.
@@ -6133,7 +6160,7 @@ class MeshcoreController extends ChangeNotifier {
     _statesSub?.cancel();
     _inboundSub?.cancel();
     _rawSub?.cancel();
-    _persistChat(); // final flush
+    _flushChat(); // final flush
     unawaited(_flushBatteryHistory()); // final flush
     unawaited(_keepalive.stop());
     unawaited(_incomingCh.close());
