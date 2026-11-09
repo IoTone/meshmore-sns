@@ -26,10 +26,18 @@ void main() {
 
   setUp(() => SharedPreferences.setMockInitialValues(<String, Object>{}));
 
+  /// Let the controller finish what a frame started.
+  ///
+  /// Event-loop turns alone are enough when this file runs by itself, but the
+  /// suite runs test files in parallel and the turns can stretch under load:
+  /// this case then emitted its answer before the send that registers the
+  /// marker for it, and timed out. One turn of real time removes the race
+  /// without making the assertion any weaker.
   Future<void> settle() async {
     for (int i = 0; i < 8; i++) {
       await Future<void>.delayed(Duration.zero);
     }
+    await Future<void>.delayed(const Duration(milliseconds: 5));
   }
 
   Future<MeshcoreController> connected(FakeMeshcoreTransport fake) async {

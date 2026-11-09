@@ -815,3 +815,57 @@ the honest response is to move the encode off the frame thread rather than to lo
 `test/media/media_codec_settings_test.dart` pins the effort, the ladder's shape, and the 350 ms / 150 B / 27-datagram
 arithmetic this reasoning rests on.
 
+
+---
+
+## §14 Round 12 — 2026-11-09: the owner's own themes, and the role this app was missing
+
+The four looks from LDMUX (Forest, Air, Daybreak, Umber) are ported, and the improvement that came with
+them is worth more than the palettes: LDMUX separates a **divider** from a **control's edge**, and holds
+each to its own floor.
+
+**D11.5 A control's edge is its own role, at 3:1 (owner, 2026-11-09).** Meshmore used one value, `line`,
+for both. The register has carried the consequence since 2026-11-05 without fixing it — on the older dark
+presets the border tier runs 1.26:1 to 2.75:1 against the layer it is drawn on, so an "outlined" control
+is outlined in a colour nobody can see. On a paper ground the same value happens to pass, which is why the
+defect read as a taste difference between skins rather than as a floor nobody met.
+
+Measured on this tree before the change, `line` against `base` / `surfaceAlt`:
+
+| preset | line vs base | line vs surfaceAlt | edge, blended until 3:1 | edge vs base / surfaceAlt |
+| --- | --- | --- | --- | --- |
+| studio | 2.08 | 1.84 | `#757575` | 4.00 / 3.07 |
+| seele | 1.46 | 1.34 | `#64625B` | 3.44 / 3.02 |
+| nerv | 1.46 | 1.35 | `#646E82` | 3.75 / 3.03 |
+| agHud | 1.38 | 1.26 | `#5B6878` | 3.56 / 3.02 |
+| hyperlocal | 1.44 | 1.30 | `#66707E` | 3.82 / 3.06 |
+| drPop | 1.52 | 1.36 | `#6E6E73` | 3.74 / 3.03 |
+| recon | 2.75 | 2.60 | `#815B00` | 3.43 / 3.01 |
+| forest | 5.00 | 4.47 | LDMUX's own `edge` | 5.00 / 3.91 |
+| air | 3.93 | 3.63 | LDMUX's own `edge` | 3.93 / 3.41 |
+| daybreak | 4.09 | 3.79 | LDMUX's own `edge` | 4.09 / 3.49 |
+| umber | 4.30 | 3.89 | LDMUX's own `edge` | 4.30 / 3.29 |
+
+Decided: `MmTokens` gains an `edge` role, derived as `line` when a preset does not state one, so the change
+lands preset by preset and nothing breaks in between. Each dark preset states the smallest blend of its own
+`line` toward its own `fg` that clears 3:1 on the page *and* on the raised layer, which keeps every skin's
+hue and makes the change as small as the floor allows. The four LDMUX presets carry that palette's own two
+values unchanged. `line` stays the divider value everywhere.
+
+Where it is drawn: control outlines, input borders, card sides and Material's `outline` role take `edge`;
+dividers, group rules and separators keep `line`. Reversal cost: low — one optional role, one derived
+default, one test that recomputes the table.
+
+**D11.6 One paper ground too many: Studio Light is withdrawn (owner, 2026-11-09).** The owner asked for a
+redundant preset to be found and removed. Measured across all twelve presets on `base + surface + fg +
+accent`, the closest pair in the app was **studioLight vs daybreak** (sum of channel deltas 102, against
+113 for the next closest). Studio Light also shared Studio's exact layout, type bundle and audio pack, so a
+switch between the two changed the ground and nothing else, and it was the third light ground out of five
+once Air and Daybreak arrived. It was added by the owner (R115), not one of David's six concepts, and the
+owner is the one asking for the reconsideration.
+
+Removed: the enum value, label, audio key, tokens and skin. **Kept:** the paper-ground audit it prompted
+(the `fgDisabled` floor, the border tier, brightness derived from the ground, the 320 dp floor). That audit
+is a standing contract about light grounds, so it moved to `test/theme/light_ground_test.dart` and now
+iterates over every preset whose tokens report `isLight` instead of naming one. A stored preference holding
+the removed name falls back to the default preset rather than to an arbitrary one, with a test.
