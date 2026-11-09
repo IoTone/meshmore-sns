@@ -143,8 +143,8 @@ void main() {
   testWidgets('the type-in field takes its corner and borders from the skin',
       (WidgetTester t) async {
     final (MeshcoreController mc, ThemeController theme, _) =
-        await pumpChat(t, MmThemePreset.studioLight);
-    final MmSkin skin = mmSkinFor(MmThemePreset.studioLight);
+        await pumpChat(t, MmThemePreset.air);
+    final MmSkin skin = mmSkinFor(MmThemePreset.air);
 
     final TextField field = t.widget<TextField>(find.byType(TextField).first);
     final InputDecoration d = field.decoration!;
@@ -160,7 +160,7 @@ void main() {
     // Focus is the skin's accent, not Material's primary.
     expect((d.focusedBorder! as OutlineInputBorder).borderSide.color,
         skin.color.accent);
-    expect(theme.preset, MmThemePreset.studioLight);
+    expect(theme.preset, MmThemePreset.air);
     await drain(t, mc);
   });
 
@@ -185,7 +185,7 @@ void main() {
   });
 
   for (final MmThemePreset preset in <MmThemePreset>[
-    MmThemePreset.studioLight,
+    MmThemePreset.air,
     MmThemePreset.hyperlocal,
   ]) {
     testWidgets('$preset holds 320 dp at 200 % text', (WidgetTester t) async {
@@ -210,7 +210,7 @@ void main() {
   testWidgets('the send control says whether it can act',
       (WidgetTester t) async {
     final (MeshcoreController mc, _, _) =
-        await pumpChat(t, MmThemePreset.studioLight);
+        await pumpChat(t, MmThemePreset.air);
     final Finder send = find.widgetWithIcon(IconButton, Icons.send);
     IconButton button() => t.widget<IconButton>(send);
 

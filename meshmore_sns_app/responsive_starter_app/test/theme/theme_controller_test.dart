@@ -11,10 +11,12 @@ void main() {
 
   setUp(() => SharedPreferences.setMockInitialValues(<String, Object>{}));
 
-  test('all twelve presets defined, distinct, non-degenerate', () {
-    // R115 added Studio Light; the LDMUX port added four more (2026-11-09).
-    expect(MmThemePreset.values, hasLength(12));
-    expect(kMmPresets.length, 12);
+  test('all eleven presets defined, distinct, non-degenerate', () {
+    // The LDMUX port added four looks (2026-11-09); Studio Light was removed
+    // the same day as the third paper ground with the closest palette in the
+    // app, leaving six concept skins, Studio and the four LDMUX ones.
+    expect(MmThemePreset.values, hasLength(11));
+    expect(kMmPresets.length, 11);
     final Set<int> bases = <int>{
       for (final MmThemePreset p in MmThemePreset.values)
         // ignore: deprecated_member_use
@@ -22,16 +24,15 @@ void main() {
     };
     expect(bases.length, greaterThanOrEqualTo(4),
         reason: 'preset backgrounds should not all be identical');
-    // Three presets are light grounds, and each was a deliberate opposite of
-    // the dark ones rather than another dark variant: Studio Light (R115),
-    // then Air and Daybreak from the LDMUX port. A fourth light theme would
-    // need a reason that is not "another shade of paper".
+    // Two presets are light grounds, and each was a deliberate opposite of
+    // the dark ones rather than another dark variant: Air and Daybreak from
+    // the LDMUX port. A third light theme would need a reason that is not
+    // "another shade of paper" — which is the test Studio Light failed.
     expect(
         MmThemePreset.values
             .where((MmThemePreset p) => kMmPresets[p]!.isLight)
             .toSet(),
         <MmThemePreset>{
-          MmThemePreset.studioLight,
           MmThemePreset.air,
           MmThemePreset.daybreak,
         });
@@ -44,6 +45,28 @@ void main() {
     expect(c.preset, MmThemePreset.studio);
     expect(c.audioMaster, isTrue,
         reason: 'audible alerts ON by default; dashboard offers quick-mute');
+  });
+
+  test('a stored preset that no longer exists falls back to the default',
+      () async {
+    // `studioLight` was removed after shipping. An install that had chosen it
+    // holds that name in preferences, so the loader has to land on the
+    // default preset rather than throw, skip, or pick a neighbour.
+    SharedPreferences.setMockInitialValues(<String, Object>{
+      'mm.preset': 'studioLight',
+    });
+    final ThemeController c = ThemeController();
+    await c.load();
+    expect(c.preset, kDefaultPreset);
+    expect(kMmPresets[c.preset], isNotNull);
+
+    // The same is true of a value that was never a preset at all.
+    SharedPreferences.setMockInitialValues(<String, Object>{
+      'mm.preset': 'not-a-preset',
+    });
+    final ThemeController c2 = ThemeController();
+    await c2.load();
+    expect(c2.preset, kDefaultPreset);
   });
 
   test('setPreset notifies and persists across reload', () async {

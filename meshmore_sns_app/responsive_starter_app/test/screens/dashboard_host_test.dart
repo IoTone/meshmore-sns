@@ -114,16 +114,16 @@ void main() {
     // The icon-only Bluetooth button is named for screen readers.
     expect(find.byTooltip('Device'), findsOneWidget);
 
-    // Studio Light is the same tool on paper: the preset repaints the
-    // dashboard, it does not swap in a different one. Before R116 it fell to
-    // the host's default, so choosing the light Studio skin replaced the whole
-    // dashboard with the SEELE monolith.
-    await tc.setPreset(MmThemePreset.studioLight);
+    // A preset with no layout of its own inherits the default one, and the
+    // host's key holds either way. Air is the light ground with no bundle of
+    // its own, so it is the case that proves the fallback still works after
+    // the Studio Light preset (which had one) was removed.
+    await tc.setPreset(MmThemePreset.air);
     await t.pumpAndSettle();
     expect(find.byKey(dashboardKey), findsOneWidget);
-    expect(find.byType(StudioDashboard), findsOneWidget,
-        reason: 'the light Studio skin keeps the Studio layout');
-    expect(find.byType(DashboardScreen), findsNothing);
+    expect(find.byType(DashboardScreen), findsOneWidget,
+        reason: 'a preset without a layout inherits the monolith');
+    expect(find.byType(StudioDashboard), findsNothing);
 
     // Back to SEELE -> the monolith, still under the host's key.
     await tc.setPreset(MmThemePreset.seele);

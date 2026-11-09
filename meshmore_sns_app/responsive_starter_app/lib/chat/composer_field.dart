@@ -31,11 +31,12 @@ InputDecoration composerFieldDecoration(
         TextStyle(color: skin.color.fgMuted, fontSize: skin.type.sizeSm),
     // `line`, not `hairline`: a text field's resting outline is the thing
     // that identifies the control, so it takes the strongest separator the
-    // skin has. Measured against `base`, `line` is 3.57:1 on Studio Light
-    // (the 3:1 a control boundary needs) and 1.38-2.75:1 on the dark skins,
-    // where the skins' separators are decorative weights rather than control
-    // boundaries — a `controlBorder` token is the fix and belongs to the
-    // theme, not here. `hairline` would have been 2.43:1 on paper.
+    // skin has. Measured against `base`, `line` is 3.93:1 on Air and 4.09:1
+    // on Daybreak (the 3:1 a control boundary needs) and 1.38-2.75:1 on the
+    // dark skins, where the skins' separators are decorative weights rather
+    // than control boundaries — a `controlBorder` token is the fix and
+    // belongs to the theme, not here. `hairline` would have been 1.70:1 on
+    // paper.
     border: border(skin.color.line),
     enabledBorder: border(skin.color.line),
     // Focus is the skin's accent, not Material's primary: in the terminal

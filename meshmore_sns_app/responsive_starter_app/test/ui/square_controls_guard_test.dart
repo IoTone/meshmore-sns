@@ -53,10 +53,7 @@ void main() {
   // their skin defaults.
   test('older presets: only the text button is themed, and it is bounded', () {
     for (final MmThemePreset p in MmThemePreset.values) {
-      if (<MmThemePreset>[
-        MmThemePreset.studio,
-        MmThemePreset.studioLight,
-      ].contains(p)) {
+      if (p == MmThemePreset.studio) {
         continue;
       }
       final ThemeData t = themeFor(p);

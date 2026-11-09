@@ -117,7 +117,7 @@ void main() {
           MeshcoreConnection(handshakeTimeout: const Duration(seconds: 5)),
     );
     final ThemeController theme = ThemeController();
-    await theme.setPreset(MmThemePreset.studioLight);
+    await theme.setPreset(MmThemePreset.air);
     await t.pumpWidget(MultiProvider(
       providers: <SingleChildWidget>[
         ChangeNotifierProvider<ThemeController>.value(value: theme),

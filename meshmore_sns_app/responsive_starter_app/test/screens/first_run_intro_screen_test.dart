@@ -62,7 +62,7 @@ void main() {
   // app bar to escape through, so an overflow there is a wall. Paper is the
   // ground it is read on in daylight, which is the state it exists for.
   for (final MmThemePreset preset in <MmThemePreset>[
-    MmThemePreset.studioLight,
+    MmThemePreset.air,
     MmThemePreset.studio,
   ]) {
     testWidgets('${preset.name}: the first page holds 320 dp at 200 % text',

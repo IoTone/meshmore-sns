@@ -115,12 +115,12 @@ void main() {
           await drawnTheme(t, vectorStyleIdFor(MmThemePreset.studio.name));
       expect(studioId, vectorStyleIdFor(MmThemePreset.studio.name));
 
-      await theme.setPreset(MmThemePreset.studioLight);
+      await theme.setPreset(MmThemePreset.air);
       final String? lightId =
-          await drawnTheme(t, vectorStyleIdFor(MmThemePreset.studioLight.name));
+          await drawnTheme(t, vectorStyleIdFor(MmThemePreset.air.name));
       expect(t.takeException(), isNull,
           reason: 'a light map at 320 dp and 200 % text');
-      expect(lightId, vectorStyleIdFor(MmThemePreset.studioLight.name),
+      expect(lightId, vectorStyleIdFor(MmThemePreset.air.name),
           reason: 'the renderer repaints only when the id changes; the same '
               'id would have left the dark palette on a paper skin');
       expect(lightId, isNot(studioId));

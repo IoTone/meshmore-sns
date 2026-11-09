@@ -16,11 +16,13 @@ import '../ui/mm_shape.dart' show kSquareRadius;
 /// one restrained accent). It is the only preset that *uses* the layered
 /// surface stack added in R63; the other six derive it (see [MmTokens]).
 ///
-/// R115 adds an eighth, [MmThemePreset.studioLight]: the same tool
-/// language on paper, because every other preset is dark and a phone in
-/// daylight needs a light one. Ink is near-black, the ground is warm
-/// paper, and the accent is a vermilion that carries selection and
-/// emphasis without relying on saturation alone.
+/// R115 added an eighth, Studio Light, as the tool language on paper. It
+/// is gone: with the LDMUX light looks (Air, Daybreak) it was the third
+/// paper ground, it shared Studio's layout, type and audio pack exactly,
+/// and its palette was the closest in the app to Daybreak's — a preset
+/// switch bought a ground colour and nothing else. The lessons it taught
+/// are a standing contract for every light preset, held in
+/// `test/theme/light_ground_test.dart`.
 enum MmThemePreset {
   nerv,
   agHud,
@@ -29,7 +31,6 @@ enum MmThemePreset {
   drPop,
   recon,
   studio,
-  studioLight,
   // The owner's own looks, ported from LDMUX (2026-11-09). Four palettes
   // whose every role was measured before it was drawn, including the
   // control-boundary role this app had been missing.
@@ -48,7 +49,6 @@ extension MmThemePresetX on MmThemePreset {
         MmThemePreset.drPop => 'DR Pop',
         MmThemePreset.recon => 'Recon Night',
         MmThemePreset.studio => 'Studio Dark — clean · square',
-        MmThemePreset.studioLight => 'Studio Light — paper · square',
         MmThemePreset.forest => 'Forest — dark pine · one green',
         MmThemePreset.air => 'Air — white page · blue',
         MmThemePreset.daybreak => 'Daybreak — white page · vermilion',
@@ -70,9 +70,6 @@ extension MmThemePresetX on MmThemePreset {
         // existing one). No studio audio exists and synthesising it is
         // out of scope; see `assets/audio/` and the R63 spec entry.
         MmThemePreset.studio => 'hyperlocal',
-        // R115 — same reason: a light skin changes colour, not the cue
-        // set. The calm pack is the one that fits a paper ground.
-        MmThemePreset.studioLight => 'hyperlocal',
         // Same reason again: these four change colour, not the cue set.
         MmThemePreset.forest => 'hyperlocal',
         MmThemePreset.air => 'hyperlocal',
@@ -297,46 +294,6 @@ const Map<MmThemePreset, MmTokens> kMmPresets = <MmThemePreset, MmTokens>{
     alert: Color(0xFFB3231F),
     ok: Color(0xFFFFB000),
   ),
-  // R115 — Studio Light: the tool language on paper. The stack runs from the
-  // brightest step (the page) down to the selected state, because on a light
-  // ground a container is *cut into* the page rather than raised out of it;
-  // that also keeps the four steps monotonic, which is what makes a panel
-  // read as a panel instead of a smudge.
-  //
-  // The ground is a warm paper rather than pure white: a white page at full
-  // brightness is the one surface a phone cannot dim, and every glyph on it
-  // sits in glare. The accent is a vermilion red that carries selection and
-  // emphasis and still reads as text on every layer (4.97:1 on the darkest).
-  //
-  // `link` is supplied because the shared live-link green (#3DDC84) is 1.7:1
-  // on paper: a link state is still green in this skin, just a green a light
-  // ground can carry. `alert` is a deeper red than the accent so the two are
-  // never mistaken for each other, and both carry an icon and a word.
-  MmThemePreset.studioLight: MmTokens(
-    base: Color(0xFFFBFAF6),
-    surface: Color(0xFFF2EFE8),
-    surfaceAlt: Color(0xFFE8E2D3),
-    line: Color(0xFF8A8474),
-    fg: Color(0xFF16181C),
-    fgMuted: Color(0xFF4E525A),
-    accent: Color(0xFFA81B0B),
-    alert: Color(0xFF8C1018),
-    ok: Color(0xFF175B33),
-    raised: Color(0xFFE8E2D3),
-    selected: Color(0xFFDAD3BF),
-    hairline: Color(0xFFA9A290),
-    onAccent: Color(0xFFFFFFFF),
-    // 3.2:1 on the deepest layer it is drawn on (`selected`), 4.6:1 on the
-    // page. The old #8E9196 was 2.1:1 there, so a disabled control on paper
-    // read as a smudge rather than as a control that is off.
-    fgDisabled: Color(0xFF6E7278),
-    onAlert: Color(0xFFFFFFFF),
-    link: Color(0xFF16603A),
-    // The dark skins' amber is 1.9:1 on paper: a gauge ring in it disappears.
-    // This is the same caution at 4.6:1, hue unchanged to the eye.
-    warn: Color(0xFF8A5A00),
-  ),
-
   // --- The four LDMUX looks (2026-11-09) -------------------------------
   //
   // Ported from the owner's LDMUX project, where every neutral is a Radix
@@ -356,10 +313,22 @@ const Map<MmThemePreset, MmTokens> kMmPresets = <MmThemePreset, MmTokens>{
   //                           for a chosen control, and this app draws that
   //                           state with `accent` plus a rule.
   //
-  // Three values were moved off the LDMUX literal because this app draws a
-  // role on `surfaceAlt`, which LDMUX does not have: Daybreak's accent and
-  // alert, Umber's alert, and the two light themes' `edge`. Each is one step
-  // in the same family and every floor still holds; the test lists them.
+  // Values moved off the LDMUX literal, each one step in the same family,
+  // because this app draws roles on layers LDMUX does not have:
+  //
+  //  * Daybreak's `accent` and `alert`, and Umber's `alert`: 4.26 / 4.46 /
+  //    4.03 on `surfaceAlt`, under the label floor. 4.5 is measured on
+  //    `base` and `surface` in LDMUX; this app also writes labels on a panel.
+  //  * Both light themes' `edge`: 2.86 and 3.02 on `surfaceAlt`, under the
+  //    control-boundary floor, one step darker in the same grey.
+  //  * Air's `surfaceAlt` and `alert`, and Daybreak's `surface`,
+  //    `surfaceAlt` and `hairline`: the light-ground contract in
+  //    `test/theme/light_ground_test.dart` wants every layer step at 1.08:1
+  //    and a hairline visible on the page (1.6:1), and the ported values
+  //    landed at 1.065 / 1.077 and 1.57 / 1.41. The alert then had to follow
+  //    one step darker to keep 4.5:1 on the darker panel.
+  //
+  // `test/theme/ldmux_presets_test.dart` pins the literals that did not move.
   MmThemePreset.forest: MmTokens(
     base: Color(0xFF121514),
     surface: Color(0xFF1A211D),
@@ -388,17 +357,23 @@ const Map<MmThemePreset, MmTokens> kMmPresets = <MmThemePreset, MmTokens>{
   MmThemePreset.air: MmTokens(
     base: Color(0xFFFFFFFF),
     surface: Color(0xFFF4F6F9),
-    surfaceAlt: Color(0xFFECEFF3),
+    // One step darker than slate-3: `surface` → `surfaceAlt` was 1.065:1, and
+    // a panel step under 1.08 does not read as a panel.
+    surfaceAlt: Color(0xFFE8ECF1),
     // LDMUX's edge #8B8D98 is 2.86:1 on this theme's raised fill, under the
     // control-boundary floor; one step darker in the same blue-grey.
     line: Color(0xFF7E808A),
-    hairline: Color(0xFFCDCED6),
+    // slate-7 is 1.57:1 on white, which is not a rule you can see on a phone
+    // in daylight; one step darker in the same blue-grey, 1.70:1.
+    hairline: Color(0xFFC4C6D0),
     fg: Color(0xFF1C2024),
     fgMuted: Color(0xFF4D525A),
     accent: Color(0xFF0A68BA),
-    alert: Color(0xFFCE2C31),
+    // red-11 (#CE2C31) is 4.43:1 on the darkened panel above, under the label
+    // floor; one step darker in the same red.
+    alert: Color(0xFFC92A2F),
     ok: Color(0xFF17703A),
-    raised: Color(0xFFECEFF3),
+    raised: Color(0xFFE8ECF1),
     selected: Color(0xFFCDCED6),
     onAccent: Color(0xFFFFFFFF),
     fgDisabled: Color(0xFF84888F),
@@ -408,10 +383,14 @@ const Map<MmThemePreset, MmTokens> kMmPresets = <MmThemePreset, MmTokens>{
   ),
   MmThemePreset.daybreak: MmTokens(
     base: Color(0xFFFFFFFF),
-    surface: Color(0xFFF5F7F4),
-    surfaceAlt: Color(0xFFEBEEEB),
+    // Olive-2 is 1.077:1 off the page, just under the step floor this app's
+    // light grounds are held to; one step darker.
+    surface: Color(0xFFF3F5F1),
+    surfaceAlt: Color(0xFFE8EBE7),
     line: Color(0xFF7A7F79),
-    hairline: Color(0xFFD7DAD7),
+    // olive-7 is 1.41:1 on white: invisible as a rule on paper. One step
+    // darker in the same warm grey, 1.73:1.
+    hairline: Color(0xFFC2C6C1),
     fg: Color(0xFF1D211C),
     fgMuted: Color(0xFF4D524B),
     // LDMUX tomato-11 (#D13415) is 4.26:1 on this theme's raised fill, under
@@ -420,7 +399,7 @@ const Map<MmThemePreset, MmTokens> kMmPresets = <MmThemePreset, MmTokens>{
     // Same correction for danger: red-11 is 4.46:1 on the raised fill.
     alert: Color(0xFFC4272C),
     ok: Color(0xFF17703A),
-    raised: Color(0xFFEBEEEB),
+    raised: Color(0xFFE8EBE7),
     selected: Color(0xFFD7DAD7),
     onAccent: Color(0xFFFFFFFF),
     fgDisabled: Color(0xFF7F837B),

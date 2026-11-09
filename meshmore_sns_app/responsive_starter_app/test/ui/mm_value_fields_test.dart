@@ -56,14 +56,14 @@ void main() {
 
   testWidgets('wide: one line, separators intact', (WidgetTester t) async {
     await pump(t,
-        preset: MmThemePreset.studioLight, width: 900, textScale: 1.0);
+        preset: MmThemePreset.air, width: 900, textScale: 1.0);
     expect(find.text('38.91996, -104.77315 · alt 2041 m · device'),
         findsOneWidget);
     expect(t.takeException(), isNull);
   });
 
   for (final MmThemePreset preset in <MmThemePreset>[
-    MmThemePreset.studioLight,
+    MmThemePreset.air,
     MmThemePreset.studio,
   ]) {
     testWidgets('${preset.name} at 320 dp and 200 %: one field per line',

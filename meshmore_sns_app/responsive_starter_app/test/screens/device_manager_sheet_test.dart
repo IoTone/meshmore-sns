@@ -96,7 +96,7 @@ void main() {
     // Paper is the ground it is read on in daylight.
     SharedPreferences.setMockInitialValues(<String, Object>{});
     final ThemeController tc = ThemeController();
-    await tc.setPreset(MmThemePreset.studioLight);
+    await tc.setPreset(MmThemePreset.air);
     t.view.physicalSize = const Size(320, 780);
     t.view.devicePixelRatio = 1.0;
     addTearDown(t.view.reset);

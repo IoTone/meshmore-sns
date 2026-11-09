@@ -35,11 +35,14 @@ void main() {
     MmThemePreset.umber,
   ];
 
-  /// The LDMUX literals, so a value cannot drift from the source silently.
+  /// The literals this app ships, so a value cannot drift silently — and so a
+  /// second `light_ground_test` correction has to be a deliberate edit here.
   ///
-  /// `line` and `hairline` are the Meshmore values rather than the LDMUX ones
-  /// because four of them were moved one step to clear a floor on a Meshmore
-  /// surface (`surfaceAlt`), and each move is called out beside the value.
+  /// These are the LDMUX values wherever LDMUX's own contract holds on this
+  /// app's surfaces, and a value moved one step where it does not. Each move is
+  /// called out beside the value, with the ratio that forced it: `surfaceAlt`
+  /// is a role LDMUX does not have, and the paper grounds are held to layer
+  /// steps and a visible hairline that the source never needed to state.
   const Map<MmThemePreset, Map<String, int>> pinned =
       <MmThemePreset, Map<String, int>>{
     MmThemePreset.forest: <String, int>{
@@ -58,23 +61,29 @@ void main() {
     MmThemePreset.air: <String, int>{
       'base': 0xFFFFFFFF,
       'surface': 0xFFF4F6F9,
-      'surfaceAlt': 0xFFECEFF3,
+      // slate-3: `surface` → `surfaceAlt` was 1.065:1, under the 1.08 step the
+      // paper grounds are held to; one step darker.
+      'surfaceAlt': 0xFFE8ECF1,
       // LDMUX edge #8B8D98 is 2.86:1 on surfaceAlt, under the control floor.
       'line': 0xFF7E808A,
-      'hairline': 0xFFCDCED6,
+      // slate-7 was 1.57:1 on white: not a rule you can see in daylight.
+      'hairline': 0xFFC4C6D0,
       'fg': 0xFF1C2024,
       'fgMuted': 0xFF4D525A,
       'accent': 0xFF0A68BA,
-      'alert': 0xFFCE2C31,
+      // red-11 is 4.43:1 on the darkened panel above, under the label floor.
+      'alert': 0xFFC92A2F,
       'warn': 0xFF8A5A00,
       'onAccent': 0xFFFFFFFF,
     },
     MmThemePreset.daybreak: <String, int>{
       'base': 0xFFFFFFFF,
-      'surface': 0xFFF5F7F4,
-      'surfaceAlt': 0xFFEBEEEB,
+      // olive-2 was 1.077:1 off the page, just under the step floor.
+      'surface': 0xFFF3F5F1,
+      'surfaceAlt': 0xFFE8EBE7,
       'line': 0xFF7A7F79,
-      'hairline': 0xFFD7DAD7,
+      // olive-7 was 1.41:1 on white: invisible as a rule on paper.
+      'hairline': 0xFFC2C6C1,
       'fg': 0xFF1D211C,
       'fgMuted': 0xFF4D524B,
       // tomato-11 #D13415 is 4.26:1 on surfaceAlt, under the label floor.

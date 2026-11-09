@@ -63,15 +63,7 @@ class DashboardHost extends StatelessWidget {
       MmThemePreset.agHud => const AgHudDashboard(),
       MmThemePreset.drPop => const DrPopDashboard(),
       MmThemePreset.recon => const ReconDashboard(),
-      // Studio Light is the same tool on paper, so it keeps the same layout:
-      // a preset changes the ground, never which dashboard the user is looking
-      // at. The two Studio presets used to split here, so switching from Studio
-      // Dark to Studio Light replaced the whole dashboard with the SEELE
-      // monolith (a colour-inverting slab and an 88 sp numeral) instead of
-      // repainting the one on screen.
-      MmThemePreset.studio ||
-      MmThemePreset.studioLight =>
-        const StudioDashboard(),
+      MmThemePreset.studio => const StudioDashboard(),
       // The four LDMUX presets (forest, air, daybreak, umber) land here on
       // purpose: a layout is a screen's own design, and inheriting the SEELE
       // monolith is the honest default until one of them earns a layout of its

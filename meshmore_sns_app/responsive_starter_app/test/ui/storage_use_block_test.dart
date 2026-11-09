@@ -88,7 +88,7 @@ void main() {
     bool withMedia = true,
     bool withController = true,
   }) async {
-    await theme.setPreset(MmThemePreset.studioLight);
+    await theme.setPreset(MmThemePreset.air);
     await t.pumpWidget(MultiProvider(
       providers: <ChangeNotifierProvider<ChangeNotifier>>[
         ChangeNotifierProvider<ThemeController>.value(value: theme),

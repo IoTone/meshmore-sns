@@ -382,42 +382,11 @@ MmSkin mmSkinFor(MmThemePreset preset) {
         ),
         ornament: _calmOrnament,
       );
-    // H (R115) — Studio Light: the tool language on paper. Same square
-    // control family and the same type rule as Studio (words in the UI face,
-    // mono for machine data), but the opposite ground, so the ornament is
-    // still none and the map is NOT dimmed: dimming exists to push a bright
-    // basemap under dark chrome, and on a light page the basemap belongs to
-    // the page.
-    //
-    // It draws the same group boundary as Studio: one rule above the label,
-    // no filled header. R115 turned the fill off here alone, because a beige
-    // band on paper is a box; R116 took the fill off the dark grounds too, so
-    // both grounds now say "a group starts here" once and in the same way.
-    case MmThemePreset.studioLight:
-      return MmSkin(
-        preset: preset,
-        color: color,
-        type: const MmType(
-          monoFamily: 'JetBrains Mono',
-          upperHeadings: true,
-          headingTracking: 1.4,
-          sansLabels: true,
-        ),
-        shape: const MmShape(
-          corner: MmCorner.sharp,
-          cornerSize: 0,
-          borderWidth: 1,
-          hairlineWidth: 1,
-          squareControls: true,
-          dimmedBasemap: false,
-        ),
-        ornament: _calmOrnament,
-      );
     // The four LDMUX looks (2026-11-09). All four set words in the mono face,
     // which is the LDMUX character (a terminal on a page) and keeps the type
-    // rule this app already enforces: only Studio and Studio Light turn words
-    // sans. None of them squares Material's own controls, so each keeps the
-    // framework's rounding and only the panel corner changes.
+    // rule this app already enforces: only Studio turns words sans. None of
+    // them squares Material's own controls, so each keeps the framework's
+    // rounding and only the panel corner changes.
     //
     // Forest: dark pine, soft corners, and a dimmed basemap for the same
     // reason Studio dims one — a pale basemap under dark chrome reads as a

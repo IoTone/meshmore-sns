@@ -39,10 +39,7 @@ void main() {
     // design, which is that skin's character.
     for (final MmThemePreset p in MmThemePreset.values) {
       final MmType t = mmSkinFor(p).type;
-      if (<MmThemePreset>[
-        MmThemePreset.studio,
-        MmThemePreset.studioLight,
-      ].contains(p)) {
+      if (p == MmThemePreset.studio) {
         expect(t.wordsMono, isNull);
       } else {
         expect(t.wordsMono, t.monoFamily, reason: '$p');

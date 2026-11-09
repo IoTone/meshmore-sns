@@ -68,8 +68,8 @@ void main() {
 
   testWidgets('paper: a border-tier rule above the label, and no fill',
       (WidgetTester t) async {
-    final MmSkin skin = mmSkinFor(MmThemePreset.studioLight);
-    await pump(t, MmThemePreset.studioLight);
+    final MmSkin skin = mmSkinFor(MmThemePreset.air);
+    await pump(t, MmThemePreset.air);
     final Material header = t.widget<Material>(find.byType(Material).last);
     expect(header.color, Colors.transparent,
         reason: 'a band on paper is a box, not a header');
@@ -114,7 +114,7 @@ void main() {
   testWidgets('two groups draw one line between them, on both grounds',
       (WidgetTester t) async {
     for (final MmThemePreset preset in <MmThemePreset>[
-      MmThemePreset.studioLight,
+      MmThemePreset.air,
       MmThemePreset.studio,
     ]) {
       await pump(t, preset, sections: 2);

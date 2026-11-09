@@ -37,22 +37,19 @@ void main() {
         }
       }
       // R63 — Studio deliberately ALIASES the Hyperlocal pack (no studio
-      // audio exists), and R115's light skin does the same for the same
-      // reason (a light skin changes colour, not the cue set). Uniqueness is
+      // audio exists), and every preset added since does the same for the
+      // same reason (a skin changes colour, not the cue set). Uniqueness is
       // therefore per distinct audioPackKey, not per preset. Any other
       // duplicate is still a bug.
       final Set<String> keys = <String>{
         for (final MmThemePreset p in MmThemePreset.values) p.audioPackKey,
       };
-      // Six aliases now: the two Studio presets and the four LDMUX ones all
-      // borrow the calm pack, because a skin changes colour rather than the
-      // cue set.
-      expect(keys.length, MmThemePreset.values.length - 6,
-          reason: 'six aliases (studio, studioLight, forest, air, daybreak, '
-              'umber -> hyperlocal)');
+      // Five aliases: Studio and the four LDMUX looks borrow the calm pack.
+      expect(keys.length, MmThemePreset.values.length - 5,
+          reason: 'five aliases (studio, forest, air, daybreak, umber -> '
+              'hyperlocal)');
       for (final MmThemePreset p in <MmThemePreset>[
         MmThemePreset.studio,
-        MmThemePreset.studioLight,
         MmThemePreset.forest,
         MmThemePreset.air,
         MmThemePreset.daybreak,

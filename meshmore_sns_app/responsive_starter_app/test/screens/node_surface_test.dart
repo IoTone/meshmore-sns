@@ -47,7 +47,7 @@ void main() {
     await t.binding.setSurfaceSize(size);
     addTearDown(() => t.binding.setSurfaceSize(null));
     final ThemeController theme = ThemeController();
-    await theme.setPreset(MmThemePreset.studioLight);
+    await theme.setPreset(MmThemePreset.air);
     final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
     final MeshcoreController mc = MeshcoreController(
       transportFactory: () async => fake,
@@ -85,7 +85,7 @@ void main() {
     await t.binding.setSurfaceSize(const Size(360, 900));
     addTearDown(() => t.binding.setSurfaceSize(null));
     final ThemeController theme = ThemeController();
-    await theme.setPreset(MmThemePreset.studioLight);
+    await theme.setPreset(MmThemePreset.air);
     final MeshcoreController mc = MeshcoreController();
     final DiscoveredNode node = DiscoveredNode(
       pubKeyHex: 'ab' * 32,
@@ -122,7 +122,7 @@ void main() {
     ));
     await t.pumpAndSettle();
 
-    final MmSkin skin = mmSkinFor(MmThemePreset.studioLight);
+    final MmSkin skin = mmSkinFor(MmThemePreset.air);
     final Finder chips = find.byWidgetPredicate((Widget w) =>
         w is Container &&
         w.key is ValueKey<String> &&
