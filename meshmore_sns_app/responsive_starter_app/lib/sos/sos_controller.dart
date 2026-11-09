@@ -9,6 +9,7 @@ import 'package:flutter/scheduler.dart';
 import '../meshcore/chat_message.dart';
 import '../meshcore/discovered_node.dart';
 import '../meshcore/meshcore_controller.dart';
+import '../util/safe_notifier.dart';
 import 'checkin.dart';
 import 'sos_alarm_record.dart';
 import 'sos_prefs.dart';
@@ -51,7 +52,7 @@ final class SosAckRow {
 /// emits due packets (so the schedule survives the screen being closed — the
 /// foreground service keeps the isolate alive) and marks a check-in overdue at
 /// its deadline.
-final class SosController extends ChangeNotifier {
+final class SosController extends ChangeNotifier with SafeNotifier {
   SosController({
     required MeshcoreController mc,
     DateTime Function()? clock,
@@ -765,17 +766,17 @@ final class SosController extends ChangeNotifier {
     _notifyPending = true;
     SchedulerBinding.instance.addPostFrameCallback((_) {
       _notifyPending = false;
-      if (_disposed) return;
+      // After disposal the mixin's override drops this; the early return keeps
+      // the pending flag honest rather than relying on that drop.
+      if (isDisposed) return;
       notifyListeners();
     });
   }
 
   bool _notifyPending = false;
-  bool _disposed = false;
 
   @override
   void dispose() {
-    _disposed = true;
     _stopTicker();
     _channelSub?.cancel();
     _dmSub?.cancel();

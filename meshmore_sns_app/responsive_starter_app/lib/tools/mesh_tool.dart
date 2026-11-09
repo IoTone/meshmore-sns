@@ -7,6 +7,7 @@ import 'package:flutter/foundation.dart';
 import 'package:meshcore/meshcore.dart';
 
 import '../meshcore/meshcore_controller.dart';
+import '../util/safe_notifier.dart';
 
 /// R60 — the Tools under Settings. See `meshmore-sns-tools-spec.md`.
 enum ToolKind { stats, ping, trace, discover, soak, range }
@@ -75,7 +76,11 @@ int randomTag() => _tagRng.nextInt(0xFFFFFFFE) + 1;
 
 /// Base for every tool: a ChangeNotifier owned by `ToolsController`
 /// so a run survives leaving its screen (a soak runs for an hour).
-abstract class MeshTool extends ChangeNotifier {
+///
+/// A run can outlive its owner by one step, so the notify guard is
+/// [SafeNotifier] rather than a hand-written flag: a tool that finishes after
+/// its screen is gone is the reason that mixin exists.
+abstract class MeshTool extends ChangeNotifier with SafeNotifier {
   MeshTool(this.mc, {DateTime Function()? now}) : now = now ?? DateTime.now;
 
   final MeshcoreController mc;
@@ -89,20 +94,6 @@ abstract class MeshTool extends ChangeNotifier {
 
   bool _running = false;
   bool get running => _running;
-
-  bool _disposed = false;
-
-  @override
-  void dispose() {
-    _disposed = true;
-    super.dispose();
-  }
-
-  /// A run can outlive its owner by one step; never notify after.
-  @override
-  void notifyListeners() {
-    if (!_disposed) super.notifyListeners();
-  }
 
   ToolFailure? _failure;
 

@@ -17,6 +17,7 @@ import 'map_fetch.dart';
 import 'map_pack.dart';
 import 'map_source.dart';
 import 'network_gate.dart';
+import '../util/safe_notifier.dart';
 import 'disk_space.dart';
 import 'pack_catalog.dart';
 import 'pmtiles.dart';
@@ -67,7 +68,7 @@ enum LayerRefusal { badUrl, offline, notGeoJson, tooLarge, overBudget }
 /// network" and a backoff timer (or any successful map fetch, e.g. the
 /// user panning a map) wakes it. A half-done pack still shows what it
 /// has; packs fill lowest zoom first.
-class MapsController extends ChangeNotifier {
+class MapsController extends ChangeNotifier with SafeNotifier {
   MapsController({
     Future<Directory> Function()? rootDir,
     MapFetcher? fetcher,
@@ -178,7 +179,6 @@ class MapsController extends ChangeNotifier {
   bool catalogLoading = false;
 
   bool _pumping = false;
-  bool _disposed = false;
   Timer? _retry;
   Timer? _sweep;
   Timer? _trim;
@@ -293,14 +293,13 @@ class MapsController extends ChangeNotifier {
   }
 
   void _changed() {
-    if (_disposed) return;
+    if (isDisposed) return;
     unawaited(_save());
     notifyListeners();
   }
 
   @override
   void dispose() {
-    _disposed = true;
     _retry?.cancel();
     _sweep?.cancel();
     _trim?.cancel();
@@ -390,7 +389,7 @@ class MapsController extends ChangeNotifier {
         ? Duration(seconds: _backoffS)
         : retryFloor;
     _retry = Timer(wait, () {
-      if (_disposed) return;
+      if (isDisposed) return;
       _offlineUntilMs = 0;
       for (final MapPack p in packs) {
         if (p.state == PackState.waitingForNetwork) {
@@ -461,7 +460,7 @@ class MapsController extends ChangeNotifier {
     if (!online || _gated(src.id) || usedBytes >= budgetBytes) return 0;
     int got = 0;
     for (final (int z, int x, int y) in coords) {
-      if (got >= limit || _disposed || !viewIdle || !online) break;
+      if (got >= limit || isDisposed || !viewIdle || !online) break;
       if (hasTile(src, z, x, y) || _absent.contains(TileStore.keyOf(src.id, z, x, y))) {
         continue;
       }
@@ -612,7 +611,7 @@ class MapsController extends ChangeNotifier {
       maxViewBytes: math.max(0, budgetBytes - pinnedBytes),
       maxIdle: Duration(days: viewKeepDays),
     );
-    if (!_disposed) notifyListeners();
+    notifyListeners();
   }
 
   // ---- packs -------------------------------------------------------
@@ -753,7 +752,7 @@ class MapsController extends ChangeNotifier {
   }
 
   Future<void> _pump() {
-    if (_pumping || _disposed || !loaded) return Future<void>.value();
+    if (_pumping || isDisposed || !loaded) return Future<void>.value();
     final Future<void> run = _pumpBody();
     _pumpRun = run;
     return run.whenComplete(() {
@@ -765,7 +764,7 @@ class MapsController extends ChangeNotifier {
     _pumping = true;
     try {
       await _promoteWifiParked();
-      while (!_disposed) {
+      while (!isDisposed) {
         MapPack? next;
         for (final MapPack p in packs) {
           if (p.state == PackState.downloading ||
@@ -809,7 +808,7 @@ class MapsController extends ChangeNotifier {
     // actually sends, so a heavy server can't overshoot by much.
     int perTile = src.bytesPerTile;
     for (final (int z, int x, int y) in tilesIn(p.box, p.minZoom, p.maxZoom)) {
-      if (_disposed || !packs.contains(p)) return true;
+      if (isDisposed || !packs.contains(p)) return true;
       if (p.state != PackState.downloading && p.state != PackState.updating) {
         return true;
       }
@@ -1062,7 +1061,7 @@ class MapsController extends ChangeNotifier {
       catalog = await loader.load();
     } finally {
       catalogLoading = false;
-      if (!_disposed) notifyListeners();
+      notifyListeners();
     }
   }
 
@@ -1146,12 +1145,14 @@ class MapsController extends ChangeNotifier {
       part: part,
       etag: a.etag,
       shouldStop: () =>
-          _disposed || !archives.contains(a) || a.state != ArchiveState.downloading,
+          isDisposed ||
+              !archives.contains(a) ||
+              a.state != ArchiveState.downloading,
       // Room for THIS file: the budget less everything else pinned.
       allowedBytes: () => budgetBytes - (pinnedBytes - (_archiveSize[a.id] ?? own)),
       onProgress: (int bytes, int? total) {
         _archiveSize[a.id] = bytes;
-        if (_now - lastNotify > 500 && !_disposed) {
+        if (_now - lastNotify > 500 && !isDisposed) {
           lastNotify = _now;
           notifyListeners();
         }
@@ -1159,7 +1160,7 @@ class MapsController extends ChangeNotifier {
     );
     _archiveSize[a.id] = r.bytes;
     a.etag = r.etag ?? a.etag;
-    if (_disposed || !archives.contains(a)) return true;
+    if (isDisposed || !archives.contains(a)) return true;
     switch (r.end) {
       case DownloadEnd.stopped:
         _changed();
