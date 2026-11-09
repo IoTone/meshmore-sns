@@ -1633,6 +1633,15 @@
   "radioHealthNotReported": "未報告",
   "radioHealthUptime": "稼働 {uptime}",
   "radioHealthSource": "無線の値です",
+
+  "radioHealthAckTrip": "最後の確認応答: 往復 {ms} ms（無線機の計測値）",
+  "@radioHealthAckTrip": {
+    "placeholders": {
+      "ms": {
+        "type": "int"
+      }
+    }
+  },
   "deviceLoadFromDevice": "デバイスから読込",
   "deviceApplyRadio": "ラジオパラメータを適用",
   "deviceConnectFirst": "まずラジオに接続してください (診断 & 接続)。",

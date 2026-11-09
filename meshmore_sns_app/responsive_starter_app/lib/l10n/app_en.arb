@@ -1842,6 +1842,14 @@
     }
   },
   "radioHealthSource": "From the radio",
+  "radioHealthAckTrip": "last acknowledgement: {ms} ms round trip (the radio's own measure)",
+  "@radioHealthAckTrip": {
+    "placeholders": {
+      "ms": {
+        "type": "int"
+      }
+    }
+  },
   "deviceLoadFromDevice": "Load from device",
   "deviceApplyRadio": "Apply radio params",
   "deviceConnectFirst": "Connect a radio first (Diagnostics & connect).",

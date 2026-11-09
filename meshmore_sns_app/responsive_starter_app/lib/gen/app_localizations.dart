@@ -4844,6 +4844,12 @@ abstract class AppLocalizations {
   /// **'From the radio'**
   String get radioHealthSource;
 
+  /// No description provided for @radioHealthAckTrip.
+  ///
+  /// In en, this message translates to:
+  /// **'last acknowledgement: {ms} ms round trip (the radio\'s own measure)'**
+  String radioHealthAckTrip(int ms);
+
   /// No description provided for @deviceLoadFromDevice.
   ///
   /// In en, this message translates to:

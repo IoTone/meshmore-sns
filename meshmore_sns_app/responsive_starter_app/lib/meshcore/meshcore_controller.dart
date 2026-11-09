@@ -2223,6 +2223,18 @@ class MeshcoreController extends ChangeNotifier {
   /// failed. A late ACK anywhere in this window still resolves to delivered.
   static const Duration _lateAckGrace = Duration(seconds: 30);
 
+  /// The radio's own send-to-ACK time for the newest confirmed message, in
+  /// milliseconds, or null until one has arrived.
+  ///
+  /// `PUSH_CODE_SEND_CONFIRMED` carries it, and it is the one round-trip
+  /// number this app cannot compute for itself: the phone's clock stops at
+  /// the radio's door. A firmware that omits the field leaves this null
+  /// rather than showing a zero.
+  int? _lastAckTripMs;
+
+  /// See [_lastAckTripMs].
+  int? get lastAckTripMs => _lastAckTripMs;
+
   /// How long to wait for the device's send confirmation before
   /// giving up on an outgoing message.
   static const Duration _confirmWatchdog = Duration(seconds: 15);
@@ -2444,6 +2456,9 @@ class MeshcoreController extends ChangeNotifier {
       _deliveryRevision++;
       _persistChat();
     } else if (f is AckFrame) {
+      if (f.roundTripMs != null && f.roundTripMs! > 0) {
+        _lastAckTripMs = f.roundTripMs;
+      }
       // Match the ack tag to the most recent still-sent message. Tags
       // are 32-bit; collisions are unlikely within a handful of
       // in-flight messages, and matching newest-first is the safe
@@ -3594,7 +3609,9 @@ class MeshcoreController extends ChangeNotifier {
     _battHistoryDirty = true;
     _battHistorySaveTimer ??=
         Timer(const Duration(seconds: 10), _flushBatteryHistory);
-    notifyListeners();
+    // No notify here: this runs inside the frame pipeline, and that pipeline
+    // notifies once per frame (coalesced during a burst). A second notify
+    // from in here rebuilt every watcher twice for one battery push.
   }
 
   Future<void> _flushBatteryHistory() async {
@@ -5999,7 +6016,67 @@ class MeshcoreController extends ChangeNotifier {
           AppErrors.record(error, stack, where: 'frame'),
     );
     if (lost > 0) _framesDropped++;
-    notifyListeners();
+    _notifyForFrame(f);
+  }
+
+  /// Notify at the leading edge of a burst, then at most once per window.
+  ///
+  /// Every inbound frame calls this and 43 widgets watch the whole controller,
+  /// so a contact sync of 350 nodes rebuilt all of them 350 times in a few
+  /// seconds, which is the jank a user reads as "the app is busy".
+  ///
+  /// Two things travel on this notification and cannot be allowed to wait:
+  /// a listener that *reacts* to a frame (the SOS watchdog classifies a
+  /// refusal from the message row, the CLI path resolves from the ledger) and
+  /// any frame the user just caused. Those notify synchronously — see
+  /// [notifyNow]. Only the bulk streams, which arrive as a flood and whose
+  /// readers are all `watch`ing widgets, are coalesced.
+  ///
+  /// The timer exists only while a burst is being coalesced, which matters
+  /// twice: an isolated frame must never leave a timer armed (a pending timer
+  /// fails a widget test and wakes a phone), and the trailing notify is what
+  /// guarantees the last frame's state is ever rendered.
+  static const Duration _frameNotifyWindow = Duration(milliseconds: 50);
+  Timer? _frameNotifyTimer;
+  DateTime? _lastFrameNotifyAt;
+
+  /// Frames whose delivery changes something a listener acts on, rather than
+  /// something a widget draws. A command answer, a send confirmation and the
+  /// self-info handshake all belong here: they are the ones a caller is
+  /// awaiting, and delaying them by a notification window would make the app
+  /// look slower than it is.
+  bool _answersSomebodyNow(MeshcoreInbound f) =>
+      f is OkFrame ||
+      f is ErrorFrame ||
+      f is MsgSentFrame ||
+      f is AckFrame ||
+      f is SelfInfoFrame ||
+      f is DisabledFrame;
+
+  void _notifyForFrame(MeshcoreInbound f) {
+    if (_answersSomebodyNow(f)) {
+      _frameNotifyTimer?.cancel();
+      _frameNotifyTimer = null;
+      _lastFrameNotifyAt = DateTime.now();
+      notifyListeners();
+      return;
+    }
+    final DateTime now = DateTime.now();
+    final DateTime? last = _lastFrameNotifyAt;
+    if (last == null || now.difference(last) >= _frameNotifyWindow) {
+      _frameNotifyTimer?.cancel();
+      _frameNotifyTimer = null;
+      _lastFrameNotifyAt = now;
+      notifyListeners();
+      return;
+    }
+    // Inside the window: this frame shares the burst's trailing notify.
+    if (_frameNotifyTimer != null) return;
+    _frameNotifyTimer = Timer(_frameNotifyWindow - now.difference(last), () {
+      _frameNotifyTimer = null;
+      _lastFrameNotifyAt = DateTime.now();
+      notifyListeners();
+    });
   }
 
   /// True once [dispose] has run. Late notifications are dropped rather
@@ -6047,6 +6124,8 @@ class MeshcoreController extends ChangeNotifier {
     _channelProbeIdleTimer = null;
     _contactIdleTimer?.cancel();
     _contactIdleTimer = null;
+    _frameNotifyTimer?.cancel();
+    _frameNotifyTimer = null;
     for (final Timer t in _deliveryTimers.values) {
       t.cancel();
     }

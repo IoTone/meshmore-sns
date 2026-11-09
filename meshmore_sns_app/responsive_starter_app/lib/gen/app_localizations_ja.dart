@@ -2728,6 +2728,11 @@ class AppLocalizationsJa extends AppLocalizations {
   String get radioHealthSource => '無線の値です';
 
   @override
+  String radioHealthAckTrip(int ms) {
+    return '最後の確認応答: 往復 $ms ms（無線機の計測値）';
+  }
+
+  @override
   String get deviceLoadFromDevice => 'デバイスから読込';
 
   @override

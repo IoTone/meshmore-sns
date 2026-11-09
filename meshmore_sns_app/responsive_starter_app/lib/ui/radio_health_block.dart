@@ -51,6 +51,7 @@ class _RadioHealthBlockState extends State<RadioHealthBlock> {
     final AppLocalizations l = AppLocalizations.of(context);
     final MmSkin skin = context.skin;
     final RadioStatsTool tool = context.watch<ToolsController>().stats;
+    final MeshcoreController mc = context.watch<MeshcoreController>();
     final CoreStats? core = tool.core;
     final RadioStats? radio = tool.radio;
     final bool any = core != null || radio != null;
@@ -91,11 +92,16 @@ class _RadioHealthBlockState extends State<RadioHealthBlock> {
           line(l.radioHealthLast('${radio.lastRssi}', '${radio.lastSnrDb}')),
         ],
         if (core != null)
-          line(l.radioHealthBattery(
-              core.batteryMilliVolts == 0
-                  ? l.radioHealthNotReported
-                  : (core.batteryMilliVolts / 1000).toStringAsFixed(2))),
+          line(l.radioHealthBattery(core.batteryMilliVolts == 0
+              ? l.radioHealthNotReported
+              : (core.batteryMilliVolts / 1000).toStringAsFixed(2))),
         if (core != null) line(l.radioHealthUptime(_uptime(core.uptimeSecs))),
+        // The one number here the app could not compute: the radio times its
+        // own send-to-ACK and reports it on the confirmation push. Absent until
+        // a direct message has been acknowledged, because a firmware that omits
+        // the field must not read as a zero-millisecond round trip.
+        if (mc.lastAckTripMs != null)
+          line(l.radioHealthAckTrip(mc.lastAckTripMs!)),
         if (tool.fetchedAt != null) line(l.radioHealthSource),
       ],
     );

@@ -2850,6 +2850,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get radioHealthSource => 'From the radio';
 
   @override
+  String radioHealthAckTrip(int ms) {
+    return 'last acknowledgement: $ms ms round trip (the radio\'s own measure)';
+  }
+
+  @override
   String get deviceLoadFromDevice => 'Load from device';
 
   @override
