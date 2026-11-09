@@ -28,6 +28,7 @@ import '../theme/theme_controller.dart';
 import '../util/geo.dart' as geo;
 import '../ui/mm_components.dart';
 import '../ui/mm_shape.dart';
+import '../util/relative_time.dart';
 
 /// R18 polish — modal bottom sheet shown when the user taps a node
 /// on the /grid view. Shows summary stats (signal, last heard,
@@ -296,16 +297,8 @@ class _NodeDetailSheetState extends State<NodeDetailSheet> {
     if (mc.isSuperseded(n.pubKeyHex)) Navigator.of(context).maybePop();
   }
 
-  String _ago(int unixSec, AppLocalizations l) {
-    final int delta =
-        DateTime.now().millisecondsSinceEpoch ~/ 1000 - unixSec;
-    if (delta < 60) return l.nodeDetailAgoSeconds(delta);
-    if (delta < 3600) return l.nodeDetailAgoMinutes((delta / 60).floor());
-    if (delta < 86400) {
-      return l.nodeDetailAgoHours((delta / 3600).floor());
-    }
-    return l.nodeDetailAgoDays((delta / 86400).floor());
-  }
+  String _ago(int unixSec, AppLocalizations l) =>
+      nodeAgo(l, ageSinceUnix(unixSec));
 
   @override
   Widget build(BuildContext context) {

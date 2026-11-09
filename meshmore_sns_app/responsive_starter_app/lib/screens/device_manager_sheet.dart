@@ -15,6 +15,7 @@ import 'device_contacts_screen.dart';
 import '../ui/mm_shape.dart';
 import '../theme/mm_skin.dart';
 import 'package:meshcore/meshcore.dart';
+import '../util/relative_time.dart';
 
 /// R41 — Device management sheet. Single place to:
 ///   - see what we're currently paired to and the live connection state,
@@ -138,12 +139,7 @@ class _DeviceManagerSheetState extends State<DeviceManagerSheet> {
   /// ago-formatter idiom.
   String _relativeAgo(int unix, AppLocalizations l) {
     if (unix <= 0) return l.deviceMgrAgoNever;
-    final int s =
-        DateTime.now().millisecondsSinceEpoch ~/ 1000 - unix;
-    if (s < 90) return l.deviceMgrAgoNow;
-    if (s < 3600) return l.deviceMgrAgoMinutes(s ~/ 60);
-    if (s < 86400) return l.deviceMgrAgoHours(s ~/ 3600);
-    return l.deviceMgrAgoDays(s ~/ 86400);
+    return deviceAgo(l, ageSinceUnix(unix));
   }
 
   String _stateLabel(MeshcoreController mc, AppLocalizations l) {

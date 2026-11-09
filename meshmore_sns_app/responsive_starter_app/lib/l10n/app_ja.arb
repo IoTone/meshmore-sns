@@ -2696,5 +2696,98 @@
     }
   },
   "deviceRadio2Never": "第2プロファイル: 今回は受信なし",
-  "deviceRadio2Note": "第2プロファイルは無線機の送信時間の96〜99%を使います（100パケットで計測）。そのため切り替えは無線機側の設定で行い、このアプリでは変更しません。両方のプロファイルのフレームは受信しますが、第2プロファイル自体のパラメータは表示しません。"
+  "deviceRadio2Note": "第2プロファイルは無線機の送信時間の96〜99%を使います（100パケットで計測）。そのため切り替えは無線機側の設定で行い、このアプリでは変更しません。両方のプロファイルのフレームは受信しますが、第2プロファイル自体のパラメータは表示しません。",
+  "deviceReadoutQuerying": "無線機に問い合わせ中…",
+  "deviceReadoutFirmware": "ファームウェア: {value}",
+  "@deviceReadoutFirmware": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "deviceReadoutBuild": "ビルド: {value}",
+  "@deviceReadoutBuild": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "deviceReadoutManufacturer": "製造元: {value}",
+  "@deviceReadoutManufacturer": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "deviceReadoutContacts": "最大コンタクト数: {maxContacts} · チャンネル: {channels}",
+  "@deviceReadoutContacts": {
+    "placeholders": {
+      "maxContacts": {
+        "type": "int"
+      },
+      "channels": {
+        "type": "int"
+      }
+    }
+  },
+  "deviceReadoutBlePin": "BLE PIN: {value}",
+  "@deviceReadoutBlePin": {
+    "placeholders": {
+      "value": {
+        "type": "int"
+      }
+    }
+  },
+  "deviceReadoutPathHash": "パスハッシュ: {bytes} バイト",
+  "@deviceReadoutPathHash": {
+    "placeholders": {
+      "bytes": {
+        "type": "int"
+      }
+    }
+  },
+  "deviceReadoutBattery": "バッテリー: {value}",
+  "@deviceReadoutBattery": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "deviceBatteryValue": "{volts}V（約{percent}%）",
+  "@deviceBatteryValue": {
+    "placeholders": {
+      "volts": {
+        "type": "String"
+      },
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "deviceAirtimeLimit": "送信時間上限: {share}%（af {af}）",
+  "@deviceAirtimeLimit": {
+    "placeholders": {
+      "share": {
+        "type": "int"
+      },
+      "af": {
+        "type": "String"
+      }
+    }
+  },
+  "deviceAirtimeLimitUnknown": "送信時間上限: —",
+  "deviceRepeatRanges": "中継: {ranges} MHz",
+  "@deviceRepeatRanges": {
+    "placeholders": {
+      "ranges": {
+        "type": "String"
+      }
+    }
+  },
+  "deviceRepeatNone": "中継: 報告なし",
+  "deviceRepeatUnknown": "中継: —"
 }

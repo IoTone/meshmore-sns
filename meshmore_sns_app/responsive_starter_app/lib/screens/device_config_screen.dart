@@ -22,6 +22,7 @@ import '../perms/location_service.dart';
 import '../perms/permissions_service.dart';
 import '../ui/mm_components.dart';
 import '../ui/mm_shape.dart';
+import '../util/relative_time.dart';
 import 'device_contacts_screen.dart';
 
 /// The advert-location policy integers → a UI label.
@@ -962,23 +963,24 @@ class _DeviceConfigScreenState extends State<DeviceConfigScreen> {
                   final DeviceInfo? d = mc.deviceInfo;
                   final String batt = mc.batteryMillivolts == null
                       ? '—'
-                      : '${mc.batteryVolts!.toStringAsFixed(2)}V '
-                          '(~${mc.batteryPercent}%)'
-                          '${mc.charging == true ? ' ⚡' : ''}';
+                      : l.deviceBatteryValue(
+                              mc.batteryVolts!.toStringAsFixed(2),
+                              mc.batteryPercent!) +
+                          (mc.charging == true ? ' ⚡' : '');
                   return Text(
                     d == null
-                        ? 'querying device…\nbattery: $batt'
-                        : 'firmware: ${d.firmwareVersion}\n'
-                            'build: ${d.firmwareBuildDate}\n'
-                            'mfr: ${d.manufacturer}\n'
-                            'max contacts: ${d.maxContacts} · '
-                            'channels: ${d.maxGroupChannels}\n'
-                            'BLE pin: ${d.blePin}\n'
-                            'path hash: ${d.pathHashMode + 1} byte(s)\n'
-                            '${_repeatRanges(mc)}'
-                            '${_airtimeLimit(mc)}'
+                        ? '${l.deviceReadoutQuerying}\n'
+                            '${l.deviceReadoutBattery(batt)}'
+                        : '${l.deviceReadoutFirmware(d.firmwareVersion)}\n'
+                            '${l.deviceReadoutBuild(d.firmwareBuildDate)}\n'
+                            '${l.deviceReadoutManufacturer(d.manufacturer)}\n'
+                            '${l.deviceReadoutContacts(d.maxContacts, d.maxGroupChannels)}\n'
+                            '${l.deviceReadoutBlePin(d.blePin)}\n'
+                            '${l.deviceReadoutPathHash(d.pathHashMode + 1)}\n'
+                            '${_repeatRanges(mc, l)}'
+                            '${_airtimeLimit(mc, l)}'
                             '${_secondProfile(mc, l)}'
-                            'battery: $batt',
+                            '${l.deviceReadoutBattery(batt)}',
                     style: TextStyle(
                         color: cs.onSurface,
                         fontFamily: context.skin.type.monoFamily,
@@ -1042,21 +1044,7 @@ class _DeviceConfigScreenState extends State<DeviceConfigScreen> {
 String _secondProfile(MeshcoreController mc, AppLocalizations l) {
   final DateTime? at = mc.radio2LastSeen;
   if (at == null) return '${l.deviceRadio2Never}\n';
-  return '${l.deviceRadio2Seen(_agoAt(at, l))}\n';
-}
-
-/// A relative time for the profile line, with the units in the ARB.
-///
-/// The same ladder `device_manager_sheet.dart` uses, and the same two strings,
-/// so a Japanese build reads "5 分前" instead of a localized template wrapped
-/// around an English "5 min". This is the app's one relative-time formatter
-/// worth sharing; two call sites is not yet a helper file.
-String _agoAt(DateTime at, AppLocalizations l) {
-  final int s = DateTime.now().difference(at).inSeconds;
-  if (s < 90) return l.deviceMgrAgoNow;
-  if (s < 3600) return l.deviceMgrAgoMinutes(s ~/ 60);
-  if (s < 86400) return l.deviceMgrAgoHours(s ~/ 3600);
-  return l.deviceMgrAgoDays(s ~/ 86400);
+  return '${l.deviceRadio2Seen(deviceAgo(l, DateTime.now().difference(at)))}\n';
 }
 
 /// The radio's own duty-cycle limit, as one readout line.
@@ -1065,12 +1053,11 @@ String _agoAt(DateTime at, AppLocalizations l) {
 /// time. The app's meter sets its own budget, so this is the figure the app's
 /// number should be read against; `—` until the radio answers, because a
 /// guessed limit is worse than none.
-String _airtimeLimit(MeshcoreController mc) {
+String _airtimeLimit(MeshcoreController mc, AppLocalizations l) {
   final TuningParams? t = mc.tuningParams;
-  if (t == null) return 'airtime limit: —\n';
+  if (t == null) return '${l.deviceAirtimeLimitUnknown}\n';
   final double share = 1 / (1 + t.airtimeFactor);
-  return 'airtime limit: ${(share * 100).toStringAsFixed(0)}% '
-      '(af ${t.airtimeFactor.toStringAsFixed(2)})\n';
+  return '${l.deviceAirtimeLimit((share * 100).round(), t.airtimeFactor.toStringAsFixed(2))}\n';
 }
 
 /// The bands the radio will relay in, as one readout line.
@@ -1079,12 +1066,16 @@ String _airtimeLimit(MeshcoreController mc) {
 /// and an empty list means it reported none. A radio that hears a channel and
 /// will not repeat it looks exactly like a range problem, so the rule is worth
 /// one line where the rest of the radio's own limits are.
-String _repeatRanges(MeshcoreController mc) {
+String _repeatRanges(MeshcoreController mc, AppLocalizations l) {
   final List<({int lowerKhz, int upperKhz})>? r = mc.allowedRepeatFreq;
-  if (r == null) return 'repeat: —\n';
-  if (r.isEmpty) return 'repeat: none reported\n';
+  if (r == null) return '${l.deviceRepeatUnknown}\n';
+  if (r.isEmpty) return '${l.deviceRepeatNone}\n';
   String mhz(int khz) => (khz / 1000).toStringAsFixed(khz % 1000 == 0 ? 0 : 3);
-  return 'repeat: ${<String>[for (final ({int lowerKhz, int upperKhz}) x in r) '${mhz(x.lowerKhz)}–${mhz(x.upperKhz)}'].join(', ')} MHz\n';
+  final String ranges = <String>[
+    for (final ({int lowerKhz, int upperKhz}) x in r)
+      '${mhz(x.lowerKhz)}–${mhz(x.upperKhz)}',
+  ].join(', ');
+  return '${l.deviceRepeatRanges(ranges)}\n';
 }
 
 /// The radio's contact-table policy, as switches that write the whole byte.

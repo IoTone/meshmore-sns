@@ -4206,5 +4206,98 @@
     }
   },
   "deviceRadio2Never": "second profile: nothing heard this session",
-  "deviceRadio2Note": "A second profile takes 96-99 % of the radio's transmit time (measured over 100 packets), which is why switching it is set on the radio and not here. Frames from both profiles are read; the second profile's own parameters are not shown."
+  "deviceRadio2Note": "A second profile takes 96-99 % of the radio's transmit time (measured over 100 packets), which is why switching it is set on the radio and not here. Frames from both profiles are read; the second profile's own parameters are not shown.",
+  "deviceReadoutQuerying": "querying device…",
+  "deviceReadoutFirmware": "firmware: {value}",
+  "@deviceReadoutFirmware": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "deviceReadoutBuild": "build: {value}",
+  "@deviceReadoutBuild": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "deviceReadoutManufacturer": "mfr: {value}",
+  "@deviceReadoutManufacturer": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "deviceReadoutContacts": "max contacts: {maxContacts} · channels: {channels}",
+  "@deviceReadoutContacts": {
+    "placeholders": {
+      "maxContacts": {
+        "type": "int"
+      },
+      "channels": {
+        "type": "int"
+      }
+    }
+  },
+  "deviceReadoutBlePin": "BLE pin: {value}",
+  "@deviceReadoutBlePin": {
+    "placeholders": {
+      "value": {
+        "type": "int"
+      }
+    }
+  },
+  "deviceReadoutPathHash": "path hash: {bytes} byte(s)",
+  "@deviceReadoutPathHash": {
+    "placeholders": {
+      "bytes": {
+        "type": "int"
+      }
+    }
+  },
+  "deviceReadoutBattery": "battery: {value}",
+  "@deviceReadoutBattery": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "deviceBatteryValue": "{volts}V (~{percent}%)",
+  "@deviceBatteryValue": {
+    "placeholders": {
+      "volts": {
+        "type": "String"
+      },
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "deviceAirtimeLimit": "airtime limit: {share}% (af {af})",
+  "@deviceAirtimeLimit": {
+    "placeholders": {
+      "share": {
+        "type": "int"
+      },
+      "af": {
+        "type": "String"
+      }
+    }
+  },
+  "deviceAirtimeLimitUnknown": "airtime limit: —",
+  "deviceRepeatRanges": "repeat: {ranges} MHz",
+  "@deviceRepeatRanges": {
+    "placeholders": {
+      "ranges": {
+        "type": "String"
+      }
+    }
+  },
+  "deviceRepeatNone": "repeat: none reported",
+  "deviceRepeatUnknown": "repeat: —"
 }

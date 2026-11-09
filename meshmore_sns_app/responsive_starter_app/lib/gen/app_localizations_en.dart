@@ -6235,4 +6235,66 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get deviceRadio2Note =>
       'A second profile takes 96-99 % of the radio\'s transmit time (measured over 100 packets), which is why switching it is set on the radio and not here. Frames from both profiles are read; the second profile\'s own parameters are not shown.';
+
+  @override
+  String get deviceReadoutQuerying => 'querying device…';
+
+  @override
+  String deviceReadoutFirmware(String value) {
+    return 'firmware: $value';
+  }
+
+  @override
+  String deviceReadoutBuild(String value) {
+    return 'build: $value';
+  }
+
+  @override
+  String deviceReadoutManufacturer(String value) {
+    return 'mfr: $value';
+  }
+
+  @override
+  String deviceReadoutContacts(int maxContacts, int channels) {
+    return 'max contacts: $maxContacts · channels: $channels';
+  }
+
+  @override
+  String deviceReadoutBlePin(int value) {
+    return 'BLE pin: $value';
+  }
+
+  @override
+  String deviceReadoutPathHash(int bytes) {
+    return 'path hash: $bytes byte(s)';
+  }
+
+  @override
+  String deviceReadoutBattery(String value) {
+    return 'battery: $value';
+  }
+
+  @override
+  String deviceBatteryValue(String volts, int percent) {
+    return '${volts}V (~$percent%)';
+  }
+
+  @override
+  String deviceAirtimeLimit(int share, String af) {
+    return 'airtime limit: $share% (af $af)';
+  }
+
+  @override
+  String get deviceAirtimeLimitUnknown => 'airtime limit: —';
+
+  @override
+  String deviceRepeatRanges(String ranges) {
+    return 'repeat: $ranges MHz';
+  }
+
+  @override
+  String get deviceRepeatNone => 'repeat: none reported';
+
+  @override
+  String get deviceRepeatUnknown => 'repeat: —';
 }

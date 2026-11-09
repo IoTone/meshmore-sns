@@ -17,6 +17,7 @@ import 'node_detail_sheet.dart';
 import '../theme/viz_palette.dart';
 import '../theme/mm_skin.dart';
 import '../ui/mm_shape.dart';
+import '../util/relative_time.dart';
 
 /// Mesh weather — a glanceable view of the environment telemetry
 /// reported across the fabric: a summary band (how many nodes are
@@ -405,12 +406,6 @@ class _ReadingTile extends StatelessWidget {
     );
   }
 
-  static String _ago(DateTime at, AppLocalizations l) {
-    final int s = DateTime.now().difference(at).inSeconds;
-    if (s < 60) return l.weatherAgoSeconds(s);
-    if (s < 3600) return l.weatherAgoMinutes(s ~/ 60);
-    return l.weatherAgoHours(s ~/ 3600);
-  }
 }
 
 /// Localized one-word label for a weather condition.
@@ -511,13 +506,9 @@ class _MicroclimateStrip extends StatelessWidget {
   }
 }
 
-/// "3 min ago", "2 h ago" — the same shape the reading tiles use.
-String _ago(DateTime at, AppLocalizations l) {
-  final int s = DateTime.now().difference(at).inSeconds;
-  if (s < 60) return l.weatherAgoSeconds(s);
-  if (s < 3600) return l.weatherAgoMinutes(s ~/ 60);
-  return l.weatherAgoHours(s ~/ 3600);
-}
+/// "3 min ago", "2 h ago" — the reading tiles' side of the app's one ladder.
+String _ago(DateTime at, AppLocalizations l) =>
+    weatherAgo(l, DateTime.now().difference(at));
 
 /// One window's ambient rollup (e.g. "1H" or "24H"): a window pill, the
 /// dominant glyph + condition + temp, and a mention count — or a muted "—"

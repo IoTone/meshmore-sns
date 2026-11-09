@@ -10449,6 +10449,90 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'A second profile takes 96-99 % of the radio\'s transmit time (measured over 100 packets), which is why switching it is set on the radio and not here. Frames from both profiles are read; the second profile\'s own parameters are not shown.'**
   String get deviceRadio2Note;
+
+  /// No description provided for @deviceReadoutQuerying.
+  ///
+  /// In en, this message translates to:
+  /// **'querying device…'**
+  String get deviceReadoutQuerying;
+
+  /// No description provided for @deviceReadoutFirmware.
+  ///
+  /// In en, this message translates to:
+  /// **'firmware: {value}'**
+  String deviceReadoutFirmware(String value);
+
+  /// No description provided for @deviceReadoutBuild.
+  ///
+  /// In en, this message translates to:
+  /// **'build: {value}'**
+  String deviceReadoutBuild(String value);
+
+  /// No description provided for @deviceReadoutManufacturer.
+  ///
+  /// In en, this message translates to:
+  /// **'mfr: {value}'**
+  String deviceReadoutManufacturer(String value);
+
+  /// No description provided for @deviceReadoutContacts.
+  ///
+  /// In en, this message translates to:
+  /// **'max contacts: {maxContacts} · channels: {channels}'**
+  String deviceReadoutContacts(int maxContacts, int channels);
+
+  /// No description provided for @deviceReadoutBlePin.
+  ///
+  /// In en, this message translates to:
+  /// **'BLE pin: {value}'**
+  String deviceReadoutBlePin(int value);
+
+  /// No description provided for @deviceReadoutPathHash.
+  ///
+  /// In en, this message translates to:
+  /// **'path hash: {bytes} byte(s)'**
+  String deviceReadoutPathHash(int bytes);
+
+  /// No description provided for @deviceReadoutBattery.
+  ///
+  /// In en, this message translates to:
+  /// **'battery: {value}'**
+  String deviceReadoutBattery(String value);
+
+  /// No description provided for @deviceBatteryValue.
+  ///
+  /// In en, this message translates to:
+  /// **'{volts}V (~{percent}%)'**
+  String deviceBatteryValue(String volts, int percent);
+
+  /// No description provided for @deviceAirtimeLimit.
+  ///
+  /// In en, this message translates to:
+  /// **'airtime limit: {share}% (af {af})'**
+  String deviceAirtimeLimit(int share, String af);
+
+  /// No description provided for @deviceAirtimeLimitUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'airtime limit: —'**
+  String get deviceAirtimeLimitUnknown;
+
+  /// No description provided for @deviceRepeatRanges.
+  ///
+  /// In en, this message translates to:
+  /// **'repeat: {ranges} MHz'**
+  String deviceRepeatRanges(String ranges);
+
+  /// No description provided for @deviceRepeatNone.
+  ///
+  /// In en, this message translates to:
+  /// **'repeat: none reported'**
+  String get deviceRepeatNone;
+
+  /// No description provided for @deviceRepeatUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'repeat: —'**
+  String get deviceRepeatUnknown;
 }
 
 class _AppLocalizationsDelegate

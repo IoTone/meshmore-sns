@@ -10,6 +10,7 @@ import '../theme/mm_skin.dart';
 import '../ui/mm_components.dart';
 import '../ui/mm_scaffold.dart';
 import '../util/geo.dart' as geo;
+import '../util/relative_time.dart';
 import 'node_detail_sheet.dart';
 import '../ui/mm_shape.dart';
 import 'package:meshcore/meshcore.dart';
@@ -50,14 +51,12 @@ class _NodesScreenState extends State<NodesScreen> {
     super.dispose();
   }
 
+  /// The compact age the row carries. The boundaries are
+  /// `util/relative_time.dart`'s; the em dash is this screen's own "never
+  /// heard", which is not an age.
   String _ago(int unix) {
     if (unix <= 0) return '—';
-    final int s = DateTime.now().millisecondsSinceEpoch ~/ 1000 - unix;
-    if (s < 0) return 'now';
-    if (s < 60) return '${s}s';
-    if (s < 3600) return '${s ~/ 60}m';
-    if (s < 86400) return '${s ~/ 3600}h';
-    return '${s ~/ 86400}d';
+    return compactAgo(ageSinceUnix(unix));
   }
 
   bool _passesFilters(

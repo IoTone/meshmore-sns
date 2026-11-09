@@ -5977,4 +5977,66 @@ class AppLocalizationsJa extends AppLocalizations {
   @override
   String get deviceRadio2Note =>
       '第2プロファイルは無線機の送信時間の96〜99%を使います（100パケットで計測）。そのため切り替えは無線機側の設定で行い、このアプリでは変更しません。両方のプロファイルのフレームは受信しますが、第2プロファイル自体のパラメータは表示しません。';
+
+  @override
+  String get deviceReadoutQuerying => '無線機に問い合わせ中…';
+
+  @override
+  String deviceReadoutFirmware(String value) {
+    return 'ファームウェア: $value';
+  }
+
+  @override
+  String deviceReadoutBuild(String value) {
+    return 'ビルド: $value';
+  }
+
+  @override
+  String deviceReadoutManufacturer(String value) {
+    return '製造元: $value';
+  }
+
+  @override
+  String deviceReadoutContacts(int maxContacts, int channels) {
+    return '最大コンタクト数: $maxContacts · チャンネル: $channels';
+  }
+
+  @override
+  String deviceReadoutBlePin(int value) {
+    return 'BLE PIN: $value';
+  }
+
+  @override
+  String deviceReadoutPathHash(int bytes) {
+    return 'パスハッシュ: $bytes バイト';
+  }
+
+  @override
+  String deviceReadoutBattery(String value) {
+    return 'バッテリー: $value';
+  }
+
+  @override
+  String deviceBatteryValue(String volts, int percent) {
+    return '${volts}V（約$percent%）';
+  }
+
+  @override
+  String deviceAirtimeLimit(int share, String af) {
+    return '送信時間上限: $share%（af $af）';
+  }
+
+  @override
+  String get deviceAirtimeLimitUnknown => '送信時間上限: —';
+
+  @override
+  String deviceRepeatRanges(String ranges) {
+    return '中継: $ranges MHz';
+  }
+
+  @override
+  String get deviceRepeatNone => '中継: 報告なし';
+
+  @override
+  String get deviceRepeatUnknown => '中継: —';
 }

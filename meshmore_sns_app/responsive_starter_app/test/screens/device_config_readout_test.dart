@@ -119,4 +119,37 @@ void main() {
     expect(find.byKey(const Key('device-radio2-note')), findsOneWidget);
     mc.dispose();
   });
+
+  testWidgets(
+      'the whole readout block is translated, not just the profile '
+      'line', (WidgetTester t) async {
+    // The block used to be one interpolated string, so a Japanese build read
+    // "firmware:", "max contacts:" and "battery:" in English. Every label is an
+    // ARB key now; this case fails if any one of them is hardcoded again.
+    final (FakeMeshcoreTransport fake, MeshcoreController mc) =
+        await pumpScreen(t, locale: const Locale('ja'));
+    fake.emit(deviceInfoFrame());
+    await t.pumpAndSettle();
+
+    for (final String label in <String>[
+      'firmware:',
+      'build:',
+      'mfr:',
+      'max contacts:',
+      'channels:',
+      'BLE pin:',
+      'path hash:',
+      'battery:',
+      'airtime limit:',
+      'repeat:',
+    ]) {
+      expect(find.textContaining(label), findsNothing,
+          reason: '"$label" is an English label showing in a Japanese build');
+    }
+    // The values are still there, in Japanese.
+    expect(find.textContaining('ファームウェア:'), findsOneWidget);
+    expect(find.textContaining('最大コンタクト数:'), findsOneWidget);
+    expect(find.textContaining('パスハッシュ:'), findsOneWidget);
+    mc.dispose();
+  });
 }

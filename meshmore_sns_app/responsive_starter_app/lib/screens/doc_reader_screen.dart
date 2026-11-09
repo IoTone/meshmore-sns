@@ -10,6 +10,7 @@ import '../gen/app_localizations.dart';
 import '../ui/mm_scaffold.dart';
 import '../meshcore/meshcore_controller.dart';
 import '../theme/mm_skin.dart';
+import '../util/relative_time.dart';
 
 /// R53 — reads one [DocSection]. Shows the cached-or-bundled copy
 /// immediately (offline-first), then quietly refreshes from upstream;
@@ -168,12 +169,6 @@ class _ProvenanceStrip extends StatelessWidget {
     );
   }
 
-  static String _ago(DateTime? at, AppLocalizations l) {
-    if (at == null) return l.docsAgoJustNow;
-    final int s = DateTime.now().difference(at).inSeconds;
-    if (s < 60) return l.docsAgoJustNow;
-    if (s < 3600) return l.docsAgoMinutes(s ~/ 60);
-    if (s < 86400) return l.docsAgoHours(s ~/ 3600);
-    return l.docsAgoDays(s ~/ 86400);
-  }
+  static String _ago(DateTime? at, AppLocalizations l) =>
+      docsAgo(l, at == null ? null : DateTime.now().difference(at));
 }
