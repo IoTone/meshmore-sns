@@ -900,3 +900,87 @@ Two roles were doing two jobs, which is why the floors were missed:
 so a floor cannot be met by one skin family and missed by another again. It states the table, not just
 the numbers: which role is drawn as text, which as a fill, which as a boundary, and which has no floor
 at all because a divider is meant to be barely there.
+
+---
+
+## §15 Round 13 — 2026-11-09: the owner's rulings on type, media, voice and the alert engine
+
+Five questions were put to the owner because the app could not answer them, and each answer is recorded
+here with the evidence it rests on. Everything else in this round was decided from the app and the
+published practice, as he asked.
+
+**D11.8 The monospace face belongs to the theme, and the dark one is Fira Mono (owner, 2026-11-09).**
+His words: "make dark theme fira mono, others have other mono fonts (use the ones that LDMUX uses and
+others)". The mapping, taken from LDMUX's own `Fonts.android.kt` and applied to Meshmore's presets:
+
+| Meshmore preset | face | source |
+| --- | --- | --- |
+| `studio` | Fira Mono | the owner's request, and LDMUX `Dark` |
+| `forest` | Fira Mono | LDMUX `Forest` |
+| `air` | JetBrains Mono | LDMUX `Air` (already bundled) |
+| `daybreak` | Source Code Pro | LDMUX `Daybreak` |
+| `umber` | Geist Mono | LDMUX `Umber` |
+| `nerv` | Cascadia Code | LDMUX `Nerv` — the one preset that maps 1:1 |
+| `seele`, `agHud`, `hyperlocal`, `drPop`, `recon` | JetBrains Mono, unchanged | David's concepts, no LDMUX counterpart |
+
+LDMUX's own source contradicts itself on Forest: its `Faces` map uses Fira Mono and its `loadTypeface`
+uses IBM Plex Mono. The Compose path that actually draws text is `Faces`, so Fira wins, and the
+disagreement is noted rather than copied. All four new faces are SIL OFL 1.1 and are already vendored in
+the owner's LDMUX tree with licences recorded, so they come across with their notices rather than from a
+fresh download.
+
+**D11.9 AVIF stays, and the 16 KB fix is a rebuild of the bundled library (owner, 2026-11-09).** Asked
+whether AVIF is the right library at all, the answer from first principles is yes: at 320×240 and a 4 KB
+budget the app is choosing between image codecs at roughly 0.3 bits/pixel, and AV1-in-AVIF is the
+strongest open option there — WebP lossy and baseline JPEG both spend more bytes for the same picture at
+that size, and JPEG XL is better per byte but has no bundled Flutter decoder and no native-asset story
+that does not mean shipping a second codec. The measured curve in D11.4 stands: 784 bytes for a
+gradient photo at encoder effort 5, which is five datagrams. What is wrong is not the format but the
+artefact: `libavif_native.so` is the one shipped library failing the 16 KB check, and the owner chose the
+rebuild over waiting for the vendor or dropping media. The package ships its own `CMakeLists.txt` and
+`tool/native/build_unix.sh`, so this is a build with `-Wl,-z,max-page-size=16384` and an aligned RELRO
+rather than a rewrite, and `tool/check_16k.sh` becomes the gate that proves it.
+
+**D11.10 Recorded voice notes: the plan is pinned, and the work starts now (owner, 2026-11-09).** He
+said "start the codec work now", and asked that the integration be planned properly first so no time is
+spent twice. The plan below is taken from research rather than invented, and every number is one a
+source states:
+
+- **Vendor Codec 2 at tag `1.2.0`, commit `06d4c11`.** Upstream says every mode that matters here is
+  outside active maintenance, its only release is that tag, and its own `FetchContent` example pins
+  `origin/main`, which is not reproducible.
+- **Two modes, chosen by the airtime they cost.** Mode sizes come from `codec2_bits_per_frame` and
+  `codec2_samples_per_frame`: 700C is 28 bits per 40 ms frame (700 bit/s, 87.5 B/s), 1200 is 48 (150 B/s),
+  1300 is 52 (162.5 B/s), 1600 is 64 (200 B/s), 3200 is 64 per 20 ms (400 B/s). A 20-second note is
+  therefore ~1,750 B in 700C (≈12 datagrams at 150 B), ~3,000 B in 1200 (≈20), ~3,250 B in 1300 (≈22).
+  Ship **700C and 1300**: 700C is the only mode that fits a note in a dozen datagrams, and 1300 is the
+  only mode wired for soft-decision decoding with a BER-driven soft mute, which is the feature a lossy
+  mesh actually wants.
+- **Pack frames bit-contiguously.** `codec2_bytes_per_frame` is `(bits + 7) / 8`, so 700C's 28 bits ride in
+  4 bytes and 1300's 52 in 7 — four wasted bits either way, 12.5 % on the tightest mode. Upstream's own
+  encoder packs bitwise MSB-first; the app must too.
+- **Two shared libraries, not one.** A pristine `libcodec2.so` and our own thin `libcodec2bridge.so`.
+  LGPL 2.1 §6(b) leans on the library being a distinct, individually replaceable object, and fusing it
+  into one `.so` with our shim removes the strongest part of that argument.
+- **Dart FFI over a plain C boundary, not JNI.** The boundary is a handful of functions, FFI is a direct
+  call with no message queue and no platform-thread round trip, it works from a background isolate
+  without a `RootIsolateToken`, and encode/decode are ideal `isLeaf` calls (pure C, no callbacks). The
+  per-frame payload is 4–7 bytes in and 320 samples out, so the serialisation cost a channel avoids is
+  not the deciding factor — the isolate and thread properties are.
+- **minSdk stays 24.** Codec 2 needs API 23+ because Bionic below that lacks various `complex.h` maths
+  the float path uses, and the app's floor is already 24.
+- **16 KB on arrival, and the check that actually fails.** NDK r28+ aligns by default; the build passes
+  `-Wl,-z,max-page-size=16384 -Wl,-z,common-page-size=16384` regardless. The trap is RELRO: a
+  `PT_GNU_RELRO` whose `VirtAddr + MemSiz` is not a multiple of 16,384 is rejected even when every
+  `PT_LOAD` aligns, so the verification checks both.
+- **Capture through the `record` package at `pcm16bits`.** Codec 2 takes raw 16-bit mono PCM at 8 kHz, so
+  any container encoder would force a decode before the encode. `RECORD_AUDIO` is the one new manifest
+  permission, and the sample rate must be verified per device rather than assumed.
+- **The licence work is a notice, the licence text, a source offer and a relink path** — which the
+  two-library layout makes ordinary. `THIRD-PARTY-NOTICES.md` and `lib/licenses/asset_licenses.dart`
+  both gain the entry, and the build keeps the shim MIT and the codec untouched.
+
+**D11.11 The alert engine's whitelist is final (owner, 2026-11-09).** `set notify.<selector>` cannot be
+offered because that grammar has no source in the firmware tree this app is built against, so "buzz only
+for #emergency" is not expressible and the question stops being open. The typed whitelist is `get/set
+buzzer` and `get/set vibration`, both through `0x42`, with the twelve refused commands still refused.
