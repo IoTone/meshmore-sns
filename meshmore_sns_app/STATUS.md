@@ -4,10 +4,10 @@ _Snapshot as of 2026-11-08. App `1.0.197+13`, branch `feat/app-completion`.
 Change records below are newest first from R122; older entries are kept in
 the order they were written._
 
-**What is proven and what is not.** Measured on this tree, **2026-11-08**: `flutter test` **2180 passed** in 3 m 00 s;
+**What is proven and what is not.** Measured on this tree, **2026-11-08**: `flutter test` **2203 passed** in 3 m 00 s warm (3 m 56 s from a clean tree, which is also the CI job's first run);
 `flutter analyze` reports **no issues** (the two `unawaited_return_in_try_block` warnings in `lib/maps/maps_controller.dart`
 were fixed on 2026-11-05, so any warning now is a regression);
-the protocol package `dart test` **372 passed with 1 skipped**; the pure-Java port at the repository root, `cd libmeshcore && ./gradlew test --offline
+the protocol package `dart test` **382 passed with 1 skipped**; the pure-Java port at the repository root, `cd libmeshcore && ./gradlew test --offline
 --rerun-tasks`, **164 tests with 0 failures and 1 pre-existing skip**. This paragraph is the only place a count lives: every other
 document points here rather than restating a number that goes stale. Both release paths build: `flutter build appbundle --release` produced a 77.0 MB bundle and
 `flutter build apk --release --target-platform android-arm64` a 32.2 MB APK, each signed with a throwaway key that
