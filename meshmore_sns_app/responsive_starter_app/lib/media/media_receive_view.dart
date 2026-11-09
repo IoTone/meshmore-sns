@@ -166,7 +166,8 @@ class _MediaPhotoViewState extends State<MediaPhotoView> {
     final ui.Image? image = _image;
     if (_failed) {
       return Text(l.mediaDecodeFailed,
-          style: TextStyle(color: skin.color.alert, fontSize: skin.type.sizeSm));
+          style: TextStyle(
+              color: skin.color.alertInk, fontSize: skin.type.sizeSm));
     }
     if (image == null) {
       return SizedBox(

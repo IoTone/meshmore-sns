@@ -121,7 +121,8 @@ void main() {
     final MmTokens t = kMmPresets[MmThemePreset.seele]!;
     final ThemeData td = buildMmTheme(t);
     expect(td.scaffoldBackgroundColor, t.base);
-    expect(td.colorScheme.error, t.alert);
+    // D11.7 — `error` is the legible ink; `alert` stays the fill.
+    expect(td.colorScheme.error, t.alertInk);
     expect(td.colorScheme.primary, t.accent);
     expect(td.brightness, Brightness.dark);
   });

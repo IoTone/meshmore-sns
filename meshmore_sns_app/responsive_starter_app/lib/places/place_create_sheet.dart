@@ -252,7 +252,9 @@ class _PlaceCreateSheetState extends State<PlaceCreateSheet> {
                   _refusedAfter,
                   _clockText(context, _refusedUntil!),
                 ),
-                style: TextStyle(color: skin.color.alert, fontSize: skin.type.sizeSm),
+                style: TextStyle(
+                    color: skin.color.alertInk,
+                    fontSize: skin.type.sizeSm),
               ),
             ),
           if (_noIdentity)
@@ -260,7 +262,8 @@ class _PlaceCreateSheetState extends State<PlaceCreateSheet> {
               padding: EdgeInsets.only(top: skin.space.step(3)),
               child: Text(l.placeNoIdentity,
                   style: TextStyle(
-                      color: skin.color.alert, fontSize: skin.type.sizeSm)),
+                      color: skin.color.alertInk,
+                      fontSize: skin.type.sizeSm)),
             ),
           SizedBox(height: skin.space.step(3)),
           Row(

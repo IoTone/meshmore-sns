@@ -89,7 +89,9 @@ class _GeofencesScreenState extends State<GeofencesScreen> {
               Text(l.geofenceNeedsFix,
                   key: const ValueKey<String>('geofence-needs-fix'),
                   style:
-                      TextStyle(color: skin.color.alert, fontSize: skin.type.sizeBody))
+                      TextStyle(
+                          color: skin.color.alertInk,
+                          fontSize: skin.type.sizeBody))
             else
               MmAction(
                 key: const ValueKey<String>('geofence-add-here'),

@@ -2,6 +2,8 @@
 // SPDX-License-Identifier: MIT
 import 'package:flutter/material.dart';
 
+import '../theme/mm_skin.dart';
+
 /// One confirmation dialog, so that a delete looks like a delete everywhere.
 ///
 /// Seventeen sites had written the same four pieces by hand — an `AlertDialog`,
@@ -34,7 +36,6 @@ Future<bool> mmConfirm(
   required String confirmLabel,
   bool destructive = false,
 }) async {
-  final ColorScheme cs = Theme.of(context).colorScheme;
   final bool? confirmed = await showDialog<bool>(
     context: context,
     builder: (BuildContext ctx) => AlertDialog(
@@ -48,9 +49,14 @@ Future<bool> mmConfirm(
         if (destructive)
           FilledButton.tonal(
             onPressed: () => Navigator.pop(ctx, true),
+            // Filled with the alert *ink*, not the raw alert: the ink is the
+            // value that was lifted to be legible, so the ground written on it
+            // clears 4.5:1 in every preset. Three skins keep a saturated
+            // crimson for the fill, and a label on that fill had no legible
+            // option at all (D11.7).
             style: FilledButton.styleFrom(
-              backgroundColor: cs.errorContainer,
-              foregroundColor: cs.onErrorContainer,
+              backgroundColor: context.skin.color.alertInk,
+              foregroundColor: context.skin.color.base,
             ),
             child: Text(confirmLabel),
           )

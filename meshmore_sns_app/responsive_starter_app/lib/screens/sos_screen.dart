@@ -242,7 +242,7 @@ class _SosScreenState extends State<SosScreen> {
                   Text(_note!,
                       key: const ValueKey<String>('sos-note'),
                       style: TextStyle(
-                          color: skin.color.alert,
+                          color: skin.color.alertInk,
                           fontSize: skin.type.sizeBody)),
                 ],
                 SizedBox(height: skin.space.step(4)),
@@ -572,7 +572,9 @@ class _DestinationPickerState extends State<_DestinationPicker> {
                 l.sosDestinationMissing,
                 key: const ValueKey<String>('sos-destination-missing'),
                 style:
-                    TextStyle(color: skin.color.alert, fontSize: skin.type.sizeSm),
+                    TextStyle(
+                        color: skin.color.alertInk,
+                        fontSize: skin.type.sizeSm),
               ),
             ],
             SizedBox(height: skin.space.step(3)),
@@ -740,14 +742,16 @@ class _Running extends StatelessWidget {
           Text(l.sosMissedSends(sos.missedSends),
               key: const ValueKey<String>('sos-missed'),
               style: TextStyle(
-                  color: skin.color.alert, fontSize: skin.type.sizeSm)),
+                  color: skin.color.alertInk,
+                  fontSize: skin.type.sizeSm)),
         ],
         if (sos.failedSends > 0) ...<Widget>[
           SizedBox(height: skin.space.step(2)),
           Text(l.sosSendFailed,
               key: const ValueKey<String>('sos-send-failed'),
               style: TextStyle(
-                  color: skin.color.alert, fontSize: skin.type.sizeSm)),
+                  color: skin.color.alertInk,
+                  fontSize: skin.type.sizeSm)),
         ],
         if (sos.unconfirmedSends > 0) ...<Widget>[
           SizedBox(height: skin.space.step(2)),

@@ -32,7 +32,19 @@ void main() {
         expect(t.selected, t.surfaceAlt, reason: '$p');
         expect(t.hairline, t.line, reason: '$p');
         expect(t.onAccent, t.base, reason: '$p');
-        expect(t.onAlert, t.fg, reason: '$p');
+        // `onAlert` is no longer derived for every legacy preset: D11.7 gave
+        // the six that fill an alert with a saturated crimson their own label
+        // colour, because light text on that fill was 3.2-4.1:1. The derived
+        // value still holds for a preset that states nothing, which is what
+        // this asserts rather than a blanket equality.
+        if (p != MmThemePreset.nerv &&
+            p != MmThemePreset.agHud &&
+            p != MmThemePreset.hyperlocal &&
+            p != MmThemePreset.drPop &&
+            p != MmThemePreset.recon &&
+            p != MmThemePreset.seele) {
+          expect(t.onAlert, t.fg, reason: '$p');
+        }
       }
     });
 
@@ -48,8 +60,12 @@ void main() {
         // `edge`; the divider tier beside it is `outlineVariant`.
         expect(c.outline, t.edge, reason: '$p');
         expect(c.outlineVariant, t.line, reason: '$p');
-        expect(c.onError, t.fg, reason: '$p');
-        expect(c.onErrorContainer, t.fg, reason: '$p');
+        // D11.7 — `error` is a text role in this app (37 call sites draw it
+        // as a sentence), so the scheme carries the legible ink and the
+        // ground written on it, not the saturated fill and a guess.
+        expect(c.error, t.alertInk, reason: '$p');
+        expect(c.onError, t.base, reason: '$p');
+        expect(c.onErrorContainer, t.base, reason: '$p');
       }
     });
 
@@ -212,7 +228,10 @@ void main() {
       // A filled alert carries dark text (light text was 1.5:1).
       expect(ratio(t.alert, t.onAlert), greaterThanOrEqualTo(7));
       final ColorScheme c = buildMmTheme(t).colorScheme;
-      expect(c.onError, t.onAlert);
+      // D11.7 — the scheme's error pair is the legible ink and the ground;
+      // `onAlert` remains the label for a filled alert of the raw fill.
+      expect(c.error, t.alertInk);
+      expect(c.onError, t.base);
     });
 
     test('R68: accent text is legible on every layer', () {

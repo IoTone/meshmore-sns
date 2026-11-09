@@ -120,8 +120,10 @@ class MmTokens {
     Color? link,
     Color? warn,
     Color? edge,
+    Color? alertInk,
   })  : _warn = warn,
         _edge = edge,
+        _alertInk = alertInk,
         _link = link,
         _onAlert = onAlert,
         _raised = raised,
@@ -162,6 +164,7 @@ class MmTokens {
   final Color? _selected;
   final Color? _hairline;
   final Color? _edge;
+  final Color? _alertInk;
   final Color? _onAccent;
   final Color? _fgDisabled;
   final Color? _onAlert;
@@ -200,6 +203,21 @@ class MmTokens {
   /// Measured before/after is in `meshmore-scope-of-record.md` D11.5;
   /// `test/theme/edge_floor_test.dart` recomputes it.
   Color get edge => _edge ?? line;
+
+  /// [alert] as **text**, rather than as a fill or a graphic.
+  ///
+  /// One colour was doing two jobs with two different floors. As a fill or an
+  /// icon an alert needs 3:1 against the page (WCAG 1.4.11, a graphical
+  /// object) and every preset's alert already clears it. As *text* it needs
+  /// 4.5:1, and the three darkest alerts did not: seele 3.13:1, nerv 3.34:1,
+  /// recon 2.79:1 against the panel they were written on. Those presets are
+  /// saturated crimsons chosen to shout as a block, which is the right choice
+  /// for a fill and the wrong one for a sentence.
+  ///
+  /// So the fill keeps its colour and the ink is lifted into the same family
+  /// until it can be read. Derived as [alert] when a preset states nothing, so
+  /// the eight presets that were already legible draw exactly what they drew.
+  Color get alertInk => _alertInk ?? alert;
 
   /// Label drawn on a filled [accent].
   Color get onAccent => _onAccent ?? base;
@@ -248,7 +266,7 @@ const Map<MmThemePreset, MmTokens> kMmPresets = <MmThemePreset, MmTokens>{
     selected: Color(0xFF363636),
     hairline: Color(0xFF4A4A4A),
     onAccent: Color(0xFF141414),
-    fgDisabled: Color(0xFF6A6A6A),
+    fgDisabled: Color(0xFF808080),
     onAlert: Color(0xFF141414),
     // D11.5 — a control's outline, not a rule: `line` was 2.08:1 on the
     // page, so an outlined control here was outlined in a colour nobody
@@ -272,6 +290,15 @@ const Map<MmThemePreset, MmTokens> kMmPresets = <MmThemePreset, MmTokens>{
     // could see. Smallest blend of this preset's own line toward its own
     // fg that clears 3:1 on the page and the raised layer: 3.44 / 3.17 / 3.02.
     edge: Color(0xFF64625B),
+    // The disabled tier is the quietest value that is still legible: as
+    // far from the second voice as the 3:1 floor on every layer allows.
+    fgDisabled: Color(0xFF67645C),
+    // The same red, lifted until it can be read as text (4.5:1 on the
+    // page and the panel). `alert` stays the fill and the graphic.
+    alertInk: Color(0xFFD34E5F),
+    // The label on a filled alert: cream reads better on this crimson than
+    // the ground does (4.73:1 against 3.57:1).
+    onAlert: Color(0xFFEDE6D6),
   ),
   MmThemePreset.nerv: MmTokens(
     base: Color(0xFF0A0E1A),
@@ -288,6 +315,15 @@ const Map<MmThemePreset, MmTokens> kMmPresets = <MmThemePreset, MmTokens>{
     // could see. Smallest blend of this preset's own line toward its own
     // fg that clears 3:1 on the page and the raised layer: 3.75 / 3.46 / 3.03.
     edge: Color(0xFF646E82),
+    // The disabled tier is the quietest value that is still legible: as
+    // far from the second voice as the 3:1 floor on every layer allows.
+    fgDisabled: Color(0xFF666F81),
+    // The same red, lifted until it can be read as text (4.5:1 on the
+    // page and the panel). `alert` stays the fill and the graphic.
+    alertInk: Color(0xFFE64085),
+    // The label on a filled alert: the ground is the better of the two
+    // candidates on this fill, where the derived fg is not.
+    onAlert: Color(0xFF0A0E1A),
   ),
   MmThemePreset.agHud: MmTokens(
     base: Color(0xFF05060B),
@@ -304,6 +340,12 @@ const Map<MmThemePreset, MmTokens> kMmPresets = <MmThemePreset, MmTokens>{
     // could see. Smallest blend of this preset's own line toward its own
     // fg that clears 3:1 on the page and the raised layer: 3.56 / 3.26 / 3.02.
     edge: Color(0xFF5B6878),
+    // The disabled tier is the quietest value that is still legible: as
+    // far from the second voice as the 3:1 floor on every layer allows.
+    fgDisabled: Color(0xFF5E6A78),
+    // The label on a filled alert: the ground is the better of the two
+    // candidates on this fill, where the derived fg is not.
+    onAlert: Color(0xFF05060B),
   ),
   MmThemePreset.hyperlocal: MmTokens(
     base: Color(0xFF0B0F17),
@@ -320,6 +362,12 @@ const Map<MmThemePreset, MmTokens> kMmPresets = <MmThemePreset, MmTokens>{
     // could see. Smallest blend of this preset's own line toward its own
     // fg that clears 3:1 on the page and the raised layer: 3.77 / 3.38 / 3.01.
     edge: Color(0xFF656F7D),
+    // The disabled tier is the quietest value that is still legible: as
+    // far from the second voice as the 3:1 floor on every layer allows.
+    fgDisabled: Color(0xFF67707F),
+    // The label on a filled alert: the ground is the better of the two
+    // candidates on this fill, where the derived fg is not.
+    onAlert: Color(0xFF0B0F17),
   ),
   MmThemePreset.drPop: MmTokens(
     base: Color(0xFF101014),
@@ -336,6 +384,12 @@ const Map<MmThemePreset, MmTokens> kMmPresets = <MmThemePreset, MmTokens>{
     // could see. Smallest blend of this preset's own line toward its own
     // fg that clears 3:1 on the page and the raised layer: 3.74 / 3.34 / 3.03.
     edge: Color(0xFF6E6E73),
+    // The disabled tier is the quietest value that is still legible: as
+    // far from the second voice as the 3:1 floor on every layer allows.
+    fgDisabled: Color(0xFF6E6E79),
+    // The label on a filled alert: the ground is the better of the two
+    // candidates on this fill, where the derived fg is not.
+    onAlert: Color(0xFF101014),
   ),
   MmThemePreset.recon: MmTokens(
     base: Color(0xFF000000),
@@ -345,13 +399,22 @@ const Map<MmThemePreset, MmTokens> kMmPresets = <MmThemePreset, MmTokens>{
     fg: Color(0xFFFFB000),
     fgMuted: Color(0xFFC79433),
     accent: Color(0xFFFFB000),
-    alert: Color(0xFFB3231F),
+    alert: Color(0xFFB8302C),
     ok: Color(0xFFFFB000),
     // D11.5 — a control's outline, not a rule: `line` was 2.75:1 on the
     // page, so an outlined control here was outlined in a colour nobody
     // could see. Smallest blend of this preset's own line toward its own
     // fg that clears 3:1 on the page and the raised layer: 3.43 / 3.24 / 3.01.
     edge: Color(0xFF815B00),
+    // The disabled tier is the quietest value that is still legible: as
+    // far from the second voice as the 3:1 floor on every layer allows.
+    fgDisabled: Color(0xFF7F5F21),
+    // The same red, lifted until it can be read as text (4.5:1 on the
+    // page and the panel). `alert` stays the fill and the graphic.
+    alertInk: Color(0xFFCD5314),
+    // The label on a filled alert: the ground is the better of the two
+    // candidates on this fill, where the derived fg is not.
+    onAlert: Color(0xFF000000),
   ),
   // --- The four LDMUX looks (2026-11-09) -------------------------------
   //
@@ -413,8 +476,8 @@ const Map<MmThemePreset, MmTokens> kMmPresets = <MmThemePreset, MmTokens>{
     // The LDMUX muted grey, blended halfway to the page exactly as the
     // derived tier would be, then nudged so it clears 3:1 on every layer with
     // headroom (the answer above is 3.83 / 3.68 / 3.22).
-    fgDisabled: Color(0xFF6F7A73),
-    onAlert: Color(0xFF0E1512),
+    fgDisabled: Color(0xFF7B847E),
+    onAlert: Color(0xFF121514),
     warn: Color(0xFFE6C177),
   ),
   MmThemePreset.air: MmTokens(
@@ -443,7 +506,7 @@ const Map<MmThemePreset, MmTokens> kMmPresets = <MmThemePreset, MmTokens>{
     raised: Color(0xFFE8ECF1),
     selected: Color(0xFFCDCED6),
     onAccent: Color(0xFFFFFFFF),
-    fgDisabled: Color(0xFF84888F),
+    fgDisabled: Color(0xFF6D7178),
     onAlert: Color(0xFFFFFFFF),
     link: Color(0xFF17703A),
     warn: Color(0xFF8A5A00),
@@ -473,7 +536,7 @@ const Map<MmThemePreset, MmTokens> kMmPresets = <MmThemePreset, MmTokens>{
     raised: Color(0xFFE8EBE7),
     selected: Color(0xFFD7DAD7),
     onAccent: Color(0xFFFFFFFF),
-    fgDisabled: Color(0xFF7F837B),
+    fgDisabled: Color(0xFF767A74),
     onAlert: Color(0xFFFFFFFF),
     link: Color(0xFF17703A),
     warn: Color(0xFF8A5A00),
@@ -498,7 +561,7 @@ const Map<MmThemePreset, MmTokens> kMmPresets = <MmThemePreset, MmTokens>{
     raised: Color(0xFF38312B),
     selected: Color(0xFF4A403A),
     onAccent: Color(0xFF282828),
-    fgDisabled: Color(0xFF8A7C6E),
+    fgDisabled: Color(0xFF9C8C70),
     onAlert: Color(0xFF211D1B),
     warn: Color(0xFFD8A657),
   ),
@@ -609,10 +672,15 @@ ThemeData buildMmTheme(MmTokens t, {String? fontFamily, MmShape? shape}) {
     onSecondaryContainer: t.fg,
     tertiary: t.ok,
     onTertiary: t.base,
-    error: t.alert,
-    onError: t.onAlert,
-    errorContainer: t.alert,
-    onErrorContainer: t.onAlert,
+    // Material's `error` is what an error *reads* as, and this app draws it as
+    // text in 37 places, so it is the ink rather than the saturated fill the
+    // skin uses for a block. `onError` is what is written on that ink.
+    error: t.alertInk,
+    onError: t.base,
+    // The container pair is the filled variant; it is used by one control (the
+    // destructive confirm) and that control now takes the ink itself.
+    errorContainer: t.alertInk,
+    onErrorContainer: t.base,
     // Material's `outline` is the boundary of a control; `outlineVariant` is
     // the quieter divider beside it. They were the same value, which is the
     // same defect D11.5 fixes in the tokens.

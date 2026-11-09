@@ -869,3 +869,34 @@ Removed: the enum value, label, audio key, tokens and skin. **Kept:** the paper-
 is a standing contract about light grounds, so it moved to `test/theme/light_ground_test.dart` and now
 iterates over every preset whose tokens report `isLight` instead of naming one. A stored preference holding
 the removed name falls back to the default preset rather than to an arbitrary one, with a test.
+
+**D11.7 A role's floor follows what it is drawn as, and the dark grounds were failing two of them
+(owner, 2026-11-09).** The owner asked that the single dark look be checked "correctly and properly".
+Done by recomputing every role against every layer the app can draw it on, for every preset, which
+found three floors that only the light grounds met — because each had been found on paper and fixed on
+paper:
+
+| defect | measured before | presets affected |
+| --- | --- | --- |
+| disabled ink under 3:1 where a disabled control sits | 2.22–2.72:1 on the raised and selected layers (2.54–2.86:1 on the page for agHud and recon) | all eleven |
+| an alert written as a sentence under 4.5:1 | seele 3.13:1, nerv 3.34:1, recon 2.79:1 on the panel | three |
+| the label on a filled alert under 4.5:1 | nerv 3.91:1, agHud 3.17:1, hyperlocal 2.75:1, drPop 3.06:1, recon 3.61:1 | five |
+
+Two roles were doing two jobs, which is why the floors were missed:
+
+- **`alert` was both a fill and a sentence.** As a fill or an icon it needs 3:1 (a graphical object) and
+  every preset's alert already cleared it. As text it needs 4.5:1 and three saturated crimsons did not
+  — they were chosen to shout as a block, which is right for a fill and wrong for a sentence. The ink
+  is now its own role, `alertInk`, lifted into each skin's own family until it can be read; `alert`
+  keeps the colour the skin chose. Material's `error` is the ink too, because this app draws it as text
+  in 37 places, while the one control that fills with it (the destructive confirm) fills with the ink
+  and writes the ground on it, which clears 4.5:1 in every preset by construction.
+- **The disabled tier was a blend rather than a value.** `fgMuted` at 50 % alpha composites to 2.2:1 on
+  a raised fill, so a disabled control was the least findable thing on the screen. Each preset now
+  states the quietest value that still clears 3:1 on all four layers — as far from the second voice as
+  the floor allows, not as close to it as possible.
+
+`test/theme/role_floors_test.dart` holds the whole contract, per role and per layer, for every preset,
+so a floor cannot be met by one skin family and missed by another again. It states the table, not just
+the numbers: which role is drawn as text, which as a fill, which as a boundary, and which has no floor
+at all because a divider is meant to be barely there.
