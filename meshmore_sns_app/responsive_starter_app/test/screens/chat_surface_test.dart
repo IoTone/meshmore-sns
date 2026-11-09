@@ -155,7 +155,9 @@ void main() {
         ? kSquareRadius
         : mmCornerFloor(kRadiusSm);
     expect(enabled.borderRadius, BorderRadius.circular(expected));
-    expect(enabled.borderSide.color, skin.color.line);
+    // D11.5 — an input is a control, so its resting border is the
+    // control-boundary role, not the divider it used to borrow.
+    expect(enabled.borderSide.color, skin.color.edge);
     expect(enabled.borderSide.width, skin.shape.borderWidth);
     // Focus is the skin's accent, not Material's primary.
     expect((d.focusedBorder! as OutlineInputBorder).borderSide.color,

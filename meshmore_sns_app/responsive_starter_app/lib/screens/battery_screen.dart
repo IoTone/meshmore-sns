@@ -203,7 +203,8 @@ class _EstimateCard extends StatelessWidget {
         // content floating with no edge.
         color: skin.color.surface,
         borderRadius: mmRadius(context, kRadiusMd),
-        border: Border.all(color: skin.color.line, width: skin.shape.borderWidth),
+        border:
+            Border.all(color: skin.color.edge, width: skin.shape.borderWidth),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

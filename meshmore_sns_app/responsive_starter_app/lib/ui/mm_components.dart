@@ -34,7 +34,7 @@ class MmPanel extends StatelessWidget {
     final OutlinedBorder border = mmShapeBorder(
       skin.shape,
       side: BorderSide(
-          color: skin.color.line, width: skin.shape.borderWidth),
+          color: skin.color.edge, width: skin.shape.borderWidth),
     );
     return Container(
       decoration:

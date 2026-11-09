@@ -172,7 +172,7 @@ class _Swatches extends StatelessWidget {
     // The white 20 % edge it used before vanishes on a light ground — and the
     // light preset is one of the choices this very row exists to offer, so the
     // swatch for it was the one you could not see.
-    final Color outline = context.skin.color.line;
+    final Color outline = context.skin.color.edge;
     Widget dot(Color c) => Container(
           width: context.skin.space.rowInset + context.skin.space.insideText,
           height: context.skin.space.rowInset + context.skin.space.insideText,

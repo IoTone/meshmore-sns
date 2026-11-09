@@ -39,7 +39,9 @@ const Color kMarkerShadow = Color(0xCC000000);
 ///   node     → fgMuted
 ///   self     → accent
 ///   inferred → accent (distinguished from self/nodes by *shape*)
-///   grid     → line
+///   grid     → edge (D11.5: a grid line is a structure you have to see, and it
+///              is held to the control-boundary floor on paper; `line` is now
+///              the barely-there divider tier)
 class VizPalette {
   const VizPalette({
     required this.hot,
@@ -66,6 +68,6 @@ class VizPalette {
         self: skin.color.accent,
         inferred: skin.color.accent,
         accent: skin.color.accent,
-        grid: skin.color.line,
+        grid: skin.color.edge,
       );
 }

@@ -49,7 +49,10 @@ void main() {
       'base': 0xFF121514,
       'surface': 0xFF1A211D,
       'surfaceAlt': 0xFF232C27,
-      'line': 0xFF7C8884,
+      // D11.5 — LDMUX's two values, under this app's two names: the edge is
+      // the control boundary (3:1), the line is the divider it always was.
+      'edge': 0xFF7C8884,
+      'line': 0xFF2F3A33,
       'hairline': 0xFF2F3A33,
       'fg': 0xFFEDF2EE,
       'fgMuted': 0xFFAEBBB2,
@@ -65,7 +68,9 @@ void main() {
       // paper grounds are held to; one step darker.
       'surfaceAlt': 0xFFE8ECF1,
       // LDMUX edge #8B8D98 is 2.86:1 on surfaceAlt, under the control floor.
-      'line': 0xFF7E808A,
+      'edge': 0xFF7E808A,
+      // The divider: LDMUX's own quiet line, which Meshmore's `line` now is.
+      'line': 0xFFC4C6D0,
       // slate-7 was 1.57:1 on white: not a rule you can see in daylight.
       'hairline': 0xFFC4C6D0,
       'fg': 0xFF1C2024,
@@ -81,7 +86,8 @@ void main() {
       // olive-2 was 1.077:1 off the page, just under the step floor.
       'surface': 0xFFF3F5F1,
       'surfaceAlt': 0xFFE8EBE7,
-      'line': 0xFF7A7F79,
+      'edge': 0xFF7A7F79,
+      'line': 0xFFC2C6C1,
       // olive-7 was 1.41:1 on white: invisible as a rule on paper.
       'hairline': 0xFFC2C6C1,
       'fg': 0xFF1D211C,
@@ -97,7 +103,8 @@ void main() {
       'base': 0xFF211D1B,
       'surface': 0xFF2B2521,
       'surfaceAlt': 0xFF38312B,
-      'line': 0xFF8C7F73,
+      'edge': 0xFF8C7F73,
+      'line': 0xFF4A403A,
       'hairline': 0xFF4A403A,
       'fg': 0xFFE7D7AD,
       'fgMuted': 0xFFC5B18D,
@@ -152,7 +159,8 @@ void main() {
         expect(v(t.base), want['base'], reason: 'base');
         expect(v(t.surface), want['surface'], reason: 'surface');
         expect(v(t.surfaceAlt), want['surfaceAlt'], reason: 'surfaceAlt');
-        expect(v(t.line), want['line'], reason: 'line (LDMUX edge)');
+        expect(v(t.edge), want['edge'], reason: 'edge (LDMUX edge)');
+        expect(v(t.line), want['line'], reason: 'line (LDMUX divider)');
         expect(v(t.hairline), want['hairline'], reason: 'hairline');
         expect(v(t.fg), want['fg'], reason: 'fg');
         expect(v(t.fgMuted), want['fgMuted'], reason: 'fgMuted (LDMUX dim)');
@@ -186,12 +194,15 @@ void main() {
 
       test('${p.name}: the control boundary clears 3:1 on every ground', () {
         // This is the floor the register records as violated on the seven
-        // older dark skins (1.14-2.75:1). Every control outline and every
-        // `MmPanel` border is drawn with `line`, so this check is what makes
-        // "the control has a visible edge" true rather than hoped for.
+        // older dark skins (1.14-2.75:1). D11.5 gave the control boundary its
+        // own role, so this is what makes "the control has a visible edge"
+        // true rather than hoped for, and the divider is separately held to
+        // staying under it.
         for (final Color g in grounds) {
-          expect(ratio(t.line, g), greaterThanOrEqualTo(3.0),
-              reason: 'line (the control boundary) on $g');
+          expect(ratio(t.edge, g), greaterThanOrEqualTo(3.0),
+              reason: 'edge (the control boundary) on $g');
+          expect(ratio(t.line, g), lessThan(3.0),
+              reason: 'the divider on $g has climbed into the boundary role');
         }
       });
 
@@ -217,7 +228,8 @@ void main() {
         // A divider is meant to be barely there, and a boundary is meant to be
         // seen. If these two ever swap, a group rule starts shouting and a
         // control starts disappearing.
-        expect(ratio(t.hairline, t.base), lessThan(ratio(t.line, t.base)));
+        expect(ratio(t.hairline, t.base), lessThan(ratio(t.edge, t.base)));
+        expect(ratio(t.line, t.base), lessThanOrEqualTo(ratio(t.edge, t.base)));
       });
     }
   });

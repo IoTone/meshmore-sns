@@ -92,6 +92,7 @@ extension MmThemePresetX on MmThemePreset {
 /// | [raised]        | [surfaceAlt]         | the theme already used `surfaceAlt` for `surfaceContainerHigh` |
 /// | [selected]      | [surfaceAlt]         | and for `surfaceContainerHighest` |
 /// | [hairline]      | [line]               | every divider/border already used `line` |
+/// | [edge]          | [line]               | R14: the control boundary was `line`; a preset that does not state one keeps drawing exactly what it drew |
 /// | [onAccent]      | [base]               | the theme already put `base` on `accent` |
 /// | [fgDisabled]    | [fgMuted] at 50 %    | new; nothing reads it for the six old presets |
 ///
@@ -118,7 +119,9 @@ class MmTokens {
     Color? onAlert,
     Color? link,
     Color? warn,
+    Color? edge,
   })  : _warn = warn,
+        _edge = edge,
         _link = link,
         _onAlert = onAlert,
         _raised = raised,
@@ -158,6 +161,7 @@ class MmTokens {
   final Color? _raised;
   final Color? _selected;
   final Color? _hairline;
+  final Color? _edge;
   final Color? _onAccent;
   final Color? _fgDisabled;
   final Color? _onAlert;
@@ -176,6 +180,26 @@ class MmTokens {
 
   /// The 1px region separator (see `MmShape.hairlineWidth`).
   Color get hairline => _hairline ?? line;
+
+  /// The outline of something you press: a button, an input, a card's side.
+  ///
+  /// D11.5 — ported from the owner's LDMUX project, which is the reason this
+  /// role exists at all. A divider and a control's boundary were one value
+  /// (`line`), so on the older dark presets an "outlined" control was outlined
+  /// at 1.26:1 to 2.75:1 against the layer it sits on — under the 3:1 that
+  /// WCAG 1.4.11 asks for a non-text boundary, and invisible in practice. On a
+  /// paper ground the same value happened to pass, which is why the defect read
+  /// as a difference in taste between skins.
+  ///
+  /// Each preset states the smallest blend of its own `line` toward its own
+  /// `fg` that clears 3:1 on both the page and the raised layer, so a skin
+  /// keeps its hue and the change is as small as the floor allows. Derived as
+  /// `line` when a preset states nothing, so an unstated preset draws exactly
+  /// what it drew before.
+  ///
+  /// Measured before/after is in `meshmore-scope-of-record.md` D11.5;
+  /// `test/theme/edge_floor_test.dart` recomputes it.
+  Color get edge => _edge ?? line;
 
   /// Label drawn on a filled [accent].
   Color get onAccent => _onAccent ?? base;
@@ -226,6 +250,11 @@ const Map<MmThemePreset, MmTokens> kMmPresets = <MmThemePreset, MmTokens>{
     onAccent: Color(0xFF141414),
     fgDisabled: Color(0xFF6A6A6A),
     onAlert: Color(0xFF141414),
+    // D11.5 — a control's outline, not a rule: `line` was 2.08:1 on the
+    // page, so an outlined control here was outlined in a colour nobody
+    // could see. Smallest blend of this preset's own line toward its own
+    // fg that clears 3:1 on the page and the raised layer: 3.94 / 3.49 / 3.03.
+    edge: Color(0xFF747474),
   ),
   // D — default.
   MmThemePreset.seele: MmTokens(
@@ -238,6 +267,11 @@ const Map<MmThemePreset, MmTokens> kMmPresets = <MmThemePreset, MmTokens>{
     accent: Color(0xFFEDE6D6),
     alert: Color(0xFFC8102E),
     ok: Color(0xFFBCB6A8),
+    // D11.5 — a control's outline, not a rule: `line` was 1.46:1 on the
+    // page, so an outlined control here was outlined in a colour nobody
+    // could see. Smallest blend of this preset's own line toward its own
+    // fg that clears 3:1 on the page and the raised layer: 3.44 / 3.17 / 3.02.
+    edge: Color(0xFF64625B),
   ),
   MmThemePreset.nerv: MmTokens(
     base: Color(0xFF0A0E1A),
@@ -249,6 +283,11 @@ const Map<MmThemePreset, MmTokens> kMmPresets = <MmThemePreset, MmTokens>{
     accent: Color(0xFFFF7A00),
     alert: Color(0xFFE6005C),
     ok: Color(0xFF9CFF00),
+    // D11.5 — a control's outline, not a rule: `line` was 1.46:1 on the
+    // page, so an outlined control here was outlined in a colour nobody
+    // could see. Smallest blend of this preset's own line toward its own
+    // fg that clears 3:1 on the page and the raised layer: 3.75 / 3.46 / 3.03.
+    edge: Color(0xFF646E82),
   ),
   MmThemePreset.agHud: MmTokens(
     base: Color(0xFF05060B),
@@ -260,6 +299,11 @@ const Map<MmThemePreset, MmTokens> kMmPresets = <MmThemePreset, MmTokens>{
     accent: Color(0xFF22D3EE),
     alert: Color(0xFFFF2D78),
     ok: Color(0xFF22D3EE),
+    // D11.5 — a control's outline, not a rule: `line` was 1.38:1 on the
+    // page, so an outlined control here was outlined in a colour nobody
+    // could see. Smallest blend of this preset's own line toward its own
+    // fg that clears 3:1 on the page and the raised layer: 3.56 / 3.26 / 3.02.
+    edge: Color(0xFF5B6878),
   ),
   MmThemePreset.hyperlocal: MmTokens(
     base: Color(0xFF0B0F17),
@@ -271,6 +315,11 @@ const Map<MmThemePreset, MmTokens> kMmPresets = <MmThemePreset, MmTokens>{
     accent: Color(0xFF35E0F0),
     alert: Color(0xFFFF3B6B),
     ok: Color(0xFF7CFF6B),
+    // D11.5 — a control's outline, not a rule: `line` was 1.44:1 on the
+    // page, so an outlined control here was outlined in a colour nobody
+    // could see. Smallest blend of this preset's own line toward its own
+    // fg that clears 3:1 on the page and the raised layer: 3.77 / 3.38 / 3.01.
+    edge: Color(0xFF656F7D),
   ),
   MmThemePreset.drPop: MmTokens(
     base: Color(0xFF101014),
@@ -282,6 +331,11 @@ const Map<MmThemePreset, MmTokens> kMmPresets = <MmThemePreset, MmTokens>{
     accent: Color(0xFFFF2E88),
     alert: Color(0xFFFF2E88),
     ok: Color(0xFFD7FF00),
+    // D11.5 — a control's outline, not a rule: `line` was 1.52:1 on the
+    // page, so an outlined control here was outlined in a colour nobody
+    // could see. Smallest blend of this preset's own line toward its own
+    // fg that clears 3:1 on the page and the raised layer: 3.74 / 3.34 / 3.03.
+    edge: Color(0xFF6E6E73),
   ),
   MmThemePreset.recon: MmTokens(
     base: Color(0xFF000000),
@@ -293,6 +347,11 @@ const Map<MmThemePreset, MmTokens> kMmPresets = <MmThemePreset, MmTokens>{
     accent: Color(0xFFFFB000),
     alert: Color(0xFFB3231F),
     ok: Color(0xFFFFB000),
+    // D11.5 — a control's outline, not a rule: `line` was 2.75:1 on the
+    // page, so an outlined control here was outlined in a colour nobody
+    // could see. Smallest blend of this preset's own line toward its own
+    // fg that clears 3:1 on the page and the raised layer: 3.43 / 3.24 / 3.01.
+    edge: Color(0xFF815B00),
   ),
   // --- The four LDMUX looks (2026-11-09) -------------------------------
   //
@@ -334,8 +393,12 @@ const Map<MmThemePreset, MmTokens> kMmPresets = <MmThemePreset, MmTokens>{
     surface: Color(0xFF1A211D),
     surfaceAlt: Color(0xFF232C27),
     // edge, not line: a row or control boundary has to be visible at 3:1.
-    line: Color(0xFF7C8884),
+    // LDMUX's divider value: a rule is meant to be barely there.
+    line: Color(0xFF2F3A33),
+    // LDMUX's edge value, under this app's name for it: the outline of a
+    // control, held to 3:1 on every layer it is drawn on.
     hairline: Color(0xFF2F3A33),
+    edge: Color(0xFF7C8884),
     fg: Color(0xFFEDF2EE),
     fgMuted: Color(0xFFAEBBB2),
     accent: Color(0xFF7FC98A),
@@ -362,10 +425,14 @@ const Map<MmThemePreset, MmTokens> kMmPresets = <MmThemePreset, MmTokens>{
     surfaceAlt: Color(0xFFE8ECF1),
     // LDMUX's edge #8B8D98 is 2.86:1 on this theme's raised fill, under the
     // control-boundary floor; one step darker in the same blue-grey.
-    line: Color(0xFF7E808A),
+    // LDMUX's divider value: a rule is meant to be barely there.
+    line: Color(0xFFC4C6D0),
     // slate-7 is 1.57:1 on white, which is not a rule you can see on a phone
     // in daylight; one step darker in the same blue-grey, 1.70:1.
+    // LDMUX's edge value, under this app's name for it: the outline of a
+    // control, held to 3:1 on every layer it is drawn on.
     hairline: Color(0xFFC4C6D0),
+    edge: Color(0xFF7E808A),
     fg: Color(0xFF1C2024),
     fgMuted: Color(0xFF4D525A),
     accent: Color(0xFF0A68BA),
@@ -387,10 +454,14 @@ const Map<MmThemePreset, MmTokens> kMmPresets = <MmThemePreset, MmTokens>{
     // light grounds are held to; one step darker.
     surface: Color(0xFFF3F5F1),
     surfaceAlt: Color(0xFFE8EBE7),
-    line: Color(0xFF7A7F79),
+    // LDMUX's divider value: a rule is meant to be barely there.
+    line: Color(0xFFC2C6C1),
     // olive-7 is 1.41:1 on white: invisible as a rule on paper. One step
     // darker in the same warm grey, 1.73:1.
+    // LDMUX's edge value, under this app's name for it: the outline of a
+    // control, held to 3:1 on every layer it is drawn on.
     hairline: Color(0xFFC2C6C1),
+    edge: Color(0xFF7A7F79),
     fg: Color(0xFF1D211C),
     fgMuted: Color(0xFF4D524B),
     // LDMUX tomato-11 (#D13415) is 4.26:1 on this theme's raised fill, under
@@ -411,8 +482,12 @@ const Map<MmThemePreset, MmTokens> kMmPresets = <MmThemePreset, MmTokens>{
     base: Color(0xFF211D1B),
     surface: Color(0xFF2B2521),
     surfaceAlt: Color(0xFF38312B),
-    line: Color(0xFF8C7F73),
+    // LDMUX's divider value: a rule is meant to be barely there.
+    line: Color(0xFF4A403A),
+    // LDMUX's edge value, under this app's name for it: the outline of a
+    // control, held to 3:1 on every layer it is drawn on.
     hairline: Color(0xFF4A403A),
+    edge: Color(0xFF8C7F73),
     fg: Color(0xFFE7D7AD),
     fgMuted: Color(0xFFC5B18D),
     accent: Color(0xFFE78A4E),
@@ -538,7 +613,10 @@ ThemeData buildMmTheme(MmTokens t, {String? fontFamily, MmShape? shape}) {
     onError: t.onAlert,
     errorContainer: t.alert,
     onErrorContainer: t.onAlert,
-    outline: t.line,
+    // Material's `outline` is the boundary of a control; `outlineVariant` is
+    // the quieter divider beside it. They were the same value, which is the
+    // same defect D11.5 fixes in the tokens.
+    outline: t.edge,
     outlineVariant: t.line,
     shadow: const Color(0xFF000000),
     scrim: const Color(0xCC000000),
@@ -584,12 +662,14 @@ ThemeData buildMmTheme(MmTokens t, {String? fontFamily, MmShape? shape}) {
     cardTheme: CardThemeData(
       color: t.surface,
       surfaceTintColor: Colors.transparent,
-      // R66: a square (Studio) card gets a hairline edge, since
-      // surface on base is only ~1.13:1 and has no visible boundary.
-      // Null side / unchanged shape for every other preset.
+      // R66: a square (Studio) card gets a visible edge, since surface on base
+      // is only ~1.13:1 and has no boundary otherwise. D11.5: that edge is
+      // `edge`, the control-boundary role held to 3:1, not the divider it used
+      // to borrow. Null side / unchanged shape for every other preset, which
+      // draws its own elevation.
       shape: square
           ? RoundedRectangleBorder(
-              side: BorderSide(color: t.hairline, width: shape!.hairlineWidth),
+              side: BorderSide(color: t.edge, width: shape!.hairlineWidth),
               borderRadius: squareRadius)
           : null,
     ),
@@ -607,8 +687,11 @@ ThemeData buildMmTheme(MmTokens t, {String? fontFamily, MmShape? shape}) {
     popupMenuTheme: square ? PopupMenuThemeData(shape: squareBorder) : null,
     inputDecorationTheme: square
         ? InputDecorationTheme(
-            border: squareField(t.line),
-            enabledBorder: squareField(t.line),
+            // An input is a control: its resting border is `edge`, at 3:1.
+            // `disabledBorder` stays the quiet divider, because a control you
+            // cannot press has no boundary worth finding.
+            border: squareField(t.edge),
+            enabledBorder: squareField(t.edge),
             disabledBorder: squareField(t.line),
             focusedBorder: squareField(t.accent, 2),
             errorBorder: squareField(t.alert),

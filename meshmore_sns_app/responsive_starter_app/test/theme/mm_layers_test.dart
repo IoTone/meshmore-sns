@@ -44,7 +44,10 @@ void main() {
         expect(c.surfaceContainerHighest, t.surfaceAlt, reason: '$p');
         expect(c.onPrimary, t.base, reason: '$p');
         expect(c.onSecondary, t.base, reason: '$p');
-        expect(c.outline, t.line, reason: '$p');
+        // D11.5 — Material's outline is a control's boundary, so it is
+        // `edge`; the divider tier beside it is `outlineVariant`.
+        expect(c.outline, t.edge, reason: '$p');
+        expect(c.outlineVariant, t.line, reason: '$p');
         expect(c.onError, t.fg, reason: '$p');
         expect(c.onErrorContainer, t.fg, reason: '$p');
       }
@@ -80,7 +83,8 @@ void main() {
       final MmTokens t = kMmPresets[MmThemePreset.studio]!;
       final RoundedRectangleBorder c =
           studio().cardTheme.shape! as RoundedRectangleBorder;
-      expect(c.side.color, t.hairline);
+      // D11.5 — a card's side is a boundary you find, so it is `edge`.
+      expect(c.side.color, t.edge);
       expect(c.side.width, 1.0);
       expect(c.borderRadius, BorderRadius.circular(1));
       expect(studio().cardTheme.elevation, isNull);
@@ -233,7 +237,9 @@ void main() {
       expect(
           td.cardTheme.shape,
           RoundedRectangleBorder(
-              side: BorderSide(color: t.hairline), borderRadius: r1));
+              // D11.5 — the card's side is a control boundary, so `edge`.
+              side: BorderSide(color: t.edge),
+              borderRadius: r1));
       expect(
           td.dialogTheme.shape, const RoundedRectangleBorder(borderRadius: r1));
       expect(td.colorScheme.surfaceContainerHighest, t.selected);

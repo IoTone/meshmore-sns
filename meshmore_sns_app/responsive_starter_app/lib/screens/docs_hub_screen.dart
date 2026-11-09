@@ -111,7 +111,7 @@ class _DocCard extends StatelessWidget {
       margin: EdgeInsets.only(bottom: skin.space.rowInset),
       shape: RoundedRectangleBorder(
         borderRadius: mmRadius(context, kRadiusMd),
-        side: BorderSide(color: skin.color.line, width: skin.shape.borderWidth),
+        side: BorderSide(color: skin.color.edge, width: skin.shape.borderWidth),
       ),
       child: InkWell(
         borderRadius: mmRadius(context, 12),

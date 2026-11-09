@@ -222,7 +222,7 @@ class _SosScreenState extends State<SosScreen> {
                         color: skin.color.fgMuted, fontSize: skin.type.sizeSm),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: mmRadius(context, kRadiusSm),
-                      borderSide: BorderSide(color: skin.color.line),
+                      borderSide: BorderSide(color: skin.color.edge),
                     ),
                   ),
                 ),

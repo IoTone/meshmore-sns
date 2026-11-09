@@ -37,8 +37,8 @@ InputDecoration composerFieldDecoration(
     // than control boundaries — a `controlBorder` token is the fix and
     // belongs to the theme, not here. `hairline` would have been 1.70:1 on
     // paper.
-    border: border(skin.color.line),
-    enabledBorder: border(skin.color.line),
+    border: border(skin.color.edge),
+    enabledBorder: border(skin.color.edge),
     // Focus is the skin's accent, not Material's primary: in the terminal
     // skins the Material primary is not the colour the rest of the screen
     // uses for "this is the control you are in".

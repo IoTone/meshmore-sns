@@ -143,23 +143,28 @@ void main() {
     }
   });
 
-  test('rules are visible on paper, and stay subordinate', () {
-    // On a light ground a rule is the only thing separating two blocks. This
-    // is the pair that a ported palette gets wrong most often: a Radix step-7
-    // grey is 1.4-1.6:1 on white, which is invisible on a phone in daylight.
+  test('a control boundary is visible on paper, and the divider stays under it',
+      () {
+    // Two roles, two floors, and D11.5 is why they are separate at all. A
+    // hairline is the only thing separating two blocks on a light ground, and
+    // it is the pair a ported palette gets wrong most often: a Radix step-7
+    // grey is 1.4-1.6:1 on white, invisible on a phone in daylight. A control's
+    // boundary is stricter again — WCAG 1.4.11 wants 3:1 — so it is `edge`.
     for (final MmThemePreset p in light) {
       final MmTokens t = kMmPresets[p]!;
       for (final Color layer in surfaces(t)) {
-        expect(ratio(t.line, layer), greaterThanOrEqualTo(2.4),
-            reason: '${p.name}: line on $layer');
+        expect(ratio(t.edge, layer), greaterThanOrEqualTo(2.99),
+            reason: '${p.name}: the control boundary on $layer');
       }
       final double hair = ratio(t.hairline, t.base);
       expect(hair, greaterThanOrEqualTo(1.6),
           reason: '${p.name}: a hairline has to be visible on the page');
       expect(hair, lessThan(2.6),
           reason: '${p.name}: a hairline is not a border');
-      expect(ratio(t.hairline, t.selected), lessThan(ratio(t.line, t.selected)),
-          reason: '${p.name}: the hairline stays weaker than the border tier');
+      expect(ratio(t.hairline, t.base), lessThan(ratio(t.edge, t.base)),
+          reason: '${p.name}: the divider stays weaker than the boundary');
+      expect(ratio(t.line, t.base), lessThan(ratio(t.edge, t.base)),
+          reason: '${p.name}: the rule tier stays weaker than the boundary');
     }
   });
 
@@ -230,7 +235,9 @@ void main() {
       // on a light basemap; the ring is the skin's foreground now.
       expect(t.fg, isNot(const Color(0xFFFFFFFF)), reason: p.name);
       final VizPalette viz = VizPalette.of(skin);
-      expect(viz.grid, t.line, reason: p.name);
+      // D11.5 — the grid is a structure a reader has to see, so it takes the
+      // control-boundary role rather than the divider tier it used to borrow.
+      expect(viz.grid, t.edge, reason: p.name);
       expect(viz.cool, t.fg, reason: p.name);
       expect(ratio(viz.grid, t.base), greaterThanOrEqualTo(2.4), reason: p.name);
       expect(ratio(viz.cool, t.base), greaterThanOrEqualTo(7), reason: p.name);
