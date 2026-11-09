@@ -18,6 +18,7 @@ import 'raw_record_card.dart';
 import '../ui/mm_components.dart';
 import '../ui/mm_collapse_controller.dart';
 import '../ui/mm_collapsible.dart';
+import '../ui/mm_confirm.dart';
 import '../ui/mm_scaffold.dart';
 import '../theme/mm_skin.dart';
 import '../ui/radio_health_block.dart';
@@ -158,21 +159,17 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
   /// free.
   Future<void> _restartRadio(
       MeshcoreController mc, AppLocalizations l) async {
-    final bool? go = await showDialog<bool>(
-      context: context,
-      builder: (BuildContext ctx) => AlertDialog(
-        title: Text(l.diagnosticsRestartRadio),
-        content: Text(l.diagnosticsRestartConfirm),
-        actions: <Widget>[
-          MmAction(
-              label: l.actionCancel, onPressed: () => Navigator.pop(ctx, false)),
-          MmAction(
-              label: l.diagnosticsRestartRadio,
-              onPressed: () => Navigator.pop(ctx, true)),
-        ],
-      ),
+    final bool go = await mmConfirm(
+      context,
+      title: l.diagnosticsRestartRadio,
+      body: l.diagnosticsRestartConfirm,
+      cancelLabel: l.actionCancel,
+      confirmLabel: l.diagnosticsRestartRadio,
+      // A restart drops the link and anything queued on the radio, which is
+      // what the body says; the tone is the rest of the warning.
+      destructive: true,
     );
-    if (go != true || !mounted) return;
+    if (!go || !mounted) return;
     final ScaffoldMessengerState sm = ScaffoldMessenger.of(context);
     try {
       await mc.send(MeshcoreFrameCodec.reboot());
@@ -812,24 +809,15 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
   /// history entry — so it asks first and names the consequence.
   Future<void> _confirmForget(MeshcoreController mc) async {
     final AppLocalizations l = AppLocalizations.of(context);
-    final bool? forget = await showDialog<bool>(
-      context: context,
-      builder: (BuildContext ctx) => AlertDialog(
-        title: Text(l.diagnosticsForgetConfirmTitle),
-        content: Text(l.diagnosticsForgetConfirmBody),
-        actions: <Widget>[
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: Text(l.cancel),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: Text(l.diagnosticsForgetShort),
-          ),
-        ],
-      ),
+    final bool forget = await mmConfirm(
+      context,
+      title: l.diagnosticsForgetConfirmTitle,
+      body: l.diagnosticsForgetConfirmBody,
+      cancelLabel: l.cancel,
+      confirmLabel: l.diagnosticsForgetShort,
+      destructive: true,
     );
-    if (forget == true) await mc.forgetDevice();
+    if (forget) await mc.forgetDevice();
   }
 
   String _label(String hex) {

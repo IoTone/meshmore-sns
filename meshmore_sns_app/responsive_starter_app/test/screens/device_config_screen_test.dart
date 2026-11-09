@@ -230,7 +230,10 @@ void main() {
     await ctrl.connect();
     fake.emit(selfInfoFrame());
     // Wire field is mode (0..2); the UI shows bytes (1..3).
-    fake.emit(deviceInfoFrame(pathHashMode: 2));
+    // The tail field only exists from protocol 10, and the decoder now reads the
+    // length as well as the version: an 82-byte frame claiming protocol 9 is
+    // inconsistent, and a real radio would not send one.
+    fake.emit(deviceInfoFrame(fwVer: 10, pathHashMode: 2));
     await t.pumpAndSettle();
 
     final Iterable<SegmentedButton<int>> segs = t

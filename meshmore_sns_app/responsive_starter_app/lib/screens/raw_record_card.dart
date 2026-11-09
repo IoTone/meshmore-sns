@@ -7,6 +7,7 @@ import '../gen/app_localizations.dart';
 import '../meshcore/failure.dart';
 import '../meshcore/mesh_sender.dart';
 import '../meshcore/meshcore_controller.dart';
+import '../ui/mm_confirm.dart';
 import '../meshcore/raw_record_input.dart';
 import '../theme/mm_skin.dart';
 import '../ui/mm_components.dart';
@@ -96,25 +97,14 @@ class _RawRecordCardState extends State<RawRecordCard> {
     final RawRecordInput parsed = _parsed;
     if (to == null || !parsed.ok) return;
     final AppLocalizations l = AppLocalizations.of(context);
-    final bool? go = await showDialog<bool>(
-      context: context,
-      builder: (BuildContext ctx) => AlertDialog(
-        title: Text(l.rawRecordConfirmTitle),
-        content:
-            Text(l.rawRecordConfirmBody(_nameOf(l, to), '${parsed.length}')),
-        actions: <Widget>[
-          MmAction(
-            label: l.cancel,
-            onPressed: () => Navigator.pop(ctx, false),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: Text(l.diagnosticsSend),
-          ),
-        ],
-      ),
+    final bool go = await mmConfirm(
+      context,
+      title: l.rawRecordConfirmTitle,
+      body: l.rawRecordConfirmBody(_nameOf(l, to), '${parsed.length}'),
+      cancelLabel: l.cancel,
+      confirmLabel: l.diagnosticsSend,
     );
-    if (go != true || !mounted) return;
+    if (!go || !mounted) return;
     setState(() {
       _busy = true;
       _outcome = null;

@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import '../gen/app_localizations.dart';
 import '../theme/mm_skin.dart';
 import '../ui/mm_components.dart';
+import '../ui/mm_confirm.dart';
 import '../ui/mm_scaffold.dart';
 import '../meshcore/meshcore_controller.dart';
 
@@ -200,22 +201,16 @@ class _DeviceContactsScreenState extends State<DeviceContactsScreen> {
 
   Future<void> _removeAll(
       MeshcoreController mc, int count, AppLocalizations l) async {
-    final bool ok = await showDialog<bool>(
-          context: context,
-          builder: (BuildContext ctx) => AlertDialog(
-            title: Text(l.deviceContactsRemoveAll),
-            content: Text(l.deviceContactsRemoveAllConfirm(count)),
-            actions: <Widget>[
-              TextButton(
-                  onPressed: () => Navigator.pop(ctx, false),
-                  child: Text(l.actionCancel)),
-              FilledButton(
-                  onPressed: () => Navigator.pop(ctx, true),
-                  child: Text(l.deviceContactsRemoveAll)),
-            ],
-          ),
-        ) ??
-        false;
+    final bool ok = await mmConfirm(
+      context,
+      title: l.deviceContactsRemoveAll,
+      body: l.deviceContactsRemoveAllConfirm(count),
+      cancelLabel: l.actionCancel,
+      confirmLabel: l.deviceContactsRemoveAll,
+      // The radio's table is its routing cache: every route it learned goes
+      // with it, and they come back only as the mesh is heard again.
+      destructive: true,
+    );
     if (!ok) return;
     final int n = await mc.removeAllDeviceContacts();
     if (!mounted) return;
@@ -229,23 +224,15 @@ class _DeviceContactsScreenState extends State<DeviceContactsScreen> {
 
   Future<void> _remove(MeshcoreController mc, Contact c, String key,
       AppLocalizations l) async {
-    final bool ok = await showDialog<bool>(
-          context: context,
-          builder: (BuildContext ctx) => AlertDialog(
-            title: Text(l.nodeDetailRemoveDeviceContact),
-            content: Text(l.nodeDetailRemoveDeviceContactConfirm(
-                c.name.isEmpty ? _hex(c.publicKey).substring(0, 8) : c.name)),
-            actions: <Widget>[
-              TextButton(
-                  onPressed: () => Navigator.pop(ctx, false),
-                  child: Text(l.actionCancel)),
-              FilledButton(
-                  onPressed: () => Navigator.pop(ctx, true),
-                  child: Text(l.nodeDetailRemoveDeviceContact)),
-            ],
-          ),
-        ) ??
-        false;
+    final bool ok = await mmConfirm(
+      context,
+      title: l.nodeDetailRemoveDeviceContact,
+      body: l.nodeDetailRemoveDeviceContactConfirm(
+          c.name.isEmpty ? _hex(c.publicKey).substring(0, 8) : c.name),
+      cancelLabel: l.actionCancel,
+      confirmLabel: l.nodeDetailRemoveDeviceContact,
+      destructive: true,
+    );
     if (!ok) return;
     await mc.removeDeviceContact(key);
     if (mounted) setState(() => _removed.add(key));

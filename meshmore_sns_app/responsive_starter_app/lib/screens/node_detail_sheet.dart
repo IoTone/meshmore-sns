@@ -28,7 +28,9 @@ import '../theme/theme_controller.dart';
 import '../util/geo.dart' as geo;
 import '../ui/mm_components.dart';
 import '../ui/mm_shape.dart';
+import '../ui/mm_confirm.dart';
 import '../util/relative_time.dart';
+import '../peer/hop_names.dart';
 
 /// R18 polish — modal bottom sheet shown when the user taps a node
 /// on the /grid view. Shows summary stats (signal, last heard,
@@ -186,23 +188,15 @@ class _NodeDetailSheetState extends State<NodeDetailSheet> {
   /// Remove this node from the radio's contact table (frees a slot).
   Future<void> _removeDeviceContact(
       MeshcoreController mc, DiscoveredNode n, AppLocalizations l) async {
-    final bool ok = await showDialog<bool>(
-          context: context,
-          builder: (BuildContext ctx) => AlertDialog(
-            title: Text(l.nodeDetailRemoveDeviceContact),
-            content: Text(l.nodeDetailRemoveDeviceContactConfirm(
-                n.name.isEmpty ? n.shortId : n.name)),
-            actions: <Widget>[
-              TextButton(
-                  onPressed: () => Navigator.pop(ctx, false),
-                  child: Text(l.actionCancel)),
-              FilledButton(
-                  onPressed: () => Navigator.pop(ctx, true),
-                  child: Text(l.nodeDetailRemoveDeviceContact)),
-            ],
-          ),
-        ) ??
-        false;
+    final bool ok = await mmConfirm(
+      context,
+      title: l.nodeDetailRemoveDeviceContact,
+      body: l.nodeDetailRemoveDeviceContactConfirm(
+          n.name.isEmpty ? n.shortId : n.name),
+      cancelLabel: l.actionCancel,
+      confirmLabel: l.nodeDetailRemoveDeviceContact,
+      destructive: true,
+    );
     if (!ok || !mounted) return;
     await mc.removeDeviceContact(n.pubKeyHex);
     if (!mounted) return;
@@ -263,23 +257,14 @@ class _NodeDetailSheetState extends State<NodeDetailSheet> {
     String tail(String pk) =>
         pk.length >= 6 ? pk.substring(0, 6) : pk;
 
-    final bool ok = await showDialog<bool>(
-          context: context,
-          builder: (BuildContext ctx) => AlertDialog(
-            title: Text(l.nodeIdentityLinkTitle),
-            content: Text(l.nodeIdentityLinkConfirm(
-                '$fromName …${tail(fromPk)}', '$toName …${tail(toPk)}')),
-            actions: <Widget>[
-              TextButton(
-                  onPressed: () => Navigator.pop(ctx, false),
-                  child: Text(l.actionCancel)),
-              FilledButton(
-                  onPressed: () => Navigator.pop(ctx, true),
-                  child: Text(l.nodeIdentityAction)),
-            ],
-          ),
-        ) ??
-        false;
+    final bool ok = await mmConfirm(
+      context,
+      title: l.nodeIdentityLinkTitle,
+      body: l.nodeIdentityLinkConfirm(
+          '$fromName …${tail(fromPk)}', '$toName …${tail(toPk)}'),
+      cancelLabel: l.actionCancel,
+      confirmLabel: l.nodeIdentityAction,
+    );
     if (!ok || !mounted) return;
 
     await mc.linkIdentityToKey(
@@ -825,17 +810,12 @@ class _FindRouteLineState extends State<_FindRouteLine> {
     });
   }
 
-  /// A hop's display name: the node whose key starts with that hash, or the
-  /// hash itself when no known node matches (a repeater we have not heard).
-  String _label(String hex) {
-    for (final DiscoveredNode n in context.read<MeshcoreController>().nodes) {
-      if (n.pubKeyHex.startsWith(hex)) return '${hex.substring(0, 2)} ${n.name}';
-    }
-    return hex.length > 2 ? hex.substring(0, 2) : hex;
-  }
-
-  /// The hops of one direction, named where a node matches the hash.
-  String _hops(PathLen len, Uint8List path) {
+  /// The hops of one direction, named where a hash names exactly one node.
+  ///
+  /// [nodes] is read once by the caller rather than once per hop: the list is
+  /// the radio's whole contact table, and a five-hop path used to walk it five
+  /// times inside a build.
+  String _hops(PathLen len, Uint8List path, List<DiscoveredNode> nodes) {
     if (path.isEmpty) return '';
     final List<String> out = <String>[];
     final int size = len.hashSize;
@@ -844,7 +824,7 @@ class _FindRouteLineState extends State<_FindRouteLine> {
           .sublist(i, i + size)
           .map((int b) => b.toRadixString(16).padLeft(2, '0'))
           .join();
-      out.add(_label(hex));
+      out.add(hopLabel(hex, hopNodeName(nodes, hex)));
     }
     return out.join(' · ');
   }
@@ -860,8 +840,10 @@ class _FindRouteLineState extends State<_FindRouteLine> {
     } else if (r == null) {
       value = l.nodeFindRouteNone;
     } else {
-      final String out = _hops(r.outPathLen, r.outPath);
-      final String back = _hops(r.inPathLen, r.inPath);
+      final List<DiscoveredNode> nodes =
+          context.read<MeshcoreController>().nodes;
+      final String out = _hops(r.outPathLen, r.outPath, nodes);
+      final String back = _hops(r.inPathLen, r.inPath, nodes);
       // Both directions come back in one reply, and the interesting case is
       // when they differ: that is an asymmetric link, and hiding it would
       // throw away half the answer.
@@ -1140,15 +1122,10 @@ class _AdvertPathLineState extends State<_AdvertPathLine> {
     });
   }
 
-  /// A hop's display name: the node whose key starts with that hash.
-  String _name(int hash, int width) {
-    final String h = hash
-        .toRadixString(16)
-        .padLeft(width * 2, '0');
-    for (final DiscoveredNode n in context.read<MeshcoreController>().nodes) {
-      if (n.pubKeyHex.startsWith(h)) return '${h.substring(0, 2)} ${n.name}';
-    }
-    return h.substring(0, 2);
+  /// A hop of the route the contact's last advert took.
+  String _name(int hash, int width, List<DiscoveredNode> nodes) {
+    final String h = hash.toRadixString(16).padLeft(width * 2, '0');
+    return hopLabel(h, hopNodeName(nodes, h));
   }
 
   @override
@@ -1156,6 +1133,8 @@ class _AdvertPathLineState extends State<_AdvertPathLine> {
     final AppLocalizations l = AppLocalizations.of(context);
     final ColorScheme cs = Theme.of(context).colorScheme;
     final AdvertPath? p = _path;
+    final List<DiscoveredNode> nodes =
+        context.read<MeshcoreController>().nodes;
     final String value = !_asked
         ? '—'
         : _reading
@@ -1175,7 +1154,8 @@ class _AdvertPathLineState extends State<_AdvertPathLine> {
                                   .sublist(i, i + p.pathLen.hashSize)
                                   .fold<int>(
                                       0, (int a, int b) => (a << 8) | b),
-                              p.pathLen.hashSize),
+                              p.pathLen.hashSize,
+                              nodes),
                       ].join(' · ');
     return InkWell(
       onTap: _reading ? null : _read,

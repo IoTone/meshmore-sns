@@ -10,6 +10,7 @@ import '../gen/app_localizations.dart';
 import '../meshcore/mesh_network.dart';
 import '../meshcore/mesh_network_store.dart';
 import '../meshcore/meshcore_controller.dart';
+import '../ui/mm_confirm.dart';
 import '../ui/mm_scaffold.dart';
 import 'networks_screen.dart';
 
@@ -52,23 +53,19 @@ class _NetworkDetailScreenState extends State<NetworkDetailScreen> {
     await _load();
   }
 
-  Future<bool> _confirm(String title, String body, String yes) async {
+  /// A yes/no question about this network. [destructive] is for the delete:
+  /// applying a network is a change, deleting one is a loss.
+  Future<bool> _confirm(String title, String body, String yes,
+      {bool destructive = false}) {
     final AppLocalizations l = AppLocalizations.of(context);
-    final bool? ok = await showDialog<bool>(
-      context: context,
-      builder: (BuildContext d) => AlertDialog(
-        title: Text(title),
-        content: Text(body),
-        actions: <Widget>[
-          TextButton(
-              onPressed: () => Navigator.pop(d, false),
-              child: Text(l.networksCancel)),
-          TextButton(
-              onPressed: () => Navigator.pop(d, true), child: Text(yes)),
-        ],
-      ),
+    return mmConfirm(
+      context,
+      title: title,
+      body: body,
+      cancelLabel: l.networksCancel,
+      confirmLabel: yes,
+      destructive: destructive,
     );
-    return ok == true;
   }
 
   void _toast(String text) =>
@@ -225,6 +222,7 @@ class _NetworkDetailScreenState extends State<NetworkDetailScreen> {
                   l.networksDeleteTitle(n.name),
                   l.networksDeleteBody,
                   l.networksDeleteConfirm,
+                  destructive: true,
                 );
                 if (!ok) return;
                 await _replace(null);

@@ -12,6 +12,7 @@ import '../gen/app_localizations.dart';
 import '../theme/mm_skin.dart';
 import '../ui/mm_collapse_controller.dart';
 import '../ui/mm_collapsible.dart';
+import '../ui/mm_confirm.dart';
 import '../ui/mm_scaffold.dart';
 import '../meshcore/meshcore_controller.dart';
 import '../meshcore/own_location.dart';
@@ -388,23 +389,15 @@ class _DeviceConfigScreenState extends State<DeviceConfigScreen> {
       return;
     }
     if (!mounted) return;
-    final bool? ok = await showDialog<bool>(
-      context: context,
-      builder: (BuildContext ctx) => AlertDialog(
-        title: Text(l.deviceRegionSuggestTitle),
-        content: Text(l.deviceRegionSuggestBody(localizedPresetLabel(l, p.id),
-            fix.latitude.toStringAsFixed(3), fix.longitude.toStringAsFixed(3))),
-        actions: <Widget>[
-          TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: Text(l.cancel)),
-          FilledButton(
-              onPressed: () => Navigator.pop(ctx, true),
-              child: Text(l.deviceRegionSuggestApply)),
-        ],
-      ),
+    final bool ok = await mmConfirm(
+      context,
+      title: l.deviceRegionSuggestTitle,
+      body: l.deviceRegionSuggestBody(localizedPresetLabel(l, p.id),
+          fix.latitude.toStringAsFixed(3), fix.longitude.toStringAsFixed(3)),
+      cancelLabel: l.cancel,
+      confirmLabel: l.deviceRegionSuggestApply,
     );
-    if (ok == true && mounted) {
+    if (ok && mounted) {
       final String name = _fillFromPreset(p);
       _toast(l.deviceRegionLoadedOffline(name));
     }

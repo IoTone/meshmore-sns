@@ -13,6 +13,7 @@ import '../../tools/trace_tool.dart';
 import '../../ui/mm_components.dart';
 import 'tool_pickers.dart';
 import 'tool_widgets.dart';
+import '../../peer/hop_names.dart';
 import '../../ui/mm_shape.dart';
 
 /// R60 T3 — per-hop SNR along a repeater chain.
@@ -50,16 +51,16 @@ class _TraceScreenState extends State<TraceScreen> {
   static String _hex(List<int> p) =>
       p.map((int b) => b.toRadixString(16).padLeft(2, '0')).join(',');
 
-  /// A hop's display name: the repeater whose key starts with it.
-  static String _hopName(MeshcoreController mc, int hash) {
+  /// A hop's label: the repeater or room server whose key starts with it.
+  ///
+  /// Only those two types are asked, because a trace passes through nothing
+  /// else; [nodes] is read once by the caller rather than per hop.
+  static String _hopName(List<DiscoveredNode> nodes, int hash) {
     final String h = hash.toRadixString(16).padLeft(2, '0');
-    for (final DiscoveredNode n in mc.nodes) {
-      if ((n.type == kAdvTypeRepeater || n.type == kAdvTypeRoom) &&
-          n.pubKeyHex.startsWith(h)) {
-        return '$h ${n.name}';
-      }
-    }
-    return h;
+    return hopLabel(
+      h,
+      hopNodeName(nodes, h, types: const <int>{kAdvTypeRepeater, kAdvTypeRoom}),
+    );
   }
 
   @override
@@ -67,6 +68,7 @@ class _TraceScreenState extends State<TraceScreen> {
     final AppLocalizations l = AppLocalizations.of(context);
     final MeshcoreController mc = context.watch<MeshcoreController>();
     final TraceTool t = context.read<ToolsController>().trace;
+    final List<DiscoveredNode> nodes = mc.nodes;
     final List<int>? path = _pathFor(mc);
     return ToolPage(
       title: l.toolTraceName,
@@ -156,7 +158,7 @@ class _TraceScreenState extends State<TraceScreen> {
         ToolFailureLine(t),
         for (final TraceRun r in t.runs) ...<Widget>[
           const SizedBox(height: 12),
-          _RunPanel(run: r, hopName: (int h) => _hopName(mc, h)),
+          _RunPanel(run: r, hopName: (int h) => _hopName(nodes, h)),
         ],
       ],
     );

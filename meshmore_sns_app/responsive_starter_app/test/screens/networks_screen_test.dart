@@ -56,6 +56,11 @@ void main() {
       transportFactory: () async => fake,
       connection:
           MeshcoreConnection(handshakeTimeout: const Duration(seconds: 5)),
+      // The channel walk asks one slot at a time and waits for each answer.
+      // The fake radio never answers, so the walk advances on this window; a
+      // short one lets it finish inside the pump, so a test that counts the
+      // frames after `connect` counts only its own.
+      channelProbeIdleOverride: const Duration(milliseconds: 1),
     );
     await t.pumpWidget(MaterialApp(
       locale: const Locale('en'),
@@ -67,6 +72,11 @@ void main() {
     if (connect) {
       await mc.connect();
       fake.emit(selfInfoFrame());
+      await t.pumpAndSettle();
+      // Let the unanswered channel walk run to its end before a test records
+      // the frame count it will compare against.
+      await t.pump(const Duration(milliseconds: 100));
+      return;
     }
     await t.pumpAndSettle();
   }

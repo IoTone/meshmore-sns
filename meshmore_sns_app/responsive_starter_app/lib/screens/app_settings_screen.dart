@@ -16,6 +16,7 @@ import '../perms/permissions_service.dart';
 import '../theme/mm_skin.dart';
 import '../ui/mm_components.dart';
 import '../ui/mm_collapsible.dart';
+import '../ui/mm_confirm.dart';
 import '../ui/mm_collapse_controller.dart';
 import '../ui/storage_use_block.dart';
 import '../ui/mm_scaffold.dart';
@@ -498,21 +499,15 @@ class _RadioPinBlockState extends State<_RadioPinBlock> {
 
   Future<void> _remove() async {
     final AppLocalizations l = AppLocalizations.of(context);
-    final bool? go = await showDialog<bool>(
-      context: context,
-      builder: (BuildContext ctx) => AlertDialog(
-        title: Text(l.settingsPinRemove),
-        content: Text(l.settingsPinConfirmRemove),
-        actions: <Widget>[
-          MmAction(
-              label: l.actionCancel, onPressed: () => Navigator.pop(ctx, false)),
-          MmAction(
-              label: l.settingsPinRemove,
-              onPressed: () => Navigator.pop(ctx, true)),
-        ],
-      ),
+    final bool go = await mmConfirm(
+      context,
+      title: l.settingsPinRemove,
+      body: l.settingsPinConfirmRemove,
+      cancelLabel: l.actionCancel,
+      confirmLabel: l.settingsPinRemove,
+      destructive: true,
     );
-    if (go == true && mounted) await _write(0, l.settingsPinRemoved);
+    if (go && mounted) await _write(0, l.settingsPinRemoved);
   }
 
   @override

@@ -8,6 +8,7 @@ import '../theme/mm_skin.dart';
 import '../meshcore/meshcore_controller.dart';
 import '../sns/meshbook.dart';
 import '../ui/mm_shape.dart';
+import '../ui/mm_confirm.dart';
 import 'grid_notice.dart';
 
 /// Meshbook (MBk) — a rolling last-24h readout of the current channel's
@@ -21,22 +22,14 @@ class MeshbookView extends StatelessWidget {
   Future<void> _confirmClear(
       BuildContext context, MeshcoreController mc, int ch,
       AppLocalizations l) async {
-    final bool ok = await showDialog<bool>(
-          context: context,
-          builder: (BuildContext ctx) => AlertDialog(
-            title: Text(l.meshbookClear),
-            content: Text(l.meshbookClearConfirm('$ch')),
-            actions: <Widget>[
-              TextButton(
-                  onPressed: () => Navigator.pop(ctx, false),
-                  child: Text(l.actionCancel)),
-              FilledButton(
-                  onPressed: () => Navigator.pop(ctx, true),
-                  child: Text(l.meshbookClear)),
-            ],
-          ),
-        ) ??
-        false;
+    final bool ok = await mmConfirm(
+      context,
+      title: l.meshbookClear,
+      body: l.meshbookClearConfirm('$ch'),
+      cancelLabel: l.actionCancel,
+      confirmLabel: l.meshbookClear,
+      destructive: true,
+    );
     if (ok) await mc.clearMeshbook(channelIdx: ch);
   }
 

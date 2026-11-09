@@ -16,6 +16,7 @@ import '../../maps/pack_catalog.dart';
 import '../../theme/mm_skin.dart';
 import '../../ui/mm_components.dart';
 import '../../ui/mm_scaffold.dart';
+import '../../ui/mm_confirm.dart';
 import '../tools/tool_widgets.dart';
 
 /// "12.3 MB" — decimal units, as the budget choices are.
@@ -242,21 +243,15 @@ class MapsScreen extends StatelessWidget {
 
 Future<bool> confirmDelete(BuildContext context, String name) async {
   final AppLocalizations l = AppLocalizations.of(context);
-  return await showDialog<bool>(
-        context: context,
-        builder: (BuildContext ctx) => AlertDialog(
-          content: Text(l.mapsDeleteConfirm(name)),
-          actions: <Widget>[
-            TextButton(
-                onPressed: () => Navigator.pop(ctx, false),
-                child: Text(l.cancel)),
-            TextButton(
-                onPressed: () => Navigator.pop(ctx, true),
-                child: Text(l.mapsDelete)),
-          ],
-        ),
-      ) ??
-      false;
+  return mmConfirm(
+    context,
+    body: l.mapsDeleteConfirm(name),
+    cancelLabel: l.cancel,
+    confirmLabel: l.mapsDelete,
+    // A downloaded region is the one thing on the phone that cost airtime or
+    // bandwidth to get and cannot be rebuilt from the radio.
+    destructive: true,
+  );
 }
 
 Future<int?> pickKeepDays(BuildContext context, int current) {

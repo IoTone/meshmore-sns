@@ -20,6 +20,7 @@ import '../theme/mm_skin.dart';
 import '../ui/mm_components.dart';
 import '../theme/theme_controller.dart';
 import '../ui/mm_shape.dart';
+import '../ui/mm_confirm.dart';
 
 /// Channel management (R6): list the device's channel slots, set the
 /// active one, and create/overwrite a slot's name + PSK. A channel is
@@ -68,28 +69,17 @@ class ChannelsScreen extends StatelessWidget {
       // means we lose the shared Public channel — surface that as an
       // explicit confirm rather than letting it happen silently.
       if (idx == 0 && !_pskMatchesPublic(r.psk)) {
-        final bool? proceed = await showDialog<bool>(
-          context: context,
-          builder: (BuildContext ctx) => AlertDialog(
-            title: Text(l.channelsSlot0WarnTitle),
-            content: Text(l.channelsSlot0WarnBody),
-            actions: <Widget>[
-              TextButton(
-                onPressed: () => Navigator.pop(ctx, false),
-                child: Text(l.channelsSlot0WarnCancel),
-              ),
-              FilledButton.tonal(
-                onPressed: () => Navigator.pop(ctx, true),
-                style: FilledButton.styleFrom(
-                  backgroundColor: cs.errorContainer,
-                  foregroundColor: cs.onErrorContainer,
-                ),
-                child: Text(l.channelsSlot0WarnContinue),
-              ),
-            ],
-          ),
+        final bool proceed = await mmConfirm(
+          context,
+          title: l.channelsSlot0WarnTitle,
+          body: l.channelsSlot0WarnBody,
+          cancelLabel: l.channelsSlot0WarnCancel,
+          confirmLabel: l.channelsSlot0WarnContinue,
+          // Overwriting slot 0 changes what every node on the public channel
+          // hears, and the old key is not recoverable from the radio.
+          destructive: true,
         );
-        if (proceed != true) return;
+        if (!proceed) return;
       }
       await mc.setChannel(idx: r.idx, name: r.name, psk: r.psk);
       if (context.mounted) {
@@ -691,30 +681,15 @@ class _EditChannelDialogState extends State<_EditChannelDialog> {
               foregroundColor: Theme.of(context).colorScheme.error,
             ),
             onPressed: () async {
-              final bool? ok = await showDialog<bool>(
-                context: context,
-                builder: (BuildContext ctx) => AlertDialog(
-                  title: Text(l.channelsClearConfirmTitle(widget.idx)),
-                  content: Text(l.channelsClearConfirmBody),
-                  actions: <Widget>[
-                    TextButton(
-                      onPressed: () => Navigator.pop(ctx, false),
-                      child: Text(l.channelsCancel),
-                    ),
-                    FilledButton.tonal(
-                      onPressed: () => Navigator.pop(ctx, true),
-                      style: FilledButton.styleFrom(
-                        backgroundColor:
-                            Theme.of(ctx).colorScheme.errorContainer,
-                        foregroundColor:
-                            Theme.of(ctx).colorScheme.onErrorContainer,
-                      ),
-                      child: Text(l.channelsClearConfirmAction),
-                    ),
-                  ],
-                ),
+              final bool ok = await mmConfirm(
+                context,
+                title: l.channelsClearConfirmTitle(widget.idx),
+                body: l.channelsClearConfirmBody,
+                cancelLabel: l.channelsCancel,
+                confirmLabel: l.channelsClearConfirmAction,
+                destructive: true,
               );
-              if (ok != true) return;
+              if (!ok) return;
               if (!context.mounted) return;
               // Pop with a special marker the outer screen reads
               // as "the user wants to clear this slot." We could

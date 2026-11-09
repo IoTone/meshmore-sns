@@ -19,6 +19,7 @@ import '../util/lora_range.dart';
 import 'grid_notice.dart';
 import 'node_detail_sheet.dart';
 import '../ui/mm_shape.dart';
+import '../ui/mm_confirm.dart';
 
 /// F8 — Fabric survey view. Paints **mesh coverage** as a quilt of
 /// shaded cells over an OSM basemap. Distinct from the equal-grid
@@ -80,22 +81,17 @@ class _FabricSurveyViewState extends State<FabricSurveyView> {
 
   Future<void> _confirmReset(MeshcoreController mc) async {
     final AppLocalizations l = AppLocalizations.of(context);
-    final bool? ok = await showDialog<bool>(
-      context: context,
-      builder: (BuildContext ctx) => AlertDialog(
-        title: Text(l.fabricResetTitle),
-        content: Text(l.fabricResetBody),
-        actions: <Widget>[
-          TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: Text(l.cancel)),
-          FilledButton(
-              onPressed: () => Navigator.pop(ctx, true),
-              child: Text(l.fabricResetApply)),
-        ],
-      ),
+    final bool ok = await mmConfirm(
+      context,
+      title: l.fabricResetTitle,
+      body: l.fabricResetBody,
+      cancelLabel: l.cancel,
+      confirmLabel: l.fabricResetApply,
+      // The survey is session-only by decision, so a reset throws away
+      // observations that cannot be recovered by re-reading anything.
+      destructive: true,
     );
-    if (ok == true) await mc.resetCoverage();
+    if (ok) await mc.resetCoverage();
   }
 
   Future<void> _showDetail(MeshcoreController mc, DiscoveredNode n) {

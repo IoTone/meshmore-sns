@@ -16,6 +16,7 @@ import '../screens/delivery_status_icon.dart';
 // The conversation picker is a widget library rather than a screen, and a
 // forward is the same question a tool asks: which conversation?
 import '../screens/tools/tool_pickers.dart';
+import '../ui/mm_confirm.dart';
 import 'draft_store.dart';
 
 /// R20 / U11 — per-message Reply / Copy / Delete actions (+ R76 Retry
@@ -213,30 +214,16 @@ Future<bool> forwardMessage(
 /// Confirm + delete dialog. Caller passes a deletion closure (so
 /// this helper stays platform-agnostic). Returns true if the user
 /// confirmed.
-Future<bool> confirmDeleteMessage(BuildContext context, ChatMessage m) async {
+Future<bool> confirmDeleteMessage(BuildContext context, ChatMessage m) {
   final AppLocalizations l = AppLocalizations.of(context);
-  final bool? ok = await showDialog<bool>(
-    context: context,
-    builder: (BuildContext ctx) => AlertDialog(
-      title: Text(l.actionDeleteConfirmTitle),
-      content: Text(l.actionDeleteConfirmBody),
-      actions: <Widget>[
-        TextButton(
-          onPressed: () => Navigator.pop(ctx, false),
-          child: Text(l.actionCancel),
-        ),
-        FilledButton.tonal(
-          onPressed: () => Navigator.pop(ctx, true),
-          style: FilledButton.styleFrom(
-            backgroundColor: Theme.of(ctx).colorScheme.errorContainer,
-            foregroundColor: Theme.of(ctx).colorScheme.onErrorContainer,
-          ),
-          child: Text(l.actionDelete),
-        ),
-      ],
-    ),
+  return mmConfirm(
+    context,
+    title: l.actionDeleteConfirmTitle,
+    body: l.actionDeleteConfirmBody,
+    cancelLabel: l.actionCancel,
+    confirmLabel: l.actionDelete,
+    destructive: true,
   );
-  return ok == true;
 }
 
 /// The reason shown under Retry: the catalogue's translated sentence when the

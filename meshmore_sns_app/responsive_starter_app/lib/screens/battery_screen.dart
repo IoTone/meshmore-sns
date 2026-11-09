@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 import '../gen/app_localizations.dart';
 import '../theme/mm_skin.dart';
 import '../ui/mm_scaffold.dart';
+import '../ui/mm_confirm.dart';
 import '../meshcore/battery_model.dart';
 import '../meshcore/device_power_specs.dart';
 import '../meshcore/meshcore_controller.dart';
@@ -82,22 +83,16 @@ class BatteryScreen extends StatelessWidget {
 
   Future<void> _confirmReset(
       BuildContext context, MeshcoreController mc, AppLocalizations l) async {
-    final bool? ok = await showDialog<bool>(
-      context: context,
-      builder: (BuildContext ctx) => AlertDialog(
-        title: Text(l.batteryReset),
-        content: Text(l.batteryResetConfirm),
-        actions: <Widget>[
-          TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: Text(l.actionCancel)),
-          FilledButton(
-              onPressed: () => Navigator.pop(ctx, true),
-              child: Text(l.batteryReset)),
-        ],
-      ),
+    final bool ok = await mmConfirm(
+      context,
+      title: l.batteryReset,
+      body: l.batteryResetConfirm,
+      cancelLabel: l.actionCancel,
+      confirmLabel: l.batteryReset,
+      // The samples are gone once reset, and the estimate has to re-learn.
+      destructive: true,
     );
-    if (ok == true) await mc.resetBatteryHistory();
+    if (ok) await mc.resetBatteryHistory();
   }
 }
 
