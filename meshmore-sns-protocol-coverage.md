@@ -155,6 +155,47 @@ the same consumption rule as the Dart side, and extending the shared vector file
 two implementations cannot drift again. Until then, anything built on the Java port (a desktop or host tool) must
 treat those codes as unknown rather than assume it can read them.
 
+## 9. Conformance against the published client contract (audited 2026-11-08)
+
+The rules below were compiled from the canonical `docs/companion_protocol.md`, the Core Protocol Working Group's
+draft and the firmware, then checked line by line against this tree. The audit found four violations and one
+half-rule; all five are closed. What remains open is named at the end rather than implied.
+
+| Rule | Verdict | Evidence |
+| --- | --- | --- |
+| One companion frame per GATT write or notification, never fragmented by the client | PASS | `transport/transport.dart` states the contract; `MeshcoreConnection.sendCommand` writes one frame |
+| A frame longer than the maximum is refused, never split | PASS | `constants.dart` `maxFrameSize` 176 and `requiredMtu` 179; the connection refuses a longer command by name |
+| Stream-transport directional markers (USB/TCP) | N/A | This app is BLE-only and no stream framing exists in the package |
+| Session sequence: APP_START, DEVICE_QUERY, SET_DEVICE_TIME, GET_CONTACTS, GET_CHANNEL per slot, SYNC_NEXT_MESSAGE on `0x83` | PASS | Handshake, device query, time read-then-write, contact sync, channel walk, drain |
+| One command outstanding, matched by expected response type | PASS | `command_ledger.dart` serialises by kind. Deliberate deviation: the ledger head expires at 15 s, not the documented 5 s, so a slow `DEVICE_INFO` stays attributable; every user-visible wait is 5 s |
+| Timeout or error clears the pending command; link loss clears the queue | PASS | `_expireCommands`, `_ledger.reset()` on reconnect/fail |
+| `PACKET_SENT.expected_ack == 0` means no confirmation will come | **VIOLATION, FIXED** | A message with no expected ACK aged into `unknown` and then `failed`; it now settles at `sent` |
+| A duplicated `SEND_CONFIRMED` cannot double-apply; the trip time | PASS, one gap named | The transition requires `sent`/`unknown`, so a repeat is inert. `roundTripMs` is decoded and shown nowhere |
+| The firmware's eight-entry ACK table bounds the client | PASS | Four unsettled messages overall plus one per contact at the composer; the ceiling is enforced in the central send path, not only in the composer |
+| A re-delivered message does not appear twice | PASS | Bounded 64-key memory over `(direction, prefix, timestamp, text)` |
+| Text ceiling is 160 bytes of UTF-8 (the 133-character figure is stale) | PASS | `text_budget.dart`; no chunking on the stale number exists |
+| Channel datagram ceiling | PASS, conservative | 162 bytes, derived from the firmware's `MAX_GROUP_DATA_LENGTH` less the inner header. The published 163 cannot coexist with that 3-byte header |
+| `path_len` is inverted by direction, and `0xFF` means "arrived direct" on receive | PASS | The send path floods with an empty path; received frames carry metadata only |
+| `path_len` packs hash-size minus one in two bits and hop count in six; hash size 4 is reserved; hop ceilings are 64/32/21 | PASS | `PathLen.isValid` refuses the reserved code and the `MAX_PATH_SIZE` overflow, which yields exactly those ceilings |
+| `DEVICE_INFO` is length-gated as well as version-gated | **VIOLATION, FIXED** | An 80- or 81-byte frame failed the whole decode; the tail is length-gated now and `hasClientRepeat`/`hasPathHashMode` say whether a value was read |
+| Multi-form frames are discriminated by length (flood scope 1/48, login 8/15, stats 26/30) | PASS | Each decoder handles both forms; the stats decoder also skips growth fields it does not model |
+| Error vocabulary 1–6, and an unknown code degrades to a generic error | PASS | `MeshcoreErrorCode`; the obsolete nine-entry table is not implemented |
+| Every channel slot the radio reports is fetched, past silent slots | **VIOLATION, FIXED** | The probe asked four slots blind; it now follows `max_group_channels`, one request at a time, and a silent slot does not end the walk |
+| A new channel should go to the first empty slot | **PARTIAL, by design** | The app never chooses a slot silently: every slot the radio reports is listed and the user picks one, so a new channel can land in a slot the user chose rather than the first empty one. The documented advice optimises for a client that has no slot list in front of the user; with the list on screen, choosing is the better rule and the register records the difference |
+| Hashtag channel keys derive from the name, and are never called private | PASS | `#test` vector in `crypto/channel_crypto.dart`; public key is the documented constant |
+| Contact enumeration is a stateful iterator: a second request yields `ERR_BAD_STATE`, and only `END_OF_CONTACTS` clears the flag | **VIOLATION, FIXED** | One fixed 8 s wait, no re-ask, and the running flag never cleared on a lost END. It is an idle-re-armed watchdog with three retries now, keeps what arrived and flags `contactsIncomplete` |
+| Auto-add flags carry the other bits through, and a write waits for a read | PASS | The whole byte is rewritten and re-read; a write before the policy is read is refused |
+
+**The screen half, closed after the audit.** `channels_screen.dart` hardcoded four slots, so a radio with eight or
+forty had most of its channels unreachable from the only screen that writes them. It reads
+`deviceInfo.maxGroupChannels` now, falls back to four before the radio answers, and never hides a slot the radio has
+named even when the reported count is smaller (`test/screens/channels_screen_test.dart`).
+
+**Still open, and why.** The ACK trip time is decoded and shown nowhere: it is a real measurement (the radio's own
+round trip in milliseconds) and belongs in Diagnostics beside the radio-health lines, but it was not added in the same
+pass. The ledger's 15 s head expiry is a deliberate deviation from the documented 5 s and would need a device run to
+change safely.
+
 ## 8. Sources
 
 - `examples/companion_radio/MyMesh.cpp` @ `companion-v1.17.1` (`d929643`):

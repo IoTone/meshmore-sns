@@ -31,8 +31,16 @@ import '../ui/mm_confirm.dart';
 class ChannelsScreen extends StatelessWidget {
   const ChannelsScreen({super.key});
 
-  /// Slots to expose (matches the controller's probe range).
-  static const int _slots = 4;
+  /// How many slots to expose: what the radio says it has.
+  ///
+  /// This was a hardcoded 4, which is what the smallest boards hold — so a
+  /// radio with 8 or 40 slots showed four and the rest were unreachable from
+  /// the only screen that writes them. `DEVICE_INFO` reports the count
+  /// (`max_group_channels`), and the controller's own probe walks exactly that
+  /// many, so the screen follows the same number instead of guessing. Before
+  /// the radio has answered, four is the honest floor: a board that reports
+  /// fewer than that still gets its own count back from the probe.
+  static const int _slotsBeforeDeviceInfo = 4;
 
   @override
   Widget build(BuildContext context) {
@@ -43,6 +51,18 @@ class ChannelsScreen extends StatelessWidget {
     final Map<int, String> known = <int, String>{
       for (final MapEntry<int, String> e in mc.channels) e.key: e.value,
     };
+    // The radio's own slot count, falling back to the smallest board's four
+    // until it has answered. Never fewer than the channels already known: a
+    // channel that exists must stay reachable even if the count disagrees.
+    final int reportedSlots =
+        mc.deviceInfo?.maxGroupChannels ?? _slotsBeforeDeviceInfo;
+    // The highest slot the radio has named, plus one: a channel that exists
+    // must stay reachable even when the reported count is smaller than the
+    // index it lives at.
+    final int knownExtent = known.isEmpty
+        ? 0
+        : known.keys.reduce((int a, int b) => a > b ? a : b) + 1;
+    final int slots = reportedSlots < knownExtent ? knownExtent : reportedSlots;
 
     Future<void> edit(int idx) async {
       final _ChannelEdit? r = await showDialog<_ChannelEdit>(
@@ -138,7 +158,7 @@ class ChannelsScreen extends StatelessWidget {
                     style: TextStyle(color: cs.error)),
               ),
             const Divider(height: 1),
-            for (int idx = 0; idx < _slots; idx++)
+            for (int idx = 0; idx < slots; idx++)
               ListTile(
                 leading: Icon(
                   idx == mc.activeChannel

@@ -32,8 +32,7 @@ Future<MeshcoreController> _ready(FakeMeshcoreTransport fake) async {
 // Provider sits *above* MaterialApp so dialogs (mounted in the root
 // navigator) can also read the controller — matches the real app's
 // MultiProvider-over-MaterialApp structure.
-Widget _host(MeshcoreController mc) =>
-    MultiProvider(
+Widget _host(MeshcoreController mc) => MultiProvider(
       providers: <ChangeNotifierProvider<ChangeNotifier>>[
         ChangeNotifierProvider<MeshcoreController>.value(value: mc),
         // The edit dialog embeds R59's BotSection.
@@ -53,12 +52,52 @@ Widget _host(MeshcoreController mc) =>
     );
 
 void main() {
+  testWidgets('the slot list is the radio\'s own count, not a hardcoded four',
+      (WidgetTester t) async {
+    // The screen exposed four slots whatever the board held, so a radio with
+    // eight or forty had most of its channels unreachable from the only screen
+    // that writes them. DEVICE_INFO reports max_group_channels, and the
+    // controller's probe walks exactly that many.
+    await t.binding.setSurfaceSize(const Size(900, 2400));
+    addTearDown(() => t.binding.setSurfaceSize(null));
+    final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
+    final MeshcoreController mc = await _ready(fake);
+    await t.pumpWidget(_host(mc));
+    await t.pumpAndSettle();
+
+    // Before the radio answers, the smallest board's four. Slot 0 is the
+    // controller's seeded Public channel, so three of the four read empty.
+    expect(find.text('— empty —'), findsNWidgets(3));
+
+    fake.emit(deviceInfoFrame(maxChannels: 8));
+    await t.pumpAndSettle();
+    expect(find.text('— empty —'), findsNWidgets(7),
+        reason: 'a radio that reports eight slots must show eight, one of '
+            'which carries the Public channel');
+    mc.dispose();
+  });
+
+  testWidgets(
+      'a channel the radio lists stays reachable even if the count '
+      'disagrees', (WidgetTester t) async {
+    await t.binding.setSurfaceSize(const Size(900, 2400));
+    addTearDown(() => t.binding.setSurfaceSize(null));
+    final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
+    final MeshcoreController mc = await _ready(fake);
+    await t.pumpWidget(_host(mc));
+    fake.emit(channelInfoFrame(idx: 3, name: 'Field'));
+    fake.emit(deviceInfoFrame(maxChannels: 2));
+    await t.pumpAndSettle();
+    expect(find.text('Field'), findsOneWidget,
+        reason: 'a slot that exists must not be hidden by a smaller count');
+    mc.dispose();
+  });
+
   testWidgets('edit slot via #hashtag sends SET_CHANNEL + lists it',
       (WidgetTester t) async {
     await t.binding.setSurfaceSize(const Size(900, 1600));
     addTearDown(() => t.binding.setSurfaceSize(null));
-    final FakeMeshcoreTransport fake =
-        FakeMeshcoreTransport(connected: true);
+    final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
     final MeshcoreController mc = await _ready(fake);
     await t.pumpWidget(_host(mc));
     fake.emit(channelInfoFrame(idx: 0, name: 'Public'));
@@ -74,8 +113,7 @@ void main() {
 
     await t.tap(find.text('#tag'));
     await t.pumpAndSettle();
-    await t.enterText(
-        find.widgetWithText(TextField, 'e.g. #mygroup'), '#ops');
+    await t.enterText(find.widgetWithText(TextField, 'e.g. #mygroup'), '#ops');
     await t.tap(find.text('Save'));
     await t.pumpAndSettle();
 
@@ -90,8 +128,7 @@ void main() {
       (WidgetTester t) async {
     await t.binding.setSurfaceSize(const Size(900, 1600));
     addTearDown(() => t.binding.setSurfaceSize(null));
-    final FakeMeshcoreTransport fake =
-        FakeMeshcoreTransport(connected: true);
+    final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
     final MeshcoreController mc = await _ready(fake);
     await t.pumpWidget(_host(mc));
     fake.emit(channelInfoFrame(idx: 0, name: 'Public'));
@@ -111,8 +148,8 @@ void main() {
     // The name the radio is given is the canonical one, so the slot reads
     // back as the channel whose key it actually holds.
     expect(find.text('#emergency'), findsOneWidget);
-    final Uint8List setChannel = fake.sent
-        .firstWhere((Uint8List f) => f.isNotEmpty && f[0] == 0x20);
+    final Uint8List setChannel =
+        fake.sent.firstWhere((Uint8List f) => f.isNotEmpty && f[0] == 0x20);
     expect(setChannel, containsAllInOrder('#emergency'.codeUnits));
     mc.dispose();
   });
@@ -120,8 +157,7 @@ void main() {
   testWidgets('tapping a configured slot sets it active', (t) async {
     await t.binding.setSurfaceSize(const Size(900, 1600));
     addTearDown(() => t.binding.setSurfaceSize(null));
-    final FakeMeshcoreTransport fake =
-        FakeMeshcoreTransport(connected: true);
+    final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
     final MeshcoreController mc = await _ready(fake);
     await t.pumpWidget(_host(mc));
     fake.emit(channelInfoFrame(idx: 1, name: 'Ops'));
@@ -154,16 +190,17 @@ void main() {
     await t.pumpAndSettle();
 
     Text find1(String key) => t.widget<Text>(find.text(key));
-    expect(find1('Channel 0 is the shared public one. A private group needs the '
-                    'same channel number, name and key on every radio.')
-                .style
-                ?.fontSize,
+    expect(
+        find1('Channel 0 is the shared public one. A private group needs the '
+                'same channel number, name and key on every radio.')
+            .style
+            ?.fontSize,
         type.sizeBody);
     expect(
         find1('Channel 0 is the shared public one. A private group needs the '
-                    'same channel number, name and key on every radio.')
-                .style
-                ?.fontSize,
+                'same channel number, name and key on every radio.')
+            .style
+            ?.fontSize,
         12);
     // The encryption panel is the second guaranteed block: 12 -> sizeBody
     // with the mono face on the key readouts it carries.
