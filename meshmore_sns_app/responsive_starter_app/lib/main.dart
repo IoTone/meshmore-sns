@@ -112,12 +112,14 @@ Future<void> startApp() async {
   // R65 — read the folded-group state before the first frame, so a
   // group the user folded never paints open and then snaps shut.
   final MmCollapseController collapse = MmCollapseController();
-  await collapse.load();
   // Radio-free mode is read before the tree exists: it decides whether the
   // launch reaches for a paired companion at all, and doing that after the
   // first frame would make the decision twice.
   final DemoMode demo = DemoMode();
-  await demo.load();
+  // Two independent preference reads, one platform-channel round trip. Both
+  // are needed before the first frame, so awaiting them in sequence put a
+  // second wait in front of the splash for no reason.
+  await Future.wait(<Future<void>>[collapse.load(), demo.load()]);
   final MeshcoreController controller = MeshcoreController(
     backgroundKeepalive: createBackgroundKeepalive(),
     locationService: const GeolocatorLocationService(),
