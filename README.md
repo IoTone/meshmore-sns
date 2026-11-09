@@ -10,7 +10,7 @@ Offline-first, theme-driven, with a hyperlocal radar grid, per-channel chat,
 > there's no public release channel yet. The one measured set of numbers lives in
 > [`meshmore_sns_app/STATUS.md`](./meshmore_sns_app/STATUS.md), with the date and
 > the command behind each, because a count restated in five documents goes wrong
-> in four of them. Measured there on 2026-11-08: 2,155 widget and unit tests in
+> in four of them. Measured there on 2026-11-08: 2,180 widget and unit tests in
 > three minutes, the protocol package's 372 with one skipped, the pure-Java
 > port's 164 with none failing, and `flutter analyze` clean with no standing
 > warnings. Debug and release APKs build, and the release bundle is 77 MB.
