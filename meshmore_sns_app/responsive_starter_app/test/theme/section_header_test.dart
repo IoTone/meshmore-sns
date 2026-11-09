@@ -22,7 +22,7 @@ import 'package:meshmore_sns_app/ui/mm_collapsible.dart';
 /// of them.
 ///
 /// R116 states the answer once for every screen that uses this widget and for
-/// all eight presets: the group starts at one rule in the border tier, the
+/// every preset: the group starts at one rule in the border tier, the
 /// header carries no fill, and the group draws nothing at its end. One
 /// boundary, one line, on every ground.
 void main() {

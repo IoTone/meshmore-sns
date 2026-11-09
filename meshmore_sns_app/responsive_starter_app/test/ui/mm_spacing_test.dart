@@ -176,7 +176,7 @@ void main() {
   testWidgets('a row keeps its text offset in every skin',
       (WidgetTester tester) async {
     // Card and flat paint modes differ in paint, never in metrics: the title
-    // starts at the same offset in all eight presets, so a list does not shift
+    // starts at the same offset in every preset, so a list does not shift
     // sideways when the skin changes.
     final Map<MmThemePreset, double> offsets = <MmThemePreset, double>{};
     for (final MmThemePreset preset in MmThemePreset.values) {
