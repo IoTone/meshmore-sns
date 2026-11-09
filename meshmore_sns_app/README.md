@@ -11,7 +11,7 @@ This directory is tracked in the parent repository, not a submodule.
 |---|---|
 | [`../README.md`](../README.md) | Project overview, doc map, repository layout |
 | [`../meshmore-sns-spec.md`](../meshmore-sns-spec.md) | Requirements R1–R117 and their change record. R118 onward live in [`STATUS.md`](STATUS.md), which is the current change log |
-| [`../meshmore-sns-UX-spec.md`](../meshmore-sns-UX-spec.md) | U0–U15 implementation plan and the six original skins (historical plan; the app now ships eight presets) |
+| [`../meshmore-sns-UX-spec.md`](../meshmore-sns-UX-spec.md) | U0–U15 implementation plan and the six original skins (historical plan; the app now ships eleven presets) |
 | [`../meshmore-sns-maps-spec.md`](../meshmore-sns-maps-spec.md) | Basemaps and offline region files (R61, R93) |
 | [`../meshmore-sns-tools-spec.md`](../meshmore-sns-tools-spec.md) | Tools surface (R60) |
 | [`../meshmore-sns-radio-alerts.md`](../meshmore-sns-radio-alerts.md) | Radio chime in firmware, per-board matrix, silence patch |
@@ -31,7 +31,7 @@ meshmore_sns_app/
     │   ├── meshcore/          ← controller facade over BLE + protocol
     │   ├── screens/           ← routed pages and the shell tabs
     │   ├── shell/             ← HomeShell, view strip, boot overlay
-    │   ├── theme/             ← eight presets (NERV, AG-HUD, Hyperlocal, SEELE, DR Pop, Recon, Studio, Studio Light)
+    │   ├── theme/             ← eleven presets (NERV, AG-HUD, Hyperlocal, SEELE, DR Pop, Recon, Studio, Studio Light)
     │   ├── maps/              ← tiles, style, offline packs, region files
     │   ├── ui/                ← shared components (MmListRow, MmAction, showMmPicker…)
     │   └── l10n/              ← ARB files (app_en.arb, app_ja.arb)

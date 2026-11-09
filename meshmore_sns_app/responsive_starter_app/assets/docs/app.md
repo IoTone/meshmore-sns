@@ -55,7 +55,7 @@ network you can actually see and feel:
   transport.
 - Six views: slide sideways to change view, or use the strip under the
   app bar. A map that pans takes the drag while you are moving it, and
-  the strip is always one tap away. Eight presets, and full English and
+  the strip is always one tap away. Eleven presets, and full English and
   Japanese.
 
 ## Offline-first by design

@@ -169,8 +169,8 @@ Each item is an amendment to shipped behaviour. Ordered by user impact.
     second is removable, or declare it.
 35. **Add an issues link in Settings** in place of crash reporting.
 36. **Add a radio-free demo mode** for store review and evaluation.
-37. **Audit every preset for correctness** and keep all of them; every feature must work in all eight (R115 added
-    Studio Light to the seven originals).
+37. **Audit every preset for correctness** and keep all of them; every feature must work in every preset the enum holds, which is eleven as of
+    2026-11-09 (D11.6 withdrew Studio Light, and four LDMUX looks joined).
 38. **Repair the documentation set** — the requirement numbering, the "Future" section and the contradictions
     named in the audit.
 39. **Add a block action, an in-app report action and first-use terms acceptance.** Play's UGC policy asks for

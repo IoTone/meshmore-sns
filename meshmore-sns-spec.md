@@ -1843,7 +1843,7 @@ the sibling specs: R93 in `meshmore-sns-maps-spec.md`, R60 in
   bounded above and below. `MmCollapsibleSection` now draws one rule in the
   border tier above the header, fills nothing, and draws nothing at the end
   (`lib/ui/mm_collapsible.dart`). `MmShape.tintedHeaders` is deleted, so
-  all eight presets state a group boundary the same way. Studio Light also
+  all presets state a group boundary the same way. Studio Light also
   stops having a dashboard of its own: `DashboardHost` sent it to the SEELE
   monolith, so choosing the light Studio skin replaced the layout (a
   colour-inverting status slab and an 88 sp numeral) instead of repainting

@@ -177,7 +177,7 @@ Companion rules:
   numbers in `EdgeInsets` and in `SizedBox(height|width:)`, checked in both
   directions, plus
   assertions that the shared tokens and the job getters are ladder members and
-  that a row's leading gap is the same in all eight presets. A new literal has
+  that a row's leading gap is the same in every preset. A new literal has
   to move its file's baseline in the same commit.
 
 ### Accessibility & sensory parity (hearing-impaired-first) — design guideline
@@ -277,7 +277,7 @@ Material's own controls square for Studio only. Grouped surfaces use
 `MmCollapsibleSection` (label + chevron, 48dp row, content not built when
 closed, marked by ONE rule in the border tier above the header (R116)): the
 header is never filled and the group draws nothing at its end, so a boundary
-is drawn once and the same way in all eight presets. A divider never sits
+is drawn once and the same way in every preset. A divider never sits
 between a header and its own content. Applied to Location settings, Device configuration
 and Personalization. Which groups are folded is persisted per stable id
 (R65, `MmCollapseController`, default open). Studio cards and the
