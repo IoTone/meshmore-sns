@@ -6381,4 +6381,34 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get diagnosticsAlertUnavailable =>
       'No usable link, so nothing was sent.';
+
+  @override
+  String get voiceTitle => 'Voice note';
+
+  @override
+  String get voiceLimit => '20 seconds, then it stops by itself.';
+
+  @override
+  String get voiceRecord => 'Record';
+
+  @override
+  String get voiceStop => 'Stop';
+
+  @override
+  String get voiceDiscard => 'Discard';
+
+  @override
+  String get voiceStoppedAtLimit => 'Stopped at 20 seconds.';
+
+  @override
+  String get voiceNoMicrophone =>
+      'The microphone is not available, so nothing can be recorded.';
+
+  @override
+  String get voiceNoCodec => 'This build has no speech codec.';
+
+  @override
+  String voiceCost(int datagrams, int seconds, String mode) {
+    return '$datagrams packets, about $seconds s of airtime at $mode.';
+  }
 }

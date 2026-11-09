@@ -24,6 +24,10 @@
          `maxSdkVersion=30` cap so geolocator can request it on
          Android 12+ too; BLE is unaffected because we declare
          `BLUETOOTH_SCAN` with `usesPermissionFlags="neverForLocation"`. -->
+    <!-- Voice notes: Codec 2 records 16-bit PCM at 8 kHz, and the take is
+         capped at 20 seconds before the microphone opens. Nothing is
+         recorded in the background and nothing is kept after a discard. -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 

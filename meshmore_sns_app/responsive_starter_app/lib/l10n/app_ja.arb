@@ -2820,5 +2820,15 @@
   "diagnosticsAlertSilent": "6秒以内に応答がありません。無線機が実行した可能性はあります。",
   "diagnosticsAlertSilentPartial": "6秒以内に応答がありません。応答: {text}",
   "diagnosticsAlertBusy": "別のコマンドがまだ応答待ちです。",
-  "diagnosticsAlertUnavailable": "接続がないため、何も送信していません。"
+  "diagnosticsAlertUnavailable": "接続がないため、何も送信していません。",
+  "voiceTitle": "ボイスメモ",
+  "voiceLimit": "20秒で自動的に停止します。",
+  "voiceRecord": "録音",
+  "voiceStop": "停止",
+  "voiceDiscard": "破棄",
+  "voiceStoppedAtLimit": "20秒で停止しました。",
+  "voiceNoMicrophone": "マイクを利用できないため録音できません。",
+  "voiceNoCodec": "このビルドには音声コーデックがありません。",
+  "voiceCost": "{datagrams} パケット、{mode} で約 {seconds} 秒の送信時間。",
+  "@voiceCost": {"placeholders": {"datagrams": {"type": "int"}, "seconds": {"type": "int"}, "mode": {"type": "String"}}}
 }

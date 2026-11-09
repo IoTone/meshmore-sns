@@ -129,12 +129,25 @@ dependencies:
   vector_map_tiles: ^8.0.0
   vector_tile_renderer: ^5.2.1
   flutter_local_notifications: ^22.3.3
-  # Exact, not a caret: the package's build hook downloads prebuilt libavif,
-  # dav1d and libaom archives named `native-v0.2.0` and verifies each against
-  # `archiveSha256`/`librarySha256` in its own manifest. A patch release would
-  # be a different native binary, so it has to be a deliberate change here.
+  # Exact, not a caret: the package's build hook resolves one prebuilt library
+  # per ABI and verifies it against `librarySha256` in its own manifest. A patch
+  # release would be a different native binary, so it has to be a deliberate
+  # change here. The version is overridden below rather than patched in place.
   avif_native: 0.2.0
   image_picker: ^1.2.4
+  record: ^7.1.2
+  ffi: ^2.2.0
+
+# Meshmore: the image codec is rebuilt from the same libavif/libaom/dav1d pins
+# as upstream 0.2.0, with the 16 KB page-size linker flags Play requires (D11.9).
+# Upstream's prebuilt archives are 4 KB aligned. The vendored copy differs from
+# the published package in exactly two ways -- `tool/native/build_unix.sh` passes
+# `-Wl,-z,max-page-size=16384 -Wl,-z,common-page-size=16384`, and
+# `native/manifest.json` names our own libraries by `path` instead of a download
+# URL -- so the hook, the Dart API and the licence files are upstream's.
+dependency_overrides:
+  avif_native:
+    path: ../third_party/avif_native
 
 dev_dependencies:
   flutter_test:
@@ -147,6 +160,7 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^5.0.0
+  ffigen: ^23.0.0
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

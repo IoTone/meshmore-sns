@@ -10665,6 +10665,60 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No usable link, so nothing was sent.'**
   String get diagnosticsAlertUnavailable;
+
+  /// No description provided for @voiceTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Voice note'**
+  String get voiceTitle;
+
+  /// No description provided for @voiceLimit.
+  ///
+  /// In en, this message translates to:
+  /// **'20 seconds, then it stops by itself.'**
+  String get voiceLimit;
+
+  /// No description provided for @voiceRecord.
+  ///
+  /// In en, this message translates to:
+  /// **'Record'**
+  String get voiceRecord;
+
+  /// No description provided for @voiceStop.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop'**
+  String get voiceStop;
+
+  /// No description provided for @voiceDiscard.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard'**
+  String get voiceDiscard;
+
+  /// No description provided for @voiceStoppedAtLimit.
+  ///
+  /// In en, this message translates to:
+  /// **'Stopped at 20 seconds.'**
+  String get voiceStoppedAtLimit;
+
+  /// No description provided for @voiceNoMicrophone.
+  ///
+  /// In en, this message translates to:
+  /// **'The microphone is not available, so nothing can be recorded.'**
+  String get voiceNoMicrophone;
+
+  /// No description provided for @voiceNoCodec.
+  ///
+  /// In en, this message translates to:
+  /// **'This build has no speech codec.'**
+  String get voiceNoCodec;
+
+  /// No description provided for @voiceCost.
+  ///
+  /// In en, this message translates to:
+  /// **'{datagrams} packets, about {seconds} s of airtime at {mode}.'**
+  String voiceCost(int datagrams, int seconds, String mode);
 }
 
 class _AppLocalizationsDelegate

@@ -1,0 +1,40 @@
+# Bindings for the Codec 2 bridge: the eleven C functions the voice feature
+# calls. Regenerate with:
+#
+#   flutter pub run ffigen --config ffigen.yaml
+#
+# Two things about that command are worth knowing, because both are outside the
+# repo and neither is obvious:
+#
+# * `llvm-path` points at a directory holding `lib/libclang.so`. On this host
+#   libclang comes from nix, so it is a symlink farm under /tmp rather than a
+#   system install.
+# * `codec2.h` includes `codec2/version.h`, which Codec 2's CMake generates
+#   from `cmake/version.h.in`. The vendored tree is deliberately unpatched, so
+#   that header is supplied from a scratch include directory instead.
+#
+# The include filter below is what keeps the output to the bridge: parsing
+# `codec2_bridge.c` also pulls in `codec2.h`, and binding upstream's API would
+# be a second, unused surface that could drift.
+name: C2Bridge
+description: Bindings for the Codec 2 bridge (libcodec2bridge.so).
+output: 'lib/voice/c2_bridge_bindings.dart'
+llvm-path:
+  - '/tmp/llvm-prefix'
+compiler-opts:
+  - '-I../third_party/codec2/src'
+  - '-I/tmp/codec2-gen'
+headers:
+  entry-points:
+    - '../third_party/codec2_bridge/codec2_bridge.c'
+  include-directives:
+    - '**codec2_bridge.c'
+functions:
+  include:
+    - 'c2_bridge_.*'
+  # Every one of these is pure C over caller-owned buffers: no callbacks into
+  # Dart and no Dart allocation, which is what `leaf` requires and what makes
+  # a per-frame call cheap.
+  leaf:
+    include:
+      - 'c2_bridge_.*'

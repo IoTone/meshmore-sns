@@ -4360,5 +4360,15 @@
     }
   },
   "diagnosticsAlertBusy": "Another command is still waiting for its answer.",
-  "diagnosticsAlertUnavailable": "No usable link, so nothing was sent."
+  "diagnosticsAlertUnavailable": "No usable link, so nothing was sent.",
+  "voiceTitle": "Voice note",
+  "voiceLimit": "20 seconds, then it stops by itself.",
+  "voiceRecord": "Record",
+  "voiceStop": "Stop",
+  "voiceDiscard": "Discard",
+  "voiceStoppedAtLimit": "Stopped at 20 seconds.",
+  "voiceNoMicrophone": "The microphone is not available, so nothing can be recorded.",
+  "voiceNoCodec": "This build has no speech codec.",
+  "voiceCost": "{datagrams} packets, about {seconds} s of airtime at {mode}.",
+  "@voiceCost": {"placeholders": {"datagrams": {"type": "int"}, "seconds": {"type": "int"}, "mode": {"type": "String"}}}
 }

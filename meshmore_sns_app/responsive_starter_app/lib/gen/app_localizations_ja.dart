@@ -6118,4 +6118,33 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get diagnosticsAlertUnavailable => '接続がないため、何も送信していません。';
+
+  @override
+  String get voiceTitle => 'ボイスメモ';
+
+  @override
+  String get voiceLimit => '20秒で自動的に停止します。';
+
+  @override
+  String get voiceRecord => '録音';
+
+  @override
+  String get voiceStop => '停止';
+
+  @override
+  String get voiceDiscard => '破棄';
+
+  @override
+  String get voiceStoppedAtLimit => '20秒で停止しました。';
+
+  @override
+  String get voiceNoMicrophone => 'マイクを利用できないため録音できません。';
+
+  @override
+  String get voiceNoCodec => 'このビルドには音声コーデックがありません。';
+
+  @override
+  String voiceCost(int datagrams, int seconds, String mode) {
+    return '$datagrams パケット、$mode で約 $seconds 秒の送信時間。';
+  }
 }
