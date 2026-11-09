@@ -1,10 +1,9 @@
 // Copyright (c) 2026 IoTone, Inc.
 // SPDX-License-Identifier: MIT
-import 'dart:io';
-
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import '../support/bundled_fonts.dart';
 
 import 'package:meshmore_sns_app/screens/tools/soak_screen.dart';
 import 'package:meshmore_sns_app/screens/tools/tool_widgets.dart';
@@ -13,17 +12,6 @@ import 'package:meshmore_sns_app/screens/tools/tool_widgets.dart';
 /// Soak page's "CONVERSATION" label broke mid-word as "CONVERSATIO / N"
 /// because every ToolField label column was a fixed 104dp. Soak now gives
 /// its rows a wider column; every other page keeps 104.
-Future<void> _bundledFonts() async {
-  for (final MapEntry<String, String> e in <String, String>{
-    'Saira': 'assets/fonts/Saira.ttf',
-    'JetBrains Mono': 'assets/fonts/JetBrainsMono.ttf',
-  }.entries) {
-    final FontLoader fl = FontLoader(e.key)
-      ..addFont(Future<ByteData>.value(
-          ByteData.sublistView(File(e.value).readAsBytesSync())));
-    await fl.load();
-  }
-}
 
 Future<void> _pump(WidgetTester t, double labelWidth) async {
   t.view.physicalSize = const Size(387, 700);
@@ -54,7 +42,7 @@ Future<void> _pump(WidgetTester t, double labelWidth) async {
 }
 
 void main() {
-  setUpAll(_bundledFonts);
+  setUpAll(loadBundledFonts);
 
   testWidgets('the default 104dp column breaks CONVERSATION at 1.15x',
       (WidgetTester t) async {

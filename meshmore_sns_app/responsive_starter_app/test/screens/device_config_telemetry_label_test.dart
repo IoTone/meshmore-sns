@@ -1,12 +1,11 @@
 // Copyright (c) 2026 IoTone, Inc.
 // SPDX-License-Identifier: MIT
-import 'dart:io';
-
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
+
+import '../support/bundled_fonts.dart';
 
 import 'package:meshmore_sns_app/gen/app_localizations.dart';
 import 'package:meshmore_sns_app/l10n/locale_controller.dart';
@@ -18,17 +17,6 @@ import '../meshcore/fake_transport.dart';
 /// Device finding (motorola edge 2024, 387dp, system font scale 1.3): the
 /// telemetry-sharing rows on Device configuration broke "Environment" as
 /// "Environme / nt" because the label column was a fixed 88dp.
-Future<void> _bundledFonts() async {
-  for (final MapEntry<String, String> e in <String, String>{
-    'Saira': 'assets/fonts/Saira.ttf',
-    'JetBrains Mono': 'assets/fonts/JetBrainsMono.ttf',
-  }.entries) {
-    final FontLoader fl = FontLoader(e.key)
-      ..addFont(Future<ByteData>.value(
-          ByteData.sublistView(File(e.value).readAsBytesSync())));
-    await fl.load();
-  }
-}
 
 /// The screen is a lazy ListView: bring the telemetry rows into the build range.
 Future<void> _toTelemetry(WidgetTester t) async {
@@ -70,7 +58,7 @@ Future<MeshcoreController> _pump(
 }
 
 void main() {
-  setUpAll(_bundledFonts);
+  setUpAll(loadBundledFonts);
 
   test('the label column is 88dp at normal size and grows to a 120dp cap', () {
     expect(telemLabelWidth(TextScaler.noScaling), 88);

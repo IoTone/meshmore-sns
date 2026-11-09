@@ -77,15 +77,29 @@ void registerAssetLicenses() {
       'License (ODbL). See https://www.openstreetmap.org/copyright.',
     );
 
+    // Every preset is set in its own monospace face (D11.8), so the list is
+    // longer than the two faces the app shipped with. One entry, because a
+    // user reading About is reading "what is in this build", not "which file
+    // came from which repository".
     yield const LicenseEntryWithLineBreaks(
-      <String>['Meshmore SNS — Bundled fonts (Saira, JetBrains Mono)'],
-      'The bundled type faces — Saira and JetBrains Mono — are used under '
-      'the SIL Open Font License, Version 1.1.\n'
+      <String>['Meshmore SNS — Bundled fonts (Saira, JetBrains Mono, Fira Mono, '
+          'Source Code Pro, Geist Mono, Cascadia Code)'],
+      'The bundled type faces — Saira, JetBrains Mono, Fira Mono, Source Code '
+      'Pro, Geist Mono and Cascadia Code — are used under the SIL Open Font '
+      'License, Version 1.1.\n'
       '\n'
       'Saira © The Saira Project Authors '
       '(https://github.com/Omnibus-Type/Saira).\n'
       'JetBrains Mono © 2020 The JetBrains Mono Project Authors '
       '(https://github.com/JetBrains/JetBrainsMono).\n'
+      'Fira Mono © 2012-2015 The Mozilla Foundation and Telefonica S.A. '
+      '(https://github.com/mozilla/Fira).\n'
+      'Source Code Pro © Adobe (https://github.com/adobe-fonts/source-code-pro), '
+      'from the Google Fonts repository at ofl/sourcecodepro.\n'
+      'Geist Mono © Vercel (https://github.com/vercel/geist-font), from the '
+      'Google Fonts repository at ofl/geistmono.\n'
+      'Cascadia Code © Microsoft (https://github.com/microsoft/cascadia-code), '
+      'from the Google Fonts repository at ofl/cascadiacode.\n'
       '\n'
       'This Font Software is licensed under the SIL Open Font License, '
       'Version 1.1. This license is available with a FAQ at '

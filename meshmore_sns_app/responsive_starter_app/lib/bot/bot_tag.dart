@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 
 import '../gen/app_localizations.dart';
+import '../theme/mm_skin.dart';
 import '../ui/mm_shape.dart';
 
 /// Marks a transcript row as machine-written (R59).
@@ -34,7 +35,7 @@ class BotTag extends StatelessWidget {
           fontSize: 9,
           letterSpacing: 1,
           fontWeight: FontWeight.w800,
-          fontFamily: 'JetBrains Mono',
+          fontFamily: context.skin.type.monoFamily,
         ),
       ),
     );

@@ -3,10 +3,11 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
+
+import '../support/bundled_fonts.dart';
 
 import 'package:meshmore_sns_app/docs/doc_section.dart';
 import 'package:meshmore_sns_app/docs/docs_repository.dart';
@@ -24,17 +25,6 @@ import '../meshcore/fake_transport.dart';
 /// headings, tables and code, so it is the page most likely to overflow
 /// on a narrow phone or at large text: this walks every section at the
 /// sizes the overflow sweep uses, with the app's own fonts loaded.
-Future<void> _bundledFonts() async {
-  for (final MapEntry<String, String> e in <String, String>{
-    'Saira': 'assets/fonts/Saira.ttf',
-    'JetBrains Mono': 'assets/fonts/JetBrainsMono.ttf',
-  }.entries) {
-    final FontLoader fl = FontLoader(e.key)
-      ..addFont(Future<ByteData>.value(
-          ByteData.sublistView(File(e.value).readAsBytesSync())));
-    await fl.load();
-  }
-}
 
 /// Serves the bundled snapshot straight from disk and never refreshes, so
 /// the test needs neither the network nor the asset bundle's isolate hop.
@@ -53,7 +43,7 @@ class _OfflineRepo extends DocsRepository {
 }
 
 void main() {
-  setUpAll(_bundledFonts);
+  setUpAll(loadBundledFonts);
 
   const List<(double, double, double)> sizes = <(double, double, double)>[
     (320, 780, 1.0),

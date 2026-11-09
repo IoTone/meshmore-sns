@@ -263,7 +263,7 @@ class _EstimateCard extends StatelessWidget {
             Text(k, style: TextStyle(color: cs.onSurfaceVariant)),
             Text(v,
                 style: TextStyle(
-                    color: cs.onSurface, fontFamily: 'JetBrains Mono')),
+                    color: cs.onSurface, fontFamily: context.skin.type.monoFamily)),
           ],
         ),
       );
@@ -357,7 +357,7 @@ class _SpecCard extends StatelessWidget {
                 '${spec.fullVolts.toStringAsFixed(2)}–'
                 '${spec.emptyVolts.toStringAsFixed(2)} V',
                 style: TextStyle(
-                    color: cs.onSurface, fontFamily: 'JetBrains Mono')),
+                    color: cs.onSurface, fontFamily: context.skin.type.monoFamily)),
             if (rx != null)
               Padding(
                 padding: EdgeInsets.only(top: skin.space.labelToControl),

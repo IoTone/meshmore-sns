@@ -207,6 +207,16 @@ flutter:
   # Mono is the NERV-concept telemetry/numeric face (slashed-zero via
   # FontFeature). Both are *variable* fonts — fontWeight maps to the
   # wght axis at runtime. OFL; attributed in About. ~670 KB total.
+  #
+  # 2026-11-09: the monospace face is now *the preset's own*, the way the
+  # owner's LDMUX project does it — a theme that changes the mono face is a
+  # theme that changes the advance of every column, so the face is bundled
+  # rather than asked for. Four faces were added for the presets that come
+  # from LDMUX (Fira Mono, Source Code Pro, Geist Mono, Cascadia Code); the
+  # five David concepts keep JetBrains Mono. Each new family ships its
+  # regular and bold static cuts from Google Fonts (`ofl/*`), so one file per
+  # weight and no axis interpolation at runtime. All SIL OFL 1.1, attributed
+  # in About; ~1.8 MB added.
   fonts:
     - family: Saira
       fonts:
@@ -214,6 +224,30 @@ flutter:
     - family: JetBrains Mono
       fonts:
         - asset: assets/fonts/JetBrainsMono.ttf
+    - family: Fira Mono
+      fonts:
+        - asset: assets/fonts/fira_mono_regular.ttf
+          weight: 400
+        - asset: assets/fonts/fira_mono_bold.ttf
+          weight: 700
+    - family: Source Code Pro
+      fonts:
+        - asset: assets/fonts/source_code_pro_regular.ttf
+          weight: 400
+        - asset: assets/fonts/source_code_pro_bold.ttf
+          weight: 700
+    - family: Geist Mono
+      fonts:
+        - asset: assets/fonts/geist_mono_regular.ttf
+          weight: 400
+        - asset: assets/fonts/geist_mono_bold.ttf
+          weight: 700
+    - family: Cascadia Code
+      fonts:
+        - asset: assets/fonts/cascadia_code_regular.ttf
+          weight: 400
+        - asset: assets/fonts/cascadia_code_bold.ttf
+          weight: 700
   #   - images/a_dot_burr.jpeg
   #   - images/a_dot_ham.jpeg
 

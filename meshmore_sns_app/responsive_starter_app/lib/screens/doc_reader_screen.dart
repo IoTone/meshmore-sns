@@ -75,7 +75,7 @@ class _DocReaderScreenState extends State<DocReaderScreen> {
     final DocContent? c = _content;
     return Scaffold(
       appBar: AppBar(
-        title: Text(_title(l), style: const TextStyle(letterSpacing: 2)),
+        title: Text(_title(l), style: TextStyle(letterSpacing: 2)),
         actions: <Widget>[
           if (DocSpec.of(widget.section).remoteUrls().isNotEmpty)
             IconButton(
@@ -158,7 +158,7 @@ class _ProvenanceStrip extends StatelessWidget {
             child: Text(
               bits.join('  ·  '),
               style: TextStyle(
-                  fontFamily: 'JetBrains Mono',
+                  fontFamily: context.skin.type.monoFamily,
                   fontSize: context.skin.type.sizeSm,
                   letterSpacing: .5,
                   color: cs.onSurfaceVariant),

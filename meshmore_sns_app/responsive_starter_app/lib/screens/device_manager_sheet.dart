@@ -261,7 +261,7 @@ class _DeviceManagerSheetState extends State<DeviceManagerSheet> {
                     : Text(l.deviceContactsCountOnly(mc.deviceContactCount!),
                         style: TextStyle(
                             color: cs.onSurfaceVariant,
-                            fontFamily: 'JetBrains Mono',
+                            fontFamily: context.skin.type.monoFamily,
                             fontSize: context.skin.type.sizeSm)),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () {
@@ -302,7 +302,7 @@ class _DeviceManagerSheetState extends State<DeviceManagerSheet> {
                       '${_relativeAgo(e.lastUsedUnix, l)}',
                       style: TextStyle(
                           color: cs.onSurfaceVariant,
-                          fontFamily: 'JetBrains Mono',
+                          fontFamily: context.skin.type.monoFamily,
                           fontSize: context.skin.type.sizeSm),
                     ),
                     trailing: IconButton(
@@ -406,7 +406,7 @@ class _DeviceManagerSheetState extends State<DeviceManagerSheet> {
                       'RSSI ${r.rssi}',
                       style: TextStyle(
                           color: cs.onSurfaceVariant,
-                          fontFamily: 'JetBrains Mono',
+                          fontFamily: context.skin.type.monoFamily,
                           fontSize: context.skin.type.sizeSm),
                     ),
                     trailing: const Icon(Icons.chevron_right),

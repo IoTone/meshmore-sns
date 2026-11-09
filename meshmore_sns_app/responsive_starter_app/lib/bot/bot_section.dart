@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 
 import '../gen/app_localizations.dart';
 import 'bot_controller.dart';
+import '../theme/mm_skin.dart';
 import 'bot_guards.dart';
 import 'bot_scope.dart';
 import 'bot_scope_config.dart';
@@ -190,7 +191,7 @@ class _Instrumentation extends StatelessWidget {
         c.suppressedOwn + c.suppressedLoop + c.suppressedRate + c.noMatch;
 
     final TextStyle mono = TextStyle(
-        fontFamily: 'JetBrains Mono',
+        fontFamily: context.skin.type.monoFamily,
         fontSize: 11,
         color: cs.onSurfaceVariant);
 
@@ -210,7 +211,7 @@ class _Instrumentation extends StatelessWidget {
             TextButton(
               onPressed: () => bot.resetCounters(scope),
               child: Text(l.botResetCounters,
-                  style: const TextStyle(fontSize: 11)),
+                  style: TextStyle(fontSize: 11)),
             ),
           ],
         ),

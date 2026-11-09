@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 import '../gen/app_localizations.dart';
+import '../theme/mm_skin.dart';
 
 /// Branded Flutter-side splash. The native splash (`flutter_native_splash`)
 /// shows for the few hundred ms between OS app-start and the first
@@ -97,7 +98,7 @@ class _BrandedSplashScreenState extends State<BrandedSplashScreen>
                     label,
                     style: t.textTheme.labelSmall?.copyWith(
                       color: cs.onSurfaceVariant.withValues(alpha: .7),
-                      fontFamily: 'JetBrains Mono',
+                      fontFamily: context.skin.type.monoFamily,
                       letterSpacing: 2,
                     ),
                   );

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../gen/app_localizations.dart';
+import '../theme/mm_skin.dart';
 import 'bot_controller.dart';
 import 'bot_scope.dart';
 
@@ -54,8 +55,8 @@ class _RulepackEditorState extends State<RulepackEditor> {
               controller: _c,
               maxLines: 12,
               minLines: 6,
-              style: const TextStyle(
-                  fontFamily: 'JetBrains Mono', fontSize: 12),
+              style: TextStyle(
+                  fontFamily: context.skin.type.monoFamily, fontSize: 12),
               decoration: const InputDecoration(
                 border: OutlineInputBorder(),
                 isDense: true,

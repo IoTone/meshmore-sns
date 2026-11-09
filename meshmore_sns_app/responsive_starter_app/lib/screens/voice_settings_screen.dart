@@ -172,7 +172,7 @@ class _VoiceSettingsScreenState extends State<VoiceSettingsScreen> {
             trailing: Text(tc.rate.toStringAsFixed(2),
                 style: TextStyle(
                     color: cs.onSurfaceVariant,
-                    fontFamily: 'JetBrains Mono')),
+                    fontFamily: context.skin.type.monoFamily)),
           ),
           // Pitch.
           ListTile(
@@ -187,7 +187,7 @@ class _VoiceSettingsScreenState extends State<VoiceSettingsScreen> {
             trailing: Text(tc.pitch.toStringAsFixed(2),
                 style: TextStyle(
                     color: cs.onSurfaceVariant,
-                    fontFamily: 'JetBrains Mono')),
+                    fontFamily: context.skin.type.monoFamily)),
           ),
           SizedBox(height: context.skin.space.sectionGap),
           // Voice picker.

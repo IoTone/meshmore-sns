@@ -10,6 +10,7 @@ import 'package:meshmore_sns_app/gen/app_localizations.dart';
 import 'package:meshmore_sns_app/l10n/locale_controller.dart';
 import 'package:meshmore_sns_app/meshcore/meshcore_controller.dart';
 import 'package:meshmore_sns_app/screens/chat_screen.dart';
+import 'package:meshmore_sns_app/theme/mm_skin.dart';
 import 'package:meshmore_sns_app/theme/mm_tokens.dart';
 import 'package:meshmore_sns_app/theme/theme_controller.dart';
 import 'package:meshmore_sns_app/tts/tts_controller.dart';
@@ -18,7 +19,11 @@ import '../meshcore/fake_transport.dart';
 import 'chat_screen_test.dart' show FakeTtsSpeaker;
 import 'package:meshcore/meshcore.dart';
 
-const String _mono = 'JetBrains Mono';
+/// The face machine data is set in *for a given preset*, taken from that
+/// preset's own type system: the rule under test is *words sans, data
+/// mono*, and which mono is the preset's decision.
+String monoOf(MmThemePreset preset) =>
+    mmSkinFor(preset).type.monoFamily;
 
 /// R71 — the type rule on the chat surface: under Studio the message body
 /// and the sender are sans and visibly ranked, the timestamp is mono, and
@@ -79,14 +84,15 @@ void main() {
     final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
     final MeshcoreController mc = await pump(t, MmThemePreset.studio, fake);
 
+    final String mono = monoOf(MmThemePreset.studio);
     final Finder body = find.byKey(const ValueKey<String>('studio-msg-body'));
     final Finder sender =
         find.byKey(const ValueKey<String>('studio-msg-sender'));
     expect(body, findsOneWidget);
     expect(t.widget<Text>(body).data, 'a long line of ordinary prose');
     expect(t.widget<Text>(sender).data, 'MikeP');
-    expect(family(t, body), isNot(_mono));
-    expect(family(t, sender), isNot(_mono));
+    expect(family(t, body), isNot(mono));
+    expect(family(t, sender), isNot(mono));
     // Hierarchy: the sender is smaller, heavier and dimmer than the body.
     final TextStyle b = t.widget<Text>(body).style!;
     final TextStyle s = t.widget<Text>(sender).style!;
@@ -96,7 +102,7 @@ void main() {
     // Time is machine data: mono.
     final Finder time = find.textContaining(RegExp(r'^\d\d:\d\d$'));
     expect(time, findsOneWidget);
-    expect(family(t, time), _mono);
+    expect(family(t, time), mono);
     expect(find.textContaining('«'), findsNothing);
     mc.dispose();
     await t.pumpWidget(const SizedBox());
@@ -110,7 +116,7 @@ void main() {
     final Finder body =
         find.text('MikeP: a long line of ordinary prose');
     expect(body, findsOneWidget);
-    expect(family(t, body), _mono);
+    expect(family(t, body), monoOf(MmThemePreset.seele));
     expect(find.textContaining('«'), findsOneWidget);
     expect(find.byKey(const ValueKey<String>('studio-msg-body')), findsNothing);
     mc.dispose();

@@ -24,7 +24,9 @@ void main() {
     expect(s.color.accent, kMmPresets[MmThemePreset.nerv]!.accent);
     // The brief's OSS type spine.
     expect(s.type.headingFamily, 'Saira');
-    expect(s.type.monoFamily, 'JetBrains Mono');
+    // The HUD's face is its LDMUX counterpart's (Cascadia Code): the
+    // rounded terminals are what make it read as an instrument.
+    expect(s.type.monoFamily, 'Cascadia Code');
     expect(s.type.slashedZero, isTrue);
   });
 

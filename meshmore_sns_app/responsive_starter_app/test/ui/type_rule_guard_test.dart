@@ -19,17 +19,17 @@ import 'package:meshmore_sns_app/theme/theme_controller.dart';
 import '../meshcore/fake_transport.dart';
 import 'package:meshcore/meshcore.dart';
 
-const String _mono = 'JetBrains Mono';
-
 /// R74 — the Studio type rule: *words sans, machine data mono*.
 ///
 /// Enforceable here: (1) which skins turn words sans (`MmType.wordsMono`);
-/// (2) prose surfaces resolve sans under Studio and unchanged mono under
-/// SEELE (docs hub as the probe); (3) a **ratchet**: the number of literal
-/// `fontFamily: 'JetBrains Mono'` per file may not grow, so new prose
-/// cannot silently be set in mono. NOT enforceable by test: whether a
-/// given literal is data or prose; that is a judgement recorded in
-/// `meshmore-sns-UX-spec.md` ("Type rule").
+/// (2) prose surfaces resolve sans under Studio and the skin's mono under
+/// SEELE (docs hub as the probe); (3) a **ratchet** on literals: no file may
+/// name a font family directly, so a new surface cannot pick a face of its
+/// own — it reads `skin.type.monoFamily` like every other one does, and the
+/// per-preset mapping in `mm_skin.dart` stays the only place a face is
+/// chosen. NOT enforceable by test: whether a given run of text is data or
+/// prose; that is a judgement recorded in `meshmore-sns-UX-spec.md`
+/// ("Type rule").
 void main() {
   setUp(() => SharedPreferences.setMockInitialValues(<String, Object>{}));
 
@@ -43,7 +43,6 @@ void main() {
         expect(t.wordsMono, isNull);
       } else {
         expect(t.wordsMono, t.monoFamily, reason: '$p');
-        expect(t.wordsMono, _mono, reason: '$p');
       }
     }
   });
@@ -96,61 +95,32 @@ void main() {
 
   testWidgets('docs hub prose: sans under Studio, mono under SEELE',
       (WidgetTester t) async {
-    expect(await docsTitleFamily(t, MmThemePreset.studio), isNot(_mono));
-    expect(await docsTitleFamily(t, MmThemePreset.seele), _mono);
+    final String seeleMono =
+        mmSkinFor(MmThemePreset.seele).type.monoFamily;
+    expect(await docsTitleFamily(t, MmThemePreset.studio), isNot(seeleMono));
+    expect(await docsTitleFamily(t, MmThemePreset.seele), seeleMono);
   });
 
-  test('literal JetBrains Mono per file may not grow (ratchet)', () {
-    // Baseline after R74. Files of the six older presets' own dashboards
-    // are exempt (their identity is mono). Lower a number when a literal
-    // is removed; never raise one.
-    const Map<String, int> baseline = <String, int>{
-      'lib/bot/bot_scope_config.dart': 1,
-      'lib/bot/bot_section.dart': 1,
-      'lib/bot/bot_tag.dart': 1,
-      'lib/screens/battery_screen.dart': 3,
-      'lib/screens/dashboard_screen.dart': 7,
-      'lib/screens/dashboards/my_pubkey_line.dart': 1,
-      'lib/screens/device_contacts_screen.dart': 1,
-      'lib/screens/device_manager_sheet.dart': 3,
-      'lib/screens/diagnostics_screen.dart': 3,
-      'lib/screens/dm_screen.dart': 1,
-      'lib/screens/doc_reader_screen.dart': 1,
-      'lib/screens/elevation_profile_view.dart': 8,
-      'lib/screens/fabric_survey_view.dart': 1,
-      'lib/screens/location_settings_screen.dart': 1,
-      'lib/screens/meshbook_view.dart': 3,
-      'lib/screens/mesh_tree_view.dart': 3,
-      'lib/screens/sns_cells_view.dart': 2,
-      'lib/screens/voice_settings_screen.dart': 2,
-      'lib/splash/branded_splash_screen.dart': 1,
-    };
-    const Set<String> exempt = <String>{
-      'lib/screens/dashboards/hyperlocal_dashboard.dart',
-      'lib/screens/dashboards/aghud_dashboard.dart',
-      'lib/screens/dashboards/drpop_dashboard.dart',
-      'lib/screens/dashboards/recon_dashboard.dart',
-      'lib/screens/dashboards/nerv_dashboard.dart',
-      'lib/shell/boot_overlay.dart',
-      'lib/licenses/asset_licenses.dart',
-    };
-    final RegExp lit = RegExp(r"fontFamily:\s*'JetBrains Mono'");
-    final List<String> grew = <String>[];
+  test('no surface names a font family of its own', () {
+    // The face is the preset's, decided once in `mm_skin.dart`; a literal in a
+    // widget sets one skin's face on every skin. This used to be a per-file
+    // ratchet (13 literals across 9 files when the mono face was one face);
+    // now the count is zero and the rule is the count, which cannot drift.
+    final RegExp lit = RegExp(r"fontFamily:\s*'[^']+'");
+    final List<String> named = <String>[];
     for (final FileSystemEntity e
         in Directory('lib').listSync(recursive: true)) {
       if (e is! File || !e.path.endsWith('.dart')) continue;
       final String path = e.path.replaceAll('\\', '/');
-      if (path.startsWith('lib/gen/') ||
-          path.startsWith('lib/theme/') ||
-          exempt.contains(path)) {
+      // The tokens layer is where a face is chosen, and `lib/gen/` is
+      // generated from ARB.
+      if (path.startsWith('lib/gen/') || path.startsWith('lib/theme/')) {
         continue;
       }
       final int n = lit.allMatches(e.readAsStringSync()).length;
-      if (n > (baseline[path] ?? 0)) {
-        grew.add('$path has $n, baseline ${baseline[path] ?? 0}');
-      }
+      if (n > 0) named.add('$path names $n font family literals');
     }
-    expect(grew, isEmpty,
+    expect(named, isEmpty,
         reason: 'set words with skin.type.wordsMono, data with monoFamily');
   });
 }

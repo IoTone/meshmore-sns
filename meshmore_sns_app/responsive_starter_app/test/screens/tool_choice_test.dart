@@ -1,10 +1,9 @@
 // Copyright (c) 2026 IoTone, Inc.
 // SPDX-License-Identifier: MIT
-import 'dart:io';
-
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import '../support/bundled_fonts.dart';
 
 import 'package:meshmore_sns_app/screens/tools/tool_widgets.dart';
 
@@ -13,17 +12,6 @@ import 'package:meshmore_sns_app/screens/tools/tool_widgets.dart';
 /// choice at large text overflowed the slot (57px at 320dp x 2.0 on the
 /// "Download a region" source picker). It now fills the slot, like the
 /// text fields on the same pages.
-Future<void> _bundledFonts() async {
-  for (final MapEntry<String, String> e in <String, String>{
-    'Saira': 'assets/fonts/Saira.ttf',
-    'JetBrains Mono': 'assets/fonts/JetBrainsMono.ttf',
-  }.entries) {
-    final FontLoader fl = FontLoader(e.key)
-      ..addFont(Future<ByteData>.value(
-          ByteData.sublistView(File(e.value).readAsBytesSync())));
-    await fl.load();
-  }
-}
 
 Future<void> _pump(WidgetTester t, {required double w, required double scale}) async {
   t.view.physicalSize = Size(w, 700);
@@ -56,7 +44,7 @@ Future<void> _pump(WidgetTester t, {required double w, required double scale}) a
 }
 
 void main() {
-  setUpAll(_bundledFonts);
+  setUpAll(loadBundledFonts);
 
   testWidgets('fills the value slot at 393dp, 1.0x', (WidgetTester t) async {
     await _pump(t, w: 393, scale: 1.0);

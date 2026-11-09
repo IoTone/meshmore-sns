@@ -12,6 +12,7 @@ import 'package:meshmore_sns_app/meshcore/meshcore_controller.dart';
 import 'package:meshmore_sns_app/screens/dashboard_screen.dart';
 import 'package:meshmore_sns_app/screens/dashboards/dashboard_host.dart';
 import 'package:meshmore_sns_app/screens/dashboards/studio_dashboard.dart';
+import 'package:meshmore_sns_app/theme/mm_skin.dart';
 import 'package:meshmore_sns_app/theme/mm_tokens.dart';
 import 'package:meshmore_sns_app/theme/theme_controller.dart';
 import 'package:meshmore_sns_app/ui/mm_collapse_controller.dart';
@@ -19,7 +20,10 @@ import 'package:meshmore_sns_app/ui/mm_collapse_controller.dart';
 import '../meshcore/fake_transport.dart';
 import 'package:meshcore/meshcore.dart';
 
-const String _mono = 'JetBrains Mono';
+/// The face machine data is set in, taken from the skin rather than
+/// restated: the rule under test is *words sans, data mono*, and the
+/// preset chooses which mono.
+final String _mono = mmSkinFor(MmThemePreset.studio).type.monoFamily;
 
 Future<void> _pump(WidgetTester t, MeshcoreController mc) async {
   final ThemeController tc = ThemeController();

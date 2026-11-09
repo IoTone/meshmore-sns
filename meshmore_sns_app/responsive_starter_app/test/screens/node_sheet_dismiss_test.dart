@@ -132,7 +132,10 @@ void main() {
     SharedPreferences.setMockInitialValues(<String, Object>{});
     await t.binding.setSurfaceSize(const Size(900, 2400));
     addTearDown(() => t.binding.setSurfaceSize(null));
-    final MmType type = mmSkinFor(MmThemePreset.seele).type;
+    // The harness renders the controller's default preset, so the type
+    // system to compare against is that preset's. This named SEELE and
+    // passed only while every preset shared one mono face.
+    final MmType type = mmSkinFor(kDefaultPreset).type;
     await t.pumpWidget(_app(Scaffold(body: _sheet())));
     await t.pump();
 

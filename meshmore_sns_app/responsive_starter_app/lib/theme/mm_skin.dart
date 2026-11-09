@@ -252,8 +252,31 @@ const MmOrnament _calmOrnament = MmOrnament();
 
 /// Build the [MmSkin] bundle for a preset. Colour comes from the shared
 /// [kMmPresets]; type/shape/ornament are spec'd per concept. All six
-/// brief concepts (A–F) are elaborated, so the switch is exhaustive — a
-/// new preset is a compile error until its bundle is defined.
+/// The monospace face each preset is set in.
+///
+/// The face is the preset's own, and it is bundled rather than asked for: a
+/// theme that changes the mono face changes the *advance* of every column, so
+/// the one thing the app may not do is let the device's `monospace` decide how
+/// wide a column is. This is the owner's LDMUX arrangement, ported with the
+/// palettes.
+///
+/// The split is deliberate on both sides. The presets that come from LDMUX
+/// carry their source theme's face — Fira Mono for Dark and Forest, JetBrains
+/// Mono for Air, Source Code Pro for Daybreak, Geist Mono for Umber, Cascadia
+/// Code for NERV — because that is the face each of those looks was designed
+/// against. The five concept skins David drew (SEELE, AG-HUD, Hyperlocal, DR
+/// Pop, Recon) keep JetBrains Mono: they have no LDMUX counterpart, and a face
+/// chosen for them here would be a restyle nobody asked for.
+///
+/// NERV is the one David concept with an exact LDMUX counterpart, so it takes
+/// that theme's face (Cascadia Code), which is the case the rule exists for.
+///
+/// The picker shows each preset by name and swatch, not in its own type, so
+/// nothing needs a face it is not wearing: `mmSkinFor(p)!.type.monoFamily` is
+/// read from the active skin at the call site and nowhere else.
+///
+/// The bundles below elaborate the UX brief's concepts (A–F), so the switch is
+/// exhaustive — a new preset is a compile error until its bundle is defined.
 MmSkin mmSkinFor(MmThemePreset preset) {
   final MmTokens color = kMmPresets[preset]!;
   switch (preset) {
@@ -266,7 +289,7 @@ MmSkin mmSkinFor(MmThemePreset preset) {
         type: const MmType(
           displayFamily: 'Saira',
           headingFamily: 'Saira',
-          monoFamily: 'JetBrains Mono',
+          monoFamily: 'Cascadia Code',
           upperHeadings: true,
           headingTracking: 3.0,
           slashedZero: true,
@@ -367,7 +390,7 @@ MmSkin mmSkinFor(MmThemePreset preset) {
         preset: preset,
         color: color,
         type: const MmType(
-          monoFamily: 'JetBrains Mono',
+          monoFamily: 'Fira Mono',
           upperHeadings: true,
           headingTracking: 1.2,
           sansLabels: true,
@@ -398,7 +421,7 @@ MmSkin mmSkinFor(MmThemePreset preset) {
         preset: preset,
         color: color,
         type: const MmType(
-          monoFamily: 'JetBrains Mono',
+          monoFamily: 'Fira Mono',
           upperHeadings: true,
           headingTracking: 1.6,
           slashedZero: true,
@@ -433,7 +456,7 @@ MmSkin mmSkinFor(MmThemePreset preset) {
         preset: preset,
         color: color,
         type: const MmType(
-          monoFamily: 'JetBrains Mono',
+          monoFamily: 'Source Code Pro',
           upperHeadings: true,
           headingTracking: 1.4,
           slashedZero: true,
@@ -450,7 +473,7 @@ MmSkin mmSkinFor(MmThemePreset preset) {
         preset: preset,
         color: color,
         type: const MmType(
-          monoFamily: 'JetBrains Mono',
+          monoFamily: 'Geist Mono',
           upperHeadings: true,
           headingTracking: 1.6,
           slashedZero: true,

@@ -419,8 +419,8 @@ class _DeviceContactsScreenState extends State<DeviceContactsScreen> {
                             overflow: TextOverflow.ellipsis),
                         subtitle: Text(
                             '…${key.substring(0, 12)} · ${_path(c, l)}',
-                            style: const TextStyle(
-                                fontFamily: 'JetBrains Mono', fontSize: 11)),
+                            style: TextStyle(
+                                fontFamily: context.skin.type.monoFamily, fontSize: 11)),
                         trailing: IconButton(
                           tooltip: l.nodeDetailRemoveDeviceContact,
                           icon: Icon(Icons.delete_outline, color: cs.error),
